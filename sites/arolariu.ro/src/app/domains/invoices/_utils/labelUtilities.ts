@@ -131,7 +131,7 @@ export function getClassificationLabel(classification: StandardClassification | 
 export function getClassificationGroup(classification: StandardClassification | null): string | null {
   if (classification === null) return null;
   if (classification.hierarchy.length === 0) return null;
-  return classification.hierarchy[0].officialLabel;
+  return classification.hierarchy[0]?.officialLabel ?? null;
 }
 
 /**

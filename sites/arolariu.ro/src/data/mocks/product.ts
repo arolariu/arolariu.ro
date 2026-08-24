@@ -18,6 +18,7 @@
  */
 
 import {type Allergen, type Product, type ProductCategory} from "@/types/invoices";
+import type {StandardClassification} from "@/types/invoices/Classification";
 import {faker} from "@faker-js/faker";
 
 /**
@@ -168,6 +169,17 @@ export class ProductBuilder {
    */
   withCategory(category: ProductCategory): this {
     this.product.category = category;
+    return this;
+  }
+
+  /**
+   * Sets the standard taxonomy classification for the product.
+   *
+   * @param classification - StandardClassification or null when unclassified.
+   * @returns The ProductBuilder instance for method chaining.
+   */
+  withClassification(classification: StandardClassification | null): this {
+    this.product.classification = classification;
     return this;
   }
 

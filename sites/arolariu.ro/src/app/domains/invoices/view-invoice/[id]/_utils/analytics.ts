@@ -4,8 +4,9 @@
  */
 
 import {getTransactionYear, toRON} from "@/lib/currency";
-import {EMPTY_GUID, formatEnum} from "@/lib/utils.generic";
-import {type Invoice, type PaymentInformation, type Product, ProductCategory} from "@/types/invoices";
+import {EMPTY_GUID} from "@/lib/utils.generic";
+import {type Invoice, type PaymentInformation, type Product} from "@/types/invoices";
+import {getClassificationGroup} from "../../../_utils/labelUtilities";
 
 // Spending by category data
 export type CategorySpending = {
@@ -15,37 +16,33 @@ export type CategorySpending = {
   fill: string;
 };
 
-// Chart color mapping
-const CATEGORY_COLORS: Record<number, string> = {
-  [ProductCategory.DAIRY]: "var(--ac-chart-1)",
-  [ProductCategory.BAKED_GOODS]: "var(--ac-chart-2)",
-  [ProductCategory.FRUITS]: "var(--ac-chart-3)",
-  [ProductCategory.VEGETABLES]: "var(--ac-chart-4)",
-  [ProductCategory.BEVERAGES]: "var(--ac-chart-5)",
-  [ProductCategory.CLEANING_SUPPLIES]: "var(--ac-chart-1)",
-  [ProductCategory.MEAT]: "var(--ac-chart-2)",
-  [ProductCategory.FISH]: "var(--ac-chart-3)",
-  [ProductCategory.GROCERIES]: "var(--ac-chart-4)",
-  [ProductCategory.OTHER]: "var(--ac-chart-5)",
-};
+/** Chart color palette; cycles for any number of groups. */
+const CHART_COLORS = [
+  "var(--ac-chart-1)",
+  "var(--ac-chart-2)",
+  "var(--ac-chart-3)",
+  "var(--ac-chart-4)",
+  "var(--ac-chart-5)",
+] as const;
 
-export function getCategorySpending(items: Product[]): CategorySpending[] {
-  const categoryMap = new Map<ProductCategory, {amount: number; count: number}>();
+export function getClassificationGroupSpending(items: Product[]): CategorySpending[] {
+  const groupMap = new Map<string, {amount: number; count: number}>();
 
   items.forEach((item) => {
-    const existing = categoryMap.get(item.category) || {amount: 0, count: 0};
-    categoryMap.set(item.category, {
+    const group = getClassificationGroup(item.classification ?? null) ?? "unclassified";
+    const existing = groupMap.get(group) ?? {amount: 0, count: 0};
+    groupMap.set(group, {
       amount: existing.amount + item.totalPrice,
       count: existing.count + 1,
     });
   });
 
-  return Array.from(categoryMap.entries())
-    .map(([category, data]) => ({
-      category: formatEnum(ProductCategory, category),
+  return Array.from(groupMap.entries())
+    .map(([group, data], index) => ({
+      category: group,
       amount: Math.round(data.amount * 100) / 100,
       count: data.count,
-      fill: CATEGORY_COLORS[category] || "var(--ac-chart-1)",
+      fill: CHART_COLORS[index % CHART_COLORS.length] ?? "var(--ac-chart-1)",
     }))
     .toSorted((a, b) => b.amount - a.amount);
 }
@@ -406,28 +403,30 @@ export type CategoryTrendData = {
  * - Returns empty array if current invoice has no items
  * - Only includes categories present in the current invoice
  */
-export function getCategoryComparison(currentInvoice: Invoice, allInvoices: ReadonlyArray<Invoice>): CategoryTrendData[] {
+export function getClassificationGroupComparison(currentInvoice: Invoice, allInvoices: ReadonlyArray<Invoice>): CategoryTrendData[] {
   const currentItems = currentInvoice.items ?? [];
   if (currentItems.length === 0) {
     return [];
   }
 
-  // Calculate current invoice's spending by category
-  const currentCategoryMap = new Map<ProductCategory, number>();
+  // Calculate current invoice's spending by classification group
+  const currentGroupMap = new Map<string, number>();
   currentItems.forEach((item) => {
-    const existing = currentCategoryMap.get(item.category) ?? 0;
-    currentCategoryMap.set(item.category, existing + item.totalPrice);
+    const group = getClassificationGroup(item.classification ?? null) ?? "unclassified";
+    const existing = currentGroupMap.get(group) ?? 0;
+    currentGroupMap.set(group, existing + item.totalPrice);
   });
 
-  // Calculate historical average spending per category (excluding current invoice)
+  // Calculate historical average spending per group (excluding current invoice)
   const otherInvoices = allInvoices.filter((inv) => inv.id !== currentInvoice.id);
-  const historicalCategoryMap = new Map<ProductCategory, {total: number; count: number}>();
+  const historicalGroupMap = new Map<string, {total: number; count: number}>();
 
   otherInvoices.forEach((inv) => {
     const items = inv.items ?? [];
     items.forEach((item) => {
-      const existing = historicalCategoryMap.get(item.category) ?? {total: 0, count: 0};
-      historicalCategoryMap.set(item.category, {
+      const group = getClassificationGroup(item.classification ?? null) ?? "unclassified";
+      const existing = historicalGroupMap.get(group) ?? {total: 0, count: 0};
+      historicalGroupMap.set(group, {
         total: existing.total + item.totalPrice,
         count: existing.count + 1,
       });
@@ -437,12 +436,12 @@ export function getCategoryComparison(currentInvoice: Invoice, allInvoices: Read
   // Build comparison data
   const result: CategoryTrendData[] = [];
 
-  currentCategoryMap.forEach((currentAmount, category) => {
-    const historical = historicalCategoryMap.get(category);
+  currentGroupMap.forEach((currentAmount, group) => {
+    const historical = historicalGroupMap.get(group);
     const averageAmount = historical ? historical.total / Math.max(historical.count, 1) : 0;
 
     result.push({
-      category: formatEnum(ProductCategory, category),
+      category: group,
       current: Math.round(currentAmount * 100) / 100,
       average: Math.round(averageAmount * 100) / 100,
     });

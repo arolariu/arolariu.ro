@@ -35,16 +35,16 @@ import {
   YAxis,
 } from "@arolariu/components";
 import {useTranslations} from "next-intl-selector";
-import type {ProductCategorySpending} from "../../../_utils/statistics";
+import type {ProductClassificationSpending} from "../../../_utils/statistics";
 import styles from "./ProductCategoryChart.module.scss";
 
 type Props = {
-  readonly data: ProductCategorySpending[];
+  readonly data: ProductClassificationSpending[];
   readonly currency: string;
 };
 
 type TooltipPayloadItem = {
-  readonly payload?: ProductCategorySpending & {fill: string};
+  readonly payload?: ProductClassificationSpending & {fill: string};
 };
 
 type CustomTooltipProps = {

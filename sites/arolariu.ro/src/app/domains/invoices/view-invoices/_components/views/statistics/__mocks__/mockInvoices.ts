@@ -6,7 +6,7 @@
  * Provides realistic mock invoice data for testing and demonstrating
  * statistics charts in Storybook. Data includes diverse:
  * - Currencies (RON, EUR, USD)
- * - Product categories
+ * - Standard taxonomy classifications (ECOICOP v2, GS1 GPC)
  * - Merchants
  * - Date ranges (past 6 months)
  * - Allergens
@@ -16,6 +16,106 @@
 import type {PaymentInformation, Product} from "@/types/invoices";
 import {InvoiceCategory, InvoiceScanType, type Invoice, type InvoiceScan} from "@/types/invoices";
 import {ProductCategory} from "@/types/invoices/Product";
+import {ClassificationOrigin, ClassificationSystem, type StandardClassification} from "@/types/invoices/Classification";
+
+// ---------------------------------------------------------------------------
+// Classification factory
+// ---------------------------------------------------------------------------
+
+/**
+ * Builds a {@link StandardClassification} for use in mock data.
+ *
+ * @param system - The taxonomy system (ECOICOP_V2, GS1_GPC, NACE_2_1).
+ * @param code - The leaf code; must equal the last hierarchy node's code.
+ * @param hierarchy - Ordered root-to-leaf triplets of [level, code, officialLabel].
+ *   The last entry's code MUST equal `code` (domain invariant).
+ */
+function makeClassification(
+  system: ClassificationSystem,
+  code: string,
+  hierarchy: ReadonlyArray<readonly [level: string, code: string, officialLabel: string]>,
+): StandardClassification {
+  const version =
+    system === ClassificationSystem.EcoicopV2
+      ? "2"
+      : system === ClassificationSystem.Nace21
+        ? "2.1"
+        : "2026-05";
+  return {
+    system,
+    code,
+    officialLabel: hierarchy.at(-1)?.[2] ?? code,
+    version,
+    hierarchy: hierarchy.map(([level, nodeCode, officialLabel]) => ({level, code: nodeCode, officialLabel})),
+    origin: ClassificationOrigin.Analysis,
+    confidence: 0.9,
+    evidence: [],
+  };
+}
+
+// ---------------------------------------------------------------------------
+// ECOICOP v2 invoice-level classifications (root = ECOICOP division)
+// ---------------------------------------------------------------------------
+
+/** ECOICOP 01 → 01.1 → 01.1.1  (Grocery / food purchases) */
+const INV_FOOD = makeClassification(ClassificationSystem.EcoicopV2, "01.1.1", [
+  ["division", "01", "Food and non-alcoholic beverages"],
+  ["group",    "01.1", "Food"],
+  ["class",    "01.1.1", "Cereals and cereal products (ND)"],
+]);
+
+/** ECOICOP 11 → 11.1 → 11.1.1  (Restaurant / fast-food purchases) */
+const INV_RESTAURANT = makeClassification(ClassificationSystem.EcoicopV2, "11.1.1", [
+  ["division", "11", "Restaurants and accommodation services"],
+  ["group",    "11.1", "Food and beverage serving services"],
+  ["class",    "11.1.1", "Restaurants, cafés and the like (S)"],
+]);
+
+/** ECOICOP 05 → 05.6 → 05.6.1 → 05.6.1.1  (Household cleaning) */
+const INV_CLEANING = makeClassification(ClassificationSystem.EcoicopV2, "05.6.1.1", [
+  ["division", "05", "Furnishings, household equipment and routine household maintenance"],
+  ["group",    "05.6", "Goods and services for routine household maintenance"],
+  ["class",    "05.6.1", "Non-durable household goods (ND)"],
+  ["subclass", "05.6.1.1", "Household cleaning and maintenance products (ND)"],
+]);
+
+// ---------------------------------------------------------------------------
+// GS1 GPC product-level classifications (root = GPC segment)
+// ---------------------------------------------------------------------------
+
+/** GPC 50000000 → 50130000  (Dairy / eggs / butter / yogurt) */
+const PROD_DAIRY = makeClassification(ClassificationSystem.Gs1Gpc, "50130000", [
+  ["segment", "50000000", "Food/Beverage"],
+  ["family",  "50130000", "Milk/Butter/Cream/Yogurts/Cheese/Eggs/Substitutes"],
+]);
+
+/** GPC 50000000 → 50100000  (Fruit & vegetable products) */
+const PROD_FRUITS_VEG = makeClassification(ClassificationSystem.Gs1Gpc, "50100000", [
+  ["segment", "50000000", "Food/Beverage"],
+  ["family",  "50100000", "Fruits/Vegetables/Nuts/Seeds Prepared/Processed"],
+]);
+
+/** GPC 50000000 → 50200000  (Beverages — non-alcoholic and alcoholic) */
+const PROD_BEVERAGES = makeClassification(ClassificationSystem.Gs1Gpc, "50200000", [
+  ["segment", "50000000", "Food/Beverage"],
+  ["family",  "50200000", "Beverages"],
+]);
+
+/** GPC 50000000  (General food — meat, fish, bakery, dry goods) */
+const PROD_FOOD_GENERAL = makeClassification(ClassificationSystem.Gs1Gpc, "50000000", [
+  ["segment", "50000000", "Food/Beverage"],
+]);
+
+/** GPC 47000000 → 47100000  (Cleaning products) */
+const PROD_CLEANING = makeClassification(ClassificationSystem.Gs1Gpc, "47100000", [
+  ["segment", "47000000", "Cleaning/Hygiene Products"],
+  ["family",  "47100000", "Cleaning Products"],
+]);
+
+/** GPC 53000000  (Beauty / personal care — null classification sentinel variant kept as example) */
+const PROD_PERSONAL_CARE = makeClassification(ClassificationSystem.Gs1Gpc, "53000000", [
+  ["segment", "53000000", "Beauty/Personal Care/Hygiene"],
+]);
 
 /**
  * Creates a mock invoice with realistic data.
@@ -52,6 +152,8 @@ export function createMockInvoice(overrides: Partial<Invoice>): Invoice {
     userIdentifier: "user_mock123",
     sharedWith: [],
     category: InvoiceCategory.GROCERY,
+    // classification is null by default; overrides supply real taxonomy objects.
+    classification: null,
     scans: [defaultScan],
     paymentInformation: defaultPaymentInfo,
     merchantReference: "merchant-mock-001",
@@ -65,6 +167,8 @@ export function createMockInvoice(overrides: Partial<Invoice>): Invoice {
     createdAt: new Date(),
     lastUpdatedAt: new Date(),
     ...overrides,
+    // Cast retained: defaultPaymentInfo omits required PaymentInformation
+    // fields (isValid, currencyCode) not needed for statistics computation.
   } as unknown as Invoice;
 }
 
@@ -90,7 +194,7 @@ export function createMockProduct(overrides: Partial<Product>): Product {
       isSoftDeleted: false,
       confidence: 1,
     },
-    classification: null,
+    classification: PROD_FOOD_GENERAL,
     allergenAssessment: null,
     ...overrides,
   };
@@ -134,6 +238,7 @@ export const mockInvoices: Invoice[] = [
     id: "invoice-001",
     name: "Weekly Groceries - Lidl",
     category: InvoiceCategory.GROCERY,
+    classification: INV_FOOD,
     merchantReference: MOCK_MERCHANTS.LIDL,
     paymentInformation: {
       totalCostAmount: 245.5,
@@ -148,6 +253,7 @@ export const mockInvoices: Invoice[] = [
       createMockProduct({
         name: "Milk 2.5% 1 Liter",
         category: ProductCategory.DAIRY,
+        classification: PROD_DAIRY,
         quantity: 2,
         price: 6.5,
         totalPrice: 13,
@@ -156,6 +262,7 @@ export const mockInvoices: Invoice[] = [
       createMockProduct({
         name: "White Bread 500g",
         category: ProductCategory.BAKED_GOODS,
+        classification: PROD_FOOD_GENERAL,
         quantity: 1,
         price: 4.2,
         totalPrice: 4.2,
@@ -164,6 +271,7 @@ export const mockInvoices: Invoice[] = [
       createMockProduct({
         name: "Chicken Breast",
         category: ProductCategory.MEAT,
+        classification: PROD_FOOD_GENERAL,
         quantity: 1,
         price: 22.8,
         totalPrice: 22.8,
@@ -172,6 +280,7 @@ export const mockInvoices: Invoice[] = [
       createMockProduct({
         name: "Large Eggs",
         category: ProductCategory.DAIRY,
+        classification: PROD_DAIRY,
         quantity: 1,
         price: 12.5,
         totalPrice: 12.5,
@@ -180,6 +289,7 @@ export const mockInvoices: Invoice[] = [
       createMockProduct({
         name: "Tomatoes",
         category: ProductCategory.VEGETABLES,
+        classification: PROD_FRUITS_VEG,
         quantity: 1.2,
         price: 8.5,
         totalPrice: 10.2,
@@ -188,6 +298,7 @@ export const mockInvoices: Invoice[] = [
       createMockProduct({
         name: "Orange Juice",
         category: ProductCategory.BEVERAGES,
+        classification: PROD_BEVERAGES,
         quantity: 2,
         price: 9,
         totalPrice: 18,
@@ -202,6 +313,7 @@ export const mockInvoices: Invoice[] = [
     id: "invoice-002",
     name: "Fast Food - McDonald's",
     category: InvoiceCategory.FAST_FOOD,
+    classification: INV_RESTAURANT,
     merchantReference: MOCK_MERCHANTS.MCDONALD,
     paymentInformation: {
       totalCostAmount: 45,
@@ -216,6 +328,8 @@ export const mockInvoices: Invoice[] = [
       createMockProduct({
         name: "Big Mac Meal",
         category: ProductCategory.OTHER,
+        // no taxonomy classification for undifferentiated fast-food items
+        classification: null,
         quantity: 2,
         price: 22.5,
         totalPrice: 45,
@@ -234,6 +348,7 @@ export const mockInvoices: Invoice[] = [
     id: "invoice-003",
     name: "Shopping in Germany",
     category: InvoiceCategory.GROCERY,
+    classification: INV_FOOD,
     merchantReference: MOCK_MERCHANTS.LIDL,
     paymentInformation: {
       totalCostAmount: 45.8,
@@ -248,6 +363,7 @@ export const mockInvoices: Invoice[] = [
       createMockProduct({
         name: "Gouda Cheese",
         category: ProductCategory.DAIRY,
+        classification: PROD_DAIRY,
         quantity: 1,
         price: 8.5,
         totalPrice: 8.5,
@@ -256,6 +372,7 @@ export const mockInvoices: Invoice[] = [
       createMockProduct({
         name: "Coffee Beans",
         category: ProductCategory.BEVERAGES,
+        classification: PROD_BEVERAGES,
         quantity: 2,
         price: 12.5,
         totalPrice: 25,
@@ -264,6 +381,7 @@ export const mockInvoices: Invoice[] = [
       createMockProduct({
         name: "Milk Chocolate",
         category: ProductCategory.GROCERIES,
+        classification: PROD_FOOD_GENERAL,
         quantity: 3,
         price: 4.1,
         totalPrice: 12.3,
@@ -281,6 +399,7 @@ export const mockInvoices: Invoice[] = [
     id: "invoice-004",
     name: "Weekly Shopping - Kaufland",
     category: InvoiceCategory.GROCERY,
+    classification: INV_FOOD,
     merchantReference: MOCK_MERCHANTS.KAUFLAND,
     paymentInformation: {
       totalCostAmount: 312.4,
@@ -295,11 +414,13 @@ export const mockInvoices: Invoice[] = [
       createMockProduct({
         name: "Red Apples",
         category: ProductCategory.FRUITS,
+        classification: PROD_FRUITS_VEG,
         detectedAllergens: [],
       }),
       createMockProduct({
         name: "Penne Pasta",
         category: ProductCategory.GROCERIES,
+        classification: PROD_FOOD_GENERAL,
         quantity: 3,
         price: 5.8,
         totalPrice: 17.4,
@@ -308,6 +429,7 @@ export const mockInvoices: Invoice[] = [
       createMockProduct({
         name: "Extra Virgin Olive Oil",
         category: ProductCategory.GROCERIES,
+        classification: PROD_FOOD_GENERAL,
         quantity: 1,
         price: 28.9,
         totalPrice: 28.9,
@@ -316,6 +438,7 @@ export const mockInvoices: Invoice[] = [
       createMockProduct({
         name: "Fresh Salmon Fillet",
         category: ProductCategory.FISH,
+        classification: PROD_FOOD_GENERAL,
         quantity: 1,
         price: 42.5,
         totalPrice: 42.5,
@@ -324,6 +447,7 @@ export const mockInvoices: Invoice[] = [
       createMockProduct({
         name: "Greek Yogurt",
         category: ProductCategory.DAIRY,
+        classification: PROD_DAIRY,
         quantity: 4,
         price: 8.2,
         totalPrice: 32.8,
@@ -339,6 +463,7 @@ export const mockInvoices: Invoice[] = [
     id: "invoice-005",
     name: "Business Trip - USA",
     category: InvoiceCategory.FAST_FOOD,
+    classification: INV_RESTAURANT,
     merchantReference: MOCK_MERCHANTS.MCDONALD,
     paymentInformation: {
       totalCostAmount: 28.5,
@@ -353,6 +478,7 @@ export const mockInvoices: Invoice[] = [
       createMockProduct({
         name: "Quarter Pounder with Cheese Meal",
         category: ProductCategory.OTHER,
+        classification: null,
         quantity: 1,
         price: 12.5,
         totalPrice: 12.5,
@@ -364,6 +490,7 @@ export const mockInvoices: Invoice[] = [
       createMockProduct({
         name: "Chicken McNuggets",
         category: ProductCategory.OTHER,
+        classification: null,
         quantity: 1,
         price: 16,
         totalPrice: 16,
@@ -378,6 +505,7 @@ export const mockInvoices: Invoice[] = [
     id: "invoice-006",
     name: "Cleaning Supplies - Carrefour",
     category: InvoiceCategory.HOME_CLEANING,
+    classification: INV_CLEANING,
     merchantReference: MOCK_MERCHANTS.CARREFOUR,
     paymentInformation: {
       totalCostAmount: 145.7,
@@ -392,6 +520,7 @@ export const mockInvoices: Invoice[] = [
       createMockProduct({
         name: "Laundry Detergent",
         category: ProductCategory.CLEANING_SUPPLIES,
+        classification: PROD_CLEANING,
         quantity: 2,
         price: 32.5,
         totalPrice: 65,
@@ -400,6 +529,7 @@ export const mockInvoices: Invoice[] = [
       createMockProduct({
         name: "Paper Towels",
         category: ProductCategory.CLEANING_SUPPLIES,
+        classification: PROD_CLEANING,
         quantity: 1,
         price: 28.9,
         totalPrice: 28.9,
@@ -408,6 +538,7 @@ export const mockInvoices: Invoice[] = [
       createMockProduct({
         name: "Dish Washing Liquid",
         category: ProductCategory.CLEANING_SUPPLIES,
+        classification: PROD_CLEANING,
         quantity: 3,
         price: 8.6,
         totalPrice: 25.8,
@@ -423,6 +554,7 @@ export const mockInvoices: Invoice[] = [
     id: "invoice-007",
     name: "Weekly Groceries - Mega Image",
     category: InvoiceCategory.GROCERY,
+    classification: INV_FOOD,
     merchantReference: MOCK_MERCHANTS.MEGA_IMAGE,
     paymentInformation: {
       totalCostAmount: 198.3,
@@ -437,6 +569,7 @@ export const mockInvoices: Invoice[] = [
       createMockProduct({
         name: "Bananas",
         category: ProductCategory.VEGETABLES,
+        classification: PROD_FRUITS_VEG,
         quantity: 1.5,
         price: 7.5,
         totalPrice: 11.25,
@@ -445,6 +578,7 @@ export const mockInvoices: Invoice[] = [
       createMockProduct({
         name: "Basmati Rice",
         category: ProductCategory.GROCERIES,
+        classification: PROD_FOOD_GENERAL,
         quantity: 2,
         price: 14.2,
         totalPrice: 28.4,
@@ -453,6 +587,7 @@ export const mockInvoices: Invoice[] = [
       createMockProduct({
         name: "Creamy Peanut Butter",
         category: ProductCategory.GROCERIES,
+        classification: PROD_FOOD_GENERAL,
         quantity: 1,
         price: 18.5,
         totalPrice: 18.5,
@@ -461,6 +596,7 @@ export const mockInvoices: Invoice[] = [
       createMockProduct({
         name: "Almond Milk Unsweetened",
         category: ProductCategory.BEVERAGES,
+        classification: PROD_BEVERAGES,
         quantity: 2,
         price: 12.8,
         totalPrice: 25.6,
@@ -475,6 +611,7 @@ export const mockInvoices: Invoice[] = [
     id: "invoice-008",
     name: "Pizza Night - Pizza Hut",
     category: InvoiceCategory.FAST_FOOD,
+    classification: INV_RESTAURANT,
     merchantReference: MOCK_MERCHANTS.PIZZA_HUT,
     paymentInformation: {
       totalCostAmount: 89,
@@ -489,6 +626,7 @@ export const mockInvoices: Invoice[] = [
       createMockProduct({
         name: "Margherita Pizza",
         category: ProductCategory.OTHER,
+        classification: null,
         quantity: 2,
         price: 35,
         totalPrice: 70,
@@ -500,6 +638,7 @@ export const mockInvoices: Invoice[] = [
       createMockProduct({
         name: "Garlic Bread Sticks",
         category: ProductCategory.OTHER,
+        classification: null,
         quantity: 1,
         price: 19,
         totalPrice: 19,
@@ -515,6 +654,7 @@ export const mockInvoices: Invoice[] = [
     id: "invoice-009",
     name: "Monthly Shopping - Auchan",
     category: InvoiceCategory.GROCERY,
+    classification: INV_FOOD,
     merchantReference: MOCK_MERCHANTS.AUCHAN,
     paymentInformation: {
       totalCostAmount: 425.6,
@@ -529,6 +669,7 @@ export const mockInvoices: Invoice[] = [
       createMockProduct({
         name: "Beef Ribeye Steak",
         category: ProductCategory.MEAT,
+        classification: PROD_FOOD_GENERAL,
         quantity: 1.2,
         price: 58,
         totalPrice: 69.6,
@@ -537,6 +678,7 @@ export const mockInvoices: Invoice[] = [
       createMockProduct({
         name: "Frozen Shrimp",
         category: ProductCategory.FISH,
+        classification: PROD_FOOD_GENERAL,
         quantity: 2,
         price: 38.5,
         totalPrice: 77,
@@ -545,6 +687,7 @@ export const mockInvoices: Invoice[] = [
       createMockProduct({
         name: "Red Wine Merlot",
         category: ProductCategory.ALCOHOLIC_BEVERAGES,
+        classification: PROD_BEVERAGES,
         quantity: 2,
         price: 45,
         totalPrice: 90,
@@ -553,6 +696,7 @@ export const mockInvoices: Invoice[] = [
       createMockProduct({
         name: "Parmesan Cheese",
         category: ProductCategory.DAIRY,
+        classification: PROD_DAIRY,
         quantity: 1,
         price: 32.8,
         totalPrice: 32.8,
@@ -567,6 +711,7 @@ export const mockInvoices: Invoice[] = [
     id: "invoice-010",
     name: "Quick Shop - Profi",
     category: InvoiceCategory.GROCERY,
+    classification: INV_FOOD,
     merchantReference: MOCK_MERCHANTS.PROFI,
     paymentInformation: {
       totalCostAmount: 67.5,
@@ -581,6 +726,7 @@ export const mockInvoices: Invoice[] = [
       createMockProduct({
         name: "Mineral Water",
         category: ProductCategory.BEVERAGES,
+        classification: PROD_BEVERAGES,
         quantity: 1,
         price: 15.5,
         totalPrice: 15.5,
@@ -589,6 +735,7 @@ export const mockInvoices: Invoice[] = [
       createMockProduct({
         name: "BBQ Potato Chips",
         category: ProductCategory.GROCERIES,
+        classification: PROD_FOOD_GENERAL,
         quantity: 3,
         price: 8.5,
         totalPrice: 25.5,
@@ -597,6 +744,7 @@ export const mockInvoices: Invoice[] = [
       createMockProduct({
         name: "Coca-Cola",
         category: ProductCategory.BEVERAGES,
+        classification: PROD_BEVERAGES,
         quantity: 2,
         price: 13.25,
         totalPrice: 26.5,
@@ -612,6 +760,7 @@ export const mockInvoices: Invoice[] = [
     id: "invoice-011",
     name: "Weekend Groceries - Penny",
     category: InvoiceCategory.GROCERY,
+    classification: INV_FOOD,
     merchantReference: MOCK_MERCHANTS.PENNY,
     paymentInformation: {
       totalCostAmount: 178.9,
@@ -626,6 +775,7 @@ export const mockInvoices: Invoice[] = [
       createMockProduct({
         name: "Salted Butter",
         category: ProductCategory.DAIRY,
+        classification: PROD_DAIRY,
         quantity: 2,
         price: 9.5,
         totalPrice: 19,
@@ -634,6 +784,7 @@ export const mockInvoices: Invoice[] = [
       createMockProduct({
         name: "Wildflower Honey",
         category: ProductCategory.GROCERIES,
+        classification: PROD_FOOD_GENERAL,
         quantity: 1,
         price: 28.5,
         totalPrice: 28.5,
@@ -642,6 +793,7 @@ export const mockInvoices: Invoice[] = [
       createMockProduct({
         name: "Soy Sauce",
         category: ProductCategory.GROCERIES,
+        classification: PROD_FOOD_GENERAL,
         quantity: 1,
         price: 12.4,
         totalPrice: 12.4,
@@ -653,6 +805,7 @@ export const mockInvoices: Invoice[] = [
       createMockProduct({
         name: "Tuna in Oil",
         category: ProductCategory.FISH,
+        classification: PROD_FOOD_GENERAL,
         quantity: 6,
         price: 11.5,
         totalPrice: 69,
@@ -667,6 +820,7 @@ export const mockInvoices: Invoice[] = [
     id: "invoice-012",
     name: "Lunch - KFC",
     category: InvoiceCategory.FAST_FOOD,
+    classification: INV_RESTAURANT,
     merchantReference: MOCK_MERCHANTS.KFC,
     paymentInformation: {
       totalCostAmount: 56,
@@ -681,6 +835,7 @@ export const mockInvoices: Invoice[] = [
       createMockProduct({
         name: "Fried Chicken Bucket",
         category: ProductCategory.OTHER,
+        classification: null,
         quantity: 1,
         price: 56,
         totalPrice: 56,
@@ -699,6 +854,7 @@ export const mockInvoices: Invoice[] = [
     id: "invoice-013",
     name: "Fresh Produce - Lidl",
     category: InvoiceCategory.GROCERY,
+    classification: INV_FOOD,
     merchantReference: MOCK_MERCHANTS.LIDL,
     paymentInformation: {
       totalCostAmount: 89.3,
@@ -713,6 +869,7 @@ export const mockInvoices: Invoice[] = [
       createMockProduct({
         name: "Iceberg Lettuce",
         category: ProductCategory.VEGETABLES,
+        classification: PROD_FRUITS_VEG,
         quantity: 2,
         price: 5.5,
         totalPrice: 11,
@@ -721,6 +878,7 @@ export const mockInvoices: Invoice[] = [
       createMockProduct({
         name: "Cucumbers",
         category: ProductCategory.VEGETABLES,
+        classification: PROD_FRUITS_VEG,
         quantity: 1,
         price: 6.8,
         totalPrice: 6.8,
@@ -729,6 +887,7 @@ export const mockInvoices: Invoice[] = [
       createMockProduct({
         name: "Mixed Bell Peppers",
         category: ProductCategory.VEGETABLES,
+        classification: PROD_FRUITS_VEG,
         quantity: 1,
         price: 12.5,
         totalPrice: 12.5,
@@ -743,6 +902,7 @@ export const mockInvoices: Invoice[] = [
     id: "invoice-014",
     name: "Snacks & Beverages - Kaufland",
     category: InvoiceCategory.GROCERY,
+    classification: INV_FOOD,
     merchantReference: MOCK_MERCHANTS.KAUFLAND,
     paymentInformation: {
       totalCostAmount: 125.4,
@@ -757,6 +917,7 @@ export const mockInvoices: Invoice[] = [
       createMockProduct({
         name: "Lager Beer Pack",
         category: ProductCategory.ALCOHOLIC_BEVERAGES,
+        classification: PROD_BEVERAGES,
         quantity: 2,
         price: 22.5,
         totalPrice: 45,
@@ -765,6 +926,7 @@ export const mockInvoices: Invoice[] = [
       createMockProduct({
         name: "Salted Pretzels",
         category: ProductCategory.GROCERIES,
+        classification: PROD_FOOD_GENERAL,
         quantity: 2,
         price: 11.2,
         totalPrice: 22.4,
@@ -773,6 +935,7 @@ export const mockInvoices: Invoice[] = [
       createMockProduct({
         name: "Microwave Popcorn",
         category: ProductCategory.GROCERIES,
+        classification: PROD_FOOD_GENERAL,
         quantity: 2,
         price: 9,
         totalPrice: 18,
@@ -787,6 +950,7 @@ export const mockInvoices: Invoice[] = [
     id: "invoice-015",
     name: "Breakfast Items - Mega Image",
     category: InvoiceCategory.GROCERY,
+    classification: INV_FOOD,
     merchantReference: MOCK_MERCHANTS.MEGA_IMAGE,
     paymentInformation: {
       totalCostAmount: 95.7,
@@ -801,6 +965,7 @@ export const mockInvoices: Invoice[] = [
       createMockProduct({
         name: "Corn Flakes",
         category: ProductCategory.GROCERIES,
+        classification: PROD_FOOD_GENERAL,
         quantity: 2,
         price: 15.5,
         totalPrice: 31,
@@ -809,6 +974,7 @@ export const mockInvoices: Invoice[] = [
       createMockProduct({
         name: "Strawberry Jam",
         category: ProductCategory.GROCERIES,
+        classification: PROD_FOOD_GENERAL,
         quantity: 1,
         price: 14.2,
         totalPrice: 14.2,
@@ -817,6 +983,7 @@ export const mockInvoices: Invoice[] = [
       createMockProduct({
         name: "Butter Croissants",
         category: ProductCategory.BAKED_GOODS,
+        classification: PROD_FOOD_GENERAL,
         quantity: 1,
         price: 18.5,
         totalPrice: 18.5,
@@ -829,6 +996,47 @@ export const mockInvoices: Invoice[] = [
     ],
     createdAt: getRandomDateInMonth(1),
     lastUpdatedAt: getRandomDateInMonth(1),
+  }),
+
+  // Unclassified invoice — exercises the null-classification / "unclassified" path
+  createMockInvoice({
+    id: "invoice-016",
+    name: "Personal Care - Carrefour",
+    category: InvoiceCategory.OTHER,
+    // classification intentionally left null so the unclassified bucket is exercised
+    classification: null,
+    merchantReference: MOCK_MERCHANTS.CARREFOUR,
+    paymentInformation: {
+      totalCostAmount: 72.5,
+      totalTaxAmount: 13.78,
+      transactionDate: getRandomDateInMonth(2),
+      currency: {code: "RON", symbol: "lei", name: "Romanian Leu"},
+      subtotalAmount: 0,
+      tipAmount: 0,
+      paymentType: 200,
+    },
+    items: [
+      createMockProduct({
+        name: "Shampoo",
+        category: ProductCategory.PERSONAL_CARE,
+        classification: PROD_PERSONAL_CARE,
+        quantity: 2,
+        price: 18.5,
+        totalPrice: 37,
+        detectedAllergens: [],
+      }),
+      createMockProduct({
+        name: "Toothpaste",
+        category: ProductCategory.PERSONAL_CARE,
+        classification: PROD_PERSONAL_CARE,
+        quantity: 1,
+        price: 12.5,
+        totalPrice: 12.5,
+        detectedAllergens: [],
+      }),
+    ],
+    createdAt: getRandomDateInMonth(2),
+    lastUpdatedAt: getRandomDateInMonth(2),
   }),
 ];
 

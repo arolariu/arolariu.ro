@@ -1,5 +1,5 @@
 import type {Meta, StoryObj} from "@storybook/react";
-import {computeProductCategorySpending} from "../../../_utils/statistics";
+import {computeProductClassificationSpending} from "../../../_utils/statistics";
 import {emptyInvoices, mockInvoices, singleInvoice} from "./__mocks__/mockInvoices";
 import {ProductCategoryChart} from "./ProductCategoryChart";
 
@@ -52,7 +52,7 @@ type Story = StoryObj<typeof meta>;
  */
 export const Default: Story = {
   args: {
-    data: computeProductCategorySpending(mockInvoices),
+    data: computeProductClassificationSpending(mockInvoices),
     currency: "lei",
   },
 };
@@ -63,7 +63,7 @@ export const Default: Story = {
  */
 export const Empty: Story = {
   args: {
-    data: computeProductCategorySpending(emptyInvoices),
+    data: computeProductClassificationSpending(emptyInvoices),
     currency: "lei",
   },
 };
@@ -74,7 +74,7 @@ export const Empty: Story = {
  */
 export const SingleInvoice: Story = {
   args: {
-    data: computeProductCategorySpending(singleInvoice),
+    data: computeProductClassificationSpending(singleInvoice),
     currency: "lei",
   },
 };
@@ -85,7 +85,7 @@ export const SingleInvoice: Story = {
  */
 export const GroceryFocused: Story = {
   args: {
-    data: computeProductCategorySpending(
+    data: computeProductClassificationSpending(
       mockInvoices.filter((inv) => inv.category === 100), // GROCERY enum value
     ),
     currency: "lei",
@@ -98,7 +98,7 @@ export const GroceryFocused: Story = {
  */
 export const FewCategories: Story = {
   args: {
-    data: computeProductCategorySpending(mockInvoices.slice(0, 3)),
+    data: computeProductClassificationSpending(mockInvoices.slice(0, 3)),
     currency: "lei",
   },
 };
@@ -109,7 +109,7 @@ export const FewCategories: Story = {
  */
 export const EuroCurrency: Story = {
   args: {
-    data: computeProductCategorySpending(mockInvoices.filter((inv) => inv.paymentInformation.currency?.code === "EUR")),
+    data: computeProductClassificationSpending(mockInvoices.filter((inv) => inv.paymentInformation.currency?.code === "EUR")),
     currency: "€",
   },
 };

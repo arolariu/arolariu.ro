@@ -29,7 +29,7 @@ import {useMemo} from "react";
 import {TbChartBar} from "react-icons/tb";
 import {
   computeAllergenFrequency,
-  computeCategoryAggregates,
+  computeClassificationGroupAggregates,
   computeCurrencyDistribution,
   computeDailySpending,
   computeKPIs,
@@ -39,7 +39,7 @@ import {
   computeMonthComparison,
   computeMonthlySpending,
   computePriceDistribution,
-  computeProductCategorySpending,
+  computeProductClassificationSpending,
   computeTimeOfDay,
   computeTopProducts,
 } from "../../_utils/statistics";
@@ -111,7 +111,7 @@ export default function RenderStatisticsView({invoices}: Readonly<Props>): React
   // Compute all statistics data with memoization
   const kpiData = useMemo(() => computeKPIs(invoices), [invoices]);
   const monthlySpending = useMemo(() => computeMonthlySpending(invoices), [invoices]);
-  const categoryAggregates = useMemo(() => computeCategoryAggregates(invoices), [invoices]);
+  const categoryAggregates = useMemo(() => computeClassificationGroupAggregates(invoices), [invoices]);
   const merchantAggregates = useMemo(() => computeMerchantAggregates(invoices), [invoices]);
   const priceDistribution = useMemo(() => computePriceDistribution(invoices), [invoices]);
   const timeOfDaySegments = useMemo(() => computeTimeOfDay(invoices), [invoices]);
@@ -119,7 +119,7 @@ export default function RenderStatisticsView({invoices}: Readonly<Props>): React
   const dailySpending = useMemo(() => computeDailySpending(invoices), [invoices]);
 
   // Product-level analytics
-  const productCategorySpending = useMemo(() => computeProductCategorySpending(invoices), [invoices]);
+  const productCategorySpending = useMemo(() => computeProductClassificationSpending(invoices), [invoices]);
   const topProducts = useMemo(() => computeTopProducts(invoices, 10), [invoices]);
   const allergenFrequency = useMemo(() => computeAllergenFrequency(invoices), [invoices]);
 

@@ -20,11 +20,11 @@ import {
   ResponsiveContainer,
 } from "@arolariu/components";
 import {useTranslations} from "next-intl-selector";
-import type {CategoryAggregate} from "../../../_utils/statistics";
+import type {ClassificationGroupAggregate} from "../../../_utils/statistics";
 import styles from "./CategoryBreakdownChart.module.scss";
 
 type Props = {
-  readonly data: CategoryAggregate[];
+  readonly data: ClassificationGroupAggregate[];
   readonly currency: string;
 };
 
@@ -34,7 +34,7 @@ type LegendEntry = {
 };
 
 type TooltipPayloadItem = {
-  payload: CategoryAggregate & {fill: string};
+  payload: ClassificationGroupAggregate & {fill: string};
 };
 
 type CustomTooltipProps = {

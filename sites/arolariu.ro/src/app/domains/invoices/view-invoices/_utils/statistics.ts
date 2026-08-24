@@ -41,7 +41,7 @@
 import {formatDate, toSafeDate} from "@/lib/utils.generic";
 import type {Invoice} from "@/types/invoices";
 import {getTransactionYear, toRON} from "../../../../../lib/currency";
-import {getProductCategoryLabel} from "../../_utils/labelUtilities";
+import {getClassificationGroup} from "../../_utils/labelUtilities";
 export {getProductCategoryLabel} from "../../_utils/labelUtilities";
 
 /**
@@ -161,30 +161,27 @@ export type MonthlySpending = {
 };
 
 /**
- * Category spending aggregate for pie/bar charts.
+ * Classification group spending aggregate for pie/bar charts.
  *
  * @remarks
- * Groups spending by invoice category to show where money goes.
- * Categories are defined by the InvoiceCategory enum.
- *
- * **Percentage Calculation:**
- * Percentage is computed as (category amount / total spending) * 100
+ * Groups spending by the taxonomy root of the invoice's standard classification.
+ * Invoices whose classification is null fall into the stable sentinel bucket
+ * keyed by the literal `"unclassified"`, which the UI localizes. They are
+ * **never** silently dropped — a disappearing invoice would corrupt spending totals.
  *
  * @example
  * ```typescript
- * const categories = computeCategoryAggregates(invoices);
- * const grocerySpend = categories.find(c => c.category === "Grocery");
- * console.log(`Grocery: ${grocerySpend?.percentage.toFixed(1)}%`);
+ * const groups = computeClassificationGroupAggregates(invoices);
+ * const food = groups.find(g => g.category === "Food and non-alcoholic beverages");
+ * console.log(`Food: ${food?.percentage.toFixed(1)}%`);
  * ```
  */
-export type CategoryAggregate = {
-  /** Human-readable category name */
+export type ClassificationGroupAggregate = {
+  /** Taxonomy root label (from getClassificationGroup), or "unclassified". */
   category: string;
-  /** Numeric category ID from enum */
-  categoryId: number;
-  /** Total spending in this category */
+  /** Total spending in this group */
   amount: number;
-  /** Number of invoices in this category */
+  /** Number of invoices in this group */
   count: number;
   /** Percentage of total spending */
   percentage: number;
@@ -535,87 +532,48 @@ export function computeMonthlySpending(invoices: ReadonlyArray<Invoice>): Monthl
 }
 
 /**
- * Maps InvoiceCategory enum values to human-readable labels.
- *
- * @param categoryId - Numeric category ID from InvoiceCategory enum
- * @returns Human-readable category label
- *
- * @remarks
- * **Category Mappings:**
- * - 0 (NOT_DEFINED) → "Uncategorized"
- * - 100 (GROCERY) → "Grocery"
- * - 200 (FAST_FOOD) → "Dining"
- * - 300 (HOME_CLEANING) → "Home"
- * - 400 (CAR_AUTO) → "Auto"
- * - 9999 (OTHER) → "Other"
- * - Unknown → "Unknown"
- *
- * @example
- * ```typescript
- * const label = getCategoryLabel(100); // "Grocery"
- * const label2 = getCategoryLabel(200); // "Dining"
- * ```
- */
-export function getCategoryLabel(categoryId: number): string {
-  const labels: Record<number, string> = {
-    0: "Uncategorized",
-    100: "Grocery",
-    200: "Dining",
-    300: "Home",
-    400: "Auto",
-    9999: "Other",
-  };
-
-  return labels[categoryId] ?? "Unknown";
-}
-
-/**
- * Computes spending aggregates by invoice category.
+ * Computes spending aggregates grouped by the taxonomy root of each invoice's classification.
  *
  * @param invoices - Array of invoices to analyze
- * @returns Array of category aggregates, sorted by amount descending
+ * @returns Array of classification group aggregates, sorted by amount descending
  *
  * @remarks
- * **Performance:** O(n) where n is the number of invoices.
- *
- * **Percentage Calculation:**
- * Each category's percentage is computed as (category total / grand total) * 100.
- *
- * **Category Mapping:**
- * Uses {@link getCategoryLabel} to convert enum values to human-readable names.
+ * **Grouping:** Uses {@link getClassificationGroup} to extract the broadest
+ * taxonomy root label from `invoice.classification`. Invoices without a
+ * classification (null) fall into the stable `"unclassified"` bucket and
+ * are **always** counted — they must never be silently dropped.
  *
  * @example
  * ```typescript
- * const categories = computeCategoryAggregates(invoices);
+ * const groups = computeClassificationGroupAggregates(invoices);
  * // Returns: [
- * //   { category: "Grocery", categoryId: 100, amount: 3456.78, count: 23, percentage: 45.2 },
- * //   { category: "Dining", categoryId: 200, amount: 2123.45, count: 18, percentage: 27.8 }
+ * //   { category: "Food and non-alcoholic beverages", amount: 3456.78, count: 23, percentage: 45.2 },
+ * //   { category: "Restaurants and accommodation services", amount: 2123.45, count: 18, percentage: 27.8 }
  * // ]
  * ```
  */
-export function computeCategoryAggregates(invoices: ReadonlyArray<Invoice>): CategoryAggregate[] {
-  const categoryMap = new Map<number, {amount: number; count: number}>();
+export function computeClassificationGroupAggregates(invoices: ReadonlyArray<Invoice>): ClassificationGroupAggregate[] {
+  const groupMap = new Map<string, {amount: number; count: number}>();
   let totalSpending = 0;
 
   for (const invoice of invoices) {
-    const category = invoice.category ?? 0;
+    const group = getClassificationGroup(invoice.classification ?? null) ?? "unclassified";
     const amount = getAmountInRON(invoice);
     totalSpending += amount;
 
-    const existing = categoryMap.get(category) ?? {amount: 0, count: 0};
-    categoryMap.set(category, {
+    const existing = groupMap.get(group) ?? {amount: 0, count: 0};
+    groupMap.set(group, {
       amount: existing.amount + amount,
       count: existing.count + 1,
     });
   }
 
-  const result: CategoryAggregate[] = [];
-  for (const [categoryId, data] of categoryMap.entries()) {
+  const result: ClassificationGroupAggregate[] = [];
+  for (const [group, data] of groupMap.entries()) {
     const percentage = totalSpending > 0 ? (data.amount / totalSpending) * 100 : 0;
 
     result.push({
-      category: getCategoryLabel(categoryId),
-      categoryId,
+      category: group,
       amount: Math.round(data.amount * 100) / 100,
       count: data.count,
       percentage: Math.round(percentage * 10) / 10,
@@ -1319,34 +1277,28 @@ export function computeMerchantVisitFrequency(invoices: ReadonlyArray<Invoice>):
 }
 
 /**
- * Product category spending aggregate for product-level analytics.
+ * Classification group spending aggregate for product-level analytics.
  *
  * @remarks
- * Groups all products across all invoices by ProductCategory enum.
- * Provides spending insights at the product category level (not invoice category).
- *
- * **Calculation:**
- * - Aggregates `product.totalPrice` across all invoices
- * - Normalizes to RON using invoice's transaction year
- * - Computes percentage of total product spending
+ * Groups all products across all invoices by the taxonomy root of their
+ * standard classification (GS1 GPC). Products with classification = null
+ * fall into the `"unclassified"` bucket and are always counted in totals.
  *
  * @example
  * ```typescript
- * const categoryData = computeProductCategorySpending(invoices);
+ * const classificationData = computeProductClassificationSpending(invoices);
  * // Returns: [
- * //   { category: "Dairy", categoryId: 300, totalSpent: 1234.56, productCount: 45, percentage: 15.2 },
- * //   { category: "Meat", categoryId: 400, totalSpent: 987.65, productCount: 32, percentage: 12.1 }
+ * //   { category: "Food/Beverage", totalSpent: 1234.56, productCount: 45, percentage: 15.2 },
+ * //   { category: "Cleaning/Hygiene Products", totalSpent: 98.7, productCount: 8, percentage: 1.3 }
  * // ]
  * ```
  */
-export type ProductCategorySpending = {
-  /** Human-readable category name */
+export type ProductClassificationSpending = {
+  /** Taxonomy root label (from getClassificationGroup), or "unclassified". */
   category: string;
-  /** Numeric category ID from ProductCategory enum */
-  categoryId: number;
-  /** Total spending in this category (RON) */
+  /** Total spending in this classification group (RON) */
   totalSpent: number;
-  /** Number of products in this category */
+  /** Number of products in this group */
   productCount: number;
   /** Percentage of total product spending */
   percentage: number;
@@ -1447,30 +1399,32 @@ export type AllergenFrequency = {
  * ```
  */
 /**
- * Computes spending aggregates by product category.
+ * Computes spending aggregates grouped by the taxonomy root of each product's classification.
  *
  * @param invoices - Array of invoices to analyze
- * @returns Array of product category spending data, sorted by totalSpent descending
+ * @returns Array of product classification spending data, sorted by totalSpent descending
  *
  * @remarks
- * **Performance:** O(n * m) where n is the number of invoices and m is average items per invoice.
+ * **Grouping:** Uses {@link getClassificationGroup} on `product.classification`.
+ * Products with no classification (null) fall into the `"unclassified"` bucket
+ * and are always counted — they must never be silently dropped.
  *
  * **Currency Normalization:**
  * All product prices are converted to RON using the invoice's transaction year
- * exchange rate. This ensures accurate cross-currency aggregation.
+ * exchange rate.
  *
  * **Soft Delete Handling:**
- * Products with `metadata.isSoftDeleted = true` are excluded from calculations.
+ * Products with `metadata.isSoftDeleted = true` are excluded.
  *
  * @example
  * ```typescript
- * const categorySpending = computeProductCategorySpending(invoices);
- * const dairySpending = categorySpending.find(c => c.categoryId === 300);
- * console.log(`Dairy: ${dairySpending?.totalSpent.toFixed(2)} RON`);
+ * const classificationSpending = computeProductClassificationSpending(invoices);
+ * const foodSpending = classificationSpending.find(c => c.category === "Food/Beverage");
+ * console.log(`Food/Beverage: ${foodSpending?.totalSpent.toFixed(2)} RON`);
  * ```
  */
-export function computeProductCategorySpending(invoices: ReadonlyArray<Invoice>): ProductCategorySpending[] {
-  const categoryMap = new Map<number, {totalSpent: number; productCount: number}>();
+export function computeProductClassificationSpending(invoices: ReadonlyArray<Invoice>): ProductClassificationSpending[] {
+  const groupMap = new Map<string, {totalSpent: number; productCount: number}>();
   let grandTotal = 0;
 
   for (const invoice of invoices) {
@@ -1479,13 +1433,12 @@ export function computeProductCategorySpending(invoices: ReadonlyArray<Invoice>)
 
     const items = invoice.items ?? [];
     for (const product of items) {
-      // Skip soft-deleted products
       if (!product.metadata?.isSoftDeleted) {
-        const category = product.category ?? 0;
+        const group = getClassificationGroup(product.classification ?? null) ?? "unclassified";
         const productPriceRON = toRON(product.totalPrice, currencyCode, year);
 
-        const existing = categoryMap.get(category) ?? {totalSpent: 0, productCount: 0};
-        categoryMap.set(category, {
+        const existing = groupMap.get(group) ?? {totalSpent: 0, productCount: 0};
+        groupMap.set(group, {
           totalSpent: existing.totalSpent + productPriceRON,
           productCount: existing.productCount + 1,
         });
@@ -1495,13 +1448,12 @@ export function computeProductCategorySpending(invoices: ReadonlyArray<Invoice>)
     }
   }
 
-  const result: ProductCategorySpending[] = [];
-  for (const [categoryId, data] of categoryMap.entries()) {
+  const result: ProductClassificationSpending[] = [];
+  for (const [group, data] of groupMap.entries()) {
     const percentage = grandTotal > 0 ? (data.totalSpent / grandTotal) * 100 : 0;
 
     result.push({
-      category: getProductCategoryLabel(categoryId),
-      categoryId,
+      category: group,
       totalSpent: Math.round(data.totalSpent * 100) / 100,
       productCount: data.productCount,
       percentage: Math.round(percentage * 10) / 10,

@@ -3,20 +3,19 @@
  * @module sites/arolariu.ro/src/app/domains/invoices/view-invoices/_utils/statistics.test
  *
  * @remarks
- * Tests all 15 exported functions to achieve 95%+ coverage:
+ * Tests all exported functions to achieve 95%+ coverage:
  * - computeKPIs
  * - computeMonthlySpending
- * - computeCategoryAggregates
+ * - computeClassificationGroupAggregates
  * - computeMerchantAggregates
  * - computeDailySpending
  * - computePriceDistribution
  * - computeTimeOfDay
  * - computeMonthComparison
  * - computeCurrencyDistribution
- * - computeProductCategorySpending
+ * - computeProductClassificationSpending
  * - computeTopProducts
  * - computeAllergenFrequency
- * - getCategoryLabel
  * - getPaymentTypeLabel
  * - getProductCategoryLabel
  */
@@ -25,11 +24,13 @@ import {describe, expect, it} from "vitest";
 
 // Import types
 import type {Invoice, Product} from "@/types/invoices";
+import type {StandardClassification} from "@/types/invoices/Classification";
+import {ClassificationOrigin, ClassificationSystem} from "@/types/invoices/Classification";
 
 // Import functions to test
 import {
   computeAllergenFrequency,
-  computeCategoryAggregates,
+  computeClassificationGroupAggregates,
   computeCurrencyDistribution,
   computeDailySpending,
   computeKPIs,
@@ -39,10 +40,9 @@ import {
   computeMonthComparison,
   computeMonthlySpending,
   computePriceDistribution,
-  computeProductCategorySpending,
+  computeProductClassificationSpending,
   computeTimeOfDay,
   computeTopProducts,
-  getCategoryLabel,
   getPaymentTypeLabel,
   getProductCategoryLabel,
 } from "./statistics";
@@ -57,7 +57,7 @@ function createTestInvoice(overrides: {
   amount?: number;
   currency?: string;
   date?: Date;
-  category?: number;
+  classification?: StandardClassification | null;
   paymentType?: number;
   items?: Product[];
 }): Invoice {
@@ -72,7 +72,8 @@ function createTestInvoice(overrides: {
     lastUpdatedAt: date,
     userIdentifier: "test-user",
     merchantReference: overrides.merchantId ?? "merchant-1",
-    category: overrides.category ?? 100,
+    category: 100,
+    classification: overrides.classification ?? null,
     scans: [],
     paymentInformation: {
       transactionDate: date,
@@ -100,7 +101,7 @@ function createTestProduct(overrides: {
   quantity?: number;
   price?: number;
   totalPrice?: number;
-  category?: number | null;
+  classification?: StandardClassification | null;
   detectedAllergens?: Array<{name: string; description: string}>;
   isSoftDeleted?: boolean;
 }): Product {
@@ -111,11 +112,78 @@ function createTestProduct(overrides: {
     quantity: overrides.quantity ?? 1,
     price: overrides.price ?? 10,
     totalPrice: overrides.totalPrice ?? 10,
-    category: overrides.category ?? null,
+    category: 0,
+    classification: overrides.classification ?? null,
     detectedAllergens: overrides.detectedAllergens ?? [],
     metadata: overrides.isSoftDeleted ? {isSoftDeleted: true} : undefined,
   } as unknown as Product;
 }
+
+// ---------------------------------------------------------------------------
+// Shared classification fixtures for tests
+// ---------------------------------------------------------------------------
+
+/** ECOICOP root "Food and non-alcoholic beverages" (division 01). */
+const FOOD_CLASSIFICATION: StandardClassification = {
+  system: ClassificationSystem.EcoicopV2,
+  code: "01.1.1",
+  officialLabel: "Cereals and cereal products (ND)",
+  version: "2",
+  hierarchy: [
+    {level: "division", code: "01", officialLabel: "Food and non-alcoholic beverages"},
+    {level: "group",    code: "01.1", officialLabel: "Food"},
+    {level: "class",    code: "01.1.1", officialLabel: "Cereals and cereal products (ND)"},
+  ],
+  origin: ClassificationOrigin.Analysis,
+  confidence: 0.9,
+  evidence: [],
+};
+
+/** ECOICOP root "Restaurants and accommodation services" (division 11). */
+const RESTAURANT_CLASSIFICATION: StandardClassification = {
+  system: ClassificationSystem.EcoicopV2,
+  code: "11.1.1",
+  officialLabel: "Restaurants, cafés and the like (S)",
+  version: "2",
+  hierarchy: [
+    {level: "division", code: "11", officialLabel: "Restaurants and accommodation services"},
+    {level: "group",    code: "11.1", officialLabel: "Food and beverage serving services"},
+    {level: "class",    code: "11.1.1", officialLabel: "Restaurants, cafés and the like (S)"},
+  ],
+  origin: ClassificationOrigin.Analysis,
+  confidence: 0.9,
+  evidence: [],
+};
+
+/** GPC root "Food/Beverage" (segment 50000000). */
+const GPC_FOOD_CLASSIFICATION: StandardClassification = {
+  system: ClassificationSystem.Gs1Gpc,
+  code: "50130000",
+  officialLabel: "Milk/Butter/Cream/Yogurts/Cheese/Eggs/Substitutes",
+  version: "2026-05",
+  hierarchy: [
+    {level: "segment", code: "50000000", officialLabel: "Food/Beverage"},
+    {level: "family",  code: "50130000", officialLabel: "Milk/Butter/Cream/Yogurts/Cheese/Eggs/Substitutes"},
+  ],
+  origin: ClassificationOrigin.Analysis,
+  confidence: 0.9,
+  evidence: [],
+};
+
+/** GPC root "Cleaning/Hygiene Products" (segment 47000000). */
+const GPC_CLEANING_CLASSIFICATION: StandardClassification = {
+  system: ClassificationSystem.Gs1Gpc,
+  code: "47100000",
+  officialLabel: "Cleaning Products",
+  version: "2026-05",
+  hierarchy: [
+    {level: "segment", code: "47000000", officialLabel: "Cleaning/Hygiene Products"},
+    {level: "family",  code: "47100000", officialLabel: "Cleaning Products"},
+  ],
+  origin: ClassificationOrigin.Analysis,
+  confidence: 0.9,
+  evidence: [],
+};
 
 describe("Statistics Functions", () => {
   describe("computeKPIs", () => {
@@ -280,82 +348,85 @@ describe("Statistics Functions", () => {
     });
   });
 
-  describe("getCategoryLabel", () => {
-    it("should map all known category IDs", () => {
-      expect(getCategoryLabel(0)).toBe("Uncategorized");
-      expect(getCategoryLabel(100)).toBe("Grocery");
-      expect(getCategoryLabel(200)).toBe("Dining");
-      expect(getCategoryLabel(300)).toBe("Home");
-      expect(getCategoryLabel(400)).toBe("Auto");
-      expect(getCategoryLabel(9999)).toBe("Other");
-    });
-
-    it("should return Unknown for unknown category", () => {
-      expect(getCategoryLabel(999)).toBe("Unknown");
-      expect(getCategoryLabel(-1)).toBe("Unknown");
-    });
-  });
-
-  describe("computeCategoryAggregates", () => {
+  describe("computeClassificationGroupAggregates", () => {
     it("should return empty array for no invoices", () => {
-      const result = computeCategoryAggregates([]);
+      const result = computeClassificationGroupAggregates([]);
 
       expect(result).toEqual([]);
     });
 
-    it("should aggregate by category", () => {
+    it("should aggregate by classification group", () => {
       const invoices = [
-        createTestInvoice({amount: 100, category: 100}), // Grocery
-        createTestInvoice({amount: 200, category: 200}), // Dining
-        createTestInvoice({amount: 150, category: 100}), // Grocery
+        createTestInvoice({amount: 100, classification: FOOD_CLASSIFICATION}),
+        createTestInvoice({amount: 200, classification: RESTAURANT_CLASSIFICATION}),
+        createTestInvoice({amount: 150, classification: FOOD_CLASSIFICATION}),
       ];
 
-      const result = computeCategoryAggregates(invoices);
+      const result = computeClassificationGroupAggregates(invoices);
 
       expect(result).toHaveLength(2);
 
-      const grocery = result.find((c) => c.categoryId === 100);
-      expect(grocery?.category).toBe("Grocery");
-      expect(grocery?.amount).toBe(250);
-      expect(grocery?.count).toBe(2);
-      expect(grocery?.percentage).toBeCloseTo(55.6, 1);
+      const food = result.find((c) => c.category === "Food and non-alcoholic beverages");
+      expect(food?.amount).toBe(250);
+      expect(food?.count).toBe(2);
+      expect(food?.percentage).toBeCloseTo(55.6, 1);
 
-      const dining = result.find((c) => c.categoryId === 200);
-      expect(dining?.category).toBe("Dining");
-      expect(dining?.amount).toBe(200);
-      expect(dining?.count).toBe(1);
-      expect(dining?.percentage).toBeCloseTo(44.4, 1);
+      const restaurant = result.find((c) => c.category === "Restaurants and accommodation services");
+      expect(restaurant?.amount).toBe(200);
+      expect(restaurant?.count).toBe(1);
+      expect(restaurant?.percentage).toBeCloseTo(44.4, 1);
     });
 
     it("should sort by amount descending", () => {
       const invoices = [
-        createTestInvoice({amount: 100, category: 100}),
-        createTestInvoice({amount: 300, category: 200}),
-        createTestInvoice({amount: 200, category: 300}),
+        createTestInvoice({amount: 100, classification: FOOD_CLASSIFICATION}),
+        createTestInvoice({amount: 300, classification: RESTAURANT_CLASSIFICATION}),
+        createTestInvoice({amount: 200, classification: null}),
       ];
 
-      const result = computeCategoryAggregates(invoices);
+      const result = computeClassificationGroupAggregates(invoices);
 
-      expect(result[0]?.categoryId).toBe(200);
-      expect(result[1]?.categoryId).toBe(300);
-      expect(result[2]?.categoryId).toBe(100);
+      expect(result[0]?.category).toBe("Restaurants and accommodation services");
+      expect(result[1]?.category).toBe("unclassified");
+      expect(result[2]?.category).toBe("Food and non-alcoholic beverages");
     });
 
-    it("should handle uncategorized invoices", () => {
-      const invoices = [createTestInvoice({amount: 100, category: 0})];
+    it("should bucket null-classification invoices into unclassified", () => {
+      const invoices = [createTestInvoice({amount: 100, classification: null})];
 
-      const result = computeCategoryAggregates(invoices);
+      const result = computeClassificationGroupAggregates(invoices);
 
-      expect(result[0]?.category).toBe("Uncategorized");
+      expect(result[0]?.category).toBe("unclassified");
     });
 
     it("should compute percentages correctly", () => {
-      const invoices = [createTestInvoice({amount: 50, category: 100}), createTestInvoice({amount: 50, category: 200})];
+      const invoices = [
+        createTestInvoice({amount: 50, classification: FOOD_CLASSIFICATION}),
+        createTestInvoice({amount: 50, classification: RESTAURANT_CLASSIFICATION}),
+      ];
 
-      const result = computeCategoryAggregates(invoices);
+      const result = computeClassificationGroupAggregates(invoices);
 
       expect(result[0]?.percentage).toBe(50.0);
       expect(result[1]?.percentage).toBe(50.0);
+    });
+
+    it("should count unclassified entities in aggregate totals", () => {
+      const invoices = [
+        createTestInvoice({amount: 100, classification: FOOD_CLASSIFICATION}),
+        createTestInvoice({amount: 200, classification: null}), // unclassified
+      ];
+
+      const result = computeClassificationGroupAggregates(invoices);
+
+      // Total must include unclassified — no invoice is silently dropped
+      const total = result.reduce((sum, g) => sum + g.amount, 0);
+      expect(total).toBe(300);
+
+      const unclassified = result.find((g) => g.category === "unclassified");
+      expect(unclassified).toBeDefined();
+      expect(unclassified?.amount).toBe(200);
+      expect(unclassified?.count).toBe(1);
     });
   });
 
@@ -754,41 +825,42 @@ describe("Statistics Functions", () => {
     });
   });
 
-  describe("computeProductCategorySpending", () => {
+  describe("computeProductClassificationSpending", () => {
     it("should return empty array for no invoices", () => {
-      const result = computeProductCategorySpending([]);
+      const result = computeProductClassificationSpending([]);
 
       expect(result).toEqual([]);
     });
 
-    it("should aggregate by product category", () => {
+    it("should aggregate by product classification group", () => {
       const products = [
-        createTestProduct({category: 300, totalPrice: 50}), // Dairy
-        createTestProduct({category: 400, totalPrice: 100}), // Meat
-        createTestProduct({category: 300, totalPrice: 75}), // Dairy
+        createTestProduct({classification: GPC_FOOD_CLASSIFICATION, totalPrice: 50}),
+        createTestProduct({classification: GPC_CLEANING_CLASSIFICATION, totalPrice: 100}),
+        createTestProduct({classification: GPC_FOOD_CLASSIFICATION, totalPrice: 75}),
       ];
 
       const invoices = [createTestInvoice({items: products})];
 
-      const result = computeProductCategorySpending(invoices);
+      const result = computeProductClassificationSpending(invoices);
 
-      const dairy = result.find((c) => c.categoryId === 300);
-      expect(dairy?.category).toBe("Dairy");
-      expect(dairy?.totalSpent).toBe(125);
-      expect(dairy?.productCount).toBe(2);
+      const food = result.find((c) => c.category === "Food/Beverage");
+      expect(food?.totalSpent).toBe(125);
+      expect(food?.productCount).toBe(2);
 
-      const meat = result.find((c) => c.categoryId === 400);
-      expect(meat?.category).toBe("Meat");
-      expect(meat?.totalSpent).toBe(100);
-      expect(meat?.productCount).toBe(1);
+      const cleaning = result.find((c) => c.category === "Cleaning/Hygiene Products");
+      expect(cleaning?.totalSpent).toBe(100);
+      expect(cleaning?.productCount).toBe(1);
     });
 
     it("should compute percentages correctly", () => {
-      const products = [createTestProduct({category: 300, totalPrice: 50}), createTestProduct({category: 400, totalPrice: 50})];
+      const products = [
+        createTestProduct({classification: GPC_FOOD_CLASSIFICATION, totalPrice: 50}),
+        createTestProduct({classification: GPC_CLEANING_CLASSIFICATION, totalPrice: 50}),
+      ];
 
       const invoices = [createTestInvoice({items: products})];
 
-      const result = computeProductCategorySpending(invoices);
+      const result = computeProductClassificationSpending(invoices);
 
       expect(result[0]?.percentage).toBe(50.0);
       expect(result[1]?.percentage).toBe(50.0);
@@ -796,32 +868,50 @@ describe("Statistics Functions", () => {
 
     it("should skip soft-deleted products", () => {
       const products = [
-        createTestProduct({category: 300, totalPrice: 50}),
-        createTestProduct({category: 400, totalPrice: 100, isSoftDeleted: true}),
+        createTestProduct({classification: GPC_FOOD_CLASSIFICATION, totalPrice: 50}),
+        createTestProduct({classification: GPC_CLEANING_CLASSIFICATION, totalPrice: 100, isSoftDeleted: true}),
       ];
 
       const invoices = [createTestInvoice({items: products})];
 
-      const result = computeProductCategorySpending(invoices);
+      const result = computeProductClassificationSpending(invoices);
 
       expect(result).toHaveLength(1);
-      expect(result[0]?.categoryId).toBe(300);
+      expect(result[0]?.category).toBe("Food/Beverage");
     });
 
     it("should sort by total spent descending", () => {
       const products = [
-        createTestProduct({category: 300, totalPrice: 50}),
-        createTestProduct({category: 400, totalPrice: 150}),
-        createTestProduct({category: 500, totalPrice: 100}),
+        createTestProduct({classification: GPC_FOOD_CLASSIFICATION, totalPrice: 50}),
+        createTestProduct({classification: GPC_CLEANING_CLASSIFICATION, totalPrice: 150}),
+        createTestProduct({classification: null, totalPrice: 100}),
       ];
 
       const invoices = [createTestInvoice({items: products})];
 
-      const result = computeProductCategorySpending(invoices);
+      const result = computeProductClassificationSpending(invoices);
 
-      expect(result[0]?.categoryId).toBe(400); // 150
-      expect(result[1]?.categoryId).toBe(500); // 100
-      expect(result[2]?.categoryId).toBe(300); // 50
+      expect(result[0]?.category).toBe("Cleaning/Hygiene Products"); // 150
+      expect(result[1]?.category).toBe("unclassified");              // 100
+      expect(result[2]?.category).toBe("Food/Beverage");             // 50
+    });
+
+    it("should count null-classification products in unclassified bucket", () => {
+      const products = [
+        createTestProduct({classification: GPC_FOOD_CLASSIFICATION, totalPrice: 50}),
+        createTestProduct({classification: null, totalPrice: 30}),
+      ];
+
+      const invoices = [createTestInvoice({items: products})];
+
+      const result = computeProductClassificationSpending(invoices);
+
+      const total = result.reduce((sum, g) => sum + g.totalSpent, 0);
+      expect(total).toBe(80);
+
+      const unclassified = result.find((g) => g.category === "unclassified");
+      expect(unclassified).toBeDefined();
+      expect(unclassified?.totalSpent).toBe(30);
     });
   });
 
@@ -1439,12 +1529,12 @@ describe("Statistics Functions", () => {
       });
     });
 
-    describe("computeProductCategorySpending - edge cases", () => {
+    describe("computeProductClassificationSpending - edge cases", () => {
       it("should handle zero grandTotal (division by zero)", () => {
-        const product = createTestProduct({price: 0, totalPrice: 0, category: 100});
+        const product = createTestProduct({price: 0, totalPrice: 0, classification: GPC_FOOD_CLASSIFICATION});
         const invoice = createTestInvoice({items: [product], amount: 0});
 
-        const result = computeProductCategorySpending([invoice]);
+        const result = computeProductClassificationSpending([invoice]);
 
         expect(result).toHaveLength(1);
         expect(result[0]?.percentage).toBe(0);
@@ -1455,54 +1545,49 @@ describe("Statistics Functions", () => {
         // @ts-expect-error - Intentionally testing null items
         invoice.items = null;
 
-        const result = computeProductCategorySpending([invoice]);
+        const result = computeProductClassificationSpending([invoice]);
 
         expect(result).toHaveLength(0);
       });
 
       it("should handle invoice with null paymentInformation in currency code", () => {
-        const product = createTestProduct({price: 10, totalPrice: 10, category: 100});
+        const product = createTestProduct({price: 10, totalPrice: 10, classification: GPC_FOOD_CLASSIFICATION});
         const invoice = createTestInvoice({items: [product], amount: 10});
         // @ts-expect-error - Intentionally testing null paymentInformation
         invoice.paymentInformation = null;
 
-        const result = computeProductCategorySpending([invoice]);
+        const result = computeProductClassificationSpending([invoice]);
 
         // Should still work with default RON currency
         expect(result.length).toBeGreaterThan(0);
       });
 
       it("should handle invoice with null currency", () => {
-        const product = createTestProduct({price: 10, totalPrice: 10, category: 100});
+        const product = createTestProduct({price: 10, totalPrice: 10, classification: GPC_FOOD_CLASSIFICATION});
         const invoice = createTestInvoice({items: [product], amount: 10});
         // @ts-expect-error - Intentionally testing null currency
         invoice.paymentInformation.currency = null;
 
-        const result = computeProductCategorySpending([invoice]);
+        const result = computeProductClassificationSpending([invoice]);
 
         // Should still work with default RON currency
         expect(result.length).toBeGreaterThan(0);
       });
 
-      it("should handle products with null category", () => {
-        const product = createTestProduct({price: 10, totalPrice: 10});
-        // @ts-expect-error - Intentionally testing null category
-        product.category = null;
+      it("should bucket null-classification products into 'unclassified'", () => {
+        const product = createTestProduct({price: 10, totalPrice: 10, classification: null});
         const invoice = createTestInvoice({items: [product], amount: 10});
 
-        const result = computeProductCategorySpending([invoice]);
+        const result = computeProductClassificationSpending([invoice]);
 
-        // Should use category 0 as default
         expect(result.length).toBeGreaterThan(0);
-        expect(result[0]?.categoryId).toBe(0);
+        expect(result[0]?.category).toBe("unclassified");
       });
     });
 
     describe("computeTopProducts - more edge cases", () => {
-      it("should handle products with null category", () => {
-        const product = createTestProduct({name: "Test Product", price: 10, totalPrice: 10});
-        // @ts-expect-error - Intentionally testing null category
-        product.category = null;
+      it("should handle products with null classification (no-throw check)", () => {
+        const product = createTestProduct({name: "Test Product", price: 10, totalPrice: 10, classification: null});
         const invoice = createTestInvoice({items: [product], amount: 10});
 
         const result = computeTopProducts([invoice], 10);
@@ -1623,27 +1708,24 @@ describe("Statistics Functions", () => {
       });
     });
 
-    // --- Line 599: computeCategoryAggregates - null invoice.category fallback ---
-    describe("computeCategoryAggregates - null invoice.category", () => {
-      it("should treat null category as 0 (Uncategorized)", () => {
-        const invoice = createTestInvoice({amount: 100});
-        // @ts-expect-error - Intentionally testing null category
-        invoice.category = null;
+    // --- computeClassificationGroupAggregates - null classification fallback ---
+    describe("computeClassificationGroupAggregates - null classification", () => {
+      it("should bucket null-classification invoices into 'unclassified'", () => {
+        const invoice = createTestInvoice({amount: 100, classification: null});
 
-        const result = computeCategoryAggregates([invoice]);
+        const result = computeClassificationGroupAggregates([invoice]);
 
         expect(result).toHaveLength(1);
-        expect(result[0]?.categoryId).toBe(0);
-        expect(result[0]?.category).toBe("Uncategorized");
+        expect(result[0]?.category).toBe("unclassified");
       });
     });
 
-    // --- Line 612: computeCategoryAggregates - zero totalSpending branch ---
-    describe("computeCategoryAggregates - zero totalSpending percentage", () => {
+    // --- computeClassificationGroupAggregates - zero totalSpending branch ---
+    describe("computeClassificationGroupAggregates - zero totalSpending percentage", () => {
       it("should return 0% when all invoice amounts are zero", () => {
-        const invoice = createTestInvoice({amount: 0, category: 100});
+        const invoice = createTestInvoice({amount: 0, classification: FOOD_CLASSIFICATION});
 
-        const result = computeCategoryAggregates([invoice]);
+        const result = computeClassificationGroupAggregates([invoice]);
 
         expect(result).toHaveLength(1);
         expect(result[0]?.percentage).toBe(0);
