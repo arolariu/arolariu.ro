@@ -97,6 +97,29 @@ export {
 } from "./Invoice";
 
 /**
+ * Analysis profile and capability resolution for the invoice and merchant analysis endpoints.
+ * Provides pure functions for resolving profiles into capability sets and building wire-ready request DTOs.
+ * @see {@link AnalysisProfile} for the three requestable profiles
+ * @see {@link buildInvoiceAnalysisRequest} for the primary builder
+ */
+export {
+  AnalysisProfile,
+  INVOICE_CAPABILITY_KEYS,
+  MERCHANT_CAPABILITY_KEYS,
+  applyInvoiceDependencyClosure,
+  buildInvoiceAnalysisRequest,
+  buildMerchantAnalysisRequest,
+  isInvoiceAnalysisCapabilitiesValid,
+  isMerchantAnalysisCapabilitiesValid,
+  resolveInvoiceCapabilities,
+  resolveMerchantCapabilities,
+  type InvoiceAnalysisCapabilities,
+  type InvoiceAnalysisRequest,
+  type MerchantAnalysisCapabilities,
+  type MerchantAnalysisRequest,
+} from "./Analysis";
+
+/**
  * Merchant (vendor/retailer) types.
  * Shared entities referenced by invoices.
  * @see {@link Merchant} for the merchant entity

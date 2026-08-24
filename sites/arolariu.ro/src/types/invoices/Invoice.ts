@@ -32,6 +32,8 @@ import type {PaymentDetail, PaymentInformation, Product, Recipe, TaxDetail} from
 /**
  * Represents the AI analysis options for invoice processing.
  *
+ * @deprecated Use {@link AnalysisProfile} with {@link InvoiceAnalysisCapabilities}. Removed in the final cutover sweep.
+ *
  * @remarks
  * Controls which aspects of an invoice undergo AI-powered analysis.
  * Analysis includes OCR extraction, entity recognition, and data enrichment.
