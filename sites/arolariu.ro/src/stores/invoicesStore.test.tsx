@@ -4,15 +4,19 @@
  */
 
 import {InvoiceBuilder} from "@/data/mocks";
-import {InvoiceCategory, InvoiceScanType, PaymentType} from "@/types/invoices";
+import {InvoiceCategory, InvoiceScanType, PaymentType, type Invoice} from "@/types/invoices";
 import {act, renderHook} from "@testing-library/react";
 import {beforeEach, describe, expect, it, vi} from "vitest";
 import {useInvoicesStore} from "./invoicesStore";
 
+// Expose a mutable getItem handle so hydration-validation tests can seed storage per-test.
+// vi.hoisted ensures this variable is evaluated before vi.mock (which is itself hoisted).
+const mockGetItem = vi.hoisted(() => vi.fn().mockResolvedValue(null));
+
 // Mock the IndexedDB storage
 vi.mock("./storage/indexedDBStorage", () => ({
   createIndexedDBStorage: () => ({
-    getItem: vi.fn().mockResolvedValue(null),
+    getItem: mockGetItem,
     setItem: vi.fn().mockResolvedValue(undefined),
     removeItem: vi.fn().mockResolvedValue(undefined),
   }),
@@ -70,6 +74,8 @@ describe("useInvoicesStore", () => {
     .build();
 
   beforeEach(() => {
+    // Restore the default null return so storage-unaware tests see an empty store.
+    mockGetItem.mockResolvedValue(null);
     // Reset the store before each test
     const {result} = renderHook(() => useInvoicesStore);
     act(() => {
@@ -754,6 +760,89 @@ describe("useInvoicesStore", () => {
 
       // Restore environment
       vi.unstubAllEnvs();
+    });
+  });
+
+  describe("Hydration validation", () => {
+    it("drops persisted entities that fail transport validation", async () => {
+      // Simulate a legacy persisted invoice from before the contract cutover.
+      // The discriminating field 'classification' is intentionally absent — that is the
+      // retired shape the guard must reject. IndexedDB preserves Date instances (not ISO
+      // strings), so this mirrors what a real stale browser cache would contain.
+      const oldShapeInvoice = {
+        id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+        name: "Old Shape Invoice",
+        description: "Retired shape — no classification key",
+        createdAt: new Date("2024-01-01"),
+        lastUpdatedAt: new Date("2024-01-01"),
+        createdBy: "",
+        lastUpdatedBy: "",
+        numberOfUpdates: 0,
+        isImportant: false,
+        isSoftDeleted: false,
+        userIdentifier: "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+        sharedWith: [],
+        category: InvoiceCategory.GROCERY,
+        // 'classification' key intentionally absent (retired shape)
+        scans: [{scanType: InvoiceScanType.JPEG, type: InvoiceScanType.JPEG, location: "https://example.com/scan.jpg", metadata: {}}],
+        paymentInformation: {
+          transactionDate: new Date("2024-01-01"),
+          paymentType: PaymentType.Cash,
+          currency: {code: "USD", name: "US Dollar", symbol: "$"},
+          totalCostAmount: 10,
+          totalTaxAmount: 1,
+          subtotalAmount: 9,
+          tipAmount: 0,
+        },
+        merchantReference: "cccccccc-cccc-cccc-cccc-cccccccccccc",
+        items: [],
+        possibleRecipes: [],
+        additionalMetadata: {},
+        receiptType: "",
+        countryRegion: "",
+        taxDetails: [],
+        payments: [],
+      };
+
+      // New-shape invoice built with the builder — classification: null is included by default.
+      const newShapeInvoice = new InvoiceBuilder()
+        .withId("dddddddd-dddd-dddd-dddd-dddddddddddd")
+        .withName("New Shape Invoice")
+        .build();
+
+      mockGetItem.mockResolvedValueOnce({
+        state: {entities: [oldShapeInvoice as unknown as Invoice, newShapeInvoice]},
+        version: 0,
+      });
+
+      await act(async () => {
+        await useInvoicesStore.persist.rehydrate();
+      });
+
+      expect(useInvoicesStore.getState().entities).toHaveLength(1);
+      expect(useInvoicesStore.getState().entities[0]?.id).toBe("dddddddd-dddd-dddd-dddd-dddddddddddd");
+    });
+
+    it("keeps persisted entities that pass validation", async () => {
+      const valid1 = new InvoiceBuilder()
+        .withId("eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee")
+        .withName("Valid Invoice 1")
+        .build();
+      const valid2 = new InvoiceBuilder()
+        .withId("ffffffff-ffff-ffff-ffff-ffffffffffff")
+        .withName("Valid Invoice 2")
+        .build();
+
+      mockGetItem.mockResolvedValueOnce({
+        state: {entities: [valid1, valid2]},
+        version: 0,
+      });
+
+      await act(async () => {
+        await useInvoicesStore.persist.rehydrate();
+      });
+
+      expect(useInvoicesStore.getState().entities).toHaveLength(2);
     });
   });
 });

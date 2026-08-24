@@ -9,10 +9,13 @@ import {act, renderHook} from "@testing-library/react";
 import {beforeEach, describe, expect, it, vi} from "vitest";
 import {useMerchantsStore} from "./merchantsStore";
 
+// Expose a mutable getItem handle so hydration-validation tests can seed storage per-test.
+const mockGetItem = vi.hoisted(() => vi.fn().mockResolvedValue(null));
+
 // Mock the IndexedDB storage
 vi.mock("./storage/indexedDBStorage", () => ({
   createIndexedDBStorage: () => ({
-    getItem: vi.fn().mockResolvedValue(null),
+    getItem: mockGetItem,
     setItem: vi.fn().mockResolvedValue(undefined),
     removeItem: vi.fn().mockResolvedValue(undefined),
   }),
@@ -57,6 +60,8 @@ describe("useMerchantsStore", () => {
     .build();
 
   beforeEach(() => {
+    // Restore the default null return so storage-unaware tests see an empty store.
+    mockGetItem.mockResolvedValue(null);
     // Reset the store before each test
     const {result} = renderHook(() => useMerchantsStore);
     act(() => {
@@ -815,6 +820,77 @@ describe("useMerchantsStore", () => {
 
       // Restore environment
       vi.unstubAllEnvs();
+    });
+  });
+
+  describe("Hydration validation", () => {
+    it("drops persisted entities that fail transport validation", async () => {
+      // Simulate a legacy persisted merchant from before the contract cutover.
+      // The discriminating field 'classification' is intentionally absent — that is the
+      // retired shape the guard must reject. IndexedDB preserves Date instances (not ISO
+      // strings), so this mirrors what a real stale browser cache would contain.
+      const oldShapeMerchant = {
+        id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+        name: "Old Shape Merchant",
+        description: "Retired shape — no classification key",
+        createdAt: new Date("2024-01-01"),
+        lastUpdatedAt: new Date("2024-01-01"),
+        createdBy: "",
+        lastUpdatedBy: "",
+        numberOfUpdates: 0,
+        isImportant: false,
+        isSoftDeleted: false,
+        category: MerchantCategory.LOCAL_SHOP,
+        // 'classification' key intentionally absent (retired shape)
+        address: {
+          fullName: "Old Merchant",
+          address: "123 Old St",
+          phoneNumber: "+1-555-0000",
+          emailAddress: "",
+          website: "",
+        },
+        parentCompanyId: "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+      };
+
+      // New-shape merchant built with the builder — classification: null is included by default.
+      const newShapeMerchant = new MerchantBuilder()
+        .withId("cccccccc-cccc-cccc-cccc-cccccccccccc")
+        .withName("New Shape Merchant")
+        .build();
+
+      mockGetItem.mockResolvedValueOnce({
+        state: {entities: [oldShapeMerchant as unknown as Merchant, newShapeMerchant]},
+        version: 0,
+      });
+
+      await act(async () => {
+        await useMerchantsStore.persist.rehydrate();
+      });
+
+      expect(useMerchantsStore.getState().entities).toHaveLength(1);
+      expect(useMerchantsStore.getState().entities[0]?.id).toBe("cccccccc-cccc-cccc-cccc-cccccccccccc");
+    });
+
+    it("keeps persisted entities that pass validation", async () => {
+      const valid1 = new MerchantBuilder()
+        .withId("dddddddd-dddd-dddd-dddd-dddddddddddd")
+        .withName("Valid Merchant 1")
+        .build();
+      const valid2 = new MerchantBuilder()
+        .withId("eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee")
+        .withName("Valid Merchant 2")
+        .build();
+
+      mockGetItem.mockResolvedValueOnce({
+        state: {entities: [valid1, valid2]},
+        version: 0,
+      });
+
+      await act(async () => {
+        await useMerchantsStore.persist.rehydrate();
+      });
+
+      expect(useMerchantsStore.getState().entities).toHaveLength(2);
     });
   });
 });
