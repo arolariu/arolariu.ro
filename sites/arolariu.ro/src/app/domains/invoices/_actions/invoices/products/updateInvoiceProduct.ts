@@ -43,6 +43,8 @@ import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {validateStringIsGuidType} from "@/lib/utils.generic";
 import {createErrorResult, fetchWithTimeout, type ServerActionResult} from "@/lib/utils.server";
 import type {Product} from "@/types/invoices";
+import {resolveClassificationCodeForWrite} from "@/types/invoices/Classification";
+import {parseProductResponse, tryParse} from "@/types/invoices/transport";
 import {revalidatePath} from "next/cache";
 
 /**
@@ -230,12 +232,12 @@ export async function updateInvoiceProduct({invoiceId, payload}: ServerActionInp
       const requestBody = {
         originalProductName,
         name: updatedProduct.name,
-        category: updatedProduct.category,
+        classificationCode: resolveClassificationCodeForWrite(updatedProduct.classification),
         quantity: updatedProduct.quantity,
         quantityUnit: updatedProduct.quantityUnit,
         productCode: updatedProduct.productCode,
         price: updatedProduct.price,
-        detectedAllergens: updatedProduct.detectedAllergens,
+        allergenAssessment: updatedProduct.allergenAssessment,
       } as const;
 
       addSpanEvent("bff.request.update-invoice-product.start");
@@ -252,12 +254,18 @@ export async function updateInvoiceProduct({invoiceId, payload}: ServerActionInp
 
       if (response.ok) {
         logWithTrace("info", "Successfully updated product in invoice", {invoiceId}, "server");
-        const product = (await response.json()) as Product;
+        const responseBody: unknown = await response.json();
+        const parsed = tryParse(parseProductResponse, responseBody);
+        if (!parsed.ok) {
+          addSpanEvent("bff.request.update-invoice-product.invalid");
+          logWithTrace("error", "Update product response failed transport validation", {path: parsed.error.path}, "server");
+          return createErrorResult(parsed.error, "The server returned unexpected data. Please try again later.");
+        }
         revalidatePath(`/domains/invoices/edit-invoice/${invoiceId}`, "page");
         revalidatePath(`/domains/invoices/view-invoice/${invoiceId}`, "page");
         return {
           success: true,
-          data: product,
+          data: parsed.value,
         } as const;
       }
 

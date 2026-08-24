@@ -5,6 +5,7 @@
 
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {fetchWithTimeout} from "@/lib/utils.server";
+import {ClassificationOrigin, ClassificationSystem, type StandardClassification} from "@/types/invoices";
 import {beforeEach, describe, expect, it, vi} from "vitest";
 import {TestDataBuilder} from "../../../../../../../tests/helpers";
 
@@ -132,5 +133,42 @@ describe("addInvoiceProduct", () => {
     const result = await addInvoiceProduct({invoiceId, product});
 
     expect(result.success).toBe(false);
+  });
+
+  it("sends classificationCode and allergenAssessment; omits category, detectedAllergens, totalPrice, metadata", async () => {
+    const invoiceId = "11111111-1111-4111-8111-111111111111";
+    const product = TestDataBuilder.build("product", {name: "Milk", price: 5.99});
+
+    await addInvoiceProduct({invoiceId, product});
+
+    const callArgs = mockFetchWithTimeout.mock.calls[0];
+    const body = JSON.parse(callArgs?.[1]?.body as string);
+    expect(body).toHaveProperty("classificationCode");
+    expect(body).toHaveProperty("allergenAssessment");
+    expect(body).not.toHaveProperty("category");
+    expect(body).not.toHaveProperty("detectedAllergens");
+    expect(body).not.toHaveProperty("totalPrice");
+    expect(body).not.toHaveProperty("metadata");
+  });
+
+  it("sends null classificationCode when classification origin is Analysis", async () => {
+    const invoiceId = "11111111-1111-4111-8111-111111111111";
+    const analysisClassification: StandardClassification = {
+      system: ClassificationSystem.Gs1Gpc,
+      version: "2024",
+      code: "10000025",
+      officialLabel: "Dairy",
+      hierarchy: [],
+      origin: ClassificationOrigin.Analysis,
+      confidence: 0.95,
+      evidence: [],
+    };
+    const product = TestDataBuilder.build("product", {classification: analysisClassification});
+
+    await addInvoiceProduct({invoiceId, product});
+
+    const callArgs = mockFetchWithTimeout.mock.calls[0];
+    const body = JSON.parse(callArgs?.[1]?.body as string);
+    expect(body.classificationCode).toBeNull();
   });
 });

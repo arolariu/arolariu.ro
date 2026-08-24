@@ -30,6 +30,8 @@ import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {validateStringIsGuidType} from "@/lib/utils.generic";
 import {createErrorResult, fetchWithTimeout, type ServerActionResult} from "@/lib/utils.server";
 import type {Product} from "@/types/invoices";
+import {resolveClassificationCodeForWrite} from "@/types/invoices/Classification";
+import {parseProductResponse, tryParse} from "@/types/invoices/transport";
 import {revalidatePath} from "next/cache";
 
 /**
@@ -155,24 +157,39 @@ export async function addInvoiceProduct({invoiceId, product}: ServerActionInputT
       // Step 2. Make the API request to add the product
       addSpanEvent("bff.request.add-invoice-product.start");
       logWithTrace("info", "Making API request to add product to invoice...", {invoiceId}, "server");
+      const requestDto = {
+        name: product.name,
+        classificationCode: resolveClassificationCodeForWrite(product.classification),
+        quantity: product.quantity,
+        quantityUnit: product.quantityUnit,
+        productCode: product.productCode,
+        price: product.price,
+        allergenAssessment: product.allergenAssessment,
+      };
       const response = await fetchWithTimeout(`/rest/v1/invoices/${invoiceId}/products`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${authToken}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(product),
+        body: JSON.stringify(requestDto),
       });
       addSpanEvent("bff.request.add-invoice-product.complete");
 
       if (response.ok) {
         logWithTrace("info", "Successfully added product to invoice...", {invoiceId}, "server");
-        const createdProduct = (await response.json()) as Product;
+        const responseBody: unknown = await response.json();
+        const parsed = tryParse(parseProductResponse, responseBody);
+        if (!parsed.ok) {
+          addSpanEvent("bff.request.add-invoice-product.invalid");
+          logWithTrace("error", "Add product response failed transport validation", {path: parsed.error.path}, "server");
+          return createErrorResult(parsed.error, "The server returned unexpected data. Please try again later.");
+        }
         revalidatePath(`/domains/invoices/edit-invoice/${invoiceId}`, "page");
         revalidatePath(`/domains/invoices/view-invoice/${invoiceId}`, "page");
         return {
           success: true,
-          data: createdProduct,
+          data: parsed.value,
         } as const;
       }
 

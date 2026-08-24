@@ -5,7 +5,7 @@
 
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {fetchWithTimeout} from "@/lib/utils.server";
-import {ProductCategory} from "@/types/invoices";
+import {ClassificationOrigin, ClassificationSystem, ProductCategory, type StandardClassification} from "@/types/invoices";
 import {beforeEach, describe, expect, it, vi} from "vitest";
 import {TestDataBuilder} from "../../../../../../../tests/helpers";
 
@@ -60,14 +60,17 @@ describe("updateInvoiceProduct", () => {
     const body = JSON.parse(callArgs?.[1]?.body as string);
     expect(body.originalProductName).toBe("Coffee");
     expect(body.name).toBe("Premium Coffee");
-    expect(body.category).toBe(ProductCategory.GROCERIES);
+    expect(body.classificationCode).toBeNull();
     expect(body.quantity).toBe(2);
     expect(body.quantityUnit).toBe("kg");
     expect(body.productCode).toBe("PROD-123");
     expect(body.price).toBe(15.99);
-    expect(body.detectedAllergens).toEqual([]);
+    expect(body.allergenAssessment).toBeNull();
     // Ensure the payload is flattened, not nested
     expect(body.updatedProduct).toBeUndefined();
+    // Ensure legacy fields are absent from the wire body
+    expect(body).not.toHaveProperty("category");
+    expect(body).not.toHaveProperty("detectedAllergens");
 
     expect(mockRevalidatePath).toHaveBeenCalledWith(`/domains/invoices/edit-invoice/${invoiceId}`, "page");
     expect(mockRevalidatePath).toHaveBeenCalledWith(`/domains/invoices/view-invoice/${invoiceId}`, "page");
@@ -147,5 +150,29 @@ describe("updateInvoiceProduct", () => {
     const result = await updateInvoiceProduct({invoiceId, payload});
 
     expect(result.success).toBe(false);
+  });
+
+  it("sends null classificationCode when classification origin is Analysis", async () => {
+    const invoiceId = "11111111-1111-4111-8111-111111111111";
+    const analysisClassification: StandardClassification = {
+      system: ClassificationSystem.Gs1Gpc,
+      version: "2024",
+      code: "10000025",
+      officialLabel: "Dairy",
+      hierarchy: [],
+      origin: ClassificationOrigin.Analysis,
+      confidence: 0.95,
+      evidence: [],
+    };
+    const payload = {
+      originalProductName: "Coffee",
+      updatedProduct: TestDataBuilder.build("product", {classification: analysisClassification}),
+    };
+
+    await updateInvoiceProduct({invoiceId, payload});
+
+    const callArgs = mockFetchWithTimeout.mock.calls[0];
+    const body = JSON.parse(callArgs?.[1]?.body as string);
+    expect(body.classificationCode).toBeNull();
   });
 });
