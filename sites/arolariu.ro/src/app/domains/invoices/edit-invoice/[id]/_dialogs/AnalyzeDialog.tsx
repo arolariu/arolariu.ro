@@ -16,8 +16,8 @@ import InvoiceAnalysisControls from "../../../_components/analysis/InvoiceAnalys
 import QueuedAnalysisNotice from "../../../_components/analysis/QueuedAnalysisNotice";
 import {useAnalysisSubmission} from "../../../_hooks/analysis/useAnalysisSubmission";
 import {
-  buildInvoiceAnalysisRequest,
-  resolveInvoiceCapabilities,
+  buildAnalysisRequest,
+  resolveAnalysisCapabilities,
   type AnalysisProfile,
   type InvoiceAnalysisCapabilities,
 } from "@/types/invoices/Analysis";
@@ -57,7 +57,9 @@ export default function AnalyzeDialog(): React.JSX.Element {
   const invoice = (payload as {invoice: {id: string; classification: {origin: string} | null} | null} | null)?.invoice ?? null;
 
   const [profile, setProfile] = useState<AnalysisProfile>("comprehensive");
-  const [capabilities, setCapabilities] = useState<InvoiceAnalysisCapabilities>(() => resolveInvoiceCapabilities("comprehensive"));
+  const [capabilities, setCapabilities] = useState<InvoiceAnalysisCapabilities>(() =>
+    resolveAnalysisCapabilities("invoice", "comprehensive"),
+  );
 
   const {status, messageId, errorMessage, submit, refreshNow, reset} = useAnalysisSubmission({
     target: "invoice",
@@ -74,7 +76,7 @@ export default function AnalyzeDialog(): React.JSX.Element {
   }, []);
 
   const handleSubmit = useCallback(async (): Promise<void> => {
-    await submit(buildInvoiceAnalysisRequest(profile, capabilities));
+    await submit(buildAnalysisRequest("invoice", profile, capabilities));
   }, [profile, capabilities, submit]);
 
   const handleClose = useCallback((): void => {

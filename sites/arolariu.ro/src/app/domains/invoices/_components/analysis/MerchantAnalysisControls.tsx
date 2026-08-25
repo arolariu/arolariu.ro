@@ -15,7 +15,7 @@ import {useTranslations} from "next-intl-selector";
 import {useCallback, type ChangeEvent} from "react";
 import {
   MERCHANT_CAPABILITY_KEYS,
-  resolveMerchantCapabilities,
+  resolveAnalysisCapabilities,
   type AnalysisProfile,
   type MerchantAnalysisCapabilities,
 } from "@/types/invoices/Analysis";
@@ -43,7 +43,7 @@ const PROFILES = ["fast", "balanced", "comprehensive"] as const satisfies readon
 
 /** Returns `true` when `value` matches the preset for `profile`. */
 function matchesPreset(profile: AnalysisProfile, value: MerchantAnalysisCapabilities): boolean {
-  const preset = resolveMerchantCapabilities(profile);
+  const preset = resolveAnalysisCapabilities("merchant", profile);
   return MERCHANT_CAPABILITY_KEYS.every((key) => value[key] === preset[key]);
 }
 
@@ -88,7 +88,7 @@ export default function MerchantAnalysisControls({profile, value, onChange, disa
   const handleProfileChange = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
       const newProfile = resolveProfile(event.currentTarget.value);
-      onChange(newProfile, resolveMerchantCapabilities(newProfile));
+      onChange(newProfile, resolveAnalysisCapabilities("merchant", newProfile));
     },
     [onChange],
   );

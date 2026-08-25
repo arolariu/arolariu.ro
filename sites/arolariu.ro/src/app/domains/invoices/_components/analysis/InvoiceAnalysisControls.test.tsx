@@ -19,7 +19,7 @@ import {render, screen} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import {describe, expect, it, vi} from "vitest";
 import type {AnalysisProfile, InvoiceAnalysisCapabilities} from "@/types/invoices/Analysis";
-import {resolveInvoiceCapabilities} from "@/types/invoices/Analysis";
+import {resolveAnalysisCapabilities} from "@/types/invoices/Analysis";
 import InvoiceAnalysisControls from "./InvoiceAnalysisControls";
 
 describe("InvoiceAnalysisControls", () => {
@@ -30,7 +30,7 @@ describe("InvoiceAnalysisControls", () => {
     render(
       <InvoiceAnalysisControls
         profile='fast'
-        value={resolveInvoiceCapabilities("fast")}
+        value={resolveAnalysisCapabilities("invoice", "fast")}
         onChange={onChange}
       />,
     );
@@ -39,7 +39,7 @@ describe("InvoiceAnalysisControls", () => {
     await userEvent.click(balancedRadio);
 
     expect(onChange).toHaveBeenCalledTimes(1);
-    expect(onChange).toHaveBeenCalledWith("balanced", resolveInvoiceCapabilities("balanced"));
+    expect(onChange).toHaveBeenCalledWith("balanced", resolveAnalysisCapabilities("invoice", "balanced"));
   });
 
   // ── 2. Dependency closure: allergenAssessment pulls in productClassification ─
@@ -78,7 +78,7 @@ describe("InvoiceAnalysisControls", () => {
   it("shows a Custom indicator when capabilities diverge from the selected profile preset", () => {
     // balanced preset: invoiceSummary = true → pass false to trigger divergence
     const divergedValue: InvoiceAnalysisCapabilities = {
-      ...resolveInvoiceCapabilities("balanced"),
+      ...resolveAnalysisCapabilities("invoice", "balanced"),
       invoiceSummary: false,
     };
 
@@ -97,7 +97,7 @@ describe("InvoiceAnalysisControls", () => {
 
   it("disables the maximumRecipes spinbutton when recipeGeneration is off", () => {
     const noRecipeValue: InvoiceAnalysisCapabilities = {
-      ...resolveInvoiceCapabilities("balanced"),
+      ...resolveAnalysisCapabilities("invoice", "balanced"),
       recipeGeneration: false,
       maximumRecipes: 0,
     };
@@ -144,7 +144,7 @@ describe("InvoiceAnalysisControls", () => {
 
   it("renders invoiceClassification as unchecked when manualClassificationPresent is true", () => {
     const value: InvoiceAnalysisCapabilities = {
-      ...resolveInvoiceCapabilities("fast"),
+      ...resolveAnalysisCapabilities("invoice", "fast"),
       invoiceClassification: false,
     };
 
@@ -165,7 +165,7 @@ describe("InvoiceAnalysisControls", () => {
 
   it("surfaces a role=alert mentioning overwriting when invoiceClassification is clicked with manualClassificationPresent", async () => {
     const value: InvoiceAnalysisCapabilities = {
-      ...resolveInvoiceCapabilities("fast"),
+      ...resolveAnalysisCapabilities("invoice", "fast"),
       invoiceClassification: false,
     };
 

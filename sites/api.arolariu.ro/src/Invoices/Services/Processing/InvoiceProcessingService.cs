@@ -251,12 +251,12 @@ public sealed partial class InvoiceProcessingService : IInvoiceProcessingService
   /// <summary>Reads the merchants referenced by the caller's own invoices.</summary>
   /// <param name="userIdentifier">The authenticated user whose invoices are inspected.</param>
   /// <param name="cancellationToken">The token used to cancel the query.</param>
-  /// <returns>The distinct merchants referenced by the caller's invoices.</returns>
+  /// <returns>The distinct visible merchants and the caller-owned invoice snapshot used to derive them.</returns>
   /// <exception cref="DDD.AggregatorRoots.Invoices.Exceptions.Outer.Processing.InvoiceProcessingServiceDependencyException">
   /// Thrown when invoice or merchant orchestration cannot complete the query.
   /// </exception>
   /// <inheritdoc/>
-  public async Task<IEnumerable<Merchant>> ReadMerchantsVisibleToUser(
+  public async Task<(IReadOnlyCollection<Merchant> Merchants, IReadOnlyCollection<Invoice> Invoices)> ReadMerchantsVisibleToUser(
     Guid userIdentifier,
     CancellationToken cancellationToken) =>
   await TryCatchAsync(async () =>
@@ -264,9 +264,9 @@ public sealed partial class InvoiceProcessingService : IInvoiceProcessingService
     using var activity = InvoicePackageTracing.StartActivity(nameof(ReadMerchantsVisibleToUser));
     activity?.SetUserContext(userIdentifier);
 
-    var invoices = await invoiceOrchestrationService
+    IReadOnlyCollection<Invoice> invoices = (await invoiceOrchestrationService
       .ReadAllInvoiceObjects(userIdentifier, cancellationToken)
-      .ConfigureAwait(false);
+      .ConfigureAwait(false)).ToList();
     var merchantIdentifiers = invoices
       .Select(invoice => invoice.MerchantReference)
       .Where(reference => reference != Guid.Empty)
@@ -274,14 +274,11 @@ public sealed partial class InvoiceProcessingService : IInvoiceProcessingService
       .ToList();
     activity?.SetTag("merchant.reference_count", merchantIdentifiers.Count);
 
-    if (merchantIdentifiers.Count == 0)
-    {
-      return [];
-    }
-
-    return await merchantOrchestrationService
+    IReadOnlyCollection<Merchant> merchants = (await merchantOrchestrationService
       .ReadMerchantObjectsByIdentifiers(merchantIdentifiers, cancellationToken)
-      .ConfigureAwait(false);
+      .ConfigureAwait(false)).ToList();
+
+    return (merchants, invoices);
   }).ConfigureAwait(false);
   #endregion
 

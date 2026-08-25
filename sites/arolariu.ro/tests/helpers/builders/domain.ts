@@ -396,7 +396,7 @@ export function buildCreateInvoiceScanPayload(overrides: Partial<CreateInvoiceSc
  * **Default Values:**
  * - userIdentifier: "test-user"
  * - initialScan: Default InvoiceScan
- * - metadata: Empty object
+ * - additionalMetadata: Creation metadata flags
  *
  * **Use Cases:**
  * - API create invoice tests
@@ -407,7 +407,7 @@ export function buildCreateInvoiceScanPayload(overrides: Partial<CreateInvoiceSc
  * ```typescript
  * const payload = buildCreateInvoicePayload({
  *   userIdentifier: "user-123",
- *   metadata: {isImportant: "true"}
+ *   additionalMetadata: {isImportant: "true"}
  * });
  * expect(payload.initialScan.location).toBe("https://storage.test/invoice-scan.jpg");
  * ```
@@ -416,7 +416,7 @@ export function buildCreateInvoicePayload(overrides: Partial<CreateInvoiceDtoPay
   return {
     userIdentifier: "test-user",
     initialScan: buildInvoiceScan(),
-    metadata: {
+    additionalMetadata: {
       isImportant: "false",
       requiresAnalysis: "false",
     },

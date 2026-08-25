@@ -42,12 +42,11 @@ public static partial class InvoiceEndpoints
         .SetLayerContext("Endpoint", nameof(InvoiceEndpoints))
         .SetOperationType("CRUD.Create");
 
-      var userIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
-      var invoice = invoiceDto.ToInvoice(userIdentifier);
-      activity?.SetInvoiceContext(invoice.id, userIdentifier);
+      var invoice = invoiceDto.ToInvoice();
+      activity?.SetInvoiceContext(invoice.id, invoice.UserIdentifier);
 
       await invoiceManagementService
-        .CreateInvoice(invoice, userIdentifier, writeScope.Token)
+        .CreateInvoice(invoice, invoice.UserIdentifier, writeScope.Token)
         .ConfigureAwait(false);
 
       activity?.RecordSuccess("Invoice created successfully");
@@ -1265,12 +1264,11 @@ public static partial class InvoiceEndpoints
       // visible set; it is deliberately NOT an alternate path that skips the ownership filter.
       // Treating it as one would let any authenticated caller enumerate a partition and read
       // other users' referencedInvoiceIds and createdBy values out of MerchantResponseDto.
-      IEnumerable<Merchant> possibleMerchants = await invoiceManagementService
+      var visibility = await invoiceManagementService
         .ReadMerchantsVisibleToUser(userIdentifier, cancellationToken)
         .ConfigureAwait(false);
-      IEnumerable<Invoice> callerInvoices = await invoiceManagementService
-        .ReadInvoices(userIdentifier, cancellationToken)
-        .ConfigureAwait(false);
+      IEnumerable<Merchant> possibleMerchants = visibility.Merchants;
+      IReadOnlyCollection<Invoice> callerInvoices = visibility.Invoices;
 
       if (parentCompanyId.HasValue)
       {

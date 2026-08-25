@@ -18,7 +18,7 @@ import {useCallback, useState, type ChangeEvent} from "react";
 import {
   INVOICE_CAPABILITY_KEYS,
   applyInvoiceDependencyClosure,
-  resolveInvoiceCapabilities,
+  resolveAnalysisCapabilities,
   type AnalysisProfile,
   type InvoiceAnalysisCapabilities,
 } from "@/types/invoices/Analysis";
@@ -56,7 +56,7 @@ function countEnabled(value: InvoiceAnalysisCapabilities): number {
 
 /** Returns `true` when `value` matches the preset for `profile`. */
 function matchesPreset(profile: AnalysisProfile, value: InvoiceAnalysisCapabilities): boolean {
-  const preset = resolveInvoiceCapabilities(profile);
+  const preset = resolveAnalysisCapabilities("invoice", profile);
   return INVOICE_CAPABILITY_KEYS.every((key) => value[key] === preset[key]) && value.maximumRecipes === preset.maximumRecipes;
 }
 
@@ -105,7 +105,7 @@ export default function InvoiceAnalysisControls({
     (event: ChangeEvent<HTMLInputElement>) => {
       const newProfile = resolveProfile(event.currentTarget.value);
       setShowOverwriteAlert(false);
-      onChange(newProfile, resolveInvoiceCapabilities(newProfile));
+      onChange(newProfile, resolveAnalysisCapabilities("invoice", newProfile));
     },
     [onChange],
   );

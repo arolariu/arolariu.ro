@@ -62,14 +62,14 @@ export type RecipeDifficulty = (typeof RECIPE_DIFFICULTY)[keyof typeof RECIPE_DI
  * Mirrors the nested ingredient sub-shape of `RecipeSuggestionResponseDto`.
  * `preparation` is `null` when no specific preparation step is required.
  */
-export interface RecipeIngredient {
+export type RecipeIngredient = {
   /** The ingredient name (e.g. `"Tomatoes"`). */
   readonly name: string;
   /** Measurement quantity (e.g. `"500 g"`). */
   readonly quantity: string;
   /** Optional preparation note (e.g. `"diced"`); `null` when absent. */
   readonly preparation: string | null;
-}
+};
 
 /**
  * A single step in the cooking instructions of a {@link RecipeSuggestion}.
@@ -78,14 +78,14 @@ export interface RecipeIngredient {
  * Steps are 1-indexed; `sequence` is the step number as emitted by the backend.
  * `notes` is `null` when the backend provides no supplemental note for this step.
  */
-export interface RecipeStep {
+export type RecipeStep = {
   /** 1-based position of this step in the instruction sequence. */
   readonly sequence: number;
   /** Human-readable instruction for this step. */
   readonly instruction: string;
   /** Optional supplemental note for this step; `null` when absent. */
   readonly notes: string | null;
-}
+};
 
 /**
  * Structured recipe suggestion returned by the backend analysis pipeline.
@@ -105,7 +105,7 @@ export interface RecipeStep {
  * @see {@link RecipeStep} for step sub-shape
  * @see {@link AllergenCode} for allergen warning codes
  */
-export interface RecipeSuggestion {
+export type RecipeSuggestion = {
   /** Display name of the recipe. Must be non-empty. */
   readonly name: string;
   /** Short description of the recipe. Must contain non-whitespace text. */
@@ -130,7 +130,7 @@ export interface RecipeSuggestion {
   readonly steps: readonly RecipeStep[];
   /** EU-14 allergen codes present in this recipe. */
   readonly allergenWarnings: readonly AllergenCode[];
-}
+};
 
 // Guard helpers (module-private)
 const recipeDifficultyValues: readonly string[] = Object.values(RECIPE_DIFFICULTY);

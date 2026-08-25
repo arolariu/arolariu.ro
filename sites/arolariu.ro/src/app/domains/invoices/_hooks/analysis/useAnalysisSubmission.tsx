@@ -93,6 +93,24 @@ type HookOutputType = Readonly<{
   readonly reset: () => void;
 }>;
 
+type AnalysisSubmissionState = Readonly<{
+  readonly scopeKey: string;
+  readonly scopeToken: symbol;
+  readonly status: AnalysisSubmissionStatus;
+  readonly messageId: string | null;
+  readonly errorMessage: string | null;
+}>;
+
+function createIdleSubmissionState(scopeKey: string): AnalysisSubmissionState {
+  return {
+    scopeKey,
+    scopeToken: Symbol(scopeKey),
+    status: "idle",
+    messageId: null,
+    errorMessage: null,
+  };
+}
+
 /** Submits a request to the invoice analysis action with invoice-shaped overrides. */
 async function submitInvoiceAnalysis(
   identifier: string,
@@ -143,19 +161,26 @@ async function submitMerchantAnalysis(
  */
 export function useAnalysisSubmission({target, identifier, scheduleRefresh = false}: HookInputType): HookOutputType {
   const router = useRouter();
-
-  const [status, setStatus] = useState<AnalysisSubmissionStatus>("idle");
-  const [messageId, setMessageId] = useState<string | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const scopeKey = `${target}:${identifier}`;
+  const [submissionState, setSubmissionState] = useState<AnalysisSubmissionState>(() => createIdleSubmissionState(scopeKey));
 
   /** Holds the id of the single scheduled refresh timer, if any. */
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   /** Guards against state updates after the component has unmounted. */
   const mountedRef = useRef(true);
+  /** Invalidates completions from submissions started before a reset or target change. */
+  const requestGenerationRef = useRef(0);
 
-  // Cancel any pending refresh timer when identifier/target changes or on unmount.
+  if (submissionState.scopeKey !== scopeKey) {
+    setSubmissionState(createIdleSubmissionState(scopeKey));
+  }
+
+  // Invalidate in-flight work and timers when the analyzed entity changes.
   useEffect(() => {
+    requestGenerationRef.current += 1;
+
     return () => {
+      requestGenerationRef.current += 1;
       if (timerRef.current !== null) {
         clearTimeout(timerRef.current);
         timerRef.current = null;
@@ -180,23 +205,25 @@ export function useAnalysisSubmission({target, identifier, scheduleRefresh = fal
   }, [router]);
 
   const reset = useCallback((): void => {
+    requestGenerationRef.current += 1;
     if (timerRef.current !== null) {
       clearTimeout(timerRef.current);
       timerRef.current = null;
     }
-    setStatus("idle");
-    setMessageId(null);
-    setErrorMessage(null);
-  }, []);
+    setSubmissionState(createIdleSubmissionState(scopeKey));
+  }, [scopeKey]);
 
-  const scheduleQueuedRefresh = useCallback((): void => {
-    timerRef.current = setTimeout(() => {
-      timerRef.current = null;
-      if (mountedRef.current) {
-        router.refresh();
-      }
-    }, ANALYSIS_REFRESH_DELAY_MS);
-  }, [router]);
+  const scheduleQueuedRefresh = useCallback(
+    (requestGeneration: number): void => {
+      timerRef.current = setTimeout(() => {
+        timerRef.current = null;
+        if (mountedRef.current && requestGeneration === requestGenerationRef.current) {
+          router.refresh();
+        }
+      }, ANALYSIS_REFRESH_DELAY_MS);
+    },
+    [router],
+  );
 
   const submit = useCallback(
     async (request: InvoiceAnalysisRequest | MerchantAnalysisRequest): Promise<void> => {
@@ -207,9 +234,15 @@ export function useAnalysisSubmission({target, identifier, scheduleRefresh = fal
       }
 
       if (!mountedRef.current) return;
-      setStatus("submitting");
-      setMessageId(null);
-      setErrorMessage(null);
+      const requestGeneration = ++requestGenerationRef.current;
+      const submissionScopeToken = submissionState.scopeToken;
+      setSubmissionState({
+        scopeKey,
+        scopeToken: submissionScopeToken,
+        status: "submitting",
+        messageId: null,
+        errorMessage: null,
+      });
 
       try {
         const actionResult =
@@ -218,24 +251,44 @@ export function useAnalysisSubmission({target, identifier, scheduleRefresh = fal
         if (!mountedRef.current) return;
 
         if (actionResult.success) {
-          setStatus("queued");
-          setMessageId(actionResult.data);
+          setSubmissionState((currentState) =>
+            currentState.scopeToken === submissionScopeToken && requestGeneration === requestGenerationRef.current
+              ? {...currentState, status: "queued", messageId: actionResult.data}
+              : currentState,
+          );
 
-          if (scheduleRefresh) {
-            scheduleQueuedRefresh();
+          if (scheduleRefresh && requestGeneration === requestGenerationRef.current) {
+            scheduleQueuedRefresh(requestGeneration);
           }
         } else {
-          setStatus("error");
-          setErrorMessage(actionResult.error.message);
+          setSubmissionState((currentState) =>
+            currentState.scopeToken === submissionScopeToken && requestGeneration === requestGenerationRef.current
+              ? {...currentState, status: "error", errorMessage: actionResult.error.message}
+              : currentState,
+          );
         }
       } catch (error: unknown) {
         if (!mountedRef.current) return;
-        setStatus("error");
-        setErrorMessage(error instanceof Error ? error.message : "Unknown submission error");
+        setSubmissionState((currentState) =>
+          currentState.scopeToken === submissionScopeToken && requestGeneration === requestGenerationRef.current
+            ? {
+                ...currentState,
+                status: "error",
+                errorMessage: error instanceof Error ? error.message : "Unknown submission error",
+              }
+            : currentState,
+        );
       }
     },
-    [target, identifier, scheduleRefresh, scheduleQueuedRefresh],
+    [target, identifier, scheduleRefresh, scheduleQueuedRefresh, scopeKey, submissionState.scopeToken],
   );
 
-  return {status, messageId, errorMessage, submit, refreshNow, reset} as const;
+  return {
+    status: submissionState.status,
+    messageId: submissionState.messageId,
+    errorMessage: submissionState.errorMessage,
+    submit,
+    refreshNow,
+    reset,
+  } as const;
 }

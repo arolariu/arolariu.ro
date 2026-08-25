@@ -17,7 +17,7 @@ import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {validateStringIsGuidType} from "@/lib/utils.generic";
 import {createErrorResult, fetchWithTimeout, type ServerActionResult} from "@/lib/utils.server";
-import {buildInvoiceAnalysisRequest, type AnalysisProfile, type InvoiceAnalysisCapabilities} from "@/types/invoices/Analysis";
+import {buildAnalysisRequest, type AnalysisProfile, type InvoiceAnalysisCapabilities} from "@/types/invoices/Analysis";
 import {parseAnalysisAcceptedResponse, tryParse} from "@/types/invoices/transport";
 
 type ServerActionInputType = Readonly<{
@@ -55,7 +55,7 @@ export async function analyzeInvoice({invoiceIdentifier, profile, overrides}: Se
 
       addSpanEvent("bff.invoice.analyze.start");
       logWithTrace("info", "Making API request to analyze invoice...", {}, "server");
-      const requestBody = buildInvoiceAnalysisRequest(profile, overrides);
+      const requestBody = buildAnalysisRequest("invoice", profile, overrides);
       const response = await fetchWithTimeout(
         `/rest/v1/invoices/${invoiceIdentifier}/analyze`,
         {

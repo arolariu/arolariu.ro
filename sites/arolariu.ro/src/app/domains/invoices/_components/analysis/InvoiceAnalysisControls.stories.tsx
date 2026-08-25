@@ -1,5 +1,5 @@
 import type {Meta, StoryObj} from "@storybook/react";
-import {resolveInvoiceCapabilities} from "@/types/invoices/Analysis";
+import {resolveAnalysisCapabilities} from "@/types/invoices/Analysis";
 import InvoiceAnalysisControls from "./InvoiceAnalysisControls";
 
 /**
@@ -18,7 +18,7 @@ const meta = {
   tags: ["autodocs"],
   args: {
     profile: "balanced",
-    value: resolveInvoiceCapabilities("balanced"),
+    value: resolveAnalysisCapabilities("invoice", "balanced"),
     onChange: () => undefined,
   },
   argTypes: {
@@ -43,7 +43,7 @@ export const Submitting: Story = {
 export const Disabled: Story = {
   args: {
     profile: "comprehensive",
-    value: resolveInvoiceCapabilities("comprehensive"),
+    value: resolveAnalysisCapabilities("invoice", "comprehensive"),
     disabled: true,
   },
 };
@@ -52,7 +52,7 @@ export const Disabled: Story = {
 export const Custom: Story = {
   args: {
     value: {
-      ...resolveInvoiceCapabilities("balanced"),
+      ...resolveAnalysisCapabilities("invoice", "balanced"),
       invoiceSummary: false,
     },
   },

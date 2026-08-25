@@ -175,6 +175,8 @@ public readonly record struct MerchantResponseDto(
   /// Referenced invoice identifiers and their count are restricted to the identifiers independently
   /// established as belonging to the authenticated caller. Audit principals are retained only when
   /// they identify that caller; unrelated identities are represented by <see cref="Guid.Empty"/>.
+  /// Additional metadata is omitted because the shared merchant document does not retain per-key
+  /// ownership provenance and therefore cannot safely distinguish caller-visible values.
   /// </remarks>
   /// <param name="merchant">The shared merchant document to project.</param>
   /// <param name="callerIdentifier">The authenticated caller identifier.</param>
@@ -208,7 +210,7 @@ public readonly record struct MerchantResponseDto(
       ParentCompanyId: merchant.ParentCompanyId,
       ReferencedInvoiceCount: visibleInvoiceIdentifiers.Count,
       ReferencedInvoiceIds: visibleInvoiceIdentifiers,
-      AdditionalMetadata: new Dictionary<string, string>(merchant.AdditionalMetadata),
+      AdditionalMetadata: new Dictionary<string, string>(),
       IsImportant: merchant.IsImportant,
       IsSoftDeleted: merchant.IsSoftDeleted,
       CreatedAt: merchant.CreatedAt,

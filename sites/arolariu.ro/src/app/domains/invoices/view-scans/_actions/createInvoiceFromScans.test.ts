@@ -28,6 +28,22 @@ import {createInvoiceFromScans} from "./createInvoiceFromScans";
 
 const mockUpdateScan = vi.mocked(updateScan);
 
+const INVOICE_ID_1 = "11111111-1111-4111-8111-111111111111";
+const INVOICE_ID_2 = "22222222-2222-4222-8222-222222222222";
+const INVOICE_ID_3 = "33333333-3333-4333-8333-333333333333";
+const BATCH_INVOICE_ID = "44444444-4444-4444-8444-444444444444";
+const SINGLE_BATCH_INVOICE_ID = "55555555-5555-4555-8555-555555555555";
+const USER_ID = "66666666-6666-4666-8666-666666666666";
+const EMPTY_GUID = "00000000-0000-0000-0000-000000000000";
+
+const invoiceIds = {
+  "invoice-1": INVOICE_ID_1,
+  "invoice-2": INVOICE_ID_2,
+  "invoice-3": INVOICE_ID_3,
+  "invoice-batch": BATCH_INVOICE_ID,
+  "invoice-single-batch": SINGLE_BATCH_INVOICE_ID,
+} as const;
+
 /**
  * Creates a test scan with default values
  */
@@ -59,16 +75,40 @@ function createTestScan(id: string, overrides: Partial<Scan> = {}): Scan {
 /**
  * Creates a mock invoice response
  */
-function createMockInvoice(id: string) {
+function createMockInvoice(alias: keyof typeof invoiceIds) {
+  const timestamp = "2026-06-03T20:00:00.000Z";
   return {
-    id,
-    userIdentifier: "test-user",
-    createdAt: new Date().toISOString(),
+    id: invoiceIds[alias],
+    userIdentifier: USER_ID,
+    sharedWith: [],
+    name: "",
+    description: "",
+    classification: null,
+    scans: [{type: InvoiceScanType.JPEG, location: "https://storage.test/invoice-scan.jpg"}],
     paymentInformation: {
-      transactionDate: new Date().toISOString(),
+      transactionDate: timestamp,
+      paymentType: 0,
       currency: {code: "USD", name: "US Dollar", symbol: "$"},
-      totalAmount: 100,
+      totalCostAmount: 100,
+      totalTaxAmount: 0,
+      subtotalAmount: 100,
+      tipAmount: 0,
     },
+    merchantReference: EMPTY_GUID,
+    items: [],
+    possibleRecipes: [],
+    additionalMetadata: {},
+    receiptType: "",
+    countryRegion: "",
+    taxDetails: [],
+    payments: [],
+    isImportant: false,
+    isSoftDeleted: false,
+    createdAt: timestamp,
+    createdBy: USER_ID,
+    lastUpdatedAt: timestamp,
+    lastUpdatedBy: USER_ID,
+    numberOfUpdates: 0,
   };
 }
 
@@ -104,6 +144,8 @@ describe("createInvoiceFromScans", () => {
       const result = await createInvoiceFromScans({scans, mode: "single"});
 
       expect(result.invoices).toHaveLength(2);
+      expect(result.invoices[0]?.createdAt).toBeInstanceOf(Date);
+      expect(result.invoices[0]?.paymentInformation.transactionDate).toBeInstanceOf(Date);
       expect(result.convertedScanIds).toEqual(["scan-1", "scan-2"]);
       expect(result.errors).toHaveLength(0);
       expect(mockFetch).toHaveBeenCalledTimes(2);
@@ -126,7 +168,7 @@ describe("createInvoiceFromScans", () => {
           status: "attached",
           attachedAt: expect.any(Date),
           attachedBy: "test-user-guid",
-          attachedTo: "invoice-1",
+          attachedTo: INVOICE_ID_1,
         },
         metadataRemove: ["detachedAt", "detachedBy", "detachedFrom", "archivedAt", "archivedBy"],
       });
@@ -136,7 +178,7 @@ describe("createInvoiceFromScans", () => {
           status: "attached",
           attachedAt: expect.any(Date),
           attachedBy: "test-user-guid",
-          attachedTo: "invoice-2",
+          attachedTo: INVOICE_ID_2,
         },
         metadataRemove: ["detachedAt", "detachedBy", "detachedFrom", "archivedAt", "archivedBy"],
       });
@@ -217,7 +259,7 @@ describe("createInvoiceFromScans", () => {
       const result = await createInvoiceFromScans({scans, mode: "batch"});
 
       expect(result.invoices).toHaveLength(1);
-      expect(result.invoices[0]?.id).toBe("invoice-batch");
+      expect(result.invoices[0]?.id).toBe(BATCH_INVOICE_ID);
       expect(result.convertedScanIds).toEqual(["scan-1", "scan-2", "scan-3"]);
       expect(result.errors).toHaveLength(0);
       expect(mockFetch).toHaveBeenCalledTimes(3);
@@ -250,7 +292,7 @@ describe("createInvoiceFromScans", () => {
           status: "attached",
           attachedAt: expect.any(Date),
           attachedBy: "test-user-guid",
-          attachedTo: "invoice-batch",
+          attachedTo: BATCH_INVOICE_ID,
         },
         metadataRemove: ["detachedAt", "detachedBy", "detachedFrom", "archivedAt", "archivedBy"],
       });
@@ -260,7 +302,7 @@ describe("createInvoiceFromScans", () => {
           status: "attached",
           attachedAt: expect.any(Date),
           attachedBy: "test-user-guid",
-          attachedTo: "invoice-batch",
+          attachedTo: BATCH_INVOICE_ID,
         },
         metadataRemove: ["detachedAt", "detachedBy", "detachedFrom", "archivedAt", "archivedBy"],
       });
@@ -270,7 +312,7 @@ describe("createInvoiceFromScans", () => {
           status: "attached",
           attachedAt: expect.any(Date),
           attachedBy: "test-user-guid",
-          attachedTo: "invoice-batch",
+          attachedTo: BATCH_INVOICE_ID,
         },
         metadataRemove: ["detachedAt", "detachedBy", "detachedFrom", "archivedAt", "archivedBy"],
       });
@@ -491,9 +533,10 @@ describe("createInvoiceFromScans", () => {
 
       expect(body.userIdentifier).toBe("test-user-guid");
       expect(body.initialScan.location).toBe("https://storage.test.com/scan-1.jpg");
-      expect(body.metadata.sourceScanId).toBe("scan-1");
-      expect(body.metadata.isImportant).toBe("false");
-      expect(body.metadata.requiresAnalysis).toBe("true");
+      expect(body.additionalMetadata.sourceScanId).toBe("scan-1");
+      expect(body.additionalMetadata.isImportant).toBe("false");
+      expect(body.additionalMetadata.requiresAnalysis).toBe("true");
+      expect(body).not.toHaveProperty("metadata");
     });
 
     it("should send correct payload for scan attachment", async () => {
@@ -513,7 +556,7 @@ describe("createInvoiceFromScans", () => {
 
       // Check attachment call (relative path — URL resolution happens inside real fetchWithTimeout)
       const attachCall = mockFetch.mock.calls[1];
-      expect(attachCall?.[0]).toBe("/rest/v1/invoices/invoice-batch/scans");
+      expect(attachCall?.[0]).toBe(`/rest/v1/invoices/${BATCH_INVOICE_ID}/scans`);
 
       const body = JSON.parse(attachCall?.[1]?.body as string);
       expect(body.type).toBe(InvoiceScanType.PNG);

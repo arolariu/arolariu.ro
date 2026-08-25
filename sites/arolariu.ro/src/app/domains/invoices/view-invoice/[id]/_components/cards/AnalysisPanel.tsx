@@ -17,8 +17,8 @@ import InvoiceAnalysisControls from "../../../../_components/analysis/InvoiceAna
 import QueuedAnalysisNotice from "../../../../_components/analysis/QueuedAnalysisNotice";
 import {useAnalysisSubmission} from "../../../../_hooks/analysis/useAnalysisSubmission";
 import {
-  buildInvoiceAnalysisRequest,
-  resolveInvoiceCapabilities,
+  buildAnalysisRequest,
+  resolveAnalysisCapabilities,
   type AnalysisProfile,
   type InvoiceAnalysisCapabilities,
 } from "@/types/invoices/Analysis";
@@ -51,7 +51,9 @@ export function AnalysisPanel(): React.JSX.Element | null {
   const {invoice} = useInvoiceContext();
 
   const [profile, setProfile] = useState<AnalysisProfile>("comprehensive");
-  const [capabilities, setCapabilities] = useState<InvoiceAnalysisCapabilities>(() => resolveInvoiceCapabilities("comprehensive"));
+  const [capabilities, setCapabilities] = useState<InvoiceAnalysisCapabilities>(() =>
+    resolveAnalysisCapabilities("invoice", "comprehensive"),
+  );
 
   const {status, messageId, errorMessage, submit, refreshNow} = useAnalysisSubmission({
     target: "invoice",
@@ -68,7 +70,7 @@ export function AnalysisPanel(): React.JSX.Element | null {
   }, []);
 
   const handleSubmit = useCallback(async (): Promise<void> => {
-    await submit(buildInvoiceAnalysisRequest(profile, capabilities));
+    await submit(buildAnalysisRequest("invoice", profile, capabilities));
   }, [profile, capabilities, submit]);
 
   // Panel is only relevant when the invoice has not yet been analysed (no items).

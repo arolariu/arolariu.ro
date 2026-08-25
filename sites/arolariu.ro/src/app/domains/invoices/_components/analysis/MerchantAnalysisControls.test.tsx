@@ -15,7 +15,7 @@ import {render, screen} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import {describe, expect, it, vi} from "vitest";
 import type {AnalysisProfile, MerchantAnalysisCapabilities} from "@/types/invoices/Analysis";
-import {resolveMerchantCapabilities} from "@/types/invoices/Analysis";
+import {resolveAnalysisCapabilities} from "@/types/invoices/Analysis";
 import MerchantAnalysisControls from "./MerchantAnalysisControls";
 
 describe("MerchantAnalysisControls", () => {
@@ -26,7 +26,7 @@ describe("MerchantAnalysisControls", () => {
     render(
       <MerchantAnalysisControls
         profile='fast'
-        value={resolveMerchantCapabilities("fast")}
+        value={resolveAnalysisCapabilities("merchant", "fast")}
         onChange={onChange}
       />,
     );
@@ -35,7 +35,7 @@ describe("MerchantAnalysisControls", () => {
     await userEvent.click(comprehensiveRadio);
 
     expect(onChange).toHaveBeenCalledTimes(1);
-    expect(onChange).toHaveBeenCalledWith("comprehensive", resolveMerchantCapabilities("comprehensive"));
+    expect(onChange).toHaveBeenCalledWith("comprehensive", resolveAnalysisCapabilities("merchant", "comprehensive"));
   });
 
   it("emits onChange with the balanced preset when the balanced profile radio is selected", async () => {
@@ -43,7 +43,7 @@ describe("MerchantAnalysisControls", () => {
     render(
       <MerchantAnalysisControls
         profile='fast'
-        value={resolveMerchantCapabilities("fast")}
+        value={resolveAnalysisCapabilities("merchant", "fast")}
         onChange={onChange}
       />,
     );
@@ -51,7 +51,7 @@ describe("MerchantAnalysisControls", () => {
     const balancedRadio = screen.getByRole("radio", {name: /profiles\.balanced/i});
     await userEvent.click(balancedRadio);
 
-    expect(onChange).toHaveBeenCalledWith("balanced", resolveMerchantCapabilities("balanced"));
+    expect(onChange).toHaveBeenCalledWith("balanced", resolveAnalysisCapabilities("merchant", "balanced"));
   });
 
   // ── 2. Custom indicator when diverged from preset ──────────────────────────
@@ -59,7 +59,7 @@ describe("MerchantAnalysisControls", () => {
   it("shows a Custom indicator when capabilities diverge from the selected profile preset", () => {
     // balanced preset: descriptionGeneration = true → pass false to trigger divergence
     const divergedValue: MerchantAnalysisCapabilities = {
-      ...resolveMerchantCapabilities("balanced"),
+      ...resolveAnalysisCapabilities("merchant", "balanced"),
       descriptionGeneration: false,
     };
 

@@ -23,6 +23,7 @@ import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {fetchWithTimeout} from "@/lib/utils.server";
 import {type CreateInvoiceDtoPayload, type CreateInvoiceScanDtoPayload, type Invoice} from "@/types/invoices";
+import {parseInvoiceCreationResponse} from "@/types/invoices/transport";
 import {type Scan, ScanMetadataStatus, ScanMetadataKey} from "@/types/scans";
 import {analyzeInvoice} from "../../_actions/invoices";
 import {updateScan} from "../../_actions/scans";
@@ -73,7 +74,7 @@ async function createSingleInvoice(scan: Scan, userIdentifier: string, authToken
         uploadedAt: scan.metadata.uploadedAt.toISOString(),
       },
     },
-    metadata: {
+    additionalMetadata: {
       isImportant: "false",
       requiresAnalysis: "true",
       sourceScanId: scan.id,
@@ -94,7 +95,8 @@ async function createSingleInvoice(scan: Scan, userIdentifier: string, authToken
     throw new Error(`Failed to create invoice: ${response.status} - ${errorText}`);
   }
 
-  return response.json() as Promise<Invoice>;
+  const responseBody: unknown = await response.json();
+  return parseInvoiceCreationResponse(responseBody);
 }
 
 /** Result type for invoice creation operations */

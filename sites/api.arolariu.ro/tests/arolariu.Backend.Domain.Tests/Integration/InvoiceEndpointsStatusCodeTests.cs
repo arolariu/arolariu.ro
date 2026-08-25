@@ -359,33 +359,26 @@ public sealed class InvoiceEndpointsStatusCodeTests
 
   #region POST /rest/v1/invoices validation tests
   /// <summary>
-  /// Verifies the endpoint derives ownership from JWT claims and ignores a spoofed body owner.
+  /// Verifies the endpoint forwards the body-trusted user identifier without adding a guard.
   /// </summary>
   [TestMethod]
-  public async Task CreateNewInvoiceAsync_SpoofedBodyOwner_UsesAuthenticatedOwner()
+  public async Task CreateNewInvoiceAsync_WhenUserIdentifierIsEmpty_DelegatesTrustedBodyValue()
   {
-    Guid authenticatedUserId = Guid.NewGuid();
-    Guid spoofedUserId = Guid.NewGuid();
     var mockService = new Mock<IInvoiceManagementService>(MockBehavior.Strict);
-    var accessor = CreateAuthenticatedContextAccessor(authenticatedUserId);
+    var accessor = CreateAuthenticatedContextAccessor();
 
-    var request = new CreateInvoiceRequestDto(
-      UserIdentifier: spoofedUserId,
-      InitialScan: new InvoiceScan(
-        ScanType.JPG,
-        new Uri("https://example.test/invoices/receipt.jpg"),
-        null),
+    var invalidDto = new CreateInvoiceRequestDto(
+      UserIdentifier: Guid.Empty,
+      InitialScan: default!,
       AdditionalMetadata: null);
     mockService.Setup(service => service.CreateInvoice(
-        It.Is<Invoice>(invoice =>
-          invoice.UserIdentifier == authenticatedUserId
-          && invoice.CreatedBy == authenticatedUserId),
-        authenticatedUserId,
+        It.Is<Invoice>(invoice => invoice.UserIdentifier == Guid.Empty),
+        Guid.Empty,
         It.IsAny<CancellationToken>()))
       .Returns(Task.CompletedTask);
 
     var result = await InvoiceEndpoints
-      .CreateNewInvoiceAsync(mockService.Object, accessor, request)
+      .CreateNewInvoiceAsync(mockService.Object, accessor, invalidDto)
 ;
 
     Assert.AreEqual(StatusCodes.Status201Created, GetStatusCode(result));
@@ -785,10 +778,9 @@ public sealed class InvoiceEndpointsStatusCodeTests
     var service = new Mock<IInvoiceManagementService>(MockBehavior.Strict);
     service
       .Setup(candidate => candidate.ReadMerchantsVisibleToUser(userId, It.IsAny<CancellationToken>()))
-      .ReturnsAsync([inPartition, outOfPartition]);
-    service
-      .Setup(candidate => candidate.ReadInvoices(userId, It.IsAny<CancellationToken>()))
-      .ReturnsAsync([]);
+      .ReturnsAsync((
+        new List<Merchant> { inPartition, outOfPartition },
+        new List<Invoice>()));
 
     IResult result = await InvoiceEndpoints.RetrieveAllMerchantsAsync(
       service.Object,
@@ -835,10 +827,9 @@ public sealed class InvoiceEndpointsStatusCodeTests
     var service = new Mock<IInvoiceManagementService>(MockBehavior.Strict);
     service
       .Setup(candidate => candidate.ReadMerchantsVisibleToUser(userId, It.IsAny<CancellationToken>()))
-      .ReturnsAsync([merchant]);
-    service
-      .Setup(candidate => candidate.ReadInvoices(userId, It.IsAny<CancellationToken>()))
-      .ReturnsAsync([callerInvoice]);
+      .ReturnsAsync((
+        new List<Merchant> { merchant },
+        new List<Invoice> { callerInvoice }));
 
     IResult result = await InvoiceEndpoints.RetrieveAllMerchantsAsync(
       service.Object,

@@ -309,8 +309,10 @@ public interface IInvoiceProcessingService
   /// </remarks>
   /// <param name="userIdentifier">The authenticated user whose invoices are inspected.</param>
   /// <param name="cancellationToken">Cancellation token to abort the operation (required).</param>
-  /// <returns>The distinct merchants referenced by the caller's invoices.</returns>
-  Task<IEnumerable<Merchant>> ReadMerchantsVisibleToUser(Guid userIdentifier, CancellationToken cancellationToken);
+  /// <returns>The distinct visible merchants and the caller-owned invoice snapshot used to derive them.</returns>
+  Task<(IReadOnlyCollection<Merchant> Merchants, IReadOnlyCollection<Invoice> Invoices)> ReadMerchantsVisibleToUser(
+    Guid userIdentifier,
+    CancellationToken cancellationToken);
   #endregion
 
   #region Update Merchant API

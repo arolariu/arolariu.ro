@@ -40,7 +40,7 @@ describe("domain builders", () => {
 
   it("builds current invoice action DTO payloads", () => {
     const createInvoicePayload = buildCreateInvoicePayload({
-      metadata: {
+      additionalMetadata: {
         isImportant: "true",
         requiresAnalysis: "true",
       },

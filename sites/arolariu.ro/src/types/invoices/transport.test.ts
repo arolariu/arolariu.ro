@@ -12,6 +12,7 @@ import {describe, expect, it} from "vitest";
 import {
   TransportValidationError,
   parseAnalysisAcceptedResponse,
+  parseInvoiceCreationResponse,
   parseInvoiceResponse,
   parseInvoicesResponse,
   parseMerchantResponse,
@@ -129,6 +130,27 @@ describe("parseInvoiceResponse", () => {
     const invoice = parseInvoiceResponse(validInvoiceJson);
     expect(invoice.name).toBe("Groceries");
     expect(invoice.classification?.code).toBe("01.1.1");
+  });
+
+  describe("parseInvoiceCreationResponse", () => {
+    it("accepts the empty name emitted before invoice enrichment", () => {
+      const invoice = parseInvoiceCreationResponse({...validInvoiceJson, name: ""});
+
+      expect(invoice.name).toBe("");
+      expect(invoice.createdAt).toBeInstanceOf(Date);
+    });
+
+    it("keeps regular invoice parsing strict for an empty name", () => {
+      expect(() => parseInvoiceResponse({...validInvoiceJson, name: ""})).toThrow(
+        new TransportValidationError("invoice.name", "expected non-empty string"),
+      );
+    });
+
+    it("still rejects a missing name from a creation response", () => {
+      const {name: _name, ...withoutName} = validInvoiceJson;
+
+      expect(() => parseInvoiceCreationResponse(withoutName)).toThrow(new TransportValidationError("invoice.name", "expected string"));
+    });
   });
 
   it("converts timestamps to real Date instances", () => {

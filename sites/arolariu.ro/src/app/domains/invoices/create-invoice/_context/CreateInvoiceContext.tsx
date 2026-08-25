@@ -302,7 +302,7 @@ export function CreateInvoiceProvider({children}: Readonly<CreateInvoiceProvider
             metadata: {},
           },
           // Metadata carries ONLY housekeeping flags — form data is NOT smuggled here
-          metadata: {
+          additionalMetadata: {
             isImportant: "false",
             requiresAnalysis: "true",
           },

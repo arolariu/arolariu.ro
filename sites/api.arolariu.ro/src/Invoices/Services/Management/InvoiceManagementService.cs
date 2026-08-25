@@ -424,12 +424,12 @@ public sealed partial class InvoiceManagementService : IInvoiceManagementService
   /// <summary>Reads the merchants referenced by the caller's own invoices through the unified Processing boundary.</summary>
   /// <param name="userIdentifier">The authenticated user whose invoices are inspected.</param>
   /// <param name="cancellationToken">The token used to cancel the query.</param>
-  /// <returns>The distinct merchants referenced by the caller's invoices.</returns>
+  /// <returns>The distinct visible merchants and the caller-owned invoice snapshot used to derive them.</returns>
   /// <exception cref="arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Management.InvoiceManagementDependencyException">
   /// Thrown when invoice or merchant persistence cannot complete the query.
   /// </exception>
   /// <inheritdoc/>
-  public async Task<IEnumerable<Merchant>> ReadMerchantsVisibleToUser(
+  public async Task<(IReadOnlyCollection<Merchant> Merchants, IReadOnlyCollection<Invoice> Invoices)> ReadMerchantsVisibleToUser(
     Guid userIdentifier,
     CancellationToken cancellationToken) =>
     await TryCatchAsync(async () =>

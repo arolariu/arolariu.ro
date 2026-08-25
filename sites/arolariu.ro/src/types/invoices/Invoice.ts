@@ -56,7 +56,7 @@ import type {RecipeSuggestion} from "./Recipe";
  * @example
  * ```typescript
  * const scan: InvoiceScan = {
- *   scanType: InvoiceScanType.PDF,
+ *   type: InvoiceScanType.PDF,
  *   location: "https://storage.arolariu.ro/invoices/doc.pdf",
  *   metadata: {}
  * };
@@ -83,7 +83,6 @@ const INVOICE_SCAN_TYPE = {
   TIFF: 7,
   /** HEIF image format */
   HEIF: 8,
-  // HEIC (9) removed: backend InvoiceScan.type only accepts values 0–8
 } as const;
 
 export {INVOICE_SCAN_TYPE as InvoiceScanType};
@@ -322,7 +321,7 @@ type SpecialMetadataKeys = "isImportant" | "requiresAnalysis";
  * - `initialScan`: At least one document scan to process
  *
  * **Metadata Handling:**
- * The `metadata` field accepts both reserved keys (`SpecialMetadataKeys`)
+ * The `additionalMetadata` field accepts both reserved keys (`SpecialMetadataKeys`)
  * and arbitrary string keys for extensibility. Reserved keys trigger
  * special backend behaviors.
  *
@@ -336,11 +335,11 @@ type SpecialMetadataKeys = "isImportant" | "requiresAnalysis";
  * const payload: CreateInvoiceDtoPayload = {
  *   userIdentifier: "user_abc123",
  *   initialScan: {
- *     scanType: InvoiceScanType.JPEG,
+ *     type: InvoiceScanType.JPEG,
  *     location: "https://cdn.arolariu.ro/uploads/receipt.jpg",
  *     metadata: {}
  *   },
- *   metadata: {
+ *   additionalMetadata: {
  *     isImportant: "true",
  *     requiresAnalysis: "true",
  *     source: "mobile-app"
@@ -361,9 +360,9 @@ export type CreateInvoiceDtoPayload = {
   readonly userIdentifier: string;
   /** The initial scan associated with the invoice. */
   readonly initialScan: InvoiceScan;
-  /** The metadata associated with the invoice. */
+  /** Additional metadata associated with the invoice. */
   // eslint-disable-next-line sonarjs/no-useless-intersection -- we want to allow extensibility.
-  readonly metadata: Record<SpecialMetadataKeys | (string & {}), string>;
+  readonly additionalMetadata: Record<SpecialMetadataKeys | (string & {}), string>;
 };
 
 /**

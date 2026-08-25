@@ -45,18 +45,6 @@ type ServerActionInputType = Readonly<{
 type ServerActionOutputType = ServerActionResult<Readonly<Invoice>>;
 
 /**
- * Resolves the safe user-facing message for a failed invoice patch request.
- *
- * @param status - HTTP status returned by the invoices API.
- * @returns A retry message for server failures, or an input message otherwise.
- */
-function getPatchFailureMessage(status: number): string {
-  return status >= 500
-    ? "A server error occurred. Please try again later."
-    : "Failed to update the invoice. Please check your input and try again.";
-}
-
-/**
  * Server action that performs a partial update (PATCH) on an invoice.
  *
  * @remarks
@@ -102,6 +90,8 @@ function getPatchFailureMessage(status: number): string {
 export async function patchInvoice({invoiceId, payload}: ServerActionInputType): ServerActionOutputType {
   console.info(">>> Executing server action {{patchInvoice}}, with:", {invoiceId, payload});
 
+  // Keep status-specific failure copy at the request site, as requested during review.
+  // eslint-disable-next-line sonarjs/cognitive-complexity
   return withSpan("api.actions.invoices.patchInvoice", async () => {
     try {
       // Step 0. Validate invoice identifier is valid GUID
@@ -157,7 +147,11 @@ export async function patchInvoice({invoiceId, payload}: ServerActionInputType):
       const errorText = await response.text();
       const internalMessage = `Failed to update invoice: ${response.status} ${response.statusText}`;
       logWithTrace("warn", internalMessage, {invoiceId, errorText}, "server");
-      return createErrorResult(new Error(internalMessage), getPatchFailureMessage(response.status));
+      const userMessage =
+        response.status >= 500
+          ? "A server error occurred. Please try again later."
+          : "Failed to update the invoice. Please check your input and try again.";
+      return createErrorResult(new Error(internalMessage), userMessage);
     } catch (error: unknown) {
       addSpanEvent("bff.request.patch-invoice.error");
       const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred";

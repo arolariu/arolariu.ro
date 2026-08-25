@@ -67,11 +67,47 @@ public sealed class InvoiceProcessingServiceCurrentArchitectureTests
       Mock.Of<IAnalysisOrchestrationService>(),
       NullLoggerFactory.Instance);
 
-    IEnumerable<Merchant> result = await service.ReadMerchantsVisibleToUser(
+    (IReadOnlyCollection<Merchant> merchants, IReadOnlyCollection<Invoice> invoiceSnapshot) =
+      await service.ReadMerchantsVisibleToUser(
       userId,
       CancellationToken.None);
 
-    Assert.AreSame(merchant, result.Single());
+    Assert.AreSame(merchant, merchants.Single());
+    CollectionAssert.AreEqual(invoices, invoiceSnapshot.ToList());
+    invoiceOrchestration.VerifyAll();
+    merchantOrchestration.VerifyAll();
+  }
+
+  /// <summary>Verifies an empty merchant reference set is delegated to the broker-backed orchestration.</summary>
+  [TestMethod]
+  public async Task ReadMerchantsVisibleToUser_NoMerchantReferences_DelegatesEmptyIdentifierSet()
+  {
+    Guid userId = Guid.NewGuid();
+    IReadOnlyCollection<Invoice> invoices =
+    [
+      new() { id = Guid.NewGuid(), UserIdentifier = userId, MerchantReference = Guid.Empty },
+    ];
+    var invoiceOrchestration = new Mock<IInvoiceOrchestrationService>(MockBehavior.Strict);
+    var merchantOrchestration = new Mock<IMerchantOrchestrationService>(MockBehavior.Strict);
+    invoiceOrchestration
+      .Setup(service => service.ReadAllInvoiceObjects(userId, It.IsAny<CancellationToken>()))
+      .ReturnsAsync(invoices);
+    merchantOrchestration
+      .Setup(service => service.ReadMerchantObjectsByIdentifiers(
+        It.Is<IReadOnlyCollection<Guid>>(identifiers => identifiers.Count == 0),
+        It.IsAny<CancellationToken>()))
+      .ReturnsAsync([]);
+    var service = new InvoiceProcessingService(
+      invoiceOrchestration.Object,
+      merchantOrchestration.Object,
+      Mock.Of<IAnalysisOrchestrationService>(),
+      NullLoggerFactory.Instance);
+
+    (IReadOnlyCollection<Merchant> merchants, IReadOnlyCollection<Invoice> invoiceSnapshot) =
+      await service.ReadMerchantsVisibleToUser(userId, CancellationToken.None);
+
+    Assert.IsEmpty(merchants);
+    CollectionAssert.AreEqual(invoices.ToList(), invoiceSnapshot.ToList());
     invoiceOrchestration.VerifyAll();
     merchantOrchestration.VerifyAll();
   }

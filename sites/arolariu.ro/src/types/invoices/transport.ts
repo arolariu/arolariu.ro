@@ -144,6 +144,14 @@ function parseNonEmptyStringField(record: Readonly<Record<string, unknown>>, fie
   return value;
 }
 
+function parseStringField(record: Readonly<Record<string, unknown>>, field: string, path: string): string {
+  const value = record[field];
+  if (typeof value !== "string") {
+    throw new TransportValidationError(`${path}.${field}`, "expected string");
+  }
+  return value;
+}
+
 function parseGuidField(record: Readonly<Record<string, unknown>>, field: string, path: string): string {
   const value = record[field];
   if (!isGuid(value)) {
@@ -544,7 +552,7 @@ function parsePaymentDetails(value: unknown, path: string): PaymentDetail[] {
  *
  * @throws {TransportValidationError} On any structural or type mismatch in the payload.
  */
-export function parseInvoiceResponse(value: unknown): Invoice {
+function parseInvoiceResponseInternal(value: unknown, allowEmptyName: boolean): Invoice {
   const path = "invoice";
   if (!isRecord(value)) throw new TransportValidationError(path, "expected object");
 
@@ -553,7 +561,7 @@ export function parseInvoiceResponse(value: unknown): Invoice {
   return {
     id: parseGuidField(value, "id", path),
     userIdentifier: parseGuidField(value, "userIdentifier", path),
-    name: parseNonEmptyStringField(value, "name", path),
+    name: allowEmptyName ? parseStringField(value, "name", path) : parseNonEmptyStringField(value, "name", path),
     description: parseOptionalStringField(value, "description", path),
     classification: parseStandardClassification(value["classification"] ?? null, `${path}.classification`),
     scans: parseArray(value["scans"], `${path}.scans`, parseScan),
@@ -575,6 +583,26 @@ export function parseInvoiceResponse(value: unknown): Invoice {
     isImportant: parseBooleanField(value, "isImportant", path),
     isSoftDeleted: parseBooleanField(value, "isSoftDeleted", path),
   };
+}
+
+/**
+ * Parses a regular invoice API response and requires a non-empty display name.
+ *
+ * @param value - The raw response body from an invoice API endpoint.
+ * @returns A validated {@link Invoice}.
+ */
+export function parseInvoiceResponse(value: unknown): Invoice {
+  return parseInvoiceResponseInternal(value, false);
+}
+
+/**
+ * Parses the response from invoice creation, where enrichment has not assigned a display name yet.
+ *
+ * @param value - The raw response body from `POST /rest/v1/invoices`.
+ * @returns A validated {@link Invoice}; `name` may be an empty string.
+ */
+export function parseInvoiceCreationResponse(value: unknown): Invoice {
+  return parseInvoiceResponseInternal(value, true);
 }
 
 /**

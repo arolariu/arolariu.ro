@@ -23,8 +23,8 @@
  * @remarks
  * The backend also has an internal `"custom"` profile that is derived server-side
  * whenever capability overrides are present in the request. Clients must **never**
- * request `"custom"` directly — use {@link buildInvoiceAnalysisRequest} or
- * {@link buildMerchantAnalysisRequest} which enforce this constraint.
+ * request `"custom"` directly — use {@link buildAnalysisRequest} which enforces
+ * this constraint.
  */
 const ANALYSIS_PROFILE = {
   Fast: "fast",
@@ -50,7 +50,7 @@ export type AnalysisProfile = (typeof ANALYSIS_PROFILE)[keyof typeof ANALYSIS_PR
  * when `recipeGeneration` is `true`. Use {@link applyInvoiceDependencyClosure}
  * to enforce dependency invariants before building the request.
  */
-export interface InvoiceAnalysisCapabilities {
+export type InvoiceAnalysisCapabilities = {
   /** Extract raw text and structure from the invoice document. */
   readonly documentExtraction: boolean;
   /** Generate a human-readable summary of the invoice. */
@@ -65,7 +65,7 @@ export interface InvoiceAnalysisCapabilities {
   readonly recipeGeneration: boolean;
   /** Maximum number of recipes to generate (1–3). Must be `0` when `recipeGeneration` is `false`. */
   readonly maximumRecipes: number;
-}
+};
 
 /**
  * Complete flat capability set for a merchant analysis request.
@@ -73,12 +73,12 @@ export interface InvoiceAnalysisCapabilities {
  * @remarks
  * All fields default to `false` for disabled capabilities.
  */
-export interface MerchantAnalysisCapabilities {
+export type MerchantAnalysisCapabilities = {
   /** Assign the merchant to a canonical category. */
   readonly merchantClassification: boolean;
   /** Generate a descriptive text passage about the merchant. */
   readonly descriptionGeneration: boolean;
-}
+};
 
 // ---------------------------------------------------------------------------
 // Request interfaces
@@ -92,7 +92,7 @@ export interface MerchantAnalysisCapabilities {
  * by `profile`. Fields absent from the body use the backend's preset defaults.
  * `maximumRecipes` is omitted entirely when `recipeGeneration` is not requested.
  */
-export interface InvoiceAnalysisRequest {
+export type InvoiceAnalysisRequest = {
   /** The base analysis profile to use. Never `"custom"`. */
   readonly profile: AnalysisProfile;
   /** Override: extract document structure. */
@@ -109,7 +109,7 @@ export interface InvoiceAnalysisRequest {
   readonly recipeGeneration?: boolean;
   /** Override: maximum number of recipes (1–3). Omitted when `recipeGeneration` is not requested. */
   readonly maximumRecipes?: number;
-}
+};
 
 /**
  * Wire-ready merchant analysis request DTO sent to the backend.
@@ -118,14 +118,27 @@ export interface InvoiceAnalysisRequest {
  * All capability fields are optional overrides relative to the preset defined
  * by `profile`. Fields absent from the body use the backend's preset defaults.
  */
-export interface MerchantAnalysisRequest {
+export type MerchantAnalysisRequest = {
   /** The base analysis profile to use. Never `"custom"`. */
   readonly profile: AnalysisProfile;
   /** Override: classify the merchant. */
   readonly merchantClassification?: boolean;
   /** Override: generate merchant description. */
   readonly descriptionGeneration?: boolean;
-}
+};
+
+/** Runtime analysis target used to preserve invoice/merchant type correlation. */
+export type AnalysisTarget = "invoice" | "merchant";
+
+type AnalysisCapabilitiesByTarget = {
+  readonly invoice: InvoiceAnalysisCapabilities;
+  readonly merchant: MerchantAnalysisCapabilities;
+};
+
+type AnalysisRequestByTarget = {
+  readonly invoice: InvoiceAnalysisRequest;
+  readonly merchant: MerchantAnalysisRequest;
+};
 
 // ---------------------------------------------------------------------------
 // Capability key tuples (enables UI to iterate without a second hard-coded list)
@@ -207,41 +220,35 @@ const MERCHANT_PRESETS: Readonly<Record<AnalysisProfile, MerchantAnalysisCapabil
   comprehensive: {merchantClassification: true, descriptionGeneration: true},
 };
 
+const ANALYSIS_PRESETS: {
+  readonly [TTarget in AnalysisTarget]: Readonly<Record<AnalysisProfile, AnalysisCapabilitiesByTarget[TTarget]>>;
+} = {
+  invoice: INVOICE_PRESETS,
+  merchant: MERCHANT_PRESETS,
+};
+
 // ---------------------------------------------------------------------------
 // Profile resolution
 // ---------------------------------------------------------------------------
 
 /**
- * Resolves an {@link AnalysisProfile} into its full {@link InvoiceAnalysisCapabilities} preset.
+ * Resolves an {@link AnalysisProfile} into the capability preset for an analysis target.
  *
+ * @param target - Runtime target that selects the matching capability contract.
  * @param profile - The requestable analysis profile to resolve.
- * @returns The complete capability set for the given profile, with all boolean
- *   fields and `maximumRecipes` explicitly set.
+ * @returns The complete capability set correlated with `target`.
  *
  * @example
  * ```typescript
- * const caps = resolveInvoiceCapabilities("fast");
+ * const caps = resolveAnalysisCapabilities("invoice", "fast");
  * // { documentExtraction: true, invoiceSummary: false, ... }
  * ```
  */
-export function resolveInvoiceCapabilities(profile: AnalysisProfile): InvoiceAnalysisCapabilities {
-  return INVOICE_PRESETS[profile];
-}
-
-/**
- * Resolves an {@link AnalysisProfile} into its full {@link MerchantAnalysisCapabilities} preset.
- *
- * @param profile - The requestable analysis profile to resolve.
- * @returns The complete capability set for the given profile.
- *
- * @example
- * ```typescript
- * const caps = resolveMerchantCapabilities("comprehensive");
- * // { merchantClassification: true, descriptionGeneration: true }
- * ```
- */
-export function resolveMerchantCapabilities(profile: AnalysisProfile): MerchantAnalysisCapabilities {
-  return MERCHANT_PRESETS[profile];
+export function resolveAnalysisCapabilities<TTarget extends AnalysisTarget>(
+  target: TTarget,
+  profile: AnalysisProfile,
+): AnalysisCapabilitiesByTarget[TTarget] {
+  return ANALYSIS_PRESETS[target][profile];
 }
 
 // ---------------------------------------------------------------------------
@@ -267,7 +274,7 @@ export function resolveMerchantCapabilities(profile: AnalysisProfile): MerchantA
  * @example
  * ```typescript
  * const closed = applyInvoiceDependencyClosure({
- *   ...resolveInvoiceCapabilities("fast"),
+ *   ...resolveAnalysisCapabilities("invoice", "fast"),
  *   allergenAssessment: true,
  * });
  * // closed.productClassification === true (pulled in by allergenAssessment)
@@ -360,7 +367,7 @@ export function isMerchantAnalysisCapabilitiesValid(capabilities: MerchantAnalys
  * @remarks
  * When `overrides` are present the effective capability set is computed as:
  * ```
- * applyInvoiceDependencyClosure({ ...resolveInvoiceCapabilities(profile), ...overrides })
+ * applyInvoiceDependencyClosure({ ...resolveAnalysisCapabilities("invoice", profile), ...overrides })
  * ```
  * Only fields that **differ from the preset** are included in the emitted body.
  * `maximumRecipes` is emitted only when the effective `recipeGeneration` is `true`
@@ -376,23 +383,20 @@ export function isMerchantAnalysisCapabilitiesValid(capabilities: MerchantAnalys
  *
  * @example
  * ```typescript
- * buildInvoiceAnalysisRequest("balanced");
+ * buildAnalysisRequest("invoice", "balanced");
  * // { profile: "balanced" }
  *
- * buildInvoiceAnalysisRequest("fast", { invoiceSummary: true });
+ * buildAnalysisRequest("invoice", "fast", { invoiceSummary: true });
  * // { profile: "fast", invoiceSummary: true }
  * ```
  */
-export function buildInvoiceAnalysisRequest(
-  profile: AnalysisProfile,
-  overrides?: Partial<InvoiceAnalysisCapabilities>,
-): InvoiceAnalysisRequest {
+function buildInvoiceAnalysisRequest(profile: AnalysisProfile, overrides?: Partial<InvoiceAnalysisCapabilities>): InvoiceAnalysisRequest {
   // No overrides (or empty overrides) → smallest legal body
   if (overrides === undefined || Object.keys(overrides).length === 0) {
     return {profile};
   }
 
-  const preset = resolveInvoiceCapabilities(profile);
+  const preset = resolveAnalysisCapabilities("invoice", profile);
   const effective = applyInvoiceDependencyClosure({...preset, ...overrides});
 
   // Collect only boolean capability fields that differ from the preset
@@ -434,14 +438,14 @@ export function buildInvoiceAnalysisRequest(
  *
  * @example
  * ```typescript
- * buildMerchantAnalysisRequest("fast");
+ * buildAnalysisRequest("merchant", "fast");
  * // { profile: "fast" }
  *
- * buildMerchantAnalysisRequest("fast", { descriptionGeneration: true });
+ * buildAnalysisRequest("merchant", "fast", { descriptionGeneration: true });
  * // { profile: "fast", descriptionGeneration: true }
  * ```
  */
-export function buildMerchantAnalysisRequest(
+function buildMerchantAnalysisRequest(
   profile: AnalysisProfile,
   overrides?: Partial<MerchantAnalysisCapabilities>,
 ): MerchantAnalysisRequest {
@@ -450,7 +454,7 @@ export function buildMerchantAnalysisRequest(
     return {profile};
   }
 
-  const preset = resolveMerchantCapabilities(profile);
+  const preset = resolveAnalysisCapabilities("merchant", profile);
 
   // Collect only capability fields that differ from the preset
   const diffFields: Partial<Record<MerchantCapabilityKey, boolean>> = {};
@@ -462,4 +466,32 @@ export function buildMerchantAnalysisRequest(
   }
 
   return {profile, ...diffFields};
+}
+
+/**
+ * Builds the smallest wire-ready request for an invoice or merchant analysis target.
+ *
+ * @remarks
+ * The runtime `target` discriminator is required because TypeScript generic
+ * parameters are erased at runtime. It keeps the selected capability overrides
+ * and returned request contract correlated without exposing duplicate builders.
+ *
+ * @param target - Analysis endpoint contract to build.
+ * @param profile - Requestable base profile.
+ * @param overrides - Optional capability overrides for the selected target.
+ * @returns A request DTO whose type matches `target`.
+ */
+export function buildAnalysisRequest<TTarget extends AnalysisTarget>(
+  target: TTarget,
+  profile: AnalysisProfile,
+  overrides?: Partial<AnalysisCapabilitiesByTarget[TTarget]>,
+): AnalysisRequestByTarget[TTarget];
+export function buildAnalysisRequest(
+  target: AnalysisTarget,
+  profile: AnalysisProfile,
+  overrides?: Partial<InvoiceAnalysisCapabilities> | Partial<MerchantAnalysisCapabilities>,
+): InvoiceAnalysisRequest | MerchantAnalysisRequest {
+  return target === "invoice"
+    ? buildInvoiceAnalysisRequest(profile, overrides as Partial<InvoiceAnalysisCapabilities> | undefined)
+    : buildMerchantAnalysisRequest(profile, overrides as Partial<MerchantAnalysisCapabilities> | undefined);
 }

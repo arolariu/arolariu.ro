@@ -33,7 +33,7 @@ describe("createInvoice", () => {
       initialScan: TestDataBuilder.build("invoiceScan", {
         location: "https://storage.test/scan.jpg",
       }),
-      metadata: {isImportant: "false", requiresAnalysis: "true"},
+      additionalMetadata: {isImportant: "false", requiresAnalysis: "true"},
     };
 
     const result = await createInvoice(payload);
@@ -61,7 +61,7 @@ describe("createInvoice", () => {
       initialScan: TestDataBuilder.build("invoiceScan", {
         location: "https://storage.test/scan.jpg",
       }),
-      metadata: {isImportant: "false", requiresAnalysis: "true"},
+      additionalMetadata: {isImportant: "false", requiresAnalysis: "true"},
     });
 
     await createInvoice(payload);
@@ -140,7 +140,7 @@ describe("createInvoice", () => {
   it("sends additionalMetadata instead of metadata on the wire", async () => {
     const payload = {
       initialScan: TestDataBuilder.build("invoiceScan", {location: "https://storage.test/scan.jpg"}),
-      metadata: {isImportant: "false", requiresAnalysis: "true"},
+      additionalMetadata: {isImportant: "false", requiresAnalysis: "true"},
     };
 
     await createInvoice(payload);
@@ -172,5 +172,22 @@ describe("createInvoice", () => {
     if (!result.success) {
       expect(result.error.code).toBe("VALIDATION_ERROR");
     }
+  });
+
+  it("accepts the backend's unenriched creation response with an empty name", async () => {
+    mockFetchWithTimeout.mockResolvedValue(
+      TestDataBuilder.jsonResponse(
+        TestDataBuilder.build("invoice", {
+          id: "11111111-1111-4111-8111-111111111111",
+          userIdentifier: "22222222-2222-4222-8222-222222222222",
+          merchantReference: "00000000-0000-0000-0000-000000000000",
+          name: "",
+        }),
+      ) as Awaited<ReturnType<typeof fetchWithTimeout>>,
+    );
+
+    const result = await createInvoice({});
+
+    expect(result).toMatchObject({success: true, data: {name: ""}});
   });
 });

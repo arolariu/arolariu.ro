@@ -89,28 +89,28 @@ describe("useInvoiceFilters", () => {
       expect(result.current.filters.amountMax).toBe(100);
     });
 
-    it("should parse comma-separated classification groups from URL param 'grp'", () => {
+    it("should parse repeated classification groups from URL param 'grp' without splitting labels containing commas", () => {
       // Arrange
-      const mockSearchParams = new URLSearchParams("?grp=Food+and+non-alcoholic+beverages,Transport");
+      const mockSearchParams = new URLSearchParams("?grp=Food%2C+beverages&grp=Transport");
       (useSearchParams as ReturnType<typeof vi.fn>).mockReturnValue(mockSearchParams);
 
       // Act
       const {result} = renderHook(() => useInvoiceFilters());
 
       // Assert
-      expect(result.current.filters.classificationGroups).toEqual(["Food and non-alcoholic beverages", "Transport"]);
+      expect(result.current.filters.classificationGroups).toEqual(["Food, beverages", "Transport"]);
     });
 
     it("should filter out empty strings from classification groups array", () => {
       // Arrange
-      const mockSearchParams = new URLSearchParams("?grp=Food+and+non-alcoholic+beverages,,Transport");
+      const mockSearchParams = new URLSearchParams("?grp=&grp=Transport");
       (useSearchParams as ReturnType<typeof vi.fn>).mockReturnValue(mockSearchParams);
 
       // Act
       const {result} = renderHook(() => useInvoiceFilters());
 
       // Assert
-      expect(result.current.filters.classificationGroups).toEqual(["Food and non-alcoholic beverages", "Transport"]);
+      expect(result.current.filters.classificationGroups).toEqual(["Transport"]);
     });
 
     it("should parse comma-separated payment types from URL param 'pay'", () => {
@@ -221,10 +221,10 @@ describe("useInvoiceFilters", () => {
       const {result} = renderHook(() => useInvoiceFilters());
 
       // Act
-      result.current.setFilters({classificationGroups: ["Food and non-alcoholic beverages", "Transport"]});
+      result.current.setFilters({classificationGroups: ["Food, beverages", "Transport"]});
 
       // Assert
-      expect(mockReplace).toHaveBeenCalledWith(expect.stringContaining("grp="), {scroll: false});
+      expect(mockReplace).toHaveBeenCalledWith(`${mockPathname}?grp=Food%2C+beverages&grp=Transport`, {scroll: false});
     });
 
     it("should remove param from URL when value is empty/null", () => {
@@ -405,7 +405,7 @@ describe("useInvoiceFilters", () => {
 
     it("should count classification groups filter", () => {
       // Arrange
-      const mockSearchParams = new URLSearchParams("?grp=Food+and+non-alcoholic+beverages,Transport");
+      const mockSearchParams = new URLSearchParams("?grp=Food+and+non-alcoholic+beverages&grp=Transport");
       (useSearchParams as ReturnType<typeof vi.fn>).mockReturnValue(mockSearchParams);
 
       // Act

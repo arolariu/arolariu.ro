@@ -241,6 +241,54 @@ describe("useAnalysisSubmission", () => {
 
       expect(mockRouter.refresh).not.toHaveBeenCalled();
     });
+
+    it("keeps reset state when an earlier in-flight submission completes", async () => {
+      let resolveSubmission!: (value: Awaited<ReturnType<typeof analyzeInvoice>>) => void;
+      const pendingSubmission = new Promise<Awaited<ReturnType<typeof analyzeInvoice>>>((resolve) => {
+        resolveSubmission = resolve;
+      });
+      mockAnalyzeInvoice.mockReturnValueOnce(pendingSubmission);
+
+      const {result} = renderHook(() => useAnalysisSubmission({target: "invoice", identifier: TEST_INVOICE_ID}));
+      let submission!: Promise<void>;
+
+      act(() => {
+        submission = result.current.submit(invoiceRequest);
+      });
+      act(() => {
+        result.current.reset();
+      });
+      resolveSubmission({success: true, data: TEST_MESSAGE_ID});
+      await act(async () => submission);
+
+      expect(result.current.status).toBe("idle");
+      expect(result.current.messageId).toBeNull();
+    });
+
+    it("ignores an invoice completion after the target changes to merchant", async () => {
+      let resolveSubmission!: (value: Awaited<ReturnType<typeof analyzeInvoice>>) => void;
+      const pendingSubmission = new Promise<Awaited<ReturnType<typeof analyzeInvoice>>>((resolve) => {
+        resolveSubmission = resolve;
+      });
+      mockAnalyzeInvoice.mockReturnValueOnce(pendingSubmission);
+
+      type TestProps = Readonly<{target: "invoice" | "merchant"}>;
+      const initialProps: TestProps = {target: "invoice"};
+      const {result, rerender} = renderHook(({target}: TestProps) => useAnalysisSubmission({target, identifier: TEST_INVOICE_ID}), {
+        initialProps,
+      });
+      let submission!: Promise<void>;
+
+      act(() => {
+        submission = result.current.submit(invoiceRequest);
+      });
+      rerender({target: "merchant"});
+      resolveSubmission({success: true, data: TEST_MESSAGE_ID});
+      await act(async () => submission);
+
+      expect(result.current.status).toBe("idle");
+      expect(result.current.messageId).toBeNull();
+    });
   });
 
   // ── 7. refreshNow() ─────────────────────────────────────────────────────────

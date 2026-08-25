@@ -50,13 +50,17 @@ export function InvoiceTabs(): React.JSX.Element {
             className={styles["tabsContent"]}>
             {invoice.possibleRecipes.length > 0 ? (
               <div className={styles["recipesGrid"]}>
-                {invoice.possibleRecipes.map((recipe, recipeIndex) => (
-                  <RecipeCard
-                    key={`${recipe.name}-${recipe.description}-${recipe.totalMinutes}-${recipe.servings}`}
-                    recipe={recipe}
-                    recipeIndex={recipeIndex}
-                  />
-                ))}
+                {invoice.possibleRecipes.map((recipe, recipeIndex) => {
+                  /* eslint-disable react/no-array-index-key -- Recipes have no persistent identifier; position is their duplicate-safe identity. */
+                  return (
+                    <RecipeCard
+                      key={`${recipe.name}-${recipe.description}-${recipe.totalMinutes}-${recipe.servings}-${recipeIndex}`}
+                      recipe={recipe}
+                      recipeIndex={recipeIndex}
+                    />
+                  );
+                  /* eslint-enable react/no-array-index-key */
+                })}
               </div>
             ) : (
               <div className={styles["emptyState"]}>

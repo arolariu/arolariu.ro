@@ -169,12 +169,12 @@ export type AllergenAssessmentStatus = (typeof ALLERGEN_ASSESSMENT_STATUS)[keyof
  * const ev: AllergenEvidence = { source: "productLabel", value: "contains wheat" };
  * ```
  */
-export interface AllergenEvidence {
+export type AllergenEvidence = {
   /** The evidence source (e.g. `"productLabel"`, `"barcodeDatabase"`). */
   readonly source: string;
   /** The raw value extracted from the source. */
   readonly value: string;
-}
+};
 
 /**
  * A single allergen signal for one EU-14 allergen code.
@@ -183,7 +183,7 @@ export interface AllergenEvidence {
  * Multiple signals may exist for the same allergen code when the pipeline
  * collected evidence from more than one source.
  */
-export interface AllergenSignal {
+export type AllergenSignal = {
   /** The EU-14 allergen code this signal corresponds to. */
   readonly code: AllergenCode;
   /** The strength of the evidence that raised this signal. */
@@ -192,7 +192,7 @@ export interface AllergenSignal {
   readonly confidence: number;
   /** Raw evidence items that produced this signal. */
   readonly evidence: readonly AllergenEvidence[];
-}
+};
 
 /**
  * Complete allergen assessment for one EU-14 allergen code.
@@ -204,12 +204,12 @@ export interface AllergenSignal {
  *
  * `isAllergenAssessment` enforces this invariant at the transport boundary.
  */
-export interface AllergenAssessment {
+export type AllergenAssessment = {
   /** The assessment outcome. */
   readonly status: AllergenAssessmentStatus;
   /** Signals that produced this assessment. Empty unless `status === "detected"`. */
   readonly signals: readonly AllergenSignal[];
-}
+};
 
 // --- Guard helpers (module-private) -----------------------------------------------
 

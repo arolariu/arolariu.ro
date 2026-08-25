@@ -30,6 +30,9 @@ public sealed partial class InvoiceProcessingService
 
   private delegate Task<IEnumerable<Merchant>> CallbackFunctionForTasksWithMerchantListReturn();
 
+  private delegate Task<(IReadOnlyCollection<Merchant> Merchants, IReadOnlyCollection<Invoice> Invoices)>
+    CallbackFunctionForTasksWithMerchantVisibilityReturn();
+
   private delegate Task<IDictionary<string, object>> CallbackFunctionForTasksWithMetadataReturn();
 
   private delegate Task<InvoiceScan> CallbackFunctionForTasksWithInvoiceScanReturn();
@@ -187,6 +190,24 @@ public sealed partial class InvoiceProcessingService
   }
 
   private async Task<IEnumerable<Merchant>> TryCatchAsync(CallbackFunctionForTasksWithMerchantListReturn callbackFunction)
+  {
+    try
+    {
+      return await callbackFunction().ConfigureAwait(false);
+    }
+    catch (OperationCanceledException)
+    {
+      // Cancellation is not a fault. Bare rethrow preserves the original stack trace.
+      throw;
+    }
+    catch (Exception exception)
+    {
+      throw Classify(exception);
+    }
+  }
+
+  private async Task<(IReadOnlyCollection<Merchant> Merchants, IReadOnlyCollection<Invoice> Invoices)> TryCatchAsync(
+    CallbackFunctionForTasksWithMerchantVisibilityReturn callbackFunction)
   {
     try
     {

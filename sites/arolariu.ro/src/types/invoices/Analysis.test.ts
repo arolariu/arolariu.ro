@@ -6,19 +6,17 @@
 import {describe, expect, it} from "vitest";
 import {
   applyInvoiceDependencyClosure,
-  buildInvoiceAnalysisRequest,
-  buildMerchantAnalysisRequest,
+  buildAnalysisRequest,
   isInvoiceAnalysisCapabilitiesValid,
-  resolveInvoiceCapabilities,
-  resolveMerchantCapabilities,
+  resolveAnalysisCapabilities,
 } from "./Analysis";
 
 // ---------------------------------------------------------------------------
-// resolveInvoiceCapabilities
+// resolveAnalysisCapabilities
 // ---------------------------------------------------------------------------
-describe("resolveInvoiceCapabilities", () => {
+describe("resolveAnalysisCapabilities", () => {
   it("fast preset returns exact expected shape", () => {
-    expect(resolveInvoiceCapabilities("fast")).toStrictEqual({
+    expect(resolveAnalysisCapabilities("invoice", "fast")).toStrictEqual({
       documentExtraction: true,
       invoiceSummary: false,
       productClassification: true,
@@ -30,14 +28,14 @@ describe("resolveInvoiceCapabilities", () => {
   });
 
   it("balanced preset enables invoiceSummary and allergenAssessment, leaves recipeGeneration false", () => {
-    const caps = resolveInvoiceCapabilities("balanced");
+    const caps = resolveAnalysisCapabilities("invoice", "balanced");
     expect(caps.invoiceSummary).toBe(true);
     expect(caps.allergenAssessment).toBe(true);
     expect(caps.recipeGeneration).toBe(false);
   });
 
   it("comprehensive preset enables recipeGeneration and sets maximumRecipes to 3", () => {
-    const caps = resolveInvoiceCapabilities("comprehensive");
+    const caps = resolveAnalysisCapabilities("invoice", "comprehensive");
     expect(caps.recipeGeneration).toBe(true);
     expect(caps.maximumRecipes).toBe(3);
   });
@@ -163,66 +161,66 @@ describe("isInvoiceAnalysisCapabilitiesValid", () => {
   });
 
   it("fast preset returns true", () => {
-    expect(isInvoiceAnalysisCapabilitiesValid(resolveInvoiceCapabilities("fast"))).toBe(true);
+    expect(isInvoiceAnalysisCapabilitiesValid(resolveAnalysisCapabilities("invoice", "fast"))).toBe(true);
   });
 });
 
 // ---------------------------------------------------------------------------
-// buildInvoiceAnalysisRequest
+// buildAnalysisRequest
 // ---------------------------------------------------------------------------
-describe("buildInvoiceAnalysisRequest", () => {
+describe("buildAnalysisRequest", () => {
   it("balanced profile with no overrides returns exactly {profile:'balanced'}", () => {
-    expect(buildInvoiceAnalysisRequest("balanced")).toStrictEqual({profile: "balanced"});
+    expect(buildAnalysisRequest("invoice", "balanced")).toStrictEqual({profile: "balanced"});
   });
 
   it("fast with invoiceSummary override emits profile and invoiceSummary", () => {
-    const req = buildInvoiceAnalysisRequest("fast", {invoiceSummary: true});
+    const req = buildAnalysisRequest("invoice", "fast", {invoiceSummary: true});
     expect(req.profile).toBe("fast");
     expect(req.invoiceSummary).toBe(true);
   });
 
   it("omits maximumRecipes when recipeGeneration is off", () => {
-    const req = buildInvoiceAnalysisRequest("fast");
+    const req = buildAnalysisRequest("invoice", "fast");
     expect(req).not.toHaveProperty("maximumRecipes");
   });
 
   it("never includes userIdentifier", () => {
-    const req = buildInvoiceAnalysisRequest("balanced");
+    const req = buildAnalysisRequest("invoice", "balanced");
     expect(req).not.toHaveProperty("userIdentifier");
   });
 
   it("never includes analysisOptions", () => {
-    const req = buildInvoiceAnalysisRequest("balanced");
+    const req = buildAnalysisRequest("invoice", "balanced");
     expect(req).not.toHaveProperty("analysisOptions");
   });
 
   it("profile is always one of the three requestable values, never 'custom'", () => {
     const profiles = ["fast", "balanced", "comprehensive"] as const;
     for (const p of profiles) {
-      expect(buildInvoiceAnalysisRequest(p).profile).toBe(p);
+      expect(buildAnalysisRequest("invoice", p).profile).toBe(p);
     }
   });
 });
 
 // ---------------------------------------------------------------------------
-// buildMerchantAnalysisRequest / resolveMerchantCapabilities
+// Merchant target
 // ---------------------------------------------------------------------------
-describe("buildMerchantAnalysisRequest", () => {
+describe("buildAnalysisRequest merchant target", () => {
   it("fast profile returns exactly {profile:'fast'}", () => {
-    expect(buildMerchantAnalysisRequest("fast")).toStrictEqual({profile: "fast"});
+    expect(buildAnalysisRequest("merchant", "fast")).toStrictEqual({profile: "fast"});
   });
 });
 
-describe("resolveMerchantCapabilities", () => {
+describe("resolveAnalysisCapabilities merchant target", () => {
   it("fast returns exactly {merchantClassification:true, descriptionGeneration:false}", () => {
-    expect(resolveMerchantCapabilities("fast")).toStrictEqual({
+    expect(resolveAnalysisCapabilities("merchant", "fast")).toStrictEqual({
       merchantClassification: true,
       descriptionGeneration: false,
     });
   });
 
   it("comprehensive returns {merchantClassification:true, descriptionGeneration:true}", () => {
-    expect(resolveMerchantCapabilities("comprehensive")).toStrictEqual({
+    expect(resolveAnalysisCapabilities("merchant", "comprehensive")).toStrictEqual({
       merchantClassification: true,
       descriptionGeneration: true,
     });

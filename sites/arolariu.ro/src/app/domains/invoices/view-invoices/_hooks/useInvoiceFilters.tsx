@@ -16,7 +16,7 @@ import {useCallback, useMemo} from "react";
  * @property dateTo - End date for date range filter (ISO string)
  * @property amountMin - Minimum amount for amount range filter
  * @property amountMax - Maximum amount for amount range filter
- * @property classificationGroups - Selected taxonomy root-group labels (comma-separated, URL key `grp`)
+ * @property classificationGroups - Selected taxonomy root-group labels (repeated URL key `grp`)
  * @property paymentTypes - Selected payment types (comma-separated enum values)
  * @property currencies - Selected ISO 4217 currency codes (comma-separated, URL key `cur`)
  * @property sortBy - Sort field. Defaults to `"date"`.
@@ -60,6 +60,15 @@ function setOptionalParameter(params: URLSearchParams, key: string, value: strin
   }
 }
 
+function setRepeatedParameters(params: URLSearchParams, key: string, values: readonly string[]): void {
+  params.delete(key);
+  for (const value of values) {
+    if (value.length > 0) {
+      params.append(key, value);
+    }
+  }
+}
+
 function setSortParameters(params: URLSearchParams, sortBy: FilterState["sortBy"], sortOrder: FilterState["sortOrder"]): void {
   if (sortBy !== null && sortOrder !== null && (sortBy !== "date" || sortOrder !== "desc")) {
     params.set("sortBy", sortBy);
@@ -87,7 +96,7 @@ function setSortParameters(params: URLSearchParams, sortBy: FilterState["sortBy"
  * - `to` (ISO date): End date for date range filter (e.g., `2026-03-28`)
  * - `min` (number): Minimum amount for amount range filter
  * - `max` (number): Maximum amount for amount range filter
- * - `grp` (comma-separated strings): Selected taxonomy root-group labels (e.g., `Food and non-alcoholic beverages`)
+ * - `grp` (repeated string): Selected taxonomy root-group labels (e.g., `grp=Food%2C+beverages&grp=Transport`)
  * - `pay` (comma-separated numbers): Selected payment type IDs (e.g., `200,300`)
  * - `sortBy` (string): Sort field - `date`, `amount`, `name`, or null for no sorting
  * - `sortOrder` (string): Sort direction - `asc`, `desc`, or null for no sorting
@@ -152,7 +161,7 @@ export function useInvoiceFilters(): UseInvoiceFiltersReturn {
    * **Parsing Strategy**:
    * - String params: Direct read with fallback to default
    * - Number params: Parse with `Number()`, use `null` if invalid/missing
-   * - Array params: Split comma-separated string, parse numbers, filter NaN values
+   * - Array params: Read repeated string keys or split comma-separated numeric values
    * - Date params: Store as ISO strings for URL compatibility
    * - Enum params: Cast to literal union types with validation
    */
@@ -163,11 +172,7 @@ export function useInvoiceFilters(): UseInvoiceFiltersReturn {
       dateTo: searchParams.get("to"),
       amountMin: searchParams.has("min") ? Number(searchParams.get("min")) : null,
       amountMax: searchParams.has("max") ? Number(searchParams.get("max")) : null,
-      classificationGroups:
-        searchParams
-          .get("grp")
-          ?.split(",")
-          .filter((g) => g.length > 0) ?? [],
+      classificationGroups: searchParams.getAll("grp").filter((group) => group.length > 0),
       paymentTypes:
         searchParams
           .get("pay")
@@ -215,7 +220,7 @@ export function useInvoiceFilters(): UseInvoiceFiltersReturn {
       setOptionalParameter(params, "to", merged.dateTo);
       setOptionalParameter(params, "min", merged.amountMin === null ? null : String(merged.amountMin));
       setOptionalParameter(params, "max", merged.amountMax === null ? null : String(merged.amountMax));
-      setOptionalParameter(params, "grp", merged.classificationGroups.join(","));
+      setRepeatedParameters(params, "grp", merged.classificationGroups);
       setOptionalParameter(params, "pay", merged.paymentTypes.join(","));
       setOptionalParameter(params, "cur", merged.currencies.join(","));
       setSortParameters(params, merged.sortBy, merged.sortOrder);

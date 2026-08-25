@@ -16,7 +16,7 @@ import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {validateStringIsGuidType} from "@/lib/utils.generic";
 import {createErrorResult, fetchWithTimeout, type ServerActionResult} from "@/lib/utils.server";
-import {buildMerchantAnalysisRequest, type AnalysisProfile, type MerchantAnalysisCapabilities} from "@/types/invoices/Analysis";
+import {buildAnalysisRequest, type AnalysisProfile, type MerchantAnalysisCapabilities} from "@/types/invoices/Analysis";
 import {parseAnalysisAcceptedResponse, tryParse} from "@/types/invoices/transport";
 
 type ServerActionInputType = Readonly<{
@@ -54,7 +54,7 @@ export async function analyzeMerchant({merchantIdentifier, profile, overrides}: 
 
       addSpanEvent("bff.merchant.analyze.start");
       logWithTrace("info", "Making API request to analyze merchant...", {merchantIdentifier}, "server");
-      const requestBody = buildMerchantAnalysisRequest(profile, overrides);
+      const requestBody = buildAnalysisRequest("merchant", profile, overrides);
       const response = await fetchWithTimeout(
         `/rest/v1/merchants/${merchantIdentifier}/analyze`,
         {

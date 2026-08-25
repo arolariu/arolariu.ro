@@ -1,5 +1,5 @@
 import type {Meta, StoryObj} from "@storybook/react";
-import {resolveMerchantCapabilities} from "@/types/invoices/Analysis";
+import {resolveAnalysisCapabilities} from "@/types/invoices/Analysis";
 import MerchantAnalysisControls from "./MerchantAnalysisControls";
 
 /**
@@ -18,7 +18,7 @@ const meta = {
   tags: ["autodocs"],
   args: {
     profile: "balanced",
-    value: resolveMerchantCapabilities("balanced"),
+    value: resolveAnalysisCapabilities("merchant", "balanced"),
     onChange: () => undefined,
   },
   argTypes: {
@@ -43,7 +43,7 @@ export const Submitting: Story = {
 export const Disabled: Story = {
   args: {
     profile: "comprehensive",
-    value: resolveMerchantCapabilities("comprehensive"),
+    value: resolveAnalysisCapabilities("merchant", "comprehensive"),
     disabled: true,
   },
 };
@@ -52,7 +52,7 @@ export const Disabled: Story = {
 export const Custom: Story = {
   args: {
     value: {
-      ...resolveMerchantCapabilities("balanced"),
+      ...resolveAnalysisCapabilities("merchant", "balanced"),
       descriptionGeneration: false,
     },
   },

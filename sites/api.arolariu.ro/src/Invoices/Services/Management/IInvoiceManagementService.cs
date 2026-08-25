@@ -192,8 +192,10 @@ public interface IInvoiceManagementService
   /// </remarks>
   /// <param name="userIdentifier">The authenticated user whose invoices are inspected.</param>
   /// <param name="cancellationToken">The token that cancels the asynchronous operation.</param>
-  /// <returns>The distinct merchants referenced by the caller's invoices.</returns>
-  Task<IEnumerable<Merchant>> ReadMerchantsVisibleToUser(Guid userIdentifier, CancellationToken cancellationToken);
+  /// <returns>The distinct visible merchants and the caller-owned invoice snapshot used to derive them.</returns>
+  Task<(IReadOnlyCollection<Merchant> Merchants, IReadOnlyCollection<Invoice> Invoices)> ReadMerchantsVisibleToUser(
+    Guid userIdentifier,
+    CancellationToken cancellationToken);
 
   /// <summary>Replaces client-editable state on an existing merchant.</summary>
   /// <param name="identifier">The persisted merchant identifier.</param>

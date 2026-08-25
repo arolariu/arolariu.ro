@@ -65,7 +65,7 @@ export default function MerchantDialog(): React.JSX.Element {
   } = useDialog("EDIT_INVOICE__MERCHANT");
 
   const merchant = payload;
-  const merchantClassification = merchant.classification?.officialLabel ?? "Unclassified";
+  const merchantClassification = merchant.classification?.officialLabel ?? t((m) => m.shared.invoices.classification.unclassified);
 
   return (
     <Dialog
