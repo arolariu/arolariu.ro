@@ -12,6 +12,8 @@ const SHELL_TOOLS = new Set([
 const DROP_SQL = /\bDROP\s+(?:DATABASE|TABLE)\b/i;
 const UNRESOLVED_TARGET =
 	/(?:\$\w+|\$\{[^}]+\}|\$\(|`|%[^%]+%|[*?]|^@\()/;
+const DYNAMIC_SHELL_VALUE =
+	/(?:\$\w+|\$\{[^}]+\}|\$\(|`|%[^%]+%|^@\()/;
 const COMMAND_SEPARATORS = new Set([
 	";",
 	"&",
@@ -354,6 +356,7 @@ function classifyGitPush(command, dialect) {
 			}
 			if (
 				token === "-f" ||
+				/^-[^-]*f/i.test(token) ||
 				token === "--force" ||
 				token === "--force-with-lease" ||
 				token.startsWith("--force-with-lease=")
@@ -393,15 +396,17 @@ function classifyGitPush(command, dialect) {
 		for (const refspec of refspecs) {
 			const forceRefspec = refspec.startsWith("+");
 			const deletionRefspec = refspec.startsWith(":");
-			if (
-				(globalForce || forceRefspec || deleteMode || deletionRefspec) &&
-				protectedDestination(refspec)
-			) {
+			const destructive =
+				globalForce || forceRefspec || deleteMode || deletionRefspec;
+			if (destructive && protectedDestination(refspec)) {
 				return {
 					permissionDecision: "deny",
 					permissionDecisionReason:
 						"Force-pushing or deleting main or preview is prohibited.",
 				};
+			}
+			if (destructive && DYNAMIC_SHELL_VALUE.test(refspec)) {
+				unresolvedForcedDestination = true;
 			}
 		}
 	}

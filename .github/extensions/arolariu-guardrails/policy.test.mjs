@@ -25,6 +25,10 @@ test("denies force pushes to protected branches", () => {
 		classify("git push origin preview --force-with-lease").permissionDecision,
 		"deny",
 	);
+	assert.equal(
+		classify("git push -uf origin main").permissionDecision,
+		"deny",
+	);
 });
 
 test("denies force-refspec pushes to protected destinations", () => {
@@ -80,6 +84,11 @@ test("does not intercept normal or feature-branch pushes", () => {
 
 test("asks when a forced push destination is implicit", () => {
 	assert.equal(classify("git push --force").permissionDecision, "ask");
+	assert.equal(
+		classify("branch=main; git push origin +HEAD:refs/heads/$branch")
+			.permissionDecision,
+		"ask",
+	);
 });
 
 test("denies recursive deletion of filesystem and repository roots", () => {
