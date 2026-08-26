@@ -1,68 +1,35 @@
 ---
-version: "1.0.0"
-lastUpdated: "2026-03-12"
-name: 'SvelteKit Standards'
-description: 'SvelteKit development guidelines for cv.arolariu.ro'
-applyTo: 'sites/cv.arolariu.ro/**/*.svelte, sites/cv.arolariu.ro/**/*.ts'
-lastReviewed: 2026-05-08
+name: CV Svelte
+description: Svelte and SvelteKit rules for the standalone CV site.
+applyTo: "sites/cv.arolariu.ro/**/*.svelte,sites/cv.arolariu.ro/**/*.ts"
 ---
 
-# SvelteKit Development Guidelines (cv.arolariu.ro)
+# CV Svelte
 
-## Instruction Contract
+## Scope
 
-### Scope
-Applies to SvelteKit code in `sites/cv.arolariu.ro/`.
+Owns Svelte behavior unique to the standalone CV site.
 
-### Mandatory Rules
-- This is a **standalone site** — do NOT import from `@arolariu/components` or other monorepo packages.
-- Use SvelteKit conventions with TypeScript (version in [AGENTS.md > Versions](../../AGENTS.md#versions)).
-- Deploy via Azure Static Web Apps adapter.
+## Required Inputs
 
-### Prohibited Actions
-- Do not add cross-dependencies to other monorepo packages.
-- Do not use React patterns — this is Svelte, not React.
-- Do not modify the Azure Static Web Apps adapter configuration without explicit user approval.
+- `sites/cv.arolariu.ro/AGENTS.md`
+- The current route/component and neighboring styles
 
-### Required Verification Commands
-```bash
-npm run build:cv
-```
+## Rules
 
----
+- Preserve static-first prerendering.
+- Do not import another monorepo package.
+- Use current Svelte runes and SvelteKit conventions already present nearby.
+- Keep state and effects local to the smallest component.
+- Preserve semantic HTML, keyboard behavior, and accessible names.
+- Keep portfolio interactions intentionally small.
+- Use the site's existing styling approach.
 
-## Quick Reference
+## Validation
 
-| Aspect | Value |
-|--------|-------|
-| **Framework** | SvelteKit (see [AGENTS.md > Versions](../../AGENTS.md#versions)) |
-| **Adapter** | Azure Static Web Apps |
-| **TypeScript** | Strict mode |
-| **Deployment** | https://cv.arolariu.ro |
-| **Dependencies** | Standalone (no cross-deps) |
+Run the CV build and the smallest relevant test.
 
----
+## Escalation
 
-## Architecture
-
-This is a personal CV/portfolio site with minimal complexity:
-
-```
-sites/cv.arolariu.ro/
-├── src/
-│   ├── routes/          # SvelteKit file-based routing
-│   │   ├── +page.svelte # Home page
-│   │   └── +layout.svelte
-│   ├── lib/             # Shared utilities
-│   └── app.html         # HTML template
-├── static/              # Static assets
-├── svelte.config.js     # SvelteKit config with Azure SWA adapter
-└── package.json
-```
-
-## Key Principles
-
-1. **Standalone** — This site has zero dependencies on the monorepo's component library or shared packages
-2. **Simple** — CV/portfolio content, minimal interactivity
-3. **Static-first** — Pre-rendered where possible via SvelteKit adapter
-4. **Azure SWA** — Deployed to Azure Static Web Apps, not App Service
+Ask before dependencies, deployment behavior, cross-package coupling, or a
+significant UX change.
