@@ -21,10 +21,11 @@ persistence boundaries.
 ## Rules
 
 ```text
-Endpoints -> Processing -> Orchestration -> Foundation -> Brokers
+Endpoints -> Management -> Processing -> Orchestration -> Foundation -> Brokers
 ```
 
 - Endpoints map protocol behavior and do not contain business logic.
+- Management is the endpoint/worker-facing application boundary.
 - Processing owns heavy or multi-stage workflows.
 - Orchestration coordinates Foundation services.
 - Foundation owns CRUD and domain validation.

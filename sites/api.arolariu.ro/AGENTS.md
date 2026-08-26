@@ -6,10 +6,11 @@ and Git rules. This file records only API architecture.
 ## The Standard
 
 ```text
-Endpoints -> Processing -> Orchestration -> Foundation -> Brokers
+Endpoints -> Management -> Processing -> Orchestration -> Foundation -> Brokers
 ```
 
-- Endpoints map HTTP and depend on Processing behavior.
+- Endpoints map HTTP and depend on the Management façade.
+- Management exposes application use cases and delegates to Processing.
 - Processing owns heavy computation and multi-stage workflows.
 - Orchestration coordinates Foundation services.
 - Foundation owns CRUD and domain validation.

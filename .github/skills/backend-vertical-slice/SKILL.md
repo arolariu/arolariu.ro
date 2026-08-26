@@ -1,6 +1,6 @@
 ---
 name: backend-vertical-slice
-description: Implement or extend an arolariu.ro API endpoint and its required The Standard service path. Use for bounded API behavior that needs endpoint, Processing/Orchestration/Foundation/Broker changes, DI, telemetry, XML docs, and MSTest coverage.
+description: Implement or extend an arolariu.ro API endpoint and its required The Standard service path. Use for bounded API behavior that needs endpoint, Management/Processing/Orchestration/Foundation/Broker changes, DI, telemetry, XML docs, and MSTest coverage.
 ---
 
 # Backend Vertical Slice
@@ -25,8 +25,9 @@ without explicit approval.
 
 1. Read root and API-local guides, C# and backend instructions, relevant RFCs,
    and one sibling vertical slice.
-2. Trace the current endpoint-to-broker path.
-3. Identify the highest existing layer that can own the behavior.
+2. Trace the current endpoint-to-Management-to-broker path.
+3. Identify the highest existing layer that can own the behavior; protocol
+   adapters consume Management contracts.
 4. Write the failing MSTest at that layer.
 5. Add only the required lower-layer behavior; do not scaffold unused layers.
 6. Keep Brokers logic-free and Foundation services independent.

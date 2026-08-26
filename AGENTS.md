@@ -162,10 +162,11 @@ page.tsx (Server Component)
 ### Backend
 
 ```text
-Endpoints -> Processing -> Orchestration -> Foundation -> Brokers
+Endpoints -> Management -> Processing -> Orchestration -> Foundation -> Brokers
 ```
 
 - Brokers are thin external-system wrappers with no business logic.
+- Management is the application façade consumed by endpoints and workers.
 - Foundation services do not call other Foundation services.
 - Services have at most two or three dependencies (Florance Pattern).
 - Service methods use the repository TryCatch and OpenTelemetry Activity

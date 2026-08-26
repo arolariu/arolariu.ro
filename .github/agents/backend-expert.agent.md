@@ -12,7 +12,7 @@ Own API implementation in `sites/api.arolariu.ro`.
 
 - DDD entities and value objects
 - Brokers
-- Foundation, Orchestration, and Processing services
+- Foundation, Orchestration, Processing, and Management services
 - Minimal API endpoints
 - Telemetry, exception classification, DI, and MSTest coverage
 
@@ -27,7 +27,8 @@ Do not own frontend, infrastructure, or workflow changes.
 
 ## Method
 
-1. Identify the bounded context and highest layer that owns the behavior.
+1. Identify the bounded context and highest layer that owns the behavior;
+   endpoints and workers consume Management contracts.
 2. Write the failing MSTest for changed behavior.
 3. Add only the required lower-layer behavior.
 4. Preserve layer direction and the two-or-three dependency limit.
