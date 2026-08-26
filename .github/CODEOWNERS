@@ -49,14 +49,13 @@ CLAUDE.md                              @arolariu
 .github/agents/**                      @arolariu
 .github/skills/**                      @arolariu
 .github/prompts/**                     @arolariu
+.github/extensions/**                  @arolariu
 .github/agent-governance/**            @arolariu
 .github/memory/**                      @arolariu
 
 # MCP server configs — modifying a server entry runs arbitrary commands
 # with your credentials on agent invocation. Higher-impact than markdown.
-.mcp.json                              @arolariu
 .copilot/mcp-config.json               @arolariu
-.claude/settings.json                  @arolariu
 
 # Configuration files
 package.json @arolariu
