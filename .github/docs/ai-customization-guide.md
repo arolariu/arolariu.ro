@@ -124,9 +124,9 @@ Canonical source overrides both.
 
 ## MCP
 
-`.copilot/mcp-config.json` is the maintained project MCP configuration for
-Copilot CLI. Inspect that file for the current server set rather than copying
-the list into documentation.
+`.github/mcp.json` is the maintained workspace MCP configuration for Copilot.
+Inspect that file for the current server set rather than copying the list into
+documentation.
 
 An MCP entry executes a package with the user's credentials. Adding,
 replacing, or broadening a server requires explicit approval and CODEOWNERS

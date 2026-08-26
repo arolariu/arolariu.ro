@@ -53,9 +53,9 @@ CLAUDE.md                              @arolariu
 .github/agent-governance/**            @arolariu
 .github/memory/**                      @arolariu
 
-# MCP server configs — modifying a server entry runs arbitrary commands
+# MCP server config — modifying a server entry runs arbitrary commands
 # with your credentials on agent invocation. Higher-impact than markdown.
-.copilot/mcp-config.json               @arolariu
+.github/mcp.json                       @arolariu
 
 # Configuration files
 package.json @arolariu

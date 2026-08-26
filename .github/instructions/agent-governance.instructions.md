@@ -1,7 +1,7 @@
 ---
 name: Agent Asset Governance
 description: Rules unique to repository AI instructions, agents, skills, prompts, extensions, memory, and Copilot configuration.
-applyTo: ".github/**/*.md,.github/extensions/**/*.mjs,.copilot/**/*.json"
+applyTo: ".github/**/*.md,.github/extensions/**/*.mjs,.github/memory/**/*.json,.github/mcp.json"
 ---
 
 # Agent Asset Governance

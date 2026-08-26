@@ -9,6 +9,7 @@ import {
 	dirname,
 	isAbsolute,
 	join,
+	matchesGlob,
 	relative,
 	resolve,
 } from "node:path";
@@ -82,6 +83,14 @@ function stringsIn(value) {
 		return Object.values(value).flatMap(stringsIn);
 	}
 	return [];
+}
+
+function scopeMatches(pattern, path) {
+	try {
+		return matchesGlob(path, pattern);
+	} catch {
+		return false;
+	}
 }
 
 function brokenLinkFindings(repositoryRoot, path) {
@@ -220,6 +229,43 @@ export function diagnoseAssets(repositoryRoot) {
 				);
 			}
 
+			if (
+				asset.type === "instruction" &&
+				basename(path) ===
+					"agent-governance.instructions.md"
+			) {
+				const patterns =
+					metadata.applyTo
+						?.split(",")
+						.map((value) => value.trim())
+						.filter(Boolean) ?? [];
+				const requiredPaths = [
+					".github/extensions/example/extension.mjs",
+					".github/memory/memory.json",
+					".github/mcp.json",
+				];
+				const missing = requiredPaths.filter(
+					(requiredPath) =>
+						!patterns.some((pattern) =>
+							scopeMatches(pattern, requiredPath),
+						),
+				);
+				if (missing.length > 0) {
+					findings.push(
+						finding(
+							"high",
+							"governance-scope-missing",
+							asset.path,
+							lineOf(
+								source,
+								source.indexOf("applyTo:"),
+							),
+							`Agent governance does not cover: ${missing.join(", ")}.`,
+						),
+					);
+				}
+			}
+
 			if (STALE_COMMAND.test(source)) {
 				const match = source.match(STALE_COMMAND);
 				findings.push(
@@ -292,6 +338,21 @@ export function diagnoseAssets(repositoryRoot) {
 					),
 				);
 			}
+		}
+
+		if (
+			asset.type === "client-config" &&
+			asset.path.startsWith(".copilot/")
+		) {
+			findings.push(
+				finding(
+					"high",
+					"unsupported-workspace-config",
+					asset.path,
+					1,
+					"Current Copilot workspace MCP configuration belongs at .github/mcp.json.",
+				),
+			);
 		}
 
 		const duplicateKey = `${asset.type}:${asset.name.toLowerCase()}`;

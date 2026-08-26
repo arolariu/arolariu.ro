@@ -108,7 +108,7 @@ function createFixtureRepository({
 		'import {joinSession} from "@github/copilot-sdk/extension";\n',
 	);
 	write(root, ".github/memory/memory.json", JSON.stringify(memory));
-	write(root, ".copilot/mcp-config.json", '{"mcpServers":{}}\n');
+	write(root, ".github/mcp.json", '{"mcpServers":{}}\n');
 
 	return root;
 }
@@ -274,6 +274,28 @@ test("diagnoseAssets reports metadata, scope, link, duplicate, and command drift
 	);
 	assert.ok(findings.some(({code}) => code === "broken-relative-link"));
 	assert.ok(findings.some(({code}) => code === "stale-command"));
+});
+
+test("diagnoseAssets requires governance scopes for extensions, memory, and MCP", () => {
+	const root = createFixtureRepository();
+	write(
+		root,
+		".github/instructions/agent-governance.instructions.md",
+		[
+			"---",
+			"name: Agent Governance",
+			"description: Agent asset rules",
+			'applyTo: ".github/**/*.md"',
+			"---",
+			"",
+		].join("\n"),
+	);
+
+	const findings = diagnoseAssets(root);
+
+	assert.ok(
+		findings.some(({code}) => code === "governance-scope-missing"),
+	);
 });
 
 test("resolveValidationContext reads commands from canonical AGENTS.md", () => {

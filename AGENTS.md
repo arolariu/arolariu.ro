@@ -294,8 +294,8 @@ sites/cv.arolariu.ro and sites/status.arolariu.ro remain standalone sites.
 | Extensions | `.github/extensions/` | Optional Copilot CLI acceleration |
 | Memory | `.github/memory/memory.json` | Durable, non-source-derived learned context |
 
-`CLAUDE.md` is a best-effort symlink to this file. Copilot CLI MCP configuration
-lives in `.copilot/mcp-config.json`.
+`CLAUDE.md` is a best-effort symlink to this file. Repository MCP configuration
+lives in `.github/mcp.json`.
 
 ## RFC Map
 

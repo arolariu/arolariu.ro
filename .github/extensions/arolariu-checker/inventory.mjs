@@ -100,6 +100,17 @@ export function inventoryAssets(repositoryRoot) {
 		});
 	}
 
+	const workspaceMcpPath = join(githubRoot, "mcp.json");
+	if (existsSync(workspaceMcpPath)) {
+		assets.push({
+			name: "mcp",
+			path: toRepositoryPath(
+				relative(repositoryRoot, workspaceMcpPath),
+			),
+			type: "client-config",
+		});
+	}
+
 	for (const path of filesIn(
 		join(repositoryRoot, ".copilot"),
 		(name) => name.endsWith(".json"),
