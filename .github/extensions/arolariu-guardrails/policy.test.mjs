@@ -38,6 +38,27 @@ test("denies force-refspec pushes to protected destinations", () => {
 	);
 });
 
+test("denies wildcard force-refspecs that can match protected branches", () => {
+	assert.equal(
+		classify("git push origin +refs/heads/*:refs/heads/*")
+			.permissionDecision,
+		"deny",
+	);
+	assert.equal(
+		classify(
+			"git push origin +refs/heads/feature/*:refs/heads/feature/*",
+		),
+		undefined,
+	);
+});
+
+test("denies mirror pushes because they force-update every remote ref", () => {
+	assert.equal(
+		classify("git push --mirror origin").permissionDecision,
+		"deny",
+	);
+});
+
 test("does not intercept normal or feature-branch pushes", () => {
 	assert.equal(
 		classify("git push origin refactor/ai-footprint-v2"),
@@ -71,6 +92,11 @@ test("denies recursive deletion of filesystem and repository roots", () => {
 		"deny",
 	);
 	assert.equal(classify("rm -rf /", "functions.bash").permissionDecision, "deny");
+	assert.equal(
+		classify('Remove-Item -Recurse -Force "C:\\repo"')
+			.permissionDecision,
+		"deny",
+	);
 });
 
 test("denies recursive deletion of a Copilot session root", () => {
@@ -132,6 +158,19 @@ test("asks for unresolved recursive targets", () => {
 		"ask",
 	);
 	assert.equal(classify("rm -rf ./tmp/*", "bash").permissionDecision, "ask");
+	assert.equal(
+		classify("Remove-Item -Recurse -Force $(Get-Location)")
+			.permissionDecision,
+		"ask",
+	);
+	assert.equal(
+		classify('rm -rf "$(pwd)"', "bash").permissionDecision,
+		"ask",
+	);
+	assert.equal(
+		classify("rm -rf `pwd`", "bash").permissionDecision,
+		"ask",
+	);
 });
 
 test("asks for destructive database operations", () => {

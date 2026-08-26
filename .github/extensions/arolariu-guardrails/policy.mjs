@@ -11,7 +11,7 @@ const SHELL_TOOLS = new Set([
 ]);
 const DROP_SQL = /\bDROP\s+(?:DATABASE|TABLE)\b/i;
 const UNRESOLVED_TARGET =
-	/(?:\$\w+|\$\{[^}]+\}|%[^%]+%|[*?]|^@\()/;
+	/(?:\$\w+|\$\{[^}]+\}|\$\(|`|%[^%]+%|[*?]|^@\()/;
 const COMMAND_SEPARATORS = new Set([
 	";",
 	"&",
@@ -73,7 +73,7 @@ function commandName(token) {
 	return token.replaceAll("\\", "/").split("/").at(-1).toLowerCase();
 }
 
-function lexCommand(command) {
+function lexCommand(command, dialect) {
 	const tokens = [];
 	let current = "";
 	let quote;
@@ -92,11 +92,22 @@ function lexCommand(command) {
 			if (character === quote) {
 				quote = undefined;
 			} else if (
+				dialect === "powershell" &&
+				character === "`" &&
+				index + 1 < command.length
+			) {
+				current += command[index + 1];
+				index += 1;
+			} else if (
+				dialect === "bash" &&
 				character === "\\" &&
 				quote === '"' &&
 				index + 1 < command.length
 			) {
-				current += command[index + 1];
+				const escaped = command[index + 1];
+				current += /[$`"\\\n]/.test(escaped)
+					? escaped
+					: `\\${escaped}`;
 				index += 1;
 			} else {
 				current += character;
@@ -132,8 +143,22 @@ function lexCommand(command) {
 			continue;
 		}
 
-		if (character === "\\" && index + 1 < command.length) {
-			current += character + command[index + 1];
+		if (
+			dialect === "powershell" &&
+			character === "`" &&
+			index + 1 < command.length
+		) {
+			current += command[index + 1];
+			index += 1;
+			continue;
+		}
+
+		if (
+			dialect === "bash" &&
+			character === "\\" &&
+			index + 1 < command.length
+		) {
+			current += command[index + 1];
 			index += 1;
 			continue;
 		}
@@ -252,8 +277,8 @@ function parseRm(arguments_) {
 	return {ambiguous: false, targets};
 }
 
-function recursiveDeletions(command) {
-	const {segments, unclosedQuote} = lexCommand(command);
+function recursiveDeletions(command, dialect) {
+	const {segments, unclosedQuote} = lexCommand(command, dialect);
 	const invocations = [];
 
 	for (const segment of segments) {
@@ -280,19 +305,29 @@ function recursiveDeletions(command) {
 	return invocations;
 }
 
+function wildcardMatches(pattern, value) {
+	const expression = pattern
+		.replaceAll(/[.+^${}()|[\]\\]/g, "\\$&")
+		.replaceAll("*", ".*")
+		.replaceAll("?", ".");
+	return new RegExp(`^${expression}$`, "i").test(value);
+}
+
 function protectedDestination(refspec) {
 	const normalized = refspec.replace(/^\+/, "");
 	const separator = normalized.lastIndexOf(":");
 	const destination =
 		separator >= 0 ? normalized.slice(separator + 1) : normalized;
-	const branch = destination
-		.replace(/^refs\/heads\//i, "")
-		.toLowerCase();
-	return branch === "main" || branch === "preview";
+	return [
+		"main",
+		"preview",
+		"refs/heads/main",
+		"refs/heads/preview",
+	].some((branch) => wildcardMatches(destination, branch));
 }
 
-function classifyGitPush(command) {
-	const {segments} = lexCommand(command);
+function classifyGitPush(command, dialect) {
+	const {segments} = lexCommand(command, dialect);
 	let unresolvedForcedDestination = false;
 
 	for (const segment of segments) {
@@ -308,6 +343,7 @@ function classifyGitPush(command) {
 
 		let deleteMode = false;
 		let globalForce = false;
+		let mirrorMode = false;
 		let skipNext = false;
 		const positionals = [];
 
@@ -329,6 +365,10 @@ function classifyGitPush(command) {
 				deleteMode = true;
 				continue;
 			}
+			if (token === "--mirror") {
+				mirrorMode = true;
+				continue;
+			}
 			if (GIT_OPTIONS_WITH_VALUE.has(token)) {
 				skipNext = true;
 				continue;
@@ -338,6 +378,13 @@ function classifyGitPush(command) {
 		}
 
 		const refspecs = positionals.slice(1);
+		if (mirrorMode) {
+			return {
+				permissionDecision: "deny",
+				permissionDecisionReason:
+					"Mirroring can force-update or delete main and preview and is prohibited.",
+			};
+		}
 		if (globalForce && refspecs.length === 0) {
 			unresolvedForcedDestination = true;
 			continue;
@@ -413,12 +460,20 @@ export function classifyToolCall({
 	repositoryRoot,
 	sessionRoot,
 }) {
-	if (!SHELL_TOOLS.has(toolAlias(toolName))) return undefined;
+	const alias = toolAlias(toolName);
+	if (!SHELL_TOOLS.has(alias)) return undefined;
 
 	const command = commandFrom(toolArgs);
 	if (!command) return undefined;
 
-	const gitPushDecision = classifyGitPush(command);
+	const dialect =
+		alias === "powershell" ||
+		((alias === "execute" || alias === "shell") &&
+			process.platform === "win32")
+			? "powershell"
+			: "bash";
+
+	const gitPushDecision = classifyGitPush(command, dialect);
 	if (gitPushDecision) return gitPushDecision;
 
 	if (DROP_SQL.test(command)) {
@@ -430,7 +485,7 @@ export function classifyToolCall({
 	}
 
 	let unresolvedDeletion = false;
-	for (const deletion of recursiveDeletions(command)) {
+	for (const deletion of recursiveDeletions(command, dialect)) {
 		if (deletion.ambiguous || deletion.targets.length === 0) {
 			unresolvedDeletion = true;
 			continue;
