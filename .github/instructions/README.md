@@ -42,6 +42,8 @@ Do not add version or review-date metadata.
 - Reference accepted RFCs rather than reproducing them.
 - Prefer concise invariants over tutorials and static implementation
   templates.
+- Put repeatable task execution in a skill; prompt files are local VS Code
+  shortcuts and are not used by Agent Host.
 - Follow `.github/agent-governance/operating-protocol.md`.
 
 ## Product References

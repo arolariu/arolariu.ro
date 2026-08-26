@@ -1,162 +1,171 @@
-# AI Customization Guide — arolariu.ro
+# AI Customization Guide
 
-> How to use and extend the AI-assisted development tools in this monorepo.
+This repository keeps Copilot guidance small, layered, and task-specific.
+Live source remains authoritative for behavior.
 
-## Overview
+## Supported Surfaces
 
-This repository includes a comprehensive AI customization layer for GitHub Copilot (VS Code, CLI, and coding agent), Claude Code, Cursor, and Windsurf. The system is organized into 6 asset types:
+First-class:
 
-| Asset Type | Location | Count | Auto-loaded? |
-|------------|----------|-------|-------------|
-| **Instructions** | `.github/instructions/*.instructions.md` | 12 | ✅ By file pattern |
-| **Agents** | `.github/agents/*.agent.md` | 6 | ✅ On invocation |
-| **Prompts** | `.github/prompts/*.prompt.md` | 9 | Manual (`@workspace /prompt`) |
-| **Skills** | `.github/skills/*/SKILL.md` | 4 | Manual (scaffolding) |
-| **Extensions** | `.github/extensions/*/extension.mjs` | 3 | ✅ Auto on CLI start |
-| **Governance** | `.github/agent-governance/*.md` | 2 | Referenced by instructions |
+- GitHub Copilot CLI
+- GitHub Copilot in Visual Studio Code
+- GitHub Copilot coding agent
 
----
+Best-effort:
 
-## Instructions (Auto-loaded by file pattern)
+- Clients that independently consume the root `CLAUDE.md` -> `AGENTS.md`
+  alias
 
-Instructions are automatically loaded when you edit files matching their `applyTo` glob pattern:
+Client-specific configuration is not duplicated for non-first-class clients.
 
-| Instruction | Applies To | Domain |
-|-------------|-----------|--------|
-| `frontend.instructions.md` | `sites/arolariu.ro/**` | Next.js, RSC, i18n |
-| `backend.instructions.md` | `**/*.cs, **/*.csproj` | DDD, The Standard |
-| `react.instructions.md` | `**/*.tsx, **/*.jsx` | React components, hooks |
-| `typescript.instructions.md` | `**/*.ts` | TypeScript strict mode |
-| `csharp.instructions.md` | `**/*.cs` | C# patterns |
-| `components.instructions.md` | `packages/components/**` | Shared UI library |
-| `bicep.instructions.md` | `**/*.bicep` | Azure IaC |
-| `workflows.instructions.md` | `.github/workflows/*.yml` | GitHub Actions |
-| `code-review.instructions.md` | `**` | Code review standards |
-| `python.instructions.md` | `sites/exp.arolariu.ro/**/*.py` | FastAPI, Ruff |
-| `svelte.instructions.md` | `sites/cv.arolariu.ro/**/*.svelte` | SvelteKit 2 |
-| `agent-governance.instructions.md` | `.github/**/*.md` | AI asset governance |
+## Authority Model
 
-**You don't need to do anything** — these load automatically based on what file you're editing.
+| Layer | Source | Responsibility |
+| --- | --- | --- |
+| Live behavior | Code and configuration | Current implementation |
+| Canonical repository contract | `AGENTS.md` | Versions, commands, architecture, safety, testing, Git |
+| Universal Copilot contract | `.github/copilot-instructions.md` | Autonomy, context, editing, verification, failure behavior |
+| Local context | Subproject `AGENTS.md` | Project-only paths, commands, architecture, exceptions |
+| File constraints | `.github/instructions/*.instructions.md` | Language and domain rules selected by path |
+| Task adapters | Agents, skills, prompts | Role routing and repeatable workflows |
+| Learned context | Memory | Durable facts not derivable from source |
 
----
+Accepted RFCs describe intent. Live code and configuration describe current
+behavior. Material drift is reported rather than hidden.
 
-## Agents (Specialized AI Personas)
+## Choosing an Agent, Skill, or Prompt
 
-Invoke agents for specialized tasks. In VS Code: `@workspace` then select an agent. In Copilot CLI: agents are available as custom agent types.
+| Need | Use |
+| --- | --- |
+| Repository-wide or path coding constraints | Instructions |
+| A domain-owned implementation or read-only review role | Agent |
+| A repeatable task workflow | Skill |
+| A short local VS Code slash command | Prompt |
+| Optional CLI runtime assistance | Extension |
+| Durable, non-source-derived learned context | Memory |
 
-| Agent | Specialty | When to Use |
-|-------|-----------|-------------|
-| `backend-expert` | .NET 10, DDD, The Standard | API endpoints, services, database |
-| `frontend-expert` | Next.js 16, React 19, TypeScript | Pages, components, state |
-| `code-reviewer` | Architecture compliance | PR reviews, code audits |
-| `docs-writer` | JSDoc (RFC 1002), XML docs (RFC 2004) | Documentation generation |
-| `full-stack-planner` | Cross-domain planning | Feature planning, architecture |
-| `infra-expert` | Azure Bicep, GitHub Actions | Infrastructure, CI/CD |
+Use the default agent for bounded work when no specialist ownership is needed.
+Do not author the same workflow in an agent, skill, and prompt.
 
----
+## Instructions
 
-## Prompts (Reusable Task Templates)
+Path instructions and their ownership are documented in
+[`instructions/README.md`](../instructions/README.md). They contain only rules
+unique to matching files and inherit the root contracts.
 
-Invoke with `@workspace /prompt` in VS Code or use directly in Copilot CLI:
+## Agents
 
-| Prompt | Purpose |
-|--------|---------|
-| `api-endpoint` | Scaffold a new API endpoint (The Standard layers) |
-| `new-page` | Scaffold a Next.js page (Island pattern) |
-| `unit-test` | Generate unit tests (Vitest or MSTest) |
-| `comment-standard` | Add JSDoc/XML documentation to code |
-| `fix-bug` | Systematic debugging workflow |
-| `extend-store` | Add state/actions to a Zustand store |
-| `upgrade-dependency` | Safe dependency upgrade with rollback |
-| `refactor` | Systematic refactoring with tests |
-| `migration` | Dependency/framework migration |
+| Agent | Responsibility |
+| --- | --- |
+| `backend-expert` | API implementation using DDD and The Standard |
+| `frontend-expert` | Website implementation using Next.js, React, i18n, and accessibility contracts |
+| `infra-expert` | Approved Azure Bicep and GitHub Actions work |
+| `code-reviewer` | Evidence-based read-only diff review |
+| `full-stack-planner` | Read-only website/API implementation planning |
 
----
+Agents inherit the active surface model unless a future task has a specific,
+verified reason to pin one.
 
-## Skills (Scaffolding with Templates)
+## Skills
 
-Skills generate complete file structures for common patterns:
+Portable workflows in `.github/skills/`:
 
-| Skill | What It Creates |
-|-------|----------------|
-| `ddd-service` | Complete DDD service (Broker + Foundation + Processing + Tests) |
-| `react-component` | React component with types, tests, and accessibility |
-| `i18n-page` | Internationalized page with en/ro/fr translations |
-| `zustand-store` | Zustand store with IndexedDB persistence and tests |
+- `backend-vertical-slice`
+- `nextjs-page`
+- `react-component`
+- `zustand-store`
+- `unit-test`
+- `fix-bug`
+- `dependency-migration`
+- `documentation`
+- `refactor`
 
----
+Skills inspect current sibling source before prescribing structure. They work
+across Copilot CLI, VS Code, and Copilot coding agent.
 
-## CLI Extensions (Active Session Enhancements)
+## VS Code Prompt Shortcuts
 
-These run automatically in every Copilot CLI session:
+Local prompt shortcuts in `.github/prompts/`:
 
-| Extension | What It Does |
-|-----------|-------------|
-| `arolariu-context` | Injects live version numbers and RFC references per domain |
-| `arolariu-guardrails` | Blocks destructive commands, detects `any` types, enforces styling best practices |
-| `arolariu-workflow` | Custom tools: `arolariu_lookup_rfc`, `arolariu_check_project_health`, `arolariu_list_stores` |
+- `api-endpoint`
+- `new-page`
+- `fix-bug`
+- `unit-test`
 
----
+Each shortcut collects input and delegates to one skill. Agent Host and cloud
+tasks do not use prompt files; put portable workflow behavior in a skill.
 
-## Subdirectory AGENTS.md Files
+## Copilot CLI Extensions
 
-Each major project has its own focused `AGENTS.md`:
+Project extensions are optional interactive CLI accelerators:
 
-| Directory | Focus |
-|-----------|-------|
-| `sites/arolariu.ro/AGENTS.md` | Next.js frontend patterns |
-| `sites/api.arolariu.ro/AGENTS.md` | .NET backend patterns |
-| `packages/components/AGENTS.md` | Component library rules |
-| `sites/exp.arolariu.ro/AGENTS.md` | Python/FastAPI patterns |
-| `sites/cv.arolariu.ro/AGENTS.md` | SvelteKit standalone rules |
+| Extension | Responsibility |
+| --- | --- |
+| `arolariu-context` | Adds bounded pointers to relevant live repository context |
+| `arolariu-guardrails` | Adds defense-in-depth for a narrow set of destructive operations |
+| `arolariu-checker` | Exposes read-only inventory, diagnostics, and validation guidance |
 
----
+Static instructions remain complete when extensions fail. Native Copilot
+permissions remain authoritative.
 
-## Governance
+Extension source is not runtime health evidence. Inspect the loaded extension
+and its log. Non-interactive `--prompt` mode can load zero project extensions,
+so use an interactive CLI session for runtime checks.
 
-All AI assets follow the [Agent Governance Contract](../copilot-instructions.md#agent-governance-contract-mandatory):
+## Memory
 
-1. **Task Intake** — Identify scope and assumptions
-2. **Policy Gate** — Enforce security and architecture constraints
-3. **RFC Grounding** — Consult `docs/rfc/` for architecture changes
-4. **Verification** — Evidence-based completion
-5. **Uncertainty Reporting** — Disclose risks and assumptions
+`.github/memory/memory.json` is reserved for durable, actionable context that
+cannot be derived from tracked source. Do not store versions, commands, counts,
+architecture snapshots, discoverable paths, task state, secrets, or personal
+data.
 
-Protocols:
-- `agent-governance/rfc-grounding-protocol.md` — When and how to consult RFCs
-- `agent-governance/self-audit-protocol.md` — Pre-completion verification checklist
+Copilot's server-side memory is separate from the file-based MCP memory store.
+Canonical source overrides both.
 
----
+## MCP
 
-## Adding New Assets
+`.copilot/mcp-config.json` is the maintained project MCP configuration for
+Copilot CLI. Inspect that file for the current server set rather than copying
+the list into documentation.
 
-### New Instruction File
-1. Create `.github/instructions/<name>.instructions.md`
-2. Add YAML frontmatter with `applyTo` glob pattern
-3. Include Instruction Contract section (scope, rules, verification)
+An MCP entry executes a package with the user's credentials. Adding,
+replacing, or broadening a server requires explicit approval and CODEOWNERS
+review.
 
-### New Agent
-1. Create `.github/agents/<name>.agent.md`
-2. Define persona, expertise, tools, and constraints
-3. Reference relevant RFCs and instruction files
+## Event-Driven Maintenance
 
-### New Extension
-1. Run: `mkdir .github/extensions/<name>`
-2. Create `extension.mjs` using `@github/copilot-sdk`
-3. Reload: `/clear` or `extensions_reload`
+The change that invalidates guidance owns its update:
 
----
+| Trigger | Update |
+| --- | --- |
+| Runtime/framework version | Root `AGENTS.md` version table |
+| Build/test command | Root command contract and the invoking skill |
+| Architecture/RFC | Owning RFC and affected path instruction |
+| Copilot schema/capability | Affected agent, skill, prompt, or extension |
+| Repeated agent mistake | Source pattern or one narrow owning rule |
+| Extension failure | That extension and troubleshooting guidance |
+| First-class surface change | This guide and that surface's adapter |
 
-## MCP Servers
+Do not add calendar review metadata or copy corrections across unrelated
+assets.
 
-The `.mcp.json` configures 7 MCP servers for enhanced AI capabilities:
+## Adding or Changing Assets
 
-| Server | Package | Capability |
-|--------|---------|-----------|
-| `sequential-thinking` | `@modelcontextprotocol/server-sequential-thinking` | Multi-step reasoning and planning |
-| `playwright` | `@playwright/mcp` | Browser automation for E2E testing |
-| `memory` | `@modelcontextprotocol/server-memory` | Persistent knowledge graph (→ `.github/memory/memory.json`) |
-| `github` | `github-mcp` | GitHub PRs, issues, actions, code search |
-| `context7` | `@upstash/context7-mcp` | Live library/framework documentation (say "use context7") |
-| `filesystem` | `@modelcontextprotocol/server-filesystem` | Structured file ops (scoped to src/, docs/, infra/) |
-| `azure-devops` | `@azure-devops/mcp` | Azure DevOps work items, builds, repos, wikis |
+1. Identify the single owning asset type.
+2. Read `.github/agent-governance/operating-protocol.md`.
+3. Use current product documentation for frontmatter or SDK changes.
+4. Reference canonical facts instead of copying them.
+5. Validate links, metadata, and runtime behavior where applicable.
+6. Keep CODEOWNERS coverage for security-sensitive paths.
+
+## Troubleshooting
+
+| Problem | Action |
+| --- | --- |
+| Extension source exists but no tool/hook appears | Inspect extension runtime status and its process log |
+| Extension reports `Hook processor is not configured` | Confirm the active CLI binary is current, fully exit stale host sessions, and retry in an interactive session |
+| `copilot update` succeeds but `/restart` keeps the old binary | Check `copilot --version`; fully exit and relaunch the installed binary because supervised hosts can retain their bundled process |
+| Checker tool unavailable in `--prompt` mode | Use interactive CLI; prompt mode does not expose project extensions |
+| Skill does not load | Ensure directory name matches frontmatter `name` and the description states when to use it |
+| Prompt does not run in cloud/Agent Host | Move workflow behavior to a skill; prompts are local VS Code shortcuts |
+| Guidance conflicts with source | Follow source for current behavior and report RFC/guidance drift |
