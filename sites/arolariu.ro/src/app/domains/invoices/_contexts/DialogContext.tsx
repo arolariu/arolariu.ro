@@ -40,7 +40,7 @@
 
 import type {Invoice, InvoiceScan, Merchant, Product, RecipeSuggestion} from "@/types/invoices";
 import type {CachedScan} from "@/types/scans";
-import {createContext, use, useCallback, useMemo, useRef, useState, type ReactNode} from "react";
+import {createContext, use, useCallback, useEffect, useMemo, useRef, useState, type ReactNode} from "react";
 
 /**
  * Union type representing all 27 dialog types across the invoices domain.
@@ -305,7 +305,10 @@ export function useDialog<T extends Exclude<DialogType, null>>(
   const state = use(DialogStateContext);
   const actions = use(DialogActionsContext);
   const payloadRef = useRef(dialogPayload);
-  payloadRef.current = dialogPayload;
+  // Keep open stable while refreshing the payload it dispatches after each render.
+  useEffect(() => {
+    payloadRef.current = dialogPayload;
+  });
   const open = useCallback(() => {
     if (actions === undefined) {
       throw new Error("useDialog must be used within a DialogProvider");

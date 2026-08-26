@@ -18,6 +18,26 @@ type Props = {
 };
 
 /**
+ * Splits message content into individually keyed lines.
+ *
+ * @remarks
+ * Derives each line's key from its own text plus an occurrence counter
+ * (rather than its array position), so duplicate lines remain uniquely
+ * identifiable without relying on array index as a React key.
+ *
+ * @param content - The raw message content, potentially spanning multiple lines.
+ * @returns Line texts paired with stable, content-derived keys.
+ */
+function getContentLines(content: string): {key: string; text: string}[] {
+  const occurrences = new Map<string, number>();
+  return content.split("\n").map((text) => {
+    const occurrence = occurrences.get(text) ?? 0;
+    occurrences.set(text, occurrence + 1);
+    return {key: `${text}::${occurrence}`, text};
+  });
+}
+
+/**
  * This function renders a list of messages in a chat interface.
  * Each message is displayed with an avatar, timestamp, and content.
  * @returns The rendered message list.
@@ -56,11 +76,11 @@ export function MessageList({messages}: Readonly<Props>): React.JSX.Element {
               <span className={styles["messageTimestamp"]}>{formatDateTime(message.timestamp, locale, {timeStyle: "short"})}</span>
             </div>
             <div className={styles["messageContent"]}>
-              {message.content.split("\n").map((line, lineIndex) => (
+              {getContentLines(message.content).map((line) => (
                 <p
-                  key={`${message.id}-line-${lineIndex}`}
+                  key={`${message.id}-${line.key}`}
                   className={styles["messageLine"]}>
-                  {line}
+                  {line.text}
                 </p>
               ))}
             </div>

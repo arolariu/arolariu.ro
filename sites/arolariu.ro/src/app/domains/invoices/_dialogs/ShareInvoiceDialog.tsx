@@ -272,7 +272,7 @@ export default function ShareInvoiceDialog(): React.JSX.Element | null {
    * Sends an email invitation to share the invoice privately through the shared hook.
    */
   const handleSendEmail = useCallback(
-    async (event: React.FormEvent<HTMLFormElement>) => {
+    async (event: React.SubmitEvent<HTMLFormElement>) => {
       event.preventDefault();
       if (invoice === null) {
         throw new Error("Cannot share an invoice before the dialog payload is available.");

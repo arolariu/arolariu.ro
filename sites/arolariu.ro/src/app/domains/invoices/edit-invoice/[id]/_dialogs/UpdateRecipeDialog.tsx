@@ -22,6 +22,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  FieldError,
   Input,
   Label,
   Select,
@@ -120,6 +121,22 @@ function updateStepRows(rows: StepRow[], rowIdentifier: string, field: StepField
   return rows.map((row) => (row.id === rowIdentifier ? {...row, [field]: value} : row));
 }
 
+function getValidationMessageId(message: string | undefined, identifier: string): string | undefined {
+  if (!isRecipeText(message)) return undefined;
+  return identifier;
+}
+
+function getTotalMinutesErrorId(errors: Readonly<Record<string, string>>, prefix: string): string | undefined {
+  const minutesErrorId = getValidationMessageId(errors["minutes"], `${prefix}-minutes-error`);
+  if (minutesErrorId !== undefined) return minutesErrorId;
+  return getValidationMessageId(errors["totalMinutes"], `${prefix}-total-error`);
+}
+
+function getIngredientQuantityErrorId(row: IngredientRow, message: string | undefined, identifier: string): string | undefined {
+  if (!isRecipeText(message) || !isRecipeText(row.name) || isRecipeText(row.quantity)) return undefined;
+  return identifier;
+}
+
 const ALL_ALLERGEN_CODES = Object.values(AllergenCode);
 
 export default function UpdateRecipeDialog(): React.JSX.Element {
@@ -148,6 +165,7 @@ export default function UpdateRecipeDialog(): React.JSX.Element {
   const [steps, setSteps] = useState<StepRow[]>(() => stepRowsFrom(recipe?.steps));
   const [allergens, setAllergens] = useState<AllergenCode[]>(() => [...(recipe?.allergenWarnings ?? [])]);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const totalMinutesErrorId = getTotalMinutesErrorId(errors, "recipe-update");
 
   const validate = useCallback((): boolean => {
     const newErrors: Record<string, string> = {};
@@ -333,17 +351,14 @@ export default function UpdateRecipeDialog(): React.JSX.Element {
               onChange={handleNameChange}
               placeholder={t((m) => m.dialogs.invoices.recipeDialog.placeholders.recipeName)}
               required
-              aria-invalid={errors["name"] ? true : undefined}
-              aria-describedby={errors["name"] ? "recipe-update-name-error" : undefined}
+              aria-invalid={errors["name"] !== undefined}
+              aria-describedby={getValidationMessageId(errors["name"], "recipe-update-name-error")}
             />
-            {errors["name"] === undefined ? null : (
-              <p
-                id='recipe-update-name-error'
-                className={styles["errorText"]}
-                role='alert'>
-                {errors["name"]}
-              </p>
-            )}
+            <FieldError
+              id='recipe-update-name-error'
+              className={styles["errorText"]}>
+              {errors["name"]}
+            </FieldError>
           </div>
 
           {/* Description */}
@@ -356,17 +371,14 @@ export default function UpdateRecipeDialog(): React.JSX.Element {
               placeholder={t((m) => m.dialogs.invoices.recipeDialog.placeholders.description)}
               rows={2}
               required
-              aria-invalid={errors["description"] ? true : undefined}
-              aria-describedby={errors["description"] ? "recipe-update-description-error" : undefined}
+              aria-invalid={errors["description"] !== undefined}
+              aria-describedby={getValidationMessageId(errors["description"], "recipe-update-description-error")}
             />
-            {errors["description"] === undefined ? null : (
-              <p
-                id='recipe-update-description-error'
-                className={styles["errorText"]}
-                role='alert'>
-                {errors["description"]}
-              </p>
-            )}
+            <FieldError
+              id='recipe-update-description-error'
+              className={styles["errorText"]}>
+              {errors["description"]}
+            </FieldError>
           </div>
 
           {/* Servings + Difficulty + Times */}
@@ -380,17 +392,14 @@ export default function UpdateRecipeDialog(): React.JSX.Element {
                 step={1}
                 value={servings}
                 onChange={handleServingsChange}
-                aria-invalid={errors["servings"] ? true : undefined}
-                aria-describedby={errors["servings"] ? "recipe-update-servings-error" : undefined}
+                aria-invalid={errors["servings"] !== undefined}
+                aria-describedby={getValidationMessageId(errors["servings"], "recipe-update-servings-error")}
               />
-              {errors["servings"] === undefined ? null : (
-                <p
-                  id='recipe-update-servings-error'
-                  className={styles["errorText"]}
-                  role='alert'>
-                  {errors["servings"]}
-                </p>
-              )}
+              <FieldError
+                id='recipe-update-servings-error'
+                className={styles["errorText"]}>
+                {errors["servings"]}
+              </FieldError>
             </div>
             <div className={styles["fieldGroup"]}>
               <Label htmlFor='recipe-update-difficulty'>{t((m) => m.dialogs.invoices.recipeDialog.fields.difficulty)}</Label>
@@ -416,8 +425,8 @@ export default function UpdateRecipeDialog(): React.JSX.Element {
                 step={1}
                 value={preparationMinutes}
                 onChange={handlePreparationMinutesChange}
-                aria-invalid={errors["minutes"] ? true : undefined}
-                aria-describedby={errors["minutes"] ? "recipe-update-minutes-error" : undefined}
+                aria-invalid={errors["minutes"] !== undefined}
+                aria-describedby={getValidationMessageId(errors["minutes"], "recipe-update-minutes-error")}
               />
             </div>
             <div className={styles["fieldGroup"]}>
@@ -429,8 +438,8 @@ export default function UpdateRecipeDialog(): React.JSX.Element {
                 step={1}
                 value={cookingMinutes}
                 onChange={handleCookingMinutesChange}
-                aria-invalid={errors["minutes"] ? true : undefined}
-                aria-describedby={errors["minutes"] ? "recipe-update-minutes-error" : undefined}
+                aria-invalid={errors["minutes"] !== undefined}
+                aria-describedby={getValidationMessageId(errors["minutes"], "recipe-update-minutes-error")}
               />
             </div>
             <div className={styles["fieldGroup"]}>
@@ -442,39 +451,28 @@ export default function UpdateRecipeDialog(): React.JSX.Element {
                 step={1}
                 value={totalMinutes}
                 onChange={handleTotalMinutesChange}
-                aria-invalid={errors["minutes"] || errors["totalMinutes"] ? true : undefined}
-                aria-describedby={
-                  errors["minutes"] ? "recipe-update-minutes-error" : errors["totalMinutes"] ? "recipe-update-total-error" : undefined
-                }
+                aria-invalid={totalMinutesErrorId !== undefined}
+                aria-describedby={totalMinutesErrorId}
               />
-              {errors["totalMinutes"] === undefined ? null : (
-                <p
-                  id='recipe-update-total-error'
-                  className={styles["errorText"]}
-                  role='alert'>
-                  {errors["totalMinutes"]}
-                </p>
-              )}
+              <FieldError
+                id='recipe-update-total-error'
+                className={styles["errorText"]}>
+                {errors["totalMinutes"]}
+              </FieldError>
             </div>
           </div>
-          {errors["minutes"] === undefined ? null : (
-            <p
-              id='recipe-update-minutes-error'
-              className={styles["errorText"]}
-              role='alert'>
-              {errors["minutes"]}
-            </p>
-          )}
+          <FieldError
+            id='recipe-update-minutes-error'
+            className={styles["errorText"]}>
+            {errors["minutes"]}
+          </FieldError>
 
           {/* Ingredient sections */}
-          {errors["ingredients"] === undefined ? null : (
-            <p
-              id='recipe-update-ingredients-error'
-              className={styles["errorText"]}
-              role='alert'>
-              {errors["ingredients"]}
-            </p>
-          )}
+          <FieldError
+            id='recipe-update-ingredients-error'
+            className={styles["errorText"]}>
+            {errors["ingredients"]}
+          </FieldError>
           {(
             [
               {
@@ -505,55 +503,54 @@ export default function UpdateRecipeDialog(): React.JSX.Element {
                   {t((m) => m.dialogs.invoices.recipeDialog.buttons.add)}
                 </Button>
               </div>
-              {rows.map((row) => (
-                <div
-                  key={row.id}
-                  className={styles["ingredientRow"]}>
-                  <Input
-                    value={row.name}
-                    data-section={key}
-                    data-row-id={row.id}
-                    data-field='name'
-                    onChange={handleIngredientChange}
-                    placeholder={t((m) => m.dialogs.invoices.recipeDialog.placeholders.ingredientName)}
-                    className={styles["ingredientInput"]}
-                  />
-                  <Input
-                    value={row.quantity}
-                    data-section={key}
-                    data-row-id={row.id}
-                    data-field='quantity'
-                    onChange={handleIngredientChange}
-                    placeholder={t((m) => m.dialogs.invoices.recipeDialog.placeholders.ingredientQuantity)}
-                    className={styles["ingredientInput"]}
-                    aria-invalid={errors["ingredients"] && isRecipeText(row.name) && !isRecipeText(row.quantity) ? true : undefined}
-                    aria-describedby={
-                      errors["ingredients"] && isRecipeText(row.name) && !isRecipeText(row.quantity)
-                        ? "recipe-update-ingredients-error"
-                        : undefined
-                    }
-                  />
-                  <Input
-                    value={row.preparation}
-                    data-section={key}
-                    data-row-id={row.id}
-                    data-field='preparation'
-                    onChange={handleIngredientChange}
-                    placeholder={t((m) => m.dialogs.invoices.recipeDialog.placeholders.ingredientPreparation)}
-                    className={styles["ingredientInput"]}
-                  />
-                  <Button
-                    type='button'
-                    variant='ghost'
-                    size='icon'
-                    disabled={rows.length <= 1}
-                    data-section={key}
-                    data-row-id={row.id}
-                    onClick={handleIngredientRemove}>
-                    <TbMinus className={styles["icon4"]} />
-                  </Button>
-                </div>
-              ))}
+              {rows.map((row) => {
+                const ingredientErrorId = getIngredientQuantityErrorId(row, errors["ingredients"], "recipe-update-ingredients-error");
+                return (
+                  <div
+                    key={row.id}
+                    className={styles["ingredientRow"]}>
+                    <Input
+                      value={row.name}
+                      data-section={key}
+                      data-row-id={row.id}
+                      data-field='name'
+                      onChange={handleIngredientChange}
+                      placeholder={t((m) => m.dialogs.invoices.recipeDialog.placeholders.ingredientName)}
+                      className={styles["ingredientInput"]}
+                    />
+                    <Input
+                      value={row.quantity}
+                      data-section={key}
+                      data-row-id={row.id}
+                      data-field='quantity'
+                      onChange={handleIngredientChange}
+                      placeholder={t((m) => m.dialogs.invoices.recipeDialog.placeholders.ingredientQuantity)}
+                      className={styles["ingredientInput"]}
+                      aria-invalid={ingredientErrorId !== undefined}
+                      aria-describedby={ingredientErrorId}
+                    />
+                    <Input
+                      value={row.preparation}
+                      data-section={key}
+                      data-row-id={row.id}
+                      data-field='preparation'
+                      onChange={handleIngredientChange}
+                      placeholder={t((m) => m.dialogs.invoices.recipeDialog.placeholders.ingredientPreparation)}
+                      className={styles["ingredientInput"]}
+                    />
+                    <Button
+                      type='button'
+                      variant='ghost'
+                      size='icon'
+                      disabled={rows.length <= 1}
+                      data-section={key}
+                      data-row-id={row.id}
+                      onClick={handleIngredientRemove}>
+                      <TbMinus className={styles["icon4"]} />
+                    </Button>
+                  </div>
+                );
+              })}
             </div>
           ))}
 
@@ -570,14 +567,11 @@ export default function UpdateRecipeDialog(): React.JSX.Element {
                 {t((m) => m.dialogs.invoices.recipeDialog.buttons.add)}
               </Button>
             </div>
-            {errors["steps"] === undefined ? null : (
-              <p
-                id='recipe-update-steps-error'
-                className={styles["errorText"]}
-                role='alert'>
-                {errors["steps"]}
-              </p>
-            )}
+            <FieldError
+              id='recipe-update-steps-error'
+              className={styles["errorText"]}>
+              {errors["steps"]}
+            </FieldError>
             {steps.map((step, stepIndex) => (
               <div
                 key={step.id}
@@ -591,8 +585,8 @@ export default function UpdateRecipeDialog(): React.JSX.Element {
                   placeholder={t((m) => m.dialogs.invoices.recipeDialog.placeholders.stepInstruction)}
                   rows={2}
                   className={styles["stepInput"]}
-                  aria-invalid={errors["steps"] ? true : undefined}
-                  aria-describedby={errors["steps"] ? "recipe-update-steps-error" : undefined}
+                  aria-invalid={errors["steps"] !== undefined}
+                  aria-describedby={getValidationMessageId(errors["steps"], "recipe-update-steps-error")}
                 />
                 <Input
                   value={step.notes}

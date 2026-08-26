@@ -38,6 +38,7 @@ import {
   Label,
   Separator,
 } from "@arolariu/components";
+import type {Invoice} from "@/types/invoices";
 import {AnimatePresence, motion} from "motion/react";
 import {useTranslations} from "next-intl-selector";
 import {useCallback, useState} from "react";
@@ -45,6 +46,35 @@ import {TbAlertOctagon, TbLoader2, TbReceipt, TbTrash} from "react-icons/tb";
 import {useDialog} from "../_contexts/DialogContext";
 import {useInvoiceDelete} from "../_hooks/invoice";
 import styles from "./DeleteInvoiceDialog.module.scss";
+
+/** Display-ready deletion impact figures derived from the invoice payload. */
+type DeletionSummary = Readonly<{
+  invoiceName: string;
+  itemCount: number;
+  scanCount: number;
+  sharedCount: number;
+}>;
+
+/**
+ * Derives the display name and deletion impact counts for an invoice.
+ *
+ * @remarks
+ * Centralizes the optional-chaining-heavy lookups in a standalone function so
+ * the dialog component's own cyclomatic complexity stays within budget.
+ *
+ * @param invoice - The invoice pending deletion, or `null` before the dialog
+ * payload is available.
+ * @returns Display name (falling back to a shortened id) and impact counts
+ * (defaulting to zero when the corresponding collection is absent).
+ */
+function getDeletionSummary(invoice: Invoice | null): DeletionSummary {
+  return {
+    invoiceName: invoice?.name || invoice?.id.slice(0, 8) || "",
+    itemCount: invoice?.items?.length ?? 0,
+    scanCount: invoice?.scans?.length ?? 0,
+    sharedCount: invoice?.sharedWith?.length ?? 0,
+  };
+}
 
 /**
  * Renders the shared invoice deletion confirmation dialog.
@@ -99,7 +129,7 @@ export default function DeleteInvoiceDialog(): React.JSX.Element | null {
 
   const {deleteInvoiceCallback, isDeleting} = useInvoiceDelete();
 
-  const invoiceName = invoice?.name || invoice?.id.slice(0, 8) || "";
+  const {invoiceName, itemCount, scanCount, sharedCount} = getDeletionSummary(invoice);
   const isConfirmValid = understoodCheckbox;
 
   /**
@@ -168,11 +198,6 @@ export default function DeleteInvoiceDialog(): React.JSX.Element | null {
     },
     [handleClose],
   );
-
-  // Calculate deletion impact
-  const itemCount = invoice?.items?.length ?? 0;
-  const scanCount = invoice?.scans?.length ?? 0;
-  const sharedCount = invoice?.sharedWith?.length ?? 0;
 
   if (invoice === null) return null;
 
