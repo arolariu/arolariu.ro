@@ -1,6 +1,6 @@
 import {render, screen} from "@testing-library/react";
 import {describe, expect, it} from "vitest";
-import {NotFoundContent} from "./_components/GlobalNotFoundContent";
+import {GlobalNotFoundContent} from "./_components/GlobalNotFoundContent";
 import NotFound from "./not-found";
 
 describe("app/not-found.tsx", () => {
@@ -18,10 +18,10 @@ describe("app/not-found.tsx", () => {
   });
 });
 
-describe("NotFoundContent", () => {
+describe("GlobalNotFoundContent", () => {
   it("renders request-independent 404 content from typed copy", () => {
     render(
-      <NotFoundContent
+      <GlobalNotFoundContent
         qrCodeData='{"userId":"storybook"}'
         copy={{
           title: "404",

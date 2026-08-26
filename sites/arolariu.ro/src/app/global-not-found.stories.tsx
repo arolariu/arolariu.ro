@@ -1,10 +1,10 @@
 import type {Meta, StoryObj} from "@storybook/react";
 import {ClerkProvider} from "@clerk/nextjs";
 import {ThemeProvider} from "next-themes";
-import {NotFoundContent} from "./_components/GlobalNotFoundContent";
+import {GlobalNotFoundContent} from "./_components/GlobalNotFoundContent";
 
 /**
- * `NotFoundContent` renders the real 404 page content — `Header`, hero, QR
+ * `GlobalNotFoundContent` renders the real 404 page content — `Header`, hero, QR
  * diagnostics section, and recovery actions, plus `Footer` — without the
  * `<html>`/`<body>` document shell Next.js requires from the default-exported,
  * `async` `NotFound` Server Component (which cannot be mounted inside
@@ -18,7 +18,7 @@ import {NotFoundContent} from "./_components/GlobalNotFoundContent";
  */
 const meta = {
   title: "Pages/Home/GlobalNotFound",
-  component: NotFoundContent,
+  component: GlobalNotFoundContent,
   args: {
     qrCodeData: JSON.stringify({userId: "user_storybook_0000", userAgent: "Storybook/Canvas", referrer: "https://arolariu.ro/"}),
     copy: {
@@ -45,7 +45,7 @@ const meta = {
   parameters: {
     layout: "fullscreen",
   },
-} satisfies Meta<typeof NotFoundContent>;
+} satisfies Meta<typeof GlobalNotFoundContent>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;

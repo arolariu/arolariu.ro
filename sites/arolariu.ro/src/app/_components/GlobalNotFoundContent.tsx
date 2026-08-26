@@ -12,7 +12,7 @@ import "@arolariu/components/styles.css";
 import "../globals.scss";
 
 /**
- * Localized copy required by {@link NotFoundContent}, resolved server-side
+ * Localized copy required by {@link GlobalNotFoundContent}, resolved server-side
  * via `getTranslations()` before the component ever renders.
  */
 export interface NotFoundContentCopy {
@@ -31,7 +31,7 @@ export interface NotFoundContentCopy {
 }
 
 /**
- * Props accepted by {@link NotFoundContent}.
+ * Props accepted by {@link GlobalNotFoundContent}.
  */
 export interface NotFoundContentProps {
   /** Pre-serialized JSON payload (userId, user agent, referrer) encoded into the diagnostics QR code. */
@@ -64,7 +64,7 @@ export interface NotFoundContentProps {
  *
  * @example
  * ```tsx
- * <NotFoundContent
+ * <GlobalNotFoundContent
  *   qrCodeData={JSON.stringify({userId: "0000", userAgent: "N/A", referrer: "unknown"})}
  *   copy={{
  *     title: "404",
@@ -79,7 +79,7 @@ export interface NotFoundContentProps {
  *
  * @see `../global-not-found.tsx` for the full document-shell boundary that resolves props for this content.
  */
-export function NotFoundContent({qrCodeData, copy}: Readonly<NotFoundContentProps>): React.JSX.Element {
+export function GlobalNotFoundContent({qrCodeData, copy}: Readonly<NotFoundContentProps>): React.JSX.Element {
   return (
     <>
       <Header />

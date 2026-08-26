@@ -1,4 +1,4 @@
-import {NotFoundContent, type NotFoundContentCopy} from "@/app/_components/GlobalNotFoundContent";
+import {GlobalNotFoundContent, type NotFoundContentCopy} from "@/app/_components/GlobalNotFoundContent";
 import {getCookie} from "@/lib/actions/cookies";
 import {fetchAaaSUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import type {Metadata} from "next";
@@ -20,7 +20,7 @@ export const metadata: Metadata = {
  *
  * @remarks
  * Resolves request headers, locale, i18n messages, the current AaaS user,
- * and the `eula-accepted` cookie, then renders {@link NotFoundContent} with
+ * and the `eula-accepted` cookie, then renders {@link GlobalNotFoundContent} with
  * the derived QR payload and localized copy inside the unchanged
  * `<html>`/`<body>` document shell and {@link ContextProviders} tree.
  *
@@ -58,7 +58,7 @@ export default async function NotFound(): Promise<React.JSX.Element> {
         <ContextProviders
           locale={locale}
           messages={messages as unknown as AbstractIntlMessages}>
-          <NotFoundContent
+          <GlobalNotFoundContent
             qrCodeData={qrCodeData}
             copy={copy}
           />
