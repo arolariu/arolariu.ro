@@ -1,75 +1,49 @@
 ---
-version: "1.0.0"
-lastUpdated: "2026-02-18"
-name: "Agent Governance Contract"
-applyTo: ".github/**/*.md"
-description: "Mandatory contract for agent-facing assets: intake, RFC grounding, verification, uncertainty reporting, and policy severity handling."
-lastReviewed: 2026-05-08
+name: Agent Asset Governance
+description: Rules unique to repository AI instructions, agents, skills, prompts, extensions, memory, and Copilot configuration.
+applyTo: ".github/**/*.md,.github/extensions/**/*.mjs,.copilot/**/*.json"
 ---
 
-# Agent Governance Contract
+# Agent Asset Governance
 
-## Instruction Contract
+## Scope
 
-### Scope
-Applies to AI customization assets under `.github/`.
+Applies only to repository AI customization and its security-sensitive
+configuration.
 
-### Mandatory Rules
-- Enforce intake, RFC grounding, verification, and uncertainty disclosure contracts.
-- Require all agent-facing assets to define scope, constraints, validation, and escalation sections.
-- Ensure RFC-source conflicts are resolved in favor of source-of-truth code and logged as drift.
+## Required Inputs
 
-### Prohibited Actions
-- Do not claim completion without command/file evidence.
-- Do not bypass escalation requirements for risky operations.
-- Do not omit policy constraints from agent, skill, or prompt templates.
+- Root `AGENTS.md`
+- `.github/agent-governance/operating-protocol.md`
+- `.github/agent-governance/threat-model.md`
+- Live source/configuration behind every encoded fact
+- Current product documentation for changed Copilot metadata or SDK APIs
 
-### Required Verification Commands
-```bash
-git --no-pager diff .github/**/*.md
-```
+## Execution Constraints
 
-### Failure Handling
-- If verification fails, stop and report failing command output with impacted files.
-- If constraints conflict with task requests, escalate and request explicit user direction.
-- If uncertainty remains on behavior-impacting choices, ask before continuing.
+- Give each fact, rule, workflow, and tool one owning asset.
+- Reference root versions, commands, architecture, and risk rules instead of
+  copying them.
+- Keep agents focused on role and routing.
+- Keep skills focused on one repeatable workflow.
+- Keep prompts as thin local shortcuts.
+- Keep extensions optional to static safety and correctness.
+- Keep memory free of versions, commands, counts, architecture snapshots,
+  discoverable paths, secrets, and task state.
+- Do not use stale model pins, arbitrary shell tools, `approveAll`, implicit
+  unmatched permission approval, or success-shaped failures.
+- Do not add `version`, `lastUpdated`, or `lastReviewed` metadata to AI assets.
 
-### Drift Watchpoints
-- Instruction hierarchy precedence
-- RFC map coverage across domains
-- Template contract section completeness
+## Validation
 
+- Check frontmatter shape and referenced paths.
+- Search for copied volatile facts and inherited governance blocks.
+- Run Node tests for extension behavior.
+- Verify extension runtime health separately from source presence.
+- Run `git --no-pager diff --check` and inspect the scoped diff.
 
-This instruction governs AI customization assets in `.github/` (`instructions`, `agents`, `prompts`, `skills`) and standardizes behavior requirements.
+## Escalation
 
-## Required Contract
-
-1. **Task Intake**
-   - Capture task objective, affected domains, and assumptions.
-2. **Policy and Safety Gate**
-   - Enforce security boundaries, architecture rules, and repository constraints.
-3. **RFC Grounding Trigger**
-   - When task changes architecture-sensitive areas, consult relevant RFCs in `docs/rfc/`.
-   - Verify RFC claims against source files before execution.
-4. **Verification Gate**
-   - Require concrete command output or file evidence before claiming completion.
-5. **Uncertainty Disclosure**
-   - Report unresolved assumptions, risk level, and confidence qualifiers.
-
-## Mandatory Sections for Agent Assets
-
-All new or updated `.github` agent assets should include:
-- **Scope** (what this artifact governs)
-- **Required Inputs** (minimum context and files to read)
-- **Execution Constraints** (what must/must not happen)
-- **Validation** (commands/checks required before completion)
-- **Escalation Conditions** (when to ask user or block execution)
-
-## Severity and Escalation
-
-| Severity | Trigger | Action |
-|----------|---------|--------|
-| Critical | Security-sensitive or destructive-risk changes | Stop and require explicit user confirmation |
-| High | Architecture/policy violations or unsupported success claims | Block completion until resolved |
-| Medium | Partial standards compliance | Correct before merge unless user defers |
-| Low | Clarity/documentation quality issues | Record and address in follow-up pass |
+Stop for dependency, security, auth, schema, infrastructure, workflow,
+destructive, or unresolved behavior decisions. Follow the operating protocol
+for source/RFC drift and material uncertainty.

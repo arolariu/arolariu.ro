@@ -49,9 +49,9 @@ agent invocation.
 ## Mitigation stack
 
 1. **CODEOWNERS** (Lockdown Level B) — PR-time review request.
-2. **Self-audit protocol** (`.github/agent-governance/self-audit-protocol.md`)
-   — agents must escalate to the user before destructive/security/auth
-   actions.
+2. **Operating protocol** (`.github/agent-governance/operating-protocol.md`)
+   — agents escalate before destructive/security/auth actions and validate
+   claims with evidence.
 3. **Human-in-the-loop discipline.** The user reviews every PR (solo
    repo). The "Always confirm" guidance in agent-governance instructions
    prevents agents from silently taking high-impact actions.
@@ -70,6 +70,15 @@ agent invocation.
   `npx -y <package>`, which floats versions. A poisoned npm package
   upgrade would land at next session start. Accepted risk; revisit if
   any specific package proves unstable.
+
+## Review and extension boundaries
+
+- Review-only behavior lives in `.github/agents/code-reviewer.agent.md`; it is
+  not injected into every task.
+- CLI extensions are defense-in-depth and optional acceleration.
+- Static instructions remain authoritative when an extension fails.
+- Native Copilot permissions remain authoritative; extensions must not
+  auto-approve unmatched operations.
 
 ## Change log
 
