@@ -1,23 +1,22 @@
-# CV Site Agent Guide (cv.arolariu.ro)
+# CV Local Guide
 
-> SvelteKit 2 — Standalone personal portfolio
+The CV is a standalone, static-first SvelteKit site deployed to Azure Static
+Web Apps.
 
-## Architecture
+## Boundaries
 
-- **Standalone** — zero dependencies on monorepo packages
-- **Static-first** — pre-rendered via SvelteKit adapter
-- **Azure Static Web Apps** deployment
+- Do not import `@arolariu/components` or another monorepo package.
+- Keep portfolio content and interactions intentionally small.
+- Preserve prerendering and static deployment.
 
-## Commands
+## Local Verification
 
-```bash
-npm run build:cv    # Build
-npm run dev:cv      # Dev server → http://localhost:4173
+```powershell
+npm run build:cv
 ```
 
-## Rules
+## Development
 
-- Do NOT import from `@arolariu/components` or other monorepo packages
-- Use SvelteKit 2 conventions (not React patterns)
-- Minimal complexity — CV/portfolio content only
-- TypeScript strict mode
+```powershell
+npm run dev:cv
+```

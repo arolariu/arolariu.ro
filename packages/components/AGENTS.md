@@ -1,39 +1,40 @@
-# Component Library Agent Guide (@arolariu/components)
+# Component Library Local Guide
 
-> Base UI + CSS Modules
+Root `AGENTS.md` owns repository-wide versions, safety, React, TypeScript,
+testing, and Git rules. This file records only `@arolariu/components`
+constraints.
 
-## Architecture
+## Boundaries
 
-- Domain-agnostic UI primitives — NO business logic
-- Every component exported through `src/index.ts` barrel
-- Storybook stories required for new public components
+- Components are domain-agnostic UI primitives.
+- Do not import from `sites/**`.
+- Do not add invoice, merchant, account, or other product business logic.
+- Prefer Base UI composition and preserve accessibility behavior.
 
-## Commands
-
-```bash
-npm run build:components    # Build with RSLib
-npm run dev:components      # Storybook → http://localhost:6006
-```
-
-## Rules
-
-- Use `cn()` for class merging (from `src/lib/utilities.ts`)
-- Use `React.forwardRef` for components needing DOM refs
-- Prefer Base UI `render` composition; keep `asChild` only for backward compatibility
-- Use colocated CSS Modules for component styling
-- NO imports from `sites/` — this is a shared library
-- NO inline styles — CSS Modules only
-- Accessibility-first: ARIA attributes, keyboard navigation
-
-## File Structure
+## File Shape
 
 ```text
-src/components/ui/[name].tsx      — Component implementation
-src/components/ui/[name].module.css — Component styles
-src/components/ui/[name].stories.tsx — Storybook story (colocated)
-src/index.ts                      — Barrel export (MUST update)
+src/components/ui/<name>.tsx
+src/components/ui/<name>.module.css
+src/components/ui/<name>.test.tsx
+src/components/ui/<name>.stories.tsx
+src/index.ts
 ```
 
-## RFC
+- Colocate implementation, CSS Module, test, and Storybook story.
+- Export every public component and public type from `src/index.ts`.
+- Use `cn()` from `src/lib/utilities.ts` for class composition.
+- Prefer Base UI `render` composition; retain `asChild` only for compatible
+  existing APIs.
+- Use `React.forwardRef` when a component must expose a DOM ref.
 
-Consult: 1006 (Component Library Architecture), 1008 (SCSS System Architecture)
+## Local Verification
+
+```powershell
+npm run build:components
+```
+
+## Architecture References
+
+- RFC 1006 - component-library architecture
+- RFC 1008 - styling architecture

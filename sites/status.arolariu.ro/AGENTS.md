@@ -1,6 +1,8 @@
-# sites/status.arolariu.ro
+# Status Site Local Guide
 
-Service status page for arolariu.ro — SvelteKit on Azure Static Web Apps (Free).
+This file records status-site-specific architecture and exceptions. Root and
+path instructions own generic TypeScript, Svelte, testing, safety, and Git
+rules.
 
 ## Layout
 
