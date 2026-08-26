@@ -803,89 +803,20 @@ Track the project's progress and upcoming features:
 <!-- AI-POWERED DEVELOPMENT -->
 ## 🤖 AI-Powered Development
 
-This repository is fully configured with **GitHub Copilot** context-aware AI assistance — including instructions, agents, prompts, and scaffolding skills.
+The repository provides a layered GitHub Copilot setup:
 
-<details open>
-<summary><b>📚 Instruction Files (9)</b></summary>
+- `AGENTS.md` owns canonical repository facts and engineering constraints.
+- `.github/copilot-instructions.md` owns universal Copilot execution behavior.
+- Path instructions add language and domain-specific rules.
+- Custom agents provide specialist ownership.
+- Agent Skills provide portable, on-demand workflows.
+- Prompt files provide local VS Code shortcuts.
+- CLI extensions add optional context, guardrails, and diagnostics.
 
-| File Pattern | Instruction File | Topics |
-|:------------:|:----------------:|:-------|
-| `.github/workflows/*.yml` | `workflows.instructions.md` | CI/CD patterns, caching, OIDC |
-| `**/*.ts` | `typescript.instructions.md` | Strict typing, type guards, generics |
-| `**/*.tsx, *.jsx` | `react.instructions.md` | RSC, hooks, state management |
-| `**/*.cs` | `csharp.instructions.md` | C# 13 patterns, async/await |
-| `sites/arolariu.ro/**` | `frontend.instructions.md` | Next.js App Router, observability |
-| `sites/api.arolariu.ro/**` | `backend.instructions.md` | DDD, SOLID, The Standard |
-| `**/*.bicep` | `bicep.instructions.md` | Azure IaC best practices |
-| `packages/components/**` | `components.instructions.md` | Radix UI, shadcn/ui patterns |
-| Pull Requests | `code-review.instructions.md` | Review standards & checklists |
-
-</details>
-
-<details>
-<summary><b>🤖 Copilot Agents (6)</b></summary>
-
-| Agent | Specialization |
-|:-----:|:---------------|
-| `backend-expert` | .NET DDD architecture, The Standard, service layers |
-| `frontend-expert` | Next.js, React 19, RSC, state management |
-| `code-reviewer` | Code quality, security, best practices |
-| `infra-expert` | Azure Bicep, infrastructure as code |
-| `docs-writer` | Technical documentation, JSDoc, XML docs |
-| `full-stack-planner` | Cross-cutting architecture decisions |
-
-</details>
-
-<details>
-<summary><b>🎯 Prompts & Skills</b></summary>
-
-**Reusable Prompts (6):**
-
-| Prompt | Purpose |
-|:------:|:--------|
-| `comment-standard` | Consistent JSDoc/XML documentation |
-| `unit-test` | Test scaffolding (Vitest/MSTest) |
-| `refactor` | Safe refactoring with patterns |
-| `api-endpoint` | New .NET endpoint scaffold |
-| `new-page` | Next.js page with i18n + metadata |
-| `migration` | Database schema migration guide |
-
-**Scaffolding Skills (4):**
-
-| Skill | Template |
-|:-----:|:---------|
-| `ddd-service` | Full DDD service stack (Foundation → Broker) |
-| `react-component` | RSC + Island pattern component |
-| `zustand-store` | Zustand store with IndexedDB persistence |
-| `i18n-page` | Internationalized page with all locales |
-
-</details>
-
-<details>
-<summary><b>📖 Architecture RFCs (13)</b></summary>
-
-| RFC # | Title | Status |
-|:-----:|:------|:------:|
-| **Infrastructure (0xxx)** | | |
-| 0001 | GitHub Actions Workflows | ✅ Implemented |
-| **Frontend (1xxx)** | | |
-| 1001 | OpenTelemetry Observability System | ✅ Implemented |
-| 1002 | JSDoc/TSDoc Documentation Standard | ✅ Implemented |
-| 1003 | Internationalization System (next-intl) | ✅ Implemented |
-| 1004 | Metadata and SEO System | ✅ Implemented |
-| 1005 | State Management (Zustand) | ✅ Implemented |
-| 1006 | Component Library Architecture | ✅ Implemented |
-| 1007 | Advanced Frontend Patterns | ✅ Implemented |
-| 1008 | SCSS System Architecture | ✅ Implemented |
-| **Backend (2xxx)** | | |
-| 2001 | Domain-Driven Design Architecture | ✅ Implemented |
-| 2002 | Backend OpenTelemetry Observability | ✅ Implemented |
-| 2003 | The Standard Implementation | ✅ Implemented |
-| 2004 | XML Documentation Standard | ✅ Implemented |
-
-> RFCs are located in [`docs/rfc/`](docs/rfc/). Use the [RFC template](docs/RFC_TEMPLATE.md) to propose new architecture decisions.
-
-</details>
+See the [AI customization guide](.github/docs/ai-customization-guide.md) for
+the live asset inventory, supported surfaces, authority model, maintenance, and
+troubleshooting. Architecture decisions remain in [`docs/rfc/`](docs/rfc/);
+use the [RFC template](docs/RFC_TEMPLATE.md) for new proposals.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
