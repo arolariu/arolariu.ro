@@ -1,420 +1,328 @@
 # AGENTS.md
 
-> Guidance for AI coding agents working in the **arolariu.ro** monorepo.
+Guidance for AI coding agents working in the **arolariu.ro** monorepo.
 
-## Project Overview
+## Repository Overview
 
-**arolariu.ro** is a full-stack pet-project platform for invoice management and personal branding, built as a monorepo:
+`arolariu.ro` is an Nx-managed monorepo containing:
 
-- **Frontend**: Next.js + React (main website at `sites/arolariu.ro/`; versions in [Versions](#versions))
-- **Backend**: .NET ASP.NET Core Minimal APIs with Domain-Driven Design (at `sites/api.arolariu.ro/`; versions in [Versions](#versions))
-- **Component Library**: `@arolariu/components` — 70+ Base UI components with CSS Modules styling (at `packages/components/`)
-- **CV Site**: SvelteKit (at `sites/cv.arolariu.ro/` — standalone, no cross-dependencies; versions in [Versions](#versions))
-- **Infrastructure**: Azure Cloud, Bicep IaC (at `infra/Azure/Bicep/`)
-- **Tooling**: Nx monorepo, npm, Node.js, .NET SDK (versions in [Versions](#versions))
-
----
+- `sites/arolariu.ro/` - Next.js website.
+- `sites/api.arolariu.ro/` - .NET Minimal API modular monolith.
+- `packages/components/` - shared `@arolariu/components` UI library.
+- `sites/cv.arolariu.ro/` - standalone SvelteKit CV site.
+- `sites/status.arolariu.ro/` - SvelteKit service-status site.
+- `sites/exp.arolariu.ro/` - Python/FastAPI experimental service.
+- `sites/docs.arolariu.ro/` - documentation site.
+- `infra/Azure/Bicep/` - Azure infrastructure as code.
+- `tooling/AppHost/` - .NET Aspire local orchestration.
 
 ## Versions
 
-Canonical runtime/framework versions. **Update here only**; downstream
-instruction/agent files reference this section by name.
+This table is the canonical runtime and framework source for human-readable AI
+guidance. Update it when the referenced machine-readable source changes;
+downstream instructions, agents, skills, and prompts reference this section
+instead of copying version values.
 
 | Component | Version | Where to verify |
-|-----------|---------|-----------------|
+| --- | --- | --- |
 | Node.js | >=24 | `package.json` engines |
 | npm | >=11 | `package.json` engines |
 | .NET SDK | 10.0 | `sites/api.arolariu.ro/Directory.Build.props` |
-| C# | 14 | implied by .NET 10 (`<LangVersion>latest</LangVersion>` in `sites/api.arolariu.ro/Directory.Build.props`) |
-| Next.js | 16.2.12 | `package.json` |
+| C# | 14 | `<LangVersion>latest</LangVersion>` in `sites/api.arolariu.ro/Directory.Build.props` |
+| Next.js | 16.3.0 | `package.json` |
 | React | 19.2.8 | `package.json` |
-| TypeScript | 6.0.3 | `package.json` devDependencies |
-| SvelteKit | 2.70.1 | `package.json` |
-| Nx | 23.1.0 | `package.json` devDependencies |
+| TypeScript | 6.0.3 | `package.json` |
+| SvelteKit | 2.70.2 | `package.json` |
+| Nx | 23.1.1 | `package.json` |
 
-When a version changes: edit this table; do NOT edit prose mentions in
-instruction/agent files unless they still drift after this change.
+## Commands
 
----
-
-## Setup Commands
-
-```bash
+```powershell
 # First-time setup
-npm install && npm run setup
+npm install
+npm run setup
 
-# Aspire mode with explicit local container engine (Docker Desktop is deprecated)
+# Aspire local development with an explicit container engine
 npm run dev -- --engine rancher
 npm run dev -- --engine podman
-npm run dev:aspire -- --engine rancher
-npm run dev:aspire -- --engine podman
 
-# Selfhost mode with explicit local container engine
-# Set MSSQL_SA_PASSWORD in your shell before selfhost start
+# Self-hosted container mode
 npm run dev:selfhost -- --engine rancher
 npm run dev:selfhost -- --engine podman
 npm run dev:selfhost:stop -- --engine rancher
 npm run dev:selfhost:stop -- --engine podman
 
-# Standalone single-service dev (no AppHost coordination — fallback only)
-npm run dev:website      # Next.js only
-npm run dev:api          # .NET API only
-npm run dev:cv           # SvelteKit only
-npm run dev:exp          # Python uvicorn only
-npm run dev:docs         # Docusaurus only
-npm run dev:status       # Status page only
-npm run dev:components   # Storybook for component library
+# Standalone services
+npm run dev:website
+npm run dev:api
+npm run dev:cv
+npm run dev:exp
+npm run dev:docs
+npm run dev:status
+npm run dev:components
 
-# Build
-npm run build              # Build all projects
-npm run build:website      # Build website only
-npm run build:api          # Build API only
-npm run build:components   # Build component library
+# Builds
+npm run build
+npm run build:website
+npm run build:api
+npm run build:components
 
-# Testing
-npm run test               # Run all tests
-npm run test:unit          # Unit tests (Vitest + MSTest)
-npm run test:e2e           # E2E tests (Playwright + Newman)
-npm run test:website       # Website FULL suite: Vitest + Playwright E2E + Storybook (expensive)
-npm run test:api           # API tests only
+# Tests
+npm run test
+npm run test:unit
+npm run test:api
+npm run test:e2e
+npm run test:e2e:frontend
+npm run test:e2e:backend
+npm run test:website
 
-# Code quality
-npm run lint               # ESLint (20+ plugins)
-npm run format             # Prettier
-npm run generate           # Generate i18n, env files, GraphQL types
+# Quality and generation
+npm run lint
+npm run format
+npm run generate
+npm run generate:i18n
 
-# Backend-specific
+# Direct backend commands
 dotnet build sites/api.arolariu.ro/src/Core
 dotnet test sites/api.arolariu.ro/tests
 dotnet test sites/api.arolariu.ro/tests --collect:"XPlat Code Coverage"
 ```
 
-### Local Dev — Aspire vs Selfhost
+### Local Development Modes
 
-Two coexisting dev modes:
+**Aspire is the default.** Applications run natively with hot reload while SQL
+Server, the Cosmos emulator, Azurite, and Redis run through Rancher Desktop or
+Podman Desktop. The Aspire dashboard is available at
+`https://localhost:17080`.
 
-**`aspire` mode (default)** — `npm run dev -- --engine rancher` or `npm run dev -- --engine podman` (or F5 in VS Code/VS 2026 with the same environment)
-- Apps run **native** (.NET via dotnet, Next.js/Svelte/Docusaurus/status via npm dev scripts, exp via uvicorn) and are reachable at `http://localhost:<port>` (api: 5000, website: 3000, exp: 5002, cv: 4173, docs: 3100, status: 3002). Hot reload preserved.
-- Infrastructure (SQL Server, Cosmos vNext emulator, Azurite, Redis) runs as containers spawned by Aspire 13.x's AppHost (`tooling/AppHost/Program.cs`) through the selected Rancher Desktop or Podman Desktop engine — native Aspire integrations, not Docker Compose.
-- Before the API starts, `local-bootstrap` clears Cosmos invoice/merchant documents, resets Azurite invoice blobs and the `invoice-analysis` queue, then restores the tracked deterministic scenario. SQL, Redis, emulator schemas, indexes, and named volumes stay warm.
-- Seed personas are Alice (rich account: 8 invoices/5 merchants), Bob (empty account), and Charlie (light account: 3 invoices/2 merchants). Dates are relative to UTC launch day; identifiers and relationships are stable.
-- The local `local-identities` resource supplies signed Alice/Bob/Charlie JWTs. Development Swagger displays persona controls that preauthorize its existing Bearer scheme. No token or signing secret is committed.
-- Aspire dashboard at `https://localhost:17080` (auto-opens on AppHost start) with live OTel traces / metrics / logs and clickable URLs / health badges per resource.
+**Selfhost is the container-parity mode.** Use it for container behavior,
+deployment-parity, or image audits.
 
-**`selfhost` mode (advanced)** — `npm run dev:selfhost -- --engine rancher` or `npm run dev:selfhost -- --engine podman`
-- Everything containerized including apps. Existing Compose flow (`infra/Local/{Storage,Management,Backend,Frontend}/docker-compose.yml`) runs through the selected engine adapter.
-- Use when auditing container behavior, validating CI parity, or testing a deploy-mock-of-prod configuration.
+**Standalone service scripts are narrow fallbacks.** Use one when full-stack
+coordination is unnecessary.
 
-**Single-service standalone** — `npm run dev:website`, `npm run dev:api`, etc.
-- For narrow work where you don't need the full stack. No AppHost coordination; just spawn the one service's dev server.
-
-The legacy `npm run dev:local*` scripts and `scripts/dev-local.ts` orchestrator have been retired (replaced by Aspire).
-
----
+Local bootstrap restores deterministic Alice, Bob, and Charlie scenarios. It
+clears seeded Cosmos invoice/merchant documents, invoice blobs, and the
+`invoice-analysis` queue while preserving warm infrastructure state. No
+development token or signing secret is committed.
 
 ## Agent Operating Contract
 
-All agent assets in this repository must apply the same execution contract to ensure reliable, RFC-grounded outcomes.
+1. Inspect live source and the narrowest applicable guidance before acting.
+2. Proceed autonomously on explicit, reversible, in-scope work that follows an
+   established repository pattern.
+3. Ask before dependencies, authentication/security behavior, schema or data
+   migration, infrastructure/deployment/cost, destructive operations, or
+   unresolved public behavior with materially different valid outcomes.
+4. Use source and configuration for current behavior and accepted RFCs for
+   architectural intent. Surface material drift instead of silently choosing.
+5. Make the smallest complete change and validate it with the smallest
+   existing check that proves the result.
+6. Report only material assumptions, residual risk, incomplete validation, or
+   blockers. Do not emit ritual confidence blocks.
 
-### Required Execution Sequence
-1. **Intake**: identify task scope, touched domains, and assumptions.
-2. **Policy gate**: enforce security, architecture, and repository constraints before edits.
-3. **RFC grounding**: when task is architecture-sensitive, read relevant `docs/rfc/*.md` and validate referenced source files.
-4. **Verification**: do not report success without command/file evidence.
-5. **Uncertainty reporting**: explicitly disclose assumptions, confidence risks, and required user checkpoints.
+### Authority
 
-### Agent Artifacts
-- Never commit `docs/superpowers/**` or `.superpowers/**`; these paths are ignored agent working artifacts, not repository deliverables.
+When guidance conflicts, use this order:
 
-### Instruction Precedence
-If rules conflict, resolve in this order:
-1. Runtime/system safety constraints
-2. Root governance (`.github/copilot-instructions.md`, `AGENTS.md`)
-3. Domain instructions (`.github/instructions/*.instructions.md`)
-4. Artifact instructions (`.github/agents`, `.github/skills`, `.github/prompts`)
-5. File-local conventions
+1. Runtime and security constraints.
+2. Live code and configuration.
+3. This file and `.github/copilot-instructions.md`.
+4. The nearest subproject `AGENTS.md`.
+5. Matching `.github/instructions/*.instructions.md`.
+6. Agents, skills, and prompts.
+7. Memory.
 
-### Violation Severity
-| Severity | Definition | Response |
-|----------|------------|----------|
-| Critical | Security/policy bypass or destructive-risk action | Stop and require explicit user approval |
-| High | Architecture or verification breach | Block completion until fixed |
-| Medium | Standards drift or partial validation | Fix before merge unless explicitly deferred |
-| Low | Non-risk clarity/documentation gaps | Queue as follow-up |
+An RFC defines intent. Live source defines current behavior. If resolving drift
+would change behavior, stop and ask.
 
-### RFC Lookup Protocol
-Use `.github/agent-governance/rfc-grounding-protocol.md` whenever a task touches architecture, workflow design, security, state management, observability, or public API contracts.  
-If RFC text conflicts with source code, treat source code as truth and record RFC drift for follow-up.
+### Agent Working Artifacts
 
-### Self-Audit Protocol
-For non-trivial work, apply `.github/agent-governance/self-audit-protocol.md` before finalizing output.  
-Always disclose assumptions, confidence level, risk flags, and validation evidence; escalate to user when risk thresholds are hit.
+Never commit `docs/superpowers/**` or `.superpowers/**`. They are ignored
+planning, verification, and visual-companion artifacts.
 
----
+## Repository Architecture
 
-## Repository Structure
+### Frontend
 
-```
-packages/
-  components/              # @arolariu/components — shared UI library (Base UI + CSS Modules)
-sites/
-  arolariu.ro/             # Next.js main website (versions in Versions section)
-    src/app/               #   App Router pages (RSC by default)
-    src/hooks/             #   Custom React hooks (useInvoice, etc.)
-    src/stores/            #   Zustand stores with IndexedDB persistence
-    src/lib/actions/       #   Server Actions
-    src/types/             #   TypeScript type definitions
-    messages/              #   i18n translations (en.json, ro.json, fr.json)
-  api.arolariu.ro/         # .NET backend API (versions in Versions section)
-    src/Core/              #   Entry point, infrastructure, health
-    src/Core.Auth/         #   Authentication bounded context
-    src/Invoices/          #   Invoice management bounded context
-    src/Common/            #   Shared DDD base classes, telemetry
-    tests/                 #   MSTest tests
-  cv.arolariu.ro/          # SvelteKit CV site (standalone)
-  docs.arolariu.ro/        # DocFX documentation site
-  exp.arolariu.ro/         # Python FastAPI experimental service
-scripts/                   # Build and utility scripts
-infra/Azure/Bicep/         # Infrastructure as Code
-docs/rfc/                  # Architecture Decision Records (RFCs)
-.github/
-  instructions/            # Copilot context-aware instruction files
-  agents/                  # Copilot custom agent definitions
-  prompts/                 # Copilot reusable prompt files
-  skills/                  # Copilot agent skills (instructions + templates)
-  copilot-instructions.md  # Root Copilot instructions
+```text
+page.tsx (Server Component)
+  -> island.tsx (Client Component only when interaction requires it)
+       -> _components/ (route-local components)
 ```
 
----
+- Server Components are the default.
+- State order is Zustand for global state, Context for scoped state, then local
+  React state.
+- User-visible text uses `next-intl` with `en`, `ro`, and `fr`.
+- Authentication is enforced at the Clerk middleware boundary.
+- Site-specific styling uses CSS Modules; shared UI comes from
+  `@arolariu/components`.
 
-## Code Style
+### Backend
 
-### TypeScript (strict mode — zero `any` tolerance)
-
-```typescript
-// DO: Explicit types, Readonly props, proper hooks
-interface Props {
-  readonly invoiceId: string;
-}
-
-export default function InvoiceCard({invoiceId}: Readonly<Props>): React.JSX.Element {
-  const [data, setData] = useState<Invoice | null>(null);
-  return <div>{data?.name}</div>;
-}
-
-// DON'T: any types, missing return types, prop drilling
-function BadComponent(data: any) { return <div>{data.thing}</div>; }
+```text
+Endpoints -> Processing -> Orchestration -> Foundation -> Brokers
 ```
+
+- Brokers are thin external-system wrappers with no business logic.
+- Foundation services do not call other Foundation services.
+- Services have at most two or three dependencies (Florance Pattern).
+- Service methods use the repository TryCatch and OpenTelemetry Activity
+  patterns.
+- Bounded contexts are Core, Core.Auth, Invoices, and Common.
+
+### Dependency Direction
+
+```text
+@arolariu/components -> sites/arolariu.ro -> HTTP -> sites/api.arolariu.ro
+sites/cv.arolariu.ro and sites/status.arolariu.ro remain standalone sites.
+```
+
+## Coding Conventions
+
+### TypeScript and React
+
+- Strict TypeScript; never introduce explicit `any`.
+- Prefer precise types, discriminated unions, generics, or `unknown` plus a
+  type guard.
+- Public functions have explicit return types and useful JSDoc.
+- Component props use `Readonly<Props>`.
+- Keep Server Components server-side; add `"use client"` only for hooks,
+  browser APIs, state, or event handlers.
+- User-facing strings use translations.
+- Do not use inline style objects in application or shared-component code.
 
 ### C#
 
-```csharp
-// DO: XML docs, ConfigureAwait, primary constructors, TryCatch pattern
-/// <summary>Creates a new invoice in storage.</summary>
-/// <param name="invoice">The invoice to create.</param>
-public async Task CreateInvoiceAsync(Invoice invoice) =>
-    await TryCatchAsync(async () =>
-    {
-        using var activity = InvoicePackageTracing.StartActivity(nameof(CreateInvoiceAsync));
-        ValidateInvoice(invoice);
-        await _broker.CreateAsync(invoice).ConfigureAwait(false);
-    }).ConfigureAwait(false);
+- Public APIs have XML documentation.
+- Library/service async code uses `.ConfigureAwait(false)`.
+- Never use `.Result` or `.Wait()`.
+- Treat warnings as errors and fix diagnostics at the source.
+- Use typed exception classification and the repository TryCatch pattern.
 
-// DON'T: Business logic in Brokers, sideways service calls, sync-over-async
-```
+### Naming
 
-### Naming Conventions
+| Context | Convention |
+| --- | --- |
+| TypeScript components | PascalCase |
+| React hooks | `use` + camelCase |
+| Zustand stores | camelCase + `Store` |
+| C# classes | PascalCase |
+| C# interfaces | `I` prefix |
+| C# tests | `Method_Condition_Expected` |
+| Branches | `type/short-description` |
+| Commits | Conventional Commits |
 
-| Context | Convention | Example |
-|---------|-----------|---------|
-| TS components | PascalCase | `InvoiceCard.tsx` |
-| TS hooks | camelCase with `use` prefix | `useInvoice.tsx` |
-| TS stores | camelCase with `Store` suffix | `invoiceStore.ts` |
-| C# classes | PascalCase | `InvoiceFoundationService.cs` |
-| C# interfaces | `I` prefix | `IInvoiceNoSqlBroker.cs` |
-| C# tests | `Method_Condition_Expected` | `CreateInvoice_ValidInput_ReturnsCreated()` |
-| Branches | `type/short-description` | `feat/invoice-export` |
-| Commits | Conventional Commits | `feat: add invoice export endpoint` |
+## Testing and Verification
 
----
+| Domain | Framework | Target |
+| --- | --- | --- |
+| Frontend unit | Vitest + Testing Library | 90%+ |
+| Frontend E2E | Playwright | Critical paths |
+| Backend unit | MSTest | 85%+ |
+| Backend E2E | Newman/Postman | API contracts |
 
-## Architecture
+- Colocate frontend `*.test.ts`/`*.test.tsx` files with the source they cover.
+- Use AAA structure and deterministic builders.
+- Mock only true external boundaries such as network, Azure SDK, or Clerk. Do
+  not mock repository modules.
+- Routine frontend verification is `npm run test:unit` and
+  `npm run build:website` when both apply.
+- Reserve `npm run lint` and `npm run test:website` for a final pass or an
+  explicit request.
+- Backend verification uses the smallest relevant `dotnet build` and
+  `dotnet test` selection.
+- Documentation-only changes need no application build unless a documentation
+  check exists.
 
-### Frontend — Island Pattern (RSC-first)
+## Risk Boundaries
 
-```
-page.tsx (Server Component — data fetching, metadata, SEO)
-  └→ island.tsx (Client Component — interactivity, state, event handlers)
-       └→ _components/ (local sub-components)
-```
+### Proceed Autonomously
 
-- **Server Components** by default — no `"use client"` unless needed
-- **State**: Zustand stores (global) → React Context (scoped) → useState (local)
-- **i18n**: next-intl with `en.json`, `ro.json`, `fr.json` in `messages/`
-- **Auth**: Clerk middleware — not in-component checks
-
-### Backend — The Standard (5 layers)
-
-```
-Endpoints (Exposers) → HTTP mapping, 1 Processing service
-    ↓
-Processing Services → Heavy computation, AI/ML, 1-2 Orchestration services
-    ↓
-Orchestration Services → Coordination, cross-cutting, 2-3 Foundation services
-    ↓
-Foundation Services → CRUD, validation, 1-2 Brokers
-    ↓
-Brokers → External abstraction, thin wrappers, NO business logic
-```
-
-- **Florance Pattern**: Max 2-3 dependencies per service
-- **Bounded Contexts**: Core (infra), Core.Auth (auth), Invoices (business), Common (shared)
-- **TryCatch pattern** with OpenTelemetry Activity tracing on all service methods
-
-### Dependency Flow
-
-```
-@arolariu/components (shared UI)
-        ↓ imports
-sites/arolariu.ro (Next.js) ←── API calls ──→ sites/api.arolariu.ro (.NET)
-        ↓ (no dependency)
-sites/cv.arolariu.ro (SvelteKit — standalone)
-```
-
----
-
-## Testing
-
-| Domain | Framework | Coverage Target | Command |
-|--------|-----------|----------------|---------|
-| Frontend unit | Vitest + Testing Library | 90%+ | `npm run test:unit` |
-| Frontend E2E | Playwright | Critical paths | `npm run test:e2e:frontend` |
-| Backend unit | MSTest | 85%+ | `dotnet test sites/api.arolariu.ro/tests` |
-| Backend E2E | Newman/Postman | API contracts | `npm run test:e2e:backend` |
-
-**Test patterns**: AAA (Arrange, Act, Assert), mock builders (`InvoiceBuilder`, `ProductBuilder`), proper cleanup in `afterEach`.
-
----
-
-## Security Boundaries
-
-### Always Do
-- Follow The Standard layer hierarchy
-- Use `Readonly<Props>` for React component props
-- Add XML docs (C#) / JSDoc (TS) on all public APIs
-- Use `.ConfigureAwait(false)` in .NET library code
-- Handle loading, error, and empty states in UI
-- Use `next-intl` for all user-facing strings
-- Run `npm run lint` and `npm run format` before committing
-- Classify exceptions with marker interfaces; endpoints map to HTTP via the static `ExceptionToHttpResultMapper`, with `ExceptionMappingHandler` (`IExceptionHandler`) as defense-in-depth for pipeline escapes (see RFC 2003)
+- Read/search within the repository.
+- Create, edit, rename, format, and test files required by an explicit,
+  reversible task.
+- Reuse established helpers and patterns.
+- Run targeted existing checks.
 
 ### Ask First
-- Adding new npm or NuGet dependencies
-- Database schema changes (Cosmos or SQL)
-- Creating new bounded contexts or Zustand stores
-- Modifying authentication/authorization logic
-- Changes to `next.config.ts`, CI/CD workflows, or infrastructure
-- Modifying shared component library (`packages/components/`)
 
-### Never Do
-- Use `any` type in TypeScript (strict mode enforced)
-- Commit secrets, API keys, connection strings, or credentials
-- Put business logic in Brokers (they are thin wrappers only)
-- Make sideways calls (Foundation→Foundation) — use Orchestration
-- Exceed 2-3 dependencies per service (Florance Pattern)
-- Skip tests for new code
-- Use inline styles instead of CSS Modules
-- Use sync-over-async patterns (`.Result`, `.Wait()`) in .NET
-- Auto-create or delete files without user confirmation
-- Commit `docs/superpowers/**` or `.superpowers/**` agent working artifacts
-- Force-push to main/preview branches
+- Add or replace npm, NuGet, Python, MCP, extension, or system dependencies.
+- Change database schemas or perform data migration.
+- Create a bounded context or Zustand store.
+- Change authentication, authorization, or security behavior.
+- Change `next.config.ts`, infrastructure, deployment, production workflows,
+  or material cloud cost.
+- Modify the shared component library when it is incidental rather than
+  explicitly requested.
+- Delete data, rewrite history, or perform another irreversible operation.
+- Choose among materially different API, product, or UX behaviors without a
+  safe established default.
 
----
+### Never
+
+- Commit secrets, tokens, credentials, or connection strings.
+- Force-push `main` or `preview`.
+- Put business logic in Brokers.
+- Make Foundation-to-Foundation calls.
+- Exceed the service dependency limit without an approved architecture change.
+- Use sync-over-async in .NET.
+- Introduce explicit TypeScript `any`.
+- Skip tests for changed behavior.
+- Commit agent working artifacts.
 
 ## Git Workflow
 
-- **Main branch**: `main` (production)
-- **Preview branch**: `preview` (staging)
-- **Feature branches**: `feat/description`, `fix/description`, `refactor/description`
-- **Commit style**: Conventional Commits (`feat:`, `fix:`, `refactor:`, `docs:`, `test:`, `chore:`)
-- **PR process**: Create branch → implement → test → lint → PR against `main`
-- **CI**: GitHub Actions (build, test, lint, deploy) — see `.github/workflows/`
+- `main` is production; `preview` is staging.
+- Use `feat/`, `fix/`, `refactor/`, `docs/`, `test/`, or `chore/` branches.
+- Use Conventional Commit messages.
+- Target the branch named by the task; otherwise target `main`.
+- Never force-push protected branches.
 
----
+## AI Customization
 
-## Available Tools & Resources
+| Asset | Location | Responsibility |
+| --- | --- | --- |
+| Root contract | `AGENTS.md` | Canonical facts and repository-wide rules |
+| Copilot contract | `.github/copilot-instructions.md` | Universal Copilot execution behavior |
+| Local guides | `**/AGENTS.md` | Project-only facts and exceptions |
+| Instructions | `.github/instructions/` | File-triggered language/domain constraints |
+| Agents | `.github/agents/` | Specialist ownership and routing |
+| Skills | `.github/skills/` | Repeatable task workflows |
+| Prompts | `.github/prompts/` | Local VS Code shortcuts |
+| Extensions | `.github/extensions/` | Optional Copilot CLI acceleration |
+| Memory | `.github/memory/memory.json` | Durable, non-source-derived learned context |
 
-### AI Instruction Files
+`CLAUDE.md` is a best-effort symlink to this file. Copilot CLI MCP configuration
+lives in `.copilot/mcp-config.json`.
 
-| Type | Location | Purpose |
-|------|----------|---------|
-| Instructions | `.github/instructions/*.instructions.md` | Auto-loaded by file pattern |
-| Agents | `.github/agents/*.agent.md` | Specialized AI personas |
-| Prompts | `.github/prompts/*.prompt.md` | Reusable task templates |
-| Skills | `.github/skills/*/SKILL.md` | Scaffolding with templates |
-
-### MCP Servers
-
-| Server | Package | Capability |
-|--------|---------|-----------|
-| sequential-thinking | `@modelcontextprotocol/server-sequential-thinking` | Multi-step reasoning and planning |
-| playwright | `@playwright/mcp` | Browser automation for E2E testing |
-| memory | `@modelcontextprotocol/server-memory` | Persistent knowledge graph (→ `.github/memory/memory.json`) |
-| github | `github-mcp` | GitHub PRs, issues, actions, code search |
-| context7 | `@upstash/context7-mcp` | Live library/framework documentation injection |
-| filesystem | `@modelcontextprotocol/server-filesystem` | Structured file operations (scoped to src/) |
-| azure-devops | `@azure-devops/mcp` | Azure DevOps work items, builds, repos |
-
-### Cross-tool MCP sync
-
-`.mcp.json` (root) is consumed by Claude Code. `.copilot/mcp-config.json`
-mirrors a subset for Copilot CLI. They share `.github/memory/memory.json`
-via the `memory` MCP server. Adding/removing a shared server: edit both
-files (intentional duplication — Copilot CLI requires explicit `type: "stdio"` per server entry; Claude Code infers it).
-
-### RFCs (Architecture Decisions)
+## RFC Map
 
 | RFC | Topic |
-|-----|-------|
-| 0001 | GitHub Actions Workflows |
-| 1001 | Frontend OpenTelemetry Observability |
-| 1002 | Comprehensive JSDoc/TSDoc Documentation |
-| 1003 | Internationalization (next-intl) |
-| 1004 | Metadata & SEO System |
-| 1005 | State Management (Zustand) |
-| 1006 | Component Library Architecture |
-| 1007 | Advanced Frontend Patterns |
-| 1008 | SCSS System Architecture |
-| 2001 | Domain-Driven Design Architecture |
-| 2002 | OpenTelemetry Backend Observability |
-| 2003 | The Standard Implementation |
-| 2004 | Comprehensive XML Documentation |
-
----
+| --- | --- |
+| 0001 | GitHub Actions |
+| 1001 | Frontend observability |
+| 1002 | JSDoc/TSDoc |
+| 1003 | Internationalization |
+| 1004 | Metadata and SEO |
+| 1005 | Zustand state |
+| 1006 | Component library |
+| 1007 | Advanced frontend patterns |
+| 1008 | SCSS architecture |
+| 2001 | Domain-driven design |
+| 2002 | Backend observability |
+| 2003 | The Standard |
+| 2004 | XML documentation |
 
 ## Troubleshooting
 
-| Issue | Solution |
-|-------|----------|
-| MCP servers not starting (Windows) | Use `cmd /c npx` in `.mcp.json` |
-| Tests failing with coverage errors | Check thresholds in `vitest.config.ts` |
-| Build fails with TS errors | Run `npm run generate` first |
-| Missing translations | Run `npm run generate:i18n` to sync locales |
-| API connection refused | Ensure API is running: `npm run dev:api` |
-| Component not found | Check barrel export in `packages/components/src/index.ts` |
-| .NET build warnings as errors | Fix all warnings — `TreatWarningsAsErrors` is enabled |
-| Missing XML docs | Add `<summary>`, `<param>`, `<returns>` to public APIs (CS1591) |
-
----
-
-## Environment Setup
-
-**Prerequisites**: Node.js, .NET SDK, npm (versions in [Versions](#versions))
-
-```bash
-git clone https://github.com/arolariu/arolariu.ro.git
-cd arolariu.ro
-npm install
-npm run setup     # Generates env files, i18n, etc.
-npm run dev:website
-```
+| Problem | Action |
+| --- | --- |
+| Build reports missing generated files | Run `npm run generate` |
+| Missing translations | Run `npm run generate:i18n` |
+| API is unavailable | Run `npm run dev:api` |
+| Shared component import fails | Verify `packages/components/src/index.ts` |
+| .NET warnings fail the build | Fix the warning; do not suppress it |
+| Public C# API fails CS1591 | Add the required XML documentation |
+| Copilot extension fails | Inspect it with Copilot CLI extension management; source presence is not runtime health |

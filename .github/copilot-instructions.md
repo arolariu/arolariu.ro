@@ -1,88 +1,102 @@
-# GitHub Copilot Instructions — arolariu.ro Monorepo
+# GitHub Copilot Instructions - arolariu.ro
 
-> **Canonical reference:** [`AGENTS.md`](../AGENTS.md) (root). This file is the always-loaded floor for Copilot surfaces (Chat, code review, cloud agent). For the full Operating Contract, code style, repo structure, testing, git workflow, RFCs, and tools — see AGENTS.md.
+`AGENTS.md` is the canonical source for repository facts, versions, commands,
+architecture, testing, security, and Git conventions. This file adds only
+Copilot execution behavior.
 
-## How to use these instructions
+## Authority and Context
 
-- Path-specific rules: `.github/instructions/*.instructions.md` (auto-attached via `applyTo` globs)
-- Personas: `.github/agents/*.agent.md` (Copilot agent mode)
-- Reusable tasks: `.github/prompts/*.prompt.md` (slash commands)
-- Scaffolding skills: `.github/skills/*/SKILL.md` (auto-attached by description)
+Before acting:
 
-## Required Execution Sequence
+1. Read live source and configuration.
+2. Read the nearest `AGENTS.md`.
+3. Load only matching `.github/instructions/*.instructions.md`.
+4. Use an agent for domain ownership and a skill for a repeatable workflow.
+5. Treat prompts as local VS Code shortcuts, not competing workflow sources.
 
-1. **Intake**: identify task scope, touched domains, and assumptions.
-2. **Policy gate**: enforce security, architecture, and repository constraints before edits.
-3. **RFC grounding**: when task is architecture-sensitive, read relevant `docs/rfc/*.md` and validate referenced source files.
-4. **Verification**: do not report success without command/file evidence.
-5. **Uncertainty reporting**: explicitly disclose assumptions, confidence risks, and required user checkpoints.
+When sources conflict, follow the authority order in root `AGENTS.md`. Use
+source for current behavior and accepted RFCs for intent. Ask only when the
+resolution changes behavior or crosses a protected risk boundary.
 
-## Instruction Precedence
+## Risk-Based Autonomy
 
-If rules conflict, resolve in this order:
-1. Runtime/system safety constraints
-2. Root governance (`.github/copilot-instructions.md`, `AGENTS.md`)
-3. Domain instructions (`.github/instructions/*.instructions.md`)
-4. Artifact instructions (`.github/agents`, `.github/skills`, `.github/prompts`)
-5. File-local conventions
+Proceed without another checkpoint when the task is explicit, reversible,
+in-scope, and follows an established pattern. This includes creating, editing,
+renaming, formatting, and testing the files needed to complete the task.
 
-## Violation Severity
+Ask before:
 
-| Severity | Definition | Response |
-|----------|------------|----------|
-| Critical | Security/policy bypass or destructive-risk action | Stop and require explicit user approval |
-| High | Architecture or verification breach | Block completion until fixed |
-| Medium | Standards drift or partial validation | Fix before merge unless explicitly deferred |
-| Low | Non-risk clarity/documentation gaps | Queue as follow-up |
+- adding or replacing dependencies;
+- changing authentication, authorization, or security behavior;
+- changing schemas or migrating data;
+- creating a bounded context or Zustand store;
+- changing infrastructure, deployment, production workflows, or material
+  cloud cost;
+- destructive or irreversible operations;
+- choosing among materially different public API, product, or UX behaviors
+  without a safe established default.
 
-## Never Do
+An explicit request authorizes ordinary in-scope file creation. It does not
+authorize an irreversible or security-sensitive operation without the required
+concrete checkpoint.
 
-- Use `any` type in TypeScript (strict mode enforced)
-- Commit secrets, API keys, connection strings, or credentials
-- Commit `docs/superpowers/**` or `.superpowers/**` agent working artifacts; these paths are git-ignored for a reason
-- Put business logic in Brokers (they are thin wrappers only)
-- Make sideways calls (Foundation→Foundation) — use Orchestration
-- Exceed 2-3 dependencies per service (Florance Pattern)
-- Skip tests for new code
-- Use inline styles instead of CSS Modules
-- Use sync-over-async patterns (`.Result`, `.Wait()`) in .NET
-- Auto-create or delete files without user confirmation
-- Force-push to `main` or `preview` branches
-- Run `npm run lint` or `npm run test:website` for routine verification — both are expensive (see [Local Dev Loop](#local-dev-loop--verification)); use `npm run test:unit` + `npm run build:website` instead
-- Create a git worktree unless the user explicitly asks — work in the current checkout/branch by default
-- Mock our own modules in tests — mock only true external boundaries
+## Editing Discipline
 
-## Ask First
+- Inspect current sibling source before adding a new pattern.
+- Reuse existing helpers and abstractions.
+- Make the smallest complete change; do not perform unrelated cleanup.
+- Preserve user changes in a dirty worktree.
+- Use strict types; never introduce TypeScript `any`.
+- Keep business logic out of Brokers and service dependencies within the
+  repository limit.
+- Keep Server Components server-side unless interaction requires a client
+  boundary.
+- Use CSS Modules instead of inline styles.
+- Keep user-facing copy in `next-intl`.
+- Add tests for changed behavior.
+- Never commit secrets or `docs/superpowers/**` / `.superpowers/**`.
+- Do not create a worktree unless the user explicitly requests one.
+- Never force-push `main` or `preview`.
 
-- Adding new npm or NuGet dependencies
-- Database schema changes (Cosmos or SQL)
-- Creating new bounded contexts or Zustand stores
-- Modifying authentication/authorization logic
-- Changes to `next.config.ts`, CI/CD workflows, or infrastructure
-- Modifying shared component library (`packages/components/`)
+## Verification
 
-## Local Dev Loop & Verification
+- Run the smallest existing test, build, or lint command that proves the
+  changed behavior.
+- Routine frontend work uses `npm run test:unit` and
+  `npm run build:website` when both apply.
+- Reserve `npm run lint` and `npm run test:website` for a final pass or an
+  explicit request.
+- Use targeted `dotnet build` and `dotnet test` selections for backend work.
+- Documentation-only changes do not require an application build unless a
+  documentation check exists.
+- Do not claim success without command or file evidence.
+- Do not dump routine evidence into the final response unless requested or
+  needed to explain risk, failure, or incomplete validation.
 
-- **Routine verification is cheap by design.** For typical edits, verify with `npm run test:unit` (Vitest unit + MSTest only) and `npm run build:website`. Run these freely.
-- **`npm run lint` and `npm run test:website` are expensive — don't run them for routine edits.** `lint` runs ESLint with 20+ plugins; `test:website` runs the **full** website suite (`test:unit && test:e2e` Playwright **&&** `test:storybook`), not unit-only. Reserve both for a final pass before a PR, or when the user explicitly asks.
-- **Tests are colocated.** Put `*.test.ts` next to the file it covers (e.g. `utils.generic.test.ts` beside `utils.generic.ts`); shared test builders live in `sites/arolariu.ro/tests/helpers/builders/`.
-- **Minimize test doubles.** Prefer real implementations and never mock our own modules — mock only true external boundaries (network, Azure SDK, Clerk, etc.). Excess mocks/stubs/fakes are a smell in this codebase.
+## Task Assets
 
-## Copilot Runtime Guidance
+- `.github/agents/*.agent.md` defines specialist scope and routing.
+- `.github/skills/*/SKILL.md` defines portable execution workflows for CLI,
+  VS Code, and Copilot coding agent.
+- `.github/prompts/*.prompt.md` defines local VS Code shortcuts.
+- `.github/extensions/*/extension.mjs` defines optional CLI acceleration.
 
-- **Skills vs prompts.** `.github/skills/*/SKILL.md` files auto-attach when their description matches the task. `.github/prompts/*.prompt.md` files are user-invoked via slash commands. Don't author the same workflow twice.
-- **MCP tools to prefer.**
-  - Use `sequential-thinking` for multi-step planning before code edits.
-  - Use `context7` to verify library APIs before recommending them — your training data may not match the installed version.
-  - Use `github` MCP for PR/issue/Actions queries instead of inferring state.
-- **Memory.** Copilot Memory (server-side) and the file-based `memory` MCP at `.github/memory/memory.json` (mirrored to Copilot CLI via `.copilot/mcp-config.json`) coexist as separate persistent stores.
-- **Cloud agent.** When running on a PR, `.github/instructions/**` files matching `applyTo` globs are loaded; this file (`copilot-instructions.md`) is always loaded. AGENTS.md may or may not be loaded depending on surface.
+Do not encode the same workflow in more than one skill. A prompt may delegate
+to a skill but must not reproduce it.
 
-## Worktrees
+## Memory
 
-- **Default: work in the current checkout/branch.** Do not create a git worktree unless the user explicitly asks for one.
-- When you *do* work in `.worktrees/**` or any fresh checkout and touch `sites/arolariu.ro` tests, typechecks, or builds that import `@arolariu/components`, run setup in that same worktree first: `npm install`, then `npm run build:components`.
+Repository memory may contain only durable, actionable context that is not
+directly derivable from tracked source. Do not store versions, commands,
+architecture summaries, counts, discoverable paths, task state, secrets, or
+personal data. Canonical source always overrides memory.
 
----
+## Failure and Uncertainty
 
-For Setup, Code Style, Architecture, Testing, Git Workflow, Tools, RFCs, Troubleshooting, Environment Setup → see [`AGENTS.md`](../AGENTS.md).
+- Surface tool and extension failures explicitly; do not return
+  success-shaped fallbacks.
+- Do not treat an extension file as proof that the extension loaded.
+- Report only material assumptions, residual risks, blockers, or incomplete
+  validation.
+- Stop when requirements conflict and no safe behavior-preserving default
+  exists.
