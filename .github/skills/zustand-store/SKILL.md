@@ -1,257 +1,50 @@
 ---
 name: zustand-store
-description: 'Creates Zustand stores with IndexedDB persistence, TypeScript strict typing, and comprehensive test coverage following arolariu.ro state management patterns from RFC 1005.'
-lastReviewed: 2026-05-08
+description: Create or extend a Zustand store using current arolariu.ro state-management patterns. Use only for genuinely global client state after confirming local state or Context is insufficient; inspect existing stores and RFC 1005 first.
 ---
 
-# Zustand Store Scaffolding
+# Zustand Store
 
-Generates Zustand stores following the arolariu.ro state management patterns.
+## Use When
 
-## When to Use
+- Extending explicitly requested global client state
+- Sharing client state across unrelated route branches
+- Persisting approved client state across navigation or reload
 
-- Adding global client-side state
-- State that persists across page navigations
-- State shared between multiple components
-- Replacing prop drilling beyond 2 levels
+Do not use for server data, one form, one component, or one scoped subtree.
 
-## When NOT to Use
+## Inputs
 
-- Server-only data: Use Server Components with direct fetching
-- Form state: Use `useState` or react-hook-form
-- Component-scoped state: Use `useState` or `useReducer`
-- Theme/locale: Use React Context
+- State owner and consumers
+- Persisted versus transient fields
+- Actions and invariants
+- Rehydration and reset behavior
 
-## Store Template
+## Procedure
 
-```typescript
-// sites/arolariu.ro/src/stores/[entity]Store.ts
-import {create} from "zustand";
-import {persist} from "zustand/middleware";
-import {indexedDBStorage} from "@/stores/indexedDBStorage";
+1. Read RFC 1005, the website guide, TypeScript/frontend instructions, store
+   barrel, and the closest existing store plus tests.
+2. Prove local state or Context is insufficient.
+3. Ask before creating a new store; an explicit request may extend an existing
+   store without another checkpoint.
+4. Separate persisted data from transient loading/error state.
+5. Reuse the existing entity-store factory and IndexedDB helpers when the
+   current shape matches.
+6. Write failing colocated tests for defaults, each action, reset, and
+   persistence/rehydration behavior.
+7. Implement the smallest state/action change.
+8. Update the barrel only when an export changes.
+9. Use `useShallow` for object selectors.
+10. Run the targeted tests and routine website verification.
 
-/**
- * State shape for the [Entity] store.
- */
-interface [Entity]StoreState {
-  /** The current list of [entities]. */
-  readonly items: [Entity][];
-  /** Whether the store is loading data. */
-  readonly isLoading: boolean;
-  /** The last error that occurred. */
-  readonly error: Error | null;
-}
+## Completion
 
-/**
- * Actions available on the [Entity] store.
- */
-interface [Entity]StoreActions {
-  /** Fetches all [entities] from the API. */
-  fetchAll: () => Promise<void>;
-  /** Adds a new [entity] to the store. */
-  add: (item: [Entity]) => void;
-  /** Updates an existing [entity]. */
-  update: (id: string, item: Partial<[Entity]>) => void;
-  /** Removes an [entity] by ID. */
-  remove: (id: string) => void;
-  /** Resets the store to initial state. */
-  reset: () => void;
-}
+State why global state is justified, what persists, and which tests prove the
+behavior.
 
-type [Entity]Store = [Entity]StoreState & [Entity]StoreActions;
+## Stop and Ask
 
-const initialState: [Entity]StoreState = {
-  items: [],
-  isLoading: false,
-  error: null,
-};
-
-/**
- * Zustand store for [Entity] management with IndexedDB persistence.
- * @see RFC 1005 for state management patterns.
- */
-export const use[Entity]Store = create<[Entity]Store>()(
-  persist(
-    (set, get) => ({
-      ...initialState,
-
-      fetchAll: async () => {
-        set({isLoading: true, error: null});
-        try {
-          const items = await fetch[Entities]();
-          set({items, isLoading: false});
-        } catch (error) {
-          set({
-            error: error instanceof Error ? error : new Error("Failed to fetch"),
-            isLoading: false,
-          });
-        }
-      },
-
-      add: (item) => {
-        set((state) => ({items: [...state.items, item]}));
-      },
-
-      update: (id, updates) => {
-        set((state) => ({
-          items: state.items.map((item) =>
-            item.id === id ? {...item, ...updates} : item,
-          ),
-        }));
-      },
-
-      remove: (id) => {
-        set((state) => ({
-          items: state.items.filter((item) => item.id !== id),
-        }));
-      },
-
-      reset: () => {
-        set(initialState);
-      },
-    }),
-    {
-      name: "[entity]-store",
-      storage: indexedDBStorage,
-      partialize: (state) => ({
-        items: state.items,
-        // Don't persist loading/error state
-      }),
-    },
-  ),
-);
-```
-
-## Test Template
-
-```typescript
-// sites/arolariu.ro/src/stores/__tests__/[entity]Store.test.tsx
-import {describe, expect, it, beforeEach, vi} from "vitest";
-import {act} from "@testing-library/react";
-import {use[Entity]Store} from "../[entity]Store";
-
-// Mock IndexedDB storage
-vi.mock("@/stores/indexedDBStorage", () => ({
-  indexedDBStorage: {
-    getItem: vi.fn(() => null),
-    setItem: vi.fn(),
-    removeItem: vi.fn(),
-  },
-}));
-
-describe("use[Entity]Store", () => {
-  beforeEach(() => {
-    // Reset store between tests
-    act(() => {
-      use[Entity]Store.getState().reset();
-    });
-  });
-
-  it("should have correct initial state", () => {
-    const state = use[Entity]Store.getState();
-    expect(state.items).toEqual([]);
-    expect(state.isLoading).toBe(false);
-    expect(state.error).toBeNull();
-  });
-
-  it("should add an item", () => {
-    const item = {id: "1", name: "Test"};
-    act(() => {
-      use[Entity]Store.getState().add(item);
-    });
-    expect(use[Entity]Store.getState().items).toContainEqual(item);
-  });
-
-  it("should update an item", () => {
-    const item = {id: "1", name: "Original"};
-    act(() => {
-      use[Entity]Store.getState().add(item);
-      use[Entity]Store.getState().update("1", {name: "Updated"});
-    });
-    expect(use[Entity]Store.getState().items[0]?.name).toBe("Updated");
-  });
-
-  it("should remove an item", () => {
-    const item = {id: "1", name: "Test"};
-    act(() => {
-      use[Entity]Store.getState().add(item);
-      use[Entity]Store.getState().remove("1");
-    });
-    expect(use[Entity]Store.getState().items).toHaveLength(0);
-  });
-
-  it("should reset to initial state", () => {
-    act(() => {
-      use[Entity]Store.getState().add({id: "1", name: "Test"});
-      use[Entity]Store.getState().reset();
-    });
-    expect(use[Entity]Store.getState().items).toEqual([]);
-  });
-});
-```
-
-## Checklist
-
-- [ ] State and Actions interfaces are separate
-- [ ] Initial state is defined as a constant
-- [ ] IndexedDB persistence configured via `indexedDBStorage`
-- [ ] `partialize` excludes loading/error state from persistence
-- [ ] `reset()` action restores initial state
-- [ ] Error handling in async actions
-- [ ] Tests reset store in `beforeEach`
-- [ ] Tests cover: initial state, add, update, remove, reset
-- [ ] No `any` types
-- [ ] JSDoc on store and all actions
-
-## RFC Grounding Checklist (Mandatory)
-
-Before final output or code changes:
-
-1. Map task scope to relevant RFC IDs using `.github/agent-governance/rfc-grounding-protocol.md`.
-2. Read the referenced source files and verify RFC guidance is still current.
-3. If RFC and source conflict, follow source-of-truth code and record RFC drift for remediation.
-4. Include concrete evidence in outputs (file paths, command results, and validation notes).
-
-## Execution Contract
-
-### Prerequisites
-- Confirm feature scope and expected behavior before creating or modifying files.
-- Identify whether this task changes architecture-sensitive behavior and trigger RFC grounding.
-
-### Required Context Reads
-- `.github/instructions/frontend.instructions.md`
-- `.github/instructions/typescript.instructions.md`
-- `docs/rfc/1005-state-management-zustand.md`
-- `sites/arolariu.ro/src/stores/index.ts`
-
-### File Mutation Boundaries
-- Allowed: `sites/arolariu.ro/src/stores/**`, related hooks/tests/messages as needed.
-- Disallowed: unrelated domain logic or infrastructure edits.
-
-### Validation Commands
-```bash
-npm run build:website
-npm run test:website
-```
-
-### Success Output Contract
-- Return created/updated file paths.
-- Summarize validation commands and outcomes.
-- Report assumptions made during generation.
-
-### Failure Output Contract
-- Report failing step and exact error output.
-- Provide impacted files and rollback-safe next steps.
-- Request user confirmation when risk or ambiguity blocks safe continuation.
-
-## Self-Audit and Uncertainty Protocol (Mandatory)
-
-For non-trivial tasks, complete this checklist before final output:
-
-1. **Assumptions:** list non-obvious assumptions that influenced decisions.
-2. **Risk Flags:** identify security, behavior, deployment, or data risks.
-3. **Confidence:** report `high`, `medium`, or `low` with brief justification.
-4. **Evidence:** cite changed files, executed commands, and validation outcomes.
-
-Escalate to the user before continuing when security/auth/infra/destructive or major behavior-changing decisions are involved.
-
+- New store
+- New persistence dependency or schema
+- Cross-user/security-sensitive persisted data
+- Public behavior ambiguity
