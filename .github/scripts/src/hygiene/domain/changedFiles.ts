@@ -43,16 +43,7 @@ const ROOT_SHARED_FILES = new Set([
   ".prettierignore",
 ]);
 
-const JS_SHARED_FILES = new Set([
-  "package.json",
-  "package-lock.json",
-  "tsconfig.json",
-  "eslint.config.ts",
-  "vitest.config.ts",
-  "nx.json",
-  ".prettierrc",
-  ".prettierignore",
-]);
+const JS_SHARED_FILES = new Set(["package.json", "package-lock.json", "tsconfig.json", "eslint.config.ts", "vitest.config.ts", "nx.json"]);
 
 const BACKEND_SHARED_EXTENSIONS = new Set([".slnx", ".props", ".targets"]);
 const PYTHON_SHARED_FILENAMES = new Set(["requirements.txt", "requirements-dev.txt", "pyproject.toml", "ruff.toml"]);

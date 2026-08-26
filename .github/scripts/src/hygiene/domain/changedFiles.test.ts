@@ -108,6 +108,12 @@ describe("file filters", () => {
     ]);
   });
 
+  it("keeps ESLint scoped when Prettier configuration changes", () => {
+    expect(filesForEslint(known([".prettierrc", ".prettierignore", "scripts/generate.artifacts.ts"]))).toEqual([
+      "scripts/generate.artifacts.ts",
+    ]);
+  });
+
   it("returns null filters for unknown or broad scope", () => {
     expect(filesForPrettier(unknown())).toBeNull();
     expect(filesForEslint(known(["package.json"]))).toBeNull();
