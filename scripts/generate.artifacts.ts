@@ -17,6 +17,23 @@ import type {
   TaxonomyArtifactNode,
 } from "./types";
 
+/** Delays between the three bounded taxonomy source attempts. */
+const TAXONOMY_SOURCE_RETRY_DELAYS_MS = [1_000, 4_000] as const;
+
+/** Per-attempt timeout that replaces Node's five-minute fetch default. */
+const TAXONOMY_SOURCE_TIMEOUT_MS = 30_000;
+
+/** Stable fields that identify the exact taxonomy expected by one generator. */
+type TaxonomyArtifactIdentity = Readonly<Pick<TaxonomyArtifact, "system" | "version" | "sourceUrl" | "attribution">>;
+
+/** Marks exhausted transient source failures that may use a validated cache. */
+class TaxonomySourceUnavailableError extends Error {
+  public constructor(message: string, cause: Error) {
+    super(message, {cause});
+    this.name = "TaxonomySourceUnavailableError";
+  }
+}
+
 /**
  * Base contract and shared invariants for taxonomy artifact generators.
  *
@@ -92,11 +109,7 @@ export abstract class TaxonomyClassificationGenerator {
    * @returns Validated string.
    * @throws {TypeError} When the field is missing, empty, or not a string.
    */
-  protected requireString(
-    record: Readonly<Record<string, unknown>>,
-    key: string,
-    context: string,
-  ): string {
+  protected requireString(record: Readonly<Record<string, unknown>>, key: string, context: string): string {
     const value = record[key];
     if (typeof value !== "string") throw new TypeError(`${context} ${key} must be a string.`);
     if (value.trim().length === 0) {
@@ -114,11 +127,7 @@ export abstract class TaxonomyClassificationGenerator {
    * @returns String value or `null` when absent.
    * @throws {TypeError} When a present value is not a string.
    */
-  protected optionalString(
-    record: Readonly<Record<string, unknown>>,
-    key: string,
-    context: string,
-  ): string | null {
+  protected optionalString(record: Readonly<Record<string, unknown>>, key: string, context: string): string | null {
     const value = record[key];
     if (value === null || value === undefined || value === "") return null;
     if (typeof value !== "string") {
@@ -136,11 +145,7 @@ export abstract class TaxonomyClassificationGenerator {
    * @returns Validated number.
    * @throws {TypeError} When the field is not a finite number.
    */
-  protected requireNumber(
-    record: Readonly<Record<string, unknown>>,
-    key: string,
-    context: string,
-  ): number {
+  protected requireNumber(record: Readonly<Record<string, unknown>>, key: string, context: string): number {
     const value = record[key];
     if (typeof value !== "number" || !Number.isFinite(value)) {
       throw new TypeError(`${context} ${key} must be a number.`);
@@ -157,11 +162,7 @@ export abstract class TaxonomyClassificationGenerator {
    * @returns Validated boolean.
    * @throws {TypeError} When the field is not boolean.
    */
-  protected requireBoolean(
-    record: Readonly<Record<string, unknown>>,
-    key: string,
-    context: string,
-  ): boolean {
+  protected requireBoolean(record: Readonly<Record<string, unknown>>, key: string, context: string): boolean {
     const value = record[key];
     if (typeof value !== "boolean") {
       throw new TypeError(`${context} ${key} must be a boolean.`);
@@ -195,10 +196,7 @@ export abstract class TaxonomyClassificationGenerator {
    * @returns Selected node with complete hierarchy and normalized search text.
    * @throws {Error} When the code is absent, a parent is missing, or a cycle exists.
    */
-  protected buildHierarchy(
-    nodesByCode: ReadonlyMap<string, TaxonomyArtifactNode>,
-    code: string,
-  ): TaxonomyArtifactNode {
+  protected buildHierarchy(nodesByCode: ReadonlyMap<string, TaxonomyArtifactNode>, code: string): TaxonomyArtifactNode {
     const selected = nodesByCode.get(code);
     if (selected === undefined) throw new Error(`Taxonomy code '${code}' was not found.`);
 
@@ -216,9 +214,7 @@ export abstract class TaxonomyClassificationGenerator {
       if (current.parentCode === null) break;
       const parent = nodesByCode.get(current.parentCode);
       if (parent === undefined) {
-        throw new Error(
-          `Taxonomy parent '${current.parentCode}' for '${current.code}' was not found.`,
-        );
+        throw new Error(`Taxonomy parent '${current.parentCode}' for '${current.code}' was not found.`);
       }
       current = parent;
     }
@@ -237,6 +233,151 @@ export abstract class TaxonomyClassificationGenerator {
   }
 
   /**
+   * Fetches and consumes one taxonomy response with bounded transient retries.
+   *
+   * @param sourceName - Generator label used in retry diagnostics.
+   * @param requestName - Request label used in HTTP failure messages.
+   * @param input - Source URL.
+   * @param init - Fetch options.
+   * @param consume - Response body consumer executed inside the timeout boundary.
+   * @returns Consumed response value.
+   * @throws {TaxonomySourceUnavailableError} After transient attempts are exhausted.
+   * @throws {Error} Immediately for non-transient HTTP or response-consumption failures.
+   */
+  protected async fetchSource<T>(
+    sourceName: string,
+    requestName: string,
+    input: string | URL,
+    init: RequestInit,
+    consume: (response: Response) => Promise<T>,
+  ): Promise<T> {
+    const totalAttempts = TAXONOMY_SOURCE_RETRY_DELAYS_MS.length + 1;
+    let lastFailure: Error | undefined;
+
+    for (let attempt = 1; attempt <= totalAttempts; attempt += 1) {
+      const timeoutSignal = AbortSignal.timeout(TAXONOMY_SOURCE_TIMEOUT_MS);
+      const signal = init.signal === undefined || init.signal === null ? timeoutSignal : AbortSignal.any([init.signal, timeoutSignal]);
+      let response: Response;
+
+      try {
+        response = await fetch(input, {...init, signal});
+      } catch (error: unknown) {
+        if (init.signal?.aborted === true) throw error;
+        lastFailure = this.toError(error);
+        const retryDelay = TAXONOMY_SOURCE_RETRY_DELAYS_MS[attempt - 1];
+        if (retryDelay === undefined) break;
+        this.logSourceRetry(sourceName, lastFailure, attempt, totalAttempts, retryDelay);
+        await this.wait(retryDelay);
+        continue;
+      }
+
+      if (!response.ok) {
+        const failure = new Error(`${requestName} failed with HTTP ${response.status} ${response.statusText}.`);
+        if (!this.isTransientHttpStatus(response.status)) throw failure;
+
+        lastFailure = failure;
+        const retryDelay = TAXONOMY_SOURCE_RETRY_DELAYS_MS[attempt - 1];
+        if (retryDelay === undefined) break;
+        this.logSourceRetry(sourceName, failure, attempt, totalAttempts, retryDelay);
+        await this.wait(retryDelay);
+        continue;
+      }
+
+      try {
+        return await consume(response);
+      } catch (error: unknown) {
+        if (!this.isTransientTransportError(error)) throw error;
+        lastFailure = this.toError(error);
+        const retryDelay = TAXONOMY_SOURCE_RETRY_DELAYS_MS[attempt - 1];
+        if (retryDelay === undefined) break;
+        this.logSourceRetry(sourceName, lastFailure, attempt, totalAttempts, retryDelay);
+        await this.wait(retryDelay);
+      }
+    }
+
+    const failure = lastFailure ?? new Error(`${requestName} failed without an error.`);
+    throw new TaxonomySourceUnavailableError(failure.message, failure);
+  }
+
+  /**
+   * Uses a checked-in mirrored artifact after transient source retries fail.
+   *
+   * @param sourceName - Generator label used in fallback diagnostics.
+   * @param fileName - Expected cached artifact file name.
+   * @param identity - Exact taxonomy identity required from the cache.
+   * @param sourceError - Error raised by source generation.
+   * @returns Validated cached paths in output-root order.
+   * @throws {Error} When the source error is non-transient or the cache is unusable.
+   */
+  protected async resolveGenerationFailure(
+    sourceName: string,
+    fileName: string,
+    identity: TaxonomyArtifactIdentity,
+    sourceError: unknown,
+  ): Promise<readonly string[]> {
+    try {
+      return await this.useCachedArtifact(sourceName, fileName, identity, sourceError);
+    } catch (error: unknown) {
+      this.logger.error(`[${sourceName}] ${error instanceof Error ? error.message : String(error)}`);
+      throw error;
+    }
+  }
+
+  /**
+   * Validates and returns the tracked taxonomy cache for an unavailable source.
+   *
+   * @param sourceName - Generator label used in fallback diagnostics.
+   * @param fileName - Expected cached artifact file name.
+   * @param identity - Exact taxonomy identity required from the cache.
+   * @param sourceError - Error raised by source generation.
+   * @returns Validated cached paths in output-root order.
+   */
+  private async useCachedArtifact(
+    sourceName: string,
+    fileName: string,
+    identity: TaxonomyArtifactIdentity,
+    sourceError: unknown,
+  ): Promise<readonly string[]> {
+    if (!(sourceError instanceof TaxonomySourceUnavailableError)) throw sourceError;
+
+    const paths = this.outputRoots.map((root) => resolve(root, fileName));
+    if (paths.length === 0) {
+      throw new Error(`${sourceError.message} Cached taxonomy artifact '${fileName}' has no configured output roots.`, {
+        cause: sourceError,
+      });
+    }
+
+    let cachedContents: readonly string[];
+    try {
+      cachedContents = await Promise.all(paths.map((path) => readFile(path, "utf8")));
+    } catch (error: unknown) {
+      const cacheError = this.toError(error);
+      throw new Error(`${sourceError.message} Cached taxonomy artifact '${fileName}' could not be read: ${cacheError.message}`, {
+        cause: new AggregateError([sourceError, cacheError]),
+      });
+    }
+
+    const firstContents = cachedContents[0];
+    if (firstContents === undefined || cachedContents.some((contents) => contents !== firstContents)) {
+      throw new Error(`Cached taxonomy artifact '${fileName}' is not byte-identical across output roots.`, {cause: sourceError});
+    }
+
+    let artifact: TaxonomyArtifact;
+    try {
+      artifact = this.parseArtifact(firstContents);
+      this.validateArtifactIdentity(fileName, artifact, identity);
+    } catch (error: unknown) {
+      const cacheError = this.toError(error);
+      throw new Error(`${sourceError.message} Cached taxonomy artifact '${fileName}' is invalid: ${cacheError.message}`, {
+        cause: new AggregateError([sourceError, cacheError]),
+      });
+    }
+
+    this.logger.warn(`[${sourceName}] Source unavailable after retries; using validated cached artifact '${fileName}'.`);
+    return paths;
+  }
+
+  /**
    * Validates, serializes, and writes an artifact to every runtime root.
    *
    * @param fileName - Generated artifact file name.
@@ -244,16 +385,15 @@ export abstract class TaxonomyClassificationGenerator {
    * @returns Absolute paths written in output-root order.
    * @throws {Error} When validation, writing, or read-back comparison fails.
    */
-  protected async writeArtifact(
-    fileName: string,
-    artifact: Readonly<TaxonomyArtifact>,
-  ): Promise<readonly string[]> {
+  protected async writeArtifact(fileName: string, artifact: Readonly<TaxonomyArtifact>): Promise<readonly string[]> {
     this.validateArtifact(artifact);
-    const contents = JSON.stringify(artifact);
     const paths = this.outputRoots.map((root) => resolve(root, fileName));
+    const existingContents = await this.readExistingArtifactContents(paths);
+    const contents = this.selectStableArtifactContents(fileName, artifact, existingContents);
 
     await Promise.all(
       paths.map(async (path, index) => {
+        if (existingContents[index] === contents) return;
         const root = this.outputRoots[index];
         if (root === undefined) throw new Error(`Output root for '${path}' was not found.`);
         await mkdir(root, {recursive: true});
@@ -267,6 +407,239 @@ export abstract class TaxonomyClassificationGenerator {
     }
 
     return paths;
+  }
+
+  /**
+   * Reads optional existing mirrors without hiding non-missing filesystem errors.
+   *
+   * @param paths - Absolute mirror paths.
+   * @returns Existing contents, using `null` only for missing paths.
+   */
+  private async readExistingArtifactContents(paths: readonly string[]): Promise<readonly (string | null)[]> {
+    return await Promise.all(
+      paths.map(async (path) => {
+        try {
+          return await readFile(path, "utf8");
+        } catch (error: unknown) {
+          if (this.isMissingPathError(error)) return null;
+          throw error;
+        }
+      }),
+    );
+  }
+
+  /**
+   * Preserves a tracked artifact timestamp when all semantic data is unchanged.
+   *
+   * @param fileName - Artifact name used in diagnostics.
+   * @param artifact - Newly generated artifact.
+   * @param existingContents - Optional current mirror contents.
+   * @returns Canonical contents to retain or write.
+   */
+  private selectStableArtifactContents(
+    fileName: string,
+    artifact: Readonly<TaxonomyArtifact>,
+    existingContents: readonly (string | null)[],
+  ): string {
+    const generatedContents = JSON.stringify(artifact);
+    if (existingContents.length === 0 || existingContents.some((contents) => contents === null)) {
+      return generatedContents;
+    }
+
+    const firstContents = existingContents[0];
+    if (firstContents === undefined || firstContents === null || existingContents.some((contents) => contents !== firstContents)) {
+      this.logger.warn(`Existing mirrored artifact '${fileName}' diverged and will be replaced.`);
+      return generatedContents;
+    }
+
+    try {
+      const existingArtifact = this.parseArtifact(firstContents);
+      const stableCandidate = JSON.stringify({
+        ...artifact,
+        generatedAt: existingArtifact.generatedAt,
+      });
+      if (stableCandidate === firstContents) {
+        this.logger.debug(`Artifact '${fileName}' is unchanged; preserving its tracked bytes.`);
+        return firstContents;
+      }
+    } catch (error: unknown) {
+      this.logger.warn(`Existing artifact '${fileName}' is invalid and will be replaced: ${this.toError(error).message}`);
+    }
+
+    return generatedContents;
+  }
+
+  /**
+   * Parses and validates an untrusted cached taxonomy artifact.
+   *
+   * @param contents - Cached JSON contents.
+   * @returns Fully validated artifact.
+   * @throws {Error} When JSON or any artifact field is invalid.
+   */
+  private parseArtifact(contents: string): TaxonomyArtifact {
+    const parsed: unknown = JSON.parse(contents);
+    const record = this.requireRecord(parsed, "Taxonomy artifact");
+    const system = this.requireString(record, "system", "Taxonomy artifact");
+    if (system !== "GS1_GPC" && system !== "ECOICOP_V2" && system !== "NACE_2_1") {
+      throw new TypeError(`Taxonomy artifact system '${system}' is unsupported.`);
+    }
+
+    const sourceUrl = this.requireString(record, "sourceUrl", "Taxonomy artifact");
+    new URL(sourceUrl);
+    const generatedAt = this.requireString(record, "generatedAt", "Taxonomy artifact");
+    if (Number.isNaN(Date.parse(generatedAt))) {
+      throw new TypeError("Taxonomy artifact generatedAt must be an ISO date.");
+    }
+
+    const rawNodes = record["nodes"];
+    if (!Array.isArray(rawNodes)) {
+      throw new TypeError("Taxonomy artifact nodes must be an array.");
+    }
+
+    const nodes = rawNodes.map((rawNode, index): TaxonomyArtifactNode => {
+      const context = `Taxonomy artifact node[${index}]`;
+      const node = this.requireRecord(rawNode, context);
+      const parentCode = node["parentCode"];
+      if (parentCode !== null && (typeof parentCode !== "string" || parentCode.trim().length === 0)) {
+        throw new TypeError(`${context} parentCode must be a non-empty string or null.`);
+      }
+      const definition = node["definition"];
+      if (definition !== null && typeof definition !== "string") {
+        throw new TypeError(`${context} definition must be a string or null.`);
+      }
+
+      return {
+        code: this.requireString(node, "code", context),
+        officialLabel: this.requireString(node, "officialLabel", context),
+        level: this.requireString(node, "level", context),
+        parentCode,
+        hierarchyCodes: this.requireStringArray(node, "hierarchyCodes", context),
+        hierarchyLabels: this.requireStringArray(node, "hierarchyLabels", context),
+        definition,
+        searchText: this.requireString(node, "searchText", context),
+      };
+    });
+
+    const artifact: TaxonomyArtifact = {
+      system,
+      version: this.requireString(record, "version", "Taxonomy artifact"),
+      sourceUrl,
+      generatedAt,
+      attribution: this.requireString(record, "attribution", "Taxonomy artifact"),
+      nodes,
+    };
+    this.validateArtifact(artifact);
+    return artifact;
+  }
+
+  /**
+   * Validates cached taxonomy identity fields against the owning generator.
+   *
+   * @param fileName - Cached artifact name used in failures.
+   * @param artifact - Parsed cached artifact.
+   * @param identity - Required generator identity.
+   */
+  private validateArtifactIdentity(fileName: string, artifact: Readonly<TaxonomyArtifact>, identity: TaxonomyArtifactIdentity): void {
+    if (
+      artifact.system !== identity.system
+      || artifact.version !== identity.version
+      || artifact.sourceUrl !== identity.sourceUrl
+      || artifact.attribution !== identity.attribution
+    ) {
+      throw new Error(`Cached taxonomy artifact '${fileName}' does not match ${identity.system} ${identity.version}.`);
+    }
+  }
+
+  /**
+   * Reads a non-empty string array from an untrusted record.
+   *
+   * @param record - Source record.
+   * @param key - Array field name.
+   * @param context - Human-readable source location.
+   * @returns Validated strings.
+   */
+  private requireStringArray(record: Readonly<Record<string, unknown>>, key: string, context: string): readonly string[] {
+    const value = record[key];
+    if (!Array.isArray(value)) {
+      throw new TypeError(`${context} ${key} must be an array.`);
+    }
+    return value.map((item, index) => {
+      if (typeof item !== "string" || item.trim().length === 0) {
+        throw new TypeError(`${context} ${key}[${index}] must be a non-empty string.`);
+      }
+      return item;
+    });
+  }
+
+  /**
+   * Logs one bounded retry without obscuring the triggering failure.
+   *
+   * @param sourceName - Generator label.
+   * @param failure - Transient failure.
+   * @param attempt - Completed attempt number.
+   * @param totalAttempts - Maximum attempt count.
+   * @param retryDelay - Delay before the next attempt.
+   */
+  private logSourceRetry(sourceName: string, failure: Error, attempt: number, totalAttempts: number, retryDelay: number): void {
+    this.logger.warn(`[${sourceName}] ${failure.message} Retrying in ${retryDelay}ms (attempt ${attempt + 1}/${totalAttempts}).`);
+  }
+
+  /**
+   * Determines whether an HTTP status represents transient source availability.
+   *
+   * @param status - HTTP response status.
+   * @returns `true` for timeout, rate-limit, early-data, and server failures.
+   */
+  private isTransientHttpStatus(status: number): boolean {
+    return status === 408 || status === 425 || status === 429 || (status >= 500 && status <= 599);
+  }
+
+  /**
+   * Determines whether response consumption failed at the transport boundary.
+   *
+   * @remarks
+   * Fetch reports network failures during body consumption as `TypeError`.
+   * Consumers passed to `fetchSource` must therefore only read the body and
+   * must keep shape validation outside that callback.
+   *
+   * @param error - Unknown response-consumption failure.
+   * @returns `true` for network and abort/timeout errors.
+   */
+  private isTransientTransportError(error: unknown): boolean {
+    return error instanceof TypeError || (error instanceof Error && (error.name === "AbortError" || error.name === "TimeoutError"));
+  }
+
+  /**
+   * Determines whether a filesystem failure means an artifact path is absent.
+   *
+   * @param error - Unknown filesystem failure.
+   * @returns `true` only for missing-path error codes.
+   */
+  private isMissingPathError(error: unknown): boolean {
+    if (!(error instanceof Error) || !("code" in error)) return false;
+    const code = Reflect.get(error, "code");
+    return code === "ENOENT" || code === "ENOTDIR";
+  }
+
+  /**
+   * Converts an unknown thrown value into an Error without losing Error identity.
+   *
+   * @param error - Unknown thrown value.
+   * @returns Original Error or an Error wrapping its string representation.
+   */
+  private toError(error: unknown): Error {
+    return error instanceof Error ? error : new Error(String(error));
+  }
+
+  /**
+   * Waits between bounded source attempts.
+   *
+   * @param delayMs - Delay in milliseconds.
+   */
+  private async wait(delayMs: number): Promise<void> {
+    await new Promise<void>((resolveDelay) => {
+      setTimeout(resolveDelay, delayMs);
+    });
   }
 
   /**
@@ -290,29 +663,21 @@ export abstract class TaxonomyClassificationGenerator {
 
     for (const node of artifact.nodes) {
       if (node.parentCode !== null && !nodesByCode.has(node.parentCode)) {
-        throw new Error(
-          `${artifact.system} parent '${node.parentCode}' for '${node.code}' was not found.`,
-        );
+        throw new Error(`${artifact.system} parent '${node.parentCode}' for '${node.code}' was not found.`);
       }
       if (node.hierarchyCodes.at(-1) !== node.code) {
-        throw new Error(
-          `${artifact.system} hierarchy for '${node.code}' does not end with the selected code.`,
-        );
+        throw new Error(`${artifact.system} hierarchy for '${node.code}' does not end with the selected code.`);
       }
       if (node.hierarchyCodes.length !== node.hierarchyLabels.length) {
-        throw new Error(
-          `${artifact.system} hierarchy for '${node.code}' has mismatched code and label lengths.`,
-        );
+        throw new Error(`${artifact.system} hierarchy for '${node.code}' has mismatched code and label lengths.`);
       }
 
       const rebuilt = this.buildHierarchy(nodesByCode, node.code);
       if (
-        !this.arraysEqual(node.hierarchyCodes, rebuilt.hierarchyCodes) ||
-        !this.arraysEqual(node.hierarchyLabels, rebuilt.hierarchyLabels)
+        !this.arraysEqual(node.hierarchyCodes, rebuilt.hierarchyCodes)
+        || !this.arraysEqual(node.hierarchyLabels, rebuilt.hierarchyLabels)
       ) {
-        throw new Error(
-          `${artifact.system} hierarchy for '${node.code}' does not match its parent chain.`,
-        );
+        throw new Error(`${artifact.system} hierarchy for '${node.code}' does not match its parent chain.`);
       }
     }
   }
@@ -325,10 +690,7 @@ export abstract class TaxonomyClassificationGenerator {
    * @returns `true` when both arrays contain the same ordered values.
    */
   private arraysEqual(left: readonly string[], right: readonly string[]): boolean {
-    return (
-      left.length === right.length &&
-      left.every((value, index) => value === right[index])
-    );
+    return left.length === right.length && left.every((value, index) => value === right[index]);
   }
 }
 
@@ -360,8 +722,7 @@ export class Gs1GpcTaxonomyClassificationGenerator extends TaxonomyClassificatio
   static readonly #archiveEntryName = "GPC as of May 2026 (2026-05-20) EN.json";
 
   /** Required GS1 attribution stored with the generated artifact. */
-  static readonly #attribution =
-    "GS1 Global Product Classification (GPC), May 2026 release.";
+  static readonly #attribution = "GS1 Global Product Classification (GPC), May 2026 release.";
 
   /** Supported GPC source levels and their normalized names. */
   static readonly #levels: Readonly<Record<number, string>> = {
@@ -377,10 +738,7 @@ export class Gs1GpcTaxonomyClassificationGenerator extends TaxonomyClassificatio
    * @param outputRoots - Optional mirrored artifact output directories.
    * @param logger - Optional lifecycle logger.
    */
-  public constructor(
-    outputRoots?: readonly string[],
-    logger?: MonorepositoryLogger,
-  ) {
+  public constructor(outputRoots?: readonly string[], logger?: MonorepositoryLogger) {
     super(outputRoots, logger);
   }
 
@@ -394,41 +752,42 @@ export class Gs1GpcTaxonomyClassificationGenerator extends TaxonomyClassificatio
     this.logger.info("[GPC] Starting generation.");
     try {
       this.logger.info("[GPC] Fetching the GS1 GPC source.");
-      const response = await fetch(Gs1GpcTaxonomyClassificationGenerator.#sourceUrl, {
-        headers: {Accept: "application/zip"},
-      });
-      if (!response.ok) {
-        throw new Error(
-          `GPC download failed with HTTP ${response.status} ${response.statusText}.`,
-        );
-      }
-
-      const archive = new Uint8Array(await response.arrayBuffer());
-      const jsonBytes = await new SystemArchiveExtractor().extractEntry(
-        archive,
-        Gs1GpcTaxonomyClassificationGenerator.#archiveEntryName,
+      const archive = await this.fetchSource(
+        "GPC",
+        "GPC download",
+        Gs1GpcTaxonomyClassificationGenerator.#sourceUrl,
+        {headers: {Accept: "application/zip"}},
+        async (response) => new Uint8Array(await response.arrayBuffer()),
       );
+
+      const jsonBytes = await new SystemArchiveExtractor().extractEntry(archive, Gs1GpcTaxonomyClassificationGenerator.#archiveEntryName);
       const parsed: unknown = JSON.parse(Buffer.from(jsonBytes).toString("utf8"));
       const nodes = this.parseDocument(parsed);
       this.logger.debug(`[GPC] Normalized ${nodes.length} taxonomy node(s).`);
       this.logger.info("[GPC] Writing mirrored taxonomy artifacts.");
 
-      const outputs = await this.writeArtifact(
+      const outputs = await this.writeArtifact(Gs1GpcTaxonomyClassificationGenerator.#fileName, {
+        system: "GS1_GPC",
+        version: Gs1GpcTaxonomyClassificationGenerator.#version,
+        sourceUrl: Gs1GpcTaxonomyClassificationGenerator.#sourceUrl,
+        generatedAt: new Date().toISOString(),
+        attribution: Gs1GpcTaxonomyClassificationGenerator.#attribution,
+        nodes,
+      });
+      this.logger.success(`[GPC] Generated ${outputs.length} artifact file(s).`);
+      return outputs;
+    } catch (error: unknown) {
+      return await this.resolveGenerationFailure(
+        "GPC",
         Gs1GpcTaxonomyClassificationGenerator.#fileName,
         {
           system: "GS1_GPC",
           version: Gs1GpcTaxonomyClassificationGenerator.#version,
           sourceUrl: Gs1GpcTaxonomyClassificationGenerator.#sourceUrl,
-          generatedAt: new Date().toISOString(),
           attribution: Gs1GpcTaxonomyClassificationGenerator.#attribution,
-          nodes,
         },
+        error,
       );
-      this.logger.success(`[GPC] Generated ${outputs.length} artifact file(s).`);
-      return outputs;
-    } catch (error: unknown) {
-      this.logger.error(`[GPC] ${error instanceof Error ? error.message : String(error)}`);
-      throw error;
     }
   }
 
@@ -458,10 +817,7 @@ export class Gs1GpcTaxonomyClassificationGenerator extends TaxonomyClassificatio
     if (!Array.isArray(schema)) throw new TypeError("GPC document Schema must be an array.");
 
     const nodes: TaxonomyArtifactNode[] = [];
-    const visit = (
-      rawNode: unknown,
-      ancestors: readonly TaxonomyArtifactNode[],
-    ): void => {
+    const visit = (rawNode: unknown, ancestors: readonly TaxonomyArtifactNode[]): void => {
       const node = this.requireRecord(rawNode, "GPC node");
       const children = node["Childs"];
       if (!Array.isArray(children)) throw new TypeError("GPC node Childs must be an array.");
@@ -483,17 +839,9 @@ export class Gs1GpcTaxonomyClassificationGenerator extends TaxonomyClassificatio
               level,
               parentCode: ancestors.at(-1)?.code ?? null,
               hierarchyCodes: [...ancestors.map((ancestor) => ancestor.code), code],
-              hierarchyLabels: [
-                ...ancestors.map((ancestor) => ancestor.officialLabel),
-                title,
-              ],
+              hierarchyLabels: [...ancestors.map((ancestor) => ancestor.officialLabel), title],
               definition,
-              searchText: this.normalizeText(
-                code,
-                title,
-                definition,
-                ...ancestors.map((ancestor) => ancestor.officialLabel),
-              ),
+              searchText: this.normalizeText(code, title, definition, ...ancestors.map((ancestor) => ancestor.officialLabel)),
             };
 
       if (current !== null) nodes.push(current);
@@ -518,10 +866,7 @@ export class Gs1GpcTaxonomyClassificationGenerator extends TaxonomyClassificatio
     }
 
     const dayMonthYear = /^\d{1,2}\/(?<month>\d{1,2})\/(?<year>\d{4})$/u.exec(value);
-    return (
-      dayMonthYear?.groups?.["year"] === "2026" &&
-      Number(dayMonthYear.groups["month"]) === 5
-    );
+    return dayMonthYear?.groups?.["year"] === "2026" && Number(dayMonthYear.groups["month"]) === 5;
   }
 }
 
@@ -546,6 +891,9 @@ export class EcoicopTaxonomyClassificationGenerator extends TaxonomyClassificati
   /** ECOICOP v2 SKOS scheme identifier. */
   static readonly #scheme = "http://data.europa.eu/ed1/ecoicop2/ecoicop2";
 
+  /** Official taxonomy version encoded by the artifact. */
+  static readonly #version = "2";
+
   /** Maximum SPARQL bindings requested per page. */
   static readonly #pageSize = 5_000;
 
@@ -562,10 +910,7 @@ export class EcoicopTaxonomyClassificationGenerator extends TaxonomyClassificati
    * @param outputRoots - Optional mirrored artifact output directories.
    * @param logger - Optional lifecycle logger.
    */
-  public constructor(
-    outputRoots?: readonly string[],
-    logger?: MonorepositoryLogger,
-  ) {
+  public constructor(outputRoots?: readonly string[], logger?: MonorepositoryLogger) {
     super(outputRoots, logger);
   }
 
@@ -584,24 +929,28 @@ export class EcoicopTaxonomyClassificationGenerator extends TaxonomyClassificati
       this.logger.debug(`[ECOICOP] Normalized ${nodes.length} taxonomy node(s).`);
       this.logger.info("[ECOICOP] Writing mirrored taxonomy artifacts.");
 
-      const outputs = await this.writeArtifact(
-        EcoicopTaxonomyClassificationGenerator.#fileName,
-        {
-          system: "ECOICOP_V2",
-          version: "2",
-          sourceUrl: `${EcoicopTaxonomyClassificationGenerator.#endpoint}#${EcoicopTaxonomyClassificationGenerator.#scheme}`,
-          generatedAt: new Date().toISOString(),
-          attribution: EcoicopTaxonomyClassificationGenerator.#attribution,
-          nodes,
-        },
-      );
+      const outputs = await this.writeArtifact(EcoicopTaxonomyClassificationGenerator.#fileName, {
+        system: "ECOICOP_V2",
+        version: EcoicopTaxonomyClassificationGenerator.#version,
+        sourceUrl: `${EcoicopTaxonomyClassificationGenerator.#endpoint}#${EcoicopTaxonomyClassificationGenerator.#scheme}`,
+        generatedAt: new Date().toISOString(),
+        attribution: EcoicopTaxonomyClassificationGenerator.#attribution,
+        nodes,
+      });
       this.logger.success(`[ECOICOP] Generated ${outputs.length} artifact file(s).`);
       return outputs;
     } catch (error: unknown) {
-      this.logger.error(
-        `[ECOICOP] ${error instanceof Error ? error.message : String(error)}`,
+      return await this.resolveGenerationFailure(
+        "ECOICOP",
+        EcoicopTaxonomyClassificationGenerator.#fileName,
+        {
+          system: "ECOICOP_V2",
+          version: EcoicopTaxonomyClassificationGenerator.#version,
+          sourceUrl: `${EcoicopTaxonomyClassificationGenerator.#endpoint}#${EcoicopTaxonomyClassificationGenerator.#scheme}`,
+          attribution: EcoicopTaxonomyClassificationGenerator.#attribution,
+        },
+        error,
       );
-      throw error;
     }
   }
 
@@ -626,24 +975,18 @@ export class EcoicopTaxonomyClassificationGenerator extends TaxonomyClassificati
       broader: string | null;
     }> = [];
 
-    for (
-      let offset = 0;
-      ;
-      offset += EcoicopTaxonomyClassificationGenerator.#pageSize
-    ) {
+    for (let offset = 0; ; offset += EcoicopTaxonomyClassificationGenerator.#pageSize) {
       const url = new URL(EcoicopTaxonomyClassificationGenerator.#endpoint);
       url.searchParams.set("query", this.createQuery(offset));
       url.searchParams.set("format", "application/sparql-results+json");
-      const response = await fetch(url, {
-        headers: {Accept: "application/sparql-results+json"},
-      });
-      if (!response.ok) {
-        throw new Error(
-          `SPARQL request failed with HTTP ${response.status} ${response.statusText}.`,
-        );
-      }
-
-      const page = this.parseResponse(await response.json());
+      const response = await this.fetchSource<unknown>(
+        "ECOICOP",
+        "SPARQL request",
+        url,
+        {headers: {Accept: "application/sparql-results+json"}},
+        async (sourceResponse) => await sourceResponse.json(),
+      );
+      const page = this.parseResponse(response);
       bindings.push(...page);
       if (page.length < EcoicopTaxonomyClassificationGenerator.#pageSize) break;
     }
@@ -679,9 +1022,7 @@ OFFSET ${offset}`;
    * @returns Validated simplified bindings.
    * @throws {TypeError} When response or binding shapes are invalid.
    */
-  private parseResponse(
-    value: unknown,
-  ): readonly Readonly<{
+  private parseResponse(value: unknown): readonly Readonly<{
     concept: string;
     notation: string;
     label: string;
@@ -714,11 +1055,7 @@ OFFSET ${offset}`;
    * @returns Binding string or `null` for an absent optional binding.
    * @throws {TypeError} When a present binding has no non-empty string value.
    */
-  private readBindingValue(
-    binding: Readonly<Record<string, unknown>>,
-    key: string,
-    required: boolean,
-  ): string | null {
+  private readBindingValue(binding: Readonly<Record<string, unknown>>, key: string, required: boolean): string | null {
     const rawValue = binding[key];
     if (rawValue === undefined) {
       if (!required) return null;
@@ -746,17 +1083,13 @@ OFFSET ${offset}`;
       broader: string | null;
     }>[],
   ): readonly TaxonomyArtifactNode[] {
-    const codeByConcept = new Map(
-      bindings.map((binding) => [binding.concept, binding.notation] as const),
-    );
+    const codeByConcept = new Map(bindings.map((binding) => [binding.concept, binding.notation] as const));
     const provisional = bindings.map<TaxonomyArtifactNode>((binding) => {
       let parentCode: string | null = null;
       if (binding.broader !== null) {
         const resolvedParentCode = codeByConcept.get(binding.broader);
         if (resolvedParentCode === undefined) {
-          throw new Error(
-            `Unresolved parent '${binding.broader}' for taxonomy code '${binding.notation}'.`,
-          );
+          throw new Error(`Unresolved parent '${binding.broader}' for taxonomy code '${binding.notation}'.`);
         }
         parentCode = resolvedParentCode;
       }
@@ -766,9 +1099,7 @@ OFFSET ${offset}`;
       return {
         code: binding.notation,
         officialLabel: label,
-        level:
-          ["division", "group", "class", "subclass"][segmentCount - 1] ??
-          `level-${segmentCount}`,
+        level: ["division", "group", "class", "subclass"][segmentCount - 1] ?? `level-${segmentCount}`,
         parentCode,
         hierarchyCodes: [],
         hierarchyLabels: [],
@@ -780,9 +1111,7 @@ OFFSET ${offset}`;
     const nodesByCode = new Map(provisional.map((node) => [node.code, node] as const));
     return provisional
       .map((node) => this.buildHierarchy(nodesByCode, node.code))
-      .toSorted((left, right) =>
-        left.code.localeCompare(right.code, "en", {numeric: true}),
-      );
+      .toSorted((left, right) => left.code.localeCompare(right.code, "en", {numeric: true}));
   }
 
   /**
@@ -824,6 +1153,9 @@ export class NaceTaxonomyClassificationGenerator extends TaxonomyClassificationG
   /** NACE 2.1 SKOS scheme identifier. */
   static readonly #scheme = "http://data.europa.eu/ux2/nace2.1/nace2.1";
 
+  /** Official taxonomy version encoded by the artifact. */
+  static readonly #version = "2.1";
+
   /** Maximum SPARQL bindings requested per page. */
   static readonly #pageSize = 5_000;
 
@@ -840,10 +1172,7 @@ export class NaceTaxonomyClassificationGenerator extends TaxonomyClassificationG
    * @param outputRoots - Optional mirrored artifact output directories.
    * @param logger - Optional lifecycle logger.
    */
-  public constructor(
-    outputRoots?: readonly string[],
-    logger?: MonorepositoryLogger,
-  ) {
+  public constructor(outputRoots?: readonly string[], logger?: MonorepositoryLogger) {
     super(outputRoots, logger);
   }
 
@@ -862,22 +1191,28 @@ export class NaceTaxonomyClassificationGenerator extends TaxonomyClassificationG
       this.logger.debug(`[NACE] Normalized ${nodes.length} taxonomy node(s).`);
       this.logger.info("[NACE] Writing mirrored taxonomy artifacts.");
 
-      const outputs = await this.writeArtifact(
-        NaceTaxonomyClassificationGenerator.#fileName,
-        {
-          system: "NACE_2_1",
-          version: "2.1",
-          sourceUrl: `${NaceTaxonomyClassificationGenerator.#endpoint}#${NaceTaxonomyClassificationGenerator.#scheme}`,
-          generatedAt: new Date().toISOString(),
-          attribution: NaceTaxonomyClassificationGenerator.#attribution,
-          nodes,
-        },
-      );
+      const outputs = await this.writeArtifact(NaceTaxonomyClassificationGenerator.#fileName, {
+        system: "NACE_2_1",
+        version: NaceTaxonomyClassificationGenerator.#version,
+        sourceUrl: `${NaceTaxonomyClassificationGenerator.#endpoint}#${NaceTaxonomyClassificationGenerator.#scheme}`,
+        generatedAt: new Date().toISOString(),
+        attribution: NaceTaxonomyClassificationGenerator.#attribution,
+        nodes,
+      });
       this.logger.success(`[NACE] Generated ${outputs.length} artifact file(s).`);
       return outputs;
     } catch (error: unknown) {
-      this.logger.error(`[NACE] ${error instanceof Error ? error.message : String(error)}`);
-      throw error;
+      return await this.resolveGenerationFailure(
+        "NACE",
+        NaceTaxonomyClassificationGenerator.#fileName,
+        {
+          system: "NACE_2_1",
+          version: NaceTaxonomyClassificationGenerator.#version,
+          sourceUrl: `${NaceTaxonomyClassificationGenerator.#endpoint}#${NaceTaxonomyClassificationGenerator.#scheme}`,
+          attribution: NaceTaxonomyClassificationGenerator.#attribution,
+        },
+        error,
+      );
     }
   }
 
@@ -906,16 +1241,14 @@ export class NaceTaxonomyClassificationGenerator extends TaxonomyClassificationG
       const url = new URL(NaceTaxonomyClassificationGenerator.#endpoint);
       url.searchParams.set("query", this.createQuery(offset));
       url.searchParams.set("format", "application/sparql-results+json");
-      const response = await fetch(url, {
-        headers: {Accept: "application/sparql-results+json"},
-      });
-      if (!response.ok) {
-        throw new Error(
-          `SPARQL request failed with HTTP ${response.status} ${response.statusText}.`,
-        );
-      }
-
-      const page = this.parseResponse(await response.json());
+      const response = await this.fetchSource<unknown>(
+        "NACE",
+        "SPARQL request",
+        url,
+        {headers: {Accept: "application/sparql-results+json"}},
+        async (sourceResponse) => await sourceResponse.json(),
+      );
+      const page = this.parseResponse(response);
       bindings.push(...page);
       if (page.length < NaceTaxonomyClassificationGenerator.#pageSize) break;
     }
@@ -951,9 +1284,7 @@ OFFSET ${offset}`;
    * @returns Validated simplified bindings.
    * @throws {TypeError} When response or binding shapes are invalid.
    */
-  private parseResponse(
-    value: unknown,
-  ): readonly Readonly<{
+  private parseResponse(value: unknown): readonly Readonly<{
     concept: string;
     notation: string;
     label: string;
@@ -986,11 +1317,7 @@ OFFSET ${offset}`;
    * @returns Binding string or `null` for an absent optional binding.
    * @throws {TypeError} When a present binding has no non-empty string value.
    */
-  private readBindingValue(
-    binding: Readonly<Record<string, unknown>>,
-    key: string,
-    required: boolean,
-  ): string | null {
+  private readBindingValue(binding: Readonly<Record<string, unknown>>, key: string, required: boolean): string | null {
     const rawValue = binding[key];
     if (rawValue === undefined) {
       if (!required) return null;
@@ -1018,17 +1345,13 @@ OFFSET ${offset}`;
       broader: string | null;
     }>[],
   ): readonly TaxonomyArtifactNode[] {
-    const codeByConcept = new Map(
-      bindings.map((binding) => [binding.concept, binding.notation] as const),
-    );
+    const codeByConcept = new Map(bindings.map((binding) => [binding.concept, binding.notation] as const));
     const provisional = bindings.map<TaxonomyArtifactNode>((binding) => {
       let parentCode: string | null = null;
       if (binding.broader !== null) {
         const resolvedParentCode = codeByConcept.get(binding.broader);
         if (resolvedParentCode === undefined) {
-          throw new Error(
-            `Unresolved parent '${binding.broader}' for taxonomy code '${binding.notation}'.`,
-          );
+          throw new Error(`Unresolved parent '${binding.broader}' for taxonomy code '${binding.notation}'.`);
         }
         parentCode = resolvedParentCode;
       }
@@ -1049,9 +1372,7 @@ OFFSET ${offset}`;
     const nodesByCode = new Map(provisional.map((node) => [node.code, node] as const));
     return provisional
       .map((node) => this.buildHierarchy(nodesByCode, node.code))
-      .toSorted((left, right) =>
-        left.code.localeCompare(right.code, "en", {numeric: true}),
-      );
+      .toSorted((left, right) => left.code.localeCompare(right.code, "en", {numeric: true}));
   }
 
   /**
@@ -1103,9 +1424,7 @@ export abstract class LicenseGenerator {
    *
    * @param logger - Logger used for lifecycle, warning, and failure output.
    */
-  protected constructor(
-    logger: MonorepositoryLogger = new MonorepositoryConsoleLogger("generate::artifacts"),
-  ) {
+  protected constructor(logger: MonorepositoryLogger = new MonorepositoryConsoleLogger("generate::artifacts")) {
     this.logger = logger;
   }
 
@@ -1136,10 +1455,7 @@ export abstract class LicenseGenerator {
    * @throws {SyntaxError} When JSON parsing fails.
    * @throws {TypeError} When the parsed root is not a record.
    */
-  protected readJsonRecord(
-    contents: string,
-    manifestPath: string,
-  ): Readonly<Record<string, unknown>> {
+  protected readJsonRecord(contents: string, manifestPath: string): Readonly<Record<string, unknown>> {
     const parsed: unknown = JSON.parse(contents);
     if (!this.isRecord(parsed)) {
       throw new TypeError(`Package manifest '${manifestPath}' must be an object.`);
@@ -1156,17 +1472,11 @@ export abstract class LicenseGenerator {
    * @returns Field value or `undefined` when absent.
    * @throws {TypeError} When a present value is not a string.
    */
-  protected readOptionalString(
-    manifest: Readonly<Record<string, unknown>>,
-    key: string,
-    manifestPath: string,
-  ): string | undefined {
+  protected readOptionalString(manifest: Readonly<Record<string, unknown>>, key: string, manifestPath: string): string | undefined {
     const value = manifest[key];
     if (value === undefined) return undefined;
     if (typeof value !== "string") {
-      throw new TypeError(
-        `Package manifest '${manifestPath}' field '${key}' must be a string.`,
-      );
+      throw new TypeError(`Package manifest '${manifestPath}' field '${key}' must be a string.`);
     }
     return value;
   }
@@ -1188,17 +1498,13 @@ export abstract class LicenseGenerator {
     const value = manifest[key];
     if (value === undefined) return {};
     if (!this.isRecord(value)) {
-      throw new TypeError(
-        `Package manifest '${manifestPath}' field '${key}' must be an object.`,
-      );
+      throw new TypeError(`Package manifest '${manifestPath}' field '${key}' must be an object.`);
     }
 
     const dependencies: Record<string, string> = {};
     for (const [name, version] of Object.entries(value)) {
       if (typeof version !== "string") {
-        throw new TypeError(
-          `Package manifest '${manifestPath}' dependency '${name}' must have a string version.`,
-        );
+        throw new TypeError(`Package manifest '${manifestPath}' dependency '${name}' must have a string version.`);
       }
       dependencies[name] = version;
     }
@@ -1230,10 +1536,7 @@ export class FrontendLicenseGenerator extends LicenseGenerator {
    * @param workspaceRoot - Repository root containing the frontend and node_modules.
    * @param logger - Optional lifecycle logger.
    */
-  public constructor(
-    workspaceRoot: string = process.cwd(),
-    logger?: MonorepositoryLogger,
-  ) {
+  public constructor(workspaceRoot: string = process.cwd(), logger?: MonorepositoryLogger) {
     super(logger);
     this.workspaceRoot = workspaceRoot;
   }
@@ -1250,13 +1553,9 @@ export class FrontendLicenseGenerator extends LicenseGenerator {
       this.logger.info("[Frontend licenses] Reading the frontend dependency manifest.");
       const declaredDependencies = await this.readDeclaredDependencies();
       const manifestPaths = await this.findInstalledManifestPaths(declaredDependencies);
-      this.logger.debug(
-        `[Frontend licenses] Discovered ${manifestPaths.length} direct installed package manifest(s).`,
-      );
+      this.logger.debug(`[Frontend licenses] Discovered ${manifestPaths.length} direct installed package manifest(s).`);
       const resolvedPackages = await Promise.all(
-        manifestPaths.map((manifestPath) =>
-          this.readInstalledPackage(manifestPath, declaredDependencies),
-        ),
+        manifestPaths.map((manifestPath) => this.readInstalledPackage(manifestPath, declaredDependencies)),
       );
       const groupedPackages = new Map<NodePackageDependencyType, NodePackageInformation[]>();
 
@@ -1267,41 +1566,25 @@ export class FrontendLicenseGenerator extends LicenseGenerator {
         groupedPackages.set(resolvedPackage.dependencyType, packages);
       }
 
-      const packageCount = [...groupedPackages.values()].reduce(
-        (total, packages) => total + packages.length,
-        0,
-      );
+      const packageCount = [...groupedPackages.values()].reduce((total, packages) => total + packages.length, 0);
       this.logger.debug(`[Frontend licenses] Grouped ${packageCount} declared package(s).`);
-      const outputPath = join(
-        this.workspaceRoot,
-        "sites",
-        "arolariu.ro",
-        "licenses.json",
-      );
+      const outputPath = join(this.workspaceRoot, "sites", "arolariu.ro", "licenses.json");
       const sortedPackages = new Map<NodePackageDependencyType, readonly NodePackageInformation[]>();
       for (const dependencyType of ["production", "development", "peer"] as const) {
         const packageInformation = groupedPackages.get(dependencyType) ?? [];
         sortedPackages.set(
           dependencyType,
-          packageInformation.toSorted((left, right) =>
-            left.name.localeCompare(right.name),
-          ),
+          packageInformation.toSorted((left, right) => left.name.localeCompare(right.name)),
         );
       }
 
       this.logger.info("[Frontend licenses] Writing licenses.json.");
       await mkdir(dirname(outputPath), {recursive: true});
-      await writeFile(
-        outputPath,
-        `${JSON.stringify(Object.fromEntries(sortedPackages))}\n`,
-        "utf8",
-      );
+      await writeFile(outputPath, `${JSON.stringify(Object.fromEntries(sortedPackages))}\n`, "utf8");
       this.logger.success("[Frontend licenses] Generated 1 artifact file(s).");
       return [outputPath];
     } catch (error: unknown) {
-      this.logger.error(
-        `[Frontend licenses] ${error instanceof Error ? error.message : String(error)}`,
-      );
+      this.logger.error(`[Frontend licenses] ${error instanceof Error ? error.message : String(error)}`);
       throw error;
     }
   }
@@ -1312,25 +1595,12 @@ export class FrontendLicenseGenerator extends LicenseGenerator {
    * @returns Map of production, development, and peer dependency names.
    * @throws {Error} When the frontend manifest cannot be read or validated.
    */
-  private async readDeclaredDependencies(): Promise<
-    ReadonlyMap<NodePackageDependencyType, readonly string[]>
-  > {
-    const manifestPath = join(
-      this.workspaceRoot,
-      "sites",
-      "arolariu.ro",
-      "package.json",
-    );
-    const manifest = this.readJsonRecord(
-      await readFile(manifestPath, "utf8"),
-      manifestPath,
-    );
+  private async readDeclaredDependencies(): Promise<ReadonlyMap<NodePackageDependencyType, readonly string[]>> {
+    const manifestPath = join(this.workspaceRoot, "sites", "arolariu.ro", "package.json");
+    const manifest = this.readJsonRecord(await readFile(manifestPath, "utf8"), manifestPath);
     return new Map<NodePackageDependencyType, readonly string[]>([
       ["production", Object.keys(this.readDependencyMap(manifest, "dependencies", manifestPath))],
-      [
-        "development",
-        Object.keys(this.readDependencyMap(manifest, "devDependencies", manifestPath)),
-      ],
+      ["development", Object.keys(this.readDependencyMap(manifest, "devDependencies", manifestPath))],
       ["peer", Object.keys(this.readDependencyMap(manifest, "peerDependencies", manifestPath))],
     ]);
   }
@@ -1348,8 +1618,7 @@ export class FrontendLicenseGenerator extends LicenseGenerator {
     const packageNames = [
       ...new Set(
         ["production", "development", "peer"].flatMap(
-          (dependencyType) =>
-            declaredDependencies.get(dependencyType as NodePackageDependencyType) ?? [],
+          (dependencyType) => declaredDependencies.get(dependencyType as NodePackageDependencyType) ?? [],
         ),
       ),
     ];
@@ -1360,13 +1629,7 @@ export class FrontendLicenseGenerator extends LicenseGenerator {
       const relativeManifestPath = join(...packageName.split("/"), "package.json");
       const candidates = [
         join(this.workspaceRoot, "node_modules", relativeManifestPath),
-        join(
-          this.workspaceRoot,
-          "sites",
-          "arolariu.ro",
-          "node_modules",
-          relativeManifestPath,
-        ),
+        join(this.workspaceRoot, "sites", "arolariu.ro", "node_modules", relativeManifestPath),
       ];
       let resolvedPath: string | undefined;
 
@@ -1385,9 +1648,7 @@ export class FrontendLicenseGenerator extends LicenseGenerator {
     }
 
     if (unresolvedPackageNames.length > 0) {
-      throw new Error(
-        `Unable to resolve declared frontend package manifest(s): ${unresolvedPackageNames.toSorted().join(", ")}.`,
-      );
+      throw new Error(`Unable to resolve declared frontend package manifest(s): ${unresolvedPackageNames.toSorted().join(", ")}.`);
     }
 
     return paths;
@@ -1404,53 +1665,33 @@ export class FrontendLicenseGenerator extends LicenseGenerator {
   private async readInstalledPackage(
     manifestPath: string,
     declaredDependencies: ReadonlyMap<NodePackageDependencyType, readonly string[]>,
-  ): Promise<
-    Readonly<{
-      dependencyType: NodePackageDependencyType;
-      packageInformation: NodePackageInformation;
-    }> | null
-  > {
-    const manifest = this.readJsonRecord(
-      await readFile(manifestPath, "utf8"),
-      manifestPath,
-    );
-    const packageName =
-      this.readOptionalString(manifest, "name", manifestPath) ??
-      basename(dirname(manifestPath));
-    const dependencyType = this.resolveDependencyType(
-      packageName,
-      declaredDependencies,
-    );
+  ): Promise<Readonly<{
+    dependencyType: NodePackageDependencyType;
+    packageInformation: NodePackageInformation;
+  }> | null> {
+    const manifest = this.readJsonRecord(await readFile(manifestPath, "utf8"), manifestPath);
+    const packageName = this.readOptionalString(manifest, "name", manifestPath) ?? basename(dirname(manifestPath));
+    const dependencyType = this.resolveDependencyType(packageName, declaredDependencies);
     if (dependencyType === null) return null;
 
     const authorValue = manifest["author"];
     let author = "unknown";
     if (typeof authorValue === "string") {
       author = authorValue;
-    } else if (
-      this.isRecord(authorValue) &&
-      typeof authorValue["name"] === "string"
-    ) {
+    } else if (this.isRecord(authorValue) && typeof authorValue["name"] === "string") {
       author = authorValue["name"];
     } else if (authorValue !== undefined) {
-      throw new TypeError(
-        `Package manifest '${manifestPath}' field 'author' must be a string or named object.`,
-      );
+      throw new TypeError(`Package manifest '${manifestPath}' field 'author' must be a string or named object.`);
     }
 
     const repositoryValue = manifest["repository"];
     let repositoryUrl: string | undefined;
     if (typeof repositoryValue === "string") {
       repositoryUrl = repositoryValue;
-    } else if (
-      this.isRecord(repositoryValue) &&
-      typeof repositoryValue["url"] === "string"
-    ) {
+    } else if (this.isRecord(repositoryValue) && typeof repositoryValue["url"] === "string") {
       repositoryUrl = repositoryValue["url"];
     } else if (repositoryValue !== undefined) {
-      throw new TypeError(
-        `Package manifest '${manifestPath}' field 'repository' must be a string or URL object.`,
-      );
+      throw new TypeError(`Package manifest '${manifestPath}' field 'repository' must be a string or URL object.`);
     }
 
     const dependencyMaps = [
@@ -1471,17 +1712,10 @@ export class FrontendLicenseGenerator extends LicenseGenerator {
       packageInformation: {
         name: packageName,
         author,
-        description:
-          this.readOptionalString(manifest, "description", manifestPath) ??
-          "This package has not provided a valid description.",
-        homepage:
-          this.readOptionalString(manifest, "homepage", manifestPath) ??
-          repositoryUrl ??
-          "unknown",
-        license:
-          this.readOptionalString(manifest, "license", manifestPath) ?? "unknown",
-        version:
-          this.readOptionalString(manifest, "version", manifestPath) ?? "unknown",
+        description: this.readOptionalString(manifest, "description", manifestPath) ?? "This package has not provided a valid description.",
+        homepage: this.readOptionalString(manifest, "homepage", manifestPath) ?? repositoryUrl ?? "unknown",
+        license: this.readOptionalString(manifest, "license", manifestPath) ?? "unknown",
+        version: this.readOptionalString(manifest, "version", manifestPath) ?? "unknown",
         dependents,
       },
     };
@@ -1537,9 +1771,7 @@ export class BackendLicenseGenerator extends LicenseGenerator {
    * @returns An empty output-path collection.
    */
   public override async generate(): Promise<readonly string[]> {
-    this.logger.warn(
-      "[Backend licenses] Generation is intentionally deferred; no artifact was written.",
-    );
+    this.logger.warn("[Backend licenses] Generation is intentionally deferred; no artifact was written.");
     return [];
   }
 }
@@ -1564,10 +1796,7 @@ class SystemArchiveExtractor {
    * @throws {Error} When the platform tool is missing, extraction fails, or the
    * matching entry is missing or ambiguous.
    */
-  public async extractEntry(
-    archive: Uint8Array,
-    entryName: string,
-  ): Promise<Uint8Array> {
+  public async extractEntry(archive: Uint8Array, entryName: string): Promise<Uint8Array> {
     const temporaryRoot = await mkdtemp(join(tmpdir(), "arolariu-taxonomy-"));
     const archivePath = join(temporaryRoot, "source.zip");
     const outputDirectory = join(temporaryRoot, "extracted");
@@ -1578,16 +1807,12 @@ class SystemArchiveExtractor {
       await writeFile(archivePath, archive);
 
       try {
-        await SystemArchiveExtractor.#executeFile(
-          extractionCommand.command,
-          [...extractionCommand.args],
-        );
+        await SystemArchiveExtractor.#executeFile(extractionCommand.command, [...extractionCommand.args]);
       } catch (error: unknown) {
         if (this.hasErrorCode(error) && error.code === "ENOENT") {
-          throw new Error(
-            `Required archive extractor '${extractionCommand.command}' was not found on '${process.platform}'.`,
-            {cause: error},
-          );
+          throw new Error(`Required archive extractor '${extractionCommand.command}' was not found on '${process.platform}'.`, {
+            cause: error,
+          });
         }
         throw error;
       }
@@ -1622,10 +1847,7 @@ class SystemArchiveExtractor {
    * @param outputDirectory - Temporary extraction directory.
    * @returns Executable and argument list.
    */
-  private createCommand(
-    archivePath: string,
-    outputDirectory: string,
-  ): Readonly<{command: string; args: readonly string[]}> {
+  private createCommand(archivePath: string, outputDirectory: string): Readonly<{command: string; args: readonly string[]}> {
     return process.platform === "win32"
       ? {command: "tar.exe", args: ["-xf", archivePath, "-C", outputDirectory]}
       : {command: "unzip", args: ["-qq", archivePath, "-d", outputDirectory]};
@@ -1638,11 +1860,7 @@ class SystemArchiveExtractor {
    * @returns `true` when a string `code` property is available.
    */
   private hasErrorCode(error: unknown): error is Error & Readonly<{code: string}> {
-    return (
-      error instanceof Error &&
-      "code" in error &&
-      typeof Reflect.get(error, "code") === "string"
-    );
+    return error instanceof Error && "code" in error && typeof Reflect.get(error, "code") === "string";
   }
 }
 
@@ -1672,9 +1890,7 @@ export async function main(
     new FrontendLicenseGenerator(options.workspaceRoot, logger),
     new BackendLicenseGenerator(logger),
   ] as const;
-  const outputs = (
-    await Promise.all(generators.map((generator) => generator.generate()))
-  ).flat();
+  const outputs = (await Promise.all(generators.map((generator) => generator.generate()))).flat();
 
   logger.success(`Generated ${outputs.length} artifact file(s).`);
   logger.debug(`Output paths: ${outputs.join(", ")}`);
