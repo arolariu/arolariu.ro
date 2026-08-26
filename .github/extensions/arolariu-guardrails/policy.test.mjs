@@ -27,6 +27,17 @@ test("denies force pushes to protected branches", () => {
 	);
 });
 
+test("denies force-refspec pushes to protected destinations", () => {
+	assert.equal(
+		classify("git push origin +HEAD:main").permissionDecision,
+		"deny",
+	);
+	assert.equal(
+		classify("git push origin +HEAD:refs/heads/preview").permissionDecision,
+		"deny",
+	);
+});
+
 test("does not intercept normal or feature-branch pushes", () => {
 	assert.equal(
 		classify("git push origin refactor/ai-footprint-v2"),
@@ -36,6 +47,18 @@ test("does not intercept normal or feature-branch pushes", () => {
 		classify("git push --force-with-lease origin feat/example"),
 		undefined,
 	);
+	assert.equal(
+		classify("git push --force origin feature/main-menu"),
+		undefined,
+	);
+	assert.equal(
+		classify("git push --force origin main:feature/main-menu"),
+		undefined,
+	);
+});
+
+test("asks when a forced push destination is implicit", () => {
+	assert.equal(classify("git push --force").permissionDecision, "ask");
 });
 
 test("denies recursive deletion of filesystem and repository roots", () => {
@@ -59,6 +82,32 @@ test("denies recursive deletion of a Copilot session root", () => {
 	);
 });
 
+test("inspects chained recursive deletion commands", () => {
+	assert.equal(
+		classify("rm -rf ./safe; rm -rf --no-preserve-root /", "bash")
+			.permissionDecision,
+		"deny",
+	);
+	assert.equal(
+		classify(
+			"Remove-Item -Recurse C:\\repo\\tmp; Remove-Item -Recurse C:\\repo",
+		).permissionDecision,
+		"deny",
+	);
+});
+
+test("inspects every recursive deletion operand", () => {
+	assert.equal(
+		classify("rm -rf ./safe /", "bash").permissionDecision,
+		"deny",
+	);
+	assert.equal(
+		classify("Remove-Item -Recurse C:\\repo\\tmp,C:\\repo")
+			.permissionDecision,
+		"deny",
+	);
+});
+
 test("does not intercept explicit deletion below protected roots", () => {
 	assert.equal(
 		classify("Remove-Item C:\\repo\\tmp\\probe.txt"),
@@ -66,6 +115,13 @@ test("does not intercept explicit deletion below protected roots", () => {
 	);
 	assert.equal(
 		classify("Remove-Item -Recurse C:\\repo\\tmp\\probe"),
+		undefined,
+	);
+	assert.equal(
+		classify(
+			"rm -rf ./tmp/one && rm -rf ./tmp/two",
+			"functions.bash",
+		),
 		undefined,
 	);
 });

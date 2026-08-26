@@ -9,12 +9,50 @@ const SHELL_TOOLS = new Set([
 	"powershell",
 	"shell",
 ]);
-const PROTECTED_BRANCH =
-	/(?:\bmain\b|\bpreview\b|refs\/heads\/(?:main|preview)\b)/i;
-const FORCE_FLAG =
-	/(?:--force(?:-with-lease)?\b|(?:^|\s)-f(?:\s|$))/i;
 const DROP_SQL = /\bDROP\s+(?:DATABASE|TABLE)\b/i;
-const UNRESOLVED_TARGET = /(?:\$\w+|\$\{[^}]+\}|%[^%]+%|[*?])/;
+const UNRESOLVED_TARGET =
+	/(?:\$\w+|\$\{[^}]+\}|%[^%]+%|[*?]|^@\()/;
+const COMMAND_SEPARATORS = new Set([
+	";",
+	"&",
+	"&&",
+	"|",
+	"||",
+]);
+const POWERSHELL_PATH_PARAMETERS = new Set([
+	"literalpath",
+	"path",
+]);
+const POWERSHELL_SWITCH_PARAMETERS = new Set([
+	"confirm",
+	"force",
+	"recurse",
+	"verbose",
+	"whatif",
+]);
+const POWERSHELL_VALUE_PARAMETERS = new Set([
+	"credential",
+	"erroraction",
+	"errorvariable",
+	"exclude",
+	"filter",
+	"include",
+	"informationaction",
+	"informationvariable",
+	"outvariable",
+	"pipelinevariable",
+	"progressaction",
+	"stream",
+	"warningaction",
+	"warningvariable",
+]);
+const GIT_OPTIONS_WITH_VALUE = new Set([
+	"--exec",
+	"--push-option",
+	"--receive-pack",
+	"--repo",
+	"-o",
+]);
 
 function toolAlias(toolName) {
 	return String(toolName)
@@ -31,61 +69,303 @@ function commandFrom(toolArgs) {
 		: undefined;
 }
 
-function tokenize(value) {
+function commandName(token) {
+	return token.replaceAll("\\", "/").split("/").at(-1).toLowerCase();
+}
+
+function lexCommand(command) {
 	const tokens = [];
-	const tokenPattern = /"([^"]*)"|'([^']*)'|`([^`]*)`|([^\s;|&]+)/g;
+	let current = "";
+	let quote;
 
-	for (const match of value.matchAll(tokenPattern)) {
-		tokens.push(match[1] ?? match[2] ?? match[3] ?? match[4]);
-	}
-
-	return tokens;
-}
-
-function findPowerShellTarget(command) {
-	const match = command.match(/\bRemove-Item\b([\s\S]*)/i);
-	if (!match) return undefined;
-
-	const tokens = tokenize(match[1]);
-	for (let index = 0; index < tokens.length; index += 1) {
-		const token = tokens[index];
-		if (/^-(?:LiteralPath|Path)$/i.test(token)) {
-			return tokens[index + 1];
+	const pushCurrent = () => {
+		if (current) {
+			tokens.push(current);
+			current = "";
 		}
-		if (!token.startsWith("-")) return token;
+	};
+
+	for (let index = 0; index < command.length; index += 1) {
+		const character = command[index];
+
+		if (quote) {
+			if (character === quote) {
+				quote = undefined;
+			} else if (
+				character === "\\" &&
+				quote === '"' &&
+				index + 1 < command.length
+			) {
+				current += command[index + 1];
+				index += 1;
+			} else {
+				current += character;
+			}
+			continue;
+		}
+
+		if (character === '"' || character === "'") {
+			quote = character;
+			continue;
+		}
+
+		if (character === "\r") continue;
+		if (character === "\n" || character === ";") {
+			pushCurrent();
+			tokens.push(";");
+			continue;
+		}
+
+		if (character === "&" || character === "|") {
+			pushCurrent();
+			if (command[index + 1] === character) {
+				tokens.push(character + character);
+				index += 1;
+			} else {
+				tokens.push(character);
+			}
+			continue;
+		}
+
+		if (/\s/.test(character)) {
+			pushCurrent();
+			continue;
+		}
+
+		if (character === "\\" && index + 1 < command.length) {
+			current += character + command[index + 1];
+			index += 1;
+			continue;
+		}
+
+		current += character;
 	}
 
-	return undefined;
+	pushCurrent();
+
+	const segments = [];
+	let segment = [];
+	for (const token of tokens) {
+		if (COMMAND_SEPARATORS.has(token)) {
+			if (segment.length > 0) segments.push(segment);
+			segment = [];
+		} else {
+			segment.push(token);
+		}
+	}
+	if (segment.length > 0) segments.push(segment);
+
+	return {segments, unclosedQuote: Boolean(quote)};
 }
 
-function findBashTarget(command) {
-	const match = command.match(/\brm\b([\s\S]*)/i);
-	if (!match) return undefined;
-
-	for (const token of tokenize(match[1])) {
-		if (token === "--") continue;
-		if (!token.startsWith("-")) return token;
-	}
-
-	return undefined;
+function splitTargets(token) {
+	return token
+		.split(",")
+		.map((target) => target.trim())
+		.filter(Boolean);
 }
 
-function recursiveDeletion(command) {
-	if (
-		/\bRemove-Item\b/i.test(command) &&
-		/(?:^|\s)-(?:Recurse|r)(?:\s|$)/i.test(command)
-	) {
-		return findPowerShellTarget(command);
+function isPowerShellParameter(token, parameter) {
+	const name = token
+		.slice(1)
+		.split(":", 1)[0]
+		.toLowerCase();
+	return name.length > 0 && parameter.startsWith(name);
+}
+
+function parseRemoveItem(arguments_) {
+	const recursive = arguments_.some(
+		(token) =>
+			token.startsWith("-") &&
+			isPowerShellParameter(token, "recurse"),
+	);
+	if (!recursive) return undefined;
+
+	const targets = [];
+	let ambiguous = false;
+
+	for (let index = 0; index < arguments_.length; index += 1) {
+		const token = arguments_[index];
+		if (!token.startsWith("-")) {
+			targets.push(...splitTargets(token));
+			continue;
+		}
+
+		const [rawName, inlineValue] = token.slice(1).split(/:(.*)/s, 2);
+		const name = rawName.toLowerCase();
+		const matchingPathParameter = [...POWERSHELL_PATH_PARAMETERS].find(
+			(parameter) => parameter.startsWith(name),
+		);
+		if (matchingPathParameter) {
+			const value = inlineValue ?? arguments_[index + 1];
+			if (value) {
+				targets.push(...splitTargets(value));
+				if (inlineValue === undefined) index += 1;
+			} else {
+				ambiguous = true;
+			}
+			continue;
+		}
+
+		if (
+			[...POWERSHELL_SWITCH_PARAMETERS].some((parameter) =>
+				parameter.startsWith(name),
+			)
+		) {
+			continue;
+		}
+
+		if (
+			[...POWERSHELL_VALUE_PARAMETERS].some((parameter) =>
+				parameter.startsWith(name),
+			)
+		) {
+			if (inlineValue === undefined) index += 1;
+			continue;
+		}
+
+		ambiguous = true;
 	}
 
-	if (
-		/\brm\b/i.test(command) &&
-		/(?:--recursive\b|(?:^|\s)-[a-z]*r[a-z]*(?:\s|$))/i.test(command)
-	) {
-		return findBashTarget(command);
+	return {ambiguous, targets};
+}
+
+function parseRm(arguments_) {
+	const recursive = arguments_.some(
+		(token) =>
+			token === "--recursive" ||
+			(/^-[^-]/.test(token) && token.toLowerCase().includes("r")),
+	);
+	if (!recursive) return undefined;
+
+	const targets = [];
+	let optionsEnded = false;
+	for (const token of arguments_) {
+		if (!optionsEnded && token === "--") {
+			optionsEnded = true;
+			continue;
+		}
+		if (!optionsEnded && token.startsWith("-")) continue;
+		targets.push(...splitTargets(token));
 	}
 
-	return undefined;
+	return {ambiguous: false, targets};
+}
+
+function recursiveDeletions(command) {
+	const {segments, unclosedQuote} = lexCommand(command);
+	const invocations = [];
+
+	for (const segment of segments) {
+		for (let index = 0; index < segment.length; index += 1) {
+			const name = commandName(segment[index]);
+			const arguments_ = segment.slice(index + 1);
+			const invocation =
+				name === "rm"
+					? parseRm(arguments_)
+					: name === "remove-item"
+						? parseRemoveItem(arguments_)
+						: undefined;
+
+			if (invocation) {
+				invocations.push({
+					...invocation,
+					ambiguous: invocation.ambiguous || unclosedQuote,
+				});
+				break;
+			}
+		}
+	}
+
+	return invocations;
+}
+
+function protectedDestination(refspec) {
+	const normalized = refspec.replace(/^\+/, "");
+	const separator = normalized.lastIndexOf(":");
+	const destination =
+		separator >= 0 ? normalized.slice(separator + 1) : normalized;
+	const branch = destination
+		.replace(/^refs\/heads\//i, "")
+		.toLowerCase();
+	return branch === "main" || branch === "preview";
+}
+
+function classifyGitPush(command) {
+	const {segments} = lexCommand(command);
+	let unresolvedForcedDestination = false;
+
+	for (const segment of segments) {
+		const gitIndex = segment.findIndex(
+			(token) => commandName(token) === "git",
+		);
+		if (gitIndex < 0) continue;
+		const pushIndex = segment.findIndex(
+			(token, index) =>
+				index > gitIndex && token.toLowerCase() === "push",
+		);
+		if (pushIndex < 0) continue;
+
+		let deleteMode = false;
+		let globalForce = false;
+		let skipNext = false;
+		const positionals = [];
+
+		for (const token of segment.slice(pushIndex + 1)) {
+			if (skipNext) {
+				skipNext = false;
+				continue;
+			}
+			if (
+				token === "-f" ||
+				token === "--force" ||
+				token === "--force-with-lease" ||
+				token.startsWith("--force-with-lease=")
+			) {
+				globalForce = true;
+				continue;
+			}
+			if (token === "-d" || token === "--delete") {
+				deleteMode = true;
+				continue;
+			}
+			if (GIT_OPTIONS_WITH_VALUE.has(token)) {
+				skipNext = true;
+				continue;
+			}
+			if (token.startsWith("-")) continue;
+			positionals.push(token);
+		}
+
+		const refspecs = positionals.slice(1);
+		if (globalForce && refspecs.length === 0) {
+			unresolvedForcedDestination = true;
+			continue;
+		}
+
+		for (const refspec of refspecs) {
+			const forceRefspec = refspec.startsWith("+");
+			const deletionRefspec = refspec.startsWith(":");
+			if (
+				(globalForce || forceRefspec || deleteMode || deletionRefspec) &&
+				protectedDestination(refspec)
+			) {
+				return {
+					permissionDecision: "deny",
+					permissionDecisionReason:
+						"Force-pushing or deleting main or preview is prohibited.",
+				};
+			}
+		}
+	}
+
+	return unresolvedForcedDestination
+		? {
+				permissionDecision: "ask",
+				permissionDecisionReason:
+					"Forced push destination is implicit; explicit user confirmation is required.",
+			}
+		: undefined;
 }
 
 function canonicalPath(value) {
@@ -138,17 +418,8 @@ export function classifyToolCall({
 	const command = commandFrom(toolArgs);
 	if (!command) return undefined;
 
-	if (
-		/\bgit\s+push\b/i.test(command) &&
-		FORCE_FLAG.test(command) &&
-		PROTECTED_BRANCH.test(command)
-	) {
-		return {
-			permissionDecision: "deny",
-			permissionDecisionReason:
-				"Force-pushing main or preview is prohibited.",
-		};
-	}
+	const gitPushDecision = classifyGitPush(command);
+	if (gitPushDecision) return gitPushDecision;
 
 	if (DROP_SQL.test(command)) {
 		return {
@@ -158,24 +429,31 @@ export function classifyToolCall({
 		};
 	}
 
-	const target = recursiveDeletion(command);
-	if (!target) return undefined;
+	let unresolvedDeletion = false;
+	for (const deletion of recursiveDeletions(command)) {
+		if (deletion.ambiguous || deletion.targets.length === 0) {
+			unresolvedDeletion = true;
+			continue;
+		}
 
-	if (UNRESOLVED_TARGET.test(target)) {
-		return {
-			permissionDecision: "ask",
-			permissionDecisionReason:
-				"Recursive deletion target is unresolved; explicit user confirmation is required.",
-		};
+		for (const target of deletion.targets) {
+			if (UNRESOLVED_TARGET.test(target)) {
+				unresolvedDeletion = true;
+			} else if (isProtectedRoot(target, repositoryRoot, sessionRoot)) {
+				return {
+					permissionDecision: "deny",
+					permissionDecisionReason:
+						"Recursive deletion targets a protected root.",
+				};
+			}
+		}
 	}
 
-	if (isProtectedRoot(target, repositoryRoot, sessionRoot)) {
-		return {
-			permissionDecision: "deny",
-			permissionDecisionReason:
-				"Recursive deletion targets a protected root.",
-		};
-	}
-
-	return undefined;
+	return unresolvedDeletion
+		? {
+				permissionDecision: "ask",
+				permissionDecisionReason:
+					"Recursive deletion target is unresolved; explicit user confirmation is required.",
+			}
+		: undefined;
 }
