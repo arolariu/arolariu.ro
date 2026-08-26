@@ -15,7 +15,6 @@
 
 import type {Decorator} from "@storybook/react";
 import {DialogProvider} from "../src/app/domains/invoices/_contexts/DialogContext";
-import {InvoiceContextProvider} from "../src/app/domains/invoices/view-invoice/[id]/_context/InvoiceContext";
 
 /**
  * Wraps a story in the invoice DialogProvider.

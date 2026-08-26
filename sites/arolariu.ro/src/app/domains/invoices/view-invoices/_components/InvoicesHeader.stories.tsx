@@ -1,95 +1,43 @@
-import type {Meta, StoryObj} from "@storybook/react";
+import type {Decorator, Meta, StoryObj} from "@storybook/react";
+import {DialogProvider} from "../../_contexts/DialogContext";
+import InvoicesHeader from "./InvoicesHeader";
+
+/**
+ * Wraps the story in the real invoice `DialogProvider` context.
+ *
+ * @remarks
+ * Defined locally (rather than importing `.storybook/providers.tsx`) because
+ * Rolldown's dependency graph resolves the same `.storybook/providers` module
+ * from many different relative depths across the story suite, which has been
+ * observed to intermittently break unrelated stories during production
+ * builds. Importing the production `DialogProvider` context directly avoids
+ * that instability while still exercising the real context implementation.
+ */
+const withDialogProvider: Decorator = (Story) => (
+  <DialogProvider>
+    <Story />
+  </DialogProvider>
+);
 
 /**
  * InvoicesHeader renders the header for the invoices list page with title,
  * description, and action buttons (import, export, print, new invoice).
- * Depends on `useDialog`.
  *
- * This story renders a static preview of the invoices header.
+ * Mounted with the real `DialogProvider` context since the component opens
+ * the import/export dialogs via `useDialog`. The dialogs themselves are not
+ * rendered here — only the header and its trigger buttons.
  */
 const meta = {
   title: "Invoices/ViewInvoices/InvoicesHeader",
+  component: InvoicesHeader,
+  decorators: [withDialogProvider],
   parameters: {
     layout: "fullscreen",
   },
-} satisfies Meta;
+} satisfies Meta<typeof InvoicesHeader>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
 /** Default invoices header with all action buttons. */
-export const Preview: Story = {
-  render: () => (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "space-between",
-        gap: "1rem",
-        borderBottom: "1px solid #e5e7eb",
-        backgroundColor: "#ffffff",
-        padding: "1rem 1.5rem",
-      }}>
-      <div>
-        <h1 style={{fontSize: "1.5rem", fontWeight: 700, letterSpacing: "-0.025em"}}>My Invoices</h1>
-        <p style={{fontSize: "0.875rem", color: "#6b7280"}}>View and manage all your invoices</p>
-      </div>
-      <div style={{display: "flex", gap: "0.5rem"}}>
-        <button
-          type='button'
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "0.25rem",
-            borderRadius: "0.375rem",
-            border: "1px solid #e5e7eb",
-            padding: "0.375rem 0.75rem",
-            fontSize: "0.875rem",
-          }}>
-          📤 Import
-        </button>
-        <button
-          type='button'
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "0.25rem",
-            borderRadius: "0.375rem",
-            border: "1px solid #e5e7eb",
-            padding: "0.375rem 0.75rem",
-            fontSize: "0.875rem",
-          }}>
-          📥 Export
-        </button>
-        <button
-          type='button'
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "0.25rem",
-            borderRadius: "0.375rem",
-            border: "1px solid #e5e7eb",
-            padding: "0.375rem 0.75rem",
-            fontSize: "0.875rem",
-          }}>
-          🖨 Print
-        </button>
-        <button
-          type='button'
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "0.25rem",
-            borderRadius: "0.375rem",
-            backgroundColor: "#2563eb",
-            padding: "0.375rem 0.75rem",
-            fontSize: "0.875rem",
-            color: "#ffffff",
-          }}>
-          ➕ New Invoice
-        </button>
-      </div>
-    </div>
-  ),
-};
+export const Default: Story = {};

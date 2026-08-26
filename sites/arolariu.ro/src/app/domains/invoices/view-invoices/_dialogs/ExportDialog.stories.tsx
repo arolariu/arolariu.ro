@@ -1,117 +1,62 @@
-import type {Meta, StoryObj} from "@storybook/react";
-import {TbDownload, TbFileSpreadsheet, TbFileText, TbJson} from "react-icons/tb";
+import {InvoiceBuilder} from "@/data/mocks";
+import {useInvoicesStore} from "@/stores";
+import type {Decorator, Meta, StoryObj} from "@storybook/react";
+import {useEffect} from "react";
+import {DialogProvider, useDialog} from "../../_contexts/DialogContext";
+import ExportDialog from "./ExportDialog";
 
 /**
- * Static visual preview of the ExportDialog component.
+ * Seeds the real `useInvoicesStore` with sample invoices and opens the real
+ * `VIEW_INVOICES__EXPORT` dialog on mount, mirroring the exact `useDialog`
+ * call `InvoicesHeader` makes when a user clicks the "Export" button.
+ */
+function ExportDialogHarness(): null {
+  const {open} = useDialog("VIEW_INVOICES__EXPORT");
+
+  useEffect(() => {
+    useInvoicesStore.getState().setEntities(Array.from({length: 5}, () => new InvoiceBuilder().build()));
+    open();
+
+    return () => {
+      useInvoicesStore.getState().clearEntities();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- run once per story mount, mirrors a single "Export" click
+  }, []);
+
+  return null;
+}
+
+/**
+ * Wraps the story in the real `DialogProvider` context and opens the export
+ * dialog via the harness above.
+ */
+const withOpenExportDialog: Decorator = (Story) => (
+  <DialogProvider>
+    <ExportDialogHarness />
+    <Story />
+  </DialogProvider>
+);
+
+/**
+ * ExportDialog lets users export their invoices as CSV, JSON, or PDF with
+ * configurable options (metadata, products, merchant, headers).
  *
- * The actual component depends on `useDialog` and `useInvoicesStore`,
- * so this story renders a faithful HTML replica of the export form
- * with format selection and options checkboxes.
+ * Mounted as the real production component. The dialog reads its invoices
+ * from the real `useInvoicesStore` Zustand store (seeded with `InvoiceBuilder`
+ * fixtures) and its open state from the real `DialogProvider` context — no
+ * mocking involved.
  */
 const meta = {
   title: "Invoices/ViewInvoices/Dialogs/ExportDialog",
+  component: ExportDialog,
+  decorators: [withOpenExportDialog],
   parameters: {
     layout: "centered",
   },
-} satisfies Meta;
+} satisfies Meta<typeof ExportDialog>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** Default export dialog with CSV selected. */
-export const Default: Story = {
-  render: () => (
-    <div
-      style={{
-        borderRadius: "0.75rem",
-        border: "1px solid #e5e7eb",
-        backgroundColor: "#ffffff",
-        boxShadow: "0 20px 25px -5px rgba(0,0,0,0.1)",
-      }}>
-      <div style={{borderBottom: "1px solid #e5e7eb", padding: "1.5rem"}}>
-        <h2 style={{fontSize: "1.125rem", fontWeight: 600}}>Export Invoices</h2>
-        <p style={{marginTop: "0.25rem", fontSize: "0.875rem", color: "#6b7280"}}>Export 5 invoices in your preferred format.</p>
-      </div>
-
-      <div style={{display: "flex", flexDirection: "column", gap: "1.25rem", padding: "1.5rem"}}>
-        {/* Format selection */}
-        <div>
-          <h3 style={{marginBottom: "0.5rem", fontSize: "0.875rem", fontWeight: 600}}>Export Format</h3>
-          <div style={{display: "flex", flexDirection: "column", gap: "0.5rem"}}>
-            {[
-              {
-                value: "csv",
-                icon: <TbFileSpreadsheet style={{height: "1rem", width: "1rem", color: "#16a34a"}} />,
-                label: "CSV",
-                selected: true,
-              },
-              {value: "json", icon: <TbJson style={{height: "1rem", width: "1rem", color: "#2563eb"}} />, label: "JSON", selected: false},
-              {value: "pdf", icon: <TbFileText style={{height: "1rem", width: "1rem", color: "#dc2626"}} />, label: "PDF", selected: false},
-            ].map((format) => (
-              <label
-                key={format.value}
-                style={{display: "flex", alignItems: "center", gap: "0.75rem", fontSize: "0.875rem"}}>
-                <input
-                  type='radio'
-                  name='format'
-                  checked={format.selected}
-                  readOnly
-                  style={{height: "1rem", width: "1rem"}}
-                />
-                <span style={{display: "flex", alignItems: "center", gap: "0.5rem"}}>
-                  {format.icon}
-                  {format.label}
-                </span>
-              </label>
-            ))}
-          </div>
-        </div>
-
-        {/* Options */}
-        <div>
-          <h3 style={{marginBottom: "0.5rem", fontSize: "0.875rem", fontWeight: 600}}>Include in Export</h3>
-          <div style={{display: "flex", flexDirection: "column", gap: "0.5rem"}}>
-            {[
-              {label: "Include Metadata", checked: false},
-              {label: "Include Products", checked: true},
-              {label: "Include Merchant", checked: false},
-              {label: "Include Headers", checked: true},
-            ].map((opt) => (
-              <label
-                key={opt.label}
-                style={{display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.875rem"}}>
-                <input
-                  type='checkbox'
-                  checked={opt.checked}
-                  readOnly
-                  style={{height: "1rem", width: "1rem", borderRadius: "0.25rem", border: "1px solid #e5e7eb"}}
-                />
-                {opt.label}
-              </label>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      <div style={{display: "flex", justifyContent: "flex-end", gap: "0.5rem", borderTop: "1px solid #e5e7eb", padding: "1rem"}}>
-        <button style={{borderRadius: "0.375rem", border: "1px solid #e5e7eb", padding: "0.5rem 1rem", fontSize: "0.875rem"}}>
-          Cancel
-        </button>
-        <button
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "0.5rem",
-            borderRadius: "0.375rem",
-            backgroundColor: "#111827",
-            padding: "0.5rem 1rem",
-            fontSize: "0.875rem",
-            color: "#ffffff",
-          }}>
-          <TbDownload style={{height: "1rem", width: "1rem"}} />
-          Export
-        </button>
-      </div>
-    </div>
-  ),
-};
+/** Default export dialog, open, seeded with 5 sample invoices in the store. */
+export const Default: Story = {};

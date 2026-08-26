@@ -1,74 +1,52 @@
+import {useDialogs} from "@/app/domains/invoices/_contexts/DialogContext";
+import {generateRandomInvoice, generateRandomMerchant} from "@/data/mocks";
+import type {Invoice, Merchant} from "@/types/invoices";
 import type {Meta, StoryObj} from "@storybook/react";
+import {useEffect} from "react";
+import {DialogProvider} from "../../../_contexts/DialogContext";
+import ShareAnalyticsDialog from "./ShareAnalyticsDialog";
 
 /**
- * ShareAnalyticsDialog renders a tabbed sharing dialog with image and email options.
- *
- * @remarks Static preview — component destructures `{invoice}` from `useDialog()` payload
- * which is null when the dialog is closed, causing a runtime crash. The dialog can only
- * render when opened programmatically via the DialogContext.
+ * ShareAnalyticsDialog renders a tabbed sharing dialog (image / email) with
+ * an invoice+merchant payload read from `useDialog("VIEW_INVOICE__SHARE_ANALYTICS")`.
+ * The dialog only renders its content while open, so this story opens it
+ * programmatically on mount (via the real `useDialogs` hook) inside the real
+ * `DialogProvider` re-exported from `.storybook/providers` — the same
+ * dispatch mechanism production code uses when a user clicks "Share".
  */
+const mockInvoice: Invoice = generateRandomInvoice();
+const mockMerchant: Merchant = generateRandomMerchant();
+
+/** Opens the share-analytics dialog with a mock payload on mount, then renders it. */
+function OpenedShareAnalyticsDialog(): React.JSX.Element {
+  const {openDialog} = useDialogs();
+
+  useEffect(() => {
+    openDialog("VIEW_INVOICE__SHARE_ANALYTICS", "share", {invoice: mockInvoice, merchant: mockMerchant});
+  }, [openDialog]);
+
+  return <ShareAnalyticsDialog />;
+}
+
 const meta = {
   title: "Invoices/ViewInvoice/Dialogs/ShareAnalyticsDialog",
+  component: ShareAnalyticsDialog,
+  decorators: [
+    (Story) => (
+      <DialogProvider>
+        <Story />
+      </DialogProvider>
+    ),
+  ],
   parameters: {
     layout: "centered",
   },
-} satisfies Meta;
+} satisfies Meta<typeof ShareAnalyticsDialog>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** Static preview of the share analytics dialog layout. */
+/** Default share-analytics dialog, opened on mount with a mock invoice/merchant payload. */
 export const Default: Story = {
-  render: () => (
-    <div
-      style={{
-        width: "100%",
-        maxWidth: "28rem",
-        borderRadius: "0.5rem",
-        border: "1px solid #e5e7eb",
-        backgroundColor: "#fff",
-        padding: "1.5rem",
-        boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1)",
-      }}>
-      <h2 style={{marginBottom: "1rem", fontSize: "1.125rem", fontWeight: 600}}>Share Analytics</h2>
-      <div style={{marginBottom: "1rem", display: "flex", gap: "0.5rem"}}>
-        <button
-          style={{
-            backgroundColor: "#3b82f6",
-            borderRadius: "0.375rem",
-            paddingLeft: "1rem",
-            paddingRight: "1rem",
-            paddingTop: "0.5rem",
-            paddingBottom: "0.5rem",
-            fontSize: "0.875rem",
-            color: "#fff",
-          }}>
-          Image
-        </button>
-        <button
-          style={{
-            borderRadius: "0.375rem",
-            backgroundColor: "#f3f4f6",
-            paddingLeft: "1rem",
-            paddingRight: "1rem",
-            paddingTop: "0.5rem",
-            paddingBottom: "0.5rem",
-            fontSize: "0.875rem",
-          }}>
-          Email
-        </button>
-      </div>
-      <div
-        style={{
-          borderRadius: "0.25rem",
-          border: "1px solid #e5e7eb",
-          padding: "1rem",
-          textAlign: "center",
-          fontSize: "0.875rem",
-          color: "#6b7280",
-        }}>
-        Analytics snapshot will be generated here
-      </div>
-    </div>
-  ),
+  render: () => <OpenedShareAnalyticsDialog />,
 };

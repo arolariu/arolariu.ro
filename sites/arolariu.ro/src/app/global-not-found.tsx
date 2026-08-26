@@ -1,24 +1,14 @@
-import Footer from "@/components/Footer";
-import Header from "@/components/Header";
+import {NotFoundContent, type NotFoundContentCopy} from "@/app/_components/GlobalNotFoundContent";
 import {getCookie} from "@/lib/actions/cookies";
 import {fetchAaaSUserFromAuthService} from "@/lib/actions/user/fetchUser";
-import {Button} from "@arolariu/components";
 import type {Metadata} from "next";
 import type {AbstractIntlMessages} from "next-intl";
 import {getTranslations} from "next-intl-selector/server";
 import {getLocale, getMessages} from "next-intl/server";
 import {headers} from "next/headers";
-import Link from "next/link";
-import QRCode from "react-qr-code";
 import styles from "./global-not-found.module.scss";
 import ContextProviders from "./providers";
 import Tracking from "./tracking";
-
-// @ts-ignore -- css file has no typings.
-import "@arolariu/components/styles.css";
-
-// @ts-ignore -- scss file has no typings.
-import "./globals.scss";
 
 export const metadata: Metadata = {
   title: "arolariu.ro | 404",
@@ -27,6 +17,13 @@ export const metadata: Metadata = {
 
 /**
  * The 404 page.
+ *
+ * @remarks
+ * Resolves request headers, locale, i18n messages, the current AaaS user,
+ * and the `eula-accepted` cookie, then renders {@link NotFoundContent} with
+ * the derived QR payload and localized copy inside the unchanged
+ * `<html>`/`<body>` document shell and {@link ContextProviders} tree.
+ *
  * @returns The 404 page.
  */
 export default async function NotFound(): Promise<React.JSX.Element> {
@@ -43,6 +40,15 @@ export default async function NotFound(): Promise<React.JSX.Element> {
     referrer: headersList.get("referer") ?? "unknown",
   });
 
+  const copy: NotFoundContentCopy = {
+    title: t((m) => m.app.errors.notFound.title),
+    subtitle: t((m) => m.app.errors.notFound.subtitle),
+    additionalInfo: t((m) => m.app.errors.notFound.additionalInfo),
+    falsePositive: t((m) => m.app.errors.notFound.falsePositive),
+    submitErrorButton: t((m) => m.app.errors.notFound.buttons.submitErrorButton),
+    returnButton: t((m) => m.app.errors.notFound.buttons.returnButton),
+  };
+
   return (
     <html
       suppressHydrationWarning
@@ -52,34 +58,10 @@ export default async function NotFound(): Promise<React.JSX.Element> {
         <ContextProviders
           locale={locale}
           messages={messages as unknown as AbstractIntlMessages}>
-          <Header />
-          <div className={styles["pageContainer"]}>
-            <section className={styles["heroContent"]}>
-              <h1 className={styles["title"]}>{t((m) => m.app.errors.notFound.title)}</h1>
-              <span className={styles["subtitle"]}>{t((m) => m.app.errors.notFound.subtitle)}</span>
-            </section>
-            <section className={styles["qrSection"]}>
-              <h2 className={styles["qrTitle"]}>{t((m) => m.app.errors.notFound.additionalInfo)}</h2>
-              <QRCode value={qrCodeData} />
-            </section>
-            <section className={styles["bottomSection"]}>
-              <span className={styles["falsePositive"]}>{t((m) => m.app.errors.notFound.falsePositive)}</span>
-              <div className={styles["buttonRow"]}>
-                <Button
-                  asChild
-                  variant='outline'
-                  className={styles["actionButtonOutline"]}>
-                  <Link href='/'>{t((m) => m.app.errors.notFound.buttons.submitErrorButton)}</Link>
-                </Button>
-                <Button
-                  asChild
-                  className={styles["actionButtonDefault"]}>
-                  <Link href='https://arolariu.ro/'>{t((m) => m.app.errors.notFound.buttons.returnButton)}</Link>
-                </Button>
-              </div>
-            </section>
-          </div>
-          <Footer />
+          <NotFoundContent
+            qrCodeData={qrCodeData}
+            copy={copy}
+          />
           {Boolean(eulaCookie) && <Tracking />}
         </ContextProviders>
       </body>

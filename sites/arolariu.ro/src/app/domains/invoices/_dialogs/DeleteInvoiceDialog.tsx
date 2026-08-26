@@ -85,22 +85,21 @@ import styles from "./DeleteInvoiceDialog.module.scss";
  * openDialog("SHARED__INVOICE_DELETE", "delete", {invoice});
  * ```
  */
-export default function DeleteInvoiceDialog(): React.JSX.Element {
+export default function DeleteInvoiceDialog(): React.JSX.Element | null {
   const t = useTranslations();
 
   const {
     isOpen,
     close,
-    currentDialog: {
-      payload: {invoice},
-    },
+    currentDialog: {payload},
   } = useDialog("SHARED__INVOICE_DELETE", "delete");
+  const invoice = payload?.invoice ?? null;
 
   const [understoodCheckbox, setUnderstoodCheckbox] = useState<boolean>(false);
 
   const {deleteInvoiceCallback, isDeleting} = useInvoiceDelete();
 
-  const invoiceName = invoice.name || `${invoice.id.slice(0, 8)}`;
+  const invoiceName = invoice?.name || invoice?.id.slice(0, 8) || "";
   const isConfirmValid = understoodCheckbox;
 
   /**
@@ -144,8 +143,11 @@ export default function DeleteInvoiceDialog(): React.JSX.Element {
    * @returns A promise that resolves after the delete hook finishes its workflow.
    */
   const handleDelete = useCallback(async () => {
+    if (invoice === null) {
+      throw new Error("Cannot delete an invoice before the dialog payload is available.");
+    }
     await deleteInvoiceCallback(invoice.id);
-  }, [invoice.id, deleteInvoiceCallback]);
+  }, [invoice, deleteInvoiceCallback]);
 
   /**
    * Responds to open-state changes emitted by the dialog primitive.
@@ -168,9 +170,11 @@ export default function DeleteInvoiceDialog(): React.JSX.Element {
   );
 
   // Calculate deletion impact
-  const itemCount = invoice.items?.length ?? 0;
-  const scanCount = invoice.scans?.length ?? 0;
-  const sharedCount = invoice.sharedWith?.length ?? 0;
+  const itemCount = invoice?.items?.length ?? 0;
+  const scanCount = invoice?.scans?.length ?? 0;
+  const sharedCount = invoice?.sharedWith?.length ?? 0;
+
+  if (invoice === null) return null;
 
   return (
     <Dialog

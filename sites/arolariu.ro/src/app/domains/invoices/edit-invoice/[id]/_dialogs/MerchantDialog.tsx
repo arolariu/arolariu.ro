@@ -56,7 +56,7 @@ import styles from "./MerchantDialog.module.scss";
  * @see {@link MerchantCard} - Parent component that opens this dialog
  * @see {@link Merchant} - Merchant type definition
  */
-export default function MerchantDialog(): React.JSX.Element {
+export default function MerchantDialog(): React.JSX.Element | null {
   const t = useTranslations();
   const {
     currentDialog: {payload},
@@ -64,7 +64,17 @@ export default function MerchantDialog(): React.JSX.Element {
     close,
   } = useDialog("EDIT_INVOICE__MERCHANT");
 
-  const merchant = payload;
+  // `payload` is `null` at runtime whenever the dialog has not been opened yet
+  // (e.g. Storybook mounting this component directly, ahead of `DialogContainer`'s
+  // production gate which only renders this component once `open()` has already
+  // set a real merchant payload). No hooks are declared below this point, so
+  // returning early here is hook-order-safe.
+  const merchant: Merchant | null = payload ?? null;
+
+  if (!merchant) {
+    return null;
+  }
+
   const merchantClassification = merchant.classification?.officialLabel ?? t((m) => m.shared.invoices.classification.unclassified);
 
   return (

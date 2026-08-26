@@ -13,7 +13,7 @@
 import {AllergenAssessmentStatus, type AllergenAssessment} from "@/types/invoices/Allergen";
 import {Button, Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, toast} from "@arolariu/components";
 import {useTranslations} from "next-intl-selector";
-import {useCallback, useState} from "react";
+import {useCallback, useEffect, useState} from "react";
 import {AllergenAssessmentEditor} from "../../../_components/allergens/AllergenAssessmentEditor";
 import {updateInvoiceProduct} from "../../../_actions/invoices";
 import {useDialog} from "../../../_contexts/DialogContext";
@@ -50,13 +50,22 @@ export default function AllergenDialog(): React.JSX.Element | null {
     close,
   } = useDialog("EDIT_INVOICE__ALLERGENS");
 
-  const {invoice, product} = payload;
+  const invoice = payload?.invoice ?? null;
+  const product = payload?.product ?? null;
 
-  const [assessment, setAssessment] = useState<AllergenAssessment>(product.allergenAssessment ?? DEFAULT_EDITABLE_ASSESSMENT);
+  const [assessment, setAssessment] = useState<AllergenAssessment>(DEFAULT_EDITABLE_ASSESSMENT);
   const [isAssessmentValid, setIsAssessmentValid] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
+  useEffect(() => {
+    setAssessment(product?.allergenAssessment ?? DEFAULT_EDITABLE_ASSESSMENT);
+  }, [product]);
+
   const handleSave = useCallback(async () => {
+    if (invoice === null || product === null) {
+      throw new Error("Cannot save allergens before the dialog payload is available.");
+    }
+
     setIsSaving(true);
 
     try {
@@ -93,6 +102,8 @@ export default function AllergenDialog(): React.JSX.Element | null {
       setIsSaving(false);
     }
   }, [invoice, product, assessment, close, t]);
+
+  if (invoice === null || product === null) return null;
 
   return (
     <Dialog

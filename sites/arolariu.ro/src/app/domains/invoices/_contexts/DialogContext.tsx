@@ -40,7 +40,7 @@
 
 import type {Invoice, InvoiceScan, Merchant, Product, RecipeSuggestion} from "@/types/invoices";
 import type {CachedScan} from "@/types/scans";
-import {createContext, use, useMemo, useState, type ReactNode} from "react";
+import {createContext, use, useCallback, useMemo, useRef, useState, type ReactNode} from "react";
 
 /**
  * Union type representing all 27 dialog types across the invoices domain.
@@ -175,6 +175,19 @@ type DialogCurrent = {
   payload: unknown;
 };
 
+type BoundDialogCurrent<T extends Exclude<DialogType, null>> = {
+  type: DialogType;
+  mode: DialogMode;
+  payload: DialogPayloads[T] | null;
+};
+
+type BoundDialog<T extends Exclude<DialogType, null>> = Readonly<{
+  currentDialog: BoundDialogCurrent<T>;
+  isOpen: boolean;
+  open: () => void;
+  close: () => void;
+}>;
+
 const INITIAL_STATE: DialogCurrent = {type: null, mode: null, payload: null};
 
 type DialogActions = {
@@ -268,11 +281,10 @@ export function useDialogs(): {
  * Hook bound to a single dialog type with optional baked-in mode and payload.
  *
  * @remarks
- * The returned `currentDialog.payload` is typed as `DialogPayloads[T]`.
- * This narrowing is sound only when read under `isOpen === true` (the active
- * dialog reads its own payload). Cards that only call `open`/`close` and never
- * read `payload` are unaffected. Callers MUST ensure they never dispatch a
- * dialog without its required payload — guard your trigger buttons.
+ * The returned `currentDialog.payload` is typed as
+ * `DialogPayloads[T] | null`, matching the provider's closed initial state.
+ * Active dialogs must guard the payload before reading it. Cards that only
+ * call `open`/`close` and never read `payload` are unaffected.
  *
  * @param dialogType - The dialog this hook is bound to (compile-time enforced).
  * @param dialogMode - Default mode when `open()` is called (defaults to `"view"`).
@@ -289,16 +301,26 @@ export function useDialog<T extends Exclude<DialogType, null>>(
   dialogType: T,
   dialogMode: Exclude<DialogMode, null> = "view",
   dialogPayload?: DialogPayloads[T],
-) {
+): BoundDialog<T> {
   const state = use(DialogStateContext);
   const actions = use(DialogActionsContext);
+  const payloadRef = useRef(dialogPayload);
+  payloadRef.current = dialogPayload;
+  const open = useCallback(() => {
+    if (actions === undefined) {
+      throw new Error("useDialog must be used within a DialogProvider");
+    }
+    actions.openDialog(dialogType, dialogMode, payloadRef.current);
+  }, [actions, dialogMode, dialogType]);
+
   if (state === undefined || actions === undefined) {
     throw new Error("useDialog must be used within a DialogProvider");
   }
+
   return {
-    currentDialog: state as {type: DialogType; mode: DialogMode; payload: DialogPayloads[T]},
+    currentDialog: state as BoundDialogCurrent<T>,
     isOpen: state.type === dialogType,
-    open: () => actions.openDialog(dialogType, dialogMode, dialogPayload),
+    open,
     close: actions.closeDialog,
   } as const;
 }

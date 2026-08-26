@@ -1,59 +1,62 @@
 import type {Meta, StoryObj} from "@storybook/react";
+import {ClerkProvider} from "@clerk/nextjs";
+import AuthButton from "./AuthButton";
 
 /**
- * The AuthButton adapts to the user's Clerk authentication state.
+ * The AuthButton adapts to the user's Clerk authentication state, rendering
+ * `<SignInButton>` when signed out or `<UserButton>` when signed in.
  *
- * Because Clerk components (`useAuth`, `Show`, `UserButton`,
- * `SignInButton`) require a live `ClerkProvider` that is impractical to supply
- * in Storybook, this story focuses on the **loading skeleton** state — the
- * pulsing circle that appears while auth state resolves.
- *
- * The skeleton is the same markup rendered by `AuthButton` when `isLoaded`
- * is `false`.
+ * Clerk is a true external boundary: this story relies on the shared,
+ * browser-safe Storybook alias for `@clerk/nextjs` (configured once for the
+ * whole preview) so the real `AuthButton` — including its nested `<Show>`,
+ * `<SignInButton>`, and `<UserButton>` — can mount exactly as it does in
+ * production, wrapped only in a real `ClerkProvider`.
  */
 const meta = {
   title: "Site/Buttons/AuthButton",
+  component: AuthButton,
+  decorators: [
+    (Story) => (
+      <ClerkProvider>
+        <div style={{borderRadius: "0.25rem", backgroundColor: "#f3f4f6", padding: "1rem"}}>
+          <Story />
+        </div>
+      </ClerkProvider>
+    ),
+  ],
   parameters: {
     layout: "centered",
     backgrounds: {default: "light-gray"},
   },
-  decorators: [
-    (Story) => (
-      <div style={{borderRadius: "0.25rem", backgroundColor: "#f3f4f6", padding: "1rem"}}>
-        <Story />
-      </div>
-    ),
-  ],
-} satisfies Meta;
+} satisfies Meta<typeof AuthButton>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/**
- * Loading / skeleton state — a pulsing circle matching the
- * `AuthButton` output before Clerk finishes initialising.
- */
-export const Loading: Story = {
-  render: () => <div style={{height: "2rem", width: "2rem", borderRadius: "9999px", backgroundColor: "#e5e7eb"}} />,
-};
+/** Default auth control for the deterministic Clerk state provided by the Storybook alias. */
+export const Default: Story = {};
 
-/** Multiple skeleton buttons side-by-side (e.g. inside a nav bar). */
-export const LoadingInNavBar: Story = {
-  render: () => (
-    <nav
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: "1rem",
-        borderRadius: "0.5rem",
-        border: "1px solid #e5e7eb",
-        paddingLeft: "1.5rem",
-        paddingRight: "1.5rem",
-        paddingTop: "0.75rem",
-        paddingBottom: "0.75rem",
-      }}>
-      <span style={{fontSize: "0.875rem", fontWeight: "500", color: "#6b7280"}}>Navigation</span>
-      <div style={{marginLeft: "auto", height: "2rem", width: "2rem", borderRadius: "9999px", backgroundColor: "#e5e7eb"}} />
-    </nav>
-  ),
+/** Auth control rendered inside a nav-bar-like container, matching its real usage in `Header`. */
+export const InNavBar: Story = {
+  decorators: [
+    (Story) => (
+      <nav
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "1rem",
+          borderRadius: "0.5rem",
+          border: "1px solid #e5e7eb",
+          paddingLeft: "1.5rem",
+          paddingRight: "1.5rem",
+          paddingTop: "0.75rem",
+          paddingBottom: "0.75rem",
+        }}>
+        <span style={{fontSize: "0.875rem", fontWeight: "500", color: "#6b7280"}}>Navigation</span>
+        <div style={{marginLeft: "auto"}}>
+          <Story />
+        </div>
+      </nav>
+    ),
+  ],
 };

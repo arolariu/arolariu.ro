@@ -1,136 +1,82 @@
-import type {Meta, StoryObj} from "@storybook/react";
+import {AllergenCode, RecipeDifficulty, type RecipeIngredient, type RecipeStep, type RecipeSuggestion} from "@/types/invoices";
+import type {Decorator, Meta, StoryObj} from "@storybook/react";
+import {DialogProvider} from "../../../_contexts/DialogContext";
+import RecipeCard from "./RecipeCard";
 
 /**
  * RecipeCard displays a recipe with complexity badge, ingredients, timing,
- * and CRUD dropdown actions. It depends on `useDialog` for edit/delete/share.
+ * and CRUD dropdown actions.
  *
- * This story renders a static preview of the recipe card layout.
+ * Requires `DialogProvider` because its dropdown menu dispatches
+ * `EDIT_INVOICE__RECIPE_UPDATE`, `EDIT_INVOICE__RECIPE_DELETE`, and
+ * `EDIT_INVOICE__RECIPE_PREVIEW` dialogs.
  */
+const withDialogProviderDecorator: Decorator = (Story) => (
+  <DialogProvider>
+    <Story />
+  </DialogProvider>
+);
+
 const meta = {
   title: "Invoices/EditInvoice/Cards/RecipeCard",
+  component: RecipeCard,
+  decorators: [withDialogProviderDecorator],
   parameters: {
     layout: "centered",
   },
-} satisfies Meta;
+} satisfies Meta<typeof RecipeCard>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** Preview of an easy recipe card. */
-export const EasyRecipe: Story = {
-  render: () => (
-    <div
-      style={{
-        overflow: "hidden",
-        borderRadius: "0.5rem",
-        border: "1px solid #e5e7eb",
-        backgroundColor: "white",
-        boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
-      }}>
-      <div style={{borderBottom: "1px solid #e5e7eb", padding: "1rem"}}>
-        <div style={{display: "flex", alignItems: "flex-start", justifyContent: "space-between"}}>
-          <div>
-            <h3 style={{fontSize: "1.125rem", fontWeight: 600}}>Salmon Pasta</h3>
-            <span
-              style={{
-                marginTop: "0.25rem",
-                display: "inline-block",
-                borderRadius: "9999px",
-                backgroundColor: "#dbeafe",
-                padding: "0.125rem 0.5rem",
-                fontSize: "0.75rem",
-                fontWeight: 500,
-                color: "#1e40af",
-              }}>
-              Easy
-            </span>
-          </div>
-          <button
-            type='button'
-            style={{borderRadius: "0.375rem", padding: "0.25rem"}}>
-            ⋯
-          </button>
-        </div>
-      </div>
-      <div style={{display: "flex", flexDirection: "column", gap: "0.75rem", padding: "1rem"}}>
-        <p style={{fontSize: "0.875rem", color: "#4b5563"}}>A quick and delicious pasta dish with fresh salmon and herbs.</p>
-        <div>
-          <h4 style={{fontSize: "0.75rem", fontWeight: 600, color: "#6b7280"}}>Ingredients</h4>
-          <ul style={{marginTop: "0.25rem", listStyleType: "disc", paddingLeft: "1.25rem", fontSize: "0.875rem", color: "#4b5563"}}>
-            <li>Pasta (200g)</li>
-            <li>Fresh Salmon (150g)</li>
-            <li>Olive Oil</li>
-            <li style={{color: "#2563eb"}}>+2 more...</li>
-          </ul>
-        </div>
-        <div style={{display: "flex", gap: "1rem", fontSize: "0.75rem", color: "#6b7280"}}>
-          <span>⏱ Prep: 10 min</span>
-          <span>🍳 Cook: 20 min</span>
-        </div>
-      </div>
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: "0.5rem",
-          borderTop: "1px solid #e5e7eb",
-          backgroundColor: "#f9fafb",
-          padding: "0.5rem 1rem",
-        }}>
-        <button
-          type='button'
-          style={{fontSize: "0.875rem", color: "#4b5563"}}>
-          Visit Reference 🔗
-        </button>
-        <button
-          type='button'
-          style={{borderRadius: "0.375rem", backgroundColor: "#2563eb", padding: "0.375rem 0.75rem", fontSize: "0.875rem", color: "white"}}>
-          View Recipe
-        </button>
-      </div>
-    </div>
-  ),
+function ingredient(name: string, quantity: string, preparation: string | null = null): RecipeIngredient {
+  return {name, quantity, preparation};
+}
+
+function step(sequence: number, instruction: string, notes: string | null = null): RecipeStep {
+  return {sequence, instruction, notes};
+}
+
+const easyRecipe: RecipeSuggestion = {
+  name: "Salmon Pasta",
+  description: "A quick and delicious pasta dish with fresh salmon and herbs.",
+  servings: 2,
+  preparationMinutes: 10,
+  cookingMinutes: 20,
+  totalMinutes: 30,
+  difficulty: RecipeDifficulty.Easy,
+  purchasedIngredients: [ingredient("Pasta", "200 g"), ingredient("Fresh Salmon", "150 g"), ingredient("Olive Oil", "2 tbsp")],
+  assumedPantryStaples: [ingredient("Salt", "to taste"), ingredient("Black Pepper", "to taste")],
+  missingOptionalIngredients: [ingredient("Fresh Dill", "1 tbsp")],
+  steps: [
+    step(1, "Boil the pasta until al dente."),
+    step(2, "Pan-sear the salmon in olive oil."),
+    step(3, "Combine pasta and salmon, season to taste."),
+  ],
+  allergenWarnings: [AllergenCode.Fish],
 };
 
-/** Preview of a hard recipe card. */
+const hardRecipe: RecipeSuggestion = {
+  name: "Beef Wellington",
+  description: "A classic British dish featuring beef fillet wrapped in pâté and puff pastry.",
+  servings: 4,
+  preparationMinutes: 45,
+  cookingMinutes: 90,
+  totalMinutes: 135,
+  difficulty: RecipeDifficulty.Hard,
+  purchasedIngredients: [ingredient("Beef Fillet", "800 g"), ingredient("Puff Pastry", "1 sheet")],
+  assumedPantryStaples: [ingredient("Butter", "50 g"), ingredient("Eggs", "1")],
+  missingOptionalIngredients: [],
+  steps: [step(1, "Sear the beef fillet on all sides."), step(2, "Wrap in pâté and puff pastry."), step(3, "Bake until golden brown.")],
+  allergenWarnings: [AllergenCode.CerealsContainingGluten, AllergenCode.Eggs],
+};
+
+/** Easy recipe with no allergen warnings. */
+export const EasyRecipe: Story = {
+  args: {recipe: easyRecipe, recipeIndex: 0},
+};
+
+/** Hard recipe with allergen warnings. */
 export const HardRecipe: Story = {
-  render: () => (
-    <div
-      style={{
-        overflow: "hidden",
-        borderRadius: "0.5rem",
-        border: "1px solid #e5e7eb",
-        backgroundColor: "white",
-        boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
-      }}>
-      <div style={{borderBottom: "1px solid #e5e7eb", padding: "1rem"}}>
-        <div>
-          <h3 style={{fontSize: "1.125rem", fontWeight: 600}}>Beef Wellington</h3>
-          <span
-            style={{
-              marginTop: "0.25rem",
-              display: "inline-block",
-              borderRadius: "9999px",
-              backgroundColor: "#fee2e2",
-              padding: "0.125rem 0.5rem",
-              fontSize: "0.75rem",
-              fontWeight: 500,
-              color: "#991b1b",
-            }}>
-            Hard
-          </span>
-        </div>
-      </div>
-      <div style={{display: "flex", flexDirection: "column", gap: "0.75rem", padding: "1rem"}}>
-        <p style={{fontSize: "0.875rem", color: "#4b5563"}}>
-          A classic British dish featuring beef fillet wrapped in pâté and puff pastry.
-        </p>
-        <div style={{display: "flex", gap: "1rem", fontSize: "0.75rem", color: "#6b7280"}}>
-          <span>⏱ Prep: 45 min</span>
-          <span>🍳 Cook: 90 min</span>
-        </div>
-      </div>
-    </div>
-  ),
+  args: {recipe: hardRecipe, recipeIndex: 1},
 };

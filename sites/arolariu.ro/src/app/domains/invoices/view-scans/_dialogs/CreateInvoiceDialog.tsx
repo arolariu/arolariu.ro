@@ -293,6 +293,7 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
               htmlFor='single'
               className={`${styles["modeOption"]} ${mode === "single" ? styles["modeOptionSelected"] : ""}`}>
               <RadioGroupItem
+                nativeButton
                 value='single'
                 id='single'
                 className={styles["radioItem"]}
@@ -312,6 +313,7 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
               htmlFor='batch'
               className={`${styles["modeOption"]} ${styles["modeOptionBatch"]} ${mode === "batch" ? styles["modeOptionSelected"] : ""}`}>
               <RadioGroupItem
+                nativeButton
                 value='batch'
                 id='batch'
                 className={styles["radioItem"]}

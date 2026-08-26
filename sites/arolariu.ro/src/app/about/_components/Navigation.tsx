@@ -87,7 +87,8 @@ export default function Navigation(): React.JSX.Element {
                       {/* Feature list */}
                       <ul className={styles["featureList"]}>
                         {([0, 1, 2] as const).map((featureIndex) => {
-                          const featureKey = `${item.key}.features.${featureIndex}` as `platform.features.${typeof featureIndex}`;
+                          const featureKey =
+                            `${item.key}.features.item${featureIndex}` as `platform.features.item${typeof featureIndex}`;
                           return (
                             <li
                               key={featureIndex}
@@ -97,7 +98,7 @@ export default function Navigation(): React.JSX.Element {
                                 className={styles["featureBadge"]}>
                                 <TbCheck className={styles["featureIcon"]} />
                               </Badge>
-                              <span>{t(selectorFromPath(`About.Hub.navigation.${featureKey}`))}</span>
+                              <span>{t(selectorFromPath(`pages.about.hub.navigation.${featureKey}`))}</span>
                             </li>
                           );
                         })}

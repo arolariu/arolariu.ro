@@ -149,7 +149,7 @@ function SelectionMode({onSelectPublic, onSelectPrivate, t}: Readonly<SelectionM
  * @see {@link SharingCard} - Parent component that opens this dialog
  * @see {@link useDialog} - Dialog state management hook
  */
-export default function ShareInvoiceDialog(): React.JSX.Element {
+export default function ShareInvoiceDialog(): React.JSX.Element | null {
   const t = useTranslations();
   const router = useRouter();
   const locale = useLocale();
@@ -159,20 +159,19 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
   const [email, setEmail] = useState<string>("");
 
   const {
-    currentDialog: {
-      payload: {invoice},
-    },
+    currentDialog: {payload},
     isOpen,
     close,
   } = useDialog("SHARED__INVOICE_SHARE");
+  const invoice = payload?.invoice ?? null;
 
   const {shareInvoiceCallback, isSharing} = useInvoiceShare();
-  const shareUrl = `${globalThis.location.origin}/domains/invoices/view-invoice/${invoice.id}`;
+  const shareUrl = invoice === null ? "" : `${globalThis.location.origin}/domains/invoices/view-invoice/${invoice.id}`;
 
   /** Check if the invoice is currently public */
   const isInvoicePublic = useMemo(() => {
-    return invoice.sharedWith?.includes(LAST_GUID) ?? false;
-  }, [invoice.sharedWith]);
+    return invoice?.sharedWith?.includes(LAST_GUID) ?? false;
+  }, [invoice]);
 
   /** Reset state when dialog closes */
   const handleClose = useCallback(() => {
@@ -193,6 +192,10 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
    */
   const handleCopyLink = useCallback(() => {
     const copyLinkAction = async () => {
+      if (invoice === null) {
+        throw new Error("Cannot share an invoice before the dialog payload is available.");
+      }
+
       const wasPrivate = !isInvoicePublic;
       // If invoice is not already public, make it public first
       if (wasPrivate && sharingMode === "public") {
@@ -220,7 +223,7 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
           message: error instanceof Error ? error.message : String(error),
         }),
     });
-  }, [invoice.id, isInvoicePublic, shareInvoiceCallback, router, sharingMode, shareUrl, t]);
+  }, [invoice, isInvoicePublic, shareInvoiceCallback, router, sharingMode, shareUrl, t]);
 
   /**
    * Makes the invoice public and copies the QR code image to clipboard.
@@ -228,6 +231,10 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
    */
   const handleCopyQRCode = useCallback(() => {
     const copyQRCodeAction = async () => {
+      if (invoice === null) {
+        throw new Error("Cannot share an invoice before the dialog payload is available.");
+      }
+
       const wasPrivate = !isInvoicePublic;
       // If invoice is not already public, make it public first
       if (wasPrivate && sharingMode === "public") {
@@ -259,7 +266,7 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
           message: error instanceof Error ? error.message : String(error),
         }),
     });
-  }, [invoice.id, isInvoicePublic, shareInvoiceCallback, router, sharingMode, t]);
+  }, [invoice, isInvoicePublic, shareInvoiceCallback, router, sharingMode, t]);
 
   /**
    * Sends an email invitation to share the invoice privately through the shared hook.
@@ -267,6 +274,9 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
   const handleSendEmail = useCallback(
     async (event: React.FormEvent<HTMLFormElement>) => {
       event.preventDefault();
+      if (invoice === null) {
+        throw new Error("Cannot share an invoice before the dialog payload is available.");
+      }
       if (!email) return;
 
       await shareInvoiceCallback(invoice.id, {
@@ -278,7 +288,7 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
       });
       setEmail("");
     },
-    [email, invoice.id, locale, shareInvoiceCallback, user],
+    [email, invoice, locale, shareInvoiceCallback, user],
   );
 
   /**
@@ -286,6 +296,10 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
    * Uses toast.promise for consistent loading/success/error states.
    */
   const handleRevokeAccess = useCallback(() => {
+    if (invoice === null) {
+      throw new Error("Cannot revoke access before the dialog payload is available.");
+    }
+
     toast.promise(shareInvoiceCallback(invoice.id, {type: "revoke"}), {
       loading: t((m) => m.dialogs.invoices.shareInvoiceDialog.toasts.revoke.loading),
       success: t((m) => m.dialogs.invoices.shareInvoiceDialog.toasts.revoke.success),
@@ -294,7 +308,7 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
           message: error instanceof Error ? error.message : String(error),
         }),
     });
-  }, [invoice.id, shareInvoiceCallback, t]);
+  }, [invoice, shareInvoiceCallback, t]);
 
   /** Navigate to public sharing mode */
   const handleSelectPublic = useCallback(() => {
@@ -319,6 +333,8 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
     },
     [handleClose],
   );
+
+  if (invoice === null) return null;
 
   /** Get the dialog description based on current state */
   const getDialogDescription = (): string => {

@@ -1,7 +1,7 @@
 "use client";
 
 import {formatDateTime} from "@/lib/utils.generic";
-import {Avatar, AvatarFallback, AvatarImage} from "@arolariu/components";
+import {Avatar, AvatarFallback} from "@arolariu/components";
 import {motion} from "motion/react";
 import {useLocale} from "next-intl";
 import {useTranslations} from "next-intl-selector";
@@ -37,19 +37,13 @@ export function MessageList({messages}: Readonly<Props>): React.JSX.Element {
           className={`${styles["messageItem"]} ${message.role === "user" ? styles["messageUser"] : styles["messageAssistant"]}`}>
           <Avatar className={styles["avatar"]}>
             {message.role === "assistant" ? (
-              <>
-                <AvatarFallback className={styles["avatarFallbackAssistant"]}>
-                  <TbRobot className={styles["robotIcon"]} />
-                </AvatarFallback>
-                <AvatarImage src='/placeholder.svg?height=32&width=32' />
-              </>
+              <AvatarFallback className={styles["avatarFallbackAssistant"]}>
+                <TbRobot className={styles["robotIcon"]} />
+              </AvatarFallback>
             ) : (
-              <>
-                <AvatarFallback className={styles["avatarFallbackUser"]}>
-                  <TbUser className={styles["userIcon"]} />
-                </AvatarFallback>
-                <AvatarImage src='/placeholder.svg?height=32&width=32' />
-              </>
+              <AvatarFallback className={styles["avatarFallbackUser"]}>
+                <TbUser className={styles["userIcon"]} />
+              </AvatarFallback>
             )}
           </Avatar>
           <div className={styles["messageBody"]}>

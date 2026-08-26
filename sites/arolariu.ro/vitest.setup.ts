@@ -23,6 +23,7 @@
 
 import "@testing-library/jest-dom/vitest";
 import "fake-indexeddb/auto";
+import type {ReactNode} from "react";
 import {vi} from "vitest";
 
 // ── Environment ──
@@ -51,9 +52,31 @@ vi.mock("next/cache", () => ({
   revalidateTag: vi.fn(),
 }));
 
+vi.mock("next/font/google", () => {
+  const createFont = (variable: string) => ({
+    className: "font-mock",
+    style: {fontFamily: "font-mock"},
+    variable,
+  });
+
+  return {
+    Atkinson_Hyperlegible: vi.fn(() => createFont("--font-dyslexic")),
+    Caudex: vi.fn(() => createFont("--font-default")),
+  };
+});
+
 vi.mock("@clerk/nextjs", () => ({
+  ClerkProvider: ({children}: Readonly<{children: ReactNode}>) => children,
   useUser: () => ({user: null, isLoaded: true, isSignedIn: false}),
   useAuth: () => ({userId: null, isLoaded: true, isSignedIn: false}),
+  Show: ({
+    when,
+    children,
+    fallback = null,
+  }: Readonly<{when: "signed-in" | "signed-out" | boolean; children: ReactNode; fallback?: ReactNode}>) =>
+    when === "signed-out" || when === true ? children : fallback,
+  SignInButton: ({children}: Readonly<{children?: ReactNode}>) => children ?? null,
+  UserButton: ({fallback = null}: Readonly<{fallback?: ReactNode}>) => fallback,
 }));
 
 // ── i18n shims ──

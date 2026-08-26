@@ -1,7 +1,7 @@
 "use client";
 
 import {usePaginationWithSearch} from "@/hooks";
-import {type Product} from "@/types/invoices";
+import {type Invoice, type Product} from "@/types/invoices";
 import {
   Button,
   Dialog,
@@ -99,8 +99,13 @@ export default function ItemsDialog(): React.JSX.Element {
     close,
   } = useDialog("EDIT_INVOICE__ITEMS");
 
-  const invoice = payload;
-  const {items} = invoice;
+  // `payload` is `null` at runtime whenever the dialog has not been opened yet
+  // (e.g. Storybook mounting this component directly, ahead of `DialogContainer`'s
+  // production gate which only renders this component once `open()` has already
+  // set a real invoice payload). Fall back to an empty items list so the
+  // component never crashes on an initial closed render.
+  const invoice: Invoice | null = payload ?? null;
+  const items = invoice?.items ?? [];
 
   const [editableItems, setEditableItems] = useState<Product[]>(items);
   const {currentPage, setCurrentPage, totalPages, paginatedItems, pageSize} = usePaginationWithSearch<Product>({
