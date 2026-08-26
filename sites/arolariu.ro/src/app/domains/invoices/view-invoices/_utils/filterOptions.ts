@@ -9,13 +9,17 @@
  * Card chip — the user can always switch between any value they've ever used.
  *
  * Ordering: frequency-desc primary; ties broken by the natural tie-break for
- * the data type (alphabetic for currency codes, ascending numeric for the
- * enum values used by category and payment type).
+ * the data type (alphabetic for currency codes and group labels, ascending
+ * numeric for the enum values used by payment type).
  */
 
-import type {Invoice, InvoiceCategory, PaymentType} from "@/types/invoices";
+import type {Invoice, PaymentType} from "@/types/invoices";
+import {getClassificationGroup} from "../../_utils/labelUtilities";
 
 const DEFAULT_CURRENCY_CODE = "RON";
+
+/** Stable filter bucket for invoices without a resolved classification. */
+export const UNCLASSIFIED_GROUP = "unclassified";
 
 function buildFrequencyMap<K>(values: Iterable<K>): Map<K, number> {
   const map = new Map<K, number>();
@@ -44,20 +48,24 @@ export function computeAvailableCurrencies(invoices: ReadonlyArray<Invoice>): Re
 }
 
 /**
- * Returns the unique `InvoiceCategory` enum values present in the user's
- * invoices, ordered by frequency descending with ties broken by ascending
- * enum ordinal (numeric value).
+ * Returns the unique taxonomy root-group labels present in the user's invoices,
+ * ordered by frequency descending with ties broken alphabetically.
+ *
+ * @remarks
+ * Uses {@link getClassificationGroup} to extract the broadest taxonomy node of
+ * `invoice.classification`. Invoices whose classification is null contribute to
+ * the stable `"unclassified"` bucket so no invoice is silently lost.
  */
-export function computeAvailableCategories(invoices: ReadonlyArray<Invoice>): ReadonlyArray<InvoiceCategory> {
-  const values = invoices.map((i) => i.category);
-  const freq = buildFrequencyMap(values);
+export function computeAvailableClassificationGroups(invoices: ReadonlyArray<Invoice>): ReadonlyArray<string> {
+  const groups = invoices.map((i) => getClassificationGroup(i.classification ?? null) ?? UNCLASSIFIED_GROUP);
+  const freq = buildFrequencyMap(groups);
   return [...freq.entries()]
     .toSorted((a, b) => {
       const freqDelta = b[1] - a[1];
       if (freqDelta !== 0) return freqDelta;
-      return (a[0] as number) - (b[0] as number);
+      return a[0].localeCompare(b[0]);
     })
-    .map(([cat]) => cat);
+    .map(([group]) => group);
 }
 
 /**

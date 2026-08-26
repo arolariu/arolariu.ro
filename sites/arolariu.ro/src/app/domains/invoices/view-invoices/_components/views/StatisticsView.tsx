@@ -29,7 +29,8 @@ import {useMemo} from "react";
 import {TbChartBar} from "react-icons/tb";
 import {
   computeAllergenFrequency,
-  computeCategoryAggregates,
+  countAssessedProducts,
+  computeClassificationGroupAggregates,
   computeCurrencyDistribution,
   computeDailySpending,
   computeKPIs,
@@ -39,12 +40,12 @@ import {
   computeMonthComparison,
   computeMonthlySpending,
   computePriceDistribution,
-  computeProductCategorySpending,
+  computeProductClassificationSpending,
   computeTimeOfDay,
   computeTopProducts,
 } from "../../_utils/statistics";
 import {AllergenSummaryChart} from "./statistics/AllergenSummaryChart";
-import {CategoryBreakdownChart} from "./statistics/CategoryBreakdownChart";
+import {ClassificationBreakdownChart} from "./statistics/ClassificationBreakdownChart";
 import {ComparisonCards} from "./statistics/ComparisonCards";
 import {CurrencyDistributionChart} from "./statistics/CurrencyDistributionChart";
 import {KPISummaryRow} from "./statistics/KPISummaryRow";
@@ -52,7 +53,7 @@ import {MerchantLeaderboard} from "./statistics/MerchantLeaderboard";
 import {MerchantTrendsChart} from "./statistics/MerchantTrendsChart";
 import {MerchantVisitChart} from "./statistics/MerchantVisitChart";
 import {PriceDistributionChart} from "./statistics/PriceDistributionChart";
-import {ProductCategoryChart} from "./statistics/ProductCategoryChart";
+import {ProductClassificationChart} from "./statistics/ProductClassificationChart";
 import SpendingCalendarHeatmap from "./statistics/SpendingCalendarHeatmap";
 import {SpendingOverTimeChart} from "./statistics/SpendingOverTimeChart";
 import {TimeOfDayChart} from "./statistics/TimeOfDayChart";
@@ -111,7 +112,7 @@ export default function RenderStatisticsView({invoices}: Readonly<Props>): React
   // Compute all statistics data with memoization
   const kpiData = useMemo(() => computeKPIs(invoices), [invoices]);
   const monthlySpending = useMemo(() => computeMonthlySpending(invoices), [invoices]);
-  const categoryAggregates = useMemo(() => computeCategoryAggregates(invoices), [invoices]);
+  const categoryAggregates = useMemo(() => computeClassificationGroupAggregates(invoices), [invoices]);
   const merchantAggregates = useMemo(() => computeMerchantAggregates(invoices), [invoices]);
   const priceDistribution = useMemo(() => computePriceDistribution(invoices), [invoices]);
   const timeOfDaySegments = useMemo(() => computeTimeOfDay(invoices), [invoices]);
@@ -119,9 +120,10 @@ export default function RenderStatisticsView({invoices}: Readonly<Props>): React
   const dailySpending = useMemo(() => computeDailySpending(invoices), [invoices]);
 
   // Product-level analytics
-  const productCategorySpending = useMemo(() => computeProductCategorySpending(invoices), [invoices]);
+  const classificationSpending = useMemo(() => computeProductClassificationSpending(invoices), [invoices]);
   const topProducts = useMemo(() => computeTopProducts(invoices, 10), [invoices]);
   const allergenFrequency = useMemo(() => computeAllergenFrequency(invoices), [invoices]);
+  const assessedProductCount = useMemo(() => countAssessedProducts(invoices), [invoices]);
 
   // Merchant-level analytics
   const merchantTrends = useMemo(() => computeMerchantTrends(invoices, 5), [invoices]);
@@ -190,7 +192,7 @@ export default function RenderStatisticsView({invoices}: Readonly<Props>): React
             initial={{opacity: 0, x: -20}}
             animate={{opacity: 1, x: 0}}
             transition={{duration: 0.5, delay: 0.5}}>
-            <CategoryBreakdownChart
+            <ClassificationBreakdownChart
               data={categoryAggregates}
               currency={currency}
             />
@@ -309,8 +311,8 @@ export default function RenderStatisticsView({invoices}: Readonly<Props>): React
             initial={{opacity: 0, x: -20}}
             animate={{opacity: 1, x: 0}}
             transition={{duration: 0.5, delay: 0.8}}>
-            <ProductCategoryChart
-              data={productCategorySpending}
+            <ProductClassificationChart
+              data={classificationSpending}
               currency={currency}
             />
           </motion.div>
@@ -332,7 +334,10 @@ export default function RenderStatisticsView({invoices}: Readonly<Props>): React
           initial={{opacity: 0, y: 20}}
           animate={{opacity: 1, y: 0}}
           transition={{duration: 0.5, delay: 0.85}}>
-          <AllergenSummaryChart data={allergenFrequency} />
+          <AllergenSummaryChart
+            assessedProductCount={assessedProductCount}
+            data={allergenFrequency}
+          />
         </motion.div>
       </section>
     </div>

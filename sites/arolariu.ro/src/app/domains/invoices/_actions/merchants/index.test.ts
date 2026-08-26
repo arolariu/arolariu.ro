@@ -6,7 +6,7 @@
 import {describe, expect, it} from "vitest";
 import * as merchantActions from "./index";
 
-const expectedExports = ["fetchMerchant", "fetchMerchants"] as const;
+const expectedExports = ["fetchMerchant", "fetchMerchants", "updateMerchant"] as const;
 
 describe("merchant server actions barrel", () => {
   it("exports the expected merchant action surface", () => {

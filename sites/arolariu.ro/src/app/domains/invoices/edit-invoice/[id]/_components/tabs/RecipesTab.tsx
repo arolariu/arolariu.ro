@@ -1,7 +1,7 @@
 "use client";
 
 import {usePaginationWithSearch} from "@/hooks";
-import type {Recipe} from "@/types/invoices";
+import type {RecipeSuggestion} from "@/types/invoices";
 import {
   Button,
   Card,
@@ -17,15 +17,20 @@ import {
 } from "@arolariu/components";
 import {motion} from "motion/react";
 import {useTranslations} from "next-intl-selector";
-import {useCallback} from "react";
+import {useCallback, useMemo} from "react";
 import {TbConfetti, TbPlus} from "react-icons/tb";
 import {useDialog} from "../../../../_contexts/DialogContext";
 import RecipeCard from "../../_cards/RecipeCard";
 import styles from "./RecipesTab.module.scss";
 
 type Props = {
-  recipes: Recipe[];
+  recipes: readonly RecipeSuggestion[];
 };
+
+type IndexedRecipe = Readonly<{
+  recipe: RecipeSuggestion;
+  recipeIndex: number;
+}>;
 
 /**
  * Displays recipes that can be made with invoice items, with add and generate capabilities.
@@ -67,7 +72,11 @@ export default function RecipesTab({recipes}: Readonly<Props>): React.JSX.Elemen
   const t = useTranslations();
   const {open: openAddDialog} = useDialog("EDIT_INVOICE__RECIPE_ADD", "add");
 
-  const {paginatedItems, currentPage, setCurrentPage, totalPages} = usePaginationWithSearch({items: recipes, initialPageSize: 4});
+  const indexedRecipes = useMemo<readonly IndexedRecipe[]>(() => recipes.map((recipe, recipeIndex) => ({recipe, recipeIndex})), [recipes]);
+  const {paginatedItems, currentPage, setCurrentPage, totalPages} = usePaginationWithSearch({
+    items: indexedRecipes,
+    initialPageSize: 4,
+  });
 
   const handleNextPage = useCallback(() => {
     if (currentPage < totalPages) {
@@ -148,10 +157,11 @@ export default function RecipesTab({recipes}: Readonly<Props>): React.JSX.Elemen
         <CardContent>
           {paginatedItems.length > 0 ? (
             <div className={styles["recipesGrid"]}>
-              {recipes.map((recipe) => (
+              {paginatedItems.map(({recipe, recipeIndex}) => (
                 <RecipeCard
-                  key={recipe.name}
+                  key={`${recipe.name}-${String(recipeIndex)}`}
                   recipe={recipe}
+                  recipeIndex={recipeIndex}
                 />
               ))}
             </div>

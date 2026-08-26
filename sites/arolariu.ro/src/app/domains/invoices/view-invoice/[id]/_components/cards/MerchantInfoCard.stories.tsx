@@ -1,246 +1,77 @@
-import type {Meta, StoryObj} from "@storybook/react";
+import {InvoiceBuilder, MerchantBuilder} from "@/data/mocks";
+import type {Invoice, Merchant} from "@/types/invoices";
+import type {Decorator, Meta, StoryObj} from "@storybook/react";
+import {InvoiceContextProvider} from "../../../../../../../../.storybook/providers";
+import {MerchantInfoCard} from "./MerchantInfoCard";
 
 /**
  * MerchantInfoCard displays merchant details: name, address, phone, category,
- * and website. Depends on `useInvoiceContext`.
- *
- * This story renders a static preview of the merchant info card layout.
+ * and website. Reads the invoice and merchant via `useInvoiceContext`, and also
+ * reads cached invoices via the real `useInvoicesStore` (empty by default in
+ * Storybook, which drives the "no spending history yet" branch).
  */
+const baseInvoice = new InvoiceBuilder().build();
+
+const merchantWithoutWebsite: Merchant = (() => {
+  const merchant = new MerchantBuilder()
+    .withName("Local Bakery")
+    .withAddress("Str. Lipscani 42, Bucharest")
+    .withPhoneNumber("+40 21 987 6543")
+    .build();
+  return {...merchant, address: {...merchant.address, website: ""}};
+})();
+
+/** Builds a decorator that supplies a specific invoice/merchant pair through the real InvoiceContext. */
+function withInvoiceAndMerchant(invoice: Invoice, merchant: Merchant | null): Decorator {
+  return (Story) => (
+    <InvoiceContextProvider
+      invoice={invoice}
+      merchant={merchant}>
+      <Story />
+    </InvoiceContextProvider>
+  );
+}
+
 const meta = {
   title: "Invoices/ViewInvoice/Cards/MerchantInfo",
+  component: MerchantInfoCard,
   parameters: {
     layout: "centered",
   },
-} satisfies Meta;
+} satisfies Meta<typeof MerchantInfoCard>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** Full merchant info with website. */
+/** Merchant with a website link. */
 export const WithWebsite: Story = {
-  render: () => (
-    <div style={{borderRadius: "0.5rem", border: "1px solid #e5e7eb", backgroundColor: "#fff", boxShadow: "0 1px 2px 0 rgba(0,0,0,0.05)"}}>
-      <div style={{borderBottom: "1px solid #e5e7eb", padding: "1rem"}}>
-        <h3 style={{fontSize: "1.125rem", fontWeight: 600}}>Kaufland</h3>
-      </div>
-      <div style={{display: "flex", flexDirection: "column", gap: "0.75rem", padding: "1rem"}}>
-        <div style={{display: "flex", alignItems: "flex-start", gap: "0.5rem", fontSize: "0.875rem"}}>
-          <span style={{marginTop: "0.125rem", color: "#9ca3af"}}>📍</span>
-          <span>Calea Victoriei 123, Sector 1, Bucharest</span>
-        </div>
-        <div style={{display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.875rem"}}>
-          <span style={{color: "#9ca3af"}}>📞</span>
-          <span>+40 21 123 4567</span>
-        </div>
-        <div>
-          <span
-            style={{
-              borderRadius: "9999px",
-              border: "1px solid #e5e7eb",
-              paddingLeft: "0.5rem",
-              paddingRight: "0.5rem",
-              paddingTop: "0.125rem",
-              paddingBottom: "0.125rem",
-              fontSize: "0.75rem",
-            }}>
-            SUPERMARKET
-          </span>
-        </div>
-        <div style={{display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.875rem"}}>
-          <span style={{color: "#9ca3af"}}>🌐</span>
-          <a
-            href='#'
-            style={{color: "#2563eb"}}>
-            kaufland.ro
-          </a>
-        </div>
-      </div>
-      <div style={{borderTop: "1px solid #e5e7eb", padding: "1rem"}}>
-        <button
-          type='button'
-          style={{
-            width: "100%",
-            borderRadius: "0.375rem",
-            border: "1px solid #e5e7eb",
-            paddingLeft: "1rem",
-            paddingRight: "1rem",
-            paddingTop: "0.5rem",
-            paddingBottom: "0.5rem",
-            fontSize: "0.875rem",
-          }}>
-          View All Receipts
-        </button>
-      </div>
-    </div>
-  ),
+  decorators: [
+    withInvoiceAndMerchant(
+      baseInvoice,
+      new MerchantBuilder().withName("Kaufland").withAddress("Calea Victoriei 123, Sector 1, Bucharest").build(),
+    ),
+  ],
 };
 
-/** Merchant without website. */
+/** Merchant without a website — the website row is not rendered. */
 export const WithoutWebsite: Story = {
-  render: () => (
-    <div style={{borderRadius: "0.5rem", border: "1px solid #e5e7eb", backgroundColor: "#fff", boxShadow: "0 1px 2px 0 rgba(0,0,0,0.05)"}}>
-      <div style={{borderBottom: "1px solid #e5e7eb", padding: "1rem"}}>
-        <h3 style={{fontSize: "1.125rem", fontWeight: 600}}>Local Bakery</h3>
-      </div>
-      <div style={{display: "flex", flexDirection: "column", gap: "0.75rem", padding: "1rem"}}>
-        <div style={{display: "flex", alignItems: "flex-start", gap: "0.5rem", fontSize: "0.875rem"}}>
-          <span style={{marginTop: "0.125rem", color: "#9ca3af"}}>📍</span>
-          <span>Str. Lipscani 42, Bucharest</span>
-        </div>
-        <div style={{display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.875rem"}}>
-          <span style={{color: "#9ca3af"}}>📞</span>
-          <span>+40 21 987 6543</span>
-        </div>
-        <div>
-          <span
-            style={{
-              borderRadius: "9999px",
-              border: "1px solid #e5e7eb",
-              paddingLeft: "0.5rem",
-              paddingRight: "0.5rem",
-              paddingTop: "0.125rem",
-              paddingBottom: "0.125rem",
-              fontSize: "0.75rem",
-            }}>
-            BAKERY
-          </span>
-        </div>
-      </div>
-      <div style={{borderTop: "1px solid #e5e7eb", padding: "1rem"}}>
-        <button
-          type='button'
-          style={{
-            width: "100%",
-            borderRadius: "0.375rem",
-            border: "1px solid #e5e7eb",
-            paddingLeft: "1rem",
-            paddingRight: "1rem",
-            paddingTop: "0.5rem",
-            paddingBottom: "0.5rem",
-            fontSize: "0.875rem",
-          }}>
-          View All Receipts
-        </button>
-      </div>
-    </div>
-  ),
+  decorators: [withInvoiceAndMerchant(baseInvoice, merchantWithoutWebsite)],
 };
 
-/** Merchant with a logo image. */
-export const WithLogo: Story = {
-  render: () => (
-    <div style={{borderRadius: "0.5rem", border: "1px solid #e5e7eb", backgroundColor: "#fff", boxShadow: "0 1px 2px 0 rgba(0,0,0,0.05)"}}>
-      <div style={{borderBottom: "1px solid #e5e7eb", padding: "1rem"}}>
-        <div style={{display: "flex", alignItems: "center", gap: "0.75rem"}}>
-          <img
-            src='https://picsum.photos/64/64'
-            alt='Merchant logo'
-            style={{height: "2.5rem", width: "2.5rem", borderRadius: "9999px", objectFit: "cover"}}
-          />
-          <h3 style={{fontSize: "1.125rem", fontWeight: 600}}>Kaufland</h3>
-        </div>
-      </div>
-      <div style={{display: "flex", flexDirection: "column", gap: "0.75rem", padding: "1rem"}}>
-        <div style={{display: "flex", alignItems: "flex-start", gap: "0.5rem", fontSize: "0.875rem"}}>
-          <span style={{marginTop: "0.125rem", color: "#9ca3af"}}>📍</span>
-          <span>Calea Victoriei 123, Sector 1, Bucharest</span>
-        </div>
-        <div style={{display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.875rem"}}>
-          <span style={{color: "#9ca3af"}}>📞</span>
-          <span>+40 21 123 4567</span>
-        </div>
-        <div>
-          <span
-            style={{
-              borderRadius: "9999px",
-              border: "1px solid #e5e7eb",
-              paddingLeft: "0.5rem",
-              paddingRight: "0.5rem",
-              paddingTop: "0.125rem",
-              paddingBottom: "0.125rem",
-              fontSize: "0.75rem",
-            }}>
-            SUPERMARKET
-          </span>
-        </div>
-        <div style={{display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.875rem"}}>
-          <span style={{color: "#9ca3af"}}>🌐</span>
-          <a
-            href='#'
-            style={{color: "#2563eb"}}>
-            kaufland.ro
-          </a>
-        </div>
-      </div>
-      <div style={{borderTop: "1px solid #e5e7eb", padding: "1rem"}}>
-        <button
-          type='button'
-          style={{
-            width: "100%",
-            borderRadius: "0.375rem",
-            border: "1px solid #e5e7eb",
-            paddingLeft: "1rem",
-            paddingRight: "1rem",
-            paddingTop: "0.5rem",
-            paddingBottom: "0.5rem",
-            fontSize: "0.875rem",
-          }}>
-          View All Receipts
-        </button>
-      </div>
-    </div>
-  ),
+/** No merchant linked to the invoice — shows the empty state. */
+export const NoMerchant: Story = {
+  decorators: [withInvoiceAndMerchant(baseInvoice, null)],
 };
 
 /** Merchant with a very long name to test text overflow and wrapping. */
 export const LongMerchantName: Story = {
-  render: () => (
-    <div style={{borderRadius: "0.5rem", border: "1px solid #e5e7eb", backgroundColor: "#fff", boxShadow: "0 1px 2px 0 rgba(0,0,0,0.05)"}}>
-      <div style={{borderBottom: "1px solid #e5e7eb", padding: "1rem"}}>
-        <h3 style={{fontSize: "1.125rem", fontWeight: 600}}>
-          Mega Image Supermarket International Premium Gold Deluxe Extra — Downtown Central Branch Nr. 42
-        </h3>
-      </div>
-      <div style={{display: "flex", flexDirection: "column", gap: "0.75rem", padding: "1rem"}}>
-        <div style={{display: "flex", alignItems: "flex-start", gap: "0.5rem", fontSize: "0.875rem"}}>
-          <span style={{marginTop: "0.125rem", color: "#9ca3af"}}>📍</span>
-          <span>Bulevardul Decebal Nr. 123, Bloc A4, Scara 2, Etaj 1, Apartament 42, Sector 3, Bucharest, 030167, Romania</span>
-        </div>
-        <div style={{display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.875rem"}}>
-          <span style={{color: "#9ca3af"}}>📞</span>
-          <span>+40 21 123 4567</span>
-        </div>
-        <div>
-          <span
-            style={{
-              borderRadius: "9999px",
-              border: "1px solid #e5e7eb",
-              paddingLeft: "0.5rem",
-              paddingRight: "0.5rem",
-              paddingTop: "0.125rem",
-              paddingBottom: "0.125rem",
-              fontSize: "0.75rem",
-            }}>
-            SUPERMARKET
-          </span>
-        </div>
-      </div>
-      <div style={{borderTop: "1px solid #e5e7eb", padding: "1rem"}}>
-        <button
-          type='button'
-          style={{
-            width: "100%",
-            borderRadius: "0.375rem",
-            border: "1px solid #e5e7eb",
-            paddingLeft: "1rem",
-            paddingRight: "1rem",
-            paddingTop: "0.5rem",
-            paddingBottom: "0.5rem",
-            fontSize: "0.875rem",
-          }}>
-          View All Receipts
-        </button>
-      </div>
-    </div>
-  ),
+  decorators: [
+    withInvoiceAndMerchant(
+      baseInvoice,
+      new MerchantBuilder()
+        .withName("Mega Image Supermarket International Premium Gold Deluxe Extra — Downtown Central Branch Nr. 42")
+        .withAddress("Bulevardul Decebal Nr. 123, Bloc A4, Scara 2, Etaj 1, Apartament 42, Sector 3, Bucharest, 030167, Romania")
+        .build(),
+    ),
+  ],
 };

@@ -356,7 +356,6 @@
         }
       },
       "merchantInfoCard": {
-        "categoryDistribution": "Répartition par catégorie",
         "noMerchantLinked": "Aucun commerçant lié à cette facture",
         "spendingHistory": "Historique des dépenses",
         "stats": {
@@ -372,34 +371,8 @@
       "nutritionCard": {
         "allergens": {
           "foundInItems": "Trouvé dans {count} article(s)",
-          "title": "Allergènes détectés"
-        },
-        "composition": {
-          "dairyOther": "Produits laitiers/Autre",
-          "processed": "Transformés",
-          "title": "Composition de votre panier",
-          "wholeFoods": "Aliments complets"
-        },
-        "foodGroups": {
-          "fruits": "Fruits frais",
-          "grains": "Céréales",
-          "itemsCount": "{count} article(s)",
-          "protein": "Protéines",
-          "vegetables": "Légumes"
-        },
-        "score": {
-          "excellent": "Très bon",
-          "fair": "Moyen",
-          "good": "Bon",
-          "needsWork": "À améliorer",
-          "title": "Score d’équilibre alimentaire"
-        },
-        "suggestions": {
-          "addFruits": "Ajouter des fruits améliorerait l’équilibre nutritionnel",
-          "addFruitsAndVegetables": "Ajoutez davantage de fruits et légumes pour équilibrer votre panier",
-          "addVegetables": "Pensez à ajouter des légumes pour une alimentation plus équilibrée",
-          "greatBalance": "Excellent équilibre d’achats !",
-          "swapProcessed": "Essayez de remplacer certains produits transformés par des aliments complets"
+          "title": "Allergènes détectés",
+          "noProducts": "Aucun produit trouve sur cette facture."
         },
         "title": "Vue d’ensemble nutritionnelle"
       },
@@ -437,32 +410,36 @@
       },
       "recipeCard": {
         "buttons": {
-          "viewRecipe": "Voir la recette",
-          "visitReference": "Visiter la référence"
-        },
-        "complexity": {
-          "easy": "Complexité facile",
-          "hard": "Complexité difficile",
-          "normal": "Complexité normale",
-          "unknown": "Complexité inconnue"
+          "viewRecipe": "Voir la recette"
         },
         "dropdown": {
           "delete": "Supprimer",
           "edit": "Modifier",
           "markAsFavorite": "Marquer comme favori",
-          "share": "Partager",
           "view": "Voir"
         },
         "ingredients": {
-          "additionalLabel": "Ingrédients supplémentaires :",
-          "label": "Ingrédients :",
-          "more": "+{count} de plus"
+          "total": "{count} ingrédients"
         },
         "timing": {
           "cookLabel": "Cuisson : {minutes}′",
           "cookTooltip": "Le temps de cuisson est de {minutes} minutes.",
           "prepLabel": "Prépa : {minutes}′",
-          "prepTooltip": "Le temps de préparation est de {minutes} minutes."
+          "prepTooltip": "Le temps de préparation est de {minutes} minutes.",
+          "totalLabel": "Total: {minutes}'",
+          "totalTooltip": "Temps total: {minutes} minutes."
+        },
+        "difficulty": {
+          "easy": "Facile",
+          "medium": "Moyen",
+          "hard": "Difficile"
+        },
+        "servings": "{count} portions",
+        "steps": {
+          "count": "{count} étapes"
+        },
+        "allergens": {
+          "sectionLabel": "Avertissements allergènes"
         }
       },
       "seasonalInsightsCard": {
@@ -564,12 +541,13 @@
         "allergenSummary": {
           "ariaLabel": "Résumé de la fréquence des allergènes",
           "description": "Exposition aux allergènes dans vos produits",
-          "empty": "Aucun allergène détecté dans vos achats",
+          "empty": "Aucun allergène détecté dans les produits évalués",
           "stats": {
             "ofTotal": "du total",
             "products": "produits"
           },
-          "title": "Résumé des allergènes"
+          "title": "Résumé des allergènes",
+          "notAssessed": "Pas encore de données sur les allergènes — ces produits n'ont pas été évalués"
         },
         "calendarHeatmap": {
           "aria": {
@@ -700,7 +678,7 @@
           "subtitle": "Aperçu de vos articles achetés",
           "title": "Analyse des produits"
         },
-        "productCategory": {
+        "productClassification": {
           "description": "Répartition des dépenses par type de produit",
           "empty": "Aucun produit à analyser pour le moment",
           "title": "Dépenses par catégorie de produit",
@@ -835,7 +813,6 @@
         },
         "scanType": {
           "bmp": "Image BMP",
-          "heic": "Image HEIC",
           "heif": "Image HEIF",
           "jpeg": "Image JPEG",
           "label": "Type de scan",
@@ -852,177 +829,34 @@
         }
       },
       "allergenDialog": {
-        "aria": {
-          "removeAllergen": "Retirer l'allergène {name}"
-        },
         "buttons": {
-          "add": "Ajouter",
           "cancel": "Annuler",
           "save": "Enregistrer les modifications",
           "saving": "Enregistrement..."
         },
-        "defaultDescription": "Contient {name}",
         "description": "Gérer les allergènes pour {productName}",
-        "empty": {
-          "noAllergens": "Aucun allergène détecté"
-        },
         "errors": {
-          "duplicate": "L''allergène {name} a déjà été ajouté",
-          "emptyName": "Le nom de l'allergène ne peut pas être vide",
           "missingData": "Données de produit manquantes",
           "saveFailed": "Échec de l'enregistrement des allergènes"
         },
-        "labels": {
-          "currentAllergens": "Allergènes actuels",
-          "customAllergen": "Ajouter un allergène personnalisé",
-          "quickAdd": "Ajout rapide d'allergènes courants"
-        },
-        "placeholders": {
-          "customAllergen": "Entrez le nom de l'allergène..."
-        },
         "success": {
-          "added": "Allergène ajouté : {name}",
-          "removed": "Allergène retiré : {name}",
           "saved": "Allergènes mis à jour avec succès"
         },
         "title": "Modifier les allergènes"
       },
       "analyzeDialog": {
-        "analysisSteps": {
-          "analyzingWithAi": "Analyse avec l'IA...",
-          "categorizingItems": "Catégorisation des articles...",
-          "finalizingResults": "Finalisation des résultats...",
-          "preparingDocument": "Préparation du document...",
-          "processing": "Traitement...",
-          "runningOcrExtraction": "Exécution de l'extraction OCR..."
-        },
-        "analyzing": {
-          "progressComplete": "{progress}% terminé",
-          "title": "Analyse de la facture"
-        },
-        "badges": {
-          "recommended": "Recommandé"
-        },
-        "buttons": {
-          "analyzing": "Analyse en cours...",
-          "cancel": "Annuler",
-          "startAnalysis": "Démarrer l'analyse"
-        },
-        "enhancements": {
-          "priceComparison": {
-            "description": "Comparer les prix avec les données historiques",
-            "label": "Comparaison des prix"
-          },
-          "quickExtract": {
-            "description": "Prioriser la vitesse plutôt que la précision",
-            "label": "Mode extraction rapide"
-          },
-          "savingsTips": {
-            "description": "Obtenir des recommandations d'économies par IA",
-            "label": "Suggestions d'économies"
-          }
-        },
         "header": {
-          "description": "Configurer une analyse alimentée par IA pour la facture",
-          "title": "Analyser la facture"
+          "title": "Analyser la facture",
+          "description": "Configurer une analyse alimentée par IA pour la facture"
         },
-        "options": {
-          "completeAnalysis": {
-            "description": "Analyse IA complète incluant toutes les données de la facture, les articles et les informations du commerçant.",
-            "estimatedTime": "2-3 min",
-            "features": {
-              "itemCategorization": "Catégorisation des articles",
-              "merchantIdentification": "Identification du commerçant",
-              "ocrExtraction": "Extraction OCR",
-              "priceAnalysis": "Analyse des prix",
-              "receiptValidation": "Validation du reçu"
-            },
-            "title": "Analyse complète"
-          },
-          "invoiceOnly": {
-            "description": "Analyser les informations de base de la facture comme les totaux, dates et détails de paiement.",
-            "estimatedTime": "30-60 s",
-            "features": {
-              "dateParsing": "Analyse des dates",
-              "paymentMethodDetection": "Détection du mode de paiement",
-              "totalExtraction": "Extraction du total"
-            },
-            "title": "Données de facture uniquement"
-          },
-          "itemsOnly": {
-            "description": "Se concentrer sur l'extraction et la catégorisation des lignes d'articles de la facture.",
-            "estimatedTime": "1-2 min",
-            "features": {
-              "categoryAssignment": "Attribution des catégories",
-              "itemExtraction": "Extraction des articles",
-              "pricePerItem": "Prix par article",
-              "quantityDetection": "Détection des quantités"
-            },
-            "title": "Analyse des articles"
-          },
-          "merchantOnly": {
-            "description": "Identifier et analyser les informations du commerçant, y compris localisation et catégorie.",
-            "estimatedTime": "30-45 s",
-            "features": {
-              "businessCategory": "Catégorie commerciale",
-              "contactInfo": "Coordonnées",
-              "locationExtraction": "Extraction de la localisation",
-              "merchantIdentification": "Identification du commerçant"
-            },
-            "title": "Analyse du commerçant"
-          }
-        },
-        "sections": {
-          "analysisType": "Type d'analyse",
-          "enhancementsOptional": "Améliorations (optionnel)",
-          "includedFeatures": "Fonctionnalités incluses"
-        },
-        "summary": {
-          "enhancementsSelected": "+ {count} amélioration(s)",
-          "estimatedTime": "Durée estimée",
-          "noEnhancementsSelected": "Aucune amélioration sélectionnée"
-        },
-        "toasts": {
-          "analysisComplete": {
-            "description": "Votre facture a été analysée avec succès.",
-            "title": "Analyse terminée"
-          },
-          "analysisFailed": {
-            "description": "Nous n'avons pas pu analyser votre facture. Veuillez réessayer.",
-            "title": "Échec de l'analyse"
-          }
-        }
-      },
-      "bulkCategoryDialog": {
         "buttons": {
           "cancel": "Annuler",
-          "save": "Appliquer à tous",
-          "saving": "Enregistrement..."
+          "startAnalysis": "Démarrer l'analyse",
+          "submitting": "Envoi en cours..."
         },
-        "description": "{count, plural, one {Changer la catégorie pour # produit} other {Changer la catégorie pour # produits}}",
         "errors": {
-          "allFailed": "Echec de la mise a jour de tous les produits",
-          "missingData": "Données manquantes",
-          "noProducts": "Aucun produit sélectionné",
-          "saveFailed": "Échec de la mise à jour des catégories"
-        },
-        "labels": {
-          "andMore": "...et {count} de plus",
-          "newCategory": "Nouvelle catégorie",
-          "progress": "Progression",
-          "selectedProducts": "Produits sélectionnés"
-        },
-        "placeholders": {
-          "selectCategory": "Sélectionner une catégorie"
-        },
-        "progress": {
-          "updating": "Mise a jour {current} sur {total}..."
-        },
-        "success": {
-          "partialSuccess": "{success} produits mis a jour, {failed} echoues",
-          "saved": "{count, plural, one {Catégorie mise à jour pour # produit} other {Catégorie mise à jour pour # produits}}"
-        },
-        "title": "Changer de catégorie"
+          "genericError": "Échec de l'envoi pour analyse. Veuillez réessayer."
+        }
       },
       "createInvoiceDialog": {
         "batchMode": {
@@ -1342,11 +1176,6 @@
         }
       },
       "recipeDialog": {
-        "actions": {
-          "enhanceInstructions": "Améliorer les instructions",
-          "generateName": "Générer un nom",
-          "unavailable": "Cette action d’assistance pour les recettes n’est pas encore disponible"
-        },
         "buttons": {
           "add": "Ajouter",
           "cancel": "Annuler",
@@ -1375,15 +1204,18 @@
           "medium": "Moyen"
         },
         "fields": {
-          "complexity": "Niveau de complexité",
           "cookTime": "Temps de cuisson",
           "description": "Présentation",
           "difficulty": "Niveau de difficulté",
-          "ingredients": "Ingrédients",
-          "instructions": "Étapes",
           "prepTime": "Temps de préparation",
           "recipeName": "Nom de la recette",
-          "totalDuration": "Durée totale"
+          "totalDuration": "Durée totale",
+          "servings": "Portions",
+          "purchasedIngredients": "Ingrédients achetés",
+          "pantryStaples": "Ingrédients de base",
+          "missingIngredients": "Ingrédients optionnels manquants",
+          "steps": "Étapes de cuisson",
+          "allergens": "Avertissements allergènes"
         },
         "minutes": "minutes",
         "placeholders": {
@@ -1392,26 +1224,21 @@
           "instructions": "Saisir les instructions de cuisson",
           "prepTime": "ex. 15 minutes",
           "recipeName": "Saisir le nom de la recette",
-          "selectDifficulty": "Sélectionner la difficulté"
+          "selectDifficulty": "Sélectionner la difficulté",
+          "servings": "ex. 4",
+          "ingredientName": "ex. Tomates",
+          "ingredientQuantity": "ex. 500 g",
+          "ingredientPreparation": "ex. coupé (optionnel)",
+          "stepInstruction": "Décrivez cette étape",
+          "stepNotes": "Note optionnelle"
         },
         "read": {
           "description": "Détails de la recette et instructions de préparation",
           "missingRecipe": "Les détails de la recette ne sont pas disponibles.",
           "noDescription": "Aucune description fournie.",
-          "notSpecified": "Non spécifié"
-        },
-        "share": {
-          "copied": "Lien de recette copié",
-          "copy": "Copier le lien",
-          "copyFailed": "Échec de la copie du lien de recette",
-          "description": "Partagez le lien de référence de la recette lorsqu’il est disponible.",
-          "missingRecipe": "Les détails de la recette ne sont pas disponibles.",
-          "title": "Partager la recette",
-          "unavailable": "Le partage de recette n’est pas encore disponible pour cette recette."
-        },
-        "tooltips": {
-          "enhanceInstructions": "Utiliser l’AI pour enrichir vos instructions avec davantage de détails",
-          "generateName": "Générer un nom de recette selon vos ingrédients et votre niveau de difficulté avec l’AI"
+          "notSpecified": "Non spécifié",
+          "noIngredients": "Aucun ingrédient listé.",
+          "noAllergens": "Aucun avertissement d'allergène."
         },
         "update": {
           "description": "Mettre à jour les détails de la recette.",
@@ -1419,6 +1246,15 @@
           "missingRecipe": "Les détails de la recette ne sont pas disponibles.",
           "success": "Recette mise à jour avec succès",
           "title": "Mettre à jour la recette"
+        },
+        "validation": {
+          "nameRequired": "Le nom de la recette est obligatoire",
+          "descriptionRequired": "La description de la recette est obligatoire",
+          "ingredientQuantityRequired": "Chaque ingrédient nommé doit avoir une quantité",
+          "minutesNonNegativeInteger": "Les durées doivent être des minutes entières non négatives",
+          "stepRequired": "Au moins une étape est requise",
+          "servingsPositive": "Le nombre de portions doit être un entier positif",
+          "totalTimeConstraint": "Le temps total doit être au moins préparation + cuisson"
         }
       },
       "removeScanDialog": {
@@ -1565,6 +1401,55 @@
           "description": "En partageant cette facture publiquement, <strong>toute personne disposant du lien pourra la consulter</strong>. Cela inclut tous les détails de la facture, les articles et les montants. Continuez uniquement si vous souhaitez rendre cette facture accessible au publique.",
           "title": "Avertissement d’accès public"
         }
+      },
+      "classificationPicker": {
+        "clear": "Effacer la sélection",
+        "placeholder": "Rechercher des classifications...",
+        "badge": {
+          "analysisOrigin": "Analyse IA",
+          "hierarchy": "Hiérarchie",
+          "manualOrigin": "Manuel"
+        }
+      },
+      "invoiceAnalysisControls": {
+        "capabilitiesLabel": "Capacités",
+        "classificationOverwriteAlert": "Cette facture a été classifiée manuellement. L'activation de la classification automatique des factures écrasera vos paramètres manuels.",
+        "customLabel": "Personnalisé",
+        "maximumRecipesLabel": "Nombre maximal de recettes",
+        "profilesLabel": "Profil d'analyse",
+        "capabilities": {
+          "allergenAssessment": "Évaluation des allergènes",
+          "documentExtraction": "Extraction de document",
+          "invoiceClassification": "Classification de facture",
+          "invoiceSummary": "Résumé de facture",
+          "productClassification": "Classification des produits",
+          "recipeGeneration": "Génération de recettes"
+        },
+        "profiles": {
+          "balanced": "Équilibré",
+          "comprehensive": "Complet",
+          "fast": "Rapide"
+        }
+      },
+      "merchantAnalysisControls": {
+        "capabilitiesLabel": "Capacités",
+        "customLabel": "Personnalisé",
+        "profilesLabel": "Profil d'analyse",
+        "capabilities": {
+          "descriptionGeneration": "Génération de description",
+          "merchantClassification": "Classification du marchand"
+        },
+        "profiles": {
+          "balanced": "Équilibré",
+          "comprehensive": "Complet",
+          "fast": "Rapide"
+        }
+      },
+      "queuedAnalysisNotice": {
+        "description": "Votre demande d'analyse a été mise en file d'attente et sera traitée sous peu.",
+        "messageIdLabel": "ID du message :",
+        "refreshButton": "Actualiser",
+        "title": "Analyse en attente"
       }
     }
   },
@@ -2111,18 +1996,6 @@
       "createInvoice": {
         "detailsForm": {
           "fields": {
-            "category": {
-              "label": "Catégorie",
-              "options": {
-                "carAuto": "Auto et véhicule",
-                "fastFood": "Restauration",
-                "grocery": "Épicerie",
-                "homeCleaning": "Maison et entretien",
-                "notDefined": "Non catégorisé",
-                "other": "Autre"
-              },
-              "placeholder": "Sélectionner une catégorie"
-            },
             "description": {
               "hint": "Notes facultatives sur cet achat",
               "label": "Description",
@@ -2148,6 +2021,10 @@
             },
             "transactionDate": {
               "label": "Date de transaction"
+            },
+            "classification": {
+              "label": "Classification",
+              "hint": "Rechercher une classification taxonomique (optionnel)"
             }
           },
           "scanPreview": {
@@ -2181,14 +2058,6 @@
             "creating": "Création de la facture...",
             "hint": "Ceci créera la facture et téléchargera les numérisations sélectionnées."
           },
-          "categories": {
-            "carAuto": "Auto et véhicule",
-            "fastFood": "Restauration",
-            "grocery": "Épicerie",
-            "homeCleaning": "Maison et entretien",
-            "notDefined": "Non catégorisé",
-            "other": "Autre"
-          },
           "paymentTypes": {
             "card": "Carte",
             "cash": "Espèces",
@@ -2200,19 +2069,27 @@
           },
           "sections": {
             "details": {
-              "category": "Catégorie",
               "description": "Description",
               "name": "Nom",
               "paymentType": "Mode de paiement",
               "title": "Détails de la facture",
-              "transactionDate": "Date de transaction"
+              "transactionDate": "Date de transaction",
+              "classification": "Classification",
+              "noClassification": "Non classifié"
             },
             "scans": {
               "title": "Numérisations"
             }
           },
           "subtitle": "Vérifiez les détails de votre facture avant de la créer",
-          "title": "Vérifier et créer"
+          "title": "Vérifier et créer",
+          "partialError": {
+            "patchFailed": "Votre facture a été créée mais les détails n'ont pas pu être enregistrés. Cliquez sur Réessayer.",
+            "scansFailed": "Votre facture a été créée, mais une ou plusieurs numérisations n'ont pas pu être jointes. Réessayez pour terminer.",
+            "retry": "Réessayer d'enregistrer les détails",
+            "retryScans": "Réessayer de joindre les numérisations",
+            "title": "Facture partiellement créée"
+          }
         },
         "scanSelector": {
           "clearAll": "Effacer",
@@ -2232,6 +2109,17 @@
           "reviewDesc": "Confirmer et créer",
           "selectScans": "Sélectionner les numérisations",
           "selectScansDesc": "Choisir les numérisations de reçus"
+        },
+        "errors": {
+          "createFailed": "Échec de la création de la facture. Veuillez réessayer.",
+          "noScansSelected": "Aucun scan sélectionné. Veuillez en sélectionner au moins un.",
+          "patchFailed": "Impossible d'enregistrer les détails. Veuillez réessayer.",
+          "scanAttachFailed": "Impossible de joindre toutes les numérisations sélectionnées. Veuillez réessayer."
+        },
+        "toasts": {
+          "created": "Facture créée avec succès.",
+          "patchFailed": "Facture créée mais les détails n'ont pas pu être enregistrés. Réessayez depuis l'étape de révision.",
+          "scanAttachFailed": "La facture a été créée, mais toutes les numérisations n'ont pas été jointes. Réessayez depuis l'étape de vérification."
         }
       },
       "filters": {
@@ -2284,7 +2172,8 @@
           "nameZA": "Nom (Z-A)"
         },
         "timeOfDay": "Moment de la journée",
-        "title": "Filtres"
+        "title": "Filtres",
+        "classificationGroups": "Classification"
       }
     }
   },
@@ -2661,11 +2550,7 @@
             "remove": "Supprimer l'article",
             "restore": "Restaurer l'article"
           },
-          "bulkCategory": {
-            "noSelection": "Veuillez sélectionner au moins un produit"
-          },
           "bulkToolbar": {
-            "changeCategory": "Changer de catégorie",
             "deleteSelected": "Supprimer la sélection",
             "noSelection": "Aucun produit sélectionné",
             "selectedCount": "{count, plural, one {# article sélectionné} other {# articles sélectionnés}}"
@@ -3066,53 +2951,17 @@
       },
       "viewInvoice": {
         "analysisPanel": {
-          "analyzing": {
-            "progress": "{progress}% terminé",
-            "title": "Analyse en cours..."
-          },
-          "buttons": {
-            "reanalyze": "Réanalyser la facture"
-          },
-          "description": "Réanalyser cette facture avec l'IA pour extraire ou mettre à jour les données",
-          "labels": {
-            "analysisComplete": "Analyse terminée — Toutes les données ont été extraites",
-            "granularOptions": "Ou choisissez une analyse spécifique",
-            "lastAnalyzed": "Dernière analyse",
-            "updates": "{count, plural, one {# mise à jour} other {# mises à jour}}"
-          },
-          "options": {
-            "completeAnalysis": "Analyse complète",
-            "invoiceOnly": "Facture uniquement",
-            "itemsOnly": "Articles uniquement",
-            "merchantOnly": "Commerçant uniquement"
-          },
-          "steps": {
-            "analyzing": "Analyse en cours avec l'IA...",
-            "complete": "Analyse terminée !",
-            "extracting": "Extraction OCR en cours...",
-            "finalizing": "Finalisation des résultats...",
-            "preparing": "Préparation du document...",
-            "processing": "Traitement des articles..."
-          },
-          "tip": "Astuce : L'analyse complète prend 30 à 60 secondes mais fournit les résultats les plus précis.",
           "title": "Analyse IA",
-          "toasts": {
-            "error": {
-              "description": "Impossible d'analyser la facture. Veuillez réessayer plus tard.",
-              "title": "Échec de l'analyse"
-            },
-            "success": {
-              "description": "La facture a été réanalysée avec succès avec des données mises à jour.",
-              "title": "Analyse terminée"
-            }
+          "description": "Re-analysez cette facture avec l'IA pour extraire ou mettre à jour les données",
+          "buttons": {
+            "reanalyze": "Re-analyser la facture"
           },
-          "tooltips": {
-            "completeAnalysis": "Extraction OCR complète + traitement IA de toutes les données de la facture",
-            "invoiceOnly": "Réextraire les informations de base de la facture (date, total, paiement)",
-            "itemsOnly": "Recatégoriser et analyser uniquement les articles",
-            "merchantOnly": "Réidentifier le commerçant et les données de localisation",
-            "reanalyze": "Relancer l'analyse complète avec toutes les fonctionnalités IA"
-          }
+          "labels": {
+            "lastAnalyzed": "Dernière analyse",
+            "updates": "{count, plural, one {# mise à jour} other {# mises à jour}}",
+            "submitting": "Envoi en cours..."
+          },
+          "tip": "Conseil rapide : L'analyse complète prend 30 à 60 secondes mais fournit les résultats les plus précis."
         },
         "categoryComparisonChart": {
           "description": "Cette facture vs votre moyenne",
@@ -3144,6 +2993,9 @@
           "jsonSuccess": "Fichier JSON téléchargé avec succès",
           "pdf": {
             "description": "Télécharger un document de facture professionnel",
+            "labels": {
+              "classification": "Classification"
+            },
             "title": "Exporter en PDF"
           },
           "pdfError": "Échec de la génération du PDF",
@@ -5185,6 +5037,9 @@
       "toggleTheme": "Basculer le thème"
     },
     "invoices": {
+      "classification": {
+        "unclassified": "Non classifié"
+      },
       "commandPalette": {
         "actions": {
           "createInvoice": "Créer une facture",
@@ -5387,6 +5242,68 @@
         "addError": "Échec de l’ajout du scan",
         "addSuccess": "Scan ajouté",
         "uploadFailed": "Échec du téléversement (statut {status})"
+      }
+    }
+  },
+  "allergens": {
+    "evidenceLevels": {
+      "explicit": "Explicite",
+      "inferred": "Déduite",
+      "precautionary": "Précaution"
+    },
+    "view": {
+      "signal": {
+        "evidenceLevel": "Niveau de preuve",
+        "confidence": "Confiance",
+        "evidenceEntries": "Entrees de preuves"
+      },
+      "notAssessed": "Ce produit n'a pas ete evalue pour les allergenes.",
+      "status": {
+        "noSignals": "Aucun signal detecte",
+        "insufficientData": "Donnees insuffisantes",
+        "detected": "Detecte"
+      },
+      "statusNote": {
+        "noSignals": "L'evaluation est terminee mais n'a trouve aucune preuve de cet allergene. Cela ne confirme pas que le produit est exempt de cet allergene.",
+        "insufficientData": "Les donnees disponibles n'etaient pas suffisantes pour une evaluation fiable des allergenes."
+      }
+    },
+    "codes": {
+      "peanuts": "Arachides",
+      "cerealsContainingGluten": "Céréales contenant du gluten",
+      "molluscs": "Mollusques",
+      "nuts": "Fruits à coque",
+      "eggs": "Œufs",
+      "lupin": "Lupin",
+      "sesame": "Graines de sésame",
+      "milk": "Lait",
+      "crustaceans": "Crustacés",
+      "sulphurDioxideAndSulphites": "Dioxyde de soufre et sulfites",
+      "soybeans": "Soja",
+      "mustard": "Moutarde",
+      "fish": "Poisson",
+      "celery": "Céleri"
+    },
+    "editor": {
+      "title": "Modifier l'evaluation des allergenes",
+      "signals": {
+        "title": "Signaux",
+        "removeEvidence": "Supprimer l'entree de preuve",
+        "userProvided": "Fourni par l'utilisateur",
+        "removeSignal": "Supprimer le signal",
+        "empty": "Aucun signal ajoute.",
+        "confidence": "Confiance (0-1)",
+        "evidenceLevel": "Niveau de preuve",
+        "addSignal": "Ajouter un signal",
+        "evidenceValue": "Valeur",
+        "code": "Allergene",
+        "evidenceSource": "Source",
+        "addEvidence": "Ajouter une preuve"
+      },
+      "status": {
+        "label": "Statut",
+        "noSignals": "Aucun signal",
+        "insufficientData": "Donnees insuffisantes"
       }
     }
   }

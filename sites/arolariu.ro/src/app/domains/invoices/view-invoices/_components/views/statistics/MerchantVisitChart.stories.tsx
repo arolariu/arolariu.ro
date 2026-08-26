@@ -135,28 +135,20 @@ export const SingleMerchant: Story = {
   },
 };
 
-/**
- * Grocery merchants only.
- * Filters to show only grocery store visit patterns.
- */
 export const GroceryMerchantsOnly: Story = {
   args: {
     data: computeMerchantVisitFrequency(
-      mockInvoices.filter((inv) => inv.category === 100), // GROCERY enum value
+      mockInvoices.filter((inv) => inv.classification?.system === "ECOICOP_V2" && inv.classification.code.startsWith("01")),
     ),
     currency: "lei",
     topN: 6,
   },
 };
 
-/**
- * Fast food merchants.
- * Shows visit patterns for fast food establishments.
- */
 export const FastFoodMerchants: Story = {
   args: {
     data: computeMerchantVisitFrequency(
-      mockInvoices.filter((inv) => inv.category === 200), // FAST_FOOD enum value
+      mockInvoices.filter((inv) => inv.classification?.system === "ECOICOP_V2" && inv.classification.code.startsWith("11")),
     ),
     currency: "lei",
     topN: 6,

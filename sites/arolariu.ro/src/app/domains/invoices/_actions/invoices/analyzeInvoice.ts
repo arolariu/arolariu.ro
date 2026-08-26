@@ -5,99 +5,57 @@
  * @module app/domains/invoices/_actions/invoices/analyzeInvoice
  *
  * @remarks
- * This action submits an invoice to the backend AI analysis pipeline.
- * The analysis extracts structured data from invoice scans including:
- * - Merchant identification and categorization
- * - Line item extraction with product matching
- * - Total amount verification
- * - Date and payment term extraction
+ * Submits an invoice to the backend AI analysis pipeline by posting a flat
+ * capability request (profile + optional overrides). Identity is resolved
+ * server-side from the JWT — the body carries no user identifier.
  *
- * **Analysis Types**:
- * - `BasicAnalysis`: Quick extraction of key fields only
- * - `DetailedAnalysis`: Full OCR with product categorization
- *
- * @see {@link InvoiceAnalysisOptions} for available analysis modes
+ * Returns the Azure queue message id on `202 Accepted` so callers can trace
+ * the queued job if needed.
  */
 
 import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {validateStringIsGuidType} from "@/lib/utils.generic";
 import {createErrorResult, fetchWithTimeout, type ServerActionResult} from "@/lib/utils.server";
-import type {InvoiceAnalysisOptions} from "@/types/invoices";
+import {buildAnalysisRequest, type AnalysisProfile, type InvoiceAnalysisCapabilities} from "@/types/invoices/Analysis";
+import {parseAnalysisAcceptedResponse, tryParse} from "@/types/invoices/transport";
 
-/**
- * Input parameters for the invoice analysis server action.
- *
- * @property invoiceIdentifier - Valid UUIDv4 of the invoice to analyze
- * @property analysisOptions - Configuration for the analysis pipeline
- */
 type ServerActionInputType = Readonly<{
   /** The identifier of the invoice to be analyzed. */
   readonly invoiceIdentifier: string;
-  /** Options for analyzing the invoice. */
-  readonly analysisOptions: Readonly<InvoiceAnalysisOptions>;
+  /** The named analysis profile to use. Never "custom". */
+  readonly profile: AnalysisProfile;
+  /** Optional capability overrides relative to the profile preset. */
+  readonly overrides?: Partial<InvoiceAnalysisCapabilities>;
 }>;
 
-/**
- * Output type indicating success or failure of the analysis operation.
- */
-type ServerActionOutputType = ServerActionResult<void>;
+type ServerActionOutputType = ServerActionResult<string>;
 
 /**
  * Submits an invoice to the AI-powered analysis pipeline.
  *
- * @remarks
- * **Execution Context**: Server-side only (Next.js server action).
- *
- * **Authentication**: Automatically fetches JWT from Clerk auth service.
- *
- * **Side Effects**:
- * - Emits OpenTelemetry spans for tracing
- * - Triggers async processing in the backend
- * - Analysis results are stored on the invoice entity
- *
- * **Error Handling**: Returns result object with success/error fields.
- * Errors are logged with trace context for debugging.
- *
- * @param input - The invoice identifier and analysis configuration.
- * @param input.invoiceIdentifier - UUIDv4 of the target invoice. Must exist and be accessible to the authenticated user.
- * @param input.analysisOptions - Analysis mode and options forwarded to the backend analysis pipeline.
- * @returns A result object with void data on success, or an error result when validation, authentication, or analysis fails.
- *
- * @example
- * ```typescript
- * import analyzeInvoice from "@/app/domains/invoices/_actions/invoices/analyzeInvoice";
- * import {InvoiceAnalysisOptions} from "@/types/invoices";
- *
- * const result = await analyzeInvoice({
- *   invoiceIdentifier: "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
- *   analysisOptions: InvoiceAnalysisOptions.DetailedAnalysis
- * });
- * if (!result.success) {
- *   console.error("Analysis failed:", result.error);
- * }
- * ```
- *
- * @see {@link fetchInvoice} to retrieve the analyzed invoice
+ * @param input - The invoice identifier, analysis profile, and optional overrides.
+ * @param input.invoiceIdentifier - UUIDv4 of the target invoice.
+ * @param input.profile - The analysis profile. Never "custom".
+ * @param input.overrides - Optional capability overrides relative to the profile.
+ * @returns The Azure queue message id on success, or an error result.
  */
-export async function analyzeInvoice({invoiceIdentifier, analysisOptions}: ServerActionInputType): ServerActionOutputType {
-  console.info(">>> Executing server action {{analyzeInvoice}}, with:", {invoiceIdentifier, analysisOptions});
+export async function analyzeInvoice({invoiceIdentifier, profile, overrides}: ServerActionInputType): ServerActionOutputType {
+  console.info(">>> Executing server action {{analyzeInvoice}}, with:", {invoiceIdentifier, profile});
 
   return withSpan("api.actions.invoices.analyzeInvoice", async () => {
     try {
-      // Step 0. Validate invoice identifier is valid GUID
       logWithTrace("info", "Validating identifier is valid...", {invoiceIdentifier}, "server");
       validateStringIsGuidType(invoiceIdentifier, "invoiceIdentifier");
 
-      // Step 1. Fetch user JWT for authentication
       addSpanEvent("bff.user.jwt.fetch.start");
       logWithTrace("info", "Fetching BFF user JWT for authentication...", {}, "server");
-      const {userIdentifier, userJwt: authToken} = await fetchBFFUserFromAuthService();
+      const {userJwt: authToken} = await fetchBFFUserFromAuthService();
       addSpanEvent("bff.user.jwt.fetch.complete");
 
-      // Step 2. Make the API request to analyze the invoice
       addSpanEvent("bff.invoice.analyze.start");
       logWithTrace("info", "Making API request to analyze invoice...", {}, "server");
+      const requestBody = buildAnalysisRequest("invoice", profile, overrides);
       const response = await fetchWithTimeout(
         `/rest/v1/invoices/${invoiceIdentifier}/analyze`,
         {
@@ -106,18 +64,22 @@ export async function analyzeInvoice({invoiceIdentifier, analysisOptions}: Serve
             Authorization: `Bearer ${authToken}`,
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({
-            userIdentifier,
-            analysisOptions,
-          }),
+          body: JSON.stringify(requestBody),
         },
         60_000,
       );
       addSpanEvent("bff.invoice.analyze.complete");
 
       if (response.ok) {
-        logWithTrace("info", "Successfully analyzed invoice...", {}, "server");
-        return {success: true, data: undefined} as const;
+        const payload: unknown = await response.json();
+        const parsed = tryParse(parseAnalysisAcceptedResponse, payload);
+        if (!parsed.ok) {
+          addSpanEvent("bff.invoice.analyze.invalid");
+          logWithTrace("error", "Analysis response failed transport validation", {path: parsed.error.path}, "server");
+          return createErrorResult(parsed.error, "The server returned an unexpected response. Please try again later.");
+        }
+        logWithTrace("info", "Successfully queued invoice analysis...", {}, "server");
+        return {success: true, data: parsed.value} as const;
       }
 
       addSpanEvent("bff.invoice.analyze.error");

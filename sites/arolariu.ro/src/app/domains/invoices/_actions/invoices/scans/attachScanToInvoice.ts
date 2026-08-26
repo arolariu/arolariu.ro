@@ -107,13 +107,18 @@ export async function attachScanToInvoice({invoiceId, payload}: ServerActionInpu
       // Step 2. Make the API request to attach the invoice scan
       addSpanEvent("bff.request.attach-scan.start");
       logWithTrace("info", "Making API request to attach invoice scan...", {invoiceId}, "server");
+      const requestDto = {
+        type: payload.type,
+        location: payload.location,
+        metadata: payload.additionalMetadata,
+      };
       const response = await fetchWithTimeout(`/rest/v1/invoices/${invoiceId}/scans`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${authToken}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(requestDto),
       });
       addSpanEvent("bff.request.attach-scan.complete");
 

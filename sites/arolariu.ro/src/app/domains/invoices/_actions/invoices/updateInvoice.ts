@@ -1,11 +1,11 @@
 "use server";
 
 /**
- * @fileoverview Server action for full invoice updates (HTTP POST).
+ * @fileoverview Server action for full invoice updates (HTTP PUT).
  * @module app/domains/invoices/_actions/invoices/updateInvoice
  *
  * @remarks
- * Provides a POST endpoint wrapper for replacing an entire invoice resource.
+ * Provides a PUT endpoint wrapper for replacing an entire invoice resource.
  * Unlike PATCH operations which update specific fields, this action replaces
  * the entire invoice with the provided data.
  *
@@ -30,6 +30,8 @@ import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {validateStringIsGuidType} from "@/lib/utils.generic";
 import {createErrorResult, fetchWithTimeout, type ServerActionResult} from "@/lib/utils.server";
 import type {Invoice} from "@/types/invoices";
+import {resolveClassificationCodeForWrite} from "@/types/invoices/Classification";
+import {parseInvoiceResponse, tryParse} from "@/types/invoices/transport";
 
 type ServerActionInputType = Readonly<{
   /** The identifier of the invoice to update. */
@@ -44,7 +46,7 @@ type ServerActionOutputType = ServerActionResult<Readonly<Invoice>>;
  * Server action that performs a full update (POST) on an invoice.
  *
  * @remarks
- * **HTTP Method**: POST
+ * **HTTP Method**: PUT
  * **Endpoint**: `/rest/v1/invoices/{invoiceId}`
  *
  * **Update Semantics**:
@@ -115,20 +117,35 @@ export async function updateInvoice({invoiceId, invoice}: ServerActionInputType)
       // Step 2. Make the API request to update the invoice
       addSpanEvent("bff.request.update-invoice.start");
       logWithTrace("info", "Making API request to update invoice...", {invoiceId}, "server");
+      const requestDto = {
+        name: invoice.name,
+        description: invoice.description,
+        classificationCode: resolveClassificationCodeForWrite(invoice.classification),
+        paymentInformation: invoice.paymentInformation,
+        merchantReference: invoice.merchantReference,
+        isImportant: invoice.isImportant,
+        additionalMetadata: invoice.additionalMetadata,
+      };
       const response = await fetchWithTimeout(`/rest/v1/invoices/${invoiceId}`, {
-        method: "POST",
+        method: "PUT",
         headers: {
           Authorization: `Bearer ${authToken}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(invoice),
+        body: JSON.stringify(requestDto),
       });
       addSpanEvent("bff.request.update-invoice.complete");
 
       if (response.ok) {
         logWithTrace("info", "Successfully updated invoice", {invoiceId}, "server");
-        const updatedInvoice = (await response.json()) as Invoice;
-        return {success: true, data: updatedInvoice} as const;
+        const responseBody: unknown = await response.json();
+        const parsed = tryParse(parseInvoiceResponse, responseBody);
+        if (!parsed.ok) {
+          addSpanEvent("bff.request.update-invoice.invalid");
+          logWithTrace("error", "Update invoice response failed transport validation", {path: parsed.error.path}, "server");
+          return createErrorResult(parsed.error, "The server returned unexpected data. Please try again later.");
+        }
+        return {success: true, data: parsed.value} as const;
       }
 
       const errorText = await response.text();

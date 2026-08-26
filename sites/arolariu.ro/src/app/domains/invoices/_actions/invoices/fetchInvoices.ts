@@ -23,6 +23,7 @@ import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {createErrorResult, fetchWithTimeout, type ServerActionResult} from "@/lib/utils.server";
 import type {Invoice} from "@/types/invoices";
+import {parseInvoicesResponse, tryParse} from "@/types/invoices/transport";
 
 /**
  * Input type (currently empty, reserved for future filter options).
@@ -101,8 +102,14 @@ export async function fetchInvoices(_void?: ServerActionInputType): ServerAction
 
       if (response.ok) {
         logWithTrace("info", "Successfully fetched invoices", {}, "server");
-        const data = (await response.json()) as ReadonlyArray<Invoice>;
-        return {success: true, data};
+        const payload: unknown = await response.json();
+        const parsed = tryParse(parseInvoicesResponse, payload);
+        if (!parsed.ok) {
+          addSpanEvent("bff.request.fetch-invoices.invalid");
+          logWithTrace("error", "Invoices response failed transport validation", {path: parsed.error.path}, "server");
+          return createErrorResult(parsed.error, "The server returned unexpected data. Please try again later.");
+        }
+        return {success: true, data: parsed.value} as const;
       }
 
       addSpanEvent("bff.request.fetch-invoices.error");

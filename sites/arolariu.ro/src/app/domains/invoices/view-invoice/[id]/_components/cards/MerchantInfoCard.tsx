@@ -24,24 +24,13 @@
  * - Chart data computation only runs when invoices change
  */
 
-import {formatAmount, formatEnum, toSafeDate} from "@/lib/utils.generic";
+import {formatAmount, toSafeDate} from "@/lib/utils.generic";
 import {useInvoicesStore} from "@/stores/invoicesStore";
-import {MerchantCategory, type Invoice} from "@/types/invoices";
-import {
-  Area,
-  AreaChart,
-  Badge,
-  Button,
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-  ResponsiveContainer,
-} from "@arolariu/components";
+import {type Invoice} from "@/types/invoices";
+import {Area, AreaChart, Button, Card, CardContent, CardFooter, CardHeader, CardTitle, ResponsiveContainer} from "@arolariu/components";
 import {useTranslations} from "next-intl-selector";
 import Link from "next/link";
-import {useMemo} from "react";
+import {useMemo, useReducer} from "react";
 import {TbCalendar, TbChartBar, TbGlobe, TbMapPin, TbPhone, TbReceipt, TbShoppingBag} from "react-icons/tb";
 import {useInvoiceContext} from "../../_context/InvoiceContext";
 import styles from "./MerchantInfoCard.module.scss";
@@ -54,20 +43,6 @@ type MonthlySpending = {
   readonly month: string;
   /** Total spending amount for the month */
   readonly amount: number;
-};
-
-/**
- * Type for category distribution data used in stacked bar visualization.
- */
-type CategoryDistribution = {
-  /** Category enum value */
-  readonly category: MerchantCategory;
-  /** Category display label */
-  readonly label: string;
-  /** Number of invoices in this category */
-  readonly count: number;
-  /** Percentage of total invoices */
-  readonly percentage: number;
 };
 
 /**
@@ -101,22 +76,12 @@ export function MerchantInfoCard(): React.JSX.Element {
   const {invoice, merchant} = useInvoiceContext();
   const {entities: invoices} = useInvoicesStore();
   const t = useTranslations();
-
-  // Early return if merchant is null
-  if (!merchant) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>{t((m) => m.cards.invoices.merchantInfoCard.title)}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className={styles["emptyState"]}>
-            <p className={styles["emptyStateText"]}>{t((m) => m.cards.invoices.merchantInfoCard.noMerchantLinked)}</p>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
+  const [referenceTime] = useReducer(
+    (currentTime: number) => currentTime,
+    0,
+    () => Date.now(),
+  );
+  const merchantAddress = merchant?.address.address ?? "";
 
   /**
    * Filter all invoices for this merchant.
@@ -165,45 +130,19 @@ export function MerchantInfoCard(): React.JSX.Element {
       .toSorted((a, b) => b.getTime() - a.getTime());
 
     const [lastVisitDate] = sortedDates;
-    const daysAgo = lastVisitDate ? Math.floor((Date.now() - lastVisitDate.getTime()) / (1000 * 60 * 60 * 24)) : 0;
+    const daysAgo = lastVisitDate ? Math.floor((referenceTime - lastVisitDate.getTime()) / (1000 * 60 * 60 * 24)) : 0;
 
     return {count, avgSpend, daysAgo};
-  }, [merchantInvoices]);
-
-  /**
-   * Calculate category distribution if merchant has invoices in multiple categories.
-   * Shows percentage breakdown across different invoice categories.
-   */
-  const categoryDistribution = useMemo<CategoryDistribution[]>(() => {
-    if (merchantInvoices.length === 0) return [];
-
-    const categoryCounts = new Map<MerchantCategory, number>();
-    merchantInvoices.forEach(() => {
-      const {category} = merchant;
-      const currentCount = categoryCounts.get(category) ?? 0;
-      categoryCounts.set(category, currentCount + 1);
-    });
-
-    const total = merchantInvoices.length;
-    return Array.from(categoryCounts.entries())
-      .map(([category, count]) => ({
-        category,
-        label: formatEnum(MerchantCategory, category),
-        count,
-        percentage: (count / total) * 100,
-      }))
-      .filter((item) => item.count > 0)
-      .toSorted((a, b) => b.count - a.count);
-  }, [merchantInvoices, merchant.category]);
+  }, [merchantInvoices, referenceTime]);
 
   /**
    * Generate Google Maps URL for the merchant's address.
    */
   const googleMapsUrl = useMemo(() => {
-    if (!merchant.address.address) return null;
-    const encodedAddress = encodeURIComponent(merchant.address.address);
+    if (!merchantAddress) return null;
+    const encodedAddress = encodeURIComponent(merchantAddress);
     return `https://www.google.com/maps/search/?api=1&query=${encodedAddress}`;
-  }, [merchant.address.address]);
+  }, [merchantAddress]);
 
   /**
    * Generate URL for viewing all invoices from this merchant.
@@ -213,6 +152,22 @@ export function MerchantInfoCard(): React.JSX.Element {
     () => `/domains/invoices/view-invoices?merchant=${invoice.merchantReference}`,
     [invoice.merchantReference],
   );
+
+  // Early return after all hooks so hook ordering remains stable when merchant data changes.
+  if (!merchant) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>{t((m) => m.cards.invoices.merchantInfoCard.title)}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className={styles["emptyState"]}>
+            <p className={styles["emptyStateText"]}>{t((m) => m.cards.invoices.merchantInfoCard.noMerchantLinked)}</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>
@@ -229,9 +184,6 @@ export function MerchantInfoCard(): React.JSX.Element {
           <div className={styles["infoRow"]}>
             <TbPhone className={styles["iconMuted"]} />
             <span className={styles["infoText"]}>{merchant.address.phoneNumber}</span>
-          </div>
-          <div className={styles["infoRow"]}>
-            <Badge variant='outline'>{formatEnum(MerchantCategory, merchant.category)}</Badge>
           </div>
           {Boolean(merchant.address.website) && (
             <div className={styles["infoRow"]}>
@@ -309,37 +261,6 @@ export function MerchantInfoCard(): React.JSX.Element {
                 <TbCalendar className={styles["statIcon"]} />
                 <span className={styles["statValue"]}>{visitStats.daysAgo}</span>
                 <span className={styles["statLabel"]}>{t((m) => m.cards.invoices.merchantInfoCard.stats.daysAgo)}</span>
-              </div>
-            </div>
-          )}
-
-          {/* Category Distribution */}
-          {categoryDistribution.length > 1 && (
-            <div className={styles["section"]}>
-              <div className={styles["sectionHeader"]}>
-                <span className={styles["sectionTitle"]}>{t((m) => m.cards.invoices.merchantInfoCard.categoryDistribution)}</span>
-              </div>
-              <div className={styles["categoryBar"]}>
-                {categoryDistribution.map((cat) => (
-                  <div
-                    key={cat.category}
-                    className={styles["categorySegment"]}
-                    style={{width: `${cat.percentage}%`}}
-                    title={`${cat.label}: ${cat.count} (${cat.percentage.toFixed(1)}%)`}
-                  />
-                ))}
-              </div>
-              <div className={styles["categoryLabels"]}>
-                {categoryDistribution.map((cat) => (
-                  <div
-                    key={cat.category}
-                    className={styles["categoryLabel"]}>
-                    <span className={styles["categoryLabelText"]}>{cat.label}</span>
-                    <span className={styles["categoryLabelCount"]}>
-                      {cat.count} ({cat.percentage.toFixed(0)}%)
-                    </span>
-                  </div>
-                ))}
               </div>
             </div>
           )}

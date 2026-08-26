@@ -45,22 +45,13 @@ import type {
   CreateInvoiceDtoPayload,
   CreateInvoiceScanDtoPayload,
   Invoice,
-  InvoiceAnalysisOptions,
   InvoiceScan,
   Merchant,
   PaymentInformation,
   Product,
-  Recipe,
+  RecipeSuggestion,
 } from "../../../src/types/invoices";
-import {
-  InvoiceAnalysisOptions as InvoiceAnalysisOptionsValue,
-  InvoiceCategory,
-  InvoiceScanType,
-  MerchantCategory,
-  PaymentType,
-  ProductCategory,
-  RecipeComplexity,
-} from "../../../src/types/invoices";
+import {InvoiceScanType, PaymentType, RecipeDifficulty} from "../../../src/types/invoices";
 import type {Scan} from "../../../src/types/scans";
 import {ScanStatus, ScanType} from "../../../src/types/scans";
 
@@ -106,19 +97,19 @@ export function buildProduct(overrides: Partial<Product> = {}): Product {
 
   return {
     name: "Test Product",
-    category: ProductCategory.GROCERIES,
     quantity,
     quantityUnit: "pcs",
     productCode: "",
     price,
     totalPrice,
-    detectedAllergens: [],
     metadata: {
       isEdited: false,
       isComplete: true,
       isSoftDeleted: false,
       confidence: 1.0,
     },
+    classification: null,
+    allergenAssessment: null,
     ...overrides,
   };
 }
@@ -183,7 +174,6 @@ export function buildMerchant(overrides: Partial<Merchant> = {}): Merchant {
     id: "merchant-test-001",
     name: "Test Merchant",
     description: "Test merchant description",
-    category: MerchantCategory.SUPERMARKET,
     address: buildContactInformation(),
     parentCompanyId: "",
     createdAt: TEST_DATE,
@@ -193,6 +183,7 @@ export function buildMerchant(overrides: Partial<Merchant> = {}): Merchant {
     numberOfUpdates: 0,
     isImportant: false,
     isSoftDeleted: false,
+    classification: null,
     ...overrides,
   };
 }
@@ -225,7 +216,7 @@ export function buildMerchant(overrides: Partial<Merchant> = {}): Merchant {
  */
 export function buildInvoiceScan(overrides: Partial<InvoiceScan> = {}): InvoiceScan {
   return {
-    scanType: InvoiceScanType.JPEG,
+    type: InvoiceScanType.JPEG,
     location: "https://storage.test/invoice-scan.jpg",
     metadata: {},
     ...overrides,
@@ -269,44 +260,29 @@ function buildPaymentInformation(overrides: Partial<PaymentInformation> = {}): P
 }
 
 /**
- * Builds a test Recipe with deterministic defaults.
+ * Builds a minimal valid test RecipeSuggestion with deterministic defaults.
  *
- * @param overrides - Partial recipe properties to override defaults
- * @returns A complete Recipe object
+ * @param overrides - Partial recipe suggestion properties to override defaults
+ * @returns A complete RecipeSuggestion object suitable for testing
  *
  * @remarks
- * **Default Values:**
- * - name: "Test Recipe"
- * - complexity: Easy
- * - ingredients: ["ingredient1", "ingredient2"]
- * - Times: prep 10 min, cooking 15 min, total 25 min
- *
- * **Use Cases:**
- * - AI-generated recipe suggestions
- * - Recipe filtering tests
- * - Meal planning tests
- *
- * @example
- * ```typescript
- * const recipe = buildRecipe({
- *   name: "Pancakes",
- *   ingredients: ["milk", "eggs", "flour"]
- * });
- * expect(recipe.complexity).toBe(RecipeComplexity.Easy);
- * expect(recipe.approximateTotalDuration).toBe(25);
- * ```
+ * Mirrors `RecipeSuggestionResponseDto` field-for-field.
+ * `steps` contains exactly one entry to satisfy the backend invariant.
  */
-export function buildRecipe(overrides: Partial<Recipe> = {}): Recipe {
+export function buildRecipeSuggestion(overrides: Partial<RecipeSuggestion> = {}): RecipeSuggestion {
   return {
-    name: "Test Recipe",
-    description: "A simple test recipe",
-    approximateTotalDuration: 25,
-    complexity: RecipeComplexity.Easy,
-    ingredients: ["ingredient1", "ingredient2"],
-    instructions: "1. Mix ingredients. 2. Cook. 3. Serve.",
-    preparationTime: 10,
-    cookingTime: 15,
-    referenceForMoreDetails: "https://recipes.test/test-recipe",
+    name: "Test Recipe Suggestion",
+    description: "",
+    servings: 2,
+    preparationMinutes: 10,
+    cookingMinutes: 15,
+    totalMinutes: 25,
+    difficulty: RecipeDifficulty.Easy,
+    purchasedIngredients: [],
+    assumedPantryStaples: [],
+    missingOptionalIngredients: [],
+    steps: [{sequence: 1, instruction: "Cook everything.", notes: null}],
+    allergenWarnings: [],
     ...overrides,
   };
 }
@@ -353,12 +329,12 @@ export function buildInvoice(overrides: Partial<Invoice> = {}): Invoice {
     description: "Test invoice description",
     userIdentifier: "test-user",
     sharedWith: [],
-    category: InvoiceCategory.GROCERY,
     scans: [buildInvoiceScan()],
     paymentInformation: buildPaymentInformation(),
     merchantReference: "merchant-test-001",
     items: [buildProduct()],
     possibleRecipes: [],
+    classification: null,
     additionalMetadata: {},
     receiptType: "Itemized",
     countryRegion: "RO",
@@ -420,7 +396,7 @@ export function buildCreateInvoiceScanPayload(overrides: Partial<CreateInvoiceSc
  * **Default Values:**
  * - userIdentifier: "test-user"
  * - initialScan: Default InvoiceScan
- * - metadata: Empty object
+ * - additionalMetadata: Creation metadata flags
  *
  * **Use Cases:**
  * - API create invoice tests
@@ -431,7 +407,7 @@ export function buildCreateInvoiceScanPayload(overrides: Partial<CreateInvoiceSc
  * ```typescript
  * const payload = buildCreateInvoicePayload({
  *   userIdentifier: "user-123",
- *   metadata: {isImportant: "true"}
+ *   additionalMetadata: {isImportant: "true"}
  * });
  * expect(payload.initialScan.location).toBe("https://storage.test/invoice-scan.jpg");
  * ```
@@ -440,39 +416,12 @@ export function buildCreateInvoicePayload(overrides: Partial<CreateInvoiceDtoPay
   return {
     userIdentifier: "test-user",
     initialScan: buildInvoiceScan(),
-    metadata: {
+    additionalMetadata: {
       isImportant: "false",
       requiresAnalysis: "false",
     },
     ...overrides,
   };
-}
-
-/**
- * Returns a deterministic InvoiceAnalysisOptions value for testing.
- *
- * @param value - Optional specific analysis option value
- * @returns InvoiceAnalysisOptions value (defaults to CompleteAnalysis)
- *
- * @remarks
- * **Default:** CompleteAnalysis (1)
- *
- * **Use Cases:**
- * - AI analysis tests
- * - Processing configuration tests
- * - Option validation tests
- *
- * @example
- * ```typescript
- * const options = buildInvoiceAnalysisOptions();
- * expect(options).toBe(InvoiceAnalysisOptions.CompleteAnalysis);
- *
- * const noAnalysis = buildInvoiceAnalysisOptions(InvoiceAnalysisOptions.NoAnalysis);
- * expect(noAnalysis).toBe(0);
- * ```
- */
-export function buildInvoiceAnalysisOptions(value?: InvoiceAnalysisOptions): InvoiceAnalysisOptions {
-  return value ?? InvoiceAnalysisOptionsValue.CompleteAnalysis;
 }
 
 /**

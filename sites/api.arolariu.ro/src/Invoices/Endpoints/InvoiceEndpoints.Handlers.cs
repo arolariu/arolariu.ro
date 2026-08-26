@@ -265,6 +265,23 @@ public static partial class InvoiceEndpoints
         updatedInvoiceEntity.Scans.Add(scan);
       }
 
+      // Preserve recipes when not explicitly supplied; an explicit empty array clears the collection
+      if (invoicePayload.PossibleRecipes is null)
+      {
+        foreach (var recipe in possibleInvoice.PossibleRecipes)
+        {
+          updatedInvoiceEntity.PossibleRecipes.Add(recipe);
+        }
+      }
+
+      // Preserve the resolved classification when no manual code is supplied. Without this the
+      // full-document upsert would drop an analysis-derived classification, including its origin,
+      // confidence and evidence, on every unrelated edit such as renaming the invoice.
+      if (string.IsNullOrWhiteSpace(invoicePayload.ClassificationCode))
+      {
+        updatedInvoiceEntity.Classification = possibleInvoice.Classification;
+      }
+
       var updatedInvoice = await invoiceManagementService
         .UpdateInvoice(
           id,
@@ -672,7 +689,10 @@ public static partial class InvoiceEndpoints
       }
 
       activity?.RecordSuccess();
-      return TypedResults.Ok(MerchantResponseDto.FromMerchant(possibleMerchant));
+      return TypedResults.Ok(MerchantResponseDto.FromMerchantForCaller(
+        possibleMerchant,
+        potentialUserIdentifier,
+        new HashSet<Guid> { possibleInvoice.id }));
     }
     catch (OperationCanceledException)
     {
@@ -1205,10 +1225,22 @@ public static partial class InvoiceEndpoints
     }
   }
 
+  /// <summary>Determines whether a merchant collection request may be served for the requested user.</summary>
+  /// <remarks>
+  /// <para>An absent <paramref name="visibleToUser"/> implies the caller. A present value must equal the
+  /// caller; otherwise the request is an attempt to enumerate another user's merchants.</para>
+  /// </remarks>
+  /// <param name="caller">The user identifier resolved from the request principal.</param>
+  /// <param name="visibleToUser">The optional user identifier supplied on the query string.</param>
+  /// <returns><see langword="true"/> when the request is authorised; otherwise <see langword="false"/>.</returns>
+  internal static bool IsMerchantCollectionRequestAuthorized(Guid caller, Guid? visibleToUser) =>
+    visibleToUser is null || visibleToUser.Value == caller;
+
   internal static async partial Task<IResult> RetrieveAllMerchantsAsync(
     IInvoiceManagementService invoiceManagementService,
     IHttpContextAccessor httpContext,
-    Guid parentCompanyId,
+    Guid? parentCompanyId,
+    Guid? visibleToUser,
     CancellationToken cancellationToken)
   {
     try
@@ -1220,15 +1252,49 @@ public static partial class InvoiceEndpoints
         activity.SetOperationType("Merchant.ReadAll");
       }
 
-      _ = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
-      activity?.SetTag("parent_company.id", parentCompanyId.ToString());
+      Guid userIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
 
-      var possibleMerchants = await invoiceManagementService
-          .ReadMerchants(parentCompanyId, cancellationToken)
-          .ConfigureAwait(false);
+      if (!IsMerchantCollectionRequestAuthorized(userIdentifier, visibleToUser))
+      {
+        activity?.SetTag("merchant.scope", "forbidden");
+        return TypedResults.Forbid();
+      }
+
+      // Owner scoping is applied unconditionally. parentCompanyId narrows the caller's own
+      // visible set; it is deliberately NOT an alternate path that skips the ownership filter.
+      // Treating it as one would let any authenticated caller enumerate a partition and read
+      // other users' referencedInvoiceIds and createdBy values out of MerchantResponseDto.
+      var visibility = await invoiceManagementService
+        .ReadMerchantsVisibleToUser(userIdentifier, cancellationToken)
+        .ConfigureAwait(false);
+      IEnumerable<Merchant> possibleMerchants = visibility.Merchants;
+      IReadOnlyCollection<Invoice> callerInvoices = visibility.Invoices;
+
+      if (parentCompanyId.HasValue)
+      {
+        activity?.SetTag("merchant.scope", "visible_to_user.parent_company");
+        activity?.SetTag("parent_company.id", parentCompanyId.Value.ToString());
+        possibleMerchants = possibleMerchants
+          .Where(merchant => merchant.ParentCompanyId == parentCompanyId.Value);
+      }
+      else
+      {
+        activity?.SetTag("merchant.scope", "visible_to_user");
+      }
 
       // RESTful convention: return 200 with empty array for collection endpoints, not 404
-      var merchantDtos = possibleMerchants?.Select(MerchantResponseDto.FromMerchant) ?? [];
+      var merchantDtos = possibleMerchants?.Select(merchant =>
+      {
+        HashSet<Guid> callerInvoiceIdentifiers = callerInvoices
+          .Where(invoice => invoice.MerchantReference == merchant.id)
+          .Select(invoice => invoice.id)
+          .ToHashSet();
+
+        return MerchantResponseDto.FromMerchantForCaller(
+          merchant,
+          userIdentifier,
+          callerInvoiceIdentifiers);
+      }) ?? [];
       activity?.SetTag("result.count", merchantDtos.Count());
       activity?.RecordSuccess();
       return TypedResults.Ok(merchantDtos);
@@ -1261,7 +1327,7 @@ public static partial class InvoiceEndpoints
         activity.SetOperationType("Merchant.Read");
       }
 
-      _ = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
+      Guid userIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
       activity?.SetMerchantContext(id);
       if (parentCompanyId.HasValue)
       {
@@ -1278,8 +1344,26 @@ public static partial class InvoiceEndpoints
         return TypedResults.NotFound();
       }
 
+      IEnumerable<Invoice> callerInvoices = await invoiceManagementService
+        .ReadInvoices(userIdentifier, cancellationToken)
+        .ConfigureAwait(false);
+      HashSet<Guid> callerInvoiceIdentifiers = callerInvoices
+        .Where(invoice => invoice.MerchantReference == possibleMerchant.id)
+        .Select(invoice => invoice.id)
+        .ToHashSet();
+
+      if (callerInvoiceIdentifiers.Count == 0)
+      {
+        activity?.SetTag("access.granted", false);
+        return TypedResults.NotFound();
+      }
+
+      activity?.SetTag("access.granted", true);
       activity?.RecordSuccess();
-      return TypedResults.Ok(MerchantResponseDto.FromMerchant(possibleMerchant));
+      return TypedResults.Ok(MerchantResponseDto.FromMerchantForCaller(
+        possibleMerchant,
+        userIdentifier,
+        callerInvoiceIdentifiers));
     }
     catch (OperationCanceledException)
     {
@@ -1312,9 +1396,19 @@ public static partial class InvoiceEndpoints
         activity.SetOperationType("Merchant.Update");
       }
 
-      _ = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
+      Guid userIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
       activity?.SetMerchantContext(id);
 
+      IEnumerable<Invoice> callerInvoices = await invoiceManagementService
+        .ReadInvoices(userIdentifier, writeScope.Token)
+        .ConfigureAwait(false);
+      if (!callerInvoices.Any(invoice => invoice.MerchantReference == id))
+      {
+        activity?.SetTag("access.granted", false);
+        return TypedResults.NotFound();
+      }
+
+      activity?.SetTag("access.granted", true);
       Merchant? existingMerchant = await invoiceManagementService
         .ReadMerchant(id, parentCompanyId: null, cancellationToken: writeScope.Token)
         .ConfigureAwait(false);

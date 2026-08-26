@@ -9,7 +9,7 @@
  */
 
 import * as exec from "@actions/exec";
-import {filesForEslint} from "../domain/changedFiles.ts";
+import {filesForEslint, filterExistingFiles} from "../domain/changedFiles.ts";
 import type {CheckProvider, ProviderRunInput, ProviderRunOutput, Schema} from "../domain/provider.ts";
 import type {Finding, LineFinding, Severity} from "../domain/types.ts";
 
@@ -93,7 +93,15 @@ export const lintProvider: CheckProvider<LintPayload> = {
     return files === null || files.length > 0;
   },
   async run(input: ProviderRunInput): Promise<ProviderRunOutput<LintPayload>> {
-    const scopedFiles = filesForEslint(input);
+    const candidateFiles = filesForEslint(input);
+    const scopedFiles = candidateFiles === null ? null : await filterExistingFiles(input.workspaceRoot, candidateFiles);
+    if (scopedFiles !== null && scopedFiles.length === 0) {
+      return {
+        payload: {errorCount: 0, warningCount: 0, filesChecked: 0},
+        findings: [],
+      };
+    }
+
     const args = scopedFiles === null ? ["eslint", ".", "--format", "json"] : ["eslint", ...scopedFiles, "--format", "json"];
     const result = await exec.getExecOutput("npx", args, {cwd: input.workspaceRoot, ignoreReturnCode: true, silent: true});
 

@@ -8,6 +8,7 @@ using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.O
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Processing;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Exceptions.Outer.Orchestration;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
+using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants.Exceptions.Inner;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants.Exceptions.Outer.Orchestration;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Exceptions.Inner;
@@ -29,6 +30,9 @@ public sealed partial class InvoiceProcessingService
   private delegate Task<Merchant> CallbackFunctionForTasksWithMerchantReturn();
 
   private delegate Task<IEnumerable<Merchant>> CallbackFunctionForTasksWithMerchantListReturn();
+
+  private delegate Task<(IReadOnlyCollection<Merchant> Merchants, IReadOnlyCollection<Invoice> Invoices)>
+    CallbackFunctionForTasksWithMerchantVisibilityReturn();
 
   private delegate Task<IDictionary<string, object>> CallbackFunctionForTasksWithMetadataReturn();
 
@@ -203,6 +207,24 @@ public sealed partial class InvoiceProcessingService
     }
   }
 
+  private async Task<(IReadOnlyCollection<Merchant> Merchants, IReadOnlyCollection<Invoice> Invoices)> TryCatchAsync(
+    CallbackFunctionForTasksWithMerchantVisibilityReturn callbackFunction)
+  {
+    try
+    {
+      return await callbackFunction().ConfigureAwait(false);
+    }
+    catch (OperationCanceledException)
+    {
+      // Cancellation is not a fault. Bare rethrow preserves the original stack trace.
+      throw;
+    }
+    catch (Exception exception)
+    {
+      throw Classify(exception);
+    }
+  }
+
   private async Task<IDictionary<string, object>> TryCatchAsync(CallbackFunctionForTasksWithMetadataReturn callbackFunction)
   {
     try
@@ -341,6 +363,7 @@ public sealed partial class InvoiceProcessingService
       => LogAndWrapValidation(exception),
 
     AnalysisOrchestrationDependencyValidationException
+      or MerchantForbiddenAccessException
       => LogAndWrapDependencyValidation(exception),
 
     AnalysisOrchestrationDependencyException

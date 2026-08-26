@@ -7,6 +7,7 @@
 
 import {formatDate, formatFileSize} from "@/lib/utils.generic";
 import {useInvoicesStore, useScansStore} from "@/stores";
+import type {Invoice} from "@/types/invoices";
 import {
   Button,
   Carousel,
@@ -49,6 +50,47 @@ import styles from "./CreateInvoiceDialog.module.scss";
 
 type CreationMode = "single" | "batch";
 type CreationStep = "select" | "creating" | "complete";
+
+/**
+ * Links converted scans back to the invoices created from them and archives
+ * the originals.
+ *
+ * @remarks
+ * In `"batch"` mode every converted scan is linked to the single invoice
+ * produced from the batch. In `"single"` mode each converted scan maps 1:1,
+ * by array index, to its own invoice. Extracted from `handleCreate` to keep
+ * that handler's cognitive complexity within budget.
+ *
+ * @param params - Linking inputs and the store actions to invoke.
+ * @returns Nothing; delegates to the provided store actions.
+ */
+function linkAndArchiveScans({
+  invoices,
+  convertedScanIds,
+  mode,
+  markScansAsUsedByInvoice,
+  archiveScans,
+}: Readonly<{
+  invoices: readonly Invoice[];
+  convertedScanIds: readonly string[];
+  mode: CreationMode;
+  markScansAsUsedByInvoice: (scanIds: string[], invoiceId: string) => void;
+  archiveScans: (scanIds: string[]) => void;
+}>): void {
+  const [firstInvoice] = invoices;
+  if (convertedScanIds.length === 0 || firstInvoice === undefined) return;
+
+  if (mode === "batch") {
+    markScansAsUsedByInvoice([...convertedScanIds], firstInvoice.id);
+  } else {
+    invoices.forEach((invoice, index) => {
+      const scanId = convertedScanIds[index];
+      if (scanId) markScansAsUsedByInvoice([scanId], invoice.id);
+    });
+  }
+
+  archiveScans([...convertedScanIds]);
+}
 
 /** Process step indicator */
 function ProcessStep({
@@ -135,7 +177,7 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
     handleClose();
   }, [router, handleClose]);
 
-  const handleCreate = async (): Promise<void> => {
+  const handleCreate = useCallback(async (): Promise<void> => {
     if (selectedScans.length === 0) return;
 
     setStep("creating");
@@ -165,18 +207,14 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
       );
       setProgress(90);
 
-      // Link scans to invoices
-      if (result.convertedScanIds.length > 0 && result.invoices.length > 0) {
-        if (mode === "batch") {
-          markScansAsUsedByInvoice(result.convertedScanIds, result.invoices[0]!.id);
-        } else {
-          result.invoices.forEach((invoice, index) => {
-            const scanId = result.convertedScanIds[index];
-            if (scanId) markScansAsUsedByInvoice([scanId], invoice.id);
-          });
-        }
-        archiveScans(result.convertedScanIds);
-      }
+      // Link converted scans to their invoices and archive the originals.
+      linkAndArchiveScans({
+        invoices: result.invoices,
+        convertedScanIds: result.convertedScanIds,
+        mode,
+        markScansAsUsedByInvoice,
+        archiveScans,
+      });
 
       clearSelectedScans();
       setProgress(100);
@@ -200,7 +238,7 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
       // Show error toast with backend details
       toast.error(t((m) => m.dialogs.invoices.createInvoiceDialog.errors.createFailed, {message: errorMessage}));
     }
-  };
+  }, [selectedScans, mode, upsertInvoice, markScansAsUsedByInvoice, archiveScans, clearSelectedScans, t]);
 
   const handleModeChange = useCallback((v: unknown) => {
     setMode(v as CreationMode);
@@ -293,6 +331,7 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
               htmlFor='single'
               className={`${styles["modeOption"]} ${mode === "single" ? styles["modeOptionSelected"] : ""}`}>
               <RadioGroupItem
+                nativeButton
                 value='single'
                 id='single'
                 className={styles["radioItem"]}
@@ -312,6 +351,7 @@ export default function CreateInvoiceDialog(): React.JSX.Element {
               htmlFor='batch'
               className={`${styles["modeOption"]} ${styles["modeOptionBatch"]} ${mode === "batch" ? styles["modeOptionSelected"] : ""}`}>
               <RadioGroupItem
+                nativeButton
                 value='batch'
                 id='batch'
                 className={styles["radioItem"]}

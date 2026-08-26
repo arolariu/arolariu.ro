@@ -46,7 +46,11 @@ public interface IInvoiceOrchestrationService
   /// Attaches one scan value to an existing invoice.
   /// </summary>
   /// <remarks>
-  /// The invoice is loaded, the scan is appended, and the aggregate is persisted once.
+  /// <para>The invoice is loaded, the scan is appended, and the aggregate is persisted once.</para>
+  /// <para><b>Idempotency:</b> Scan identity is the <see cref="ScanType"/> plus the canonical,
+  /// escaped absolute <see cref="InvoiceScan.Location"/> URI. Metadata is descriptive and is not
+  /// part of identity. When that identity is already attached, the loaded aggregate is returned
+  /// successfully without another append or persistence write.</para>
   /// </remarks>
   /// <param name="invoiceIdentifier">The identifier of the invoice receiving the scan.</param>
   /// <param name="userIdentifier">The optional partition context for the invoice.</param>

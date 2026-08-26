@@ -11,7 +11,6 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Allergens;
 /// </summary>
 /// <remarks>
 /// <para>Each ingredient collection is a non-null section. An empty collection means the capability succeeded but produced no items for that section.</para>
-/// <para>The recipe retains only a transient <see cref="SourceRunId"/> for correlation with the analysis run that produced it.</para>
 /// </remarks>
 public sealed record RecipeSuggestion
 {
@@ -30,7 +29,6 @@ public sealed record RecipeSuggestion
   /// <param name="missingOptionalIngredients">Ingredients that are optional and may be missing.</param>
   /// <param name="steps">The ordered recipe steps.</param>
   /// <param name="allergenWarnings">The allergen warnings relevant to the recipe.</param>
-  /// <param name="sourceRunId">The transient analysis run identifier that produced the recipe.</param>
   /// <exception cref="ArgumentException">
   /// Thrown when required text values are missing or when the steps collection is empty.
   /// </exception>
@@ -50,8 +48,7 @@ public sealed record RecipeSuggestion
     IReadOnlyList<RecipeIngredient> assumedPantryStaples,
     IReadOnlyList<RecipeIngredient> missingOptionalIngredients,
     IReadOnlyList<RecipeStep> steps,
-    IReadOnlyList<AllergenCode> allergenWarnings,
-    Guid sourceRunId)
+    IReadOnlyList<AllergenCode> allergenWarnings)
   {
     if (!Enum.IsDefined(difficulty))
     {
@@ -70,7 +67,6 @@ public sealed record RecipeSuggestion
     MissingOptionalIngredients = AnalysisContractGuards.Snapshot(missingOptionalIngredients, nameof(missingOptionalIngredients));
     Steps = AnalysisContractGuards.Snapshot(steps, nameof(steps));
     AllergenWarnings = AnalysisContractGuards.Snapshot(allergenWarnings, nameof(allergenWarnings));
-    SourceRunId = AnalysisContractGuards.RequireNonDefault(sourceRunId, nameof(sourceRunId));
 
     if (Steps.Count == 0)
     {
@@ -142,9 +138,4 @@ public sealed record RecipeSuggestion
   /// Gets allergen warnings relevant to the recipe.
   /// </summary>
   public IReadOnlyList<AllergenCode> AllergenWarnings { get; }
-
-  /// <summary>
-  /// Gets the transient analysis run identifier that produced the recipe.
-  /// </summary>
-  public Guid SourceRunId { get; }
 }

@@ -55,16 +55,14 @@ public sealed class AllergenValueObjectCoverageTests
   [TestMethod]
   public void AllergenAssessment_StatusAndSignals_ExercisesConstructorBranches()
   {
-    Guid sourceRunId = Guid.Parse("33333333-3333-3333-3333-333333333333");
     AllergenSignal signal = CreateSignal();
 
-    Assert.AreEqual(AllergenAssessmentStatus.NoSignals, AllergenAssessment.NoSignals(sourceRunId).Status);
-    Assert.AreEqual(AllergenAssessmentStatus.InsufficientData, AllergenAssessment.Insufficient(sourceRunId).Status);
-    Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => new AllergenAssessment(sourceRunId, (AllergenAssessmentStatus)999, []));
-    Assert.ThrowsExactly<ArgumentNullException>(() => new AllergenAssessment(sourceRunId, AllergenAssessmentStatus.NoSignals, null!));
-    Assert.ThrowsExactly<ArgumentException>(() => AllergenAssessment.Detected(sourceRunId, []));
-    Assert.ThrowsExactly<ArgumentException>(() => new AllergenAssessment(sourceRunId, AllergenAssessmentStatus.NoSignals, [signal]));
-    Assert.ThrowsExactly<ArgumentException>(() => AllergenAssessment.NoSignals(Guid.Empty));
+    Assert.AreEqual(AllergenAssessmentStatus.NoSignals, AllergenAssessment.NoSignals().Status);
+    Assert.AreEqual(AllergenAssessmentStatus.InsufficientData, AllergenAssessment.Insufficient().Status);
+    Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => new AllergenAssessment((AllergenAssessmentStatus)999, []));
+    Assert.ThrowsExactly<ArgumentNullException>(() => new AllergenAssessment(AllergenAssessmentStatus.NoSignals, null!));
+    Assert.ThrowsExactly<ArgumentException>(() => AllergenAssessment.Detected([]));
+    Assert.ThrowsExactly<ArgumentException>(() => new AllergenAssessment(AllergenAssessmentStatus.NoSignals, [signal]));
   }
 
   /// <summary>
@@ -73,9 +71,8 @@ public sealed class AllergenValueObjectCoverageTests
   [TestMethod]
   public void AllergenAssessment_EquivalentRecords_ExercisesRecordMembers()
   {
-    Guid sourceRunId = Guid.Parse("44444444-4444-4444-4444-444444444444");
-    AllergenAssessment assessment = AllergenAssessment.Detected(sourceRunId, [CreateSignal()]);
-    AllergenAssessment different = AllergenAssessment.Insufficient(sourceRunId);
+    AllergenAssessment assessment = AllergenAssessment.Detected([CreateSignal()]);
+    AllergenAssessment different = AllergenAssessment.Insufficient();
     AllergenAssessment copy = assessment with { };
     AllergenAssessment? missing = null;
 

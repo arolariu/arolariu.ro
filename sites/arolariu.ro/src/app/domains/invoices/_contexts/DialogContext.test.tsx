@@ -179,6 +179,28 @@ describe("useDialog", () => {
     expect(result.current.currentDialog.payload).toStrictEqual({invoice: mockInvoice});
   });
 
+  test("keeps open stable across rerenders while dispatching the latest payload", () => {
+    const updatedInvoice = {...mockInvoice, name: "Updated invoice"};
+    const {result, rerender} = renderHook(
+      ({invoice}) => useDialog("SHARED__INVOICE_SHARE", "edit", {invoice}),
+      {
+        wrapper,
+        initialProps: {invoice: mockInvoice},
+      },
+    );
+    const initialOpen = result.current.open;
+
+    rerender({invoice: updatedInvoice});
+
+    expect(result.current.open).toBe(initialOpen);
+
+    act(() => {
+      result.current.open();
+    });
+
+    expect(result.current.currentDialog.payload).toStrictEqual({invoice: updatedInvoice});
+  });
+
   test("it closes dialog and resets state", () => {
     const {result} = renderHook(() => useDialog("SHARED__INVOICE_SHARE", "edit", {invoice: mockInvoice}), {wrapper});
 

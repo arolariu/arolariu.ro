@@ -334,7 +334,7 @@ public sealed class ValueObjectTests
       QuantityUnit = "pcs",
       ProductCode = "SKU12345",
       Price = 5.99m,
-      AllergenAssessment = AllergenAssessment.Detected(Guid.NewGuid(), signals)
+      AllergenAssessment = AllergenAssessment.Detected(signals)
     };
 
     // Assert
@@ -550,14 +550,12 @@ public sealed class ValueObjectTests
   public void Product_SetAllergenAssessment_AssessmentIsSet()
   {
     // Arrange
-    var runIdentifier = Guid.NewGuid();
-    var assessment = AllergenAssessment.NoSignals(runIdentifier);
+    var assessment = AllergenAssessment.NoSignals();
 
     var product = new Product { AllergenAssessment = assessment };
 
     // Assert
     Assert.IsNotNull(product.AllergenAssessment);
-    Assert.AreEqual(runIdentifier, product.AllergenAssessment!.SourceRunId);
   }
 
   /// <summary>

@@ -3,13 +3,13 @@
  */
 
 import {InvoiceBuilder, ProductBuilder} from "@/data/mocks";
-import {ProductCategory} from "@/types/invoices";
+import {ClassificationOrigin, ClassificationSystem, type StandardClassification} from "@/types/invoices/Classification";
 import {beforeEach, describe, expect, it, vi} from "vitest";
 import {
   computeBudgetImpact,
   computeShoppingPatterns,
-  getCategoryComparison,
-  getCategorySpending,
+  getClassificationGroupComparison,
+  getClassificationGroupSpending,
   getComparisonStats,
   getInvoiceSummary,
   getMerchantBreakdown,
@@ -35,18 +35,34 @@ vi.mock("@/lib/currency", () => ({
   }),
 }));
 
-describe("getCategorySpending — fallback fill color", () => {
-  it("should use fallback color for category not in CATEGORY_COLORS map", () => {
-    // Cast a numeric value outside the known ProductCategory map keys (e.g., 999)
-    // to exercise the `|| "var(--ac-chart-1)"` branch on line 48.
-    const unknownCategory = 999 as unknown as (typeof ProductCategory)[keyof typeof ProductCategory];
-    const items = [new ProductBuilder().withCategory(unknownCategory).withTotalPrice(25).build()];
+// ---------------------------------------------------------------------------
+// Classification helpers for analytics tests
+// ---------------------------------------------------------------------------
 
-    const result = getCategorySpending(items);
+function makeTestClassification(rootLabel: string, code: string = "50000000"): StandardClassification {
+  return {
+    system: ClassificationSystem.Gs1Gpc,
+    code,
+    officialLabel: rootLabel,
+    version: "2026-05",
+    hierarchy: [{level: "segment", code, officialLabel: rootLabel}],
+    origin: ClassificationOrigin.Analysis,
+    confidence: 0.9,
+    evidence: [],
+  };
+}
+
+const FOOD_CLASS = makeTestClassification("Food/Beverage");
+const CLEANING_CLASS = makeTestClassification("Cleaning/Hygiene Products");
+
+describe("getClassificationGroupSpending — color cycling", () => {
+  it("should assign chart colors cycling over CHART_COLORS", () => {
+    const items = [new ProductBuilder().withClassification(FOOD_CLASS).withTotalPrice(25).build()];
+
+    const result = getClassificationGroupSpending(items);
 
     expect(result).toHaveLength(1);
-    // Should fall back to "var(--ac-chart-1)" because 999 is not in CATEGORY_COLORS
-    expect(result[0]?.fill).toBe("var(--ac-chart-1)");
+    expect(result[0]?.fill).toContain("var(--ac-chart-");
   });
 });
 
@@ -614,129 +630,131 @@ describe("getMerchantBreakdown", () => {
   });
 });
 
-describe("getCategoryComparison", () => {
+describe("getClassificationGroupComparison", () => {
   it("should return empty array if current invoice has no items", () => {
     const invoice = new InvoiceBuilder().withItems([]).build();
-    const result = getCategoryComparison(invoice, [invoice]);
+    const result = getClassificationGroupComparison(invoice, [invoice]);
     expect(result).toEqual([]);
   });
 
-  it("should compare current invoice categories to historical averages", () => {
+  it("should compare current invoice classification groups to historical averages", () => {
     const currentInvoice = new InvoiceBuilder()
       .withId("current")
-      .withItems([{category: ProductCategory.DAIRY, totalPrice: 50} as any, {category: ProductCategory.MEAT, totalPrice: 100} as any])
+      .withItems([
+        new ProductBuilder().withClassification(FOOD_CLASS).withTotalPrice(50).build(),
+        new ProductBuilder().withClassification(CLEANING_CLASS).withTotalPrice(100).build(),
+      ])
       .build();
 
     const historicalInvoice = new InvoiceBuilder()
       .withId("historical")
-      .withItems([{category: ProductCategory.DAIRY, totalPrice: 30} as any, {category: ProductCategory.MEAT, totalPrice: 60} as any])
+      .withItems([
+        new ProductBuilder().withClassification(FOOD_CLASS).withTotalPrice(30).build(),
+        new ProductBuilder().withClassification(CLEANING_CLASS).withTotalPrice(60).build(),
+      ])
       .build();
 
-    const result = getCategoryComparison(currentInvoice, [currentInvoice, historicalInvoice]);
+    const result = getClassificationGroupComparison(currentInvoice, [currentInvoice, historicalInvoice]);
 
     expect(result).toHaveLength(2);
     // Should be sorted by current amount descending
-    expect(result[0]?.category).toContain("MEAT");
+    expect(result[0]?.category).toBe("Cleaning/Hygiene Products");
     expect(result[0]?.current).toBe(100);
     expect(result[0]?.average).toBe(60);
 
-    expect(result[1]?.category).toContain("DAIRY");
+    expect(result[1]?.category).toBe("Food/Beverage");
     expect(result[1]?.current).toBe(50);
     expect(result[1]?.average).toBe(30);
   });
 
-  it("should handle category with no historical data", () => {
+  it("should handle group with no historical data", () => {
     const currentInvoice = new InvoiceBuilder()
       .withId("current")
-      .withItems([{category: ProductCategory.FRUITS, totalPrice: 75} as any])
+      .withItems([new ProductBuilder().withClassification(FOOD_CLASS).withTotalPrice(75).build()])
       .build();
 
     const historicalInvoice = new InvoiceBuilder()
       .withId("historical")
-      .withItems([{category: ProductCategory.DAIRY, totalPrice: 30} as any])
+      .withItems([new ProductBuilder().withClassification(CLEANING_CLASS).withTotalPrice(30).build()])
       .build();
 
-    const result = getCategoryComparison(currentInvoice, [currentInvoice, historicalInvoice]);
+    const result = getClassificationGroupComparison(currentInvoice, [currentInvoice, historicalInvoice]);
 
     expect(result).toHaveLength(1);
-    expect(result[0]?.category).toContain("FRUITS");
+    expect(result[0]?.category).toBe("Food/Beverage");
     expect(result[0]?.current).toBe(75);
     expect(result[0]?.average).toBe(0);
   });
 
-  it("should use fallback empty array when currentInvoice.items is null (line 410)", () => {
-    // Line 410: const currentItems = currentInvoice.items ?? [];
+  it("should use fallback empty array when currentInvoice.items is null", () => {
     const invoice = new InvoiceBuilder().withId("current").build();
     (invoice as any).items = null;
 
-    const result = getCategoryComparison(invoice, [invoice]);
+    const result = getClassificationGroupComparison(invoice, [invoice]);
 
-    // null items falls back to [], so length === 0 → returns []
     expect(result).toEqual([]);
   });
 
-  it("should use fallback empty array when other invoice items are null (line 427)", () => {
-    // Line 427: const items = inv.items ?? [];
+  it("should use fallback empty array when other invoice items are null", () => {
     const currentInvoice = new InvoiceBuilder()
       .withId("current")
-      .withItems([{category: ProductCategory.BEVERAGES, totalPrice: 40} as any])
+      .withItems([new ProductBuilder().withClassification(FOOD_CLASS).withTotalPrice(40).build()])
       .build();
 
     const otherInvoice = new InvoiceBuilder().withId("other").withPaymentAmount(50).build();
     (otherInvoice as any).items = null;
 
-    const result = getCategoryComparison(currentInvoice, [currentInvoice, otherInvoice]);
+    const result = getClassificationGroupComparison(currentInvoice, [currentInvoice, otherInvoice]);
 
-    // otherInvoice.items ?? [] → empty, so historical average for BEVERAGES = 0
     expect(result).toHaveLength(1);
-    expect(result[0]?.category).toContain("BEVERAGES");
+    expect(result[0]?.category).toBe("Food/Beverage");
     expect(result[0]?.current).toBe(40);
     expect(result[0]?.average).toBe(0);
   });
 });
 
-describe("getCategorySpending", () => {
+describe("getClassificationGroupSpending", () => {
   it("should return empty array for no items", () => {
-    const result = getCategorySpending([]);
+    const result = getClassificationGroupSpending([]);
     expect(result).toEqual([]);
   });
 
-  it("should group items by category and compute totals", () => {
+  it("should group items by classification group and compute totals", () => {
     const items = [
-      new ProductBuilder().withCategory(ProductCategory.DAIRY).withTotalPrice(50).build(),
-      new ProductBuilder().withCategory(ProductCategory.DAIRY).withTotalPrice(30).build(),
-      new ProductBuilder().withCategory(ProductCategory.MEAT).withTotalPrice(100).build(),
+      new ProductBuilder().withClassification(FOOD_CLASS).withTotalPrice(50).build(),
+      new ProductBuilder().withClassification(FOOD_CLASS).withTotalPrice(30).build(),
+      new ProductBuilder().withClassification(CLEANING_CLASS).withTotalPrice(100).build(),
     ];
 
-    const result = getCategorySpending(items);
+    const result = getClassificationGroupSpending(items);
 
     expect(result).toHaveLength(2);
-    expect(result[0]?.category).toContain("MEAT");
+    expect(result[0]?.category).toBe("Cleaning/Hygiene Products");
     expect(result[0]?.amount).toBe(100);
     expect(result[0]?.count).toBe(1);
-    expect(result[1]?.category).toContain("DAIRY");
+    expect(result[1]?.category).toBe("Food/Beverage");
     expect(result[1]?.amount).toBe(80);
     expect(result[1]?.count).toBe(2);
   });
 
   it("should sort by amount descending", () => {
     const items = [
-      new ProductBuilder().withCategory(ProductCategory.DAIRY).withTotalPrice(30).build(),
-      new ProductBuilder().withCategory(ProductCategory.MEAT).withTotalPrice(100).build(),
-      new ProductBuilder().withCategory(ProductCategory.FRUITS).withTotalPrice(50).build(),
+      new ProductBuilder().withClassification(FOOD_CLASS).withTotalPrice(30).build(),
+      new ProductBuilder().withClassification(CLEANING_CLASS).withTotalPrice(100).build(),
+      new ProductBuilder().withClassification(null).withTotalPrice(50).build(),
     ];
 
-    const result = getCategorySpending(items);
+    const result = getClassificationGroupSpending(items);
 
     expect(result[0]?.amount).toBe(100);
     expect(result[1]?.amount).toBe(50);
     expect(result[2]?.amount).toBe(30);
   });
 
-  it("should assign fill colors from category color map", () => {
-    const items = [new ProductBuilder().withCategory(ProductCategory.DAIRY).withTotalPrice(50).build()];
+  it("should assign fill colors from the cycling palette", () => {
+    const items = [new ProductBuilder().withClassification(FOOD_CLASS).withTotalPrice(50).build()];
 
-    const result = getCategorySpending(items);
+    const result = getClassificationGroupSpending(items);
 
     expect(result[0]?.fill).toBeDefined();
     expect(result[0]?.fill).toContain("var(--ac-chart-");
@@ -827,9 +845,9 @@ describe("getQuantityAnalysis", () => {
 describe("getInvoiceSummary", () => {
   it("should compute summary statistics correctly", () => {
     const items = [
-      new ProductBuilder().withCategory(ProductCategory.DAIRY).withTotalPrice(50).withName("Milk").build(),
-      new ProductBuilder().withCategory(ProductCategory.MEAT).withTotalPrice(100).withName("Beef").build(),
-      new ProductBuilder().withCategory(ProductCategory.FRUITS).withTotalPrice(30).withName("Apples").build(),
+      new ProductBuilder().withClassification(makeTestClassification("Dairy", "50130000")).withTotalPrice(50).withName("Milk").build(),
+      new ProductBuilder().withClassification(makeTestClassification("Meat", "50230000")).withTotalPrice(100).withName("Beef").build(),
+      new ProductBuilder().withClassification(makeTestClassification("Fruits", "50100000")).withTotalPrice(30).withName("Apples").build(),
     ];
 
     const invoice = new InvoiceBuilder().withItems(items).withPaymentAmount(180).build();

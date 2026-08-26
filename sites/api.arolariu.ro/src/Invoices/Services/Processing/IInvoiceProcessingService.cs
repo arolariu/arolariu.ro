@@ -299,6 +299,22 @@ public interface IInvoiceProcessingService
   Task<IEnumerable<Merchant>> ReadMerchants(Guid parentCompanyId, CancellationToken cancellationToken);
   #endregion
 
+  #region Read Merchants Visible To User API
+  /// <summary>
+  /// Enumerates the merchants referenced by the caller's own invoices.
+  /// </summary>
+  /// <remarks>
+  /// Visibility is determined by invoice merchant reference rather than by <c>CreatedBy</c>, because
+  /// analysis performed by any user may create the merchant record that another user's invoice references.
+  /// </remarks>
+  /// <param name="userIdentifier">The authenticated user whose invoices are inspected.</param>
+  /// <param name="cancellationToken">Cancellation token to abort the operation (required).</param>
+  /// <returns>The distinct visible merchants and the caller-owned invoice snapshot used to derive them.</returns>
+  Task<(IReadOnlyCollection<Merchant> Merchants, IReadOnlyCollection<Invoice> Invoices)> ReadMerchantsVisibleToUser(
+    Guid userIdentifier,
+    CancellationToken cancellationToken);
+  #endregion
+
   #region Update Merchant API
   /// <summary>
   /// Replaces an existing merchant aggregate with updated state.
@@ -341,7 +357,7 @@ public interface IInvoiceProcessingService
     InvoiceAnalysisRequestDto request,
     CancellationToken cancellationToken);
 
-  /// <summary>Validates merchant ownership and queues a request with resolved analysis options.</summary>
+  /// <summary>Validates invoice-reference visibility and queues a merchant request with resolved analysis options.</summary>
   /// <param name="merchantId">The merchant identifier to analyze.</param>
   /// <param name="userIdentifier">The authenticated requester.</param>
   /// <param name="request">The requested analysis profile and capability overrides.</param>

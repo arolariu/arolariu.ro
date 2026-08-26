@@ -1,5 +1,6 @@
 "use client";
 
+import type {Invoice, Merchant} from "@/types/invoices";
 import {
   Badge,
   Button,
@@ -70,7 +71,14 @@ export default function FeedbackDialog(): React.JSX.Element {
     close,
   } = useDialog("EDIT_INVOICE__FEEDBACK");
 
-  const {invoice, merchant} = payload;
+  // `payload` is `null` at runtime whenever the dialog has not been opened yet
+  // (e.g. Storybook mounting this component directly, ahead of `DialogContainer`'s
+  // production gate which only renders this component once `open()` has already
+  // set a real payload). Fall back to `null` so the component never crashes on
+  // an initial closed render, and guard the one place that requires a non-null
+  // invoice (`handleSubmit`).
+  const invoice: Invoice | null = payload?.invoice ?? null;
+  const merchant: Merchant | null = payload?.merchant ?? null;
   const features = [
     t((m) => m.dialogs.invoices.feedbackDialog.features.spendingTrends),
     t((m) => m.dialogs.invoices.feedbackDialog.features.priceComparisons),
@@ -102,6 +110,13 @@ export default function FeedbackDialog(): React.JSX.Element {
   const handleSubmit = useCallback(
     async (e: React.SubmitEvent) => {
       e.preventDefault();
+
+      // Guards against the (Storybook-only) closed-dialog render where `invoice`
+      // is `null`. In production `DialogContainer` never mounts this component
+      // before `open()` has supplied a real invoice, so this branch is unreachable.
+      if (!invoice) {
+        return;
+      }
 
       // Show loading toast
       const loadingToast = toast(

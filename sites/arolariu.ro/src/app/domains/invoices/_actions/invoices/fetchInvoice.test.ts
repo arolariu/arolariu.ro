@@ -20,7 +20,13 @@ describe("fetchInvoice", () => {
     vi.clearAllMocks();
     mockFetchUser.mockResolvedValue(TestDataBuilder.build("userInformation", {userIdentifier: "user-1", userJwt: "jwt-1"}));
     mockFetchWithTimeout.mockResolvedValue(
-      TestDataBuilder.jsonResponse(TestDataBuilder.build("invoice", {id: invoiceId})) as Awaited<ReturnType<typeof fetchWithTimeout>>,
+      TestDataBuilder.jsonResponse(
+        TestDataBuilder.build("invoice", {
+          id: invoiceId,
+          userIdentifier: "22222222-2222-4222-8222-222222222222",
+          merchantReference: "33333333-3333-4333-8333-333333333333",
+        }),
+      ) as Awaited<ReturnType<typeof fetchWithTimeout>>,
     );
   });
 
@@ -124,6 +130,17 @@ describe("fetchInvoice", () => {
     expect(result.success).toBe(false);
     if (!result.success) {
       expect(result.error.message).toContain("An unexpected error occurred");
+    }
+  });
+
+  it("returns a server failure when the API returns a malformed payload", async () => {
+    mockFetchWithTimeout.mockResolvedValue(TestDataBuilder.jsonResponse({}) as Awaited<ReturnType<typeof fetchWithTimeout>>);
+
+    const result = await fetchInvoice({invoiceId});
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.code).toBe("SERVER_ERROR");
     }
   });
 });

@@ -551,7 +551,7 @@ public sealed class ProductExtendedTests
       QuantityUnit = "pcs",
       ProductCode = "5449000131805",
       Price = 4.99M,
-      AllergenAssessment = AllergenAssessment.NoSignals(Guid.NewGuid())
+      AllergenAssessment = AllergenAssessment.NoSignals()
     };
 
     // Assert

@@ -1,22 +1,13 @@
 "use client";
 
 /**
- * @fileoverview Product Category Chart - displays spending by product category as horizontal bars.
- * @module app/domains/invoices/view-invoices/_components/views/statistics/ProductCategoryChart
+ * @fileoverview Product Classification Chart - displays spending by product classification group as horizontal bars.
+ * @module app/domains/invoices/view-invoices/_components/views/statistics/ProductClassificationChart
  *
  * @remarks
- * This component visualizes product-level spending aggregated by ProductCategory enum.
- * Unlike the CategoryBreakdownChart (which shows invoice-level categories),
- * this chart analyzes individual product items across all invoices.
- *
- * **Features:**
- * - Horizontal bar chart for easy label reading
- * - Color-coded bars by category
- * - Shows total spent, product count, and percentage
- * - Responsive design with mobile optimization
- *
- * **Empty State:**
- * Displays a friendly message when no products are available.
+ * This component visualizes product-level spending aggregated by the taxonomy root group of
+ * each product's {@link StandardClassification}. Unlike the ClassificationBreakdownChart (which
+ * shows invoice-level groups), this chart analyzes individual product items across all invoices.
  */
 
 import {formatAmount} from "@/lib/utils.generic";
@@ -35,16 +26,16 @@ import {
   YAxis,
 } from "@arolariu/components";
 import {useTranslations} from "next-intl-selector";
-import type {ProductCategorySpending} from "../../../_utils/statistics";
-import styles from "./ProductCategoryChart.module.scss";
+import type {ProductClassificationSpending} from "../../../_utils/statistics";
+import styles from "./ProductClassificationChart.module.scss";
 
 type Props = {
-  readonly data: ProductCategorySpending[];
+  readonly data: ProductClassificationSpending[];
   readonly currency: string;
 };
 
 type TooltipPayloadItem = {
-  readonly payload?: ProductCategorySpending & {fill: string};
+  readonly payload?: ProductClassificationSpending & {fill: string};
 };
 
 type CustomTooltipProps = {
@@ -57,11 +48,7 @@ type CustomTooltipProps = {
 const EMPTY_TOOLTIP_PAYLOAD: ReadonlyArray<TooltipPayloadItem> = [];
 
 /**
- * Custom tooltip for the product category chart.
- *
- * @remarks
- * Displays category name, total spending, product count, and percentage
- * in a formatted card overlay.
+ * Custom tooltip for the product classification chart.
  */
 function CustomTooltip({
   active = false,
@@ -83,49 +70,34 @@ function CustomTooltip({
       </p>
       <p className={styles["tooltipPercentage"]}>{formatAmount(data.percentage, "en-US", 1)}%</p>
       <p className={styles["tooltipCount"]}>
-        {t((m) => m.cards.invoices.statistics.productCategory.tooltip.productCount, {count: String(data.productCount)})}
+        {t((m) => m.cards.invoices.statistics.productClassification.tooltip.productCount, {count: String(data.productCount)})}
       </p>
     </div>
   );
 }
 
 /**
- * Renders a horizontal bar chart showing spending breakdown by product category.
+ * Renders a horizontal bar chart showing spending breakdown by product classification group.
  *
- * @remarks
- * **Performance:**
- * Uses memoized data from parent component to avoid recalculations.
- * Chart rendering is handled by recharts with optimized SVG output.
- *
- * **Accessibility:**
- * - Semantic HTML with ARIA labels
- * - Keyboard navigation support
- * - Screen reader friendly tooltips
- *
- * **Color Scheme:**
- * Uses CSS custom properties from the theme (--chart-1 through --chart-5)
- * with cycling for categories beyond 5.
- *
- * @param data - Product category spending aggregates
+ * @param data - Product classification group spending aggregates
  * @param currency - Currency code for display (always RON for normalized data)
  * @returns Horizontal bar chart component
  */
-export function ProductCategoryChart({data, currency}: Props): React.JSX.Element {
+export function ProductClassificationChart({data, currency}: Props): React.JSX.Element {
   const t = useTranslations();
 
-  // Empty state
   if (data.length === 0) {
     return (
       <Card className={styles["card"]}>
         <CardHeader className={styles["cardHeader"]}>
-          <CardTitle className={styles["cardTitle"]}>{t((m) => m.cards.invoices.statistics.productCategory.title)}</CardTitle>
+          <CardTitle className={styles["cardTitle"]}>{t((m) => m.cards.invoices.statistics.productClassification.title)}</CardTitle>
           <CardDescription className={styles["cardDescription"]}>
-            {t((m) => m.cards.invoices.statistics.productCategory.description)}
+            {t((m) => m.cards.invoices.statistics.productClassification.description)}
           </CardDescription>
         </CardHeader>
         <CardContent className={styles["cardContent"]}>
           <div className={styles["emptyState"]}>
-            <p className={styles["emptyText"]}>{t((m) => m.cards.invoices.statistics.productCategory.empty)}</p>
+            <p className={styles["emptyText"]}>{t((m) => m.cards.invoices.statistics.productClassification.empty)}</p>
           </div>
         </CardContent>
       </Card>
@@ -148,9 +120,9 @@ export function ProductCategoryChart({data, currency}: Props): React.JSX.Element
   return (
     <Card className={styles["card"]}>
       <CardHeader className={styles["cardHeader"]}>
-        <CardTitle className={styles["cardTitle"]}>{t((m) => m.cards.invoices.statistics.productCategory.title)}</CardTitle>
+        <CardTitle className={styles["cardTitle"]}>{t((m) => m.cards.invoices.statistics.productClassification.title)}</CardTitle>
         <CardDescription className={styles["cardDescription"]}>
-          {t((m) => m.cards.invoices.statistics.productCategory.description)}
+          {t((m) => m.cards.invoices.statistics.productClassification.description)}
         </CardDescription>
       </CardHeader>
       <CardContent className={styles["cardContent"]}>

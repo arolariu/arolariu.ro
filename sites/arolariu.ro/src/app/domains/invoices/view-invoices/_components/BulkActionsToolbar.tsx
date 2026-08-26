@@ -25,7 +25,6 @@
  * ```
  */
 import {useInvoicesStore} from "@/stores";
-import {InvoiceCategory} from "@/types/invoices";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -37,19 +36,12 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
   Button,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-  toast,
 } from "@arolariu/components";
 import {AnimatePresence, motion} from "motion/react";
 import {useTranslations} from "next-intl-selector";
-import {useCallback, useState} from "react";
-import {TbCategory, TbDownload, TbTrash, TbX} from "react-icons/tb";
+import {useCallback} from "react";
+import {TbDownload, TbTrash, TbX} from "react-icons/tb";
 import {useShallow} from "zustand/react/shallow";
-import {patchInvoice} from "../../_actions/invoices";
 import {useDialog} from "../../_contexts/DialogContext";
 import {useInvoiceDelete} from "../../_hooks/invoice";
 import styles from "./BulkActionsToolbar.module.scss";
@@ -85,25 +77,22 @@ export default function BulkActionsToolbar(): React.JSX.Element | null {
     selectedEntities: selectedInvoices,
     clearSelectedEntities: clearSelectedInvoices,
     setSelectedEntities: setSelectedInvoices,
-    updateEntity: updateInvoice,
   } = useInvoicesStore(
     useShallow((state) => ({
       selectedEntities: state.selectedEntities,
       clearSelectedEntities: state.clearSelectedEntities,
       setSelectedEntities: state.setSelectedEntities,
-      updateEntity: state.updateEntity,
     })),
   );
 
   const {deleteInvoiceCallback, isDeleting} = useInvoiceDelete();
-  const [isCategoryChanging, setIsCategoryChanging] = useState(false);
 
   /**
    * Opens the export dialog with selected invoices.
    */
   const handleExport = useCallback(() => {
     openExportDialog();
-  }, [openExportDialog, selectedInvoices]);
+  }, [openExportDialog]);
 
   /**
    * Handles bulk deletion of selected invoices.
@@ -121,65 +110,6 @@ export default function BulkActionsToolbar(): React.JSX.Element | null {
     const failedInvoices = selectedInvoices.filter((invoice) => failedIds.includes(invoice.id));
     setSelectedInvoices(failedInvoices);
   }, [selectedInvoices, deleteInvoiceCallback, clearSelectedInvoices, setSelectedInvoices]);
-
-  /**
-   * Handles bulk category change for selected invoices.
-   *
-   * @param newCategory - The new category to apply to all selected invoices
-   */
-  const handleCategoryChange = useCallback(
-    async (newCategory: string) => {
-      setIsCategoryChanging(true);
-      const category = Number.parseInt(newCategory, 10) as InvoiceCategory;
-      const invoiceIds = selectedInvoices.map((invoice) => invoice.id);
-      let successCount = 0;
-      let failureCount = 0;
-
-      try {
-        // Update each invoice sequentially
-        for (const invoiceId of invoiceIds) {
-          try {
-            const result = await patchInvoice({
-              invoiceId,
-              payload: {category},
-            });
-
-            if (result.success) {
-              updateInvoice(invoiceId, {category});
-              successCount++;
-            } else {
-              failureCount++;
-            }
-          } catch (error) {
-            console.error(`Failed to update invoice ${invoiceId}:`, error);
-            failureCount++;
-          }
-        }
-
-        // Show appropriate toast based on results
-        if (failureCount === 0) {
-          toast.success(t((m) => m.pages.invoices.viewInvoices.bulkActions.categoryChanged, {count: successCount}));
-        } else if (successCount === 0) {
-          toast.error(t((m) => m.pages.invoices.viewInvoices.bulkActions.categoryChangeError));
-        } else {
-          toast.success(
-            t((m) => m.pages.invoices.viewInvoices.bulkActions.categoryPartialSuccess, {
-              success: String(successCount),
-              failed: String(failureCount),
-            }),
-          );
-        }
-
-        clearSelectedInvoices();
-      } catch (error) {
-        console.error("Bulk category change error:", error);
-        toast.error(t((m) => m.pages.invoices.viewInvoices.bulkActions.categoryChangeError));
-      } finally {
-        setIsCategoryChanging(false);
-      }
-    },
-    [selectedInvoices, updateInvoice, clearSelectedInvoices, t],
-  );
 
   // Don't render if no invoices are selected
   if (selectedInvoices.length === 0) {
@@ -254,40 +184,6 @@ export default function BulkActionsToolbar(): React.JSX.Element | null {
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
-
-            {/* Category change dropdown */}
-            <div className={styles["categorySelect"]}>
-              <TbCategory className={styles["categoryIcon"]} />
-              <Select
-                onValueChange={handleCategoryChange}
-                disabled={isCategoryChanging}>
-                <SelectTrigger
-                  className={styles["selectTrigger"]}
-                  aria-label={t((m) => m.pages.invoices.viewInvoices.bulkActions.changeCategory)}>
-                  <SelectValue placeholder={t((m) => m.pages.invoices.viewInvoices.bulkActions.changeCategory)} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={InvoiceCategory.NOT_DEFINED.toString()}>
-                    {t((m) => m.pages.invoices.viewInvoices.bulkActions.categories.notDefined)}
-                  </SelectItem>
-                  <SelectItem value={InvoiceCategory.GROCERY.toString()}>
-                    {t((m) => m.pages.invoices.viewInvoices.bulkActions.categories.grocery)}
-                  </SelectItem>
-                  <SelectItem value={InvoiceCategory.FAST_FOOD.toString()}>
-                    {t((m) => m.pages.invoices.viewInvoices.bulkActions.categories.fastFood)}
-                  </SelectItem>
-                  <SelectItem value={InvoiceCategory.HOME_CLEANING.toString()}>
-                    {t((m) => m.pages.invoices.viewInvoices.bulkActions.categories.homeCleaning)}
-                  </SelectItem>
-                  <SelectItem value={InvoiceCategory.CAR_AUTO.toString()}>
-                    {t((m) => m.pages.invoices.viewInvoices.bulkActions.categories.carAuto)}
-                  </SelectItem>
-                  <SelectItem value={InvoiceCategory.OTHER.toString()}>
-                    {t((m) => m.pages.invoices.viewInvoices.bulkActions.categories.other)}
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
           </div>
         </div>
       </motion.div>

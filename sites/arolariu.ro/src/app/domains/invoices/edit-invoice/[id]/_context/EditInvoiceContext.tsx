@@ -18,7 +18,7 @@
  * @see patchInvoice server action for persistence
  */
 
-import type {Invoice, InvoiceCategory, Merchant, PaymentType} from "@/types/invoices";
+import type {Invoice, Merchant, PaymentType} from "@/types/invoices";
 import {toast} from "@arolariu/components";
 import {useTranslations} from "next-intl-selector";
 import {createContext, use, useCallback, useMemo, useState} from "react";
@@ -34,7 +34,6 @@ import {patchInvoice} from "../../../_actions/invoices";
 interface PendingChanges {
   name?: string;
   description?: string;
-  category?: InvoiceCategory;
   paymentType?: PaymentType;
   isImportant?: boolean;
   transactionDate?: Date;
@@ -58,7 +57,6 @@ interface EditInvoiceContextValue {
   // Field setters
   setName: (name: string) => void;
   setDescription: (description: string) => void;
-  setCategory: (category: InvoiceCategory) => void;
   setPaymentType: (paymentType: PaymentType) => void;
   setIsImportant: (isImportant: boolean) => void;
   setTransactionDate: (date: Date) => void;
@@ -138,7 +136,6 @@ export function EditInvoiceContextProvider({invoice, merchant, children}: Readon
   // Field setters using the generic helper
   const setName = useMemo(() => createFieldSetter("name", invoice.name), [createFieldSetter, invoice.name]);
   const setDescription = useMemo(() => createFieldSetter("description", invoice.description), [createFieldSetter, invoice.description]);
-  const setCategory = useMemo(() => createFieldSetter("category", invoice.category), [createFieldSetter, invoice.category]);
   const setPaymentType = useMemo(
     () => createFieldSetter("paymentType", invoice.paymentInformation.paymentType),
     [createFieldSetter, invoice.paymentInformation.paymentType],
@@ -173,9 +170,6 @@ export function EditInvoiceContextProvider({invoice, merchant, children}: Readon
       }
       if (pendingChanges.description !== undefined) {
         payload["description"] = pendingChanges.description;
-      }
-      if (pendingChanges.category !== undefined) {
-        payload["category"] = pendingChanges.category;
       }
       if (pendingChanges.isImportant !== undefined) {
         payload["isImportant"] = pendingChanges.isImportant;
@@ -231,7 +225,6 @@ export function EditInvoiceContextProvider({invoice, merchant, children}: Readon
       isSaving,
       setName,
       setDescription,
-      setCategory,
       setPaymentType,
       setIsImportant,
       setTransactionDate,
@@ -246,7 +239,6 @@ export function EditInvoiceContextProvider({invoice, merchant, children}: Readon
       isSaving,
       setName,
       setDescription,
-      setCategory,
       setPaymentType,
       setIsImportant,
       setTransactionDate,

@@ -18,7 +18,6 @@ public sealed record AllergenAssessment
   /// <summary>
   /// Initializes a new instance of the <see cref="AllergenAssessment"/> record.
   /// </summary>
-  /// <param name="sourceRunId">The transient analysis run identifier that produced this section.</param>
   /// <param name="status">The overall outcome of the allergen assessment capability.</param>
   /// <param name="signals">The detected allergen signals.</param>
   /// <exception cref="ArgumentException">
@@ -27,7 +26,6 @@ public sealed record AllergenAssessment
   /// <exception cref="ArgumentNullException">Thrown when <paramref name="signals"/> is null.</exception>
   /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="status"/> is not a defined status.</exception>
   public AllergenAssessment(
-    Guid sourceRunId,
     AllergenAssessmentStatus status,
     IReadOnlyList<AllergenSignal> signals)
   {
@@ -36,7 +34,6 @@ public sealed record AllergenAssessment
       throw new ArgumentOutOfRangeException(nameof(status), status, "Status must be a defined allergen assessment status.");
     }
 
-    SourceRunId = AnalysisContractGuards.RequireNonDefault(sourceRunId, nameof(sourceRunId));
     Status = status;
     Signals = AnalysisContractGuards.Snapshot(signals, nameof(signals));
 
@@ -52,11 +49,6 @@ public sealed record AllergenAssessment
   }
 
   /// <summary>
-  /// Gets the transient analysis run identifier that produced this section.
-  /// </summary>
-  public Guid SourceRunId { get; }
-
-  /// <summary>
   /// Gets the overall outcome of the allergen assessment capability.
   /// </summary>
   public AllergenAssessmentStatus Status { get; }
@@ -66,28 +58,19 @@ public sealed record AllergenAssessment
   /// </summary>
   public IReadOnlyList<AllergenSignal> Signals { get; }
 
-  /// <summary>
-  /// Creates a detected allergen assessment containing one or more signals.
-  /// </summary>
-  /// <param name="sourceRunId">The transient analysis run identifier that produced this section.</param>
+  /// <summary>Creates a detected allergen assessment containing one or more signals.</summary>
   /// <param name="signals">The detected allergen signals.</param>
   /// <returns>A detected allergen assessment.</returns>
-  public static AllergenAssessment Detected(Guid sourceRunId, IReadOnlyList<AllergenSignal> signals) =>
-    new(sourceRunId, AllergenAssessmentStatus.Detected, signals);
+  public static AllergenAssessment Detected(IReadOnlyList<AllergenSignal> signals) =>
+    new(AllergenAssessmentStatus.Detected, signals);
 
-  /// <summary>
-  /// Creates a successful allergen assessment that found no signals.
-  /// </summary>
-  /// <param name="sourceRunId">The transient analysis run identifier that produced this section.</param>
+  /// <summary>Creates a successful allergen assessment that found no signals.</summary>
   /// <returns>An allergen assessment whose status is <see cref="AllergenAssessmentStatus.NoSignals"/>.</returns>
-  public static AllergenAssessment NoSignals(Guid sourceRunId) =>
-    new(sourceRunId, AllergenAssessmentStatus.NoSignals, []);
+  public static AllergenAssessment NoSignals() =>
+    new(AllergenAssessmentStatus.NoSignals, []);
 
-  /// <summary>
-  /// Creates an allergen assessment that did not have enough data to produce a reliable result.
-  /// </summary>
-  /// <param name="sourceRunId">The transient analysis run identifier that produced this section.</param>
+  /// <summary>Creates an allergen assessment that did not have enough data to produce a reliable result.</summary>
   /// <returns>An allergen assessment whose status is <see cref="AllergenAssessmentStatus.InsufficientData"/>.</returns>
-  public static AllergenAssessment Insufficient(Guid sourceRunId) =>
-    new(sourceRunId, AllergenAssessmentStatus.InsufficientData, []);
+  public static AllergenAssessment Insufficient() =>
+    new(AllergenAssessmentStatus.InsufficientData, []);
 }

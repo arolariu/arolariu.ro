@@ -25,7 +25,6 @@ vi.mock("next/dynamic", () => ({
       ["AddRecipeDialog", "add-recipe-dialog", "AddRecipeDialog"],
       ["AllergenDialog", "allergen-dialog", "AllergenDialog"],
       ["AnalyzeDialog", "analyze-dialog", "AnalyzeDialog"],
-      ["BulkCategoryDialog", "bulk-category-dialog", "BulkCategoryDialog"],
       ["CreateInvoiceDialog", "create-invoice-dialog", "CreateInvoiceDialog"],
       ["DeleteInvoiceDialog", "delete-invoice-dialog", "DeleteInvoiceDialog"],
       ["DeleteRecipeDialog", "delete-recipe-dialog", "DeleteRecipeDialog"],
@@ -181,10 +180,6 @@ vi.mock("../edit-invoice/[id]/_dialogs/AllergenDialog", () => ({
   default: () => <div data-testid='allergen-dialog'>AllergenDialog</div>,
 }));
 
-vi.mock("../edit-invoice/[id]/_dialogs/BulkCategoryDialog", () => ({
-  default: () => <div data-testid='bulk-category-dialog'>BulkCategoryDialog</div>,
-}));
-
 vi.mock("../view-invoice/[id]/_dialogs/ShareAnalyticsDialog", () => ({
   default: () => <div data-testid='share-analytics-dialog'>ShareAnalyticsDialog</div>,
 }));
@@ -321,15 +316,6 @@ describe("DialogContainer", () => {
       expect(screen.getByTestId("allergen-dialog")).toBeInTheDocument();
       expect(screen.getByText("AllergenDialog")).toBeInTheDocument();
     });
-
-    test("renders BulkCategoryDialog when type is EDIT_INVOICE__BULK_CATEGORY", () => {
-      setupMockDialogType("EDIT_INVOICE__BULK_CATEGORY");
-
-      render(<DialogContainer />);
-
-      expect(screen.getByTestId("bulk-category-dialog")).toBeInTheDocument();
-      expect(screen.getByText("BulkCategoryDialog")).toBeInTheDocument();
-    });
   });
 
   describe("view-invoice dialogs", () => {
@@ -416,9 +402,7 @@ describe("DialogContainer", () => {
       {type: "EDIT_INVOICE__RECIPE_UPDATE", mode: "edit", expectedTestId: "update-recipe-dialog"},
       {type: "EDIT_INVOICE__RECIPE_DELETE", mode: "delete", expectedTestId: "delete-recipe-dialog"},
       {type: "EDIT_INVOICE__RECIPE_PREVIEW", mode: "view", expectedTestId: "preview-recipe-dialog"},
-      {type: "EDIT_INVOICE__RECIPE_SHARE", mode: "share", expectedTestId: "share-recipe-dialog"},
       {type: "EDIT_INVOICE__ALLERGENS", expectedTestId: "allergen-dialog"},
-      {type: "EDIT_INVOICE__BULK_CATEGORY", expectedTestId: "bulk-category-dialog"},
       {type: "EDIT_INVOICE__ADD_SCAN", mode: "add", expectedTestId: "add-scan-dialog"},
       {type: "EDIT_INVOICE__REMOVE_SCAN", mode: "delete", expectedTestId: "remove-scan-dialog"},
       {type: "VIEW_INVOICE__SHARE_ANALYTICS", expectedTestId: "share-analytics-dialog"},
@@ -451,12 +435,10 @@ describe("DialogContainer", () => {
         "EDIT_INVOICE__RECIPE_UPDATE",
         "EDIT_INVOICE__RECIPE_DELETE",
         "EDIT_INVOICE__RECIPE_PREVIEW",
-        "EDIT_INVOICE__RECIPE_SHARE",
         "EDIT_INVOICE__METADATA",
         "EDIT_INVOICE__ITEMS",
         "EDIT_INVOICE__FEEDBACK",
         "EDIT_INVOICE__ALLERGENS",
-        "EDIT_INVOICE__BULK_CATEGORY",
         "EDIT_INVOICE__ADD_SCAN",
         "EDIT_INVOICE__REMOVE_SCAN",
         "VIEW_INVOICE__SHARE_ANALYTICS",

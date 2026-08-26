@@ -62,7 +62,11 @@ export default mergeConfig(
         },
         // ── General aliases (must come after stubs) ──
         {find: "@", replacement: resolve(__dirname, "./src")},
-        {find: "@arolariu/components", replacement: resolve(__dirname, "../../packages/components/dist/index.js")},
+        {
+          find: /^@arolariu\/components\/styles\.css$/,
+          replacement: resolve(__dirname, "../../packages/components/dist/index.css"),
+        },
+        {find: /^@arolariu\/components$/, replacement: resolve(__dirname, "../../packages/components/dist/index.js")},
       ],
       conditions: ["node", "default"],
       mainFields: ["module", "jsnext:main", "jsnext"],

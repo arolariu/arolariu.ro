@@ -68,16 +68,15 @@ import styles from "./DeleteScanDialog.module.scss";
  * openDialog("SHARED__SCAN_DELETE", "delete", {scan});
  * ```
  */
-export default function DeleteScanDialog(): React.JSX.Element {
+export default function DeleteScanDialog(): React.JSX.Element | null {
   const t = useTranslations();
 
   const {
     isOpen,
     close,
-    currentDialog: {
-      payload: {scan},
-    },
+    currentDialog: {payload},
   } = useDialog("SHARED__SCAN_DELETE", "delete");
+  const scan = payload?.scan ?? null;
 
   const {isDeleting, deleteScanCallback} = useScanDelete(scan);
 
@@ -114,6 +113,8 @@ export default function DeleteScanDialog(): React.JSX.Element {
     },
     [close, isDeleting],
   );
+
+  if (scan === null) return null;
 
   return (
     <AlertDialog

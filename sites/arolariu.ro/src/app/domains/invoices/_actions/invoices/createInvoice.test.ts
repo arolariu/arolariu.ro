@@ -18,7 +18,13 @@ describe("createInvoice", () => {
     vi.clearAllMocks();
     mockFetchUser.mockResolvedValue(TestDataBuilder.build("userInformation", {userIdentifier: "user-1", userJwt: "jwt-1"}));
     mockFetchWithTimeout.mockResolvedValue(
-      TestDataBuilder.jsonResponse(TestDataBuilder.build("invoice")) as Awaited<ReturnType<typeof fetchWithTimeout>>,
+      TestDataBuilder.jsonResponse(
+        TestDataBuilder.build("invoice", {
+          id: "11111111-1111-4111-8111-111111111111",
+          userIdentifier: "22222222-2222-4222-8222-222222222222",
+          merchantReference: "33333333-3333-4333-8333-333333333333",
+        }),
+      ) as Awaited<ReturnType<typeof fetchWithTimeout>>,
     );
   });
 
@@ -27,7 +33,7 @@ describe("createInvoice", () => {
       initialScan: TestDataBuilder.build("invoiceScan", {
         location: "https://storage.test/scan.jpg",
       }),
-      metadata: {isImportant: "false", requiresAnalysis: "true"},
+      additionalMetadata: {isImportant: "false", requiresAnalysis: "true"},
     };
 
     const result = await createInvoice(payload);
@@ -55,7 +61,7 @@ describe("createInvoice", () => {
       initialScan: TestDataBuilder.build("invoiceScan", {
         location: "https://storage.test/scan.jpg",
       }),
-      metadata: {isImportant: "false", requiresAnalysis: "true"},
+      additionalMetadata: {isImportant: "false", requiresAnalysis: "true"},
     });
 
     await createInvoice(payload);
@@ -129,5 +135,59 @@ describe("createInvoice", () => {
     if (!result.success) {
       expect(result.error.message).toContain("An unexpected error occurred");
     }
+  });
+
+  it("sends additionalMetadata instead of metadata on the wire", async () => {
+    const payload = {
+      initialScan: TestDataBuilder.build("invoiceScan", {location: "https://storage.test/scan.jpg"}),
+      additionalMetadata: {isImportant: "false", requiresAnalysis: "true"},
+    };
+
+    await createInvoice(payload);
+
+    const callArgs = mockFetchWithTimeout.mock.calls[0];
+    const body: unknown = JSON.parse(String(callArgs?.[1]?.body));
+    expect(body).toHaveProperty("additionalMetadata");
+    expect(body).not.toHaveProperty("metadata");
+  });
+
+  it("does not carry client-only fields the backend ignores", async () => {
+    const payload = TestDataBuilder.build("createInvoicePayload");
+    await createInvoice(payload);
+
+    const callArgs = mockFetchWithTimeout.mock.calls[0];
+    const body: unknown = JSON.parse(String(callArgs?.[1]?.body));
+    expect(body).not.toHaveProperty("category");
+    expect(body).not.toHaveProperty("items");
+    expect(body).not.toHaveProperty("possibleRecipes");
+    expect(body).not.toHaveProperty("classification");
+  });
+
+  it("returns a server failure when the API returns a malformed payload", async () => {
+    mockFetchWithTimeout.mockResolvedValue(TestDataBuilder.jsonResponse({}) as Awaited<ReturnType<typeof fetchWithTimeout>>);
+
+    const result = await createInvoice({});
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.code).toBe("SERVER_ERROR");
+    }
+  });
+
+  it("accepts the backend's unenriched creation response with an empty name", async () => {
+    mockFetchWithTimeout.mockResolvedValue(
+      TestDataBuilder.jsonResponse(
+        TestDataBuilder.build("invoice", {
+          id: "11111111-1111-4111-8111-111111111111",
+          userIdentifier: "22222222-2222-4222-8222-222222222222",
+          merchantReference: "00000000-0000-0000-0000-000000000000",
+          name: "",
+        }),
+      ) as Awaited<ReturnType<typeof fetchWithTimeout>>,
+    );
+
+    const result = await createInvoice({});
+
+    expect(result).toMatchObject({success: true, data: {name: ""}});
   });
 });

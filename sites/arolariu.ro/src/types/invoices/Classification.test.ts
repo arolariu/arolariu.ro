@@ -4,7 +4,39 @@ import {
   isSearchClassificationsInput,
   isTaxonomyArtifact,
   normalizeClassificationSearchQuery,
+  resolveClassificationCodeForWrite,
+  type StandardClassification,
 } from "./Classification";
+
+describe("resolveClassificationCodeForWrite", () => {
+  const base = {
+    system: ClassificationSystem.EcoicopV2,
+    code: "01.1.1",
+    version: "2.0",
+    officialLabel: "Bread and cereals",
+    hierarchy: [],
+    confidence: null,
+    evidence: [],
+  } as const;
+
+  it("sends null for an unclassified entity", () => {
+    expect(resolveClassificationCodeForWrite(null)).toBeNull();
+  });
+
+  it("sends null for an analysis-derived classification so the server preserves it", () => {
+    // Echoing the code back would make the backend re-resolve it as Manual,
+    // discarding the origin, confidence and evidence produced by analysis.
+    const analysis: StandardClassification = {...base, origin: "Analysis", confidence: 0.87};
+
+    expect(resolveClassificationCodeForWrite(analysis)).toBeNull();
+  });
+
+  it("sends the code for a user-chosen manual classification", () => {
+    const manual: StandardClassification = {...base, origin: "Manual"};
+
+    expect(resolveClassificationCodeForWrite(manual)).toBe("01.1.1");
+  });
+});
 
 describe("classification contracts", () => {
   it("normalizes Unicode taxonomy queries", () => {

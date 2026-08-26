@@ -20,7 +20,7 @@ public sealed class ProductRequestDtoTests
   [TestMethod]
   public void CreateProductRequestDto_AllergenAssessment_MapsToProduct()
   {
-    AllergenAssessment assessment = AllergenAssessment.NoSignals(Guid.NewGuid());
+    AllergenAssessment assessment = AllergenAssessment.NoSignals();
     var request = new CreateProductRequestDto(
       "Milk",
       ClassificationCode: " 10000025 ",
@@ -40,7 +40,7 @@ public sealed class ProductRequestDtoTests
   [TestMethod]
   public void UpdateProductRequestDto_AllergenAssessment_MapsToProduct()
   {
-    AllergenAssessment assessment = AllergenAssessment.Insufficient(Guid.NewGuid());
+    AllergenAssessment assessment = AllergenAssessment.Insufficient();
     var request = new UpdateProductRequestDto(
       "Old milk",
       "Milk",

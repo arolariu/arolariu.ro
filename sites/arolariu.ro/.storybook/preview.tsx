@@ -32,7 +32,7 @@ const preview: Preview = {
     },
     layout: "fullscreen",
     viewport: {
-      viewports: {
+      options: {
         "2xs": {name: "2XS (320px)", styles: {width: "320px", height: "568px"}},
         xs: {name: "XS (375px)", styles: {width: "375px", height: "667px"}},
         sm: {name: "SM (640px)", styles: {width: "640px", height: "900px"}},
@@ -94,6 +94,7 @@ const preview: Preview = {
     },
   },
   initialGlobals: {
+    viewport: {value: undefined},
     locale: "en",
     font: "normal",
     themePreset: "default",

@@ -22,14 +22,14 @@
  * - **Enriched**: Enhanced with public business data (location, category, contact info)
  *
  * **Data Characteristics:**
- * - Returns all merchants with at least one associated invoice
+ * - Returns merchants referenced by the caller's own invoices
  * - Excludes merchants with no current invoice associations
- * - Includes AI-enriched fields (normalized name, category, location)
- * - Contains aggregate statistics per merchant (invoice count, total spent)
+ * - Includes AI-enriched fields (normalized name, NACE Rev. 2.1 classification)
+ * - Classification is provided via `classification` (StandardClassification | null)
  *
  * **Common Use Cases:**
  * - Spending analysis by merchant
- * - Merchant category breakdown charts
+ * - Merchant classification breakdown (NACE Rev. 2.1)
  * - Merchant dropdown filters in invoice lists
  * - Spending trends by store/business
  *
@@ -42,6 +42,7 @@ import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {createErrorResult, fetchWithTimeout, type ServerActionResult} from "@/lib/utils.server";
 import type {Merchant} from "@/types/invoices";
+import {parseMerchantsResponse, tryParse} from "@/types/invoices/transport";
 
 /**
  * Input parameters for the fetchMerchants server action.
@@ -77,12 +78,10 @@ type ServerActionOutputType = ServerActionResult<ReadonlyArray<Merchant>>;
  * **Data Returned:**
  * Array of complete Merchant entities, each including:
  * - **Identity**: `id`, `name` (business name)
- * - **Classification**: `category` (business type/industry)
- * - **Location**: `address`, `coordinates`, `city`, `country`
- * - **Contact**: `phone`, `email`, `website`
- * - **Statistics**: `invoiceCount`, `totalSpent` (user-specific aggregates)
+ * - **Classification**: `classification` (NACE Rev. 2.1 StandardClassification, or `null` when not yet classified)
+ * - **Location**: `address` (ContactInformation with fullName, address, phoneNumber, emailAddress, website)
  * - **Enrichment**: AI-detected and normalized fields
- * - **Metadata**: `createdAt`, `updatedAt` timestamps
+ * - **Metadata**: `createdAt`, `lastUpdatedAt` timestamps
  *
  * **Empty Results:**
  * Returns empty array (`[]`) when:
@@ -139,7 +138,7 @@ type ServerActionOutputType = ServerActionResult<ReadonlyArray<Merchant>>;
  *
  *   // Display in dropdown
  *   merchants.forEach((m) => {
- *     console.log(`${m.name} - ${m.category}`);
+ *     console.log(`${m.name} - ${m.classification?.code ?? "unclassified"}`);
  *   });
  * } else {
  *   console.error("Failed to fetch merchants:", result.error);
@@ -148,37 +147,35 @@ type ServerActionOutputType = ServerActionResult<ReadonlyArray<Merchant>>;
  *
  * @example
  * ```typescript
- * // Group merchants by category for analytics
+ * // Group merchants by NACE classification for analytics
  * const result = await fetchMerchants();
  *
  * if (result.success) {
- *   const byCategory = result.data.reduce((acc, merchant) => {
- *     const cat = merchant.category ?? "Uncategorized";
- *     if (!acc[cat]) acc[cat] = [];
- *     acc[cat].push(merchant);
+ *   const byClassification = result.data.reduce((acc, merchant) => {
+ *     const code = merchant.classification?.code ?? "unclassified";
+ *     if (!acc[code]) acc[code] = [];
+ *     acc[code].push(merchant);
  *     return acc;
  *   }, {} as Record<string, Merchant[]>);
  *
- *   // Display category breakdown
- *   Object.entries(byCategory).forEach(([category, merchants]) => {
- *     console.log(`${category}: ${merchants.length} merchants`);
+ *   // Display classification breakdown
+ *   Object.entries(byClassification).forEach(([code, merchants]) => {
+ *     console.log(`${code}: ${merchants.length} merchants`);
  *   });
  * }
  * ```
  *
  * @example
  * ```typescript
- * // Calculate total spending by merchant
+ * // List merchants referenced by the caller's invoices
  * const result = await fetchMerchants();
  *
  * if (result.success) {
- *   const topMerchants = result.data
- *     .sort((a, b) => (b.totalSpent ?? 0) - (a.totalSpent ?? 0))
- *     .slice(0, 5);
+ *   const sorted = [...result.data].sort((a, b) => a.name.localeCompare(b.name));
  *
- *   console.log("Top 5 merchants by spending:");
- *   topMerchants.forEach((m, i) => {
- *     console.log(`${i + 1}. ${m.name}: $${m.totalSpent?.toFixed(2)}`);
+ *   console.log("Merchants from your invoices:");
+ *   sorted.forEach((m, i) => {
+ *     console.log(`${i + 1}. ${m.name} (${m.classification?.officialLabel ?? "unclassified"})`);
  *   });
  * }
  * ```
@@ -212,8 +209,14 @@ export async function fetchMerchants(_params?: ServerActionInputType): ServerAct
 
       if (response.ok) {
         logWithTrace("info", "Successfully fetched merchants", {}, "server");
-        const data = (await response.json()) as ReadonlyArray<Merchant>;
-        return {success: true, data} as const;
+        const payload: unknown = await response.json();
+        const parsed = tryParse(parseMerchantsResponse, payload);
+        if (!parsed.ok) {
+          addSpanEvent("bff.request.fetch-merchants.invalid");
+          logWithTrace("error", "Merchant response failed transport validation", {path: parsed.error.path}, "server");
+          return createErrorResult(parsed.error, "The server returned unexpected data. Please try again later.");
+        }
+        return {success: true, data: parsed.value} as const;
       }
 
       addSpanEvent("bff.request.fetch-merchants.error");

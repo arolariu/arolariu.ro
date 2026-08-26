@@ -18,7 +18,7 @@
  *
  * **Supported Fields:**
  * - Required: name, category, quantity, price
- * - Optional: quantityUnit, productCode, detectedAllergens
+ * - Optional: quantityUnit, productCode
  * - Server-generated: totalPrice, metadata
  *
  * @see {@link Product} - Product type definition
@@ -30,6 +30,8 @@ import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {validateStringIsGuidType} from "@/lib/utils.generic";
 import {createErrorResult, fetchWithTimeout, type ServerActionResult} from "@/lib/utils.server";
 import type {Product} from "@/types/invoices";
+import {resolveClassificationCodeForWrite} from "@/types/invoices/Classification";
+import {parseProductResponse, tryParse} from "@/types/invoices/transport";
 import {revalidatePath} from "next/cache";
 
 /**
@@ -42,7 +44,7 @@ import {revalidatePath} from "next/cache";
 type ServerActionInputType = Readonly<{
   /** The unique identifier of the invoice. Must be a valid UUIDv4 GUID. */
   readonly invoiceId: string;
-  /** The product to add. Must include required fields: name, category, quantity, price. */
+  /** The product to add. Must include required fields: name, quantity, price. */
   readonly product: Product;
 }>;
 
@@ -110,17 +112,10 @@ type ServerActionOutputType = ServerActionResult<Readonly<Product>>;
  *   invoiceId: "123e4567-e89b-12d3-a456-426614174000",
  *   product: {
  *     name: "Zuzu Milk 2% 1 Liter",
- *     category: ProductCategory.DAIRY,
  *     quantity: 2,
  *     quantityUnit: "pcs",
  *     price: 8.99,
- *     detectedAllergens: [
- *       {
- *         name: "Lactose",
- *         description: "Milk sugar",
- *         learnMoreAddress: "https://example.com/allergens/lactose"
- *       }
- *     ]
+ *     allergenAssessment: null,
  *   }
  * });
  *
@@ -155,24 +150,39 @@ export async function addInvoiceProduct({invoiceId, product}: ServerActionInputT
       // Step 2. Make the API request to add the product
       addSpanEvent("bff.request.add-invoice-product.start");
       logWithTrace("info", "Making API request to add product to invoice...", {invoiceId}, "server");
+      const requestDto = {
+        name: product.name,
+        classificationCode: resolveClassificationCodeForWrite(product.classification),
+        quantity: product.quantity,
+        quantityUnit: product.quantityUnit,
+        productCode: product.productCode,
+        price: product.price,
+        allergenAssessment: product.allergenAssessment,
+      };
       const response = await fetchWithTimeout(`/rest/v1/invoices/${invoiceId}/products`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${authToken}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(product),
+        body: JSON.stringify(requestDto),
       });
       addSpanEvent("bff.request.add-invoice-product.complete");
 
       if (response.ok) {
         logWithTrace("info", "Successfully added product to invoice...", {invoiceId}, "server");
-        const createdProduct = (await response.json()) as Product;
+        const responseBody: unknown = await response.json();
+        const parsed = tryParse(parseProductResponse, responseBody);
+        if (!parsed.ok) {
+          addSpanEvent("bff.request.add-invoice-product.invalid");
+          logWithTrace("error", "Add product response failed transport validation", {path: parsed.error.path}, "server");
+          return createErrorResult(parsed.error, "The server returned unexpected data. Please try again later.");
+        }
         revalidatePath(`/domains/invoices/edit-invoice/${invoiceId}`, "page");
         revalidatePath(`/domains/invoices/view-invoice/${invoiceId}`, "page");
         return {
           success: true,
-          data: createdProduct,
+          data: parsed.value,
         } as const;
       }
 

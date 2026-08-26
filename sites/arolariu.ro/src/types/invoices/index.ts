@@ -22,8 +22,8 @@
  * // Import specific types
  * import type { Invoice, Product } from "@/types/invoices";
  *
- * // Import enums (runtime values)
- * import { InvoiceCategory, ProductCategory } from "@/types/invoices";
+ * // Import runtime values (enums/const objects)
+ * import { InvoiceScanType, PaymentType } from "@/types/invoices";
  *
  * // Import DTO payloads for API calls
  * import type { CreateInvoiceDtoPayload } from "@/types/invoices";
@@ -34,10 +34,25 @@
  */
 
 /**
- * Allergen types for food safety tracking.
- * @see {@link Allergen} for allergen structure
+ * EU-14 canonical allergen model, runtime guards, and food-safety assessment types.
+ * @see {@link AllergenAssessment} for the structured assessment contract
  */
-export type {Allergen, CreateAllergenDtoPayload, DeleteAllergenDtoPayload, UpdateAllergenDtoPayload} from "./Allergen";
+export {
+  AllergenAssessmentStatus,
+  AllergenCode,
+  AllergenEvidenceLevel,
+  ALLERGEN_EVIDENCE_LEVEL_LABEL_KEYS,
+  ALLERGEN_LABEL_KEYS,
+  getAllergenEvidenceLevelLabelKey,
+  getAllergenLabelKey,
+  isAllergenAssessment,
+  isAllergenCode,
+  isAllergenEvidence,
+  isAllergenSignal,
+  type AllergenAssessment,
+  type AllergenEvidence,
+  type AllergenSignal,
+} from "./Allergen";
 
 /** Canonical taxonomy classification contracts and runtime guards. */
 export {
@@ -48,6 +63,7 @@ export {
   isSearchClassificationsInput,
   isTaxonomyArtifact,
   normalizeClassificationSearchQuery,
+  resolveClassificationCodeForWrite,
   type ClassificationEvidence,
   type ClassificationNode,
   type ClassificationSearchResult,
@@ -64,8 +80,6 @@ export {
  * @see {@link Invoice} for the main entity
  */
 export {
-  InvoiceAnalysisOptions,
-  InvoiceCategory,
   InvoiceScanType,
   type CreateInvoiceDtoPayload,
   type CreateInvoiceScanDtoPayload,
@@ -77,12 +91,33 @@ export {
 } from "./Invoice";
 
 /**
+ * Analysis profile and capability resolution for the invoice and merchant analysis endpoints.
+ * Provides pure functions for resolving profiles into capability sets and building wire-ready request DTOs.
+ * @see {@link AnalysisProfile} for the three requestable profiles
+ * @see {@link buildAnalysisRequest} for target-correlated request building
+ */
+export {
+  AnalysisProfile,
+  INVOICE_CAPABILITY_KEYS,
+  MERCHANT_CAPABILITY_KEYS,
+  applyInvoiceDependencyClosure,
+  buildAnalysisRequest,
+  isInvoiceAnalysisCapabilitiesValid,
+  isMerchantAnalysisCapabilitiesValid,
+  resolveAnalysisCapabilities,
+  type AnalysisTarget,
+  type InvoiceAnalysisCapabilities,
+  type InvoiceAnalysisRequest,
+  type MerchantAnalysisCapabilities,
+  type MerchantAnalysisRequest,
+} from "./Analysis";
+
+/**
  * Merchant (vendor/retailer) types.
  * Shared entities referenced by invoices.
  * @see {@link Merchant} for the merchant entity
  */
 export {
-  MerchantCategory,
   type ContactInformation,
   type CreateMerchantDtoPayload,
   type DeleteMerchantDtoPayload,
@@ -111,7 +146,6 @@ export {
  * @see {@link Product} for product structure
  */
 export {
-  ProductCategory,
   type CreateProductDtoPayload,
   type DeleteProductDtoPayload,
   type Product,
@@ -122,12 +156,43 @@ export {
 /**
  * Recipe types for AI-generated cooking suggestions.
  * Generated from invoice product analysis.
- * @see {@link Recipe} for recipe structure
+ * @see {@link RecipeSuggestion} for the current structured recipe contract
+ * @see {@link Recipe} for the legacy recipe structure
  */
 export {
-  RecipeComplexity,
-  type CreateRecipeDtoPayload,
-  type DeleteRecipeDtoPayload,
-  type Recipe,
-  type UpdateRecipeDtoPayload,
+  RecipeDifficulty,
+  hasValidRecipeTiming,
+  isNonNegativeInteger,
+  isRecipeDifficulty,
+  isRecipeIngredient,
+  isRecipeStep,
+  isRecipeSuggestion,
+  isRecipeText,
+  type RecipeIngredient,
+  type RecipeStep,
+  type RecipeSuggestion,
 } from "./Recipe";
+
+/**
+ * Runtime transport validation boundary for the invoices bounded context.
+ *
+ * @remarks
+ * Every server action that consumes an invoices API response must route that
+ * response through one of these parsers. `as Invoice` casts do NOT validate
+ * at runtime — these parsers are the permanent runtime safety net.
+ *
+ * @see {@link parseInvoiceResponse} for the primary invoice parser
+ * @see {@link tryParse} for non-throwing result wrapper
+ * @see {@link TransportValidationError} for the error type
+ */
+export {
+  TransportValidationError,
+  parseAnalysisAcceptedResponse,
+  parseInvoiceResponse,
+  parseInvoicesResponse,
+  parseMerchantResponse,
+  parseMerchantsResponse,
+  parseProductResponse,
+  parseStandardClassification,
+  tryParse,
+} from "./transport";

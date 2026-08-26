@@ -119,7 +119,7 @@ export function ExportDialog(): React.JSX.Element {
           item.quantity.toString(),
           formatAmount(item.price),
           formatAmount(item.totalPrice),
-          `"${String(item.category).replaceAll('"', '""')}"`,
+          `"${(item.classification?.officialLabel ?? "").replaceAll('"', '""')}"`,
         ];
         csvRows.push(row.join(","));
       }
@@ -246,6 +246,10 @@ Items: ${invoice.items.length}
         <InvoicePDF
           invoice={invoice}
           merchant={merchant}
+          messages={{
+            classification: t((m) => m.pages.invoices.viewInvoice.export.pdf.labels.classification),
+            unclassified: t((m) => m.shared.invoices.classification.unclassified),
+          }}
         />,
       ).toBlob();
 

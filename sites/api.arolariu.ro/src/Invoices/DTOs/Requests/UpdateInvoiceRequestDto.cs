@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics.CodeAnalysis;
+using System.Text.Json.Serialization;
 
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
@@ -51,6 +52,12 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 /// Flag indicating if the invoice is marked as important/favorite.
 /// Important invoices may appear prominently in UI or be excluded from cleanup.
 /// </param>
+/// <param name="PossibleRecipes">
+/// Optional recipe suggestions. Null preserves the persisted collection (the handler
+/// re-adds existing recipes when this field is null, mirroring the Scans preservation
+/// pattern). A supplied list (including an explicitly empty array) replaces the collection
+/// wholesale. An explicitly empty array clears all recipes.
+/// </param>
 /// <param name="AdditionalMetadata">
 /// Extensible key-value metadata for client-specific data.
 /// Null or empty dictionary replaces any existing metadata.
@@ -64,6 +71,7 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 ///     PaymentInformation: new PaymentInformation(Currency.RON, 150.50m, 28.60m, PaymentMethod.Card),
 ///     MerchantReference: merchantId,
 ///     IsImportant: true,
+///     PossibleRecipes: null,    // null preserves existing recipes
 ///     AdditionalMetadata: null);
 ///
 /// var invoice = request.ToInvoice(invoiceId, userId);
@@ -82,6 +90,7 @@ public readonly record struct UpdateInvoiceRequestDto(
   PaymentInformation PaymentInformation,
   Guid? MerchantReference,
   bool IsImportant,
+  [property: JsonPropertyName("possibleRecipes")] IReadOnlyList<RecipeSuggestionRequestDto>? PossibleRecipes,
   IDictionary<string, object>? AdditionalMetadata)
 {
   /// <summary>
@@ -130,6 +139,14 @@ public readonly record struct UpdateInvoiceRequestDto(
       foreach (var (key, value) in AdditionalMetadata)
       {
         invoice.AdditionalMetadata[key] = value;
+      }
+    }
+
+    if (PossibleRecipes is not null)
+    {
+      foreach (var recipe in PossibleRecipes)
+      {
+        invoice.PossibleRecipes.Add(recipe.ToRecipeSuggestion());
       }
     }
 

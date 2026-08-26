@@ -52,6 +52,8 @@ Dockerfile.*
 package-lock.json
 **/code-cov/**
 **/storybook-static/**
+sites/arolariu.ro/src/data/taxonomies/*.min.json
+sites/api.arolariu.ro/src/Invoices/Resources/Taxonomies/*.min.json
 
 # --- Intentionally hand-formatted ---
 sites/cv.arolariu.ro/**/*.html

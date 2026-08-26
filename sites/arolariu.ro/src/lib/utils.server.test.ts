@@ -424,6 +424,21 @@ describe("mapHttpStatusToErrorCode", () => {
 });
 
 describe("createErrorResult", () => {
+  it("classifies malformed successful transport payloads as server errors", async () => {
+    const error = new Error("$.items[0]: invalid invoice");
+    error.name = "TransportValidationError";
+
+    const result = await createErrorResult<string>(error, "The server returned an invalid response.");
+
+    expect(result).toEqual({
+      success: false,
+      error: {
+        code: "SERVER_ERROR",
+        message: "The server returned an invalid response.",
+      },
+    });
+  });
+
   it("should create error result from Error object", async () => {
     const error = new Error("Something went wrong");
 

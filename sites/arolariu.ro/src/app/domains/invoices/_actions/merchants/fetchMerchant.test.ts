@@ -255,6 +255,17 @@ describe("fetchMerchant", () => {
     }
   });
 
+  it("returns a server failure when the API returns a malformed payload", async () => {
+    mockFetchWithTimeout.mockResolvedValue(TestDataBuilder.jsonResponse({}, {status: 200}));
+
+    const result = await fetchMerchant({merchantId});
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.code).toBe("SERVER_ERROR");
+    }
+  });
+
   it("preserves all merchant fields in the response", async () => {
     const fullMerchant: Merchant = TestDataBuilder.build("merchant", {
       id: merchantId,
@@ -270,8 +281,8 @@ describe("fetchMerchant", () => {
     if (result.success) {
       expect(result.data.id).toBe(merchantId);
       expect(result.data.name).toBe("Full Merchant");
-      expect(result.data.createdAt).toBe("2026-01-01T00:00:00.000Z");
-      expect(result.data.lastUpdatedAt).toBe("2026-01-02T00:00:00.000Z");
+      expect(result.data.createdAt).toEqual(new Date("2026-01-01T00:00:00.000Z"));
+      expect(result.data.lastUpdatedAt).toEqual(new Date("2026-01-02T00:00:00.000Z"));
     }
   });
 });

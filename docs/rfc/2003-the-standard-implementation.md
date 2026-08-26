@@ -260,7 +260,7 @@ dependency: Invoice Processing. Every method delegates to that boundary.
 ```text
 Analyze endpoint
   -> InvoiceManagementService
-    -> InvoiceProcessingService (target existence, ownership, and queue publication)
+    -> InvoiceProcessingService (target existence, requester visibility, and queue publication)
       -> AnalysisOrchestrationService
         -> AnalysisQueueFoundationService
           -> IQueueBroker

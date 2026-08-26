@@ -9,14 +9,14 @@
  * - Fluent API for merchant configuration
  * - Faker.js integration for realistic business data
  * - Support for merchant hierarchies (parent companies)
- * - Category-based classification
+ * - Standard taxonomy classification
  * - Batch generation with unique IDs
  *
  * @see {@link MerchantBuilder} - Main builder class
  * @see {@link generateRandomMerchant} - Quick random generation
  */
 
-import {MerchantCategory, type Merchant} from "@/types/invoices";
+import {type Merchant, type StandardClassification} from "@/types/invoices";
 import {faker} from "@faker-js/faker";
 
 /**
@@ -29,7 +29,7 @@ import {faker} from "@faker-js/faker";
  * - Random UUIDs for all identifiers
  * - Realistic company names from faker.js
  * - Random addresses and phone numbers
- * - LOCAL_SHOP category as default
+ * - Null classification by default
  * - Non-deleted state (isSoftDeleted: false)
  *
  * **Method Chaining:**
@@ -43,7 +43,7 @@ import {faker} from "@faker-js/faker";
  * // Basic usage
  * const merchant = new MerchantBuilder()
  *   .withName("SuperMart")
- *   .withCategory(MerchantCategory.SUPERMARKET)
+ *   .withClassification(supermarketClassification)
  *   .withAddress("123 Main St")
  *   .build();
  * ```
@@ -54,7 +54,7 @@ import {faker} from "@faker-js/faker";
  * const parentId = faker.string.uuid();
  * const merchants = new MerchantBuilder()
  *   .withParentCompanyId(parentId)
- *   .withCategory(MerchantCategory.RESTAURANT_CHAIN)
+ *   .withClassification(restaurantClassification)
  *   .buildMany(5); // 5 locations of same chain
  * ```
  */
@@ -70,7 +70,7 @@ export class MerchantBuilder {
    * - Uses faker.company.name() for realistic business names
    * - Creates fake addresses with street + city format
    * - Generates realistic phone numbers
-   * - Defaults to LOCAL_SHOP category
+   * - Defaults to a null classification
    * - Sets random past/recent timestamps
    * - Randomly assigns importance flag
    *
@@ -93,7 +93,6 @@ export class MerchantBuilder {
       numberOfUpdates: faker.number.int({min: 0, max: 100}),
       isImportant: faker.datatype.boolean(),
       isSoftDeleted: false,
-      category: MerchantCategory.LOCAL_SHOP,
       address: {
         fullName: faker.company.name(),
         address: faker.location.streetAddress(true),
@@ -102,6 +101,7 @@ export class MerchantBuilder {
         website: faker.internet.url(),
       },
       parentCompanyId: faker.string.uuid(),
+      classification: null,
     };
   }
 
@@ -244,27 +244,10 @@ export class MerchantBuilder {
   }
 
   /**
-   * Sets the business category of the merchant.
-   * @param category Business type classification
-   * @returns The MerchantBuilder instance for chaining
-   */
-  withCategory(category: MerchantCategory): this {
-    this.merchant.category = category;
-    return this;
-  }
-
-  /**
    * Sets the merchant's physical address.
    *
    * @param address - Street address, city, state, zip
    * @returns The MerchantBuilder instance for method chaining
-   *
-   * @example
-   * ```typescript
-   * const merchant = new MerchantBuilder()
-   *   .withAddress("123 Main St, Springfield, IL 62701")
-   *   .build();
-   * ```
    */
   withAddress(address: string): this {
     this.merchant.address.address = address;
@@ -313,6 +296,17 @@ export class MerchantBuilder {
    */
   withParentCompanyId(companyId: string): this {
     this.merchant.parentCompanyId = companyId;
+    return this;
+  }
+
+  /**
+   * Sets the merchant's standard taxonomy classification.
+   *
+   * @param classification - Canonical classification, or `null` for an unclassified merchant.
+   * @returns The MerchantBuilder instance for method chaining.
+   */
+  withClassification(classification: StandardClassification | null): this {
+    this.merchant.classification = classification;
     return this;
   }
 
@@ -372,7 +366,7 @@ export function createMerchantBuilder(): MerchantBuilder {
  *
  * **Randomization:**
  * - All properties use faker.js for realistic values
- * - Merchant categories are randomly selected
+ * - Classification is null unless explicitly configured through the builder
  * - Addresses, phone numbers, and names are locale-appropriate
  *
  * @example
@@ -381,7 +375,7 @@ export function createMerchantBuilder(): MerchantBuilder {
  * // Result: {
  * //   id: "uuid...",
  * //   name: "Johnson Group",
- * //   category: MerchantCategory.SUPERMARKET,
+ * //   classification: null,
  * //   address: "123 Oak St, Denver CO",
  * //   ...
  * // }
@@ -434,7 +428,7 @@ export function generateRandomMerchants(count: number): Merchant[] {
  * **Characteristics:**
  * - Fixed ID: "merchant-1"
  * - Name: "Test Merchant"
- * - Category: SUPERMARKET
+ * - Classification: null
  * - Other properties are faker-generated but deterministic
  *
  * @example
@@ -447,11 +441,7 @@ export function generateRandomMerchants(count: number): Merchant[] {
  * });
  * ```
  */
-export const mockMerchant = new MerchantBuilder()
-  .withId("merchant-1")
-  .withName("Test Merchant")
-  .withCategory(MerchantCategory.SUPERMARKET)
-  .build();
+export const mockMerchant = new MerchantBuilder().withId("merchant-1").withName("Test Merchant").build();
 
 /**
  * Pre-built list of 5 mock merchants for testing collections.
@@ -477,8 +467,8 @@ export const mockMerchant = new MerchantBuilder()
  * @example
  * ```typescript
  * // Test filtering
- * const supermarkets = mockMerchantList.filter(
- *   m => m.category === MerchantCategory.SUPERMARKET
+ * const classifiedMerchants = mockMerchantList.filter(
+ *   (merchant) => merchant.classification !== null,
  * );
  * ```
  */

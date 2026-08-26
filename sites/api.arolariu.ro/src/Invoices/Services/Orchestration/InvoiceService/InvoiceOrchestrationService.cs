@@ -64,7 +64,23 @@ public partial class InvoiceOrchestrationService : IInvoiceOrchestrationService
         .ReadInvoiceObject(invoiceIdentifier, userIdentifier, cancellationToken)
         .ConfigureAwait(false);
 
+      foreach (InvoiceScan attachedScan in invoice.Scans)
+      {
+        if (attachedScan.Type == scan.Type
+          && Uri.Compare(
+            attachedScan.Location,
+            scan.Location,
+            UriComponents.AbsoluteUri,
+            UriFormat.UriEscaped,
+            StringComparison.Ordinal) == 0)
+        {
+          activity?.SetTag("scan.attachment.result", "already-attached");
+          return invoice;
+        }
+      }
+
       invoice.Scans.Add(scan);
+      activity?.SetTag("scan.attachment.result", "attached");
 
       return await invoiceStorageFoundationService
         .UpdateInvoiceObject(invoice, invoiceIdentifier, userIdentifier, cancellationToken)

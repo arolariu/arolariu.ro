@@ -1,171 +1,72 @@
+import {generateRandomInvoice, generateRandomMerchant} from "@/data/mocks";
+import type {Invoice, Merchant} from "@/types/invoices";
 import type {Meta, StoryObj} from "@storybook/react";
+import {useEffect} from "react";
+import {DialogProvider} from "../../../_contexts/DialogContext";
+import {EditInvoiceContextProvider, useEditInvoiceContext} from "../_context/EditInvoiceContext";
+import InvoiceHeader from "./InvoiceHeader";
 
 /**
  * InvoiceHeader (edit) renders the editable invoice header with inline name
- * editing, save, discard, print, and delete controls. Depends on
- * `useEditInvoiceContext` and `useDialog`.
+ * editing, save, discard, print, and delete controls.
  *
- * This story renders a static preview of the header layout.
+ * Requires `EditInvoiceContextProvider` (name editing, pending-change
+ * tracking) and `DialogProvider` (delete + analyze dialogs). Each story
+ * supplies its own provider decorator (rather than a shared meta-level
+ * decorator) so different invoice fixtures never nest two competing
+ * providers of the same context.
  */
+const mockInvoiceWithItems = generateRandomInvoice();
+const mockInvoiceNoItems: Invoice = {...generateRandomInvoice(), items: []};
+const mockMerchant = generateRandomMerchant();
+
+function withInvoiceHeaderProviders(invoice: Invoice, merchant: Merchant | null) {
+  return (Story: React.ComponentType): React.JSX.Element => (
+    <DialogProvider>
+      <EditInvoiceContextProvider
+        invoice={invoice}
+        merchant={merchant}>
+        <Story />
+      </EditInvoiceContextProvider>
+    </DialogProvider>
+  );
+}
+
 const meta = {
   title: "Invoices/EditInvoice/InvoiceHeader",
+  component: InvoiceHeader,
   parameters: {
     layout: "fullscreen",
   },
-} satisfies Meta;
+} satisfies Meta<typeof InvoiceHeader>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** Preview with no pending changes. */
+/** No pending changes — save/discard buttons are hidden. */
 export const NoChanges: Story = {
-  render: () => (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        gap: "0.75rem",
-        borderBottom: "1px solid #e5e7eb",
-        backgroundColor: "#ffffff",
-        paddingLeft: "1.5rem",
-        paddingRight: "1.5rem",
-        paddingTop: "1rem",
-        paddingBottom: "1rem",
-      }}>
-      <div>
-        <input
-          type='text'
-          defaultValue='Weekly Grocery Shopping'
-          style={{
-            width: "100%",
-            border: "none",
-            backgroundColor: "transparent",
-            fontSize: "1.875rem",
-            fontWeight: "700",
-            letterSpacing: "-0.025em",
-          }}
-          readOnly
-        />
-      </div>
-      <div style={{display: "flex", gap: "0.5rem"}}>
-        <button
-          type='button'
-          style={{
-            borderRadius: "0.375rem",
-            border: "1px solid #e5e7eb",
-            paddingLeft: "0.75rem",
-            paddingRight: "0.75rem",
-            paddingTop: "0.375rem",
-            paddingBottom: "0.375rem",
-            fontSize: "0.875rem",
-          }}>
-          🖨 Print
-        </button>
-        <button
-          type='button'
-          style={{
-            borderRadius: "0.375rem",
-            backgroundColor: "#dc2626",
-            paddingLeft: "0.75rem",
-            paddingRight: "0.75rem",
-            paddingTop: "0.375rem",
-            paddingBottom: "0.375rem",
-            fontSize: "0.875rem",
-            color: "#ffffff",
-          }}>
-          🗑 Delete
-        </button>
-      </div>
-    </div>
-  ),
+  decorators: [withInvoiceHeaderProviders(mockInvoiceWithItems, mockMerchant)],
 };
 
-/** Preview with pending changes (save/discard buttons visible). */
+/** Invoice with no items yet — the "Analyze with AI" button appears. */
+export const AnalyzableInvoice: Story = {
+  decorators: [withInvoiceHeaderProviders(mockInvoiceNoItems, mockMerchant)],
+};
+
+/** Renders `InvoiceHeader` and edits the name field once mounted so save/discard appear. */
+function InvoiceHeaderWithPendingNameChange(): React.JSX.Element {
+  const {setName} = useEditInvoiceContext();
+
+  useEffect(() => {
+    setName(`${mockInvoiceWithItems.name} (edited)`);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- run once on mount to seed a pending change
+  }, []);
+
+  return <InvoiceHeader />;
+}
+
+/** Pending name change — save/discard buttons appear. */
 export const WithPendingChanges: Story = {
-  render: () => (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        gap: "0.75rem",
-        borderBottom: "1px solid #e5e7eb",
-        backgroundColor: "#ffffff",
-        paddingLeft: "1.5rem",
-        paddingRight: "1.5rem",
-        paddingTop: "1rem",
-        paddingBottom: "1rem",
-      }}>
-      <div>
-        <input
-          type='text'
-          defaultValue='Weekly Grocery Shopping (edited)'
-          style={{
-            width: "100%",
-            border: "none",
-            backgroundColor: "transparent",
-            fontSize: "1.875rem",
-            fontWeight: "700",
-            letterSpacing: "-0.025em",
-          }}
-          readOnly
-        />
-      </div>
-      <div style={{display: "flex", gap: "0.5rem"}}>
-        <button
-          type='button'
-          style={{
-            borderRadius: "0.375rem",
-            backgroundColor: "#2563eb",
-            paddingLeft: "0.75rem",
-            paddingRight: "0.75rem",
-            paddingTop: "0.375rem",
-            paddingBottom: "0.375rem",
-            fontSize: "0.875rem",
-            color: "#ffffff",
-          }}>
-          💾 Save
-        </button>
-        <button
-          type='button'
-          style={{
-            borderRadius: "0.375rem",
-            border: "1px solid #e5e7eb",
-            paddingLeft: "0.75rem",
-            paddingRight: "0.75rem",
-            paddingTop: "0.375rem",
-            paddingBottom: "0.375rem",
-            fontSize: "0.875rem",
-          }}>
-          ✕ Discard
-        </button>
-        <button
-          type='button'
-          style={{
-            borderRadius: "0.375rem",
-            border: "1px solid #e5e7eb",
-            paddingLeft: "0.75rem",
-            paddingRight: "0.75rem",
-            paddingTop: "0.375rem",
-            paddingBottom: "0.375rem",
-            fontSize: "0.875rem",
-          }}>
-          🖨 Print
-        </button>
-        <button
-          type='button'
-          style={{
-            borderRadius: "0.375rem",
-            backgroundColor: "#dc2626",
-            paddingLeft: "0.75rem",
-            paddingRight: "0.75rem",
-            paddingTop: "0.375rem",
-            paddingBottom: "0.375rem",
-            fontSize: "0.875rem",
-            color: "#ffffff",
-          }}>
-          🗑 Delete
-        </button>
-      </div>
-    </div>
-  ),
+  decorators: [withInvoiceHeaderProviders(mockInvoiceWithItems, mockMerchant)],
+  render: () => <InvoiceHeaderWithPendingNameChange />,
 };

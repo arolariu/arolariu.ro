@@ -720,23 +720,26 @@ public static partial class InvoiceEndpoints
 
   #region HTTP GET /rest/v1/merchants
   /// <summary>
-  /// Retrieves all merchants from the system, optionally filtered by parent company.
+  /// Retrieves merchants visible to the authenticated caller, optionally filtered by parent company.
   /// </summary>
   /// <param name="invoiceManagementService">The invoice management service responsible for handling merchant logic.</param>
   /// <param name="httpContext">The HTTP context accessor for accessing request information.</param>
-  /// <param name="parentCompanyId">The unique identifier of the parent company to filter merchants by.</param>
+  /// <param name="parentCompanyId">The optional unique identifier of the parent company to filter merchants by.</param>
+  /// <param name="visibleToUser">The optional user identifier. Must match the authenticated caller.</param>
   /// <param name="cancellationToken">The cancellation token to cancel the operation.</param>
   /// <returns>A task representing the asynchronous operation, containing a list of merchants.</returns>
   [SwaggerOperation(
-    Summary = "Retrieves all merchants from the system.",
-    Description = "This endpoint retrieves all merchants from the Invoice Management System. " +
-    "It allows filtering by a parent company identifier. " +
+    Summary = "Retrieves the merchants visible to the authenticated caller.",
+    Description = "This endpoint retrieves merchants from the Invoice Management System. " +
+    "Results are always scoped to merchants referenced by the caller's own invoices. " +
+    "An optional parentCompanyId narrows that set to a single partition; it never widens visibility. " +
+    "An optional visibleToUser parameter is validated against the caller's identity and returns 403 on mismatch. " +
     "If successful, a list of merchants matching the criteria is returned.",
     OperationId = nameof(RetrieveAllMerchantsAsync),
     Tags = [EndpointNameTag])]
   [SwaggerResponse(StatusCodes.Status200OK, "The merchants were successfully retrieved.", typeof(IEnumerable<MerchantResponseDto>))]
   [SwaggerResponse(StatusCodes.Status401Unauthorized, "The user is not authorized to access the list of merchants.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status403Forbidden, "The user is not authenticated. Please provide valid credentials.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status403Forbidden, "The caller requested another user's merchants.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status429TooManyRequests, "The user has exceeded the rate limit. Please try again later.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status504GatewayTimeout, "The operation timed out. Please try again later.", typeof(ProblemDetails))]
@@ -745,7 +748,8 @@ public static partial class InvoiceEndpoints
   internal static partial Task<IResult> RetrieveAllMerchantsAsync(
     [FromServices] IInvoiceManagementService invoiceManagementService,
     [FromServices] IHttpContextAccessor httpContext,
-    [FromQuery, SwaggerParameter("The parent company identifier used as a filter.", Required = true)] Guid parentCompanyId,
+    [FromQuery, SwaggerParameter("Optional parent company identifier. Narrows the caller's own merchants; it does not widen visibility.", Required = false)] Guid? parentCompanyId,
+    [FromQuery, SwaggerParameter("Optional user identifier. Must match the authenticated caller.", Required = false)] Guid? visibleToUser,
     CancellationToken cancellationToken);
   #endregion
 

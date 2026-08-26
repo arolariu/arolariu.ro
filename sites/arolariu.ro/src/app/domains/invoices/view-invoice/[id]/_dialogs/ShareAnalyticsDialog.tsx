@@ -113,6 +113,10 @@ export default function ShareAnalyticsDialog(): React.JSX.Element {
   );
 
   const handleDownloadImage = useCallback(() => {
+    if (!merchant) {
+      throw new Error("Cannot download analytics before the dialog payload is available.");
+    }
+
     // In a real app, this would generate and download an image
     toast(
       t((m) => m.dialogs.invoices.shareAnalyticsDialog.toasts.imageSaved.title),

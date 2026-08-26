@@ -135,35 +135,20 @@ class ArtifactGeneratorTestHarness {
   public mockArchiveExtraction(document: unknown = this.gpcDocument): void {
     vi.mocked(execFile).mockImplementation((...arguments_) => {
       const commandArguments = arguments_.find(
-        (argument): argument is readonly string[] =>
-          Array.isArray(argument) && argument.every((value) => typeof value === "string"),
+        (argument): argument is readonly string[] => Array.isArray(argument) && argument.every((value) => typeof value === "string"),
       );
       const callback = arguments_.find(
-        (
-          argument,
-        ): argument is (
-          error: ExecFileException | null,
-          stdout: string | Buffer,
-          stderr: string | Buffer,
-        ) => void => typeof argument === "function",
+        (argument): argument is (error: ExecFileException | null, stdout: string | Buffer, stderr: string | Buffer) => void =>
+          typeof argument === "function",
       );
-      const outputIndex =
-        commandArguments?.findIndex((value) => value === "-C" || value === "-d") ?? -1;
+      const outputIndex = commandArguments?.findIndex((value) => value === "-C" || value === "-d") ?? -1;
       const outputDirectory = commandArguments?.[outputIndex + 1];
       if (outputDirectory === undefined) throw new Error("Output directory argument is missing.");
 
       const childProcess = new ChildProcess();
       void Promise.all([
-        writeFile(
-          join(outputDirectory, "GPC as of May 2026 (2026-05-20) EN.json"),
-          JSON.stringify(document),
-          "utf8",
-        ),
-        writeFile(
-          join(outputDirectory, "Delta - GPC as of May 2026 (20260520 v 20251127) EN.json"),
-          JSON.stringify(document),
-          "utf8",
-        ),
+        writeFile(join(outputDirectory, "GPC as of May 2026 (2026-05-20) EN.json"), JSON.stringify(document), "utf8"),
+        writeFile(join(outputDirectory, "Delta - GPC as of May 2026 (20260520 v 20251127) EN.json"), JSON.stringify(document), "utf8"),
       ])
         .then(() => {
           callback?.(null, "", "");
@@ -227,9 +212,7 @@ class ArtifactGeneratorTestHarness {
   public captureConsole(): void {
     for (const level of ["debug", "info", "warn", "error"] as const) {
       vi.spyOn(console, level).mockImplementation((...args: readonly unknown[]) => {
-        this.#consoleMessages[level].push(
-          stripVTControlCharacters(args.map((argument) => String(argument)).join(" ")),
-        );
+        this.#consoleMessages[level].push(stripVTControlCharacters(args.map((argument) => String(argument)).join(" ")));
       });
     }
   }
@@ -240,13 +223,8 @@ class ArtifactGeneratorTestHarness {
    * @param level - Captured console level.
    * @param expected - Stable message fragment.
    */
-  public expectMessage(
-    level: "debug" | "info" | "warn" | "error",
-    expected: string,
-  ): void {
-    expect(this.#consoleMessages[level]).toEqual(
-      expect.arrayContaining([expect.stringContaining(expected)]),
-    );
+  public expectMessage(level: "debug" | "info" | "warn" | "error", expected: string): void {
+    expect(this.#consoleMessages[level]).toEqual(expect.arrayContaining([expect.stringContaining(expected)]));
   }
 
   /**
@@ -254,9 +232,7 @@ class ArtifactGeneratorTestHarness {
    *
    * @returns Output-root and workspace options accepted by `main`.
    */
-  public async createUnifiedMainOptions(): Promise<
-    Readonly<{outputRoots: readonly string[]; workspaceRoot: string}>
-  > {
+  public async createUnifiedMainOptions(): Promise<Readonly<{outputRoots: readonly string[]; workspaceRoot: string}>> {
     const workspaceRoot = await this.createTemporaryDirectory("arolariu-unified-main-");
     const outputRoots = [join(workspaceRoot, "api"), join(workspaceRoot, "web")];
     await this.writeJson(join(workspaceRoot, "sites", "arolariu.ro", "package.json"), {});
@@ -267,13 +243,10 @@ class ArtifactGeneratorTestHarness {
 
   /** Restores mocks and removes every registered temporary directory. */
   public async cleanup(): Promise<void> {
+    vi.useRealTimers();
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
-    await Promise.all(
-      this.#temporaryDirectories
-        .splice(0)
-        .map((directory) => rm(directory, {recursive: true, force: true})),
-    );
+    await Promise.all(this.#temporaryDirectories.splice(0).map((directory) => rm(directory, {recursive: true, force: true})));
   }
 }
 
@@ -291,43 +264,68 @@ describe("Taxonomy classification generators", () => {
   describe("Gs1GpcTaxonomyClassificationGenerator", () => {
     describe("generate", () => {
       it("generates the mirrored GPC artifact", async () => {
-        vi.stubGlobal("fetch", vi.fn(async () => new Response(new Uint8Array([1]), {status: 200})));
+        vi.stubGlobal(
+          "fetch",
+          vi.fn(async () => new Response(new Uint8Array([1]), {status: 200})),
+        );
         harness.mockArchiveExtraction();
         const roots = await harness.createOutputRoots("arolariu-gpc-class-");
 
         const outputs = await new Gs1GpcTaxonomyClassificationGenerator(roots).generate();
 
-        expect(outputs.map((output) => basename(output))).toEqual([
-          "gpc-2026-05.min.json",
-          "gpc-2026-05.min.json",
-        ]);
+        expect(outputs.map((output) => basename(output))).toEqual(["gpc-2026-05.min.json", "gpc-2026-05.min.json"]);
+      });
+
+      it("retries a transient HTTP failure before generating", async () => {
+        vi.useFakeTimers();
+        const fetchMock = vi
+          .fn()
+          .mockResolvedValueOnce(new Response("Unavailable", {status: 503, statusText: "Service Unavailable"}))
+          .mockResolvedValueOnce(new Response(new Uint8Array([1]), {status: 200}));
+        vi.stubGlobal("fetch", fetchMock);
+        harness.mockArchiveExtraction();
+        const roots = await harness.createOutputRoots("arolariu-gpc-retry-");
+
+        const generation = new Gs1GpcTaxonomyClassificationGenerator(roots).generate();
+        await vi.runAllTimersAsync();
+
+        await expect(generation).resolves.toHaveLength(2);
+        expect(fetchMock).toHaveBeenCalledTimes(2);
       });
 
       it("surfaces HTTP failures", async () => {
-        vi.stubGlobal(
-          "fetch",
-          vi.fn(async () => new Response("Unavailable", {status: 503, statusText: "Service Unavailable"})),
-        );
+        vi.useFakeTimers();
+        const fetchMock = vi.fn(async () => new Response("Unavailable", {status: 503, statusText: "Service Unavailable"}));
+        vi.stubGlobal("fetch", fetchMock);
 
-        await expect(new Gs1GpcTaxonomyClassificationGenerator([]).generate()).rejects.toThrow(
+        const expectation = expect(new Gs1GpcTaxonomyClassificationGenerator([]).generate()).rejects.toThrow(
           "GPC download failed with HTTP 503 Service Unavailable.",
         );
+        await vi.runAllTimersAsync();
+
+        await expectation;
+        expect(fetchMock).toHaveBeenCalledTimes(3);
       });
 
       it("logs a generator error and rethrows the original failure", async () => {
+        vi.useFakeTimers();
         harness.captureConsole();
         const failure = new Error("GPC unavailable");
         harness.stubGpcFailure(failure);
         const roots = await harness.createOutputRoots("arolariu-gpc-error-");
 
-        await expect(new Gs1GpcTaxonomyClassificationGenerator(roots).generate()).rejects.toBe(
-          failure,
-        );
-        harness.expectMessage("error", "⛔ [GPC] GPC unavailable");
+        const expectation = expect(new Gs1GpcTaxonomyClassificationGenerator(roots).generate()).rejects.toThrow("GPC unavailable");
+        await vi.runAllTimersAsync();
+
+        await expectation;
+        harness.expectMessage("error", "[GPC] GPC unavailable");
       });
 
       it("rejects a source document outside the pinned release month", async () => {
-        vi.stubGlobal("fetch", vi.fn(async () => new Response(new Uint8Array([1]), {status: 200})));
+        vi.stubGlobal(
+          "fetch",
+          vi.fn(async () => new Response(new Uint8Array([1]), {status: 200})),
+        );
         harness.mockArchiveExtraction({...harness.gpcDocument, DateUtc: "2025-04-01"});
         const roots = await harness.createOutputRoots("arolariu-gpc-date-");
 
@@ -390,6 +388,54 @@ describe("Taxonomy classification generators", () => {
           }),
         ).rejects.toThrow("NACE_2_1 hierarchy for '01' does not match its parent chain.");
       });
+
+      it("preserves existing bytes when only the generation timestamp changes", async () => {
+        class TaxonomyGeneratorProbe extends TaxonomyClassificationGenerator {
+          public constructor(outputRoots: readonly string[]) {
+            super(outputRoots);
+          }
+
+          public override async generate(): Promise<readonly string[]> {
+            return [];
+          }
+
+          public async write(artifact: Readonly<TaxonomyArtifact>): Promise<readonly string[]> {
+            return this.writeArtifact("probe.json", artifact);
+          }
+        }
+
+        const roots = await harness.createOutputRoots("arolariu-stable-artifact-");
+        const generator = new TaxonomyGeneratorProbe(roots);
+        const artifact: TaxonomyArtifact = {
+          system: "NACE_2_1",
+          version: "2.1",
+          sourceUrl: "https://example.test",
+          generatedAt: "2026-08-19T00:00:00.000Z",
+          attribution: "Test",
+          nodes: [
+            {
+              code: "A",
+              officialLabel: "Root",
+              level: "section",
+              parentCode: null,
+              hierarchyCodes: ["A"],
+              hierarchyLabels: ["Root"],
+              definition: null,
+              searchText: "a root",
+            },
+          ],
+        };
+
+        const outputs = await generator.write(artifact);
+        const originalContents = await readFile(outputs[0] ?? "", "utf8");
+        await generator.write({
+          ...artifact,
+          generatedAt: "2026-08-26T00:00:00.000Z",
+        });
+
+        await expect(readFile(outputs[0] ?? "", "utf8")).resolves.toBe(originalContents);
+        await expect(readFile(outputs[1] ?? "", "utf8")).resolves.toBe(originalContents);
+      });
     });
   });
 
@@ -415,10 +461,7 @@ describe("Taxonomy classification generators", () => {
         const outputs = await new EcoicopTaxonomyClassificationGenerator(roots).generate();
         const nodes = harness.readObjectArray(await readFile(outputs[0] ?? "", "utf8"), "nodes");
 
-        expect(outputs.map((output) => basename(output))).toEqual([
-          "ecoicop-v2.min.json",
-          "ecoicop-v2.min.json",
-        ]);
+        expect(outputs.map((output) => basename(output))).toEqual(["ecoicop-v2.min.json", "ecoicop-v2.min.json"]);
         expect(nodes[1]).toMatchObject({code: "01.1", hierarchyCodes: ["01", "01.1"]});
       });
 
@@ -432,9 +475,7 @@ describe("Taxonomy classification generators", () => {
           .fn()
           .mockResolvedValueOnce(harness.createSparqlResponse(firstPage))
           .mockResolvedValueOnce(
-            harness.createSparqlResponse([
-              {concept: {value: "eco:final"}, notation: {value: "9999.1"}, label: {value: "Final"}},
-            ]),
+            harness.createSparqlResponse([{concept: {value: "eco:final"}, notation: {value: "9999.1"}, label: {value: "Final"}}]),
           );
         vi.stubGlobal("fetch", fetchMock);
         const roots = await harness.createOutputRoots("arolariu-ecoicop-pages-");
@@ -488,10 +529,7 @@ describe("Taxonomy classification generators", () => {
         const outputs = await new NaceTaxonomyClassificationGenerator(roots).generate();
         const nodes = harness.readObjectArray(await readFile(outputs[0] ?? "", "utf8"), "nodes");
 
-        expect(outputs.map((output) => basename(output))).toEqual([
-          "nace-2.1.min.json",
-          "nace-2.1.min.json",
-        ]);
+        expect(outputs.map((output) => basename(output))).toEqual(["nace-2.1.min.json", "nace-2.1.min.json"]);
         expect(nodes).toMatchObject([
           {code: "01", level: "division", hierarchyCodes: ["A", "01"]},
           {code: "A", level: "section", hierarchyCodes: ["A"]},
@@ -539,15 +577,9 @@ describe("License generators", () => {
 
         const [output] = await new FrontendLicenseGenerator(workspace).generate();
 
-        expect(harness.readObjectArray(await readFile(output ?? "", "utf8"), "production")).toMatchObject([
-          {name: "production-package"},
-        ]);
-        expect(harness.readObjectArray(await readFile(output ?? "", "utf8"), "development")).toMatchObject([
-          {name: "development-package"},
-        ]);
-        expect(harness.readObjectArray(await readFile(output ?? "", "utf8"), "peer")).toMatchObject([
-          {name: "peer-package"},
-        ]);
+        expect(harness.readObjectArray(await readFile(output ?? "", "utf8"), "production")).toMatchObject([{name: "production-package"}]);
+        expect(harness.readObjectArray(await readFile(output ?? "", "utf8"), "development")).toMatchObject([{name: "development-package"}]);
+        expect(harness.readObjectArray(await readFile(output ?? "", "utf8"), "peer")).toMatchObject([{name: "peer-package"}]);
       });
 
       it("sorts scoped packages and applies defaults", async () => {
@@ -622,9 +654,7 @@ describe("License generators", () => {
         const contents = await readFile(output ?? "", "utf8");
 
         expect(contents.startsWith('{"production":')).toBe(true);
-        expect(contents.indexOf('"development"')).toBeGreaterThan(
-          contents.indexOf('"production"'),
-        );
+        expect(contents.indexOf('"development"')).toBeGreaterThan(contents.indexOf('"production"'));
         expect(contents.indexOf('"peer"')).toBeGreaterThan(contents.indexOf('"development"'));
         expect(contents.endsWith("\n")).toBe(true);
         expect(contents.endsWith("\r\n")).toBe(false);
@@ -635,22 +665,16 @@ describe("License generators", () => {
         await harness.writeJson(join(workspace, "sites", "arolariu.ro", "package.json"), {
           dependencies: {"package-with-overlap": "1.0.0"},
         });
-        await harness.writeJson(
-          join(workspace, "node_modules", "package-with-overlap", "package.json"),
-          {
-            name: "package-with-overlap",
-            version: "1.0.0",
-            dependencies: {shared: "^1.0.0"},
-            devDependencies: {shared: "^2.0.0"},
-            peerDependencies: {shared: "^3.0.0"},
-          },
-        );
+        await harness.writeJson(join(workspace, "node_modules", "package-with-overlap", "package.json"), {
+          name: "package-with-overlap",
+          version: "1.0.0",
+          dependencies: {shared: "^1.0.0"},
+          devDependencies: {shared: "^2.0.0"},
+          peerDependencies: {shared: "^3.0.0"},
+        });
 
         const [output] = await new FrontendLicenseGenerator(workspace).generate();
-        const [packageInformation] = harness.readObjectArray(
-          await readFile(output ?? "", "utf8"),
-          "production",
-        );
+        const [packageInformation] = harness.readObjectArray(await readFile(output ?? "", "utf8"), "production");
 
         expect(packageInformation).toMatchObject({
           dependents: [{name: "shared", version: "^3.0.0"}],
@@ -693,21 +717,11 @@ describe("Artifact orchestration and CLI contracts", () => {
       logger.error("error message");
       logger.success("success message");
 
-      expect(debug).toHaveBeenCalledWith(
-        expect.stringContaining("[arolariu::generate::artifacts] 🐛 debug message"),
-      );
-      expect(info).toHaveBeenCalledWith(
-        expect.stringContaining("[arolariu::generate::artifacts] ℹ️ info message"),
-      );
-      expect(info).toHaveBeenCalledWith(
-        expect.stringContaining("[arolariu::generate::artifacts] ✅ success message"),
-      );
-      expect(warn).toHaveBeenCalledWith(
-        expect.stringContaining("[arolariu::generate::artifacts] ⚠️ warning message"),
-      );
-      expect(error).toHaveBeenCalledWith(
-        expect.stringContaining("[arolariu::generate::artifacts] ⛔ error message"),
-      );
+      expect(debug).toHaveBeenCalledWith(expect.stringContaining("[arolariu::generate::artifacts] 🐛 debug message"));
+      expect(info).toHaveBeenCalledWith(expect.stringContaining("[arolariu::generate::artifacts] ℹ️ info message"));
+      expect(info).toHaveBeenCalledWith(expect.stringContaining("[arolariu::generate::artifacts] ✅ success message"));
+      expect(warn).toHaveBeenCalledWith(expect.stringContaining("[arolariu::generate::artifacts] ⚠️ warning message"));
+      expect(error).toHaveBeenCalledWith(expect.stringContaining("[arolariu::generate::artifacts] ⛔ error message"));
     });
   });
 
@@ -735,6 +749,62 @@ describe("Artifact orchestration and CLI contracts", () => {
       await expect(main(options)).resolves.toBe(0);
     });
 
+    it("uses validated mirrored taxonomy artifacts when sources remain unavailable", async () => {
+      harness.captureConsole();
+      const options = await harness.createUnifiedMainOptions();
+      await main(options);
+      vi.useFakeTimers();
+      const fetchMock = vi.fn(async () => new Response("Unavailable", {status: 503, statusText: "Service Unavailable"}));
+      vi.stubGlobal("fetch", fetchMock);
+
+      const generation = main(options);
+      await vi.runAllTimersAsync();
+
+      await expect(generation).resolves.toBe(0);
+      expect(fetchMock).toHaveBeenCalledTimes(9);
+      harness.expectMessage("warn", "[GPC] Source unavailable after retries; using validated cached artifact");
+      harness.expectMessage("warn", "[ECOICOP] Source unavailable after retries; using validated cached artifact");
+      harness.expectMessage("warn", "[NACE] Source unavailable after retries; using validated cached artifact");
+    });
+
+    it("rejects a divergent cached mirror when the source is unavailable", async () => {
+      const roots = await harness.createOutputRoots("arolariu-divergent-cache-");
+      vi.stubGlobal(
+        "fetch",
+        vi.fn(async () => harness.createSparqlResponse([{concept: {value: "eco:01"}, notation: {value: "01"}, label: {value: "Food"}}])),
+      );
+      const generator = new EcoicopTaxonomyClassificationGenerator(roots);
+      const outputs = await generator.generate();
+      await writeFile(outputs[1] ?? "", "{}", "utf8");
+      vi.useFakeTimers();
+      vi.stubGlobal(
+        "fetch",
+        vi.fn(async () => new Response("Unavailable", {status: 503, statusText: "Service Unavailable"})),
+      );
+
+      const expectation = expect(generator.generate()).rejects.toThrow(
+        "Cached taxonomy artifact 'ecoicop-v2.min.json' is not byte-identical",
+      );
+      await vi.runAllTimersAsync();
+
+      await expectation;
+    });
+
+    it("does not use cached artifacts for non-transient HTTP failures", async () => {
+      const roots = await harness.createOutputRoots("arolariu-non-transient-");
+      vi.stubGlobal(
+        "fetch",
+        vi.fn(async () => harness.createSparqlResponse([{concept: {value: "eco:01"}, notation: {value: "01"}, label: {value: "Food"}}])),
+      );
+      const generator = new EcoicopTaxonomyClassificationGenerator(roots);
+      await generator.generate();
+      const fetchMock = vi.fn(async () => new Response("Missing", {status: 404, statusText: "Not Found"}));
+      vi.stubGlobal("fetch", fetchMock);
+
+      await expect(generator.generate()).rejects.toThrow("SPARQL request failed with HTTP 404 Not Found.");
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
     it("logs unified lifecycle progress with the artifact prefix", async () => {
       harness.captureConsole();
       const options = await harness.createUnifiedMainOptions();
@@ -746,10 +816,7 @@ describe("Artifact orchestration and CLI contracts", () => {
       harness.expectMessage("info", "[ECOICOP] Fetching");
       harness.expectMessage("info", "[NACE] Fetching");
       harness.expectMessage("info", "[Frontend licenses] Reading");
-      harness.expectMessage(
-        "warn",
-        "[Backend licenses] Generation is intentionally deferred",
-      );
+      harness.expectMessage("warn", "[Backend licenses] Generation is intentionally deferred");
       harness.expectMessage("info", "✅ Generated 7 artifact file(s).");
     });
   });

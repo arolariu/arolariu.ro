@@ -1,91 +1,98 @@
-import type {Meta, StoryObj} from "@storybook/react";
+import {useScansStore} from "@/stores";
+import type {CachedScan} from "@/types/scans";
+import {ScanDocumentKind, ScanDocumentRole, ScanMetadataStatus, ScanStatus, ScanType} from "@/types/scans";
+import type {Decorator, Meta, StoryObj} from "@storybook/react";
+import {useEffect} from "react";
+import ScanSelectionToolbar from "./ScanSelectionToolbar";
+
+/* eslint-disable @typescript-eslint/no-empty-function -- Storybook action stub */
+const noop = () => {};
+/* eslint-enable @typescript-eslint/no-empty-function */
 
 /**
- * ScanSelectionToolbar appears when scans are selected, providing bulk
- * actions like creating invoices. Depends on `useScans` hook.
- *
- * This story renders a static preview of the selection toolbar.
+ * Builds a real `CachedScan` fixture for seeding the `useScansStore` Zustand
+ * store in stories (no mocking — this is the same shape the real scan-sync
+ * pipeline produces).
+ */
+function createMockScan(index: number): CachedScan {
+  const now = new Date();
+  const id = `storybook-scan-${index}`;
+  return {
+    id,
+    userIdentifier: "00000000-0000-0000-0000-000000000000",
+    name: `receipt-${index}.jpg`,
+    blobUrl: `https://picsum.photos/seed/scan-${index}/400/300`,
+    mimeType: "image/jpeg",
+    sizeInBytes: 245_760,
+    scanType: ScanType.JPEG,
+    uploadedAt: now,
+    status: ScanStatus.READY,
+    metadata: {
+      scanId: id,
+      ownerId: "00000000-0000-0000-0000-000000000000",
+      documentKind: ScanDocumentKind.RECEIPT,
+      documentRole: ScanDocumentRole.PRIMARY,
+      status: ScanMetadataStatus.READY,
+      uploadedAt: now,
+      uploadedBy: "00000000-0000-0000-0000-000000000000",
+    },
+    cachedAt: now,
+  };
+}
+
+/**
+ * Seeds the real `useScansStore` with `count` selected scans on mount, and
+ * clears the store on unmount so stories don't leak state into one another.
+ */
+function SeedSelectionHarness({count, children}: Readonly<{count: number; children: React.ReactNode}>): React.JSX.Element {
+  useEffect(() => {
+    const scans = Array.from({length: count}, (_unused, i) => createMockScan(i + 1));
+    useScansStore.getState().setScans(scans);
+    useScansStore.getState().setSelectedScans(scans);
+
+    return () => {
+      useScansStore.getState().clearScans();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- seed once per story mount
+  }, []);
+
+  return <>{children}</>;
+}
+
+/** Builds a decorator that seeds `count` selected scans before the story renders. */
+function withSeededSelection(count: number): Decorator {
+  return (Story) => (
+    <SeedSelectionHarness count={count}>
+      <Story />
+    </SeedSelectionHarness>
+  );
+}
+
+/**
+ * ScanSelectionToolbar appears when scans are selected in `useScansStore`,
+ * providing bulk actions like creating invoices, deleting, and clearing
+ * selection.
  */
 const meta = {
   title: "Invoices/ViewScans/ScanSelectionToolbar",
+  component: ScanSelectionToolbar,
   parameters: {
     layout: "fullscreen",
   },
-} satisfies Meta;
+  args: {
+    onCreateInvoice: noop,
+  },
+} satisfies Meta<typeof ScanSelectionToolbar>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
 /** Single scan selected. */
 export const SingleSelected: Story = {
-  render: () => (
-    <div
-      style={{
-        borderBottom: "1px solid #e5e7eb",
-        backgroundColor: "white",
-        paddingInline: "1rem",
-        paddingBlock: "0.75rem",
-        boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
-      }}>
-      <div style={{marginInline: "auto", display: "flex", maxWidth: "80rem", alignItems: "center", justifyContent: "space-between"}}>
-        <div style={{display: "flex", alignItems: "center", gap: "0.75rem"}}>
-          <span style={{fontSize: "0.875rem", fontWeight: 500}}>1 selected</span>
-          <button
-            type='button'
-            style={{fontSize: "0.875rem", color: "#6b7280"}}>
-            ✕ Clear
-          </button>
-        </div>
-        <button
-          type='button'
-          style={{
-            borderRadius: "0.375rem",
-            backgroundImage: "linear-gradient(to right, #16a34a, #059669)",
-            paddingInline: "1rem",
-            paddingBlock: "0.5rem",
-            fontSize: "0.875rem",
-            color: "white",
-          }}>
-          📄 Create Invoice
-        </button>
-      </div>
-    </div>
-  ),
+  decorators: [withSeededSelection(1)],
 };
 
 /** Multiple scans selected. */
 export const MultipleSelected: Story = {
-  render: () => (
-    <div
-      style={{
-        borderBottom: "1px solid #e5e7eb",
-        backgroundColor: "white",
-        paddingInline: "1rem",
-        paddingBlock: "0.75rem",
-        boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
-      }}>
-      <div style={{marginInline: "auto", display: "flex", maxWidth: "80rem", alignItems: "center", justifyContent: "space-between"}}>
-        <div style={{display: "flex", alignItems: "center", gap: "0.75rem"}}>
-          <span style={{fontSize: "0.875rem", fontWeight: 500}}>5 selected</span>
-          <button
-            type='button'
-            style={{fontSize: "0.875rem", color: "#6b7280"}}>
-            ✕ Clear
-          </button>
-        </div>
-        <button
-          type='button'
-          style={{
-            borderRadius: "0.375rem",
-            backgroundImage: "linear-gradient(to right, #16a34a, #059669)",
-            paddingInline: "1rem",
-            paddingBlock: "0.5rem",
-            fontSize: "0.875rem",
-            color: "white",
-          }}>
-          📄 Create Invoices
-        </button>
-      </div>
-    </div>
-  ),
+  decorators: [withSeededSelection(5)],
 };

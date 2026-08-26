@@ -19,8 +19,16 @@ describe("fetchInvoices", () => {
     mockFetchUser.mockResolvedValue(TestDataBuilder.build("userInformation", {userIdentifier: "user-1", userJwt: "jwt-1"}));
     mockFetchWithTimeout.mockResolvedValue(
       TestDataBuilder.jsonResponse([
-        TestDataBuilder.build("invoice"),
-        TestDataBuilder.build("invoice", {id: "22222222-2222-4222-8222-222222222222"}),
+        TestDataBuilder.build("invoice", {
+          id: "11111111-1111-4111-8111-111111111111",
+          userIdentifier: "44444444-4444-4444-8444-444444444444",
+          merchantReference: "55555555-5555-4555-8555-555555555555",
+        }),
+        TestDataBuilder.build("invoice", {
+          id: "22222222-2222-4222-8222-222222222222",
+          userIdentifier: "44444444-4444-4444-8444-444444444444",
+          merchantReference: "55555555-5555-4555-8555-555555555555",
+        }),
       ]) as Awaited<ReturnType<typeof fetchWithTimeout>>,
     );
   });
@@ -103,6 +111,28 @@ describe("fetchInvoices", () => {
     expect(result.success).toBe(false);
     if (!result.success) {
       expect(result.error.message).toContain("An unexpected error occurred");
+    }
+  });
+
+  it("returns a server failure when the API returns a malformed payload", async () => {
+    mockFetchWithTimeout.mockResolvedValue(TestDataBuilder.jsonResponse({}) as Awaited<ReturnType<typeof fetchWithTimeout>>);
+
+    const result = await fetchInvoices();
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.code).toBe("SERVER_ERROR");
+    }
+  });
+
+  it("returns a server failure when the API returns an array with a malformed element", async () => {
+    mockFetchWithTimeout.mockResolvedValue(TestDataBuilder.jsonResponse([{}]) as Awaited<ReturnType<typeof fetchWithTimeout>>);
+
+    const result = await fetchInvoices();
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.code).toBe("SERVER_ERROR");
     }
   });
 });

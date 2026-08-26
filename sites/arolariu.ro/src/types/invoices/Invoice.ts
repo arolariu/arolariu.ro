@@ -27,44 +27,10 @@
  */
 
 import type {NamedEntity} from "../DDD";
-import type {PaymentDetail, PaymentInformation, Product, Recipe, TaxDetail} from "./index.ts";
-
-/**
- * Represents the AI analysis options for invoice processing.
- *
- * @remarks
- * Controls which aspects of an invoice undergo AI-powered analysis.
- * Analysis includes OCR extraction, entity recognition, and data enrichment.
- *
- * **Performance Trade-offs:**
- * - `NoAnalysis`: Fastest, no AI processing costs
- * - `CompleteAnalysis`: Slowest, highest accuracy and data enrichment
- * - Partial options: Balance between speed and data quality
- *
- * **Usage Context:**
- * - Use `NoAnalysis` for manual data entry or pre-processed invoices
- * - Use `CompleteAnalysis` for new scanned documents requiring full extraction
- * - Use partial options when only specific data needs enrichment
- *
- * @example
- * ```typescript
- * const options: InvoiceAnalysisOptions = InvoiceAnalysisOptions.CompleteAnalysis;
- * await submitInvoiceForAnalysis(invoice, options);
- * ```
- */
-export const InvoiceAnalysisOptions = {
-  /** No analysis will be performed on the invoice. */
-  NoAnalysis: 0,
-  /** Full analysis will be performed on the invoice. */
-  CompleteAnalysis: 1,
-  /** Only the invoice data will be analyzed. */
-  InvoiceOnly: 2,
-  /** Only the items on the invoice will be analyzed. */
-  InvoiceItemsOnly: 3,
-  /** Only the merchant information will be analyzed. */
-  InvoiceMerchantOnly: 4,
-} as const;
-export type InvoiceAnalysisOptions = (typeof InvoiceAnalysisOptions)[keyof typeof InvoiceAnalysisOptions];
+import type {StandardClassification} from "./Classification";
+import type {PaymentDetail, PaymentInformation, TaxDetail} from "./Payment";
+import type {Product} from "./Product";
+import type {RecipeSuggestion} from "./Recipe";
 
 /**
  * Represents the document format type of an invoice scan.
@@ -75,9 +41,13 @@ export type InvoiceAnalysisOptions = (typeof InvoiceAnalysisOptions)[keyof typeo
  * OCR strategies and preprocessing steps.
  *
  * **Supported Formats:**
- * - Image formats (JPG, JPEG, PNG, BMP, TIFF, HEIF, HEIC): Direct OCR processing
+ * - Image formats (JPG, JPEG, PNG, BMP, TIFF, HEIF): Direct OCR processing
  * - PDF: Multi-page document extraction with embedded text detection
  * - OTHER/UNKNOWN: Fallback processing with format detection
+ *
+ * **Backend Constraint:**
+ * The backend `InvoiceScan.type` field accepts values `0`–`8` only.
+ * `HEIC` (formerly `9`) has been removed to prevent rejected uploads.
  *
  * **Backend Processing:**
  * The scan type determines which Azure AI Document Intelligence model
@@ -86,7 +56,7 @@ export type InvoiceAnalysisOptions = (typeof InvoiceAnalysisOptions)[keyof typeo
  * @example
  * ```typescript
  * const scan: InvoiceScan = {
- *   scanType: InvoiceScanType.PDF,
+ *   type: InvoiceScanType.PDF,
  *   location: "https://storage.arolariu.ro/invoices/doc.pdf",
  *   metadata: {}
  * };
@@ -94,7 +64,7 @@ export type InvoiceAnalysisOptions = (typeof InvoiceAnalysisOptions)[keyof typeo
  *
  * @see {@link InvoiceScan} for the complete scan object structure
  */
-export const InvoiceScanType = {
+const INVOICE_SCAN_TYPE = {
   /** JPG image format */
   JPG: 0,
   /** JPEG image format */
@@ -113,60 +83,10 @@ export const InvoiceScanType = {
   TIFF: 7,
   /** HEIF image format */
   HEIF: 8,
-  /** HEIC image format */
-  HEIC: 9,
 } as const;
-export type InvoiceScanType = (typeof InvoiceScanType)[keyof typeof InvoiceScanType];
 
-/**
- * Categorizes invoices by their primary business purpose.
- *
- * @remarks
- * Used for filtering, reporting, and analytics. Categories are assigned
- * either manually by users or automatically by AI analysis based on
- * merchant type and product categories.
- *
- * **Numeric Values:**
- * Values are spaced by 100 to allow future subcategory insertion
- * without breaking existing data. `NOT_DEFINED` (0) is the default
- * for newly created invoices pending categorization.
- *
- * **AI Auto-categorization:**
- * When `InvoiceAnalysisOptions.CompleteAnalysis` is used, the category
- * is inferred from:
- * 1. Merchant category (if known)
- * 2. Dominant product categories in line items
- * 3. Transaction patterns and amounts
- *
- * @example
- * ```typescript
- * const invoice: Invoice = {
- *   category: InvoiceCategory.GROCERY,
- *   // ... other properties
- * };
- *
- * // Filter invoices by category
- * const groceryInvoices = invoices.filter(i => i.category === InvoiceCategory.GROCERY);
- * ```
- *
- * @see {@link MerchantCategory} for merchant-level categorization
- * @see {@link ProductCategory} for product-level categorization
- */
-export const InvoiceCategory = {
-  /** Not defined category */
-  NOT_DEFINED: 0,
-  /** Grocery category */
-  GROCERY: 100,
-  /** Fast food category */
-  FAST_FOOD: 200,
-  /** Home cleaning category */
-  HOME_CLEANING: 300,
-  /** Car and auto category */
-  CAR_AUTO: 400,
-  /** Other category */
-  OTHER: 9999,
-} as const;
-export type InvoiceCategory = (typeof InvoiceCategory)[keyof typeof InvoiceCategory];
+export {INVOICE_SCAN_TYPE as InvoiceScanType};
+export type InvoiceScanType = (typeof INVOICE_SCAN_TYPE)[keyof typeof INVOICE_SCAN_TYPE];
 
 /**
  * Represents a value that can be stored in InvoiceScan metadata.
@@ -221,7 +141,7 @@ export type InvoiceScanMetadataValue = string | object;
  * @example
  * ```typescript
  * const scan: InvoiceScan = {
- *   scanType: InvoiceScanType.JPEG,
+ *   type: InvoiceScanType.JPEG,
  *   location: "https://cdn.arolariu.ro/invoices/user123/scan-001.jpg",
  *   metadata: {
  *     // Canonical scan metadata (string values)
@@ -239,8 +159,10 @@ export type InvoiceScanMetadataValue = string | object;
  * @see {@link CreateInvoiceScanDtoPayload} for creating new scans
  */
 export type InvoiceScan = {
-  /** The type of the invoice scan. */
-  scanType: InvoiceScanType;
+  /**
+   * The numeric scan format type, matching the backend `InvoiceScanResponseDto.type`.
+   */
+  type: InvoiceScanType;
   /** The location (URL or path) of the invoice scan. */
   location: string;
   /** Additional metadata associated with the invoice scan (supports both string and object values). */
@@ -285,7 +207,6 @@ export type InvoiceScan = {
  *   description: "Weekly groceries from Lidl",
  *   userIdentifier: "user_abc123",
  *   sharedWith: [],
- *   category: InvoiceCategory.GROCERY,
  *   scans: [scan],
  *   paymentInformation: paymentInfo,
  *   merchantReference: "merchant-guid-here",
@@ -301,7 +222,7 @@ export type InvoiceScan = {
  * @see {@link NamedEntity} for inherited properties (id, name, description, audit fields)
  * @see {@link PaymentInformation} for payment details structure
  * @see {@link Product} for line item structure
- * @see {@link Recipe} for AI-generated recipe suggestions
+ * @see {@link RecipeSuggestion} for AI-generated recipe suggestions
  */
 export interface Invoice extends NamedEntity<string> {
   /**
@@ -317,11 +238,6 @@ export interface Invoice extends NamedEntity<string> {
    * If the list contains a special GUIDv4 identifier string, the invoice is considered public.
    */
   sharedWith: string[];
-
-  /**
-   * The category of the invoice.
-   */
-  category: InvoiceCategory;
 
   /**
    * The invoice scans.
@@ -345,9 +261,15 @@ export interface Invoice extends NamedEntity<string> {
   items: Product[];
 
   /**
-   * The list of recipes that can be made from the items on the invoice.
+   * AI-generated structured recipe suggestions derived from the invoice products.
    */
-  possibleRecipes: Recipe[];
+  possibleRecipes: readonly RecipeSuggestion[];
+
+  /**
+   * The standard taxonomy classification for this invoice.
+   * @remarks Expected system is ECOICOP v2. Null when the invoice has not been classified.
+   */
+  classification: StandardClassification | null;
 
   /**
    * Additional metadata for the invoice.
@@ -399,7 +321,7 @@ type SpecialMetadataKeys = "isImportant" | "requiresAnalysis";
  * - `initialScan`: At least one document scan to process
  *
  * **Metadata Handling:**
- * The `metadata` field accepts both reserved keys (`SpecialMetadataKeys`)
+ * The `additionalMetadata` field accepts both reserved keys (`SpecialMetadataKeys`)
  * and arbitrary string keys for extensibility. Reserved keys trigger
  * special backend behaviors.
  *
@@ -413,11 +335,11 @@ type SpecialMetadataKeys = "isImportant" | "requiresAnalysis";
  * const payload: CreateInvoiceDtoPayload = {
  *   userIdentifier: "user_abc123",
  *   initialScan: {
- *     scanType: InvoiceScanType.JPEG,
+ *     type: InvoiceScanType.JPEG,
  *     location: "https://cdn.arolariu.ro/uploads/receipt.jpg",
  *     metadata: {}
  *   },
- *   metadata: {
+ *   additionalMetadata: {
  *     isImportant: "true",
  *     requiresAnalysis: "true",
  *     source: "mobile-app"
@@ -438,9 +360,9 @@ export type CreateInvoiceDtoPayload = {
   readonly userIdentifier: string;
   /** The initial scan associated with the invoice. */
   readonly initialScan: InvoiceScan;
-  /** The metadata associated with the invoice. */
+  /** Additional metadata associated with the invoice. */
   // eslint-disable-next-line sonarjs/no-useless-intersection -- we want to allow extensibility.
-  readonly metadata: Record<SpecialMetadataKeys | (string & {}), string>;
+  readonly additionalMetadata: Record<SpecialMetadataKeys | (string & {}), string>;
 };
 
 /**
@@ -468,14 +390,8 @@ export type CreateInvoiceDtoPayload = {
  * const updatePayload: UpdateInvoiceDtoPayload = {
  *   id: "invoice-uuid-here",
  *   userIdentifier: "user_abc123",
- *   name: "Updated Invoice Name",
- *   category: InvoiceCategory.FAST_FOOD
+ *   name: "Updated Invoice Name"
  * };
- *
- * await fetch(`/api/invoices/${updatePayload.id}`, {
- *   method: "PATCH",
- *   body: JSON.stringify(updatePayload)
- * });
  * ```
  *
  * @see {@link Invoice} for the full entity structure

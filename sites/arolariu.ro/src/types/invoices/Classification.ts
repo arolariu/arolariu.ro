@@ -3,21 +3,46 @@
  * @module types/invoices/Classification
  */
 
+import {hasOnlyKeys, isRecord} from "../guards";
+
 /** Supported canonical taxonomy systems. */
-export const ClassificationSystem = {
+const CLASSIFICATION_SYSTEM = {
   Gs1Gpc: "GS1_GPC",
   EcoicopV2: "ECOICOP_V2",
   Nace21: "NACE_2_1",
 } as const;
 
+export {CLASSIFICATION_SYSTEM as ClassificationSystem};
+
 /** Union of supported canonical taxonomy-system values. */
-export type ClassificationSystem = (typeof ClassificationSystem)[keyof typeof ClassificationSystem];
+export type ClassificationSystem = (typeof CLASSIFICATION_SYSTEM)[keyof typeof CLASSIFICATION_SYSTEM];
 
 /** Supported classification origins. */
-export const ClassificationOrigin = {Analysis: "Analysis", Manual: "Manual"} as const;
+const CLASSIFICATION_ORIGIN = {Analysis: "Analysis", Manual: "Manual"} as const;
+
+export {CLASSIFICATION_ORIGIN as ClassificationOrigin};
 
 /** Union of supported classification-origin values. */
-export type ClassificationOrigin = (typeof ClassificationOrigin)[keyof typeof ClassificationOrigin];
+export type ClassificationOrigin = (typeof CLASSIFICATION_ORIGIN)[keyof typeof CLASSIFICATION_ORIGIN];
+
+/**
+ * Decides which `classificationCode` value a write action should send for an entity.
+ *
+ * @remarks
+ * The backend resolves any supplied code through `ResolveManualClassificationAsync`, which
+ * unconditionally stamps the result as {@link ClassificationOrigin.Manual} with a null
+ * confidence and empty evidence. Echoing an analysis-derived code back on an unrelated edit
+ * would therefore silently downgrade it from `Analysis` to `Manual` and discard its evidence.
+ *
+ * Sending `null` instead makes the backend preserve the persisted classification untouched.
+ * Only a genuinely user-chosen classification should travel as a code.
+ *
+ * @param classification - The entity's current classification, or null when unclassified.
+ * @returns The manual code to send, or null to preserve whatever the server already holds.
+ */
+export function resolveClassificationCodeForWrite(classification: StandardClassification | null): string | null {
+  return classification?.origin === CLASSIFICATION_ORIGIN.Manual ? classification.code : null;
+}
 
 /** Minimal mutation-safe taxonomy selection. */
 export interface ClassificationSelection {
@@ -87,69 +112,64 @@ export interface SearchClassificationsInput {
   readonly limit?: number;
 }
 
-const systemValues: readonly string[] = Object.values(ClassificationSystem);
-const originValues: readonly string[] = Object.values(ClassificationOrigin);
-const rfc3339Pattern =
-  /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/u;
-
-function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
+const systemValues: readonly string[] = Object.values(CLASSIFICATION_SYSTEM);
+const originValues: readonly string[] = Object.values(CLASSIFICATION_ORIGIN);
+const rfc3339DateTimePattern = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/u;
 
 function isText(value: unknown): value is string {
   return typeof value === "string" && value.trim().length > 0;
 }
 
 function isStringArray(value: unknown): value is readonly string[] {
-  return Array.isArray(value) && value.length > 0 && value.every(isText);
+  return Array.isArray(value) && value.length > 0 && value.every((item) => isText(item));
 }
 
-function hasOnlyKeys(record: Readonly<Record<string, unknown>>, keys: readonly string[]): boolean {
-  return Object.keys(record).every((key) => keys.includes(key));
+function isDigit(value: string): boolean {
+  return value >= "0" && value <= "9";
+}
+
+function isRfc3339Offset(value: string): boolean {
+  if (value === "Z") return true;
+  if (value.length !== 6 || (value[0] !== "+" && value[0] !== "-") || value[3] !== ":") return false;
+  return [...value.slice(1, 3), ...value.slice(4, 6)].every((character) => isDigit(character));
+}
+
+function isRfc3339Suffix(value: string): boolean {
+  if (!value.startsWith(".")) return isRfc3339Offset(value);
+  const offset = value.endsWith("Z") ? "Z" : value.slice(-6);
+  const fraction = value.slice(1, offset === "Z" ? -1 : -6);
+  return fraction.length > 0 && [...fraction].every((character) => isDigit(character)) && isRfc3339Offset(offset);
+}
+
+function isValidCalendarDate(year: number, month: number, day: number): boolean {
+  if (month < 1 || month > 12 || day < 1) return false;
+  const maximumDay = new Date(Date.UTC(year, month, 0)).getUTCDate();
+  return day <= maximumDay;
 }
 
 function isStrictRfc3339Timestamp(value: unknown): value is string {
-  if (typeof value !== "string") return false;
-  const match = rfc3339Pattern.exec(value);
-  if (match === null || !Number.isFinite(Date.parse(value))) return false;
+  if (typeof value !== "string" || !Number.isFinite(Date.parse(value))) return false;
+  const dateTime = value.slice(0, 19);
+  if (!rfc3339DateTimePattern.test(dateTime) || !isRfc3339Suffix(value.slice(19))) return false;
 
-  const [datePart, timePart] = value.split("T");
-  const dateSegments = datePart?.split("-").map(Number);
-  const timeSegments = timePart?.slice(0, 8).split(":").map(Number);
-  if (dateSegments?.length !== 3 || timeSegments?.length !== 3) return false;
-
-  const [year, month, day] = dateSegments;
-  const [hour, minute, second] = timeSegments;
-  if (
-    year === undefined ||
-    month === undefined ||
-    day === undefined ||
-    hour === undefined ||
-    minute === undefined ||
-    second === undefined ||
-    month < 1 ||
-    month > 12 ||
-    day < 1 ||
-    hour > 23 ||
-    minute > 59 ||
-    second > 59
-  ) {
-    return false;
-  }
-
-  const maximumDay = new Date(Date.UTC(year, month, 0)).getUTCDate();
-  return day <= maximumDay;
+  const year = Number(dateTime.slice(0, 4));
+  const month = Number(dateTime.slice(5, 7));
+  const day = Number(dateTime.slice(8, 10));
+  const hour = Number(dateTime.slice(11, 13));
+  const minute = Number(dateTime.slice(14, 16));
+  const second = Number(dateTime.slice(17, 19));
+  return isValidCalendarDate(year, month, day) && hour <= 23 && minute <= 59 && second <= 59;
 }
 
 /** Normalizes Unicode taxonomy-search text. */
 export function normalizeClassificationSearchQuery(query: string): string {
   return query
     .normalize("NFD")
-    .replace(/\p{M}/gu, "")
+    .replaceAll(/\p{M}/gu, "")
     .toLocaleLowerCase("en-US")
-    .replace(/[^\p{L}\p{N}]+/gu, " ")
+    .replaceAll(/[^\p{L}\p{N}]+/gu, " ")
     .trim()
-    .replace(/\s+/gu, " ");
+    .replaceAll(/\s+/gu, " ");
 }
 
 /** Determines whether a value is a supported taxonomy system. */
@@ -165,81 +185,100 @@ export function isClassificationOrigin(value: unknown): value is ClassificationO
 /** Determines whether a value is valid taxonomy search input. */
 export function isSearchClassificationsInput(value: unknown): value is SearchClassificationsInput {
   if (
-    !isRecord(value) ||
-    !hasOnlyKeys(value, ["system", "query", "limit"]) ||
-    !isClassificationSystem(value["system"]) ||
-    !isText(value["query"]) ||
-    normalizeClassificationSearchQuery(value["query"]).length < 2
+    !isRecord(value)
+    || !hasOnlyKeys(value, ["system", "query", "limit"])
+    || !isClassificationSystem(value["system"])
+    || !isText(value["query"])
+    || normalizeClassificationSearchQuery(value["query"]).length < 2
   ) {
     return false;
   }
-  const limit = value["limit"];
-  return limit === undefined || (typeof limit === "number" && Number.isInteger(limit) && limit >= 1 && limit <= 50);
+  const {limit} = value;
+  return limit === undefined || (typeof limit === "number" && Number.isSafeInteger(limit) && limit >= 1 && limit <= 50);
+}
+
+const TAXONOMY_ARTIFACT_KEYS = ["system", "version", "sourceUrl", "generatedAt", "attribution", "nodes"] as const;
+const TAXONOMY_NODE_KEYS = [
+  "code",
+  "officialLabel",
+  "level",
+  "parentCode",
+  "hierarchyCodes",
+  "hierarchyLabels",
+  "definition",
+  "searchText",
+] as const;
+
+type TaxonomyArtifactEnvelopeRecord = Readonly<Record<string, unknown>> & {
+  readonly system: ClassificationSystem;
+  readonly version: string;
+  readonly sourceUrl: string;
+  readonly generatedAt: string;
+  readonly attribution: string;
+  readonly nodes: readonly unknown[];
+};
+
+function hasValidTaxonomyArtifactEnvelope(value: Readonly<Record<string, unknown>>): value is TaxonomyArtifactEnvelopeRecord {
+  return (
+    hasOnlyKeys(value, TAXONOMY_ARTIFACT_KEYS)
+    && isClassificationSystem(value["system"])
+    && isText(value["version"])
+    && isText(value["sourceUrl"])
+    && isStrictRfc3339Timestamp(value["generatedAt"])
+    && isText(value["attribution"])
+    && Array.isArray(value["nodes"])
+    && value["nodes"].length > 0
+  );
+}
+
+function hasValidTaxonomyNodeFields(
+  value: Readonly<Record<string, unknown>>,
+): value is Readonly<Record<string, unknown>> & TaxonomyArtifactNode {
+  return (
+    hasOnlyKeys(value, TAXONOMY_NODE_KEYS)
+    && isText(value["code"])
+    && isText(value["officialLabel"])
+    && isText(value["level"])
+    && (value["parentCode"] === null || isText(value["parentCode"]))
+    && isStringArray(value["hierarchyCodes"])
+    && isStringArray(value["hierarchyLabels"])
+    && (value["definition"] === null || typeof value["definition"] === "string")
+    && isText(value["searchText"])
+  );
+}
+
+function parseTaxonomyArtifactNode(value: unknown): TaxonomyArtifactNode | null {
+  if (!isRecord(value) || !hasValidTaxonomyNodeFields(value)) return null;
+  const {code, definition, hierarchyCodes, hierarchyLabels, level, officialLabel, parentCode, searchText} = value;
+  if (hierarchyCodes.length !== hierarchyLabels.length || hierarchyCodes.at(-1) !== code || hierarchyLabels.at(-1) !== officialLabel) {
+    return null;
+  }
+  return {code, definition, hierarchyCodes, hierarchyLabels, level, officialLabel, parentCode, searchText};
+}
+
+function hasValidNodeHierarchy(node: TaxonomyArtifactNode, nodesByCode: ReadonlyMap<string, TaxonomyArtifactNode>): boolean {
+  return node.hierarchyCodes.every((code, index) => {
+    const hierarchyNode = nodesByCode.get(code);
+    if (hierarchyNode === undefined || hierarchyNode.officialLabel !== node.hierarchyLabels[index]) return false;
+    const expectedParentCode = index === 0 ? null : (node.hierarchyCodes[index - 1] ?? null);
+    return hierarchyNode.parentCode === expectedParentCode;
+  });
 }
 
 /** Determines whether a value is a structurally valid generated taxonomy artifact. */
 export function isTaxonomyArtifact(value: unknown): value is TaxonomyArtifact {
-  if (
-    !isRecord(value) ||
-    !hasOnlyKeys(value, ["system", "version", "sourceUrl", "generatedAt", "attribution", "nodes"]) ||
-    !isClassificationSystem(value["system"]) ||
-    !isText(value["version"]) ||
-    !isText(value["sourceUrl"]) ||
-    !isStrictRfc3339Timestamp(value["generatedAt"]) ||
-    !isText(value["attribution"]) ||
-    !Array.isArray(value["nodes"]) ||
-    value["nodes"].length === 0
-  ) {
-    return false;
-  }
+  if (!isRecord(value) || !hasValidTaxonomyArtifactEnvelope(value)) return false;
 
-  const nodes = value["nodes"];
+  const {nodes} = value;
   const nodesByCode = new Map<string, TaxonomyArtifactNode>();
   for (const rawNode of nodes) {
-    if (
-      !isRecord(rawNode) ||
-      !hasOnlyKeys(rawNode, [
-        "code", "officialLabel", "level", "parentCode", "hierarchyCodes",
-        "hierarchyLabels", "definition", "searchText",
-      ]) ||
-      !isText(rawNode["code"]) ||
-      !isText(rawNode["officialLabel"]) ||
-      !isText(rawNode["level"]) ||
-      !(rawNode["parentCode"] === null || isText(rawNode["parentCode"])) ||
-      !isStringArray(rawNode["hierarchyCodes"]) ||
-      !isStringArray(rawNode["hierarchyLabels"]) ||
-      rawNode["hierarchyCodes"].length !== rawNode["hierarchyLabels"].length ||
-      !(rawNode["definition"] === null || typeof rawNode["definition"] === "string") ||
-      !isText(rawNode["searchText"]) ||
-      rawNode["hierarchyCodes"].at(-1) !== rawNode["code"] ||
-      rawNode["hierarchyLabels"].at(-1) !== rawNode["officialLabel"] ||
-      nodesByCode.has(rawNode["code"])
-    ) {
-      return false;
-    }
-    const node: TaxonomyArtifactNode = {
-      code: rawNode["code"],
-      officialLabel: rawNode["officialLabel"],
-      level: rawNode["level"],
-      parentCode: rawNode["parentCode"],
-      hierarchyCodes: rawNode["hierarchyCodes"],
-      hierarchyLabels: rawNode["hierarchyLabels"],
-      definition: rawNode["definition"],
-      searchText: rawNode["searchText"],
-    };
+    const node = parseTaxonomyArtifactNode(rawNode);
+    if (node === null || nodesByCode.has(node.code)) return false;
     nodesByCode.set(node.code, node);
   }
 
-  return [...nodesByCode.values()].every((node) =>
-    node.hierarchyCodes.every((code, index) => {
-      const hierarchyNode = nodesByCode.get(code);
-      return (
-        hierarchyNode !== undefined &&
-        hierarchyNode.officialLabel === node.hierarchyLabels[index] &&
-        (index === 0
-          ? hierarchyNode.parentCode === null
-          : hierarchyNode.parentCode === node.hierarchyCodes[index - 1])
-      );
-    }),
-  );
+  for (const node of nodesByCode.values()) {
+    if (!hasValidNodeHierarchy(node, nodesByCode)) return false;
+  }
+  return true;
 }

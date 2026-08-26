@@ -15,7 +15,7 @@
  *
  * **Required Fields**:
  * - `initialScan`: First scan attachment (uploaded to Azure Blob)
- * - `metadata`: Must include `isImportant` and `requiresAnalysis` flags
+ * - `additionalMetadata`: Must include `isImportant` and `requiresAnalysis` flags
  *
  * @see {@link createScan} for uploading scans first (from `@/app/domains/invoices/_actions/scans`)
  * @see {@link CreateInvoiceDtoPayload} for full payload structure
@@ -25,6 +25,7 @@ import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {createErrorResult, fetchWithTimeout, ServerActionResult} from "@/lib/utils.server";
 import type {CreateInvoiceDtoPayload, Invoice} from "@/types/invoices";
+import {parseInvoiceCreationResponse, tryParse} from "@/types/invoices/transport";
 
 /**
  * Input type allowing partial payload (userIdentifier is auto-filled from auth).
@@ -58,7 +59,7 @@ type ServerActionOutputType = ServerActionResult<Readonly<Invoice>>;
  * @param payload - Partial invoice creation payload; `userIdentifier` is filled from the authenticated session when omitted.
  * @param payload.userIdentifier - Optional user GUID. The authenticated user's identifier is used when this is not provided.
  * @param payload.initialScan - Initial scan reference with type, location, and metadata for the new invoice.
- * @param payload.metadata - Creation metadata, including flags such as `isImportant` and `requiresAnalysis`.
+ * @param payload.additionalMetadata - Creation metadata, including flags such as `isImportant` and `requiresAnalysis`.
  * @returns A result object containing the created invoice with its generated identifier, or an error result.
  *
  * @example
@@ -72,7 +73,7 @@ type ServerActionOutputType = ServerActionResult<Readonly<Invoice>>;
  *     location: "https://storage.blob.core.windows.net/invoices/scan.jpg",
  *     metadata: {}
  *   },
- *   metadata: {
+ *   additionalMetadata: {
  *     isImportant: "false",
  *     requiresAnalysis: "true"
  *   }
@@ -107,14 +108,24 @@ export async function createInvoice(payload: ServerActionInputType): ServerActio
           Authorization: `Bearer ${authToken}`,
           "Content-Type": "application/json",
         },
-        body: payload.userIdentifier ? JSON.stringify(payload) : JSON.stringify({...payload, userIdentifier}),
+        body: JSON.stringify({
+          userIdentifier: payload.userIdentifier ?? userIdentifier,
+          initialScan: payload.initialScan,
+          additionalMetadata: payload.additionalMetadata,
+        }),
       });
       addSpanEvent("bff.invoice.create.complete");
 
       if (response.ok) {
         logWithTrace("info", "Successfully created invoice entity...", {}, "server");
-        const data = (await response.json()) as Invoice;
-        return {success: true, data} as const;
+        const responseBody: unknown = await response.json();
+        const parsed = tryParse(parseInvoiceCreationResponse, responseBody);
+        if (!parsed.ok) {
+          addSpanEvent("bff.invoice.create.invalid");
+          logWithTrace("error", "Create invoice response failed transport validation", {path: parsed.error.path}, "server");
+          return createErrorResult(parsed.error, "The server returned unexpected data. Please try again later.");
+        }
+        return {success: true, data: parsed.value} as const;
       }
 
       addSpanEvent("bff.invoice.create.error");

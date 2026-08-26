@@ -8,8 +8,8 @@ import {useMemo} from "react";
 import {TbChartBar, TbTrendingUp} from "react-icons/tb";
 import {useInvoiceContext} from "../_context/InvoiceContext";
 import {
-  getCategoryComparison,
-  getCategorySpending,
+  getClassificationGroupComparison,
+  getClassificationGroupSpending,
   getComparisonStats,
   getInvoiceSummary,
   getMerchantBreakdown,
@@ -39,7 +39,7 @@ export function InvoiceAnalytics(): React.JSX.Element {
 
   const isOwner = invoice.userIdentifier === userIdentifier;
   const currency = invoice.paymentInformation.currency.symbol;
-  const categoryData = getCategorySpending(invoice.items);
+  const categoryData = getClassificationGroupSpending(invoice.items);
   const priceData = getPriceDistribution(invoice.items);
   const quantityData = getQuantityAnalysis(invoice.items);
   const summary = getInvoiceSummary(invoice);
@@ -47,7 +47,7 @@ export function InvoiceAnalytics(): React.JSX.Element {
   // Memoize comparison analytics (computed from all cached invoices)
   const trendData = useMemo(() => getSpendingTrend(invoice, allInvoices), [invoice, allInvoices]);
   const comparisonStats = useMemo(() => getComparisonStats(invoice, allInvoices), [invoice, allInvoices]);
-  const categoryComparison = useMemo(() => getCategoryComparison(invoice, allInvoices), [invoice, allInvoices]);
+  const categoryComparison = useMemo(() => getClassificationGroupComparison(invoice, allInvoices), [invoice, allInvoices]);
   const merchantBreakdown = useMemo(() => getMerchantBreakdown(allInvoices), [allInvoices]);
 
   // Check if we have enough data for meaningful comparisons

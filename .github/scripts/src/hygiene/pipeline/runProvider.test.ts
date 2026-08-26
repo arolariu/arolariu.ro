@@ -197,15 +197,17 @@ describe("collectChangedFiles", () => {
     await git(["init", "-b", "main"]);
     await fs.mkdir(path.join(tmpDir, "src"), {recursive: true});
     await fs.writeFile(path.join(tmpDir, "src", "a.ts"), "const a = 1;\n");
+    await fs.writeFile(path.join(tmpDir, "src", "deleted.ts"), "const deleted = true;\n");
     await git(["add", "."]);
     await git(["-c", "user.email=test@example.com", "-c", "user.name=Test", "commit", "-m", "base"]);
     await fs.writeFile(path.join(tmpDir, "src", "a.ts"), "const a = 2;\n");
+    await fs.rm(path.join(tmpDir, "src", "deleted.ts"));
     await git(["add", "."]);
     await git(["-c", "user.email=test@example.com", "-c", "user.name=Test", "commit", "-m", "head"]);
 
     await expect(collectChangedFiles(tmpDir, "HEAD~1", "HEAD")).resolves.toEqual({
       scope: "known",
-      files: ["src/a.ts"],
+      files: ["src/a.ts", "src/deleted.ts"],
     });
   });
 

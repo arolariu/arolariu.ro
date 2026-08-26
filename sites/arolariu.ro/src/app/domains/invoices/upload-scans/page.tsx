@@ -134,7 +134,7 @@ export async function generateMetadata(): Promise<Metadata> {
  *
  * **Storage Flow**:
  * 1. User selects files (file picker or drag-drop)
- * 2. Client validates file types (JPEG, PNG, PDF, HEIC) and sizes (<10MB each)
+ * 2. Client validates file types (JPEG, PNG, BMP, TIFF, HEIF, PDF) and sizes (<10MB each)
  * 3. Images compressed to reduce storage costs (target: <2MB per scan)
  * 4. Blob URLs generated for instant preview feedback
  * 5. Files uploaded to Azure Blob Storage with metadata:

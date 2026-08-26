@@ -137,6 +137,63 @@ public partial class CosmosDatabaseBroker
   }
 
   /// <inheritdoc/>
+  public async ValueTask<IEnumerable<Merchant>> ReadMerchantsByIdentifiersAsync(
+    IReadOnlyCollection<Guid> merchantIdentifiers,
+    CancellationToken cancellationToken)
+  {
+    ArgumentNullException.ThrowIfNull(merchantIdentifiers);
+
+    using var activity = InvoicePackageTracing.StartActivity(nameof(ReadMerchantsByIdentifiersAsync));
+    activity?
+      .SetLayerContext("Broker", nameof(CosmosDatabaseBroker))
+      .SetCosmosDbContext("primary", "merchants", "query")
+      .SetDbStatement("SELECT * FROM c WHERE c.id IN (@ids)");
+
+    if (merchantIdentifiers.Count == 0)
+    {
+      activity?.SetTag("result.total_count", 0);
+      activity?.RecordSuccess();
+      return [];
+    }
+
+    var database = CosmosClient.GetDatabase("primary");
+    var container = database.GetContainer("merchants");
+    var merchantList = new List<Merchant>();
+    var totalRequestCharge = 0.0;
+
+    foreach (var chunk in merchantIdentifiers.Chunk(100))
+    {
+      var parameterNames = chunk.Select((_, index) => $"@id{index}").ToArray();
+      var query = new QueryDefinition($"SELECT * FROM c WHERE c.id IN ({string.Join(", ", parameterNames)})");
+
+      for (var index = 0; index < chunk.Length; index++)
+      {
+        query = query.WithParameter(parameterNames[index], chunk[index].ToString());
+      }
+
+      var iterator = container.GetItemQueryIterator<Merchant>(query);
+      while (iterator.HasMoreResults)
+      {
+        var response = await TranslateMerchantCosmosAsync(
+          () => iterator.ReadNextAsync(cancellationToken),
+          null).ConfigureAwait(false);
+        totalRequestCharge += response.RequestCharge;
+        merchantList.AddRange(response);
+      }
+    }
+
+    activity?.SetCosmosDbRequestCharge(totalRequestCharge);
+    InvoiceMetrics.RecordCosmosDbCharge(totalRequestCharge, "query", "merchants");
+    activity?.SetTag("result.total_count", merchantList.Count);
+
+    var filteredMerchants = merchantList.Where(merchant => merchant.IsSoftDeleted == false).ToList();
+    activity?.SetTag("result.filtered_count", filteredMerchants.Count);
+    activity?.RecordSuccess();
+
+    return filteredMerchants;
+  }
+
+  /// <inheritdoc/>
   public async ValueTask<Merchant> UpdateMerchantAsync(Merchant currentMerchant, Merchant updatedMerchant, CancellationToken cancellationToken)
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateMerchantAsync));

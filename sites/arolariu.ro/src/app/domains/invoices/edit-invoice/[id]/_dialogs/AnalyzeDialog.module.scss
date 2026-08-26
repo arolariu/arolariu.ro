@@ -345,6 +345,19 @@
   }
 }
 
+.controlsSection {
+  padding-block: space(2);
+}
+
+.errorAlert {
+  border-radius: radius("md");
+  border: 1px solid color("destructive");
+  background-color: color-alpha("destructive", 0.1);
+  padding: space(3);
+  color: color("destructive");
+  font-size: font-size("sm");
+}
+
 @keyframes spin {
   from {
     transform: rotate(0deg);

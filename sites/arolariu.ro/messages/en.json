@@ -356,7 +356,6 @@
         }
       },
       "merchantInfoCard": {
-        "categoryDistribution": "Category Distribution",
         "noMerchantLinked": "No merchant linked to this invoice",
         "spendingHistory": "Spending History",
         "stats": {
@@ -372,34 +371,8 @@
       "nutritionCard": {
         "allergens": {
           "foundInItems": "Found in {count} item(s)",
-          "title": "Allergens Detected"
-        },
-        "composition": {
-          "dairyOther": "Dairy/Other",
-          "processed": "Processed",
-          "title": "Your Basket Composition",
-          "wholeFoods": "Whole Foods"
-        },
-        "foodGroups": {
-          "fruits": "Fruits",
-          "grains": "Grains",
-          "itemsCount": "{count} item(s)",
-          "protein": "Protein",
-          "vegetables": "Vegetables"
-        },
-        "score": {
-          "excellent": "Excellent",
-          "fair": "Fair",
-          "good": "Good",
-          "needsWork": "Needs Work",
-          "title": "Food Balance Score"
-        },
-        "suggestions": {
-          "addFruits": "Adding some fruits would improve nutritional balance",
-          "addFruitsAndVegetables": "Add more fruits and vegetables to balance your basket",
-          "addVegetables": "Consider adding vegetables for a more balanced diet",
-          "greatBalance": "Great balanced shopping!",
-          "swapProcessed": "Try swapping some processed items for whole foods"
+          "title": "Allergens Detected",
+          "noProducts": "No products found on this invoice."
         },
         "title": "Nutrition Overview"
       },
@@ -437,32 +410,36 @@
       },
       "recipeCard": {
         "buttons": {
-          "viewRecipe": "View Recipe",
-          "visitReference": "Visit Reference"
-        },
-        "complexity": {
-          "easy": "Easy Complexity",
-          "hard": "Hard Complexity",
-          "normal": "Normal Complexity",
-          "unknown": "Unknown Complexity"
+          "viewRecipe": "View Recipe"
         },
         "dropdown": {
           "delete": "Delete",
           "edit": "Edit",
           "markAsFavorite": "Mark as Favorite",
-          "share": "Share",
           "view": "View"
         },
         "ingredients": {
-          "additionalLabel": "Additional ingredients:",
-          "label": "Ingredients:",
-          "more": "+{count} more"
+          "total": "{count} ingredients"
         },
         "timing": {
           "cookLabel": "Cook: {minutes}′",
           "cookTooltip": "Cooking time is {minutes} minutes.",
           "prepLabel": "Prep: {minutes}′",
-          "prepTooltip": "Preparation time is {minutes} minutes."
+          "prepTooltip": "Preparation time is {minutes} minutes.",
+          "totalLabel": "Total: {minutes}'",
+          "totalTooltip": "Total time is {minutes} minutes."
+        },
+        "difficulty": {
+          "easy": "Easy",
+          "medium": "Medium",
+          "hard": "Hard"
+        },
+        "servings": "{count} servings",
+        "steps": {
+          "count": "{count} steps"
+        },
+        "allergens": {
+          "sectionLabel": "Allergen warnings"
         }
       },
       "seasonalInsightsCard": {
@@ -564,12 +541,13 @@
         "allergenSummary": {
           "ariaLabel": "Allergen frequency summary",
           "description": "Allergen exposure across products",
-          "empty": "No allergens detected in your purchases",
+          "empty": "No allergens detected in the products that were assessed",
           "stats": {
             "ofTotal": "of total",
             "products": "products"
           },
-          "title": "Allergen Summary"
+          "title": "Allergen Summary",
+          "notAssessed": "No allergen data yet — these products have not been assessed"
         },
         "calendarHeatmap": {
           "aria": {
@@ -700,7 +678,7 @@
           "subtitle": "Insights into your purchased items",
           "title": "Product-Level Analytics"
         },
-        "productCategory": {
+        "productClassification": {
           "description": "Spending breakdown by product type",
           "empty": "No products to analyze yet",
           "title": "Product Category Spending",
@@ -835,7 +813,6 @@
         },
         "scanType": {
           "bmp": "BMP image",
-          "heic": "HEIC image",
           "heif": "HEIF image",
           "jpeg": "JPEG image",
           "label": "Scan type",
@@ -852,177 +829,34 @@
         }
       },
       "allergenDialog": {
-        "aria": {
-          "removeAllergen": "Remove {name} allergen"
-        },
         "buttons": {
-          "add": "Add",
           "cancel": "Cancel",
           "save": "Save Changes",
           "saving": "Saving..."
         },
-        "defaultDescription": "Contains {name}",
         "description": "Manage allergens for {productName}",
-        "empty": {
-          "noAllergens": "No allergens detected"
-        },
         "errors": {
-          "duplicate": "Allergen {name} already added",
-          "emptyName": "Allergen name cannot be empty",
           "missingData": "Missing product data",
           "saveFailed": "Failed to save allergens"
         },
-        "labels": {
-          "currentAllergens": "Current Allergens",
-          "customAllergen": "Add Custom Allergen",
-          "quickAdd": "Quick Add Common Allergens"
-        },
-        "placeholders": {
-          "customAllergen": "Enter allergen name..."
-        },
         "success": {
-          "added": "Added allergen: {name}",
-          "removed": "Removed allergen: {name}",
           "saved": "Allergens updated successfully"
         },
         "title": "Edit Allergens"
       },
       "analyzeDialog": {
-        "analysisSteps": {
-          "analyzingWithAi": "Analyzing with AI...",
-          "categorizingItems": "Categorizing items...",
-          "finalizingResults": "Finalizing results...",
-          "preparingDocument": "Preparing document...",
-          "processing": "Processing...",
-          "runningOcrExtraction": "Running OCR extraction..."
-        },
-        "analyzing": {
-          "progressComplete": "{progress}% complete",
-          "title": "Analyzing Invoice"
-        },
-        "badges": {
-          "recommended": "Recommended"
-        },
-        "buttons": {
-          "analyzing": "Analyzing...",
-          "cancel": "Cancel",
-          "startAnalysis": "Start Analysis"
-        },
-        "enhancements": {
-          "priceComparison": {
-            "description": "Compare prices with historical data",
-            "label": "Price Comparison"
-          },
-          "quickExtract": {
-            "description": "Prioritize speed over accuracy",
-            "label": "Quick Extract Mode"
-          },
-          "savingsTips": {
-            "description": "Get AI-powered saving recommendations",
-            "label": "Savings Suggestions"
-          }
-        },
         "header": {
-          "description": "Configure AI-powered analysis for invoice",
-          "title": "Analyze Invoice"
+          "title": "Analyze Invoice",
+          "description": "Configure AI-powered analysis for invoice"
         },
-        "options": {
-          "completeAnalysis": {
-            "description": "Full AI-powered analysis including all invoice data, items, and merchant information.",
-            "estimatedTime": "2-3 min",
-            "features": {
-              "itemCategorization": "Item categorization",
-              "merchantIdentification": "Merchant identification",
-              "ocrExtraction": "OCR extraction",
-              "priceAnalysis": "Price analysis",
-              "receiptValidation": "Receipt validation"
-            },
-            "title": "Complete Analysis"
-          },
-          "invoiceOnly": {
-            "description": "Analyze basic invoice information like totals, dates, and payment details.",
-            "estimatedTime": "30-60 sec",
-            "features": {
-              "dateParsing": "Date parsing",
-              "paymentMethodDetection": "Payment method detection",
-              "totalExtraction": "Total extraction"
-            },
-            "title": "Invoice Data Only"
-          },
-          "itemsOnly": {
-            "description": "Focus on extracting and categorizing individual line items from the invoice.",
-            "estimatedTime": "1-2 min",
-            "features": {
-              "categoryAssignment": "Category assignment",
-              "itemExtraction": "Item extraction",
-              "pricePerItem": "Price per item",
-              "quantityDetection": "Quantity detection"
-            },
-            "title": "Items Analysis"
-          },
-          "merchantOnly": {
-            "description": "Identify and analyze merchant information including location and category.",
-            "estimatedTime": "30-45 sec",
-            "features": {
-              "businessCategory": "Business category",
-              "contactInfo": "Contact info",
-              "locationExtraction": "Location extraction",
-              "merchantIdentification": "Merchant identification"
-            },
-            "title": "Merchant Analysis"
-          }
-        },
-        "sections": {
-          "analysisType": "Analysis Type",
-          "enhancementsOptional": "Enhancements (Optional)",
-          "includedFeatures": "Included Features"
-        },
-        "summary": {
-          "enhancementsSelected": "+ {count} enhancement(s)",
-          "estimatedTime": "Estimated time",
-          "noEnhancementsSelected": "No enhancements selected"
-        },
-        "toasts": {
-          "analysisComplete": {
-            "description": "Your invoice has been analyzed successfully.",
-            "title": "Analysis Complete"
-          },
-          "analysisFailed": {
-            "description": "We couldn't analyze your invoice. Please try again.",
-            "title": "Analysis Failed"
-          }
-        }
-      },
-      "bulkCategoryDialog": {
         "buttons": {
           "cancel": "Cancel",
-          "save": "Apply to All",
-          "saving": "Saving..."
+          "startAnalysis": "Start Analysis",
+          "submitting": "Submitting..."
         },
-        "description": "{count, plural, one {Change category for # product} other {Change category for # products}}",
         "errors": {
-          "allFailed": "All products failed to update",
-          "missingData": "Missing data",
-          "noProducts": "No products selected",
-          "saveFailed": "Failed to update categories"
-        },
-        "labels": {
-          "andMore": "...and {count} more",
-          "newCategory": "New Category",
-          "progress": "Progress",
-          "selectedProducts": "Selected Products"
-        },
-        "placeholders": {
-          "selectCategory": "Select a category"
-        },
-        "progress": {
-          "updating": "Updating {current} of {total}..."
-        },
-        "success": {
-          "partialSuccess": "Updated {success} products, {failed} failed",
-          "saved": "{count, plural, one {Category updated for # product} other {Category updated for # products}}"
-        },
-        "title": "Change Category"
+          "genericError": "Failed to submit for analysis. Please try again."
+        }
       },
       "createInvoiceDialog": {
         "batchMode": {
@@ -1342,11 +1176,6 @@
         }
       },
       "recipeDialog": {
-        "actions": {
-          "enhanceInstructions": "Enhance instructions",
-          "generateName": "Generate name",
-          "unavailable": "This recipe assistant action is not available yet"
-        },
         "buttons": {
           "add": "Add",
           "cancel": "Cancel",
@@ -1375,15 +1204,18 @@
           "medium": "Medium"
         },
         "fields": {
-          "complexity": "Complexity level",
           "cookTime": "Cook time",
           "description": "Description",
           "difficulty": "Difficulty level",
-          "ingredients": "Ingredients",
-          "instructions": "Instructions",
           "prepTime": "Prep time",
           "recipeName": "Recipe name",
-          "totalDuration": "Total Duration"
+          "totalDuration": "Total Duration",
+          "servings": "Servings",
+          "purchasedIngredients": "Purchased Ingredients",
+          "pantryStaples": "Pantry Staples",
+          "missingIngredients": "Missing Optional Ingredients",
+          "steps": "Cooking Steps",
+          "allergens": "Allergen Warnings"
         },
         "minutes": "minutes",
         "placeholders": {
@@ -1392,26 +1224,21 @@
           "instructions": "Enter cooking instructions",
           "prepTime": "e.g. 15 minutes",
           "recipeName": "Enter recipe name",
-          "selectDifficulty": "Select difficulty"
+          "selectDifficulty": "Select difficulty",
+          "servings": "e.g. 4",
+          "ingredientName": "e.g. Tomatoes",
+          "ingredientQuantity": "e.g. 500 g",
+          "ingredientPreparation": "e.g. diced (optional)",
+          "stepInstruction": "Describe this step",
+          "stepNotes": "Optional note"
         },
         "read": {
           "description": "Recipe details and cooking instructions",
           "missingRecipe": "Recipe details are unavailable.",
           "noDescription": "No description provided.",
-          "notSpecified": "Not specified"
-        },
-        "share": {
-          "copied": "Recipe link copied",
-          "copy": "Copy link",
-          "copyFailed": "Failed to copy recipe link",
-          "description": "Share the recipe reference link when one is available.",
-          "missingRecipe": "Recipe details are unavailable.",
-          "title": "Share recipe",
-          "unavailable": "Recipe sharing is not available for this recipe yet."
-        },
-        "tooltips": {
-          "enhanceInstructions": "Use AI to enhance your instructions with more details",
-          "generateName": "Generate a recipe name based on your ingredients and difficulty level using AI"
+          "notSpecified": "Not specified",
+          "noIngredients": "No ingredients listed.",
+          "noAllergens": "No allergen warnings."
         },
         "update": {
           "description": "Update recipe details.",
@@ -1419,6 +1246,15 @@
           "missingRecipe": "Recipe details are unavailable.",
           "success": "Recipe updated successfully",
           "title": "Update recipe"
+        },
+        "validation": {
+          "nameRequired": "Recipe name is required",
+          "descriptionRequired": "Recipe description is required",
+          "ingredientQuantityRequired": "Every named ingredient requires a quantity",
+          "minutesNonNegativeInteger": "Recipe times must be non-negative whole minutes",
+          "stepRequired": "At least one step is required",
+          "servingsPositive": "Servings must be a positive whole number",
+          "totalTimeConstraint": "Total time must be at least prep + cook time"
         }
       },
       "removeScanDialog": {
@@ -1565,6 +1401,55 @@
           "description": "By sharing this invoice publicly, <strong>anyone with the link will be able to view it</strong>. This includes all invoice details, items, and amounts. Only proceed if you intend to make this invoice accessible to the public.",
           "title": "Public access warning"
         }
+      },
+      "classificationPicker": {
+        "clear": "Clear selection",
+        "placeholder": "Search classifications...",
+        "badge": {
+          "analysisOrigin": "AI Analysis",
+          "hierarchy": "Hierarchy",
+          "manualOrigin": "Manual"
+        }
+      },
+      "invoiceAnalysisControls": {
+        "capabilitiesLabel": "Capabilities",
+        "classificationOverwriteAlert": "This invoice has been manually classified. Enabling automatic invoice classification will overwrite your manual settings.",
+        "customLabel": "Custom",
+        "maximumRecipesLabel": "Maximum Recipes",
+        "profilesLabel": "Analysis Profile",
+        "capabilities": {
+          "allergenAssessment": "Allergen Assessment",
+          "documentExtraction": "Document Extraction",
+          "invoiceClassification": "Invoice Classification",
+          "invoiceSummary": "Invoice Summary",
+          "productClassification": "Product Classification",
+          "recipeGeneration": "Recipe Generation"
+        },
+        "profiles": {
+          "balanced": "Balanced",
+          "comprehensive": "Comprehensive",
+          "fast": "Fast"
+        }
+      },
+      "merchantAnalysisControls": {
+        "capabilitiesLabel": "Capabilities",
+        "customLabel": "Custom",
+        "profilesLabel": "Analysis Profile",
+        "capabilities": {
+          "descriptionGeneration": "Description Generation",
+          "merchantClassification": "Merchant Classification"
+        },
+        "profiles": {
+          "balanced": "Balanced",
+          "comprehensive": "Comprehensive",
+          "fast": "Fast"
+        }
+      },
+      "queuedAnalysisNotice": {
+        "description": "Your analysis request has been queued and will be processed shortly.",
+        "messageIdLabel": "Message ID:",
+        "refreshButton": "Refresh",
+        "title": "Analysis Queued"
       }
     }
   },
@@ -2111,18 +1996,6 @@
       "createInvoice": {
         "detailsForm": {
           "fields": {
-            "category": {
-              "label": "Category",
-              "options": {
-                "carAuto": "Auto & Vehicle",
-                "fastFood": "Dining",
-                "grocery": "Grocery",
-                "homeCleaning": "Home & Cleaning",
-                "notDefined": "Uncategorized",
-                "other": "Other"
-              },
-              "placeholder": "Select a category"
-            },
             "description": {
               "hint": "Optional notes about this purchase",
               "label": "Description",
@@ -2148,6 +2021,10 @@
             },
             "transactionDate": {
               "label": "Transaction Date"
+            },
+            "classification": {
+              "label": "Classification",
+              "hint": "Search for a taxonomy classification (optional)"
             }
           },
           "scanPreview": {
@@ -2181,14 +2058,6 @@
             "creating": "Creating invoice...",
             "hint": "This will create the invoice and upload the selected scans."
           },
-          "categories": {
-            "carAuto": "Auto & Vehicle",
-            "fastFood": "Dining",
-            "grocery": "Grocery",
-            "homeCleaning": "Home & Cleaning",
-            "notDefined": "Uncategorized",
-            "other": "Other"
-          },
           "paymentTypes": {
             "card": "Card",
             "cash": "Cash",
@@ -2200,19 +2069,27 @@
           },
           "sections": {
             "details": {
-              "category": "Category",
               "description": "Description",
               "name": "Name",
               "paymentType": "Payment Method",
               "title": "Invoice Details",
-              "transactionDate": "Transaction Date"
+              "transactionDate": "Transaction Date",
+              "classification": "Classification",
+              "noClassification": "Not classified"
             },
             "scans": {
               "title": "Scans"
             }
           },
           "subtitle": "Review your invoice details before creating",
-          "title": "Review & Create"
+          "title": "Review & Create",
+          "partialError": {
+            "patchFailed": "Your invoice was created but the details could not be saved. Click Retry to try again.",
+            "scansFailed": "Your invoice was created but one or more scans could not be attached. Retry to finish attaching them.",
+            "retry": "Retry saving details",
+            "retryScans": "Retry attaching scans",
+            "title": "Invoice partially created"
+          }
         },
         "scanSelector": {
           "clearAll": "Clear",
@@ -2232,6 +2109,17 @@
           "reviewDesc": "Confirm and create",
           "selectScans": "Select Scans",
           "selectScansDesc": "Choose receipt scans"
+        },
+        "errors": {
+          "createFailed": "Failed to create invoice. Please try again.",
+          "noScansSelected": "No scans selected. Please select at least one scan.",
+          "patchFailed": "Failed to save invoice details. Please retry.",
+          "scanAttachFailed": "Failed to attach all selected scans. Please retry."
+        },
+        "toasts": {
+          "created": "Invoice created successfully.",
+          "patchFailed": "Invoice was created but details could not be saved. Use Retry on the review step.",
+          "scanAttachFailed": "Invoice was created but not all scans were attached. Use Retry on the review step."
         }
       },
       "filters": {
@@ -2248,6 +2136,7 @@
         "anyValue": "any",
         "button": "Filters",
         "categories": "Categories",
+        "classificationGroups": "Classification",
         "category": "Category",
         "clear": "Clear all",
         "currency": "Currency",
@@ -2661,11 +2550,7 @@
             "remove": "Remove item",
             "restore": "Restore item"
           },
-          "bulkCategory": {
-            "noSelection": "Please select at least one product"
-          },
           "bulkToolbar": {
-            "changeCategory": "Change Category",
             "deleteSelected": "Delete Selected",
             "noSelection": "No products selected",
             "selectedCount": "{count, plural, one {# item selected} other {# items selected}}"
@@ -3066,53 +2951,17 @@
       },
       "viewInvoice": {
         "analysisPanel": {
-          "analyzing": {
-            "progress": "{progress}% complete",
-            "title": "Analyzing..."
-          },
+          "title": "AI Analysis",
+          "description": "Re-analyze this invoice with AI to extract or update data",
           "buttons": {
             "reanalyze": "Re-Analyze Invoice"
           },
-          "description": "Re-analyze this invoice with AI to extract or update data",
           "labels": {
-            "analysisComplete": "Analysis Complete — All data has been extracted",
-            "granularOptions": "Or choose specific analysis",
             "lastAnalyzed": "Last Analyzed",
-            "updates": "{count, plural, one {# update} other {# updates}}"
+            "updates": "{count, plural, one {# update} other {# updates}}",
+            "submitting": "Submitting..."
           },
-          "options": {
-            "completeAnalysis": "Full Analysis",
-            "invoiceOnly": "Invoice Only",
-            "itemsOnly": "Items Only",
-            "merchantOnly": "Merchant Only"
-          },
-          "steps": {
-            "analyzing": "Analyzing with AI...",
-            "complete": "Analysis complete!",
-            "extracting": "Running OCR extraction...",
-            "finalizing": "Finalizing results...",
-            "preparing": "Preparing document...",
-            "processing": "Processing items..."
-          },
-          "tip": "Quick Tip: Full analysis takes 30-60 seconds but provides the most accurate results.",
-          "title": "AI Analysis",
-          "toasts": {
-            "error": {
-              "description": "Unable to analyze invoice. Please try again later.",
-              "title": "Analysis Failed"
-            },
-            "success": {
-              "description": "Invoice has been successfully re-analyzed with updated data.",
-              "title": "Analysis Complete"
-            }
-          },
-          "tooltips": {
-            "completeAnalysis": "Complete OCR extraction + AI processing of all invoice data",
-            "invoiceOnly": "Re-extract basic invoice information (date, total, payment)",
-            "itemsOnly": "Re-categorize and analyze line items only",
-            "merchantOnly": "Re-identify merchant and location data",
-            "reanalyze": "Trigger complete re-analysis with all AI features"
-          }
+          "tip": "Quick Tip: Full analysis takes 30-60 seconds but provides the most accurate results."
         },
         "categoryComparisonChart": {
           "description": "This invoice vs your average",
@@ -3144,6 +2993,9 @@
           "jsonSuccess": "JSON file downloaded successfully",
           "pdf": {
             "description": "Download professional invoice document",
+            "labels": {
+              "classification": "Classification"
+            },
             "title": "Export as PDF"
           },
           "pdfError": "Failed to generate PDF",
@@ -5185,6 +5037,9 @@
       "toggleTheme": "Toggle theme"
     },
     "invoices": {
+      "classification": {
+        "unclassified": "Unclassified"
+      },
       "commandPalette": {
         "actions": {
           "createInvoice": "Create Invoice",
@@ -5387,6 +5242,68 @@
         "addError": "Failed to add scan",
         "addSuccess": "Scan added",
         "uploadFailed": "Upload failed (status {status})"
+      }
+    }
+  },
+  "allergens": {
+    "evidenceLevels": {
+      "explicit": "Explicit",
+      "inferred": "Inferred",
+      "precautionary": "Precautionary"
+    },
+    "view": {
+      "notAssessed": "This product has not been assessed for allergens.",
+      "status": {
+        "detected": "Detected",
+        "insufficientData": "Insufficient data",
+        "noSignals": "No signals found"
+      },
+      "signal": {
+        "confidence": "Confidence",
+        "evidenceEntries": "Evidence entries",
+        "evidenceLevel": "Evidence level"
+      },
+      "statusNote": {
+        "noSignals": "The assessment completed but found no evidence of this allergen. This does not confirm the product is free of this allergen.",
+        "insufficientData": "There was insufficient data to make a reliable allergen assessment."
+      }
+    },
+    "codes": {
+      "milk": "Milk",
+      "nuts": "Nuts",
+      "cerealsContainingGluten": "Cereals Containing Gluten",
+      "fish": "Fish",
+      "molluscs": "Molluscs",
+      "peanuts": "Peanuts",
+      "mustard": "Mustard",
+      "celery": "Celery",
+      "eggs": "Eggs",
+      "sesame": "Sesame",
+      "crustaceans": "Crustaceans",
+      "lupin": "Lupin",
+      "soybeans": "Soybeans",
+      "sulphurDioxideAndSulphites": "Sulphur Dioxide and Sulphites"
+    },
+    "editor": {
+      "status": {
+        "insufficientData": "Insufficient data",
+        "noSignals": "No signals",
+        "label": "Status"
+      },
+      "title": "Edit Allergen Assessment",
+      "signals": {
+        "empty": "No signals added.",
+        "title": "Signals",
+        "removeSignal": "Remove signal",
+        "userProvided": "User-provided",
+        "evidenceLevel": "Evidence level",
+        "addSignal": "Add signal",
+        "evidenceValue": "Value",
+        "addEvidence": "Add evidence",
+        "evidenceSource": "Source",
+        "removeEvidence": "Remove evidence entry",
+        "code": "Allergen",
+        "confidence": "Confidence (0-1)"
       }
     }
   }

@@ -1,8 +1,12 @@
+import * as fs from "node:fs/promises";
+import * as os from "node:os";
+import * as path from "node:path";
 import {describe, expect, it} from "vitest";
 import {
   classifyChangedFiles,
   filesForEslint,
   filesForPrettier,
+  filterExistingFiles,
   normalizeChangedFile,
   shouldRunBroadly,
   suitesForTypeScriptChanges,
@@ -76,6 +80,18 @@ describe("scope helpers", () => {
 });
 
 describe("file filters", () => {
+  it("retains only files that still exist for path-based tools", async () => {
+    const workspaceRoot = await fs.mkdtemp(path.join(os.tmpdir(), "changed-files-test-"));
+    try {
+      await fs.mkdir(path.join(workspaceRoot, "src"), {recursive: true});
+      await fs.writeFile(path.join(workspaceRoot, "src", "existing.ts"), "export {};\n");
+
+      await expect(filterExistingFiles(workspaceRoot, ["src/existing.ts", "src/deleted.ts"])).resolves.toEqual(["src/existing.ts"]);
+    } finally {
+      await fs.rm(workspaceRoot, {recursive: true, force: true});
+    }
+  });
+
   it("filters Prettier-supported changed files", () => {
     expect(filesForPrettier(known(["src/a.ts", "image.png", "README.md", "sites/cv.arolariu.ro/src/+page.svelte"]))).toEqual([
       "src/a.ts",
@@ -89,6 +105,12 @@ describe("file filters", () => {
       "src/a.ts",
       "src/b.tsx",
       "sites/cv.arolariu.ro/src/+page.svelte",
+    ]);
+  });
+
+  it("keeps ESLint scoped when Prettier configuration changes", () => {
+    expect(filesForEslint(known([".prettierrc", ".prettierignore", "scripts/generate.artifacts.ts"]))).toEqual([
+      "scripts/generate.artifacts.ts",
     ]);
   });
 

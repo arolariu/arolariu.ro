@@ -185,6 +185,18 @@ public interface IInvoiceManagementService
   /// <returns>The merchants in the requested partition.</returns>
   Task<IEnumerable<Merchant>> ReadMerchants(Guid parentCompanyId, CancellationToken cancellationToken);
 
+  /// <summary>Retrieves the merchants referenced by the caller's own invoices.</summary>
+  /// <remarks>
+  /// Visibility is determined by invoice merchant reference rather than by <c>CreatedBy</c>, because
+  /// analysis performed by any user may create the merchant record that another user's invoice references.
+  /// </remarks>
+  /// <param name="userIdentifier">The authenticated user whose invoices are inspected.</param>
+  /// <param name="cancellationToken">The token that cancels the asynchronous operation.</param>
+  /// <returns>The distinct visible merchants and the caller-owned invoice snapshot used to derive them.</returns>
+  Task<(IReadOnlyCollection<Merchant> Merchants, IReadOnlyCollection<Invoice> Invoices)> ReadMerchantsVisibleToUser(
+    Guid userIdentifier,
+    CancellationToken cancellationToken);
+
   /// <summary>Replaces client-editable state on an existing merchant.</summary>
   /// <param name="identifier">The persisted merchant identifier.</param>
   /// <param name="parentCompanyId">The parent-company partition, or <see langword="null"/> when resolved downstream.</param>
@@ -220,7 +232,7 @@ public interface IInvoiceManagementService
     InvoiceAnalysisRequestDto request,
     CancellationToken cancellationToken);
 
-  /// <summary>Queues merchant analysis after validating target ownership.</summary>
+  /// <summary>Queues merchant analysis after validating invoice-reference visibility.</summary>
   /// <param name="merchantId">The merchant identifier to analyze.</param>
   /// <param name="userIdentifier">The authenticated user requesting analysis.</param>
   /// <param name="request">The requested profile and capability overrides.</param>

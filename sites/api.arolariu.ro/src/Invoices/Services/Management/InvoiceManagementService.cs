@@ -421,6 +421,23 @@ public sealed partial class InvoiceManagementService : IInvoiceManagementService
       return await invoiceProcessingService.ReadMerchants(parentCompanyId, cancellationToken).ConfigureAwait(false);
     }).ConfigureAwait(false);
 
+  /// <summary>Reads the merchants referenced by the caller's own invoices through the unified Processing boundary.</summary>
+  /// <param name="userIdentifier">The authenticated user whose invoices are inspected.</param>
+  /// <param name="cancellationToken">The token used to cancel the query.</param>
+  /// <returns>The distinct visible merchants and the caller-owned invoice snapshot used to derive them.</returns>
+  /// <exception cref="arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Management.InvoiceManagementDependencyException">
+  /// Thrown when invoice or merchant persistence cannot complete the query.
+  /// </exception>
+  /// <inheritdoc/>
+  public async Task<(IReadOnlyCollection<Merchant> Merchants, IReadOnlyCollection<Invoice> Invoices)> ReadMerchantsVisibleToUser(
+    Guid userIdentifier,
+    CancellationToken cancellationToken) =>
+    await TryCatchAsync(async () =>
+    {
+      using var activity = InvoicePackageTracing.StartActivity(nameof(ReadMerchantsVisibleToUser));
+      return await invoiceProcessingService.ReadMerchantsVisibleToUser(userIdentifier, cancellationToken).ConfigureAwait(false);
+    }).ConfigureAwait(false);
+
   /// <summary>Replaces client-editable merchant state through Processing.</summary>
   /// <param name="updatedMerchant">The replacement merchant fields.</param>
   /// <param name="identifier">The persisted merchant identifier.</param>
@@ -494,7 +511,7 @@ public sealed partial class InvoiceManagementService : IInvoiceManagementService
         .ConfigureAwait(false);
     }).ConfigureAwait(false);
 
-  /// <summary>Validates merchant ownership and queues a request with resolved analysis options.</summary>
+  /// <summary>Validates invoice-reference visibility and queues a merchant request with resolved analysis options.</summary>
   /// <param name="merchantId">The merchant identifier to analyze.</param>
   /// <param name="userIdentifier">The authenticated requester.</param>
   /// <param name="request">The requested analysis profile and capability overrides.</param>
@@ -504,7 +521,7 @@ public sealed partial class InvoiceManagementService : IInvoiceManagementService
   /// Thrown when the analysis request is invalid.
   /// </exception>
   /// <exception cref="arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Management.InvoiceManagementDependencyValidationException">
-  /// Thrown when the target merchant is unavailable or not owned by the requester.
+  /// Thrown when the target merchant is unavailable or is not referenced by one of the requester's invoices.
   /// </exception>
   /// <exception cref="arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Management.InvoiceManagementDependencyException">
   /// Thrown when target lookup or queue publication fails.

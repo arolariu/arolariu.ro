@@ -16,7 +16,7 @@ import {useCallback, useMemo} from "react";
  * @property dateTo - End date for date range filter (ISO string)
  * @property amountMin - Minimum amount for amount range filter
  * @property amountMax - Maximum amount for amount range filter
- * @property categories - Selected invoice categories (comma-separated enum values)
+ * @property classificationGroups - Selected taxonomy root-group labels (repeated URL key `grp`)
  * @property paymentTypes - Selected payment types (comma-separated enum values)
  * @property currencies - Selected ISO 4217 currency codes (comma-separated, URL key `cur`)
  * @property sortBy - Sort field. Defaults to `"date"`.
@@ -29,7 +29,7 @@ export type FilterState = {
   dateTo: string | null;
   amountMin: number | null;
   amountMax: number | null;
-  categories: number[];
+  classificationGroups: string[];
   paymentTypes: number[];
   currencies: string[];
   sortBy: "date" | "amount" | "name" | null;
@@ -52,6 +52,33 @@ export type UseInvoiceFiltersReturn = {
   activeFilterCount: number;
 };
 
+function setOptionalParameter(params: URLSearchParams, key: string, value: string | null): void {
+  if (value === null || value.length === 0) {
+    params.delete(key);
+  } else {
+    params.set(key, value);
+  }
+}
+
+function setRepeatedParameters(params: URLSearchParams, key: string, values: readonly string[]): void {
+  params.delete(key);
+  for (const value of values) {
+    if (value.length > 0) {
+      params.append(key, value);
+    }
+  }
+}
+
+function setSortParameters(params: URLSearchParams, sortBy: FilterState["sortBy"], sortOrder: FilterState["sortOrder"]): void {
+  if (sortBy !== null && sortOrder !== null && (sortBy !== "date" || sortOrder !== "desc")) {
+    params.set("sortBy", sortBy);
+    params.set("sortOrder", sortOrder);
+  } else {
+    params.delete("sortBy");
+    params.delete("sortOrder");
+  }
+}
+
 /**
  * Custom hook for managing invoice filter state via URL search parameters.
  *
@@ -69,7 +96,7 @@ export type UseInvoiceFiltersReturn = {
  * - `to` (ISO date): End date for date range filter (e.g., `2026-03-28`)
  * - `min` (number): Minimum amount for amount range filter
  * - `max` (number): Maximum amount for amount range filter
- * - `cat` (comma-separated numbers): Selected category IDs (e.g., `100,200`)
+ * - `grp` (repeated string): Selected taxonomy root-group labels (e.g., `grp=Food%2C+beverages&grp=Transport`)
  * - `pay` (comma-separated numbers): Selected payment type IDs (e.g., `200,300`)
  * - `sortBy` (string): Sort field - `date`, `amount`, `name`, or null for no sorting
  * - `sortOrder` (string): Sort direction - `asc`, `desc`, or null for no sorting
@@ -134,7 +161,7 @@ export function useInvoiceFilters(): UseInvoiceFiltersReturn {
    * **Parsing Strategy**:
    * - String params: Direct read with fallback to default
    * - Number params: Parse with `Number()`, use `null` if invalid/missing
-   * - Array params: Split comma-separated string, parse numbers, filter NaN values
+   * - Array params: Read repeated string keys or split comma-separated numeric values
    * - Date params: Store as ISO strings for URL compatibility
    * - Enum params: Cast to literal union types with validation
    */
@@ -145,12 +172,7 @@ export function useInvoiceFilters(): UseInvoiceFiltersReturn {
       dateTo: searchParams.get("to"),
       amountMin: searchParams.has("min") ? Number(searchParams.get("min")) : null,
       amountMax: searchParams.has("max") ? Number(searchParams.get("max")) : null,
-      categories:
-        searchParams
-          .get("cat")
-          ?.split(",")
-          .map(Number)
-          .filter((n) => !Number.isNaN(n)) ?? [],
+      classificationGroups: searchParams.getAll("grp").filter((group) => group.length > 0),
       paymentTypes:
         searchParams
           .get("pay")
@@ -189,75 +211,20 @@ export function useInvoiceFilters(): UseInvoiceFiltersReturn {
    * @param newFilters - Partial filter state to merge with existing filters
    */
   const setFilters = useCallback(
-    (newFilters: Partial<FilterState>) => {
+    (newFilters: Partial<FilterState>): void => {
       const params = new URLSearchParams(searchParams.toString());
-
       const merged = {...filters, ...newFilters};
 
-      // Set or delete each param based on value
-      if (merged.search) {
-        params.set("q", merged.search);
-      } else {
-        params.delete("q");
-      }
-
-      if (merged.dateFrom) {
-        params.set("from", merged.dateFrom);
-      } else {
-        params.delete("from");
-      }
-
-      if (merged.dateTo) {
-        params.set("to", merged.dateTo);
-      } else {
-        params.delete("to");
-      }
-
-      if (merged.amountMin === null) {
-        params.delete("min");
-      } else {
-        params.set("min", String(merged.amountMin));
-      }
-
-      if (merged.amountMax === null) {
-        params.delete("max");
-      } else {
-        params.set("max", String(merged.amountMax));
-      }
-
-      if (merged.categories.length > 0) {
-        params.set("cat", merged.categories.join(","));
-      } else {
-        params.delete("cat");
-      }
-
-      if (merged.paymentTypes.length > 0) {
-        params.set("pay", merged.paymentTypes.join(","));
-      } else {
-        params.delete("pay");
-      }
-
-      if (merged.currencies.length > 0) {
-        params.set("cur", merged.currencies.join(","));
-      } else {
-        params.delete("cur");
-      }
-
-      // Sort params: write only when value differs from the new default
-      // (default = date/desc → no params in URL keeps it clean)
-      if (merged.sortBy && merged.sortOrder && !(merged.sortBy === "date" && merged.sortOrder === "desc")) {
-        params.set("sortBy", merged.sortBy);
-        params.set("sortOrder", merged.sortOrder);
-      } else {
-        params.delete("sortBy");
-        params.delete("sortOrder");
-      }
-
-      if (merged.view === "table") {
-        params.delete("view");
-      } else {
-        params.set("view", merged.view);
-      }
+      setOptionalParameter(params, "q", merged.search);
+      setOptionalParameter(params, "from", merged.dateFrom);
+      setOptionalParameter(params, "to", merged.dateTo);
+      setOptionalParameter(params, "min", merged.amountMin === null ? null : String(merged.amountMin));
+      setOptionalParameter(params, "max", merged.amountMax === null ? null : String(merged.amountMax));
+      setRepeatedParameters(params, "grp", merged.classificationGroups);
+      setOptionalParameter(params, "pay", merged.paymentTypes.join(","));
+      setOptionalParameter(params, "cur", merged.currencies.join(","));
+      setSortParameters(params, merged.sortBy, merged.sortOrder);
+      setOptionalParameter(params, "view", merged.view === "table" ? null : merged.view);
 
       // Replace URL without adding to history or scrolling
       // Only add '?' if there are parameters, otherwise keep pathname clean
@@ -301,7 +268,7 @@ export function useInvoiceFilters(): UseInvoiceFiltersReturn {
     if (filters.search) count++;
     if (filters.dateFrom || filters.dateTo) count++;
     if (filters.amountMin !== null || filters.amountMax !== null) count++;
-    if (filters.categories.length > 0) count++;
+    if (filters.classificationGroups.length > 0) count++;
     if (filters.paymentTypes.length > 0) count++;
     if (filters.currencies.length > 0) count++;
     // Sort is "active" when not the default (date/desc). Matches the Sort card's

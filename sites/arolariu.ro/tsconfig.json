@@ -10,6 +10,6 @@
     "plugins": [{"name": "next"}],
     "types": ["@types/node", "@types/react", "@types/react-dom"]
   },
-  "exclude": ["node_modules", ".storybook"],
-  "include": ["**/*.d.ts", "**/*.ts", "**/*.tsx"]
+  "exclude": ["node_modules"],
+  "include": ["**/*.d.ts", "**/*.ts", "**/*.tsx", ".storybook/**/*.ts", ".storybook/**/*.tsx"]
 }

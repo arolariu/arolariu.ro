@@ -17,7 +17,9 @@ using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Recipes;
 using arolariu.Backend.Domain.Invoices.DTOs.Requests;
+using arolariu.Backend.Domain.Invoices.DTOs.Responses;
 using arolariu.Backend.Domain.Invoices.Endpoints;
 using arolariu.Backend.Domain.Invoices.Services.Management;
 
@@ -376,12 +378,10 @@ public sealed class InvoiceEndpointsStatusCodeTests
         It.IsAny<CancellationToken>()))
       .Returns(Task.CompletedTask);
 
-    // Act
     var result = await InvoiceEndpoints
       .CreateNewInvoiceAsync(mockService.Object, accessor, invalidDto)
 ;
 
-    // Assert
     Assert.AreEqual(StatusCodes.Status201Created, GetStatusCode(result));
     mockService.VerifyAll();
   }
@@ -758,10 +758,238 @@ public sealed class InvoiceEndpointsStatusCodeTests
   }
   #endregion
 
-  #region Replacement classification preservation tests
-  /// <summary>Verifies invoice PUT preserves classification omission for Processing merge semantics.</summary>
+  #region Merchant collection scoping tests
+  /// <summary>
+  /// Verifies the merchant collection is owner-scoped even when a parent company is supplied.
+  /// </summary>
+  /// <remarks>
+  /// <para><c>parentCompanyId</c> narrows the caller's own visible set. It must never act as an
+  /// alternate path that skips ownership filtering: <c>MerchantResponseDto</c> exposes
+  /// <c>referencedInvoiceIds</c> and <c>createdBy</c>, so an unscoped partition read would
+  /// disclose other users' invoice and user identifiers to any authenticated caller.</para>
+  /// </remarks>
   [TestMethod]
-  public async Task UpdateSpecificInvoiceAsync_OmittedClassification_LeavesSelectionUnset()
+  public async Task RetrieveAllMerchantsAsync_WithParentCompanyId_StillScopesToCaller()
+  {
+    Guid userId = Guid.NewGuid();
+    Guid parentCompanyId = Guid.NewGuid();
+    var inPartition = new Merchant { id = Guid.NewGuid(), ParentCompanyId = parentCompanyId };
+    var outOfPartition = new Merchant { id = Guid.NewGuid(), ParentCompanyId = Guid.NewGuid() };
+
+    var service = new Mock<IInvoiceManagementService>(MockBehavior.Strict);
+    service
+      .Setup(candidate => candidate.ReadMerchantsVisibleToUser(userId, It.IsAny<CancellationToken>()))
+      .ReturnsAsync((
+        new List<Merchant> { inPartition, outOfPartition },
+        new List<Invoice>()));
+
+    IResult result = await InvoiceEndpoints.RetrieveAllMerchantsAsync(
+      service.Object,
+      CreateAuthenticatedContextAccessor(userId),
+      parentCompanyId,
+      visibleToUser: null,
+      CancellationToken.None);
+
+    Assert.AreEqual(StatusCodes.Status200OK, GetStatusCode(result));
+
+    // The owner-scoped read is the ONLY source of merchants; the unscoped partition read
+    // must never be reached. MockBehavior.Strict makes any other call fail the test.
+    service.Verify(
+      candidate => candidate.ReadMerchants(It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
+      Times.Never);
+  }
+
+  /// <summary>
+  /// Verifies collection responses expose only caller-owned invoice references and redact unrelated audit principals.
+  /// </summary>
+  [TestMethod]
+  public async Task RetrieveAllMerchantsAsync_SharedMerchant_ReturnsCallerScopedProjection()
+  {
+    Guid userId = Guid.NewGuid();
+    Guid callerInvoiceId = Guid.NewGuid();
+    Guid otherUserInvoiceId = Guid.NewGuid();
+    Guid otherUserId = Guid.NewGuid();
+    Guid merchantId = Guid.NewGuid();
+    var merchant = new Merchant
+    {
+      id = merchantId,
+      ReferencedInvoices = [callerInvoiceId, otherUserInvoiceId],
+      CreatedBy = otherUserId,
+    };
+    typeof(Merchant)
+      .GetProperty(nameof(Merchant.LastUpdatedBy))!
+      .SetValue(merchant, otherUserId);
+    var callerInvoice = new Invoice
+    {
+      id = callerInvoiceId,
+      UserIdentifier = userId,
+      MerchantReference = merchantId,
+    };
+    var service = new Mock<IInvoiceManagementService>(MockBehavior.Strict);
+    service
+      .Setup(candidate => candidate.ReadMerchantsVisibleToUser(userId, It.IsAny<CancellationToken>()))
+      .ReturnsAsync((
+        new List<Merchant> { merchant },
+        new List<Invoice> { callerInvoice }));
+
+    IResult result = await InvoiceEndpoints.RetrieveAllMerchantsAsync(
+      service.Object,
+      CreateAuthenticatedContextAccessor(userId),
+      parentCompanyId: null,
+      visibleToUser: null,
+      CancellationToken.None);
+
+    IEnumerable<MerchantResponseDto> values =
+      Assert.IsInstanceOfType<IEnumerable<MerchantResponseDto>>(((IValueHttpResult)result).Value);
+    MerchantResponseDto response = values.Single();
+    CollectionAssert.AreEqual(new[] { callerInvoiceId }, response.ReferencedInvoiceIds.ToArray());
+    Assert.AreEqual(1, response.ReferencedInvoiceCount);
+    Assert.AreEqual(Guid.Empty, response.CreatedBy);
+    Assert.AreEqual(Guid.Empty, response.LastUpdatedBy);
+    Assert.AreNotEqual(otherUserId, response.CreatedBy);
+    Assert.AreNotEqual(otherUserId, response.LastUpdatedBy);
+    service.VerifyAll();
+  }
+
+  /// <summary>
+  /// Verifies a specific shared merchant response applies the same caller relationship and audit projection.
+  /// </summary>
+  [TestMethod]
+  public async Task RetrieveSpecificMerchantAsync_SharedMerchant_ReturnsCallerScopedProjection()
+  {
+    Guid userId = Guid.NewGuid();
+    Guid callerInvoiceId = Guid.NewGuid();
+    Guid otherUserInvoiceId = Guid.NewGuid();
+    Guid otherUserId = Guid.NewGuid();
+    Guid merchantId = Guid.NewGuid();
+    var merchant = new Merchant
+    {
+      id = merchantId,
+      ReferencedInvoices = [callerInvoiceId, otherUserInvoiceId],
+      CreatedBy = otherUserId,
+    };
+    var callerInvoice = new Invoice
+    {
+      id = callerInvoiceId,
+      UserIdentifier = userId,
+      MerchantReference = merchantId,
+    };
+    var service = new Mock<IInvoiceManagementService>(MockBehavior.Strict);
+    service
+      .Setup(candidate => candidate.ReadMerchant(
+        merchantId,
+        parentCompanyId: null,
+        It.IsAny<CancellationToken>()))
+      .ReturnsAsync(merchant);
+    service
+      .Setup(candidate => candidate.ReadInvoices(userId, It.IsAny<CancellationToken>()))
+      .ReturnsAsync([callerInvoice]);
+
+    IResult result = await InvoiceEndpoints.RetrieveSpecificMerchantAsync(
+      service.Object,
+      CreateAuthenticatedContextAccessor(userId),
+      merchantId,
+      parentCompanyId: null,
+      CancellationToken.None);
+
+    MerchantResponseDto response =
+      Assert.IsExactInstanceOfType<MerchantResponseDto>(((IValueHttpResult)result).Value);
+    CollectionAssert.AreEqual(new[] { callerInvoiceId }, response.ReferencedInvoiceIds.ToArray());
+    Assert.AreEqual(Guid.Empty, response.CreatedBy);
+    Assert.AreNotEqual(otherUserId, response.CreatedBy);
+    service.VerifyAll();
+  }
+
+  /// <summary>
+  /// Verifies the invoice merchant subresource cannot disclose references or audit principals from other users.
+  /// </summary>
+  [TestMethod]
+  public async Task RetrieveMerchantFromInvoiceAsync_SharedMerchant_ReturnsInvoiceScopedProjection()
+  {
+    Guid userId = Guid.NewGuid();
+    Guid invoiceId = Guid.NewGuid();
+    Guid otherUserInvoiceId = Guid.NewGuid();
+    Guid otherUserId = Guid.NewGuid();
+    Guid merchantId = Guid.NewGuid();
+    var invoice = new Invoice
+    {
+      id = invoiceId,
+      UserIdentifier = userId,
+      MerchantReference = merchantId,
+    };
+    var merchant = new Merchant
+    {
+      id = merchantId,
+      ReferencedInvoices = [invoiceId, otherUserInvoiceId],
+      CreatedBy = otherUserId,
+    };
+    var service = new Mock<IInvoiceManagementService>(MockBehavior.Strict);
+    service
+      .Setup(candidate => candidate.ReadInvoice(
+        invoiceId,
+        userId,
+        It.IsAny<CancellationToken>()))
+      .ReturnsAsync(invoice);
+    service
+      .Setup(candidate => candidate.ReadMerchant(
+        merchantId,
+        parentCompanyId: null,
+        It.IsAny<CancellationToken>()))
+      .ReturnsAsync(merchant);
+
+    IResult result = await InvoiceEndpoints.RetrieveMerchantFromInvoiceAsync(
+      service.Object,
+      CreateAuthenticatedContextAccessor(userId),
+      invoiceId,
+      CancellationToken.None);
+
+    MerchantResponseDto response =
+      Assert.IsExactInstanceOfType<MerchantResponseDto>(((IValueHttpResult)result).Value);
+    CollectionAssert.AreEqual(new[] { invoiceId }, response.ReferencedInvoiceIds.ToArray());
+    Assert.AreEqual(Guid.Empty, response.CreatedBy);
+    Assert.AreNotEqual(otherUserId, response.CreatedBy);
+    service.VerifyAll();
+  }
+
+  /// <summary>
+  /// Verifies a caller requesting another user's merchants is rejected before any read occurs.
+  /// </summary>
+  [TestMethod]
+  public async Task RetrieveAllMerchantsAsync_VisibleToAnotherUser_ReturnsForbidden()
+  {
+    Guid userId = Guid.NewGuid();
+    var service = new Mock<IInvoiceManagementService>(MockBehavior.Strict);
+
+    IResult result = await InvoiceEndpoints.RetrieveAllMerchantsAsync(
+      service.Object,
+      CreateAuthenticatedContextAccessor(userId),
+      parentCompanyId: null,
+      visibleToUser: Guid.NewGuid(),
+      CancellationToken.None);
+
+    // TypedResults.Forbid() yields ForbidHttpResult, which carries no status-code property.
+    Assert.IsInstanceOfType<ForbidHttpResult>(result);
+    service.VerifyNoOtherCalls();
+  }
+  #endregion
+
+  #region Replacement classification preservation tests
+  /// <summary>
+  /// Verifies invoice PUT preserves an existing classification when no manual code is supplied.
+  /// </summary>
+  /// <remarks>
+  /// <para>This test previously asserted the opposite — that the endpoint hands Processing an
+  /// invoice with a null classification and lets "Processing merge semantics" restore it. No such
+  /// merge exists for invoices: <c>InvoiceProcessingService.UpdateInvoice</c> only assigns
+  /// <c>Classification</c> when a <c>ClassificationCode</c> is present, and persistence is a
+  /// full-document Cosmos upsert. The omitted classification was therefore dropped, so renaming an
+  /// invoice silently destroyed its analysis-derived classification, confidence and evidence.</para>
+  /// <para>Merchants are unaffected because <c>MerchantStorageFoundationService.UpdateMerchantObject</c>
+  /// copies client-editable fields onto the persisted entity field by field, leaving an unassigned
+  /// classification intact.</para>
+  /// </remarks>
+  [TestMethod]
+  public async Task UpdateSpecificInvoiceAsync_OmittedClassification_PreservesPersistedSelection()
   {
     Guid invoiceId = Guid.NewGuid();
     Guid userId = Guid.NewGuid();
@@ -783,6 +1011,7 @@ public sealed class InvoiceEndpointsStatusCodeTests
       PaymentInformation: new PaymentInformation(),
       MerchantReference: null,
       IsImportant: false,
+      PossibleRecipes: null,
       AdditionalMetadata: null);
     var service = new Mock<IInvoiceManagementService>(MockBehavior.Strict);
     Invoice? capturedInvoice = null;
@@ -810,7 +1039,111 @@ public sealed class InvoiceEndpointsStatusCodeTests
 
     Assert.AreEqual(StatusCodes.Status202Accepted, GetStatusCode(result));
     Assert.IsNotNull(capturedInvoice);
-    Assert.IsNull(capturedInvoice.Classification);
+    Assert.AreSame(classification, capturedInvoice.Classification);
+  }
+
+  /// <summary>Verifies invoice PUT treats a whitespace classification code as omission.</summary>
+  [TestMethod]
+  public async Task UpdateSpecificInvoiceAsync_WhitespaceClassification_PreservesPersistedSelection()
+  {
+    Guid invoiceId = Guid.NewGuid();
+    Guid userId = Guid.NewGuid();
+    StandardClassification classification = CreateClassification(
+      ClassificationSystem.EcoicopV2,
+      "2",
+      "01.1",
+      "Food products");
+    var invoice = new Invoice
+    {
+      id = invoiceId,
+      UserIdentifier = userId,
+      Classification = classification,
+    };
+    var request = new UpdateInvoiceRequestDto(
+      Name: "Groceries",
+      Description: "Weekly shop",
+      ClassificationCode: "   ",
+      PaymentInformation: new PaymentInformation(),
+      MerchantReference: null,
+      IsImportant: false,
+      PossibleRecipes: null,
+      AdditionalMetadata: null);
+    var service = new Mock<IInvoiceManagementService>(MockBehavior.Strict);
+    Invoice? capturedInvoice = null;
+    service
+      .Setup(candidate => candidate.ReadInvoice(
+        invoiceId,
+        userId,
+        It.IsAny<CancellationToken>()))
+      .ReturnsAsync(invoice);
+    service
+      .Setup(candidate => candidate.UpdateInvoice(
+        invoiceId,
+        userId,
+        It.IsAny<Invoice>(),
+        It.IsAny<CancellationToken>()))
+      .Callback<Guid, Guid?, Invoice, CancellationToken>(
+        (_, _, updated, _) => capturedInvoice = updated)
+      .ReturnsAsync(invoice);
+
+    IResult result = await InvoiceEndpoints.UpdateSpecificInvoiceAsync(
+      service.Object,
+      CreateAuthenticatedContextAccessor(userId),
+      invoiceId,
+      request);
+
+    Assert.AreEqual(StatusCodes.Status202Accepted, GetStatusCode(result));
+    Assert.IsNotNull(capturedInvoice);
+    Assert.AreSame(classification, capturedInvoice.Classification);
+    Assert.AreEqual("   ", capturedInvoice.ClassificationCode);
+    service.VerifyAll();
+  }
+
+  /// <summary>Verifies invalid recipe invariants are returned as HTTP 400 instead of HTTP 500.</summary>
+  [TestMethod]
+  public async Task UpdateSpecificInvoiceAsync_InvalidRecipe_ReturnsValidationProblem()
+  {
+    Guid invoiceId = Guid.NewGuid();
+    Guid userId = Guid.NewGuid();
+    var invalidRecipe = new RecipeSuggestionRequestDto(
+      Name: "Tomato soup",
+      Description: "A simple tomato soup.",
+      Servings: 2,
+      PreparationMinutes: -1,
+      CookingMinutes: 20,
+      TotalMinutes: 20,
+      Difficulty: RecipeDifficulty.Easy,
+      PurchasedIngredients: [],
+      AssumedPantryStaples: [],
+      MissingOptionalIngredients: [],
+      Steps: [new RecipeStepRequestDto(1, "Serve.", null)],
+      AllergenWarnings: []);
+    var request = new UpdateInvoiceRequestDto(
+      Name: "Groceries",
+      Description: "Weekly shop",
+      ClassificationCode: null,
+      PaymentInformation: new PaymentInformation(),
+      MerchantReference: null,
+      IsImportant: false,
+      PossibleRecipes: [invalidRecipe],
+      AdditionalMetadata: null);
+    var service = new Mock<IInvoiceManagementService>(MockBehavior.Strict);
+    service
+      .Setup(candidate => candidate.ReadInvoice(
+        invoiceId,
+        userId,
+        It.IsAny<CancellationToken>()))
+      .ReturnsAsync(new Invoice { id = invoiceId, UserIdentifier = userId });
+
+    IResult result = await InvoiceEndpoints.UpdateSpecificInvoiceAsync(
+      service.Object,
+      CreateAuthenticatedContextAccessor(userId),
+      invoiceId,
+      request);
+
+    Assert.AreEqual(StatusCodes.Status400BadRequest, GetStatusCode(result));
+    Assert.AreEqual(ProblemTypeUris.Validation, GetProblemDetails(result).Type);
+    service.VerifyAll();
   }
 
   /// <summary>Verifies merchant PUT preserves classification omission for Processing merge semantics.</summary>
@@ -819,6 +1152,7 @@ public sealed class InvoiceEndpointsStatusCodeTests
   {
     Guid merchantId = Guid.NewGuid();
     Guid parentCompanyId = Guid.NewGuid();
+    Guid userId = Guid.NewGuid();
     StandardClassification classification = CreateClassification(
       ClassificationSystem.Nace21,
       "2.1",
@@ -840,6 +1174,11 @@ public sealed class InvoiceEndpointsStatusCodeTests
     var service = new Mock<IInvoiceManagementService>(MockBehavior.Strict);
     Merchant? capturedMerchant = null;
     service
+      .Setup(candidate => candidate.ReadInvoices(
+        userId,
+        It.IsAny<CancellationToken>()))
+      .ReturnsAsync([new Invoice { id = Guid.NewGuid(), UserIdentifier = userId, MerchantReference = merchantId }]);
+    service
       .Setup(candidate => candidate.ReadMerchant(
         merchantId,
         parentCompanyId: null,
@@ -858,13 +1197,54 @@ public sealed class InvoiceEndpointsStatusCodeTests
 
     IResult result = await InvoiceEndpoints.UpdateSpecificMerchantAsync(
       service.Object,
-      CreateAuthenticatedContextAccessor(),
+      CreateAuthenticatedContextAccessor(userId),
       merchantId,
       request);
 
     Assert.AreEqual(StatusCodes.Status202Accepted, GetStatusCode(result));
     Assert.IsNotNull(capturedMerchant);
     Assert.IsNull(capturedMerchant.Classification);
+    service.VerifyAll();
+  }
+
+  /// <summary>Verifies merchant PUT hides and rejects merchants not referenced by the caller's invoices.</summary>
+  [TestMethod]
+  public async Task UpdateSpecificMerchantAsync_UnreferencedMerchant_ReturnsNotFoundWithoutWriting()
+  {
+    Guid merchantId = Guid.NewGuid();
+    Guid userId = Guid.NewGuid();
+    var request = new UpdateMerchantRequestDto(
+      Name: "Store",
+      Description: "Description",
+      ClassificationCode: null,
+      Address: null,
+      ParentCompanyId: Guid.NewGuid(),
+      AdditionalMetadata: null);
+    var service = new Mock<IInvoiceManagementService>(MockBehavior.Strict);
+    service
+      .Setup(candidate => candidate.ReadInvoices(
+        userId,
+        It.IsAny<CancellationToken>()))
+      .ReturnsAsync([new Invoice { id = Guid.NewGuid(), UserIdentifier = userId, MerchantReference = Guid.NewGuid() }]);
+
+    IResult result = await InvoiceEndpoints.UpdateSpecificMerchantAsync(
+      service.Object,
+      CreateAuthenticatedContextAccessor(userId),
+      merchantId,
+      request);
+
+    Assert.AreEqual(StatusCodes.Status404NotFound, GetStatusCode(result));
+    service.VerifyAll();
+    service.Verify(candidate => candidate.ReadMerchant(
+      It.IsAny<Guid>(),
+      It.IsAny<Guid?>(),
+      It.IsAny<CancellationToken>()), Times.Never);
+    service.Verify(candidate => candidate.UpdateMerchant(
+      It.IsAny<Guid>(),
+      It.IsAny<Guid?>(),
+      It.IsAny<Merchant>(),
+      It.IsAny<string?>(),
+      It.IsAny<CancellationToken>()), Times.Never);
   }
 
   private static StandardClassification CreateClassification(

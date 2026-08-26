@@ -171,6 +171,17 @@ public interface IDatabaseBroker
   /// <exception cref="OperationCanceledException">Thrown if the operation is cancelled.</exception>
   ValueTask<IEnumerable<Merchant>> ReadMerchantsAsync(Guid parentCompanyId, CancellationToken cancellationToken);
 
+  /// <summary>Reads every non-deleted merchant whose identifier appears in the supplied set.</summary>
+  /// <remarks>
+  /// <para>Executes a cross-partition query. The caller is responsible for having already
+  /// authorised the identifier set; this broker applies no ownership filtering.</para>
+  /// <para>Large sets are chunked internally to respect Cosmos query parameter limits.</para>
+  /// </remarks>
+  /// <param name="merchantIdentifiers">The merchant identifiers to read. May be empty.</param>
+  /// <param name="cancellationToken">Cancellation token to abort the operation (required).</param>
+  /// <returns>The merchants matching the supplied identifiers, excluding soft-deleted rows.</returns>
+  ValueTask<IEnumerable<Merchant>> ReadMerchantsByIdentifiersAsync(IReadOnlyCollection<Guid> merchantIdentifiers, CancellationToken cancellationToken);
+
   /// <summary>
   /// Replaces (upserts) a merchant using its current and updated snapshots.
   /// </summary>

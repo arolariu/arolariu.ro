@@ -1,5 +1,4 @@
 import type {Invoice} from "@/types/invoices";
-import {ProductCategory} from "@/types/invoices/Product";
 
 const EMPTY_GUID = "00000000-0000-0000-0000-000000000000";
 
@@ -44,7 +43,7 @@ export function calculateHealthScorePercentage(invoice: Invoice): number {
     && (invoice.paymentInformation.currency?.code?.length ?? 0) > 0;
   const paymentPoints = hasCompletePayment ? 15 : 0;
 
-  const categorizedProducts = items.filter((item) => item.category !== ProductCategory.NOT_DEFINED).length;
+  const categorizedProducts = items.filter((item) => item.classification !== null).length;
   const categoryRatio = totalItems > 0 ? categorizedProducts / totalItems : 0;
   const categoryPoints = Math.round(categoryRatio * 10);
 

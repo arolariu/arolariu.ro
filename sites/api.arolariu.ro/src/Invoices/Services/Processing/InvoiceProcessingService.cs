@@ -247,6 +247,41 @@ public sealed partial class InvoiceProcessingService : IInvoiceProcessingService
   }).ConfigureAwait(false);
   #endregion
 
+  #region Read Merchants Visible To User API
+  /// <summary>Reads the merchants referenced by the caller's own invoices.</summary>
+  /// <param name="userIdentifier">The authenticated user whose invoices are inspected.</param>
+  /// <param name="cancellationToken">The token used to cancel the query.</param>
+  /// <returns>The distinct visible merchants and the caller-owned invoice snapshot used to derive them.</returns>
+  /// <exception cref="DDD.AggregatorRoots.Invoices.Exceptions.Outer.Processing.InvoiceProcessingServiceDependencyException">
+  /// Thrown when invoice or merchant orchestration cannot complete the query.
+  /// </exception>
+  /// <inheritdoc/>
+  public async Task<(IReadOnlyCollection<Merchant> Merchants, IReadOnlyCollection<Invoice> Invoices)> ReadMerchantsVisibleToUser(
+    Guid userIdentifier,
+    CancellationToken cancellationToken) =>
+  await TryCatchAsync(async () =>
+  {
+    using var activity = InvoicePackageTracing.StartActivity(nameof(ReadMerchantsVisibleToUser));
+    activity?.SetUserContext(userIdentifier);
+
+    IReadOnlyCollection<Invoice> invoices = (await invoiceOrchestrationService
+      .ReadAllInvoiceObjects(userIdentifier, cancellationToken)
+      .ConfigureAwait(false)).ToList();
+    var merchantIdentifiers = invoices
+      .Select(invoice => invoice.MerchantReference)
+      .Where(reference => reference != Guid.Empty)
+      .Distinct()
+      .ToList();
+    activity?.SetTag("merchant.reference_count", merchantIdentifiers.Count);
+
+    IReadOnlyCollection<Merchant> merchants = (await merchantOrchestrationService
+      .ReadMerchantObjectsByIdentifiers(merchantIdentifiers, cancellationToken)
+      .ConfigureAwait(false)).ToList();
+
+    return (merchants, invoices);
+  }).ConfigureAwait(false);
+  #endregion
+
   #region Read Invoice API
   /// <summary>Reads one invoice through invoice orchestration.</summary>
   /// <param name="identifier">The invoice identifier.</param>
@@ -323,7 +358,7 @@ public sealed partial class InvoiceProcessingService : IInvoiceProcessingService
     using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateInvoice));
     var sw = Stopwatch.StartNew();
 
-    if (updatedInvoice.ClassificationCode is not null)
+    if (!string.IsNullOrWhiteSpace(updatedInvoice.ClassificationCode))
     {
       updatedInvoice.Classification = await analysisOrchestrationService
         .ResolveManualClassificationAsync(
@@ -1043,7 +1078,7 @@ public sealed partial class InvoiceProcessingService : IInvoiceProcessingService
       return messageId;
     }).ConfigureAwait(false);
 
-  /// <summary>Validates merchant ownership and publishes a resolved durable analysis request.</summary>
+  /// <summary>Validates invoice-reference visibility and publishes a resolved durable merchant analysis request.</summary>
   /// <param name="merchantId">The merchant identifier to analyze.</param>
   /// <param name="userIdentifier">The authenticated requester.</param>
   /// <param name="request">The requested profile and capability overrides.</param>
@@ -1053,7 +1088,7 @@ public sealed partial class InvoiceProcessingService : IInvoiceProcessingService
   /// Thrown when the request cannot be converted to valid analysis options.
   /// </exception>
   /// <exception cref="DDD.AggregatorRoots.Invoices.Exceptions.Outer.Processing.InvoiceProcessingServiceDependencyValidationException">
-  /// Thrown when the target merchant is unavailable or not owned by the requester.
+  /// Thrown when the target merchant is unavailable or is not referenced by one of the requester's invoices.
   /// </exception>
   /// <exception cref="DDD.AggregatorRoots.Invoices.Exceptions.Outer.Processing.InvoiceProcessingServiceDependencyException">
   /// Thrown when target lookup or queue publication fails.
@@ -1067,14 +1102,18 @@ public sealed partial class InvoiceProcessingService : IInvoiceProcessingService
     await TryCatchAnalysisAsync(async () =>
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(QueueMerchantAnalysisAsync));
-      Merchant merchant = await merchantOrchestrationService
-        .ReadMerchantObject(merchantId, parentCompanyId: null, cancellationToken)
+      IEnumerable<Invoice> callerInvoices = await invoiceOrchestrationService
+        .ReadAllInvoiceObjects(userIdentifier, cancellationToken)
         .ConfigureAwait(false);
 
-      if (merchant.CreatedBy != Guid.Empty && merchant.CreatedBy != userIdentifier)
+      if (!callerInvoices.Any(invoice => invoice.MerchantReference == merchantId))
       {
         throw new MerchantForbiddenAccessException(merchantId, userIdentifier);
       }
+
+      Merchant merchant = await merchantOrchestrationService
+        .ReadMerchantObject(merchantId, parentCompanyId: null, cancellationToken)
+        .ConfigureAwait(false);
 
       MerchantAnalysisOptions options = request.ToMerchantAnalysisOptions();
       QueueAnalysisMessage message = QueueAnalysisMessage.CreateMerchantMessage(

@@ -32,8 +32,7 @@ public sealed class RecipeSuggestionTests
         [],
         [],
         [new RecipeStep(1, "Cook", null)],
-        [],
-        Guid.NewGuid()));
+        []));
 
   /// <summary>
   /// Verifies that recipe suggestions snapshot collection inputs.
@@ -70,8 +69,7 @@ public sealed class RecipeSuggestionTests
       [],
       [],
       steps,
-      warnings,
-      Guid.NewGuid());
+      warnings);
 
     purchasedIngredients.Clear();
     steps.Add(new RecipeStep(2, "Serve immediately.", null));

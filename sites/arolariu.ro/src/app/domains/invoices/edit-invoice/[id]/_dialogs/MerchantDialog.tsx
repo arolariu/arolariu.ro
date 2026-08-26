@@ -1,7 +1,6 @@
 "use client";
 
-import {formatEnum} from "@/lib/utils.generic";
-import {type Merchant, MerchantCategory} from "@/types/invoices";
+import {type Merchant} from "@/types/invoices";
 import {
   Badge,
   Button,
@@ -37,7 +36,7 @@ import styles from "./MerchantDialog.module.scss";
  * **Visual Design**:
  * - Profile-style header with merchant icon in primary-tinted circle
  * - Table layout for structured detail presentation
- * - Category badge derived from `MerchantCategory` const-object
+ * - Classification badge showing merchant sector
  *
  * **Dialog Integration**: Uses `useDialog` hook with `INVOICE_MERCHANT` type.
  * Payload contains the full `Merchant` object.
@@ -56,9 +55,8 @@ import styles from "./MerchantDialog.module.scss";
  *
  * @see {@link MerchantCard} - Parent component that opens this dialog
  * @see {@link Merchant} - Merchant type definition
- * @see {@link MerchantCategory} - Category const-object for badge display
  */
-export default function MerchantDialog(): React.JSX.Element {
+export default function MerchantDialog(): React.JSX.Element | null {
   const t = useTranslations();
   const {
     currentDialog: {payload},
@@ -66,8 +64,18 @@ export default function MerchantDialog(): React.JSX.Element {
     close,
   } = useDialog("EDIT_INVOICE__MERCHANT");
 
-  const merchant = payload;
-  const merchantCategoryAsString = formatEnum(MerchantCategory, merchant.category) || "NOT_DEFINED";
+  // `payload` is `null` at runtime whenever the dialog has not been opened yet
+  // (e.g. Storybook mounting this component directly, ahead of `DialogContainer`'s
+  // production gate which only renders this component once `open()` has already
+  // set a real merchant payload). No hooks are declared below this point, so
+  // returning early here is hook-order-safe.
+  const merchant: Merchant | null = payload ?? null;
+
+  if (!merchant) {
+    return null;
+  }
+
+  const merchantClassification = merchant.classification?.officialLabel ?? t((m) => m.shared.invoices.classification.unclassified);
 
   return (
     <Dialog
@@ -91,7 +99,7 @@ export default function MerchantDialog(): React.JSX.Element {
               <Badge
                 variant='outline'
                 className={styles["categoryBadge"]}>
-                {merchantCategoryAsString}
+                {merchantClassification}
               </Badge>
             </div>
           </div>

@@ -17,15 +17,16 @@
  * **Product Enrichment:**
  * Raw OCR names are enriched with:
  * - Generic names (e.g., "MLK 2% 1L" → "Milk 2% 1 Liter")
- * - Category classification
+ * - Canonical taxonomy classification
  * - Allergen detection
  * - Nutritional information (future)
  *
  * @see {@link Invoice.items} for product attachment to invoices
- * @see {@link Allergen} for allergen information
+ * @see {@link AllergenAssessment} for allergen information
  */
 
-import type {Allergen} from "./index.ts";
+import type {AllergenAssessment} from "./Allergen";
+import type {StandardClassification} from "./Classification";
 
 /**
  * Tracks the editing and lifecycle state of a product.
@@ -75,59 +76,6 @@ export type ProductMetadata = {
 };
 
 /**
- * Categorizes products by their type for analytics and filtering.
- *
- * @remarks
- * Product categories enable spending breakdowns and dietary tracking.
- * Categories are assigned by AI during invoice analysis or manually by users.
- *
- * **Numeric Values:**
- * Values are spaced by 100 to allow subcategory insertion.
- * `NOT_DEFINED` (0) is the default for unclassified products.
- *
- * **Category Hierarchy:**
- * Future enhancement: Subcategories (e.g., FRUITS_CITRUS = 601)
- *
- * **Health Tracking:**
- * Categories like ALCOHOLIC_BEVERAGES and TOBACCO are flagged
- * separately for health-conscious spending reports.
- *
- * @example
- * ```typescript
- * const product: Product = {
- *   category: ProductCategory.DAIRY,
- *   // ... other properties
- * };
- *
- * // Spending by category
- * const dairySpending = products
- *   .filter(p => p.category === ProductCategory.DAIRY)
- *   .reduce((sum, p) => sum + p.totalPrice, 0);
- * ```
- *
- * @see {@link InvoiceCategory} for invoice-level categorization
- * @see {@link MerchantCategory} for merchant-level categorization
- */
-export const ProductCategory = {
-  NOT_DEFINED: 0,
-  BAKED_GOODS: 100,
-  GROCERIES: 200,
-  DAIRY: 300,
-  MEAT: 400,
-  FISH: 500,
-  FRUITS: 600,
-  VEGETABLES: 700,
-  BEVERAGES: 800,
-  ALCOHOLIC_BEVERAGES: 900,
-  TOBACCO: 1000,
-  CLEANING_SUPPLIES: 1100,
-  PERSONAL_CARE: 1200,
-  MEDICINE: 1300,
-  OTHER: 9999,
-} as const;
-export type ProductCategory = (typeof ProductCategory)[keyof typeof ProductCategory];
-
-/**
  * Represents a line item product on an invoice.
  *
  * @remarks
@@ -150,34 +98,29 @@ export type ProductCategory = (typeof ProductCategory)[keyof typeof ProductCateg
  *
  * **Allergen Detection:**
  * AI analysis scans product names and database matches to identify
- * common allergens. The `detectedAllergens` array is populated
- * automatically and can be manually edited.
+ * common allergens. The `allergenAssessment` field captures structured EU-14
+ * allergen results.
  *
  * @example
  * ```typescript
  * const product: Product = {
  *   name: "Zuzu Milk 2% 1 Liter",
- *   category: ProductCategory.DAIRY,
  *   quantity: 2,
  *   quantityUnit: "pcs",
  *   productCode: "5941234567890",
  *   price: 8.99,
  *   totalPrice: 17.98,
- *   detectedAllergens: [{ name: "Lactose", description: "...", learnMoreAddress: "..." }],
+ *   classification: null,
+ *   allergenAssessment: null,
  *   metadata: { isEdited: false, isComplete: true, isSoftDeleted: false, confidence: 0.95 }
  * };
  * ```
  *
- * @see {@link ProductCategory} for category options
- * @see {@link Allergen} for allergen structure
  * @see {@link ProductMetadata} for lifecycle state
  */
 export interface Product {
   /** The name of the product. */
   name: string;
-
-  /** The category of the product. */
-  category: ProductCategory;
 
   /** The quantity of the product. */
   quantity: number;
@@ -194,11 +137,20 @@ export interface Product {
   /** The total price of the product (price * quantity). */
   totalPrice: number;
 
-  /** The list of detected allergens in the product. */
-  detectedAllergens: Allergen[];
-
   /** The metadata associated with the product. */
   metadata: ProductMetadata;
+
+  /**
+   * The standard taxonomy classification for this product.
+   * @remarks Expected system is GS1 GPC or ECOICOP v2. Null when the product has not been classified.
+   */
+  classification: StandardClassification | null;
+
+  /**
+   * Structured EU-14 allergen assessment for this product.
+   * @remarks Null when the allergen assessment pipeline has not run for this product.
+   */
+  allergenAssessment: AllergenAssessment | null;
 }
 
 /**
@@ -220,7 +172,6 @@ export interface Product {
  * ```typescript
  * const payload: CreateProductDtoPayload = {
  *   name: "Apple Fuji 1kg",
- *   category: ProductCategory.FRUITS,
  *   quantity: 1,
  *   price: 12.50
  * };
@@ -233,20 +184,10 @@ export type CreateProductDtoPayload = Partial<Product>;
 /**
  * DTO payload for updating an existing product.
  *
- * @remarks
- * **Partial Updates:**
- * Only provided fields are updated. Products are embedded in
- * invoices, so updates go through the invoice update endpoint.
- *
- * **Edit Tracking:**
- * When a product is updated, `metadata.isEdited` is automatically
- * set to `true` to prevent AI re-analysis overwriting user corrections.
- *
  * @example
  * ```typescript
  * const updatePayload: UpdateProductDtoPayload = {
- *   name: "Corrected Product Name",
- *   category: ProductCategory.VEGETABLES
+ *   name: "Corrected Product Name"
  * };
  * ```
  *

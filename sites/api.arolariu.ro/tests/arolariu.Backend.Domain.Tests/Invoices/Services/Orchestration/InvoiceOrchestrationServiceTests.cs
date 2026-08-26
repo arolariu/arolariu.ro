@@ -188,6 +188,149 @@ public sealed class InvoiceOrchestrationServiceTests
 
   #endregion
 
+  #region AttachInvoiceScanAsync Tests
+
+  /// <summary>
+  /// Verifies a new scan is appended and persisted exactly once.
+  /// </summary>
+  [TestMethod]
+  public async Task AttachInvoiceScanAsync_NewScan_AppendsAndPersistsOnce()
+  {
+    // Arrange
+    var invoice = InvoiceBuilder.CreateRandomInvoice();
+    var scan = new InvoiceScan(
+      ScanType.JPG,
+      new Uri("https://example.test/scans/receipt.jpg"),
+      new Dictionary<string, object> { ["pageNumber"] = 1 });
+
+    mockStorageService
+      .Setup(s => s.ReadInvoiceObject(invoice.id, invoice.UserIdentifier, It.IsAny<CancellationToken>()))
+      .ReturnsAsync(invoice);
+    mockStorageService
+      .Setup(s => s.UpdateInvoiceObject(invoice, invoice.id, invoice.UserIdentifier, It.IsAny<CancellationToken>()))
+      .ReturnsAsync(invoice);
+
+    // Act
+    Invoice result = await orchestrationService.AttachInvoiceScanAsync(
+      invoice.id,
+      invoice.UserIdentifier,
+      scan,
+      CancellationToken.None);
+
+    // Assert
+    Assert.HasCount(1, result.Scans);
+    Assert.AreEqual(scan, result.Scans.Single());
+    mockStorageService.Verify(
+      s => s.UpdateInvoiceObject(invoice, invoice.id, invoice.UserIdentifier, It.IsAny<CancellationToken>()),
+      Times.Once);
+  }
+
+  /// <summary>
+  /// Verifies canonical scan identity ignores URI representation and metadata differences.
+  /// </summary>
+  [TestMethod]
+  public async Task AttachInvoiceScanAsync_CanonicalIdentityAlreadyAttached_SucceedsWithoutPersistence()
+  {
+    // Arrange
+    var invoice = InvoiceBuilder.CreateRandomInvoice();
+    var attachedScan = new InvoiceScan(
+      ScanType.JPG,
+      new Uri("HTTPS://EXAMPLE.TEST:443/scans/%72eceipt.jpg"),
+      new Dictionary<string, object> { ["pageNumber"] = 1 });
+    var repeatedScan = new InvoiceScan(
+      ScanType.JPG,
+      new Uri("https://example.test/scans/receipt.jpg"),
+      new Dictionary<string, object> { ["pageNumber"] = 2 });
+    invoice.Scans.Add(attachedScan);
+
+    mockStorageService
+      .Setup(s => s.ReadInvoiceObject(invoice.id, invoice.UserIdentifier, It.IsAny<CancellationToken>()))
+      .ReturnsAsync(invoice);
+
+    // Act
+    Invoice result = await orchestrationService.AttachInvoiceScanAsync(
+      invoice.id,
+      invoice.UserIdentifier,
+      repeatedScan,
+      CancellationToken.None);
+
+    // Assert
+    Assert.HasCount(1, result.Scans);
+    Assert.AreEqual(attachedScan, result.Scans.Single());
+    mockStorageService.Verify(
+      s => s.UpdateInvoiceObject(
+        It.IsAny<Invoice>(),
+        It.IsAny<Guid>(),
+        It.IsAny<Guid?>(),
+        It.IsAny<CancellationToken>()),
+      Times.Never);
+  }
+
+  /// <summary>
+  /// Verifies a retry after a committed write with a lost response does not append a second scan.
+  /// </summary>
+  [TestMethod]
+  public async Task AttachInvoiceScanAsync_FirstCommitResponseLost_RetryDoesNotDuplicateScan()
+  {
+    // Arrange
+    var invoiceId = Guid.NewGuid();
+    var userId = Guid.NewGuid();
+    var persistedScans = new List<InvoiceScan>();
+    var scan = new InvoiceScan(
+      ScanType.PNG,
+      new Uri("https://example.test/scans/receipt.png"),
+      null);
+
+    mockStorageService
+      .Setup(s => s.ReadInvoiceObject(invoiceId, userId, It.IsAny<CancellationToken>()))
+      .ReturnsAsync(() => new Invoice
+      {
+        id = invoiceId,
+        UserIdentifier = userId,
+        Scans = [.. persistedScans],
+      });
+    mockStorageService
+      .Setup(s => s.UpdateInvoiceObject(
+        It.IsAny<Invoice>(),
+        invoiceId,
+        userId,
+        It.IsAny<CancellationToken>()))
+      .Callback<Invoice, Guid, Guid?, CancellationToken>(
+        (updatedInvoice, _, _, _) => persistedScans = [.. updatedInvoice.Scans])
+      .ThrowsAsync(new InvoiceFoundationDependencyException(
+        new TimeoutException("The commit succeeded, but its response was lost.")));
+
+    // Act
+    await Assert.ThrowsExactlyAsync<InvoiceOrchestrationDependencyException>(() =>
+      orchestrationService.AttachInvoiceScanAsync(
+        invoiceId,
+        userId,
+        scan,
+        CancellationToken.None));
+    Invoice retryResult = await orchestrationService.AttachInvoiceScanAsync(
+      invoiceId,
+      userId,
+      scan,
+      CancellationToken.None);
+
+    // Assert
+    Assert.HasCount(1, persistedScans);
+    Assert.HasCount(1, retryResult.Scans);
+    Assert.AreEqual(scan, retryResult.Scans.Single());
+    mockStorageService.Verify(
+      s => s.ReadInvoiceObject(invoiceId, userId, It.IsAny<CancellationToken>()),
+      Times.Exactly(2));
+    mockStorageService.Verify(
+      s => s.UpdateInvoiceObject(
+        It.IsAny<Invoice>(),
+        invoiceId,
+        userId,
+        It.IsAny<CancellationToken>()),
+      Times.Once);
+  }
+
+  #endregion
+
   #region ReadInvoiceObject Tests
 
   /// <summary>

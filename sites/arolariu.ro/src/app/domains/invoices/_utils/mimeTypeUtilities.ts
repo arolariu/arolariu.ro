@@ -16,7 +16,7 @@
  * - Case-insensitive handling of MIME types and extensions
  *
  * **Supported Formats:**
- * - Images: JPEG, PNG, BMP, TIFF, HEIF, HEIC
+ * - Images: JPEG, PNG, BMP, TIFF, HEIF, HEIC (blob storage accepts HEIC; the invoice scan path does not)
  * - Documents: PDF
  *
  * @example
@@ -59,7 +59,6 @@ import {type ScanType, ScanType as ScanTypeEnum} from "@/types/scans";
  * - `image/bmp` - Bitmap images (alias: x-ms-bmp)
  * - `image/tiff` - TIFF images (aliases: tif, x-tiff)
  * - `image/heif` - High Efficiency Image Format
- * - `image/heic` - High Efficiency Image Codec
  * - `application/pdf` - PDF documents
  *
  * @example
@@ -69,15 +68,7 @@ import {type ScanType, ScanType as ScanTypeEnum} from "@/types/scans";
  * }
  * ```
  */
-export const ACCEPTED_SCAN_MIME_TYPES = [
-  "image/jpeg",
-  "image/png",
-  "image/bmp",
-  "image/tiff",
-  "image/heif",
-  "image/heic",
-  "application/pdf",
-] as const;
+export const ACCEPTED_SCAN_MIME_TYPES = ["image/jpeg", "image/png", "image/bmp", "image/tiff", "image/heif", "application/pdf"] as const;
 
 /**
  * Immutable array of accepted file extensions for invoice scans.
@@ -92,9 +83,14 @@ export const ACCEPTED_SCAN_MIME_TYPES = [
  * - `png` - PNG images
  * - `bmp` - Bitmap images
  * - `tif`, `tiff` - TIFF images
- * - `heif` - High Efficiency Image Format
- * - `heic` - High Efficiency Image Codec
+ * - `heif` - HEIF images
  * - `pdf` - PDF documents
+ *
+ * Note: `heic` is intentionally excluded. `InvoiceScanType.HEIC` was value 9,
+ * which exceeds the backend's accepted range of 0-8. `heif` is retained because
+ * `InvoiceScanType.HEIF` is 8 and is accepted, and because `image/heif` remains
+ * in {@link ACCEPTED_SCAN_MIME_TYPES} — dropping only the extension would reject
+ * a file the API can actually ingest.
  *
  * @example
  * ```typescript
@@ -104,7 +100,7 @@ export const ACCEPTED_SCAN_MIME_TYPES = [
  * }
  * ```
  */
-export const ACCEPTED_SCAN_FILE_EXTENSIONS = ["jpg", "jpeg", "png", "bmp", "tif", "tiff", "heif", "heic", "pdf"] as const;
+export const ACCEPTED_SCAN_FILE_EXTENSIONS = ["jpg", "jpeg", "png", "bmp", "tif", "tiff", "heif", "pdf"] as const;
 
 /**
  * Internal Set for efficient MIME type lookups.
@@ -198,7 +194,6 @@ const MIME_TO_INVOICE_SCAN_TYPE: Readonly<Record<string, InvoiceScanType>> = {
   "image/bmp": InvoiceScanTypeEnum.BMP,
   "image/tiff": InvoiceScanTypeEnum.TIFF,
   "image/heif": InvoiceScanTypeEnum.HEIF,
-  "image/heic": InvoiceScanTypeEnum.HEIC,
   "application/pdf": InvoiceScanTypeEnum.PDF,
 };
 
@@ -217,10 +212,25 @@ const SCAN_TYPE_TO_INVOICE_SCAN_TYPE: Readonly<Record<string, InvoiceScanType>> 
   [ScanTypeEnum.BMP]: InvoiceScanTypeEnum.BMP,
   [ScanTypeEnum.TIFF]: InvoiceScanTypeEnum.TIFF,
   [ScanTypeEnum.HEIF]: InvoiceScanTypeEnum.HEIF,
-  [ScanTypeEnum.HEIC]: InvoiceScanTypeEnum.HEIC,
   [ScanTypeEnum.PDF]: InvoiceScanTypeEnum.PDF,
   [ScanTypeEnum.OTHER]: InvoiceScanTypeEnum.UNKNOWN,
 };
+
+/**
+ * Normalizes a MIME type string for blob-side ScanType lookup.
+ *
+ * @remarks
+ * Unlike {@link normalizeScanMimeType}, this function does NOT verify the result
+ * against {@link ACCEPTED_SCAN_MIME_TYPES} — it operates on the full blob-side
+ * format set (which includes `image/heic`). Use this only for the blob-side
+ * {@link mimeTypeToScanType} path.
+ *
+ * @internal
+ */
+function normalizeMimeTypeForBlobLookup(mimeType: string): string {
+  const lower = mimeType.trim().toLowerCase();
+  return MIME_TYPE_ALIASES[lower] ?? lower;
+}
 
 /**
  * Normalizes a MIME type string to canonical form for invoice scans.
@@ -315,29 +325,23 @@ export function deriveBlobExtension(fileName: string): string {
  * @returns The corresponding ScanType, or `ScanType.OTHER` for unsupported types
  *
  * @remarks
- * **Conversion Process:**
- * 1. Normalize the MIME type (handles aliases and casing)
- * 2. Look up in MIME-to-ScanType mapping
- * 3. Return `ScanType.OTHER` if not found
- *
- * **Behavior:**
- * - Canonical MIME types map to specific ScanType values
- * - Aliases are resolved (e.g., image/jpg → ScanType.JPEG)
- * - Unsupported or empty inputs return `ScanType.OTHER`
+ * Uses blob-side normalization (does not enforce the invoice-facing
+ * {@link ACCEPTED_SCAN_MIME_TYPES} list), so `image/heic` still resolves to
+ * `ScanType.HEIC` even though HEIC is no longer accepted for invoice scans.
  *
  * @example
  * ```typescript
  * mimeTypeToScanType("image/jpeg")      // ScanType.JPEG
  * mimeTypeToScanType("image/png")       // ScanType.PNG
  * mimeTypeToScanType("application/pdf") // ScanType.PDF
+ * mimeTypeToScanType("image/heic")      // ScanType.HEIC (blob-side stays)
  * mimeTypeToScanType("image/gif")       // ScanType.OTHER
  * mimeTypeToScanType("")                // ScanType.OTHER
  * ```
  */
 export function mimeTypeToScanType(mimeType: string): ScanType {
-  const normalized = normalizeScanMimeType(mimeType);
+  const normalized = normalizeMimeTypeForBlobLookup(mimeType);
   if (!normalized) return ScanTypeEnum.OTHER;
-
   return MIME_TO_SCAN_TYPE[normalized] ?? ScanTypeEnum.OTHER;
 }
 
@@ -384,9 +388,6 @@ export function mimeTypeToInvoiceScanType(mimeType: string): InvoiceScanType {
  * **Mapping Logic:**
  * - Each specific ScanType maps to its InvoiceScanType equivalent
  * - `ScanType.OTHER` maps to `InvoiceScanType.UNKNOWN`
- *
- * **Type Safety:**
- * All ScanType values are explicitly mapped to prevent runtime errors.
  *
  * @example
  * ```typescript
