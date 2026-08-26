@@ -54,6 +54,9 @@ describe("analyzeInvoice", () => {
     } as Response);
     const result = await analyzeInvoice({invoiceIdentifier: invoiceId, profile: "balanced"});
     expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.code).toBe("SERVER_ERROR");
+    }
   });
 
   it("never requests the custom profile", async () => {

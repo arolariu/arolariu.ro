@@ -271,25 +271,25 @@ describe("fetchMerchants", () => {
     }
   });
 
-  it("returns a validation failure when the API returns a malformed payload", async () => {
+  it("returns a server failure when the API returns a malformed payload", async () => {
     mockFetchWithTimeout.mockResolvedValue(TestDataBuilder.jsonResponse({}, {status: 200}));
 
     const result = await fetchMerchants();
 
     expect(result.success).toBe(false);
     if (!result.success) {
-      expect(result.error.code).toBe("VALIDATION_ERROR");
+      expect(result.error.code).toBe("SERVER_ERROR");
     }
   });
 
-  it("returns a validation failure when the API returns an array with a malformed element", async () => {
+  it("returns a server failure when the API returns an array with a malformed element", async () => {
     mockFetchWithTimeout.mockResolvedValue(TestDataBuilder.jsonResponse([{}], {status: 200}));
 
     const result = await fetchMerchants();
 
     expect(result.success).toBe(false);
     if (!result.success) {
-      expect(result.error.code).toBe("VALIDATION_ERROR");
+      expect(result.error.code).toBe("SERVER_ERROR");
     }
   });
 

@@ -207,7 +207,7 @@ describe("collectChangedFiles", () => {
 
     await expect(collectChangedFiles(tmpDir, "HEAD~1", "HEAD")).resolves.toEqual({
       scope: "known",
-      files: ["src/a.ts"],
+      files: ["src/a.ts", "src/deleted.ts"],
     });
   });
 

@@ -62,8 +62,7 @@ public sealed class RecipeRequestDtoTests
   }
 
   /// <summary>
-  /// Verifies that a request with an empty steps collection throws <see cref="ArgumentException"/>
-  /// from the domain guard when <see cref="RecipeSuggestionRequestDto.ToRecipeSuggestion"/> is called.
+  /// Verifies that a request with an empty steps collection is classified as client validation.
   /// </summary>
   [TestMethod]
   public void RecipeSuggestionRequestDto_NoSteps_Throws()
@@ -82,7 +81,34 @@ public sealed class RecipeRequestDtoTests
       Steps: [],
       AllergenWarnings: []);
 
-    Assert.ThrowsExactly<ArgumentException>(() => request.ToRecipeSuggestion());
+    RecipeSuggestionRequestValidationException exception =
+      Assert.ThrowsExactly<RecipeSuggestionRequestValidationException>(() => request.ToRecipeSuggestion());
+
+    Assert.IsInstanceOfType<ArgumentException>(exception.InnerException);
+  }
+
+  /// <summary>Verifies invalid duration invariants are classified as client validation.</summary>
+  [TestMethod]
+  public void RecipeSuggestionRequestDto_NegativeDuration_ThrowsRequestValidationException()
+  {
+    var request = new RecipeSuggestionRequestDto(
+      Name: "Tomato soup",
+      Description: "A simple tomato soup.",
+      Servings: 2,
+      PreparationMinutes: -1,
+      CookingMinutes: 20,
+      TotalMinutes: 20,
+      Difficulty: RecipeDifficulty.Easy,
+      PurchasedIngredients: [],
+      AssumedPantryStaples: [],
+      MissingOptionalIngredients: [],
+      Steps: [new RecipeStepRequestDto(1, "Serve.", null)],
+      AllergenWarnings: []);
+
+    RecipeSuggestionRequestValidationException exception =
+      Assert.ThrowsExactly<RecipeSuggestionRequestValidationException>(() => request.ToRecipeSuggestion());
+
+    Assert.IsInstanceOfType<ArgumentOutOfRangeException>(exception.InnerException);
   }
 
   /// <summary>

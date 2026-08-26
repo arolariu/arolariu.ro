@@ -232,7 +232,7 @@ public interface IInvoiceManagementService
     InvoiceAnalysisRequestDto request,
     CancellationToken cancellationToken);
 
-  /// <summary>Queues merchant analysis after validating target ownership.</summary>
+  /// <summary>Queues merchant analysis after validating invoice-reference visibility.</summary>
   /// <param name="merchantId">The merchant identifier to analyze.</param>
   /// <param name="userIdentifier">The authenticated user requesting analysis.</param>
   /// <param name="request">The requested profile and capability overrides.</param>

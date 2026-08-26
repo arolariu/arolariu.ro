@@ -18,6 +18,7 @@
 
 import {act, render, screen} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import {useState} from "react";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import type {ClassificationSearchResult, ClassificationSelection} from "@/types/invoices";
 import {ClassificationSystem} from "@/types/invoices";
@@ -254,14 +255,20 @@ describe("ClassificationPicker", () => {
         }),
     );
 
-    render(
-      <ClassificationPicker
-        system={SYSTEM}
-        value={{system: SYSTEM, code: RESULT_A.code}}
-        onChange={vi.fn()}
-        label='Test'
-      />,
-    );
+    function ControlledPicker(): React.JSX.Element {
+      const [selection, setSelection] = useState<ClassificationSelection | null>({system: SYSTEM, code: RESULT_A.code});
+
+      return (
+        <ClassificationPicker
+          system={SYSTEM}
+          value={selection}
+          onChange={setSelection}
+          label='Test'
+        />
+      );
+    }
+
+    render(<ControlledPicker />);
 
     const combobox = screen.getByRole("combobox");
     await user.type(combobox, "ab");
@@ -510,6 +517,28 @@ describe("ClassificationPicker", () => {
 
     expect(onChange).toHaveBeenCalledTimes(1);
     expect(onChange).toHaveBeenCalledWith(null);
+  });
+
+  it("displays the controlled selection and clears it when a replacement search begins", async () => {
+    const onChange = vi.fn<(selection: ClassificationSelection | null) => void>();
+    const user = userEvent.setup({advanceTimers: vi.advanceTimersByTime});
+
+    render(
+      <ClassificationPicker
+        system={SYSTEM}
+        value={{system: SYSTEM, code: RESULT_A.code}}
+        onChange={onChange}
+        label='Test'
+      />,
+    );
+
+    const combobox = screen.getByRole("combobox");
+    expect(combobox).toHaveValue(RESULT_A.code);
+
+    await user.type(combobox, "milk");
+
+    expect(onChange).toHaveBeenCalledWith(null);
+    expect(combobox).toHaveValue("milk");
   });
 
   // ── 6. Options render label and code ──────────────────────────────────────

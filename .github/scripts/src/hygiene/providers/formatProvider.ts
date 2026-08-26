@@ -8,7 +8,7 @@
  */
 
 import * as exec from "@actions/exec";
-import {filesForPrettier} from "../domain/changedFiles.ts";
+import {filesForPrettier, filterExistingFiles} from "../domain/changedFiles.ts";
 import type {CheckProvider, ProviderRunInput, ProviderRunOutput, Schema} from "../domain/provider.ts";
 import type {FileFinding, Finding} from "../domain/types.ts";
 
@@ -61,7 +61,15 @@ export const formatProvider: CheckProvider<FormatPayload> = {
     return files === null || files.length > 0;
   },
   async run(input: ProviderRunInput): Promise<ProviderRunOutput<FormatPayload>> {
-    const scopedFiles = filesForPrettier(input);
+    const candidateFiles = filesForPrettier(input);
+    const scopedFiles = candidateFiles === null ? null : await filterExistingFiles(input.workspaceRoot, candidateFiles);
+    if (scopedFiles !== null && scopedFiles.length === 0) {
+      return {
+        payload: {unformattedCount: 0, unformattedFiles: []},
+        findings: [],
+      };
+    }
+
     const args = scopedFiles === null ? ["prettier", "--check", "."] : ["prettier", "--check", ...scopedFiles];
     const result = await exec.getExecOutput("npx", args, {cwd: input.workspaceRoot, ignoreReturnCode: true, silent: true});
 

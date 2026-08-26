@@ -1,3 +1,6 @@
+import * as fs from "node:fs/promises";
+import * as os from "node:os";
+import * as path from "node:path";
 import {beforeEach, describe, expect, it, vi} from "vitest";
 import type {FileFinding} from "../domain/types.ts";
 import {formatProvider, parsePrettierCheckOutput} from "./formatProvider.ts";
@@ -136,20 +139,54 @@ describe("formatProvider.run", () => {
     });
     vi.doMock("@actions/exec", () => ({getExecOutput}));
     const {formatProvider: provider} = await import("./formatProvider.ts");
+    const workspaceRoot = await fs.mkdtemp(path.join(os.tmpdir(), "format-provider-test-"));
+    const relativeFile = "sites/arolariu.ro/src/app/page.tsx";
+    await fs.mkdir(path.join(workspaceRoot, "sites", "arolariu.ro", "src", "app"), {recursive: true});
+    await fs.writeFile(path.join(workspaceRoot, ...relativeFile.split("/")), "export {};\n");
 
-    await provider.run({
-      workspaceRoot: "/tmp",
-      baseRef: "main",
-      headRef: "HEAD",
-      changeScope: "known",
-      changedFiles: ["sites/arolariu.ro/src/app/page.tsx", "image.png"],
-      env: {},
-    });
+    try {
+      await provider.run({
+        workspaceRoot,
+        baseRef: "main",
+        headRef: "HEAD",
+        changeScope: "known",
+        changedFiles: [relativeFile, "sites/arolariu.ro/src/app/deleted.ts", "image.png"],
+        env: {},
+      });
 
-    expect(getExecOutput).toHaveBeenCalledWith("npx", ["prettier", "--check", "sites/arolariu.ro/src/app/page.tsx"], {
-      cwd: "/tmp",
-      ignoreReturnCode: true,
-      silent: true,
-    });
+      expect(getExecOutput).toHaveBeenCalledWith("npx", ["prettier", "--check", relativeFile], {
+        cwd: workspaceRoot,
+        ignoreReturnCode: true,
+        silent: true,
+      });
+    } finally {
+      await fs.rm(workspaceRoot, {recursive: true, force: true});
+    }
+  });
+
+  it("returns a clean result without invoking Prettier for deletion-only scoped changes", async () => {
+    const getExecOutput = vi.fn();
+    vi.doMock("@actions/exec", () => ({getExecOutput}));
+    const {formatProvider: provider} = await import("./formatProvider.ts");
+    const workspaceRoot = await fs.mkdtemp(path.join(os.tmpdir(), "format-provider-test-"));
+
+    try {
+      const result = await provider.run({
+        workspaceRoot,
+        baseRef: "main",
+        headRef: "HEAD",
+        changeScope: "known",
+        changedFiles: ["sites/arolariu.ro/src/app/deleted.ts"],
+        env: {},
+      });
+
+      expect(getExecOutput).not.toHaveBeenCalled();
+      expect(result).toEqual({
+        payload: {unformattedCount: 0, unformattedFiles: []},
+        findings: [],
+      });
+    } finally {
+      await fs.rm(workspaceRoot, {recursive: true, force: true});
+    }
   });
 });

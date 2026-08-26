@@ -1396,9 +1396,19 @@ public static partial class InvoiceEndpoints
         activity.SetOperationType("Merchant.Update");
       }
 
-      _ = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
+      Guid userIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
       activity?.SetMerchantContext(id);
 
+      IEnumerable<Invoice> callerInvoices = await invoiceManagementService
+        .ReadInvoices(userIdentifier, writeScope.Token)
+        .ConfigureAwait(false);
+      if (!callerInvoices.Any(invoice => invoice.MerchantReference == id))
+      {
+        activity?.SetTag("access.granted", false);
+        return TypedResults.NotFound();
+      }
+
+      activity?.SetTag("access.granted", true);
       Merchant? existingMerchant = await invoiceManagementService
         .ReadMerchant(id, parentCompanyId: null, cancellationToken: writeScope.Token)
         .ConfigureAwait(false);

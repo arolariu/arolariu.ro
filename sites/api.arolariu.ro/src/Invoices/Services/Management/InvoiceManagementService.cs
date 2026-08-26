@@ -511,7 +511,7 @@ public sealed partial class InvoiceManagementService : IInvoiceManagementService
         .ConfigureAwait(false);
     }).ConfigureAwait(false);
 
-  /// <summary>Validates merchant ownership and queues a request with resolved analysis options.</summary>
+  /// <summary>Validates invoice-reference visibility and queues a merchant request with resolved analysis options.</summary>
   /// <param name="merchantId">The merchant identifier to analyze.</param>
   /// <param name="userIdentifier">The authenticated requester.</param>
   /// <param name="request">The requested analysis profile and capability overrides.</param>
@@ -521,7 +521,7 @@ public sealed partial class InvoiceManagementService : IInvoiceManagementService
   /// Thrown when the analysis request is invalid.
   /// </exception>
   /// <exception cref="arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Management.InvoiceManagementDependencyValidationException">
-  /// Thrown when the target merchant is unavailable or not owned by the requester.
+  /// Thrown when the target merchant is unavailable or is not referenced by one of the requester's invoices.
   /// </exception>
   /// <exception cref="arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Management.InvoiceManagementDependencyException">
   /// Thrown when target lookup or queue publication fails.

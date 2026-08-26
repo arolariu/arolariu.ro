@@ -60,6 +60,9 @@ describe("analyzeMerchant", () => {
     } as Response);
     const result = await analyzeMerchant({merchantIdentifier: merchantId, profile: "balanced"});
     expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.code).toBe("SERVER_ERROR");
+    }
   });
 
   it("never requests the custom profile", async () => {

@@ -17,6 +17,7 @@ using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Recipes;
 using arolariu.Backend.Domain.Invoices.DTOs.Requests;
 using arolariu.Backend.Domain.Invoices.DTOs.Responses;
 using arolariu.Backend.Domain.Invoices.Endpoints;
@@ -1098,12 +1099,60 @@ public sealed class InvoiceEndpointsStatusCodeTests
     service.VerifyAll();
   }
 
+  /// <summary>Verifies invalid recipe invariants are returned as HTTP 400 instead of HTTP 500.</summary>
+  [TestMethod]
+  public async Task UpdateSpecificInvoiceAsync_InvalidRecipe_ReturnsValidationProblem()
+  {
+    Guid invoiceId = Guid.NewGuid();
+    Guid userId = Guid.NewGuid();
+    var invalidRecipe = new RecipeSuggestionRequestDto(
+      Name: "Tomato soup",
+      Description: "A simple tomato soup.",
+      Servings: 2,
+      PreparationMinutes: -1,
+      CookingMinutes: 20,
+      TotalMinutes: 20,
+      Difficulty: RecipeDifficulty.Easy,
+      PurchasedIngredients: [],
+      AssumedPantryStaples: [],
+      MissingOptionalIngredients: [],
+      Steps: [new RecipeStepRequestDto(1, "Serve.", null)],
+      AllergenWarnings: []);
+    var request = new UpdateInvoiceRequestDto(
+      Name: "Groceries",
+      Description: "Weekly shop",
+      ClassificationCode: null,
+      PaymentInformation: new PaymentInformation(),
+      MerchantReference: null,
+      IsImportant: false,
+      PossibleRecipes: [invalidRecipe],
+      AdditionalMetadata: null);
+    var service = new Mock<IInvoiceManagementService>(MockBehavior.Strict);
+    service
+      .Setup(candidate => candidate.ReadInvoice(
+        invoiceId,
+        userId,
+        It.IsAny<CancellationToken>()))
+      .ReturnsAsync(new Invoice { id = invoiceId, UserIdentifier = userId });
+
+    IResult result = await InvoiceEndpoints.UpdateSpecificInvoiceAsync(
+      service.Object,
+      CreateAuthenticatedContextAccessor(userId),
+      invoiceId,
+      request);
+
+    Assert.AreEqual(StatusCodes.Status400BadRequest, GetStatusCode(result));
+    Assert.AreEqual(ProblemTypeUris.Validation, GetProblemDetails(result).Type);
+    service.VerifyAll();
+  }
+
   /// <summary>Verifies merchant PUT preserves classification omission for Processing merge semantics.</summary>
   [TestMethod]
   public async Task UpdateSpecificMerchantAsync_OmittedClassification_LeavesSelectionUnset()
   {
     Guid merchantId = Guid.NewGuid();
     Guid parentCompanyId = Guid.NewGuid();
+    Guid userId = Guid.NewGuid();
     StandardClassification classification = CreateClassification(
       ClassificationSystem.Nace21,
       "2.1",
@@ -1125,6 +1174,11 @@ public sealed class InvoiceEndpointsStatusCodeTests
     var service = new Mock<IInvoiceManagementService>(MockBehavior.Strict);
     Merchant? capturedMerchant = null;
     service
+      .Setup(candidate => candidate.ReadInvoices(
+        userId,
+        It.IsAny<CancellationToken>()))
+      .ReturnsAsync([new Invoice { id = Guid.NewGuid(), UserIdentifier = userId, MerchantReference = merchantId }]);
+    service
       .Setup(candidate => candidate.ReadMerchant(
         merchantId,
         parentCompanyId: null,
@@ -1143,13 +1197,54 @@ public sealed class InvoiceEndpointsStatusCodeTests
 
     IResult result = await InvoiceEndpoints.UpdateSpecificMerchantAsync(
       service.Object,
-      CreateAuthenticatedContextAccessor(),
+      CreateAuthenticatedContextAccessor(userId),
       merchantId,
       request);
 
     Assert.AreEqual(StatusCodes.Status202Accepted, GetStatusCode(result));
     Assert.IsNotNull(capturedMerchant);
     Assert.IsNull(capturedMerchant.Classification);
+    service.VerifyAll();
+  }
+
+  /// <summary>Verifies merchant PUT hides and rejects merchants not referenced by the caller's invoices.</summary>
+  [TestMethod]
+  public async Task UpdateSpecificMerchantAsync_UnreferencedMerchant_ReturnsNotFoundWithoutWriting()
+  {
+    Guid merchantId = Guid.NewGuid();
+    Guid userId = Guid.NewGuid();
+    var request = new UpdateMerchantRequestDto(
+      Name: "Store",
+      Description: "Description",
+      ClassificationCode: null,
+      Address: null,
+      ParentCompanyId: Guid.NewGuid(),
+      AdditionalMetadata: null);
+    var service = new Mock<IInvoiceManagementService>(MockBehavior.Strict);
+    service
+      .Setup(candidate => candidate.ReadInvoices(
+        userId,
+        It.IsAny<CancellationToken>()))
+      .ReturnsAsync([new Invoice { id = Guid.NewGuid(), UserIdentifier = userId, MerchantReference = Guid.NewGuid() }]);
+
+    IResult result = await InvoiceEndpoints.UpdateSpecificMerchantAsync(
+      service.Object,
+      CreateAuthenticatedContextAccessor(userId),
+      merchantId,
+      request);
+
+    Assert.AreEqual(StatusCodes.Status404NotFound, GetStatusCode(result));
+    service.VerifyAll();
+    service.Verify(candidate => candidate.ReadMerchant(
+      It.IsAny<Guid>(),
+      It.IsAny<Guid?>(),
+      It.IsAny<CancellationToken>()), Times.Never);
+    service.Verify(candidate => candidate.UpdateMerchant(
+      It.IsAny<Guid>(),
+      It.IsAny<Guid?>(),
+      It.IsAny<Merchant>(),
+      It.IsAny<string?>(),
+      It.IsAny<CancellationToken>()), Times.Never);
   }
 
   private static StandardClassification CreateClassification(

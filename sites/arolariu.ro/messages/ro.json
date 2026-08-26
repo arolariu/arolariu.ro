@@ -1250,8 +1250,10 @@
         "validation": {
           "nameRequired": "Numele rețetei este obligatoriu",
           "descriptionRequired": "Descrierea rețetei este obligatorie",
+          "ingredientQuantityRequired": "Fiecare ingredient denumit necesită o cantitate",
+          "minutesNonNegativeInteger": "Timpii rețetei trebuie să fie minute întregi nenegative",
           "stepRequired": "Este necesar cel puțin un pas",
-          "servingsPositive": "Numărul de porții trebuie să fie pozitiv",
+          "servingsPositive": "Numărul de porții trebuie să fie un număr întreg pozitiv",
           "totalTimeConstraint": "Timpul total trebuie să fie cel puțin pregătire + gătire"
         }
       },

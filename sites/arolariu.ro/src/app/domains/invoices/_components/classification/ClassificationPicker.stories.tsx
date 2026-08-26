@@ -1,6 +1,28 @@
 import type {Meta, StoryObj} from "@storybook/react";
+import {useCallback, useState} from "react";
 import {ClassificationSystem} from "@/types/invoices";
 import ClassificationPicker from "./ClassificationPicker";
+
+type ClassificationPickerProps = React.ComponentProps<typeof ClassificationPicker>;
+
+function ControlledClassificationPicker({value: initialValue, onChange, ...props}: Readonly<ClassificationPickerProps>): React.JSX.Element {
+  const [value, setValue] = useState(initialValue);
+  const handleChange = useCallback<ClassificationPickerProps["onChange"]>(
+    (selection) => {
+      setValue(selection);
+      onChange(selection);
+    },
+    [onChange],
+  );
+
+  return (
+    <ClassificationPicker
+      {...props}
+      value={value}
+      onChange={handleChange}
+    />
+  );
+}
 
 /**
  * Accessible canonical-taxonomy picker.
@@ -23,6 +45,12 @@ const meta = {
     onChange: () => undefined,
     label: "Product classification",
   },
+  render: (args) => (
+    <ControlledClassificationPicker
+      key={`${args.system}-${args.value?.code ?? "empty"}`}
+      {...args}
+    />
+  ),
   argTypes: {
     onChange: {control: false},
   },

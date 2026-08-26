@@ -13,6 +13,7 @@ using arolariu.Backend.Domain.Invoices.DDD.Analysis.Enums;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Exceptions.Outer.Orchestration;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
+using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants.Exceptions.Inner;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Classifications;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Orchestration;
@@ -778,6 +779,96 @@ public sealed class InvoiceProcessingServiceCurrentArchitectureTests
     Assert.AreEqual("message-1", result);
     invoiceOrchestration.VerifyAll();
     analysis.VerifyAll();
+  }
+
+  /// <summary>Verifies merchant queueing uses invoice-reference visibility rather than merchant creator identity.</summary>
+  [TestMethod]
+  public async Task QueueMerchantAnalysisAsync_ReferencedMerchant_ReturnsMessageId()
+  {
+    Guid merchantId = Guid.NewGuid();
+    Guid parentCompanyId = Guid.NewGuid();
+    Guid userIdentifier = Guid.NewGuid();
+    var request = new MerchantAnalysisRequestDto(
+      AnalysisProfile.Fast,
+      MerchantClassification: null,
+      DescriptionGeneration: null);
+    var invoiceOrchestration = new Mock<IInvoiceOrchestrationService>(MockBehavior.Strict);
+    var merchantOrchestration = new Mock<IMerchantOrchestrationService>(MockBehavior.Strict);
+    var analysis = new Mock<IAnalysisOrchestrationService>(MockBehavior.Strict);
+    invoiceOrchestration
+      .Setup(service => service.ReadAllInvoiceObjects(userIdentifier, It.IsAny<CancellationToken>()))
+      .ReturnsAsync([
+        new Invoice { id = Guid.NewGuid(), UserIdentifier = userIdentifier, MerchantReference = merchantId },
+      ]);
+    merchantOrchestration
+      .Setup(service => service.ReadMerchantObject(merchantId, null, It.IsAny<CancellationToken>()))
+      .ReturnsAsync(new Merchant
+      {
+        id = merchantId,
+        ParentCompanyId = parentCompanyId,
+        CreatedBy = Guid.NewGuid(),
+      });
+    analysis
+      .Setup(service => service.EnqueueAnalysisAsync(
+        It.Is<QueueAnalysisMessage>(message =>
+          message.TargetId == merchantId
+          && message.RequestedBy == userIdentifier
+          && message.TargetPartitionIdentifier == parentCompanyId
+          && message.MerchantOptions!.Profile == AnalysisProfile.Fast),
+        It.IsAny<CancellationToken>()))
+      .ReturnsAsync("message-2");
+    var service = new InvoiceProcessingService(
+      invoiceOrchestration.Object,
+      merchantOrchestration.Object,
+      analysis.Object,
+      NullLoggerFactory.Instance);
+
+    string result = await service
+      .QueueMerchantAnalysisAsync(merchantId, userIdentifier, request, CancellationToken.None)
+      .ConfigureAwait(false);
+
+    Assert.AreEqual("message-2", result);
+    invoiceOrchestration.VerifyAll();
+    merchantOrchestration.VerifyAll();
+    analysis.VerifyAll();
+  }
+
+  /// <summary>Verifies merchant queueing rejects a target not referenced by the caller's invoices.</summary>
+  [TestMethod]
+  public async Task QueueMerchantAnalysisAsync_UnreferencedMerchant_ThrowsDependencyValidationException()
+  {
+    Guid merchantId = Guid.NewGuid();
+    Guid userIdentifier = Guid.NewGuid();
+    var request = new MerchantAnalysisRequestDto(
+      AnalysisProfile.Fast,
+      MerchantClassification: null,
+      DescriptionGeneration: null);
+    var invoiceOrchestration = new Mock<IInvoiceOrchestrationService>(MockBehavior.Strict);
+    var merchantOrchestration = new Mock<IMerchantOrchestrationService>(MockBehavior.Strict);
+    var analysis = new Mock<IAnalysisOrchestrationService>(MockBehavior.Strict);
+    invoiceOrchestration
+      .Setup(service => service.ReadAllInvoiceObjects(userIdentifier, It.IsAny<CancellationToken>()))
+      .ReturnsAsync([
+        new Invoice { id = Guid.NewGuid(), UserIdentifier = userIdentifier, MerchantReference = Guid.NewGuid() },
+      ]);
+    var service = new InvoiceProcessingService(
+      invoiceOrchestration.Object,
+      merchantOrchestration.Object,
+      analysis.Object,
+      NullLoggerFactory.Instance);
+
+    InvoiceProcessingServiceDependencyValidationException exception =
+      await Assert.ThrowsExactlyAsync<InvoiceProcessingServiceDependencyValidationException>(
+        () => service.QueueMerchantAnalysisAsync(
+          merchantId,
+          userIdentifier,
+          request,
+          CancellationToken.None));
+
+    Assert.IsInstanceOfType<MerchantForbiddenAccessException>(exception.InnerException);
+    invoiceOrchestration.VerifyAll();
+    merchantOrchestration.VerifyNoOtherCalls();
+    analysis.VerifyNoOtherCalls();
   }
 
   /// <summary>

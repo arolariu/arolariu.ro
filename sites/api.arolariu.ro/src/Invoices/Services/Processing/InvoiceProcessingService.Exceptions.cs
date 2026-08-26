@@ -8,6 +8,7 @@ using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.O
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Processing;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Exceptions.Outer.Orchestration;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
+using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants.Exceptions.Inner;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants.Exceptions.Outer.Orchestration;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 using arolariu.Backend.Domain.Invoices.DDD.Analysis.Exceptions.Inner;
@@ -362,6 +363,7 @@ public sealed partial class InvoiceProcessingService
       => LogAndWrapValidation(exception),
 
     AnalysisOrchestrationDependencyValidationException
+      or MerchantForbiddenAccessException
       => LogAndWrapDependencyValidation(exception),
 
     AnalysisOrchestrationDependencyException

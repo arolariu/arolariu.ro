@@ -23,7 +23,7 @@
  */
 
 import {type AllergenCode, isAllergenCode} from "./Allergen";
-import {hasOnlyKeys, isArrayOf, isFiniteNumber, isNonEmptyString, isRecord} from "../guards";
+import {hasOnlyKeys, isArrayOf, isNonEmptyString, isRecord} from "../guards";
 
 // ============================================================
 // Structured Recipe Suggestion Model (current API contract)
@@ -116,7 +116,7 @@ export type RecipeSuggestion = {
   readonly preparationMinutes: number;
   /** Time spent on cooking (passive), in minutes. */
   readonly cookingMinutes: number;
-  /** Total time = preparationMinutes + cookingMinutes, in minutes. */
+  /** Total elapsed time in minutes; must cover preparation plus cooking time. */
   readonly totalMinutes: number;
   /** Difficulty classification of this recipe. */
   readonly difficulty: RecipeDifficulty;
@@ -169,6 +169,37 @@ export function isRecipeText(value: unknown): value is string {
   return isNonEmptyString(value);
 }
 
+function isPositiveInteger(value: unknown): value is number {
+  return typeof value === "number" && Number.isSafeInteger(value) && value > 0;
+}
+
+/**
+ * Determines whether a value is a whole number accepted by backend duration fields.
+ *
+ * @param value - The unknown value to test.
+ * @returns `true` for safe integers greater than or equal to zero.
+ */
+export function isNonNegativeInteger(value: unknown): value is number {
+  return typeof value === "number" && Number.isSafeInteger(value) && value >= 0;
+}
+
+/**
+ * Determines whether recipe durations satisfy the backend recipe contract.
+ *
+ * @param preparationMinutes - Active preparation time in minutes.
+ * @param cookingMinutes - Cooking time in minutes.
+ * @param totalMinutes - Total elapsed time in minutes.
+ * @returns `true` when every duration is a non-negative integer and total time covers preparation plus cooking.
+ */
+export function hasValidRecipeTiming(preparationMinutes: unknown, cookingMinutes: unknown, totalMinutes: unknown): boolean {
+  return (
+    isNonNegativeInteger(preparationMinutes)
+    && isNonNegativeInteger(cookingMinutes)
+    && isNonNegativeInteger(totalMinutes)
+    && totalMinutes >= preparationMinutes + cookingMinutes
+  );
+}
+
 /**
  * Determines whether a value conforms to {@link RecipeIngredient}.
  *
@@ -197,7 +228,7 @@ export function isRecipeStep(value: unknown): value is RecipeStep {
     return false;
   }
   return (
-    isFiniteNumber(value["sequence"])
+    isPositiveInteger(value["sequence"])
     && isNonEmptyString(value["instruction"])
     && (value["notes"] === null || typeof value["notes"] === "string")
   );
@@ -223,10 +254,8 @@ export function isRecipeSuggestion(value: unknown): value is RecipeSuggestion {
   return (
     isRecipeText(value["name"])
     && isRecipeText(value["description"])
-    && isFiniteNumber(value["servings"])
-    && isFiniteNumber(value["preparationMinutes"])
-    && isFiniteNumber(value["cookingMinutes"])
-    && isFiniteNumber(value["totalMinutes"])
+    && isPositiveInteger(value["servings"])
+    && hasValidRecipeTiming(value["preparationMinutes"], value["cookingMinutes"], value["totalMinutes"])
     && isRecipeDifficulty(value["difficulty"])
     && isArrayOf(value["purchasedIngredients"], isRecipeIngredient)
     && isArrayOf(value["assumedPantryStaples"], isRecipeIngredient)

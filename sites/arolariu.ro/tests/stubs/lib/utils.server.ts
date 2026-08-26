@@ -118,7 +118,7 @@ export async function createErrorResult<T>(error: unknown, defaultMessage?: stri
     return {
       success: false,
       error: {
-        code: "VALIDATION_ERROR",
+        code: "SERVER_ERROR",
         message: defaultMessage ?? error.message,
       },
     } as const;

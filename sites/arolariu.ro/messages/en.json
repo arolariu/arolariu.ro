@@ -1250,8 +1250,10 @@
         "validation": {
           "nameRequired": "Recipe name is required",
           "descriptionRequired": "Recipe description is required",
+          "ingredientQuantityRequired": "Every named ingredient requires a quantity",
+          "minutesNonNegativeInteger": "Recipe times must be non-negative whole minutes",
           "stepRequired": "At least one step is required",
-          "servingsPositive": "Servings must be a positive number",
+          "servingsPositive": "Servings must be a positive whole number",
           "totalTimeConstraint": "Total time must be at least prep + cook time"
         }
       },

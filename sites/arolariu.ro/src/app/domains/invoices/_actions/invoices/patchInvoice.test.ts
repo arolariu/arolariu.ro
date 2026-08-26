@@ -169,14 +169,14 @@ describe("patchInvoice", () => {
     expect(body).not.toHaveProperty("possibleRecipes");
   });
 
-  it("returns a validation failure when the API returns a malformed payload", async () => {
+  it("returns a server failure when the API returns a malformed payload", async () => {
     mockFetchWithTimeout.mockResolvedValue(TestDataBuilder.jsonResponse({}) as Awaited<ReturnType<typeof fetchWithTimeout>>);
 
     const result = await patchInvoice({invoiceId, payload: {}});
 
     expect(result.success).toBe(false);
     if (!result.success) {
-      expect(result.error.code).toBe("VALIDATION_ERROR");
+      expect(result.error.code).toBe("SERVER_ERROR");
     }
   });
 });

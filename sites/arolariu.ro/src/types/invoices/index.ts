@@ -161,6 +161,8 @@ export {
  */
 export {
   RecipeDifficulty,
+  hasValidRecipeTiming,
+  isNonNegativeInteger,
   isRecipeDifficulty,
   isRecipeIngredient,
   isRecipeStep,

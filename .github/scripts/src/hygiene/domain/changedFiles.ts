@@ -3,6 +3,9 @@
  * @module github/scripts/src/hygiene/domain/changedFiles
  */
 
+import * as fs from "node:fs/promises";
+import * as path from "node:path";
+
 export type ChangeScope = "known" | "unknown";
 export type ProjectBucket = "website" | "components" | "cv" | "status" | "api" | "exp" | "docs" | "hygieneScripts";
 
@@ -77,6 +80,47 @@ const TYPE_SCRIPT_SUITE_ORDER: readonly TypeScriptSuiteName[] = ["scripts", "web
 
 export function normalizeChangedFile(file: string): string {
   return file.replace(/^[.][\\/]/, "").replace(/\\/g, "/");
+}
+
+function isMissingPathError(error: unknown): boolean {
+  return error instanceof Error && "code" in error && (error.code === "ENOENT" || error.code === "ENOTDIR");
+}
+
+/**
+ * Filters a changed-file list to paths that still exist as files in the workspace.
+ *
+ * @remarks
+ * Scope classification intentionally retains deleted paths. Path-based tools such as
+ * Prettier and ESLint call this helper immediately before execution so deletion-only
+ * changes still select the correct project checks without passing missing files to tools.
+ *
+ * @param workspaceRoot - Absolute repository workspace root.
+ * @param files - Repository-relative changed paths.
+ * @returns Normalized repository-relative paths that currently exist as files.
+ */
+export async function filterExistingFiles(workspaceRoot: string, files: readonly string[]): Promise<readonly string[]> {
+  const resolvedRoot = path.resolve(workspaceRoot);
+  const candidates = await Promise.all(
+    files.map(async (file): Promise<string | null> => {
+      const normalizedFile = normalizeChangedFile(file);
+      const absolutePath = path.resolve(resolvedRoot, normalizedFile);
+      const relativePath = path.relative(resolvedRoot, absolutePath);
+
+      if (relativePath === ".." || relativePath.startsWith(`..${path.sep}`) || path.isAbsolute(relativePath)) {
+        throw new Error(`Changed path resolves outside the workspace: ${normalizedFile}`);
+      }
+
+      try {
+        const stats = await fs.stat(absolutePath);
+        return stats.isFile() ? normalizedFile : null;
+      } catch (error) {
+        if (isMissingPathError(error)) return null;
+        throw error;
+      }
+    }),
+  );
+
+  return candidates.filter((file): file is string => file !== null);
 }
 
 function extensionOf(file: string): string {

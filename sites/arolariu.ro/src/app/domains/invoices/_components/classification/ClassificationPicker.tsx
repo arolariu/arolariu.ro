@@ -140,6 +140,7 @@ export default function ClassificationPicker({system, value, onChange, label, di
       // is cleared or becomes too short to schedule a replacement request.
       const requestGeneration = invalidatePendingSearch();
 
+      if (value !== null) onChange(null);
       setQuery(raw);
       setActiveIndex(-1);
 
@@ -153,7 +154,15 @@ export default function ClassificationPicker({system, value, onChange, label, di
         void performSearch(raw, requestGeneration);
       }, DEBOUNCE_MS);
     },
-    [invalidatePendingSearch, performSearch],
+    [invalidatePendingSearch, onChange, performSearch, value],
+  );
+
+  /** Selects the displayed controlled code so typing replaces it with a new query. */
+  const handleInputFocus = useCallback(
+    (event: React.FocusEvent<HTMLInputElement>): void => {
+      if (query.length === 0 && value !== null) event.currentTarget.select();
+    },
+    [query.length, value],
   );
 
   /** Handles keyboard navigation and selection within the combobox. */
@@ -258,6 +267,7 @@ export default function ClassificationPicker({system, value, onChange, label, di
   }, [invalidatePendingSearch, onChange]);
 
   const activeOptionId = isOpen && activeIndex >= 0 ? `${listboxId}-option-${activeIndex}` : undefined;
+  const displayedValue = query.length === 0 && value !== null ? value.code : query;
 
   return (
     <div className={styles["container"]}>
@@ -278,14 +288,15 @@ export default function ClassificationPicker({system, value, onChange, label, di
           aria-activedescendant={activeOptionId}
           aria-disabled={disabled}
           className={styles["input"]}
-          value={query}
+          value={displayedValue}
           placeholder={t((m) => m.dialogs.invoices.classificationPicker.placeholder)}
           disabled={disabled}
           autoComplete='off'
           onChange={handleInputChange}
+          onFocus={handleInputFocus}
           onKeyDown={handleKeyDown}
         />
-        {value !== null && (
+        {(value !== null || query.length > 0) && (
           <button
             type='button'
             className={styles["clearButton"]}

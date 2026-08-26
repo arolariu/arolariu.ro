@@ -18,9 +18,10 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Recipes;
 /// fields, and send the same payload back without any mapping overhead.
 /// </para>
 /// <para>
-/// Domain invariants — at least one step required; total minutes must be greater than or equal
-/// to preparation plus cooking minutes — are enforced by <see cref="RecipeSuggestion"/> itself.
-/// The DTO does not duplicate those guards.
+/// Domain invariants — required text, positive servings, non-negative durations, consistent total
+/// time, complete ingredients, and at least one step — are enforced by <see cref="RecipeSuggestion"/>
+/// and its nested value objects. Conversion wraps those caller-correctable failures in
+/// <see cref="RecipeSuggestionRequestValidationException"/> for endpoint mapping.
 /// </para>
 /// </remarks>
 /// <param name="Name">The recipe display name.</param>
@@ -55,27 +56,34 @@ public readonly record struct RecipeSuggestionRequestDto(
   /// Converts this DTO into its domain value object, applying all domain invariants.
   /// </summary>
   /// <returns>The mapped <see cref="RecipeSuggestion"/>.</returns>
-  /// <exception cref="ArgumentException">
-  /// Thrown when required text values are missing, when the steps collection is empty,
-  /// or when a collection item is null.
+  /// <exception cref="RecipeSuggestionRequestValidationException">
+  /// Thrown when the request violates a recipe domain invariant.
   /// </exception>
-  /// <exception cref="ArgumentOutOfRangeException">
-  /// Thrown when numeric values are invalid or when <see cref="TotalMinutes"/> is less than
-  /// the sum of <see cref="PreparationMinutes"/> and <see cref="CookingMinutes"/>.
-  /// </exception>
-  public RecipeSuggestion ToRecipeSuggestion() => new(
-    Name,
-    Description,
-    Servings,
-    PreparationMinutes,
-    CookingMinutes,
-    TotalMinutes,
-    Difficulty,
-    MapIngredients(PurchasedIngredients),
-    MapIngredients(AssumedPantryStaples),
-    MapIngredients(MissingOptionalIngredients),
-    Steps?.Select(step => step.ToRecipeStep()).ToList() ?? [],
-    AllergenWarnings?.ToList() ?? []);
+  public RecipeSuggestion ToRecipeSuggestion()
+  {
+    try
+    {
+      return new RecipeSuggestion(
+        Name,
+        Description,
+        Servings,
+        PreparationMinutes,
+        CookingMinutes,
+        TotalMinutes,
+        Difficulty,
+        MapIngredients(PurchasedIngredients),
+        MapIngredients(AssumedPantryStaples),
+        MapIngredients(MissingOptionalIngredients),
+        Steps?.Select(step => step.ToRecipeStep()).ToList() ?? [],
+        AllergenWarnings?.ToList() ?? []);
+    }
+    catch (ArgumentException exception)
+    {
+      throw new RecipeSuggestionRequestValidationException(
+        "The recipe suggestion violates the request contract.",
+        exception);
+    }
+  }
 
   private static List<RecipeIngredient> MapIngredients(IReadOnlyList<RecipeIngredientRequestDto>? ingredients) =>
     ingredients?.Select(ingredient => ingredient.ToRecipeIngredient()).ToList() ?? [];

@@ -357,7 +357,7 @@ public interface IInvoiceProcessingService
     InvoiceAnalysisRequestDto request,
     CancellationToken cancellationToken);
 
-  /// <summary>Validates merchant ownership and queues a request with resolved analysis options.</summary>
+  /// <summary>Validates invoice-reference visibility and queues a merchant request with resolved analysis options.</summary>
   /// <param name="merchantId">The merchant identifier to analyze.</param>
   /// <param name="userIdentifier">The authenticated requester.</param>
   /// <param name="request">The requested analysis profile and capability overrides.</param>

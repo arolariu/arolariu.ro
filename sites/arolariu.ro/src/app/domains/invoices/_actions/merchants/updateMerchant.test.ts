@@ -98,12 +98,12 @@ describe("updateMerchant", () => {
     }
   });
 
-  it("returns a validation failure when the server returns a malformed merchant", async () => {
+  it("returns a server failure when the server returns a malformed merchant", async () => {
     fetchMock.mockResolvedValue(TestDataBuilder.jsonResponse({}, {status: 202}));
     const result = await updateMerchant({merchantId, merchant});
     expect(result.success).toBe(false);
     if (!result.success) {
-      expect(result.error.code).toBe("VALIDATION_ERROR");
+      expect(result.error.code).toBe("SERVER_ERROR");
     }
   });
 

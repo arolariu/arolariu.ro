@@ -66,7 +66,13 @@ public partial class InvoiceOrchestrationService : IInvoiceOrchestrationService
 
       foreach (InvoiceScan attachedScan in invoice.Scans)
       {
-        if (HasSameCanonicalIdentity(attachedScan, scan))
+        if (attachedScan.Type == scan.Type
+          && Uri.Compare(
+            attachedScan.Location,
+            scan.Location,
+            UriComponents.AbsoluteUri,
+            UriFormat.UriEscaped,
+            StringComparison.Ordinal) == 0)
         {
           activity?.SetTag("scan.attachment.result", "already-attached");
           return invoice;
@@ -80,15 +86,6 @@ public partial class InvoiceOrchestrationService : IInvoiceOrchestrationService
         .UpdateInvoiceObject(invoice, invoiceIdentifier, userIdentifier, cancellationToken)
         .ConfigureAwait(false);
     }).ConfigureAwait(false);
-
-  private static bool HasSameCanonicalIdentity(InvoiceScan attachedScan, InvoiceScan candidateScan) =>
-    attachedScan.Type == candidateScan.Type
-    && Uri.Compare(
-      attachedScan.Location,
-      candidateScan.Location,
-      UriComponents.AbsoluteUri,
-      UriFormat.UriEscaped,
-      StringComparison.Ordinal) == 0;
 
   /// <inheritdoc/>
   public async Task DeleteInvoiceObject(Guid identifier, Guid? userIdentifier, CancellationToken cancellationToken) =>
