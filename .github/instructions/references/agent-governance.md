@@ -13,8 +13,10 @@ play out in the repository's actual assets.
 
 ## Customization-type selection
 
-The repository uses the following customization surfaces. Each concern should
-map to exactly one owner, per the product boundaries this repository follows:
+The repository uses six owning asset types. Instruction catalogs are
+subordinate resources, and MCP is security-sensitive client/tool
+configuration rather than a guidance owner. Each concern should map to one
+owner:
 
 | If the concern is... | Put it in... | Not in... |
 | --- | --- | --- |
@@ -22,8 +24,10 @@ map to exactly one owner, per the product boundaries this repository follows:
 | Domain judgment/routing across many possible tasks | An agent (`.github/agents/*.agent.md`) | A prompt (prompts must stay thin) |
 | A repeatable, ordered procedure with decision points | A skill (`.github/skills/*/SKILL.md`) | An agent (agents route, they don't enumerate steps) |
 | A short local alias to an existing skill | A prompt (`.github/prompts/*.prompt.md`) | A new skill (do not fork the procedure) |
-| Extensive examples/anti-patterns/edge cases for one path family | An instruction's linked catalog (`references/*.md`) | The auto-loaded instruction itself |
-| A deterministic, optional capability (read-only inventory, permission classification) | An extension (`.github/extensions/*/extension.mjs`) or MCP server | An instruction (instructions can't execute code) |
+| Extensive examples/anti-patterns/edge cases for one path family | The owning instruction's linked catalog (`references/*.md`) | A separate owner or the auto-loaded instruction body |
+| A deterministic optional local capability (read-only inventory, bounded context injection) | An extension (`.github/extensions/*/extension.mjs`) | An instruction (instructions cannot execute code) |
+| Durable actionable context not derivable from tracked source | Memory | An instruction, catalog, or copied source snapshot |
+| External tools/services exposed to Copilot | MCP client configuration | An agent/skill as though it owned the integration |
 
 [VS Code's agent customization concepts](https://code.visualstudio.com/docs/agents/concepts/customization),
 [Agent Skills](https://code.visualstudio.com/docs/agent-customization/agent-skills),
@@ -45,9 +49,12 @@ into the skill or a step-by-step procedure into the agent.
 
 ## Frontmatter requirements by surface
 
-Every surface's frontmatter is minimal and functional; the checker extension
-(`diagnostics.mjs`) actively flags violations, so these shapes are enforced,
-not aspirational.
+Every surface's frontmatter is minimal and functional. The shapes below are
+repository requirements. The checker currently verifies descriptions,
+forbidden model/calendar metadata, the exact global `applyTo: "**"` token,
+and skill-directory name alignment; it does not validate equivalent broad
+glob patterns or every required key/type, so reviewers must still inspect the
+complete frontmatter.
 
 **Instruction** (`name`, `description`, `applyTo`):
 
@@ -136,18 +143,16 @@ that owner instead of restating it:
   Versions table. `sites/exp.arolariu.ro/AGENTS.md` says "PEP 695 `type`
   keyword for aliases" but never repeats a Python version number — it
   implicitly matches whatever `requires-python` in `pyproject.toml` states.
-- Global commands (`npm run test:unit`, `npm run build:website`, ...) live
-  only in root `AGENTS.md`'s Commands section; local `AGENTS.md` files list
-  only their own narrower commands (`sites/cv.arolariu.ro/AGENTS.md` lists
-  `npm run build:cv`/`npm run dev:cv`, nothing global).
+- Global and repository-owned scripts live only in root `AGENTS.md`'s Commands
+  section; local guides point there and retain only commands that are
+  genuinely local to a subproject.
 - The RFC map (0001, 1001-1008, 2001-2004) lives only in root `AGENTS.md`.
   Instructions reference an RFC number (`agent-governance.instructions.md`
   references RFC via the operating protocol) instead of restating its
   content.
-- Risk escalation rules (dependency, auth, schema, infra, destructive) live
-  only in `.github/agent-governance/operating-protocol.md`; every agent's
-  Escalation section and every instruction's Escalation section names
-  concrete repository triggers but does not re-derive the general policy.
+- Repository-wide risk boundaries live only in root `AGENTS.md`.
+  `.github/copilot-instructions.md` and the operating protocol point there;
+  agents and instructions add only role/path-specific triggers.
 - `python.instructions.md` and `svelte.instructions.md` each own their own
   path's non-negotiable rules and link exactly one catalog
   (`references/python.md`, `references/svelte.md`); neither restates the
@@ -235,42 +240,16 @@ above.
 
 ## Extension and MCP threat boundaries
 
-Every registered extension is either read-only or a deterministic
-allow/deny/ask classifier — none call an LLM, and none silently approve a
-permission request:
+Every registered repository extension is read-only or adds bounded,
+deterministic context. None call an LLM, execute shell commands, or make
+permission decisions:
 
-- `arolariu-checker` exposes its inventory, doctor, and validation-context
-  tools
-  (`arolariu_ai_inventory`, `arolariu_ai_doctor`,
-  `arolariu_validation_context`), each wrapped in `success()`/`failure()`
-  and backed by pure filesystem reads — `diagnoseAssets` never edits a file,
-  and `resolveValidationContext` returns commands it verifies are already
-  present in `AGENTS.md` rather than inventing or running them.
-- `arolariu-guardrails` only implements `onPreToolUse`, and its
-  `classifyToolCall` function returns `undefined` (no opinion, defer to
-  native permissions) unless it detects a destructive shell pattern; when it
-  does have an opinion, it only ever returns `"deny"` or `"ask"`, never an
-  auto-approval:
-
-```js
-// .github/extensions/arolariu-guardrails/policy.mjs
-if (mirrorMode) {
-    return {
-        permissionDecision: "deny",
-        permissionDecisionReason:
-            "Mirroring can force-update or delete main and preview and is prohibited.",
-    };
-}
-...
-return unresolvedForcedDestination
-    ? {
-            permissionDecision: "ask",
-            permissionDecisionReason:
-                "Forced push destination is implicit; explicit user confirmation is required.",
-        }
-    : undefined;
-```
-
+- `arolariu-checker` exposes inventory and doctor tools
+  (`arolariu_ai_inventory`, `arolariu_ai_doctor`), each wrapped in
+  `success()`/`failure()` and backed by pure filesystem reads.
+  `diagnoseAssets` never edits a file. Validation command selection remains
+  with the canonical guides and task skills rather than a duplicated extension
+  profile.
 - `arolariu-context` only implements `onUserPromptSubmitted` and returns a
   bounded (`maxCharacters: 2000`), deterministically-derived
   `additionalContext` string built from existing file paths — it never
@@ -295,13 +274,13 @@ return additionalContext ? {additionalContext} : undefined;
   `sites/exp.arolariu.ro` or `sites/cv.arolariu.ro` — the two path families
   this catalog's siblings own — so filesystem-MCP reads there always fall
   back to the wider shell tools.
-- CODEOWNERS gates every agentic path (`.github/instructions/**`,
+- CODEOWNERS requests review for every agentic path (`.github/instructions/**`,
   `.github/agents/**`, `.github/skills/**`, `.github/prompts/**`,
   `.github/extensions/**`, `.github/agent-governance/**`,
   `.github/memory/**`, `.github/mcp.json`, `AGENTS.md`, `CLAUDE.md`,
-  `.github/copilot-instructions.md`) at PR time — it is a review gate, not a
-  push-time block (this is a solo repo without branch protection, an
-  accepted trade documented in the threat model).
+  `.github/copilot-instructions.md`) at PR time. Whether approval is required
+  or direct/forced updates are blocked depends on live branch rules and
+  rulesets; query GitHub rather than freezing that state in guidance.
 - MCP package supply chain: the current stdio entries use `npx -y` package
   resolution without repository-pinned versions. The threat model records
   this as an accepted risk, not a recommended pattern. Adding, replacing, or
@@ -309,16 +288,18 @@ return additionalContext ? {additionalContext} : undefined;
   stop for explicit approval, inspect the package's official release/source,
   define rollback, and do not silently "fix" the accepted baseline while
   editing unrelated AI guidance.
-- GitHub MCP credentials: `.github/mcp.json` receives
-  `GITHUB_ACCESS_TOKEN` from the environment. Never commit, print, or copy the
-  value into an agent asset. Before changing this entry, verify the credential
-  is temporary and least-privilege for the intended tools; expanding scopes or
-  replacing the authentication model requires explicit approval.
+- GitHub MCP: the workspace configuration intentionally omits a second local
+  GitHub server because Copilot CLI already provides its built-in GitHub
+  integration. Adding a credential-bearing workspace duplicate requires
+  explicit approval, a least-privilege token review, and evidence that the
+  built-in surface lacks a required capability.
 
 ### Anti-pattern: an extension that executes arbitrary shell commands
 
-`diagnostics.mjs` actively scans extension source for this and reports
-`"arbitrary-shell-handler"` (high severity) on a match:
+`diagnostics.mjs` scans each registered `extension.mjs` entrypoint for this
+and reports `"arbitrary-shell-handler"` (high severity) on a direct match. It
+does not recursively scan imported helper modules, so source review must also
+follow every local import:
 
 ```js
 // ❌ Anti-pattern (would be flagged by arolariu_ai_doctor)
@@ -328,34 +309,32 @@ handler: async ({command}) => exec(command);
 
 ```js
 // ✅ Correction: arolariu-checker's handlers only call pure, read-only
-// functions (inventoryAssets, diagnoseAssets, resolveValidationContext)
-// backed by node:fs reads, never a shell.
+// inventoryAssets/diagnoseAssets functions backed by node:fs reads.
 ```
 
 ### Anti-pattern: `approveAll` or silent unmatched-permission approval
 
 ```js
-// ❌ Anti-pattern (would be flagged: "Extensions must not auto-approve
-// permission requests.")
+// ❌ Anti-pattern: repository extensions must not make allow decisions.
 onPreToolUse: async () => ({permissionDecision: "allow"});
 ```
 
-```js
-// ✅ Correction: arolariu-guardrails returns undefined (defer to native
-// permissions) for every tool call it has no specific opinion about, and
-// only ever overrides toward "deny" or "ask".
-```
+`diagnostics.mjs` detects the literal `approveAll` identifier, but it does not
+prove that every possible allow-shaped hook is absent. Manual review must
+reject `permissionDecision: "allow"`, equivalent computed values, and any
+extension that claims to secure arbitrary shell text. Execution safety belongs
+to native permissions, assisted approval, local/cloud sandboxing, and remote
+branch rules.
 
 ## Memory policy
 
 `.github/memory/memory.json` may remain empty when no durable fact exists that
 cannot be derived from source. Read its current contents rather than copying a
-snapshot into guidance. `diagnostics.mjs`'s
-`SOURCE_DERIVED_MEMORY` pattern actively flags any memory value that looks
-like a version number, a `npm run`/`dotnet`/`python`/`git`/`gh` command, or a
-count of agents/skills/prompts/instructions/extensions/stores/sites/
-components/RFCs — because all of those are already derivable from tracked
-source and would go stale silently.
+snapshot into guidance. `diagnostics.mjs` catches dotted version strings,
+selected build/test/install/push command forms, and numeric asset-count
+phrases. That heuristic is intentionally incomplete: reviewers must reject
+other source-derived values such as runtime floors, arbitrary Git/GitHub
+commands, paths, and architecture snapshots even when the doctor is clean.
 
 ### Anti-pattern: a memory entity that snapshots discoverable facts
 
@@ -433,9 +412,6 @@ await session.log("arolariu-checker: read-only AI diagnostics enabled");
 
 // .github/extensions/arolariu-context/extension.mjs
 await session.log("arolariu-context: live path-based context enabled");
-
-// .github/extensions/arolariu-guardrails/extension.mjs
-await session.log("arolariu-guardrails: destructive-operation checks enabled");
 ```
 
 Verifying "the checker extension works" means confirming that log line
@@ -451,15 +427,14 @@ node --test .github/extensions/arolariu-checker/checker.test.mjs
 ### Anti-pattern: claiming an extension is healthy from source presence alone
 
 ```text
-❌ "arolariu-guardrails/extension.mjs exists in .github/extensions, so
-destructive-operation checks are active."
+❌ "arolariu-context/extension.mjs exists in .github/extensions, so context
+injection is active."
 ```
 
 ```text
-✅ "arolariu-guardrails logged 'destructive-operation checks enabled' at
-session start, and node --test .github/extensions/arolariu-guardrails/policy.test.mjs
-passes 100% locally" — both runtime and logic evidence, not just a file
-listing.
+✅ "arolariu-context logged 'live path-based context enabled' at session
+start, and its resolver tests pass locally" — both runtime and logic evidence,
+not just a file listing.
 ```
 
 MCP discovery and runtime evidence are separate too. This read-only command
@@ -485,12 +460,10 @@ the JSON file alone.
 - `.github/mcp.json` — registered MCP servers and the `filesystem`
   allowlist.
 - `.github/memory/memory.json` — current memory state and schema.
-- `.github/extensions/arolariu-checker/{extension,diagnostics,frontmatter,inventory,validation}.mjs`
-  — read-only inventory/doctor/validation-context tools.
+- `.github/extensions/arolariu-checker/{extension,diagnostics,frontmatter,inventory}.mjs`
+  — read-only inventory and doctor tools.
 - `.github/extensions/arolariu-context/{extension,resolver}.mjs` — bounded
   deterministic context injection.
-- `.github/extensions/arolariu-guardrails/{extension,policy}.mjs` —
-  deny/ask-only destructive-operation classification.
 - `.github/skills/unit-test/SKILL.md` — canonical Resource Triggers table
   shape.
 - `.github/prompts/fix-bug.prompt.md` — canonical thin-prompt shape.

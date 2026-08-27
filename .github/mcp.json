@@ -1,19 +1,5 @@
 {
   "mcpServers": {
-    "memory": {
-      "type": "stdio",
-      "command": "cmd",
-      "args": ["/c", "npx", "-y", "@modelcontextprotocol/server-memory"],
-      "env": {
-        "MEMORY_FILE_PATH": ".github/memory/memory.json"
-      }
-    },
-    "github": {
-      "type": "stdio",
-      "command": "cmd",
-      "args": ["/c", "npx", "-y", "github-mcp"],
-      "env": { "GITHUB_ACCESS_TOKEN": "${GITHUB_ACCESS_TOKEN}" }
-    },
     "context7": {
       "type": "stdio",
       "command": "cmd",

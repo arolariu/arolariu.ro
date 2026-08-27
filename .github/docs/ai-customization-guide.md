@@ -102,8 +102,7 @@ Project extensions are optional interactive CLI accelerators:
 | Extension | Responsibility |
 | --- | --- |
 | `arolariu-context` | Adds bounded pointers to relevant live repository context |
-| `arolariu-guardrails` | Adds defense-in-depth for a narrow set of destructive operations |
-| `arolariu-checker` | Exposes read-only inventory, diagnostics, and validation guidance |
+| `arolariu-checker` | Exposes read-only inventory and diagnostics |
 
 Static instructions remain complete when extensions fail. Native Copilot
 permissions remain authoritative.
@@ -112,6 +111,54 @@ Extension source is not runtime health evidence. Inspect the loaded extension
 and its log. Non-interactive `--prompt` mode can load zero project extensions,
 so use an interactive CLI session for runtime checks.
 
+## Native CLI Safety
+
+The repository intentionally does not ship a shell-command policy extension.
+Arbitrary shell text can dispatch scripts, aliases, interpreters, hooks, or
+provider-specific path syntax, so a repository regex parser would create a
+false security guarantee.
+
+Use the native layers instead:
+
+1. Keep the default permission flow for normal work. Do not use
+   `--allow-all`/`--yolo` for routine repository sessions, and do not approve
+   destructive commands or general-purpose runtimes for the rest of a
+   session.
+2. When experimental features are available, prefer
+   `--experimental --assisted-approval` (or the assisted `/permissions`
+   mode) so the built-in safety judge reviews permission requests rather than
+   silently approving them.
+3. Enable local command sandboxing with `/sandbox enable`, turn **Allow
+   sandbox bypass** off, keep local MCP/LSP processes sandboxed, and inspect
+   the effective result with `/sandbox policy`. Windows support requires a
+   compatible Windows Insiders build.
+4. Expose Git/`gh` credentials to the sandbox only for a task that genuinely
+   needs authenticated GitHub operations.
+5. Query live branch/ruleset settings before relying on review, lock,
+   force-push, or deletion protection. Those controls are not stored in this
+   repository.
+
+Local sandboxing limits access outside the granted policy, but the current
+working directory is read/write by default. It therefore contains blast
+radius; it does not make an approved recursive deletion of the active
+worktree harmless. Permission review, small commits, and remote branch rules
+remain necessary.
+
+The local sandbox also inherits most of the shell environment. Arbitrary
+credentials already present there may remain visible, **Allow dev tool
+access** can expose package-manager configuration/tokens, and outbound/local
+network access is enabled by default. For hostile or untrusted code, prefer a
+cloud sandbox or start from a secret-free environment, disable dev-tool
+access, Git/`gh` authentication, outbound and local networking, and sandbox
+bypass, then confirm the result with `/sandbox policy`.
+
+For review-only sessions, keep shell commands on per-invocation approval.
+Do not pre-approve even apparently read-only Git subcommands: `diff`, `log`,
+and `show` accept output/external-tool options that can write or execute.
+Never grant `shell(git:*)` to a reviewer; it also covers directly mutating
+commands such as `clean`, `reset`, and `checkout`. Denial rules still take
+precedence over allow rules, including `--allow-all-tools`.
+
 ## Memory
 
 `.github/memory/memory.json` is reserved for durable, actionable context that
@@ -119,8 +166,9 @@ cannot be derived from tracked source. Do not store versions, commands, counts,
 architecture snapshots, discoverable paths, task state, secrets, or personal
 data.
 
-Copilot's server-side memory is separate from the file-based MCP memory store.
-Canonical source overrides both.
+Copilot's server-side memory is separate from the tracked repository memory
+policy/file. The workspace MCP configuration intentionally does not launch a
+second memory server. Canonical source overrides memory.
 
 ## MCP
 
@@ -131,6 +179,12 @@ documentation.
 An MCP entry executes a package with the user's credentials. Adding,
 replacing, or broadening a server requires explicit approval and CODEOWNERS
 review.
+
+The current Playwright workspace entry exposes all tools from its local
+package. Treat it as code-capable rather than a read-only browser, keep native
+permissions/sandboxing in force, and use an isolated environment for hostile
+content. Pinning or narrowing that entry remains an approved MCP/dependency
+decision.
 
 ## Event-Driven Maintenance
 

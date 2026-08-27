@@ -9,7 +9,6 @@ import {joinSession} from "@github/copilot-sdk/extension";
 
 import {diagnoseAssets} from "./diagnostics.mjs";
 import {inventoryAssets} from "./inventory.mjs";
-import {resolveValidationContext} from "./validation.mjs";
 
 function findRepositoryRoot(startPath) {
 	let current = resolve(startPath);
@@ -77,35 +76,6 @@ const tools = [
 		name: "arolariu_ai_doctor",
 		parameters: {
 			properties: {},
-			type: "object",
-		},
-	},
-	{
-		description:
-			"Resolve an existing targeted validation profile from canonical AGENTS.md guidance without executing commands.",
-		handler: async ({profile}) => {
-			try {
-				return success(
-					resolveValidationContext(repositoryRoot, profile),
-				);
-			} catch (error) {
-				return failure(error);
-			}
-		},
-		name: "arolariu_validation_context",
-		parameters: {
-			properties: {
-				profile: {
-					description: "Validation profile to resolve.",
-					enum: [
-						"frontend-routine",
-						"backend",
-						"components",
-					],
-					type: "string",
-				},
-			},
-			required: ["profile"],
 			type: "object",
 		},
 	},

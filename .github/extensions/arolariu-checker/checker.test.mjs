@@ -7,6 +7,7 @@ import {
 	mkdirSync,
 	mkdtempSync,
 	rmSync,
+	symlinkSync,
 	writeFileSync,
 } from "node:fs";
 import {tmpdir} from "node:os";
@@ -18,7 +19,6 @@ import {
 import {diagnoseAssets} from "./diagnostics.mjs";
 import {parseFrontmatter} from "./frontmatter.mjs";
 import {inventoryAssets} from "./inventory.mjs";
-import {resolveValidationContext} from "./validation.mjs";
 
 const repositories = [];
 
@@ -184,6 +184,32 @@ test("inventoryAssets discovers every supported asset type", () => {
 	);
 });
 
+test("inventoryAssets recursively discovers nested instructions", () => {
+	const root = createFixtureRepository();
+	write(
+		root,
+		".github/instructions/nested/security.instructions.md",
+		[
+			"---",
+			"name: Nested Security",
+			"description: Nested instruction",
+			'applyTo: "**/*.security.json"',
+			"---",
+			"",
+		].join("\n"),
+	);
+
+	const assets = inventoryAssets(root);
+
+	assert.ok(
+		assets.some(
+			({path, type}) =>
+				type === "instruction" &&
+				path === ".github/instructions/nested/security.instructions.md",
+		),
+	);
+});
+
 test("diagnoseAssets reports stale metadata and unsafe extension patterns", () => {
 	const findings = diagnoseAssets(createInvalidFixtureRepository());
 
@@ -276,6 +302,218 @@ test("diagnoseAssets reports metadata, scope, link, duplicate, and command drift
 	assert.ok(findings.some(({code}) => code === "stale-command"));
 });
 
+test("diagnoseAssets rejects unsafe link targets before filesystem access", () => {
+	const root = createFixtureRepository();
+	write(
+		root,
+		".github/docs/unsafe-links.md",
+		[
+			"[scheme-relative](//invalid.example/share/file.md)",
+			"[unc](\\\\invalid.example\\share\\file.md)",
+			"[absolute](C:\\outside\\file.md)",
+			"[escape](../../../outside.md)",
+			"",
+		].join("\n"),
+	);
+
+	const findings = diagnoseAssets(root).filter(
+		({code}) => code === "unsafe-relative-link",
+	);
+
+	assert.equal(findings.length, 4);
+});
+
+test("diagnoseAssets checks instruction catalogs and skill resources", () => {
+	const root = createFixtureRepository();
+	write(
+		root,
+		".github/instructions/references/typescript.md",
+		"[missing catalog link](./missing-catalog.md)\n",
+	);
+	write(
+		root,
+		".github/skills/fix-bug/references/troubleshooting.md",
+		"[missing resource link](./missing-resource.md)\n",
+	);
+
+	const findings = diagnoseAssets(root).filter(
+		({code}) => code === "broken-relative-link",
+	);
+
+	assert.ok(
+		findings.some(
+			({path}) =>
+				path === ".github/instructions/references/typescript.md",
+		),
+	);
+	assert.ok(
+		findings.some(
+			({path}) =>
+				path === ".github/skills/fix-bug/references/troubleshooting.md",
+		),
+	);
+});
+
+test("diagnoseAssets ignores example links inside fenced code", () => {
+	const root = createFixtureRepository();
+	write(
+		root,
+		".github/instructions/references/examples.md",
+		[
+			"```markdown",
+			"[example](./not-a-document-link.md)",
+			"```",
+			"",
+		].join("\n"),
+	);
+
+	const findings = diagnoseAssets(root);
+
+	assert.ok(
+		!findings.some(
+			({code, path}) =>
+				code === "broken-relative-link" &&
+				path === ".github/instructions/references/examples.md",
+		),
+	);
+});
+
+test("diagnoseAssets scans governed AGENTS files and non-inline links", () => {
+	const root = createFixtureRepository();
+	write(
+		root,
+		"sites/example/AGENTS.md",
+		[
+			"[reference link][missing-reference]",
+			"[missing-reference]: ./missing-reference.md",
+			'<a href="./missing-html.md">Missing HTML link</a>',
+			"",
+		].join("\n"),
+	);
+
+	const findings = diagnoseAssets(root).filter(
+		({code, path}) =>
+			code === "broken-relative-link" &&
+			path === "sites/example/AGENTS.md",
+	);
+
+	assert.equal(findings.length, 2);
+});
+
+test("diagnoseAssets rejects unsafe reference and HTML link targets", () => {
+	const root = createFixtureRepository();
+	write(
+		root,
+		".github/instructions/references/security.md",
+		[
+			"[reference][unsafe]",
+			"[unsafe]: //invalid.example/share/file.md",
+			'<a href="file://invalid.example/share/file.md">Unsafe HTML</a>',
+			"",
+		].join("\n"),
+	);
+
+	const findings = diagnoseAssets(root).filter(
+		({code}) => code === "unsafe-relative-link",
+	);
+
+	assert.equal(findings.length, 2);
+});
+
+test("diagnoseAssets rejects repository-relative links through symlinks", () => {
+	const root = createFixtureRepository();
+	const outside = mkdtempSync(join(tmpdir(), "arolariu-checker-outside-"));
+	repositories.push(outside);
+	writeFileSync(join(outside, "outside.md"), "outside\n");
+
+	const link = join(root, ".github", "docs", "escape");
+	mkdirSync(dirname(link), {recursive: true});
+	symlinkSync(
+		outside,
+		link,
+		process.platform === "win32" ? "junction" : "dir",
+	);
+	write(
+		root,
+		".github/docs/symlink-link.md",
+		"[escape](./escape/outside.md)\n",
+	);
+
+	const findings = diagnoseAssets(root);
+
+	assert.ok(
+		findings.some(
+			({code, path}) =>
+				code === "unsafe-relative-link" &&
+				path === ".github/docs/symlink-link.md",
+		),
+	);
+});
+
+test("inventoryAssets ignores symlinked asset source files", () => {
+	const root = createFixtureRepository();
+	const outside = mkdtempSync(join(tmpdir(), "arolariu-checker-asset-"));
+	repositories.push(outside);
+	const outsideSkill = join(outside, "SKILL.md");
+	writeFileSync(
+		outsideSkill,
+		[
+			"---",
+			"name: outside-skill",
+			"description: Outside repository",
+			"---",
+			"",
+		].join("\n"),
+	);
+
+	const skillDirectory = join(root, ".github", "skills", "escape");
+	mkdirSync(skillDirectory, {recursive: true});
+	symlinkSync(
+		outsideSkill,
+		join(skillDirectory, "SKILL.md"),
+		"file",
+	);
+
+	const assets = inventoryAssets(root);
+
+	assert.ok(
+		!assets.some(
+			({path}) => path === ".github/skills/escape/SKILL.md",
+		),
+	);
+});
+
+test("diagnoseAssets ignores symlinked resource source files", () => {
+	const root = createFixtureRepository();
+	const outside = mkdtempSync(join(tmpdir(), "arolariu-checker-resource-"));
+	repositories.push(outside);
+	const outsideResource = join(outside, "external.md");
+	writeFileSync(outsideResource, "[outside](./missing.md)\n");
+
+	const resourceDirectory = join(
+		root,
+		".github",
+		"skills",
+		"fix-bug",
+		"references",
+	);
+	mkdirSync(resourceDirectory, {recursive: true});
+	symlinkSync(
+		outsideResource,
+		join(resourceDirectory, "external.md"),
+		"file",
+	);
+
+	const findings = diagnoseAssets(root);
+
+	assert.ok(
+		!findings.some(
+			({path}) =>
+				path === ".github/skills/fix-bug/references/external.md",
+		),
+	);
+});
+
 test("diagnoseAssets requires governance scopes for extensions, memory, and MCP", () => {
 	const root = createFixtureRepository();
 	write(
@@ -295,25 +533,5 @@ test("diagnoseAssets requires governance scopes for extensions, memory, and MCP"
 
 	assert.ok(
 		findings.some(({code}) => code === "governance-scope-missing"),
-	);
-});
-
-test("resolveValidationContext reads commands from canonical AGENTS.md", () => {
-	const result = resolveValidationContext(
-		createFixtureRepository(),
-		"frontend-routine",
-	);
-
-	assert.equal(result.source, "AGENTS.md");
-	assert.deepEqual(result.commands, [
-		"npm run test:unit",
-		"npm run build:website",
-	]);
-});
-
-test("resolveValidationContext fails explicitly for unknown profiles", () => {
-	assert.throws(
-		() => resolveValidationContext(createFixtureRepository(), "unknown"),
-		/Unknown validation profile: unknown/,
 	);
 });

@@ -24,17 +24,8 @@ Proceed without another checkpoint when the task is explicit, reversible,
 in-scope, and follows an established pattern. This includes creating, editing,
 renaming, formatting, and testing the files needed to complete the task.
 
-Ask before:
-
-- adding or replacing dependencies;
-- changing authentication, authorization, or security behavior;
-- changing schemas or migrating data;
-- creating a bounded context or Zustand store;
-- changing infrastructure, deployment, production workflows, or material
-  cloud cost;
-- destructive or irreversible operations;
-- choosing among materially different public API, product, or UX behaviors
-  without a safe established default.
+Follow the repository-wide `Risk Boundaries` in root `AGENTS.md`. Do not
+redefine that list in client-specific guidance.
 
 An explicit request authorizes ordinary in-scope file creation. It does not
 authorize an irreversible or security-sensitive operation without the required
@@ -42,33 +33,20 @@ concrete checkpoint.
 
 ## Editing Discipline
 
+- Follow root `AGENTS.md` for coding conventions, architecture, tests, and
+  security boundaries; do not restate those contracts here.
 - Inspect current sibling source before adding a new pattern.
 - Reuse existing helpers and abstractions.
 - Make the smallest complete change; do not perform unrelated cleanup.
 - Preserve user changes in a dirty worktree.
-- Use strict types; never introduce TypeScript `any`.
-- Keep business logic out of Brokers and service dependencies within the
-  repository limit.
-- Keep Server Components server-side unless interaction requires a client
-  boundary.
-- Use CSS Modules instead of inline styles.
-- Keep user-facing copy in `next-intl`.
 - Add tests for changed behavior.
 - Never commit secrets or `docs/superpowers/**` / `.superpowers/**`.
 - Do not create a worktree unless the user explicitly requests one.
-- Never force-push `main` or `preview`.
 
 ## Verification
 
-- Run the smallest existing test, build, or lint command that proves the
-  changed behavior.
-- Routine frontend work uses `npm run test:unit` and
-  `npm run build:website` when both apply.
-- Reserve `npm run lint` and `npm run test:website` for a final pass or an
-  explicit request.
-- Use targeted `dotnet build` and `dotnet test` selections for backend work.
-- Documentation-only changes do not require an application build unless a
-  documentation check exists.
+- Follow root `AGENTS.md` and the nearest local guide to select the smallest
+  existing check that proves the changed behavior.
 - Do not claim success without command or file evidence.
 - Do not dump routine evidence into the final response unless requested or
   needed to explain risk, failure, or incomplete validation.

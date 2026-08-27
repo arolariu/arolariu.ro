@@ -1,7 +1,7 @@
 ---
 name: Agent Asset Governance
 description: Rules unique to repository AI instructions, agents, skills, prompts, extensions, memory, and Copilot configuration.
-applyTo: ".github/**/*.md,.github/extensions/**/*.mjs,.github/memory/**/*.json,.github/mcp.json"
+applyTo: "**/AGENTS.md,CLAUDE.md,.github/CODEOWNERS,.github/copilot-instructions.md,.github/agent-governance/**/*.md,.github/agents/*.agent.md,.github/docs/ai-customization-guide.md,.github/extensions/**/*.mjs,.github/instructions/**/*.md,.github/memory/**/*.json,.github/mcp.json,.github/prompts/*.prompt.md,.github/skills/**/*.md"
 ---
 
 # Agent Asset Governance
@@ -38,15 +38,16 @@ configuration.
 
 Open `references/agent-governance.md` only when the task needs one of:
 
-- deciding which of the six customization surfaces (instruction, agent,
-  skill, prompt, extension, MCP server) owns a new concern;
+- deciding which owning asset type (instruction, agent, skill, prompt,
+  extension, or memory) owns a concern, or whether it belongs in a subordinate
+  instruction catalog or MCP client configuration;
 - a frontmatter shape question for an instruction, agent, skill, or prompt;
 - confirming a one-owner placement, or correcting an asset that duplicates
   another asset's owned fact;
 - writing or reviewing a progressive-disclosure trigger for a skill resource
   or instruction catalog;
-- an extension/MCP threat-boundary question (read-only tools, deny/ask-only
-  permission classification, bounded context injection, allowlist scope);
+- an extension/MCP threat-boundary question (read-only tools, bounded context
+  injection, native permissions/sandboxing, allowlist scope);
 - a memory-policy question about whether a proposed entry is source-derived;
 - a prompt-versus-skill boundary question;
 - verifying runtime health evidence for an extension beyond source presence.

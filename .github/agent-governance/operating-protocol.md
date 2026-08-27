@@ -18,15 +18,11 @@ agents, skills, prompts, extensions, memory, or Copilot configuration.
 
 ## Risk Escalation
 
-Ask before:
-
-- adding or replacing a dependency;
-- changing authentication, authorization, or security behavior;
-- changing schemas or migrating data;
-- changing infrastructure, deployment, production workflows, or material
-  cloud cost;
-- destructive or irreversible operations;
-- choosing among materially different public behaviors without a safe default.
+Root `AGENTS.md` owns the repository-wide risk boundaries. Apply them to AI
+assets without copying the list here. In particular, an extension or MCP
+change does not bypass the dependency, security, infrastructure, destructive,
+or public-behavior checkpoint merely because the changed file is
+configuration or documentation.
 
 ## Completion
 

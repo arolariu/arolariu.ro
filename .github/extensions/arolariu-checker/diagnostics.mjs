@@ -1,8 +1,8 @@
 import {
 	existsSync,
+	lstatSync,
 	readdirSync,
 	readFileSync,
-	statSync,
 } from "node:fs";
 import {
 	basename,
@@ -16,6 +16,10 @@ import {
 
 import {parseFrontmatter} from "./frontmatter.mjs";
 import {inventoryAssets} from "./inventory.mjs";
+import {
+	isSafeRepositoryFile,
+	repositoryPathKind,
+} from "./path-safety.mjs";
 
 const MARKDOWN_TYPES = new Set([
 	"agent",
@@ -32,6 +36,20 @@ const SEVERITY_ORDER = {
 	medium: 1,
 	low: 2,
 };
+const GOVERNANCE_GUIDE_NAMES = new Set([
+	"AGENTS.md",
+	"CLAUDE.md",
+]);
+const SKIPPED_GUIDE_DIRECTORIES = new Set([
+	".git",
+	".next",
+	".nx",
+	".svelte-kit",
+	"bin",
+	"dist",
+	"node_modules",
+	"obj",
+]);
 
 function toRepositoryPath(value) {
 	return value.replaceAll("\\", "/");
@@ -49,18 +67,32 @@ function absolutePath(repositoryRoot, repositoryPath) {
 	return join(repositoryRoot, ...repositoryPath.split("/"));
 }
 
-function collectMarkdown(path) {
-	if (!existsSync(path)) return [];
-	const status = statSync(path);
-	if (status.isFile()) return path.endsWith(".md") ? [path] : [];
+function collectMarkdown(repositoryRoot, path) {
+	const kind = repositoryPathKind(repositoryRoot, path);
+	if (kind === "file") return path.endsWith(".md") ? [path] : [];
+	if (kind !== "directory") return [];
 
 	return readdirSync(path, {withFileTypes: true}).flatMap((entry) =>
-		entry.isDirectory()
-			? collectMarkdown(join(path, entry.name))
-			: entry.name.endsWith(".md")
-				? [join(path, entry.name)]
-				: [],
+		collectMarkdown(repositoryRoot, join(path, entry.name)),
 	);
+}
+
+function collectGovernanceGuides(repositoryRoot, path) {
+	if (repositoryPathKind(repositoryRoot, path) !== "directory") return [];
+
+	return readdirSync(path, {withFileTypes: true}).flatMap((entry) => {
+		const candidate = join(path, entry.name);
+		if (
+			entry.isDirectory() &&
+			!SKIPPED_GUIDE_DIRECTORIES.has(entry.name)
+		) {
+			return collectGovernanceGuides(repositoryRoot, candidate);
+		}
+		return GOVERNANCE_GUIDE_NAMES.has(entry.name) &&
+			isSafeRepositoryFile(repositoryRoot, candidate)
+			? [candidate]
+			: [];
+	});
 }
 
 function markdownFiles(repositoryRoot, assets) {
@@ -70,10 +102,20 @@ function markdownFiles(repositoryRoot, assets) {
 	const extras = [
 		join(repositoryRoot, ".github", "agent-governance"),
 		join(repositoryRoot, ".github", "docs"),
+		join(repositoryRoot, ".github", "instructions"),
+		join(repositoryRoot, ".github", "skills"),
 		join(repositoryRoot, ".github", "copilot-instructions.md"),
+		join(repositoryRoot, "AGENTS.md"),
+		join(repositoryRoot, "CLAUDE.md"),
 	];
 
-	return [...new Set([...files, ...extras.flatMap(collectMarkdown)])];
+	return [
+		...new Set([
+			...files,
+			...extras.flatMap((path) => collectMarkdown(repositoryRoot, path)),
+			...collectGovernanceGuides(repositoryRoot, repositoryRoot),
+		]),
+	];
 }
 
 function stringsIn(value) {
@@ -93,13 +135,106 @@ function scopeMatches(pattern, path) {
 	}
 }
 
+function isUnsafeLinkTarget(repositoryRoot, sourcePath, target) {
+	const normalized = target.replaceAll("\\", "/");
+	if (
+		normalized.startsWith("//") ||
+		normalized.startsWith("/") ||
+		/^[a-z][a-z0-9+.-]*:/i.test(normalized) ||
+		/^[a-z]:\//i.test(normalized) ||
+		isAbsolute(target)
+	) {
+		return true;
+	}
+
+	const resolved = resolve(dirname(sourcePath), target);
+	const repositoryRelative = relative(repositoryRoot, resolved);
+	if (
+		isAbsolute(repositoryRelative) ||
+		/^\.\.(?:[\\/]|$)/.test(repositoryRelative)
+	) {
+		return true;
+	}
+
+	let current = repositoryRoot;
+	for (const part of repositoryRelative.split(/[\\/]/).filter(Boolean)) {
+		current = join(current, part);
+		try {
+			if (lstatSync(current).isSymbolicLink()) return true;
+		} catch (error) {
+			if (
+				error &&
+				typeof error === "object" &&
+				"code" in error &&
+				error.code === "ENOENT"
+			) {
+				return false;
+			}
+			throw error;
+		}
+	}
+
+	return false;
+}
+
+function fencedCodeRanges(source) {
+	return [
+		...source.matchAll(
+			/^(?<fence>`{3,}|~{3,})[^\r\n]*\r?\n[\s\S]*?^\k<fence>[ \t]*$/gm,
+		),
+	].map((match) => ({
+		end: (match.index ?? 0) + match[0].length,
+		start: match.index ?? 0,
+	}));
+}
+
+function linkTargets(source) {
+	const matches = [];
+	const patterns = [
+		/\[[^\]]+\]\(([^)]+)\)/g,
+		/^[ \t]{0,3}\[[^\]]+\]:[ \t]*(?:<([^>]+)>|(\S+))/gm,
+		/\b(?:href|src)[ \t]*=[ \t]*(?:"([^"]+)"|'([^']+)'|([^\s>]+))/gi,
+		/<([a-z][a-z0-9+.-]*:[^ >]+|\/\/[^ >]+)>/gi,
+	];
+
+	for (const pattern of patterns) {
+		for (const match of source.matchAll(pattern)) {
+			const rawTarget = match.slice(1).find(Boolean);
+			if (rawTarget) {
+				matches.push({index: match.index ?? 0, rawTarget});
+			}
+		}
+	}
+
+	return matches.filter(
+		(candidate, index) =>
+			matches.findIndex(
+				(other) =>
+					other.index === candidate.index &&
+					other.rawTarget === candidate.rawTarget,
+			) === index,
+	);
+}
+
 function brokenLinkFindings(repositoryRoot, path) {
+	if (!isSafeRepositoryFile(repositoryRoot, path)) return [];
+
 	const source = readFileSync(path, "utf8");
 	const repositoryPath = toRepositoryPath(relative(repositoryRoot, path));
 	const findings = [];
+	const codeRanges = fencedCodeRanges(source);
 
-	for (const match of source.matchAll(/\[[^\]]+\]\(([^)]+)\)/g)) {
-		const rawTarget = match[1].trim();
+	for (const match of linkTargets(source)) {
+		if (
+			codeRanges.some(
+				({end, start}) =>
+					match.index >= start && match.index < end,
+			)
+		) {
+			continue;
+		}
+
+		const rawTarget = match.rawTarget.trim();
 		if (
 			/^(?:https?:|mailto:|about:|#|\$\{)/i.test(rawTarget)
 		) {
@@ -112,9 +247,20 @@ function brokenLinkFindings(repositoryRoot, path) {
 			.split("#")[0];
 		if (!target) continue;
 
-		const resolved = isAbsolute(target)
-			? resolve(target)
-			: resolve(dirname(path), target);
+		if (isUnsafeLinkTarget(repositoryRoot, path, target)) {
+			findings.push(
+				finding(
+					"high",
+					"unsafe-relative-link",
+					repositoryPath,
+					lineOf(source, match.index),
+					`Link target must stay repository-relative: ${rawTarget}`,
+				),
+			);
+			continue;
+		}
+
+		const resolved = resolve(dirname(path), target);
 		if (!existsSync(resolved)) {
 			findings.push(
 				finding(
