@@ -123,7 +123,8 @@ func createTags(moduleName string, deploymentDate string) resourceTags => {
   module: moduleName
   costCenter: 'infrastructure'
   project: 'arolariu.ro'
-  version: '2.0.0'
+  // Read remaining tag values, including the current schema version, from
+  // the live createTags function instead of copying them into guidance.
 }
 ```
 
@@ -152,11 +153,11 @@ assignments — never a subscription- or resource-group-wide role:
 
 ```bicep
 // infra/Azure/Bicep/rbac/storage-rbac.bicep
-resource storageAccount 'Microsoft.Storage/storageAccounts@2025-06-01' existing = {
+resource storageAccount 'Microsoft.Storage/storageAccounts@<current-api-version>' existing = {
   name: storageAccountName
 }
 
-resource frontendBlobContributor 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+resource frontendBlobContributor 'Microsoft.Authorization/roleAssignments@<current-api-version>' = {
   scope: storageAccount
   name: guid(storageAccount.id, frontendPrincipalId, storageBlobDataContributor)
   properties: {
@@ -208,7 +209,7 @@ var federatedCredentials = [
 ]
 
 @batchSize(1) // there's a limitation to create sequential fed creds
-resource federatedCredentialsForInfrastructureIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities/federatedIdentityCredentials@2025-01-31-preview' = [
+resource federatedCredentialsForInfrastructureIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities/federatedIdentityCredentials@<current-api-version>' = [
   for credential in federatedCredentials: {
     parent: managedIdentity
     name: credential.name
@@ -232,7 +233,7 @@ secrets are never assigned inline in a consuming module:
 
 ```bicep
 // infra/Azure/Bicep/configuration/keyVault.bicep
-resource keyVault 'Microsoft.KeyVault/vaults@2025-05-01' = {
+resource keyVault 'Microsoft.KeyVault/vaults@<current-api-version>' = {
   properties: {
     enableRbacAuthorization: true
     enablePurgeProtection: true
@@ -243,7 +244,7 @@ resource keyVault 'Microsoft.KeyVault/vaults@2025-05-01' = {
 }
 
 var secrets = loadJsonContent('keyVault.json')
-resource keyVaultSecrets 'Microsoft.KeyVault/vaults/secrets@2025-05-01' = [
+resource keyVaultSecrets 'Microsoft.KeyVault/vaults/secrets@<current-api-version>' = [
   for secret in secrets.items: {
     parent: keyVault
     name: secret.name
@@ -365,7 +366,7 @@ documents the intended shape as a recommendation:
 
 ```bicep
 // infra/Azure/Bicep/observability/README.md (documentation only — not deployed)
-resource appServiceDiagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
+resource appServiceDiagnostics 'Microsoft.Insights/diagnosticSettings@<current-api-version>' = {
   scope: appService
   name: 'diagnostics'
   properties: {
@@ -391,29 +392,23 @@ settings.
 
 ## API versions
 
-`bicepconfig.json`'s `use-recent-api-versions` rule enforces a
-`maxAllowedAgeInDays: 730` ceiling (warning level) across the whole repo:
+`bicepconfig.json` configures the `use-recent-api-versions` analyzer. Read its
+current level and age threshold from that file instead of copying them here.
 
-```json
-// infra/Azure/Bicep/bicepconfig.json
-"use-recent-api-versions": { "level": "warning", "maxAllowedAgeInDays": 730 }
-```
+For every resource family, inspect the exact live module and match the current
+API version used by the same resource type and its child resources. Do not
+select an API version from memory, from this catalog, or merely because the
+Bicep extension suggests it. Representative source owners include:
 
-Representative pinned versions, one per resource family — match the sibling
-file's version for the *same* resource type rather than picking whatever the
-Bicep extension suggests:
-
-| Resource type | API version (example module) |
-| --- | --- |
-| `Microsoft.Storage/storageAccounts` | `2025-06-01` (`storage/storageAccount.bicep`) |
-| `Microsoft.KeyVault/vaults` | `2025-05-01` (`configuration/keyVault.bicep`) |
-| `Microsoft.DocumentDB/databaseAccounts` | `2025-11-01-preview` (`storage/noSqlServer.bicep`) |
-| `Microsoft.Sql/servers` | `2024-11-01-preview` (`storage/sqlServer.bicep`) |
-| `Microsoft.Web/sites` | `2025-03-01` (`sites/api-arolariu-ro.bicep`) |
-| `Microsoft.Web/serverfarms` | `2025-03-01` (`compute/appServicePlans.bicep`) |
-| `Microsoft.ManagedIdentity/userAssignedIdentities` | `2025-01-31-preview` (`identity/userAssignedIdentity.bicep`) |
-| `Microsoft.CognitiveServices/accounts` | `2025-10-01-preview` (`ai/aiFoundry.bicep`) |
-| `Microsoft.Authorization/roleAssignments` | `2022-04-01` (every `rbac/*.bicep` module) |
+- `storage/storageAccount.bicep`
+- `configuration/keyVault.bicep`
+- `storage/noSqlServer.bicep`
+- `storage/sqlServer.bicep`
+- `sites/api-arolariu-ro.bicep`
+- `compute/appServicePlans.bicep`
+- `identity/userAssignedIdentity.bicep`
+- `ai/aiFoundry.bicep`
+- `rbac/*.bicep`
 
 Anti-pattern: bumping only the API version of the resource you happen to be
 editing in a shared module while leaving its nested child resources (for
@@ -424,27 +419,11 @@ deliberately.
 
 ## Cost and SKU
 
-`compute/appServicePlans.bicep` documents its own SKU rationale directly in
-the header comment and mirrors it in resource tags:
-
-```bicep
-// infra/Azure/Bicep/compute/appServicePlans.bicep
-// - B2 (Basic): 2 cores, 3.5 GB RAM - suitable for moderate production traffic
-// - B1 (Basic): 1 core, 1.75 GB RAM - sufficient for development/staging
-// - Basic tier includes custom domains and SSL (no scale-out)
-// - Consider Standard (S1+) for auto-scaling and deployment slots
-```
-
-`COST_OPTIMIZATION.md` gives the current baseline cost distribution — Compute
-(App Service Plans) and Networking (Front Door Standard) dominate the monthly
-bill:
-
-```text
-| Category       | Service                        | SKU/Tier      | Estimated Cost (EUR) |
-| Compute        | App Service Plan (Production)  | B2            | ~€23                 |
-| Compute        | App Service Plan (Development) | B1            | ~€11                 |
-| Networking     | Azure Front Door (Standard)     | Standard      | ~€30                 |
-```
+`compute/appServicePlans.bicep` documents the current SKU rationale directly
+in its header and resource definitions. `COST_OPTIMIZATION.md` owns the current
+cost distribution and price assumptions. Read both live sources before
+comparing or proposing a SKU; do not copy SKU capacities or monthly estimates
+from this catalog.
 
 Other deliberate low-cost tier choices worth knowing before proposing a
 change: Cosmos DB uses the free tier with `capacity: { totalThroughputLimit:

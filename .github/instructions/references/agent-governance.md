@@ -13,8 +13,8 @@ play out in the repository's actual assets.
 
 ## Customization-type selection
 
-Six customization surfaces exist, and each request should map to exactly
-one, per the product boundaries this repository follows:
+The repository uses the following customization surfaces. Each concern should
+map to exactly one owner, per the product boundaries this repository follows:
 
 | If the concern is... | Put it in... | Not in... |
 | --- | --- | --- |
@@ -239,7 +239,8 @@ Every registered extension is either read-only or a deterministic
 allow/deny/ask classifier — none call an LLM, and none silently approve a
 permission request:
 
-- `arolariu-checker` exposes exactly three tools
+- `arolariu-checker` exposes its inventory, doctor, and validation-context
+  tools
   (`arolariu_ai_inventory`, `arolariu_ai_doctor`,
   `arolariu_validation_context`), each wrapped in `success()`/`failure()`
   and backed by pure filesystem reads — `diagnoseAssets` never edits a file,
@@ -347,9 +348,9 @@ onPreToolUse: async () => ({permissionDecision: "allow"});
 
 ## Memory policy
 
-`.github/memory/memory.json` currently holds an empty entity/relation graph
-(`{"entities": [], "relations": []}`) — this is the correct steady state
-absent a durable fact that cannot be derived from source. `diagnostics.mjs`'s
+`.github/memory/memory.json` may remain empty when no durable fact exists that
+cannot be derived from source. Read its current contents rather than copying a
+snapshot into guidance. `diagnostics.mjs`'s
 `SOURCE_DERIVED_MEMORY` pattern actively flags any memory value that looks
 like a version number, a `npm run`/`dotnet`/`python`/`git`/`gh` command, or a
 count of agents/skills/prompts/instructions/extensions/stores/sites/
@@ -364,7 +365,7 @@ source and would go stale silently.
   "entities": [
     {
       "name": "repository-versions",
-      "observations": ["Next.js 16.3.0", "run npm run test:unit before committing"]
+      "observations": ["Framework <version-from-source>", "run the current repository test command"]
     }
   ]
 }
@@ -396,8 +397,9 @@ Follow the [bug-fix skill](../skills/fix-bug/SKILL.md) for this request:
 ${input:request:Describe the observed behavior, expected behavior, and reproduction}
 ```
 
-The four prompts (`api-endpoint`, `new-page`, `fix-bug`, `unit-test`) each
-follow this exact one-line-delegation shape. If a prompt file accumulates
+The current prompt files each follow this one-line-delegation shape. Discover
+the current set from `.github/prompts/` rather than copying its count into
+guidance. If a prompt file accumulates
 its own numbered steps, decision points, or examples, that content belongs in
 the skill it delegates to, not in the prompt.
 
@@ -422,8 +424,8 @@ Follow the [bug-fix skill](../skills/fix-bug/SKILL.md) for this request:
 A file existing under `.github/extensions/*/extension.mjs` is not proof the
 extension loaded or is doing anything at runtime — the operating protocol's
 "Do not treat an asset file as proof that a surface loaded it" applies
-directly here. Each of this repository's three extensions logs a session
-message specifically so runtime health is independently checkable:
+directly here. Each repository extension logs a session message specifically
+so runtime health is independently checkable:
 
 ```js
 // .github/extensions/arolariu-checker/extension.mjs
@@ -482,7 +484,7 @@ the JSON file alone.
 - `.github/CODEOWNERS` — agentic-path review gate.
 - `.github/mcp.json` — registered MCP servers and the `filesystem`
   allowlist.
-- `.github/memory/memory.json` — current (empty) memory state.
+- `.github/memory/memory.json` — current memory state and schema.
 - `.github/extensions/arolariu-checker/{extension,diagnostics,frontmatter,inventory,validation}.mjs`
   — read-only inventory/doctor/validation-context tools.
 - `.github/extensions/arolariu-context/{extension,resolver}.mjs` — bounded

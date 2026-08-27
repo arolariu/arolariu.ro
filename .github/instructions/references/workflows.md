@@ -63,14 +63,14 @@ needs to open an issue.
 
 ## OIDC authentication
 
-Every Azure-facing job authenticates via `azure/login@v3` with a client ID,
-tenant ID, and subscription ID sourced from GitHub Secrets — never a client
-secret or long-lived credential:
+Jobs that invoke the currently pinned `azure/login` action authenticate with a
+client ID, tenant ID, and subscription ID sourced from GitHub Secrets — never a
+client secret or long-lived credential:
 
 ```yaml
 # .github/workflows/official-api-trigger.yml
 - name: 🔒 Performing auth against Azure Public Cloud...
-  uses: Azure/login@v3
+  uses: Azure/login@<current-approved-major>
   with:
     client-id: ${{ secrets.AZURE_CLIENT_ID }}
     tenant-id: ${{ secrets.AZURE_TENANT_ID }}
@@ -115,33 +115,41 @@ authentication merely from those inputs. A `client-secret`/password/certificate
 input would be a different, long-lived credential design and requires explicit
 security approval.
 
+Static Web Apps deployments are a separate live authentication path. The CV,
+documentation, and status workflows invoke the currently pinned
+`Azure/static-web-apps-deploy` action with a site-specific
+`azure_static_web_apps_api_token` secret:
+
+```yaml
+- uses: Azure/static-web-apps-deploy@<current-approved-major>
+  with:
+    azure_static_web_apps_api_token: ${{ secrets.<site-specific-token-name> }}
+    action: upload
+```
+
+These are long-lived deployment-token secrets, not OIDC. Do not describe them
+as federated credentials, copy one site's token to another workflow, or expose
+the value in logs. Replacing this current authentication path is a workflow and
+security design change that requires explicit approval.
+
+**Live drift, not a template:** the CV and documentation workflows still
+describe Azure OIDC in header comments and grant `id-token: write`, while their
+deploy steps use Static Web Apps deployment tokens. Do not copy that mismatch
+into new workflows or infer that the token deployment consumes the OIDC
+permission. Removing the permission/comment or changing the authentication
+path is a workflow security change and remains approval-gated.
+
 ## Actions and pinned versions
 
-Actions are pinned to a specific major version consistently across workflows;
-mixing an older major into a new workflow is the anti-pattern, not choosing a
-version per se. Current baseline across live workflows:
+Actions are pinned to a specific major version in live workflow/action files.
+Read the current reference from the exact workflow family and compare relevant
+siblings before editing; this catalog intentionally does not snapshot action
+versions.
 
-| Action | Version | Where |
-| --- | --- | --- |
-| `actions/checkout` | `v7` | every workflow |
-| `actions/setup-node` | `v7` | `setup-tooling/action.yml` |
-| `actions/setup-dotnet` | `v6` | `setup-tooling/action.yml` |
-| `actions/setup-python` | `v7` | `setup-tooling/action.yml` |
-| `actions/cache` | `v5` | `setup-workspace/action.yml` |
-| `actions/upload-artifact` | `v7` | most workflows |
-| `actions/download-artifact` | `v6` (`official-hygiene-check-v2.yml`) / `v8` (`official-e2e-action.yml`) | see anti-pattern below |
-| `azure/login` | `v3` | any Azure-authenticating job |
-| `azure/webapps-deploy` | `v3` | `official-api-trigger.yml`, `official-website-release.yml` |
-| `actions/github-script` | `v8` | PR-comment and issue-creation steps |
-| `codecov/codecov-action` | `v7` | `official-website-build.yml` |
-
-Anti-pattern (live drift to be aware of, not silently propagated further):
-`official-hygiene-check-v2.yml`'s gate job uses
-`actions/download-artifact@v6` while `official-e2e-action.yml`'s
-`raise-issue-on-failure` job uses `actions/download-artifact@v8` for the same
-fan-in-artifacts purpose. Match whichever version the workflow you are editing
-already uses; do not "helpfully" bump one without confirming the change is in
-scope, since a bump is itself a dependency/version decision.
+Live drift exists between the pinned major used by the hygiene gate and the
+one used by the E2E failure fan-in for `actions/download-artifact`. Do not
+propagate or normalize that difference as unrelated cleanup. Match the owning
+workflow unless an action-version change is explicitly approved.
 
 ## Caching
 
@@ -151,7 +159,7 @@ by `setup-tooling` with a `cache-dependency-path` and nothing else:
 
 ```yaml
 # .github/actions/setup-tooling/action.yml
-- uses: actions/setup-node@v7
+- uses: actions/setup-node@<current-approved-major>
   with:
     cache: ${{ inputs.cache == 'true' && 'npm' || '' }}
     cache-dependency-path: |
@@ -167,7 +175,8 @@ counted as a hit — nothing would be written back, repeating the wasted
 download on every subsequent run.
 
 Workspace-produced artifacts (`node_modules`, the Playwright browser bundle)
-use explicit `actions/cache@v5` steps with **no `restore-keys` fallback**,
+use explicit `actions/cache` steps pinned in the live composite action with
+**no `restore-keys` fallback**,
 per RFC 0001 §3.2 ("Why No Fallback Keys?"):
 
 ```yaml
@@ -271,7 +280,7 @@ job downloads all of them with a pattern and merges them into one directory:
 
 ```yaml
 # .github/workflows/official-hygiene-check-v2.yml (providers job)
-- uses: actions/upload-artifact@v7
+- uses: actions/upload-artifact@<current-approved-major>
   with:
     name: outcome-${{ matrix.provider.id }}
     path: artifacts/hygiene/outcome-${{ matrix.provider.id }}.json
@@ -279,7 +288,7 @@ job downloads all of them with a pattern and merges them into one directory:
     retention-days: 7
 
 # (gate job)
-- uses: actions/download-artifact@v6
+- uses: actions/download-artifact@<current-approved-major>
   with:
     pattern: outcome-*
     path: artifacts/hygiene
@@ -315,8 +324,9 @@ block rather than relying on an ambient token.
 
 ## Environments and deployment safety
 
-The website's build/release split exists specifically to gate production
-behind a separate, approvable workflow (RFC 0001 §4.1):
+The website's build/release split separates production deployment from the
+build workflow and provides a place for environment protection (RFC 0001
+§4.1):
 
 ```yaml
 # .github/workflows/official-website-release.yml
@@ -332,8 +342,8 @@ on:
         default: "development"
 ```
 
-`environment:` blocks scope both the approval gate and the exposed URL to the
-job, not the workflow:
+`environment:` blocks scope environment secrets and the exposed URL to the job,
+not the workflow:
 
 ```yaml
 # .github/workflows/official-website-release.yml
@@ -342,11 +352,19 @@ environment:
   url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
 ```
 
-`official-components-publish.yml` applies the same job-level scoping
-principle even without a development/production choice: only the `publish`
-job carries an `environment: { name: npm-publish }` gate, while the preceding
-`validate` job (build, version check, dry-run pack) runs with no environment
-at all, because only the actual publish step needs the protection rule.
+An environment creates a manual approval gate only when that environment has
+deployment protection rules configured. The current production, development,
+CV, documentation, and status environments have no protection rules, so do not
+claim an active approval gate from YAML presence alone. Query current
+environment settings when approval behavior matters and treat adding
+protection rules as a production workflow/repository-settings decision.
+
+`official-components-publish.yml` applies the same job-level scoping principle
+even without a development/production choice: only the `publish` job carries
+an `environment: { name: npm-publish }` block, while the preceding `validate`
+job (build, version check, dry-run pack) runs with no environment. Whether that
+environment currently enforces reviewers must be verified from repository
+settings rather than inferred.
 
 `official-api-trigger.yml` is the trigger-pattern counter-example — one
 workflow does test → build → deploy in sequence with `needs:` chaining rather
@@ -438,9 +456,9 @@ the catalog records the gap but does not authorize correcting it.
 | Anti-pattern | Why it fails here | Correction |
 | --- | --- | --- |
 | Adding `restore-keys:` to the `node_modules` or Playwright cache | Reintroduces the exact stale-cache failure mode RFC 0001 §3.2 documents (version bump without a lock-file change silently restores an incompatible cache) | Keep the cache key exact-match only; accept the cache miss on genuine dependency changes |
-| Renaming/adding a GitHub Environment without a matching Bicep federated credential | `azure/login@v3` OIDC token exchange fails against a subject claim that does not exist | Add the matching `federatedIdentityCredentials` entry in `identity/federatedCredentials.bicep` in the same approved change |
+| Renaming/adding a GitHub Environment without a matching Bicep federated credential | The pinned `azure/login` action's OIDC token exchange fails against a subject claim that does not exist | Add the matching `federatedIdentityCredentials` entry in `identity/federatedCredentials.bicep` in the same approved change |
 | Interpolating a secret directly into a `run:` shell string | Script-injection risk; violates `setup-workspace`'s own documented convention | Pass the value through an `env:` block and reference the environment variable inside `run:` |
-| Bumping one workflow's pinned action version without checking siblings | Creates/extends version drift like the current `download-artifact@v6` vs `@v8` split | Match the version the file already uses unless the version bump itself is the approved task |
+| Bumping one workflow's pinned action version without checking siblings | Creates or extends the current `download-artifact` major-version drift | Match the version the file already uses unless the version bump itself is the approved task |
 | Adding a deploy step to a currently build/test-only trigger workflow | Silently converts a lower-risk trigger pattern into a production deployment behavior change | Treat as a deployment-safety/environment change requiring confirmation, not a routine step addition |
 | Setting `cancel-in-progress: true` on a workflow that pushes to shared state (e.g. an orphan data branch) | Can cancel mid-write and corrupt or lose the push | Use a fixed concurrency group with `cancel-in-progress: false` to serialize instead |
 | Adding a `paths:` filter to a schedule- or tag-triggered workflow | `schedule`/tag-push triggers are time- or version-based, not file-change-based; a path filter can silently suppress required runs | Leave schedule/tag workflows without a `paths:` filter |

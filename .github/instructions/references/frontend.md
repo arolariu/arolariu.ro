@@ -105,7 +105,8 @@ hand-rolled `{success: false, message: string}` shape instead of
 
 ## Zustand / Context / URL / local hierarchy
 
-Store inventory (`sites/arolariu.ro/src/stores/`, RFC 1005 §2.3):
+Inspect the live store inventory in `sites/arolariu.ro/src/stores/` and compare
+it with RFC 1005 §2.3 before changing state:
 
 | Store | Entity | Notes |
 | --- | --- | --- |
@@ -119,15 +120,16 @@ persisted state should gate its render on it (`if (!hasHydrated) return <Loading
 rather than trusting an empty array as "no data yet" — an empty array is
 ambiguous between "not hydrated" and "hydrated, genuinely empty".
 `sites/arolariu.ro/src/stores/createEntityStore.ts` is a generic factory
-available for a new entity store, but the four stores above are still
-hand-rolled (RFC 1007 §2.6) — do not assume a store already uses the factory.
+available for an entity-store shape, but some existing stores remain
+hand-rolled (RFC 1007 §2.6). Inspect the target store instead of relying on a
+copied adoption count.
 
 `DialogContext.tsx` (`sites/arolariu.ro/src/app/domains/invoices/_contexts/`)
 is the established Context pattern for state shared by a route subtree but
-not needed globally: 27 dialog types across 4 route domains, dispatched
-through a discriminated `DialogType`/`DialogPayloads` registry, with state
-and actions split into two contexts so action-only consumers do not
-re-render on every open/close.
+not needed globally. It dispatches through a discriminated
+`DialogType`/`DialogPayloads` registry, with state and actions split into two
+contexts so action-only consumers do not re-render on every open/close. Read
+the registry for its current dialog/domain inventory.
 
 Escalation boundary: promoting route-scoped Context state to a new Zustand
 store, or extending an existing store's persisted shape, requires proving
@@ -164,9 +166,9 @@ return createMetadata({
 
 `sites/arolariu.ro/messages/en.d.json.ts` is auto-generated from `en.json`
 and is what makes `m.pages.invoices.landing.metadata.title` a compile-time
-key, not a runtime string lookup — regenerate it (`npm run generate:i18n`)
-after adding a key, and add the identical key path to `ro.json` and
-`fr.json`. Route metadata uses the same typed selector API and the route's
+key, not a runtime string lookup. After adding a key, add the identical key
+path to `ro.json` and `fr.json`, then run the canonical i18n generation command
+from root `AGENTS.md`. Route metadata uses the same typed selector API and the route's
 `metadata` object; do not introduce flat `Namespace.__metadata__` lookups.
 
 `sites/arolariu.ro/src/metadata.ts`'s `createMetadata()` merges page-specific
