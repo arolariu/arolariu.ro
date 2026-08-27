@@ -95,11 +95,11 @@ OpenTelemetry boundaries rather than adding a new one.
 | Locale dictionary/schema, typed selector, ICU, metadata/email message, or generated declaration | `react-internationalization` |
 | Clerk matcher, redirect, guest/public/shared/owner, or authorization behavior | `react-auth` |
 | React Compiler readiness, diagnostics, adoption, or rollback | `react-compiler` |
-| Coverage for already-correct behavior, an edge case, or a brittle test | `unit-test` |
-| A reported defect, regression, or flaky behavior | `fix-bug` |
-| Explicitly approved structural change with preserved behavior | `refactor` |
-| An npm package or framework upgrade | `dependency-migration` |
-| JSDoc/TSDoc, README, or RFC 1001-1008 alignment with no behavior change | `documentation` |
+| Coverage for already-correct behavior, an edge case, or a brittle test | `code-unit-test` |
+| A reported defect, regression, or flaky behavior | `code-fix-bug` |
+| Explicitly approved structural change with preserved behavior | `code-refactor` |
+| An npm package or framework upgrade | `infra-dependency-update` |
+| JSDoc/TSDoc, README, or RFC 1001-1008 alignment with no behavior change | `code-documentation` |
 
 Confirm the routed skill directory exists under `.github/skills/` before
 relying on it; do not invent a workflow name.

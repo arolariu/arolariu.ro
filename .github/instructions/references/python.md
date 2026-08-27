@@ -5,7 +5,7 @@ extensive, repository-specific Python/FastAPI examples, anti-patterns, edge
 cases, and rationale for `sites/exp.arolariu.ro`. It does not define a
 workflow and it does not restate the service's local commands or Ruff/pytest
 configuration — see `sites/exp.arolariu.ro/AGENTS.md` and `pyproject.toml`. It
-does not duplicate `refactor`, `documentation`, `unit-test`, or `fix-bug`
+does not duplicate `code-refactor`, `code-documentation`, `code-unit-test`, or `code-fix-bug`
 skill workflow procedures; this catalog explains the module architecture and
 typing/config/error conventions those workflows execute inside.
 

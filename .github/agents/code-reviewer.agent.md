@@ -102,11 +102,11 @@ skill that specialist would use:
 
 | Finding type | Owning specialist | Remedy skill |
 | --- | --- | --- |
-| Missing test for changed behavior | Backend or Frontend Expert | `unit-test` |
-| Confirmed defect/regression | Backend or Frontend Expert | `fix-bug` |
-| Architecture/layering violation fixable without behavior change | Backend or Frontend Expert | `refactor` |
-| Stale/incorrect XML doc, JSDoc, or README claim | Backend or Frontend Expert | `documentation` |
-| Vulnerable or outdated dependency | Backend or Frontend Expert | `dependency-migration` |
+| Missing test for changed behavior | Backend or Frontend Expert | `code-unit-test` |
+| Confirmed defect/regression | Backend or Frontend Expert | `code-fix-bug` |
+| Architecture/layering violation fixable without behavior change | Backend or Frontend Expert | `code-refactor` |
+| Stale/incorrect XML doc, JSDoc, Python docstring, or README claim | Owning specialist | `code-documentation` |
+| Vulnerable or outdated dependency | Owning specialist | `infra-dependency-update` |
 | Missing backend vertical-slice behavior | Backend Expert | `backend-vertical-slice` |
 | Missing/incorrect page, layout, route boundary, metadata, or server-component behavior | Frontend Expert | `react-server-component` |
 | Missing/incorrect interactive component or client-boundary behavior | Frontend Expert | `react-client-component` |
@@ -117,7 +117,7 @@ skill that specialist would use:
 | Authentication/authorization behavior defect | Frontend Expert | `react-auth` after explicit approval |
 | React Compiler configuration or compatibility defect | Frontend Expert | `react-compiler` after required approval |
 | Infrastructure/workflow defect or risk | Infrastructure Expert | none — requires explicit approval before mutation |
-| AI instruction/agent/skill/prompt/memory defect | Main repository agent under Agent Asset Governance | `documentation` for guidance; `fix-bug` for executable extensions |
+| AI instruction/agent/skill/prompt/memory defect | Main repository agent under Agent Asset Governance | `code-documentation` for guidance; `code-fix-bug` for executable extensions |
 | MCP configuration defect or risk | Main repository agent under Agent Asset Governance | direct approved handling; dependency/security approval required |
 
 ## Output Completeness and No-Finding Criteria

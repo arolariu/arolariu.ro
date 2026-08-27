@@ -3,7 +3,7 @@
 Owner: `.github/instructions/csharp.instructions.md`. This catalog holds
 extensive, repository-specific C# language examples, anti-patterns, edge
 cases, and rationale. It does not define a workflow; use `backend-vertical-slice`,
-`fix-bug`, `refactor`, `unit-test`, or another skill for the procedure. It does
+`code-fix-bug`, `code-refactor`, `code-unit-test`, or another skill for the procedure. It does
 not restate versions, global commands, or root safety policy — see root
 `AGENTS.md`. API layering and The Standard belong to the backend catalog
 (`references/backend.md`).

@@ -59,7 +59,7 @@ unique to matching files and inherit the root contracts.
 | --- | --- |
 | `backend-expert` | API implementation using DDD and The Standard |
 | `frontend-expert` | Website implementation using Next.js, React, i18n, and accessibility contracts |
-| `infra-expert` | Approved Azure Bicep and GitHub Actions work |
+| `infra-expert` | Approved Azure Bicep/GitHub Actions work and local Aspire/selfhost operations |
 | `code-reviewer` | Evidence-based read-only diff review |
 | `full-stack-planner` | Read-only website/API implementation planning |
 
@@ -79,14 +79,32 @@ Portable workflows in `.github/skills/`:
 - `react-internationalization`
 - `react-auth`
 - `react-compiler`
-- `unit-test`
-- `fix-bug`
-- `dependency-migration`
-- `documentation`
-- `refactor`
+- `code-unit-test`
+- `code-fix-bug`
+- `code-refactor`
+- `code-documentation`
+- `infra-dependency-update`
+- `infra-selfhost`
 
 Skills inspect current sibling source before prescribing structure. They work
 across Copilot CLI, VS Code, and Copilot coding agent.
+
+### Cross-language workflow map
+
+The `code-*` skills own one language-neutral procedure and load exactly the
+matching repository artifact after the project boundary is known:
+
+| Task | Orchestrator | Conditional artifacts |
+| --- | --- | --- |
+| Add coverage for correct behavior | `code-unit-test` | TypeScript/React/Svelte/Node, .NET/MSTest, or Python/FastAPI/pytest |
+| Reproduce and correct a defect | `code-fix-bug` | TypeScript debugging, .NET debugging, or Python debugging |
+| Improve structure without behavior change | `code-refactor` | TypeScript refactors, .NET refactors, or Python refactors |
+| Document an existing contract | `code-documentation` | JSDoc/TSDoc, C# XML documentation, or Python docstrings |
+| Research or perform an approved package/runtime migration | `infra-dependency-update` | npm, NuGet, or Python dependency ownership |
+| Operate a local development environment | `infra-selfhost` | Aspire, selfhost, standalone, or ad hoc image/Compose guidance |
+
+Shared decision tables, checklists, and troubleshooting remain in the same
+bundle but load only at their named decision or failure trigger.
 
 ### React workflow map
 

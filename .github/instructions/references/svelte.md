@@ -4,8 +4,8 @@ Owner: `.github/instructions/svelte.instructions.md`. This catalog holds
 extensive, repository-specific Svelte/SvelteKit examples, anti-patterns, edge
 cases, and rationale for `sites/cv.arolariu.ro`. It does not define a
 workflow and it does not restate the site's local commands — see
-`sites/cv.arolariu.ro/AGENTS.md`. It does not duplicate `refactor`,
-`documentation`, `unit-test`, or `fix-bug` skill workflow procedures; this
+`sites/cv.arolariu.ro/AGENTS.md`. It does not duplicate `code-refactor`,
+`code-documentation`, `code-unit-test`, or `code-fix-bug` skill workflow procedures; this
 catalog explains the standalone architecture and runes/rendering/testing
 conventions those workflows execute inside.
 

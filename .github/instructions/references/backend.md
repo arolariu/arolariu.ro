@@ -3,8 +3,8 @@
 Owner: `.github/instructions/backend.instructions.md`. This catalog holds
 extensive, repository-specific API architecture examples, anti-patterns, edge
 cases, and rationale for `sites/api.arolariu.ro`. It does not define a
-workflow; use `backend-vertical-slice` for implementing a change, `unit-test`
-for coverage, or `fix-bug`/`refactor` for the corresponding narrower task. It
+workflow; use `backend-vertical-slice` for implementing a change, `code-unit-test`
+for coverage, or `code-fix-bug`/`code-refactor` for the corresponding narrower task. It
 does not restate versions, global commands, or root safety policy — see root
 `AGENTS.md` and `sites/api.arolariu.ro/AGENTS.md`. It does not duplicate the
 `backend-vertical-slice` skill's own resources
@@ -330,7 +330,7 @@ public async Task EnqueueAsync_ValidMessage_ReturnsMessageId()
 ```
 
 Full behavior-category selection (valid/validation/dependency/cancellation/
-partition/orchestration-call matrices) is the `unit-test` skill's backend test
+partition/orchestration-call matrices) is the `code-unit-test` skill's .NET test
 matrix; this section anchors the architecture-reflection and Foundation-test
 shapes those categories build on.
 

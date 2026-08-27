@@ -88,11 +88,12 @@ choice with more than one valid outcome.
 | Message schema, locale, typed selector, metadata/email localization | Frontend Expert | `react-internationalization` |
 | Auth/access-control behavior | Frontend Expert | `react-auth`, explicit approval required |
 | React Compiler audit/adoption | Frontend Expert | `react-compiler`, config/dependency approval required |
-| Regression fix on either side | Backend or Frontend Expert | `fix-bug` |
-| Coverage-only test task on either side | Backend or Frontend Expert | `unit-test` |
-| Approved structural cleanup on either side | Backend or Frontend Expert | `refactor` |
-| Docs/RFC alignment on either side | Backend or Frontend Expert | `documentation` |
-| Package/framework upgrade on either side | Backend or Frontend Expert | `dependency-migration` |
+| Regression fix on either side | Backend or Frontend Expert | `code-fix-bug` |
+| Coverage-only test task on either side | Backend or Frontend Expert | `code-unit-test` |
+| Approved structural cleanup on either side | Backend or Frontend Expert | `code-refactor` |
+| Docs/RFC alignment on either side | Backend or Frontend Expert | `code-documentation` |
+| Package/framework upgrade on either side | Owning specialist | `infra-dependency-update` |
+| Local Aspire/selfhost startup or troubleshooting | Infrastructure Expert | `infra-selfhost` |
 | Infrastructure/workflow enablement | Infrastructure Expert | none — direct, requires explicit approval |
 | Independent diff review of the resulting change | Code Reviewer | n/a (read-only) |
 

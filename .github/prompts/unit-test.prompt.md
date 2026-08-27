@@ -5,6 +5,6 @@ argument-hint: "[source file or behavior]"
 agent: agent
 ---
 
-Follow the [unit-test skill](../skills/unit-test/SKILL.md) for this request:
+Follow the [code unit-test skill](../skills/code-unit-test/SKILL.md) for this request:
 
 ${input:request:Identify the source file, behavior, and missing coverage}

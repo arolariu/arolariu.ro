@@ -126,8 +126,8 @@ tools: ["read", "edit", "search", "execute", "agent"]
 ### Anti-pattern: a skill name that doesn't match its directory
 
 ```text
-.github/skills/unit-test/SKILL.md   name: "Unit Testing Skill"   ❌ mismatch
-.github/skills/unit-test/SKILL.md   name: unit-test              ✅ matches
+.github/skills/code-unit-test/SKILL.md   name: "Unit Testing Skill"   ❌ mismatch
+.github/skills/code-unit-test/SKILL.md   name: code-unit-test         ✅ matches
 ```
 
 `diagnostics.mjs`'s `"skill-name-mismatch"` finding is `high` severity because
@@ -200,7 +200,7 @@ current lean instructions for the same one-owner reason.
 ## Progressive disclosure
 
 An optional resource is only useful if its trigger is concrete. The
-`unit-test` skill's Resource Triggers table is the reference shape: every
+`code-unit-test` skill's Resource Triggers table is the reference shape: every
 row names an exact decision point, not a vague "read if useful":
 
 ```markdown
@@ -371,7 +371,7 @@ argument-hint: "[failure or reproduction]"
 agent: agent
 ---
 
-Follow the [bug-fix skill](../skills/fix-bug/SKILL.md) for this request:
+Follow the [code-fix skill](../skills/code-fix-bug/SKILL.md) for this request:
 
 ${input:request:Describe the observed behavior, expected behavior, and reproduction}
 ```
@@ -395,7 +395,7 @@ the skill it delegates to, not in the prompt.
 
 ```markdown
 <!-- ✅ Correction: delegate, as fix-bug.prompt.md does. -->
-Follow the [bug-fix skill](../skills/fix-bug/SKILL.md) for this request:
+Follow the [code-fix skill](../skills/code-fix-bug/SKILL.md) for this request:
 ```
 
 ## Runtime health evidence
@@ -464,7 +464,7 @@ the JSON file alone.
   — read-only inventory and doctor tools.
 - `.github/extensions/arolariu-context/{extension,resolver}.mjs` — bounded
   deterministic context injection.
-- `.github/skills/unit-test/SKILL.md` — canonical Resource Triggers table
+- `.github/skills/code-unit-test/SKILL.md` — canonical Resource Triggers table
   shape.
 - `.github/prompts/fix-bug.prompt.md` — canonical thin-prompt shape.
 - `.github/agents/backend-expert.agent.md` — canonical agent frontmatter

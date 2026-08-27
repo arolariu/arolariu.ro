@@ -8,8 +8,8 @@ does not authorize any workflow mutation — every change still requires the
 explicit user approval described in the Infrastructure Expert agent's
 read-only-versus-mutation classification and escalation examples. It does not
 restate versions, global commands, or root safety policy — see root
-`AGENTS.md` and RFC 0001. It does not duplicate `refactor`, `documentation`,
-or `dependency-migration` skill workflow procedures; this catalog explains the
+`AGENTS.md` and RFC 0001. It does not duplicate `code-refactor`, `code-documentation`,
+or `infra-dependency-update` skill workflow procedures; this catalog explains the
 CI/CD architecture and constraints those approved changes must fit into, with
 YAML, not procedure.
 

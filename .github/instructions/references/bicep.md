@@ -7,8 +7,8 @@ and it does not authorize any infrastructure mutation — every change still
 requires the explicit user approval described in the Infrastructure Expert
 agent's read-only-versus-mutation classification and escalation examples. It
 does not restate versions, global commands, or root safety policy — see root
-`AGENTS.md`. It does not duplicate `refactor`, `documentation`, or
-`dependency-migration` skill workflow procedures; this catalog explains the
+`AGENTS.md`. It does not duplicate `code-refactor`, `code-documentation`, or
+`infra-dependency-update` skill workflow procedures; this catalog explains the
 architecture and constraints those approved changes must fit into, with code,
 not procedure.
 

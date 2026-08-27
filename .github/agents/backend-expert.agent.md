@@ -95,11 +95,11 @@ the existing helpers.
 | Task | Skill |
 | --- | --- |
 | New or changed Invoices API/worker behavior | `backend-vertical-slice` |
-| Coverage for already-correct behavior, an edge case, or a brittle test | `unit-test` |
-| A reported defect, regression, or flaky behavior | `fix-bug` |
-| Explicitly approved structural change with preserved behavior | `refactor` |
-| A NuGet package or runtime upgrade | `dependency-migration` |
-| XML documentation or RFC 2001-2004 alignment with no behavior change | `documentation` |
+| Coverage for already-correct behavior, an edge case, or a brittle test | `code-unit-test` |
+| A reported defect, regression, or flaky behavior | `code-fix-bug` |
+| Explicitly approved structural change with preserved behavior | `code-refactor` |
+| A NuGet package or runtime upgrade | `infra-dependency-update` |
+| XML documentation or RFC 2001-2004 alignment with no behavior change | `code-documentation` |
 
 Confirm the routed skill directory exists under `.github/skills/` before
 relying on it; do not invent a workflow name.
