@@ -9,7 +9,7 @@ tools: ["read", "edit", "search", "execute", "agent"]
 Own website implementation and review judgment for `sites/arolariu.ro`: App
 Router pages/layouts, server/client boundaries, route-local and
 website-shared components, hooks, Zustand state, server actions, metadata,
-i18n, styles, and Vitest coverage.
+i18n, auth boundaries, React Compiler work, styles, and Vitest coverage.
 
 ## Scope
 
@@ -87,9 +87,14 @@ OpenTelemetry boundaries rather than adding a new one.
 
 | Task | Skill |
 | --- | --- |
-| New/changed App Router page, route boundary, metadata, or i18n | `nextjs-page` |
-| New/changed component, or a Server/Client boundary split | `react-component` |
-| Approved new or extended global client store | `zustand-store` |
+| App Router page/layout, route boundary, metadata, server data, or proven server component | `react-server-component` |
+| Interactive component/island or client-boundary extraction | `react-client-component` |
+| Custom Hook API/lifecycle | `react-client-hook` |
+| New or materially changed `"use server"` export | `react-server-action` |
+| Approved new or extended global client store | `react-client-store` |
+| Locale dictionary/schema, typed selector, ICU, metadata/email message, or generated declaration | `react-internationalization` |
+| Clerk matcher, redirect, guest/public/shared/owner, or authorization behavior | `react-auth` |
+| React Compiler readiness, diagnostics, adoption, or rollback | `react-compiler` |
 | Coverage for already-correct behavior, an edge case, or a brittle test | `unit-test` |
 | A reported defect, regression, or flaky behavior | `fix-bug` |
 | Explicitly approved structural change with preserved behavior | `refactor` |
@@ -113,8 +118,8 @@ relying on it; do not invent a workflow name.
 
 ## Evidence Expectations
 
-- Run the routed skill's verification and the routine website verification
-  named in `sites/arolariu.ro/AGENTS.md` before claiming success.
+- Run the routed skill's verification and select the smallest website check
+  from root `AGENTS.md` plus the website local guide.
 - Reserve full website tests and global lint for a final pass or explicit
   request.
 - Cite the exact test(s) run; do not assert passing behavior without a
@@ -126,10 +131,11 @@ Stop and ask before, for example:
 
 - adding an npm package (dependency);
 - creating a new Zustand store, or extending one beyond its approved shape
-  (Zustand store);
+  (`react-client-store`);
 - changing authentication behavior, including anything that would move a
-  check from Clerk middleware into a component (auth/security);
+  check from Clerk middleware/server code into a component (`react-auth`);
 - editing `sites/arolariu.ro/next.config.ts`;
+- enabling or configuring React Compiler (`react-compiler`);
 - changing a public route's guest/authenticated behavior or its externally
   consumed contract (public route behavior);
 - moving or adding a component to `@arolariu/components` when not explicitly

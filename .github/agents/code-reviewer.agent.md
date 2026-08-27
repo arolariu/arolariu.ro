@@ -108,8 +108,14 @@ skill that specialist would use:
 | Stale/incorrect XML doc, JSDoc, or README claim | Backend or Frontend Expert | `documentation` |
 | Vulnerable or outdated dependency | Backend or Frontend Expert | `dependency-migration` |
 | Missing backend vertical-slice behavior | Backend Expert | `backend-vertical-slice` |
-| Missing/incorrect page or route boundary | Frontend Expert | `nextjs-page` |
-| Missing/incorrect component behavior | Frontend Expert | `react-component` |
+| Missing/incorrect page, layout, route boundary, metadata, or server-component behavior | Frontend Expert | `react-server-component` |
+| Missing/incorrect interactive component or client-boundary behavior | Frontend Expert | `react-client-component` |
+| Missing/incorrect custom Hook behavior | Frontend Expert | `react-client-hook` |
+| Missing/incorrect Server Action RPC/security/transport behavior | Frontend Expert | `react-server-action` |
+| Missing/incorrect global client-store behavior | Frontend Expert | `react-client-store` |
+| Missing/incorrect locale/message/selector behavior | Frontend Expert | `react-internationalization` |
+| Authentication/authorization behavior defect | Frontend Expert | `react-auth` after explicit approval |
+| React Compiler configuration or compatibility defect | Frontend Expert | `react-compiler` after required approval |
 | Infrastructure/workflow defect or risk | Infrastructure Expert | none — requires explicit approval before mutation |
 | AI instruction/agent/skill/prompt/memory defect | Main repository agent under Agent Asset Governance | `documentation` for guidance; `fix-bug` for executable extensions |
 | MCP configuration defect or risk | Main repository agent under Agent Asset Governance | direct approved handling; dependency/security approval required |

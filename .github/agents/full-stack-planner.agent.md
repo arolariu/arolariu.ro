@@ -80,9 +80,14 @@ choice with more than one valid outcome.
 | Plan segment | Owning agent | Underlying skill |
 | --- | --- | --- |
 | Backend vertical slice (endpoint/service behavior) | Backend Expert | `backend-vertical-slice` |
-| New/changed page, route boundary, i18n, or metadata | Frontend Expert | `nextjs-page` |
-| New/changed component or Server/Client split | Frontend Expert | `react-component` |
-| Approved new/extended global client store | Frontend Expert | `zustand-store` |
+| Page/layout, route boundary, metadata, server data, or server component | Frontend Expert | `react-server-component` |
+| Interactive component/island or client split | Frontend Expert | `react-client-component` |
+| Custom Hook | Frontend Expert | `react-client-hook` |
+| Browser-callable Server Action | Frontend Expert | `react-server-action` |
+| Approved new/extended global client store | Frontend Expert | `react-client-store` |
+| Message schema, locale, typed selector, metadata/email localization | Frontend Expert | `react-internationalization` |
+| Auth/access-control behavior | Frontend Expert | `react-auth`, explicit approval required |
+| React Compiler audit/adoption | Frontend Expert | `react-compiler`, config/dependency approval required |
 | Regression fix on either side | Backend or Frontend Expert | `fix-bug` |
 | Coverage-only test task on either side | Backend or Frontend Expert | `unit-test` |
 | Approved structural cleanup on either side | Backend or Frontend Expert | `refactor` |
@@ -98,8 +103,8 @@ the plan.
 
 - Name the failing test to write before implementation for each task, at the
   narrowest boundary that proves the behavior.
-- Name the smallest targeted validation command per task from the owning
-  local `AGENTS.md`, not a copied global command.
+- Name the smallest targeted validation command per task from root
+  `AGENTS.md`, refined by the owning local guide.
 - State a rollback boundary for any task that changes a public contract,
   moves files, or touches infrastructure — which commit/file reverts cleanly
   and what a partial rollout would leave inconsistent.

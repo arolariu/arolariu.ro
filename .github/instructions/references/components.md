@@ -3,8 +3,9 @@
 Owner: `.github/instructions/components.instructions.md`. This catalog holds
 extensive `@arolariu/components`-specific examples, anti-patterns, edge
 cases, and rationale. It does not define a workflow — component procedure
-lives in `react-component` — and it does not restate generic React/TypeScript
-rules (see the sibling catalogs) or root safety policy.
+uses `react-client-component` when the file directly needs client features and
+`react-server-component` when it remains server-compatible — and it does not
+restate generic React/TypeScript rules or root safety policy.
 
 ## Base UI composition: `useRender` + `mergeProps`
 

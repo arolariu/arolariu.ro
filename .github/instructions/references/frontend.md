@@ -2,10 +2,10 @@
 
 Owner: `.github/instructions/frontend.instructions.md`. This catalog holds
 extensive `sites/arolariu.ro`-specific examples, anti-patterns, edge cases,
-and RFC-grounded rationale. It does not define a workflow — use `nextjs-page`
-for the route procedure and `zustand-store` for an approved global-state
-change — and it does not restate TypeScript/React language rules (see the
-sibling catalogs) or root safety policy.
+and RFC-grounded rationale. It does not define a workflow — the generic React
+instruction routes to server/client component, Hook, Server Action, store,
+i18n, auth, and compiler skills — and it does not restate TypeScript/React
+language rules or root safety policy.
 
 ## RSC/island/server-action data ownership
 
@@ -54,24 +54,18 @@ lives under `lib/actions/`.
 
 ## Clerk boundary
 
-Authentication is enforced entirely by
-`sites/arolariu.ro/src/proxy.ts` (the Clerk middleware entrypoint), not by a
-component-level check:
+`sites/arolariu.ro/src/proxy.ts` is the Clerk middleware entrypoint and owns
+matcher-based route protection. The current matcher snapshot is owned by
+`.github/skills/react-auth/examples/live-auth-surfaces.md`; verify it against
+live `src/proxy.ts`. Other routes retain server-owned access decisions:
+`src/app/auth/page.tsx` redirects an already authenticated user, while invoice
+pages distinguish guest/public/shared/owner access and Server Actions enforce
+their own applicable RPC policy.
 
-```ts
-const isProtectedRoute = createRouteMatcher(["/admin(.*)"]);
-
-export default authMiddleware(async (auth, req) => {
-  if (isProtectedRoute(req)) {
-    await auth.protect();
-  }
-});
-```
-
-Only `/admin(.*)` is currently protected by the matcher; every other route is
-guest-accessible by default. Do not add a redirect-on-missing-session check
-inside a page or component — extend `isProtectedRoute`'s matcher (a security
-behavior change; stop and ask) instead of duplicating the check downstream.
+Do not move those checks into Client Components or remove them merely because a
+route is not middleware-matched. Changing the matcher, redirect behavior,
+guest/public visibility, ownership policy, or Server Action authorization is a
+security behavior change and requires explicit approval.
 
 ## Transport error mapping
 

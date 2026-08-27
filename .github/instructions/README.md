@@ -9,7 +9,7 @@ owns one narrow concern and inherits root `AGENTS.md` plus
 | File | Owns |
 | --- | --- |
 | `typescript.instructions.md` | TypeScript language and type-system rules |
-| `react.instructions.md` | React component, hook, and state-lifetime semantics |
+| `react.instructions.md` | Common React semantics and artifact-workflow routing |
 | `frontend.instructions.md` | Next.js website architecture |
 | `csharp.instructions.md` | C# language, nullable, docs, and async rules |
 | `backend.instructions.md` | API DDD and The Standard |

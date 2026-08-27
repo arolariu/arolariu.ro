@@ -2,8 +2,8 @@
 
 Owner: `.github/instructions/typescript.instructions.md`. This catalog holds
 extensive, repository-specific TypeScript examples, anti-patterns, edge cases,
-and rationale. It does not define a workflow; use `nextjs-page`,
-`react-component`, `zustand-store`, or another skill for the procedure. It does
+and rationale. It does not define a workflow; use the artifact skill routed by
+the generic React instruction or another task skill for the procedure. It does
 not restate versions, global commands, or root safety policy — see root
 `AGENTS.md`.
 

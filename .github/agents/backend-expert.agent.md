@@ -118,9 +118,8 @@ relying on it; do not invent a workflow name.
 
 ## Evidence Expectations
 
-- Run the routed skill's verification and the smallest targeted build/test
-  selection named in `sites/api.arolariu.ro/AGENTS.md` before claiming
-  success.
+- Run the routed skill's verification and select the smallest targeted
+  build/test from root `AGENTS.md` plus the API local guide.
 - Cite the exact test(s) and build target exercised; do not assert passing
   behavior without a command outcome.
 - Report warnings-as-errors status when C# diagnostics are touched.

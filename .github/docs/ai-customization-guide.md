@@ -71,9 +71,14 @@ verified reason to pin one.
 Portable workflows in `.github/skills/`:
 
 - `backend-vertical-slice`
-- `nextjs-page`
-- `react-component`
-- `zustand-store`
+- `react-server-component`
+- `react-client-component`
+- `react-client-hook`
+- `react-server-action`
+- `react-client-store`
+- `react-internationalization`
+- `react-auth`
+- `react-compiler`
 - `unit-test`
 - `fix-bug`
 - `dependency-migration`
@@ -83,12 +88,33 @@ Portable workflows in `.github/skills/`:
 Skills inspect current sibling source before prescribing structure. They work
 across Copilot CLI, VS Code, and Copilot coding agent.
 
+### React workflow map
+
+`react.instructions.md` owns common semantics and artifact routing. Client and
+server identity is derived from directives plus the import graph, so the
+repository intentionally does not use path-only
+`react.client.instructions.md`/`react.server.instructions.md` files.
+
+| Artifact | Skill |
+| --- | --- |
+| Interactive component or island | `react-client-component` |
+| Page/layout, route boundary, server component, or server-compatible shared component | `react-server-component` |
+| Custom Hook | `react-client-hook` |
+| Browser-callable `"use server"` export | `react-server-action` |
+| Approved Zustand/global state | `react-client-store` |
+| Locale/message/selector schema | `react-internationalization` |
+| Clerk/access-control behavior | `react-auth` |
+| React Compiler audit or adoption | `react-compiler` |
+
 ## VS Code Prompt Shortcuts
 
 Local prompt shortcuts in `.github/prompts/`:
 
 - `api-endpoint`
-- `new-page`
+- `react-server-component`
+- `react-client-component`
+- `react-client-hook`
+- `react-server-action`
 - `fix-bug`
 - `unit-test`
 
@@ -165,6 +191,10 @@ precedence over allow rules, including `--allow-all-tools`.
 cannot be derived from tracked source. Do not store versions, commands, counts,
 architecture snapshots, discoverable paths, task state, secrets, or personal
 data.
+
+Keep the committed file empty unless a durable non-source-derived fact is
+actually approved. Do not prepopulate it with repository facts “for context”;
+the live source and instructions already own those facts.
 
 Copilot's server-side memory is separate from the tracked repository memory
 policy/file. The workspace MCP configuration intentionally does not launch a

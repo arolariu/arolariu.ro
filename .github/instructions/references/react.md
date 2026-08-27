@@ -3,9 +3,31 @@
 Owner: `.github/instructions/react.instructions.md`. This catalog holds
 extensive React-specific examples, anti-patterns, edge cases, and rationale
 for `**/*.tsx`/`**/*.jsx` across the monorepo (website and component library).
-It does not define a workflow — use `react-component` for the component
-procedure — and it does not own routing, page architecture, or Next.js-only
-concerns (`frontend.md` owns those).
+It does not define a workflow. The generic instruction routes to artifact
+skills; Next.js/product architecture still belongs to `frontend.md`.
+
+## Artifact workflow decisions
+
+| Signal | Primary skill | Boundary proof |
+| --- | --- | --- |
+| Direct hook, event handler, browser API, client Context, or interactive state | `react-client-component` | The file itself needs a client capability and carries or inherits the client graph |
+| Page/layout, route metadata/boundary, async server rendering, or private server data | `react-server-component` | Trace consumers/imports; absence of `"use client"` alone is not proof |
+| Reusable `use*` API with lifecycle/state logic and no owned markup | `react-client-hook` | Multiple consumers or a cohesive reusable lifecycle contract |
+| File-level/function-level `"use server"` export | `react-server-action` | Treat every export as browser-callable public RPC |
+| Zustand implementation/persistence/hydration/selectors | `react-client-store` | Global state is approved and narrower owners are insufficient |
+| Dictionary/schema/selector/ICU/generated-message change | `react-internationalization` | Message artifacts change, even when invoked secondarily from a component task |
+| Matcher/redirect/visibility/ownership/authorization behavior | `react-auth` | Security behavior change has explicit approval |
+| Compiler lint/transform readiness or adoption | `react-compiler` | Distinguish installed package, registered lint rules, and active transform |
+
+`sites/arolariu.ro` currently contains both large client and server-default
+graphs, so do not invent `react.client.instructions.md` or
+`react.server.instructions.md`: path globs cannot reliably inspect directives
+or transitive imports.
+
+The volatile React Compiler snapshot is owned by
+`.github/skills/react-compiler/examples/live-baseline.md`. Inspect that resource
+and live configuration through `react-compiler` before changing compiler state;
+do not copy its current enabled/disabled details into another asset.
 
 ## Purity and render semantics
 
