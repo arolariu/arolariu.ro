@@ -65,9 +65,11 @@ Before editing, decide:
    `"use client"`.
 5. Define precise readonly props and explicit exported function return types.
    Reuse domain types and guards; do not introduce `any` or broad assertions.
-6. Keep render pure. Derive values during render, handle user actions in event
-   callbacks, and use effects only for external synchronization with complete
-   dependencies and cleanup.
+6. Keep render pure. Derive values during render and handle user actions in
+   callbacks. Use effects for external synchronization or the narrow
+   latest-value ref pattern needed by an explicitly stable callback; include
+   complete dependencies and cleanup whenever the synchronized resource needs
+   it.
 7. Compose native HTML or the existing `@arolariu/components` primitive. Add
    accessible names, keyboard/pointer parity, focus behavior, and observable
    disabled/loading/error/empty states.
@@ -85,7 +87,10 @@ Before editing, decide:
 | Named trigger | Resource |
 | --- | --- |
 | Before choosing reuse scope, Server/Client, state lifetime, effect ownership, or Base UI composition | [Reuse and boundary decisions](references/reuse-and-boundary-decisions.md) |
-| Interactive, icon-only, overlay, focus, keyboard, live-region, motion, or dynamic-list behavior | [Accessibility edge cases](references/accessibility-edge-cases.md) |
+| Native interactive control, icon-only name, disabled state, or loading announcement | [Native control accessibility](references/native-control-accessibility.md) |
+| Dialog, popover, tooltip, focus entry/return, or focus recovery | [Overlay and focus accessibility](references/overlay-focus-accessibility.md) |
+| Composite keyboard widget, live region/error, or dynamic list/item semantics | [Dynamic widget accessibility](references/dynamic-widget-accessibility.md) |
+| Reduced-motion, animation meaning, theme, contrast, or forced-colors behavior | [Motion and theme accessibility](references/motion-theme-accessibility.md) |
 | Need a current same-category sibling | [Live components](examples/live-components.md) |
 | A live sibling confirms the readonly-props, client-boundary, CSS Module, ref, or user-test shape | [Stable component tests and shapes](templates/stable-component-tests.md) |
 | Before selecting component behavior tests | [Component test matrix](checklists/component-test-matrix.md) |
@@ -95,7 +100,8 @@ Before editing, decide:
 
 - Reuse scope and client boundary are no broader than required.
 - Props and public returns are precise/readonly; render is pure; effects have a
-  demonstrated external owner, complete dependencies, and cleanup.
+  demonstrated external owner or latest-ref stabilization need, complete
+  dependencies, and cleanup when they own a disposable resource.
 - Native/Base UI semantics, keyboard and pointer paths, focus, accessible names,
   and all changed UI states are preserved.
 - Styling follows the owner, including theme, responsive, focus-visible, and

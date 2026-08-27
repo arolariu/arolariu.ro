@@ -151,26 +151,24 @@ from the placeholder.
 ```tsx
 import {render, screen} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import {describe, expect, it, vi} from "vitest";
+import {describe, expect, it} from "vitest";
 import Render<RouteName>Screen from "./island";
 
 describe("Render<RouteName>Screen", () => {
   it("exposes the primary action and completes the user interaction", async () => {
     // Arrange
     const user = userEvent.setup();
-    const onComplete = vi.fn();
     render(
       <Render<RouteName>Screen
         initialData={<live-builder-or-fixture>}
-        onComplete={onComplete}
       />,
     );
 
     // Act
     await user.click(screen.getByRole("button", {name: "<selector path from the global test shim>"}));
 
-    // Assert
-    expect(onComplete).toHaveBeenCalledOnce();
+    // Assert the route's observable completion state, not an undeclared prop.
+    expect(screen.getByRole("status")).toHaveTextContent("<localized completion state>");
   });
 });
 ```

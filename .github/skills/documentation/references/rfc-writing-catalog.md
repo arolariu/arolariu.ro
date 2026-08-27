@@ -6,9 +6,11 @@ may proceed, but it must still distinguish live implementation from intent.
 
 ## Current Structural Owners
 
-- `docs/rfc/README.md` owns the index, status lifecycle, placement, and current
-  numbering guidance.
-- `docs/RFC_TEMPLATE.md` is the starting scaffold, not authority for a decision.
+- `docs/rfc/README.md` owns the index, placement, and current numbering
+  guidance.
+- `docs/RFC_TEMPLATE.md` and representative current RFC siblings establish
+  the supported status vocabulary and document shape; the template is not
+  authority for the decision itself.
 - The closest accepted/implemented RFC owns terminology and local precedent.
 - Live source and configuration own current implementation.
 

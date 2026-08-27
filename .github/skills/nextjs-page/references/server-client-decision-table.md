@@ -19,7 +19,7 @@ Split below the page whenever only one subtree needs interaction.
 
 | Need | Choose | Live pointer / check |
 | --- | --- | --- |
-| Request-time data, cookies, locale, feature flags, or initial authenticated snapshot | Server Component or existing server action called by it | `sites/arolariu.ro/src/app/layout.tsx`; `sites/arolariu.ro/src/app/domains/invoices/view-invoice/[id]/page.tsx` |
+| Request-time data, cookies, locale, feature flags, secrets, or initial authenticated snapshot | Server Component calling a private `server-only` helper | `sites/arolariu.ro/src/app/layout.tsx`; `sites/arolariu.ro/src/lib/actions/storage/fetchConfig.ts` |
 | Mutation or authenticated API call initiated by the client | Existing `"use server"` action returning the repository result union | `sites/arolariu.ro/src/app/domains/invoices/_actions/invoices/fetchInvoice.ts`; `sites/arolariu.ro/src/lib/utils.server.ts` |
 | Browser-only stream, worker, clipboard, observer, or device API | Client component/hook with cleanup and an explicit failure state | `sites/arolariu.ro/src/app/playground/workers/island.tsx`; `sites/arolariu.ro/src/hooks/useScrollToTop.tsx` |
 | Bookmarkable/shareable filters, sort, view mode, or pagination contract | URL search params | `sites/arolariu.ro/src/app/domains/invoices/view-invoices/_hooks/useInvoiceFilters.tsx` |
@@ -27,9 +27,10 @@ Split below the page whenever only one subtree needs interaction.
 | State shared by one mounted subtree | Context | `sites/arolariu.ro/src/app/domains/invoices/create-invoice/_context/CreateInvoiceContext.tsx` |
 | Existing cross-route client cache/preferences | Existing Zustand store, after inspecting its hydration contract | `sites/arolariu.ro/src/stores/`; use the `zustand-store` skill |
 
-Do not replace an existing server action with a client `fetch` merely to avoid
-passing props. Client fetch is appropriate only when the browser must own the
-lifecycle and the live code already exposes a safe browser transport boundary.
+Do not create a Server Action merely to share server-owned data with a Server
+Component: `"use server"` makes the export RPC-callable. Client fetch is
+appropriate only when the browser must own the lifecycle and live code already
+exposes a safe browser transport boundary.
 
 ## Trust and serialization boundary
 

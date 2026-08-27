@@ -25,8 +25,8 @@ description: Create or internationalize an arolariu.ro App Router page using the
 ## Required Inputs
 
 - Requested route and public behavior, including guest/authenticated behavior.
-- Data owner and trust boundary: Server Component, server action, URL, or
-  client-only source.
+- Data owner and trust boundary: Server Component plus private `server-only`
+  helper, client-invoked Server Action, URL, or client-only source.
 - Interaction, loading, error, empty, not-found, and recovery expectations.
 - Root and website guides; matching TypeScript, React, and frontend
   instructions; relevant RFC 1001-1008 sections.
@@ -39,16 +39,17 @@ Before editing, decide:
 
 1. Whether the page can remain entirely server-rendered or needs the smallest
    client island.
-2. Whether data belongs in a Server Component, an existing server action, URL
-   state, local state, Context, or an already-approved Zustand store.
+2. Whether data belongs in a Server Component/private helper, a
+   client-invoked Server Action, URL state, local state, Context, or an
+   already-approved Zustand store.
 3. Which segment boundaries are required: `loading.tsx`, local `Suspense`,
    `error.tsx`, `not-found.tsx`, or none.
 4. Whether current authentication is owned by
    `sites/arolariu.ro/src/proxy.ts` or by established guest/public route
    behavior. Do not invent a component auth check.
 5. Which live metadata/message selector convention the neighboring route uses.
-   If it conflicts with the guide's `__metadata__` convention and resolving it
-   changes message shape, stop and ask.
+   If choosing between live `metadata` and legacy `__metadata__` shapes would
+   change message structure, stop and ask.
 6. Which semantics and tests prove the behavior without testing component
    implementation details.
 
@@ -61,8 +62,9 @@ Before editing, decide:
    E2E coverage only when Server Component streaming, middleware, or navigation
    behavior cannot be proven in Vitest.
 3. Keep `page.tsx` and layouts as Server Components. Fetch server-owned data
-   there or through an existing server action, and validate untrusted transport
-   data before it reaches JSX.
+   there through a private `server-only` helper. Use an existing Server Action
+   only for a client-required RPC with the right authentication/authorization
+   contract, and validate untrusted transport data before it reaches JSX.
 4. Add `island.tsx` only around hooks, browser APIs, client state, or handlers.
    Pass the smallest serializable initial contract into it.
 5. Reuse route-local siblings and `@arolariu/components`; create `_components/`
@@ -89,7 +91,10 @@ Load only the resource named by the current decision or failure:
 | --- | --- |
 | Before choosing Server Component, island, action, URL, or store ownership | [Server/client decision table](references/server-client-decision-table.md) |
 | New route or a change spanning two or more route artifact categories | [Route artifact matrix](checklists/route-artifact-matrix.md) |
-| Locale, guest/auth, transport, hydration, search-param, accessibility, responsive, or metadata edge case | [Page edge cases](references/page-edge-cases.md) |
+| Locale dictionary, typed-selector, or metadata edge case | [Locale and metadata edge cases](references/locale-and-metadata-edge-cases.md) |
+| Guest/authenticated visibility or transport-result edge case | [Auth and transport edge cases](references/auth-and-transport-edge-cases.md) |
+| Hydration or URL/search-parameter edge case | [Hydration and URL edge cases](references/hydration-and-url-edge-cases.md) |
+| Loading/error/empty/not-found, route accessibility, responsive, theme, or motion edge case | [Route UI edge cases](references/route-ui-edge-cases.md) |
 | Need a current route of the same behavioral category | [Live routes](examples/live-routes.md) |
 | A live sibling confirms a matching localized metadata, page/island, boundary, or test shape | [Stable route patterns](templates/stable-route-patterns.md) |
 | Before selecting page behavior test categories | [Page test matrix](checklists/page-test-matrix.md) |
