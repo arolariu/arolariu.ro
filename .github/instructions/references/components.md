@@ -54,9 +54,9 @@ Key points a new component must preserve:
 
 ## Domain independence and non-native interaction
 
-`button.tsx`'s `createNonNativeInteractionProps(disabled)` is the pattern for
-preserving button semantics when `render`/`asChild` composes the component
-onto a non-`<button>` element (for example an anchor):
+`button.tsx`'s `createNonNativeInteractionProps(disabled)` currently preserves
+the **disabled** state when `render`/`asChild` composes the component onto a
+non-`<button>` element (for example an anchor):
 
 ```tsx
 function createNonNativeInteractionProps(disabled: boolean): React.HTMLAttributes<HTMLElement> {
@@ -87,6 +87,12 @@ the real `disabled` attribute, and the non-native element gets
 Anti-pattern: adding `disabled` styling without also blocking the click/key
 handlers on a non-native `render` target leaves the composed element visually
 disabled but still activatable by keyboard.
+
+**Live limitation, not a pattern to copy:** the helper does not make an
+enabled arbitrary element keyboard-equivalent to a native button. It leaves
+enabled `tabIndex` unset and does not activate on Space. An anchor retains its
+native Enter behavior, but a generic element remains unfocusable and neither
+target gains native Space activation.
 
 Components stay domain-agnostic: no `sites/**` import, no invoice/merchant/
 account-specific prop, copy, or business logic. A component that needs
@@ -131,9 +137,10 @@ skips `clsx`'s falsy-value filtering used elsewhere for conditional classes).
 
 ## Accessibility and focus
 
-- Preserve keyboard parity between the native and non-native render targets
-  (see the non-native interaction props above) — Enter and Space must both
-  activate a button-role element, matching native `<button>` behavior.
+- Prefer a native `<button>` for button behavior. If a public API must support
+  an enabled non-native button-role target, add focusability plus Enter/Space
+  activation and focused tests; do not cite the current `Button` helper as
+  proof that this parity already exists.
 - Preserve Base UI's built-in ARIA wiring for compound overlay components
   (`Dialog`, `Popover`, `Tooltip`, `AlertDialog`) rather than adding manual
   `aria-*` attributes on top of them; Base UI's accessibility primitives are

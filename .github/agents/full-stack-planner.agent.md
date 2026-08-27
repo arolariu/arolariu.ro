@@ -42,7 +42,8 @@ artificial seams.
 
 | Surface | Owner |
 | --- | --- |
-| Application outcome and use-case contract | Backend Expert, at the Management boundary |
+| Invoices application outcome and use-case contract | Backend Expert, at the Management boundary |
+| Core.Auth application outcome | Backend Expert, at the established ASP.NET Core Identity endpoint/manager boundary; auth changes require approval |
 | Request/response DTO mapping, HTTP status, and exception-to-result mapping | Backend Expert, in the endpoint/protocol adapter |
 | Client-side type mirroring the contract, and its transport validation | Frontend Expert, at the server action/fetch boundary |
 | Shared UI contract (props/variants) | Frontend Expert, or an explicitly scoped component-library task |
@@ -52,8 +53,10 @@ artificial seams.
 name in the plan:
 
 1. The originating user action or trigger.
-2. Every hop: component → hook/action → transport call → endpoint →
-   Management → lower layers → Broker/persistence, and back.
+2. Every hop. For Invoices:
+   component → hook/action → transport call → endpoint → Management → lower
+   layers → Broker/persistence, and back. For another bounded context, trace
+   its actual live topology instead of inventing the Invoices chain.
 3. The validation/trust boundary where untrusted input is checked.
 4. The error/empty/loading state at each hop.
 5. Where cancellation, retries, or partial failure are owned.

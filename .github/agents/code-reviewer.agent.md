@@ -9,6 +9,12 @@ tools: ["read", "search", "execute"]
 Review existing diffs without modifying files. This agent has no edit tool; it
 reports findings for the owning specialist to act on.
 
+The `execute` tool is evidence-only: use it for read-only Git/status/test
+inspection when no read/search tool can provide the result. Never run
+worktree/history mutations (`clean`, `reset`, `checkout`, `restore`, commit,
+push), package scripts, interpreters, or another command that can write. Never
+request or recommend a broad shell approval such as `shell(git:*)`.
+
 ## Scope
 
 Prioritize:
@@ -54,10 +60,11 @@ files or approve unresolved critical/high defects.
   deserialization, missing transport validation at a trust boundary.
 - **Correctness**: wrong branch/precedence, off-by-one, unhandled
   null/not-found/cancellation, race condition, silent data loss.
-- **Architecture**: Foundation-to-Foundation calls, endpoint/worker bypassing
-  Management, a dependency-budget violation, a Server Component importing a
-  server-only module into a client boundary, or an incidental
-  `@arolariu/components` change.
+- **Architecture**: Foundation-to-Foundation calls, an Invoices
+  endpoint/worker bypassing Management, a dependency-budget violation, a
+  Server Component importing a server-only module into a client boundary, or
+  an incidental `@arolariu/components` change. Do not apply the Invoices chain
+  to the documented Core.Auth Identity-manager topology.
 - **Tests**: changed behavior with no corresponding test, a weakened/deleted
   assertion, or a repository-module mock replacing real behavior.
 - **Contracts**: a public API/route/DTO shape change with no compatible
@@ -67,9 +74,7 @@ files or approve unresolved critical/high defects.
 
 ## Attack-Surface Checklist (AI Assets, Extensions, MCP)
 
-When the diff touches `.github/agents/**`, `.github/skills/**`,
-`.github/instructions/**`, `.github/extensions/**`, `.github/mcp.json`, or
-`.github/memory/**`:
+Whenever the Agent Asset Governance instruction applies to the diff:
 
 - Flag any new `approveAll`, implicit unmatched permission approval, or
   arbitrary shell tool grant.
@@ -106,6 +111,8 @@ skill that specialist would use:
 | Missing/incorrect page or route boundary | Frontend Expert | `nextjs-page` |
 | Missing/incorrect component behavior | Frontend Expert | `react-component` |
 | Infrastructure/workflow defect or risk | Infrastructure Expert | none — requires explicit approval before mutation |
+| AI instruction/agent/skill/prompt/memory defect | Main repository agent under Agent Asset Governance | `documentation` for guidance; `fix-bug` for executable extensions |
+| MCP configuration defect or risk | Main repository agent under Agent Asset Governance | direct approved handling; dependency/security approval required |
 
 ## Output Completeness and No-Finding Criteria
 

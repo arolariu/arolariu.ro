@@ -52,9 +52,11 @@ grow the shared module with domain checks.
 ## Transport validation at the trust boundary
 
 `sites/arolariu.ro/src/types/invoices/transport.ts` is the permanent runtime
-boundary for the invoices bounded context. Every server action response is
-routed through one of its parsers before reaching UI code — a TypeScript
-`as Invoice` cast never validates at runtime.
+boundary for invoice-domain transport data. Actions that receive typed
+invoice, product, merchant, or value-object payloads route unknown JSON
+through the relevant parser before it reaches UI state; actions with no such
+payload use their own established result contract. A TypeScript `as Invoice`
+cast never validates at runtime.
 
 Design rules encoded in that module (read the file before adding a parser):
 
@@ -108,8 +110,9 @@ predicate; do not duplicate the regex.
 
 ## Discriminated unions
 
-`ServerActionResult<T>` is the repository's canonical discriminated union for
-fallible operations (see `sites/arolariu.ro/src/lib/utils.server.ts`):
+`ServerActionResult<T>` is the repository's established discriminated union
+for recoverable transport actions that use the shared result contract (see
+`sites/arolariu.ro/src/lib/utils.server.ts`):
 
 ```ts
 export type ServerActionResult<T> = Promise<
@@ -152,10 +155,10 @@ export interface EntityActions<E extends BaseEntity> {
 export type EntityStore<E extends BaseEntity> = EntityState<E> & EntityActions<E>;
 ```
 
-The production `useInvoicesStore`/`useMerchantsStore`/`useScansStore` stores
-are still hand-rolled rather than built on this factory (partial adoption per
-RFC 1007 §2.6) — do not assume every store already uses it; check the target
-store file before generalizing it.
+The production `useInvoicesStore` and `useMerchantsStore` stores use this
+factory. `useScansStore` remains specialized because cached scan lifecycle
+state and actions exceed the generic entity contract. Check the target store
+before generalizing factory field names or behavior.
 
 `sites/arolariu.ro/src/types/DDD/Entities/BaseEntity.ts` shows the sibling DDD
 generic pattern (`BaseEntity<T> extends IAuditable { readonly id: T }`),
@@ -220,10 +223,12 @@ preset selection.
   (`mergeProps`, `useRender`, `CSPProvider`, `DirectionProvider`) are exported
   from the same barrel rather than requiring consumers to depend on
   `@base-ui/react` directly.
-- Default exports are reserved for Next.js pages/layouts
-  (`export default async function InvoicesHomepage(...)`); everything else —
-  utilities, hooks, guards, components — uses named exports so barrels and
-  tree-shaking stay predictable.
+- Prefer named exports for reusable application utilities, hooks, guards, and
+  components so barrels and tree-shaking stay predictable. Preserve default
+  exports required by framework/tool contracts, including Next.js
+  pages/layouts, Clerk middleware (`src/proxy.ts`), next-intl request
+  configuration (`src/i18n/request.ts`), and configuration modules that a
+  tool loads by default.
 
 ## Type-system edge cases from the live `tsconfig`
 
@@ -233,12 +238,15 @@ preset selection.
   `exactOptionalPropertyTypes` semantics apply uniformly across the monorepo;
   check the nearest `tsconfig.json` before relying on the distinction between
   an omitted optional property and one explicitly set to `undefined`.
-- `noUncheckedIndexedAccess` (root `tsconfig.json`) means array/index access
-  returns `T | undefined`; narrow before use (`invoices[0]` is
-  `Invoice | undefined`, not `Invoice`) instead of asserting it away.
-- `verbatimModuleSyntax` requires `import type` for type-only imports; mixing
-  a value and its type in one import (`import {Invoice} from "@/types"` where
-  `Invoice` is only a type) is a build error, not a style nit.
+- `noUncheckedIndexedAccess` is enabled by the root default, so array/index
+  access returns `T | undefined` in inheriting projects. The CV site
+  explicitly disables it (along with
+  `noPropertyAccessFromIndexSignature`) for its CSS Module typing. Check the
+  nearest merged `tsconfig` before relying on either strictness flag.
+- Use `import type` for type-only imports as a repository convention and to
+  keep runtime import intent explicit. The current root config does not enable
+  `verbatimModuleSyntax`, so do not diagnose a build failure on that flag
+  without checking the nearest live `tsconfig`.
 
 ## Anti-pattern corrections summary
 

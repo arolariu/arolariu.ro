@@ -29,13 +29,15 @@ const config = {
 };
 ```
 
-Every internal import uses the `@/*` alias (`@/hooks/useTheme.svelte`,
-`@/lib/utils`) resolved to `src/*` — there is no `$lib` alias for
-cross-package reuse the way the website uses shared components. If a task
-seems to need a component or utility that already exists in
-`packages/components` or `sites/arolariu.ro`, that is a signal to
-reimplement the small piece locally, not to add a cross-package dependency;
-ask before adding any new external dependency.
+Prefer the `@/*` alias (`@/hooks/useTheme.svelte`, `@/lib/utils`) for imports
+that cross source-tree areas. Nearby or colocated modules may use relative
+imports, as `presentation/Header.svelte` currently does. SvelteKit also
+provides `$lib` for `src/lib`; the custom `@/*` alias spans the whole `src`
+tree. Neither alias permits cross-package reuse. If a task seems to need a
+component or utility that already exists in
+`packages/components` or `sites/arolariu.ro`, that is a signal to reimplement
+the small piece locally, not to add a cross-package dependency; ask before
+adding any new external dependency.
 
 ### Anti-pattern: reaching into another site/package
 
@@ -118,7 +120,11 @@ intermediate variables):
   const isDark = $derived(theme.current === "dark");
 
   const groupedCommands = $derived.by(() => {
-    const groups = {navigation: [], action: [], contact: []};
+    const groups = {
+      navigation: [] as CommandAction[],
+      action: [] as CommandAction[],
+      contact: [] as CommandAction[],
+    };
     filteredCommands.forEach((cmd) => {
       groups[cmd.category].push(cmd);
     });
@@ -156,7 +162,8 @@ export const trailingSlash = "never";
 `prerender = true` means every route must be resolvable at build time from
 data already available in `src/data/*.ts` — do not add a route that depends
 on a runtime-only external fetch without first confirming prerendering still
-succeeds (`npm run build:cv`). `csr = true` is why client-only interactivity
+succeeds with the CV build command owned by root `AGENTS.md`. `csr = true` is
+why client-only interactivity
 (Command Palette, theme toggle, scroll progress) works after hydration even
 though the HTML is fully pre-baked. If a new route genuinely cannot be
 prerendered, that is a page-option change and needs explicit approval before
@@ -224,8 +231,11 @@ reset behavior; keep the explicit reference or the comment that explains it.
 
 ```svelte
 <script lang="ts">
-  <!-- ✅ Correction: an $effect that reacts to the derived value, as
-       CommandPalette.svelte does. -->
+  // ✅ Correction: read the derived value so the effect re-runs with it.
+  $effect(() => {
+    flatCommands;
+    selectedIndex = 0;
+  });
 </script>
 ```
 

@@ -42,8 +42,7 @@ AssertConstructorDependencies(
   typeof(ILoggerFactory));
 ```
 
-A Foundation CRUD method reads Broker-neighboring: validate, start an
-Activity, delegate, return:
+A current Foundation CRUD read exposes unresolved nullability drift:
 
 ```csharp
 // sites/api.arolariu.ro/src/Invoices/Services/Foundation/InvoiceStorage/InvoiceStorageFoundationService.cs
@@ -58,6 +57,13 @@ await TryCatchAsync(async () =>
   return invoice!;
 }).ConfigureAwait(false);
 ```
+
+`IDatabaseBroker.ReadInvoiceAsync` returns `Invoice?` and the cross-partition
+Broker path returns `null` when no item exists. This Foundation method does
+not prove non-null before `invoice!`; do not copy that assertion as a
+canonical read pattern. A new or changed read must either classify not-found
+explicitly or preserve a genuinely nullable contract. Resolving the existing
+contract is behavior work, not documentation cleanup.
 
 ## Bounded contexts and dependency direction
 
@@ -178,9 +184,14 @@ catch (Exception ex)
 differently: reads bind `HttpContext.RequestAborted` directly because Minimal
 API already does that binding, while writes deliberately do not observe client
 disconnect (a half-finished mutation should not be abandoned mid-flight) and
-instead bind only application shutdown plus an explicit timeout budget
-(`CrudWriteBudget` = 30s, `AnalysisWriteBudget` = 300s, matching the Document
-Intelligence client's own network timeout).
+instead bind only application shutdown plus an explicit timeout budget.
+
+**Live drift, not a template:** `AnalysisWriteBudget` is defined, but the
+invoice and merchant analysis handlers currently pass `CrudWriteBudget`, and
+their mappings use `RequestTimeoutPolicies.Crud`. Do not assume the five-minute
+analysis budget is active. A timeout change must inspect and update the handler
+scope and endpoint timeout policy together, with approval when observable
+request behavior changes.
 
 The marker-interface families themselves and per-layer classification detail
 are the `backend-vertical-slice` skill's exception-telemetry catalog; this

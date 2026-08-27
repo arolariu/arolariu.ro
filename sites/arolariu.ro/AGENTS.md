@@ -11,8 +11,10 @@ testing, and Git rules. This file records only website-specific architecture.
   React state otherwise.
 - User-visible text uses `next-intl` in `en`, `ro`, and `fr`.
 - Authentication is enforced by Clerk middleware rather than component checks.
-- Metadata uses the shared metadata helpers and localized `__metadata__`
-  messages.
+- Metadata uses the shared metadata helpers and localized typed selectors.
+  Live namespaces use `metadata` while older guidance also names
+  `__metadata__`; preserve the target route's sibling shape and stop before a
+  schema migration.
 
 ## Local Paths
 
@@ -21,20 +23,16 @@ testing, and Git rules. This file records only website-specific architecture.
 | `src/app/` | App Router routes and route-local components |
 | `src/hooks/` | Reusable React hooks |
 | `src/stores/` | Persisted global client state |
-| `src/lib/actions/` | Server actions and transport boundaries |
+| `src/lib/actions/` | Private `server-only` helpers, client-invoked Server Actions, and transport boundaries |
 | `src/types/` | Website domain types |
 | `messages/` | Localized messages |
 | `tests/helpers/builders/` | Shared test builders |
 
 ## Local Verification
 
-```powershell
-npm run test:unit
-npm run build:website
-```
-
-Use the targeted command that covers the changed behavior. Full website tests
-and global lint are final-pass checks.
+Use the website commands owned by root `AGENTS.md`. Select the targeted check
+that covers the changed behavior; full website tests and global lint are
+final-pass checks.
 
 ## Architecture References
 

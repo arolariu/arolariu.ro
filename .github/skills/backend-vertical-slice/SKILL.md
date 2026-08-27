@@ -1,13 +1,13 @@
 ---
 name: backend-vertical-slice
-description: Implement or extend an arolariu.ro API endpoint and its required The Standard service path. Use for bounded API behavior that needs endpoint, Management/Processing/Orchestration/Foundation/Broker changes, DI, telemetry, XML docs, and MSTest coverage.
+description: Implement or extend an Invoices API endpoint and its required The Standard service path. Use for Invoices behavior that needs endpoint, Management/Processing/Orchestration/Foundation/Broker changes, DI, telemetry, XML docs, and MSTest coverage.
 ---
 
 # Backend Vertical Slice
 
 ## When to Use
 
-- Add or change API or worker behavior inside an existing bounded context.
+- Add or change API or worker behavior in the Invoices bounded context.
 - Expose an existing domain capability through the Management façade.
 - Extend a service path when ownership, failure behavior, and persistence or
   provider boundaries are understood.
@@ -17,6 +17,8 @@ description: Implement or extend an arolariu.ro API endpoint and its required Th
 ## When Not to Use
 
 - Do not use for frontend, infrastructure, deployment, or CI workflow files.
+- Do not apply the Invoices service hierarchy to Core.Auth, Core, or Common;
+  inspect their established topology and use the narrower task workflow.
 - Do not use to scaffold every layer for symmetry when an existing layer already
   owns the behavior.
 - Do not use for an unapproved bounded context, dependency, external
@@ -27,7 +29,7 @@ description: Implement or extend an arolariu.ro API endpoint and its required Th
 
 ## Required Inputs
 
-- The existing bounded context and aggregate or capability owner.
+- The existing Invoices aggregate or capability owner.
 - The route or worker contract, request/response shape, and expected protocol
   outcomes.
 - Ownership, partition, validation, null/not-found, cancellation, and retry or
@@ -104,8 +106,7 @@ Load only the resource whose named trigger applies:
 
 - The targeted MSTest demonstrates the changed behavior and exact failure
   contract.
-- Adapter and worker dependencies stop at the bounded context's Management
-  contract.
+- Invoices adapter and worker dependencies stop at its Management contract.
 - Dependencies remain flow-forward, with no Foundation-to-Foundation or
   Orchestration-to-Orchestration calls and no lower-layer bypass.
 - Each service remains within two or three direct domain dependencies; support

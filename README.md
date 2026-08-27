@@ -177,7 +177,7 @@ The **arolariu.ro** monorepo is a comprehensive full-stack platform built with c
 | 🔧 **Development** | ![Status](https://img.shields.io/badge/status-live-success?style=flat-square) | [dev.arolariu.ro](https://dev.arolariu.ro) | Next.js 16 + React 19 | Preview environment |
 | 🚀 **API** | ![Status](https://img.shields.io/badge/status-live-success?style=flat-square) | [api.arolariu.ro](https://api.arolariu.ro) | .NET 10 (LTS) | REST, GraphQL & gRPC |
 | 📄 **CV/Resume** | ![Status](https://img.shields.io/badge/status-live-success?style=flat-square) | [cv.arolariu.ro](https://cv.arolariu.ro) | SvelteKit 2 | Personal CV |
-| 📚 **Documentation** | ![Status](https://img.shields.io/badge/status-live-success?style=flat-square) | [docs.arolariu.ro](https://docs.arolariu.ro) | DocFX | Technical docs |
+| 📚 **Documentation** | ![Status](https://img.shields.io/badge/status-live-success?style=flat-square) | [docs.arolariu.ro](https://docs.arolariu.ro) | Docusaurus | Technical docs |
 
 </div>
 
@@ -256,7 +256,7 @@ npm run build:website      # 🌐 Main website (Next.js)
 npm run build:components   # 🧩 React component library
 npm run build:api          # ⚙️ Backend API (.NET)
 npm run build:cv           # 📄 CV site (SvelteKit)
-npm run build:docs         # 📚 Documentation (DocFX)
+npm run build:docs         # 📚 Documentation (Docusaurus)
 ```
 
 </details>
@@ -498,7 +498,7 @@ arolariu.ro/
 │   │   └── tests/                  #    MSTest tests
 │   │
 │   ├── cv.arolariu.ro/             # 📄 SvelteKit 2 CV/Resume (standalone)
-│   └── docs.arolariu.ro/           # 📚 DocFX documentation site
+│   └── docs.arolariu.ro/           # 📚 Docusaurus documentation site
 │
 ├── 🏗️ infra/                      # Infrastructure
 │   ├── Azure/Bicep/                #    Azure IaC (main.bicep → facade → modules)
@@ -576,7 +576,7 @@ graph LR
         WEB["🎨 arolariu.ro<br/><i>Next.js 16 + React 19</i>"]
         API["⚙️ api.arolariu.ro<br/><i>.NET 10 + DDD</i>"]
         CV["📄 cv.arolariu.ro<br/><i>SvelteKit 2</i>"]
-        DOCS["📚 docs.arolariu.ro<br/><i>DocFX</i>"]
+        DOCS["📚 docs.arolariu.ro<br/><i>Docusaurus</i>"]
     end
 
     subgraph "☁️ Azure Cloud"
@@ -668,7 +668,7 @@ graph TB
         subgraph WEB["🌍 Websites Layer"]
             S1["arolariu.ro<br/><i>Next.js</i>"]
             S2["api.arolariu.ro<br/><i>.NET</i>"]
-            S3["docs.arolariu.ro<br/><i>DocFX</i>"]
+            S3["docs.arolariu.ro<br/><i>Docusaurus</i>"]
             S4["cv.arolariu.ro<br/><i>SvelteKit</i>"]
         end
 
@@ -748,7 +748,7 @@ Automated deployment pipelines ensure code quality and zero-downtime releases.
 |:--------:|:------:|:--------|
 | **Components** | [![Components](https://github.com/arolariu/arolariu.ro/actions/workflows/official-components-publish.yml/badge.svg)](https://github.com/arolariu/arolariu.ro/actions/workflows/official-components-publish.yml) | Publish @arolariu/components |
 | **CV Site** | [![CV](https://github.com/arolariu/arolariu.ro/actions/workflows/official-cv-trigger.yml/badge.svg)](https://github.com/arolariu/arolariu.ro/actions/workflows/official-cv-trigger.yml) | Deploy SvelteKit CV |
-| **Docs** | [![Docs](https://github.com/arolariu/arolariu.ro/actions/workflows/official-docs-trigger.yml/badge.svg)](https://github.com/arolariu/arolariu.ro/actions/workflows/official-docs-trigger.yml) | Deploy DocFX site |
+| **Docs** | [![Docs](https://github.com/arolariu/arolariu.ro/actions/workflows/official-docs-trigger.yml/badge.svg)](https://github.com/arolariu/arolariu.ro/actions/workflows/official-docs-trigger.yml) | Deploy Docusaurus site |
 | **E2E Tests** | [![E2E](https://github.com/arolariu/arolariu.ro/actions/workflows/official-e2e-action.yml/badge.svg)](https://github.com/arolariu/arolariu.ro/actions/workflows/official-e2e-action.yml) | Playwright + Newman |
 | **Hygiene** | [![Hygiene](https://github.com/arolariu/arolariu.ro/actions/workflows/official-hygiene-check-v2.yml/badge.svg)](https://github.com/arolariu/arolariu.ro/actions/workflows/official-hygiene-check-v2.yml) | Lint, format, type-check |
 
@@ -811,7 +811,9 @@ The repository provides a layered GitHub Copilot setup:
 - Custom agents provide specialist ownership.
 - Agent Skills provide portable, on-demand workflows.
 - Prompt files provide local VS Code shortcuts.
-- CLI extensions add optional context, guardrails, and diagnostics.
+- CLI extensions add optional bounded context and read-only diagnostics.
+- Native Copilot permissions, sandboxing, and GitHub branch rules own command
+  safety; no repository extension attempts to interpret arbitrary shell code.
 
 See the [AI customization guide](.github/docs/ai-customization-guide.md) for
 the live asset inventory, supported surfaces, authority model, maintenance, and

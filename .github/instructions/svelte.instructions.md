@@ -1,7 +1,7 @@
 ---
 name: CV Svelte
 description: Svelte and SvelteKit rules for the standalone CV site.
-applyTo: "sites/cv.arolariu.ro/**/*.svelte,sites/cv.arolariu.ro/**/*.ts"
+applyTo: "sites/cv.arolariu.ro/**/*.svelte,sites/cv.arolariu.ro/**/*.ts,sites/cv.arolariu.ro/**/*.js,sites/cv.arolariu.ro/**/*.scss"
 ---
 
 # CV Svelte

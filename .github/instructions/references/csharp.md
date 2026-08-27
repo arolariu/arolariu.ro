@@ -32,7 +32,8 @@ public InvoiceStorageFoundationService(
 
 A narrow null-forgiving operator is accepted only when the current layer has
 already proven non-null through its own validation or the direct dependency's
-documented contract, and the justification is visible at the call site:
+documented contract, and the justification is visible at the call site.
+The current invoice read does **not** meet that standard:
 
 ```csharp
 // sites/api.arolariu.ro/src/Invoices/Services/Foundation/InvoiceStorage/InvoiceStorageFoundationService.cs
@@ -43,15 +44,15 @@ await TryCatchAsync(async () =>
   var invoice = await invoiceNoSqlBroker
     .ReadInvoiceAsync(identifier, userIdentifier, cancellationToken)
     .ConfigureAwait(false);
-  return invoice!; // Broker signature is nullable for "not found"; this path's contract requires an existing invoice.
+  return invoice!;
 }).ConfigureAwait(false);
 ```
 
-Anti-pattern correction: a null-forgiving operator used merely to silence the
-compiler at a boundary that has not actually validated non-null (for example
-forgiving a Broker read result before checking a not-found marker) hides a
-real "not found" bug instead of surfacing it through the classification chain
-described in `references/backend.md`.
+`IDatabaseBroker.ReadInvoiceAsync` is nullable and can return `null`; this
+Foundation method has no not-found check. Treat `invoice!` as live debt, not a
+pattern to copy. A null-forgiving operator used merely to silence the compiler
+at an unvalidated boundary hides a real not-found bug instead of surfacing it
+through the classification chain described in `references/backend.md`.
 
 ## Primary constructors
 
@@ -176,14 +177,16 @@ await TryCatchAsync(async () =>
 ```
 
 Cancellation tokens are threaded through every layer to the Broker call, not
-generated fresh at each boundary. `RequestCancellation.ForWrite` (above) shows
-the one place a *new* token source is deliberately created — for a write
-operation that must survive client disconnect — and even that factory still
-links to `IHostApplicationLifetime.ApplicationStopping` rather than ignoring
-shutdown.
+generated fresh at each boundary. `RequestCancellation.ForWrite` (above) is
+the shared HTTP write-budget factory for operations that must survive client
+disconnect, and it still links to
+`IHostApplicationLifetime.ApplicationStopping`. Service-owned coordination
+may create its own established scope: visibility renewal uses `renewalCts` to
+couple queue ownership loss to the in-flight operation.
 
-`OperationCanceledException` is always caught before a general `catch
-(Exception)` and rethrown unchanged, never reclassified as a fault:
+Caller- or host-originated `OperationCanceledException` is caught before a
+general `catch (Exception)` and rethrown unchanged rather than reclassified as
+a fault:
 
 ```csharp
 // sites/api.arolariu.ro/src/Invoices/Services/Management/InvoiceManagementService.Exceptions.cs
@@ -201,6 +204,14 @@ catch (Exception exception)
 }
 ```
 
+An established exception exists in
+`InvoiceProcessingService.ExecuteWithVisibilityRenewalAsync`: when visibility
+renewal fails, the service cancels the in-flight operation, consumes that
+induced cancellation, awaits cleanup, and throws the recorded dependency
+exception because exclusive queue ownership was lost. Preserve that
+coordination rule; do not replace internally induced ownership-loss
+cancellation with a raw cancellation rethrow.
+
 Anti-pattern correction: awaiting a Task without `.ConfigureAwait(false)` in a
 service/library method is not merely a style choice here — the repository
 convention assumes no captured `SyncContext` is required off the ASP.NET Core
@@ -211,9 +222,11 @@ callers of asynchronous code.
 
 ## Exception classification mechanics
 
-C#-level exception handling in this repository always:
+C#-level exception handling in this repository:
 
-1. Catches `OperationCanceledException` first and rethrows it unmodified.
+1. Rethrows caller/host cancellation unmodified, except where an established
+   coordination path intentionally converts internally induced cancellation
+   back to the recorded owning failure.
 2. Classifies only exceptions the current type can enrich or reclassify
    (never a bare `catch (Exception) { /* swallow */ }`).
 3. Preserves the original exception as `InnerException` when wrapping.

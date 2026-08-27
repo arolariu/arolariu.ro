@@ -1,7 +1,7 @@
 ---
 name: Experimental Service Python
 description: Python typing, FastAPI, Ruff, and pytest conventions for the experimental service.
-applyTo: "sites/exp.arolariu.ro/**/*.py"
+applyTo: "sites/exp.arolariu.ro/**/*.py,sites/exp.arolariu.ro/config*.json,sites/exp.arolariu.ro/pyproject.toml,sites/exp.arolariu.ro/requirements*.txt"
 ---
 
 # Experimental Service Python

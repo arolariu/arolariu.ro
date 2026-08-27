@@ -3,6 +3,9 @@
 Use this matrix after layer ownership is selected and only when behavior crosses
 more than one layer.
 
+This matrix applies to Invoices. Do not create equivalent layers in Core.Auth,
+Core, or Common for symmetry.
+
 **Legend:** `R` = normally required, `C` = required when the contract changes or
 a new implementation is introduced, `—` = do not add for symmetry.
 
@@ -19,8 +22,8 @@ a new implementation is introduced, `—` = do not add for symmetry.
 
 ## Artifact Decisions
 
-- **Endpoint/worker:** adapters resolve only Management and own protocol or host
-  concerns.
+- **Endpoint/worker:** Invoices adapters resolve only Management and own
+  protocol or host concerns.
 - **DTO/domain contract:** keep provider SDK types below the Broker boundary and
   transport types out of domain services unless the current public Management
   contract explicitly owns them.

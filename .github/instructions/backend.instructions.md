@@ -1,7 +1,7 @@
 ---
 name: API Architecture
 description: DDD and The Standard rules for the arolariu.ro API.
-applyTo: "sites/api.arolariu.ro/**/*.cs,sites/api.arolariu.ro/**/*.csproj,sites/api.arolariu.ro/**/Program.cs,sites/api.arolariu.ro/**/appsettings.json"
+applyTo: "sites/api.arolariu.ro/**/*.cs,sites/api.arolariu.ro/**/*.csproj,sites/api.arolariu.ro/**/Program.cs,sites/api.arolariu.ro/**/appsettings*.json"
 ---
 
 # API Architecture
@@ -20,12 +20,14 @@ persistence boundaries.
 
 ## Rules
 
+The full chain below applies to the Invoices bounded context:
+
 ```text
 Endpoints -> Management -> Processing -> Orchestration -> Foundation -> Brokers
 ```
 
 - Endpoints map protocol behavior and do not contain business logic.
-- Management is the endpoint/worker-facing application boundary.
+- Invoices Management is the endpoint/worker-facing application boundary.
 - Processing owns heavy or multi-stage workflows.
 - Orchestration coordinates Foundation services.
 - Foundation owns CRUD and domain validation.
@@ -38,6 +40,8 @@ Endpoints -> Management -> Processing -> Orchestration -> Foundation -> Brokers
   tags.
 - Use existing marker interfaces and exception-to-HTTP mapping.
 - Register new services in the owning bounded-context extension.
+- Core.Auth deliberately injects ASP.NET Core Identity managers from endpoints;
+  do not report that established topology as an Invoices-style layer bypass.
 - Preserve partition and ownership boundaries in storage calls.
 - Do not commit connection strings or credentials.
 

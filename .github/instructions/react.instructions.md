@@ -1,7 +1,7 @@
 ---
 name: React Semantics
 description: React component, hook, accessibility, and state-lifetime rules.
-applyTo: "**/*.tsx,**/*.jsx"
+applyTo: "**/*.tsx,**/*.jsx,sites/arolariu.ro/**/hooks/**/*.ts,sites/arolariu.ro/**/_hooks/**/*.ts,sites/arolariu.ro/**/use*.ts,sites/arolariu.ro/**/hooks/**/*.js,sites/arolariu.ro/**/_hooks/**/*.js,sites/arolariu.ro/**/use*.js,packages/components/**/hooks/**/*.ts,packages/components/**/use*.ts,packages/components/**/hooks/**/*.js,packages/components/**/use*.js"
 ---
 
 # React Semantics
@@ -21,7 +21,9 @@ Owns React behavior independent of routing or product architecture.
 - Keep render logic pure.
 - Use `Readonly<Props>` for component props.
 - Keep state at the narrowest owner.
-- Use effects only to synchronize with an external system.
+- Use effects to synchronize with an external system or for the narrow
+  latest-value ref pattern that keeps an explicitly stable callback current.
+  Derive ordinary render state instead.
 - Include complete dependencies and return cleanup for subscriptions,
   observers, timers, and abortable work.
 - Do not copy props into state without a demonstrated synchronization need.

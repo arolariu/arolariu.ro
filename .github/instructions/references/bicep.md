@@ -15,9 +15,10 @@ not procedure.
 ## Module composition and deployment order
 
 `main.bicep` (subscription scope) creates the resource group and delegates
-everything else to `facade.bicep` (resource group scope), which orchestrates
-ten module groups in a fixed dependency order documented in its own header
-comment:
+everything else to `facade.bicep` (resource group scope). The facade's
+numbered header is a readability sequence, not a complete deployment order:
+Bicep combines explicit `dependsOn` edges with implicit dependencies created
+by symbolic output references.
 
 ```bicep
 // infra/Azure/Bicep/facade.bicep
@@ -30,25 +31,51 @@ comment:
 // 6. Sites         → Deploys web applications (depends on: Storage, Configuration)
 // 7. Network       → Creates Front Door, DNS (depends on: Sites)
 // 8. Bindings      → Configures custom domains (depends on: Sites, Network)
-// 9. AI            → Deploys Azure OpenAI (depends on: Configuration)
+// 9. AI            → Deploys Azure OpenAI (header says Configuration)
 // 10. RBAC         → Resource-scoped role assignments (depends on: respective resources)
 ```
 
-Each first-level module is a `deploymentFile.bicep` orchestrator (e.g.
-`observability/deploymentFile.bicep`, `storage/deploymentFile.bicep`) that
-wires its own sub-modules and re-exposes only the outputs the facade needs —
-individual resource modules (`storageAccount.bicep`,
-`application-insights.bicep`, ...) are never referenced directly from
-`facade.bicep`.
+The live effective DAG is:
+
+| Module group | Effective dependencies |
+| --- | --- |
+| Identity | none |
+| Configuration | none |
+| Observability | Identity, Configuration |
+| Storage | Identity |
+| Compute | Identity |
+| Sites | Identity, Configuration, Observability, Storage, Compute |
+| Network | Sites |
+| Bindings | Sites, Network, Compute |
+| AI | none in current source |
+| RBAC modules | The resource-producing groups whose outputs each module consumes |
+
+Sites' extra edges come from identity, monitoring, and plan outputs even
+though its explicit `dependsOn` lists only Storage and Configuration.
+Bindings similarly consumes Compute outputs. Conversely, AI currently has no
+Configuration reference or explicit dependency despite the header comment;
+treat that as live documentation drift, not an edge to assume or add without
+an approved infrastructure change.
+
+Module groups 1–9 use `deploymentFile.bicep` orchestrators (for example
+`observability/deploymentFile.bicep` and `storage/deploymentFile.bicep`) that
+wire sub-modules and re-expose only the outputs the facade needs. RBAC is the
+deliberate exception: `facade.bicep` invokes the individual `rbac/*.bicep`
+modules directly.
 
 A `resourceConventionPrefix` is derived once in the facade and threaded to
-every module, so every resource name in a deployment shares one short,
-collision-resistant prefix:
+the module groups that accept it:
 
 ```bicep
 // infra/Azure/Bicep/facade.bicep
 var resourceConventionPrefix = 'q${substring(uniqueString(resourceDeploymentDate), 0, 5)}'
 ```
+
+The Sites orchestrator does not accept that prefix. Its App Services and
+Static Web Apps use stable fixed names such as `api-arolariu-ro`,
+`www-arolariu-ro`, and `cv-arolariu-ro`. Do not rename those resources merely
+to make the prefix rule universal; resource replacement and public-hostname
+impact require explicit review.
 
 ### The identity-array convention is a positional contract
 
@@ -128,15 +155,15 @@ func createTags(moduleName string, deploymentDate string) resourceTags => {
 }
 ```
 
-Every resource module (`storageAccount.bicep`, `keyVault.bicep`,
-`appServicePlans.bicep`, ...) imports `createTags` and calls
-`union(commonTags, { displayName: '...' })` on its resource. **Live drift to
-be aware of, not silently copied forward:** `identity/userAssignedIdentity.bicep`
-does not call `createTags()` — it declares its own inline `commonTags`
-variable with the same shape. Match the sibling file you are actually editing;
-do not assume every module already uses the shared function, and do not
-"fix" the inconsistency as an unrelated cleanup unless that is the approved
-task.
+Most resource modules (`storageAccount.bicep`, `keyVault.bicep`,
+`appServicePlans.bicep`, ...) import `createTags` and call
+`union(commonTags, { displayName: '...' })` on their resources. **Live drift
+to be aware of, not silently copied forward:** inline typed `commonTags`
+blocks also exist in `identity/userAssignedIdentity.bicep`,
+`bindings/api-arolariu-ro-bindings.bicep`, and
+`bindings/dev-arolariu-ro-bindings.bicep`. Search for
+`var commonTags resourceTags` before assuming the shared function is
+universal, and do not normalize these files as unrelated cleanup.
 
 Naming follows `${resourceConventionPrefix}-<role>` for identities
 (`${prefix}-frontend`, `${prefix}-backend`, `${prefix}-infrastructure`) and
@@ -197,9 +224,10 @@ with an inline comment pointing at the Microsoft built-in roles reference:
 var storageBlobDataOwner = 'b7e6dc6d-f1e8-4753-8033-0f276bb0955b'
 ```
 
-OIDC federation replaces stored credentials for GitHub Actions. Only the
-infrastructure identity receives federated credentials, one per GitHub
-Environment, matched by an exact subject string:
+OIDC federation replaces stored Azure credentials for GitHub Actions jobs that
+invoke `azure/login`. Only the infrastructure identity receives the current
+federated credentials, for the `development` and `production` GitHub
+Environments, matched by exact subject strings:
 
 ```bicep
 // infra/Azure/Bicep/identity/federatedCredentials.bicep
@@ -225,6 +253,13 @@ resource federatedCredentialsForInfrastructureIdentity 'Microsoft.ManagedIdentit
 The `@batchSize(1)` decorator is not cosmetic — Azure rejects parallel
 federated-credential creation on the same identity, so removing it reintroduces
 a real deployment failure, not just a slower one.
+
+Do not add an Azure federated subject merely because a workflow names a GitHub
+Environment. `npm-publish` uses npm Trusted Publishing, while CV,
+documentation, and status deploy through Static Web Apps token secrets; those
+jobs do not authenticate with this Azure identity. A matching federated
+credential is required only when the job actually uses `azure/login` with the
+infrastructure UAMI.
 
 ## Secrets
 
@@ -316,8 +351,8 @@ current network posture are exposure changes and require confirmation per the
 Infrastructure Expert agent's identity/RBAC/secret/network matrix — the
 baseline being "already public" does not make a further change lower-risk.
 
-Storage CORS is deliberately narrow and explains *why* `PUT` is present for
-one origin set only:
+Storage CORS is deliberately scoped per consumer. The root/development origin
+rule documents its `PUT` requirement for direct SAS uploads:
 
 ```bicep
 // infra/Azure/Bicep/storage/storageAccount.bicep
@@ -328,6 +363,10 @@ one origin set only:
   allowedMethods: ['GET', 'HEAD', 'PUT', 'OPTIONS']
 }
 ```
+
+The API and localhost rule sets also currently allow `PUT` for their own
+consumers. Do not remove it from either based only on the SAS-upload comment;
+inspect the corresponding caller before changing any method list.
 
 Cosmos DB explicitly disables VNet filtering and AAD-bypass while still
 requiring TLS 1.2 and disabling key-based auth:
@@ -395,10 +434,10 @@ settings.
 `bicepconfig.json` configures the `use-recent-api-versions` analyzer. Read its
 current level and age threshold from that file instead of copying them here.
 
-For every resource family, inspect the exact live module and match the current
-API version used by the same resource type and its child resources. Do not
-select an API version from memory, from this catalog, or merely because the
-Bicep extension suggests it. Representative source owners include:
+For every resource family, inspect the exact live module and the supported API
+version of each parent and nested resource type. Do not select an API version
+from memory, from this catalog, or merely because the Bicep extension suggests
+it. Representative source owners include:
 
 - `storage/storageAccount.bicep`
 - `configuration/keyVault.bicep`
@@ -410,12 +449,12 @@ Bicep extension suggests it. Representative source owners include:
 - `ai/aiFoundry.bicep`
 - `rbac/*.bicep`
 
-Anti-pattern: bumping only the API version of the resource you happen to be
-editing in a shared module while leaving its nested child resources (for
-example `blobServices`/`containers` inside `storageAccount.bicep`, or
-`sqlDatabases`/`containers` inside `noSqlServer.bicep`) on an older version —
-these repository's modules keep parent and nested-child API versions in sync
-deliberately.
+Some resource families deliberately keep parent and nested-child versions in
+sync (for example Storage blob services/containers). That is not universal:
+`storage/sqlServer.bicep` uses a current server API while its nested
+`auditingPolicies` resource remains on the API version supported by that child
+type. Check compatibility per nested resource and preserve documented
+exceptions rather than synchronizing versions mechanically.
 
 ## Cost and SKU
 
@@ -466,15 +505,15 @@ touching Azure.
 | Reordering `identity/userAssignedIdentity.bicep`'s `identities` array | `facade.bicep` indexes `managedIdentitiesList[0/1/2]` positionally; reordering silently rebinds RBAC/app settings to the wrong identity | Treat the array order as a contract; update every `[N]` consumer in the same change |
 | Copying `observability/README.md`'s `diagnosticSettings` snippet as if it were already deployed | No module currently creates a live `Microsoft.Insights/diagnosticSettings` resource | Confirm the resource does not exist before assuming diagnostics are wired; adding one is a new-resource/monitoring decision |
 | Inlining a raw role-definition GUID in a new RBAC module | Bypasses the single source of truth and its inline documentation link | Import the named constant from `constants/roles.bicep`; add a new export there if the role is missing |
-| Declaring a new module's own `commonTags` variable instead of `createTags()` | Diverges from the shared tagging contract most modules follow (with one known, pre-existing exception) | Import and call `createTags(moduleName, deploymentDate)` unless matching an already-inconsistent sibling on purpose |
+| Declaring a new module's own `commonTags` variable instead of `createTags()` | Diverges from the shared tagging contract most modules follow (with known identity and binding exceptions) | Import and call `createTags(moduleName, deploymentDate)` unless matching an already-inconsistent sibling on purpose |
 | Removing `@batchSize(1)` from `federatedCredentialsForInfrastructureIdentity` "to speed up deployment" | Azure rejects parallel federated-credential creation on the same identity | Keep the decorator; the sequential creation is a real Azure limitation, not caution |
-| Bumping only the parent resource's API version and leaving nested child resources on the old version | Repository modules keep parent/child API versions in lockstep | Update the whole resource family (parent + nested children) together |
+| Assuming parent and nested child resources must share one API version | Some families align versions, while others such as SQL auditing use a child-specific supported version | Verify each nested resource type; update together only where live source and provider compatibility support it |
 | Treating `publicNetworkAccess: 'Enabled'` as a bug to silently fix | It is the repository's deliberate current baseline across every resource | Escalate a tightening (or further loosening) change instead of changing it inline |
 
 ## Live source pointers
 
 - `infra/Azure/Bicep/main.bicep`, `facade.bicep` — subscription/resource-group
-  entry points and the ten-module deployment order
+  entry points and the explicit-plus-implicit module dependency graph
 - `infra/Azure/Bicep/types/common.type.bicep`, `types/identity.type.bicep` —
   exported UDTs consumed across modules
 - `infra/Azure/Bicep/constants/tags.bicep`, `constants/roles.bicep` — shared

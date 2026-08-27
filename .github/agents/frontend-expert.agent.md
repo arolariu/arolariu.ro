@@ -49,12 +49,14 @@ API changes.
 | `island.tsx` | The client-only interaction slice passed the smallest serializable props |
 | `_components/` | Route-owned pieces not reused elsewhere |
 | `src/hooks/` | Reusable client logic shared across routes |
-| `src/lib/actions/` | Server actions and transport-boundary validation |
+| `src/lib/actions/` | Private `server-only` helpers plus client-invoked Server Actions; every `"use server"` export is an RPC boundary |
 
 **Server data versus URL/local/Context/Zustand state** — choose the narrowest
 owner before writing state:
 
-1. Can a Server Component or existing server action own it? Use that.
+1. Can a Server Component call a private `server-only` helper? Use that for
+   server-owned reads. Use an existing Server Action only when a client must
+   invoke the operation and its auth contract is appropriate.
 2. Is it shareable/bookmarkable navigation state? Use URL state.
 3. Is it confined to one component/subtree? Use local state.
 4. Is it shared by a few related components in one mounted subtree? Use
@@ -75,10 +77,11 @@ owner before writing state:
 **i18n/metadata/accessibility/observability obligations** — any user-visible
 copy change updates `en`, `ro`, and `fr` with identical key shape; any
 route-level metadata change goes through the shared metadata helper and
-localized `__metadata__` messages; interactive changes preserve keyboard
-order, focus, and accessible names; changes to instrumented boundaries
-preserve the RFC 1001 frontend OpenTelemetry boundaries rather than adding a
-new one.
+the established typed selector shape for that route (`metadata` and
+`__metadata__` are unresolved live drift, not interchangeable aliases);
+interactive changes preserve keyboard order, focus, and accessible names;
+changes to instrumented boundaries preserve the RFC 1001 frontend
+OpenTelemetry boundaries rather than adding a new one.
 
 ## Task-to-Skill Routing
 

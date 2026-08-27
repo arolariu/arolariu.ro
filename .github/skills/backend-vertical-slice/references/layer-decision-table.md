@@ -2,6 +2,7 @@
 
 Use this reference only when the skill reaches the owning-layer decision. Live
 source is authoritative when a row and an established sibling differ.
+This table applies to the Invoices Standard hierarchy, not Core.Auth.
 
 ## Ownership Signals
 
@@ -26,7 +27,8 @@ Endpoint or worker
 ```
 
 - Each service consumes contracts for the next approved role.
-- An adapter always resolves Management, including background workers.
+- An Invoices adapter always resolves Management, including background
+  workers.
 - A layer may be unchanged when an existing contract already supplies the
   behavior; the call path does not require one new type per layer.
 - Count direct **domain** collaborators when applying the two-or-three

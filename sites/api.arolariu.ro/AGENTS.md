@@ -5,11 +5,13 @@ and Git rules. This file records only API architecture.
 
 ## The Standard
 
+Invoices implements the full Standard chain:
+
 ```text
 Endpoints -> Management -> Processing -> Orchestration -> Foundation -> Brokers
 ```
 
-- Endpoints map HTTP and depend on the Management façade.
+- Invoices endpoints map HTTP and depend on the Management façade.
 - Management exposes application use cases and delegates to Processing.
 - Processing owns heavy computation and multi-stage workflows.
 - Orchestration coordinates Foundation services.
@@ -17,6 +19,8 @@ Endpoints -> Management -> Processing -> Orchestration -> Foundation -> Brokers
 - Brokers wrap external systems and contain no business logic.
 - Foundation services never call other Foundation services.
 - Keep every service at two or three dependencies.
+- Core.Auth is a deliberate exception and calls ASP.NET Core Identity managers
+  directly from its endpoints.
 
 ## Bounded Contexts
 
@@ -38,10 +42,8 @@ Endpoints -> Management -> Processing -> Orchestration -> Foundation -> Brokers
 
 ## Local Verification
 
-```powershell
-dotnet build sites/api.arolariu.ro/src/Core
-dotnet test sites/api.arolariu.ro/tests
-```
+Use the API build/test commands owned by root `AGENTS.md`, selecting the
+smallest relevant project or test subset.
 
 ## Architecture References
 

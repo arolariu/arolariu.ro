@@ -33,13 +33,24 @@ export default function RenderInvoiceDomainScreen({isAuthenticated}: Readonly<Pr
 }
 ```
 
-Server actions live at `sites/arolariu.ro/src/lib/actions/**` (cross-cutting,
-for example `user/fetchUser.ts`, `cookies/cookies.action.ts`) and
-route/domain-scoped actions live under
-`sites/arolariu.ro/src/app/domains/<domain>/_actions/**` (for example
-`invoices/_actions/invoices/fetchInvoice.ts`). Both use the
-`"use server"` directive and return `ServerActionResult<T>` — see the
-transport-error section below.
+**Live debt, not a precedent:** this page currently obtains its auth snapshot
+through `fetchAaaSUserFromAuthService`, which is exported from a
+`"use server"` module. A Server Component does not need an RPC action for a
+server-owned read. New work should call a private `server-only` helper
+directly; reserve Server Actions for operations the browser must invoke and
+authenticate/authorize them as public endpoints.
+
+Server-only code uses two distinct boundaries:
+
+- RPC-capable Server Actions carry `"use server"` (for example
+  `cookies/cookies.action.ts`, `user/fetchUser.ts`, and invoice-domain
+  `_actions/**`). Their return contracts vary with the caller.
+- Private server helpers such as `lib/actions/storage/fetchConfig.ts` import
+  `"server-only"` and intentionally omit `"use server"` so they cannot become
+  browser-callable RPC surfaces.
+
+Do not convert a `server-only` helper into a Server Action merely because it
+lives under `lib/actions/`.
 
 ## Clerk boundary
 
@@ -64,8 +75,8 @@ behavior change; stop and ask) instead of duplicating the check downstream.
 
 ## Transport error mapping
 
-`sites/arolariu.ro/src/lib/utils.server.ts` defines the one
-`ServerActionResult<T>` shape every server action should return, plus the
+`sites/arolariu.ro/src/lib/utils.server.ts` defines the
+`ServerActionResult<T>` shape used by recoverable transport actions, plus the
 helpers that produce it:
 
 ```ts
@@ -98,10 +109,10 @@ raw body. `fetchWithTimeout` wraps every request with an `AbortController`
 and forces `cache: "no-store"` for authenticated requests — reuse it instead
 of a bare `fetch` in a new server action.
 
-Anti-pattern: catching an error in a new server action and returning a
-hand-rolled `{success: false, message: string}` shape instead of
-`ServerActionResult<T>` breaks every client-side consumer that narrows on
-`result.success`.
+Anti-pattern: catching an error in a transport action whose consumers narrow
+`result.success` and returning a hand-rolled
+`{success: false, message: string}` instead of its established
+`ServerActionResult<T>` contract.
 
 ## Zustand / Context / URL / local hierarchy
 
@@ -110,8 +121,8 @@ it with RFC 1005 §2.3 before changing state:
 
 | Store | Entity | Notes |
 | --- | --- | --- |
-| `useInvoicesStore` | Invoice | `invoices[]` persisted, `selectedInvoices[]` + `hasHydrated` in-memory |
-| `useMerchantsStore` | Merchant | `merchants[]` persisted, `hasHydrated` in-memory |
+| `useInvoicesStore` | Invoice | Factory-backed `entities[]` persisted; `selectedEntities[]` + `hasHydrated` in-memory |
+| `useMerchantsStore` | Merchant | Factory-backed `entities[]` persisted; `selectedEntities[]` + `hasHydrated` in-memory |
 | `useScansStore` | Scan | `scans[]` persisted, `selectedScans[]` + `hasHydrated` in-memory |
 | `usePreferencesStore` | Preferences | locale/theme/font/gradient preset fields, cookie-synced |
 
@@ -119,10 +130,11 @@ Every persisted store exposes a `hasHydrated` flag; a component reading
 persisted state should gate its render on it (`if (!hasHydrated) return <Loading />;`)
 rather than trusting an empty array as "no data yet" — an empty array is
 ambiguous between "not hydrated" and "hydrated, genuinely empty".
-`sites/arolariu.ro/src/stores/createEntityStore.ts` is a generic factory
-available for an entity-store shape, but some existing stores remain
-hand-rolled (RFC 1007 §2.6). Inspect the target store instead of relying on a
-copied adoption count.
+`sites/arolariu.ro/src/stores/createEntityStore.ts` backs invoices and
+merchants. Scans remains a specialized hand-rolled store because its cached
+records and domain actions exceed the generic shape; preferences has a
+separate non-entity contract. Inspect the target store rather than assuming a
+single field naming convention.
 
 `DialogContext.tsx` (`sites/arolariu.ro/src/app/domains/invoices/_contexts/`)
 is the established Context pattern for state shared by a route subtree but
@@ -168,8 +180,11 @@ return createMetadata({
 and is what makes `m.pages.invoices.landing.metadata.title` a compile-time
 key, not a runtime string lookup. After adding a key, add the identical key
 path to `ro.json` and `fr.json`, then run the canonical i18n generation command
-from root `AGENTS.md`. Route metadata uses the same typed selector API and the route's
-`metadata` object; do not introduce flat `Namespace.__metadata__` lookups.
+from root `AGENTS.md`. Live route metadata currently uses nested `metadata` objects. Older
+repository guidance also names `__metadata__`; treat that as unresolved
+message-schema drift, not two interchangeable aliases. Preserve a target
+route's established sibling shape and stop before a cross-namespace
+migration.
 
 `sites/arolariu.ro/src/metadata.ts`'s `createMetadata()` merges page-specific
 overrides into the base `Metadata` object and derives the OpenGraph
@@ -182,9 +197,11 @@ Observability (RFC 1001) helpers live in
 `sites/arolariu.ro/src/instrumentation.server.ts`: `withSpan`,
 `addSpanEvent`, `setSpanAttributes`, `recordSpanError`, `logWithTrace`,
 `createCounter`/`createHistogram`/`createUpDownCounter`. Server actions wrap
-their body in `withSpan("api.actions.<domain>.<action>", ...)` (see
-`fetchInvoices.ts`, `utils.server.ts`'s `createJwtToken`/`verifyJwtToken`);
-preserve this boundary rather than adding a parallel logging mechanism.
+their body in `withSpan("api.actions.<domain>.<action>", ...)` throughout the
+invoice-domain transport actions (see `fetchInvoices.ts`);
+cross-cutting server actions are not uniformly wrapped. For a newly
+instrumented boundary, follow RFC 1001 rather than assuming existing coverage
+or adding a parallel logging mechanism.
 
 Route boundaries follow the App Router convention:
 `sites/arolariu.ro/src/app/error.tsx`, `.../about/error.tsx`,
@@ -216,9 +233,9 @@ objects.
 
 ## Hydration, message, metadata, and transport edge cases
 
-- **Hydration race**: reading `useInvoicesStore().invoices` before
-  `hasHydrated` is `true` can render a false "no invoices" empty state for a
-  user who has persisted data; always branch on `hasHydrated` first.
+- **Hydration race**: reading `useInvoicesStore((state) => state.entities)`
+  before `hasHydrated` is `true` can render a false "no invoices" empty state
+  for a user who has persisted data; always branch on `hasHydrated` first.
 - **Dev-only Strict Mode aborts**: see the React catalog's effect-cleanup
   section — the same `AbortError`-during-double-invoke pattern applies to any
   new data-fetching hook or island effect in this app.

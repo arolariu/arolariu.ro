@@ -1,7 +1,7 @@
 ---
 name: TypeScript Standards
 description: Type-system and language rules for TypeScript source files.
-applyTo: "**/*.ts,**/*.tsx"
+applyTo: "**/*.ts,**/*.tsx,**/tsconfig*.json,sites/cv.arolariu.ro/**/*.svelte,sites/status.arolariu.ro/**/*.svelte"
 ---
 
 # TypeScript Standards

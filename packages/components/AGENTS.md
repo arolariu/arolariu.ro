@@ -30,9 +30,7 @@ src/index.ts
 
 ## Local Verification
 
-```powershell
-npm run build:components
-```
+Use the component-library build command owned by root `AGENTS.md`.
 
 ## Architecture References
 

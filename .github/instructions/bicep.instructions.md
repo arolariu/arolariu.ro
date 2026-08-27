@@ -1,7 +1,7 @@
 ---
 name: Azure Bicep
 description: Azure Bicep security, composition, naming, validation, and cost constraints.
-applyTo: "**/*.bicep"
+applyTo: "**/*.bicep,**/*.bicepparam,infra/Azure/Bicep/**/*.json,infra/Azure/Bicep/**/*.sql"
 ---
 
 # Azure Bicep
@@ -50,8 +50,8 @@ not authorize any mutation.
 
 ## Validation
 
-Use Bicep build and Azure `what-if` only after the user approves the
-infrastructure change and target scope.
+Use local Bicep build/lint during investigation. Run Azure `what-if` only
+after the user approves the infrastructure change and target scope.
 
 ## Escalation
 

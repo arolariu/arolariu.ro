@@ -66,6 +66,7 @@ npm run build
 npm run build:website
 npm run build:api
 npm run build:components
+npm run build:cv
 
 # Tests
 npm run test
@@ -161,17 +162,23 @@ page.tsx (Server Component)
 
 ### Backend
 
+The Invoices bounded context implements the full Standard chain:
+
 ```text
 Endpoints -> Management -> Processing -> Orchestration -> Foundation -> Brokers
 ```
 
 - Brokers are thin external-system wrappers with no business logic.
-- Management is the application façade consumed by endpoints and workers.
+- Invoices Management is the application façade consumed by its endpoints and
+  workers.
 - Foundation services do not call other Foundation services.
 - Services have at most two or three dependencies (Florance Pattern).
 - Service methods use the repository TryCatch and OpenTelemetry Activity
   patterns.
 - Bounded contexts are Core, Core.Auth, Invoices, and Common.
+- Core.Auth is a deliberate exception: its endpoints use ASP.NET Core Identity
+  managers directly and do not have Management/Processing/Orchestration/
+  Foundation layers.
 
 ### Dependency Direction
 

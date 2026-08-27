@@ -11,12 +11,8 @@ Web Apps.
 
 ## Local Verification
 
-```powershell
-npm run build:cv
-```
+Use the CV build command owned by root `AGENTS.md`.
 
 ## Development
 
-```powershell
-npm run dev:cv
-```
+Use the CV development command owned by root `AGENTS.md`.

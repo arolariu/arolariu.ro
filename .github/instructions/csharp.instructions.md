@@ -1,7 +1,7 @@
 ---
 name: C# Standards
 description: C# language, nullable, documentation, and asynchronous programming rules.
-applyTo: "**/*.cs"
+applyTo: "**/*.cs,**/*.csproj,**/*.props,**/*.targets"
 ---
 
 # C# Standards

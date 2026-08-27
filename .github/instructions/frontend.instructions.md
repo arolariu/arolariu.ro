@@ -1,7 +1,7 @@
 ---
 name: Website Architecture
 description: Next.js App Router, server/client boundary, i18n, metadata, state, and website observability rules.
-applyTo: "sites/arolariu.ro/**/*.ts,sites/arolariu.ro/**/*.tsx,sites/arolariu.ro/**/*.js,sites/arolariu.ro/**/*.jsx,sites/arolariu.ro/**/*.css"
+applyTo: "sites/arolariu.ro/**/*.ts,sites/arolariu.ro/**/*.tsx,sites/arolariu.ro/**/*.js,sites/arolariu.ro/**/*.jsx,sites/arolariu.ro/**/*.css,sites/arolariu.ro/**/*.scss,sites/arolariu.ro/messages/*.json"
 ---
 
 # Website Architecture
@@ -24,7 +24,9 @@ belongs to their dedicated instructions.
   client boundary.
 - Put browser state and handlers in the smallest `island.tsx` or client
   component.
-- Fetch server-owned data in Server Components or server actions.
+- Fetch server-owned data through private `server-only` helpers called by
+  Server Components. Reserve `"use server"` actions for operations a client
+  must invoke, and treat each as a public RPC authorization boundary.
 - Use the existing transport validation/error mapping at API boundaries.
 - Use Zustand only for genuinely global client state, Context for scoped state,
   and local state otherwise.
@@ -34,7 +36,8 @@ belongs to their dedicated instructions.
 - Route all user-visible text through `next-intl`.
 - Keep `en`, `ro`, and `fr` message keys structurally aligned.
 - Build metadata through the shared metadata helpers and localized typed
-  `next-intl-selector` paths under each route's `metadata` object.
+  selectors. Preserve the neighboring route's `metadata` or `__metadata__`
+  shape; do not migrate between them incidentally.
 - Handle loading, error, and empty states.
 - Use CSS Modules; do not add inline style objects.
 - Import shared primitives from `@arolariu/components`.

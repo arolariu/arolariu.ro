@@ -45,13 +45,14 @@ owns the capability before touching files:
 | A type or contract genuinely reused by 2+ existing contexts today | `Common` |
 | No existing context owns the capability | Stop; a new bounded context needs approval |
 
-**Endpoint/worker-to-Management rule** — endpoints and workers call only the
-Management façade for their bounded context. An endpoint or worker that reaches
-past Management into Processing, Orchestration, Foundation, or a Broker
-directly is a layer violation, not a shortcut.
+**Invoices endpoint/worker-to-Management rule** — Invoices endpoints and
+workers call only its Management façade. Reaching past Management into
+Processing, Orchestration, Foundation, or a Broker is a layer violation.
+Core.Auth is the documented exception: its endpoints call ASP.NET Core
+Identity managers directly.
 
-**Layer selection** — choose the single highest layer that owns the new
-decision:
+**Invoices layer selection** — choose the single highest layer that owns the
+new decision:
 
 | Signal | Owning layer |
 | --- | --- |
@@ -79,7 +80,7 @@ all; it is never resolved by exceeding the budget.
 | --- | --- |
 | Simple create/read/update/delete on one aggregate | Foundation |
 | Multi-step or long-running analysis/transformation | Processing |
-| Message/queue production or consumption | The Broker wrapping that provider, invoked through Orchestration or Management, never invoked directly from an endpoint |
+| Message/queue production or consumption | The Broker wrapping that provider, invoked through the established Invoices service path, never directly from an endpoint |
 | Call to a new external system/API | A new Broker — stop and ask before adding it |
 | Coordination across existing Foundation services with no new I/O | Orchestration |
 
@@ -93,7 +94,7 @@ the existing helpers.
 
 | Task | Skill |
 | --- | --- |
-| New or changed API/worker behavior inside an existing bounded context | `backend-vertical-slice` |
+| New or changed Invoices API/worker behavior | `backend-vertical-slice` |
 | Coverage for already-correct behavior, an edge case, or a brittle test | `unit-test` |
 | A reported defect, regression, or flaky behavior | `fix-bug` |
 | Explicitly approved structural change with preserved behavior | `refactor` |

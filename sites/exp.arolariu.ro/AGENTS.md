@@ -2,7 +2,11 @@
 
 This FastAPI service provides configuration-proxy and feature-flag behavior.
 
-## Local API
+## Representative Local API
+
+`main.py` and the router modules under `api/` own the complete live route set.
+The entries below are common public probes/configuration examples, not an
+exhaustive inventory.
 
 | Route | Responsibility |
 | --- | --- |

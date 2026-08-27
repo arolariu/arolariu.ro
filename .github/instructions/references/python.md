@@ -37,10 +37,11 @@ memory flat. `config/loader.py`'s `ConfigLoaderStats` and
 add a new cross-module value, match this pattern rather than returning a
 loose `dict[str, Any]`.
 
-`from __future__ import annotations` is present at the top of every module in
-this service (`main.py`, `config/loader.py`, `security/authz.py`, ...) so
-forward references and `X | None` unions resolve lazily; add it to any new
-module before using PEP 604 unions.
+`from __future__ import annotations` is the convention for new modules that
+need deferred annotation evaluation and is present in representative runtime
+modules such as `main.py`, `config/loader.py`, and `security/authz.py`. Several
+existing health/test modules omit it, so do not create review churn solely to
+make the import universal.
 
 ### Anti-pattern: returning a mutable shared reference
 
@@ -112,20 +113,20 @@ def get_config_value_endpoint(
     ...
 ```
 
-Notice the handler never constructs a `JSONResponse` inline for an error —
-every failure path calls a named `build_*_error`/`error_response` helper from
-`api/common.py` so every endpoint returns the same envelope shape
-(`ErrorResponse` with `error`, `deniedKeys`, `invalidKeys`,
-`missingRequiredKeys`). When adding a new endpoint, reuse
-`resolve_target_query`/`resolve_config_name_query` and the `build_*_response`
-helpers instead of hand-rolling validation or response construction again.
+Notice this configuration handler delegates expected validation and
+authorization failures to named `build_*_error`/`error_response` helpers from
+`api/common.py`. That shared envelope applies to the `/api/v1` configuration
+surface, not every route in the service. When extending that surface, reuse
+`resolve_target_query`/`resolve_config_name_query` and the
+`build_*_response` helpers instead of hand-rolling validation or response
+construction again.
 
 ### Request-scoped context via ASGI middleware, not `Depends`
 
 `main.py`'s `attach_request_context` middleware is the one place request IDs,
 timing, and telemetry span attributes are attached — it wraps `call_next`,
-re-raises after logging, and always emits the response even on the caught
-branch:
+re-raises after logging, and adds standard/cache headers only when a response
+is returned:
 
 ```python
 # sites/exp.arolariu.ro/main.py
@@ -172,12 +173,17 @@ def get_config_value_endpoint(req: Request, name: str = "") -> JSONResponse:
 ## Feature flags: bare catalog names, `FeatureManagement:` storage prefix
 
 `config/catalog.py` registers feature IDs under their **bare** name
-(`website.commander.enabled`), but the runtime config store may hold them
-prefixed with `FeatureManagement:` or as an Azure App Configuration feature
-flag document under `.appconfig.featureflag/<id>`. `resolve_config_value` and
-`config/loader.py`'s `_resolve_feature_state` both check the bare key first,
-then the prefixed/JSON forms, and log a warning before defaulting to
-`False` on an unparsable value — never raise for a malformed flag:
+(`website.commander.enabled`), but two readers resolve different snapshot
+shapes:
+
+- `resolve_config_value` checks the bare key first, then
+  `FeatureManagement:<id>`; it does not inspect Azure feature-flag JSON.
+- `config/loader.py`'s `_resolve_feature_state` checks
+  `FeatureManagement:<id>` first, then
+  `.appconfig.featureflag/<id>` JSON; it does not check the bare key.
+
+For feature snapshot extraction, an invalid value logs a warning and returns
+`False` immediately rather than falling through to the next representation:
 
 ```python
 # sites/exp.arolariu.ro/config/loader.py
@@ -336,18 +342,20 @@ with patch("api.config.get_config", return_value=...):
     ...
 ```
 
-## Errors: structured `ErrorResponse`, never a bare exception leak
+## Errors: boundary-specific response contracts
 
-Every error path returns the shared `ErrorResponse` Pydantic model via
-`api/common.py error_response()` — never a raw `HTTPException` detail string
-or an uncaught exception surfaced to the client. Middleware-level exceptions
-are logged with trace correlation and re-raised so FastAPI's default 500
-handling still applies, but every *expected* validation/authorization/missing
-key failure is translated into a typed `ErrorResponse` with the correct
-status code (400 invalid input, 401 unauthenticated, 403 unauthorized, 500
-misconfiguration) before it reaches the router return statement. When adding
-a new failure mode, add a named `build_*_error` helper in `api/common.py`
-instead of constructing `JSONResponse` ad hoc in the handler.
+Expected validation, authorization, and missing-key failures on the
+`/api/v1` configuration routes use the shared `ErrorResponse` Pydantic model
+through `api/common.py error_response()`. When adding a failure to that
+surface, add or reuse a named `build_*_error` helper rather than constructing
+an ad hoc response in the handler.
+
+Health/readiness routes return `HealthResponse`/`ReadyResponse`. Admin routes
+currently return ad hoc JSON and some provider failures include exception
+text. Middleware-level exceptions are logged with trace correlation and
+re-raised for FastAPI's default 500 handling. Treat those as separate live
+boundaries, not proof of a universal envelope; changing their public or
+security behavior requires explicit scope and approval.
 
 ## Live source pointers
 

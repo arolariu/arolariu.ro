@@ -15,40 +15,18 @@ YAML, not procedure.
 
 ## Permissions
 
-Every workflow declares the narrowest top-level `permissions:` block its jobs
-actually need — nothing defaults to broad, and additions are visibly
-justified inline:
+Only workflow/job `permissions` constrain `GITHUB_TOKEN` and OIDC
+capabilities. A workflow-level block applies to every job; an `env:
+GITHUB_TOKEN` assignment only exposes the token value to a step and does not
+narrow what the token can do. Prefer job-level permissions when only one job
+needs a capability:
 
 ```yaml
-# .github/workflows/official-api-trigger.yml
-permissions:
-  id-token: write # Required for OIDC authentication with Azure
-  contents: read # Required to checkout repository
-```
-
-```yaml
-# .github/workflows/official-website-build.yml
-permissions:
-  id-token: write # Required for OIDC authentication with Azure
-  contents: read # Required to checkout repository
-  issues: write # Required for PR comments on test results
-  pull-requests: write # Required for PR comments on test results
-```
-
-```yaml
-# .github/workflows/official-components-publish.yml
-permissions:
-  id-token: write # Required for OIDC authentication with npm
-  contents: read # Required to checkout repository
-  attestations: write # Required for provenance attestations
-```
-
-```yaml
-# .github/workflows/official-hygiene-check-v2.yml
-permissions:
-  contents: read
-  pull-requests: write
-  checks: write
+# .github/workflows/official-e2e-action.yml
+raise-issue-on-failure:
+  permissions:
+    contents: read
+    issues: write
 ```
 
 `official-status-probe.yml` is the one workflow with `contents: write` at the
@@ -60,6 +38,20 @@ workflows that merely read or deploy. A job can also carry its own narrower
 `permissions: { contents: read, issues: write }` even though the workflow's
 top-level `permissions` is just `contents: read`, because only that one job
 needs to open an issue.
+
+**Live least-privilege drift, not templates:**
+
+- API and website workflows grant `id-token: write` at workflow scope even
+  though only Azure-login jobs need it.
+- Components publishing grants OIDC/attestation capabilities to its validation
+  job even though publishing owns those capabilities.
+- The hygiene workflow grants PR/check writes to every job even though only
+  reporting/gating needs them.
+- CV and documentation grant `id-token: write` despite using Static Web Apps
+  token secrets and never calling `azure/login`.
+
+Do not copy these broad blocks. Narrowing them is a workflow security change
+and remains approval-gated.
 
 ## OIDC authentication
 
@@ -77,10 +69,10 @@ client secret or long-lived credential:
     subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 ```
 
-This only works because `permissions.id-token: write` is set (GitHub must be
-allowed to mint the OIDC token) and because the federated credential's
-`subject` claim on the Azure side matches the workflow's GitHub Environment
-exactly:
+When a job uses `azure/login`, this only works because
+`permissions.id-token: write` is set (GitHub must be allowed to mint the OIDC
+token) and because the federated credential's `subject` claim on the Azure
+side matches the job's GitHub Environment exactly:
 
 ```bicep
 // infra/Azure/Bicep/identity/federatedCredentials.bicep
@@ -92,10 +84,13 @@ exactly:
 environment: ${{ inputs.environment || 'production' }}
 ```
 
-Anti-pattern: adding a new GitHub Environment name (or renaming one) without
-also adding a matching `federatedIdentityCredentials` subject in
+Anti-pattern: adding or renaming a GitHub Environment on a job that uses
+`azure/login` with the infrastructure UAMI without also adding the matching
+`federatedIdentityCredentials` subject in
 `identity/federatedCredentials.bicep` — the Azure login step fails with an
 OIDC token-exchange error that looks unrelated to the environment rename.
+Environments used only by npm Trusted Publishing or Static Web Apps token
+deployment do not need an Azure federated subject.
 `official-components-publish.yml` uses OIDC for npm Trusted Publishing
 instead of Azure — no `NODE_AUTH_TOKEN` is set anywhere, and the publish step
 comment says so explicitly:
@@ -198,8 +193,17 @@ install. The Playwright bundle holds browser binaries, not Node addons, and
 the Playwright version that governs them is already pinned by the lock file
 the key hashes. Anti-pattern: adding a `restore-keys:` fallback to either
 cache "to reduce cache misses" — RFC 0001 documents the exact failure mode
-this reintroduces (a version bump without a regenerated lock file silently
-restoring an incompatible cache).
+this reintroduces (a changed lock hash falling back to a cache from an older
+dependency graph).
+
+**Live drift, not a correctness guarantee:** the current `node_modules` key
+hashes only `package-lock.json`, and a cache hit skips `npm ci`. If a
+`package.json`/workspace manifest changes without the lock file, the primary
+key still hits and no lock-consistency check runs. Omitting `restore-keys`
+prevents fallback across *different lock hashes*; it does not detect
+manifest/lock divergence. An approved workflow correction should hash the
+owning manifests alongside the lock file or always run an explicit
+lock-consistency check.
 
 ## Path filters and triggers
 
@@ -222,7 +226,15 @@ on:
     paths: ["sites/arolariu.ro/**"]
 ```
 
-Not every workflow uses a path filter, and the exceptions are deliberate:
+**Live drift, not a dependency-aligned example:** the website workflow also
+sets `run-build-components: true`, but its current automatic filter excludes
+`packages/components/**` and root manifests/configuration that can change the
+website build. Do not copy that filter as canonical. Derive a proposed filter
+from the Nx/project dependency graph and every called setup/build input; at a
+minimum, account for the shared component package and build-owning root files.
+Changing the live trigger remains approval-gated.
+
+Not every workflow uses a path filter, and several exceptions are deliberate:
 `official-hygiene-check-v2.yml` runs on every `pull_request` regardless of
 path and computes its own `git diff` in a dedicated `detect` job instead,
 because it needs one shared "did anything change" gate feeding six parallel
@@ -300,9 +312,9 @@ best-effort outcome file, `error` for
 `official-website-build.yml`'s test-report upload where a missing report
 means the test phase itself is broken, not merely quiet.
 
-Secrets are always threaded through `env:`, never interpolated directly into
-a `run:` string — `setup-workspace/action.yml`'s own header comment states
-this as a rule, not a suggestion:
+New or changed shell steps should thread secrets and expression-derived values
+through `env:` rather than interpolate them directly into a `run:` string.
+`setup-workspace/action.yml` states this as its own rule:
 
 ```yaml
 # .github/actions/setup-workspace/action.yml
@@ -316,11 +328,16 @@ env:
   E2E_TEST_AUTH_TOKEN: ${{ secrets.E2E_TEST_AUTH_TOKEN }}
 ```
 
-`GITHUB_TOKEN` is scoped per job/step rather than assumed global — for
-example `official-website-build.yml`'s PR-comment step and
-`official-hygiene-check-v2.yml`'s gate step each set
-`GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}` explicitly in their own `env:`
-block rather than relying on an ambient token.
+**Live drift, not a safety guarantee:** API, experimental-service, and website
+deployment scripts currently interpolate the Azure Container Registry address
+expression directly into shell commands. Do not copy that pattern or assume
+all existing `run:` blocks are already safe. Moving those values through
+step-level environment variables is a workflow security change and requires
+explicit approval.
+
+Setting `GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}` in a step's `env:` block
+makes the value available to that step. It does not reduce capabilities; only
+the nearest job/workflow `permissions` block does that.
 
 ## Environments and deployment safety
 
@@ -353,11 +370,10 @@ environment:
 ```
 
 An environment creates a manual approval gate only when that environment has
-deployment protection rules configured. The current production, development,
-CV, documentation, and status environments have no protection rules, so do not
-claim an active approval gate from YAML presence alone. Query current
-environment settings when approval behavior matters and treat adding
-protection rules as a production workflow/repository-settings decision.
+deployment protection rules configured. YAML presence alone proves no
+approval behavior. Query current repository environment settings whenever a
+gate matters, and treat adding or changing protection rules as a production
+workflow/repository-settings decision.
 
 `official-components-publish.yml` applies the same job-level scoping principle
 even without a development/production choice: only the `publish` job carries
@@ -435,9 +451,10 @@ directly as `dotnet:`/`python:` inputs, so a lint-only job never pays for a
 
 | Pattern | Shape | Live example |
 | --- | --- | --- |
-| Build-Release | `push/PR → build → test → validate → [approval] → release → deploy` (two workflows) | `official-website-build.yml` + `official-website-release.yml` |
-| Trigger | `push/PR → build → test → deploy` (one workflow) | `official-api-trigger.yml`, `official-cv-trigger.yml`, `official-docs-trigger.yml` |
-| Validation | `PR → lint/format/test → report`, parallel jobs | `official-hygiene-check-v2.yml`, `official-e2e-action.yml` |
+| Build-Release | `push/manual build → validate → workflow_run/manual release → [configured protection] → deploy` | `official-website-build.yml` + `official-website-release.yml` |
+| Trigger | `push/manual → build → test → deploy` | `official-api-trigger.yml`, `official-cv-trigger.yml`, `official-docs-trigger.yml` |
+| PR validation | `PR/manual → detect → provider matrix → gate/report` | `official-hygiene-check-v2.yml` |
+| Scheduled E2E validation | `schedule/manual → E2E → failure reporting` | `official-e2e-action.yml` |
 
 Use this table to classify which pattern a proposed workflow change belongs
 to before comparing it against the wrong example — a trigger-pattern
@@ -455,8 +472,8 @@ the catalog records the gap but does not authorize correcting it.
 
 | Anti-pattern | Why it fails here | Correction |
 | --- | --- | --- |
-| Adding `restore-keys:` to the `node_modules` or Playwright cache | Reintroduces the exact stale-cache failure mode RFC 0001 §3.2 documents (version bump without a lock-file change silently restores an incompatible cache) | Keep the cache key exact-match only; accept the cache miss on genuine dependency changes |
-| Renaming/adding a GitHub Environment without a matching Bicep federated credential | The pinned `azure/login` action's OIDC token exchange fails against a subject claim that does not exist | Add the matching `federatedIdentityCredentials` entry in `identity/federatedCredentials.bicep` in the same approved change |
+| Adding `restore-keys:` to the `node_modules` or Playwright cache | Allows a changed lock hash to fall back to artifacts from an older dependency graph | Keep exact-match restoration; separately treat the current manifest-only-change blind spot as live drift requiring an approved key/check change |
+| Renaming/adding a GitHub Environment on an Azure-login job without a matching Bicep federated credential | The pinned `azure/login` action's OIDC token exchange fails against a subject claim that does not exist | Add the matching `federatedIdentityCredentials` entry in `identity/federatedCredentials.bicep` in the same approved change; do not add Azure federation for npm/SWA-token-only environments |
 | Interpolating a secret directly into a `run:` shell string | Script-injection risk; violates `setup-workspace`'s own documented convention | Pass the value through an `env:` block and reference the environment variable inside `run:` |
 | Bumping one workflow's pinned action version without checking siblings | Creates or extends the current `download-artifact` major-version drift | Match the version the file already uses unless the version bump itself is the approved task |
 | Adding a deploy step to a currently build/test-only trigger workflow | Silently converts a lower-risk trigger pattern into a production deployment behavior change | Treat as a deployment-safety/environment change requiring confirmation, not a routine step addition |

@@ -31,8 +31,8 @@ export function Counter({initial}: Readonly<{initial: number}>): React.JSX.Eleme
 
 ## Effect dependency, cleanup, and stale-closure edge cases
 
-`sites/arolariu.ro/src/hooks/useUserInformation.tsx` is the canonical
-abort-and-cleanup pattern in this repository:
+`sites/arolariu.ro/src/hooks/useUserInformation.tsx` is useful evidence of
+current lifecycle behavior, but it is **live debt, not a pattern to copy**:
 
 ```tsx
 useEffect(() => {
@@ -43,8 +43,7 @@ useEffect(() => {
   const fetchUserInformation = async (signal: AbortSignal) => {
     try {
       setIsLoading(true);
-      const response = await fetch(`${SITE_URL}/api/user`, {signal});
-      setUserInformation((await response.json()) as UserInformation);
+      // Fetch and validate untrusted response data before committing state.
     } catch (error: unknown) {
       const isAbort = signal.aborted || (error instanceof DOMException && error.name === "AbortError");
       if (isAbort && process.env.NODE_ENV === "development") {
@@ -53,7 +52,10 @@ useEffect(() => {
       console.error(">>> Error fetching user information:", error as Error);
       setIsError(true);
     } finally {
-      setIsLoading(false);
+      const shouldSkipLoadingReset = process.env.NODE_ENV === "development" && signal.aborted;
+      if (!shouldSkipLoadingReset) {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -62,19 +64,25 @@ useEffect(() => {
 }, []);
 ```
 
-Key edge cases this demonstrates:
+Key edge cases:
 
-- **React 19 Strict Mode double-invoke**: in development, effects run,
-  clean up, and run again on mount. An `AbortError` from the first
-  intentionally-aborted request is expected and must not surface as a user
-  error; the production branch keeps the original (stricter) behavior.
-  Do not silence `AbortError` unconditionally in both environments — it would
-  hide a genuine cancellation bug in production.
+- **Owned cleanup/supersession aborts**: an abort caused by this effect's own
+  cleanup or replacement request is expected in every environment. New work
+  should ignore that owned abort and guard later state writes after
+  cancellation.
+- **Current production debt**: the live hook suppresses owned aborts only in
+  development. In production it logs the cleanup abort as an error and reaches
+  the loading-state write; the current test explicitly locks that behavior.
+  Do not propagate it as the desired lifecycle contract.
 - **Ref for cross-render mutable state**: `abortControllerRef` survives
   re-renders without becoming a dependency (a ref does not trigger a
   re-render or belong in a dependency array).
-- **Cleanup aborts the in-flight request**, not just resets state, preventing
-  a `setState` call after unmount.
+- **Cleanup aborts the in-flight request**, but aborting alone does not prove
+  later state writes are suppressed; guard them explicitly.
+- **Live transport debt**: the current hook still asserts
+  `response.json()` as `UserInformation` without runtime validation. Do not
+  copy that assertion into new work; parse `unknown` at the trust boundary
+  before updating state.
 
 `sites/arolariu.ro/src/app/domains/invoices/_contexts/DialogContext.tsx`
 (`useDialog`) shows the "keep a callback identity stable while a payload
@@ -158,14 +166,15 @@ checks alone.
 | --- | --- | --- |
 | `useEffect(async () => {...}, [])` | The effect callback itself must not return a Promise; React treats the return value as a cleanup function | Define an inner `async` function and invoke it, as in `useUserInformation` |
 | Missing dependency array entry for a value read inside an effect | Stale closure reads an outdated value on the next render | Include the value in the dependency array, or hold it in a ref when it must not retrigger the effect (see `useDialog`) |
-| Silencing every `AbortError` unconditionally | Hides a genuine unexpected cancellation in production | Gate the dev-only silencing behind `process.env.NODE_ENV === "development"`, as in `useUserInformation` |
+| Treating every `AbortError` identically | Conflates owned cleanup/supersession with an unexpected external cancellation | Track abort ownership, ignore owned cleanup/supersession in every environment, suppress later state writes, and surface only unexpected cancellation |
 | A new component defined inside a parent's render function | Remounts on every parent render; loses focus/state | Hoist the component to module scope or a sibling file |
 | Adding a payload/object to a `useCallback` dependency array to "be safe" | Recreates the callback (and everything depending on it) every time the object changes, even when the callback does not need the latest value synchronously | Read the latest value through a ref updated in a separate effect, as in `useDialog` |
 
 ## Live component/test pointers
 
 - `sites/arolariu.ro/src/hooks/useUserInformation.tsx` +
-  `useUserInformation.test.tsx` — abort/cleanup, Strict Mode dev-only guard
+  `useUserInformation.test.tsx` — current abort/cleanup behavior and its
+  production-only debt
 - `sites/arolariu.ro/src/app/domains/invoices/_contexts/DialogContext.tsx` +
   `DialogContext.test.tsx` — split-context state/actions, ref-backed stable
   callback, discriminated payload union

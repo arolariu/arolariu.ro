@@ -9,7 +9,12 @@
 
 ## Abstract
 
-This RFC documents the comprehensive DevOps architecture for the arolariu.ro monorepo using GitHub Actions. The system implements a structured approach to CI/CD with distinct workflow patterns: **build-release workflows** for staged deployments with validation gates, and **trigger workflows** for direct build-and-deploy operations. All workflows leverage two centralized composite actions — `setup-tooling` for language toolchains and `setup-workspace` for repository bootstrap — giving consistent environment setup, shared un-prefixed caching, and a single place to change a toolchain version.
+This RFC documents the DevOps architecture for the arolariu.ro monorepo using
+GitHub Actions. The system uses **build-release workflows** for staged
+deployments, **trigger workflows** for direct build-and-deploy operations,
+validation workflows, and stateful scheduled jobs. Build/test jobs generally
+reuse `setup-tooling` or `setup-workspace`; release, probe, and other narrow
+jobs may not need repository bootstrap.
 
 ---
 
@@ -39,17 +44,20 @@ Modern monorepo applications require sophisticated CI/CD pipelines that handle:
 
 ### 2.1 Workflow Architecture
 
-The arolariu.ro monorepo implements two primary workflow patterns:
+The arolariu.ro monorepo implements three primary workflow patterns:
 
 #### **Pattern 1: Build-Release Workflows** (Staged Deployment)
 ```
-Trigger (push/PR) → Build → Test → Validate → [Manual Approval] → Release → Deploy
+Build trigger (push/manual) → Build → Test → Validate
+  → Release trigger (workflow_run/manual)
+  → [Environment protection, if configured] → Deploy
 ```
 
 **Characteristics:**
 - Separate build and release workflows
 - Build artifacts are validated before deployment
-- Manual approval gates for production
+- Supports manual approval when the target GitHub Environment has live
+  deployment-protection rules; YAML `environment:` alone is not a gate
 - Suitable for high-risk deployments (currently website pipeline)
 
 **Examples:**
@@ -57,7 +65,7 @@ Trigger (push/PR) → Build → Test → Validate → [Manual Approval] → Rele
 
 #### **Pattern 2: Trigger Workflows** (Direct Deployment)
 ```
-Trigger (push/PR) → Build → Test → Deploy (all in one)
+Trigger (push/manual) → Build → Test → Deploy (all in one)
 ```
 
 **Characteristics:**
@@ -72,7 +80,8 @@ Trigger (push/PR) → Build → Test → Deploy (all in one)
 
 #### **Pattern 3: Validation Workflows** (Continuous Quality)
 ```
-Trigger (push/PR) → Lint → Format → Test → Report
+PR/manual → Detect → Parallel quality providers → Gate/report
+Schedule/manual → End-to-end tests → Failure reporting
 ```
 
 **Characteristics:**
@@ -84,18 +93,21 @@ Trigger (push/PR) → Lint → Format → Test → Report
 - `official-hygiene-check-v2.yml` (stats, format, lint, summary)
 - `official-e2e-action.yml` (end-to-end testing)
 
-### 2.2 Workflow Inventory
+### 2.2 Representative Workflow Families
 
-| Workflow | Pattern | Trigger | Purpose | Tech Stack |
-|----------|---------|---------|---------|------------|
-| `official-website-build.yml` | Build-Release | Push to preview + Manual | Build and test Next.js website | Node.js 24, Playwright |
-| `official-website-release.yml` | Build-Release | workflow_run (preview) + Manual | Deploy website to Azure | Azure deployment |
-| `official-api-trigger.yml` | Trigger | Push to main + Manual | Build, test, and deploy .NET API | .NET 10, Azure |
-| `official-cv-trigger.yml` | Trigger | Push to main | Build and deploy SvelteKit CV site | Node.js 24, Azure SWA |
-| `official-docs-trigger.yml` | Trigger | Push to main | Generate and deploy DocFX docs | .NET 10, DocFX |
-| `official-hygiene-check-v2.yml` | Validation | PR + Manual | Code quality checks (lint, format, tests) | Node.js 24, ESLint, Prettier |
-| `official-e2e-action.yml` | Validation | Schedule, Manual | End-to-end API and frontend test runs | Node.js 24, Newman |
-| `official-components-publish.yml` | Trigger | Tag push (`components-v*`) + Manual | Publish component library to npm | Node.js 24, RSLib |
+This table illustrates each pattern; it is not a complete workflow inventory.
+Discover the current set from `.github/workflows/*.yml` before planning or
+reviewing a change.
+
+| Workflow | Pattern | Trigger | Purpose |
+|----------|---------|---------|---------|
+| `official-website-build.yml` | Build-Release | Push to preview + Manual | Build and test the website |
+| `official-website-release.yml` | Build-Release | workflow run + Manual | Deploy the website |
+| `official-api-trigger.yml` | Trigger | Push to main + Manual | Build, test, and deploy the API |
+| `official-cv-trigger.yml` | Trigger | Push to main | Build and deploy the CV site |
+| `official-hygiene-check-v2.yml` | Validation | PR + Manual | Lint, format, test, and report |
+| `official-e2e-action.yml` | Validation | Schedule + Manual | Run end-to-end suites |
+| `official-components-publish.yml` | Trigger | Version tag + Manual | Publish the component library |
 
 ---
 
@@ -130,21 +142,23 @@ Toolchain caches (`~/.npm`, `~/.nuget/packages`, pip) are delegated entirely to 
 
 | Toolchain | Action | `cache-dependency-path` |
 |-----------|--------|------------------------|
-| Node.js (npm download cache) | `actions/setup-node@v7` | `package-lock.json`, `.github/scripts/package-lock.json` |
-| .NET (NuGet) | `actions/setup-dotnet@v6` | `**/packages.lock.json` |
-| Python (pip) | `actions/setup-python@v7` | `sites/exp.arolariu.ro/requirements*.txt` |
+| Node.js (npm download cache) | `actions/setup-node` (live pinned major) | `package-lock.json`, `.github/scripts/package-lock.json` |
+| .NET (NuGet) | `actions/setup-dotnet` (live pinned major) | `**/packages.lock.json` |
+| Python (pip) | `actions/setup-python` (live pinned major) | `sites/exp.arolariu.ro/requirements*.txt` |
 
 The exact key strings are generated internally by each `setup-*` action; no per-workflow segment is added.
 
 #### **Workspace Caches (setup-workspace)**
 
-Workspace caches use explicit `actions/cache@v5` steps. The keys below are copied verbatim from `setup-workspace/action.yml`:
+Workspace caches use explicit `actions/cache` steps pinned in the live
+composite action. The key shapes below come from
+`setup-workspace/action.yml`:
 
 **node_modules:**
 ```yaml
 key: ${{ runner.os }}-node-modules-${{ inputs.node-version }}-${{ hashFiles('package-lock.json') }}
 ```
-Example: `linux-node-modules-24-a3f9b2c1d4e5...`
+Example: `linux-node-modules-<node-major>-a3f9b2c1d4e5...`
 
 The Node version is part of the key because `node_modules` can contain
 natively-compiled addons whose ABI is tied to the runtime. A cache hit skips
@@ -162,9 +176,12 @@ are browser binaries, not Node addons, and the Playwright version that governs
 them is already pinned by the lock file.
 
 **Behavior (both caches):**
-- **Cache hit**: When `package-lock.json` hasn't changed (and, for `node_modules`, the Node version is unchanged)
-- **Cache miss**: When `package-lock.json` changes (due to package updates), or — for `node_modules` — when the Node version is bumped
-- **No fallback**: Ensures fresh installation when dependencies change
+- **Cache hit**: When `package-lock.json` hasn't changed (and, for
+  `node_modules`, the Node version is unchanged)
+- **Cache miss**: When `package-lock.json` changes, or — for `node_modules` —
+  when the Node version is bumped
+- **No fallback**: Prevents a changed lock hash from restoring artifacts
+  produced for an older lock state
 
 #### **Why No Fallback Keys?**
 
@@ -173,7 +190,7 @@ them is already pinned by the lock file.
 # DANGEROUS (what we deliberately do NOT do)
 key: ${{ runner.os }}-node-modules-${{ inputs.node-version }}-${{ hashFiles('package-lock.json') }}
 restore-keys: |
-  linux-node-modules-24-
+  linux-node-modules-<node-major>-
   linux-node-modules-
 ```
 
@@ -181,37 +198,45 @@ Note the key itself is the current one — the hazard below comes entirely from
 the `restore-keys` stanza, not from the key format.
 
 **Scenario that fails:**
-1. Dev pushes feature → Cache created: `linux-node-modules-24-hash123`
-2. 3 days later, dev updates `package.json` (version bump)
-3. BUT doesn't regenerate `package-lock.json` (edge case)
-4. Workflow runs → Primary key misses
-5. Fallback `linux-node-modules-24-` hits old cache! ❌
-6. Build fails with incompatible dependencies ❌
+1. Dev pushes feature → Cache created:
+   `linux-node-modules-<node-major>-hash123`
+2. 3 days later, dev updates dependencies and regenerates
+   `package-lock.json`
+3. Workflow runs → The new lock hash makes the primary key miss
+4. Fallback `linux-node-modules-<node-major>-` hits old cache! ❌
+5. Build fails with incompatible dependencies ❌
 
 **Solution (current approach):**
 ```yaml
-# SAFE (current approach)
+# Exact-match current approach
 key: ${{ runner.os }}-node-modules-${{ inputs.node-version }}-${{ hashFiles('package-lock.json') }}
 # NO restore-keys
 ```
 
 **Benefits:**
-- ✅ No stale cache reuse when lock files are out of sync
-- ✅ Forces fresh installation when dependencies change
-- ✅ All workflows share one cache entry per lock-file state (no per-workflow copies)
+- ✅ No fallback to an older lock-file state
+- ✅ Forces fresh installation when the lock hash changes
+- ✅ Workflows can reuse an exact entry when GitHub cache scope and cache
+  version make it accessible
 - ✅ Clear: cache hit = exact match, cache miss = fresh install
 
 **Trade-off:**
 - More frequent cache misses (but correct behavior)
 - Slightly longer execution time on first run after dependency update
-- BUT: Guarantees correctness over speed
+- Correctness still depends on manifests and `package-lock.json` remaining
+  synchronized
 
 **When cache invalidates (as expected):**
 a) Developer deploys new features without version bumps → **Cache HIT** (lock file unchanged)
 b) Developer deploys new feature with version bump → Lock file regenerated → **Cache MISS** → Fresh install ✅
 c) Developer only bumps versions → Lock file regenerated → **Cache MISS** → Fresh install ✅
 
-**Key insight:** When PR merges, lock file hash ALWAYS changes if dependencies changed, guaranteeing fresh cache.
+**Known limitation:** the current key hashes only `package-lock.json`, and the
+workflow skips `npm ci` on a cache hit. A manifest-only change therefore keeps
+the same key and can reuse stale dependencies. Omitting fallback keys does not
+solve that case. A future approved workflow change should hash the owning
+manifests too or run an explicit lock-consistency check before trusting the
+cache.
 
 ### 3.3 Workflow Structure Pattern
 
@@ -237,17 +262,17 @@ jobs:
     
     steps:
       - name: 📥 Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@<live-pinned-major>
       
       - name: 🔐 Azure authentication (if needed)
-        uses: azure/login@v2
+        uses: azure/login@<live-pinned-major>
         with:
           # ...
       
       - name: 🚀 Setup workspace
         uses: ./.github/actions/setup-workspace
         with:
-          node-version: '24'
+          node-version: ${{ env.NODE_VERSION }}
           # ... other inputs
       
       - name: 🏗️ Build
@@ -270,11 +295,11 @@ jobs:
 ```
 Trigger: Push to preview (+ manual dispatch)
 ├─ Job: test
-│  ├─ Setup workspace (Node.js 24, Playwright, Generate)
+│  ├─ Setup workspace (Node.js, Playwright, Generate)
 │  ├─ Run tests
 │  └─ Upload test results
 └─ Job: build
-   ├─ Setup workspace (Node.js 24, Playwright, Generate)
+   ├─ Setup workspace (Node.js, Playwright, Generate)
    ├─ Build Docker image
    ├─ Push to Azure Container Registry
    └─ Tag with commit SHA
@@ -289,7 +314,8 @@ Trigger: workflow_run from official-website-build on preview (+ manual dispatch)
 
 **Why separate workflows?**
 - Build can be automated on every push
-- Release requires manual approval for production
+- Release can carry production environment protection independently of the
+  build; whether approval is required is a live GitHub setting
 - Enables testing in preview environment before production release
 
 ### 4.2 Trigger Pattern (API)
@@ -298,13 +324,15 @@ Trigger: workflow_run from official-website-build on preview (+ manual dispatch)
 ```
 Trigger: Push to main (+ manual dispatch)
 ├─ Job: test
-│  ├─ Setup workspace (.NET 10)
+│  ├─ Setup workspace (.NET)
 │  ├─ Run unit tests
 │  └─ Report coverage
-└─ Job: build-and-deploy
-   ├─ Setup workspace (.NET 10)
+├─ Job: build (needs test)
+   ├─ Setup workspace (.NET)
    ├─ Build .NET application
    ├─ Publish artifacts
+   └─ Publish deployment artifact/image
+└─ Job: deploy (needs build)
    ├─ Azure authentication
    └─ Deploy to Azure App Service
 ```
@@ -320,31 +348,22 @@ Trigger: Push to main (+ manual dispatch)
 **Hygiene Check** (`official-hygiene-check-v2.yml`):
 ```
 Trigger: PR
-├─ Job: setup (sequential)
-│  ├─ Setup workspace (Node.js 24)
-│  └─ Detect changed files
-├─ Job: format (parallel)
-│  ├─ Setup workspace (Node.js 24)
-│  └─ Check code formatting → format-result.json
-├─ Job: lint (parallel)
-│  ├─ Setup workspace (Node.js 24)
-│  └─ Run ESLint → lint-result.json
-├─ Job: test (parallel)
-│  ├─ Setup workspace (Node.js 24)
-│  └─ Run unit tests → test-result.json
-├─ Job: stats (parallel)
-│  ├─ Setup workspace (Node.js 24)
-│  └─ Run dependency stats → stats-result.json
-└─ Job: summary (depends on above)
-   ├─ Download all result artifacts
-   └─ Generate rich PR comment
+├─ Job: detect
+│  └─ Classify the changed providers
+├─ Job: providers (matrix, needs detect)
+│  ├─ Provision only the required toolchains
+│  ├─ Run the selected format/lint/test/stats provider
+│  └─ Upload one provider outcome
+└─ Job: gate (needs detect + providers)
+   ├─ Download provider outcomes
+   └─ Aggregate and enforce the final result
 ```
 
 **Why parallel jobs?**
 - Faster feedback (jobs run simultaneously)
 - Independent validation checks
-- Each job can potentially reuse cache from other jobs running in parallel
-- Summary job aggregates results
+- Matrix entries provision only the toolchains they need
+- The gate job aggregates provider outcomes
 
 ---
 
@@ -361,21 +380,23 @@ Trigger: PR
 **For DevOps:**
 - 🔧 **Centralized management**: Update setup logic once, applies everywhere
 - 💰 **Cost reduction**: Efficient caching reduces GitHub Actions minutes
-- 🔒 **Security**: Hash-based caching prevents stale dependency issues
+- 🔒 **Security**: Exact lock-hash keys prevent fallback to an older dependency graph
 - 📈 **Scalability**: Easy to add new workflows following established patterns
 
 **For the Project:**
 - 🎨 **DRY principles**: Eliminated ~150 lines of duplicate code
 - 📖 **Maintainability**: Single source of truth for setup logic
-- ✅ **Reliability**: No cache pollution, guaranteed fresh installations when needed
+- ✅ **Reliability**: No cross-lock fallback; manifest/lock consistency remains an explicit requirement
 - 🚀 **Performance**: Cache hits when dependencies unchanged
 
 ### 5.2 Trade-offs
 
 **Caching Strategy:**
-- ✅ **Pro**: Guaranteed correctness (no stale caches)
+- ✅ **Pro**: No fallback across distinct lock-file states
 - ⚠️ **Con**: No fallback means every dependency change = cache miss
-- **Decision**: Correctness over speed (prevents mysterious build failures)
+- ⚠️ **Con**: The current lock-only key does not detect manifest-only drift
+- **Decision**: Prefer exact restoration now; separately harden
+  manifest/lock consistency in an approved workflow change
 
 **Composite Action:**
 - ✅ **Pro**: Consistency and reusability
@@ -383,9 +404,10 @@ Trigger: PR
 - **Decision**: Well-tested changes, clear documentation
 
 **Build-Release Separation:**
-- ✅ **Pro**: Manual approval gates for production
+- ✅ **Pro**: A dedicated release boundary where environment protection can be configured
 - ⚠️ **Con**: Requires two workflows for website
-- **Decision**: Worth it for critical production deployments
+- **Decision**: Worth it for critical production deployments; verify live
+  environment rules before claiming an approval gate
 
 ---
 
@@ -405,7 +427,7 @@ key: ${{ runner.os }}-node-modules-${{ inputs.node-version }}-${{ hashFiles('pac
 
 **Example:**
 ```
-linux-node-modules-24-7f3e9a2c1b5d4...
+linux-node-modules-<node-major>-7f3e9a2c1b5d4...
 ```
 
 ### 6.2 Progress Indicators
@@ -414,12 +436,12 @@ The composite action provides clear visual feedback:
 
 ```
 🚀 Starting workspace setup...
-📦 Setup Node.js 24
+📦 Setup Node.js
 💾 Cache Node.js dependencies
   ✅ Using cached Node.js dependencies (cache hit)
   OR
   ⚠️ Cache miss - installing dependencies...
-📦 Setup .NET 10.x
+📦 Setup .NET
 💾 Cache .NET packages
   ✅ Using cached .NET packages (cache hit)
 📥 Restore .NET dependencies
@@ -489,14 +511,22 @@ The composite action provides clear visual feedback:
 ### 8.1 Cache Security
 
 **Current Approach:**
-- Hash-based keys prevent cache poisoning
-- No cross-workflow cache sharing via fallback keys
-- Shared un-prefixed keys — all workflows use one cache entry per lock-file state; no fallback restore keys prevent stale-dependency propagation
+- Exact lock-hash keys prevent fallback to a cache created for a different
+  lock state.
+- Shared un-prefixed keys allow workflows with the same OS/runtime/lock state
+  to reuse an entry only when GitHub cache branch/tag scope and cache version
+  make that entry accessible.
+- Cache keys select artifacts; they do not authenticate cache contents or
+  validate manifests on a cache hit.
 
-**Benefits:**
-- Malicious cached dependencies cannot spread between workflows
-- Each workflow validates its own dependencies
-- Clear cache invalidation when dependencies change
+**Limitations:**
+- A contaminated entry can be reused by another workflow that resolves the
+  same key and cache scope.
+- `setup-workspace` skips `npm ci` on a `node_modules` hit, so that path does
+  not independently validate dependencies.
+- The current lock-only key does not detect a manifest-only change.
+- Treat GitHub cache permissions, workflow trust, and manifest/lock
+  consistency as separate controls; the hash is not a poisoning boundary.
 
 ### 8.2 Secret Management
 
@@ -528,8 +558,10 @@ The composite action provides clear visual feedback:
 
 - ✅ All workflows execute successfully
 - ✅ Cache hits when dependencies unchanged
-- ✅ Fresh installations when dependencies change
-- ✅ No cross-workflow cache pollution
+- ✅ A changed lock hash does not fall back to an older cache
+- ⚠️ Manifest/lock consistency is not yet validated before a cache hit is
+  trusted; this remains an approved future workflow hardening
+- ✅ Shared-cache reuse remains within the intended trust and key scope
 - ✅ Clear progress indicators in logs
 - ✅ Execution time within acceptable range
 
@@ -555,8 +587,12 @@ The arolariu.ro GitHub Actions workflows implement a mature DevOps architecture 
 
 - **Clear patterns**: Build-release, trigger, and validation workflows
 - **Centralized setup**: Composite action for consistency
-- **Safe caching**: Hash-based only, no fallback to prevent stale cache issues
+- **Exact cache restoration**: No fallback across different lock hashes, with
+  separately documented shared-cache and manifest-drift limitations
 - **Developer experience**: Progress indicators and clear feedback
 - **Flexibility**: Support for different deployment strategies
 
-The system balances performance, correctness, and maintainability, prioritizing reliability over marginal speed gains. The hash-based caching strategy without fallback keys ensures that dependency updates always result in fresh installations, preventing subtle bugs from stale cached dependencies.
+The system balances performance, correctness, and maintainability. Exact
+lock-hash matching prevents fallback to an older dependency graph, but it is
+not an integrity boundary: shared-cache trust and manifest/lock consistency
+must be validated separately.
