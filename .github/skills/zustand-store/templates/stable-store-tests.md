@@ -1,7 +1,10 @@
 # Stable Store Test Patterns
 
 Use only after a current store with the same factory/storage shape confirms the
-pattern. These tests intentionally do not mock repository modules.
+behavioral contract. This is the preferred real-storage pattern for new or
+rewritten tests, not a claim that every current store suite already follows it.
+Several live store suites still mock `indexedDBStorage`; treat those mocks as
+migration debt and do not copy them into new tests.
 
 ## Provenance
 
@@ -21,8 +24,9 @@ pattern. These tests intentionally do not mock repository modules.
 ## Invariants
 
 - Tests reset singleton memory and durable storage and remain order-independent.
-- Repository store/factory/storage modules run for real; only a true external
-  boundary may be substituted.
+- In this preferred pattern, repository store/factory/storage modules run for
+  real; only a true external boundary may be substituted. Existing sibling
+  adapter mocks can show behavior cases but cannot prove the storage module.
 - Defaults, actions, related selection, reset, partialized persistence,
   hydration completion, stale/invalid durable data, and selector behavior are
   asserted when owned by the change.

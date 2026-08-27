@@ -80,14 +80,21 @@ pressure rather than introducing or copying a storage-module replacement.
 - `sites/arolariu.ro/tests/helpers/builders/domain.ts`
 - `sites/arolariu.ro/tests/helpers/builders/http.ts`
 - `sites/arolariu.ro/tests/helpers/builders/auth.ts`
+- `sites/arolariu.ro/tests/helpers/builders/azure.ts`
+- `sites/arolariu.ro/tests/helpers/builders/serverActions.ts`
+- `sites/arolariu.ro/tests/helpers/builders/stores.ts`
 - `sites/arolariu.ro/tests/helpers/builders/testDataBuilder.ts`
-- Corresponding `*.test.ts` files in the same directory
+- `sites/arolariu.ro/tests/helpers/builders/azure.test.ts`
+- `sites/arolariu.ro/tests/helpers/builders/serverActions.test.ts`
+- `sites/arolariu.ro/tests/helpers/builders/stores.test.ts`
 
 **Why representative**
 
 The domain builders use stable defaults and partial typed overrides; the HTTP
-builders create real `Response` values for transport boundaries; the facade
-collects current builder entry points.
+builders create real `Response` values for transport boundaries; Azure
+builders represent the external SDK seam; server-action builders construct the
+shared result union; store builders support selector-facing state. The facade
+collects these current entry points.
 
 **Inspect**
 

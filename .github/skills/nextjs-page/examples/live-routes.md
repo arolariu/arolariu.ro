@@ -30,6 +30,7 @@ Do not copy its animation or page-wide client boundary into a static route.
 - `sites/arolariu.ro/src/app/(privacy-and-terms)/privacy-policy/page.tsx`
 - `sites/arolariu.ro/src/app/(privacy-and-terms)/privacy-policy/island.tsx`
 - `sites/arolariu.ro/src/app/about/page.tsx`
+- `sites/arolariu.ro/src/app/about/page.spec.tsx`
 - `sites/arolariu.ro/src/metadata.ts`
 - `sites/arolariu.ro/messages/en.json`
 - `sites/arolariu.ro/messages/ro.json`
@@ -43,9 +44,10 @@ island.
 
 ### Inspect
 
-Derive the exact message branch from the neighboring route and verify all
-locales. Notice that live selectors use `metadata` while guidance names
-`__metadata__`; do not turn that drift into a mixed convention silently.
+Derive the exact typed `metadata` selector branch from the neighboring route
+and verify all locales. `about/page.spec.tsx` is the current colocated route
+test; the privacy-policy route has no colocated spec, so do not claim that
+example proves route behavior beyond its live source.
 
 ## Server data with streaming client interaction
 
@@ -100,11 +102,15 @@ never copy or change them as a generic pattern.
 - `sites/arolariu.ro/src/app/auth/page.tsx`
 - `sites/arolariu.ro/src/app/auth/island.tsx`
 - `sites/arolariu.ro/src/app/auth/error.tsx`
+- `sites/arolariu.ro/src/app/auth/page.spec.tsx`
 
 ### Why representative
 
 Together they show the difference between the live Clerk matcher, a server-side
 redirect for an already authenticated visitor, and an interactive auth screen.
+The current route spec covers structure/accessibility but does not directly
+assert the authenticated redirect branch; treat that as a coverage gap rather
+than evidence the redirect is tested.
 
 ### Inspect
 

@@ -55,13 +55,16 @@ as a global cache or copy domain-specific dialog types elsewhere.
 
 It is consumed at the website shell, combines auth-aware localized navigation
 with desktop/mobile interaction, and therefore belongs above a single route
-but below the domain-agnostic library.
+but below the domain-agnostic library. Its hand-built mobile `role="dialog"`
+overlay is a legacy anti-pattern: it does not reuse the shared Dialog primitive,
+and its tests do not prove focus trapping or focus return.
 
 ### Inspect
 
-Inspect all consumers and current semantics before changing it. Some styling
-and test choices are legacy-specific; derive new CSS Module and external-mock
-patterns from newer siblings rather than copying every detail.
+Inspect all consumers and current semantics before changing it. Do not copy the
+mobile overlay shell for new overlay work; use the shared Dialog-based sibling
+and its modality semantics. Derive new CSS Module and external-mock patterns
+from newer siblings rather than copying legacy details.
 
 ## Domain-agnostic composed button
 

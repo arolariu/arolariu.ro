@@ -8,7 +8,7 @@ Select only rows affected by the component contract.
 | Props and variants | Required/default/optional props produce the documented public behavior | Shared component sibling tests |
 | Pointer interaction | Click/hover/drag path updates state or invokes callback exactly as specified | `packages/components/src/components/ui/button.test.tsx`; `packages/components/src/components/ui/tooltip.test.tsx` |
 | Keyboard interaction | Tab order, Enter/Space, arrows, Escape, and bounds for the chosen widget | `sites/arolariu.ro/src/app/domains/invoices/_components/classification/ClassificationPicker.test.tsx`; `packages/components/src/components/ui/dialog.test.tsx` |
-| Focus | Initial focus, focus trap where modal, close/recovery return, removed-item destination | `packages/components/src/components/ui/dialog.test.tsx`; browser check when happy-dom is insufficient |
+| Focus | Open/close/Escape semantics in the current dialog unit test; initial focus, trap, and close/recovery return require a browser/E2E check until a live test proves them | `packages/components/src/components/ui/dialog.test.tsx`; browser check for focus movement |
 | Disabled/loading | Native or composed disabled semantics block both modalities; loading is named/busy | `packages/components/src/components/ui/button.test.tsx`; `packages/components/src/components/ui/spinner.test.tsx` |
 | Error/status | Correct alert/status priority and localized copy; retry/action works | `sites/arolariu.ro/src/app/error.test.tsx` |
 | Empty/dynamic list | Explicit empty state, correct list/table semantics, add/remove/reorder identity | Route table/grid tests or focused component test |
