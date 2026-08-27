@@ -465,6 +465,11 @@ test("repositoryPathKind accepts only the canonical root CLAUDE alias", () => {
 
 	assert.equal(repositoryPathKind(root, claudePath), undefined);
 
+	rmSync(claudePath);
+	symlinkSync("agents.md", claudePath, "file");
+
+	assert.equal(repositoryPathKind(root, claudePath), undefined);
+
 	const nestedAlias = join(root, "sites", "example", "CLAUDE.md");
 	mkdirSync(dirname(nestedAlias), {recursive: true});
 	symlinkSync(join(root, "AGENTS.md"), nestedAlias, "file");

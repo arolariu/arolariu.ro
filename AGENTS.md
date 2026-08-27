@@ -85,8 +85,10 @@ npm run generate:i18n
 
 # Direct backend commands
 dotnet build sites/api.arolariu.ro/src/Core
-dotnet test sites/api.arolariu.ro/tests
-dotnet test sites/api.arolariu.ro/tests --collect:"XPlat Code Coverage"
+dotnet test sites/api.arolariu.ro/tests/arolariu.Backend.Core.Tests/arolariu.Backend.Core.Tests.csproj
+dotnet test sites/api.arolariu.ro/tests/arolariu.Backend.Domain.Tests/arolariu.Backend.Domain.Tests.csproj
+dotnet test sites/api.arolariu.ro/tests/arolariu.Backend.Core.Tests/arolariu.Backend.Core.Tests.csproj --collect:"XPlat Code Coverage"
+dotnet test sites/api.arolariu.ro/tests/arolariu.Backend.Domain.Tests/arolariu.Backend.Domain.Tests.csproj --collect:"XPlat Code Coverage"
 ```
 
 ### Local Development Modes

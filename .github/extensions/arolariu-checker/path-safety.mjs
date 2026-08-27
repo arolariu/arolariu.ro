@@ -11,8 +11,7 @@ import {
 } from "node:path";
 
 function canonicalPath(value) {
-	const resolved = resolve(value);
-	return process.platform === "win32" ? resolved.toLowerCase() : resolved;
+	return resolve(value);
 }
 
 function isInside(repositoryRoot, candidate) {
