@@ -33,14 +33,26 @@ belongs to their dedicated instructions.
   checks.
 - Route all user-visible text through `next-intl`.
 - Keep `en`, `ro`, and `fr` message keys structurally aligned.
-- Build metadata through the shared metadata helpers and localized
-  `__metadata__` messages.
+- Build metadata through the shared metadata helpers and localized typed
+  `next-intl-selector` paths under each route's `metadata` object.
 - Handle loading, error, and empty states.
 - Use CSS Modules; do not add inline style objects.
 - Import shared primitives from `@arolariu/components`.
 - Preserve the frontend OpenTelemetry boundaries defined by RFC 1001.
 - Colocate `*.test.ts`/`*.test.tsx` with the source and mock only external
   boundaries.
+
+## Reference Catalog
+
+Open `references/frontend.md` only when the task needs one of:
+
+- deciding Server Component/island/server-action data ownership for a route;
+- choosing among Zustand, Context, URL, or local state for website state;
+- changing i18n message/metadata generation or frontend observability spans;
+- mapping a new transport/server-action failure to a `ServerActionResult`.
+
+The catalog does not redefine these rules or the verification/escalation
+sections below; it only adds repository-specific examples and anti-patterns.
 
 ## Validation
 

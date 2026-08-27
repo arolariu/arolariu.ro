@@ -31,6 +31,19 @@ Owns React behavior independent of routing or product architecture.
 - Avoid unnecessary memoization; add it only for measured or structural need.
 - Do not define components inside another component's render body.
 
+## Reference Catalog
+
+Open `references/react.md` only when the task needs one of:
+
+- an effect dependency, cleanup, cancellation, or stale-closure decision;
+- a memoization or component-identity decision beyond the default rule above;
+- accessibility work on an interactive, focus, or keyboard-sensitive element;
+- a state-lifetime or Context-splitting decision for shared component/hook
+  state.
+
+The catalog does not redefine these rules or the verification/escalation
+sections below; it only adds repository-specific examples and anti-patterns.
+
 ## Validation
 
 Use colocated Testing Library/Vitest coverage for changed behavior. Test user

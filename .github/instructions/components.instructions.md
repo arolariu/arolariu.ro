@@ -30,6 +30,18 @@ Owns constraints unique to `@arolariu/components`.
 - Colocate a focused test and Storybook story.
 - Export every public component and public type from `src/index.ts`.
 
+## Reference Catalog
+
+Open `references/components.md` only when the task needs one of:
+
+- designing or changing a public component's variant/ref/`render` API;
+- composing a new Base UI wrapper or non-native interactive element;
+- accessibility/focus work on an overlay, compound, or interactive component;
+- a story/test/barrel-export decision for a new or changed public component.
+
+The catalog does not redefine these rules or the verification/escalation
+sections below; it only adds repository-specific examples and anti-patterns.
+
 ## Validation
 
 Run the component-library build and the smallest relevant component test.

@@ -41,6 +41,21 @@ Endpoints -> Management -> Processing -> Orchestration -> Foundation -> Brokers
 - Preserve partition and ownership boundaries in storage calls.
 - Do not commit connection strings or credentials.
 
+## Reference Catalog
+
+Open `references/backend.md` only when the task needs one of:
+
+- confirming or extending the Management-to-Broker dependency graph for a
+  bounded context;
+- a CRUD, analysis-composition, or durable-queue pattern not resolved by the
+  rules above;
+- an exception-to-HTTP mapping, telemetry tag, or DI-registration decision;
+- a partition/ownership boundary question in a persistence call.
+
+The catalog does not redefine these rules, the `backend-vertical-slice` skill's
+own decision workflow, or the verification/escalation sections below; it only
+adds repository-specific examples and anti-patterns.
+
 ## Validation
 
 Use the API local guide's smallest build and MSTest selection.

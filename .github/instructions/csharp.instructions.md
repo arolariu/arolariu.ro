@@ -31,6 +31,21 @@ backend instruction.
 - Do not suppress warnings with `NoWarn`, `#pragma`, or weakened analyzers.
 - Keep warnings-as-errors clean.
 
+## Reference Catalog
+
+Open `references/csharp.md` only when the task needs one of:
+
+- deciding between a primary constructor and a validating conventional
+  constructor;
+- a nullable/null-forgiving decision at a Broker, DTO, or public boundary;
+- writing or correcting XML documentation beyond a one-line summary;
+- an async/cancellation/`ConfigureAwait` or exception-classification edge case
+  not resolved by the rules above;
+- a warnings-as-errors or analyzer-suppression question.
+
+The catalog does not redefine these rules or the verification/escalation
+sections below; it only adds repository-specific examples and anti-patterns.
+
 ## Validation
 
 Run the smallest relevant project build and test selection.

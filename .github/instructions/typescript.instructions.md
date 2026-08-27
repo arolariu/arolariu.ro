@@ -32,6 +32,19 @@ and project architecture belong to their narrower instructions.
   codebase.
 - Do not add a new utility when an existing module owns the behavior.
 
+## Reference Catalog
+
+Open `references/typescript.md` only when the task needs one of:
+
+- designing or changing a public function/type/module API surface;
+- a discriminated union, generic, `satisfies`, or branded-identifier decision;
+- adding or changing runtime validation at a transport/trust boundary;
+- a `noUncheckedIndexedAccess`/`exactOptionalPropertyTypes`/module-syntax edge
+  case that is not resolved by the rules above.
+
+The catalog does not redefine these rules or the verification/escalation
+sections below; it only adds repository-specific examples and anti-patterns.
+
 ## Validation
 
 Run the smallest project test/build from the nearest local guide that exercises

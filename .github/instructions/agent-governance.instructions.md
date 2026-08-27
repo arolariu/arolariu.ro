@@ -34,6 +34,26 @@ configuration.
   unmatched permission approval, or success-shaped failures.
 - Do not add `version`, `lastUpdated`, or `lastReviewed` metadata to AI assets.
 
+## Reference Catalog
+
+Open `references/agent-governance.md` only when the task needs one of:
+
+- deciding which of the six customization surfaces (instruction, agent,
+  skill, prompt, extension, MCP server) owns a new concern;
+- a frontmatter shape question for an instruction, agent, skill, or prompt;
+- confirming a one-owner placement, or correcting an asset that duplicates
+  another asset's owned fact;
+- writing or reviewing a progressive-disclosure trigger for a skill resource
+  or instruction catalog;
+- an extension/MCP threat-boundary question (read-only tools, deny/ask-only
+  permission classification, bounded context injection, allowlist scope);
+- a memory-policy question about whether a proposed entry is source-derived;
+- a prompt-versus-skill boundary question;
+- verifying runtime health evidence for an extension beyond source presence.
+
+The catalog does not redefine these rules, the operating protocol, or the
+threat model; it only adds repository-specific examples and corrections.
+
 ## Validation
 
 - Check frontmatter shape and referenced paths.

@@ -30,6 +30,23 @@ Owns GitHub Actions workflow and composite-action conventions.
 - Do not hide a failing build/test/deploy step with `continue-on-error`.
 - Preserve explicit environments and approval boundaries.
 
+## Reference Catalog
+
+Open `references/workflows.md` only when the task needs one of:
+
+- a permissions, OIDC, or third-party-action decision on a specific workflow;
+- a cache-key, path-filter, or concurrency-group decision beyond the rules
+  above;
+- an artifact/secret-handling or environment/deployment-safety question not
+  resolved by the rules above;
+- comparing a proposed workflow change against RFC 0001's established
+  patterns.
+
+The catalog does not redefine these rules, the Infrastructure Expert agent's
+approval workflow, or the verification/escalation sections below; it only
+adds repository-specific examples, anti-patterns, and live pointers. It does
+not authorize any mutation.
+
 ## Validation
 
 Inspect the full YAML graph and use the repository's existing workflow
