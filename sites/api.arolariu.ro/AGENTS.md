@@ -18,7 +18,9 @@ Endpoints -> Management -> Processing -> Orchestration -> Foundation -> Brokers
 - Foundation owns CRUD and domain validation.
 - Brokers wrap external systems and contain no business logic.
 - Foundation services never call other Foundation services.
-- Keep every service at two or three dependencies.
+- Keep every service at two or three direct domain collaborators; framework
+  and support dependencies such as `ILoggerFactory` do not count toward that
+  budget.
 - Core.Auth is a deliberate exception and calls ASP.NET Core Identity managers
   directly from its endpoints.
 

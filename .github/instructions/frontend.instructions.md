@@ -31,8 +31,9 @@ belongs to their dedicated instructions.
 - Use Zustand only for genuinely global client state, Context for scoped state,
   and local state otherwise.
 - Use `useShallow` for object-shaped Zustand selectors.
-- Enforce authentication through Clerk middleware rather than component
-  checks.
+- Use Clerk middleware for matcher-owned route protection. Preserve
+  server-owned redirect, guest/public, ownership, and authorization checks for
+  routes and Server Actions outside that matcher; never move them client-side.
 - Route all user-visible text through `next-intl`.
 - Keep `en`, `ro`, and `fr` message keys structurally aligned.
 - Build metadata through the shared metadata helpers and localized typed

@@ -33,7 +33,9 @@ Endpoints -> Management -> Processing -> Orchestration -> Foundation -> Brokers
 - Foundation owns CRUD and domain validation.
 - Brokers are thin external-system wrappers.
 - Never make Foundation-to-Foundation calls.
-- Keep each service at two or three dependencies.
+- Keep each service at two or three direct domain collaborators; framework and
+  support dependencies such as `ILoggerFactory` do not count toward that
+  budget.
 - Follow the existing partial-class structure for validations and TryCatch
   classification.
 - Start an Activity for observable service work and add non-sensitive domain

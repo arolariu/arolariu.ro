@@ -156,7 +156,9 @@ page.tsx (Server Component)
 - State order is Zustand for global state, Context for scoped state, then local
   React state.
 - User-visible text uses `next-intl` with `en`, `ro`, and `fr`.
-- Authentication is enforced at the Clerk middleware boundary.
+- Clerk middleware owns matching for configured protected routes. Server
+  Components and Server Actions still enforce established route/resource
+  access decisions that are not covered by that matcher.
 - Site-specific styling uses CSS Modules; shared UI comes from
   `@arolariu/components`.
 
@@ -172,7 +174,9 @@ Endpoints -> Management -> Processing -> Orchestration -> Foundation -> Brokers
 - Invoices Management is the application façade consumed by its endpoints and
   workers.
 - Foundation services do not call other Foundation services.
-- Services have at most two or three dependencies (Florance Pattern).
+- Services have at most two or three direct domain collaborators (Florance
+  Pattern); framework/support dependencies such as `ILoggerFactory` do not
+  count toward that budget.
 - Service methods use the repository TryCatch and OpenTelemetry Activity
   patterns.
 - Bounded contexts are Core, Core.Auth, Invoices, and Common.

@@ -19,6 +19,7 @@ import {
 import {diagnoseAssets} from "./diagnostics.mjs";
 import {parseFrontmatter} from "./frontmatter.mjs";
 import {inventoryAssets} from "./inventory.mjs";
+import {repositoryPathKind} from "./path-safety.mjs";
 
 const repositories = [];
 
@@ -448,6 +449,27 @@ test("diagnoseAssets rejects repository-relative links through symlinks", () => 
 				path === ".github/docs/symlink-link.md",
 		),
 	);
+});
+
+test("repositoryPathKind accepts only the canonical root CLAUDE alias", () => {
+	const root = createFixtureRepository();
+	const claudePath = join(root, "CLAUDE.md");
+	symlinkSync("AGENTS.md", claudePath, "file");
+
+	assert.equal(repositoryPathKind(root, claudePath), "file");
+
+	rmSync(claudePath);
+	const wrongTarget = join(root, "NOT-AGENTS.md");
+	writeFileSync(wrongTarget, "# Wrong target\n");
+	symlinkSync("NOT-AGENTS.md", claudePath, "file");
+
+	assert.equal(repositoryPathKind(root, claudePath), undefined);
+
+	const nestedAlias = join(root, "sites", "example", "CLAUDE.md");
+	mkdirSync(dirname(nestedAlias), {recursive: true});
+	symlinkSync(join(root, "AGENTS.md"), nestedAlias, "file");
+
+	assert.equal(repositoryPathKind(root, nestedAlias), undefined);
 });
 
 test("inventoryAssets ignores symlinked asset source files", () => {

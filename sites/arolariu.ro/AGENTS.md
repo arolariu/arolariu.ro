@@ -10,7 +10,10 @@ testing, and Git rules. This file records only website-specific architecture.
 - Use Zustand for global client state, Context for scoped state, and local
   React state otherwise.
 - User-visible text uses `next-intl` in `en`, `ro`, and `fr`.
-- Authentication is enforced by Clerk middleware rather than component checks.
+- Clerk middleware protects the routes matched in `src/proxy.ts`. Server
+  Components and Server Actions retain established redirect, guest/public,
+  ownership, and authorization checks outside that matcher; do not replace
+  those checks with client-only logic.
 - Metadata uses the shared metadata helpers and localized typed selectors.
   Live namespaces use `metadata` while older guidance also names
   `__metadata__`; preserve the target route's sibling shape and stop before a
