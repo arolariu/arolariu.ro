@@ -76,10 +76,10 @@ request:
 | Change affects only a non-production/preview environment | Still ask; do not assume lower risk removes the approval requirement |
 | Change alters an approval/environment-protection rule itself | Ask; this is a governance change, not a routine deployment edit |
 
-**Validation checkpoint decisions** — Bicep build/lint and `what-if` are safe
-to run for investigation; `what-if` against a live target and any workflow
-dispatch/run are validation steps that themselves require the same approval as
-the change they validate.
+**Validation checkpoint decisions** — local Bicep build/lint is safe to run for
+investigation. Every Azure `what-if` evaluates a live target and requires prior
+approval of both the proposed change and target scope. Any workflow
+dispatch/run requires the same approval as the change it validates.
 
 ## Task-to-Skill Routing
 

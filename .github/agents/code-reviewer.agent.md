@@ -43,9 +43,9 @@ files or approve unresolved critical/high defects.
 
 | Severity | Criteria |
 | --- | --- |
-| Critical | Exploitable vulnerability, data loss, or auth/authz bypass reachable in a realistic path |
+| Critical | Exploitable vulnerability, auth/authz bypass, or realistic material data loss that is irreversible, security-relevant, or broad in reach |
 | High | Confirmed correctness defect, broken public contract, or an architecture violation that changes runtime/dependency direction |
-| Medium | Missing test for materially changed behavior, or a defect with a narrow/unlikely trigger |
+| Medium | Missing test for materially changed behavior, or a recoverable/low-impact defect with a narrow or unlikely trigger |
 | Low | Real but low-impact issue (for example, an unhandled edge case with no observed consumer) |
 
 ## Domain Checks

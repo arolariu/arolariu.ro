@@ -42,7 +42,8 @@ artificial seams.
 
 | Surface | Owner |
 | --- | --- |
-| Request/response shape, HTTP status/exception mapping | Backend Expert, at the Management boundary |
+| Application outcome and use-case contract | Backend Expert, at the Management boundary |
+| Request/response DTO mapping, HTTP status, and exception-to-result mapping | Backend Expert, in the endpoint/protocol adapter |
 | Client-side type mirroring the contract, and its transport validation | Frontend Expert, at the server action/fetch boundary |
 | Shared UI contract (props/variants) | Frontend Expert, or an explicitly scoped component-library task |
 | Infra/workflow surface enabling the above (new secret, permission, resource) | Infrastructure Expert, with explicit approval named in the plan |
@@ -99,6 +100,9 @@ the plan.
 - State a rollback boundary for any task that changes a public contract,
   moves files, or touches infrastructure — which commit/file reverts cleanly
   and what a partial rollout would leave inconsistent.
+- State an explicit compatibility/deployment rollout sequence whenever a
+  public contract changes or independently deployed surfaces must advance in a
+  specific order.
 
 ## File-Specific Plan Completeness Criteria
 
@@ -109,6 +113,8 @@ A plan is complete only when it:
 - assigns each task to exactly one specialist agent and one skill (or "direct,
   approval required" for infra);
 - states the failing test and targeted validation per task;
+- defines rollout order and compatibility for changed contracts or
+  independently deployed surfaces;
 - lists cross-domain risks and protected-boundary decisions still open; and
 - does not itself edit production files.
 
@@ -120,5 +126,6 @@ auth/security, schema/data migration, infrastructure, or deployment changes.
 ## Completion Contract
 
 Produce a dependency-ordered plan with exact files, interfaces, tests,
-validation commands, risks, and checkpoints, using the delegation map above.
-Do not edit production files.
+validation commands, rollout/compatibility sequence, rollback boundaries,
+risks, and checkpoints, using the delegation map above. Do not edit production
+files.

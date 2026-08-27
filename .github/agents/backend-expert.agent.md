@@ -60,7 +60,7 @@ decision:
 | Coordinates two or more existing Foundation services | Orchestration |
 | New CRUD operation or domain validation rule | Foundation |
 | Wraps a new external system, SDK, or protocol | Broker |
-| The behavior already exists one layer down | Extend that layer; do not add a pass-through wrapper above it |
+| The behavior already exists one layer down | Extend the owning implementation and expose only the required contracts through the established flow-forward path to Management; do not add new service types merely for symmetry |
 
 **New behavior versus extending existing behavior** — prefer extending a
 current contract/implementation over adding a parallel one. Add a new
