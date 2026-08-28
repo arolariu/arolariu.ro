@@ -12,8 +12,7 @@ exhaustive inventory.
 | --- | --- |
 | `/api/health` | Liveness |
 | `/api/ready` | Readiness |
-| `/api/v1/config` | Configuration values |
-| `/api/v1/config?name=KEY` | One configuration value |
+| `/api/v1/config?name=KEY` | One indexed configuration value after mode-specific caller and target authorization |
 
 ## Local Rules
 

@@ -8,6 +8,7 @@ import {
 	mkdirSync,
 	mkdtempSync,
 	rmSync,
+	symlinkSync,
 	writeFileSync,
 } from "node:fs";
 import {tmpdir} from "node:os";
@@ -88,10 +89,10 @@ function createRepository() {
 	);
 	write(
 		root,
-		".github/skills/fix-bug/SKILL.md",
+		".github/skills/code-fix-bug/SKILL.md",
 		[
 			"---",
-			"name: fix-bug",
+			"name: code-fix-bug",
 			"description: Reproduce and fix a defect",
 			"---",
 			"",
@@ -154,13 +155,86 @@ test("buildContext resolves named projects and task assets", () => {
 
 	const context = buildContext({
 		maxCharacters: 2000,
-		prompt: "Use the fix bug workflow for the arolariu.ro project.",
+		prompt: "Use the code fix bug workflow for the arolariu.ro project.",
 		repositoryRoot: root,
 		workingDirectory: root,
 	});
 
 	assert.match(context, /sites\/arolariu\.ro\/AGENTS\.md/);
-	assert.match(context, /\.github\/skills\/fix-bug\/SKILL\.md/);
+	assert.match(context, /\.github\/skills\/code-fix-bug\/SKILL\.md/);
+});
+
+test("buildContext ignores symlinked instruction, agent, and skill assets", () => {
+	const root = createRepository();
+	const outside = mkdtempSync(join(tmpdir(), "arolariu-context-outside-"));
+	repositories.push(outside);
+
+	const outsideInstruction = join(outside, "escape.instructions.md");
+	writeFileSync(
+		outsideInstruction,
+		[
+			"---",
+			"name: Escape Instruction",
+			"description: External instruction",
+			'applyTo: "sites/arolariu.ro/**/*.tsx"',
+			"---",
+			"",
+		].join("\n"),
+	);
+	symlinkSync(
+		outsideInstruction,
+		join(
+			root,
+			".github",
+			"instructions",
+			"escape.instructions.md",
+		),
+		"file",
+	);
+
+	const outsideAgent = join(outside, "escape.agent.md");
+	writeFileSync(
+		outsideAgent,
+		[
+			"---",
+			"name: Escape Agent",
+			"description: External review agent",
+			"---",
+			"",
+		].join("\n"),
+	);
+	symlinkSync(
+		outsideAgent,
+		join(root, ".github", "agents", "escape.agent.md"),
+		"file",
+	);
+
+	const outsideSkill = join(outside, "SKILL.md");
+	writeFileSync(
+		outsideSkill,
+		[
+			"---",
+			"name: escape-skill",
+			"description: External review workflow",
+			"---",
+			"",
+		].join("\n"),
+	);
+	const skillDirectory = join(root, ".github", "skills", "escape-skill");
+	mkdirSync(skillDirectory, {recursive: true});
+	symlinkSync(outsideSkill, join(skillDirectory, "SKILL.md"), "file");
+
+	const context = buildContext({
+		maxCharacters: 2000,
+		prompt:
+			"Use the escape agent and escape skill to update `sites/arolariu.ro/src/page.tsx`.",
+		repositoryRoot: root,
+		workingDirectory: root,
+	});
+
+	assert.doesNotMatch(context, /escape\.instructions\.md/);
+	assert.doesNotMatch(context, /escape\.agent\.md/);
+	assert.doesNotMatch(context, /escape-skill/);
 });
 
 test("buildContext rejects formatting characters in repository paths", () => {
@@ -176,7 +250,7 @@ test("buildContext rejects formatting characters in repository paths", () => {
 
 	const context = buildContext({
 		maxCharacters: 2000,
-		prompt: "Use the fix bug workflow for the website project.",
+		prompt: "Use the code fix bug workflow for the website project.",
 		repositoryRoot: root,
 		workingDirectory: root,
 	});

@@ -14,6 +14,11 @@ import {
 	sep,
 } from "node:path";
 
+import {
+	isSafeRepositoryFile,
+	repositoryPathKind,
+} from "../arolariu-checker/path-safety.mjs";
+
 const PATH_TOKEN = /`([^`]+)`/g;
 const STOPWORDS = new Set([
 	"a",
@@ -58,7 +63,8 @@ function isInsideRepository(repositoryRoot, candidate) {
 	);
 }
 
-function readFrontmatter(path) {
+function readFrontmatter(repositoryRoot, path) {
+	if (!isSafeRepositoryFile(repositoryRoot, path)) return undefined;
 	const content = readFileSync(path, "utf8");
 	return content.match(/^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/)?.[1];
 }
@@ -71,10 +77,17 @@ function readScalar(frontmatter, key) {
 	return match?.[1];
 }
 
-function listDirectories(path) {
-	if (!existsSync(path)) return [];
+function listDirectories(repositoryRoot, path) {
+	if (repositoryPathKind(repositoryRoot, path) !== "directory") return [];
 	return readdirSync(path, {withFileTypes: true})
-		.filter((entry) => entry.isDirectory())
+		.filter(
+			(entry) =>
+				entry.isDirectory() &&
+				repositoryPathKind(
+					repositoryRoot,
+					join(path, entry.name),
+				) === "directory",
+		)
 		.map((entry) => entry.name)
 		.sort();
 }
@@ -128,7 +141,7 @@ export function extractRepositoryPaths(prompt, repositoryRoot) {
 			: resolve(repositoryRoot, rawPath.replaceAll(/[\\/]/g, sep));
 
 		if (!isInsideRepository(repositoryRoot, candidate)) continue;
-		if (!existsSync(candidate)) continue;
+		if (!repositoryPathKind(repositoryRoot, candidate)) continue;
 
 		const repositoryPath = toRepositoryPath(relative(repositoryRoot, candidate));
 		if (repositoryPath) paths.push(repositoryPath);
@@ -145,13 +158,13 @@ export function extractRepositoryPaths(prompt, repositoryRoot) {
  */
 export function findNearestAgentsFile(startPath, repositoryRoot) {
 	let current = resolve(startPath);
-	if (existsSync(current) && statSync(current).isFile()) {
+	if (repositoryPathKind(repositoryRoot, current) === "file") {
 		current = dirname(current);
 	}
 
 	while (isInsideRepository(repositoryRoot, current)) {
 		const candidate = join(current, "AGENTS.md");
-		if (existsSync(candidate)) {
+		if (isSafeRepositoryFile(repositoryRoot, candidate)) {
 			return toRepositoryPath(relative(repositoryRoot, candidate));
 		}
 		if (current === repositoryRoot) break;
@@ -168,14 +181,30 @@ export function findNearestAgentsFile(startPath, repositoryRoot) {
  */
 export function loadInstructionRules(repositoryRoot) {
 	const instructionsRoot = join(repositoryRoot, ".github", "instructions");
-	if (!existsSync(instructionsRoot)) return [];
+	if (
+		repositoryPathKind(repositoryRoot, instructionsRoot) !== "directory"
+	) {
+		return [];
+	}
 
-	return readdirSync(instructionsRoot)
-		.filter((name) => name.endsWith(".instructions.md"))
+	return readdirSync(instructionsRoot, {withFileTypes: true})
+		.filter(
+			(entry) =>
+				entry.isFile() &&
+				entry.name.endsWith(".instructions.md") &&
+				isSafeRepositoryFile(
+					repositoryRoot,
+					join(instructionsRoot, entry.name),
+				),
+		)
+		.map((entry) => entry.name)
 		.sort()
 		.flatMap((name) => {
 			const absolutePath = join(instructionsRoot, name);
-			const applyTo = readScalar(readFrontmatter(absolutePath), "applyTo");
+			const applyTo = readScalar(
+				readFrontmatter(repositoryRoot, absolutePath),
+				"applyTo",
+			);
 			if (!applyTo) return [];
 			return [
 				{
@@ -201,9 +230,9 @@ export function findNamedProjectGuides(prompt, repositoryRoot) {
 
 	for (const collection of ["sites", "packages"]) {
 		const collectionRoot = join(repositoryRoot, collection);
-		for (const name of listDirectories(collectionRoot)) {
+		for (const name of listDirectories(repositoryRoot, collectionRoot)) {
 			const guide = join(collectionRoot, name, "AGENTS.md");
-			if (!existsSync(guide)) continue;
+			if (!isSafeRepositoryFile(repositoryRoot, guide)) continue;
 
 			const aliases = uniqueSorted([
 				name,
@@ -235,7 +264,7 @@ export function findNamedDomainPointers(prompt, repositoryRoot) {
 	];
 
 	for (const domainRoot of domainRoots) {
-		for (const name of listDirectories(domainRoot)) {
+		for (const name of listDirectories(repositoryRoot, domainRoot)) {
 			const normalizedName = normalizeWords(name);
 			const aliases = normalizedName.endsWith("s")
 				? [normalizedName, normalizedName.slice(0, -1)]
@@ -264,23 +293,28 @@ export function findTaskAssetPointers(prompt, repositoryRoot) {
 	const assets = [];
 
 	const agentRoot = join(repositoryRoot, ".github", "agents");
-	if (existsSync(agentRoot)) {
-		for (const name of readdirSync(agentRoot).filter((entry) =>
-			entry.endsWith(".agent.md"),
-		)) {
-			assets.push(join(agentRoot, name));
+	if (repositoryPathKind(repositoryRoot, agentRoot) === "directory") {
+		for (const entry of readdirSync(agentRoot, {withFileTypes: true})) {
+			const absolutePath = join(agentRoot, entry.name);
+			if (
+				entry.isFile() &&
+				entry.name.endsWith(".agent.md") &&
+				isSafeRepositoryFile(repositoryRoot, absolutePath)
+			) {
+				assets.push(absolutePath);
+			}
 		}
 	}
 
 	const skillsRoot = join(repositoryRoot, ".github", "skills");
-	for (const name of listDirectories(skillsRoot)) {
+	for (const name of listDirectories(repositoryRoot, skillsRoot)) {
 		const skill = join(skillsRoot, name, "SKILL.md");
-		if (existsSync(skill)) assets.push(skill);
+		if (isSafeRepositoryFile(repositoryRoot, skill)) assets.push(skill);
 	}
 
 	return uniqueSorted(
 		assets.flatMap((absolutePath) => {
-			const frontmatter = readFrontmatter(absolutePath);
+			const frontmatter = readFrontmatter(repositoryRoot, absolutePath);
 			const name = readScalar(frontmatter, "name");
 			const description = readScalar(frontmatter, "description");
 
@@ -388,7 +422,9 @@ export function buildContext({
 	if (!hasSignal) return undefined;
 
 	const pointers = [
-		"AGENTS.md",
+		...(isSafeRepositoryFile(repositoryRoot, join(repositoryRoot, "AGENTS.md"))
+			? ["AGENTS.md"]
+			: []),
 		...uniqueSorted(candidates).filter(
 			(path) => path !== "AGENTS.md" && isSafeContextPath(path),
 		),
