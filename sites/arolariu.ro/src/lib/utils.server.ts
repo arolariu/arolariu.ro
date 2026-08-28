@@ -209,6 +209,10 @@ async function resolveFetchUrl(url: string): Promise<string> {
  * Wraps the native fetch with AbortController for timeout handling and resolves relative paths
  * against the exp-provided API base URL on the server.
  *
+ * @remarks
+ * The current timeout controller replaces `options.signal`; caller-provided
+ * cancellation is not composed with the timeout signal.
+ *
  * @param url - Absolute URL or API-relative path to fetch
  * @param options - Fetch options (headers, method, body, etc.)
  * @param timeoutMs - Timeout in milliseconds (default: 30 seconds)

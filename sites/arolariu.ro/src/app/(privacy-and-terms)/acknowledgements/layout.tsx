@@ -15,7 +15,7 @@ import Loading from "./loading";
  * for the acknowledgements page listing all third-party packages and their licenses.
  *
  * **Async Operations**:
- * - Fetches translations from `Acknowledgements.__metadata__` namespace
+ * - Selects `pages.legal.acknowledgements.metadata` translations
  * - Retrieves current locale for language-specific metadata
  *
  * **Metadata Generation**:

@@ -1,453 +1,144 @@
-# Internationalization (i18n) Guide
+# Internationalization Guide
 
-## Quick Reference for RFC 1003: next-intl Internationalization System
+The website uses `next-intl` for request/provider behavior and
+`next-intl-selector` for typed message access. RFC 1003 owns the architecture;
+live messages, generated declarations, and consumers own current behavior.
 
-This guide provides practical examples for implementing multi-language support in the arolariu.ro frontend.
-
-**Supported Languages**: English (en), Romanian (ro), French (fr)
-
-## Quick Start
-
-### 1. Add Translation Keys
-
-Add keys to all translation files: `messages/en.json`, `messages/ro.json`, and `messages/fr.json`:
-
-> **Tip**: Run `npm run generate:i18n` after adding keys to `en.json` to automatically detect missing keys in other locales.
-
-```json
-{
-  "MyPage": {
-    "__metadata__": {
-      "title": "My Page Title",
-      "description": "SEO description for my page"
-    },
-    "heading": "Welcome to My Page",
-    "description": "This page displays {itemCount} items",
-    "actions": {
-      "save": "Save Changes",
-      "cancel": "Cancel"
-    }
-  }
-}
-```
-
-**Key Rules**:
-
-- Use `__metadata__` for SEO/metadata translations
-- Nest keys logically by feature/component
-- Use variables with `{variableName}` syntax
-
-### 2. Use Translations in Server Components
-
-```typescript
-import {getTranslations} from "next-intl/server";
-
-export default async function MyPage() {
-  const t = await getTranslations("MyPage");
-  
-  return (
-    <div>
-      <h1>{t("heading")}</h1>
-      <p>{t("description", {itemCount: 42})}</p>
-      <button>{t("actions.save")}</button>
-    </div>
-  );
-}
-```
-
-### 3. Use Translations in Client Components
-
-```typescript
-"use client";
-
-import {useTranslations} from "next-intl";
-
-export function MyComponent() {
-  const t = useTranslations("MyPage");
-  
-  return (
-    <div>
-      <h1>{t("heading")}</h1>
-      <button>{t("actions.save")}</button>
-    </div>
-  );
-}
-```
-
-## Common Patterns
-
-### Server Component with Metadata
-
-```typescript
-import {createMetadata} from "@/metadata";
-import {getLocale, getTranslations} from "next-intl/server";
-import type {Metadata} from "next";
-
-export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations("MyPage.__metadata__");
-  const locale = await getLocale();
-  
-  return createMetadata({
-    locale,
-    title: t("title"),
-    description: t("description"),
-  });
-}
-
-export default async function MyPage() {
-  const t = await getTranslations("MyPage");
-  return <h1>{t("heading")}</h1>;
-}
-```
-
-### Client Component with Multiple Namespaces
-
-```typescript
-"use client";
-
-import {useTranslations} from "next-intl";
-
-export function InvoiceCard() {
-  const tInvoice = useTranslations("Invoices");
-  const tCommon = useTranslations("Common");
-  
-  return (
-    <div>
-      <h2>{tInvoice("title")}</h2>
-      <button>{tCommon("actions.delete")}</button>
-    </div>
-  );
-}
-```
-
-### Pluralization
-
-```json
-{
-  "items": "{count, plural, =0 {No items} =1 {One item} other {# items}}"
-}
-```
-
-```typescript
-const t = useTranslations("Namespace");
-t("items", {count: 0});  // "No items"
-t("items", {count: 1});  // "One item"
-t("items", {count: 42}); // "42 items"
-```
-
-### Rich Text with Components
-
-```typescript
-import {useTranslations} from "next-intl";
-import Link from "next/link";
-
-export function Message() {
-  const t = useTranslations("Messages");
-  
-  return (
-    <p>
-      {t.rich("learnMore", {
-        link: (chunks) => <Link href="/learn">{chunks}</Link>,
-        bold: (chunks) => <strong>{chunks}</strong>,
-      })}
-    </p>
-  );
-}
-```
-
-Translation file:
-
-```json
-{
-  "Messages": {
-    "learnMore": "Visit our <link><bold>learning center</bold></link> for tutorials"
-  }
-}
-```
-
-### Date and Number Formatting
-
-```typescript
-import {useFormatter} from "next-intl";
-
-export function FormattedData() {
-  const format = useFormatter();
-  
-  const date = new Date();
-  const number = 1234.56;
-  
-  return (
-    <div>
-      <p>{format.dateTime(date, {dateStyle: "full"})}</p>
-      <p>{format.number(number, {style: "currency", currency: "USD"})}</p>
-    </div>
-  );
-}
-```
-
-## Language Switching
-
-### Get Current Locale
-
-```typescript
-import {getLocale} from "next-intl/server";
-
-export default async function Page() {
-  const locale = await getLocale(); // "en", "ro", or "fr"
-  return <div>Current language: {locale}</div>;
-}
-```
-
-### Switch Language (Client Component)
-
-```typescript
-"use client";
-
-import {setCookie} from "@/lib/actions/cookies";
-import {useRouter} from "next/navigation";
-
-export function LanguageSwitcher() {
-  const router = useRouter();
-
-  const switchToEnglish = async () => {
-    await setCookie("locale", "en");
-    router.refresh();
-  };
-
-  const switchToRomanian = async () => {
-    await setCookie("locale", "ro");
-    router.refresh();
-  };
-
-  const switchToFrench = async () => {
-    await setCookie("locale", "fr");
-    router.refresh();
-  };
-
-  return (
-    <div>
-      <button onClick={switchToEnglish}>English</button>
-      <button onClick={switchToRomanian}>Română</button>
-      <button onClick={switchToFrench}>Français</button>
-    </div>
-  );
-}
-```
-
-## Type Safety
-
-### Type-Safe Translation Keys
-
-TypeScript types are auto-generated from `messages/en.json`:
-
-```typescript
-// ✅ Valid - key exists
-t("Invoices.title");
-
-// ❌ Compile error - key doesn't exist
-t("Invoices.nonExistent");
-```
-
-### Regenerate Types
-
-After updating translation files:
-
-```bash
-npm run dev  # Types auto-generate in development
-```
-
-Or manually:
-
-```bash
-npm run generate:i18n
-```
-
-## Best Practices
-
-### ✅ Do: Organize by Feature
-
-```json
-{
-  "Invoices": {
-    "__metadata__": { },
-    "list": { },
-    "details": { },
-    "actions": { }
-  },
-  "Merchants": {
-    "__metadata__": { },
-    "list": { },
-    "details": { }
-  }
-}
-```
-
-### ✅ Do: Use Variables for Dynamic Content
-
-```json
-{
-  "greeting": "Hello, {userName}!",
-  "itemCount": "Showing {count} of {total} items"
-}
-```
-
-```typescript
-t("greeting", {userName: "Alex"});
-t("itemCount", {count: 10, total: 100});
-```
-
-### ✅ Do: Keep Keys Semantic
-
-```json
-{
-  "actions": {
-    "save": "Save",
-    "cancel": "Cancel",
-    "delete": "Delete"
-  }
-}
-```
-
-### ❌ Don't: Hardcode Text
-
-```typescript
-// ❌ Bad
-<button>Save Changes</button>
-
-// ✅ Good
-<button>{t("actions.save")}</button>
-```
-
-### ❌ Don't: Duplicate Keys
-
-```json
-{
-  "Invoices": {
-    "save": "Save"  // ❌ Duplicate
-  },
-  "Merchants": {
-    "save": "Save"  // ❌ Duplicate
-  }
-}
-```
-
-Instead, use common namespace:
-
-```json
-{
-  "Common": {
-    "actions": {
-      "save": "Save"
-    }
-  }
-}
-```
-
-## Troubleshooting
-
-### Issue: Translation Key Not Found
-
-**Error**: `Missing message for key "MyPage.title"`
-
-**Solution**:
-
-1. Check key exists in all locale files: `en.json`, `ro.json`, and `fr.json`
-2. Verify correct namespace: `useTranslations("MyPage")`
-3. Run `npm run generate:i18n` to detect and add missing keys
-4. Run `npm run dev` to regenerate types
-
-### Issue: Translations Not Updating
-
-**Solution**:
-
-1. Restart dev server: `Ctrl+C`, then `npm run dev`
-2. Clear `.next` cache: `rm -rf .next && npm run dev`
-3. Hard refresh browser: `Ctrl+Shift+R`
-
-### Issue: Type Errors After Adding Keys
-
-**Solution**:
-
-```bash
-# Regenerate TypeScript definitions
-npm run generate:i18n
-```
-
-### Issue: Wrong Language Displayed
-
-**Check locale cookie**:
-
-```typescript
-import {getCookie} from "@/lib/actions/cookies";
-
-const locale = await getCookie("locale");
-console.log("Current locale:", locale); // Should be "en", "ro", or "fr"
-```
-
-## Translation File Structure
+## Message files
 
 ```text
-messages/
-├── en.json           # English translations (source of truth)
-├── ro.json           # Romanian translations
-├── fr.json           # French translations
-└── en.d.json.ts      # Auto-generated TypeScript types
+sites/arolariu.ro/messages/
+├── en.json
+├── ro.json
+├── fr.json
+└── en.d.json.ts
 ```
 
-> **Note**: Always add new keys to `en.json` first, then run `npm run generate:i18n` to synchronize other locales.
+- `en.json` is the source schema.
+- `ro.json` and `fr.json` must contain the same key structure.
+- `en.d.json.ts` is generated and must not be edited by hand.
+- User-visible text belongs in messages, including accessibility labels,
+  errors, empty/loading states, metadata, and email copy.
 
-### Example Translation Structure
+## Server usage
+
+```tsx
+import {getTranslations} from "next-intl-selector/server";
+
+export default async function Page(): Promise<React.JSX.Element> {
+  const t = await getTranslations();
+  return <h1>{t((messages) => messages.pages.home.title)}</h1>;
+}
+```
+
+Use the server import in Server Components, layouts, Route Handlers, private
+server helpers, and metadata generation.
+
+## Client usage
+
+```tsx
+"use client";
+
+import {useTranslations} from "next-intl-selector";
+
+export function ButtonLabel(): React.JSX.Element {
+  const t = useTranslations();
+  return <span>{t((messages) => messages.shared.invoices.invoiceHeader.buttons.save)}</span>;
+}
+```
+
+Do not use the retired string-namespace shape such as
+`useTranslations("Footer")` for new code.
+
+## Metadata messages
+
+Current locale files use nested `metadata` objects:
 
 ```json
 {
-  "Common": {
-    "actions": {
-      "save": "Save",
-      "cancel": "Cancel",
-      "delete": "Delete"
-    }
-  },
-  "Invoices": {
-    "__metadata__": {
-      "title": "Invoices",
-      "description": "Manage your invoices"
-    },
-    "title": "My Invoices",
-    "empty": "No invoices found",
-    "list": {
-      "header": "All Invoices",
-      "filters": {
-        "search": "Search invoices...",
-        "sortBy": "Sort by",
-        "dateRange": "Date range"
+  "pages": {
+    "invoices": {
+      "landing": {
+        "metadata": {
+          "title": "...",
+          "description": "..."
+        }
       }
     }
   }
 }
 ```
 
-## Quick Reference
+Use the same path in all locales, select it with
+`next-intl-selector/server`, and pass values to `createMetadata`.
+`__metadata__` is not a supported alternate schema.
 
-| Task | Server Component | Client Component |
-|------|------------------|------------------|
-| Get translations | `await getTranslations("Namespace")` | `useTranslations("Namespace")` |
-| Get locale | `await getLocale()` | `const locale = useLocale()` |
-| Format dates | `const format = await useFormatter()` | `const format = useFormatter()` |
-| Generate metadata | `generateMetadata()` with `getTranslations()` | N/A |
-| Sync translations | `npm run generate:i18n` | N/A |
+## ICU messages
 
-## Supported Locales
+Use ICU for variables and language-dependent branches:
 
-| Locale | Language | File |
-|--------|----------|------|
-| `en` | English | `messages/en.json` (source of truth) |
-| `ro` | Romanian | `messages/ro.json` |
-| `fr` | French | `messages/fr.json` |
+```json
+{
+  "selected": "{count, plural, =0 {No items selected} one {# item selected} other {# items selected}}"
+}
+```
 
-## Additional Resources
+Keep variable names identical in each locale. Prefer plural/select/date/time
+formatting to concatenating translated fragments.
 
-- **RFC 1003**: Complete i18n system documentation
-- **next-intl Docs**: <https://next-intl-docs.vercel.app/>
-- **ICU Message Format**: <https://formatjs.io/docs/core-concepts/icu-syntax/>
-- **Translation Files**: `sites/arolariu.ro/messages/`
-- **i18n Script**: `scripts/generate.i18n.ts`
+## Dates, numbers, and relative time
+
+Server Components use server formatting APIs such as `getFormatter`; Client
+Components use the matching client Hooks. Do not call or await a client Hook
+from server code.
+
+The request configuration in `src/i18n/request.ts` owns locale validation,
+dictionary loading, and the configured time zone.
+
+## Adding or changing messages
+
+1. Find the nearest existing domain/shared namespace.
+2. Add the same key and ICU variables to `en`, `ro`, and `fr`.
+3. Use a typed selector callback at the consumer.
+4. Run the root i18n generation command.
+5. Test every changed ICU branch and user-visible state.
+6. Inspect metadata/email/accessibility consumers when their schema changes.
+
+Do not copy a message into a second namespace solely to shorten a selector.
+Move/rename keys only as an explicit schema migration with all consumers and
+locales updated together.
+
+## Client bundle behavior
+
+The root layout currently loads one complete selected locale dictionary and
+passes it to the client provider. Do not claim that unused keys are
+tree-shaken or quote static locale sizes without a current measured build.
+
+Reducing that handoff would require a new loading/provider contract and bundle
+evidence.
+
+## Server Actions
+
+`"use server"` exports are browser-callable RPC even though their
+implementation runs on the server. Validate browser input, derive identity
+server-side, authorize independently, and translate only the user-visible
+result. Never accept a caller-provided JWT as proof of identity.
+
+## Testing checklist
+
+- selector path compiles against generated declarations;
+- all locale files have identical key/leaf structure;
+- ICU variables and branches match across locales;
+- visible copy and accessible names render correctly;
+- metadata selectors feed `createMetadata`;
+- no machine identifier, metric label, route, or provider code is translated;
+- generated declaration changes are reviewed but not hand-edited.
+
+## References
+
+- [RFC 1003](../rfc/1003-internationalization-system.md)
+- [RFC 1004](../rfc/1004-metadata-seo-system.md)
+- `sites/arolariu.ro/src/i18n/request.ts`
+- `sites/arolariu.ro/src/app/layout.tsx`
+- `sites/arolariu.ro/src/app/providers.tsx`
+- `sites/arolariu.ro/messages/`

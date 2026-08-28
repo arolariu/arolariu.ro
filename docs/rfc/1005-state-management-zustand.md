@@ -3,377 +3,190 @@
 - **Status**: Implemented
 - **Date**: 2025-12-25
 - **Authors**: Alexandru-Razvan Olariu
-- **Related Components**: `sites/arolariu.ro/src/stores/`, `src/stores/invoicesStore.tsx`, `src/stores/merchantsStore.tsx`, `src/stores/scansStore.tsx`, `src/stores/preferencesStore.ts`
+- **Related Components**: `sites/arolariu.ro/src/stores/`
 
 ---
 
 ## Abstract
 
-This RFC documents the client-side state management architecture for the arolariu.ro Next.js application using Zustand with IndexedDB persistence. The system provides type-safe, performant state management with offline-first capabilities, enabling seamless user experience across sessions and network conditions.
+The website uses Zustand for genuinely global client state. Invoice and
+merchant stores share a generic entity-store factory with entity-level
+IndexedDB persistence. Scans retain a specialized store because their cached
+lifecycle exceeds the generic entity contract. Preferences use a separate
+key/value persisted shape.
 
----
+Zustand stores are client-side boundaries. Server Components may pass
+serializable initial data to client islands, but they do not subscribe to
+Zustand directly.
 
-## 1. Motivation
+## State placement
 
-### 1.1 Problem Statement
+Choose URL state first when behavior is bookmarkable, shareable, or
+navigation-owned. Otherwise choose the narrowest owner:
 
-Modern web applications require sophisticated state management that:
+1. derive values during render when possible;
+2. use local component state for one component lifetime;
+3. use Context for one mounted subtree;
+4. reuse an existing store when it already owns the global contract;
+5. create/extend Zustand only when state is shared across unrelated client
+   branches or must persist globally.
 
-1. **Persists Data Locally**: Support offline access and improve perceived performance
-2. **Type Safety**: Prevent runtime errors through TypeScript integration
-3. **Minimal Boilerplate**: Avoid verbose Redux-like patterns
-4. **React 19 Compatibility**: Work seamlessly with Server Components and Suspense
-5. **Developer Experience**: Provide debugging tools during development
-6. **Performance**: Avoid unnecessary re-renders and memory overhead
+Creating a new store or persisted field changes architecture/data ownership
+and requires the repository checkpoint.
 
-### 1.2 Design Goals
+## Current store inventory
 
-- **Offline-First**: IndexedDB persistence for all domain entities
-- **Type Safety**: Full TypeScript support with explicit state and action types
-- **Minimal API**: Simple hook-based access with no providers needed
-- **DevTools Integration**: Conditional Redux DevTools support in development
-- **Entity-Level Storage**: Individual entities stored as separate rows for efficiency
-- **Hydration Awareness**: Track when persisted data has been loaded
+| Store | Implementation | Persisted state | In-memory state |
+| --- | --- | --- | --- |
+| `useInvoicesStore` | `createEntityStore<Invoice>` | `entities` in the `invoices` table | `selectedEntities`, `hasHydrated` |
+| `useMerchantsStore` | `createEntityStore<Merchant>` | `entities` in the `merchants` table | `selectedEntities`, `hasHydrated` |
+| `useScansStore` | Specialized store | `scans` in the `scans` table | `selectedScans`, sync/cache state, `hasHydrated` |
+| `usePreferencesStore` | Specialized key/value store | preference fields under the shared table | `hasHydrated` and derived actions |
 
----
+Do not assume one field naming convention for every store. Invoice/merchant
+consumers use `entities`; scan consumers use `scans`.
 
-## 2. Technical Design
+## Generic entity store
 
-### 2.1 Architecture Overview
+`createEntityStore<E>` requires an entity with a stable `id` and creates:
+
+```typescript
+type EntityState<E> = Readonly<{
+  entities: ReadonlyArray<E>;
+  selectedEntities: E[];
+  hasHydrated: boolean;
+}>;
+```
+
+Its actions include set/upsert/update/remove, selection, lookup, clearing, and
+hydration state. The exact public types and implementation are owned by
+`src/stores/createEntityStore.ts`.
+
+Invoice and merchant stores configure the factory with their table, devtools
+name, and persist key:
+
+```typescript
+export const useInvoicesStore = createEntityStore<Invoice>({
+  tableName: "invoices",
+  storeName: "InvoicesStore",
+  persistName: "invoices-store",
+});
+```
+
+Scans do not use the factory because they own scan-specific status, naming,
+blob URL, metadata, archive, invoice-use, selection, and transient sync-state
+transitions. Generalizing the factory for scans requires explicit
+characterization and approval; it is not an automatic cleanup.
+
+## IndexedDB adapter
+
+`storage/indexedDBStorage.ts` owns the Dexie database:
 
 ```text
-┌─────────────────────────────────────────────────────────────────┐
-│                    React Components                             │
-│                (Server & Client Components)                      │
-└──────────────────────────┬──────────────────────────────────────┘
-                           │
-                           ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                     Zustand Stores                               │
-│              (useInvoicesStore, useMerchantsStore, useScansStore, usePreferencesStore)    │
-├─────────────────────────────────────────────────────────────────┤
-│  persist middleware                                              │
-│  ├─ Serializes state to storage                                  │
-│  ├─ Hydrates state on load                                       │
-│  └─ Manages rehydration callbacks                                │
-├─────────────────────────────────────────────────────────────────┤
-│  devtools middleware (development only)                          │
-│  └─ Redux DevTools integration                                   │
-└──────────────────────────┬──────────────────────────────────────┘
-                           │
-                           ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                IndexedDB Storage Layer                           │
-│                    (via Dexie.js)                                │
-│  ┌───────────────────┐  ┌───────────────────┐  ┌───────────────────┐  ┌──────────────────────┐  │
-│  │  invoices table   │  │  merchants table  │  │   scans table     │  │  shared table        │  │
-│  │  ├─ id (PK)       │  │  ├─ id (PK)       │  │  ├─ id (PK)       │  │  (preferences store) │  │
-│  │  └─ ...fields     │  │  └─ ...fields     │  │  └─ ...fields     │  │  └─ ...fields        │  │
-│  └───────────────────┘  └───────────────────┘  └───────────────────┘  └──────────────────────┘  │
-└─────────────────────────────────────────────────────────────────┘
+zustand-store
+├── shared      key/value preference snapshots
+├── invoices    id primary key, merchantReference index
+├── merchants   id primary key, parentCompanyId index
+└── scans       id primary key, status index
 ```
 
-### 2.2 Core Components
+Entity tables store each domain object as one row. The adapter reconstructs
+the persisted array on hydration and uses a transaction to synchronize
+additions, updates, and removals.
 
-#### 2.2.1 Store Structure
+The `persist` middleware name is not the IndexedDB table name; both values
+belong to the store configuration and must remain stable unless a data
+migration is approved.
 
-Each Zustand store follows a consistent pattern with three layers:
+## Hydration contract
 
-```typescript
-// 1. Persisted State Interface (stored in IndexedDB)
-interface InvoicesPersistedState {
-  invoices: ReadonlyArray<Invoice>;
-}
+Every persisted store starts with `hasHydrated: false`. An empty collection
+before hydration is ambiguous; it does not mean the user has no data.
 
-// 2. In-Memory State Interface (extends persisted)
-interface InvoicesState extends InvoicesPersistedState {
-  selectedInvoices: Invoice[];  // Not persisted
-  hasHydrated: boolean;         // Tracks hydration status
-}
-
-// 3. Actions Interface
-interface InvoicesActions {
-  setInvoices: (invoices: ReadonlyArray<Invoice>) => void;
-  upsertInvoice: (invoice: Invoice) => void;
-  removeInvoice: (invoiceId: string) => void;
-  updateInvoice: (invoiceId: string, updates: Partial<Invoice>) => void;
-  toggleInvoiceSelection: (invoice: Invoice) => void;
-  clearSelectedInvoices: () => void;
-  clearInvoices: () => void;
-  setHasHydrated: (hasHydrated: boolean) => void;
-}
-
-// Combined Store Type
-type InvoicesStore = InvoicesState & InvoicesActions;
-```
-
-#### 2.2.2 IndexedDB Storage Adapter
-
-Custom storage adapter using Dexie.js for entity-level persistence:
-
-```typescript
-const indexedDBStorage = createIndexedDBStorage<InvoicesPersistedState, Invoice>({
-  table: "invoices",
-  entityKey: "invoices",
-});
-```
-
-**Benefits**:
-- **Entity-Level Storage**: Each invoice stored as individual IndexedDB row
-- **Efficient Updates**: Only modified entities are written
-- **Large Dataset Support**: IndexedDB handles thousands of records
-- **Offline Support**: Data persists without network connectivity
-
-#### 2.2.3 Middleware Configuration
-
-```typescript
-// Persist configuration
-const persistConfig = {
-  name: "invoices-store",
-  storage: indexedDBStorage,
-  partialize: (state: InvoicesStore): InvoicesPersistedState => ({
-    invoices: [...state.invoices],
-  }),
-  onRehydrateStorage: () => (state: InvoicesStore | undefined) => {
-    state?.setHasHydrated(true);
-  },
-};
-
-// Environment-aware store creation
-const createDevStore = () =>
-  create<InvoicesStore>()(
-    devtools(
-      persist((set) => createInvoicesSlice(set), persistConfig),
-      { name: "InvoicesStore", enabled: true }
-    )
-  );
-
-const createProdStore = () =>
-  create<InvoicesStore>()(
-    persist((set) => createInvoicesSlice(set), persistConfig)
-  );
-
-export const useInvoicesStore =
-  process.env.NODE_ENV === "development" ? createDevStore() : createProdStore();
-```
-
-### 2.3 Store Inventory
-
-| Store | Entity | Persisted Fields | In-Memory Fields |
-|-------|--------|------------------|------------------|
-| `useInvoicesStore` | Invoice | invoices[] | selectedInvoices[], hasHydrated |
-| `useMerchantsStore` | Merchant | merchants[] | hasHydrated |
-| `useScansStore` | Scan | scans[] | selectedScans[], hasHydrated |
-| `usePreferencesStore` | Preferences | locale, theme, fontType, gradient/theme preset fields | hasHydrated |
-
----
-
-## 3. Implementation Patterns
-
-### 3.1 Using Stores in Client Components
+Client UI should select the exact fields/actions it needs:
 
 ```tsx
 "use client";
 
-import {useInvoicesStore} from "@/stores";
+const {entities, hasHydrated} = useInvoicesStore(
+  useShallow((state) => ({
+    entities: state.entities,
+    hasHydrated: state.hasHydrated,
+  })),
+);
 
-export function InvoicesList() {
-  const {invoices, hasHydrated, upsertInvoice} = useInvoicesStore();
-
-  // Wait for hydration before rendering
-  if (!hasHydrated) {
-    return <Loading />;
-  }
-
-  return (
-    <ul>
-      {invoices.map((invoice) => (
-        <li key={invoice.id}>{invoice.name}</li>
-      ))}
-    </ul>
-  );
-}
+if (!hasHydrated) return <Loading />;
+if (entities.length === 0) return <EmptyState />;
 ```
 
-### 3.2 Selective Subscriptions (Performance)
+Use `useShallow` for object-shaped selectors. Preserve server-safe initial
+state so the first client render does not contradict the server output.
 
-```tsx
-"use client";
+## Persistence boundaries
 
-import {useInvoicesStore} from "@/stores";
+Persist only fields intended to survive reload:
 
-export function InvoiceCount() {
-  // Subscribe only to invoices.length, not the entire array
-  const count = useInvoicesStore((state) => state.invoices.length);
+- invoice/merchant `entities`;
+- scan records, excluding selection/sync state;
+- the documented preference subset.
 
-  return <span>Total: {count}</span>;
-}
-```
+Selection, hydration flags, in-flight status, and ephemeral UI state remain
+in-memory unless an approved contract says otherwise.
 
-### 3.3 Upsert Pattern (Avoid Duplicates)
+On removal, clear any selected entity that no longer exists. During hydration,
+discard stale fields through the owning merge/partialization behavior rather
+than preserving unknown state accidentally.
 
-```tsx
-"use client";
+## Preferences
 
-export function useInvoiceSync() {
-  const {upsertInvoice} = useInvoicesStore();
+`usePreferencesStore` remains separate from the entity factory. It owns
+locale, theme/font/gradient state and persistence under the shared table.
+Browser cookie, BroadcastChannel, visibility, and DOM synchronization are
+owned by `PreferencesSubscriptions`.
 
-  const syncInvoice = async (invoiceId: string) => {
-    const invoice = await fetchInvoiceFromAPI(invoiceId);
-    // Upsert automatically handles create vs update
-    upsertInvoice(invoice);
-  };
+Do not move route-local visual state into preferences or treat the preference
+shape as a generic entity collection.
 
-  return {syncInvoice};
-}
-```
+## Devtools
 
-### 3.4 Hydration-Aware Server Components
+Development builds wrap the current stores with Zustand devtools while
+production uses persistence without that wrapper. Devtools names are useful
+diagnostic identity and should remain stable when the store itself is not
+being renamed.
 
-```tsx
-// Server Component fetches initial data
-export default async function InvoicesPage() {
-  const initialInvoices = await fetchInvoices();
+## Testing
 
-  return (
-    <Suspense fallback={<Loading />}>
-      <InvoicesClient initialData={initialInvoices} />
-    </Suspense>
-  );
-}
+Test:
 
-// Client Component hydrates store
-"use client";
+- initial state and public actions;
+- upsert/update/remove and selection cleanup;
+- `hasHydrated` transitions;
+- partialization and stale-field removal;
+- the real IndexedDB adapter's entity synchronization;
+- consuming UI's loading versus genuinely empty behavior;
+- preferences cross-tab/cookie behavior where changed.
 
-export function InvoicesClient({initialData}: {initialData: Invoice[]}) {
-  const {invoices, setInvoices, hasHydrated} = useInvoicesStore();
+Repository behavior should execute through real repository modules. Existing
+store suites that replace `indexedDBStorage` cannot prove persistence or
+hydration integration; use the configured external IndexedDB implementation
+with the real store/adapter when that contract changes.
 
-  // Merge server data with persisted data on mount
-  useEffect(() => {
-    if (hasHydrated && initialData.length > 0) {
-      // Server data takes precedence
-      setInvoices(initialData);
-    }
-  }, [hasHydrated, initialData, setInvoices]);
+## Trade-offs
 
-  return <InvoicesList invoices={invoices} />;
-}
-```
+Entity-level IndexedDB avoids rewriting one large serialized snapshot and
+supports efficient updates, but hydration is asynchronous and requires an
+explicit UI state. Specialized stores remain appropriate when their lifecycle
+cannot be represented by the generic entity contract without weakening type or
+behavior ownership.
 
----
+## References
 
-## 4. Storage Architecture
-
-### 4.1 IndexedDB Schema
-
-```
-Database: zustand-store
-├── Table: invoices
-│   ├─ id: string (Primary Key)
-│   ├─ name: string
-│   ├─ merchantId: string
-│   ├─ totalAmount: number
-│   └─ ...Invoice fields
-│
-├── Table: merchants
-│   ├─ id: string (Primary Key)
-│   ├─ name: string
-│   └─ ...Merchant fields
-│
-├── Table: scans
-│   ├─ id: string (Primary Key)
-│   ├─ status: string (Indexed)
-│   └─ ...Scan fields
-│
-└── Table: shared
-    ├─ key: string (Primary Key)
-    └─ value: string (Serialized preferences snapshot)
-```
-
-### 4.2 Storage Lifecycle
-
-1. **Initial Load**: Store created with empty state
-2. **Hydration**: Dexie reads entities from IndexedDB
-3. **State Update**: Action modifies in-memory state
-4. **Persistence**: Middleware writes changes to IndexedDB
-5. **Page Reload**: State restored from IndexedDB
-
----
-
-## 5. Developer Experience
-
-### 5.1 Redux DevTools Integration
-
-Development builds include Redux DevTools support:
-
-- **Time Travel**: Replay state changes
-- **Action Logging**: See all dispatched actions
-- **State Inspection**: Browse current state tree
-- **Import/Export**: Share state snapshots
-
-### 5.2 Type Safety
-
-Full TypeScript support prevents common errors:
-
-```typescript
-// ✅ Type-safe - compiler enforces correct types
-upsertInvoice({
-  id: "123",
-  name: "Invoice #123",
-  totalAmount: 99.99,
-  // ...required fields
-});
-
-// ❌ Compile error - missing required fields
-upsertInvoice({id: "123"}); // Error: Missing properties
-```
-
----
-
-## 6. Trade-offs and Alternatives
-
-### 6.1 Considered Alternatives
-
-| Alternative | Reason for Rejection |
-|-------------|---------------------|
-| **Redux Toolkit** | More boilerplate, overkill for this use case |
-| **React Context** | No persistence, prop drilling for large state |
-| **localStorage** | 5MB limit, no structured queries |
-| **React Query** | Server state focused, not for local persistence |
-| **Jotai** | Atomic model less suitable for entity collections |
-
-### 6.2 Trade-offs
-
-**Pros**:
-- ✅ Minimal boilerplate
-- ✅ TypeScript-first design
-- ✅ IndexedDB for large datasets
-- ✅ No provider components needed
-- ✅ DevTools in development only
-
-**Cons**:
-- ⚠️ IndexedDB async nature requires hydration handling
-- ⚠️ Entity-level storage adds complexity
-- ⚠️ No built-in optimistic updates (must be implemented)
-
----
-
-## 7. Related Documentation
-
-- [Zustand Documentation](https://github.com/pmndrs/zustand)
-- [Dexie.js Documentation](https://dexie.org/)
-- [RFC 1001: OpenTelemetry](./1001-opentelemetry-observability-system.md) - For tracing store operations
-- [RFC 1003: Internationalization](./1003-internationalization-system.md) - Locale-aware state handling
-
----
-
-## 8. File Locations
-
-| File | Purpose |
-|------|---------|
-| `src/stores/index.ts` | Barrel export for all stores |
-| `src/stores/invoicesStore.tsx` | Invoices Zustand store |
-| `src/stores/merchantsStore.tsx` | Merchants Zustand store |
-| `src/stores/scansStore.tsx` | Scans Zustand store |
-| `src/stores/preferencesStore.ts` | Preferences store with locale/cookie sync |
-| `src/stores/storage/indexedDBStorage.ts` | Custom IndexedDB adapter |
+- `sites/arolariu.ro/src/stores/createEntityStore.ts`
+- `sites/arolariu.ro/src/stores/invoicesStore.tsx`
+- `sites/arolariu.ro/src/stores/merchantsStore.tsx`
+- `sites/arolariu.ro/src/stores/scansStore.tsx`
+- `sites/arolariu.ro/src/stores/preferencesStore.ts`
+- `sites/arolariu.ro/src/stores/storage/indexedDBStorage.ts`
+- [RFC 1007](./1007-advanced-frontend-patterns.md)
+- [Zustand](https://zustand.docs.pmnd.rs/)
+- [Dexie](https://dexie.org/)

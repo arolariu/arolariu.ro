@@ -1,678 +1,207 @@
 # RFC 1007: Advanced Frontend Patterns
 
-- **Status**: Partially Implemented
+- **Status**: Implemented
 - **Date**: 2026-01-15
 - **Authors**: arolariu
-- **Related Components**: `sites/arolariu.ro/src/stores/`, `sites/arolariu.ro/src/lib/actions/`, `sites/arolariu.ro/src/app/domains/invoices/_contexts/`
+- **Related Components**: entity stores, server transport/results, dialog
+  context, React client/server boundaries
 
 ---
 
 ## Abstract
 
-This RFC documents advanced frontend patterns implemented in the arolariu.ro Next.js application that go beyond basic React patterns. These patterns provide type-safe, reusable abstractions for common concerns: entity state management with persistence, type-safe server action results, and modal dialog state management. Some patterns are production-adopted, while others are available as utilities pending broader migration.
+The website standardizes three cross-cutting patterns:
 
----
+1. factory-backed persisted entity stores for invoices and merchants;
+2. typed server result/error handling around server-owned transport;
+3. discriminated dialog state with typed payloads and stable actions.
 
-## 1. Motivation
+These patterns are implemented in production. Scans intentionally retain a
+specialized store, and not every server-side function is a Server Action.
 
-### 1.1 Problem Statement
+## 1. Entity-store factory
 
-As the application grew, several recurring patterns emerged that required standardization:
+`src/stores/createEntityStore.ts` owns the reusable Zustand entity contract.
+It provides:
 
-1. **Entity Store Duplication**: Multiple stores (invoices, merchants, scans) still have similar CRUD logic and can be migrated to a shared factory
-2. **Server Action Error Handling**: Inconsistent error handling across server actions
-3. **Dialog Management Complexity**: Modal dialogs needed mode/payload support beyond simple open/close
+- `entities`, `selectedEntities`, and `hasHydrated`;
+- set/upsert/update/remove/lookup operations;
+- selection toggle/clear behavior;
+- IndexedDB persistence through the shared adapter;
+- development-only devtools wrapping.
 
-### 1.2 Design Goals
+### Current adoption
 
-- **DRY Principle**: Eliminate code duplication through generic abstractions
-- **Type Safety**: Leverage TypeScript generics for compile-time validation
-- **Consistency**: Enforce uniform patterns across the codebase
-- **Developer Experience**: Provide clear, well-documented APIs
+| Store | Status |
+| --- | --- |
+| `useInvoicesStore` | Factory-backed |
+| `useMerchantsStore` | Factory-backed |
+| `useScansStore` | Deliberately specialized |
+| `usePreferencesStore` | Separate preference/key-value contract |
 
----
+Scans own status, naming, blob URL, metadata, archive, invoice-use, selection,
+cache, and transient sync-state transitions that the generic factory does not
+express. Extending the factory for that lifecycle is an architecture change
+requiring characterization, not an automatic DRY refactor.
 
-## 2. Generic Entity Store Factory (Available, Partial Adoption)
-
-### 2.1 Overview
-
-The `createEntityStore<E>` factory function provides a reusable way to create Zustand stores with IndexedDB persistence. It is implemented and tested, but the production invoice/merchant/scan stores are currently still hand-rolled.
-
-**Location**: `sites/arolariu.ro/src/stores/createEntityStore.ts`
-
-### 2.2 Architecture
-
-```text
-+-------------------+     +------------------+     +---------------+
-|   Component       | --> |  Entity Store    | --> |   IndexedDB   |
-|   (useStore)      |     |  (Zustand)       |     |   (Dexie)     |
-+-------------------+     +------------------+     +---------------+
-                                  ^
-                                  |
-                          +---------------+
-                          |  DevTools     |
-                          |  (Dev only)   |
-                          +---------------+
-```
-
-### 2.3 Core Types
+### Factory usage
 
 ```typescript
-/**
- * Base entity interface requiring an id field.
- */
-export interface BaseEntity {
-  readonly id: string;
-}
-
-/**
- * Persisted state (saved to IndexedDB).
- */
-export interface EntityPersistedState<E extends BaseEntity> {
-  readonly entities: ReadonlyArray<E>;
-}
-
-/**
- * Full state including in-memory only fields.
- */
-export interface EntityState<E extends BaseEntity> extends EntityPersistedState<E> {
-  selectedEntities: E[];
-  hasHydrated: boolean;
-}
-
-/**
- * Actions available on all entity stores.
- */
-export interface EntityActions<E extends BaseEntity> {
-  setEntities: (entities: ReadonlyArray<E>) => void;
-  setSelectedEntities: (selectedEntities: E[]) => void;
-  upsertEntity: (entity: E) => void;
-  removeEntity: (entityId: string) => void;
-  updateEntity: (entityId: string, updates: Partial<E>) => void;
-  toggleEntitySelection: (entity: E) => void;
-  clearSelectedEntities: () => void;
-  clearEntities: () => void;
-  getEntityById: (entityId: string) => E | undefined;
-  setHasHydrated: (hasHydrated: boolean) => void;
-}
-
-/**
- * Combined store type.
- */
-export type EntityStore<E extends BaseEntity> = EntityState<E> & EntityActions<E>;
-```
-
-### 2.4 Usage Pattern
-
-```typescript
-// Example usage for future migrations (not yet used by current invoice/merchant/scan stores)
-// 1. Define entity type
-interface Invoice extends BaseEntity {
-  name: string;
-  createdAt: Date;
-  totalAmount: number;
-}
-
-// 2. Create store with configuration
 export const useInvoicesStore = createEntityStore<Invoice>({
-  tableName: "invoices",      // IndexedDB table name
-  storeName: "InvoicesStore", // DevTools display name
-  persistName: "invoices-store", // Persist middleware key
+  tableName: "invoices",
+  storeName: "InvoicesStore",
+  persistName: "invoices-store",
 });
-
-// 3. Use in components
-function InvoicesList() {
-  const {entities, upsertEntity, hasHydrated} = useInvoicesStore(
-    useShallow((state) => ({
-      entities: state.entities,
-      upsertEntity: state.upsertEntity,
-      hasHydrated: state.hasHydrated,
-    }))
-  );
-
-  if (!hasHydrated) return <Loading />;
-
-  return (
-    <ul>
-      {entities.map((invoice) => (
-        <li key={invoice.id}>{invoice.name}</li>
-      ))}
-    </ul>
-  );
-}
 ```
 
-### 2.5 Key Features
+Consumers use exact selectors and `useShallow` for object results. UI must
+distinguish pre-hydration from a settled empty collection.
 
-| Feature | Description |
-|---------|-------------|
-| **IndexedDB Persistence** | Entities survive page refresh via Dexie storage adapter |
-| **Hydration Tracking** | `hasHydrated` flag prevents flash of empty content |
-| **DevTools Integration** | Full Redux DevTools support in development |
-| **Selection Management** | Built-in multi-select with toggle/clear |
-| **Upsert Operation** | Single method handles both insert and update |
-| **Partial Updates** | `updateEntity` accepts partial entity data |
+RFC 1005 owns persistence, IndexedDB, and state-placement detail.
 
-### 2.6 Current Adoption Status
+## 2. Server result pattern
 
-- `createEntityStore` utility: implemented (`sites/arolariu.ro/src/stores/createEntityStore.ts`)
-- Utility tests: implemented (`createEntityStore.test.ts`)
-- `useInvoicesStore`, `useMerchantsStore`, `useScansStore`: currently hand-rolled stores
-
----
-
-## 3. Server Action Result Pattern
-
-### 3.1 Overview
-
-A discriminated union type that provides type-safe error handling for server actions, ensuring consistent error structures across the application.
-
-**Location**: `sites/arolariu.ro/src/lib/utils.server.ts`
-
-### 3.2 Type Definitions
+`src/lib/utils.server.ts` owns a promise-based discriminated result:
 
 ```typescript
-/**
- * Standardized error codes for server actions.
- */
-export type ServerActionErrorCode =
-  | "NETWORK_ERROR"
-  | "TIMEOUT_ERROR"
-  | "AUTH_ERROR"
-  | "NOT_FOUND"
-  | "VALIDATION_ERROR"
-  | "SERVER_ERROR"
-  | "UNKNOWN_ERROR";
-
-/**
- * Discriminated union result type.
- * Either success with data, or failure with error details.
- */
-export type ServerActionResult<T> =
-  | {success: true; data: T}
-  | {success: false; error: {code: ServerActionErrorCode; message: string; status?: number}};
-```
-
-### 3.3 Helper Functions
-
-```typescript
-/**
- * Maps HTTP status codes to error codes.
- */
-export function mapHttpStatusToErrorCode(status: number): ServerActionErrorCode {
-  if (status === 401 || status === 403) return "AUTH_ERROR";
-  if (status === 404) return "NOT_FOUND";
-  if (status === 400 || status === 422) return "VALIDATION_ERROR";
-  if (status >= 500) return "SERVER_ERROR";
-  return "UNKNOWN_ERROR";
-}
-
-/**
- * Creates error result from caught exception.
- */
-export function createErrorResult<T>(error: unknown, defaultMessage: string): ServerActionResult<T> {
-  if (error instanceof Error) {
-    const isTimeout = error.message.includes("timed out");
-    return {
-      success: false,
+export type ServerActionResult<T> = Promise<
+  | Readonly<{success: true; data: T; error?: never}>
+  | Readonly<{
+      success: false;
+      data?: never;
       error: {
-        code: isTimeout ? "TIMEOUT_ERROR" : "NETWORK_ERROR",
-        message: error.message,
-      },
-    };
-  }
-  return {
-    success: false,
-    error: {
-      code: "UNKNOWN_ERROR",
-      message: defaultMessage,
-    },
-  };
-}
-```
-
-### 3.4 Server Action Pattern
-
-```typescript
-"use server";
-
-import {createErrorResult, fetchWithTimeout, mapHttpStatusToErrorCode, type ServerActionResult} from "@/lib/utils.server";
-
-type ServerActionOutputType = Promise<ServerActionResult<ReadonlyArray<Invoice>>>;
-
-export default async function fetchInvoices(): ServerActionOutputType {
-  return withSpan("api.actions.invoices.fetchInvoices", async () => {
-    try {
-      const {userJwt} = await fetchBFFUserFromAuthService();
-
-      const response = await fetchWithTimeout(`${API_URL}/invoices/`, {
-        headers: {Authorization: `Bearer ${userJwt}`},
-      });
-
-      if (response.ok) {
-        const data = await response.json() as Invoice[];
-        return {success: true, data};
-      }
-
-      return {
-        success: false,
-        error: {
-          code: mapHttpStatusToErrorCode(response.status),
-          message: `Failed to fetch invoices: ${response.statusText}`,
-          status: response.status,
-        },
+        code: ServerActionErrorCode;
+        message: string;
+        status?: number;
       };
-    } catch (error) {
-      return createErrorResult<ReadonlyArray<Invoice>>(error, "Failed to fetch invoices");
-    }
-  });
-}
+    }>
+>;
 ```
 
-### 3.5 Client-Side Consumption
-
-```typescript
-"use client";
-
-import fetchInvoices from "@/lib/actions/invoices/fetchInvoices";
-
-export function useInvoices() {
-  const [isError, setIsError] = useState(false);
-  const {invoices, setInvoices, hasHydrated} = useInvoicesStore(useShallow(...));
-
-  useEffect(() => {
-    const fetchData = async () => {
-      const result = await fetchInvoices();
-
-      if (result.success) {
-        setInvoices([...result.data]);
-      } else {
-        console.error(`[${result.error.code}] ${result.error.message}`);
-        setIsError(true);
-      }
-    };
-    fetchData();
-  }, [setInvoices]);
-
-  return {invoices, isLoading: !hasHydrated, isError};
-}
-```
-
-### 3.6 Benefits
-
-| Benefit | Description |
-|---------|-------------|
-| **Type-Safe Error Handling** | TypeScript narrows type after `result.success` check |
-| **Consistent Error Structure** | All errors have code, message, and optional status |
-| **Meaningful Error Codes** | Semantic codes enable proper UI error messaging |
-| **OpenTelemetry Integration** | All actions wrapped in spans for tracing |
-| **Timeout Protection** | 30-second default timeout prevents hanging requests |
-
----
-
-## 4. Dialog Context with Mode and Payload
-
-### 4.1 Overview
-
-A context-based dialog management system that supports multiple dialog types with operation modes and data payloads, preventing multiple simultaneous dialogs.
-
-**Location**: `sites/arolariu.ro/src/app/domains/invoices/_contexts/DialogContext.tsx`
-
-### 4.2 Type Definitions
-
-```typescript
-/**
- * Dialog type enumeration - exhaustive list of dialog identifiers.
- */
-export type DialogType = Readonly<
-  | "EDIT_INVOICE__ANALYSIS"
-  | "EDIT_INVOICE__IMAGE"
-  | "EDIT_INVOICE__SCAN"
-  | "EDIT_INVOICE__MERCHANT"
-  | "EDIT_INVOICE__MERCHANT_INVOICES"
-  | "EDIT_INVOICE__RECIPE"
-  | "EDIT_INVOICE__METADATA"
-  | "EDIT_INVOICE__ITEMS"
-  | "EDIT_INVOICE__FEEDBACK"
-  | "VIEW_INVOICE__SHARE_ANALYTICS"
-  | "VIEW_INVOICES__IMPORT"
-  | "VIEW_INVOICES__EXPORT"
-  | "SHARED__INVOICE_DELETE"
-  | "SHARED__INVOICE_SHARE"
-> | null;
-
-/**
- * Operation mode for the dialog.
- */
-export type DialogMode = Readonly<"view" | "add" | "edit" | "delete" | "share"> | null;
-
-/**
- * Payload data for the dialog (entity ID, entity data, etc.).
- */
-export type DialogPayload = unknown;
-
-/**
- * Current dialog state structure.
- */
-type DialogCurrent = {
-  type: DialogType;
-  mode: DialogMode;
-  payload: DialogPayload;
-};
-```
-
-### 4.3 Context API
-
-```typescript
-interface DialogContextValue {
-  currentDialog: DialogCurrent;
-  isOpen: (dialog: DialogType) => boolean;
-  openDialog: (dialog: DialogType, mode?: DialogMode, payload?: DialogPayload) => void;
-  closeDialog: () => void;
-}
-```
-
-### 4.4 Provider Implementation
-
-```typescript
-export function DialogProvider({children}: {children: ReactNode}) {
-  const [dialogState, setDialogState] = useState<DialogCurrent>({
-    type: null,
-    mode: null,
-    payload: null,
-  });
-
-  const currentDialog = useRef<DialogCurrent>({
-    type: null,
-    mode: null,
-    payload: null,
-  });
-
-  const isOpen = useCallback(
-    (dialog: DialogType) => currentDialog.current.type === dialog,
-    []
-  );
-
-  const openDialog = useCallback(
-    (dialog: DialogType, mode: DialogMode = "view", payload: DialogPayload = null) => {
-      // Only open if no dialog is currently open (prevents stacking)
-      if (currentDialog.current.type === null) {
-        currentDialog.current = {type: dialog, mode, payload};
-        setDialogState(currentDialog.current);
-      }
-    },
-    []
-  );
-
-  const closeDialog = useCallback(() => {
-    currentDialog.current = {type: null, mode: null, payload: null};
-    setDialogState(currentDialog.current);
-  }, []);
-
-  const value = useMemo(
-    () => ({currentDialog: currentDialog.current, isOpen, openDialog, closeDialog}),
-    [dialogState] // Re-create when state changes
-  );
-
-  return <DialogContext value={value}>{children}</DialogContext>;
-}
-```
-
-### 4.5 Usage Pattern
-
-```typescript
-// 1. Wrap components with provider
-<DialogProvider>
-  <InvoiceEditor />
-  <DialogContainer />
-</DialogProvider>
-
-// 2. Use in components
-function InvoiceEditor() {
-  const {openDialog} = useDialogs();
-
-  return (
-    <Button onClick={() => openDialog("EDIT_INVOICE__MERCHANT", "edit", {merchantId: "123"})}>
-      Edit Merchant
-    </Button>
-  );
-}
-
-// 3. Render dialogs conditionally
-function DialogContainer() {
-  const {currentDialog, closeDialog} = useDialogs();
-
-  if (currentDialog.type === "EDIT_INVOICE__MERCHANT") {
-    return (
-      <MerchantDialog
-        mode={currentDialog.mode}
-        merchantId={currentDialog.payload?.merchantId}
-        onClose={closeDialog}
-      />
-    );
-  }
-
-  return null;
-}
-```
-
-### 4.6 Key Features
-
-| Feature | Description |
-|---------|-------------|
-| **Single Dialog Constraint** | `openDialog` no-ops if dialog already open |
-| **Mode-Aware Dialogs** | Same dialog can behave differently in view/edit/delete modes |
-| **Payload Support** | Pass entity IDs, data, or configuration to dialogs |
-| **Ref + State Hybrid** | Ref for immediate reads, state for React re-renders |
-| **Memoized Context** | Prevents unnecessary re-renders of consuming components |
-
----
-
-## 5. Integration Example
-
-### 5.1 Complete Flow: Edit Invoice Merchant
-
-```typescript
-// 1. User clicks edit merchant button
-const {openDialog} = useDialogs();
-openDialog("EDIT_INVOICE__MERCHANT", "edit", {invoiceId: invoice.id});
-
-// 2. DialogContainer renders MerchantEditDialog
-function MerchantEditDialog({mode, payload, onClose}) {
-  const {entities: merchants} = useMerchantsStore(useShallow(...));
-
-  const handleSave = async (merchantData) => {
-    const result = await updateMerchant(merchantData);
-
-    if (result.success) {
-      // Update local store immediately
-      upsertMerchant(result.data);
-      onClose();
-    } else {
-      toast.error(result.error.message);
-    }
-  };
-
-  return (
-    <Dialog open onOpenChange={onClose}>
-      <DialogContent>
-        <MerchantForm onSubmit={handleSave} />
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-// 3. Server action handles the update
-async function updateMerchant(data): ServerActionOutputType {
-  // Returns ServerActionResult<Merchant>
-}
-
-// 4. Store updates and UI re-renders
-```
-
----
-
-## 6. Testing Strategies
-
-### 6.1 Entity Store Testing
-
-```typescript
-import {renderHook, act} from "@testing-library/react";
-import {useInvoicesStore} from "./invoicesStore";
-
-describe("useInvoicesStore", () => {
-  beforeEach(() => {
-    // Reset store state between tests
-    useInvoicesStore.getState().clearEntities();
-  });
-
-  it("upserts new entity", () => {
-    const {result} = renderHook(() => useInvoicesStore());
-
-    act(() => {
-      result.current.upsertEntity({id: "1", name: "Test"});
-    });
-
-    expect(result.current.entities).toHaveLength(1);
-    expect(result.current.entities[0].name).toBe("Test");
-  });
-
-  it("updates existing entity", () => {
-    const {result} = renderHook(() => useInvoicesStore());
-
-    act(() => {
-      result.current.upsertEntity({id: "1", name: "Original"});
-      result.current.upsertEntity({id: "1", name: "Updated"});
-    });
-
-    expect(result.current.entities).toHaveLength(1);
-    expect(result.current.entities[0].name).toBe("Updated");
-  });
-});
-```
-
-### 6.2 Server Action Testing
-
-```typescript
-import fetchInvoices from "./fetchInvoices";
-
-describe("fetchInvoices", () => {
-  it("returns success result on 200", async () => {
-    // Mock fetch to return success
-    const result = await fetchInvoices();
-
-    expect(result.success).toBe(true);
-    if (result.success) {
-      expect(Array.isArray(result.data)).toBe(true);
-    }
-  });
-
-  it("returns error result on 401", async () => {
-    // Mock fetch to return 401
-    const result = await fetchInvoices();
-
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error.code).toBe("AUTH_ERROR");
-    }
-  });
-});
-```
-
-### 6.3 Dialog Context Testing
-
-```typescript
-import {renderHook, act} from "@testing-library/react";
-import {DialogProvider, useDialogs} from "./DialogContext";
-
-describe("DialogContext", () => {
-  const wrapper = ({children}) => <DialogProvider>{children}</DialogProvider>;
-
-  it("opens dialog with mode and payload", () => {
-    const {result} = renderHook(() => useDialogs(), {wrapper});
-
-    act(() => {
-      result.current.openDialog("EDIT_INVOICE__MERCHANT", "edit", {id: "123"});
-    });
-
-    expect(result.current.currentDialog.type).toBe("EDIT_INVOICE__MERCHANT");
-    expect(result.current.currentDialog.mode).toBe("edit");
-    expect(result.current.currentDialog.payload).toEqual({id: "123"});
-  });
-
-  it("prevents opening second dialog", () => {
-    const {result} = renderHook(() => useDialogs(), {wrapper});
-
-    act(() => {
-      result.current.openDialog("EDIT_INVOICE__MERCHANT", "edit");
-      result.current.openDialog("EDIT_INVOICE__IMAGE", "view"); // Should no-op
-    });
-
-    expect(result.current.currentDialog.type).toBe("EDIT_INVOICE__MERCHANT");
-  });
-});
-```
-
----
-
-## 7. Best Practices
-
-### 7.1 Entity Store Usage
-
-- **Do** use `useShallow` to prevent unnecessary re-renders
-- **Do** check `hasHydrated` before displaying content
-- **Do** use `upsertEntity` instead of manual add/update logic
-- **Don't** store derived data - compute it in components
-
-### 7.2 Server Actions
-
-- **Do** wrap all API calls in OpenTelemetry spans
-- **Do** use `fetchWithTimeout` for resilience
-- **Do** map HTTP status codes to semantic error codes
-- **Don't** throw exceptions - return error results
-
-### 7.3 Dialog Management
-
-- **Do** use semantic dialog type names (feature__action format)
-- **Do** pass minimal payload (IDs over full objects)
-- **Do** centralize dialog rendering in `DialogContainer`
-- **Don't** open dialogs from within dialogs
-
----
-
-## 8. References
-
-### 8.1 Related RFCs
-
-- **RFC 1005**: State Management (Zustand) - Foundation for entity stores
-- **RFC 1001**: Frontend OpenTelemetry - Tracing integration
-
-### 8.2 External Documentation
-
-- [Zustand Documentation](https://docs.pmnd.rs/zustand)
-- [Dexie.js Documentation](https://dexie.org/)
-- [React Context Best Practices](https://react.dev/reference/react/useContext)
-
-### 8.3 Internal Resources
-
-- Entity Store Factory: `sites/arolariu.ro/src/stores/createEntityStore.ts`
-- Server Utilities: `sites/arolariu.ro/src/lib/utils.server.ts`
-- Dialog Context: `sites/arolariu.ro/src/app/domains/invoices/_contexts/DialogContext.tsx`
-
----
-
-## 9. Conclusion
-
-These advanced patterns provide the foundation for scalable, maintainable frontend code:
-
-- **Generic Entity Store Factory**: Eliminates ~80% of boilerplate for new entity types
-- **Server Action Result Pattern**: Ensures type-safe, consistent error handling
-- **Dialog Context with Mode/Payload**: Enables complex modal workflows
-
-The server action result and dialog context patterns are production-tested across active domains. The entity store factory is implemented and validated through tests, and is ready for incremental adoption in production stores.
-
----
-
-**Document Version**: 1.0
-**Last Updated**: 2026-01-15
-**Status**: Partially Implemented
+Consumers narrow on `success`; they do not inspect ad hoc response shapes.
+
+### Error ownership
+
+- HTTP status mapping uses the shared `ServerActionErrorCode` policy.
+- `TransportValidationError` maps to `SERVER_ERROR` because a malformed
+  successful API payload is server/client contract drift, not user validation.
+- timeout, network, auth, not-found, validation, server, and unknown failures
+  remain distinguishable.
+- backend error parsing uses safe `ProblemDetails`/detail content and special
+  handling for established status contracts.
+
+### Transport ownership
+
+`fetchWithTimeout`:
+
+- resolves the configured API URL for relative paths;
+- owns a timeout `AbortController`; the current implementation overrides
+  `RequestInit.signal` rather than composing a caller signal, which is a live
+  limitation to preserve or fix explicitly;
+- injects trace context;
+- forces `cache: "no-store"` for every request;
+- throws the established timeout/network errors.
+
+Runtime parsing remains separate: successful JSON is `unknown` until the
+domain transport parser validates it.
+
+## 3. Server Actions and private server helpers
+
+A module-level `"use server"` export is implemented on the server but is
+browser-callable RPC. Treat every exported action as an untrusted public
+boundary:
+
+1. validate browser-controlled inputs;
+2. derive identity on the server through Clerk or the established auth owner;
+3. enforce operation/resource authorization independently;
+4. call the shared transport and parser;
+5. return the established typed result.
+
+Do not accept a caller-supplied JWT merely because the function executes on
+the server.
+
+Private server reads used only by Server Components or Route Handlers import
+`"server-only"` and do not carry `"use server"`. Directory names such as
+`lib/actions` do not decide RPC exposure.
+
+## 4. Dialog context
+
+`src/app/domains/invoices/_contexts/DialogContext.tsx` models dialog state with
+a discriminated `DialogType`/payload registry.
+
+The provider uses separate state and actions contexts:
+
+- the actions value is stable for the provider lifetime;
+- the state value changes on open/close;
+- current exported `useDialog` and `useDialogs` hooks subscribe to both and
+  therefore rerender on state changes;
+- the split preserves a future action-only seam but does not currently avoid
+  rerenders for public hook consumers.
+
+`useDialog` binds one dialog type/mode and keeps `open` stable while a ref is
+updated after each render so the callback dispatches the latest payload.
+Removing the ref can dispatch stale data; adding the payload as a dependency
+changes callback identity.
+
+### Guard behavior
+
+The provider preserves the established "do not replace an already open dialog"
+guard inside its functional state update. Changing that behavior is a UX
+decision, not a context refactor.
+
+## 5. Client/server composition
+
+Server Components own private reads, metadata, access decisions, and stable
+initial output. Client Components own Hooks, events, browser APIs, client
+Context, and Zustand.
+
+Pass only the minimal React-serializable snapshot into a client island. Do not
+move a route client-side merely to consume one interactive control, and do not
+turn a private server helper into a Server Action for server-to-server reuse.
+
+## 6. Testing
+
+### Entity stores
+
+- exercise public actions and selectors;
+- cover hydration and selection cleanup;
+- use the real store plus configured IndexedDB implementation when persistence
+  is the contract.
+
+### Server transport/actions
+
+- control only HTTP, Clerk, or provider boundaries;
+- execute shared transport/error/parser modules rather than replacing them;
+- assert exact discriminated results, request shape, and forbidden calls;
+- cover malformed successful responses.
+
+### Dialog context
+
+- render the real provider;
+- prove open/close guard and typed payload behavior;
+- rerender with a changed payload and verify stable `open` dispatches the
+  latest value;
+- assert the current state-driven rerender contract rather than claiming an
+  action-only optimization.
+
+## 7. Trade-offs
+
+- Generic entity stores reduce duplicated CRUD/selection/persistence logic but
+  should not absorb specialized lifecycle behavior.
+- A shared result union simplifies consumers but requires every transport
+  action to preserve the same discriminants.
+- Stable callback/latest-ref patterns avoid avoidable effect churn but require
+  focused rerender tests.
+- Full server/client separation reduces shipped client code but requires
+  explicit serializable handoffs.
+
+## References
+
+- `sites/arolariu.ro/src/stores/createEntityStore.ts`
+- `sites/arolariu.ro/src/stores/invoicesStore.tsx`
+- `sites/arolariu.ro/src/stores/merchantsStore.tsx`
+- `sites/arolariu.ro/src/stores/scansStore.tsx`
+- `sites/arolariu.ro/src/lib/utils.server.ts`
+- `sites/arolariu.ro/src/types/invoices/transport.ts`
+- `sites/arolariu.ro/src/app/domains/invoices/_contexts/DialogContext.tsx`
+- [RFC 1005](./1005-state-management-zustand.md)
