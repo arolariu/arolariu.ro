@@ -35,6 +35,57 @@ describe("MonorepositoryConsoleLogger", () => {
     }
 
     vi.useRealTimers();
+    vi.restoreAllMocks();
+  });
+
+  it("routes semantic levels through the production console sink", () => {
+    const debug = vi.spyOn(console, "debug").mockImplementation(() => undefined);
+    const info = vi.spyOn(console, "info").mockImplementation(() => undefined);
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const error = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const logger = new MonorepositoryConsoleLogger("generate::artifacts", {
+      color: false,
+    });
+
+    logger.debug("debug message");
+    logger.info("info message");
+    logger.warn("warning message");
+    logger.error("error message");
+    logger.success("success message");
+
+    expect(debug).toHaveBeenCalledOnce();
+    expect(debug).toHaveBeenCalledWith("[arolariu::generate::artifacts] 🐛 debug message");
+    expect(info).toHaveBeenCalledTimes(2);
+    expect(info).toHaveBeenNthCalledWith(1, "[arolariu::generate::artifacts] ℹ️ info message");
+    expect(info).toHaveBeenNthCalledWith(2, "[arolariu::generate::artifacts] ✅ success message");
+    expect(warn).toHaveBeenCalledOnce();
+    expect(warn).toHaveBeenCalledWith("[arolariu::generate::artifacts] ⚠️ warning message");
+    expect(error).toHaveBeenCalledOnce();
+    expect(error).toHaveBeenCalledWith("[arolariu::generate::artifacts] ⛔ error message");
+  });
+
+  it("routes production line and raw writes to their requested streams", () => {
+    const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
+    const error = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const stdoutWrite = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+    const stderrWrite = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
+    const logger = new MonorepositoryConsoleLogger("setup", {
+      color: false,
+    });
+
+    logger.line("stdout line");
+    logger.line("stderr line", "stderr");
+    logger.write("stdout chunk");
+    logger.write("stderr chunk", "stderr");
+
+    expect(log).toHaveBeenCalledOnce();
+    expect(log).toHaveBeenCalledWith("stdout line");
+    expect(error).toHaveBeenCalledOnce();
+    expect(error).toHaveBeenCalledWith("stderr line");
+    expect(stdoutWrite).toHaveBeenCalledOnce();
+    expect(stdoutWrite).toHaveBeenCalledWith("stdout chunk");
+    expect(stderrWrite).toHaveBeenCalledOnce();
+    expect(stderrWrite).toHaveBeenCalledWith("stderr chunk");
   });
 
   it("routes semantic levels with the stable context prefix", () => {
@@ -270,6 +321,27 @@ describe("MonorepositoryConsoleLogger", () => {
     ]);
   });
 
+  it("redacts JSON-escaped secret values before production output", () => {
+    const secret = 'quote"slash\\line\nend';
+    const sink = new InMemoryLoggerSink();
+    const logger = new MonorepositoryConsoleLogger("doctor", {
+      mode: "json",
+      color: false,
+      sink,
+      redactions: [secret],
+    });
+
+    logger.json({token: secret});
+
+    expect(sink.records).toEqual([
+      {
+        stream: "stdout",
+        text: '{\n  "token": "[REDACTED]"\n}',
+        write: false,
+      },
+    ]);
+  });
+
   it("cleans up TTY progress before terminal output and stops future frames", () => {
     vi.useFakeTimers();
     Object.defineProperty(process.stdout, "isTTY", {configurable: true, value: true});
@@ -293,6 +365,97 @@ describe("MonorepositoryConsoleLogger", () => {
       write: false,
     });
     expect(sink.records).toHaveLength(recordCountAfterSuccess);
+  });
+
+  it.each([true, false])("keeps progress active after interleaved output when TTY is %s", (isTTY) => {
+    vi.useFakeTimers();
+    Object.defineProperty(process.stdout, "isTTY", {configurable: true, value: isTTY});
+    const sink = new InMemoryLoggerSink();
+    const logger = new MonorepositoryConsoleLogger("setup", {
+      color: false,
+      sink,
+    });
+
+    const progress = logger.progress("Installing");
+    logger.warn("Using fallback");
+    progress.update("Configuring");
+    progress.succeed("Configured");
+    progress.succeed("Duplicate success");
+    progress.fail("Late failure");
+    const recordCountAfterSuccess = sink.records.length;
+    vi.advanceTimersByTime(160);
+
+    expect(sink.records.filter((record) => record.text.includes("Using fallback"))).toEqual([
+      {
+        stream: "stderr",
+        text: "[arolariu::setup] ⚠️ Using fallback",
+        write: false,
+      },
+    ]);
+    expect(sink.records.filter((record) => record.text === "✔ Configured")).toEqual([
+      {
+        stream: "stdout",
+        text: "✔ Configured",
+        write: false,
+      },
+    ]);
+    expect(sink.records.every((record) => !record.text.includes("Duplicate success") && !record.text.includes("Late failure"))).toBe(true);
+    expect(sink.records).toHaveLength(recordCountAfterSuccess);
+
+    if (isTTY) {
+      expect(sink.records.some((record) => record.write && record.text.includes("Configuring"))).toBe(true);
+    } else {
+      expect(sink.records.every((record) => !record.text.includes("\r"))).toBe(true);
+    }
+  });
+
+  it.each([true, false])("emits one failure after interleaved progress output when TTY is %s", (isTTY) => {
+    vi.useFakeTimers();
+    Object.defineProperty(process.stdout, "isTTY", {configurable: true, value: isTTY});
+    const sink = new InMemoryLoggerSink();
+    const logger = new MonorepositoryConsoleLogger("setup", {
+      color: false,
+      sink,
+    });
+
+    const progress = logger.progress("Installing");
+    logger.info("Downloaded package");
+    progress.fail("Installation failed");
+    progress.fail("Duplicate failure");
+    progress.succeed("Late success");
+
+    expect(sink.records.filter((record) => record.text === "✖ Installation failed")).toEqual([
+      {
+        stream: "stderr",
+        text: "✖ Installation failed",
+        write: false,
+      },
+    ]);
+    expect(sink.records.every((record) => !record.text.includes("Duplicate failure") && !record.text.includes("Late success"))).toBe(true);
+  });
+
+  it.each([true, false])("stops progress without a final line after interleaved output when TTY is %s", (isTTY) => {
+    vi.useFakeTimers();
+    Object.defineProperty(process.stdout, "isTTY", {configurable: true, value: isTTY});
+    const sink = new InMemoryLoggerSink();
+    const logger = new MonorepositoryConsoleLogger("setup", {
+      color: false,
+      sink,
+    });
+
+    const progress = logger.progress("Installing");
+    logger.info("Downloaded package");
+    progress.stop();
+    progress.update("Ignored update");
+    progress.succeed("Late success");
+    progress.fail("Late failure");
+    const recordCountAfterStop = sink.records.length;
+    vi.advanceTimersByTime(160);
+
+    expect(sink.records.some((record) => record.text.includes("Ignored update"))).toBe(false);
+    expect(sink.records.some((record) => record.text.includes("Late success"))).toBe(false);
+    expect(sink.records.some((record) => record.text.includes("Late failure"))).toBe(false);
+    expect(sink.records).toHaveLength(recordCountAfterStop);
   });
 
   it("keeps non-TTY progress line-oriented and free of carriage returns", () => {

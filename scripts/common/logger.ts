@@ -69,6 +69,7 @@ export interface ProgressReporter {
 type SemanticLevel = "debug" | "info" | "warn" | "error" | "success";
 
 interface ActiveProgress {
+  readonly pause: () => void;
   readonly stop: () => void;
 }
 
@@ -419,7 +420,7 @@ export class MonorepositoryConsoleLogger extends MonorepositoryLogger {
     const document = JSON.stringify(value, null, 2) ?? "null";
     this.prepareForOutput();
     this.#state.jsonEmitted = true;
-    this.writeToSink("stdout", document, false);
+    this.writeToSink("stdout", document, false, undefined, true);
   }
 
   /** {@inheritDoc MonorepositoryLogger.progress} */
@@ -433,12 +434,13 @@ export class MonorepositoryConsoleLogger extends MonorepositoryLogger {
       };
     }
 
-    this.prepareForOutput();
+    this.#state.activeProgress?.stop();
 
     let message = initialMessage;
     let frameIndex = 0;
     let active = true;
     let timer: NodeJS.Timeout | null = null;
+    let progressDisplayed = false;
 
     const renderProgress = (): void => {
       if (!active || !this.#state.tty) {
@@ -448,6 +450,32 @@ export class MonorepositoryConsoleLogger extends MonorepositoryLogger {
       const frame = PROGRESS_FRAMES[frameIndex] ?? PROGRESS_FRAMES[0];
       frameIndex = (frameIndex + 1) % PROGRESS_FRAMES.length;
       this.writeToSink("stdout", `\r${this.applyStyles(frame, ["cyan"])} ${message}`, true);
+      progressDisplayed = true;
+    };
+
+    const startProgress = (): void => {
+      if (!active || !this.#state.tty || timer !== null) {
+        return;
+      }
+
+      renderProgress();
+      timer = setInterval(renderProgress, PROGRESS_INTERVAL_MS);
+      timer.unref();
+    };
+
+    const pauseProgress = (): void => {
+      if (!active) {
+        return;
+      }
+
+      if (timer !== null) {
+        clearInterval(timer);
+        timer = null;
+      }
+      if (this.#state.tty && progressDisplayed) {
+        this.writeToSink("stdout", "\r\u001B[K", true);
+        progressDisplayed = false;
+      }
     };
 
     const stopProgress = (): void => {
@@ -455,35 +483,26 @@ export class MonorepositoryConsoleLogger extends MonorepositoryLogger {
         return;
       }
 
+      if (this.#state.activeProgress === activeProgress) {
+        this.#state.activeProgress = null;
+      }
+      pauseProgress();
       active = false;
-      if (timer !== null) {
-        clearInterval(timer);
-        timer = null;
-      }
-      if (this.#state.tty) {
-        this.writeToSink("stdout", "\r\u001B[K", true);
-      }
     };
 
     const activeProgress: ActiveProgress = {
+      pause: pauseProgress,
       stop: stopProgress,
     };
     this.#state.activeProgress = activeProgress;
 
-    if (this.#state.tty) {
-      renderProgress();
-      timer = setInterval(renderProgress, PROGRESS_INTERVAL_MS);
-      timer.unref();
-    }
+    startProgress();
 
     const finish = (stream: LoggerStream, icon: string, style: LoggerStyle, finalMessage: string): void => {
       if (!active) {
         return;
       }
 
-      if (this.#state.activeProgress === activeProgress) {
-        this.#state.activeProgress = null;
-      }
       stopProgress();
       this.writeToSink(stream, this.render([{text: `${icon} `, styles: [style]}, {text: finalMessage}]), false);
     };
@@ -495,7 +514,11 @@ export class MonorepositoryConsoleLogger extends MonorepositoryLogger {
         }
 
         message = updatedMessage;
-        renderProgress();
+        if (timer === null) {
+          startProgress();
+        } else {
+          renderProgress();
+        }
       },
       succeed: (finalMessage: string): void => {
         finish("stdout", "✔", "green", finalMessage);
@@ -503,12 +526,7 @@ export class MonorepositoryConsoleLogger extends MonorepositoryLogger {
       fail: (finalMessage: string): void => {
         finish("stderr", "✖", "red", finalMessage);
       },
-      stop: (): void => {
-        if (this.#state.activeProgress === activeProgress) {
-          this.#state.activeProgress = null;
-        }
-        stopProgress();
-      },
+      stop: stopProgress,
     };
   }
 
@@ -532,7 +550,7 @@ export class MonorepositoryConsoleLogger extends MonorepositoryLogger {
   }
 
   /**
-   * Stops and clears any progress output before writing unrelated output.
+   * Pauses and clears any progress output before writing unrelated output.
    */
   private prepareForOutput(): void {
     const activeProgress = this.#state.activeProgress;
@@ -540,8 +558,7 @@ export class MonorepositoryConsoleLogger extends MonorepositoryLogger {
       return;
     }
 
-    this.#state.activeProgress = null;
-    activeProgress.stop();
+    activeProgress.pause();
   }
 
   /**
@@ -581,9 +598,10 @@ export class MonorepositoryConsoleLogger extends MonorepositoryLogger {
    * @param text - Rendered text.
    * @param write - Whether this is a raw write rather than a complete line.
    * @param semanticLevel - Optional semantic console method to preserve.
+   * @param includeJsonEscapes - Whether JSON-escaped redaction variants are matched.
    */
-  private writeToSink(stream: LoggerStream, text: string, write: boolean, semanticLevel?: SemanticLevel): void {
-    const redacted = this.redactText(text);
+  private writeToSink(stream: LoggerStream, text: string, write: boolean, semanticLevel?: SemanticLevel, includeJsonEscapes = false): void {
+    const redacted = this.redactText(text, includeJsonEscapes);
     if (semanticLevel !== undefined && this.#state.sink instanceof ConsoleLoggerSink) {
       this.#state.sink.semantic(semanticLevel, redacted);
       return;
@@ -601,13 +619,20 @@ export class MonorepositoryConsoleLogger extends MonorepositoryLogger {
    * Replaces registered sensitive values, applying longest values first.
    *
    * @param text - Text about to be written to a sink.
+   * @param includeJsonEscapes - Whether JSON-escaped variants are also sensitive.
    * @returns Redacted output text.
    */
-  private redactText(text: string): string {
+  private redactText(text: string, includeJsonEscapes: boolean): string {
     let redacted = text;
-    const values = [...this.#state.redactions].toSorted((left, right) => right.length - left.length);
+    const values = new Set<string>();
+    for (const value of this.#state.redactions) {
+      values.add(value);
+      if (includeJsonEscapes) {
+        values.add(JSON.stringify(value).slice(1, -1));
+      }
+    }
 
-    for (const value of values) {
+    for (const value of [...values].toSorted((left, right) => right.length - left.length)) {
       redacted = redacted.replaceAll(value, REDACTION_MARKER);
     }
 
