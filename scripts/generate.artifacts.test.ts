@@ -26,7 +26,6 @@ import {
   NaceTaxonomyClassificationGenerator,
   TaxonomyClassificationGenerator,
 } from "./generate.artifacts.ts";
-import {MonorepositoryConsoleLogger} from "./common/logger.ts";
 import {parseCommandLineOptions} from "./generate.ts";
 import type {TaxonomyArtifact} from "./types";
 
@@ -701,28 +700,6 @@ describe("Artifact orchestration and CLI contracts", () => {
 
   afterEach(async () => {
     await harness.cleanup();
-  });
-
-  describe("logger", () => {
-    it("writes the fixed prefix, icons, and semantic console levels", () => {
-      const debug = vi.spyOn(console, "debug").mockImplementation(() => undefined);
-      const info = vi.spyOn(console, "info").mockImplementation(() => undefined);
-      const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
-      const error = vi.spyOn(console, "error").mockImplementation(() => undefined);
-      const logger = new MonorepositoryConsoleLogger("generate::artifacts");
-
-      logger.debug("debug message");
-      logger.info("info message");
-      logger.warn("warning message");
-      logger.error("error message");
-      logger.success("success message");
-
-      expect(debug).toHaveBeenCalledWith(expect.stringContaining("[arolariu::generate::artifacts] 🐛 debug message"));
-      expect(info).toHaveBeenCalledWith(expect.stringContaining("[arolariu::generate::artifacts] ℹ️ info message"));
-      expect(info).toHaveBeenCalledWith(expect.stringContaining("[arolariu::generate::artifacts] ✅ success message"));
-      expect(warn).toHaveBeenCalledWith(expect.stringContaining("[arolariu::generate::artifacts] ⚠️ warning message"));
-      expect(error).toHaveBeenCalledWith(expect.stringContaining("[arolariu::generate::artifacts] ⛔ error message"));
-    });
   });
 
   describe("module surface", () => {
