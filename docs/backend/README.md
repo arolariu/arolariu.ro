@@ -1,225 +1,70 @@
 # Backend Documentation
 
-This directory contains technical documentation for the backend components of the arolariu.ro platform.
+Source-grounded documentation for `sites/api.arolariu.ro`.
 
-## Overview
+Root `AGENTS.md` owns versions, commands, testing targets, and risk
+boundaries. The API local guide and live source own current architecture;
+accepted RFCs record intent.
 
-The backend is built using:
+## Current architecture
 
-- **Framework**: .NET 10.0 (LTS)
-- **Language**: C# 13 with modern language features
-- **Architecture**: Modular Monolith
-- **Design Patterns**: Domain-Driven Design (DDD) + SOLID principles
-- **API Style**: ASP.NET Core Minimal APIs
-- **Testing**: MSTest
+The API is a modular monolith with four bounded contexts:
 
-## Architecture
+| Context | Current shape |
+| --- | --- |
+| Core | Host, middleware, health, OpenAPI, and runtime composition |
+| Core.Auth | ASP.NET Core Identity persistence and endpoints |
+| Invoices | Full Management -> Processing -> Orchestration -> Foundation -> Broker chain |
+| Common | Shared HTTP, exception, telemetry, and DDD primitives |
 
-### Modular Monolith Structure
+Invoices endpoints and the analysis worker enter through Management. Core.Auth
+is a deliberate exception: framework routes use `MapIdentityApi`, and the
+custom logout handler injects `SignInManager<IdentityUser>` directly.
 
-```text
-src/
-├── Core/              # Application entry point and pipeline configuration
-├── Core.Auth/         # Authentication domain
-├── Common/            # Shared infrastructure and cross-cutting concerns
-└── Invoices/          # Invoices domain (business logic)
-```
+The direct-domain collaborator budget is owned by root `AGENTS.md`.
+Framework/support dependencies do not count. Foundations never call other
+Foundations, and Brokers contain no business logic.
 
-### Domain-Driven Design Principles
+## Canonical RFCs
 
-- **Bounded Contexts**: Clear service boundaries
-- **Aggregates**: Root entities maintaining consistency
-- **Value Objects**: Immutable domain concepts
-- **Domain Events**: Business-significant state changes
-- **Domain Services**: Complex operations across aggregates
-- **Repositories**: Aggregate persistence abstraction
-- **Ubiquitous Language**: Consistent business terminology
+| RFC | Responsibility |
+| --- | --- |
+| [2001](../rfc/2001-domain-driven-design-architecture.md) | Bounded contexts, DDD roles, and dependency direction |
+| [2002](../rfc/2002-opentelemetry-backend-observability.md) | Backend tracing, metrics, logging, and telemetry privacy |
+| [2003](../rfc/2003-the-standard-implementation.md) | Exact Invoices graph, durable analysis, exceptions, and HTTP mapping |
+| [2004](../rfc/2004-comprehensive-xml-documentation-standard.md) | Public XML documentation and generated reference pipeline |
 
-### SOLID Principles
+## Practical references
 
-- **S**ingle Responsibility Principle
-- **O**pen/Closed Principle
-- **L**iskov Substitution Principle
-- **I**nterface Segregation Principle
-- **D**ependency Inversion Principle
+- [The Standard implementation guide](./the-standard-guide.md)
+- [OpenTelemetry guide](./opentelemetry-guide.md)
+- [Distributed tracing reference](./distributed-tracing.md)
+- [Event ID registry](./event-id-registry.md)
+- [ConfigureAwait guidance](./configureawait-best-practices.md)
 
-## RFCs (Request for Comments)
+## Live source owners
 
-Backend RFCs are numbered **2000-2999** and located in `/docs/rfc/`.
+- `sites/api.arolariu.ro/src/Invoices/Services/Management/`
+- `sites/api.arolariu.ro/src/Invoices/Services/Processing/`
+- `sites/api.arolariu.ro/src/Invoices/Services/Orchestration/`
+- `sites/api.arolariu.ro/src/Invoices/Services/Foundation/`
+- `sites/api.arolariu.ro/src/Invoices/Brokers/`
+- `sites/api.arolariu.ro/src/Invoices/Endpoints/`
+- `sites/api.arolariu.ro/src/Invoices/Workers/`
+- `sites/api.arolariu.ro/src/Common/Http/`
+- `sites/api.arolariu.ro/src/Common/Telemetry/`
+- `sites/api.arolariu.ro/tests/`
 
-### Implemented RFCs
+## Working on the API
 
-| RFC # | Title | Status | Date | Description |
-| ----- | ----- | ------ | ---- | ----------- |
-| [2001](../rfc/2001-domain-driven-design-architecture.md) | Domain-Driven Design Architecture | ✅ Implemented | 2025-10-12 | Complete DDD architecture with modular monolith, SOLID principles, and bounded contexts |
-| [2002](../rfc/2002-opentelemetry-backend-observability.md) | OpenTelemetry Backend Observability | ✅ Implemented | 2025-10-12 | Backend distributed tracing with OpenTelemetry, Activity API, and Azure Application Insights |
-| [2003](../rfc/2003-the-standard-implementation.md) | The Standard Implementation | ✅ Implemented | 2025-01-26 | Implementation of Hassan Habib's Standard with Brokers, Foundation, Processing, and Orchestration layers |
-| [2004](../rfc/2004-comprehensive-xml-documentation-standard.md) | XML Documentation Standard | ✅ Implemented | 2025-01-26 | Comprehensive XML documentation standard for C# public APIs |
+Use:
 
-### Proposed RFCs
+- `sites/api.arolariu.ro/AGENTS.md` for the concise API contract;
+- `.github/instructions/backend.instructions.md` and
+  `.github/instructions/csharp.instructions.md` for path-scoped rules;
+- `backend-vertical-slice` for endpoint/service behavior;
+- the applicable `code-*` workflow for tests, defects, refactors,
+  documentation, or review.
 
-None currently.
-
-### Draft RFCs
-
-None currently.
-
-## Quick Start Guides
-
-Practical, concise guides for rapid development:
-
-- **[OpenTelemetry Guide](./opentelemetry-guide.md)** - Activity tracing, tags, events, and Azure Application Insights integration
-
-## Key Topics
-
-### Architecture Patterns
-
-- Modular monolith organization
-- DDD aggregate design
-- Domain event handling
-- Repository pattern implementation
-- Dependency injection strategies
-
-### API Design
-
-- Minimal API patterns
-- RESTful conventions
-- GraphQL endpoints (if implemented)
-- gRPC services (if implemented)
-- API versioning strategy
-
-### Data Access
-
-- Entity Framework Core usage
-- Database migrations
-- Query optimization
-- Transaction management
-- Caching strategies
-
-### Authentication & Authorization
-
-- JWT token validation
-- Role-based access control
-- External identity providers
-- API key management
-
-### Testing
-
-- Unit testing with MSTest
-- Integration testing patterns
-- Test naming conventions: `MethodName_Condition_ExpectedResult()`
-- Test coverage standards (85%+)
-- Mocking strategies
-
-### Observability
-
-- Structured logging
-- OpenTelemetry integration (see [OpenTelemetry Guide](./opentelemetry-guide.md), RFC 2002)
-- Health checks
-- Metrics collection
-
-### Security
-
-- Input validation
-- SQL injection prevention
-- XSS protection
-- CSRF protection
-- Secrets management
-- GDPR/LGPD compliance
-
-## Domains
-
-### General Domain (Core Infrastructure)
-
-**Responsibilities:**
-
-- Application bootstrapping
-- Middleware pipeline
-- CORS configuration
-- Authentication/Authorization setup
-- Logging and telemetry
-- Health checks
-- OpenAPI/Swagger documentation
-
-### Invoices Domain
-
-**Responsibilities:**
-
-- Invoice CRUD operations
-- Merchant management
-- Product/line item handling
-- Invoice metadata
-- Business rule validation
-
-**Key Aggregates:**
-
-- Invoice (root)
-- Merchant
-- Product
-
-### Authentication Domain (Core.Auth)
-
-**Responsibilities:**
-
-- User authentication
-- Authorization policies
-- JWT token management
-- External provider integration
-
-## Related Documentation
-
-- **Site README**: `/sites/api.arolariu.ro/README.md` - Development setup guide
-- **API Documentation**: `/sites/docs.arolariu.ro/api/` - Generated XML documentation
-- **Copilot Instructions**: `/.github/instructions/backend.instructions.md` - DDD & SOLID guidelines
-- **Infrastructure**: `/infra/Azure/Bicep/` - Azure deployment configurations
-
-## Creating Backend RFCs
-
-When creating a new backend RFC:
-
-1. Use the RFC template from `/docs/RFC_TEMPLATE.md`
-2. Number it in the 2000-2999 range (2002, 2003, etc.)
-3. Place in `/docs/rfc/`
-4. Update this README with the new RFC entry
-5. Submit for review
-
-### Suggested Topics for Future RFCs
-
-- **RFC 2002**: Domain event architecture and implementation
-- **RFC 2003**: Repository pattern and data access strategy
-- **RFC 2004**: API versioning and backward compatibility
-- **RFC 2005**: Background job processing architecture
-- **RFC 2006**: Multi-tenancy implementation
-- **RFC 2007**: Caching strategy (distributed cache, in-memory)
-- **RFC 2008**: Rate limiting and throttling
-- **RFC 2009**: Audit logging and compliance
-- **RFC 2010**: Database migration strategy
-- **RFC 2011**: Error handling and response standardization
-
-## Code Quality Standards
-
-All backend code must follow:
-
-- ✅ DDD principles and patterns
-- ✅ SOLID design principles
-- ✅ Ubiquitous language from business domain
-- ✅ Test naming: `MethodName_Condition_ExpectedResult()`
-- ✅ XML documentation for public APIs
-- ✅ 85%+ code coverage for domain and application layers
-- ✅ async/await for I/O-bound operations
-- ✅ Proper exception handling and logging
-
-## Questions?
-
-For backend-specific questions:
-
-- Check existing RFCs (when available)
-- Review site README
-- Review DDD/SOLID instructions
-- Open a GitHub issue
-- Contact: `admin@arolariu.ro`
-
----
-
-**Last Updated**: 2025-12-25
-**Maintained By**: Backend team
+Commands are intentionally not duplicated here; select them from root
+`AGENTS.md` and the owning project configuration.

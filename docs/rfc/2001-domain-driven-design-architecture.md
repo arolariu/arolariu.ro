@@ -81,7 +81,7 @@ The Invoices bounded context contains:
 BoundedContext/
 ├── DDD/                    # Aggregates, entities, value objects, and contracts
 ├── Services/
-│   ├── Management/        # Application-facing coordination boundary
+│   ├── Management/        # Application-facing facade over unified Processing
 │   ├── Processing/        # Domain computation and workflow sequencing
 │   ├── Orchestration/     # Composition of approved capabilities
 │   └── Foundation/        # Validation and direct dependency classification
@@ -111,7 +111,7 @@ These responsibilities apply to the Invoices Standard service hierarchy.
 
 | Architectural role | Responsibility |
 |---|---|
-| Management Service Layer | Exposes one application-facing boundary and coordinates operations spanning Processing services |
+| Management Service Layer | Exposes the application-facing facade and delegates to the single unified Invoice Processing boundary |
 | Processing Services Layer | Performs domain computation, applies transformations, and sequences approved Orchestrations |
 | Orchestration Services Layer | Composes only the Foundations approved for a workflow |
 | Foundation Services Layer | Validates capability inputs, applies capability policy, and classifies direct Broker failures |
@@ -123,10 +123,13 @@ does not bypass Processing.
 
 ### 2.4 Persistence boundaries
 
-Persistence Brokers expose only the regions and primitive operations required by
-their bounded context. Partition selection, provider calls, and direct provider
-error translation belong in the Broker. Validation, authorization, aggregate
-coordination, and workflow policy belong in higher layers.
+Persistence Brokers expose only the regions and primitive operations required
+by their bounded context. Partition selection, provider calls, and provider
+record mapping belong in the Broker. Error translation follows the live Broker
+contract; when a raw provider exception is explicitly exposed, the direct
+Foundation classifies it and it must not escape above that boundary.
+Validation, authorization, aggregate coordination, and workflow policy belong
+in higher layers.
 
 The current Invoices persistence boundary contains invoice and merchant regions.
 Analysis durability is not stored in that database boundary.

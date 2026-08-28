@@ -56,7 +56,8 @@ Our XML documentation standard addresses these challenges by:
 1. **Embedding Documentation in Code**: Single source of truth that evolves with implementation
 2. **Providing Multi-Level Context**: From quick summaries to deep architectural rationale
 3. **Enabling IDE-Integrated Learning**: IntelliSense becomes a teaching tool
-4. **Generating Production Documentation**: DocFX, Swagger, and API docs auto-generated from XML
+4. **Generating Production Documentation**: DefaultDocumentation, Swagger,
+   and API reference pages generated from XML
 5. **Documenting Trade-Offs**: Explain why decisions were made (thread-safety, performance, simplicity)
 6. **Cross-Referencing Architecture**: Link code to RFCs, DDD patterns, and The Standard principles
 
@@ -71,7 +72,7 @@ Our XML documentation standard addresses these challenges by:
    - Future you (6 months later)
    - New team members (onboarding)
    - API consumers (external developers)
-   - Tooling (DocFX, Swagger generators)
+   - Tooling (DefaultDocumentation, Swagger generators)
 3. **Explain the Why, Not Just the What**: Implementation details are visible in code; context is not
 4. **Leverage Structure**: Use XML tags to create scannable, hierarchical documentation
 5. **Cross-Reference Liberally**: Link to related types, methods, RFCs, and external resources
@@ -447,7 +448,7 @@ Link to related types, methods, properties, and members.
 
 ```csharp
 /// <seealso cref="IInvoiceStorageFoundationService"/>
-/// <seealso cref="InvoiceNoSqlBroker"/>
+/// <seealso cref="CosmosDatabaseBroker"/>
 ```
 
 ### 3. Inline Formatting
@@ -592,7 +593,7 @@ internal static class Program { }
 /// </summary>
 /// <remarks>
 /// <para>
-/// <b>Layer Role (The Standard):</b> Explain which layer (Broker, Foundation, Processing, Orchestration, Exposer).
+/// <b>Layer Role (The Standard):</b> Explain which role (Broker, Foundation, Orchestration, Processing, Management, Endpoint/Worker).
 /// </para>
 /// <para>
 /// <b>Responsibilities:</b>
@@ -1097,43 +1098,27 @@ public static class Validator
 - Use `<remarks>` for extended information (users can expand)
 - Provide `<example>` for complex APIs
 
-### 2. DocFX Documentation Generation
+### 2. DefaultDocumentation and Docusaurus Generation
 
 **How it Works**:
 
-- DocFX parses XML documentation comments from compiled assemblies
-- Generates static HTML documentation sites
-- Supports Markdown in XML comments
-- Cross-references resolve automatically
+- `Directory.Build.props` emits XML documentation beside compiled assemblies.
+- `scripts/docs-assemble.ts` discovers and builds the API project graph.
+- The repository-local `DefaultDocumentation.Console` tool converts each
+  assembly's XML documentation into Markdown under the generated .NET tier.
+- Docusaurus publishes that generated tier with the rest of the documentation
+  site.
 
-**Configuration**:
+**Current ownership**:
 
-```json
-{
-  "metadata": [
-    {
-      "src": [
-        {
-          "files": ["**/*.csproj"],
-          "exclude": ["**/bin/**", "**/obj/**"]
-        }
-      ],
-      "dest": "api",
-      "includePrivateMembers": false,
-      "disableGitFeatures": false,
-      "disableDefaultFilter": false
-    }
-  ],
-  "build": {
-    "content": [
-      {
-        "files": ["api/**/*.yml", "api/index.md"]
-      }
-    ],
-    "dest": "_site"
-  }
-}
-```
+- `.config/dotnet-tools.json` pins the local documentation tool.
+- `scripts/docs-assemble.ts` owns project discovery, build roots, invocation
+  arguments, normalization, landing pages, and output validation.
+- `sites/docs.arolariu.ro/project.json` makes assembly a dependency of docs
+  build and development.
+
+Do not hand-edit generated Markdown or introduce a parallel DocFX
+configuration.
 
 ### 3. Swagger / OpenAPI Generation
 
@@ -1144,41 +1129,32 @@ public static class Validator
 - `<returns>` becomes response description
 - `<remarks>` can be included in extended info
 
-**Configuration** (Swashbuckle):
+The live Swashbuckle configuration is centralized in
+`SwaggerConfigurationService.GetSwaggerGenOptions` and includes the XML files
+for Common, Core, Core.Auth, and Invoices:
 
 ```csharp
-services.AddSwaggerGen(c =>
-{
-  c.SwaggerDoc("v1", new OpenApiInfo { Title = "arolariu.ro API", Version = "v1" });
-
-  // Include XML comments
-  var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
-  var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
-  c.IncludeXmlComments(xmlPath);
-});
+options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, "arolariu.Backend.Common.xml"), true);
+options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, "arolariu.Backend.Core.xml"), true);
+options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, "arolariu.Backend.Core.Auth.xml"), true);
+options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, "arolariu.Backend.Domain.Invoices.xml"), true);
 ```
 
 ### 4. .NET Compiler Integration
 
-**Enable XML Documentation Generation**:
-
-```xml
-<Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <NoWarn>$(NoWarn);1591</NoWarn> <!-- Suppress missing XML doc warnings -->
-  </PropertyGroup>
-</Project>
-```
-
-**Warnings as Errors (Strict Mode)**:
+**Current XML documentation and strictness settings**:
 
 ```xml
 <PropertyGroup>
-  <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-  <WarningsAsErrors>CS1591</WarningsAsErrors> <!-- Missing XML comment for publicly visible type or member -->
+  <GenerateDocumentationFile>True</GenerateDocumentationFile>
+  <WarningLevel>9999</WarningLevel>
+  <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
+  <NoWarn>S1135, NU1903, NU1902</NoWarn>
 </PropertyGroup>
 ```
+
+CS1591 is not suppressed. Missing required public XML documentation fails the
+build through the repository's warning policy.
 
 ---
 
@@ -1483,7 +1459,7 @@ This standard ensures that every piece of code is self-documenting, contextually
 ## References
 
 - **C# XML Documentation Comments**: <https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/xmldoc/>
-- **DocFX Documentation Generator**: <https://dotnet.github.io/docfx/>
+- **DefaultDocumentation**: <https://github.com/Doraku/DefaultDocumentation>
 - **Swashbuckle (Swagger for .NET)**: <https://github.com/domaindrivendev/Swashbuckle.AspNetCore>
 - **RFC 2001**: Domain-Driven Design Architecture (`docs/rfc/2001-domain-driven-design-architecture.md`)
 - **RFC 2003**: The Standard Implementation (`docs/rfc/2003-the-standard-implementation.md`)
