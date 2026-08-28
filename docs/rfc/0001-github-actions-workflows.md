@@ -124,7 +124,10 @@ reviewing a change.
 | `setup-tooling` | Installs Node.js / .NET / Python. Repo-agnostic. Caching is delegated to each `setup-*` action's built-in mechanism |
 | `setup-workspace` | Invokes `setup-tooling`, then bootstraps the repo: `npm ci`, `dotnet restore`, `pip install`, Playwright, `npm run generate`, `npm run build:components` |
 
-Use `setup-tooling` when a job needs only a binary. Use `setup-workspace` for everything else.
+Use `setup-tooling` when a job needs only a binary. Use `setup-workspace` when
+repository dependencies, generation, builds, or tests are required. Narrow
+release, probe, or deployment jobs may need `setup-tooling` only or neither
+action.
 
 | Cache | Owner | Key |
 |-------|-------|-----|
@@ -432,33 +435,16 @@ linux-node-modules-<node-major>-7f3e9a2c1b5d4...
 
 ### 6.2 Progress Indicators
 
-The composite action provides clear visual feedback:
-
-```
-🚀 Starting workspace setup...
-📦 Setup Node.js
-💾 Cache Node.js dependencies
-  ✅ Using cached Node.js dependencies (cache hit)
-  OR
-  ⚠️ Cache miss - installing dependencies...
-📦 Setup .NET
-💾 Cache .NET packages
-  ✅ Using cached .NET packages (cache hit)
-📥 Restore .NET dependencies
-  ✅ .NET dependencies restored successfully
-🎭 Install Playwright browsers
-  ✅ Playwright browsers installed
-🔨 Generate artifacts (GraphQL schemas, types, etc.)
-  ✅ Artifacts generated successfully
-✨ Workspace setup complete
-📊 Summary:
-  - Node.js cache hit: true
-  - .NET cache hit: true
-```
+The composite action groups each enabled setup phase and writes a final
+duration log group. Its current final logging step reports the `node_modules`
+and Playwright cache states; toolchain cache outputs remain available to
+callers but are not duplicated there. Read the live step names and final
+logging step in `.github/actions/setup-workspace/action.yml` before
+documenting additional output.
 
 ### 6.3 GraphQL Artifact Generation
 
-**Feature:** The `generate` input runs `npm run generate` during workspace setup.
+**Feature:** The `run-generate` input runs `npm run generate` during workspace setup.
 
 **Use Case:** Websites with GraphQL schemas that need to be compiled before build.
 

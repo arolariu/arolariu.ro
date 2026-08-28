@@ -10,12 +10,11 @@
 # - Toolchain caching belongs to `setup-tooling` (built-in caches).
 #   This action caches only what it produces itself: `node_modules`
 #   and the Playwright browser bundle.
-# - Neither cache carries a per-workflow prefix, so all workflows share
-#   one entry each rather than every workflow writing its own
-#   multi-hundred-megabyte copy. The Playwright key is the lock-file
-#   hash alone; the `node_modules` key additionally includes the Node
-#   version, because a cache hit skips `npm ci` and the tree can hold
-#   natively-compiled addons whose ABI is tied to the runtime.
+# - Neither cache key carries a workflow-name segment, but GitHub still
+#   applies branch/tag scope and cache-version accessibility. The
+#   Playwright key is the lock-file hash alone; the `node_modules` key
+#   additionally includes the Node version because a cache hit skips
+#   `npm ci` and the tree can hold native addons tied to the runtime ABI.
 # - Inputs are never interpolated directly into `run:` blocks; they
 #   are passed through `env:` to avoid script injection.
 #+#+#+#+############################################################
