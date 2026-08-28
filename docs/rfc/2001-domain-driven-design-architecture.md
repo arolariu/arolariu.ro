@@ -224,7 +224,7 @@ their operational cost.
 
 Invoices architecture tests should verify:
 
-- Invoices adapters consume only its Management contract;
+- Invoices adapters consume only their Management contract;
 - dependencies flow only to the next approved role;
 - no sideways Foundation or Orchestration dependencies exist;
 - each Foundation owns only its approved Broker contracts;
