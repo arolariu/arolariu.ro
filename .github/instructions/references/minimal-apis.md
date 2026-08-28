@@ -128,7 +128,9 @@ the `backend-vertical-slice` telemetry resource.
 
 Never attach request bodies, OCR text, product or merchant names, prompts,
 scan URLs, provider responses, credentials, authorization headers, or raw
-exception details to endpoint telemetry. Cancellation caused by the client is
+exception details as new endpoint telemetry. The current shared
+`RecordException` helper still emits exception type/message/stack and is live
+privacy debt, not a redacted exemplar. Cancellation caused by the client is
 not automatically a server failure.
 
 ## Protocol evidence anchors

@@ -14,7 +14,8 @@ Owns constraints unique to `@arolariu/components`.
 
 - `packages/components/AGENTS.md`
 - RFC 1006 and RFC 1008 for architecture changes
-- A sibling Base UI component, CSS Module, test, and story
+- A sibling Base UI component, its test/story, and its CSS Module when it owns
+  visual styling
 - `packages/components/src/index.ts`
 
 ## Rules
@@ -25,7 +26,8 @@ Owns constraints unique to `@arolariu/components`.
 - Keep `asChild` only for backward-compatible existing APIs.
 - Use `React.forwardRef` when a public component exposes a DOM ref.
 - Compose classes with the existing `cn()` helper.
-- Style with a colocated CSS Module; no inline style objects.
+- Style-owning components use a colocated CSS Module; intentional style-free
+  composition primitives may omit one. Do not use inline style objects.
 - Preserve keyboard, focus, disabled, and ARIA behavior.
 - Colocate a focused test and Storybook story.
 - Export every public component and public type from `src/index.ts`.

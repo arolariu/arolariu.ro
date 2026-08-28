@@ -71,7 +71,7 @@ Use constructor evidence before changing registrations:
 - Orchestrations call only their approved Foundations.
 - Foundations call only their approved Brokers.
 - Framework/support dependencies such as `ILoggerFactory` do not count toward
-  the two-or-three direct domain dependency budget.
+  the root-owned direct domain dependency budget.
 
 `InvoiceStandardLayeringArchitectureTests` reflects the full graph;
 `InvoiceUnifiedLayeringArchitectureTests` also checks adapter entry points and
@@ -114,8 +114,9 @@ mapper bug.
 ## Provider and Broker boundaries
 
 Brokers own SDK/protocol calls, provider records, provider-neutral mapping, and
-direct provider exception translation. Foundations own domain/capability
-validation and classification of direct Broker failures. Diagnose at the
+only the error translation promised by their live contract. If that contract
+explicitly exposes a raw provider exception, the direct Foundation classifies
+it and the provider failure must not escape above Foundation. Diagnose at the
 lowest boundary that still reproduces the issue:
 
 - Use an SDK client/transport substitute with the real Broker for Azure record,

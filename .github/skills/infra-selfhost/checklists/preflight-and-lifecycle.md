@@ -10,7 +10,7 @@
 | Repository prerequisites | Root engines/scripts and existing installed state | Ask before any install or generated dependency state |
 | Ports | AppHost constants/endpoints, Compose mappings, and current listeners | Attribute conflicts to exact PID/container before action |
 | Config/secrets | Required variable names and ignored/user-secret source files | Report missing names only; never print values |
-| Certificates | Current selfhost cert paths and startup certificate branch | Ask before certificate generation or local CA/trust-store mutation |
+| Certificates | Native Next.js experimental-HTTPS state plus selfhost cert paths and startup branches | Ask before certificate generation, downloaded certificate tooling, or local CA/trust-store mutation |
 | Data/bootstrap | Current AppHost bootstrap and selfhost bootstrap paths | Explain reset/ensure behavior; ask before destructive effects |
 | Persistence | Current Compose/AppHost volume declarations | Choose stop versus down based on data that must survive |
 
@@ -22,10 +22,14 @@
 - Aspire startup generates an ignored exp Aspire config from the developer's
   Docker-mode source config. It must not mutate or expose that source's secret
   values. Inspect `ExpConfigGenerator` before diagnosing generation.
-- Aspire's local scenario bootstrap deliberately clears and repopulates the
-  guarded local Cosmos invoice-domain data, invoice blob container, and
-  analysis queue. Obtain acknowledgement before risking unpreserved local
-  work; verify the guard still restricts targets to local emulators.
+- Aspire's local scenario bootstrap deliberately deletes every document in the
+  guarded local invoice/merchant Cosmos containers, removes the invoice blob
+  container, clears the analysis queue, and then restores deterministic data.
+  Obtain acknowledgement before risking unpreserved local work; verify the
+  guard still restricts targets to local emulators.
+- Aspire launches the website through `next dev --experimental-https`. On a
+  certificate-free first run, Next.js can download/run certificate tooling and
+  install a local CA. Stop and ask before that trust-store branch.
 - Selfhost startup requires the current SQL password variable in the shell and
   performs SQL/Cosmos/Azurite/storage bootstrap. The storage-only .NET branch
   ensures resources rather than running the Aspire scenario reset; verify this

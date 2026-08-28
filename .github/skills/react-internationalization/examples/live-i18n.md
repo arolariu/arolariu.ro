@@ -27,9 +27,8 @@ is not completion evidence.
 
 Server pages use `getTranslations` from `next-intl-selector/server`; client
 components use `useTranslations` from `next-intl-selector`. Metadata goes
-through `createMetadata`. Current message files use nested `metadata` keys,
-while RFC 1003/1004 examples still show `__metadata__`; preserve the live
-route shape and stop before migration.
+through `createMetadata`, and current message files use nested `metadata`
+keys.
 
 ## Email localization
 

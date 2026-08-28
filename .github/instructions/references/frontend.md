@@ -57,7 +57,7 @@ human-readable messages for `402` (payment required), `409` (conflict),
 (rate limiting) before falling back to a parsed `detail` field or a sanitized
 raw body. `fetchWithTimeout` wraps every request with an `AbortController`
 (default `DEFAULT_FETCH_TIMEOUT = 30_000` ms), injects trace-context headers,
-and forces `cache: "no-store"` for authenticated requests — reuse it instead
+and forces `cache: "no-store"` for every request — reuse it instead
 of a bare `fetch` in a new server action.
 
 Anti-pattern: catching an error in a transport action whose consumers narrow
@@ -132,11 +132,7 @@ return createMetadata({
 and is what makes `m.pages.invoices.landing.metadata.title` a compile-time
 key, not a runtime string lookup. After adding a key, add the identical key
 path to `ro.json` and `fr.json`, then run the canonical i18n generation command
-from root `AGENTS.md`. Live route metadata currently uses nested `metadata` objects. Older
-repository guidance also names `__metadata__`; treat that as unresolved
-message-schema drift, not two interchangeable aliases. Preserve a target
-route's established sibling shape and stop before a cross-namespace
-migration.
+from root `AGENTS.md`. Live route metadata uses nested `metadata` objects.
 
 `sites/arolariu.ro/src/metadata.ts`'s `createMetadata()` merges page-specific
 overrides into the base `Metadata` object and derives the OpenGraph

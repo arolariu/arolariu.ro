@@ -24,8 +24,8 @@ description: Implement or extend an Invoices API endpoint and its required The S
 - Do not use for an unapproved bounded context, dependency, external
   integration, authentication or authorization change, or schema/data
   migration.
-- Use the narrower bug, refactor, or unit-test workflow when no API behavior or
-  service-path implementation changes.
+- Use `code-fix-bug`, `code-refactor`, or `code-unit-test` when no new API
+  behavior or service-path implementation changes.
 
 ## Required Inputs
 
@@ -109,8 +109,8 @@ Load only the resource whose named trigger applies:
 - Invoices adapter and worker dependencies stop at its Management contract.
 - Dependencies remain flow-forward, with no Foundation-to-Foundation or
   Orchestration-to-Orchestration calls and no lower-layer bypass.
-- Each service remains within two or three direct domain dependencies; support
-  services do not hide extra domain coordination.
+- Each service remains within the root direct-domain collaborator budget;
+  support services do not hide extra domain coordination.
 - Cancellation is forwarded and is not reclassified as a fault.
 - Activities use the bounded-context source and contain only approved,
   non-sensitive context.
@@ -127,8 +127,8 @@ Load only the resource whose named trigger applies:
 - Schema, partition-key, persistence-contract, or data migration changes.
 - A new bounded context or a public contract with materially different valid
   outcomes.
-- A change to layer direction, layer responsibility, or the two-or-three direct
-  domain-dependency limit.
+- A change to layer direction, layer responsibility, or the root-owned direct
+  domain-dependency budget.
 - Infrastructure, deployment, destructive, or production-cost implications.
 
 ## Completion Contract

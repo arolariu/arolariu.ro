@@ -15,9 +15,7 @@ testing, and Git rules. This file records only website-specific architecture.
   ownership, and authorization checks outside that matcher; do not replace
   those checks with client-only logic.
 - Metadata uses the shared metadata helpers and localized typed selectors.
-  Live namespaces use `metadata` while older guidance also names
-  `__metadata__`; preserve the target route's sibling shape and stop before a
-  schema migration.
+  Live namespaces use nested `metadata` keys consistently across all locales.
 
 ## Local Paths
 

@@ -81,8 +81,8 @@ name):
 
 ```yaml
 ---
-name: unit-test
-description: Add or improve a focused unit test for behavior that is already correct, using current Vitest or MSTest conventions. Use for coverage, edge-case or regression guards, and test-quality work; route production defects to fix-bug.
+name: code-unit-test
+description: Add or improve focused tests for already-correct behavior across the repository stacks; route production defects to code-fix-bug.
 ---
 ```
 

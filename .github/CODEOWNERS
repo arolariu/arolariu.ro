@@ -23,7 +23,7 @@ sites/api.arolariu.ro/ @arolariu
 # CV Website (SvelteKit)
 sites/cv.arolariu.ro/ @arolariu
 
-# Documentation Site (DocFX)
+# Documentation Site (Docusaurus)
 sites/docs.arolariu.ro/ @arolariu
 
 # Infrastructure as Code
@@ -61,4 +61,4 @@ CLAUDE.md                              @arolariu
 package.json @arolariu
 tsconfig.json @arolariu
 .prettierrc @arolariu
-eslint.config.js @arolariu
+eslint.config.ts @arolariu

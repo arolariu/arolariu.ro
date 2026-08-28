@@ -37,8 +37,7 @@ belongs to their dedicated instructions.
 - Route all user-visible text through `next-intl`.
 - Keep `en`, `ro`, and `fr` message keys structurally aligned.
 - Build metadata through the shared metadata helpers and localized typed
-  selectors. Preserve the neighboring route's `metadata` or `__metadata__`
-  shape; do not migrate between them incidentally.
+  selectors using the live nested `metadata` message shape.
 - Handle loading, error, and empty states.
 - Use CSS Modules; do not add inline style objects.
 - Import shared primitives from `@arolariu/components`.

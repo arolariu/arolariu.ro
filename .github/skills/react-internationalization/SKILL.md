@@ -18,9 +18,7 @@ description: Change arolariu.ro next-intl and next-intl-selector message assets 
 - This skill owns message schemas, locale parity, selector contracts,
   generation, and localized behavior.
 - It does not own component layout, styling, or interaction.
-- Preserve the target namespace's live `metadata` shape. Legacy RFC examples
-  use `__metadata__`; migration between them is a schema change and a stop
-  point, not an alias choice.
+- Preserve the target namespace's live nested `metadata` shape.
 
 ## Required Inputs
 
@@ -73,7 +71,6 @@ description: Change arolariu.ro next-intl and next-intl-selector message assets 
 
 ## Stop and Ask
 
-- Reconciling `metadata` with legacy `__metadata__` requires schema migration.
 - Locale fallback, supported locale set, public metadata, or email delivery
   behavior would change.
 - `next.config.ts`, a dependency, or a component interaction/layout must

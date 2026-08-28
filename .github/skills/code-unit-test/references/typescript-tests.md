@@ -118,7 +118,7 @@ Allowed seams are the system outside the repository behavior being asserted:
 
 Do not add or retain `vi.mock` for `@/...`, relative application modules, stores, actions, parsers, contexts, or `@arolariu/components`. The
 website Vitest aliases that redirect repository server modules to `tests/stubs/**` are documented migration debt. Likewise,
-`status.arolariu.ro/src/lib/api/fetchStatusData.test.ts` currently replaces the neighboring `mockData` repository module; its cache cases
+`sites/status.arolariu.ro/src/lib/api/fetchStatusData.test.ts` currently replaces the neighboring `mockData` repository module; its cache cases
 are useful behavior inventory, but that replacement is not a seam to copy.
 
 ## Timing, Cleanup, Races, Hydration, and Transport

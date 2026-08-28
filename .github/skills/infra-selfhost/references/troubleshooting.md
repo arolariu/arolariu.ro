@@ -28,7 +28,7 @@ probe, or dependency; do not restart everything first.
 2. Resolve exact port or stale-resource ownership.
 3. Recover infrastructure transport and readiness in dependency order.
 4. Verify bootstrap/config resources.
-5. Recover exp/config and local identity resources.
+5. Recover exp/config and, in Aspire mode, local identity resources.
 6. Recover API, then website.
 7. Recheck only the affected route and one immediate consumer.
 

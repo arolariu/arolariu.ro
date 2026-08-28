@@ -104,10 +104,13 @@ deployment-parity, or image audits.
 **Standalone service scripts are narrow fallbacks.** Use one when full-stack
 coordination is unnecessary.
 
-Local bootstrap restores deterministic Alice, Bob, and Charlie scenarios. It
-clears seeded Cosmos invoice/merchant documents, invoice blobs, and the
-`invoice-analysis` queue while preserving warm infrastructure state. No
-development token or signing secret is committed.
+Aspire's local bootstrap restores deterministic Alice, Bob, and Charlie
+scenarios. Before seeding, it deletes **all** documents from the guarded local
+invoice and merchant Cosmos containers, removes the entire local invoice blob
+container, and clears the `invoice-analysis` queue while preserving warm
+infrastructure state.
+Selfhost instead performs SQL/Cosmos/Azurite provisioning without the Aspire
+scenario reset. No development token or signing secret is committed.
 
 ## Agent Operating Contract
 
@@ -176,9 +179,9 @@ Endpoints -> Management -> Processing -> Orchestration -> Foundation -> Brokers
 - Invoices Management is the application façade consumed by its endpoints and
   workers.
 - Foundation services do not call other Foundation services.
-- Services have at most two or three direct domain collaborators (Florance
-  Pattern); framework/support dependencies such as `ILoggerFactory` do not
-  count toward that budget.
+- Services have at most three direct domain collaborators (Florance Pattern);
+  framework/support dependencies such as `ILoggerFactory` do not count toward
+  that upper budget.
 - Service methods use the repository TryCatch and OpenTelemetry Activity
   patterns.
 - Bounded contexts are Core, Core.Auth, Invoices, and Common.

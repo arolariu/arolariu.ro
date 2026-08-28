@@ -120,9 +120,10 @@ does not fetch or know about `Invoice`/`Merchant` types itself.
 
 ## CSS Modules and class composition
 
-Every component pairs with a colocated `<name>.module.css` and composes
-classes exclusively through `cn()` from `src/lib/utilities.ts` (a thin
-`clsx` wrapper):
+Every component that owns visual presentation pairs with a colocated
+`<name>.module.css` and composes classes exclusively through `cn()` from
+`src/lib/utilities.ts` (a thin `clsx` wrapper). Intentional style-free
+composition primitives may omit the CSS file:
 
 ```tsx
 import {cn} from "@/lib/utilities";

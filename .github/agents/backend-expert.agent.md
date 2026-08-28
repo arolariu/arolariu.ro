@@ -69,10 +69,9 @@ type/interface only when the existing contract cannot express the outcome
 (different failure mode, different ownership boundary, or a materially
 different valid result), not merely to avoid touching a shared file.
 
-**Dependency budget** — every service stays at two or three direct domain
-dependencies. A fourth dependency is a signal to extract a coordinating
-service or to question whether the responsibility belongs in this service at
-all; it is never resolved by exceeding the budget.
+**Dependency budget** — apply the direct-domain collaborator budget from root
+`AGENTS.md`. If a proposed graph exceeds it, route coordination to the correct
+owner rather than hiding dependencies or silently changing the budget.
 
 **CRUD, analysis, queue, and external-system ownership**:
 

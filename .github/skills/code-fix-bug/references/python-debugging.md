@@ -1,7 +1,7 @@
 # Python Bug Diagnosis
 
 Use this reference after reproducing a defect in
-`sites/exp.arolariu.ro`. It narrows the generic fix-bug workflow to the
+`sites/exp.arolariu.ro`. It narrows the `code-fix-bug` workflow to the
 service's configuration, FastAPI, security, telemetry, and Azure boundaries.
 
 ## Start from the visible boundary

@@ -21,8 +21,7 @@ Use before editing message artifacts.
   the existing shared namespace.
 - A rename/move updates every locale and consumer atomically.
 - An object in one locale cannot be a string in another.
-- Live dictionaries and selectors use `metadata`; `__metadata__` remains
-  accepted-RFC drift. Stop before migrating or combining these shapes.
+- Live dictionaries and selectors use nested `metadata` keys.
 
 ## ICU contract
 

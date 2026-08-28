@@ -76,9 +76,8 @@ owner before writing state:
 
 **i18n/metadata/accessibility/observability obligations** — any user-visible
 copy change updates `en`, `ro`, and `fr` with identical key shape; any
-route-level metadata change goes through the shared metadata helper and
-the established typed selector shape for that route (`metadata` and
-`__metadata__` are unresolved live drift, not interchangeable aliases);
+route-level metadata change goes through the shared metadata helper and the
+established typed selector shape using nested `metadata` keys;
 interactive changes preserve keyboard order, focus, and accessible names;
 changes to instrumented boundaries preserve the RFC 1001 frontend
 OpenTelemetry boundaries rather than adding a new one.

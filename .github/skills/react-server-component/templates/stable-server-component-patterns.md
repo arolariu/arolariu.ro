@@ -34,8 +34,7 @@ every angle-bracket placeholder from live source; never paste it literally.
 Derive route literals, `PageProps` types, selector paths, style module names,
 prop/domain types, action names, parser/result handling, skeleton geometry,
 return destinations, and test setup from the target segment and closest
-sibling. Derive whether the current message branch is named `metadata` or
-`__metadata__`; do not guess.
+sibling. Use the current nested `metadata` message branch.
 
 ## Isolated server-compatible component
 

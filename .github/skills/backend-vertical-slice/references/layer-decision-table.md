@@ -13,7 +13,7 @@ This table applies to the Invoices Standard hierarchy, not Core.Auth.
 | Heavy computation, aggregate sequencing, batch policy, durable work, or a multi-stage domain workflow | Processing | Domain computation, workflow ordering, partial-persistence policy, and coordination of approved Orchestrations | Foundation or Broker calls |
 | Composition of approved Foundation capabilities | Orchestration | Cross-capability sequencing over Foundation contracts | Calling another Orchestration or a Broker |
 | CRUD, capability validation, or resilience policy adjacent to an external dependency | Foundation | Capability-specific validation and classification of direct Broker failures | Calling another Foundation or coordinating an application use case |
-| Primitive SDK, storage, queue, file, or provider operation | Broker | Provider calls, provider response mapping, partition selection, and direct provider-error translation | Business validation, workflow branching, retry orchestration, or authorization |
+| Primitive SDK, storage, queue, file, or provider operation | Broker | Provider calls, provider response mapping, partition selection, and contract-owned error translation; an explicitly exposed raw provider exception is classified by the direct Foundation | Business validation, workflow branching, retry orchestration, or authorization |
 
 ## Allowed Direction
 
@@ -31,9 +31,9 @@ Endpoint or worker
   workers.
 - A layer may be unchanged when an existing contract already supplies the
   behavior; the call path does not require one new type per layer.
-- Count direct **domain** collaborators when applying the two-or-three
-  dependency budget. A logger or framework service does not justify a fourth
-  domain collaborator or hidden sideways coordination.
+- Count direct **domain** collaborators when applying the budget owned by root
+  `AGENTS.md`. A logger or framework service does not justify hidden sideways
+  coordination.
 
 ## Prohibited Bypasses and Sideways Calls
 

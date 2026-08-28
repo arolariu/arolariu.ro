@@ -15,7 +15,7 @@ test before applying any pattern below.
 | Orchestration coordination | Orchestration service | Its direct Foundation contracts | Required calls, order/branching, result mutation, and no forbidden sideways call |
 | Processing workflow | Processing service | Its direct Orchestration contracts | Multi-stage order, partial results, persistence/queue policy, exact classification |
 | Management façade | Management service | `IInvoiceProcessingService` | Delegation through the application boundary and Management classification |
-| Broker provider mapping | Real Broker and provider-neutral contract | Provider SDK client/transport only | Wire/provider record mapping, provider call, cancellation, and direct error translation |
+| Broker provider mapping | Real Broker and provider-neutral contract | Provider SDK client/transport only | Wire/provider record mapping, provider call, cancellation, and any error translation owned by that Broker contract |
 | HTTP result or DTO shape | Real DTO mapper, endpoint, or `ExceptionToHttpResultMapper` | Downstream Management contract where needed | Status, `ProblemDetails`, exact serialized fields, safe detail, or cancellation result |
 | Constructor graph | Real reflected service types | None | Exact approved direct dependencies and adapter-to-Management direction |
 | Registration/lifetime | Real service collection and owning registration extension | Only unavoidable external configuration/provider clients | Resolution, implementation, scope/lifetime, and worker scope behavior |

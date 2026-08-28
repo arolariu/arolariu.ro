@@ -15,13 +15,15 @@ constraints.
 
 ```text
 src/components/ui/<name>.tsx
-src/components/ui/<name>.module.css
+src/components/ui/<name>.module.css  # when the component owns visual styling
 src/components/ui/<name>.test.tsx
 src/components/ui/<name>.stories.tsx
 src/index.ts
 ```
 
-- Colocate implementation, CSS Module, test, and Storybook story.
+- Colocate implementation, test, Storybook story, and a CSS Module when the
+  component owns visual styling. Intentional style-free composition primitives
+  may omit the CSS file.
 - Export every public component and public type from `src/index.ts`.
 - Use `cn()` from `src/lib/utilities.ts` for class composition.
 - Prefer Base UI `render` composition; retain `asChild` only for compatible

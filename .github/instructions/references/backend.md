@@ -72,23 +72,25 @@ contract is behavior work, not documentation cleanup.
 | Context | Path | Layers present | Notable shape |
 | --- | --- | --- | --- |
 | Core | `src/Core/` | Host, middleware, health | No domain service hierarchy; hosts composition |
-| Core.Auth | `src/Core.Auth/` | `Brokers/` (`AuthDbContext`), `Endpoints/` | No Management/Processing/Orchestration/Foundation — endpoints call ASP.NET Core Identity's `SignInManager<TUser>` directly |
+| Core.Auth | `src/Core.Auth/` | `Brokers/` (`AuthDbContext`), `Endpoints/` | No Management/Processing/Orchestration/Foundation; framework routes use `MapIdentityApi`, and custom logout injects `SignInManager<IdentityUser>` |
 | Invoices | `src/Invoices/` | Full Management → Processing → Orchestration → Foundation → Brokers | The reference implementation of RFC 2001/2003 |
 | Common | `src/Common/` | Shared DDD, `Exceptions/`, `Http/`, `Telemetry/` | Cross-context primitives only; must not become a bypass route around a context's Management boundary |
 
-Core.Auth is a deliberate exception to the five-layer shape (RFC 2001 §2.1:
-"Not every bounded context requires every adapter type"). Do not treat its
-direct Identity/DbContext calls as a precedent for skipping Management in
-Invoices, and do not add a Foundation/Orchestration layer to Core.Auth without
-confirming the change is in scope — auth behavior is always an escalation
-regardless of layering questions.
+Core.Auth is a deliberate exception to the five-layer shape. RFC 2001 §2.1
+states that other bounded contexts may use a subset or framework-owned
+topology. Do not treat its Identity endpoint behavior as a precedent for
+skipping Management in Invoices, and do not add a
+Foundation/Orchestration layer to Core.Auth without confirming the change is
+in scope - auth behavior is always an escalation regardless of layering
+questions.
 
 ```csharp
 // sites/api.arolariu.ro/src/Core.Auth/Endpoints/AuthEndpoints.Handlers.cs
 public static partial class AuthEndpoints
 {
-  // handlers inject SignInManager<TUser>/UserManager<TUser> directly — there is
-  // no Core.Auth Management service to route through.
+  // The custom logout handler injects SignInManager<IdentityUser> directly,
+  // while framework-owned routes are registered through MapIdentityApi.
+  // There is no Core.Auth Management service to route through.
 }
 ```
 

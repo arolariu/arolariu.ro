@@ -26,16 +26,17 @@ The full chain below applies to the Invoices bounded context:
 Endpoints -> Management -> Processing -> Orchestration -> Foundation -> Brokers
 ```
 
-- Endpoints map protocol behavior and do not contain business logic.
+- Endpoints own protocol, caller-claim/access, DTO, and result decisions.
+  Preserve documented existing multi-call behavior when touched, but put new
+  domain sequencing behind Management.
 - Invoices Management is the endpoint/worker-facing application boundary.
 - Processing owns heavy or multi-stage workflows.
 - Orchestration coordinates Foundation services.
 - Foundation owns CRUD and domain validation.
 - Brokers are thin external-system wrappers.
 - Never make Foundation-to-Foundation calls.
-- Keep each service at two or three direct domain collaborators; framework and
-  support dependencies such as `ILoggerFactory` do not count toward that
-  budget.
+- Apply the direct-domain collaborator budget owned by root `AGENTS.md`;
+  framework/support dependencies such as `ILoggerFactory` do not count.
 - Follow the existing partial-class structure for validations and TryCatch
   classification.
 - Start an Activity for observable service work and add non-sensitive domain

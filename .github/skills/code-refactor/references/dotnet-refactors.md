@@ -50,11 +50,11 @@ refactor.
 
 ## Constructors, dependencies, and DI
 
-Services keep two or three direct domain collaborators. Framework/support
-dependencies such as `ILoggerFactory` are outside that count. During
-extraction:
+Services preserve the direct-domain collaborator budget owned by root
+`AGENTS.md`; framework/support dependencies such as `ILoggerFactory` are
+outside that count. During extraction:
 
-- Do not hide a fourth domain dependency in a service locator, `IServiceProvider`,
+- Do not hide a domain dependency beyond the root budget in a service locator, `IServiceProvider`,
   options bag, generic façade, delegate bundle, or factory closure.
 - Management currently depends on one Processing contract; Processing
   currently depends on the three approved Orchestrations.

@@ -102,7 +102,7 @@ matching repository artifact after the project boundary is known:
 | Improve structure without behavior change | `code-refactor` | TypeScript refactors, .NET refactors, or Python refactors |
 | Document an existing contract | `code-documentation` | JSDoc/TSDoc, C# XML documentation, or Python docstrings |
 | Review an existing diff/range read-only | `code-review` | TypeScript/UI, .NET, Python, AI assets, or infrastructure/workflow review |
-| Research or perform an approved package/runtime migration | `infra-dependency-update` | npm, NuGet, or Python dependency ownership |
+| Research or perform an approved package/runtime/action migration | `infra-dependency-update` | npm, NuGet, Python, or GitHub Actions dependency ownership |
 | Operate a local development environment | `infra-selfhost` | Aspire, selfhost, standalone, or ad hoc image/Compose guidance |
 
 Shared decision tables, checklists, and troubleshooting remain in the same
