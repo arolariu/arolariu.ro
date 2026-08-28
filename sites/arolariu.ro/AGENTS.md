@@ -1,46 +1,47 @@
-# Frontend Agent Guide (arolariu.ro)
+# Website Local Guide
 
-> Next.js 16.2 + React 19.2.4 + TypeScript 6.0
+Root `AGENTS.md` owns repository-wide versions, commands, safety, TypeScript,
+testing, and Git rules. This file records only website-specific architecture.
 
 ## Architecture
 
-- **Server Components by default** — only add `"use client"` when state/interactivity is needed
-- **Island Pattern**: `page.tsx` (RSC) → `island.tsx` (Client) → `_components/` (local)
-- **State hierarchy**: Zustand (global) → Context (scoped) → useState (local)
+- Server Components are the default.
+- Interactive routes use `page.tsx` -> `island.tsx` -> `_components/`.
+- Use Zustand for global client state, Context for scoped state, and local
+  React state otherwise.
+- User-visible text uses `next-intl` in `en`, `ro`, and `fr`.
+- Clerk middleware protects the routes matched in `src/proxy.ts`. Server
+  Components and Server Actions retain established redirect, guest/public,
+  ownership, and authorization checks outside that matcher; do not replace
+  those checks with client-only logic.
+- Metadata uses the shared metadata helpers and localized typed selectors.
+  Live namespaces use nested `metadata` keys consistently across all locales.
 
-## Commands
+## Local Paths
 
-```bash
-npm run dev:website        # Dev server → http://localhost:3000
-npm run build:website      # Production build
-npm run test:unit          # Vitest unit tests only (fast — use for routine checks)
-npm run test:website       # FULL suite: Vitest + Playwright E2E + Storybook (expensive)
-npm run lint               # ESLint (20+ plugins)
-npm run format             # Prettier
-npm run generate           # Generate env, i18n, GraphQL types
-```
+| Path | Responsibility |
+| --- | --- |
+| `src/app/` | App Router routes and route-local components |
+| `src/hooks/` | Reusable React hooks |
+| `src/stores/` | Persisted global client state |
+| `src/lib/actions/` | Private `server-only` helpers, client-invoked Server Actions, and transport boundaries |
+| `src/types/` | Website domain types |
+| `messages/` | Localized messages |
+| `tests/helpers/builders/` | Shared test builders |
 
-## Key Directories
+## Local Verification
 
-| Path               | Purpose                                                  |
-| ------------------ | -------------------------------------------------------- |
-| `src/app/`         | App Router pages (RSC by default)                        |
-| `src/stores/`      | Zustand stores (invoices, merchants, scans, preferences) |
-| `src/hooks/`       | Custom hooks (useInvoice, useMerchants, etc.)            |
-| `src/lib/actions/` | Server Actions                                           |
-| `src/types/`       | TypeScript type definitions                              |
-| `messages/`        | i18n translations (en.json, ro.json, fr.json)            |
+Use the website commands owned by root `AGENTS.md`. Select the targeted check
+that covers the changed behavior; full website tests and global lint are
+final-pass checks.
 
-## Rules
+## Architecture References
 
-- Zero `any` types — TypeScript strict mode enforced
-- All user-facing strings through `next-intl`
-- Import shared UI from `@arolariu/components`
-- Use `Readonly<Props>` for all component props
-- `useShallow` for Zustand object selectors
-- 90%+ test coverage target
-
-## RFCs
-
-Consult before architectural changes: 1001 (observability), 1002 (JSDoc), 1003 (i18n), 1004 (metadata/SEO), 1005 (Zustand), 1006 (component
-library), 1007 (patterns), 1008 (SCSS)
+- RFC 1001 - frontend observability
+- RFC 1002 - JSDoc/TSDoc
+- RFC 1003 - internationalization
+- RFC 1004 - metadata and SEO
+- RFC 1005 - Zustand
+- RFC 1006 - shared components
+- RFC 1007 - advanced frontend patterns
+- RFC 1008 - SCSS architecture

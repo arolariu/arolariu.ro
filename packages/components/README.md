@@ -14,7 +14,7 @@
 
 **Modern • Accessible • Production Ready**
 
-_A comprehensive collection of 71+ beautifully crafted React components built on [Base UI](https://base-ui.com/) primitives, styled with CSS
+_A comprehensive collection of React components built on [Base UI](https://base-ui.com/) primitives, styled with CSS
 Modules, and designed for modern applications that demand both beauty and performance._
 
 [🚀 Get Started](#-quick-start) • [📖 Documentation](#-component-catalog) • 🎨 Storybook demos (Coming soon) •
@@ -37,7 +37,7 @@ Modules, and designed for modern applications that demand both beauty and perfor
 - **🌙 Flexible Theming** - Light and dark mode via `.dark` or `[data-theme="dark"]`
 - **🚀 Modern Stack** - React 18/19, ESM, SSR compatible, built with RSLib
 
-**Version 1.0.0 is the first major release of the new Base UI + CSS Modules architecture.**
+The current package version is owned by [`package.json`](./package.json).
 
 ## 🚀 Quick Start
 
@@ -63,7 +63,7 @@ export default function MyApp() {
   return (
     <Card className={styles.card}>
       <CardHeader>
-        <CardTitle>Welcome to @arolariu/components 1.0.0</CardTitle>
+        <CardTitle>Welcome to @arolariu/components</CardTitle>
       </CardHeader>
       <CardContent className={styles.content}>
         <Button>Get Started</Button>
@@ -119,7 +119,8 @@ import {Button, Card} from "@arolariu/components";
 
 ## 📖 Component Catalog
 
-Explore our collection of **71+ components** organized by category.
+Explore representative components below. The live public inventory is owned by
+`src/index.ts`, package exports, and `src/components/ui/`.
 
 ### 🎨 Layout & Structure
 
@@ -190,7 +191,7 @@ Explore our collection of **71+ components** organized by category.
 | **Alert**    | Important message notifications | `@arolariu/components/alert`    |
 | **Progress** | Task completion indicators      | `@arolariu/components/progress` |
 | **Skeleton** | Loading state placeholders      | `@arolariu/components/skeleton` |
-| **Toaster**  | Base UI-backed toast system     | `@arolariu/components/sonner`   |
+| **Toast**    | Base UI-backed toast system     | `@arolariu/components/toast`    |
 | **Spinner**  | Loading indicators              | `@arolariu/components/spinner`  |
 
 ### 🎪 Animated Backgrounds
@@ -211,7 +212,8 @@ Explore our collection of **71+ components** organized by category.
 - `@radix-ui/*` has been replaced internally with `@base-ui/react`; this is automatic and does not require consumer changes.
 - `tailwindcss` is no longer a peer dependency.
 - `asChild` still works for backward compatibility, but the `render` prop is now the preferred composition API.
-- The `sonner` toast API is preserved through the compatibility wrapper exported from `@arolariu/components/sonner`.
+- The former `sonner` wrapper is removed; use the current
+  `@arolariu/components/toast` surface.
 - If you previously used `badgeVariants` or `buttonVariants`, migrate to component props such as `variant` and `size` instead.
 - CSS custom properties now use the `--ac-*` prefix.
 
@@ -227,7 +229,8 @@ Explore our collection of **71+ components** organized by category.
 
 ### Styling
 
-- Each component is styled with a colocated **CSS Module** such as `button.module.css`
+- Components that own visual presentation use a colocated **CSS Module** such
+  as `button.module.css`; style-free composition primitives may omit one
 - `className` remains the public extension point for consumer overrides
 - Base UI state attributes such as `[data-open]`, `[data-disabled]`, `[data-checked]`, and `[data-selected]` drive stateful styling
 - `cn()` now uses **`clsx` only** for predictable class composition
@@ -567,16 +570,16 @@ We welcome contributions. Help make @arolariu/components even better.
 ```bash
 # 1. Fork and clone the repository
 git clone https://github.com/your-username/arolariu.ro.git
-cd arolariu.ro/packages/components
+cd arolariu.ro
 
 # 2. Install dependencies
 npm install
 
-# 3. Start development environment
-npm run build:components
+# 3. Start the component development environment
 npm run dev:components
 
-# 4. Make your changes and test
+# 4. Make your changes, test, and build
+npm run test:components
 npm run build:components
 ```
 
@@ -613,7 +616,7 @@ npx bundlephobia @arolariu/components
 
 **Key Stats**
 
-- 📦 **Version**: 1.0.0
+- 📦 **Version**: see the npm badge or live package manifest
 - 🌲 **Tree-shakeable**: import only what you need
 - 📝 **TypeScript**: typed package with declaration output
 - ♿ **Accessibility**: Base UI-backed primitives and patterns
@@ -628,11 +631,12 @@ Core runtime dependencies include:
 - **clsx** - Class name composition used by `cn()`
 - **lucide-react** - Icon set
 - **motion** - Animation library
-- **react-hook-form** and **zod** - Forms and validation helpers
-- **embla-carousel-react**, **recharts**, **react-day-picker**, **input-otp**, **react-resizable-panels**, **shiki** - Specialized UI
+- **react-hook-form** and **recharts** - Form and chart peer integrations
+- **embla-carousel-react**, **react-day-picker**, **input-otp**, and
+  **react-resizable-panels** - Specialized UI
   integrations
 
-Removed from the 1.0.0 architecture:
+Removed from the current Base UI architecture:
 
 - `@radix-ui/*`
 - `tailwind-merge`
@@ -660,7 +664,7 @@ to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 copies of the Software...
 ```
 
-[**View full license →**](./LICENSE)
+[**View full license →**](./LICENSE.md)
 
 ---
 

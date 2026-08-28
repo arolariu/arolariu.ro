@@ -175,9 +175,11 @@ The **arolariu.ro** monorepo is a comprehensive full-stack platform built with c
 |:-------:|:------:|:---:|:----------:|:-------:|
 | 🎨 **Production** | ![Status](https://img.shields.io/badge/status-live-success?style=flat-square) | [arolariu.ro](https://arolariu.ro) | Next.js 16 + React 19 | Main platform |
 | 🔧 **Development** | ![Status](https://img.shields.io/badge/status-live-success?style=flat-square) | [dev.arolariu.ro](https://dev.arolariu.ro) | Next.js 16 + React 19 | Preview environment |
-| 🚀 **API** | ![Status](https://img.shields.io/badge/status-live-success?style=flat-square) | [api.arolariu.ro](https://api.arolariu.ro) | .NET 10 (LTS) | REST, GraphQL & gRPC |
+| 🚀 **API** | ![Status](https://img.shields.io/badge/status-live-success?style=flat-square) | [api.arolariu.ro](https://api.arolariu.ro) | .NET Minimal APIs | REST and OpenAPI |
 | 📄 **CV/Resume** | ![Status](https://img.shields.io/badge/status-live-success?style=flat-square) | [cv.arolariu.ro](https://cv.arolariu.ro) | SvelteKit 2 | Personal CV |
-| 📚 **Documentation** | ![Status](https://img.shields.io/badge/status-live-success?style=flat-square) | [docs.arolariu.ro](https://docs.arolariu.ro) | DocFX | Technical docs |
+| 📚 **Documentation** | ![Status](https://img.shields.io/badge/status-live-success?style=flat-square) | [docs.arolariu.ro](https://docs.arolariu.ro) | Docusaurus | Technical docs |
+| 📟 **Status** | ![Status](https://img.shields.io/badge/status-live-success?style=flat-square) | [status.arolariu.ro](https://status.arolariu.ro) | SvelteKit | Service availability |
+| 🐍 **Configuration** | ![Status](https://img.shields.io/badge/status-live-success?style=flat-square) | [exp.arolariu.ro](https://exp.arolariu.ro) | FastAPI | Target-scoped configuration proxy |
 
 </div>
 
@@ -192,7 +194,7 @@ The **arolariu.ro** monorepo is a comprehensive full-stack platform built with c
 | 🔒 **Security** | SSL/TLS A+ • CSP Headers • RBAC • Managed Identities • OIDC |
 | 📊 **Observability** | OpenTelemetry • Distributed Tracing • Application Insights • Grafana |
 | 🧪 **Quality** | 85%+ Test Coverage • ESLint (20+ plugins) • TypeScript Strict • Prettier |
-| 🔄 **CI/CD** | GitHub Actions • Blue-Green Deploys • Auto-rollback • Container Registry |
+| 🔄 **CI/CD** | GitHub Actions • Container builds • Environment-scoped deployments |
 | 🌍 **i18n** | Multi-language Support (EN/RO/FR) • Type-safe Translations • next-intl |
 | 📧 **Email** | React Email Templates • Resend Integration • Transactional Emails |
 | 📦 **Monorepo** | Nx Workspace • Shared Components • Incremental Builds • Affected Commands |
@@ -216,11 +218,16 @@ Before you begin, ensure you have the following installed:
 |:----:|:-------:|:--------|
 | ![Node.js](https://img.shields.io/badge/Node.js-24%2B-339933?style=flat-square&logo=nodedotjs&logoColor=white) | ≥24.x | JavaScript runtime |
 | ![npm](https://img.shields.io/badge/npm-11%2B-CB3837?style=flat-square&logo=npm&logoColor=white) | ≥11.x | Package manager |
-| ![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?style=flat-square&logo=dotnet&logoColor=white) | 10.0 | Backend runtime + Aspire 13.x AppHost |
-| ![Docker](https://img.shields.io/badge/Docker-Latest-2496ED?style=flat-square&logo=docker&logoColor=white) | Latest | Required for Aspire infra containers (SQL, Cosmos, Azurite, Redis) |
+| ![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?style=flat-square&logo=dotnet&logoColor=white) | 10.0 | Backend runtime and Aspire AppHost |
+| Container engine | Rancher Desktop or Podman Desktop | Required for local SQL, Cosmos, Azurite, and Redis containers |
 | ![Python](https://img.shields.io/badge/Python-3.12-3776AB?style=flat-square&logo=python&logoColor=white) | 3.12 | Required for `exp` config service (FastAPI) |
 
 ### Quick Start
+
+> [!WARNING]
+> The Aspire start command below resets all guarded local invoice/merchant
+> documents, invoice blobs, and analysis queue messages before restoring the
+> deterministic local scenarios.
 
 ```bash
 # 1️⃣ Clone the repository
@@ -233,8 +240,9 @@ npm install
 # 3️⃣ Run initial setup (generates env files, i18n, GraphQL)
 npm run setup
 
-# 4️⃣ Start the full stack via Aspire (recommended — apps native, infra in containers)
-npm run dev
+# 4️⃣ Start the full stack via Aspire with one supported engine
+npm run dev -- --engine rancher
+# or: npm run dev -- --engine podman
 # → Aspire dashboard auto-opens at https://localhost:17080
 # → Website https://localhost:3000 · API http://localhost:5000 · CV http://localhost:4173
 #   Docs http://localhost:3100 · Status http://localhost:3002 · exp http://localhost:5002
@@ -256,7 +264,7 @@ npm run build:website      # 🌐 Main website (Next.js)
 npm run build:components   # 🧩 React component library
 npm run build:api          # ⚙️ Backend API (.NET)
 npm run build:cv           # 📄 CV site (SvelteKit)
-npm run build:docs         # 📚 Documentation (DocFX)
+npm run build:docs         # 📚 Documentation (Docusaurus)
 ```
 
 </details>
@@ -265,10 +273,10 @@ npm run build:docs         # 📚 Documentation (DocFX)
 <summary><b>🔥 Development Servers</b></summary>
 
 ```bash
-npm run dev                # 🚀 Aspire AppHost (full stack — recommended)
-npm run dev:aspire         # 🚀 Explicit alias for `npm run dev`
-npm run dev:selfhost       # 🐳 Containerized stack (Docker Compose)
-npm run dev:selfhost:stop  # 🛑 Stop the containerized stack
+npm run dev -- --engine rancher                # 🚀 Aspire AppHost (choose rancher or podman)
+npm run dev:aspire -- --engine podman          # 🚀 Explicit Aspire alias
+npm run dev:selfhost -- --engine rancher       # 🐳 Containerized stack
+npm run dev:selfhost:stop -- --engine rancher  # 🛑 Stop that containerized stack
 
 # Standalone (single service, no AppHost coordination — fallback only):
 npm run dev:website        # 🌐 Website → https://localhost:3000
@@ -312,8 +320,16 @@ npx nx show project website      # 🔍 Show project details
 
 ### Aspire Mode (Default)
 
-`npm run dev -- --engine rancher` or `npm run dev -- --engine podman` starts the **.NET Aspire 13.x AppHost** at `tooling/AppHost/`. The AppHost orchestrates the entire dev stack:
+`npm run dev -- --engine rancher` or `npm run dev -- --engine podman` starts the **.NET Aspire AppHost** at `tooling/AppHost/`. The AppHost orchestrates the entire dev stack:
 
+- **Destructive local scenario bootstrap** — before restoring Alice, Bob, and
+  Charlie, Aspire deletes all documents in the guarded local invoice/merchant
+  Cosmos containers, removes the local invoice blob container, and clears the
+  analysis queue. Preserve local work before starting.
+- **Native website certificate preflight** — the website uses
+  `next dev --experimental-https`; a certificate-free first run can
+  download/run certificate tooling and install a local CA. Confirm that
+  trust-store change before starting.
 - **Apps run native** — .NET via `dotnet run`, Next.js / SvelteKit / Docusaurus / status via their `dev` scripts, Python `exp` via `uvicorn`. Hot reload is preserved on every runtime.
 - **Infrastructure runs in containers** — SQL Server, Cosmos DB vNext emulator, Azurite (Blob/Queue/Table), and Redis are spawned as native Aspire integrations through the selected Rancher Desktop or Podman Desktop engine (no Docker Compose required).
 - **Aspire dashboard** auto-opens at `https://localhost:17080` with live OpenTelemetry traces, metrics, logs, clickable URLs, and per-resource health badges.
@@ -326,7 +342,7 @@ Rancher Desktop is selected through its Moby/Docker-compatible backend; Aspire/D
 |----------|-----|-------|
 | Aspire dashboard | `https://localhost:17080` | OTel traces · metrics · logs · resource graph |
 | Website (Next.js) | `https://localhost:3000` | HTTPS via `--experimental-https` (mkcert root CA) |
-| API (.NET) | `http://localhost:5000` | Swagger UI at `/swagger` |
+| API (.NET) | `http://localhost:5000` | Swagger UI at `/` |
 | CV (SvelteKit) | `http://localhost:4173` | Preview server |
 | Docs (Docusaurus) | `http://localhost:3100` | |
 | Status | `http://localhost:3002` | |
@@ -374,7 +390,9 @@ The Aspire AppHost spawns `next dev --inspect` which exposes the V8 inspector on
 
 1. Confirm the website resource is **Running** in the Aspire dashboard.
 2. In VS Code, use the **`Attach to Next.js (Aspire)`** launch configuration (auto-attaches via `inspect` protocol on `localhost:9229`).
-3. If npm 11 logs an `arborist` null-state error during startup, kill the AppHost and re-run `npm run dev` — npm 11 occasionally races on concurrent `--inspect` children.
+3. If npm logs an `arborist` null-state error during startup, interrupt the
+   owning AppHost terminal and re-run
+   `npm run dev -- --engine <rancher|podman>`.
 4. For .NET debugging, F5 from `tooling/AppHost/AppHost.csproj` attaches automatically. The `watch` task in `.vscode/tasks.json` also targets the AppHost project.
 
 </details>
@@ -387,7 +405,7 @@ Each resource has a health check; check the dashboard's **Health** column for th
 | Resource | Health endpoint | What it checks |
 |----------|-----------------|----------------|
 | API | `http://localhost:5000/health` | DB + Cosmos + Azurite + Redis + exp connectivity |
-| Website | `https://localhost:3000/api/health` | Renders, env present |
+| Website | `https://localhost:3000/api/health` | Website readiness plus configured exp/API upstream checks |
 | exp | `http://localhost:5002/api/ready` | FastAPI ready + config bootstrap done |
 | SQL Server | TDS handshake | Aspire's built-in `WaitFor` gate (`sql-ready`) |
 
@@ -408,7 +426,11 @@ Aspire's **Distributed Container Proxy (DCP)** allocates dynamic ports for proxi
 <details>
 <summary><b>🔐 SQL Server connection hangs or "TLS handshake failed"</b></summary>
 
-The dev SQL container does not present a trusted TLS cert. Connection strings **must** include `Encrypt=False;TrustServerCertificate=True`. The AppHost wires this automatically via `Parameters:sql-password` from `tooling/AppHost/appsettings.Development.json`. If you bypass the AppHost (e.g. connecting from Azure Data Studio), append the same parameters.
+The dev SQL container does not present a trusted TLS certificate. Use the
+connection settings injected by the selected local mode. If connecting with a
+separate database client, derive the current host/port/encryption requirements
+from the live AppHost or Compose configuration rather than copying a password
+or connection string from documentation.
 
 </details>
 
@@ -419,17 +441,23 @@ The dashboard exposes two OTLP endpoints — **gRPC on `:21030`** and **HTTP on 
 
 1. Check the resource's **Console logs** tab in the dashboard for `OTLP exporter` errors.
 2. Confirm `OTEL_EXPORTER_OTLP_ENDPOINT` is set to the right protocol's port — the AppHost sets these per-resource.
-3. The HTTPS dashboard requires the mkcert root CA to be trusted (`mkcert -install`). On first boot, accept the cert prompt or run `.devcontainer/postCreate.sh` (devcontainer) which handles this.
+3. For Aspire dashboard TLS, inspect the Kestrel endpoint in
+   `tooling/AppHost/Properties/launchSettings.json` and the current ASP.NET
+   Core development certificate. `mkcert` owns selfhost Traefik certificates,
+   not the Aspire dashboard.
 
 </details>
 
 <details>
 <summary><b>🔑 Local HTTPS certificate errors (`*.localhost`)</b></summary>
 
-The website and dashboard both use a wildcard `*.localhost` cert generated by **mkcert**. If you see `NET::ERR_CERT_AUTHORITY_INVALID`:
+Selfhost Traefik can use a wildcard `*.localhost` certificate generated by
+**mkcert**. Aspire's dashboard and native website HTTPS have separate
+development-certificate owners. Installing a local CA or modifying the trust
+store is security-sensitive; confirm that change before running:
 
 ```bash
-# Reinstall the root CA
+# Install/reinstall the local CA after approval
 mkcert -install
 
 # Regenerate the wildcard cert (devcontainer does this automatically in postCreate.sh)
@@ -458,9 +486,13 @@ If the selected engine is not running, start Rancher Desktop or Podman Desktop b
 <summary><b>🧪 Aspire AppHost crashes immediately on startup</b></summary>
 
 1. Run `dotnet restore ./arolariu.slnx` to refresh NuGet packages.
-2. Run `dotnet workload restore` to install the Aspire workload.
-3. Delete `tooling/AppHost/bin` and `tooling/AppHost/obj`, then re-run `npm run dev`.
-4. Check `tooling/AppHost/appsettings.Development.json` exists and has the `Parameters:sql-password` value (it ships with a dev default).
+2. Inspect the first AppHost build/startup error rather than installing an
+   undeclared workload.
+3. If the evidence identifies stale build output, remove only
+   `tooling/AppHost/bin` and `tooling/AppHost/obj`, then re-run
+   `npm run dev -- --engine <rancher|podman>`.
+4. Check that the current local AppHost configuration supplies the required
+   parameter names without printing their values.
 
 </details>
 
@@ -474,22 +506,22 @@ If the selected engine is not running, start Rancher Desktop or Podman Desktop b
 ```plaintext
 arolariu.ro/
 ├── 📦 packages/                    # Shared libraries
-│   └── components/                 # 🧩 @arolariu/components (Radix UI + shadcn/ui)
-│       ├── src/                    #    60+ component source files
+│   └── components/                 # 🧩 @arolariu/components (Base UI primitives)
+│       ├── src/                    #    Component source
 │       └── stories/                #    Storybook stories
 │
 ├── 🌐 sites/                       # Applications
-│   ├── arolariu.ro/                # 🎨 Main Next.js 16 website
+│   ├── arolariu.ro/                # 🎨 Main Next.js website
 │   │   ├── src/
 │   │   │   ├── app/                #    App Router pages (RSC by default)
 │   │   │   ├── hooks/              #    Custom React hooks (useInvoice, etc.)
 │   │   │   ├── stores/             #    Zustand stores with IndexedDB persistence
-│   │   │   ├── lib/actions/        #    Server Actions
+│   │   │   ├── lib/actions/        #    Server-only helpers, Server Actions, transport
 │   │   │   └── types/              #    TypeScript type definitions
 │   │   ├── emails/                 #    📧 React Email templates (Resend)
 │   │   └── messages/               #    🌍 i18n translations (en, ro, fr)
 │   │
-│   ├── api.arolariu.ro/            # ⚙️ .NET 10 Backend API
+│   ├── api.arolariu.ro/            # ⚙️ .NET Minimal API modular monolith
 │   │   ├── src/
 │   │   │   ├── Core/               #    Entry point, infrastructure, health
 │   │   │   ├── Core.Auth/          #    Authentication bounded context
@@ -497,8 +529,10 @@ arolariu.ro/
 │   │   │   └── Common/             #    Shared DDD base classes, telemetry
 │   │   └── tests/                  #    MSTest tests
 │   │
-│   ├── cv.arolariu.ro/             # 📄 SvelteKit 2 CV/Resume (standalone)
-│   └── docs.arolariu.ro/           # 📚 DocFX documentation site
+│   ├── cv.arolariu.ro/             # 📄 Standalone SvelteKit CV/Resume
+│   ├── status.arolariu.ro/         # 📟 Standalone SvelteKit service status
+│   ├── exp.arolariu.ro/            # 🐍 Experimental FastAPI config service
+│   └── docs.arolariu.ro/           # 📚 Docusaurus documentation site
 │
 ├── 🏗️ infra/                      # Infrastructure
 │   ├── Azure/Bicep/                #    Azure IaC (main.bicep → facade → modules)
@@ -507,18 +541,21 @@ arolariu.ro/
 │
 ├── 📜 scripts/                     # Build & utility scripts
 ├── 🛠️  tooling/                    # Dev tooling
-│   ├── AppHost/                    #    .NET Aspire 13.x AppHost (orchestrator)
+│   ├── AppHost/                    #    .NET Aspire local orchestrator
 │   └── AppHost.Tests/              #    MSTest tests for AppHost helpers
 ├── 📖 docs/                        # Architecture documentation & RFCs
-│   └── rfc/                        #    13 Architecture Decision Records
+│   └── rfc/                        #    Architecture Decision Records
 │
 ├── 🤖 .github/                     # GitHub configuration
-│   ├── workflows/                  #    8 CI/CD workflow files
-│   ├── instructions/               #    9 Copilot instruction files
-│   ├── agents/                     #    6 Copilot agent definitions
-│   ├── prompts/                    #    6 reusable prompt templates
-│   ├── skills/                     #    4 scaffolding skill templates
-│   └── ISSUE_TEMPLATE/             #    8 issue templates (YAML)
+│   ├── workflows/                  #    CI/CD workflows
+│   ├── instructions/               #    Path instructions and reference catalogs
+│   ├── agents/                     #    Specialist agent definitions
+│   ├── prompts/                    #    Thin VS Code prompt shortcuts
+│   ├── skills/                     #    Portable progressive workflows
+│   ├── extensions/                 #    Optional CLI context and diagnostics
+│   ├── memory/                     #    Durable non-source-derived context
+│   ├── mcp.json                    #    Workspace MCP client configuration
+│   └── ISSUE_TEMPLATE/             #    Issue templates
 │
 └── 🔧 Configuration Files
     ├── nx.json                     # Nx workspace config
@@ -534,8 +571,11 @@ Each sub-project has its own detailed documentation:
 |:-------:|:------:|:------------|
 | 🎨 **Website** | [`sites/arolariu.ro/README.md`](sites/arolariu.ro/README.md) | Next.js frontend architecture & patterns |
 | ⚙️ **API** | [`sites/api.arolariu.ro/README.md`](sites/api.arolariu.ro/README.md) | .NET backend DDD architecture |
-| 🧩 **Components** | [`packages/components/readme.md`](packages/components/readme.md) | Shared component library usage |
+| 🧩 **Components** | [`packages/components/README.md`](packages/components/README.md) | Shared component library usage |
 | 📄 **CV** | [`sites/cv.arolariu.ro/README.md`](sites/cv.arolariu.ro/README.md) | SvelteKit CV site |
+| 📟 **Status** | [`sites/status.arolariu.ro/README.md`](sites/status.arolariu.ro/README.md) | Service-status site |
+| 🐍 **Experimental Service** | [`sites/exp.arolariu.ro/README.md`](sites/exp.arolariu.ro/README.md) | FastAPI configuration proxy |
+| 📚 **Documentation** | [`sites/docs.arolariu.ro/README.md`](sites/docs.arolariu.ro/README.md) | Docusaurus documentation pipeline |
 | 🏗️ **Infrastructure** | [`infra/Azure/Bicep/DEPLOYMENT_GUIDE.md`](infra/Azure/Bicep/DEPLOYMENT_GUIDE.md) | Azure deployment guide |
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
@@ -569,20 +609,20 @@ This platform follows a **modular monolith** architecture deployed on **Microsof
 ```mermaid
 graph LR
     subgraph "📦 Packages"
-        COMP["🧩 @arolariu/components<br/><i>Radix UI + shadcn/ui</i>"]
+        COMP["🧩 @arolariu/components<br/><i>Base UI primitives</i>"]
     end
 
     subgraph "🌐 Sites"
         WEB["🎨 arolariu.ro<br/><i>Next.js 16 + React 19</i>"]
         API["⚙️ api.arolariu.ro<br/><i>.NET 10 + DDD</i>"]
         CV["📄 cv.arolariu.ro<br/><i>SvelteKit 2</i>"]
-        DOCS["📚 docs.arolariu.ro<br/><i>DocFX</i>"]
+        DOCS["📚 docs.arolariu.ro<br/><i>Docusaurus</i>"]
     end
 
     subgraph "☁️ Azure Cloud"
         AFD["🌐 Azure Front Door<br/><i>CDN + WAF</i>"]
         DATA["📦 Data Layer<br/><i>SQL + Cosmos DB + Blob</i>"]
-        AI["🤖 Azure OpenAI<br/><i>GPT-4o</i>"]
+        AI["🤖 Azure OpenAI<br/><i>Model deployments</i>"]
     end
 
     COMP -->|imports| WEB
@@ -604,33 +644,45 @@ graph LR
     style AI fill:#f59e0b,stroke:#d97706,color:#fff
 ```
 
-> **Note:** `cv.arolariu.ro` is fully standalone — no cross-dependencies with other packages.
+> **Note:** `cv.arolariu.ro` and `status.arolariu.ro` remain standalone sites
+> with no website/component-package dependency.
 
-### Backend — The Standard (5 Layers)
+### Backend — The Standard Flow
 
-The .NET backend follows **[The Standard](https://github.com/hassanhabib/The-Standard)** architecture pattern:
+The Invoices bounded context follows
+**[The Standard](https://github.com/hassanhabib/The-Standard)** through the
+implemented flow below:
 
 ```mermaid
 graph TB
-    EP["🔌 Endpoints (Exposers)<br/><i>HTTP mapping, 1 Processing service</i>"]
-    PS["⚡ Processing Services<br/><i>Heavy computation, AI/ML, 1-2 Orchestration services</i>"]
-    OS["🔄 Orchestration Services<br/><i>Coordination, cross-cutting, 2-3 Foundation services</i>"]
-    FS["🏗️ Foundation Services<br/><i>CRUD, validation, 1-2 Brokers</i>"]
+    EP["🔌 Endpoints / Workers<br/><i>HTTP or host adapters, 1 Management façade</i>"]
+    MS["🎛️ Management Service<br/><i>Application use cases, 1 Processing service</i>"]
+    PS["⚡ Processing Service<br/><i>Computation and workflow sequencing</i>"]
+    OS["🔄 Orchestration Services<br/><i>Approved capability coordination</i>"]
+    FS["🏗️ Foundation Services<br/><i>Validation and direct dependency classification</i>"]
     BR["📦 Brokers<br/><i>External abstraction, thin wrappers, NO business logic</i>"]
 
-    EP --> PS
+    EP --> MS
+    MS --> PS
     PS --> OS
     OS --> FS
     FS --> BR
 
     style EP fill:#ef4444,stroke:#dc2626,color:#fff
+    style MS fill:#f43f5e,stroke:#e11d48,color:#fff
     style PS fill:#f97316,stroke:#ea580c,color:#fff
     style OS fill:#eab308,stroke:#ca8a04,color:#fff
     style FS fill:#22c55e,stroke:#16a34a,color:#fff
     style BR fill:#3b82f6,stroke:#2563eb,color:#fff
 ```
 
-**Key constraints:** Max 2-3 dependencies per service (Florance Pattern). No sideways calls (Foundation→Foundation). Business logic never in Brokers.
+**Key constraints:** Services follow the direct-domain collaborator budget in
+root `AGENTS.md`; framework/support dependencies do not count. Invoices
+endpoints and workers enter through Management, Foundation-to-Foundation calls
+are prohibited, and Brokers contain no business logic.
+
+Core.Auth is a deliberate exception: framework Identity routes and the custom
+logout handler do not use the Invoices service hierarchy.
 
 ### Azure Infrastructure
 
@@ -642,9 +694,9 @@ graph TB
 | Layer | Components | Purpose |
 |:-----:|:-----------|:--------|
 | 🌐 **Networking** | Azure Front Door, DNS Zone | Global CDN, WAF, traffic routing |
-| 🖥️ **Compute** | App Service Plans (2x) | Production & Development hosting |
-| 🌍 **Sites** | App Services (3x), Static Web Apps (2x) | Web applications |
-| 🔐 **Identity** | User-Assigned Managed Identities (3x) | Zero-trust security |
+| 🖥️ **Compute** | App Service Plans | Production and development hosting |
+| 🌍 **Sites** | App Services and Static Web Apps | Web applications |
+| 🔐 **Identity** | User-Assigned Managed Identities | Workload identity |
 | ⚙️ **Configuration** | Key Vault, App Configuration | Secrets & feature flags |
 | 📦 **Storage** | Blob Storage, SQL Server, Cosmos DB, ACR | Data persistence |
 | 📊 **Observability** | Log Analytics, App Insights, Grafana | Monitoring & alerting |
@@ -668,7 +720,7 @@ graph TB
         subgraph WEB["🌍 Websites Layer"]
             S1["arolariu.ro<br/><i>Next.js</i>"]
             S2["api.arolariu.ro<br/><i>.NET</i>"]
-            S3["docs.arolariu.ro<br/><i>DocFX</i>"]
+            S3["docs.arolariu.ro<br/><i>Docusaurus</i>"]
             S4["cv.arolariu.ro<br/><i>SvelteKit</i>"]
         end
 
@@ -725,7 +777,8 @@ graph TB
 <!-- CI/CD PIPELINE -->
 ## 🔄 CI/CD Pipeline
 
-Automated deployment pipelines ensure code quality and zero-downtime releases.
+Automated pipelines enforce repository quality gates and environment-scoped
+build/deployment flows.
 
 <div align="center">
 
@@ -748,7 +801,9 @@ Automated deployment pipelines ensure code quality and zero-downtime releases.
 |:--------:|:------:|:--------|
 | **Components** | [![Components](https://github.com/arolariu/arolariu.ro/actions/workflows/official-components-publish.yml/badge.svg)](https://github.com/arolariu/arolariu.ro/actions/workflows/official-components-publish.yml) | Publish @arolariu/components |
 | **CV Site** | [![CV](https://github.com/arolariu/arolariu.ro/actions/workflows/official-cv-trigger.yml/badge.svg)](https://github.com/arolariu/arolariu.ro/actions/workflows/official-cv-trigger.yml) | Deploy SvelteKit CV |
-| **Docs** | [![Docs](https://github.com/arolariu/arolariu.ro/actions/workflows/official-docs-trigger.yml/badge.svg)](https://github.com/arolariu/arolariu.ro/actions/workflows/official-docs-trigger.yml) | Deploy DocFX site |
+| **Status Site** | [![Status](https://github.com/arolariu/arolariu.ro/actions/workflows/official-status-trigger.yml/badge.svg)](https://github.com/arolariu/arolariu.ro/actions/workflows/official-status-trigger.yml) | Deploy the SvelteKit status site |
+| **Experimental Service** | [![Experimental Service](https://github.com/arolariu/arolariu.ro/actions/workflows/official-exp-trigger.yml/badge.svg)](https://github.com/arolariu/arolariu.ro/actions/workflows/official-exp-trigger.yml) | Build, test, and deploy the FastAPI configuration service |
+| **Docs** | [![Docs](https://github.com/arolariu/arolariu.ro/actions/workflows/official-docs-trigger.yml/badge.svg)](https://github.com/arolariu/arolariu.ro/actions/workflows/official-docs-trigger.yml) | Deploy Docusaurus site |
 | **E2E Tests** | [![E2E](https://github.com/arolariu/arolariu.ro/actions/workflows/official-e2e-action.yml/badge.svg)](https://github.com/arolariu/arolariu.ro/actions/workflows/official-e2e-action.yml) | Playwright + Newman |
 | **Hygiene** | [![Hygiene](https://github.com/arolariu/arolariu.ro/actions/workflows/official-hygiene-check-v2.yml/badge.svg)](https://github.com/arolariu/arolariu.ro/actions/workflows/official-hygiene-check-v2.yml) | Lint, format, type-check |
 
@@ -763,8 +818,8 @@ Automated deployment pipelines ensure code quality and zero-downtime releases.
 | ✅ **Code Quality Gates** | ESLint, Prettier, TypeScript strict checks |
 | ✅ **Security Scanning** | Dependency vulnerability analysis |
 | ✅ **Docker Multi-stage** | Optimized container builds with layer caching |
-| ✅ **Blue-Green Deploy** | Zero-downtime production releases |
-| ✅ **Auto-rollback** | Automatic rollback on health check failures |
+| ✅ **Environment Controls** | GitHub Environment scoping for deployment jobs |
+| ✅ **Container Promotion** | Pre-built images deployed from Azure Container Registry |
 | ✅ **OIDC Authentication** | Secure Azure authentication without secrets |
 
 </details>
@@ -803,89 +858,22 @@ Track the project's progress and upcoming features:
 <!-- AI-POWERED DEVELOPMENT -->
 ## 🤖 AI-Powered Development
 
-This repository is fully configured with **GitHub Copilot** context-aware AI assistance — including instructions, agents, prompts, and scaffolding skills.
+The repository provides a layered GitHub Copilot setup:
 
-<details open>
-<summary><b>📚 Instruction Files (9)</b></summary>
+- `AGENTS.md` owns canonical repository facts and engineering constraints.
+- `.github/copilot-instructions.md` owns universal Copilot execution behavior.
+- Path instructions add language and domain-specific rules.
+- Custom agents provide specialist ownership.
+- Agent Skills provide portable, on-demand workflows.
+- Prompt files provide local VS Code shortcuts.
+- CLI extensions add optional bounded context and read-only diagnostics.
+- Native Copilot permissions, sandboxing, and GitHub branch rules own command
+  safety; no repository extension attempts to interpret arbitrary shell code.
 
-| File Pattern | Instruction File | Topics |
-|:------------:|:----------------:|:-------|
-| `.github/workflows/*.yml` | `workflows.instructions.md` | CI/CD patterns, caching, OIDC |
-| `**/*.ts` | `typescript.instructions.md` | Strict typing, type guards, generics |
-| `**/*.tsx, *.jsx` | `react.instructions.md` | RSC, hooks, state management |
-| `**/*.cs` | `csharp.instructions.md` | C# 13 patterns, async/await |
-| `sites/arolariu.ro/**` | `frontend.instructions.md` | Next.js App Router, observability |
-| `sites/api.arolariu.ro/**` | `backend.instructions.md` | DDD, SOLID, The Standard |
-| `**/*.bicep` | `bicep.instructions.md` | Azure IaC best practices |
-| `packages/components/**` | `components.instructions.md` | Radix UI, shadcn/ui patterns |
-| Pull Requests | `code-review.instructions.md` | Review standards & checklists |
-
-</details>
-
-<details>
-<summary><b>🤖 Copilot Agents (6)</b></summary>
-
-| Agent | Specialization |
-|:-----:|:---------------|
-| `backend-expert` | .NET DDD architecture, The Standard, service layers |
-| `frontend-expert` | Next.js, React 19, RSC, state management |
-| `code-reviewer` | Code quality, security, best practices |
-| `infra-expert` | Azure Bicep, infrastructure as code |
-| `docs-writer` | Technical documentation, JSDoc, XML docs |
-| `full-stack-planner` | Cross-cutting architecture decisions |
-
-</details>
-
-<details>
-<summary><b>🎯 Prompts & Skills</b></summary>
-
-**Reusable Prompts (6):**
-
-| Prompt | Purpose |
-|:------:|:--------|
-| `comment-standard` | Consistent JSDoc/XML documentation |
-| `unit-test` | Test scaffolding (Vitest/MSTest) |
-| `refactor` | Safe refactoring with patterns |
-| `api-endpoint` | New .NET endpoint scaffold |
-| `new-page` | Next.js page with i18n + metadata |
-| `migration` | Database schema migration guide |
-
-**Scaffolding Skills (4):**
-
-| Skill | Template |
-|:-----:|:---------|
-| `ddd-service` | Full DDD service stack (Foundation → Broker) |
-| `react-component` | RSC + Island pattern component |
-| `zustand-store` | Zustand store with IndexedDB persistence |
-| `i18n-page` | Internationalized page with all locales |
-
-</details>
-
-<details>
-<summary><b>📖 Architecture RFCs (13)</b></summary>
-
-| RFC # | Title | Status |
-|:-----:|:------|:------:|
-| **Infrastructure (0xxx)** | | |
-| 0001 | GitHub Actions Workflows | ✅ Implemented |
-| **Frontend (1xxx)** | | |
-| 1001 | OpenTelemetry Observability System | ✅ Implemented |
-| 1002 | JSDoc/TSDoc Documentation Standard | ✅ Implemented |
-| 1003 | Internationalization System (next-intl) | ✅ Implemented |
-| 1004 | Metadata and SEO System | ✅ Implemented |
-| 1005 | State Management (Zustand) | ✅ Implemented |
-| 1006 | Component Library Architecture | ✅ Implemented |
-| 1007 | Advanced Frontend Patterns | ✅ Implemented |
-| 1008 | SCSS System Architecture | ✅ Implemented |
-| **Backend (2xxx)** | | |
-| 2001 | Domain-Driven Design Architecture | ✅ Implemented |
-| 2002 | Backend OpenTelemetry Observability | ✅ Implemented |
-| 2003 | The Standard Implementation | ✅ Implemented |
-| 2004 | XML Documentation Standard | ✅ Implemented |
-
-> RFCs are located in [`docs/rfc/`](docs/rfc/). Use the [RFC template](docs/RFC_TEMPLATE.md) to propose new architecture decisions.
-
-</details>
+See the [AI customization guide](.github/docs/ai-customization-guide.md) for
+the live asset inventory, supported surfaces, authority model, maintenance, and
+troubleshooting. Architecture decisions remain in [`docs/rfc/`](docs/rfc/);
+use the [RFC template](docs/RFC_TEMPLATE.md) for new proposals.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -1121,7 +1109,7 @@ Special thanks to these amazing resources and tools:
 - [.NET](https://dotnet.microsoft.com) — Free, open-source developer platform
 - [SvelteKit](https://svelte.dev/docs/kit) — Web framework for Svelte
 - [Sass](https://sass-lang.com) — CSS preprocessor with superpowers
-- [shadcn/ui](https://ui.shadcn.com) — Re-usable components built on Radix UI
+- [Base UI](https://base-ui.com) — Accessible unstyled React primitives
 - [Zustand](https://zustand.docs.pmnd.rs/) — Lightweight state management
 - [React Email](https://react.email) — Build emails using React components
 - [Resend](https://resend.com) — Email API for developers

@@ -1,435 +1,184 @@
-# api.arolariu.ro - Backend API
+# api.arolariu.ro
 
-A **modular monolith** backend API built with **.NET 10.0** following **Domain-Driven Design (DDD)** principles and **SOLID** patterns.
+The backend is a .NET Minimal API modular monolith. Root `AGENTS.md` owns
+repository-wide versions, commands, safety, and testing policy;
+[`AGENTS.md`](./AGENTS.md) owns the API-specific architecture contract.
 
----
+## Architecture
 
-## 🏗️ Architecture
+### Bounded contexts
 
-### Modular Monolith Pattern
+| Context | Responsibility |
+| --- | --- |
+| `Core` | Host composition, middleware, health, OpenAPI, and runtime configuration |
+| `Core.Auth` | ASP.NET Core Identity endpoints and persistence |
+| `Invoices` | Invoice, merchant, product, scan, metadata, and analysis behavior |
+| `Common` | Shared HTTP, exception, telemetry, and DDD primitives |
 
-The API is organized as a modular monolith with distinct bounded contexts:
+Invoices implements the complete flow-forward chain:
 
-```
-src/
-├── Core/              # Application entry point and pipeline configuration
-├── Core.Auth/         # Authentication domain (user authentication services)
-├── Common/            # Shared infrastructure and cross-cutting concerns
-└── Invoices/          # Invoices domain (business logic for invoice management)
-```
-
-### Domain-Driven Design
-
-Each domain follows DDD principles:
-
-- **Bounded Contexts**: Clear service boundaries with well-defined responsibilities
-- **Aggregates**: Root entities maintaining consistency boundaries and transactional integrity
-- **Value Objects**: Immutable objects representing domain concepts
-- **Domain Events**: Business-significant state changes captured and propagated
-- **Domain Services**: Stateless services for complex operations involving multiple aggregates
-- **Repositories**: Aggregate persistence using interfaces defined in the domain layer
-- **Ubiquitous Language**: Consistent business terminology across code and documentation
-
-### SOLID Principles
-
-The codebase adheres to SOLID design patterns:
-
-- **Single Responsibility Principle (SRP)**: Each class has one reason to change
-- **Open/Closed Principle (OCP)**: Open for extension, closed for modification
-- **Liskov Substitution Principle (LSP)**: Subtypes are substitutable for base types
-- **Interface Segregation Principle (ISP)**: Focused interfaces, no forced dependencies
-- **Dependency Inversion Principle (DIP)**: Depends on abstractions, not concretions
-
----
-
-## 🚀 Technology Stack
-
-- **Framework**: .NET 10.0 (LTS)
-- **Language**: C# 13 with modern language features
-- **API Pattern**: ASP.NET Core Minimal APIs
-- **Dependency Injection**: Built-in DI container
-- **Documentation**: OpenAPI/Swagger with Swashbuckle
-- **Testing**: MSTest with comprehensive unit and integration tests
-- **Logging**: Microsoft.Extensions.Logging with structured logging
-- **Telemetry**: OpenTelemetry for observability
-- **Health Checks**: Built-in health check middleware
-
----
-
-## 📦 Domain Structure
-
-### General Domain (Core Infrastructure)
-
-**Responsibilities:**
-- Application configuration and bootstrapping
-- Middleware pipeline setup (CORS, authentication, authorization)
-- Logging, telemetry, and health checks
-- OpenAPI/Swagger documentation
-- Cross-cutting concerns
-
-**Key Components:**
-- `GeneralDomainExtensions.cs`: Service registration and configuration
-- `GeneralApplicationConfiguration.cs`: Middleware pipeline setup
-
-### Invoices Domain
-
-**Responsibilities:**
-- Invoice management (CRUD operations)
-- Merchant management
-- Invoice products and line items
-- Invoice metadata and scanning
-- Business rules and validation
-
-**Key Aggregates:**
-- **Invoice**: Root aggregate for invoice data
-- **Merchant**: Merchant information and relationships
-- **Product**: Invoice line items and products
-
-**Domain Events:**
-- Invoice created, updated, deleted
-- Merchant associated, updated
-- Product added, modified, removed
-
-### Authentication Domain (Core.Auth)
-
-**Responsibilities:**
-- User authentication
-- Authorization policies
-- JWT token validation
-- External identity provider integration
-
----
-
-## 🛠️ Development
-
-### Prerequisites
-
-- [.NET 10.0 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) or later
-- [Docker](https://www.docker.com/) (optional, for containerized development)
-- IDE: [Visual Studio 2022](https://visualstudio.microsoft.com/), [Rider](https://www.jetbrains.com/rider/), or [VS Code](https://code.visualstudio.com/)
-
-### Local Development Setup
-
-1. **Clone the repository:**
-   ```bash
-   git clone https://github.com/arolariu/arolariu.ro.git
-   cd arolariu.ro/sites/api.arolariu.ro
-   ```
-
-2. **Restore dependencies:**
-   ```bash
-   dotnet restore
-   ```
-
-3. **Build the project:**
-   ```bash
-   dotnet build
-   ```
-
-4. **Run the application:**
-   ```bash
-   dotnet run --project src/Core/arolariu.Backend.Core.csproj
-   ```
-
-5. **Access the API:**
-   - API: `http://localhost:5000` or `https://localhost:5001`
-   - Swagger UI: `http://localhost:5000/` or `https://localhost:5001/`
-   - OpenAPI JSON: `http://localhost:5000/swagger/v1/swagger.json`
-
-### Running Tests
-
-#### Unit Tests
-```bash
-dotnet test tests/arolariu.Backend.Core.Tests/
-dotnet test tests/arolariu.Backend.Domain.Tests/
+```text
+Endpoints / AnalysisWorker
+  -> InvoiceManagementService
+    -> InvoiceProcessingService
+      -> approved Orchestration services
+        -> capability Foundation services
+          -> Brokers
 ```
 
-#### All Tests
-```bash
-dotnet test
+- Endpoints and the analysis worker consume only
+  `IInvoiceManagementService`.
+- Management exposes application use cases and delegates to the unified
+  Processing boundary.
+- Processing owns computation, workflow sequencing, persistence order, and
+  durable analysis policy.
+- Orchestration composes approved Foundation capabilities.
+- Foundation validates capability inputs and classifies direct Broker
+  failures.
+- Brokers wrap provider SDKs and map provider records into provider-neutral
+  contracts; they contain no business logic.
+- Services follow the root direct-domain collaborator budget;
+  framework/support dependencies do not count.
+
+Core.Auth is a deliberate exception. Framework-owned routes are registered
+through `MapIdentityApi`, while the custom logout handler uses
+`SignInManager<IdentityUser>` directly. It does not have the Invoices
+Management/Processing/Orchestration/Foundation hierarchy.
+
+See:
+
+- [`docs/rfc/2001-domain-driven-design-architecture.md`](../../docs/rfc/2001-domain-driven-design-architecture.md)
+- [`docs/rfc/2003-the-standard-implementation.md`](../../docs/rfc/2003-the-standard-implementation.md)
+- [`docs/backend/the-standard-guide.md`](../../docs/backend/the-standard-guide.md)
+
+## Minimal API boundary
+
+Invoices routes are grouped under `/rest/v1`. The endpoint partials separate
+mapping, metadata, handlers, and endpoint-only helpers:
+
+| File | Responsibility |
+| --- | --- |
+| `src/Invoices/Endpoints/InvoiceEndpoints.cs` | Route registration entry point |
+| `InvoiceEndpoints.Mappings.cs` | Verbs, paths, policies, timeouts, and route-builder metadata |
+| `InvoiceEndpoints.Metadata.cs` | Binding signatures, XML docs, and Swagger annotations |
+| `InvoiceEndpoints.Handlers.cs` | Management calls, DTO projection, protocol results, and endpoint Activities |
+| `InvoiceEndpoints.Internals.cs` | Cancellation and principal helpers |
+
+Endpoint handlers catch cancellation before general exceptions. Reads observe
+request cancellation; writes use an application-owned timeout/shutdown scope.
+Other failures flow through the shared `ExceptionToHttpResultMapper`, which
+returns safe RFC 7807 responses without leaking provider or internal exception
+details.
+
+The global `ExceptionMappingHandler` is defense in depth for failures that
+escape endpoint handlers or occur earlier in the pipeline.
+
+## Local development
+
+Aspire is the default full-stack mode:
+
+```powershell
+npm run dev -- --engine rancher
+npm run dev -- --engine podman
 ```
 
-#### Test Coverage
-```bash
-dotnet test --collect:"XPlat Code Coverage"
+Use the standalone API only when full-stack orchestration is unnecessary:
+
+```powershell
+npm run dev:api
 ```
 
-**Test Naming Convention:** Tests follow the pattern `MethodName_Condition_ExpectedResult()`
+Direct build from the repository root:
 
-Example:
-```csharp
-[TestMethod]
-public void CreateInvoice_WithValidData_ReturnsSuccessResult()
-{
-    // Arrange
-    var invoice = CreateTestInvoice();
-    
-    // Act
-    var result = _invoiceService.Create(invoice);
-    
-    // Assert
-    Assert.IsNotNull(result);
-    Assert.IsTrue(result.IsSuccess);
-}
+```powershell
+dotnet build sites/api.arolariu.ro/src/Core
 ```
 
----
+The current root command contract and local orchestration details are in:
 
-## 🧪 E2E Testing
+- [`../../AGENTS.md`](../../AGENTS.md)
+- [`../../infra/Local/readme.md`](../../infra/Local/readme.md)
 
-### Postman Collection
+## HTTP and OpenAPI
 
-**Location:** `postman-collection.json`
+In the standard local configuration:
 
-**Environment profiles:**
-- `postman-environment.local.json`
-- `postman-environment.production.json`
+| Surface | Location |
+| --- | --- |
+| API | `http://localhost:5000` |
+| Swagger UI | `http://localhost:5000/` |
+| Swagger document | `/swagger/v1/swagger.json` |
+| Microsoft OpenAPI document | `/openapi/v1.json` |
+| Health | `/health` |
 
-The collection contains comprehensive tests for all API endpoints:
-- **Invoices**: CRUD operations, filtering, pagination
-- **Merchants**: Management and relationships
-- **Products**: Invoice line items
-- **Metadata**: Invoice metadata management
-- **Scans**: Invoice scanning and OCR
+Derive deployed URLs and route inventories from live configuration and source;
+do not treat this table as an exhaustive endpoint catalog.
 
-### Running E2E Tests
+## Tests
 
-#### Using npm script (from repository root):
-```bash
-npm run test:e2e:backend
+The API test projects use MSTest:
+
+```powershell
+dotnet test sites/api.arolariu.ro/tests/arolariu.Backend.Core.Tests/arolariu.Backend.Core.Tests.csproj
+dotnet test sites/api.arolariu.ro/tests/arolariu.Backend.Domain.Tests/arolariu.Backend.Domain.Tests.csproj
 ```
 
-#### Using Newman directly:
-```bash
-# Run with production profile
-newman run sites/api.arolariu.ro/postman-collection.json \
-  --environment sites/api.arolariu.ro/postman-environment.production.json \
-  --env-var "authToken=your-jwt-token"
-```
-
-### Collection Variables
-
-| Variable | Purpose |
-|----------|---------|
-| `baseProtocol`, `baseHost`, `basePath`, `baseUrl` | Environment URL contract |
-| `authToken` | Runtime JWT token |
-| `userIdentifier` | User scope identifier |
-| `warningLatencyMs`, `failureLatencyMs` | Latency thresholds |
-| `allowProductionCrud` | Explicit guardrail override for mutating production runs |
-
-### Authentication
-
-E2E tests require a valid JWT token:
-
-```bash
-# Set environment variable
-export E2E_TEST_AUTH_TOKEN="your-jwt-token"
-
-# Run tests
-npm run test:e2e:backend
-```
-
-### Runner Controls
-
-Repository-level E2E runner options:
-- `E2E_TEST_ENVIRONMENT=local|production` (default: `production`)
-- `NEWMAN_STRICT_MODE=true|false` (default: `false`)
-- `NEWMAN_REPORT_DIR=<path>` (default: `e2e-logs`)
-
----
-
-## 🐳 Docker
-
-### Building the Image
-
-```bash
-docker build -t api.arolariu.ro:latest .
-```
-
-### Running the Container
-
-```bash
-docker run -d \
-  -p 8080:8080 \
-  -e ASPNETCORE_ENVIRONMENT=Production \
-  --name api-arolariu \
-  api.arolariu.ro:latest
-```
-
-### Health Check
-
-The Docker image includes a health check endpoint:
-
-```bash
-curl http://localhost:8080/health
-```
-
-Expected response:
-```json
-{
-  "status": "Healthy",
-  "totalDuration": "00:00:00.0012642",
-  "entries": {}
-}
-```
-
----
-
-## 📋 API Documentation
-
-### Swagger UI
-
-Interactive API documentation is available at:
-- **Production:** `https://api.arolariu.ro/`
-- **Local:** `http://localhost:5000/`
-
-### OpenAPI Specification
-
-Retrieve the OpenAPI JSON specification:
-- **Swagger Format:** `/swagger/v1/swagger.json`
-- **Microsoft Format:** `/openapi/v1.json`
-
-### Example Endpoints
-
-#### Get All Invoices
-```http
-GET /rest/v1/invoices
-Authorization: Bearer {JWT_TOKEN}
-```
-
-#### Create Invoice
-```http
-POST /rest/v1/invoices
-Authorization: Bearer {JWT_TOKEN}
-Content-Type: application/json
-
-{
-  "userIdentifier": "user-guid",
-  "metadata": {
-    "author": "John Doe"
-  }
-}
-```
-
-#### Get Invoice by ID
-```http
-GET /rest/v1/invoices/{invoiceId}
-Authorization: Bearer {JWT_TOKEN}
-```
-
----
-
-## 🔒 Security & Compliance
-
-### Security Features
-
-- **Authentication**: JWT bearer token authentication
-- **Authorization**: Role-based and policy-based authorization
-- **CORS**: Configured for trusted origins only
-- **HTTPS**: Required in production environments
-- **Input Validation**: Comprehensive validation at API boundaries
-- **SQL Injection Protection**: Parameterized queries via Entity Framework Core
-- **XSS Protection**: Output encoding and Content Security Policy headers
-
-### Compliance
-
-The API is designed with compliance in mind:
-- **PCI-DSS**: Payment card data handling requirements
-- **SOX**: Financial reporting controls
-- **LGPD**: Brazilian data protection regulations
-- **Audit Trails**: Complete audit history via domain events
-
----
-
-## 📊 Monitoring & Observability
-
-### Health Checks
-
-**Endpoint:** `/health`
-
-Monitors:
-- Application health
-- Database connectivity
-- External service dependencies
-
-### Logging
-
-Structured logging with:
-- **Console**: Development environment
-- **Application Insights**: Production environment
-- **Log Levels**: Trace, Debug, Information, Warning, Error, Critical
-
-### Telemetry
-
-OpenTelemetry integration:
-- **Traces**: Distributed tracing across services
-- **Metrics**: Performance and business metrics
-- **Correlation**: W3C trace context plus supplemental request correlation IDs
-
-Runtime contract:
-- Azure export uses `APPLICATIONINSIGHTS_CONNECTION_STRING`.
-- The API propagates distributed tracing through `HttpClient` calls and enriches runtime spans for downstream dependencies.
-- Requests from the website stay in the same trace when they flow through the API into `exp.arolariu.ro`.
-- `X-Request-Id` is forwarded to `exp.arolariu.ro` as an operator-friendly correlation field and does not replace trace context.
-
----
-
-## 🚢 Deployment
-
-### Azure App Service
-
-The API is deployed as a containerized application to Azure App Service.
-
-**Configuration:**
-- Auto-scaling based on CPU and memory
-- Always On enabled
-- HTTP/2 support
-- Minimum TLS 1.2
-
-### Environment Variables
-
-Required environment variables:
-- `ASPNETCORE_ENVIRONMENT`: `Production` or `Development`
-- `APPINSIGHTS_INSTRUMENTATIONKEY`: Application Insights key
-- `APPLICATIONINSIGHTS_CONNECTION_STRING`: Application Insights connection
-
----
-
-## 🤝 Contributing
-
-### Code Quality Standards
-
-- Follow **DDD principles** and **SOLID patterns**
-- Use **ubiquitous language** from the business domain
-- Write **comprehensive tests** with `MethodName_Condition_ExpectedResult()` naming
-- Document **public APIs** with XML documentation comments
-- Maintain **85%+ code coverage** for domain and application layers
-- Use **async/await** for I/O-bound operations
-- Implement **proper exception handling** and logging
-
-### Pull Request Process
-
-1. Create a feature branch from `preview`
-2. Implement changes following DDD and SOLID principles
-3. Write or update tests
-4. Update documentation
-5. Ensure all tests pass and code coverage meets standards
-6. Submit PR with clear description of changes
-
----
-
-## 📚 Additional Resources
-
-- [.NET Documentation](https://docs.microsoft.com/en-us/dotnet/)
-- [Domain-Driven Design](https://martinfowler.com/tags/domain%20driven%20design.html)
-- [SOLID Principles](https://en.wikipedia.org/wiki/SOLID)
-- [ASP.NET Core](https://docs.microsoft.com/en-us/aspnet/core/)
-- [MSTest Documentation](https://learn.microsoft.com/dotnet/core/testing/unit-testing-mstest-intro)
-
----
-
-## 📄 License
-
-This project is part of the arolariu.ro platform.
-
-For questions or support, contact: [admin@arolariu.ro](mailto:admin@arolariu.ro)
+Tests use `Method_Condition_Expected` names, deterministic builders, and exact
+exception classification where contractual. Focused service tests substitute
+the real service's direct injected dependency contracts; broader integration,
+transport, DI, and architecture tests keep the repository boundary under test
+real.
+
+Important contract suites include:
+
+- Invoices constructor/dependency architecture;
+- endpoint status, cancellation, and timeout behavior;
+- transport DTO serialization;
+- queue order and visibility ownership;
+- provider mapping and contract-owned exception translation;
+- telemetry privacy and trace continuity.
+
+The Postman/Newman collection under this project covers deployed HTTP
+contracts. Invoke it through the root E2E command so the current environment
+and safety controls are applied.
+
+## Persistence and external systems
+
+- SQL Server stores ASP.NET Core Identity data.
+- Cosmos DB stores invoice and merchant documents.
+- Azure Blob Storage/Azurite stores invoice scans.
+- Azure Queue Storage/Azurite carries durable analysis messages.
+- Document Intelligence, generative AI, and taxonomy providers are isolated
+  behind Brokers.
+
+Partition selection and provider calls remain in Brokers. Ownership
+discriminators flow unchanged through Management, Processing, Orchestration,
+and Foundation.
+
+## Observability
+
+The API uses OpenTelemetry Activities, metrics, and source-generated logging.
+ASP.NET Core and HTTP/database dependencies provide automatic instrumentation;
+the Invoices layers add bounded operation, entity identifier, outcome, and
+service-layer context.
+
+Never add OCR text, product or merchant names, prompts, scan URLs, credentials,
+authorization headers, raw provider responses, or customer payloads to
+telemetry. The current shared exception recorder still emits exception
+type/message/stack; treat that as existing privacy debt rather than a safe
+pattern to extend.
+
+See:
+
+- [`docs/rfc/2002-opentelemetry-backend-observability.md`](../../docs/rfc/2002-opentelemetry-backend-observability.md)
+- [`docs/backend/opentelemetry-guide.md`](../../docs/backend/opentelemetry-guide.md)
+- [`docs/backend/distributed-tracing.md`](../../docs/backend/distributed-tracing.md)
+
+## Documentation
+
+Public C# APIs require useful XML documentation. The compiler emits XML files
+and treats warnings as errors. The documentation pipeline invokes the
+repository-local DefaultDocumentation tool and publishes generated Markdown
+through the Docusaurus site; generated output is not edited by hand.
+
+See [`docs/rfc/2004-comprehensive-xml-documentation-standard.md`](../../docs/rfc/2004-comprehensive-xml-documentation-standard.md).

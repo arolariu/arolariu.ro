@@ -1,6 +1,9 @@
-# sites/status.arolariu.ro
+# Status Site Local Guide
 
-Service status page for arolariu.ro — SvelteKit on Azure Static Web Apps (Free).
+This file records status-site architecture, Svelte conventions, and
+exceptions. Root and the TypeScript path instruction own repository-wide
+language, testing, safety, and Git rules; the CV-only Svelte instruction does
+not apply here.
 
 ## Layout
 
@@ -71,8 +74,10 @@ or any modifier key is held.
 
 ## Data flow
 
-GH Actions cron (`*/30 * * * *`) runs `npm run probe:all` → appends raw JSONL + rebuilds aggregates + updates incidents → commits to
-`status-data` orphan branch. SWA fetches JSON via `raw.githubusercontent.com` at runtime.
+`.github/workflows/official-status-probe.yml` owns the live twice-hourly
+schedule. Each run invokes `npm run probe:all`, appends raw JSONL, rebuilds
+aggregates, updates incidents, and commits to the `status-data` orphan branch.
+SWA fetches JSON via `raw.githubusercontent.com` at runtime.
 
 ## Local dev
 

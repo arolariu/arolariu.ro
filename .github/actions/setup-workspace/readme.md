@@ -113,7 +113,10 @@ silently fetch a floating version rather than the one the lock file pins.
 | `node_modules`, `packages/*/node_modules`, `sites/*/node_modules` | this action | `<os>-node-modules-<node-version>-<hash(package-lock.json)>` |
 | `~/.cache/ms-playwright` | this action | `<os>-playwright-<hash(package-lock.json)>` |
 
-Neither of this action's caches carries a per-workflow prefix — one shared entry each, rather than every workflow writing its own multi-hundred-megabyte copy against the repository's 10 GB budget. Neither uses fallback restore keys.
+Neither key carries a workflow-name segment, but GitHub still applies
+branch/tag scope and cache-version accessibility. These are not one
+repository-wide cache object, and the configuration does not imply a fixed
+storage-budget guarantee. Neither cache uses fallback restore keys.
 
 The two keys are not identical in shape. The Playwright key is the lock-file hash alone, since the cached artifacts are browser binaries and the Playwright version governing them is already pinned by the lock file. The `node_modules` key **also includes the Node version**: a cache hit skips `npm ci`, and the tree can contain natively-compiled addons (this repo pulls in `sharp`) whose ABI is tied to the runtime — so a Node bump must invalidate the cache rather than restore binaries built for the previous version.
 

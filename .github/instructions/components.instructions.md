@@ -1,202 +1,54 @@
 ---
-version: "1.0.0"
-lastUpdated: "2026-02-09"
-name: 'Component Library'
-description: 'Guidelines for the @arolariu/components shared UI library built on Base UI and CSS Modules'
-applyTo: 'packages/components/**/*.tsx, packages/components/**/*.ts'
-lastReviewed: 2026-05-08
+name: Component Library
+description: Domain-agnostic @arolariu/components architecture and styling constraints.
+applyTo: "packages/components/**/*.ts,packages/components/**/*.tsx,packages/components/**/*.css"
 ---
 
-# Component Library Guidelines
+# Component Library
 
-## Instruction Contract
+## Scope
 
-### Scope
-Applies to shared component library changes in `packages/components/`.
+Owns constraints unique to `@arolariu/components`.
 
-### Mandatory Rules
-- Use `cn()` class merging and `forwardRef` patterns where required.
-- Keep components domain-agnostic and exported through `src/index.ts`.
-- Include Storybook coverage for newly added public components.
+## Required Inputs
 
-### Prohibited Actions
-- Do not import from application-specific `sites/` paths.
-- Do not ship component changes without barrel export updates.
-- Do not introduce inline styles instead of CSS Modules.
+- `packages/components/AGENTS.md`
+- RFC 1006 and RFC 1008 for architecture changes
+- A sibling Base UI component, its test/story, and its CSS Module when it owns
+  visual styling
+- `packages/components/src/index.ts`
 
-### Required Verification Commands
-```bash
-npm run build:components
-```
+## Rules
 
-### Failure Handling
-- If verification fails, stop and report failing command output with impacted files.
-- If constraints conflict with task requests, escalate and request explicit user direction.
-- If uncertainty remains on behavior-impacting choices, ask before continuing.
+- Keep public components domain-agnostic.
+- Do not import from `sites/**`.
+- Prefer Base UI `render` composition.
+- Keep `asChild` only for backward-compatible existing APIs.
+- Use `React.forwardRef` when a public component exposes a DOM ref.
+- Compose classes with the existing `cn()` helper.
+- Style-owning components use a colocated CSS Module; intentional style-free
+  composition primitives may omit one. Do not use inline style objects.
+- Preserve keyboard, focus, disabled, and ARIA behavior.
+- Colocate a focused test and Storybook story.
+- Export every public component and public type from `src/index.ts`.
 
-### Drift Watchpoints
-- Barrel export completeness
-- Component API signatures and story coverage
-- Build/publish assumptions for `@arolariu/components`
+## Reference Catalog
 
+Open `references/components.md` only when the task needs one of:
 
-Guidelines for developing and maintaining the `@arolariu/components` shared UI library.
+- designing or changing a public component's variant/ref/`render` API;
+- composing a new Base UI wrapper or non-native interactive element;
+- accessibility/focus work on an overlay, compound, or interactive component;
+- a story/test/barrel-export decision for a new or changed public component.
 
----
+The catalog does not redefine these rules or the verification/escalation
+sections below; it only adds repository-specific examples and anti-patterns.
 
-## Quick Reference
+## Validation
 
-| Property | Value |
-|----------|-------|
-| **Package** | `@arolariu/components` |
-| **Location** | `packages/components/` |
-| **Base** | Base UI + CSS Modules |
-| **Styling** | CSS Modules with `cn()` utility |
-| **Stories** | Colocated in `src/components/ui/` + docs in `src/stories/` |
-| **Exports** | Barrel export via `src/index.ts` |
+Run the component-library build and the smallest relevant component test.
 
----
+## Escalation
 
-## Project Structure
-
-```
-packages/components/
-  src/
-    components/
-      ui/                    # UI primitives + colocated stories and tests
-    hooks/                   # Shared React hooks
-    lib/
-      utilities.ts           # cn() utility for class merging
-    stories/                 # Storybook docs/foundations (Welcome, Typography, etc.)
-    index.ts                 # Barrel export — ALL components must be exported here
-```
-
----
-
-## Component Creation Checklist
-
-When adding a new component:
-
-1. **Create the component** in `src/components/ui/[component-name].tsx`
-2. **Export from barrel** — Add to `src/index.ts`
-3. **Add Storybook story** in `src/components/ui/[component-name].stories.tsx` (colocated)
-4. **Follow patterns**: Base UI primitives, `cn()` for styling, `forwardRef` for DOM refs
-5. **Accessibility**: ARIA attributes, keyboard navigation, focus management
-
----
-
-## Component Pattern
-
-```tsx
-"use client";
-
-import * as React from "react";
-import {cn} from "@/lib/utilities";
-import styles from "./button.module.css";
-
-const variantStyles: Record<string, string> = {
-  default: styles.default!,
-  destructive: styles.destructive!,
-  outline: styles.outline!,
-  ghost: styles.ghost!,
-};
-
-export type ButtonVariant = "default" | "destructive" | "outline" | "ghost";
-export type ButtonSize = "default" | "sm" | "lg" | "icon";
-
-interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: ButtonVariant;
-  size?: ButtonSize;
-}
-
-const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({className, variant = "default", size = "default", ...props}, ref) => {
-    return (
-      <button
-        className={cn(styles.base, variantStyles[variant], className)}
-        ref={ref}
-        {...props}
-      />
-    );
-  },
-);
-Button.displayName = "Button";
-
-export {Button};
-export type {ButtonProps};
-```
-
----
-
-## Key Rules
-
-- **Always** use `cn()` from `@/lib/utilities` for class merging (never manual concatenation)
-- **Always** use `forwardRef` for components that render DOM elements
-- **Always** export both the component and its props type
-- **Always** add the component to `src/index.ts` barrel export
-- **Always** set `displayName` on forwardRef components
-- **Never** add project-specific business logic to shared components
-- **Never** import from `sites/` directories — components must be standalone
-- **Never** use inline styles — use CSS Modules exclusively
-
----
-
-## Styling with cn()
-
-```tsx
-import {cn} from "@/lib/utilities";
-import styles from "./component.module.css";
-
-// Merge CSS Module classes with conditional and user-provided classes
-<div className={cn(
-  styles.base,
-  isActive && styles.active,
-  className, // Allow consumers to override
-)} />
-```
-
----
-
-## Barrel Export
-
-Every new component MUST be added to `src/index.ts`:
-
-```typescript
-// src/index.ts
-export {Button} from "./components/ui/button";
-export type {ButtonProps} from "./components/ui/button";
-export {Card, CardContent, CardHeader, CardTitle} from "./components/ui/card";
-// ... add new exports here
-```
-
----
-
-## Storybook Stories
-
-```tsx
-// src/components/ui/button.stories.tsx
-import type {Meta, StoryObj} from "@storybook/react";
-import {Button} from "./button";
-
-const meta: Meta<typeof Button> = {
-  title: "UI/Button",
-  component: Button,
-  tags: ["autodocs"],
-};
-
-export default meta;
-type Story = StoryObj<typeof Button>;
-
-export const Default: Story = {
-  args: {
-    children: "Button",
-  },
-};
-
-export const Destructive: Story = {
-  args: {
-    children: "Delete",
-    variant: "destructive",
-  },
-};
-```
+Ask before adding a dependency, changing a public component contract, or
+modifying the library when the user's task did not explicitly include it.

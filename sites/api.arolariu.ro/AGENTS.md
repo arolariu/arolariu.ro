@@ -1,44 +1,54 @@
-# Backend Agent Guide (api.arolariu.ro)
+# API Local Guide
 
-> .NET 10.0 / C# 14 — Modular Monolith with DDD
-> Canonical runtime versions: root `AGENTS.md` > Versions.
+Root `AGENTS.md` owns repository-wide versions, commands, safety, C# testing,
+and Git rules. This file records only API architecture.
 
-## Architecture — The Standard (5 layers)
+## The Standard
 
+Invoices implements the full Standard chain:
+
+```text
+Endpoints -> Management -> Processing -> Orchestration -> Foundation -> Brokers
 ```
-Endpoints → Processing → Orchestration → Foundation → Brokers
-```
 
-- **Florance Pattern**: Max 2-3 dependencies per service
-- **Brokers**: Thin wrappers only — NO business logic
-- **TryCatch pattern** with OpenTelemetry Activity tracing on all service methods
-- **No sideways calls**: Foundation↔Foundation forbidden — use Orchestration
-
-## Commands
-
-```bash
-dotnet build src/Core                    # Build
-dotnet test tests                         # Run tests
-dotnet test tests --collect:"XPlat Code Coverage"  # With coverage
-```
+- Invoices endpoints map HTTP and depend on the Management façade.
+- Management exposes application use cases and delegates to Processing.
+- Processing owns heavy computation and multi-stage workflows.
+- Orchestration coordinates Foundation services.
+- Foundation owns CRUD and domain validation.
+- Brokers wrap external systems and contain no business logic.
+- Foundation services never call other Foundation services.
+- Follow root `AGENTS.md` for the direct-domain collaborator budget;
+  framework and support dependencies such as `ILoggerFactory` do not count.
+- Core.Auth is a deliberate exception and calls ASP.NET Core Identity managers
+  directly from its endpoints.
 
 ## Bounded Contexts
 
-| Context | Project | Responsibility |
-|---------|---------|---------------|
-| General | `src/Core` | Infrastructure, middleware, health |
-| Auth | `src/Core.Auth` | Authentication, identity |
-| Invoices | `src/Invoices` | Invoice lifecycle, merchants, AI analysis |
-| Common | `src/Common` | Shared DDD base classes, telemetry |
+| Context | Path | Responsibility |
+| --- | --- | --- |
+| Core | `src/Core/` | Host, infrastructure, middleware, health |
+| Auth | `src/Core.Auth/` | Authentication and identity |
+| Invoices | `src/Invoices/` | Invoice lifecycle, merchants, analysis |
+| Common | `src/Common/` | Shared DDD and telemetry contracts |
 
-## Rules
+## Service Contract
 
-- XML docs required on all public APIs (`<summary>`, `<param>`, `<returns>`)
-- `.ConfigureAwait(false)` in all library/service async code
-- No sync-over-async (`.Result`, `.Wait()`)
-- `TreatWarningsAsErrors` is enabled — fix all warnings
-- 85%+ test coverage target
+- Follow the existing partial-class separation in the target service.
+- Wrap service methods with the repository TryCatch pattern.
+- Start an OpenTelemetry Activity for observable service work.
+- Classify exceptions with the existing marker interfaces.
+- Map endpoint exceptions through the shared exception-to-HTTP mapper.
+- Register new services in the owning bounded-context extension.
 
-## RFCs
+## Local Verification
 
-Consult: 2001 (DDD), 2002 (OpenTelemetry), 2003 (The Standard), 2004 (XML docs)
+Use the API build/test commands owned by root `AGENTS.md`, selecting the
+smallest relevant project or test subset.
+
+## Architecture References
+
+- RFC 2001 - domain-driven design
+- RFC 2002 - backend observability
+- RFC 2003 - The Standard
+- RFC 2004 - XML documentation

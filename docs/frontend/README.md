@@ -1,132 +1,88 @@
 # Frontend Documentation
 
-This directory contains technical documentation for the frontend components of the arolariu.ro platform.
+Source-grounded documentation for the main Next.js website and shared React
+component library.
 
-## Overview
+Root `AGENTS.md` owns runtime/framework versions, commands, and repository-wide
+testing policy. The website/component local guides and live source own current
+behavior; accepted RFCs record intent.
 
-The frontend is built using:
+## Architecture
 
-- **Framework**: Next.js 16.1.6 with App Router
-- **Language**: TypeScript 5.9.3 (strict mode)
-- **UI Library**: React 19.2.4 with Server Components
-- **Styling**: Sass (SCSS Modules + CSS Modules)
-- **State Management**: Zustand v5.0.11
-- **Testing**: Jest + Playwright
+The website uses the App Router with Server Components by default:
 
-## RFCs (Request for Comments)
+```text
+page.tsx / layout.tsx
+  -> private server reads, metadata, access decisions
+  -> smallest serializable handoff
+     -> island.tsx / Client Component
+        -> route-local components and Hooks
+```
 
-Frontend RFCs are numbered **1000-1999** and located in `/docs/rfc/`.
+- Add `"use client"` only for Hooks, events, browser APIs, client Context,
+  Zustand, or framework-required client artifacts.
+- Use private `"server-only"` helpers for server-owned reads.
+- Reserve `"use server"` exports for operations the browser invokes; treat
+  them as public RPC boundaries.
+- Use URL state first when behavior is bookmarkable, shareable, or
+  navigation-owned. Otherwise keep state at the narrowest owner: derived
+  render value, local state, scoped Context, an existing store, then an
+  approved new Zustand boundary.
+- Use `next-intl-selector` callbacks for typed messages.
+- Build page metadata through `createMetadata`.
+- Use CSS Modules for website styling and `@arolariu/components` for shared
+  domain-agnostic primitives.
 
-### Implemented RFCs
+## Current RFCs
 
-| RFC # | Title | Status | Date | Description |
-| ----- | ----- | ------ | ---- | ----------- |
-| [1001](../rfc/1001-opentelemetry-observability-system.md) | OpenTelemetry Observability System | ✅ Implemented | 2025-10-11 | Comprehensive observability system using OpenTelemetry SDK for Next.js |
-| [1002](../rfc/1002-comprehensive-jsdoc-documentation-standard.md) | JSDoc/TSDoc Documentation Standard | ✅ Implemented | 2025-01-26 | Comprehensive JSDoc documentation standard for TypeScript/React |
-| [1003](../rfc/1003-internationalization-system.md) | next-intl Internationalization System | ✅ Implemented | 2025-10-25 | Multi-language support with next-intl and type-safe translations |
-| [1004](../rfc/1004-metadata-seo-system.md) | Metadata and SEO System | ✅ Implemented | 2025-10-25 | Centralized metadata management and SEO optimization |
-| [1005](../rfc/1005-state-management-zustand.md) | State Management with Zustand | ✅ Implemented | 2025-12-25 | Client-side state management using Zustand with IndexedDB persistence |
-| [1006](../rfc/1006-component-library-architecture.md) | Component Library Architecture | ✅ Implemented | 2025-12-25 | Shared React component library (@arolariu/components) |
+| RFC | Status | Responsibility |
+| --- | --- | --- |
+| [1001](../rfc/1001-opentelemetry-observability-system.md) | Implemented | Frontend tracing and telemetry |
+| [1002](../rfc/1002-comprehensive-jsdoc-documentation-standard.md) | Implemented | JSDoc/TSDoc contracts |
+| [1003](../rfc/1003-internationalization-system.md) | Implemented | Typed i18n and locale schema |
+| [1004](../rfc/1004-metadata-seo-system.md) | Implemented | Metadata and SEO |
+| [1005](../rfc/1005-state-management-zustand.md) | Implemented | Zustand and IndexedDB persistence |
+| [1006](../rfc/1006-component-library-architecture.md) | Implemented | Shared component architecture |
+| [1007](../rfc/1007-advanced-frontend-patterns.md) | Implemented | Entity stores, server results, dialogs |
+| [1008](../rfc/1008-scss-system-architecture.md) | Implemented | Website styling architecture |
 
-### Proposed RFCs
+## Practical guides
 
-None currently.
+- [Internationalization](./i18n-guide.md)
+- [Metadata and SEO](./metadata-guide.md)
+- [JSDoc/TSDoc](./jsdoc-guide.md)
+- [Frontend OpenTelemetry](./opentelemetry-guide.md)
 
-### Draft RFCs
+Generated TypeScript reference is published by the documentation site under
+`/reference/typescript/website/`. It is generated from live source comments
+and must not be edited directly.
 
-None currently.
+## Testing
 
-## Quick Start Guides
+Website unit/component/hook tests use Vitest and Testing Library. Playwright
+owns browser navigation and critical user journeys. The root Newman frontend
+suite is a separate HTTP contract surface.
 
-Practical, developer-focused guides for implementing common patterns:
+Tests should:
 
-- **[JSDoc Guide](./jsdoc-guide.md)** - How to document TypeScript/React code (RFC 1002)
-- **[i18n Guide](./i18n-guide.md)** - How to add translations and multi-language support (RFC 1003)
-- **[Metadata Guide](./metadata-guide.md)** - How to implement SEO and metadata (RFC 1004)
-- **[OpenTelemetry Guide](./opentelemetry-guide.md)** - How to implement distributed tracing and observability (RFC 1001)
+- assert user/public outcomes rather than internals;
+- use roles, accessible names, keyboard/focus behavior, and exact result
+  contracts;
+- execute repository modules and substitute only true external boundaries;
+- cover loading, error, empty, hydration, cleanup, and transport validation
+  when those behaviors change.
 
-## Key Topics
+## Live owners
 
-### Architecture
+- `sites/arolariu.ro/AGENTS.md`
+- `.github/instructions/frontend.instructions.md`
+- `.github/instructions/react.instructions.md`
+- `.github/instructions/typescript.instructions.md`
+- `sites/arolariu.ro/src/app/`
+- `sites/arolariu.ro/src/lib/`
+- `sites/arolariu.ro/src/stores/`
+- `sites/arolariu.ro/messages/`
+- `packages/components/AGENTS.md`
 
-- Next.js App Router patterns
-- Server vs Client component patterns
-- React Server Components usage
-- API route handlers
-- Middleware implementation
-
-### State Management
-
-- Zustand stores for global state
-- React Context for component trees
-- Server Actions for mutations
-- Form state management
-
-### Performance
-
-- Code splitting strategies
-- Image optimization
-- Lazy loading
-- Caching strategies
-- Bundle size optimization
-
-### Testing
-
-- Unit testing with Jest
-- Integration testing strategies
-- E2E testing with Playwright
-- Component testing best practices
-
-### Observability
-
-- OpenTelemetry integration (see [OpenTelemetry Guide](./opentelemetry-guide.md) (RFC 1001))
-- Logging strategies
-- Error tracking
-- Performance monitoring
-
-### Security
-
-- Authentication with Clerk
-- Authorization patterns
-- Input validation
-- XSS prevention
-- CSRF protection
-
-## Related Documentation
-
-- **Site README**: `/sites/arolariu.ro/README.md` - Development setup guide
-- **Component Library**: `/packages/components/readme.md` - Shared UI components
-- **API Documentation**: `/sites/docs.arolariu.ro/api/arolariu/Frontend/` - Generated API docs
-- **Copilot Instructions**: `/.github/copilot-instructions.md` - Coding standards
-
-## Creating Frontend RFCs
-
-When creating a new frontend RFC:
-
-1. Use the RFC template from `/docs/RFC_TEMPLATE.md`
-2. Number it in the 1000-1999 range (1002, 1003, etc.)
-3. Place in `/docs/rfc/`
-4. Update this README with the new RFC entry
-5. Submit for review
-
-### Suggested Topics for Future RFCs
-
-- Server Actions patterns and best practices
-- Component library architecture
-- Form handling strategy
-- Progressive Web App (PWA) features
-- Client-side caching strategy
-
-## Questions?
-
-For frontend-specific questions:
-
-- Check existing RFCs
-- Review site README
-- Open a GitHub issue
-- Contact: <admin@arolariu.ro>
-
----
-
-**Last Updated**: 2025-10-25
-**Maintained By**: Frontend team
+Use the matching React or `code-*` skill for implementation; commands are
+intentionally not copied here.

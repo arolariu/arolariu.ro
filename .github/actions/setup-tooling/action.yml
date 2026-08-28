@@ -10,9 +10,9 @@
 #   Dependency installation, code generation, and browser provisioning
 #   belong to `setup-workspace`, which wraps this action.
 # - Caching is delegated entirely to each `actions/setup-*` action's
-#   built-in mechanism. Those caches are keyed on lock-file hashes and
-#   are NOT scoped per workflow, so every workflow shares one cache per
-#   ecosystem instead of maintaining its own copy.
+#   built-in mechanism. Keys contain no workflow-name segment, but GitHub
+#   still applies branch/tag scope and cache-version accessibility; these
+#   are not one repository-wide cache object or a fixed budget guarantee.
 # - Every toolchain except Node.js is opt-in. Installing an SDK a job
 #   never uses costs real minutes on every run.
 #+#+#+#+############################################################

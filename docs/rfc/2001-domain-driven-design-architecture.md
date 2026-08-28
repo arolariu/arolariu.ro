@@ -3,18 +3,19 @@
 - **Status**: Implemented
 - **Date**: 2025-10-12
 - **Authors**: Alexandru-Razvan Olariu
-- **Related Components**: `sites/api.arolariu.ro`, all backend domains
+- **Related Components**: `sites/api.arolariu.ro`, with the full service
+  hierarchy implemented by the Invoices bounded context
 
 ---
 
 ## Abstract
 
-This RFC defines the generic Domain-Driven Design (DDD) architecture used by the
-arolariu.ro .NET 10 modular monolith. Bounded contexts organize aggregates,
-entities, value objects, and application services around domain language. The
-service architecture follows a flow-forward dependency model: each role depends
-only on the next approved role, while external-system details remain behind
-Broker contracts.
+This RFC defines the Domain-Driven Design (DDD) architecture used by the
+arolariu.ro modular monolith. Bounded contexts organize aggregates, entities,
+value objects, and application services around domain language. Invoices
+implements the full flow-forward service hierarchy; Core.Auth deliberately
+uses ASP.NET Core Identity managers directly from endpoints, while Core/Common
+do not implement the domain-service chain.
 
 ---
 
@@ -37,9 +38,9 @@ flowchart TB
   class Management,Processing,Orchestration,Foundation,Broker layer;
 ```
 
-The diagram describes architectural roles rather than a specific bounded
-context. Protocol adapters call the Management boundary but are not themselves
-part of the service hierarchy.
+The diagram describes the Standard roles implemented by Invoices. Its protocol
+adapters call Management but are not themselves part of the service hierarchy.
+Do not project this graph onto Core.Auth.
 
 ---
 
@@ -74,13 +75,13 @@ contracts, services, and external dependency abstractions. Shared primitives,
 telemetry, options, and HTTP contracts live outside those domain boundaries and
 must not become a route for bypassing the service hierarchy.
 
-Each bounded context may contain:
+The Invoices bounded context contains:
 
 ```text
 BoundedContext/
 ├── DDD/                    # Aggregates, entities, value objects, and contracts
 ├── Services/
-│   ├── Management/        # Application-facing coordination boundary
+│   ├── Management/        # Application-facing facade over unified Processing
 │   ├── Processing/        # Domain computation and workflow sequencing
 │   ├── Orchestration/     # Composition of approved capabilities
 │   └── Foundation/        # Validation and direct dependency classification
@@ -89,8 +90,9 @@ BoundedContext/
 └── Workers/               # Background host adapters
 ```
 
-Not every bounded context requires every adapter type, but service dependencies
-must retain the direction shown in the architectural overview.
+Other bounded contexts may use a subset or a framework-owned topology.
+Core.Auth's direct Identity-manager endpoint dependencies are an explicit
+example, not a layer violation.
 
 ### 2.2 Domain model
 
@@ -105,9 +107,11 @@ types must not become domain contracts.
 
 ### 2.3 Service responsibilities
 
+These responsibilities apply to the Invoices Standard service hierarchy.
+
 | Architectural role | Responsibility |
 |---|---|
-| Management Service Layer | Exposes one application-facing boundary and coordinates operations spanning Processing services |
+| Management Service Layer | Exposes the application-facing facade and delegates to the single unified Invoice Processing boundary |
 | Processing Services Layer | Performs domain computation, applies transformations, and sequences approved Orchestrations |
 | Orchestration Services Layer | Composes only the Foundations approved for a workflow |
 | Foundation Services Layer | Validates capability inputs, applies capability policy, and classifies direct Broker failures |
@@ -119,10 +123,13 @@ does not bypass Processing.
 
 ### 2.4 Persistence boundaries
 
-Persistence Brokers expose only the regions and primitive operations required by
-their bounded context. Partition selection, provider calls, and direct provider
-error translation belong in the Broker. Validation, authorization, aggregate
-coordination, and workflow policy belong in higher layers.
+Persistence Brokers expose only the regions and primitive operations required
+by their bounded context. Partition selection, provider calls, and provider
+record mapping belong in the Broker. Error translation follows the live Broker
+contract; when a raw provider exception is explicitly exposed, the direct
+Foundation classifies it and it must not escape above that boundary.
+Validation, authorization, aggregate coordination, and workflow policy belong
+in higher layers.
 
 The current Invoices persistence boundary contains invoice and merchant regions.
 Analysis durability is not stored in that database boundary.
@@ -137,9 +144,9 @@ Processing services own capability composition.
 
 ---
 
-## 3. Runtime workflows
+## 3. Invoices runtime workflows
 
-### 3.1 Request workflow
+### 3.1 Invoices request workflow
 
 ```text
 Protocol adapter
@@ -150,9 +157,9 @@ Protocol adapter
           -> Broker Services Layer
 ```
 
-Adapters own transport validation, authorization context, request cancellation,
-DTO mapping, and response construction. They resolve the Management contract
-rather than lower-layer contracts.
+Invoices adapters own transport validation, authorization context, request
+cancellation, DTO mapping, and response construction. They resolve the
+Invoices Management contract rather than lower-layer contracts.
 
 ### 3.2 Durable analysis workflow
 
@@ -169,7 +176,7 @@ Processing.
 
 ---
 
-## 4. SOLID application
+## 4. SOLID application in the Invoices hierarchy
 
 ### 4.1 Single responsibility
 
@@ -218,9 +225,9 @@ their operational cost.
 
 ## 6. Testing strategy
 
-Architecture tests should verify:
+Invoices architecture tests should verify:
 
-- adapters consume only their bounded context's Management contract;
+- Invoices adapters consume only their Management contract;
 - dependencies flow only to the next approved role;
 - no sideways Foundation or Orchestration dependencies exist;
 - each Foundation owns only its approved Broker contracts;

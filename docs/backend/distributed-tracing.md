@@ -1,157 +1,149 @@
 # Distributed Tracing Reference
 
-> End-to-end trace context propagation from Next.js frontend to .NET backend to Azure services.
+End-to-end trace propagation from the Next.js website through the .NET API and
+its external dependencies.
 
-## Trace Flow Overview
+## Request flow
 
-```
-Next.js Server Action (withSpan)
-  │ fetchWithTimeout() → injectTraceContextHeaders()
-  │   ├── traceparent: 00-{traceId}-{spanId}-01
-  │   ├── tracestate: (empty)
-  │   └── X-Request-Id: {traceId}
-  ▼
-ASP.NET Core API
-  │ AddAspNetCoreInstrumentation() auto-extracts traceparent
-  │ Creates Activity with same traceId
-  │ Enriches: http.request.id, enduser.id, http.client.ip
-  │ Adds baggage: enduser.id (propagated downstream)
-  │
-  ├── InvoiceProcessingService.CreateInvoice    (child span)
-  │   └── InvoiceOrchestrationService           (grandchild span)
-  │       └── InvoiceStorageFoundationService   (great-grandchild span)
-  │           └── InvoiceNoSqlBroker            (great-great-grandchild span)
-  │               ├── Cosmos DB SDK (native OTel spans via Azure.Cosmos.Operation)
-  │               └── Tags: db.system, db.operation, db.cosmosdb.request_charge
-  │
-  ├── HttpClient → Azure Form Recognizer       (child span, traceparent auto-injected)
-  ├── HttpClient → Azure OpenAI                (child span, traceparent auto-injected)
-  └── HttpClient → Azure Translator            (child span, traceparent auto-injected)
-  │
-  ▼
-Azure Monitor / Application Insights
-  All spans share the same traceId for end-to-end correlation
+```text
+Website Server Action / server helper
+  -> fetchWithTimeout()
+     injects W3C trace context
+  -> ASP.NET Core request Activity
+  -> Invoices Endpoint Activity
+  -> InvoiceManagementService
+  -> InvoiceProcessingService
+  -> approved Orchestration
+  -> capability Foundation
+  -> Broker/provider SDK
 ```
 
-## W3C Header Propagation
+`X-Request-Id` is an operator-friendly correlation field. It does not replace
+W3C `traceparent`/`tracestate`, and it must not be treated as the parent span
+contract.
 
-| Hop | Header | Auto-Injected? | Mechanism |
-|-----|--------|----------------|-----------|
-| Frontend → Backend | `traceparent` | ✅ | `propagation.inject()` in `injectTraceContextHeaders()` |
-| Frontend → Backend | `X-Request-Id` | ✅ | Fallback correlation ID = traceId |
-| Backend receives | `traceparent` | ✅ | `AddAspNetCoreInstrumentation()` auto-extracts |
-| Backend → Azure OpenAI | `traceparent` | ✅ | `AddHttpClientInstrumentation()` auto-injects |
-| Backend → Form Recognizer | `traceparent` | ✅ | `AddHttpClientInstrumentation()` auto-injects |
-| Backend → Cosmos DB | SDK-internal | ✅ | `CosmosClientTelemetryOptions.DisableDistributedTracing = false` |
+## Website to API
 
-## Backend Service Layer Hierarchy
+The website's shared server transport helper injects current trace context and
+uses the configured API base URL. Server Actions parse untrusted responses
+before committing domain data.
 
-Each layer calls `InvoicePackageTracing.StartActivity(nameof(Method))`. The .NET `Activity` API automatically parents via `Activity.Current`, forming a child chain:
+The API's ASP.NET Core instrumentation extracts W3C headers and creates the
+request Activity. HTTP client instrumentation propagates the current context
+to downstream HTTP services.
 
+## Invoices hierarchy
+
+Each observable boundary starts an Activity from
+`InvoicePackageTracing`:
+
+```text
+HTTP request
+  -> Endpoint (ActivityKind.Server)
+    -> Management
+      -> Processing
+        -> Orchestration
+          -> Foundation
+            -> Broker
+              -> provider-native dependency span
 ```
-HTTP GET /rest/v1/invoices (ASP.NET Core root span)
-  └── CreateInvoice (Processing — service.layer=Processing)
-      └── CreateInvoiceObject (Orchestration — service.layer=Orchestration)
-          └── CreateInvoiceObject (Foundation — service.layer=Foundation)
-              └── CreateInvoiceAsync (Broker — service.layer=Broker)
-                  ├── db.system=cosmosdb, db.operation=create
-                  ├── db.cosmosdb.request_charge=5.2
-                  └── Azure.Cosmos.Operation (SDK-native span)
-```
 
-## ActivitySource Registry
+The display names come from current method names. Do not hard-code a sample
+method chain as the only valid trace; select the operation under investigation
+from live source.
 
-| ActivitySource Name | Bounded Context | Registered In |
-|---------------------|-----------------|---------------|
-| `arolariu.Backend.Common` | Common infrastructure | `TracingExtensions.cs` |
-| `arolariu.Backend.Core` | Core API | `TracingExtensions.cs` |
-| `arolariu.Backend.Auth` | Authentication | `TracingExtensions.cs` |
-| `arolariu.Backend.Domain.Invoices` | Invoice domain | `TracingExtensions.cs` |
-| `Azure.Cosmos.Operation` | Cosmos DB SDK | `TracingExtensions.cs` |
+## Queue and worker continuation
 
-## Querying Traces in Application Insights (KQL)
+Durable analysis messages carry provider-neutral correlation and trace
+context. The worker:
 
-### Find end-to-end trace by operation
-```kql
-union requests, dependencies, traces
-| where operation_Id == "<traceId>"
+1. receives the current queue delivery through Management;
+2. starts consumer work with the propagated parent;
+3. preserves correlation across visibility renewal;
+4. persists successful work before deleting the current message;
+5. advances the logical attempt when publishing failed-only replacement work.
+
+Message ID/pop receipt identify a provider delivery; correlation ID identifies
+logical work. Do not substitute one for the other in trace queries or logs.
+
+## Activity sources
+
+| Source | Boundary |
+| --- | --- |
+| `arolariu.Backend.Common` | Shared infrastructure |
+| `arolariu.Backend.Core` | Host/runtime |
+| `arolariu.Backend.Auth` | Core.Auth |
+| `arolariu.Backend.Domain.Invoices` | Invoices endpoint and service graph |
+
+The actual registrations are owned by
+`src/Common/Telemetry/Tracing/TracingExtensions.cs`. Provider SDKs may register
+additional sources; inspect current configuration before depending on one.
+
+## Safe correlation context
+
+Established helpers add bounded values such as:
+
+- service layer/component and operation type;
+- invoice, merchant, user, message, correlation, or analysis-run identifiers;
+- database system/container/operation and numeric request charge;
+- outcome, count, attempt, and duration.
+
+Never attach OCR text, names, prompts, scan URLs, request bodies, credentials,
+connection strings, authorization headers, or raw provider responses.
+
+## Application Insights queries
+
+Find one trace:
+
+```kusto
+union requests, dependencies, traces, exceptions
+| where operation_Id == "<trace-id>"
 | order by timestamp asc
-| project timestamp, itemType, name, duration, success, resultCode,
-          customDimensions["service.layer"],
-          customDimensions["db.operation"],
-          customDimensions["db.cosmosdb.request_charge"]
 ```
 
-### Find slow invoice operations (>2s)
-```kql
-requests
-| where name contains "invoices"
-| where duration > 2000
-| project timestamp, name, duration, operation_Id, resultCode
-| order by duration desc
-| take 50
+Inspect Invoices layer timing:
+
+```kusto
+union requests, dependencies, traces
+| where tostring(customDimensions["service.layer"]) != ""
+| project timestamp,
+          name,
+          duration,
+          success,
+          operation_Id,
+          layer=tostring(customDimensions["service.layer"]),
+          operation=tostring(customDimensions["operation.type"])
+| order by timestamp asc
 ```
 
-### Cosmos DB RU consumption by operation type
-```kql
+Inspect Cosmos request charge only when the exporter emits the configured
+numeric attribute:
+
+```kusto
 dependencies
-| where type == "Azure DocumentDB" or customDimensions["db.system"] == "cosmosdb"
-| summarize avg_ru=avg(todouble(customDimensions["db.cosmosdb.request_charge"])),
-            p95_ru=percentile(todouble(customDimensions["db.cosmosdb.request_charge"]), 95),
-            count=count()
+| extend requestCharge =
+    todouble(customDimensions["db.cosmosdb.request_charge"])
+| where isnotnull(requestCharge)
+| summarize average=avg(requestCharge),
+            p95=percentile(requestCharge, 95),
+            calls=count()
   by tostring(customDimensions["db.operation"]),
      tostring(customDimensions["db.cosmosdb.container"])
-| order by avg_ru desc
 ```
 
-### Frontend-to-backend trace correlation
-```kql
-requests
-| where customDimensions["service.namespace"] == "arolariu.ro"
-| where isnotempty(operation_Id)
-| join kind=inner (
-    dependencies
-    | where customDimensions["cloud.role"] == "api"
-) on operation_Id
-| project timestamp, 
-          frontend_name=name, 
-          backend_name=name1, 
-          total_duration=duration + duration1,
-          operation_Id
-| order by total_duration desc
-| take 20
-```
+Schema/table placement can differ with exporter configuration. Validate a
+query against current telemetry before committing it to an alert or dashboard.
 
-### Failed traces with full span tree
-```kql
-requests
-| where success == false
-| project operation_Id, name, duration, resultCode, timestamp
-| join kind=inner (
-    union requests, dependencies, traces, exceptions
-    | project operation_Id, itemType, name, message, timestamp
-) on operation_Id
-| order by timestamp asc
-```
+## Verification
 
-### User-specific traces (via baggage propagation)
-```kql
-union requests, dependencies
-| where customDimensions["enduser.id"] == "<userId>"
-| order by timestamp desc
-| take 100
-```
+Current trace evidence should prove:
 
-## Span Enrichment Reference
+- one trace ID across website, API, and downstream calls;
+- the Endpoint -> Management -> Processing hierarchy;
+- correct parentage for worker-consumed queue work;
+- no duplicate manual span around one provider operation;
+- cancellation status distinguishes timeout from client disconnect;
+- no sensitive or unbounded customer data appears in tags/logs.
 
-### Automatic (ActivityEnrichingProcessor)
-Every span receives: `correlation.id`, `root.trace_id`, `parent.span_id`, `span.depth`, `environment.name`, `host.name`, `process.id`, `thread.id`, `start.timestamp_utc`, `duration.ms`, `display.name`, and any `baggage.*` items.
-
-### ASP.NET Core Request Spans
-`http.request.id`, `http.client.ip`, `enduser.id`, `http.response.content_length`.
-
-### Broker Layer Spans
-`service.layer`, `service.component`, `operation.type`, `db.system`, `db.name`, `db.operation`, `db.cosmosdb.container`, `db.cosmosdb.partition_key`, `db.cosmosdb.request_charge`, `db.statement`, `db.query.type`.
-
-### Domain Context
-`invoice.id`, `invoice.user_id`, `invoice.merchant_id`, `merchant.id`, `user.id`.
+See [RFC 2002](../rfc/2002-opentelemetry-backend-observability.md) and the
+[OpenTelemetry guide](./opentelemetry-guide.md).

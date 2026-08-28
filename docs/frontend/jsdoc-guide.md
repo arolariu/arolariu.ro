@@ -118,8 +118,9 @@ export function useInvoiceSelection(invoiceIds: string[]): SelectionState {
  *
  * @remarks
  * This is a Server Action that:
- * - Runs only on the server (never exposed to client)
- * - Validates user permissions
+ * - Is implemented on the server but exposed as browser-callable RPC
+ * - Validates untrusted input
+ * - Derives identity and authorization on the server
  * - Revalidates the /invoices path
  * - Returns type-safe result
  * 

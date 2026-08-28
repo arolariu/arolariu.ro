@@ -226,11 +226,13 @@ export default function Footer(): React.JSX.Element { }
 ```typescript
 /**
  * Server action that fetches a single invoice for a user.
- * @param id - The UUID of the invoice to fetch. Must be a valid UUIDv4 string.
- * @param authToken - The JWT token of the user. Used for API authorization header.
- * @returns A promise resolving to the invoice, or throws an error if the request failed.
+ * @param input - Browser-controlled input validated at the action boundary.
+ * @param input.invoiceId - The UUID of the invoice to fetch.
+ * @returns A typed success/error result. Identity is derived server-side.
  */
-export default async function fetchInvoice(id: string, authToken: string): Promise<Invoice> { }
+export async function fetchInvoice(
+  input: Readonly<{invoiceId: string}>,
+): ServerActionResult<Readonly<Invoice>> { }
 
 /**
  * Formats a date string into a human-readable format.
@@ -598,20 +600,25 @@ export function useInvoice({invoiceIdentifier}: HookInputType): HookOutputType {
 **Template**:
 
 ```typescript
+"use server";
+
 /**
  * Server action description.
  *
  * @remarks
- * **Execution Context**: Server-side only. Automatically serializes return value.
+ * **Execution Context**: Implemented server-side and exported as
+ * browser-callable RPC. Inputs are untrusted and return values are serialized.
  *
- * **Authentication**: Requires user to be authenticated? How is auth checked?
+ * **Authentication**: How is identity derived server-side and authorization
+ * enforced for this operation/resource?
  *
  * **Side Effects**: Database writes? External API calls? Cache invalidation?
  *
- * **Error Handling**: What errors can be thrown? How should client handle them?
+ * **Error Handling**: Which established result discriminants can the caller
+ * receive?
  *
  * @param param - Parameter description
- * @returns Promise resolving to result
+ * @returns The established typed success/error result
  *
  * @example
  * ```tsx
@@ -619,7 +626,6 @@ export function useInvoice({invoiceIdentifier}: HookInputType): HookOutputType {
  * ```
  */
 export async function myServerAction(param: Type): Promise<Result> {
-  "use server";
   // Implementation
 }
 ```
@@ -631,21 +637,24 @@ export async function myServerAction(param: Type): Promise<Result> {
  * Server action that fetches a single invoice for a user.
  *
  * @remarks
- * **Execution Context**: Server-side only (Next.js server action).
+ * **Execution Context**: Browser-callable RPC implemented on the server.
  *
- * **Authentication**: Requires valid JWT token in `authToken` parameter.
+ * **RPC Boundary**: Browser-callable export; treat input as untrusted.
+ *
+ * **Authentication**: Derives the current identity and token server-side,
+ * then enforces resource authorization independently.
  *
  * **Side Effects**: Makes authenticated API call to backend REST endpoint.
  *
- * **Error Handling**: Throws error on non-OK response or network failure.
- * Client should catch and display error message.
+ * **Error Handling**: Returns the established discriminated result contract.
  *
- * @param id - The UUID of the invoice to fetch. Must be a valid UUIDv4 string.
- * @param authToken - The JWT token of the user. Used for API authorization header.
- * @returns A promise resolving to the invoice, or throws an error if the request failed.
+ * @param input - The validated action input.
+ * @param input.invoiceId - The UUID of the invoice to fetch.
+ * @returns A typed success/error result containing the invoice when authorized.
  */
-export default async function fetchInvoice(id: string, authToken: string): Promise<Invoice> {
-  "use server";
+export async function fetchInvoice(
+  input: Readonly<{invoiceId: string}>,
+): ServerActionResult<Readonly<Invoice>> {
   // Implementation
 }
 ```
@@ -1338,18 +1347,19 @@ export default [
  * Persists invoice data to backend API with optimistic UI updates.
  *
  * @remarks
- * **Execution Context**: Server Action (runs server-side only).
+ * **Execution Context**: Browser-callable Server Action implemented on the server.
  *
- * **Optimistic Updates**: Updates UI immediately, reverts on error.
+ * **Authentication**: Derives the current identity server-side and enforces
+ * resource authorization independently.
  *
- * **Validation**: Client-side validation in form component + server-side validation in API.
+ * **Validation**: Treats form data as untrusted and validates it before transport.
  *
- * **Error Handling**: Displays toast notification on failure, logs error to OpenTelemetry.
+ * **Error Handling**: Returns the established typed success/error result.
  *
- * **Performance**: Debounced to 500ms to prevent excessive API calls during rapid edits.
+ * **Side Effects**: Performs the documented API mutation and records bounded telemetry.
  *
- * @param formData - Invoice form data (validated with Zod schema)
- * @returns Promise resolving to saved invoice or throwing validation error
+ * @param formData - Browser-controlled invoice form data.
+ * @returns A typed success/error result for the saved invoice.
  */
 ```
 
@@ -1377,16 +1387,18 @@ export async function fetchInvoice(id: string): Promise<Invoice> { }
  * Server action that fetches a single invoice for the authenticated user.
  *
  * @remarks
- * **Execution Context**: Server-side only (Next.js server action).
- * **Authentication**: Requires valid JWT token from user session.
- * **Caching**: Response is cached for 5 minutes using Next.js cache.
+ * **Execution Context**: Browser-callable RPC implemented on the server.
+ * **Authentication**: Derives the current identity/token server-side and
+ * enforces invoice ownership or sharing.
+ * **Caching**: Uses the current no-store authenticated transport contract.
  *
- * @param id - The UUID of the invoice to fetch. Must be a valid UUIDv4 string.
- * @returns A promise resolving to the invoice, or throws NotFoundError if invoice doesn't exist.
- * @throws {NotFoundError} When invoice ID doesn't exist or user lacks permission.
- * @throws {AuthenticationError} When user session is invalid or expired.
+ * @param input - Browser-controlled input validated by the action.
+ * @param input.invoiceId - The UUID of the invoice to fetch.
+ * @returns A typed success/error result containing the invoice when accessible.
  */
-export async function fetchInvoice(id: string): Promise<Invoice> { }
+export async function fetchInvoice(
+  input: Readonly<{invoiceId: string}>,
+): ServerActionResult<Readonly<Invoice>> { }
 ```
 
 ### ❌ Anti-Pattern 2: Vague Summaries

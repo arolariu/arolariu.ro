@@ -142,9 +142,12 @@ Orchestration and Foundation calls only its listed domain dependencies.
 ## Brokers
 
 Brokers are thin adapters over external systems. They perform provider calls,
-provider response mapping, client selection, and direct dependency-error
-translation. They do not validate domain workflows, choose capabilities,
-coordinate aggregates, or call services.
+provider response mapping, client selection, and error translation only where
+their live contract owns it. `IQueueBroker` explicitly permits a raw
+`RequestFailedException` at its direct Foundation boundary; that Foundation
+classifies it, and the provider exception must not escape above Foundation.
+Brokers do not validate domain workflows, choose capabilities, coordinate
+aggregates, or call services.
 
 ### Database broker
 
@@ -425,7 +428,7 @@ Each layer validates and classifies only what it owns:
 | Foundation | Structural/capability validation and direct Broker failures |
 | Orchestration | Foundation composition and cross-capability contract validation |
 | Processing | Used-data-only validation, computation, and direct Orchestration failures |
-| Management | Cross-processing sequencing and direct Processing failures |
+| Management | Application-facade delegation and direct Processing failures |
 | Endpoint/Worker | Protocol or host concerns |
 
 Cancellation is propagated without reclassification. Domain exceptions retain
@@ -481,6 +484,7 @@ defense-in-depth handler for exceptions that escape before or around an endpoint
 | `IAlreadyExistsException` | 409 | `ProblemTypeUris.Conflict` |
 | `ILockedException` | 423 | `ProblemTypeUris.Locked` |
 | `IRateLimitedException` | 429 | `ProblemTypeUris.RateLimited` |
+| `ITimeoutException` | 504 | `ProblemTypeUris.Timeout` |
 | `BadHttpRequestException` | exception status | `ProblemTypeUris.Validation` |
 | `IValidationException` | 400 | `ProblemTypeUris.Validation` |
 | `IDependencyValidationException` | 400 | `ProblemTypeUris.Validation` |

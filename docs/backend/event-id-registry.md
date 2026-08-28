@@ -1,199 +1,91 @@
-# Backend Event ID Registry
+# Backend Event ID Reference
 
-> Centralized reference of all `[LoggerMessage]` event IDs used across the backend API.  
-> Prevents ID collisions and enables efficient log querying in Azure Application Insights.
+The source-generated `[LoggerMessage]` declarations are the authoritative
+event registry. This document explains ownership and review rules without
+copying a volatile event-by-event inventory.
 
-## Event ID Scheme
+## Live owners
 
-Event IDs follow the pattern `XXX_YZZ` where:
+| Area | Source owner |
+| --- | --- |
+| Common configuration/telemetry | `sites/api.arolariu.ro/src/Common/**/Log.cs` and logging extension files |
+| Core host/middleware/health | `sites/api.arolariu.ro/src/Core/**/Log.cs` |
+| Core.Auth | `sites/api.arolariu.ro/src/Core.Auth/**/Log.cs` |
+| Invoices | `sites/api.arolariu.ro/src/Invoices/Modules/Log.cs` |
 
-- **XXX** = Layer/domain prefix  
-- **Y** = Sub-category within the layer  
-- **ZZ** = Sequential event number  
+Search those declarations before assigning a new identifier:
 
-## Registry by Project
-
-### Common — Key Vault and Configuration Loading (`src/Common/Log.cs`)
-
-| Event ID | Level | Message | Method |
-|----------|-------|---------|--------|
-| `0` | Critical | Option missing from config AND Key Vault | `LogOptionValueIsCompletelyMissing` |
-| `1` | Information | Option loaded from Key Vault | `LogOptionValueFromKeyVault` |
-| `2` | Information | Option loaded from configuration file | `LogOptionValueFromConfiguration` |
-
-### Common — Configuration Proxy (`src/Common/Log.cs`)
-
-| Event ID | Level | Message | Method |
-|----------|-------|---------|--------|
-| `410_103` | Information | Config and features refreshed from proxy | `LogRefreshSucceeded` |
-| `410_104` | Warning | Config refresh failed, retrying | `LogRefreshFailed` |
-| `410_105` | Warning | Config refresh returned no values | `LogBootstrapMissing` |
-| `410_107` | Information | Feature snapshot cache updated | `LogFeatureSnapshotUpdated` |
-| `410_201` | Warning | exp returned HTTP error for config key | `LogConfigKeyHttpError` |
-| `410_202` | Error | Network error fetching config key | `LogConfigKeyNetworkError` |
-| `410_203` | Error | Timeout fetching config key | `LogConfigKeyTimeout` |
-| `410_204` | Error | Deserialization error for config key | `LogConfigKeyDeserializationError` |
-
-### Core (`src/Core/Log.cs`)
-
-| Event ID | Level | Message | Method |
-|----------|-------|---------|--------|
-| `500_100` | Information | General domain config started | `LogGeneralDomainConfigurationStarted` |
-| `500_101` | Information | General domain config completed | `LogGeneralDomainConfigurationCompleted` |
-| `500_102` | Information | Proxy config fetch started | `LogProxyConfigurationFetchStarted` |
-| `500_103` | Information | Proxy config fetch completed | `LogProxyConfigurationFetchCompleted` |
-| `500_104` | Error | Proxy config fetch failed | `LogProxyConfigurationFetchFailed` |
-| `500_105` | Information | OTel configured | `LogOTelConfigured` |
-| `500_106` | Information | Invoices domain configured | `LogInvoicesDomainConfigured` |
-| `500_107` | Information | Application started | `LogApplicationStarted` |
-| `500_200` | Information | Pipeline config started | `LogPipelineConfigurationStarted` |
-| `500_201` | Information | Pipeline config completed | `LogPipelineConfigurationCompleted` |
-| `500_202` | Debug | Security headers injected | `LogSecurityHeadersInjected` |
-| `500_203` | Information | Swagger configured | `LogSwaggerConfigured` |
-| `500_300` | Information | Health checks registered | `LogHealthChecksRegistered` |
-| `500_301` | Debug | Health check completed | `LogHealthCheckCompleted` |
-
-### Core.Auth (`src/Core.Auth/Log.cs`)
-
-| Event ID | Level | Message | Method |
-|----------|-------|---------|--------|
-| `600_100` | Information | User logged out | `LogUserLoggedOut` |
-| `600_101` | Warning | Logout failed — null body | `LogLogoutFailed` |
-| `600_102` | Information | Auth endpoints mapped | `LogAuthEndpointsMapped` |
-| `600_200` | Warning | JWT secret missing | `LogJwtSecretMissing` |
-| `600_201` | Warning | JWT issuer validation failed | `LogJwtIssuerValidationFailed` |
-| `600_202` | Warning | JWT audience validation failed | `LogJwtAudienceValidationFailed` |
-| `600_203` | Debug | JWT issuer fallback applied | `LogJwtIssuerFallback` |
-| `600_204` | Debug | JWT audience fallback applied | `LogJwtAudienceFallback` |
-| `600_300` | Information | Auth services configured | `LogAuthServicesConfigured` |
-| `600_301` | Information | Auth middleware applied | `LogAuthMiddlewareApplied` |
-| `600_302` | Error | AuthDbContext config failed | `LogAuthDbContextConfigurationFailed` |
-
-### Invoices (`src/Invoices/Modules/Log.cs`)
-
-#### Foundation Services (100_xxx)
-
-| Event ID | Level | Message | Method |
-|----------|-------|---------|--------|
-| `100_100` | Error | Invoice analysis validation exception | `LogInvoiceAnalysisValidationException` |
-| `100_101` | Error | Invoice analysis dependency exception | `LogInvoiceAnalysisDependencyException` |
-| `100_102` | Error | Invoice analysis dependency validation exception | `LogInvoiceAnalysisDependencyValidationException` |
-| `100_103` | Error | Invoice analysis service exception | `LogInvoiceAnalysisServiceException` |
-| `100_104` | Warning | No analysis performed on invoice | `LogInvoiceAnalysisNoAnalysisHasBeenPerformed` |
-| `100_200` | Error | Invoice storage validation exception | `LogInvoiceStorageValidationException` |
-| `100_201` | Error | Invoice storage dependency exception | `LogInvoiceStorageDependencyException` |
-| `100_202` | Error | Invoice storage dependency validation exception | `LogInvoiceStorageDependencyValidationException` |
-| `100_203` | Error | Invoice storage service exception | `LogInvoiceStorageServiceException` |
-| `100_300` | Error | Merchant storage validation exception | `LogMerchantStorageServiceValidationException` |
-| `100_301` | Error | Merchant storage dependency exception | `LogMerchantStorageServiceDependencyException` |
-| `100_302` | Error | Merchant storage dependency validation exception | `LogMerchantStorageServiceDependencyValidationException` |
-| `100_303` | Error | Merchant storage service exception | `LogMerchantStorageServiceException` |
-
-#### Orchestration Services (200_xxx)
-
-| Event ID | Level | Message | Method |
-|----------|-------|---------|--------|
-| `200_100` | Error | Invoice orchestration validation exception | `LogInvoiceOrchestrationValidationException` |
-| `200_101` | Error | Invoice orchestration dependency exception | `LogInvoiceOrchestrationDependencyException` |
-| `200_102` | Error | Invoice orchestration dependency validation exception | `LogInvoiceOrchestrationDependencyValidationException` |
-| `200_103` | Error | Invoice orchestration service exception | `LogInvoiceOrchestrationServiceException` |
-| `200_200` | Error | Merchant orchestration validation exception | `LogMerchantOrchestrationValidationException` |
-| `200_201` | Error | Merchant orchestration dependency exception | `LogMerchantOrchestrationDependencyException` |
-| `200_202` | Error | Merchant orchestration dependency validation exception | `LogMerchantOrchestrationDependencyValidationException` |
-| `200_203` | Error | Merchant orchestration service exception | `LogMerchantOrchestrationServiceException` |
-
-#### Processing Services (300_xxx)
-
-| Event ID | Level | Message | Method |
-|----------|-------|---------|--------|
-| `300_100` | Error | Invoice processing validation exception | `LogInvoiceProcessingValidationException` |
-| `300_101` | Error | Invoice processing dependency exception | `LogInvoiceProcessingDependencyException` |
-| `300_102` | Error | Invoice processing dependency validation exception | `LogInvoiceProcessingDependencyValidationException` |
-| `300_103` | Error | Invoice processing service exception | `LogInvoiceProcessingServiceException` |
-
-#### Classifier Broker (400_xxx)
-
-| Event ID | Level | Message | Method |
-|----------|-------|---------|--------|
-| `400_100` | Error | GPT method failed | `LogGptMethodFailed` |
-| `400_101` | Error | GPT method failed with context | `LogGptMethodFailedWithContext` |
-| `400_102` | Warning | Content filter triggered | `LogContentFilterTriggered` |
-| `400_103` | Warning | Content filter triggered with context | `LogContentFilterTriggeredWithContext` |
-| `400_104` | Information | GPT analysis started | `LogGptAnalysisStarted` |
-| `400_105` | Warning | Allergen hallucination skipped | `LogAllergenHallucinationSkipped` |
-| `400_106` | Warning | Allergen unrecognized skipped | `LogAllergenUnrecognizedSkipped` |
-
-#### General Validation (900_xxx)
-
-| Event ID | Level | Message | Method |
-|----------|-------|---------|--------|
-| `900_100` | Warning | User identifier not set | `LogUserIdentifierNotSetWarning` |
-
-## ID Range Allocation
-
-| Range | Project | Domain |
-|-------|---------|--------|
-| `0–99` | Common/Telemetry | OTel setup, Key Vault config |
-| `100_000–199_999` | Invoices | Foundation services |
-| `200_000–299_999` | Invoices | Orchestration services |
-| `300_000–399_999` | Invoices | Processing services |
-| `400_000–409_999` | Invoices | Classifier/AI broker |
-| `410_000–419_999` | Common/Config | Configuration proxy |
-| `500_000–599_999` | Core | Startup, middleware, health |
-| `600_000–699_999` | Core.Auth | Auth, JWT, identity |
-| `900_000–999_999` | Invoices | General validation |
-
-## Custom Metrics Registry
-
-### Invoice Meter (`arolariu.Backend.Domain.Invoices`) — RED Method
-
-| Instrument | Type | Unit | Tags | Description |
-|-----------|------|------|------|-------------|
-| `invoices.operations` | Counter | operations | `operation`, `entity`, `outcome`, `failure.reason` | Invoice/merchant CRUD rate with outcome |
-| `invoices.operations.duration` | Histogram | ms | `operation`, `entity`, `outcome` | CRUD operation latency distribution |
-| `invoices.analysis` | Counter | analyses | `outcome`, `failure.reason` | Analysis pipeline rate with outcome |
-| `invoices.analysis.duration` | Histogram | ms | `outcome` | Analysis pipeline latency distribution |
-| `invoices.analysis.content_filter.triggered` | Counter | events | — | AI content filter triggers |
-| `invoices.cosmosdb.request_charge` | Histogram | RU | `db.operation`, `db.cosmosdb.container` | Cosmos DB RU per operation |
-
-**SLA/QoS Computation (KQL):**
-
-```kql
-// Success Rate SLI (per operation)
-customMetrics
-| where name == "invoices.operations"
-| summarize total=sum(value), success=sumif(value, customDimensions["outcome"]=="success")
-  by tostring(customDimensions["operation"]), tostring(customDimensions["entity"])
-| extend success_rate = round(100.0 * success / total, 2)
-| order by success_rate asc
-
-// Latency SLO (p99 < threshold)
-customMetrics
-| where name == "invoices.operations.duration"
-| where customDimensions["outcome"] == "success"
-| summarize p50=percentile(value, 50), p95=percentile(value, 95), p99=percentile(value, 99)
-  by tostring(customDimensions["operation"]), tostring(customDimensions["entity"])
-
-// Error Budget Burn Rate
-customMetrics
-| where name == "invoices.operations"
-| where customDimensions["outcome"] == "failure"
-| summarize failures=sum(value) by bin(timestamp, 1h), tostring(customDimensions["failure.reason"])
-| render timechart
+```text
+[LoggerMessage(<event-id>, <level>, "<message template>")]
 ```
 
-### Auth Meter (`arolariu.Backend.Auth`)
+Do not choose an identifier from this document alone.
 
-| Instrument | Type | Unit | Description |
-|-----------|------|------|-------------|
-| `auth.logouts` | Counter | events | Successful logouts |
-| `auth.logout_failures` | Counter | events | Failed logout attempts |
-| `auth.jwt.validation_failures` | Counter | events | JWT validation failures (tag: `reason`) |
+## Current Invoices range conventions
 
-### Common Meter (`arolariu.Backend.Common`)
+The Invoices log module groups established families by broad role:
 
-| Instrument | Type | Unit | Description |
-|-----------|------|------|-------------|
-| `config.refresh.success` | Counter | events | Config refresh successes |
-| `config.refresh.failure` | Counter | events | Config refresh failures |
-| `config.refresh.duration` | Histogram | ms | Config refresh cycle duration |
+| Prefix family | Current use |
+| --- | --- |
+| `100_xxx` | Foundation/capability failures |
+| `200_xxx` | Orchestration failures |
+| `300_xxx` | Processing, worker, queue, and durable-analysis events |
+| `400_xxx` | Classifier/generative-provider events |
+| `500_xxx` | Management classification |
+| `600_xxx` | Provider call lifecycle |
+| `900_xxx` | Shared validation warnings |
+
+These are conventions observed in the live module, not reserved global
+numeric ranges. Confirm uniqueness across all compiled `[LoggerMessage]`
+declarations before adding an event.
+
+## Adding or changing an event
+
+1. Use the log module owned by the bounded context/component.
+2. Reuse an existing declaration when the semantic event is identical.
+3. Select an unused identifier near related current events.
+4. Keep the template stable and arguments bounded.
+5. Update tests or operational queries when event identity is contractual.
+6. Search the complete backend for the identifier before completion.
+
+Changing an event ID can break alerts, dashboards, and log queries. Treat a
+renumber as an observable contract change rather than formatting cleanup.
+
+## Privacy and cardinality
+
+Safe arguments are bounded operation, layer, target, outcome, reason category,
+attempt/count, duration, and approved identifiers.
+
+For new or changed events, do not add:
+
+- OCR/scan/request payloads;
+- product, merchant, or customer names;
+- prompts or provider responses;
+- credentials, tokens, connection strings, or authorization headers;
+- new raw exception messages when they can contain customer/provider data.
+  Existing generated exception events that accept `exception.Message` are live
+  privacy debt and are not safe exemplars;
+- unbounded values used as metric dimensions.
+
+## Source-generated logging
+
+Prefer source-generated declarations for recurring or hot-path events. They
+provide:
+
+- compile-time template/argument validation;
+- stable event identity;
+- lower allocation overhead;
+- one discoverable owner for message text and level.
+
+Do not add a parallel ad hoc log with the same semantic event at another layer.
+Activities carry trace correlation; logs should not invent another correlation
+scheme.
+
+## Metrics are separate
+
+Metric instrument names and label contracts are owned by the current metering
+source under `src/Common/Telemetry/Metering` and Invoices metrics helpers.
+They are not event IDs and should not be copied into this registry.
+
+See [RFC 2002](../rfc/2002-opentelemetry-backend-observability.md) and the
+[OpenTelemetry guide](./opentelemetry-guide.md).

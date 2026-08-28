@@ -1,41 +1,41 @@
-# Experimental Service Agent Guide (exp.arolariu.ro)
+# Experimental Service Local Guide
 
-> Python 3.12 + FastAPI + uvicorn
+This FastAPI service provides configuration-proxy and feature-flag behavior.
 
-## Purpose
+## Representative Local API
 
-Configuration proxy and feature flag service for the arolariu.ro platform.
+`main.py` and the router modules under `api/` own the complete live route set.
+The entries below are common public probes/configuration examples, not an
+exhaustive inventory.
 
-## Commands
+| Route | Responsibility |
+| --- | --- |
+| `/api/health` | Liveness |
+| `/api/ready` | Readiness |
+| `/api/v1/config?name=KEY` | One indexed configuration value after mode-specific caller and target authorization |
 
-```bash
-python -m ruff check .       # Lint (Ruff)
-python -m pytest -q          # Run tests
-uvicorn main:app --reload    # Dev server
+## Local Rules
+
+- Ruff selects E, F, I, W, UP, B, SIM, and RUF with line length 120.
+- Public functions have type hints.
+- Use the PEP 695 `type` keyword for aliases.
+- Tests use `*.test.py`, not `test_*.py`.
+- Feature flags use bare catalog names and the `FeatureManagement:` storage
+  prefix.
+- `requirements-dev.txt` includes `requirements.txt`; install one, not both.
+
+## Local Verification
+
+Run from `sites/exp.arolariu.ro`:
+
+```powershell
+python -m ruff check .
+python -m pytest -q
 ```
 
-Installing dependencies — pick **one**, not both. `requirements-dev.txt`
-starts with `-r requirements.txt`, so it is a superset:
+## Development
 
-```bash
-pip install -r requirements-dev.txt   # Development: runtime + pytest, pytest-cov, ruff, bandit, pydoc-markdown
-pip install -r requirements.txt       # Runtime only (what the Docker image installs)
+```powershell
+pip install -r requirements-dev.txt
+uvicorn main:app --reload
 ```
-
-## API Endpoints
-
-| Endpoint | Purpose |
-|----------|---------|
-| `/api/health` | Health check |
-| `/api/ready` | Readiness probe |
-| `/api/v1/config` | Configuration values |
-| `/api/v1/config?name=KEY` | Single config key lookup |
-
-## Rules
-
-- Ruff rules: E, F, I, W, UP, B, SIM, RUF
-- 120-char line length
-- Type hints on all public functions
-- PEP 695 `type` keyword for type aliases
-- Tests as `*.test.py` files (not `test_*.py`)
-- Feature flags: bare names in catalog, `FeatureManagement:` prefix in storage
