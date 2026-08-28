@@ -47,20 +47,33 @@ Endpoints -> Management -> Processing -> Orchestration -> Foundation -> Brokers
 - Preserve partition and ownership boundaries in storage calls.
 - Do not commit connection strings or credentials.
 
-## Reference Catalog
+## Reference Catalogs
 
 Open `references/backend.md` only when the task needs one of:
 
 - confirming or extending the Management-to-Broker dependency graph for a
   bounded context;
-- a CRUD, analysis-composition, or durable-queue pattern not resolved by the
-  rules above;
-- an exception-to-HTTP mapping, telemetry tag, or DI-registration decision;
-- a partition/ownership boundary question in a persistence call.
+- a CRUD, analysis-composition, durable-queue, or partial-failure architecture
+  pattern not resolved by the rules above;
+- a service-layer exception-classification, internal Activity, persistence,
+  partition, ownership-flow, or DI-registration decision.
 
-The catalog does not redefine these rules, the `backend-vertical-slice` skill's
-own decision workflow, or the verification/escalation sections below; it only
-adds repository-specific examples and anti-patterns.
+Open `references/minimal-apis.md` only when the task needs one of:
+
+- adding, changing, or reviewing a Minimal API route group, verb/path mapping,
+  handler binding source, request/response DTO projection, or `IResult` /
+  `TypedResults` outcome;
+- aligning `Accepts`, `Produces`, endpoint naming, authorization, rate-limit,
+  request-timeout, Swagger, or OpenAPI metadata with live handler behavior;
+- deciding endpoint or global exception-to-ProblemDetails mapping, including
+  timeout-versus-client-disconnect handling;
+- changing endpoint Activity ownership, protocol tags, result telemetry, or
+  telemetry privacy behavior.
+
+Open both catalogs only when a change crosses the endpoint-to-Management
+boundary and needs both protocol and domain-architecture decisions. Neither
+catalog replaces `backend-vertical-slice`, the `code-*` skills, or the rules
+and escalation below.
 
 ## Validation
 

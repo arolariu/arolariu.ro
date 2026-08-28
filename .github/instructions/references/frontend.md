@@ -5,52 +5,9 @@ extensive `sites/arolariu.ro`-specific examples, anti-patterns, edge cases,
 and RFC-grounded rationale. It does not define a workflow — the generic React
 instruction routes to server/client component, Hook, Server Action, store,
 i18n, auth, and compiler skills — and it does not restate TypeScript/React
-language rules or root safety policy.
-
-## RSC/island/server-action data ownership
-
-`sites/arolariu.ro/src/app/domains/invoices/page.tsx` is the canonical
-`page.tsx -> island.tsx` split: the Server Component fetches server-owned
-data and passes only the smallest serializable contract into the client
-island.
-
-```tsx
-// page.tsx — Server Component
-export async function generateMetadata(): Promise<Metadata> { /* ... */ }
-
-export default async function InvoicesHomepage(
-  _props: Readonly<PageProps<"/domains/invoices">>,
-): Promise<React.JSX.Element> {
-  const {isAuthenticated} = await fetchAaaSUserFromAuthService();
-  return <RenderInvoiceDomainScreen isAuthenticated={isAuthenticated} />;
-}
-```
-
-```tsx
-// island.tsx — "use client"; receives only `isAuthenticated`, not the auth service call
-export default function RenderInvoiceDomainScreen({isAuthenticated}: Readonly<Props>): React.JSX.Element {
-  /* composes section components */
-}
-```
-
-**Live debt, not a precedent:** this page currently obtains its auth snapshot
-through `fetchAaaSUserFromAuthService`, which is exported from a
-`"use server"` module. A Server Component does not need an RPC action for a
-server-owned read. New work should call a private `server-only` helper
-directly; reserve Server Actions for operations the browser must invoke and
-authenticate/authorize them as public endpoints.
-
-Server-only code uses two distinct boundaries:
-
-- RPC-capable Server Actions carry `"use server"` (for example
-  `cookies/cookies.action.ts`, `user/fetchUser.ts`, and invoice-domain
-  `_actions/**`). Their return contracts vary with the caller.
-- Private server helpers such as `lib/actions/storage/fetchConfig.ts` import
-  `"server-only"` and intentionally omit `"use server"` so they cannot become
-  browser-callable RPC surfaces.
-
-Do not convert a `server-only` helper into a Server Action merely because it
-lives under `lib/actions/`.
+language rules or root safety policy. React server/client execution boundaries
+live in `react-server.md` and `react-client.md`; App Router framework mechanics
+live in `nextjs.md`.
 
 ## Clerk boundary
 
@@ -133,9 +90,10 @@ single field naming convention.
 `DialogContext.tsx` (`sites/arolariu.ro/src/app/domains/invoices/_contexts/`)
 is the established Context pattern for state shared by a route subtree but
 not needed globally. It dispatches through a discriminated
-`DialogType`/`DialogPayloads` registry, with state and actions split into two
-contexts so action-only consumers do not re-render on every open/close. Read
-the registry for its current dialog/domain inventory.
+`DialogType`/`DialogPayloads` registry. The current split-context, stable
+actions, rerender, and latest-payload behavior is owned by
+`react-client.md`; read the live registry for its current dialog/domain
+inventory.
 
 Escalation boundary: promoting route-scoped Context state to a new Zustand
 store, or extending an existing store's persisted shape, requires proving
@@ -197,11 +155,8 @@ cross-cutting server actions are not uniformly wrapped. For a newly
 instrumented boundary, follow RFC 1001 rather than assuming existing coverage
 or adding a parallel logging mechanism.
 
-Route boundaries follow the App Router convention:
-`sites/arolariu.ro/src/app/error.tsx`, `.../about/error.tsx`,
-`.../domains/invoices/edit-invoice/[id]/not-found.tsx`. Add `loading.tsx`,
-`error.tsx`, and `not-found.tsx` at the segment that owns the corresponding
-failure/pending state, not only at the root.
+App Router special-file placement, promised route inputs, streaming, and Route
+Handler behavior are owned by `nextjs.md`.
 
 ## CSS Modules and shared component rules
 
@@ -214,12 +169,8 @@ compile. Shared, domain-agnostic primitives are imported from
 recreate a primitive that already exists there, and do not add inline style
 objects.
 
-## Route and test examples
+## Website-specific test examples
 
-- `sites/arolariu.ro/src/app/domains/invoices/page.tsx` +
-  `island.tsx` — RSC/island split with typed `generateMetadata`
-- `sites/arolariu.ro/src/app/_components/Hero.tsx` — client component using
-  the typed `next-intl-selector` API
 - `sites/arolariu.ro/src/lib/utils.server.test.ts` — transport error mapping
   coverage
 - `sites/arolariu.ro/tests/helpers/builders/` — shared test data builders;
@@ -230,9 +181,6 @@ objects.
 - **Hydration race**: reading `useInvoicesStore((state) => state.entities)`
   before `hasHydrated` is `true` can render a false "no invoices" empty state
   for a user who has persisted data; always branch on `hasHydrated` first.
-- **Dev-only Strict Mode aborts**: see the React catalog's effect-cleanup
-  section — the same `AbortError`-during-double-invoke pattern applies to any
-  new data-fetching hook or island effect in this app.
 - **Missing locale alternate**: adding a locale to `next-intl` without adding
   it to `metadata.ts`'s `LOCALE_ALTERNATES` map silently falls back to
   `en_US` for OpenGraph — update both together.

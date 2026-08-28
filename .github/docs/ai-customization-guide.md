@@ -60,7 +60,7 @@ unique to matching files and inherit the root contracts.
 | `backend-expert` | API implementation using DDD and The Standard |
 | `frontend-expert` | Website implementation using Next.js, React, i18n, and accessibility contracts |
 | `infra-expert` | Approved Azure Bicep/GitHub Actions work and local Aspire/selfhost operations |
-| `code-reviewer` | Evidence-based read-only diff review |
+| `code-reviewer` | Evidence-based read-only diff role and remedy routing |
 | `full-stack-planner` | Read-only website/API implementation planning |
 
 Agents inherit the active surface model unless a future task has a specific,
@@ -83,6 +83,7 @@ Portable workflows in `.github/skills/`:
 - `code-fix-bug`
 - `code-refactor`
 - `code-documentation`
+- `code-review`
 - `infra-dependency-update`
 - `infra-selfhost`
 
@@ -100,11 +101,16 @@ matching repository artifact after the project boundary is known:
 | Reproduce and correct a defect | `code-fix-bug` | TypeScript debugging, .NET debugging, or Python debugging |
 | Improve structure without behavior change | `code-refactor` | TypeScript refactors, .NET refactors, or Python refactors |
 | Document an existing contract | `code-documentation` | JSDoc/TSDoc, C# XML documentation, or Python docstrings |
+| Review an existing diff/range read-only | `code-review` | TypeScript/UI, .NET, Python, AI assets, or infrastructure/workflow review |
 | Research or perform an approved package/runtime migration | `infra-dependency-update` | npm, NuGet, or Python dependency ownership |
 | Operate a local development environment | `infra-selfhost` | Aspire, selfhost, standalone, or ad hoc image/Compose guidance |
 
 Shared decision tables, checklists, and troubleshooting remain in the same
 bundle but load only at their named decision or failure trigger.
+
+The Code Reviewer agent owns its read-only tools and correction routing;
+`code-review` owns target resolution, evidence thresholds, severity/confidence,
+conditional stack checks, and the findings output contract.
 
 ### React workflow map
 
@@ -112,6 +118,9 @@ bundle but load only at their named decision or failure trigger.
 server identity is derived from directives plus the import graph, so the
 repository intentionally does not use path-only
 `react.client.instructions.md`/`react.server.instructions.md` files.
+Conditional `react-client.md` and `react-server.md` catalogs provide semantic
+depth after that boundary is proven; `nextjs.md` separately owns App Router
+framework behavior.
 
 | Artifact | Skill |
 | --- | --- |

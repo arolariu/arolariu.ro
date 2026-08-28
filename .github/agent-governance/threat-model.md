@@ -92,8 +92,10 @@ requires reviews, blocks force pushes/deletions, or permits direct pushes.
 
 ## Review and extension boundaries
 
-- Review-only behavior lives in `.github/agents/code-reviewer.agent.md`; it is
-  not injected into every task.
+- The read-only reviewer role and tool restrictions live in
+  `.github/agents/code-reviewer.agent.md`; the repeatable review procedure and
+  conditional stack checks live in `.github/skills/code-review/`. Neither is
+  injected into every implementation task.
 - Repository CLI extensions are limited to bounded context injection and
   read-only diagnostics. No extension claims to parse or sandbox arbitrary
   shell effects.

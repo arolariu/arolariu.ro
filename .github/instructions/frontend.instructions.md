@@ -46,17 +46,30 @@ belongs to their dedicated instructions.
 - Colocate `*.test.ts`/`*.test.tsx` with the source and mock only external
   boundaries.
 
-## Reference Catalog
+## Reference Catalogs
 
 Open `references/frontend.md` only when the task needs one of:
 
-- deciding Server Component/island/server-action data ownership for a route;
 - choosing among Zustand, Context, URL, or local state for website state;
 - changing i18n message/metadata generation or frontend observability spans;
 - mapping a new transport/server-action failure to a `ServerActionResult`.
 
-The catalog does not redefine these rules or the verification/escalation
-sections below; it only adds repository-specific examples and anti-patterns.
+Open `references/nextjs.md` only when the task needs one of:
+
+- deciding ownership or behavior among App Router `page.tsx`, `layout.tsx`,
+  `template.tsx`, `loading.tsx`, `error.tsx`, `not-found.tsx`, or `route.ts`
+  artifacts;
+- handling promised route `params`/`searchParams`, `redirect()`/`notFound()`,
+  segment streaming/Suspense, or Route Handler response/cache behavior;
+- changing the Next.js metadata lifecycle while leaving localized message
+  schema and website metadata-helper behavior with their existing owners;
+- investigating `src/proxy.ts`, `next.config.ts`, or another Next-specific
+  routing/rendering/build edge case far enough to route protected changes to
+  the owning skill and escalation.
+
+Do not open `nextjs.md` for ordinary React semantics, message-copy changes,
+Server Action security, or website state placement. Neither catalog redefines
+these rules or a task skill's procedure.
 
 ## Validation
 

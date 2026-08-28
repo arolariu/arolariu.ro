@@ -11,7 +11,9 @@ does not restate versions, global commands, or root safety policy — see root
 (`references/layer-decision-table.md`, `references/exception-telemetry-catalog.md`,
 `references/backend-edge-cases.md`), which own the layer-selection and
 edge-case decision workflow; this catalog explains the architecture those
-decisions operate on, with code, not procedure.
+decisions operate on, with code, not procedure. Minimal API protocol,
+ProblemDetails, cancellation, route metadata, and endpoint telemetry examples
+live in `minimal-apis.md`.
 
 ## Management-to-Broker layers
 
@@ -137,65 +139,15 @@ Do not add a poison queue, external workflow-state store, or persistence
 retry — RFC 2003 documents that the current design has none, and Processing's
 three-attempt discard policy is the accepted terminal behavior.
 
-## Exception and HTTP mapping
+## Service exception propagation
 
-`ExceptionToHttpResultMapper` walks the inner-exception chain for the
-*deepest* classifiable exception, not the outermost wrapper, and returns a safe
-RFC 7807 `ProblemDetails`:
+Each Standard layer classifies only failures from its direct dependency while
+preserving cancellation and the marker semantics needed by callers. Exact
+outer/inner retention varies by current service path and is documented by the
+`backend-vertical-slice` exception resource and .NET test guidance.
 
-```csharp
-// sites/api.arolariu.ro/src/Common/Http/ExceptionToHttpResultMapper.cs
-private static (int Status, string Title, string Type) SelectStatus(Exception ex) => ex switch
-{
-  IUnauthorizedException => (401, "Unauthorized", ProblemTypeUris.Unauthorized),
-  IForbiddenException => (403, "Forbidden", ProblemTypeUris.Forbidden),
-  INotFoundException => (404, "Resource not found", ProblemTypeUris.NotFound),
-  IAlreadyExistsException => (409, "Resource conflict", ProblemTypeUris.Conflict),
-  ILockedException => (423, "Resource locked", ProblemTypeUris.Locked),
-  IRateLimitedException => (429, "Too many requests", ProblemTypeUris.RateLimited),
-  ITimeoutException => (504, "Operation timed out", ProblemTypeUris.Timeout),
-  BadHttpRequestException badReq => (badReq.StatusCode, "Bad request", ProblemTypeUris.Validation),
-  IValidationException => (400, "Validation failed", ProblemTypeUris.Validation),
-  IDependencyValidationException => (400, "Dependency validation", ProblemTypeUris.Validation),
-  IDependencyException => (503, "Service unavailable", ProblemTypeUris.ServiceUnavailable),
-  IServiceException => (500, "Internal server error", ProblemTypeUris.InternalServerError),
-  // ...
-};
-```
-
-Endpoint handlers classify cancellation *before* delegating to the mapper —
-never let a client-disconnect masquerade as a 500:
-
-```csharp
-// sites/api.arolariu.ro/src/Invoices/Endpoints/InvoiceEndpoints.Handlers.cs
-catch (OperationCanceledException)
-{
-  return HandleCancellation(httpContext.HttpContext!, writeScope, "create", "invoice");
-}
-catch (Exception ex)
-{
-  Activity.Current?.RecordException(ex);
-  Activity.Current?.SetStatus(ActivityStatusCode.Error, ex.GetType().Name);
-  return ExceptionToHttpResultMapper.ToHttpResult(ex, Activity.Current);
-}
-```
-
-`RequestCancellation` shows *why* reads and writes classify cancellation
-differently: reads bind `HttpContext.RequestAborted` directly because Minimal
-API already does that binding, while writes deliberately do not observe client
-disconnect (a half-finished mutation should not be abandoned mid-flight) and
-instead bind only application shutdown plus an explicit timeout budget.
-
-**Live drift, not a template:** `AnalysisWriteBudget` is defined, but the
-invoice and merchant analysis handlers currently pass `CrudWriteBudget`, and
-their mappings use `RequestTimeoutPolicies.Crud`. Do not assume the five-minute
-analysis budget is active. A timeout change must inspect and update the handler
-scope and endpoint timeout policy together, with approval when observable
-request behavior changes.
-
-The marker-interface families themselves and per-layer classification detail
-are the `backend-vertical-slice` skill's exception-telemetry catalog; this
-section shows the mapper and endpoint code those markers ultimately drive.
+HTTP status selection, safe `ProblemDetails`, request cancellation, timeout
+policy, and endpoint catch ordering belong to `minimal-apis.md`.
 
 ## Telemetry
 
@@ -329,10 +281,9 @@ public async Task EnqueueAsync_ValidMessage_ReturnsMessageId()
 }
 ```
 
-Full behavior-category selection (valid/validation/dependency/cancellation/
-partition/orchestration-call matrices) is the `code-unit-test` skill's .NET test
-matrix; this section anchors the architecture-reflection and Foundation-test
-shapes those categories build on.
+Full behavior-category selection is the `code-unit-test` skill's .NET guidance;
+this section anchors the architecture-reflection and Foundation-test shapes
+those categories build on.
 
 ## Anti-pattern corrections summary
 
@@ -343,7 +294,6 @@ shapes those categories build on.
 | Adding a Foundation/Orchestration/Processing layer to Core.Auth for symmetry | Core.Auth intentionally has no Standard hierarchy; auth changes are an escalation regardless | Confirm the change is actually approved auth work before touching `Core.Auth/*` |
 | Registering a new service as `AddSingleton` "to be safe" | Breaks Cosmos/EF Core per-request scoping used by every other Broker/service | Match `AddScoped` unless the type holds genuinely immutable startup state like `JsonTaxonomyBroker` |
 | Dropping the `userIdentifier`/partition parameter in a pass-through layer | Silently converts an owner-scoped call into an unscoped one | Thread the discriminator unchanged from endpoint to Broker |
-| Returning the outer wrapper exception's type in a new endpoint mapping instead of using `ExceptionToHttpResultMapper` | Duplicates status-mapping logic that already walks the inner-exception chain correctly | Call the shared mapper; do not hand-roll a second switch |
 
 ## Live source pointers
 
@@ -353,7 +303,6 @@ shapes those categories build on.
 - `sites/api.arolariu.ro/src/Invoices/Services/Foundation/InvoiceStorage/InvoiceStorageFoundationService.cs` — Foundation CRUD shape
 - `sites/api.arolariu.ro/src/Invoices/Brokers/DatabaseBroker/CosmosDatabaseBroker.Invoices.cs` — partition/provider call shape
 - `sites/api.arolariu.ro/src/Invoices/Brokers/QueueBroker/QueueAnalysisMessage.cs` — durable message validation
-- `sites/api.arolariu.ro/src/Common/Http/ExceptionToHttpResultMapper.cs`, `RequestCancellation.cs` — HTTP mapping and cancellation classification
 - `sites/api.arolariu.ro/src/Common/Telemetry/Tracing/ActivityExtensions.cs` — semantic tag constants
 - `sites/api.arolariu.ro/src/Core.Auth/Endpoints/AuthEndpoints.Handlers.cs` — the non-Standard bounded-context shape
 - `sites/api.arolariu.ro/tests/arolariu.Backend.Domain.Tests/Invoices/Architecture/InvoiceStandardLayeringArchitectureTests.cs` — reflection-based dependency-graph enforcement

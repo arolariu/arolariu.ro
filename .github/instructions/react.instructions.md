@@ -52,20 +52,39 @@ For a defect, test-only request, refactor, or dependency migration, route first
 to the corresponding cross-cutting skill and use the React artifact workflow
 for the affected implementation boundary.
 
-## Reference Catalog
+## Reference Catalogs
 
 Open `references/react.md` only when the task needs one of:
 
-- distinguishing client, server, Hook, Server Action, store, i18n, auth, or
-  compiler ownership;
-- an effect dependency, cleanup, cancellation, or stale-closure decision;
+- initially distinguishing client, server, Hook, Server Action, store, i18n,
+  auth, or compiler ownership;
 - a memoization or component-identity decision beyond the default rule above;
 - accessibility work on an interactive, focus, or keyboard-sensitive element;
-- a state-lifetime or Context-splitting decision for shared component/hook
-  state.
+- a framework-independent render-purity or derived-state decision.
 
-The catalog does not redefine these rules or the verification/escalation
-sections below; it only adds repository-specific examples and anti-patterns.
+Open `references/react-client.md` only after directives and the import graph
+prove client execution, and only when the task needs one of:
+
+- a Strict Mode replay, owned cleanup/supersession abort, stale async commit,
+  or browser-response validation edge case;
+- a Context provider, latest-value ref, stable callback, or provider-value
+  identity decision that crosses component and Hook boundaries;
+- a first-client-render mismatch caused by browser-only, persisted, locale,
+  or theme state after a server handoff.
+
+Open `references/react-server.md` only after tracing consumers and imports,
+and only when the task needs one of:
+
+- distinguishing exclusively server-only execution from server-compatible or
+  directive-free code that is currently client-bundled;
+- deciding whether server-owned work belongs in a private `server-only`
+  helper or requires a browser-callable Server Action adapter;
+- reasoning about the smallest React-serializable RSC-to-client handoff or a
+  live server-boundary debt example.
+
+Do not open either semantic catalog merely because of a filename, directory,
+the absence of `"use client"`, or the presence of `page.tsx`. These catalogs
+do not replace the artifact skills or redefine these rules.
 
 ## Validation
 

@@ -20,8 +20,18 @@ owns one narrow concern and inherits root `AGENTS.md` plus
 | `svelte.instructions.md` | CV Svelte rules |
 | `agent-governance.instructions.md` | AI asset rules |
 
-Review behavior belongs to `.github/agents/code-reviewer.agent.md`; it is not a
-globally applied instruction.
+Subordinate catalogs under `references/` hold optional examples, edge cases,
+and rationale. Notable semantic splits are:
+
+| Instruction owner | Conditional catalogs |
+| --- | --- |
+| `frontend.instructions.md` | `frontend.md`, `nextjs.md` |
+| `react.instructions.md` | `react.md`, `react-client.md`, `react-server.md` |
+| `backend.instructions.md` | `backend.md`, `minimal-apis.md` |
+
+The Code Reviewer agent owns the read-only role and tool restrictions;
+`code-review` owns the repeatable review procedure. Neither is globally
+injected into implementation tasks.
 
 ## Required Frontmatter
 

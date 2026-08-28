@@ -251,8 +251,9 @@ private Exception Classify(Exception exception) => exception switch
 ```
 
 The marker-interface families themselves (`IValidationException`,
-`IDependencyException`, and so on) and their HTTP mapping are API-architecture
-concerns owned by `references/backend.md`; this catalog covers only the C#
+`IDependencyException`, and so on) are owned by the
+`backend-vertical-slice` exception/telemetry resource; their HTTP mapping is
+owned by `references/minimal-apis.md`. This catalog covers only the C#
 mechanics of the `switch` classifier and the catch-order rule above.
 
 ## Diagnostics and warnings-as-errors

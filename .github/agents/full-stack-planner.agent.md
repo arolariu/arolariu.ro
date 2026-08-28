@@ -95,7 +95,7 @@ choice with more than one valid outcome.
 | Package/framework upgrade on either side | Owning specialist | `infra-dependency-update` |
 | Local Aspire/selfhost startup or troubleshooting | Infrastructure Expert | `infra-selfhost` |
 | Infrastructure/workflow enablement | Infrastructure Expert | none — direct, requires explicit approval |
-| Independent diff review of the resulting change | Code Reviewer | n/a (read-only) |
+| Independent diff review of the resulting change | Code Reviewer | `code-review` |
 
 Confirm every routed skill exists under `.github/skills/` before naming it in
 the plan.
