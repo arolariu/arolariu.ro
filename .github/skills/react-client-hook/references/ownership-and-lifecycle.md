@@ -36,7 +36,7 @@ Use a latest ref only when both are true:
    registration; and
 2. that later callback must read the newest value without resubscribing.
 
-Update the ref from the current render and let the stable callback read
+Refresh the ref in a narrow effect keyed to the current value, then let the stable callback read
 `ref.current`. Do not use a ref to conceal an ordinary missing dependency or
 to bypass rerendering that the UI contract needs.
 
