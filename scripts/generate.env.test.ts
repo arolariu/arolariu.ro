@@ -13,6 +13,7 @@ import type {PromptProvider} from "./common/prompts.ts";
 afterEach(() => {
   vi.restoreAllMocks();
   vi.unstubAllEnvs();
+  vi.unstubAllGlobals();
   vi.doUnmock("@azure/identity");
 });
 
@@ -120,9 +121,48 @@ describe("appendMissingEnvironmentValues", () => {
       ),
     ).toBe(original);
   });
+
+  it("trims surrounding whitespace while preserving and quoting internal whitespace", async () => {
+    const {appendMissingEnvironmentValues} = await import("./generate.env.ts");
+
+    expect(appendMissingEnvironmentValues("", new Map([["DISPLAY_NAME", "  local development site  "]]))).toBe(
+      ["# arolariu.ro setup-managed values", 'DISPLAY_NAME="local development site"', "# End arolariu.ro setup-managed values", ""].join(
+        "\n",
+      ),
+    );
+  });
 });
 
 describe("generator PromptProvider compatibility", () => {
+  it("stops aggregate generation and propagates a real environment generator failure", async () => {
+    vi.resetModules();
+    vi.stubEnv("INFRA", "azure");
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response("unavailable", {status: 503})),
+    );
+    const sink = new InMemoryLoggerSink();
+    const logger = new MonorepositoryConsoleLogger("generate", {color: false, sink});
+    const {main} = await import("./generate.ts");
+
+    await expect(
+      main(
+        {
+          verbose: false,
+          generateEnv: true,
+          generateGql: true,
+          generateI18n: false,
+          generateArtifacts: false,
+        },
+        logger,
+      ),
+    ).resolves.toBe(1);
+
+    const retained = sink.records.map((record) => record.text).join("\n");
+    expect(retained).not.toContain("Running GraphQL types generator");
+    expect(retained).not.toContain("All requested generation tasks completed");
+  });
+
   it("uses the injected provider, redacts entered secrets, and never writes directly to console", async () => {
     vi.stubEnv("INFRA", "local");
     vi.stubEnv("VERBOSE", "false");

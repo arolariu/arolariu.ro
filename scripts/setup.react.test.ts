@@ -849,7 +849,70 @@ describe("dry-run, interruption, and command safety", () => {
     expect(result.status).toBe("skipped");
     expect(harness.actionIds).toEqual(["react.environment.write", "react.playwright.chromium.install"]);
     expect(harness.run).not.toHaveBeenCalled();
+    expect(filesystem.writes).toHaveLength(0);
     expect(result.evidence.join("\n")).toMatch(/workspace\.root-dependencies|deferred/i);
+  });
+
+  it("fails fresh-checkout dry-run when Playwright requirements disagree before dependency probes", async () => {
+    const filesystem = createFilesystem({rootDependencies: false});
+    const harness = createHarness({
+      filesystem,
+      setupOptions: options({dryRun: true}),
+      requirementPatch: new Map([["playwright", "1.61.0"]]),
+      dispositions: {"react.playwright.chromium.install": "planned"},
+    });
+
+    const result = await harness.phase.run(harness.context);
+
+    expect(result.status).toBe("failed");
+    expect(result.evidence.join("\n")).toMatch(/playwright/i);
+    expect(harness.run).not.toHaveBeenCalled();
+    expect(harness.actionIds).toEqual([]);
+    expect(filesystem.writes).toHaveLength(0);
+  });
+
+  it("fails fresh-checkout dry-run when the linked component lock entry disagrees before dependency probes", async () => {
+    const filesystem = createFilesystem({rootDependencies: false});
+    filesystem.files.set(
+      paths.packageLock,
+      JSON.stringify({packages: {"packages/components": {name: "@arolariu/components", version: "2.2.0"}}}),
+    );
+    const harness = createHarness({
+      filesystem,
+      setupOptions: options({dryRun: true}),
+      dispositions: {"react.playwright.chromium.install": "planned"},
+    });
+
+    const result = await harness.phase.run(harness.context);
+
+    expect(result.status).toBe("failed");
+    expect(result.evidence.join("\n")).toMatch(/components.*lock|lock.*components/i);
+    expect(harness.run).not.toHaveBeenCalled();
+    expect(harness.actionIds).toEqual([]);
+    expect(filesystem.writes).toHaveLength(0);
+  });
+
+  it("fails fresh-checkout dry-run when a generated artifact path is a directory", async () => {
+    const invalidArtifact = generatedArtifacts[0];
+    if (invalidArtifact === undefined) {
+      throw new Error("A generated artifact fixture is required.");
+    }
+    const filesystem = createFilesystem({rootDependencies: false});
+    filesystem.files.delete(invalidArtifact);
+    filesystem.directories.add(invalidArtifact);
+    const harness = createHarness({
+      filesystem,
+      setupOptions: options({dryRun: true}),
+      dispositions: {"react.playwright.chromium.install": "planned"},
+    });
+
+    const result = await harness.phase.run(harness.context);
+
+    expect(result.status).toBe("failed");
+    expect(result.evidence.join("\n")).toContain(`Generated artifact path is not a file: ${invalidArtifact}`);
+    expect(harness.run).not.toHaveBeenCalled();
+    expect(harness.actionIds).toEqual([]);
+    expect(filesystem.writes).toHaveLength(0);
   });
 
   it("rethrows AbortError instead of converting interruption to a failure", async () => {

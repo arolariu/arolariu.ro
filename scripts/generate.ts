@@ -44,7 +44,7 @@ export type CommandLineOptions = {
  *
  * @param options - Selected generators and verbose-output preference.
  * @param logger - Optional caller-owned logger whose child contexts are passed to each selected generator.
- * @returns Zero after every selected generator completes.
+ * @returns Zero after every selected generator succeeds, or the first nonzero generator result.
  */
 export async function main(options: Readonly<CommandLineOptions>, logger?: MonorepositoryLogger): Promise<number> {
   const {verbose, generateGql, generateI18n, generateEnv, generateArtifacts} = options;
@@ -96,25 +96,37 @@ export async function main(options: Readonly<CommandLineOptions>, logger?: Monor
 
   if (generateEnv) {
     output.info("Running environment configuration generator...");
-    await import("./generate.env.ts").then((module) => module.main(verbose, output.child("env")));
+    const result = await import("./generate.env.ts").then((module) => module.main(verbose, output.child("env")));
+    if (result !== 0) {
+      return result;
+    }
     tasksExecuted++;
   }
 
   if (generateI18n) {
     output.info("Running internationalization (i18n) generator...");
-    await import("./generate.i18n.ts").then((module) => module.main(verbose, output.child("i18n")));
+    const result = await import("./generate.i18n.ts").then((module) => module.main(verbose, output.child("i18n")));
+    if (result !== 0) {
+      return result;
+    }
     tasksExecuted++;
   }
 
   if (generateGql) {
     output.info("Running GraphQL types generator...");
-    await import("./generate.gql.ts").then((module) => module.main(verbose, output.child("gql")));
+    const result = await import("./generate.gql.ts").then((module) => module.main(verbose, output.child("gql")));
+    if (result !== 0) {
+      return result;
+    }
     tasksExecuted++;
   }
 
   if (generateArtifacts) {
     output.info("Running taxonomy and license artifact generator...");
-    await import("./generate.artifacts.ts").then((module) => module.main({}, output.child("artifacts")));
+    const result = await import("./generate.artifacts.ts").then((module) => module.main({}, output.child("artifacts")));
+    if (result !== 0) {
+      return result;
+    }
     tasksExecuted++;
   }
 

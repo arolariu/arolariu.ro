@@ -282,10 +282,7 @@ function collectInstalledVersions(
   }
 }
 
-async function validatePackages(context: SetupContext, dependencies: ReactSetupDependencies): Promise<PackageValidation> {
-  const expected = new Map(expectedExternalVersions(context));
-  expected.set("@arolariu/components", await deriveLinkedComponentsVersion(context, dependencies));
-
+async function validatePackages(context: SetupContext, expected: ReadonlyMap<string, string>): Promise<PackageValidation> {
   const inspection = await context.runner.run(PACKAGE_INSPECTION_COMMAND, {cwd: context.paths.root});
   if (!isSuccessfulCommand(inspection)) {
     throw new Error(["Required React package inspection failed.", ...commandFailureEvidence(inspection)].join("\n"));
@@ -618,6 +615,13 @@ async function runReactSetup(context: SetupContext, dependencies: ReactSetupDepe
 
   try {
     const rootDependencies = await dependencies.inspectPath(resolve(context.paths.root, "node_modules"));
+    const expectedPackages = new Map(expectedExternalVersions(context));
+    expectedPackages.set("@arolariu/components", await deriveLinkedComponentsVersion(context, dependencies));
+    const artifacts = await inspectGeneratedArtifacts(context, dependencies);
+    if (artifacts.invalid.length > 0) {
+      throw new Error(artifacts.invalid.map((path) => `Generated artifact path is not a file: ${path}`).join("\n"));
+    }
+
     if (context.options.dryRun && rootDependencies === "missing") {
       const environment = await prepareWebsiteEnvironmentWithDependencies(context, dependencies, knownSecrets);
       const browserDisposition = await context.actions.run({
@@ -631,10 +635,12 @@ async function runReactSetup(context: SetupContext, dependencies: ReactSetupDepe
       if (browserDisposition === "declined") {
         throw new Error(`Required action '${BROWSER_INSTALL_ACTION}' was declined.`);
       }
-      evidence.push(
-        "Deferred package and browser postconditions until planned workspace.root-dependencies restoration.",
-        "Deferred generated artifact postconditions to the planned workspace.generators action.",
-      );
+      evidence.push("Deferred package and browser postconditions until planned workspace.root-dependencies restoration.");
+      if (artifacts.missing.length > 0) {
+        evidence.push("Deferred generated artifact postconditions to the planned workspace.generators action.");
+      } else {
+        evidence.push(`Verified ${generatedArtifactCount(context)} generated website artifact(s).`);
+      }
       if (environment.actionDisposition === "planned") {
         evidence.push(`Planned action: ${ENVIRONMENT_WRITE_ACTION}`);
       }
@@ -653,13 +659,9 @@ async function runReactSetup(context: SetupContext, dependencies: ReactSetupDepe
       });
     }
 
-    const packageValidation = await validatePackages(context, dependencies);
+    const packageValidation = await validatePackages(context, expectedPackages);
     evidence.push(...packageValidation.evidence);
 
-    const artifacts = await inspectGeneratedArtifacts(context, dependencies);
-    if (artifacts.invalid.length > 0) {
-      throw new Error(artifacts.invalid.map((path) => `Generated artifact path is not a file: ${path}`).join("\n"));
-    }
     if (artifacts.missing.length > 0) {
       if (!context.options.dryRun) {
         throw new Error(artifacts.missing.map((path) => `Missing generated artifact: ${path}`).join("\n"));

@@ -90,8 +90,9 @@ export function appendMissingEnvironmentValues(original: string, additions: Read
   const missing: string[] = [];
 
   for (const [key, value] of additions) {
-    if (!existing.has(key) && value.trim() !== "") {
-      missing.push(`${key}=${quoteIfNeeded(value)}`);
+    const trimmedValue = value.trim();
+    if (!existing.has(key) && trimmedValue !== "") {
+      missing.push(`${key}=${quoteIfNeeded(trimmedValue)}`);
     }
   }
 
