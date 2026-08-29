@@ -354,7 +354,7 @@ async function validateAppHostSettings(path: string, readTextFile: ReadTextFile)
 
 function parseUserSecrets(output: string, logger: SetupContext["logger"]): ReadonlyMap<string, string> {
   const begin = output.indexOf("//BEGIN");
-  const end = output.indexOf("//END");
+  const end = output.lastIndexOf("//END");
   let document = output;
   if (begin >= 0 || end >= 0) {
     if (begin < 0 || end < 0 || end <= begin) {
@@ -379,7 +379,7 @@ function parseUserSecrets(output: string, logger: SetupContext["logger"]): Reado
       throw new Error("The user-secrets command must return a JSON object of string values.");
     }
     secrets.set(key, value);
-    if (value.length > 0) {
+    if (value.trim().length > 0) {
       logger.redact(value);
     }
   }
@@ -397,7 +397,7 @@ async function listUserSecrets(context: SetupContext, project: string, knownSecr
   }
   const secrets = parseUserSecrets(result.stdout, context.logger);
   for (const value of secrets.values()) {
-    if (value.length > 0 && !knownSecrets.includes(value)) {
+    if (value.trim().length > 0 && !knownSecrets.includes(value)) {
       knownSecrets.push(value);
     }
   }
@@ -405,7 +405,7 @@ async function listUserSecrets(context: SetupContext, project: string, knownSecr
 }
 
 function missingSecretKeys(secrets: ReadonlyMap<string, string>): readonly (typeof APPHOST_SECRET_KEYS)[number][] {
-  return APPHOST_SECRET_KEYS.filter((key) => (secrets.get(key)?.length ?? 0) === 0);
+  return APPHOST_SECRET_KEYS.filter((key) => (secrets.get(key)?.trim().length ?? 0) === 0);
 }
 
 async function ensureUserSecrets(
@@ -485,24 +485,31 @@ function parseTrustState(output: string): boolean | null {
   } catch {
     return null;
   }
-  if (!isRecord(parsed)) {
+  if (!Array.isArray(parsed)) {
     return null;
   }
-  for (const [key, value] of Object.entries(parsed)) {
-    if (key.toLowerCase() === "trusted" && typeof value === "boolean") {
-      return value;
+
+  let foundUntrustedCertificate = false;
+  for (const report of parsed) {
+    if (!isRecord(report)) {
+      continue;
     }
-    if (key.toLowerCase() === "status" && typeof value === "string") {
-      const status = value.toLowerCase();
-      if (status === "trusted") {
+    const normalized = new Map(Object.entries(report).map(([key, value]) => [key.toLowerCase(), value] as const));
+    if (normalized.get("ishttpsdevelopmentcertificate") !== true) {
+      continue;
+    }
+    const trustLevel = normalized.get("trustlevel");
+    if (typeof trustLevel === "string") {
+      const normalizedTrustLevel = trustLevel.toLowerCase();
+      if (normalizedTrustLevel === "full") {
         return true;
       }
-      if (status === "untrusted") {
-        return false;
+      if (normalizedTrustLevel === "none" || normalizedTrustLevel === "partial") {
+        foundUntrustedCertificate = true;
       }
     }
   }
-  return null;
+  return foundUntrustedCertificate ? false : null;
 }
 
 async function runCertificateProbe(context: SetupContext): Promise<CommandResult> {
@@ -563,17 +570,16 @@ async function ensureCertificate(
   }
 
   const trustResult = await runTrustProbe(context);
-  const trustState = commandTransportSucceeded(trustResult) ? parseTrustState(trustResult.stdout) : null;
-  if (trustState === null || (trustState && !isSuccessfulCommand(trustResult))) {
+  const trustState = isSuccessfulCommand(trustResult) ? parseTrustState(trustResult.stdout) : null;
+  if (trustState === null) {
+    const trustEvidence = isSuccessfulCommand(trustResult)
+      ? ["The probe did not report a recognizable Full, Partial, or None trust level for an HTTPS development certificate."]
+      : commandFailureEvidence(trustResult, {includeStdout: false}).map((item) => sanitize(item, knownSecrets));
     return {
       id: "dotnet",
       status: plannedActions.length > 0 ? "skipped" : "degraded",
       summary: "Required .NET preparation completed, but certificate trust could not be determined.",
-      evidence: [
-        ...evidence,
-        "The machine-readable HTTPS certificate trust probe was unavailable or malformed.",
-        ...commandFailureEvidence(trustResult, {includeStdout: false}).map((item) => sanitize(item, knownSecrets)),
-      ],
+      evidence: [...evidence, "The machine-readable HTTPS certificate trust probe was unavailable or malformed.", ...trustEvidence],
       nextActions: ["Run 'dotnet dev-certs https --check-trust-machine-readable' and correct local certificate trust."],
       durationMs: 0,
     };

@@ -48,6 +48,28 @@ const commandKeys = {
   trust: commandKey({command: "dotnet", args: ["dev-certs", "https", "--check-trust-machine-readable"]}),
 } as const;
 
+function machineReadableTrustReport(...trustLevels: readonly ("None" | "Partial" | "Full")[]): string {
+  return JSON.stringify(
+    trustLevels.map((trustLevel) => ({
+      Thumbprint: "0123456789ABCDEF0123456789ABCDEF01234567",
+      Subject: "CN=localhost",
+      X509SubjectAlternativeNameExtension: [
+        "localhost",
+        "*.dev.localhost",
+        "*.dev.internal",
+        "host.docker.internal",
+        "host.containers.internal",
+      ],
+      Version: 6,
+      ValidityNotBefore: "2026-01-14T12:00:01+02:00",
+      ValidityNotAfter: "2027-01-14T12:00:01+02:00",
+      IsHttpsDevelopmentCertificate: true,
+      IsExportable: true,
+      TrustLevel: trustLevel,
+    })),
+  );
+}
+
 function requirements(): RepositoryRequirements {
   return {
     node: {major: 24, minor: 0, patch: 0},
@@ -84,7 +106,7 @@ function defaultResponse(command: Readonly<CommandSpec>): CommandResult {
     return commandResult();
   }
   if (key === commandKeys.trust) {
-    return commandResult({stdout: '{"trusted":true}\n'});
+    return commandResult({stdout: machineReadableTrustReport("Full")});
   }
   return commandResult();
 }
@@ -439,6 +461,25 @@ describe("AppHost configuration and user secrets", () => {
     expect(result.evidence.join("\n")).not.toContain(stdout);
   });
 
+  it("accepts a wrapped secret value containing the wrapper terminator text", async () => {
+    const markerSecret = "existing-//END-value";
+    const harness = createHarness({
+      responses: {
+        [commandKeys.secrets]: commandResult({
+          stdout: `//BEGIN\n${JSON.stringify({
+            "Parameters:sql-password": markerSecret,
+            "Parameters:redis-password": "existing-redis",
+          })}\n//END\n`,
+        }),
+      },
+    });
+
+    const result = await harness.phase.run(harness.context);
+
+    expect(result.status).toBe("succeeded");
+    expect(harness.redactions).toContain(markerSecret);
+  });
+
   it("rejects malformed secret JSON without retaining raw stdout", async () => {
     const raw = "//BEGIN\nnot-json-SENSITIVE\n//END\n";
     const harness = createHarness({responses: {[commandKeys.secrets]: commandResult({stdout: raw})}});
@@ -514,6 +555,29 @@ describe("AppHost configuration and user secrets", () => {
     expect(Object.keys(JSON.parse(String(setCall?.[1]?.input)) as object)).toEqual(["Parameters:redis-password"]);
   });
 
+  it("replaces a whitespace-only required secret without registering whitespace as a redaction", async () => {
+    const random = vi.fn<(size: number) => Uint8Array>().mockReturnValue(new Uint8Array(24).fill(3));
+    const harness = createHarness({
+      randomBytes: random,
+      responses: {
+        [commandKeys.secrets]: [
+          commandResult({stdout: '{"Parameters:sql-password":"   ","Parameters:redis-password":"existing-redis"}'}),
+          commandResult({
+            stdout: '{"Parameters:sql-password":"Aa1!AwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMD","Parameters:redis-password":"existing-redis"}',
+          }),
+        ],
+      },
+    });
+
+    const result = await harness.phase.run(harness.context);
+
+    expect(result.status).toBe("succeeded");
+    expect(random).toHaveBeenCalledOnce();
+    expect(harness.redactions).not.toContain("   ");
+    const setCall = harness.run.mock.calls.find(([command]) => command.args[0] === "user-secrets" && command.args[1] === "set");
+    expect(Object.keys(JSON.parse(String(setCall?.[1]?.input)) as object)).toEqual(["Parameters:sql-password"]);
+  });
+
   it("fails post-set verification and sanitizes known values from child errors", async () => {
     const generated = "Aa1!BAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQE";
     const harness = createHarness({
@@ -562,6 +626,30 @@ describe("AppHost configuration and user secrets", () => {
 });
 
 describe("HTTPS development certificate", () => {
+  it.each(["win32", "linux"] as const)("accepts the real machine-readable certificate array contract on %s", async (platform) => {
+    const harness = createHarness({
+      platform,
+      responses: {[commandKeys.trust]: commandResult({stdout: machineReadableTrustReport("Full")})},
+    });
+
+    const result = await harness.phase.run(harness.context);
+
+    expect(result.status).toBe("succeeded");
+    expect(result.evidence.join("\n")).toMatch(/certificate is trusted/i);
+    expect(harness.actionIds).not.toContain("dotnet.certificate.trust");
+  });
+
+  it("accepts trust when any reported development certificate has full trust", async () => {
+    const harness = createHarness({
+      responses: {[commandKeys.trust]: commandResult({stdout: machineReadableTrustReport("None", "Full")})},
+    });
+
+    const result = await harness.phase.run(harness.context);
+
+    expect(result.status).toBe("succeeded");
+    expect(harness.actionIds).not.toContain("dotnet.certificate.trust");
+  });
+
   it("creates an absent certificate and verifies it before checking trust", async () => {
     const createKey = commandKey({command: "dotnet", args: ["dev-certs", "https"]});
     const harness = createHarness({
@@ -582,7 +670,10 @@ describe("HTTPS development certificate", () => {
     const trustMutationKey = commandKey({command: "dotnet", args: ["dev-certs", "https", "--trust"]});
     const harness = createHarness({
       responses: {
-        [commandKeys.trust]: [commandResult({stdout: '{"trusted":false}'}), commandResult({stdout: '{"trusted":true}'})],
+        [commandKeys.trust]: [
+          commandResult({stdout: machineReadableTrustReport("None")}),
+          commandResult({stdout: machineReadableTrustReport("Full")}),
+        ],
         [trustMutationKey]: commandResult(),
       },
     });
@@ -596,7 +687,7 @@ describe("HTTPS development certificate", () => {
 
   it.each(["declined", "planned"] as const)("reports $0 trust without fabricating trusted success", async (disposition) => {
     const harness = createHarness({
-      responses: {[commandKeys.trust]: commandResult({stdout: '{"trusted":false}'})},
+      responses: {[commandKeys.trust]: commandResult({stdout: machineReadableTrustReport("None")})},
       dispositions: {"dotnet.certificate.trust": disposition},
       ...(disposition === "planned"
         ? {
@@ -622,7 +713,7 @@ describe("HTTPS development certificate", () => {
     const trustMutationKey = commandKey({command: "dotnet", args: ["dev-certs", "https", "--trust"]});
     const harness = createHarness({
       responses: {
-        [commandKeys.trust]: commandResult({stdout: '{"trusted":false}'}),
+        [commandKeys.trust]: commandResult({stdout: machineReadableTrustReport("None")}),
         [trustMutationKey]: commandResult({code: 1, stderr: "trust denied"}),
       },
     });
@@ -637,7 +728,10 @@ describe("HTTPS development certificate", () => {
   it("degrades when the trust postcondition remains false", async () => {
     const harness = createHarness({
       responses: {
-        [commandKeys.trust]: [commandResult({stdout: '{"trusted":false}'}), commandResult({stdout: '{"trusted":false}'})],
+        [commandKeys.trust]: [
+          commandResult({stdout: machineReadableTrustReport("None")}),
+          commandResult({stdout: machineReadableTrustReport("Partial")}),
+        ],
       },
     });
 
@@ -647,15 +741,31 @@ describe("HTTPS development certificate", () => {
     expect(result.evidence.join("\n")).toContain("dotnet.certificate.trust");
   });
 
-  it("does not report trust when the machine-readable probe exits nonzero", async () => {
+  it.each(["Full", "None"] as const)(
+    "does not use a %s trust payload when the machine-readable probe exits nonzero",
+    async (trustLevel) => {
+      const harness = createHarness({
+        responses: {[commandKeys.trust]: commandResult({code: 9, stdout: machineReadableTrustReport(trustLevel)})},
+      });
+
+      const result = await harness.phase.run(harness.context);
+
+      expect(result.status).toBe("degraded");
+      expect(result.summary).toMatch(/could not be determined/i);
+      expect(harness.actionIds).not.toContain("dotnet.certificate.trust");
+    },
+  );
+
+  it("degrades with explicit evidence when successful trust output has no recognized state", async () => {
     const harness = createHarness({
-      responses: {[commandKeys.trust]: commandResult({code: 9, stdout: '{"trusted":true}'})},
+      responses: {[commandKeys.trust]: commandResult({stdout: "[]"})},
     });
 
     const result = await harness.phase.run(harness.context);
 
     expect(result.status).toBe("degraded");
-    expect(result.summary).toMatch(/could not be determined/i);
+    expect(result.evidence.join("\n")).toMatch(/recognizable.*trust level/i);
+    expect(harness.actionIds).not.toContain("dotnet.certificate.trust");
   });
 
   it("fails when certificate creation cannot establish the required postcondition", async () => {
@@ -675,7 +785,7 @@ describe("dry-run and safety contracts", () => {
     const harness = createHarness({
       options: setupOptions({dryRun: true}),
       responses: {
-        [commandKeys.trust]: commandResult({stdout: '{"trusted":false}'}),
+        [commandKeys.trust]: commandResult({stdout: machineReadableTrustReport("None")}),
       },
       dispositions: {
         "dotnet.workload-restore": "planned",
