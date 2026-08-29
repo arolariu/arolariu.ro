@@ -3,7 +3,13 @@
  * @module scripts/container-runtime/process
  */
 
-import {spawn} from "node:child_process";
+import {MonorepositoryConsoleLogger, type MonorepositoryLogger} from "../common/logger.ts";
+import {
+  defaultCommandRunner,
+  formatCommand as formatCommonCommand,
+  type CommandRunOptions,
+  type CommandRunner as CommonCommandRunner,
+} from "../common/process.ts";
 import type {RuntimeCommand} from "./adapters.ts";
 
 /** Output handling mode for child processes. */
@@ -20,6 +26,7 @@ export interface CommandRunnerOptions {
   readonly cwd?: string;
   readonly env?: NodeJS.ProcessEnv;
   readonly stdio?: CommandStdioMode;
+  readonly logger?: MonorepositoryLogger;
 }
 
 /** Abstraction over process execution used by runtime wrappers and tests. */
@@ -34,8 +41,7 @@ export interface CommandRunner {
  * @returns A shell-like command string.
  */
 export function formatCommand(command: RuntimeCommand): string {
-  const args = command.args.map((arg) => (/\s/.test(arg) ? `"${arg}"` : arg));
-  return [command.command, ...args].join(" ");
+  return formatCommonCommand(command);
 }
 
 /**
@@ -55,42 +61,33 @@ export function makeDryRunRunner(): CommandRunner & {readonly commands: readonly
   };
 }
 
+/**
+ * Adapts the shared command result to the legacy container-runtime shape.
+ *
+ * @param runner - Shared command runner to adapt.
+ * @returns A container-runtime compatible command runner.
+ */
+export function adaptCommandRunner(runner: CommonCommandRunner): CommandRunner {
+  return {
+    run: async (command, options) => {
+      const output = options?.stdio === "pipe" ? "capture" : (options?.stdio ?? "capture");
+      const compatibilityLogger =
+        output === "tee" ? (options?.logger ?? new MonorepositoryConsoleLogger("container::process")) : options?.logger;
+      const commonOptions: CommandRunOptions = {
+        output,
+        ...(options?.cwd === undefined ? {} : {cwd: options.cwd}),
+        ...(options?.env === undefined ? {} : {env: options.env}),
+        ...(compatibilityLogger === undefined ? {} : {logger: compatibilityLogger}),
+      };
+      const result = await runner.run(command, commonOptions);
+
+      return {
+        code: result.code,
+        output: result.stdout + result.stderr + (result.spawnError === undefined ? "" : result.spawnError),
+      };
+    },
+  };
+}
+
 /** Default process-backed command runner for runtime wrappers. */
-export const defaultRunner: CommandRunner = {
-  run: (command, options) =>
-    new Promise((resolve) => {
-      const stdioMode = options?.stdio ?? "pipe";
-      const child = spawn(command.command, [...command.args], {
-        cwd: options?.cwd,
-        env: options?.env === undefined ? process.env : {...process.env, ...options.env},
-        stdio: stdioMode === "inherit" ? "inherit" : "pipe",
-        windowsHide: true,
-      });
-
-      let output = "";
-
-      child.stdout?.on("data", (data: Buffer) => {
-        const chunk = data.toString();
-        output += chunk;
-        if (stdioMode === "tee") {
-          process.stdout.write(chunk);
-        }
-      });
-
-      child.stderr?.on("data", (data: Buffer) => {
-        const chunk = data.toString();
-        output += chunk;
-        if (stdioMode === "tee") {
-          process.stderr.write(chunk);
-        }
-      });
-
-      child.on("close", (code) => {
-        resolve({code: code ?? 1, output});
-      });
-
-      child.on("error", (error) => {
-        resolve({code: 1, output: error.message});
-      });
-    }),
-};
+export const defaultRunner: CommandRunner = adaptCommandRunner(defaultCommandRunner);

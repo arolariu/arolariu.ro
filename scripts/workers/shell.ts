@@ -15,15 +15,7 @@
  * desired lifetime — caching across runs of the same worker process is safe.
  */
 
-import {spawn} from "node:child_process";
-
-/**
- * npm-installed CLIs that ship as .cmd shims on Windows (instead of .exe binaries).
- * Since Node 18.20+/20.12+/21.7+, spawn() refuses to run .cmd files directly
- * (CVE-2024-27980). We route through cmd.exe /c, which is a real binary on PATH
- * and resolves the shim via PATHEXT.
- */
-const WIN_CMD_SHIMS: ReadonlySet<string> = new Set(["npx", "npm", "yarn", "pnpm"]);
+import {defaultCommandRunner} from "../common/process.ts";
 
 /**
  * Runs a command and captures merged stdout+stderr output.
@@ -39,39 +31,14 @@ const WIN_CMD_SHIMS: ReadonlySet<string> = new Set(["npx", "npm", "yarn", "pnpm"
 export async function runCommand(
   command: string,
   args: readonly string[],
-  opts?: {cwd?: string},
+  opts?: Readonly<{cwd?: string}>,
 ): Promise<{code: number; output: string}> {
-  return new Promise((resolve) => {
-    const needsCmdWrapper = process.platform === "win32" && WIN_CMD_SHIMS.has(command);
-    const [spawnCommand, spawnArgs]: [string, string[]] = needsCmdWrapper
-      ? ["cmd.exe", ["/c", command, ...args]]
-      : [command, [...args]];
+  const result = await defaultCommandRunner.run({command, args}, opts?.cwd === undefined ? undefined : {cwd: opts.cwd});
 
-    const child = spawn(spawnCommand, spawnArgs, {
-      stdio: "pipe",
-      windowsHide: true,
-      cwd: opts?.cwd,
-    });
-
-    let output = "";
-    let errorOutput = "";
-
-    child.stdout?.on("data", (data: Buffer) => {
-      output += data.toString();
-    });
-
-    child.stderr?.on("data", (data: Buffer) => {
-      errorOutput += data.toString();
-    });
-
-    child.on("close", (code) => {
-      resolve({code: code ?? 1, output: output + errorOutput});
-    });
-
-    child.on("error", (error) => {
-      resolve({code: 1, output: error.message});
-    });
-  });
+  return {
+    code: result.code,
+    output: result.stdout + result.stderr + (result.spawnError === undefined ? "" : result.spawnError),
+  };
 }
 
 /**
