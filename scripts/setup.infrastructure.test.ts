@@ -4,11 +4,11 @@
  * @module scripts.setup.infrastructure.test
  */
 
-import {win32} from "node:path";
+import {dirname, isAbsolute, join, resolve} from "node:path";
 import {describe, expect, it, vi} from "vitest";
 
 import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "./common/logger.ts";
-import type {CommandResult, CommandRunner, CommandSpec} from "./common/process.ts";
+import {defaultCommandRunner, type CommandResult, type CommandRunner, type CommandSpec} from "./common/process.ts";
 import {createRepositoryPaths} from "./common/repository-paths.ts";
 import type {RepositoryRequirements} from "./common/requirements.ts";
 import type {ToolingConfigReadResult, ToolingConfigV1} from "./common/tooling-config.ts";
@@ -22,17 +22,18 @@ import {
 } from "./setup.infrastructure.ts";
 import type {SetupAction, SetupActionDisposition, SetupActionExecutor, SetupContext, SetupOptions} from "./setup.types.ts";
 
-const ROOT = "C:\\repo";
+const ROOT = resolve(process.cwd(), ".synthetic", "setup-infrastructure-root");
 const paths = createRepositoryPaths(ROOT);
 const requiredFiles = [
-  win32.join(ROOT, "tooling", "AppHost", "AppHost.csproj"),
-  win32.join(ROOT, "infra", "Local", "Management", "docker-compose.yml"),
-  win32.join(ROOT, "infra", "Local", "Storage", "docker-compose.yml"),
-  win32.join(ROOT, "infra", "Local", "Backend", "docker-compose.yml"),
-  win32.join(ROOT, "infra", "Local", "Frontend", "docker-compose.yml"),
+  join(paths.root, "tooling", "AppHost", "AppHost.csproj"),
+  join(paths.root, "infra", "Local", "Management", "docker-compose.yml"),
+  join(paths.root, "infra", "Local", "Storage", "docker-compose.yml"),
+  join(paths.root, "infra", "Local", "Backend", "docker-compose.yml"),
+  join(paths.root, "infra", "Local", "Frontend", "docker-compose.yml"),
 ] as const;
-const certificatePath = win32.join(ROOT, "infra", "Local", "Management", "certs", "local-cert.pem");
-const certificateKeyPath = win32.join(ROOT, "infra", "Local", "Management", "certs", "local-key.pem");
+const certificatePath = join(paths.root, "infra", "Local", "Management", "certs", "local-cert.pem");
+const certificateKeyPath = join(paths.root, "infra", "Local", "Management", "certs", "local-key.pem");
+const SYNTHETIC_INSPECTION_PORT = 49_151;
 
 function commandResult(patch: Partial<CommandResult> = {}): CommandResult {
   return {
@@ -123,7 +124,7 @@ interface HarnessInput {
   readonly writeConfig?: ((path: string, config: Readonly<ToolingConfigV1>) => Promise<void>) | undefined;
   readonly runner?: CommandRunner | undefined;
   readonly ports?: readonly PortState[] | undefined;
-  readonly inspectFile?: ((path: string) => Promise<"file" | "missing" | "other">) | undefined;
+  readonly inspectFile?: ((path: string) => Promise<"file" | "missing" | "directory" | "other">) | undefined;
   readonly createDirectory?: ((path: string) => Promise<void>) | undefined;
   readonly dispositions?: Readonly<Record<string, SetupActionDisposition>> | undefined;
   readonly actions?: SetupActionExecutor | undefined;
@@ -139,8 +140,8 @@ function createHarness(input: HarnessInput = {}): Readonly<{
   writeConfig: ReturnType<typeof vi.fn<(path: string, config: Readonly<ToolingConfigV1>) => Promise<void>>>;
   inspectedPorts: number[][];
 }> {
-  const run = vi.fn<CommandRunner["run"]>(async (command) =>
-    input.runner === undefined ? successfulRuntimeResponse(command) : input.runner.run(command),
+  const run = vi.fn<CommandRunner["run"]>(async (command, options) =>
+    input.runner === undefined ? successfulRuntimeResponse(command) : input.runner.run(command, options),
   );
   const selected =
     input.select
@@ -192,6 +193,11 @@ function createHarness(input: HarnessInput = {}): Readonly<{
 }
 
 describe("infrastructure setup public contract", () => {
+  it("uses a host-native absolute synthetic repository root", () => {
+    expect(paths.root).toBe(resolve(process.cwd(), ".synthetic", "setup-infrastructure-root"));
+    expect(isAbsolute(paths.root)).toBe(true);
+  });
+
   it("publishes an independent required phase", () => {
     expect(infrastructureSetupPhase).toMatchObject({
       id: "infrastructure",
@@ -469,6 +475,39 @@ describe("container runtime readiness", () => {
     expect(harness.actionRecords.map(({id}) => id)).not.toContain("infrastructure.container.install");
   });
 
+  it("blocks Docker Desktop before proposing installation when Podman is missing", async () => {
+    const runner: CommandRunner = {
+      run: async (command) => {
+        const key = commandKey(command);
+        if (key === "podman --version") {
+          return commandResult({code: 1, spawnError: "ENOENT"});
+        }
+        if (key === "docker version") {
+          return commandResult({stdout: "Docker Desktop 4.50.0"});
+        }
+        if (key === "winget --version") {
+          return commandResult({stdout: "v1.10"});
+        }
+        return successfulRuntimeResponse(command);
+      },
+    };
+    const harness = createHarness({
+      options: setupOptions({engine: "podman"}),
+      runner,
+      dispositions: {"infrastructure.container.install": "planned"},
+      config: {status: "valid", config: {schemaVersion: 1, containerEngine: "podman"}},
+    });
+
+    const result = await harness.phase.run(harness.context);
+    const commands = harness.run.mock.calls.map(([command]) => commandKey(command));
+
+    expect(result.status).toBe("failed");
+    expect(result.evidence.join("\n")).toContain("Docker Desktop is the active backend");
+    expect(harness.actionRecords.map(({id}) => id)).not.toContain("infrastructure.container.install");
+    expect(commands).toContain("docker version");
+    expect(commands).not.toContain("winget --version");
+  });
+
   it("reports manual desktop startup when an installed Rancher CLI cannot reach its backend", async () => {
     const runner: CommandRunner = {
       run: async (command) => {
@@ -658,6 +697,202 @@ describe("required port inspection", () => {
     ]);
   });
 
+  it.each([
+    [
+      "exact IPv4",
+      [
+        {
+          localAddress: "127.0.0.1",
+          family: "IPv4",
+          pid: 701,
+          processName: "node",
+          commandLine: "node exact-listener.js",
+        },
+      ],
+      {pid: 701, processName: "node exact-listener.js"},
+    ],
+    [
+      "wildcard IPv4",
+      [
+        {
+          localAddress: "0.0.0.0",
+          family: "IPv4",
+          pid: 702,
+          processName: "dotnet",
+          commandLine: "dotnet wildcard-listener.dll",
+        },
+      ],
+      {pid: 702, processName: "dotnet wildcard-listener.dll"},
+    ],
+    [
+      "same-PID duplicate address",
+      [
+        {
+          localAddress: "0.0.0.0",
+          family: "IPv4",
+          pid: 703,
+          processName: "python",
+          commandLine: "python duplicate-listener.py",
+        },
+        {
+          localAddress: "127.0.0.1",
+          family: "IPv4",
+          pid: 703,
+          processName: "python",
+          commandLine: "python duplicate-listener.py",
+        },
+      ],
+      {pid: 703, processName: "python duplicate-listener.py"},
+    ],
+  ] as const)("correlates injected %s listener evidence to the IPv4 bind", async (_case, listeners, expected) => {
+    const result = await inspectRequiredPorts([SYNTHETIC_INSPECTION_PORT], {
+      probePort: async () => ({status: "occupied"}),
+      lookupListeners: async () => listeners,
+    });
+
+    expect(result).toEqual([{port: SYNTHETIC_INSPECTION_PORT, available: false, ...expected}]);
+  });
+
+  it("returns a distinct ownership error for an unrelated IPv6-only listener", async () => {
+    const result = await inspectRequiredPorts([SYNTHETIC_INSPECTION_PORT], {
+      probePort: async () => ({status: "occupied"}),
+      lookupListeners: async () => [
+        {
+          localAddress: "::1",
+          family: "IPv6",
+          pid: 704,
+          processName: "node",
+          commandLine: "node ipv6-only.js",
+        },
+      ],
+    });
+
+    expect(result).toEqual([
+      {
+        port: SYNTHETIC_INSPECTION_PORT,
+        available: false,
+        error: "Listener ownership failed: no listener record matched 127.0.0.1 or a wildcard address.",
+      },
+    ]);
+  });
+
+  it("returns a distinct ownership error when multiple PIDs can block the IPv4 bind", async () => {
+    const result = await inspectRequiredPorts([SYNTHETIC_INSPECTION_PORT], {
+      probePort: async () => ({status: "occupied"}),
+      lookupListeners: async () => [
+        {
+          localAddress: "127.0.0.1",
+          family: "IPv4",
+          pid: 705,
+          processName: "node",
+          commandLine: "node exact.js",
+        },
+        {
+          localAddress: "::",
+          family: "IPv6",
+          pid: 706,
+          processName: "dotnet",
+          commandLine: "dotnet wildcard.dll",
+        },
+      ],
+    });
+
+    expect(result).toEqual([
+      {
+        port: SYNTHETIC_INSPECTION_PORT,
+        available: false,
+        error: "Listener ownership is ambiguous: multiple PIDs (705, 706) can block 127.0.0.1.",
+      },
+    ]);
+  });
+
+  it("passes the SQL password removal override to the listener command runner", async () => {
+    const run = vi.fn<CommandRunner["run"]>(async () =>
+      commandResult({
+        stdout: JSON.stringify([
+          {
+            localAddress: "0.0.0.0",
+            family: "IPv4",
+            pid: 707,
+            processName: "node.exe",
+            commandLine: "node exact-listener.js",
+          },
+          {
+            localAddress: "127.0.0.1",
+            family: "IPv4",
+            pid: 707,
+            processName: "node.exe",
+            commandLine: "node exact-listener.js",
+          },
+        ]),
+      }),
+    );
+
+    const result = await inspectRequiredPorts([SYNTHETIC_INSPECTION_PORT], {
+      platform: "win32",
+      probePort: async () => ({status: "occupied"}),
+      listenerRunner: {run},
+    });
+
+    expect(result).toEqual([
+      {
+        port: SYNTHETIC_INSPECTION_PORT,
+        available: false,
+        pid: 707,
+        processName: "node exact-listener.js",
+      },
+    ]);
+    expect(run).toHaveBeenCalledTimes(1);
+    expect(run.mock.calls[0]?.[1]?.env).toHaveProperty("MSSQL_SA_PASSWORD", undefined);
+    expect(run.mock.calls[0]?.[0].args.join(" ")).toContain("foreach ($connection in $connections)");
+    expect(run.mock.calls[0]?.[0].args.join(" ")).not.toContain("Select-Object -First");
+  });
+
+  it("retains POSIX listener addresses and resolves each exact PID command line", async () => {
+    const run = vi.fn<CommandRunner["run"]>(async (command) => {
+      const key = commandKey(command);
+      if (key.includes("-i4TCP:")) {
+        return commandResult({stdout: `p708\ncnode\nn127.0.0.1:${SYNTHETIC_INSPECTION_PORT}\n`});
+      }
+      if (key.includes("-i6TCP:")) {
+        return commandResult({stdout: `p709\ncnode\nn[::1]:${SYNTHETIC_INSPECTION_PORT}\n`});
+      }
+      if (key === "ps -p 708 -o command=") {
+        return commandResult({stdout: "node exact-posix-listener.js\n"});
+      }
+      if (key === "ps -p 709 -o command=") {
+        return commandResult({stdout: "node unrelated-ipv6-listener.js\n"});
+      }
+      return commandResult({code: 1, stderr: `Unexpected command: ${key}`});
+    });
+
+    const result = await inspectRequiredPorts([SYNTHETIC_INSPECTION_PORT], {
+      platform: "linux",
+      probePort: async () => ({status: "occupied"}),
+      listenerRunner: {run},
+    });
+
+    expect(result).toEqual([
+      {
+        port: SYNTHETIC_INSPECTION_PORT,
+        available: false,
+        pid: 708,
+        processName: "node exact-posix-listener.js",
+      },
+    ]);
+    expect(run.mock.calls.map(([command]) => commandKey(command))).toEqual(
+      expect.arrayContaining([
+        `lsof -nP -a -i4TCP:${SYNTHETIC_INSPECTION_PORT} -sTCP:LISTEN -Fpcn`,
+        `lsof -nP -a -i6TCP:${SYNTHETIC_INSPECTION_PORT} -sTCP:LISTEN -Fpcn`,
+        "ps -p 708 -o command=",
+        "ps -p 709 -o command=",
+      ]),
+    );
+    for (const [, options] of run.mock.calls) {
+      expect(options?.env).toHaveProperty("MSSQL_SA_PASSWORD", undefined);
+    }
+  });
+
   it("blocks an unrelated listener with exact PID and process evidence", async () => {
     const harness = createHarness({
       ports: [
@@ -674,9 +909,9 @@ describe("required port inspection", () => {
   });
 
   it.each([
-    [3000, "node C:\\repo\\node_modules\\next\\dist\\bin\\next dev"],
-    [5000, "dotnet run --project C:\\repo\\tooling\\AppHost\\AppHost.csproj"],
-    [5002, "python -m uvicorn main:app --app-dir C:\\repo\\sites\\exp.arolariu.ro"],
+    [3000, `node ${join(paths.root, "node_modules", "next", "dist", "bin", "next")} dev`],
+    [5000, `dotnet run --project ${join(paths.root, "tooling", "AppHost", "AppHost.csproj")}`],
+    [5002, `python -m uvicorn main:app --app-dir ${join(paths.root, "sites", "exp.arolariu.ro")}`],
   ] as const)("recognizes the repository host process for port %s", async (port, processName) => {
     const harness = createHarness({
       ports: requiredLocalPorts.map((candidate) =>
@@ -690,6 +925,45 @@ describe("required port inspection", () => {
     expect(result.status).toBe("degraded");
     expect(result.nextActions).toContain("npm run dev:selfhost:stop -- --engine rancher");
     expect(result.nextActions.join("\n")).toContain("Stop the owning foreground Aspire/npm process directly.");
+  });
+
+  it.each([
+    [3000, "node C:\\tools\\next\\dist\\bin\\next dev"],
+    [3002, "node C:\\tools\\nx\\bin\\nx serve status"],
+    [4173, "node C:\\tools\\vite\\bin\\vite"],
+    [5000, "dotnet C:\\tools\\AppHost.dll"],
+    [5000, "dotnet C:\\tools\\api.dll"],
+    [5002, "python -m uvicorn main:app"],
+    [5002, "python C:\\tools\\exp\\main.py"],
+  ] as const)("uses bounded repository process markers for port %s: %s", async (port, processName) => {
+    const harness = createHarness({
+      ports: requiredLocalPorts.map((candidate) =>
+        candidate === port ? {port, available: false, pid: 5100 + port, processName} : {port: candidate, available: true},
+      ),
+      config: {status: "valid", config: {schemaVersion: 1, containerEngine: "rancher"}},
+    });
+
+    const result = await harness.phase.run(harness.context);
+
+    expect(result.status).toBe("degraded");
+  });
+
+  it.each([
+    [3000, "node C:\\unrelated\\nextcloud\\server.js"],
+    [5000, "dotnet C:\\unrelated\\capital.dll"],
+    [5002, "python C:\\unrelated\\express\\main.py"],
+  ] as const)("does not classify incidental process substrings for port %s: %s", async (port, processName) => {
+    const harness = createHarness({
+      ports: requiredLocalPorts.map((candidate) =>
+        candidate === port ? {port, available: false, pid: 6100 + port, processName} : {port: candidate, available: true},
+      ),
+      config: {status: "valid", config: {schemaVersion: 1, containerEngine: "rancher"}},
+    });
+
+    const result = await harness.phase.run(harness.context);
+
+    expect(result.status).toBe("failed");
+    expect(result.evidence.join("\n")).not.toContain("occupied by repository");
   });
 
   it.each([
@@ -899,6 +1173,9 @@ describe("optional selfhost certificates", () => {
 
     expect(result.status).toBe("degraded");
     expect(harness.actionRecords.map(({id}) => id)).toEqual(["infrastructure.mkcert.install"]);
+    expect(result.nextActions).toEqual([
+      "Allow action 'infrastructure.mkcert.install' or install mkcert manually from https://github.com/FiloSottile/mkcert#installation, then rerun setup.",
+    ]);
   });
 
   it("plans the complete mkcert dependency chain without executing commands or creating a directory", async () => {
@@ -954,7 +1231,7 @@ describe("optional selfhost certificates", () => {
     expect(result.status).toBe("succeeded");
     expect(harness.actionRecords).toContainEqual(expect.objectContaining({id: "infrastructure.mkcert.trust", scope: "system"}));
     expect(harness.actionRecords).toContainEqual(expect.objectContaining({id: "infrastructure.certificates.generate", scope: "user"}));
-    expect(createdDirectories).toEqual([win32.dirname(certificatePath)]);
+    expect(createdDirectories).toEqual([dirname(certificatePath)]);
     expect(harness.run.mock.calls).toContainEqual([
       {
         command: "mkcert",
@@ -975,6 +1252,23 @@ describe("optional selfhost certificates", () => {
 
     expect(result.status).toBe("degraded");
     expect(harness.actionRecords.map(({id}) => id)).toEqual(["infrastructure.mkcert.trust"]);
+    expect(result.nextActions).toEqual(["Allow action 'infrastructure.mkcert.trust', then rerun setup."]);
+    expect(result.nextActions.join("\n")).not.toContain("mkcert#installation");
+  });
+
+  it("uses generation-specific guidance when certificate generation is declined", async () => {
+    const harness = createHarness({
+      dispositions: {"infrastructure.certificates.generate": "declined"},
+      inspectFile: async (path) => (path === certificatePath || path === certificateKeyPath ? "missing" : "file"),
+      config: {status: "valid", config: {schemaVersion: 1, containerEngine: "rancher"}},
+    });
+
+    const result = await harness.phase.run(harness.context);
+
+    expect(result.status).toBe("degraded");
+    expect(harness.actionRecords.map(({id}) => id)).toEqual(["infrastructure.mkcert.trust", "infrastructure.certificates.generate"]);
+    expect(result.nextActions).toEqual(["Allow action 'infrastructure.certificates.generate', then rerun setup."]);
+    expect(result.nextActions.join("\n")).not.toContain("mkcert#installation");
   });
 
   it("degrades when either generated certificate postcondition is not a regular file", async () => {
@@ -999,6 +1293,8 @@ describe("optional selfhost certificates", () => {
 
     expect(result.status).toBe("degraded");
     expect(result.evidence.join("\n")).toContain("certificate generation postcondition failed");
+    expect(result.nextActions).toEqual(["Resolve the reported certificate generation failure, then rerun setup."]);
+    expect(result.nextActions.join("\n")).not.toContain("mkcert#installation");
   });
 
   it("structures an ordinary certificate generation failure as degraded", async () => {
@@ -1018,6 +1314,8 @@ describe("optional selfhost certificates", () => {
 
     expect(result.status).toBe("degraded");
     expect(result.evidence.join("\n")).toContain("generation denied");
+    expect(result.nextActions).toEqual(["Resolve the reported certificate preparation failure, then rerun setup."]);
+    expect(result.nextActions.join("\n")).not.toContain("mkcert#installation");
   });
 
   it("degrades an invalid certificate path kind without attempting replacement", async () => {
@@ -1029,8 +1327,52 @@ describe("optional selfhost certificates", () => {
     const result = await harness.phase.run(harness.context);
 
     expect(result.status).toBe("degraded");
-    expect(result.evidence.join("\n")).toContain("not a regular file");
+    expect(result.evidence).toContain(`Optional selfhost certificate paths have invalid kinds: ${certificatePath} (other).`);
+    expect(result.nextActions).toEqual([`Replace or remove the invalid optional certificate path ${certificatePath}, then rerun setup.`]);
+    expect(result.nextActions.join("\n")).not.toContain("mkcert#installation");
     expect(harness.actionRecords).toHaveLength(0);
+  });
+
+  it("identifies every invalid certificate path with its exact inspected kind", async () => {
+    const harness = createHarness({
+      inspectFile: async (path) => {
+        if (path === certificatePath) {
+          return "directory";
+        }
+        return path === certificateKeyPath ? "other" : "file";
+      },
+      config: {status: "valid", config: {schemaVersion: 1, containerEngine: "rancher"}},
+    });
+
+    const result = await harness.phase.run(harness.context);
+
+    expect(result.status).toBe("degraded");
+    expect(result.evidence).toContain(
+      `Optional selfhost certificate paths have invalid kinds: ${certificatePath} (directory), ${certificateKeyPath} (other).`,
+    );
+    expect(result.nextActions).toEqual([
+      `Replace or remove the invalid optional certificate paths ${certificatePath}, ${certificateKeyPath}, then rerun setup.`,
+    ]);
+    expect(harness.actionRecords).toHaveLength(0);
+  });
+
+  it("uses access guidance for an optional certificate inspection error", async () => {
+    const harness = createHarness({
+      inspectFile: async (path) => {
+        if (path === certificatePath) {
+          throw new Error("EACCES simulated");
+        }
+        return "file";
+      },
+      config: {status: "valid", config: {schemaVersion: 1, containerEngine: "rancher"}},
+    });
+
+    const result = await harness.phase.run(harness.context);
+
+    expect(result.status).toBe("degraded");
+    expect(result.evidence).toContain(`Unable to inspect optional selfhost certificate path ${certificatePath}: EACCES simulated`);
+    expect(result.nextActions).toEqual(["Check access and permissions for the optional certificate and key paths, then rerun setup."]);
+    expect(result.nextActions.join("\n")).not.toContain("mkcert#installation");
   });
 
   it("uses the dnf mkcert proposal when apt is unavailable", async () => {
@@ -1143,7 +1485,12 @@ describe("failure, precedence, and safety", () => {
       },
       ports: requiredLocalPorts.map((port) =>
         port === 3000
-          ? {port, available: false, pid: 81, processName: "node C:\\repo\\node_modules\\next\\dist\\bin\\next dev"}
+          ? {
+              port,
+              available: false,
+              pid: 81,
+              processName: `node ${join(paths.root, "node_modules", "next", "dist", "bin", "next")} dev`,
+            }
           : {port, available: true},
       ),
       inspectFile: async (path) => (path === certificatePath || path === certificateKeyPath ? "missing" : "file"),
@@ -1241,5 +1588,92 @@ describe("failure, precedence, and safety", () => {
 
     expect(result.status).toBe("succeeded");
     expect(serializedCommands).not.toContain("MSSQL_SA_PASSWORD");
+  });
+
+  it("removes the parent MSSQL_SA_PASSWORD from every phase child environment", async () => {
+    const key = "MSSQL_SA_PASSWORD";
+    const hadPreviousValue = Object.hasOwn(process.env, key);
+    const previousValue = process.env[key];
+    process.env[key] = "phase-parent-sentinel";
+    const childEnvironmentStates: string[] = [];
+    const commandEnvironments: Array<Readonly<NodeJS.ProcessEnv> | undefined> = [];
+    let podmanProbes = 0;
+    let mkcertProbes = 0;
+    let generated = false;
+    const runner: CommandRunner = {
+      run: async (command, options) => {
+        commandEnvironments.push(options?.env);
+        const verification = await defaultCommandRunner.run(
+          {
+            command: process.execPath,
+            args: ["-e", `process.stdout.write(Object.hasOwn(process.env, ${JSON.stringify(key)}) ? "present" : "absent")`],
+          },
+          options?.env === undefined ? {} : {env: options.env},
+        );
+        childEnvironmentStates.push(verification.stdout);
+
+        const commandText = commandKey(command);
+        if (commandText === "podman --version") {
+          podmanProbes++;
+          return podmanProbes === 1 ? commandResult({code: 1, spawnError: "ENOENT"}) : commandResult({stdout: "podman version 5.8.2"});
+        }
+        if (commandText === "mkcert --version") {
+          mkcertProbes++;
+          return mkcertProbes === 1 ? commandResult({code: 1, spawnError: "ENOENT"}) : commandResult({stdout: "mkcert v1.4.4"});
+        }
+        if (commandText === "podman compose version") {
+          return commandResult({stdout: "podman-compose version 1.5.0"});
+        }
+        if (commandText === "podman info --format json") {
+          return commandResult({stdout: "{}"});
+        }
+        if (commandText === "winget --version") {
+          return commandResult({stdout: "v1.10"});
+        }
+        return commandResult();
+      },
+    };
+    const harness = createHarness({
+      options: setupOptions({engine: "podman"}),
+      runner,
+      inspectFile: async (path) => (path === certificatePath || path === certificateKeyPath ? (generated ? "file" : "missing") : "file"),
+      createDirectory: async () => {
+        generated = true;
+      },
+      config: {status: "valid", config: {schemaVersion: 1, containerEngine: "podman"}},
+    });
+
+    try {
+      const result = await harness.phase.run(harness.context);
+      const commands = harness.run.mock.calls.map(([command]) => commandKey(command));
+
+      expect(result.status).toBe("succeeded");
+      expect(commands).toEqual(
+        expect.arrayContaining([
+          "docker version",
+          "podman --version",
+          "podman compose version",
+          "podman info --format json",
+          "podman ps --format {{.Names}}\t{{.Ports}}",
+          "winget --version",
+          "winget install --id RedHat.Podman-Desktop --exact --accept-package-agreements --accept-source-agreements",
+          "mkcert --version",
+          "winget install --id FiloSottile.mkcert --exact --accept-package-agreements --accept-source-agreements",
+          "mkcert -install",
+          `mkcert -key-file ${certificateKeyPath} -cert-file ${certificatePath} localhost *.localhost`,
+        ]),
+      );
+      expect(childEnvironmentStates).not.toHaveLength(0);
+      expect(childEnvironmentStates).toEqual(commandEnvironments.map(() => "absent"));
+      for (const environment of commandEnvironments) {
+        expect(environment).toHaveProperty(key, undefined);
+      }
+    } finally {
+      if (hadPreviousValue) {
+        process.env[key] = previousValue;
+      } else {
+        delete process.env[key];
+      }
+    }
   });
 });

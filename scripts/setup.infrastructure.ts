@@ -7,11 +7,11 @@ import {mkdir, stat} from "node:fs/promises";
 import {createServer} from "node:net";
 import {dirname, resolve} from "node:path";
 
-import {defaultCommandRunner, type CommandResult} from "./common/process.ts";
+import {defaultCommandRunner, type CommandResult, type CommandRunner, type CommandRunOptions} from "./common/process.ts";
 import type {ToolingConfigReadResult, ToolingConfigV1} from "./common/tooling-config.ts";
 import {mergeToolingConfig, readToolingConfig, writeToolingConfig} from "./common/tooling-config.ts";
 import {getContainerAdapter, type ContainerRuntimeAdapter} from "./container-runtime/adapters.ts";
-import {requiredLocalPorts, runSharedPreflight} from "./container-runtime/preflight.ts";
+import {assertNoDockerDesktopBackend, requiredLocalPorts, runSharedPreflight} from "./container-runtime/preflight.ts";
 import {adaptCommandRunner} from "./container-runtime/process.ts";
 import {resolveContainerEngine} from "./container-runtime/selection.ts";
 import type {ContainerEngine, EngineSelectionSource} from "./container-runtime/types.ts";
@@ -27,7 +27,7 @@ export interface PortState {
   readonly error?: string;
 }
 
-type FileKind = "file" | "missing" | "other";
+type FileKind = "file" | "missing" | "directory" | "other";
 
 interface InfrastructureSetupDependencies {
   readonly platform: NodeJS.Platform;
@@ -46,7 +46,32 @@ const MKCERT_INSTALL_ACTION = "infrastructure.mkcert.install";
 const MKCERT_TRUST_ACTION = "infrastructure.mkcert.trust";
 const CERTIFICATE_GENERATE_ACTION = "infrastructure.certificates.generate";
 const SELECT_ENGINE_ACTION = "npm run setup -- --engine rancher|podman";
-const MKCERT_MANUAL_ACTION = "Install mkcert from https://github.com/FiloSottile/mkcert#installation, then rerun setup.";
+const MKCERT_MANUAL_URL = "https://github.com/FiloSottile/mkcert#installation";
+const MKCERT_MANUAL_ACTION = `Install mkcert from ${MKCERT_MANUAL_URL}, then rerun setup.`;
+const SQL_PASSWORD_ENVIRONMENT_KEY = "MSSQL_SA_PASSWORD";
+
+function credentialIsolatedEnvironment(environment?: Readonly<NodeJS.ProcessEnv>): NodeJS.ProcessEnv {
+  const isolated: NodeJS.ProcessEnv = {};
+  if (environment !== undefined) {
+    for (const key of Object.keys(environment)) {
+      if (key.toUpperCase() !== SQL_PASSWORD_ENVIRONMENT_KEY) {
+        isolated[key] = environment[key];
+      }
+    }
+  }
+  isolated[SQL_PASSWORD_ENVIRONMENT_KEY] = undefined;
+  return isolated;
+}
+
+function createCredentialIsolatedRunner(runner: CommandRunner): CommandRunner {
+  return {
+    run: (command, options: Readonly<CommandRunOptions> = {}) =>
+      runner.run(command, {
+        ...options,
+        env: credentialIsolatedEnvironment(options.env),
+      }),
+  };
+}
 
 function isInterrupted(error: unknown): boolean {
   return error instanceof Error && error.name === "AbortError";
@@ -66,94 +91,258 @@ function invalidPortState(port: number): PortState | null {
     : {port, available: false, error: `Invalid TCP port ${String(port)}.`};
 }
 
-async function lookupListener(port: number): Promise<Omit<PortState, "port" | "available">> {
-  if (process.platform === "win32") {
-    const script = [
-      `$connection = Get-NetTCPConnection -State Listen -LocalPort ${port} -ErrorAction Stop | Select-Object -First 1`,
-      "if ($null -eq $connection) { throw 'No listener owner found.' }",
-      '$owner = Get-CimInstance Win32_Process -Filter "ProcessId = $($connection.OwningProcess)" -ErrorAction Stop',
-      "[pscustomobject]@{ pid = $connection.OwningProcess; processName = if ($owner.CommandLine) { $owner.CommandLine } else { $owner.Name } } | ConvertTo-Json -Compress",
-    ].join("; ");
-    const result = await defaultCommandRunner.run({
-      command: "powershell",
-      args: ["-NoProfile", "-NonInteractive", "-Command", script],
-    });
-    if (!isSuccessfulCommand(result)) {
-      throw new Error(result.stderr.trim() || result.stdout.trim() || result.spawnError || `PowerShell exited with code ${result.code}.`);
-    }
-    const value: unknown = JSON.parse(result.stdout);
-    if (
-      typeof value !== "object"
-      || value === null
-      || !("pid" in value)
-      || typeof value.pid !== "number"
-      || !("processName" in value)
-      || typeof value.processName !== "string"
-    ) {
-      throw new Error("PowerShell returned invalid listener ownership evidence.");
-    }
-    return {pid: value.pid, processName: value.processName};
-  }
+type ListenerFamily = "IPv4" | "IPv6";
 
-  const lsof = await defaultCommandRunner.run({
-    command: "lsof",
-    args: ["-nP", `-iTCP:${port}`, "-sTCP:LISTEN", "-t"],
-  });
-  if (!isSuccessfulCommand(lsof)) {
-    throw new Error(lsof.stderr.trim() || lsof.stdout.trim() || lsof.spawnError || `lsof exited with code ${lsof.code}.`);
-  }
-  const firstLine = lsof.stdout.split(/\r?\n/u).find((line) => line.trim() !== "");
-  const pid = firstLine === undefined ? Number.NaN : Number(firstLine.trim());
-  if (!Number.isSafeInteger(pid) || pid <= 0) {
-    throw new Error("lsof returned no valid listener PID.");
-  }
-  const ps = await defaultCommandRunner.run({
-    command: "ps",
-    args: ["-p", String(pid), "-o", "command="],
-  });
-  if (!isSuccessfulCommand(ps) || ps.stdout.trim() === "") {
-    throw new Error(ps.stderr.trim() || ps.stdout.trim() || ps.spawnError || `ps exited with code ${ps.code}.`);
-  }
-  return {pid, processName: ps.stdout.trim()};
+interface ListenerRecord {
+  readonly localAddress: string;
+  readonly family: ListenerFamily;
+  readonly pid: number;
+  readonly processName: string;
+  readonly commandLine: string;
 }
 
-async function inspectPort(port: number): Promise<PortState> {
+type BindProbeResult = Readonly<{status: "available"}> | Readonly<{status: "occupied"}> | Readonly<{status: "error"; error: string}>;
+
+interface PortInspectionDependencies {
+  readonly platform: NodeJS.Platform;
+  readonly listenerRunner: CommandRunner;
+  readonly probePort: (port: number) => Promise<BindProbeResult>;
+  readonly lookupListeners?: (port: number) => Promise<readonly ListenerRecord[]>;
+}
+
+function isListenerRecord(value: unknown): value is ListenerRecord {
+  return (
+    typeof value === "object"
+    && value !== null
+    && "localAddress" in value
+    && typeof value.localAddress === "string"
+    && "family" in value
+    && (value.family === "IPv4" || value.family === "IPv6")
+    && "pid" in value
+    && typeof value.pid === "number"
+    && Number.isSafeInteger(value.pid)
+    && value.pid > 0
+    && "processName" in value
+    && typeof value.processName === "string"
+    && "commandLine" in value
+    && typeof value.commandLine === "string"
+  );
+}
+
+function commandFailure(result: Readonly<CommandResult>, fallback: string): string {
+  return result.stderr.trim() || result.stdout.trim() || result.spawnError || fallback;
+}
+
+async function lookupWindowsListeners(port: number, runner: CommandRunner): Promise<readonly ListenerRecord[]> {
+  const script = [
+    `$connections = @(Get-NetTCPConnection -State Listen -LocalPort ${port} -ErrorAction Stop);`,
+    "$records = foreach ($connection in $connections) {",
+    '$owner = Get-CimInstance Win32_Process -Filter "ProcessId = $($connection.OwningProcess)" -ErrorAction Stop;',
+    "[pscustomobject]@{",
+    "localAddress = [string]$connection.LocalAddress;",
+    "family = $(if ([string]$connection.LocalAddress -like '*:*') { 'IPv6' } else { 'IPv4' });",
+    "pid = [int]$connection.OwningProcess;",
+    "processName = [string]$owner.Name;",
+    "commandLine = $(if ($owner.CommandLine) { [string]$owner.CommandLine } else { [string]$owner.Name })",
+    "}",
+    "};",
+    "ConvertTo-Json -InputObject @($records) -Compress",
+  ].join(" ");
+  const result = await runner.run(
+    {
+      command: "powershell",
+      args: ["-NoProfile", "-NonInteractive", "-Command", script],
+    },
+    {env: credentialIsolatedEnvironment()},
+  );
+  if (!isSuccessfulCommand(result)) {
+    throw new Error(commandFailure(result, `PowerShell exited with code ${result.code}.`));
+  }
+
+  const value: unknown = JSON.parse(result.stdout);
+  if (!Array.isArray(value) || !value.every(isListenerRecord)) {
+    throw new Error("PowerShell returned invalid listener ownership evidence.");
+  }
+  return value;
+}
+
+function lsofAddress(value: string, port: number): string | null {
+  const endpoint = value
+    .replace(/^TCP\s+/u, "")
+    .replace(/\s+\(LISTEN\)$/u, "")
+    .trim();
+  const suffix = `:${port}`;
+  if (!endpoint.endsWith(suffix)) {
+    return null;
+  }
+  const address = endpoint.slice(0, -suffix.length);
+  return address.startsWith("[") && address.endsWith("]") ? address.slice(1, -1) : address;
+}
+
+async function lookupLsofFamily(port: number, family: ListenerFamily, runner: CommandRunner): Promise<readonly ListenerRecord[]> {
+  const result = await runner.run(
+    {
+      command: "lsof",
+      args: ["-nP", "-a", `-i${family === "IPv4" ? "4" : "6"}TCP:${port}`, "-sTCP:LISTEN", "-Fpcn"],
+    },
+    {env: credentialIsolatedEnvironment()},
+  );
+  if (!isSuccessfulCommand(result)) {
+    if (
+      result.code === 1
+      && result.stdout.trim() === ""
+      && result.stderr.trim() === ""
+      && result.spawnError === undefined
+      && !result.timedOut
+      && result.signal === undefined
+    ) {
+      return [];
+    }
+    throw new Error(commandFailure(result, `lsof exited with code ${result.code}.`));
+  }
+
+  const records: ListenerRecord[] = [];
+  let pid: number | undefined;
+  let processName = "";
+  for (const line of result.stdout.split(/\r?\n/u)) {
+    const field = line[0];
+    const value = line.slice(1);
+    if (field === "p") {
+      const parsedPid = Number(value);
+      pid = Number.isSafeInteger(parsedPid) && parsedPid > 0 ? parsedPid : undefined;
+      processName = "";
+    } else if (field === "c") {
+      processName = value;
+    } else if (field === "n" && pid !== undefined) {
+      const localAddress = lsofAddress(value, port);
+      if (localAddress !== null) {
+        records.push({localAddress, family, pid, processName, commandLine: ""});
+      }
+    }
+  }
+  return records;
+}
+
+async function lookupPosixListeners(port: number, runner: CommandRunner): Promise<readonly ListenerRecord[]> {
+  const records = (await Promise.all([lookupLsofFamily(port, "IPv4", runner), lookupLsofFamily(port, "IPv6", runner)])).flat();
+  const commandLines = new Map<number, string>();
+  for (const pid of new Set(records.map((record) => record.pid))) {
+    const result = await runner.run(
+      {
+        command: "ps",
+        args: ["-p", String(pid), "-o", "command="],
+      },
+      {env: credentialIsolatedEnvironment()},
+    );
+    if (!isSuccessfulCommand(result) || result.stdout.trim() === "") {
+      throw new Error(commandFailure(result, `ps exited with code ${result.code}.`));
+    }
+    commandLines.set(pid, result.stdout.trim());
+  }
+  return records.map((record) => ({
+    ...record,
+    commandLine: commandLines.get(record.pid) ?? record.processName,
+  }));
+}
+
+async function lookupListeners(port: number, platform: NodeJS.Platform, runner: CommandRunner): Promise<readonly ListenerRecord[]> {
+  if (platform === "win32") {
+    return lookupWindowsListeners(port, runner);
+  }
+  return lookupPosixListeners(port, runner);
+}
+
+function normalizedListenerAddress(address: string): string {
+  const normalized = address.trim().toLowerCase();
+  const unwrapped = normalized.startsWith("[") && normalized.endsWith("]") ? normalized.slice(1, -1) : normalized;
+  const zoneIndex = unwrapped.indexOf("%");
+  return zoneIndex === -1 ? unwrapped : unwrapped.slice(0, zoneIndex);
+}
+
+function canBlockIpv4Loopback(record: ListenerRecord): boolean {
+  const address = normalizedListenerAddress(record.localAddress);
+  if (record.family === "IPv4") {
+    return address === "127.0.0.1" || address === "0.0.0.0" || address === "*";
+  }
+  return address === "::" || address === "*" || address === "::ffff:127.0.0.1";
+}
+
+function correlateListenerOwner(records: readonly ListenerRecord[]): Omit<PortState, "port" | "available"> {
+  const relevant = records.filter(canBlockIpv4Loopback);
+  if (relevant.length === 0) {
+    return {error: "Listener ownership failed: no listener record matched 127.0.0.1 or a wildcard address."};
+  }
+
+  const pids = [...new Set(relevant.map((record) => record.pid))].toSorted((left, right) => left - right);
+  if (pids.length !== 1) {
+    return {error: `Listener ownership is ambiguous: multiple PIDs (${pids.join(", ")}) can block 127.0.0.1.`};
+  }
+
+  const owner =
+    relevant.find((record) => record.family === "IPv4" && normalizedListenerAddress(record.localAddress) === "127.0.0.1") ?? relevant[0];
+  if (owner === undefined) {
+    return {error: "Listener ownership failed: no listener owner remained after address correlation."};
+  }
+  return {
+    pid: owner.pid,
+    processName: owner.commandLine.trim() === "" ? owner.processName : owner.commandLine,
+  };
+}
+
+async function probePort(port: number): Promise<BindProbeResult> {
+  return new Promise<BindProbeResult>((resolveProbe) => {
+    const server = createServer();
+    const settle = (state: BindProbeResult): void => {
+      server.removeAllListeners();
+      resolveProbe(state);
+    };
+    server.unref();
+    server.once("error", (error: NodeJS.ErrnoException) => {
+      settle(
+        error.code === "EADDRINUSE" ? {status: "occupied"} : {status: "error", error: `Port availability probe failed: ${error.message}`},
+      );
+    });
+    server.once("listening", () => {
+      server.close((error) => {
+        settle(error === undefined ? {status: "available"} : {status: "error", error: `Port probe cleanup failed: ${error.message}`});
+      });
+    });
+    server.listen({host: "127.0.0.1", port, exclusive: true});
+  });
+}
+
+async function inspectPort(port: number, dependencies: PortInspectionDependencies): Promise<PortState> {
   const invalid = invalidPortState(port);
   if (invalid !== null) {
     return invalid;
   }
 
-  return new Promise<PortState>((resolvePort) => {
-    const server = createServer();
-    const settle = (state: PortState): void => {
-      server.removeAllListeners();
-      resolvePort(state);
+  let probe: BindProbeResult;
+  try {
+    probe = await dependencies.probePort(port);
+  } catch (error) {
+    return {port, available: false, error: `Port availability probe failed: ${errorMessage(error)}`};
+  }
+  if (probe.status === "available") {
+    return {port, available: true};
+  }
+  if (probe.status === "error") {
+    return {port, available: false, error: probe.error};
+  }
+
+  try {
+    const records =
+      dependencies.lookupListeners === undefined
+        ? await lookupListeners(port, dependencies.platform, dependencies.listenerRunner)
+        : await dependencies.lookupListeners(port);
+    return {port, available: false, ...correlateListenerOwner(records)};
+  } catch (error) {
+    return {
+      port,
+      available: false,
+      error: `Listener lookup failed: ${errorMessage(error)}`,
     };
-    server.unref();
-    server.once("error", (error: NodeJS.ErrnoException) => {
-      if (error.code !== "EADDRINUSE") {
-        settle({port, available: false, error: `Port availability probe failed: ${error.message}`});
-        return;
-      }
-      void lookupListener(port).then(
-        (owner) => settle({port, available: false, ...owner}),
-        (lookupError: unknown) =>
-          settle({
-            port,
-            available: false,
-            error: `Listener lookup failed: ${errorMessage(lookupError)}`,
-          }),
-      );
-    });
-    server.once("listening", () => {
-      server.close((error) => {
-        settle(
-          error === undefined ? {port, available: true} : {port, available: false, error: `Port probe cleanup failed: ${error.message}`},
-        );
-      });
-    });
-    server.listen({host: "127.0.0.1", port, exclusive: true});
-  });
+  }
 }
 
 function phaseResult(context: SetupContext, startedAt: number, input: Omit<SetupPhaseResult, "durationMs">): SetupPhaseResult {
@@ -165,7 +354,8 @@ function phaseResult(context: SetupContext, startedAt: number, input: Omit<Setup
 
 async function inspectRegularFile(path: string): Promise<FileKind> {
   try {
-    return (await stat(path)).isFile() ? "file" : "other";
+    const pathStat = await stat(path);
+    return pathStat.isFile() ? "file" : pathStat.isDirectory() ? "directory" : "other";
   } catch (error) {
     if (error instanceof Error && "code" in error && error.code === "ENOENT") {
       return "missing";
@@ -225,12 +415,22 @@ export function selectContainerInstallationProposal(
  * Inspects required local ports without starting or stopping services.
  *
  * @param ports - Optional ordered ports to inspect.
+ * @param overrides - Optional external bind/listener boundaries for deterministic inspection.
  * @returns Availability and listener ownership evidence in input order.
  */
-export async function inspectRequiredPorts(ports: readonly number[] = requiredLocalPorts): Promise<readonly PortState[]> {
+export async function inspectRequiredPorts(
+  ports: readonly number[] = requiredLocalPorts,
+  overrides: Readonly<Partial<PortInspectionDependencies>> = {},
+): Promise<readonly PortState[]> {
+  const dependencies: PortInspectionDependencies = {
+    platform: overrides.platform ?? process.platform,
+    listenerRunner: overrides.listenerRunner ?? defaultCommandRunner,
+    probePort: overrides.probePort ?? probePort,
+    ...(overrides.lookupListeners === undefined ? {} : {lookupListeners: overrides.lookupListeners}),
+  };
   const states: PortState[] = [];
   for (const port of ports) {
-    states.push(await inspectPort(port));
+    states.push(await inspectPort(port, dependencies));
   }
   return states;
 }
@@ -283,17 +483,20 @@ const ASPIRE_RESOURCE_TOKENS = ["traefik", "healthchecks", "mssql", "cosmos", "a
 function repositoryProcessOwnsPort(port: number, processName: string, root: string): boolean {
   const command = processName.replaceAll("\\", "/").toLowerCase();
   const normalizedRoot = root.replaceAll("\\", "/").toLowerCase();
-  if (command.includes(normalizedRoot)) {
+  if (normalizedRoot.length > 1 && command.includes(normalizedRoot)) {
     return true;
   }
   if ([3000, 3002, 4173].includes(port)) {
-    return /\bnode(?:\.exe)?\b/u.test(command) && /(arolariu|nx|next|vite|svelte)/u.test(command);
+    return /\bnode(?:\.exe)?\b/u.test(command) && /(?:^|[^a-z0-9_])(?:arolariu|nx|next|vite|svelte)(?:$|[^a-z0-9_])/u.test(command);
   }
   if (port === 5000) {
-    return /\bdotnet(?:\.exe)?\b/u.test(command) && /(apphost|api|arolariu)/u.test(command);
+    return /\bdotnet(?:\.exe)?\b/u.test(command) && /(?:^|[^a-z0-9_])(?:apphost|api|arolariu)(?:$|[^a-z0-9_])/u.test(command);
   }
   if (port === 5002) {
-    return /\b(?:python|python3|py)(?:\.exe)?\b/u.test(command) && /(uvicorn|main:app|exp|arolariu)/u.test(command);
+    return (
+      /\b(?:python(?:3(?:\.\d+)?)?|py)(?:\.exe)?\b/u.test(command)
+      && /(?:^|[^a-z0-9_])(?:uvicorn|main:app|exp|arolariu)(?:$|[^a-z0-9_])/u.test(command)
+    );
   }
   return false;
 }
@@ -461,10 +664,7 @@ async function runRequiredCommand(context: SetupContext, command: InstallationPr
   }
 }
 
-function degradedCertificateOutcome(
-  evidence: readonly string[],
-  nextActions: readonly string[] = [MKCERT_MANUAL_ACTION],
-): CertificateOutcome {
+function degradedCertificateOutcome(evidence: readonly string[], nextActions: readonly string[] = []): CertificateOutcome {
   return {planned: false, degraded: true, evidence, nextActions};
 }
 
@@ -475,12 +675,25 @@ async function prepareCertificates(context: SetupContext, dependencies: Infrastr
   let keyKind: FileKind;
   try {
     certificateKind = await dependencies.inspectFile(certificatePath);
+  } catch (error) {
+    if (isInterrupted(error)) {
+      throw error;
+    }
+    return degradedCertificateOutcome(
+      [`Unable to inspect optional selfhost certificate path ${certificatePath}: ${errorMessage(error)}`],
+      ["Check access and permissions for the optional certificate and key paths, then rerun setup."],
+    );
+  }
+  try {
     keyKind = await dependencies.inspectFile(keyPath);
   } catch (error) {
     if (isInterrupted(error)) {
       throw error;
     }
-    return degradedCertificateOutcome([`Optional selfhost certificate inspection failed: ${errorMessage(error)}`]);
+    return degradedCertificateOutcome(
+      [`Unable to inspect optional selfhost certificate path ${keyPath}: ${errorMessage(error)}`],
+      ["Check access and permissions for the optional certificate and key paths, then rerun setup."],
+    );
   }
   if (certificateKind === "file" && keyKind === "file") {
     return {
@@ -490,8 +703,18 @@ async function prepareCertificates(context: SetupContext, dependencies: Infrastr
       nextActions: [],
     };
   }
-  if (certificateKind === "other" || keyKind === "other") {
-    return degradedCertificateOutcome(["Optional selfhost certificate or key path exists but is not a regular file."]);
+  if (certificateKind === "directory" || certificateKind === "other" || keyKind === "directory" || keyKind === "other") {
+    const invalidPaths = [
+      ...(certificateKind === "directory" || certificateKind === "other" ? [{path: certificatePath, kind: certificateKind}] : []),
+      ...(keyKind === "directory" || keyKind === "other" ? [{path: keyPath, kind: keyKind}] : []),
+    ];
+    const suffix = invalidPaths.length === 1 ? "" : "s";
+    return degradedCertificateOutcome(
+      [`Optional selfhost certificate paths have invalid kinds: ${invalidPaths.map(({path, kind}) => `${path} (${kind})`).join(", ")}.`],
+      [
+        `Replace or remove the invalid optional certificate path${suffix} ${invalidPaths.map(({path}) => path).join(", ")}, then rerun setup.`,
+      ],
+    );
   }
 
   const evidence: string[] = ["Optional selfhost certificate generation is required."];
@@ -502,7 +725,10 @@ async function prepareCertificates(context: SetupContext, dependencies: Infrastr
       const managers = await discoverPackageManagers(context, dependencies.platform);
       const proposal = selectMkcertInstallationProposal(dependencies.platform, managers);
       if (proposal === null) {
-        return degradedCertificateOutcome([...evidence, "mkcert is unavailable and no reviewed installer was discovered."]);
+        return degradedCertificateOutcome(
+          [...evidence, "mkcert is unavailable and no reviewed installer was discovered."],
+          [MKCERT_MANUAL_ACTION],
+        );
       }
       const installDisposition = await context.actions.run({
         id: MKCERT_INSTALL_ACTION,
@@ -511,7 +737,10 @@ async function prepareCertificates(context: SetupContext, dependencies: Infrastr
         execute: () => runRequiredCommand(context, proposal.command, "mkcert installation failed"),
       });
       if (installDisposition === "declined") {
-        return degradedCertificateOutcome([...evidence, `Declined action: ${MKCERT_INSTALL_ACTION}`]);
+        return degradedCertificateOutcome(
+          [...evidence, `Declined action: ${MKCERT_INSTALL_ACTION}`],
+          [`Allow action '${MKCERT_INSTALL_ACTION}' or install mkcert manually from ${MKCERT_MANUAL_URL}, then rerun setup.`],
+        );
       }
       if (installDisposition === "planned") {
         planned = true;
@@ -520,7 +749,7 @@ async function prepareCertificates(context: SetupContext, dependencies: Infrastr
         evidence.push(`Executed action: ${MKCERT_INSTALL_ACTION}`);
         mkcertProbe = await context.runner.run({command: "mkcert", args: ["--version"]}, {cwd: context.paths.root});
         if (!isSuccessfulCommand(mkcertProbe)) {
-          return degradedCertificateOutcome([...evidence, "mkcert remains unavailable after installation."]);
+          return degradedCertificateOutcome([...evidence, "mkcert remains unavailable after installation."], [MKCERT_MANUAL_ACTION]);
         }
       }
     } else {
@@ -534,7 +763,10 @@ async function prepareCertificates(context: SetupContext, dependencies: Infrastr
       execute: () => runRequiredCommand(context, {command: "mkcert", args: ["-install"]}, "mkcert trust installation failed"),
     });
     if (trustDisposition === "declined") {
-      return degradedCertificateOutcome([...evidence, `Declined action: ${MKCERT_TRUST_ACTION}`]);
+      return degradedCertificateOutcome(
+        [...evidence, `Declined action: ${MKCERT_TRUST_ACTION}`],
+        [`Allow action '${MKCERT_TRUST_ACTION}', then rerun setup.`],
+      );
     }
     if (trustDisposition === "planned") {
       planned = true;
@@ -560,7 +792,10 @@ async function prepareCertificates(context: SetupContext, dependencies: Infrastr
       },
     });
     if (generationDisposition === "declined") {
-      return degradedCertificateOutcome([...evidence, `Declined action: ${CERTIFICATE_GENERATE_ACTION}`]);
+      return degradedCertificateOutcome(
+        [...evidence, `Declined action: ${CERTIFICATE_GENERATE_ACTION}`],
+        [`Allow action '${CERTIFICATE_GENERATE_ACTION}', then rerun setup.`],
+      );
     }
     if (generationDisposition === "planned") {
       planned = true;
@@ -690,6 +925,23 @@ async function prepareRuntime(
     };
   }
 
+  if (adapter.engine === "podman") {
+    try {
+      await assertNoDockerDesktopBackend(adaptCommandRunner(context.runner));
+    } catch (error) {
+      if (isInterrupted(error)) {
+        throw error;
+      }
+      return {
+        blocked: true,
+        planned: false,
+        evidence: [`${adapter.displayName} runtime postcondition failed: ${errorMessage(error)}`],
+        nextActions: ["Resolve the reported container runtime conflict, then rerun setup."],
+        inventory: "",
+      };
+    }
+  }
+
   const packageManagers = await discoverPackageManagers(context, dependencies.platform);
   const proposal = selectContainerInstallationProposal({
     engine: adapter.engine,
@@ -801,6 +1053,10 @@ async function selectEngine(
 async function runInfrastructureSetup(context: SetupContext, dependencies: InfrastructureSetupDependencies): Promise<SetupPhaseResult> {
   const startedAt = context.now();
   const evidence: string[] = [];
+  const phaseContext: SetupContext = {
+    ...context,
+    runner: createCredentialIsolatedRunner(context.runner),
+  };
 
   try {
     const configRead = await dependencies.readConfig(context.paths.toolingConfig);
@@ -876,17 +1132,17 @@ async function runInfrastructureSetup(context: SetupContext, dependencies: Infra
       evidence.push("The persisted container engine selection is already current.");
     }
 
-    const runtime = await prepareRuntime(context, dependencies, adapter);
+    const runtime = await prepareRuntime(phaseContext, dependencies, adapter);
     evidence.push(...runtime.evidence);
     planned ||= runtime.planned;
 
-    const ports = await inspectInfrastructurePorts(context, dependencies, adapter, runtime.inventory);
+    const ports = await inspectInfrastructurePorts(phaseContext, dependencies, adapter, runtime.inventory);
     evidence.push(...ports.evidence);
 
     const files = await inspectRuntimeFiles(dependencies, context.paths.root);
     evidence.push(...files.evidence);
 
-    const certificates = await prepareCertificates(context, dependencies);
+    const certificates = await prepareCertificates(phaseContext, dependencies);
     evidence.push(...certificates.evidence);
     planned ||= certificates.planned;
     const degraded = ports.degraded || certificates.degraded;
