@@ -300,10 +300,14 @@ function validateInstalledEvidence(
 
   const versions = new Map<string, string[]>();
   collectInstalledVersions(selectedWorkspace, new Set(REQUIRED_PACKAGES), versions, problems, definition.packageName);
-  for (const [packageName, expectedVersion] of expected) {
+  for (const packageName of REQUIRED_PACKAGES) {
     const installedVersions = versions.get(packageName) ?? [];
     if (installedVersions.length === 0) {
       problems.push(`Required package '${packageName}' is absent from ${definition.name} workspace npm evidence.`);
+      continue;
+    }
+    const expectedVersion = expected.get(packageName);
+    if (expectedVersion === undefined) {
       continue;
     }
     for (const installedVersion of installedVersions) {

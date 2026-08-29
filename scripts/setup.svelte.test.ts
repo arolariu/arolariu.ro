@@ -793,6 +793,30 @@ describe("workspace-scoped installed package evidence", () => {
     ]);
     expect(harness.actionIds).toEqual([]);
   });
+
+  it("retains absent installed evidence when the same package has no root requirement", async () => {
+    const filesystem = createFilesystem({missingConfigs: ["status"]});
+    const harness = createHarness({
+      filesystem,
+      repositoryRequirements: requirements({omitPackage: "svelte"}),
+      responses: {
+        [commandKey(inspectionCommand("cv"))]: commandResult({
+          stdout: workspaceEvidence("cv", {omitPackage: "svelte"}),
+        }),
+      },
+    });
+
+    const result = await harness.phase.run(harness.context);
+
+    expect(result.status).toBe("failed");
+    expect(result.evidence.join("\n")).toMatch(/cv:.*root requirement 'svelte'.*missing/iu);
+    expect(result.evidence.join("\n")).toMatch(/cv:.*required package 'svelte'.*absent.*npm evidence/iu);
+    expect(harness.run.mock.calls).toEqual([
+      [inspectionCommand("cv"), {cwd: paths.root}],
+      [inspectionCommand("status"), {cwd: paths.root}],
+    ]);
+    expect(harness.actionIds).toEqual([]);
+  });
 });
 
 describe("generated SvelteKit state", () => {
