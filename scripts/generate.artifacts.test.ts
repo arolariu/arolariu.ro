@@ -6,6 +6,7 @@
 
 import {ChildProcess, execFile} from "node:child_process";
 import type {ExecFileException} from "node:child_process";
+import fs from "node:fs";
 import {mkdir, mkdtemp, readFile, rm, writeFile} from "node:fs/promises";
 import {tmpdir} from "node:os";
 import {basename, dirname, join} from "node:path";
@@ -21,12 +22,15 @@ import {
   BackendLicenseGenerator,
   EcoicopTaxonomyClassificationGenerator,
   FrontendLicenseGenerator,
+  getExpectedTaxonomyArtifactPaths,
   Gs1GpcTaxonomyClassificationGenerator,
   main,
   NaceTaxonomyClassificationGenerator,
+  taxonomyArtifactFileNames,
   TaxonomyClassificationGenerator,
 } from "./generate.artifacts.ts";
-import {parseCommandLineOptions} from "./generate.ts";
+import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "./common/logger.ts";
+import {main as generate, parseCommandLineOptions} from "./generate.ts";
 import type {TaxonomyArtifact} from "./types";
 
 /**
@@ -703,7 +707,7 @@ describe("Artifact orchestration and CLI contracts", () => {
   });
 
   describe("module surface", () => {
-    it("exports only main and the seven generator classes", async () => {
+    it("exports the generators and canonical taxonomy artifact manifest", async () => {
       const artifactModule = await import("./generate.artifacts.ts");
 
       expect(Object.keys(artifactModule).toSorted()).toEqual([
@@ -714,7 +718,9 @@ describe("Artifact orchestration and CLI contracts", () => {
         "LicenseGenerator",
         "NaceTaxonomyClassificationGenerator",
         "TaxonomyClassificationGenerator",
+        "getExpectedTaxonomyArtifactPaths",
         "main",
+        "taxonomyArtifactFileNames",
       ]);
     });
   });
@@ -724,6 +730,21 @@ describe("Artifact orchestration and CLI contracts", () => {
       const options = await harness.createUnifiedMainOptions();
 
       await expect(main(options)).resolves.toBe(0);
+    });
+
+    it("uses the supplied logger without writing through direct console methods", async () => {
+      const options = await harness.createUnifiedMainOptions();
+      const consoleSpies = ["debug", "info", "warn", "error", "log"].map((level) =>
+        vi.spyOn(console, level as "debug").mockImplementation(() => undefined),
+      );
+      const sink = new InMemoryLoggerSink();
+      const logger = new MonorepositoryConsoleLogger("test::artifacts", {color: false, sink});
+
+      await expect(main(options, logger)).resolves.toBe(0);
+
+      expect(consoleSpies.every((spy) => spy.mock.calls.length === 0)).toBe(true);
+      expect(sink.records.some((record) => record.text.includes("[arolariu::test::artifacts]"))).toBe(true);
+      expect(sink.records.some((record) => record.text.includes("Generated 7 artifact file(s)."))).toBe(true);
     });
 
     it("uses validated mirrored taxonomy artifacts when sources remain unavailable", async () => {
@@ -795,6 +816,137 @@ describe("Artifact orchestration and CLI contracts", () => {
       harness.expectMessage("info", "[Frontend licenses] Reading");
       harness.expectMessage("warn", "[Backend licenses] Generation is intentionally deferred");
       harness.expectMessage("info", "✅ Generated 7 artifact file(s).");
+    });
+  });
+
+  describe("taxonomy artifact manifest", () => {
+    it("matches the canonical paths written by every taxonomy generator", async () => {
+      const workspaceRoot = await harness.createTemporaryDirectory("arolariu-taxonomy-manifest-");
+      const outputRoots = [
+        join(workspaceRoot, "sites", "api.arolariu.ro", "src", "Invoices", "Resources", "Taxonomies"),
+        join(workspaceRoot, "sites", "arolariu.ro", "src", "data", "taxonomies"),
+      ];
+      harness.mockArchiveExtraction();
+      harness.stubUnifiedFetch();
+
+      const actualPaths = (
+        await Promise.all([
+          new Gs1GpcTaxonomyClassificationGenerator(outputRoots).generate(),
+          new EcoicopTaxonomyClassificationGenerator(outputRoots).generate(),
+          new NaceTaxonomyClassificationGenerator(outputRoots).generate(),
+        ])
+      ).flat();
+      const expectedPaths = [
+        join(outputRoots[0] ?? "", "gpc-2026-05.min.json"),
+        join(outputRoots[1] ?? "", "gpc-2026-05.min.json"),
+        join(outputRoots[0] ?? "", "ecoicop-v2.min.json"),
+        join(outputRoots[1] ?? "", "ecoicop-v2.min.json"),
+        join(outputRoots[0] ?? "", "nace-2.1.min.json"),
+        join(outputRoots[1] ?? "", "nace-2.1.min.json"),
+      ];
+
+      expect(taxonomyArtifactFileNames).toEqual({
+        gpc: "gpc-2026-05.min.json",
+        ecoicop: "ecoicop-v2.min.json",
+        nace: "nace-2.1.min.json",
+      });
+      expect(getExpectedTaxonomyArtifactPaths(workspaceRoot)).toEqual(expectedPaths);
+      expect(actualPaths).toEqual(expectedPaths);
+    });
+  });
+
+  describe("generation logger injection", () => {
+    it("routes no-task orchestration output through the supplied logger", async () => {
+      const consoleSpies = ["debug", "info", "warn", "error", "log"].map((level) =>
+        vi.spyOn(console, level as "debug").mockImplementation(() => undefined),
+      );
+      const sink = new InMemoryLoggerSink();
+      const logger = new MonorepositoryConsoleLogger("generate", {color: false, sink});
+
+      await expect(
+        generate(
+          {
+            verbose: false,
+            generateEnv: false,
+            generateGql: false,
+            generateI18n: false,
+            generateArtifacts: false,
+          },
+          logger,
+        ),
+      ).resolves.toBe(0);
+
+      expect(consoleSpies.every((spy) => spy.mock.calls.length === 0)).toBe(true);
+      expect(sink.records.some((record) => record.text.includes("No generation tasks selected"))).toBe(true);
+    });
+
+    it("routes GraphQL generator output through the supplied logger", async () => {
+      const consoleSpies = ["debug", "info", "warn", "error", "log"].map((level) =>
+        vi.spyOn(console, level as "debug").mockImplementation(() => undefined),
+      );
+      const sink = new InMemoryLoggerSink();
+      const logger = new MonorepositoryConsoleLogger("generate::gql", {color: false, sink});
+      vi.spyOn(fs, "mkdirSync").mockImplementation(() => undefined);
+      vi.spyOn(fs, "writeFileSync").mockImplementation(() => undefined);
+
+      const {main: generateGql} = await import("./generate.gql.ts");
+      await expect(generateGql(false, logger)).resolves.toBe(0);
+
+      expect(consoleSpies.every((spy) => spy.mock.calls.length === 0)).toBe(true);
+      expect(sink.records.some((record) => record.text.includes("GraphQL generation completed"))).toBe(true);
+    });
+
+    it("routes i18n generator output through the supplied logger", async () => {
+      const consoleSpies = ["debug", "info", "warn", "error", "log"].map((level) =>
+        vi.spyOn(console, level as "debug").mockImplementation(() => undefined),
+      );
+      const sink = new InMemoryLoggerSink();
+      const logger = new MonorepositoryConsoleLogger("generate::i18n", {color: false, sink});
+      vi.spyOn(fs, "readFileSync").mockReturnValue('{"greeting":"Hello"}');
+
+      const {main: generateI18n} = await import("./generate.i18n.ts");
+      await expect(generateI18n(false, logger)).resolves.toBe(0);
+
+      expect(consoleSpies.every((spy) => spy.mock.calls.length === 0)).toBe(true);
+      expect(sink.records.some((record) => record.text.includes("i18n synchronization completed"))).toBe(true);
+    });
+
+    it("loads Azure identity lazily and never logs environment secret values", async () => {
+      const secretValue = "test-secret-value-that-must-not-be-logged";
+      const consoleSpies = ["debug", "info", "warn", "error", "log"].map((level) =>
+        vi.spyOn(console, level as "debug").mockImplementation(() => undefined),
+      );
+      const sink = new InMemoryLoggerSink();
+      const logger = new MonorepositoryConsoleLogger("generate::env", {color: false, sink});
+      vi.stubEnv("INFRA", "local");
+      vi.stubEnv("VERBOSE", "false");
+      vi.doMock("@azure/identity", () => {
+        throw new Error("Azure identity loaded eagerly");
+      });
+      vi.spyOn(fs, "existsSync").mockReturnValue(true);
+      vi.spyOn(fs, "readFileSync").mockReturnValue(
+        [
+          "SITE_ENV=DEVELOPMENT",
+          "SITE_NAME=Test",
+          "SITE_URL=https://example.test",
+          "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test",
+          `CLERK_SECRET_KEY=${secretValue}`,
+          "USE_CDN=false",
+        ].join("\n"),
+      );
+      vi.spyOn(fs, "writeFileSync").mockImplementation(() => undefined);
+      vi.spyOn(fs, "copyFileSync").mockImplementation(() => undefined);
+
+      try {
+        const {main: generateEnv} = await import("./generate.env.ts");
+        await expect(generateEnv(false, logger)).resolves.toBe(0);
+      } finally {
+        vi.doUnmock("@azure/identity");
+      }
+
+      expect(consoleSpies.every((spy) => spy.mock.calls.length === 0)).toBe(true);
+      expect(sink.records.some((record) => record.text.includes("File content generated successfully"))).toBe(true);
+      expect(sink.records.every((record) => !record.text.includes(secretValue))).toBe(true);
     });
   });
 

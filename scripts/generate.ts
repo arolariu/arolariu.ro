@@ -7,11 +7,10 @@
  * a single CLI command, keeping output consistent across tools.
  */
 
-import {styleText} from "node:util";
+import {MonorepositoryConsoleLogger, type MonorepositoryLogger} from "./common/logger.ts";
 
 /**
- * Master generation orchestrator for monorepo assets (env, i18n, gql, artifacts).
- * Provides a unified CLI with colored, emoji-rich output consistent with `generate.env.ts`.
+ * Selects the generators and verbosity used by the generation orchestrator.
  */
 export type CommandLineOptions = {
   /**
@@ -40,57 +39,92 @@ export type CommandLineOptions = {
   generateArtifacts: boolean;
 };
 
-export async function main(options: Readonly<CommandLineOptions>): Promise<number> {
+/**
+ * Runs the selected monorepository generators with one shared logging context.
+ *
+ * @param options - Selected generators and verbose-output preference.
+ * @param logger - Optional caller-owned logger whose child contexts are passed to each selected generator.
+ * @returns Zero after every selected generator completes.
+ */
+export async function main(options: Readonly<CommandLineOptions>, logger?: MonorepositoryLogger): Promise<number> {
   const {verbose, generateGql, generateI18n, generateEnv, generateArtifacts} = options;
+  const output = logger ?? new MonorepositoryConsoleLogger("generate", {verbose});
 
-  console.log(styleText("magenta", "\n╔══════════════════════════════════════════════════════════════════╗"));
-  console.log(styleText("magenta", "║          ||arolariu.ro|| Generation Orchestrator                 ║"));
-  console.log(styleText("magenta", "╚══════════════════════════════════════════════════════════════════╝\n"));
+  output.banner(
+    [
+      "",
+      "╔══════════════════════════════════════════════════════════════════╗",
+      "║          ||arolariu.ro|| Generation Orchestrator                 ║",
+      "╚══════════════════════════════════════════════════════════════════╝",
+      "",
+    ],
+    "magenta",
+  );
 
-  console.log(styleText("cyan", "🔧 Configuration:\n"));
-  console.log(styleText("gray", `   Verbose: ${verbose ? styleText("green", "✅ Enabled") : styleText("red", "❌ Disabled")}`));
-  console.log(styleText("gray", `   Working Directory: ${styleText("dim", process.cwd())}`));
-  console.log(styleText("gray", `   Selected Tasks:`));
-  console.log(styleText("gray", `     • Env (${generateEnv ? styleText("green", "✓") : styleText("red", "✗")})`));
-  console.log(styleText("gray", `     • i18n (${generateI18n ? styleText("green", "✓") : styleText("red", "✗")})`));
-  console.log(styleText("gray", `     • GraphQL (${generateGql ? styleText("green", "✓") : styleText("red", "✗")})`));
-  console.log(styleText("gray", `     • Artifacts (${generateArtifacts ? styleText("green", "✓") : styleText("red", "✗")})`));
-  console.log();
+  output.line([{text: "🔧 Configuration:", styles: ["cyan"]}]);
+  output.line();
+  output.line([
+    {text: "   Verbose: ", styles: ["gray"]},
+    {text: verbose ? "✅ Enabled" : "❌ Disabled", styles: [verbose ? "green" : "red"]},
+  ]);
+  output.line([
+    {text: "   Working Directory: ", styles: ["gray"]},
+    {text: process.cwd(), styles: ["dim"]},
+  ]);
+  output.line([{text: "   Selected Tasks:", styles: ["gray"]}]);
+  for (const [name, selected] of [
+    ["Env", generateEnv],
+    ["i18n", generateI18n],
+    ["GraphQL", generateGql],
+    ["Artifacts", generateArtifacts],
+  ] as const) {
+    output.line([
+      {text: `     • ${name} (`, styles: ["gray"]},
+      {text: selected ? "✓" : "✗", styles: [selected ? "green" : "red"]},
+      {text: ")", styles: ["gray"]},
+    ]);
+  }
+  output.line();
 
   if (!(generateEnv || generateI18n || generateGql || generateArtifacts)) {
-    console.log(styleText("yellow", "⚠ No generation tasks selected. Nothing to do."));
-    console.log(styleText("gray", "   Tip: Use one or more flags (e.g. /env /i18n /gql /artifacts)."));
+    output.warn("No generation tasks selected. Nothing to do.");
+    output.line([{text: "   Tip: Use one or more flags (e.g. /env /i18n /gql /artifacts).", styles: ["gray"]}]);
     return 0;
   }
 
   let tasksExecuted = 0;
 
   if (generateEnv) {
-    console.log(styleText("cyan", "🚀 Running environment configuration generator..."));
-    await import("./generate.env.ts").then((module) => module.main(verbose));
+    output.info("Running environment configuration generator...");
+    await import("./generate.env.ts").then((module) => module.main(verbose, output.child("env")));
     tasksExecuted++;
   }
 
   if (generateI18n) {
-    console.log(styleText("cyan", "🌍 Running internationalization (i18n) generator..."));
-    await import("./generate.i18n.ts").then((module) => module.main(verbose));
+    output.info("Running internationalization (i18n) generator...");
+    await import("./generate.i18n.ts").then((module) => module.main(verbose, output.child("i18n")));
     tasksExecuted++;
   }
 
   if (generateGql) {
-    console.log(styleText("cyan", "🧬 Running GraphQL types generator..."));
-    await import("./generate.gql.ts").then((module) => module.main(verbose));
+    output.info("Running GraphQL types generator...");
+    await import("./generate.gql.ts").then((module) => module.main(verbose, output.child("gql")));
     tasksExecuted++;
   }
 
   if (generateArtifacts) {
-    console.log(styleText("cyan", "🏷️ Running taxonomy and license artifact generator..."));
-    await import("./generate.artifacts.ts").then((module) => module.main());
+    output.info("Running taxonomy and license artifact generator...");
+    await import("./generate.artifacts.ts").then((module) => module.main({}, output.child("artifacts")));
     tasksExecuted++;
   }
 
-  console.log(styleText("green", "\n✨ All requested generation tasks completed."));
-  console.log(styleText("gray", `   Executed ${styleText("green", String(tasksExecuted))} task(s).`));
+  output.line();
+  output.success("All requested generation tasks completed.");
+  output.line([
+    {text: "   Executed ", styles: ["gray"]},
+    {text: String(tasksExecuted), styles: ["green"]},
+    {text: " task(s).", styles: ["gray"]},
+  ]);
   return 0;
 }
 
@@ -109,32 +143,44 @@ if (import.meta.main) {
   const argv = process.argv.slice(2);
   const options = parseCommandLineOptions(argv);
   const wantsHelp = argv.some((a) => ["/help", "/h", "--help", "-h"].includes(a));
+  const logger = new MonorepositoryConsoleLogger("generate", {verbose: options.verbose});
 
   if (wantsHelp || argv.length === 0) {
-    console.log(styleText("magenta", "\n╔══════════════════════════════════════════════════════════════════╗"));
-    console.log(styleText("magenta", "║                 ||arolariu.ro|| Generation CLI Help              ║"));
-    console.log(styleText("magenta", "╚══════════════════════════════════════════════════════════════════╝\n"));
-    console.log(styleText("cyan", "Usage:"), styleText("gray", "npm run generate [flags]\n"));
-    console.log(styleText("cyan", "Flags:"));
-    console.log(`  ${styleText("green", "/env     /e   --env   -e")}   Generate environment configuration file (.env) ☁️`);
-    console.log(`  ${styleText("green", "/i18n    /i   --i18n  -i")}   Synchronize translation keys (messages) 🌍`);
-    console.log(`  ${styleText("green", "/gql     /g   --gql   -g")}   Generate GraphQL type artifacts 🧬`);
-    console.log(`  ${styleText("green", "/artifacts /a   --artifacts -a")} Generate taxonomy and license artifacts 🏷️`);
-    console.log(`  ${styleText("green", "/verbose /v   --verbose -v")} Enable verbose logging 🔊`);
-    console.log(`  ${styleText("green", "/help    /h   --help  -h")}   Show this help menu ❓`);
-    console.log("\nExamples:");
-    console.log(styleText("gray", "  npm run generate /env /artifacts"));
-    console.log(styleText("gray", "  npm run generate --env --i18n --artifacts --verbose"));
-    console.log(styleText("gray", "  npm run generate -e -g -a -v"));
+    logger.banner(
+      [
+        "",
+        "╔══════════════════════════════════════════════════════════════════╗",
+        "║                 ||arolariu.ro|| Generation CLI Help              ║",
+        "╚══════════════════════════════════════════════════════════════════╝",
+        "",
+      ],
+      "magenta",
+    );
+    logger.line([
+      {text: "Usage: ", styles: ["cyan"]},
+      {text: "npm run generate [flags]", styles: ["gray"]},
+    ]);
+    logger.line();
+    logger.line([{text: "Flags:", styles: ["cyan"]}]);
+    logger.line([{text: "  /env     /e   --env   -e", styles: ["green"]}, {text: "   Generate environment configuration file (.env) ☁️"}]);
+    logger.line([{text: "  /i18n    /i   --i18n  -i", styles: ["green"]}, {text: "   Synchronize translation keys (messages) 🌍"}]);
+    logger.line([{text: "  /gql     /g   --gql   -g", styles: ["green"]}, {text: "   Generate GraphQL type artifacts 🧬"}]);
+    logger.line([{text: "  /artifacts /a   --artifacts -a", styles: ["green"]}, {text: " Generate taxonomy and license artifacts 🏷️"}]);
+    logger.line([{text: "  /verbose /v   --verbose -v", styles: ["green"]}, {text: " Enable verbose logging 🔊"}]);
+    logger.line([{text: "  /help    /h   --help  -h", styles: ["green"]}, {text: "   Show this help menu ❓"}]);
+    logger.line();
+    logger.line("Examples:");
+    logger.line([{text: "  npm run generate /env /artifacts", styles: ["gray"]}]);
+    logger.line([{text: "  npm run generate --env --i18n --artifacts --verbose", styles: ["gray"]}]);
+    logger.line([{text: "  npm run generate -e -g -a -v", styles: ["gray"]}]);
     if (wantsHelp) process.exit(0);
   }
 
   try {
-    const code = await main(options);
+    const code = await main(options, logger);
     process.exit(code);
-  } catch (err) {
-    console.error(styleText("red", "Unexpected error in generation orchestrator:"));
-    console.error(err);
+  } catch (error: unknown) {
+    logger.error(`Unexpected error in generation orchestrator: ${error instanceof Error ? error.message : String(error)}`);
     process.exit(1);
   }
 }

@@ -11,13 +11,12 @@
  * - prompts the developer for missing values based on required keys.
  */
 
-import {AzureCliCredential, DefaultAzureCredential} from "@azure/identity";
 import fs from "node:fs";
 import path from "node:path";
 import readline from "node:readline";
-import {styleText} from "node:util";
 import {APP_CONFIGURATION_MAPPING, isSecretKey} from "./azure/index.ts";
 import {isAzureInfrastructure, isInCI, isProductionEnvironment, isVerboseMode} from "./common/index.ts";
+import {MonorepositoryConsoleLogger, type MonorepositoryLogger} from "./common/logger.ts";
 import type {AllEnvironmentVariablesKeys, TypedConfigurationType} from "./types/index.ts";
 
 /** exp service URL — same deterministic logic as the runtime consumers. EXP_PROXY_URL overrides for bare-metal dev. */
@@ -28,10 +27,7 @@ const EXP_BASE_URL = process.env["EXP_PROXY_URL"]?.trim() || (process.env["AZURE
 const USE_AZURE_AUTH = EXP_BASE_URL === AZURE_EXP_URL;
 
 /** Config label derived from SITE_ENV (matches website configProxy.ts logic). */
-const CONFIG_LABEL: string =
-  (process.env["SITE_ENV"] ?? "").toUpperCase() === "PRODUCTION" ? "PRODUCTION" : "DEVELOPMENT";
-
-console.log(`[generate.env] SITE_ENV=${process.env["SITE_ENV"] ?? "(unset)"} → CONFIG_LABEL=${CONFIG_LABEL}`);
+const CONFIG_LABEL: string = (process.env["SITE_ENV"] ?? "").toUpperCase() === "PRODUCTION" ? "PRODUCTION" : "DEVELOPMENT";
 
 /** Azure AD token scope for authenticating to the exp service. */
 const EXP_TOKEN_SCOPE = "api://950ac239-5c2c-4759-bd83-911e68f6a8c9/.default";
@@ -45,38 +41,42 @@ const EXP_TOKEN_SCOPE = "api://950ac239-5c2c-4759-bd83-911e68f6a8c9/.default";
  * {@link APP_CONFIGURATION_MAPPING}.
  *
  * @param verbose - Enables verbose logging.
+ * @param logger - Logger used for fetch, mapping, and failure output.
  * @returns A promise that resolves to the typed configuration object.
  */
-async function fetchConfigurationFromExp(verbose: boolean = false): Promise<TypedConfigurationType> {
-  verbose && console.info(`🔍 Exp service URL: ${EXP_BASE_URL}`);
+async function fetchConfigurationFromExp(verbose: boolean, logger: MonorepositoryLogger): Promise<TypedConfigurationType> {
+  if (verbose) {
+    logger.debug(`Exp service URL: ${EXP_BASE_URL}`);
+  }
 
   const headers: Record<string, string> = {"X-Exp-Target": "website"};
 
   // Acquire a bearer token only when targeting the Azure-hosted exp service.
   if (USE_AZURE_AUTH) {
     try {
+      const {AzureCliCredential, DefaultAzureCredential} = await import("@azure/identity");
       // In CI (GitHub Actions), azure/login sets up AzureCliCredential via OIDC.
       // DefaultAzureCredential with AZURE_CLIENT_ID tries ManagedIdentity first,
       // which doesn't exist in CI. Use AzureCliCredential directly in CI.
       const isCI = Boolean(process.env["CI"] || process.env["GITHUB_ACTIONS"]);
       const credential = isCI ? new AzureCliCredential() : new DefaultAzureCredential();
-      console.log(styleText("gray", `🔐 Acquiring token for scope: ${EXP_TOKEN_SCOPE} (via ${isCI ? "AzureCliCredential" : "DefaultAzureCredential"})`));
+      logger.info(`Acquiring token for scope ${EXP_TOKEN_SCOPE} via ${isCI ? "AzureCliCredential" : "DefaultAzureCredential"}.`);
       const token = await credential.getToken(EXP_TOKEN_SCOPE);
       if (token?.token) {
         headers["Authorization"] = `Bearer ${token.token}`;
-        console.log(styleText("green", "🔐 Bearer token acquired successfully"));
+        logger.success("Bearer token acquired successfully.");
       } else {
-        console.log(styleText("yellow", "⚠️ Token acquisition returned empty token"));
+        logger.warn("Token acquisition returned an empty token.");
       }
-    } catch (error) {
-      console.log(styleText("yellow", `⚠️ Failed to acquire bearer token: ${error instanceof Error ? error.message : String(error)}`));
+    } catch (error: unknown) {
+      logger.warn(`Failed to acquire bearer token: ${error instanceof Error ? error.message : String(error)}`);
     }
   } else {
-    console.log(styleText("gray", "ℹ️  No AZURE_CLIENT_ID — skipping bearer token acquisition"));
+    logger.info("No AZURE_CLIENT_ID; skipping bearer token acquisition.");
   }
 
   const url = `${EXP_BASE_URL}/api/v1/build-time?for=website&label=${CONFIG_LABEL}`;
-  console.log(styleText("gray", `🌐 Fetching: ${url}`));
+  logger.info(`Fetching ${url}.`);
 
   const response = await fetch(url, {
     headers,
@@ -85,8 +85,10 @@ async function fetchConfigurationFromExp(verbose: boolean = false): Promise<Type
 
   if (!response.ok) {
     const errorBody = await response.text().catch(() => "");
-    console.log(styleText("red", `❌ exp returned ${response.status} for ${url}`));
-    if (errorBody) console.log(styleText("gray", `   Response body: ${errorBody.substring(0, 500)}`));
+    logger.error(`exp returned ${response.status} for ${url}.`);
+    if (errorBody && verbose) {
+      logger.debug(`exp response included a non-empty error body (${errorBody.length} characters).`);
+    }
     throw new Error(`exp returned ${response.status} for /api/v1/build-time?for=website`);
   }
 
@@ -95,7 +97,9 @@ async function fetchConfigurationFromExp(verbose: boolean = false): Promise<Type
     throw new Error("exp build-time response missing 'config' object");
   }
 
-  verbose && console.info(`📦 Received ${Object.keys(payload.config).length} config keys from exp`);
+  if (verbose) {
+    logger.debug(`Received ${Object.keys(payload.config).length} config keys from exp.`);
+  }
 
   // Map exp config keys to environment variable names.
   const config = {} as TypedConfigurationType;
@@ -103,13 +107,13 @@ async function fetchConfigurationFromExp(verbose: boolean = false): Promise<Type
     const value = payload.config[expKey];
     if (value !== undefined && value !== null) {
       config[envVar] = value;
-      console.log(styleText("gray", `📝 Mapped ${expKey} → ${envVar}`));
+      logger.info(`Mapped ${expKey} to ${envVar}.`);
     } else {
-      console.log(styleText("yellow", `⚠️ Key ${expKey} not found in exp build-time response`));
+      logger.warn(`Key ${expKey} was not found in the exp build-time response.`);
     }
   }
 
-  console.log(styleText("green", `\n   ✓ Fetched ${Object.keys(config).length} configuration values from exp\n`));
+  logger.success(`Fetched ${Object.keys(config).length} configuration values from exp.`);
   return config;
 }
 
@@ -121,20 +125,25 @@ async function fetchConfigurationFromExp(verbose: boolean = false): Promise<Type
  *
  * @param envPath - Path to the `.env` file (defaults to `.env`).
  * @param verbose - Enables verbose error logging.
+ * @param logger - Logger used for parsing and failure output.
  * @returns The parsed configuration as a partial typed object.
  */
-function fetchConfigurationFromLocalEnvFile(envPath: string = ".env", verbose: boolean = false): Partial<TypedConfigurationType> {
+function fetchConfigurationFromLocalEnvFile(
+  envPath: string,
+  verbose: boolean,
+  logger: MonorepositoryLogger,
+): Partial<TypedConfigurationType> {
   const config = {} as Partial<TypedConfigurationType>;
 
   if (!fs.existsSync(envPath)) {
-    console.log(styleText("gray", "📄 No existing .env file found in the supplied path."));
-    console.log(styleText("gray", `⚙️ Supplied path (raw): ${envPath}\n`));
-    console.log(styleText("gray", `⚙️ Supplied path (built): ${path.resolve(envPath)}\n`));
+    logger.info("No existing .env file found in the supplied path.");
+    logger.info(`Supplied path (raw): ${envPath}`);
+    logger.info(`Supplied path (built): ${path.resolve(envPath)}`);
     return config;
   }
 
-  console.log(styleText("gray", "Path found:"), styleText("cyan", path.resolve(envPath)));
-  console.log(styleText("cyan", `\n📖 Parsing existing .env file...`));
+  logger.info(`Path found: ${path.resolve(envPath)}`);
+  logger.info("Parsing existing .env file.");
 
   try {
     const content = fs.readFileSync(envPath, "utf-8");
@@ -158,10 +167,12 @@ function fetchConfigurationFromLocalEnvFile(envPath: string = ".env", verbose: b
       }
     }
 
-    console.log(styleText("green", `✅ Parsed ${Object.keys(config).length} existing environment variables\n`));
-  } catch (error) {
-    console.log(styleText("yellow", `⚠️ Encountered error while parsing .env file.\n`));
-    verbose && console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+    logger.success(`Parsed ${Object.keys(config).length} existing environment variables.`);
+  } catch (error: unknown) {
+    logger.warn("Encountered an error while parsing the .env file.");
+    if (verbose) {
+      logger.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+    }
   }
 
   return config;
@@ -178,24 +189,25 @@ function fetchConfigurationFromLocalEnvFile(envPath: string = ".env", verbose: b
  *
  * @param missingKeys - Keys representing missing environment variables.
  * @param verbose - Enables verbose logging.
+ * @param logger - Logger used for prompts without exposing entered values.
  * @returns A partial configuration object containing newly provided values.
  */
 async function promptForMissingKeys(
   missingKeys: AllEnvironmentVariablesKeys[],
-  verbose: boolean = false,
+  verbose: boolean,
+  logger: MonorepositoryLogger,
 ): Promise<Partial<TypedConfigurationType>> {
-  console.log(styleText("cyan", "\n🔍 Prompting for missing environment variables...\n"));
+  logger.section("Prompting for missing environment variables", "🔍");
 
   if (missingKeys.length === 0) {
-    console.log(styleText("green", "   ✓ All required keys are present!\n"));
+    logger.success("All required keys are present.");
     return {} as TypedConfigurationType;
   }
 
-  console.log(styleText("yellow", `   ⚠ Found ${missingKeys.length} missing key(s) that need to be provided:\n`));
+  logger.warn(`Found ${missingKeys.length} missing key(s) that need to be provided.`);
 
   const rl = readline.createInterface({
     input: process.stdin,
-    output: process.stdout,
   });
 
   const config = {} as TypedConfigurationType;
@@ -203,36 +215,36 @@ async function promptForMissingKeys(
 
   for (const key of missingKeys) {
     const isSecret = isSecretKey(key);
-    const prefix = isSecret ? styleText("magenta", "🔐") : styleText("blue", "🔑");
-    const keyLabel = isSecret ? styleText("magenta", key) : styleText("cyan", key);
-    const secretHint = isSecret ? styleText("gray", " (hidden)") : "";
-    const prompt = `   ${prefix} [${count}/${missingKeys.length}] ${keyLabel}${secretHint}: `;
+    const prefix = isSecret ? "🔐" : "🔑";
+    const secretHint = isSecret ? " (hidden)" : "";
+    logger.write([
+      {text: `   ${prefix} [${count}/${missingKeys.length}] `, styles: [isSecret ? "magenta" : "blue"]},
+      {text: key, styles: [isSecret ? "magenta" : "cyan"]},
+      {text: `${secretHint}: `, styles: ["gray"]},
+    ]);
 
     const value = await new Promise<string>((resolve) => {
-      if (isSecret) {
-        // Hide input for secrets
-        rl.question(prompt, (answer) => {
-          resolve(answer.trim());
-        });
-        // Hide the input by moving cursor and clearing line
-        process.stdout.write(prompt + styleText("gray", "*".repeat(8)) + "\n");
-      } else {
-        rl.question(prompt, (answer) => {
-          resolve(answer.trim());
-        });
-      }
+      rl.question("", (answer) => {
+        resolve(answer.trim());
+      });
     });
+    if (isSecret) {
+      logger.line([{text: "*".repeat(8), styles: ["gray"]}]);
+    }
 
     if (value) {
       config[key] = value;
     } else {
-      console.log(styleText("yellow", ` ⚠️ Warning: Empty value provided for ${key}. Please ensure this is intentional.`));
+      logger.warn(`Empty value provided for ${key}. Please ensure this is intentional.`);
     }
     count++;
   }
 
   rl.close();
-  console.log(styleText("green", "✅ All missing keys have been provided!\n"));
+  if (verbose) {
+    logger.debug(`Collected ${Object.keys(config).length} prompted environment value(s).`);
+  }
+  logger.success("All missing keys have been provided.");
   return config;
 }
 
@@ -244,36 +256,39 @@ async function promptForMissingKeys(
  * missing required keys.
  *
  * @param verbose - Enables verbose logging.
+ * @param logger - Logger used for parsing, prompts, and completion output.
  * @returns The completed typed configuration.
  */
-async function ensureLocalEnvIsComplete(verbose: boolean = false): Promise<TypedConfigurationType> {
-  console.log(styleText("cyan", "\n🔧 Ensuring local environment configuration is complete...\n"));
+async function ensureLocalEnvIsComplete(verbose: boolean, logger: MonorepositoryLogger): Promise<TypedConfigurationType> {
+  logger.section("Ensuring local environment configuration is complete", "🔧");
   const configurationKeys = Object.values(APP_CONFIGURATION_MAPPING);
 
   // Parse existing .env if it exists, first (redundant in cloud / ci);
-  const existingConfig = fetchConfigurationFromLocalEnvFile();
+  const existingConfig = fetchConfigurationFromLocalEnvFile(".env", verbose, logger);
   const existingConfigKeys = Object.keys(existingConfig);
-  verbose && console.info(`🔍 Existing configuration keys: ${JSON.stringify(existingConfigKeys, null, 2)}`);
+  if (verbose) {
+    logger.debug(`Existing configuration keys: ${JSON.stringify(existingConfigKeys, null, 2)}`);
+  }
 
   // Find missing keys from REQUIRED array
   const missingKeys = configurationKeys.filter((key) => !existingConfigKeys.includes(key));
   if (missingKeys.length === 0) {
-    console.log(styleText("green", "✅ All required environment variables are present!\n"));
+    logger.success("All required environment variables are present.");
     return existingConfig as TypedConfigurationType; // safe cast.
   }
 
-  console.log(styleText("yellow", `📝 Missing ${missingKeys.length} required environment variable(s):`));
+  logger.warn(`Missing ${missingKeys.length} required environment variable(s):`);
   for (const missingKey of missingKeys) {
-    console.log(styleText("gray", `      • ${missingKey}`));
+    logger.line([{text: `      • ${missingKey}`, styles: ["gray"]}]);
   }
 
-  console.log(styleText("yellow", "Do you want to provide the missing values now? (Y/n)"));
+  logger.warn("Do you want to provide the missing values now? (Y/n)");
   const rl = readline.createInterface({
     input: process.stdin,
-    output: process.stdout,
   });
+  logger.write([{text: "> ", styles: ["yellow"]}]);
   const answer = await new Promise<string>((resolve) => {
-    rl.question(styleText("yellow", "> "), (input) => {
+    rl.question("", (input) => {
       resolve(input.trim().toLowerCase());
     });
   });
@@ -284,9 +299,9 @@ async function ensureLocalEnvIsComplete(verbose: boolean = false): Promise<Typed
   }
 
   // Prompt user for missing keys
-  const newValues = await promptForMissingKeys(missingKeys, verbose);
+  const newValues = await promptForMissingKeys(missingKeys, verbose, logger);
   // Merge and return complete config
-  console.log(styleText("green", "✅ Configuration merged successfully!\n"));
+  logger.success("Configuration merged successfully.");
 
   const completedConfig = {...existingConfig, ...newValues};
   return completedConfig as TypedConfigurationType; // safe cast.
@@ -346,10 +361,18 @@ function quoteIfNeeded(value: string): string {
  * @param emoji - Emoji used in console output.
  * @param keys - Keys to include in this section.
  * @param config - Completed configuration object.
+ * @param logger - Logger used for section progress output.
  * @returns Nothing.
  */
-function addConfigSection(lines: string[], sectionName: string, emoji: string, keys: string[], config: TypedConfigurationType): void {
-  console.log(styleText("gray", `   ${emoji} Adding ${sectionName} Configuration...`));
+function addConfigSection(
+  lines: string[],
+  sectionName: string,
+  emoji: string,
+  keys: string[],
+  config: TypedConfigurationType,
+  logger: MonorepositoryLogger,
+): void {
+  logger.info(`${emoji} Adding ${sectionName} Configuration.`);
   lines.push("", `# ${sectionName} Configuration Start`);
 
   for (const key of keys) {
@@ -365,10 +388,11 @@ function addConfigSection(lines: string[], sectionName: string, emoji: string, k
  * Generates the `.env` file content from a configuration object.
  *
  * @param config - Completed configuration object.
+ * @param logger - Logger used for content-construction progress.
  * @returns A newline-separated `.env` payload.
  */
-function generateEnvFileContent(config: TypedConfigurationType): string {
-  console.log(styleText("cyan", "\n📝 Generating .env file content...\n"));
+function generateEnvFileContent(config: TypedConfigurationType, logger: MonorepositoryLogger): string {
+  logger.section("Generating .env file content", "📝");
 
   const lines = [
     "# Generated environment configuration file",
@@ -381,10 +405,10 @@ function generateEnvFileContent(config: TypedConfigurationType): string {
   ];
 
   // Site config
-  addConfigSection(lines, "Site", "📦", ["SITE_ENV", "SITE_NAME", "SITE_URL"], config);
+  addConfigSection(lines, "Site", "📦", ["SITE_ENV", "SITE_NAME", "SITE_URL"], config, logger);
 
   // Accepted auth config
-  addConfigSection(lines, "Accepted Authentication", "🔐", ["NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY", "CLERK_SECRET_KEY"], config);
+  addConfigSection(lines, "Accepted Authentication", "🔐", ["NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY", "CLERK_SECRET_KEY"], config, logger);
 
   // Accepted Azure runtime identity config (preserved if present)
   addConfigSection(
@@ -393,10 +417,11 @@ function generateEnvFileContent(config: TypedConfigurationType): string {
     "☁️",
     ["AZURE_CLIENT_ID", "AZURE_TENANT_ID", "AZURE_SUBSCRIPTION_ID"],
     config,
+    logger,
   );
 
   // Metadata config
-  console.log(styleText("gray", "   📊 Adding Metadata Configuration..."));
+  logger.info("📊 Adding Metadata Configuration.");
   const timestamp = new Date().toISOString();
   const commitSha = process.env["COMMIT_SHA"] ?? process.env["GITHUB_SHA"] ?? "N/A";
   const useCdn = config["USE_CDN"] ?? "false";
@@ -410,7 +435,7 @@ function generateEnvFileContent(config: TypedConfigurationType): string {
     "# Metadata Configuration End",
   );
 
-  console.log(styleText("green", "   ✓ File content generated successfully!\n"));
+  logger.success("File content generated successfully.");
 
   return lines.join("\n");
 }
@@ -421,19 +446,22 @@ function generateEnvFileContent(config: TypedConfigurationType): string {
  * @param sourcePath - Source `.env` path.
  * @param targetPaths - Relative target paths to copy to.
  * @param verbose - Enables verbose error logging.
+ * @param logger - Logger used for copy progress and failures.
  * @returns Nothing.
  */
-function copyEnvFileToSubRepos(sourcePath: string, targetPaths: string[], verbose: boolean = false): void {
-  console.log(styleText("cyan", "\n📂 Copying .env file to sub-repositories...\n"));
+function copyEnvFileToSubRepos(sourcePath: string, targetPaths: string[], verbose: boolean, logger: MonorepositoryLogger): void {
+  logger.section("Copying .env file to sub-repositories", "📂");
   for (const targetPath of targetPaths) {
-    console.log(styleText("gray", `Raw target path:${targetPath}`));
+    logger.info(`Raw target path: ${targetPath}`);
     const builtTargetPath = path.resolve(`.${targetPath}`);
-    console.log(styleText("gray", `Built target path: ${builtTargetPath}`));
+    logger.info(`Built target path: ${builtTargetPath}`);
     try {
       fs.copyFileSync(sourcePath, builtTargetPath);
     } catch (error: unknown) {
-      console.error(styleText("red", `   ✗ Error copying to ${builtTargetPath}.`));
-      verbose && console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      logger.error(`Error copying to ${builtTargetPath}.`);
+      if (verbose) {
+        logger.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      }
     }
   }
 }
@@ -445,74 +473,127 @@ function copyEnvFileToSubRepos(sourcePath: string, targetPaths: string[], verbos
  * This is the script entrypoint used by `npm run generate:env`.
  *
  * @param verbose - Enables verbose logging.
+ * @param logger - Logger used for all script-authored output.
  * @returns Process exit code (0 for success, non-zero for failure).
  */
-export async function main(verbose: boolean = false): Promise<number> {
-  console.log(styleText("cyan", "🔧 Configuration:\n"));
-  console.log(styleText("gray", `   Infrastructure: ${isAzureInfrastructure ? styleText("blue", "Azure") : styleText("yellow", "Local")}`));
-  console.log(styleText("gray", `   Environment: ${isProductionEnvironment ? styleText("red", "production") : styleText("green", "development")}`));
-  console.log(styleText("gray", `   Verbose: ${isVerboseMode ? styleText("green", "✅ Enabled") : styleText("gray", "❌ Disabled")}`));
-  console.log(styleText("gray", `   Agent: ${isInCI ? styleText("cyan", "CI/CD") : styleText("yellow", "Local")}`));
-  console.log(styleText("gray", `   Working Directory: ${styleText("dim", path.resolve("."))}`));
-  console.log(styleText("gray", `   Output File: ${styleText("cyan", ".env")}\n`));
+export async function main(
+  verbose: boolean = false,
+  logger: MonorepositoryLogger = new MonorepositoryConsoleLogger("generate::env", {verbose}),
+): Promise<number> {
+  logger.line([{text: "🔧 Configuration:", styles: ["cyan"]}]);
+  logger.line();
+  logger.line([
+    {text: "   Infrastructure: ", styles: ["gray"]},
+    {text: isAzureInfrastructure ? "Azure" : "Local", styles: [isAzureInfrastructure ? "blue" : "yellow"]},
+  ]);
+  logger.line([
+    {text: "   Environment: ", styles: ["gray"]},
+    {text: isProductionEnvironment ? "production" : "development", styles: [isProductionEnvironment ? "red" : "green"]},
+  ]);
+  logger.line([
+    {text: "   Verbose: ", styles: ["gray"]},
+    {text: verbose ? "✅ Enabled" : "❌ Disabled", styles: [verbose ? "green" : "gray"]},
+  ]);
+  logger.line([
+    {text: "   Agent: ", styles: ["gray"]},
+    {text: isInCI ? "CI/CD" : "Local", styles: [isInCI ? "cyan" : "yellow"]},
+  ]);
+  logger.line([
+    {text: "   Working Directory: ", styles: ["gray"]},
+    {text: path.resolve("."), styles: ["dim"]},
+  ]);
+  logger.line([
+    {text: "   Output File: ", styles: ["gray"]},
+    {text: ".env", styles: ["cyan"]},
+  ]);
+  logger.line();
+  if (verbose || isVerboseMode) {
+    logger.debug(`SITE_ENV=${process.env["SITE_ENV"] ?? "(unset)"} maps to CONFIG_LABEL=${CONFIG_LABEL}.`);
+  }
 
   let config = {} as TypedConfigurationType;
   try {
     if (isAzureInfrastructure) {
-      isVerboseMode && console.log(styleText("cyan", "☁️  Fetching configuration from exp service...\n"));
-      config = await fetchConfigurationFromExp(verbose);
+      if (verbose || isVerboseMode) {
+        logger.debug("Fetching configuration from the exp service.");
+      }
+      config = await fetchConfigurationFromExp(verbose, logger);
     } else {
-      isVerboseMode && console.log(styleText("yellow", "📝 Populating configuration via manual input...\n"));
-      config = await ensureLocalEnvIsComplete(verbose);
+      if (verbose || isVerboseMode) {
+        logger.debug("Populating configuration via manual input.");
+      }
+      config = await ensureLocalEnvIsComplete(verbose, logger);
     }
-  } catch (error) {
-    console.error(styleText("red", `\n✗ Error: ${error instanceof Error ? error.message : String(error)}\n`));
+  } catch (error: unknown) {
+    logger.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
     process.exit(1);
   }
 
-  const content = generateEnvFileContent(config);
+  for (const [key, value] of Object.entries(config)) {
+    if (isSecretKey(key) && typeof value === "string") {
+      logger.redact(value);
+    }
+  }
+  const content = generateEnvFileContent(config, logger);
 
-  console.log(styleText("cyan", "💾 Writing .env file...\n"));
+  logger.info("Writing .env file.");
   fs.writeFileSync(".env", content, {mode: 0o600});
 
-  console.log(styleText("green", `   Generated ${styleText("green", String(Object.keys(config).length))} environment variables`));
-  console.log(styleText("green", `   File: ${styleText("cyan", path.resolve(".env"))}\n`));
+  logger.success(`Generated ${Object.keys(config).length} environment variables.`);
+  logger.line([
+    {text: "   File: ", styles: ["green"]},
+    {text: path.resolve(".env"), styles: ["cyan"]},
+  ]);
+  logger.line();
 
   // Copy to sub-repositories if needed
-  copyEnvFileToSubRepos(".env", ["/sites/arolariu.ro/.env"], verbose);
+  copyEnvFileToSubRepos(".env", ["/sites/arolariu.ro/.env"], verbose, logger);
   return 0;
 }
 
 if (import.meta.main) {
   const verbose = process.argv.includes("/verbose") || process.argv.includes("/v");
+  const logger = new MonorepositoryConsoleLogger("generate::env", {verbose});
   if (process.argv.includes("--help") || process.argv.includes("-h")) {
-    console.log(styleText("magenta", "\n╔══════════════════════════════════════════════════════════════════╗"));
-    console.log(styleText("magenta", "║       ||arolariu.ro|| Environment Generator - Help               ║"));
-    console.log(styleText("magenta", "╚══════════════════════════════════════════════════════════════════╝\n"));
-    console.log(styleText("cyan", "📋 Description:"));
-    console.log(styleText("gray", "   Generates .env file from Azure App Configuration or manual input\n"));
-    console.log(styleText("cyan", "🚀 Usage:"));
-    console.log(styleText("gray", "   npm run generate:env [options]\n"));
-    console.log(styleText("cyan", "⚙️  Options:"));
-    console.log(styleText("gray", "   --help, -h        Show this help message"));
-    console.log(styleText("gray", "   --verbose, -v     Enable verbose logging"));
-    console.log(styleText("gray", "   --azure           Fetch from Azure App Configuration"));
-    console.log(styleText("gray", "   --production      Use production configuration\n"));
-    console.log(styleText("cyan", "📦 Environment Variables:"));
-    console.log(styleText("gray", "   AZURE_CONFIG      Enable Azure mode (true/false)"));
-    console.log(styleText("gray", "   NODE_ENV          Set environment (production/development)"));
-    console.log(styleText("gray", "   CI                Detect CI/CD environment\n"));
-    console.log(styleText("cyan", "📖 Examples:"));
-    console.log(styleText("gray", "   npm run generate:env --azure --production"));
-    console.log(styleText("gray", "   npm run generate:env --verbose\n"));
+    logger.banner(
+      [
+        "",
+        "╔══════════════════════════════════════════════════════════════════╗",
+        "║       ||arolariu.ro|| Environment Generator - Help               ║",
+        "╚══════════════════════════════════════════════════════════════════╝",
+        "",
+      ],
+      "magenta",
+    );
+    logger.line([{text: "📋 Description:", styles: ["cyan"]}]);
+    logger.line([{text: "   Generates .env file from Azure App Configuration or manual input", styles: ["gray"]}]);
+    logger.line();
+    logger.line([{text: "🚀 Usage:", styles: ["cyan"]}]);
+    logger.line([{text: "   npm run generate:env [options]", styles: ["gray"]}]);
+    logger.line();
+    logger.line([{text: "⚙️  Options:", styles: ["cyan"]}]);
+    logger.line([{text: "   --help, -h        Show this help message", styles: ["gray"]}]);
+    logger.line([{text: "   --verbose, -v     Enable verbose logging", styles: ["gray"]}]);
+    logger.line([{text: "   --azure           Fetch from Azure App Configuration", styles: ["gray"]}]);
+    logger.line([{text: "   --production      Use production configuration", styles: ["gray"]}]);
+    logger.line();
+    logger.line([{text: "📦 Environment Variables:", styles: ["cyan"]}]);
+    logger.line([{text: "   AZURE_CONFIG      Enable Azure mode (true/false)", styles: ["gray"]}]);
+    logger.line([{text: "   NODE_ENV          Set environment (production/development)", styles: ["gray"]}]);
+    logger.line([{text: "   CI                Detect CI/CD environment", styles: ["gray"]}]);
+    logger.line();
+    logger.line([{text: "📖 Examples:", styles: ["cyan"]}]);
+    logger.line([{text: "   npm run generate:env --azure --production", styles: ["gray"]}]);
+    logger.line([{text: "   npm run generate:env --verbose", styles: ["gray"]}]);
+    logger.line();
     process.exit(1);
   }
 
   try {
-    const code = await main(verbose);
+    const code = await main(verbose, logger);
     process.exit(code);
-  } catch (err) {
-    console.error(err);
+  } catch (error: unknown) {
+    logger.error(error instanceof Error ? error.message : String(error));
     process.exit(1);
   }
 }

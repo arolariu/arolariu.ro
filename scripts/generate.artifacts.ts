@@ -9,19 +9,43 @@ import {tmpdir} from "node:os";
 import {basename, dirname, join, resolve} from "node:path";
 import {promisify} from "node:util";
 import {MonorepositoryConsoleLogger, MonorepositoryLogger} from "./common/logger.ts";
-import type {
-  ArtifactClassificationSystem,
-  NodePackageDependencyType,
-  NodePackageInformation,
-  TaxonomyArtifact,
-  TaxonomyArtifactNode,
-} from "./types";
+import type {NodePackageDependencyType, NodePackageInformation, TaxonomyArtifact, TaxonomyArtifactNode} from "./types";
 
 /** Delays between the three bounded taxonomy source attempts. */
 const TAXONOMY_SOURCE_RETRY_DELAYS_MS = [1_000, 4_000] as const;
 
 /** Per-attempt timeout that replaces Node's five-minute fetch default. */
 const TAXONOMY_SOURCE_TIMEOUT_MS = 30_000;
+
+/** Canonical taxonomy artifact names shared by generation and verification tooling. */
+export const taxonomyArtifactFileNames: Readonly<{
+  gpc: string;
+  ecoicop: string;
+  nace: string;
+}> = {
+  gpc: "gpc-2026-05.min.json",
+  ecoicop: "ecoicop-v2.min.json",
+  nace: "nace-2.1.min.json",
+};
+
+/** Canonical repository-relative roots that receive mirrored taxonomy artifacts. */
+const TAXONOMY_OUTPUT_ROOTS = [
+  join("sites", "api.arolariu.ro", "src", "Invoices", "Resources", "Taxonomies"),
+  join("sites", "arolariu.ro", "src", "data", "taxonomies"),
+] as const;
+
+/**
+ * Returns every canonical taxonomy artifact path for a repository workspace.
+ *
+ * @param workspaceRoot - Absolute or relative monorepository root.
+ * @returns Generator-major paths for the API and website mirrors.
+ */
+export function getExpectedTaxonomyArtifactPaths(workspaceRoot: string): readonly string[] {
+  const outputRoots = TAXONOMY_OUTPUT_ROOTS.map((root) => resolve(workspaceRoot, root));
+  return [taxonomyArtifactFileNames.gpc, taxonomyArtifactFileNames.ecoicop, taxonomyArtifactFileNames.nace].flatMap((fileName) =>
+    outputRoots.map((root) => join(root, fileName)),
+  );
+}
 
 /** Stable fields that identify the exact taxonomy expected by one generator. */
 type TaxonomyArtifactIdentity = Readonly<Pick<TaxonomyArtifact, "system" | "version" | "sourceUrl" | "attribution">>;
@@ -44,10 +68,7 @@ class TaxonomySourceUnavailableError extends Error {
  */
 export abstract class TaxonomyClassificationGenerator {
   /** Default API and website directories that receive byte-identical artifacts. */
-  protected static readonly defaultOutputRoots = [
-    resolve("sites/api.arolariu.ro/src/Invoices/Resources/Taxonomies"),
-    resolve("sites/arolariu.ro/src/data/taxonomies"),
-  ] as const;
+  protected static readonly defaultOutputRoots = TAXONOMY_OUTPUT_ROOTS.map((root) => resolve(root));
 
   /** Runtime directories that receive mirrored taxonomy artifacts. */
   protected readonly outputRoots: readonly string[];
@@ -715,9 +736,6 @@ export class Gs1GpcTaxonomyClassificationGenerator extends TaxonomyClassificatio
   /** Version encoded in the generated artifact. */
   static readonly #version = "2026-05";
 
-  /** File name written to every runtime output root. */
-  static readonly #fileName = "gpc-2026-05.min.json";
-
   /** Exact full-taxonomy JSON entry in the pinned GS1 archive. */
   static readonly #archiveEntryName = "GPC as of May 2026 (2026-05-20) EN.json";
 
@@ -766,7 +784,7 @@ export class Gs1GpcTaxonomyClassificationGenerator extends TaxonomyClassificatio
       this.logger.debug(`[GPC] Normalized ${nodes.length} taxonomy node(s).`);
       this.logger.info("[GPC] Writing mirrored taxonomy artifacts.");
 
-      const outputs = await this.writeArtifact(Gs1GpcTaxonomyClassificationGenerator.#fileName, {
+      const outputs = await this.writeArtifact(taxonomyArtifactFileNames.gpc, {
         system: "GS1_GPC",
         version: Gs1GpcTaxonomyClassificationGenerator.#version,
         sourceUrl: Gs1GpcTaxonomyClassificationGenerator.#sourceUrl,
@@ -779,7 +797,7 @@ export class Gs1GpcTaxonomyClassificationGenerator extends TaxonomyClassificatio
     } catch (error: unknown) {
       return await this.resolveGenerationFailure(
         "GPC",
-        Gs1GpcTaxonomyClassificationGenerator.#fileName,
+        taxonomyArtifactFileNames.gpc,
         {
           system: "GS1_GPC",
           version: Gs1GpcTaxonomyClassificationGenerator.#version,
@@ -897,9 +915,6 @@ export class EcoicopTaxonomyClassificationGenerator extends TaxonomyClassificati
   /** Maximum SPARQL bindings requested per page. */
   static readonly #pageSize = 5_000;
 
-  /** File name written to every runtime output root. */
-  static readonly #fileName = "ecoicop-v2.min.json";
-
   /** Required European Union source attribution. */
   static readonly #attribution =
     "European Union, Publications Office of the European Union, reused under the European Commission reuse policy.";
@@ -929,7 +944,7 @@ export class EcoicopTaxonomyClassificationGenerator extends TaxonomyClassificati
       this.logger.debug(`[ECOICOP] Normalized ${nodes.length} taxonomy node(s).`);
       this.logger.info("[ECOICOP] Writing mirrored taxonomy artifacts.");
 
-      const outputs = await this.writeArtifact(EcoicopTaxonomyClassificationGenerator.#fileName, {
+      const outputs = await this.writeArtifact(taxonomyArtifactFileNames.ecoicop, {
         system: "ECOICOP_V2",
         version: EcoicopTaxonomyClassificationGenerator.#version,
         sourceUrl: `${EcoicopTaxonomyClassificationGenerator.#endpoint}#${EcoicopTaxonomyClassificationGenerator.#scheme}`,
@@ -942,7 +957,7 @@ export class EcoicopTaxonomyClassificationGenerator extends TaxonomyClassificati
     } catch (error: unknown) {
       return await this.resolveGenerationFailure(
         "ECOICOP",
-        EcoicopTaxonomyClassificationGenerator.#fileName,
+        taxonomyArtifactFileNames.ecoicop,
         {
           system: "ECOICOP_V2",
           version: EcoicopTaxonomyClassificationGenerator.#version,
@@ -1159,9 +1174,6 @@ export class NaceTaxonomyClassificationGenerator extends TaxonomyClassificationG
   /** Maximum SPARQL bindings requested per page. */
   static readonly #pageSize = 5_000;
 
-  /** File name written to every runtime output root. */
-  static readonly #fileName = "nace-2.1.min.json";
-
   /** Required European Union source attribution. */
   static readonly #attribution =
     "European Union, Publications Office of the European Union, reused under the European Commission reuse policy.";
@@ -1191,7 +1203,7 @@ export class NaceTaxonomyClassificationGenerator extends TaxonomyClassificationG
       this.logger.debug(`[NACE] Normalized ${nodes.length} taxonomy node(s).`);
       this.logger.info("[NACE] Writing mirrored taxonomy artifacts.");
 
-      const outputs = await this.writeArtifact(NaceTaxonomyClassificationGenerator.#fileName, {
+      const outputs = await this.writeArtifact(taxonomyArtifactFileNames.nace, {
         system: "NACE_2_1",
         version: NaceTaxonomyClassificationGenerator.#version,
         sourceUrl: `${NaceTaxonomyClassificationGenerator.#endpoint}#${NaceTaxonomyClassificationGenerator.#scheme}`,
@@ -1204,7 +1216,7 @@ export class NaceTaxonomyClassificationGenerator extends TaxonomyClassificationG
     } catch (error: unknown) {
       return await this.resolveGenerationFailure(
         "NACE",
-        NaceTaxonomyClassificationGenerator.#fileName,
+        taxonomyArtifactFileNames.nace,
         {
           system: "NACE_2_1",
           version: NaceTaxonomyClassificationGenerator.#version,
@@ -1872,16 +1884,21 @@ class SystemArchiveExtractor {
  * interleaved messages retain a stable prefix and generator label.
  *
  * @param options - Optional roots used by targeted tests and alternate workspaces.
+ * @param logger - Logger used by the unified generator lifecycle.
  * @returns Process exit code.
  * @throws {Error} When any generator fails.
  */
+export interface ArtifactMainOptions {
+  /** Optional mirrored taxonomy output roots. */
+  readonly outputRoots?: readonly string[];
+  /** Optional repository root used for frontend-license discovery and output. */
+  readonly workspaceRoot?: string;
+}
+
 export async function main(
-  options: Readonly<{
-    outputRoots?: readonly string[];
-    workspaceRoot?: string;
-  }> = {},
+  options: Readonly<ArtifactMainOptions> = {},
+  logger: MonorepositoryLogger = new MonorepositoryConsoleLogger("generate::artifacts"),
 ): Promise<number> {
-  const logger = new MonorepositoryConsoleLogger("generate::artifacts");
   logger.info("Starting 5 artifact generator(s).");
   const generators = [
     new Gs1GpcTaxonomyClassificationGenerator(options.outputRoots, logger),
