@@ -140,6 +140,30 @@ describe("createTerminalPromptProvider", () => {
     expect(testTerminal.rawModes).toEqual([true, false]);
   });
 
+  it("rejects a closed secret-input stream and restores terminal mode", async () => {
+    const testTerminal = createTestTerminal();
+    const {logger} = createLogger();
+    const prompts = createTerminalPromptProvider(logger, testTerminal.terminal);
+
+    const answer = prompts.secret("Token");
+    testTerminal.input.emit("close");
+    const disposition = await Promise.race([
+      answer.then(
+        () => "resolved" as const,
+        () => "rejected" as const,
+      ),
+      new Promise<"pending">((resolve) => setImmediate(() => resolve("pending"))),
+    ]);
+
+    expect(disposition).toBe("rejected");
+    await expect(answer).rejects.toThrow(/closed before/i);
+    expect(testTerminal.rawModes).toEqual([true, false]);
+    expect(testTerminal.input.listenerCount("data")).toBe(0);
+    expect(testTerminal.input.listenerCount("end")).toBe(0);
+    expect(testTerminal.input.listenerCount("error")).toBe(0);
+    expect(testTerminal.input.listenerCount("close")).toBe(0);
+  });
+
   it("closes the readline interface after cancellation", async () => {
     const testTerminal = createTestTerminal();
     const {logger} = createLogger();

@@ -138,6 +138,7 @@ function readSecret(terminal: PromptTerminal, message: string): Promise<string> 
       terminal.input.removeListener("data", onData);
       terminal.input.removeListener("end", onEnd);
       terminal.input.removeListener("error", onError);
+      terminal.input.removeListener("close", onClose);
       if (rawModeEnabled) {
         rawModeEnabled = false;
         setRawMode(false);
@@ -196,12 +197,17 @@ function readSecret(terminal: PromptTerminal, message: string): Promise<string> 
       settle({error});
     }
 
+    function onClose(): void {
+      settle({error: new Error("Secret prompt input closed before a value was submitted.")});
+    }
+
     try {
       setRawMode(true);
       rawModeEnabled = true;
       terminal.input.on("data", onData);
       terminal.input.once("end", onEnd);
       terminal.input.once("error", onError);
+      terminal.input.once("close", onClose);
       terminal.output.write(`${message}: `);
     } catch (error: unknown) {
       settle({error});
