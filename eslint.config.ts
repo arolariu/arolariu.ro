@@ -841,7 +841,7 @@ const statusEslintConfig: Config = defineConfig({
 const toolingOutputConfig: Config = defineConfig({
   name: "[@arolariu/tooling-output]",
   files: ["scripts/**/*.{ts,js,mjs,cjs}"],
-  ignores: ["scripts/**/*.test.ts", "scripts/common/logger.ts", "scripts/setup.ts", "scripts/doctor.ts", "scripts/status.ts"],
+  ignores: ["scripts/**/*.test.ts", "scripts/common/logger.ts", "scripts/doctor.ts", "scripts/status.ts"],
   languageOptions: {
     parser: tseslint.parser,
     ecmaVersion: "latest",

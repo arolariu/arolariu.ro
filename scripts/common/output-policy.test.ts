@@ -39,6 +39,80 @@ function discoverProductionScripts(directory: string = "scripts"): readonly stri
   return files.toSorted();
 }
 
+function getConfigObjectLiteral(expression: ts.Expression): ts.ObjectLiteralExpression | null {
+  if (
+    ts.isParenthesizedExpression(expression)
+    || ts.isAsExpression(expression)
+    || ts.isSatisfiesExpression(expression)
+    || ts.isNonNullExpression(expression)
+    || ts.isElementAccessExpression(expression)
+  ) {
+    return getConfigObjectLiteral(expression.expression);
+  }
+
+  if (ts.isObjectLiteralExpression(expression)) {
+    return expression;
+  }
+
+  if (ts.isCallExpression(expression)) {
+    for (const argument of expression.arguments) {
+      const objectLiteral = getConfigObjectLiteral(argument);
+      if (objectLiteral !== null) {
+        return objectLiteral;
+      }
+    }
+  }
+
+  return null;
+}
+
+function readConfigStringArrayProperty(fileName: string, variableName: string, propertyName: string): readonly string[] {
+  const source = ts.createSourceFile(fileName, readFileSync(fileName, "utf8"), ts.ScriptTarget.Latest, true);
+
+  for (const statement of source.statements) {
+    if (!ts.isVariableStatement(statement)) {
+      continue;
+    }
+
+    for (const declaration of statement.declarationList.declarations) {
+      if (!ts.isIdentifier(declaration.name) || declaration.name.text !== variableName || declaration.initializer === undefined) {
+        continue;
+      }
+
+      const objectLiteral = getConfigObjectLiteral(declaration.initializer);
+      if (objectLiteral === null) {
+        continue;
+      }
+
+      for (const property of objectLiteral.properties) {
+        if (!ts.isPropertyAssignment(property)) {
+          continue;
+        }
+
+        const propertyNameNode = property.name;
+        const matchesPropertyName =
+          (ts.isIdentifier(propertyNameNode) && propertyNameNode.text === propertyName)
+          || (ts.isStringLiteral(propertyNameNode) && propertyNameNode.text === propertyName)
+          || (ts.isNumericLiteral(propertyNameNode) && propertyNameNode.text === propertyName)
+          || (ts.isNoSubstitutionTemplateLiteral(propertyNameNode) && propertyNameNode.text === propertyName);
+        if (!matchesPropertyName || !ts.isArrayLiteralExpression(property.initializer)) {
+          continue;
+        }
+
+        return property.initializer.elements.map((element) => {
+          if (ts.isStringLiteral(element) || ts.isNoSubstitutionTemplateLiteral(element)) {
+            return element.text;
+          }
+
+          throw new Error(`Expected ${variableName}.${propertyName} to contain only string literals in ${fileName}.`);
+        });
+      }
+    }
+  }
+
+  throw new Error(`Unable to locate ${variableName}.${propertyName} in ${fileName}.`);
+}
+
 function getAccessPath(expression: ts.Expression, scopes: readonly AliasScope[]): AccessPath | null {
   if (
     ts.isParenthesizedExpression(expression)
@@ -206,6 +280,13 @@ function findForbiddenOutputCalls(sourceText: string, fileName: string): readonl
 describe("direct output policy", () => {
   it("anchors every transitional exception to an existing entrypoint", () => {
     expect([...transitionalEntrypoints].filter((fileName) => !existsSync(fileName))).toEqual([]);
+  });
+
+  it("keeps setup out of the tooling output ignore list", () => {
+    const ignores = readConfigStringArrayProperty("eslint.config.ts", "toolingOutputConfig", "ignores");
+
+    expect(ignores).toEqual(expect.arrayContaining([...transitionalEntrypoints]));
+    expect(ignores).not.toContain("scripts/setup.ts");
   });
 
   it("inspects executable calls without matching comments or strings", () => {
