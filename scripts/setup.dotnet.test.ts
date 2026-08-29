@@ -384,6 +384,92 @@ describe("dotnet SDK readiness", () => {
     expect(result.summary).toMatch(/SDK/i);
     expect(harness.actionIds).toEqual(["dotnet.install-sdk"]);
   });
+
+  it("discovers an apt candidate and prefers the exact apt installation over dnf", async () => {
+    const aptVersionKey = commandKey({command: "apt-get", args: ["--version"]});
+    const dnfVersionKey = commandKey({command: "dnf", args: ["--version"]});
+    const aptPolicyKey = commandKey({command: "apt-cache", args: ["policy", "dotnet-sdk-10.0"]});
+    const aptInstallKey = commandKey({command: "sudo", args: ["apt-get", "install", "-y", "dotnet-sdk-10.0"]});
+    const dnfInstallKey = commandKey({command: "sudo", args: ["dnf", "install", "-y", "dotnet-sdk-10.0"]});
+    const unavailable = commandResult({code: 1, spawnError: "ENOENT"});
+    const harness = createHarness({
+      platform: "linux",
+      responses: {
+        [commandKeys.sdks]: [unavailable, commandResult({stdout: "10.0.100 [/usr/share/dotnet/sdk]\n"})],
+        [commandKeys.selectedSdk]: [unavailable, commandResult({stdout: "10.0.100\n"})],
+        [aptVersionKey]: commandResult({stdout: "apt 2.9.0\n"}),
+        [dnfVersionKey]: commandResult({stdout: "4.21.1\n"}),
+        [aptPolicyKey]: commandResult({
+          stdout: "dotnet-sdk-10.0:\n  Installed: (none)\n  Candidate: 10.0.100-1\n  Version table:\n",
+        }),
+        [aptInstallKey]: commandResult(),
+      },
+    });
+
+    const result = await harness.phase.run(harness.context);
+
+    expect(result.status).toBe("succeeded");
+    expect(harness.actionRecords.find(({id}) => id === "dotnet.install-sdk")?.scope).toBe("system");
+    expect(harness.run.mock.calls.find(([command]) => commandKey(command) === aptInstallKey)?.[1]).toMatchObject({
+      cwd: paths.root,
+      output: "inherit",
+    });
+    expect(harness.run.mock.calls.some(([command]) => commandKey(command) === dnfInstallKey)).toBe(false);
+  });
+
+  it("falls back to the exact dnf installation when apt reports no candidate", async () => {
+    const aptVersionKey = commandKey({command: "apt-get", args: ["--version"]});
+    const dnfVersionKey = commandKey({command: "dnf", args: ["--version"]});
+    const aptPolicyKey = commandKey({command: "apt-cache", args: ["policy", "dotnet-sdk-10.0"]});
+    const aptInstallKey = commandKey({command: "sudo", args: ["apt-get", "install", "-y", "dotnet-sdk-10.0"]});
+    const dnfInstallKey = commandKey({command: "sudo", args: ["dnf", "install", "-y", "dotnet-sdk-10.0"]});
+    const unavailable = commandResult({code: 1, spawnError: "ENOENT"});
+    const harness = createHarness({
+      platform: "linux",
+      responses: {
+        [commandKeys.sdks]: [unavailable, commandResult({stdout: "10.0.100 [/usr/share/dotnet/sdk]\n"})],
+        [commandKeys.selectedSdk]: [unavailable, commandResult({stdout: "10.0.100\n"})],
+        [aptVersionKey]: commandResult({stdout: "apt 2.9.0\n"}),
+        [dnfVersionKey]: commandResult({stdout: "4.21.1\n"}),
+        [aptPolicyKey]: commandResult({
+          stdout: "dotnet-sdk-10.0:\n  Installed: (none)\n  Candidate: (none)\n  Version table:\n",
+        }),
+        [dnfInstallKey]: commandResult(),
+      },
+    });
+
+    const result = await harness.phase.run(harness.context);
+
+    expect(result.status).toBe("succeeded");
+    expect(harness.run.mock.calls.some(([command]) => commandKey(command) === aptInstallKey)).toBe(false);
+    expect(harness.run.mock.calls.find(([command]) => commandKey(command) === dnfInstallKey)?.[1]).toMatchObject({
+      cwd: paths.root,
+      output: "inherit",
+    });
+  });
+
+  it("discovers Homebrew and executes the exact macOS installation proposal", async () => {
+    const brewVersionKey = commandKey({command: "brew", args: ["--version"]});
+    const brewInstallKey = commandKey({command: "brew", args: ["install", "--cask", "dotnet-sdk"]});
+    const unavailable = commandResult({code: 1, spawnError: "ENOENT"});
+    const harness = createHarness({
+      platform: "darwin",
+      responses: {
+        [commandKeys.sdks]: [unavailable, commandResult({stdout: "10.0.100 [/usr/local/share/dotnet/sdk]\n"})],
+        [commandKeys.selectedSdk]: [unavailable, commandResult({stdout: "10.0.100\n"})],
+        [brewVersionKey]: commandResult({stdout: "Homebrew 4.6.0\n"}),
+        [brewInstallKey]: commandResult(),
+      },
+    });
+
+    const result = await harness.phase.run(harness.context);
+
+    expect(result.status).toBe("succeeded");
+    expect(harness.run.mock.calls.find(([command]) => commandKey(command) === brewInstallKey)?.[1]).toMatchObject({
+      cwd: paths.root,
+      output: "inherit",
+    });
+  });
 });
 
 describe("restore ordering and failures", () => {
