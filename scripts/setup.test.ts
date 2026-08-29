@@ -8,9 +8,10 @@ import {PassThrough} from "node:stream";
 import {describe, expect, it, vi} from "vitest";
 
 import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "./common/logger.ts";
+import type {CommandRunner} from "./common/process.ts";
 import {createTerminalPromptProvider, type PromptProvider} from "./common/prompts.ts";
-import {createSetupActionExecutor, parseSetupOptions} from "./setup.ts";
-import type {SetupAction, SetupOptions} from "./setup.types.ts";
+import {createSetupActionExecutor, main, parseSetupOptions, runSetup, setupPhases} from "./setup.ts";
+import type {SetupAction, SetupContext, SetupOptions, SetupPhaseDefinition, SetupPhaseResult, SetupStatus} from "./setup.types.ts";
 
 function createLogger(): Readonly<{
   logger: MonorepositoryConsoleLogger;
@@ -228,5 +229,252 @@ describe("parseSetupOptions", () => {
 
   it.each([["--unknown"], ["positional"], ["--engine"], ["--engine=docker"]])("rejects invalid arguments: %s", (...argv) => {
     expect(() => parseSetupOptions(argv)).toThrow(/setup option|engine/i);
+  });
+});
+
+const noopRunner: CommandRunner = {
+  run: async () => ({code: 0, stdout: "", stderr: "", durationMs: 0, timedOut: false}),
+};
+
+function phaseResult(id: string, status: SetupStatus, patch: Partial<SetupPhaseResult> = {}): SetupPhaseResult {
+  return {
+    id,
+    status,
+    summary: patch.summary ?? `${id}:${status}`,
+    evidence: patch.evidence ?? [],
+    nextActions: patch.nextActions ?? [],
+    durationMs: patch.durationMs ?? 1,
+  };
+}
+
+function stubPhase(
+  id: string,
+  config: Readonly<{
+    dependsOn?: readonly string[];
+    required?: boolean;
+    run?: (context: SetupContext) => Promise<SetupPhaseResult>;
+  }> = {},
+): SetupPhaseDefinition {
+  return {
+    id,
+    title: id,
+    required: config.required ?? true,
+    dependsOn: config.dependsOn ?? [],
+    run: config.run ?? ((): Promise<SetupPhaseResult> => Promise.resolve(phaseResult(id, "succeeded"))),
+  };
+}
+
+describe("setupPhases", () => {
+  it("assembles the exact repository onboarding order", () => {
+    expect(setupPhases.map((phase) => phase.id)).toEqual([
+      "workspace.prerequisites",
+      "workspace.root-dependencies",
+      "workspace.github-scripts-dependencies",
+      "workspace.generators",
+      "dotnet",
+      "react",
+      "svelte",
+      "python",
+      "infrastructure",
+    ]);
+  });
+});
+
+describe("runSetup", () => {
+  it("succeeds when every phase reports success", async () => {
+    const {prompts} = createPrompts();
+    const {logger, sink} = createLogger();
+    const phases = [stubPhase("a"), stubPhase("b", {dependsOn: ["a"]})];
+
+    const {exitCode, results} = await runSetup(options(), {phases, logger, prompts, runner: noopRunner});
+
+    expect(exitCode).toBe(0);
+    expect(results.map((result) => result.status)).toEqual(["succeeded", "succeeded"]);
+    expect(sink.records.length).toBeGreaterThan(0);
+  });
+
+  it("traverses a dry-run planned dependency to run downstream generators", async () => {
+    const {prompts} = createPrompts();
+    const {logger} = createLogger();
+    const rootDependenciesRun = vi.fn<() => Promise<SetupPhaseResult>>(() =>
+      Promise.resolve(phaseResult("workspace.root-dependencies", "skipped", {summary: "Planned npm restoration."})),
+    );
+    const generatorsRun = vi.fn<() => Promise<SetupPhaseResult>>(() => Promise.resolve(phaseResult("workspace.generators", "succeeded")));
+    const phases = [
+      stubPhase("workspace.root-dependencies", {run: rootDependenciesRun}),
+      stubPhase("workspace.generators", {dependsOn: ["workspace.root-dependencies"], run: generatorsRun}),
+    ];
+
+    const {exitCode, results} = await runSetup(options({dryRun: true}), {phases, logger, prompts, runner: noopRunner});
+
+    expect(generatorsRun).toHaveBeenCalledOnce();
+    expect(results.find(({id}) => id === "workspace.generators")).toMatchObject({status: "succeeded"});
+    expect(exitCode).toBe(0);
+  });
+
+  it("keeps python and infrastructure independent from a failed dotnet phase", async () => {
+    const {prompts} = createPrompts();
+    const {logger} = createLogger();
+    const pythonRun = vi.fn<() => Promise<SetupPhaseResult>>(() => Promise.resolve(phaseResult("python", "succeeded")));
+    const infrastructureRun = vi.fn<() => Promise<SetupPhaseResult>>(() => Promise.resolve(phaseResult("infrastructure", "succeeded")));
+    const phases = [
+      stubPhase("dotnet", {run: () => Promise.resolve(phaseResult("dotnet", "failed", {summary: "The .NET toolchain failed."}))}),
+      stubPhase("python", {run: pythonRun}),
+      stubPhase("infrastructure", {run: infrastructureRun}),
+    ];
+
+    const {exitCode, results} = await runSetup(options(), {phases, logger, prompts, runner: noopRunner});
+
+    expect(pythonRun).toHaveBeenCalledOnce();
+    expect(infrastructureRun).toHaveBeenCalledOnce();
+    expect(results.find(({id}) => id === "python")).toMatchObject({status: "succeeded"});
+    expect(results.find(({id}) => id === "infrastructure")).toMatchObject({status: "succeeded"});
+    expect(exitCode).toBe(1);
+  });
+
+  it("skips generators, react, and svelte when the workspace root dependency fails", async () => {
+    const {prompts} = createPrompts();
+    const {logger} = createLogger();
+    const phases = [
+      stubPhase("workspace.root-dependencies", {
+        run: () => Promise.resolve(phaseResult("workspace.root-dependencies", "failed", {summary: "npm ci failed."})),
+      }),
+      stubPhase("workspace.generators", {dependsOn: ["workspace.root-dependencies"]}),
+      stubPhase("react", {dependsOn: ["workspace.root-dependencies", "workspace.generators"]}),
+      stubPhase("svelte", {dependsOn: ["workspace.root-dependencies"]}),
+    ];
+
+    const {results} = await runSetup(options(), {phases, logger, prompts, runner: noopRunner});
+
+    expect(results.find(({id}) => id === "workspace.generators")).toMatchObject({
+      status: "skipped",
+      summary: expect.stringContaining("workspace.root-dependencies"),
+    });
+    expect(results.find(({id}) => id === "react")).toMatchObject({
+      status: "skipped",
+      summary: expect.stringContaining("workspace.root-dependencies"),
+    });
+    expect(results.find(({id}) => id === "svelte")).toMatchObject({
+      status: "skipped",
+      summary: expect.stringContaining("workspace.root-dependencies"),
+    });
+  });
+
+  it("does not skip react or svelte when only the .github scripts dependency fails", async () => {
+    const {prompts} = createPrompts();
+    const {logger} = createLogger();
+    const reactRun = vi.fn<() => Promise<SetupPhaseResult>>(() => Promise.resolve(phaseResult("react", "succeeded")));
+    const svelteRun = vi.fn<() => Promise<SetupPhaseResult>>(() => Promise.resolve(phaseResult("svelte", "succeeded")));
+    const phases = [
+      stubPhase("workspace.root-dependencies"),
+      stubPhase("workspace.github-scripts-dependencies", {
+        run: () =>
+          Promise.resolve(phaseResult("workspace.github-scripts-dependencies", "failed", {summary: ".github scripts npm ci failed."})),
+      }),
+      stubPhase("react", {dependsOn: ["workspace.root-dependencies"], run: reactRun}),
+      stubPhase("svelte", {dependsOn: ["workspace.root-dependencies"], run: svelteRun}),
+    ];
+
+    const {results} = await runSetup(options(), {phases, logger, prompts, runner: noopRunner});
+
+    expect(reactRun).toHaveBeenCalledOnce();
+    expect(svelteRun).toHaveBeenCalledOnce();
+    expect(results.find(({id}) => id === "react")).toMatchObject({status: "succeeded"});
+    expect(results.find(({id}) => id === "svelte")).toMatchObject({status: "succeeded"});
+  });
+
+  it("returns exit code 0 for a degraded capability", async () => {
+    const {prompts} = createPrompts();
+    const {logger} = createLogger();
+    const phases = [
+      stubPhase("react", {
+        run: () => Promise.resolve(phaseResult("react", "degraded", {summary: "Clerk credentials are unavailable."})),
+      }),
+    ];
+
+    const {exitCode, results} = await runSetup(options(), {phases, logger, prompts, runner: noopRunner});
+
+    expect(exitCode).toBe(0);
+    expect(results[0]).toMatchObject({status: "degraded"});
+  });
+
+  it("returns exit code 1 for a required failure", async () => {
+    const {prompts} = createPrompts();
+    const {logger} = createLogger();
+    const phases = [stubPhase("dotnet", {run: () => Promise.resolve(phaseResult("dotnet", "failed"))})];
+
+    const {exitCode} = await runSetup(options(), {phases, logger, prompts, runner: noopRunner});
+
+    expect(exitCode).toBe(1);
+  });
+
+  it("renders the exact duration and summary for a completed phase", async () => {
+    const {prompts} = createPrompts();
+    const {logger, sink} = createLogger();
+    const phases = [
+      stubPhase("dotnet", {
+        run: () => Promise.resolve(phaseResult("dotnet", "succeeded", {summary: "The .NET SDK is ready.", durationMs: 42})),
+      }),
+    ];
+
+    await runSetup(options(), {phases, logger, prompts, runner: noopRunner});
+
+    const rendered = sink.records.map((record) => record.text).join("\n");
+    expect(rendered).toContain("The .NET SDK is ready. (42ms)");
+  });
+
+  it("propagates AbortError interruption instead of converting it to a failed result", async () => {
+    const {prompts} = createPrompts();
+    const {logger} = createLogger();
+    const interruption = new DOMException("The command was interrupted", "AbortError");
+    const phases = [stubPhase("dotnet", {run: () => Promise.reject(interruption)})];
+
+    await expect(runSetup(options(), {phases, logger, prompts, runner: noopRunner})).rejects.toBe(interruption);
+  });
+
+  it("converts an ordinary thrown exception into a failed result and continues with independent phases", async () => {
+    const {prompts} = createPrompts();
+    const {logger} = createLogger();
+    const pythonRun = vi.fn<() => Promise<SetupPhaseResult>>(() => Promise.resolve(phaseResult("python", "succeeded")));
+    const phases = [
+      stubPhase("dotnet", {
+        run: (): Promise<SetupPhaseResult> => {
+          throw new Error("unexpected dotnet failure");
+        },
+      }),
+      stubPhase("python", {run: pythonRun}),
+    ];
+
+    const {exitCode, results} = await runSetup(options(), {phases, logger, prompts, runner: noopRunner});
+
+    expect(pythonRun).toHaveBeenCalledOnce();
+    expect(results.find(({id}) => id === "dotnet")).toMatchObject({
+      status: "failed",
+      evidence: expect.arrayContaining([expect.stringContaining("unexpected dotnet failure")]),
+    });
+    expect(exitCode).toBe(1);
+  });
+
+  it("blocks a phase whose dependency was never defined", async () => {
+    const {prompts} = createPrompts();
+    const {logger} = createLogger();
+    const phases = [stubPhase("react", {dependsOn: ["workspace.root-dependencies"]})];
+
+    const {results} = await runSetup(options(), {phases, logger, prompts, runner: noopRunner});
+
+    expect(results[0]).toMatchObject({
+      status: "skipped",
+      summary: expect.stringContaining("workspace.root-dependencies"),
+    });
+  });
+});
+
+describe("main", () => {
+  it("renders help and returns 0 without parsing other options", async () => {
+    await expect(main(["--bogus", "--help"])).resolves.toBe(0);
+  });
+
+  it("rejects on an invalid option instead of silently continuing", async () => {
+    await expect(main(["--bogus"])).rejects.toThrow(/unknown setup option/i);
   });
 });

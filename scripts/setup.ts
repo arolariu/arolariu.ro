@@ -1,12 +1,12 @@
 /**
- * @fileoverview Dev environment bootstrapper for the monorepo.
+ * @fileoverview Dependency-aware onboarding orchestrator for the monorepo.
  * @module scripts/setup
  *
  * @remarks
- * This script validates local toolchain prerequisites (Node, npm, .NET) and
- * offers to install/upgrade them to the minimum supported versions.
- *
- * It is designed to be interactive and platform-aware (Windows/macOS/Linux).
+ * This script prepares a fresh checkout end to end: it validates workspace
+ * prerequisites, restores root and `.github/scripts` dependencies, generates
+ * checkout artifacts, and prepares the .NET, React, Svelte, Python, and local
+ * infrastructure toolchains through independent, dependency-aware phases.
  *
  * @example
  * ```bash
@@ -14,18 +14,18 @@
  * ```
  */
 
-import {execSync} from "child_process";
-import {existsSync, mkdirSync} from "fs";
-import {homedir, platform, tmpdir} from "os";
-import {join} from "path";
-import {styleText} from "node:util";
-import type {MonorepositoryLogger} from "./common/logger.ts";
-import type {PromptProvider} from "./common/prompts.ts";
-import type {SetupActionExecutor, SetupOptions} from "./setup.types.ts";
-
-const REQUIRED_DOTNET_VERSION = 10;
-const REQUIRED_NODE_VERSION = 24;
-const REQUIRED_NPM_VERSION = 11;
+import {defaultCommandRunner, type CommandRunner} from "./common/process.ts";
+import {MonorepositoryConsoleLogger, type MonorepositoryLogger} from "./common/logger.ts";
+import {createTerminalPromptProvider, type PromptProvider} from "./common/prompts.ts";
+import {loadRepositoryRequirements, type RequirementLoadResult} from "./common/requirements.ts";
+import {resolveRepositoryPaths, type RepositoryPaths} from "./common/repository-paths.ts";
+import {dotnetSetupPhase} from "./setup.dotnet.ts";
+import {infrastructureSetupPhase} from "./setup.infrastructure.ts";
+import {pythonSetupPhase} from "./setup.python.ts";
+import {reactSetupPhase} from "./setup.react.ts";
+import {svelteSetupPhase} from "./setup.svelte.ts";
+import type {SetupActionExecutor, SetupContext, SetupOptions, SetupPhaseDefinition, SetupPhaseResult} from "./setup.types.ts";
+import {workspaceSetupPhases} from "./setup.workspace.ts";
 
 function parseContainerEngine(value: string): NonNullable<SetupOptions["engine"]> {
   if (value === "rancher" || value === "podman") {
@@ -36,10 +36,10 @@ function parseContainerEngine(value: string): NonNullable<SetupOptions["engine"]
 }
 
 /**
- * Parses setup command-line options without changing the legacy runtime flow.
+ * Parses setup command-line options.
  *
  * @param argv - Arguments following the setup entrypoint.
- * @returns Strict setup options consumed by the future orchestrator.
+ * @returns Strict setup options consumed by the orchestrator.
  * @throws When an option or container engine is unsupported.
  */
 export function parseSetupOptions(argv: readonly string[]): SetupOptions {
@@ -128,379 +128,340 @@ export function createSetupActionExecutor(
 }
 
 /**
- * Checks whether an executable is available on the current PATH.
+ * Every dependency-aware setup phase in the exact order `runSetup` executes
+ * them.
  *
  * @remarks
- * Uses `where` on Windows and `which` on Unix-like systems.
- *
- * @param command - Executable name to check (e.g. `dotnet`, `node`, `npm`).
- * @returns `true` when the command can be resolved, otherwise `false`.
+ * Workspace phases run first because every other phase depends on a restored
+ * root dependency tree or generated checkout artifact. `dotnet`, `python`,
+ * and `infrastructure` declare no dependency, so an independent failure in
+ * one of them never blocks the others.
  */
-function commandExists(command: string): boolean {
-  try {
-    const testCmd = platform() === "win32" ? `where ${command}` : `which ${command}`;
-    execSync(testCmd, {stdio: "pipe"});
-    return true;
-  } catch {
+export const setupPhases: readonly SetupPhaseDefinition[] = [
+  ...workspaceSetupPhases,
+  dotnetSetupPhase,
+  reactSetupPhase,
+  svelteSetupPhase,
+  pythonSetupPhase,
+  infrastructureSetupPhase,
+];
+
+/**
+ * Boundary values {@link runSetup} needs to resolve repository context and
+ * execute every phase.
+ *
+ * @remarks
+ * Exported so tests can inject fake phases and deterministic boundaries
+ * without replacing the repository modules that own path discovery, manifest
+ * loading, command execution, prompting, or logging.
+ */
+export interface SetupDependencies {
+  /** Ordered phases to execute; defaults to {@link setupPhases}. */
+  readonly phases: readonly SetupPhaseDefinition[];
+  /** Resolves canonical repository paths. */
+  readonly resolveRepositoryPaths: () => RepositoryPaths;
+  /** Loads manifest-derived repository requirements. */
+  readonly loadRepositoryRequirements: (paths: RepositoryPaths) => Promise<RequirementLoadResult>;
+  /** Executes phase commands. */
+  readonly runner: CommandRunner;
+  /** Resolves interactive phase prompts. */
+  readonly prompts: PromptProvider;
+  /** Receives setup presentation and semantic output. */
+  readonly logger: MonorepositoryLogger;
+  /** Monotonic time source used for phase and orchestrator durations. */
+  readonly now: () => number;
+}
+
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
+function isInterrupted(error: unknown): boolean {
+  return error instanceof Error && error.name === "AbortError";
+}
+
+function formatDuration(durationMs: number): string {
+  return `${Math.max(0, Math.round(durationMs))}ms`;
+}
+
+/**
+ * Describes why a dependency did not satisfy a downstream phase.
+ *
+ * @param dependencyId - Identifier of the unmet dependency.
+ * @param dependencyResult - The dependency's recorded result, if any.
+ * @returns Evidence naming the exact blocking dependency and its state.
+ */
+function unmetDependencyEvidence(dependencyId: string, dependencyResult: SetupPhaseResult | undefined): string {
+  if (dependencyResult === undefined) {
+    return `Dependency '${dependencyId}' was not defined or had not run before this phase.`;
+  }
+  return `Dependency '${dependencyId}' has status '${dependencyResult.status}', not 'succeeded' or 'degraded'.`;
+}
+
+/**
+ * Determines whether a completed dependency satisfies a downstream phase.
+ *
+ * @remarks
+ * A `succeeded` or `degraded` dependency always satisfies. During a dry run,
+ * a dependency the orchestrator did not itself skip may also be a `skipped`
+ * result whose mutations were merely planned; that remains traversable so
+ * downstream phases still plan their own actions.
+ *
+ * @param dependencyResult - The dependency's recorded result, if any.
+ * @param dryRun - Whether setup is planning mutations instead of applying them.
+ * @param blockerSkipIds - Identifiers of orchestrator-synthesized skips.
+ * @returns Whether the dependency is satisfied.
+ */
+function isDependencySatisfied(
+  dependencyResult: SetupPhaseResult | undefined,
+  dryRun: boolean,
+  blockerSkipIds: ReadonlySet<string>,
+): boolean {
+  if (dependencyResult === undefined) {
     return false;
   }
-}
-
-/**
- * Reads the installed .NET SDK version.
- *
- * @remarks
- * If `dotnet` is missing or `dotnet --version` fails, the function returns an
- * `installed: false` marker so callers can decide whether to prompt install.
- *
- * @returns Version metadata including the parsed major version.
- */
-function getDotnetVersion(): {installed: boolean; version: string; majorVersion: number} {
-  if (!commandExists("dotnet")) {
-    return {installed: false, version: "not installed", majorVersion: 0};
-  }
-
-  try {
-    const result = execSync("dotnet --version", {encoding: "utf-8", stdio: "pipe"});
-    const version = result.trim();
-    const majorVersion = parseInt(version.split(".")[0]!, 10);
-    return {installed: true, version, majorVersion};
-  } catch {
-    return {installed: false, version: "error", majorVersion: 0};
-  }
-}
-
-/**
- * Reads the installed Node.js version.
- *
- * @returns Version metadata including the parsed major version.
- */
-function getNodeVersion(): {installed: boolean; version: string; majorVersion: number} {
-  if (!commandExists("node")) {
-    return {installed: false, version: "not installed", majorVersion: 0};
-  }
-
-  try {
-    const result = execSync("node --version", {encoding: "utf-8", stdio: "pipe"});
-    const version = result.trim().replace("v", "");
-    const majorVersion = parseInt(version.split(".")[0]!, 10);
-    return {installed: true, version, majorVersion};
-  } catch {
-    return {installed: false, version: "error", majorVersion: 0};
-  }
-}
-
-/**
- * Reads the installed npm version.
- *
- * @returns Version metadata including the parsed major version.
- */
-function getNpmVersion(): {installed: boolean; version: string; majorVersion: number} {
-  if (!commandExists("npm")) {
-    return {installed: false, version: "not installed", majorVersion: 0};
-  }
-
-  try {
-    const result = execSync("npm --version", {encoding: "utf-8", stdio: "pipe"});
-    const version = result.trim();
-    const majorVersion = parseInt(version.split(".")[0]!, 10);
-    return {installed: true, version, majorVersion};
-  } catch {
-    return {installed: false, version: "error", majorVersion: 0};
-  }
-}
-
-/**
- * Downloads and installs the .NET SDK required by this monorepo.
- *
- * @remarks
- * The installer is sourced from the official dot.net install scripts.
- *
- * On success the function updates `PATH`/`DOTNET_ROOT` for the *current process*
- * and prints guidance for persistently updating the user's environment.
- *
- * @returns `true` when installation succeeded; otherwise `false`.
- */
-async function installDotnet(): Promise<boolean> {
-  console.log(styleText("cyan", "\n📥 Installing .NET 10 SDK..."));
-
-  const isWindows = platform() === "win32";
-  const installDir = join(homedir(), ".dotnet");
-
-  try {
-    // Create install directory if it doesn't exist
-    if (!existsSync(installDir)) {
-      mkdirSync(installDir, {recursive: true});
-    }
-
-    if (isWindows) {
-      // Download and run PowerShell install script
-      console.log(styleText("gray", "  → Downloading .NET install script for Windows..."));
-      const scriptPath = join(tmpdir(), "dotnet-install.ps1");
-
-      // Download the script
-      execSync(
-        `powershell -NoProfile -ExecutionPolicy Bypass -Command "Invoke-WebRequest -Uri 'https://dot.net/v1/dotnet-install.ps1' -OutFile '${scriptPath}'"`,
-        {stdio: "inherit"},
-      );
-
-      // Run the script to install .NET 10
-      console.log(styleText("gray", "  → Installing .NET 10 SDK..."));
-      execSync(
-        `powershell -NoProfile -ExecutionPolicy Bypass -File "${scriptPath}" -Channel 10.0 -InstallDir "${installDir}" -Version latest`,
-        {stdio: "inherit"},
-      );
-    } else {
-      // Download and run bash install script for Linux/macOS
-      console.log(styleText("gray", "  → Downloading .NET install script for Unix..."));
-      const scriptPath = join(tmpdir(), "dotnet-install.sh");
-
-      // Download the script
-      execSync(`curl -sSL https://dot.net/v1/dotnet-install.sh -o "${scriptPath}"`, {stdio: "inherit"});
-      execSync(`chmod +x "${scriptPath}"`, {stdio: "inherit"});
-
-      // Run the script to install .NET 10
-      console.log(styleText("gray", "  → Installing .NET 10 SDK..."));
-      execSync(`"${scriptPath}" --channel 10.0 --install-dir "${installDir}" --version latest`, {stdio: "inherit"});
-    }
-
-    // Add to PATH for current session
-    process.env["PATH"] = `${installDir}${isWindows ? ";" : ":"}${process.env["PATH"]}`;
-    process.env["DOTNET_ROOT"] = installDir;
-
-    console.log(styleText("green", "  ✓ .NET 10 SDK installed successfully!"));
-    console.log(styleText("yellow", `  ⚠ Please add ${installDir} to your PATH environment variable permanently.`));
-    console.log(styleText("yellow", `  ⚠ Also set DOTNET_ROOT=${installDir}`));
-
+  if (dependencyResult.status === "succeeded" || dependencyResult.status === "degraded") {
     return true;
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : String(error);
-    console.error(styleText("red", "  ✗ Failed to install .NET 10 SDK:"), message);
+  }
+  return dependencyResult.status === "skipped" && dryRun && !blockerSkipIds.has(dependencyResult.id);
+}
+
+/**
+ * Determines whether a required phase's result blocks overall readiness.
+ *
+ * @param result - The phase's recorded result.
+ * @param dryRun - Whether setup is planning mutations instead of applying them.
+ * @param blockerSkipIds - Identifiers of orchestrator-synthesized skips.
+ * @returns Whether the result blocks setup readiness.
+ */
+function blocksReadiness(result: SetupPhaseResult, dryRun: boolean, blockerSkipIds: ReadonlySet<string>): boolean {
+  if (result.status === "failed") {
+    return true;
+  }
+  if (result.status !== "skipped") {
     return false;
   }
+  return blockerSkipIds.has(result.id) || !dryRun;
 }
 
 /**
- * Downloads and installs the Node.js runtime required by this monorepo.
+ * Renders one phase's status, duration, summary, and evidence.
+ *
+ * @param logger - Logger scoped to the completed phase.
+ * @param result - The phase's recorded result.
+ */
+function renderPhaseResult(logger: MonorepositoryLogger, result: SetupPhaseResult): void {
+  const message = `${result.summary} (${formatDuration(result.durationMs)})`;
+  switch (result.status) {
+    case "succeeded":
+      logger.success(message);
+      break;
+    case "degraded":
+    case "skipped":
+      logger.warn(message);
+      break;
+    case "failed":
+      logger.error(message);
+      break;
+  }
+  for (const evidenceLine of result.evidence) {
+    logger.line(`  - ${evidenceLine}`);
+  }
+}
+
+/**
+ * Runs every dependency-aware setup phase in sequence and reports readiness.
  *
  * @remarks
- * Installation strategy is platform-dependent:
- * - Windows: downloads an MSI and invokes `msiexec`.
- * - macOS: downloads a PKG and invokes `installer`.
- * - Linux: downloads a tarball and extracts it to a local directory.
+ * Phases run sequentially so prompts, package managers, and local
+ * configuration writes cannot race; dependency handling, not concurrency,
+ * isolates failures. Before each phase, every declared dependency must have
+ * `succeeded`, `degraded`, or (during `--dry-run`) been planned rather than
+ * blocked; otherwise the phase is skipped, naming the exact blocking
+ * dependency. An ordinary phase exception becomes one failed result and
+ * setup continues with independent phases; an `AbortError` is rethrown
+ * unchanged so the caller can distinguish interruption from failure.
  *
- * @returns `true` when installation completed; otherwise `false`.
+ * @param options - Parsed setup options.
+ * @param dependencies - Optional boundary replacements; unset values default
+ * to the real repository-owned functions and executors.
+ * @returns The overall exit code and every phase's recorded result.
+ * @throws When repository paths or requirements cannot be resolved, or when
+ * a phase rejects with an `AbortError`.
  */
-async function installNodeJs(): Promise<boolean> {
-  console.log(styleText("cyan", "\n📥 Installing Node.js 24..."));
+export async function runSetup(
+  options: Readonly<SetupOptions>,
+  dependencies: Readonly<Partial<SetupDependencies>> = {},
+): Promise<
+  Readonly<{
+    exitCode: number;
+    results: readonly SetupPhaseResult[];
+  }>
+> {
+  const logger = dependencies.logger ?? new MonorepositoryConsoleLogger("setup", {verbose: options.verbose});
+  const prompts = dependencies.prompts ?? createTerminalPromptProvider(logger);
+  const runner = dependencies.runner ?? defaultCommandRunner;
+  const now = dependencies.now ?? ((): number => performance.now());
+  const resolvePaths = dependencies.resolveRepositoryPaths ?? ((): RepositoryPaths => resolveRepositoryPaths());
+  const loadRequirements = dependencies.loadRepositoryRequirements ?? loadRepositoryRequirements;
+  const phases = dependencies.phases ?? setupPhases;
 
-  const currentPlatform = platform();
-  const arch = process.arch;
+  logger.banner([
+    "arolariu.ro repository setup",
+    options.dryRun
+      ? "Dry run: planning every phase without mutating the repository."
+      : "Preparing every required workspace, toolchain, and local dependency.",
+  ]);
 
-  // Map process.arch to Node.js download arch naming
-  const archMap: Record<string, string> = {
-    x64: "x64",
-    arm64: "arm64",
-    ia32: "x86",
+  const paths = resolvePaths();
+  const requirementLoad = await loadRequirements(paths);
+  if (requirementLoad.status === "invalid") {
+    throw new Error(`Repository requirements are invalid:\n${requirementLoad.errors.join("\n")}`);
+  }
+
+  const actions = createSetupActionExecutor({options, prompts, logger});
+  const context: SetupContext = {
+    options,
+    paths,
+    requirements: requirementLoad.requirements,
+    runner,
+    prompts,
+    actions,
+    logger,
+    now,
   };
 
-  const nodeArch = archMap[arch] || arch;
+  const results: SetupPhaseResult[] = [];
+  const resultById = new Map<string, SetupPhaseResult>();
+  const blockerSkipIds = new Set<string>();
 
-  try {
-    if (currentPlatform === "win32") {
-      console.log(styleText("gray", "  → Downloading Node.js 24 installer for Windows..."));
-      const installerUrl = `https://nodejs.org/dist/v24.9.0/node-v24.9.0-${nodeArch}.msi`;
-      const installerPath = join(tmpdir(), "node-installer.msi");
+  for (const phase of phases) {
+    const phaseLogger = logger.child(phase.id);
+    phaseLogger.section(phase.title);
 
-      execSync(`powershell -Command "Invoke-WebRequest -Uri '${installerUrl}' -OutFile '${installerPath}'"`, {
-        stdio: "inherit",
-      });
+    const unmetDependency = phase.dependsOn.find(
+      (dependencyId) => !isDependencySatisfied(resultById.get(dependencyId), options.dryRun, blockerSkipIds),
+    );
 
-      console.log(styleText("gray", "  → Running Node.js installer..."));
-      console.log(styleText("yellow", "  ⚠ Please follow the installation wizard to complete the installation."));
-      execSync(`msiexec /i "${installerPath}" /qn`, {stdio: "inherit"});
-    } else if (currentPlatform === "darwin") {
-      console.log(styleText("gray", "  → Downloading Node.js 24 package for macOS..."));
-      const installerUrl = `https://nodejs.org/dist/v24.9.0/node-v24.9.0.pkg`;
-      const installerPath = join(tmpdir(), "node-installer.pkg");
-
-      execSync(`curl -o "${installerPath}" "${installerUrl}"`, {stdio: "inherit"});
-
-      console.log(styleText("gray", "  → Running Node.js installer..."));
-      console.log(styleText("yellow", "  ⚠ You may be prompted for your password."));
-      execSync(`sudo installer -pkg "${installerPath}" -target /`, {stdio: "inherit"});
+    let result: SetupPhaseResult;
+    if (unmetDependency !== undefined) {
+      const startedAt = now();
+      result = {
+        id: phase.id,
+        status: "skipped",
+        summary: `Skipped '${phase.title}' because dependency '${unmetDependency}' did not succeed.`,
+        evidence: [unmetDependencyEvidence(unmetDependency, resultById.get(unmetDependency))],
+        nextActions: [`Resolve '${unmetDependency}', then rerun setup.`],
+        durationMs: Math.max(0, now() - startedAt),
+      };
+      blockerSkipIds.add(phase.id);
     } else {
-      // Linux - download and extract tarball
-      console.log(styleText("gray", "  → Downloading Node.js 24 for Linux..."));
-      const installDir = join(homedir(), ".nodejs");
-      const tarballUrl = `https://nodejs.org/dist/v24.9.0/node-v24.9.0-linux-${nodeArch}.tar.xz`;
-      const tarballPath = join(tmpdir(), "node.tar.xz");
-
-      execSync(`curl -o "${tarballPath}" "${tarballUrl}"`, {stdio: "inherit"});
-
-      if (!existsSync(installDir)) {
-        mkdirSync(installDir, {recursive: true});
+      const startedAt = now();
+      try {
+        result = await phase.run(context);
+      } catch (error: unknown) {
+        if (isInterrupted(error)) {
+          throw error;
+        }
+        result = {
+          id: phase.id,
+          status: "failed",
+          summary: `'${phase.title}' failed with an unexpected exception.`,
+          evidence: [errorMessage(error)],
+          nextActions: [`Resolve the reported '${phase.title}' failure, then rerun setup.`],
+          durationMs: Math.max(0, now() - startedAt),
+        };
       }
-
-      console.log(styleText("gray", "  → Extracting Node.js..."));
-      execSync(`tar -xf "${tarballPath}" -C "${installDir}" --strip-components=1`, {stdio: "inherit"});
-
-      // Add to PATH for current session
-      const binDir = join(installDir, "bin");
-      process.env["PATH"] = `${binDir}:${process.env["PATH"]}`;
-
-      console.log(styleText("yellow", `  ⚠ Please add ${binDir} to your PATH environment variable permanently.`));
     }
 
-    console.log(styleText("green", "  ✓ Node.js 24 installation completed!"));
-    console.log(styleText("yellow", "  ⚠ You may need to restart your terminal or IDE for changes to take effect."));
-
-    return true;
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : String(error);
-    console.error(styleText("red", "  ✗ Failed to install Node.js 24:"), message);
-    console.log(styleText("yellow", "\n  💡 Please install Node.js 24 manually from https://nodejs.org/"));
-    return false;
+    results.push(result);
+    resultById.set(phase.id, result);
+    renderPhaseResult(phaseLogger, result);
   }
+
+  logger.section("Setup summary");
+  logger.table({
+    headers: ["Phase", "Status", "Duration", "Summary"],
+    rows: results.map((result) => [result.id, result.status, formatDuration(result.durationMs), result.summary]),
+  });
+
+  const degradedResults = results.filter((result) => result.status === "degraded");
+  if (degradedResults.length > 0) {
+    logger.section("Degraded capabilities");
+    for (const degradedResult of degradedResults) {
+      logger.warn(degradedResult.summary);
+    }
+  }
+
+  const nextActions = results.flatMap((result) => result.nextActions);
+  if (nextActions.length > 0) {
+    logger.section("Next actions");
+    nextActions.forEach((nextAction, index) => logger.line(`${index + 1}. ${nextAction}`));
+  }
+
+  const phaseById = new Map(phases.map((phase) => [phase.id, phase]));
+  const blocked = results.some((result) => {
+    const definition = phaseById.get(result.id);
+    return definition !== undefined && definition.required && blocksReadiness(result, options.dryRun, blockerSkipIds);
+  });
+  const outcome: "ready" | "degraded" | "failed" = blocked ? "failed" : degradedResults.length > 0 ? "degraded" : "ready";
+
+  logger.banner(
+    [
+      outcome === "failed"
+        ? "Setup failed. Resolve the reported failures, then rerun setup."
+        : outcome === "degraded"
+          ? "Setup is ready with degraded capabilities."
+          : "Setup is ready.",
+    ],
+    outcome === "failed" ? "red" : outcome === "degraded" ? "yellow" : "green",
+  );
+
+  return {exitCode: blocked ? 1 : 0, results};
 }
 
+const HELP_LINES: readonly string[] = [
+  "Usage: node scripts/setup.ts [options]",
+  "",
+  "Options:",
+  "  --verbose            Show diagnostic detail for each phase.",
+  "  --dry-run            Plan every phase mutation without executing it.",
+  "  --yes                Approve system-scoped mutations without prompting.",
+  "  --engine <engine>    Select rancher or podman for infrastructure phases.",
+  "  --help               Show this help message.",
+];
+
 /**
- * Runs the development environment setup flow.
+ * Runs the setup CLI entrypoint.
  *
  * @remarks
- * This is the CLI entrypoint used by `npm run setup`.
+ * `--help` is detected before options are parsed or any phase runs, so an
+ * unsupported flag combined with `--help` never surfaces a parse error.
  *
- * The function validates minimum versions for .NET, Node.js and npm.
- * When requirements are not met, it attempts guided installation or upgrade.
- *
- * @returns Process exit code (0 for success, non-zero for failure).
+ * @param argv - Arguments following the setup entrypoint.
+ * @returns Process exit code.
  */
-export async function runLegacySetup(): Promise<number> {
-  console.log(styleText(["bold", "magenta"], "\n╔════════════════════════════════════════╗"));
-  console.log(styleText(["bold", "magenta"], "║   arolariu.ro Development Setup Tool   ║"));
-  console.log(styleText(["bold", "magenta"], "╚════════════════════════════════════════╝\n"));
-
-  let hasErrors = false;
-
-  // Check .NET version
-  console.log(styleText("bold", "\n🔍 Checking .NET SDK..."));
-  const dotnetInfo = getDotnetVersion();
-
-  if (!dotnetInfo.installed) {
-    console.log(styleText("red", `  ✗ .NET is not installed`));
-    console.log(styleText("yellow", `  → Required: .NET ${REQUIRED_DOTNET_VERSION}.x`));
-
-    const installed = await installDotnet();
-    if (!installed) {
-      hasErrors = true;
+export async function main(argv: readonly string[] = process.argv.slice(2)): Promise<number> {
+  if (argv.includes("--help")) {
+    const logger = new MonorepositoryConsoleLogger("setup", {verbose: false});
+    logger.banner(["arolariu.ro repository setup"]);
+    for (const line of HELP_LINES) {
+      logger.line(line);
     }
-  } else if (dotnetInfo.majorVersion < REQUIRED_DOTNET_VERSION) {
-    console.log(styleText("yellow", `  ⚠ Found .NET ${dotnetInfo.version}`));
-    console.log(styleText("yellow", `  → Required: .NET ${REQUIRED_DOTNET_VERSION}.x`));
-
-    const installed = await installDotnet();
-    if (!installed) {
-      hasErrors = true;
-    }
-  } else {
-    console.log(styleText("green", `  ✓ .NET ${dotnetInfo.version} is installed`));
+    return 0;
   }
 
-  // Check Node.js version
-  console.log(styleText("bold", "\n🔍 Checking Node.js..."));
-  const nodeInfo = getNodeVersion();
-
-  if (!nodeInfo.installed) {
-    console.log(styleText("red", `  ✗ Node.js is not installed`));
-    console.log(styleText("yellow", `  → Required: Node.js ${REQUIRED_NODE_VERSION}.x or higher`));
-
-    const installed = await installNodeJs();
-    if (!installed) {
-      hasErrors = true;
-    }
-  } else if (nodeInfo.majorVersion < REQUIRED_NODE_VERSION) {
-    console.log(styleText("yellow", `  ⚠ Found Node.js ${nodeInfo.version}`));
-    console.log(styleText("yellow", `  → Required: Node.js ${REQUIRED_NODE_VERSION}.x or higher`));
-
-    const installed = await installNodeJs();
-    if (!installed) {
-      hasErrors = true;
-    }
-  } else {
-    console.log(styleText("green", `  ✓ Node.js ${nodeInfo.version} is installed`));
-  }
-
-  // Check npm version
-  console.log(styleText("bold", "\n🔍 Checking npm..."));
-  const npmInfo = getNpmVersion();
-
-  if (!npmInfo.installed) {
-    console.log(styleText("red", `  ✗ npm is not installed`));
-    console.log(styleText("yellow", `  → npm should be installed with Node.js`));
-    hasErrors = true;
-  } else if (npmInfo.majorVersion < REQUIRED_NPM_VERSION) {
-    console.log(styleText("yellow", `  ⚠ Found npm ${npmInfo.version}`));
-    console.log(styleText("yellow", `  → Required: npm ${REQUIRED_NPM_VERSION}.x or higher`));
-    console.log(styleText("gray", `  → Updating npm...`));
-
-    try {
-      execSync("npm install -g npm@latest", {stdio: "inherit"});
-      console.log(styleText("green", `  ✓ npm updated successfully`));
-    } catch (error: unknown) {
-      const msg = error instanceof Error ? error.message : String(error);
-      console.error(styleText("red", `  ✗ Failed to update npm: ${msg}`));
-      hasErrors = true;
-    }
-  } else {
-    console.log(styleText("green", `  ✓ npm ${npmInfo.version} is installed`));
-  }
-
-  // Stop if there were critical errors
-  if (hasErrors) {
-    console.log(styleText(["bold", "red"], "\n❌ Setup encountered errors. Please resolve them before continuing.\n"));
-    return 1;
-  }
-
-  console.log(styleText("bold", "\n🏷️ Generating taxonomy and license artifacts..."));
-  try {
-    await import("./generate.artifacts.ts").then((module) => module.main());
-    console.log(styleText("green", "  ✓ Taxonomy and license artifacts generated"));
-  } catch (error: unknown) {
-    console.log(
-      styleText("red", `  ✗ Taxonomy and license artifact generation failed: ${error instanceof Error ? error.message : String(error)}`),
-    );
-    return 1;
-  }
-
-  // Final summary
-  if (hasErrors) {
-    console.log(styleText(["bold", "red"], "\n❌ Setup completed with errors.\n"));
-    return 1;
-  }
-
-  console.log(styleText(["bold", "green"], "\n✅ Setup completed successfully!"));
-  console.log(styleText("gray", "\n📝 Next steps:"));
-  console.log(styleText("gray", "  1. Restart your terminal or IDE if you installed new software"));
-  console.log(styleText("gray", "  2. Run 'npm run dev' to start development"));
-  console.log(styleText("gray", "  3. Check the README.md for more information\n"));
-
-  return 0;
-}
-
-/**
- * Runs the current setup entrypoint.
- *
- * @returns Process exit code from the behavior-preserving legacy setup flow.
- */
-export async function main(): Promise<number> {
-  return runLegacySetup();
+  const options = parseSetupOptions(argv);
+  const {exitCode} = await runSetup(options);
+  return exitCode;
 }
 
 if (import.meta.main) {
   main()
-    .then((exitCode) => process.exit(exitCode))
-    .catch((error) => {
-      console.error(styleText("red", "\n❌ Unexpected error:"), error);
-      process.exit(1);
+    .then((exitCode) => {
+      process.exitCode = exitCode;
+    })
+    .catch((error: unknown) => {
+      process.exitCode = isInterrupted(error) ? 130 : 1;
     });
 }
