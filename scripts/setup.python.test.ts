@@ -518,7 +518,7 @@ describe("python virtual environment preparation", () => {
     const paths = await createFixture();
     const venv = venvPython(paths, "win32");
     const venvVersionKey = commandKey({command: venv.command, args: ["--version"]});
-    const createKey = commandKey({command: "python", args: ["-m", "venv", `${paths.expRoot}\\.venv`]});
+    const createKey = commandKey({command: "py", args: ["-3.12", "-m", "venv", `${paths.expRoot}\\.venv`]});
     const upgradeKey = commandKey({command: venv.command, args: ["-m", "pip", "install", "--upgrade", "pip"]});
     const installKey = commandKey({command: venv.command, args: ["-m", "pip", "install", "-r", paths.pythonRequirements]});
     const checkKey = commandKey({command: venv.command, args: ["-m", "pip", "check"]});
@@ -544,6 +544,7 @@ describe("python virtual environment preparation", () => {
       "python.dependencies.install",
       "python.fingerprint.write",
     ]);
+    expect(harness.run.mock.calls.map(([command]) => commandKey(command))).toContain(createKey);
     expect(harness.removedDirectories).toEqual([`${paths.expRoot}\\.venv`]);
     const config = JSON.parse(await readFile(paths.toolingConfig, "utf8")) as ToolingConfigV1;
     expect(config.fingerprints?.pythonRequirementsSha256).toBe(await sha256File(paths.pythonRequirements));
@@ -553,7 +554,7 @@ describe("python virtual environment preparation", () => {
     const paths = await createFixture();
     const venv = venvPython(paths, "win32");
     const venvVersionKey = commandKey({command: venv.command, args: ["--version"]});
-    const createKey = commandKey({command: "python", args: ["-m", "venv", `${paths.expRoot}\\.venv`]});
+    const createKey = commandKey({command: "py", args: ["-3.12", "-m", "venv", `${paths.expRoot}\\.venv`]});
     const harness = createHarness({
       paths,
       platform: "win32",
@@ -647,13 +648,14 @@ describe("python virtual environment preparation", () => {
   it("fails without further actions when venv creation fails", async () => {
     const paths = await createFixture();
     const venv = venvPython(paths, "win32");
-    const createKey = commandKey({command: "python", args: ["-m", "venv", `${paths.expRoot}\\.venv`]});
+    const venvVersionKey = commandKey({command: venv.command, args: ["--version"]});
+    const createKey = commandKey({command: "py", args: ["-3.12", "-m", "venv", `${paths.expRoot}\\.venv`]});
     const harness = createHarness({
       paths,
       platform: "win32",
       responses: {
         [commandKey({command: "py", args: ["-3.12", "--version"]})]: commandResult({stdout: "Python 3.12.4\n"}),
-        [commandKey({command: venv.command, args: ["--version"]})]: commandResult({code: 1, spawnError: "ENOENT"}),
+        [venvVersionKey]: commandResult({code: 1, spawnError: "ENOENT"}),
         [createKey]: commandResult({code: 1, stderr: "boom\n"}),
       },
     });
@@ -662,6 +664,13 @@ describe("python virtual environment preparation", () => {
 
     expect(result.status).toBe("failed");
     expect(harness.actionIds).toEqual(["python.venv.create"]);
+    expect(result.evidence.join("\n")).toContain("Python virtual environment creation failed.");
+    expect(result.evidence.join("\n")).toContain("stderr: boom");
+    const calledKeys = harness.run.mock.calls.map(([command]) => commandKey(command));
+    expect(calledKeys.filter((key) => key === venvVersionKey)).toHaveLength(1);
+    expect(calledKeys).not.toContain(commandKey({command: venv.command, args: ["-m", "pip", "install", "--upgrade", "pip"]}));
+    expect(calledKeys).not.toContain(commandKey({command: venv.command, args: ["-m", "pip", "install", "-r", paths.pythonRequirements]}));
+    expect(calledKeys).not.toContain(commandKey({command: venv.command, args: ["-m", "pip", "check"]}));
   });
 
   it("fails without installing requirements when pip upgrade fails", async () => {
@@ -926,7 +935,7 @@ describe("python virtual environment preparation", () => {
   it("never issues a bare pip, remote-installer, build, test, or service command", async () => {
     const paths = await createFixture();
     const venv = venvPython(paths, "win32");
-    const createKey = commandKey({command: "python", args: ["-m", "venv", `${paths.expRoot}\\.venv`]});
+    const createKey = commandKey({command: "py", args: ["-3.12", "-m", "venv", `${paths.expRoot}\\.venv`]});
     const harness = createHarness({
       paths,
       platform: "win32",
