@@ -59,6 +59,10 @@ function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
+function hasErrorCode(error: unknown, code: string): boolean {
+  return error instanceof Error && "code" in error && error.code === code;
+}
+
 function isSuccessfulCommand(result: Readonly<CommandResult>): boolean {
   return result.code === 0 && !result.timedOut && result.signal === undefined && result.spawnError === undefined;
 }
@@ -96,26 +100,61 @@ function validRequirement(version: MinimumVersion): boolean {
 async function isDirectory(path: string): Promise<boolean> {
   try {
     return (await stat(path)).isDirectory();
-  } catch {
-    return false;
+  } catch (error: unknown) {
+    if (hasErrorCode(error, "ENOENT")) {
+      return false;
+    }
+    throw new Error(`Unable to inspect dependency directory '${path}': ${errorMessage(error)}`);
   }
 }
 
 async function isFile(path: string): Promise<boolean> {
   try {
     return (await stat(path)).isFile();
-  } catch {
-    return false;
+  } catch (error: unknown) {
+    if (hasErrorCode(error, "ENOENT")) {
+      return false;
+    }
+    throw new Error(`Unable to inspect generated artifact '${path}': ${errorMessage(error)}`);
   }
 }
 
-async function readRepositoryIdentity(packageJsonPath: string): Promise<string | null> {
+type RepositoryIdentityReadResult =
+  {readonly status: "missing"} | {readonly status: "valid"; readonly name: string} | {readonly status: "invalid"; readonly error: string};
+
+async function readRepositoryIdentity(packageJsonPath: string): Promise<RepositoryIdentityReadResult> {
+  let contents: string;
   try {
-    const parsed: unknown = JSON.parse(await readFile(packageJsonPath, "utf8"));
-    return isRecord(parsed) && typeof parsed["name"] === "string" ? parsed["name"] : null;
-  } catch {
-    return null;
+    contents = await readFile(packageJsonPath, "utf8");
+  } catch (error: unknown) {
+    if (hasErrorCode(error, "ENOENT")) {
+      return {status: "missing"};
+    }
+    return {
+      status: "invalid",
+      error: `Unable to read repository identity '${packageJsonPath}': ${errorMessage(error)}`,
+    };
   }
+
+  try {
+    const parsed: unknown = JSON.parse(contents);
+    if (!isRecord(parsed) || typeof parsed["name"] !== "string") {
+      return {
+        status: "invalid",
+        error: `Repository identity '${packageJsonPath}' must be a JSON object with a string name.`,
+      };
+    }
+    return {status: "valid", name: parsed["name"]};
+  } catch (error: unknown) {
+    return {
+      status: "invalid",
+      error: `Unable to parse repository identity '${packageJsonPath}': ${errorMessage(error)}`,
+    };
+  }
+}
+
+function hasValidGitVersionOutput(value: string): boolean {
+  return /^git version (?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)(?=$|[.\s+-])/u.test(value.trim());
 }
 
 function inspectRuntimeVersion(
@@ -160,7 +199,25 @@ async function runPrerequisites(context: SetupContext): Promise<SetupPhaseResult
   const id = "workspace.prerequisites";
   const repositoryIdentity = await readRepositoryIdentity(context.paths.packageJson);
 
-  if (repositoryIdentity !== REPOSITORY_PACKAGE_NAME) {
+  if (repositoryIdentity.status === "missing") {
+    return result(context, startedAt, {
+      id,
+      status: "failed",
+      summary: "The canonical repository path does not identify the arolariu.ro monorepository.",
+      evidence: [`Repository identity file '${context.paths.packageJson}' does not exist.`],
+      nextActions: ["Run setup from a checkout of the arolariu.ro monorepository."],
+    });
+  }
+  if (repositoryIdentity.status === "invalid") {
+    return result(context, startedAt, {
+      id,
+      status: "failed",
+      summary: "The canonical repository identity could not be validated.",
+      evidence: [repositoryIdentity.error],
+      nextActions: ["Correct the repository identity file or its filesystem access, then rerun setup."],
+    });
+  }
+  if (repositoryIdentity.name !== REPOSITORY_PACKAGE_NAME) {
     return result(context, startedAt, {
       id,
       status: "failed",
@@ -205,7 +262,7 @@ async function runPrerequisites(context: SetupContext): Promise<SetupPhaseResult
 
   const evidence: string[] = [];
   const nextActions: string[] = [];
-  const gitVersion = /^git version \d+(?:\.\d+){1,3}(?:[.\-+][^\s]+)?$/u.test(gitResult.stdout.trim());
+  const gitVersion = hasValidGitVersionOutput(gitResult.stdout);
   if (!isSuccessfulCommand(gitResult) || !gitVersion) {
     evidence.push(
       "Git version probe failed.",
@@ -341,11 +398,46 @@ function selectedConfig(readResult: Awaited<ReturnType<typeof readToolingConfig>
   return readResult.status === "valid" ? readResult.config : undefined;
 }
 
+function otherLockFingerprint(lockFingerprint: NpmTreeDefinition["lockFingerprint"]): NpmTreeDefinition["lockFingerprint"] {
+  return lockFingerprint === "rootPackageLockSha256" ? "githubScriptsPackageLockSha256" : "rootPackageLockSha256";
+}
+
+function withoutLockFingerprint(
+  config: ToolingConfigV1 | undefined,
+  lockFingerprint: NpmTreeDefinition["lockFingerprint"],
+): ToolingConfigV1 | undefined {
+  if (config?.fingerprints === undefined) {
+    return config;
+  }
+
+  const fingerprints = config.fingerprints;
+  const preservedFingerprints: SetupFingerprints =
+    lockFingerprint === "rootPackageLockSha256"
+      ? {
+          ...(fingerprints.nodeVersion === undefined ? {} : {nodeVersion: fingerprints.nodeVersion}),
+          ...(fingerprints.githubScriptsPackageLockSha256 === undefined
+            ? {}
+            : {githubScriptsPackageLockSha256: fingerprints.githubScriptsPackageLockSha256}),
+          ...(fingerprints.pythonRequirementsSha256 === undefined ? {} : {pythonRequirementsSha256: fingerprints.pythonRequirementsSha256}),
+        }
+      : {
+          ...(fingerprints.nodeVersion === undefined ? {} : {nodeVersion: fingerprints.nodeVersion}),
+          ...(fingerprints.rootPackageLockSha256 === undefined ? {} : {rootPackageLockSha256: fingerprints.rootPackageLockSha256}),
+          ...(fingerprints.pythonRequirementsSha256 === undefined ? {} : {pythonRequirementsSha256: fingerprints.pythonRequirementsSha256}),
+        };
+
+  return {
+    ...config,
+    fingerprints: preservedFingerprints,
+  };
+}
+
 async function writeSuccessfulFingerprint(
   context: SetupContext,
   tree: NpmTreeDefinition,
   currentNodeVersion: string,
   currentLockHash: string,
+  nodeVersionChanged: boolean,
 ): Promise<SetupActionDisposition> {
   const actionId = `${tree.phaseId}.write-fingerprint`;
   return context.actions.run({
@@ -357,13 +449,17 @@ async function writeSuccessfulFingerprint(
       if (latest.status === "invalid") {
         throw new Error(latest.error);
       }
+      const currentConfig = selectedConfig(latest);
+      const mergeBase = nodeVersionChanged
+        ? withoutLockFingerprint(currentConfig, otherLockFingerprint(tree.lockFingerprint))
+        : currentConfig;
       const fingerprints: Partial<SetupFingerprints> = {
         nodeVersion: currentNodeVersion,
         [tree.lockFingerprint]: currentLockHash,
       };
       await writeToolingConfig(
         context.paths.toolingConfig,
-        mergeToolingConfig(selectedConfig(latest), {
+        mergeToolingConfig(mergeBase, {
           fingerprints,
         }),
       );
@@ -406,6 +502,7 @@ async function runNpmTreePhase(context: SetupContext, tree: NpmTreeDefinition): 
     }
     const currentNodeVersion = normalizedVersion(runningNodeVersion);
     const fingerprints = selectedConfig(configResult)?.fingerprints;
+    const nodeVersionChanged = fingerprints?.nodeVersion !== currentNodeVersion;
     const restoreRequired = shouldRestoreNpmTree({
       directoryExists,
       inspection,
@@ -480,7 +577,7 @@ async function runNpmTreePhase(context: SetupContext, tree: NpmTreeDefinition): 
     }
 
     const fingerprintActionId = `${tree.phaseId}.write-fingerprint`;
-    const fingerprintDisposition = await writeSuccessfulFingerprint(context, tree, currentNodeVersion, currentLockHash);
+    const fingerprintDisposition = await writeSuccessfulFingerprint(context, tree, currentNodeVersion, currentLockHash, nodeVersionChanged);
     if (fingerprintDisposition === "planned") {
       return result(context, startedAt, {
         id: tree.phaseId,
@@ -536,30 +633,29 @@ function parseNxProjects(commandResult: Readonly<CommandResult>): readonly strin
 async function runGenerators(context: SetupContext): Promise<SetupPhaseResult> {
   const startedAt = context.now();
   const id = "workspace.generators";
-  const nxResult = await context.runner.run(NX_PROJECTS_COMMAND, {
-    cwd: context.paths.root,
-  });
-  const projects = parseNxProjects(nxResult);
-  if (projects === null) {
-    return result(context, startedAt, {
-      id,
-      status: "failed",
-      summary: "Nx project metadata is unavailable or malformed.",
-      evidence: [
-        ...commandFailureEvidence(nxResult),
-        ...(nxResult.stdout.trim() === "" ? ["Nx returned no project JSON."] : [`Nx output: ${nxResult.stdout.trim()}`]),
-      ],
-      nextActions: ["Restore the root dependency tree and correct the Nx workspace metadata before rerunning setup."],
-    });
-  }
-
   const generatorActionId = "workspace.generators.generate";
+  let projectCount: number | undefined;
   try {
     const disposition = await context.actions.run({
       id: generatorActionId,
       scope: "repository",
       summary: "Generate taxonomy, GraphQL, and internationalization checkout artifacts.",
       execute: async () => {
+        const nxResult = await context.runner.run(NX_PROJECTS_COMMAND, {
+          cwd: context.paths.root,
+        });
+        const projects = parseNxProjects(nxResult);
+        if (projects === null) {
+          throw new Error(
+            [
+              "Nx project metadata is unavailable or malformed.",
+              ...commandFailureEvidence(nxResult),
+              ...(nxResult.stdout.trim() === "" ? ["Nx returned no project JSON."] : [`Nx output: ${nxResult.stdout.trim()}`]),
+            ].join("\n"),
+          );
+        }
+        projectCount = projects.length;
+
         const generatorResult = await context.runner.run(
           {
             command: process.execPath,
@@ -582,7 +678,7 @@ async function runGenerators(context: SetupContext): Promise<SetupPhaseResult> {
         id,
         status: "skipped",
         summary: "Repository artifact generation is planned by dry-run.",
-        evidence: [`Planned action: ${generatorActionId}`, `Nx reported ${projects.length} project(s).`],
+        evidence: [`Planned action: ${generatorActionId}`],
         nextActions: [],
       });
     }
@@ -605,12 +701,32 @@ async function runGenerators(context: SetupContext): Promise<SetupPhaseResult> {
     });
   }
 
+  if (projectCount === undefined) {
+    return result(context, startedAt, {
+      id,
+      status: "failed",
+      summary: "Repository artifact generation completed without validated Nx metadata.",
+      evidence: [`Executed action '${generatorActionId}' did not report validated Nx projects.`],
+      nextActions: ["Restore the root dependency tree and correct the Nx workspace metadata before rerunning setup."],
+    });
+  }
+
   const expectedArtifacts = [
     ...getExpectedTaxonomyArtifactPaths(context.paths.root),
-    resolve(context.paths.websiteRoot, "messages", "en.d.json.ts"),
     resolve(context.paths.root, "scripts", "__generated__", "gql", "README.placeholder.txt"),
   ];
-  const artifactChecks = await Promise.all(expectedArtifacts.map(async (path) => ({path, exists: await isFile(path)})));
+  let artifactChecks: readonly Readonly<{path: string; exists: boolean}>[];
+  try {
+    artifactChecks = await Promise.all(expectedArtifacts.map(async (path) => ({path, exists: await isFile(path)})));
+  } catch (error: unknown) {
+    return result(context, startedAt, {
+      id,
+      status: "failed",
+      summary: "Repository generator postconditions could not be inspected.",
+      evidence: [errorMessage(error)],
+      nextActions: ["Correct filesystem access to the generated artifacts, then rerun setup."],
+    });
+  }
   const missingArtifacts = artifactChecks.filter(({exists}) => !exists).map(({path}) => path);
   if (missingArtifacts.length > 0) {
     return result(context, startedAt, {
@@ -627,7 +743,7 @@ async function runGenerators(context: SetupContext): Promise<SetupPhaseResult> {
     status: "succeeded",
     summary: "Nx metadata and required generated checkout artifacts are valid.",
     evidence: [
-      `Nx reported ${projects.length} project(s).`,
+      `Nx reported ${projectCount} project(s).`,
       `Executed action: ${generatorActionId}`,
       `Verified ${expectedArtifacts.length} generated artifact(s).`,
     ],

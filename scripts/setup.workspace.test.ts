@@ -5,8 +5,8 @@
  */
 
 import {mkdir, mkdtemp, readFile, rm, stat, unlink, writeFile} from "node:fs/promises";
+import {tmpdir} from "node:os";
 import {dirname, join, resolve} from "node:path";
-import {fileURLToPath} from "node:url";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 
 import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "./common/logger.ts";
@@ -25,7 +25,34 @@ import type {
   SetupPhaseDefinition,
 } from "./setup.types.ts";
 
-const testDirectory = dirname(fileURLToPath(import.meta.url));
+const filesystemFailures = vi.hoisted(
+  (): {
+    readFile?: Readonly<{path: string; code: "EACCES"}>;
+    stat?: Readonly<{path: string; code: "EPERM" | "EIO"}>;
+  } => ({}),
+);
+
+vi.mock("node:fs/promises", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("node:fs/promises")>();
+  return {
+    ...actual,
+    readFile: (...args: unknown[]) => {
+      const failure = filesystemFailures.readFile;
+      if (failure !== undefined && String(args[0]) === failure.path) {
+        return Promise.reject(Object.assign(new Error(`${failure.code}: simulated read failure`), {code: failure.code}));
+      }
+      return Reflect.apply(actual.readFile, actual, args);
+    },
+    stat: (...args: unknown[]) => {
+      const failure = filesystemFailures.stat;
+      if (failure !== undefined && String(args[0]) === failure.path) {
+        return Promise.reject(Object.assign(new Error(`${failure.code}: simulated stat failure`), {code: failure.code}));
+      }
+      return Reflect.apply(actual.stat, actual, args);
+    },
+  };
+});
+
 const temporaryRoots: string[] = [];
 function requireNodeVersion(): MinimumVersion {
   const version = parseVersion(process.version);
@@ -173,7 +200,7 @@ async function writeFixture(path: string, contents: string = ""): Promise<void> 
 }
 
 async function createFixture(): Promise<RepositoryPaths> {
-  const root = await mkdtemp(join(testDirectory, ".setup-workspace-test-"));
+  const root = await mkdtemp(join(tmpdir(), "arolariu-setup-workspace-test-"));
   temporaryRoots.push(root);
   const paths = createRepositoryPaths(root);
   const nodeMajor = String(nodeVersion.major);
@@ -235,7 +262,6 @@ async function writeMatchingConfig(paths: RepositoryPaths): Promise<void> {
 async function writeGeneratedArtifacts(paths: RepositoryPaths): Promise<readonly string[]> {
   const generatedPaths = [
     ...getExpectedTaxonomyArtifactPaths(paths.root),
-    resolve(paths.websiteRoot, "messages", "en.d.json.ts"),
     resolve(paths.root, "scripts", "__generated__", "gql", "README.placeholder.txt"),
   ];
   await Promise.all(generatedPaths.map((path) => writeFixture(path, "generated\n")));
@@ -244,6 +270,8 @@ async function writeGeneratedArtifacts(paths: RepositoryPaths): Promise<readonly
 
 beforeEach(() => {
   vi.restoreAllMocks();
+  delete filesystemFailures.readFile;
+  delete filesystemFailures.stat;
 });
 
 afterEach(async () => {
@@ -423,16 +451,64 @@ describe("workspace prerequisites", () => {
     expect(run).not.toHaveBeenCalled();
   });
 
-  it("accepts supported Node and npm versions", async () => {
+  it.each([
+    ["plain", "git version 2.50.0\n"],
+    ["Apple", "git version 2.39.5 (Apple Git-154)\n"],
+    ["Windows", "git version 2.51.0.windows.1\n"],
+  ])("accepts %s vendor Git output with supported Node and npm versions", async (_vendor, gitOutput) => {
     const paths = await createFixture();
-    const {runner} = createRunner();
+    const {runner} = createRunner((command) =>
+      command.command === "git" ? commandResult({stdout: gitOutput}) : defaultCommandResponse(command),
+    );
     const {actions} = createActions(false);
 
     const result = await findPhase("workspace.prerequisites").run(createContext(paths, runner, actions));
 
     expect(result.status).toBe("succeeded");
+    expect(result.evidence.join("\n")).toContain(gitOutput.trim());
     expect(result.evidence.join("\n")).toContain(process.version);
     expect(result.evidence.join("\n")).toContain("11.0.0");
+  });
+
+  it("rejects malformed Git output", async () => {
+    const paths = await createFixture();
+    const {runner} = createRunner((command) =>
+      command.command === "git" ? commandResult({stdout: "git version vendor-only\n"}) : defaultCommandResponse(command),
+    );
+    const {actions} = createActions(false);
+
+    const result = await findPhase("workspace.prerequisites").run(createContext(paths, runner, actions));
+
+    expect(result.status).toBe("failed");
+    expect(result.evidence.join("\n")).toMatch(/malformed.*vendor-only/i);
+  });
+
+  it("reports malformed repository identity instead of inferring a missing checkout", async () => {
+    const paths = await createFixture();
+    await writeFixture(paths.packageJson, "{not-json");
+    const {runner, run} = createRunner();
+    const {actions, run: runAction} = createActions(false);
+
+    const result = await findPhase("workspace.prerequisites").run(createContext(paths, runner, actions));
+
+    expect(result.status).toBe("failed");
+    expect(result.evidence.join("\n")).toMatch(/parse|JSON/i);
+    expect(run).not.toHaveBeenCalled();
+    expect(runAction).not.toHaveBeenCalled();
+  });
+
+  it("reports repository identity permission failures without probing or mutating", async () => {
+    const paths = await createFixture();
+    filesystemFailures.readFile = {path: paths.packageJson, code: "EACCES"};
+    const {runner, run} = createRunner();
+    const {actions, run: runAction} = createActions(false);
+
+    const result = await findPhase("workspace.prerequisites").run(createContext(paths, runner, actions));
+
+    expect(result.status).toBe("failed");
+    expect(result.evidence.join("\n")).toContain("EACCES");
+    expect(run).not.toHaveBeenCalled();
+    expect(runAction).not.toHaveBeenCalled();
   });
 
   it.each([
@@ -638,6 +714,68 @@ describe("workspace npm restoration", () => {
     expect(config.fingerprints?.["githubScriptsPackageLockSha256"]).toBe(await sha256File(paths.githubScriptsPackageLock));
   });
 
+  it("restores both npm trees exactly once after Node drift and is idempotent on the next complete run", async () => {
+    const paths = await createFixture();
+    await writeMatchingConfig(paths);
+    const originalConfig = JSON.parse(await readFile(paths.toolingConfig, "utf8")) as {
+      fingerprints: Record<string, string>;
+    };
+    originalConfig.fingerprints.nodeVersion = "1.0.0";
+    await writeFixture(paths.toolingConfig, `${JSON.stringify(originalConfig, null, 2)}\n`);
+    const {runner, run} = createRunner();
+    const {actions, actionIds} = createActions(false);
+    const context = createContext(paths, runner, actions);
+    const rootPhase = findPhase("workspace.root-dependencies");
+    const githubPhase = findPhase("workspace.github-scripts-dependencies");
+
+    await expect(rootPhase.run(context)).resolves.toMatchObject({status: "succeeded"});
+    await expect(githubPhase.run(context)).resolves.toMatchObject({status: "succeeded"});
+
+    expect(
+      run.mock.calls.filter(([command]) => command.command === "npm" && command.args[0] === "ci").map(([, runOptions]) => runOptions?.cwd),
+    ).toEqual([paths.root, paths.githubScriptsRoot]);
+    expect(actionIds).toEqual([
+      "workspace.root-dependencies.npm-ci",
+      "workspace.root-dependencies.write-fingerprint",
+      "workspace.github-scripts-dependencies.npm-ci",
+      "workspace.github-scripts-dependencies.write-fingerprint",
+    ]);
+
+    const actionCountAfterFirstRun = actionIds.length;
+    await expect(rootPhase.run(context)).resolves.toMatchObject({status: "succeeded"});
+    await expect(githubPhase.run(context)).resolves.toMatchObject({status: "succeeded"});
+
+    expect(actionIds).toHaveLength(actionCountAfterFirstRun);
+    expect(run.mock.calls.filter(([command]) => command.command === "npm" && command.args[0] === "ci")).toHaveLength(2);
+    const config = JSON.parse(await readFile(paths.toolingConfig, "utf8")) as {
+      readonly containerEngine?: string;
+      readonly fingerprints?: Readonly<Record<string, string>>;
+    };
+    expect(config).toMatchObject({
+      containerEngine: "podman",
+      fingerprints: {
+        nodeVersion: `${nodeVersion.major}.${nodeVersion.minor}.${nodeVersion.patch}`,
+        rootPackageLockSha256: await sha256File(paths.packageLock),
+        githubScriptsPackageLockSha256: await sha256File(paths.githubScriptsPackageLock),
+        pythonRequirementsSha256: "preserve-python",
+      },
+    });
+  });
+
+  it("reports node_modules permission failures without planning restoration", async () => {
+    const paths = await createFixture();
+    const nodeModules = resolve(paths.root, "node_modules");
+    filesystemFailures.stat = {path: nodeModules, code: "EPERM"};
+    const {runner} = createRunner();
+    const {actions, run: runAction} = createActions(false);
+
+    const result = await findPhase("workspace.root-dependencies").run(createContext(paths, runner, actions));
+
+    expect(result.status).toBe("failed");
+    expect(result.evidence.join("\n")).toContain("EPERM");
+    expect(runAction).not.toHaveBeenCalled();
+  });
+
   it("returns a traversable skipped result in dry-run without mutation", async () => {
     const paths = await createFixture();
     const {runner, run} = createRunner();
@@ -661,12 +799,14 @@ describe("workspace generators", () => {
     const paths = await createFixture();
     await writeGeneratedArtifacts(paths);
     const {runner, run} = createRunner();
-    const {actions, actionIds} = createActions(false);
+    const {actions, actionIds, run: runAction} = createActions(false);
 
     const result = await findPhase("workspace.generators").run(createContext(paths, runner, actions));
 
     expect(result.status).toBe("succeeded");
     expect(actionIds).toEqual(["workspace.generators.generate"]);
+    expect(runAction.mock.calls[0]?.[0]).toMatchObject({id: "workspace.generators.generate", scope: "repository"});
+    expect(run.mock.calls.map(([command]) => command.command)).toEqual(["npx", process.execPath]);
     expect(run).toHaveBeenCalledWith(
       {
         command: "npx",
@@ -690,27 +830,31 @@ describe("workspace generators", () => {
     ["invalid project names", '[""]'],
   ])("rejects %s Nx JSON", async (_name, stdout) => {
     const paths = await createFixture();
-    const {runner} = createRunner((command) => (command.command === "npx" ? commandResult({stdout}) : defaultCommandResponse(command)));
-    const {actions, run} = createActions(false);
+    const {runner, run} = createRunner((command) =>
+      command.command === "npx" ? commandResult({stdout}) : defaultCommandResponse(command),
+    );
+    const {actions, actionIds} = createActions(false);
 
     const result = await findPhase("workspace.generators").run(createContext(paths, runner, actions));
 
     expect(result.status).toBe("failed");
-    expect(run).not.toHaveBeenCalled();
+    expect(actionIds).toEqual(["workspace.generators.generate"]);
+    expect(run.mock.calls.some(([command]) => command.command === process.execPath)).toBe(false);
   });
 
   it("rejects failed Nx execution even when stdout contains valid JSON", async () => {
     const paths = await createFixture();
-    const {runner} = createRunner((command) =>
+    const {runner, run} = createRunner((command) =>
       command.command === "npx" ? commandResult({code: 1, stdout: '["website"]', stderr: "nx failed"}) : defaultCommandResponse(command),
     );
-    const {actions, run} = createActions(false);
+    const {actions, actionIds} = createActions(false);
 
     const result = await findPhase("workspace.generators").run(createContext(paths, runner, actions));
 
     expect(result.status).toBe("failed");
     expect(result.evidence.join("\n")).toContain("nx failed");
-    expect(run).not.toHaveBeenCalled();
+    expect(actionIds).toEqual(["workspace.generators.generate"]);
+    expect(run.mock.calls.some(([command]) => command.command === process.execPath)).toBe(false);
   });
 
   it("fails when the generator command fails", async () => {
@@ -743,6 +887,38 @@ describe("workspace generators", () => {
     }
   });
 
+  it("does not own the Next-generated locale declaration", async () => {
+    const paths = await createFixture();
+    const generatedPaths = await writeGeneratedArtifacts(paths);
+    const nextDeclaration = resolve(paths.websiteRoot, "messages", "en.d.json.ts");
+    const {runner} = createRunner();
+    const {actions} = createActions(false);
+
+    expect(generatedPaths).not.toContain(nextDeclaration);
+    await expect(stat(nextDeclaration)).rejects.toMatchObject({code: "ENOENT"});
+    await expect(findPhase("workspace.generators").run(createContext(paths, runner, actions))).resolves.toMatchObject({
+      status: "succeeded",
+    });
+  });
+
+  it("reports generated artifact I/O failures instead of inferring a missing artifact", async () => {
+    const paths = await createFixture();
+    const generatedPaths = await writeGeneratedArtifacts(paths);
+    const inaccessibleArtifact = generatedPaths[0];
+    if (inaccessibleArtifact === undefined) {
+      throw new Error("Expected at least one generated artifact.");
+    }
+    filesystemFailures.stat = {path: inaccessibleArtifact, code: "EIO"};
+    const {runner} = createRunner();
+    const {actions} = createActions(false);
+
+    const result = await findPhase("workspace.generators").run(createContext(paths, runner, actions));
+
+    expect(result.status).toBe("failed");
+    expect(result.evidence.join("\n")).toContain("EIO");
+    expect(result.evidence.join("\n")).not.toContain(`Missing generated artifact: ${inaccessibleArtifact}`);
+  });
+
   it("returns a traversable skipped result in dry-run and names the generator action", async () => {
     const paths = await createFixture();
     const {runner, run} = createRunner();
@@ -756,6 +932,6 @@ describe("workspace generators", () => {
     expect(result.status).toBe("skipped");
     expect(result.evidence.join("\n")).toContain("workspace.generators.generate");
     expect(actionIds).toEqual(["workspace.generators.generate"]);
-    expect(run.mock.calls.some(([command]) => command.command === process.execPath)).toBe(false);
+    expect(run).not.toHaveBeenCalled();
   });
 });
