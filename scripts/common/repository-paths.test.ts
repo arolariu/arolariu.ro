@@ -40,7 +40,7 @@ describe("createRepositoryPaths", () => {
       statusRoot: resolve(root, "sites", "status.arolariu.ro"),
       expRoot: resolve(root, "sites", "exp.arolariu.ro"),
       pythonProject: resolve(root, "sites", "exp.arolariu.ro", "pyproject.toml"),
-      pythonRequirements: resolve(root, "sites", "exp.arolariu.ro", "requirements.txt"),
+      pythonRequirements: resolve(root, "sites", "exp.arolariu.ro", "requirements-dev.txt"),
       toolingConfig: resolve(root, ".arolariu", "tooling.local.json"),
     });
   });

@@ -65,7 +65,7 @@ export function createRepositoryPaths(root: string): RepositoryPaths {
     statusRoot: resolve(resolvedRoot, "sites", "status.arolariu.ro"),
     expRoot,
     pythonProject: resolve(expRoot, "pyproject.toml"),
-    pythonRequirements: resolve(expRoot, "requirements.txt"),
+    pythonRequirements: resolve(expRoot, "requirements-dev.txt"),
     toolingConfig: resolve(resolvedRoot, ".arolariu", "tooling.local.json"),
   };
 }
