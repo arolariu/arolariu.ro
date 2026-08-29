@@ -838,10 +838,33 @@ const statusEslintConfig: Config = defineConfig({
   },
 })[0] as Config;
 
-const eslintConfig = defineConfig(websiteEslintConfig, cvEslintConfig, packagesEslintConfig, statusEslintConfig);
+const toolingOutputConfig: Config = defineConfig({
+  name: "[@arolariu/tooling-output]",
+  files: ["scripts/**/*.{ts,js,mjs,cjs}"],
+  ignores: ["scripts/**/*.test.ts", "scripts/common/logger.ts", "scripts/setup.ts", "scripts/doctor.ts", "scripts/status.ts"],
+  languageOptions: {
+    parser: tseslint.parser,
+    ecmaVersion: "latest",
+    sourceType: "module",
+    globals: globals.node,
+  },
+  rules: {
+    "no-console": "error",
+    "no-restricted-syntax": [
+      "error",
+      {
+        selector:
+          "CallExpression[callee.type='MemberExpression'][callee.property.name='write'][callee.object.type='MemberExpression'][callee.object.object.name='process'][callee.object.property.name=/^(stdout|stderr)$/]",
+        message: "Route script-authored process stream output through MonorepositoryConsoleLogger.",
+      },
+    ],
+  },
+});
+
+const projectEslintConfig = defineConfig(websiteEslintConfig, cvEslintConfig, packagesEslintConfig, statusEslintConfig);
 
 // Add the global ignores to the default config.
-for (const individualEslintConfig of eslintConfig) {
+for (const individualEslintConfig of projectEslintConfig) {
   const eslintPathsIgnoreList = [
     "**/{node_modules,.storybook,.svelte-kit,.next,out,bin,build,dist,scripts,tests}/**", // dirs
     "**/*.{test,config,spec,setup,stories,d}.{js,jsx,ts,tsx}", // files
@@ -851,5 +874,7 @@ for (const individualEslintConfig of eslintConfig) {
     ? [...individualEslintConfig.ignores, ...eslintPathsIgnoreList]
     : [...eslintPathsIgnoreList];
 }
+
+const eslintConfig = defineConfig(projectEslintConfig, toolingOutputConfig);
 
 export default eslintConfig;
