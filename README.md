@@ -267,9 +267,10 @@ Docker Desktop is unsupported and is never selected as a fallback.
 
 Useful flags: `npm run setup -- --verbose` (diagnostic evidence per phase), `npm run setup -- --dry-run` (plan every mutation without
 executing it and without any consent prompt — an engine-selection prompt can still appear when no engine has been chosen yet;
-combine with `--engine` to avoid it), `npm run setup -- --yes` (approve system-scoped mutations — SDK, .NET workload, HTTPS-trust,
-Playwright Linux system-dependency, mkcert, and container-engine installs — without an interactive prompt; it never invents an engine
-choice, prompted text, or a secret), and `npm run setup -- --engine rancher|podman` (select the engine explicitly).
+combine with `--engine` to avoid it), `npm run setup -- --yes` (approve system-scoped mutations — SDK, .NET workload, Python
+interpreter, HTTPS-trust, Playwright Linux system-dependency, mkcert, and container-engine installs — without an interactive prompt;
+it never invents an engine choice, prompted text, or a secret), and `npm run setup -- --engine rancher|podman` (select the engine
+explicitly).
 
 Website authentication ([Clerk](https://clerk.com)) is optional: without a valid, mode-matched publishable/secret key pair, `npm run
 setup` still exits `0` and reports authenticated website capability as degraded.

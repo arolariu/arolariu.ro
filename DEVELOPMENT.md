@@ -28,7 +28,7 @@
 
 There are three ways to develop locally. Choose based on your needs:
 
-| | Aspire (default) | Selfhost (Docker Compose) | DevContainer / Codespaces |
+| | Aspire (default) | Selfhost (Compose) | DevContainer / Codespaces |
 |---|---|---|---|
 | **Best for** | Day-to-day coding with fast iteration | CI parity, deploy-mock-of-prod, container auditing | Onboarding, cloud dev, consistent env |
 | **Hot reload** | ✅ All services (apps run native) | ❌ Production builds, no reload | ✅ All services (Aspire runs inside container) |
@@ -230,7 +230,7 @@ Open the workspace file that matches your role for a tailored VS Code experience
 
 > **Storybook** for interactive component development is available via the website workspace: `cd sites/arolariu.ro && npm run storybook` (port 6006).
 
-### Docker Compose Services (when using Option B)
+### Selfhost Compose Services
 
 | Service | URL | HTTPS URL |
 |---------|-----|-----------|
@@ -251,7 +251,7 @@ Open the workspace file that matches your role for a tailored VS Code experience
 ```bash
 npm run dev              # Aspire mode — full stack (apps native + infra in Aspire-managed containers)
 npm run dev:aspire       # Explicit alias for npm run dev
-npm run dev:selfhost     # Selfhost mode — fully containerized via Docker Compose
+npm run dev:selfhost     # Selfhost mode — fully containerized via the selected engine's Compose provider
 npm run dev:website      # Next.js website standalone (no AppHost)
 npm run dev:api          # .NET API standalone (no AppHost; needs infra separately)
 npm run dev:exp          # Python exp service standalone
@@ -291,7 +291,7 @@ npm run build:components # Build component library
 ### Code Generation
 
 ```bash
-npm run generate         # Generate all (env, i18n, GraphQL)
+npm run generate -- /a /g /i  # Regenerate setup-owned artifacts, GraphQL types, and i18n (excludes destructive env generation)
 npm run generate:env     # ⚠️ Destructive manual regeneration — rewrites root .env and overwrites sites/arolariu.ro/.env; not a routine post-setup step
 npm run generate:i18n    # i18n translation sync
 npm run generate:gql     # GraphQL type generation
@@ -303,7 +303,7 @@ npm run generate:gql     # GraphQL type generation
 
 ### How Config Works
 
-In production and Docker, all runtime config flows through the **exp** service — the website and API fetch config values from `http://exp/api/v1/config` at runtime.
+In production and selfhost mode, all runtime config flows through the **exp** service — the website and API fetch config values from `http://exp/api/v1/config` at runtime.
 
 For bare-metal local development, environment variables are set via `sites/arolariu.ro/.env`, which `npm run setup` additively
 populates with core local defaults (`SITE_ENV`, `SITE_NAME`, `SITE_URL`, `USE_CDN`) without overwriting existing entries. `npm run
@@ -321,10 +321,11 @@ unconditionally** — treat it as a manual, destructive regeneration command, no
 | `ASPNETCORE_ENVIRONMENT` | API | `Development` |
 
 > **Warning:** `npm run generate:env` unconditionally rewrites the root `.env` and overwrites `sites/arolariu.ro/.env` — it is a manual,
-> destructive regeneration command, not a routine step after `npm run setup`. See `.env.example` for the monorepo-wide reference, and
-> the per-app `.env.example` files for service-specific values. If you copy `.env.example` to `sites/arolariu.ro/.env` before running
-> `npm run setup`, the Clerk keys already exist (empty) in that file, so setup will not prompt for them — fill the publishable/secret
-> pair in by hand, or omit those two lines from your copy first if you want the interactive prompt.
+> destructive regeneration command, not a routine step after `npm run setup`. See the root `.env.example` for the monorepo-wide
+> reference and per-app templates such as `sites/arolariu.ro/.env.example` for service-specific values. If you copy
+> `sites/arolariu.ro/.env.example` to `sites/arolariu.ro/.env` before running `npm run setup`, the Clerk keys already exist (empty) in
+> that file, so setup will not prompt for them — fill the publishable/secret pair in by hand, or omit those two lines from your copy
+> first if you want the interactive prompt.
 
 ---
 
@@ -379,11 +380,11 @@ All services support **debugging with breakpoints** AND **hot reload simultaneou
 The **"Full Stack: Website + API + exp"** compound is a true one-click experience:
 
 1. **Press F5** (or select from the debug dropdown)
-2. The `preLaunchTask` automatically starts Docker infrastructure (CosmosDB, SQL, Redis, Azurite)
+2. The `preLaunchTask` automatically starts local container infrastructure (CosmosDB, SQL, Redis, Azurite)
 3. All three services launch with debuggers attached
 4. Set breakpoints across the entire stack — Next.js → .NET API → Python exp
 
-No manual Docker setup required. If Docker infra is already running, the preLaunchTask completes in ~3 seconds.
+No manual container startup is required. If the infrastructure is already running, the preLaunchTask completes in ~3 seconds.
 
 **What you can do:**
 - Set a breakpoint in a Next.js server action
@@ -396,10 +397,10 @@ No manual Docker setup required. If Docker infra is already running, the preLaun
 
 Run tasks from the Command Palette (`Ctrl+Shift+P` → "Tasks: Run Task"):
 
-- **Infra: Setup Docker** — starts Docker infrastructure (used automatically by debug compound)
+- **Infra: Setup Docker** — starts local container infrastructure (used automatically by debug compound)
 - **Dev: Website** / **Dev: API** / **Dev: exp Service** — start individual services (no debugger)
 - **Dev: All Services** — start everything in parallel (no debugger)
-- **Docker: Start/Stop Local Stack** — manage Docker Compose environment
+- **Docker: Start/Stop Local Stack** — manage the selfhost Compose environment
 - **Tests:** / **Checks:** — run tests and code quality tools
 - **Health: Doctor Check** — diagnose workspace issues
 
@@ -419,7 +420,7 @@ arolariu.ro/
 │   └── docs.arolariu.ro/    # DocFX documentation
 ├── infra/
 │   ├── Azure/Bicep/         # Infrastructure as Code
-│   ├── Local/               # Docker Compose local stack
+│   ├── Local/               # Selfhost Compose stack
 │   └── containers/          # Dockerfiles
 ├── scripts/                 # Build & utility scripts
 ├── docs/rfc/                # Architecture Decision Records
@@ -449,10 +450,10 @@ sites/arolariu.ro ←── API calls ──→ sites/api.arolariu.ro
 | .NET API won't start | Under Aspire, check the dashboard's Health/Console-log tabs — the API waits on SQL, Cosmos, Azurite, and exp before going live (allow ~30s on first boot). Running `npm run dev:api` standalone needs a running container engine and `npm run dev:exp` started separately, since exp supplies the API's runtime config |
 | Python not found | Rerun `npm run setup -- --yes` to install Python 3.12 with consent (required by setup's `python` phase), or install it yourself |
 | Containers won't start | Ensure the selected container engine (Rancher Desktop or Podman Desktop — Docker Desktop is not supported) is running and ports 3000/5000/5002 are free |
-| TypeScript errors on build | Run `npm run generate` to regenerate types and env files |
+| Missing generated TypeScript artifacts | Rerun `npm run setup`, or explicitly run `npm run generate -- /a /g /i` |
 | Tests failing | Run `npm run doctor` to diagnose workspace health |
 | HTTPS certificate errors | See [infra/Local/readme.md](infra/Local/readme.md) for mkcert setup |
-| `*.localhost` not resolving (Windows, selfhost mode) | Add entries to `C:\Windows\System32\drivers\etc\hosts` — see Docker setup docs |
+| `*.localhost` not resolving (Windows, selfhost mode) | Add entries to `C:\Windows\System32\drivers\etc\hosts` — see selfhost setup docs |
 
 ---
 
@@ -460,6 +461,6 @@ sites/arolariu.ro ←── API calls ──→ sites/api.arolariu.ro
 
 - **[CONTRIBUTING.md](CONTRIBUTING.md)** — PR workflow, branch naming, commit conventions
 - **[docs/rfc/](docs/rfc/)** — Architecture decisions (RFCs 1xxx=frontend, 2xxx=backend)
-- **[infra/Local/readme.md](infra/Local/readme.md)** — Full Docker Compose setup guide
+- **[infra/Local/readme.md](infra/Local/readme.md)** — Full selfhost Compose setup guide
 - **[AGENTS.md](AGENTS.md)** — AI agent guidance for the monorepo
 - **[README.md](README.md)** — Project overview and live service links
