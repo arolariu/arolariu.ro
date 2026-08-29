@@ -193,6 +193,66 @@ describe("createTerminalPromptProvider", () => {
     expect(testTerminal.rawModes).toEqual([true, false]);
   });
 
+  it("rejects an initial prompt-write failure after cleaning up terminal state", async () => {
+    const testTerminal = createTestTerminal();
+    const originalWrite = testTerminal.output.write.bind(testTerminal.output);
+    let writeCount = 0;
+    Object.defineProperty(testTerminal.output, "write", {
+      value: (chunk: string | Uint8Array): boolean => {
+        writeCount++;
+        if (writeCount === 1) {
+          throw new Error("Prompt output unavailable.");
+        }
+        return originalWrite(chunk);
+      },
+    });
+    const {logger} = createLogger();
+    const prompts = createTerminalPromptProvider(logger, testTerminal.terminal);
+
+    await expect(prompts.secret("Token")).rejects.toThrow("Prompt output unavailable.");
+    expect(writeCount).toBe(2);
+    expect(testTerminal.rawModes).toEqual([true, false]);
+    expect(testTerminal.input.listenerCount("data")).toBe(0);
+    expect(testTerminal.input.listenerCount("end")).toBe(0);
+    expect(testTerminal.input.listenerCount("error")).toBe(0);
+    expect(testTerminal.input.listenerCount("close")).toBe(0);
+  });
+
+  it("attempts every terminal cleanup operation when one removal fails", async () => {
+    const testTerminal = createTestTerminal();
+    const originalRemoveListener = testTerminal.input.removeListener.bind(testTerminal.input);
+    const removedEvents: (string | symbol)[] = [];
+    Object.defineProperty(testTerminal.input, "removeListener", {
+      value: (event: string | symbol, listener: unknown): PassThrough => {
+        removedEvents.push(event);
+        Reflect.apply(originalRemoveListener, testTerminal.input, [event, listener]);
+        if (event === "data") {
+          throw new Error("Data listener cleanup failed.");
+        }
+        return testTerminal.input;
+      },
+    });
+    const {logger} = createLogger();
+    const prompts = createTerminalPromptProvider(logger, testTerminal.terminal);
+
+    const answer = prompts.secret("Token");
+
+    expect(() => testTerminal.input.emit("close")).not.toThrow();
+    await expect(answer).rejects.toMatchObject({
+      name: "AggregateError",
+      errors: [
+        expect.objectContaining({message: expect.stringMatching(/closed before/i)}),
+        expect.objectContaining({message: "Data listener cleanup failed."}),
+      ],
+    });
+    expect(removedEvents).toEqual(expect.arrayContaining(["data", "end", "error", "close"]));
+    expect(testTerminal.rawModes).toEqual([true, false]);
+    expect(testTerminal.input.listenerCount("data")).toBe(0);
+    expect(testTerminal.input.listenerCount("end")).toBe(0);
+    expect(testTerminal.input.listenerCount("error")).toBe(0);
+    expect(testTerminal.input.listenerCount("close")).toBe(0);
+  });
+
   it("closes the readline interface after cancellation", async () => {
     const testTerminal = createTestTerminal();
     const {logger} = createLogger();

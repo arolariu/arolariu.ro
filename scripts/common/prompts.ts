@@ -134,15 +134,25 @@ function readSecret(terminal: PromptTerminal, message: string): Promise<string> 
     let settled = false;
     let rawModeEnabled = false;
 
-    const cleanup = (): void => {
-      terminal.input.removeListener("data", onData);
-      terminal.input.removeListener("end", onEnd);
-      terminal.input.removeListener("error", onError);
-      terminal.input.removeListener("close", onClose);
+    const cleanup = (): unknown[] => {
+      const errors: unknown[] = [];
+      const attempt = (operation: () => void): void => {
+        try {
+          operation();
+        } catch (error: unknown) {
+          errors.push(error);
+        }
+      };
+
+      attempt(() => terminal.input.removeListener("data", onData));
+      attempt(() => terminal.input.removeListener("end", onEnd));
+      attempt(() => terminal.input.removeListener("error", onError));
+      attempt(() => terminal.input.removeListener("close", onClose));
       if (rawModeEnabled) {
         rawModeEnabled = false;
-        setRawMode(false);
+        attempt(() => setRawMode(false));
       }
+      return errors;
     };
 
     const settle = (result: Readonly<{value: string}> | Readonly<{error: unknown}>): void => {
@@ -150,12 +160,7 @@ function readSecret(terminal: PromptTerminal, message: string): Promise<string> 
         return;
       }
       settled = true;
-      const finalizationErrors: unknown[] = [];
-      try {
-        cleanup();
-      } catch (error: unknown) {
-        finalizationErrors.push(error);
-      }
+      const finalizationErrors = cleanup();
       try {
         terminal.output.write("\n");
       } catch (error: unknown) {
