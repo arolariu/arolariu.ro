@@ -19,10 +19,113 @@ import {existsSync, mkdirSync} from "fs";
 import {homedir, platform, tmpdir} from "os";
 import {join} from "path";
 import {styleText} from "node:util";
+import type {MonorepositoryLogger} from "./common/logger.ts";
+import type {PromptProvider} from "./common/prompts.ts";
+import type {SetupActionExecutor, SetupOptions} from "./setup.types.ts";
 
 const REQUIRED_DOTNET_VERSION = 10;
 const REQUIRED_NODE_VERSION = 24;
 const REQUIRED_NPM_VERSION = 11;
+
+function parseContainerEngine(value: string): NonNullable<SetupOptions["engine"]> {
+  if (value === "rancher" || value === "podman") {
+    return value;
+  }
+
+  throw new Error(`Unsupported setup engine '${value}'. Expected rancher or podman.`);
+}
+
+/**
+ * Parses setup command-line options without changing the legacy runtime flow.
+ *
+ * @param argv - Arguments following the setup entrypoint.
+ * @returns Strict setup options consumed by the future orchestrator.
+ * @throws When an option or container engine is unsupported.
+ */
+export function parseSetupOptions(argv: readonly string[]): SetupOptions {
+  let verbose = false;
+  let dryRun = false;
+  let yes = false;
+  let engine: SetupOptions["engine"];
+
+  for (let index = 0; index < argv.length; index++) {
+    const argument = argv[index];
+    switch (argument) {
+      case "--verbose":
+        verbose = true;
+        break;
+      case "--dry-run":
+        dryRun = true;
+        break;
+      case "--yes":
+        yes = true;
+        break;
+      case "--help":
+        break;
+      case "--engine": {
+        const value = argv[index + 1];
+        if (value === undefined || value.startsWith("--")) {
+          throw new Error("Setup option '--engine' requires rancher or podman.");
+        }
+        engine = parseContainerEngine(value);
+        index++;
+        break;
+      }
+      default:
+        if (argument?.startsWith("--engine=")) {
+          engine = parseContainerEngine(argument.slice("--engine=".length));
+          break;
+        }
+        throw new Error(`Unknown setup option '${String(argument)}'.`);
+    }
+  }
+
+  return {
+    verbose,
+    dryRun,
+    yes,
+    ...(engine === undefined ? {} : {engine}),
+  };
+}
+
+/**
+ * Creates the consent and dry-run controller for setup mutations.
+ *
+ * @param dependencies - Parsed options plus injected prompting and logging.
+ * @returns An action executor that preserves action failures and interruption.
+ */
+export function createSetupActionExecutor(
+  dependencies: Readonly<{
+    options: SetupOptions;
+    prompts: PromptProvider;
+    logger: MonorepositoryLogger;
+  }>,
+): SetupActionExecutor {
+  const {options, prompts, logger} = dependencies;
+
+  return {
+    run: async (action) => {
+      const metadata = `'${action.id}' (${action.scope}): ${action.summary}`;
+
+      if (options.dryRun) {
+        logger.info(`Planned setup action ${metadata}`);
+        return "planned";
+      }
+
+      if (action.scope === "system" && !options.yes) {
+        const confirmed = await prompts.confirm(`Allow system setup action ${metadata}?`, false);
+        if (!confirmed) {
+          logger.warn(`Declined setup action ${metadata}`);
+          return "declined";
+        }
+      }
+
+      await action.execute();
+      logger.success(`Executed setup action ${metadata}`);
+      return "executed";
+    },
+  };
+}
 
 /**
  * Checks whether an executable is available on the current PATH.
@@ -272,7 +375,7 @@ async function installNodeJs(): Promise<boolean> {
  *
  * @returns Process exit code (0 for success, non-zero for failure).
  */
-export async function main(): Promise<number> {
+export async function runLegacySetup(): Promise<number> {
   console.log(styleText(["bold", "magenta"], "\n╔════════════════════════════════════════╗"));
   console.log(styleText(["bold", "magenta"], "║   arolariu.ro Development Setup Tool   ║"));
   console.log(styleText(["bold", "magenta"], "╚════════════════════════════════════════╝\n"));
@@ -364,10 +467,7 @@ export async function main(): Promise<number> {
     console.log(styleText("green", "  ✓ Taxonomy and license artifacts generated"));
   } catch (error: unknown) {
     console.log(
-      styleText(
-        "red",
-        `  ✗ Taxonomy and license artifact generation failed: ${error instanceof Error ? error.message : String(error)}`,
-      ),
+      styleText("red", `  ✗ Taxonomy and license artifact generation failed: ${error instanceof Error ? error.message : String(error)}`),
     );
     return 1;
   }
@@ -385,6 +485,15 @@ export async function main(): Promise<number> {
   console.log(styleText("gray", "  3. Check the README.md for more information\n"));
 
   return 0;
+}
+
+/**
+ * Runs the current setup entrypoint.
+ *
+ * @returns Process exit code from the behavior-preserving legacy setup flow.
+ */
+export async function main(): Promise<number> {
+  return runLegacySetup();
 }
 
 if (import.meta.main) {
