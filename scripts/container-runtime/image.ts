@@ -5,6 +5,7 @@
 
 import {resolve} from "node:path";
 import {fileURLToPath} from "node:url";
+import {MonorepositoryConsoleLogger, type MonorepositoryLogger} from "../common/logger.ts";
 import {getContainerAdapter, type ContainerRuntimeAdapter, type RuntimeCommand} from "./adapters.ts";
 import {runArtifactGeneration, runSharedPreflight} from "./preflight.ts";
 import {defaultRunner, formatCommand, type CommandRunner} from "./process.ts";
@@ -87,9 +88,9 @@ export function buildImageRunCommand(adapter: ContainerRuntimeAdapter, options: 
   return adapter.run(["--rm", ...ports, ...environment, options.tag]);
 }
 
-async function runImageCommand(runner: CommandRunner, command: RuntimeCommand): Promise<void> {
-  console.log(`$ ${formatCommand(command)}`);
-  const result = await runner.run(command, {stdio: "tee"});
+async function runImageCommand(runner: CommandRunner, command: RuntimeCommand, logger: MonorepositoryLogger): Promise<void> {
+  logger.command(formatCommand(command));
+  const result = await runner.run(command, {stdio: "tee", logger});
   if (result.code !== 0) throw new Error(result.output);
 }
 
@@ -97,11 +98,16 @@ async function runImageCommand(runner: CommandRunner, command: RuntimeCommand): 
  * Runs the local image build/run CLI wrapper.
  *
  * @param runner - Command runner used to execute runtime commands.
+ * @param logger - Logger used for orchestration output.
  */
-export async function runImageCli(runner: CommandRunner = defaultRunner): Promise<void> {
+export async function runImageCli(
+  runner: CommandRunner = defaultRunner,
+  logger: MonorepositoryLogger = new MonorepositoryConsoleLogger("container::image"),
+): Promise<void> {
   const selection = resolveContainerEngine({argv: process.argv, env: process.env});
   const adapter = getContainerAdapter(selection.engine);
-  await runSharedPreflight(adapter, runner);
+  const preflightLogger = logger.child("preflight");
+  await runSharedPreflight(adapter, runner, preflightLogger);
 
   const action = process.argv[2];
   const target = parseTarget(process.argv);
@@ -109,18 +115,23 @@ export async function runImageCli(runner: CommandRunner = defaultRunner): Promis
 
   if (action === "build") {
     if (requiresTaxonomyArtifacts(target)) {
-      await runArtifactGeneration(runner);
+      await runArtifactGeneration(runner, preflightLogger);
     }
 
     await runImageCommand(
       runner,
       buildImageBuildCommand(adapter, {dockerfile: dockerfilesByTarget[target], tag, context: ".", buildArgs: {VERSION: "local"}}),
+      logger,
     );
     return;
   }
 
   if (action === "run") {
-    await runImageCommand(runner, buildImageRunCommand(adapter, {tag, ports: portsByTarget[target], environment: {INFRA: "local"}}));
+    await runImageCommand(
+      runner,
+      buildImageRunCommand(adapter, {tag, ports: portsByTarget[target], environment: {INFRA: "local"}}),
+      logger,
+    );
     return;
   }
 
@@ -133,6 +144,6 @@ if (isDirectExecution) {
   try {
     await runImageCli();
   } catch (error) {
-    exitWithError(error);
+    exitWithError(error, new MonorepositoryConsoleLogger("container::image"));
   }
 }

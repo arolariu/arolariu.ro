@@ -3,13 +3,15 @@
  * @module scripts/container-runtime/preflight.test
  */
 
-import {describe, expect, it, vi} from "vitest";
+import {describe, expect, it} from "vitest";
+import {InMemoryLoggerSink, MonorepositoryConsoleLogger, type MonorepositoryLogger} from "../common/logger.ts";
 import {getContainerAdapter} from "./adapters.ts";
 import {
   assertNoDockerDesktopBackend,
   assertPodmanBackend,
   assertRancherBackend,
   assertToolAvailable,
+  runArtifactGeneration,
   requiredLocalPorts,
   runSharedPreflight,
   warnOnExistingLocalContainers,
@@ -21,6 +23,34 @@ function runnerWith(output: string, code = 0): CommandRunner {
     run: async () => ({code, output}),
   };
 }
+
+function createTestLogger(): Readonly<{sink: InMemoryLoggerSink; logger: MonorepositoryLogger}> {
+  const sink = new InMemoryLoggerSink();
+  const logger = new MonorepositoryConsoleLogger("test", {
+    color: false,
+    sink,
+  });
+
+  return {sink, logger};
+}
+
+describe("runArtifactGeneration", () => {
+  it("logs the command and supplies the logger for tee output", async () => {
+    const {sink, logger} = createTestLogger();
+    let receivedLogger: MonorepositoryLogger | undefined;
+    const runner: CommandRunner = {
+      run: async (_command, options) => {
+        receivedLogger = options?.logger;
+        return {code: 0, output: ""};
+      },
+    };
+
+    await runArtifactGeneration(runner, logger);
+
+    expect(sink.records.some((record) => record.text.includes("generate.ts") && record.text.startsWith("$ "))).toBe(true);
+    expect(receivedLogger).toBe(logger);
+  });
+});
 
 describe("assertToolAvailable", () => {
   it("passes when the tool exits successfully", async () => {
@@ -148,17 +178,21 @@ describe("assertPodmanBackend", () => {
 
 describe("warnOnExistingLocalContainers", () => {
   it("warns when known local containers already exist", async () => {
-    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
-    await warnOnExistingLocalContainers(getContainerAdapter("podman"), runnerWith("mssql\nredis\n"));
+    const {sink, logger} = createTestLogger();
 
-    expect(warn).toHaveBeenCalledWith("Existing local containers detected for Podman Desktop: mssql, redis");
+    await warnOnExistingLocalContainers(getContainerAdapter("podman"), runnerWith("mssql\nredis\n"), logger);
+
+    expect(sink.records.some((record) => record.text.includes("Existing local containers detected for Podman Desktop: mssql, redis"))).toBe(
+      true,
+    );
   });
 
   it("does not warn when container listing fails", async () => {
-    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
-    await warnOnExistingLocalContainers(getContainerAdapter("podman"), runnerWith("error", 1));
+    const {sink, logger} = createTestLogger();
 
-    expect(warn).not.toHaveBeenCalled();
+    await warnOnExistingLocalContainers(getContainerAdapter("podman"), runnerWith("error", 1), logger);
+
+    expect(sink.records).toHaveLength(0);
   });
 });
 

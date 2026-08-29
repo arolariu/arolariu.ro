@@ -4,13 +4,16 @@
  */
 
 import {afterEach, describe, expect, it} from "vitest";
+import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "../common/logger.ts";
 import {getContainerAdapter} from "./adapters.ts";
 import {
   buildLocalStorageBootstrapCommand,
   buildSelfhostPlan,
   getRequiredSqlPassword,
+  runSelfhost,
   shouldGenerateTaxonomyArtifacts,
 } from "./selfhost.ts";
+import type {CommandRunner, CommandRunnerOptions} from "./process.ts";
 
 const originalSqlPassword = process.env["MSSQL_SA_PASSWORD"];
 
@@ -67,6 +70,39 @@ describe("buildSelfhostPlan", () => {
   });
 });
 
+describe("runSelfhost", () => {
+  it("routes command output through the injected logger", async () => {
+    const originalArgv = process.argv;
+    process.argv = ["node", "selfhost.ts", "logs", "--engine", "podman"];
+    const sink = new InMemoryLoggerSink();
+    const logger = new MonorepositoryConsoleLogger("test", {
+      color: false,
+      sink,
+    });
+    const receivedOptions: Array<CommandRunnerOptions | undefined> = [];
+    const runner: CommandRunner = {
+      run: async (_command, options) => {
+        receivedOptions.push(options);
+        return {
+          code: 0,
+          output: "podman version 5.8.2\npodman-compose version 1.5.0",
+        };
+      },
+    };
+
+    try {
+      await runSelfhost("logs", runner, logger);
+    } finally {
+      process.argv = originalArgv;
+    }
+
+    expect(sink.records.some((record) => record.text.includes("$ podman logs --tail 100 exp-arolariu-ro"))).toBe(true);
+    const teeOptions = receivedOptions.filter((options) => options?.stdio === "tee");
+    expect(teeOptions.length).toBeGreaterThan(0);
+    expect(teeOptions.every((options) => options?.logger !== undefined)).toBe(true);
+  });
+});
+
 describe("getRequiredSqlPassword", () => {
   it("reads the SQL password from the process environment", () => {
     process.env["MSSQL_SA_PASSWORD"] = "local-strong-password";
@@ -78,13 +114,7 @@ describe("getRequiredSqlPassword", () => {
     it("uses the shared .NET local storage provisioner", () => {
       expect(buildLocalStorageBootstrapCommand()).toEqual({
         command: "dotnet",
-        args: [
-          "run",
-          "--project",
-          "../../tooling/LocalDevelopment.Bootstrap",
-          "--",
-          "--ensure-storage-only",
-        ],
+        args: ["run", "--project", "../../tooling/LocalDevelopment.Bootstrap", "--", "--ensure-storage-only"],
       });
     });
   });

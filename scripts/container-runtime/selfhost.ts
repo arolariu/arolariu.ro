@@ -8,6 +8,7 @@ import {access, mkdir} from "node:fs/promises";
 import {resolve} from "node:path";
 import {setTimeout as delay} from "node:timers/promises";
 import {fileURLToPath} from "node:url";
+import {MonorepositoryConsoleLogger, type MonorepositoryLogger} from "../common/logger.ts";
 import {getContainerAdapter, type ContainerRuntimeAdapter, type RuntimeCommand} from "./adapters.ts";
 import {runArtifactGeneration, runSharedPreflight} from "./preflight.ts";
 import {defaultRunner, formatCommand, type CommandRunner, type CommandRunnerOptions} from "./process.ts";
@@ -92,13 +93,15 @@ export function buildSelfhostPlan(inputs: SelfhostPlanInputs): readonly RuntimeC
 async function runCommandOrThrow(
   runner: CommandRunner,
   command: RuntimeCommand,
+  logger: MonorepositoryLogger,
   options: CommandRunnerOptions = {},
 ): Promise<void> {
-  console.log(`$ ${formatCommand(command)}`);
+  logger.command(formatCommand(command));
   const result = await runner.run(command, {
     cwd: options.cwd ?? "infra/Local",
-    env: options.env,
     stdio: options.stdio ?? "tee",
+    logger,
+    ...(options.env === undefined ? {} : {env: options.env}),
   });
   if (result.code !== 0) {
     throw new ContainerRuntimeError(`Command failed: ${formatCommand(command)}\n${result.output}`);
@@ -113,13 +116,7 @@ async function runCommandOrThrow(
 export function buildLocalStorageBootstrapCommand(): RuntimeCommand {
   return {
     command: "dotnet",
-    args: [
-      "run",
-      "--project",
-      "../../tooling/LocalDevelopment.Bootstrap",
-      "--",
-      "--ensure-storage-only",
-    ],
+    args: ["run", "--project", "../../tooling/LocalDevelopment.Bootstrap", "--", "--ensure-storage-only"],
   };
 }
 
@@ -132,25 +129,29 @@ async function pathExists(path: string): Promise<boolean> {
   }
 }
 
-async function ensureHttpsCertificates(runner: CommandRunner): Promise<void> {
+async function ensureHttpsCertificates(runner: CommandRunner, logger: MonorepositoryLogger): Promise<void> {
   if ((await pathExists(`infra/Local/${certFilePath}`)) && (await pathExists(`infra/Local/${keyFilePath}`))) {
     return;
   }
 
   const mkcert = await runner.run({command: "mkcert", args: ["--version"]});
   if (mkcert.code !== 0) {
-    console.warn(
+    logger.warn(
       "mkcert is not available; Traefik HTTPS will use its default self-signed certificate. Install mkcert and rerun selfhost to generate trusted localhost certificates.",
     );
     return;
   }
 
   await mkdir("infra/Local/Management/certs", {recursive: true});
-  await runCommandOrThrow(runner, {command: "mkcert", args: ["-install"]});
-  await runCommandOrThrow(runner, {
-    command: "mkcert",
-    args: ["-key-file", keyFilePath, "-cert-file", certFilePath, "localhost", "*.localhost"],
-  });
+  await runCommandOrThrow(runner, {command: "mkcert", args: ["-install"]}, logger);
+  await runCommandOrThrow(
+    runner,
+    {
+      command: "mkcert",
+      args: ["-key-file", keyFilePath, "-cert-file", certFilePath, "localhost", "*.localhost"],
+    },
+    logger,
+  );
 }
 
 async function postCosmosResource(url: string, body: unknown): Promise<void> {
@@ -209,7 +210,7 @@ async function bootstrapAzurite(): Promise<void> {
   }
 }
 
-async function bootstrapSelfhost(adapter: ContainerRuntimeAdapter, runner: CommandRunner): Promise<void> {
+async function bootstrapSelfhost(adapter: ContainerRuntimeAdapter, runner: CommandRunner, logger: MonorepositoryLogger): Promise<void> {
   const sqlPassword = getRequiredSqlPassword();
 
   await runCommandOrThrow(
@@ -229,21 +230,18 @@ async function bootstrapSelfhost(adapter: ContainerRuntimeAdapter, runner: Comma
       "/usr/sql/sqlSchema.sql",
       "-No",
     ]),
+    logger,
   );
   await bootstrapCosmos();
   await bootstrapAzurite();
-  await runCommandOrThrow(
-    runner,
-    buildLocalStorageBootstrapCommand(),
-    {
-      env: {
-        DOTNET_ENVIRONMENT: "Development",
-        INFRA: "local",
-        ConnectionStrings__blobs: azuriteDevelopmentConnectionString,
-        ConnectionStrings__queues: azuriteDevelopmentConnectionString,
-      },
+  await runCommandOrThrow(runner, buildLocalStorageBootstrapCommand(), logger, {
+    env: {
+      DOTNET_ENVIRONMENT: "Development",
+      INFRA: "local",
+      ConnectionStrings__blobs: azuriteDevelopmentConnectionString,
+      ConnectionStrings__queues: azuriteDevelopmentConnectionString,
     },
-  );
+  });
 }
 
 /**
@@ -272,29 +270,35 @@ export function getRequiredSqlPassword(): string {
  *
  * @param action - Selfhost action to execute.
  * @param runner - Command runner used to execute runtime commands.
+ * @param logger - Logger used for orchestration output.
  */
-export async function runSelfhost(action: SelfhostAction, runner: CommandRunner = defaultRunner): Promise<void> {
+export async function runSelfhost(
+  action: SelfhostAction,
+  runner: CommandRunner = defaultRunner,
+  logger: MonorepositoryLogger = new MonorepositoryConsoleLogger("container::selfhost"),
+): Promise<void> {
   const selection = resolveContainerEngine({argv: process.argv, env: process.env});
   const adapter = getContainerAdapter(selection.engine);
+  const preflightLogger = logger.child("preflight");
 
-  await runSharedPreflight(adapter, runner);
+  await runSharedPreflight(adapter, runner, preflightLogger);
 
   if (shouldGenerateTaxonomyArtifacts(action)) {
-    await runArtifactGeneration(runner);
+    await runArtifactGeneration(runner, preflightLogger);
   }
 
   if (action === "start") {
     getRequiredSqlPassword();
-    await ensureHttpsCertificates(runner);
+    await ensureHttpsCertificates(runner, logger);
     await writeSelfhostTraefikConfig();
   }
 
   const commands = buildSelfhostPlan({action, adapter});
   for (const command of commands) {
-    await runCommandOrThrow(runner, command);
+    await runCommandOrThrow(runner, command, logger);
     if (action === "start" && command.args.includes("Storage/docker-compose.yml")) {
       await delay(storageReadyDelayMs);
-      await bootstrapSelfhost(adapter, runner);
+      await bootstrapSelfhost(adapter, runner, logger);
     }
     if (action !== "logs") {
       await delay(stackOperationDelayMs);
@@ -317,6 +321,6 @@ if (isDirectExecution) {
 
     await runSelfhost(action);
   } catch (error) {
-    exitWithError(error);
+    exitWithError(error, new MonorepositoryConsoleLogger("container::selfhost"));
   }
 }
