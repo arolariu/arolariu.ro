@@ -859,7 +859,7 @@ const toolingOutputConfig: Config = defineConfig({
       },
     ],
   },
-});
+})[0] as Config;
 
 const projectEslintConfig = defineConfig(websiteEslintConfig, cvEslintConfig, packagesEslintConfig, statusEslintConfig);
 

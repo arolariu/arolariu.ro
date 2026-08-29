@@ -288,7 +288,8 @@ export async function runSelfhost(
   }
 
   if (action === "start") {
-    getRequiredSqlPassword();
+    const sqlPassword = getRequiredSqlPassword();
+    logger.redact(sqlPassword);
     await ensureHttpsCertificates(runner, logger);
     await writeSelfhostTraefikConfig();
   }

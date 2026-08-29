@@ -208,6 +208,7 @@ async function promptForMissingKeys(
 
   const rl = readline.createInterface({
     input: process.stdin,
+    output: process.stdout,
   });
 
   const config = {} as TypedConfigurationType;
@@ -285,6 +286,7 @@ async function ensureLocalEnvIsComplete(verbose: boolean, logger: Monorepository
   logger.warn("Do you want to provide the missing values now? (Y/n)");
   const rl = readline.createInterface({
     input: process.stdin,
+    output: process.stdout,
   });
   logger.write([{text: "> ", styles: ["yellow"]}]);
   const answer = await new Promise<string>((resolve) => {
@@ -478,8 +480,9 @@ function copyEnvFileToSubRepos(sourcePath: string, targetPaths: string[], verbos
  */
 export async function main(
   verbose: boolean = false,
-  logger: MonorepositoryLogger = new MonorepositoryConsoleLogger("generate::env", {verbose}),
+  logger: MonorepositoryLogger = new MonorepositoryConsoleLogger("generate::env", {verbose: verbose || isVerboseMode}),
 ): Promise<number> {
+  const effectiveVerbose = verbose || isVerboseMode;
   logger.line([{text: "🔧 Configuration:", styles: ["cyan"]}]);
   logger.line();
   logger.line([
@@ -492,7 +495,7 @@ export async function main(
   ]);
   logger.line([
     {text: "   Verbose: ", styles: ["gray"]},
-    {text: verbose ? "✅ Enabled" : "❌ Disabled", styles: [verbose ? "green" : "gray"]},
+    {text: effectiveVerbose ? "✅ Enabled" : "❌ Disabled", styles: [effectiveVerbose ? "green" : "gray"]},
   ]);
   logger.line([
     {text: "   Agent: ", styles: ["gray"]},
@@ -507,19 +510,19 @@ export async function main(
     {text: ".env", styles: ["cyan"]},
   ]);
   logger.line();
-  if (verbose || isVerboseMode) {
+  if (effectiveVerbose) {
     logger.debug(`SITE_ENV=${process.env["SITE_ENV"] ?? "(unset)"} maps to CONFIG_LABEL=${CONFIG_LABEL}.`);
   }
 
   let config = {} as TypedConfigurationType;
   try {
     if (isAzureInfrastructure) {
-      if (verbose || isVerboseMode) {
+      if (effectiveVerbose) {
         logger.debug("Fetching configuration from the exp service.");
       }
       config = await fetchConfigurationFromExp(verbose, logger);
     } else {
-      if (verbose || isVerboseMode) {
+      if (effectiveVerbose) {
         logger.debug("Populating configuration via manual input.");
       }
       config = await ensureLocalEnvIsComplete(verbose, logger);
@@ -553,7 +556,7 @@ export async function main(
 
 if (import.meta.main) {
   const verbose = process.argv.includes("/verbose") || process.argv.includes("/v");
-  const logger = new MonorepositoryConsoleLogger("generate::env", {verbose});
+  const logger = new MonorepositoryConsoleLogger("generate::env", {verbose: verbose || isVerboseMode});
   if (process.argv.includes("--help") || process.argv.includes("-h")) {
     logger.banner(
       [

@@ -4,7 +4,7 @@
  * @module scripts.common.output-policy.test
  */
 
-import {readdirSync, readFileSync} from "node:fs";
+import {existsSync, readdirSync, readFileSync} from "node:fs";
 import {join} from "node:path";
 import ts from "typescript";
 import {describe, expect, it} from "vitest";
@@ -204,6 +204,10 @@ function findForbiddenOutputCalls(sourceText: string, fileName: string): readonl
 }
 
 describe("direct output policy", () => {
+  it("anchors every transitional exception to an existing entrypoint", () => {
+    expect([...transitionalEntrypoints].filter((fileName) => !existsSync(fileName))).toEqual([]);
+  });
+
   it("inspects executable calls without matching comments or strings", () => {
     const source = [
       "// console.log('comment')",

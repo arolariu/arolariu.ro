@@ -369,8 +369,10 @@ export async function main(logger?: MonorepositoryLogger): Promise<void> {
   output.line(styleText("dim", `   File: ${CSV_PATH}\n`));
 }
 
-const output = new MonorepositoryConsoleLogger("update::exchange-rates");
-main(output).catch((error) => {
-  output.line(styleText("red", `\n❌ Fatal error: ${error instanceof Error ? error.message : String(error)}`), "stderr");
-  process.exit(1);
-});
+if (import.meta.main) {
+  const output = new MonorepositoryConsoleLogger("update::exchange-rates");
+  main(output).catch((error) => {
+    output.line(styleText("red", `\n❌ Fatal error: ${error instanceof Error ? error.message : String(error)}`), "stderr");
+    process.exit(1);
+  });
+}

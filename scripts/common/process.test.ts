@@ -36,6 +36,27 @@ describe("resolveSpawnCommand", () => {
 });
 
 describe("defaultCommandRunner", () => {
+  it("returns a failed result when Windows shim resolution rejects an unsafe argument", async () => {
+    const platformDescriptor = Object.getOwnPropertyDescriptor(process, "platform");
+    Object.defineProperty(process, "platform", {...platformDescriptor, value: "win32"});
+
+    try {
+      const execution = defaultCommandRunner.run({command: "npm", args: ["run", "unsafe&argument"]});
+
+      await expect(execution).resolves.toMatchObject({
+        code: 1,
+        stdout: "",
+        stderr: "",
+        timedOut: false,
+        spawnError: "Unsafe Windows command-shim argument: unsafe&argument",
+      });
+    } finally {
+      if (platformDescriptor !== undefined) {
+        Object.defineProperty(process, "platform", platformDescriptor);
+      }
+    }
+  });
+
   it("captures successful stdout with duration metadata", async () => {
     const result = await defaultCommandRunner.run({
       command: process.execPath,

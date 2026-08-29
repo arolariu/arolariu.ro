@@ -30,11 +30,14 @@ name, select `capture`, `tee`, or `inherit` explicitly when needed, and render c
 Register runtime secrets with `logger.redact()` before any output that could contain them. Logger children share the same redaction
 registry. Do not place secret values in command echoes or other manually formatted diagnostics.
 
-## Transitional entry points
+## Output-policy exemptions
 
-[`setup.ts`](./setup.ts), [`doctor.ts`](./doctor.ts), and [`status.ts`](./status.ts) temporarily retain direct console output while their
-dedicated migrations are completed. They are the only production exceptions to the boundary enforced by
-[`output-policy.test.ts`](./common/output-policy.test.ts) and the root ESLint configuration.
+The permanent production exemption is the logger sink implementation in [`common/logger.ts`](./common/logger.ts), which owns the direct
+console and process-stream writes used by every migrated script.
+
+[`setup.ts`](./setup.ts), [`doctor.ts`](./doctor.ts), and [`status.ts`](./status.ts) are the three temporary production exceptions while
+their dedicated migrations are completed. Both [`output-policy.test.ts`](./common/output-policy.test.ts) and the root ESLint configuration
+exclude the permanent logger sink and these temporary entry points.
 
 ## Targeted validation
 
@@ -58,11 +61,13 @@ $workerTests = Get-ChildItem scripts\workers\*.test.ts |
 npx vitest run --coverage.enabled=false `
   scripts\common\logger.test.ts `
   scripts\common\process.test.ts `
+  scripts\common\process.controlled.test.ts `
   scripts\common\index.test.ts `
   scripts\common\output-policy.test.ts `
   @containerRuntimeTests `
   @workerTests `
   scripts\generate.artifacts.test.ts `
+  scripts\update-exchange-rates.test.ts `
   scripts\docs-assemble.test.ts `
   scripts\docs-assemble.normalize.test.ts
 npx eslint scripts

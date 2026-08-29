@@ -10,6 +10,7 @@ import fs from "node:fs";
 import {mkdir, mkdtemp, readFile, rm, writeFile} from "node:fs/promises";
 import {tmpdir} from "node:os";
 import {basename, dirname, join} from "node:path";
+import readline from "node:readline";
 import {stripVTControlCharacters} from "node:util";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 
@@ -856,6 +857,76 @@ describe("Artifact orchestration and CLI contracts", () => {
   });
 
   describe("generation logger injection", () => {
+    it("enables default environment diagnostics when VERBOSE=true", async () => {
+      vi.stubEnv("INFRA", "local");
+      vi.stubEnv("VERBOSE", "true");
+      vi.resetModules();
+      vi.spyOn(fs, "existsSync").mockReturnValue(true);
+      vi.spyOn(fs, "readFileSync").mockReturnValue(
+        [
+          "SITE_ENV=DEVELOPMENT",
+          "SITE_NAME=Test",
+          "SITE_URL=https://example.test",
+          "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test",
+          "CLERK_SECRET_KEY=sk_test",
+          "USE_CDN=false",
+        ].join("\n"),
+      );
+      vi.spyOn(fs, "writeFileSync").mockImplementation(() => undefined);
+      vi.spyOn(fs, "copyFileSync").mockImplementation(() => undefined);
+      const debug = vi.spyOn(console, "debug").mockImplementation(() => undefined);
+      for (const level of ["info", "warn", "error", "log"] as const) {
+        vi.spyOn(console, level).mockImplementation(() => undefined);
+      }
+
+      try {
+        const {main: generateEnv} = await import("./generate.env.ts");
+        await expect(generateEnv()).resolves.toBe(0);
+      } finally {
+        vi.unstubAllEnvs();
+      }
+
+      expect(debug.mock.calls.flat().join("\n")).toContain("SITE_ENV=");
+    });
+
+    it("creates both interactive environment prompts with process.stdout without reading real input", async () => {
+      vi.stubEnv("INFRA", "local");
+      vi.stubEnv("VERBOSE", "false");
+      vi.resetModules();
+      vi.spyOn(fs, "existsSync").mockReturnValue(true);
+      vi.spyOn(fs, "readFileSync").mockReturnValue("");
+      vi.spyOn(fs, "writeFileSync").mockImplementation(() => undefined);
+      vi.spyOn(fs, "copyFileSync").mockImplementation(() => undefined);
+      const createInterface = vi.spyOn(readline, "createInterface").mockImplementation(
+        () =>
+          ({
+            question: (_query: string, callback: (answer: string) => void): void => {
+              callback("value");
+            },
+            close: vi.fn(),
+          }) as unknown as readline.Interface,
+      );
+      const sink = new InMemoryLoggerSink();
+      const logger = new MonorepositoryConsoleLogger("generate::env", {color: false, sink});
+
+      try {
+        const {main: generateEnv} = await import("./generate.env.ts");
+        await expect(generateEnv(false, logger)).resolves.toBe(0);
+      } finally {
+        vi.unstubAllEnvs();
+      }
+
+      expect(createInterface).toHaveBeenCalledTimes(2);
+      expect(createInterface).toHaveBeenNthCalledWith(1, {
+        input: process.stdin,
+        output: process.stdout,
+      });
+      expect(createInterface).toHaveBeenNthCalledWith(2, {
+        input: process.stdin,
+        output: process.stdout,
+      });
+    });
+
     it("routes no-task orchestration output through the supplied logger", async () => {
       const consoleSpies = ["debug", "info", "warn", "error", "log"].map((level) =>
         vi.spyOn(console, level as "debug").mockImplementation(() => undefined),

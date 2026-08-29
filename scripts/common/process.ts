@@ -4,10 +4,12 @@
  */
 
 import {spawn} from "node:child_process";
+import {StringDecoder} from "node:string_decoder";
 import type {MonorepositoryLogger} from "./logger.ts";
 
 const WINDOWS_COMMAND_SHIMS: ReadonlySet<string> = new Set(["npm", "npx", "pnpm", "yarn"]);
 const WINDOWS_COMMAND_METACHARACTERS = /[&|^<>"]/;
+const TERMINATION_GRACE_MS = 1_000;
 
 /** Describes one executable and its argument array. */
 export interface CommandSpec {
@@ -123,15 +125,22 @@ async function runSpawnedCommand(command: Readonly<CommandSpec>, options: Readon
       windowsHide: true,
     });
 
-    let stdout = "";
-    let stderr = "";
+    const stdoutChunks: Buffer[] = [];
+    const stderrChunks: Buffer[] = [];
+    const stdoutDecoder = new StringDecoder("utf8");
+    const stderrDecoder = new StringDecoder("utf8");
     let timedOut = false;
     let settled = false;
     let timeout: NodeJS.Timeout | undefined;
+    let escalationTimeout: NodeJS.Timeout | undefined;
+    let terminationStarted = false;
 
     const cleanup = (): void => {
       if (timeout !== undefined) {
         clearTimeout(timeout);
+      }
+      if (escalationTimeout !== undefined) {
+        clearTimeout(escalationTimeout);
       }
       options.signal?.removeEventListener("abort", abort);
     };
@@ -143,11 +152,21 @@ async function runSpawnedCommand(command: Readonly<CommandSpec>, options: Readon
 
       settled = true;
       cleanup();
+      if (outputMode === "tee") {
+        const stdoutTail = stdoutDecoder.end();
+        if (stdoutTail.length > 0) {
+          options.logger?.write(stdoutTail, "stdout");
+        }
+        const stderrTail = stderrDecoder.end();
+        if (stderrTail.length > 0) {
+          options.logger?.write(stderrTail, "stderr");
+        }
+      }
 
       const result: CommandResult = {
         code: code ?? 1,
-        stdout,
-        stderr,
+        stdout: Buffer.concat(stdoutChunks).toString("utf8"),
+        stderr: Buffer.concat(stderrChunks).toString("utf8"),
         durationMs: performance.now() - startedAt,
         timedOut,
         ...(signal === null ? {} : {signal}),
@@ -156,25 +175,50 @@ async function runSpawnedCommand(command: Readonly<CommandSpec>, options: Readon
       resolve(result);
     };
 
-    function abort(): void {
+    function terminate(forTimeout: boolean): void {
+      if (settled || terminationStarted) {
+        return;
+      }
+
+      terminationStarted = true;
+      if (forTimeout) {
+        timedOut = true;
+      } else if (timeout !== undefined) {
+        clearTimeout(timeout);
+        timeout = undefined;
+      }
+
+      child.kill("SIGTERM");
       if (!settled) {
-        child.kill("SIGTERM");
+        escalationTimeout = setTimeout(() => {
+          if (!settled) {
+            child.kill("SIGKILL");
+          }
+        }, TERMINATION_GRACE_MS);
       }
     }
 
+    function abort(): void {
+      terminate(false);
+    }
+
     child.stdout?.on("data", (data: Buffer) => {
-      const chunk = data.toString();
-      stdout += chunk;
+      stdoutChunks.push(Buffer.from(data));
       if (outputMode === "tee") {
-        options.logger?.write(chunk, "stdout");
+        const chunk = stdoutDecoder.write(data);
+        if (chunk.length > 0) {
+          options.logger?.write(chunk, "stdout");
+        }
       }
     });
 
     child.stderr?.on("data", (data: Buffer) => {
-      const chunk = data.toString();
-      stderr += chunk;
+      stderrChunks.push(Buffer.from(data));
       if (outputMode === "tee") {
-        options.logger?.write(chunk, "stderr");
+        const chunk = stderrDecoder.write(data);
+        if (chunk.length > 0) {
+          options.logger?.write(chunk, "stderr");
+        }
       }
     });
 
@@ -188,10 +232,8 @@ async function runSpawnedCommand(command: Readonly<CommandSpec>, options: Readon
 
     if (options.timeoutMs !== undefined) {
       timeout = setTimeout(() => {
-        if (!settled) {
-          timedOut = true;
-          child.kill("SIGTERM");
-        }
+        timeout = undefined;
+        terminate(true);
       }, options.timeoutMs);
     }
 
@@ -211,9 +253,25 @@ async function runSpawnedCommand(command: Readonly<CommandSpec>, options: Readon
 
 /** Default process-backed command runner. */
 export const defaultCommandRunner: CommandRunner = {
-  run: (command, options = {}) =>
-    runSpawnedCommand(resolveSpawnCommand(command), {
+  run: (command, options = {}) => {
+    const startedAt = performance.now();
+    let resolvedCommand: CommandSpec;
+    try {
+      resolvedCommand = resolveSpawnCommand(command);
+    } catch (error) {
+      return Promise.resolve({
+        code: 1,
+        stdout: "",
+        stderr: "",
+        durationMs: performance.now() - startedAt,
+        timedOut: false,
+        spawnError: error instanceof Error ? error.message : String(error),
+      });
+    }
+
+    return runSpawnedCommand(resolvedCommand, {
       ...options,
       env: options.env === undefined ? process.env : {...process.env, ...options.env},
-    }),
+    });
+  },
 };
