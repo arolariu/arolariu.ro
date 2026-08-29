@@ -4,6 +4,7 @@
  */
 
 import {afterEach, describe, expect, it} from "vitest";
+import {readFile} from "node:fs/promises";
 import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "../common/logger.ts";
 import {getContainerAdapter} from "./adapters.ts";
 import {
@@ -17,12 +18,63 @@ import type {CommandRunner, CommandRunnerOptions} from "./process.ts";
 
 const originalSqlPassword = process.env["MSSQL_SA_PASSWORD"];
 
+const launcherCases = [
+  {
+    path: "../../infra/Local/selfhost-start.bat",
+    action: "start",
+    forwarding: "%*",
+    shell: "batch",
+  },
+  {
+    path: "../../infra/Local/selfhost-stop.bat",
+    action: "stop",
+    forwarding: "%*",
+    shell: "batch",
+  },
+  {
+    path: "../../infra/Local/selfhost-start.sh",
+    action: "start",
+    forwarding: '"$@"',
+    shell: "bash",
+  },
+  {
+    path: "../../infra/Local/selfhost-stop.sh",
+    action: "stop",
+    forwarding: '"$@"',
+    shell: "bash",
+  },
+] as const;
+
 afterEach(() => {
   if (originalSqlPassword === undefined) {
     delete process.env["MSSQL_SA_PASSWORD"];
   } else {
     process.env["MSSQL_SA_PASSWORD"] = originalSqlPassword;
   }
+});
+
+describe("supported selfhost launchers", () => {
+  it.each(launcherCases)(
+    "routes $path through the TypeScript entrypoint with argument and exit-code propagation",
+    async ({path, action, forwarding, shell}) => {
+      const source = await readFile(new URL(path, import.meta.url), "utf8");
+      const command = `node scripts/container-runtime/selfhost.ts ${action} ${forwarding}`;
+
+      expect(source).not.toContain("scripts/dev-selfhost.mjs");
+      expect(source).toContain(command);
+
+      if (shell === "batch") {
+        expect(source).toContain('pushd "%~dp0..\\.."');
+        expect(source).toMatch(
+          /node scripts\/container-runtime\/selfhost\.ts (?:start|stop) %\*\r?\nset "EXIT_CODE=%ERRORLEVEL%"\r?\npopd\r?\nexit \/b %EXIT_CODE%/,
+        );
+      } else {
+        expect(source).toContain("set -euo pipefail");
+        expect(source).toContain('cd "$(dirname "$0")/../.."');
+        expect(source.trimEnd().endsWith(command)).toBe(true);
+      }
+    },
+  );
 });
 
 describe("buildSelfhostPlan", () => {

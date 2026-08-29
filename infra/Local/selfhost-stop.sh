@@ -2,4 +2,4 @@
 set -euo pipefail
 
 cd "$(dirname "$0")/../.."
-node scripts/dev-selfhost.mjs stop "$@"
+node scripts/container-runtime/selfhost.ts stop "$@"
