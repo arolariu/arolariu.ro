@@ -217,7 +217,7 @@ never installs or upgrades Git, Node.js, or npm:
 
 | Tool | Version | Purpose |
 |:----:|:-------:|:--------|
-| ![Git](https://img.shields.io/badge/Git-2.30%2B-F05032?style=flat-square&logo=git&logoColor=white) | ≥2.30 | Version control — bootstrap prerequisite |
+| ![Git](https://img.shields.io/badge/Git-required-F05032?style=flat-square&logo=git&logoColor=white) | — | Version control — must be installed and on `PATH`; probed by `npm run setup` (no minimum version enforced) — bootstrap prerequisite |
 | ![Node.js](https://img.shields.io/badge/Node.js-24%2B-339933?style=flat-square&logo=nodedotjs&logoColor=white) | ≥24.x | JavaScript runtime — bootstrap prerequisite |
 | ![npm](https://img.shields.io/badge/npm-11%2B-CB3837?style=flat-square&logo=npm&logoColor=white) | ≥11.x | Package manager — bootstrap prerequisite |
 | ![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?style=flat-square&logo=dotnet&logoColor=white) | 10.0 | Backend runtime and Aspire AppHost — prepared by `npm run setup` |
@@ -257,22 +257,27 @@ npm run dev:website        # Next.js only
 - Prepares the .NET SDK/workload/tool restore, AppHost local-development user secrets, and the local HTTPS development certificate;
 - Prepares an isolated Python virtual environment and its pinned dependencies for the `exp` service;
 - Prepares the SvelteKit CV and status generated `.svelte-kit` state;
-- Additively writes the website's core local defaults (`SITE_ENV`, `SITE_NAME`, `SITE_URL`, `USE_CDN`) to `sites/arolariu.ro/.env` without overwriting existing entries, and installs Playwright's Chromium browser;
+- Additively writes the website's core local defaults (`SITE_ENV`, `SITE_NAME`, `SITE_URL`, `USE_CDN`) to `sites/arolariu.ro/.env` without overwriting existing entries, and ensures Playwright's locked Chromium browser is installed;
 - Selects a container engine (Rancher Desktop or Podman Desktop), persists it to `.arolariu/tooling.local.json`, with your consent installs it if missing, and checks — but never starts — its readiness for Aspire or selfhost.
 
-Container engine selection precedence: `--engine rancher|podman`, then `AROLARIU_CONTAINER_ENGINE`, then the persisted
-`.arolariu/tooling.local.json`, then an interactive prompt when none are set. Docker Desktop is unsupported and is never selected as a
-fallback.
+Container engine selection precedence for `npm run setup`: `npm run setup -- --engine rancher|podman`, then `AROLARIU_CONTAINER_ENGINE`,
+then the persisted `.arolariu/tooling.local.json`, then an interactive prompt when none are set. `npm run dev` and
+`npm run dev:selfhost` consume the same CLI/environment/persisted selection, but throw instead of prompting when none is available.
+Docker Desktop is unsupported and is never selected as a fallback.
 
-Useful flags: `--verbose` (diagnostic evidence per phase), `--dry-run` (plan every mutation without executing it or prompting), `--yes`
-(approve system-scoped mutations — SDK/browser/engine installs — without an interactive prompt; it never invents an engine choice,
-prompted text, or a secret), and `--engine rancher|podman` (select the engine explicitly).
+Useful flags: `npm run setup -- --verbose` (diagnostic evidence per phase), `npm run setup -- --dry-run` (plan every mutation without
+executing it and without any consent prompt — an engine-selection prompt can still appear when no engine has been chosen yet;
+combine with `--engine` to avoid it), `npm run setup -- --yes` (approve system-scoped mutations — SDK, .NET workload, HTTPS-trust,
+Playwright Linux system-dependency, mkcert, and container-engine installs — without an interactive prompt; it never invents an engine
+choice, prompted text, or a secret), and `npm run setup -- --engine rancher|podman` (select the engine explicitly).
 
 Website authentication ([Clerk](https://clerk.com)) is optional: without a valid, mode-matched publishable/secret key pair, `npm run
 setup` still exits `0` and reports authenticated website capability as degraded.
 
 Running `npm run dev:selfhost`? Export `MSSQL_SA_PASSWORD` in your shell/session first — required only when selfhost starts its SQL
-bootstrap, never stored in `.env` or `.arolariu/tooling.local.json`, and not forwarded by `npm run setup`'s own child processes.
+bootstrap, never stored in `.env` or `.arolariu/tooling.local.json`. `npm run setup`'s infrastructure phase strips it from the
+container-engine, port-inspection, and certificate subprocesses it runs, but every other setup subprocess inherits your shell
+environment — export it only in the session used to run `npm run dev:selfhost`.
 
 ### Development Commands
 
