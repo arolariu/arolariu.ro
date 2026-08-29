@@ -13,10 +13,10 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import readline from "node:readline";
 import {APP_CONFIGURATION_MAPPING, isSecretKey} from "./azure/index.ts";
 import {isAzureInfrastructure, isInCI, isProductionEnvironment, isVerboseMode} from "./common/index.ts";
 import {MonorepositoryConsoleLogger, type MonorepositoryLogger} from "./common/logger.ts";
+import {createTerminalPromptProvider, type PromptProvider} from "./common/prompts.ts";
 import type {AllEnvironmentVariablesKeys, TypedConfigurationType} from "./types/index.ts";
 
 /** exp service URL — same deterministic logic as the runtime consumers. EXP_PROXY_URL overrides for bare-metal dev. */
@@ -31,6 +31,78 @@ const CONFIG_LABEL: string = (process.env["SITE_ENV"] ?? "").toUpperCase() === "
 
 /** Azure AD token scope for authenticating to the exp service. */
 const EXP_TOKEN_SCOPE = "api://950ac239-5c2c-4759-bd83-911e68f6a8c9/.default";
+
+const SETUP_SECTION_START = "# arolariu.ro setup-managed values";
+const SETUP_SECTION_END = "# End arolariu.ro setup-managed values";
+
+function isMappedEnvironmentKey(key: string): key is AllEnvironmentVariablesKeys {
+  return Object.values(APP_CONFIGURATION_MAPPING).some((candidate) => candidate === key);
+}
+
+/**
+ * Parses environment assignments without logging or evaluating their values.
+ *
+ * @param content - Raw environment file contents.
+ * @returns Parsed assignments, with the final assignment winning.
+ */
+export function parseEnvironmentFile(content: string): ReadonlyMap<string, string> {
+  const values = new Map<string, string>();
+
+  for (const line of content.split(/\r\n|\n|\r/u)) {
+    const trimmed = line.trim();
+    if (trimmed === "" || trimmed.startsWith("#")) {
+      continue;
+    }
+
+    const separator = trimmed.indexOf("=");
+    if (separator <= 0) {
+      continue;
+    }
+
+    const key = trimmed.slice(0, separator).trim();
+    if (key === "") {
+      continue;
+    }
+
+    let value = trimmed.slice(separator + 1).trim();
+    if (value.length >= 2 && ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'")))) {
+      value = value.slice(1, -1);
+    }
+    values.set(key, value);
+  }
+
+  return values;
+}
+
+function environmentNewline(content: string): "\r\n" | "\n" | "\r" {
+  return (content.match(/\r\n|\n|\r/u)?.[0] as "\r\n" | "\n" | "\r" | undefined) ?? "\n";
+}
+
+/**
+ * Appends one setup-owned section containing only missing, nonempty values.
+ *
+ * @param original - Existing environment file contents.
+ * @param additions - Candidate assignments in desired output order.
+ * @returns The unchanged original or an additive environment payload.
+ */
+export function appendMissingEnvironmentValues(original: string, additions: ReadonlyMap<string, string>): string {
+  const existing = parseEnvironmentFile(original);
+  const missing: string[] = [];
+
+  for (const [key, value] of additions) {
+    if (!existing.has(key) && value.trim() !== "") {
+      missing.push(`${key}=${quoteIfNeeded(value)}`);
+    }
+  }
+
+  if (missing.length === 0) {
+    return original;
+  }
+
+  const newline = environmentNewline(original);
+  const separator = original === "" || original.endsWith("\n") || original.endsWith("\r") ? "" : newline;
+  return `${original}${separator}${[SETUP_SECTION_START, ...missing, SETUP_SECTION_END, ""].join(newline)}`;
+}
 
 /**
  * Fetches build-time configuration from the exp service.
@@ -147,23 +219,9 @@ function fetchConfigurationFromLocalEnvFile(
 
   try {
     const content = fs.readFileSync(envPath, "utf-8");
-    const lines = content.split("\n");
-
-    for (const line of lines) {
-      const trimmedLine = line.trim();
-      if (trimmedLine && !trimmedLine.startsWith("#")) {
-        const [key, ...valueParts] = trimmedLine.split("=");
-        // TODO: Check if key is part of AllEnvironmentVariablesKeys type
-        if (key && valueParts.length > 0) {
-          let value = valueParts.join("=");
-          // Remove quotes if present
-          if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
-            value = value.slice(1, -1);
-          }
-          config[key as AllEnvironmentVariablesKeys] = value;
-          // ---------^ this type casting is not safe.
-          // TODO: Check if key is part of AllEnvironmentVariablesKeys type
-        }
+    for (const [key, value] of parseEnvironmentFile(content)) {
+      if (isMappedEnvironmentKey(key)) {
+        config[key] = value;
       }
     }
 
@@ -190,12 +248,14 @@ function fetchConfigurationFromLocalEnvFile(
  * @param missingKeys - Keys representing missing environment variables.
  * @param verbose - Enables verbose logging.
  * @param logger - Logger used for prompts without exposing entered values.
+ * @param prompts - Shared interactive prompt provider.
  * @returns A partial configuration object containing newly provided values.
  */
 async function promptForMissingKeys(
   missingKeys: AllEnvironmentVariablesKeys[],
   verbose: boolean,
   logger: MonorepositoryLogger,
+  prompts: PromptProvider,
 ): Promise<Partial<TypedConfigurationType>> {
   logger.section("Prompting for missing environment variables", "🔍");
 
@@ -206,11 +266,6 @@ async function promptForMissingKeys(
 
   logger.warn(`Found ${missingKeys.length} missing key(s) that need to be provided.`);
 
-  const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout,
-  });
-
   const config = {} as TypedConfigurationType;
   let count = 1;
 
@@ -218,19 +273,11 @@ async function promptForMissingKeys(
     const isSecret = isSecretKey(key);
     const prefix = isSecret ? "🔐" : "🔑";
     const secretHint = isSecret ? " (hidden)" : "";
-    logger.write([
-      {text: `   ${prefix} [${count}/${missingKeys.length}] `, styles: [isSecret ? "magenta" : "blue"]},
-      {text: key, styles: [isSecret ? "magenta" : "cyan"]},
-      {text: `${secretHint}: `, styles: ["gray"]},
-    ]);
+    logger.info(`${prefix} [${count}/${missingKeys.length}] Requesting ${key}${secretHint}.`);
 
-    const value = await new Promise<string>((resolve) => {
-      rl.question("", (answer) => {
-        resolve(answer.trim());
-      });
-    });
-    if (isSecret) {
-      logger.line([{text: "*".repeat(8), styles: ["gray"]}]);
+    const value = (isSecret ? await prompts.secret(key) : await prompts.text(key)).trim();
+    if (isSecret && value !== "") {
+      logger.redact(value);
     }
 
     if (value) {
@@ -241,7 +288,6 @@ async function promptForMissingKeys(
     count++;
   }
 
-  rl.close();
   if (verbose) {
     logger.debug(`Collected ${Object.keys(config).length} prompted environment value(s).`);
   }
@@ -258,9 +304,14 @@ async function promptForMissingKeys(
  *
  * @param verbose - Enables verbose logging.
  * @param logger - Logger used for parsing, prompts, and completion output.
+ * @param prompts - Shared interactive prompt provider.
  * @returns The completed typed configuration.
  */
-async function ensureLocalEnvIsComplete(verbose: boolean, logger: MonorepositoryLogger): Promise<TypedConfigurationType> {
+async function ensureLocalEnvIsComplete(
+  verbose: boolean,
+  logger: MonorepositoryLogger,
+  prompts: PromptProvider,
+): Promise<TypedConfigurationType> {
   logger.section("Ensuring local environment configuration is complete", "🔧");
   const configurationKeys = Object.values(APP_CONFIGURATION_MAPPING);
 
@@ -283,25 +334,13 @@ async function ensureLocalEnvIsComplete(verbose: boolean, logger: Monorepository
     logger.line([{text: `      • ${missingKey}`, styles: ["gray"]}]);
   }
 
-  logger.warn("Do you want to provide the missing values now? (Y/n)");
-  const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout,
-  });
-  logger.write([{text: "> ", styles: ["yellow"]}]);
-  const answer = await new Promise<string>((resolve) => {
-    rl.question("", (input) => {
-      resolve(input.trim().toLowerCase());
-    });
-  });
-  rl.close();
-
-  if (answer === "n" || answer === "no") {
+  const shouldPrompt = await prompts.confirm("Do you want to provide the missing values now?", true);
+  if (!shouldPrompt) {
     throw new Error("Aborting: Missing environment variables were not provided.");
   }
 
   // Prompt user for missing keys
-  const newValues = await promptForMissingKeys(missingKeys, verbose, logger);
+  const newValues = await promptForMissingKeys(missingKeys, verbose, logger, prompts);
   // Merge and return complete config
   logger.success("Configuration merged successfully.");
 
@@ -321,7 +360,7 @@ async function ensureLocalEnvIsComplete(verbose: boolean, logger: Monorepository
  * @param value The string value to check and potentially quote
  * @returns The value, quoted and escaped if necessary
  */
-function quoteIfNeeded(value: string): string {
+export function quoteIfNeeded(value: string): string {
   // Empty values should be represented as empty strings
   if (!value) {
     return '""';
@@ -476,11 +515,13 @@ function copyEnvFileToSubRepos(sourcePath: string, targetPaths: string[], verbos
  *
  * @param verbose - Enables verbose logging.
  * @param logger - Logger used for all script-authored output.
+ * @param prompts - Optional injected prompt provider.
  * @returns Process exit code (0 for success, non-zero for failure).
  */
 export async function main(
   verbose: boolean = false,
   logger: MonorepositoryLogger = new MonorepositoryConsoleLogger("generate::env", {verbose: verbose || isVerboseMode}),
+  prompts: PromptProvider = createTerminalPromptProvider(logger),
 ): Promise<number> {
   const effectiveVerbose = verbose || isVerboseMode;
   logger.line([{text: "🔧 Configuration:", styles: ["cyan"]}]);
@@ -511,7 +552,7 @@ export async function main(
   ]);
   logger.line();
   if (effectiveVerbose) {
-    logger.debug(`SITE_ENV=${process.env["SITE_ENV"] ?? "(unset)"} maps to CONFIG_LABEL=${CONFIG_LABEL}.`);
+    logger.debug("SITE_ENV was evaluated without logging its value.");
   }
 
   let config = {} as TypedConfigurationType;
@@ -525,11 +566,11 @@ export async function main(
       if (effectiveVerbose) {
         logger.debug("Populating configuration via manual input.");
       }
-      config = await ensureLocalEnvIsComplete(verbose, logger);
+      config = await ensureLocalEnvIsComplete(verbose, logger, prompts);
     }
   } catch (error: unknown) {
     logger.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
-    process.exit(1);
+    return 1;
   }
 
   for (const [key, value] of Object.entries(config)) {

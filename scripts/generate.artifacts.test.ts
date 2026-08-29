@@ -10,7 +10,6 @@ import fs from "node:fs";
 import {mkdir, mkdtemp, readFile, rm, writeFile} from "node:fs/promises";
 import {tmpdir} from "node:os";
 import {basename, dirname, join} from "node:path";
-import readline from "node:readline";
 import {stripVTControlCharacters} from "node:util";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 
@@ -857,9 +856,10 @@ describe("Artifact orchestration and CLI contracts", () => {
   });
 
   describe("generation logger injection", () => {
-    it("enables default environment diagnostics when VERBOSE=true", async () => {
+    it("enables key-only environment diagnostics when VERBOSE=true", async () => {
       vi.stubEnv("INFRA", "local");
       vi.stubEnv("VERBOSE", "true");
+      vi.stubEnv("SITE_ENV", "VALUE_THAT_MUST_NOT_BE_LOGGED");
       vi.resetModules();
       vi.spyOn(fs, "existsSync").mockReturnValue(true);
       vi.spyOn(fs, "readFileSync").mockReturnValue(
@@ -886,10 +886,12 @@ describe("Artifact orchestration and CLI contracts", () => {
         vi.unstubAllEnvs();
       }
 
-      expect(debug.mock.calls.flat().join("\n")).toContain("SITE_ENV=");
+      const debugOutput = debug.mock.calls.flat().join("\n");
+      expect(debugOutput).toContain("SITE_ENV");
+      expect(debugOutput).not.toContain("VALUE_THAT_MUST_NOT_BE_LOGGED");
     });
 
-    it("creates both interactive environment prompts with process.stdout without reading real input", async () => {
+    it("uses the injected environment PromptProvider without reading real input", async () => {
       vi.stubEnv("INFRA", "local");
       vi.stubEnv("VERBOSE", "false");
       vi.resetModules();
@@ -897,34 +899,38 @@ describe("Artifact orchestration and CLI contracts", () => {
       vi.spyOn(fs, "readFileSync").mockReturnValue("");
       vi.spyOn(fs, "writeFileSync").mockImplementation(() => undefined);
       vi.spyOn(fs, "copyFileSync").mockImplementation(() => undefined);
-      const createInterface = vi.spyOn(readline, "createInterface").mockImplementation(
-        () =>
-          ({
-            question: (_query: string, callback: (answer: string) => void): void => {
-              callback("value");
-            },
-            close: vi.fn(),
-          }) as unknown as readline.Interface,
-      );
+      const confirm = vi.fn().mockResolvedValue(true);
+      const text = vi.fn().mockResolvedValue("value");
+      const secret = vi.fn().mockResolvedValue("value");
       const sink = new InMemoryLoggerSink();
       const logger = new MonorepositoryConsoleLogger("generate::env", {color: false, sink});
 
       try {
         const {main: generateEnv} = await import("./generate.env.ts");
-        await expect(generateEnv(false, logger)).resolves.toBe(0);
+        await expect(
+          generateEnv(false, logger, {
+            confirm,
+            select: async <TValue extends string>(
+              _message: string,
+              choices: readonly Readonly<{value: TValue; label: string}>[],
+            ): Promise<TValue> => {
+              const selected = choices[0]?.value;
+              if (selected === undefined) {
+                throw new Error("A test choice is required.");
+              }
+              return selected;
+            },
+            text,
+            secret,
+          }),
+        ).resolves.toBe(0);
       } finally {
         vi.unstubAllEnvs();
       }
 
-      expect(createInterface).toHaveBeenCalledTimes(2);
-      expect(createInterface).toHaveBeenNthCalledWith(1, {
-        input: process.stdin,
-        output: process.stdout,
-      });
-      expect(createInterface).toHaveBeenNthCalledWith(2, {
-        input: process.stdin,
-        output: process.stdout,
-      });
+      expect(confirm).toHaveBeenCalledOnce();
+      expect(text).toHaveBeenCalled();
+      expect(secret).toHaveBeenCalled();
     });
 
     it("routes no-task orchestration output through the supplied logger", async () => {
