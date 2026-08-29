@@ -11,15 +11,10 @@
 
 import path from "node:path";
 import process from "node:process";
-import {styleText} from "node:util";
+import {format as formatText, styleText} from "node:util";
 import Piscina from "piscina";
-import {
-  createProgressTracker,
-  formatBytes,
-  logWorkerComplete,
-  logWorkerSpawn,
-  printWorkerTimeline,
-} from "./common/index.ts";
+import {createProgressTracker, formatBytes, logWorkerComplete, logWorkerSpawn, printWorkerTimeline} from "./common/index.ts";
+import {MonorepositoryConsoleLogger, type MonorepositoryLogger} from "./common/logger.ts";
 import type {ESLintFileStats, LintWorkerInput, LintWorkerResult} from "./types/lint.ts";
 
 type LintTarget = "all" | "packages" | "website" | "cv" | "status" | "api" | "exp";
@@ -64,9 +59,12 @@ const allTargets: Exclude<LintTarget, "all">[] = ["packages", "website", "cv", "
  */
 function scopeForTarget(configName: string): string {
   switch (configName) {
-    case "[dotnet]": return "arolariu.slnx";
-    case "[ruff]": return "sites/exp.arolariu.ro";
-    default: return "(unknown)"; // shouldn't hit — ESLint configs always have fileCount > 0 after a real lint
+    case "[dotnet]":
+      return "arolariu.slnx";
+    case "[ruff]":
+      return "sites/exp.arolariu.ro";
+    default:
+      return "(unknown)"; // shouldn't hit — ESLint configs always have fileCount > 0 after a real lint
   }
 }
 
@@ -79,35 +77,35 @@ function scopeForTarget(configName: string): string {
  * - counts and textual output for standard ESLint results.
  *
  * @param result - The ESLint worker result.
+ * @param logger - Logger used for presentation output.
  * @returns Nothing.
  */
-function printWorkerResult(result: LintWorkerResult): void {
+function printWorkerResult(result: LintWorkerResult, logger: MonorepositoryLogger): void {
   const workerInfo = styleText("gray", `[Worker #${result.workerId}]`);
   const timingInfo = styleText("gray", `[init: ${result.initTimeMs}ms, work: ${result.workTimeMs}ms, total: ${result.durationMs}ms]`);
   // For ESLint targets, fileCount reflects the real number of files linted.
   // For api/exp the underlying tool (dotnet build, ruff check) doesn't report a
   // count back to the worker, so fileCount stays 0 — show the scope instead.
-  const fileInfo = result.fileCount > 0
-    ? styleText("gray", `[${result.fileCount} files]`)
-    : styleText("gray", `[scope: ${scopeForTarget(result.configName)}]`);
+  const fileInfo =
+    result.fileCount > 0
+      ? styleText("gray", `[${result.fileCount} files]`)
+      : styleText("gray", `[scope: ${scopeForTarget(result.configName)}]`);
   const memInfo = styleText("gray", `[${formatBytes(result.peakMemoryBytes)}]`);
-  console.log(
-    styleText("cyan", `\n🔍 Lint target: ${styleText("bold", result.configName)} ${workerInfo}`),
-  );
-  console.log(styleText("gray", `   ${timingInfo} ${fileInfo} ${memInfo}`));
+  logger.line(styleText("cyan", `\n🔍 Lint target: ${styleText("bold", result.configName)} ${workerInfo}`));
+  logger.line(styleText("gray", `   ${timingInfo} ${fileInfo} ${memInfo}`));
 
   if (result.skipped) {
-    console.log(styleText("gray", `  ⊘ ${result.configName} skipped: ${result.skipReason}`));
+    logger.line(styleText("gray", `  ⊘ ${result.configName} skipped: ${result.skipReason}`));
     return;
   }
 
   if (result.error) {
-    console.log(styleText("red", `  ✗ Worker error: ${result.error}`));
+    logger.line(styleText("red", `  ✗ Worker error: ${result.error}`));
     return;
   }
 
   if (result.resultText) {
-    console.log(result.resultText);
+    logger.line(result.resultText);
   }
 
   // When a 2-step target fails on a non-ESLint step (svelte-check, dotnet format, dotnet build),
@@ -116,13 +114,13 @@ function printWorkerResult(result: LintWorkerResult): void {
   // "ESLint skipped".
   if (result.failedStep && result.failedStep !== "eslint") {
     const skippedSuffix = result.skippedStep ? ` — ${result.skippedStep} skipped` : "";
-    console.log(styleText("red", `  ✗ ${result.failedStep} failed${skippedSuffix}`));
+    logger.line(styleText("red", `  ✗ ${result.failedStep} failed${skippedSuffix}`));
   } else if (result.errorCount > 0) {
-    console.log(styleText("red", `  ✗ ESLint found ${result.errorCount} error(s) and ${result.warningCount} warning(s)`));
+    logger.line(styleText("red", `  ✗ ESLint found ${result.errorCount} error(s) and ${result.warningCount} warning(s)`));
   } else if (result.warningCount > 0) {
-    console.log(styleText("yellow", `  ⚠ ESLint found ${result.warningCount} warning(s)`));
+    logger.line(styleText("yellow", `  ⚠ ESLint found ${result.warningCount} warning(s)`));
   } else {
-    console.log(styleText("green", `  ✓ No linting issues found for ${result.configName}`));
+    logger.line(styleText("green", `  ✓ No linting issues found for ${result.configName}`));
   }
 }
 
@@ -130,8 +128,9 @@ function printWorkerResult(result: LintWorkerResult): void {
  * Prints the slowest files report across all workers.
  *
  * @param results - All worker results containing slowest files data.
+ * @param logger - Logger used for presentation output.
  */
-function printSlowestFilesReport(results: LintWorkerResult[]): void {
+function printSlowestFilesReport(results: readonly LintWorkerResult[], logger: MonorepositoryLogger): void {
   // Collect all file stats from all workers
   const allFileStats: ESLintFileStats[] = [];
   for (const result of results) {
@@ -147,11 +146,11 @@ function printSlowestFilesReport(results: LintWorkerResult[]): void {
     return; // No timing data available
   }
 
-  console.log(styleText("bold", "\n  🐢 Slowest Files to Lint:"));
+  logger.line(styleText("bold", "\n  🐢 Slowest Files to Lint:"));
   for (const [index, file] of topSlowest.entries()) {
     const relativePath = path.relative(process.cwd(), file.filePath);
     const timeStr = file.lintTimeMs > 0 ? styleText("yellow", `${file.lintTimeMs.toFixed(0)}ms`) : styleText("gray", "cached");
-    console.log(styleText("gray", `     ${index + 1}. `) + styleText("dim", relativePath) + ` ${timeStr}`);
+    logger.line(styleText("gray", `     ${index + 1}. `) + styleText("dim", relativePath) + ` ${timeStr}`);
   }
 }
 
@@ -159,16 +158,17 @@ function printSlowestFilesReport(results: LintWorkerResult[]): void {
  * Prints memory usage summary across all workers.
  *
  * @param results - All worker results containing memory data.
+ * @param logger - Logger used for presentation output.
  */
-function printMemorySummary(results: LintWorkerResult[]): void {
+function printMemorySummary(results: readonly LintWorkerResult[], logger: MonorepositoryLogger): void {
   const totalMemory = results.reduce((sum, r) => sum + r.peakMemoryBytes, 0);
   const maxMemory = Math.max(...results.map((r) => r.peakMemoryBytes));
   const totalFiles = results.reduce((sum, r) => sum + r.fileCount, 0);
 
-  console.log(styleText("bold", "\n  📊 Resource Usage:"));
-  console.log(styleText("gray", `     Total files linted: `) + styleText("cyan", `${totalFiles}`));
-  console.log(styleText("gray", `     Peak memory (max worker): `) + styleText("cyan", formatBytes(maxMemory)));
-  console.log(styleText("gray", `     Combined memory (all workers): `) + styleText("cyan", formatBytes(totalMemory)));
+  logger.line(styleText("bold", "\n  📊 Resource Usage:"));
+  logger.line(styleText("gray", `     Total files linted: `) + styleText("cyan", `${totalFiles}`));
+  logger.line(styleText("gray", `     Peak memory (max worker): `) + styleText("cyan", formatBytes(maxMemory)));
+  logger.line(styleText("gray", `     Combined memory (all workers): `) + styleText("cyan", formatBytes(totalMemory)));
 }
 
 /**
@@ -182,15 +182,20 @@ function printMemorySummary(results: LintWorkerResult[]): void {
  *
  * @param lintTarget - The target to lint.
  * @param filePatterns - Optional glob patterns for selective targeting.
+ * @param logger - Logger used for lint lifecycle output.
  * @returns Exit code (0 for success, 1 for any error).
  */
-async function startESLint(lintTarget: LintTarget, filePatterns?: string[]): Promise<number> {
-  const hasSelectiveTargeting = filePatterns && filePatterns.length > 0;
+async function startESLint(
+  lintTarget: LintTarget,
+  filePatterns: readonly string[] | undefined,
+  logger: MonorepositoryLogger,
+): Promise<number> {
+  const hasSelectiveTargeting = filePatterns !== undefined && filePatterns.length > 0;
   const targetDisplay = hasSelectiveTargeting ? `${lintTarget} (${filePatterns.length} patterns)` : lintTarget;
-  console.log(styleText(["bold", "magenta"], `\n🔎 Running lint for: ${targetDisplay}`));
+  logger.line(styleText(["bold", "magenta"], `\n🔎 Running lint for: ${targetDisplay}`));
 
   if (hasSelectiveTargeting) {
-    console.log(styleText("gray", "   Patterns: " + filePatterns.join(", ")));
+    logger.line(styleText("gray", "   Patterns: " + filePatterns.join(", ")));
   }
 
   // Create Piscina worker pool
@@ -203,24 +208,23 @@ async function startESLint(lintTarget: LintTarget, filePatterns?: string[]): Pro
 
   try {
     if (lintTarget === "all") {
-      console.log(styleText("yellow", "⏱️  Running lint on all targets in parallel..."));
-      console.log(styleText(["bold", "cyan"], "\n  🧵 Dispatching parallel workers..."));
-      console.log(styleText("gray", `     Main process PID: ${process.pid}`));
-      console.log(styleText("gray", `     Worker pool: min=${piscina.options.minThreads}, max=${piscina.options.maxThreads}`));
-      console.log();
+      logger.line(styleText("yellow", "⏱️  Running lint on all targets in parallel..."));
+      logger.line(styleText(["bold", "cyan"], "\n  🧵 Dispatching parallel workers..."));
+      logger.line(styleText("gray", `     Main process PID: ${process.pid}`));
+      logger.line(styleText("gray", `     Worker pool: min=${piscina.options.minThreads}, max=${piscina.options.maxThreads}`));
+      logger.line();
 
-      const progress = createProgressTracker(allTargets.length);
+      const progress = createProgressTracker(allTargets.length, logger.child("progress"));
       const dispatchTime = Date.now();
       const results: (LintWorkerResult | null)[] = new Array(allTargets.length).fill(null);
-      const completionEvents: Array<{index: number; target: string; durationMs: number; status: "success" | "error"}> =
-        [];
+      const completionEvents: Array<{index: number; target: string; durationMs: number; status: "success" | "error"}> = [];
       let failedWorkers = 0;
 
       // Log all spawn events first
       for (const [index, target] of allTargets.entries()) {
-        logWorkerSpawn(index + 1, target);
+        logWorkerSpawn(index + 1, target, logger.child("workers"));
       }
-      console.log();
+      logger.line();
 
       // Start the progress bar
       progress.start();
@@ -233,7 +237,7 @@ async function startESLint(lintTarget: LintTarget, filePatterns?: string[]): Pro
           configName,
           taskIndex: index,
           dispatchedAt: dispatchTime,
-          filePatterns: hasSelectiveTargeting ? filePatterns : undefined,
+          ...(hasSelectiveTargeting ? {filePatterns} : {}),
         };
 
         return piscina.run(input) as Promise<LintWorkerResult>;
@@ -286,16 +290,14 @@ async function startESLint(lintTarget: LintTarget, filePatterns?: string[]): Pro
       progress.finish();
 
       // Log completion events in order they finished
-      console.log();
+      logger.line();
       for (const event of completionEvents) {
-        logWorkerComplete(event.index, event.target, event.durationMs, event.status);
+        logWorkerComplete(event.index, event.target, event.durationMs, event.status, logger.child("workers"));
       }
 
       // Show graceful degradation notice if any workers failed
       if (failedWorkers > 0) {
-        console.log(
-          styleText("yellow", `\n  ⚠️  ${failedWorkers} worker(s) crashed but others continued (graceful degradation)`),
-        );
+        logger.line(styleText("yellow", `\n  ⚠️  ${failedWorkers} worker(s) crashed but others continued (graceful degradation)`));
       }
 
       // Print timeline visualization (only for successful workers)
@@ -307,7 +309,7 @@ async function startESLint(lintTarget: LintTarget, filePatterns?: string[]): Pro
         .filter((e) => e.durationMs > 0);
 
       if (timelineEntries.length > 0) {
-        printWorkerTimeline(timelineEntries);
+        printWorkerTimeline(timelineEntries, logger.child("timeline"));
       }
 
       // Print results in `allTargets` order so output is stable across runs.
@@ -319,9 +321,9 @@ async function startESLint(lintTarget: LintTarget, filePatterns?: string[]): Pro
         if (!result) continue;
         validResults.push(result);
 
-        console.log(styleText("gray", "\n─────────────────────────────────────────────────"));
-        printWorkerResult(result);
-        console.log(styleText("gray", "─────────────────────────────────────────────────"));
+        logger.line(styleText("gray", "\n─────────────────────────────────────────────────"));
+        printWorkerResult(result, logger.child(result.configName));
+        logger.line(styleText("gray", "─────────────────────────────────────────────────"));
 
         if (result.skipped) {
           // Skipped targets don't affect the error/warning totals.
@@ -334,10 +336,10 @@ async function startESLint(lintTarget: LintTarget, filePatterns?: string[]): Pro
       }
 
       // Print enhanced summary
-      printMemorySummary(validResults);
-      printSlowestFilesReport(validResults);
+      printMemorySummary(validResults, logger.child("memory"));
+      printSlowestFilesReport(validResults, logger.child("slowest"));
 
-      console.log(styleText(["bold", "cyan"], `\n📊 Summary: ${totalErrors} error(s), ${totalWarnings} warning(s)`));
+      logger.line(styleText(["bold", "cyan"], `\n📊 Summary: ${totalErrors} error(s), ${totalWarnings} warning(s)`));
       return totalErrors > 0 ? 1 : 0;
     } else {
       // Single target - still use worker for consistency
@@ -347,16 +349,16 @@ async function startESLint(lintTarget: LintTarget, filePatterns?: string[]): Pro
         configName,
         taskIndex: 0,
         dispatchedAt: Date.now(),
-        filePatterns: hasSelectiveTargeting ? filePatterns : undefined,
+        ...(hasSelectiveTargeting ? {filePatterns} : {}),
       };
 
       try {
         const result = (await piscina.run(input)) as LintWorkerResult;
-        printWorkerResult(result);
+        printWorkerResult(result, logger.child(result.configName));
 
         // Print slowest files for single target too
         if (result.slowestFiles && result.slowestFiles.length > 0) {
-          printSlowestFilesReport([result]);
+          printSlowestFilesReport([result], logger.child("slowest"));
         }
 
         if (result.skipped) {
@@ -367,7 +369,7 @@ async function startESLint(lintTarget: LintTarget, filePatterns?: string[]): Pro
         }
         return result.errorCount > 0 ? 1 : 0;
       } catch (error) {
-        console.log(styleText("red", `  ✗ Worker crashed: ${error}`));
+        logger.line(styleText("red", `  ✗ Worker crashed: ${error}`));
         return 1;
       }
     }
@@ -386,27 +388,29 @@ async function startESLint(lintTarget: LintTarget, filePatterns?: string[]): Pro
  *
  * @param arg - Target name (`all`, `packages`, `website`, `cv`).
  * @param filePatterns - Optional glob patterns for selective targeting.
+ * @param logger - Optional logger used for all lint output.
  * @returns Process exit code (0 for success, non-zero for failure).
  */
-export async function main(arg?: string, filePatterns?: string[]): Promise<number> {
-  console.log(styleText(["bold", "magenta"], "\n╔════════════════════════════════════════╗"));
-  console.log(styleText(["bold", "magenta"], "║    arolariu.ro Code Linter Tool        ║"));
-  console.log(styleText(["bold", "magenta"], "╚════════════════════════════════════════╝\n"));
+export async function main(arg?: string, filePatterns?: readonly string[], logger?: MonorepositoryLogger): Promise<number> {
+  const output = logger ?? new MonorepositoryConsoleLogger("lint");
+  output.line(styleText(["bold", "magenta"], "\n╔════════════════════════════════════════╗"));
+  output.line(styleText(["bold", "magenta"], "║    arolariu.ro Code Linter Tool        ║"));
+  output.line(styleText(["bold", "magenta"], "╚════════════════════════════════════════╝\n"));
 
   if (!arg) {
-    console.error(styleText("red", "✗ Missing target argument"));
-    console.log(styleText("gray", "\n💡 Usage: lint <all|packages|website|cv|status|api|exp> [glob patterns...]"));
-    console.log(styleText("gray", "   - all:      Lint all targets"));
-    console.log(styleText("gray", "   - packages: Lint component packages"));
-    console.log(styleText("gray", "   - website:  Lint main website"));
-    console.log(styleText("gray", "   - cv:       Lint CV site (svelte-check + ESLint)"));
-    console.log(styleText("gray", "   - status:   Lint status site (svelte-check + ESLint)"));
-    console.log(styleText("gray", "   - api:      Lint .NET API (dotnet format + dotnet build)"));
-    console.log(styleText("gray", "   - exp:      Lint Python service (ruff check)"));
-    console.log(styleText("gray", "\n📁 Selective targeting:"));
-    console.log(styleText("gray", '   lint website "src/**/*.tsx"       Lint only TSX files'));
-    console.log(styleText("gray", '   lint all "**/*.test.ts"           Lint only test files\n'));
-    console.log(styleText("gray", "\n💡 Valid targets: all, packages, website, cv, status, api, exp\n"));
+    output.line(styleText("red", "✗ Missing target argument"), "stderr");
+    output.line(styleText("gray", "\n💡 Usage: lint <all|packages|website|cv|status|api|exp> [glob patterns...]"));
+    output.line(styleText("gray", "   - all:      Lint all targets"));
+    output.line(styleText("gray", "   - packages: Lint component packages"));
+    output.line(styleText("gray", "   - website:  Lint main website"));
+    output.line(styleText("gray", "   - cv:       Lint CV site (svelte-check + ESLint)"));
+    output.line(styleText("gray", "   - status:   Lint status site (svelte-check + ESLint)"));
+    output.line(styleText("gray", "   - api:      Lint .NET API (dotnet format + dotnet build)"));
+    output.line(styleText("gray", "   - exp:      Lint Python service (ruff check)"));
+    output.line(styleText("gray", "\n📁 Selective targeting:"));
+    output.line(styleText("gray", '   lint website "src/**/*.tsx"       Lint only TSX files'));
+    output.line(styleText("gray", '   lint all "**/*.test.ts"           Lint only test files\n'));
+    output.line(styleText("gray", "\n💡 Valid targets: all, packages, website, cv, status, api, exp\n"));
     return 1;
   }
 
@@ -415,53 +419,54 @@ export async function main(arg?: string, filePatterns?: string[]): Promise<numbe
 
     switch (arg) {
       case "all":
-        exitCode = await startESLint("all", filePatterns);
+        exitCode = await startESLint("all", filePatterns, output.child("all"));
         break;
       case "packages":
-        exitCode = await startESLint("packages", filePatterns);
+        exitCode = await startESLint("packages", filePatterns, output.child("packages"));
         break;
       case "website":
-        exitCode = await startESLint("website", filePatterns);
+        exitCode = await startESLint("website", filePatterns, output.child("website"));
         break;
       case "cv":
-        exitCode = await startESLint("cv", filePatterns);
+        exitCode = await startESLint("cv", filePatterns, output.child("cv"));
         break;
       case "status":
-        exitCode = await startESLint("status", filePatterns);
+        exitCode = await startESLint("status", filePatterns, output.child("status"));
         break;
       case "api":
-        exitCode = await startESLint("api", filePatterns);
+        exitCode = await startESLint("api", filePatterns, output.child("api"));
         break;
       case "exp":
-        exitCode = await startESLint("exp", filePatterns);
+        exitCode = await startESLint("exp", filePatterns, output.child("exp"));
         break;
       default:
-        console.error(styleText("red", `✗ Invalid target: "${arg}"`));
-        console.log(styleText("gray", "\n💡 Valid targets: all, packages, website, cv, status, api, exp\n"));
+        output.line(styleText("red", `✗ Invalid target: "${arg}"`), "stderr");
+        output.line(styleText("gray", "\n💡 Valid targets: all, packages, website, cv, status, api, exp\n"));
         return 1;
     }
 
     if (exitCode === 0) {
-      console.log(styleText(["bold", "green"], "\n✅ Linting completed successfully!\n"));
+      output.line(styleText(["bold", "green"], "\n✅ Linting completed successfully!\n"));
     } else {
-      console.log(styleText(["bold", "red"], "\n❌ Linting completed with errors\n"));
+      output.line(styleText(["bold", "red"], "\n❌ Linting completed with errors\n"));
     }
 
     return exitCode;
   } catch (error) {
-    console.error(styleText(["bold", "red"], "\n❌ Linting failed with errors:"), error);
+    output.line(formatText(styleText(["bold", "red"], "\n❌ Linting failed with errors:"), error), "stderr");
     return 1;
   }
 }
 
 if (import.meta.main) {
+  const output = new MonorepositoryConsoleLogger("lint");
   const arg = process.argv[2];
   // Collect additional arguments as file patterns for selective targeting
   const filePatterns = process.argv.slice(3).filter((p) => p.length > 0);
-  main(arg, filePatterns.length > 0 ? filePatterns : undefined)
+  main(arg, filePatterns.length > 0 ? filePatterns : undefined, output)
     .then((code) => process.exit(code))
     .catch((err) => {
-      console.error(err);
+      output.line(err instanceof Error ? (err.stack ?? err.message) : String(err), "stderr");
       process.exit(1);
     });
 }
