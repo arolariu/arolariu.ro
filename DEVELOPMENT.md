@@ -6,14 +6,19 @@
 
 | Tool | Version | Required | Install |
 |------|---------|----------|---------|
-| **Node.js** | ≥ 24 | ✅ Yes | [nodejs.org](https://nodejs.org/) or `npm run setup` |
-| **npm** | ≥ 11 | ✅ Yes | Bundled with Node.js |
-| **.NET SDK** | 10.0 | ✅ Yes | [dot.net](https://dot.net/) or `npm run setup` |
-| **Python** | 3.12 | ⬡ Optional | [python.org](https://python.org/) — only for exp service |
-| **Docker** | ≥ 20.10 | ⬡ Optional | [docker.com](https://docker.com/) — for local infra stack |
-| **Git** | ≥ 2.30 | ✅ Yes | [git-scm.com](https://git-scm.com/) |
+| **Git** | ≥ 2.30 | ✅ Yes | [git-scm.com](https://git-scm.com/) — bootstrap prerequisite |
+| **Node.js** | ≥ 24 | ✅ Yes | [nodejs.org](https://nodejs.org/) — bootstrap prerequisite; `npm run setup` never installs or upgrades it |
+| **npm** | ≥ 11 | ✅ Yes | Bundled with Node.js — bootstrap prerequisite |
+| **.NET SDK** | 10.0 | ✅ Yes | Prepared by `npm run setup` (SDK install requires your consent) |
+| **Python** | 3.12 | ⬡ Optional | Prepared by `npm run setup` — only for the `exp` service |
+| **Container engine** | Rancher Desktop or Podman Desktop | ✅ Yes (for Aspire/selfhost infra) | Selected and, with consent, installed by `npm run setup`; Docker Desktop is not supported |
 
-> **First time?** Run `npm run setup` — it checks and installs Node.js, .NET, and npm automatically.
+> **First time?** Clone the repository, then run `npm run setup` — it restores root and `.github/scripts` dependencies, generates
+> checkout artifacts, prepares the .NET SDK/AppHost secrets/HTTPS certificate, an isolated Python virtual environment, the website's
+> local `.env` defaults, Playwright's Chromium browser, and selects/persists a Rancher Desktop or Podman Desktop container engine. It
+> never installs or upgrades Node.js or npm, and it does not build, type-check, test, or start any service. Add `--verbose` for
+> diagnostic detail, `--dry-run` to preview every planned mutation, `--yes` to approve system-scoped installs without prompting, and
+> `--engine rancher|podman` to select the container engine explicitly.
 
 ---
 
@@ -26,8 +31,8 @@ There are three ways to develop locally. Choose based on your needs:
 | **Best for** | Day-to-day coding with fast iteration | CI parity, deploy-mock-of-prod, container auditing | Onboarding, cloud dev, consistent env |
 | **Hot reload** | ✅ All services (apps run native) | ❌ Production builds, no reload | ✅ All services (Aspire runs inside container) |
 | **Infrastructure** | ✅ SQL Server, Cosmos vNext emulator, Azurite, Redis via Aspire-managed containers | ✅ Full containerized stack | ✅ Same as Aspire (Docker-in-Docker) |
-| **Setup time** | ~2 min (npm install + setup) | ~5 min (Docker build + init) | ~5 min (container build) |
-| **Prerequisites** | Node, .NET 10, Docker Desktop | Docker Desktop only | Docker + VS Code Dev Containers extension |
+| **Setup time** | ~2 min (`npm run setup`) | ~5 min (container build + init) | ~5 min (container build) |
+| **Prerequisites** | Git, Node, npm (`npm run setup` prepares .NET + the engine) | Rancher Desktop or Podman Desktop (`npm run setup` prepares the engine) | A Dev Containers-compatible engine + VS Code Dev Containers extension |
 | **VS Code integration** | Open `.code-workspace`, press F5 | Open folder (services run in containers) | Automatic — extensions + tools pre-installed |
 | **OS support** | Windows, macOS, Linux | Windows, macOS, Linux | Windows, macOS, Linux, browser (Codespaces) |
 | **When to use** | Writing code, debugging, unit tests | Container auditing, CI parity, E2E against prod-shape | First day setup, CI environments, Codespaces |
@@ -47,13 +52,12 @@ See **[AGENTS.md → Local Dev — Aspire vs Selfhost](AGENTS.md#local-dev--aspi
 This is the primary development workflow — Aspire orchestrates real infrastructure containers while your apps run native with full hot reload.
 
 ```bash
-# 1. Clone and install
+# 1. Clone
 git clone https://github.com/arolariu/arolariu.ro.git
 cd arolariu.ro
-npm install
 
-# 2. Validate your environment
-npm run setup        # checks Node 24, .NET 10, npm 11
+# 2. One-command onboarding, then confirm workspace health
+npm run setup        # restores dependencies; prepares .NET, Python, generated artifacts, and the container engine
 npm run doctor       # diagnoses workspace health
 
 # 3. Start everything (Aspire AppHost orchestrates apps + infra)
@@ -125,23 +129,22 @@ npm run doctor
 
 | Problem | Cause | Fix |
 |---------|-------|-----|
-| `Docker is not running` | Docker Desktop not started | Start Docker Desktop, wait for it to initialize |
+| Container runtime is not running | The selected engine (Rancher Desktop or Podman Desktop — see `.arolariu/tooling.local.json`) is not started | Start that engine and wait for it to initialize. Docker Desktop is not a supported fallback |
 | AppHost fails on startup | Stale containers from prior session | `docker ps` then `docker stop` lingering `aspire-*` containers and retry |
 | API crashes on startup | Infra container not yet healthy | The AppHost has `WaitFor` dependencies — wait ~30s on first run while SQL/Cosmos initialize |
 | Website shows blank page | Turbopack compiling | Wait 10-15s for initial compilation, then refresh |
-| Port already in use | Previous dev session didn't clean up | `npm run doctor` checks ports. Kill stale processes or restart Docker |
+| Port already in use | Previous dev session didn't clean up | `npm run doctor` checks ports. Kill stale processes or restart the selected container engine |
 | CosmosDB Explorer not loading | Emulator still initializing | Wait 60s after AppHost start, Cosmos vNext takes time to start |
 | SQL schema errors | Schema already exists | Safe to ignore "already exists" messages |
 | Want the legacy fully-containerized stack | Auditing, CI parity, deploy-mock-of-prod | Use `npm run dev:selfhost` (see Alternative below) |
 
 ---
 
-### Alternative: Bare-Metal Single Service (no Docker, no AppHost)
+### Alternative: Bare-Metal Single Service (no container engine, no AppHost)
 
 For frontend-only work where you don't need databases:
 
 ```bash
-npm install
 npm run setup
 npm run generate:env  # creates .env with sensible defaults
 npm run dev:website       # Just the website with hot reload
@@ -157,13 +160,16 @@ npm run dev:website       # Just the website with hot reload
 | Components | `rslib --watch` | Component source files | `rslib.config.ts` changes |
 | CV | Vite HMR | Svelte components, styles | `svelte.config.js`, `vite.config.js` |
 
-> **Note:** Without Docker, the API will build and start but crash because it can't reach CosmosDB/SQL. This is fine for frontend-only work.
+> **Note:** Without a running container engine, the API will build and start but crash because it can't reach CosmosDB/SQL. This is fine for frontend-only work.
 
 ---
 
 ### Alternative: Selfhost Mode (full containerized stack)
 
-For integration testing, CI parity, or auditing container behavior — everything (apps + infra) runs in Docker:
+For integration testing, CI parity, or auditing container behavior — everything (apps + infra) runs in containers via the engine
+`npm run setup` selected (Rancher Desktop or Podman Desktop; Docker Desktop is not supported). Export `MSSQL_SA_PASSWORD` in your
+shell/session before starting — selfhost's SQL bootstrap requires it, it is never stored in `.env` or `.arolariu/tooling.local.json`,
+and it is not forwarded by `npm run setup`'s own child processes.
 
 ```bash
 npm run dev:selfhost       # Brings up the full Docker Compose stack
@@ -292,16 +298,18 @@ npm run generate:gql     # GraphQL type generation
 
 In production and Docker, all runtime config flows through the **exp** service — the website and API fetch config values from `http://exp/api/v1/config` at runtime.
 
-For bare-metal local development, environment variables are set via `.env` files generated by `npm run generate:env`.
+For bare-metal local development, environment variables are set via `sites/arolariu.ro/.env`, which `npm run setup` additively
+populates with core local defaults (`SITE_ENV`, `SITE_NAME`, `SITE_URL`, `USE_CDN`) without overwriting existing entries, or via `.env`
+files generated by `npm run generate:env`.
 
 ### Required Variables
 
 | Variable | Service | Description |
 |----------|---------|-------------|
 | `SITE_ENV` | Website | `DEVELOPMENT` or `PRODUCTION` |
-| `SITE_URL` | Website | `http://localhost:3000` |
-| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Website | Clerk auth (get from [clerk.com](https://clerk.com)) |
-| `CLERK_SECRET_KEY` | Website | Clerk secret key |
+| `SITE_URL` | Website | `https://localhost:3000` locally |
+| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Website | Optional Clerk publishable key (get a matching test/live pair from [clerk.com](https://clerk.com)) |
+| `CLERK_SECRET_KEY` | Website | Optional Clerk secret key — without a valid, mode-matched pair, authenticated website features stay degraded, but `npm run setup` still exits `0` |
 | `ASPNETCORE_ENVIRONMENT` | API | `Development` |
 
 > **Tip:** Run `npm run generate:env` to auto-create `.env` files with sensible defaults. See `.env.example` for the monorepo-wide reference, and the per-app `.env.example` files for service-specific values.
@@ -424,11 +432,11 @@ sites/arolariu.ro ←── API calls ──→ sites/api.arolariu.ro
 
 | Issue | Solution |
 |-------|----------|
-| `npm run setup` fails | Install Node 24+ and .NET 10 manually, then retry |
+| `npm run setup` fails | Confirm Git, Node 24+, and npm 11+ are installed, then rerun `npm run setup --verbose` for per-phase evidence |
 | Port 3000 in use | Stop other dev servers or change port: `PORT=3001 npm run dev:website` |
 | .NET API won't start | Run `npm run generate:env` first — API needs config from exp or env vars |
-| Python not found | Install Python 3.12 (only needed for exp service) |
-| Docker containers won't start | Ensure Docker Desktop is running and ports 3000/5000/5002 are free |
+| Python not found | Rerun `npm run setup --yes` to install Python 3.12 with consent, or install it yourself (only needed for the exp service) |
+| Containers won't start | Ensure the selected container engine (Rancher Desktop or Podman Desktop — Docker Desktop is not supported) is running and ports 3000/5000/5002 are free |
 | TypeScript errors on build | Run `npm run generate` to regenerate types and env files |
 | Tests failing | Run `npm run doctor` to diagnose workspace health |
 | HTTPS certificate errors | See [infra/Local/readme.md](infra/Local/readme.md) for mkcert setup |
