@@ -321,6 +321,9 @@ async function inspectPort(port: number, dependencies: PortInspectionDependencie
   try {
     probe = await dependencies.probePort(port);
   } catch (error) {
+    if (isInterrupted(error)) {
+      throw error;
+    }
     return {port, available: false, error: `Port availability probe failed: ${errorMessage(error)}`};
   }
   if (probe.status === "available") {
@@ -337,6 +340,9 @@ async function inspectPort(port: number, dependencies: PortInspectionDependencie
         : await dependencies.lookupListeners(port);
     return {port, available: false, ...correlateListenerOwner(records)};
   } catch (error) {
+    if (isInterrupted(error)) {
+      throw error;
+    }
     return {
       port,
       available: false,
@@ -480,10 +486,35 @@ const SELFHOST_CONTAINER_NAMES: ReadonlySet<string> = new Set([
 ]);
 const ASPIRE_RESOURCE_TOKENS = ["traefik", "healthchecks", "mssql", "cosmos", "azurite", "redis", "exp", "api", "website"] as const;
 
-function repositoryProcessOwnsPort(port: number, processName: string, root: string): boolean {
+function commandContainsRepositoryRoot(processName: string, root: string, platform: NodeJS.Platform): boolean {
+  let command = processName.replaceAll("\\", "/");
+  let normalizedRoot = root.replaceAll("\\", "/").replace(/\/+$/u, "");
+  if (platform === "win32") {
+    command = command.toLowerCase();
+    normalizedRoot = normalizedRoot.toLowerCase();
+  }
+  if (normalizedRoot.length <= 1) {
+    return false;
+  }
+
+  let index = command.indexOf(normalizedRoot);
+  while (index !== -1) {
+    const before = command[index - 1];
+    const after = command[index + normalizedRoot.length];
+    const hasArgumentBoundaryBefore = before === undefined || before === '"' || before === "'" || before === "=" || /\s/u.test(before);
+    const hasPathBoundaryAfter =
+      after === undefined || after === "/" || after === '"' || after === "'" || after === "," || /\s/u.test(after);
+    if (hasArgumentBoundaryBefore && hasPathBoundaryAfter) {
+      return true;
+    }
+    index = command.indexOf(normalizedRoot, index + normalizedRoot.length);
+  }
+  return false;
+}
+
+function repositoryProcessOwnsPort(port: number, processName: string, root: string, platform: NodeJS.Platform): boolean {
   const command = processName.replaceAll("\\", "/").toLowerCase();
-  const normalizedRoot = root.replaceAll("\\", "/").toLowerCase();
-  if (normalizedRoot.length > 1 && command.includes(normalizedRoot)) {
+  if (commandContainsRepositoryRoot(processName, root, platform)) {
     return true;
   }
   if ([3000, 3002, 4173].includes(port)) {
@@ -506,8 +537,9 @@ function isRepositoryContainer(name: string): boolean {
   if (SELFHOST_CONTAINER_NAMES.has(normalized)) {
     return true;
   }
-  const hasMarker = normalized.includes("aspire") || normalized.includes("dcp");
-  return hasMarker && ASPIRE_RESOURCE_TOKENS.some((token) => normalized.includes(token));
+  const tokens = new Set(normalized.split(/[^a-z0-9]+/u).filter((token) => token !== ""));
+  const hasMarker = tokens.has("aspire") || tokens.has("dcp");
+  return hasMarker && ASPIRE_RESOURCE_TOKENS.some((token) => tokens.has(token));
 }
 
 function repositoryContainersByPort(inventory: string): ReadonlyMap<number, string> {
@@ -554,7 +586,8 @@ async function inspectInfrastructurePorts(
     const repositoryOwned =
       state.repositoryOwned === true
       || container !== undefined
-      || (state.processName !== undefined && repositoryProcessOwnsPort(state.port, state.processName, context.paths.root));
+      || (state.processName !== undefined
+        && repositoryProcessOwnsPort(state.port, state.processName, context.paths.root, dependencies.platform));
     if (repositoryOwned) {
       degraded = true;
       if (container !== undefined) {

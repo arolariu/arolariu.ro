@@ -119,6 +119,7 @@ interface HarnessInput {
   readonly environment?: Readonly<NodeJS.ProcessEnv> | undefined;
   readonly interactive?: boolean | undefined;
   readonly platform?: NodeJS.Platform | undefined;
+  readonly root?: string | undefined;
   readonly config?: ToolingConfigReadResult | undefined;
   readonly readConfig?: ((path: string) => Promise<ToolingConfigReadResult>) | undefined;
   readonly writeConfig?: ((path: string, config: Readonly<ToolingConfigV1>) => Promise<void>) | undefined;
@@ -159,7 +160,7 @@ function createHarness(input: HarnessInput = {}): Readonly<{
   let now = 10;
   const context: SetupContext = {
     options: input.options ?? setupOptions(),
-    paths,
+    paths: input.root === undefined ? paths : {...paths, root: input.root},
     requirements: requirements(),
     runner: {run},
     prompts: {
@@ -697,6 +698,40 @@ describe("required port inspection", () => {
     ]);
   });
 
+  it("propagates AbortError from an injected bind probe without inspecting later ports", async () => {
+    const interruption = Object.assign(new Error("bind probe interrupted"), {name: "AbortError"});
+    const inspected: number[] = [];
+
+    const inspection = inspectRequiredPorts([SYNTHETIC_INSPECTION_PORT, SYNTHETIC_INSPECTION_PORT + 1], {
+      probePort: async (port) => {
+        inspected.push(port);
+        throw interruption;
+      },
+    });
+
+    await expect(inspection).rejects.toBe(interruption);
+    expect(inspected).toEqual([SYNTHETIC_INSPECTION_PORT]);
+  });
+
+  it("propagates AbortError from an injected listener runner without inspecting later ports", async () => {
+    const interruption = Object.assign(new Error("listener lookup interrupted"), {name: "AbortError"});
+    const probed: number[] = [];
+    const run = vi.fn<CommandRunner["run"]>(async () => Promise.reject(interruption));
+
+    const inspection = inspectRequiredPorts([SYNTHETIC_INSPECTION_PORT, SYNTHETIC_INSPECTION_PORT + 1], {
+      platform: "win32",
+      probePort: async (port) => {
+        probed.push(port);
+        return {status: "occupied"};
+      },
+      listenerRunner: {run},
+    });
+
+    await expect(inspection).rejects.toBe(interruption);
+    expect(probed).toEqual([SYNTHETIC_INSPECTION_PORT]);
+    expect(run).toHaveBeenCalledTimes(1);
+  });
+
   it.each([
     [
       "exact IPv4",
@@ -967,6 +1002,25 @@ describe("required port inspection", () => {
   });
 
   it.each([
+    ["a sibling-prefix path on Windows", "win32", paths.root, `redis-server "${paths.root}-copy\\redis.conf"`],
+    ["a case-distinct path on POSIX", "linux", "/work/arolariu.ro", 'redis-server "/work/AROLARIU.RO/redis.conf"'],
+  ] as const)("does not classify %s as the repository root", async (_case, platform, root, processName) => {
+    const harness = createHarness({
+      platform,
+      root,
+      ports: requiredLocalPorts.map((port) =>
+        port === 6379 ? {port, available: false, pid: 7_379, processName} : {port, available: true},
+      ),
+      config: {status: "valid", config: {schemaVersion: 1, containerEngine: "rancher"}},
+    });
+
+    const result = await harness.phase.run(harness.context);
+
+    expect(result.status).toBe("failed");
+    expect(result.evidence.join("\n")).not.toContain("occupied by repository");
+  });
+
+  it.each([
     ["mssql", "0.0.0.0:8082->1433/tcp"],
     ["dcp-mssql-74f9", "0.0.0.0:8082->1433/tcp"],
     ["aspire-website-a12c", "0.0.0.0:3000->3000/tcp"],
@@ -1012,6 +1066,30 @@ describe("required port inspection", () => {
     expect(result.status).toBe("failed");
     expect(result.evidence.join("\n")).not.toContain("repository container");
   });
+
+  it.each(["aspire-capital", "myaspire-website", "dcpanel-website"] as const)(
+    "does not attribute container name near-miss %s",
+    async (name) => {
+      const runner: CommandRunner = {
+        run: async (command) =>
+          commandKey(command) === "docker ps --format {{.Names}}\t{{.Ports}}"
+            ? commandResult({stdout: `${name}\t0.0.0.0:3000->3000/tcp\n`})
+            : successfulRuntimeResponse(command),
+      };
+      const harness = createHarness({
+        runner,
+        ports: requiredLocalPorts.map((port) =>
+          port === 3000 ? {port, available: false, pid: 921, processName: "container proxy"} : {port, available: true},
+        ),
+        config: {status: "valid", config: {schemaVersion: 1, containerEngine: "rancher"}},
+      });
+
+      const result = await harness.phase.run(harness.context);
+
+      expect(result.status).toBe("failed");
+      expect(result.evidence.join("\n")).not.toContain("repository container");
+    },
+  );
 
   it("blocks ownership lookup errors distinctly from identified occupied listeners", async () => {
     const harness = createHarness({
