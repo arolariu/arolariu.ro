@@ -8,7 +8,13 @@ import {readFileSync} from "node:fs";
 import ts from "typescript";
 import {describe, expect, it} from "vitest";
 
-const guardedFiles = ["scripts/format.ts", "scripts/lint.ts"] as const;
+const guardedFiles = [
+  "scripts/format.ts",
+  "scripts/lint.ts",
+  "scripts/test-e2e.ts",
+  "scripts/docs-assemble.ts",
+  "scripts/update-exchange-rates.ts",
+] as const;
 
 function getAccessPath(expression: ts.Expression): readonly string[] | null {
   if (ts.isIdentifier(expression)) {
@@ -69,7 +75,7 @@ describe("direct output policy", () => {
     expect(findForbiddenOutputCalls(source, "fixture.ts")).toEqual(["fixture.ts:3", "fixture.ts:4"]);
   });
 
-  it("routes guarded format and lint output through the logger", () => {
+  it("routes guarded production output through the logger", () => {
     const violations = guardedFiles.flatMap((fileName) => findForbiddenOutputCalls(readFileSync(fileName, "utf8"), fileName));
 
     expect(violations).toEqual([]);

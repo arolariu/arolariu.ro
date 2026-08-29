@@ -8,9 +8,10 @@
  * while guaranteeing collection restoration after every run.
  */
 
-import {execSync} from "node:child_process";
 import {existsSync, mkdirSync, readFileSync, rmSync, writeFileSync} from "node:fs";
-import {styleText} from "node:util";
+import {format as formatText, styleText} from "node:util";
+import {MonorepositoryConsoleLogger, type MonorepositoryLogger} from "./common/logger.ts";
+import {defaultCommandRunner} from "./common/process.ts";
 
 type E2ETestTarget = "frontend" | "backend" | "cv" | "all";
 type RunnableTarget = Exclude<E2ETestTarget, "all">;
@@ -93,9 +94,9 @@ const targetConfigurationMap: Record<RunnableTarget, TargetConfiguration> = {
  * @param token - Authentication token to inject.
  * @returns Nothing.
  */
-const injectAuthTokenIntoCollection = (collectionPath: string, token: string): void => {
-  console.log(styleText("cyan", `\n🔑 Injecting auth token into collection...`));
-  console.log(styleText("gray", `   Path: ${collectionPath}`));
+const injectAuthTokenIntoCollection = (collectionPath: string, token: string, logger: MonorepositoryLogger): void => {
+  logger.line(styleText("cyan", `\n🔑 Injecting auth token into collection...`));
+  logger.line(styleText("gray", `   Path: ${collectionPath}`));
 
   const parsedCollection = JSON.parse(readFileSync(collectionPath, "utf-8")) as unknown;
   if (typeof parsedCollection !== "object" || parsedCollection === null) {
@@ -114,7 +115,7 @@ const injectAuthTokenIntoCollection = (collectionPath: string, token: string): v
 
   collection.variable = collectionVariables;
   writeFileSync(collectionPath, JSON.stringify(collection, null, 2));
-  console.log(styleText("green", `   ✓ Auth token injected successfully`));
+  logger.line(styleText("green", `   ✓ Auth token injected successfully`));
 };
 
 /**
@@ -124,7 +125,7 @@ const injectAuthTokenIntoCollection = (collectionPath: string, token: string): v
  * @param originalContent - Original content captured before mutation.
  * @returns Nothing.
  */
-const restoreCollectionContent = (collectionPath: string, originalContent: string): void => {
+const restoreCollectionContent = (collectionPath: string, originalContent: string, logger: MonorepositoryLogger): void => {
   writeFileSync(collectionPath, originalContent, "utf-8");
   const restoredContent = readFileSync(collectionPath, "utf-8");
 
@@ -132,7 +133,7 @@ const restoreCollectionContent = (collectionPath: string, originalContent: strin
     throw new Error(`Collection restore verification failed for ${collectionPath}.`);
   }
 
-  console.log(styleText("green", `   ✓ Collection restored to original content`));
+  logger.line(styleText("green", `   ✓ Collection restored to original content`));
 };
 
 /**
@@ -174,12 +175,12 @@ const loadOpenAPITestEnvironmentPath = (target: RunnableTarget, profile: Environ
  * @param dir - Directory path to create.
  * @returns Nothing.
  */
-const ensureReportDir = (dir: string): void => {
+const ensureReportDir = (dir: string, logger: MonorepositoryLogger): void => {
   try {
     mkdirSync(dir, {recursive: true});
-    console.log(styleText("gray", `   📁 Report directory: ${dir}`));
+    logger.line(styleText("gray", `   📁 Report directory: ${dir}`));
   } catch (e) {
-    console.error(styleText("red", "   ✗ Failed to create report directory:"), dir, e);
+    logger.line(formatText(styleText("red", "   ✗ Failed to create report directory:"), dir, e), "stderr");
   }
 };
 
@@ -194,37 +195,34 @@ const ensureReportDir = (dir: string): void => {
  * @param reportDir - Report directory path.
  * @returns Nothing.
  */
-const writeAssertionSummary = (target: string, reportDir: string): void => {
+const writeAssertionSummary = (target: string, reportDir: string, logger: MonorepositoryLogger): void => {
   const jsonPath = `${reportDir}/newman-${target}.json`;
   if (!existsSync(jsonPath)) {
-    console.warn(styleText("yellow", `   ⚠ JSON report not found, cannot create summary: ${jsonPath}`));
+    logger.line(styleText("yellow", `   ⚠ JSON report not found, cannot create summary: ${jsonPath}`), "stderr");
     return;
   }
   try {
     const data = JSON.parse(readFileSync(jsonPath, "utf-8")) as NewmanReport;
     const failures = (data.run?.failures ?? []).map((failure) => ({
       assertion: failure.assertion ?? "Unknown assertion",
-      error:
-        typeof failure.error === "string"
-          ? failure.error
-          : (failure.error?.message ?? "Unknown error"),
+      error: typeof failure.error === "string" ? failure.error : (failure.error?.message ?? "Unknown error"),
       item: failure.source?.name ?? failure.parent?.name ?? failure.cursor?.scriptId ?? "Unknown",
     }));
 
     let md = `### Failed Assertions (${target})\n`;
     if (!failures.length) {
       md += "No failed assertions.\n";
-      console.log(styleText("green", `   ✓ No failed assertions for ${target}`));
+      logger.line(styleText("green", `   ✓ No failed assertions for ${target}`));
     } else {
       failures.forEach((failure, index) => {
         md += `${index + 1}. AssertionError  ${failure.assertion}\n   ${failure.error}\n   in "${failure.item}"\n\n`;
       });
-      console.log(styleText("yellow", `   ⚠ ${failures.length} failed assertion(s) for ${target}`));
+      logger.line(styleText("yellow", `   ⚠ ${failures.length} failed assertion(s) for ${target}`));
     }
     writeFileSync(`${reportDir}/newman-${target}-summary.md`, md.trim() + "\n");
-    console.log(styleText("gray", `   📄 Summary written to: ${reportDir}/newman-${target}-summary.md`));
+    logger.line(styleText("gray", `   📄 Summary written to: ${reportDir}/newman-${target}-summary.md`));
   } catch (e) {
-    console.error(styleText("red", "   ✗ Error while writing assertion summary:"), e);
+    logger.line(formatText(styleText("red", "   ✗ Error while writing assertion summary:"), e), "stderr");
   }
 };
 
@@ -235,7 +233,7 @@ const writeAssertionSummary = (target: string, reportDir: string): void => {
  * @param fallback - Fallback number if variable is missing/invalid.
  * @returns Parsed positive integer.
  */
-const readPositiveIntegerEnv = (key: string, fallback: number): number => {
+const readPositiveIntegerEnv = (key: string, fallback: number, logger: MonorepositoryLogger): number => {
   const rawValue = process.env[key];
   if (!rawValue) {
     return fallback;
@@ -243,7 +241,7 @@ const readPositiveIntegerEnv = (key: string, fallback: number): number => {
 
   const parsedValue = Number.parseInt(rawValue, 10);
   if (!Number.isFinite(parsedValue) || parsedValue <= 0) {
-    console.warn(styleText("yellow", `⚠ Invalid ${key}="${rawValue}", using default ${fallback}.`));
+    logger.line(styleText("yellow", `⚠ Invalid ${key}="${rawValue}", using default ${fallback}.`), "stderr");
     return fallback;
   }
 
@@ -257,7 +255,7 @@ const readPositiveIntegerEnv = (key: string, fallback: number): number => {
  * @param fallback - Fallback value.
  * @returns Parsed boolean value.
  */
-const readBooleanEnv = (key: string, fallback: boolean): boolean => {
+const readBooleanEnv = (key: string, fallback: boolean, logger: MonorepositoryLogger): boolean => {
   const rawValue = process.env[key];
   if (!rawValue) {
     return fallback;
@@ -272,7 +270,7 @@ const readBooleanEnv = (key: string, fallback: boolean): boolean => {
     return false;
   }
 
-  console.warn(styleText("yellow", `⚠ Invalid ${key}="${rawValue}", using default ${fallback}.`));
+  logger.line(styleText("yellow", `⚠ Invalid ${key}="${rawValue}", using default ${fallback}.`), "stderr");
   return fallback;
 };
 
@@ -284,11 +282,7 @@ const readBooleanEnv = (key: string, fallback: boolean): boolean => {
  * @param accumulator - Mutable counter of performed redactions.
  * @returns The sanitized string value.
  */
-const redactSensitiveString = (
-  value: string,
-  key: string | null,
-  accumulator: SanitizeAccumulator,
-): string => {
+const redactSensitiveString = (value: string, key: string | null, accumulator: SanitizeAccumulator): string => {
   if (key && SENSITIVE_KEY_PATTERN.test(key) && value.trim().length > 0) {
     accumulator.redactionCount++;
     return "[REDACTED]";
@@ -319,11 +313,7 @@ const redactSensitiveString = (
  * @param key - The owning object key, when available.
  * @returns The sanitized value.
  */
-const sanitizeJsonValue = (
-  value: unknown,
-  accumulator: SanitizeAccumulator,
-  key: string | null = null,
-): unknown => {
+const sanitizeJsonValue = (value: unknown, accumulator: SanitizeAccumulator, key: string | null = null): unknown => {
   if (typeof value === "string") {
     return redactSensitiveString(value, key, accumulator);
   }
@@ -352,7 +342,7 @@ const sanitizeJsonValue = (
  * @param jsonPath - Path to the Newman JSON report.
  * @returns Nothing.
  */
-const sanitizeNewmanJsonReport = (jsonPath: string): void => {
+const sanitizeNewmanJsonReport = (jsonPath: string, logger: MonorepositoryLogger): void => {
   if (!existsSync(jsonPath)) {
     return;
   }
@@ -365,16 +355,16 @@ const sanitizeNewmanJsonReport = (jsonPath: string): void => {
 
     if (BEARER_JWT_DETECTION_PATTERN.test(serializedReport) || JWT_DETECTION_PATTERN.test(serializedReport)) {
       rmSync(jsonPath, {force: true});
-      console.warn(styleText("yellow", `   ⚠ Removed unsanitized Newman JSON report due to remaining JWT patterns: ${jsonPath}`));
+      logger.line(styleText("yellow", `   ⚠ Removed unsanitized Newman JSON report due to remaining JWT patterns: ${jsonPath}`), "stderr");
       return;
     }
 
     writeFileSync(jsonPath, serializedReport, "utf-8");
-    console.log(styleText("gray", `   🔐 Sanitized Newman JSON report (${accumulator.redactionCount} redactions)`));
+    logger.line(styleText("gray", `   🔐 Sanitized Newman JSON report (${accumulator.redactionCount} redactions)`));
   } catch (error) {
     rmSync(jsonPath, {force: true});
-    console.warn(styleText("yellow", `   ⚠ Failed to sanitize Newman JSON report and removed it: ${jsonPath}`));
-    console.warn(styleText("gray", `      Reason: ${error instanceof Error ? error.message : String(error)}`));
+    logger.line(styleText("yellow", `   ⚠ Failed to sanitize Newman JSON report and removed it: ${jsonPath}`), "stderr");
+    logger.line(styleText("gray", `      Reason: ${error instanceof Error ? error.message : String(error)}`), "stderr");
   }
 };
 
@@ -388,6 +378,7 @@ const sanitizeNewmanJsonReport = (jsonPath: string): void => {
  * @param collectionPath - Path to the Postman collection JSON.
  * @param environmentPath - Path to the Postman environment JSON.
  * @param reportDir - Directory to write report artifacts.
+ * @param logger - Logger used for Newman lifecycle and report output.
  * @param runtimeAuthToken - Optional runtime auth token passed as Newman env-var.
  * @returns A promise that resolves when execution completes.
  */
@@ -396,56 +387,68 @@ const runOpenAPITestCollection = async (
   collectionPath: string,
   environmentPath: string,
   reportDir: string,
+  logger: MonorepositoryLogger,
   runtimeAuthToken?: string,
 ): Promise<void> => {
-  console.log(styleText("cyan", `\n🧪 Running Newman test collection for: ${styleText("bold", target)}`));
-  ensureReportDir(reportDir);
+  logger.line(styleText("cyan", `\n🧪 Running Newman test collection for: ${styleText("bold", target)}`));
+  ensureReportDir(reportDir, logger);
   const jsonPath = `${reportDir}/newman-${target}.json`;
   const junitPath = `${reportDir}/newman-${target}.xml`;
-  const collectionTimeout = readPositiveIntegerEnv("NEWMAN_TIMEOUT", 600_000);
-  const requestTimeout = readPositiveIntegerEnv("NEWMAN_TIMEOUT_REQUEST", 30_000);
-  const scriptTimeout = readPositiveIntegerEnv("NEWMAN_TIMEOUT_SCRIPT", 10_000);
-  const strictMode = readBooleanEnv("NEWMAN_STRICT_MODE", false);
+  const collectionTimeout = readPositiveIntegerEnv("NEWMAN_TIMEOUT", 600_000, logger);
+  const requestTimeout = readPositiveIntegerEnv("NEWMAN_TIMEOUT_REQUEST", 30_000, logger);
+  const scriptTimeout = readPositiveIntegerEnv("NEWMAN_TIMEOUT_SCRIPT", 10_000, logger);
+  const strictMode = readBooleanEnv("NEWMAN_STRICT_MODE", false, logger);
 
-  console.log(styleText("gray", `   📦 Collection path: ${collectionPath}`));
-  console.log(styleText("gray", `   🌍 Environment path: ${environmentPath}`));
-  console.log(styleText("gray", `   📊 JSON report: ${jsonPath}`));
-  console.log(styleText("gray", `   📊 JUnit report: ${junitPath}`));
-  console.log(styleText("gray", `   ⏱ Timeout: ${collectionTimeout}ms (request: ${requestTimeout}ms, script: ${scriptTimeout}ms)`));
-  console.log(styleText("gray", `   🚦 Strict mode (--bail): ${strictMode}`));
-  console.log(styleText("cyan", `\n⚡ Executing tests...\n`));
+  logger.line(styleText("gray", `   📦 Collection path: ${collectionPath}`));
+  logger.line(styleText("gray", `   🌍 Environment path: ${environmentPath}`));
+  logger.line(styleText("gray", `   📊 JSON report: ${jsonPath}`));
+  logger.line(styleText("gray", `   📊 JUnit report: ${junitPath}`));
+  logger.line(styleText("gray", `   ⏱ Timeout: ${collectionTimeout}ms (request: ${requestTimeout}ms, script: ${scriptTimeout}ms)`));
+  logger.line(styleText("gray", `   🚦 Strict mode (--bail): ${strictMode}`));
+  logger.line(styleText("cyan", `\n⚡ Executing tests...\n`));
 
   try {
-    const commandParts = [
-      `npx newman run "${collectionPath}"`,
-      `--environment "${environmentPath}"`,
-      runtimeAuthToken ? `--env-var "authToken=${runtimeAuthToken}"` : "",
-      "--reporters cli,json,junit",
-      `--reporter-json-export "${jsonPath}"`,
-      `--reporter-junit-export "${junitPath}"`,
-      `--timeout ${collectionTimeout}`,
-      `--timeout-request ${requestTimeout}`,
-      `--timeout-script ${scriptTimeout}`,
-      strictMode ? "--bail" : "",
-    ].filter((part) => part.length > 0);
-
-    execSync(commandParts.join(" "), {stdio: "inherit"});
-    console.log(styleText("green", `\n   ✓ Newman tests passed for ${target}`));
+    const args = [
+      "newman",
+      "run",
+      collectionPath,
+      "--environment",
+      environmentPath,
+      ...(runtimeAuthToken === undefined ? [] : ["--env-var", `authToken=${runtimeAuthToken}`]),
+      "--reporters",
+      "cli,json,junit",
+      "--reporter-json-export",
+      jsonPath,
+      "--reporter-junit-export",
+      junitPath,
+      "--timeout",
+      String(collectionTimeout),
+      "--timeout-request",
+      String(requestTimeout),
+      "--timeout-script",
+      String(scriptTimeout),
+      ...(strictMode ? ["--bail"] : []),
+    ];
+    const result = await defaultCommandRunner.run({command: "npx", args}, {output: "inherit"});
+    if (result.code !== 0) {
+      throw new Error(result.spawnError ?? `Newman exited with code ${result.code}.`);
+    }
+    logger.line(styleText("green", `\n   ✓ Newman tests passed for ${target}`));
   } catch (error) {
-    console.error(styleText("red", `\n   ✗ Newman tests failed for ${target}`));
+    logger.line(styleText("red", `\n   ✗ Newman tests failed for ${target}`), "stderr");
     throw error;
   } finally {
     try {
-      console.log(styleText("cyan", `\n📝 Generating assertion summary...`));
-      writeAssertionSummary(target, reportDir);
+      logger.line(styleText("cyan", `\n📝 Generating assertion summary...`));
+      writeAssertionSummary(target, reportDir, logger);
     } catch (e) {
-      console.error(styleText("red", "   ✗ Failed generating assertion summary:"), e);
+      logger.line(formatText(styleText("red", "   ✗ Failed generating assertion summary:"), e), "stderr");
     }
 
     try {
-      sanitizeNewmanJsonReport(jsonPath);
+      sanitizeNewmanJsonReport(jsonPath, logger);
     } catch (e) {
-      console.error(styleText("red", "   ✗ Failed sanitizing Newman JSON report:"), e);
+      logger.line(formatText(styleText("red", "   ✗ Failed sanitizing Newman JSON report:"), e), "stderr");
     }
   }
 };
@@ -460,12 +463,13 @@ const runOpenAPITestCollection = async (
  * - cv: ignored
  *
  * @param target - The target to run Newman tests for.
+ * @param logger - Target-specific child logger.
  * @returns A promise that resolves when the flow completes.
  */
-const startNewmanTesting = async (target: RunnableTarget): Promise<void> => {
-  console.log(styleText(["bold", "magenta"], `\n╔════════════════════════════════════════╗`));
-  console.log(styleText(["bold", "magenta"], `║   E2E Testing: ${target.padEnd(23)} ║`));
-  console.log(styleText(["bold", "magenta"], `╚════════════════════════════════════════╝`));
+const startNewmanTesting = async (target: RunnableTarget, logger: MonorepositoryLogger): Promise<void> => {
+  logger.line(styleText(["bold", "magenta"], `\n╔════════════════════════════════════════╗`));
+  logger.line(styleText(["bold", "magenta"], `║   E2E Testing: ${target.padEnd(23)} ║`));
+  logger.line(styleText(["bold", "magenta"], `╚════════════════════════════════════════╝`));
 
   const targetConfiguration = targetConfigurationMap[target];
   const collectionPath = loadOpenAPITestCollectionPath(target);
@@ -487,24 +491,25 @@ const startNewmanTesting = async (target: RunnableTarget): Promise<void> => {
   }
 
   if (targetConfiguration.authPolicy === "optional" && authToken.length === 0) {
-    console.warn(styleText("yellow", `⚠ E2E_TEST_AUTH_TOKEN is not set. Continuing ${target} run without auth token injection.`));
+    logger.line(styleText("yellow", `⚠ E2E_TEST_AUTH_TOKEN is not set. Continuing ${target} run without auth token injection.`), "stderr");
   }
 
   if (targetConfiguration.authPolicy === "ignored" && authToken.length > 0) {
-    console.log(styleText("gray", `ℹ ${target} does not require auth token; skipping auth injection.`));
+    logger.line(styleText("gray", `ℹ ${target} does not require auth token; skipping auth injection.`));
   }
 
-  console.log(styleText("cyan", `\n📦 Target: ${styleText("bold", target)} (${targetConfiguration.label})`));
-  console.log(styleText("gray", `   Collection: ${collectionPath}`));
-  console.log(styleText("gray", `   Environment: ${environmentPath} (${environmentProfile})`));
-  console.log(styleText("gray", `   Reports: ${reportDir}`));
+  logger.line(styleText("cyan", `\n📦 Target: ${styleText("bold", target)} (${targetConfiguration.label})`));
+  logger.line(styleText("gray", `   Collection: ${collectionPath}`));
+  logger.line(styleText("gray", `   Environment: ${environmentPath} (${environmentProfile})`));
+  logger.line(styleText("gray", `   Reports: ${reportDir}`));
 
   const shouldInjectAuthToken = targetConfiguration.authPolicy !== "ignored" && authToken.length > 0;
   const originalCollectionContent = shouldInjectAuthToken ? readFileSync(collectionPath, "utf-8") : "";
 
   try {
     if (shouldInjectAuthToken) {
-      injectAuthTokenIntoCollection(collectionPath, authToken);
+      logger.redact(authToken);
+      injectAuthTokenIntoCollection(collectionPath, authToken, logger.child("auth"));
     }
 
     await runOpenAPITestCollection(
@@ -512,16 +517,17 @@ const startNewmanTesting = async (target: RunnableTarget): Promise<void> => {
       collectionPath,
       environmentPath,
       reportDir,
+      logger.child("newman"),
       shouldInjectAuthToken ? authToken : undefined,
     );
   } finally {
     if (shouldInjectAuthToken) {
-      console.log(styleText("cyan", `\n🔄 Restoring collection content...`));
-      restoreCollectionContent(collectionPath, originalCollectionContent);
+      logger.line(styleText("cyan", `\n🔄 Restoring collection content...`));
+      restoreCollectionContent(collectionPath, originalCollectionContent, logger.child("auth"));
     }
   }
 
-  console.log(styleText(["bold", "green"], `\n✅ Completed Newman tests for: ${target}\n`));
+  logger.line(styleText(["bold", "green"], `\n✅ Completed Newman tests for: ${target}\n`));
 };
 
 /**
@@ -531,67 +537,70 @@ const startNewmanTesting = async (target: RunnableTarget): Promise<void> => {
  * This is the script entrypoint used by `npm run test:e2e`.
  *
  * @param arg - Target selector (`frontend`, `backend`, `cv`, `all`).
+ * @param logger - Optional logger used for E2E output and target child contexts.
  * @returns Process exit code (0 for success, non-zero for failure).
  */
-export async function main(arg?: string): Promise<number> {
-  console.log(styleText(["bold", "magenta"], "\n╔════════════════════════════════════════╗"));
-  console.log(styleText(["bold", "magenta"], "║   arolariu.ro E2E Test Runner          ║"));
-  console.log(styleText(["bold", "magenta"], "╚════════════════════════════════════════╝\n"));
+export async function main(arg?: string, logger?: MonorepositoryLogger): Promise<number> {
+  const output = logger ?? new MonorepositoryConsoleLogger("test::e2e");
+  output.line(styleText(["bold", "magenta"], "\n╔════════════════════════════════════════╗"));
+  output.line(styleText(["bold", "magenta"], "║   arolariu.ro E2E Test Runner          ║"));
+  output.line(styleText(["bold", "magenta"], "╚════════════════════════════════════════╝\n"));
 
   if (!arg) {
-    console.error(styleText("red", "✗ Missing target argument"));
-    console.log(styleText("gray", "\n💡 Usage: test:e2e <frontend|backend|cv|all>"));
-    console.log(styleText("gray", "   - frontend: Run frontend E2E tests"));
-    console.log(styleText("gray", "   - backend:  Run backend API tests"));
-    console.log(styleText("gray", "   - cv:       Run CV website/API tests"));
-    console.log(styleText("gray", "   - all:      Run all E2E tests"));
-    console.log(styleText("yellow", "\n⚠️  Notes:"));
-    console.log(styleText("yellow", "   - E2E_TEST_AUTH_TOKEN is required for backend"));
-    console.log(styleText("yellow", "   - E2E_TEST_AUTH_TOKEN is optional for frontend"));
-    console.log(styleText("yellow", "   - E2E_TEST_AUTH_TOKEN is ignored for cv"));
-    console.log(styleText("yellow", "   - E2E_TEST_ENVIRONMENT can be local|production (default: production)\n"));
+    output.line(styleText("red", "✗ Missing target argument"), "stderr");
+    output.line(styleText("gray", "\n💡 Usage: test:e2e <frontend|backend|cv|all>"));
+    output.line(styleText("gray", "   - frontend: Run frontend E2E tests"));
+    output.line(styleText("gray", "   - backend:  Run backend API tests"));
+    output.line(styleText("gray", "   - cv:       Run CV website/API tests"));
+    output.line(styleText("gray", "   - all:      Run all E2E tests"));
+    output.line(styleText("yellow", "\n⚠️  Notes:"));
+    output.line(styleText("yellow", "   - E2E_TEST_AUTH_TOKEN is required for backend"));
+    output.line(styleText("yellow", "   - E2E_TEST_AUTH_TOKEN is optional for frontend"));
+    output.line(styleText("yellow", "   - E2E_TEST_AUTH_TOKEN is ignored for cv"));
+    output.line(styleText("yellow", "   - E2E_TEST_ENVIRONMENT can be local|production (default: production)\n"));
     return 1;
   }
 
   try {
     switch (arg) {
       case "frontend":
-        await startNewmanTesting("frontend");
+        await startNewmanTesting("frontend", output.child("frontend"));
         break;
       case "backend":
-        await startNewmanTesting("backend");
+        await startNewmanTesting("backend", output.child("backend"));
         break;
       case "cv":
-        await startNewmanTesting("cv");
+        await startNewmanTesting("cv", output.child("cv"));
         break;
       case "all":
-        console.log(styleText(["bold", "cyan"], "\n🎯 Running all E2E tests...\n"));
-        await startNewmanTesting("frontend");
-        console.log(styleText("gray", "\n─────────────────────────────────────────────────\n"));
-        await startNewmanTesting("backend");
-        console.log(styleText("gray", "\n─────────────────────────────────────────────────\n"));
-        await startNewmanTesting("cv");
+        output.section("Running all E2E tests", "🎯");
+        await startNewmanTesting("frontend", output.child("frontend"));
+        output.line(styleText("gray", "\n─────────────────────────────────────────────────\n"));
+        await startNewmanTesting("backend", output.child("backend"));
+        output.line(styleText("gray", "\n─────────────────────────────────────────────────\n"));
+        await startNewmanTesting("cv", output.child("cv"));
         break;
       default:
-        console.error(styleText("red", `✗ Invalid target: "${arg}"`));
-        console.log(styleText("gray", "\n💡 Valid targets: frontend, backend, cv, all\n"));
+        output.line(styleText("red", `✗ Invalid target: "${arg}"`), "stderr");
+        output.line(styleText("gray", "\n💡 Valid targets: frontend, backend, cv, all\n"));
         return 1;
     }
 
-    console.log(styleText(["bold", "green"], "\n🎉 All E2E tests completed successfully!\n"));
+    output.line(styleText(["bold", "green"], "\n🎉 All E2E tests completed successfully!\n"));
     return 0;
   } catch (error) {
-    console.error(styleText(["bold", "red"], "\n❌ E2E tests failed with errors\n"));
+    output.line(styleText(["bold", "red"], "\n❌ E2E tests failed with errors\n"), "stderr");
     return 1;
   }
 }
 
 if (import.meta.main) {
+  const output = new MonorepositoryConsoleLogger("test::e2e");
   const arg = process.argv[2];
-  main(arg)
+  main(arg, output)
     .then((code) => process.exit(code))
     .catch((err) => {
-      console.error(err);
+      output.error(err instanceof Error ? (err.stack ?? err.message) : String(err));
       process.exit(1);
     });
 }

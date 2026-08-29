@@ -23,6 +23,7 @@
 import {existsSync, readFileSync, writeFileSync} from "node:fs";
 import {join} from "node:path";
 import {styleText} from "node:util";
+import {MonorepositoryConsoleLogger, type MonorepositoryLogger} from "./common/logger.ts";
 
 // ---------------------------------------------------------------------------
 // Configuration
@@ -34,27 +35,113 @@ const CSV_PATH = join(import.meta.dirname, "..", "sites", "arolariu.ro", "public
 /** Top 100 currencies to track (by global relevance + Romanian context). */
 const TARGET_CURRENCIES = [
   // Major reserve currencies
-  "EUR", "USD", "GBP", "CHF", "JPY",
+  "EUR",
+  "USD",
+  "GBP",
+  "CHF",
+  "JPY",
   // Americas
-  "CAD", "AUD", "NZD", "BRL", "MXN", "ARS", "CLP", "COP", "PEN",
-  "UYU", "BOB", "PYG", "PAB", "DOP", "CRC", "GTQ", "HNL", "JMD", "TTD", "CUP",
+  "CAD",
+  "AUD",
+  "NZD",
+  "BRL",
+  "MXN",
+  "ARS",
+  "CLP",
+  "COP",
+  "PEN",
+  "UYU",
+  "BOB",
+  "PYG",
+  "PAB",
+  "DOP",
+  "CRC",
+  "GTQ",
+  "HNL",
+  "JMD",
+  "TTD",
+  "CUP",
   // Europe (non-Eurozone)
-  "SEK", "NOK", "DKK", "PLN", "CZK", "HUF", "BGN", "HRK", "TRY", "ISK",
-  "UAH", "MDL", "RSD", "GEL", "ALL", "BAM", "MKD", "BYN",
+  "SEK",
+  "NOK",
+  "DKK",
+  "PLN",
+  "CZK",
+  "HUF",
+  "BGN",
+  "HRK",
+  "TRY",
+  "ISK",
+  "UAH",
+  "MDL",
+  "RSD",
+  "GEL",
+  "ALL",
+  "BAM",
+  "MKD",
+  "BYN",
   // Caucasus & Central Asia
-  "AMD", "AZN", "KZT", "UZS", "MNT",
+  "AMD",
+  "AZN",
+  "KZT",
+  "UZS",
+  "MNT",
   // South Asia
-  "INR", "PKR", "BDT", "LKR", "NPR", "AFN",
+  "INR",
+  "PKR",
+  "BDT",
+  "LKR",
+  "NPR",
+  "AFN",
   // East & Southeast Asia
-  "CNY", "KRW", "SGD", "HKD", "TWD", "THB", "IDR", "MYR", "PHP", "VND",
-  "MMK", "KHR", "LAK",
+  "CNY",
+  "KRW",
+  "SGD",
+  "HKD",
+  "TWD",
+  "THB",
+  "IDR",
+  "MYR",
+  "PHP",
+  "VND",
+  "MMK",
+  "KHR",
+  "LAK",
   // Middle East
-  "ILS", "AED", "SAR", "KWD", "QAR", "BHD", "OMR", "JOD", "IQD", "LBP",
+  "ILS",
+  "AED",
+  "SAR",
+  "KWD",
+  "QAR",
+  "BHD",
+  "OMR",
+  "JOD",
+  "IQD",
+  "LBP",
   // Africa
-  "ZAR", "EGP", "KES", "NGN", "MAD", "TND", "DZD", "GHS", "TZS", "UGX",
-  "ETB", "XOF", "XAF", "MZN", "ZMW", "BWP", "MUR", "RWF", "AOA", "LYD",
+  "ZAR",
+  "EGP",
+  "KES",
+  "NGN",
+  "MAD",
+  "TND",
+  "DZD",
+  "GHS",
+  "TZS",
+  "UGX",
+  "ETB",
+  "XOF",
+  "XAF",
+  "MZN",
+  "ZMW",
+  "BWP",
+  "MUR",
+  "RWF",
+  "AOA",
+  "LYD",
   // Pacific
-  "FJD", "PGK",
+  "FJD",
+  "PGK",
   // Other
   "SOS",
 ] as const;
@@ -124,11 +211,11 @@ function parseArgs(): {fromYear: number; toYear: number} {
  *
  * Where eur_to_ron and eur_to_currency come from the same daily snapshot.
  */
-async function fetchYearlyRates(year: number): Promise<RateRecord[]> {
+async function fetchYearlyRates(year: number, logger: MonorepositoryLogger): Promise<RateRecord[]> {
   const startDate = `${year}-01-01`;
   const endDate = year === new Date().getFullYear() ? new Date().toISOString().split("T")[0] : `${year}-12-31`;
 
-  console.log(styleText("cyan", `  Fetching ${startDate} → ${endDate}...`));
+  logger.line(styleText("cyan", `  Fetching ${startDate} → ${endDate}...`));
 
   // Fetch EUR-based rates (includes RON and all target currencies)
   const currenciesParam = ["RON", ...TARGET_CURRENCIES].join(",");
@@ -150,8 +237,6 @@ async function fetchYearlyRates(year: number): Promise<RateRecord[]> {
     if (!eurToRon) continue; // Skip days without RON data
 
     for (const currency of TARGET_CURRENCIES) {
-      if (currency === "RON") continue;
-
       const eurToCurrency = dayRates[currency];
       if (!eurToCurrency) continue;
 
@@ -187,7 +272,7 @@ async function fetchYearlyRates(year: number): Promise<RateRecord[]> {
   // Sort by currency code for consistent output
   records.sort((a, b) => a.currency.localeCompare(b.currency));
 
-  console.log(styleText("green", `  ✓ Got ${records.length} currency averages from ${Object.keys(dailyRates).length} trading days`));
+  logger.line(styleText("green", `  ✓ Got ${records.length} currency averages from ${Object.keys(dailyRates).length} trading days`));
 
   return records;
 }
@@ -241,26 +326,33 @@ function writeCSV(records: RateRecord[]): void {
 // Main
 // ---------------------------------------------------------------------------
 
-async function main(): Promise<void> {
+/**
+ * Updates the configured exchange-rate CSV for the selected year range.
+ *
+ * @param logger - Optional logger used for update lifecycle output.
+ */
+export async function main(logger?: MonorepositoryLogger): Promise<void> {
+  const output = logger ?? new MonorepositoryConsoleLogger("update::exchange-rates");
   const {fromYear, toYear} = parseArgs();
 
-  console.log(styleText("bold", "\n📊 Exchange Rate Updater"));
-  console.log(styleText("dim", `Fetching yearly averages from Frankfurter API\n`));
-  console.log(`  Years: ${fromYear} → ${toYear}`);
-  console.log(`  Currencies: ${TARGET_CURRENCIES.length} currencies`);
-  console.log(`  Output: ${CSV_PATH}\n`);
+  output.line(styleText("bold", "\n📊 Exchange Rate Updater"));
+  output.line(styleText("dim", `Fetching yearly averages from Frankfurter API\n`));
+  output.line(`  Years: ${fromYear} → ${toYear}`);
+  output.line(`  Currencies: ${TARGET_CURRENCIES.length} currencies`);
+  output.line(`  Output: ${CSV_PATH}\n`);
 
   // Read existing records (preserve years outside update range)
   const existingRecords = readExistingRecords(fromYear, toYear);
   const newRecords: RateRecord[] = [];
 
   for (let year = fromYear; year <= toYear; year++) {
-    console.log(styleText("bold", `\n📅 Year ${year}`));
+    const yearOutput = output.child(String(year));
+    yearOutput.line(styleText("bold", `\n📅 Year ${year}`));
     try {
-      const yearRecords = await fetchYearlyRates(year);
+      const yearRecords = await fetchYearlyRates(year, yearOutput);
       newRecords.push(...yearRecords);
     } catch (error) {
-      console.error(styleText("red", `  ✗ Failed for ${year}: ${error instanceof Error ? error.message : String(error)}`));
+      yearOutput.line(styleText("red", `  ✗ Failed for ${year}: ${error instanceof Error ? error.message : String(error)}`), "stderr");
     }
 
     // Be polite to the API
@@ -273,11 +365,12 @@ async function main(): Promise<void> {
   const allRecords = [...existingRecords, ...newRecords];
   writeCSV(allRecords);
 
-  console.log(styleText("bold", `\n✅ Done! Wrote ${allRecords.length} records to CSV`));
-  console.log(styleText("dim", `   File: ${CSV_PATH}\n`));
+  output.line(styleText("bold", `\n✅ Done! Wrote ${allRecords.length} records to CSV`));
+  output.line(styleText("dim", `   File: ${CSV_PATH}\n`));
 }
 
-main().catch((error) => {
-  console.error(styleText("red", `\n❌ Fatal error: ${error instanceof Error ? error.message : String(error)}`));
+const output = new MonorepositoryConsoleLogger("update::exchange-rates");
+main(output).catch((error) => {
+  output.line(styleText("red", `\n❌ Fatal error: ${error instanceof Error ? error.message : String(error)}`), "stderr");
   process.exit(1);
 });
