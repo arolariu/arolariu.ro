@@ -150,13 +150,35 @@ function readSecret(terminal: PromptTerminal, message: string): Promise<string> 
         return;
       }
       settled = true;
-      cleanup();
-      terminal.output.write("\n");
-      if ("error" in result) {
-        reject(result.error);
-      } else {
-        resolve(result.value);
+      const finalizationErrors: unknown[] = [];
+      try {
+        cleanup();
+      } catch (error: unknown) {
+        finalizationErrors.push(error);
       }
+      try {
+        terminal.output.write("\n");
+      } catch (error: unknown) {
+        finalizationErrors.push(error);
+      }
+
+      if ("error" in result) {
+        if (finalizationErrors.length > 0) {
+          reject(new AggregateError([result.error, ...finalizationErrors], "Secret prompt failed during terminal finalization."));
+          return;
+        }
+        reject(result.error);
+        return;
+      }
+      if (finalizationErrors.length > 0) {
+        reject(
+          finalizationErrors.length === 1
+            ? finalizationErrors[0]
+            : new AggregateError(finalizationErrors, "Secret prompt terminal finalization failed."),
+        );
+        return;
+      }
+      resolve(result.value);
     };
 
     const consume = (text: string): void => {

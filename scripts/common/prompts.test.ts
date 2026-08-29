@@ -164,6 +164,35 @@ describe("createTerminalPromptProvider", () => {
     expect(testTerminal.input.listenerCount("close")).toBe(0);
   });
 
+  it("rejects instead of throwing when terminal finalization fails", async () => {
+    const testTerminal = createTestTerminal();
+    const originalWrite = testTerminal.output.write.bind(testTerminal.output);
+    let writeCount = 0;
+    Object.defineProperty(testTerminal.output, "write", {
+      value: (chunk: string | Uint8Array): boolean => {
+        writeCount++;
+        if (writeCount === 2) {
+          throw new Error("Terminal output unavailable.");
+        }
+        return originalWrite(chunk);
+      },
+    });
+    const {logger} = createLogger();
+    const prompts = createTerminalPromptProvider(logger, testTerminal.terminal);
+
+    const answer = prompts.secret("Token");
+
+    expect(() => testTerminal.input.emit("close")).not.toThrow();
+    await expect(answer).rejects.toMatchObject({
+      name: "AggregateError",
+      errors: [
+        expect.objectContaining({message: expect.stringMatching(/closed before/i)}),
+        expect.objectContaining({message: "Terminal output unavailable."}),
+      ],
+    });
+    expect(testTerminal.rawModes).toEqual([true, false]);
+  });
+
   it("closes the readline interface after cancellation", async () => {
     const testTerminal = createTestTerminal();
     const {logger} = createLogger();
