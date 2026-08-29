@@ -425,6 +425,162 @@ describe("Svelte setup public contract", () => {
   });
 });
 
+describe("exported workspace inspection", () => {
+  it("inspects cv and status through their exact selected-workspace commands and projects public state", async () => {
+    const harness = createHarness();
+
+    const cv = await inspectSvelteWorkspace(harness.context, "cv", harness.filesystem.dependencies);
+    const status = await inspectSvelteWorkspace(harness.context, "status", harness.filesystem.dependencies);
+
+    expect(cv).toEqual({
+      name: "cv",
+      root: paths.cvRoot,
+      packageContractValid: true,
+      generatedConfigExists: true,
+      problems: [],
+    });
+    expect(status).toEqual({
+      name: "status",
+      root: paths.statusRoot,
+      packageContractValid: true,
+      generatedConfigExists: true,
+      problems: [],
+    });
+    expect(harness.run.mock.calls).toEqual([
+      [inspectionCommand("cv"), {cwd: paths.root}],
+      [inspectionCommand("status"), {cwd: paths.root}],
+    ]);
+  });
+
+  it("defers installed evidence during a fresh-checkout dry-run without running a command", async () => {
+    const filesystem = createFilesystem({rootDependencies: "missing"});
+    const harness = createHarness({filesystem, setupOptions: options({dryRun: true})});
+
+    await expect(inspectSvelteWorkspace(harness.context, "cv", filesystem.dependencies)).resolves.toEqual({
+      name: "cv",
+      root: paths.cvRoot,
+      packageContractValid: true,
+      generatedConfigExists: true,
+      problems: [],
+    });
+    expect(harness.run).not.toHaveBeenCalled();
+  });
+
+  it.each(["file", "other"] as const)("rejects a root node_modules %s after retaining site-local state", async (kind) => {
+    const filesystem = createFilesystem({rootDependencies: kind});
+    const harness = createHarness({filesystem});
+
+    const state = await inspectSvelteWorkspace(harness.context, "status", filesystem.dependencies);
+
+    expect(state).toMatchObject({
+      name: "status",
+      root: paths.statusRoot,
+      packageContractValid: false,
+      generatedConfigExists: true,
+    });
+    expect(state.problems.join("\n")).toMatch(/root node_modules.*directory.*(?:file|other)/iu);
+    expect(harness.run).not.toHaveBeenCalled();
+  });
+
+  it("rejects missing root dependencies during real execution without running a command", async () => {
+    const filesystem = createFilesystem({rootDependencies: "missing"});
+    const harness = createHarness({filesystem});
+
+    const state = await inspectSvelteWorkspace(harness.context, "cv", filesystem.dependencies);
+
+    expect(state.packageContractValid).toBe(false);
+    expect(state.generatedConfigExists).toBe(true);
+    expect(state.problems.join("\n")).toContain("workspace.root-dependencies");
+    expect(harness.run).not.toHaveBeenCalled();
+  });
+
+  it("converts an ordinary root inspection failure after gathering static and generated site evidence", async () => {
+    const rootDependencies = resolve(paths.root, "node_modules");
+    const filesystem = createFilesystem({
+      manifestPatch: {cv: manifest("cv", {node: "^24"})},
+      inspectError: {
+        path: rootDependencies,
+        error: Object.assign(new Error("EACCES: root dependencies denied"), {code: "EACCES"}),
+      },
+    });
+    const harness = createHarness({filesystem});
+
+    const state = await inspectSvelteWorkspace(harness.context, "cv", filesystem.dependencies);
+
+    expect(state.packageContractValid).toBe(false);
+    expect(state.generatedConfigExists).toBe(true);
+    expect(state.problems.join("\n")).toMatch(/unsupported engine/iu);
+    expect(state.problems.join("\n")).toMatch(/node_modules.*EACCES/iu);
+    expect(harness.run).not.toHaveBeenCalled();
+  });
+
+  it("converts ordinary site filesystem and command failures into package problems", async () => {
+    const manifestPath = resolve(paths.cvRoot, "package.json");
+    const filesystem = createFilesystem({
+      readError: {path: manifestPath, error: Object.assign(new Error("EACCES: manifest denied"), {code: "EACCES"})},
+    });
+    const filesystemHarness = createHarness({filesystem});
+
+    const filesystemState = await inspectSvelteWorkspace(filesystemHarness.context, "cv", filesystem.dependencies);
+
+    expect(filesystemState.packageContractValid).toBe(false);
+    expect(filesystemState.generatedConfigExists).toBe(true);
+    expect(filesystemState.problems.join("\n")).toMatch(/EACCES.*manifest denied/iu);
+    expect(filesystemHarness.run).toHaveBeenCalledOnce();
+
+    const generatedFilesystem = createFilesystem({
+      inspectError: {
+        path: generatedConfig("status"),
+        error: Object.assign(new Error("EACCES: generated config denied"), {code: "EACCES"}),
+      },
+    });
+    const generatedHarness = createHarness({filesystem: generatedFilesystem});
+    const generatedState = await inspectSvelteWorkspace(generatedHarness.context, "status", generatedFilesystem.dependencies);
+
+    expect(generatedState.packageContractValid).toBe(true);
+    expect(generatedState.generatedConfigExists).toBe(false);
+    expect(generatedState.problems.join("\n")).toMatch(/generated config.*EACCES/iu);
+    expect(generatedHarness.run).toHaveBeenCalledOnce();
+
+    const commandHarness = createHarness({
+      onRun: () => {
+        throw new Error("runner unavailable");
+      },
+    });
+    const commandState = await inspectSvelteWorkspace(commandHarness.context, "status", commandHarness.filesystem.dependencies);
+
+    expect(commandState.packageContractValid).toBe(false);
+    expect(commandState.generatedConfigExists).toBe(true);
+    expect(commandState.problems.join("\n")).toMatch(/status.*runner unavailable/iu);
+  });
+
+  it("propagates AbortError from root, site filesystem, and command boundaries", async () => {
+    const interruption = Object.assign(new Error("interrupted"), {name: "AbortError"});
+    const rootDependencies = resolve(paths.root, "node_modules");
+    const rootFilesystem = createFilesystem({inspectError: {path: rootDependencies, error: interruption}});
+    const rootHarness = createHarness({filesystem: rootFilesystem});
+    await expect(inspectSvelteWorkspace(rootHarness.context, "cv", rootFilesystem.dependencies)).rejects.toBe(interruption);
+
+    const manifestPath = resolve(paths.cvRoot, "package.json");
+    const siteFilesystem = createFilesystem({readError: {path: manifestPath, error: interruption}});
+    const siteHarness = createHarness({filesystem: siteFilesystem});
+    await expect(inspectSvelteWorkspace(siteHarness.context, "cv", siteFilesystem.dependencies)).rejects.toBe(interruption);
+
+    const generatedFilesystem = createFilesystem({
+      inspectError: {path: generatedConfig("status"), error: interruption},
+    });
+    const generatedHarness = createHarness({filesystem: generatedFilesystem});
+    await expect(inspectSvelteWorkspace(generatedHarness.context, "status", generatedFilesystem.dependencies)).rejects.toBe(interruption);
+
+    const runnerHarness = createHarness({
+      onRun: () => {
+        throw interruption;
+      },
+    });
+    await expect(inspectSvelteWorkspace(runnerHarness.context, "status", runnerHarness.filesystem.dependencies)).rejects.toBe(interruption);
+  });
+});
+
 describe("workspace manifest contracts", () => {
   it("accepts both live manifest shapes and reports both sites independently", async () => {
     const harness = createHarness();
@@ -496,7 +652,10 @@ describe("workspace manifest contracts", () => {
       expect(result.status).toBe("failed");
       expect(result.evidence.join("\n")).toContain(packageName);
       expect(result.evidence.join("\n")).toMatch(/(?:cv|status):.*requirement/iu);
-      expect(harness.run).not.toHaveBeenCalled();
+      expect(harness.run.mock.calls).toEqual([
+        [inspectionCommand("cv"), {cwd: paths.root}],
+        [inspectionCommand("status"), {cwd: paths.root}],
+      ]);
     }
   });
 
@@ -609,6 +768,30 @@ describe("workspace-scoped installed package evidence", () => {
 
     expect(result.status).toBe("failed");
     expect(result.evidence.join("\n")).toMatch(/cv:.*svelte.*0\.0\.[12]/iu);
+  });
+
+  it("reports static and independent npm evidence defects while probing each site exactly once", async () => {
+    const filesystem = createFilesystem({missingConfigs: ["status"]});
+    const harness = createHarness({
+      filesystem,
+      repositoryRequirements: requirements({omitPackage: "svelte"}),
+      responses: {
+        [commandKey(inspectionCommand("cv"))]: commandResult({
+          stdout: workspaceEvidence("cv", {mismatchPackage: "vite"}),
+        }),
+      },
+    });
+
+    const result = await harness.phase.run(harness.context);
+
+    expect(result.status).toBe("failed");
+    expect(result.evidence.join("\n")).toMatch(/cv:.*root requirement 'svelte'.*missing/iu);
+    expect(result.evidence.join("\n")).toMatch(/cv:.*vite.*expected 8\.2\.0.*0\.0\.1/iu);
+    expect(harness.run.mock.calls).toEqual([
+      [inspectionCommand("cv"), {cwd: paths.root}],
+      [inspectionCommand("status"), {cwd: paths.root}],
+    ]);
+    expect(harness.actionIds).toEqual([]);
   });
 });
 

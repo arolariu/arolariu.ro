@@ -359,7 +359,7 @@ async function inspectWorkspace(
     generatedProblems.push(`Unable to inspect generated config '${generatedConfigPath}': ${errorMessage(error)}`);
   }
 
-  if (installedEvidenceMode === "inspect" && packageProblems.length === 0) {
+  if (installedEvidenceMode === "inspect") {
     try {
       const result = await context.runner.run(packageInspectionCommand(definition), {cwd: context.paths.root});
       validateInstalledEvidence(result, definition, expected, packageProblems);
@@ -567,33 +567,45 @@ async function runSvelteSetup(context: SetupContext, dependencies: SvelteSetupDe
  *
  * @param context - Active setup context.
  * @param name - Canonical Svelte workspace name.
+ * @param dependencies - Optional filesystem-boundary replacements for deterministic callers and tests.
  * @returns Manifest, installed-package, and generated-state evidence for the selected site.
  */
-export async function inspectSvelteWorkspace(context: SetupContext, name: WorkspaceName): Promise<SvelteWorkspaceState> {
-  const dependencies = defaultDependencies();
-  const rootDependenciesKind = await dependencies.inspectPath(resolve(context.paths.root, "node_modules"));
-  const installedEvidenceMode: InstalledEvidenceMode = rootDependenciesKind === "directory" ? "inspect" : "defer";
-  const inspection = await inspectWorkspace(context, WORKSPACES[name], dependencies, installedEvidenceMode);
-  if (rootDependenciesKind === "directory" || (rootDependenciesKind === "missing" && context.options.dryRun)) {
-    return {
-      name: inspection.name,
-      root: inspection.root,
-      packageContractValid: inspection.packageContractValid,
-      generatedConfigExists: inspection.generatedConfigExists,
-      problems: inspection.problems,
-    };
+export async function inspectSvelteWorkspace(
+  context: SetupContext,
+  name: WorkspaceName,
+  dependencies: Partial<SvelteSetupDependencies> = {},
+): Promise<SvelteWorkspaceState> {
+  const defaults = defaultDependencies();
+  const resolvedDependencies: SvelteSetupDependencies = {
+    readTextFile: dependencies.readTextFile ?? defaults.readTextFile,
+    inspectPath: dependencies.inspectPath ?? defaults.inspectPath,
+  };
+  const rootDependenciesPath = resolve(context.paths.root, "node_modules");
+  let rootDependenciesKind: InspectedPathKind = "other";
+  let rootInspectionProblem: string | null = null;
+  try {
+    rootDependenciesKind = await resolvedDependencies.inspectPath(rootDependenciesPath);
+  } catch (error: unknown) {
+    if (isInterrupted(error)) {
+      throw error;
+    }
+    rootInspectionProblem = `Unable to inspect root node_modules '${rootDependenciesPath}': ${errorMessage(error)} Installed package evidence could not be verified.`;
   }
+  const installedEvidenceMode: InstalledEvidenceMode = rootDependenciesKind === "directory" ? "inspect" : "defer";
+  const inspection = await inspectWorkspace(context, WORKSPACES[name], resolvedDependencies, installedEvidenceMode);
+  const rootProblem =
+    rootInspectionProblem
+    ?? (rootDependenciesKind === "directory" || (rootDependenciesKind === "missing" && context.options.dryRun)
+      ? null
+      : rootDependenciesKind === "missing"
+        ? "Installed package evidence requires workspace.root-dependencies."
+        : `Root node_modules must be a directory; found ${rootDependenciesKind}.`);
   return {
     name: inspection.name,
     root: inspection.root,
-    packageContractValid: false,
+    packageContractValid: inspection.packageContractValid && rootProblem === null,
     generatedConfigExists: inspection.generatedConfigExists,
-    problems: [
-      ...inspection.problems,
-      rootDependenciesKind === "missing"
-        ? "Installed package evidence requires workspace.root-dependencies."
-        : `Root node_modules must be a directory; found ${rootDependenciesKind}.`,
-    ],
+    problems: rootProblem === null ? inspection.problems : [...inspection.problems, rootProblem],
   };
 }
 
