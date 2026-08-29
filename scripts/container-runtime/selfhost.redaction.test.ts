@@ -32,11 +32,12 @@ vi.mock("node:timers/promises", async (importOriginal) => {
 });
 
 import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "../common/logger.ts";
-import {runSelfhost} from "./selfhost.ts";
+import {runSelfhost, runSelfhostEntrypoint} from "./selfhost.ts";
 import type {CommandRunner} from "./process.ts";
 
 const originalArgv = process.argv;
 const originalSqlPassword = process.env["MSSQL_SA_PASSWORD"];
+const originalExitCode = process.exitCode;
 
 beforeEach(() => {
   process.argv = ["node", "selfhost.ts", "start", "--engine", "podman"];
@@ -49,7 +50,9 @@ afterEach(() => {
   } else {
     process.env["MSSQL_SA_PASSWORD"] = originalSqlPassword;
   }
+  process.exitCode = originalExitCode;
   vi.clearAllMocks();
+  vi.restoreAllMocks();
 });
 
 describe("runSelfhost SQL password redaction", () => {
@@ -91,6 +94,34 @@ describe("runSelfhost SQL password redaction", () => {
     logger.error(failure instanceof Error ? failure.message : String(failure));
     const output = sink.records.map((record) => record.text).join("\n");
 
+    expect(output).toContain("[REDACTED]");
+    expect(output).not.toContain(sqlPassword);
+  });
+
+  it("reuses the direct-entrypoint logger when reporting a password-bearing runtime error", async () => {
+    const sqlPassword = "direct-entrypoint-password";
+    process.env["MSSQL_SA_PASSWORD"] = sqlPassword;
+    const errorOutput = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const runner: CommandRunner = {
+      run: async (command) => {
+        if (command.args.includes("-P")) {
+          return {
+            code: 1,
+            output: `sqlcmd rejected ${sqlPassword}`,
+          };
+        }
+
+        return {
+          code: 0,
+          output: "podman version 5.8.2\npodman-compose version 1.5.0",
+        };
+      },
+    };
+
+    await runSelfhostEntrypoint("start", runner);
+
+    const output = errorOutput.mock.calls.flat().join("\n");
+    expect(process.exitCode).toBe(1);
     expect(output).toContain("[REDACTED]");
     expect(output).not.toContain(sqlPassword);
   });

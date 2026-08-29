@@ -25,6 +25,43 @@ describe("resolveContainerEngine", () => {
     expect(result).toEqual({engine: "rancher", source: "environment"});
   });
 
+  it("uses the persisted engine after arguments and environment", () => {
+    expect(
+      resolveContainerEngine({
+        argv: ["node", "script.ts"],
+        env: {},
+        configuredEngine: "podman",
+      }),
+    ).toEqual({engine: "podman", source: "configuration"});
+  });
+
+  it("prefers arguments and environment over the persisted engine", () => {
+    expect(
+      resolveContainerEngine({
+        argv: ["node", "script.ts", "--engine", "rancher"],
+        env: {AROLARIU_CONTAINER_ENGINE: "rancher"},
+        configuredEngine: "podman",
+      }),
+    ).toEqual({engine: "rancher", source: "argument"});
+    expect(
+      resolveContainerEngine({
+        argv: ["node", "script.ts"],
+        env: {AROLARIU_CONTAINER_ENGINE: "rancher"},
+        configuredEngine: "podman",
+      }),
+    ).toEqual({engine: "rancher", source: "environment"});
+  });
+
+  it.each(["docker", "docker-desktop", "colima"])("rejects configured engine %s", (configuredEngine) => {
+    expect(() =>
+      resolveContainerEngine({
+        argv: ["node", "script.ts"],
+        env: {},
+        configuredEngine,
+      }),
+    ).toThrow(configuredEngine === "colima" ? "Unsupported container engine" : "Docker Desktop is deprecated");
+  });
+
   it("rejects docker as an engine", () => {
     expect(() =>
       resolveContainerEngine({

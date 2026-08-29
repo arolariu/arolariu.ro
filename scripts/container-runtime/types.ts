@@ -9,7 +9,7 @@ import type {MonorepositoryLogger} from "../common/logger.ts";
 export type ContainerEngine = "rancher" | "podman";
 
 /** Indicates where the selected container engine was configured. */
-export type EngineSelectionSource = "argument" | "environment";
+export type EngineSelectionSource = "argument" | "environment" | "configuration";
 
 /** Resolved local container engine selection. */
 export interface RuntimeSelection {
@@ -21,6 +21,7 @@ export interface RuntimeSelection {
 export interface SelectionInputs {
   readonly argv: readonly string[];
   readonly env: Readonly<NodeJS.ProcessEnv>;
+  readonly configuredEngine?: string;
 }
 
 /** Error raised when local container runtime configuration is invalid. */

@@ -37,7 +37,7 @@ function readEngineArgument(argv: readonly string[]): string | null {
 }
 
 /**
- * Resolves the selected local container engine from CLI arguments or environment.
+ * Resolves the selected local container engine from CLI, environment, or persisted configuration.
  *
  * @param inputs - Process arguments and environment variables to inspect.
  * @returns The resolved engine and configuration source.
@@ -54,5 +54,11 @@ export function resolveContainerEngine(inputs: SelectionInputs): RuntimeSelectio
     return {engine: normalizeEngine(environmentValue), source: "environment"};
   }
 
-  throw new ContainerRuntimeError("Select a container engine with --engine rancher|podman or AROLARIU_CONTAINER_ENGINE=rancher|podman.");
+  if (inputs.configuredEngine !== undefined && inputs.configuredEngine.trim() !== "") {
+    return {engine: normalizeEngine(inputs.configuredEngine), source: "configuration"};
+  }
+
+  throw new ContainerRuntimeError(
+    "Select a container engine with --engine rancher|podman, AROLARIU_CONTAINER_ENGINE=rancher|podman, or local tooling configuration.",
+  );
 }

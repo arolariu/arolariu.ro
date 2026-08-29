@@ -9,6 +9,8 @@ import {resolve} from "node:path";
 import {setTimeout as delay} from "node:timers/promises";
 import {fileURLToPath} from "node:url";
 import {MonorepositoryConsoleLogger, type MonorepositoryLogger} from "../common/logger.ts";
+import {resolveRepositoryPaths} from "../common/repository-paths.ts";
+import {readToolingConfig} from "../common/tooling-config.ts";
 import {getContainerAdapter, type ContainerRuntimeAdapter, type RuntimeCommand} from "./adapters.ts";
 import {runArtifactGeneration, runSharedPreflight} from "./preflight.ts";
 import {defaultRunner, formatCommand, type CommandRunner, type CommandRunnerOptions} from "./process.ts";
@@ -277,7 +279,18 @@ export async function runSelfhost(
   runner: CommandRunner = defaultRunner,
   logger: MonorepositoryLogger = new MonorepositoryConsoleLogger("container::selfhost"),
 ): Promise<void> {
-  const selection = resolveContainerEngine({argv: process.argv, env: process.env});
+  const paths = resolveRepositoryPaths();
+  const localConfig = await readToolingConfig(paths.toolingConfig);
+  if (localConfig.status === "invalid") {
+    throw new ContainerRuntimeError(localConfig.error);
+  }
+  const selection = resolveContainerEngine({
+    argv: process.argv,
+    env: process.env,
+    ...(localConfig.status === "valid" && localConfig.config.containerEngine !== undefined
+      ? {configuredEngine: localConfig.config.containerEngine}
+      : {}),
+  });
   const adapter = getContainerAdapter(selection.engine);
   const preflightLogger = logger.child("preflight");
 
@@ -314,14 +327,25 @@ export async function runSelfhost(
 const action = process.argv[2];
 const isDirectExecution = process.argv[1] !== undefined && fileURLToPath(import.meta.url) === resolve(process.argv[1]);
 
-if (isDirectExecution) {
+/**
+ * Runs the direct selfhost CLI with one logger shared by orchestration and failure reporting.
+ *
+ * @param requestedAction - Raw action from the direct process arguments.
+ * @param runner - Command runner used by orchestration.
+ */
+export async function runSelfhostEntrypoint(requestedAction: string | undefined, runner: CommandRunner = defaultRunner): Promise<void> {
+  const logger = new MonorepositoryConsoleLogger("container::selfhost");
   try {
-    if (action !== "start" && action !== "stop" && action !== "logs") {
+    if (requestedAction !== "start" && requestedAction !== "stop" && requestedAction !== "logs") {
       throw new ContainerRuntimeError("Usage: node scripts/container-runtime/selfhost.ts <start|stop|logs> --engine rancher|podman");
     }
 
-    await runSelfhost(action);
+    await runSelfhost(requestedAction, runner, logger);
   } catch (error) {
-    exitWithError(error, new MonorepositoryConsoleLogger("container::selfhost"));
+    exitWithError(error, logger);
   }
+}
+
+if (isDirectExecution) {
+  await runSelfhostEntrypoint(action);
 }

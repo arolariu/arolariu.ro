@@ -6,11 +6,13 @@
 import {resolve} from "node:path";
 import {fileURLToPath} from "node:url";
 import {MonorepositoryConsoleLogger, type MonorepositoryLogger} from "../common/logger.ts";
+import {resolveRepositoryPaths} from "../common/repository-paths.ts";
+import {readToolingConfig} from "../common/tooling-config.ts";
 import {getContainerAdapter, type ContainerRuntimeAdapter, type RuntimeCommand} from "./adapters.ts";
 import {runSharedPreflight} from "./preflight.ts";
 import {defaultRunner, formatCommand, type CommandRunner} from "./process.ts";
 import {resolveContainerEngine} from "./selection.ts";
-import {exitWithError} from "./types.ts";
+import {ContainerRuntimeError, exitWithError} from "./types.ts";
 
 /** Options for invoking an arbitrary Compose file through the selected engine. */
 export interface ComposeOptions {
@@ -39,7 +41,18 @@ export async function runComposeCli(
   runner: CommandRunner = defaultRunner,
   logger: MonorepositoryLogger = new MonorepositoryConsoleLogger("container::compose"),
 ): Promise<void> {
-  const selection = resolveContainerEngine({argv: process.argv, env: process.env});
+  const paths = resolveRepositoryPaths();
+  const localConfig = await readToolingConfig(paths.toolingConfig);
+  if (localConfig.status === "invalid") {
+    throw new ContainerRuntimeError(localConfig.error);
+  }
+  const selection = resolveContainerEngine({
+    argv: process.argv,
+    env: process.env,
+    ...(localConfig.status === "valid" && localConfig.config.containerEngine !== undefined
+      ? {configuredEngine: localConfig.config.containerEngine}
+      : {}),
+  });
   const adapter = getContainerAdapter(selection.engine);
   await runSharedPreflight(adapter, runner, logger.child("preflight"));
 
