@@ -25,7 +25,7 @@ import {
 // export. Test coverage in doctor.python.test.ts asserts every command built from this text matches
 // the shared constant exactly, which fails the moment either copy drifts from the other.
 const PYTHON_METADATA_PROBE_SCRIPT =
-  "import json; import platform; import site; import sys; print(json.dumps({;   'executable': sys.executable,;   'version': platform.python_version(),;   'prefix': sys.prefix,;   'basePrefix': getattr(sys, 'base_prefix', sys.prefix),;   'sitePackages': site.getsitepackages(),; }, separators=(',', ':')))";
+  "import json, platform, site, sys; print(json.dumps({'executable': sys.executable, 'version': platform.python_version(), 'prefix': sys.prefix, 'basePrefix': getattr(sys, 'base_prefix', sys.prefix), 'sitePackages': site.getsitepackages()}, separators=(',', ':')))";
 
 // The venv executable path is intentionally a fixed, platform-specific relative literal combined
 // with `{cwd: context.paths.expRoot}` at every call site. Node's child_process resolves a relative
@@ -86,12 +86,33 @@ const SETUP_COMMAND_HINT = "npm run setup";
 const EXACT_REQUIREMENT_PIN =
   /^([A-Za-z0-9](?:[A-Za-z0-9._-]*[A-Za-z0-9])?)\s*==\s*([A-Za-z0-9](?:[A-Za-z0-9._!+-]*[A-Za-z0-9])?)$/u;
 const REQUIREMENT_INCLUDE_DIRECTIVE = /^(?:-r|--requirement)(?:=|\s+)(.+)$/u;
+/** Matches the start of a line that at least looks like a pip package requirement (a name). */
+const REQUIREMENT_NAME_LIKE = /^[A-Za-z0-9][A-Za-z0-9._-]*/u;
+/** Matches a trailing pip requirements-file line-continuation backslash. */
+const LINE_CONTINUATION_SUFFIX = /\\\s*$/u;
 
 /** One normalized exact-pinned Python requirement discovered while parsing a requirements tree. */
 export interface ParsedRequirement {
   readonly name: string;
   readonly specifier: string;
   readonly source: string;
+}
+
+/**
+ * One ordinary pip requirements-file entry (extras, environment markers, non-exact version
+ * specifiers, hash/continuation lines, or editable/constraint/index options) that is valid pip
+ * syntax but is not exactly comparable against `pip list` output without a full PEP 440 evaluator.
+ */
+interface UnverifiedRequirementEntry {
+  readonly text: string;
+  readonly source: string;
+  readonly reason: string;
+}
+
+/** The result of parsing a requirements tree: exact pins plus recognized-but-unverified entries. */
+interface RequirementsTreeDetail {
+  readonly exact: readonly ParsedRequirement[];
+  readonly unverified: readonly UnverifiedRequirementEntry[];
 }
 
 /** Comparison of a parsed requirement tree against distributions reported by `pip list`. */
@@ -523,9 +544,9 @@ async function diagnoseRequirements(context: Readonly<DoctorContext>, blocked: b
 
   const startedAt = context.now();
 
-  let requirements: readonly ParsedRequirement[];
+  let detail: RequirementsTreeDetail;
   try {
-    requirements = await parseRequirementsTree(context.paths.pythonRequirements, (path) => readFile(path, "utf8"));
+    detail = await parseRequirementsTreeDetailed(context.paths.pythonRequirements, (path) => readFile(path, "utf8"));
   } catch (error) {
     return issueDiagnostic(context, startedAt, {
       id: "python.requirements",
@@ -565,7 +586,11 @@ async function diagnoseRequirements(context: Readonly<DoctorContext>, blocked: b
     });
   }
 
-  const comparison = compareInstalledDistributions(requirements, installed);
+  const comparison = compareInstalledDistributions(detail.exact, installed);
+  const unverifiedEvidence = detail.unverified.map(
+    (entry) => `Unverified (not exactly comparable): '${entry.text}' in ${entry.source} — ${entry.reason}`,
+  );
+
   if (comparison.missing.length > 0 || comparison.mismatched.length > 0) {
     return issueDiagnostic(context, startedAt, {
       id: "python.requirements",
@@ -575,6 +600,7 @@ async function diagnoseRequirements(context: Readonly<DoctorContext>, blocked: b
       evidence: [
         ...comparison.missing.map((entry) => `Missing: ${entry}`),
         ...comparison.mismatched.map((entry) => `Mismatched: ${entry}`),
+        ...unverifiedEvidence,
       ],
       potentialCauses: [
         ...comparison.missing.map((entry) => ({cause: `${entry} is not installed.`, confidence: "high" as const})),
@@ -584,13 +610,28 @@ async function diagnoseRequirements(context: Readonly<DoctorContext>, blocked: b
     });
   }
 
+  if (detail.unverified.length > 0) {
+    return issueDiagnostic(context, startedAt, {
+      id: "python.requirements",
+      name: "Installed requirements",
+      status: "warn",
+      summary: "Every exact pinned requirement is satisfied, but some requirement entries could not be exactly verified.",
+      evidence: [`${String(detail.exact.length)} exact pinned requirements verified.`, ...unverifiedEvidence],
+      rootCause:
+        "One or more requirement entries use extras, environment markers, non-exact version specifiers, or pip options/directives that are not evaluated by this doctor's exact-pin comparator.",
+      fixes: detail.unverified.map((entry) => ({
+        description: `Review '${entry.text}' in ${entry.source} manually, or replace it with an exact '==' pin if precise doctor verification is desired.`,
+      })),
+    });
+  }
+
   return passDiagnostic(
     context,
     startedAt,
     "python.requirements",
     "Installed requirements",
     "Installed distributions satisfy every pinned requirement.",
-    [`${String(requirements.length)} pinned requirements verified.`],
+    [`${String(detail.exact.length)} pinned requirements verified.`],
   );
 }
 
@@ -802,6 +843,7 @@ async function parseRequirementsFile(
   visited: Set<string>,
   seenNames: Map<string, ParsedRequirement>,
   results: ParsedRequirement[],
+  unverified: UnverifiedRequirementEntry[],
 ): Promise<void> {
   if (visiting.has(path)) {
     throw new RequirementsParseError(`Circular requirements include detected at ${path}.`);
@@ -820,7 +862,17 @@ async function parseRequirementsFile(
   }
 
   for (const rawLine of contents.split(/\r?\n/u)) {
-    const line = rawLine.startsWith("#") ? "" : stripInlineComment(rawLine);
+    const withoutComment = rawLine.startsWith("#") ? "" : stripInlineComment(rawLine);
+    if (withoutComment === "") {
+      continue;
+    }
+
+    // Pip requirements files allow a trailing backslash to continue a logical entry (most
+    // commonly `name==version \` followed by one or more `--hash=...` lines). Each continued
+    // physical line remains independently recognizable once the trailing backslash is stripped:
+    // an option line (e.g. `--hash=...`) is still detected by its own leading `-`, so no full
+    // logical-line reassembly is required.
+    const line = LINE_CONTINUATION_SUFFIX.test(withoutComment) ? withoutComment.replace(LINE_CONTINUATION_SUFFIX, "").trim() : withoutComment;
     if (line === "") {
       continue;
     }
@@ -833,24 +885,50 @@ async function parseRequirementsFile(
       }
 
       const includedPath = resolve(dirname(path), includedRaw);
-      await parseRequirementsFile(includedPath, readText, visiting, visited, seenNames, results);
+      await parseRequirementsFile(includedPath, readText, visiting, visited, seenNames, results, unverified);
+      continue;
+    }
+
+    // Ordinary pip option lines (editable/constraint directives, index options, hash lines, etc.)
+    // are valid requirements-file syntax but carry no package pin to compare; only `-r`/
+    // `--requirement` (handled above) is followed recursively.
+    if (line.startsWith("-")) {
+      unverified.push({
+        text: line,
+        source: path,
+        reason: "Pip option or directive is not evaluated by the exact-pin comparator.",
+      });
       continue;
     }
 
     const pinMatch = EXACT_REQUIREMENT_PIN.exec(line);
-    if (pinMatch === null || pinMatch[1] === undefined || pinMatch[2] === undefined) {
-      throw new RequirementsParseError(`Unsupported or malformed requirement entry '${line}' in ${path}; only exact == pins are supported.`);
+    if (pinMatch !== null && pinMatch[1] !== undefined && pinMatch[2] !== undefined) {
+      const normalizedName = normalizeDistributionName(pinMatch[1]);
+      const existing = seenNames.get(normalizedName);
+      if (existing !== undefined) {
+        throw new RequirementsParseError(`Duplicate requirement '${normalizedName}' declared in both ${existing.source} and ${path}.`);
+      }
+
+      const parsedRequirement: ParsedRequirement = {name: normalizedName, specifier: pinMatch[2], source: path};
+      seenNames.set(normalizedName, parsedRequirement);
+      results.push(parsedRequirement);
+      continue;
     }
 
-    const normalizedName = normalizeDistributionName(pinMatch[1]);
-    const existing = seenNames.get(normalizedName);
-    if (existing !== undefined) {
-      throw new RequirementsParseError(`Duplicate requirement '${normalizedName}' declared in both ${existing.source} and ${path}.`);
+    // Extras (`name[extra]==1.0`), environment markers (`name==1.0; python_version >= "3.9"`),
+    // and non-exact specifiers (`~=`, `>=`, ranges, bare unpinned names, ...) are ordinary, valid
+    // pip requirement entries. They are not comparable against `pip list` without a full PEP 440
+    // evaluator, so they are recorded as unverified rather than aborting the whole tree.
+    if (REQUIREMENT_NAME_LIKE.test(line)) {
+      unverified.push({
+        text: line,
+        source: path,
+        reason: "Requirement uses extras, an environment marker, or a non-exact version specifier that is not evaluated by the exact-pin comparator.",
+      });
+      continue;
     }
 
-    const parsedRequirement: ParsedRequirement = {name: normalizedName, specifier: pinMatch[2], source: path};
-    seenNames.set(normalizedName, parsedRequirement);
-    results.push(parsedRequirement);
+    throw new RequirementsParseError(`Unsupported or malformed requirement entry '${rawLine}' in ${path}.`);
   }
 
   visiting.delete(path);
@@ -863,21 +941,43 @@ function stripInlineComment(line: string): string {
 }
 
 /**
+ * Recursively parses a pip requirements file tree, following `-r`/`--requirement` includes, and
+ * separates exact `==` pins from ordinary valid-but-unverified entries (extras, environment
+ * markers, non-exact specifiers, and other pip options/directives).
+ *
+ * @param rootFile - Absolute or relative path to the entry requirements file.
+ * @param readText - Read-only text loader used for the entry file and every discovered include.
+ * @returns Every exact-pinned requirement and every recognized-but-unverified entry, in file order.
+ * @throws RequirementsParseError When an include cycle, duplicate include, duplicate requirement
+ * name, malformed include directive, or a genuinely unparseable entry is discovered.
+ */
+async function parseRequirementsTreeDetailed(
+  rootFile: string,
+  readText: (path: string) => Promise<string>,
+): Promise<RequirementsTreeDetail> {
+  const exact: ParsedRequirement[] = [];
+  const unverified: UnverifiedRequirementEntry[] = [];
+  await parseRequirementsFile(resolve(rootFile), readText, new Set(), new Set(), new Map(), exact, unverified);
+  return {exact, unverified};
+}
+
+/**
  * Recursively parses a pip requirements file tree, following `-r`/`--requirement` includes.
  *
  * @param rootFile - Absolute or relative path to the entry requirements file.
  * @param readText - Read-only text loader used for the entry file and every discovered include.
- * @returns Every exact-pinned requirement discovered across the tree, in file order.
+ * @returns Every exact-pinned requirement discovered across the tree, in file order. Ordinary
+ * valid-but-unverified entries (extras, environment markers, non-exact specifiers, and other pip
+ * options/directives) are recognized and skipped rather than included here.
  * @throws RequirementsParseError When an include cycle, duplicate include, duplicate requirement
- * name, or non-exact/malformed requirement entry is discovered.
+ * name, malformed include directive, or a genuinely unparseable entry is discovered.
  */
 export async function parseRequirementsTree(
   rootFile: string,
   readText: (path: string) => Promise<string>,
 ): Promise<readonly ParsedRequirement[]> {
-  const results: ParsedRequirement[] = [];
-  await parseRequirementsFile(resolve(rootFile), readText, new Set(), new Set(), new Map(), results);
-  return results;
+  const detail = await parseRequirementsTreeDetailed(rootFile, readText);
+  return detail.exact;
 }
 
 /**

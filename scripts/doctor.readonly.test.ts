@@ -948,6 +948,33 @@ describe("isReadOnlyDiagnosticCommand", () => {
   });
 });
 
+describe("PYTHON_INTERPRETER_METADATA_SNIPPET", () => {
+  it("is a syntactically valid single Python -c argument whose dict literal contains no statement separators", async () => {
+    const module = await loadDoctorTypesModule();
+    const snippet = module.PYTHON_INTERPRETER_METADATA_SNIPPET;
+
+    // Regression for a prior defect where the snippet's source lines were joined with "; ",
+    // inserting a statement separator *inside* the dict literal passed to json.dumps({...}) and
+    // producing invalid Python (e.g. "json.dumps({;   'executable': ...")). The dict literal
+    // itself must never contain a semicolon.
+    const dictLiteralMatch = /\{[^{}]*\}/u.exec(snippet);
+    expect(dictLiteralMatch).not.toBeNull();
+    expect(dictLiteralMatch?.[0]).not.toContain(";");
+
+    // The snippet must remain a single compact statement sequence (an import followed by exactly
+    // one print call), not a multi-statement chain reconstructed from embedded-newline joins.
+    expect(snippet.match(/print\(/gu)).toHaveLength(1);
+  });
+
+  it("remains accepted by the exact read-only diagnostic command policy after correction", async () => {
+    const module = await loadDoctorTypesModule();
+    const snippet = module.PYTHON_INTERPRETER_METADATA_SNIPPET;
+
+    expect(module.isReadOnlyDiagnosticCommand({command: "py", args: ["-3.12", "-c", snippet]})).toBe(true);
+    expect(module.isReadOnlyDiagnosticCommand({command: "python3.12", args: ["-c", snippet]})).toBe(true);
+  });
+});
+
 describe("createReadOnlyDiagnosticRunner", () => {
   it("rejects a forbidden command before delegating to the underlying runner", async () => {
     const module = await loadDoctorTypesModule();

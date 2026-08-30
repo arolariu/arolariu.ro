@@ -11,20 +11,17 @@ import type {RequirementLoadResult} from "./common/requirements.ts";
 /** One bounded timeout applied to diagnostic commands that do not supply one explicitly. */
 export const DIAGNOSTIC_DEFAULT_TIMEOUT_MS = 15_000;
 
-/** Fixed Python metadata probe consumed by later doctor modules. */
-export const PYTHON_INTERPRETER_METADATA_SNIPPET = [
-  "import json",
-  "import platform",
-  "import site",
-  "import sys",
-  "print(json.dumps({",
-  "  'executable': sys.executable,",
-  "  'version': platform.python_version(),",
-  "  'prefix': sys.prefix,",
-  "  'basePrefix': getattr(sys, 'base_prefix', sys.prefix),",
-  "  'sitePackages': site.getsitepackages(),",
-  "}, separators=(',', ':')))",
-].join("; ");
+/**
+ * Fixed Python metadata probe consumed by later doctor modules.
+ *
+ * This is a single compact statement sequence (one import statement, one `;`, one `print` call)
+ * so it survives verbatim as a single `-c` argument on both Windows and POSIX shells without
+ * relying on embedded-newline quoting. The dict literal passed to `json.dumps` must never contain
+ * a `;`: joining pretty-printed source lines with `"; "` previously inserted a statement separator
+ * *inside* the dict literal (e.g. `json.dumps({;  'executable': ...`), which is invalid Python.
+ */
+export const PYTHON_INTERPRETER_METADATA_SNIPPET =
+  "import json, platform, site, sys; print(json.dumps({'executable': sys.executable, 'version': platform.python_version(), 'prefix': sys.prefix, 'basePrefix': getattr(sys, 'base_prefix', sys.prefix), 'sitePackages': site.getsitepackages()}, separators=(',', ':')))";
 
 const WINDOWS_PROBE_SHELL = ["-NoProfile", "-NonInteractive", "-Command"] as const;
 const WINDOWS_DISK_PROBE_SCRIPT =

@@ -286,13 +286,48 @@ describe("parseRequirementsTree", () => {
     ).rejects.toThrow(/Duplicate requirement 'requests'/u);
   });
 
-  it("rejects a non-exact requirement specifier as malformed/unsupported", async () => {
+  it("treats a non-exact requirement specifier as recognized-but-unverified rather than a parse failure", async () => {
     const rootPath = resolve("virtual-repo", "root.txt");
     const files: Record<string, string> = {[rootPath]: "opentelemetry-exporter-otlp-proto-http~=1.43\n"};
 
+    const parsed = await parseRequirementsTree(rootPath, async (path) => files[path] ?? Promise.reject(new Error("ENOENT")));
+
+    expect(parsed).toEqual<readonly ParsedRequirement[]>([]);
+  });
+
+  it("does not abort on extras, environment markers, hash/continuation lines, editable/constraint directives, or index options, and still checks exact pins that follow them", async () => {
+    const rootPath = resolve("virtual-repo", "root.txt");
+    const content = [
+      "opentelemetry-exporter-otlp-proto-http~=1.43",
+      "requests[security]==2.31.0",
+      'numpy==1.26.4; python_version >= "3.9"',
+      "certifi==2024.2.2 \\",
+      "    --hash=sha256:abcdef0123456789",
+      "-e .",
+      "-c constraints.txt",
+      "--index-url https://pypi.org/simple",
+      "--extra-index-url https://example.invalid/simple",
+      "--no-index",
+      "--find-links ./wheels",
+      "flask==3.0.3",
+    ].join("\n");
+    const files: Record<string, string> = {[rootPath]: `${content}\n`};
+
+    const parsed = await parseRequirementsTree(rootPath, async (path) => files[path] ?? Promise.reject(new Error("ENOENT")));
+
+    expect(parsed).toEqual<readonly ParsedRequirement[]>([
+      {name: "certifi", specifier: "2024.2.2", source: rootPath},
+      {name: "flask", specifier: "3.0.3", source: rootPath},
+    ]);
+  });
+
+  it("still rejects a genuinely unparseable requirements entry", async () => {
+    const rootPath = resolve("virtual-repo", "root.txt");
+    const files: Record<string, string> = {[rootPath]: "@@@not-a-real-entry@@@\n"};
+
     await expect(
       parseRequirementsTree(rootPath, async (path) => files[path] ?? Promise.reject(new Error("ENOENT"))),
-    ).rejects.toThrow(/only exact == pins are supported/u);
+    ).rejects.toThrow(RequirementsParseError);
   });
 
   it("rejects a malformed -r include directive with no path", async () => {
@@ -589,14 +624,35 @@ describe("pythonDoctorModule", () => {
     expect(results.find(({id}) => id === "python.requirements")?.status).toBe("fail");
   });
 
-  it("fails python.requirements when the repository requirements tree contains a non-exact pin", async () => {
+  it("warns python.requirements when the repository requirements tree contains a recognized non-exact pin but every exact pin is satisfied", async () => {
     const fixture = await createPythonFixture({platform: "win32", requirementsTxt: "opentelemetry-exporter-otlp-proto-http~=1.43\n"});
 
     const results = await pythonDoctorModule.run(fixture.context);
 
     const requirements = results.find(({id}) => id === "python.requirements");
+    expect(requirements?.status).toBe("warn");
+    expect(requirements?.evidence.join("\n")).toContain("opentelemetry-exporter-otlp-proto-http~=1.43");
+    expect(requirements?.rootCause).toContain("exact-pin comparator");
+    expect(requirements?.fixes.length).toBeGreaterThan(0);
+  });
+
+  it("fails python.requirements on a missing exact pin while retaining visibility of a recognized unverified entry", async () => {
+    const fixture = await createPythonFixture({
+      platform: "win32",
+      requirementsTxt: "opentelemetry-exporter-otlp-proto-http~=1.43\nrequests==2.31.0\n",
+    });
+    fixture.setResponse(
+      VENV_PIP_LIST_COMMAND.win32,
+      commandResult({stdout: JSON.stringify([{name: "pytest", version: "8.3.2"}])}),
+      fixture.context.paths.expRoot,
+    );
+
+    const results = await pythonDoctorModule.run(fixture.context);
+
+    const requirements = results.find(({id}) => id === "python.requirements");
     expect(requirements?.status).toBe("fail");
-    expect(requirements?.rootCause).toContain("only exact == pins are supported");
+    expect(requirements?.evidence.join("\n")).toContain("Missing: requests==2.31.0");
+    expect(requirements?.evidence.join("\n")).toContain("opentelemetry-exporter-otlp-proto-http~=1.43");
   });
 
   it("fails python.conflicts when pip check reports broken requirement sets", async () => {
