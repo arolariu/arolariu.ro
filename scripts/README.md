@@ -33,12 +33,13 @@ registry. Do not place secret values in command echoes or other manually formatt
 ## Output-policy exemptions
 
 The permanent production exemption is the logger sink implementation in [`common/logger.ts`](./common/logger.ts), which owns the direct
-console and process-stream writes used by every migrated script.
+console and process-stream writes used by every migrated script. It is the only exemption:
+[`output-policy.test.ts`](./common/output-policy.test.ts)'s AST guard and the root ESLint configuration's `toolingOutputConfig.ignores`
+list only ever contain this sink, never a script entry point.
 
-[`doctor.ts`](./doctor.ts) and [`status.ts`](./status.ts) are the two temporary production exceptions while their dedicated migrations are
-completed. Both [`output-policy.test.ts`](./common/output-policy.test.ts) and the root ESLint configuration exclude the permanent logger
-sink and these temporary entry points. [`setup.ts`](./setup.ts) completed its logger migration and is no longer an exception — it routes
-every phase's presentation and semantic output through `MonorepositoryConsoleLogger`.
+Every production script under root `scripts/**` — including [`setup.ts`](./setup.ts), [`doctor.ts`](./doctor.ts), and
+[`status.ts`](./status.ts) — routes its presentation and semantic output through `MonorepositoryConsoleLogger`. There are no remaining
+transitional setup/doctor/status exceptions.
 
 ## Setup orchestrator (`npm run setup`)
 
@@ -102,8 +103,69 @@ npx eslint scripts\setup.ts scripts\setup.types.ts scripts\setup.*.ts scripts\co
 git --no-pager diff --check
 ```
 
-The full root-tooling suite in [Targeted validation](#targeted-validation) below now enumerates these setup and shared-dependency test
-files too, so it remains the single command that exercises every test file under `scripts/`.
+The full root-tooling suite in [Targeted validation](#targeted-validation) below enumerates these setup and shared-dependency test files
+too; it exercises every setup, container-runtime, and worker test file under `scripts/`. Doctor, its reporter and specialist modules, and
+`status.ts` have their own focused command in [Doctor test commands](#doctor-test-commands).
+
+## Doctor diagnostics (`npm run doctor`)
+
+`npm run doctor` is [`doctor.ts`](./doctor.ts)'s CLI entrypoint (`--verbose`/`-v`, `--ci`, `--score`, `--json`, `--quick`, `--help`/`-h`).
+It resolves the same canonical repository paths and manifest-derived requirements setup uses, then runs every bounded-context module
+independently and concurrently, flattening their results back into a fixed rendering order. Doctor is strictly read-only: it never
+installs, writes, restores, generates, starts/stops a service, builds, type-checks, or tests.
+
+### Module map
+
+| Module | Owns |
+|--------|------|
+| [`doctor.ts`](./doctor.ts) | CLI parsing, help, module orchestration/ordering, and the exit-code rollup |
+| [`doctor.types.ts`](./doctor.types.ts) | Shared `DiagnosticResult`/`DoctorContext`/`DoctorOptions` contracts, the exact-allowlisted read-only command policy, and diagnostic-result helpers |
+| [`doctor.reporter.ts`](./doctor.reporter.ts) | Stable per-check score weights, schema-v1 validation (`createDoctorReport`/`parseDoctorReport`), and human/JSON rendering |
+| [`doctor.workspace.ts`](./doctor.workspace.ts) | Repository root, git, Node/npm runtime, dependency trees, Nx graph, config files, generated artifacts, host capacity, npm audit/outdated |
+| [`doctor.dotnet.ts`](./doctor.dotnet.ts) | .NET SDK/host/workloads, NuGet state, solution, local tools, HTTPS certificate trust, AppHost user secrets, NuGet feed reachability |
+| [`doctor.react.ts`](./doctor.react.ts) | Website packages, workspace link, environment, i18n, taxonomy/licenses, Playwright, framework config |
+| [`doctor.svelte.ts`](./doctor.svelte.ts) | CV and status SvelteKit packages, Node engine, scripts, generated `.svelte-kit` state, adapter |
+| [`doctor.python.ts`](./doctor.python.ts) | `exp` runtime, virtual environment, pip, requirements, dependency conflicts, PyPI reachability |
+| [`doctor.infrastructure.ts`](./doctor.infrastructure.ts) | Container engine selection, CLI/backend/Compose/socket checks, ports, certificates, manifests, known containers |
+
+Modules are invoked independently and concurrently, but `doctor.ts` always flattens their results back into the module-map order above
+regardless of which module settles first. An unhandled module exception never produces a passing or skipped result — it becomes exactly
+one failed `<module>.module-error` row so the report degrades to one row instead of losing the whole run.
+
+### Stable result contract
+
+Every check is one `DiagnosticResult`: a stable `id` (module-prefixed, e.g. `workspace.git`), its owning `module`, `name`, `status`
+(`pass`/`warn`/`fail`/`skipped`), `summary`, `evidence`, `durationMs`, `fixes`, and exactly one diagnosis form for a `warn`/`fail` row —
+either `rootCause` or ranked `potentialCauses` (`high`/`medium`/`low`), never both. [`doctor.reporter.ts`](./doctor.reporter.ts) rejects an
+unknown or duplicate `id`, a `warn`/`fail` row missing evidence/fixes/diagnosis, and an ANSI-bearing or empty report string. The completed
+`DoctorReportV1` (`schemaVersion: 1`, `score`, `grade`, `summary`, `checks`, `timestamp`) is scored with a stable per-`id` weight: a pass
+earns full weight, a warn half, a fail none, and a `skipped` check contributes to neither the earned total nor the denominator.
+
+### Read-only command policy
+
+Every diagnostic command runs through `defaultDiagnosticRunner` (built by [`doctor.types.ts`](./doctor.types.ts)'s
+`createReadOnlyDiagnosticRunner`), which rejects any command that is not an exact match against `isReadOnlyDiagnosticCommand`'s allowlist,
+rejects caller-supplied stdin, forces captured output, and applies `DIAGNOSTIC_DEFAULT_TIMEOUT_MS` when no explicit timeout is given.
+Modules never import [`common/process.ts`](./common/process.ts) directly — [`doctor.readonly.test.ts`](./doctor.readonly.test.ts)'s
+source-level AST guard forbids a mutating filesystem import or an unresolved/forbidden command specification anywhere in `doctor.*.ts`.
+
+### JSON consumers
+
+`--json` emits exactly one ANSI-free schema-v1 document. [`status.ts`](./status.ts) is the reference consumer: it invokes doctor as
+`--quick --json` and always parses the full `stdout` through `parseDoctorReport`, which recomputes and validates `summary`, `score`, and
+`grade` from `checks` rather than trusting the reported numbers. A doctor exit code of `1` (failed checks) does not indicate a malformed
+report; only an empty/non-JSON/wrong-schema/internally-inconsistent document makes status's `health` section `null`. Any other JSON
+consumer should follow the same parse-then-validate pattern instead of scraping human-readable output.
+
+### Doctor test commands
+
+Focused validation for doctor, its reporter, every specialist module, and `status.ts`:
+
+```powershell
+npx vitest run --coverage.enabled=false scripts\common\logger.test.ts scripts\common\process.test.ts scripts\common\output-policy.test.ts scripts\doctor.test.ts scripts\doctor.reporter.test.ts scripts\doctor.readonly.test.ts scripts\doctor.workspace.test.ts scripts\doctor.dotnet.test.ts scripts\doctor.react.test.ts scripts\doctor.svelte.test.ts scripts\doctor.python.test.ts scripts\doctor.infrastructure.test.ts scripts\status.test.ts scripts\setup.test.ts
+npx eslint scripts\doctor.ts scripts\doctor.types.ts scripts\doctor.reporter.ts scripts\doctor.workspace.ts scripts\doctor.dotnet.ts scripts\doctor.react.ts scripts\doctor.svelte.ts scripts\doctor.python.ts scripts\doctor.infrastructure.ts scripts\status.ts
+git --no-pager diff --check
+```
 
 ## Targeted validation
 

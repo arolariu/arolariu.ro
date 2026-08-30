@@ -334,6 +334,20 @@ npm run format             # Prettier formatting
 </details>
 
 <details>
+<summary><b>🩺 Diagnostics</b></summary>
+
+```bash
+npm run doctor              # Read-only workspace health check — never mutates the repository
+npm run status              # Six-section monorepo status dashboard (includes doctor's health score)
+```
+
+`npm run doctor` diagnoses the workspace; it never builds, type-checks, or runs tests. See
+[DEVELOPMENT.md](DEVELOPMENT.md#diagnosing-with-npm-run-doctor) for the full CLI contract, module
+order, and ecosystem-specific troubleshooting commands.
+
+</details>
+
+<details>
 <summary><b>🎯 Advanced Nx Commands</b></summary>
 
 ```bash

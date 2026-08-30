@@ -58,8 +58,14 @@ Run these checks locally — they're the same ones CI will run:
 npm run format           # auto-fix formatting (Prettier)
 npm run lint             # check for lint errors (ESLint)
 npm run test:unit        # run unit tests
-npm run doctor           # check workspace health
+npm run doctor           # read-only environment diagnosis
 ```
+
+`npm run setup` prepares your environment (dependency-aware install/restore/generate);
+`npm run doctor` only diagnoses that environment afterward and never builds, type-checks, or runs
+tests itself, so it is not a substitute for `npm run test:unit`/`npm run lint`/`npm run build` —
+run those separately. See [DEVELOPMENT.md](DEVELOPMENT.md#diagnosing-with-npm-run-doctor) for the
+full doctor contract.
 
 ### Per-Role Checklist
 
