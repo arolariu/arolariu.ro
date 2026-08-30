@@ -112,9 +112,7 @@ function messagesFixture(): Readonly<{en: object; ro: object; fr: object}> {
 }
 
 function declaredMessagesSource(messages: object): string {
-  return ["declare const messages: " + JSON.stringify(messages, undefined, 2).replace(/^\{/u, "{").concat(";"), "export default messages;", ""].join(
-    "\n",
-  );
+  return ["declare const messages: " + JSON.stringify(messages, undefined, 2).concat(";"), "export default messages;", ""].join("\n");
 }
 
 function taxonomyArtifactContents(
@@ -596,7 +594,12 @@ describe("reactDoctorModule", () => {
       const result = results.find(({id}) => id === "react.environment");
 
       expect(result?.status).toBe("warn");
-      expect(result?.rootCause).toBeDefined();
+      expect(result?.summary).toBe(
+        "Both Clerk credentials are absent; ordinary non-CI Next.js development may use Clerk keyless mode.",
+      );
+      expect(result?.rootCause).toBe(
+        "Both Clerk credentials are absent; ordinary non-CI Next.js development may use Clerk keyless mode.",
+      );
     });
 
     it("fails when only one Clerk key is present", async () => {

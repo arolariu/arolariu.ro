@@ -70,6 +70,50 @@ describe("controlled command lifecycle", () => {
     ]);
   });
 
+  it("redacts registered values split across arbitrary stdout and stderr chunks", async () => {
+    const stdoutSecret = "stdout\nsplit-secret";
+    const stderrSecret = "stderr-split-secret";
+    const sink = new InMemoryLoggerSink();
+    const logger = new MonorepositoryConsoleLogger("process", {
+      color: false,
+      sink,
+      redactions: [stdoutSecret, stderrSecret],
+    });
+
+    const execution = defaultCommandRunner.run({command: "controlled", args: []}, {logger, output: "tee"});
+    child.stdout.emit("data", Buffer.from("stdout\nsplit-"));
+    child.stderr.emit("data", Buffer.from("stderr-split-"));
+    child.stdout.emit("data", Buffer.from("secret"));
+    child.stderr.emit("data", Buffer.from("secret"));
+    child.emit("close", 0, null);
+
+    await expect(execution).resolves.toMatchObject({
+      stdout: stdoutSecret,
+      stderr: stderrSecret,
+    });
+    expect(sink.records.filter(({stream}) => stream === "stdout").map(({text}) => text).join("")).toBe("[REDACTED]");
+    expect(sink.records.filter(({stream}) => stream === "stderr").map(({text}) => text).join("")).toBe("[REDACTED]");
+  });
+
+  it("does not spawn a child when cancellation was already requested", async () => {
+    const controller = new AbortController();
+    controller.abort();
+
+    const execution = defaultCommandRunner.run({command: "controlled", args: []}, {signal: controller.signal});
+    if (spawn.mock.calls.length > 0) {
+      child.emit("close", null, "SIGTERM");
+    }
+
+    await expect(execution).resolves.toMatchObject({
+      code: 1,
+      stdout: "",
+      stderr: "",
+      timedOut: false,
+    });
+    expect(spawn).not.toHaveBeenCalled();
+    expect(child.kill).not.toHaveBeenCalled();
+  });
+
   it("escalates a timed-out child from SIGTERM to SIGKILL after one second", async () => {
     vi.useFakeTimers();
 

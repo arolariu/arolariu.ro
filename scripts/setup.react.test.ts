@@ -666,6 +666,9 @@ describe("website environment preparation", () => {
     const result = await harness.phase.run(harness.context);
 
     expect(result.status).toBe("degraded");
+    expect(result.summary).toBe(
+      "React tooling is ready, but Clerk credentials are incomplete or invalid outside keyless local development.",
+    );
     expect(harness.text).not.toHaveBeenCalled();
     expect(harness.secret).not.toHaveBeenCalled();
     expect(filesystem.writes[0]?.content).not.toMatch(/NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=|CLERK_SECRET_KEY=/);

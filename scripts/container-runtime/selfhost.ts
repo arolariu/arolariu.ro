@@ -10,11 +10,10 @@ import {setTimeout as delay} from "node:timers/promises";
 import {fileURLToPath} from "node:url";
 import {MonorepositoryConsoleLogger, type MonorepositoryLogger} from "../common/logger.ts";
 import {resolveRepositoryPaths} from "../common/repository-paths.ts";
-import {readToolingConfig} from "../common/tooling-config.ts";
 import {getContainerAdapter, type ContainerRuntimeAdapter, type RuntimeCommand} from "./adapters.ts";
 import {runArtifactGeneration, runSharedPreflight} from "./preflight.ts";
 import {defaultRunner, formatCommand, type CommandRunner, type CommandRunnerOptions} from "./process.ts";
-import {resolveContainerEngine} from "./selection.ts";
+import {resolveRuntimeContainerEngine} from "./selection.ts";
 import {removeSelfhostTraefikConfig, writeSelfhostTraefikConfig} from "./traefik.ts";
 import {ContainerRuntimeError, exitWithError} from "./types.ts";
 
@@ -280,16 +279,10 @@ export async function runSelfhost(
   logger: MonorepositoryLogger = new MonorepositoryConsoleLogger("container::selfhost"),
 ): Promise<void> {
   const paths = resolveRepositoryPaths();
-  const localConfig = await readToolingConfig(paths.toolingConfig);
-  if (localConfig.status === "invalid") {
-    throw new ContainerRuntimeError(localConfig.error);
-  }
-  const selection = resolveContainerEngine({
+  const selection = await resolveRuntimeContainerEngine({
     argv: process.argv,
     env: process.env,
-    ...(localConfig.status === "valid" && localConfig.config.containerEngine !== undefined
-      ? {configuredEngine: localConfig.config.containerEngine}
-      : {}),
+    toolingConfigPath: paths.toolingConfig,
   });
   const adapter = getContainerAdapter(selection.engine);
   const preflightLogger = logger.child("preflight");

@@ -11,9 +11,11 @@ import {describe, expect, it} from "vitest";
 
 const productionScriptExtensions = new Set([".ts", ".js", ".mjs", ".cjs"]);
 const transitionalEntrypoints = new Set<string>();
+const interactiveTerminalAdapters = new Set(["scripts/common/prompts.ts"]);
 
 type AccessPath = readonly string[];
 type AliasScope = Map<string, AccessPath | null>;
+type OutputExpressionPredicate = (expression: ts.Expression, scopes: readonly AliasScope[]) => boolean;
 
 function discoverProductionScripts(directory: string = "scripts"): readonly string[] {
   const files: string[] = [];
@@ -113,6 +115,53 @@ function readConfigStringArrayProperty(fileName: string, variableName: string, p
   throw new Error(`Unable to locate ${variableName}.${propertyName} in ${fileName}.`);
 }
 
+function readRestrictedSyntaxMessages(fileName: string, variableName: string): readonly string[] {
+  const source = ts.createSourceFile(fileName, readFileSync(fileName, "utf8"), ts.ScriptTarget.Latest, true);
+
+  for (const statement of source.statements) {
+    if (!ts.isVariableStatement(statement)) {
+      continue;
+    }
+
+    for (const declaration of statement.declarationList.declarations) {
+      if (!ts.isIdentifier(declaration.name) || declaration.name.text !== variableName || declaration.initializer === undefined) {
+        continue;
+      }
+
+      const config = getConfigObjectLiteral(declaration.initializer);
+      const rules = config?.properties.find(
+        (property): property is ts.PropertyAssignment =>
+          ts.isPropertyAssignment(property) && ts.isIdentifier(property.name) && property.name.text === "rules",
+      )?.initializer;
+      if (!ts.isObjectLiteralExpression(rules)) {
+        continue;
+      }
+
+      const restriction = rules.properties.find(
+        (property): property is ts.PropertyAssignment =>
+          ts.isPropertyAssignment(property) && ts.isStringLiteral(property.name) && property.name.text === "no-restricted-syntax",
+      )?.initializer;
+      if (!ts.isArrayLiteralExpression(restriction)) {
+        continue;
+      }
+
+      return restriction.elements.flatMap((element) => {
+        if (!ts.isObjectLiteralExpression(element)) {
+          return [];
+        }
+
+        const message = element.properties.find(
+          (property): property is ts.PropertyAssignment =>
+            ts.isPropertyAssignment(property) && ts.isIdentifier(property.name) && property.name.text === "message",
+        )?.initializer;
+        return ts.isStringLiteral(message) ? [message.text] : [];
+      });
+    }
+  }
+
+  throw new Error(`Unable to locate ${variableName}.rules["no-restricted-syntax"] in ${fileName}.`);
+}
+
 function getAccessPath(expression: ts.Expression, scopes: readonly AliasScope[]): AccessPath | null {
   if (
     ts.isParenthesizedExpression(expression)
@@ -163,7 +212,17 @@ function isForbiddenOutputExpression(expression: ts.Expression, scopes: readonly
   return path.length === 3 && path[0] === "process" && (path[1] === "stdout" || path[1] === "stderr") && path[2] === "write";
 }
 
-function findForbiddenOutputCalls(sourceText: string, fileName: string): readonly string[] {
+function isPromptTerminalOutputExpression(expression: ts.Expression, scopes: readonly AliasScope[]): boolean {
+  const path = getAccessPath(expression, scopes);
+  return path !== null && path.length >= 2 && path.at(-2) === "output" && path.at(-1) === "write";
+}
+
+function findOutputCalls(
+  sourceText: string,
+  fileName: string,
+  predicate: OutputExpressionPredicate,
+  trackParameterRoots = false,
+): readonly string[] {
   const source = ts.createSourceFile(fileName, sourceText, ts.ScriptTarget.Latest, true);
   const violations: string[] = [];
 
@@ -201,8 +260,8 @@ function findForbiddenOutputCalls(sourceText: string, fileName: string): readonl
     if (node.name !== undefined && ts.isIdentifier(node.name)) {
       functionScope.set(node.name.text, null);
     }
-    for (const parameter of node.parameters) {
-      declareBindingName(parameter.name, functionScope, null);
+    for (const [index, parameter] of node.parameters.entries()) {
+      declareBindingName(parameter.name, functionScope, trackParameterRoots ? [`<parameter:${index}>`] : null);
     }
 
     const functionScopes = [...scopes, functionScope];
@@ -266,7 +325,7 @@ function findForbiddenOutputCalls(sourceText: string, fileName: string): readonl
       scope.set(node.name.text, null);
     }
 
-    if (ts.isCallExpression(node) && isForbiddenOutputExpression(node.expression, scopes)) {
+    if (ts.isCallExpression(node) && predicate(node.expression, scopes)) {
       const position = source.getLineAndCharacterOfPosition(node.getStart(source));
       violations.push(`${fileName}:${position.line + 1}`);
     }
@@ -275,6 +334,14 @@ function findForbiddenOutputCalls(sourceText: string, fileName: string): readonl
 
   visit(source, []);
   return violations;
+}
+
+function findForbiddenOutputCalls(sourceText: string, fileName: string): readonly string[] {
+  return findOutputCalls(sourceText, fileName, isForbiddenOutputExpression);
+}
+
+function findPromptTerminalOutputCalls(sourceText: string, fileName: string): readonly string[] {
+  return findOutputCalls(sourceText, fileName, isPromptTerminalOutputExpression, true);
 }
 
 describe("direct output policy", () => {
@@ -287,6 +354,18 @@ describe("direct output policy", () => {
 
     expect(ignores).toEqual(expect.arrayContaining([...transitionalEntrypoints]));
     expect(ignores).not.toContain("scripts/setup.ts");
+  });
+
+  it("keeps process restrictions when the prompt ESLint policy is applied later", () => {
+    const outputMessages = readRestrictedSyntaxMessages("eslint.config.ts", "toolingOutputConfig");
+    const promptMessages = readRestrictedSyntaxMessages("eslint.config.ts", "toolingPromptOutputConfig");
+    const promptIgnores = readConfigStringArrayProperty("eslint.config.ts", "toolingPromptOutputConfig", "ignores");
+
+    expect(outputMessages).toHaveLength(1);
+    expect(promptMessages).toEqual(
+      expect.arrayContaining([...outputMessages, "Interactive terminal output is owned exclusively by scripts/common/prompts.ts."]),
+    );
+    expect(promptIgnores).toContain("scripts/common/prompts.ts");
   });
 
   it("inspects executable calls without matching comments or strings", () => {
@@ -335,6 +414,42 @@ describe("direct output policy", () => {
     const violations = discoverProductionScripts()
       .filter((fileName) => !transitionalEntrypoints.has(fileName))
       .flatMap((fileName) => findForbiddenOutputCalls(readFileSync(fileName, "utf8"), fileName));
+
+    expect(violations).toEqual([]);
+  });
+
+  it("reserves injected terminal output writes for the prompt adapter", () => {
+    const source = [
+      "function emit(terminal: {output: {write(message: string): void}}): void {",
+      "  terminal.output.write('question');",
+      "  terminal['output'].write('choice');",
+      "  const outputAlias = terminal.output;",
+      "  outputAlias.write('aliased output');",
+      "  const {write: writeAlias} = terminal.output;",
+      "  writeAlias('destructured write');",
+      "  const directWriteAlias = terminal.output.write;",
+      "  directWriteAlias('aliased write');",
+      "  const {output: destructuredOutput} = terminal;",
+      "  destructuredOutput.write('destructured output');",
+      "}",
+      "function unrelated(outputAlias: {write(message: string): void}): void {",
+      "  outputAlias.write('different receiver');",
+      "}",
+      "const example = \"terminal.output.write('string')\";",
+    ].join("\n");
+
+    expect(findPromptTerminalOutputCalls(source, "fixture.ts")).toEqual([
+      "fixture.ts:2",
+      "fixture.ts:3",
+      "fixture.ts:5",
+      "fixture.ts:7",
+      "fixture.ts:9",
+      "fixture.ts:11",
+    ]);
+
+    const violations = discoverProductionScripts()
+      .filter((fileName) => !interactiveTerminalAdapters.has(fileName))
+      .flatMap((fileName) => findPromptTerminalOutputCalls(readFileSync(fileName, "utf8"), fileName));
 
     expect(violations).toEqual([]);
   });

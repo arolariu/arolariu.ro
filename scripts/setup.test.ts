@@ -186,7 +186,7 @@ describe("createSetupActionExecutor", () => {
     const input = new PassThrough();
     const output = new PassThrough();
     const {logger} = createLogger();
-    const prompts = createTerminalPromptProvider(logger, {
+    const prompts = createTerminalPromptProvider({
       input,
       output,
       isTTY: false,

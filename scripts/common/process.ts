@@ -116,6 +116,15 @@ async function runSpawnedCommand(command: Readonly<CommandSpec>, options: Readon
   }
 
   const startedAt = performance.now();
+  if (options.signal?.aborted === true) {
+    return {
+      code: 1,
+      stdout: "",
+      stderr: "",
+      durationMs: performance.now() - startedAt,
+      timedOut: false,
+    };
+  }
 
   return new Promise<CommandResult>((resolve) => {
     const child = spawn(command.command, [...command.args], {
@@ -129,6 +138,8 @@ async function runSpawnedCommand(command: Readonly<CommandSpec>, options: Readon
     const stderrChunks: Buffer[] = [];
     const stdoutDecoder = new StringDecoder("utf8");
     const stderrDecoder = new StringDecoder("utf8");
+    const stdoutWriter = outputMode === "tee" ? options.logger?.createStreamWriter("stdout") : undefined;
+    const stderrWriter = outputMode === "tee" ? options.logger?.createStreamWriter("stderr") : undefined;
     let timedOut = false;
     let settled = false;
     let timeout: NodeJS.Timeout | undefined;
@@ -155,12 +166,14 @@ async function runSpawnedCommand(command: Readonly<CommandSpec>, options: Readon
       if (outputMode === "tee") {
         const stdoutTail = stdoutDecoder.end();
         if (stdoutTail.length > 0) {
-          options.logger?.write(stdoutTail, "stdout");
+          stdoutWriter?.write(stdoutTail);
         }
+        stdoutWriter?.end();
         const stderrTail = stderrDecoder.end();
         if (stderrTail.length > 0) {
-          options.logger?.write(stderrTail, "stderr");
+          stderrWriter?.write(stderrTail);
         }
+        stderrWriter?.end();
       }
 
       const result: CommandResult = {
@@ -207,7 +220,7 @@ async function runSpawnedCommand(command: Readonly<CommandSpec>, options: Readon
       if (outputMode === "tee") {
         const chunk = stdoutDecoder.write(data);
         if (chunk.length > 0) {
-          options.logger?.write(chunk, "stdout");
+          stdoutWriter?.write(chunk);
         }
       }
     });
@@ -217,7 +230,7 @@ async function runSpawnedCommand(command: Readonly<CommandSpec>, options: Readon
       if (outputMode === "tee") {
         const chunk = stderrDecoder.write(data);
         if (chunk.length > 0) {
-          options.logger?.write(chunk, "stderr");
+          stderrWriter?.write(chunk);
         }
       }
     });

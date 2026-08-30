@@ -533,7 +533,7 @@ function copyEnvFileToSubRepos(sourcePath: string, targetPaths: string[], verbos
 export async function main(
   verbose: boolean = false,
   logger: MonorepositoryLogger = new MonorepositoryConsoleLogger("generate::env", {verbose: verbose || isVerboseMode}),
-  prompts: PromptProvider = createTerminalPromptProvider(logger),
+  prompts: PromptProvider = createTerminalPromptProvider(),
 ): Promise<number> {
   const effectiveVerbose = verbose || isVerboseMode;
   logger.line([{text: "🔧 Configuration:", styles: ["cyan"]}]);

@@ -5,9 +5,8 @@
  */
 
 import {PassThrough} from "node:stream";
-import {describe, expect, it, vi} from "vitest";
+import {describe, expect, it} from "vitest";
 
-import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "./logger.ts";
 import {createTerminalPromptProvider, type PromptTerminal} from "./prompts.ts";
 
 interface TestTerminal {
@@ -39,18 +38,6 @@ function createTestTerminal(isTTY: boolean = true): TestTerminal {
   };
 }
 
-function createLogger(): Readonly<{
-  logger: MonorepositoryConsoleLogger;
-  sink: InMemoryLoggerSink;
-}> {
-  const sink = new InMemoryLoggerSink();
-  const logger = new MonorepositoryConsoleLogger("setup", {
-    color: false,
-    sink,
-  });
-  return {logger, sink};
-}
-
 describe("createTerminalPromptProvider", () => {
   it.each([
     {input: "\n", defaultValue: true, expected: true},
@@ -59,19 +46,18 @@ describe("createTerminalPromptProvider", () => {
     {input: "n\n", defaultValue: true, expected: false},
   ])("parses confirm input '$input' with default $defaultValue", async ({input, defaultValue, expected}) => {
     const testTerminal = createTestTerminal();
-    const {logger} = createLogger();
-    const prompts = createTerminalPromptProvider(logger, testTerminal.terminal);
+    const prompts = createTerminalPromptProvider(testTerminal.terminal);
 
     const answer = prompts.confirm("Continue?", defaultValue);
     testTerminal.input.write(input);
 
     await expect(answer).resolves.toBe(expected);
+    expect(testTerminal.outputText()).toContain("Continue?");
   });
 
   it("reprompts after an invalid selection and returns the selected value", async () => {
     const testTerminal = createTestTerminal();
-    const {logger} = createLogger();
-    const prompts = createTerminalPromptProvider(logger, testTerminal.terminal);
+    const prompts = createTerminalPromptProvider(testTerminal.terminal);
 
     const answer = prompts.select(
       "Choose an engine",
@@ -89,35 +75,31 @@ describe("createTerminalPromptProvider", () => {
 
   it("returns text entered through the injected terminal", async () => {
     const testTerminal = createTestTerminal();
-    const {logger} = createLogger();
-    const prompts = createTerminalPromptProvider(logger, testTerminal.terminal);
+    const prompts = createTerminalPromptProvider(testTerminal.terminal);
 
     const answer = prompts.text("Display name");
     testTerminal.input.write("Alice Example\n");
 
     await expect(answer).resolves.toBe("Alice Example");
+    expect(testTerminal.outputText()).toContain("Display name:");
   });
 
-  it("reads secrets in raw mode without echoing typed characters or passing them to the logger", async () => {
+  it("reads secrets in raw mode without echoing typed characters", async () => {
     const testTerminal = createTestTerminal();
-    const {logger, sink} = createLogger();
-    const redact = vi.spyOn(logger, "redact");
-    const prompts = createTerminalPromptProvider(logger, testTerminal.terminal);
+    const prompts = createTerminalPromptProvider(testTerminal.terminal);
 
     const answer = prompts.secret("Token");
     testTerminal.input.write("secrex\u007ft\r");
 
     await expect(answer).resolves.toBe("secret");
     expect(testTerminal.rawModes).toEqual([true, false]);
+    expect(testTerminal.outputText()).toContain("Token: ");
     expect(testTerminal.outputText()).not.toContain("secret");
-    expect(sink.records.every((record) => !record.text.includes("secret"))).toBe(true);
-    expect(redact).not.toHaveBeenCalled();
   });
 
   it("handles Ctrl+C during a secret prompt and restores terminal mode", async () => {
     const testTerminal = createTestTerminal();
-    const {logger} = createLogger();
-    const prompts = createTerminalPromptProvider(logger, testTerminal.terminal);
+    const prompts = createTerminalPromptProvider(testTerminal.terminal);
 
     const answer = prompts.secret("Token");
     testTerminal.input.write("partial\u0003");
@@ -130,8 +112,7 @@ describe("createTerminalPromptProvider", () => {
 
   it("rejects end-of-stream during a secret prompt and restores terminal mode", async () => {
     const testTerminal = createTestTerminal();
-    const {logger} = createLogger();
-    const prompts = createTerminalPromptProvider(logger, testTerminal.terminal);
+    const prompts = createTerminalPromptProvider(testTerminal.terminal);
 
     const answer = prompts.secret("Token");
     testTerminal.input.end("partial");
@@ -142,8 +123,7 @@ describe("createTerminalPromptProvider", () => {
 
   it("rejects a closed secret-input stream and restores terminal mode", async () => {
     const testTerminal = createTestTerminal();
-    const {logger} = createLogger();
-    const prompts = createTerminalPromptProvider(logger, testTerminal.terminal);
+    const prompts = createTerminalPromptProvider(testTerminal.terminal);
 
     const answer = prompts.secret("Token");
     testTerminal.input.emit("close");
@@ -177,8 +157,7 @@ describe("createTerminalPromptProvider", () => {
         return originalWrite(chunk);
       },
     });
-    const {logger} = createLogger();
-    const prompts = createTerminalPromptProvider(logger, testTerminal.terminal);
+    const prompts = createTerminalPromptProvider(testTerminal.terminal);
 
     const answer = prompts.secret("Token");
 
@@ -206,8 +185,7 @@ describe("createTerminalPromptProvider", () => {
         return originalWrite(chunk);
       },
     });
-    const {logger} = createLogger();
-    const prompts = createTerminalPromptProvider(logger, testTerminal.terminal);
+    const prompts = createTerminalPromptProvider(testTerminal.terminal);
 
     const answer = prompts.secret("Token");
     testTerminal.input.write("partial\u0003");
@@ -232,8 +210,7 @@ describe("createTerminalPromptProvider", () => {
         return originalWrite(chunk);
       },
     });
-    const {logger} = createLogger();
-    const prompts = createTerminalPromptProvider(logger, testTerminal.terminal);
+    const prompts = createTerminalPromptProvider(testTerminal.terminal);
 
     await expect(prompts.secret("Token")).rejects.toThrow("Prompt output unavailable.");
     expect(writeCount).toBe(2);
@@ -258,8 +235,7 @@ describe("createTerminalPromptProvider", () => {
         return testTerminal.input;
       },
     });
-    const {logger} = createLogger();
-    const prompts = createTerminalPromptProvider(logger, testTerminal.terminal);
+    const prompts = createTerminalPromptProvider(testTerminal.terminal);
 
     const answer = prompts.secret("Token");
 
@@ -281,8 +257,7 @@ describe("createTerminalPromptProvider", () => {
 
   it("closes the readline interface after cancellation", async () => {
     const testTerminal = createTestTerminal();
-    const {logger} = createLogger();
-    const prompts = createTerminalPromptProvider(logger, testTerminal.terminal);
+    const prompts = createTerminalPromptProvider(testTerminal.terminal);
 
     const answer = prompts.confirm("Continue?", false);
     testTerminal.input.write("\u0003");
@@ -294,18 +269,17 @@ describe("createTerminalPromptProvider", () => {
 
   it("rejects non-interactive secret prompting with actionable guidance", async () => {
     const testTerminal = createTestTerminal(false);
-    const {logger} = createLogger();
-    const prompts = createTerminalPromptProvider(logger, testTerminal.terminal);
+    const prompts = createTerminalPromptProvider(testTerminal.terminal);
 
     await expect(prompts.secret("Token")).rejects.toThrow(/interactive terminal/i);
     expect(testTerminal.rawModes).toEqual([]);
+    expect(testTerminal.outputText()).toBe("");
   });
 
   it("rejects secret prompting when the TTY cannot disable echo", async () => {
     const input = new PassThrough();
     const output = new PassThrough();
-    const {logger} = createLogger();
-    const prompts = createTerminalPromptProvider(logger, {
+    const prompts = createTerminalPromptProvider({
       input,
       output,
       isTTY: true,

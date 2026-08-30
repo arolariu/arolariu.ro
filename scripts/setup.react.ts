@@ -741,9 +741,9 @@ async function runReactSetup(context: SetupContext, dependencies: ReactSetupDepe
       return phaseResult(context, startedAt, {
         id: "react",
         status: "degraded",
-        summary: "React tooling is ready, but Clerk-authenticated website features remain unavailable.",
+        summary: "React tooling is ready, but Clerk credentials are incomplete or invalid outside keyless local development.",
         evidence,
-        nextActions: ["Provide valid mode-compatible Clerk credentials and rerun setup."],
+        nextActions: ["Provide a valid mode-compatible Clerk credential pair for CI, production, or authenticated local development."],
       });
     }
 

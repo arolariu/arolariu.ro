@@ -32,10 +32,16 @@ registry. Do not place secret values in command echoes or other manually formatt
 
 ## Output-policy exemptions
 
-The permanent production exemption is the logger sink implementation in [`common/logger.ts`](./common/logger.ts), which owns the direct
-console and process-stream writes used by every migrated script. It is the only exemption:
-[`output-policy.test.ts`](./common/output-policy.test.ts)'s AST guard and the root ESLint configuration's `toolingOutputConfig.ignores`
-list only ever contain this sink, never a script entry point.
+The logger sink implementation in [`common/logger.ts`](./common/logger.ts) is the sole owner of semantic and non-interactive presentation
+output. The interactive terminal-protocol adapter in [`common/prompts.ts`](./common/prompts.ts) is a separate narrow exemption because
+readline, visible input echo, cursor state, validation feedback, and non-echoing secret entry must share one writable terminal stream.
+That adapter may emit only prompt labels, questions, choices, validation feedback, and terminal-control newlines; lifecycle diagnostics and
+submitted secret values remain forbidden there.
+
+[`output-policy.test.ts`](./common/output-policy.test.ts)'s AST guards enforce both boundaries, including property, direct-function, and
+destructured aliases. The root ESLint configuration provides immediate feedback for direct syntax. Direct console/process-stream output
+stays confined to the logger sink, while injected `output.write(...)` prompt presentation stays confined to the prompt adapter. Neither
+exemption includes a script entry point.
 
 Every production script under root `scripts/**` — including [`setup.ts`](./setup.ts), [`doctor.ts`](./doctor.ts), and
 [`status.ts`](./status.ts) — routes its presentation and semantic output through `MonorepositoryConsoleLogger`. There are no remaining

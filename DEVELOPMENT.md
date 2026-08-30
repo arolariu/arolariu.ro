@@ -412,8 +412,8 @@ unconditionally** — treat it as a manual, destructive regeneration command, no
 |----------|---------|-------------|
 | `SITE_ENV` | Website | `DEVELOPMENT` or `PRODUCTION` |
 | `SITE_URL` | Website | `https://localhost:3000` locally |
-| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Website | Optional Clerk publishable key (get a matching test/live pair from [clerk.com](https://clerk.com)) |
-| `CLERK_SECRET_KEY` | Website | Optional Clerk secret key — without a valid, mode-matched pair, authenticated website features stay degraded, but `npm run setup` still exits `0` |
+| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Website | Clerk publishable key from a matching test/live pair. Both keys may be absent only for ordinary non-CI `next dev`, where Clerk can use keyless development. |
+| `CLERK_SECRET_KEY` | Website | Matching Clerk secret key. CI, production, and explicitly configured Clerk runtimes require the complete valid pair; `npm run setup` still exits `0` with a degraded React phase when it is not ready. |
 | `ASPNETCORE_ENVIRONMENT` | API | `Development` |
 
 > **Warning:** `npm run generate:env` unconditionally rewrites the root `.env` and overwrites `sites/arolariu.ro/.env` — it is a manual,

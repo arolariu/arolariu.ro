@@ -272,8 +272,10 @@ interpreter, HTTPS-trust, Playwright Linux system-dependency, mkcert, and contai
 it never invents an engine choice, prompted text, or a secret), and `npm run setup -- --engine rancher|podman` (select the engine
 explicitly).
 
-Website authentication ([Clerk](https://clerk.com)) is optional: without a valid, mode-matched publishable/secret key pair, `npm run
-setup` still exits `0` and reports authenticated website capability as degraded.
+Clerk credentials are optional for `npm run setup`, not universally optional at runtime. When both keys are absent, ordinary non-CI
+`next dev` can use Clerk's keyless development mode. The repository has no auth-disabled runtime path: CI, production, and any explicitly
+configured Clerk state require a valid, mode-matched publishable/secret key pair, and partial or invalid pairs are unsupported. Setup still
+exits `0` with a degraded React phase when that pair is not ready.
 
 Running `npm run dev:selfhost`? Export `MSSQL_SA_PASSWORD` in your shell/session first — required only when selfhost starts its SQL
 bootstrap, never stored in `.env` or `.arolariu/tooling.local.json`. `npm run setup`'s infrastructure phase strips it from the

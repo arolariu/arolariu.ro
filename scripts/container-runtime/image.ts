@@ -7,12 +7,11 @@ import {resolve} from "node:path";
 import {fileURLToPath} from "node:url";
 import {MonorepositoryConsoleLogger, type MonorepositoryLogger} from "../common/logger.ts";
 import {resolveRepositoryPaths} from "../common/repository-paths.ts";
-import {readToolingConfig} from "../common/tooling-config.ts";
 import {getContainerAdapter, type ContainerRuntimeAdapter, type RuntimeCommand} from "./adapters.ts";
 import {runArtifactGeneration, runSharedPreflight} from "./preflight.ts";
 import {defaultRunner, formatCommand, type CommandRunner} from "./process.ts";
-import {resolveContainerEngine} from "./selection.ts";
-import {ContainerRuntimeError, exitWithError} from "./types.ts";
+import {resolveRuntimeContainerEngine} from "./selection.ts";
+import {exitWithError} from "./types.ts";
 
 type ImageTarget = "frontend" | "backend" | "cv" | "exp";
 
@@ -107,16 +106,10 @@ export async function runImageCli(
   logger: MonorepositoryLogger = new MonorepositoryConsoleLogger("container::image"),
 ): Promise<void> {
   const paths = resolveRepositoryPaths();
-  const localConfig = await readToolingConfig(paths.toolingConfig);
-  if (localConfig.status === "invalid") {
-    throw new ContainerRuntimeError(localConfig.error);
-  }
-  const selection = resolveContainerEngine({
+  const selection = await resolveRuntimeContainerEngine({
     argv: process.argv,
     env: process.env,
-    ...(localConfig.status === "valid" && localConfig.config.containerEngine !== undefined
-      ? {configuredEngine: localConfig.config.containerEngine}
-      : {}),
+    toolingConfigPath: paths.toolingConfig,
   });
   const adapter = getContainerAdapter(selection.engine);
   const preflightLogger = logger.child("preflight");

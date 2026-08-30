@@ -40,6 +40,14 @@ export interface LoggerSink {
   readonly write: (stream: LoggerStream, text: string) => void;
 }
 
+/** Redacts and forwards one logical stream across arbitrary chunk boundaries. */
+export interface LoggerStreamWriter {
+  /** Writes the next decoded stream chunk. */
+  readonly write: (chunk: string) => void;
+  /** Flushes the final buffered stream tail. */
+  readonly end: () => void;
+}
+
 /** Configures a monorepository console logger. */
 export interface LoggerOptions {
   /** Output mode. */
@@ -196,6 +204,9 @@ export abstract class MonorepositoryLogger {
   /** Writes an incomplete or raw human-oriented output chunk. */
   public abstract write(segments: string | readonly LogSegment[], stream?: LoggerStream): void;
 
+  /** Creates a stateful raw writer that preserves redaction across chunk boundaries. */
+  public abstract createStreamWriter(stream?: LoggerStream): LoggerStreamWriter;
+
   /** Writes a visually separated section heading. */
   public abstract section(title: string, icon?: string): void;
 
@@ -339,6 +350,45 @@ export class MonorepositoryConsoleLogger extends MonorepositoryLogger {
 
     this.prepareForOutput();
     this.writeToSink(stream, this.render(segments), true);
+  }
+
+  /** {@inheritDoc MonorepositoryLogger.createStreamWriter} */
+  public override createStreamWriter(stream: LoggerStream = "stdout"): LoggerStreamWriter {
+    let pending = "";
+    let ended = false;
+
+    const emit = (text: string): void => {
+      if (text === "" || this.#state.mode === "json") {
+        return;
+      }
+      this.prepareForOutput();
+      this.writeToSink(stream, text, true);
+    };
+
+    return {
+      write: (chunk) => {
+        if (ended || chunk === "") {
+          return;
+        }
+
+        pending += chunk;
+        const boundary = this.findStreamingRedactionBoundary(pending);
+        if (boundary === 0) {
+          return;
+        }
+
+        emit(pending.slice(0, boundary));
+        pending = pending.slice(boundary);
+      },
+      end: () => {
+        if (ended) {
+          return;
+        }
+        ended = true;
+        emit(pending);
+        pending = "";
+      },
+    };
   }
 
   /** {@inheritDoc MonorepositoryLogger.section} */
@@ -613,6 +663,54 @@ export class MonorepositoryConsoleLogger extends MonorepositoryLogger {
     }
 
     this.#state.sink.line(stream, redacted);
+  }
+
+  /**
+   * Finds a prefix that can be emitted without splitting a registered redaction.
+   *
+   * @param text - Buffered decoded stream text.
+   * @returns Exclusive boundary of text safe to redact and emit immediately.
+   */
+  private findStreamingRedactionBoundary(text: string): number {
+    const redactions = [...this.#state.redactions];
+    if (redactions.length === 0) {
+      return text.length;
+    }
+
+    const maximumLength = Math.max(...redactions.map((value) => value.length));
+    let boundary = Math.max(0, text.length - maximumLength + 1);
+    let changed = true;
+
+    while (changed) {
+      changed = false;
+      for (const value of redactions) {
+        let matchIndex = text.indexOf(value, Math.max(0, boundary - value.length + 1));
+        while (matchIndex !== -1 && matchIndex < boundary) {
+          if (matchIndex + value.length > boundary) {
+            boundary = matchIndex;
+            changed = true;
+            break;
+          }
+          matchIndex = text.indexOf(value, matchIndex + 1);
+        }
+      }
+
+      const precedingCodeUnit = boundary === 0 ? undefined : text.charCodeAt(boundary - 1);
+      const followingCodeUnit = boundary === text.length ? undefined : text.charCodeAt(boundary);
+      if (
+        precedingCodeUnit !== undefined
+        && followingCodeUnit !== undefined
+        && precedingCodeUnit >= 0xd800
+        && precedingCodeUnit <= 0xdbff
+        && followingCodeUnit >= 0xdc00
+        && followingCodeUnit <= 0xdfff
+      ) {
+        boundary--;
+        changed = true;
+      }
+    }
+
+    return boundary;
   }
 
   /**

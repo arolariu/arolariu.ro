@@ -348,7 +348,7 @@ export async function runSetup(
   }>
 > {
   const logger = dependencies.logger ?? new MonorepositoryConsoleLogger("setup", {verbose: options.verbose});
-  const prompts = dependencies.prompts ?? createTerminalPromptProvider(logger);
+  const prompts = dependencies.prompts ?? createTerminalPromptProvider();
   const runner = dependencies.runner ?? defaultCommandRunner;
   const now = dependencies.now ?? ((): number => performance.now());
   const resolvePaths = dependencies.resolveRepositoryPaths ?? ((): RepositoryPaths => resolveRepositoryPaths());

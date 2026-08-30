@@ -24,6 +24,19 @@ const requiredDotnet: MinimumVersion = {major: 10, minor: 0, patch: 0};
 const paths = createRepositoryPaths(resolve("C:\\fixture\\arolariu.ro"));
 const appHostProject = resolve(paths.root, "tooling", "AppHost", "AppHost.csproj");
 const appHostSettings = resolve(paths.root, "tooling", "AppHost", "appsettings.Development.json");
+const sqlSecretKey = "Parameters:sql-password";
+const redisSecretKey = "Parameters:redis-password";
+
+function userSecretsJson(sql: string | undefined, redis: string | undefined): string {
+  return JSON.stringify({
+    ...(sql === undefined ? {} : {[sqlSecretKey]: sql}),
+    ...(redis === undefined ? {} : {[redisSecretKey]: redis}),
+  });
+}
+
+function expectedPasswordForRepeatedByte(byte: number): string {
+  return `Aa1!${Buffer.alloc(24, byte).toString("base64url")}`;
+}
 
 function commandResult(patch: Partial<CommandResult> = {}): CommandResult {
   return {
@@ -294,11 +307,13 @@ describe("dotnet setup public contract", () => {
 
 describe("generateLocalDevelopmentPassword", () => {
   it("requests exactly 24 bytes and emits an unpadded base64url password", () => {
-    const source = vi.fn<(size: number) => Uint8Array>().mockReturnValue(Uint8Array.from({length: 24}, (_, index) => index + 240));
+    const bytes = Uint8Array.from({length: 24}, (_, index) => index + 240);
+    const source = vi.fn<(size: number) => Uint8Array>().mockReturnValue(bytes);
 
     const password = generateLocalDevelopmentPassword(source);
 
     expect(source).toHaveBeenCalledExactlyOnceWith(24);
+    expect(password).toBe(`Aa1!${Buffer.from(bytes).toString("base64url")}`);
     expect(password).toMatch(/^Aa1![A-Za-z0-9_-]{32}$/);
     expect(password).not.toMatch(/[+/=]/);
   });
@@ -536,7 +551,7 @@ describe("AppHost configuration and user secrets", () => {
       '//BEGIN\n{"Parameters:sql-password":"wrapped-sql","Parameters:redis-password":"wrapped-redis"}\n//END\n',
       ["wrapped-sql", "wrapped-redis"],
     ],
-    ["plain", '{"Parameters:sql-password":"plain-sql","Parameters:redis-password":"plain-redis"}', ["plain-sql", "plain-redis"]],
+    ["plain", userSecretsJson("plain-sql", "plain-redis"), ["plain-sql", "plain-redis"]],
   ])("accepts $0 JSON and immediately redacts discovered values", async (_name, stdout, secrets) => {
     const harness = createHarness({responses: {[commandKeys.secrets]: commandResult({stdout})}});
 
@@ -581,16 +596,15 @@ describe("AppHost configuration and user secrets", () => {
       .fn<(size: number) => Uint8Array>()
       .mockReturnValueOnce(new Uint8Array(24).fill(1))
       .mockReturnValueOnce(new Uint8Array(24).fill(2));
+    const sqlPassword = expectedPasswordForRepeatedByte(1);
+    const redisPassword = expectedPasswordForRepeatedByte(2);
     const setKey = commandKey({command: "dotnet", args: ["user-secrets", "set", "--project", appHostProject]});
     const harness = createHarness({
       randomBytes: random,
       responses: {
         [commandKeys.secrets]: [
           commandResult({stdout: "{}"}),
-          commandResult({
-            stdout:
-              '{"Parameters:sql-password":"Aa1!AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEB","Parameters:redis-password":"Aa1!AgICAgICAgICAgICAgICAgICAgICAgIC"}',
-          }),
+          commandResult({stdout: userSecretsJson(sqlPassword, redisPassword)}),
         ],
         [setKey]: commandResult(),
       },
@@ -604,9 +618,10 @@ describe("AppHost configuration and user secrets", () => {
     expect(harness.actionRecords.find(({id}) => id === "dotnet.user-secrets.set")?.scope).toBe("user");
     const setCall = harness.run.mock.calls.find(([command]) => commandKey(command) === setKey);
     expect(setCall?.[0].args).toEqual(["user-secrets", "set", "--project", appHostProject]);
+    expect(sqlPassword).not.toBe(redisPassword);
     expect(JSON.parse(String(setCall?.[1]?.input))).toEqual({
-      "Parameters:sql-password": "Aa1!AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEB",
-      "Parameters:redis-password": "Aa1!AgICAgICAgICAgICAgICAgICAgICAgIC",
+      [sqlSecretKey]: sqlPassword,
+      [redisSecretKey]: redisPassword,
     });
     const secretValues = Object.values(JSON.parse(String(setCall?.[1]?.input)) as Readonly<Record<string, string>>);
     const retained = JSON.stringify({
@@ -623,14 +638,13 @@ describe("AppHost configuration and user secrets", () => {
 
   it("sets only the independently missing secret key", async () => {
     const random = vi.fn<(size: number) => Uint8Array>().mockReturnValue(new Uint8Array(24).fill(3));
+    const redisPassword = expectedPasswordForRepeatedByte(3);
     const harness = createHarness({
       randomBytes: random,
       responses: {
         [commandKeys.secrets]: [
           commandResult({stdout: '{"Parameters:sql-password":"existing-sql"}'}),
-          commandResult({
-            stdout: '{"Parameters:sql-password":"existing-sql","Parameters:redis-password":"Aa1!AwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMD"}',
-          }),
+          commandResult({stdout: userSecretsJson("existing-sql", redisPassword)}),
         ],
       },
     });
@@ -643,14 +657,13 @@ describe("AppHost configuration and user secrets", () => {
 
   it("replaces a whitespace-only required secret without registering whitespace as a redaction", async () => {
     const random = vi.fn<(size: number) => Uint8Array>().mockReturnValue(new Uint8Array(24).fill(3));
+    const sqlPassword = expectedPasswordForRepeatedByte(3);
     const harness = createHarness({
       randomBytes: random,
       responses: {
         [commandKeys.secrets]: [
           commandResult({stdout: '{"Parameters:sql-password":"   ","Parameters:redis-password":"existing-redis"}'}),
-          commandResult({
-            stdout: '{"Parameters:sql-password":"Aa1!AwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMD","Parameters:redis-password":"existing-redis"}',
-          }),
+          commandResult({stdout: userSecretsJson(sqlPassword, "existing-redis")}),
         ],
       },
     });
@@ -665,7 +678,7 @@ describe("AppHost configuration and user secrets", () => {
   });
 
   it("fails post-set verification and sanitizes known values from child errors", async () => {
-    const generated = "Aa1!BAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQE";
+    const generated = expectedPasswordForRepeatedByte(4);
     const harness = createHarness({
       randomBytes: () => new Uint8Array(24).fill(4),
       responses: {

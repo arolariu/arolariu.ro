@@ -2,10 +2,8 @@
  * @fileoverview Terminal-backed prompt contracts for setup workflows.
  * @module scripts.common.prompts
  */
-
 import {createInterface} from "node:readline";
 import {StringDecoder} from "node:string_decoder";
-import type {MonorepositoryLogger} from "./logger.ts";
 
 /** One selectable prompt value and its human-readable label. */
 export interface PromptChoice<TValue extends string> {
@@ -256,16 +254,16 @@ function readSecret(terminal: PromptTerminal, message: string): Promise<string> 
 /**
  * Creates prompt operations over injected or process terminal streams.
  *
- * @param logger - Active setup logger. Secret values are never passed to it.
  * @param terminal - Optional terminal streams and raw-mode control.
  * @returns Prompt provider suitable for setup orchestration.
+ *
+ * @remarks
+ * This adapter exclusively owns interactive terminal protocol output:
+ * questions, choices, validation feedback, cursor/echo behavior, and secret
+ * prompt labels. It never writes submitted secret values or lifecycle
+ * diagnostics.
  */
-export function createTerminalPromptProvider(
-  logger: MonorepositoryLogger,
-  terminal: PromptTerminal = createProcessTerminal(),
-): PromptProvider {
-  void logger;
-
+export function createTerminalPromptProvider(terminal: PromptTerminal = createProcessTerminal()): PromptProvider {
   return {
     confirm: async (message, defaultValue) => {
       if (!terminal.isTTY) {

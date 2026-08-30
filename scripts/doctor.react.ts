@@ -574,14 +574,16 @@ async function diagnoseEnvironment(context: Readonly<DoctorContext>): Promise<Di
   }
 
   if (diagnosis.missingAuthenticationKeys.length === 2) {
+    const keylessDevelopmentSummary =
+      "Both Clerk credentials are absent; ordinary non-CI Next.js development may use Clerk keyless mode.";
     return issueDiagnostic(context, startedAt, {
       id: "react.environment",
       name: "React environment",
       status: "warn",
-      summary: "Both Clerk credentials are absent; authenticated website features are degraded.",
+      summary: keylessDevelopmentSummary,
       evidence: diagnosis.missingAuthenticationKeys.map((key) => `${key}: absent`),
-      rootCause: "Both Clerk credentials are absent; authenticated website features are degraded.",
-      fixes: [{description: "Configure both Clerk keys in sites/arolariu.ro/.env for authenticated local development."}],
+      rootCause: keylessDevelopmentSummary,
+      fixes: [{description: "Configure both Clerk keys for CI, production, or authenticated local development."}],
     });
   }
 
