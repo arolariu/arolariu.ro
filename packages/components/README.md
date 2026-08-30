@@ -14,8 +14,8 @@
 
 **Modern • Accessible • Production Ready**
 
-_A comprehensive collection of React components built on [Base UI](https://base-ui.com/) primitives, styled with CSS
-Modules, and designed for modern applications that demand both beauty and performance._
+_A comprehensive collection of React components built on [Base UI](https://base-ui.com/) primitives, styled with CSS Modules, and designed
+for modern applications that demand both beauty and performance._
 
 [🚀 Get Started](#-quick-start) • [📖 Documentation](#-component-catalog) • 🎨 Storybook demos (Coming soon) •
 [💡 Examples](#-usage-examples) • [🤝 Contributing](#-contributing)
@@ -119,8 +119,7 @@ import {Button, Card} from "@arolariu/components";
 
 ## 📖 Component Catalog
 
-Explore representative components below. The live public inventory is owned by
-`src/index.ts`, package exports, and `src/components/ui/`.
+Explore representative components below. The live public inventory is owned by `src/index.ts`, package exports, and `src/components/ui/`.
 
 ### 🎨 Layout & Structure
 
@@ -212,8 +211,7 @@ Explore representative components below. The live public inventory is owned by
 - `@radix-ui/*` has been replaced internally with `@base-ui/react`; this is automatic and does not require consumer changes.
 - `tailwindcss` is no longer a peer dependency.
 - `asChild` still works for backward compatibility, but the `render` prop is now the preferred composition API.
-- The former `sonner` wrapper is removed; use the current
-  `@arolariu/components/toast` surface.
+- The former `sonner` wrapper is removed; use the current `@arolariu/components/toast` surface.
 - If you previously used `badgeVariants` or `buttonVariants`, migrate to component props such as `variant` and `size` instead.
 - CSS custom properties now use the `--ac-*` prefix.
 
@@ -229,8 +227,8 @@ Explore representative components below. The live public inventory is owned by
 
 ### Styling
 
-- Components that own visual presentation use a colocated **CSS Module** such
-  as `button.module.css`; style-free composition primitives may omit one
+- Components that own visual presentation use a colocated **CSS Module** such as `button.module.css`; style-free composition primitives may
+  omit one
 - `className` remains the public extension point for consumer overrides
 - Base UI state attributes such as `[data-open]`, `[data-disabled]`, `[data-checked]`, and `[data-selected]` drive stateful styling
 - `cn()` now uses **`clsx` only** for predictable class composition
@@ -632,9 +630,7 @@ Core runtime dependencies include:
 - **lucide-react** - Icon set
 - **motion** - Animation library
 - **react-hook-form** and **recharts** - Form and chart peer integrations
-- **embla-carousel-react**, **react-day-picker**, **input-otp**, and
-  **react-resizable-panels** - Specialized UI
-  integrations
+- **embla-carousel-react**, **react-day-picker**, **input-otp**, and **react-resizable-panels** - Specialized UI integrations
 
 Removed from the current Base UI architecture:
 

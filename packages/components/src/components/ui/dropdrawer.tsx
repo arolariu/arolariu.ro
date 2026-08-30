@@ -296,11 +296,9 @@ function DropdownMenuSubContent(
 
 type DropDrawerRootProps = React.ComponentProps<typeof Drawer> | React.ComponentProps<typeof DropdownMenu>;
 type DropDrawerTriggerProps =
-  | React.ComponentPropsWithoutRef<typeof DrawerTrigger>
-  | React.ComponentPropsWithoutRef<typeof DropdownMenuTrigger>;
+  React.ComponentPropsWithoutRef<typeof DrawerTrigger> | React.ComponentPropsWithoutRef<typeof DropdownMenuTrigger>;
 type DropDrawerContentProps =
-  | React.ComponentPropsWithoutRef<typeof DrawerContent>
-  | React.ComponentPropsWithoutRef<typeof DropdownMenuContent>;
+  React.ComponentPropsWithoutRef<typeof DrawerContent> | React.ComponentPropsWithoutRef<typeof DropdownMenuContent>;
 
 interface MobileSubmenuDataAttributes {
   "data-parent-submenu-id"?: string;

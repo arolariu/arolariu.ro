@@ -55,10 +55,7 @@ class ContainerClient {
 export class BlobServiceClient {
   public readonly accountName = "storybook";
 
-  public constructor(
-    _storageEndpoint = "https://storybook.invalid",
-    _credential?: unknown,
-  ) {}
+  public constructor(_storageEndpoint = "https://storybook.invalid", _credential?: unknown) {}
 
   public static fromConnectionString(): BlobServiceClient {
     return new BlobServiceClient();

@@ -181,13 +181,10 @@ describe("useDialog", () => {
 
   test("keeps open stable across rerenders while dispatching the latest payload", () => {
     const updatedInvoice = {...mockInvoice, name: "Updated invoice"};
-    const {result, rerender} = renderHook(
-      ({invoice}) => useDialog("SHARED__INVOICE_SHARE", "edit", {invoice}),
-      {
-        wrapper,
-        initialProps: {invoice: mockInvoice},
-      },
-    );
+    const {result, rerender} = renderHook(({invoice}) => useDialog("SHARED__INVOICE_SHARE", "edit", {invoice}), {
+      wrapper,
+      initialProps: {invoice: mockInvoice},
+    });
     const initialOpen = result.current.open;
 
     rerender({invoice: updatedInvoice});

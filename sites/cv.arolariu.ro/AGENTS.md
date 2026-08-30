@@ -1,7 +1,6 @@
 # CV Local Guide
 
-The CV is a standalone, static-first SvelteKit site deployed to Azure Static
-Web Apps.
+The CV is a standalone, static-first SvelteKit site deployed to Azure Static Web Apps.
 
 ## Boundaries
 

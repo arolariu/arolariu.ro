@@ -6,15 +6,9 @@
  */
 
 import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
-import {
-  searchTaxonomyCatalog,
-  TaxonomySearchValidationError,
-} from "@/lib/taxonomies/taxonomyCatalog.server";
+import {searchTaxonomyCatalog, TaxonomySearchValidationError} from "@/lib/taxonomies/taxonomyCatalog.server";
 import {createErrorResult, type ServerActionResult} from "@/lib/utils.server";
-import {
-  isSearchClassificationsInput,
-  type ClassificationSearchResult,
-} from "@/types/invoices";
+import {isSearchClassificationsInput, type ClassificationSearchResult} from "@/types/invoices";
 
 type SearchClassificationsResult = ServerActionResult<readonly ClassificationSearchResult[]>;
 

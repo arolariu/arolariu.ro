@@ -1,4 +1,5 @@
 namespace arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
+
 using System.Text.Json.Serialization;
 
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Allergens;

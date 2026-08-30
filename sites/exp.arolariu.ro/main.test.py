@@ -141,8 +141,9 @@ class TestHealthFailureCounterMiddleware:
     def test_records_counter_on_readiness_failure(self, client: TestClient) -> None:
         """A 503 from /api/ready must record exactly one check=config measurement."""
 
-        with patch("main.record_health_failure_metric") as recorder, patch(
-            "api.health.get_config", side_effect=RuntimeError("config unavailable")
+        with (
+            patch("main.record_health_failure_metric") as recorder,
+            patch("api.health.get_config", side_effect=RuntimeError("config unavailable")),
         ):
             response = client.get("/api/ready")
 
@@ -170,8 +171,9 @@ class TestHealthFailureCounterMiddleware:
     def test_records_nothing_for_non_health_route(self, client: TestClient) -> None:
         """A 5xx on a normal route must not be attributed to the health counter."""
 
-        with patch("main.record_health_failure_metric") as recorder, patch(
-            "api.config.get_config", side_effect=RuntimeError("boom")
+        with (
+            patch("main.record_health_failure_metric") as recorder,
+            patch("api.config.get_config", side_effect=RuntimeError("boom")),
         ):
             client.get("/api/v1/config")
 

@@ -1,8 +1,7 @@
 # Component Library Local Guide
 
-Root `AGENTS.md` owns repository-wide versions, safety, React, TypeScript,
-testing, and Git rules. This file records only `@arolariu/components`
-constraints.
+Root `AGENTS.md` owns repository-wide versions, safety, React, TypeScript, testing, and Git rules. This file records only
+`@arolariu/components` constraints.
 
 ## Boundaries
 
@@ -21,13 +20,11 @@ src/components/ui/<name>.stories.tsx
 src/index.ts
 ```
 
-- Colocate implementation, test, Storybook story, and a CSS Module when the
-  component owns visual styling. Intentional style-free composition primitives
-  may omit the CSS file.
+- Colocate implementation, test, Storybook story, and a CSS Module when the component owns visual styling. Intentional style-free
+  composition primitives may omit the CSS file.
 - Export every public component and public type from `src/index.ts`.
 - Use `cn()` from `src/lib/utilities.ts` for class composition.
-- Prefer Base UI `render` composition; retain `asChild` only for compatible
-  existing APIs.
+- Prefer Base UI `render` composition; retain `asChild` only for compatible existing APIs.
 - Use `React.forwardRef` when a component must expose a DOM ref.
 
 ## Local Verification

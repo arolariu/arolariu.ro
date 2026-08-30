@@ -87,8 +87,7 @@ export default function Navigation(): React.JSX.Element {
                       {/* Feature list */}
                       <ul className={styles["featureList"]}>
                         {([0, 1, 2] as const).map((featureIndex) => {
-                          const featureKey =
-                            `${item.key}.features.item${featureIndex}` as `platform.features.item${typeof featureIndex}`;
+                          const featureKey = `${item.key}.features.item${featureIndex}` as `platform.features.item${typeof featureIndex}`;
                           return (
                             <li
                               key={featureIndex}

@@ -77,6 +77,5 @@ def build_excluded_urls() -> str:
     """
 
     return ",".join(
-        f"(?i:^(?:[a-z][a-z0-9+.\\-]*://[^/]*)?{re.escape(path)}/?(\\?.*)?$)"
-        for path in SUPPRESSED_HEALTH_PATHS
+        f"(?i:^(?:[a-z][a-z0-9+.\\-]*://[^/]*)?{re.escape(path)}/?(\\?.*)?$)" for path in SUPPRESSED_HEALTH_PATHS
     )
