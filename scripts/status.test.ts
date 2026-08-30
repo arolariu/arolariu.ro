@@ -6,16 +6,19 @@
 
 import {spawn} from "node:child_process";
 import {readFileSync} from "node:fs";
+import {mkdir, mkdtemp, rm, symlink, writeFile} from "node:fs/promises";
+import {tmpdir} from "node:os";
 import {join, resolve} from "node:path";
 import {fileURLToPath} from "node:url";
-import {describe, expect, it} from "vitest";
+import {afterEach, describe, expect, it} from "vitest";
 
 import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "./common/logger.ts";
+import {defaultCommandRunner} from "./common/process.ts";
 import type {CommandResult, CommandRunner, CommandRunOptions, CommandSpec} from "./common/process.ts";
 import {createRepositoryPaths} from "./common/repository-paths.ts";
 import {createDoctorReport} from "./doctor.reporter.ts";
 import type {DiagnosticResult} from "./doctor.types.ts";
-import {healthFromDoctorResult, main, parseStatusOptions} from "./status.ts";
+import {collectDisk, healthFromDoctorResult, main, parseStatusOptions} from "./status.ts";
 
 // ============================================================================
 // Fixtures
@@ -35,7 +38,23 @@ const NPM_OUTDATED_KEY = "npm outdated --json";
 const NX_GRAPH_KEY = "npx --no-install nx graph --print --open=false --watch=false";
 const DOCTOR_KEY = `${process.execPath} ${DOCTOR_SCRIPT_PATH} --quick --json`;
 
+const DISK_NODE_MODULES_TARGET = join(FIXED_ROOT, "node_modules");
+const DISK_NEXT_BUILD_TARGET = join(FIXED_ROOT, "sites", "arolariu.ro", ".next");
+const DISK_COMPONENTS_DIST_TARGET = join(FIXED_ROOT, "packages", "components", "dist");
+
+/**
+ * The disk-size probe is `process.execPath --eval <script> <targetPath>`. The generated
+ * script text is an implementation detail tests must not duplicate, so responses/calls are
+ * keyed on the target path alone.
+ */
+function diskProbeKey(targetPath: string): string {
+  return `disk-probe ${targetPath}`;
+}
+
 function commandKey(command: Readonly<CommandSpec>): string {
+  if (command.command === process.execPath && command.args[0] === "--eval") {
+    return diskProbeKey(command.args[command.args.length - 1] ?? "");
+  }
   return [command.command, ...command.args].join(" ");
 }
 
@@ -116,9 +135,14 @@ function baseResponses(): Map<string, CommandResult> {
     [GIT_LOG_MSG_KEY, commandResult({stdout: "chore: something\n"})],
     [GIT_STATUS_KEY, commandResult({stdout: ""})],
     [NPM_AUDIT_KEY, commandResult({stdout: CLEAN_AUDIT_STDOUT})],
-    [NPM_OUTDATED_KEY, commandResult({stdout: ""})],
+    // A successful `npm outdated --json` run always writes a JSON object — "{}" when nothing
+    // is outdated — never empty stdout; see the "npm outdated" regression tests below.
+    [NPM_OUTDATED_KEY, commandResult({stdout: "{}"})],
     [NX_GRAPH_KEY, commandResult({stdout: HEALTHY_NX_GRAPH_STDOUT})],
     [DOCTOR_KEY, commandResult({stdout: JSON.stringify(PASSING_DOCTOR_REPORT)})],
+    [diskProbeKey(DISK_NODE_MODULES_TARGET), commandResult({stdout: "1024"})],
+    [diskProbeKey(DISK_NEXT_BUILD_TARGET), commandResult({stdout: "2048"})],
+    [diskProbeKey(DISK_COMPONENTS_DIST_TARGET), commandResult({stdout: "512"})],
   ]);
 }
 
@@ -140,10 +164,6 @@ function resolvePathsThatMustNotBeCalled(): never {
   throw new Error("Status test resolveRepositoryPaths should not be invoked for this path.");
 }
 
-function fixedMeasureDirectorySize(): Promise<number> {
-  return Promise.resolve(4_096);
-}
-
 function createLogger(mode?: "human" | "json"): Readonly<{logger: MonorepositoryConsoleLogger; sink: InMemoryLoggerSink}> {
   const sink = new InMemoryLoggerSink();
   const logger = new MonorepositoryConsoleLogger("status", {
@@ -163,7 +183,6 @@ async function runMainHappyPath(argv: readonly string[], mode?: "human" | "json"
     logger,
     runner,
     resolveRepositoryPaths: () => FIXED_REPOSITORY_PATHS,
-    measureDirectorySize: fixedMeasureDirectorySize,
   });
   return {exitCode, sink, calls};
 }
@@ -331,6 +350,46 @@ describe("main — help and option parsing", () => {
     expect(exitCode).toBe(1);
     expect(sink.records.map((record) => record.text).join("\n")).toMatch(/context assembly boom/);
   });
+
+  it("returns 1, emits no stdout/partial JSON, and writes exactly one stderr diagnostic through the injected errorLogger when repository-path resolution fails under --json", async () => {
+    // In JSON mode the primary logger's semantic `error` is a no-op (it only ever emits the
+    // single JSON document), so a fatal failure here must be routed through a dedicated
+    // human-mode `errorLogger` that always reaches stderr — mirroring doctor.ts's fatal path.
+    const {logger, sink} = createLogger("json");
+    const {logger: errorLogger, sink: errorSink} = createLogger();
+
+    const exitCode = await main(["--json"], {
+      logger,
+      errorLogger,
+      runner: runnerThatMustNotBeCalled,
+      resolveRepositoryPaths: () => {
+        throw new Error("context assembly boom");
+      },
+    });
+
+    expect(exitCode).toBe(1);
+    expect(sink.records).toHaveLength(0);
+    const errorRecords = errorSink.records.filter((record) => record.stream === "stderr");
+    expect(errorRecords).toHaveLength(1);
+    expect(errorRecords[0]?.text).toMatch(/context assembly boom/);
+  });
+
+  it("keeps emitting exactly one JSON document on a successful --json run when an errorLogger is injected but never invoked", async () => {
+    const {logger, sink} = createLogger("json");
+    const {logger: errorLogger, sink: errorSink} = createLogger();
+    const {runner} = createRecordingRunner(baseResponses());
+
+    const exitCode = await main(["--json"], {
+      logger,
+      errorLogger,
+      runner,
+      resolveRepositoryPaths: () => FIXED_REPOSITORY_PATHS,
+    });
+
+    expect(exitCode).toBe(0);
+    expect(sink.records).toHaveLength(1);
+    expect(errorSink.records).toHaveLength(0);
+  });
 });
 
 // ============================================================================
@@ -408,6 +467,121 @@ describe("no temporary Nx graph file", () => {
 });
 
 // ============================================================================
+// collectDisk — bounded, out-of-process directory-size probe
+// ============================================================================
+
+describe("collectDisk", () => {
+  const fixtureRoots: string[] = [];
+
+  afterEach(async () => {
+    await Promise.all(fixtureRoots.splice(0).map((root) => rm(root, {recursive: true, force: true})));
+  });
+
+  it("issues each directory-size probe as an argument-separated CommandSpec with the target path as its own argument, repository cwd, and a 60s timeout", async () => {
+    const calls: {command: CommandSpec; options?: CommandRunOptions}[] = [];
+    const recordingRunner: CommandRunner = {
+      run: async (command, options) => {
+        calls.push(options === undefined ? {command} : {command, options});
+        return commandResult({stdout: "0"});
+      },
+    };
+
+    await collectDisk(recordingRunner, FIXED_ROOT);
+
+    expect(calls).toHaveLength(3);
+    const expectedTargets = [DISK_NODE_MODULES_TARGET, DISK_NEXT_BUILD_TARGET, DISK_COMPONENTS_DIST_TARGET];
+    for (const call of calls) {
+      expect(call.command.command).toBe(process.execPath);
+      expect(call.command.args[0]).toBe("--eval");
+      expect(typeof call.command.args[1]).toBe("string");
+      expect(call.command.args).toHaveLength(3);
+      expect(expectedTargets).toContain(call.command.args[2]);
+      expect(call.options?.cwd).toBe(FIXED_ROOT);
+      expect(call.options?.timeoutMs).toBe(60_000);
+    }
+  });
+
+  it("reaches disk: null when a probe command exits non-zero", async () => {
+    const failingRunner: CommandRunner = {
+      run: async () => commandResult({code: 1, stdout: "", stderr: "boom"}),
+    };
+
+    await expect(collectDisk(failingRunner, FIXED_ROOT)).resolves.toBeNull();
+  });
+
+  it("reaches disk: null on a probe timeout/spawn failure/signal termination", async () => {
+    const timedOutRunner: CommandRunner = {
+      run: async () => commandResult({code: 1, stdout: "", timedOut: true}),
+    };
+    const spawnErrorRunner: CommandRunner = {
+      run: async () => commandResult({code: 1, stdout: "", spawnError: "ENOENT"}),
+    };
+    const signalRunner: CommandRunner = {
+      run: async () => commandResult({code: 1, stdout: "", signal: "SIGTERM"}),
+    };
+
+    await expect(collectDisk(timedOutRunner, FIXED_ROOT)).resolves.toBeNull();
+    await expect(collectDisk(spawnErrorRunner, FIXED_ROOT)).resolves.toBeNull();
+    await expect(collectDisk(signalRunner, FIXED_ROOT)).resolves.toBeNull();
+  });
+
+  it("reaches disk: null when probe output is empty, non-integer, or negative", async () => {
+    const emptyRunner: CommandRunner = {run: async () => commandResult({stdout: ""})};
+    const nonIntegerRunner: CommandRunner = {run: async () => commandResult({stdout: "12.5"})};
+    const negativeRunner: CommandRunner = {run: async () => commandResult({stdout: "-5"})};
+    const wordsRunner: CommandRunner = {run: async () => commandResult({stdout: "not-a-number"})};
+
+    await expect(collectDisk(emptyRunner, FIXED_ROOT)).resolves.toBeNull();
+    await expect(collectDisk(nonIntegerRunner, FIXED_ROOT)).resolves.toBeNull();
+    await expect(collectDisk(negativeRunner, FIXED_ROOT)).resolves.toBeNull();
+    await expect(collectDisk(wordsRunner, FIXED_ROOT)).resolves.toBeNull();
+  });
+
+  it("sums nested files through the real shared CommandRunner and real probe, and reports zero for a genuinely absent directory", async () => {
+    const root = await mkdtemp(join(tmpdir(), "arolariu-status-disk-"));
+    fixtureRoots.push(root);
+
+    await mkdir(join(root, "node_modules", "nested"), {recursive: true});
+    await writeFile(join(root, "node_modules", "a.txt"), "12345"); // 5 bytes
+    await writeFile(join(root, "node_modules", "nested", "b.txt"), "1234567890"); // 10 bytes
+    await mkdir(join(root, "packages", "components", "dist"), {recursive: true});
+    await writeFile(join(root, "packages", "components", "dist", "bundle.js"), "abcdefghij"); // 10 bytes
+    // sites/arolariu.ro/.next is intentionally left absent.
+
+    const disk = await collectDisk(defaultCommandRunner, root);
+
+    expect(disk).toEqual({nodeModules: 15, nextBuild: 0, componentsDist: 10});
+  }, 20_000);
+
+  it("skips a directory junction/symlink entry instead of recursing into it", async () => {
+    const root = await mkdtemp(join(tmpdir(), "arolariu-status-disk-symlink-"));
+    fixtureRoots.push(root);
+
+    const realTarget = join(root, "real-target");
+    await mkdir(realTarget, {recursive: true});
+    await writeFile(join(realTarget, "big.txt"), "x".repeat(10_000));
+    await mkdir(join(root, "node_modules"), {recursive: true});
+    await writeFile(join(root, "node_modules", "a.txt"), "12345"); // 5 bytes
+
+    let junctionCreated = true;
+    try {
+      await symlink(realTarget, join(root, "node_modules", "linked"), "junction");
+    } catch {
+      // Cross-platform/privilege limitation: fall back to a direct proof of the fixed probe
+      // logic (nested summation without the symlink) instead of the symlink-skip behavior.
+      junctionCreated = false;
+    }
+
+    const disk = await collectDisk(defaultCommandRunner, root);
+
+    expect(disk).toEqual({nodeModules: 5, nextBuild: 0, componentsDist: 0});
+    if (!junctionCreated) {
+      expect(disk?.nodeModules).toBe(5); // Direct proof of the fixed probe logic (see above).
+    }
+  }, 20_000);
+});
+
+// ============================================================================
 // Collector independence
 // ============================================================================
 
@@ -420,7 +594,6 @@ describe("collector independence", () => {
       logger,
       runner,
       resolveRepositoryPaths: () => FIXED_REPOSITORY_PATHS,
-      measureDirectorySize: fixedMeasureDirectorySize,
     });
 
     expect(exitCode).toBe(0);
@@ -437,7 +610,7 @@ describe("collector independence", () => {
     const {logger, sink} = createLogger("json");
     const {runner} = createRecordingRunner(withOverrides({[NX_GRAPH_KEY]: commandResult({stdout: "{not valid nx json"})}));
 
-    await main(["--json"], {logger, runner, resolveRepositoryPaths: () => FIXED_REPOSITORY_PATHS, measureDirectorySize: fixedMeasureDirectorySize});
+    await main(["--json"], {logger, runner, resolveRepositoryPaths: () => FIXED_REPOSITORY_PATHS});
 
     const output = parseJsonOutput(sink);
     expect(output["nxEdges"]).toBeNull();
@@ -450,7 +623,7 @@ describe("collector independence", () => {
       withOverrides({[NX_GRAPH_KEY]: commandResult({code: 1, stdout: HEALTHY_NX_GRAPH_STDOUT})}),
     );
 
-    await main(["--json"], {logger, runner, resolveRepositoryPaths: () => FIXED_REPOSITORY_PATHS, measureDirectorySize: fixedMeasureDirectorySize});
+    await main(["--json"], {logger, runner, resolveRepositoryPaths: () => FIXED_REPOSITORY_PATHS});
 
     const output = parseJsonOutput(sink);
     expect(output["nxEdges"]).toBeNull();
@@ -462,18 +635,41 @@ describe("collector independence", () => {
       withOverrides({[NPM_AUDIT_KEY]: commandResult({code: 1, stdout: "not json at all"})}),
     );
 
-    await main(["--json"], {logger, runner, resolveRepositoryPaths: () => FIXED_REPOSITORY_PATHS, measureDirectorySize: fixedMeasureDirectorySize});
+    await main(["--json"], {logger, runner, resolveRepositoryPaths: () => FIXED_REPOSITORY_PATHS});
 
     const output = parseJsonOutput(sink);
     expect(output["security"]).toBeNull();
     expect(output["security"]).not.toEqual({critical: 0, high: 0, moderate: 0, low: 0, majorOutdated: 0, minorOutdated: 0, patchOutdated: 0});
   });
 
+  it("renders security as unavailable — not a fabricated zero-outdated success — when npm outdated stdout is empty", async () => {
+    // A successful current `npm outdated --json` always writes a JSON object: "{}" when
+    // nothing is outdated. Empty stdout is therefore unambiguously a failed probe (registry
+    // error, arborist load failure, etc.) and must never be treated as "no packages outdated".
+    const {logger, sink} = createLogger("json");
+    const {runner} = createRecordingRunner(withOverrides({[NPM_OUTDATED_KEY]: commandResult({stdout: ""})}));
+
+    await main(["--json"], {logger, runner, resolveRepositoryPaths: () => FIXED_REPOSITORY_PATHS});
+
+    const output = parseJsonOutput(sink);
+    expect(output["security"]).toBeNull();
+  });
+
+  it("retains a genuinely empty npm outdated JSON object ({}) as zero-outdated success data", async () => {
+    const {logger, sink} = createLogger("json");
+    const {runner} = createRecordingRunner(withOverrides({[NPM_OUTDATED_KEY]: commandResult({stdout: "{}"})}));
+
+    await main(["--json"], {logger, runner, resolveRepositoryPaths: () => FIXED_REPOSITORY_PATHS});
+
+    const output = parseJsonOutput(sink);
+    expect(output["security"]).toEqual({critical: 0, high: 0, moderate: 0, low: 0, majorOutdated: 0, minorOutdated: 0, patchOutdated: 0});
+  });
+
   it("renders security as unavailable when npm outdated JSON is malformed", async () => {
     const {logger, sink} = createLogger("json");
     const {runner} = createRecordingRunner(withOverrides({[NPM_OUTDATED_KEY]: commandResult({stdout: "not json"})}));
 
-    await main(["--json"], {logger, runner, resolveRepositoryPaths: () => FIXED_REPOSITORY_PATHS, measureDirectorySize: fixedMeasureDirectorySize});
+    await main(["--json"], {logger, runner, resolveRepositoryPaths: () => FIXED_REPOSITORY_PATHS});
 
     const output = parseJsonOutput(sink);
     expect(output["security"]).toBeNull();
@@ -494,7 +690,7 @@ describe("collector independence", () => {
       }),
     );
 
-    await main(["--json"], {logger, runner, resolveRepositoryPaths: () => FIXED_REPOSITORY_PATHS, measureDirectorySize: fixedMeasureDirectorySize});
+    await main(["--json"], {logger, runner, resolveRepositoryPaths: () => FIXED_REPOSITORY_PATHS});
 
     const output = parseJsonOutput(sink);
     expect(output["security"]).toEqual({
@@ -508,27 +704,36 @@ describe("collector independence", () => {
     });
   });
 
-  it("renders disk as unavailable when directory measurement fails unexpectedly", async () => {
+  it("renders disk as unavailable when a directory-size probe command fails", async () => {
     const {logger, sink} = createLogger("json");
-    const {runner} = createRecordingRunner(baseResponses());
+    const {runner} = createRecordingRunner(
+      withOverrides({[diskProbeKey(DISK_NODE_MODULES_TARGET)]: commandResult({code: 1, stdout: ""})}),
+    );
 
-    await main(["--json"], {
-      logger,
-      runner,
-      resolveRepositoryPaths: () => FIXED_REPOSITORY_PATHS,
-      measureDirectorySize: () => Promise.reject(new Error("disk measurement boom")),
-    });
+    await main(["--json"], {logger, runner, resolveRepositoryPaths: () => FIXED_REPOSITORY_PATHS});
 
     const output = parseJsonOutput(sink);
     expect(output["disk"]).toBeNull();
     expect(output["git"]).not.toBeNull();
   });
 
+  it("renders disk as unavailable when a directory-size probe emits malformed (non-integer) output", async () => {
+    const {logger, sink} = createLogger("json");
+    const {runner} = createRecordingRunner(
+      withOverrides({[diskProbeKey(DISK_NEXT_BUILD_TARGET)]: commandResult({stdout: "not-a-number"})}),
+    );
+
+    await main(["--json"], {logger, runner, resolveRepositoryPaths: () => FIXED_REPOSITORY_PATHS});
+
+    const output = parseJsonOutput(sink);
+    expect(output["disk"]).toBeNull();
+  });
+
   it("renders health as unavailable when the doctor report is malformed, while siblings still render", async () => {
     const {logger, sink} = createLogger("json");
     const {runner} = createRecordingRunner(withOverrides({[DOCTOR_KEY]: commandResult({stdout: "{bad json"})}));
 
-    await main(["--json"], {logger, runner, resolveRepositoryPaths: () => FIXED_REPOSITORY_PATHS, measureDirectorySize: fixedMeasureDirectorySize});
+    await main(["--json"], {logger, runner, resolveRepositoryPaths: () => FIXED_REPOSITORY_PATHS});
 
     const output = parseJsonOutput(sink);
     expect(output["health"]).toBeNull();
@@ -565,7 +770,7 @@ describe("main --json", () => {
     const {logger, sink} = createLogger("json");
     const {runner} = createRecordingRunner(withOverrides({[DOCTOR_KEY]: commandResult({code: 1, stdout: JSON.stringify(FAILING_DOCTOR_REPORT)})}));
 
-    await main(["--json"], {logger, runner, resolveRepositoryPaths: () => FIXED_REPOSITORY_PATHS, measureDirectorySize: fixedMeasureDirectorySize});
+    await main(["--json"], {logger, runner, resolveRepositoryPaths: () => FIXED_REPOSITORY_PATHS});
 
     const output = parseJsonOutput(sink);
     expect(output["health"]).toEqual({
@@ -610,7 +815,6 @@ describe("main — human dashboard", () => {
       logger,
       runner,
       resolveRepositoryPaths: () => FIXED_REPOSITORY_PATHS,
-      measureDirectorySize: fixedMeasureDirectorySize,
     });
 
     expect(exitCode).toBe(0);

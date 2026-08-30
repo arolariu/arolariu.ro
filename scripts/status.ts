@@ -12,11 +12,12 @@
  * failure or malformed result from any single source degrades that section
  * to `null` ("unavailable") without invalidating the rest of the report and
  * without inventing a zero, `"unknown"`, or empty-array stand-in for a
- * genuine failure. Every external probe (git, npm, the Nx graph, and the
- * doctor report) is issued through the shared {@link CommandRunner} as an
- * explicit {@link CommandSpec} — never a shell string — and the script never
- * writes a temporary file or inherits child process output. All human or
- * machine-readable output is produced by {@link MonorepositoryLogger}.
+ * genuine failure. Every external probe (git, npm, the Nx graph, the disk
+ * usage probe, and the doctor report) is issued through the shared
+ * {@link CommandRunner} as an explicit {@link CommandSpec} — never a shell
+ * string — and the script never writes a temporary file or inherits child
+ * process output. All human or machine-readable output is produced by
+ * {@link MonorepositoryLogger}.
  *
  * @example
  * ```bash
@@ -26,8 +27,7 @@
  * ```
  */
 
-import {readdir, stat} from "node:fs/promises";
-import {existsSync, readFileSync, type Stats} from "node:fs";
+import {existsSync, readFileSync} from "node:fs";
 import {join, resolve} from "node:path";
 import {fileURLToPath} from "node:url";
 
@@ -78,7 +78,7 @@ interface SecurityInfo {
 }
 
 /** Disk usage in bytes for key directories. */
-interface DiskInfo {
+export interface DiskInfo {
   readonly nodeModules: number;
   readonly nextBuild: number;
   readonly componentsDist: number;
@@ -113,7 +113,7 @@ interface StatusOptions {
  *
  * @remarks
  * Exported so tests can inject a deterministic command runner, logger,
- * repository-path resolver, or filesystem traversal without replacing the
+ * repository-path resolver, or fatal-error logger without replacing the
  * repository modules that own those boundaries.
  */
 export interface StatusDependencies {
@@ -123,8 +123,17 @@ export interface StatusDependencies {
   readonly logger: MonorepositoryLogger;
   /** Resolves canonical repository paths. */
   readonly resolveRepositoryPaths: () => RepositoryPaths;
-  /** Measures the total byte size of a directory (or file) tree. */
-  readonly measureDirectorySize: (absolutePath: string) => Promise<number>;
+  /**
+   * Receives a fatal, pre-collection diagnostic (a repository-context
+   * failure) so it always reaches stderr.
+   *
+   * @remarks
+   * In JSON mode the primary `logger`'s semantic `error` is a no-op, so a
+   * fatal failure here must be routed through a logger that always reaches
+   * stderr. Human mode's primary logger already reaches stderr, so it may
+   * serve both roles.
+   */
+  readonly errorLogger: MonorepositoryLogger;
 }
 
 // ============================================================================
@@ -144,7 +153,7 @@ const GIT_TIMEOUT_MS = 30_000;
 const NPM_TIMEOUT_MS = 60_000;
 const NX_TIMEOUT_MS = 60_000;
 const DOCTOR_TIMEOUT_MS = 60_000;
-const MAX_CONCURRENT_STAT_OPERATIONS = 64;
+const DISK_PROBE_TIMEOUT_MS = 60_000;
 
 const GIT_BRANCH_COMMAND = {command: "git", args: ["rev-parse", "--abbrev-ref", "HEAD"]} as const satisfies CommandSpec;
 const GIT_SHA_COMMAND = {command: "git", args: ["rev-parse", "--short", "HEAD"]} as const satisfies CommandSpec;
@@ -157,6 +166,55 @@ const NX_GRAPH_COMMAND = {
   command: "npx",
   args: ["--no-install", "nx", "graph", "--print", "--open=false", "--watch=false"],
 } as const satisfies CommandSpec;
+
+/**
+ * Read-only Node.js source, executed as a separate process via `node --eval`,
+ * that measures the total byte size of a directory or file tree.
+ *
+ * @remarks
+ * Runs entirely inside the spawned child process — no parent-process
+ * recursion, no unbounded pending-task fan-out, and no temp file. Traversal
+ * is single-threaded and therefore inherently sequential/bounded. A
+ * directory/file entry reported as a symbolic link (which also covers
+ * Windows junctions, verified cross-platform via `Dirent#isSymbolicLink()`)
+ * is skipped rather than followed, so no cycle or double counting is
+ * possible. A missing target resolves to `0`; every other filesystem error
+ * (permission failure, etc.) is written to stderr and the process exits
+ * non-zero so the parent can classify the whole disk section unavailable.
+ */
+const DISK_PROBE_SCRIPT = [
+  '"use strict";',
+  'const fs = require("node:fs");',
+  'const path = require("node:path");',
+  "function sizeOf(target) {",
+  "  let stats;",
+  "  try {",
+  "    stats = fs.lstatSync(target);",
+  "  } catch (error) {",
+  '    if (error && error.code === "ENOENT") return 0;',
+  "    throw error;",
+  "  }",
+  "  if (stats.isSymbolicLink()) return 0;",
+  "  if (stats.isFile()) return stats.size;",
+  "  if (!stats.isDirectory()) return 0;",
+  "  let total = 0;",
+  "  for (const entry of fs.readdirSync(target, {withFileTypes: true})) {",
+  "    if (entry.isSymbolicLink()) continue;",
+  "    total += sizeOf(path.join(target, entry.name));",
+  "  }",
+  "  return total;",
+  "}",
+  "const target = process.argv[1];",
+  "try {",
+  "  process.stdout.write(String(sizeOf(target)));",
+  "} catch (error) {",
+  '  process.stderr.write(error && error.message ? error.message : String(error));',
+  "  process.exitCode = 1;",
+  "}",
+].join("\n");
+
+/** Strict, sign-free, decimal-point-free byte-count pattern for probe stdout. */
+const NONNEGATIVE_INTEGER_PATTERN = /^[0-9]+$/;
 
 const HELP_LINES: readonly string[] = [
   "Usage: node scripts/status.ts [options]",
@@ -194,6 +252,48 @@ function doctorCommand(paths: Readonly<RepositoryPaths>): CommandSpec {
     command: process.execPath,
     args: [join(paths.root, "scripts", "doctor.ts"), "--quick", "--json"],
   };
+}
+
+/**
+ * Builds the disk-size probe command for one absolute target path.
+ *
+ * @remarks
+ * The executable, the fixed `--eval` script literal, and the target path are
+ * three separate {@link CommandSpec.args} elements — never an interpolated
+ * or shell-joined string — so the child process receives the target purely
+ * as `process.argv[1]`.
+ *
+ * @param absolutePath - Absolute directory or file path to measure.
+ * @returns The disk-size probe command.
+ */
+function buildDiskSizeCommand(absolutePath: string): CommandSpec {
+  return {command: process.execPath, args: ["--eval", DISK_PROBE_SCRIPT, absolutePath]};
+}
+
+/**
+ * Parses one disk-size probe result into a strict nonnegative byte count.
+ *
+ * @remarks
+ * A runner-level transport failure (spawn error, timeout, or signal
+ * termination), a nonzero exit code, or stdout that is empty or does not
+ * match a strict nonnegative integer all resolve to `null` — never a
+ * fabricated `0`.
+ *
+ * @param result - The complete result of running the disk-size probe.
+ * @returns The parsed byte count, or `null` when unavailable.
+ */
+function parseDiskProbeSize(result: Readonly<CommandResult>): number | null {
+  if (!isSuccessfulCommand(result)) {
+    return null;
+  }
+
+  const trimmed = result.stdout.trim();
+  if (!NONNEGATIVE_INTEGER_PATTERN.test(trimmed)) {
+    return null;
+  }
+
+  const size = Number(trimmed);
+  return Number.isSafeInteger(size) ? size : null;
 }
 
 // ============================================================================
@@ -450,14 +550,19 @@ async function collectSecurity(runner: CommandRunner, root: string): Promise<Sec
     return null;
   }
 
+  // A successful current `npm outdated --json` run always writes a JSON object — an empty
+  // `{}` when nothing is outdated — because npm's JSON branch is unconditional. Empty stdout
+  // is therefore unambiguously a failed probe (registry/auth error, arborist load failure,
+  // EJSONPARSE, etc.) and must never be treated as a "0 outdated" success.
   const trimmedOutdated = outdatedResult.stdout.trim();
-  let outdatedPayload: unknown = {};
-  if (trimmedOutdated.length > 0) {
-    try {
-      outdatedPayload = JSON.parse(trimmedOutdated);
-    } catch {
-      return null;
-    }
+  if (trimmedOutdated.length === 0) {
+    return null;
+  }
+  let outdatedPayload: unknown;
+  try {
+    outdatedPayload = JSON.parse(trimmedOutdated);
+  } catch {
+    return null;
   }
   if (!isRecord(outdatedPayload)) {
     return null;
@@ -479,107 +584,50 @@ async function collectSecurity(runner: CommandRunner, root: string): Promise<Sec
   return {critical, high, moderate, low, majorOutdated, minorOutdated, patchOutdated};
 }
 
-async function tryStat(path: string): Promise<Stats | null> {
-  try {
-    return await stat(path);
-  } catch (error: unknown) {
-    if (error instanceof Error && "code" in error && error.code === "ENOENT") {
-      return null;
-    }
-    throw error;
-  }
-}
-
-/** Bounds the number of concurrent filesystem operations issued by a single traversal. */
-function createConcurrencyGate(limit: number): <T>(task: () => Promise<T>) => Promise<T> {
-  let active = 0;
-  const queue: Array<() => void> = [];
-
-  function release(): void {
-    active--;
-    const next = queue.shift();
-    if (next !== undefined) {
-      next();
-    }
-  }
-
-  return async function run<T>(task: () => Promise<T>): Promise<T> {
-    if (active >= limit) {
-      await new Promise<void>((settle) => queue.push(settle));
-    }
-    active++;
-    try {
-      return await task();
-    } finally {
-      release();
-    }
-  };
-}
-
-const gateDirectoryOperation = createConcurrencyGate(MAX_CONCURRENT_STAT_OPERATIONS);
-
 /**
- * Measures the total byte size of a file or directory tree using read-only
- * Node.js filesystem calls (no shell command, no platform-specific quoting).
+ * Measures on-disk size of key directories through the shared, out-of-process
+ * disk-size probe.
  *
  * @remarks
- * A directory or file that does not exist is a legitimate, distinguishable
- * zero. Any other filesystem error (e.g. a permission failure) propagates so
- * the caller can classify the whole disk section as unavailable rather than
- * silently reporting a successful-looking zero.
+ * Each of the three targets is measured by a separate, argument-separated
+ * `process.execPath --eval <script> <targetPath>` invocation issued through
+ * the shared {@link CommandRunner} — never an in-process recursive
+ * traversal, a shell string, or a temp file. Every probe carries the
+ * repository `cwd` and a bounded 60 s `timeoutMs`; the runner terminates
+ * (`SIGTERM`, then `SIGKILL`) a stalled child rather than merely racing a
+ * promise while filesystem work continues. The three probes are independent
+ * child processes, so running them concurrently adds no unbounded
+ * parent-process queue. A transport failure (spawn error, timeout, signal),
+ * a nonzero exit code, or malformed/negative/non-integer stdout from any
+ * single probe makes the whole disk section `null` — never a fabricated `0`
+ * for a real I/O failure. A probe legitimately reports `0` only when its
+ * target is absent.
  *
- * @param absolutePath - Absolute path to measure.
- * @returns Total size in bytes.
- */
-async function defaultMeasureDirectorySize(absolutePath: string): Promise<number> {
-  const stats = await gateDirectoryOperation(() => tryStat(absolutePath));
-  if (stats === null) {
-    return 0;
-  }
-  if (stats.isFile()) {
-    return stats.size;
-  }
-  if (!stats.isDirectory()) {
-    return 0;
-  }
-
-  const entries = await gateDirectoryOperation(() => readdir(absolutePath, {withFileTypes: true}));
-  const sizes = await Promise.all(
-    entries.map(async (entry): Promise<number> => {
-      if (entry.isSymbolicLink()) {
-        return 0;
-      }
-      const entryPath = join(absolutePath, entry.name);
-      if (entry.isDirectory()) {
-        return defaultMeasureDirectorySize(entryPath);
-      }
-      if (!entry.isFile()) {
-        return 0;
-      }
-      const fileStats = await gateDirectoryOperation(() => tryStat(entryPath));
-      return fileStats?.size ?? 0;
-    }),
-  );
-
-  return sizes.reduce((total, size) => total + size, 0);
-}
-
-/**
- * Measures on-disk size of key directories.
- *
+ * @param runner - Command runner used to invoke each disk-size probe.
  * @param root - Absolute repository root.
- * @param measureDirectorySize - Filesystem traversal boundary.
- * @returns Byte counts for `node_modules`, `.next`, and `dist`.
+ * @returns Byte counts for `node_modules`, `.next`, and `dist`, or `null`.
  */
-async function collectDisk(
-  root: string,
-  measureDirectorySize: (absolutePath: string) => Promise<number>,
-): Promise<DiskInfo> {
-  const [nodeModules, nextBuild, componentsDist] = await Promise.all([
-    measureDirectorySize(join(root, "node_modules")),
-    measureDirectorySize(join(root, "sites", "arolariu.ro", ".next")),
-    measureDirectorySize(join(root, "packages", "components", "dist")),
-  ]);
+export async function collectDisk(runner: CommandRunner, root: string): Promise<DiskInfo | null> {
+  const targets = [
+    join(root, "node_modules"),
+    join(root, "sites", "arolariu.ro", ".next"),
+    join(root, "packages", "components", "dist"),
+  ] as const;
+
+  const results = await Promise.all(
+    targets.map((target) => runner.run(buildDiskSizeCommand(target), {cwd: root, timeoutMs: DISK_PROBE_TIMEOUT_MS})),
+  );
+  const [nodeModules, nextBuild, componentsDist] = results.map(parseDiskProbeSize);
+  if (
+    nodeModules === null ||
+    nodeModules === undefined ||
+    nextBuild === null ||
+    nextBuild === undefined ||
+    componentsDist === null ||
+    componentsDist === undefined
+  ) {
+    return null;
+  }
 
   return {nodeModules, nextBuild, componentsDist};
 }
@@ -751,19 +799,24 @@ export function parseStatusOptions(argv: readonly string[]): StatusOptions {
  * @remarks
  * `--help`/`-h` is detected before options are parsed or any collector runs,
  * so an unsupported flag combined with `--help` never surfaces a parse
- * error. An option-parsing or repository-context failure renders through the
- * logger and returns `1` without invoking any collector. On a successful
- * run every collector executes independently via `Promise.allSettled()`; a
- * failed or malformed collector renders/serializes as `null`
- * ("unavailable") without fabricating a failure report, and the command
- * always returns `0`. JSON mode emits exactly one document through
- * {@link MonorepositoryLogger.json}; human mode renders the dashboard
- * exclusively through logger methods.
+ * error. An option-parsing failure renders through the primary logger and
+ * returns `1` without invoking any collector. A repository-context
+ * (path-resolution) failure is fatal and pre-collection: no partial or
+ * success-shaped payload is ever synthesized, no document reaches
+ * {@link MonorepositoryLogger.json}, and exactly one normalized, non-empty
+ * diagnostic is written through {@link StatusDependencies.errorLogger} —
+ * never through the primary `logger`, whose semantic methods (including
+ * `error`) are silently suppressed in JSON mode. On a successful run every
+ * collector executes independently via `Promise.allSettled()`; a failed or
+ * malformed collector renders/serializes as `null` ("unavailable") without
+ * fabricating a failure report, and the command always returns `0`. JSON
+ * mode emits exactly one document through {@link MonorepositoryLogger.json};
+ * human mode renders the dashboard exclusively through logger methods.
  *
  * @param argv - Arguments following the status entrypoint.
  * @param dependencies - Optional boundary replacements, primarily for tests
  * that must inject a deterministic runner, logger, repository-path
- * resolver, or filesystem traversal without reading the live checkout.
+ * resolver, or fatal-error logger without reading the live checkout.
  * @returns Process exit code.
  */
 export async function main(
@@ -790,15 +843,20 @@ export async function main(
 
   const logger =
     dependencies.logger ?? new MonorepositoryConsoleLogger("status", {mode: options.json ? "json" : "human", verbose: false});
+
+  // In JSON mode the primary `logger`'s semantic `error` is a no-op, so a fatal
+  // failure here must be routed through a logger that always reaches stderr.
+  // Human mode's primary logger already reaches stderr, so it may serve both roles.
+  const errorLogger = dependencies.errorLogger ?? (options.json ? new MonorepositoryConsoleLogger("status", {verbose: false}) : logger);
+
   const resolvePaths = dependencies.resolveRepositoryPaths ?? ((): RepositoryPaths => resolveRepositoryPaths());
   const runner = dependencies.runner ?? defaultCommandRunner;
-  const measureDirectorySize = dependencies.measureDirectorySize ?? defaultMeasureDirectorySize;
 
   let paths: RepositoryPaths;
   try {
     paths = resolvePaths();
   } catch (error: unknown) {
-    logger.error(errorMessage(error));
+    errorLogger.error(errorMessage(error));
     return 1;
   }
 
@@ -807,7 +865,7 @@ export async function main(
     collectNxGraph(runner, paths.root),
     collectGit(runner, paths.root),
     collectSecurity(runner, paths.root),
-    collectDisk(paths.root, measureDirectorySize),
+    collectDisk(runner, paths.root),
     collectHealth(runner, paths),
   ]);
 
