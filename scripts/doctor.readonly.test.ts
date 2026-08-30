@@ -187,14 +187,20 @@ function getExportedInterfacePropertyType(source: ts.SourceFile, interfaceName: 
 }
 
 function discoverDoctorProductionFiles(): readonly string[] {
-  return readdirSync(resolve(process.cwd(), "scripts"), {withFileTypes: true})
+  const doctorFiles = readdirSync(resolve(process.cwd(), "scripts"), {withFileTypes: true})
     .filter((entry) => entry.isFile() && entry.name.startsWith("doctor"))
     .map((entry) => `scripts/${entry.name}`.replaceAll("\\", "/"))
     .filter((fileName) => {
       const extension = fileName.slice(fileName.lastIndexOf("."));
       return doctorProductionExtensions.has(extension) && !/\.(?:spec|test)\.(?:cjs|js|mjs|ts)$/u.test(fileName);
-    })
-    .toSorted();
+    });
+
+  // The shared workspace-graph module is a production dependency of doctor.workspace.ts and
+  // status.ts. It must be included in the guarded set so that a future filesystem write or
+  // command dispatch cannot reintroduce doctor mutation without failing this guard.
+  const SHARED_PRODUCTION_FILES = ["scripts/common/workspace-graph.ts"];
+
+  return [...doctorFiles, ...SHARED_PRODUCTION_FILES].toSorted();
 }
 
 function getPropertyNameText(name: ts.PropertyName): string | null {
@@ -1123,6 +1129,14 @@ describe("doctor source-level read-only guard", () => {
       "scripts/doctor.workspace.ts:11: forbidden command specification",
       "scripts/doctor.workspace.ts:13: unresolved command specification",
     ]);
+  });
+
+  it("includes scripts/common/workspace-graph.ts in the read-only guard set", () => {
+    // Asserts that the shared workspace-graph production module is always present in the
+    // guarded set. This test fails if the explicit entry is removed from
+    // discoverDoctorProductionFiles(), preventing a silent regression where a future write
+    // or command dispatch in that module goes undetected.
+    expect(discoverDoctorProductionFiles()).toContain("scripts/common/workspace-graph.ts");
   });
 
   it("keeps every doctor production file read-only compliant", async () => {

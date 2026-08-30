@@ -863,6 +863,102 @@ describe("main — human dashboard", () => {
 });
 
 // ============================================================================
+// Default workspace-graph wiring proof
+// ============================================================================
+
+describe("main — default workspace-graph wiring", () => {
+  const wiringFixtureRoots: string[] = [];
+
+  afterEach(async () => {
+    await Promise.all(wiringFixtureRoots.splice(0).map((root) => rm(root, {recursive: true, force: true})));
+  });
+
+  it("selects the real readWorkspaceGraph and passes paths.root when no override is injected, returning six keys and the two expected website→components edges", async () => {
+    // Create a minimal fixture repository root. It deliberately contains only two projects so
+    // that any accidental fallback to the live checkout's seven-project graph would produce a
+    // different nxEdges array and fail the assertion below.
+    const fixtureRoot = await mkdtemp(join(tmpdir(), "arolariu-status-wiring-"));
+    wiringFixtureRoots.push(fixtureRoot);
+
+    // Minimal nx.json using the same workspace layout as the live repository.
+    await writeFile(
+      join(fixtureRoot, "nx.json"),
+      JSON.stringify({workspaceLayout: {appsDir: "sites", libsDir: "packages"}}),
+      "utf8",
+    );
+
+    // @arolariu/components project — library under packages/.
+    await mkdir(join(fixtureRoot, "packages", "components"), {recursive: true});
+    await writeFile(
+      join(fixtureRoot, "packages", "components", "project.json"),
+      JSON.stringify({name: "@arolariu/components"}),
+      "utf8",
+    );
+    await writeFile(
+      join(fixtureRoot, "packages", "components", "package.json"),
+      JSON.stringify({name: "@arolariu/components"}),
+      "utf8",
+    );
+
+    // @arolariu/website project — declares both a package dependency and a cross-project
+    // target dependency on @arolariu/components, matching the live production shape that
+    // yields exactly two dependency records.
+    await mkdir(join(fixtureRoot, "sites", "arolariu.ro"), {recursive: true});
+    await writeFile(
+      join(fixtureRoot, "sites", "arolariu.ro", "project.json"),
+      JSON.stringify({name: "@arolariu/website", targets: {build: {dependsOn: ["components:build"]}}}),
+      "utf8",
+    );
+    await writeFile(
+      join(fixtureRoot, "sites", "arolariu.ro", "package.json"),
+      JSON.stringify({name: "@arolariu/website", dependencies: {"@arolariu/components": "*"}}),
+      "utf8",
+    );
+
+    // Build a recording runner keyed on the fixture root so every external probe (git, npm,
+    // doctor, disk) is handled without touching the live checkout.
+    const fixtureDocScriptPath = join(fixtureRoot, "scripts", "doctor.ts");
+    const fixtureDoctorKey = `${process.execPath} ${fixtureDocScriptPath} --quick --json`;
+    const fixtureResponses = new Map<string, CommandResult>([
+      [GIT_BRANCH_KEY, commandResult({stdout: "main\n"})],
+      [GIT_SHA_KEY, commandResult({stdout: "abc1234\n"})],
+      [GIT_LOG_TIME_KEY, commandResult({stdout: "2 hours ago\n"})],
+      [GIT_LOG_MSG_KEY, commandResult({stdout: "chore: fixture\n"})],
+      [GIT_STATUS_KEY, commandResult({stdout: ""})],
+      [NPM_AUDIT_KEY, commandResult({stdout: CLEAN_AUDIT_STDOUT})],
+      [NPM_OUTDATED_KEY, commandResult({stdout: "{}"})],
+      [fixtureDoctorKey, commandResult({stdout: JSON.stringify(PASSING_DOCTOR_REPORT)})],
+      [diskProbeKey(join(fixtureRoot, "node_modules")), commandResult({stdout: "0"})],
+      [diskProbeKey(join(fixtureRoot, "sites", "arolariu.ro", ".next")), commandResult({stdout: "0"})],
+      [diskProbeKey(join(fixtureRoot, "packages", "components", "dist")), commandResult({stdout: "0"})],
+    ]);
+
+    const {logger, sink} = createLogger("json");
+    const {runner} = createRecordingRunner(fixtureResponses);
+
+    // readWorkspaceGraph is intentionally NOT injected — the production default must be
+    // selected and must receive paths.root (the fixture root, not the process checkout).
+    const exitCode = await main(["--json"], {
+      logger,
+      runner,
+      resolveRepositoryPaths: () => createRepositoryPaths(fixtureRoot),
+    });
+
+    expect(exitCode).toBe(0);
+    const output = parseJsonOutput(sink);
+    // All six top-level keys must be present.
+    expect(Object.keys(output).toSorted()).toEqual(["disk", "git", "health", "nxEdges", "security", "workspaces"].toSorted());
+    // Exactly two edges from the fixture metadata (one from the package dependency, one from
+    // the target dependency). The live checkout's seven-project graph would produce a different
+    // result, so this assertion fails if the default reader reads the wrong root.
+    expect(output["nxEdges"]).toEqual([
+      {source: "@arolariu/website", target: "@arolariu/components"},
+      {source: "@arolariu/website", target: "@arolariu/components"},
+    ]);
+  });
+});
+
+// ============================================================================
 // Direct entrypoint smoke
 // ============================================================================
 
