@@ -10,7 +10,7 @@ import ts from "typescript";
 import {describe, expect, it} from "vitest";
 
 const productionScriptExtensions = new Set([".ts", ".js", ".mjs", ".cjs"]);
-const transitionalEntrypoints = new Set(["scripts/doctor.ts", "scripts/status.ts"]);
+const transitionalEntrypoints = new Set<string>();
 
 type AccessPath = readonly string[];
 type AliasScope = Map<string, AccessPath | null>;

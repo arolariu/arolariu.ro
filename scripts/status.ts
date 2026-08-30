@@ -3,16 +3,20 @@
  * @module scripts/status
  *
  * @remarks
- * Collects data from multiple sources in parallel (workspaces, Nx dependency
- * graph, git state, npm audit/outdated, disk usage, and doctor health score)
- * then renders a rich terminal dashboard with box-drawing characters and ANSI
- * colors via `node:util` {@link styleText}.
+ * Collects data from multiple sources concurrently (workspaces, the Nx
+ * dependency graph, git state, npm audit/outdated, disk usage, and the
+ * doctor health report) then renders a dashboard through
+ * {@link MonorepositoryLogger} or emits it as a single JSON document.
  *
- * All collectors use `Promise.allSettled()` so a failure in any single source
- * degrades gracefully to "unavailable" without blocking the rest of the output.
- *
- * No external npm packages are imported — only Node.js built-ins and the
- * monorepo's own `scripts/common` utilities.
+ * Every collector runs independently through `Promise.allSettled()`, so a
+ * failure or malformed result from any single source degrades that section
+ * to `null` ("unavailable") without invalidating the rest of the report and
+ * without inventing a zero, `"unknown"`, or empty-array stand-in for a
+ * genuine failure. Every external probe (git, npm, the Nx graph, and the
+ * doctor report) is issued through the shared {@link CommandRunner} as an
+ * explicit {@link CommandSpec} — never a shell string — and the script never
+ * writes a temporary file or inherits child process output. All human or
+ * machine-readable output is produced by {@link MonorepositoryLogger}.
  *
  * @example
  * ```bash
@@ -22,13 +26,18 @@
  * ```
  */
 
-import {execSync} from "node:child_process";
-import {existsSync, readFileSync, unlinkSync} from "node:fs";
-import {join} from "node:path";
-import {platform} from "node:os";
-import {styleText} from "node:util";
+import {readdir, stat} from "node:fs/promises";
+import {existsSync, readFileSync, type Stats} from "node:fs";
+import {join, resolve} from "node:path";
+import {fileURLToPath} from "node:url";
 
 import {formatBytes} from "./common/index.ts";
+import {MonorepositoryConsoleLogger, type LogSegment, type MonorepositoryLogger} from "./common/logger.ts";
+import {defaultCommandRunner, type CommandResult, type CommandRunner, type CommandSpec} from "./common/process.ts";
+import {resolveRepositoryPaths, type RepositoryPaths} from "./common/repository-paths.ts";
+import {parseDoctorReport} from "./doctor.reporter.ts";
+import type {DoctorSummary} from "./doctor.types.ts";
+import {parseNxGraph} from "./doctor.workspace.ts";
 
 // ============================================================================
 // Types
@@ -75,26 +84,54 @@ interface DiskInfo {
   readonly componentsDist: number;
 }
 
-/** Health score from the doctor script. */
-interface HealthInfo {
+/** Health score and summary from the doctor script. */
+export interface HealthInfo {
   readonly score: number;
   readonly grade: string;
+  readonly summary: DoctorSummary;
 }
 
-/** Parsed CLI flags. */
-interface CliFlags {
+/** The complete, six-section status payload. */
+interface StatusOutput {
+  readonly workspaces: readonly WorkspaceInfo[] | null;
+  readonly nxEdges: readonly DependencyEdge[] | null;
+  readonly git: GitInfo | null;
+  readonly security: SecurityInfo | null;
+  readonly disk: DiskInfo | null;
+  readonly health: HealthInfo | null;
+}
+
+/** Parsed CLI options. */
+interface StatusOptions {
   readonly json: boolean;
   readonly help: boolean;
+}
+
+/**
+ * Boundary values {@link main} needs to resolve repository context and
+ * execute every collector.
+ *
+ * @remarks
+ * Exported so tests can inject a deterministic command runner, logger,
+ * repository-path resolver, or filesystem traversal without replacing the
+ * repository modules that own those boundaries.
+ */
+export interface StatusDependencies {
+  /** Executes read-only status commands. */
+  readonly runner: CommandRunner;
+  /** Receives dashboard presentation and JSON output. */
+  readonly logger: MonorepositoryLogger;
+  /** Resolves canonical repository paths. */
+  readonly resolveRepositoryPaths: () => RepositoryPaths;
+  /** Measures the total byte size of a directory (or file) tree. */
+  readonly measureDirectorySize: (absolutePath: string) => Promise<number>;
 }
 
 // ============================================================================
 // Constants
 // ============================================================================
 
-/** Absolute path to the monorepo root. */
-const ROOT = join(import.meta.dirname, "..");
-
-/** Relative paths (from ROOT) to every workspace project. */
+/** Relative paths (from the repository root) to every workspace project. */
 const WORKSPACE_DIRS: readonly string[] = [
   "packages/components",
   "sites/arolariu.ro",
@@ -103,30 +140,98 @@ const WORKSPACE_DIRS: readonly string[] = [
   "sites/docs.arolariu.ro",
 ];
 
+const GIT_TIMEOUT_MS = 30_000;
+const NPM_TIMEOUT_MS = 60_000;
+const NX_TIMEOUT_MS = 60_000;
+const DOCTOR_TIMEOUT_MS = 60_000;
+const MAX_CONCURRENT_STAT_OPERATIONS = 64;
+
+const GIT_BRANCH_COMMAND = {command: "git", args: ["rev-parse", "--abbrev-ref", "HEAD"]} as const satisfies CommandSpec;
+const GIT_SHA_COMMAND = {command: "git", args: ["rev-parse", "--short", "HEAD"]} as const satisfies CommandSpec;
+const GIT_LAST_COMMIT_TIME_COMMAND = {command: "git", args: ["log", "-1", "--format=%cr"]} as const satisfies CommandSpec;
+const GIT_LAST_COMMIT_MSG_COMMAND = {command: "git", args: ["log", "-1", "--format=%s"]} as const satisfies CommandSpec;
+const GIT_STATUS_COMMAND = {command: "git", args: ["status", "--porcelain"]} as const satisfies CommandSpec;
+const NPM_AUDIT_COMMAND = {command: "npm", args: ["audit", "--json"]} as const satisfies CommandSpec;
+const NPM_OUTDATED_COMMAND = {command: "npm", args: ["outdated", "--json"]} as const satisfies CommandSpec;
+const NX_GRAPH_COMMAND = {
+  command: "npx",
+  args: ["--no-install", "nx", "graph", "--print", "--open=false", "--watch=false"],
+} as const satisfies CommandSpec;
+
+const HELP_LINES: readonly string[] = [
+  "Usage: node scripts/status.ts [options]",
+  "",
+  "Options:",
+  "  --json        Output all collected data as a single JSON document.",
+  "  --help, -h    Show this help message.",
+];
+
 // ============================================================================
-// Utility Helpers
+// Small Utilities
+// ============================================================================
+
+type UnknownRecord = Readonly<Record<string, unknown>>;
+
+function isRecord(value: unknown): value is UnknownRecord {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
+function hasCommandTransportFailure(result: Readonly<CommandResult>): boolean {
+  return result.spawnError !== undefined || result.timedOut || result.signal !== undefined;
+}
+
+function isSuccessfulCommand(result: Readonly<CommandResult>): boolean {
+  return result.code === 0 && !hasCommandTransportFailure(result);
+}
+
+/** Builds the `node <repo>/scripts/doctor.ts --quick --json` command run through the process runner. */
+function doctorCommand(paths: Readonly<RepositoryPaths>): CommandSpec {
+  return {
+    command: process.execPath,
+    args: [join(paths.root, "scripts", "doctor.ts"), "--quick", "--json"],
+  };
+}
+
+// ============================================================================
+// Doctor Health Parsing
 // ============================================================================
 
 /**
- * Executes a shell command synchronously and returns trimmed stdout.
+ * Parses a doctor command result into a health summary.
  *
- * Returns `null` when the command fails **and** produces no usable stdout.
- * Commands like `npm audit --json` exit non-zero but still write valid JSON to
- * stdout — that output is preserved.
+ * @remarks
+ * Parses {@link CommandResult.stdout} directly with `JSON.parse` followed by
+ * {@link parseDoctorReport} — it never scans for the first `{` and never
+ * reuses a stale value. A schema-v1 report is accepted whether the doctor
+ * process exited `0` or `1` (doctor exits `1` when checks fail, not when the
+ * report itself is invalid), and `stderr` warnings are ignored whenever
+ * `stdout` holds a valid report. An empty `stdout`, a non-JSON preamble, a
+ * missing/old/future schema, malformed JSON, or an internally inconsistent
+ * score/grade/summary all resolve to `null`.
  *
- * @param cmd - The shell command to run.
- * @param timeoutMs - Maximum execution time in milliseconds (default 30 s).
- * @returns Trimmed stdout, or `null` on failure with no output.
+ * @param result - The complete result of running the doctor command.
+ * @returns The parsed health summary, or `null` when unavailable.
  */
-function exec(cmd: string, timeoutMs: number = 30_000): string | null {
+export function healthFromDoctorResult(result: Readonly<CommandResult>): HealthInfo | null {
+  if (result.stdout.trim().length === 0) {
+    return null;
+  }
+
+  let parsed: unknown;
   try {
-    return execSync(cmd, {encoding: "utf-8", stdio: "pipe", timeout: timeoutMs, cwd: ROOT}).trim();
-  } catch (error: unknown) {
-    // npm audit / npm outdated exit non-zero but still emit valid stdout.
-    if (error !== null && typeof error === "object" && "stdout" in error) {
-      const stdout = String((error as {stdout: unknown}).stdout).trim();
-      if (stdout.length > 0) return stdout;
-    }
+    parsed = JSON.parse(result.stdout);
+  } catch {
+    return null;
+  }
+
+  try {
+    const report = parseDoctorReport(parsed);
+    return {score: report.score, grade: report.grade, summary: report.summary};
+  } catch {
     return null;
   }
 }
@@ -139,13 +244,14 @@ function exec(cmd: string, timeoutMs: number = 30_000): string | null {
  * Reads workspace metadata from `package.json` and `project.json` for each
  * project directory listed in {@link WORKSPACE_DIRS}.
  *
+ * @param root - Absolute repository root.
  * @returns Array of workspace info objects.
  */
-async function collectWorkspaces(): Promise<readonly WorkspaceInfo[]> {
+async function collectWorkspaces(root: string): Promise<readonly WorkspaceInfo[]> {
   const workspaces: WorkspaceInfo[] = [];
 
   for (const dir of WORKSPACE_DIRS) {
-    const absDir = join(ROOT, dir);
+    const absDir = join(root, dir);
     let name = dir;
     let version = "—";
     let type = "unknown";
@@ -154,9 +260,11 @@ async function collectWorkspaces(): Promise<readonly WorkspaceInfo[]> {
     const pkgPath = join(absDir, "package.json");
     if (existsSync(pkgPath)) {
       try {
-        const pkg = JSON.parse(readFileSync(pkgPath, "utf-8")) as Record<string, unknown>;
-        if (typeof pkg["name"] === "string") name = pkg["name"];
-        if (typeof pkg["version"] === "string") version = pkg["version"];
+        const pkg: unknown = JSON.parse(readFileSync(pkgPath, "utf-8"));
+        if (isRecord(pkg)) {
+          if (typeof pkg["name"] === "string") name = pkg["name"];
+          if (typeof pkg["version"] === "string") version = pkg["version"];
+        }
       } catch {
         // ignore parse errors
       }
@@ -165,13 +273,15 @@ async function collectWorkspaces(): Promise<readonly WorkspaceInfo[]> {
     const projPath = join(absDir, "project.json");
     if (existsSync(projPath)) {
       try {
-        const proj = JSON.parse(readFileSync(projPath, "utf-8")) as Record<string, unknown>;
-        if (typeof proj["name"] === "string") name = proj["name"];
-        if (typeof proj["projectType"] === "string") {
-          type = proj["projectType"] === "library" ? "lib" : "app";
-        }
-        if (Array.isArray(proj["tags"])) {
-          tags = (proj["tags"] as unknown[]).filter((t): t is string => typeof t === "string");
+        const proj: unknown = JSON.parse(readFileSync(projPath, "utf-8"));
+        if (isRecord(proj)) {
+          if (typeof proj["name"] === "string") name = proj["name"];
+          if (typeof proj["projectType"] === "string") {
+            type = proj["projectType"] === "library" ? "lib" : "app";
+          }
+          if (Array.isArray(proj["tags"])) {
+            tags = (proj["tags"] as unknown[]).filter((t): t is string => typeof t === "string");
+          }
         }
       } catch {
         // ignore parse errors
@@ -185,48 +295,37 @@ async function collectWorkspaces(): Promise<readonly WorkspaceInfo[]> {
 }
 
 /**
- * Runs `npx nx graph --file=<tmpfile>` and parses the resulting JSON to
- * extract inter-project dependency edges.
+ * Runs the Nx graph command and extracts inter-project dependency edges.
  *
- * The temporary file is always cleaned up, even on failure.
+ * @remarks
+ * Reuses {@link parseNxGraph} so status and doctor share identical Nx graph
+ * semantics. No temporary file is ever written or read: the graph is parsed
+ * directly from captured stdout.
  *
- * @returns Array of `{source, target}` dependency edges.
+ * @param runner - Command runner used to invoke Nx.
+ * @param root - Absolute repository root.
+ * @returns Dependency edges between workspace projects, or `null` when the
+ * command fails or the graph cannot be parsed.
  */
-async function collectNxGraph(): Promise<readonly DependencyEdge[]> {
-  const tmpFile = join(ROOT, "nx-graph-status-tmp.json");
+async function collectNxGraph(runner: CommandRunner, root: string): Promise<readonly DependencyEdge[] | null> {
+  const result = await runner.run(NX_GRAPH_COMMAND, {cwd: root, timeoutMs: NX_TIMEOUT_MS});
+  if (!isSuccessfulCommand(result)) {
+    return null;
+  }
 
   try {
-    exec(`npx nx graph --file="${tmpFile}"`, 60_000);
-
-    if (!existsSync(tmpFile)) return [];
-
-    const raw = readFileSync(tmpFile, "utf-8");
-    const data = JSON.parse(raw) as Record<string, unknown>;
+    const graph = parseNxGraph(result.stdout);
     const edges: DependencyEdge[] = [];
-
-    // Nx may nest under `graph.dependencies` or directly under `dependencies`.
-    const graphObj = (data["graph"] as Record<string, unknown> | undefined) ?? data;
-    const deps = graphObj["dependencies"];
-    if (typeof deps !== "object" || deps === null) return edges;
-
-    for (const [source, targets] of Object.entries(deps as Record<string, unknown>)) {
-      if (!Array.isArray(targets)) continue;
-      for (const dep of targets as unknown[]) {
-        const target = typeof dep === "string" ? dep : (dep as Record<string, unknown> | null)?.["target"];
-        // Only keep edges between workspace projects, skip npm:* externals.
-        if (typeof target === "string" && !target.startsWith("npm:")) {
+    for (const [source, targets] of graph.dependencies) {
+      for (const target of targets) {
+        if (!target.startsWith("npm:")) {
           edges.push({source, target});
         }
       }
     }
-
     return edges;
-  } finally {
-    try {
-      if (existsSync(tmpFile)) unlinkSync(tmpFile);
-    } catch {
-      // cleanup is best-effort
-    }
+  } catch {
+    return null;
   }
 }
 
@@ -234,204 +333,315 @@ async function collectNxGraph(): Promise<readonly DependencyEdge[]> {
  * Collects current git repository state: branch, SHA, last commit info, and
  * the number of dirty (uncommitted) files.
  *
- * @returns Git info object.
+ * @remarks
+ * Every underlying git command must succeed for git state to be considered
+ * available; a single failing command makes the whole section `null`
+ * instead of substituting `"unknown"` per field.
+ *
+ * @param runner - Command runner used to invoke git.
+ * @param root - Absolute repository root.
+ * @returns Git info, or `null` when any underlying command fails.
  */
-async function collectGit(): Promise<GitInfo> {
-  const branch = exec("git rev-parse --abbrev-ref HEAD") ?? "unknown";
-  const sha = exec("git rev-parse --short HEAD") ?? "unknown";
-  const lastCommitTime = exec("git log -1 --format=%cr") ?? "unknown";
-  let lastCommitMsg = exec("git log -1 --format=%s") ?? "unknown";
-  if (lastCommitMsg.length > 60) {
-    lastCommitMsg = lastCommitMsg.slice(0, 57) + "...";
-  }
-  const porcelain = exec("git status --porcelain");
-  const dirtyFiles = porcelain ? porcelain.split("\n").filter((l) => l.trim().length > 0).length : 0;
+async function collectGit(runner: CommandRunner, root: string): Promise<GitInfo | null> {
+  const options = {cwd: root, timeoutMs: GIT_TIMEOUT_MS};
+  const [branch, sha, lastCommitTime, lastCommitMsg, status] = await Promise.all([
+    runner.run(GIT_BRANCH_COMMAND, options),
+    runner.run(GIT_SHA_COMMAND, options),
+    runner.run(GIT_LAST_COMMIT_TIME_COMMAND, options),
+    runner.run(GIT_LAST_COMMIT_MSG_COMMAND, options),
+    runner.run(GIT_STATUS_COMMAND, options),
+  ]);
 
-  return {branch, sha, lastCommitTime, lastCommitMsg, dirtyFiles};
+  if (![branch, sha, lastCommitTime, lastCommitMsg, status].every(isSuccessfulCommand)) {
+    return null;
+  }
+
+  let lastCommitMsgText = lastCommitMsg.stdout.trim();
+  if (lastCommitMsgText.length > 60) {
+    lastCommitMsgText = `${lastCommitMsgText.slice(0, 57)}...`;
+  }
+  const dirtyFiles = status.stdout.split("\n").filter((line) => line.trim().length > 0).length;
+
+  return {
+    branch: branch.stdout.trim(),
+    sha: sha.stdout.trim(),
+    lastCommitTime: lastCommitTime.stdout.trim(),
+    lastCommitMsg: lastCommitMsgText,
+    dirtyFiles,
+  };
+}
+
+function parseSeverityCount(value: unknown, label: string): number {
+  if (value === undefined) {
+    return 0;
+  }
+  if (typeof value !== "number" || !Number.isFinite(value) || value < 0) {
+    throw new Error(`npm audit ${label} count must be a non-negative number.`);
+  }
+  return value;
+}
+
+function classifyOutdatedBump(current: string, latest: string): "major" | "minor" | "patch" {
+  const currentParts = current.split(".");
+  const latestParts = latest.split(".");
+  if ((currentParts[0] ?? "") !== (latestParts[0] ?? "")) {
+    return "major";
+  }
+  if ((currentParts[1] ?? "") !== (latestParts[1] ?? "")) {
+    return "minor";
+  }
+  return "patch";
 }
 
 /**
  * Runs `npm audit --json` and `npm outdated --json` to gather vulnerability
  * counts by severity and outdated-package counts by semver bump level.
  *
- * Both commands may exit non-zero in normal operation (e.g. when
- * vulnerabilities or outdated packages exist). The {@link exec} helper
- * preserves their stdout regardless.
+ * @remarks
+ * Both commands may exit non-zero in normal operation (vulnerabilities or
+ * outdated packages found) — that nonzero JSON is preserved. Only a spawn
+ * failure, timeout, or signal termination, or JSON that does not match the
+ * expected shape, makes the whole section `null`; it never falls back to
+ * all-zero counts.
  *
- * @returns Security and dependency-health summary.
+ * @param runner - Command runner used to invoke npm.
+ * @param root - Absolute repository root.
+ * @returns Security info, or `null` when unavailable.
  */
-async function collectSecurity(): Promise<SecurityInfo> {
-  let critical = 0;
-  let high = 0;
-  let moderate = 0;
-  let low = 0;
+async function collectSecurity(runner: CommandRunner, root: string): Promise<SecurityInfo | null> {
+  const options = {cwd: root, timeoutMs: NPM_TIMEOUT_MS};
+  const [auditResult, outdatedResult] = await Promise.all([
+    runner.run(NPM_AUDIT_COMMAND, options),
+    runner.run(NPM_OUTDATED_COMMAND, options),
+  ]);
 
-  const auditRaw = exec("npm audit --json", 60_000);
-  if (auditRaw) {
+  if (hasCommandTransportFailure(auditResult) || hasCommandTransportFailure(outdatedResult)) {
+    return null;
+  }
+
+  let auditPayload: unknown;
+  try {
+    auditPayload = JSON.parse(auditResult.stdout);
+  } catch {
+    return null;
+  }
+  if (!isRecord(auditPayload)) {
+    return null;
+  }
+  const metadata = auditPayload["metadata"];
+  if (!isRecord(metadata)) {
+    return null;
+  }
+  const vulnerabilities = metadata["vulnerabilities"];
+  if (!isRecord(vulnerabilities)) {
+    return null;
+  }
+
+  let critical: number;
+  let high: number;
+  let moderate: number;
+  let low: number;
+  try {
+    critical = parseSeverityCount(vulnerabilities["critical"], "critical");
+    high = parseSeverityCount(vulnerabilities["high"], "high");
+    moderate = parseSeverityCount(vulnerabilities["moderate"], "moderate");
+    low = parseSeverityCount(vulnerabilities["low"], "low");
+  } catch {
+    return null;
+  }
+
+  const trimmedOutdated = outdatedResult.stdout.trim();
+  let outdatedPayload: unknown = {};
+  if (trimmedOutdated.length > 0) {
     try {
-      const audit = JSON.parse(auditRaw) as Record<string, unknown>;
-      const meta = audit["metadata"] as Record<string, unknown> | undefined;
-      const vulns = (meta?.["vulnerabilities"] ?? {}) as Record<string, number>;
-      critical = vulns["critical"] ?? 0;
-      high = vulns["high"] ?? 0;
-      moderate = vulns["moderate"] ?? 0;
-      low = vulns["low"] ?? 0;
+      outdatedPayload = JSON.parse(trimmedOutdated);
     } catch {
-      // malformed JSON — leave zeroes
+      return null;
     }
+  }
+  if (!isRecord(outdatedPayload)) {
+    return null;
   }
 
   let majorOutdated = 0;
   let minorOutdated = 0;
   let patchOutdated = 0;
-
-  const outdatedRaw = exec("npm outdated --json", 60_000);
-  if (outdatedRaw) {
-    try {
-      const outdated = JSON.parse(outdatedRaw) as Record<string, Record<string, string>>;
-      for (const pkg of Object.values(outdated)) {
-        const current = pkg["current"]?.split(".") ?? [];
-        const latest = pkg["latest"]?.split(".") ?? [];
-        if (current.length >= 1 && latest.length >= 1) {
-          if (current[0] !== latest[0]) majorOutdated++;
-          else if (current.length >= 2 && latest.length >= 2 && current[1] !== latest[1]) minorOutdated++;
-          else patchOutdated++;
-        }
-      }
-    } catch {
-      // malformed JSON — leave zeroes
+  for (const entry of Object.values(outdatedPayload)) {
+    if (!isRecord(entry) || typeof entry["current"] !== "string" || typeof entry["latest"] !== "string") {
+      continue;
     }
+    const bump = classifyOutdatedBump(entry["current"], entry["latest"]);
+    if (bump === "major") majorOutdated++;
+    else if (bump === "minor") minorOutdated++;
+    else patchOutdated++;
   }
 
   return {critical, high, moderate, low, majorOutdated, minorOutdated, patchOutdated};
 }
 
-/**
- * Measures on-disk size of key directories using PowerShell
- * `Get-ChildItem -Recurse`.
- *
- * @returns Byte counts for `node_modules`, `.next`, and `dist`.
- */
-async function collectDisk(): Promise<DiskInfo> {
-  function measureDir(relativePath: string): number {
-    const absPath = join(ROOT, relativePath);
-    if (!existsSync(absPath)) return 0;
-    let result: string | null;
-    if (platform() === "win32") {
-      const escaped = absPath.replaceAll("'", "''");
-      result = exec(
-        `powershell -NoProfile -Command "(Get-ChildItem '${escaped}' -Recurse -File -ErrorAction SilentlyContinue | Measure-Object -Property Length -Sum).Sum"`,
-        60_000,
-      );
-    } else {
-      result = exec(`du -sb "${absPath}" 2>/dev/null | cut -f1`, 60_000);
+async function tryStat(path: string): Promise<Stats | null> {
+  try {
+    return await stat(path);
+  } catch (error: unknown) {
+    if (error instanceof Error && "code" in error && error.code === "ENOENT") {
+      return null;
     }
-    if (!result) return 0;
-    const parsed = Number.parseInt(result, 10);
-    return Number.isNaN(parsed) ? 0 : parsed;
+    throw error;
+  }
+}
+
+/** Bounds the number of concurrent filesystem operations issued by a single traversal. */
+function createConcurrencyGate(limit: number): <T>(task: () => Promise<T>) => Promise<T> {
+  let active = 0;
+  const queue: Array<() => void> = [];
+
+  function release(): void {
+    active--;
+    const next = queue.shift();
+    if (next !== undefined) {
+      next();
+    }
   }
 
-  return {
-    nodeModules: measureDir("node_modules"),
-    nextBuild: measureDir("sites/arolariu.ro/.next"),
-    componentsDist: measureDir("packages/components/dist"),
+  return async function run<T>(task: () => Promise<T>): Promise<T> {
+    if (active >= limit) {
+      await new Promise<void>((settle) => queue.push(settle));
+    }
+    active++;
+    try {
+      return await task();
+    } finally {
+      release();
+    }
   };
 }
 
-/**
- * Runs the doctor script in quick JSON mode to retrieve the overall health
- * score and letter grade.
- *
- * @returns Health score and grade, or `null` if the doctor script failed.
- */
-async function collectHealthScore(): Promise<HealthInfo | null> {
-  const raw = exec("node scripts/doctor.ts --quick --json", 60_000);
-  if (!raw) return null;
+const gateDirectoryOperation = createConcurrencyGate(MAX_CONCURRENT_STAT_OPERATIONS);
 
-  try {
-    // The doctor output may include npm warnings before the JSON — find the JSON object
-    const jsonStart = raw.indexOf("{");
-    if (jsonStart < 0) return null;
-    const jsonStr = raw.slice(jsonStart);
-    const data = JSON.parse(jsonStr) as Record<string, unknown>;
-    if (typeof data["score"] === "number" && typeof data["grade"] === "string") {
-      return {score: data["score"], grade: data["grade"]};
-    }
-  } catch {
-    // malformed JSON
+/**
+ * Measures the total byte size of a file or directory tree using read-only
+ * Node.js filesystem calls (no shell command, no platform-specific quoting).
+ *
+ * @remarks
+ * A directory or file that does not exist is a legitimate, distinguishable
+ * zero. Any other filesystem error (e.g. a permission failure) propagates so
+ * the caller can classify the whole disk section as unavailable rather than
+ * silently reporting a successful-looking zero.
+ *
+ * @param absolutePath - Absolute path to measure.
+ * @returns Total size in bytes.
+ */
+async function defaultMeasureDirectorySize(absolutePath: string): Promise<number> {
+  const stats = await gateDirectoryOperation(() => tryStat(absolutePath));
+  if (stats === null) {
+    return 0;
+  }
+  if (stats.isFile()) {
+    return stats.size;
+  }
+  if (!stats.isDirectory()) {
+    return 0;
   }
 
-  return null;
+  const entries = await gateDirectoryOperation(() => readdir(absolutePath, {withFileTypes: true}));
+  const sizes = await Promise.all(
+    entries.map(async (entry): Promise<number> => {
+      if (entry.isSymbolicLink()) {
+        return 0;
+      }
+      const entryPath = join(absolutePath, entry.name);
+      if (entry.isDirectory()) {
+        return defaultMeasureDirectorySize(entryPath);
+      }
+      if (!entry.isFile()) {
+        return 0;
+      }
+      const fileStats = await gateDirectoryOperation(() => tryStat(entryPath));
+      return fileStats?.size ?? 0;
+    }),
+  );
+
+  return sizes.reduce((total, size) => total + size, 0);
+}
+
+/**
+ * Measures on-disk size of key directories.
+ *
+ * @param root - Absolute repository root.
+ * @param measureDirectorySize - Filesystem traversal boundary.
+ * @returns Byte counts for `node_modules`, `.next`, and `dist`.
+ */
+async function collectDisk(
+  root: string,
+  measureDirectorySize: (absolutePath: string) => Promise<number>,
+): Promise<DiskInfo> {
+  const [nodeModules, nextBuild, componentsDist] = await Promise.all([
+    measureDirectorySize(join(root, "node_modules")),
+    measureDirectorySize(join(root, "sites", "arolariu.ro", ".next")),
+    measureDirectorySize(join(root, "packages", "components", "dist")),
+  ]);
+
+  return {nodeModules, nextBuild, componentsDist};
+}
+
+/**
+ * Runs the doctor script in quick JSON mode and parses its health report.
+ *
+ * @param runner - Command runner used to invoke doctor.
+ * @param paths - Canonical repository paths.
+ * @returns The health summary, or `null` if the report is unavailable.
+ */
+async function collectHealth(runner: CommandRunner, paths: Readonly<RepositoryPaths>): Promise<HealthInfo | null> {
+  const result = await runner.run(doctorCommand(paths), {cwd: paths.root, timeoutMs: DOCTOR_TIMEOUT_MS});
+  return healthFromDoctorResult(result);
 }
 
 // ============================================================================
 // Rendering
 // ============================================================================
 
-/** Pads or truncates a string to exactly `width` visible characters. */
-function pad(text: string, width: number): string {
-  if (text.length >= width) return text.slice(0, width);
-  return text + " ".repeat(width - text.length);
+function renderHealthSummary(summary: Readonly<DoctorSummary>): string {
+  return `${String(summary.passed)} passed, ${String(summary.warnings)} warning${summary.warnings === 1 ? "" : "s"}, ${String(summary.failed)} failure${summary.failed === 1 ? "" : "s"}, ${String(summary.skipped)} skipped`;
 }
 
 /**
- * Renders the full status dashboard to the terminal using box-drawing
- * characters and ANSI colour codes.
+ * Renders the full status dashboard through the injected logger.
+ *
+ * @param logger - Repository logger abstraction.
+ * @param output - The complete, six-section status payload.
  */
-function renderDashboard(
-  workspaces: readonly WorkspaceInfo[] | null,
-  nxEdges: readonly DependencyEdge[] | null,
-  git: GitInfo | null,
-  security: SecurityInfo | null,
-  disk: DiskInfo | null,
-  health: HealthInfo | null,
-): void {
+function renderDashboard(logger: MonorepositoryLogger, output: Readonly<StatusOutput>): void {
+  const {workspaces, nxEdges, git, security, disk, health} = output;
   const nodeMajor = process.versions["node"]?.split(".")[0] ?? "?";
-  const healthLabel = health ? `${health.score} (${health.grade})` : "—";
-  const branchLabel = git?.branch ?? "—";
+  const healthLabel = health ? `${String(health.score)} (${health.grade})` : "unavailable";
+  const branchLabel = git?.branch ?? "unavailable";
 
-  // ── Header box ────────────────────────────────────────────────────────────
-  const innerWidth = 56;
-  console.log();
-  console.log(`  ${styleText("cyan", "╭" + "─".repeat(innerWidth) + "╮")}`);
-  console.log(
-    `  ${styleText("cyan", "│")}  🏠 ${styleText("bold", "arolariu.ro monorepo")}` +
-      `${" ".repeat(innerWidth - 25)}${styleText("cyan", "│")}`,
-  );
-  console.log(
-    `  ${styleText("cyan", "│")}  Branch: ${styleText("yellow", pad(branchLabel, 10))}` +
-      `  │  Node: ${pad(nodeMajor + ".x", 6)}` +
-      ` │  Health: ${pad(healthLabel, 8)}${styleText("cyan", "│")}`,
-  );
-  console.log(`  ${styleText("cyan", "╰" + "─".repeat(innerWidth) + "╯")}`);
-
-  // ── Workspaces ────────────────────────────────────────────────────────────
-  console.log();
-  console.log(`  ${styleText("bold", "📦 Workspaces")}`);
-  console.log(`  ${styleText("gray", "─".repeat(57))}`);
-  if (workspaces) {
-    console.log(
-      `  ${styleText("gray", pad("  Package", 28) + pad("Version", 9) + pad("Type", 9) + "Tags")}`,
-    );
-    for (const ws of workspaces) {
-      const shortName = ws.name.replace("@arolariu/", "");
-      const tagStr = ws.tags
-        .filter((t) => t.startsWith("domain:"))
-        .map((t) => t.replace("domain:", ""))
-        .join(", ");
-      console.log(
-        `  ${pad("  " + shortName, 28)}${pad(ws.version, 9)}${pad(ws.type, 9)}${tagStr}`,
-      );
-    }
-  } else {
-    console.log(`  ${styleText("yellow", "  unavailable")}`);
+  logger.banner(["🏠 arolariu.ro monorepo status"], "cyan");
+  logger.line(`Branch: ${branchLabel}  │  Node: ${nodeMajor}.x  │  Health: ${healthLabel}`);
+  if (health) {
+    logger.line(`Health summary: ${renderHealthSummary(health.summary)}`);
   }
 
-  // ── Dependency Graph ──────────────────────────────────────────────────────
-  console.log();
-  console.log(`  ${styleText("bold", "🔗 Dependency Graph")}`);
+  logger.section("📦 Workspaces");
+  if (workspaces) {
+    logger.table({
+      headers: ["Package", "Version", "Type", "Tags"],
+      rows: workspaces.map((ws) => [
+        ws.name.replace("@arolariu/", ""),
+        ws.version,
+        ws.type,
+        ws.tags
+          .filter((t) => t.startsWith("domain:"))
+          .map((t) => t.replace("domain:", ""))
+          .join(", "),
+      ]),
+    });
+  } else {
+    logger.line([{text: "unavailable", styles: ["yellow"]}]);
+  }
+
+  logger.section("🔗 Dependency Graph");
   if (nxEdges && nxEdges.length > 0) {
-    // Group by target: show "target ← dependents"
     const inbound = new Map<string, string[]>();
     const mentioned = new Set<string>();
 
@@ -449,81 +659,86 @@ function renderDashboard(
     }
 
     for (const [target, sources] of inbound) {
-      console.log(`  ${styleText("cyan", "  " + target)} ← ${sources.join(", ")}`);
+      logger.line(`${target} ← ${sources.join(", ")}`);
     }
 
-    // Show isolated workspace projects
     if (workspaces) {
       for (const ws of workspaces) {
         const short = ws.name.replace("@arolariu/", "");
         if (!mentioned.has(short)) {
-          console.log(`  ${styleText("gray", "  " + short + " (isolated)")}`);
+          logger.line([{text: `${short} (isolated)`, styles: ["gray"]}]);
         }
       }
     }
   } else if (nxEdges) {
-    console.log(`  ${styleText("gray", "  No inter-project dependencies found")}`);
+    logger.line([{text: "No inter-project dependencies found", styles: ["gray"]}]);
   } else {
-    console.log(`  ${styleText("yellow", "  unavailable")}`);
+    logger.line([{text: "unavailable", styles: ["yellow"]}]);
   }
 
-  // ── Git ────────────────────────────────────────────────────────────────────
-  console.log();
-  console.log(`  ${styleText("bold", "📋 Git")}`);
+  logger.section("📋 Git");
   if (git) {
-    console.log(
-      `  ${styleText("gray", "  Branch:")} ${styleText("yellow", git.branch)} @ ${styleText("cyan", git.sha)}`,
-    );
-    console.log(`  ${styleText("gray", "  Last:")} ${git.lastCommitTime} — "${git.lastCommitMsg}"`);
-    const treeStatus =
+    logger.line(`Branch: ${git.branch} @ ${git.sha}`);
+    logger.line(`Last: ${git.lastCommitTime} — "${git.lastCommitMsg}"`);
+    const treeStatus: LogSegment =
       git.dirtyFiles === 0
-        ? styleText("green", "clean ✅")
-        : styleText("yellow", `${git.dirtyFiles} file${git.dirtyFiles === 1 ? "" : "s"} modified ⚠️`);
-    console.log(`  ${styleText("gray", "  Working tree:")} ${treeStatus}`);
+        ? {text: "clean", styles: ["green"]}
+        : {text: `${String(git.dirtyFiles)} file${git.dirtyFiles === 1 ? "" : "s"} modified`, styles: ["yellow"]};
+    logger.line([{text: "Working tree: "}, treeStatus]);
   } else {
-    console.log(`  ${styleText("yellow", "  unavailable")}`);
+    logger.line([{text: "unavailable", styles: ["yellow"]}]);
   }
 
-  // ── Security & Dependencies ───────────────────────────────────────────────
-  console.log();
-  console.log(`  ${styleText("bold", "🔒 Security & Dependencies")}`);
+  logger.section("🔒 Security & Dependencies");
   if (security) {
-    const auditParts: string[] = [];
-    auditParts.push(
-      security.critical > 0
-        ? styleText("red", `${security.critical} critical`)
-        : `${security.critical} critical`,
-    );
-    auditParts.push(
-      security.high > 0 ? styleText("red", `${security.high} high`) : `${security.high} high`,
-    );
-    auditParts.push(
-      security.moderate > 0
-        ? styleText("yellow", `${security.moderate} moderate`)
-        : `${security.moderate} moderate`,
-    );
-    console.log(`  ${styleText("gray", "  Audit:    ")}${auditParts.join(", ")}`);
-    console.log(
-      `  ${styleText("gray", "  Outdated: ")}${security.majorOutdated} major, ${security.minorOutdated} minor, ${security.patchOutdated} patch`,
+    logger.line(`Audit:    ${String(security.critical)} critical, ${String(security.high)} high, ${String(security.moderate)} moderate`);
+    logger.line(
+      `Outdated: ${String(security.majorOutdated)} major, ${String(security.minorOutdated)} minor, ${String(security.patchOutdated)} patch`,
     );
   } else {
-    console.log(`  ${styleText("yellow", "  unavailable")}`);
+    logger.line([{text: "unavailable", styles: ["yellow"]}]);
   }
 
-  // ── Disk Usage ────────────────────────────────────────────────────────────
-  console.log();
-  console.log(`  ${styleText("bold", "💾 Disk Usage")}`);
+  logger.section("💾 Disk Usage");
   if (disk) {
-    console.log(
-      `  ${styleText("gray", "  node_modules:")} ${formatBytes(disk.nodeModules)}` +
-        `  │  ${styleText("gray", ".next:")} ${formatBytes(disk.nextBuild)}` +
-        `  │  ${styleText("gray", "dist:")} ${formatBytes(disk.componentsDist)}`,
+    logger.line(
+      `node_modules: ${formatBytes(disk.nodeModules)}  │  .next: ${formatBytes(disk.nextBuild)}  │  dist: ${formatBytes(disk.componentsDist)}`,
     );
   } else {
-    console.log(`  ${styleText("yellow", "  unavailable")}`);
+    logger.line([{text: "unavailable", styles: ["yellow"]}]);
+  }
+}
+
+// ============================================================================
+// Options
+// ============================================================================
+
+/**
+ * Parses status command-line options.
+ *
+ * @param argv - Arguments following the status entrypoint.
+ * @returns Strict status options.
+ * @throws When an argument is not a supported status option.
+ */
+export function parseStatusOptions(argv: readonly string[]): StatusOptions {
+  let json = false;
+  let help = false;
+
+  for (const argument of argv) {
+    switch (argument) {
+      case "--json":
+        json = true;
+        break;
+      case "--help":
+      case "-h":
+        help = true;
+        break;
+      default:
+        throw new Error(`Unknown status option '${String(argument)}'.`);
+    }
   }
 
-  console.log();
+  return {json, help};
 }
 
 // ============================================================================
@@ -531,67 +746,101 @@ function renderDashboard(
 // ============================================================================
 
 /**
- * Entry-point: runs all collectors in parallel via `Promise.allSettled()`,
- * then renders the dashboard or emits JSON.
+ * Runs the status CLI entrypoint.
  *
- * @param flags - Parsed CLI flags.
+ * @remarks
+ * `--help`/`-h` is detected before options are parsed or any collector runs,
+ * so an unsupported flag combined with `--help` never surfaces a parse
+ * error. An option-parsing or repository-context failure renders through the
+ * logger and returns `1` without invoking any collector. On a successful
+ * run every collector executes independently via `Promise.allSettled()`; a
+ * failed or malformed collector renders/serializes as `null`
+ * ("unavailable") without fabricating a failure report, and the command
+ * always returns `0`. JSON mode emits exactly one document through
+ * {@link MonorepositoryLogger.json}; human mode renders the dashboard
+ * exclusively through logger methods.
+ *
+ * @param argv - Arguments following the status entrypoint.
+ * @param dependencies - Optional boundary replacements, primarily for tests
+ * that must inject a deterministic runner, logger, repository-path
+ * resolver, or filesystem traversal without reading the live checkout.
+ * @returns Process exit code.
  */
-async function main(flags: CliFlags): Promise<void> {
-  if (flags.help) {
-    console.log(`
-  ${styleText("bold", "arolariu.ro monorepo status dashboard")}
-
-  ${styleText("cyan", "Usage:")}
-    node scripts/status.ts [options]
-
-  ${styleText("cyan", "Options:")}
-    --json        Output all collected data as JSON
-    --help, -h    Show this help message
-`);
-    return;
+export async function main(
+  argv: readonly string[] = process.argv.slice(2),
+  dependencies: Readonly<Partial<StatusDependencies>> = {},
+): Promise<number> {
+  if (argv.includes("--help") || argv.includes("-h")) {
+    const logger = dependencies.logger ?? new MonorepositoryConsoleLogger("status", {verbose: false});
+    logger.banner(["arolariu.ro monorepo status dashboard"]);
+    for (const line of HELP_LINES) {
+      logger.line(line);
+    }
+    return 0;
   }
 
-  const [workspacesResult, nxGraphResult, gitResult, securityResult, diskResult, healthResult] =
-    await Promise.allSettled([
-      collectWorkspaces(),
-      collectNxGraph(),
-      collectGit(),
-      collectSecurity(),
-      collectDisk(),
-      collectHealthScore(),
-    ]);
-
-  const workspaces = workspacesResult.status === "fulfilled" ? workspacesResult.value : null;
-  const nxEdges = nxGraphResult.status === "fulfilled" ? nxGraphResult.value : null;
-  const git = gitResult.status === "fulfilled" ? gitResult.value : null;
-  const security = securityResult.status === "fulfilled" ? securityResult.value : null;
-  const disk = diskResult.status === "fulfilled" ? diskResult.value : null;
-  const health = healthResult.status === "fulfilled" ? healthResult.value : null;
-
-  if (flags.json) {
-    const output = {workspaces, nxEdges, git, security, disk, health};
-    console.log(JSON.stringify(output, null, 2));
-    return;
+  let options: StatusOptions;
+  try {
+    options = parseStatusOptions(argv);
+  } catch (error: unknown) {
+    const logger = dependencies.logger ?? new MonorepositoryConsoleLogger("status", {verbose: false});
+    logger.error(errorMessage(error));
+    return 1;
   }
 
-  renderDashboard(workspaces, nxEdges, git, security, disk, health);
+  const logger =
+    dependencies.logger ?? new MonorepositoryConsoleLogger("status", {mode: options.json ? "json" : "human", verbose: false});
+  const resolvePaths = dependencies.resolveRepositoryPaths ?? ((): RepositoryPaths => resolveRepositoryPaths());
+  const runner = dependencies.runner ?? defaultCommandRunner;
+  const measureDirectorySize = dependencies.measureDirectorySize ?? defaultMeasureDirectorySize;
+
+  let paths: RepositoryPaths;
+  try {
+    paths = resolvePaths();
+  } catch (error: unknown) {
+    logger.error(errorMessage(error));
+    return 1;
+  }
+
+  const [workspacesResult, nxGraphResult, gitResult, securityResult, diskResult, healthResult] = await Promise.allSettled([
+    collectWorkspaces(paths.root),
+    collectNxGraph(runner, paths.root),
+    collectGit(runner, paths.root),
+    collectSecurity(runner, paths.root),
+    collectDisk(paths.root, measureDirectorySize),
+    collectHealth(runner, paths),
+  ]);
+
+  const output: StatusOutput = {
+    workspaces: workspacesResult.status === "fulfilled" ? workspacesResult.value : null,
+    nxEdges: nxGraphResult.status === "fulfilled" ? nxGraphResult.value : null,
+    git: gitResult.status === "fulfilled" ? gitResult.value : null,
+    security: securityResult.status === "fulfilled" ? securityResult.value : null,
+    disk: diskResult.status === "fulfilled" ? diskResult.value : null,
+    health: healthResult.status === "fulfilled" ? healthResult.value : null,
+  };
+
+  if (options.json) {
+    logger.json(output);
+    return 0;
+  }
+
+  renderDashboard(logger, output);
+  return 0;
 }
 
 // ============================================================================
 // Entry Point
 // ============================================================================
 
-if (import.meta.main) {
-  const argv = process.argv.slice(2);
-  const flags: CliFlags = {
-    json: argv.some((a) => a === "--json"),
-    help: argv.some((a) => ["--help", "-h"].includes(a)),
-  };
-
-  main(flags)
-    .then(() => process.exit(0))
+const statusEntrypointPath = process.argv[1];
+if (statusEntrypointPath !== undefined && fileURLToPath(import.meta.url) === resolve(statusEntrypointPath)) {
+  main()
+    .then((exitCode) => {
+      process.exitCode = exitCode;
+    })
     .catch((error: unknown) => {
-      console.error(styleText("red", "\n❌ Unexpected error:"), error);
-      process.exit(1);
+      new MonorepositoryConsoleLogger("status", {verbose: false}).error(errorMessage(error));
+      process.exitCode = 1;
     });
 }
