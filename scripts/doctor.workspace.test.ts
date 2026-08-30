@@ -68,6 +68,17 @@ function healthyNxGraph(): string {
   });
 }
 
+function taxonomyArtifactContents(path: string, generatedAt = "2026-08-29T00:00:00.000Z"): string {
+  const fileName = basename(path);
+  const version =
+    /^ecoicop-v(?<version>.+)\.min\.json$/u.exec(fileName)?.groups?.["version"]
+    ?? /^(?:gpc|nace)-(?<version>.+)\.min\.json$/u.exec(fileName)?.groups?.["version"];
+  if (version === undefined) {
+    throw new Error(`Unsupported taxonomy fixture path: ${path}`);
+  }
+  return `${JSON.stringify({version, generatedAt, nodes: []})}\n`;
+}
+
 interface WorkspaceFixture {
   readonly root: string;
   readonly cacheRoot: string;
@@ -129,7 +140,7 @@ async function createWorkspaceFixture(
   const sourceAt = new Date("2026-08-28T00:00:00.000Z");
   await utimes(resolve(root, "scripts", "generate.artifacts.ts"), sourceAt, sourceAt);
   for (const artifactPath of getExpectedTaxonomyArtifactPaths(root)) {
-    await writeFixtureFile(artifactPath, `${basename(artifactPath)}\n`);
+    await writeFixtureFile(artifactPath, taxonomyArtifactContents(artifactPath));
     await utimes(artifactPath, generatedAt, generatedAt);
   }
 
@@ -407,25 +418,76 @@ describe("workspaceDoctorModule", () => {
     ).toBe(false);
   });
 
-  it("reports missing config and mismatched or stale mirrored taxonomy artifacts without regenerating", async () => {
+  it("reports missing config and mismatched mirrored taxonomy artifacts without regenerating", async () => {
     const fixture = await createWorkspaceFixture();
     await rm(resolve(fixture.root, "nx.json"));
     const artifacts = getExpectedTaxonomyArtifactPaths(fixture.root);
     await writeFile(artifacts[1]!, "different mirror\n", "utf8");
-    const staleAt = new Date("2026-08-27T00:00:00.000Z");
-    await utimes(artifacts[2]!, staleAt, staleAt);
 
     const results = await workspaceDoctorModule.run(fixture.context);
 
     expect(results.find(({id}) => id === "workspace.config-files")?.status).toBe("fail");
     const artifactsResult = results.find(({id}) => id === "workspace.generated-artifacts");
     expect(artifactsResult?.status).toBe("fail");
-    expect(artifactsResult?.evidence.join("\n")).toMatch(/mirror|stale/iu);
+    expect(artifactsResult?.evidence.join("\n")).toMatch(/mirror/iu);
     expect(
       fixture.run.mock.calls.some(
         ([command]) => command.command === process.execPath && command.args.some((argument) => argument.includes("generate")),
       ),
     ).toBe(false);
+  });
+
+  it("does not use filesystem mtimes to classify taxonomy freshness", async () => {
+    const fixture = await createWorkspaceFixture();
+    const oldAt = new Date("2020-01-01T00:00:00.000Z");
+    for (const artifactPath of getExpectedTaxonomyArtifactPaths(fixture.root)) {
+      await utimes(artifactPath, oldAt, oldAt);
+    }
+
+    const results = await workspaceDoctorModule.run(fixture.context);
+
+    expect(results.find(({id}) => id === "workspace.generated-artifacts")).toMatchObject({
+      status: "pass",
+    });
+  });
+
+  it("warns when mirrored taxonomy artifacts have invalid embedded freshness metadata", async () => {
+    const fixture = await createWorkspaceFixture();
+    const artifacts = getExpectedTaxonomyArtifactPaths(fixture.root);
+    const malformedFreshness = taxonomyArtifactContents(artifacts[0]!, "not-a-date");
+    await Promise.all([
+      writeFile(artifacts[0]!, malformedFreshness, "utf8"),
+      writeFile(artifacts[1]!, malformedFreshness, "utf8"),
+    ]);
+
+    const results = await workspaceDoctorModule.run(fixture.context);
+    const artifactsResult = results.find(({id}) => id === "workspace.generated-artifacts");
+
+    expect(artifactsResult).toMatchObject({
+      status: "warn",
+      rootCause: "One or more taxonomy artifacts have invalid embedded generation timestamps.",
+    });
+    expect(artifactsResult?.evidence.join("\n")).toContain("not-a-date");
+  });
+
+  it("fails when mirrored taxonomy artifacts contain stale release metadata", async () => {
+    const fixture = await createWorkspaceFixture();
+    const artifacts = getExpectedTaxonomyArtifactPaths(fixture.root);
+    const staleRelease = `${JSON.stringify({
+      version: "2025-01",
+      generatedAt: "2026-08-29T00:00:00.000Z",
+      nodes: [],
+    })}\n`;
+    await Promise.all([
+      writeFile(artifacts[0]!, staleRelease, "utf8"),
+      writeFile(artifacts[1]!, staleRelease, "utf8"),
+    ]);
+
+    const results = await workspaceDoctorModule.run(fixture.context);
+    const artifactsResult = results.find(({id}) => id === "workspace.generated-artifacts");
+
+    expect(artifactsResult?.status).toBe("fail");
+    expect(artifactsResult?.evidence.join("\n")).toContain("expected embedded version '2026-05'");
   });
 
   it("reclassifies a missing dependency directory with exactly one diagnosis form", async () => {

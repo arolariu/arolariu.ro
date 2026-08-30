@@ -947,13 +947,13 @@ async function diagnoseGeneratedArtifacts(context: Readonly<DoctorContext>): Pro
   const startedAt = context.now();
   const paths = getExpectedTaxonomyArtifactPaths(context.paths.root);
   const missing: string[] = [];
-  const stale: string[] = [];
   const mismatched: string[] = [];
+  const metadataErrors: string[] = [];
+  const freshnessWarnings: string[] = [];
+  const freshnessEvidence: string[] = [];
   const contents = new Map<string, Buffer>();
-  let generatorModifiedAt = 0;
 
   try {
-    generatorModifiedAt = (await stat(resolve(context.paths.root, "scripts", "generate.artifacts.ts"))).mtimeMs;
     for (const path of paths) {
       try {
         const metadata = await stat(path);
@@ -962,9 +962,6 @@ async function diagnoseGeneratedArtifacts(context: Readonly<DoctorContext>): Pro
           continue;
         }
         contents.set(path, await readFile(path));
-        if (metadata.mtimeMs < generatorModifiedAt) {
-          stale.push(path);
-        }
       } catch (error: unknown) {
         if (hasErrorCode(error, "ENOENT")) {
           missing.push(path);
@@ -998,19 +995,46 @@ async function diagnoseGeneratedArtifacts(context: Readonly<DoctorContext>): Pro
     const second = contents.get(mirrors[1]!);
     if (first !== undefined && second !== undefined && !first.equals(second)) {
       mismatched.push(name);
+      continue;
+    }
+
+    try {
+      const parsed: unknown = JSON.parse(first!.toString("utf8"));
+      if (!isRecord(parsed)) {
+        throw new Error("artifact root must be an object");
+      }
+
+      const expectedVersion =
+        /^ecoicop-v(?<version>.+)\.min\.json$/u.exec(name)?.groups?.["version"]
+        ?? /^(?:gpc|nace)-(?<version>.+)\.min\.json$/u.exec(name)?.groups?.["version"];
+      if (expectedVersion === undefined || parsed["version"] !== expectedVersion) {
+        metadataErrors.push(
+          `${name}: expected embedded version '${expectedVersion ?? "(unknown)"}', received '${String(parsed["version"])}'.`,
+        );
+      }
+
+      const generatedAt = parsed["generatedAt"];
+      if (typeof generatedAt !== "string" || Number.isNaN(Date.parse(generatedAt))) {
+        freshnessWarnings.push(`${name}: invalid generatedAt '${String(generatedAt)}'.`);
+      } else {
+        freshnessEvidence.push(`${name}: generated at ${generatedAt}.`);
+      }
+    } catch (error: unknown) {
+      metadataErrors.push(`${name}: ${errorMessage(error)}`);
     }
   }
 
-  if (missing.length > 0 || mismatched.length > 0) {
+  if (missing.length > 0 || mismatched.length > 0 || metadataErrors.length > 0) {
     return issueDiagnostic(context, startedAt, {
       id: "workspace.generated-artifacts",
       name: "Generated artifacts",
       status: "fail",
-      summary: "Required mirrored taxonomy artifacts are incomplete or inconsistent.",
+      summary: "Required mirrored taxonomy artifacts are incomplete, inconsistent, or invalid.",
       evidence: [
         ...missing.map((path) => `Missing artifact: ${path}`),
         ...mismatched.map((name) => `Mirrored taxonomy bytes differ: ${name}`),
-        ...stale.map((path) => `Potentially stale artifact: ${path}`),
+        ...metadataErrors,
+        ...freshnessWarnings,
       ],
       potentialCauses: [
         ...(missing.length > 0
@@ -1019,21 +1043,21 @@ async function diagnoseGeneratedArtifacts(context: Readonly<DoctorContext>): Pro
         ...(mismatched.length > 0
           ? [{cause: "API and website taxonomy mirrors were generated from different content.", confidence: "high" as const}]
           : []),
-        ...(stale.length > 0
-          ? [{cause: "One or more taxonomy artifacts predate the generator source.", confidence: "medium" as const}]
+        ...(metadataErrors.length > 0
+          ? [{cause: "One or more taxonomy artifacts contain invalid or outdated release metadata.", confidence: "high" as const}]
           : []),
       ],
       fixes: [{description: "Regenerate taxonomy artifacts without running a build.", command: "npm run generate -- /a"}],
     });
   }
-  if (stale.length > 0) {
+  if (freshnessWarnings.length > 0) {
     return issueDiagnostic(context, startedAt, {
       id: "workspace.generated-artifacts",
       name: "Generated artifacts",
       status: "warn",
-      summary: "Mirrored taxonomy artifacts exist but may be stale.",
-      evidence: stale.map((path) => `Potentially stale artifact: ${path}`),
-      rootCause: "One or more taxonomy artifacts predate the generator source.",
+      summary: "Mirrored taxonomy artifacts have invalid freshness metadata.",
+      evidence: [...freshnessWarnings, ...freshnessEvidence],
+      rootCause: "One or more taxonomy artifacts have invalid embedded generation timestamps.",
       fixes: [{description: "Regenerate taxonomy artifacts.", command: "npm run generate -- /a"}],
     });
   }
@@ -1043,8 +1067,11 @@ async function diagnoseGeneratedArtifacts(context: Readonly<DoctorContext>): Pro
     startedAt,
     "workspace.generated-artifacts",
     "Generated artifacts",
-    "Mirrored taxonomy artifacts are present, current, and byte-identical.",
-    [`Verified ${String(paths.length)} taxonomy artifacts across ${String(byName.size)} mirrored sets.`],
+    "Mirrored taxonomy artifacts are present, metadata-valid, and byte-identical.",
+    [
+      `Verified ${String(paths.length)} taxonomy artifacts across ${String(byName.size)} mirrored sets.`,
+      ...freshnessEvidence,
+    ],
   );
 }
 
