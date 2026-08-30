@@ -4,19 +4,22 @@
  *
  * @remarks
  * Collects data from multiple sources concurrently (workspaces, the Nx
- * dependency graph, git state, npm audit/outdated, disk usage, and the
- * doctor health report) then renders a dashboard through
- * {@link MonorepositoryLogger} or emits it as a single JSON document.
+ * dependency graph derived from tracked workspace metadata, git state, npm
+ * audit/outdated, disk usage, and the doctor health report) then renders a
+ * dashboard through {@link MonorepositoryLogger} or emits it as a single JSON
+ * document.
  *
  * Every collector runs independently through `Promise.allSettled()`, so a
  * failure or malformed result from any single source degrades that section
  * to `null` ("unavailable") without invalidating the rest of the report and
  * without inventing a zero, `"unknown"`, or empty-array stand-in for a
- * genuine failure. Every external probe (git, npm, the Nx graph, the disk
- * usage probe, and the doctor report) is issued through the shared
+ * genuine failure. Every external probe (git, npm, the disk usage probe, and
+ * the doctor report) is issued through the shared
  * {@link CommandRunner} as an explicit {@link CommandSpec} — never a shell
  * string — and the script never writes a temporary file or inherits child
- * process output. All human or machine-readable output is produced by
+ * process output. The workspace graph is read from tracked metadata instead of
+ * an Nx child process, which would rewrite Nx's native workspace database. All
+ * human or machine-readable output is produced by
  * {@link MonorepositoryLogger}.
  *
  * @example
@@ -35,9 +38,9 @@ import {formatBytes} from "./common/index.ts";
 import {MonorepositoryConsoleLogger, type LogSegment, type MonorepositoryLogger} from "./common/logger.ts";
 import {defaultCommandRunner, type CommandResult, type CommandRunner, type CommandSpec} from "./common/process.ts";
 import {resolveRepositoryPaths, type RepositoryPaths} from "./common/repository-paths.ts";
+import {readWorkspaceGraph, type WorkspaceGraph} from "./common/workspace-graph.ts";
 import {parseDoctorReport} from "./doctor.reporter.ts";
 import type {DoctorSummary} from "./doctor.types.ts";
-import {parseNxGraph} from "./doctor.workspace.ts";
 
 // ============================================================================
 // Types
@@ -134,6 +137,14 @@ export interface StatusDependencies {
    * serve both roles.
    */
   readonly errorLogger: MonorepositoryLogger;
+  /**
+   * Reads the workspace project graph from tracked repository metadata.
+   *
+   * @remarks
+   * Defaults to the shared read-only reader. Focused tests inject a
+   * deterministic graph so they never read the live checkout.
+   */
+  readonly readWorkspaceGraph: (root: string) => Promise<WorkspaceGraph>;
 }
 
 // ============================================================================
@@ -151,7 +162,6 @@ const WORKSPACE_DIRS: readonly string[] = [
 
 const GIT_TIMEOUT_MS = 30_000;
 const NPM_TIMEOUT_MS = 60_000;
-const NX_TIMEOUT_MS = 60_000;
 const DOCTOR_TIMEOUT_MS = 60_000;
 const DISK_PROBE_TIMEOUT_MS = 60_000;
 
@@ -162,10 +172,6 @@ const GIT_LAST_COMMIT_MSG_COMMAND = {command: "git", args: ["log", "-1", "--form
 const GIT_STATUS_COMMAND = {command: "git", args: ["status", "--porcelain"]} as const satisfies CommandSpec;
 const NPM_AUDIT_COMMAND = {command: "npm", args: ["audit", "--json"]} as const satisfies CommandSpec;
 const NPM_OUTDATED_COMMAND = {command: "npm", args: ["outdated", "--json"]} as const satisfies CommandSpec;
-const NX_GRAPH_COMMAND = {
-  command: "npx",
-  args: ["--no-install", "nx", "graph", "--print", "--open=false", "--watch=false"],
-} as const satisfies CommandSpec;
 
 /**
  * Read-only Node.js source, executed as a separate process via `node --eval`,
@@ -395,35 +401,29 @@ async function collectWorkspaces(root: string): Promise<readonly WorkspaceInfo[]
 }
 
 /**
- * Runs the Nx graph command and extracts inter-project dependency edges.
+ * Derives inter-project dependency edges from tracked workspace metadata.
  *
  * @remarks
- * Reuses {@link parseNxGraph} so status and doctor share identical Nx graph
- * semantics. No temporary file is ever written or read: the graph is parsed
- * directly from captured stdout.
+ * Shares {@link readWorkspaceGraph} with `doctor.workspace.ts`, so status and
+ * doctor report identical workspace-graph semantics. No Nx child process is
+ * dispatched and no temporary file is written or read: Nx's project-graph
+ * construction rewrites its native workspace database, which the strict
+ * read-only contract forbids. One edge is emitted per independent dependency
+ * record, so a project pair declared through both a package dependency and an
+ * explicit target dependency contributes two edges.
  *
- * @param runner - Command runner used to invoke Nx.
+ * @param readGraph - Injected workspace-graph reader.
  * @param root - Absolute repository root.
  * @returns Dependency edges between workspace projects, or `null` when the
- * command fails or the graph cannot be parsed.
+ * metadata cannot be inspected.
  */
-async function collectNxGraph(runner: CommandRunner, root: string): Promise<readonly DependencyEdge[] | null> {
-  const result = await runner.run(NX_GRAPH_COMMAND, {cwd: root, timeoutMs: NX_TIMEOUT_MS});
-  if (!isSuccessfulCommand(result)) {
-    return null;
-  }
-
+async function collectNxGraph(
+  readGraph: (root: string) => Promise<WorkspaceGraph>,
+  root: string,
+): Promise<readonly DependencyEdge[] | null> {
   try {
-    const graph = parseNxGraph(result.stdout);
-    const edges: DependencyEdge[] = [];
-    for (const [source, targets] of graph.dependencies) {
-      for (const target of targets) {
-        if (!target.startsWith("npm:")) {
-          edges.push({source, target});
-        }
-      }
-    }
-    return edges;
+    const graph = await readGraph(root);
+    return graph.dependencies.map(({source, target}) => ({source, target}));
   } catch {
     return null;
   }
@@ -851,6 +851,7 @@ export async function main(
 
   const resolvePaths = dependencies.resolveRepositoryPaths ?? ((): RepositoryPaths => resolveRepositoryPaths());
   const runner = dependencies.runner ?? defaultCommandRunner;
+  const readGraph = dependencies.readWorkspaceGraph ?? readWorkspaceGraph;
 
   let paths: RepositoryPaths;
   try {
@@ -862,7 +863,7 @@ export async function main(
 
   const [workspacesResult, nxGraphResult, gitResult, securityResult, diskResult, healthResult] = await Promise.allSettled([
     collectWorkspaces(paths.root),
-    collectNxGraph(runner, paths.root),
+    collectNxGraph(readGraph, paths.root),
     collectGit(runner, paths.root),
     collectSecurity(runner, paths.root),
     collectDisk(runner, paths.root),

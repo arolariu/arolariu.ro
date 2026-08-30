@@ -364,7 +364,11 @@ failure. `--quick` skips the same remote checks intentionally, independent of co
 ### npm run status integration
 
 `npm run status` remains a six-section aggregator (`workspaces`, `nxEdges`, `git`, `security`,
-`disk`, `health`). It invokes doctor internally as `--quick --json` and parses the schema-v1
+`disk`, `health`). `nxEdges` is derived from tracked Nx workspace metadata (`nx.json`,
+`project.json`, and workspace `package.json`) rather than an Nx child process, because Nx's
+project-graph construction rewrites its native workspace database and would break the read-only
+contract; an unreadable or ambiguous graph makes the section unavailable (`null`) instead of an
+empty list. It invokes doctor internally as `--quick --json` and parses the schema-v1
 document even when doctor exits `1` (a failed check is not a malformed report). A malformed, old,
 or future-schema report makes `health` unavailable (`null`) instead of stale or fabricated data;
 `health` otherwise reports `score`, `grade`, and `summary`. `status` supports only `--json` and

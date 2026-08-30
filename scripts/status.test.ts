@@ -16,6 +16,7 @@ import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "./common/logger.t
 import {defaultCommandRunner} from "./common/process.ts";
 import type {CommandResult, CommandRunner, CommandRunOptions, CommandSpec} from "./common/process.ts";
 import {createRepositoryPaths} from "./common/repository-paths.ts";
+import {buildWorkspaceGraph, WorkspaceGraphError, type WorkspaceGraph} from "./common/workspace-graph.ts";
 import {createDoctorReport} from "./doctor.reporter.ts";
 import type {DiagnosticResult} from "./doctor.types.ts";
 import {collectDisk, healthFromDoctorResult, main, parseStatusOptions} from "./status.ts";
@@ -35,7 +36,6 @@ const GIT_LOG_MSG_KEY = "git log -1 --format=%s";
 const GIT_STATUS_KEY = "git status --porcelain";
 const NPM_AUDIT_KEY = "npm audit --json";
 const NPM_OUTDATED_KEY = "npm outdated --json";
-const NX_GRAPH_KEY = "npx --no-install nx graph --print --open=false --watch=false";
 const DOCTOR_KEY = `${process.execPath} ${DOCTOR_SCRIPT_PATH} --quick --json`;
 
 const DISK_NODE_MODULES_TARGET = join(FIXED_ROOT, "node_modules");
@@ -94,15 +94,23 @@ function failCheck(id: string): DiagnosticResult {
 const PASSING_DOCTOR_REPORT = createDoctorReport([passCheck("workspace.repository-root")], "2026-08-29T00:00:00.000Z");
 const FAILING_DOCTOR_REPORT = createDoctorReport([failCheck("workspace.repository-root")], "2026-08-29T00:00:00.000Z");
 
-const HEALTHY_NX_GRAPH_STDOUT = JSON.stringify({
-  graph: {
-    nodes: {"@arolariu/website": {}, "@arolariu/components": {}},
-    dependencies: {
-      "@arolariu/website": [{source: "@arolariu/website", target: "@arolariu/components"}],
-      "@arolariu/components": [],
-    },
+const HEALTHY_WORKSPACE_GRAPH: WorkspaceGraph = buildWorkspaceGraph([
+  {
+    root: "packages/components",
+    projectConfiguration: {name: "@arolariu/components"},
+    packageManifest: {name: "@arolariu/components"},
   },
-});
+  {
+    root: "sites/arolariu.ro",
+    projectConfiguration: {name: "@arolariu/website", targets: {build: {dependsOn: ["components:build"]}}},
+    packageManifest: {name: "@arolariu/website", dependencies: {"@arolariu/components": "*"}},
+  },
+]);
+
+const FIXTURE_DEPENDENCIES = {
+  resolveRepositoryPaths: (): ReturnType<typeof createRepositoryPaths> => FIXED_REPOSITORY_PATHS,
+  readWorkspaceGraph: async (): Promise<WorkspaceGraph> => HEALTHY_WORKSPACE_GRAPH,
+} as const;
 
 const CLEAN_AUDIT_STDOUT = JSON.stringify({
   metadata: {vulnerabilities: {critical: 0, high: 0, moderate: 0, low: 0}},
@@ -138,7 +146,6 @@ function baseResponses(): Map<string, CommandResult> {
     // A successful `npm outdated --json` run always writes a JSON object — "{}" when nothing
     // is outdated — never empty stdout; see the "npm outdated" regression tests below.
     [NPM_OUTDATED_KEY, commandResult({stdout: "{}"})],
-    [NX_GRAPH_KEY, commandResult({stdout: HEALTHY_NX_GRAPH_STDOUT})],
     [DOCTOR_KEY, commandResult({stdout: JSON.stringify(PASSING_DOCTOR_REPORT)})],
     [diskProbeKey(DISK_NODE_MODULES_TARGET), commandResult({stdout: "1024"})],
     [diskProbeKey(DISK_NEXT_BUILD_TARGET), commandResult({stdout: "2048"})],
@@ -182,7 +189,7 @@ async function runMainHappyPath(argv: readonly string[], mode?: "human" | "json"
   const exitCode = await main(argv, {
     logger,
     runner,
-    resolveRepositoryPaths: () => FIXED_REPOSITORY_PATHS,
+    ...FIXTURE_DEPENDENCIES,
   });
   return {exitCode, sink, calls};
 }
@@ -383,7 +390,7 @@ describe("main — help and option parsing", () => {
       logger,
       errorLogger,
       runner,
-      resolveRepositoryPaths: () => FIXED_REPOSITORY_PATHS,
+      ...FIXTURE_DEPENDENCIES,
     });
 
     expect(exitCode).toBe(0);
@@ -417,21 +424,33 @@ describe("main — command specs", () => {
       expect(call?.options?.timeoutMs).toBe(60_000);
     }
 
-    const nxCall = byKey.get(NX_GRAPH_KEY);
-    expect(nxCall).toBeDefined();
-    expect(nxCall?.command).toEqual({
-      command: "npx",
-      args: ["--no-install", "nx", "graph", "--print", "--open=false", "--watch=false"],
-    });
-    expect(nxCall?.options?.cwd).toBe(FIXED_ROOT);
-    expect(nxCall?.options?.timeoutMs).toBe(60_000);
-
     const doctorCall = byKey.get(DOCTOR_KEY);
     expect(doctorCall).toBeDefined();
     expect(doctorCall?.command.command).toBe(process.execPath);
     expect(doctorCall?.command.args).toEqual([DOCTOR_SCRIPT_PATH, "--quick", "--json"]);
     expect(doctorCall?.options?.cwd).toBe(FIXED_ROOT);
     expect(doctorCall?.options?.timeoutMs).toBe(60_000);
+  });
+
+  it("dispatches no Nx child command: the exact inventory contains no npx or nx invocation", async () => {
+    const {calls} = await runMainHappyPath([], "json");
+
+    expect(calls.map((call) => commandKey(call.command)).toSorted()).toEqual(
+      [
+        GIT_BRANCH_KEY,
+        GIT_SHA_KEY,
+        GIT_LOG_TIME_KEY,
+        GIT_LOG_MSG_KEY,
+        GIT_STATUS_KEY,
+        NPM_AUDIT_KEY,
+        NPM_OUTDATED_KEY,
+        DOCTOR_KEY,
+        diskProbeKey(DISK_NODE_MODULES_TARGET),
+        diskProbeKey(DISK_NEXT_BUILD_TARGET),
+        diskProbeKey(DISK_COMPONENTS_DIST_TARGET),
+      ].toSorted(),
+    );
+    expect(calls.some((call) => call.command.command === "npx" || call.command.args.includes("nx"))).toBe(false);
   });
 
   it("never passes a shell string: every command is {command, args}", async () => {
@@ -445,24 +464,31 @@ describe("main — command specs", () => {
 });
 
 // ============================================================================
-// No temporary Nx graph file
+// Source-derived Nx graph collection
 // ============================================================================
 
-describe("no temporary Nx graph file", () => {
+describe("source-derived Nx graph collection", () => {
   const sourceText = readFileSync(fileURLToPath(new URL("./status.ts", import.meta.url)), "utf8");
 
-  it("never writes or unlinks a temporary graph file in production source", () => {
+  it("never writes or unlinks a temporary graph file and never dispatches Nx in production source", () => {
     expect(sourceText).not.toMatch(/unlinkSync/);
     expect(sourceText).not.toMatch(/writeFileSync/);
     expect(sourceText).not.toMatch(/--file=/);
     expect(sourceText).not.toMatch(/nx-graph-status-tmp/);
+    expect(sourceText).not.toMatch(/"npx"/);
   });
 
-  it("parses the Nx graph directly from captured stdout", async () => {
-    const {calls} = await runMainHappyPath([], "json");
-    const nxCall = calls.find((call) => commandKey(call.command) === NX_GRAPH_KEY);
+  it("reports every source-derived dependency record as an nxEdges entry", async () => {
+    const {logger, sink} = createLogger("json");
+    const {runner} = createRecordingRunner(baseResponses());
 
-    expect(nxCall?.command.args).toContain("--print");
+    await main(["--json"], {logger, runner, ...FIXTURE_DEPENDENCIES});
+
+    const output = parseJsonOutput(sink);
+    expect(output["nxEdges"]).toEqual([
+      {source: "@arolariu/website", target: "@arolariu/components"},
+      {source: "@arolariu/website", target: "@arolariu/components"},
+    ]);
   });
 });
 
@@ -593,7 +619,7 @@ describe("collector independence", () => {
     const exitCode = await main(["--json"], {
       logger,
       runner,
-      resolveRepositoryPaths: () => FIXED_REPOSITORY_PATHS,
+      ...FIXTURE_DEPENDENCIES,
     });
 
     expect(exitCode).toBe(0);
@@ -606,27 +632,40 @@ describe("collector independence", () => {
     expect(output["disk"]).not.toBeNull();
   });
 
-  it("renders nxEdges as unavailable when the Nx graph command is malformed", async () => {
+  it("renders nxEdges as unavailable when workspace metadata inspection is rejected", async () => {
     const {logger, sink} = createLogger("json");
-    const {runner} = createRecordingRunner(withOverrides({[NX_GRAPH_KEY]: commandResult({stdout: "{not valid nx json"})}));
+    const {runner} = createRecordingRunner(baseResponses());
 
-    await main(["--json"], {logger, runner, resolveRepositoryPaths: () => FIXED_REPOSITORY_PATHS});
+    await main(["--json"], {
+      logger,
+      runner,
+      resolveRepositoryPaths: () => FIXED_REPOSITORY_PATHS,
+      readWorkspaceGraph: async (): Promise<WorkspaceGraph> => {
+        throw new WorkspaceGraphError("Workspace project metadata is malformed.");
+      },
+    });
 
     const output = parseJsonOutput(sink);
     expect(output["nxEdges"]).toBeNull();
     expect(output["git"]).not.toBeNull();
+    expect(output["workspaces"]).not.toBeNull();
+    expect(output["health"]).not.toBeNull();
   });
 
-  it("renders nxEdges as unavailable when the Nx graph command exits non-zero", async () => {
+  it("never fabricates an empty dependency list when workspace metadata cannot be read", async () => {
     const {logger, sink} = createLogger("json");
-    const {runner} = createRecordingRunner(
-      withOverrides({[NX_GRAPH_KEY]: commandResult({code: 1, stdout: HEALTHY_NX_GRAPH_STDOUT})}),
-    );
+    const {runner} = createRecordingRunner(baseResponses());
 
-    await main(["--json"], {logger, runner, resolveRepositoryPaths: () => FIXED_REPOSITORY_PATHS});
+    await main(["--json"], {
+      logger,
+      runner,
+      resolveRepositoryPaths: () => FIXED_REPOSITORY_PATHS,
+      readWorkspaceGraph: async (): Promise<WorkspaceGraph> => Promise.reject(new Error("ENOENT: nx.json")),
+    });
 
     const output = parseJsonOutput(sink);
     expect(output["nxEdges"]).toBeNull();
+    expect(output["nxEdges"]).not.toEqual([]);
   });
 
   it("renders security as unavailable (not zero counts) when npm audit JSON is malformed", async () => {
@@ -635,7 +674,7 @@ describe("collector independence", () => {
       withOverrides({[NPM_AUDIT_KEY]: commandResult({code: 1, stdout: "not json at all"})}),
     );
 
-    await main(["--json"], {logger, runner, resolveRepositoryPaths: () => FIXED_REPOSITORY_PATHS});
+    await main(["--json"], {logger, runner, ...FIXTURE_DEPENDENCIES});
 
     const output = parseJsonOutput(sink);
     expect(output["security"]).toBeNull();
@@ -649,7 +688,7 @@ describe("collector independence", () => {
     const {logger, sink} = createLogger("json");
     const {runner} = createRecordingRunner(withOverrides({[NPM_OUTDATED_KEY]: commandResult({stdout: ""})}));
 
-    await main(["--json"], {logger, runner, resolveRepositoryPaths: () => FIXED_REPOSITORY_PATHS});
+    await main(["--json"], {logger, runner, ...FIXTURE_DEPENDENCIES});
 
     const output = parseJsonOutput(sink);
     expect(output["security"]).toBeNull();
@@ -659,7 +698,7 @@ describe("collector independence", () => {
     const {logger, sink} = createLogger("json");
     const {runner} = createRecordingRunner(withOverrides({[NPM_OUTDATED_KEY]: commandResult({stdout: "{}"})}));
 
-    await main(["--json"], {logger, runner, resolveRepositoryPaths: () => FIXED_REPOSITORY_PATHS});
+    await main(["--json"], {logger, runner, ...FIXTURE_DEPENDENCIES});
 
     const output = parseJsonOutput(sink);
     expect(output["security"]).toEqual({critical: 0, high: 0, moderate: 0, low: 0, majorOutdated: 0, minorOutdated: 0, patchOutdated: 0});
@@ -669,7 +708,7 @@ describe("collector independence", () => {
     const {logger, sink} = createLogger("json");
     const {runner} = createRecordingRunner(withOverrides({[NPM_OUTDATED_KEY]: commandResult({stdout: "not json"})}));
 
-    await main(["--json"], {logger, runner, resolveRepositoryPaths: () => FIXED_REPOSITORY_PATHS});
+    await main(["--json"], {logger, runner, ...FIXTURE_DEPENDENCIES});
 
     const output = parseJsonOutput(sink);
     expect(output["security"]).toBeNull();
@@ -690,7 +729,7 @@ describe("collector independence", () => {
       }),
     );
 
-    await main(["--json"], {logger, runner, resolveRepositoryPaths: () => FIXED_REPOSITORY_PATHS});
+    await main(["--json"], {logger, runner, ...FIXTURE_DEPENDENCIES});
 
     const output = parseJsonOutput(sink);
     expect(output["security"]).toEqual({
@@ -710,7 +749,7 @@ describe("collector independence", () => {
       withOverrides({[diskProbeKey(DISK_NODE_MODULES_TARGET)]: commandResult({code: 1, stdout: ""})}),
     );
 
-    await main(["--json"], {logger, runner, resolveRepositoryPaths: () => FIXED_REPOSITORY_PATHS});
+    await main(["--json"], {logger, runner, ...FIXTURE_DEPENDENCIES});
 
     const output = parseJsonOutput(sink);
     expect(output["disk"]).toBeNull();
@@ -723,7 +762,7 @@ describe("collector independence", () => {
       withOverrides({[diskProbeKey(DISK_NEXT_BUILD_TARGET)]: commandResult({stdout: "not-a-number"})}),
     );
 
-    await main(["--json"], {logger, runner, resolveRepositoryPaths: () => FIXED_REPOSITORY_PATHS});
+    await main(["--json"], {logger, runner, ...FIXTURE_DEPENDENCIES});
 
     const output = parseJsonOutput(sink);
     expect(output["disk"]).toBeNull();
@@ -733,7 +772,7 @@ describe("collector independence", () => {
     const {logger, sink} = createLogger("json");
     const {runner} = createRecordingRunner(withOverrides({[DOCTOR_KEY]: commandResult({stdout: "{bad json"})}));
 
-    await main(["--json"], {logger, runner, resolveRepositoryPaths: () => FIXED_REPOSITORY_PATHS});
+    await main(["--json"], {logger, runner, ...FIXTURE_DEPENDENCIES});
 
     const output = parseJsonOutput(sink);
     expect(output["health"]).toBeNull();
@@ -770,7 +809,7 @@ describe("main --json", () => {
     const {logger, sink} = createLogger("json");
     const {runner} = createRecordingRunner(withOverrides({[DOCTOR_KEY]: commandResult({code: 1, stdout: JSON.stringify(FAILING_DOCTOR_REPORT)})}));
 
-    await main(["--json"], {logger, runner, resolveRepositoryPaths: () => FIXED_REPOSITORY_PATHS});
+    await main(["--json"], {logger, runner, ...FIXTURE_DEPENDENCIES});
 
     const output = parseJsonOutput(sink);
     expect(output["health"]).toEqual({
@@ -814,7 +853,7 @@ describe("main — human dashboard", () => {
     const exitCode = await main([], {
       logger,
       runner,
-      resolveRepositoryPaths: () => FIXED_REPOSITORY_PATHS,
+      ...FIXTURE_DEPENDENCIES,
     });
 
     expect(exitCode).toBe(0);

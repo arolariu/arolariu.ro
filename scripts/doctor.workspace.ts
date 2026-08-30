@@ -1,15 +1,26 @@
 /**
  * @fileoverview Read-only repository, package-manager, Nx, and host diagnostics.
  * @module scripts.doctor.workspace
+ *
+ * @remarks
+ * The Nx project and graph checks are derived from tracked workspace metadata
+ * through {@link readWorkspaceGraph}; no Nx child process is ever dispatched,
+ * because Nx's project-graph construction rewrites its native workspace
+ * database and therefore violates the strict read-only diagnostic contract.
  */
 
 import {constants as fsConstants} from "node:fs";
 import {access, readFile, stat, statfs} from "node:fs/promises";
 import {freemem, homedir, totalmem} from "node:os";
-import {basename, dirname, join, resolve} from "node:path";
+import {basename, join, resolve} from "node:path";
 
 import type {CommandResult, CommandSpec} from "./common/process.ts";
 import {parseVersion, satisfiesMinimum, type MinimumVersion} from "./common/requirements.ts";
+import {
+  readWorkspaceGraph,
+  workspaceDependencyTargets,
+  type WorkspaceGraph,
+} from "./common/workspace-graph.ts";
 import {getExpectedTaxonomyArtifactPaths} from "./generate.artifacts.ts";
 import {
   diagnosticResult,
@@ -36,14 +47,6 @@ const NODE_VERSION_COMMAND = {command: "node", args: ["--version"]} as const sat
 const NPM_VERSION_COMMAND = {command: "npm", args: ["--version"]} as const satisfies CommandSpec;
 const NPM_TREE_COMMAND = {command: "npm", args: ["ls", "--all", "--json"]} as const satisfies CommandSpec;
 const NPM_CACHE_COMMAND = {command: "npm", args: ["config", "get", "cache"]} as const satisfies CommandSpec;
-const NX_PROJECTS_COMMAND = {
-  command: "npx",
-  args: ["--no-install", "nx", "show", "projects", "--json"],
-} as const satisfies CommandSpec;
-const NX_GRAPH_COMMAND = {
-  command: "npx",
-  args: ["--no-install", "nx", "graph", "--print", "--open=false", "--watch=false"],
-} as const satisfies CommandSpec;
 const NPM_AUDIT_COMMAND = {command: "npm", args: ["audit", "--json"]} as const satisfies CommandSpec;
 const NPM_OUTDATED_COMMAND = {command: "npm", args: ["outdated", "--json"]} as const satisfies CommandSpec;
 
@@ -63,11 +66,16 @@ const REQUIRED_CONFIG_PATHS = [
 
 type UnknownRecord = Readonly<Record<string, unknown>>;
 
-interface NxGraphPayload {
-  readonly projects: readonly string[];
-  readonly dependencies: ReadonlyMap<string, readonly string[]>;
-  readonly cycles: readonly string[];
-}
+/**
+ * Outcome of one strictly read-only workspace-graph inspection.
+ *
+ * @remarks
+ * A rejected inspection is never converted into an empty graph — the two Nx
+ * diagnostics classify it as an explicit failure with normalized evidence.
+ */
+type WorkspaceGraphOutcome =
+  | Readonly<{status: "available"; graph: WorkspaceGraph}>
+  | Readonly<{status: "unavailable"; error: string}>;
 
 function isRecord(value: unknown): value is UnknownRecord {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -312,90 +320,12 @@ export function diagnoseNpmIntegrity(result: Readonly<CommandResult>, treeName: 
   };
 }
 
-function findGraphCycles(
-  projects: readonly string[],
-  dependencies: ReadonlyMap<string, readonly string[]>,
-): readonly string[] {
-  const state = new Map<string, "visiting" | "visited">();
-  const stack: string[] = [];
-  const cycles = new Set<string>();
-
-  const visit = (project: string): void => {
-    const currentState = state.get(project);
-    if (currentState === "visited") {
-      return;
-    }
-    if (currentState === "visiting") {
-      const start = stack.indexOf(project);
-      if (start >= 0) {
-        cycles.add([...stack.slice(start), project].join(" -> "));
-      }
-      return;
-    }
-
-    state.set(project, "visiting");
-    stack.push(project);
-    for (const dependency of dependencies.get(project) ?? []) {
-      if (dependencies.has(dependency)) {
-        visit(dependency);
-      }
-    }
-    stack.pop();
-    state.set(project, "visited");
-  };
-
-  for (const project of projects) {
-    visit(project);
-  }
-
-  return [...cycles].toSorted();
-}
-
-/**
- * Parses the JSON emitted by `nx graph --print` and computes dependency cycles.
- *
- * @param stdout - Nx graph JSON.
- * @returns Stable project, dependency, and cycle data.
- * @throws When the graph payload is malformed.
- */
-export function parseNxGraph(stdout: string): NxGraphPayload {
-  let parsed: unknown;
+async function inspectWorkspaceGraph(root: string): Promise<WorkspaceGraphOutcome> {
   try {
-    parsed = JSON.parse(stdout);
+    return {status: "available", graph: await readWorkspaceGraph(root)};
   } catch (error: unknown) {
-    throw new Error(`Unable to parse Nx graph JSON: ${errorMessage(error)}`);
+    return {status: "unavailable", error: errorMessage(error)};
   }
-
-  if (!isRecord(parsed) || !isRecord(parsed["graph"])) {
-    throw new Error("Nx graph output must contain a graph object.");
-  }
-  const graph = parsed["graph"];
-  if (!isRecord(graph["nodes"]) || !isRecord(graph["dependencies"])) {
-    throw new Error("Nx graph nodes and dependencies must be objects.");
-  }
-
-  const projects = Object.keys(graph["nodes"]).toSorted();
-  const dependencies = new Map<string, readonly string[]>();
-  for (const project of projects) {
-    const rawDependencies = graph["dependencies"][project];
-    if (!Array.isArray(rawDependencies)) {
-      throw new Error(`Nx graph dependencies for '${project}' must be an array.`);
-    }
-    const targets: string[] = [];
-    for (const dependency of rawDependencies) {
-      if (!isRecord(dependency) || typeof dependency["target"] !== "string" || dependency["target"].trim() === "") {
-        throw new Error(`Nx graph dependency for '${project}' must contain a target.`);
-      }
-      targets.push(dependency["target"]);
-    }
-    dependencies.set(project, targets.toSorted());
-  }
-
-  return {
-    projects,
-    dependencies,
-    cycles: findGraphCycles(projects, dependencies),
-  };
 }
 
 async function pathIsDirectory(path: string): Promise<boolean> {
@@ -773,51 +703,37 @@ async function diagnoseNpmCache(context: Readonly<DoctorContext>): Promise<Diagn
   }
 }
 
-async function diagnoseNxProjects(context: Readonly<DoctorContext>): Promise<DiagnosticResult> {
+function diagnoseNxProjects(
+  context: Readonly<DoctorContext>,
+  outcome: WorkspaceGraphOutcome,
+): DiagnosticResult {
   const startedAt = context.now();
-  const result = await context.runner.run(NX_PROJECTS_COMMAND, {cwd: context.paths.root});
-  let projects: readonly string[];
-  try {
-    const parsed: unknown = JSON.parse(result.stdout);
-    if (!Array.isArray(parsed) || !parsed.every((project) => typeof project === "string" && project.trim() !== "")) {
-      throw new Error("Nx project output must be an array of non-empty strings.");
-    }
-    projects = parsed.toSorted();
-  } catch (error: unknown) {
+
+  if (outcome.status === "unavailable") {
     return issueDiagnostic(context, startedAt, {
       id: "workspace.nx-projects",
       name: "Nx projects",
       status: "fail",
       summary: "Nx project metadata is missing or malformed.",
-      evidence: [...commandEvidence(result), errorMessage(error)],
+      evidence: [outcome.error],
       potentialCauses: [
         {cause: "The Nx workspace metadata is invalid.", confidence: "high"},
-        {cause: "The root dependency tree is incomplete.", confidence: "medium"},
+        {cause: "A tracked project or package manifest is malformed, duplicated, or ambiguous.", confidence: "medium"},
       ],
-      fixes: [{description: "Restore dependencies and correct Nx project metadata.", command: "npm run setup"}],
+      fixes: [{description: "Correct nx.json, project.json, and workspace package metadata before rerunning doctor."}],
     });
   }
 
+  const projects = outcome.graph.projects.map(({name}) => name);
   if (projects.length === 0) {
     return issueDiagnostic(context, startedAt, {
       id: "workspace.nx-projects",
       name: "Nx projects",
       status: "fail",
       summary: "Nx discovered no projects.",
-      evidence: ["Nx returned an empty project list.", ...commandEvidence(result)],
+      evidence: ["The declared Nx workspace layout contains no project.json file."],
       rootCause: "The Nx workspace contains no discoverable projects.",
       fixes: [{description: "Correct nx.json and project configuration before rerunning doctor."}],
-    });
-  }
-  if (!isSuccessfulCommand(result)) {
-    return issueDiagnostic(context, startedAt, {
-      id: "workspace.nx-projects",
-      name: "Nx projects",
-      status: "warn",
-      summary: "Nx returned project metadata with a nonzero exit.",
-      evidence: [`Projects: ${projects.join(", ")}`, ...commandEvidence(result)],
-      potentialCauses: [{cause: "Nx completed metadata generation but also reported a workspace warning.", confidence: "medium"}],
-      fixes: [{description: "Inspect the Nx command output and correct the reported workspace warning."}],
     });
   }
 
@@ -826,35 +742,34 @@ async function diagnoseNxProjects(context: Readonly<DoctorContext>): Promise<Dia
   ]);
 }
 
-async function diagnoseNxGraph(context: Readonly<DoctorContext>): Promise<DiagnosticResult> {
+function diagnoseNxGraph(context: Readonly<DoctorContext>, outcome: WorkspaceGraphOutcome): DiagnosticResult {
   const startedAt = context.now();
-  const result = await context.runner.run(NX_GRAPH_COMMAND, {cwd: context.paths.root});
-  let graph: NxGraphPayload;
-  try {
-    graph = parseNxGraph(result.stdout);
-  } catch (error: unknown) {
+
+  if (outcome.status === "unavailable") {
     return issueDiagnostic(context, startedAt, {
       id: "workspace.nx-graph",
       name: "Nx graph",
       status: "fail",
       summary: "Nx graph metadata is missing or malformed.",
-      evidence: [...commandEvidence(result), errorMessage(error)],
+      evidence: [outcome.error],
       potentialCauses: [
-        {cause: "The Nx project graph could not be constructed from workspace metadata.", confidence: "high"},
-        {cause: "The installed Nx dependency tree is incomplete or inconsistent.", confidence: "medium"},
+        {cause: "The Nx project graph could not be derived from tracked workspace metadata.", confidence: "high"},
+        {cause: "A project dependency declaration is unresolved, ambiguous, or unsupported.", confidence: "medium"},
       ],
-      fixes: [{description: "Restore dependencies and correct Nx configuration.", command: "npm run setup"}],
+      fixes: [{description: "Correct the reported Nx workspace metadata declaration and rerun doctor."}],
     });
   }
 
-  if (graph.projects.length === 0) {
+  const {graph} = outcome;
+  const projects = graph.projects.map(({name}) => name);
+  if (projects.length === 0) {
     return issueDiagnostic(context, startedAt, {
       id: "workspace.nx-graph",
       name: "Nx graph",
       status: "fail",
       summary: "Nx graph contains no projects.",
-      evidence: ["The graph nodes object is empty."],
-      rootCause: "Nx produced an empty project graph.",
+      evidence: ["The declared Nx workspace layout contains no project.json file."],
+      rootCause: "Nx workspace metadata produced an empty project graph.",
       fixes: [{description: "Correct the Nx project configuration and rerun doctor."}],
     });
   }
@@ -870,36 +785,30 @@ async function diagnoseNxGraph(context: Readonly<DoctorContext>): Promise<Diagno
     });
   }
 
-  const websiteDependencies = graph.dependencies.get(WEBSITE_PROJECT) ?? [];
-  if (!graph.projects.includes(WEBSITE_PROJECT) || !graph.projects.includes(COMPONENTS_PROJECT) || !websiteDependencies.includes(COMPONENTS_PROJECT)) {
+  const websiteDependencies = workspaceDependencyTargets(graph, WEBSITE_PROJECT);
+  if (
+    !projects.includes(WEBSITE_PROJECT)
+    || !projects.includes(COMPONENTS_PROJECT)
+    || !websiteDependencies.includes(COMPONENTS_PROJECT)
+  ) {
     return issueDiagnostic(context, startedAt, {
       id: "workspace.nx-graph",
       name: "Nx graph",
       status: "fail",
       summary: "The expected website-to-components Nx dependency is missing.",
       evidence: [
-        `Projects: ${graph.projects.join(", ")}`,
+        `Projects: ${projects.join(", ")}`,
         `${WEBSITE_PROJECT} dependencies: ${websiteDependencies.join(", ") || "(none)"}`,
       ],
-      rootCause: "Nx does not report the required website dependency on the shared components project.",
+      rootCause: "Workspace metadata does not declare the required website dependency on the shared components project.",
       fixes: [{description: "Restore the website project dependency on @arolariu/components."}],
-    });
-  }
-  if (!isSuccessfulCommand(result)) {
-    return issueDiagnostic(context, startedAt, {
-      id: "workspace.nx-graph",
-      name: "Nx graph",
-      status: "warn",
-      summary: "Nx returned a valid graph with a nonzero exit.",
-      evidence: [`${String(graph.projects.length)} projects parsed.`, ...commandEvidence(result)],
-      potentialCauses: [{cause: "Nx produced usable graph data while also reporting a workspace warning.", confidence: "medium"}],
-      fixes: [{description: "Inspect the Nx graph command output and correct the warning."}],
     });
   }
 
   return passDiagnostic(context, startedAt, "workspace.nx-graph", "Nx graph", "Nx graph is valid and acyclic.", [
-    `${String(graph.projects.length)} projects.`,
+    `${String(projects.length)} projects.`,
     `${WEBSITE_PROJECT} depends on ${COMPONENTS_PROJECT}.`,
+    ...graph.dependencies.map(({source, target, origin}) => `${source} -> ${target} (${origin})`),
   ]);
 }
 
@@ -1306,6 +1215,7 @@ export const workspaceDoctorModule: DiagnosticModule = {
     const requirementSources = diagnoseRequirementSources(context);
     const nodeMinimum = context.requirements.status === "valid" ? context.requirements.requirements.node : null;
     const npmMinimum = context.requirements.status === "valid" ? context.requirements.requirements.npm : null;
+    const workspaceGraph = await inspectWorkspaceGraph(context.paths.root);
 
     return [
       await diagnoseRepositoryRoot(context),
@@ -1328,8 +1238,8 @@ export const workspaceDoctorModule: DiagnosticModule = {
       await diagnoseNpmTree(context, "root workspace", context.paths.root),
       await diagnoseNpmTree(context, ".github scripts", context.paths.githubScriptsRoot),
       await diagnoseNpmCache(context),
-      await diagnoseNxProjects(context),
-      await diagnoseNxGraph(context),
+      diagnoseNxProjects(context, workspaceGraph),
+      diagnoseNxGraph(context, workspaceGraph),
       await diagnoseConfigFiles(context),
       await diagnoseGeneratedArtifacts(context),
       await diagnoseHostCapacity(context),

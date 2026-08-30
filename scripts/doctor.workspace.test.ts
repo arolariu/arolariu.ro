@@ -14,7 +14,7 @@ import type {CommandResult, CommandSpec} from "./common/process.ts";
 import {createRepositoryPaths} from "./common/repository-paths.ts";
 import type {RepositoryRequirements} from "./common/requirements.ts";
 import {getExpectedTaxonomyArtifactPaths} from "./generate.artifacts.ts";
-import {diagnoseNpmIntegrity, parseNxGraph, workspaceDoctorModule} from "./doctor.workspace.ts";
+import {diagnoseNpmIntegrity, workspaceDoctorModule} from "./doctor.workspace.ts";
 import type {
   DiagnosticCommandRunner,
   DiagnosticNetworkResult,
@@ -47,25 +47,28 @@ function commandKey(command: Readonly<CommandSpec>, cwd?: string): string {
   return `${cwd ?? ""}\u0000${command.command}\u0000${JSON.stringify(command.args)}`;
 }
 
-function healthyNxGraph(): string {
+const NX_WORKSPACE_CONFIGURATION = JSON.stringify({workspaceLayout: {appsDir: "sites", libsDir: "packages"}});
+
+function websiteProjectConfiguration(dependsOn: readonly string[] = ["components:build"]): string {
   return JSON.stringify({
-    graph: {
-      nodes: {
-        "@arolariu/website": {name: "@arolariu/website"},
-        "@arolariu/components": {name: "@arolariu/components"},
-      },
-      dependencies: {
-        "@arolariu/website": [
-          {
-            source: "@arolariu/website",
-            target: "@arolariu/components",
-            type: "static",
-          },
-        ],
-        "@arolariu/components": [],
-      },
-    },
+    name: "@arolariu/website",
+    sourceRoot: "sites/arolariu.ro",
+    projectType: "application",
+    targets: {build: {dependsOn}},
   });
+}
+
+function componentsProjectConfiguration(dependsOn: readonly string[] = []): string {
+  return JSON.stringify({
+    name: "@arolariu/components",
+    sourceRoot: "packages/components",
+    projectType: "library",
+    ...(dependsOn.length === 0 ? {} : {targets: {build: {dependsOn}}}),
+  });
+}
+
+function websitePackageManifest(dependencies: Readonly<Record<string, string>> = {"@arolariu/components": "*"}): string {
+  return JSON.stringify({name: "@arolariu/website", version: "1.0.0", dependencies});
 }
 
 function taxonomyArtifactContents(path: string, generatedAt = "2026-08-29T00:00:00.000Z"): string {
@@ -127,7 +130,11 @@ async function createWorkspaceFixture(
     writeFixtureFile(paths.pythonRequirements, "pytest==9.1.1\n"),
     writeFixtureFile(resolve(root, ".nvmrc"), "24\n"),
     writeFixtureFile(resolve(root, ".node-version"), "24\n"),
-    writeFixtureFile(resolve(root, "nx.json")),
+    writeFixtureFile(resolve(root, "nx.json"), NX_WORKSPACE_CONFIGURATION),
+    writeFixtureFile(resolve(paths.websiteRoot, "project.json"), websiteProjectConfiguration()),
+    writeFixtureFile(resolve(paths.websiteRoot, "package.json"), websitePackageManifest()),
+    writeFixtureFile(resolve(paths.componentsRoot, "project.json"), componentsProjectConfiguration()),
+    writeFixtureFile(resolve(paths.componentsRoot, "package.json"), JSON.stringify({name: "@arolariu/components"})),
     writeFixtureFile(resolve(root, "tsconfig.json")),
     writeFixtureFile(resolve(root, "eslint.config.ts"), "export default [];\n"),
     writeFixtureFile(resolve(root, "scripts", "generate.artifacts.ts"), "export {};\n"),
@@ -164,14 +171,6 @@ async function createWorkspaceFixture(
     paths.githubScriptsRoot,
   );
   setResponse({command: "npm", args: ["config", "get", "cache"]}, commandResult({stdout: `${cacheRoot}\n`}));
-  setResponse(
-    {command: "npx", args: ["--no-install", "nx", "show", "projects", "--json"]},
-    commandResult({stdout: '["@arolariu/website","@arolariu/components"]\n'}),
-  );
-  setResponse(
-    {command: "npx", args: ["--no-install", "nx", "graph", "--print", "--open=false", "--watch=false"]},
-    commandResult({stdout: healthyNxGraph()}),
-  );
   setResponse(
     {command: "npm", args: ["audit", "--json"]},
     commandResult({
@@ -279,47 +278,6 @@ describe("diagnoseNpmIntegrity", () => {
     expect(result.rootCause).toBeUndefined();
     expect(result.potentialCauses.map(({confidence}) => confidence)).toEqual(["high", "medium", "low"]);
   });
-});
-
-describe("parseNxGraph", () => {
-  it("parses projects, dependencies, and no cycles from a healthy graph", () => {
-    const parsed = parseNxGraph(healthyNxGraph());
-
-    expect(parsed.projects).toEqual(["@arolariu/components", "@arolariu/website"]);
-    expect(parsed.dependencies.get("@arolariu/website")).toEqual(["@arolariu/components"]);
-    expect(parsed.cycles).toEqual([]);
-  });
-
-  it("detects dependency cycles", () => {
-    const parsed = parseNxGraph(
-      JSON.stringify({
-        graph: {
-          nodes: {a: {}, b: {}},
-          dependencies: {
-            a: [{source: "a", target: "b", type: "static"}],
-            b: [{source: "b", target: "a", type: "static"}],
-          },
-        },
-      }),
-    );
-
-    expect(parsed.cycles).toEqual(["a -> b -> a"]);
-  });
-
-  it("preserves a valid zero-project graph for the diagnostic layer to classify", () => {
-    expect(parseNxGraph(JSON.stringify({graph: {nodes: {}, dependencies: {}}}))).toEqual({
-      projects: [],
-      dependencies: new Map(),
-      cycles: [],
-    });
-  });
-
-  it.each(["not-json", "[]", '{"graph":{"nodes":[],"dependencies":{}}}', '{"graph":{"nodes":{},"dependencies":[]}}'])(
-    "rejects malformed graph payload %s",
-    (stdout) => {
-      expect(() => parseNxGraph(stdout)).toThrow();
-    },
-  );
 });
 
 describe("workspaceDoctorModule", () => {
@@ -513,65 +471,75 @@ describe("workspaceDoctorModule", () => {
     expect(dependencies?.rootCause).toBeUndefined();
   });
 
-  it.each([
-    [
-      "zero projects",
-      commandResult({stdout: "[]"}),
-      commandResult({stdout: healthyNxGraph()}),
-      "workspace.nx-projects",
-    ],
-    [
-      "malformed graph",
-      commandResult({stdout: '["@arolariu/website","@arolariu/components"]'}),
-      commandResult({stdout: "not-json"}),
-      "workspace.nx-graph",
-    ],
-    [
-      "dependency cycle",
-      commandResult({stdout: '["@arolariu/website","@arolariu/components"]'}),
-      commandResult({
-        stdout: JSON.stringify({
-          graph: {
-            nodes: {"@arolariu/website": {}, "@arolariu/components": {}},
-            dependencies: {
-              "@arolariu/website": [{target: "@arolariu/components"}],
-              "@arolariu/components": [{target: "@arolariu/website"}],
-            },
-          },
-        }),
-      }),
-      "workspace.nx-graph",
-    ],
-    [
-      "missing website-components edge",
-      commandResult({stdout: '["@arolariu/website","@arolariu/components"]'}),
-      commandResult({
-        stdout: JSON.stringify({
-          graph: {
-            nodes: {"@arolariu/website": {}, "@arolariu/components": {}},
-            dependencies: {"@arolariu/website": [], "@arolariu/components": []},
-          },
-        }),
-      }),
-      "workspace.nx-graph",
-    ],
-  ])("classifies %s as an explicit Nx failure", async (_title, projects, graph, failedId) => {
+  it("derives both Nx diagnostics from tracked workspace metadata without dispatching any Nx command", async () => {
     const fixture = await createWorkspaceFixture();
-    fixture.responses.set(
-      commandKey({command: "npx", args: ["--no-install", "nx", "show", "projects", "--json"]}, fixture.root),
-      projects,
-    );
-    fixture.responses.set(
-      commandKey(
-        {command: "npx", args: ["--no-install", "nx", "graph", "--print", "--open=false", "--watch=false"]},
-        fixture.root,
-      ),
-      graph,
+
+    const results = await workspaceDoctorModule.run(fixture.context);
+
+    expect(results.find(({id}) => id === "workspace.nx-projects")).toMatchObject({status: "pass"});
+    expect(results.find(({id}) => id === "workspace.nx-graph")).toMatchObject({status: "pass"});
+    expect(results.find(({id}) => id === "workspace.nx-projects")?.evidence.join("\n")).toContain("@arolariu/website");
+    expect(results.find(({id}) => id === "workspace.nx-graph")?.evidence.join("\n")).toContain("@arolariu/components");
+    expect(
+      fixture.run.mock.calls.filter(([command]) => command.command === "npx" || command.args.includes("nx")),
+    ).toEqual([]);
+  });
+
+  it("fails both Nx checks when the workspace declares no discoverable project", async () => {
+    const fixture = await createWorkspaceFixture();
+    await Promise.all([
+      rm(resolve(fixture.context.paths.websiteRoot, "project.json")),
+      rm(resolve(fixture.context.paths.componentsRoot, "project.json")),
+    ]);
+
+    const results = await workspaceDoctorModule.run(fixture.context);
+
+    expect(results.find(({id}) => id === "workspace.nx-projects")?.status).toBe("fail");
+    expect(results.find(({id}) => id === "workspace.nx-graph")?.status).toBe("fail");
+  });
+
+  it("fails both Nx checks with normalized evidence when project metadata is malformed", async () => {
+    const fixture = await createWorkspaceFixture();
+    await writeFile(resolve(fixture.context.paths.websiteRoot, "project.json"), "{not-json", "utf8");
+
+    const results = await workspaceDoctorModule.run(fixture.context);
+    const projects = results.find(({id}) => id === "workspace.nx-projects");
+    const graph = results.find(({id}) => id === "workspace.nx-graph");
+
+    expect(projects?.status).toBe("fail");
+    expect(projects?.evidence.join("\n")).not.toBe("");
+    expect(graph?.status).toBe("fail");
+    expect(graph?.fixes).not.toEqual([]);
+  });
+
+  it("fails the Nx graph check on a dependency cycle while project discovery still passes", async () => {
+    const fixture = await createWorkspaceFixture();
+    await writeFile(
+      resolve(fixture.context.paths.componentsRoot, "project.json"),
+      componentsProjectConfiguration(["website:build"]),
+      "utf8",
     );
 
     const results = await workspaceDoctorModule.run(fixture.context);
 
-    expect(results.find(({id}) => id === failedId)?.status).toBe("fail");
+    expect(results.find(({id}) => id === "workspace.nx-projects")?.status).toBe("pass");
+    expect(results.find(({id}) => id === "workspace.nx-graph")).toMatchObject({
+      status: "fail",
+      rootCause: "The Nx project dependency graph contains a cycle.",
+    });
+  });
+
+  it("fails the Nx graph check when the expected website-to-components dependency is absent", async () => {
+    const fixture = await createWorkspaceFixture();
+    await Promise.all([
+      writeFile(resolve(fixture.context.paths.websiteRoot, "project.json"), websiteProjectConfiguration([]), "utf8"),
+      writeFile(resolve(fixture.context.paths.websiteRoot, "package.json"), websitePackageManifest({}), "utf8"),
+    ]);
+
+    const results = await workspaceDoctorModule.run(fixture.context);
+
+    expect(results.find(({id}) => id === "workspace.nx-projects")?.status).toBe("pass");
+    expect(results.find(({id}) => id === "workspace.nx-graph")?.status).toBe("fail");
   });
 
   it.each([

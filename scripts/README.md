@@ -121,7 +121,7 @@ installs, writes, restores, generates, starts/stops a service, builds, type-chec
 | [`doctor.ts`](./doctor.ts) | CLI parsing, help, module orchestration/ordering, and the exit-code rollup |
 | [`doctor.types.ts`](./doctor.types.ts) | Shared `DiagnosticResult`/`DoctorContext`/`DoctorOptions` contracts, the exact-allowlisted read-only command policy, and diagnostic-result helpers |
 | [`doctor.reporter.ts`](./doctor.reporter.ts) | Stable per-check score weights, schema-v1 validation (`createDoctorReport`/`parseDoctorReport`), and human/JSON rendering |
-| [`doctor.workspace.ts`](./doctor.workspace.ts) | Repository root, git, Node/npm runtime, dependency trees, Nx graph, config files, generated artifacts, host capacity, npm audit/outdated |
+| [`doctor.workspace.ts`](./doctor.workspace.ts) | Repository root, git, Node/npm runtime, dependency trees, Nx workspace graph (read from tracked metadata, see below), config files, generated artifacts, host capacity, npm audit/outdated |
 | [`doctor.dotnet.ts`](./doctor.dotnet.ts) | .NET SDK/host/workloads, NuGet state, solution, local tools, HTTPS certificate trust, AppHost user secrets, NuGet feed reachability |
 | [`doctor.react.ts`](./doctor.react.ts) | Website packages, workspace link, environment, i18n, taxonomy/licenses, Playwright, framework config |
 | [`doctor.svelte.ts`](./doctor.svelte.ts) | CV and status SvelteKit packages, Node engine, scripts, generated `.svelte-kit` state, adapter |
@@ -149,6 +149,15 @@ rejects caller-supplied stdin, forces captured output, and applies `DIAGNOSTIC_D
 Modules never import [`common/process.ts`](./common/process.ts) directly — [`doctor.readonly.test.ts`](./doctor.readonly.test.ts)'s
 source-level AST guard forbids a mutating filesystem import or an unresolved/forbidden command specification anywhere in `doctor.*.ts`.
 
+No Nx child command is dispatched by doctor or status, and none is allowlisted. Nx 23.1.1 always opens (and rewrites) its native workspace
+database under `NX_WORKSPACE_DATA_DIRECTORY` when it constructs a project graph, so `npx nx show projects` and `npx nx graph` mutate
+gitignored local tooling state. `workspace.nx-projects`, `workspace.nx-graph`, and status's `nxEdges` are instead derived by the shared
+read-only [`common/workspace-graph.ts`](./common/workspace-graph.ts) reader, which discovers `project.json` files beneath the `appsDir`/
+`libsDir` roots declared by `nx.json` and combines them with the optional workspace `package.json` manifests. It keeps one dependency
+record per independent source category (a workspace package dependency, an explicit cross-project `dependsOn` declaration, and an exact
+implicit dependency), and rejects malformed, duplicated, ambiguous, or unresolvable metadata with a `WorkspaceGraphError` rather than
+returning a fabricated empty graph.
+
 ### JSON consumers
 
 `--json` emits exactly one ANSI-free schema-v1 document. [`status.ts`](./status.ts) is the reference consumer: it invokes doctor as
@@ -162,8 +171,8 @@ consumer should follow the same parse-then-validate pattern instead of scraping 
 Focused validation for doctor, its reporter, every specialist module, and `status.ts`:
 
 ```powershell
-npx vitest run --coverage.enabled=false scripts\common\logger.test.ts scripts\common\process.test.ts scripts\common\output-policy.test.ts scripts\doctor.test.ts scripts\doctor.reporter.test.ts scripts\doctor.readonly.test.ts scripts\doctor.workspace.test.ts scripts\doctor.dotnet.test.ts scripts\doctor.react.test.ts scripts\doctor.svelte.test.ts scripts\doctor.python.test.ts scripts\doctor.infrastructure.test.ts scripts\status.test.ts scripts\setup.test.ts
-npx eslint scripts\doctor.ts scripts\doctor.types.ts scripts\doctor.reporter.ts scripts\doctor.workspace.ts scripts\doctor.dotnet.ts scripts\doctor.react.ts scripts\doctor.svelte.ts scripts\doctor.python.ts scripts\doctor.infrastructure.ts scripts\status.ts
+npx vitest run --coverage.enabled=false scripts\common\logger.test.ts scripts\common\process.test.ts scripts\common\output-policy.test.ts scripts\common\workspace-graph.test.ts scripts\doctor.test.ts scripts\doctor.reporter.test.ts scripts\doctor.readonly.test.ts scripts\doctor.workspace.test.ts scripts\doctor.dotnet.test.ts scripts\doctor.react.test.ts scripts\doctor.svelte.test.ts scripts\doctor.python.test.ts scripts\doctor.infrastructure.test.ts scripts\status.test.ts scripts\setup.test.ts
+npx eslint scripts\doctor.ts scripts\doctor.types.ts scripts\doctor.reporter.ts scripts\doctor.workspace.ts scripts\doctor.dotnet.ts scripts\doctor.react.ts scripts\doctor.svelte.ts scripts\doctor.python.ts scripts\doctor.infrastructure.ts scripts\status.ts scripts\common\workspace-graph.ts
 git --no-pager diff --check
 ```
 
@@ -199,6 +208,7 @@ npx vitest run --coverage.enabled=false `
   scripts\common\requirements.test.ts `
   scripts\common\tooling-config.test.ts `
   scripts\common\prompts.test.ts `
+  scripts\common\workspace-graph.test.ts `
   @setupTests `
   scripts\generate.env.test.ts `
   @containerRuntimeTests `

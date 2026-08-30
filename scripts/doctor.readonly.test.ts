@@ -830,8 +830,6 @@ describe("isReadOnlyDiagnosticCommand", () => {
       {command: "npm", args: ["audit", "--json"]},
       {command: "npm", args: ["outdated", "--json"]},
       {command: "npm", args: ["config", "get", "cache"]},
-      {command: "npx", args: ["--no-install", "nx", "show", "projects", "--json"]},
-      {command: "npx", args: ["--no-install", "nx", "graph", "--print", "--open=false", "--watch=false"]},
       {command: "npx", args: ["--no-install", "playwright", "install", "--list"]},
       {command: "git", args: ["--version"]},
       {command: "git", args: ["status", "--short", "--branch"]},
@@ -934,6 +932,11 @@ describe("isReadOnlyDiagnosticCommand", () => {
       {command: "npm", args: ["ci"]},
       {command: "dotnet", args: ["restore"]},
       {command: "dotnet", args: ["build"]},
+      // Nx 23.1.1 always opens (and rewrites) its native workspace database under
+      // NX_WORKSPACE_DATA_DIRECTORY when it constructs a project graph, so both former Nx
+      // probes mutate gitignored local tooling state and are no longer read-only.
+      {command: "npx", args: ["--no-install", "nx", "show", "projects", "--json"]},
+      {command: "npx", args: ["--no-install", "nx", "graph", "--print", "--open=false", "--watch=false"]},
       {command: "npx", args: ["tsc", "--noEmit"]},
       {command: "npx", args: ["svelte-check"]},
       {command: "npx", args: ["vitest", "run"]},

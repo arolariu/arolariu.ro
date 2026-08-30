@@ -355,11 +355,7 @@ export function isReadOnlyDiagnosticCommand(command: Readonly<CommandSpec>): boo
         || hasExactArguments(command.args, ["config", "get", "cache"])
       );
     case "npx":
-      return (
-        hasExactArguments(command.args, ["--no-install", "nx", "show", "projects", "--json"])
-        || hasExactArguments(command.args, ["--no-install", "nx", "graph", "--print", "--open=false", "--watch=false"])
-        || hasExactArguments(command.args, ["--no-install", "playwright", "install", "--list"])
-      );
+      return hasExactArguments(command.args, ["--no-install", "playwright", "install", "--list"]);
     case "git":
       return (
         hasExactArguments(command.args, ["--version"])
