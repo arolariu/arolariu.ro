@@ -3,7 +3,7 @@
  * @module scripts.setup.python
  */
 
-import {rm} from "node:fs/promises";
+import {rm, stat} from "node:fs/promises";
 
 import type {CommandResult, CommandSpec} from "./common/process.ts";
 import {formatCommand} from "./common/process.ts";
@@ -23,6 +23,7 @@ export interface PythonInterpreter {
 
 interface PythonSetupDependencies {
   readonly platform: NodeJS.Platform;
+  readonly virtualEnvironmentExists: (path: string) => Promise<boolean>;
   readonly removeDirectory: (path: string) => Promise<void>;
 }
 
@@ -30,6 +31,13 @@ interface InterpreterProbe {
   readonly command: string;
   readonly prefixArgs: readonly string[];
 }
+
+type ExistingVirtualEnvironmentProbe =
+  | Readonly<{status: "compatible"; version: MinimumVersion}>
+  | Readonly<{status: "incompatible"; version: MinimumVersion}>
+  | Readonly<{status: "inconclusive"; evidence: readonly string[]}>;
+
+type VirtualEnvironmentProbe = Readonly<{status: "absent"}> | ExistingVirtualEnvironmentProbe;
 
 const PYTHON_INSTALL_ACTION = "python.install-interpreter";
 const VENV_CREATE_ACTION = "python.venv.create";
@@ -50,6 +58,10 @@ function isInterrupted(error: unknown): boolean {
 
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
+}
+
+function hasErrorCode(error: unknown, code: string): boolean {
+  return error instanceof Error && "code" in error && error.code === code;
 }
 
 function duration(startedAt: number, context: SetupContext): number {
@@ -288,12 +300,25 @@ export function selectPythonInstallationProposal(
   return null;
 }
 
-async function probeVenvVersion(context: SetupContext, venvSpec: Readonly<CommandSpec>): Promise<MinimumVersion | null> {
+async function probeExistingVenvVersion(
+  context: SetupContext,
+  venvSpec: Readonly<CommandSpec>,
+  requiredPython: MinimumVersion,
+): Promise<ExistingVirtualEnvironmentProbe> {
   const result = await context.runner.run({command: venvSpec.command, args: [...venvSpec.args, "--version"]}, {cwd: context.paths.expRoot});
   if (!isSuccessfulCommand(result)) {
-    return null;
+    return {status: "inconclusive", evidence: commandFailureEvidence(result)};
   }
-  return parsePythonVersion(result.stdout) ?? parsePythonVersion(result.stderr);
+  const version = parsePythonVersion(result.stdout) ?? parsePythonVersion(result.stderr);
+  if (version === null) {
+    return {
+      status: "inconclusive",
+      evidence: ["The virtual environment returned an unrecognized Python version.", ...commandFailureEvidence(result)],
+    };
+  }
+  return satisfiesMinimum(version, requiredPython)
+    ? {status: "compatible", version}
+    : {status: "incompatible", version};
 }
 
 async function ensureVirtualEnvironment(
@@ -305,13 +330,37 @@ async function ensureVirtualEnvironment(
   evidence: string[],
 ): Promise<SetupPhaseResult | null> {
   const requiredPython = context.requirements.python;
-  const initialVersion = await probeVenvVersion(context, venvSpec);
-  const venvCompatible = initialVersion !== null && satisfiesMinimum(initialVersion, requiredPython);
-  evidence.push(
-    venvCompatible
-      ? `The isolated virtual environment satisfies >=${normalizedVersion(requiredPython)}.`
-      : "The isolated virtual environment is missing or does not satisfy the required Python version.",
-  );
+  const venvDirectory = virtualEnvironmentDirectory(context.paths.expRoot, dependencies.platform);
+  const initialProbe: VirtualEnvironmentProbe = await dependencies.virtualEnvironmentExists(venvDirectory)
+    ? await probeExistingVenvVersion(context, venvSpec, requiredPython)
+    : {status: "absent"};
+
+  if (initialProbe.status === "inconclusive") {
+    return {
+      id: "python",
+      status: "failed",
+      summary: "The existing Python virtual environment could not be inspected safely.",
+      evidence: [
+        ...evidence,
+        "The virtual environment version probe was inconclusive; the existing environment was not changed.",
+        ...initialProbe.evidence,
+      ],
+      nextActions: ["Resolve the virtual environment version probe failure, then rerun setup."],
+      durationMs: 0,
+    };
+  }
+
+  const venvCompatible = initialProbe.status === "compatible";
+  const venvNeedsCreation = initialProbe.status === "absent" || initialProbe.status === "incompatible";
+  if (initialProbe.status === "absent") {
+    evidence.push("The isolated virtual environment does not exist.");
+  } else if (initialProbe.status === "incompatible") {
+    evidence.push(
+      `The isolated virtual environment uses Python ${normalizedVersion(initialProbe.version)}, below the required >=${normalizedVersion(requiredPython)}.`,
+    );
+  } else {
+    evidence.push(`The isolated virtual environment satisfies >=${normalizedVersion(requiredPython)}.`);
+  }
 
   const requirementsHash = await sha256File(context.paths.pythonRequirements);
   const configRead = await readToolingConfig(context.paths.toolingConfig);
@@ -328,7 +377,7 @@ async function ensureVirtualEnvironment(
   const storedHash = configRead.status === "valid" ? configRead.config.fingerprints?.pythonRequirementsSha256 : undefined;
   const fingerprintMatches = storedHash === requirementsHash;
 
-  let mutationNeeded = !venvCompatible || !fingerprintMatches;
+  let mutationNeeded = venvNeedsCreation || !fingerprintMatches;
   if (!mutationNeeded) {
     const checkProbe = await context.runner.run(
       {command: venvSpec.command, args: [...venvSpec.args, "-m", "pip", "check"]},
@@ -348,14 +397,15 @@ async function ensureVirtualEnvironment(
 
   let anyPlanned = false;
 
-  if (!venvCompatible) {
-    const venvDirectory = virtualEnvironmentDirectory(context.paths.expRoot, dependencies.platform);
+  if (venvNeedsCreation) {
     const disposition = await context.actions.run({
       id: VENV_CREATE_ACTION,
       scope: "repository",
       summary: "Create the isolated exp.arolariu.ro Python virtual environment.",
       execute: async () => {
-        await dependencies.removeDirectory(venvDirectory);
+        if (initialProbe.status === "incompatible") {
+          await dependencies.removeDirectory(venvDirectory);
+        }
         const createResult = await context.runner.run(
           {command: interpreter.command, args: [...interpreter.prefixArgs, "-m", "venv", venvDirectory]},
           {cwd: context.paths.root},
@@ -374,8 +424,11 @@ async function ensureVirtualEnvironment(
       evidence.push(`Planned action: ${VENV_CREATE_ACTION}`);
       anyPlanned = true;
     } else {
-      const reprobeVersion = await probeVenvVersion(context, venvSpec);
-      if (reprobeVersion === null || !satisfiesMinimum(reprobeVersion, requiredPython)) {
+      const reprobe = await probeExistingVenvVersion(context, venvSpec, requiredPython);
+      if (reprobe.status === "inconclusive") {
+        throw new Error(["The Python virtual environment could not be verified after creation.", ...reprobe.evidence].join("\n"));
+      }
+      if (reprobe.status === "incompatible") {
         throw new Error("The Python virtual environment remains incompatible after creation.");
       }
       evidence.push(`Executed and verified action: ${VENV_CREATE_ACTION}`);
@@ -607,6 +660,19 @@ async function runPythonSetup(context: SetupContext, dependencies: PythonSetupDe
 export function createPythonSetupPhase(dependencies: Partial<PythonSetupDependencies> = {}): SetupPhaseDefinition {
   const resolvedDependencies: PythonSetupDependencies = {
     platform: dependencies.platform ?? process.platform,
+    virtualEnvironmentExists:
+      dependencies.virtualEnvironmentExists
+      ?? (async (path) => {
+        try {
+          await stat(path);
+          return true;
+        } catch (error: unknown) {
+          if (hasErrorCode(error, "ENOENT")) {
+            return false;
+          }
+          throw error;
+        }
+      }),
     removeDirectory:
       dependencies.removeDirectory
       ?? (async (path) => {

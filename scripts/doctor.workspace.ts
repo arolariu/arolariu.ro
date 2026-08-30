@@ -21,7 +21,7 @@ import {
   workspaceDependencyTargets,
   type WorkspaceGraph,
 } from "./common/workspace-graph.ts";
-import {getExpectedTaxonomyArtifactPaths} from "./generate.artifacts.ts";
+import {getExpectedTaxonomyArtifactPaths} from "./common/taxonomy-artifacts.ts";
 import {
   diagnosticResult,
   skippedDiagnostic,

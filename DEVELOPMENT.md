@@ -303,21 +303,23 @@ npm run generate:gql     # GraphQL type generation
 
 `npm run setup` and `npm run doctor` own different halves of the environment lifecycle:
 
-| Command | Ownership | Mutates the repository? |
-|---------|-----------|--------------------------|
+| Command | Ownership | Mutates repository/local tooling state? |
+|---------|-----------|------------------------------------------|
 | `npm run setup` | Dependency-aware **preparation** — may restore/install/generate/write approved local state under its consent/`--dry-run` contracts | Yes, within the scopes described under [Prerequisites](#prerequisites) and [Quick Start](#quick-start) |
-| `npm run doctor` | Strictly **read-only diagnosis** of the same toolchains setup prepares | Never — no install/upgrade, write/copy/rename/delete, dependency restore, artifact generation, service start/stop, build, type-check, compile, or test |
+| `npm run doctor` | Strictly **read-only diagnosis** of the same toolchains setup prepares | No repository, `.nx`, or `.arolariu` mutation — no install/upgrade, repository write/copy/rename/delete, dependency restore, artifact generation, service start/stop, build, type-check, compile, or test |
 
 Doctor is not a substitute for `npm run test`, `npm run lint`, or `npm run build` — it diagnoses
 the *environment* those commands run in, not the code itself. Run the relevant build/test/lint
 command separately once doctor's evidence points to a code (rather than environment) problem.
+Approved metadata/status probes may still update external package-manager caches or
+container-engine client/cache state outside the repository and local-tooling boundary.
 
 ### CLI contract
 
 ```bash
 node scripts/doctor.ts               # Human-readable report
 node scripts/doctor.ts --verbose     # -v: also show evidence for passing checks
-node scripts/doctor.ts --ci          # Skip host-local checks (certificates, AppHost, containers, ports) as explicit `skipped` rows
+node scripts/doctor.ts --ci          # Skip host-local checks (.NET HTTPS certificate, AppHost, ports, selfhost TLS certificates, containers)
 node scripts/doctor.ts --score       # Render the aggregate health score/grade banner
 node scripts/doctor.ts --json        # Emit one ANSI-free schema-v1 JSON document
 node scripts/doctor.ts --quick       # Skip network/slow checks as explicit `skipped` rows
@@ -333,7 +335,8 @@ them in this fixed order: **Workspace → .NET → React → Svelte → Python �
 - `--quick` still invokes every module — it emits explicit `skipped` rows for network/slow checks
   (npm registry, NuGet, and PyPI reachability) and omits their expensive follow-up probes.
 - `--ci` still invokes every module — it emits explicit `skipped` rows for host-local checks
-  (HTTPS certificate trust, AppHost user secrets, local container inventory, port inspection).
+  (.NET HTTPS certificate trust, the whole AppHost check, local port inspection, selfhost TLS
+  certificates, and known-container inventory).
 - Skipped rows stay visible in the report but are excluded from the score's denominator.
 
 Every warning/failure row includes evidence, one or more ordered suggested fixes, and exactly one
@@ -364,11 +367,13 @@ failure. `--quick` skips the same remote checks intentionally, independent of co
 ### npm run status integration
 
 `npm run status` remains a six-section aggregator (`workspaces`, `nxEdges`, `git`, `security`,
-`disk`, `health`). `nxEdges` is derived from tracked Nx workspace metadata (`nx.json`,
-`project.json`, and workspace `package.json`) rather than an Nx child process, because Nx's
-project-graph construction rewrites its native workspace database and would break the read-only
-contract; an unreadable or ambiguous graph makes the section unavailable (`null`) instead of an
-empty list. It invokes doctor internally as `--quick --json` and parses the schema-v1
+`disk`, `health`). `nxEdges` is derived from repository Nx metadata (`nx.json`, discoverable
+`project.json`, and adjacent workspace `package.json`) rather than an Nx child process, because
+Nx's project-graph construction rewrites its native workspace database and would break the
+read-only contract. The shared graph retains independent metadata origins, while status emits
+one deterministically ordered logical edge per source/target pair; an unreadable or ambiguous
+graph makes the section unavailable (`null`) instead of an empty list. It invokes doctor
+internally as `--quick --json` and parses the schema-v1
 document even when doctor exits `1` (a failed check is not a malformed report). A malformed, old,
 or future-schema report makes `health` unavailable (`null`) instead of stale or fabricated data;
 `health` otherwise reports `score`, `grade`, and `summary`. `status` supports only `--json` and

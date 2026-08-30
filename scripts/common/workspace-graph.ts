@@ -7,9 +7,8 @@
  * that is always opened — and rewritten — under `NX_WORKSPACE_DATA_DIRECTORY`,
  * so no Nx CLI invocation can satisfy the repository's strict read-only
  * diagnostic contract. This module reproduces the same workspace shape from
- * tracked metadata only: `nx.json`'s declared workspace layout, the
- * `project.json` files discovered beneath it, and the optional workspace
- * `package.json` manifests beside them.
+ * repository metadata only: `nx.json`, every discoverable `project.json`, and
+ * the optional workspace `package.json` manifests beside them.
  *
  * It uses Node built-ins exclusively, never spawns a process, never writes, and
  * never creates a temporary or redirected cache directory. Malformed or
@@ -17,7 +16,7 @@
  * report an explicit failure instead of a fabricated empty graph.
  */
 
-import {readdir, readFile, stat} from "node:fs/promises";
+import {lstat, readdir, readFile, stat} from "node:fs/promises";
 import {isAbsolute, join, normalize, relative, resolve} from "node:path";
 
 /** Independent metadata category one dependency record was derived from. */
@@ -132,6 +131,11 @@ interface DependencyDraft {
   readonly target: string;
   readonly origin: WorkspaceDependencyOrigin;
   readonly declaration: string;
+}
+
+interface WorkspaceLayoutRoot {
+  readonly path: string;
+  readonly explicit: boolean;
 }
 
 function isRecord(value: unknown): value is UnknownRecord {
@@ -609,28 +613,37 @@ export function workspaceDependencyTargets(graph: Readonly<WorkspaceGraph>, proj
 // Filesystem discovery
 // ============================================================================
 
-function workspaceLayoutRoots(nxConfiguration: unknown): readonly string[] {
+function workspaceLayoutRoots(nxConfiguration: unknown): readonly WorkspaceLayoutRoot[] {
   const configuration = requireRecord(nxConfiguration, NX_CONFIGURATION_FILE);
   const layoutValue = configuration["workspaceLayout"];
   const layout = layoutValue === undefined ? {} : requireRecord(layoutValue, `${NX_CONFIGURATION_FILE} workspaceLayout`);
 
-  const appsDir = optionalString(layout["appsDir"], `${NX_CONFIGURATION_FILE} workspaceLayout.appsDir`) ?? DEFAULT_APPS_DIR;
-  const libsDir = optionalString(layout["libsDir"], `${NX_CONFIGURATION_FILE} workspaceLayout.libsDir`) ?? DEFAULT_LIBS_DIR;
+  const declarations = [
+    {
+      path: optionalString(layout["appsDir"], `${NX_CONFIGURATION_FILE} workspaceLayout.appsDir`) ?? DEFAULT_APPS_DIR,
+      explicit: layout["appsDir"] !== undefined,
+    },
+    {
+      path: optionalString(layout["libsDir"], `${NX_CONFIGURATION_FILE} workspaceLayout.libsDir`) ?? DEFAULT_LIBS_DIR,
+      explicit: layout["libsDir"] !== undefined,
+    },
+  ] as const;
 
-  const layoutRoots: string[] = [];
-  for (const declared of [appsDir, libsDir]) {
+  const layoutRoots = new Map<string, boolean>();
+  for (const declaration of declarations) {
+    const declared = declaration.path;
     const normalized = toPosixPath(normalize(declared)).replace(/\/+$/u, "");
     if (isAbsolute(declared) || normalized === ".." || normalized.startsWith("../") || normalized === "") {
       throw new WorkspaceGraphError(
         `${NX_CONFIGURATION_FILE} workspaceLayout must declare repository-relative directories, but got '${declared}'.`,
       );
     }
-    if (!layoutRoots.includes(normalized)) {
-      layoutRoots.push(normalized);
-    }
+    layoutRoots.set(normalized, (layoutRoots.get(normalized) ?? false) || declaration.explicit);
   }
 
-  return layoutRoots.toSorted();
+  return [...layoutRoots]
+    .map(([path, explicit]) => ({path, explicit}))
+    .toSorted((left, right) => compareText(left.path, right.path));
 }
 
 async function readJsonDocument(path: string, label: string): Promise<unknown> {
@@ -690,38 +703,41 @@ async function collectProjectRoots(directory: string, repositoryRoot: string, di
 }
 
 /**
- * Reads the workspace project graph from tracked repository metadata.
+ * Reads the workspace project graph from repository metadata.
  *
  * @remarks
- * Discovers `project.json` files beneath the `appsDir`/`libsDir` roots declared
- * by `nx.json`, skipping symbolic links (including Windows junctions),
- * dot-prefixed directories, and known generated/dependency directories.
- * Discovery stops at the first `project.json` on any path, so a project root is
- * never rescanned for nested projects. No Nx process is started and nothing is
- * written.
+ * Discovers `project.json` files across the repository, matching Nx metadata
+ * discovery rather than treating `workspaceLayout` as a project boundary.
+ * Explicitly configured layout roots must remain readable real directories;
+ * absent default `apps`/`libs` roots are treated as empty. Symbolic links
+ * (including Windows junctions), dot-prefixed directories, and known
+ * generated/dependency directories are skipped. Discovery stops at the first
+ * `project.json` on any path, so a project root is never rescanned for nested
+ * projects. No Nx process is started and nothing is written.
  *
  * @param root - Absolute repository root.
- * @returns Deterministic workspace graph derived from tracked metadata.
+ * @returns Deterministic workspace graph derived from repository metadata.
  * @throws WorkspaceGraphError when metadata is missing, malformed, ambiguous, or unresolvable.
  */
 export async function readWorkspaceGraph(root: string): Promise<WorkspaceGraph> {
   const repositoryRoot = resolve(root);
   const nxConfiguration = await readJsonDocument(join(repositoryRoot, NX_CONFIGURATION_FILE), NX_CONFIGURATION_FILE);
 
-  const discovered: string[] = [];
-  for (const layoutRoot of workspaceLayoutRoots(nxConfiguration)) {
-    const absoluteRoot = join(repositoryRoot, layoutRoot);
+  for (const layoutRoot of workspaceLayoutRoots(nxConfiguration).filter(({explicit}) => explicit)) {
+    const absoluteRoot = join(repositoryRoot, layoutRoot.path);
     let stats;
     try {
-      stats = await stat(absoluteRoot);
+      stats = await lstat(absoluteRoot);
     } catch (error: unknown) {
-      throw new WorkspaceGraphError(`Declared workspace root '${layoutRoot}' is not readable: ${errorMessage(error)}`);
+      throw new WorkspaceGraphError(`Declared workspace root '${layoutRoot.path}' is not readable: ${errorMessage(error)}`);
     }
-    if (!stats.isDirectory()) {
-      throw new WorkspaceGraphError(`Declared workspace root '${layoutRoot}' is not a directory.`);
+    if (!stats.isDirectory() || stats.isSymbolicLink()) {
+      throw new WorkspaceGraphError(`Declared workspace root '${layoutRoot.path}' is not a real directory.`);
     }
-    await collectProjectRoots(absoluteRoot, repositoryRoot, discovered);
   }
+
+  const discovered: string[] = [];
+  await collectProjectRoots(repositoryRoot, repositoryRoot, discovered);
 
   const sources: WorkspaceProjectSource[] = [];
   for (const projectRoot of discovered.toSorted()) {

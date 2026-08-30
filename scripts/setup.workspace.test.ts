@@ -13,8 +13,8 @@ import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "./common/logger.t
 import type {CommandResult, CommandRunner, CommandSpec} from "./common/process.ts";
 import {createRepositoryPaths, type RepositoryPaths} from "./common/repository-paths.ts";
 import {parseVersion, type MinimumVersion, type RepositoryRequirements} from "./common/requirements.ts";
+import {getExpectedTaxonomyArtifactPaths} from "./common/taxonomy-artifacts.ts";
 import {sha256File} from "./common/tooling-config.ts";
-import {getExpectedTaxonomyArtifactPaths} from "./generate.artifacts.ts";
 import {inspectNpmTreeResult, shouldRestoreNpmTree, workspaceSetupPhases, type NpmTreeInspection} from "./setup.workspace.ts";
 import type {
   SetupAction,

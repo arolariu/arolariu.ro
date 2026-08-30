@@ -16,7 +16,7 @@ import {
   type SetupFingerprints,
   type ToolingConfigV1,
 } from "./common/tooling-config.ts";
-import {getExpectedTaxonomyArtifactPaths} from "./generate.artifacts.ts";
+import {getExpectedTaxonomyArtifactPaths} from "./common/taxonomy-artifacts.ts";
 import type {SetupActionDisposition, SetupContext, SetupPhaseDefinition, SetupPhaseResult} from "./setup.types.ts";
 
 const REPOSITORY_PACKAGE_NAME = "@arolariu/monorepo";

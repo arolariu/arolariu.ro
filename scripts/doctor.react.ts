@@ -7,7 +7,7 @@ import {access, readFile} from "node:fs/promises";
 import {basename, dirname, resolve} from "node:path";
 
 import type {CommandResult, CommandSpec} from "./common/process.ts";
-import {getExpectedTaxonomyArtifactPaths} from "./generate.artifacts.ts";
+import {getExpectedTaxonomyArtifactPaths} from "./common/taxonomy-artifacts.ts";
 import {
   diagnosticResult,
   skippedDiagnostic,

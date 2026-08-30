@@ -478,16 +478,32 @@ describe("source-derived Nx graph collection", () => {
     expect(sourceText).not.toMatch(/"npx"/);
   });
 
-  it("reports every source-derived dependency record as an nxEdges entry", async () => {
+  it("emits one deterministically ordered nxEdges entry per logical dependency", async () => {
     const {logger, sink} = createLogger("json");
     const {runner} = createRecordingRunner(baseResponses());
+    const graph: WorkspaceGraph = {
+      projects: [],
+      dependencies: [
+        {source: "@scope/z", target: "@scope/a", origin: "target", declaration: "z target"},
+        {source: "@scope/a", target: "@scope/c", origin: "package", declaration: "a package c"},
+        {source: "@scope/z", target: "@scope/a", origin: "package", declaration: "z package"},
+        {source: "@scope/a", target: "@scope/b", origin: "implicit", declaration: "a implicit b"},
+      ],
+      cycles: [],
+    };
 
-    await main(["--json"], {logger, runner, ...FIXTURE_DEPENDENCIES});
+    await main(["--json"], {
+      logger,
+      runner,
+      resolveRepositoryPaths: FIXTURE_DEPENDENCIES.resolveRepositoryPaths,
+      readWorkspaceGraph: async (): Promise<WorkspaceGraph> => graph,
+    });
 
     const output = parseJsonOutput(sink);
     expect(output["nxEdges"]).toEqual([
-      {source: "@arolariu/website", target: "@arolariu/components"},
-      {source: "@arolariu/website", target: "@arolariu/components"},
+      {source: "@scope/a", target: "@scope/b"},
+      {source: "@scope/a", target: "@scope/c"},
+      {source: "@scope/z", target: "@scope/a"},
     ]);
   });
 });
@@ -873,7 +889,7 @@ describe("main — default workspace-graph wiring", () => {
     await Promise.all(wiringFixtureRoots.splice(0).map((root) => rm(root, {recursive: true, force: true})));
   });
 
-  it("selects the real readWorkspaceGraph and passes paths.root when no override is injected, returning six keys and the two expected website→components edges", async () => {
+  it("selects the real readWorkspaceGraph and passes paths.root when no override is injected, returning six keys and one logical website→components edge", async () => {
     // Create a minimal fixture repository root. It deliberately contains only two projects so
     // that any accidental fallback to the live checkout's seven-project graph would produce a
     // different nxEdges array and fail the assertion below.
@@ -902,7 +918,7 @@ describe("main — default workspace-graph wiring", () => {
 
     // @arolariu/website project — declares both a package dependency and a cross-project
     // target dependency on @arolariu/components, matching the live production shape that
-    // yields exactly two dependency records.
+    // yields two internal dependency records for one logical public edge.
     await mkdir(join(fixtureRoot, "sites", "arolariu.ro"), {recursive: true});
     await writeFile(
       join(fixtureRoot, "sites", "arolariu.ro", "project.json"),
@@ -948,13 +964,10 @@ describe("main — default workspace-graph wiring", () => {
     const output = parseJsonOutput(sink);
     // All six top-level keys must be present.
     expect(Object.keys(output).toSorted()).toEqual(["disk", "git", "health", "nxEdges", "security", "workspaces"].toSorted());
-    // Exactly two edges from the fixture metadata (one from the package dependency, one from
-    // the target dependency). The live checkout's seven-project graph would produce a different
-    // result, so this assertion fails if the default reader reads the wrong root.
-    expect(output["nxEdges"]).toEqual([
-      {source: "@arolariu/website", target: "@arolariu/components"},
-      {source: "@arolariu/website", target: "@arolariu/components"},
-    ]);
+    // The package and target origins remain distinct in WorkspaceGraph but serialize as one
+    // logical status edge. The live checkout's seven-project graph would still produce a
+    // different workspace payload if the default reader used the wrong root.
+    expect(output["nxEdges"]).toEqual([{source: "@arolariu/website", target: "@arolariu/components"}]);
   });
 });
 

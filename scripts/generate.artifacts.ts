@@ -9,43 +9,16 @@ import {tmpdir} from "node:os";
 import {basename, dirname, join, resolve} from "node:path";
 import {promisify} from "node:util";
 import {MonorepositoryConsoleLogger, MonorepositoryLogger} from "./common/logger.ts";
+import {taxonomyArtifactFileNames, taxonomyArtifactOutputRoots} from "./common/taxonomy-artifacts.ts";
 import type {NodePackageDependencyType, NodePackageInformation, TaxonomyArtifact, TaxonomyArtifactNode} from "./types";
+
+export {getExpectedTaxonomyArtifactPaths, taxonomyArtifactFileNames} from "./common/taxonomy-artifacts.ts";
 
 /** Delays between the three bounded taxonomy source attempts. */
 const TAXONOMY_SOURCE_RETRY_DELAYS_MS = [1_000, 4_000] as const;
 
 /** Per-attempt timeout that replaces Node's five-minute fetch default. */
 const TAXONOMY_SOURCE_TIMEOUT_MS = 30_000;
-
-/** Canonical taxonomy artifact names shared by generation and verification tooling. */
-export const taxonomyArtifactFileNames: Readonly<{
-  gpc: string;
-  ecoicop: string;
-  nace: string;
-}> = {
-  gpc: "gpc-2026-05.min.json",
-  ecoicop: "ecoicop-v2.min.json",
-  nace: "nace-2.1.min.json",
-};
-
-/** Canonical repository-relative roots that receive mirrored taxonomy artifacts. */
-const TAXONOMY_OUTPUT_ROOTS = [
-  join("sites", "api.arolariu.ro", "src", "Invoices", "Resources", "Taxonomies"),
-  join("sites", "arolariu.ro", "src", "data", "taxonomies"),
-] as const;
-
-/**
- * Returns every canonical taxonomy artifact path for a repository workspace.
- *
- * @param workspaceRoot - Absolute or relative monorepository root.
- * @returns Generator-major paths for the API and website mirrors.
- */
-export function getExpectedTaxonomyArtifactPaths(workspaceRoot: string): readonly string[] {
-  const outputRoots = TAXONOMY_OUTPUT_ROOTS.map((root) => resolve(workspaceRoot, root));
-  return [taxonomyArtifactFileNames.gpc, taxonomyArtifactFileNames.ecoicop, taxonomyArtifactFileNames.nace].flatMap((fileName) =>
-    outputRoots.map((root) => join(root, fileName)),
-  );
-}
 
 /** Stable fields that identify the exact taxonomy expected by one generator. */
 type TaxonomyArtifactIdentity = Readonly<Pick<TaxonomyArtifact, "system" | "version" | "sourceUrl" | "attribution">>;
@@ -68,7 +41,7 @@ class TaxonomySourceUnavailableError extends Error {
  */
 export abstract class TaxonomyClassificationGenerator {
   /** Default API and website directories that receive byte-identical artifacts. */
-  protected static readonly defaultOutputRoots = TAXONOMY_OUTPUT_ROOTS.map((root) => resolve(root));
+  protected static readonly defaultOutputRoots = taxonomyArtifactOutputRoots.map((root) => resolve(root));
 
   /** Runtime directories that receive mirrored taxonomy artifacts. */
   protected readonly outputRoots: readonly string[];

@@ -134,6 +134,59 @@ describe("appendMissingEnvironmentValues", () => {
 });
 
 describe("generator PromptProvider compatibility", () => {
+  it("preserves every supported Azure runtime identity value during local regeneration", async () => {
+    vi.stubEnv("INFRA", "local");
+    vi.resetModules();
+    vi.spyOn(fs, "existsSync").mockReturnValue(true);
+    vi.spyOn(fs, "readFileSync").mockReturnValue(
+      [
+        "SITE_ENV=DEVELOPMENT",
+        "SITE_NAME=dev.arolariu.ro",
+        "SITE_URL=https://localhost:3000",
+        "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_existing",
+        "CLERK_SECRET_KEY=sk_test_existing",
+        "USE_CDN=false",
+        "AZURE_CLIENT_ID=existing-client",
+        "AZURE_TENANT_ID=existing-tenant",
+        "AZURE_SUBSCRIPTION_ID=existing-subscription",
+        "UNSUPPORTED_LOCAL_VALUE=must-not-be-reemitted",
+      ].join("\n"),
+    );
+    const writeFile = vi.spyOn(fs, "writeFileSync").mockImplementation(() => undefined);
+    vi.spyOn(fs, "copyFileSync").mockImplementation(() => undefined);
+    const prompts: PromptProvider = {
+      confirm: vi.fn<PromptProvider["confirm"]>().mockResolvedValue(false),
+      select: async <TValue extends string>(
+        _message: string,
+        choices: readonly Readonly<{value: TValue; label: string}>[],
+      ): Promise<TValue> => {
+        const selected = choices[0]?.value;
+        if (selected === undefined) {
+          throw new Error("A test choice is required.");
+        }
+        return selected;
+      },
+      text: vi.fn<PromptProvider["text"]>().mockResolvedValue(""),
+      secret: vi.fn<PromptProvider["secret"]>().mockResolvedValue(""),
+    };
+    const logger = new MonorepositoryConsoleLogger("generate::env", {
+      color: false,
+      sink: new InMemoryLoggerSink(),
+    });
+
+    const {main} = await import("./generate.env.ts");
+    await expect(main(false, logger, prompts)).resolves.toBe(0);
+
+    expect(prompts.confirm).not.toHaveBeenCalled();
+    const generated = writeFile.mock.calls[0]?.[1];
+    expect(typeof generated).toBe("string");
+    const generatedText = String(generated);
+    expect(generatedText).toContain("AZURE_CLIENT_ID=existing-client");
+    expect(generatedText).toContain("AZURE_TENANT_ID=existing-tenant");
+    expect(generatedText).toContain("AZURE_SUBSCRIPTION_ID=existing-subscription");
+    expect(generatedText).not.toContain("UNSUPPORTED_LOCAL_VALUE");
+  });
+
   it("stops aggregate generation and propagates a real environment generator failure", async () => {
     vi.resetModules();
     vi.stubEnv("INFRA", "azure");

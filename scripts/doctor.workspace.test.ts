@@ -13,7 +13,7 @@ import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "./common/logger.t
 import type {CommandResult, CommandSpec} from "./common/process.ts";
 import {createRepositoryPaths} from "./common/repository-paths.ts";
 import type {RepositoryRequirements} from "./common/requirements.ts";
-import {getExpectedTaxonomyArtifactPaths} from "./generate.artifacts.ts";
+import {getExpectedTaxonomyArtifactPaths} from "./common/taxonomy-artifacts.ts";
 import {diagnoseNpmIntegrity, workspaceDoctorModule} from "./doctor.workspace.ts";
 import type {
   DiagnosticCommandRunner,

@@ -35,8 +35,19 @@ const EXP_TOKEN_SCOPE = "api://950ac239-5c2c-4759-bd83-911e68f6a8c9/.default";
 const SETUP_SECTION_START = "# arolariu.ro setup-managed values";
 const SETUP_SECTION_END = "# End arolariu.ro setup-managed values";
 
-function isMappedEnvironmentKey(key: string): key is AllEnvironmentVariablesKeys {
-  return Object.values(APP_CONFIGURATION_MAPPING).some((candidate) => candidate === key);
+const AZURE_RUNTIME_IDENTITY_KEYS = [
+  "AZURE_CLIENT_ID",
+  "AZURE_TENANT_ID",
+  "AZURE_SUBSCRIPTION_ID",
+] as const;
+
+const REEMITTABLE_ENVIRONMENT_KEYS: ReadonlySet<string> = new Set([
+  ...Object.values(APP_CONFIGURATION_MAPPING),
+  ...AZURE_RUNTIME_IDENTITY_KEYS,
+]);
+
+function isReemittableEnvironmentKey(key: string): boolean {
+  return REEMITTABLE_ENVIRONMENT_KEYS.has(key);
 }
 
 /**
@@ -221,7 +232,7 @@ function fetchConfigurationFromLocalEnvFile(
   try {
     const content = fs.readFileSync(envPath, "utf-8");
     for (const [key, value] of parseEnvironmentFile(content)) {
-      if (isMappedEnvironmentKey(key)) {
+      if (isReemittableEnvironmentKey(key)) {
         config[key] = value;
       }
     }
@@ -410,7 +421,7 @@ function addConfigSection(
   lines: string[],
   sectionName: string,
   emoji: string,
-  keys: string[],
+  keys: readonly string[],
   config: TypedConfigurationType,
   logger: MonorepositoryLogger,
 ): void {
@@ -457,7 +468,7 @@ function generateEnvFileContent(config: TypedConfigurationType, logger: Monorepo
     lines,
     "Accepted Azure Runtime Identity",
     "☁️",
-    ["AZURE_CLIENT_ID", "AZURE_TENANT_ID", "AZURE_SUBSCRIPTION_ID"],
+    AZURE_RUNTIME_IDENTITY_KEYS,
     config,
     logger,
   );

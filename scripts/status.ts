@@ -408,9 +408,9 @@ async function collectWorkspaces(root: string): Promise<readonly WorkspaceInfo[]
  * doctor report identical workspace-graph semantics. No Nx child process is
  * dispatched and no temporary file is written or read: Nx's project-graph
  * construction rewrites its native workspace database, which the strict
- * read-only contract forbids. One edge is emitted per independent dependency
- * record, so a project pair declared through both a package dependency and an
- * explicit target dependency contributes two edges.
+ * read-only contract forbids. {@link WorkspaceGraph} retains one record per
+ * independent metadata origin, while the public status payload emits each
+ * logical source/target pair once in deterministic order.
  *
  * @param readGraph - Injected workspace-graph reader.
  * @param root - Absolute repository root.
@@ -423,7 +423,20 @@ async function collectNxGraph(
 ): Promise<readonly DependencyEdge[] | null> {
   try {
     const graph = await readGraph(root);
-    return graph.dependencies.map(({source, target}) => ({source, target}));
+    const targetsBySource = new Map<string, Set<string>>();
+    for (const {source, target} of graph.dependencies) {
+      const targets = targetsBySource.get(source) ?? new Set<string>();
+      targets.add(target);
+      targetsBySource.set(source, targets);
+    }
+
+    return [...targetsBySource.entries()]
+      .toSorted(([left], [right]) => (left < right ? -1 : left > right ? 1 : 0))
+      .flatMap(([source, targets]) =>
+        [...targets]
+          .toSorted((left, right) => (left < right ? -1 : left > right ? 1 : 0))
+          .map((target) => ({source, target})),
+      );
   } catch {
     return null;
   }

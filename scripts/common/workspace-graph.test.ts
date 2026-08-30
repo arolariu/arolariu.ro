@@ -363,29 +363,39 @@ describe("workspaceDependencyTargets", () => {
 // ============================================================================
 
 describe("readWorkspaceGraph", () => {
-  it("discovers projects beneath the appsDir and libsDir roots declared by nx.json", async () => {
+  it("discovers project metadata across the workspace instead of limiting discovery to workspaceLayout roots", async () => {
     const root = await createFixtureRoot();
     await writeJsonFile(join(root, "nx.json"), {workspaceLayout: {appsDir: "apps", libsDir: "libs"}});
     await writeJsonFile(join(root, "apps", "web", "project.json"), {name: "@scope/web"});
     await writeJsonFile(join(root, "apps", "nested", "api", "project.json"), {name: "@scope/api"});
     await writeJsonFile(join(root, "libs", "ui", "project.json"), {name: "@scope/ui"});
-    await writeJsonFile(join(root, "other", "ignored", "project.json"), {name: "@scope/ignored"});
+    await writeJsonFile(join(root, "tooling", "worker", "project.json"), {name: "@scope/worker"});
 
     const graph = await readWorkspaceGraph(root);
 
-    expect(graph.projects.map(({name}) => name)).toEqual(["@scope/api", "@scope/ui", "@scope/web"]);
+    expect(graph.projects.map(({name}) => name)).toEqual(["@scope/api", "@scope/ui", "@scope/web", "@scope/worker"]);
     expect(graph.projects.map(({root: projectRoot}) => projectRoot)).toEqual([
       "apps/nested/api",
       "libs/ui",
       "apps/web",
+      "tooling/worker",
     ]);
   });
 
-  it("defaults to the Nx apps and libs layout when nx.json declares no workspace layout", async () => {
+  it("treats missing default apps and libs roots as empty while discovering valid projects elsewhere", async () => {
     const root = await createFixtureRoot();
     await writeJsonFile(join(root, "nx.json"), {});
-    await mkdir(join(root, "libs"), {recursive: true});
-    await writeJsonFile(join(root, "apps", "web", "project.json"), {name: "@scope/web"});
+    await writeJsonFile(join(root, "tooling", "worker", "project.json"), {name: "@scope/worker"});
+
+    const graph = await readWorkspaceGraph(root);
+
+    expect(graph.projects.map(({name}) => name)).toEqual(["@scope/worker"]);
+  });
+
+  it("does not require an undeclared default root when one workspaceLayout root is explicit", async () => {
+    const root = await createFixtureRoot();
+    await writeJsonFile(join(root, "nx.json"), {workspaceLayout: {appsDir: "sites"}});
+    await writeJsonFile(join(root, "sites", "web", "project.json"), {name: "@scope/web"});
 
     const graph = await readWorkspaceGraph(root);
 
@@ -441,11 +451,11 @@ describe("readWorkspaceGraph", () => {
     await writeJsonFile(join(root, "nx.json"), {workspaceLayout: {appsDir: "apps", libsDir: "libs"}});
     await mkdir(join(root, "libs"), {recursive: true});
     await writeJsonFile(join(root, "apps", "web", "project.json"), {name: "@scope/web"});
-    await writeJsonFile(join(root, "external", "linked", "project.json"), {name: "@scope/linked"});
+    await writeJsonFile(join(root, ".external", "linked", "project.json"), {name: "@scope/linked"});
 
     let linkCreated = true;
     try {
-      await symlink(join(root, "external"), join(root, "apps", "linked"), "junction");
+      await symlink(join(root, ".external"), join(root, "apps", "linked"), "junction");
     } catch {
       // Cross-platform/privilege limitation: fall back to proving discovery still returns only
       // the real project, which is the same observable outcome the skip guarantees.

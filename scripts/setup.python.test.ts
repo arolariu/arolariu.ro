@@ -151,6 +151,7 @@ function createHarness(
     dispositions?: Readonly<Record<string, SetupActionDisposition>>;
     options?: SetupOptions;
     platform?: NodeJS.Platform;
+    venvExists?: boolean;
     removeDirectory?: (path: string) => Promise<void>;
     actionsOverride?: SetupActionExecutor;
   }>,
@@ -193,6 +194,7 @@ function createHarness(
   };
   const phase = createPythonSetupPhase({
     platform: input.platform ?? "win32",
+    virtualEnvironmentExists: async () => input.venvExists ?? true,
     removeDirectory:
       input.removeDirectory
       ?? (async (path) => {
@@ -525,9 +527,10 @@ describe("python virtual environment preparation", () => {
     const harness = createHarness({
       paths,
       platform: "win32",
+      venvExists: false,
       responses: {
         [commandKey({command: "py", args: ["-3.12", "--version"]})]: commandResult({stdout: "Python 3.12.4\n"}),
-        [venvVersionKey]: [commandResult({code: 1, spawnError: "ENOENT"}), commandResult({stdout: "Python 3.12.4\n"})],
+        [venvVersionKey]: commandResult({stdout: "Python 3.12.4\n"}),
         [createKey]: commandResult(),
         [upgradeKey]: commandResult(),
         [installKey]: commandResult(),
@@ -545,7 +548,7 @@ describe("python virtual environment preparation", () => {
       "python.fingerprint.write",
     ]);
     expect(harness.run.mock.calls.map(([command]) => commandKey(command))).toContain(createKey);
-    expect(harness.removedDirectories).toEqual([`${paths.expRoot}\\.venv`]);
+    expect(harness.removedDirectories).toEqual([]);
     const config = JSON.parse(await readFile(paths.toolingConfig, "utf8")) as ToolingConfigV1;
     expect(config.fingerprints?.pythonRequirementsSha256).toBe(await sha256File(paths.pythonRequirements));
   });
@@ -572,6 +575,35 @@ describe("python virtual environment preparation", () => {
 
     expect(result.status).toBe("succeeded");
     expect(harness.actionIds[0]).toBe("python.venv.create");
+    expect(harness.removedDirectories).toEqual([`${paths.expRoot}\\.venv`]);
+  });
+
+  it.each([
+    ["a timeout", commandResult({code: 1, timedOut: true})],
+    ["a termination signal", commandResult({code: 1, signal: "SIGTERM"})],
+    ["a non-ENOENT spawn failure", commandResult({code: 1, spawnError: "spawn EBUSY"})],
+    ["a nonzero probe exit", commandResult({code: 1, stderr: "interpreter locked\n"})],
+    ["malformed version output", commandResult({stdout: "not a Python version\n"})],
+  ])("fails without removing or recreating an existing venv when its version probe has %s", async (_name, probeResult) => {
+    const paths = await createFixture();
+    const venv = venvPython(paths, "win32");
+    const harness = createHarness({
+      paths,
+      platform: "win32",
+      venvExists: true,
+      responses: {
+        [commandKey({command: "py", args: ["-3.12", "--version"]})]: commandResult({stdout: "Python 3.12.4\n"}),
+        [commandKey({command: venv.command, args: ["--version"]})]: probeResult,
+      },
+    });
+
+    const result = await harness.phase.run(harness.context);
+
+    expect(result.status).toBe("failed");
+    expect(result.evidence.join("\n")).toMatch(/virtual environment version probe.*inconclusive/i);
+    expect(result.nextActions.join("\n")).toMatch(/resolve.*probe.*rerun setup/i);
+    expect(harness.actionIds).toEqual([]);
+    expect(harness.removedDirectories).toEqual([]);
   });
 
   it("performs no mutation when the fingerprint matches and pip check succeeds", async () => {
@@ -595,6 +627,7 @@ describe("python virtual environment preparation", () => {
 
     expect(result.status).toBe("succeeded");
     expect(harness.actionIds).toEqual([]);
+    expect(harness.removedDirectories).toEqual([]);
   });
 
   it("reinstalls without recreating the venv when the requirements fingerprint is stale", async () => {
@@ -653,9 +686,9 @@ describe("python virtual environment preparation", () => {
     const harness = createHarness({
       paths,
       platform: "win32",
+      venvExists: false,
       responses: {
         [commandKey({command: "py", args: ["-3.12", "--version"]})]: commandResult({stdout: "Python 3.12.4\n"}),
-        [venvVersionKey]: commandResult({code: 1, spawnError: "ENOENT"}),
         [createKey]: commandResult({code: 1, stderr: "boom\n"}),
       },
     });
@@ -667,7 +700,7 @@ describe("python virtual environment preparation", () => {
     expect(result.evidence.join("\n")).toContain("Python virtual environment creation failed.");
     expect(result.evidence.join("\n")).toContain("stderr: boom");
     const calledKeys = harness.run.mock.calls.map(([command]) => commandKey(command));
-    expect(calledKeys.filter((key) => key === venvVersionKey)).toHaveLength(1);
+    expect(calledKeys).not.toContain(venvVersionKey);
     expect(calledKeys).not.toContain(commandKey({command: venv.command, args: ["-m", "pip", "install", "--upgrade", "pip"]}));
     expect(calledKeys).not.toContain(commandKey({command: venv.command, args: ["-m", "pip", "install", "-r", paths.pythonRequirements]}));
     expect(calledKeys).not.toContain(commandKey({command: venv.command, args: ["-m", "pip", "check"]}));
@@ -773,9 +806,9 @@ describe("python virtual environment preparation", () => {
       paths,
       platform: "win32",
       options: setupOptions({dryRun: true}),
+      venvExists: false,
       responses: {
         [commandKey({command: "py", args: ["-3.12", "--version"]})]: commandResult({stdout: "Python 3.12.4\n"}),
-        [commandKey({command: venv.command, args: ["--version"]})]: commandResult({code: 1, spawnError: "ENOENT"}),
       },
       dispositions: {
         "python.venv.create": "planned",
@@ -918,6 +951,7 @@ describe("python virtual environment preparation", () => {
     const harness = createHarness({
       paths,
       platform: "win32",
+      venvExists: false,
       responses: {
         [commandKey({command: "py", args: ["-3.12", "--version"]})]: commandResult({stdout: "Python 3.12.4\n"}),
         [commandKey({command: venv.command, args: ["--version"]})]: commandResult({code: 1, spawnError: "ENOENT"}),
@@ -939,12 +973,10 @@ describe("python virtual environment preparation", () => {
     const harness = createHarness({
       paths,
       platform: "win32",
+      venvExists: false,
       responses: {
         [commandKey({command: "py", args: ["-3.12", "--version"]})]: commandResult({stdout: "Python 3.12.4\n"}),
-        [commandKey({command: venv.command, args: ["--version"]})]: [
-          commandResult({code: 1, spawnError: "ENOENT"}),
-          commandResult({stdout: "Python 3.12.4\n"}),
-        ],
+        [commandKey({command: venv.command, args: ["--version"]})]: commandResult({stdout: "Python 3.12.4\n"}),
         [createKey]: commandResult(),
         [commandKey({command: venv.command, args: ["-m", "pip", "install", "--upgrade", "pip"]})]: commandResult(),
         [commandKey({command: venv.command, args: ["-m", "pip", "install", "-r", paths.pythonRequirements]})]: commandResult(),

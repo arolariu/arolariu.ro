@@ -195,10 +195,13 @@ function discoverDoctorProductionFiles(): readonly string[] {
       return doctorProductionExtensions.has(extension) && !/\.(?:spec|test)\.(?:cjs|js|mjs|ts)$/u.test(fileName);
     });
 
-  // The shared workspace-graph module is a production dependency of doctor.workspace.ts and
-  // status.ts. It must be included in the guarded set so that a future filesystem write or
-  // command dispatch cannot reintroduce doctor mutation without failing this guard.
-  const SHARED_PRODUCTION_FILES = ["scripts/common/workspace-graph.ts"];
+  // These pure shared modules are production dependencies of doctor specialists. Guard them
+  // alongside the specialists so future filesystem writes or command dispatch cannot bypass
+  // the doctor read-only boundary.
+  const SHARED_PRODUCTION_FILES = [
+    "scripts/common/taxonomy-artifacts.ts",
+    "scripts/common/workspace-graph.ts",
+  ];
 
   return [...doctorFiles, ...SHARED_PRODUCTION_FILES].toSorted();
 }
@@ -509,7 +512,121 @@ function isSetupModuleSpecifier(value: string): boolean {
 }
 
 function isFsModuleSpecifier(value: string): boolean {
-  return value === "node:fs" || value === "node:fs/promises";
+  return value === "fs" || value === "fs/promises" || value === "node:fs" || value === "node:fs/promises";
+}
+
+function isChildProcessModuleSpecifier(value: string): boolean {
+  return value === "child_process" || value === "node:child_process";
+}
+
+const READ_ONLY_FS_IMPORTS: ReadonlyMap<string, ReadonlySet<string>> = new Map([
+  [
+    "fs",
+    new Set([
+      "accessSync",
+      "constants",
+      "existsSync",
+      "lstatSync",
+      "readFileSync",
+      "readdirSync",
+      "readlinkSync",
+      "realpathSync",
+      "statSync",
+      "statfsSync",
+    ]),
+  ],
+  [
+    "node:fs",
+    new Set([
+      "accessSync",
+      "constants",
+      "existsSync",
+      "lstatSync",
+      "readFileSync",
+      "readdirSync",
+      "readlinkSync",
+      "realpathSync",
+      "statSync",
+      "statfsSync",
+    ]),
+  ],
+  [
+    "fs/promises",
+    new Set(["access", "lstat", "readFile", "readdir", "readlink", "realpath", "stat", "statfs"]),
+  ],
+  [
+    "node:fs/promises",
+    new Set(["access", "lstat", "readFile", "readdir", "readlink", "realpath", "stat", "statfs"]),
+  ],
+]);
+
+const APPROVED_DOCTOR_REPOSITORY_IMPORTS: ReadonlyMap<string, ReadonlySet<string>> = new Map([
+  [
+    "scripts/doctor.ts",
+    new Set([
+      "./common/logger.ts",
+      "./common/repository-paths.ts",
+      "./common/requirements.ts",
+      "./doctor.dotnet.ts",
+      "./doctor.infrastructure.ts",
+      "./doctor.python.ts",
+      "./doctor.react.ts",
+      "./doctor.reporter.ts",
+      "./doctor.svelte.ts",
+      "./doctor.types.ts",
+      "./doctor.workspace.ts",
+    ]),
+  ],
+  [
+    "scripts/doctor.types.ts",
+    new Set([
+      "./common/logger.ts",
+      "./common/process.ts",
+      "./common/repository-paths.ts",
+      "./common/requirements.ts",
+    ]),
+  ],
+  ["scripts/doctor.reporter.ts", new Set(["./common/logger.ts", "./doctor.types.ts"])],
+  [
+    "scripts/doctor.dotnet.ts",
+    new Set(["./common/process.ts", "./common/requirements.ts", "./doctor.types.ts"]),
+  ],
+  [
+    "scripts/doctor.infrastructure.ts",
+    new Set([
+      "./common/process.ts",
+      "./common/tooling-config.ts",
+      "./container-runtime/preflight.ts",
+      "./container-runtime/selection.ts",
+      "./container-runtime/types.ts",
+      "./doctor.types.ts",
+    ]),
+  ],
+  [
+    "scripts/doctor.python.ts",
+    new Set(["./common/process.ts", "./common/requirements.ts", "./doctor.types.ts"]),
+  ],
+  [
+    "scripts/doctor.react.ts",
+    new Set(["./common/process.ts", "./common/taxonomy-artifacts.ts", "./doctor.types.ts"]),
+  ],
+  ["scripts/doctor.svelte.ts", new Set(["./common/requirements.ts", "./doctor.types.ts"])],
+  [
+    "scripts/doctor.workspace.ts",
+    new Set([
+      "./common/process.ts",
+      "./common/requirements.ts",
+      "./common/taxonomy-artifacts.ts",
+      "./common/workspace-graph.ts",
+      "./doctor.types.ts",
+    ]),
+  ],
+  ["scripts/common/taxonomy-artifacts.ts", new Set()],
+  ["scripts/common/workspace-graph.ts", new Set()],
+]);
+
+function isApprovedDoctorRepositoryImport(fileName: string, moduleSpecifier: string): boolean {
+  return APPROVED_DOCTOR_REPOSITORY_IMPORTS.get(fileName)?.has(moduleSpecifier) === true;
 }
 
 function isApprovedDynamicPortOwnerFactoryExpression(node: ts.ObjectLiteralExpression, fileName: string): boolean {
@@ -548,7 +665,6 @@ function findDoctorGuardViolations(
 ): readonly string[] {
   const source = ts.createSourceFile(fileName, sourceText, ts.ScriptTarget.Latest, true);
   const violations: string[] = [];
-  const mutatingFsImports = new Set(["appendFile", "copyFile", "mkdir", "rename", "rm", "truncate", "unlink", "writeFile"]);
   const allowCommonProcessImports = fileName === "scripts/doctor.types.ts";
 
   const report = (node: ts.Node, message: string): void => {
@@ -562,7 +678,8 @@ function findDoctorGuardViolations(
     }
 
     const moduleSpecifier = statement.moduleSpecifier.text;
-    if (isSetupModuleSpecifier(moduleSpecifier)) {
+    const setupImport = isSetupModuleSpecifier(moduleSpecifier);
+    if (setupImport) {
       report(statement, "setup import");
     }
 
@@ -576,17 +693,34 @@ function findDoctorGuardViolations(
       }
     }
 
-    if (!isFsModuleSpecifier(moduleSpecifier)) {
+    if (isChildProcessModuleSpecifier(moduleSpecifier)) {
+      report(statement, "child process import");
       continue;
     }
 
-    if (statement.importClause?.namedBindings !== undefined && ts.isNamedImports(statement.importClause.namedBindings)) {
-      for (const element of statement.importClause.namedBindings.elements) {
-        const importedName = element.propertyName?.text ?? element.name.text;
-        if (mutatingFsImports.has(importedName)) {
-          report(element, "mutating fs import");
+    if (isFsModuleSpecifier(moduleSpecifier)) {
+      const importClause = statement.importClause;
+      if (importClause?.name !== undefined) {
+        report(importClause.name, "unrestricted fs import");
+      }
+      if (importClause?.namedBindings !== undefined) {
+        if (ts.isNamespaceImport(importClause.namedBindings)) {
+          report(importClause.namedBindings, "unrestricted fs import");
+        } else {
+          const approvedImports = READ_ONLY_FS_IMPORTS.get(moduleSpecifier) ?? new Set<string>();
+          for (const element of importClause.namedBindings.elements) {
+            const importedName = element.propertyName?.text ?? element.name.text;
+            if (!approvedImports.has(importedName)) {
+              report(element, "mutating fs import");
+            }
+          }
         }
       }
+      continue;
+    }
+
+    if (!moduleSpecifier.startsWith("node:") && !setupImport && !isApprovedDoctorRepositoryImport(fileName, moduleSpecifier)) {
+      report(statement, "unapproved repository import");
     }
   }
 
@@ -1131,12 +1265,60 @@ describe("doctor source-level read-only guard", () => {
     ]);
   });
 
-  it("includes scripts/common/workspace-graph.ts in the read-only guard set", () => {
-    // Asserts that the shared workspace-graph production module is always present in the
-    // guarded set. This test fails if the explicit entry is removed from
-    // discoverDoctorProductionFiles(), preventing a silent regression where a future write
-    // or command dispatch in that module goes undetected.
-    expect(discoverDoctorProductionFiles()).toContain("scripts/common/workspace-graph.ts");
+  it("rejects sync and stream mutations, unrestricted fs bindings, and child-process imports", async () => {
+    const module = await loadDoctorTypesModule();
+    const source = [
+      'import fs from "node:fs";',
+      'import * as fsPromises from "node:fs/promises";',
+      'import {appendFileSync} from "node:fs";',
+      'import {copyFileSync} from "node:fs";',
+      'import {mkdirSync} from "node:fs";',
+      'import {renameSync} from "node:fs";',
+      'import {rmSync} from "node:fs";',
+      'import {truncateSync} from "node:fs";',
+      'import {unlinkSync} from "node:fs";',
+      'import {writeFileSync} from "node:fs";',
+      'import {createWriteStream} from "node:fs";',
+      'import {spawn} from "node:child_process";',
+      'import {constants, readFileSync} from "node:fs";',
+      'import {access, readFile} from "node:fs/promises";',
+    ].join("\n");
+
+    expect(findDoctorGuardViolations(source, "scripts/doctor.react.ts", module.isReadOnlyDiagnosticCommand)).toEqual([
+      "scripts/doctor.react.ts:1: unrestricted fs import",
+      "scripts/doctor.react.ts:2: unrestricted fs import",
+      "scripts/doctor.react.ts:3: mutating fs import",
+      "scripts/doctor.react.ts:4: mutating fs import",
+      "scripts/doctor.react.ts:5: mutating fs import",
+      "scripts/doctor.react.ts:6: mutating fs import",
+      "scripts/doctor.react.ts:7: mutating fs import",
+      "scripts/doctor.react.ts:8: mutating fs import",
+      "scripts/doctor.react.ts:9: mutating fs import",
+      "scripts/doctor.react.ts:10: mutating fs import",
+      "scripts/doctor.react.ts:11: mutating fs import",
+      "scripts/doctor.react.ts:12: child process import",
+    ]);
+  });
+
+  it("rejects repository imports outside the approved doctor surface", async () => {
+    const module = await loadDoctorTypesModule();
+    const source = [
+      'import {getExpectedTaxonomyArtifactPaths} from "./common/taxonomy-artifacts.ts";',
+      'import {main} from "./generate.artifacts.ts";',
+    ].join("\n");
+
+    expect(findDoctorGuardViolations(source, "scripts/doctor.react.ts", module.isReadOnlyDiagnosticCommand)).toEqual([
+      "scripts/doctor.react.ts:2: unapproved repository import",
+    ]);
+  });
+
+  it("includes each shared pure production dependency in the read-only guard set", () => {
+    expect(discoverDoctorProductionFiles()).toEqual(
+      expect.arrayContaining([
+        "scripts/common/taxonomy-artifacts.ts",
+        "scripts/common/workspace-graph.ts",
+      ]),
+    );
   });
 
   it("keeps every doctor production file read-only compliant", async () => {
