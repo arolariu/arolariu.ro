@@ -17,6 +17,42 @@ const doctorProductionExtensions = new Set([".ts", ".js", ".mjs", ".cjs"]);
 type AccessPath = readonly string[];
 type AliasScope = Map<string, AccessPath | null>;
 
+interface StaticUnknownValue {
+  readonly kind: "unknown";
+}
+
+interface StaticStringValue {
+  readonly kind: "string";
+  readonly value: string;
+}
+
+interface StaticStringArrayValue {
+  readonly kind: "stringArray";
+  readonly value: readonly string[];
+}
+
+interface StaticObjectValue {
+  readonly kind: "object";
+  readonly properties: ReadonlyMap<string, StaticValue>;
+  readonly hasUnresolvedSpread: boolean;
+}
+
+type StaticValue = StaticUnknownValue | StaticStringValue | StaticStringArrayValue | StaticObjectValue;
+
+interface GuardScopeFrame {
+  readonly aliases: AliasScope;
+  readonly constants: Map<string, StaticValue>;
+}
+
+type CommandSpecExtraction =
+  | {readonly kind: "not-command"}
+  | {readonly kind: "resolved"; readonly spec: Readonly<CommandSpec>}
+  | {readonly kind: "unresolved"};
+
+const UNKNOWN_STATIC_VALUE: StaticUnknownValue = {kind: "unknown"};
+const NOT_A_COMMAND_SPEC: CommandSpecExtraction = {kind: "not-command"};
+const UNRESOLVED_COMMAND_SPEC: CommandSpecExtraction = {kind: "unresolved"};
+
 interface DoctorTypesModule {
   readonly DIAGNOSTIC_DEFAULT_TIMEOUT_MS: number;
   readonly DiagnosticPolicyError: new (message: string) => Error;
@@ -162,38 +198,59 @@ function discoverDoctorProductionFiles(): readonly string[] {
     .toSorted();
 }
 
-function getAccessPath(expression: ts.Expression, scopes: readonly AliasScope[]): AccessPath | null {
+function getPropertyNameText(name: ts.PropertyName): string | null {
   if (
-    ts.isParenthesizedExpression(expression)
-    || ts.isAsExpression(expression)
-    || ts.isSatisfiesExpression(expression)
-    || ts.isNonNullExpression(expression)
+    ts.isIdentifier(name)
+    || ts.isStringLiteral(name)
+    || ts.isNumericLiteral(name)
+    || ts.isNoSubstitutionTemplateLiteral(name)
   ) {
-    return getAccessPath(expression.expression, scopes);
+    return name.text;
   }
 
-  if (ts.isIdentifier(expression)) {
+  return null;
+}
+
+function unwrapExpression(expression: ts.Expression): ts.Expression {
+  let current = expression;
+  while (
+    ts.isParenthesizedExpression(current)
+    || ts.isAsExpression(current)
+    || ts.isSatisfiesExpression(current)
+    || ts.isNonNullExpression(current)
+  ) {
+    current = current.expression;
+  }
+
+  return current;
+}
+
+function getAccessPath(expression: ts.Expression, scopes: readonly GuardScopeFrame[]): AccessPath | null {
+  const target = unwrapExpression(expression);
+
+  if (ts.isIdentifier(target)) {
     for (let index = scopes.length - 1; index >= 0; index--) {
       const scope = scopes[index];
-      if (scope?.has(expression.text)) {
-        return scope.get(expression.text) ?? null;
+      if (scope?.aliases.has(target.text)) {
+        return scope.aliases.get(target.text) ?? null;
       }
     }
 
-    return [expression.text];
+    return [target.text];
   }
 
-  if (ts.isPropertyAccessExpression(expression)) {
-    const receiver = getAccessPath(expression.expression, scopes);
-    return receiver === null ? null : [...receiver, expression.name.text];
+  if (ts.isPropertyAccessExpression(target)) {
+    const receiver = getAccessPath(target.expression, scopes);
+    return receiver === null ? null : [...receiver, target.name.text];
   }
 
   if (
-    ts.isElementAccessExpression(expression)
-    && (ts.isStringLiteral(expression.argumentExpression) || ts.isNoSubstitutionTemplateLiteral(expression.argumentExpression))
+    ts.isElementAccessExpression(target)
+    && target.argumentExpression !== undefined
+    && (ts.isStringLiteral(target.argumentExpression) || ts.isNoSubstitutionTemplateLiteral(target.argumentExpression))
   ) {
-    const receiver = getAccessPath(expression.expression, scopes);
-    return receiver === null ? null : [...receiver, expression.argumentExpression.text];
+    const receiver = getAccessPath(target.expression, scopes);
+    return receiver === null ? null : [...receiver, target.argumentExpression.text];
   }
 
   return null;
@@ -228,7 +285,168 @@ function declareBindingName(name: ts.BindingName, scope: AliasScope, accessPath:
   }
 }
 
-function isForbiddenOutputExpression(expression: ts.Expression, scopes: readonly AliasScope[]): boolean {
+function getStaticValue(name: string, scopes: readonly GuardScopeFrame[]): StaticValue | null {
+  for (let index = scopes.length - 1; index >= 0; index--) {
+    const scope = scopes[index];
+    const value = scope?.constants.get(name);
+    if (value !== undefined) {
+      return value;
+    }
+  }
+
+  return null;
+}
+
+function evaluateStaticObject(node: ts.ObjectLiteralExpression, scopes: readonly GuardScopeFrame[]): StaticObjectValue {
+  const properties = new Map<string, StaticValue>();
+  let hasUnresolvedSpread = false;
+
+  for (const property of node.properties) {
+    if (ts.isSpreadAssignment(property)) {
+      const spreadValue = evaluateStaticExpression(property.expression, scopes);
+      if (spreadValue.kind !== "object") {
+        hasUnresolvedSpread = true;
+        continue;
+      }
+
+      for (const [propertyName, propertyValue] of spreadValue.properties) {
+        properties.set(propertyName, propertyValue);
+      }
+
+      hasUnresolvedSpread ||= spreadValue.hasUnresolvedSpread;
+      continue;
+    }
+
+    const propertyName = property.name !== undefined ? getPropertyNameText(property.name) : null;
+    if (propertyName === null) {
+      continue;
+    }
+
+    if (ts.isPropertyAssignment(property)) {
+      properties.set(propertyName, evaluateStaticExpression(property.initializer, scopes));
+      continue;
+    }
+
+    if (ts.isShorthandPropertyAssignment(property)) {
+      properties.set(propertyName, evaluateStaticExpression(property.name, scopes));
+      continue;
+    }
+
+    properties.set(propertyName, UNKNOWN_STATIC_VALUE);
+  }
+
+  return {
+    kind: "object",
+    properties,
+    hasUnresolvedSpread,
+  };
+}
+
+function evaluateStaticExpression(expression: ts.Expression, scopes: readonly GuardScopeFrame[]): StaticValue {
+  const target = unwrapExpression(expression);
+
+  if (ts.isStringLiteral(target) || ts.isNoSubstitutionTemplateLiteral(target)) {
+    return {kind: "string", value: target.text};
+  }
+
+  if (ts.isIdentifier(target)) {
+    return getStaticValue(target.text, scopes) ?? UNKNOWN_STATIC_VALUE;
+  }
+
+  if (ts.isArrayLiteralExpression(target)) {
+    const values: string[] = [];
+    for (const element of target.elements) {
+      if (ts.isSpreadElement(element)) {
+        const spreadValue = evaluateStaticExpression(element.expression, scopes);
+        if (spreadValue.kind !== "stringArray") {
+          return UNKNOWN_STATIC_VALUE;
+        }
+
+        values.push(...spreadValue.value);
+        continue;
+      }
+
+      const value = evaluateStaticExpression(element, scopes);
+      if (value.kind !== "string") {
+        return UNKNOWN_STATIC_VALUE;
+      }
+
+      values.push(value.value);
+    }
+
+    return {kind: "stringArray", value: values};
+  }
+
+  if (ts.isObjectLiteralExpression(target)) {
+    return evaluateStaticObject(target, scopes);
+  }
+
+  if (ts.isPropertyAccessExpression(target)) {
+    const receiver = evaluateStaticExpression(target.expression, scopes);
+    if (receiver.kind !== "object") {
+      return UNKNOWN_STATIC_VALUE;
+    }
+
+    return receiver.properties.get(target.name.text) ?? UNKNOWN_STATIC_VALUE;
+  }
+
+  if (
+    ts.isElementAccessExpression(target)
+    && target.argumentExpression !== undefined
+    && (ts.isStringLiteral(target.argumentExpression) || ts.isNoSubstitutionTemplateLiteral(target.argumentExpression))
+  ) {
+    const receiver = evaluateStaticExpression(target.expression, scopes);
+    if (receiver.kind !== "object") {
+      return UNKNOWN_STATIC_VALUE;
+    }
+
+    return receiver.properties.get(target.argumentExpression.text) ?? UNKNOWN_STATIC_VALUE;
+  }
+
+  return UNKNOWN_STATIC_VALUE;
+}
+
+function declareConstantBinding(name: ts.BindingName, scope: Map<string, StaticValue>, value: StaticValue): void {
+  if (ts.isIdentifier(name)) {
+    scope.set(name.text, value);
+    return;
+  }
+
+  if (ts.isObjectBindingPattern(name)) {
+    for (const element of name.elements) {
+      if (ts.isOmittedExpression(element)) {
+        continue;
+      }
+
+      const propertyName = element.propertyName ?? (ts.isIdentifier(element.name) ? element.name : undefined);
+      const propertyText = propertyName !== undefined ? getPropertyNameText(propertyName) : null;
+      const propertyValue =
+        propertyText !== null && value.kind === "object"
+          ? (value.properties.get(propertyText) ?? UNKNOWN_STATIC_VALUE)
+          : UNKNOWN_STATIC_VALUE;
+      declareConstantBinding(element.name, scope, propertyValue);
+    }
+
+    return;
+  }
+
+  for (let index = 0; index < name.elements.length; index++) {
+    const element = name.elements[index];
+    if (ts.isOmittedExpression(element)) {
+      continue;
+    }
+
+    const elementValue =
+      value.kind === "stringArray"
+        ? element.dotDotDotToken === undefined
+          ? (value.value[index] !== undefined ? {kind: "string", value: value.value[index]} satisfies StaticStringValue : UNKNOWN_STATIC_VALUE)
+          : {kind: "stringArray", value: value.value.slice(index)} satisfies StaticStringArrayValue
+        : UNKNOWN_STATIC_VALUE;
+    declareConstantBinding(element.name, scope, elementValue);
+  }
+}
+
+function isForbiddenOutputExpression(expression: ts.Expression, scopes: readonly GuardScopeFrame[]): boolean {
   const accessPath = getAccessPath(expression, scopes);
   if (accessPath === null) {
     return false;
@@ -246,50 +464,39 @@ function isForbiddenOutputExpression(expression: ts.Expression, scopes: readonly
   );
 }
 
-function extractCommandSpec(node: ts.ObjectLiteralExpression): Readonly<CommandSpec> | null {
-  let command: string | null = null;
-  let args: string[] | null = null;
-
-  for (const property of node.properties) {
-    if (!ts.isPropertyAssignment(property)) {
-      continue;
-    }
-
-    const propertyName =
-      ts.isIdentifier(property.name)
-      || ts.isStringLiteral(property.name)
-      || ts.isNumericLiteral(property.name)
-      || ts.isNoSubstitutionTemplateLiteral(property.name)
-        ? property.name.text
-        : null;
-    if (propertyName === "command") {
-      if (!ts.isStringLiteral(property.initializer) && !ts.isNoSubstitutionTemplateLiteral(property.initializer)) {
-        return null;
-      }
-
-      command = property.initializer.text;
-      continue;
-    }
-
-    if (propertyName === "args") {
-      if (!ts.isArrayLiteralExpression(property.initializer)) {
-        return null;
-      }
-
-      const literalArgs: string[] = [];
-      for (const element of property.initializer.elements) {
-        if (!ts.isStringLiteral(element) && !ts.isNoSubstitutionTemplateLiteral(element)) {
-          return null;
-        }
-
-        literalArgs.push(element.text);
-      }
-
-      args = literalArgs;
-    }
+function extractCommandSpec(
+  node: ts.ObjectLiteralExpression,
+  scopes: readonly GuardScopeFrame[],
+): CommandSpecExtraction {
+  const value = evaluateStaticExpression(node, scopes);
+  if (value.kind !== "object") {
+    return NOT_A_COMMAND_SPEC;
   }
 
-  return command === null || args === null ? null : {command, args};
+  const commandValue = value.properties.get("command");
+  const argsValue = value.properties.get("args");
+  if (commandValue === undefined || argsValue === undefined) {
+    return NOT_A_COMMAND_SPEC;
+  }
+
+  if (commandValue.kind === "string" && argsValue.kind === "stringArray" && !value.hasUnresolvedSpread) {
+    return {
+      kind: "resolved",
+      spec: {
+        command: commandValue.value,
+        args: [...argsValue.value],
+      },
+    };
+  }
+
+  if (
+    (commandValue.kind === "string" || commandValue.kind === "unknown")
+    && (argsValue.kind === "stringArray" || argsValue.kind === "unknown")
+  ) {
+    return UNRESOLVED_COMMAND_SPEC;
+  }
+
+  return NOT_A_COMMAND_SPEC;
 }
 
 function isSetupModuleSpecifier(value: string): boolean {
@@ -298,6 +505,35 @@ function isSetupModuleSpecifier(value: string): boolean {
 
 function isFsModuleSpecifier(value: string): boolean {
   return value === "node:fs" || value === "node:fs/promises";
+}
+
+function isApprovedDynamicPortOwnerFactoryExpression(node: ts.ObjectLiteralExpression, fileName: string): boolean {
+  if (fileName !== "scripts/doctor.types.ts") {
+    return false;
+  }
+
+  let current: ts.Node | undefined = node.parent;
+  while (
+    current !== undefined
+    && (ts.isParenthesizedExpression(current) || ts.isAsExpression(current) || ts.isSatisfiesExpression(current))
+  ) {
+    current = current.parent;
+  }
+
+  if (current === undefined || !ts.isReturnStatement(current)) {
+    return false;
+  }
+
+  let owner: ts.Node | undefined = current.parent;
+  while (owner !== undefined) {
+    if (ts.isFunctionDeclaration(owner)) {
+      return owner.name?.text === "createPortOwnerProbeCommand";
+    }
+
+    owner = owner.parent;
+  }
+
+  return false;
 }
 
 function findDoctorGuardViolations(
@@ -349,13 +585,18 @@ function findDoctorGuardViolations(
     }
   }
 
-  function visitFunction(node: ts.FunctionLikeDeclaration, scopes: readonly AliasScope[]): void {
-    const functionScope: AliasScope = new Map();
+  function visitFunction(node: ts.FunctionLikeDeclaration, scopes: readonly GuardScopeFrame[]): void {
+    const functionScope: GuardScopeFrame = {
+      aliases: new Map(),
+      constants: new Map(),
+    };
+
     if (node.name !== undefined && ts.isIdentifier(node.name)) {
-      functionScope.set(node.name.text, null);
+      functionScope.aliases.set(node.name.text, null);
     }
+
     for (const parameter of node.parameters) {
-      declareBindingName(parameter.name, functionScope, null);
+      declareBindingName(parameter.name, functionScope.aliases, null);
     }
 
     const functionScopes = [...scopes, functionScope];
@@ -369,9 +610,16 @@ function findDoctorGuardViolations(
     }
   }
 
-  function visit(node: ts.Node, scopes: readonly AliasScope[]): void {
+  function visit(node: ts.Node, scopes: readonly GuardScopeFrame[]): void {
     if (ts.isSourceFile(node) || ts.isBlock(node)) {
-      const blockScopes = [...scopes, new Map<string, AccessPath | null>()];
+      const blockScopes = [
+        ...scopes,
+        {
+          aliases: new Map<string, AccessPath | null>(),
+          constants: new Map<string, StaticValue>(),
+        },
+      ];
+
       for (const statement of node.statements) {
         visit(statement, blockScopes);
       }
@@ -389,15 +637,19 @@ function findDoctorGuardViolations(
         if (declaration.initializer !== undefined) {
           visit(declaration.initializer, scopes);
         }
+
         const accessPath = isConstant && declaration.initializer !== undefined ? getAccessPath(declaration.initializer, scopes) : null;
-        declareBindingName(declaration.name, scope, accessPath);
+        declareBindingName(declaration.name, scope.aliases, accessPath);
+        if (isConstant && declaration.initializer !== undefined) {
+          declareConstantBinding(declaration.name, scope.constants, evaluateStaticExpression(declaration.initializer, scopes));
+        }
       }
       return;
     }
 
     if (ts.isFunctionDeclaration(node)) {
       if (node.name !== undefined) {
-        scope.set(node.name.text, null);
+        scope.aliases.set(node.name.text, null);
       }
       visitFunction(node, scopes);
       return;
@@ -416,7 +668,7 @@ function findDoctorGuardViolations(
     }
 
     if (ts.isClassDeclaration(node) && node.name !== undefined) {
-      scope.set(node.name.text, null);
+      scope.aliases.set(node.name.text, null);
     }
 
     if (ts.isCallExpression(node) && isForbiddenOutputExpression(node.expression, scopes)) {
@@ -424,9 +676,17 @@ function findDoctorGuardViolations(
     }
 
     if (ts.isObjectLiteralExpression(node)) {
-      const command = extractCommandSpec(node);
-      if (command !== null && !isReadOnlyDiagnosticCommand(command)) {
+      const command = extractCommandSpec(node, scopes);
+      if (
+        !isApprovedDynamicPortOwnerFactoryExpression(node, fileName)
+        && command.kind === "resolved"
+        && !isReadOnlyDiagnosticCommand(command.spec)
+      ) {
         report(node, "forbidden command specification");
+      }
+
+      if (!isApprovedDynamicPortOwnerFactoryExpression(node, fileName) && command.kind === "unresolved") {
+        report(node, "unresolved command specification");
       }
     }
 
@@ -763,6 +1023,34 @@ describe("doctor source-level read-only guard", () => {
       "scripts/doctor.react.ts:7: forbidden command specification",
       "scripts/doctor.react.ts:8: direct output",
       "scripts/doctor.react.ts:9: direct output",
+    ]);
+  });
+
+  it("resolves representative command-spec indirection and fails closed on unresolved command specs", async () => {
+    const module = await loadDoctorTypesModule();
+    const source = [
+      "const safeCommand = 'node';",
+      "const safeArgs = ['--version'];",
+      "const safeSpec = {command: safeCommand, args: safeArgs};",
+      "const forbiddenCommand = 'npm';",
+      "const forbiddenArgs = ['ci'];",
+      "const forbiddenSpec = {command: forbiddenCommand, args: forbiddenArgs};",
+      "const forbiddenTail = ['vitest', 'run'];",
+      "const spreadSpec = {command: 'npx', args: [...forbiddenTail]};",
+      "const helperCommand = 'dotnet';",
+      "const helperArgs = ['restore'];",
+      "const createForbiddenSpec = () => ({command: helperCommand, args: helperArgs});",
+      "const helperSpec = createForbiddenSpec();",
+      "const unresolvedSpec = {command: unknownCommand, args: ['ci']};",
+      "const ordinaryObject = {command: 'palette', label: 'Launch'};",
+      "const incompleteObject = {command: 'node'};",
+    ].join("\n");
+
+    expect(findDoctorGuardViolations(source, "scripts/doctor.workspace.ts", module.isReadOnlyDiagnosticCommand)).toEqual([
+      "scripts/doctor.workspace.ts:6: forbidden command specification",
+      "scripts/doctor.workspace.ts:8: forbidden command specification",
+      "scripts/doctor.workspace.ts:11: forbidden command specification",
+      "scripts/doctor.workspace.ts:13: unresolved command specification",
     ]);
   });
 
