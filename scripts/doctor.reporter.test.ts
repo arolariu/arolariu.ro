@@ -189,6 +189,111 @@ function createValidReport(): DoctorReportV1 {
   );
 }
 
+function createWarnDiagnostic(
+  overrides: Readonly<{
+    evidence?: readonly string[];
+    rootCause?: string;
+    potentialCauses?: DiagnosticResult["potentialCauses"];
+    fixes?: DiagnosticResult["fixes"];
+  }> = {},
+): DiagnosticResult {
+  return createDiagnostic({
+    id: "react.environment",
+    module: "react",
+    name: "React environment",
+    status: "warn",
+    summary: "Environment is degraded.",
+    evidence: overrides.evidence ?? ["WARN EVIDENCE"],
+    rootCause: overrides.rootCause,
+    potentialCauses: overrides.potentialCauses ?? [{cause: "Missing runtime dependency.", confidence: "high"}],
+    fixes: overrides.fixes ?? [{description: "Restore the missing runtime dependency."}],
+    durationMs: 20,
+  });
+}
+
+function createFailDiagnostic(
+  overrides: Readonly<{
+    evidence?: readonly string[];
+    rootCause?: string;
+    potentialCauses?: DiagnosticResult["potentialCauses"];
+    fixes?: DiagnosticResult["fixes"];
+  }> = {},
+): DiagnosticResult {
+  return createDiagnostic({
+    id: "python.configuration",
+    module: "python",
+    name: "Python configuration",
+    status: "fail",
+    summary: "Configuration is invalid.",
+    evidence: overrides.evidence ?? ["FAIL EVIDENCE"],
+    rootCause: "rootCause" in overrides ? overrides.rootCause : "The JSON configuration file is malformed.",
+    potentialCauses: overrides.potentialCauses ?? [],
+    fixes: overrides.fixes ?? [{description: "Rewrite the invalid configuration."}],
+    durationMs: 30,
+  });
+}
+
+function replaceReportCheck(report: Readonly<DoctorReportV1>, check: Readonly<DiagnosticResult>): DoctorReportV1 {
+  return {
+    ...report,
+    checks: report.checks.map((existingCheck) => (existingCheck.id === check.id ? check : existingCheck)),
+  };
+}
+
+const invalidDetailedDiagnosticCases = [
+  {
+    title: "warn diagnostics without evidence",
+    diagnostic: createWarnDiagnostic({evidence: []}),
+    error: "Doctor diagnostic 'react.environment' with status 'warn' must include at least one evidence entry.",
+  },
+  {
+    title: "warn diagnostics without suggested fixes",
+    diagnostic: createWarnDiagnostic({fixes: []}),
+    error: "Doctor diagnostic 'react.environment' with status 'warn' must include at least one suggested fix.",
+  },
+  {
+    title: "warn diagnostics without any diagnosis form",
+    diagnostic: createWarnDiagnostic({
+      rootCause: undefined,
+      potentialCauses: [],
+    }),
+    error: "Doctor diagnostic 'react.environment' with status 'warn' must include exactly one diagnosis form: rootCause or potentialCauses.",
+  },
+  {
+    title: "warn diagnostics with both diagnosis forms",
+    diagnostic: createWarnDiagnostic({
+      rootCause: "A direct root cause is already known.",
+      potentialCauses: [{cause: "A second possible cause.", confidence: "medium"}],
+    }),
+    error: "Doctor diagnostic 'react.environment' with status 'warn' must include exactly one diagnosis form: rootCause or potentialCauses.",
+  },
+  {
+    title: "fail diagnostics without evidence",
+    diagnostic: createFailDiagnostic({evidence: []}),
+    error: "Doctor diagnostic 'python.configuration' with status 'fail' must include at least one evidence entry.",
+  },
+  {
+    title: "fail diagnostics without suggested fixes",
+    diagnostic: createFailDiagnostic({fixes: []}),
+    error: "Doctor diagnostic 'python.configuration' with status 'fail' must include at least one suggested fix.",
+  },
+  {
+    title: "fail diagnostics without any diagnosis form",
+    diagnostic: createFailDiagnostic({
+      rootCause: undefined,
+      potentialCauses: [],
+    }),
+    error: "Doctor diagnostic 'python.configuration' with status 'fail' must include exactly one diagnosis form: rootCause or potentialCauses.",
+  },
+  {
+    title: "fail diagnostics with both diagnosis forms",
+    diagnostic: createFailDiagnostic({
+      potentialCauses: [{cause: "A second possible cause.", confidence: "medium"}],
+    }),
+    error: "Doctor diagnostic 'python.configuration' with status 'fail' must include exactly one diagnosis form: rootCause or potentialCauses.",
+  },
+] as const;
+
 describe("doctor reporter scoring", () => {
   it("defines explicit stable weights for every Task 3-8 diagnostic id", () => {
     expect(Object.keys(diagnosticWeights).toSorted()).toEqual([...stableDiagnosticIds].toSorted());
@@ -277,6 +382,20 @@ describe("doctor reporter scoring", () => {
     expect(gradeFromScore(60)).toBe("D");
     expect(gradeFromScore(59)).toBe("F");
   });
+});
+
+describe("doctor report semantic validation", () => {
+  for (const testCase of invalidDetailedDiagnosticCases) {
+    it(`createDoctorReport rejects ${testCase.title}`, () => {
+      expect(() => createDoctorReport([testCase.diagnostic], "2026-08-30T01:23:45.000Z")).toThrow(testCase.error);
+    });
+
+    it(`parseDoctorReport rejects ${testCase.title}`, () => {
+      const report = replaceReportCheck(createValidReport(), testCase.diagnostic);
+
+      expect(() => parseDoctorReport(report)).toThrow(testCase.error);
+    });
+  }
 });
 
 describe("doctor report parsing", () => {

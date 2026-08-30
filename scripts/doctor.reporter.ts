@@ -303,6 +303,28 @@ function validateDiagnosticIds(checks: readonly DiagnosticResult[]): void {
   }
 }
 
+function validateDiagnosticSemantics(checks: readonly DiagnosticResult[]): void {
+  for (const check of checks) {
+    if (check.status !== "warn" && check.status !== "fail") {
+      continue;
+    }
+
+    if (check.evidence.length === 0) {
+      throw new Error(`Doctor diagnostic '${check.id}' with status '${check.status}' must include at least one evidence entry.`);
+    }
+
+    if (check.fixes.length === 0) {
+      throw new Error(`Doctor diagnostic '${check.id}' with status '${check.status}' must include at least one suggested fix.`);
+    }
+
+    const hasRootCause = check.rootCause !== undefined;
+    const hasPotentialCauses = check.potentialCauses.length > 0;
+    if (hasRootCause === hasPotentialCauses) {
+      throw new Error(`Doctor diagnostic '${check.id}' with status '${check.status}' must include exactly one diagnosis form: rootCause or potentialCauses.`);
+    }
+  }
+}
+
 function renderSummary(summary: Readonly<DoctorSummary>): string {
   return `Summary: ${summary.passed} passed, ${summary.warnings} warning${summary.warnings === 1 ? "" : "s"}, ${summary.failed} failure${summary.failed === 1 ? "" : "s"}, ${summary.skipped} skipped`;
 }
@@ -437,6 +459,7 @@ export function gradeFromScore(score: number): string {
  */
 export function createDoctorReport(checks: readonly DiagnosticResult[], timestamp: string): DoctorReportV1 {
   const clonedChecks = checks.map((check) => cloneDiagnostic(check));
+  validateDiagnosticSemantics(clonedChecks);
   const score = computeHealthScore(clonedChecks);
   const report: DoctorReportV1 = {
     schemaVersion: 1,
@@ -466,6 +489,7 @@ export function parseDoctorReport(value: unknown): DoctorReportV1 {
   }
 
   const checks = parseChecks(value["checks"]);
+  validateDiagnosticSemantics(checks);
   const summary = parseSummary(value["summary"]);
   const score = parseScore(value["score"]);
   const grade = parseGrade(value["grade"]);
