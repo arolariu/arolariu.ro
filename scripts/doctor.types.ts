@@ -39,7 +39,8 @@ const WINDOWS_PORT_OWNER_PROBE_SCRIPT = [
   "Get-NetTCPConnection -State Listen -LocalPort ([int]$port) -ErrorAction Stop | Select-Object LocalAddress, LocalPort, OwningProcess",
   "} | ConvertTo-Json -Compress",
 ].join(" ");
-const POSIX_PORT_OWNER_PROBE_SCRIPT = 'for port in "$@"; do lsof -nP -a -iTCP:"$port" -sTCP:LISTEN -Fpcn; done';
+const MACOS_PORT_OWNER_PROBE_SCRIPT = 'for port in "$@"; do lsof -nP -a -iTCP:"$port" -sTCP:LISTEN -Fpcn; done';
+const LINUX_PORT_OWNER_PROBE_SCRIPT = 'for port in "$@"; do ss -ltnp "sport = :$port"; done';
 const SAFE_EXECUTABLE_NAME = /^[A-Za-z0-9._-]+(?:\.exe)?$/u;
 const DECIMAL_PORT = /^(?:0|[1-9]\d{0,4})$/u;
 const DECIMAL_PORT_LIST = /^(?:0|[1-9]\d{0,4})(?:,(?:0|[1-9]\d{0,4}))*$/u;
@@ -210,6 +211,13 @@ function isDotnetUserSecretsList(args: readonly string[]): boolean {
       && (args[2] === "--project" || args[2] === "-p")
       && args[3] !== undefined
       && args[3].trim().length > 0)
+    || (args.length === 5
+      && args[0] === "user-secrets"
+      && args[1] === "list"
+      && args[2] === "--json"
+      && (args[3] === "--project" || args[3] === "-p")
+      && args[4] !== undefined
+      && args[4].trim().length > 0)
   );
 }
 
@@ -253,11 +261,12 @@ function isWindowsPortOwnerProbe(command: Readonly<CommandSpec>): boolean {
 }
 
 function isPosixPortOwnerProbe(command: Readonly<CommandSpec>): boolean {
+  const script = command.args[1];
   return (
     normalizedCommandName(command.command) === "sh"
     && command.args.length >= 4
     && command.args[0] === "-c"
-    && command.args[1] === POSIX_PORT_OWNER_PROBE_SCRIPT
+    && (script === MACOS_PORT_OWNER_PROBE_SCRIPT || script === LINUX_PORT_OWNER_PROBE_SCRIPT)
     && command.args[2] === "--"
     && areDecimalPorts(command.args.slice(3))
   );
@@ -293,7 +302,12 @@ export function createPortOwnerProbeCommand(platform: NodeJS.Platform, ports: re
 
   return {
     command: "sh",
-    args: ["-c", POSIX_PORT_OWNER_PROBE_SCRIPT, "--", ...normalizedPorts],
+    args: [
+      "-c",
+      platform === "darwin" ? MACOS_PORT_OWNER_PROBE_SCRIPT : LINUX_PORT_OWNER_PROBE_SCRIPT,
+      "--",
+      ...normalizedPorts,
+    ],
   };
 }
 
@@ -314,6 +328,7 @@ export function isReadOnlyDiagnosticCommand(command: Readonly<CommandSpec>): boo
         hasExactArguments(command.args, ["--version"])
         || hasExactArguments(command.args, ["ls"])
         || hasExactArguments(command.args, ["ls", "--json"])
+        || hasExactArguments(command.args, ["ls", "--all", "--json"])
         || hasExactArguments(command.args, ["audit", "--json"])
         || hasExactArguments(command.args, ["outdated", "--json"])
         || hasExactArguments(command.args, ["config", "get", "cache"])
@@ -343,6 +358,7 @@ export function isReadOnlyDiagnosticCommand(command: Readonly<CommandSpec>): boo
         || hasExactArguments(command.args, ["tool", "list", "--local"])
         || hasExactArguments(command.args, ["tool", "list", "--global"])
         || hasExactArguments(command.args, ["nuget", "list", "source"])
+        || hasExactArguments(command.args, ["nuget", "locals", "global-packages", "--list"])
         || isDotnetUserSecretsList(command.args)
         || hasExactArguments(command.args, ["dev-certs", "https", "--check"])
         || hasExactArguments(command.args, ["dev-certs", "https", "--check", "--trust"])
@@ -351,18 +367,20 @@ export function isReadOnlyDiagnosticCommand(command: Readonly<CommandSpec>): boo
       return (
         hasExactArguments(command.args, ["--version"])
         || hasExactArguments(command.args, ["version"])
+        || hasExactArguments(command.args, ["info"])
         || hasExactArguments(command.args, ["info", "--format", "{{json .}}"])
         || hasExactArguments(command.args, ["context", "show"])
         || hasExactArguments(command.args, ["compose", "version"])
-        || hasExactArguments(command.args, ["ps", "--format", "{{.Names}}\t{{.Ports}}"])
+        || hasExactArguments(command.args, ["ps", "-a", "--format", "{{json .}}"])
       );
     case "podman":
       return (
         hasExactArguments(command.args, ["--version"])
         || hasExactArguments(command.args, ["info", "--format", "json"])
         || hasExactArguments(command.args, ["system", "connection", "list", "--format", "json"])
+        || hasExactArguments(command.args, ["machine", "list", "--format", "json"])
         || hasExactArguments(command.args, ["compose", "version"])
-        || hasExactArguments(command.args, ["ps", "--format", "{{.Names}}\t{{.Ports}}"])
+        || hasExactArguments(command.args, ["ps", "-a", "--format", "{{json .}}"])
       );
     case "mkcert":
       return hasExactArguments(command.args, ["--version"]) || hasExactArguments(command.args, ["-CAROOT"]);
@@ -388,6 +406,7 @@ export function isReadOnlyDiagnosticCommand(command: Readonly<CommandSpec>): boo
       return (
         isPythonInvocation(command, ["--version"])
         || isPythonInvocation(command, ["-c", PYTHON_INTERPRETER_METADATA_SNIPPET])
+        || isPythonInvocation(command, ["-m", "pip", "--version"])
         || isPythonInvocation(command, ["-m", "pip", "list", "--format", "json"])
         || isPythonInvocation(command, ["-m", "pip", "check"])
       );

@@ -825,6 +825,7 @@ describe("isReadOnlyDiagnosticCommand", () => {
     const allowed = [
       {command: "node", args: ["--version"]},
       {command: "npm", args: ["--version"]},
+      {command: "npm", args: ["ls", "--all", "--json"]},
       {command: "npm", args: ["ls", "--json"]},
       {command: "npm", args: ["audit", "--json"]},
       {command: "npm", args: ["outdated", "--json"]},
@@ -844,28 +845,37 @@ describe("isReadOnlyDiagnosticCommand", () => {
       {command: "dotnet", args: ["tool", "list", "--local"]},
       {command: "dotnet", args: ["tool", "list", "--global"]},
       {command: "dotnet", args: ["nuget", "list", "source"]},
+      {command: "dotnet", args: ["nuget", "locals", "global-packages", "--list"]},
       {command: "dotnet", args: ["user-secrets", "list", "--project", "sites\\arolariu.ro"]},
+      {
+        command: "dotnet",
+        args: ["user-secrets", "list", "--json", "--project", "tooling\\AppHost\\AppHost.csproj"],
+      },
       {command: "dotnet", args: ["dev-certs", "https", "--check"]},
       {command: "dotnet", args: ["dev-certs", "https", "--check", "--trust"]},
       {command: "python", args: ["--version"]},
       {command: "python", args: ["-c", pythonMetadata]},
+      {command: "python", args: ["-m", "pip", "--version"]},
       {command: "python", args: ["-m", "pip", "list", "--format", "json"]},
       {command: "python", args: ["-m", "pip", "check"]},
       {command: "py", args: ["-3.12", "--version"]},
       {command: "py", args: ["-3.12", "-c", pythonMetadata]},
+      {command: "py", args: ["-3.12", "-m", "pip", "--version"]},
       {command: "py", args: ["-3.12", "-m", "pip", "list", "--format", "json"]},
       {command: "C:\\repo\\sites\\exp.arolariu.ro\\.venv\\Scripts\\python.exe", args: ["-c", pythonMetadata]},
       {command: "docker", args: ["--version"]},
       {command: "docker", args: ["version"]},
+      {command: "docker", args: ["info"]},
       {command: "docker", args: ["info", "--format", "{{json .}}"]},
       {command: "docker", args: ["context", "show"]},
       {command: "docker", args: ["compose", "version"]},
-      {command: "docker", args: ["ps", "--format", "{{.Names}}\t{{.Ports}}"]},
+      {command: "docker", args: ["ps", "-a", "--format", "{{json .}}"]},
       {command: "podman", args: ["--version"]},
       {command: "podman", args: ["info", "--format", "json"]},
       {command: "podman", args: ["system", "connection", "list", "--format", "json"]},
+      {command: "podman", args: ["machine", "list", "--format", "json"]},
       {command: "podman", args: ["compose", "version"]},
-      {command: "podman", args: ["ps", "--format", "{{.Names}}\t{{.Ports}}"]},
+      {command: "podman", args: ["ps", "-a", "--format", "{{json .}}"]},
       {command: "mkcert", args: ["--version"]},
       {command: "mkcert", args: ["-CAROOT"]},
       {command: "df", args: ["-Pk"]},
@@ -879,6 +889,31 @@ describe("isReadOnlyDiagnosticCommand", () => {
     ] as const;
 
     expect(allowed.every((command) => module.isReadOnlyDiagnosticCommand(command))).toBe(true);
+  });
+
+  it("uses the platform-specific fixed port-owner probes required by infrastructure diagnostics", async () => {
+    const module = await loadDoctorTypesModule();
+
+    expect(module.createPortOwnerProbeCommand("darwin", [3000, 4200])).toEqual({
+      command: "sh",
+      args: [
+        "-c",
+        'for port in "$@"; do lsof -nP -a -iTCP:"$port" -sTCP:LISTEN -Fpcn; done',
+        "--",
+        "3000",
+        "4200",
+      ],
+    });
+    expect(module.createPortOwnerProbeCommand("linux", [3000, 4200])).toEqual({
+      command: "sh",
+      args: [
+        "-c",
+        'for port in "$@"; do ss -ltnp "sport = :$port"; done',
+        "--",
+        "3000",
+        "4200",
+      ],
+    });
   });
 
   it("rejects mutating, test-running, trust-broadening, and injection-shaped commands", async () => {
