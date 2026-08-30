@@ -77,12 +77,18 @@ function isSuccessfulCommand(result: Readonly<CommandResult>): boolean {
   return result.code === 0 && !result.timedOut && result.signal === undefined && result.spawnError === undefined;
 }
 
-function commandEvidence(result: Readonly<CommandResult>): readonly string[] {
+function commandStatusEvidence(result: Readonly<CommandResult>): readonly string[] {
   return [
     ...(result.spawnError === undefined ? [] : [`Unable to start command: ${result.spawnError}`]),
     ...(result.timedOut ? ["Command timed out."] : []),
     ...(result.signal === undefined ? [] : [`Command stopped with signal ${result.signal}.`]),
     ...(result.code === 0 ? [] : [`Command exited with code ${String(result.code)}.`]),
+  ];
+}
+
+function commandEvidence(result: Readonly<CommandResult>): readonly string[] {
+  return [
+    ...commandStatusEvidence(result),
     ...(result.stdout.trim() === "" ? [] : [`stdout: ${result.stdout.trim()}`]),
     ...(result.stderr.trim() === "" ? [] : [`stderr: ${result.stderr.trim()}`]),
   ];
@@ -260,8 +266,9 @@ function parsePlaywrightInstallList(stdout: string): readonly PlaywrightVersionI
 function buildIssueDiagnosis(
   issues: readonly string[],
 ): Readonly<{rootCause?: string; potentialCauses: readonly DiagnosticPotentialCause[]}> {
-  if (issues.length === 1) {
-    return {rootCause: issues[0], potentialCauses: []};
+  const [rootCause] = issues;
+  if (issues.length === 1 && rootCause !== undefined) {
+    return {rootCause, potentialCauses: []};
   }
   return {potentialCauses: issues.map((cause) => ({cause, confidence: "high" as const}))};
 }
@@ -293,18 +300,83 @@ async function diagnosePackages(context: Readonly<DoctorContext>): Promise<Diagn
   }
 
   const result = await context.runner.run(NPM_LS_JSON_COMMAND, {cwd: context.paths.root});
-  const commandFailureEvidence = commandEvidence(result);
-  let dependencies: UnknownRecord = {};
-  const parseErrors: string[] = [];
+  const commandFailureEvidence = commandStatusEvidence(result);
+  let dependencies: UnknownRecord | undefined;
+  let metadataRootCause: string | undefined;
+  let structuredRootCause: string | undefined;
+  const npmDocumentEvidence: string[] = [];
   if (result.stdout.trim() !== "") {
     try {
       const parsed: unknown = JSON.parse(result.stdout);
-      if (isRecord(parsed) && isRecord(parsed["dependencies"])) {
-        dependencies = parsed["dependencies"];
+      if (!isRecord(parsed)) {
+        metadataRootCause = "npm ls JSON did not contain an object document.";
+      } else {
+        const rawDependencies = parsed["dependencies"];
+        if (isRecord(rawDependencies)) {
+          dependencies = rawDependencies;
+        } else if (rawDependencies !== undefined) {
+          metadataRootCause = "npm ls JSON contained malformed dependency metadata.";
+        }
+
+        const rawError = parsed["error"];
+        if (isRecord(rawError)) {
+          const code = typeof rawError["code"] === "string" ? rawError["code"].trim() : "";
+          const summary = typeof rawError["summary"] === "string" ? rawError["summary"].trim() : "";
+          const detail = typeof rawError["detail"] === "string" ? rawError["detail"].trim() : "";
+          if (code !== "") {
+            npmDocumentEvidence.push(`npm code: ${code}`);
+          }
+          if (summary !== "") {
+            npmDocumentEvidence.push(`npm summary: ${summary}`);
+          }
+          if (detail !== "") {
+            npmDocumentEvidence.push(`npm detail: ${detail}`);
+          }
+          structuredRootCause = summary !== "" ? summary : code === "" ? (detail === "" ? undefined : detail) : `npm reported ${code}.`;
+        }
+
+        const rawProblems = parsed["problems"];
+        if (Array.isArray(rawProblems)) {
+          for (const problem of rawProblems) {
+            if (typeof problem !== "string" || problem.trim() === "") {
+              metadataRootCause ??= "npm ls JSON contained malformed problem metadata.";
+              continue;
+            }
+            const normalizedProblem = problem.trim();
+            npmDocumentEvidence.push(`npm problem: ${normalizedProblem}`);
+            structuredRootCause ??= normalizedProblem;
+          }
+        } else if (rawProblems !== undefined) {
+          metadataRootCause ??= "npm ls JSON contained malformed problem metadata.";
+        }
       }
     } catch (error: unknown) {
-      parseErrors.push(`Unable to parse npm ls JSON: ${errorMessage(error)}`);
+      metadataRootCause = `Unable to parse npm ls JSON: ${errorMessage(error)}`;
     }
+  } else {
+    metadataRootCause = "npm ls produced no JSON output.";
+  }
+
+  if (dependencies === undefined) {
+    const rootCause = structuredRootCause
+      ?? metadataRootCause
+      ?? "npm ls JSON did not include React ecosystem dependency metadata.";
+    const evidence = [
+      ...commandFailureEvidence,
+      ...npmDocumentEvidence,
+      ...(metadataRootCause === undefined ? [] : [metadataRootCause]),
+      ...(commandFailureEvidence.length === 0 && npmDocumentEvidence.length === 0 && metadataRootCause === undefined ? [rootCause] : []),
+    ];
+
+    return issueDiagnostic(context, startedAt, {
+      id: "react.packages",
+      name: "React ecosystem packages",
+      status: "fail",
+      summary: "npm could not produce React ecosystem package metadata.",
+      evidence,
+      rootCause,
+      fixes: [{description: "Correct the reported npm metadata problem, restore root dependencies, then rerun doctor."}],
+    });
   }
 
   const issues: PackageIssue[] = [];
@@ -348,7 +420,7 @@ async function diagnosePackages(context: Readonly<DoctorContext>): Promise<Diagn
     okEvidence.push(`${name}@${installedVersion} matches the locked requirement.`);
   }
 
-  if (issues.length === 0 && parseErrors.length === 0) {
+  if (issues.length === 0) {
     return passDiagnostic(
       context,
       startedAt,
@@ -359,8 +431,8 @@ async function diagnosePackages(context: Readonly<DoctorContext>): Promise<Diagn
     );
   }
 
-  const evidence = [...commandFailureEvidence, ...parseErrors, ...issues.map((issue) => issue.detail)];
-  const diagnosisEntries = [...parseErrors, ...issues.map((issue) => issue.detail)];
+  const evidence = [...commandFailureEvidence, ...npmDocumentEvidence, ...issues.map((issue) => issue.detail)];
+  const diagnosisEntries = issues.map((issue) => issue.detail);
   return issueDiagnostic(context, startedAt, {
     id: "react.packages",
     name: "React ecosystem packages",

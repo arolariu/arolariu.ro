@@ -23,6 +23,9 @@ const confidenceRank = {
   medium: 1,
   low: 2,
 } as const;
+const MAX_STANDARD_EVIDENCE_CHARACTERS = 1_000;
+const MAX_STANDARD_EVIDENCE_ENTRIES = 12;
+const MAX_STANDARD_EVIDENCE_LINES = 12;
 
 /** Stable scoring weights for every planned doctor diagnostic result ID. */
 export const diagnosticWeights: Readonly<Record<string, number>> = Object.freeze({
@@ -352,6 +355,18 @@ function renderStatusIcon(status: DiagnosticResult["status"]): string {
   }
 }
 
+function compactHumanEvidence(evidence: string): string {
+  const normalized = evidence.replace(/\r\n?|\u2028|\u2029/gu, "\n");
+  const lineCount = normalized.split("\n").length;
+  if (normalized.length <= MAX_STANDARD_EVIDENCE_CHARACTERS && lineCount <= MAX_STANDARD_EVIDENCE_LINES) {
+    return evidence;
+  }
+
+  const streamLabel = /^(stdout|stderr):/u.exec(normalized)?.[1];
+  const label = streamLabel === undefined ? "Oversized evidence:" : `${streamLabel}:`;
+  return `${label} omitted ${String(lineCount)} lines (${String(normalized.length)} characters); rerun with --verbose for full evidence.`;
+}
+
 function cloneDiagnostic(check: Readonly<DiagnosticResult>): DiagnosticResult {
   return {
     ...check,
@@ -570,8 +585,13 @@ export function renderDoctorReport(
       const shouldRenderEvidence = options.verbose || check.status === "warn" || check.status === "fail";
       if (shouldRenderEvidence && check.evidence.length > 0) {
         logger.line("    Evidence:");
-        for (const evidence of check.evidence) {
-          logger.line(`      - ${evidence}`);
+        const visibleEvidence = options.verbose ? check.evidence : check.evidence.slice(0, MAX_STANDARD_EVIDENCE_ENTRIES);
+        for (const evidence of visibleEvidence) {
+          logger.line(`      - ${options.verbose ? evidence : compactHumanEvidence(evidence)}`);
+        }
+        const omittedEvidenceCount = check.evidence.length - visibleEvidence.length;
+        if (omittedEvidenceCount > 0) {
+          logger.line(`      - ${String(omittedEvidenceCount)} additional evidence entries omitted; rerun with --verbose for full evidence.`);
         }
       }
 

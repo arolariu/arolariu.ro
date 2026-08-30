@@ -278,6 +278,41 @@ describe("diagnoseNpmIntegrity", () => {
     expect(result.rootCause).toBeUndefined();
     expect(result.potentialCauses.map(({confidence}) => confidence)).toEqual(["high", "medium", "low"]);
   });
+
+  it("reports parsed npm problems without retaining the complete dependency tree", () => {
+    const problem = "invalid: vite@8.2.0 C:\\repo\\node_modules\\vite";
+    const stdout = JSON.stringify(
+      {
+        name: "@arolariu/monorepo",
+        problems: [problem],
+        error: {code: "ELSPROBLEMS", summary: problem},
+        dependencies: {
+          "unrelated-noise-package": {
+            version: "9.9.9",
+            dependencies: Object.fromEntries(
+              Array.from({length: 100}, (_, index) => [`transitive-noise-${String(index)}`, {version: "1.0.0"}]),
+            ),
+          },
+        },
+      },
+      undefined,
+      2,
+    );
+
+    const result = diagnoseNpmIntegrity(
+      commandResult({code: 1, stdout, stderr: "npm warn unrelated configuration noise"}),
+      "root workspace",
+    );
+
+    expect(result.status).toBe("fail");
+    expect(result.evidence).toEqual([
+      "Command exited with code 1.",
+      "npm code: ELSPROBLEMS",
+      `npm summary: ${problem}`,
+      `npm problem: ${problem}`,
+    ]);
+    expect(JSON.stringify(result)).not.toContain("unrelated-noise-package");
+  });
 });
 
 describe("workspaceDoctorModule", () => {

@@ -99,12 +99,18 @@ function isMissingExecutable(result: Readonly<CommandResult>): boolean {
     || /\bENOENT\b|command not found|not recognized as an internal or external command|no such file or directory/iu.test(detail);
 }
 
-function commandEvidence(result: Readonly<CommandResult>): readonly string[] {
+function commandStatusEvidence(result: Readonly<CommandResult>): readonly string[] {
   return [
     ...(result.spawnError === undefined ? [] : [`Unable to start command: ${result.spawnError}`]),
     ...(result.timedOut ? ["Command timed out."] : []),
     ...(result.signal === undefined ? [] : [`Command stopped with signal ${result.signal}.`]),
     ...(result.code === 0 ? [] : [`Command exited with code ${String(result.code)}.`]),
+  ];
+}
+
+function commandEvidence(result: Readonly<CommandResult>): readonly string[] {
+  return [
+    ...commandStatusEvidence(result),
     ...(result.stdout.trim() === "" ? [] : [`stdout: ${result.stdout.trim()}`]),
     ...(result.stderr.trim() === "" ? [] : [`stderr: ${result.stderr.trim()}`]),
   ];
@@ -202,7 +208,7 @@ function addPotentialCause(
 }
 
 /**
- * Classifies one `npm ls --all --json` result without discarding failed-command output.
+ * Classifies one `npm ls --all --json` result into concise problem evidence.
  *
  * @param result - Complete npm command result.
  * @param treeName - Human-readable dependency-tree owner.
@@ -210,7 +216,7 @@ function addPotentialCause(
  */
 export function diagnoseNpmIntegrity(result: Readonly<CommandResult>, treeName: string): DiagnosticResult {
   const tree = treeIdentity(treeName);
-  const evidence = [...commandEvidence(result)];
+  const evidence = [...commandStatusEvidence(result)];
   const combined = `${result.stdout}\n${result.stderr}\n${result.spawnError ?? ""}`;
   const permissionFailure = /\b(?:EACCES|EPERM)\b|permission denied|access is denied/iu.test(combined);
   const causes: DiagnosticPotentialCause[] = [];

@@ -491,6 +491,67 @@ describe("reactDoctorModule", () => {
       expect(result?.status).toBe("fail");
       expect(result?.evidence.join("\n")).toMatch(/18\.0\.0/u);
     });
+
+    it("reports package drift without retaining the complete npm dependency tree", async () => {
+      const dependencies: Record<string, unknown> = {};
+      for (const [name, version] of REACT_PACKAGE_VERSIONS) {
+        dependencies[name] = {
+          version: name === "@arolariu/components" ? "2.3.0" : version,
+          resolved: name === "@arolariu/components" ? "file:packages/components" : "registry",
+        };
+      }
+      dependencies["unrelated-noise-package"] = {
+        version: "9.9.9",
+        dependencies: Object.fromEntries(
+          Array.from({length: 100}, (_, index) => [`transitive-noise-${String(index)}`, {version: "1.0.0"}]),
+        ),
+      };
+      const fixture = await createReactFixture({
+        npmLsOverride: commandResult({
+          stdout: JSON.stringify({name: "@arolariu/monorepo", dependencies}, undefined, 2),
+          stderr: "npm warn unrelated configuration noise",
+        }),
+      });
+
+      const results = await reactDoctorModule.run(fixture.context);
+      const result = results.find(({id}) => id === "react.packages");
+
+      expect(result?.status).toBe("fail");
+      expect(result?.evidence).toEqual([
+        "@arolariu/components installed version '2.3.0' does not match the locked version '2.2.0'.",
+      ]);
+      expect(JSON.stringify(result)).not.toContain("unrelated-noise-package");
+    });
+
+    it("reports a structured npm document error instead of claiming every package is missing", async () => {
+      const fixture = await createReactFixture({
+        npmLsOverride: commandResult({
+          code: 1,
+          stdout: JSON.stringify({
+            name: "@arolariu/monorepo",
+            problems: ["Invalid package.json metadata prevented dependency inspection."],
+            error: {
+              code: "EJSONPARSE",
+              summary: "Invalid package.json: JSON parsing failed.",
+              detail: "Correct the malformed package.json document.",
+            },
+          }),
+        }),
+      });
+
+      const results = await reactDoctorModule.run(fixture.context);
+      const result = results.find(({id}) => id === "react.packages");
+      const diagnosis = [result?.rootCause, ...(result?.potentialCauses.map(({cause}) => cause) ?? [])]
+        .filter((entry): entry is string => entry !== undefined)
+        .join("\n");
+
+      expect(result?.status).toBe("fail");
+      expect(result?.summary).toBe("npm could not produce React ecosystem package metadata.");
+      expect(result?.evidence).toContain("npm code: EJSONPARSE");
+      expect(result?.evidence).toContain("npm summary: Invalid package.json: JSON parsing failed.");
+      expect(diagnosis).toMatch(/EJSONPARSE|Invalid package\.json/iu);
+      expect(result?.evidence.join("\n")).not.toMatch(/is required at .* but is not installed/iu);
+    });
   });
 
   describe("react.workspace-link", () => {
