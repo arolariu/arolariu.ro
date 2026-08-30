@@ -442,10 +442,10 @@ export function createReadOnlyDiagnosticRunner(runner: CommandRunner): Diagnosti
           : DIAGNOSTIC_DEFAULT_TIMEOUT_MS;
 
       const runOptions: CommandRunOptions = {
-        cwd: options?.cwd,
-        env: options?.env,
+        ...(options?.cwd === undefined ? {} : {cwd: options.cwd}),
+        ...(options?.env === undefined ? {} : {env: options.env}),
         timeoutMs,
-        signal: options?.signal,
+        ...(options?.signal === undefined ? {} : {signal: options.signal}),
         output: "capture",
       };
 
