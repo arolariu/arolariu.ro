@@ -4,14 +4,13 @@
  * @module scripts/doctor.readonly.test
  */
 
-import {existsSync, readdirSync, readFileSync} from "node:fs";
+import {readdirSync, readFileSync} from "node:fs";
 import {resolve} from "node:path";
 import ts from "typescript";
 import {describe, expect, it, vi} from "vitest";
 import type {CommandResult, CommandRunner, CommandSpec} from "./common/process.ts";
 
 const doctorTypesPath = resolve(process.cwd(), "scripts", "doctor.types.ts");
-const transitionalDoctorEntrypoints = new Set(["scripts/doctor.ts"]);
 const doctorProductionExtensions = new Set([".ts", ".js", ".mjs", ".cjs"]);
 
 type AccessPath = readonly string[];
@@ -1071,11 +1070,6 @@ describe("createReadOnlyDiagnosticRunner", () => {
 });
 
 describe("doctor source-level read-only guard", () => {
-  it("anchors only the temporary legacy doctor exemption", () => {
-    expect([...transitionalDoctorEntrypoints]).toEqual(["scripts/doctor.ts"]);
-    expect([...transitionalDoctorEntrypoints].filter((fileName) => !existsSync(fileName))).toEqual([]);
-  });
-
   it("detects real policy violations without matching comments or strings", async () => {
     const module = await loadDoctorTypesModule();
     const source = [
@@ -1128,11 +1122,10 @@ describe("doctor source-level read-only guard", () => {
     ]);
   });
 
-  it("keeps every non-legacy doctor production file read-only compliant", async () => {
+  it("keeps every doctor production file read-only compliant", async () => {
     const module = await loadDoctorTypesModule();
 
     const violations = discoverDoctorProductionFiles()
-      .filter((fileName) => !transitionalDoctorEntrypoints.has(fileName))
       .flatMap((fileName) =>
         findDoctorGuardViolations(
           readFileSync(resolve(process.cwd(), fileName), "utf8"),

@@ -3,7 +3,7 @@
  * @module scripts/doctor.types
  */
 
-import {formatCommand, type CommandResult, type CommandRunner, type CommandRunOptions, type CommandSpec} from "./common/process.ts";
+import {defaultCommandRunner, formatCommand, type CommandResult, type CommandRunner, type CommandRunOptions, type CommandSpec} from "./common/process.ts";
 import type {MonorepositoryLogger} from "./common/logger.ts";
 import type {RepositoryPaths} from "./common/repository-paths.ts";
 import type {RequirementLoadResult} from "./common/requirements.ts";
@@ -474,6 +474,19 @@ export function createReadOnlyDiagnosticRunner(runner: CommandRunner): Diagnosti
     },
   };
 }
+
+/**
+ * The default production read-only diagnostic runner.
+ *
+ * @remarks
+ * This is the sole production wiring point for {@link defaultCommandRunner}:
+ * the doctor read-only source guard forbids every other production doctor
+ * file from importing {@link CommandRunner} or {@link defaultCommandRunner}
+ * directly from `./common/process.ts`, so the orchestrator and every module
+ * obtain an already-guarded runner from here instead of constructing one
+ * themselves.
+ */
+export const defaultDiagnosticRunner: DiagnosticCommandRunner = createReadOnlyDiagnosticRunner(defaultCommandRunner);
 
 /**
  * Finalizes a diagnostic row with elapsed timing metadata.

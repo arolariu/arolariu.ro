@@ -72,6 +72,12 @@ const stableDiagnosticIds = [
   "infrastructure.certificates",
   "infrastructure.manifests",
   "infrastructure.containers",
+  "workspace.module-error",
+  "dotnet.module-error",
+  "react.module-error",
+  "svelte.module-error",
+  "python.module-error",
+  "infrastructure.module-error",
 ] as const;
 
 const moduleOrder = ["Workspace", ".NET", "React", "Svelte", "Python", "Infrastructure"] as const;

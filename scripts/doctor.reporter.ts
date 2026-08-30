@@ -90,6 +90,16 @@ export const diagnosticWeights: Readonly<Record<string, number>> = Object.freeze
   "infrastructure.certificates": 9,
   "infrastructure.manifests": 8,
   "infrastructure.containers": 4,
+
+  // Module-crash normalization rows. Each is weighted as the sum of its module's ordinary
+  // weights above so that a crashed module is scored as a complete module loss rather than
+  // shrinking the denominator used to compute the overall health score.
+  "workspace.module-error": 135,
+  "dotnet.module-error": 92,
+  "react.module-error": 64,
+  "svelte.module-error": 84,
+  "python.module-error": 66,
+  "infrastructure.module-error": 90,
 });
 
 function isRecord(value: unknown): value is UnknownRecord {
