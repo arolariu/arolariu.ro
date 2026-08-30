@@ -915,6 +915,17 @@ describe("isReadOnlyDiagnosticCommand", () => {
         "4200",
       ],
     });
+    // Regression proof: the Windows script must wrap the foreach statement's result with the
+    // `$(...)` subexpression operator (a bare `foreach (...) { ... } | ConvertTo-Json` is
+    // rejected by PowerShell with "An empty pipe element is not allowed.") and must wrap the
+    // whole body in `& { ... }` so the caller's trailing argv binds to `$args`.
+    const windowsProbe = module.createPortOwnerProbeCommand("win32", [3000, 4200]);
+    expect(windowsProbe.command).toBe("powershell");
+    expect(windowsProbe.args[3]).toContain("& {");
+    expect(windowsProbe.args[3]).toContain("$(foreach ($port in $ports)");
+    expect(windowsProbe.args[3]).not.toMatch(/\}\s*\|\s*ConvertTo-Json/u);
+    expect(windowsProbe.args[3]).not.toContain("-ErrorAction Stop");
+    expect(windowsProbe.args[4]).toBe("3000,4200");
   });
 
   it("rejects mutating, test-running, trust-broadening, and injection-shaped commands", async () => {
@@ -937,7 +948,7 @@ describe("isReadOnlyDiagnosticCommand", () => {
           "-NoProfile",
           "-NonInteractive",
           "-Command",
-          "$ports = @($args[0] -split ','); foreach ($port in $ports) { Get-NetTCPConnection -State Listen -LocalPort ([int]$port) -ErrorAction Stop | Select-Object LocalAddress, LocalPort, OwningProcess } | ConvertTo-Json -Compress",
+          module.createPortOwnerProbeCommand("win32", [3000]).args[3],
           "3000; Remove-Item",
         ],
       },

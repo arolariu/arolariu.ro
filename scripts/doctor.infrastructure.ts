@@ -100,14 +100,59 @@ export interface PortOwner {
   readonly commandLine?: string;
 }
 
+/**
+ * One normalized `docker ps`/`podman ps` container record.
+ *
+ * Real Docker and Podman `-a --format {{json .}}` output use materially different shapes for
+ * the same logical fields: Docker emits `Names` as a single comma-joined string and `Ports` as a
+ * single human-readable string (`"0.0.0.0:3000->3000/tcp"`); Podman emits `Names` as a JSON array
+ * of strings and `Ports` as a JSON array of port-mapping objects
+ * (`{"host_ip":"0.0.0.0","container_port":3000,"host_port":3000,"protocol":"tcp"}`). Both shapes
+ * are normalized into this single read-only record so downstream logic never depends on which
+ * engine produced the line.
+ */
 interface ParsedContainerRecord {
-  readonly name: string;
+  readonly names: readonly string[];
   readonly state: string;
-  readonly ports: string;
+  readonly status: string;
+  readonly hostPorts: readonly number[];
 }
 
 function isSuccessfulCommand(result: Readonly<CommandResult>): boolean {
   return result.code === 0 && !result.timedOut && result.signal === undefined && result.spawnError === undefined;
+}
+
+/**
+ * Determines whether a port-owner probe result is acceptable evidence, tolerating the one
+ * platform-specific benign nonzero exit shape.
+ *
+ * The macOS port-owner probe script (`for port in "$@"; do lsof ... ; done`) runs one `lsof`
+ * invocation per requested port without `set -e`. `lsof` exits `1` for a port with no listener,
+ * so the *last* requested port having no listener leaves the whole `sh -c` invocation's exit
+ * code at `1` even though earlier ports in the same invocation may have produced valid,
+ * already-flushed stdout. That specific shape (nonzero exit, no timeout, no signal, no spawn
+ * error, no stderr) is indistinguishable from "some or all requested ports were free" and must
+ * be treated as acceptable evidence rather than a probe failure. A genuine tool/permission
+ * failure (for example a missing `lsof` binary or a permission error) always produces non-empty
+ * stderr and must still be classified as a probe failure.
+ *
+ * @param platform - Target runtime platform the probe was executed for.
+ * @param result - Captured command result from the port-owner probe.
+ * @returns Whether the result's stdout should be parsed as port-ownership evidence.
+ */
+function isAcceptablePortProbeResult(platform: NodeJS.Platform, result: Readonly<CommandResult>): boolean {
+  if (isSuccessfulCommand(result)) {
+    return true;
+  }
+
+  return (
+    platform === "darwin"
+    && result.code === 1
+    && !result.timedOut
+    && result.signal === undefined
+    && result.spawnError === undefined
+    && result.stderr.trim() === ""
+  );
 }
 
 function isMissingExecutable(result: Readonly<CommandResult>): boolean {
@@ -256,6 +301,22 @@ export function classifyContainerFailure(
     };
   }
 
+  // A non-missing `--version` failure/timeout/signal is a CLI probe failure in its own right —
+  // it is not evidence of a stopped daemon or misconfigured socket, which can only be diagnosed
+  // from an actual backend/Compose probe result. Only classify this way when no backend or
+  // Compose evidence was captured for this call (i.e. this classification originates from the
+  // CLI check itself, not from a later backend/Compose failure that also received a successful
+  // CLI result).
+  if (!isSuccessfulCommand(cli) && backend === undefined && compose === undefined) {
+    return {
+      rootCause: `The ${cliDisplayName} CLI command failed, timed out, or was terminated unexpectedly.`,
+      potentialCauses: [],
+      fixes: [
+        {description: `Re-run '${cliDisplayName} --version' manually to diagnose the failure, then rerun doctor.`},
+      ],
+    };
+  }
+
   if (engine === "rancher" && backend !== undefined && backend.stdout.toLowerCase().includes("docker desktop")) {
     return {
       rootCause: "Rancher engine selected but Docker Desktop appears to be the active backend.",
@@ -310,17 +371,28 @@ async function diagnoseSelection(context: Readonly<DoctorContext>): Promise<Sele
     });
   } catch (error) {
     const message = error instanceof ContainerRuntimeError ? error.message : String(error);
+    // `resolveContainerEngine` throws two distinct shapes reachable with `argv: []`: a generic
+    // "no engine selected" message when neither the environment variable nor persisted
+    // configuration provided any value, and a specific "unsupported"/"deprecated" message when a
+    // value was provided but rejected (for example an invalid or deprecated engine name). These
+    // must not be conflated: an invalid/unsupported configured value is a different root cause
+    // from no selection having been made at all.
+    const isInvalidConfiguredValue = /unsupported container engine|deprecated/iu.test(message);
     return {
       diagnostic: issueDiagnostic(context, startedAt, {
         id: "infrastructure.selection",
         name: "Container engine selection",
         status: "fail",
-        summary: "No supported local container engine is selected.",
+        summary: isInvalidConfiguredValue
+          ? "An invalid or unsupported container engine value is configured."
+          : "No supported local container engine is selected.",
         evidence: [
           message,
           ...(configRead.status === "invalid" ? [configRead.error] : []),
         ],
-        rootCause: "No container engine is selected via environment variable or persisted local tooling configuration.",
+        rootCause: isInvalidConfiguredValue
+          ? "The configured container engine value is invalid, unsupported, or deprecated."
+          : "No container engine is selected via environment variable or persisted local tooling configuration.",
         fixes: [SETUP_REMEDIATION_FIX],
       }),
       selection: null,
@@ -469,11 +541,40 @@ async function diagnoseDockerConflict(
   context: Readonly<DoctorContext>,
   engine: ContainerEngine,
   cli: CommandResult,
+  backend: CommandResult,
   compose: CommandResult,
+  triggerFollowUp: boolean,
 ): Promise<DiagnosticResult> {
   const startedAt = context.now();
 
   if (engine === "rancher") {
+    if (!triggerFollowUp) {
+      // Derive the outcome from the already-captured `docker info` (backend) evidence instead of
+      // dispatching a redundant `docker version` follow-up: on a healthy, non-verbose path the
+      // backend probe's own output is sufficient evidence, and Docker Desktop's `docker info`
+      // output identifies itself the same way `docker version` does.
+      if (backend.stdout.toLowerCase().includes("docker desktop")) {
+        return issueDiagnostic(context, startedAt, {
+          id: "infrastructure.docker-conflict",
+          name: "Docker Desktop conflict",
+          status: "fail",
+          summary: "Docker Desktop appears to be the active backend instead of Rancher Desktop.",
+          evidence: [backend.stdout.trim()],
+          rootCause: "Rancher engine selected but Docker Desktop appears to be the active backend.",
+          fixes: [{description: "Start Rancher Desktop in Moby/dockerd mode and stop Docker Desktop."}],
+        });
+      }
+
+      return passDiagnostic(
+        context,
+        startedAt,
+        "infrastructure.docker-conflict",
+        "Docker Desktop conflict",
+        "Rancher Desktop, not Docker Desktop, owns the Docker-compatible backend (derived from already-captured backend evidence).",
+        [backend.stdout.trim() === "" ? "Backend evidence did not mention Docker Desktop." : backend.stdout.trim()],
+      );
+    }
+
     const result = await context.runner.run(DOCKER_VERSION_FULL_COMMAND, {cwd: context.paths.root, timeoutMs: DIAGNOSTIC_DEFAULT_TIMEOUT_MS});
     if (!isSuccessfulCommand(result)) {
       return issueDiagnostic(context, startedAt, {
@@ -617,6 +718,68 @@ function skipBackendDependentChecks(reasonSuffix: string, reason: readonly strin
   ];
 }
 
+/**
+ * Normalizes Docker's single comma-joined `Names` string or Podman's `Names` string array into a
+ * flat list of container names, tolerating malformed/mixed entries.
+ *
+ * @param value - Raw `Names` field from one parsed `ps -a --format {{json .}}` JSON line.
+ * @returns The normalized name list, or `null` when the field is neither a string nor an array.
+ */
+function normalizeContainerNames(value: unknown): readonly string[] | null {
+  if (typeof value === "string") {
+    return value
+      .split(",")
+      .map((name) => name.trim())
+      .filter((name) => name !== "");
+  }
+
+  if (Array.isArray(value)) {
+    return value.filter((entry): entry is string => typeof entry === "string");
+  }
+
+  return null;
+}
+
+/**
+ * Extracts distinct host ports from Docker's single human-readable `Ports` string
+ * (for example `"0.0.0.0:3000->3000/tcp, :::3000->3000/tcp"`).
+ *
+ * @param ports - Raw Docker `Ports` string.
+ * @returns Distinct host ports found in the string.
+ */
+function parseDockerPortsString(ports: string): readonly number[] {
+  const found = new Set<number>();
+  for (const match of ports.matchAll(/:(\d+)->\d+\/(?:tcp|udp)/gu)) {
+    const port = Number(match[1]);
+    if (Number.isSafeInteger(port)) {
+      found.add(port);
+    }
+  }
+  return [...found];
+}
+
+/**
+ * Extracts distinct host ports from Podman's `Ports` array of port-mapping objects
+ * (for example `{"host_ip":"0.0.0.0","container_port":3000,"host_port":3000,"protocol":"tcp"}`).
+ *
+ * @param ports - Raw Podman `Ports` array.
+ * @returns Distinct host ports found across the array's `host_port` fields.
+ */
+function parsePodmanPortsArray(ports: readonly unknown[]): readonly number[] {
+  const found = new Set<number>();
+  for (const entry of ports) {
+    if (typeof entry !== "object" || entry === null) {
+      continue;
+    }
+    const record = entry as Readonly<Record<string, unknown>>;
+    const hostPort = Number(record["host_port"]);
+    if (Number.isSafeInteger(hostPort)) {
+      found.add(hostPort);
+    }
+  }
+  return [...found];
+}
+
 function parseContainerListLine(line: string): ParsedContainerRecord | null {
   const trimmed = line.trim();
   if (trimmed === "") {
@@ -630,14 +793,28 @@ function parseContainerListLine(line: string): ParsedContainerRecord | null {
     }
 
     const record = parsed as Readonly<Record<string, unknown>>;
-    const name = record["Names"];
     const state = record["State"];
-    const ports = record["Ports"];
-    if (typeof name !== "string" || typeof state !== "string") {
+    if (typeof state !== "string") {
       return null;
     }
 
-    return {name, state, ports: typeof ports === "string" ? ports : ""};
+    const names = normalizeContainerNames(record["Names"]);
+    if (names === null) {
+      return null;
+    }
+
+    const rawStatus = record["Status"];
+    const status = typeof rawStatus === "string" ? rawStatus : "";
+
+    const rawPorts = record["Ports"];
+    const hostPorts =
+      typeof rawPorts === "string"
+        ? parseDockerPortsString(rawPorts)
+        : Array.isArray(rawPorts)
+          ? parsePodmanPortsArray(rawPorts)
+          : [];
+
+    return {names, state, status, hostPorts};
   } catch {
     return null;
   }
@@ -650,17 +827,18 @@ function parseContainerList(stdout: string): readonly ParsedContainerRecord[] {
     .filter((record): record is ParsedContainerRecord => record !== null);
 }
 
+function isKnownContainerRecord(record: Readonly<ParsedContainerRecord>): boolean {
+  return record.names.some((name) => KNOWN_LOCAL_CONTAINER_NAMES.includes(name));
+}
+
 function knownContainerHostPorts(records: readonly ParsedContainerRecord[]): ReadonlySet<number> {
   const ports = new Set<number>();
   for (const record of records) {
-    if (!KNOWN_LOCAL_CONTAINER_NAMES.includes(record.name)) {
+    if (!isKnownContainerRecord(record)) {
       continue;
     }
-    for (const match of record.ports.matchAll(/:(\d+)->\d+\/(?:tcp|udp)/gu)) {
-      const port = Number(match[1]);
-      if (Number.isSafeInteger(port)) {
-        ports.add(port);
-      }
+    for (const port of record.hostPorts) {
+      ports.add(port);
     }
   }
   return ports;
@@ -784,7 +962,7 @@ async function collectPortOwners(
   command: Readonly<CommandSpec>,
 ): Promise<{readonly owners: readonly PortOwner[]; readonly probeResult: CommandResult}> {
   const probeResult = await context.runner.run(command, {cwd: context.paths.root, timeoutMs: DIAGNOSTIC_DEFAULT_TIMEOUT_MS});
-  if (!isSuccessfulCommand(probeResult)) {
+  if (!isAcceptablePortProbeResult(context.platform, probeResult)) {
     return {owners: [], probeResult};
   }
 
@@ -847,7 +1025,7 @@ async function diagnosePorts(
 
   const {owners, probeResult} = await collectPortOwners(context, command);
 
-  if (!isSuccessfulCommand(probeResult)) {
+  if (!isAcceptablePortProbeResult(context.platform, probeResult)) {
     return issueDiagnostic(context, startedAt, {
       id: "infrastructure.ports",
       name: "Required local ports",
@@ -1046,7 +1224,7 @@ async function diagnoseContainers(
   }
 
   const records = parseContainerList(containerListResult.stdout);
-  const knownRecords = records.filter((record) => KNOWN_LOCAL_CONTAINER_NAMES.includes(record.name));
+  const knownRecords = records.filter((record) => isKnownContainerRecord(record));
 
   if (knownRecords.length === 0) {
     return {
@@ -1070,9 +1248,31 @@ async function diagnoseContainers(
         name: "Known local containers",
         status: "warn",
         summary: "One or more known local containers exist but are not running.",
-        evidence: staleRecords.map((record) => `${record.name}: ${record.state}`),
+        evidence: staleRecords.map((record) => `${record.names.join(",")}: ${record.state}`),
         rootCause: "A known local container exists in a stopped or stale state.",
         fixes: [{description: "Start, remove, or recreate the stale local container using the selfhost tooling."}],
+      }),
+      records,
+    };
+  }
+
+  // A container reporting `State: running` can still be unhealthy: Docker/Podman surface health
+  // check evidence through the `Status` field (for example `"Up 3 hours (unhealthy)"`), which is
+  // materially different information than `State` and must never be inferred by mirroring
+  // `State`. A running-but-unhealthy known container must not PASS.
+  const unhealthyRecords = knownRecords.filter(
+    (record) => record.state.toLowerCase() === "running" && /unhealthy/iu.test(record.status),
+  );
+  if (unhealthyRecords.length > 0) {
+    return {
+      diagnostic: issueDiagnostic(context, startedAt, {
+        id: "infrastructure.containers",
+        name: "Known local containers",
+        status: "warn",
+        summary: "One or more known local containers are running but report an unhealthy status.",
+        evidence: unhealthyRecords.map((record) => `${record.names.join(",")}: ${record.status}`),
+        rootCause: "A known local container's health check is reporting an unhealthy status.",
+        fixes: [{description: "Inspect the unhealthy local container's logs and restart it using the selfhost tooling."}],
       }),
       records,
     };
@@ -1085,7 +1285,7 @@ async function diagnoseContainers(
       "infrastructure.containers",
       "Known local containers",
       "All known local containers are running.",
-      knownRecords.map((record) => `${record.name}: ${record.state}`),
+      knownRecords.map((record) => `${record.names.join(",")}: ${record.state}`),
     ),
     records,
   };
@@ -1140,12 +1340,14 @@ export const infrastructureDoctorModule: DiagnosticModule = {
     const composeOutcome = await diagnoseCompose(context, engine, cli);
     results.push(composeOutcome.diagnostic);
 
-    results.push(await diagnoseDockerConflict(context, engine, cli, composeOutcome.result));
-
     const backendOk = backendOutcome.diagnostic.status === "pass";
     const composeOk = composeOutcome.diagnostic.status === "pass";
-    const socketContextTriggered = !backendOk || !composeOk || context.options.verbose;
-    results.push(await diagnoseSocketContext(context, engine, socketContextTriggered));
+    const followUpTriggered = !backendOk || !composeOk || context.options.verbose;
+
+    results.push(
+      await diagnoseDockerConflict(context, engine, cli, backendOutcome.result, composeOutcome.result, followUpTriggered),
+    );
+    results.push(await diagnoseSocketContext(context, engine, followUpTriggered));
 
     const containerListCommand = engine === "rancher" ? DOCKER_PS_COMMAND : PODMAN_PS_COMMAND;
     const containerListResult = context.options.ci

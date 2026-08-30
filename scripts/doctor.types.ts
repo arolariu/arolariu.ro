@@ -30,11 +30,34 @@ const WINDOWS_PORTS_PROBE_SCRIPT =
   "Get-NetTCPConnection -State Listen -ErrorAction Stop | Select-Object LocalAddress, LocalPort, State, OwningProcess | ConvertTo-Json -Compress";
 const WINDOWS_PROCESS_PROBE_SCRIPT =
   "Get-Process | Select-Object Id, ProcessName, Path | ConvertTo-Json -Compress";
+/**
+ * Windows read-only port-owner probe script.
+ *
+ * Two independent defects were present in an earlier revision of this script and are both
+ * corrected here:
+ *
+ * 1. `foreach (...) { ... } | ConvertTo-Json` piped the output of a `foreach` *statement*
+ *    directly into a pipeline. PowerShell's parser rejects this with `An empty pipe element is
+ *    not allowed.` (verified interactively). The `foreach` statement's result must first be
+ *    captured with the `$(...)` subexpression operator before it can be piped.
+ * 2. A bare top-level `-Command` script body does not receive the caller's trailing native
+ *    argv as `$args` — PowerShell instead re-tokenizes and executes the trailing argv as
+ *    additional top-level statements (verified interactively: a bare script sees
+ *    `$args.Count -eq 0`). Wrapping the whole body in `& { ... }` (explicit scriptblock
+ *    invocation via the call operator) is required for `$args` to be bound from the caller's
+ *    trailing argv, exactly as the dynamic port-owner builder relies upon.
+ *
+ * `-ErrorAction SilentlyContinue` (not `Stop`) is required so that a port with no listener
+ * (the common case) does not raise a terminating error that would prevent later ports in the
+ * same invocation from being inspected.
+ */
 const WINDOWS_PORT_OWNER_PROBE_SCRIPT = [
+  "& {",
   "$ports = @($args[0] -split ',');",
-  "foreach ($port in $ports) {",
-  "Get-NetTCPConnection -State Listen -LocalPort ([int]$port) -ErrorAction Stop | Select-Object LocalAddress, LocalPort, OwningProcess",
-  "} | ConvertTo-Json -Compress",
+  "$(foreach ($port in $ports) {",
+  "Get-NetTCPConnection -State Listen -LocalPort ([int]$port) -ErrorAction SilentlyContinue | Select-Object LocalAddress, LocalPort, OwningProcess",
+  "}) | ConvertTo-Json -Compress",
+  "}",
 ].join(" ");
 const MACOS_PORT_OWNER_PROBE_SCRIPT = 'for port in "$@"; do lsof -nP -a -iTCP:"$port" -sTCP:LISTEN -Fpcn; done';
 const LINUX_PORT_OWNER_PROBE_SCRIPT = 'for port in "$@"; do ss -ltnp "sport = :$port"; done';

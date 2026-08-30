@@ -93,8 +93,52 @@ async function writeFixtureFile(path: string, contents: string): Promise<void> {
   await writeFile(path, contents, "utf8");
 }
 
-function containerListLine(input: Readonly<{name: string; state: string; ports?: string}>): string {
-  return JSON.stringify({Names: input.name, State: input.state, Status: input.state, Ports: input.ports ?? ""});
+function containerListLine(input: Readonly<{name: string; state: string; status?: string; ports?: string}>): string {
+  // Real Docker `ps -a --format {{json .}}` output never mirrors `Status` from `State`: `Status`
+  // is a distinct human-readable field (for example `"Up 3 hours"` or `"Exited (0) 2 hours ago"`)
+  // that can additionally carry health-check evidence (for example `"Up 3 hours (unhealthy)"`).
+  const defaultStatus = input.state.toLowerCase() === "running" ? "Up 3 hours" : "Exited (0) 2 hours ago";
+  return JSON.stringify({Names: input.name, State: input.state, Status: input.status ?? defaultStatus, Ports: input.ports ?? ""});
+}
+
+/**
+ * Builds one real Podman `ps -a --format {{json .}}` JSON line.
+ *
+ * Podman's shape materially differs from Docker's: `Names` is a JSON array of strings (not a
+ * single comma-joined string) and `Ports` is a JSON array of port-mapping objects (not a single
+ * human-readable string), each carrying `host_ip`/`container_port`/`host_port`/`protocol` fields.
+ */
+function podmanContainerListLine(
+  input: Readonly<{
+    names: readonly string[];
+    state: string;
+    status?: string;
+    ports?: readonly Readonly<{hostIp?: string; containerPort: number; hostPort: number; protocol?: string}>[];
+  }>,
+): string {
+  const defaultStatus = input.state.toLowerCase() === "running" ? "Up 3 hours" : "Exited (0) 2 hours ago";
+  return JSON.stringify({
+    Command: ["/entrypoint.sh"],
+    CreatedAt: "2026-08-29 10:00:00 +0000 UTC",
+    Id: "a1b2c3d4e5f6",
+    Image: "docker.io/library/redis:7",
+    Labels: {},
+    Names: input.names,
+    Pid: 4242,
+    Pod: "",
+    PodName: "",
+    Ports: (input.ports ?? []).map((port) => ({
+      host_ip: port.hostIp ?? "0.0.0.0",
+      container_port: port.containerPort,
+      host_port: port.hostPort,
+      range: 1,
+      protocol: port.protocol ?? "tcp",
+    })),
+    Size: null,
+    StartedAt: 1756468800,
+    State: input.state,
+    Status: input.status ?? defaultStatus,
+  });
 }
 
 interface InfrastructureFixture {
@@ -261,6 +305,31 @@ describe("classifyContainerFailure", () => {
     expect(classification.potentialCauses.length).toBeGreaterThan(0);
     expect(classification.fixes.length).toBeGreaterThan(0);
   });
+
+  it("classifies a non-missing CLI probe failure as a CLI probe failure, not a stopped daemon or socket diagnosis", () => {
+    const classification = classifyContainerFailure({
+      engine: "rancher",
+      cli: commandResult({code: 1, timedOut: true, stdout: "", stderr: ""}),
+    });
+
+    expect(classification.rootCause).toMatch(/failed, timed out, or was terminated/u);
+    expect(classification.rootCause?.toLowerCase()).not.toContain("backend is not running");
+    expect(classification.rootCause?.toLowerCase()).not.toContain("socket");
+    expect(classification.potentialCauses).toEqual([]);
+  });
+
+  it("does not classify a genuinely failed backend probe (cli already successful) as a CLI probe failure", () => {
+    const classification = classifyContainerFailure({
+      engine: "podman",
+      cli: commandResult({stdout: "podman version 5.8.2\n"}),
+      backend: commandResult({code: 1, stderr: "Cannot connect to the Podman socket."}),
+    });
+
+    // This must fall through to the ambiguous backend/socket fallback, not the CLI-probe-failure
+    // branch, because the CLI itself succeeded.
+    expect(classification.rootCause).toBeUndefined();
+    expect(classification.potentialCauses.some((cause) => /backend is not running/u.test(cause.cause))).toBe(true);
+  });
 });
 
 describe("infrastructureDoctorModule", () => {
@@ -284,6 +353,11 @@ describe("infrastructureDoctorModule", () => {
     expect(results.find(({id}) => id === "infrastructure.containers")?.status).toBe("pass");
 
     expect(() => createDoctorReport(results, new Date().toISOString())).not.toThrow();
+
+    // Regression proof: the healthy, non-verbose default path must derive the docker-conflict
+    // outcome from the already-captured `docker info` evidence and must never dispatch a
+    // redundant `docker version` follow-up.
+    expect(fixture.run.mock.calls.some(([command]) => command.command === "docker" && command.args[0] === "version")).toBe(false);
   });
 
   it("returns every stable infrastructure check in order for a healthy Podman baseline", async () => {
@@ -334,6 +408,18 @@ describe("infrastructureDoctorModule", () => {
     expect(() => createDoctorReport(results, new Date().toISOString())).not.toThrow();
   });
 
+  it("fails selection with an invalid-configuration root cause (not a 'no selection' root cause) for an unsupported engine value", async () => {
+    const fixture = await createInfrastructureFixture({env: {AROLARIU_CONTAINER_ENGINE: "docker"}});
+
+    const results = await infrastructureDoctorModule.run(fixture.context);
+
+    const selection = results.find(({id}) => id === "infrastructure.selection");
+    expect(selection?.status).toBe("fail");
+    expect(selection?.rootCause).toMatch(/invalid|unsupported|deprecated/iu);
+    expect(selection?.rootCause?.toLowerCase()).not.toContain("no container engine is selected");
+    expect(selection?.evidence.join("\n")).toMatch(/deprecated/iu);
+  });
+
   it("warns selection when persisted local tooling configuration is invalid but the environment resolves an engine", async () => {
     const fixture = await createInfrastructureFixture({
       env: {AROLARIU_CONTAINER_ENGINE: "rancher"},
@@ -362,6 +448,20 @@ describe("infrastructureDoctorModule", () => {
     }
   });
 
+  it("classifies a timed-out (present) docker CLI as a CLI probe failure, not a stopped daemon diagnosis", async () => {
+    const fixture = await createInfrastructureFixture({env: {AROLARIU_CONTAINER_ENGINE: "rancher"}});
+    seedHealthyRancherResponses(fixture);
+    fixture.setResponse({command: "docker", args: ["--version"]}, commandResult({code: 1, timedOut: true}));
+
+    const results = await infrastructureDoctorModule.run(fixture.context);
+
+    const cli = results.find(({id}) => id === "infrastructure.cli");
+    expect(cli?.status).toBe("fail");
+    expect(cli?.rootCause).toMatch(/failed, timed out, or was terminated/u);
+    expect(cli?.rootCause?.toLowerCase()).not.toContain("not installed");
+    expect(cli?.rootCause?.toLowerCase()).not.toContain("backend is not running");
+  });
+
   it("decouples a stopped backend from Compose availability and marks the backend failure ambiguous", async () => {
     const fixture = await createInfrastructureFixture({env: {AROLARIU_CONTAINER_ENGINE: "rancher"}});
     seedHealthyRancherResponses(fixture);
@@ -385,10 +485,45 @@ describe("infrastructureDoctorModule", () => {
     expect(results.find(({id}) => id === "infrastructure.docker-conflict")?.status).toBe("warn");
     // Backend/compose evidence should still trigger follow-up socket/context probing.
     expect(results.find(({id}) => id === "infrastructure.socket-context")?.status).toBe("pass");
+    // Regression proof: a backend failure must trigger the docker-conflict follow-up dispatch.
+    expect(fixture.run.mock.calls.some(([command]) => command.command === "docker" && command.args[0] === "version")).toBe(true);
   });
 
-  it("fails docker-conflict when Docker Desktop answers instead of Rancher Desktop", async () => {
+  it("derives a Docker Desktop conflict from already-captured docker info evidence without a docker version follow-up on the healthy default path", async () => {
     const fixture = await createInfrastructureFixture({env: {AROLARIU_CONTAINER_ENGINE: "rancher"}});
+    seedHealthyRancherResponses(fixture);
+    fixture.setResponse(
+      {command: "docker", args: ["info"]},
+      commandResult({stdout: "Server:\n Version: 27.3.1\n Operating System: Docker Desktop\n"}),
+    );
+
+    const results = await infrastructureDoctorModule.run(fixture.context);
+
+    expect(results.find(({id}) => id === "infrastructure.backend")?.status).toBe("pass");
+    const conflict = results.find(({id}) => id === "infrastructure.docker-conflict");
+    expect(conflict?.status).toBe("fail");
+    expect(conflict?.rootCause).toMatch(/Docker Desktop/u);
+    expect(fixture.run.mock.calls.some(([command]) => command.command === "docker" && command.args[0] === "version")).toBe(false);
+  });
+
+  it("dispatches a docker version follow-up under --verbose even on an otherwise healthy default path", async () => {
+    const fixture = await createInfrastructureFixture({
+      env: {AROLARIU_CONTAINER_ENGINE: "rancher"},
+      options: {verbose: true},
+    });
+    seedHealthyRancherResponses(fixture);
+
+    const results = await infrastructureDoctorModule.run(fixture.context);
+
+    expect(results.find(({id}) => id === "infrastructure.docker-conflict")?.status).toBe("pass");
+    expect(fixture.run.mock.calls.some(([command]) => command.command === "docker" && command.args[0] === "version")).toBe(true);
+  });
+
+  it("fails docker-conflict from a triggered docker version follow-up when Docker Desktop answers instead of Rancher Desktop", async () => {
+    const fixture = await createInfrastructureFixture({
+      env: {AROLARIU_CONTAINER_ENGINE: "rancher"},
+      options: {verbose: true},
+    });
     seedHealthyRancherResponses(fixture);
     fixture.setResponse(
       {command: "docker", args: ["version"]},
@@ -513,6 +648,56 @@ describe("infrastructureDoctorModule", () => {
     expect(ports?.potentialCauses.length).toBeGreaterThan(0);
   });
 
+  it("retains an earlier macOS lsof -Fpcn owner despite the loop's expected trailing no-match exit 1", async () => {
+    // The macOS probe script runs one `lsof` invocation per port in a shell loop without
+    // `set -e`. `lsof` exits 1 for any port with no listener, so if the *last* requested port
+    // has no listener the whole `sh -c` invocation's exit code is 1 even though an *earlier*
+    // port's `lsof` invocation already produced valid, flushed stdout. That benign shape (exit
+    // 1, no stderr, no timeout, no spawn error) must not discard the earlier owner's evidence.
+    const fixture = await createInfrastructureFixture({env: {AROLARIU_CONTAINER_ENGINE: "rancher"}, platform: "darwin"});
+    seedHealthyRancherResponses(fixture);
+    fixture.setResponse(
+      createPortOwnerProbeCommand("darwin", requiredLocalPorts),
+      commandResult({code: 1, stdout: "p4242\ncjava\nn*:3000\n", stderr: ""}),
+    );
+
+    const results = await infrastructureDoctorModule.run(fixture.context);
+
+    const ports = results.find(({id}) => id === "infrastructure.ports");
+    expect(ports?.status).toBe("fail");
+    expect(ports?.evidence.join("\n")).toContain("4242");
+    expect(ports?.evidence.join("\n")).toContain("java");
+  });
+
+  it("treats an all-free macOS lsof exit 1 with empty stdout as evidence that every required port is free", async () => {
+    const fixture = await createInfrastructureFixture({env: {AROLARIU_CONTAINER_ENGINE: "rancher"}, platform: "darwin"});
+    seedHealthyRancherResponses(fixture);
+    fixture.setResponse(
+      createPortOwnerProbeCommand("darwin", requiredLocalPorts),
+      commandResult({code: 1, stdout: "", stderr: ""}),
+    );
+
+    const results = await infrastructureDoctorModule.run(fixture.context);
+
+    const ports = results.find(({id}) => id === "infrastructure.ports");
+    expect(ports?.status).toBe("pass");
+  });
+
+  it("still warns for a genuine macOS lsof tool/permission error sharing the same exit code as the benign no-match shape", async () => {
+    const fixture = await createInfrastructureFixture({env: {AROLARIU_CONTAINER_ENGINE: "rancher"}, platform: "darwin"});
+    seedHealthyRancherResponses(fixture);
+    fixture.setResponse(
+      createPortOwnerProbeCommand("darwin", requiredLocalPorts),
+      commandResult({code: 1, stdout: "", stderr: "lsof: command not found"}),
+    );
+
+    const results = await infrastructureDoctorModule.run(fixture.context);
+
+    const ports = results.find(({id}) => id === "infrastructure.ports");
+    expect(ports?.status).toBe("warn");
+    expect(ports?.potentialCauses.length).toBeGreaterThan(0);
+  });
+
   it("resolves Windows port owners by combining the port probe with a process list probe", async () => {
     const fixture = await createInfrastructureFixture({env: {AROLARIU_CONTAINER_ENGINE: "rancher"}, platform: "win32"});
     seedHealthyRancherResponses(fixture);
@@ -623,6 +808,70 @@ describe("infrastructureDoctorModule", () => {
     fixture.setResponse(
       {command: "docker", args: ["ps", "-a", "--format", "{{json .}}"]},
       commandResult({stdout: containerListLine({name: "mssql", state: "exited"})}),
+    );
+
+    const results = await infrastructureDoctorModule.run(fixture.context);
+
+    const containers = results.find(({id}) => id === "infrastructure.containers");
+    expect(containers?.status).toBe("warn");
+    expect(containers?.evidence.join("\n")).toContain("mssql");
+  });
+
+  it("warns (does not PASS) a known Docker container that is running but reports an unhealthy Status", async () => {
+    // `Status` is a distinct field from `State` and must never be inferred by mirroring `State`:
+    // Docker's real `Status` string carries health-check evidence (for example
+    // `"Up 3 hours (unhealthy)"`) that `State: running` alone cannot reveal.
+    const fixture = await createInfrastructureFixture({env: {AROLARIU_CONTAINER_ENGINE: "rancher"}});
+    seedHealthyRancherResponses(fixture);
+    fixture.setResponse(
+      {command: "docker", args: ["ps", "-a", "--format", "{{json .}}"]},
+      commandResult({stdout: containerListLine({name: "mssql", state: "running", status: "Up 3 hours (unhealthy)"})}),
+    );
+
+    const results = await infrastructureDoctorModule.run(fixture.context);
+
+    const containers = results.find(({id}) => id === "infrastructure.containers");
+    expect(containers?.status).not.toBe("pass");
+    expect(containers?.status).toBe("warn");
+    expect(containers?.evidence.join("\n")).toContain("unhealthy");
+  });
+
+  it("recognizes a real Podman-shaped container record (array Names, port-mapping objects) and classifies its required host port as known-stack WARN, not unrelated FAIL", async () => {
+    const fixture = await createInfrastructureFixture({env: {AROLARIU_CONTAINER_ENGINE: "podman"}, platform: "linux"});
+    seedHealthyPodmanResponses(fixture);
+    const port = requiredLocalPorts.find((candidate) => candidate === 6379) as number;
+    fixture.setResponse(
+      {command: "podman", args: ["ps", "-a", "--format", "{{json .}}"]},
+      commandResult({
+        stdout: podmanContainerListLine({
+          names: ["redis"],
+          state: "running",
+          ports: [{containerPort: 6379, hostPort: port}],
+        }),
+      }),
+    );
+    fixture.setResponse(
+      createPortOwnerProbeCommand("linux", requiredLocalPorts),
+      commandResult({stdout: `LISTEN 0      4096      0.0.0.0:${String(port)}      0.0.0.0:*      users:(("podman",pid=4242,fd=7))\n`}),
+    );
+
+    const results = await infrastructureDoctorModule.run(fixture.context);
+
+    expect(results.find(({id}) => id === "infrastructure.containers")?.status).toBe("pass");
+    const ports = results.find(({id}) => id === "infrastructure.ports");
+    expect(ports?.status).toBe("warn");
+    expect(ports?.status).not.toBe("fail");
+    expect(ports?.rootCause).toMatch(/already running/u);
+  });
+
+  it("recognizes a real Podman-shaped stale (non-running) known container", async () => {
+    const fixture = await createInfrastructureFixture({env: {AROLARIU_CONTAINER_ENGINE: "podman"}});
+    seedHealthyPodmanResponses(fixture);
+    fixture.setResponse(
+      {command: "podman", args: ["ps", "-a", "--format", "{{json .}}"]},
+      commandResult({
+        stdout: podmanContainerListLine({names: ["mssql"], state: "exited", ports: []}),
+      }),
     );
 
     const results = await infrastructureDoctorModule.run(fixture.context);
