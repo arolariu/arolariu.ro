@@ -381,7 +381,7 @@ async function diagnoseHost(context: Readonly<DoctorContext>): Promise<Diagnosti
     return issueDiagnostic(context, startedAt, {
       id: "dotnet.host",
       name: ".NET host",
-      status: "warn",
+      status: "fail",
       summary: "The installed .NET host architecture does not match the current process architecture.",
       evidence: [`Host architecture: ${info.architecture}`, `Process architecture: ${context.arch}`],
       rootCause: "A mismatched .NET host architecture can degrade native performance or break architecture-specific tooling.",
@@ -878,6 +878,31 @@ async function diagnoseAppHost(context: Readonly<DoctorContext>): Promise<Diagno
   );
 }
 
+/**
+ * Validates that a NuGet v3 service index response body is a JSON object exposing a `resources` array.
+ *
+ * @param body - Captured HTTP response body, when the network probe recorded one.
+ * @returns Whether the body is a well-formed NuGet v3 service index.
+ */
+function isValidNugetServiceIndex(body: string | undefined): boolean {
+  if (body === undefined || body.trim() === "") {
+    return false;
+  }
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(body);
+  } catch {
+    return false;
+  }
+
+  if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+    return false;
+  }
+
+  return Array.isArray((parsed as Readonly<Record<string, unknown>>)["resources"]);
+}
+
 async function diagnoseNugetFeed(context: Readonly<DoctorContext>): Promise<DiagnosticResult> {
   if (context.options.quick) {
     return skippedDiagnostic({
@@ -909,6 +934,23 @@ async function diagnoseNugetFeed(context: Readonly<DoctorContext>): Promise<Diag
       summary: "The NuGet feed returned an unexpected response.",
       evidence: [`HTTP status: ${String(probe.statusCode)}`],
       rootCause: "The public NuGet v3 feed responded without a successful status.",
+      fixes: [{description: "Verify NuGet feed availability and configured sources, then rerun doctor."}],
+    });
+  }
+
+  if (!isValidNugetServiceIndex(probe.body)) {
+    return issueDiagnostic(context, startedAt, {
+      id: "dotnet.nuget-feed",
+      name: "NuGet feed reachability",
+      status: "warn",
+      summary: "The NuGet feed returned a malformed service index.",
+      evidence: [
+        `HTTP status: ${String(probe.statusCode)}`,
+        probe.body === undefined || probe.body.trim() === ""
+          ? "No response body was captured."
+          : `Response body: ${probe.body.trim()}`,
+      ],
+      rootCause: "The NuGet v3 service index response did not contain a JSON object with a resources array.",
       fixes: [{description: "Verify NuGet feed availability and configured sources, then rerun doctor."}],
     });
   }

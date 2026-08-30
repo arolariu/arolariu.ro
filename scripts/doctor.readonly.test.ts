@@ -748,6 +748,7 @@ describe("doctor diagnostic contracts", () => {
       "statusCode",
       "durationMs",
       "error",
+      "body",
     ]);
     expect(getExportedInterfacePropertyNames(source, "DoctorContext")).toEqual([
       "options",

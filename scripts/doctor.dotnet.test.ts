@@ -192,7 +192,15 @@ async function createDotnetFixture(
   const runner: DiagnosticCommandRunner = {run};
   const networkGet = vi.fn(
     async (): Promise<DiagnosticNetworkResult> =>
-      input.networkResult ?? {status: "reachable", statusCode: 200, durationMs: 3},
+      input.networkResult ?? {
+        status: "reachable",
+        statusCode: 200,
+        durationMs: 3,
+        body: JSON.stringify({
+          version: "3.0.0",
+          resources: [{"@id": "https://api.nuget.org/v3-flatcontainer/", "@type": "PackageBaseAddress/3.0.0"}],
+        }),
+      },
   );
   const sink = new InMemoryLoggerSink();
   let now = 0;
@@ -361,14 +369,14 @@ describe("dotnetDoctorModule", () => {
     expect(host?.rootCause).toBeDefined();
   });
 
-  it("warns dotnet.host on an architecture mismatch", async () => {
+  it("fails dotnet.host on an architecture mismatch", async () => {
     const fixture = await createDotnetFixture();
     fixture.setResponse({command: "dotnet", args: ["--info"]}, commandResult({stdout: dotnetInfoOutput({architecture: "arm64"})}));
 
     const results = await dotnetDoctorModule.run(fixture.context);
 
     const host = results.find(({id}) => id === "dotnet.host");
-    expect(host?.status).toBe("warn");
+    expect(host?.status).toBe("fail");
     expect(host?.evidence.join("\n")).toContain("arm64");
   });
 
@@ -530,5 +538,43 @@ describe("dotnetDoctorModule", () => {
     const nugetFeed = results.find(({id}) => id === "dotnet.nuget-feed");
     expect(nugetFeed?.status).toBe("warn");
     expect(nugetFeed?.evidence.join("\n")).toContain("503");
+  });
+
+  it("warns dotnet.nuget-feed on malformed successful content", async () => {
+    const fixture = await createDotnetFixture({
+      networkResult: {status: "reachable", statusCode: 200, durationMs: 2, body: "not-json"},
+    });
+
+    const results = await dotnetDoctorModule.run(fixture.context);
+
+    const nugetFeed = results.find(({id}) => id === "dotnet.nuget-feed");
+    expect(nugetFeed?.status).toBe("warn");
+    expect(nugetFeed?.evidence).not.toEqual([]);
+    expect(nugetFeed?.fixes).not.toEqual([]);
+    expect([nugetFeed?.rootCause !== undefined, (nugetFeed?.potentialCauses ?? []).length > 0].filter(Boolean)).toHaveLength(1);
+  });
+
+  it("warns dotnet.nuget-feed when the successful response has no body", async () => {
+    const fixture = await createDotnetFixture({
+      networkResult: {status: "reachable", statusCode: 200, durationMs: 2},
+    });
+
+    const results = await dotnetDoctorModule.run(fixture.context);
+
+    const nugetFeed = results.find(({id}) => id === "dotnet.nuget-feed");
+    expect(nugetFeed?.status).toBe("warn");
+    expect(nugetFeed?.evidence).not.toEqual([]);
+    expect(nugetFeed?.fixes).not.toEqual([]);
+  });
+
+  it("warns dotnet.nuget-feed when the successful response body lacks a resources array", async () => {
+    const fixture = await createDotnetFixture({
+      networkResult: {status: "reachable", statusCode: 200, durationMs: 2, body: JSON.stringify({version: "3.0.0"})},
+    });
+
+    const results = await dotnetDoctorModule.run(fixture.context);
+
+    const nugetFeed = results.find(({id}) => id === "dotnet.nuget-feed");
+    expect(nugetFeed?.status).toBe("warn");
   });
 });

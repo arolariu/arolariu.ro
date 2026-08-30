@@ -130,6 +130,7 @@ export interface DiagnosticNetworkResult {
   readonly statusCode?: number;
   readonly durationMs: number;
   readonly error?: string;
+  readonly body?: string;
 }
 
 /** Read-only HTTP probe contract for doctor modules. */
