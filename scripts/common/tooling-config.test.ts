@@ -5,17 +5,16 @@
  */
 
 import {mkdir, mkdtemp, readFile, readdir, rm, stat, writeFile} from "node:fs/promises";
+import {tmpdir} from "node:os";
 import {dirname, join} from "node:path";
-import {fileURLToPath} from "node:url";
 import {afterEach, beforeEach, describe, expect, it} from "vitest";
 import {mergeToolingConfig, parseToolingConfig, readToolingConfig, sha256File, writeToolingConfig} from "./tooling-config.ts";
 
-const testDirectory = dirname(fileURLToPath(import.meta.url));
 const temporaryRoots: string[] = [];
 let configPath: string;
 
 beforeEach(async () => {
-  const root = await mkdtemp(join(testDirectory, ".tooling-config-test-"));
+  const root = await mkdtemp(join(tmpdir(), "arolariu-tooling-config-test-"));
   temporaryRoots.push(root);
   configPath = join(root, ".arolariu", "tooling.local.json");
 });

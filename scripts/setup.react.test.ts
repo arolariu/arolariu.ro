@@ -4,16 +4,34 @@
  * @module scripts.setup.react.test
  */
 
-import {resolve} from "node:path";
-import {afterEach, describe, expect, it, vi} from "vitest";
+import {mkdtemp, readFile, readdir, rm, writeFile} from "node:fs/promises";
+import {tmpdir} from "node:os";
+import {join, resolve} from "node:path";
+import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 
 import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "./common/logger.ts";
 import type {CommandResult, CommandRunner, CommandSpec} from "./common/process.ts";
 import {createRepositoryPaths} from "./common/repository-paths.ts";
 import type {PackageRequirement, RepositoryRequirements} from "./common/requirements.ts";
 import {getExpectedTaxonomyArtifactPaths} from "./generate.artifacts.ts";
-import {createReactSetupPhase, reactSetupPhase, type ReactSetupDependencies} from "./setup.react.ts";
+import {createReactSetupPhase, reactSetupPhase, writeTextFileAtomically, type ReactSetupDependencies} from "./setup.react.ts";
 import type {SetupAction, SetupActionDisposition, SetupActionExecutor, SetupContext, SetupOptions} from "./setup.types.ts";
+
+const filesystemFailures = vi.hoisted((): {rename?: Readonly<{path: string; code: string}>} => ({}));
+
+vi.mock("node:fs/promises", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("node:fs/promises")>();
+  return {
+    ...actual,
+    rename: (...args: unknown[]) => {
+      const failure = filesystemFailures.rename;
+      if (failure !== undefined && String(args[1]) === failure.path) {
+        return Promise.reject(Object.assign(new Error(`${failure.code}: simulated rename failure`), {code: failure.code}));
+      }
+      return Reflect.apply(actual.rename, actual, args);
+    },
+  };
+});
 
 const paths = createRepositoryPaths(resolve("C:\\fixture\\arolariu.ro"));
 const packageVersions = new Map<string, string>([
@@ -349,6 +367,44 @@ function createHarness(
 afterEach(() => {
   vi.restoreAllMocks();
   vi.doUnmock("@azure/identity");
+});
+
+describe("writeTextFileAtomically", () => {
+  let root: string;
+
+  beforeEach(async () => {
+    delete filesystemFailures.rename;
+    root = await mkdtemp(join(tmpdir(), "arolariu-setup-react-env-"));
+  });
+
+  afterEach(async () => {
+    delete filesystemFailures.rename;
+    await rm(root, {recursive: true, force: true});
+  });
+
+  it("replaces the destination file atomically with no leftover temporary sibling", async () => {
+    const target = join(root, ".env");
+    await writeFile(target, "EXISTING=1\n", "utf8");
+
+    await writeTextFileAtomically(target, "EXISTING=1\nADDED=2\n", 0o600);
+
+    await expect(readFile(target, "utf8")).resolves.toBe("EXISTING=1\nADDED=2\n");
+    await expect(readdir(root)).resolves.toEqual([".env"]);
+  });
+
+  it("preserves the original file content and removes the temporary file when rename fails", async () => {
+    const target = join(root, ".env");
+    const originalContent = "CLERK_SECRET_KEY=sk_test_original\n";
+    await writeFile(target, originalContent, "utf8");
+    filesystemFailures.rename = {path: target, code: "EPERM"};
+
+    await expect(writeTextFileAtomically(target, "CLERK_SECRET_KEY=sk_test_original\nADDED=2\n", 0o600)).rejects.toThrow(
+      /simulated rename failure/,
+    );
+
+    await expect(readFile(target, "utf8")).resolves.toBe(originalContent);
+    await expect(readdir(root)).resolves.toEqual([".env"]);
+  });
 });
 
 describe("React setup public contract", () => {

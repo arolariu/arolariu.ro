@@ -35,7 +35,7 @@ interface InfrastructureSetupDependencies {
   readonly interactive: boolean;
   readonly readConfig: (path: string) => Promise<ToolingConfigReadResult>;
   readonly writeConfig: (path: string, config: Readonly<ToolingConfigV1>) => Promise<void>;
-  readonly inspectPorts: (ports: readonly number[]) => Promise<readonly PortState[]>;
+  readonly inspectPorts: (ports: readonly number[], runner: CommandRunner) => Promise<readonly PortState[]>;
   readonly inspectFile: (path: string) => Promise<FileKind>;
   readonly createDirectory: (path: string) => Promise<void>;
 }
@@ -49,6 +49,18 @@ const SELECT_ENGINE_ACTION = "npm run setup -- --engine rancher|podman";
 const MKCERT_MANUAL_URL = "https://github.com/FiloSottile/mkcert#installation";
 const MKCERT_MANUAL_ACTION = `Install mkcert from ${MKCERT_MANUAL_URL}, then rerun setup.`;
 const SQL_PASSWORD_ENVIRONMENT_KEY = "MSSQL_SA_PASSWORD";
+
+/**
+ * Default timeout applied directly to listener-lookup probe commands.
+ *
+ * @remarks
+ * Matches the shared setup runner's default capture/probe timeout
+ * (`scripts/setup.ts`). Applied explicitly here so every listener-lookup
+ * child process is bounded even when `inspectRequiredPorts` is called
+ * directly with a bare runner, in addition to whatever timeout a composed
+ * phase runner would otherwise apply.
+ */
+const LISTENER_LOOKUP_TIMEOUT_MS = 120_000;
 
 function credentialIsolatedEnvironment(environment?: Readonly<NodeJS.ProcessEnv>): NodeJS.ProcessEnv {
   const isolated: NodeJS.ProcessEnv = {};
@@ -153,7 +165,7 @@ async function lookupWindowsListeners(port: number, runner: CommandRunner): Prom
       command: "powershell",
       args: ["-NoProfile", "-NonInteractive", "-Command", script],
     },
-    {env: credentialIsolatedEnvironment()},
+    {env: credentialIsolatedEnvironment(), timeoutMs: LISTENER_LOOKUP_TIMEOUT_MS},
   );
   if (!isSuccessfulCommand(result)) {
     throw new Error(commandFailure(result, `PowerShell exited with code ${result.code}.`));
@@ -185,7 +197,7 @@ async function lookupLsofFamily(port: number, family: ListenerFamily, runner: Co
       command: "lsof",
       args: ["-nP", "-a", `-i${family === "IPv4" ? "4" : "6"}TCP:${port}`, "-sTCP:LISTEN", "-Fpcn"],
     },
-    {env: credentialIsolatedEnvironment()},
+    {env: credentialIsolatedEnvironment(), timeoutMs: LISTENER_LOOKUP_TIMEOUT_MS},
   );
   if (!isSuccessfulCommand(result)) {
     if (
@@ -232,7 +244,7 @@ async function lookupPosixListeners(port: number, runner: CommandRunner): Promis
         command: "ps",
         args: ["-p", String(pid), "-o", "command="],
       },
-      {env: credentialIsolatedEnvironment()},
+      {env: credentialIsolatedEnvironment(), timeoutMs: LISTENER_LOOKUP_TIMEOUT_MS},
     );
     if (!isSuccessfulCommand(result) || result.stdout.trim() === "") {
       throw new Error(commandFailure(result, `ps exited with code ${result.code}.`));
@@ -565,7 +577,7 @@ async function inspectInfrastructurePorts(
   adapter: ContainerRuntimeAdapter,
   inventory: string,
 ): Promise<PortOutcome> {
-  const states = await dependencies.inspectPorts(requiredLocalPorts);
+  const states = await dependencies.inspectPorts(requiredLocalPorts, context.runner);
   const containerOwners = repositoryContainersByPort(inventory);
   const evidence: string[] = [];
   let blocked = false;
@@ -1214,13 +1226,22 @@ async function runInfrastructureSetup(context: SetupContext, dependencies: Infra
   }
 }
 
-const defaultDependencies: InfrastructureSetupDependencies = {
+/**
+ * Production infrastructure setup dependencies.
+ *
+ * @remarks
+ * Exported so focused tests can verify `inspectPorts` composes the supplied
+ * phase runner — rather than a detached default runner — with the bounded
+ * timeouts and verbose command evidence that runner applies, in addition to
+ * this module's own `MSSQL_SA_PASSWORD` isolation.
+ */
+export const defaultDependencies: InfrastructureSetupDependencies = {
   platform: process.platform,
   environment: process.env,
   interactive: process.stdin.isTTY === true,
   readConfig: readToolingConfig,
   writeConfig: writeToolingConfig,
-  inspectPorts: inspectRequiredPorts,
+  inspectPorts: (ports, runner) => inspectRequiredPorts(ports, {listenerRunner: runner}),
   inspectFile: inspectRegularFile,
   createDirectory: (path) => mkdir(path, {recursive: true}).then(() => undefined),
 };

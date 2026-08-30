@@ -5,6 +5,7 @@
  */
 
 import {dirname, isAbsolute, join, resolve} from "node:path";
+import {createServer} from "node:net";
 import {describe, expect, it, vi} from "vitest";
 
 import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "./common/logger.ts";
@@ -15,6 +16,7 @@ import type {ToolingConfigReadResult, ToolingConfigV1} from "./common/tooling-co
 import {requiredLocalPorts} from "./container-runtime/preflight.ts";
 import {
   createInfrastructureSetupPhase,
+  defaultDependencies,
   infrastructureSetupPhase,
   inspectRequiredPorts,
   selectContainerInstallationProposal,
@@ -925,6 +927,78 @@ describe("required port inspection", () => {
     );
     for (const [, options] of run.mock.calls) {
       expect(options?.env).toHaveProperty("MSSQL_SA_PASSWORD", undefined);
+    }
+  });
+
+  it("bounds the Windows listener lookup command with the default timeout", async () => {
+    const run = vi.fn<CommandRunner["run"]>(async () =>
+      commandResult({
+        stdout: JSON.stringify([
+          {localAddress: "127.0.0.1", family: "IPv4", pid: 710, processName: "node.exe", commandLine: "node bounded-listener.js"},
+        ]),
+      }),
+    );
+
+    await inspectRequiredPorts([SYNTHETIC_INSPECTION_PORT], {
+      platform: "win32",
+      probePort: async () => ({status: "occupied"}),
+      listenerRunner: {run},
+    });
+
+    expect(run).toHaveBeenCalledOnce();
+    expect(run.mock.calls[0]?.[1]).toMatchObject({timeoutMs: 120_000});
+  });
+
+  it("bounds POSIX listener lookup commands with the default timeout", async () => {
+    const run = vi.fn<CommandRunner["run"]>(async (command) => {
+      const key = commandKey(command);
+      if (key.includes("-i4TCP:")) {
+        return commandResult({stdout: `p711\ncnode\nn127.0.0.1:${SYNTHETIC_INSPECTION_PORT}\n`});
+      }
+      if (key.includes("-i6TCP:")) {
+        return commandResult({stdout: ""});
+      }
+      if (key === "ps -p 711 -o command=") {
+        return commandResult({stdout: "node bounded-posix-listener.js\n"});
+      }
+      return commandResult({code: 1, stderr: `Unexpected command: ${key}`});
+    });
+
+    await inspectRequiredPorts([SYNTHETIC_INSPECTION_PORT], {
+      platform: "linux",
+      probePort: async () => ({status: "occupied"}),
+      listenerRunner: {run},
+    });
+
+    expect(run.mock.calls.length).toBeGreaterThan(0);
+    for (const [, options] of run.mock.calls) {
+      expect(options).toMatchObject({timeoutMs: 120_000});
+    }
+  });
+
+  it("routes production listener lookups through the supplied phase runner instead of a detached default runner", async () => {
+    const port = 49_567;
+    const server = createServer();
+    await new Promise<void>((resolveListen, rejectListen) => {
+      server.once("error", rejectListen);
+      server.listen({host: "127.0.0.1", port, exclusive: true}, () => resolveListen());
+    });
+
+    try {
+      const run = vi.fn<CommandRunner["run"]>(async () => {
+        throw new Error("phase-runner-sentinel-invoked");
+      });
+
+      const [state] = await defaultDependencies.inspectPorts([port], {run});
+
+      expect(run.mock.calls.length).toBeGreaterThan(0);
+      expect(state).toMatchObject({
+        port,
+        available: false,
+        error: expect.stringContaining("phase-runner-sentinel-invoked"),
+      });
+    } finally {
+      await new Promise<void>((resolveClose) => server.close(() => resolveClose()));
     }
   });
 

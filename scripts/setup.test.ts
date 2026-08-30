@@ -4,16 +4,21 @@
  * @module scripts.setup.test
  */
 
+import {spawn} from "node:child_process";
+import {resolve} from "node:path";
 import {PassThrough} from "node:stream";
+import {fileURLToPath} from "node:url";
 import {describe, expect, it, vi} from "vitest";
 
 import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "./common/logger.ts";
 import type {CommandRunner} from "./common/process.ts";
 import {createTerminalPromptProvider, type PromptProvider} from "./common/prompts.ts";
-import {createSetupActionExecutor, main, parseSetupOptions, runSetup, setupPhases} from "./setup.ts";
+import {createRepositoryPaths, type RepositoryPaths} from "./common/repository-paths.ts";
+import type {RepositoryRequirements} from "./common/requirements.ts";
+import {createSetupActionExecutor, main, parseSetupOptions, runSetup, setupPhases, type SetupDependencies} from "./setup.ts";
 import type {SetupAction, SetupContext, SetupOptions, SetupPhaseDefinition, SetupPhaseResult, SetupStatus} from "./setup.types.ts";
 
-function createLogger(): Readonly<{
+function createLogger(verbose?: boolean): Readonly<{
   logger: MonorepositoryConsoleLogger;
   sink: InMemoryLoggerSink;
 }> {
@@ -21,8 +26,47 @@ function createLogger(): Readonly<{
   const logger = new MonorepositoryConsoleLogger("setup", {
     color: false,
     sink,
+    ...(verbose === undefined ? {} : {verbose}),
   });
   return {logger, sink};
+}
+
+/** Fixed repository paths so orchestrator tests never resolve the live checkout. */
+const FIXED_REPOSITORY_PATHS: RepositoryPaths = createRepositoryPaths(resolve("C:\\fixture\\arolariu.ro"));
+
+/** Fixed valid requirements so orchestrator tests never read live manifests. */
+const FIXED_REPOSITORY_REQUIREMENTS: RepositoryRequirements = {
+  node: {major: 24, minor: 0, patch: 0},
+  npm: {major: 11, minor: 0, patch: 0},
+  dotnet: {major: 10, minor: 0, patch: 0},
+  python: {major: 3, minor: 12, patch: 0},
+  packages: new Map(),
+};
+
+/**
+ * Fixed path/requirements seam shared by every {@link runSetup} test.
+ *
+ * @remarks
+ * Every orchestrator test must inject deterministic repository paths and a
+ * valid requirements result so it never reads live manifests or local
+ * tooling configuration (see F8 in the plan-wide remediation brief).
+ */
+function fixedRuntimeDependencies(): Pick<SetupDependencies, "resolveRepositoryPaths" | "loadRepositoryRequirements"> {
+  return {
+    resolveRepositoryPaths: () => FIXED_REPOSITORY_PATHS,
+    loadRepositoryRequirements: async () => ({status: "valid", requirements: FIXED_REPOSITORY_REQUIREMENTS}),
+  };
+}
+
+/**
+ * Runs the orchestrator with the shared fixed path/requirements seam applied.
+ *
+ * @param setupOptions - Parsed setup options for this run.
+ * @param dependencies - Additional boundary replacements for this run.
+ * @returns The same result {@link runSetup} resolves with.
+ */
+function runSetupForTest(setupOptions: SetupOptions, dependencies: Readonly<Partial<SetupDependencies>>): ReturnType<typeof runSetup> {
+  return runSetup(setupOptions, {...fixedRuntimeDependencies(), ...dependencies});
 }
 
 function createPrompts(confirmResult: boolean = true): Readonly<{
@@ -286,7 +330,7 @@ describe("runSetup", () => {
     const {logger, sink} = createLogger();
     const phases = [stubPhase("a"), stubPhase("b", {dependsOn: ["a"]})];
 
-    const {exitCode, results} = await runSetup(options(), {phases, logger, prompts, runner: noopRunner});
+    const {exitCode, results} = await runSetupForTest(options(), {phases, logger, prompts, runner: noopRunner});
 
     expect(exitCode).toBe(0);
     expect(results.map((result) => result.status)).toEqual(["succeeded", "succeeded"]);
@@ -305,7 +349,7 @@ describe("runSetup", () => {
       stubPhase("workspace.generators", {dependsOn: ["workspace.root-dependencies"], run: generatorsRun}),
     ];
 
-    const {exitCode, results} = await runSetup(options({dryRun: true}), {phases, logger, prompts, runner: noopRunner});
+    const {exitCode, results} = await runSetupForTest(options({dryRun: true}), {phases, logger, prompts, runner: noopRunner});
 
     expect(generatorsRun).toHaveBeenCalledOnce();
     expect(results.find(({id}) => id === "workspace.generators")).toMatchObject({status: "succeeded"});
@@ -323,7 +367,7 @@ describe("runSetup", () => {
       stubPhase("infrastructure", {run: infrastructureRun}),
     ];
 
-    const {exitCode, results} = await runSetup(options(), {phases, logger, prompts, runner: noopRunner});
+    const {exitCode, results} = await runSetupForTest(options(), {phases, logger, prompts, runner: noopRunner});
 
     expect(pythonRun).toHaveBeenCalledOnce();
     expect(infrastructureRun).toHaveBeenCalledOnce();
@@ -344,7 +388,7 @@ describe("runSetup", () => {
       stubPhase("svelte", {dependsOn: ["workspace.root-dependencies"]}),
     ];
 
-    const {results} = await runSetup(options(), {phases, logger, prompts, runner: noopRunner});
+    const {results} = await runSetupForTest(options(), {phases, logger, prompts, runner: noopRunner});
 
     expect(results.find(({id}) => id === "workspace.generators")).toMatchObject({
       status: "skipped",
@@ -375,7 +419,7 @@ describe("runSetup", () => {
       stubPhase("svelte", {dependsOn: ["workspace.root-dependencies"], run: svelteRun}),
     ];
 
-    const {results} = await runSetup(options(), {phases, logger, prompts, runner: noopRunner});
+    const {results} = await runSetupForTest(options(), {phases, logger, prompts, runner: noopRunner});
 
     expect(reactRun).toHaveBeenCalledOnce();
     expect(svelteRun).toHaveBeenCalledOnce();
@@ -392,7 +436,7 @@ describe("runSetup", () => {
       }),
     ];
 
-    const {exitCode, results} = await runSetup(options(), {phases, logger, prompts, runner: noopRunner});
+    const {exitCode, results} = await runSetupForTest(options(), {phases, logger, prompts, runner: noopRunner});
 
     expect(exitCode).toBe(0);
     expect(results[0]).toMatchObject({status: "degraded"});
@@ -403,7 +447,7 @@ describe("runSetup", () => {
     const {logger} = createLogger();
     const phases = [stubPhase("dotnet", {run: () => Promise.resolve(phaseResult("dotnet", "failed"))})];
 
-    const {exitCode} = await runSetup(options(), {phases, logger, prompts, runner: noopRunner});
+    const {exitCode} = await runSetupForTest(options(), {phases, logger, prompts, runner: noopRunner});
 
     expect(exitCode).toBe(1);
   });
@@ -417,7 +461,7 @@ describe("runSetup", () => {
       }),
     ];
 
-    await runSetup(options(), {phases, logger, prompts, runner: noopRunner});
+    await runSetupForTest(options(), {phases, logger, prompts, runner: noopRunner});
 
     const rendered = sink.records.map((record) => record.text).join("\n");
     expect(rendered).toContain("The .NET SDK is ready. (42ms)");
@@ -429,7 +473,7 @@ describe("runSetup", () => {
     const interruption = new DOMException("The command was interrupted", "AbortError");
     const phases = [stubPhase("dotnet", {run: () => Promise.reject(interruption)})];
 
-    await expect(runSetup(options(), {phases, logger, prompts, runner: noopRunner})).rejects.toBe(interruption);
+    await expect(runSetupForTest(options(), {phases, logger, prompts, runner: noopRunner})).rejects.toBe(interruption);
   });
 
   it("converts an ordinary thrown exception into a failed result and continues with independent phases", async () => {
@@ -445,7 +489,7 @@ describe("runSetup", () => {
       stubPhase("python", {run: pythonRun}),
     ];
 
-    const {exitCode, results} = await runSetup(options(), {phases, logger, prompts, runner: noopRunner});
+    const {exitCode, results} = await runSetupForTest(options(), {phases, logger, prompts, runner: noopRunner});
 
     expect(pythonRun).toHaveBeenCalledOnce();
     expect(results.find(({id}) => id === "dotnet")).toMatchObject({
@@ -460,12 +504,132 @@ describe("runSetup", () => {
     const {logger} = createLogger();
     const phases = [stubPhase("react", {dependsOn: ["workspace.root-dependencies"]})];
 
-    const {results} = await runSetup(options(), {phases, logger, prompts, runner: noopRunner});
+    const {results} = await runSetupForTest(options(), {phases, logger, prompts, runner: noopRunner});
 
     expect(results[0]).toMatchObject({
       status: "skipped",
       summary: expect.stringContaining("workspace.root-dependencies"),
     });
+  });
+
+  it("emits verbose dependency-block reasoning naming the unmet dependency and its status", async () => {
+    const {prompts} = createPrompts();
+    const {logger, sink} = createLogger(true);
+    const phases = [
+      stubPhase("workspace.root-dependencies", {
+        run: () => Promise.resolve(phaseResult("workspace.root-dependencies", "failed", {summary: "npm ci failed."})),
+      }),
+      stubPhase("workspace.generators", {dependsOn: ["workspace.root-dependencies"]}),
+    ];
+
+    await runSetupForTest(options(), {phases, logger, prompts, runner: noopRunner});
+
+    const rendered = sink.records.map((record) => record.text).join("\n");
+    expect(rendered).toContain("🐛");
+    expect(rendered).toMatch(/\[arolariu::setup::workspace\.generators]/);
+    expect(rendered).toContain("workspace.root-dependencies");
+    expect(rendered).toMatch(/status 'failed'/);
+  });
+
+  it("does not emit debug-level dependency-block reasoning in normal mode", async () => {
+    const {prompts} = createPrompts();
+    const {logger, sink} = createLogger(false);
+    const phases = [
+      stubPhase("workspace.root-dependencies", {
+        run: () => Promise.resolve(phaseResult("workspace.root-dependencies", "failed", {summary: "npm ci failed."})),
+      }),
+      stubPhase("workspace.generators", {dependsOn: ["workspace.root-dependencies"]}),
+    ];
+
+    await runSetupForTest(options(), {phases, logger, prompts, runner: noopRunner});
+
+    const rendered = sink.records.map((record) => record.text).join("\n");
+    expect(rendered).not.toContain("🐛");
+  });
+});
+
+describe("phase command execution", () => {
+  it("does not emit command evidence in normal mode", async () => {
+    const {prompts} = createPrompts();
+    const {logger, sink} = createLogger(false);
+    const run = vi.fn<CommandRunner["run"]>(async () => ({code: 0, stdout: "", stderr: "", durationMs: 1, timedOut: false}));
+    const phases = [
+      stubPhase("dotnet", {
+        run: async (context) => {
+          await context.runner.run({command: "dotnet", args: ["--version"]});
+          return phaseResult("dotnet", "succeeded");
+        },
+      }),
+    ];
+
+    await runSetupForTest(options({verbose: false}), {phases, logger, prompts, runner: {run}});
+
+    expect(sink.records.some((record) => record.text.includes("dotnet --version"))).toBe(false);
+  });
+
+  it("emits formatted command evidence in verbose mode without stdin or environment values", async () => {
+    const {prompts} = createPrompts();
+    const {logger, sink} = createLogger(false);
+    const run = vi.fn<CommandRunner["run"]>(async () => ({code: 0, stdout: "", stderr: "", durationMs: 1, timedOut: false}));
+    const phases = [
+      stubPhase("dotnet", {
+        run: async (context) => {
+          await context.runner.run(
+            {command: "dotnet", args: ["user-secrets", "set"]},
+            {input: "super-secret-stdin-payload", env: {SOME_TOKEN: "super-secret-env-value"}},
+          );
+          return phaseResult("dotnet", "succeeded");
+        },
+      }),
+    ];
+
+    await runSetupForTest(options({verbose: true}), {phases, logger, prompts, runner: {run}});
+
+    const rendered = sink.records.map((record) => record.text).join("\n");
+    expect(rendered).toContain("$ dotnet user-secrets set");
+    expect(rendered).not.toContain("super-secret-stdin-payload");
+    expect(rendered).not.toContain("super-secret-env-value");
+  });
+
+  it.each([
+    ["no explicit output mode", undefined, 120_000],
+    ["capture", "capture" as const, 120_000],
+    ["tee", "tee" as const, 1_200_000],
+    ["inherit", "inherit" as const, 1_200_000],
+  ] as const)("bounds a command with %s with the default timeout %i", async (_case, output, expectedTimeoutMs) => {
+    const {prompts} = createPrompts();
+    const {logger} = createLogger(false);
+    const run = vi.fn<CommandRunner["run"]>(async () => ({code: 0, stdout: "", stderr: "", durationMs: 1, timedOut: false}));
+    const phases = [
+      stubPhase("dotnet", {
+        run: async (context) => {
+          await context.runner.run({command: "dotnet", args: ["--version"]}, output === undefined ? {} : {output});
+          return phaseResult("dotnet", "succeeded");
+        },
+      }),
+    ];
+
+    await runSetupForTest(options(), {phases, logger, prompts, runner: {run}});
+
+    expect(run).toHaveBeenCalledWith({command: "dotnet", args: ["--version"]}, expect.objectContaining({timeoutMs: expectedTimeoutMs}));
+  });
+
+  it("preserves an explicit caller timeout instead of applying a default", async () => {
+    const {prompts} = createPrompts();
+    const {logger} = createLogger(false);
+    const run = vi.fn<CommandRunner["run"]>(async () => ({code: 0, stdout: "", stderr: "", durationMs: 1, timedOut: false}));
+    const phases = [
+      stubPhase("dotnet", {
+        run: async (context) => {
+          await context.runner.run({command: "dotnet", args: ["--version"]}, {output: "tee", timeoutMs: 5_000});
+          return phaseResult("dotnet", "succeeded");
+        },
+      }),
+    ];
+
+    await runSetupForTest(options(), {phases, logger, prompts, runner: {run}});
+
+    expect(run).toHaveBeenCalledWith({command: "dotnet", args: ["--version"]}, expect.objectContaining({timeoutMs: 5_000}));
   });
 });
 
@@ -474,7 +638,69 @@ describe("main", () => {
     await expect(main(["--bogus", "--help"])).resolves.toBe(0);
   });
 
-  it("rejects on an invalid option instead of silently continuing", async () => {
-    await expect(main(["--bogus"])).rejects.toThrow(/unknown setup option/i);
+  it("returns 1 and renders the option error instead of silently continuing", async () => {
+    const {logger, sink} = createLogger();
+
+    await expect(main(["--bogus"], {logger})).resolves.toBe(1);
+
+    expect(sink.records.map((record) => record.text).join("\n")).toMatch(/unknown setup option/i);
+  });
+
+  it("returns 1 and renders every blocking reason for invalid repository requirements", async () => {
+    const {logger, sink} = createLogger();
+
+    const exitCode = await main([], {
+      logger,
+      ...fixedRuntimeDependencies(),
+      loadRepositoryRequirements: async () => ({status: "invalid", errors: ["reason one is blocking", "reason two is blocking"]}),
+    });
+
+    expect(exitCode).toBe(1);
+    const rendered = sink.records.map((record) => record.text).join("\n");
+    expect(rendered).toContain("reason one is blocking");
+    expect(rendered).toContain("reason two is blocking");
+  });
+
+  it("returns 130 and renders interruption when a phase aborts", async () => {
+    const {logger, sink} = createLogger();
+    const {prompts} = createPrompts();
+    const interruption = new DOMException("The command was interrupted", "AbortError");
+
+    const exitCode = await main([], {
+      logger,
+      prompts,
+      runner: noopRunner,
+      phases: [stubPhase("dotnet", {run: () => Promise.reject(interruption)})],
+      ...fixedRuntimeDependencies(),
+    });
+
+    expect(exitCode).toBe(130);
+    expect(sink.records.map((record) => record.text).join("\n")).toMatch(/interrupt/i);
+  });
+
+  it("emits a diagnostic and exits 1 for direct process invocation of an invalid option", async () => {
+    const setupEntrypoint = fileURLToPath(new URL("./setup.ts", import.meta.url));
+
+    const result = await new Promise<{code: number | null; output: string}>((resolveProcess, rejectProcess) => {
+      const child = spawn(process.execPath, [setupEntrypoint, "--bogus"], {
+        cwd: resolve(setupEntrypoint, "..", ".."),
+        stdio: ["ignore", "pipe", "pipe"],
+      });
+      let output = "";
+      child.stdout.on("data", (chunk: Buffer) => {
+        output += chunk.toString("utf8");
+      });
+      child.stderr.on("data", (chunk: Buffer) => {
+        output += chunk.toString("utf8");
+      });
+      child.once("error", rejectProcess);
+      child.once("close", (code) => {
+        resolveProcess({code, output});
+      });
+    });
+
+    expect(result.code).toBe(1);
+    expect(result.output.trim().length).toBeGreaterThan(0);
+    expect(result.output).toMatch(/unknown setup option/i);
   });
 });

@@ -4,8 +4,8 @@
  */
 
 import {mkdir, mkdtemp, rm, writeFile} from "node:fs/promises";
+import {tmpdir} from "node:os";
 import {dirname, join} from "node:path";
-import {fileURLToPath} from "node:url";
 import {afterEach, beforeEach, describe, expect, it} from "vitest";
 import {createRepositoryPaths, type RepositoryPaths} from "./repository-paths.ts";
 import {loadRepositoryRequirements, parseVersion, satisfiesMinimum} from "./requirements.ts";
@@ -31,7 +31,6 @@ interface PackageLockFixture {
   }>;
 }
 
-const testDirectory = dirname(fileURLToPath(import.meta.url));
 let fixtureRoot: string;
 let paths: RepositoryPaths;
 
@@ -82,7 +81,7 @@ async function writeValidFixture(): Promise<void> {
 }
 
 beforeEach(async () => {
-  fixtureRoot = await mkdtemp(join(testDirectory, ".requirements-test-"));
+  fixtureRoot = await mkdtemp(join(tmpdir(), "arolariu-requirements-test-"));
   paths = createRepositoryPaths(fixtureRoot);
   await writeValidFixture();
 });

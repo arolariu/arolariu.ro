@@ -193,6 +193,32 @@ describe("createTerminalPromptProvider", () => {
     expect(testTerminal.rawModes).toEqual([true, false]);
   });
 
+  it("classifies Ctrl+C as AbortError even when terminal finalization fails", async () => {
+    const testTerminal = createTestTerminal();
+    const originalWrite = testTerminal.output.write.bind(testTerminal.output);
+    let writeCount = 0;
+    Object.defineProperty(testTerminal.output, "write", {
+      value: (chunk: string | Uint8Array): boolean => {
+        writeCount++;
+        if (writeCount === 2) {
+          throw new Error("Terminal output unavailable.");
+        }
+        return originalWrite(chunk);
+      },
+    });
+    const {logger} = createLogger();
+    const prompts = createTerminalPromptProvider(logger, testTerminal.terminal);
+
+    const answer = prompts.secret("Token");
+    testTerminal.input.write("partial\u0003");
+
+    await expect(answer).rejects.toMatchObject({
+      name: "AbortError",
+      errors: [expect.objectContaining({name: "AbortError"}), expect.objectContaining({message: "Terminal output unavailable."})],
+    });
+    expect(testTerminal.rawModes).toEqual([true, false]);
+  });
+
   it("rejects an initial prompt-write failure after cleaning up terminal state", async () => {
     const testTerminal = createTestTerminal();
     const originalWrite = testTerminal.output.write.bind(testTerminal.output);

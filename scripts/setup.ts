@@ -14,7 +14,10 @@
  * ```
  */
 
-import {defaultCommandRunner, type CommandRunner} from "./common/process.ts";
+import {resolve} from "node:path";
+import {fileURLToPath} from "node:url";
+
+import {defaultCommandRunner, formatCommand, type CommandRunner, type CommandRunOptions} from "./common/process.ts";
 import {MonorepositoryConsoleLogger, type MonorepositoryLogger} from "./common/logger.ts";
 import {createTerminalPromptProvider, type PromptProvider} from "./common/prompts.ts";
 import {loadRepositoryRequirements, type RequirementLoadResult} from "./common/requirements.ts";
@@ -184,6 +187,52 @@ function formatDuration(durationMs: number): string {
   return `${Math.max(0, Math.round(durationMs))}ms`;
 }
 
+/** Default timeout for capture/probe commands without an explicit timeout. */
+const DEFAULT_PROBE_TIMEOUT_MS = 120_000;
+
+/** Default timeout for `tee`/`inherit` mutation and installation commands without an explicit timeout. */
+const DEFAULT_MUTATION_TIMEOUT_MS = 1_200_000;
+
+/**
+ * Resolves the default command timeout for an output mode.
+ *
+ * @param output - Requested command output mode.
+ * @returns {@link DEFAULT_MUTATION_TIMEOUT_MS} for `tee`/`inherit`; otherwise {@link DEFAULT_PROBE_TIMEOUT_MS}.
+ */
+function defaultCommandTimeoutMs(output: CommandRunOptions["output"]): number {
+  return output === "tee" || output === "inherit" ? DEFAULT_MUTATION_TIMEOUT_MS : DEFAULT_PROBE_TIMEOUT_MS;
+}
+
+/**
+ * Wraps a command runner with phase-scoped verbose command evidence and a bounded default timeout.
+ *
+ * @remarks
+ * Command evidence is rendered through {@link MonorepositoryLogger.command}
+ * only in verbose mode, and only ever includes the executable and its
+ * argument array — never stdin or environment values. An explicit caller
+ * timeout is always preserved; otherwise capture/probe commands receive
+ * {@link DEFAULT_PROBE_TIMEOUT_MS} and `tee`/`inherit` mutation or
+ * installation commands receive {@link DEFAULT_MUTATION_TIMEOUT_MS}.
+ *
+ * @param runner - Underlying command runner to delegate to.
+ * @param logger - Phase-scoped child logger that receives verbose command evidence.
+ * @param verbose - Whether command evidence is rendered.
+ * @returns A command runner bounded by the default timeout policy.
+ */
+function createPhaseCommandRunner(runner: CommandRunner, logger: MonorepositoryLogger, verbose: boolean): CommandRunner {
+  return {
+    run: (command, options = {}) => {
+      if (verbose) {
+        logger.command(formatCommand(command));
+      }
+      return runner.run(command, {
+        ...options,
+        timeoutMs: options.timeoutMs ?? defaultCommandTimeoutMs(options.output),
+      });
+    },
+  };
+}
+
 /**
  * Describes why a dependency did not satisfy a downstream phase.
  *
@@ -345,20 +394,24 @@ export async function runSetup(
 
     let result: SetupPhaseResult;
     if (unmetDependency !== undefined) {
+      const dependencyResult = resultById.get(unmetDependency);
       const startedAt = now();
+      phaseLogger.debug(`Dependency check for '${phase.title}': ${unmetDependencyEvidence(unmetDependency, dependencyResult)}`);
       result = {
         id: phase.id,
         status: "skipped",
         summary: `Skipped '${phase.title}' because dependency '${unmetDependency}' did not succeed.`,
-        evidence: [unmetDependencyEvidence(unmetDependency, resultById.get(unmetDependency))],
+        evidence: [unmetDependencyEvidence(unmetDependency, dependencyResult)],
         nextActions: [`Resolve '${unmetDependency}', then rerun setup.`],
         durationMs: Math.max(0, now() - startedAt),
       };
       blockerSkipIds.add(phase.id);
     } else {
       const startedAt = now();
+      const phaseRunner = createPhaseCommandRunner(runner, phaseLogger, options.verbose);
+      const phaseContext: SetupContext = {...context, runner: phaseRunner};
       try {
-        result = await phase.run(context);
+        result = await phase.run(phaseContext);
       } catch (error: unknown) {
         if (isInterrupted(error)) {
           throw error;
@@ -437,13 +490,24 @@ const HELP_LINES: readonly string[] = [
  * @remarks
  * `--help` is detected before options are parsed or any phase runs, so an
  * unsupported flag combined with `--help` never surfaces a parse error.
+ * Every other failure is classified and rendered through the logger before
+ * this function returns: an option/path/requirements error renders and
+ * returns `1`; an `AbortError` renders an interruption notice and returns
+ * `130`. {@link runSetup} itself still rethrows an `AbortError` unchanged so
+ * direct callers can distinguish interruption from failure.
  *
  * @param argv - Arguments following the setup entrypoint.
+ * @param dependencies - Optional boundary replacements, primarily for tests
+ * that must inject a deterministic logger, phases, or repository seam
+ * without reading the live checkout.
  * @returns Process exit code.
  */
-export async function main(argv: readonly string[] = process.argv.slice(2)): Promise<number> {
+export async function main(
+  argv: readonly string[] = process.argv.slice(2),
+  dependencies: Readonly<Partial<SetupDependencies>> = {},
+): Promise<number> {
   if (argv.includes("--help")) {
-    const logger = new MonorepositoryConsoleLogger("setup", {verbose: false});
+    const logger = dependencies.logger ?? new MonorepositoryConsoleLogger("setup", {verbose: false});
     logger.banner(["arolariu.ro repository setup"]);
     for (const line of HELP_LINES) {
       logger.line(line);
@@ -451,17 +515,37 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
     return 0;
   }
 
-  const options = parseSetupOptions(argv);
-  const {exitCode} = await runSetup(options);
-  return exitCode;
+  let options: SetupOptions;
+  try {
+    options = parseSetupOptions(argv);
+  } catch (error: unknown) {
+    const logger = dependencies.logger ?? new MonorepositoryConsoleLogger("setup", {verbose: false});
+    logger.error(errorMessage(error));
+    return 1;
+  }
+
+  const logger = dependencies.logger ?? new MonorepositoryConsoleLogger("setup", {verbose: options.verbose});
+  try {
+    const {exitCode} = await runSetup(options, {...dependencies, logger});
+    return exitCode;
+  } catch (error: unknown) {
+    if (isInterrupted(error)) {
+      logger.warn(`Setup was interrupted: ${errorMessage(error)}`);
+      return 130;
+    }
+    logger.error(errorMessage(error));
+    return 1;
+  }
 }
 
-if (import.meta.main) {
+const setupEntrypointPath = process.argv[1];
+if (setupEntrypointPath !== undefined && fileURLToPath(import.meta.url) === resolve(setupEntrypointPath)) {
   main()
     .then((exitCode) => {
       process.exitCode = exitCode;
     })
     .catch((error: unknown) => {
+      new MonorepositoryConsoleLogger("setup", {verbose: false}).error(errorMessage(error));
       process.exitCode = isInterrupted(error) ? 130 : 1;
     });
 }

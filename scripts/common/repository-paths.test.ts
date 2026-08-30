@@ -4,12 +4,12 @@
  */
 
 import {mkdir, mkdtemp, rm, writeFile} from "node:fs/promises";
+import {tmpdir} from "node:os";
 import {dirname, join, resolve} from "node:path";
-import {fileURLToPath, pathToFileURL} from "node:url";
+import {pathToFileURL} from "node:url";
 import {afterEach, describe, expect, it} from "vitest";
 import {createRepositoryPaths, resolveRepositoryPaths} from "./repository-paths.ts";
 
-const testDirectory = dirname(fileURLToPath(import.meta.url));
 const temporaryRoots: string[] = [];
 
 afterEach(async () => {
@@ -48,7 +48,7 @@ describe("createRepositoryPaths", () => {
 
 describe("resolveRepositoryPaths", () => {
   it("discovers a verified repository root from a nested module URL", async () => {
-    const root = await mkdtemp(join(testDirectory, ".repository-paths-test-"));
+    const root = await mkdtemp(join(tmpdir(), "arolariu-repository-paths-test-"));
     temporaryRoots.push(root);
     const nestedModule = join(root, "scripts", "nested", "module.ts");
 
@@ -62,13 +62,15 @@ describe("resolveRepositoryPaths", () => {
   });
 
   it("does not mistake a nearer package for the repository root", async () => {
-    const root = await mkdtemp(join(testDirectory, ".repository-paths-test-"));
+    const root = await mkdtemp(join(tmpdir(), "arolariu-repository-paths-test-"));
     temporaryRoots.push(root);
     const nestedModule = join(root, "scripts", "nested", "module.ts");
 
     await mkdir(dirname(nestedModule), {recursive: true});
-    await writeFile(join(root, "package.json"), JSON.stringify({name: "@example/not-the-repository"}), "utf8");
+    await writeFile(join(root, "package.json"), JSON.stringify({name: "@arolariu/monorepo"}), "utf8");
+    await writeFile(join(root, "scripts", "package.json"), JSON.stringify({name: "@example/not-the-repository"}), "utf8");
+    await writeFile(nestedModule, "", "utf8");
 
-    expect(resolveRepositoryPaths(pathToFileURL(nestedModule).href).root).toBe(resolve(testDirectory, "..", ".."));
+    expect(resolveRepositoryPaths(pathToFileURL(nestedModule).href).root).toBe(root);
   });
 });

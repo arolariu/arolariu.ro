@@ -3,8 +3,9 @@
  * @module scripts.setup.react
  */
 
-import {chmod, readFile, stat, writeFile} from "node:fs/promises";
-import {resolve} from "node:path";
+import {randomBytes} from "node:crypto";
+import {chmod, readFile, rename, rm, stat, writeFile} from "node:fs/promises";
+import {basename, dirname, resolve} from "node:path";
 
 import type {CommandResult, CommandSpec} from "./common/process.ts";
 import {appendMissingEnvironmentValues, parseEnvironmentFile} from "./generate.env.ts";
@@ -152,14 +153,46 @@ function phaseResult(context: SetupContext, startedAt: number, input: Omit<Setup
   };
 }
 
+/**
+ * Writes text content through a temporary sibling file and an atomic rename.
+ *
+ * @remarks
+ * Mirrors the temporary-sibling-plus-rename pattern in
+ * `scripts/common/tooling-config.ts` (without depending on that module) so a
+ * crash, interruption, or full disk cannot leave a truncated or empty
+ * destination file — a real risk for `sites/arolariu.ro/.env`, which in
+ * practice holds the developer's Clerk secret key. The temporary file is
+ * created exclusively (`wx`) in the destination's own directory so the
+ * rename is same-filesystem, and it is removed if the write or rename fails,
+ * leaving any existing destination file byte-for-byte untouched.
+ *
+ * @param path - Destination file path.
+ * @param content - UTF-8 text content to write.
+ * @param mode - POSIX file mode applied to the temporary file before rename.
+ */
+export async function writeTextFileAtomically(path: string, content: string, mode: number): Promise<void> {
+  const parent = dirname(path);
+  const temporaryPath = resolve(parent, `${basename(path)}.${process.pid}.${randomBytes(8).toString("hex")}.tmp`);
+
+  try {
+    await writeFile(temporaryPath, content, {encoding: "utf8", flag: "wx", mode});
+    await rename(temporaryPath, path);
+  } catch (error) {
+    try {
+      await rm(temporaryPath, {force: true});
+    } catch {
+      // Preserve the original write/rename failure and never broaden cleanup.
+    }
+    throw error;
+  }
+}
+
 function defaultDependencies(): ReactSetupDependencies {
   return {
     platform: process.platform,
     interactive: process.stdin.isTTY === true && process.stdout.isTTY === true,
     readTextFile: (path) => readFile(path, "utf8"),
-    writeTextFile: async (path, content, mode) => {
-      await writeFile(path, content, {encoding: "utf8", mode});
-    },
+    writeTextFile: (path, content, mode) => writeTextFileAtomically(path, content, mode),
     setFileMode: async (path, mode) => {
       await chmod(path, mode);
     },

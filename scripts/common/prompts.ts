@@ -55,6 +55,10 @@ function cancellationError(): Error {
   return error;
 }
 
+function isAbortError(error: unknown): boolean {
+  return error instanceof Error && error.name === "AbortError";
+}
+
 function nonInteractiveError(kind: string): Error {
   return new Error(`Cannot request ${kind} without an interactive terminal. Re-run setup in a TTY.`);
 }
@@ -169,7 +173,14 @@ function readSecret(terminal: PromptTerminal, message: string): Promise<string> 
 
       if ("error" in result) {
         if (finalizationErrors.length > 0) {
-          reject(new AggregateError([result.error, ...finalizationErrors], "Secret prompt failed during terminal finalization."));
+          const aggregate = new AggregateError([result.error, ...finalizationErrors], "Secret prompt failed during terminal finalization.");
+          if (isAbortError(result.error)) {
+            // Preserve interruption classification: a concurrent finalization
+            // failure must not downgrade a cancelled prompt into an ordinary
+            // error that the orchestrator would treat as a phase failure.
+            aggregate.name = "AbortError";
+          }
+          reject(aggregate);
           return;
         }
         reject(result.error);
