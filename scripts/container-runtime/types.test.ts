@@ -3,30 +3,38 @@
  * @module scripts/container-runtime/types.test
  */
 
-import {afterEach, describe, expect, it, vi} from "vitest";
+import {afterEach, describe, expect, it} from "vitest";
+import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "../common/logger.ts";
 import {exitWithError} from "./types.ts";
 
 describe("exitWithError", () => {
   afterEach(() => {
-    vi.restoreAllMocks();
     process.exitCode = undefined;
   });
 
   it("prints Error messages and sets exit code 1", () => {
-    const error = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const sink = new InMemoryLoggerSink();
+    const logger = new MonorepositoryConsoleLogger("test", {color: false, sink});
 
-    exitWithError(new Error("bad runtime"));
+    exitWithError(new Error("bad runtime"), logger);
 
-    expect(error).toHaveBeenCalledWith("bad runtime");
+    expect(sink.records).toEqual([
+      {
+        stream: "stderr",
+        text: "[arolariu::test] ⛔ bad runtime",
+        write: false,
+      },
+    ]);
     expect(process.exitCode).toBe(1);
   });
 
   it("prints non-Error values and sets exit code 1", () => {
-    const error = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const sink = new InMemoryLoggerSink();
+    const logger = new MonorepositoryConsoleLogger("test", {color: false, sink});
 
-    exitWithError("bad runtime");
+    exitWithError("bad runtime", logger);
 
-    expect(error).toHaveBeenCalledWith("bad runtime");
+    expect(sink.records[0]?.text).toContain("bad runtime");
     expect(process.exitCode).toBe(1);
   });
 });

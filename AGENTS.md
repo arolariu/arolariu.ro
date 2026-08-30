@@ -39,7 +39,6 @@ instead of copying version values.
 
 ```powershell
 # First-time setup
-npm install
 npm run setup
 
 # Aspire local development with an explicit container engine

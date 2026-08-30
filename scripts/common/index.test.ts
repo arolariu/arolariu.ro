@@ -1,13 +1,14 @@
 /**
- * @fileoverview Tests for the inline spinner and runWithSpinner utility.
+ * @fileoverview Tests for logger-backed shared presentation utilities.
  * @module scripts/common/index.test
  *
  * @remarks
- * createSpinner is module-private; all behaviour is exercised through the
- * exported runWithSpinner, which is the real public contract.
+ * All behavior is exercised through the exported public contracts with an
+ * in-memory logger sink.
  */
 
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
+import {InMemoryLoggerSink, MonorepositoryConsoleLogger, type MonorepositoryLogger} from "./logger.ts";
 import {
   formatBytes,
   formatDurationMs,
@@ -32,16 +33,14 @@ function node(code: string): [string, string[]] {
   return [process.execPath, ["-e", code]];
 }
 
-/** Silence console.log/error during a block to keep test output pristine. */
-function silenceConsole(): {restore: () => void} {
-  const logSpy = vi.spyOn(console, "log").mockImplementation(() => undefined);
-  const errSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
-  return {
-    restore() {
-      logSpy.mockRestore();
-      errSpy.mockRestore();
-    },
-  };
+function createTestLogger(): Readonly<{sink: InMemoryLoggerSink; logger: MonorepositoryLogger}> {
+  const sink = new InMemoryLoggerSink();
+  const logger = new MonorepositoryConsoleLogger("test", {
+    color: false,
+    sink,
+  });
+
+  return {sink, logger};
 }
 
 // ---------------------------------------------------------------------------
@@ -50,38 +49,23 @@ function silenceConsole(): {restore: () => void} {
 
 describe("non-TTY path keeps CI logs clean", () => {
   let originalIsTTY: boolean | undefined;
-  let stdoutWrites: string[];
-  let writeSpy: ReturnType<typeof vi.spyOn>;
-  let consoleSilence: {restore: () => void};
 
   beforeEach(() => {
     originalIsTTY = process.stdout.isTTY;
-    // Force non-TTY to simulate CI
     Object.defineProperty(process.stdout, "isTTY", {value: false, configurable: true});
-
-    stdoutWrites = [];
-    writeSpy = vi.spyOn(process.stdout, "write").mockImplementation((chunk) => {
-      stdoutWrites.push(String(chunk));
-      return true;
-    });
-
-    consoleSilence = silenceConsole();
   });
 
   afterEach(() => {
     Object.defineProperty(process.stdout, "isTTY", {value: originalIsTTY, configurable: true});
-    writeSpy.mockRestore();
-    consoleSilence.restore();
   });
 
   it("emits no spinner frames or ANSI cursor escapes on non-TTY stdout", async () => {
+    const {sink, logger} = createTestLogger();
     const [cmd, args] = node("process.exit(0)");
-    await runWithSpinner(cmd, args, "test task");
+    await runWithSpinner(cmd, args, "test task", true, logger);
 
-    // No carriage-return / ANSI escape sequences should hit stdout.write in non-TTY mode
-    const hasSpinnerOutput = stdoutWrites.some(
-      (s) => s.includes("\r") || s.includes("\x1b["),
-    );
+    expect(sink.records.length).toBeGreaterThan(0);
+    const hasSpinnerOutput = sink.records.some((record) => record.text.includes("\r") || record.text.includes("\x1b["));
     expect(hasSpinnerOutput).toBe(false);
   });
 });
@@ -91,51 +75,47 @@ describe("non-TTY path keeps CI logs clean", () => {
 // ---------------------------------------------------------------------------
 
 describe("success and failure result shapes", () => {
-  let consoleSilence: {restore: () => void};
-
-  beforeEach(() => {
-    consoleSilence = silenceConsole();
-  });
-
-  afterEach(() => {
-    consoleSilence.restore();
-  });
-
   it("resolves with code 0 for a process that exits 0", async () => {
+    const {logger} = createTestLogger();
     const [cmd, args] = node("process.exit(0)");
-    const result = await runWithSpinner(cmd, args, "success test");
+    const result = await runWithSpinner(cmd, args, "success test", true, logger);
     expect(result.code).toBe(0);
   });
 
   it("resolves with non-zero code for a process that exits non-zero", async () => {
+    const {logger} = createTestLogger();
     const [cmd, args] = node("process.exit(42)");
-    const result = await runWithSpinner(cmd, args, "failure test");
+    const result = await runWithSpinner(cmd, args, "failure test", true, logger);
     expect(result.code).toBe(42);
   });
 
   it("captures stdout output in the result", async () => {
+    const {logger} = createTestLogger();
     const [cmd, args] = node("process.stdout.write('hello-from-child')");
-    const result = await runWithSpinner(cmd, args, "capture test");
+    const result = await runWithSpinner(cmd, args, "capture test", true, logger);
     expect(result.output).toContain("hello-from-child");
   });
 
   it("captures stderr in the output field on failure", async () => {
+    const {logger} = createTestLogger();
     const [cmd, args] = node("process.stderr.write('err-detail'); process.exit(1)");
-    const result = await runWithSpinner(cmd, args, "stderr capture test");
+    const result = await runWithSpinner(cmd, args, "stderr capture test", true, logger);
     expect(result.code).not.toBe(0);
     expect(result.output).toContain("err-detail");
   });
 
   it("hideOutput=false runs with inherited stdio and resolves code", async () => {
+    const {logger} = createTestLogger();
     const [cmd, args] = node("process.exit(0)");
-    const result = await runWithSpinner(cmd, args, "inherited stdio test", false);
+    const result = await runWithSpinner(cmd, args, "inherited stdio test", false, logger);
     expect(result.code).toBe(0);
     expect(result.output).toBe("");
   });
 
   it("hideOutput=false resolves non-zero exit code", async () => {
+    const {logger} = createTestLogger();
     const [cmd, args] = node("process.exit(3)");
-    const result = await runWithSpinner(cmd, args, "inherited stdio fail", false);
+    const result = await runWithSpinner(cmd, args, "inherited stdio fail", false, logger);
     expect(result.code).toBe(3);
   });
 });
@@ -146,44 +126,34 @@ describe("success and failure result shapes", () => {
 
 describe("timer cleanup after runWithSpinner resolves", () => {
   let originalIsTTY: boolean | undefined;
-  let consoleSilence: {restore: () => void};
-  let writeSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
     originalIsTTY = process.stdout.isTTY;
-    consoleSilence = silenceConsole();
-    writeSpy = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
   });
 
   afterEach(() => {
     Object.defineProperty(process.stdout, "isTTY", {value: originalIsTTY, configurable: true});
     vi.useRealTimers();
-    consoleSilence.restore();
-    writeSpy.mockRestore();
   });
 
   it("no pending intervals remain after a successful run (TTY path)", async () => {
-    // Force TTY so the spinner interval is actually created
     Object.defineProperty(process.stdout, "isTTY", {value: true, configurable: true});
-
+    const {logger} = createTestLogger();
     vi.useFakeTimers({shouldAdvanceTime: true});
 
-    // 200ms delay ensures the spinner interval fires at least once (every 80ms),
-    // covering the render() TTY write branch.
     const [cmd, args] = node("setTimeout(() => process.exit(0), 200)");
-    await runWithSpinner(cmd, args, "timer cleanup test");
+    await runWithSpinner(cmd, args, "timer cleanup test", true, logger);
 
-    // After stop() clears the interval there must be no pending timers
     expect(vi.getTimerCount()).toBe(0);
   });
 
   it("no pending intervals remain after a failed run (TTY path)", async () => {
     Object.defineProperty(process.stdout, "isTTY", {value: true, configurable: true});
-
+    const {logger} = createTestLogger();
     vi.useFakeTimers({shouldAdvanceTime: true});
 
     const [cmd, args] = node("process.exit(1)");
-    await runWithSpinner(cmd, args, "timer cleanup failure test");
+    await runWithSpinner(cmd, args, "timer cleanup failure test", true, logger);
 
     expect(vi.getTimerCount()).toBe(0);
   });
@@ -210,9 +180,7 @@ describe("runWithSpinner input validation", () => {
     // JSON.parse returns `any`, so assignment to string[] is valid without a cast.
     // This tests the runtime Array.isArray() guard.
     const notAnArray: string[] = JSON.parse('"not-an-array"');
-    await expect(runWithSpinner("echo", notAnArray, "spinner text")).rejects.toThrow(
-      /Arguments must be an array/,
-    );
+    await expect(runWithSpinner("echo", notAnArray, "spinner text")).rejects.toThrow(/Arguments must be an array/);
   });
 });
 
@@ -221,41 +189,18 @@ describe("runWithSpinner input validation", () => {
 // ---------------------------------------------------------------------------
 
 describe("spawn error handling", () => {
-  let consoleSilence: {restore: () => void};
-  let writeSpy: ReturnType<typeof vi.spyOn>;
+  it("resolves code 1, captures the message, and emits one logger error when command does not exist", async () => {
+    const {sink, logger} = createTestLogger();
+    const result = await runWithSpinner("definitely-nonexistent-binary-xyz-1234", [], "spawn error test", true, logger);
 
-  beforeEach(() => {
-    consoleSilence = silenceConsole();
-    writeSpy = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
-  });
-
-  afterEach(() => {
-    consoleSilence.restore();
-    writeSpy.mockRestore();
-  });
-
-  it("resolves code 1 and captures error message when command does not exist (hideOutput=true)", async () => {
-    const result = await runWithSpinner(
-      "definitely-nonexistent-binary-xyz-1234",
-      [],
-      "spawn error test",
-      true,
-    );
-    // Give Windows close event (fires after error event) time to run before
-    // afterEach restores the mocks — prevents stray console output in reporter.
-    await new Promise<void>((r) => { setTimeout(r, 50); });
     expect(result.code).toBe(1);
     expect(result.output).toBeTruthy();
+    expect(sink.records.filter((record) => record.text.includes("Error:"))).toHaveLength(1);
   });
 
   it("resolves code 1 when command does not exist (hideOutput=false)", async () => {
-    const result = await runWithSpinner(
-      "definitely-nonexistent-binary-xyz-1234",
-      [],
-      "spawn error test",
-      false,
-    );
-    await new Promise<void>((r) => { setTimeout(r, 50); });
+    const {logger} = createTestLogger();
+    const result = await runWithSpinner("definitely-nonexistent-binary-xyz-1234", [], "spawn error test", false, logger);
     expect(result.code).toBe(1);
   });
 });
@@ -336,38 +281,35 @@ describe("environment flags", () => {
 // ---------------------------------------------------------------------------
 
 describe("logWorkerSpawn", () => {
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
+  it("writes workerId and taskName through the logger", () => {
+    const {sink, logger} = createTestLogger();
 
-  it("calls console.log with workerId and taskName", () => {
-    const spy = vi.spyOn(console, "log").mockImplementation(() => undefined);
-    logWorkerSpawn(1, "packages");
-    expect(spy).toHaveBeenCalledOnce();
-    const msg: string = spy.mock.calls[0]?.[0] ?? "";
-    expect(msg).toContain("1");
-    expect(msg).toContain("packages");
+    logWorkerSpawn(1, "packages", logger);
+
+    expect(sink.records).toHaveLength(1);
+    expect(sink.records[0]?.text).toContain("Worker #1");
+    expect(sink.records[0]?.text).toContain("packages");
   });
 });
 
 describe("logWorkerComplete", () => {
-  afterEach(() => {
-    vi.restoreAllMocks();
+  it("writes a successful completion through the logger", () => {
+    const {sink, logger} = createTestLogger();
+
+    logWorkerComplete(2, "website", 2000, "success", logger);
+
+    expect(sink.records).toHaveLength(1);
+    expect(sink.records[0]?.text).toContain("Worker #2");
+    expect(sink.records[0]?.text).toContain("website");
   });
 
-  it("calls console.log with success status", () => {
-    const spy = vi.spyOn(console, "log").mockImplementation(() => undefined);
-    logWorkerComplete(2, "website", 2000, "success");
-    expect(spy).toHaveBeenCalledOnce();
-    const msg: string = spy.mock.calls[0]?.[0] ?? "";
-    expect(msg).toContain("2");
-    expect(msg).toContain("website");
-  });
+  it("writes an error completion through the logger", () => {
+    const {sink, logger} = createTestLogger();
 
-  it("calls console.log with error status", () => {
-    const spy = vi.spyOn(console, "log").mockImplementation(() => undefined);
-    logWorkerComplete(3, "api", 1000, "error");
-    expect(spy).toHaveBeenCalledOnce();
+    logWorkerComplete(3, "api", 1000, "error", logger);
+
+    expect(sink.records).toHaveLength(1);
+    expect(sink.records[0]?.text).toContain("❌");
   });
 });
 
@@ -376,37 +318,31 @@ describe("logWorkerComplete", () => {
 // ---------------------------------------------------------------------------
 
 describe("createProgressTracker", () => {
-  let writeSpy: ReturnType<typeof vi.spyOn>;
-  let logSpy: ReturnType<typeof vi.spyOn>;
-
-  beforeEach(() => {
-    writeSpy = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
-    logSpy = vi.spyOn(console, "log").mockImplementation(() => undefined);
-  });
-
-  afterEach(() => {
-    writeSpy.mockRestore();
-    logSpy.mockRestore();
-  });
-
   it("starts at 0 completed", () => {
-    const tracker = createProgressTracker(4);
+    const {logger} = createTestLogger();
+    const tracker = createProgressTracker(4, logger);
     expect(tracker.completed).toBe(0);
   });
 
   it("increments completed count", () => {
-    const tracker = createProgressTracker(4);
+    const {logger} = createTestLogger();
+    const tracker = createProgressTracker(4, logger);
     tracker.start();
     tracker.increment();
     tracker.increment();
     expect(tracker.completed).toBe(2);
   });
 
-  it("finish calls console.log", () => {
-    const tracker = createProgressTracker(4);
+  it("does not emit carriage returns for non-TTY progress", () => {
+    const {sink, logger} = createTestLogger();
+    const tracker = createProgressTracker(4, logger);
+
     tracker.start();
+    tracker.increment();
     tracker.finish();
-    expect(logSpy).toHaveBeenCalled();
+
+    expect(sink.records.length).toBeGreaterThan(0);
+    expect(sink.records.every((record) => !record.text.includes("\r"))).toBe(true);
   });
 });
 
@@ -415,23 +351,20 @@ describe("createProgressTracker", () => {
 // ---------------------------------------------------------------------------
 
 describe("printWorkerTimeline", () => {
-  let logSpy: ReturnType<typeof vi.spyOn>;
-
-  beforeEach(() => {
-    logSpy = vi.spyOn(console, "log").mockImplementation(() => undefined);
-  });
-
-  afterEach(() => {
-    logSpy.mockRestore();
-  });
-
   it("does nothing when passed an empty array", () => {
-    printWorkerTimeline([]);
-    expect(logSpy).not.toHaveBeenCalled();
+    const {sink, logger} = createTestLogger();
+
+    printWorkerTimeline([], logger);
+
+    expect(sink.records).toHaveLength(0);
   });
 
-  it("calls console.log at least once for a non-empty timeline", () => {
-    printWorkerTimeline([{target: "packages", durationMs: 2000}]);
-    expect(logSpy).toHaveBeenCalled();
+  it("writes a non-empty timeline through the logger", () => {
+    const {sink, logger} = createTestLogger();
+
+    printWorkerTimeline([{target: "packages", durationMs: 2000}], logger);
+
+    expect(sink.records.some((record) => record.text.includes("Worker Timeline"))).toBe(true);
+    expect(sink.records.some((record) => record.text.includes("packages"))).toBe(true);
   });
 });

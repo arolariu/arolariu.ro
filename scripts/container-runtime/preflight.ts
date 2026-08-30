@@ -4,6 +4,7 @@
  */
 
 import {resolve} from "node:path";
+import {MonorepositoryConsoleLogger, type MonorepositoryLogger} from "../common/logger.ts";
 import type {ContainerRuntimeAdapter, RuntimeCommand} from "./adapters.ts";
 import {formatCommand, type CommandRunner} from "./process.ts";
 import {ContainerRuntimeError} from "./types.ts";
@@ -27,12 +28,16 @@ export function buildArtifactGenerationCommand(): RuntimeCommand {
  * Generates required artifacts before local frontend/backend container builds.
  *
  * @param runner - Command runner used to execute the generator.
+ * @param logger - Logger used for command and child-process output.
  * @throws {ContainerRuntimeError} When generation fails.
  */
-export async function runArtifactGeneration(runner: CommandRunner): Promise<void> {
+export async function runArtifactGeneration(
+  runner: CommandRunner,
+  logger: MonorepositoryLogger = new MonorepositoryConsoleLogger("container::preflight"),
+): Promise<void> {
   const command = buildArtifactGenerationCommand();
-  console.log(`$ ${formatCommand(command)}`);
-  const result = await runner.run(command, {stdio: "tee"});
+  logger.command(formatCommand(command));
+  const result = await runner.run(command, {stdio: "tee", logger});
   if (result.code !== 0) {
     throw new ContainerRuntimeError(`Artifact generation failed. Output: ${result.output.trim()}`);
   }
@@ -124,8 +129,13 @@ export async function assertPodmanBackend(runner: CommandRunner): Promise<void> 
  *
  * @param adapter - Selected runtime adapter.
  * @param runner - Command runner used for probing.
+ * @param logger - Logger used for warning output.
  */
-export async function warnOnExistingLocalContainers(adapter: ContainerRuntimeAdapter, runner: CommandRunner): Promise<void> {
+export async function warnOnExistingLocalContainers(
+  adapter: ContainerRuntimeAdapter,
+  runner: CommandRunner,
+  logger: MonorepositoryLogger = new MonorepositoryConsoleLogger("container::preflight"),
+): Promise<void> {
   const names = ["traefik", "mssql", "cosmosdb", "azurite", "redis", "exp-arolariu-ro", "api-arolariu-ro", "website-arolariu-ro"];
   const result = await runner.run({command: adapter.primaryCli, args: ["ps", "-a", "--format", "{{.Names}}"]});
 
@@ -138,7 +148,7 @@ export async function warnOnExistingLocalContainers(adapter: ContainerRuntimeAda
   const collisions = names.filter((name) => active.includes(name));
 
   if (collisions.length > 0) {
-    console.warn(`Existing local containers detected for ${adapter.displayName}: ${collisions.join(", ")}`);
+    logger.warn(`Existing local containers detected for ${adapter.displayName}: ${collisions.join(", ")}`);
   }
 }
 
@@ -147,9 +157,14 @@ export async function warnOnExistingLocalContainers(adapter: ContainerRuntimeAda
  *
  * @param adapter - Selected runtime adapter.
  * @param runner - Command runner used for probing.
+ * @param logger - Logger used for preflight output.
  * @throws {ContainerRuntimeError} When required runtime capabilities are missing.
  */
-export async function runSharedPreflight(adapter: ContainerRuntimeAdapter, runner: CommandRunner): Promise<void> {
+export async function runSharedPreflight(
+  adapter: ContainerRuntimeAdapter,
+  runner: CommandRunner,
+  logger: MonorepositoryLogger = new MonorepositoryConsoleLogger("container::preflight"),
+): Promise<void> {
   await assertToolAvailable(adapter.primaryCli, runner);
 
   if (adapter.engine === "rancher") {
@@ -164,5 +179,5 @@ export async function runSharedPreflight(adapter: ContainerRuntimeAdapter, runne
     throw new ContainerRuntimeError(`${adapter.displayName} Compose provider is not available. Output: ${composeResult.output.trim()}`);
   }
 
-  await warnOnExistingLocalContainers(adapter, runner);
+  await warnOnExistingLocalContainers(adapter, runner, logger);
 }

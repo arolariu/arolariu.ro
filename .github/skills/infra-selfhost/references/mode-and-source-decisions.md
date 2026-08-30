@@ -5,7 +5,7 @@
 | Mode | Behavior | Live owners to reopen |
 | --- | --- | --- |
 | Aspire | AppHost runs applications natively and asks the selected engine for infrastructure containers | `package.json`; `scripts/container-runtime/aspire.ts`; `tooling/AppHost/Program.cs` |
-| Selfhost | Management, storage, API, and website run through ordered Compose projects | `scripts/dev-selfhost.mjs`; `scripts/container-runtime/selfhost.ts`; `infra/Local/**/docker-compose.yml` |
+| Selfhost | Management, storage, API, and website run through ordered Compose projects | `scripts/container-runtime/selfhost.ts`; `infra/Local/**/docker-compose.yml` |
 | Standalone | One root/Nx development target runs without AppHost coordination | Root `package.json`, the service package/project manifest, and its nearest `AGENTS.md` |
 | Ad hoc | One supported image target or Compose file is operated through the engine adapter | Root `package.json`; `scripts/container-runtime/{image,compose}.ts`; `infra/containers/**`; selected Compose file |
 

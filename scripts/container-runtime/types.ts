@@ -3,11 +3,13 @@
  * @module scripts/container-runtime/types
  */
 
+import type {MonorepositoryLogger} from "../common/logger.ts";
+
 /** Supported local container engines for this repository. */
 export type ContainerEngine = "rancher" | "podman";
 
 /** Indicates where the selected container engine was configured. */
-export type EngineSelectionSource = "argument" | "environment";
+export type EngineSelectionSource = "argument" | "environment" | "configuration";
 
 /** Resolved local container engine selection. */
 export interface RuntimeSelection {
@@ -19,6 +21,7 @@ export interface RuntimeSelection {
 export interface SelectionInputs {
   readonly argv: readonly string[];
   readonly env: Readonly<NodeJS.ProcessEnv>;
+  readonly configuredEngine?: string;
 }
 
 /** Error raised when local container runtime configuration is invalid. */
@@ -33,9 +36,9 @@ export class ContainerRuntimeError extends Error {
  * Prints a CLI-safe error message and marks the process as failed.
  *
  * @param error - Unknown error thrown by a CLI entrypoint.
+ * @param logger - Logger used for the error message.
  */
-export function exitWithError(error: unknown): void {
-  const message = error instanceof Error ? error.message : String(error);
-  console.error(message);
+export function exitWithError(error: unknown, logger: MonorepositoryLogger): void {
+  logger.error(error instanceof Error ? error.message : String(error));
   process.exitCode = 1;
 }

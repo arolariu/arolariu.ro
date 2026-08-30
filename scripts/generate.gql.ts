@@ -11,7 +11,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import {styleText} from "node:util";
+import {MonorepositoryConsoleLogger, type MonorepositoryLogger} from "./common/logger.ts";
 
 /**
  * GraphQL Types generator (placeholder).
@@ -21,24 +21,42 @@ import {styleText} from "node:util";
  *  1. Fetch remote schema (introspection)
  *  2. Generate TypeScript types via codegen
  *  3. Output artifacts into a designated cache folder
+ *
+ * @param verbose - Whether to emit diagnostic filesystem details.
+ * @param logger - Logger used for configuration, diagnostics, and completion output.
+ * @returns Zero after the placeholder artifact is written.
  */
-export async function main(verbose: boolean = false): Promise<number> {
-  console.log(styleText("cyan", "🔧 Configuration:\n"));
-  console.log(styleText("gray", `   Verbose: ${verbose ? styleText("green", "✅ Enabled") : styleText("red", "❌ Disabled")}`));
-  console.log(styleText("gray", `   Working Directory: ${styleText("dim", process.cwd())}`));
-  console.log();
+export async function main(
+  verbose: boolean = false,
+  logger: MonorepositoryLogger = new MonorepositoryConsoleLogger("generate::gql", {verbose}),
+): Promise<number> {
+  logger.line([{text: "🔧 Configuration:", styles: ["cyan"]}]);
+  logger.line();
+  logger.line([
+    {text: "   Verbose: ", styles: ["gray"]},
+    {text: verbose ? "✅ Enabled" : "❌ Disabled", styles: [verbose ? "green" : "red"]},
+  ]);
+  logger.line([
+    {text: "   Working Directory: ", styles: ["gray"]},
+    {text: process.cwd(), styles: ["dim"]},
+  ]);
+  logger.line();
 
   // Placeholder logic – ensure folder exists.
   const outDir = path.resolve("scripts", "__generated__", "gql");
   fs.mkdirSync(outDir, {recursive: true});
-  verbose && console.info(styleText("gray", `   Ensured output directory: ${outDir}`));
+  if (verbose) {
+    logger.debug(`Ensured output directory: ${outDir}`);
+  }
 
   // In the future replace with actual schema + codegen steps.
   const placeholder = `// Generated at ${new Date().toISOString()}\n// TODO: Integrate GraphQL Codegen here.\n`;
   fs.writeFileSync(path.join(outDir, "README.placeholder.txt"), placeholder, "utf-8");
-  verbose && console.info(styleText("gray", "   Wrote placeholder artifact."));
+  if (verbose) {
+    logger.debug("Wrote placeholder artifact.");
+  }
 
-  console.log(styleText("green", "✨ GraphQL generation completed (placeholder)."));
+  logger.success("GraphQL generation completed (placeholder).");
   return 0;
 }
 
@@ -46,26 +64,38 @@ if (import.meta.main) {
   const argv = process.argv.slice(2);
   const verbose = argv.some((a) => ["/verbose", "/v", "--verbose", "-v"].includes(a));
   const wantsHelp = argv.some((a) => ["/help", "/h", "--help", "-h"].includes(a));
+  const logger = new MonorepositoryConsoleLogger("generate::gql", {verbose});
 
   if (wantsHelp) {
-    console.log(styleText("magenta", "\n╔══════════════════════════════════════════════════════════════════╗"));
-    console.log(styleText("magenta", "║               ||arolariu.ro|| GQL Types Generator - Help         ║"));
-    console.log(styleText("magenta", "╚══════════════════════════════════════════════════════════════════╝\n"));
-    console.log(styleText("cyan", "Usage:"), styleText("gray", "npm run generate /gql [optional flags]\n"));
-    console.log(styleText("cyan", "Flags:"));
-    console.log(`  ${styleText("green", "/verbose     /v    --verbose     -v")}  Enable verbose logging 🔊`);
-    console.log(`  ${styleText("green", "/help        /h    --help        -h")}  Show this help menu ❓`);
-    console.log("\nExample:");
-    console.log(styleText("gray", "  npm run generate /gql /verbose"));
+    logger.banner(
+      [
+        "",
+        "╔══════════════════════════════════════════════════════════════════╗",
+        "║               ||arolariu.ro|| GQL Types Generator - Help         ║",
+        "╚══════════════════════════════════════════════════════════════════╝",
+        "",
+      ],
+      "magenta",
+    );
+    logger.line([
+      {text: "Usage: ", styles: ["cyan"]},
+      {text: "npm run generate /gql [optional flags]", styles: ["gray"]},
+    ]);
+    logger.line();
+    logger.line([{text: "Flags:", styles: ["cyan"]}]);
+    logger.line([{text: "  /verbose     /v    --verbose     -v", styles: ["green"]}, {text: "  Enable verbose logging 🔊"}]);
+    logger.line([{text: "  /help        /h    --help        -h", styles: ["green"]}, {text: "  Show this help menu ❓"}]);
+    logger.line();
+    logger.line("Example:");
+    logger.line([{text: "  npm run generate /gql /verbose", styles: ["gray"]}]);
     process.exit(0);
   }
 
   try {
-    const code = await main(verbose);
+    const code = await main(verbose, logger);
     process.exit(code);
-  } catch (err) {
-    console.error(styleText("red", "GraphQL generation failed:"));
-    console.error(err);
+  } catch (error: unknown) {
+    logger.error(`GraphQL generation failed: ${error instanceof Error ? error.message : String(error)}`);
     process.exit(1);
   }
 }

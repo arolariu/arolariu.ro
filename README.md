@@ -212,15 +212,17 @@ The **arolariu.ro** monorepo is a comprehensive full-stack platform built with c
 
 ### Prerequisites
 
-Before you begin, ensure you have the following installed:
+Before you begin, ensure you have the following bootstrap prerequisites installed — `npm run setup` prepares everything else below and
+never installs or upgrades Git, Node.js, or npm:
 
 | Tool | Version | Purpose |
 |:----:|:-------:|:--------|
-| ![Node.js](https://img.shields.io/badge/Node.js-24%2B-339933?style=flat-square&logo=nodedotjs&logoColor=white) | ≥24.x | JavaScript runtime |
-| ![npm](https://img.shields.io/badge/npm-11%2B-CB3837?style=flat-square&logo=npm&logoColor=white) | ≥11.x | Package manager |
-| ![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?style=flat-square&logo=dotnet&logoColor=white) | 10.0 | Backend runtime and Aspire AppHost |
-| Container engine | Rancher Desktop or Podman Desktop | Required for local SQL, Cosmos, Azurite, and Redis containers |
-| ![Python](https://img.shields.io/badge/Python-3.12-3776AB?style=flat-square&logo=python&logoColor=white) | 3.12 | Required for `exp` config service (FastAPI) |
+| ![Git](https://img.shields.io/badge/Git-required-F05032?style=flat-square&logo=git&logoColor=white) | — | Version control — must be installed and on `PATH`; probed by `npm run setup` (no minimum version enforced) — bootstrap prerequisite |
+| ![Node.js](https://img.shields.io/badge/Node.js-24%2B-339933?style=flat-square&logo=nodedotjs&logoColor=white) | ≥24.x | JavaScript runtime — bootstrap prerequisite |
+| ![npm](https://img.shields.io/badge/npm-11%2B-CB3837?style=flat-square&logo=npm&logoColor=white) | ≥11.x | Package manager — bootstrap prerequisite |
+| ![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?style=flat-square&logo=dotnet&logoColor=white) | 10.0 | Backend runtime and Aspire AppHost — prepared by `npm run setup` |
+| Container engine | Rancher Desktop or Podman Desktop | Local SQL, Cosmos, Azurite, and Redis containers — selected/persisted by `npm run setup` (Docker Desktop is not supported) |
+| ![Python](https://img.shields.io/badge/Python-3.12-3776AB?style=flat-square&logo=python&logoColor=white) | 3.12 | Required for `exp` config service (FastAPI) — prepared by `npm run setup` |
 
 ### Quick Start
 
@@ -234,15 +236,11 @@ Before you begin, ensure you have the following installed:
 git clone https://github.com/arolariu/arolariu.ro.git
 cd arolariu.ro
 
-# 2️⃣ Install dependencies
-npm install
-
-# 3️⃣ Run initial setup (generates env files, i18n, GraphQL)
+# 2️⃣ One-command onboarding — restores dependencies and prepares every toolchain
 npm run setup
 
-# 4️⃣ Start the full stack via Aspire with one supported engine
-npm run dev -- --engine rancher
-# or: npm run dev -- --engine podman
+# 3️⃣ Start the full stack via Aspire with the engine setup selected/persisted
+npm run dev
 # → Aspire dashboard auto-opens at https://localhost:17080
 # → Website https://localhost:3000 · API http://localhost:5000 · CV http://localhost:4173
 #   Docs http://localhost:3100 · Status http://localhost:3002 · exp http://localhost:5002
@@ -252,6 +250,37 @@ npm run dev:website        # Next.js only
 ```
 
 > 💡 **F5 in VS Code or Visual Studio 2026** launches the Aspire AppHost with debuggers attached for all runtimes (.NET, Node.js, Python).
+
+**What `npm run setup` prepares** — a single dependency-aware run that never builds, type-checks, tests, or starts/stops a service:
+
+- Restores root and `.github/scripts` npm dependency trees and regenerates taxonomy/GraphQL/i18n checkout artifacts;
+- Prepares the .NET SDK/workload/tool restore, AppHost local-development user secrets, and the local HTTPS development certificate;
+- Prepares an isolated Python virtual environment and its pinned dependencies for the `exp` service;
+- Prepares the SvelteKit CV and status generated `.svelte-kit` state;
+- Additively writes the website's core local defaults (`SITE_ENV`, `SITE_NAME`, `SITE_URL`, `USE_CDN`) to `sites/arolariu.ro/.env` without overwriting existing entries, and ensures Playwright's locked Chromium browser is installed;
+- Selects a container engine (Rancher Desktop or Podman Desktop), persists it to `.arolariu/tooling.local.json`, with your consent installs it if missing, and checks — but never starts — its readiness for Aspire or selfhost.
+
+Container engine selection precedence for `npm run setup`: `npm run setup -- --engine rancher|podman`, then `AROLARIU_CONTAINER_ENGINE`,
+then the persisted `.arolariu/tooling.local.json`, then an interactive prompt when none are set. `npm run dev` and
+`npm run dev:selfhost` consume the same CLI/environment/persisted selection, but throw instead of prompting when none is available.
+Docker Desktop is unsupported and is never selected as a fallback.
+
+Useful flags: `npm run setup -- --verbose` (diagnostic evidence per phase), `npm run setup -- --dry-run` (plan every mutation without
+executing it and without any consent prompt — an engine-selection prompt can still appear when no engine has been chosen yet;
+combine with `--engine` to avoid it), `npm run setup -- --yes` (approve system-scoped mutations — SDK, .NET workload, Python
+interpreter, HTTPS-trust, Playwright Linux system-dependency, mkcert, and container-engine installs — without an interactive prompt;
+it never invents an engine choice, prompted text, or a secret), and `npm run setup -- --engine rancher|podman` (select the engine
+explicitly).
+
+Clerk credentials are optional for `npm run setup`, not universally optional at runtime. When both keys are absent, ordinary non-CI
+`next dev` can use Clerk's keyless development mode. The repository has no auth-disabled runtime path: CI, production, and any explicitly
+configured Clerk state require a valid, mode-matched publishable/secret key pair, and partial or invalid pairs are unsupported. Setup still
+exits `0` with a degraded React phase when that pair is not ready.
+
+Running `npm run dev:selfhost`? Export `MSSQL_SA_PASSWORD` in your shell/session first — required only when selfhost starts its SQL
+bootstrap, never stored in `.env` or `.arolariu/tooling.local.json`. `npm run setup`'s infrastructure phase strips it from the
+container-engine, port-inspection, and certificate subprocesses it runs, but every other setup subprocess inherits your shell
+environment — export it only in the session used to run `npm run dev:selfhost`.
 
 ### Development Commands
 
@@ -303,6 +332,20 @@ npm run test:e2e:cv        # CV Newman live tests
 npm run lint               # ESLint (20+ plugins)
 npm run format             # Prettier formatting
 ```
+
+</details>
+
+<details>
+<summary><b>🩺 Diagnostics</b></summary>
+
+```bash
+npm run doctor              # Read-only workspace health check — never mutates the repository
+npm run status              # Six-section monorepo status dashboard (includes doctor's health score)
+```
+
+`npm run doctor` diagnoses the workspace; it never builds, type-checks, or runs tests. See
+[DEVELOPMENT.md](DEVELOPMENT.md#diagnosing-with-npm-run-doctor) for the full CLI contract, module
+order, and ecosystem-specific troubleshooting commands.
 
 </details>
 

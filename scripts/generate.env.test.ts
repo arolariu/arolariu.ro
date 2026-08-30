@@ -1,0 +1,287 @@
+// @vitest-environment node
+/**
+ * @fileoverview Pure environment helper and prompt compatibility tests.
+ * @module scripts.generate.env.test
+ */
+
+import fs from "node:fs";
+import {afterEach, describe, expect, it, vi} from "vitest";
+
+import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "./common/logger.ts";
+import type {PromptProvider} from "./common/prompts.ts";
+
+afterEach(() => {
+  vi.restoreAllMocks();
+  vi.unstubAllEnvs();
+  vi.unstubAllGlobals();
+  vi.doUnmock("@azure/identity");
+});
+
+describe("parseEnvironmentFile", () => {
+  it("ignores non-assignments, splits on the first equals sign, unwraps matching quotes, and lets the last assignment win", async () => {
+    const {parseEnvironmentFile} = await import("./generate.env.ts");
+
+    const parsed = parseEnvironmentFile(
+      [
+        "",
+        " # comment",
+        "malformed",
+        "=missing-key",
+        " SITE_URL = https://example.test/path?a=b ",
+        "QUOTED_SINGLE='single value'",
+        'QUOTED_DOUBLE = "double value"',
+        "MISMATCHED='value\"",
+        "SITE_URL=https://last.example.test",
+      ].join("\n"),
+    );
+
+    expect([...parsed]).toEqual([
+      ["SITE_URL", "https://last.example.test"],
+      ["QUOTED_SINGLE", "single value"],
+      ["QUOTED_DOUBLE", "double value"],
+      ["MISMATCHED", "'value\""],
+    ]);
+  });
+});
+
+describe("quoteIfNeeded", () => {
+  it.each([
+    ["plain", "plain"],
+    ["", '""'],
+    ["contains space", '"contains space"'],
+    ["dollar$value", '"dollar$value"'],
+    ['quote"value', '"quote\\"value"'],
+    ["line\nvalue", '"line\\nvalue"'],
+    ["tab\tvalue", '"tab\\tvalue"'],
+    ["back\\slash", '"back\\\\slash"'],
+  ])("quotes %j as %j", async (value, expected) => {
+    const {quoteIfNeeded} = await import("./generate.env.ts");
+
+    expect(quoteIfNeeded(value)).toBe(expected);
+  });
+});
+
+describe("appendMissingEnvironmentValues", () => {
+  it("preserves the original bytes as a prefix and appends only missing nonempty values in insertion order", async () => {
+    const {appendMissingEnvironmentValues} = await import("./generate.env.ts");
+    const original = "# user comment\nSITE_NAME=user-site\nEMPTY_EXISTING=\n";
+
+    const appended = appendMissingEnvironmentValues(
+      original,
+      new Map([
+        ["SITE_ENV", "DEVELOPMENT"],
+        ["SITE_NAME", "must-not-overwrite"],
+        ["SITE_URL", "https://localhost:3000"],
+        ["EMPTY_EXISTING", "must-not-overwrite"],
+        ["SKIPPED", "   "],
+        ["NEEDS_QUOTING", "value with spaces"],
+      ]),
+    );
+
+    expect(appended.startsWith(original)).toBe(true);
+    expect(appended.slice(original.length)).toBe(
+      [
+        "# arolariu.ro setup-managed values",
+        "SITE_ENV=DEVELOPMENT",
+        "SITE_URL=https://localhost:3000",
+        'NEEDS_QUOTING="value with spaces"',
+        "# End arolariu.ro setup-managed values",
+        "",
+      ].join("\n"),
+    );
+  });
+
+  it("reuses CRLF and adds exactly the separator needed after a non-newline-terminated prefix", async () => {
+    const {appendMissingEnvironmentValues} = await import("./generate.env.ts");
+    const original = "# comment\r\nSITE_ENV=DEVELOPMENT";
+
+    expect(appendMissingEnvironmentValues(original, new Map([["USE_CDN", "false"]]))).toBe(
+      [
+        "# comment",
+        "SITE_ENV=DEVELOPMENT",
+        "# arolariu.ro setup-managed values",
+        "USE_CDN=false",
+        "# End arolariu.ro setup-managed values",
+        "",
+      ].join("\r\n"),
+    );
+  });
+
+  it("returns the original string unchanged when every candidate is existing or empty", async () => {
+    const {appendMissingEnvironmentValues} = await import("./generate.env.ts");
+    const original = "SITE_ENV=DEVELOPMENT\n";
+
+    expect(
+      appendMissingEnvironmentValues(
+        original,
+        new Map([
+          ["SITE_ENV", "PRODUCTION"],
+          ["EMPTY", ""],
+        ]),
+      ),
+    ).toBe(original);
+  });
+
+  it("trims surrounding whitespace while preserving and quoting internal whitespace", async () => {
+    const {appendMissingEnvironmentValues} = await import("./generate.env.ts");
+
+    expect(appendMissingEnvironmentValues("", new Map([["DISPLAY_NAME", "  local development site  "]]))).toBe(
+      ["# arolariu.ro setup-managed values", 'DISPLAY_NAME="local development site"', "# End arolariu.ro setup-managed values", ""].join(
+        "\n",
+      ),
+    );
+  });
+});
+
+describe("generator PromptProvider compatibility", () => {
+  it("preserves every supported Azure runtime identity value during local regeneration", async () => {
+    vi.stubEnv("INFRA", "local");
+    vi.resetModules();
+    vi.spyOn(fs, "existsSync").mockReturnValue(true);
+    vi.spyOn(fs, "readFileSync").mockReturnValue(
+      [
+        "SITE_ENV=DEVELOPMENT",
+        "SITE_NAME=dev.arolariu.ro",
+        "SITE_URL=https://localhost:3000",
+        "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_existing",
+        "CLERK_SECRET_KEY=sk_test_existing",
+        "USE_CDN=false",
+        "AZURE_CLIENT_ID=existing-client",
+        "AZURE_TENANT_ID=existing-tenant",
+        "AZURE_SUBSCRIPTION_ID=existing-subscription",
+        "UNSUPPORTED_LOCAL_VALUE=must-not-be-reemitted",
+      ].join("\n"),
+    );
+    const writeFile = vi.spyOn(fs, "writeFileSync").mockImplementation(() => undefined);
+    vi.spyOn(fs, "copyFileSync").mockImplementation(() => undefined);
+    const prompts: PromptProvider = {
+      confirm: vi.fn<PromptProvider["confirm"]>().mockResolvedValue(false),
+      select: async <TValue extends string>(
+        _message: string,
+        choices: readonly Readonly<{value: TValue; label: string}>[],
+      ): Promise<TValue> => {
+        const selected = choices[0]?.value;
+        if (selected === undefined) {
+          throw new Error("A test choice is required.");
+        }
+        return selected;
+      },
+      text: vi.fn<PromptProvider["text"]>().mockResolvedValue(""),
+      secret: vi.fn<PromptProvider["secret"]>().mockResolvedValue(""),
+    };
+    const logger = new MonorepositoryConsoleLogger("generate::env", {
+      color: false,
+      sink: new InMemoryLoggerSink(),
+    });
+
+    const {main} = await import("./generate.env.ts");
+    await expect(main(false, logger, prompts)).resolves.toBe(0);
+
+    expect(prompts.confirm).not.toHaveBeenCalled();
+    const generated = writeFile.mock.calls[0]?.[1];
+    expect(typeof generated).toBe("string");
+    const generatedText = String(generated);
+    expect(generatedText).toContain("AZURE_CLIENT_ID=existing-client");
+    expect(generatedText).toContain("AZURE_TENANT_ID=existing-tenant");
+    expect(generatedText).toContain("AZURE_SUBSCRIPTION_ID=existing-subscription");
+    expect(generatedText).not.toContain("UNSUPPORTED_LOCAL_VALUE");
+  });
+
+  it("stops aggregate generation and propagates a real environment generator failure", async () => {
+    vi.resetModules();
+    vi.stubEnv("INFRA", "azure");
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response("unavailable", {status: 503})),
+    );
+    const sink = new InMemoryLoggerSink();
+    const logger = new MonorepositoryConsoleLogger("generate", {color: false, sink});
+    const {main} = await import("./generate.ts");
+
+    await expect(
+      main(
+        {
+          verbose: false,
+          generateEnv: true,
+          generateGql: true,
+          generateI18n: false,
+          generateArtifacts: false,
+        },
+        logger,
+      ),
+    ).resolves.toBe(1);
+
+    const retained = sink.records.map((record) => record.text).join("\n");
+    expect(retained).not.toContain("Running GraphQL types generator");
+    expect(retained).not.toContain("All requested generation tasks completed");
+  });
+
+  it("uses the injected provider, redacts entered secrets, and never writes directly to console", async () => {
+    vi.stubEnv("INFRA", "local");
+    vi.stubEnv("VERBOSE", "false");
+    vi.resetModules();
+    vi.spyOn(fs, "existsSync").mockReturnValue(true);
+    vi.spyOn(fs, "readFileSync").mockReturnValue("");
+    const writeFile = vi.spyOn(fs, "writeFileSync").mockImplementation(() => undefined);
+    vi.spyOn(fs, "copyFileSync").mockImplementation(() => undefined);
+    const consoleSpies = ["debug", "info", "warn", "error", "log"].map((level) =>
+      vi.spyOn(console, level as "debug").mockImplementation(() => undefined),
+    );
+    const publishable = "pk_test_generator-publishable";
+    const secret = "sk_test_generator-secret";
+    const text = vi.fn<PromptProvider["text"]>(async () => "local-value");
+    const secretPrompt = vi.fn<PromptProvider["secret"]>(async (message) =>
+      message.includes("NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY") ? publishable : secret,
+    );
+    const prompts: PromptProvider = {
+      confirm: vi.fn<PromptProvider["confirm"]>().mockResolvedValue(true),
+      select: async <TValue extends string>(
+        _message: string,
+        choices: readonly Readonly<{value: TValue; label: string}>[],
+      ): Promise<TValue> => {
+        const selected = choices[0]?.value;
+        if (selected === undefined) {
+          throw new Error("A test choice is required.");
+        }
+        return selected;
+      },
+      text,
+      secret: secretPrompt,
+    };
+    const sink = new InMemoryLoggerSink();
+    const logger = new MonorepositoryConsoleLogger("generate::env", {color: false, sink});
+    const redactions: string[] = [];
+    const originalRedact = logger.redact.bind(logger);
+    logger.redact = (value: string): void => {
+      redactions.push(value);
+      originalRedact(value);
+    };
+
+    const {main} = await import("./generate.env.ts");
+    await expect(main(false, logger, prompts)).resolves.toBe(0);
+
+    expect(prompts.confirm).toHaveBeenCalledOnce();
+    expect(text).toHaveBeenCalled();
+    expect(secretPrompt.mock.calls.map(([message]) => message)).toEqual(["NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY", "CLERK_SECRET_KEY"]);
+    expect(redactions).toContain(publishable);
+    expect(redactions).toContain(secret);
+    expect(consoleSpies.every((spy) => spy.mock.calls.length === 0)).toBe(true);
+    const retained = JSON.stringify({records: sink.records});
+    expect(retained).not.toContain(publishable);
+    expect(retained).not.toContain(secret);
+    expect(JSON.stringify(writeFile.mock.calls)).toContain(secret);
+  });
+
+  it("does not load Azure identity merely by importing the module", async () => {
+    vi.resetModules();
+    vi.doMock("@azure/identity", () => {
+      throw new Error("Azure identity loaded eagerly");
+    });
+
+    await expect(import("./generate.env.ts")).resolves.toMatchObject({
+      appendMissingEnvironmentValues: expect.any(Function),
+      parseEnvironmentFile: expect.any(Function),
+      quoteIfNeeded: expect.any(Function),
+    });
+  });
+});

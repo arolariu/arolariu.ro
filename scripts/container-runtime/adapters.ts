@@ -3,13 +3,11 @@
  * @module scripts/container-runtime/adapters
  */
 
+import type {CommandSpec} from "../common/process.ts";
 import type {ContainerEngine} from "./types.ts";
 
 /** Command and arguments to execute for a selected container runtime. */
-export interface RuntimeCommand {
-  readonly command: string;
-  readonly args: readonly string[];
-}
+export type RuntimeCommand = CommandSpec;
 
 /** Engine-specific command adapter for local container workflows. */
 export interface ContainerRuntimeAdapter {

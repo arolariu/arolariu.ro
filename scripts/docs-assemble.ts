@@ -17,17 +17,18 @@
  * behave the same as a fresh local clone.
  */
 
-import {cpSync, rmSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync, existsSync} from 'node:fs';
-import {dirname, join, resolve} from 'node:path';
-import {pathToFileURL} from 'node:url';
-import {spawn, type StdioOptions} from 'node:child_process';
-import {normalizeDirectory, serializeFrontmatter} from './docs-assemble.normalize.ts';
+import {cpSync, rmSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync, existsSync} from "node:fs";
+import {dirname, join, resolve} from "node:path";
+import {pathToFileURL} from "node:url";
+import {spawn, type StdioOptions} from "node:child_process";
+import {MonorepositoryConsoleLogger, type MonorepositoryLogger} from "./common/logger.ts";
+import {normalizeDirectory, serializeFrontmatter} from "./docs-assemble.normalize.ts";
 
-const REPO_ROOT = resolve(import.meta.dirname, '..');
-const DOCS_ROOT = join(REPO_ROOT, 'sites', 'docs.arolariu.ro');
-const GENERATED_ROOT = join(DOCS_ROOT, '_generated');
-const PROSE_DEST = join(DOCS_ROOT, 'docs', 'monorepo');
-const PROSE_SRC = join(REPO_ROOT, 'docs');
+const REPO_ROOT = resolve(import.meta.dirname, "..");
+const DOCS_ROOT = join(REPO_ROOT, "sites", "docs.arolariu.ro");
+const GENERATED_ROOT = join(DOCS_ROOT, "_generated");
+const PROSE_DEST = join(DOCS_ROOT, "docs", "monorepo");
+const PROSE_SRC = join(REPO_ROOT, "docs");
 
 /**
  * .NET target framework shared across every project under
@@ -36,7 +37,7 @@ const PROSE_SRC = join(REPO_ROOT, 'docs');
  * {@link discoverDotnetProjects} can locate each project's built DLL
  * without parsing MSBuild props on every run.
  */
-const DOTNET_TFM = 'net10.0';
+const DOTNET_TFM = "net10.0";
 
 /**
  * Commands that, on Windows, ship as `.cmd` shims rather than real
@@ -47,7 +48,7 @@ const DOTNET_TFM = 'net10.0';
  * without cmd.exe in between. DefaultDocumentation is no longer
  * spawned directly — it is a local tool invoked through `dotnet`.
  */
-const NPM_FAMILY_COMMANDS = new Set(['npm', 'npx', 'node']);
+const NPM_FAMILY_COMMANDS = new Set(["npm", "npx", "node"]);
 
 /**
  * Resolve a bare command name to an invocable form. On Windows, the
@@ -56,7 +57,7 @@ const NPM_FAMILY_COMMANDS = new Set(['npm', 'npx', 'node']);
  * `shell: false` — so we rewrite them here.
  */
 function resolveCommand(command: string): string {
-  if (process.platform !== 'win32') return command;
+  if (process.platform !== "win32") return command;
   if (NPM_FAMILY_COMMANDS.has(command)) return `${command}.cmd`;
   return command;
 }
@@ -75,7 +76,7 @@ export async function syncProse(src: string, dest: string): Promise<void> {
   rmSync(dest, {recursive: true, force: true});
   mkdirSync(dest, {recursive: true});
   cpSync(src, dest, {recursive: true});
-  rmSync(join(dest, 'superpowers'), {recursive: true, force: true});
+  rmSync(join(dest, "superpowers"), {recursive: true, force: true});
 }
 
 /** Optional knobs for {@link runCommand}. */
@@ -106,31 +107,30 @@ export type RunOptions = {
  *   and (when buffered) the last 2KB of output so CI logs surface the
  *   real failure instead of just "exited with N".
  */
-export function runCommand(
-  command: string,
-  args: readonly string[],
-  cwd: string,
-  options: RunOptions = {},
-): Promise<string> {
+export function runCommand(command: string, args: readonly string[], cwd: string, options: RunOptions = {}): Promise<string> {
   const buffered = options.buffered === true;
   const isNpmFamily = NPM_FAMILY_COMMANDS.has(command);
-  const shell = process.platform === 'win32' && isNpmFamily;
-  const stdio: StdioOptions = buffered ? ['ignore', 'pipe', 'pipe'] : 'inherit';
+  const shell = process.platform === "win32" && isNpmFamily;
+  const stdio: StdioOptions = buffered ? ["ignore", "pipe", "pipe"] : "inherit";
 
   return new Promise<string>((resolvePromise, reject) => {
     const child = spawn(resolveCommand(command), args as string[], {cwd, stdio, shell});
-    let output = '';
+    let output = "";
     if (buffered) {
-      child.stdout?.setEncoding('utf8');
-      child.stderr?.setEncoding('utf8');
-      child.stdout?.on('data', (chunk: string) => { output += chunk; });
-      child.stderr?.on('data', (chunk: string) => { output += chunk; });
+      child.stdout?.setEncoding("utf8");
+      child.stderr?.setEncoding("utf8");
+      child.stdout?.on("data", (chunk: string) => {
+        output += chunk;
+      });
+      child.stderr?.on("data", (chunk: string) => {
+        output += chunk;
+      });
     }
-    child.on('error', reject);
-    child.on('exit', (code) => {
+    child.on("error", reject);
+    child.on("exit", (code) => {
       if (code === 0) return resolvePromise(output);
-      const tail = buffered && output ? `\n--- last output ---\n${output.slice(-2000)}` : '';
-      reject(new Error(`${command} ${args.join(' ')} exited with ${code}${tail}`));
+      const tail = buffered && output ? `\n--- last output ---\n${output.slice(-2000)}` : "";
+      reject(new Error(`${command} ${args.join(" ")} exited with ${code}${tail}`));
     });
   });
 }
@@ -168,10 +168,10 @@ export function cleanGenerated(): void {
   mkdirSync(GENERATED_ROOT, {recursive: true});
 }
 
-const TS_REFERENCE_DIR = join(GENERATED_ROOT, 'ts-reference');
-const PYTHON_DIR = join(GENERATED_ROOT, 'experimental');
-const DOTNET_INTERNALS_DIR = join(GENERATED_ROOT, 'dotnet-internals');
-const API_ROOT = join(REPO_ROOT, 'sites', 'api.arolariu.ro');
+const TS_REFERENCE_DIR = join(GENERATED_ROOT, "ts-reference");
+const PYTHON_DIR = join(GENERATED_ROOT, "experimental");
+const DOTNET_INTERNALS_DIR = join(GENERATED_ROOT, "dotnet-internals");
+const API_ROOT = join(REPO_ROOT, "sites", "api.arolariu.ro");
 
 /**
  * Required generated documentation tiers mounted by Docusaurus.
@@ -183,13 +183,13 @@ const API_ROOT = join(REPO_ROOT, 'sites', 'api.arolariu.ro');
  * synthetic Docusaurus pages cannot satisfy the deployment gate.
  */
 export const REQUIRED_DOCUMENTATION_TIERS = [
-  {relativePath: join('ts-reference', 'components'), label: 'typedoc components'},
-  {relativePath: join('ts-reference', 'website'), label: 'typedoc website'},
-  {relativePath: 'experimental', label: 'pydoc-markdown'},
-  {relativePath: 'dotnet-internals', label: 'defaultdocumentation'},
+  {relativePath: join("ts-reference", "components"), label: "typedoc components"},
+  {relativePath: join("ts-reference", "website"), label: "typedoc website"},
+  {relativePath: "experimental", label: "pydoc-markdown"},
+  {relativePath: "dotnet-internals", label: "defaultdocumentation"},
 ] as const;
 
-const ROOT_LANDING_FILE_NAMES = new Set(['index.md', 'index.mdx', 'readme.md', 'readme.mdx']);
+const ROOT_LANDING_FILE_NAMES = new Set(["index.md", "index.mdx", "readme.md", "readme.mdx"]);
 
 function isDocumentationOutputFile(fileName: string): boolean {
   return /\.mdx?$|\.json$/i.test(fileName);
@@ -245,11 +245,11 @@ export type DotnetProject = {
 
 /** Extract `<ProjectReference Include="..." />` paths from a csproj. */
 function parseProjectReferences(csprojPath: string): readonly string[] {
-  const content = readFileSync(csprojPath, 'utf8');
+  const content = readFileSync(csprojPath, "utf8");
   const refs: string[] = [];
   const regex = /<ProjectReference\s+Include\s*=\s*["']([^"']+)["']/g;
   for (let match: RegExpExecArray | null; (match = regex.exec(content)) !== null;) {
-    const relPath = match[1].replaceAll('\\', '/');
+    const relPath = match[1].replaceAll("\\", "/");
     refs.push(resolve(dirname(csprojPath), relPath));
   }
   return refs;
@@ -265,22 +265,19 @@ function parseProjectReferences(csprojPath: string): readonly string[] {
  * cascades through the entire graph via `BuildProjectReferences=true`
  * (the default).
  */
-export function discoverDotnetProjects(
-  apiRoot: string = API_ROOT,
-  tfm: string = DOTNET_TFM,
-): readonly DotnetProject[] {
-  const srcRoot = join(apiRoot, 'src');
+export function discoverDotnetProjects(apiRoot: string = API_ROOT, tfm: string = DOTNET_TFM): readonly DotnetProject[] {
+  const srcRoot = join(apiRoot, "src");
   const projects: DotnetProject[] = [];
   for (const dir of readdirSync(srcRoot)) {
     const dirPath = join(srcRoot, dir);
     if (!statSync(dirPath).isDirectory()) continue;
     for (const file of readdirSync(dirPath)) {
-      if (!file.endsWith('.csproj')) continue;
+      if (!file.endsWith(".csproj")) continue;
       const csproj = join(dirPath, file);
       projects.push({
         csproj,
         csprojRelative: `src/${dir}/${file}`,
-        assemblyName: file.replace(/\.csproj$/, ''),
+        assemblyName: file.replace(/\.csproj$/, ""),
         binRelative: `src/${dir}/bin/Release/${tfm}`,
         projectReferences: parseProjectReferences(csproj),
       });
@@ -300,7 +297,7 @@ export function findDotnetBuildRoots(projects: readonly DotnetProject[]): readon
   const referenced = new Set(projects.flatMap((p) => p.projectReferences));
   const roots = projects.filter((p) => !referenced.has(p.csproj));
   if (roots.length === 0) {
-    throw new Error('.NET projects: every project is referenced by another — cyclic graph, cannot pick a build root.');
+    throw new Error(".NET projects: every project is referenced by another — cyclic graph, cannot pick a build root.");
   }
   return roots;
 }
@@ -319,21 +316,21 @@ export function findDotnetBuildRoots(projects: readonly DotnetProject[]): readon
  */
 export function getDefaultDocumentationArgs(dll: string, outDir: string): readonly string[] {
   return [
-    '--AssemblyFilePath',
+    "--AssemblyFilePath",
     dll,
-    '--OutputDirectoryPath',
+    "--OutputDirectoryPath",
     outDir,
-    '--FileNameFactory',
-    'Name',
-    '--GeneratedPages',
-    'Namespaces',
-    '--IncludeUndocumentedItems',
-    'true',
-    '--GeneratedAccessModifiers',
-    'Public',
-    'Protected',
-    'Internal',
-    'Private',
+    "--FileNameFactory",
+    "Name",
+    "--GeneratedPages",
+    "Namespaces",
+    "--IncludeUndocumentedItems",
+    "true",
+    "--GeneratedAccessModifiers",
+    "Public",
+    "Protected",
+    "Internal",
+    "Private",
   ];
 }
 
@@ -353,11 +350,8 @@ export function getDefaultDocumentationArgs(dll: string, outDir: string): readon
  * @param outDir - Absolute output directory for generated markdown.
  * @returns The command and arguments to spawn.
  */
-export function getDefaultDocumentationCommand(
-  dll: string,
-  outDir: string,
-): {readonly command: string; readonly args: readonly string[]} {
-  return {command: 'dotnet', args: ['defaultdocumentation', ...getDefaultDocumentationArgs(dll, outDir)]};
+export function getDefaultDocumentationCommand(dll: string, outDir: string): {readonly command: string; readonly args: readonly string[]} {
+  return {command: "dotnet", args: ["defaultdocumentation", ...getDefaultDocumentationArgs(dll, outDir)]};
 }
 
 /**
@@ -368,11 +362,11 @@ export function getDefaultDocumentationCommand(
  * lands under `_generated/dotnet-internals/<assembly>/`.
  */
 async function runDotnetInternals(): Promise<string> {
-  let log = '';
+  let log = "";
   const projects = discoverDotnetProjects();
   const roots = findDotnetBuildRoots(projects);
   for (const root of roots) {
-    log += await runCommand('dotnet', ['build', root.csprojRelative, '-c', 'Release'], API_ROOT, {buffered: true});
+    log += await runCommand("dotnet", ["build", root.csprojRelative, "-c", "Release"], API_ROOT, {buffered: true});
   }
   mkdirSync(DOTNET_INTERNALS_DIR, {recursive: true});
   for (const proj of projects) {
@@ -384,7 +378,7 @@ async function runDotnetInternals(): Promise<string> {
     const {command, args} = getDefaultDocumentationCommand(dll, outDir);
     log += await runCommand(command, args, API_ROOT, {buffered: true});
   }
-  assertNonEmpty(DOTNET_INTERNALS_DIR, 'defaultdocumentation');
+  assertNonEmpty(DOTNET_INTERNALS_DIR, "defaultdocumentation");
   return log;
 }
 
@@ -394,10 +388,10 @@ async function runDotnetInternals(): Promise<string> {
  * under `_generated/ts-reference/{components,website}/`.
  */
 async function runTypedoc(): Promise<string> {
-  let log = '';
-  log += await runCommand('npx', ['typedoc', '--options', 'typedoc.components.json'], REPO_ROOT, {buffered: true});
-  log += await runCommand('npx', ['typedoc', '--options', 'typedoc.website.json'], REPO_ROOT, {buffered: true});
-  assertNonEmpty(TS_REFERENCE_DIR, 'typedoc');
+  let log = "";
+  log += await runCommand("npx", ["typedoc", "--options", "typedoc.components.json"], REPO_ROOT, {buffered: true});
+  log += await runCommand("npx", ["typedoc", "--options", "typedoc.website.json"], REPO_ROOT, {buffered: true});
+  assertNonEmpty(TS_REFERENCE_DIR, "typedoc");
   return log;
 }
 
@@ -412,8 +406,8 @@ function normalizeLineEndings(dir: string): void {
     const full = join(dir, name);
     if (statSync(full).isDirectory()) normalizeLineEndings(full);
     else if (/\.mdx?$|\.json$/i.test(name)) {
-      const content = readFileSync(full, 'utf8');
-      if (content.includes('\r\n')) writeFileSync(full, content.replaceAll('\r\n', '\n'));
+      const content = readFileSync(full, "utf8");
+      if (content.includes("\r\n")) writeFileSync(full, content.replaceAll("\r\n", "\n"));
     }
   }
 }
@@ -425,9 +419,9 @@ function normalizeLineEndings(dir: string): void {
  * frontmatter pass sees consistent `\n` separators.
  */
 async function runPydocMarkdown(): Promise<string> {
-  const expDir = join(REPO_ROOT, 'sites', 'exp.arolariu.ro');
-  const log = await runCommand('python', ['-m', 'pydoc_markdown.main'], expDir, {buffered: true});
-  assertNonEmpty(PYTHON_DIR, 'pydoc-markdown');
+  const expDir = join(REPO_ROOT, "sites", "exp.arolariu.ro");
+  const log = await runCommand("python", ["-m", "pydoc_markdown.main"], expDir, {buffered: true});
+  assertNonEmpty(PYTHON_DIR, "pydoc-markdown");
   // pydoc-markdown emits CRLF on Windows; normalize so downstream frontmatter parsers match on \n.
   normalizeLineEndings(PYTHON_DIR);
   return log;
@@ -464,21 +458,29 @@ function writeLandingPage({dir, title, summary, routeBase}: LandingPage): void {
     })
     .filter((name) => !/^index\.mdx?$/i.test(name))
     .sort();
-  const bullets = children.map((name) => {
-    const label = name.replace(/\.mdx?$/i, '');
-    const href = statSync(join(dir, name)).isDirectory() ? `${routeBase}/${label}/` : `${routeBase}/${label}`;
-    return `- [${label}](${href})`;
-  }).join('\n');
+  const bullets = children
+    .map((name) => {
+      const label = name.replace(/\.mdx?$/i, "");
+      const href = statSync(join(dir, name)).isDirectory() ? `${routeBase}/${label}/` : `${routeBase}/${label}`;
+      return `- [${label}](${href})`;
+    })
+    .join("\n");
   const body = `\n# ${title}\n\n${summary}\n\n${bullets}\n`;
   const full = serializeFrontmatter({title, sidebar_position: 0}, body);
-  writeFileSync(join(dir, 'index.md'), full);
+  writeFileSync(join(dir, "index.md"), full);
 }
 
-/** Write a labeled block of buffered extractor output to stdout. */
-function flushExtractorLog(label: string, body: string): void {
+/**
+ * Write a labeled block of buffered extractor output to the active logger.
+ *
+ * @param label - Extractor label used as the block heading.
+ * @param body - Buffered extractor output.
+ * @param logger - Logger used to preserve the assembled output bytes.
+ */
+export function flushExtractorLog(label: string, body: string, logger: MonorepositoryLogger): void {
   if (body.length === 0) return;
-  process.stdout.write(`\n=== ${label} ===\n`);
-  process.stdout.write(body.endsWith('\n') ? body : `${body}\n`);
+  logger.write(`\n=== ${label} ===\n`);
+  logger.write(body.endsWith("\n") ? body : `${body}\n`);
 }
 
 /**
@@ -487,17 +489,16 @@ function flushExtractorLog(label: string, body: string): void {
  * another, replays each block in a fixed order once they all finish,
  * normalizes each tier's frontmatter, writes landing pages, and mirrors
  * prose. Designed to be idempotent — see module-level docs.
+ *
+ * @param logger - Optional logger used for deterministic extractor output.
  */
-async function main(): Promise<void> {
+export async function main(logger?: MonorepositoryLogger): Promise<void> {
+  const output = logger ?? new MonorepositoryConsoleLogger("docs::assemble");
   cleanGenerated();
-  const [tsOut, pyOut, dotnetOut] = await Promise.all([
-    runTypedoc(),
-    runPydocMarkdown(),
-    runDotnetInternals(),
-  ]);
-  flushExtractorLog('TypeScript (TypeDoc)', tsOut);
-  flushExtractorLog('Python (pydoc-markdown)', pyOut);
-  flushExtractorLog('.NET internals (DefaultDocumentation)', dotnetOut);
+  const [tsOut, pyOut, dotnetOut] = await Promise.all([runTypedoc(), runPydocMarkdown(), runDotnetInternals()]);
+  flushExtractorLog("TypeScript (TypeDoc)", tsOut, output.child("typedoc"));
+  flushExtractorLog("Python (pydoc-markdown)", pyOut, output.child("pydoc-markdown"));
+  flushExtractorLog(".NET internals (DefaultDocumentation)", dotnetOut, output.child("defaultdocumentation"));
   // Validate extractor output before normalization and synthetic landing pages
   // can obscure missing-tier failures.
   assertExpectedDocumentationTiers();
@@ -509,21 +510,23 @@ async function main(): Promise<void> {
   // after normalization so the landing pages appear in the sidebar at position 0.
   writeLandingPage({
     dir: TS_REFERENCE_DIR,
-    title: 'TypeScript reference',
-    summary: 'Generated from TSDoc / JSDoc comments across `@arolariu/components` and the `arolariu.ro` website.',
-    routeBase: '/reference/typescript',
+    title: "TypeScript reference",
+    summary: "Generated from TSDoc / JSDoc comments across `@arolariu/components` and the `arolariu.ro` website.",
+    routeBase: "/reference/typescript",
   });
   writeLandingPage({
     dir: PYTHON_DIR,
-    title: 'Experimental service (Python)',
-    summary: 'Internal documentation for `exp.arolariu.ro`, a FastAPI configuration-proxy service. Extracted from Google-style docstrings via `pydoc-markdown`.',
-    routeBase: '/internals/experimental',
+    title: "Experimental service (Python)",
+    summary:
+      "Internal documentation for `exp.arolariu.ro`, a FastAPI configuration-proxy service. Extracted from Google-style docstrings via `pydoc-markdown`.",
+    routeBase: "/internals/experimental",
   });
   writeLandingPage({
     dir: DOTNET_INTERNALS_DIR,
-    title: '.NET internals',
-    summary: 'Reference documentation for internal types, services, and brokers of `api.arolariu.ro`. Generated from XML doc comments via `DefaultDocumentation`.',
-    routeBase: '/internals/dotnet',
+    title: ".NET internals",
+    summary:
+      "Reference documentation for internal types, services, and brokers of `api.arolariu.ro`. Generated from XML doc comments via `DefaultDocumentation`.",
+    routeBase: "/internals/dotnet",
   });
   await syncProse(PROSE_SRC, PROSE_DEST);
 }
@@ -543,8 +546,9 @@ const invokedAsEntrypoint = (() => {
 })();
 
 if (invokedAsEntrypoint) {
-  main().catch((err) => {
-    console.error(err);
+  const output = new MonorepositoryConsoleLogger("docs::assemble");
+  main(output).catch((err) => {
+    output.error(err instanceof Error ? (err.stack ?? err.message) : String(err));
     process.exit(1);
   });
 }

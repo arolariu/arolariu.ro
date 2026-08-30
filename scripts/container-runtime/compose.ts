@@ -5,10 +5,12 @@
 
 import {resolve} from "node:path";
 import {fileURLToPath} from "node:url";
+import {MonorepositoryConsoleLogger, type MonorepositoryLogger} from "../common/logger.ts";
+import {resolveRepositoryPaths} from "../common/repository-paths.ts";
 import {getContainerAdapter, type ContainerRuntimeAdapter, type RuntimeCommand} from "./adapters.ts";
 import {runSharedPreflight} from "./preflight.ts";
 import {defaultRunner, formatCommand, type CommandRunner} from "./process.ts";
-import {resolveContainerEngine} from "./selection.ts";
+import {resolveRuntimeContainerEngine} from "./selection.ts";
 import {exitWithError} from "./types.ts";
 
 /** Options for invoking an arbitrary Compose file through the selected engine. */
@@ -32,11 +34,20 @@ export function buildComposeCommand(adapter: ContainerRuntimeAdapter, options: C
  * Runs the ad hoc Compose CLI wrapper.
  *
  * @param runner - Command runner used to execute Compose.
+ * @param logger - Logger used for orchestration output.
  */
-export async function runComposeCli(runner: CommandRunner = defaultRunner): Promise<void> {
-  const selection = resolveContainerEngine({argv: process.argv, env: process.env});
+export async function runComposeCli(
+  runner: CommandRunner = defaultRunner,
+  logger: MonorepositoryLogger = new MonorepositoryConsoleLogger("container::compose"),
+): Promise<void> {
+  const paths = resolveRepositoryPaths();
+  const selection = await resolveRuntimeContainerEngine({
+    argv: process.argv,
+    env: process.env,
+    toolingConfigPath: paths.toolingConfig,
+  });
   const adapter = getContainerAdapter(selection.engine);
-  await runSharedPreflight(adapter, runner);
+  await runSharedPreflight(adapter, runner, logger.child("preflight"));
 
   const fileIndex = process.argv.indexOf("--file");
   const separatorIndex = process.argv.indexOf("--");
@@ -48,8 +59,8 @@ export async function runComposeCli(runner: CommandRunner = defaultRunner): Prom
   }
 
   const command = buildComposeCommand(adapter, {file, args});
-  console.log(`$ ${formatCommand(command)}`);
-  const result = await runner.run(command, {stdio: "tee"});
+  logger.command(formatCommand(command));
+  const result = await runner.run(command, {stdio: "tee", logger});
   if (result.code !== 0) throw new Error(result.output);
 }
 
@@ -59,6 +70,6 @@ if (isDirectExecution) {
   try {
     await runComposeCli();
   } catch (error) {
-    exitWithError(error);
+    exitWithError(error, new MonorepositoryConsoleLogger("container::compose"));
   }
 }
