@@ -375,6 +375,96 @@ describe("runDoctor", () => {
     expect(report.checks.filter((check) => check.status === "pass")).toHaveLength(4);
   });
 
+  it("normalizes an empty-message Error crash into a stable non-empty evidence entry without aborting the report", async () => {
+    const {modules} = createFakeModules({
+      dotnet: async () => {
+        throw new Error();
+      },
+    });
+
+    const report = await runDoctor(doctorOptions(), {...fixedRuntimeDependencies(), modules});
+
+    expect(report.checks).toHaveLength(6);
+    const crashRow = report.checks.find((check) => check.id === "dotnet.module-error");
+    expect(crashRow?.status).toBe("fail");
+    expect(crashRow?.evidence).toHaveLength(1);
+    expect(crashRow?.evidence[0]?.trim().length).toBeGreaterThan(0);
+    expect(report.checks.some((check) => check.id === "workspace.repository-root")).toBe(true);
+    expect(report.checks.some((check) => check.id === "react.packages")).toBe(true);
+    expect(report.checks.some((check) => check.id === "svelte.cv.packages")).toBe(true);
+    expect(report.checks.some((check) => check.id === "python.runtime")).toBe(true);
+    expect(report.checks.some((check) => check.id === "infrastructure.selection")).toBe(true);
+  });
+
+  it("normalizes an empty-string throw crash into a stable non-empty evidence entry without aborting the report", async () => {
+    const {modules} = createFakeModules({
+      react: async () => {
+        // eslint-disable-next-line @typescript-eslint/only-throw-error -- exercising a non-Error thrown value on purpose.
+        throw "";
+      },
+    });
+
+    const report = await runDoctor(doctorOptions(), {...fixedRuntimeDependencies(), modules});
+
+    expect(report.checks).toHaveLength(6);
+    const crashRow = report.checks.find((check) => check.id === "react.module-error");
+    expect(crashRow?.status).toBe("fail");
+    expect(crashRow?.evidence).toHaveLength(1);
+    expect(crashRow?.evidence[0]?.trim().length).toBeGreaterThan(0);
+    expect(report.checks.some((check) => check.id === "workspace.repository-root")).toBe(true);
+  });
+
+  it("strips ANSI escape sequences from an Error crash message before it becomes evidence", async () => {
+    const {modules} = createFakeModules({
+      svelte: async () => {
+        throw new Error("\u001B[31msvelte boom\u001B[0m");
+      },
+    });
+
+    const report = await runDoctor(doctorOptions(), {...fixedRuntimeDependencies(), modules});
+
+    expect(report.checks).toHaveLength(6);
+    const crashRow = report.checks.find((check) => check.id === "svelte.module-error");
+    expect(crashRow?.status).toBe("fail");
+    expect(crashRow?.evidence).toEqual(["svelte boom"]);
+    expect(crashRow?.evidence[0]).not.toMatch(/\u001B/);
+    expect(report.checks.some((check) => check.id === "workspace.repository-root")).toBe(true);
+  });
+
+  it("strips ANSI escape sequences from a safe error-shaped object crash without an unsafe cast", async () => {
+    const {modules} = createFakeModules({
+      python: async () => {
+        // eslint-disable-next-line @typescript-eslint/only-throw-error -- exercising a safe error-shaped non-Error object.
+        throw {message: "\u001B[31mpython boom\u001B[0m"};
+      },
+    });
+
+    const report = await runDoctor(doctorOptions(), {...fixedRuntimeDependencies(), modules});
+
+    expect(report.checks).toHaveLength(6);
+    const crashRow = report.checks.find((check) => check.id === "python.module-error");
+    expect(crashRow?.status).toBe("fail");
+    expect(crashRow?.evidence).toEqual(["python boom"]);
+    expect(report.checks.some((check) => check.id === "workspace.repository-root")).toBe(true);
+  });
+
+  it("normalizes a non-Error, non-object unknown thrown value into a stable evidence entry", async () => {
+    const {modules} = createFakeModules({
+      infrastructure: async () => {
+        // eslint-disable-next-line @typescript-eslint/only-throw-error -- exercising a non-Error thrown value on purpose.
+        throw 42;
+      },
+    });
+
+    const report = await runDoctor(doctorOptions(), {...fixedRuntimeDependencies(), modules});
+
+    expect(report.checks).toHaveLength(6);
+    const crashRow = report.checks.find((check) => check.id === "infrastructure.module-error");
+    expect(crashRow?.status).toBe("fail");
+    expect(crashRow?.evidence).toEqual(["42"]);
+    expect(report.checks.some((check) => check.id === "workspace.repository-root")).toBe(true);
+  });
+
   it("rejects duplicate result ids emitted by two different modules", async () => {
     const {modules} = createFakeModules({
       react: async () => [passCheck("workspace.repository-root", "react")],
@@ -525,6 +615,94 @@ describe("main", () => {
     expect(record?.text).not.toMatch(/\u001B/);
     const parsed = JSON.parse(record?.text ?? "") as {schemaVersion: number};
     expect(parsed.schemaVersion).toBe(1);
+  });
+
+  it("returns 1, renders no report, and writes one non-empty human stderr error for a context-resolution failure", async () => {
+    const {logger, sink} = createLogger();
+    const {modules} = createFakeModules();
+    const resolvePaths = vi.fn((): RepositoryPaths => {
+      throw new Error("context assembly boom");
+    });
+
+    const exitCode = await main([], {...fixedRuntimeDependencies(), modules, logger, resolveRepositoryPaths: resolvePaths});
+
+    expect(exitCode).toBe(1);
+    expect(renderDoctorReportMock).not.toHaveBeenCalled();
+    const errorRecords = sink.records.filter((record) => record.stream === "stderr");
+    expect(errorRecords).toHaveLength(1);
+    expect(errorRecords[0]?.text).toMatch(/context assembly boom/);
+  });
+
+  it("returns 1, emits no stdout document, and routes one non-empty stderr error through a separate fatal logger for a JSON-mode context-resolution failure", async () => {
+    const {logger, sink} = createLogger("json");
+    const {logger: errorLogger, sink: errorSink} = createLogger();
+    const {modules} = createFakeModules();
+    const resolvePaths = vi.fn((): RepositoryPaths => {
+      throw new Error("context assembly boom");
+    });
+
+    const exitCode = await main(["--json"], {
+      ...fixedRuntimeDependencies(),
+      modules,
+      logger,
+      errorLogger,
+      resolveRepositoryPaths: resolvePaths,
+    });
+
+    expect(exitCode).toBe(1);
+    expect(sink.records).toHaveLength(0);
+    expect(renderDoctorReportMock).not.toHaveBeenCalled();
+    const errorRecords = errorSink.records.filter((record) => record.stream === "stderr");
+    expect(errorRecords).toHaveLength(1);
+    expect(errorRecords[0]?.text).toMatch(/context assembly boom/);
+  });
+
+  it("returns 1, renders no report, and writes one non-empty human stderr error for a report-validation failure", async () => {
+    const {logger, sink} = createLogger();
+    const {modules} = createFakeModules({
+      react: async () => [passCheck("workspace.repository-root", "react")],
+    });
+
+    const exitCode = await main([], {...fixedRuntimeDependencies(), modules, logger});
+
+    expect(exitCode).toBe(1);
+    expect(renderDoctorReportMock).not.toHaveBeenCalled();
+    const errorRecords = sink.records.filter((record) => record.stream === "stderr");
+    expect(errorRecords).toHaveLength(1);
+    expect(errorRecords[0]?.text).toMatch(/duplicate/i);
+  });
+
+  it("returns 1, emits no stdout document, and routes one non-empty stderr error through a separate fatal logger for a JSON-mode report-validation failure", async () => {
+    const {logger, sink} = createLogger("json");
+    const {logger: errorLogger, sink: errorSink} = createLogger();
+    const {modules} = createFakeModules({
+      react: async () => [passCheck("workspace.repository-root", "react")],
+    });
+
+    const exitCode = await main(["--json"], {...fixedRuntimeDependencies(), modules, logger, errorLogger});
+
+    expect(exitCode).toBe(1);
+    expect(sink.records).toHaveLength(0);
+    expect(renderDoctorReportMock).not.toHaveBeenCalled();
+    const errorRecords = errorSink.records.filter((record) => record.stream === "stderr");
+    expect(errorRecords).toHaveLength(1);
+    expect(errorRecords[0]?.text).toMatch(/duplicate/i);
+  });
+
+  it("normalizes an empty-message fatal error into non-empty, ANSI-free stderr text", async () => {
+    const {logger, sink} = createLogger();
+    const {modules} = createFakeModules();
+    const resolvePaths = vi.fn((): RepositoryPaths => {
+      throw new Error();
+    });
+
+    const exitCode = await main([], {...fixedRuntimeDependencies(), modules, logger, resolveRepositoryPaths: resolvePaths});
+
+    expect(exitCode).toBe(1);
+    const errorRecords = sink.records.filter((record) => record.stream === "stderr");
+    expect(errorRecords).toHaveLength(1);
+    expect(errorRecords[0]?.text.trim().length).toBeGreaterThan(0);
+    expect(errorRecords[0]?.text).not.toMatch(/\u001B/);
   });
 });
 

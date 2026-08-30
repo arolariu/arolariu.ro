@@ -28,6 +28,7 @@
 
 import {resolve} from "node:path";
 import {fileURLToPath} from "node:url";
+import {stripVTControlCharacters} from "node:util";
 
 import {MonorepositoryConsoleLogger, type MonorepositoryLogger} from "./common/logger.ts";
 import {loadRepositoryRequirements, type RequirementLoadResult} from "./common/requirements.ts";
@@ -83,6 +84,20 @@ export interface DoctorDependencies {
   readonly network: DiagnosticNetworkProbe;
   /** Receives doctor presentation and semantic output. */
   readonly logger: MonorepositoryLogger;
+  /**
+   * Receives exactly one fatal error when context assembly or report
+   * validation prevents any report from being produced.
+   *
+   * @remarks
+   * In JSON mode the primary {@link logger}'s semantic methods (including
+   * `error`) are intentionally suppressed so only {@link MonorepositoryLogger.json}
+   * reaches stdout; this dependency is the only sink guaranteed to still
+   * surface a fatal failure. It defaults to a fresh human-mode
+   * {@link MonorepositoryConsoleLogger} in JSON mode, and to the primary
+   * `logger` itself in human mode, where semantic output already reaches
+   * stderr.
+   */
+  readonly errorLogger: MonorepositoryLogger;
   /** Target runtime platform. */
   readonly platform: NodeJS.Platform;
   /** Target runtime architecture. */
@@ -97,6 +112,69 @@ export interface DoctorDependencies {
 
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
+}
+
+type UnknownRecord = Readonly<Record<string, unknown>>;
+
+function isRecord(value: unknown): value is UnknownRecord {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+/**
+ * Extracts a raw, unnormalized message from an arbitrary thrown value.
+ *
+ * @remarks
+ * Understands a native {@link Error} and a safe error-shaped object (a
+ * non-array object exposing a string `message` property) through the
+ * repository's established {@link isRecord} narrowing convention, without an
+ * unsafe type cast. Every other thrown value — a string, a number, `null`,
+ * `undefined`, or a plain object without a string `message` — falls back to
+ * its string coercion.
+ *
+ * @param error - The unknown thrown value.
+ * @returns The best-effort raw message before ANSI stripping and trimming.
+ */
+function extractThrownMessage(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  if (isRecord(error) && typeof error["message"] === "string") {
+    return error["message"];
+  }
+  return String(error);
+}
+
+/**
+ * Reports whether an already-normalized message is usable as report text.
+ *
+ * @param value - A message already stripped of ANSI/VT sequences and trimmed.
+ * @returns Whether the value is non-empty and not a stringification artifact.
+ */
+function isUsableErrorText(value: string): boolean {
+  return value.length > 0 && value !== "[object Object]" && value !== "null" && value !== "undefined";
+}
+
+/**
+ * Normalizes an arbitrary thrown value into non-empty, report-safe text.
+ *
+ * @remarks
+ * The doctor reporter rejects an empty, whitespace-only, or ANSI-bearing
+ * string in evidence and fatal error text, so an unnormalized module crash
+ * or fatal failure message would otherwise abort the entire report instead
+ * of producing the single failed row or fatal error it is meant to
+ * describe. ANSI/VT control sequences are stripped with the Node.js
+ * built-in {@link stripVTControlCharacters}, then the result is trimmed; an
+ * empty, whitespace-only, or otherwise unhelpful message falls back to
+ * `fallbackMessage`, which callers supply as a stable, non-empty,
+ * context-specific default.
+ *
+ * @param error - The unknown thrown value.
+ * @param fallbackMessage - A stable, non-empty fallback for an unhelpful message.
+ * @returns Non-empty, ANSI-free, report-safe text.
+ */
+function normalizeErrorText(error: unknown, fallbackMessage: string): string {
+  const normalized = stripVTControlCharacters(extractThrownMessage(error)).trim();
+  return isUsableErrorText(normalized) ? normalized : fallbackMessage;
 }
 
 /**
@@ -168,9 +246,13 @@ export function createBoundedNetworkProbe(now: () => number): DiagnosticNetworkP
  *
  * @remarks
  * A module exception never becomes a passing or skipped result: it is
- * replaced with exactly one failed `<module>.module-error` row carrying the
- * raw error as evidence, so a crashed module is scored as a complete module
- * loss rather than silently shrinking the report.
+ * replaced with exactly one failed `<module>.module-error` row. The thrown
+ * value is normalized through {@link normalizeErrorText} before it becomes
+ * evidence — an empty, whitespace-only, or ANSI-bearing message would
+ * otherwise be rejected by the doctor reporter's semantic validation and
+ * abort the entire report (siblings included) instead of degrading to one
+ * failed row, so a crashed module is scored as a complete module loss
+ * rather than silently shrinking the report.
  *
  * @param module - The diagnostic module to execute.
  * @param context - The shared read-only diagnostic context.
@@ -184,6 +266,7 @@ async function runDoctorModule(
   try {
     return await module.run(context);
   } catch (error: unknown) {
+    const evidence = normalizeErrorText(error, `The ${module.title} diagnostic module threw an error without a usable message.`);
     return [
       diagnosticResult(
         {
@@ -192,7 +275,7 @@ async function runDoctorModule(
           name: `${module.title} module error`,
           status: "fail",
           summary: `The ${module.title} diagnostic module failed unexpectedly and could not complete its checks.`,
-          evidence: [errorMessage(error)],
+          evidence: [evidence],
           rootCause: `An unhandled exception was thrown while running the ${module.title} diagnostic module.`,
           potentialCauses: [],
           fixes: [{description: `Investigate the ${module.title} module failure captured in evidence, then rerun doctor.`}],
@@ -334,6 +417,15 @@ const HELP_LINES: readonly string[] = [
  * exactly once. The process exits `0` when the report has no failed checks
  * and `1` otherwise.
  *
+ * When context assembly (repository paths, requirements) or report
+ * validation (schema/semantic checks in {@link createDoctorReport}) throws
+ * after options are parsed, no partial or success-shaped report is ever
+ * synthesized: the run returns `1`, no document reaches
+ * {@link MonorepositoryLogger.json}, and exactly one normalized, non-empty
+ * fatal error is written through {@link DoctorDependencies.errorLogger} —
+ * never through the primary `logger`, whose semantic methods (including
+ * `error`) are silently suppressed in JSON mode.
+ *
  * @param argv - Arguments following the doctor entrypoint.
  * @param dependencies - Optional boundary replacements, primarily for tests
  * that must inject a deterministic logger, modules, or repository seam
@@ -365,11 +457,18 @@ export async function main(
   const logger =
     dependencies.logger ?? new MonorepositoryConsoleLogger("doctor", {mode: options.json ? "json" : "human", verbose: options.verbose});
 
+  // In JSON mode the primary `logger`'s semantic `error` is a no-op, so a fatal
+  // failure here must be routed through a logger that always reaches stderr.
+  // Human mode's primary logger already reaches stderr, so it may serve both roles.
+  const errorLogger = dependencies.errorLogger ?? (options.json ? new MonorepositoryConsoleLogger("doctor", {verbose: false}) : logger);
+
   let report: DoctorReportV1;
   try {
     report = await runDoctor(options, {...dependencies, logger});
   } catch (error: unknown) {
-    logger.error(errorMessage(error));
+    errorLogger.error(
+      normalizeErrorText(error, "Doctor failed to produce a report because context assembly or report validation failed unexpectedly."),
+    );
     return 1;
   }
 
