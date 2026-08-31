@@ -35,6 +35,20 @@ describe("createToolProgram", () => {
     expect(() => program.parse(["node", "sample", "--help"])).toThrow();
     expect(sink.records.map((record) => record.text).join("")).toContain("Usage:");
   });
+
+  it("routes commander help through the injected logger from parseAsync", async () => {
+    const sink = new InMemoryLoggerSink();
+    const logger = new MonorepositoryConsoleLogger("test", {color: false, sink});
+    const program = createToolProgram({
+      name: "sample",
+      description: "Sample command.",
+      examples: ["npm run sample -- --verbose"],
+      logger,
+    });
+
+    await expect(program.parseAsync(["node", "sample", "--help"])).rejects.toBeInstanceOf(CommanderError);
+    expect(sink.records.map((record) => record.text).join("")).toContain("Usage:");
+  });
 });
 
 describe("commanderExitCode", () => {
