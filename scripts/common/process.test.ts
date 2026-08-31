@@ -92,21 +92,31 @@ describe("defaultCommandRunner", () => {
 
     const result = await defaultCommandRunner.run({command, args: []});
 
+    expect(result.code).toBe(1);
+    expect(result.timedOut).toBe(false);
+    // On Windows, Execa resolves an unrecognized bare command name through
+    // `cmd.exe`, which reports the failure as an ordinary nonzero exit with no
+    // string `code` of its own. The runner recognizes that specific fallback from
+    // the spawned subprocess' own `spawnfile`/`spawnargs` metadata (never a custom
+    // PATH/PATHEXT filesystem scan) and still populates `spawnError`. On POSIX
+    // platforms, the subprocess never starts, so Execa reports a genuine startup
+    // failure through its own result metadata instead.
+    expect(result.spawnError).toBeDefined();
+    expect(result.spawnError).toContain(command);
+  });
+
+  it("treats a resolved command that exits nonzero as an ordinary failure, including a Windows npm/cmd shim", async () => {
+    const result = await defaultCommandRunner.run({
+      command: "npm",
+      args: ["run", "definitely-not-a-real-script-xyzzy-12345"],
+    });
+
     expect(result.code).not.toBe(0);
     expect(result.timedOut).toBe(false);
-
-    if (process.platform === "win32") {
-      // On Windows, Execa resolves an unrecognized command name through `cmd.exe`,
-      // which reports the failure as an ordinary nonzero exit rather than a
-      // distinguishable spawn error, so no custom PATH/PATHEXT scanner is needed
-      // (or added) to reclassify it.
-      expect(result.spawnError).toBeUndefined();
-      expect(result.stderr).toContain(command);
-    } else {
-      // On POSIX platforms, the subprocess never starts, so Execa reports a
-      // genuine startup failure through its own result metadata.
-      expect(result.spawnError).toContain(command);
-    }
+    // `npm` resolves to a real executable on every platform (a `.cmd` shim on
+    // Windows), so this must remain an ordinary nonzero exit, never a spawn error,
+    // even though the Windows shim also routes through `cmd.exe`.
+    expect(result.spawnError).toBeUndefined();
   });
 
   it("times out and terminates a long-running command", async () => {

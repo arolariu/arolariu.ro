@@ -3,6 +3,7 @@
  * @module scripts/common/process
  */
 
+import {basename} from "node:path";
 import {StringDecoder} from "node:string_decoder";
 import {execa} from "execa";
 import type {MonorepositoryLogger} from "./logger.ts";
@@ -18,6 +19,12 @@ interface ExecaResultLike {
   readonly stderr?: unknown;
   readonly stdout?: unknown;
   readonly timedOut?: boolean | undefined;
+}
+
+/** Minimal Node.js `ChildProcess` spawn metadata used for Windows fallback detection. */
+interface NodeChildProcessSpawnInfo {
+  readonly spawnfile?: string;
+  readonly spawnargs?: readonly string[];
 }
 
 /** Describes one executable and its argument array. */
@@ -150,7 +157,7 @@ async function runExecaCommand(command: Readonly<CommandSpec>, options: Readonly
     }
 
     const result = await subprocess;
-    return mapExecaSuccess(result, startedAt);
+    return mapExecaSuccess(result, startedAt, command, subprocess.nodeChildProcess);
   } catch (error: unknown) {
     return mapExecaFailure(error, startedAt);
   } finally {
@@ -178,16 +185,30 @@ async function runExecaCommand(command: Readonly<CommandSpec>, options: Readonly
  * failures reported through its own result fields (for example a string `code` set
  * from an underlying Node.js system error). Only that resolved result is mapped here.
  *
+ * When Execa's own result metadata carries no such string `code` (for example on
+ * Windows, where an unresolved bare command name is instead reported as an ordinary
+ * `cmd.exe` nonzero exit), the resolved subprocess' own `spawnfile`/`spawnargs` are
+ * inspected to recognize that specific fallback and still populate `spawnError`.
+ *
  * @param result - Execa outcome for a subprocess that was started.
  * @param startedAt - Start time used when Execa did not report a duration.
+ * @param command - Original command spec passed to Execa.
+ * @param nodeChildProcess - Underlying Node child process Execa spawned.
  * @returns Shared command result.
  */
-function mapExecaSuccess(result: ExecaResultLike, startedAt: number): CommandResult {
+function mapExecaSuccess(
+  result: ExecaResultLike,
+  startedAt: number,
+  command: Readonly<CommandSpec>,
+  nodeChildProcess: NodeChildProcessSpawnInfo | undefined,
+): CommandResult {
   const signal = typeof result.signal === "string" ? (result.signal as NodeJS.Signals) : undefined;
   const spawnError =
     typeof result.code === "string"
       ? (result.originalMessage ?? result.shortMessage ?? result.message ?? `spawn failed with ${result.code}`)
-      : undefined;
+      : isUnresolvedWindowsCommand(command, nodeChildProcess)
+        ? `spawn ${command.command} ENOENT`
+        : undefined;
 
   return {
     code: typeof result.exitCode === "number" ? result.exitCode : 1,
@@ -198,6 +219,50 @@ function mapExecaSuccess(result: ExecaResultLike, startedAt: number): CommandRes
     ...(signal === undefined ? {} : {signal}),
     ...(spawnError === undefined ? {} : {spawnError}),
   };
+}
+
+/** Matches `cmd.exe` (any casing, with or without extension) as a spawned file's basename. */
+const WINDOWS_CMD_SHELL_BASENAME = /^cmd(?:\.exe)?$/i;
+
+/** Matches a `cmd.exe` command line beginning with an absolute Windows path (drive-letter or UNC). */
+const WINDOWS_RESOLVED_COMMAND_LINE_PREFIX = /^"(?:[A-Za-z]:[\\/]|\\\\)/;
+
+/**
+ * Detects Execa's Windows `cmd.exe` fallback for a bare, unresolved command name, as
+ * opposed to a resolved executable or command shim that also happens to route
+ * through `cmd.exe` (for example an `.cmd`/`.bat` shim such as `npm.cmd`).
+ *
+ * On Windows, Execa resolves a bare command name (containing no path separators)
+ * itself before spawning: a `.exe`/`.com` match spawns directly, and any other match
+ * is routed through `cmd.exe` with the *resolved absolute path* embedded in its
+ * command line. When nothing resolves, Execa still routes the original, unresolved
+ * command text through `cmd.exe`, which reports the failure as an ordinary nonzero
+ * exit (`cmd.exe`'s own "is not recognized" error) with no distinguishable
+ * startup-failure metadata of its own. This inspects the already-spawned
+ * subprocess' own `spawnfile`/`spawnargs` — Node's standard `ChildProcess` fields,
+ * exposed through Execa's own `nodeChildProcess` escape hatch — to tell those two
+ * `cmd.exe` cases apart, without a filesystem PATH/PATHEXT scan or an additional
+ * resolver dependency.
+ *
+ * @param command - Original command spec passed to Execa.
+ * @param nodeChildProcess - Underlying Node child process Execa spawned.
+ * @returns Whether the command reached `cmd.exe` unresolved.
+ */
+function isUnresolvedWindowsCommand(
+  command: Readonly<CommandSpec>,
+  nodeChildProcess: NodeChildProcessSpawnInfo | undefined,
+): boolean {
+  if (process.platform !== "win32" || /[\\/]/.test(command.command)) {
+    return false;
+  }
+
+  const spawnfile = nodeChildProcess?.spawnfile;
+  if (typeof spawnfile !== "string" || !WINDOWS_CMD_SHELL_BASENAME.test(basename(spawnfile))) {
+    return false;
+  }
+
+  const commandLine = nodeChildProcess?.spawnargs?.at(-1);
+  return typeof commandLine === "string" && !WINDOWS_RESOLVED_COMMAND_LINE_PREFIX.test(commandLine);
 }
 
 /**

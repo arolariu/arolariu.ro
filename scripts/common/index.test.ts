@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * @fileoverview Tests for logger-backed shared presentation utilities.
  * @module scripts/common/index.test
