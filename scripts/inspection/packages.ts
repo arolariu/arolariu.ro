@@ -234,7 +234,7 @@ function projectNpmTree(document: unknown, scope: NpmTreeScope, exitCode: number
   }
 
   const npmError = normalizeNpmError(document["error"]);
-  if (npmError !== undefined) {
+  if (npmError !== undefined && problemCount === 0) {
     problemCount += 1;
     if (normalizedProblems.length < NPM_PROBLEM_FACT_LIMIT) {
       normalizedProblems.push(npmError);

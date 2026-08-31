@@ -188,11 +188,8 @@ describe("createNpmTreeProvider", () => {
       scope: "root",
       valid: false,
       packageCount: 1,
-      problemCount: 2,
-      problems: [
-        {name: "react", code: "invalid", detail: "npm reported invalid for 'react'."},
-        {code: "ELSPROBLEMS", detail: "npm reported ELSPROBLEMS."},
-      ],
+      problemCount: 1,
+      problems: [{name: "react", code: "invalid", detail: "npm reported invalid for 'react'."}],
     });
     expect(JSON.stringify(outcome)).not.toMatch(/secret-user|raw-marker|raw-detail-marker|raw-stderr-marker/iu);
   });
