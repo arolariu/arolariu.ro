@@ -5,12 +5,31 @@
 
 import {resolve} from "node:path";
 import {MonorepositoryConsoleLogger, type MonorepositoryLogger} from "../common/logger.ts";
+import {formatCommand, type CommandResult, type CommandRunner} from "../common/process.ts";
 import type {ContainerRuntimeAdapter, RuntimeCommand} from "./adapters.ts";
-import {formatCommand, type CommandRunner} from "./process.ts";
 import {ContainerRuntimeError} from "./types.ts";
 
 /** Fixed ports used by local Aspire and selfhost resources. */
 export const requiredLocalPorts = [3000, 3002, 4173, 5000, 5002, 6379, 8081, 8082, 10000] as const;
+
+/**
+ * Builds a human-readable failure detail from a structured command result.
+ *
+ * @remarks
+ * Preserves the `stdout`/`stderr`/`spawnError` distinction all the way to
+ * diagnostics text instead of concatenating the fields into one opaque blob
+ * and then guessing at the failure cause: standard error is preferred when
+ * present, standard output is used when standard error is empty, a spawn
+ * failure message is used when the process never started, and `fallback`
+ * covers the remaining case where none of those are available.
+ *
+ * @param result - Structured command result to describe.
+ * @param fallback - Text used when no stream or spawn error carries detail.
+ * @returns The most relevant available diagnostic text.
+ */
+export function describeCommandFailure(result: Readonly<CommandResult>, fallback: string): string {
+  return result.stderr.trim() || result.stdout.trim() || result.spawnError || fallback;
+}
 
 /**
  * Builds the host command that generates taxonomy and license artifacts.
@@ -37,9 +56,9 @@ export async function runArtifactGeneration(
 ): Promise<void> {
   const command = buildArtifactGenerationCommand();
   logger.command(formatCommand(command));
-  const result = await runner.run(command, {stdio: "tee", logger});
+  const result = await runner.run(command, {output: "tee", logger});
   if (result.code !== 0) {
-    throw new ContainerRuntimeError(`Artifact generation failed. Output: ${result.output.trim()}`);
+    throw new ContainerRuntimeError(`Artifact generation failed. Output: ${describeCommandFailure(result, `exit code ${result.code}`)}`);
   }
 }
 
@@ -53,7 +72,9 @@ export async function runArtifactGeneration(
 export async function assertToolAvailable(tool: string, runner: CommandRunner): Promise<void> {
   const result = await runner.run({command: tool, args: ["--version"]});
   if (result.code !== 0) {
-    throw new ContainerRuntimeError(`Required tool '${tool}' is not available. Output: ${result.output.trim()}`);
+    throw new ContainerRuntimeError(
+      `Required tool '${tool}' is not available. Output: ${describeCommandFailure(result, `exit code ${result.code}`)}`,
+    );
   }
 }
 
@@ -65,9 +86,8 @@ export async function assertToolAvailable(tool: string, runner: CommandRunner): 
  */
 export async function assertNoDockerDesktopBackend(runner: CommandRunner): Promise<void> {
   const result = await runner.run({command: "docker", args: ["version"]});
-  const output = result.output.toLowerCase();
 
-  if (result.code === 0 && output.includes("docker desktop")) {
+  if (result.code === 0 && result.stdout.toLowerCase().includes("docker desktop")) {
     throw new ContainerRuntimeError(
       "Docker Desktop is the active backend. Stop Docker Desktop and select Rancher Desktop or Podman Desktop.",
     );
@@ -82,13 +102,14 @@ export async function assertNoDockerDesktopBackend(runner: CommandRunner): Promi
  */
 export async function assertRancherBackend(runner: CommandRunner): Promise<void> {
   const result = await runner.run({command: "docker", args: ["version"]});
-  const output = result.output.toLowerCase();
 
   if (result.code !== 0) {
-    throw new ContainerRuntimeError(`Rancher Desktop Docker-compatible CLI is not available. Output: ${result.output.trim()}`);
+    throw new ContainerRuntimeError(
+      `Rancher Desktop Docker-compatible CLI is not available. Output: ${describeCommandFailure(result, `exit code ${result.code}`)}`,
+    );
   }
 
-  if (output.includes("docker desktop")) {
+  if (result.stdout.toLowerCase().includes("docker desktop")) {
     throw new ContainerRuntimeError(
       "Rancher engine selected but Docker Desktop appears to be active. Start Rancher Desktop in Moby/dockerd mode and stop Docker Desktop.",
     );
@@ -104,17 +125,17 @@ export async function assertRancherBackend(runner: CommandRunner): Promise<void>
 export async function assertPodmanBackend(runner: CommandRunner): Promise<void> {
   const podman = await runner.run({command: "podman", args: ["--version"]});
   if (podman.code !== 0) {
-    throw new ContainerRuntimeError(`Podman is not available. Output: ${podman.output.trim()}`);
+    throw new ContainerRuntimeError(`Podman is not available. Output: ${describeCommandFailure(podman, `exit code ${podman.code}`)}`);
   }
 
   const compose = await runner.run({command: "podman", args: ["compose", "version"]});
   if (compose.code !== 0) {
     throw new ContainerRuntimeError(
-      `Podman Compose provider is not available. Configure Podman Desktop Compose support. Output: ${compose.output.trim()}`,
+      `Podman Compose provider is not available. Configure Podman Desktop Compose support. Output: ${describeCommandFailure(compose, `exit code ${compose.code}`)}`,
     );
   }
 
-  const composeOutput = compose.output.toLowerCase();
+  const composeOutput = compose.stdout.toLowerCase();
   const usesPodmanCompose = composeOutput.includes("podman-compose");
   const dockerComposeIndicators = ["\\docker\\", "/docker/", "/docker.app/", "docker desktop", "docker-compose.exe", "docker-compose"];
   if (!usesPodmanCompose && dockerComposeIndicators.some((indicator) => composeOutput.includes(indicator))) {
@@ -141,7 +162,7 @@ export async function warnOnExistingLocalContainers(
 
   if (result.code !== 0) return;
 
-  const active = result.output
+  const active = result.stdout
     .split(/\r?\n/)
     .map((line) => line.trim())
     .filter((line) => line.length > 0);
@@ -176,7 +197,9 @@ export async function runSharedPreflight(
 
   const composeResult = await runner.run(adapter.compose(["version"]));
   if (composeResult.code !== 0) {
-    throw new ContainerRuntimeError(`${adapter.displayName} Compose provider is not available. Output: ${composeResult.output.trim()}`);
+    throw new ContainerRuntimeError(
+      `${adapter.displayName} Compose provider is not available. Output: ${describeCommandFailure(composeResult, `exit code ${composeResult.code}`)}`,
+    );
   }
 
   await warnOnExistingLocalContainers(adapter, runner, logger);

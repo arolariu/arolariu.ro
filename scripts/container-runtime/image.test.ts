@@ -4,10 +4,11 @@
  */
 
 import {describe, expect, it} from "vitest";
+import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "../common/logger.ts";
+import type {CommandRunner} from "../common/process.ts";
 import {getContainerAdapter} from "./adapters.ts";
 import {buildImageBuildCommand, buildImageRunCommand, runImageCli} from "./image.ts";
 import {buildArtifactGenerationCommand} from "./preflight.ts";
-import type {CommandRunner} from "./process.ts";
 
 describe("buildImageBuildCommand", () => {
   it("builds frontend image with Podman", () => {
@@ -56,37 +57,52 @@ describe("buildImageRunCommand", () => {
       ["cv", false],
       ["exp", false],
     ] as const)("gates artifact generation for %s builds", async (target, shouldGenerate) => {
-      const originalArgv = process.argv;
-      process.argv = ["node", "image.ts", "build", "--target", target, "--engine", "podman"];
       const commands: Array<Readonly<{command: string; args: readonly string[]}>> = [];
       const runner: CommandRunner = {
         run: async (command) => {
           commands.push(command);
-          return {code: 0, output: "podman version 5.8.2 podman-compose version 1.5.0"};
+          return {code: 0, stdout: "podman version 5.8.2 podman-compose version 1.5.0", stderr: "", durationMs: 0, timedOut: false};
         },
       };
 
-      try {
-        await runImageCli(runner);
-      } finally {
-        process.argv = originalArgv;
-      }
+      await runImageCli(["build", "--target", target, "--engine", "podman"], {runner});
 
       expect(commands.some((command) => command.command === process.execPath && command.args.includes("/a"))).toBe(shouldGenerate);
     });
 
     it("reports a clean target error when --target is missing", async () => {
-      const originalArgv = process.argv;
-      process.argv = ["node", "image.ts", "build", "--engine", "podman"];
       const runner: CommandRunner = {
-        run: async () => ({code: 0, output: "podman version 5.8.2\npodman-compose version 1.5.0"}),
+        run: async () => ({code: 0, stdout: "podman version 5.8.2\npodman-compose version 1.5.0", stderr: "", durationMs: 0, timedOut: false}),
       };
 
-      try {
-        await expect(runImageCli(runner)).rejects.toThrow("Use --target frontend|backend|cv|exp");
-      } finally {
-        process.argv = originalArgv;
-      }
+      await expect(runImageCli(["build", "--engine", "podman"], {runner})).rejects.toThrow("Use --target frontend|backend|cv|exp");
+    });
+
+    it("reports a clean action error when build/run is missing", async () => {
+      const runner: CommandRunner = {
+        run: async () => ({code: 0, stdout: "podman version 5.8.2\npodman-compose version 1.5.0", stderr: "", durationMs: 0, timedOut: false}),
+      };
+
+      await expect(runImageCli(["--target", "backend", "--engine", "podman"], {runner})).rejects.toThrow(
+        "Use build or run as the first argument.",
+      );
+    });
+
+    it.each(["--help", "-h", "/h"])("routes %s through the injected logger without executing anything", async (helpFlag) => {
+      const sink = new InMemoryLoggerSink();
+      const logger = new MonorepositoryConsoleLogger("test", {color: false, sink});
+      let executed = false;
+      const runner: CommandRunner = {
+        run: async () => {
+          executed = true;
+          return {code: 0, stdout: "", stderr: "", durationMs: 0, timedOut: false};
+        },
+      };
+
+      await expect(runImageCli([helpFlag], {runner, logger})).resolves.toBeUndefined();
+
+      expect(executed).toBe(false);
+      expect(sink.records.some((record) => record.text.includes("Usage:"))).toBe(true);
     });
   });
 });

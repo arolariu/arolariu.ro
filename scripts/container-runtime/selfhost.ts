@@ -8,13 +8,15 @@ import {access, mkdir} from "node:fs/promises";
 import {resolve} from "node:path";
 import {setTimeout as delay} from "node:timers/promises";
 import {fileURLToPath} from "node:url";
+import {commanderExitCode, createToolProgram} from "../common/cli.ts";
 import {MonorepositoryConsoleLogger, type MonorepositoryLogger} from "../common/logger.ts";
+import {defaultCommandRunner, formatCommand, type CommandRunner, type CommandRunOptions} from "../common/process.ts";
 import {resolveRepositoryPaths} from "../common/repository-paths.ts";
 import {getContainerAdapter, type ContainerRuntimeAdapter, type RuntimeCommand} from "./adapters.ts";
-import {runArtifactGeneration, runSharedPreflight} from "./preflight.ts";
-import {defaultRunner, formatCommand, type CommandRunner, type CommandRunnerOptions} from "./process.ts";
+import {describeCommandFailure, runArtifactGeneration, runSharedPreflight} from "./preflight.ts";
 import {resolveRuntimeContainerEngine} from "./selection.ts";
 import {removeSelfhostTraefikConfig, writeSelfhostTraefikConfig} from "./traefik.ts";
+import type {ContainerEngine} from "./types.ts";
 import {ContainerRuntimeError, exitWithError} from "./types.ts";
 
 /** Time to wait for storage containers to accept bootstrap calls after compose start. */
@@ -43,6 +45,19 @@ export type SelfhostAction = "start" | "stop" | "logs";
 export interface SelfhostPlanInputs {
   readonly action: SelfhostAction;
   readonly adapter: ContainerRuntimeAdapter;
+}
+
+/** Optional boundary replacements for {@link runSelfhost}. */
+export interface RunSelfhostOptions {
+  readonly requestedEngine?: ContainerEngine;
+  readonly runner?: CommandRunner;
+  readonly logger?: MonorepositoryLogger;
+}
+
+/** Optional boundary replacements for {@link runSelfhostEntrypoint}. */
+export interface SelfhostCliDependencies {
+  readonly runner?: CommandRunner;
+  readonly logger?: MonorepositoryLogger;
 }
 
 /**
@@ -95,17 +110,19 @@ async function runCommandOrThrow(
   runner: CommandRunner,
   command: RuntimeCommand,
   logger: MonorepositoryLogger,
-  options: CommandRunnerOptions = {},
+  options: CommandRunOptions = {},
 ): Promise<void> {
   logger.command(formatCommand(command));
   const result = await runner.run(command, {
     cwd: options.cwd ?? "infra/Local",
-    stdio: options.stdio ?? "tee",
+    output: options.output ?? "tee",
     logger,
     ...(options.env === undefined ? {} : {env: options.env}),
   });
   if (result.code !== 0) {
-    throw new ContainerRuntimeError(`Command failed: ${formatCommand(command)}\n${result.output}`);
+    throw new ContainerRuntimeError(
+      `Command failed: ${formatCommand(command)}\n${describeCommandFailure(result, `exit code ${result.code}`)}`,
+    );
   }
 }
 
@@ -270,17 +287,17 @@ export function getRequiredSqlPassword(): string {
  * Runs selfhost orchestration with the selected runtime engine.
  *
  * @param action - Selfhost action to execute.
- * @param runner - Command runner used to execute runtime commands.
- * @param logger - Logger used for orchestration output.
+ * @param options - Explicit engine request and optional injected command runner/logger.
  */
 export async function runSelfhost(
   action: SelfhostAction,
-  runner: CommandRunner = defaultRunner,
-  logger: MonorepositoryLogger = new MonorepositoryConsoleLogger("container::selfhost"),
+  options: Readonly<RunSelfhostOptions> = {},
 ): Promise<void> {
+  const runner = options.runner ?? defaultCommandRunner;
+  const logger = options.logger ?? new MonorepositoryConsoleLogger("container::selfhost");
   const paths = resolveRepositoryPaths();
   const selection = await resolveRuntimeContainerEngine({
-    argv: process.argv,
+    ...(options.requestedEngine === undefined ? {} : {requestedEngine: options.requestedEngine}),
     env: process.env,
     toolingConfigPath: paths.toolingConfig,
   });
@@ -317,28 +334,66 @@ export async function runSelfhost(
   }
 }
 
-const action = process.argv[2];
 const isDirectExecution = process.argv[1] !== undefined && fileURLToPath(import.meta.url) === resolve(process.argv[1]);
 
 /**
- * Runs the direct selfhost CLI with one logger shared by orchestration and failure reporting.
+ * Parses selfhost CLI arguments and runs the direct selfhost CLI with one
+ * logger shared by orchestration and failure reporting.
  *
- * @param requestedAction - Raw action from the direct process arguments.
- * @param runner - Command runner used by orchestration.
+ * @remarks
+ * Accepts `argv` explicitly (a Commander "user" argument list, without a
+ * leading node executable or script path) so tests never mutate
+ * `process.argv`. `--help`/`-h`/`/h` route through the injected `logger` and
+ * return without running any selfhost action.
+ *
+ * @param argv - Raw CLI arguments following the selfhost entrypoint.
+ * @param dependencies - Optional injected command runner and logger.
  */
-export async function runSelfhostEntrypoint(requestedAction: string | undefined, runner: CommandRunner = defaultRunner): Promise<void> {
-  const logger = new MonorepositoryConsoleLogger("container::selfhost");
+export async function runSelfhostEntrypoint(
+  argv: readonly string[],
+  dependencies: Readonly<SelfhostCliDependencies> = {},
+): Promise<void> {
+  const logger = dependencies.logger ?? new MonorepositoryConsoleLogger("container::selfhost");
+  const program = createToolProgram({
+    name: "selfhost",
+    description: "Runs selfhost container orchestration for the selected local engine.",
+    usage: "<start|stop|logs> [--engine <rancher|podman>]",
+    examples: ["npm run dev:selfhost -- --engine rancher", "npm run dev:selfhost:stop -- --engine podman"],
+    logger,
+  });
+  program.argument("[action]", "Selfhost action to run: start, stop, or logs.");
+  program.option("--engine <engine>", "Container engine to use (rancher or podman).");
+
+  try {
+    program.parse(argv, {from: "user"});
+  } catch (error) {
+    if (commanderExitCode(error) !== null) {
+      return;
+    }
+    throw error;
+  }
+
+  const [requestedAction] = program.args as [string | undefined];
+  const options = program.opts<{engine?: string}>();
+
   try {
     if (requestedAction !== "start" && requestedAction !== "stop" && requestedAction !== "logs") {
       throw new ContainerRuntimeError("Usage: node scripts/container-runtime/selfhost.ts <start|stop|logs> --engine rancher|podman");
     }
 
-    await runSelfhost(requestedAction, runner, logger);
+    await runSelfhost(requestedAction, {
+      // Commander only yields untyped strings; resolveRuntimeContainerEngine
+      // validates the value (including the docker-deprecation message)
+      // before it is ever treated as a real ContainerEngine.
+      ...(options.engine === undefined ? {} : {requestedEngine: options.engine as ContainerEngine}),
+      ...(dependencies.runner === undefined ? {} : {runner: dependencies.runner}),
+      logger,
+    });
   } catch (error) {
     exitWithError(error, logger);
   }
 }
 
 if (isDirectExecution) {
-  await runSelfhostEntrypoint(action);
+  await runSelfhostEntrypoint(process.argv.slice(2));
 }

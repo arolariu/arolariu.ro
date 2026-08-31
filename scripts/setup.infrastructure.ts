@@ -12,7 +12,6 @@ import type {ToolingConfigReadResult, ToolingConfigV1} from "./common/tooling-co
 import {mergeToolingConfig, readToolingConfig, writeToolingConfig} from "./common/tooling-config.ts";
 import {getContainerAdapter, type ContainerRuntimeAdapter} from "./container-runtime/adapters.ts";
 import {assertNoDockerDesktopBackend, requiredLocalPorts, runSharedPreflight} from "./container-runtime/preflight.ts";
-import {adaptCommandRunner} from "./container-runtime/process.ts";
 import {resolveContainerEngine} from "./container-runtime/selection.ts";
 import type {ContainerEngine, EngineSelectionSource} from "./container-runtime/types.ts";
 import type {InstallationProposal, SetupContext, SetupPhaseDefinition, SetupPhaseResult} from "./setup.types.ts";
@@ -903,7 +902,7 @@ async function checkRuntime(
   adapter: ContainerRuntimeAdapter,
 ): Promise<Readonly<{ok: true; inventory: string}> | Readonly<{ok: false; error: string; installable: boolean; manualStart: boolean}>> {
   try {
-    await runSharedPreflight(adapter, adaptCommandRunner(context.runner), context.logger);
+    await runSharedPreflight(adapter, context.runner, context.logger);
     if (adapter.engine === "podman") {
       const info = await context.runner.run({command: "podman", args: ["info", "--format", "json"]}, {cwd: context.paths.root});
       if (!isSuccessfulCommand(info)) {
@@ -972,7 +971,7 @@ async function prepareRuntime(
 
   if (adapter.engine === "podman") {
     try {
-      await assertNoDockerDesktopBackend(adaptCommandRunner(context.runner));
+      await assertNoDockerDesktopBackend(context.runner);
     } catch (error) {
       if (isInterrupted(error)) {
         throw error;

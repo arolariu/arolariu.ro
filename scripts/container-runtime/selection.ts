@@ -4,13 +4,20 @@
  */
 
 import {readToolingConfig} from "../common/tooling-config.ts";
-import {ContainerRuntimeError, type ContainerEngine, type RuntimeSelection, type SelectionInputs} from "./types.ts";
+import {ContainerRuntimeError, type ContainerEngine, type ContainerEngineSelection, type SelectionInputs} from "./types.ts";
 
 const supportedEngines: ReadonlySet<string> = new Set(["rancher", "podman"]);
 
-/** Inputs used by runtime entry points that may fall back to persisted tooling configuration. */
-export interface RuntimeSelectionInputs {
-  readonly argv: readonly string[];
+/**
+ * Inputs used by runtime entry points that may fall back to persisted tooling
+ * configuration.
+ *
+ * @remarks
+ * `requestedEngine` is supplied explicitly by the caller (typically a parsed
+ * Commander CLI option); this module never inspects `process.argv` itself.
+ */
+export interface RuntimeSelectionInput {
+  readonly requestedEngine?: ContainerEngine;
   readonly env: Readonly<NodeJS.ProcessEnv>;
   readonly toolingConfigPath: string;
 }
@@ -44,7 +51,7 @@ function readEngineArgument(argv: readonly string[]): string | null {
   return value;
 }
 
-function resolveExplicitContainerEngine(inputs: Readonly<Pick<SelectionInputs, "argv" | "env">>): RuntimeSelection | undefined {
+function resolveExplicitContainerEngine(inputs: Readonly<Pick<SelectionInputs, "argv" | "env">>): ContainerEngineSelection | undefined {
   const argumentValue = readEngineArgument(inputs.argv);
   if (argumentValue !== null) {
     return {engine: normalizeEngine(argumentValue), source: "argument"};
@@ -65,7 +72,7 @@ function resolveExplicitContainerEngine(inputs: Readonly<Pick<SelectionInputs, "
  * @returns The resolved engine and configuration source.
  * @throws {ContainerRuntimeError} When no supported engine is selected.
  */
-export function resolveContainerEngine(inputs: SelectionInputs): RuntimeSelection {
+export function resolveContainerEngine(inputs: SelectionInputs): ContainerEngineSelection {
   const explicitSelection = resolveExplicitContainerEngine(inputs);
   if (explicitSelection !== undefined) {
     return explicitSelection;
@@ -83,17 +90,27 @@ export function resolveContainerEngine(inputs: SelectionInputs): RuntimeSelectio
 /**
  * Resolves a runtime engine while consulting persisted configuration only as the lowest-priority source.
  *
- * @param inputs - Process inputs and local tooling configuration path.
+ * @remarks
+ * Priority order is an explicitly supplied `requestedEngine`, then the
+ * `AROLARIU_CONTAINER_ENGINE` environment variable, then persisted local
+ * tooling configuration. Callers (Commander-parsed CLI entry points) supply
+ * `requestedEngine` explicitly; this function never reads `process.argv`.
+ *
+ * @param input - Explicit engine request, environment, and local tooling configuration path.
  * @returns The resolved engine and configuration source.
  * @throws {ContainerRuntimeError} When an explicit source or required persisted configuration is invalid.
  */
-export async function resolveRuntimeContainerEngine(inputs: Readonly<RuntimeSelectionInputs>): Promise<RuntimeSelection> {
-  const explicitSelection = resolveExplicitContainerEngine(inputs);
-  if (explicitSelection !== undefined) {
-    return explicitSelection;
+export async function resolveRuntimeContainerEngine(input: Readonly<RuntimeSelectionInput>): Promise<ContainerEngineSelection> {
+  if (input.requestedEngine !== undefined) {
+    return {engine: normalizeEngine(input.requestedEngine), source: "argument"};
   }
 
-  const localConfig = await readToolingConfig(inputs.toolingConfigPath);
+  const environmentValue = input.env["AROLARIU_CONTAINER_ENGINE"];
+  if (environmentValue !== undefined && environmentValue.trim() !== "") {
+    return {engine: normalizeEngine(environmentValue), source: "environment"};
+  }
+
+  const localConfig = await readToolingConfig(input.toolingConfigPath);
   if (localConfig.status === "invalid") {
     throw new ContainerRuntimeError(localConfig.error);
   }

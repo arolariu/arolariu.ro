@@ -5,24 +5,40 @@
 
 import {describe, expect, it} from "vitest";
 import {InMemoryLoggerSink, MonorepositoryConsoleLogger, type MonorepositoryLogger} from "../common/logger.ts";
+import type {CommandResult, CommandRunner} from "../common/process.ts";
 import {getContainerAdapter} from "./adapters.ts";
 import {
   assertNoDockerDesktopBackend,
   assertPodmanBackend,
   assertRancherBackend,
   assertToolAvailable,
+  describeCommandFailure,
   runArtifactGeneration,
   requiredLocalPorts,
   runSharedPreflight,
   warnOnExistingLocalContainers,
 } from "./preflight.ts";
-import type {CommandRunner} from "./process.ts";
+
+function commandResult(stdout: string, code = 0): CommandResult {
+  return {code, stdout, stderr: "", durationMs: 0, timedOut: false};
+}
 
 function runnerWith(output: string, code = 0): CommandRunner {
   return {
-    run: async () => ({code, output}),
+    run: async () => commandResult(output, code),
   };
 }
+
+describe("describeCommandFailure", () => {
+  it("prefers stderr, then stdout, then spawnError, then the fallback", () => {
+    expect(describeCommandFailure({code: 1, stdout: "out", stderr: "err", durationMs: 0, timedOut: false}, "fallback")).toBe("err");
+    expect(describeCommandFailure({code: 1, stdout: "out", stderr: "", durationMs: 0, timedOut: false}, "fallback")).toBe("out");
+    expect(
+      describeCommandFailure({code: 1, stdout: "", stderr: "", durationMs: 0, timedOut: false, spawnError: "spawn failed"}, "fallback"),
+    ).toBe("spawn failed");
+    expect(describeCommandFailure({code: 1, stdout: "", stderr: "", durationMs: 0, timedOut: false}, "fallback")).toBe("fallback");
+  });
+});
 
 function createTestLogger(): Readonly<{sink: InMemoryLoggerSink; logger: MonorepositoryLogger}> {
   const sink = new InMemoryLoggerSink();
@@ -41,7 +57,7 @@ describe("runArtifactGeneration", () => {
     const runner: CommandRunner = {
       run: async (_command, options) => {
         receivedLogger = options?.logger;
-        return {code: 0, output: ""};
+        return commandResult("");
       },
     };
 
@@ -95,14 +111,14 @@ describe("assertPodmanBackend", () => {
     const runner: CommandRunner = {
       run: async (command) => {
         if (command.command === "podman" && command.args.join(" ") === "--version") {
-          return {code: 0, output: "podman version 5.4.0"};
+          return commandResult("podman version 5.4.0");
         }
 
         if (command.command === "podman" && command.args.join(" ") === "compose version") {
-          return {code: 0, output: "podman-compose version 1.2.0"};
+          return commandResult("podman-compose version 1.2.0");
         }
 
-        return {code: 1, output: "unexpected command"};
+        return commandResult("unexpected command", 1);
       },
     };
 
@@ -117,10 +133,10 @@ describe("assertPodmanBackend", () => {
     const runner: CommandRunner = {
       run: async (command) => {
         if (command.command === "podman" && command.args.join(" ") === "--version") {
-          return {code: 0, output: "podman version 5.4.0"};
+          return commandResult("podman version 5.4.0");
         }
 
-        return {code: 1, output: "podman compose provider is not configured"};
+        return commandResult("podman compose provider is not configured", 1);
       },
     };
 
@@ -131,13 +147,12 @@ describe("assertPodmanBackend", () => {
     const runner: CommandRunner = {
       run: async (command) => {
         if (command.command === "podman" && command.args.join(" ") === "--version") {
-          return {code: 0, output: "podman version 5.8.2"};
+          return commandResult("podman version 5.8.2");
         }
 
-        return {
-          code: 0,
-          output: 'Executing external compose provider "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker-compose.exe"',
-        };
+        return commandResult(
+          'Executing external compose provider "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker-compose.exe"',
+        );
       },
     };
 
@@ -148,13 +163,10 @@ describe("assertPodmanBackend", () => {
     const runner: CommandRunner = {
       run: async (command) => {
         if (command.command === "podman" && command.args.join(" ") === "--version") {
-          return {code: 0, output: "podman version 5.8.2"};
+          return commandResult("podman version 5.8.2");
         }
 
-        return {
-          code: 0,
-          output: 'Executing external compose provider "/Applications/Docker.app/Contents/Resources/cli-plugins/docker-compose"',
-        };
+        return commandResult('Executing external compose provider "/Applications/Docker.app/Contents/Resources/cli-plugins/docker-compose"');
       },
     };
 
@@ -165,10 +177,10 @@ describe("assertPodmanBackend", () => {
     const runner: CommandRunner = {
       run: async (command) => {
         if (command.command === "podman" && command.args.join(" ") === "--version") {
-          return {code: 0, output: "podman version 5.8.2"};
+          return commandResult("podman version 5.8.2");
         }
 
-        return {code: 0, output: "podman version 5.8.2\npodman-compose version 1.5.0"};
+        return commandResult("podman version 5.8.2\npodman-compose version 1.5.0");
       },
     };
 
@@ -202,7 +214,7 @@ describe("runSharedPreflight", () => {
     const runner: CommandRunner = {
       run: async (command) => {
         calls.push([command.command, ...command.args].join(" "));
-        return {code: 0, output: "Rancher Desktop"};
+        return commandResult("Rancher Desktop");
       },
     };
 
@@ -215,10 +227,10 @@ describe("runSharedPreflight", () => {
     const runner: CommandRunner = {
       run: async (command) => {
         if (command.command === "podman") {
-          return {code: 0, output: "podman version 5.4.0"};
+          return commandResult("podman version 5.4.0");
         }
 
-        return {code: 0, output: "Docker Desktop 4.40.0"};
+        return commandResult("Docker Desktop 4.40.0");
       },
     };
 

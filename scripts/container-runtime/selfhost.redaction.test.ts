@@ -4,7 +4,7 @@
  * @module scripts/container-runtime/selfhost.redaction.test
  */
 
-import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
+import {afterEach, describe, expect, it, vi} from "vitest";
 
 const {access, mkdir, writeFile, delay} = vi.hoisted(() => ({
   access: vi.fn(async () => undefined),
@@ -32,19 +32,13 @@ vi.mock("node:timers/promises", async (importOriginal) => {
 });
 
 import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "../common/logger.ts";
+import type {CommandRunner} from "../common/process.ts";
 import {runSelfhost, runSelfhostEntrypoint} from "./selfhost.ts";
-import type {CommandRunner} from "./process.ts";
 
-const originalArgv = process.argv;
 const originalSqlPassword = process.env["MSSQL_SA_PASSWORD"];
 const originalExitCode = process.exitCode;
 
-beforeEach(() => {
-  process.argv = ["node", "selfhost.ts", "start", "--engine", "podman"];
-});
-
 afterEach(() => {
-  process.argv = originalArgv;
   if (originalSqlPassword === undefined) {
     delete process.env["MSSQL_SA_PASSWORD"];
   } else {
@@ -71,20 +65,26 @@ describe("runSelfhost SQL password redaction", () => {
           sawSqlCommand = true;
           return {
             code: 1,
-            output: `sqlcmd failed with ${sqlPassword}`,
+            stdout: "",
+            stderr: `sqlcmd failed with ${sqlPassword}`,
+            durationMs: 0,
+            timedOut: false,
           };
         }
 
         return {
           code: 0,
-          output: "podman version 5.8.2\npodman-compose version 1.5.0",
+          stdout: "podman version 5.8.2\npodman-compose version 1.5.0",
+          stderr: "",
+          durationMs: 0,
+          timedOut: false,
         };
       },
     };
 
     let failure: unknown;
     try {
-      await runSelfhost("start", runner, logger);
+      await runSelfhost("start", {requestedEngine: "podman", runner, logger});
     } catch (error) {
       failure = error;
     }
@@ -107,18 +107,24 @@ describe("runSelfhost SQL password redaction", () => {
         if (command.args.includes("-P")) {
           return {
             code: 1,
-            output: `sqlcmd rejected ${sqlPassword}`,
+            stdout: "",
+            stderr: `sqlcmd rejected ${sqlPassword}`,
+            durationMs: 0,
+            timedOut: false,
           };
         }
 
         return {
           code: 0,
-          output: "podman version 5.8.2\npodman-compose version 1.5.0",
+          stdout: "podman version 5.8.2\npodman-compose version 1.5.0",
+          stderr: "",
+          durationMs: 0,
+          timedOut: false,
         };
       },
     };
 
-    await runSelfhostEntrypoint("start", runner);
+    await runSelfhostEntrypoint(["start", "--engine", "podman"], {runner});
 
     const output = errorOutput.mock.calls.flat().join("\n");
     expect(process.exitCode).toBe(1);

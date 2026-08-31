@@ -12,7 +12,7 @@ export type ContainerEngine = "rancher" | "podman";
 export type EngineSelectionSource = "argument" | "environment" | "configuration";
 
 /** Resolved local container engine selection. */
-export interface RuntimeSelection {
+export interface ContainerEngineSelection {
   readonly engine: ContainerEngine;
   readonly source: EngineSelectionSource;
 }

@@ -5,12 +5,14 @@
 
 import {resolve} from "node:path";
 import {fileURLToPath} from "node:url";
+import {commanderExitCode, createToolProgram} from "../common/cli.ts";
 import {MonorepositoryConsoleLogger, type MonorepositoryLogger} from "../common/logger.ts";
+import {defaultCommandRunner, formatCommand, type CommandRunner} from "../common/process.ts";
 import {resolveRepositoryPaths} from "../common/repository-paths.ts";
 import {getContainerAdapter, type ContainerRuntimeAdapter, type RuntimeCommand} from "./adapters.ts";
-import {runArtifactGeneration, runSharedPreflight} from "./preflight.ts";
-import {defaultRunner, formatCommand, type CommandRunner} from "./process.ts";
+import {describeCommandFailure, runArtifactGeneration, runSharedPreflight} from "./preflight.ts";
 import {resolveRuntimeContainerEngine} from "./selection.ts";
+import type {ContainerEngine} from "./types.ts";
 import {exitWithError} from "./types.ts";
 
 type ImageTarget = "frontend" | "backend" | "cv" | "exp";
@@ -30,6 +32,12 @@ export interface ImageRunOptions {
   readonly environment: Readonly<Record<string, string>>;
 }
 
+/** Optional boundary replacements for {@link runImageCli}. */
+export interface ImageCliDependencies {
+  readonly runner?: CommandRunner;
+  readonly logger?: MonorepositoryLogger;
+}
+
 const dockerfilesByTarget: Readonly<Record<ImageTarget, string>> = {
   frontend: "infra/containers/Dockerfile.frontend",
   backend: "infra/containers/Dockerfile.backend",
@@ -44,9 +52,7 @@ const portsByTarget: Readonly<Record<ImageTarget, readonly string[]>> = {
   exp: ["5002:80"],
 };
 
-function parseTarget(argv: readonly string[]): ImageTarget {
-  const targetIndex = argv.indexOf("--target");
-  const target = targetIndex === -1 ? undefined : argv[targetIndex + 1];
+function parseTarget(target: string | undefined): ImageTarget {
   if (target === "frontend" || target === "backend" || target === "cv" || target === "exp") {
     return target;
   }
@@ -91,23 +97,61 @@ export function buildImageRunCommand(adapter: ContainerRuntimeAdapter, options: 
 
 async function runImageCommand(runner: CommandRunner, command: RuntimeCommand, logger: MonorepositoryLogger): Promise<void> {
   logger.command(formatCommand(command));
-  const result = await runner.run(command, {stdio: "tee", logger});
-  if (result.code !== 0) throw new Error(result.output);
+  const result = await runner.run(command, {output: "tee", logger});
+  if (result.code !== 0) throw new Error(describeCommandFailure(result, `exit code ${result.code}`));
 }
 
 /**
- * Runs the local image build/run CLI wrapper.
+ * Parses image CLI arguments and runs the local build/run wrapper.
  *
- * @param runner - Command runner used to execute runtime commands.
- * @param logger - Logger used for orchestration output.
+ * @remarks
+ * Accepts `argv` explicitly (a Commander "user" argument list, without a
+ * leading node executable or script path) so tests never mutate
+ * `process.argv`. `--help`/`-h`/`/h` route through the injected `logger` and
+ * return without building or running an image.
+ *
+ * @param argv - Raw CLI arguments following the image entrypoint.
+ * @param dependencies - Optional injected command runner and logger.
+ * @throws {Error} When the action or `--target` is missing/invalid, or the runtime command exits with a nonzero code.
  */
 export async function runImageCli(
-  runner: CommandRunner = defaultRunner,
-  logger: MonorepositoryLogger = new MonorepositoryConsoleLogger("container::image"),
+  argv: readonly string[],
+  dependencies: Readonly<ImageCliDependencies> = {},
 ): Promise<void> {
+  const logger = dependencies.logger ?? new MonorepositoryConsoleLogger("container::image");
+  const program = createToolProgram({
+    name: "image",
+    description: "Builds or runs a local container image with the selected engine.",
+    usage: "<build|run> --target <frontend|backend|cv|exp> [--engine <rancher|podman>]",
+    examples: [
+      "npm run containers:build -- --target frontend --engine rancher",
+      "npm run containers:run -- --target backend --engine podman",
+    ],
+    logger,
+  });
+  program.argument("[action]", "Image action to run: build or run.");
+  program.option("--target <target>", "Image target: frontend, backend, cv, or exp.");
+  program.option("--engine <engine>", "Container engine to use (rancher or podman).");
+
+  try {
+    program.parse(argv, {from: "user"});
+  } catch (error) {
+    if (commanderExitCode(error) !== null) {
+      return;
+    }
+    throw error;
+  }
+
+  const [action] = program.args as [string | undefined];
+  const options = program.opts<{target?: string; engine?: string}>();
+
+  const runner = dependencies.runner ?? defaultCommandRunner;
   const paths = resolveRepositoryPaths();
   const selection = await resolveRuntimeContainerEngine({
-    argv: process.argv,
+    // Commander only yields untyped strings; resolveRuntimeContainerEngine
+    // validates the value (including the docker-deprecation message) before
+    // it is ever treated as a real ContainerEngine.
+    ...(options.engine === undefined ? {} : {requestedEngine: options.engine as ContainerEngine}),
     env: process.env,
     toolingConfigPath: paths.toolingConfig,
   });
@@ -115,8 +159,7 @@ export async function runImageCli(
   const preflightLogger = logger.child("preflight");
   await runSharedPreflight(adapter, runner, preflightLogger);
 
-  const action = process.argv[2];
-  const target = parseTarget(process.argv);
+  const target = parseTarget(options.target);
   const tag = `arolariu-${target}`;
 
   if (action === "build") {
@@ -148,7 +191,7 @@ const isDirectExecution = process.argv[1] !== undefined && fileURLToPath(import.
 
 if (isDirectExecution) {
   try {
-    await runImageCli();
+    await runImageCli(process.argv.slice(2));
   } catch (error) {
     exitWithError(error, new MonorepositoryConsoleLogger("container::image"));
   }

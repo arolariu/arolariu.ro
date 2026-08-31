@@ -6,6 +6,7 @@
 import {afterEach, describe, expect, it} from "vitest";
 import {readFile} from "node:fs/promises";
 import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "../common/logger.ts";
+import type {CommandRunner, CommandRunOptions} from "../common/process.ts";
 import {getContainerAdapter} from "./adapters.ts";
 import {
   buildLocalStorageBootstrapCommand,
@@ -14,7 +15,6 @@ import {
   runSelfhost,
   shouldGenerateTaxonomyArtifacts,
 } from "./selfhost.ts";
-import type {CommandRunner, CommandRunnerOptions} from "./process.ts";
 
 const originalSqlPassword = process.env["MSSQL_SA_PASSWORD"];
 
@@ -124,34 +124,54 @@ describe("buildSelfhostPlan", () => {
 
 describe("runSelfhost", () => {
   it("routes command output through the injected logger", async () => {
-    const originalArgv = process.argv;
-    process.argv = ["node", "selfhost.ts", "logs", "--engine", "podman"];
     const sink = new InMemoryLoggerSink();
     const logger = new MonorepositoryConsoleLogger("test", {
       color: false,
       sink,
     });
-    const receivedOptions: Array<CommandRunnerOptions | undefined> = [];
+    const receivedOptions: Array<CommandRunOptions | undefined> = [];
     const runner: CommandRunner = {
       run: async (_command, options) => {
         receivedOptions.push(options);
         return {
           code: 0,
-          output: "podman version 5.8.2\npodman-compose version 1.5.0",
+          stdout: "podman version 5.8.2\npodman-compose version 1.5.0",
+          stderr: "",
+          durationMs: 0,
+          timedOut: false,
         };
       },
     };
 
-    try {
-      await runSelfhost("logs", runner, logger);
-    } finally {
-      process.argv = originalArgv;
-    }
+    await runSelfhost("logs", {requestedEngine: "podman", runner, logger});
 
     expect(sink.records.some((record) => record.text.includes("$ podman logs --tail 100 exp-arolariu-ro"))).toBe(true);
-    const teeOptions = receivedOptions.filter((options) => options?.stdio === "tee");
+    const teeOptions = receivedOptions.filter((options) => options?.output === "tee");
     expect(teeOptions.length).toBeGreaterThan(0);
     expect(teeOptions.every((options) => options?.logger !== undefined)).toBe(true);
+  });
+
+  it("resolves the engine from the explicit requestedEngine option only", async () => {
+    const commands: string[] = [];
+    const spyRunner: CommandRunner = {
+      run: async (command) => {
+        commands.push(command.command);
+        return {
+          code: 0,
+          stdout: "podman version 5.8.2\npodman-compose version 1.5.0",
+          stderr: "",
+          durationMs: 0,
+          timedOut: false,
+        };
+      },
+    };
+
+    await runSelfhost("logs", {requestedEngine: "podman", runner: spyRunner});
+
+    // The selfhost plan's own logs commands (the final three calls) are
+    // executed through podman, proving engine selection came from the
+    // explicit requestedEngine option rather than any global process state.
+    expect(commands.slice(-3)).toEqual(["podman", "podman", "podman"]);
   });
 });
 

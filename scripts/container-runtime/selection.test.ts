@@ -8,6 +8,7 @@ import {tmpdir} from "node:os";
 import {resolve} from "node:path";
 import {afterEach, describe, expect, it} from "vitest";
 import {resolveContainerEngine, resolveRuntimeContainerEngine} from "./selection.ts";
+import type {ContainerEngine} from "./types.ts";
 
 const temporaryRoots: string[] = [];
 
@@ -108,12 +109,12 @@ describe("resolveContainerEngine", () => {
 });
 
 describe("resolveRuntimeContainerEngine", () => {
-  it("uses an explicit argument without consulting malformed persisted configuration", async () => {
+  it("uses an explicit requestedEngine without consulting malformed persisted configuration", async () => {
     const toolingConfigPath = await malformedToolingConfigPath();
 
     await expect(
       resolveRuntimeContainerEngine({
-        argv: ["node", "script.ts", "--engine", "podman"],
+        requestedEngine: "podman",
         env: {},
         toolingConfigPath,
       }),
@@ -125,7 +126,6 @@ describe("resolveRuntimeContainerEngine", () => {
 
     await expect(
       resolveRuntimeContainerEngine({
-        argv: ["node", "script.ts"],
         env: {AROLARIU_CONTAINER_ENGINE: "rancher"},
         toolingConfigPath,
       }),
@@ -137,19 +137,18 @@ describe("resolveRuntimeContainerEngine", () => {
 
     await expect(
       resolveRuntimeContainerEngine({
-        argv: ["node", "script.ts"],
         env: {},
         toolingConfigPath,
       }),
     ).rejects.toThrow("Invalid local tooling configuration");
   });
 
-  it("rejects an invalid explicit argument instead of falling back to persisted configuration", async () => {
+  it("rejects an invalid explicit requestedEngine instead of falling back to persisted configuration", async () => {
     const toolingConfigPath = await malformedToolingConfigPath();
 
     await expect(
       resolveRuntimeContainerEngine({
-        argv: ["node", "script.ts", "--engine", "colima"],
+        requestedEngine: "colima" as ContainerEngine,
         env: {},
         toolingConfigPath,
       }),
