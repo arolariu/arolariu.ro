@@ -88,6 +88,26 @@ describe("buildImageRunCommand", () => {
       );
     });
 
+    it("rejects an unknown option instead of exiting silently", async () => {
+      const sink = new InMemoryLoggerSink();
+      const logger = new MonorepositoryConsoleLogger("test", {color: false, sink});
+      const runner: CommandRunner = {
+        run: async () => ({code: 0, stdout: "", stderr: "", durationMs: 0, timedOut: false}),
+      };
+
+      await expect(runImageCli(["--bogus"], {runner, logger})).rejects.toThrow(/unknown option/iu);
+    });
+
+    it("rejects a missing --target argument instead of exiting silently", async () => {
+      const sink = new InMemoryLoggerSink();
+      const logger = new MonorepositoryConsoleLogger("test", {color: false, sink});
+      const runner: CommandRunner = {
+        run: async () => ({code: 0, stdout: "", stderr: "", durationMs: 0, timedOut: false}),
+      };
+
+      await expect(runImageCli(["build", "--target"], {runner, logger})).rejects.toThrow(/argument missing/iu);
+    });
+
     it.each(["--help", "-h", "/h"])("routes %s through the injected logger without executing anything", async (helpFlag) => {
       const sink = new InMemoryLoggerSink();
       const logger = new MonorepositoryConsoleLogger("test", {color: false, sink});

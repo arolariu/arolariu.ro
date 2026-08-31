@@ -59,6 +59,20 @@ describe("runComposeCli", () => {
     ).rejects.toThrow("Use --file <compose-file> -- <compose arguments>");
   });
 
+  it("rejects an unknown option instead of exiting silently", async () => {
+    const sink = new InMemoryLoggerSink();
+    const logger = new MonorepositoryConsoleLogger("test", {color: false, sink});
+
+    await expect(runComposeCli(["--bogus"], {runner: successfulRunner(), logger})).rejects.toThrow(/unknown option/iu);
+  });
+
+  it("rejects a missing --file argument instead of exiting silently", async () => {
+    const sink = new InMemoryLoggerSink();
+    const logger = new MonorepositoryConsoleLogger("test", {color: false, sink});
+
+    await expect(runComposeCli(["--file"], {runner: successfulRunner(), logger})).rejects.toThrow(/argument missing/iu);
+  });
+
   it.each(["--help", "-h", "/h"])("routes %s through the injected logger without executing anything", async (helpFlag) => {
     const sink = new InMemoryLoggerSink();
     const logger = new MonorepositoryConsoleLogger("test", {color: false, sink});

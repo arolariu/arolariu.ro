@@ -13,10 +13,12 @@ import {
   buildSelfhostPlan,
   getRequiredSqlPassword,
   runSelfhost,
+  runSelfhostEntrypoint,
   shouldGenerateTaxonomyArtifacts,
 } from "./selfhost.ts";
 
 const originalSqlPassword = process.env["MSSQL_SA_PASSWORD"];
+const originalExitCode = process.exitCode;
 
 const launcherCases = [
   {
@@ -51,6 +53,7 @@ afterEach(() => {
   } else {
     process.env["MSSQL_SA_PASSWORD"] = originalSqlPassword;
   }
+  process.exitCode = originalExitCode;
 });
 
 describe("supported selfhost launchers", () => {
@@ -172,6 +175,62 @@ describe("runSelfhost", () => {
     // executed through podman, proving engine selection came from the
     // explicit requestedEngine option rather than any global process state.
     expect(commands.slice(-3)).toEqual(["podman", "podman", "podman"]);
+  });
+});
+
+describe("runSelfhostEntrypoint", () => {
+  it.each(["--help", "-h", "/h"])("routes %s through the injected logger without executing anything", async (helpFlag) => {
+    const sink = new InMemoryLoggerSink();
+    const logger = new MonorepositoryConsoleLogger("test", {color: false, sink});
+    let executed = false;
+    const runner: CommandRunner = {
+      run: async () => {
+        executed = true;
+        return {code: 0, stdout: "", stderr: "", durationMs: 0, timedOut: false};
+      },
+    };
+
+    await expect(runSelfhostEntrypoint([helpFlag], {runner, logger})).resolves.toBeUndefined();
+
+    expect(executed).toBe(false);
+    expect(process.exitCode).toBe(originalExitCode);
+    expect(sink.records.some((record) => record.text.includes("Usage:"))).toBe(true);
+  });
+
+  it("routes an unknown option through the existing exitWithError boundary instead of an unhandled rejection", async () => {
+    const sink = new InMemoryLoggerSink();
+    const logger = new MonorepositoryConsoleLogger("test", {color: false, sink});
+    let executed = false;
+    const runner: CommandRunner = {
+      run: async () => {
+        executed = true;
+        return {code: 0, stdout: "", stderr: "", durationMs: 0, timedOut: false};
+      },
+    };
+
+    await expect(runSelfhostEntrypoint(["--bogus"], {runner, logger})).resolves.toBeUndefined();
+
+    expect(executed).toBe(false);
+    expect(process.exitCode).toBe(1);
+    expect(sink.records.some((record) => record.text.toLowerCase().includes("unknown option"))).toBe(true);
+  });
+
+  it("routes a missing --engine argument through the existing exitWithError boundary instead of an unhandled rejection", async () => {
+    const sink = new InMemoryLoggerSink();
+    const logger = new MonorepositoryConsoleLogger("test", {color: false, sink});
+    let executed = false;
+    const runner: CommandRunner = {
+      run: async () => {
+        executed = true;
+        return {code: 0, stdout: "", stderr: "", durationMs: 0, timedOut: false};
+      },
+    };
+
+    await expect(runSelfhostEntrypoint(["start", "--engine"], {runner, logger})).resolves.toBeUndefined();
+
+    expect(executed).toBe(false);
+    expect(process.exitCode).toBe(1);
+    expect(sink.records.some((record) => record.text.toLowerCase().includes("argument missing"))).toBe(true);
   });
 });
 

@@ -136,7 +136,7 @@ export async function runImageCli(
   try {
     program.parse(argv, {from: "user"});
   } catch (error) {
-    if (commanderExitCode(error) !== null) {
+    if (commanderExitCode(error) === 0) {
       return;
     }
     throw error;

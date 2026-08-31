@@ -32,6 +32,23 @@ export function describeCommandFailure(result: Readonly<CommandResult>, fallback
 }
 
 /**
+ * Combines stdout and stderr for backend/provider banner detection.
+ *
+ * @remarks
+ * Some container CLI banners (for example Podman's external compose
+ * provider notice, or a Docker Desktop version banner) are written to
+ * stderr rather than stdout. Detection heuristics must inspect both
+ * streams; this is unrelated to {@link describeCommandFailure}'s
+ * stderr-first precedence, which is used only for diagnostic failure text.
+ *
+ * @param result - Structured command result to inspect.
+ * @returns Lowercased stdout and stderr joined for substring detection.
+ */
+function combinedOutputForBannerDetection(result: Readonly<CommandResult>): string {
+  return `${result.stdout}\n${result.stderr}`.toLowerCase();
+}
+
+/**
  * Builds the host command that generates taxonomy and license artifacts.
  *
  * @returns Platform-safe Node command using the unified `/a` alias.
@@ -87,7 +104,7 @@ export async function assertToolAvailable(tool: string, runner: CommandRunner): 
 export async function assertNoDockerDesktopBackend(runner: CommandRunner): Promise<void> {
   const result = await runner.run({command: "docker", args: ["version"]});
 
-  if (result.code === 0 && result.stdout.toLowerCase().includes("docker desktop")) {
+  if (result.code === 0 && combinedOutputForBannerDetection(result).includes("docker desktop")) {
     throw new ContainerRuntimeError(
       "Docker Desktop is the active backend. Stop Docker Desktop and select Rancher Desktop or Podman Desktop.",
     );
@@ -109,7 +126,7 @@ export async function assertRancherBackend(runner: CommandRunner): Promise<void>
     );
   }
 
-  if (result.stdout.toLowerCase().includes("docker desktop")) {
+  if (combinedOutputForBannerDetection(result).includes("docker desktop")) {
     throw new ContainerRuntimeError(
       "Rancher engine selected but Docker Desktop appears to be active. Start Rancher Desktop in Moby/dockerd mode and stop Docker Desktop.",
     );
@@ -135,7 +152,7 @@ export async function assertPodmanBackend(runner: CommandRunner): Promise<void> 
     );
   }
 
-  const composeOutput = compose.stdout.toLowerCase();
+  const composeOutput = combinedOutputForBannerDetection(compose);
   const usesPodmanCompose = composeOutput.includes("podman-compose");
   const dockerComposeIndicators = ["\\docker\\", "/docker/", "/docker.app/", "docker desktop", "docker-compose.exe", "docker-compose"];
   if (!usesPodmanCompose && dockerComposeIndicators.some((indicator) => composeOutput.includes(indicator))) {

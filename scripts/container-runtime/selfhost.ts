@@ -367,10 +367,11 @@ export async function runSelfhostEntrypoint(
   try {
     program.parse(argv, {from: "user"});
   } catch (error) {
-    if (commanderExitCode(error) !== null) {
+    if (commanderExitCode(error) === 0) {
       return;
     }
-    throw error;
+    exitWithError(error, logger);
+    return;
   }
 
   const [requestedAction] = program.args as [string | undefined];

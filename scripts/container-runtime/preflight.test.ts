@@ -23,6 +23,10 @@ function commandResult(stdout: string, code = 0): CommandResult {
   return {code, stdout, stderr: "", durationMs: 0, timedOut: false};
 }
 
+function commandResultWithStderr(stderr: string, code = 0): CommandResult {
+  return {code, stdout: "", stderr, durationMs: 0, timedOut: false};
+}
+
 function runnerWith(output: string, code = 0): CommandRunner {
   return {
     run: async () => commandResult(output, code),
@@ -86,6 +90,14 @@ describe("assertNoDockerDesktopBackend", () => {
   it("passes when the active backend is Rancher Desktop", async () => {
     await expect(assertNoDockerDesktopBackend(runnerWith("Rancher Desktop"))).resolves.toBeUndefined();
   });
+
+  it("throws when the Docker Desktop banner is only present on stderr", async () => {
+    const runner: CommandRunner = {
+      run: async () => commandResultWithStderr("Docker Desktop 4.40.0"),
+    };
+
+    await expect(assertNoDockerDesktopBackend(runner)).rejects.toThrow("Docker Desktop is the active backend");
+  });
 });
 
 describe("assertRancherBackend", () => {
@@ -102,6 +114,16 @@ describe("assertRancherBackend", () => {
   it("rejects an unavailable Docker-compatible CLI", async () => {
     await expect(assertRancherBackend(runnerWith("not found", 1))).rejects.toThrow(
       "Rancher Desktop Docker-compatible CLI is not available",
+    );
+  });
+
+  it("rejects a Docker Desktop banner reported only on stderr", async () => {
+    const runner: CommandRunner = {
+      run: async () => commandResultWithStderr("Docker Desktop 4.40.0"),
+    };
+
+    await expect(assertRancherBackend(runner)).rejects.toThrow(
+      "Rancher engine selected but Docker Desktop appears to be active",
     );
   });
 });
@@ -167,6 +189,22 @@ describe("assertPodmanBackend", () => {
         }
 
         return commandResult('Executing external compose provider "/Applications/Docker.app/Contents/Resources/cli-plugins/docker-compose"');
+      },
+    };
+
+    await expect(assertPodmanBackend(runner)).rejects.toThrow("Podman Compose is currently delegated to a Docker Desktop compose provider");
+  });
+
+  it("rejects Docker Desktop compose provider delegation reported only on stderr", async () => {
+    const runner: CommandRunner = {
+      run: async (command) => {
+        if (command.command === "podman" && command.args.join(" ") === "--version") {
+          return commandResult("podman version 5.8.2");
+        }
+
+        return commandResultWithStderr(
+          'Executing external compose provider "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker-compose.exe"',
+        );
       },
     };
 
