@@ -568,6 +568,39 @@ describe("createDotnetProvider", () => {
     });
   });
 
+  it("accepts one valid leading XML declaration", async () => {
+    const fixture = await createDotnetFixture();
+    await writeFixtureFile(
+      fixture.paths.solution,
+      [
+        '<?xml version="1.0" encoding="utf-8" standalone="yes"?>',
+        '<Solution><Project Path="sites/api.arolariu.ro/src/Common/arolariu.Backend.Common.csproj" /></Solution>',
+      ].join("\n"),
+    );
+
+    const outcome = await fixture.provider();
+
+    expect(outcome).toMatchObject({kind: "available", value: {solutionIssues: []}});
+  });
+
+  it.each([
+    ["malformed", '<?xml?><Solution><Project Path="sites/api.arolariu.ro/src/Common/arolariu.Backend.Common.csproj" /></Solution>'],
+    [
+      "misplaced",
+      '<Solution><?xml version="1.0"?><Project Path="sites/api.arolariu.ro/src/Common/arolariu.Backend.Common.csproj" /></Solution>',
+    ],
+  ] as const)("reports a %s reserved XML declaration", async (_case, contents) => {
+    const fixture = await createDotnetFixture();
+    await writeFixtureFile(fixture.paths.solution, contents);
+
+    const outcome = await fixture.provider();
+
+    expect(outcome).toMatchObject({
+      kind: "available",
+      value: {solutionIssues: ["The repository solution file is malformed."]},
+    });
+  });
+
   it("decodes a valid XML-escaped project path before filesystem validation", async () => {
     const fixture = await createDotnetFixture();
     const escapedProject = "sites/api.arolariu.ro/src/R&D/R&D.csproj";

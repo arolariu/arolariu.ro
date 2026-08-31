@@ -528,12 +528,45 @@ function parseXmlTag(source: string): ParsedXmlTag | undefined {
   return {attributes, closing: false, name: parsedName.name, selfClosing: false};
 }
 
+function isValidXmlDeclaration(instruction: string): boolean {
+  const declaration = parseXmlTag(instruction);
+  if (declaration === undefined || declaration.closing || declaration.selfClosing || declaration.name !== "xml") {
+    return false;
+  }
+
+  const attributes = [...declaration.attributes.entries()];
+  let cursor = 0;
+  const version = attributes[cursor];
+  if (version?.[0] !== "version" || (version[1] !== "1.0" && version[1] !== "1.1")) {
+    return false;
+  }
+  cursor += 1;
+
+  const encoding = attributes[cursor];
+  if (encoding?.[0] === "encoding") {
+    if (!/^[A-Za-z][A-Za-z0-9._-]*$/u.test(encoding[1])) {
+      return false;
+    }
+    cursor += 1;
+  }
+
+  const standalone = attributes[cursor];
+  if (standalone?.[0] === "standalone") {
+    if (standalone[1] !== "yes" && standalone[1] !== "no") {
+      return false;
+    }
+    cursor += 1;
+  }
+  return cursor === attributes.length;
+}
+
 function parseSolutionProjectDeclarations(source: string): SolutionProjectDeclarations | undefined {
   const paths: string[] = [];
   const openElements: string[] = [];
   let declarationCount = 0;
   let hasInvalidPath = false;
   let rootSeen = false;
+  let xmlDeclarationSeen = false;
   let cursor = 0;
 
   while (cursor <= source.length) {
@@ -569,13 +602,23 @@ function parseSolutionProjectDeclarations(source: string): SolutionProjectDeclar
       const end = source.indexOf("?>", opening + 2);
       const instruction = end < 0 ? undefined : source.slice(opening + 2, end);
       const target = instruction === undefined ? undefined : parseXmlName(instruction, 0);
+      const reservedXmlTarget = target?.name.toLowerCase() === "xml";
       if (
         instruction === undefined
         || target === undefined
         || !hasValidXmlCharacters(instruction)
         || (target.next < instruction.length && !isXmlWhitespace(instruction[target.next]))
+        || (reservedXmlTarget
+          && (target.name !== "xml"
+            || rootSeen
+            || xmlDeclarationSeen
+            || (opening !== 0 && !(opening === 1 && source.codePointAt(0) === 0xfeff))
+            || !isValidXmlDeclaration(instruction)))
       ) {
         return undefined;
+      }
+      if (reservedXmlTarget) {
+        xmlDeclarationSeen = true;
       }
       cursor = end + 2;
       continue;
