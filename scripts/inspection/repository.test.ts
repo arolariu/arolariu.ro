@@ -1,0 +1,226 @@
+// @vitest-environment node
+/**
+ * @fileoverview Contract tests for the composed repository inspection session.
+ * @module scripts/inspection/repository.test
+ *
+ * @remarks
+ * These tests exercise wiring, not domain correctness: every individual provider already has its
+ * own focused test suite. `./aggregate.ts` and `./packages.ts` are partially mocked so the exact
+ * number of times their real provider is *invoked* (not merely constructed) is directly
+ * observable, which is the only reliable black-box signal for "shared through the same session
+ * cache" versus "invoked directly, bypassing memoization" — both `createAggregateProvider` and
+ * `createInstalledPackageProvider` otherwise expose no other externally observable per-call
+ * signal (the aggregate provider's own command runner calls are behind an isolated worker
+ * process boundary, and the package provider never calls the injected command runner at all).
+ */
+
+import {beforeEach, describe, expect, it, vi} from "vitest";
+
+import type {CommandResult, CommandRunner, CommandSpec} from "../common/process.ts";
+import {resolveRepositoryPaths, type RepositoryPaths} from "../common/repository-paths.ts";
+import {INSPECTED_PACKAGE_NAMES} from "./packages.ts";
+import {createRepositoryInspectionSession, type RepositoryInspectionSession} from "./repository.ts";
+
+const packagesProviderState = vi.hoisted(() => ({
+  factoryCalls: 0,
+  invocationCalls: 0,
+  lastPackageNames: undefined as readonly string[] | undefined,
+}));
+
+const aggregateProviderState = vi.hoisted(() => ({
+  factoryCalls: 0,
+  invocationCalls: 0,
+}));
+
+vi.mock("./packages.ts", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("./packages.ts")>();
+  return {
+    ...actual,
+    createInstalledPackageProvider: (input: Parameters<typeof actual.createInstalledPackageProvider>[0]) => {
+      packagesProviderState.factoryCalls += 1;
+      packagesProviderState.lastPackageNames = input.packageNames;
+      const real = actual.createInstalledPackageProvider(input);
+      return async () => {
+        packagesProviderState.invocationCalls += 1;
+        return real();
+      };
+    },
+  };
+});
+
+vi.mock("./aggregate.ts", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("./aggregate.ts")>();
+  return {
+    ...actual,
+    createAggregateProvider: (input: Parameters<typeof actual.createAggregateProvider>[0]) => {
+      aggregateProviderState.factoryCalls += 1;
+      const real = actual.createAggregateProvider(input);
+      return async () => {
+        aggregateProviderState.invocationCalls += 1;
+        return real();
+      };
+    },
+  };
+});
+
+// ============================================================================
+// Fixtures
+// ============================================================================
+
+/** Canonical real repository paths; every read this suite triggers is read-only. */
+const repositoryPaths: RepositoryPaths = resolveRepositoryPaths();
+
+/** Monotonically increasing fake clock, matching the pattern used by sibling provider tests. */
+function clock(): () => number {
+  let current = 0;
+  return () => {
+    current += 1;
+    return current;
+  };
+}
+
+/** A fake {@link CommandRunner} that reports every command as a bounded, non-throwing failure. */
+function createFakeRunner(): {runner: CommandRunner; calls: Readonly<CommandSpec>[]} {
+  const calls: Readonly<CommandSpec>[] = [];
+  const run = vi.fn(async (command: Readonly<CommandSpec>): Promise<CommandResult> => {
+    calls.push(command);
+    return {code: 1, stdout: "", stderr: "", durationMs: 1, timedOut: false};
+  });
+  return {runner: {run}, calls};
+}
+
+/** Builds one repository inspection session over a fresh fake runner for one test. */
+function buildSession(overrides: Readonly<Partial<{profile: "full" | "quick"; platform: NodeJS.Platform; runner: CommandRunner}>> = {}): {
+  session: RepositoryInspectionSession;
+  runnerCalls: Readonly<CommandSpec>[];
+} {
+  const fake = createFakeRunner();
+  const runner = overrides.runner ?? fake.runner;
+  const session = createRepositoryInspectionSession({
+    profile: overrides.profile ?? "full",
+    paths: repositoryPaths,
+    runner,
+    env: {},
+    platform: overrides.platform ?? "linux",
+    now: clock(),
+  });
+  return {session, runnerCalls: fake.calls};
+}
+
+beforeEach(() => {
+  packagesProviderState.factoryCalls = 0;
+  packagesProviderState.invocationCalls = 0;
+  packagesProviderState.lastPackageNames = undefined;
+  aggregateProviderState.factoryCalls = 0;
+  aggregateProviderState.invocationCalls = 0;
+});
+
+// ============================================================================
+// Tests
+// ============================================================================
+
+describe("createRepositoryInspectionSession aggregate wiring", () => {
+  it("shares one aggregate provider invocation between concurrent inspections", async () => {
+    const {session} = buildSession({profile: "full"});
+
+    await Promise.all([session.inspect("aggregate"), session.inspect("aggregate")]);
+
+    expect(aggregateProviderState.factoryCalls).toBe(1);
+    expect(aggregateProviderState.invocationCalls).toBe(1);
+  });
+
+  it("never constructs the real aggregate worker provider under the quick profile", async () => {
+    const {session, runnerCalls} = buildSession({profile: "quick"});
+
+    const outcome = await session.inspect("aggregate");
+
+    expect(outcome.kind).toBe("unavailable");
+    if (outcome.kind === "unavailable") {
+      expect(outcome.reason).toMatch(/quick/iu);
+    }
+    expect(aggregateProviderState.factoryCalls).toBe(0);
+    expect(aggregateProviderState.invocationCalls).toBe(0);
+    expect(runnerCalls.some((call) => call.args.some((arg) => arg.includes("aggregate-worker")))).toBe(false);
+  });
+
+  it("reuses the already-cached aggregate outcome when infrastructure is inspected afterward", async () => {
+    const {session} = buildSession({profile: "full"});
+
+    await session.inspect("aggregate");
+    expect(aggregateProviderState.invocationCalls).toBe(1);
+
+    await session.inspect("infrastructure");
+
+    expect(aggregateProviderState.invocationCalls).toBe(1);
+  });
+});
+
+describe("createRepositoryInspectionSession packages wiring", () => {
+  it("creates the packages provider exactly once with the exact INSPECTED_PACKAGE_NAMES inventory", async () => {
+    const {session} = buildSession({profile: "full"});
+
+    await session.inspect("packages");
+
+    expect(packagesProviderState.factoryCalls).toBe(1);
+    expect(packagesProviderState.lastPackageNames).toEqual(INSPECTED_PACKAGE_NAMES);
+  });
+
+  it("shares one memoized packages outcome across concurrent React and Svelte inspections", async () => {
+    const {session} = buildSession({profile: "full"});
+
+    await Promise.all([session.inspect("react"), session.inspect("svelte.cv"), session.inspect("svelte.status")]);
+
+    expect(packagesProviderState.factoryCalls).toBe(1);
+    expect(packagesProviderState.invocationCalls).toBe(1);
+  });
+});
+
+describe("createRepositoryInspectionSession targeted invalidation", () => {
+  it("does not rerun dotnet when only python is invalidated", async () => {
+    // An unsupported platform makes both providers resolve immediately without any command
+    // execution, isolating this test from every other inspection concern.
+    const {session} = buildSession({platform: "aix" as NodeJS.Platform});
+
+    const firstDotnet = session.inspect("dotnet");
+    await session.inspect("python");
+    await firstDotnet;
+
+    session.invalidate("python");
+
+    const secondDotnet = session.inspect("dotnet");
+    expect(secondDotnet).toBe(firstDotnet);
+    await expect(secondDotnet).resolves.toEqual(await firstDotnet);
+  });
+
+  it("only refreshes React's package facts after both packages and its own key are invalidated", async () => {
+    const {session} = buildSession({profile: "full"});
+
+    await session.inspect("react");
+    expect(packagesProviderState.invocationCalls).toBe(1);
+
+    // Invalidating "packages" alone does not retroactively refresh an already-cached "react".
+    session.invalidate("packages");
+    await session.inspect("react");
+    expect(packagesProviderState.invocationCalls).toBe(1);
+
+    // Only invalidating both the dependency and the consumer's own key forces a fresh read.
+    session.invalidate("packages", "react");
+    await session.inspect("react");
+    expect(packagesProviderState.invocationCalls).toBe(2);
+  });
+
+  it("only refreshes Svelte's package facts after both packages and its own key are invalidated", async () => {
+    const {session} = buildSession({profile: "full"});
+
+    await session.inspect("svelte.cv");
+    expect(packagesProviderState.invocationCalls).toBe(1);
+
+    session.invalidate("packages");
+    await session.inspect("svelte.cv");
+    expect(packagesProviderState.invocationCalls).toBe(1);
+
+    session.invalidate("packages", "svelte.cv");
+    await session.inspect("svelte.cv");
+    expect(packagesProviderState.invocationCalls).toBe(2);
+  });
+});
