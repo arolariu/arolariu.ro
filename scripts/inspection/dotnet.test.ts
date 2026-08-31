@@ -262,6 +262,24 @@ describe("createDotnetProvider", () => {
   });
 
   it.each([
+    ["selected SDK", DOTNET_VERSION, "10.0.400-preview.\n", "dotnet --version returned malformed output."],
+    [
+      "installed SDK",
+      DOTNET_SDKS,
+      "10.0.400-preview..1 [C:\\Program Files\\dotnet\\sdk]\n",
+      "dotnet --list-sdks returned malformed output.",
+    ],
+    ["host", DOTNET_INFO, dotnetInfoOutput({hostVersion: "10.0.11+build."}), "dotnet --info returned malformed output."],
+  ] as const)("rejects a near-valid %s version with an empty suffix identifier", async (_case, command, stdout, issue) => {
+    const fixture = await createDotnetFixture();
+    fixture.setResponse(command, commandResult({stdout}));
+
+    const outcome = await fixture.provider();
+
+    expect(outcome).toEqual({kind: "invalid", issues: [issue], durationMs: 5});
+  });
+
+  it.each([
     ["SDK list", DOTNET_SDKS, "not-an-sdk-line raw-sdk-marker", "dotnet --list-sdks returned malformed output."],
     ["host information", DOTNET_INFO, "Host:\n Version: 10.0.11\n", "dotnet --info returned malformed output."],
     ["workload list", DOTNET_WORKLOADS, "raw-workload-marker", "dotnet workload list returned malformed output."],

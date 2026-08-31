@@ -98,7 +98,7 @@ const SUPPORTED_DOTNET_ARCHITECTURES: ReadonlySet<string> = new Set([
 ]);
 const DOTNET_PROBE_ENVIRONMENT = Object.freeze({DOTNET_CLI_UI_LANGUAGE: "en-US"});
 const CONTROL_CHARACTER_PATTERN = /[\u0000-\u001f\u007f]/u;
-const DOTNET_VERSION_PATTERN = /^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z][0-9A-Za-z.-]*)?$/u;
+const DOTNET_VERSION_PATTERN = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/u;
 const NUGET_VERSION_PATTERN =
   /^(?:0|[1-9]\d*)(?:\.(?:0|[1-9]\d*)){0,3}(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/u;
 const RUNTIME_IDENTIFIER_PATTERN = /^[a-z0-9]+(?:[.-][a-z0-9]+)*$/u;
