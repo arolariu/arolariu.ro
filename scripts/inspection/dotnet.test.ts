@@ -523,6 +523,39 @@ describe("createDotnetProvider", () => {
     });
   });
 
+  it.each([
+    ["truncated elements", '<Solution><Project Path="sites/api.arolariu.ro/src/Common/arolariu.Backend.Common.csproj">'],
+    ["a mismatched close", "<Solution><Folder></Solution>"],
+    [
+      "a malformed bare attribute",
+      '<Solution><Project Path="sites/api.arolariu.ro/src/Common/arolariu.Backend.Common.csproj" broken /></Solution>',
+    ],
+  ] as const)("reports malformed solution XML with %s", async (_case, contents) => {
+    const fixture = await createDotnetFixture();
+    await writeFixtureFile(fixture.paths.solution, contents);
+
+    const outcome = await fixture.provider();
+
+    expect(outcome).toMatchObject({
+      kind: "available",
+      value: {solutionIssues: ["The repository solution file is malformed."]},
+    });
+  });
+
+  it("decodes a valid XML-escaped project path before filesystem validation", async () => {
+    const fixture = await createDotnetFixture();
+    const escapedProject = "sites/api.arolariu.ro/src/R&D/R&D.csproj";
+    await writeFixtureFile(resolve(fixture.root, escapedProject), '<Project Sdk="Microsoft.NET.Sdk" />\n');
+    await writeFixtureFile(
+      fixture.paths.solution,
+      '<Solution><Project Path="sites/api.arolariu.ro/src/R&amp;D/R&amp;D.csproj" /></Solution>',
+    );
+
+    const outcome = await fixture.provider();
+
+    expect(outcome).toMatchObject({kind: "available", value: {solutionIssues: []}});
+  });
+
   it("returns an explicit solution issue when the solution file is missing", async () => {
     const fixture = await createDotnetFixture();
     await rm(fixture.paths.solution);
@@ -610,6 +643,46 @@ describe("createDotnetProvider", () => {
       },
     });
     expect(JSON.stringify(outcome)).not.toContain("configured-secret-marker");
+  });
+
+  it("applies user-secret precedence with ordinal case-insensitive required-key identity", async () => {
+    const fixture = await createDotnetFixture();
+    fixture.setResponse(
+      DOTNET_USER_SECRETS,
+      commandResult({
+        stdout: JSON.stringify({
+          "PARAMETERS:SQL-PASSWORD": "   ",
+          "Parameters:redis-password": "configured-secret-marker",
+        }),
+      }),
+    );
+
+    const outcome = await fixture.provider();
+
+    expect(outcome).toMatchObject({
+      kind: "available",
+      value: {
+        appHost: {
+          missingParameterKeys: ["Parameters:sql-password"],
+          userSecretKeys: ["PARAMETERS:SQL-PASSWORD", "Parameters:redis-password"],
+        },
+      },
+    });
+  });
+
+  it("recognizes tracked AppHost parameter sections and keys case-insensitively", async () => {
+    const fixture = await createDotnetFixture();
+    await writeFixtureFile(
+      resolve(fixture.root, "tooling", "AppHost", "appsettings.Development.json"),
+      JSON.stringify({parameters: {"SQL-PASSWORD": "tracked-value-marker"}}),
+    );
+
+    const outcome = await fixture.provider();
+
+    expect(outcome).toMatchObject({
+      kind: "available",
+      value: {appHost: {missingParameterKeys: []}},
+    });
   });
 
   it("returns missing AppHost parameter keys when neither tracked config nor user secrets supplies them", async () => {

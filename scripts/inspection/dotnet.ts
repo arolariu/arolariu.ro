@@ -58,7 +58,7 @@ export interface DotnetFacts {
   readonly appHost: Readonly<{
     /** Whether `tooling/AppHost/AppHost.csproj` exists as a regular file. */
     projectExists: boolean;
-    /** Required Aspire parameter keys absent from tracked configuration and user secrets. */
+    /** Required Aspire parameter keys missing after user-secret-over-tracked configuration precedence. */
     missingParameterKeys: readonly string[];
     /** Sorted user-secret key names; values are never retained. */
     userSecretKeys: readonly string[];
@@ -87,9 +87,17 @@ interface SolutionProjectDeclarations {
   readonly paths: readonly string[];
 }
 
+interface ParsedXmlTag {
+  readonly attributes: ReadonlyMap<string, string>;
+  readonly closing: boolean;
+  readonly name: string;
+  readonly selfClosing: boolean;
+}
+
 const APPHOST_PROJECT_RELATIVE_PATH = "tooling/AppHost/AppHost.csproj";
 const APPHOST_SETTINGS_RELATIVE_PATH = "tooling/AppHost/appsettings.Development.json";
 const REQUIRED_APPHOST_PARAMETER_KEYS = ["Parameters:sql-password", "Parameters:redis-password"] as const;
+type RequiredAppHostParameterKey = (typeof REQUIRED_APPHOST_PARAMETER_KEYS)[number];
 const SUPPORTED_PLATFORMS: ReadonlySet<NodeJS.Platform> = new Set(["win32", "darwin", "linux"]);
 const SUPPORTED_DOTNET_ARCHITECTURES: ReadonlySet<string> = new Set([
   "x86",
@@ -122,6 +130,11 @@ function isRecord(value: unknown): value is UnknownRecord {
 
 function compareText(left: string, right: string): number {
   return left < right ? -1 : left > right ? 1 : 0;
+}
+
+function canonicalRequiredAppHostParameterKey(key: string): RequiredAppHostParameterKey | undefined {
+  const normalizedKey = key.toLowerCase();
+  return REQUIRED_APPHOST_PARAMETER_KEYS.find((requiredKey) => requiredKey.toLowerCase() === normalizedKey);
 }
 
 function hasErrorCode(error: unknown, code: string): boolean {
@@ -331,6 +344,85 @@ function normalizeSolutionProjectPath(path: string): string | undefined {
   return normalized;
 }
 
+function isXmlWhitespace(character: string | undefined): boolean {
+  return character === " " || character === "\t" || character === "\r" || character === "\n";
+}
+
+function skipXmlWhitespace(source: string, start: number): number {
+  let cursor = start;
+  while (isXmlWhitespace(source[cursor])) {
+    cursor += 1;
+  }
+  return cursor;
+}
+
+function parseXmlName(source: string, start: number): Readonly<{name: string; next: number}> | undefined {
+  const name = /^[A-Za-z_][A-Za-z0-9_.:-]*/u.exec(source.slice(start))?.[0];
+  return name === undefined ? undefined : {name, next: start + name.length};
+}
+
+function isValidXmlCodePoint(codePoint: number): boolean {
+  return (
+    codePoint === 0x09
+    || codePoint === 0x0a
+    || codePoint === 0x0d
+    || (codePoint >= 0x20 && codePoint <= 0xd7ff)
+    || (codePoint >= 0xe000 && codePoint <= 0xfffd)
+    || (codePoint >= 0x10000 && codePoint <= 0x10ffff)
+  );
+}
+
+function decodeXmlReferences(value: string): string | undefined {
+  for (const character of value) {
+    const codePoint = character.codePointAt(0);
+    if (codePoint === undefined || !isValidXmlCodePoint(codePoint)) {
+      return undefined;
+    }
+  }
+
+  let decoded = "";
+  let cursor = 0;
+  while (cursor < value.length) {
+    const ampersand = value.indexOf("&", cursor);
+    if (ampersand < 0) {
+      return decoded + value.slice(cursor);
+    }
+    decoded += value.slice(cursor, ampersand);
+    const semicolon = value.indexOf(";", ampersand + 1);
+    if (semicolon < 0) {
+      return undefined;
+    }
+
+    const reference = value.slice(ampersand + 1, semicolon);
+    const namedReference =
+      reference === "amp"
+        ? "&"
+        : reference === "lt"
+          ? "<"
+          : reference === "gt"
+            ? ">"
+            : reference === "quot"
+              ? '"'
+              : reference === "apos"
+                ? "'"
+                : undefined;
+    if (namedReference !== undefined) {
+      decoded += namedReference;
+    } else {
+      const hexadecimal = /^#x([0-9A-Fa-f]+)$/u.exec(reference)?.[1];
+      const decimal = /^#([0-9]+)$/u.exec(reference)?.[1];
+      const codePoint =
+        hexadecimal !== undefined ? Number.parseInt(hexadecimal, 16) : decimal !== undefined ? Number.parseInt(decimal, 10) : Number.NaN;
+      if (!Number.isInteger(codePoint) || !isValidXmlCodePoint(codePoint)) {
+        return undefined;
+      }
+      decoded += String.fromCodePoint(codePoint);
+    }
+    cursor = semicolon + 1;
+  }
+  return decoded;
+}
+
 function findXmlTagEnd(source: string, start: number): number | undefined {
   let quote: '"' | "'" | undefined;
   for (let index = start; index < source.length; index += 1) {
@@ -352,20 +444,89 @@ function findXmlTagEnd(source: string, start: number): number | undefined {
   return undefined;
 }
 
+function parseXmlTag(source: string): ParsedXmlTag | undefined {
+  let cursor = 0;
+  const closing = source.startsWith("/");
+  if (closing) {
+    cursor += 1;
+  }
+
+  const parsedName = parseXmlName(source, cursor);
+  if (parsedName === undefined) {
+    return undefined;
+  }
+  cursor = parsedName.next;
+
+  if (closing) {
+    cursor = skipXmlWhitespace(source, cursor);
+    return cursor === source.length ? {attributes: new Map(), closing: true, name: parsedName.name, selfClosing: false} : undefined;
+  }
+
+  const attributes = new Map<string, string>();
+  while (cursor < source.length) {
+    const beforeWhitespace = cursor;
+    cursor = skipXmlWhitespace(source, cursor);
+    if (cursor === source.length) {
+      return {attributes, closing: false, name: parsedName.name, selfClosing: false};
+    }
+    if (source[cursor] === "/") {
+      return cursor + 1 === source.length ? {attributes, closing: false, name: parsedName.name, selfClosing: true} : undefined;
+    }
+    if (cursor === beforeWhitespace) {
+      return undefined;
+    }
+
+    const parsedAttributeName = parseXmlName(source, cursor);
+    if (parsedAttributeName === undefined || attributes.has(parsedAttributeName.name)) {
+      return undefined;
+    }
+    cursor = skipXmlWhitespace(source, parsedAttributeName.next);
+    if (source[cursor] !== "=") {
+      return undefined;
+    }
+    cursor = skipXmlWhitespace(source, cursor + 1);
+    const quote = source[cursor];
+    if (quote !== '"' && quote !== "'") {
+      return undefined;
+    }
+    const valueEnd = source.indexOf(quote, cursor + 1);
+    if (valueEnd < 0) {
+      return undefined;
+    }
+    const rawValue = source.slice(cursor + 1, valueEnd);
+    const value = rawValue.includes("<") ? undefined : decodeXmlReferences(rawValue);
+    if (value === undefined) {
+      return undefined;
+    }
+    attributes.set(parsedAttributeName.name, value);
+    cursor = valueEnd + 1;
+  }
+
+  return {attributes, closing: false, name: parsedName.name, selfClosing: false};
+}
+
 function parseSolutionProjectDeclarations(source: string): SolutionProjectDeclarations | undefined {
   const paths: string[] = [];
+  const openElements: string[] = [];
   let declarationCount = 0;
   let hasInvalidPath = false;
+  let rootSeen = false;
   let cursor = 0;
 
-  while (cursor < source.length) {
+  while (cursor <= source.length) {
     const opening = source.indexOf("<", cursor);
+    const textEnd = opening < 0 ? source.length : opening;
+    const text = source.slice(cursor, textEnd);
+    if (text.includes("]]>") || decodeXmlReferences(text) === undefined || (openElements.length === 0 && text.trim() !== "")) {
+      return undefined;
+    }
     if (opening < 0) {
       break;
     }
+
     if (source.startsWith("<!--", opening)) {
       const end = source.indexOf("-->", opening + 4);
-      if (end < 0) {
+      if (end < 0 || source.slice(opening + 4, end).includes("--")) {
         return undefined;
       }
       cursor = end + 3;
@@ -373,7 +534,7 @@ function parseSolutionProjectDeclarations(source: string): SolutionProjectDeclar
     }
     if (source.startsWith("<![CDATA[", opening)) {
       const end = source.indexOf("]]>", opening + 9);
-      if (end < 0) {
+      if (end < 0 || openElements.length === 0) {
         return undefined;
       }
       cursor = end + 3;
@@ -395,39 +556,39 @@ function parseSolutionProjectDeclarations(source: string): SolutionProjectDeclar
     if (tagEnd === undefined) {
       return undefined;
     }
-    const tag = source.slice(opening + 1, tagEnd).trim();
+    const tag = parseXmlTag(source.slice(opening + 1, tagEnd));
     cursor = tagEnd + 1;
-    if (tag === "" || tag.startsWith("/")) {
-      continue;
-    }
-
-    const name = /^[A-Za-z_][A-Za-z0-9_.:-]*/u.exec(tag)?.[0];
-    if (name === undefined) {
+    if (tag === undefined) {
       return undefined;
     }
-    if (name !== "Project") {
+    if (tag.closing) {
+      if (openElements.pop() !== tag.name) {
+        return undefined;
+      }
       continue;
     }
 
-    declarationCount += 1;
-    const attributes = tag.slice(name.length).replace(/\/\s*$/u, "");
-    const pathAssignments = [...attributes.matchAll(/(?:^|\s)Path\s*=/gu)];
-    const quotedPaths = [...attributes.matchAll(/(?:^|\s)Path\s*=\s*(?:"([^"]*)"|'([^']*)')/gu)];
-    const rawPath = quotedPaths[0]?.[1] ?? quotedPaths[0]?.[2];
-    if (
-      pathAssignments.length !== 1
-      || quotedPaths.length !== 1
-      || rawPath === undefined
-      || rawPath.trim() === ""
-      || rawPath.includes("&")
-    ) {
-      hasInvalidPath = true;
-      continue;
+    if (openElements.length === 0) {
+      if (rootSeen || tag.name !== "Solution") {
+        return undefined;
+      }
+      rootSeen = true;
     }
-    paths.push(rawPath);
+    if (tag.name === "Project") {
+      declarationCount += 1;
+      const projectPath = tag.attributes.get("Path");
+      if (projectPath === undefined || projectPath.trim() === "") {
+        hasInvalidPath = true;
+      } else {
+        paths.push(projectPath);
+      }
+    }
+    if (!tag.selfClosing) {
+      openElements.push(tag.name);
+    }
   }
 
-  return {declarationCount, hasInvalidPath, paths};
+  return rootSeen && openElements.length === 0 ? {declarationCount, hasInvalidPath, paths} : undefined;
 }
 
 async function inspectSolution(paths: RepositoryPaths): Promise<readonly string[]> {
@@ -510,25 +671,32 @@ function configuredTrackedParameters(document: unknown): readonly string[] | und
   if (!isRecord(document)) {
     return undefined;
   }
-  const parameters = document["Parameters"];
-  if (parameters === undefined) {
+  const parameterSections = Object.entries(document).filter(([key]) => key.toLowerCase() === "parameters");
+  if (parameterSections.length === 0) {
     return [];
   }
-  if (!isRecord(parameters)) {
+  const parameters = parameterSections[0]?.[1];
+  if (parameterSections.length !== 1 || !isRecord(parameters)) {
     return undefined;
   }
 
   const configured: string[] = [];
   for (const key of REQUIRED_APPHOST_PARAMETER_KEYS) {
     const suffix = key.slice("Parameters:".length);
-    const value = parameters[suffix];
-    if (value === undefined || (typeof value === "string" && value.trim() === "")) {
+    const matches = Object.entries(parameters).filter(([candidate]) => candidate.toLowerCase() === suffix.toLowerCase());
+    if (matches.length === 0) {
       continue;
+    }
+    const value = matches[0]?.[1];
+    if (matches.length !== 1) {
+      return undefined;
     }
     if (typeof value !== "string") {
       return undefined;
     }
-    configured.push(key);
+    if (value.trim() !== "") {
+      configured.push(key);
+    }
   }
   return configured;
 }
@@ -600,10 +768,14 @@ function parseUserSecrets(output: string): UserSecretFacts | undefined {
       return undefined;
     }
     keys.push(key);
-    if (REQUIRED_APPHOST_PARAMETER_KEYS.some((requiredKey) => requiredKey === key)) {
-      presentParameterKeys.add(key);
+    const requiredKey = canonicalRequiredAppHostParameterKey(key);
+    if (requiredKey !== undefined) {
+      if (presentParameterKeys.has(requiredKey)) {
+        return undefined;
+      }
+      presentParameterKeys.add(requiredKey);
       if (value.trim() !== "") {
-        configuredParameterKeys.add(key);
+        configuredParameterKeys.add(requiredKey);
       }
     }
   }
