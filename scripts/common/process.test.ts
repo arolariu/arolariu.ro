@@ -201,6 +201,31 @@ describe("defaultCommandRunner", () => {
     }
   });
 
+  it("removes an inherited parent environment variable when the override marks it undefined", async () => {
+    const key = "COMMAND_RUNNER_REMOVED_TEST";
+    const hadPreviousValue = Object.hasOwn(process.env, key);
+    const previousValue = process.env[key];
+    process.env[key] = "parent-sentinel";
+
+    try {
+      const result = await defaultCommandRunner.run(
+        {
+          command: process.execPath,
+          args: ["-e", `process.stdout.write(Object.hasOwn(process.env, ${JSON.stringify(key)}) ? "present" : "absent")`],
+        },
+        {env: {[key]: undefined}},
+      );
+
+      expect(result.stdout).toBe("absent");
+    } finally {
+      if (hadPreviousValue) {
+        process.env[key] = previousValue;
+      } else {
+        delete process.env[key];
+      }
+    }
+  });
+
   it("uses the requested working directory", async () => {
     const result = await defaultCommandRunner.run(
       {

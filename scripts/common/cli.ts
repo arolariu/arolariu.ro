@@ -62,12 +62,13 @@ export function createToolProgram(options: Readonly<ToolProgramOptions>): Comman
       writeErr: (text) => options.logger.write(text, "stderr"),
     });
 
-  if (options.examples !== undefined && options.examples.length > 0) {
+  const {examples} = options;
+  if (examples !== undefined && examples.length > 0) {
     program.addHelpText("after", () =>
       [
         "",
         "Examples:",
-        ...options.examples.map((example) => `  ${example}`),
+        ...examples.map((example) => `  ${example}`),
       ].join("\n"),
     );
   }

@@ -132,6 +132,11 @@ async function runExecaCommand(command: Readonly<CommandSpec>, options: Readonly
       preferLocal: false,
       cleanup: true,
       windowsHide: true,
+      // `buildEnvironment` already merges the parent environment with `options.env`
+      // and drops keys explicitly overridden to `undefined`; Execa's own default
+      // `extendEnv: true` would otherwise re-merge `process.env` on top and restore
+      // those removed values, so the already-normalized environment must be authoritative.
+      extendEnv: false,
       stripFinalNewline: false,
       ...(options.timeoutMs === undefined ? {} : {timeout: options.timeoutMs}),
       ...(options.signal === undefined ? {} : {cancelSignal: options.signal}),
