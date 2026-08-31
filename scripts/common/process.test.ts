@@ -179,8 +179,8 @@ describe("defaultCommandRunner", () => {
   });
 
   it("merges environment overrides with the parent environment", async () => {
-    const previous = process.env.COMMAND_RUNNER_PARENT_TEST;
-    process.env.COMMAND_RUNNER_PARENT_TEST = "parent";
+    const previous = process.env["COMMAND_RUNNER_PARENT_TEST"];
+    process.env["COMMAND_RUNNER_PARENT_TEST"] = "parent";
 
     try {
       const result = await defaultCommandRunner.run(
@@ -194,9 +194,9 @@ describe("defaultCommandRunner", () => {
       expect(result.stdout).toBe("parent:child");
     } finally {
       if (previous === undefined) {
-        delete process.env.COMMAND_RUNNER_PARENT_TEST;
+        delete process.env["COMMAND_RUNNER_PARENT_TEST"];
       } else {
-        process.env.COMMAND_RUNNER_PARENT_TEST = previous;
+        process.env["COMMAND_RUNNER_PARENT_TEST"] = previous;
       }
     }
   });
