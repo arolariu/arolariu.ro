@@ -290,7 +290,7 @@ describe("engine selection and persistence", () => {
         config: {
           schemaVersion: 1,
           containerEngine: "rancher",
-          fingerprints: {nodeVersion: "24.0.0"},
+          fingerprints: {pythonRequirementsSha256: "abc123"},
         },
       },
     });
@@ -302,7 +302,7 @@ describe("engine selection and persistence", () => {
     expect(harness.writeConfig).toHaveBeenCalledWith(paths.toolingConfig, {
       schemaVersion: 1,
       containerEngine: "podman",
-      fingerprints: {nodeVersion: "24.0.0"},
+      fingerprints: {pythonRequirementsSha256: "abc123"},
     });
     expect(harness.select).not.toHaveBeenCalled();
   });

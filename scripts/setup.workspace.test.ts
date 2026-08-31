@@ -4,7 +4,7 @@
  * @module scripts.setup.workspace.test
  */
 
-import {mkdir, mkdtemp, readFile, rm, stat, unlink, writeFile} from "node:fs/promises";
+import {mkdir, mkdtemp, rm, stat, unlink, writeFile} from "node:fs/promises";
 import {tmpdir} from "node:os";
 import {dirname, join, resolve} from "node:path";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
@@ -14,9 +14,10 @@ import type {CommandResult, CommandRunner, CommandSpec} from "./common/process.t
 import {createRepositoryPaths, type RepositoryPaths} from "./common/repository-paths.ts";
 import {parseVersion, type MinimumVersion, type RepositoryRequirements} from "./common/requirements.ts";
 import {getExpectedTaxonomyArtifactPaths} from "./common/taxonomy-artifacts.ts";
-import {sha256File} from "./common/tooling-config.ts";
+import type {NpmTreeFacts} from "./inspection/packages.ts";
 import type {RepositoryInspectionSession} from "./inspection/repository.ts";
-import {inspectNpmTreeResult, shouldRestoreNpmTree, workspaceSetupPhases, type NpmTreeInspection} from "./setup.workspace.ts";
+import type {InspectionOutcome} from "./inspection/types.ts";
+import {workspaceSetupPhases} from "./setup.workspace.ts";
 import type {
   SetupAction,
   SetupActionDisposition,
@@ -96,11 +97,28 @@ function options(patch: Partial<SetupOptions> = {}): SetupOptions {
   };
 }
 
-/** A typed fake {@link RepositoryInspectionSession} that never resolves a real repository fact. */
-function createFakeInspectionSession(): RepositoryInspectionSession {
+/** Session-inspected npm tree keys consumed by workspace setup phases. */
+type NpmInspectionKey = "npm.root" | "npm.github-scripts";
+
+/** A typed fake {@link RepositoryInspectionSession} that never resolves a real repository fact by default. */
+function createInspectionHarness(
+  overrides: Readonly<
+    Partial<Record<NpmInspectionKey, () => InspectionOutcome<NpmTreeFacts> | Promise<InspectionOutcome<NpmTreeFacts>>>>
+  > = {},
+): Readonly<{
+  session: RepositoryInspectionSession;
+  inspect: ReturnType<typeof vi.fn>;
+  invalidate: ReturnType<typeof vi.fn>;
+}> {
+  const inspect = vi.fn(async (key: NpmInspectionKey) => {
+    const provider = overrides[key];
+    return provider === undefined ? {kind: "unavailable" as const, reason: "Not exercised by this test.", durationMs: 0} : provider();
+  });
+  const invalidate = vi.fn();
   return {
-    inspect: async () => ({kind: "unavailable", reason: "Not exercised by this test.", durationMs: 0}),
-    invalidate: () => {},
+    session: {inspect, invalidate} as unknown as RepositoryInspectionSession,
+    inspect,
+    invalidate,
   };
 }
 
@@ -147,7 +165,10 @@ function createRunner(
   return {runner: {run}, run};
 }
 
-function createActions(dryRun: boolean): Readonly<{
+function createActions(
+  dryRun: boolean,
+  dispositions: Readonly<Record<string, SetupActionDisposition>> = {},
+): Readonly<{
   actions: SetupActionExecutor;
   run: ReturnType<typeof vi.fn<SetupActionExecutor["run"]>>;
   actionIds: string[];
@@ -155,11 +176,11 @@ function createActions(dryRun: boolean): Readonly<{
   const actionIds: string[] = [];
   const run = vi.fn<SetupActionExecutor["run"]>(async (action: Readonly<SetupAction>): Promise<SetupActionDisposition> => {
     actionIds.push(action.id);
-    if (dryRun) {
-      return "planned";
+    const disposition = dispositions[action.id] ?? (dryRun ? "planned" : "executed");
+    if (disposition === "executed") {
+      await action.execute();
     }
-    await action.execute();
-    return "executed";
+    return disposition;
   });
   return {actions: {run}, run, actionIds};
 }
@@ -171,6 +192,7 @@ function createContext(
   patch: Readonly<{
     options?: SetupOptions;
     requirements?: RepositoryRequirements;
+    inspection?: RepositoryInspectionSession;
   }> = {},
 ): SetupContext {
   let time = 0;
@@ -178,7 +200,7 @@ function createContext(
     options: patch.options ?? options(),
     paths,
     requirements: patch.requirements ?? requirements(),
-    inspection: createFakeInspectionSession(),
+    inspection: patch.inspection ?? createInspectionHarness().session,
     runner,
     prompts: {
       confirm: async () => true,
@@ -249,26 +271,6 @@ async function createFixture(): Promise<RepositoryPaths> {
   return paths;
 }
 
-async function writeMatchingConfig(paths: RepositoryPaths): Promise<void> {
-  await writeFixture(
-    paths.toolingConfig,
-    `${JSON.stringify(
-      {
-        schemaVersion: 1,
-        containerEngine: "podman",
-        fingerprints: {
-          nodeVersion: `${nodeVersion.major}.${nodeVersion.minor}.${nodeVersion.patch}`,
-          rootPackageLockSha256: await sha256File(paths.packageLock),
-          githubScriptsPackageLockSha256: await sha256File(paths.githubScriptsPackageLock),
-          pythonRequirementsSha256: "preserve-python",
-        },
-      },
-      null,
-      2,
-    )}\n`,
-  );
-}
-
 async function writeGeneratedArtifacts(paths: RepositoryPaths): Promise<readonly string[]> {
   const generatedPaths = [
     ...getExpectedTaxonomyArtifactPaths(paths.root),
@@ -314,101 +316,6 @@ describe("workspaceSetupPhases", () => {
         dependsOn: ["workspace.root-dependencies"],
       },
     ]);
-  });
-});
-
-describe("inspectNpmTreeResult", () => {
-  it("accepts a successful npm tree with no problems", () => {
-    expect(inspectNpmTreeResult(commandResult({stdout: '{"name":"fixture"}\n'}))).toEqual({
-      valid: true,
-      problems: [],
-      stdout: '{"name":"fixture"}\n',
-      stderr: "",
-    });
-  });
-
-  it("preserves problem JSON from a nonzero npm exit", () => {
-    expect(
-      inspectNpmTreeResult(
-        commandResult({
-          code: 1,
-          stdout: '{"problems":["missing: dep@1.0.0"]}\n',
-          stderr: "npm error",
-        }),
-      ),
-    ).toEqual({
-      valid: false,
-      problems: ["missing: dep@1.0.0"],
-      stdout: '{"problems":["missing: dep@1.0.0"]}\n',
-      stderr: "npm error",
-    });
-  });
-
-  it.each([
-    ["empty output", commandResult(), /empty/i],
-    ["malformed JSON", commandResult({stdout: "not json"}), /json/i],
-    ["a non-object document", commandResult({stdout: "[]"}), /object/i],
-    ["a malformed problems property", commandResult({stdout: '{"problems":"bad"}'}), /problems/i],
-    ["a timed out command", commandResult({stdout: "{}", timedOut: true}), /timed out/i],
-    ["a spawn failure", commandResult({stdout: "{}", spawnError: "ENOENT"}), /ENOENT/i],
-  ])("rejects %s without trusting command output", (_name, result, expectedProblem) => {
-    const inspection = inspectNpmTreeResult(result);
-
-    expect(inspection.valid).toBe(false);
-    expect(inspection.problems.join("\n")).toMatch(expectedProblem);
-    expect(inspection.stdout).toBe(result.stdout);
-    expect(inspection.stderr).toBe(result.stderr);
-  });
-});
-
-describe("shouldRestoreNpmTree", () => {
-  const validInspection: NpmTreeInspection = {
-    valid: true,
-    problems: [],
-    stdout: "{}",
-    stderr: "",
-  };
-  const base = {
-    directoryExists: true,
-    inspection: validInspection,
-    currentNodeVersion: "24.1.0",
-    currentLockHash: "abc",
-    storedNodeVersion: "24.1.0",
-    storedLockHash: "abc",
-  };
-
-  it.each([
-    ["node_modules is absent", {...base, directoryExists: false}],
-    [
-      "the live tree is broken despite matching fingerprints",
-      {
-        ...base,
-        inspection: {
-          valid: false,
-          problems: ["missing dep"],
-          stdout: "{}",
-          stderr: "",
-        },
-      },
-    ],
-    ["the Node version changed", {...base, currentNodeVersion: "24.2.0"}],
-    ["the lockfile changed", {...base, currentLockHash: "def"}],
-    [
-      "the successful fingerprint is absent",
-      {
-        directoryExists: true,
-        inspection: validInspection,
-        currentNodeVersion: "24.1.0",
-        currentLockHash: "abc",
-        storedNodeVersion: "24.1.0",
-      },
-    ],
-  ])("restores when %s", (_name, input) => {
-    expect(shouldRestoreNpmTree(input)).toBe(true);
-  });
-
-  it("does not restore a valid live tree with matching fingerprints", () => {
-    expect(shouldRestoreNpmTree(base)).toBe(false);
   });
 });
 
@@ -566,84 +473,159 @@ describe("workspace prerequisites", () => {
   });
 });
 
-describe("workspace npm restoration", () => {
-  it("restores a missing root tree through exact repository actions and preserves config", async () => {
+describe("workspace root dependency validation", () => {
+  function npmTreeFacts(patch: Partial<NpmTreeFacts> = {}): NpmTreeFacts {
+    return {
+      scope: "root",
+      valid: true,
+      packageCount: 42,
+      problemCount: 0,
+      problems: [],
+      ...patch,
+    };
+  }
+
+  it("consumes npm.root exactly once, registers no action, and never runs npm ci when the tree is valid", async () => {
     const paths = await createFixture();
-    await rm(resolve(paths.root, "node_modules"), {recursive: true, force: true});
-    await writeMatchingConfig(paths);
-    const {runner, run} = createRunner((command) =>
-      command.command === "npm" && command.args[0] === "ls"
-        ? commandResult({code: 1, stdout: '{"problems":["missing node_modules"]}'})
-        : defaultCommandResponse(command),
-    );
-    let inspectionCount = 0;
-    run.mockImplementation(async (command, _runOptions) => {
-      if (command.command === "npm" && command.args[0] === "ls") {
-        inspectionCount++;
-        return inspectionCount === 1
-          ? commandResult({code: 1, stdout: '{"problems":["missing node_modules"]}'})
-          : commandResult({stdout: "{}"});
-      }
-      return defaultCommandResponse(command);
-    });
-    const {actions, actionIds} = createActions(false);
-
-    const result = await findPhase("workspace.root-dependencies").run(createContext(paths, runner, actions));
-
-    expect(result.status).toBe("succeeded");
-    expect(actionIds).toEqual(["workspace.root-dependencies.npm-ci", "workspace.root-dependencies.write-fingerprint"]);
-    expect(run).toHaveBeenCalledWith(
-      {
-        command: "npm",
-        args: ["ci", "--prefer-offline", "--no-audit", "--no-fund"],
-      },
-      expect.objectContaining({cwd: paths.root}),
-    );
-    const config = JSON.parse(await readFile(paths.toolingConfig, "utf8")) as unknown;
-    expect(config).toMatchObject({
-      containerEngine: "podman",
-      fingerprints: {
-        rootPackageLockSha256: await sha256File(paths.packageLock),
-        githubScriptsPackageLockSha256: await sha256File(paths.githubScriptsPackageLock),
-        pythonRequirementsSha256: "preserve-python",
-      },
-    });
-  });
-
-  it("does not restore a valid live root tree with matching fingerprints", async () => {
-    const paths = await createFixture();
-    await writeMatchingConfig(paths);
     const {runner, run} = createRunner();
     const {actions, run: runAction} = createActions(false);
+    const {session, inspect} = createInspectionHarness({"npm.root": () => ({kind: "available", value: npmTreeFacts(), durationMs: 1})});
 
-    const result = await findPhase("workspace.root-dependencies").run(createContext(paths, runner, actions));
+    const result = await findPhase("workspace.root-dependencies").run(createContext(paths, runner, actions, {inspection: session}));
 
     expect(result.status).toBe("succeeded");
+    expect(result.evidence.join("\n")).toContain("42");
+    expect(inspect).toHaveBeenCalledTimes(1);
+    expect(inspect).toHaveBeenCalledWith("npm.root");
     expect(runAction).not.toHaveBeenCalled();
-    expect(run).toHaveBeenCalledTimes(1);
-    expect(run).toHaveBeenCalledWith({command: "npm", args: ["ls", "--all", "--json"]}, expect.objectContaining({cwd: paths.root}));
+    expect(run.mock.calls.some(([command]) => command.command === "npm" && command.args[0] === "ci")).toBe(false);
   });
 
-  it("does not let a matching fingerprint hide a broken live tree", async () => {
+  it("fails with exact npm-ci guidance when npm.root is unavailable", async () => {
     const paths = await createFixture();
-    await writeMatchingConfig(paths);
-    let inspections = 0;
-    const {runner} = createRunner((command) => {
-      if (command.command === "npm" && command.args[0] === "ls") {
-        inspections++;
-        return inspections === 1 ? commandResult({code: 1, stdout: '{"problems":["missing dependency"]}'}) : commandResult({stdout: "{}"});
-      }
-      return defaultCommandResponse(command);
+    const {runner} = createRunner();
+    const {actions, run: runAction} = createActions(false);
+    const {session} = createInspectionHarness({
+      "npm.root": () => ({kind: "unavailable", reason: "npm dependency inspection could not be started.", durationMs: 1}),
     });
-    const {actions, actionIds} = createActions(false);
 
-    const result = await findPhase("workspace.root-dependencies").run(createContext(paths, runner, actions));
+    const result = await findPhase("workspace.root-dependencies").run(createContext(paths, runner, actions, {inspection: session}));
+
+    expect(result.status).toBe("failed");
+    expect(result.evidence).toContain("npm dependency inspection could not be started.");
+    expect(result.nextActions.join("\n")).toContain("npm ci");
+    expect(runAction).not.toHaveBeenCalled();
+  });
+
+  it("fails with exact npm-ci guidance when npm.root is invalid", async () => {
+    const paths = await createFixture();
+    const {runner} = createRunner();
+    const {actions, run: runAction} = createActions(false);
+    const {session} = createInspectionHarness({
+      "npm.root": () => ({kind: "invalid", issues: ["npm dependency inspection produced malformed tree data."], durationMs: 1}),
+    });
+
+    const result = await findPhase("workspace.root-dependencies").run(createContext(paths, runner, actions, {inspection: session}));
+
+    expect(result.status).toBe("failed");
+    expect(result.evidence).toContain("npm dependency inspection produced malformed tree data.");
+    expect(result.nextActions.join("\n")).toContain("npm ci");
+    expect(runAction).not.toHaveBeenCalled();
+  });
+
+  it("fails with exact npm-ci guidance and safe problem evidence when the live tree is broken", async () => {
+    const paths = await createFixture();
+    const {runner} = createRunner();
+    const {actions, run: runAction} = createActions(false);
+    const {session} = createInspectionHarness({
+      "npm.root": () => ({
+        kind: "available",
+        value: npmTreeFacts({valid: false, problemCount: 1, problems: [{code: "missing", detail: "npm reported missing for 'left-pad'."}]}),
+        durationMs: 1,
+      }),
+    });
+
+    const result = await findPhase("workspace.root-dependencies").run(createContext(paths, runner, actions, {inspection: session}));
+
+    expect(result.status).toBe("failed");
+    expect(result.evidence).toContain("npm reported missing for 'left-pad'.");
+    expect(result.nextActions.join("\n")).toContain("npm ci");
+    expect(runAction).not.toHaveBeenCalled();
+  });
+});
+
+describe("workspace github scripts dependency restoration", () => {
+  function npmTreeFacts(patch: Partial<NpmTreeFacts> = {}): NpmTreeFacts {
+    return {
+      scope: "github-scripts",
+      valid: true,
+      packageCount: 7,
+      problemCount: 0,
+      problems: [],
+      ...patch,
+    };
+  }
+
+  it("always executes the exact npm ci restoration command, then invalidates and re-verifies npm.github-scripts", async () => {
+    const paths = await createFixture();
+    const {runner, run} = createRunner();
+    const {actions, actionIds} = createActions(false);
+    const {session, inspect, invalidate} = createInspectionHarness({
+      "npm.github-scripts": () => ({kind: "available", value: npmTreeFacts(), durationMs: 1}),
+    });
+
+    const result = await findPhase("workspace.github-scripts-dependencies").run(
+      createContext(paths, runner, actions, {inspection: session}),
+    );
 
     expect(result.status).toBe("succeeded");
-    expect(actionIds).toContain("workspace.root-dependencies.npm-ci");
+    expect(actionIds).toEqual(["workspace.github-scripts-dependencies.npm-ci"]);
+    expect(run).toHaveBeenCalledWith(
+      {command: "npm", args: ["ci", "--prefer-offline", "--no-audit", "--no-fund"]},
+      expect.objectContaining({cwd: paths.githubScriptsRoot}),
+    );
+    expect(invalidate).toHaveBeenCalledWith("npm.github-scripts");
+    expect(invalidate).toHaveBeenCalledTimes(1);
+    expect(inspect).toHaveBeenCalledWith("npm.github-scripts");
+    expect(inspect).toHaveBeenCalledTimes(1);
   });
 
-  it("fails when npm ci fails", async () => {
+  it("plans the exact restoration command without executing it or touching inspection in dry-run", async () => {
+    const paths = await createFixture();
+    const {runner, run} = createRunner();
+    const {actions, actionIds} = createActions(true);
+    const {session, inspect, invalidate} = createInspectionHarness();
+    const context = createContext(paths, runner, actions, {options: options({dryRun: true}), inspection: session});
+
+    const result = await findPhase("workspace.github-scripts-dependencies").run(context);
+
+    expect(result.status).toBe("skipped");
+    expect(result.evidence.join("\n")).toContain("workspace.github-scripts-dependencies.npm-ci");
+    expect(actionIds).toEqual(["workspace.github-scripts-dependencies.npm-ci"]);
+    expect(run.mock.calls.some(([command]) => command.args[0] === "ci")).toBe(false);
+    expect(invalidate).not.toHaveBeenCalled();
+    expect(inspect).not.toHaveBeenCalled();
+  });
+
+  it("fails explicitly and reports no invalidation when the restoration action is declined", async () => {
+    const paths = await createFixture();
+    const {runner, run} = createRunner();
+    const {actions, actionIds} = createActions(false, {"workspace.github-scripts-dependencies.npm-ci": "declined"});
+    const {session, inspect, invalidate} = createInspectionHarness();
+
+    const result = await findPhase("workspace.github-scripts-dependencies").run(
+      createContext(paths, runner, actions, {inspection: session}),
+    );
+
+    expect(result.status).toBe("failed");
+    expect(result.evidence.join("\n")).toContain("Declined action: workspace.github-scripts-dependencies.npm-ci");
+    expect(actionIds).toEqual(["workspace.github-scripts-dependencies.npm-ci"]);
+    expect(run.mock.calls.some(([command]) => command.args[0] === "ci")).toBe(false);
+    expect(invalidate).not.toHaveBeenCalled();
+    expect(inspect).not.toHaveBeenCalled();
+  });
+
+  it("fails when npm ci fails, without invalidating or re-inspecting", async () => {
     const paths = await createFixture();
     const {runner} = createRunner((command) =>
       command.command === "npm" && command.args[0] === "ci"
@@ -651,156 +633,70 @@ describe("workspace npm restoration", () => {
         : defaultCommandResponse(command),
     );
     const {actions} = createActions(false);
+    const {session, inspect, invalidate} = createInspectionHarness();
 
-    const result = await findPhase("workspace.root-dependencies").run(createContext(paths, runner, actions));
+    const result = await findPhase("workspace.github-scripts-dependencies").run(
+      createContext(paths, runner, actions, {inspection: session}),
+    );
 
     expect(result.status).toBe("failed");
     expect(result.evidence.join("\n")).toContain("restore failed");
+    expect(invalidate).not.toHaveBeenCalled();
+    expect(inspect).not.toHaveBeenCalled();
   });
 
-  it("fails when the restored tree does not pass reinspection", async () => {
+  it("fails when the refreshed npm.github-scripts facts remain unavailable after npm ci", async () => {
     const paths = await createFixture();
-    const {runner} = createRunner((command) =>
-      command.command === "npm" && command.args[0] === "ls"
-        ? commandResult({code: 1, stdout: '{"problems":["still broken"]}'})
-        : defaultCommandResponse(command),
-    );
-    const {actions, actionIds} = createActions(false);
-
-    const result = await findPhase("workspace.root-dependencies").run(createContext(paths, runner, actions));
-
-    expect(result.status).toBe("failed");
-    expect(result.evidence.join("\n")).toContain("still broken");
-    expect(actionIds).toEqual(["workspace.root-dependencies.npm-ci"]);
-  });
-
-  it("is idempotent after a successful restore and fingerprint write", async () => {
-    const paths = await createFixture();
-    let inspections = 0;
-    const {runner} = createRunner((command) => {
-      if (command.command === "npm" && command.args[0] === "ls") {
-        inspections++;
-        return commandResult({stdout: "{}"});
-      }
-      return defaultCommandResponse(command);
-    });
-    const {actions, actionIds} = createActions(false);
-    const context = createContext(paths, runner, actions);
-
-    await expect(findPhase("workspace.root-dependencies").run(context)).resolves.toMatchObject({status: "succeeded"});
-    await expect(findPhase("workspace.root-dependencies").run(context)).resolves.toMatchObject({status: "succeeded"});
-
-    expect(inspections).toBe(3);
-    expect(actionIds).toEqual(["workspace.root-dependencies.npm-ci", "workspace.root-dependencies.write-fingerprint"]);
-  });
-
-  it("owns the .github scripts tree and its separate fingerprint", async () => {
-    const paths = await createFixture();
-    let inspections = 0;
-    const {runner, run} = createRunner((command) => {
-      if (command.command === "npm" && command.args[0] === "ls") {
-        inspections++;
-        return commandResult({stdout: "{}"});
-      }
-      return defaultCommandResponse(command);
-    });
-    const {actions, actionIds} = createActions(false);
-
-    const result = await findPhase("workspace.github-scripts-dependencies").run(createContext(paths, runner, actions));
-
-    expect(result.status).toBe("succeeded");
-    expect(inspections).toBe(2);
-    expect(actionIds).toEqual(["workspace.github-scripts-dependencies.npm-ci", "workspace.github-scripts-dependencies.write-fingerprint"]);
-    expect(run).toHaveBeenCalledWith(
-      {
-        command: "npm",
-        args: ["ci", "--prefer-offline", "--no-audit", "--no-fund"],
-      },
-      expect.objectContaining({cwd: paths.githubScriptsRoot}),
-    );
-    const config = JSON.parse(await readFile(paths.toolingConfig, "utf8")) as {
-      readonly fingerprints?: Readonly<Record<string, string>>;
-    };
-    expect(config.fingerprints?.["githubScriptsPackageLockSha256"]).toBe(await sha256File(paths.githubScriptsPackageLock));
-  });
-
-  it("restores both npm trees exactly once after Node drift and is idempotent on the next complete run", async () => {
-    const paths = await createFixture();
-    await writeMatchingConfig(paths);
-    const originalConfig = JSON.parse(await readFile(paths.toolingConfig, "utf8")) as {
-      fingerprints: Record<string, string>;
-    };
-    originalConfig.fingerprints.nodeVersion = "1.0.0";
-    await writeFixture(paths.toolingConfig, `${JSON.stringify(originalConfig, null, 2)}\n`);
-    const {runner, run} = createRunner();
-    const {actions, actionIds} = createActions(false);
-    const context = createContext(paths, runner, actions);
-    const rootPhase = findPhase("workspace.root-dependencies");
-    const githubPhase = findPhase("workspace.github-scripts-dependencies");
-
-    await expect(rootPhase.run(context)).resolves.toMatchObject({status: "succeeded"});
-    await expect(githubPhase.run(context)).resolves.toMatchObject({status: "succeeded"});
-
-    expect(
-      run.mock.calls.filter(([command]) => command.command === "npm" && command.args[0] === "ci").map(([, runOptions]) => runOptions?.cwd),
-    ).toEqual([paths.root, paths.githubScriptsRoot]);
-    expect(actionIds).toEqual([
-      "workspace.root-dependencies.npm-ci",
-      "workspace.root-dependencies.write-fingerprint",
-      "workspace.github-scripts-dependencies.npm-ci",
-      "workspace.github-scripts-dependencies.write-fingerprint",
-    ]);
-
-    const actionCountAfterFirstRun = actionIds.length;
-    await expect(rootPhase.run(context)).resolves.toMatchObject({status: "succeeded"});
-    await expect(githubPhase.run(context)).resolves.toMatchObject({status: "succeeded"});
-
-    expect(actionIds).toHaveLength(actionCountAfterFirstRun);
-    expect(run.mock.calls.filter(([command]) => command.command === "npm" && command.args[0] === "ci")).toHaveLength(2);
-    const config = JSON.parse(await readFile(paths.toolingConfig, "utf8")) as {
-      readonly containerEngine?: string;
-      readonly fingerprints?: Readonly<Record<string, string>>;
-    };
-    expect(config).toMatchObject({
-      containerEngine: "podman",
-      fingerprints: {
-        nodeVersion: `${nodeVersion.major}.${nodeVersion.minor}.${nodeVersion.patch}`,
-        rootPackageLockSha256: await sha256File(paths.packageLock),
-        githubScriptsPackageLockSha256: await sha256File(paths.githubScriptsPackageLock),
-        pythonRequirementsSha256: "preserve-python",
-      },
-    });
-  });
-
-  it("reports node_modules permission failures without planning restoration", async () => {
-    const paths = await createFixture();
-    const nodeModules = resolve(paths.root, "node_modules");
-    filesystemFailures.stat = {path: nodeModules, code: "EPERM"};
     const {runner} = createRunner();
-    const {actions, run: runAction} = createActions(false);
-
-    const result = await findPhase("workspace.root-dependencies").run(createContext(paths, runner, actions));
-
-    expect(result.status).toBe("failed");
-    expect(result.evidence.join("\n")).toContain("EPERM");
-    expect(runAction).not.toHaveBeenCalled();
-  });
-
-  it("returns a traversable skipped result in dry-run without mutation", async () => {
-    const paths = await createFixture();
-    const {runner, run} = createRunner();
-    const {actions, actionIds} = createActions(true);
-    const context = createContext(paths, runner, actions, {
-      options: options({dryRun: true}),
+    const {actions, actionIds} = createActions(false);
+    const {session, invalidate} = createInspectionHarness({
+      "npm.github-scripts": () => ({kind: "unavailable", reason: "npm dependency inspection could not be started.", durationMs: 1}),
     });
 
-    const result = await findPhase("workspace.root-dependencies").run(context);
+    const result = await findPhase("workspace.github-scripts-dependencies").run(
+      createContext(paths, runner, actions, {inspection: session}),
+    );
 
-    expect(result.status).toBe("skipped");
-    expect(result.evidence.join("\n")).toContain("workspace.root-dependencies.npm-ci");
-    expect(actionIds).toEqual(["workspace.root-dependencies.npm-ci"]);
-    expect(run.mock.calls.some(([command]) => command.args[0] === "ci")).toBe(false);
-    await expect(stat(paths.toolingConfig)).rejects.toMatchObject({code: "ENOENT"});
+    expect(result.status).toBe("failed");
+    expect(result.evidence).toContain("npm dependency inspection could not be started.");
+    expect(invalidate).toHaveBeenCalledWith("npm.github-scripts");
+    expect(actionIds).toEqual(["workspace.github-scripts-dependencies.npm-ci"]);
+  });
+
+  it("fails when the refreshed npm.github-scripts facts remain invalid after npm ci", async () => {
+    const paths = await createFixture();
+    const {runner} = createRunner();
+    const {actions} = createActions(false);
+    const {session} = createInspectionHarness({
+      "npm.github-scripts": () => ({kind: "invalid", issues: ["npm dependency inspection produced malformed tree data."], durationMs: 1}),
+    });
+
+    const result = await findPhase("workspace.github-scripts-dependencies").run(
+      createContext(paths, runner, actions, {inspection: session}),
+    );
+
+    expect(result.status).toBe("failed");
+    expect(result.evidence).toContain("npm dependency inspection produced malformed tree data.");
+  });
+
+  it("fails with safe problem evidence when the refreshed tree remains broken after npm ci", async () => {
+    const paths = await createFixture();
+    const {runner} = createRunner();
+    const {actions} = createActions(false);
+    const {session} = createInspectionHarness({
+      "npm.github-scripts": () => ({
+        kind: "available",
+        value: npmTreeFacts({valid: false, problemCount: 1, problems: [{code: "missing", detail: "npm reported missing for 'left-pad'."}]}),
+        durationMs: 1,
+      }),
+    });
+
+    const result = await findPhase("workspace.github-scripts-dependencies").run(
+      createContext(paths, runner, actions, {inspection: session}),
+    );
+
+    expect(result.status).toBe("failed");
+    expect(result.evidence).toContain("npm reported missing for 'left-pad'.");
   });
 });
 

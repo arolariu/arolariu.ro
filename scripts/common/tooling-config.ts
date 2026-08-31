@@ -10,23 +10,31 @@ import {basename, dirname, resolve} from "node:path";
 import type {ContainerEngine} from "../container-runtime/types.ts";
 
 const supportedContainerEngines: ReadonlySet<string> = new Set(["rancher", "podman"]);
-const fingerprintKeys = ["nodeVersion", "rootPackageLockSha256", "githubScriptsPackageLockSha256", "pythonRequirementsSha256"] as const;
+/**
+ * Recognized fingerprint keys, retained only for the not-yet-migrated Python requirements
+ * consumer. Node/npm fingerprints are permanently retired: shared inspection session facts
+ * supersede them for setup dependency validation and restoration.
+ */
+const fingerprintKeys = ["pythonRequirementsSha256"] as const;
 const secretKeyFragments = ["token", "secret", "password", "connectionstring"] as const;
 
-/** Setup inputs whose successful state can be reused while their fingerprints match. */
-export interface SetupFingerprints {
-  readonly nodeVersion?: string;
-  readonly rootPackageLockSha256?: string;
-  readonly githubScriptsPackageLockSha256?: string;
-  readonly pythonRequirementsSha256?: string;
-}
-
-/** Version 1 of the repository-local, non-secret tooling configuration. */
+/**
+ * Version 1 of the repository-local, non-secret tooling configuration.
+ *
+ * @remarks
+ * Transitional shape: only `pythonRequirementsSha256` remains under `fingerprints`, retained until
+ * Task 19 migrates the Python setup phase away from fingerprint-gated restoration.
+ */
 export interface ToolingConfigV1 {
   readonly schemaVersion: 1;
   readonly containerEngine?: ContainerEngine;
-  readonly fingerprints?: SetupFingerprints;
+  readonly fingerprints?: Readonly<{
+    readonly pythonRequirementsSha256?: string;
+  }>;
 }
+
+/** Recognized fingerprint fields of {@link ToolingConfigV1}. */
+type ToolingConfigFingerprints = NonNullable<ToolingConfigV1["fingerprints"]>;
 
 /** Result of reading the optional repository-local tooling configuration. */
 export type ToolingConfigReadResult =
@@ -68,13 +76,13 @@ function readOptionalString(record: Readonly<Record<string, unknown>>, key: stri
   return value;
 }
 
-function parseFingerprints(value: unknown): SetupFingerprints {
+function parseFingerprints(value: unknown): ToolingConfigFingerprints {
   if (!isRecord(value)) {
     throw new Error("Tooling configuration property 'fingerprints' must be an object.");
   }
 
   const parsed: {
-    -readonly [Key in keyof SetupFingerprints]?: string;
+    -readonly [Key in keyof ToolingConfigFingerprints]?: string;
   } = {};
   for (const key of fingerprintKeys) {
     const fingerprint = readOptionalString(value, key);

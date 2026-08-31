@@ -901,7 +901,7 @@ describe("python virtual environment preparation", () => {
     await writeToolingConfigFixture(paths, {
       schemaVersion: 1,
       containerEngine: "podman",
-      fingerprints: {nodeVersion: "24.0.0", rootPackageLockSha256: "root-hash", pythonRequirementsSha256: "stale"},
+      fingerprints: {pythonRequirementsSha256: "stale"},
     });
 
     const result = await harness.phase.run(harness.context);
@@ -909,8 +909,6 @@ describe("python virtual environment preparation", () => {
     expect(result.status).toBe("succeeded");
     const config = JSON.parse(await readFile(paths.toolingConfig, "utf8")) as ToolingConfigV1;
     expect(config.containerEngine).toBe("podman");
-    expect(config.fingerprints?.nodeVersion).toBe("24.0.0");
-    expect(config.fingerprints?.rootPackageLockSha256).toBe("root-hash");
     expect(config.fingerprints?.pythonRequirementsSha256).toBe(await sha256File(paths.pythonRequirements));
   });
 

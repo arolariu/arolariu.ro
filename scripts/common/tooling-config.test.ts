@@ -36,8 +36,7 @@ describe("readToolingConfig", () => {
         schemaVersion: 1,
         containerEngine: "podman",
         fingerprints: {
-          nodeVersion: "24.0.0",
-          rootPackageLockSha256: "abc123",
+          pythonRequirementsSha256: "abc123",
         },
       }),
       "utf8",
@@ -49,8 +48,7 @@ describe("readToolingConfig", () => {
         schemaVersion: 1,
         containerEngine: "podman",
         fingerprints: {
-          nodeVersion: "24.0.0",
-          rootPackageLockSha256: "abc123",
+          pythonRequirementsSha256: "abc123",
         },
       },
     });
@@ -99,6 +97,23 @@ describe("parseToolingConfig", () => {
         },
       }),
     ).toThrow("must not contain secrets");
+  });
+
+  it("discards legacy Node/npm fingerprint fields while retaining the Python fingerprint and engine", () => {
+    expect(
+      parseToolingConfig({
+        schemaVersion: 1,
+        containerEngine: "podman",
+        fingerprints: {
+          nodeVersion: "24.0.0",
+          pythonRequirementsSha256: "requirements-hash",
+        },
+      }),
+    ).toEqual({
+      schemaVersion: 1,
+      containerEngine: "podman",
+      fingerprints: {pythonRequirementsSha256: "requirements-hash"},
+    });
   });
 });
 
@@ -179,14 +194,35 @@ describe("mergeToolingConfig", () => {
           schemaVersion: 1,
           containerEngine: "rancher",
           fingerprints: {
-            nodeVersion: "24.0.0",
-            rootPackageLockSha256: "old-root",
+            pythonRequirementsSha256: "old-python",
+          },
+        },
+        {
+          containerEngine: "podman",
+        },
+      ),
+    ).toEqual({
+      schemaVersion: 1,
+      containerEngine: "podman",
+      fingerprints: {
+        pythonRequirementsSha256: "old-python",
+      },
+    });
+  });
+
+  it("overwrites the Python fingerprint while preserving the container engine", () => {
+    expect(
+      mergeToolingConfig(
+        {
+          schemaVersion: 1,
+          containerEngine: "rancher",
+          fingerprints: {
+            pythonRequirementsSha256: "old-python",
           },
         },
         {
           fingerprints: {
-            rootPackageLockSha256: "new-root",
-            pythonRequirementsSha256: "python",
+            pythonRequirementsSha256: "new-python",
           },
         },
       ),
@@ -194,9 +230,7 @@ describe("mergeToolingConfig", () => {
       schemaVersion: 1,
       containerEngine: "rancher",
       fingerprints: {
-        nodeVersion: "24.0.0",
-        rootPackageLockSha256: "new-root",
-        pythonRequirementsSha256: "python",
+        pythonRequirementsSha256: "new-python",
       },
     });
   });
