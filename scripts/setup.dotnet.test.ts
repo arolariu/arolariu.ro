@@ -11,37 +11,22 @@ import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "./common/logger.t
 import type {CommandResult, CommandRunner, CommandSpec} from "./common/process.ts";
 import {createRepositoryPaths} from "./common/repository-paths.ts";
 import type {MinimumVersion, RepositoryRequirements} from "./common/requirements.ts";
+import type {DotnetFacts} from "./inspection/dotnet.ts";
 import type {RepositoryInspectionSession} from "./inspection/repository.ts";
+import type {InspectionOutcome} from "./inspection/types.ts";
 import {
   createDotnetSetupPhase,
   dotnetSetupPhase,
   generateLocalDevelopmentPassword,
-  parseDotnetSdks,
   selectDotnetInstallationProposal,
 } from "./setup.dotnet.ts";
 import type {SetupAction, SetupActionDisposition, SetupActionExecutor, SetupContext, SetupOptions} from "./setup.types.ts";
 
-/** A typed fake {@link RepositoryInspectionSession} that never resolves a real repository fact. */
-function createFakeInspectionSession(): RepositoryInspectionSession {
-  return {
-    inspect: async () => ({kind: "unavailable", reason: "Not exercised by this test.", durationMs: 0}),
-    invalidate: () => {},
-  };
-}
-
 const requiredDotnet: MinimumVersion = {major: 10, minor: 0, patch: 0};
 const paths = createRepositoryPaths(resolve("C:\\fixture\\arolariu.ro"));
 const appHostProject = resolve(paths.root, "tooling", "AppHost", "AppHost.csproj");
-const appHostSettings = resolve(paths.root, "tooling", "AppHost", "appsettings.Development.json");
 const sqlSecretKey = "Parameters:sql-password";
 const redisSecretKey = "Parameters:redis-password";
-
-function userSecretsJson(sql: string | undefined, redis: string | undefined): string {
-  return JSON.stringify({
-    ...(sql === undefined ? {} : {[sqlSecretKey]: sql}),
-    ...(redis === undefined ? {} : {[redisSecretKey]: redis}),
-  });
-}
 
 function expectedPasswordForRepeatedByte(byte: number): string {
   return `Aa1!${Buffer.alloc(24, byte).toString("base64url")}`;
@@ -60,36 +45,6 @@ function commandResult(patch: Partial<CommandResult> = {}): CommandResult {
 
 function commandKey(command: Readonly<CommandSpec>): string {
   return [command.command, ...command.args].join("\u0000");
-}
-
-const commandKeys = {
-  sdks: commandKey({command: "dotnet", args: ["--list-sdks"]}),
-  selectedSdk: commandKey({command: "dotnet", args: ["--version"]}),
-  secrets: commandKey({command: "dotnet", args: ["user-secrets", "list", "--json", "--project", appHostProject]}),
-  certificate: commandKey({command: "dotnet", args: ["dev-certs", "https", "--check"]}),
-  trust: commandKey({command: "dotnet", args: ["dev-certs", "https", "--check-trust-machine-readable"]}),
-} as const;
-
-function machineReadableTrustReport(...trustLevels: readonly ("None" | "Partial" | "Full")[]): string {
-  return JSON.stringify(
-    trustLevels.map((trustLevel) => ({
-      Thumbprint: "0123456789ABCDEF0123456789ABCDEF01234567",
-      Subject: "CN=localhost",
-      X509SubjectAlternativeNameExtension: [
-        "localhost",
-        "*.dev.localhost",
-        "*.dev.internal",
-        "host.docker.internal",
-        "host.containers.internal",
-      ],
-      Version: 6,
-      ValidityNotBefore: "2026-01-14T12:00:01+02:00",
-      ValidityNotAfter: "2027-01-14T12:00:01+02:00",
-      IsHttpsDevelopmentCertificate: true,
-      IsExportable: true,
-      TrustLevel: trustLevel,
-    })),
-  );
 }
 
 function requirements(): RepositoryRequirements {
@@ -111,25 +66,83 @@ function setupOptions(patch: Partial<SetupOptions> = {}): SetupOptions {
   };
 }
 
-function defaultResponse(command: Readonly<CommandSpec>): CommandResult {
-  const key = commandKey(command);
-  if (key === commandKeys.sdks) {
-    return commandResult({stdout: "10.0.100 [C:\\Program Files\\dotnet\\sdk]\n"});
-  }
-  if (key === commandKeys.selectedSdk) {
-    return commandResult({stdout: "10.0.100\n"});
-  }
-  if (key === commandKeys.secrets) {
-    return commandResult({
-      stdout: '//BEGIN\n{"Parameters:sql-password":"existing-sql","Parameters:redis-password":"existing-redis"}\n//END\n',
-    });
-  }
-  if (key === commandKeys.certificate) {
-    return commandResult();
-  }
-  if (key === commandKeys.trust) {
-    return commandResult({stdout: machineReadableTrustReport("Full")});
-  }
+/** A {@link DotnetFacts} patch that may explicitly clear an optional field to `undefined`. */
+type DotnetFactsPatch = Partial<Omit<DotnetFacts, "selectedVersion" | "host">> & {
+  selectedVersion?: string | undefined;
+  host?: DotnetFacts["host"] | undefined;
+};
+
+/** Builds one complete, compatible-by-default {@link DotnetFacts} value for tests to patch. */
+function dotnetFacts(patch: DotnetFactsPatch = {}): DotnetFacts {
+  const {selectedVersion, host, ...rest} = patch;
+  // `"key" in patch` distinguishes an absent field (use the default) from an explicit `undefined`
+  // (clear the optional field), which a destructuring default alone cannot tell apart.
+  const includeSelectedVersion = !("selectedVersion" in patch) || selectedVersion !== undefined;
+  const includeHost = !("host" in patch) || host !== undefined;
+  return {
+    executable: {available: true, resolvedPaths: ["C:\\Program Files\\dotnet\\dotnet.exe"]},
+    sdks: ["10.0.100"],
+    workloads: [],
+    nugetCachePath: "C:\\fixture\\nuget\\packages",
+    solutionIssues: [],
+    localTools: [],
+    certificate: {exists: true, trusted: true},
+    appHost: {
+      projectExists: true,
+      missingParameterKeys: [],
+      userSecretKeys: [sqlSecretKey, redisSecretKey],
+    },
+    ...rest,
+    ...(includeSelectedVersion ? {selectedVersion: selectedVersion ?? "10.0.100"} : {}),
+    ...(includeHost ? {host: host ?? {version: "10.0.0", architecture: "x64", rid: "win-x64"}} : {}),
+  };
+}
+
+function availableOutcome(patch: DotnetFactsPatch = {}): InspectionOutcome<DotnetFacts> {
+  return {kind: "available", value: dotnetFacts(patch), durationMs: 1};
+}
+
+function unavailableOutcome(reason = "The dotnet executable is unavailable."): InspectionOutcome<DotnetFacts> {
+  return {kind: "unavailable", reason, durationMs: 1};
+}
+
+function invalidOutcome(issues: readonly string[] = ["dotnet --version returned malformed output."]): InspectionOutcome<DotnetFacts> {
+  return {kind: "invalid", issues, durationMs: 1};
+}
+
+/**
+ * Builds a `dotnet` inspection outcome sequence for tests. The restore phase always re-inspects
+ * `dotnet` once after its three restore actions execute (the default disposition), so `initial` is
+ * duplicated once for that unconditional refresh before any further supplied outcomes model the
+ * mutation actually under test (an executed SDK install, secret write, or certificate operation).
+ */
+function dotnetOutcomeSequence(
+  initial: InspectionOutcome<DotnetFacts>,
+  ...after: readonly InspectionOutcome<DotnetFacts>[]
+): readonly InspectionOutcome<DotnetFacts>[] {
+  return [initial, initial, ...after];
+}
+
+/** A controllable fake {@link RepositoryInspectionSession} that only ever resolves the `"dotnet"` key. */
+function createDotnetInspectionHarness(outcomes: readonly InspectionOutcome<DotnetFacts>[] = [availableOutcome()]): Readonly<{
+  session: RepositoryInspectionSession;
+  inspect: ReturnType<typeof vi.fn>;
+  invalidate: ReturnType<typeof vi.fn>;
+}> {
+  let callIndex = 0;
+  const inspect = vi.fn(async (key: "dotnet") => {
+    if (key !== "dotnet") {
+      return {kind: "unavailable" as const, reason: "Not exercised by this test.", durationMs: 0};
+    }
+    const outcome = outcomes[Math.min(callIndex, outcomes.length - 1)]!;
+    callIndex += 1;
+    return outcome;
+  });
+  const invalidate = vi.fn();
+  return {session: {inspect, invalidate} as unknown as RepositoryInspectionSession, inspect, invalidate};
+}
+
+function defaultResponse(): CommandResult {
   return commandResult();
 }
 
@@ -144,9 +157,9 @@ function createRunner(responses: Readonly<Record<string, CommandResult | readonl
     if (Array.isArray(configured)) {
       const offset = offsets.get(key) ?? 0;
       offsets.set(key, offset + 1);
-      return configured[offset] ?? configured.at(-1) ?? defaultResponse(command);
+      return configured[offset] ?? configured.at(-1) ?? defaultResponse();
     }
-    return configured ?? defaultResponse(command);
+    return configured ?? defaultResponse();
   });
   return {runner: {run}, run};
 }
@@ -178,8 +191,8 @@ function createHarness(
     dispositions?: Readonly<Record<string, SetupActionDisposition>>;
     options?: SetupOptions;
     platform?: NodeJS.Platform;
-    settings?: string | Error;
     randomBytes?: (size: number) => Uint8Array;
+    dotnetOutcomes?: readonly InspectionOutcome<DotnetFacts>[];
   }> = {},
 ): Readonly<{
   phase: ReturnType<typeof createDotnetSetupPhase>;
@@ -189,9 +202,12 @@ function createHarness(
   actionRecords: SetupAction[];
   sink: InMemoryLoggerSink;
   redactions: string[];
+  inspect: ReturnType<typeof vi.fn>;
+  invalidate: ReturnType<typeof vi.fn>;
 }> {
   const {runner, run} = createRunner(input.responses);
   const {actions, actionIds, actionRecords} = createActions(input.dispositions);
+  const {session, inspect, invalidate} = createDotnetInspectionHarness(input.dotnetOutcomes);
   const sink = new InMemoryLoggerSink();
   const redactions: string[] = [];
   const logger = new MonorepositoryConsoleLogger("setup::dotnet", {color: false, sink});
@@ -205,7 +221,7 @@ function createHarness(
     options: input.options ?? setupOptions(),
     paths,
     requirements: requirements(),
-    inspection: createFakeInspectionSession(),
+    inspection: session,
     runner,
     prompts: {
       confirm: async () => true,
@@ -226,26 +242,11 @@ function createHarness(
     logger,
     now: () => now++,
   };
-  const settings =
-    input.settings
-    ?? JSON.stringify({
-      Parameters: {
-        "sql-password": "tracked-shape-only-sql",
-        "redis-password": "tracked-shape-only-redis",
-      },
-    });
   const phase = createDotnetSetupPhase({
     platform: input.platform ?? "win32",
-    readTextFile: async (path) => {
-      expect(path).toBe(appHostSettings);
-      if (settings instanceof Error) {
-        throw settings;
-      }
-      return settings;
-    },
     randomBytes: input.randomBytes ?? ((size) => new Uint8Array(size).fill(7)),
   });
-  return {phase, context, run, actionIds, actionRecords, sink, redactions};
+  return {phase, context, run, actionIds, actionRecords, sink, redactions, inspect, invalidate};
 }
 
 describe("dotnet setup public contract", () => {
@@ -255,27 +256,6 @@ describe("dotnet setup public contract", () => {
       required: true,
       dependsOn: [],
     });
-  });
-
-  it("parses stable and preview SDK lines while ignoring malformed input", () => {
-    expect(
-      parseDotnetSdks(
-        [
-          "10.0.100 [C:\\Program Files\\dotnet\\sdk]",
-          "11.0.0-preview.4.25258.110 [/usr/share/dotnet/sdk]",
-          "9.0.301 [/usr/share/dotnet/sdk]",
-          "10.0 [/missing/patch]",
-          "text 10.0.200 [/not-leading]",
-          "01.0.0 [/leading-zero]",
-          "12.3.4",
-        ].join("\n"),
-      ),
-    ).toEqual([
-      {major: 10, minor: 0, patch: 100},
-      {major: 11, minor: 0, patch: 0},
-      {major: 9, minor: 0, patch: 301},
-      {major: 12, minor: 3, patch: 4},
-    ]);
   });
 
   it.each([
@@ -333,33 +313,49 @@ describe("generateLocalDevelopmentPassword", () => {
   });
 });
 
-describe("dotnet SDK readiness", () => {
-  it("accepts a compatible listed stable SDK and selected preview SDK", async () => {
-    const harness = createHarness({
-      responses: {
-        [commandKeys.sdks]: commandResult({stdout: "9.0.400 [sdk]\n10.0.100-preview.7.25380.108 [sdk]\n"}),
-        [commandKeys.selectedSdk]: commandResult({stdout: "10.0.100-preview.7.25380.108\n"}),
-      },
-    });
+describe("dotnet fact readiness", () => {
+  it("accepts compatible facts without an SDK inspection round trip beyond the initial fetch", async () => {
+    const harness = createHarness();
 
     const result = await harness.phase.run(harness.context);
 
     expect(result.status).toBe("succeeded");
     expect(harness.actionIds).not.toContain("dotnet.install-sdk");
+    expect(harness.inspect).toHaveBeenCalledWith("dotnet");
+  });
+
+  it("fails explicitly with bounded evidence when the initial dotnet fact is unavailable", async () => {
+    const harness = createHarness({dotnetOutcomes: [unavailableOutcome("The dotnet executable is unavailable.")]});
+
+    const result = await harness.phase.run(harness.context);
+
+    expect(result.status).toBe("failed");
+    expect(result.evidence).toContain("The dotnet executable is unavailable.");
+    expect(result.nextActions.join("\n")).toContain("https://dotnet.microsoft.com/download");
+    expect(harness.run).not.toHaveBeenCalled();
+    expect(harness.invalidate).not.toHaveBeenCalled();
+  });
+
+  it("fails explicitly with bounded evidence when the initial dotnet fact is invalid", async () => {
+    const harness = createHarness({dotnetOutcomes: [invalidOutcome(["dotnet --version returned malformed output."])]});
+
+    const result = await harness.phase.run(harness.context);
+
+    expect(result.status).toBe("failed");
+    expect(result.evidence).toContain("dotnet --version returned malformed output.");
+    expect(harness.run).not.toHaveBeenCalled();
   });
 
   it.each([
-    ["only older SDKs", commandResult({stdout: "9.0.400 [sdk]\n"}), commandResult({stdout: "9.0.400\n"})],
-    ["a missing CLI", commandResult({code: 1, spawnError: "ENOENT"}), commandResult({code: 1, spawnError: "ENOENT"})],
-    ["a selected-SDK mismatch", commandResult({stdout: "10.0.100 [sdk]\n"}), commandResult({stdout: "9.0.400\n"})],
-  ])("requires installation for $0", async (_name, sdkResult, selectedResult) => {
+    ["only older installed and selected SDKs", {sdks: ["9.0.400"], selectedVersion: "9.0.400"}],
+    ["an unavailable executable", {executable: {available: false, resolvedPaths: []}}],
+    ["no selected SDK", {selectedVersion: undefined}],
+    ["a selected-SDK mismatch", {sdks: ["10.0.100"], selectedVersion: "9.0.400"}],
+  ])("requires installation for %s", async (_name, patch) => {
     const wingetKey = commandKey({command: "winget", args: ["--version"]});
     const harness = createHarness({
-      responses: {
-        [commandKeys.sdks]: sdkResult,
-        [commandKeys.selectedSdk]: selectedResult,
-        [wingetKey]: commandResult({stdout: "v1.11.0\n"}),
-      },
+      dotnetOutcomes: [availableOutcome(patch)],
+      responses: {[wingetKey]: commandResult({stdout: "v1.11.0\n"})},
       dispositions: {"dotnet.install-sdk": "declined"},
     });
 
@@ -369,35 +365,28 @@ describe("dotnet SDK readiness", () => {
     expect(result.evidence.join("\n")).toContain("dotnet.install-sdk");
   });
 
-  it("fails with official guidance when no supported installer is discoverable", async () => {
+  it("fails with official guidance when no supported installer is discoverable, without probing anything", async () => {
     const harness = createHarness({
       platform: "freebsd",
-      responses: {
-        [commandKeys.sdks]: commandResult({code: 1, spawnError: "ENOENT"}),
-        [commandKeys.selectedSdk]: commandResult({code: 1, spawnError: "ENOENT"}),
-      },
+      dotnetOutcomes: [availableOutcome({sdks: [], selectedVersion: undefined})],
     });
 
     const result = await harness.phase.run(harness.context);
 
     expect(result.status).toBe("failed");
     expect(result.nextActions.join("\n")).toContain("https://dotnet.microsoft.com/download");
-    expect(harness.run.mock.calls.flatMap(([command]) => command.args).join(" ")).not.toMatch(/curl|Invoke-WebRequest|dotnet-install/);
+    expect(harness.run).not.toHaveBeenCalled();
   });
 
-  it("requires both SDK probes to pass after an executed installation", async () => {
+  it("does not treat a successful install command as proof of readiness when refreshed facts remain incompatible", async () => {
     const wingetKey = commandKey({command: "winget", args: ["--version"]});
     const installKey = commandKey(
-      selectDotnetInstallationProposal({
-        platform: "win32",
-        availablePackageManagers: new Set(["winget"]),
-        required: requiredDotnet,
-      })!.command,
+      selectDotnetInstallationProposal({platform: "win32", availablePackageManagers: new Set(["winget"]), required: requiredDotnet})!
+        .command,
     );
     const harness = createHarness({
+      dotnetOutcomes: [availableOutcome({sdks: [], selectedVersion: undefined}), availableOutcome({sdks: [], selectedVersion: undefined})],
       responses: {
-        [commandKeys.sdks]: [commandResult({code: 1, spawnError: "ENOENT"}), commandResult({stdout: "10.0.100 [sdk]\n"})],
-        [commandKeys.selectedSdk]: [commandResult({code: 1, spawnError: "ENOENT"}), commandResult({stdout: "malformed-selection\n"})],
         [wingetKey]: commandResult({stdout: "v1.11.0\n"}),
         [installKey]: commandResult(),
       },
@@ -406,8 +395,32 @@ describe("dotnet SDK readiness", () => {
     const result = await harness.phase.run(harness.context);
 
     expect(result.status).toBe("failed");
-    expect(result.summary).toMatch(/SDK/i);
+    expect(result.summary).toMatch(/remains incompatible/i);
     expect(harness.actionIds).toEqual(["dotnet.install-sdk"]);
+    expect(harness.invalidate).toHaveBeenCalledExactlyOnceWith("dotnet");
+    expect(harness.inspect).toHaveBeenCalledTimes(2);
+  });
+
+  it("installs, invalidates exactly dotnet, and verifies compatibility from refreshed facts", async () => {
+    const wingetKey = commandKey({command: "winget", args: ["--version"]});
+    const installKey = commandKey(
+      selectDotnetInstallationProposal({platform: "win32", availablePackageManagers: new Set(["winget"]), required: requiredDotnet})!
+        .command,
+    );
+    const harness = createHarness({
+      dotnetOutcomes: [availableOutcome({sdks: [], selectedVersion: undefined}), availableOutcome()],
+      responses: {
+        [wingetKey]: commandResult({stdout: "v1.11.0\n"}),
+        [installKey]: commandResult(),
+      },
+    });
+
+    const result = await harness.phase.run(harness.context);
+
+    expect(result.status).toBe("succeeded");
+    expect(harness.actionIds[0]).toBe("dotnet.install-sdk");
+    expect(harness.invalidate).toHaveBeenCalledWith("dotnet");
+    expect(result.evidence.join("\n")).toContain("Executed and verified action: dotnet.install-sdk");
   });
 
   it("discovers an apt candidate and prefers the exact apt installation over dnf", async () => {
@@ -416,12 +429,10 @@ describe("dotnet SDK readiness", () => {
     const aptPolicyKey = commandKey({command: "apt-cache", args: ["policy", "dotnet-sdk-10.0"]});
     const aptInstallKey = commandKey({command: "sudo", args: ["apt-get", "install", "-y", "dotnet-sdk-10.0"]});
     const dnfInstallKey = commandKey({command: "sudo", args: ["dnf", "install", "-y", "dotnet-sdk-10.0"]});
-    const unavailable = commandResult({code: 1, spawnError: "ENOENT"});
     const harness = createHarness({
       platform: "linux",
+      dotnetOutcomes: [availableOutcome({sdks: [], selectedVersion: undefined}), availableOutcome()],
       responses: {
-        [commandKeys.sdks]: [unavailable, commandResult({stdout: "10.0.100 [/usr/share/dotnet/sdk]\n"})],
-        [commandKeys.selectedSdk]: [unavailable, commandResult({stdout: "10.0.100\n"})],
         [aptVersionKey]: commandResult({stdout: "apt 2.9.0\n"}),
         [dnfVersionKey]: commandResult({stdout: "4.21.1\n"}),
         [aptPolicyKey]: commandResult({
@@ -448,12 +459,10 @@ describe("dotnet SDK readiness", () => {
     const aptPolicyKey = commandKey({command: "apt-cache", args: ["policy", "dotnet-sdk-10.0"]});
     const aptInstallKey = commandKey({command: "sudo", args: ["apt-get", "install", "-y", "dotnet-sdk-10.0"]});
     const dnfInstallKey = commandKey({command: "sudo", args: ["dnf", "install", "-y", "dotnet-sdk-10.0"]});
-    const unavailable = commandResult({code: 1, spawnError: "ENOENT"});
     const harness = createHarness({
       platform: "linux",
+      dotnetOutcomes: [availableOutcome({sdks: [], selectedVersion: undefined}), availableOutcome()],
       responses: {
-        [commandKeys.sdks]: [unavailable, commandResult({stdout: "10.0.100 [/usr/share/dotnet/sdk]\n"})],
-        [commandKeys.selectedSdk]: [unavailable, commandResult({stdout: "10.0.100\n"})],
         [aptVersionKey]: commandResult({stdout: "apt 2.9.0\n"}),
         [dnfVersionKey]: commandResult({stdout: "4.21.1\n"}),
         [aptPolicyKey]: commandResult({
@@ -476,12 +485,10 @@ describe("dotnet SDK readiness", () => {
   it("discovers Homebrew and executes the exact macOS installation proposal", async () => {
     const brewVersionKey = commandKey({command: "brew", args: ["--version"]});
     const brewInstallKey = commandKey({command: "brew", args: ["install", "--cask", "dotnet-sdk"]});
-    const unavailable = commandResult({code: 1, spawnError: "ENOENT"});
     const harness = createHarness({
       platform: "darwin",
+      dotnetOutcomes: [availableOutcome({sdks: [], selectedVersion: undefined}), availableOutcome()],
       responses: {
-        [commandKeys.sdks]: [unavailable, commandResult({stdout: "10.0.100 [/usr/local/share/dotnet/sdk]\n"})],
-        [commandKeys.selectedSdk]: [unavailable, commandResult({stdout: "10.0.100\n"})],
         [brewVersionKey]: commandResult({stdout: "Homebrew 4.6.0\n"}),
         [brewInstallKey]: commandResult(),
       },
@@ -497,8 +504,23 @@ describe("dotnet SDK readiness", () => {
   });
 });
 
+describe("repository solution integrity", () => {
+  it("fails immediately on non-empty solution issues without attempting any mutation", async () => {
+    const harness = createHarness({
+      dotnetOutcomes: [availableOutcome({solutionIssues: ["Missing solution project: src/Broken.csproj"]})],
+    });
+
+    const result = await harness.phase.run(harness.context);
+
+    expect(result.status).toBe("failed");
+    expect(result.evidence).toContain("Missing solution project: src/Broken.csproj");
+    expect(harness.run).not.toHaveBeenCalled();
+    expect(harness.invalidate).not.toHaveBeenCalled();
+  });
+});
+
 describe("restore ordering and failures", () => {
-  it("runs the exact restore commands in order with their scopes and logger-backed tee output", async () => {
+  it("runs the exact restore commands in order, then verifies solution integrity from refreshed facts", async () => {
     const harness = createHarness();
 
     const result = await harness.phase.run(harness.context);
@@ -518,6 +540,8 @@ describe("restore ordering and failures", () => {
     for (const [, options] of restoreCalls) {
       expect(options).toMatchObject({cwd: paths.root, output: "tee", logger: harness.context.logger});
     }
+    expect(harness.invalidate).toHaveBeenCalledExactlyOnceWith("dotnet");
+    expect(harness.inspect).toHaveBeenCalledTimes(2);
   });
 
   it.each([
@@ -525,7 +549,7 @@ describe("restore ordering and failures", () => {
     ["timeout", commandResult({code: 1, timedOut: true})],
     ["signal", commandResult({code: 1, signal: "SIGTERM"})],
     ["spawn error", commandResult({code: 1, spawnError: "EACCES"})],
-  ])("retains explicit safe restore evidence for $0", async (_name, failure) => {
+  ])("retains explicit safe restore evidence for %s without invalidating facts", async (_name, failure) => {
     const workloadKey = commandKey({command: "dotnet", args: ["workload", "restore", paths.solution]});
     const harness = createHarness({responses: {[workloadKey]: failure}});
 
@@ -536,69 +560,53 @@ describe("restore ordering and failures", () => {
     if (failure.stderr !== "") {
       expect(result.evidence.join("\n")).toContain(failure.stderr);
     }
-  });
-});
-
-describe("AppHost configuration and user secrets", () => {
-  it.each([
-    ["unreadable", new Error("EACCES")],
-    ["malformed", "not json"],
-    ["missing SQL parameter", '{"Parameters":{"redis-password":"shape-value"}}'],
-    ["empty Redis parameter", '{"Parameters":{"sql-password":"shape-value","redis-password":""}}'],
-  ])("fails tracked AppHost validation when it is $0 without exposing tracked values", async (_name, settings) => {
-    const harness = createHarness({settings});
-
-    const result = await harness.phase.run(harness.context);
-
-    expect(result.status).toBe("failed");
-    expect(result.evidence.join("\n")).not.toContain("shape-value");
-    expect(harness.run.mock.calls.some(([command]) => command.args[0] === "user-secrets")).toBe(false);
+    expect(harness.invalidate).not.toHaveBeenCalled();
   });
 
-  it.each([
-    [
-      "wrapped",
-      '//BEGIN\n{"Parameters:sql-password":"wrapped-sql","Parameters:redis-password":"wrapped-redis"}\n//END\n',
-      ["wrapped-sql", "wrapped-redis"],
-    ],
-    ["plain", userSecretsJson("plain-sql", "plain-redis"), ["plain-sql", "plain-redis"]],
-  ])("accepts $0 JSON and immediately redacts discovered values", async (_name, stdout, secrets) => {
-    const harness = createHarness({responses: {[commandKeys.secrets]: commandResult({stdout})}});
-
-    const result = await harness.phase.run(harness.context);
-
-    expect(result.status).toBe("succeeded");
-    expect(harness.redactions).toEqual(expect.arrayContaining(secrets));
-    expect(result.evidence.join("\n")).not.toContain(stdout);
-  });
-
-  it("accepts a wrapped secret value containing the wrapper terminator text", async () => {
-    const markerSecret = "existing-//END-value";
+  it("fails when the refreshed solution issues are non-empty after an otherwise successful restore", async () => {
     const harness = createHarness({
-      responses: {
-        [commandKeys.secrets]: commandResult({
-          stdout: `//BEGIN\n${JSON.stringify({
-            "Parameters:sql-password": markerSecret,
-            "Parameters:redis-password": "existing-redis",
-          })}\n//END\n`,
-        }),
-      },
+      dotnetOutcomes: [availableOutcome(), availableOutcome({solutionIssues: ["Missing solution project: X"]})],
     });
 
     const result = await harness.phase.run(harness.context);
 
-    expect(result.status).toBe("succeeded");
-    expect(harness.redactions).toContain(markerSecret);
+    expect(result.status).toBe("failed");
+    expect(result.evidence).toContain("Missing solution project: X");
+    expect(harness.invalidate).toHaveBeenCalledExactlyOnceWith("dotnet");
   });
 
-  it("rejects malformed secret JSON without retaining raw stdout", async () => {
-    const raw = "//BEGIN\nnot-json-SENSITIVE\n//END\n";
-    const harness = createHarness({responses: {[commandKeys.secrets]: commandResult({stdout: raw})}});
+  it("fails when refreshed facts are unavailable after an otherwise successful restore", async () => {
+    const harness = createHarness({
+      dotnetOutcomes: [availableOutcome(), unavailableOutcome("The dotnet executable is unavailable.")],
+    });
 
     const result = await harness.phase.run(harness.context);
 
     expect(result.status).toBe("failed");
-    expect(result.evidence.join("\n")).not.toContain("not-json-SENSITIVE");
+    expect(result.evidence).toContain("The dotnet executable is unavailable.");
+  });
+});
+
+describe("AppHost project and user secrets", () => {
+  it("fails when the AppHost project does not exist, without attempting user-secret commands", async () => {
+    const harness = createHarness({
+      dotnetOutcomes: [availableOutcome({appHost: {projectExists: false, missingParameterKeys: [], userSecretKeys: []}})],
+    });
+
+    const result = await harness.phase.run(harness.context);
+
+    expect(result.status).toBe("failed");
+    expect(harness.run.mock.calls.some(([command]) => command.args[0] === "user-secrets")).toBe(false);
+  });
+
+  it("succeeds without a user-secrets action when no required key is missing", async () => {
+    const harness = createHarness();
+
+    const result = await harness.phase.run(harness.context);
+
+    expect(result.status).toBe("succeeded");
+    expect(harness.actionIds).not.toContain("dotnet.user-secrets.set");
+    expect(harness.run.mock.calls.some(([command]) => command.args[0] === "user-secrets")).toBe(false);
   });
 
   it("generates each missing key independently inside one action and sends values only through stdin", async () => {
@@ -609,15 +617,16 @@ describe("AppHost configuration and user secrets", () => {
     const sqlPassword = expectedPasswordForRepeatedByte(1);
     const redisPassword = expectedPasswordForRepeatedByte(2);
     const setKey = commandKey({command: "dotnet", args: ["user-secrets", "set", "--project", appHostProject]});
+    const missing = availableOutcome({
+      appHost: {projectExists: true, missingParameterKeys: [sqlSecretKey, redisSecretKey], userSecretKeys: []},
+    });
+    const resolved = availableOutcome({
+      appHost: {projectExists: true, missingParameterKeys: [], userSecretKeys: [sqlSecretKey, redisSecretKey]},
+    });
     const harness = createHarness({
       randomBytes: random,
-      responses: {
-        [commandKeys.secrets]: [
-          commandResult({stdout: "{}"}),
-          commandResult({stdout: userSecretsJson(sqlPassword, redisPassword)}),
-        ],
-        [setKey]: commandResult(),
-      },
+      dotnetOutcomes: dotnetOutcomeSequence(missing, resolved),
+      responses: {[setKey]: commandResult()},
     });
 
     const result = await harness.phase.run(harness.context);
@@ -646,56 +655,44 @@ describe("AppHost configuration and user secrets", () => {
     }
   });
 
-  it("sets only the independently missing secret key", async () => {
+  it("sets only the independently missing secret key named by facts", async () => {
     const random = vi.fn<(size: number) => Uint8Array>().mockReturnValue(new Uint8Array(24).fill(3));
-    const redisPassword = expectedPasswordForRepeatedByte(3);
-    const harness = createHarness({
-      randomBytes: random,
-      responses: {
-        [commandKeys.secrets]: [
-          commandResult({stdout: '{"Parameters:sql-password":"existing-sql"}'}),
-          commandResult({stdout: userSecretsJson("existing-sql", redisPassword)}),
-        ],
-      },
+    const missing = availableOutcome({
+      appHost: {projectExists: true, missingParameterKeys: [redisSecretKey], userSecretKeys: [sqlSecretKey]},
     });
+    const resolved = availableOutcome({
+      appHost: {projectExists: true, missingParameterKeys: [], userSecretKeys: [sqlSecretKey, redisSecretKey]},
+    });
+    const harness = createHarness({randomBytes: random, dotnetOutcomes: dotnetOutcomeSequence(missing, resolved)});
 
     await expect(harness.phase.run(harness.context)).resolves.toMatchObject({status: "succeeded"});
     expect(random).toHaveBeenCalledOnce();
     const setCall = harness.run.mock.calls.find(([command]) => command.args[0] === "user-secrets" && command.args[1] === "set");
-    expect(Object.keys(JSON.parse(String(setCall?.[1]?.input)) as object)).toEqual(["Parameters:redis-password"]);
+    expect(Object.keys(JSON.parse(String(setCall?.[1]?.input)) as object)).toEqual([redisSecretKey]);
   });
 
-  it("replaces a whitespace-only required secret without registering whitespace as a redaction", async () => {
-    const random = vi.fn<(size: number) => Uint8Array>().mockReturnValue(new Uint8Array(24).fill(3));
-    const sqlPassword = expectedPasswordForRepeatedByte(3);
+  it("fails post-set verification when refreshed facts still report a missing key, without leaking the generated value", async () => {
+    const generated = expectedPasswordForRepeatedByte(4);
+    const missing = availableOutcome({appHost: {projectExists: true, missingParameterKeys: [sqlSecretKey], userSecretKeys: []}});
     const harness = createHarness({
-      randomBytes: random,
-      responses: {
-        [commandKeys.secrets]: [
-          commandResult({stdout: '{"Parameters:sql-password":"   ","Parameters:redis-password":"existing-redis"}'}),
-          commandResult({stdout: userSecretsJson(sqlPassword, "existing-redis")}),
-        ],
-      },
+      randomBytes: () => new Uint8Array(24).fill(4),
+      dotnetOutcomes: dotnetOutcomeSequence(missing, missing),
     });
 
     const result = await harness.phase.run(harness.context);
 
-    expect(result.status).toBe("succeeded");
-    expect(random).toHaveBeenCalledOnce();
-    expect(harness.redactions).not.toContain("   ");
-    const setCall = harness.run.mock.calls.find(([command]) => command.args[0] === "user-secrets" && command.args[1] === "set");
-    expect(Object.keys(JSON.parse(String(setCall?.[1]?.input)) as object)).toEqual(["Parameters:sql-password"]);
+    expect(result.status).toBe("failed");
+    expect(result.evidence.join("\n")).not.toContain(generated);
+    expect(result.evidence.join("\n")).toMatch(/postcondition/i);
   });
 
-  it("fails post-set verification and sanitizes known values from child errors", async () => {
+  it("fails when the set command itself fails, sanitizing known generated values from child errors", async () => {
     const generated = expectedPasswordForRepeatedByte(4);
+    const missing = availableOutcome({appHost: {projectExists: true, missingParameterKeys: [sqlSecretKey], userSecretKeys: []}});
     const harness = createHarness({
       randomBytes: () => new Uint8Array(24).fill(4),
+      dotnetOutcomes: [missing, missing],
       responses: {
-        [commandKeys.secrets]: [
-          commandResult({stdout: '{"Parameters:sql-password":"existing-sql"}'}),
-          commandResult({stdout: '{"Parameters:sql-password":"existing-sql"}'}),
-        ],
         [commandKey({command: "dotnet", args: ["user-secrets", "set", "--project", appHostProject]})]: commandResult({
           code: 1,
           stderr: `tool echoed ${generated}`,
@@ -711,10 +708,13 @@ describe("AppHost configuration and user secrets", () => {
 
   it("plans a missing-secret action in dry-run without generating or setting", async () => {
     const random = vi.fn<(size: number) => Uint8Array>();
+    const missing = availableOutcome({
+      appHost: {projectExists: true, missingParameterKeys: [sqlSecretKey, redisSecretKey], userSecretKeys: []},
+    });
     const harness = createHarness({
       options: setupOptions({dryRun: true}),
       randomBytes: random,
-      responses: {[commandKeys.secrets]: commandResult({stdout: "{}"})},
+      dotnetOutcomes: [missing],
       dispositions: {
         "dotnet.workload-restore": "planned",
         "dotnet.solution-restore": "planned",
@@ -731,72 +731,100 @@ describe("AppHost configuration and user secrets", () => {
       expect.arrayContaining(["dotnet.workload-restore", "dotnet.solution-restore", "dotnet.tool-restore", "dotnet.user-secrets.set"]),
     );
     expect(harness.run.mock.calls.some(([command]) => command.args[0] === "user-secrets" && command.args[1] === "set")).toBe(false);
+    expect(harness.invalidate).not.toHaveBeenCalled();
   });
 });
 
 describe("HTTPS development certificate", () => {
-  it.each(["win32", "linux"] as const)("accepts the real machine-readable certificate array contract on %s", async (platform) => {
-    const harness = createHarness({
-      platform,
-      responses: {[commandKeys.trust]: commandResult({stdout: machineReadableTrustReport("Full")})},
-    });
+  it("accepts an already-trusted certificate without any mutation", async () => {
+    const harness = createHarness();
 
     const result = await harness.phase.run(harness.context);
 
     expect(result.status).toBe("succeeded");
     expect(result.evidence.join("\n")).toMatch(/certificate is trusted/i);
     expect(harness.actionIds).not.toContain("dotnet.certificate.trust");
+    expect(harness.actionIds).not.toContain("dotnet.certificate.create");
   });
 
-  it("accepts trust when any reported development certificate has full trust", async () => {
-    const harness = createHarness({
-      responses: {[commandKeys.trust]: commandResult({stdout: machineReadableTrustReport("None", "Full")})},
-    });
-
-    const result = await harness.phase.run(harness.context);
-
-    expect(result.status).toBe("succeeded");
-    expect(harness.actionIds).not.toContain("dotnet.certificate.trust");
-  });
-
-  it("creates an absent certificate and verifies it before checking trust", async () => {
+  it("creates an absent certificate and verifies existence from refreshed facts before checking trust", async () => {
     const createKey = commandKey({command: "dotnet", args: ["dev-certs", "https"]});
     const harness = createHarness({
-      responses: {
-        [commandKeys.certificate]: [commandResult({code: 1}), commandResult()],
-        [createKey]: commandResult(),
-      },
+      dotnetOutcomes: dotnetOutcomeSequence(availableOutcome({certificate: {exists: false, trusted: false}}), availableOutcome()),
+      responses: {[createKey]: commandResult()},
     });
 
     const result = await harness.phase.run(harness.context);
 
     expect(result.status).toBe("succeeded");
     expect(harness.actionRecords.find(({id}) => id === "dotnet.certificate.create")?.scope).toBe("user");
-    expect(harness.run.mock.calls.filter(([command]) => commandKey(command) === commandKeys.certificate)).toHaveLength(2);
+    expect(harness.run.mock.calls.some(([command]) => commandKey(command) === createKey)).toBe(true);
   });
 
-  it("trusts an untrusted certificate and requires the machine-readable recheck", async () => {
+  it("fails when certificate creation cannot establish the required existence postcondition", async () => {
+    const before = availableOutcome({certificate: {exists: false, trusted: false}});
+    const harness = createHarness({dotnetOutcomes: dotnetOutcomeSequence(before, before)});
+
+    const result = await harness.phase.run(harness.context);
+
+    expect(result.status).toBe("failed");
+    expect(result.nextActions.join("\n")).toMatch(/certificate/i);
+  });
+
+  it("declines certificate creation and fails as required", async () => {
+    const before = availableOutcome({certificate: {exists: false, trusted: false}});
+    const harness = createHarness({
+      dotnetOutcomes: [before],
+      dispositions: {"dotnet.certificate.create": "declined"},
+    });
+
+    const result = await harness.phase.run(harness.context);
+
+    expect(result.status).toBe("failed");
+    expect(result.evidence.join("\n")).toContain("dotnet.certificate.create");
+  });
+
+  it("plans certificate creation in dry-run without running dependent trust mutations", async () => {
+    const before = availableOutcome({certificate: {exists: false, trusted: false}});
     const trustMutationKey = commandKey({command: "dotnet", args: ["dev-certs", "https", "--trust"]});
     const harness = createHarness({
-      responses: {
-        [commandKeys.trust]: [
-          commandResult({stdout: machineReadableTrustReport("None")}),
-          commandResult({stdout: machineReadableTrustReport("Full")}),
-        ],
-        [trustMutationKey]: commandResult(),
+      options: setupOptions({dryRun: true}),
+      dotnetOutcomes: [before],
+      dispositions: {
+        "dotnet.workload-restore": "planned",
+        "dotnet.solution-restore": "planned",
+        "dotnet.tool-restore": "planned",
+        "dotnet.certificate.create": "planned",
       },
+    });
+
+    const result = await harness.phase.run(harness.context);
+
+    expect(result.status).toBe("skipped");
+    expect(harness.actionIds).toContain("dotnet.certificate.create");
+    expect(harness.actionIds).not.toContain("dotnet.certificate.trust");
+    expect(harness.run.mock.calls.some(([command]) => commandKey(command) === trustMutationKey)).toBe(false);
+    expect(harness.invalidate).not.toHaveBeenCalled();
+  });
+
+  it("trusts an untrusted certificate and requires the refreshed trust postcondition", async () => {
+    const trustMutationKey = commandKey({command: "dotnet", args: ["dev-certs", "https", "--trust"]});
+    const harness = createHarness({
+      dotnetOutcomes: dotnetOutcomeSequence(availableOutcome({certificate: {exists: true, trusted: false}}), availableOutcome()),
+      responses: {[trustMutationKey]: commandResult()},
     });
 
     const result = await harness.phase.run(harness.context);
 
     expect(result.status).toBe("succeeded");
     expect(harness.actionRecords.find(({id}) => id === "dotnet.certificate.trust")?.scope).toBe("system");
-    expect(harness.run.mock.calls.filter(([command]) => commandKey(command) === commandKeys.trust)).toHaveLength(2);
+    expect(harness.run.mock.calls.some(([command]) => commandKey(command) === trustMutationKey)).toBe(true);
   });
 
-  it.each(["declined", "planned"] as const)("reports $0 trust without fabricating trusted success", async (disposition) => {
+  it.each(["declined", "planned"] as const)("reports %s trust without fabricating trusted success", async (disposition) => {
+    const before = availableOutcome({certificate: {exists: true, trusted: false}});
     const harness = createHarness({
-      responses: {[commandKeys.trust]: commandResult({stdout: machineReadableTrustReport("None")})},
+      dotnetOutcomes: [before],
       dispositions: {"dotnet.certificate.trust": disposition},
       ...(disposition === "planned"
         ? {
@@ -821,10 +849,8 @@ describe("HTTPS development certificate", () => {
   it("degrades when trust execution fails and names remediation", async () => {
     const trustMutationKey = commandKey({command: "dotnet", args: ["dev-certs", "https", "--trust"]});
     const harness = createHarness({
-      responses: {
-        [commandKeys.trust]: commandResult({stdout: machineReadableTrustReport("None")}),
-        [trustMutationKey]: commandResult({code: 1, stderr: "trust denied"}),
-      },
+      dotnetOutcomes: [availableOutcome({certificate: {exists: true, trusted: false}})],
+      responses: {[trustMutationKey]: commandResult({code: 1, stderr: "trust denied"})},
     });
 
     const result = await harness.phase.run(harness.context);
@@ -834,58 +860,14 @@ describe("HTTPS development certificate", () => {
     expect(result.nextActions.join("\n")).toMatch(/trust/i);
   });
 
-  it("degrades when the trust postcondition remains false", async () => {
-    const harness = createHarness({
-      responses: {
-        [commandKeys.trust]: [
-          commandResult({stdout: machineReadableTrustReport("None")}),
-          commandResult({stdout: machineReadableTrustReport("Partial")}),
-        ],
-      },
-    });
+  it("degrades when the refreshed trust postcondition remains false after a successful trust command", async () => {
+    const before = availableOutcome({certificate: {exists: true, trusted: false}});
+    const harness = createHarness({dotnetOutcomes: dotnetOutcomeSequence(before, before)});
 
     const result = await harness.phase.run(harness.context);
 
     expect(result.status).toBe("degraded");
     expect(result.evidence.join("\n")).toContain("dotnet.certificate.trust");
-  });
-
-  it.each(["Full", "None"] as const)(
-    "does not use a %s trust payload when the machine-readable probe exits nonzero",
-    async (trustLevel) => {
-      const harness = createHarness({
-        responses: {[commandKeys.trust]: commandResult({code: 9, stdout: machineReadableTrustReport(trustLevel)})},
-      });
-
-      const result = await harness.phase.run(harness.context);
-
-      expect(result.status).toBe("degraded");
-      expect(result.summary).toMatch(/could not be determined/i);
-      expect(harness.actionIds).not.toContain("dotnet.certificate.trust");
-    },
-  );
-
-  it("degrades with explicit evidence when successful trust output has no recognized state", async () => {
-    const harness = createHarness({
-      responses: {[commandKeys.trust]: commandResult({stdout: "[]"})},
-    });
-
-    const result = await harness.phase.run(harness.context);
-
-    expect(result.status).toBe("degraded");
-    expect(result.evidence.join("\n")).toMatch(/recognizable.*trust level/i);
-    expect(harness.actionIds).not.toContain("dotnet.certificate.trust");
-  });
-
-  it("fails when certificate creation cannot establish the required postcondition", async () => {
-    const harness = createHarness({
-      responses: {[commandKeys.certificate]: commandResult({code: 1})},
-    });
-
-    const result = await harness.phase.run(harness.context);
-
-    expect(result.status).toBe("failed");
-    expect(result.nextActions.join("\n")).toMatch(/certificate/i);
   });
 });
 
@@ -893,9 +875,7 @@ describe("dry-run and safety contracts", () => {
   it("accumulates safely knowable planned actions without running mutations or postconditions", async () => {
     const harness = createHarness({
       options: setupOptions({dryRun: true}),
-      responses: {
-        [commandKeys.trust]: commandResult({stdout: machineReadableTrustReport("None")}),
-      },
+      dotnetOutcomes: [availableOutcome({certificate: {exists: true, trusted: false}})],
       dispositions: {
         "dotnet.workload-restore": "planned",
         "dotnet.solution-restore": "planned",
@@ -914,39 +894,16 @@ describe("dry-run and safety contracts", () => {
       "dotnet.tool-restore",
       "dotnet.certificate.trust",
     ]);
-    expect(harness.run.mock.calls.filter(([command]) => commandKey(command) === commandKeys.certificate)).toHaveLength(1);
-    expect(harness.run.mock.calls.filter(([command]) => commandKey(command) === commandKeys.trust)).toHaveLength(1);
-  });
-
-  it("plans certificate creation without running dependent trust probes", async () => {
-    const harness = createHarness({
-      options: setupOptions({dryRun: true}),
-      responses: {[commandKeys.certificate]: commandResult({code: 1})},
-      dispositions: {
-        "dotnet.workload-restore": "planned",
-        "dotnet.solution-restore": "planned",
-        "dotnet.tool-restore": "planned",
-        "dotnet.certificate.create": "planned",
-      },
-    });
-
-    const result = await harness.phase.run(harness.context);
-
-    expect(result.status).toBe("skipped");
-    expect(harness.actionIds).toContain("dotnet.certificate.create");
-    expect(harness.run.mock.calls.some(([command]) => commandKey(command) === commandKeys.trust)).toBe(false);
-    expect(harness.run.mock.calls.filter(([command]) => commandKey(command) === commandKeys.certificate)).toHaveLength(1);
+    expect(harness.invalidate).not.toHaveBeenCalled();
+    expect(harness.inspect).toHaveBeenCalledTimes(1);
   });
 
   it("plans SDK installation and all safely knowable restore actions without post-install probes", async () => {
     const wingetKey = commandKey({command: "winget", args: ["--version"]});
     const harness = createHarness({
       options: setupOptions({dryRun: true}),
-      responses: {
-        [commandKeys.sdks]: commandResult({code: 1, spawnError: "ENOENT"}),
-        [commandKeys.selectedSdk]: commandResult({code: 1, spawnError: "ENOENT"}),
-        [wingetKey]: commandResult({stdout: "v1.11.0"}),
-      },
+      dotnetOutcomes: [availableOutcome({sdks: [], selectedVersion: undefined})],
+      responses: {[wingetKey]: commandResult({stdout: "v1.11.0"})},
       dispositions: {
         "dotnet.install-sdk": "planned",
         "dotnet.workload-restore": "planned",
@@ -959,8 +916,9 @@ describe("dry-run and safety contracts", () => {
 
     expect(result.status).toBe("skipped");
     expect(harness.actionIds).toEqual(["dotnet.install-sdk", "dotnet.workload-restore", "dotnet.solution-restore", "dotnet.tool-restore"]);
-    expect(harness.run.mock.calls.filter(([command]) => commandKey(command) === commandKeys.sdks)).toHaveLength(1);
     expect(harness.run.mock.calls.some(([command]) => command.args[0] === "workload")).toBe(false);
+    expect(harness.invalidate).not.toHaveBeenCalled();
+    expect(harness.inspect).toHaveBeenCalledTimes(1);
   });
 
   it("rethrows AbortError interruption", async () => {
@@ -979,5 +937,6 @@ describe("dry-run and safety contracts", () => {
     const commands = harness.run.mock.calls.map(([command]) => [command.command, ...command.args].join(" "));
     expect(commands.join("\n")).not.toMatch(/\bdotnet (?:build|test|run|watch|workload update|tool update)\b/i);
     expect(commands.join("\n")).not.toMatch(/\bcurl\b|Invoke-WebRequest|dotnet-install\.(?:ps1|sh)/i);
+    expect(commands.join("\n")).not.toMatch(/--list-sdks|--check-trust-machine-readable|user-secrets list/i);
   });
 });

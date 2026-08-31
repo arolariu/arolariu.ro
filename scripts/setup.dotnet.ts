@@ -1,14 +1,25 @@
 /**
  * @fileoverview Independent .NET SDK, restore, AppHost, and HTTPS setup phase.
  * @module scripts.setup.dotnet
+ *
+ * @remarks
+ * Every read-only .NET observation (executable/SDK availability, selected/installed SDK
+ * compatibility, workloads, NuGet cache, local tools, repository solution integrity, AppHost
+ * project/parameter-key state, user-secret key names, and HTTPS development-certificate state) is
+ * consumed exclusively through `context.inspection.inspect("dotnet")`. This phase never re-parses
+ * `dotnet` command output itself. After every executed SDK install, restore, user-secret write, or
+ * certificate mutation, it invalidates exactly `"dotnet"`, re-inspects it, and requires the
+ * relevant postcondition from the refreshed facts; a successful mutation command or a `"planned"`/
+ * `"executed"` action disposition alone is never treated as proof of readiness.
  */
 
 import {randomBytes as nodeRandomBytes} from "node:crypto";
-import {readFile} from "node:fs/promises";
 import {resolve} from "node:path";
 
 import type {CommandResult, CommandSpec} from "./common/process.ts";
 import {satisfiesMinimum, type MinimumVersion} from "./common/requirements.ts";
+import type {DotnetFacts} from "./inspection/dotnet.ts";
+import type {InspectionOutcome} from "./inspection/types.ts";
 import type {
   InstallationProposal,
   SetupActionDisposition,
@@ -18,19 +29,11 @@ import type {
   SetupPhaseResult,
 } from "./setup.types.ts";
 
-type UnknownRecord = Readonly<Record<string, unknown>>;
-type ReadTextFile = (path: string, encoding: "utf8") => Promise<string>;
 type RandomByteSource = (size: number) => Uint8Array;
 
 interface DotnetSetupDependencies {
   readonly platform: NodeJS.Platform;
-  readonly readTextFile: ReadTextFile;
   readonly randomBytes: RandomByteSource;
-}
-
-interface DotnetReadiness {
-  readonly ready: boolean;
-  readonly evidence: readonly string[];
 }
 
 interface RestoreDefinition {
@@ -40,16 +43,16 @@ interface RestoreDefinition {
   readonly command: CommandSpec;
 }
 
-const APPHOST_SECRET_KEYS = ["Parameters:sql-password", "Parameters:redis-password"] as const;
+/** One completed setup step: either a terminal phase result, or refreshed `dotnet` facts to continue with. */
+type DotnetStepOutcome = Readonly<{result: SetupPhaseResult}> | Readonly<{facts: DotnetFacts}>;
+
+const APPHOST_PROJECT_SEGMENTS = ["tooling", "AppHost", "AppHost.csproj"] as const;
 const DOTNET_MANUAL_INSTALL = "Install the required SDK from https://dotnet.microsoft.com/download, then rerun setup.";
 const DOTNET_INSTALL_ACTION = "dotnet.install-sdk";
 const USER_SECRETS_ACTION = "dotnet.user-secrets.set";
 const CERTIFICATE_CREATE_ACTION = "dotnet.certificate.create";
 const CERTIFICATE_TRUST_ACTION = "dotnet.certificate.trust";
-
-function isRecord(value: unknown): value is UnknownRecord {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
+const LEADING_VERSION_PATTERN = /^(\d+)\.(\d+)\.(\d+)/u;
 
 function isSuccessfulCommand(result: Readonly<CommandResult>): boolean {
   return result.code === 0 && !result.timedOut && result.signal === undefined && result.spawnError === undefined;
@@ -68,23 +71,6 @@ function phaseResult(context: SetupContext, startedAt: number, input: Omit<Setup
     ...input,
     durationMs: duration(startedAt, context),
   };
-}
-
-function normalizedVersion(version: MinimumVersion): string {
-  return `${version.major}.${version.minor}.${version.patch}`;
-}
-
-function parseLeadingVersion(value: string): MinimumVersion | null {
-  const match = /^\s*(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?=$|[-+\s])/u.exec(value);
-  if (match === null) {
-    return null;
-  }
-  const version = {
-    major: Number(match[1]),
-    minor: Number(match[2]),
-    patch: Number(match[3]),
-  };
-  return Object.values(version).every(Number.isSafeInteger) ? version : null;
 }
 
 function commandFailureEvidence(result: Readonly<CommandResult>, options: Readonly<{includeStdout?: boolean}> = {}): readonly string[] {
@@ -110,22 +96,77 @@ function errorMessage(error: unknown, secrets: readonly string[]): string {
   return sanitize(error instanceof Error ? error.message : String(error), secrets);
 }
 
+function normalizedVersion(version: MinimumVersion): string {
+  return `${version.major}.${version.minor}.${version.patch}`;
+}
+
 /**
- * Parses the leading numeric version from every valid `dotnet --list-sdks`
- * line.
+ * Reads the leading `major.minor.patch` components already guaranteed present in one fact-provided
+ * `dotnet` version string and compares them against a required minimum.
  *
- * @param output - Untrusted SDK listing output.
- * @returns Parsed stable and prerelease SDK versions in output order.
+ * @param version - An already-validated fact version string (never raw, unparsed command output).
+ * @param required - The minimum version to satisfy.
+ * @returns Whether `version` satisfies `required`.
  */
-export function parseDotnetSdks(output: string): readonly MinimumVersion[] {
-  const versions: MinimumVersion[] = [];
-  for (const line of output.split(/\r?\n/u)) {
-    const version = parseLeadingVersion(line);
-    if (version !== null) {
-      versions.push(version);
-    }
+function versionSatisfiesRequirement(version: string, required: MinimumVersion): boolean {
+  const match = LEADING_VERSION_PATTERN.exec(version);
+  if (match === null) {
+    return false;
   }
-  return versions;
+  return satisfiesMinimum({major: Number(match[1]), minor: Number(match[2]), patch: Number(match[3])}, required);
+}
+
+function isDotnetCompatible(facts: Readonly<DotnetFacts>, required: MinimumVersion): boolean {
+  return (
+    facts.executable.available
+    && facts.selectedVersion !== undefined
+    && versionSatisfiesRequirement(facts.selectedVersion, required)
+    && facts.sdks.some((sdk) => versionSatisfiesRequirement(sdk, required))
+  );
+}
+
+function dotnetCompatibilityEvidence(facts: Readonly<DotnetFacts>, required: MinimumVersion): readonly string[] {
+  const normalized = normalizedVersion(required);
+  const evidence: string[] = [];
+  if (!facts.sdks.some((sdk) => versionSatisfiesRequirement(sdk, required))) {
+    evidence.push(
+      facts.sdks.length === 0
+        ? "The installed SDK listing contained no valid SDK versions."
+        : `No installed SDK satisfies >=${normalized}.`,
+    );
+  }
+  if (facts.selectedVersion === undefined || !versionSatisfiesRequirement(facts.selectedVersion, required)) {
+    evidence.push(
+      facts.selectedVersion === undefined
+        ? "dotnet reported no selected SDK version."
+        : `The selected SDK ${facts.selectedVersion} does not satisfy >=${normalized}.`,
+    );
+  }
+  if (evidence.length === 0) {
+    evidence.push(`A listed SDK and selected SDK satisfy >=${normalized}.`);
+  }
+  return evidence;
+}
+
+/**
+ * Converts an unavailable/invalid `dotnet` inspection outcome into bounded, non-secret evidence.
+ *
+ * @param outcome - A non-`"available"` {@link InspectionOutcome} for `dotnet`.
+ * @returns At least one evidence line; never raw command output.
+ */
+function unavailableOrInvalidEvidence(outcome: Readonly<InspectionOutcome<DotnetFacts>>): readonly string[] {
+  if (outcome.kind === "unavailable") {
+    return [outcome.reason];
+  }
+  if (outcome.kind === "invalid") {
+    return [...outcome.issues];
+  }
+  return [];
+}
+
+async function refreshDotnetFacts(context: SetupContext): Promise<InspectionOutcome<DotnetFacts>> {
+  context.inspection.invalidate("dotnet");
+  return context.inspection.inspect("dotnet");
 }
 
 /**
@@ -194,41 +235,6 @@ export function generateLocalDevelopmentPassword(randomBytes: RandomByteSource =
   return `Aa1!${Buffer.from(bytes).toString("base64url")}`;
 }
 
-async function inspectDotnetReadiness(context: SetupContext): Promise<DotnetReadiness> {
-  const sdkResult = await context.runner.run({command: "dotnet", args: ["--list-sdks"]}, {cwd: context.paths.root});
-  const selectedResult = await context.runner.run({command: "dotnet", args: ["--version"]}, {cwd: context.paths.root});
-  const evidence: string[] = [];
-
-  const sdks = isSuccessfulCommand(sdkResult) ? parseDotnetSdks(sdkResult.stdout) : [];
-  const compatibleSdk = sdks.some((sdk) => satisfiesMinimum(sdk, context.requirements.dotnet));
-  if (!isSuccessfulCommand(sdkResult)) {
-    evidence.push("The dotnet SDK listing probe failed.", ...commandFailureEvidence(sdkResult));
-  } else if (!compatibleSdk) {
-    evidence.push(
-      sdks.length === 0
-        ? "The dotnet SDK listing contained no valid SDK versions."
-        : `No listed SDK satisfies >=${normalizedVersion(context.requirements.dotnet)}.`,
-    );
-  }
-
-  const selected = isSuccessfulCommand(selectedResult) ? parseLeadingVersion(selectedResult.stdout.trim()) : null;
-  const compatibleSelected = selected !== null && satisfiesMinimum(selected, context.requirements.dotnet);
-  if (!isSuccessfulCommand(selectedResult)) {
-    evidence.push("The selected dotnet SDK probe failed.", ...commandFailureEvidence(selectedResult));
-  } else if (!compatibleSelected) {
-    evidence.push(
-      selected === null
-        ? "dotnet --version returned a malformed selected SDK version."
-        : `The selected SDK ${normalizedVersion(selected)} does not satisfy >=${normalizedVersion(context.requirements.dotnet)}.`,
-    );
-  }
-
-  if (compatibleSdk && compatibleSelected) {
-    evidence.push(`A listed SDK and selected SDK satisfy >=${normalizedVersion(context.requirements.dotnet)}.`);
-  }
-  return {ready: compatibleSdk && compatibleSelected, evidence};
-}
-
 async function discoverPackageManagers(context: SetupContext, platform: NodeJS.Platform): Promise<ReadonlySet<string>> {
   const managers = new Set<string>();
   if (platform === "win32") {
@@ -290,7 +296,23 @@ function restores(context: SetupContext): readonly RestoreDefinition[] {
   ];
 }
 
-async function runRestoreActions(context: SetupContext, plannedActions: string[], evidence: string[]): Promise<SetupPhaseResult | null> {
+/**
+ * Plans or executes the exact repository restore commands, then verifies the repository solution
+ * remains structurally valid from refreshed `dotnet` facts whenever a restore actually executed.
+ *
+ * @param context - Shared setup dependencies, including the repository inspection session.
+ * @param facts - The `dotnet` facts observed before this step.
+ * @param plannedActions - Mutable accumulator of dry-run-planned action identifiers.
+ * @param evidence - Mutable accumulator of human-readable phase evidence.
+ * @returns Either a terminal failed/declined phase result, or the facts to continue with.
+ */
+async function runRestoreActions(
+  context: SetupContext,
+  facts: Readonly<DotnetFacts>,
+  plannedActions: string[],
+  evidence: string[],
+): Promise<DotnetStepOutcome> {
+  let executedAny = false;
   for (const restore of restores(context)) {
     const disposition = await context.actions.run({
       id: restore.id,
@@ -312,117 +334,82 @@ async function runRestoreActions(context: SetupContext, plannedActions: string[]
       evidence.push(`Planned action: ${restore.id}`);
     } else if (disposition === "declined") {
       return {
-        id: "dotnet",
-        status: "failed",
-        summary: "A required .NET restore action was declined.",
-        evidence: [...evidence, `Declined action: ${restore.id}`],
-        nextActions: [`Allow required action '${restore.id}', then rerun setup.`],
-        durationMs: 0,
+        result: {
+          id: "dotnet",
+          status: "failed",
+          summary: "A required .NET restore action was declined.",
+          evidence: [...evidence, `Declined action: ${restore.id}`],
+          nextActions: [`Allow required action '${restore.id}', then rerun setup.`],
+          durationMs: 0,
+        },
       };
     } else {
+      executedAny = true;
       evidence.push(`Executed action: ${restore.id}`);
     }
   }
-  return null;
+
+  if (!executedAny) {
+    return {facts};
+  }
+
+  const refreshed = await refreshDotnetFacts(context);
+  if (refreshed.kind !== "available") {
+    return {
+      result: {
+        id: "dotnet",
+        status: "failed",
+        summary: "The .NET restore result could not be verified.",
+        evidence: [...evidence, ...unavailableOrInvalidEvidence(refreshed)],
+        nextActions: ["Resolve the reported .NET restore verification failure, then rerun setup."],
+        durationMs: 0,
+      },
+    };
+  }
+  if (refreshed.value.solutionIssues.length > 0) {
+    return {
+      result: {
+        id: "dotnet",
+        status: "failed",
+        summary: "The repository solution reports integrity issues after restore.",
+        evidence: [...evidence, ...refreshed.value.solutionIssues],
+        nextActions: ["Resolve the reported repository solution integrity issues, then rerun setup."],
+        durationMs: 0,
+      },
+    };
+  }
+  evidence.push("The repository solution remains structurally valid after restore.");
+  return {facts: refreshed.value};
 }
 
-async function validateAppHostSettings(path: string, readTextFile: ReadTextFile): Promise<void> {
-  let contents: string;
-  try {
-    contents = await readTextFile(path, "utf8");
-  } catch (error: unknown) {
-    throw new Error(`Unable to read tracked AppHost development configuration: ${error instanceof Error ? error.message : String(error)}`);
-  }
-
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(contents);
-  } catch {
-    throw new Error("Tracked AppHost development configuration is not valid JSON.");
-  }
-  const parameters = isRecord(parsed) ? parsed["Parameters"] : undefined;
-  if (!isRecord(parameters)) {
-    throw new Error("Tracked AppHost development configuration must contain a Parameters object.");
-  }
-  for (const key of ["sql-password", "redis-password"] as const) {
-    const value = parameters[key];
-    if (typeof value !== "string" || value.trim() === "") {
-      throw new Error(`Tracked AppHost development configuration is missing required parameter '${key}'.`);
-    }
-  }
-}
-
-function parseUserSecrets(output: string, logger: SetupContext["logger"]): ReadonlyMap<string, string> {
-  const begin = output.indexOf("//BEGIN");
-  const end = output.lastIndexOf("//END");
-  let document = output;
-  if (begin >= 0 || end >= 0) {
-    if (begin < 0 || end < 0 || end <= begin) {
-      throw new Error("The user-secrets JSON wrapper is malformed.");
-    }
-    document = output.slice(begin + "//BEGIN".length, end).trim();
-  }
-
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(document);
-  } catch {
-    throw new Error("The user-secrets command returned malformed JSON.");
-  }
-  if (!isRecord(parsed) || !Object.values(parsed).every((value) => typeof value === "string")) {
-    throw new Error("The user-secrets command must return a JSON object of string values.");
-  }
-
-  const secrets = new Map<string, string>();
-  for (const [key, value] of Object.entries(parsed)) {
-    if (typeof value !== "string") {
-      throw new Error("The user-secrets command must return a JSON object of string values.");
-    }
-    secrets.set(key, value);
-    if (value.trim().length > 0) {
-      logger.redact(value);
-    }
-  }
-  return secrets;
-}
-
-async function listUserSecrets(context: SetupContext, project: string, knownSecrets: string[]): Promise<ReadonlyMap<string, string>> {
-  const result = await context.runner.run(
-    {command: "dotnet", args: ["user-secrets", "list", "--json", "--project", project]},
-    {cwd: context.paths.root},
-  );
-  if (!isSuccessfulCommand(result)) {
-    const safeEvidence = commandFailureEvidence(result, {includeStdout: false}).map((item) => sanitize(item, knownSecrets));
-    throw new Error(["Unable to inspect AppHost user-secret keys.", ...safeEvidence].join("\n"));
-  }
-  const secrets = parseUserSecrets(result.stdout, context.logger);
-  for (const value of secrets.values()) {
-    if (value.trim().length > 0 && !knownSecrets.includes(value)) {
-      knownSecrets.push(value);
-    }
-  }
-  return secrets;
-}
-
-function missingSecretKeys(secrets: ReadonlyMap<string, string>): readonly (typeof APPHOST_SECRET_KEYS)[number][] {
-  return APPHOST_SECRET_KEYS.filter((key) => (secrets.get(key)?.trim().length ?? 0) === 0);
-}
-
+/**
+ * Plans, executes, or reports on generating the missing AppHost user-secret parameter keys named
+ * by the observed `dotnet` facts, then verifies none remain missing from refreshed facts.
+ *
+ * @param context - Shared setup dependencies, including the repository inspection session.
+ * @param facts - The `dotnet` facts observed before this step.
+ * @param dependencies - Independent random-byte source used to generate new passwords.
+ * @param plannedActions - Mutable accumulator of dry-run-planned action identifiers.
+ * @param evidence - Mutable accumulator of human-readable phase evidence.
+ * @param knownSecrets - Mutable accumulator of generated secret values to redact and sanitize.
+ * @returns Either a terminal declined phase result, or the facts to continue with.
+ * @throws When the post-write postcondition is not satisfied by refreshed facts.
+ */
 async function ensureUserSecrets(
   context: SetupContext,
-  project: string,
+  facts: Readonly<DotnetFacts>,
   dependencies: DotnetSetupDependencies,
-  knownSecrets: string[],
   plannedActions: string[],
   evidence: string[],
-): Promise<SetupPhaseResult | null> {
-  const existing = await listUserSecrets(context, project, knownSecrets);
-  const missing = missingSecretKeys(existing);
+  knownSecrets: string[],
+): Promise<DotnetStepOutcome> {
+  const missing = facts.appHost.missingParameterKeys;
   if (missing.length === 0) {
     evidence.push("Required AppHost user-secret keys are present.");
-    return null;
+    return {facts};
   }
 
+  const appHostProject = resolve(context.paths.root, ...APPHOST_PROJECT_SEGMENTS);
   const disposition = await context.actions.run({
     id: USER_SECRETS_ACTION,
     scope: "user",
@@ -436,11 +423,8 @@ async function ensureUserSecrets(
         payload[key] = value;
       }
       const setResult = await context.runner.run(
-        {command: "dotnet", args: ["user-secrets", "set", "--project", project]},
-        {
-          cwd: context.paths.root,
-          input: JSON.stringify(payload),
-        },
+        {command: "dotnet", args: ["user-secrets", "set", "--project", appHostProject]},
+        {cwd: context.paths.root, input: JSON.stringify(payload)},
       );
       if (!isSuccessfulCommand(setResult)) {
         const safeEvidence = commandFailureEvidence(setResult, {includeStdout: false}).map((item) => sanitize(item, knownSecrets));
@@ -452,86 +436,55 @@ async function ensureUserSecrets(
   if (disposition === "planned") {
     plannedActions.push(USER_SECRETS_ACTION);
     evidence.push(`Planned action: ${USER_SECRETS_ACTION}`);
-    return null;
+    return {facts};
   }
   if (disposition === "declined") {
     return {
-      id: "dotnet",
-      status: "failed",
-      summary: "Required AppHost user-secret preparation was declined.",
-      evidence: [...evidence, `Declined action: ${USER_SECRETS_ACTION}`],
-      nextActions: [`Allow required action '${USER_SECRETS_ACTION}', then rerun setup.`],
-      durationMs: 0,
+      result: {
+        id: "dotnet",
+        status: "failed",
+        summary: "Required AppHost user-secret preparation was declined.",
+        evidence: [...evidence, `Declined action: ${USER_SECRETS_ACTION}`],
+        nextActions: [`Allow required action '${USER_SECRETS_ACTION}', then rerun setup.`],
+        durationMs: 0,
+      },
     };
   }
 
-  const verified = await listUserSecrets(context, project, knownSecrets);
-  const stillMissing = missingSecretKeys(verified);
-  if (stillMissing.length > 0) {
+  const refreshed = await refreshDotnetFacts(context);
+  if (refreshed.kind !== "available") {
+    throw new Error(
+      ["Unable to verify AppHost user-secret keys after the set action.", ...unavailableOrInvalidEvidence(refreshed)].join("\n"),
+    );
+  }
+  if (refreshed.value.appHost.missingParameterKeys.length > 0) {
     throw new Error("AppHost user-secret postcondition failed; one or more required keys remain missing.");
   }
   evidence.push(`Executed and verified action: ${USER_SECRETS_ACTION}`);
-  return null;
+  return {facts: refreshed.value};
 }
 
-function commandTransportSucceeded(result: Readonly<CommandResult>): boolean {
-  return !result.timedOut && result.signal === undefined && result.spawnError === undefined;
-}
-
-function parseTrustState(output: string): boolean | null {
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(output);
-  } catch {
-    return null;
-  }
-  if (!Array.isArray(parsed)) {
-    return null;
-  }
-
-  let foundUntrustedCertificate = false;
-  for (const report of parsed) {
-    if (!isRecord(report)) {
-      continue;
-    }
-    const normalized = new Map(Object.entries(report).map(([key, value]) => [key.toLowerCase(), value] as const));
-    if (normalized.get("ishttpsdevelopmentcertificate") !== true) {
-      continue;
-    }
-    const trustLevel = normalized.get("trustlevel");
-    if (typeof trustLevel === "string") {
-      const normalizedTrustLevel = trustLevel.toLowerCase();
-      if (normalizedTrustLevel === "full") {
-        return true;
-      }
-      if (normalizedTrustLevel === "none" || normalizedTrustLevel === "partial") {
-        foundUntrustedCertificate = true;
-      }
-    }
-  }
-  return foundUntrustedCertificate ? false : null;
-}
-
-async function runCertificateProbe(context: SetupContext): Promise<CommandResult> {
-  return context.runner.run({command: "dotnet", args: ["dev-certs", "https", "--check"]}, {cwd: context.paths.root});
-}
-
-async function runTrustProbe(context: SetupContext): Promise<CommandResult> {
-  return context.runner.run({command: "dotnet", args: ["dev-certs", "https", "--check-trust-machine-readable"]}, {cwd: context.paths.root});
-}
-
+/**
+ * Plans, executes, or reports on creating and trusting the local HTTPS development certificate
+ * from the observed `dotnet` facts, verifying each executed mutation against refreshed facts.
+ *
+ * @param context - Shared setup dependencies, including the repository inspection session.
+ * @param facts - The `dotnet` facts observed before this step.
+ * @param plannedActions - Mutable accumulator of dry-run-planned action identifiers.
+ * @param evidence - Mutable accumulator of human-readable phase evidence.
+ * @param knownSecrets - Known generated secret values to sanitize from child-process errors.
+ * @returns A terminal phase result, or `null` to continue with overall phase success.
+ */
 async function ensureCertificate(
   context: SetupContext,
+  facts: Readonly<DotnetFacts>,
   plannedActions: string[],
   evidence: string[],
   knownSecrets: string[],
 ): Promise<SetupPhaseResult | null> {
-  const initialCertificate = await runCertificateProbe(context);
-  if (!commandTransportSucceeded(initialCertificate)) {
-    throw new Error(["Unable to inspect the HTTPS development certificate.", ...commandFailureEvidence(initialCertificate)].join("\n"));
-  }
+  let certificate = facts.certificate;
 
-  if (!isSuccessfulCommand(initialCertificate)) {
+  if (!certificate.exists) {
     const createDisposition = await context.actions.run({
       id: CERTIFICATE_CREATE_ACTION,
       scope: "user",
@@ -547,7 +500,8 @@ async function ensureCertificate(
       plannedActions.push(CERTIFICATE_CREATE_ACTION);
       evidence.push(`Planned action: ${CERTIFICATE_CREATE_ACTION}`);
       return null;
-    } else if (createDisposition === "declined") {
+    }
+    if (createDisposition === "declined") {
       return {
         id: "dotnet",
         status: "failed",
@@ -556,35 +510,26 @@ async function ensureCertificate(
         nextActions: [`Allow required action '${CERTIFICATE_CREATE_ACTION}', then rerun setup.`],
         durationMs: 0,
       };
-    } else {
-      const verifiedCertificate = await runCertificateProbe(context);
-      if (!isSuccessfulCommand(verifiedCertificate)) {
-        throw new Error(
-          ["No valid HTTPS development certificate exists after creation.", ...commandFailureEvidence(verifiedCertificate)].join("\n"),
-        );
-      }
-      evidence.push(`Executed and verified action: ${CERTIFICATE_CREATE_ACTION}`);
     }
+
+    const refreshed = await refreshDotnetFacts(context);
+    if (refreshed.kind !== "available" || !refreshed.value.certificate.exists) {
+      return {
+        id: "dotnet",
+        status: "failed",
+        summary: "No valid HTTPS development certificate exists after creation.",
+        evidence: [...evidence, ...(refreshed.kind === "available" ? [] : unavailableOrInvalidEvidence(refreshed))],
+        nextActions: [`Resolve and rerun required action '${CERTIFICATE_CREATE_ACTION}'.`],
+        durationMs: 0,
+      };
+    }
+    certificate = refreshed.value.certificate;
+    evidence.push(`Executed and verified action: ${CERTIFICATE_CREATE_ACTION}`);
   } else {
     evidence.push("A valid HTTPS development certificate exists.");
   }
 
-  const trustResult = await runTrustProbe(context);
-  const trustState = isSuccessfulCommand(trustResult) ? parseTrustState(trustResult.stdout) : null;
-  if (trustState === null) {
-    const trustEvidence = isSuccessfulCommand(trustResult)
-      ? ["The probe did not report a recognizable Full, Partial, or None trust level for an HTTPS development certificate."]
-      : commandFailureEvidence(trustResult, {includeStdout: false}).map((item) => sanitize(item, knownSecrets));
-    return {
-      id: "dotnet",
-      status: plannedActions.length > 0 ? "skipped" : "degraded",
-      summary: "Required .NET preparation completed, but certificate trust could not be determined.",
-      evidence: [...evidence, "The machine-readable HTTPS certificate trust probe was unavailable or malformed.", ...trustEvidence],
-      nextActions: ["Run 'dotnet dev-certs https --check-trust-machine-readable' and correct local certificate trust."],
-      durationMs: 0,
-    };
-  }
-  if (trustState) {
+  if (certificate.trusted) {
     evidence.push("The HTTPS development certificate is trusted.");
     return null;
   }
@@ -635,8 +580,8 @@ async function ensureCertificate(
     };
   }
 
-  const verifiedTrust = await runTrustProbe(context);
-  if (!isSuccessfulCommand(verifiedTrust) || parseTrustState(verifiedTrust.stdout) !== true) {
+  const refreshed = await refreshDotnetFacts(context);
+  if (refreshed.kind !== "available" || !refreshed.value.certificate.trusted) {
     return {
       id: "dotnet",
       status: plannedActions.length > 0 ? "skipped" : "degraded",
@@ -650,6 +595,124 @@ async function ensureCertificate(
   return null;
 }
 
+/**
+ * Ensures a compatible .NET SDK is selected and installed, consuming shared `dotnet` facts for
+ * every readiness observation and installing only through the reviewed proposal contract.
+ *
+ * @param context - Shared setup dependencies, including the repository inspection session.
+ * @param dependencies - Independent platform boundary used to select an installation proposal.
+ * @param facts - The `dotnet` facts observed before this step.
+ * @param plannedActions - Mutable accumulator of dry-run-planned action identifiers.
+ * @param evidence - Mutable accumulator of human-readable phase evidence.
+ * @returns Either a terminal phase result (including a dry-run "planned installation" summary
+ * that also plans dependent restores), or the facts to continue with.
+ */
+async function ensureDotnetSdk(
+  context: SetupContext,
+  dependencies: DotnetSetupDependencies,
+  facts: Readonly<DotnetFacts>,
+  plannedActions: string[],
+  evidence: string[],
+): Promise<DotnetStepOutcome> {
+  if (isDotnetCompatible(facts, context.requirements.dotnet)) {
+    return {facts};
+  }
+
+  const packageManagers = await discoverPackageManagers(context, dependencies.platform);
+  const proposal = selectDotnetInstallationProposal({
+    platform: dependencies.platform,
+    availablePackageManagers: packageManagers,
+    required: context.requirements.dotnet,
+  });
+  if (proposal === null) {
+    return {
+      result: {
+        id: "dotnet",
+        status: "failed",
+        summary: "A compatible .NET SDK is unavailable and no supported installer was discovered.",
+        evidence,
+        nextActions: [DOTNET_MANUAL_INSTALL],
+        durationMs: 0,
+      },
+    };
+  }
+
+  const installDisposition = await context.actions.run({
+    id: DOTNET_INSTALL_ACTION,
+    scope: "system",
+    summary: proposal.explanation,
+    execute: async () => {
+      const installResult = await context.runner.run(proposal.command, {cwd: context.paths.root, output: "inherit"});
+      if (!isSuccessfulCommand(installResult)) {
+        throw new Error(["The supported .NET SDK installation command failed.", ...commandFailureEvidence(installResult)].join("\n"));
+      }
+    },
+  });
+
+  if (installDisposition === "declined") {
+    return {
+      result: {
+        id: "dotnet",
+        status: "failed",
+        summary: "Required .NET SDK installation was declined.",
+        evidence: [...evidence, `Declined action: ${DOTNET_INSTALL_ACTION}`],
+        nextActions: [DOTNET_MANUAL_INSTALL],
+        durationMs: 0,
+      },
+    };
+  }
+
+  if (installDisposition === "planned") {
+    plannedActions.push(DOTNET_INSTALL_ACTION);
+    evidence.push(`Planned action: ${DOTNET_INSTALL_ACTION}`);
+    const restoreOutcome = await runRestoreActions(context, facts, plannedActions, evidence);
+    if ("result" in restoreOutcome) {
+      return restoreOutcome;
+    }
+    return {
+      result: {
+        id: "dotnet",
+        status: "skipped",
+        summary: "Required .NET SDK installation and dependent restores are planned by dry-run.",
+        evidence,
+        nextActions: [],
+        durationMs: 0,
+      },
+    };
+  }
+
+  // The install command exiting successfully is never sufficient proof of readiness: the SDK
+  // requirement is only satisfied once refreshed, invalidated facts confirm compatibility.
+  const refreshed = await refreshDotnetFacts(context);
+  if (refreshed.kind !== "available") {
+    return {
+      result: {
+        id: "dotnet",
+        status: "failed",
+        summary: "The .NET SDK could not be verified after installation.",
+        evidence: [...evidence, ...unavailableOrInvalidEvidence(refreshed)],
+        nextActions: [DOTNET_MANUAL_INSTALL],
+        durationMs: 0,
+      },
+    };
+  }
+  evidence.push(...dotnetCompatibilityEvidence(refreshed.value, context.requirements.dotnet));
+  if (!isDotnetCompatible(refreshed.value, context.requirements.dotnet)) {
+    return {
+      result: {
+        id: "dotnet",
+        status: "failed",
+        summary: "The .NET SDK remains incompatible after installation.",
+        evidence,
+        nextActions: [DOTNET_MANUAL_INSTALL],
+        durationMs: 0,
+      },
+    };
+  }
+  evidence.push(`Executed and verified action: ${DOTNET_INSTALL_ACTION}`);
+  return {facts: refreshed.value};
+}
+
 async function runDotnetSetup(context: SetupContext, dependencies: DotnetSetupDependencies): Promise<SetupPhaseResult> {
   const startedAt = context.now();
   const evidence: string[] = [];
@@ -657,120 +720,60 @@ async function runDotnetSetup(context: SetupContext, dependencies: DotnetSetupDe
   const knownSecrets: string[] = [];
 
   try {
-    let readiness = await inspectDotnetReadiness(context);
-    evidence.push(...readiness.evidence);
-    if (!readiness.ready) {
-      const packageManagers = await discoverPackageManagers(context, dependencies.platform);
-      const proposal = selectDotnetInstallationProposal({
-        platform: dependencies.platform,
-        availablePackageManagers: packageManagers,
-        required: context.requirements.dotnet,
-      });
-      if (proposal === null) {
-        return phaseResult(context, startedAt, {
-          id: "dotnet",
-          status: "failed",
-          summary: "A compatible .NET SDK is unavailable and no supported installer was discovered.",
-          evidence,
-          nextActions: [DOTNET_MANUAL_INSTALL],
-        });
-      }
-
-      const installDisposition = await context.actions.run({
-        id: DOTNET_INSTALL_ACTION,
-        scope: "system",
-        summary: proposal.explanation,
-        execute: async () => {
-          const installResult = await context.runner.run(proposal.command, {
-            cwd: context.paths.root,
-            output: "inherit",
-          });
-          if (!isSuccessfulCommand(installResult)) {
-            throw new Error(["The supported .NET SDK installation command failed.", ...commandFailureEvidence(installResult)].join("\n"));
-          }
-        },
-      });
-      if (installDisposition === "declined") {
-        return phaseResult(context, startedAt, {
-          id: "dotnet",
-          status: "failed",
-          summary: "Required .NET SDK installation was declined.",
-          evidence: [...evidence, `Declined action: ${DOTNET_INSTALL_ACTION}`],
-          nextActions: [DOTNET_MANUAL_INSTALL],
-        });
-      }
-      if (installDisposition === "planned") {
-        plannedActions.push(DOTNET_INSTALL_ACTION);
-        evidence.push(`Planned action: ${DOTNET_INSTALL_ACTION}`);
-        const restoreFailure = await runRestoreActions(context, plannedActions, evidence);
-        if (restoreFailure !== null) {
-          return phaseResult(context, startedAt, {
-            id: restoreFailure.id,
-            status: restoreFailure.status,
-            summary: restoreFailure.summary,
-            evidence: restoreFailure.evidence,
-            nextActions: restoreFailure.nextActions,
-          });
-        }
-        return phaseResult(context, startedAt, {
-          id: "dotnet",
-          status: "skipped",
-          summary: "Required .NET SDK installation and dependent restores are planned by dry-run.",
-          evidence,
-          nextActions: [],
-        });
-      }
-
-      readiness = await inspectDotnetReadiness(context);
-      evidence.push(...readiness.evidence);
-      if (!readiness.ready) {
-        return phaseResult(context, startedAt, {
-          id: "dotnet",
-          status: "failed",
-          summary: "The .NET SDK remains incompatible after installation.",
-          evidence,
-          nextActions: [DOTNET_MANUAL_INSTALL],
-        });
-      }
-      evidence.push(`Executed and verified action: ${DOTNET_INSTALL_ACTION}`);
-    }
-
-    const restoreFailure = await runRestoreActions(context, plannedActions, evidence);
-    if (restoreFailure !== null) {
+    const initialOutcome = await context.inspection.inspect("dotnet");
+    if (initialOutcome.kind !== "available") {
       return phaseResult(context, startedAt, {
-        id: restoreFailure.id,
-        status: restoreFailure.status,
-        summary: restoreFailure.summary,
-        evidence: restoreFailure.evidence,
-        nextActions: restoreFailure.nextActions,
+        id: "dotnet",
+        status: "failed",
+        summary: "The .NET environment could not be inspected.",
+        evidence: [...evidence, ...unavailableOrInvalidEvidence(initialOutcome)],
+        nextActions: [DOTNET_MANUAL_INSTALL],
       });
     }
+    evidence.push(...dotnetCompatibilityEvidence(initialOutcome.value, context.requirements.dotnet));
 
-    const appHostSettings = resolve(context.paths.root, "tooling", "AppHost", "appsettings.Development.json");
-    const appHostProject = resolve(context.paths.root, "tooling", "AppHost", "AppHost.csproj");
-    await validateAppHostSettings(appHostSettings, dependencies.readTextFile);
-    evidence.push("Tracked AppHost development parameter shape is valid.");
+    const sdkOutcome = await ensureDotnetSdk(context, dependencies, initialOutcome.value, plannedActions, evidence);
+    if ("result" in sdkOutcome) {
+      return phaseResult(context, startedAt, sdkOutcome.result);
+    }
+    let facts = sdkOutcome.facts;
 
-    const secretFailure = await ensureUserSecrets(context, appHostProject, dependencies, knownSecrets, plannedActions, evidence);
-    if (secretFailure !== null) {
+    if (facts.solutionIssues.length > 0) {
       return phaseResult(context, startedAt, {
-        id: secretFailure.id,
-        status: secretFailure.status,
-        summary: secretFailure.summary,
-        evidence: secretFailure.evidence,
-        nextActions: secretFailure.nextActions,
+        id: "dotnet",
+        status: "failed",
+        summary: "The repository solution reports integrity issues.",
+        evidence: [...evidence, ...facts.solutionIssues],
+        nextActions: ["Resolve the reported repository solution integrity issues, then rerun setup."],
       });
     }
 
-    const certificateOutcome = await ensureCertificate(context, plannedActions, evidence, knownSecrets);
+    const restoreOutcome = await runRestoreActions(context, facts, plannedActions, evidence);
+    if ("result" in restoreOutcome) {
+      return phaseResult(context, startedAt, restoreOutcome.result);
+    }
+    facts = restoreOutcome.facts;
+
+    if (!facts.appHost.projectExists) {
+      return phaseResult(context, startedAt, {
+        id: "dotnet",
+        status: "failed",
+        summary: "The required AppHost project does not exist.",
+        evidence: [...evidence, `${APPHOST_PROJECT_SEGMENTS.join("/")} is missing.`],
+        nextActions: ["Restore the tracked AppHost project, then rerun setup."],
+      });
+    }
+    evidence.push("The AppHost project exists.");
+
+    const secretsOutcome = await ensureUserSecrets(context, facts, dependencies, plannedActions, evidence, knownSecrets);
+    if ("result" in secretsOutcome) {
+      return phaseResult(context, startedAt, secretsOutcome.result);
+    }
+    facts = secretsOutcome.facts;
+
+    const certificateOutcome = await ensureCertificate(context, facts, plannedActions, evidence, knownSecrets);
     if (certificateOutcome !== null) {
-      return phaseResult(context, startedAt, {
-        id: certificateOutcome.id,
-        status: certificateOutcome.status,
-        summary: certificateOutcome.summary,
-        evidence: certificateOutcome.evidence,
-        nextActions: certificateOutcome.nextActions,
-      });
+      return phaseResult(context, startedAt, certificateOutcome);
     }
 
     if (plannedActions.length > 0) {
@@ -810,8 +813,7 @@ async function runDotnetSetup(context: SetupContext, dependencies: DotnetSetupDe
 }
 
 /**
- * Creates the .NET setup phase with explicit platform, filesystem, and random
- * boundaries.
+ * Creates the .NET setup phase with an explicit platform and random-byte source boundary.
  *
  * @param dependencies - Optional production-boundary replacements for tests.
  * @returns The independent .NET setup phase definition.
@@ -819,7 +821,6 @@ async function runDotnetSetup(context: SetupContext, dependencies: DotnetSetupDe
 export function createDotnetSetupPhase(dependencies: Partial<DotnetSetupDependencies> = {}): SetupPhaseDefinition {
   const resolvedDependencies: DotnetSetupDependencies = {
     platform: dependencies.platform ?? process.platform,
-    readTextFile: dependencies.readTextFile ?? ((path, encoding) => readFile(path, encoding)),
     randomBytes: dependencies.randomBytes ?? nodeRandomBytes,
   };
   return {
