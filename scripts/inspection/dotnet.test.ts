@@ -38,7 +38,15 @@ const DOTNET_USER_SECRETS = {
   command: "dotnet",
   args: ["user-secrets", "list", "--json", "--project", APPHOST_PROJECT],
 } as const satisfies CommandSpec;
-const DOTNET_ENVIRONMENT = {DOTNET_CLI_UI_LANGUAGE: "en-US"} as const;
+const DOTNET_ENVIRONMENT = {
+  DOTNET_ADD_GLOBAL_TOOLS_TO_PATH: "false",
+  DOTNET_CLI_TELEMETRY_OPTOUT: "true",
+  DOTNET_CLI_UI_LANGUAGE: "en-US",
+  DOTNET_CLI_WORKLOAD_UPDATE_NOTIFY_DISABLE: "true",
+  DOTNET_GENERATE_ASPNET_CERTIFICATE: "false",
+  DOTNET_NOLOGO: "true",
+  DOTNET_SKIP_WORKLOAD_INTEGRITY_CHECK: "true",
+} as const;
 
 function commandResult(patch: Partial<CommandResult> = {}): CommandResult {
   return {
@@ -542,6 +550,24 @@ describe("createDotnetProvider", () => {
     });
   });
 
+  it.each([
+    ["an invalid comment character", `<Solution><!-- bad\u0001comment --></Solution>`],
+    ["an invalid CDATA character", `<Solution><![CDATA[bad\u0001data]]></Solution>`],
+    ["an invalid processing-instruction character", `<Solution><?probe bad\u0001data?></Solution>`],
+    ["a comment ending in a forbidden hyphen", "<Solution><!--bad---></Solution>"],
+    ["a targetless processing instruction", "<Solution><?></Solution>"],
+  ] as const)("reports malformed solution XML with %s", async (_case, contents) => {
+    const fixture = await createDotnetFixture();
+    await writeFixtureFile(fixture.paths.solution, contents);
+
+    const outcome = await fixture.provider();
+
+    expect(outcome).toMatchObject({
+      kind: "available",
+      value: {solutionIssues: ["The repository solution file is malformed."]},
+    });
+  });
+
   it("decodes a valid XML-escaped project path before filesystem validation", async () => {
     const fixture = await createDotnetFixture();
     const escapedProject = "sites/api.arolariu.ro/src/R&D/R&D.csproj";
@@ -617,6 +643,32 @@ describe("createDotnetProvider", () => {
       },
     });
     expect(JSON.stringify(outcome)).not.toMatch(/wrapped-secret-value-marker|other-secret-value-marker/iu);
+  });
+
+  it("parses raw user-secret JSON before treating marker text inside a value as a wrapper", async () => {
+    const fixture = await createDotnetFixture();
+    fixture.setResponse(
+      DOTNET_USER_SECRETS,
+      commandResult({
+        stdout: JSON.stringify({
+          "Parameters:redis-password": "configured-secret-marker",
+          "Other:Marker": "prefix //BEGIN{}//END suffix",
+        }),
+      }),
+    );
+
+    const outcome = await fixture.provider();
+
+    expect(outcome).toMatchObject({
+      kind: "available",
+      value: {
+        appHost: {
+          missingParameterKeys: [],
+          userSecretKeys: ["Other:Marker", "Parameters:redis-password"],
+        },
+      },
+    });
+    expect(JSON.stringify(outcome)).not.toMatch(/configured-secret-marker|prefix|suffix/iu);
   });
 
   it("treats a blank user secret as a missing higher-precedence override of tracked configuration", async () => {
@@ -715,6 +767,22 @@ describe("createDotnetProvider", () => {
       durationMs: 5,
     });
     expect(JSON.stringify(outcome)).not.toContain("apphost-raw-marker");
+  });
+
+  it.each([
+    ["top-level Parameters sections", '{"Parameters":{"sql-password":"first"},"Parameters":{"redis-password":"second"}}'],
+    ["required Parameters child keys", '{"Parameters":{"sql-password":"first","sql-password":"second"}}'],
+  ] as const)("returns invalid for exact duplicate tracked %s", async (_case, contents) => {
+    const fixture = await createDotnetFixture();
+    await writeFixtureFile(resolve(fixture.root, "tooling", "AppHost", "appsettings.Development.json"), contents);
+
+    const outcome = await fixture.provider();
+
+    expect(outcome).toEqual({
+      kind: "invalid",
+      issues: ["AppHost development configuration is malformed."],
+      durationMs: 5,
+    });
   });
 
   it("uses the injected POSIX platform for executable resolution", async () => {

@@ -94,6 +94,14 @@ interface ParsedXmlTag {
   readonly selfClosing: boolean;
 }
 
+interface JsonScanState {
+  cursor: number;
+  duplicateTrackedIdentity: boolean;
+  readonly source: string;
+}
+
+type JsonObjectContext = "root" | "parameters" | "other";
+
 const APPHOST_PROJECT_RELATIVE_PATH = "tooling/AppHost/AppHost.csproj";
 const APPHOST_SETTINGS_RELATIVE_PATH = "tooling/AppHost/appsettings.Development.json";
 const REQUIRED_APPHOST_PARAMETER_KEYS = ["Parameters:sql-password", "Parameters:redis-password"] as const;
@@ -111,7 +119,16 @@ const SUPPORTED_DOTNET_ARCHITECTURES: ReadonlySet<string> = new Set([
   "ppc64le",
   "riscv64",
 ]);
-const DOTNET_PROBE_ENVIRONMENT = Object.freeze({DOTNET_CLI_UI_LANGUAGE: "en-US"});
+// Keep observational probes deterministic while disabling .NET first-use mutations and telemetry.
+const DOTNET_PROBE_ENVIRONMENT = Object.freeze({
+  DOTNET_ADD_GLOBAL_TOOLS_TO_PATH: "false",
+  DOTNET_CLI_TELEMETRY_OPTOUT: "true",
+  DOTNET_CLI_UI_LANGUAGE: "en-US",
+  DOTNET_CLI_WORKLOAD_UPDATE_NOTIFY_DISABLE: "true",
+  DOTNET_GENERATE_ASPNET_CERTIFICATE: "false",
+  DOTNET_NOLOGO: "true",
+  DOTNET_SKIP_WORKLOAD_INTEGRITY_CHECK: "true",
+});
 const CONTROL_CHARACTER_PATTERN = /[\u0000-\u001f\u007f]/u;
 const DOTNET_VERSION_PATTERN = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/u;
 const NUGET_VERSION_PATTERN =
@@ -372,14 +389,20 @@ function isValidXmlCodePoint(codePoint: number): boolean {
   );
 }
 
-function decodeXmlReferences(value: string): string | undefined {
+function hasValidXmlCharacters(value: string): boolean {
   for (const character of value) {
     const codePoint = character.codePointAt(0);
     if (codePoint === undefined || !isValidXmlCodePoint(codePoint)) {
-      return undefined;
+      return false;
     }
   }
+  return true;
+}
 
+function decodeXmlReferences(value: string): string | undefined {
+  if (!hasValidXmlCharacters(value)) {
+    return undefined;
+  }
   let decoded = "";
   let cursor = 0;
   while (cursor < value.length) {
@@ -526,7 +549,8 @@ function parseSolutionProjectDeclarations(source: string): SolutionProjectDeclar
 
     if (source.startsWith("<!--", opening)) {
       const end = source.indexOf("-->", opening + 4);
-      if (end < 0 || source.slice(opening + 4, end).includes("--")) {
+      const comment = end < 0 ? undefined : source.slice(opening + 4, end);
+      if (comment === undefined || !hasValidXmlCharacters(comment) || comment.includes("--") || comment.endsWith("-")) {
         return undefined;
       }
       cursor = end + 3;
@@ -534,7 +558,8 @@ function parseSolutionProjectDeclarations(source: string): SolutionProjectDeclar
     }
     if (source.startsWith("<![CDATA[", opening)) {
       const end = source.indexOf("]]>", opening + 9);
-      if (end < 0 || openElements.length === 0) {
+      const cdata = end < 0 ? undefined : source.slice(opening + 9, end);
+      if (cdata === undefined || openElements.length === 0 || !hasValidXmlCharacters(cdata)) {
         return undefined;
       }
       cursor = end + 3;
@@ -542,7 +567,14 @@ function parseSolutionProjectDeclarations(source: string): SolutionProjectDeclar
     }
     if (source.startsWith("<?", opening)) {
       const end = source.indexOf("?>", opening + 2);
-      if (end < 0) {
+      const instruction = end < 0 ? undefined : source.slice(opening + 2, end);
+      const target = instruction === undefined ? undefined : parseXmlName(instruction, 0);
+      if (
+        instruction === undefined
+        || target === undefined
+        || !hasValidXmlCharacters(instruction)
+        || (target.next < instruction.length && !isXmlWhitespace(instruction[target.next]))
+      ) {
         return undefined;
       }
       cursor = end + 2;
@@ -667,6 +699,143 @@ async function inspectSolution(paths: RepositoryPaths): Promise<readonly string[
   return [...issues].sort(compareText);
 }
 
+function skipJsonWhitespace(state: JsonScanState): void {
+  while (/\s/u.test(state.source[state.cursor] ?? "")) {
+    state.cursor += 1;
+  }
+}
+
+function scanJsonString(state: JsonScanState): string | undefined {
+  if (state.source[state.cursor] !== '"') {
+    return undefined;
+  }
+  const start = state.cursor;
+  state.cursor += 1;
+  while (state.cursor < state.source.length) {
+    const character = state.source[state.cursor];
+    if (character === "\\") {
+      state.cursor += 2;
+      continue;
+    }
+    if (character === '"') {
+      state.cursor += 1;
+      let value: unknown;
+      try {
+        value = JSON.parse(state.source.slice(start, state.cursor));
+      } catch {
+        return undefined;
+      }
+      return typeof value === "string" ? value : undefined;
+    }
+    state.cursor += 1;
+  }
+  return undefined;
+}
+
+function scanJsonArray(state: JsonScanState): boolean {
+  state.cursor += 1;
+  skipJsonWhitespace(state);
+  if (state.source[state.cursor] === "]") {
+    state.cursor += 1;
+    return true;
+  }
+  while (scanJsonValue(state, "other")) {
+    skipJsonWhitespace(state);
+    if (state.source[state.cursor] === "]") {
+      state.cursor += 1;
+      return true;
+    }
+    if (state.source[state.cursor] !== ",") {
+      return false;
+    }
+    state.cursor += 1;
+  }
+  return false;
+}
+
+function scanJsonObject(state: JsonScanState, context: JsonObjectContext): boolean {
+  state.cursor += 1;
+  const trackedIdentities = new Set<string>();
+  skipJsonWhitespace(state);
+  if (state.source[state.cursor] === "}") {
+    state.cursor += 1;
+    return true;
+  }
+
+  while (state.cursor < state.source.length) {
+    const key = scanJsonString(state);
+    if (key === undefined) {
+      return false;
+    }
+    skipJsonWhitespace(state);
+    if (state.source[state.cursor] !== ":") {
+      return false;
+    }
+    state.cursor += 1;
+
+    let childContext: JsonObjectContext = "other";
+    const trackedIdentity =
+      context === "root" && key.toLowerCase() === "parameters"
+        ? "Parameters"
+        : context === "parameters"
+          ? canonicalRequiredAppHostParameterKey(`Parameters:${key}`)
+          : undefined;
+    if (trackedIdentity !== undefined) {
+      if (trackedIdentities.has(trackedIdentity)) {
+        state.duplicateTrackedIdentity = true;
+      }
+      trackedIdentities.add(trackedIdentity);
+      if (context === "root") {
+        childContext = "parameters";
+      }
+    }
+
+    if (!scanJsonValue(state, childContext)) {
+      return false;
+    }
+    skipJsonWhitespace(state);
+    if (state.source[state.cursor] === "}") {
+      state.cursor += 1;
+      return true;
+    }
+    if (state.source[state.cursor] !== ",") {
+      return false;
+    }
+    state.cursor += 1;
+    skipJsonWhitespace(state);
+  }
+  return false;
+}
+
+function scanJsonValue(state: JsonScanState, objectContext: JsonObjectContext): boolean {
+  skipJsonWhitespace(state);
+  const character = state.source[state.cursor];
+  if (character === "{") {
+    return scanJsonObject(state, objectContext);
+  }
+  if (character === "[") {
+    return scanJsonArray(state);
+  }
+  if (character === '"') {
+    return scanJsonString(state) !== undefined;
+  }
+  const primitive = /^(?:true|false|null|-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?)/u.exec(state.source.slice(state.cursor))?.[0];
+  if (primitive === undefined) {
+    return false;
+  }
+  state.cursor += primitive.length;
+  return true;
+}
+
+function hasDuplicateTrackedConfigurationIdentity(source: string): boolean | undefined {
+  const state: JsonScanState = {source, cursor: 0, duplicateTrackedIdentity: false};
+  if (!scanJsonValue(state, "root")) {
+    return undefined;
+  }
+  skipJsonWhitespace(state);
+  return state.cursor === source.length ? state.duplicateTrackedIdentity : undefined;
+}
+
 function configuredTrackedParameters(document: unknown): readonly string[] | undefined {
   if (!isRecord(document)) {
     return undefined;
@@ -729,6 +898,9 @@ async function inspectAppHostFiles(paths: RepositoryPaths): Promise<AppHostFileO
   } catch {
     return {kind: "invalid"};
   }
+  if (hasDuplicateTrackedConfigurationIdentity(settingsSource) !== false) {
+    return {kind: "invalid"};
+  }
   const configuredParameterKeys = configuredTrackedParameters(settings);
   return configuredParameterKeys === undefined
     ? {kind: "invalid"}
@@ -736,25 +908,33 @@ async function inspectAppHostFiles(paths: RepositoryPaths): Promise<AppHostFileO
 }
 
 function unwrapUserSecretsDocument(output: string): string | undefined {
-  const begin = output.indexOf("//BEGIN");
-  const end = output.lastIndexOf("//END");
-  if (begin < 0 && end < 0) {
-    return output;
-  }
-  return begin < 0 || end < 0 || end <= begin ? undefined : output.slice(begin + "//BEGIN".length, end).trim();
+  const lines = output.split(/\r?\n/u);
+  const beginLines = lines.flatMap((line, index) => (line.trim() === "//BEGIN" ? [index] : []));
+  const endLines = lines.flatMap((line, index) => (line.trim() === "//END" ? [index] : []));
+  const begin = beginLines[0];
+  const end = endLines[0];
+  return beginLines.length !== 1 || endLines.length !== 1 || begin === undefined || end === undefined || end <= begin
+    ? undefined
+    : lines
+        .slice(begin + 1, end)
+        .join("\n")
+        .trim();
 }
 
 function parseUserSecrets(output: string): UserSecretFacts | undefined {
-  const document = unwrapUserSecretsDocument(output);
-  if (document === undefined) {
-    return undefined;
-  }
-
   let parsed: unknown;
   try {
-    parsed = JSON.parse(document);
+    parsed = JSON.parse(output);
   } catch {
-    return undefined;
+    const document = unwrapUserSecretsDocument(output);
+    if (document === undefined) {
+      return undefined;
+    }
+    try {
+      parsed = JSON.parse(document);
+    } catch {
+      return undefined;
+    }
   }
   if (!isRecord(parsed)) {
     return undefined;
