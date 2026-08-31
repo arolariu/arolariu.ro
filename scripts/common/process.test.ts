@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * @fileoverview Tests for the shared command runner.
  * @module scripts/common/process.test
@@ -69,9 +70,12 @@ describe("defaultCommandRunner", () => {
   });
 
   it("returns spawn errors without rejecting", async () => {
-    const command = "definitely-not-a-real-tool-xyzzy-12345";
+    const missingWorkingDirectory = resolve(tmpdir(), `command-runner-missing-cwd-${Date.now()}`);
 
-    const result = await defaultCommandRunner.run({command, args: []});
+    const result = await defaultCommandRunner.run(
+      {command: process.execPath, args: ["-e", "1"]},
+      {cwd: missingWorkingDirectory},
+    );
 
     expect(result).toMatchObject({
       code: 1,
@@ -79,7 +83,30 @@ describe("defaultCommandRunner", () => {
       stderr: "",
       timedOut: false,
     });
-    expect(result.spawnError).toContain(command);
+    expect(result.spawnError).toBeDefined();
+    expect(result.spawnError).toContain("ENOENT");
+  });
+
+  it("classifies an unresolved command name using Execa's own metadata instead of a custom PATH scanner", async () => {
+    const command = "definitely-not-a-real-tool-xyzzy-12345";
+
+    const result = await defaultCommandRunner.run({command, args: []});
+
+    expect(result.code).not.toBe(0);
+    expect(result.timedOut).toBe(false);
+
+    if (process.platform === "win32") {
+      // On Windows, Execa resolves an unrecognized command name through `cmd.exe`,
+      // which reports the failure as an ordinary nonzero exit rather than a
+      // distinguishable spawn error, so no custom PATH/PATHEXT scanner is needed
+      // (or added) to reclassify it.
+      expect(result.spawnError).toBeUndefined();
+      expect(result.stderr).toContain(command);
+    } else {
+      // On POSIX platforms, the subprocess never starts, so Execa reports a
+      // genuine startup failure through its own result metadata.
+      expect(result.spawnError).toContain(command);
+    }
   });
 
   it("times out and terminates a long-running command", async () => {

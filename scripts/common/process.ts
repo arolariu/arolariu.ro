@@ -3,88 +3,21 @@
  * @module scripts/common/process
  */
 
-import {constants as fileSystemConstants} from "node:fs";
-import {EventEmitter, setMaxListeners} from "node:events";
-import {access} from "node:fs/promises";
-import {delimiter, isAbsolute, join, resolve as resolvePath} from "node:path";
 import {StringDecoder} from "node:string_decoder";
 import {execa} from "execa";
 import type {MonorepositoryLogger} from "./logger.ts";
 
-const DEFAULT_WINDOWS_COMMAND_EXTENSIONS = [".COM", ".EXE", ".BAT", ".CMD"] as const;
-const COMMAND_NOT_FOUND_CODE = "ENOENT";
-const PATH_LIKE_COMMAND = /[\\/]/;
-
 interface ExecaResultLike {
-  readonly code?: string | number;
-  readonly durationMs?: number;
-  readonly exitCode?: number;
-  readonly message?: string;
-  readonly originalMessage?: string;
-  readonly shortMessage?: string;
-  readonly signal?: string;
+  readonly code?: string | number | undefined;
+  readonly durationMs?: number | undefined;
+  readonly exitCode?: number | undefined;
+  readonly message?: string | undefined;
+  readonly originalMessage?: string | undefined;
+  readonly shortMessage?: string | undefined;
+  readonly signal?: string | undefined;
   readonly stderr?: unknown;
   readonly stdout?: unknown;
-  readonly timedOut?: boolean;
-}
-
-class CompatibleAbortSignal extends EventEmitter {
-  readonly #listenerCallbacks = new WeakMap<object, EventListener>();
-  public aborted = false;
-  public reason: unknown;
-
-  public addEventListener(type: string, listener: EventListenerOrEventListenerObject): void {
-    const callback = this.resolveListenerCallback(listener);
-    this.on(type, callback);
-  }
-
-  public removeEventListener(type: string, listener: EventListenerOrEventListenerObject): void {
-    const callback = this.resolveListenerCallback(listener);
-    this.off(type, callback);
-  }
-
-  public dispatchEvent(event: Event): boolean {
-    return this.emit(event.type, event);
-  }
-
-  public throwIfAborted(): void {
-    if (this.aborted) {
-      throw this.reason ?? createAbortReason();
-    }
-  }
-
-  public get [Symbol.toStringTag](): string {
-    return "AbortSignal";
-  }
-
-  private resolveListenerCallback(listener: EventListenerOrEventListenerObject): EventListener {
-    if (typeof listener === "function") {
-      return listener;
-    }
-
-    const existingCallback = this.#listenerCallbacks.get(listener);
-    if (existingCallback !== undefined) {
-      return existingCallback;
-    }
-
-    const callback = listener.handleEvent.bind(listener);
-    this.#listenerCallbacks.set(listener, callback);
-    return callback;
-  }
-}
-
-class CompatibleAbortController {
-  public readonly signal = new CompatibleAbortSignal();
-
-  public abort(reason?: unknown): void {
-    if (this.signal.aborted) {
-      return;
-    }
-
-    this.signal.aborted = true;
-    this.signal.reason = reason ?? createAbortReason();
-    this.signal.dispatchEvent(new Event("abort"));
-  }
+  readonly timedOut?: boolean | undefined;
 }
 
 /** Describes one executable and its argument array. */
@@ -176,43 +109,29 @@ async function runExecaCommand(command: Readonly<CommandSpec>, options: Readonly
   }
 
   const environment = buildEnvironment(options.env);
-  const spawnError = await findMissingExecutableMessage(command.command, environment, options.cwd);
-  if (spawnError !== undefined) {
-    return {
-      code: 1,
-      stdout: "",
-      stderr: "",
-      durationMs: performance.now() - startedAt,
-      timedOut: false,
-      spawnError,
-    };
-  }
-
   const stdoutWriter = outputMode === "tee" ? options.logger?.createStreamWriter("stdout") : undefined;
   const stderrWriter = outputMode === "tee" ? options.logger?.createStreamWriter("stderr") : undefined;
   const stdoutDecoder = new StringDecoder("utf8");
   const stderrDecoder = new StringDecoder("utf8");
 
   try {
-    const subprocess = runWithCompatibleAbortController(() =>
-      execa(command.command, [...command.args], {
-        ...(options.cwd === undefined ? {} : {cwd: options.cwd}),
-        env: environment,
-        stdin: options.input === undefined ? "ignore" : "pipe",
-        ...(options.input === undefined ? {} : {input: options.input}),
-        reject: false,
-        shell: false,
-        preferLocal: false,
-        cleanup: true,
-        windowsHide: true,
-        stripFinalNewline: false,
-        ...(options.timeoutMs === undefined ? {} : {timeout: options.timeoutMs}),
-        ...(options.signal === undefined ? {} : {cancelSignal: options.signal}),
-        forceKillAfterDelay: 1_000,
-        stdout: outputMode === "inherit" ? "inherit" : "pipe",
-        stderr: outputMode === "inherit" ? "inherit" : "pipe",
-      }),
-    );
+    const subprocess = execa(command.command, [...command.args], {
+      ...(options.cwd === undefined ? {} : {cwd: options.cwd}),
+      env: environment,
+      stdin: outputMode === "inherit" ? "inherit" : options.input === undefined ? "ignore" : "pipe",
+      ...(options.input === undefined ? {} : {input: options.input}),
+      reject: false,
+      shell: false,
+      preferLocal: false,
+      cleanup: true,
+      windowsHide: true,
+      stripFinalNewline: false,
+      ...(options.timeoutMs === undefined ? {} : {timeout: options.timeoutMs}),
+      ...(options.signal === undefined ? {} : {cancelSignal: options.signal}),
+      forceKillAfterDelay: 1_000,
+      stdout: outputMode === "inherit" ? "inherit" : "pipe",
+      stderr: outputMode === "inherit" ? "inherit" : "pipe",
+    });
 
     if (outputMode === "tee") {
       subprocess.stdout?.on("data", (chunk: string | Uint8Array) => {
@@ -231,9 +150,9 @@ async function runExecaCommand(command: Readonly<CommandSpec>, options: Readonly
     }
 
     const result = await subprocess;
-    return mapExecaResult(result, startedAt);
+    return mapExecaSuccess(result, startedAt);
   } catch (error: unknown) {
-    return mapExecaResult(error, startedAt);
+    return mapExecaFailure(error, startedAt);
   } finally {
     if (outputMode === "tee") {
       const stdoutTail = stdoutDecoder.end();
@@ -252,24 +171,18 @@ async function runExecaCommand(command: Readonly<CommandSpec>, options: Readonly
 }
 
 /**
- * Converts an Execa result or error into the shared non-throwing command result.
+ * Converts a resolved Execa result into the shared non-throwing command result.
  *
- * @param result - Execa outcome or thrown error.
+ * With `reject: false`, Execa always resolves (never rejects) for ordinary process
+ * outcomes, including nonzero exits, timeouts, cancellations, and genuine startup
+ * failures reported through its own result fields (for example a string `code` set
+ * from an underlying Node.js system error). Only that resolved result is mapped here.
+ *
+ * @param result - Execa outcome for a subprocess that was started.
  * @param startedAt - Start time used when Execa did not report a duration.
  * @returns Shared command result.
  */
-function mapExecaResult(result: unknown, startedAt: number): CommandResult {
-  if (!isExecaResultLike(result)) {
-    return {
-      code: 1,
-      stdout: "",
-      stderr: "",
-      durationMs: performance.now() - startedAt,
-      timedOut: false,
-      ...(result instanceof Error ? {spawnError: result.message} : {spawnError: String(result)}),
-    };
-  }
-
+function mapExecaSuccess(result: ExecaResultLike, startedAt: number): CommandResult {
   const signal = typeof result.signal === "string" ? (result.signal as NodeJS.Signals) : undefined;
   const spawnError =
     typeof result.code === "string"
@@ -288,165 +201,26 @@ function mapExecaResult(result: unknown, startedAt: number): CommandResult {
 }
 
 /**
- * Detects commands that cannot be started before invoking Execa.
+ * Converts a thrown exception into the shared non-throwing command result.
  *
- * @param command - Executable name or path.
- * @param environment - Fully merged process environment.
- * @param cwd - Optional working directory used for relative command paths.
- * @returns The legacy ENOENT message when the command is missing.
- */
-async function findMissingExecutableMessage(
-  command: string,
-  environment: Readonly<Record<string, string>>,
-  cwd?: string,
-): Promise<string | undefined> {
-  const candidates = buildCommandCandidates(command, environment, cwd);
-  for (const candidate of candidates) {
-    try {
-      await access(candidate, fileSystemConstants.F_OK);
-      return undefined;
-    } catch {
-      // Continue searching additional PATH and PATHEXT candidates.
-    }
-  }
-
-  return `spawn ${command} ${COMMAND_NOT_FOUND_CODE}`;
-}
-
-/**
- * Expands one command into the host-specific candidate file paths Execa can start.
+ * Reaching this path means Execa itself could not be invoked (for example an option
+ * validation failure) rather than reporting an ordinary resolved process outcome, so
+ * the caught message always represents a startup failure and is preserved verbatim
+ * in `spawnError`.
  *
- * @param command - Executable name or path.
- * @param environment - Fully merged process environment.
- * @param cwd - Optional working directory used for relative command paths.
- * @returns Candidate absolute or PATH-relative file paths.
+ * @param error - Exception thrown while constructing or awaiting the subprocess.
+ * @param startedAt - Start time used to compute the elapsed duration.
+ * @returns Shared command result with `spawnError` populated.
  */
-function buildCommandCandidates(
-  command: string,
-  environment: Readonly<Record<string, string>>,
-  cwd?: string,
-): readonly string[] {
-  const commandCandidates = process.platform === "win32"
-    ? buildWindowsCommandCandidates(command, environment)
-    : [command];
-
-  if (isPathLikeCommand(command)) {
-    const basePath = isAbsolute(command) ? command : resolvePath(cwd ?? process.cwd(), command);
-    return process.platform === "win32"
-      ? buildWindowsCommandCandidates(basePath, environment)
-      : [basePath];
-  }
-
-  const pathDirectories = readEnvironmentValue(environment, "PATH")
-    ?.split(delimiter)
-    .filter((directory) => directory.length > 0)
-    ?? [];
-
-  return pathDirectories.flatMap((directory) => commandCandidates.map((candidate) => join(directory, candidate)));
-}
-
-/**
- * Expands a Windows command into extension-aware candidate file names.
- *
- * @param command - Executable name or path.
- * @param environment - Fully merged process environment.
- * @returns Candidate file names or paths.
- */
-function buildWindowsCommandCandidates(command: string, environment: Readonly<Record<string, string>>): readonly string[] {
-  const extensions = readEnvironmentValue(environment, "PATHEXT")
-    ?.split(";")
-    .map((extension) => extension.trim())
-    .filter((extension) => extension.length > 0)
-    ?? [...DEFAULT_WINDOWS_COMMAND_EXTENSIONS];
-  const normalizedExtensions = extensions.map((extension) => extension.toLowerCase());
-  const normalizedCommand = command.toLowerCase();
-  if (normalizedExtensions.some((extension) => normalizedCommand.endsWith(extension))) {
-    return [command];
-  }
-
-  return [command, ...extensions.map((extension) => `${command}${extension}`)];
-}
-
-/**
- * Reads one environment value with Windows-compatible case-insensitive lookup.
- *
- * @param environment - Environment object to search.
- * @param key - Variable name to read.
- * @returns The configured value when present.
- */
-function readEnvironmentValue(environment: Readonly<Record<string, string>>, key: string): string | undefined {
-  const directValue = environment[key];
-  if (directValue !== undefined || process.platform !== "win32") {
-    return directValue;
-  }
-
-  const matchedEntry = Object.entries(environment).find(([candidate]) => candidate.toLowerCase() === key.toLowerCase());
-  return matchedEntry?.[1];
-}
-
-/**
- * Determines whether a command should be resolved as a filesystem path.
- *
- * @param command - Executable name or path.
- * @returns `true` when the command includes an explicit path.
- */
-function isPathLikeCommand(command: string): boolean {
-  return isAbsolute(command) || PATH_LIKE_COMMAND.test(command);
-}
-
-/**
- * Runs one operation with a Node-compatible AbortController when the global one is incompatible.
- *
- * @param operation - Operation that constructs the Execa subprocess.
- * @returns The operation result.
- */
-function runWithCompatibleAbortController<T>(operation: () => T): T {
-  if (canUseGlobalAbortController()) {
-    return operation();
-  }
-
-  const descriptor = Object.getOwnPropertyDescriptor(globalThis, "AbortController");
-  Object.defineProperty(globalThis, "AbortController", {
-    configurable: true,
-    writable: true,
-    value: CompatibleAbortController,
-  });
-
-  try {
-    return operation();
-  } finally {
-    if (descriptor === undefined) {
-      Reflect.deleteProperty(globalThis, "AbortController");
-      return;
-    }
-
-    Object.defineProperty(globalThis, "AbortController", descriptor);
-  }
-}
-
-/**
- * Determines whether the current global AbortController is compatible with Execa's Node event helpers.
- *
- * @returns `true` when Node event utilities accept the global AbortSignal implementation.
- */
-function canUseGlobalAbortController(): boolean {
-  try {
-    setMaxListeners(Infinity, new AbortController().signal);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-/**
- * Creates the default abort reason used by the compatibility shim.
- *
- * @returns Abort reason matching the platform default as closely as possible.
- */
-function createAbortReason(): Error {
-  return typeof DOMException === "function"
-    ? new DOMException("This operation was aborted", "AbortError")
-    : new Error("This operation was aborted");
+function mapExecaFailure(error: unknown, startedAt: number): CommandResult {
+  return {
+    code: 1,
+    stdout: "",
+    stderr: "",
+    durationMs: performance.now() - startedAt,
+    timedOut: false,
+    spawnError: error instanceof Error ? error.message : String(error),
+  };
 }
 
 /**
@@ -481,16 +255,6 @@ function buildEnvironment(environmentOverrides?: Readonly<NodeJS.ProcessEnv>): R
     .map(([key, value]) => [key, typeof value === "string" ? value : String(value)] as const);
 
   return Object.fromEntries(normalizedEntries);
-}
-
-/**
- * Narrows unknown values to the Execa result shape used by the shared runner.
- *
- * @param value - Unknown value to inspect.
- * @returns `true` when the value exposes Execa result fields.
- */
-function isExecaResultLike(value: unknown): value is ExecaResultLike {
-  return typeof value === "object" && value !== null;
 }
 
 /** Default process-backed command runner. */
