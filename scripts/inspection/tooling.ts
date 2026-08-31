@@ -37,14 +37,17 @@ export interface PackageFact {
 
 /** Deterministic, repository-scoped projection of an `envinfo` inventory document. */
 export interface ToolingFacts {
-  /** Operating-system identity string, when present. */
-  readonly os?: string;
-  /** CPU identity string, when present. */
-  readonly cpu?: string;
-  /** Memory summary string, when present. */
-  readonly memory?: string;
-  /** Shell version string with any path stripped, when present. */
-  readonly shell?: string;
+  /** System identity strings, when present. */
+  readonly system: Readonly<{
+    /** Operating-system identity string, when present. */
+    os?: string;
+    /** CPU identity string, when present. */
+    cpu?: string;
+    /** Memory summary string, when present. */
+    memory?: string;
+    /** Shell version string with any path stripped, when present. */
+    shellVersion?: string;
+  }>;
   /** Generic tools, sorted by category then name. */
   readonly tools: readonly ToolFact[];
   /** Installed packages, sorted by scope then name. */
@@ -169,11 +172,11 @@ function resolveSafeVersion(value: unknown): string | undefined {
  * @returns Partial identity facts; missing, non-string, or path-only fields are omitted. The shell
  * path is never projected.
  */
-function projectSystem(system: unknown): Pick<ToolingFacts, "os" | "cpu" | "memory" | "shell"> {
+function projectSystem(system: unknown): ToolingFacts["system"] {
   if (!isRecord(system)) {
     return {};
   }
-  const identity: {os?: string; cpu?: string; memory?: string; shell?: string} = {};
+  const identity: {os?: string; cpu?: string; memory?: string; shellVersion?: string} = {};
 
   const os = system["OS"];
   if (typeof os === "string" && os.trim() !== "") {
@@ -191,7 +194,7 @@ function projectSystem(system: unknown): Pick<ToolingFacts, "os" | "cpu" | "memo
   const shell = system["Shell"];
   const shellVersion = resolveSafeVersion(shell);
   if (shellVersion !== undefined) {
-    identity.shell = shellVersion;
+    identity.shellVersion = shellVersion;
   }
 
   return identity;
@@ -314,7 +317,7 @@ export function parseEnvinfoJson(serialized: string): ToolingFacts {
   ].toSorted((left, right) => compareText(left.scope, right.scope) || compareText(left.name, right.name));
 
   return {
-    ...identity,
+    system: identity,
     tools: projectTools(document),
     packages,
   };

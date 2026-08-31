@@ -15,7 +15,7 @@ function baseInput(overrides: Partial<SystemInformationProjectionInput> = {}): S
   return {
     repositoryRoot: REPOSITORY_ROOT,
     requiredPorts: [3000, 5432, 6379],
-    repositoryContainerNames: ["arolariu-sql", "arolariu-redis"],
+    repositoryContainerNames: new Set(["arolariu-sql", "arolariu-redis"]),
     ...overrides,
   };
 }
@@ -147,16 +147,16 @@ describe("projectSystemInformation - normalized facts", () => {
     expect(facts.os).toEqual({platform: "win32", distro: "Microsoft Windows 11 Pro", release: "10.0.22631", arch: "x64"});
     expect(facts.cpu).toEqual({brand: "AMD Ryzen 9 5900X 12-Core", cores: 24, physicalCores: 12, virtualization: true});
     expect(facts.memory).toEqual({totalBytes: 68719476736, usedBytes: 20000000000, availableBytes: 48000000000});
-    expect(facts.load).toEqual({currentLoadPercent: 17.25});
-    expect(facts.processes).toEqual({all: 300, running: 5, blocked: 1});
+    expect(facts.load).toEqual({currentPercent: 17.25});
+    expect(facts.processes).toEqual({total: 300, running: 5, blocked: 1});
   });
 
   it("projects only numeric filesystem facts and the repository-volume boolean", () => {
     const facts = projectSystemInformation(sensitiveHostValue(), baseInput());
 
     expect(facts.filesystems).toEqual([
-      {sizeBytes: 1000000000000, usedBytes: 400000000000, availableBytes: 600000000000, usePercent: 40, repositoryVolume: true},
-      {sizeBytes: 500000000000, usedBytes: 100000000000, availableBytes: 400000000000, usePercent: 20, repositoryVolume: false},
+      {sizeBytes: 1000000000000, usedBytes: 400000000000, availableBytes: 600000000000, usedPercent: 40, repositoryVolume: true},
+      {sizeBytes: 500000000000, usedBytes: 100000000000, availableBytes: 400000000000, usedPercent: 20, repositoryVolume: false},
     ]);
   });
 
@@ -186,13 +186,30 @@ describe("projectSystemInformation - normalized facts", () => {
     const facts = projectSystemInformation(value, baseInput());
     expect(facts.network.defaultInterfaceOperational).toBe(false);
   });
+
+  it("omits defaultInterfaceOperational when no interface entry is marked default", () => {
+    const value = sensitiveHostValue();
+    value["net"] = (value["net"] as Array<Record<string, unknown>>).map((entry) => ({...entry, default: false}));
+    const facts = projectSystemInformation(value, baseInput());
+
+    expect(facts.network.defaultInterfaceOperational).toBeUndefined();
+    expect(Object.keys(facts.network)).not.toContain("defaultInterfaceOperational");
+  });
+
+  it("omits defaultInterfaceOperational when no net entries are reported", () => {
+    const value = sensitiveHostValue();
+    delete value["net"];
+    const facts = projectSystemInformation(value, baseInput());
+
+    expect(facts.network.defaultInterfaceOperational).toBeUndefined();
+  });
 });
 
 describe("projectSystemInformation - required ports", () => {
   it("matches only de-duplicated required TCP ports in listening state and correlates repository ownership", () => {
     const facts = projectSystemInformation(sensitiveHostValue(), baseInput({requiredPorts: [3000, 5432, 6379, 6379]}));
 
-    expect(facts.requiredPorts).toEqual([
+    expect(facts.portOwners).toEqual([
       {port: 3000, pid: 7777, processName: "node.exe", repositoryOwned: true},
       {port: 5432, pid: 4242, processName: "postgres.exe", repositoryOwned: false},
       {port: 6379, pid: 9999, processName: "redis-server", repositoryOwned: false},
@@ -201,7 +218,7 @@ describe("projectSystemInformation - required ports", () => {
 
   it("does not surface required ports that are not listening", () => {
     const facts = projectSystemInformation(sensitiveHostValue(), baseInput({requiredPorts: [8080]}));
-    expect(facts.requiredPorts).toEqual([]);
+    expect(facts.portOwners).toEqual([]);
   });
 
   it("throws on an out-of-range or non-integer required port without echoing it", () => {
@@ -256,19 +273,19 @@ describe("projectSystemInformation - containers", () => {
     delete value["dockerImages"];
     const facts = projectSystemInformation(value, baseInput());
 
-    expect(facts.containers).toEqual({available: false, total: 0, running: 0, paused: 0, stopped: 0, images: 0, repositoryContainers: []});
+    expect(facts.containers).toEqual({available: false, running: 0, stopped: 0, images: 0, repositoryContainers: []});
   });
 
   it("uses dockerInfo counts and filters repository containers to the approved, sorted, de-duplicated set", () => {
     const facts = projectSystemInformation(sensitiveHostValue(), baseInput());
 
     expect(facts.containers.available).toBe(true);
-    expect(facts.containers.total).toBe(5);
     expect(facts.containers.running).toBe(3);
-    expect(facts.containers.paused).toBe(1);
     expect(facts.containers.stopped).toBe(1);
     expect(facts.containers.images).toBe(12);
     expect(facts.containers.repositoryContainers).toEqual(["arolariu-redis", "arolariu-sql"]);
+    expect(Object.keys(facts.containers)).not.toContain("total");
+    expect(Object.keys(facts.containers)).not.toContain("paused");
   });
 
   it("falls back to array lengths and state counts when dockerInfo is absent", () => {
@@ -277,16 +294,14 @@ describe("projectSystemInformation - containers", () => {
     const facts = projectSystemInformation(value, baseInput());
 
     expect(facts.containers.available).toBe(true);
-    expect(facts.containers.total).toBe(3);
     expect(facts.containers.running).toBe(2);
-    expect(facts.containers.paused).toBe(0);
     expect(facts.containers.stopped).toBe(1);
     expect(facts.containers.images).toBe(2);
   });
 
   it("throws when a present Docker aggregate is malformed", () => {
     const value = sensitiveHostValue();
-    (value["dockerInfo"] as Record<string, unknown>)["containers"] = -3;
+    (value["dockerInfo"] as Record<string, unknown>)["containersRunning"] = -3;
     expect(() => projectSystemInformation(value, baseInput())).toThrow();
   });
 });
@@ -343,9 +358,9 @@ describe("projectSystemInformation - sensitive-field redaction", () => {
     expect(facts.os.release).toBe("10.0.22631");
     expect(facts.cpu.brand).toBe("AMD Ryzen 9 5900X 12-Core");
     expect(facts.containers.images).toBe(12);
-    expect(facts.containers.total).toBe(5);
+    expect(facts.containers.running).toBe(3);
     expect(facts.containers.repositoryContainers).toEqual(["arolariu-redis", "arolariu-sql"]);
-    expect(facts.requiredPorts.map((owner) => owner.port)).toEqual([3000, 5432, 6379]);
-    expect(facts.requiredPorts.find((owner) => owner.port === 3000)?.repositoryOwned).toBe(true);
+    expect(facts.portOwners.map((owner) => owner.port)).toEqual([3000, 5432, 6379]);
+    expect(facts.portOwners.find((owner) => owner.port === 3000)?.repositoryOwned).toBe(true);
   });
 });

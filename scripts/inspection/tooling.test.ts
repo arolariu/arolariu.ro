@@ -34,10 +34,10 @@ describe("parseEnvinfoJson - System identity", () => {
       }),
     );
 
-    expect(facts.os).toBe("Windows 11 10.0.22631");
-    expect(facts.cpu).toBe("(16) x64 AMD Ryzen 7");
-    expect(facts.memory).toBe("12.00 GB / 32.00 GB");
-    expect(facts.shell).toBe("5.1.22621");
+    expect(facts.system.os).toBe("Windows 11 10.0.22631");
+    expect(facts.system.cpu).toBe("(16) x64 AMD Ryzen 7");
+    expect(facts.system.memory).toBe("12.00 GB / 32.00 GB");
+    expect(facts.system.shellVersion).toBe("5.1.22621");
     expect(serialize(facts)).not.toContain("cmd.exe");
     expect(serialize(facts)).not.toContain("System32");
   });
@@ -45,17 +45,17 @@ describe("parseEnvinfoJson - System identity", () => {
   it("strips the trailing path from a direct-string shell candidate", () => {
     const facts = parseEnvinfoJson(serialize({System: {Shell: "5.8.1 - /usr/bin/zsh"}}));
 
-    expect(facts.shell).toBe("5.8.1");
+    expect(facts.system.shellVersion).toBe("5.8.1");
     expect(serialize(facts)).not.toContain("/usr/bin/zsh");
   });
 
   it("omits System identity fields that are missing or non-string", () => {
     const facts = parseEnvinfoJson(serialize({System: {CPU: 42, Shell: {path: "/only/a/path"}}}));
 
-    expect(facts.os).toBeUndefined();
-    expect(facts.cpu).toBeUndefined();
-    expect(facts.memory).toBeUndefined();
-    expect(facts.shell).toBeUndefined();
+    expect(facts.system.os).toBeUndefined();
+    expect(facts.system.cpu).toBeUndefined();
+    expect(facts.system.memory).toBeUndefined();
+    expect(facts.system.shellVersion).toBeUndefined();
     expect(serialize(facts)).not.toContain("/only/a/path");
   });
 

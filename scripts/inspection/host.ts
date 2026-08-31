@@ -39,7 +39,7 @@ export interface HostMemoryFacts {
 
 /** Normalized current-load facts. */
 export interface HostLoadFacts {
-  readonly currentLoadPercent: number;
+  readonly currentPercent: number;
 }
 
 /** Normalized, redacted filesystem facts for one mount. */
@@ -47,14 +47,14 @@ export interface HostFilesystemFact {
   readonly sizeBytes: number;
   readonly usedBytes: number;
   readonly availableBytes: number;
-  readonly usePercent: number;
+  readonly usedPercent: number;
   /** True only for the single most-specific mount that contains the repository root. */
   readonly repositoryVolume: boolean;
 }
 
 /** Normalized process-count facts. */
 export interface HostProcessFacts {
-  readonly all: number;
+  readonly total: number;
   readonly running: number;
   readonly blocked: number;
 }
@@ -73,9 +73,7 @@ export interface HostPortOwnerFact {
 /** Normalized container-runtime facts. */
 export interface HostContainerFacts {
   readonly available: boolean;
-  readonly total: number;
   readonly running: number;
-  readonly paused: number;
   readonly stopped: number;
   readonly images: number;
   /** Approved repository container names present on the host, sorted and de-duplicated. */
@@ -84,7 +82,8 @@ export interface HostContainerFacts {
 
 /** Normalized network facts, without interface identity or address data. */
 export interface HostNetworkFacts {
-  readonly defaultInterfaceOperational: boolean;
+  /** Operational state of the `net` entry whose `default` field is true; omitted when none exists. */
+  readonly defaultInterfaceOperational?: boolean;
   /** Non-negative internet latency, when finitely reported. */
   readonly latencyMs?: number;
 }
@@ -97,7 +96,7 @@ export interface HostFacts {
   readonly load: HostLoadFacts;
   readonly filesystems: readonly HostFilesystemFact[];
   readonly processes: HostProcessFacts;
-  readonly requiredPorts: readonly HostPortOwnerFact[];
+  readonly portOwners: readonly HostPortOwnerFact[];
   readonly containers: HostContainerFacts;
   readonly network: HostNetworkFacts;
 }
@@ -109,7 +108,7 @@ export interface SystemInformationProjectionInput {
   /** Required TCP ports to correlate to listening owners. */
   readonly requiredPorts: readonly number[];
   /** Exact approved container names that may appear in {@link HostContainerFacts.repositoryContainers}. */
-  readonly repositoryContainerNames: readonly string[];
+  readonly repositoryContainerNames: ReadonlySet<string>;
 }
 
 /** Reports a malformed required host structure or invalid input. Never echoes source values. */
@@ -291,13 +290,13 @@ function projectMemory(value: unknown): HostMemoryFacts {
 
 function projectLoad(value: unknown): HostLoadFacts {
   const load = requireRecord(value, "currentLoad");
-  return {currentLoadPercent: requireFiniteNonNegative(load, "currentLoad", "currentLoad")};
+  return {currentPercent: requireFiniteNonNegative(load, "currentLoad", "currentLoad")};
 }
 
 function projectProcesses(value: unknown): HostProcessFacts {
   const processes = requireRecord(value, "processes");
   return {
-    all: requireNonNegativeInteger(processes, "all", "processes"),
+    total: requireNonNegativeInteger(processes, "all", "processes"),
     running: requireNonNegativeInteger(processes, "running", "processes"),
     blocked: requireNonNegativeInteger(processes, "blocked", "processes"),
   };
@@ -335,7 +334,7 @@ function projectFilesystems(value: unknown, repositoryRoot: string): readonly Ho
     sizeBytes: entry.sizeBytes,
     usedBytes: entry.usedBytes,
     availableBytes: entry.availableBytes,
-    usePercent: entry.usePercent,
+    usedPercent: entry.usePercent,
     repositoryVolume: index === repositoryVolumeIndex,
   }));
 }
@@ -467,7 +466,7 @@ function projectRequiredPorts(
 }
 
 function projectNetwork(netValue: unknown, latencyValue: unknown): HostNetworkFacts {
-  let defaultInterfaceOperational = false;
+  let defaultInterfaceOperational: boolean | undefined;
   if (Array.isArray(netValue)) {
     for (const entry of netValue) {
       if (isRecord(entry) && entry["default"] === true) {
@@ -480,7 +479,7 @@ function projectNetwork(netValue: unknown, latencyValue: unknown): HostNetworkFa
 
   const latencyOk = typeof latencyValue === "number" && Number.isFinite(latencyValue) && latencyValue >= 0;
   return {
-    defaultInterfaceOperational,
+    ...(defaultInterfaceOperational === undefined ? {} : {defaultInterfaceOperational}),
     ...(latencyOk ? {latencyMs: latencyValue} : {}),
   };
 }
@@ -506,29 +505,23 @@ function projectContainers(
 ): HostContainerFacts {
   const available = dockerInfoValue !== undefined || dockerContainersValue !== undefined || dockerImagesValue !== undefined;
   if (!available) {
-    return {available: false, total: 0, running: 0, paused: 0, stopped: 0, images: 0, repositoryContainers: []};
+    return {available: false, running: 0, stopped: 0, images: 0, repositoryContainers: []};
   }
 
   const containers = dockerContainersValue === undefined ? [] : requireArray(dockerContainersValue, "dockerContainers");
   const images = dockerImagesValue === undefined ? [] : requireArray(dockerImagesValue, "dockerImages");
 
-  let total: number;
   let running: number;
-  let paused: number;
   let stopped: number;
   let imageCount: number;
 
   if (dockerInfoValue === undefined) {
-    total = containers.length;
     running = countContainersByState(containers, (state) => state === "running");
-    paused = countContainersByState(containers, (state) => state === "paused");
     stopped = countContainersByState(containers, (state) => state !== "running" && state !== "paused");
     imageCount = images.length;
   } else {
     const dockerInfo = requireRecord(dockerInfoValue, "dockerInfo");
-    total = requireNonNegativeInteger(dockerInfo, "containers", "dockerInfo");
     running = requireNonNegativeInteger(dockerInfo, "containersRunning", "dockerInfo");
-    paused = requireNonNegativeInteger(dockerInfo, "containersPaused", "dockerInfo");
     stopped = requireNonNegativeInteger(dockerInfo, "containersStopped", "dockerInfo");
     imageCount = requireNonNegativeInteger(dockerInfo, "images", "dockerInfo");
   }
@@ -545,9 +538,7 @@ function projectContainers(
 
   return {
     available: true,
-    total,
     running,
-    paused,
     stopped,
     images: imageCount,
     repositoryContainers: [...repositoryContainers].toSorted(compareText),
@@ -593,7 +584,7 @@ export function projectSystemInformation(value: unknown, input: Readonly<SystemI
   }
 
   const requiredPorts = validateRequiredPorts(input.requiredPorts);
-  const approvedNames = new Set(input.repositoryContainerNames);
+  const approvedNames = input.repositoryContainerNames;
   const root = input.repositoryRoot;
 
   const document = requireRecord(value, "aggregate document");
@@ -606,7 +597,7 @@ export function projectSystemInformation(value: unknown, input: Readonly<SystemI
     load: projectLoad(document["currentLoad"]),
     filesystems: projectFilesystems(document["fsSize"], root),
     processes: projectProcesses(document["processes"]),
-    requiredPorts: projectRequiredPorts(document["networkConnections"], requiredPorts, processIndex, root),
+    portOwners: projectRequiredPorts(document["networkConnections"], requiredPorts, processIndex, root),
     containers: projectContainers(document["dockerInfo"], document["dockerContainers"], document["dockerImages"], approvedNames),
     network: projectNetwork(document["net"], document["inetLatency"]),
   };
