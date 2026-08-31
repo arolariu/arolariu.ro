@@ -170,11 +170,6 @@ const fixedProbeCases: readonly FixedProbeCase[] = [
     command: {command: "dotnet", args: ["nuget", "locals", "global-packages", "--list"]},
   },
   {name: "dotnet.localTools", factory: probes.dotnet.localTools, command: {command: "dotnet", args: ["tool", "list", "--local"]}},
-  {
-    name: "dotnet.certificate",
-    factory: probes.dotnet.certificate,
-    command: {command: "dotnet", args: ["dev-certs", "https", "--check"]},
-  },
   {name: "frontend.packageTree", factory: probes.frontend.packageTree, command: {command: "npm", args: ["ls", "--json"]}},
   {
     name: "frontend.playwrightInventory",
@@ -207,8 +202,71 @@ describe.each(fixedProbeCases)("probes.$name", ({factory, command}) => {
   });
 });
 
+describe("probes.dotnet.certificate", () => {
+  it("defaults to the presence-check command when no mode is supplied", async () => {
+    const {runner, run} = createFakeCommandRunner();
+
+    await createInspectionProbeRunner(runner).run(probes.dotnet.certificate());
+
+    expect(run).toHaveBeenCalledWith(
+      {command: "dotnet", args: ["dev-certs", "https", "--check"]},
+      expect.objectContaining({output: "capture"}),
+    );
+  });
+
+  it("maps the explicit presence mode to the same plain check command", async () => {
+    const {runner, run} = createFakeCommandRunner();
+
+    await createInspectionProbeRunner(runner).run(probes.dotnet.certificate("presence"));
+
+    expect(run).toHaveBeenCalledWith(
+      {command: "dotnet", args: ["dev-certs", "https", "--check"]},
+      expect.objectContaining({output: "capture"}),
+    );
+  });
+
+  it("maps the trust mode to the check-and-trust command", async () => {
+    const {runner, run} = createFakeCommandRunner();
+
+    await createInspectionProbeRunner(runner).run(probes.dotnet.certificate("trust"));
+
+    expect(run).toHaveBeenCalledWith(
+      {command: "dotnet", args: ["dev-certs", "https", "--check", "--trust"]},
+      expect.objectContaining({output: "capture"}),
+    );
+  });
+
+  it("rejects an unsupported certificate mode", () => {
+    expect(() => probes.dotnet.certificate("bogus" as never)).toThrow(/certificate mode/iu);
+  });
+});
+
 describe("probes.workspace.executableResolution", () => {
-  it("maps to the current platform's canonical resolver command", async () => {
+  it("maps to the exact win32 resolver command", async () => {
+    const {runner, run} = createFakeCommandRunner();
+
+    await createInspectionProbeRunner(runner).run(probes.workspace.executableResolution("git.exe", "win32"));
+
+    expect(run).toHaveBeenCalledWith({command: "where.exe", args: ["git.exe"]}, expect.objectContaining({output: "capture"}));
+  });
+
+  it("maps to the exact darwin resolver command", async () => {
+    const {runner, run} = createFakeCommandRunner();
+
+    await createInspectionProbeRunner(runner).run(probes.workspace.executableResolution("git", "darwin"));
+
+    expect(run).toHaveBeenCalledWith({command: "which", args: ["git"]}, expect.objectContaining({output: "capture"}));
+  });
+
+  it("maps to the exact linux resolver command", async () => {
+    const {runner, run} = createFakeCommandRunner();
+
+    await createInspectionProbeRunner(runner).run(probes.workspace.executableResolution("git", "linux"));
+
+    expect(run).toHaveBeenCalledWith({command: "which", args: ["git"]}, expect.objectContaining({output: "capture"}));
+  });
+
+  it("defaults to the current process platform when no override is supplied", async () => {
     const {runner, run} = createFakeCommandRunner();
 
     await createInspectionProbeRunner(runner).run(probes.workspace.executableResolution("git.exe"));
@@ -216,6 +274,10 @@ describe("probes.workspace.executableResolution", () => {
     const expected: CommandSpec =
       process.platform === "win32" ? {command: "where.exe", args: ["git.exe"]} : {command: "which", args: ["git.exe"]};
     expect(run).toHaveBeenCalledWith(expected, expect.objectContaining({output: "capture"}));
+  });
+
+  it("rejects an unsupported platform", () => {
+    expect(() => probes.workspace.executableResolution("git", "aix")).toThrow(/platform/iu);
   });
 
   it.each(["", "git version", "git;rm -rf /", "../git", "git\u0007", "../../bin/git"])(
@@ -245,16 +307,22 @@ describe("probes.dotnet.userSecrets", () => {
     "tooling/../AppHost.csproj",
     "tooling/AppHost/AppHost.sln",
     "-x",
-    "tooling/AppHost/AppHost;rm -rf.csproj",
     "tooling/AppHost/App\u0007Host.csproj",
   ])("rejects an invalid project path %j", (projectPath) => {
     expect(() => probes.dotnet.userSecrets(projectPath)).toThrow();
   });
+
+  it.each(["tooling/AppHost (v2)/AppHost.csproj", "src/$feature/App.csproj", "src/it's-fine/App.csproj", "src/(shared)/App.csproj"])(
+    "accepts a legitimate project path containing safe special characters %j",
+    (projectPath) => {
+      expect(() => probes.dotnet.userSecrets(projectPath)).not.toThrow();
+    },
+  );
 });
 
 interface PythonProbeCase {
   readonly name: string;
-  readonly factory: (pythonPath: string) => InspectionProbe;
+  readonly factory: (pythonPath: string, selector?: string) => InspectionProbe;
   readonly args: readonly string[];
 }
 
@@ -282,8 +350,46 @@ describe.each(pythonProbeCases)("probes.$name", ({factory, args}) => {
     expect(run).toHaveBeenCalledWith({command: ".venv/bin/python", args}, expect.objectContaining({output: "capture"}));
   });
 
-  it.each(["", "-c", "python\u0000", "python;rm -rf /", "python `rm -rf /`"])("rejects an invalid interpreter path %j", (path) => {
-    expect(() => factory(path)).toThrow();
+  it.each(["", "-c", "python\u0000", "curl", "curl.exe", "../../evil", "../python", ".venv/bin/../python"])(
+    "rejects an invalid interpreter path %j",
+    (path) => {
+      expect(() => factory(path)).toThrow();
+    },
+  );
+
+  it.each([
+    "C:\\Program Files (x86)\\Python312\\python.exe",
+    "/opt/homebrew/opt/python's$env/bin/python3.12",
+    "./My Apps (2024)/python",
+  ])("accepts a legitimate interpreter path containing safe special characters %j", (path) => {
+    expect(() => factory(path)).not.toThrow();
+  });
+
+  it("prefixes a valid numeric selector before the argument tail for the py launcher", async () => {
+    const {runner, run} = createFakeCommandRunner();
+
+    await createInspectionProbeRunner(runner).run(factory("py", "-3.12"));
+
+    expect(run).toHaveBeenCalledWith({command: "py", args: ["-3.12", ...args]}, expect.objectContaining({output: "capture"}));
+  });
+
+  it("accepts a selector for the case-insensitive py.exe launcher basename", async () => {
+    const {runner, run} = createFakeCommandRunner();
+
+    await createInspectionProbeRunner(runner).run(factory("C:\\Windows\\py.EXE", "-3"));
+
+    expect(run).toHaveBeenCalledWith(
+      {command: "C:\\Windows\\py.EXE", args: ["-3", ...args]},
+      expect.objectContaining({output: "capture"}),
+    );
+  });
+
+  it("rejects a selector when the interpreter basename is not the py launcher", () => {
+    expect(() => factory("python", "-3.12")).toThrow(/launcher/iu);
+  });
+
+  it.each(["3.12", "-x", "-3.12.1", "-3 12", "-3.", "-", ""])("rejects an invalid py launcher selector %j", (selector) => {
+    expect(() => factory("py", selector)).toThrow();
   });
 });
 
@@ -344,7 +450,45 @@ describe.each(runtimeProbeCases)("probes.$name", ({factory, rancherCommand, podm
 });
 
 describe("probes.infrastructure.portOwners", () => {
-  it("maps to the current platform's canonical port-owner probe command", async () => {
+  const WINDOWS_PORT_OWNER_SCRIPT =
+    "& { $ports = @($args[0] -split ','); $(foreach ($port in $ports) { Get-NetTCPConnection -State Listen -LocalPort ([int]$port) -ErrorAction SilentlyContinue | Select-Object LocalAddress, LocalPort, OwningProcess }) | ConvertTo-Json -Compress }";
+  const MACOS_PORT_OWNER_SCRIPT = 'for port in "$@"; do lsof -nP -a -iTCP:"$port" -sTCP:LISTEN -Fpcn; done';
+  const LINUX_PORT_OWNER_SCRIPT = 'for port in "$@"; do ss -ltnp "sport = :$port"; done';
+
+  it("maps to the exact win32 port-owner probe command", async () => {
+    const {runner, run} = createFakeCommandRunner();
+
+    await createInspectionProbeRunner(runner).run(probes.infrastructure.portOwners([3000, 5432], "win32"));
+
+    expect(run).toHaveBeenCalledWith(
+      {command: "powershell", args: ["-NoProfile", "-NonInteractive", "-Command", WINDOWS_PORT_OWNER_SCRIPT, "3000,5432"]},
+      expect.objectContaining({output: "capture"}),
+    );
+  });
+
+  it("maps to the exact darwin port-owner probe command", async () => {
+    const {runner, run} = createFakeCommandRunner();
+
+    await createInspectionProbeRunner(runner).run(probes.infrastructure.portOwners([3000, 5432], "darwin"));
+
+    expect(run).toHaveBeenCalledWith(
+      {command: "sh", args: ["-c", MACOS_PORT_OWNER_SCRIPT, "--", "3000", "5432"]},
+      expect.objectContaining({output: "capture"}),
+    );
+  });
+
+  it("maps to the exact linux port-owner probe command", async () => {
+    const {runner, run} = createFakeCommandRunner();
+
+    await createInspectionProbeRunner(runner).run(probes.infrastructure.portOwners([3000, 5432], "linux"));
+
+    expect(run).toHaveBeenCalledWith(
+      {command: "sh", args: ["-c", LINUX_PORT_OWNER_SCRIPT, "--", "3000", "5432"]},
+      expect.objectContaining({output: "capture"}),
+    );
+  });
+
+  it("defaults to the current process platform when no override is supplied", async () => {
     const {runner, run} = createFakeCommandRunner();
 
     await createInspectionProbeRunner(runner).run(probes.infrastructure.portOwners([3000, 5432]));
@@ -353,6 +497,10 @@ describe("probes.infrastructure.portOwners", () => {
     expect(actualCommand?.command).toBe(process.platform === "win32" ? "powershell" : "sh");
     expect(actualCommand?.args.join(" ")).toContain("3000");
     expect(actualCommand?.args.join(" ")).toContain("5432");
+  });
+
+  it("rejects an unsupported platform", () => {
+    expect(() => probes.infrastructure.portOwners([3000], "aix")).toThrow(/platform/iu);
   });
 
   it("rejects an empty port list", () => {
