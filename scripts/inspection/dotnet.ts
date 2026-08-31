@@ -8,9 +8,8 @@
  * values are never returned or included in outcome text.
  */
 
-import {constants as fsConstants} from "node:fs";
-import {access, readFile, stat} from "node:fs/promises";
-import {isAbsolute, relative, resolve, sep} from "node:path";
+import {readFile, realpath, stat} from "node:fs/promises";
+import {isAbsolute, posix, relative, resolve, sep, win32} from "node:path";
 
 import type {CommandResult} from "../common/process.ts";
 import type {RepositoryPaths} from "../common/repository-paths.ts";
@@ -74,9 +73,7 @@ interface AppHostFileFacts {
 }
 
 type AppHostFileOutcome =
-  | {readonly kind: "available"; readonly value: AppHostFileFacts}
-  | {readonly kind: "unavailable"}
-  | {readonly kind: "invalid"};
+  {readonly kind: "available"; readonly value: AppHostFileFacts} | {readonly kind: "unavailable"} | {readonly kind: "invalid"};
 
 interface UserSecretFacts {
   readonly keys: readonly string[];
@@ -87,8 +84,26 @@ const APPHOST_PROJECT_RELATIVE_PATH = "tooling/AppHost/AppHost.csproj";
 const APPHOST_SETTINGS_RELATIVE_PATH = "tooling/AppHost/appsettings.Development.json";
 const REQUIRED_APPHOST_PARAMETER_KEYS = ["Parameters:sql-password", "Parameters:redis-password"] as const;
 const SUPPORTED_PLATFORMS: ReadonlySet<NodeJS.Platform> = new Set(["win32", "darwin", "linux"]);
+const SUPPORTED_DOTNET_ARCHITECTURES: ReadonlySet<string> = new Set([
+  "x86",
+  "x64",
+  "arm",
+  "arm64",
+  "wasm",
+  "s390x",
+  "loongarch64",
+  "armv6",
+  "ppc64le",
+  "riscv64",
+]);
+const DOTNET_PROBE_ENVIRONMENT = Object.freeze({DOTNET_CLI_UI_LANGUAGE: "en-US"});
 const CONTROL_CHARACTER_PATTERN = /[\u0000-\u001f\u007f]/u;
 const DOTNET_VERSION_PATTERN = /^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z][0-9A-Za-z.-]*)?$/u;
+const NUGET_VERSION_PATTERN =
+  /^(?:0|[1-9]\d*)(?:\.(?:0|[1-9]\d*)){0,3}(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/u;
+const RUNTIME_IDENTIFIER_PATTERN = /^[a-z0-9]+(?:[.-][a-z0-9]+)*$/u;
+const PATH_SCHEME_PATTERN = /^[A-Za-z][A-Za-z0-9+.-]*:/u;
+const WINDOWS_DRIVE_PATH_PATTERN = /^[A-Za-z]:/u;
 const SIMPLE_IDENTIFIER_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._-]*$/u;
 const MAX_PATH_LENGTH = 4_096;
 const MAX_IDENTIFIER_LENGTH = 256;
@@ -121,14 +136,27 @@ function hasTransportFailure(result: Readonly<CommandResult>): boolean {
 
 function safeToken(value: string, maximumLength: number): string | undefined {
   const trimmed = value.trim();
-  return trimmed !== "" && trimmed.length <= maximumLength && !CONTROL_CHARACTER_PATTERN.test(trimmed)
-    ? trimmed
-    : undefined;
+  return trimmed !== "" && trimmed.length <= maximumLength && !CONTROL_CHARACTER_PATTERN.test(trimmed) ? trimmed : undefined;
 }
 
 function parseDotnetVersion(output: string): string | undefined {
   const version = safeToken(output, MAX_VERSION_LENGTH);
   return version !== undefined && DOTNET_VERSION_PATTERN.test(version) ? version : undefined;
+}
+
+function parseNugetVersion(output: string): string | undefined {
+  const version = safeToken(output, MAX_VERSION_LENGTH);
+  return version !== undefined && NUGET_VERSION_PATTERN.test(version) ? version : undefined;
+}
+
+function parseDotnetArchitecture(output: string): string | undefined {
+  const architecture = safeToken(output, MAX_IDENTIFIER_LENGTH)?.toLowerCase();
+  return architecture !== undefined && SUPPORTED_DOTNET_ARCHITECTURES.has(architecture) ? architecture : undefined;
+}
+
+function parseRuntimeIdentifier(output: string): string | undefined {
+  const rid = safeToken(output, MAX_IDENTIFIER_LENGTH);
+  return rid !== undefined && RUNTIME_IDENTIFIER_PATTERN.test(rid) ? rid : undefined;
 }
 
 function parseSdkVersions(output: string): readonly string[] | undefined {
@@ -176,7 +204,7 @@ function parseDotnetHost(output: string): DotnetFacts["host"] | undefined {
     if (section === "runtime") {
       const candidate = /^RID:\s*(.+)$/u.exec(trimmed)?.[1];
       if (candidate !== undefined) {
-        rid = safeToken(candidate, MAX_IDENTIFIER_LENGTH);
+        rid = parseRuntimeIdentifier(candidate);
       }
     } else if (section === "host") {
       const versionCandidate = /^Version:\s*(.+)$/u.exec(trimmed)?.[1];
@@ -185,14 +213,12 @@ function parseDotnetHost(output: string): DotnetFacts["host"] | undefined {
       }
       const architectureCandidate = /^Architecture:\s*(.+)$/u.exec(trimmed)?.[1];
       if (architectureCandidate !== undefined) {
-        architecture = safeToken(architectureCandidate, MAX_IDENTIFIER_LENGTH);
+        architecture = parseDotnetArchitecture(architectureCandidate);
       }
     }
   }
 
-  return version === undefined || architecture === undefined || rid === undefined
-    ? undefined
-    : {version, architecture, rid};
+  return version === undefined || architecture === undefined || rid === undefined ? undefined : {version, architecture, rid};
 }
 
 function tableBody(output: string): readonly string[] | undefined {
@@ -216,11 +242,7 @@ function parseWorkloads(output: string): readonly string[] | undefined {
       continue;
     }
     const identifier = /^(\S+)\s+\S+/u.exec(row)?.[1];
-    if (
-      identifier === undefined
-      || identifier.length > MAX_IDENTIFIER_LENGTH
-      || !SIMPLE_IDENTIFIER_PATTERN.test(identifier)
-    ) {
+    if (identifier === undefined || identifier.length > MAX_IDENTIFIER_LENGTH || !SIMPLE_IDENTIFIER_PATTERN.test(identifier)) {
       return undefined;
     }
     workloads.add(identifier);
@@ -228,9 +250,17 @@ function parseWorkloads(output: string): readonly string[] | undefined {
   return [...workloads].sort(compareText);
 }
 
-function parseNugetCachePath(output: string): string | undefined {
-  const candidate = /^global-packages:\s*(.+)$/imu.exec(output)?.[1];
-  return candidate === undefined ? undefined : safeToken(candidate, MAX_PATH_LENGTH);
+function parseNugetCachePath(output: string, platform: NodeJS.Platform): string | undefined {
+  const lines = output
+    .split(/\r?\n/u)
+    .map((line) => line.trim())
+    .filter((line) => line !== "");
+  if (lines.length !== 1) {
+    return undefined;
+  }
+  const candidate = /^global-packages:\s*(.+)$/iu.exec(lines[0]!)?.[1];
+  const path = candidate === undefined ? undefined : safeToken(candidate, MAX_PATH_LENGTH);
+  return path !== undefined && isAbsoluteForPlatform(path, platform) ? path : undefined;
 }
 
 function parseLocalTools(output: string): DotnetFacts["localTools"] | undefined {
@@ -246,13 +276,8 @@ function parseLocalTools(output: string): DotnetFacts["localTools"] | undefined 
   for (const row of rows) {
     const match = /^(\S+)\s+(\S+)(?:\s+.*)?$/u.exec(row);
     const name = match?.[1];
-    const version = match?.[2] === undefined ? undefined : parseDotnetVersion(match[2]);
-    if (
-      name === undefined
-      || name.length > MAX_IDENTIFIER_LENGTH
-      || !SIMPLE_IDENTIFIER_PATTERN.test(name)
-      || version === undefined
-    ) {
+    const version = match?.[2] === undefined ? undefined : parseNugetVersion(match[2]);
+    if (name === undefined || name.length > MAX_IDENTIFIER_LENGTH || !SIMPLE_IDENTIFIER_PATTERN.test(name) || version === undefined) {
       return undefined;
     }
     const existing = tools.get(name);
@@ -261,15 +286,11 @@ function parseLocalTools(output: string): DotnetFacts["localTools"] | undefined 
     }
     tools.set(name, version);
   }
-  return [...tools.entries()]
-    .sort(([left], [right]) => compareText(left, right))
-    .map(([name, version]) => ({name, version}));
+  return [...tools.entries()].sort(([left], [right]) => compareText(left, right)).map(([name, version]) => ({name, version}));
 }
 
 function isAbsoluteForPlatform(path: string, platform: NodeJS.Platform): boolean {
-  return platform === "win32"
-    ? /^[A-Za-z]:[\\/]/u.test(path) || /^\\\\/u.test(path)
-    : path.startsWith("/");
+  return platform === "win32" ? win32.isAbsolute(path) : posix.isAbsolute(path);
 }
 
 function parseResolvedPaths(output: string, platform: NodeJS.Platform): readonly string[] | undefined {
@@ -294,7 +315,8 @@ function normalizeSolutionProjectPath(path: string): string | undefined {
     || normalized.length > MAX_PATH_LENGTH
     || CONTROL_CHARACTER_PATTERN.test(normalized)
     || normalized.startsWith("/")
-    || /^[A-Za-z]:\//u.test(normalized)
+    || WINDOWS_DRIVE_PATH_PATTERN.test(normalized)
+    || PATH_SCHEME_PATTERN.test(normalized)
     || normalized.split("/").includes("..")
   ) {
     return undefined;
@@ -303,15 +325,18 @@ function normalizeSolutionProjectPath(path: string): string | undefined {
 }
 
 async function inspectSolution(paths: RepositoryPaths): Promise<readonly string[]> {
+  let canonicalRoot: string;
+  try {
+    canonicalRoot = await realpath(paths.root);
+  } catch {
+    return ["The repository root could not be inspected for solution integrity."];
+  }
+
   let contents: string;
   try {
     contents = await readFile(paths.solution, "utf8");
   } catch (error: unknown) {
-    return [
-      hasErrorCode(error, "ENOENT")
-        ? "The repository solution file is missing."
-        : "The repository solution file could not be read.",
-    ];
+    return [hasErrorCode(error, "ENOENT") ? "The repository solution file is missing." : "The repository solution file could not be read."];
   }
 
   const rawProjectPaths = [...contents.matchAll(/<Project\s+Path="([^"]+)"/gu)]
@@ -329,7 +354,8 @@ async function inspectSolution(paths: RepositoryPaths): Promise<readonly string[
       const safeRelativePath =
         safePath !== undefined
         && !safePath.startsWith("/")
-        && !/^[A-Za-z]:\//u.test(safePath)
+        && !WINDOWS_DRIVE_PATH_PATTERN.test(safePath)
+        && !PATH_SCHEME_PATTERN.test(safePath)
           ? safePath
           : undefined;
       issues.add(
@@ -346,10 +372,25 @@ async function inspectSolution(paths: RepositoryPaths): Promise<readonly string[
       issues.add(`Invalid solution project path: ${projectPath}`);
       continue;
     }
+
     try {
-      await access(resolvedProject, fsConstants.R_OK);
-    } catch {
-      issues.add(`Missing solution project: ${projectPath}`);
+      const canonicalProject = await realpath(resolvedProject);
+      const canonicalRelativeProject = relative(canonicalRoot, canonicalProject);
+      if (canonicalRelativeProject === ".." || canonicalRelativeProject.startsWith(`..${sep}`) || isAbsolute(canonicalRelativeProject)) {
+        issues.add(`Invalid solution project path: ${projectPath}`);
+        continue;
+      }
+
+      const projectStat = await stat(canonicalProject);
+      if (!projectStat.isFile()) {
+        issues.add(`Invalid solution project path: ${projectPath}`);
+      }
+    } catch (error: unknown) {
+      issues.add(
+        hasErrorCode(error, "ENOENT") || hasErrorCode(error, "ENOTDIR")
+          ? `Missing solution project: ${projectPath}`
+          : `Solution project could not be inspected: ${projectPath}`,
+      );
     }
   }
   return [...issues].sort(compareText);
@@ -422,9 +463,7 @@ function unwrapUserSecretsDocument(output: string): string | undefined {
   if (begin < 0 && end < 0) {
     return output;
   }
-  return begin < 0 || end < 0 || end <= begin
-    ? undefined
-    : output.slice(begin + "//BEGIN".length, end).trim();
+  return begin < 0 || end < 0 || end <= begin ? undefined : output.slice(begin + "//BEGIN".length, end).trim();
 }
 
 function parseUserSecrets(output: string): UserSecretFacts | undefined {
@@ -446,19 +485,11 @@ function parseUserSecrets(output: string): UserSecretFacts | undefined {
   const keys: string[] = [];
   const configuredParameterKeys = new Set<string>();
   for (const [key, value] of Object.entries(parsed)) {
-    if (
-      typeof value !== "string"
-      || key.trim() === ""
-      || key.length > MAX_IDENTIFIER_LENGTH
-      || CONTROL_CHARACTER_PATTERN.test(key)
-    ) {
+    if (typeof value !== "string" || key.trim() === "" || key.length > MAX_IDENTIFIER_LENGTH || CONTROL_CHARACTER_PATTERN.test(key)) {
       return undefined;
     }
     keys.push(key);
-    if (
-      value.trim() !== ""
-      && REQUIRED_APPHOST_PARAMETER_KEYS.some((requiredKey) => requiredKey === key)
-    ) {
+    if (value.trim() !== "" && REQUIRED_APPHOST_PARAMETER_KEYS.some((requiredKey) => requiredKey === key)) {
       configuredParameterKeys.add(key);
     }
   }
@@ -469,19 +500,11 @@ function parseUserSecrets(output: string): UserSecretFacts | undefined {
   };
 }
 
-function unavailableOutcome(
-  reason: string,
-  startedAt: number,
-  now: () => number,
-): InspectionOutcome<DotnetFacts> {
+function unavailableOutcome(reason: string, startedAt: number, now: () => number): InspectionOutcome<DotnetFacts> {
   return {kind: "unavailable", reason, durationMs: elapsedMilliseconds(startedAt, now)};
 }
 
-function invalidOutcome(
-  issue: string,
-  startedAt: number,
-  now: () => number,
-): InspectionOutcome<DotnetFacts> {
+function invalidOutcome(issue: string, startedAt: number, now: () => number): InspectionOutcome<DotnetFacts> {
   return {kind: "invalid", issues: [issue], durationMs: elapsedMilliseconds(startedAt, now)};
 }
 
@@ -491,19 +514,22 @@ function invalidOutcome(
  * @param input - Canonical repository paths, opaque probe runner, target platform, and monotonic clock.
  * @returns An inspection provider with explicit unavailable/invalid outcomes at command and parse boundaries.
  */
-export function createDotnetProvider(input: Readonly<{
-  paths: RepositoryPaths;
-  probes: InspectionProbeRunner;
-  platform: NodeJS.Platform;
-  now: () => number;
-}>): InspectionProvider<DotnetFacts> {
+export function createDotnetProvider(
+  input: Readonly<{
+    paths: RepositoryPaths;
+    probes: InspectionProbeRunner;
+    platform: NodeJS.Platform;
+    now: () => number;
+  }>,
+): InspectionProvider<DotnetFacts> {
   return async (): Promise<InspectionOutcome<DotnetFacts>> => {
     const startedAt = input.now();
     if (!SUPPORTED_PLATFORMS.has(input.platform)) {
       return invalidOutcome("The requested .NET inspection platform is unsupported.", startedAt, input.now);
     }
 
-    const versionResult = await input.probes.run(probes.dotnet.version(), {cwd: input.paths.root});
+    const dotnetProbeOptions = {cwd: input.paths.root, env: DOTNET_PROBE_ENVIRONMENT};
+    const versionResult = await input.probes.run(probes.dotnet.version(), dotnetProbeOptions);
     if (!isSuccessfulCommand(versionResult)) {
       return unavailableOutcome("The dotnet executable is unavailable.", startedAt, input.now);
     }
@@ -525,12 +551,12 @@ export function createDotnetProvider(input: Readonly<{
       appHostFiles,
     ] = await Promise.all([
       input.probes.run(probes.workspace.executableResolution(executableName, input.platform), {cwd: input.paths.root}),
-      input.probes.run(probes.dotnet.sdkList(), {cwd: input.paths.root}),
-      input.probes.run(probes.dotnet.info(), {cwd: input.paths.root}),
-      input.probes.run(probes.dotnet.workloads(), {cwd: input.paths.root}),
-      input.probes.run(probes.dotnet.nugetLocals(), {cwd: input.paths.root}),
-      input.probes.run(probes.dotnet.localTools(), {cwd: input.paths.root}),
-      input.probes.run(probes.dotnet.certificate("presence"), {cwd: input.paths.root}),
+      input.probes.run(probes.dotnet.sdkList(), dotnetProbeOptions),
+      input.probes.run(probes.dotnet.info(), dotnetProbeOptions),
+      input.probes.run(probes.dotnet.workloads(), dotnetProbeOptions),
+      input.probes.run(probes.dotnet.nugetLocals(), dotnetProbeOptions),
+      input.probes.run(probes.dotnet.localTools(), dotnetProbeOptions),
+      input.probes.run(probes.dotnet.certificate("presence"), dotnetProbeOptions),
       inspectSolution(input.paths),
       inspectAppHostFiles(input.paths),
     ]);
@@ -576,7 +602,7 @@ export function createDotnetProvider(input: Readonly<{
     if (workloads === undefined) {
       return invalidOutcome("dotnet workload list returned malformed output.", startedAt, input.now);
     }
-    const nugetCachePath = parseNugetCachePath(nugetResult.stdout);
+    const nugetCachePath = parseNugetCachePath(nugetResult.stdout, input.platform);
     if (nugetCachePath === undefined) {
       return invalidOutcome("dotnet nuget locals returned malformed output.", startedAt, input.now);
     }
@@ -588,7 +614,7 @@ export function createDotnetProvider(input: Readonly<{
     const certificateExists = certificateResult.code === 0;
     let certificateTrusted = false;
     if (certificateExists) {
-      const trustResult = await input.probes.run(probes.dotnet.certificate("trust"), {cwd: input.paths.root});
+      const trustResult = await input.probes.run(probes.dotnet.certificate("trust"), dotnetProbeOptions);
       if (hasTransportFailure(trustResult)) {
         return unavailableOutcome("HTTPS development certificate trust could not be inspected.", startedAt, input.now);
       }
@@ -598,7 +624,7 @@ export function createDotnetProvider(input: Readonly<{
     let userSecretFacts: UserSecretFacts = {keys: [], configuredParameterKeys: []};
     if (appHostFiles.value.projectExists) {
       const secretsResult = await input.probes.run(probes.dotnet.userSecrets(APPHOST_PROJECT_RELATIVE_PATH), {
-        cwd: input.paths.root,
+        ...dotnetProbeOptions,
       });
       if (!isSuccessfulCommand(secretsResult)) {
         return unavailableOutcome("AppHost user-secret keys could not be inspected.", startedAt, input.now);
@@ -610,13 +636,8 @@ export function createDotnetProvider(input: Readonly<{
       userSecretFacts = parsedSecrets;
     }
 
-    const configuredParameters = new Set([
-      ...appHostFiles.value.configuredParameterKeys,
-      ...userSecretFacts.configuredParameterKeys,
-    ]);
-    const missingParameterKeys = REQUIRED_APPHOST_PARAMETER_KEYS.filter(
-      (key) => !configuredParameters.has(key),
-    );
+    const configuredParameters = new Set([...appHostFiles.value.configuredParameterKeys, ...userSecretFacts.configuredParameterKeys]);
+    const missingParameterKeys = REQUIRED_APPHOST_PARAMETER_KEYS.filter((key) => !configuredParameters.has(key));
     const value: DotnetFacts = {
       executable: {available: true, resolvedPaths},
       selectedVersion,

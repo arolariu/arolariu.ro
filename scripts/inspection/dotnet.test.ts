@@ -4,7 +4,7 @@
  * @module scripts/inspection/dotnet.test
  */
 
-import {mkdir, mkdtemp, rm, writeFile} from "node:fs/promises";
+import {mkdir, mkdtemp, rm, symlink, writeFile} from "node:fs/promises";
 import {tmpdir} from "node:os";
 import {dirname, join, resolve} from "node:path";
 import {afterEach, describe, expect, it, vi} from "vitest";
@@ -38,6 +38,7 @@ const DOTNET_USER_SECRETS = {
   command: "dotnet",
   args: ["user-secrets", "list", "--json", "--project", APPHOST_PROJECT],
 } as const satisfies CommandSpec;
+const DOTNET_ENVIRONMENT = {DOTNET_CLI_UI_LANGUAGE: "en-US"} as const;
 
 function commandResult(patch: Partial<CommandResult> = {}): CommandResult {
   return {
@@ -62,9 +63,7 @@ function clock(): () => number {
   };
 }
 
-function dotnetInfoOutput(
-  input: Readonly<{sdkVersion?: string; hostVersion?: string; architecture?: string; rid?: string}> = {},
-): string {
+function dotnetInfoOutput(input: Readonly<{sdkVersion?: string; hostVersion?: string; architecture?: string; rid?: string}> = {}): string {
   return [
     ".NET SDK:",
     ` Version:           ${input.sdkVersion ?? "10.0.400-preview.0.26356.102"}`,
@@ -117,13 +116,7 @@ async function createDotnetFixture(platform: NodeJS.Platform = "win32"): Promise
   await Promise.all([
     writeFixtureFile(
       paths.solution,
-      [
-        "<Solution>",
-        `  <Project Path="${commonProject}" />`,
-        `  <Project Path="${APPHOST_PROJECT}" />`,
-        "</Solution>",
-        "",
-      ].join("\n"),
+      ["<Solution>", `  <Project Path="${commonProject}" />`, `  <Project Path="${APPHOST_PROJECT}" />`, "</Solution>", ""].join("\n"),
     ),
     writeFixtureFile(resolve(root, commonProject), '<Project Sdk="Microsoft.NET.Sdk" />\n'),
     writeFixtureFile(resolve(root, APPHOST_PROJECT), '<Project Sdk="Microsoft.NET.Sdk" />\n'),
@@ -139,27 +132,21 @@ async function createDotnetFixture(platform: NodeJS.Platform = "win32"): Promise
   };
 
   const resolutionCommand =
-    platform === "win32"
-      ? ({command: "where.exe", args: ["dotnet.exe"]} as const)
-      : ({command: "which", args: ["dotnet"]} as const);
-  const resolvedDotnet =
-    platform === "win32" ? String.raw`C:\Program Files\dotnet\dotnet.exe` : "/usr/local/share/dotnet/dotnet";
+    platform === "win32" ? ({command: "where.exe", args: ["dotnet.exe"]} as const) : ({command: "which", args: ["dotnet"]} as const);
+  const resolvedDotnet = platform === "win32" ? String.raw`C:\Program Files\dotnet\dotnet.exe` : "/usr/local/share/dotnet/dotnet";
 
   setResponse(DOTNET_VERSION, commandResult({stdout: "10.0.400-preview.0.26356.102\n"}));
   setResponse(resolutionCommand, commandResult({stdout: `${resolvedDotnet}\n`}));
   setResponse(
     DOTNET_SDKS,
     commandResult({
-      stdout: [
-        "8.0.408 [C:\\Program Files\\dotnet\\sdk]",
-        "10.0.400-preview.0.26356.102 [C:\\Program Files\\dotnet\\sdk]",
-        "",
-      ].join("\n"),
+      stdout: ["8.0.408 [C:\\Program Files\\dotnet\\sdk]", "10.0.400-preview.0.26356.102 [C:\\Program Files\\dotnet\\sdk]", ""].join("\n"),
     }),
   );
   setResponse(DOTNET_INFO, commandResult({stdout: dotnetInfoOutput()}));
   setResponse(DOTNET_WORKLOADS, commandResult({stdout: workloadOutput()}));
-  setResponse(DOTNET_NUGET, commandResult({stdout: `global-packages: ${resolve(root, ".nuget", "packages")}\n`}));
+  const nugetCachePath = platform === "win32" ? resolve(root, ".nuget", "packages") : "/home/arolariu/.nuget/packages";
+  setResponse(DOTNET_NUGET, commandResult({stdout: `global-packages: ${nugetCachePath}\n`}));
   setResponse(DOTNET_TOOLS, commandResult({stdout: localToolOutput()}));
   setResponse(DOTNET_CERTIFICATE, commandResult({stdout: "A valid certificate was found.\n"}));
   setResponse(DOTNET_CERTIFICATE_TRUST, commandResult({stdout: "A trusted certificate was found.\n"}));
@@ -220,34 +207,34 @@ describe("createDotnetProvider", () => {
       },
       durationMs: 5,
     });
-    expect(JSON.stringify(outcome)).not.toMatch(
-      /tracked-value-marker|secret-value-marker|other-value-marker|Program Files\\dotnet\\sdk/iu,
-    );
+    expect(JSON.stringify(outcome)).not.toMatch(/tracked-value-marker|secret-value-marker|other-value-marker|Program Files\\dotnet\\sdk/iu);
 
-    const commands = fixture.run.mock.calls.map(([command]) => [command.command, ...command.args].join(" "));
-    expect(commands).toEqual(
-      expect.arrayContaining([
-        "dotnet --version",
-        "where.exe dotnet.exe",
-        "dotnet --list-sdks",
-        "dotnet --info",
-        "dotnet workload list",
-        "dotnet nuget locals global-packages --list",
-        "dotnet tool list --local",
-        "dotnet dev-certs https --check",
-        "dotnet dev-certs https --check --trust",
-        `dotnet user-secrets list --json --project ${APPHOST_PROJECT}`,
-      ]),
-    );
-    expect(commands.some((command) => /\b(?:restore|build|test|set|clean|install)\b/iu.test(command))).toBe(false);
+    const dotnetOptions = {
+      cwd: fixture.root,
+      env: DOTNET_ENVIRONMENT,
+      timeoutMs: 15_000,
+      output: "capture",
+    } as const;
+    expect(fixture.run.mock.calls).toEqual([
+      [DOTNET_VERSION, dotnetOptions],
+      [
+        {command: "where.exe", args: ["dotnet.exe"]},
+        {cwd: fixture.root, timeoutMs: 15_000, output: "capture"},
+      ],
+      [DOTNET_SDKS, dotnetOptions],
+      [DOTNET_INFO, dotnetOptions],
+      [DOTNET_WORKLOADS, dotnetOptions],
+      [DOTNET_NUGET, dotnetOptions],
+      [DOTNET_TOOLS, dotnetOptions],
+      [DOTNET_CERTIFICATE, dotnetOptions],
+      [DOTNET_CERTIFICATE_TRUST, dotnetOptions],
+      [DOTNET_USER_SECRETS, dotnetOptions],
+    ]);
   });
 
   it("returns unavailable for a missing executable without retaining native failure text", async () => {
     const fixture = await createDotnetFixture();
-    fixture.setResponse(
-      DOTNET_VERSION,
-      commandResult({code: 1, spawnError: "ENOENT C:\\Users\\raw-user\\dotnet.exe raw-spawn-marker"}),
-    );
+    fixture.setResponse(DOTNET_VERSION, commandResult({code: 1, spawnError: "ENOENT C:\\Users\\raw-user\\dotnet.exe raw-spawn-marker"}));
 
     const outcome = await fixture.provider();
 
@@ -291,12 +278,48 @@ describe("createDotnetProvider", () => {
     expect(JSON.stringify(outcome)).not.toMatch(/raw-(?:sdk|workload|nuget|tool|secret)-marker|raw-secret-json-marker/iu);
   });
 
+  it.each([
+    [
+      "unknown host architecture",
+      DOTNET_INFO,
+      dotnetInfoOutput({architecture: "rawarchitecturemarker"}),
+      "dotnet --info returned malformed output.",
+      /rawarchitecturemarker/iu,
+    ],
+    [
+      "path-shaped host RID",
+      DOTNET_INFO,
+      dotnetInfoOutput({rid: "win-x64/raw-rid-marker"}),
+      "dotnet --info returned malformed output.",
+      /raw-rid-marker/iu,
+    ],
+    [
+      "relative NuGet cache path",
+      DOTNET_NUGET,
+      "global-packages: raw-nuget-marker\n",
+      "dotnet nuget locals returned malformed output.",
+      /raw-nuget-marker/iu,
+    ],
+    [
+      "multi-line NuGet cache payload",
+      DOTNET_NUGET,
+      `global-packages: C:\\Users\\raw-user\\.nuget\\packages\nraw-nuget-marker\n`,
+      "dotnet nuget locals returned malformed output.",
+      /raw-user|raw-nuget-marker/iu,
+    ],
+  ] as const)("rejects a successful but malformed %s without exposing it", async (_case, command, stdout, issue, marker) => {
+    const fixture = await createDotnetFixture();
+    fixture.setResponse(command, commandResult({stdout}));
+
+    const outcome = await fixture.provider();
+
+    expect(outcome).toEqual({kind: "invalid", issues: [issue], durationMs: 5});
+    expect(JSON.stringify(outcome)).not.toMatch(marker);
+  });
+
   it("returns unavailable when a required secondary probe cannot run", async () => {
     const fixture = await createDotnetFixture();
-    fixture.setResponse(
-      DOTNET_INFO,
-      commandResult({code: 1, timedOut: true, stderr: "C:\\Users\\raw-user\\raw-timeout-marker"}),
-    );
+    fixture.setResponse(DOTNET_INFO, commandResult({code: 1, timedOut: true, stderr: "C:\\Users\\raw-user\\raw-timeout-marker"}));
 
     const outcome = await fixture.provider();
 
@@ -315,6 +338,21 @@ describe("createDotnetProvider", () => {
     const outcome = await fixture.provider();
 
     expect(outcome).toMatchObject({kind: "available", value: {workloads: []}});
+  });
+
+  it("accepts a valid four-component NuGet version for a local tool", async () => {
+    const fixture = await createDotnetFixture();
+    fixture.setResponse(
+      DOTNET_TOOLS,
+      commandResult({stdout: localToolOutput(["defaultdocumentation.console 1.2.3.4 defaultdocumentation"])}),
+    );
+
+    const outcome = await fixture.provider();
+
+    expect(outcome).toMatchObject({
+      kind: "available",
+      value: {localTools: [{name: "defaultdocumentation.console", version: "1.2.3.4"}]},
+    });
   });
 
   it("represents an absent certificate without running the trust probe", async () => {
@@ -376,6 +414,60 @@ describe("createDotnetProvider", () => {
     }
   });
 
+  it("redacts URI and drive-relative solution references instead of treating them as repository paths", async () => {
+    const fixture = await createDotnetFixture();
+    await writeFixtureFile(
+      fixture.paths.solution,
+      [
+        "<Solution>",
+        '  <Project Path="file:///C:/Users/raw-uri-user/Outside.csproj" />',
+        '  <Project Path="C:Users/raw-drive-user/Outside.csproj" />',
+        "</Solution>",
+      ].join("\n"),
+    );
+
+    const outcome = await fixture.provider();
+
+    expect(outcome).toMatchObject({
+      kind: "available",
+      value: {solutionIssues: ["The repository solution contains an invalid project path."]},
+    });
+    expect(JSON.stringify(outcome)).not.toMatch(/raw-uri-user|raw-drive-user/iu);
+  });
+
+  it("rejects an existing solution project path that names a directory", async () => {
+    const fixture = await createDotnetFixture();
+    const directoryProject = "sites/api.arolariu.ro/src/Directory.csproj";
+    await mkdir(resolve(fixture.root, directoryProject), {recursive: true});
+    await writeFixtureFile(fixture.paths.solution, ["<Solution>", `  <Project Path="${directoryProject}" />`, "</Solution>"].join("\n"));
+
+    const outcome = await fixture.provider();
+
+    expect(outcome).toMatchObject({
+      kind: "available",
+      value: {solutionIssues: [`Invalid solution project path: ${directoryProject}`]},
+    });
+  });
+
+  it("rejects a solution project reached through a repository link that escapes the canonical root", async () => {
+    const fixture = await createDotnetFixture();
+    const externalRoot = await mkdtemp(join(tmpdir(), "arolariu-inspection-dotnet-external-"));
+    fixtureRoots.push(externalRoot);
+    await writeFixtureFile(resolve(externalRoot, "External.csproj"), '<Project Sdk="Microsoft.NET.Sdk" />\n');
+    await symlink(externalRoot, resolve(fixture.root, "linked-project"), process.platform === "win32" ? "junction" : "dir");
+    await writeFixtureFile(
+      fixture.paths.solution,
+      ["<Solution>", '  <Project Path="linked-project/External.csproj" />', "</Solution>"].join("\n"),
+    );
+
+    const outcome = await fixture.provider();
+
+    expect(outcome).toMatchObject({
+      kind: "available",
+      value: {solutionIssues: ["Invalid solution project path: linked-project/External.csproj"]},
+    });
+  });
+
   it("returns an explicit solution issue when the solution file is missing", async () => {
     const fixture = await createDotnetFixture();
     await rm(fixture.paths.solution);
@@ -404,9 +496,7 @@ describe("createDotnetProvider", () => {
         },
       },
     });
-    expect(
-      fixture.run.mock.calls.some(([command]) => command.args[0] === "user-secrets"),
-    ).toBe(false);
+    expect(fixture.run.mock.calls.some(([command]) => command.args[0] === "user-secrets")).toBe(false);
   });
 
   it("combines tracked and wrapped user-secret parameter presence without retaining values", async () => {
@@ -443,10 +533,7 @@ describe("createDotnetProvider", () => {
 
   it("returns missing AppHost parameter keys when neither tracked config nor user secrets supplies them", async () => {
     const fixture = await createDotnetFixture();
-    await writeFixtureFile(
-      resolve(fixture.root, "tooling", "AppHost", "appsettings.Development.json"),
-      JSON.stringify({Parameters: {}}),
-    );
+    await writeFixtureFile(resolve(fixture.root, "tooling", "AppHost", "appsettings.Development.json"), JSON.stringify({Parameters: {}}));
     fixture.setResponse(DOTNET_USER_SECRETS, commandResult({stdout: "{}"}));
 
     const outcome = await fixture.provider();
@@ -464,10 +551,7 @@ describe("createDotnetProvider", () => {
 
   it("returns invalid for malformed tracked AppHost development configuration", async () => {
     const fixture = await createDotnetFixture();
-    await writeFixtureFile(
-      resolve(fixture.root, "tooling", "AppHost", "appsettings.Development.json"),
-      "{apphost-raw-marker",
-    );
+    await writeFixtureFile(resolve(fixture.root, "tooling", "AppHost", "appsettings.Development.json"), "{apphost-raw-marker");
 
     const outcome = await fixture.provider();
 
