@@ -21,6 +21,7 @@ considered, and what landed.
 ### Process
 
 - [0001 — GitHub Actions workflows](./0001-github-actions-workflows.md)
+- [0002 — Lean monorepo tooling architecture](./0002-lean-monorepo-tooling-architecture.md)
 
 ### Frontend
 

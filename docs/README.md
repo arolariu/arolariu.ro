@@ -27,6 +27,7 @@ All architectural RFCs are organized by number ranges in a single directory:
 #### Monorepo/General (0000-0999)
 
 - [RFC 0001: GitHub Actions Workflows](./rfc/0001-github-actions-workflows.md) - ✅ Implemented
+- [RFC 0002: Lean Monorepo Tooling Architecture](./rfc/0002-lean-monorepo-tooling-architecture.md) - Accepted
 - General architecture decisions
 - Cross-cutting concerns
 - Tooling and infrastructure
@@ -154,5 +155,5 @@ For questions about documentation:
 
 ---
 
-**Last Updated**: 2026-04-24
+**Last Updated**: 2026-08-31
 **Maintained By**: arolariu team
