@@ -341,16 +341,27 @@ export function createNpmTreeProvider(input: Readonly<{
   return async (): Promise<InspectionOutcome<NpmTreeFacts>> => {
     const startedAt = input.now();
     const result = await input.probes.run(probes.workspace.npmTree(), {cwd: resolve(input.root)});
-    const durationMs = elapsedMilliseconds(startedAt, input.now);
 
     if (result.spawnError !== undefined) {
-      return {kind: "unavailable", reason: "npm dependency inspection could not be started.", durationMs};
+      return {
+        kind: "unavailable",
+        reason: "npm dependency inspection could not be started.",
+        durationMs: elapsedMilliseconds(startedAt, input.now),
+      };
     }
     if (result.timedOut) {
-      return {kind: "unavailable", reason: "npm dependency inspection timed out.", durationMs};
+      return {
+        kind: "unavailable",
+        reason: "npm dependency inspection timed out.",
+        durationMs: elapsedMilliseconds(startedAt, input.now),
+      };
     }
     if (result.signal !== undefined) {
-      return {kind: "unavailable", reason: "npm dependency inspection was interrupted.", durationMs};
+      return {
+        kind: "unavailable",
+        reason: "npm dependency inspection was interrupted.",
+        durationMs: elapsedMilliseconds(startedAt, input.now),
+      };
     }
 
     let document: unknown;
@@ -360,17 +371,18 @@ export function createNpmTreeProvider(input: Readonly<{
       return {
         kind: "invalid",
         issues: ["npm dependency inspection did not produce one valid JSON document."],
-        durationMs,
+        durationMs: elapsedMilliseconds(startedAt, input.now),
       };
     }
 
     try {
-      return {kind: "available", value: projectNpmTree(document, input.scope, result.code), durationMs};
+      const value = projectNpmTree(document, input.scope, result.code);
+      return {kind: "available", value, durationMs: elapsedMilliseconds(startedAt, input.now)};
     } catch {
       return {
         kind: "invalid",
         issues: ["npm dependency inspection produced malformed tree data."],
-        durationMs,
+        durationMs: elapsedMilliseconds(startedAt, input.now),
       };
     }
   };
@@ -415,13 +427,12 @@ export function createInstalledPackageProvider(input: Readonly<{
         resolveInstalledPackage(repositoryRoot, canonicalRepositoryRoot, packageName),
       ),
     );
-    const durationMs = elapsedMilliseconds(startedAt, input.now);
     const unavailable = resolutions.filter((resolution) => resolution.kind === "unavailable");
     if (unavailable.length > 0) {
       return {
         kind: "unavailable",
         reason: "One or more requested installed package manifests could not be inspected.",
-        durationMs,
+        durationMs: elapsedMilliseconds(startedAt, input.now),
       };
     }
 
@@ -433,7 +444,7 @@ export function createInstalledPackageProvider(input: Readonly<{
       return {
         kind: "invalid",
         issues: malformed.map((name) => `Installed package metadata is malformed for '${name}'.`),
-        durationMs,
+        durationMs: elapsedMilliseconds(startedAt, input.now),
       };
     }
 
@@ -448,7 +459,7 @@ export function createInstalledPackageProvider(input: Readonly<{
     return {
       kind: "available",
       value: {installed, malformed: []},
-      durationMs,
+      durationMs: elapsedMilliseconds(startedAt, input.now),
     };
   };
 }

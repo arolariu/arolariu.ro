@@ -154,6 +154,52 @@ describe("createNpmTreeProvider", () => {
     });
   });
 
+  it("executes a fresh named probe for each provider invocation", async () => {
+    const harness = npmHarness(commandResult({stdout: JSON.stringify({dependencies: {}})}));
+    const provider = createNpmTreeProvider({
+      scope: "root",
+      root: resolve(tmpdir(), "npm-provider-reuse-fixture"),
+      probes: harness.probes,
+      now: clock(),
+    });
+
+    await expect(provider()).resolves.toMatchObject({kind: "available"});
+    await expect(provider()).resolves.toMatchObject({kind: "available"});
+
+    expect(harness.run).toHaveBeenCalledTimes(2);
+  });
+
+  it("measures duration only after npm JSON projection finishes", async () => {
+    const events: string[] = [];
+    let current = 100;
+    const result: CommandResult = {
+      code: 0,
+      get stdout(): string {
+        events.push("project");
+        return JSON.stringify({dependencies: {react: {version: "19.2.8"}}});
+      },
+      stderr: "",
+      durationMs: 1,
+      timedOut: false,
+    };
+    const harness = npmHarness(result);
+    const provider = createNpmTreeProvider({
+      scope: "root",
+      root: resolve(tmpdir(), "npm-duration-fixture"),
+      probes: harness.probes,
+      now: () => {
+        events.push("clock");
+        current += 5;
+        return current;
+      },
+    });
+
+    const outcome = await provider();
+
+    expect(outcome).toMatchObject({kind: "available", durationMs: 5});
+    expect(events).toEqual(["clock", "project", "clock"]);
+  });
+
   it("keeps valid nonzero npm JSON as bounded dependency-problem facts", async () => {
     const rawPath = String.raw`C:\Users\secret-user\repository\node_modules\react`;
     const harness = npmHarness(
@@ -192,6 +238,35 @@ describe("createNpmTreeProvider", () => {
       problems: [{name: "react", code: "invalid", detail: "npm reported invalid for 'react'."}],
     });
     expect(JSON.stringify(outcome)).not.toMatch(/secret-user|raw-marker|raw-detail-marker|raw-stderr-marker/iu);
+  });
+
+  it("uses a top-level npm error only when no concrete problem entry exists", async () => {
+    const harness = npmHarness(
+      commandResult({
+        code: 1,
+        stdout: JSON.stringify({
+          error: {code: "EJSONPARSE", summary: "raw-summary-marker", detail: "raw-detail-marker"},
+        }),
+      }),
+    );
+    const provider = createNpmTreeProvider({
+      scope: "root",
+      root: resolve(tmpdir(), "npm-error-fallback-fixture"),
+      probes: harness.probes,
+      now: clock(),
+    });
+
+    const outcome = await provider();
+
+    expect(outcome).toMatchObject({
+      kind: "available",
+      value: {
+        valid: false,
+        problemCount: 1,
+        problems: [{code: "EJSONPARSE", detail: "npm reported EJSONPARSE."}],
+      },
+    });
+    expect(JSON.stringify(outcome)).not.toMatch(/raw-(?:summary|detail)-marker/iu);
   });
 
   it.each([
@@ -281,7 +356,8 @@ describe("createInstalledPackageProvider", () => {
   it("reads only requested metadata and normalizes a workspace-link root", async () => {
     const root = await createTemporaryRoot("arolariu-packages-");
     await writePackageManifest(root, "react", {name: "react", version: "19.2.8"});
-    await writePackageManifest(root, "unrequested-broken-package", "{ definitely-not-json");
+    const unrequestedRoot = join(root, "node_modules", "unrequested-broken-package", "package.json");
+    await mkdir(unrequestedRoot, {recursive: true});
 
     const workspaceRoot = join(root, "packages", "components");
     await mkdir(workspaceRoot, {recursive: true});
@@ -313,13 +389,42 @@ describe("createInstalledPackageProvider", () => {
     });
   });
 
+  it("does not expose an absolute root for a package link outside the repository", async () => {
+    const root = await createTemporaryRoot("arolariu-packages-external-link-");
+    const externalRoot = await createTemporaryRoot("arolariu-packages-external-target-");
+    await writeFile(
+      join(externalRoot, "package.json"),
+      JSON.stringify({name: "linked-package", version: "1.2.3"}),
+      "utf8",
+    );
+    const linkRoot = join(root, "node_modules", "linked-package");
+    await mkdir(dirname(linkRoot), {recursive: true});
+    await symlink(externalRoot, linkRoot, "junction");
+    const provider = createInstalledPackageProvider({
+      root,
+      packageNames: ["linked-package"],
+      now: clock(),
+    });
+
+    const outcome = await provider();
+
+    expect(outcome).toEqual({
+      kind: "available",
+      value: {installed: {"linked-package": {version: "1.2.3"}}, malformed: []},
+      durationMs: 5,
+    });
+    expect(JSON.stringify(outcome)).not.toContain(externalRoot);
+  });
+
   it.each([
     ["invalid JSON", "{ package-json-raw-marker"],
     ["a non-object document", "[]"],
     ["a mismatched package name", JSON.stringify({name: "not-react", version: "19.2.8"})],
     ["a missing version", JSON.stringify({name: "react"})],
     ["a blank version", JSON.stringify({name: "react", version: "  "})],
-  ])("returns invalid partial inventory for requested metadata with %s", async (_case, contents) => {
+    ["a control-character version", JSON.stringify({name: "react", version: "19.2.8\nraw-version-marker"})],
+    ["an overlong version", JSON.stringify({name: "react", version: "1".repeat(257)})],
+  ])("returns an invalid outcome for requested metadata with %s", async (_case, contents) => {
     const root = await createTemporaryRoot("arolariu-packages-malformed-");
     await writePackageManifest(root, "react", contents);
     await writePackageManifest(root, "next", {name: "next", version: "16.3.0"});
@@ -337,7 +442,44 @@ describe("createInstalledPackageProvider", () => {
     }
     expect(outcome.issues).toEqual(["Installed package metadata is malformed for 'react'."]);
     expect("partial" in outcome).toBe(false);
-    expect(JSON.stringify(outcome)).not.toContain("package-json-raw-marker");
+    expect(JSON.stringify(outcome)).not.toMatch(/package-json-raw-marker|raw-version-marker/u);
+  });
+
+  it("rejects a traversing requested package name before inspecting the repository root", async () => {
+    const rawRoot = resolve(tmpdir(), "nonexistent-package-inventory-root");
+    const provider = createInstalledPackageProvider({
+      root: rawRoot,
+      packageNames: ["../secret-package"],
+      now: clock(),
+    });
+
+    const outcome = await provider();
+
+    expect(outcome).toEqual({
+      kind: "invalid",
+      issues: ["Installed package inventory contains an invalid requested package name."],
+      durationMs: 5,
+    });
+    expect(JSON.stringify(outcome)).not.toContain("secret-package");
+  });
+
+  it("redacts native filesystem details when requested metadata cannot be read", async () => {
+    const root = await createTemporaryRoot("arolariu-packages-unreadable-");
+    await mkdir(join(root, "node_modules", "react", "package.json"), {recursive: true});
+    const provider = createInstalledPackageProvider({
+      root,
+      packageNames: ["react"],
+      now: clock(),
+    });
+
+    const outcome = await provider();
+
+    expect(outcome).toEqual({
+      kind: "unavailable",
+      reason: "One or more requested installed package manifests could not be inspected.",
+      durationMs: 5,
+    });
+    expect(JSON.stringify(outcome)).not.toContain(root);
   });
 
   it("represents a missing requested package as an available empty inventory", async () => {
