@@ -77,7 +77,14 @@ type AppHostFileOutcome =
 
 interface UserSecretFacts {
   readonly keys: readonly string[];
+  readonly presentParameterKeys: readonly string[];
   readonly configuredParameterKeys: readonly string[];
+}
+
+interface SolutionProjectDeclarations {
+  readonly declarationCount: number;
+  readonly hasInvalidPath: boolean;
+  readonly paths: readonly string[];
 }
 
 const APPHOST_PROJECT_RELATIVE_PATH = "tooling/AppHost/AppHost.csproj";
@@ -324,6 +331,105 @@ function normalizeSolutionProjectPath(path: string): string | undefined {
   return normalized;
 }
 
+function findXmlTagEnd(source: string, start: number): number | undefined {
+  let quote: '"' | "'" | undefined;
+  for (let index = start; index < source.length; index += 1) {
+    const character = source[index]!;
+    if (quote !== undefined) {
+      if (character === quote) {
+        quote = undefined;
+      }
+      continue;
+    }
+    if (character === '"' || character === "'") {
+      quote = character;
+    } else if (character === "<") {
+      return undefined;
+    } else if (character === ">") {
+      return index;
+    }
+  }
+  return undefined;
+}
+
+function parseSolutionProjectDeclarations(source: string): SolutionProjectDeclarations | undefined {
+  const paths: string[] = [];
+  let declarationCount = 0;
+  let hasInvalidPath = false;
+  let cursor = 0;
+
+  while (cursor < source.length) {
+    const opening = source.indexOf("<", cursor);
+    if (opening < 0) {
+      break;
+    }
+    if (source.startsWith("<!--", opening)) {
+      const end = source.indexOf("-->", opening + 4);
+      if (end < 0) {
+        return undefined;
+      }
+      cursor = end + 3;
+      continue;
+    }
+    if (source.startsWith("<![CDATA[", opening)) {
+      const end = source.indexOf("]]>", opening + 9);
+      if (end < 0) {
+        return undefined;
+      }
+      cursor = end + 3;
+      continue;
+    }
+    if (source.startsWith("<?", opening)) {
+      const end = source.indexOf("?>", opening + 2);
+      if (end < 0) {
+        return undefined;
+      }
+      cursor = end + 2;
+      continue;
+    }
+    if (source.startsWith("<!", opening)) {
+      return undefined;
+    }
+
+    const tagEnd = findXmlTagEnd(source, opening + 1);
+    if (tagEnd === undefined) {
+      return undefined;
+    }
+    const tag = source.slice(opening + 1, tagEnd).trim();
+    cursor = tagEnd + 1;
+    if (tag === "" || tag.startsWith("/")) {
+      continue;
+    }
+
+    const name = /^[A-Za-z_][A-Za-z0-9_.:-]*/u.exec(tag)?.[0];
+    if (name === undefined) {
+      return undefined;
+    }
+    if (name !== "Project") {
+      continue;
+    }
+
+    declarationCount += 1;
+    const attributes = tag.slice(name.length).replace(/\/\s*$/u, "");
+    const pathAssignments = [...attributes.matchAll(/(?:^|\s)Path\s*=/gu)];
+    const quotedPaths = [...attributes.matchAll(/(?:^|\s)Path\s*=\s*(?:"([^"]*)"|'([^']*)')/gu)];
+    const rawPath = quotedPaths[0]?.[1] ?? quotedPaths[0]?.[2];
+    if (
+      pathAssignments.length !== 1
+      || quotedPaths.length !== 1
+      || rawPath === undefined
+      || rawPath.trim() === ""
+      || rawPath.includes("&")
+    ) {
+      hasInvalidPath = true;
+      continue;
+    }
+    paths.push(rawPath);
+  }
+
+  return {declarationCount, hasInvalidPath, paths};
+}
+
 async function inspectSolution(paths: RepositoryPaths): Promise<readonly string[]> {
   let canonicalRoot: string;
   try {
@@ -339,15 +445,19 @@ async function inspectSolution(paths: RepositoryPaths): Promise<readonly string[
     return [hasErrorCode(error, "ENOENT") ? "The repository solution file is missing." : "The repository solution file could not be read."];
   }
 
-  const rawProjectPaths = [...contents.matchAll(/<Project\s+Path="([^"]+)"/gu)]
-    .map((match) => match[1])
-    .filter((path): path is string => path !== undefined);
-  if (rawProjectPaths.length === 0) {
+  const declarations = parseSolutionProjectDeclarations(contents);
+  if (declarations === undefined) {
+    return ["The repository solution file is malformed."];
+  }
+  if (declarations.declarationCount === 0) {
     return ["The repository solution declares no projects."];
   }
 
   const issues = new Set<string>();
-  for (const rawProjectPath of rawProjectPaths) {
+  if (declarations.hasInvalidPath) {
+    issues.add("The repository solution contains an invalid project path.");
+  }
+  for (const rawProjectPath of declarations.paths) {
     const projectPath = normalizeSolutionProjectPath(rawProjectPath);
     if (projectPath === undefined) {
       const safePath = safeToken(rawProjectPath, MAX_PATH_LENGTH)?.replaceAll("\\", "/");
@@ -483,19 +593,24 @@ function parseUserSecrets(output: string): UserSecretFacts | undefined {
   }
 
   const keys: string[] = [];
+  const presentParameterKeys = new Set<string>();
   const configuredParameterKeys = new Set<string>();
   for (const [key, value] of Object.entries(parsed)) {
     if (typeof value !== "string" || key.trim() === "" || key.length > MAX_IDENTIFIER_LENGTH || CONTROL_CHARACTER_PATTERN.test(key)) {
       return undefined;
     }
     keys.push(key);
-    if (value.trim() !== "" && REQUIRED_APPHOST_PARAMETER_KEYS.some((requiredKey) => requiredKey === key)) {
-      configuredParameterKeys.add(key);
+    if (REQUIRED_APPHOST_PARAMETER_KEYS.some((requiredKey) => requiredKey === key)) {
+      presentParameterKeys.add(key);
+      if (value.trim() !== "") {
+        configuredParameterKeys.add(key);
+      }
     }
   }
 
   return {
     keys: [...new Set(keys)].sort(compareText),
+    presentParameterKeys: REQUIRED_APPHOST_PARAMETER_KEYS.filter((key) => presentParameterKeys.has(key)),
     configuredParameterKeys: REQUIRED_APPHOST_PARAMETER_KEYS.filter((key) => configuredParameterKeys.has(key)),
   };
 }
@@ -621,7 +736,7 @@ export function createDotnetProvider(
       certificateTrusted = trustResult.code === 0;
     }
 
-    let userSecretFacts: UserSecretFacts = {keys: [], configuredParameterKeys: []};
+    let userSecretFacts: UserSecretFacts = {keys: [], presentParameterKeys: [], configuredParameterKeys: []};
     if (appHostFiles.value.projectExists) {
       const secretsResult = await input.probes.run(probes.dotnet.userSecrets(APPHOST_PROJECT_RELATIVE_PATH), {
         ...dotnetProbeOptions,
@@ -636,8 +751,12 @@ export function createDotnetProvider(
       userSecretFacts = parsedSecrets;
     }
 
-    const configuredParameters = new Set([...appHostFiles.value.configuredParameterKeys, ...userSecretFacts.configuredParameterKeys]);
-    const missingParameterKeys = REQUIRED_APPHOST_PARAMETER_KEYS.filter((key) => !configuredParameters.has(key));
+    const trackedParameters = new Set(appHostFiles.value.configuredParameterKeys);
+    const presentSecretParameters = new Set(userSecretFacts.presentParameterKeys);
+    const configuredSecretParameters = new Set(userSecretFacts.configuredParameterKeys);
+    const missingParameterKeys = REQUIRED_APPHOST_PARAMETER_KEYS.filter((key) =>
+      presentSecretParameters.has(key) ? !configuredSecretParameters.has(key) : !trackedParameters.has(key),
+    );
     const value: DotnetFacts = {
       executable: {available: true, resolvedPaths},
       selectedVersion,

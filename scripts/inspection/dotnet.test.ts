@@ -486,6 +486,43 @@ describe("createDotnetProvider", () => {
     });
   });
 
+  it("ignores project-shaped text inside solution XML comments", async () => {
+    const fixture = await createDotnetFixture();
+    await writeFixtureFile(
+      fixture.paths.solution,
+      ["<Solution>", '  <!-- <Project Path="sites/api.arolariu.ro/src/Common/arolariu.Backend.Common.csproj" /> -->', "</Solution>"].join(
+        "\n",
+      ),
+    );
+
+    const outcome = await fixture.provider();
+
+    expect(outcome).toMatchObject({
+      kind: "available",
+      value: {solutionIssues: ["The repository solution declares no projects."]},
+    });
+  });
+
+  it("reports a pathless project declaration even when another project path is valid", async () => {
+    const fixture = await createDotnetFixture();
+    await writeFixtureFile(
+      fixture.paths.solution,
+      [
+        "<Solution>",
+        '  <Project Path="sites/api.arolariu.ro/src/Common/arolariu.Backend.Common.csproj" />',
+        "  <Project />",
+        "</Solution>",
+      ].join("\n"),
+    );
+
+    const outcome = await fixture.provider();
+
+    expect(outcome).toMatchObject({
+      kind: "available",
+      value: {solutionIssues: ["The repository solution contains an invalid project path."]},
+    });
+  });
+
   it("returns an explicit solution issue when the solution file is missing", async () => {
     const fixture = await createDotnetFixture();
     await rm(fixture.paths.solution);
@@ -547,6 +584,32 @@ describe("createDotnetProvider", () => {
       },
     });
     expect(JSON.stringify(outcome)).not.toMatch(/wrapped-secret-value-marker|other-secret-value-marker/iu);
+  });
+
+  it("treats a blank user secret as a missing higher-precedence override of tracked configuration", async () => {
+    const fixture = await createDotnetFixture();
+    fixture.setResponse(
+      DOTNET_USER_SECRETS,
+      commandResult({
+        stdout: JSON.stringify({
+          "Parameters:sql-password": "   ",
+          "Parameters:redis-password": "configured-secret-marker",
+        }),
+      }),
+    );
+
+    const outcome = await fixture.provider();
+
+    expect(outcome).toMatchObject({
+      kind: "available",
+      value: {
+        appHost: {
+          missingParameterKeys: ["Parameters:sql-password"],
+          userSecretKeys: ["Parameters:redis-password", "Parameters:sql-password"],
+        },
+      },
+    });
+    expect(JSON.stringify(outcome)).not.toContain("configured-secret-marker");
   });
 
   it("returns missing AppHost parameter keys when neither tracked config nor user secrets supplies them", async () => {
