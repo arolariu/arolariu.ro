@@ -106,7 +106,9 @@ const REQUIRED_MANIFEST_RELATIVE_SEGMENTS: readonly (readonly string[])[] = [
 const CERTIFICATE_RELATIVE_SEGMENTS = ["infra", "Local", "Management", "certs", "local-cert.pem"] as const;
 const KEY_RELATIVE_SEGMENTS = ["infra", "Local", "Management", "certs", "local-key.pem"] as const;
 
-/** Substrings identifying a Docker Desktop Compose delegation, reused verbatim from doctor policy. */
+/**
+ * Substrings identifying a Docker Desktop Compose delegation, reused verbatim from doctor policy.
+ */
 const DOCKER_DESKTOP_COMPOSE_INDICATORS = [
   "\\docker\\",
   "/docker/",
@@ -116,17 +118,8 @@ const DOCKER_DESKTOP_COMPOSE_INDICATORS = [
   "docker-compose",
 ] as const;
 
-/**
- * Substrings identifying an active Docker Desktop context/connection for the rancher engine.
- *
- * @remarks
- * No currently registered probe issues `docker info`/`docker version` (the commands doctor's prior
- * banner-text detection relied on), so this module instead classifies the already-required
- * `probes.infrastructure.runtimeContext` (`docker context show`) result: Docker Desktop's own
- * default contexts are named `desktop-linux`/`desktop-windows`, which is distinct from Rancher
- * Desktop's own `rancher-desktop` context name. See the Task 14 report for the full ruling.
- */
-const DOCKER_DESKTOP_CONTEXT_INDICATORS = ["docker desktop", "desktop-linux", "desktop-windows"] as const;
+/** Substring identifying a Docker Desktop backend/engine banner, reused verbatim from doctor policy. */
+const DOCKER_DESKTOP_BACKEND_INDICATOR = "docker desktop";
 
 const SUPPORTED_PORT_OWNER_PLATFORMS: ReadonlySet<NodeJS.Platform> = new Set(["win32", "darwin", "linux"]);
 
@@ -607,17 +600,19 @@ function projectContainers(stdout: string): readonly ContainerFact[] {
 
 /**
  * Classifies whether Docker Desktop appears to be the active backend instead of the selected
- * engine, from already-captured Compose/context evidence.
+ * engine, from already-captured Compose/backend-info evidence.
  *
  * @param engine - Selected local container engine.
  * @param composeResult - Already-captured `probes.infrastructure.composeVersion` result.
- * @param contextResult - Already-captured `probes.infrastructure.runtimeContext` result.
- * @returns Whether Docker Desktop delegation/context evidence was found.
+ * @param runtimeInfoResult - For the rancher engine, the already-captured
+ * `probes.infrastructure.runtimeInfo` (`docker info`) result; `undefined` for every other engine,
+ * since the podman path is classified from `composeResult` alone and never invokes this probe.
+ * @returns Whether Docker Desktop delegation/backend evidence was found.
  */
 function classifyDockerConflict(
   engine: ContainerEngine,
   composeResult: Readonly<CommandResult>,
-  contextResult: Readonly<CommandResult>,
+  runtimeInfoResult: Readonly<CommandResult> | undefined,
 ): boolean {
   if (engine === "podman") {
     if (!isSuccessfulCommand(composeResult)) {
@@ -628,11 +623,10 @@ function classifyDockerConflict(
     return !usesPodmanCompose && DOCKER_DESKTOP_COMPOSE_INDICATORS.some((indicator) => output.includes(indicator));
   }
 
-  if (!isSuccessfulCommand(contextResult)) {
+  if (runtimeInfoResult === undefined || !isSuccessfulCommand(runtimeInfoResult)) {
     return false;
   }
-  const output = combinedOutput(contextResult);
-  return DOCKER_DESKTOP_CONTEXT_INDICATORS.some((indicator) => output.includes(indicator));
+  return combinedOutput(runtimeInfoResult).includes(DOCKER_DESKTOP_BACKEND_INDICATOR);
 }
 
 // ============================================================================
@@ -704,10 +698,11 @@ export function createInfrastructureProvider(input: Readonly<InfrastructureProvi
         return {kind: "available", value, durationMs: elapsedMilliseconds(startedAt, input.now)};
       }
 
-      const [composeResult, contextResult, containerListResult] = await Promise.all([
+      const [composeResult, contextResult, containerListResult, runtimeInfoResult] = await Promise.all([
         input.probes.run(probes.infrastructure.composeVersion(engine), probeOptions),
         input.probes.run(probes.infrastructure.runtimeContext(engine), probeOptions),
         input.probes.run(probes.infrastructure.containerList(engine), probeOptions),
+        engine === "rancher" ? input.probes.run(probes.infrastructure.runtimeInfo(engine), probeOptions) : Promise.resolve(undefined),
       ]);
 
       const composeAvailable = isSuccessfulCommand(composeResult);
@@ -716,7 +711,7 @@ export function createInfrastructureProvider(input: Readonly<InfrastructureProvi
       const socketContextIssues = isSuccessfulCommand(contextResult)
         ? []
         : ["The active container runtime context or connection state could not be determined."];
-      const dockerConflict = classifyDockerConflict(engine, composeResult, contextResult);
+      const dockerConflict = classifyDockerConflict(engine, composeResult, runtimeInfoResult);
 
       const value: InfrastructureFacts = {
         selectedEngine: engine,

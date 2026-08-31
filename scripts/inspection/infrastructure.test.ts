@@ -73,6 +73,10 @@ function containerListCommand(engine: ContainerEngine): CommandSpec {
     : {command: "podman", args: ["ps", "-a", "--format", "{{json .}}"]};
 }
 
+function runtimeInfoCommand(engine: ContainerEngine): CommandSpec {
+  return engine === "rancher" ? {command: "docker", args: ["info"]} : {command: "podman", args: ["info", "--format", "json"]};
+}
+
 function portOwnersCommand(platform: NodeJS.Platform, ports: readonly number[] = [...requiredLocalPorts]): CommandSpec {
   const portArguments = ports.map((port) => String(port));
   if (platform === "win32") {
@@ -442,32 +446,73 @@ describe("createInfrastructureProvider engine facts", () => {
     expect(facts.dockerConflict).toBe(false);
   });
 
-  it("reports dockerConflict true when the rancher context indicates an active Docker Desktop context", async () => {
+  it("reports dockerConflict true when rancher docker info reports the Docker Desktop backend, even on the Desktop default context", async () => {
     const fixture = await createInfrastructureFixture();
     fixture.setResponse(runtimeVersionCommand("rancher"), commandResult({stdout: "Docker version 24.0.5\n"}));
     fixture.setResponse(composeVersionCommand("rancher"), commandResult({stdout: "Docker Compose version v2.23.0\n"}));
-    fixture.setResponse(runtimeContextCommand("rancher"), commandResult({stdout: "desktop-linux\n"}));
+    fixture.setResponse(runtimeContextCommand("rancher"), commandResult({stdout: "default\n"}));
     fixture.setResponse(containerListCommand("rancher"), commandResult({stdout: ""}));
+    fixture.setResponse(
+      runtimeInfoCommand("rancher"),
+      commandResult({stdout: "Server Version: 24.0.5\nOperating System: Docker Desktop\nKernel Version: 6.6.0\n"}),
+    );
     const provider = createProvider(fixture, {requestedEngine: "rancher"});
 
     const outcome = await provider();
 
     const facts = (outcome as Readonly<{value: InfrastructureFacts}>).value;
     expect(facts.dockerConflict).toBe(true);
+    expect(fixture.run).toHaveBeenCalledWith(runtimeInfoCommand("rancher"), expect.anything());
   });
 
-  it("reports dockerConflict false when the rancher context is the rancher-desktop context", async () => {
+  it("reports dockerConflict false when rancher docker info does not mention Docker Desktop, even on a Desktop-shaped context name", async () => {
     const fixture = await createInfrastructureFixture();
     fixture.setResponse(runtimeVersionCommand("rancher"), commandResult({stdout: "Docker version 24.0.5\n"}));
     fixture.setResponse(composeVersionCommand("rancher"), commandResult({stdout: "Docker Compose version v2.23.0\n"}));
-    fixture.setResponse(runtimeContextCommand("rancher"), commandResult({stdout: "rancher-desktop\n"}));
+    fixture.setResponse(runtimeContextCommand("rancher"), commandResult({stdout: "desktop-linux\n"}));
     fixture.setResponse(containerListCommand("rancher"), commandResult({stdout: ""}));
+    fixture.setResponse(
+      runtimeInfoCommand("rancher"),
+      commandResult({stdout: "Server Version: 24.0.5\nOperating System: Ubuntu 22.04.3 LTS\nKernel Version: 5.15.0\n"}),
+    );
     const provider = createProvider(fixture, {requestedEngine: "rancher"});
 
     const outcome = await provider();
 
     const facts = (outcome as Readonly<{value: InfrastructureFacts}>).value;
     expect(facts.dockerConflict).toBe(false);
+  });
+
+  it("reports dockerConflict false, without leaking raw evidence, when the rancher runtime-info probe fails", async () => {
+    const fixture = await createInfrastructureFixture();
+    fixture.setResponse(runtimeVersionCommand("rancher"), commandResult({stdout: "Docker version 24.0.5\n"}));
+    fixture.setResponse(composeVersionCommand("rancher"), commandResult({stdout: "Docker Compose version v2.23.0\n"}));
+    fixture.setResponse(runtimeContextCommand("rancher"), commandResult({stdout: "rancher-desktop\n"}));
+    fixture.setResponse(containerListCommand("rancher"), commandResult({stdout: ""}));
+    fixture.setResponse(runtimeInfoCommand("rancher"), commandResult({code: 1, stderr: "raw-secret-docker-info-detail-marker"}));
+    const provider = createProvider(fixture, {requestedEngine: "rancher"});
+
+    const outcome = await provider();
+
+    expect(outcome.kind).toBe("available");
+    const facts = (outcome as Readonly<{value: InfrastructureFacts}>).value;
+    expect(facts.dockerConflict).toBe(false);
+    expect(JSON.stringify(facts)).not.toContain("raw-secret-docker-info-detail-marker");
+  });
+
+  it("does not invoke the runtime-info probe for the podman engine, preserving its Compose-delegation classification", async () => {
+    const fixture = await createInfrastructureFixture();
+    fixture.setResponse(runtimeVersionCommand("podman"), commandResult({stdout: "podman version 4.9.0\n"}));
+    fixture.setResponse(composeVersionCommand("podman"), commandResult({stdout: "podman-compose version 1.0.6\n"}));
+    fixture.setResponse(runtimeContextCommand("podman"), commandResult({stdout: "[]\n"}));
+    fixture.setResponse(containerListCommand("podman"), commandResult({stdout: ""}));
+    const provider = createProvider(fixture, {requestedEngine: "podman"});
+
+    const outcome = await provider();
+
+    const facts = (outcome as Readonly<{value: InfrastructureFacts}>).value;
+    expect(facts.dockerConflict).toBe(false);
+    expect(fixture.run).not.toHaveBeenCalledWith(runtimeInfoCommand("podman"), expect.anything());
   });
 
   it("reports a bounded socketContextIssues entry when the context probe fails", async () => {

@@ -422,6 +422,12 @@ const runtimeProbeCases: readonly RuntimeProbeCase[] = [
     rancherCommand: {command: "docker", args: ["ps", "-a", "--format", "{{json .}}"]},
     podmanCommand: {command: "podman", args: ["ps", "-a", "--format", "{{json .}}"]},
   },
+  {
+    name: "infrastructure.runtimeInfo",
+    factory: probes.infrastructure.runtimeInfo,
+    rancherCommand: {command: "docker", args: ["info"]},
+    podmanCommand: {command: "podman", args: ["info", "--format", "json"]},
+  },
 ];
 
 describe.each(runtimeProbeCases)("probes.$name", ({factory, rancherCommand, podmanCommand}) => {

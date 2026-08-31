@@ -668,6 +668,26 @@ function infrastructureRuntimeContext(runtime: string): InspectionProbe {
 }
 
 /**
+ * Read-only engine/backend information probe.
+ *
+ * @remarks
+ * Mirrors doctor's original `docker info`/`podman info` banner-evidence command exactly, so
+ * Docker Desktop conflict detection for the rancher engine can classify the same text doctor
+ * classified, independent of the active `docker context show` name (for example the Desktop
+ * default `default` context, which carries no `desktop-linux`/`desktop-windows` substring).
+ *
+ * @param runtime - Supported local container runtime name (`"rancher"` or `"podman"`).
+ * @returns The registered probe handle.
+ * @throws Error when `runtime` fails {@link validateInfrastructureRuntimeName}.
+ */
+function infrastructureRuntimeInfo(runtime: string): InspectionProbe {
+  const validatedRuntime = validateInfrastructureRuntimeName(runtime);
+  const command: CommandSpec =
+    validatedRuntime === "rancher" ? {command: "docker", args: ["info"]} : {command: "podman", args: ["info", "--format", "json"]};
+  return registerProbe(`infrastructure.runtime-info:${validatedRuntime}`, command);
+}
+
+/**
  * Read-only local container list probe.
  *
  * @param runtime - Supported local container runtime name (`"rancher"` or `"podman"`).
@@ -747,6 +767,7 @@ export const probes = {
     runtimeVersion: infrastructureRuntimeVersion,
     composeVersion: infrastructureComposeVersion,
     runtimeContext: infrastructureRuntimeContext,
+    runtimeInfo: infrastructureRuntimeInfo,
     containerList: infrastructureContainerList,
     mkcertVersion: infrastructureMkcertVersion,
     mkcertCaRoot: infrastructureMkcertCaRoot,
