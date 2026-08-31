@@ -280,12 +280,9 @@ describe("probes.workspace.executableResolution", () => {
     expect(() => probes.workspace.executableResolution("git", "aix")).toThrow(/platform/iu);
   });
 
-  it.each(["", "git version", "git;rm -rf /", "../git", "git\u0007", "../../bin/git"])(
-    "rejects an invalid executable name %j",
-    (name) => {
-      expect(() => probes.workspace.executableResolution(name)).toThrow();
-    },
-  );
+  it.each(["", "git version", "git;rm -rf /", "../git", "git\u0007", "../../bin/git"])("rejects an invalid executable name %j", (name) => {
+    expect(() => probes.workspace.executableResolution(name)).toThrow();
+  });
 });
 
 describe("probes.dotnet.userSecrets", () => {
@@ -336,9 +333,13 @@ const pythonProbeCases: readonly PythonProbeCase[] = [
       "import json, platform, site, sys; print(json.dumps({'executable': sys.executable, 'version': platform.python_version(), 'prefix': sys.prefix, 'basePrefix': getattr(sys, 'base_prefix', sys.prefix), 'sitePackages': site.getsitepackages()}, separators=(',', ':')))",
     ],
   },
-  {name: "python.pipVersion", factory: probes.python.pipVersion, args: ["-m", "pip", "--version"]},
-  {name: "python.pipList", factory: probes.python.pipList, args: ["-m", "pip", "list", "--format", "json"]},
-  {name: "python.pipCheck", factory: probes.python.pipCheck, args: ["-m", "pip", "check"]},
+  {name: "python.pipVersion", factory: probes.python.pipVersion, args: ["-m", "pip", "--isolated", "--version"]},
+  {
+    name: "python.pipList",
+    factory: probes.python.pipList,
+    args: ["-m", "pip", "--isolated", "list", "--format", "json"],
+  },
+  {name: "python.pipCheck", factory: probes.python.pipCheck, args: ["-m", "pip", "--isolated", "check"]},
 ];
 
 describe.each(pythonProbeCases)("probes.$name", ({factory, args}) => {
@@ -357,13 +358,12 @@ describe.each(pythonProbeCases)("probes.$name", ({factory, args}) => {
     },
   );
 
-  it.each([
-    "C:\\Program Files (x86)\\Python312\\python.exe",
-    "/opt/homebrew/opt/python's$env/bin/python3.12",
-    "./My Apps (2024)/python",
-  ])("accepts a legitimate interpreter path containing safe special characters %j", (path) => {
-    expect(() => factory(path)).not.toThrow();
-  });
+  it.each(["C:\\Program Files (x86)\\Python312\\python.exe", "/opt/homebrew/opt/python's$env/bin/python3.12", "./My Apps (2024)/python"])(
+    "accepts a legitimate interpreter path containing safe special characters %j",
+    (path) => {
+      expect(() => factory(path)).not.toThrow();
+    },
+  );
 
   it("prefixes a valid numeric selector before the argument tail for the py launcher", async () => {
     const {runner, run} = createFakeCommandRunner();
@@ -378,10 +378,7 @@ describe.each(pythonProbeCases)("probes.$name", ({factory, args}) => {
 
     await createInspectionProbeRunner(runner).run(factory("C:\\Windows\\py.EXE", "-3"));
 
-    expect(run).toHaveBeenCalledWith(
-      {command: "C:\\Windows\\py.EXE", args: ["-3", ...args]},
-      expect.objectContaining({output: "capture"}),
-    );
+    expect(run).toHaveBeenCalledWith({command: "C:\\Windows\\py.EXE", args: ["-3", ...args]}, expect.objectContaining({output: "capture"}));
   });
 
   it("rejects a selector when the interpreter basename is not the py launcher", () => {

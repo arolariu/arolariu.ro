@@ -4,7 +4,7 @@
  * @module scripts/inspection/python.test
  */
 
-import {mkdir, mkdtemp, rm, writeFile} from "node:fs/promises";
+import {mkdir, mkdtemp, rm, truncate, writeFile} from "node:fs/promises";
 import {tmpdir} from "node:os";
 import {dirname, join, resolve} from "node:path";
 import {afterEach, describe, expect, it, vi} from "vitest";
@@ -93,15 +93,15 @@ function venvMetadataCommand(platform: NodeJS.Platform): Readonly<CommandSpec> {
 }
 
 function venvPipVersionCommand(platform: NodeJS.Platform): Readonly<CommandSpec> {
-  return {command: venvRelativeCommand(platform), args: ["-m", "pip", "--version"]};
+  return {command: venvRelativeCommand(platform), args: ["-m", "pip", "--isolated", "--version"]};
 }
 
 function venvPipListCommand(platform: NodeJS.Platform): Readonly<CommandSpec> {
-  return {command: venvRelativeCommand(platform), args: ["-m", "pip", "list", "--format", "json"]};
+  return {command: venvRelativeCommand(platform), args: ["-m", "pip", "--isolated", "list", "--format", "json"]};
 }
 
 function venvPipCheckCommand(platform: NodeJS.Platform): Readonly<CommandSpec> {
-  return {command: venvRelativeCommand(platform), args: ["-m", "pip", "check"]};
+  return {command: venvRelativeCommand(platform), args: ["-m", "pip", "--isolated", "check"]};
 }
 
 function expectedVenvDirectory(paths: RepositoryPaths, platform: NodeJS.Platform): string {
@@ -605,7 +605,7 @@ describe("createPythonProvider", () => {
     const fixture = await createPythonFixture();
     fixture.setResponse(
       venvPipVersionCommand("win32"),
-      commandResult({stdout: "pip raw-version-marker from C:\\Users\\secret-user-marker"}),
+      commandResult({stdout: "pip 1notapepversion from C:\\Users\\secret-user-marker\\.venv (python 3.12)"}),
       fixture.paths.expRoot,
     );
 
@@ -616,7 +616,7 @@ describe("createPythonProvider", () => {
       issues: ["pip --version returned malformed output."],
       durationMs: 5,
     });
-    expect(JSON.stringify(outcome)).not.toMatch(/raw-version-marker|secret-user-marker/iu);
+    expect(JSON.stringify(outcome)).not.toMatch(/1notapepversion|secret-user-marker/iu);
   });
 
   it("accepts pip version output written to stderr without retaining the installation path", async () => {
@@ -756,6 +756,89 @@ describe("createPythonProvider", () => {
     });
   });
 
+  it("uses PEP 440 equality for exact pins instead of raw version-string equality", async () => {
+    const fixture = await createPythonFixture({
+      requirements: "demo==1.0\n",
+      includedRequirements: "",
+    });
+    fixture.setResponse(
+      venvPipListCommand("win32"),
+      commandResult({stdout: JSON.stringify([{name: "demo", version: "1.0.0+vendor.1"}])}),
+      fixture.paths.expRoot,
+    );
+
+    const outcome = await fixture.provider();
+
+    expect(outcome).toMatchObject({
+      kind: "available",
+      value: {
+        requirements: {
+          declared: [{name: "demo", specifier: "1.0", source: "sites/exp.arolariu.ro/requirements-dev.txt"}],
+          mismatches: [],
+        },
+      },
+    });
+  });
+
+  it("normalizes PEP 440 epochs, prereleases, postreleases, development releases, and local versions", async () => {
+    const fixture = await createPythonFixture({
+      requirements: [
+        "epoch-package==1!2.0",
+        "pre-package==1.0alpha1",
+        "post-package==1.0rev1",
+        "dev-package==1.0.dev1",
+        "local-package==1.0+ABC-1",
+        "",
+      ].join("\n"),
+      includedRequirements: "",
+    });
+    fixture.setResponse(
+      venvPipListCommand("win32"),
+      commandResult({
+        stdout: JSON.stringify([
+          {name: "epoch-package", version: "1!2.0.0"},
+          {name: "pre-package", version: "1.0a1"},
+          {name: "post-package", version: "1.0-post1"},
+          {name: "dev-package", version: "1.0_dev1"},
+          {name: "local-package", version: "1.0+abc.1"},
+        ]),
+      }),
+      fixture.paths.expRoot,
+    );
+
+    const outcome = await fixture.provider();
+
+    expect(outcome).toMatchObject({kind: "available", value: {requirements: {mismatches: []}}});
+  });
+
+  it("rejects a digit-prefixed malformed version returned by pip list", async () => {
+    const fixture = await createPythonFixture();
+    fixture.setResponse(
+      venvPipListCommand("win32"),
+      commandResult({stdout: JSON.stringify([{name: "requests", version: "1notapepversion"}])}),
+      fixture.paths.expRoot,
+    );
+
+    await expect(fixture.provider()).resolves.toEqual({
+      kind: "invalid",
+      issues: ["pip list returned malformed package data."],
+      durationMs: 5,
+    });
+  });
+
+  it("rejects an exact pin whose version is not valid PEP 440", async () => {
+    const fixture = await createPythonFixture({
+      requirements: "demo==1notapepversion\n",
+      includedRequirements: "",
+    });
+
+    await expect(fixture.provider()).resolves.toEqual({
+      kind: "invalid",
+      issues: ["The Python requirements tree is malformed."],
+      durationMs: 5,
+    });
+  });
+
   it("redacts unverifiable pip option contents while retaining their source location", async () => {
     const fixture = await createPythonFixture({
       requirements: [
@@ -782,6 +865,34 @@ describe("createPythonProvider", () => {
     expect(JSON.stringify(outcome)).not.toMatch(/credential-marker|password|python_version/iu);
   });
 
+  it("retains valid extras, direct references, and bare marker requirements only as redacted unverifiable facts", async () => {
+    const fixture = await createPythonFixture({
+      requirements: [
+        "extras-package[security, speed]>=1.0",
+        "direct-package @ https://user:secret@example.invalid/direct-package.whl",
+        'marker-package; python_version >= "3.12" and sys_platform != "win32"',
+        "",
+      ].join("\n"),
+      includedRequirements: "",
+    });
+
+    const outcome = await fixture.provider();
+
+    expect(outcome).toMatchObject({
+      kind: "available",
+      value: {
+        requirements: {
+          unverifiable: [
+            "sites/exp.arolariu.ro/requirements-dev.txt:1 declares 'extras-package' with a requirement that is not exactly comparable.",
+            "sites/exp.arolariu.ro/requirements-dev.txt:2 declares 'direct-package' with a requirement that is not exactly comparable.",
+            "sites/exp.arolariu.ro/requirements-dev.txt:3 declares 'marker-package' with a requirement that is not exactly comparable.",
+          ],
+        },
+      },
+    });
+    expect(JSON.stringify(outcome)).not.toMatch(/user:secret|example\.invalid|python_version|sys_platform/iu);
+  });
+
   it("rejects malformed requirements without copying the malformed line", async () => {
     const fixture = await createPythonFixture({requirements: '"unterminated-raw-secret-marker\n'});
 
@@ -793,6 +904,58 @@ describe("createPythonProvider", () => {
       durationMs: 5,
     });
     expect(JSON.stringify(outcome)).not.toContain("unterminated-raw-secret-marker");
+  });
+
+  it("rejects a name-prefixed malformed requirement instead of classifying it as unverifiable", async () => {
+    const fixture = await createPythonFixture({requirements: "demo==\n", includedRequirements: ""});
+
+    await expect(fixture.provider()).resolves.toEqual({
+      kind: "invalid",
+      issues: ["The Python requirements tree is malformed."],
+      durationMs: 5,
+    });
+  });
+
+  it("rejects a malformed environment marker instead of classifying it as unverifiable", async () => {
+    const fixture = await createPythonFixture({
+      requirements: 'demo>=1; python_version >>> "3.12"\n',
+      includedRequirements: "",
+    });
+
+    await expect(fixture.provider()).resolves.toEqual({
+      kind: "invalid",
+      issues: ["The Python requirements tree is malformed."],
+      durationMs: 5,
+    });
+  });
+
+  it("rejects duplicate normalized names across non-exact requirements", async () => {
+    const fixture = await createPythonFixture({
+      requirements: "demo>=1\nDemo~=2.0\n",
+      includedRequirements: "",
+    });
+
+    await expect(fixture.provider()).resolves.toEqual({
+      kind: "invalid",
+      issues: ["The Python requirements tree is malformed."],
+      durationMs: 5,
+    });
+  });
+
+  it("rejects unknown pip requirement-file options", async () => {
+    const fixture = await createPythonFixture({
+      requirements: "--not-a-real-pip-option raw-option-secret-marker\n",
+      includedRequirements: "",
+    });
+
+    const outcome = await fixture.provider();
+
+    expect(outcome).toEqual({
+      kind: "invalid",
+      issues: ["The Python requirements tree is malformed."],
+      durationMs: 5,
+    });
+    expect(JSON.stringify(outcome)).not.toContain("raw-option-secret-marker");
   });
 
   it("rejects requirement includes that escape the experimental-service root", async () => {
@@ -807,6 +970,26 @@ describe("createPythonProvider", () => {
       durationMs: 5,
     });
     expect(JSON.stringify(outcome)).not.toMatch(/outside-requirements|outside-secret-marker/iu);
+  });
+
+  it("allows a parent-relative requirement include that remains inside the experimental-service root", async () => {
+    const fixture = await createPythonFixture({requirements: "-r nested/dev.txt\n"});
+    await writeFixtureFile(resolve(fixture.paths.expRoot, "nested", "dev.txt"), "-r ../requirements.txt\npytest==9.1.1\n");
+
+    const outcome = await fixture.provider();
+
+    expect(outcome).toMatchObject({
+      kind: "available",
+      value: {
+        requirements: {
+          declared: [
+            {name: "requests", specifier: "2.31.0", source: "sites/exp.arolariu.ro/requirements.txt"},
+            {name: "fastapi", specifier: "0.141.1", source: "sites/exp.arolariu.ro/requirements.txt"},
+            {name: "pytest", specifier: "9.1.1", source: "sites/exp.arolariu.ro/nested/dev.txt"},
+          ],
+        },
+      },
+    });
   });
 
   it("rejects duplicate normalized requirements across included files", async () => {
@@ -921,6 +1104,19 @@ describe("createPythonProvider", () => {
       issues: ["The Python requirements entry file is missing."],
       durationMs: 5,
     });
+    expect(fixture.run).not.toHaveBeenCalled();
+  });
+
+  it("rejects an oversized sparse requirements file before launching probes", async () => {
+    const fixture = await createPythonFixture();
+    await truncate(fixture.paths.pythonRequirements, 1_048_577);
+
+    await expect(fixture.provider()).resolves.toEqual({
+      kind: "invalid",
+      issues: ["The Python requirements tree is malformed."],
+      durationMs: 5,
+    });
+    expect(fixture.run).not.toHaveBeenCalled();
   });
 
   it("rejects a non-directory object at the canonical virtual-environment path", async () => {

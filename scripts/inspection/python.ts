@@ -8,8 +8,9 @@
  * package-index credentials, and configuration values never cross this module's public boundary.
  */
 
-import {readFile, realpath, stat} from "node:fs/promises";
+import {open, realpath, stat} from "node:fs/promises";
 import {dirname, isAbsolute, relative, resolve, sep} from "node:path";
+import {TextDecoder} from "node:util";
 
 import type {CommandResult} from "../common/process.ts";
 import type {RepositoryPaths} from "../common/repository-paths.ts";
@@ -102,6 +103,23 @@ interface RequirementDetail {
   readonly unverifiable: readonly string[];
 }
 
+interface Pep440Version {
+  readonly normalized: string;
+  readonly publicIdentity: string;
+  readonly localIdentity?: string;
+  readonly releaseSegmentCount: number;
+}
+
+type ParsedRequirementEntry =
+  {readonly kind: "exact"; readonly name: string; readonly specifier: string} | {readonly kind: "unverifiable"; readonly name: string};
+
+type RequirementMarkerToken =
+  | {readonly kind: "word"; readonly value: string}
+  | {readonly kind: "string"}
+  | {readonly kind: "operator"}
+  | {readonly kind: "leftParenthesis"}
+  | {readonly kind: "rightParenthesis"};
+
 type ContainedTextObservation =
   | {readonly kind: "available"; readonly contents: string}
   | {readonly kind: "missing"}
@@ -148,13 +166,16 @@ const PYTHON_VERSION_PATTERN = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:(a|b
 const PYTHON_COMMAND_VERSION_PATTERN = /^Python\s+(.+)$/u;
 const PYTHON_REQUIREMENT_PATTERN = /^>=(0|[1-9]\d*)\.(0|[1-9]\d*)$/u;
 const PIP_VERSION_PATTERN = /^pip\s+(\S+)\s+from\s+.+\s+\(python\s+\S+\)$/u;
-const PIP_VERSION_TOKEN_PATTERN = /^[0-9][0-9A-Za-z.!+_-]*$/u;
 const PACKAGE_NAME_PATTERN = /^[A-Za-z0-9](?:[A-Za-z0-9._-]*[A-Za-z0-9])?$/u;
-const PACKAGE_VERSION_PATTERN = /^[A-Za-z0-9](?:[A-Za-z0-9._!+-]*[A-Za-z0-9])?$/u;
-const EXACT_REQUIREMENT_PIN = /^([A-Za-z0-9](?:[A-Za-z0-9._-]*[A-Za-z0-9])?)\s*==\s*([A-Za-z0-9](?:[A-Za-z0-9._!+-]*[A-Za-z0-9])?)$/u;
+const REQUIREMENT_NAME_PREFIX = /^([A-Za-z0-9](?:[A-Za-z0-9._-]*[A-Za-z0-9])?)/u;
+const REQUIREMENT_EXTRAS_PATTERN = /^[A-Za-z0-9](?:[A-Za-z0-9._-]*[A-Za-z0-9])?(?:\s*,\s*[A-Za-z0-9](?:[A-Za-z0-9._-]*[A-Za-z0-9])?)*$/u;
 const REQUIREMENT_INCLUDE_DIRECTIVE = /^(?:-r|--requirement)(?:=|\s+)(.+)$/u;
 const REQUIREMENT_INCLUDE_PREFIX = /^(?:-r|--requirement)(?:=|\s|$)/u;
-const REQUIREMENT_NAME_LIKE = /^[A-Za-z0-9][A-Za-z0-9._-]*/u;
+const REQUIREMENT_SPECIFIER_OPERATOR = /^(===|~=|==|!=|<=|>=|<|>)/u;
+const REQUIREMENT_WILDCARD_VERSION = /^(?:(?:0|[1-9]\d*)!)?(?:0|[1-9]\d*)(?:\.(?:0|[1-9]\d*))*\.\*$/u;
+const PIP_REQUIREMENT_FLAG_OPTION = /^--(?:no-index|pre|prefer-binary|require-hashes)$/u;
+const PIP_REQUIREMENT_VALUE_OPTION =
+  /^(?:-[cefi]|--(?:config-settings|constraint|editable|extra-index-url|find-links|global-option|hash|index-url|no-binary|only-binary|trusted-host|use-deprecated|use-feature))(?:=|\s+)\S.*$/u;
 const LINE_CONTINUATION_SUFFIX = /\\\s*$/u;
 const CONFIGURATION_KEY_PATTERN = /^[A-Za-z0-9][A-Za-z0-9:._-]*$/u;
 const PIP_CONFLICT_PATTERN = /^([A-Za-z0-9](?:[A-Za-z0-9._-]*[A-Za-z0-9])?)\s+\S+\s+(?:has requirement\b|is not supported\b)/u;
@@ -170,6 +191,25 @@ const MAX_VERSION_LENGTH = 128;
 const MAX_PACKAGE_NAME_LENGTH = 214;
 const MAX_PACKAGE_VERSION_LENGTH = 256;
 const MAX_BOUNDED_FACTS = 50;
+const MAX_REQUIREMENT_MARKER_TOKENS = 256;
+const REQUIREMENT_MARKER_VARIABLES: ReadonlySet<string> = new Set([
+  "dependency_groups",
+  "extra",
+  "extras",
+  "implementation_name",
+  "implementation_version",
+  "os_name",
+  "platform_machine",
+  "platform_python_implementation",
+  "platform_release",
+  "platform_system",
+  "platform_version",
+  "python_full_version",
+  "python_version",
+  "sys_platform",
+]);
+const PEP440_VERSION_PATTERN =
+  /^\s*v?(?:(\d+)!)?(\d+(?:\.\d+)*)(?:(?:[-_.]?)(a|b|c|rc|alpha|beta|pre|preview)(?:[-_.]?)(\d+)?)?(?:(?:-(\d+))|(?:(?:[-_.]?)(post|rev|r)(?:[-_.]?)(\d+)?))?(?:(?:[-_.]?)(dev)(?:[-_.]?)(\d+)?)?(?:\+([a-z0-9]+(?:[-_.][a-z0-9]+)*))?\s*$/iu;
 
 function isRecord(value: unknown): value is UnknownRecord {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -218,6 +258,84 @@ function safeText(value: string, maximumLength: number): string | undefined {
   }
   const trimmed = value.trim();
   return trimmed !== "" && trimmed.length <= maximumLength && !CONTROL_CHARACTER_PATTERN.test(trimmed) ? trimmed : undefined;
+}
+
+function normalizePep440Integer(value: string | undefined): string {
+  const normalized = (value ?? "0").replace(/^0+(?=\d)/u, "");
+  return normalized === "" ? "0" : normalized;
+}
+
+function normalizePep440Prerelease(value: string): "a" | "b" | "rc" {
+  const normalized = value.toLowerCase();
+  if (normalized === "a" || normalized === "alpha") {
+    return "a";
+  }
+  if (normalized === "b" || normalized === "beta") {
+    return "b";
+  }
+  return "rc";
+}
+
+function normalizePep440Local(value: string): Readonly<{text: string; identity: string}> {
+  const normalizedSegments = value
+    .toLowerCase()
+    .split(/[-_.]/u)
+    .map((segment) => {
+      if (/^\d+$/u.test(segment)) {
+        const number = normalizePep440Integer(segment);
+        return {text: number, identity: `n:${number}`};
+      }
+      return {text: segment, identity: `s:${segment}`};
+    });
+  return {
+    text: normalizedSegments.map(({text}) => text).join("."),
+    identity: normalizedSegments.map(({identity}) => identity).join("."),
+  };
+}
+
+function parsePep440Version(value: string): Pep440Version | undefined {
+  const text = safeText(value, MAX_PACKAGE_VERSION_LENGTH);
+  if (text === undefined) {
+    return undefined;
+  }
+  const match = PEP440_VERSION_PATTERN.exec(text);
+  if (match === null || match[2] === undefined) {
+    return undefined;
+  }
+
+  const epoch = normalizePep440Integer(match[1]);
+  const release = match[2].split(".").map((part) => normalizePep440Integer(part));
+  const equalityRelease = [...release];
+  while (equalityRelease.length > 1 && equalityRelease.at(-1) === "0") {
+    equalityRelease.pop();
+  }
+
+  const prereleaseType = match[3];
+  const prerelease =
+    prereleaseType === undefined ? undefined : `${normalizePep440Prerelease(prereleaseType)}${normalizePep440Integer(match[4])}`;
+  const implicitPost = match[5];
+  const explicitPost = match[6];
+  const post =
+    implicitPost !== undefined || explicitPost !== undefined ? `.post${normalizePep440Integer(implicitPost ?? match[7])}` : undefined;
+  const dev = match[8] === undefined ? undefined : `.dev${normalizePep440Integer(match[9])}`;
+  const local = match[10] === undefined ? undefined : normalizePep440Local(match[10]);
+
+  const epochPrefix = epoch === "0" ? "" : `${epoch}!`;
+  const publicVersion = `${epochPrefix}${release.join(".")}${prerelease ?? ""}${post ?? ""}${dev ?? ""}`;
+  const publicIdentity = [epoch, equalityRelease.join("."), prerelease ?? "-", post ?? "-", dev ?? "-"].join("|");
+  return {
+    normalized: `${publicVersion}${local === undefined ? "" : `+${local.text}`}`,
+    publicIdentity,
+    ...(local === undefined ? {} : {localIdentity: local.identity}),
+    releaseSegmentCount: release.length,
+  };
+}
+
+function pep440ExactMatch(expected: Pep440Version, installed: Pep440Version): boolean {
+  return (
+    expected.publicIdentity === installed.publicIdentity
+    && (expected.localIdentity === undefined || expected.localIdentity === installed.localIdentity)
+  );
 }
 
 function parsePythonVersionText(value: string): ParsedPythonVersion | undefined {
@@ -360,7 +478,7 @@ function parsePythonMetadata(output: string): PythonMetadata | undefined {
 function parsePipVersion(output: string): string | undefined {
   const text = safeText(output, MAX_PATH_LENGTH);
   const version = text === undefined ? undefined : PIP_VERSION_PATTERN.exec(text)?.[1];
-  return version !== undefined && version.length <= MAX_VERSION_LENGTH && PIP_VERSION_TOKEN_PATTERN.test(version) ? version : undefined;
+  return version === undefined ? undefined : parsePep440Version(version)?.normalized;
 }
 
 function parsePipVersionResult(result: Readonly<CommandResult>): string | undefined {
@@ -371,7 +489,7 @@ function normalizeDistributionName(name: string): string {
   return name.toLowerCase().replaceAll(/[-_.]+/gu, "-");
 }
 
-function parseInstalledDistributions(output: string): ReadonlyMap<string, string> | undefined {
+function parseInstalledDistributions(output: string): ReadonlyMap<string, Pep440Version> | undefined {
   if (output.length > MAX_COMMAND_OUTPUT_LENGTH) {
     return undefined;
   }
@@ -386,20 +504,19 @@ function parseInstalledDistributions(output: string): ReadonlyMap<string, string
     return undefined;
   }
 
-  const distributions = new Map<string, string>();
+  const distributions = new Map<string, Pep440Version>();
   for (const entry of parsed) {
     if (!isRecord(entry)) {
       return undefined;
     }
     const name = entry["name"];
     const version = entry["version"];
+    const parsedVersion = typeof version === "string" ? parsePep440Version(version) : undefined;
     if (
       typeof name !== "string"
       || name.length > MAX_PACKAGE_NAME_LENGTH
       || !PACKAGE_NAME_PATTERN.test(name)
-      || typeof version !== "string"
-      || version.length > MAX_PACKAGE_VERSION_LENGTH
-      || !PACKAGE_VERSION_PATTERN.test(version)
+      || parsedVersion === undefined
     ) {
       return undefined;
     }
@@ -408,7 +525,7 @@ function parseInstalledDistributions(output: string): ReadonlyMap<string, string
     if (distributions.has(normalizedName)) {
       return undefined;
     }
-    distributions.set(normalizedName, version);
+    distributions.set(normalizedName, parsedVersion);
   }
   return distributions;
 }
@@ -475,6 +592,44 @@ async function canonicalExperimentalRoot(paths: RepositoryPaths): Promise<string
   }
 }
 
+async function readBoundedTextFile(path: string): Promise<ContainedTextObservation> {
+  try {
+    const handle = await open(path, "r");
+    try {
+      const metadata = await handle.stat();
+      if (!metadata.isFile() || metadata.size > MAX_TEXT_FILE_LENGTH) {
+        return {kind: "invalid"};
+      }
+
+      const buffer = Buffer.allocUnsafe(MAX_TEXT_FILE_LENGTH + 1);
+      let bytesRead = 0;
+      while (bytesRead < buffer.length) {
+        const result = await handle.read(buffer, bytesRead, buffer.length - bytesRead, bytesRead);
+        if (result.bytesRead === 0) {
+          break;
+        }
+        bytesRead += result.bytesRead;
+      }
+      if (bytesRead > MAX_TEXT_FILE_LENGTH) {
+        return {kind: "invalid"};
+      }
+
+      try {
+        return {
+          kind: "available",
+          contents: new TextDecoder("utf-8", {fatal: true}).decode(buffer.subarray(0, bytesRead)),
+        };
+      } catch {
+        return {kind: "invalid"};
+      }
+    } finally {
+      await handle.close();
+    }
+  } catch (error: unknown) {
+    return hasErrorCode(error, "ENOENT") ? {kind: "missing"} : {kind: "unavailable"};
+  }
+}
+
 async function readContainedText(path: string, canonicalRoot: string): Promise<ContainedTextObservation> {
   let canonicalPath: string;
   try {
@@ -485,17 +640,7 @@ async function readContainedText(path: string, canonicalRoot: string): Promise<C
   if (!isPathWithin(canonicalRoot, canonicalPath)) {
     return {kind: "invalid"};
   }
-
-  try {
-    const metadata = await stat(canonicalPath);
-    if (!metadata.isFile()) {
-      return {kind: "invalid"};
-    }
-    const contents = await readFile(canonicalPath, "utf8");
-    return contents.length <= MAX_TEXT_FILE_LENGTH ? {kind: "available", contents} : {kind: "invalid"};
-  } catch {
-    return {kind: "unavailable"};
-  }
+  return readBoundedTextFile(canonicalPath);
 }
 
 async function readPythonMinimum(paths: RepositoryPaths, canonicalRoot: string): Promise<PythonMinimum> {
@@ -527,6 +672,243 @@ function stripInlineComment(line: string): string {
   return (hashIndex === -1 ? line : line.slice(0, hashIndex)).trim();
 }
 
+function splitRequirementMarker(value: string): Readonly<{requirement: string; marker?: string}> | undefined {
+  let quote: "'" | '"' | undefined;
+  for (let index = 0; index < value.length; index += 1) {
+    const character = value[index]!;
+    if (character === "'" || character === '"') {
+      quote = quote === undefined ? character : quote === character ? undefined : quote;
+      continue;
+    }
+    if (character === ";" && quote === undefined) {
+      const requirement = value.slice(0, index).trim();
+      const marker = value.slice(index + 1).trim();
+      return !isValidRequirementMarker(marker) ? undefined : {requirement, marker};
+    }
+  }
+  return quote === undefined ? {requirement: value.trim()} : undefined;
+}
+
+function isValidRequirementMarker(value: string): boolean {
+  if (value === "" || value.length > MAX_TEXT_FILE_LENGTH || CONTROL_CHARACTER_PATTERN.test(value)) {
+    return false;
+  }
+
+  const tokens: RequirementMarkerToken[] = [];
+  for (let index = 0; index < value.length;) {
+    const character = value[index]!;
+    if (/\s/u.test(character)) {
+      index += 1;
+      continue;
+    }
+    if (character === "(") {
+      tokens.push({kind: "leftParenthesis"});
+      index += 1;
+    } else if (character === ")") {
+      tokens.push({kind: "rightParenthesis"});
+      index += 1;
+    } else if (character === "'" || character === '"') {
+      const closingIndex = value.indexOf(character, index + 1);
+      if (closingIndex === -1 || value.slice(index + 1, closingIndex).includes("\\")) {
+        return false;
+      }
+      tokens.push({kind: "string"});
+      index = closingIndex + 1;
+    } else {
+      const operator = /^(?:===|~=|==|!=|<=|>=|<|>)/u.exec(value.slice(index))?.[0];
+      if (operator !== undefined) {
+        tokens.push({kind: "operator"});
+        index += operator.length;
+      } else {
+        const word = /^[A-Za-z_][A-Za-z0-9_]*/u.exec(value.slice(index))?.[0];
+        if (word === undefined) {
+          return false;
+        }
+        tokens.push({kind: "word", value: word});
+        index += word.length;
+      }
+    }
+    if (tokens.length > MAX_REQUIREMENT_MARKER_TOKENS) {
+      return false;
+    }
+  }
+
+  let position = 0;
+  const consumeWord = (word: string): boolean => {
+    const token = tokens[position];
+    if (token?.kind !== "word" || token.value !== word) {
+      return false;
+    }
+    position += 1;
+    return true;
+  };
+  const consumeOperand = (): boolean => {
+    const token = tokens[position];
+    if (token?.kind === "string" || (token?.kind === "word" && REQUIREMENT_MARKER_VARIABLES.has(token.value))) {
+      position += 1;
+      return true;
+    }
+    return false;
+  };
+  const consumeOperator = (): boolean => {
+    if (tokens[position]?.kind === "operator") {
+      position += 1;
+      return true;
+    }
+    if (consumeWord("in")) {
+      return true;
+    }
+    const originalPosition = position;
+    if (consumeWord("not") && consumeWord("in")) {
+      return true;
+    }
+    position = originalPosition;
+    return false;
+  };
+
+  let consumeOrExpression: () => boolean;
+  const consumeAtom = (): boolean => {
+    if (tokens[position]?.kind === "leftParenthesis") {
+      position += 1;
+      if (!consumeOrExpression() || tokens[position]?.kind !== "rightParenthesis") {
+        return false;
+      }
+      position += 1;
+      return true;
+    }
+    return consumeOperand() && consumeOperator() && consumeOperand();
+  };
+  const consumeAndExpression = (): boolean => {
+    if (!consumeAtom()) {
+      return false;
+    }
+    while (consumeWord("and")) {
+      if (!consumeAtom()) {
+        return false;
+      }
+    }
+    return true;
+  };
+  consumeOrExpression = (): boolean => {
+    if (!consumeAndExpression()) {
+      return false;
+    }
+    while (consumeWord("or")) {
+      if (!consumeAndExpression()) {
+        return false;
+      }
+    }
+    return true;
+  };
+
+  return tokens.length > 0 && consumeOrExpression() && position === tokens.length;
+}
+
+function parseRequirementSpecifierSet(
+  value: string,
+): readonly Readonly<{operator: string; version: string; parsedVersion?: Pep440Version}>[] | undefined {
+  const trimmed = value.trim();
+  const body = trimmed.startsWith("(") && trimmed.endsWith(")") ? trimmed.slice(1, -1).trim() : trimmed;
+  if (body === "") {
+    return undefined;
+  }
+
+  const specifiers: Array<Readonly<{operator: string; version: string; parsedVersion?: Pep440Version}>> = [];
+  for (const rawSpecifier of body.split(",")) {
+    const specifier = rawSpecifier.trim();
+    const operator = REQUIREMENT_SPECIFIER_OPERATOR.exec(specifier)?.[1];
+    if (operator === undefined) {
+      return undefined;
+    }
+    const version = specifier.slice(operator.length).trim();
+    if (version === "" || version.length > MAX_PACKAGE_VERSION_LENGTH || CONTROL_CHARACTER_PATTERN.test(version)) {
+      return undefined;
+    }
+    if (operator === "===") {
+      if (/\s/u.test(version)) {
+        return undefined;
+      }
+      specifiers.push({operator, version});
+      continue;
+    }
+    if (REQUIREMENT_WILDCARD_VERSION.test(version)) {
+      if (operator !== "==" && operator !== "!=") {
+        return undefined;
+      }
+      specifiers.push({operator, version});
+      continue;
+    }
+
+    const parsedVersion = parsePep440Version(version);
+    if (
+      parsedVersion === undefined
+      || ((operator === "<" || operator === "<=" || operator === ">" || operator === ">=" || operator === "~=")
+        && parsedVersion.localIdentity !== undefined)
+      || (operator === "~=" && parsedVersion.releaseSegmentCount < 2)
+    ) {
+      return undefined;
+    }
+    specifiers.push({operator, version, parsedVersion});
+  }
+  return specifiers;
+}
+
+function parseRequirementEntry(line: string): ParsedRequirementEntry | undefined {
+  const nameMatch = REQUIREMENT_NAME_PREFIX.exec(line);
+  if (nameMatch?.[1] === undefined || nameMatch[1].length > MAX_PACKAGE_NAME_LENGTH) {
+    return undefined;
+  }
+
+  const name = normalizeDistributionName(nameMatch[1]);
+  let remainder = line.slice(nameMatch[1].length).trimStart();
+  let hasExtras = false;
+  if (remainder.startsWith("[")) {
+    const closingBracket = remainder.indexOf("]");
+    if (closingBracket < 2 || !REQUIREMENT_EXTRAS_PATTERN.test(remainder.slice(1, closingBracket))) {
+      return undefined;
+    }
+    hasExtras = true;
+    remainder = remainder.slice(closingBracket + 1).trimStart();
+  }
+
+  const markerSplit = splitRequirementMarker(remainder);
+  if (markerSplit === undefined) {
+    return undefined;
+  }
+  const requirement = markerSplit.requirement;
+  if (requirement === "") {
+    return {kind: "unverifiable", name};
+  }
+
+  if (requirement.startsWith("@")) {
+    const reference = requirement.slice(1).trim();
+    return reference !== ""
+      && reference.length <= MAX_PATH_LENGTH
+      && !CONTROL_CHARACTER_PATTERN.test(reference)
+      && !/\s/u.test(reference)
+      && URI_SCHEME_PATTERN.test(reference)
+      ? {kind: "unverifiable", name}
+      : undefined;
+  }
+
+  const specifiers = parseRequirementSpecifierSet(requirement);
+  if (specifiers === undefined) {
+    return undefined;
+  }
+  const exact = specifiers.length === 1 ? specifiers[0] : undefined;
+  return !hasExtras && markerSplit.marker === undefined && exact?.operator === "==" && exact.parsedVersion !== undefined
+    ? {kind: "exact", name, specifier: exact.version}
+    : {kind: "unverifiable", name};
+}
+
+function isSupportedRequirementOption(line: string): boolean {
+  return (
+    line.length <= MAX_TEXT_FILE_LENGTH
+    && !CONTROL_CHARACTER_PATTERN.test(line)
+    && (PIP_REQUIREMENT_FLAG_OPTION.test(line) || PIP_REQUIREMENT_VALUE_OPTION.test(line))
+  );
+}
+
 function parseIncludeValue(value: string): string | undefined {
   const trimmed = value.trim();
   if (trimmed === "") {
@@ -549,7 +931,6 @@ function isSafeRequirementInclude(value: string): boolean {
     && !WINDOWS_DRIVE_PATH_PATTERN.test(value)
     && !URI_SCHEME_PATTERN.test(value)
     && !value.startsWith("\\")
-    && !value.split(/[\\/]/u).includes("..")
   );
 }
 
@@ -586,22 +967,14 @@ async function parseRequirementsTree(paths: RepositoryPaths, canonicalRoot: stri
       throw new RequirementsTreeInvalidError();
     }
 
-    let contents: string;
-    try {
-      const metadata = await stat(canonicalPath);
-      if (!metadata.isFile()) {
-        throw new RequirementsTreeInvalidError();
-      }
-      contents = await readFile(canonicalPath, "utf8");
-    } catch (error: unknown) {
-      if (error instanceof RequirementsTreeInvalidError) {
-        throw error;
-      }
-      throw new RequirementsTreeUnavailableError();
-    }
-    if (contents.length > MAX_TEXT_FILE_LENGTH) {
+    const observation = await readBoundedTextFile(canonicalPath);
+    if (observation.kind === "invalid" || observation.kind === "missing") {
       throw new RequirementsTreeInvalidError();
     }
+    if (observation.kind === "unavailable") {
+      throw new RequirementsTreeUnavailableError();
+    }
+    const contents = observation.contents;
 
     const source = repositoryRelativePath(paths, logicalPath);
     if (source === undefined) {
@@ -647,30 +1020,25 @@ async function parseRequirementsTree(paths: RepositoryPaths, canonicalRoot: stri
       }
 
       if (line.startsWith("-")) {
+        if (!isSupportedRequirementOption(line)) {
+          throw new RequirementsTreeInvalidError();
+        }
         unverifiable.push(`${source}:${String(index + 1)} contains a pip option or directive that is not exactly comparable.`);
         continue;
       }
 
-      const exactMatch = EXACT_REQUIREMENT_PIN.exec(line);
-      if (exactMatch !== null && exactMatch[1] !== undefined && exactMatch[2] !== undefined) {
-        const name = normalizeDistributionName(exactMatch[1]);
-        if (seenNames.has(name)) {
-          throw new RequirementsTreeInvalidError();
-        }
-        seenNames.add(name);
-        declarations.push({name, specifier: exactMatch[2], source});
-        continue;
+      const requirement = parseRequirementEntry(line);
+      if (requirement === undefined || seenNames.has(requirement.name)) {
+        throw new RequirementsTreeInvalidError();
       }
-
-      const packageName = REQUIREMENT_NAME_LIKE.exec(line)?.[0];
-      if (packageName !== undefined && packageName.length <= MAX_PACKAGE_NAME_LENGTH) {
+      seenNames.add(requirement.name);
+      if (requirement.kind === "exact") {
+        declarations.push({name: requirement.name, specifier: requirement.specifier, source});
+      } else {
         unverifiable.push(
-          `${source}:${String(index + 1)} declares '${normalizeDistributionName(packageName)}' with a requirement that is not exactly comparable.`,
+          `${source}:${String(index + 1)} declares '${requirement.name}' with a requirement that is not exactly comparable.`,
         );
-        continue;
       }
-
-      throw new RequirementsTreeInvalidError();
     }
 
     visiting.delete(canonicalPath);
@@ -684,14 +1052,21 @@ async function parseRequirementsTree(paths: RepositoryPaths, canonicalRoot: stri
   };
 }
 
-function compareRequirements(declarations: RequirementDetail["declared"], installed: ReadonlyMap<string, string>): readonly string[] {
+function compareRequirements(
+  declarations: RequirementDetail["declared"],
+  installed: ReadonlyMap<string, Pep440Version>,
+): readonly string[] {
   const mismatches: string[] = [];
   for (const declaration of declarations) {
     const installedVersion = installed.get(declaration.name);
+    const expectedVersion = parsePep440Version(declaration.specifier);
+    if (expectedVersion === undefined) {
+      continue;
+    }
     if (installedVersion === undefined) {
       mismatches.push(`${declaration.name}==${declaration.specifier} is not installed.`);
-    } else if (installedVersion !== declaration.specifier) {
-      mismatches.push(`${declaration.name} requires ${declaration.specifier} but ${installedVersion} is installed.`);
+    } else if (!pep440ExactMatch(expectedVersion, installedVersion)) {
+      mismatches.push(`${declaration.name} requires ${declaration.specifier} but ${installedVersion.normalized} is installed.`);
     }
   }
   return boundGeneratedFacts(mismatches, "requirement mismatches");
@@ -852,13 +1227,13 @@ export function createPythonProvider(
     try {
       const canonicalRoot = await canonicalExperimentalRoot(input.paths);
       const environment = pythonProbeEnvironment(input.platform);
-      const [minimum, interpreterDetails, requirementDetail, configurationIssues, venvExists] = await Promise.all([
-        readPythonMinimum(input.paths, canonicalRoot),
-        inspectInterpreters({...input, environment}),
-        parseRequirementsTree(input.paths, canonicalRoot),
+      const minimum = await readPythonMinimum(input.paths, canonicalRoot);
+      const requirementDetail = await parseRequirementsTree(input.paths, canonicalRoot);
+      const [configurationIssues, venvExists] = await Promise.all([
         inspectConfiguration(input.paths, canonicalRoot),
         inspectVenvDirectory(input.paths),
       ]);
+      const interpreterDetails = await inspectInterpreters({...input, environment});
 
       const interpreters = interpreterDetails.map(({fact}) => fact);
       const selected = interpreterDetails.find(({version}) => satisfiesMinimum(version, minimum))?.fact;

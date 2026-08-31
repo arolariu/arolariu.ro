@@ -571,7 +571,7 @@ function pythonPipVersion(pythonPath: string, selector?: string): InspectionProb
   const validatedSelector = validatePythonLauncherSelector(validatedPath, selector);
   return registerProbe(buildPythonProbeId("python.pip-version", validatedPath, validatedSelector), {
     command: validatedPath,
-    args: buildPythonProbeArgs(validatedSelector, ["-m", "pip", "--version"]),
+    args: buildPythonProbeArgs(validatedSelector, ["-m", "pip", "--isolated", "--version"]),
   });
 }
 
@@ -590,7 +590,7 @@ function pythonPipList(pythonPath: string, selector?: string): InspectionProbe {
   const validatedSelector = validatePythonLauncherSelector(validatedPath, selector);
   return registerProbe(buildPythonProbeId("python.pip-list", validatedPath, validatedSelector), {
     command: validatedPath,
-    args: buildPythonProbeArgs(validatedSelector, ["-m", "pip", "list", "--format", "json"]),
+    args: buildPythonProbeArgs(validatedSelector, ["-m", "pip", "--isolated", "list", "--format", "json"]),
   });
 }
 
@@ -609,7 +609,7 @@ function pythonPipCheck(pythonPath: string, selector?: string): InspectionProbe 
   const validatedSelector = validatePythonLauncherSelector(validatedPath, selector);
   return registerProbe(buildPythonProbeId("python.pip-check", validatedPath, validatedSelector), {
     command: validatedPath,
-    args: buildPythonProbeArgs(validatedSelector, ["-m", "pip", "check"]),
+    args: buildPythonProbeArgs(validatedSelector, ["-m", "pip", "--isolated", "check"]),
   });
 }
 
