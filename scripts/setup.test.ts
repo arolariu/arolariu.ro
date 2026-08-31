@@ -15,8 +15,17 @@ import type {CommandRunner} from "./common/process.ts";
 import {createTerminalPromptProvider, type PromptProvider} from "./common/prompts.ts";
 import {createRepositoryPaths, type RepositoryPaths} from "./common/repository-paths.ts";
 import type {RepositoryRequirements} from "./common/requirements.ts";
-import {createSetupActionExecutor, main, parseSetupOptions, runSetup, setupPhases, type SetupDependencies} from "./setup.ts";
+import type {createRepositoryInspectionSession, RepositoryInspectionSession} from "./inspection/repository.ts";
+import {createSetupActionExecutor, main, runSetup, setupPhases, type SetupDependencies} from "./setup.ts";
 import type {SetupAction, SetupContext, SetupOptions, SetupPhaseDefinition, SetupPhaseResult, SetupStatus} from "./setup.types.ts";
+
+/** A typed fake {@link RepositoryInspectionSession} that never resolves a real repository fact. */
+function createFakeInspectionSession(): RepositoryInspectionSession {
+  return {
+    inspect: async () => ({kind: "unavailable", reason: "Not exercised by this test.", durationMs: 0}),
+    invalidate: () => {},
+  };
+}
 
 function createLogger(verbose?: boolean): Readonly<{
   logger: MonorepositoryConsoleLogger;
@@ -233,48 +242,8 @@ describe("createSetupActionExecutor", () => {
   });
 });
 
-describe("parseSetupOptions", () => {
-  it("returns disabled defaults when no arguments are provided", () => {
-    expect(parseSetupOptions([])).toEqual({
-      verbose: false,
-      dryRun: false,
-      yes: false,
-    });
-  });
-
-  it("parses flags and a separate engine value", () => {
-    expect(parseSetupOptions(["--verbose", "--dry-run", "--yes", "--engine", "rancher"])).toEqual({
-      verbose: true,
-      dryRun: true,
-      yes: true,
-      engine: "rancher",
-    });
-  });
-
-  it("parses an inline engine value", () => {
-    expect(parseSetupOptions(["--engine=podman"])).toEqual({
-      verbose: false,
-      dryRun: false,
-      yes: false,
-      engine: "podman",
-    });
-  });
-
-  it("consumes --help without widening SetupOptions", () => {
-    const parsed = parseSetupOptions(["--help"]);
-
-    expect(parsed).toEqual({
-      verbose: false,
-      dryRun: false,
-      yes: false,
-    });
-    expect(Object.keys(parsed)).toEqual(["verbose", "dryRun", "yes"]);
-  });
-
-  it.each([["--unknown"], ["positional"], ["--engine"], ["--engine=docker"]])("rejects invalid arguments: %s", (...argv) => {
-    expect(() => parseSetupOptions(argv)).toThrow(/setup option|engine/i);
-  });
-});
+// CLI option parsing (`--help`, `-h`, `/h`, `--verbose`, `--dry-run`, `--yes`, `--engine`) is
+// owned by Commander through `main()`; see the `describe("main", ...)` CLI coverage below.
 
 const noopRunner: CommandRunner = {
   run: async () => ({code: 0, stdout: "", stderr: "", durationMs: 0, timedOut: false}),
@@ -546,6 +515,98 @@ describe("runSetup", () => {
     const rendered = sink.records.map((record) => record.text).join("\n");
     expect(rendered).not.toContain("🐛");
   });
+
+  it("constructs one full inspection session for every setup phase", async () => {
+    const {prompts} = createPrompts();
+    const {logger} = createLogger();
+    const fakeSession = createFakeInspectionSession();
+    const createInspectionSession = vi.fn<typeof createRepositoryInspectionSession>(() => fakeSession);
+    const receivedContexts: SetupContext[] = [];
+    const phases = [
+      stubPhase("a", {
+        run: async (context) => {
+          receivedContexts.push(context);
+          return phaseResult("a", "succeeded");
+        },
+      }),
+      stubPhase("b", {
+        dependsOn: ["a"],
+        run: async (context) => {
+          receivedContexts.push(context);
+          return phaseResult("b", "succeeded");
+        },
+      }),
+    ];
+
+    await runSetupForTest(options(), {phases, logger, prompts, runner: noopRunner, createInspectionSession});
+
+    expect(createInspectionSession).toHaveBeenCalledTimes(1);
+    expect(createInspectionSession).toHaveBeenCalledWith(
+      expect.objectContaining({
+        profile: "full",
+        paths: FIXED_REPOSITORY_PATHS,
+        runner: noopRunner,
+        env: process.env,
+        platform: process.platform,
+      }),
+    );
+    expect(receivedContexts).toHaveLength(2);
+    expect(receivedContexts.every((context) => context.inspection === receivedContexts[0]?.inspection)).toBe(true);
+    expect(receivedContexts[0]?.inspection).toBe(fakeSession);
+  });
+
+  it("omits requestedEngine from the inspection session input when no engine option is set", async () => {
+    const createInspectionSession = vi.fn<typeof createRepositoryInspectionSession>(() => createFakeInspectionSession());
+
+    await runSetupForTest(options(), {
+      phases: [stubPhase("a")],
+      logger: createLogger().logger,
+      prompts: createPrompts().prompts,
+      runner: noopRunner,
+      createInspectionSession,
+    });
+
+    const call = createInspectionSession.mock.calls[0];
+    expect(call).toBeDefined();
+    const input = call?.[0];
+    if (input === undefined) {
+      throw new Error("createInspectionSession was not called.");
+    }
+    expect(Object.hasOwn(input, "requestedEngine")).toBe(false);
+  });
+
+  it("passes the requested engine through to the inspection session", async () => {
+    const createInspectionSession = vi.fn<typeof createRepositoryInspectionSession>(() => createFakeInspectionSession());
+
+    await runSetupForTest(options({engine: "podman"}), {
+      phases: [stubPhase("a")],
+      logger: createLogger().logger,
+      prompts: createPrompts().prompts,
+      runner: noopRunner,
+      createInspectionSession,
+    });
+
+    expect(createInspectionSession).toHaveBeenCalledWith(expect.objectContaining({requestedEngine: "podman"}));
+  });
+
+  it("does not construct an inspection session when repository requirements are invalid", async () => {
+    const {prompts} = createPrompts();
+    const {logger} = createLogger();
+    const createInspectionSession = vi.fn<typeof createRepositoryInspectionSession>(() => createFakeInspectionSession());
+
+    await expect(
+      runSetup(options(), {
+        resolveRepositoryPaths: () => FIXED_REPOSITORY_PATHS,
+        loadRepositoryRequirements: async () => ({status: "invalid", errors: ["reason is blocking"]}),
+        logger,
+        prompts,
+        runner: noopRunner,
+        createInspectionSession,
+      }),
+    ).rejects.toThrow(/invalid/i);
+
+    expect(createInspectionSession).not.toHaveBeenCalled();
+  });
 });
 
 describe("phase command execution", () => {
@@ -634,16 +695,87 @@ describe("phase command execution", () => {
 });
 
 describe("main", () => {
+  it.each([["--help"], ["-h"], ["/h"]])("performs no repository work and exits 0 for %s", async (flag) => {
+    const {logger} = createLogger();
+    const resolveRepositoryPaths = vi.fn<() => RepositoryPaths>(() => FIXED_REPOSITORY_PATHS);
+
+    const exitCode = await main([flag], {logger, resolveRepositoryPaths});
+
+    expect(exitCode).toBe(0);
+    expect(resolveRepositoryPaths).not.toHaveBeenCalled();
+  });
+
   it("renders help and returns 0 without parsing other options", async () => {
-    await expect(main(["--bogus", "--help"])).resolves.toBe(0);
+    const resolveRepositoryPaths = vi.fn<() => RepositoryPaths>(() => FIXED_REPOSITORY_PATHS);
+
+    await expect(main(["--bogus", "--help"], {resolveRepositoryPaths})).resolves.toBe(0);
+
+    expect(resolveRepositoryPaths).not.toHaveBeenCalled();
   });
 
   it("returns 1 and renders the option error instead of silently continuing", async () => {
     const {logger, sink} = createLogger();
+    const resolveRepositoryPaths = vi.fn<() => RepositoryPaths>(() => FIXED_REPOSITORY_PATHS);
 
-    await expect(main(["--bogus"], {logger})).resolves.toBe(1);
+    await expect(main(["--bogus"], {logger, resolveRepositoryPaths})).resolves.toBe(1);
 
-    expect(sink.records.map((record) => record.text).join("\n")).toMatch(/unknown setup option/i);
+    expect(resolveRepositoryPaths).not.toHaveBeenCalled();
+    expect(sink.records.map((record) => record.text).join("\n")).toMatch(/unknown option/i);
+  });
+
+  it("returns 1 and performs no repository work for an invalid --engine value", async () => {
+    const {logger, sink} = createLogger();
+    const resolveRepositoryPaths = vi.fn<() => RepositoryPaths>(() => FIXED_REPOSITORY_PATHS);
+
+    await expect(main(["--engine=docker"], {logger, resolveRepositoryPaths})).resolves.toBe(1);
+
+    expect(resolveRepositoryPaths).not.toHaveBeenCalled();
+    expect(sink.records.map((record) => record.text).join("\n")).toMatch(/engine/i);
+  });
+
+  it.each([
+    ["--verbose", {verbose: true, dryRun: false, yes: false}],
+    ["--dry-run", {verbose: false, dryRun: true, yes: false}],
+    ["--yes", {verbose: false, dryRun: false, yes: true}],
+  ] as const)("parses %s into SetupOptions before running setup", async (flag, expectedOptions) => {
+    const {logger} = createLogger();
+    const {prompts} = createPrompts();
+    let receivedOptions: SetupOptions | undefined;
+    const phases = [
+      stubPhase("dotnet", {
+        run: async (context) => {
+          receivedOptions = context.options;
+          return phaseResult("dotnet", "succeeded");
+        },
+      }),
+    ];
+
+    const exitCode = await main([flag], {logger, prompts, runner: noopRunner, phases, ...fixedRuntimeDependencies()});
+
+    expect(exitCode).toBe(0);
+    expect(receivedOptions).toEqual(expectedOptions);
+  });
+
+  it.each([
+    ["--engine", "podman", ["--engine", "podman"]],
+    ["--engine=podman", "podman", ["--engine=podman"]],
+  ] as const)("parses %s into a podman SetupOptions.engine before running setup", async (_case, expectedEngine, argv) => {
+    const {logger} = createLogger();
+    const {prompts} = createPrompts();
+    let receivedOptions: SetupOptions | undefined;
+    const phases = [
+      stubPhase("dotnet", {
+        run: async (context) => {
+          receivedOptions = context.options;
+          return phaseResult("dotnet", "succeeded");
+        },
+      }),
+    ];
+
+    const exitCode = await main([...argv], {logger, prompts, runner: noopRunner, phases, ...fixedRuntimeDependencies()});
+
+    expect(exitCode).toBe(0);
+    expect(receivedOptions?.engine).toBe(expectedEngine);
   });
 
   it("returns 1 and renders every blocking reason for invalid repository requirements", async () => {
@@ -701,6 +833,6 @@ describe("main", () => {
 
     expect(result.code).toBe(1);
     expect(result.output.trim().length).toBeGreaterThan(0);
-    expect(result.output).toMatch(/unknown setup option/i);
+    expect(result.output).toMatch(/unknown option/i);
   });
 });

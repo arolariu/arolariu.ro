@@ -15,6 +15,7 @@ import {createRepositoryPaths, type RepositoryPaths} from "./common/repository-p
 import {parseVersion, type MinimumVersion, type RepositoryRequirements} from "./common/requirements.ts";
 import {getExpectedTaxonomyArtifactPaths} from "./common/taxonomy-artifacts.ts";
 import {sha256File} from "./common/tooling-config.ts";
+import type {RepositoryInspectionSession} from "./inspection/repository.ts";
 import {inspectNpmTreeResult, shouldRestoreNpmTree, workspaceSetupPhases, type NpmTreeInspection} from "./setup.workspace.ts";
 import type {
   SetupAction,
@@ -95,6 +96,14 @@ function options(patch: Partial<SetupOptions> = {}): SetupOptions {
   };
 }
 
+/** A typed fake {@link RepositoryInspectionSession} that never resolves a real repository fact. */
+function createFakeInspectionSession(): RepositoryInspectionSession {
+  return {
+    inspect: async () => ({kind: "unavailable", reason: "Not exercised by this test.", durationMs: 0}),
+    invalidate: () => {},
+  };
+}
+
 function findPhase(id: string): SetupPhaseDefinition {
   const phase = workspaceSetupPhases.find((candidate) => candidate.id === id);
   if (phase === undefined) {
@@ -169,6 +178,7 @@ function createContext(
     options: patch.options ?? options(),
     paths,
     requirements: patch.requirements ?? requirements(),
+    inspection: createFakeInspectionSession(),
     runner,
     prompts: {
       confirm: async () => true,

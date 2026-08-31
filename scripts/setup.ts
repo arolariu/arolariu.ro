@@ -16,12 +16,15 @@
 
 import {resolve} from "node:path";
 import {fileURLToPath} from "node:url";
+import {Option, type Command} from "commander";
 
+import {commanderExitCode, createToolProgram} from "./common/cli.ts";
 import {defaultCommandRunner, formatCommand, type CommandRunner, type CommandRunOptions} from "./common/process.ts";
 import {MonorepositoryConsoleLogger, type MonorepositoryLogger} from "./common/logger.ts";
 import {createTerminalPromptProvider, type PromptProvider} from "./common/prompts.ts";
 import {loadRepositoryRequirements, type RequirementLoadResult} from "./common/requirements.ts";
 import {resolveRepositoryPaths, type RepositoryPaths} from "./common/repository-paths.ts";
+import {createRepositoryInspectionSession} from "./inspection/repository.ts";
 import {dotnetSetupPhase} from "./setup.dotnet.ts";
 import {infrastructureSetupPhase} from "./setup.infrastructure.ts";
 import {pythonSetupPhase} from "./setup.python.ts";
@@ -30,64 +33,58 @@ import {svelteSetupPhase} from "./setup.svelte.ts";
 import type {SetupActionExecutor, SetupContext, SetupOptions, SetupPhaseDefinition, SetupPhaseResult} from "./setup.types.ts";
 import {workspaceSetupPhases} from "./setup.workspace.ts";
 
-function parseContainerEngine(value: string): NonNullable<SetupOptions["engine"]> {
-  if (value === "rancher" || value === "podman") {
-    return value;
-  }
+/** Example invocations rendered in setup CLI help. */
+const SETUP_EXAMPLES: readonly string[] = ["npm run setup", "npm run setup -- --dry-run", "npm run setup -- --engine podman"];
 
-  throw new Error(`Unsupported setup engine '${value}'. Expected rancher or podman.`);
+/**
+ * Builds the Commander program that owns setup CLI parsing, `--help`, `-h`, `/h`, and parse-error
+ * rendering.
+ *
+ * @remarks
+ * `--engine` values are restricted to `rancher`/`podman` through Commander's own choice
+ * validation, so an invalid engine is rejected with a Commander-native, logger-rendered error
+ * before any repository work begins.
+ *
+ * @param logger - Logger that receives Commander's rendered help and error output.
+ * @returns A configured, not-yet-parsed Commander program.
+ */
+function buildSetupProgram(logger: MonorepositoryLogger): Command {
+  const program = createToolProgram({
+    name: "setup",
+    description:
+      "Prepares a fresh checkout end to end: workspace dependencies, generated artifacts, and the .NET, React, Svelte, Python, and local infrastructure toolchains.",
+    usage: "[options]",
+    examples: SETUP_EXAMPLES,
+    logger,
+  });
+
+  program
+    .option("--verbose", "Show diagnostic detail for each phase.")
+    .option("--dry-run", "Plan every phase mutation without executing it.")
+    .option("--yes", "Approve system-scoped mutations without prompting.")
+    .addOption(new Option("--engine <engine>", "Select rancher or podman for infrastructure phases.").choices(["rancher", "podman"]));
+
+  return program;
 }
 
 /**
- * Parses setup command-line options.
+ * Extracts strict {@link SetupOptions} from a Commander program that has already parsed
+ * successfully.
  *
- * @param argv - Arguments following the setup entrypoint.
- * @returns Strict setup options consumed by the orchestrator.
- * @throws When an option or container engine is unsupported.
+ * @param program - Setup Commander program after a successful `parse`.
+ * @returns Setup options consumed by the orchestrator.
  */
-export function parseSetupOptions(argv: readonly string[]): SetupOptions {
-  let verbose = false;
-  let dryRun = false;
-  let yes = false;
-  let engine: SetupOptions["engine"];
-
-  for (let index = 0; index < argv.length; index++) {
-    const argument = argv[index];
-    switch (argument) {
-      case "--verbose":
-        verbose = true;
-        break;
-      case "--dry-run":
-        dryRun = true;
-        break;
-      case "--yes":
-        yes = true;
-        break;
-      case "--help":
-        break;
-      case "--engine": {
-        const value = argv[index + 1];
-        if (value === undefined || value.startsWith("--")) {
-          throw new Error("Setup option '--engine' requires rancher or podman.");
-        }
-        engine = parseContainerEngine(value);
-        index++;
-        break;
-      }
-      default:
-        if (argument?.startsWith("--engine=")) {
-          engine = parseContainerEngine(argument.slice("--engine=".length));
-          break;
-        }
-        throw new Error(`Unknown setup option '${String(argument)}'.`);
-    }
-  }
-
+function optionsFromProgram(program: Command): SetupOptions {
+  const parsed = program.opts<{verbose?: boolean; dryRun?: boolean; yes?: boolean; engine?: string}>();
   return {
-    verbose,
-    dryRun,
-    yes,
-    ...(engine === undefined ? {} : {engine}),
+    verbose: parsed.verbose ?? false,
+    dryRun: parsed.dryRun ?? false,
+    yes: parsed.yes ?? false,
+    // Commander's `.choices([...])` already restricts this value to "rancher" or "podman"
+    // before it is ever treated as a real ContainerEngine. Cast away `undefined` (not just
+    // `SetupOptions["engine"]`, which still includes it) so this branch stays assignable under
+    // `exactOptionalPropertyTypes`.
+    ...(parsed.engine === undefined ? {} : {engine: parsed.engine as Exclude<SetupOptions["engine"], undefined>}),
   };
 }
 
@@ -165,6 +162,8 @@ export interface SetupDependencies {
   readonly resolveRepositoryPaths: () => RepositoryPaths;
   /** Loads manifest-derived repository requirements. */
   readonly loadRepositoryRequirements: (paths: RepositoryPaths) => Promise<RequirementLoadResult>;
+  /** Composes the one full repository inspection session shared by every phase. */
+  readonly createInspectionSession: typeof createRepositoryInspectionSession;
   /** Executes phase commands. */
   readonly runner: CommandRunner;
   /** Resolves interactive phase prompts. */
@@ -353,6 +352,7 @@ export async function runSetup(
   const now = dependencies.now ?? ((): number => performance.now());
   const resolvePaths = dependencies.resolveRepositoryPaths ?? ((): RepositoryPaths => resolveRepositoryPaths());
   const loadRequirements = dependencies.loadRepositoryRequirements ?? loadRepositoryRequirements;
+  const createInspectionSession = dependencies.createInspectionSession ?? createRepositoryInspectionSession;
   const phases = dependencies.phases ?? setupPhases;
 
   logger.banner([
@@ -368,11 +368,24 @@ export async function runSetup(
     throw new Error(`Repository requirements are invalid:\n${requirementLoad.errors.join("\n")}`);
   }
 
+  // Constructed exactly once, after paths and requirements are valid, and shared by reference
+  // across every phase's SetupContext below.
+  const inspection = createInspectionSession({
+    profile: "full",
+    paths,
+    runner,
+    ...(options.engine === undefined ? {} : {requestedEngine: options.engine}),
+    env: process.env,
+    platform: process.platform,
+    now,
+  });
+
   const actions = createSetupActionExecutor({options, prompts, logger});
   const context: SetupContext = {
     options,
     paths,
     requirements: requirementLoad.requirements,
+    inspection,
     runner,
     prompts,
     actions,
@@ -473,28 +486,20 @@ export async function runSetup(
   return {exitCode: blocked ? 1 : 0, results};
 }
 
-const HELP_LINES: readonly string[] = [
-  "Usage: node scripts/setup.ts [options]",
-  "",
-  "Options:",
-  "  --verbose            Show diagnostic detail for each phase.",
-  "  --dry-run            Plan every phase mutation without executing it.",
-  "  --yes                Approve system-scoped mutations without prompting.",
-  "  --engine <engine>    Select rancher or podman for infrastructure phases.",
-  "  --help               Show this help message.",
-];
-
 /**
  * Runs the setup CLI entrypoint.
  *
  * @remarks
- * `--help` is detected before options are parsed or any phase runs, so an
- * unsupported flag combined with `--help` never surfaces a parse error.
- * Every other failure is classified and rendered through the logger before
- * this function returns: an option/path/requirements error renders and
- * returns `1`; an `AbortError` renders an interruption notice and returns
- * `130`. {@link runSetup} itself still rethrows an `AbortError` unchanged so
- * direct callers can distinguish interruption from failure.
+ * Commander owns `--help`/`-h`/`/h` and every option-parse error: help is
+ * rendered and returns `0`; a parse error (unknown option, missing/invalid
+ * `--engine` value, or an unexpected positional argument) is rendered
+ * through the logger and returns `1`. Neither path resolves repository
+ * paths, loads requirements, or runs a phase. Once options parse
+ * successfully, every other failure is classified before this function
+ * returns: a path/requirements error renders and returns `1`; an
+ * `AbortError` renders an interruption notice and returns `130`.
+ * {@link runSetup} itself still rethrows an `AbortError` unchanged so direct
+ * callers can distinguish interruption from failure.
  *
  * @param argv - Arguments following the setup entrypoint.
  * @param dependencies - Optional boundary replacements, primarily for tests
@@ -506,24 +511,16 @@ export async function main(
   argv: readonly string[] = process.argv.slice(2),
   dependencies: Readonly<Partial<SetupDependencies>> = {},
 ): Promise<number> {
-  if (argv.includes("--help")) {
-    const logger = dependencies.logger ?? new MonorepositoryConsoleLogger("setup", {verbose: false});
-    logger.banner(["arolariu.ro repository setup"]);
-    for (const line of HELP_LINES) {
-      logger.line(line);
-    }
-    return 0;
-  }
+  const parseLogger = dependencies.logger ?? new MonorepositoryConsoleLogger("setup", {verbose: false});
+  const program = buildSetupProgram(parseLogger);
 
-  let options: SetupOptions;
   try {
-    options = parseSetupOptions(argv);
+    program.parse(argv, {from: "user"});
   } catch (error: unknown) {
-    const logger = dependencies.logger ?? new MonorepositoryConsoleLogger("setup", {verbose: false});
-    logger.error(errorMessage(error));
-    return 1;
+    return commanderExitCode(error) ?? 1;
   }
 
+  const options = optionsFromProgram(program);
   const logger = dependencies.logger ?? new MonorepositoryConsoleLogger("setup", {verbose: options.verbose});
   try {
     const {exitCode} = await runSetup(options, {...dependencies, logger});

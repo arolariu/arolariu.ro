@@ -14,8 +14,17 @@ import type {CommandResult, CommandRunner, CommandSpec} from "./common/process.t
 import {createRepositoryPaths} from "./common/repository-paths.ts";
 import type {PackageRequirement, RepositoryRequirements} from "./common/requirements.ts";
 import {getExpectedTaxonomyArtifactPaths} from "./common/taxonomy-artifacts.ts";
+import type {RepositoryInspectionSession} from "./inspection/repository.ts";
 import {createReactSetupPhase, reactSetupPhase, writeTextFileAtomically, type ReactSetupDependencies} from "./setup.react.ts";
 import type {SetupAction, SetupActionDisposition, SetupActionExecutor, SetupContext, SetupOptions} from "./setup.types.ts";
+
+/** A typed fake {@link RepositoryInspectionSession} that never resolves a real repository fact. */
+function createFakeInspectionSession(): RepositoryInspectionSession {
+  return {
+    inspect: async () => ({kind: "unavailable", reason: "Not exercised by this test.", durationMs: 0}),
+    invalidate: () => {},
+  };
+}
 
 const filesystemFailures = vi.hoisted((): {rename?: Readonly<{path: string; code: string}>} => ({}));
 
@@ -330,6 +339,7 @@ function createHarness(
     options: input.setupOptions ?? options(),
     paths,
     requirements: requirements(input.requirementPatch),
+    inspection: createFakeInspectionSession(),
     runner,
     prompts: {
       confirm: async () => true,

@@ -11,6 +11,7 @@ import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "./common/logger.t
 import type {CommandResult, CommandRunner, CommandSpec} from "./common/process.ts";
 import {createRepositoryPaths} from "./common/repository-paths.ts";
 import type {PackageRequirement, RepositoryRequirements} from "./common/requirements.ts";
+import type {RepositoryInspectionSession} from "./inspection/repository.ts";
 import {
   createSvelteSetupPhase,
   inspectSvelteWorkspace,
@@ -19,6 +20,14 @@ import {
   type SvelteWorkspaceState,
 } from "./setup.svelte.ts";
 import type {SetupAction, SetupActionDisposition, SetupActionExecutor, SetupContext, SetupOptions} from "./setup.types.ts";
+
+/** A typed fake {@link RepositoryInspectionSession} that never resolves a real repository fact. */
+function createFakeInspectionSession(): RepositoryInspectionSession {
+  return {
+    inspect: async () => ({kind: "unavailable", reason: "Not exercised by this test.", durationMs: 0}),
+    invalidate: () => {},
+  };
+}
 
 const paths = createRepositoryPaths(resolve("C:\\fixture\\arolariu.ro"));
 const requiredPackages = [
@@ -361,6 +370,7 @@ function createHarness(
     options: input.setupOptions ?? options(),
     paths,
     requirements: input.repositoryRequirements ?? requirements(),
+    inspection: createFakeInspectionSession(),
     runner,
     prompts: {
       confirm: async () => true,

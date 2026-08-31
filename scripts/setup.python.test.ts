@@ -14,6 +14,7 @@ import type {CommandResult, CommandRunner, CommandSpec} from "./common/process.t
 import {createRepositoryPaths, type RepositoryPaths} from "./common/repository-paths.ts";
 import type {MinimumVersion, RepositoryRequirements} from "./common/requirements.ts";
 import {sha256File, type ToolingConfigV1} from "./common/tooling-config.ts";
+import type {RepositoryInspectionSession} from "./inspection/repository.ts";
 import {
   createPythonSetupPhase,
   pythonInVirtualEnvironment,
@@ -22,6 +23,14 @@ import {
   selectPythonInterpreter,
 } from "./setup.python.ts";
 import type {SetupAction, SetupActionDisposition, SetupActionExecutor, SetupContext, SetupOptions} from "./setup.types.ts";
+
+/** A typed fake {@link RepositoryInspectionSession} that never resolves a real repository fact. */
+function createFakeInspectionSession(): RepositoryInspectionSession {
+  return {
+    inspect: async () => ({kind: "unavailable", reason: "Not exercised by this test.", durationMs: 0}),
+    invalidate: () => {},
+  };
+}
 
 const filesystemFailures = vi.hoisted((): {readFile?: Readonly<{path: string; code: "EACCES"}>} => ({}));
 
@@ -172,6 +181,7 @@ function createHarness(
     options: input.options ?? setupOptions(),
     paths: input.paths,
     requirements: requirements(),
+    inspection: createFakeInspectionSession(),
     runner,
     prompts: {
       confirm: async () => true,

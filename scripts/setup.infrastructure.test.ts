@@ -14,6 +14,7 @@ import {createRepositoryPaths} from "./common/repository-paths.ts";
 import type {RepositoryRequirements} from "./common/requirements.ts";
 import type {ToolingConfigReadResult, ToolingConfigV1} from "./common/tooling-config.ts";
 import {requiredLocalPorts} from "./container-runtime/preflight.ts";
+import type {RepositoryInspectionSession} from "./inspection/repository.ts";
 import {
   createInfrastructureSetupPhase,
   defaultDependencies,
@@ -23,6 +24,14 @@ import {
   type PortState,
 } from "./setup.infrastructure.ts";
 import type {SetupAction, SetupActionDisposition, SetupActionExecutor, SetupContext, SetupOptions} from "./setup.types.ts";
+
+/** A typed fake {@link RepositoryInspectionSession} that never resolves a real repository fact. */
+function createFakeInspectionSession(): RepositoryInspectionSession {
+  return {
+    inspect: async () => ({kind: "unavailable", reason: "Not exercised by this test.", durationMs: 0}),
+    invalidate: () => {},
+  };
+}
 
 const ROOT = resolve(process.cwd(), ".synthetic", "setup-infrastructure-root");
 const paths = createRepositoryPaths(ROOT);
@@ -164,6 +173,7 @@ function createHarness(input: HarnessInput = {}): Readonly<{
     options: input.options ?? setupOptions(),
     paths: input.root === undefined ? paths : {...paths, root: input.root},
     requirements: requirements(),
+    inspection: createFakeInspectionSession(),
     runner: {run},
     prompts: {
       confirm: async () => true,

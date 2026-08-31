@@ -9,6 +9,7 @@ import type {CommandRunner, CommandSpec} from "./common/process.ts";
 import type {PromptProvider} from "./common/prompts.ts";
 import type {RepositoryPaths} from "./common/repository-paths.ts";
 import type {RepositoryRequirements} from "./common/requirements.ts";
+import type {RepositoryInspectionSession} from "./inspection/repository.ts";
 
 /** Terminal status reported by one setup phase. */
 export type SetupStatus = "succeeded" | "failed" | "skipped" | "degraded";
@@ -95,6 +96,8 @@ export interface SetupContext {
   readonly paths: RepositoryPaths;
   /** Manifest-derived repository requirements. */
   readonly requirements: RepositoryRequirements;
+  /** One full repository inspection session shared by every setup phase. */
+  readonly inspection: RepositoryInspectionSession;
   /** Injected command runner. */
   readonly runner: CommandRunner;
   /** Injected prompt provider. */

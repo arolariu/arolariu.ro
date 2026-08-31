@@ -11,6 +11,7 @@ import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "./common/logger.t
 import type {CommandResult, CommandRunner, CommandSpec} from "./common/process.ts";
 import {createRepositoryPaths} from "./common/repository-paths.ts";
 import type {MinimumVersion, RepositoryRequirements} from "./common/requirements.ts";
+import type {RepositoryInspectionSession} from "./inspection/repository.ts";
 import {
   createDotnetSetupPhase,
   dotnetSetupPhase,
@@ -19,6 +20,14 @@ import {
   selectDotnetInstallationProposal,
 } from "./setup.dotnet.ts";
 import type {SetupAction, SetupActionDisposition, SetupActionExecutor, SetupContext, SetupOptions} from "./setup.types.ts";
+
+/** A typed fake {@link RepositoryInspectionSession} that never resolves a real repository fact. */
+function createFakeInspectionSession(): RepositoryInspectionSession {
+  return {
+    inspect: async () => ({kind: "unavailable", reason: "Not exercised by this test.", durationMs: 0}),
+    invalidate: () => {},
+  };
+}
 
 const requiredDotnet: MinimumVersion = {major: 10, minor: 0, patch: 0};
 const paths = createRepositoryPaths(resolve("C:\\fixture\\arolariu.ro"));
@@ -196,6 +205,7 @@ function createHarness(
     options: input.options ?? setupOptions(),
     paths,
     requirements: requirements(),
+    inspection: createFakeInspectionSession(),
     runner,
     prompts: {
       confirm: async () => true,
