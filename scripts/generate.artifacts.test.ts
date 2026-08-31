@@ -4,19 +4,12 @@
  * @module scripts/generate.artifacts.test
  */
 
-import {ChildProcess, execFile} from "node:child_process";
-import type {ExecFileException} from "node:child_process";
 import fs from "node:fs";
 import {mkdir, mkdtemp, readFile, rm, writeFile} from "node:fs/promises";
 import {tmpdir} from "node:os";
 import {basename, dirname, join} from "node:path";
 import {stripVTControlCharacters} from "node:util";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
-
-vi.mock("node:child_process", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("node:child_process")>();
-  return {...actual, execFile: vi.fn(actual.execFile)};
-});
 
 import {
   BackendLicenseGenerator,
@@ -30,6 +23,7 @@ import {
   TaxonomyClassificationGenerator,
 } from "./generate.artifacts.ts";
 import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "./common/logger.ts";
+import {defaultCommandRunner, type CommandRunner} from "./common/process.ts";
 import {main as generate, parseCommandLineOptions} from "./generate.ts";
 import type {TaxonomyArtifact} from "./types";
 
@@ -40,6 +34,9 @@ import type {TaxonomyArtifact} from "./types";
 class ArtifactGeneratorTestHarness {
   /** Temporary directories registered for cleanup after the current test. */
   readonly #temporaryDirectories: string[] = [];
+
+  /** Injected archive-extraction command runner used by GPC tests. */
+  #archiveCommandRunner: CommandRunner | undefined;
 
   /** ANSI-normalized console messages captured by semantic console level. */
   readonly #consoleMessages: Record<"debug" | "info" | "warn" | "error", string[]> = {
@@ -131,36 +128,37 @@ class ArtifactGeneratorTestHarness {
   }
 
   /**
-   * Mocks OS archive extraction by writing an extracted GPC fixture.
+   * Configures archive extraction by injecting a fake shared command runner.
    *
    * @param document - GPC document written into the mocked extraction directory.
    */
   public mockArchiveExtraction(document: unknown = this.gpcDocument): void {
-    vi.mocked(execFile).mockImplementation((...arguments_) => {
-      const commandArguments = arguments_.find(
-        (argument): argument is readonly string[] => Array.isArray(argument) && argument.every((value) => typeof value === "string"),
-      );
-      const callback = arguments_.find(
-        (argument): argument is (error: ExecFileException | null, stdout: string | Buffer, stderr: string | Buffer) => void =>
-          typeof argument === "function",
-      );
-      const outputIndex = commandArguments?.findIndex((value) => value === "-C" || value === "-d") ?? -1;
-      const outputDirectory = commandArguments?.[outputIndex + 1];
-      if (outputDirectory === undefined) throw new Error("Output directory argument is missing.");
+    this.#archiveCommandRunner = {
+      run: vi.fn<CommandRunner["run"]>(async (command) => {
+        const outputIndex = command.args.findIndex((value) => value === "-C" || value === "-d");
+        const outputDirectory = command.args[outputIndex + 1];
+        if (outputDirectory === undefined) {
+          throw new Error("Output directory argument is missing.");
+        }
 
-      const childProcess = new ChildProcess();
-      void Promise.all([
-        writeFile(join(outputDirectory, "GPC as of May 2026 (2026-05-20) EN.json"), JSON.stringify(document), "utf8"),
-        writeFile(join(outputDirectory, "Delta - GPC as of May 2026 (20260520 v 20251127) EN.json"), JSON.stringify(document), "utf8"),
-      ])
-        .then(() => {
-          callback?.(null, "", "");
-        })
-        .catch((error: unknown) => {
-          callback?.(error instanceof Error ? error : new Error(String(error)), "", "");
-        });
-      return childProcess;
-    });
+        await Promise.all([
+          writeFile(join(outputDirectory, "GPC as of May 2026 (2026-05-20) EN.json"), JSON.stringify(document), "utf8"),
+          writeFile(
+            join(outputDirectory, "Delta - GPC as of May 2026 (20260520 v 20251127) EN.json"),
+            JSON.stringify(document),
+            "utf8",
+          ),
+        ]);
+
+        return {
+          code: 0,
+          stdout: "",
+          stderr: "",
+          durationMs: 0,
+          timedOut: false,
+        };
+      }),
+    };
   }
 
   /**
@@ -235,13 +233,49 @@ class ArtifactGeneratorTestHarness {
    *
    * @returns Output-root and workspace options accepted by `main`.
    */
-  public async createUnifiedMainOptions(): Promise<Readonly<{outputRoots: readonly string[]; workspaceRoot: string}>> {
+  public async createUnifiedMainOptions(): Promise<Readonly<{
+    archiveCommandRunner: CommandRunner;
+    outputRoots: readonly string[];
+    workspaceRoot: string;
+  }>> {
     const workspaceRoot = await this.createTemporaryDirectory("arolariu-unified-main-");
     const outputRoots = [join(workspaceRoot, "api"), join(workspaceRoot, "web")];
     await this.writeJson(join(workspaceRoot, "sites", "arolariu.ro", "package.json"), {});
     this.mockArchiveExtraction();
     this.stubUnifiedFetch();
-    return {outputRoots, workspaceRoot};
+    return {
+      archiveCommandRunner: this.requireArchiveCommandRunner(),
+      outputRoots,
+      workspaceRoot,
+    };
+  }
+
+  /**
+   * Creates a GPC generator bound to the configured archive runner.
+   *
+   * @param outputRoots - Optional mirrored output roots.
+   * @returns A generator using the configured archive runner.
+   */
+  public createGpcGenerator(outputRoots?: readonly string[]): Gs1GpcTaxonomyClassificationGenerator {
+    return new Gs1GpcTaxonomyClassificationGenerator(
+      outputRoots,
+      undefined,
+      this.#archiveCommandRunner ?? defaultCommandRunner,
+    );
+  }
+
+  /**
+   * Returns the configured archive-extraction runner.
+   *
+   * @returns Archive-extraction command runner.
+   */
+  public requireArchiveCommandRunner(): CommandRunner {
+    const archiveCommandRunner = this.#archiveCommandRunner;
+    if (archiveCommandRunner === undefined) {
+      throw new Error("Archive extraction runner was not configured.");
+    }
+
+    return archiveCommandRunner;
   }
 
   /** Restores mocks and removes every registered temporary directory. */
@@ -274,7 +308,7 @@ describe("Taxonomy classification generators", () => {
         harness.mockArchiveExtraction();
         const roots = await harness.createOutputRoots("arolariu-gpc-class-");
 
-        const outputs = await new Gs1GpcTaxonomyClassificationGenerator(roots).generate();
+        const outputs = await harness.createGpcGenerator(roots).generate();
 
         expect(outputs.map((output) => basename(output))).toEqual(["gpc-2026-05.min.json", "gpc-2026-05.min.json"]);
       });
@@ -289,7 +323,7 @@ describe("Taxonomy classification generators", () => {
         harness.mockArchiveExtraction();
         const roots = await harness.createOutputRoots("arolariu-gpc-retry-");
 
-        const generation = new Gs1GpcTaxonomyClassificationGenerator(roots).generate();
+        const generation = harness.createGpcGenerator(roots).generate();
         await vi.runAllTimersAsync();
 
         await expect(generation).resolves.toHaveLength(2);
@@ -301,7 +335,7 @@ describe("Taxonomy classification generators", () => {
         const fetchMock = vi.fn(async () => new Response("Unavailable", {status: 503, statusText: "Service Unavailable"}));
         vi.stubGlobal("fetch", fetchMock);
 
-        const expectation = expect(new Gs1GpcTaxonomyClassificationGenerator([]).generate()).rejects.toThrow(
+        const expectation = expect(harness.createGpcGenerator([]).generate()).rejects.toThrow(
           "GPC download failed with HTTP 503 Service Unavailable.",
         );
         await vi.runAllTimersAsync();
@@ -317,7 +351,7 @@ describe("Taxonomy classification generators", () => {
         harness.stubGpcFailure(failure);
         const roots = await harness.createOutputRoots("arolariu-gpc-error-");
 
-        const expectation = expect(new Gs1GpcTaxonomyClassificationGenerator(roots).generate()).rejects.toThrow("GPC unavailable");
+        const expectation = expect(harness.createGpcGenerator(roots).generate()).rejects.toThrow("GPC unavailable");
         await vi.runAllTimersAsync();
 
         await expectation;
@@ -332,8 +366,55 @@ describe("Taxonomy classification generators", () => {
         harness.mockArchiveExtraction({...harness.gpcDocument, DateUtc: "2025-04-01"});
         const roots = await harness.createOutputRoots("arolariu-gpc-date-");
 
-        await expect(new Gs1GpcTaxonomyClassificationGenerator(roots).generate()).rejects.toThrow(
+        await expect(harness.createGpcGenerator(roots).generate()).rejects.toThrow(
           "GPC source DateUtc must belong to the pinned 2026-05 release.",
+        );
+      });
+
+      it("uses the injected command runner for archive extraction", async () => {
+        vi.stubGlobal(
+          "fetch",
+          vi.fn(async () => new Response(new Uint8Array([1]), {status: 200})),
+        );
+        const roots = await harness.createOutputRoots("arolariu-gpc-runner-");
+        const run = vi.fn<CommandRunner["run"]>(async (command) => {
+          const outputIndex = command.args.findIndex((value) => value === "-C" || value === "-d");
+          const outputDirectory = command.args[outputIndex + 1];
+          if (outputDirectory === undefined) {
+            throw new Error("Output directory argument is missing.");
+          }
+
+          await Promise.all([
+            writeFile(join(outputDirectory, "GPC as of May 2026 (2026-05-20) EN.json"), JSON.stringify(harness.gpcDocument), "utf8"),
+            writeFile(
+              join(outputDirectory, "Delta - GPC as of May 2026 (20260520 v 20251127) EN.json"),
+              JSON.stringify(harness.gpcDocument),
+              "utf8",
+            ),
+          ]);
+
+          return {
+            code: 0,
+            stdout: "",
+            stderr: "",
+            durationMs: 0,
+            timedOut: false,
+          };
+        });
+        const runner: CommandRunner = {run};
+        const generator = new Gs1GpcTaxonomyClassificationGenerator(roots, undefined, runner);
+
+        const outputs = await generator.generate();
+
+        expect(outputs.map((output) => basename(output))).toEqual(["gpc-2026-05.min.json", "gpc-2026-05.min.json"]);
+        expect(run).toHaveBeenCalledWith(
+          {
+            command: process.platform === "win32" ? "tar.exe" : "unzip",
+            args: process.platform === "win32"
+              ? expect.arrayContaining(["-xf", expect.any(String), "-C", expect.any(String)])
+              : expect.arrayContaining(["-qq", expect.any(String), "-d", expect.any(String)]),
+          },
+          {output: "capture"},
         );
       });
     });
@@ -831,7 +912,7 @@ describe("Artifact orchestration and CLI contracts", () => {
 
       const actualPaths = (
         await Promise.all([
-          new Gs1GpcTaxonomyClassificationGenerator(outputRoots).generate(),
+          harness.createGpcGenerator(outputRoots).generate(),
           new EcoicopTaxonomyClassificationGenerator(outputRoots).generate(),
           new NaceTaxonomyClassificationGenerator(outputRoots).generate(),
         ])

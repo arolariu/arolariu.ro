@@ -3,12 +3,11 @@
  * @module scripts.generate.artifacts
  */
 
-import {execFile} from "node:child_process";
 import {access, glob, mkdir, mkdtemp, readFile, rm, writeFile} from "node:fs/promises";
 import {tmpdir} from "node:os";
 import {basename, dirname, join, resolve} from "node:path";
-import {promisify} from "node:util";
 import {MonorepositoryConsoleLogger, MonorepositoryLogger} from "./common/logger.ts";
+import {defaultCommandRunner, type CommandResult, type CommandRunner} from "./common/process.ts";
 import {taxonomyArtifactFileNames, taxonomyArtifactOutputRoots} from "./common/taxonomy-artifacts.ts";
 import type {NodePackageDependencyType, NodePackageInformation, TaxonomyArtifact, TaxonomyArtifactNode} from "./types";
 
@@ -723,14 +722,23 @@ export class Gs1GpcTaxonomyClassificationGenerator extends TaxonomyClassificatio
     4: "brick",
   };
 
+  /** Archive extractor used by this generator. */
+  readonly #archiveExtractor: SystemArchiveExtractor;
+
   /**
    * Creates the GPC generator.
    *
    * @param outputRoots - Optional mirrored artifact output directories.
    * @param logger - Optional lifecycle logger.
+   * @param archiveCommandRunner - Optional archive-extraction command runner.
    */
-  public constructor(outputRoots?: readonly string[], logger?: MonorepositoryLogger) {
+  public constructor(
+    outputRoots?: readonly string[],
+    logger?: MonorepositoryLogger,
+    archiveCommandRunner: CommandRunner = defaultCommandRunner,
+  ) {
     super(outputRoots, logger);
+    this.#archiveExtractor = new SystemArchiveExtractor(archiveCommandRunner);
   }
 
   /**
@@ -751,7 +759,7 @@ export class Gs1GpcTaxonomyClassificationGenerator extends TaxonomyClassificatio
         async (response) => new Uint8Array(await response.arrayBuffer()),
       );
 
-      const jsonBytes = await new SystemArchiveExtractor().extractEntry(archive, Gs1GpcTaxonomyClassificationGenerator.#archiveEntryName);
+      const jsonBytes = await this.#archiveExtractor.extractEntry(archive, Gs1GpcTaxonomyClassificationGenerator.#archiveEntryName);
       const parsed: unknown = JSON.parse(Buffer.from(jsonBytes).toString("utf8"));
       const nodes = this.parseDocument(parsed);
       this.logger.debug(`[GPC] Normalized ${nodes.length} taxonomy node(s).`);
@@ -1769,8 +1777,17 @@ export class BackendLicenseGenerator extends LicenseGenerator {
  * inside a unique temporary directory that is removed in a `finally` block.
  */
 class SystemArchiveExtractor {
-  /** Promisified Node.js child-process boundary used for archive extraction. */
-  static readonly #executeFile = promisify(execFile);
+  /** Shared command runner used for archive extraction. */
+  readonly #commandRunner: CommandRunner;
+
+  /**
+   * Creates the archive extractor.
+   *
+   * @param commandRunner - Shared command runner used for extraction commands.
+   */
+  public constructor(commandRunner: CommandRunner = defaultCommandRunner) {
+    this.#commandRunner = commandRunner;
+  }
 
   /**
    * Extracts one archive entry selected by suffix.
@@ -1790,17 +1807,8 @@ class SystemArchiveExtractor {
     try {
       await mkdir(outputDirectory, {recursive: true});
       await writeFile(archivePath, archive);
-
-      try {
-        await SystemArchiveExtractor.#executeFile(extractionCommand.command, [...extractionCommand.args]);
-      } catch (error: unknown) {
-        if (this.hasErrorCode(error) && error.code === "ENOENT") {
-          throw new Error(`Required archive extractor '${extractionCommand.command}' was not found on '${process.platform}'.`, {
-            cause: error,
-          });
-        }
-        throw error;
-      }
+      const result = await this.#commandRunner.run(extractionCommand, {output: "capture"});
+      this.throwIfExtractionFailed(extractionCommand, result);
 
       const matchingPaths: string[] = [];
       for await (const extractedPath of glob("**/*", {cwd: outputDirectory})) {
@@ -1839,13 +1847,52 @@ class SystemArchiveExtractor {
   }
 
   /**
-   * Determines whether an unknown error exposes a string error code.
+   * Throws the legacy extraction failure classification for a failed command.
    *
-   * @param error - Unknown caught value.
-   * @returns `true` when a string `code` property is available.
+   * @param command - Extraction command that was executed.
+   * @param result - Shared command result.
    */
-  private hasErrorCode(error: unknown): error is Error & Readonly<{code: string}> {
-    return error instanceof Error && "code" in error && typeof Reflect.get(error, "code") === "string";
+  private throwIfExtractionFailed(command: Readonly<{command: string; args: readonly string[]}>, result: CommandResult): void {
+    if (result.spawnError?.includes("ENOENT") === true) {
+      throw new Error(`Required archive extractor '${command.command}' was not found on '${process.platform}'.`, {
+        cause: new Error(result.spawnError),
+      });
+    }
+
+    if (result.spawnError !== undefined) {
+      throw Object.assign(new Error(result.spawnError), {
+        code: result.code,
+        cmd: this.formatExecFileCommand(command),
+        signal: result.signal ?? null,
+        stderr: result.stderr,
+        stdout: result.stdout,
+      });
+    }
+
+    if (result.code === 0) {
+      return;
+    }
+
+    throw Object.assign(
+      new Error(`Command failed: ${this.formatExecFileCommand(command)}\n${result.stderr}`),
+      {
+        code: result.code,
+        cmd: this.formatExecFileCommand(command),
+        signal: result.signal ?? null,
+        stderr: result.stderr,
+        stdout: result.stdout,
+      },
+    );
+  }
+
+  /**
+   * Formats an extraction command using Node's `execFile` command text shape.
+   *
+   * @param command - Extraction command to format.
+   * @returns Space-joined command text.
+   */
+  private formatExecFileCommand(command: Readonly<{command: string; args: readonly string[]}>): string {
+    return [command.command, ...command.args].join(" ");
   }
 }
 
@@ -1866,6 +1913,8 @@ export interface ArtifactMainOptions {
   readonly outputRoots?: readonly string[];
   /** Optional repository root used for frontend-license discovery and output. */
   readonly workspaceRoot?: string;
+  /** Optional command runner used by archive extraction in tests. */
+  readonly archiveCommandRunner?: CommandRunner;
 }
 
 export async function main(
@@ -1874,7 +1923,11 @@ export async function main(
 ): Promise<number> {
   logger.info("Starting 5 artifact generator(s).");
   const generators = [
-    new Gs1GpcTaxonomyClassificationGenerator(options.outputRoots, logger),
+    new Gs1GpcTaxonomyClassificationGenerator(
+      options.outputRoots,
+      logger,
+      options.archiveCommandRunner ?? defaultCommandRunner,
+    ),
     new EcoicopTaxonomyClassificationGenerator(options.outputRoots, logger),
     new NaceTaxonomyClassificationGenerator(options.outputRoots, logger),
     new FrontendLicenseGenerator(options.workspaceRoot, logger),

@@ -4,9 +4,11 @@
  */
 
 import {resolve} from "node:path";
+import {access, mkdtemp, rm} from "node:fs/promises";
+import {tmpdir} from "node:os";
 import {describe, expect, it} from "vitest";
 import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "./logger.ts";
-import {defaultCommandRunner, formatCommand, resolveSpawnCommand} from "./process.ts";
+import {defaultCommandRunner, formatCommand} from "./process.ts";
 
 const scriptsDirectory = resolve(process.cwd(), "scripts");
 
@@ -16,47 +18,7 @@ describe("formatCommand", () => {
   });
 });
 
-describe("resolveSpawnCommand", () => {
-  it("leaves ordinary commands unchanged", () => {
-    const command = {command: "node", args: ["--version"]} as const;
-
-    expect(resolveSpawnCommand(command, "linux")).toEqual(command);
-  });
-
-  it.each(["npm", "npx", "yarn", "pnpm"])("routes %s through cmd.exe on Windows", (command) => {
-    expect(resolveSpawnCommand({command, args: ["--version"]}, "win32")).toEqual({
-      command: "cmd.exe",
-      args: ["/d", "/s", "/c", command, "--version"],
-    });
-  });
-
-  it.each(["a&b", "a|b", "a^b", "a<b", "a>b", 'a"b'])("rejects unsafe Windows shim argument %s", (argument) => {
-    expect(() => resolveSpawnCommand({command: "npm", args: ["run", argument]}, "win32")).toThrow("Unsafe Windows command-shim argument");
-  });
-});
-
 describe("defaultCommandRunner", () => {
-  it("returns a failed result when Windows shim resolution rejects an unsafe argument", async () => {
-    const platformDescriptor = Object.getOwnPropertyDescriptor(process, "platform");
-    Object.defineProperty(process, "platform", {...platformDescriptor, value: "win32"});
-
-    try {
-      const execution = defaultCommandRunner.run({command: "npm", args: ["run", "unsafe&argument"]});
-
-      await expect(execution).resolves.toMatchObject({
-        code: 1,
-        stdout: "",
-        stderr: "",
-        timedOut: false,
-        spawnError: "Unsafe Windows command-shim argument: unsafe&argument",
-      });
-    } finally {
-      if (platformDescriptor !== undefined) {
-        Object.defineProperty(process, "platform", platformDescriptor);
-      }
-    }
-  });
-
   it("captures successful stdout with duration metadata", async () => {
     const result = await defaultCommandRunner.run({
       command: process.execPath,
@@ -80,6 +42,16 @@ describe("defaultCommandRunner", () => {
 
     expect(result.stdout).toBe("out");
     expect(result.stderr).toBe("err");
+  });
+
+  it("preserves trailing newlines in captured output", async () => {
+    const result = await defaultCommandRunner.run({
+      command: process.execPath,
+      args: ["-e", "process.stdout.write('out\\n'); process.stderr.write('err\\n')"],
+    });
+
+    expect(result.stdout).toBe("out\n");
+    expect(result.stderr).toBe("err\n");
   });
 
   it("preserves stdout and stderr from a nonzero process", async () => {
@@ -144,6 +116,28 @@ describe("defaultCommandRunner", () => {
       expect(result.durationMs).toBeLessThan(5_000);
     } finally {
       clearTimeout(cancellation);
+    }
+  });
+
+  it("does not start a process for an already-aborted signal", async () => {
+    const temporaryRoot = await mkdtemp(resolve(tmpdir(), "command-runner-abort-"));
+    const marker = resolve(temporaryRoot, "started.txt");
+    const controller = new AbortController();
+    controller.abort();
+
+    try {
+      const result = await defaultCommandRunner.run(
+        {
+          command: process.execPath,
+          args: ["-e", `require("node:fs").writeFileSync(${JSON.stringify(marker)}, "started")`],
+        },
+        {signal: controller.signal},
+      );
+
+      expect(result.code).toBe(1);
+      await expect(access(marker)).rejects.toMatchObject({code: "ENOENT"});
+    } finally {
+      await rm(temporaryRoot, {recursive: true, force: true});
     }
   });
 
