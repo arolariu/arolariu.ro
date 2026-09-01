@@ -1,15 +1,21 @@
 // @vitest-environment node
 /**
  * @fileoverview ESLint boundary and runtime immutability tests for the doctor pipeline.
+ *
+ * ESLint boundary tests execute the installed ESLint Linter API against minimal virtual
+ * doctor-module sources using the actual exported flat config, rather than parsing config
+ * source. Runtime immutability tests use bounded content snapshots of sentinel files so
+ * that mutation (not merely creation) is detected.
+ *
  * @module scripts/doctor.readonly.test
  */
 
+import {createHash} from "node:crypto";
 import {existsSync, readFileSync} from "node:fs";
-import {spawn} from "node:child_process";
+import {execFileSync, spawn} from "node:child_process";
 import {resolve} from "node:path";
 import {fileURLToPath} from "node:url";
-import ts from "typescript";
-import {describe, expect, it, vi} from "vitest";
+import {describe, expect, it, vi, beforeAll} from "vitest";
 import {MonorepositoryConsoleLogger} from "./common/logger.ts";
 import {createRepositoryPaths, type RepositoryPaths} from "./common/repository-paths.ts";
 import type {RepositoryRequirements} from "./common/requirements.ts";
@@ -18,100 +24,110 @@ import type {DiagnosticModule, DiagnosticModuleId, DiagnosticResult} from "./doc
 import type {RepositoryInspectionSession} from "./inspection/repository.ts";
 import type {InspectionOutcome} from "./inspection/types.ts";
 
-// ===== ESLint config reader =====
+// ===== ESLint boundary batch runner =====
 
-interface NoRestrictedImportsEntry {
-  readonly name: string;
-  readonly importNames?: readonly string[];
+/**
+ * All virtual doctor-module sources to lint. Each entry is [label, code, filename, expectViolation].
+ * A single Node.js subprocess loads the ESLint config once and lints every source, avoiding
+ * the ~8 s per-invocation startup cost of eslint-plugin-unicorn's web-worker bootstrap in
+ * a Vitest worker thread.
+ */
+const BOUNDARY_CASES: readonly [string, string, string, boolean][] = [
+  // Rejected imports
+  ["execa", 'import {execa} from "execa";', "scripts/doctor.workspace.ts", true],
+  ["node:child_process", 'import {spawn} from "node:child_process";', "scripts/doctor.workspace.ts", true],
+  ["child_process-bare", 'import {execFile} from "child_process";', "scripts/doctor.workspace.ts", true],
+  ["defaultCommandRunner", 'import {defaultCommandRunner} from "./common/process.ts";', "scripts/doctor.workspace.ts", true],
+  ["CommandRunner-type", 'import type {CommandRunner} from "./common/process.ts";', "scripts/doctor.workspace.ts", true],
+  ["fs-writeFile", 'import {writeFile} from "node:fs";', "scripts/doctor.workspace.ts", true],
+  ["fs-writeFileSync", 'import {writeFileSync} from "node:fs";', "scripts/doctor.workspace.ts", true],
+  ["fs-rm", 'import {rm} from "node:fs";', "scripts/doctor.workspace.ts", true],
+  ["fs-rmSync", 'import {rmSync} from "node:fs";', "scripts/doctor.workspace.ts", true],
+  ["fs-rename", 'import {rename} from "node:fs";', "scripts/doctor.workspace.ts", true],
+  ["fs-renameSync", 'import {renameSync} from "node:fs";', "scripts/doctor.workspace.ts", true],
+  ["fs-mkdir", 'import {mkdir} from "node:fs";', "scripts/doctor.workspace.ts", true],
+  ["fs-mkdirSync", 'import {mkdirSync} from "node:fs";', "scripts/doctor.workspace.ts", true],
+  ["fs-appendFile", 'import {appendFile} from "node:fs";', "scripts/doctor.workspace.ts", true],
+  ["fs-appendFileSync", 'import {appendFileSync} from "node:fs";', "scripts/doctor.workspace.ts", true],
+  ["fs-default", 'import fs from "node:fs";', "scripts/doctor.workspace.ts", true],
+  ["fs-namespace", 'import * as fs from "node:fs";', "scripts/doctor.workspace.ts", true],
+  ["fsp-writeFile", 'import {writeFile} from "node:fs/promises";', "scripts/doctor.workspace.ts", true],
+  ["fsp-rm", 'import {rm} from "node:fs/promises";', "scripts/doctor.workspace.ts", true],
+  ["fsp-rename", 'import {rename} from "node:fs/promises";', "scripts/doctor.workspace.ts", true],
+  ["fsp-mkdir", 'import {mkdir} from "node:fs/promises";', "scripts/doctor.workspace.ts", true],
+  ["fsp-appendFile", 'import {appendFile} from "node:fs/promises";', "scripts/doctor.workspace.ts", true],
+  ["fsp-default", 'import fsp from "node:fs/promises";', "scripts/doctor.workspace.ts", true],
+  ["fsp-namespace", 'import * as fsp from "node:fs/promises";', "scripts/doctor.workspace.ts", true],
+  // Allowed read-only imports
+  ["fs-constants", 'import {constants} from "node:fs";', "scripts/doctor.workspace.ts", false],
+  ["fs-existsSync", 'import {existsSync} from "node:fs";', "scripts/doctor.workspace.ts", false],
+  ["fs-readFileSync", 'import {readFileSync} from "node:fs";', "scripts/doctor.workspace.ts", false],
+  ["fsp-access-readFile-stat", 'import {access, readFile, stat} from "node:fs/promises";', "scripts/doctor.workspace.ts", false],
+  ["fsp-readdir", 'import {readdir} from "node:fs/promises";', "scripts/doctor.workspace.ts", false],
+];
+
+/**
+ * Run all boundary lint cases in a single Node.js subprocess. The ESLint config is loaded
+ * once, then `lintText` is called for each virtual source. Returns a label → violation-count map.
+ */
+function runBoundaryLintBatch(): ReadonlyMap<string, number> {
+  const casesJson = JSON.stringify(BOUNDARY_CASES.map(([label, code, filename]) => [label, code, filename]));
+  const script = `
+    import {ESLint} from "eslint";
+    const eslint = new ESLint();
+    const cases = ${casesJson};
+    const out = {};
+    for (const [label, code, filename] of cases) {
+      const r = await eslint.lintText(code + "\\n", {filePath: filename});
+      out[label] = r[0].messages.filter(m => m.ruleId === "no-restricted-imports" && m.severity === 2).length;
+    }
+    process.stdout.write(JSON.stringify(out));
+  `;
+  const output = execFileSync(process.execPath, ["--input-type=module"], {
+    input: script,
+    cwd: process.cwd(),
+    encoding: "utf8",
+    maxBuffer: 4 * 1024 * 1024,
+    timeout: 120_000,
+  });
+  return new Map(Object.entries(JSON.parse(output) as Record<string, number>));
+}
+
+let boundaryResults: ReadonlyMap<string, number>;
+
+// ===== Bounded filesystem snapshot =====
+
+interface FileSnapshot {
+  readonly exists: boolean;
+  readonly contentHash: string | null;
 }
 
 /**
- * Reads the `no-restricted-imports` paths from a named ESLint config variable in
- * `eslint.config.ts`. Throws when the variable or rule is not found so the test fails
- * RED before the restriction is added.
+ * Bounded sentinel paths inside `.nx` and `.arolariu` that are cheap to hash and
+ * representative of mutation. Does not recurse into `.nx/cache/<hash>/` trees.
  */
-function readNoRestrictedImportsPathsFromConfig(variableName: string): readonly NoRestrictedImportsEntry[] {
-  const configPath = resolve(process.cwd(), "eslint.config.ts");
-  const source = ts.createSourceFile(configPath, readFileSync(configPath, "utf8"), ts.ScriptTarget.Latest, true);
+const SENTINEL_PATHS: readonly string[] = [
+  ".arolariu/tooling.local.json",
+  ".nx/cache/run.json",
+  ".nx/workspace-data/lockfile-dependencies.hash",
+  ".nx/workspace-data/lockfile-nodes.hash",
+];
 
-  for (const statement of source.statements) {
-    if (!ts.isVariableStatement(statement)) continue;
-    for (const decl of statement.declarationList.declarations) {
-      if (!ts.isIdentifier(decl.name) || decl.name.text !== variableName || !decl.initializer) continue;
+/** SHA-256 hex digest of a file, or `null` if the file does not exist. */
+function hashFile(path: string): string | null {
+  if (!existsSync(path)) return null;
+  return createHash("sha256").update(readFileSync(path)).digest("hex");
+}
 
-      // Unwrap: defineConfig({…})[0] as Config
-      let node: ts.Expression = decl.initializer;
-      for (let i = 0; i < 4; i++) {
-        if (
-          ts.isAsExpression(node)
-          || ts.isSatisfiesExpression(node)
-          || ts.isNonNullExpression(node)
-          || ts.isParenthesizedExpression(node)
-        ) {
-          node = node.expression;
-        } else break;
-      }
-      if (ts.isElementAccessExpression(node)) node = node.expression;
-      for (let i = 0; i < 4; i++) {
-        if (
-          ts.isAsExpression(node)
-          || ts.isSatisfiesExpression(node)
-          || ts.isNonNullExpression(node)
-          || ts.isParenthesizedExpression(node)
-        ) {
-          node = node.expression;
-        } else break;
-      }
-
-      if (!ts.isCallExpression(node) || node.arguments.length === 0) continue;
-      const configArg = node.arguments[0];
-      if (!configArg || !ts.isObjectLiteralExpression(configArg)) continue;
-
-      const rulesProp = configArg.properties.find(
-        (p): p is ts.PropertyAssignment =>
-          ts.isPropertyAssignment(p)
-          && ((ts.isIdentifier(p.name) && p.name.text === "rules") || (ts.isStringLiteral(p.name) && p.name.text === "rules")),
-      );
-      if (!rulesProp || !ts.isObjectLiteralExpression(rulesProp.initializer)) continue;
-
-      const ruleProp = rulesProp.initializer.properties.find(
-        (p): p is ts.PropertyAssignment =>
-          ts.isPropertyAssignment(p) && ts.isStringLiteral(p.name) && p.name.text === "no-restricted-imports",
-      );
-      if (!ruleProp || !ts.isArrayLiteralExpression(ruleProp.initializer)) continue;
-
-      const optionsElem = ruleProp.initializer.elements[1];
-      if (!optionsElem || !ts.isObjectLiteralExpression(optionsElem)) continue;
-
-      const pathsProp = optionsElem.properties.find(
-        (p): p is ts.PropertyAssignment => ts.isPropertyAssignment(p) && ts.isIdentifier(p.name) && p.name.text === "paths",
-      );
-      if (!pathsProp || !ts.isArrayLiteralExpression(pathsProp.initializer)) continue;
-
-      return pathsProp.initializer.elements.flatMap((elem): NoRestrictedImportsEntry[] => {
-        if (!ts.isObjectLiteralExpression(elem)) return [];
-        let name: string | null = null;
-        const importNames: string[] = [];
-
-        for (const prop of elem.properties) {
-          if (!ts.isPropertyAssignment(prop)) continue;
-          const propKey = ts.isIdentifier(prop.name) ? prop.name.text : null;
-          if (propKey === "name" && ts.isStringLiteral(prop.initializer)) {
-            name = prop.initializer.text;
-          } else if (propKey === "importNames" && ts.isArrayLiteralExpression(prop.initializer)) {
-            for (const el of prop.initializer.elements) {
-              if (ts.isStringLiteral(el)) importNames.push(el.text);
-            }
-          }
-        }
-
-        if (name === null) return [];
-        return [{name, ...(importNames.length > 0 ? {importNames} : {})}];
-      });
-    }
+/** Snapshot sentinel files under `root` as a path → content-hash map. */
+function snapshotSentinelFiles(root: string): ReadonlyMap<string, FileSnapshot> {
+  const map = new Map<string, FileSnapshot>();
+  for (const rel of SENTINEL_PATHS) {
+    const fullPath = resolve(root, rel);
+    const h = hashFile(fullPath);
+    map.set(rel, {exists: h !== null, contentHash: h});
   }
-
-  throw new Error(`${variableName} with no-restricted-imports paths not found in eslint.config.ts`);
+  return map;
 }
 
 // ===== Test fixtures =====
@@ -186,19 +202,31 @@ function fixedDependencies() {
 // ===== ESLint boundary tests =====
 
 describe("doctor ESLint boundary restrictions", () => {
-  it("doctorReadOnlyConfig bans execa and node:child_process imports", () => {
-    const paths = readNoRestrictedImportsPathsFromConfig("doctorReadOnlyConfig");
-    const names = paths.map((p) => p.name);
-    expect(names).toContain("execa");
-    expect(names).toContain("node:child_process");
-  });
+  beforeAll(() => {
+    boundaryResults = runBoundaryLintBatch();
+  }, 120_000);
 
-  it("doctorReadOnlyConfig bans mutating node:fs named imports", () => {
-    const paths = readNoRestrictedImportsPathsFromConfig("doctorReadOnlyConfig");
-    const fsPaths = paths.filter((p) => p.name === "node:fs");
-    const fsImportNames = fsPaths.flatMap((p) => p.importNames ?? []);
-    expect(fsImportNames).toEqual(
-      expect.arrayContaining([
+  /** Assert a case was rejected by the no-restricted-imports rule. */
+  function expectRestricted(label: string): void {
+    const count = boundaryResults.get(label);
+    expect(count, `Expected violation for "${label}" but got ${count ?? "undefined"}`).toBeGreaterThan(0);
+  }
+
+  /** Assert a case was NOT flagged by the no-restricted-imports rule. */
+  function expectAllowed(label: string): void {
+    const count = boundaryResults.get(label);
+    expect(count, `Unexpected violation for "${label}"`).toBe(0);
+  }
+
+  describe("rejected imports", () => {
+    it("rejects execa imports in doctor modules", () => expectRestricted("execa"));
+    it("rejects node:child_process imports in doctor modules", () => expectRestricted("node:child_process"));
+    it("rejects child_process (bare alias) imports in doctor modules", () => expectRestricted("child_process-bare"));
+    it("rejects defaultCommandRunner from process.ts in specialist modules", () => expectRestricted("defaultCommandRunner"));
+    it("rejects CommandRunner type from process.ts in specialist modules", () => expectRestricted("CommandRunner-type"));
+
+    it("rejects mutating node:fs named imports", () => {
+      for (const suffix of [
         "writeFile",
         "writeFileSync",
         "rm",
@@ -209,60 +237,100 @@ describe("doctor ESLint boundary restrictions", () => {
         "mkdirSync",
         "appendFile",
         "appendFileSync",
-      ]),
-    );
+      ]) {
+        expectRestricted(`fs-${suffix}`);
+      }
+    });
+
+    it("rejects default node:fs import (bypasses named-import restrictions)", () => expectRestricted("fs-default"));
+    it("rejects namespace node:fs import (bypasses named-import restrictions)", () => expectRestricted("fs-namespace"));
+
+    it("rejects mutating node:fs/promises named imports", () => {
+      for (const suffix of ["writeFile", "rm", "rename", "mkdir", "appendFile"]) {
+        expectRestricted(`fsp-${suffix}`);
+      }
+    });
+
+    it("rejects default node:fs/promises import (bypasses named-import restrictions)", () => expectRestricted("fsp-default"));
+    it("rejects namespace node:fs/promises import (bypasses named-import restrictions)", () => expectRestricted("fsp-namespace"));
   });
 
-  it("doctorReadOnlyConfig bans mutating node:fs/promises named imports", () => {
-    const paths = readNoRestrictedImportsPathsFromConfig("doctorReadOnlyConfig");
-    const fsPaths = paths.filter((p) => p.name === "node:fs/promises");
-    const fsImportNames = fsPaths.flatMap((p) => p.importNames ?? []);
-    expect(fsImportNames).toEqual(expect.arrayContaining(["writeFile", "rm", "rename", "mkdir", "appendFile"]));
-  });
-
-  it("doctorModuleIsolationConfig bans defaultCommandRunner and CommandRunner from process.ts", () => {
-    const paths = readNoRestrictedImportsPathsFromConfig("doctorModuleIsolationConfig");
-    const processPaths = paths.filter((p) => p.name === "./common/process.ts");
-    const importNames = processPaths.flatMap((p) => p.importNames ?? []);
-    expect(importNames).toEqual(expect.arrayContaining(["defaultCommandRunner", "CommandRunner"]));
+  describe("allowed read-only imports", () => {
+    it("allows constants from node:fs", () => expectAllowed("fs-constants"));
+    it("allows existsSync from node:fs", () => expectAllowed("fs-existsSync"));
+    it("allows readFileSync from node:fs", () => expectAllowed("fs-readFileSync"));
+    it("allows access, readFile, stat from node:fs/promises", () => expectAllowed("fsp-access-readFile-stat"));
+    it("allows readdir from node:fs/promises", () => expectAllowed("fsp-readdir"));
   });
 });
 
 // ===== Runtime immutability tests =====
 
 describe("doctor runtime immutability", () => {
-  it("quick doctor does not create .nx or .arolariu directories", async () => {
+  it("quick doctor does not mutate .nx or .arolariu sentinel files", async () => {
     const root = resolve(process.cwd());
     const nxPath = resolve(root, ".nx");
     const arolaruPath = resolve(root, ".arolariu");
 
     const nxExistedBefore = existsSync(nxPath);
     const arolaruExistedBefore = existsSync(arolaruPath);
+    const snapshotBefore = snapshotSentinelFiles(root);
 
     const entrypoint = fileURLToPath(new URL("./doctor.ts", import.meta.url));
-    await new Promise<void>((resolvePromise, reject) => {
+    const {exitCode, signal, stdout, stderr} = await new Promise<{
+      exitCode: number | null;
+      signal: NodeJS.Signals | null;
+      stdout: string;
+      stderr: string;
+    }>((resolvePromise, reject) => {
       const child = spawn(process.execPath, [entrypoint, "--quick"], {
         cwd: root,
-        stdio: ["ignore", "ignore", "ignore"],
+        stdio: ["ignore", "pipe", "pipe"],
         env: {...process.env, FORCE_COLOR: "0"},
       });
+      const outChunks: Buffer[] = [];
+      const errChunks: Buffer[] = [];
+      child.stdout!.on("data", (chunk: Buffer) => outChunks.push(chunk));
+      child.stderr!.on("data", (chunk: Buffer) => errChunks.push(chunk));
       child.once("error", reject);
-      child.once("close", () => resolvePromise());
+      child.once("close", (code, sig) =>
+        resolvePromise({
+          exitCode: code,
+          signal: sig,
+          stdout: Buffer.concat(outChunks).toString("utf8"),
+          stderr: Buffer.concat(errChunks).toString("utf8"),
+        }),
+      );
     });
 
+    // Finding 4: assert the CLI genuinely ran to completion.
+    // Doctor exits 0 (healthy) or 1 (diagnostics found issues); anything else is a crash.
+    expect(signal, "doctor must not be killed by a signal").toBeNull();
+    expect(exitCode, `doctor exited with unexpected code ${exitCode}`).not.toBeNull();
+    expect([0, 1], `doctor exit code ${exitCode} is neither 0 nor 1`).toContain(exitCode);
+
+    // Assert recognizable doctor output so immutability check is not vacuous.
+    const combinedOutput = stdout + stderr;
+    expect(combinedOutput, "expected recognizable doctor output").toMatch(/doctor|diagnostic|health|score/i);
+
+    // Finding 3: content-level immutability, not just existence.
     if (!nxExistedBefore) {
       expect(existsSync(nxPath), ".nx must not be created by quick doctor").toBe(false);
     }
     expect(existsSync(arolaruPath), ".arolariu must not be created by quick doctor").toBe(arolaruExistedBefore);
+
+    const snapshotAfter = snapshotSentinelFiles(root);
+    expect(snapshotAfter, "sentinel files must not be mutated by quick doctor").toEqual(snapshotBefore);
   }, 120_000);
 
-  it("full-profile runDoctor with injected inspection session does not create .nx or .arolariu", async () => {
+  it("full-profile runDoctor with injected inspection session does not mutate .nx or .arolariu", async () => {
     const root = resolve(process.cwd());
     const nxPath = resolve(root, ".nx");
     const arolaruPath = resolve(root, ".arolariu");
 
     const nxExistedBefore = existsSync(nxPath);
     const arolaruExistedBefore = existsSync(arolaruPath);
+    const snapshotBefore = snapshotSentinelFiles(root);
 
     const {modules} = createFakeModules();
     await runDoctor(
@@ -277,5 +345,8 @@ describe("doctor runtime immutability", () => {
       expect(existsSync(nxPath), ".nx must not be created during full-profile immutability test").toBe(false);
     }
     expect(existsSync(arolaruPath), ".arolariu must not be created during full-profile immutability test").toBe(arolaruExistedBefore);
+
+    const snapshotAfter = snapshotSentinelFiles(root);
+    expect(snapshotAfter, "sentinel files must not be mutated during full-profile doctor").toEqual(snapshotBefore);
   });
 });

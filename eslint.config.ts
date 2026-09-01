@@ -889,46 +889,32 @@ const toolingPromptOutputConfig: Config = defineConfig({
 })[0] as Config;
 
 /**
- * Bans whole-module imports of `execa` and `node:child_process` plus mutating named imports
- * from `node:fs` and `node:fs/promises` in doctor production modules. Read-only named imports
- * such as `readFile`, `stat`, `readdir`, `access`, and `constants` remain permitted.
+ * Shared read-only paths that apply to all doctor production modules. Uses `allowImportNames`
+ * instead of `importNames` so that default and namespace imports (which bypass named-import
+ * restrictions) are also blocked.
  */
+const doctorReadOnlyPaths: readonly object[] = [
+  {name: "execa", message: "Doctor modules must not use execa directly; use context.probes instead."},
+  {name: "node:child_process", message: "Doctor modules must not import node:child_process; use context.probes instead."},
+  {name: "child_process", message: "Doctor modules must not import child_process; use context.probes instead."},
+  {
+    name: "node:fs",
+    allowImportNames: ["constants", "existsSync", "readFileSync", "statSync", "readdirSync", "accessSync", "statfsSync"],
+    message: "Doctor modules must use only read-only fs operations.",
+  },
+  {
+    name: "node:fs/promises",
+    allowImportNames: ["access", "readFile", "readdir", "stat", "statfs"],
+    message: "Doctor modules must use only read-only fs/promises operations.",
+  },
+];
+
 const doctorReadOnlyConfig: Config = defineConfig({
   name: "[@arolariu/doctor-read-only]",
   files: ["scripts/doctor*.ts"],
   ignores: ["scripts/**/*.test.ts"],
   rules: {
-    "no-restricted-imports": [
-      "error",
-      {
-        paths: [
-          {name: "execa", message: "Doctor modules must not use execa directly; use context.probes instead."},
-          {name: "node:child_process", message: "Doctor modules must not import node:child_process; use context.probes instead."},
-          {name: "child_process", message: "Doctor modules must not import child_process; use context.probes instead."},
-          {
-            name: "node:fs",
-            importNames: [
-              "writeFile",
-              "writeFileSync",
-              "rm",
-              "rmSync",
-              "rename",
-              "renameSync",
-              "mkdir",
-              "mkdirSync",
-              "appendFile",
-              "appendFileSync",
-            ],
-            message: "Doctor modules must use only read-only fs operations.",
-          },
-          {
-            name: "node:fs/promises",
-            importNames: ["writeFile", "rm", "rename", "mkdir", "appendFile"],
-            message: "Doctor modules must use only read-only fs/promises operations.",
-          },
-        ],
-      },
-    ],
+    "no-restricted-imports": ["error", {paths: doctorReadOnlyPaths}],
   },
 })[0] as Config;
 
@@ -936,6 +922,9 @@ const doctorReadOnlyConfig: Config = defineConfig({
  * Bans direct runtime imports of `defaultCommandRunner` and `CommandRunner` from
  * `./common/process.ts` in doctor specialist modules. `doctor.ts` (the sole orchestrator
  * wiring point) is excluded; all `*.test.ts` files are also excluded.
+ *
+ * Because flat config merges later entries on top of earlier ones for the same rule, this
+ * config must include the shared read-only paths or it would silently replace them.
  */
 const doctorModuleIsolationConfig: Config = defineConfig({
   name: "[@arolariu/doctor-module-isolation]",
@@ -946,6 +935,7 @@ const doctorModuleIsolationConfig: Config = defineConfig({
       "error",
       {
         paths: [
+          ...doctorReadOnlyPaths,
           {
             name: "./common/process.ts",
             importNames: ["defaultCommandRunner", "CommandRunner"],
