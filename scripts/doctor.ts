@@ -36,7 +36,6 @@ import {defaultCommandRunner} from "./common/process.ts";
 import {resolveRepositoryPaths, type RepositoryPaths} from "./common/repository-paths.ts";
 import {normalizeErrorForReport, diagnosticResult} from "./doctor.diagnostics.ts";
 import {renderDoctorReport, createDoctorReport} from "./doctor.reporter.ts";
-import {defaultDiagnosticRunner} from "./doctor.types.ts";
 import {createInspectionProbeRunner, type InspectionProbeRunner} from "./inspection/probes.ts";
 import {createRepositoryInspectionSession, type RepositoryInspectionSession} from "./inspection/repository.ts";
 import {dotnetDoctorModule} from "./doctor.dotnet.ts";
@@ -46,7 +45,6 @@ import {reactDoctorModule} from "./doctor.react.ts";
 import {svelteDoctorModule} from "./doctor.svelte.ts";
 import {workspaceDoctorModule} from "./doctor.workspace.ts";
 import type {
-  DiagnosticCommandRunner,
   DiagnosticModule,
   DiagnosticNetworkProbe,
   DiagnosticNetworkResult,
@@ -82,8 +80,6 @@ export interface DoctorDependencies {
   readonly resolveRepositoryPaths: () => RepositoryPaths;
   /** Loads manifest-derived repository requirements, including an invalid/drift result. */
   readonly loadRepositoryRequirements: (paths: RepositoryPaths) => Promise<RequirementLoadResult>;
-  /** Executes read-only diagnostic commands. */
-  readonly runner: DiagnosticCommandRunner;
   /** Executes bounded read-only network reachability probes. */
   readonly network: DiagnosticNetworkProbe;
   /** Receives doctor presentation and semantic output. */
@@ -282,7 +278,6 @@ export async function runDoctor(
   const timestamp = dependencies.timestamp ?? ((): string => new Date().toISOString());
   const resolvePaths = dependencies.resolveRepositoryPaths ?? ((): RepositoryPaths => resolveRepositoryPaths());
   const loadRequirements = dependencies.loadRepositoryRequirements ?? loadRepositoryRequirements;
-  const runner = dependencies.runner ?? defaultDiagnosticRunner;
   const network = dependencies.network ?? createBoundedNetworkProbe(now);
   const logger = dependencies.logger ?? new MonorepositoryConsoleLogger("doctor", {verbose: options.verbose});
   const modules = dependencies.modules ?? doctorModules;
@@ -317,7 +312,6 @@ export async function runDoctor(
     options,
     paths,
     requirements,
-    runner,
     network,
     logger,
     platform,

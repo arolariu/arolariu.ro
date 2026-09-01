@@ -888,6 +888,76 @@ const toolingPromptOutputConfig: Config = defineConfig({
   },
 })[0] as Config;
 
+/**
+ * Bans whole-module imports of `execa` and `node:child_process` plus mutating named imports
+ * from `node:fs` and `node:fs/promises` in doctor production modules. Read-only named imports
+ * such as `readFile`, `stat`, `readdir`, `access`, and `constants` remain permitted.
+ */
+const doctorReadOnlyConfig: Config = defineConfig({
+  name: "[@arolariu/doctor-read-only]",
+  files: ["scripts/doctor*.ts"],
+  ignores: ["scripts/**/*.test.ts"],
+  rules: {
+    "no-restricted-imports": [
+      "error",
+      {
+        paths: [
+          {name: "execa", message: "Doctor modules must not use execa directly; use context.probes instead."},
+          {name: "node:child_process", message: "Doctor modules must not import node:child_process; use context.probes instead."},
+          {name: "child_process", message: "Doctor modules must not import child_process; use context.probes instead."},
+          {
+            name: "node:fs",
+            importNames: [
+              "writeFile",
+              "writeFileSync",
+              "rm",
+              "rmSync",
+              "rename",
+              "renameSync",
+              "mkdir",
+              "mkdirSync",
+              "appendFile",
+              "appendFileSync",
+            ],
+            message: "Doctor modules must use only read-only fs operations.",
+          },
+          {
+            name: "node:fs/promises",
+            importNames: ["writeFile", "rm", "rename", "mkdir", "appendFile"],
+            message: "Doctor modules must use only read-only fs/promises operations.",
+          },
+        ],
+      },
+    ],
+  },
+})[0] as Config;
+
+/**
+ * Bans direct runtime imports of `defaultCommandRunner` and `CommandRunner` from
+ * `./common/process.ts` in doctor specialist modules. `doctor.ts` (the sole orchestrator
+ * wiring point) is excluded; all `*.test.ts` files are also excluded.
+ */
+const doctorModuleIsolationConfig: Config = defineConfig({
+  name: "[@arolariu/doctor-module-isolation]",
+  files: ["scripts/doctor*.ts"],
+  ignores: ["scripts/doctor.ts", "scripts/**/*.test.ts"],
+  rules: {
+    "no-restricted-imports": [
+      "error",
+      {
+        paths: [
+          {
+            name: "./common/process.ts",
+            importNames: ["defaultCommandRunner", "CommandRunner"],
+            message:
+              "Doctor specialist modules must obtain the command runner through context.probes, not directly from ./common/process.ts.",
+          },
+        ],
+      },
+    ],
+  },
+})[0] as Config;
+
 const projectEslintConfig = defineConfig(websiteEslintConfig, cvEslintConfig, packagesEslintConfig, statusEslintConfig);
 
 // Add the global ignores to the default config.
@@ -902,6 +972,12 @@ for (const individualEslintConfig of projectEslintConfig) {
     : [...eslintPathsIgnoreList];
 }
 
-const eslintConfig = defineConfig(projectEslintConfig, toolingOutputConfig, toolingPromptOutputConfig);
+const eslintConfig = defineConfig(
+  projectEslintConfig,
+  toolingOutputConfig,
+  toolingPromptOutputConfig,
+  doctorReadOnlyConfig,
+  doctorModuleIsolationConfig,
+);
 
 export default eslintConfig;

@@ -28,7 +28,6 @@ import type {RepositoryRequirements} from "./common/requirements.ts";
 import {computeHealthScore, diagnosticWeights} from "./doctor.reporter.ts";
 import {createBoundedNetworkProbe, doctorModules, main, parseDoctorOptions, runDoctor, type DoctorDependencies} from "./doctor.ts";
 import type {
-  DiagnosticCommandRunner,
   DiagnosticModule,
   DiagnosticModuleId,
   DiagnosticNetworkProbe,
@@ -134,12 +133,6 @@ const FIXED_REPOSITORY_REQUIREMENTS: RepositoryRequirements = {
   packages: new Map(),
 };
 
-const noopRunner: DiagnosticCommandRunner = {
-  run: vi.fn(async () => {
-    throw new Error("Doctor test runner should not be invoked by a fake module.");
-  }),
-};
-
 const noopNetwork: DiagnosticNetworkProbe = {
   get: vi.fn(async () => {
     throw new Error("Doctor test network probe should not be invoked by a fake module.");
@@ -165,7 +158,6 @@ function fixedRuntimeDependencies(): Readonly<
     DoctorDependencies,
     | "resolveRepositoryPaths"
     | "loadRepositoryRequirements"
-    | "runner"
     | "network"
     | "platform"
     | "arch"
@@ -180,7 +172,6 @@ function fixedRuntimeDependencies(): Readonly<
   return {
     resolveRepositoryPaths: () => FIXED_REPOSITORY_PATHS,
     loadRepositoryRequirements: async () => ({status: "valid", requirements: FIXED_REPOSITORY_REQUIREMENTS}),
-    runner: noopRunner,
     network: noopNetwork,
     platform: "win32",
     arch: "x64",
