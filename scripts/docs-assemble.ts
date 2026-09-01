@@ -194,7 +194,9 @@ function parseProjectReferences(csprojPath: string): readonly string[] {
   const refs: string[] = [];
   const regex = /<ProjectReference\s+Include\s*=\s*["']([^"']+)["']/g;
   for (let match: RegExpExecArray | null; (match = regex.exec(content)) !== null;) {
-    const relPath = match[1].replaceAll("\\", "/");
+    const capture = match[1];
+    if (capture === undefined) continue;
+    const relPath = capture.replaceAll("\\", "/");
     refs.push(resolve(dirname(csprojPath), relPath));
   }
   return refs;

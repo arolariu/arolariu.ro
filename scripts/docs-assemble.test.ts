@@ -12,7 +12,6 @@ import {
   getDefaultDocumentationArgs,
   getDefaultDocumentationCommand,
   main,
-  type AssembleDependencies,
 } from "./docs-assemble";
 import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "./common/logger";
 import type {CommandResult, CommandRunner, CommandRunOptions, CommandSpec} from "./common/process";
@@ -110,6 +109,8 @@ describe("discoverDotnetProjects", () => {
   it("derives csprojRelative + binRelative from the folder layout", () => {
     writeCsproj("src/Common/arolariu.Backend.Common.csproj", "<Project/>");
     const [only] = discoverDotnetProjects(apiRoot, "net10.0");
+    expect(only).toBeDefined();
+    if (!only) return;
     expect(only.csprojRelative).toBe("src/Common/arolariu.Backend.Common.csproj");
     expect(only.binRelative).toBe("src/Common/bin/Release/net10.0");
   });

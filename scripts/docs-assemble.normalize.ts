@@ -22,8 +22,8 @@
  * an explicit `slug` would double-prefix the route.
  */
 
-import {readFileSync, writeFileSync, readdirSync, statSync} from 'node:fs';
-import {join} from 'node:path';
+import {readFileSync, writeFileSync, readdirSync, statSync} from "node:fs";
+import {join} from "node:path";
 
 /**
  * Optional knobs for {@link normalizeDirectory}.
@@ -44,7 +44,7 @@ export type NormalizeOptions = {
  */
 export type Frontmatter = Record<string, string | number>;
 
-const FRONTMATTER_DELIMITER = '---';
+const FRONTMATTER_DELIMITER = "---";
 
 /**
  * Parse the leading YAML frontmatter block of a markdown source string.
@@ -65,16 +65,16 @@ const FRONTMATTER_DELIMITER = '---';
  *   block so downstream code can fill in defaults.
  */
 function parseFrontmatter(source: string): {frontmatter: Frontmatter; body: string} {
-  if (!source.startsWith(FRONTMATTER_DELIMITER + '\n')) {
+  if (!source.startsWith(FRONTMATTER_DELIMITER + "\n")) {
     return {frontmatter: {}, body: source};
   }
-  const end = source.indexOf('\n' + FRONTMATTER_DELIMITER + '\n', FRONTMATTER_DELIMITER.length);
+  const end = source.indexOf("\n" + FRONTMATTER_DELIMITER + "\n", FRONTMATTER_DELIMITER.length);
   if (end === -1) return {frontmatter: {}, body: source};
   const raw = source.slice(FRONTMATTER_DELIMITER.length + 1, end);
   const body = source.slice(end + FRONTMATTER_DELIMITER.length + 2);
   const frontmatter: Frontmatter = {};
-  for (const line of raw.split('\n')) {
-    const colon = line.indexOf(':');
+  for (const line of raw.split("\n")) {
+    const colon = line.indexOf(":");
     if (colon === -1) continue;
     const key = line.slice(0, colon).trim();
     const value = line.slice(colon + 1).trim();
@@ -99,11 +99,11 @@ const YAML_KEYWORD_SCALAR = /^(true|false|yes|no|on|off|null|~)$/i;
  * {@link YAML_KEYWORD_SCALAR}.
  */
 function serializeValue(value: string | number): string {
-  if (typeof value === 'number') return String(value);
+  if (typeof value === "number") return String(value);
   const needsPunctuationQuoting = /^[@#&*!|>%`?{}[\]-]|[:#]|^\s|\s$/.test(value);
   const needsKeywordQuoting = YAML_KEYWORD_SCALAR.test(value);
   if (!needsPunctuationQuoting && !needsKeywordQuoting) return value;
-  return `"${value.replaceAll('\\', '\\\\').replaceAll('"', '\\"')}"`;
+  return `"${value.replaceAll("\\", "\\\\").replaceAll('"', '\\"')}"`;
 }
 
 /**
@@ -116,7 +116,9 @@ function serializeValue(value: string | number): string {
 export function serializeFrontmatter(fm: Frontmatter, body: string): string {
   const keys = Object.keys(fm);
   if (keys.length === 0) return body;
-  const lines = keys.map((k) => `${k}: ${serializeValue(fm[k])}`).join('\n');
+  const lines = Object.entries(fm)
+    .map(([k, v]) => `${k}: ${serializeValue(v)}`)
+    .join("\n");
   return `${FRONTMATTER_DELIMITER}\n${lines}\n${FRONTMATTER_DELIMITER}\n${body}`;
 }
 
@@ -138,13 +140,13 @@ function extractH1(body: string): string | undefined {
  * @param position - Sidebar position to assign when the file has none.
  */
 async function normalizeFile(filePath: string, position: number): Promise<void> {
-  const source = readFileSync(filePath, 'utf8');
+  const source = readFileSync(filePath, "utf8");
   const {frontmatter, body} = parseFrontmatter(source);
-  if (!('title' in frontmatter)) {
+  if (!("title" in frontmatter)) {
     const heading = extractH1(body);
-    if (heading) frontmatter.title = heading;
+    if (heading) frontmatter["title"] = heading;
   }
-  if (!('sidebar_position' in frontmatter)) frontmatter.sidebar_position = position;
+  if (!("sidebar_position" in frontmatter)) frontmatter["sidebar_position"] = position;
   writeFileSync(filePath, serializeFrontmatter(frontmatter, body));
 }
 
