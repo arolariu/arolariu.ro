@@ -575,7 +575,16 @@ const APPROVED_DOCTOR_REPOSITORY_IMPORTS: ReadonlyMap<string, ReadonlySet<string
   ],
   ["scripts/doctor.reporter.ts", new Set(["./common/logger.ts", "./doctor.diagnostics.ts", "./doctor.types.ts"])],
   ["scripts/doctor.diagnostics.ts", new Set(["./common/process.ts", "./doctor.types.ts"])],
-  ["scripts/doctor.dotnet.ts", new Set(["./common/process.ts", "./common/requirements.ts", "./doctor.types.ts"])],
+  [
+    "scripts/doctor.dotnet.ts",
+    new Set([
+      "./common/requirements.ts",
+      "./doctor.diagnostics.ts",
+      "./doctor.types.ts",
+      "./inspection/dotnet.ts",
+      "./inspection/types.ts",
+    ]),
+  ],
   [
     "scripts/doctor.infrastructure.ts",
     new Set([
@@ -587,7 +596,10 @@ const APPROVED_DOCTOR_REPOSITORY_IMPORTS: ReadonlyMap<string, ReadonlySet<string
       "./doctor.types.ts",
     ]),
   ],
-  ["scripts/doctor.python.ts", new Set(["./common/process.ts", "./common/requirements.ts", "./doctor.types.ts"])],
+  [
+    "scripts/doctor.python.ts",
+    new Set(["./doctor.diagnostics.ts", "./doctor.types.ts", "./inspection/python.ts", "./inspection/types.ts"]),
+  ],
   [
     "scripts/doctor.react.ts",
     new Set([
