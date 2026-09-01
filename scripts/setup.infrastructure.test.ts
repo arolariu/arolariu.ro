@@ -281,7 +281,7 @@ describe("selectContainerInstallationProposal", () => {
 });
 
 describe("engine selection and persistence", () => {
-  it("prefers the CLI option and persists it while preserving fingerprints", async () => {
+  it("prefers the CLI option and persists only the schema and container engine", async () => {
     const harness = createHarness({
       options: setupOptions({engine: "podman"}),
       environment: {AROLARIU_CONTAINER_ENGINE: "rancher"},
@@ -290,7 +290,6 @@ describe("engine selection and persistence", () => {
         config: {
           schemaVersion: 1,
           containerEngine: "rancher",
-          fingerprints: {pythonRequirementsSha256: "abc123"},
         },
       },
     });
@@ -302,7 +301,6 @@ describe("engine selection and persistence", () => {
     expect(harness.writeConfig).toHaveBeenCalledWith(paths.toolingConfig, {
       schemaVersion: 1,
       containerEngine: "podman",
-      fingerprints: {pythonRequirementsSha256: "abc123"},
     });
     expect(harness.select).not.toHaveBeenCalled();
   });
