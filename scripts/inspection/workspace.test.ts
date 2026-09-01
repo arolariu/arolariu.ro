@@ -507,6 +507,16 @@ describe("live snapshot helper", () => {
 // Live integration (real Nx workspace, real shared runner)
 // ============================================================================
 
+/**
+ * Wall-clock budget for the live Nx provider case.
+ *
+ * @remarks
+ * Must stay strictly greater than the provider's own `WORKER_TIMEOUT_MS` (120s in
+ * `./workspace.ts`) so the provider's bounded outcome — not this outer budget — always decides the
+ * result. The case normally completes in ~25s; the headroom only covers full-suite parallel load.
+ */
+const LIVE_WORKSPACE_TIMEOUT_MS = 180_000;
+
 describe("createWorkspaceProvider live integration", () => {
   it(
     "reflects the current seven-project workspace graph and leaves top-level .nx files, .nx/workspace-data, and .arolariu unchanged",
@@ -523,7 +533,12 @@ describe("createWorkspaceProvider live integration", () => {
         now: () => performance.now(),
       })();
 
-      expect(outcome.kind).toBe("available");
+      // The provider bounds its own Nx worker invocation and reports a typed `unavailable`/
+      // `invalid` outcome instead of throwing. Asserting on the kind alone would hide that reason
+      // behind a bare "expected 'unavailable' to be 'available'", so the reason is folded into the
+      // compared value. The requirement itself is unchanged: only a real Nx graph passes.
+      const detail = outcome.kind === "available" ? "" : outcome.kind === "unavailable" ? outcome.reason : outcome.issues.join("; ");
+      expect(detail === "" ? outcome.kind : `${outcome.kind} (${detail})`).toBe("available");
       if (outcome.kind === "available") {
         expect(outcome.value.projects.map(({name}) => name)).toEqual([
           "@arolariu/api",
@@ -545,6 +560,10 @@ describe("createWorkspaceProvider live integration", () => {
       expect(sortedSnapshotEntries(workspaceDataAfter)).toEqual(sortedSnapshotEntries(workspaceDataBefore));
       expect(sortedSnapshotEntries(arolariuAfter)).toEqual(sortedSnapshotEntries(arolariuBefore));
     },
-    120_000,
+    // The provider bounds its own Nx worker at 120s (`WORKER_TIMEOUT_MS` in `./workspace.ts`).
+    // A test budget equal to that bound leaves no headroom for the surrounding filesystem
+    // snapshots, so the outer timeout could pre-empt the provider's own bounded outcome under
+    // full-suite parallel load. The budget stays strictly greater than the provider's.
+    LIVE_WORKSPACE_TIMEOUT_MS,
   );
 });

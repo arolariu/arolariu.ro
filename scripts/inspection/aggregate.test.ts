@@ -521,6 +521,52 @@ describe("collectAggregateWorkerDocument component collection", () => {
     }
   });
 
+  it("keeps every non-Docker host fact when an unreachable engine fulfils Docker calls with empty sentinels", async () => {
+    // `systeminformation` fulfils (never rejects) when no Docker-compatible socket is reachable,
+    // which is the normal state on a Podman-only host. `dockerInfo()` then resolves a fully-keyed
+    // record whose values are all `undefined` (it serializes as `{}`), and the list calls resolve
+    // `[]`. This mirrors the exact observed shape rather than a hand-simplified empty object.
+    const unreachableDockerInfo = Object.fromEntries(
+      ["id", "containers", "containersRunning", "containersPaused", "containersStopped", "images", "serverVersion", "ncpu", "memTotal"].map(
+        (key) => [key, undefined],
+      ),
+    );
+    const worker = await loadWorkerWithMocks({
+      envinfo: envinfoMockModule(async () => JSON.stringify({})),
+      systeminformation: systeminformationMockModule({
+        dockerInfo: async (): Promise<unknown> => unreachableDockerInfo,
+        dockerContainers: async (): Promise<unknown> => [],
+        dockerImages: async (): Promise<unknown> => [],
+      }),
+    });
+
+    const document = await worker.collectAggregateWorkerDocument(WORKER_ROOT);
+
+    expect(document.host.kind).toBe("available");
+    if (document.host.kind === "available") {
+      expect(document.host.value.containers).toEqual({available: false, running: 0, stopped: 0, images: 0, repositoryContainers: []});
+      expect(document.host.value.memory).toEqual({totalBytes: 100, usedBytes: 40, availableBytes: 60});
+      expect(document.host.value.filesystems.length).toBeGreaterThan(0);
+      expect(document.host.value.os.platform).toBe("win32");
+    }
+  });
+
+  it("still invalidates the host projection when a reachable engine reports a malformed Docker record", async () => {
+    const worker = await loadWorkerWithMocks({
+      envinfo: envinfoMockModule(async () => JSON.stringify({})),
+      systeminformation: systeminformationMockModule({
+        dockerInfo: async (): Promise<unknown> => ({containersRunning: -3, containersStopped: 0, images: 2}),
+      }),
+    });
+
+    const document = await worker.collectAggregateWorkerDocument(WORKER_ROOT);
+
+    expect(document.host.kind).toBe("invalid");
+    if (document.host.kind === "invalid") {
+      expect(document.host.issues.join("\n")).toContain("projectSystemInformation");
+    }
+  });
+
   it("never includes supplied error messages, stacks, or paths in nested worker errors", async () => {
     const secret = "C:\\secret\\path\\leak.txt do-not-leak-marker";
     const worker = await loadWorkerWithMocks({

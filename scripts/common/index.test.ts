@@ -44,11 +44,23 @@ function createTestLogger(): Readonly<{sink: InMemoryLoggerSink; logger: Monorep
   return {sink, logger};
 }
 
+/**
+ * Explicit wall-clock budget for cases that spawn a real child process through `runWithSpinner`.
+ *
+ * @remarks
+ * These cases exercise genuine Windows process creation, which is dominated by OS
+ * process-creation latency rather than by the code under test. The repository-wide 10s
+ * `testTimeout` in `vitest.config.ts` is comfortable in isolation but too tight when the full
+ * 59-file scripts suite runs in parallel, so this file declares its own budget for the spawning
+ * blocks instead of relaxing the global default for every unrelated test.
+ */
+const REAL_SPAWN_TIMEOUT_MS = 45_000;
+
 // ---------------------------------------------------------------------------
 // Non-TTY (CI) path is quiet
 // ---------------------------------------------------------------------------
 
-describe("non-TTY path keeps CI logs clean", () => {
+describe("non-TTY path keeps CI logs clean", {timeout: REAL_SPAWN_TIMEOUT_MS}, () => {
   let originalIsTTY: boolean | undefined;
 
   beforeEach(() => {
@@ -75,7 +87,7 @@ describe("non-TTY path keeps CI logs clean", () => {
 // Success vs failure result shapes
 // ---------------------------------------------------------------------------
 
-describe("success and failure result shapes", () => {
+describe("success and failure result shapes", {timeout: REAL_SPAWN_TIMEOUT_MS}, () => {
   it("resolves with code 0 for a process that exits 0", async () => {
     const {logger} = createTestLogger();
     const [cmd, args] = node("process.exit(0)");
@@ -125,7 +137,7 @@ describe("success and failure result shapes", () => {
 // Timer cleanup — no lingering interval after resolution
 // ---------------------------------------------------------------------------
 
-describe("timer cleanup after runWithSpinner resolves", () => {
+describe("timer cleanup after runWithSpinner resolves", {timeout: REAL_SPAWN_TIMEOUT_MS}, () => {
   let originalIsTTY: boolean | undefined;
 
   beforeEach(() => {
@@ -189,7 +201,7 @@ describe("runWithSpinner input validation", () => {
 // Spawn error paths (child.on("error") handler coverage)
 // ---------------------------------------------------------------------------
 
-describe("spawn error handling", () => {
+describe("spawn error handling", {timeout: REAL_SPAWN_TIMEOUT_MS}, () => {
   it("resolves code 1, captures the message, and emits one logger error when command does not exist", async () => {
     const {sink, logger} = createTestLogger();
     const result = await runWithSpinner("definitely-nonexistent-binary-xyz-1234", [], "spawn error test", true, logger);

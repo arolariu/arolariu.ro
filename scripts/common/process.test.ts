@@ -13,13 +13,25 @@ import {defaultCommandRunner, formatCommand} from "./process.ts";
 
 const scriptsDirectory = resolve(process.cwd(), "scripts");
 
+/**
+ * Explicit wall-clock budget for cases that spawn a real child process.
+ *
+ * @remarks
+ * These cases exercise genuine Windows process creation (including the `cmd.exe` fallback for an
+ * unresolved bare command name), which is dominated by OS process-creation latency rather than by
+ * the code under test. The repository-wide 10s `testTimeout` in `vitest.config.ts` is comfortable
+ * in isolation but too tight when the full 59-file scripts suite runs in parallel, so this file
+ * declares its own budget instead of relaxing the global default for every unrelated test.
+ */
+const REAL_SPAWN_TIMEOUT_MS = 45_000;
+
 describe("formatCommand", () => {
   it("quotes arguments containing whitespace", () => {
     expect(formatCommand({command: "tool", args: ["plain", "two words"]})).toBe('tool plain "two words"');
   });
 });
 
-describe("defaultCommandRunner", () => {
+describe("defaultCommandRunner", {timeout: REAL_SPAWN_TIMEOUT_MS}, () => {
   it("captures successful stdout with duration metadata", async () => {
     const result = await defaultCommandRunner.run({
       command: process.execPath,
