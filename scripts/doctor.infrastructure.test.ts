@@ -226,13 +226,15 @@ describe("infrastructureDoctorModule – selection", () => {
   it("fails selection and skips engine-dependent checks when no engine is selected", async () => {
     const fixture = await createInfrastructureFixture({
       toolingConfig: null,
-      initialFacts: healthyFacts({
-        selectedEngine: undefined,
-        cliAvailable: false,
-        backendAvailable: false,
-        composeAvailable: false,
-        containers: [],
-      }),
+      initialFacts: (() => {
+        const {selectedEngine: _omit, ...rest} = healthyFacts({
+          cliAvailable: false,
+          backendAvailable: false,
+          composeAvailable: false,
+          containers: [],
+        });
+        return rest;
+      })(),
     });
 
     const results = await infrastructureDoctorModule.run(fixture.context);
