@@ -24,7 +24,7 @@ import {
 } from "./generate.artifacts.ts";
 import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "./common/logger.ts";
 import {defaultCommandRunner, type CommandRunner} from "./common/process.ts";
-import {main as generate, parseCommandLineOptions} from "./generate.ts";
+import {main as generate} from "./generate.ts";
 import type {TaxonomyArtifact} from "./types";
 
 /**
@@ -1105,16 +1105,6 @@ describe("Artifact orchestration and CLI contracts", () => {
       expect(consoleSpies.every((spy) => spy.mock.calls.length === 0)).toBe(true);
       expect(sink.records.some((record) => record.text.includes("File content generated successfully"))).toBe(true);
       expect(sink.records.every((record) => !record.text.includes(secretValue))).toBe(true);
-    });
-  });
-
-  describe("command contract", () => {
-    it.each(["/artifacts", "/a", "--artifacts", "-a"])("selects artifacts for %s", (alias) => {
-      expect(parseCommandLineOptions([alias]).generateArtifacts).toBe(true);
-    });
-
-    it.each(["/acks", "--acks", "/art", "-t"])("rejects removed alias %s", (alias) => {
-      expect(parseCommandLineOptions([alias]).generateArtifacts).toBe(false);
     });
   });
 });

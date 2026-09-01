@@ -143,17 +143,6 @@ export async function main(options: Readonly<CommandLineOptions>, logger?: Monor
   return 0;
 }
 
-/** Parses generation CLI aliases into a stable options object. */
-export function parseCommandLineOptions(argv: readonly string[]): CommandLineOptions {
-  return {
-    verbose: argv.some((argument) => ["/verbose", "/v", "--verbose", "-v"].includes(argument)),
-    generateGql: argv.some((argument) => ["/gql", "/g", "--gql", "-g"].includes(argument)),
-    generateI18n: argv.some((argument) => ["/i18n", "/i", "--i18n", "-i"].includes(argument)),
-    generateEnv: argv.some((argument) => ["/env", "/e", "--env", "-e"].includes(argument)),
-    generateArtifacts: argv.some((argument) => ["/artifacts", "/a", "--artifacts", "-a"].includes(argument)),
-  };
-}
-
 /**
  * Builds a configured Commander program for the generation orchestrator CLI.
  *

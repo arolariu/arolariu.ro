@@ -3,7 +3,7 @@
  * @module scripts/inspection/workspace
  *
  * @remarks
- * Unlike {@link "./../common/workspace-graph.ts"}, this provider does not reimplement Nx's own
+ * Unlike the former `common/workspace-graph.ts` (now deleted), this provider does not reimplement Nx's own
  * project-discovery rules from repository metadata. It instead invokes
  * `createProjectGraphAsync()` inside an isolated child process (see `./workspace.worker.ts`),
  * redirecting Nx's workspace database and task cache to a unique, disposable temporary directory

@@ -115,7 +115,7 @@ too; it exercises every setup, container-runtime, and worker test file under `sc
 
 ## Doctor diagnostics (`npm run doctor`)
 
-`npm run doctor` is [`doctor.ts`](./doctor.ts)'s CLI entrypoint (`--verbose`/`-v`, `--ci`, `--score`, `--json`, `--quick`, `--help`/`-h`).
+`npm run doctor` is [`doctor.ts`](./doctor.ts)'s CLI entrypoint (`--verbose`/`-v`, `--quick`, `--help`/`-h`).
 It resolves the same canonical repository paths and manifest-derived requirements setup uses, then runs every bounded-context module
 independently and concurrently, flattening their results back into a fixed rendering order. Doctor is strictly read-only at the repository
 and local-tooling boundary: it never mutates repository files, `.nx`, or `.arolariu`, and never installs/upgrades, restores, generates,
@@ -127,8 +127,8 @@ container-engine client/cache state outside that boundary.
 | Module | Owns |
 |--------|------|
 | [`doctor.ts`](./doctor.ts) | CLI parsing, help, module orchestration/ordering, and the exit-code rollup |
-| [`doctor.types.ts`](./doctor.types.ts) | Shared `DiagnosticResult`/`DoctorContext`/`DoctorOptions` contracts, the exact-allowlisted read-only command policy, and diagnostic-result helpers |
-| [`doctor.reporter.ts`](./doctor.reporter.ts) | Stable per-check score weights, schema-v1 validation (`createDoctorReport`/`parseDoctorReport`), and human/JSON rendering |
+| [`doctor.types.ts`](./doctor.types.ts) | Shared `DiagnosticResult`/`DoctorContext`/`DoctorRunOptions` contracts and diagnostic-result helpers |
+| [`doctor.reporter.ts`](./doctor.reporter.ts) | Stable per-check score weights, schema-v1 validation (`createDoctorReport`), and human rendering |
 | [`doctor.workspace.ts`](./doctor.workspace.ts) | Repository root, git, Node/npm runtime, dependency trees, Nx workspace graph (read from repository metadata, see below), config files, generated artifacts, host capacity, npm audit/outdated |
 | [`doctor.dotnet.ts`](./doctor.dotnet.ts) | .NET SDK/host/workloads, NuGet state, solution, local tools, HTTPS certificate trust, AppHost configuration and required local parameters, NuGet feed reachability |
 | [`doctor.react.ts`](./doctor.react.ts) | Website packages, workspace link, environment, i18n, taxonomy/licenses, Playwright, framework config |
@@ -151,39 +151,30 @@ earns full weight, a warn half, a fail none, and a `skipped` check contributes t
 
 ### Read-only command policy
 
-Every diagnostic command runs through `defaultDiagnosticRunner` (built by [`doctor.types.ts`](./doctor.types.ts)'s
-`createReadOnlyDiagnosticRunner`), which rejects any command that is not an exact match against `isReadOnlyDiagnosticCommand`'s allowlist,
-rejects caller-supplied stdin, forces captured output, and applies `DIAGNOSTIC_DEFAULT_TIMEOUT_MS` when no explicit timeout is given.
-Specialist modules never use `CommandRunner` or `defaultCommandRunner` directly; approved type-only command contracts may come from
-[`common/process.ts`](./common/process.ts). [`doctor.readonly.test.ts`](./doctor.readonly.test.ts)'s source-level AST guard rejects
-mutation-capable/unrestricted filesystem imports, child-process imports, unapproved repository imports, and unresolved/forbidden command
-specifications across the doctor production surface.
+Every diagnostic command runs through the shared inspection probe runner backed by the allowlisted read-only command set in
+[`inspection/probes.ts`](./inspection/probes.ts). Specialist modules never use `CommandRunner` or `defaultCommandRunner` directly; approved
+type-only command contracts may come from [`common/process.ts`](./common/process.ts).
+[`doctor.readonly.test.ts`](./doctor.readonly.test.ts)'s source-level AST guard rejects mutation-capable/unrestricted filesystem imports,
+child-process imports, unapproved repository imports, and unresolved/forbidden command specifications across the doctor production surface.
 
-No Nx child command is dispatched by doctor or status, and none is allowlisted. Nx 23.1.1 always opens (and rewrites) its native workspace
-database under `NX_WORKSPACE_DATA_DIRECTORY` when it constructs a project graph, so `npx nx show projects` and `npx nx graph` mutate
-gitignored local tooling state. `workspace.nx-projects`, `workspace.nx-graph`, and status's `nxEdges` are instead derived by the shared
-read-only [`common/workspace-graph.ts`](./common/workspace-graph.ts) reader, which discovers `project.json` files across the workspace,
-validates explicitly configured `workspaceLayout` roots, and combines projects with optional adjacent `package.json` manifests. Missing
-default `apps`/`libs` roots are empty, not failures. The graph keeps one dependency record per independent source category (a workspace
-package dependency, an explicit cross-project `dependsOn` declaration, and an exact implicit dependency); status serializes one
-deterministically ordered logical edge per source/target pair. Malformed, duplicated, ambiguous, or unresolvable metadata raises
-`WorkspaceGraphError` rather than fabricating an empty graph.
+No Nx child command is dispatched by doctor or status, and none is allowlisted. Nx always opens (and rewrites) its native workspace
+database when it constructs a project graph. `workspace.nx-projects`, `workspace.nx-graph`, and status's `nxEdges` are instead derived
+from the shared inspection session's workspace facts, which use an isolated Nx Devkit worker process
+([`inspection/workspace.ts`](./inspection/workspace.ts)) that redirects Nx state to a disposable temporary directory.
 
-### JSON consumers
+### Status integration
 
-`--json` emits exactly one ANSI-free schema-v1 document. [`status.ts`](./status.ts) is the reference consumer: it invokes doctor as
-`--quick --json` and always parses the full `stdout` through `parseDoctorReport`, which recomputes and validates `summary`, `score`, and
-`grade` from `checks` rather than trusting the reported numbers. A doctor exit code of `1` (failed checks) does not indicate a malformed
-report; only an empty/non-JSON/wrong-schema/internally-inconsistent document makes status's `health` section `null`. Any other JSON
-consumer should follow the same parse-then-validate pattern instead of scraping human-readable output.
+[`status.ts`](./status.ts) invokes doctor internally as a typed quick doctor call (not a subprocess) and extracts `score`, `grade`, and
+`summary` directly from the returned report. A doctor failure makes the `health` section `null` ("unavailable") instead of stale or
+fabricated data.
 
 ### Doctor test commands
 
 Focused validation for doctor, its reporter, every specialist module, and `status.ts`:
 
 ```powershell
-npx vitest run --coverage.enabled=false scripts\common\logger.test.ts scripts\common\process.test.ts scripts\common\output-policy.test.ts scripts\common\workspace-graph.test.ts scripts\doctor.test.ts scripts\doctor.reporter.test.ts scripts\doctor.readonly.test.ts scripts\doctor.workspace.test.ts scripts\doctor.dotnet.test.ts scripts\doctor.react.test.ts scripts\doctor.svelte.test.ts scripts\doctor.python.test.ts scripts\doctor.infrastructure.test.ts scripts\status.test.ts scripts\setup.test.ts
-npx eslint scripts\doctor.ts scripts\doctor.types.ts scripts\doctor.reporter.ts scripts\doctor.workspace.ts scripts\doctor.dotnet.ts scripts\doctor.react.ts scripts\doctor.svelte.ts scripts\doctor.python.ts scripts\doctor.infrastructure.ts scripts\status.ts scripts\common\taxonomy-artifacts.ts scripts\common\workspace-graph.ts
+npx vitest run --coverage.enabled=false scripts\common\logger.test.ts scripts\common\process.test.ts scripts\common\output-policy.test.ts scripts\doctor.test.ts scripts\doctor.reporter.test.ts scripts\doctor.readonly.test.ts scripts\doctor.workspace.test.ts scripts\doctor.dotnet.test.ts scripts\doctor.react.test.ts scripts\doctor.svelte.test.ts scripts\doctor.python.test.ts scripts\doctor.infrastructure.test.ts scripts\doctor.diagnostics.test.ts scripts\status.test.ts scripts\setup.test.ts
+npx eslint scripts\doctor.ts scripts\doctor.types.ts scripts\doctor.reporter.ts scripts\doctor.workspace.ts scripts\doctor.dotnet.ts scripts\doctor.react.ts scripts\doctor.svelte.ts scripts\doctor.python.ts scripts\doctor.infrastructure.ts scripts\status.ts scripts\common\taxonomy-artifacts.ts
 git --no-pager diff --check
 ```
 
@@ -219,7 +210,6 @@ npx vitest run --coverage.enabled=false `
   scripts\common\requirements.test.ts `
   scripts\common\tooling-config.test.ts `
   scripts\common\prompts.test.ts `
-  scripts\common\workspace-graph.test.ts `
   @setupTests `
   scripts\generate.env.test.ts `
   @containerRuntimeTests `

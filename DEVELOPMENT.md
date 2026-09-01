@@ -317,43 +317,34 @@ container-engine client/cache state outside the repository and local-tooling bou
 ### CLI contract
 
 ```bash
-node scripts/doctor.ts               # Human-readable report
+node scripts/doctor.ts               # Human-readable report (score always rendered)
 node scripts/doctor.ts --verbose     # -v: also show evidence for passing checks
-node scripts/doctor.ts --ci          # Skip host-local checks (.NET HTTPS certificate, AppHost, ports, selfhost TLS certificates, containers)
-node scripts/doctor.ts --score       # Render the aggregate health score/grade banner
-node scripts/doctor.ts --json        # Emit one ANSI-free schema-v1 JSON document
 node scripts/doctor.ts --quick       # Skip network/slow checks as explicit `skipped` rows
 node scripts/doctor.ts --help        # -h: usage — always wins over an unknown flag or any repository/module work
 ```
 
 `npm run doctor -- <flag>` works identically. `--help`/`-h` is checked first and always wins; any
-other unrecognized flag fails before repository or module work begins.
+other unrecognized flag fails before repository or module work begins. Only `--verbose`/`-v`,
+`--quick`, and `--help`/`-h` are supported; there are no `--ci`, `--json`, or `--score` flags.
 
 Doctor always runs all six diagnostic modules independently and concurrently, but always renders
 them in this fixed order: **Workspace → .NET → React → Svelte → Python → Infrastructure**.
 
 - `--quick` still invokes every module — it emits explicit `skipped` rows for network/slow checks
   (npm registry, NuGet, and PyPI reachability) and omits their expensive follow-up probes.
-- `--ci` still invokes every module — it emits explicit `skipped` rows for host-local checks
-  (.NET HTTPS certificate trust, the whole AppHost check, local port inspection, selfhost TLS
-  certificates, and known-container inventory).
+- The health score and grade are always rendered as part of the default aggregate report.
 - Skipped rows stay visible in the report but are excluded from the score's denominator.
 
 Every warning/failure row includes evidence, one or more ordered suggested fixes, and exactly one
 diagnosis form — a single `rootCause` or ranked `potentialCauses` (`high`/`medium`/`low`), never
 both. Suggested fixes are prose/command *text* only; doctor never executes them itself.
 
-### Score, grade, and JSON schema
+### Score and grade
 
 The health score is a stable-ID-weighted average: a passing check earns its full weight, a warning
 earns half, a failing check earns none, and a `skipped` check contributes to neither the earned
 total nor the denominator — an entirely skipped run scores `100`. The score is converted to a
-letter grade.
-
-`--json` emits exactly one ANSI-free object: `schemaVersion`, `score`, `grade`, `summary`,
-`checks`, `timestamp`. Validate it the same way `status.ts` does — parse the whole `stdout` as
-JSON, then recompute/validate `summary`, `score`, and `grade` from `checks` instead of trusting
-the reported numbers directly.
+letter grade. Score and grade are always rendered as part of the default report.
 
 Doctor exits `0` when the report has no failed checks, and `1` when at least one check fails or
 when a fatal context/validation failure prevents any report from being produced at all.
@@ -367,17 +358,16 @@ failure. `--quick` skips the same remote checks intentionally, independent of co
 ### npm run status integration
 
 `npm run status` remains a six-section aggregator (`workspaces`, `nxEdges`, `git`, `security`,
-`disk`, `health`). `nxEdges` is derived from repository Nx metadata (`nx.json`, discoverable
-`project.json`, and adjacent workspace `package.json`) rather than an Nx child process, because
+`disk`, `health`). `nxEdges` is derived from the shared inspection session's workspace facts
+(backed by an isolated Nx Devkit worker) rather than a direct Nx child process, because
 Nx's project-graph construction rewrites its native workspace database and would break the
-read-only contract. The shared graph retains independent metadata origins, while status emits
-one deterministically ordered logical edge per source/target pair; an unreadable or ambiguous
-graph makes the section unavailable (`null`) instead of an empty list. It invokes doctor
-internally as `--quick --json` and parses the schema-v1
-document even when doctor exits `1` (a failed check is not a malformed report). A malformed, old,
-or future-schema report makes `health` unavailable (`null`) instead of stale or fabricated data;
-`health` otherwise reports `score`, `grade`, and `summary`. `status` supports only `--json` and
-`--help`/`-h`, and its JSON output is a single ANSI-free six-key document.
+read-only contract. Status emits one deterministically ordered logical edge per source/target
+pair; an unreadable or ambiguous graph makes the section unavailable (`null`) instead of an
+empty list. It invokes doctor internally as a typed quick doctor call (not a subprocess) and
+extracts `score`, `grade`, and `summary` directly from the returned report. A doctor failure
+makes `health` unavailable (`null`) instead of stale or fabricated data.
+`status` supports only `--json` and `--help`/`-h`, and its JSON output is a single ANSI-free
+six-key document.
 
 ### Ecosystem troubleshooting workflow
 

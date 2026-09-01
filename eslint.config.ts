@@ -962,10 +962,73 @@ for (const individualEslintConfig of projectEslintConfig) {
     : [...eslintPathsIgnoreList];
 }
 
+/**
+ * Bans direct `node:child_process`, `child_process`, and `execa` imports across all production
+ * scripts except `scripts/common/process.ts` (the sole process adapter). Every command must go
+ * through the shared `CommandRunner` interface. Test files are excluded so black-box contract
+ * tests can spawn child processes.
+ *
+ * Because flat config replaces the entire `no-restricted-imports` rule value when multiple
+ * configs match the same file, this single block covers both child_process and execa so
+ * neither is silently dropped by a later override. `scripts/common/process.ts` is handled
+ * by `toolingProcessBoundaryConfig` below, which bans only child_process while allowing execa.
+ */
+const toolingExecaBoundaryConfig: Config = defineConfig({
+  name: "[@arolariu/tooling-execa-boundary]",
+  files: ["scripts/**/*.ts"],
+  ignores: ["scripts/**/*.test.ts", "scripts/common/process.ts"],
+  languageOptions: {
+    parser: tseslint.parser,
+    ecmaVersion: "latest",
+    sourceType: "module",
+    globals: globals.node,
+  },
+  rules: {
+    "no-restricted-imports": [
+      "error",
+      {
+        paths: [
+          {name: "node:child_process", message: "Use the shared command runner in scripts/common/process.ts instead of node:child_process."},
+          {name: "child_process", message: "Use the shared command runner in scripts/common/process.ts instead of child_process."},
+          {name: "execa", message: "Only scripts/common/process.ts may import execa; use the shared CommandRunner interface."},
+        ],
+      },
+    ],
+  },
+})[0] as Config;
+
+/**
+ * Bans `node:child_process` and `child_process` in `scripts/common/process.ts`.
+ * The process adapter may use Execa but must not bypass it with direct child_process imports.
+ */
+const toolingProcessBoundaryConfig: Config = defineConfig({
+  name: "[@arolariu/tooling-process-boundary]",
+  files: ["scripts/common/process.ts"],
+  languageOptions: {
+    parser: tseslint.parser,
+    ecmaVersion: "latest",
+    sourceType: "module",
+    globals: globals.node,
+  },
+  rules: {
+    "no-restricted-imports": [
+      "error",
+      {
+        paths: [
+          {name: "node:child_process", message: "The process adapter must not import node:child_process; use execa instead."},
+          {name: "child_process", message: "The process adapter must not import child_process; use execa instead."},
+        ],
+      },
+    ],
+  },
+})[0] as Config;
+
 const eslintConfig = defineConfig(
   projectEslintConfig,
   toolingOutputConfig,
   toolingPromptOutputConfig,
+  toolingProcessBoundaryConfig,
+  toolingExecaBoundaryConfig,
   doctorReadOnlyConfig,
   doctorModuleIsolationConfig,
 );
