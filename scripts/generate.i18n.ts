@@ -21,6 +21,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
+import {commanderExitCode, createToolProgram} from "./common/cli.ts";
 import {MonorepositoryConsoleLogger, type MonorepositoryLogger} from "./common/logger.ts";
 
 /**
@@ -502,50 +503,31 @@ export async function main(
 }
 
 if (import.meta.main) {
-  const argv = process.argv.slice(2);
-  const verbose = argv.some((a) => ["/verbose", "/v", "--verbose", "-v"].includes(a));
-  const wantsHelp = argv.some((a) => ["/help", "/h", "--help", "-h"].includes(a));
-  const logger = new MonorepositoryConsoleLogger("generate::i18n", {verbose});
-
-  if (wantsHelp) {
-    logger.banner(
-      [
-        "",
-        "╔══════════════════════════════════════════════════════════════════╗",
-        "║                   ||arolariu.ro|| i18n Generator - Help          ║",
-        "╚══════════════════════════════════════════════════════════════════╝",
-        "",
-      ],
-      "magenta",
-    );
-    logger.line([
-      {text: "Usage: ", styles: ["cyan"]},
-      {text: "npm run generate /i18n [flags]", styles: ["gray"]},
-    ]);
-    logger.line();
-    logger.line([{text: "Description:", styles: ["cyan"]}]);
-    logger.line([{text: "  Validates and synchronizes translation files against English (en.json).", styles: ["gray"]}]);
-    logger.line([{text: "  Ensures all supported locales have matching translation keys.", styles: ["gray"]}]);
-    logger.line();
-    logger.line([{text: "Supported Locales:", styles: ["cyan"]}]);
-    logger.line([{text: "  • en.json - English (source of truth)", styles: ["gray"]}]);
-    logger.line([{text: "  • ro.json - Romanian", styles: ["gray"]}]);
-    logger.line([{text: "  • fr.json - French", styles: ["gray"]}]);
-    logger.line();
-    logger.line([{text: "Flags:", styles: ["cyan"]}]);
-    logger.line([{text: "  /verbose     /v    --verbose     -v", styles: ["green"]}, {text: "  Enable verbose logging 🔊"}]);
-    logger.line([{text: "  /help        /h    --help        -h", styles: ["green"]}, {text: "  Show this help menu ❓"}]);
-    logger.line();
-    logger.line("Example:");
-    logger.line([{text: "  npm run generate /i18n /verbose", styles: ["gray"]}]);
-    process.exit(0);
-  }
+  const cliLogger = new MonorepositoryConsoleLogger("generate::i18n");
+  const program = createToolProgram({
+    name: "generate:i18n",
+    description: "Validates and synchronizes translation files against English (en.json).",
+    examples: ["npm run generate /i18n", "npm run generate /i18n /verbose"],
+    logger: cliLogger,
+    slashAliases: {"/v": "--verbose", "/verbose": "--verbose"},
+  });
+  program.option("-v, --verbose", "Enable verbose logging.");
 
   try {
-    const code = await main(verbose, logger);
+    program.parse();
+  } catch (error: unknown) {
+    const code = commanderExitCode(error);
+    process.exit(code ?? 1);
+  }
+
+  const {verbose = false} = program.opts<{verbose?: boolean}>();
+  const runLogger = new MonorepositoryConsoleLogger("generate::i18n", {verbose});
+
+  try {
+    const code = await main(verbose, runLogger);
     process.exit(code);
   } catch (error: unknown) {
-    logger.error(`i18n generation failed: ${error instanceof Error ? error.message : String(error)}`);
+    runLogger.error(`i18n generation failed: ${error instanceof Error ? error.message : String(error)}`);
     process.exit(1);
   }
 }

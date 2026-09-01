@@ -23,6 +23,8 @@
 import {existsSync, readFileSync, writeFileSync} from "node:fs";
 import {join} from "node:path";
 import {styleText} from "node:util";
+import {Command, CommanderError} from "commander";
+import {commanderExitCode, createToolProgram} from "./common/cli.ts";
 import {MonorepositoryConsoleLogger, type MonorepositoryLogger} from "./common/logger.ts";
 
 // ---------------------------------------------------------------------------
@@ -166,6 +168,17 @@ type FrankfurterResponse = {
   rates: Record<string, Record<string, number>>;
 };
 
+/**
+ * Validated year range for the exchange-rate update operation.
+ */
+export interface ExchangeRateOptions {
+  readonly fromYear: number;
+  readonly toYear: number;
+}
+
+/** Earliest year for which Frankfurter data is reliably available. */
+const EARLIEST_SUPPORTED_YEAR = 2018;
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -174,26 +187,67 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-function parseArgs(): {fromYear: number; toYear: number} {
-  const args = process.argv.slice(2);
+/**
+ * Parses and validates exchange-rate CLI arguments, returning a typed options object.
+ *
+ * @remarks
+ * Uses Commander to parse the raw argument tokens. Rejects unknown options,
+ * non-integer year values, years outside the supported range (2018 → current year),
+ * and ranges where `--from` exceeds `--to`.
+ *
+ * @param argv - Raw argument tokens (not including the node binary or script name).
+ * @returns Validated year range options.
+ * @throws {CommanderError} When unknown options are encountered.
+ * @throws {Error} When year values fail integer or range validation.
+ */
+export function parseExchangeRateOptions(argv: readonly string[]): ExchangeRateOptions {
   const currentYear = new Date().getFullYear();
-  let fromYear = 2018;
-  let toYear = currentYear;
 
-  for (let i = 0; i < args.length; i++) {
-    const arg = args[i];
-    const nextArg = args[i + 1];
-    if (arg === "--year" && nextArg) {
-      fromYear = Number(nextArg);
-      toYear = Number(nextArg);
-      i++;
-    } else if (arg === "--from" && nextArg) {
-      fromYear = Number(nextArg);
-      i++;
-    } else if (arg === "--to" && nextArg) {
-      toYear = Number(nextArg);
-      i++;
+  const program = new Command().exitOverride().configureOutput({writeOut: () => {}, writeErr: () => {}});
+
+  program
+    .option("--year <year>", `Fetch a single year (${EARLIEST_SUPPORTED_YEAR}–current).`)
+    .option("--from <year>", `Starting year (default: ${EARLIEST_SUPPORTED_YEAR}).`)
+    .option("--to <year>", "Ending year (default: current year).");
+
+  program.parse([...argv], {from: "user"});
+
+  const opts = program.opts<{year?: string; from?: string; to?: string}>();
+
+  if (opts.year !== undefined) {
+    const raw = opts.year.trim();
+    const year = Number(raw);
+    if (!Number.isInteger(year) || raw === "") {
+      throw new Error(`--year must be an integer, got: "${opts.year}"`);
     }
+    if (year < EARLIEST_SUPPORTED_YEAR) {
+      throw new Error(`--year must be >= ${EARLIEST_SUPPORTED_YEAR} (earliest supported), got: ${year}`);
+    }
+    if (year > currentYear) {
+      throw new Error(`--year must be <= ${currentYear} (current year), got: ${year}`);
+    }
+    return {fromYear: year, toYear: year};
+  }
+
+  const fromRaw = opts.from?.trim();
+  const toRaw = opts.to?.trim();
+  const fromYear = fromRaw !== undefined ? Number(fromRaw) : EARLIEST_SUPPORTED_YEAR;
+  const toYear = toRaw !== undefined ? Number(toRaw) : currentYear;
+
+  if (fromRaw !== undefined && (!Number.isInteger(fromYear) || fromRaw === "")) {
+    throw new Error(`--from must be an integer, got: "${opts.from}"`);
+  }
+  if (toRaw !== undefined && (!Number.isInteger(toYear) || toRaw === "")) {
+    throw new Error(`--to must be an integer, got: "${opts.to}"`);
+  }
+  if (fromYear < EARLIEST_SUPPORTED_YEAR) {
+    throw new Error(`--from must be >= ${EARLIEST_SUPPORTED_YEAR} (earliest supported), got: ${fromYear}`);
+  }
+  if (toYear > currentYear) {
+    throw new Error(`--to must be <= ${currentYear} (current year), got: ${toYear}`);
+  }
+  if (fromYear > toYear) {
+    throw new Error(`--from (${fromYear}) must be <= --to (${toYear})`);
   }
 
   return {fromYear, toYear};
@@ -329,11 +383,12 @@ function writeCSV(records: RateRecord[]): void {
 /**
  * Updates the configured exchange-rate CSV for the selected year range.
  *
+ * @param options - Validated year range to fetch and update.
  * @param logger - Optional logger used for update lifecycle output.
  */
-export async function main(logger?: MonorepositoryLogger): Promise<void> {
+export async function main(options: Readonly<ExchangeRateOptions>, logger?: MonorepositoryLogger): Promise<void> {
   const output = logger ?? new MonorepositoryConsoleLogger("update::exchange-rates");
-  const {fromYear, toYear} = parseArgs();
+  const {fromYear, toYear} = options;
 
   output.line(styleText("bold", "\n📊 Exchange Rate Updater"));
   output.line(styleText("dim", `Fetching yearly averages from Frankfurter API\n`));
@@ -371,7 +426,45 @@ export async function main(logger?: MonorepositoryLogger): Promise<void> {
 
 if (import.meta.main) {
   const output = new MonorepositoryConsoleLogger("update::exchange-rates");
-  main(output).catch((error) => {
+
+  const program = createToolProgram({
+    name: "update-exchange-rates",
+    description: "Fetches yearly exchange rate averages from the Frankfurter API and writes them to CSV.",
+    examples: [
+      "npm run update-exchange-rates",
+      "npm run update-exchange-rates -- --year 2025",
+      "npm run update-exchange-rates -- --from 2020 --to 2025",
+    ],
+    logger: output,
+  });
+  program
+    .option("--year <year>", `Fetch a single year (${EARLIEST_SUPPORTED_YEAR}–current).`)
+    .option("--from <year>", `Starting year (default: ${EARLIEST_SUPPORTED_YEAR}).`)
+    .option("--to <year>", "Ending year (default: current year).");
+
+  try {
+    program.parse();
+  } catch (error: unknown) {
+    const code = commanderExitCode(error);
+    process.exit(code ?? 1);
+  }
+
+  const rawOpts = program.opts<{year?: string; from?: string; to?: string}>();
+  const reconstitutedArgv = [
+    ...(rawOpts.year !== undefined ? ["--year", rawOpts.year] : []),
+    ...(rawOpts.from !== undefined ? ["--from", rawOpts.from] : []),
+    ...(rawOpts.to !== undefined ? ["--to", rawOpts.to] : []),
+  ];
+
+  let exchangeOptions: ExchangeRateOptions;
+  try {
+    exchangeOptions = parseExchangeRateOptions(reconstitutedArgv);
+  } catch (error: unknown) {
+    output.error(error instanceof Error ? error.message : String(error));
+    process.exit(1);
+  }
+
+  main(exchangeOptions, output).catch((error) => {
     output.line(styleText("red", `\n❌ Fatal error: ${error instanceof Error ? error.message : String(error)}`), "stderr");
     process.exit(1);
   });

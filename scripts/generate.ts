@@ -7,6 +7,9 @@
  * a single CLI command, keeping output consistent across tools.
  */
 
+import type {Command} from "commander";
+
+import {commanderExitCode, createToolProgram} from "./common/cli.ts";
 import {MonorepositoryConsoleLogger, type MonorepositoryLogger} from "./common/logger.ts";
 
 /**
@@ -151,45 +154,66 @@ export function parseCommandLineOptions(argv: readonly string[]): CommandLineOpt
   };
 }
 
-if (import.meta.main) {
-  const argv = process.argv.slice(2);
-  const options = parseCommandLineOptions(argv);
-  const wantsHelp = argv.some((a) => ["/help", "/h", "--help", "-h"].includes(a));
-  const logger = new MonorepositoryConsoleLogger("generate", {verbose: options.verbose});
+/**
+ * Builds a configured Commander program for the generation orchestrator CLI.
+ *
+ * @param logger - Logger used to route Commander help and error output.
+ * @returns Configured Commander program with all generation flag options and slash aliases.
+ */
+export function createGenerateProgram(logger: MonorepositoryLogger): Command {
+  const program = createToolProgram({
+    name: "generate",
+    description: "Generation orchestrator for monorepo build artifacts.",
+    examples: ["npm run generate /env /artifacts", "npm run generate --env --i18n --artifacts --verbose", "npm run generate -e -g -a -v"],
+    logger,
+    slashAliases: {
+      "/v": "--verbose",
+      "/verbose": "--verbose",
+      "/e": "--env",
+      "/env": "--env",
+      "/i": "--i18n",
+      "/i18n": "--i18n",
+      "/g": "--gql",
+      "/gql": "--gql",
+      "/a": "--artifacts",
+      "/artifacts": "--artifacts",
+    },
+  });
+  program
+    .option("-v, --verbose", "Enable verbose logging. 🔊")
+    .option("-e, --env", "Generate environment configuration file (.env). ☁️")
+    .option("-i, --i18n", "Synchronize translation keys (messages). 🌍")
+    .option("-g, --gql", "Generate GraphQL type artifacts. 🧬")
+    .option("-a, --artifacts", "Generate taxonomy and license artifacts. 🏷️");
+  return program;
+}
 
-  if (wantsHelp || argv.length === 0) {
-    logger.banner(
-      [
-        "",
-        "╔══════════════════════════════════════════════════════════════════╗",
-        "║                 ||arolariu.ro|| Generation CLI Help              ║",
-        "╚══════════════════════════════════════════════════════════════════╝",
-        "",
-      ],
-      "magenta",
-    );
-    logger.line([
-      {text: "Usage: ", styles: ["cyan"]},
-      {text: "npm run generate [flags]", styles: ["gray"]},
-    ]);
-    logger.line();
-    logger.line([{text: "Flags:", styles: ["cyan"]}]);
-    logger.line([{text: "  /env     /e   --env   -e", styles: ["green"]}, {text: "   Generate environment configuration file (.env) ☁️"}]);
-    logger.line([{text: "  /i18n    /i   --i18n  -i", styles: ["green"]}, {text: "   Synchronize translation keys (messages) 🌍"}]);
-    logger.line([{text: "  /gql     /g   --gql   -g", styles: ["green"]}, {text: "   Generate GraphQL type artifacts 🧬"}]);
-    logger.line([{text: "  /artifacts /a   --artifacts -a", styles: ["green"]}, {text: " Generate taxonomy and license artifacts 🏷️"}]);
-    logger.line([{text: "  /verbose /v   --verbose -v", styles: ["green"]}, {text: " Enable verbose logging 🔊"}]);
-    logger.line([{text: "  /help    /h   --help  -h", styles: ["green"]}, {text: "   Show this help menu ❓"}]);
-    logger.line();
-    logger.line("Examples:");
-    logger.line([{text: "  npm run generate /env /artifacts", styles: ["gray"]}]);
-    logger.line([{text: "  npm run generate --env --i18n --artifacts --verbose", styles: ["gray"]}]);
-    logger.line([{text: "  npm run generate -e -g -a -v", styles: ["gray"]}]);
-    if (wantsHelp) process.exit(0);
-  }
+if (import.meta.main) {
+  const cliLogger = new MonorepositoryConsoleLogger("generate");
+  const program = createGenerateProgram(cliLogger);
 
   try {
-    const code = await main(options, logger);
+    program.parse();
+  } catch (error: unknown) {
+    const code = commanderExitCode(error);
+    process.exit(code ?? 1);
+  }
+
+  const opts = program.opts<{verbose?: boolean; env?: boolean; i18n?: boolean; gql?: boolean; artifacts?: boolean}>();
+  const {verbose = false} = opts;
+  const logger = new MonorepositoryConsoleLogger("generate", {verbose});
+
+  try {
+    const code = await main(
+      {
+        verbose,
+        generateEnv: opts.env ?? false,
+        generateI18n: opts.i18n ?? false,
+        generateGql: opts.gql ?? false,
+        generateArtifacts: opts.artifacts ?? false,
+      },
+      logger,
+    );
     process.exit(code);
   } catch (error: unknown) {
     logger.error(`Unexpected error in generation orchestrator: ${error instanceof Error ? error.message : String(error)}`);
