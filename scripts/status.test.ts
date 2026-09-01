@@ -799,10 +799,10 @@ describe("main — human dashboard", () => {
 });
 
 // ============================================================================
-// Default workspace-graph wiring proof
+// Default inspection session wiring proof
 // ============================================================================
 
-describe("main — default workspace-graph wiring", () => {
+describe("main — default inspection session wiring", () => {
   it("uses the inspection session for workspace facts instead of a hard-coded project list", async () => {
     const customFacts: WorkspaceFacts = {
       projects: [

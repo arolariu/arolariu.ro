@@ -3,8 +3,8 @@
  * @module scripts/inspection/workspace
  *
  * @remarks
- * Unlike the former `common/workspace-graph.ts` (now deleted), this provider does not reimplement Nx's own
- * project-discovery rules from repository metadata. It instead invokes
+ * This provider does not reimplement Nx's own project-discovery rules from repository metadata.
+ * It instead invokes
  * `createProjectGraphAsync()` inside an isolated child process (see `./workspace.worker.ts`),
  * redirecting Nx's workspace database and task cache to a unique, disposable temporary directory
  * so the repository's own `.nx` state is never read from or written to. The worker's untrusted

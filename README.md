@@ -236,7 +236,11 @@ never installs or upgrades Git, Node.js, or npm:
 git clone https://github.com/arolariu/arolariu.ro.git
 cd arolariu.ro
 
-# 2️⃣ One-command onboarding — restores dependencies and prepares every toolchain
+# 2️⃣ Install root dependencies
+npm install
+# (or use `npm ci` for a reproducible, lockfile-exact install in CI or clean checkouts)
+
+# 3️⃣ One-command onboarding — validates root dependencies and prepares every toolchain
 npm run setup
 
 # 3️⃣ Start the full stack via Aspire with the engine setup selected/persisted
@@ -253,7 +257,7 @@ npm run dev:website        # Next.js only
 
 **What `npm run setup` prepares** — a single dependency-aware run that never builds, type-checks, tests, or starts/stops a service:
 
-- Restores root and `.github/scripts` npm dependency trees and regenerates taxonomy/GraphQL/i18n checkout artifacts;
+- Validates the root npm dependency tree (already installed by `npm install`/`npm ci` above), restores the `.github/scripts` npm dependency tree, and regenerates taxonomy/GraphQL/i18n checkout artifacts;
 - Prepares the .NET SDK/workload/tool restore, AppHost local-development user secrets, and the local HTTPS development certificate;
 - Prepares an isolated Python virtual environment and its pinned dependencies for the `exp` service;
 - Prepares the SvelteKit CV and status generated `.svelte-kit` state;
