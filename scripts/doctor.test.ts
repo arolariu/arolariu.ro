@@ -583,6 +583,46 @@ describe("runDoctor", () => {
       expect(context.inspection).toBe(injectedSession);
     }
   });
+
+  it.each([
+    [{}, "CI unset"],
+    [{CI: "true"}, "CI=true"],
+    [{CI: "false"}, "CI=false"],
+  ] as const)("prewarns aggregate inspection exactly once before modules in full mode (%s)", async (envPatch, _label) => {
+    const fakeSession = createFakeInspectionSession();
+    const inspectSpy = vi.spyOn(fakeSession, "inspect");
+    const {modules} = createFakeModules();
+
+    await runDoctor(doctorOptions({quick: false}), {
+      ...fixedRuntimeDependencies(),
+      modules,
+      inspection: fakeSession,
+      env: envPatch,
+    });
+
+    const aggregateCalls = inspectSpy.mock.calls.filter(([key]) => key === "aggregate");
+    expect(aggregateCalls).toHaveLength(1);
+  });
+
+  it.each([
+    [{}, "CI unset"],
+    [{CI: "true"}, "CI=true"],
+    [{CI: "false"}, "CI=false"],
+  ] as const)("never requests aggregate inspection during orchestration in quick mode (%s)", async (envPatch, _label) => {
+    const fakeSession = createFakeInspectionSession();
+    const inspectSpy = vi.spyOn(fakeSession, "inspect");
+    const {modules} = createFakeModules();
+
+    await runDoctor(doctorOptions({quick: true}), {
+      ...fixedRuntimeDependencies(),
+      modules,
+      inspection: fakeSession,
+      env: envPatch,
+    });
+
+    const aggregateCalls = inspectSpy.mock.calls.filter(([key]) => key === "aggregate");
+    expect(aggregateCalls).toHaveLength(0);
+  });
 });
 
 describe("module-error weighting", () => {

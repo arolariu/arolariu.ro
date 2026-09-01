@@ -306,6 +306,13 @@ export async function runDoctor(
 
   const probes = dependencies.probes ?? createInspectionProbeRunner(defaultCommandRunner);
 
+  // Prewarm aggregate collection in full mode only: firing-and-forgetting starts the isolated
+  // worker process once so its memoized result is ready by the time the infrastructure module
+  // consumes it, without blocking module startup. Quick mode never starts the worker.
+  if (!options.quick) {
+    void inspection.inspect("aggregate");
+  }
+
   const context: DoctorContext = {
     options,
     paths,

@@ -562,12 +562,13 @@ const APPROVED_DOCTOR_REPOSITORY_IMPORTS: ReadonlyMap<string, ReadonlySet<string
   [
     "scripts/doctor.infrastructure.ts",
     new Set([
-      "./common/process.ts",
       "./common/tooling-config.ts",
-      "./container-runtime/preflight.ts",
       "./container-runtime/selection.ts",
       "./container-runtime/types.ts",
+      "./doctor.diagnostics.ts",
       "./doctor.types.ts",
+      "./inspection/infrastructure.ts",
+      "./inspection/types.ts",
     ]),
   ],
   [

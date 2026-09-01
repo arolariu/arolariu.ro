@@ -50,6 +50,8 @@ export interface InfrastructureFacts {
   readonly containers: readonly Readonly<{
     name: string;
     state: string;
+    /** Human-readable container status string, set when available (e.g. `"Up 3 hours (unhealthy)"`). */
+    status?: string;
     publishedPorts: readonly number[];
     repositoryOwned: boolean;
   }>[];
@@ -98,6 +100,7 @@ const KNOWN_LOCAL_CONTAINER_NAMES: ReadonlySet<string> = new Set([
   "cosmosdb",
   "azurite",
   "redis",
+  "healthchecks",
   "exp-arolariu-ro",
   "api-arolariu-ro",
   "website-arolariu-ro",
@@ -476,6 +479,7 @@ async function inspectManifests(paths: RepositoryPaths): Promise<readonly string
 interface ParsedContainerRecord {
   readonly names: readonly string[];
   readonly state: string;
+  readonly status?: string;
   readonly hostPorts: readonly number[];
 }
 
@@ -561,7 +565,10 @@ function parseContainerListLine(line: string): ParsedContainerRecord | null {
     const hostPorts =
       typeof rawPorts === "string" ? parseDockerPortsString(rawPorts) : Array.isArray(rawPorts) ? parsePodmanPortsArray(rawPorts) : [];
 
-    return {names, state, hostPorts};
+    const rawStatus = parsed["Status"];
+    const status = typeof rawStatus === "string" && rawStatus.trim() !== "" ? rawStatus.trim() : undefined;
+
+    return {names, state, ...(status !== undefined ? {status} : {}), hostPorts};
   } catch {
     return null;
   }
@@ -587,7 +594,7 @@ function parseContainerList(stdout: string): readonly ParsedContainerRecord[] {
  * @returns Approved container facts, sorted by name.
  */
 function projectContainers(stdout: string): readonly ContainerFact[] {
-  const byName = new Map<string, {state: string; publishedPorts: readonly number[]}>();
+  const byName = new Map<string, {state: string; status?: string; publishedPorts: readonly number[]}>();
   for (const record of parseContainerList(stdout)) {
     const knownName = record.names.find((name) => KNOWN_LOCAL_CONTAINER_NAMES.has(name));
     if (knownName === undefined || byName.has(knownName)) {
@@ -595,12 +602,19 @@ function projectContainers(stdout: string): readonly ContainerFact[] {
     }
     byName.set(knownName, {
       state: record.state,
+      ...(record.status !== undefined ? {status: record.status} : {}),
       publishedPorts: [...new Set(record.hostPorts)].toSorted((left, right) => left - right),
     });
   }
 
   return [...byName.entries()]
-    .map(([name, detail]) => ({name, state: detail.state, publishedPorts: detail.publishedPorts, repositoryOwned: true}))
+    .map(([name, detail]) => ({
+      name,
+      state: detail.state,
+      ...(detail.status !== undefined ? {status: detail.status} : {}),
+      publishedPorts: detail.publishedPorts,
+      repositoryOwned: true,
+    }))
     .toSorted((left, right) => compareText(left.name, right.name));
 }
 
