@@ -178,14 +178,21 @@ const writeAssertionSummary = (target: string, reportDir: string, logger: Monore
 };
 
 /**
- * Reads a positive integer from environment variables.
+ * Reads a positive integer from an environment map.
  *
  * @param key - Environment variable key.
  * @param fallback - Fallback number if variable is missing/invalid.
+ * @param logger - Logger for diagnostic output.
+ * @param env - Environment map to read from.
  * @returns Parsed positive integer.
  */
-const readPositiveIntegerEnv = (key: string, fallback: number, logger: MonorepositoryLogger): number => {
-  const rawValue = process.env[key];
+const readPositiveIntegerEnv = (
+  key: string,
+  fallback: number,
+  logger: MonorepositoryLogger,
+  env: Readonly<Record<string, string | undefined>>,
+): number => {
+  const rawValue = env[key];
   if (!rawValue) {
     return fallback;
   }
@@ -200,14 +207,21 @@ const readPositiveIntegerEnv = (key: string, fallback: number, logger: Monorepos
 };
 
 /**
- * Reads a boolean from environment variables.
+ * Reads a boolean from an environment map.
  *
  * @param key - Environment variable key.
  * @param fallback - Fallback value.
+ * @param logger - Logger for diagnostic output.
+ * @param env - Environment map to read from.
  * @returns Parsed boolean value.
  */
-const readBooleanEnv = (key: string, fallback: boolean, logger: MonorepositoryLogger): boolean => {
-  const rawValue = process.env[key];
+const readBooleanEnv = (
+  key: string,
+  fallback: boolean,
+  logger: MonorepositoryLogger,
+  env: Readonly<Record<string, string | undefined>>,
+): boolean => {
+  const rawValue = env[key];
   if (!rawValue) {
     return fallback;
   }
@@ -320,6 +334,57 @@ const sanitizeNewmanJsonReport = (jsonPath: string, logger: MonorepositoryLogger
 };
 
 /**
+ * Sanitizes a text-based report (JUnit XML, Markdown summary) by removing JWT patterns.
+ *
+ * @param filePath - Path to the text report.
+ * @param logger - Logger for diagnostic output.
+ * @param runtimeAuthToken - Optional runtime auth token to redact by exact match.
+ * @returns Nothing.
+ */
+const sanitizeNewmanTextReport = (filePath: string, logger: MonorepositoryLogger, runtimeAuthToken?: string): void => {
+  if (!existsSync(filePath)) {
+    return;
+  }
+
+  try {
+    let content = readFileSync(filePath, "utf-8");
+    let redactionCount = 0;
+
+    if (runtimeAuthToken !== undefined && runtimeAuthToken.length > 0 && content.includes(runtimeAuthToken)) {
+      content = content.replaceAll(runtimeAuthToken, "[REDACTED]");
+      redactionCount++;
+    }
+
+    const bearerRedacted = content.replace(BEARER_JWT_REPLACEMENT_PATTERN, "******");
+    if (bearerRedacted !== content) {
+      content = bearerRedacted;
+      redactionCount++;
+    }
+
+    const jwtRedacted = content.replace(JWT_REPLACEMENT_PATTERN, "[REDACTED_JWT]");
+    if (jwtRedacted !== content) {
+      content = jwtRedacted;
+      redactionCount++;
+    }
+
+    if (JWT_DETECTION_PATTERN.test(content) || BEARER_JWT_DETECTION_PATTERN.test(content)) {
+      rmSync(filePath, {force: true});
+      logger.line(styleText("yellow", `   ⚠ Removed unsanitized text report due to remaining JWT patterns: ${filePath}`), "stderr");
+      return;
+    }
+
+    writeFileSync(filePath, content, "utf-8");
+    if (redactionCount > 0) {
+      logger.line(styleText("gray", `   🔐 Sanitized text report (${redactionCount} redaction pass(es)): ${filePath}`));
+    }
+  } catch (error) {
+    rmSync(filePath, {force: true});
+    logger.line(styleText("yellow", `   ⚠ Failed to sanitize text report and removed it: ${filePath}`), "stderr");
+    logger.line(styleText("gray", `      Reason: ${error instanceof Error ? error.message : String(error)}`), "stderr");
+  }
+};
+
+/**
  * Runs a Newman collection and produces JSON/JUnit reports.
  *
  * @remarks
@@ -331,6 +396,8 @@ const sanitizeNewmanJsonReport = (jsonPath: string, logger: MonorepositoryLogger
  * @param reportDir - Directory to write report artifacts.
  * @param logger - Logger used for Newman lifecycle and report output.
  * @param runner - Command runner used for Newman execution.
+ * @param env - Environment variable map for runtime configuration.
+ * @param runtimeAuthToken - Optional auth token injected via `--env-var`.
  * @returns A promise that resolves when execution completes.
  */
 const runOpenAPITestCollection = async (
@@ -340,16 +407,17 @@ const runOpenAPITestCollection = async (
   reportDir: string,
   logger: MonorepositoryLogger,
   runner: CommandRunner,
+  env: Readonly<Record<string, string | undefined>>,
   runtimeAuthToken?: string,
 ): Promise<void> => {
   logger.line(styleText("cyan", `\n🧪 Running Newman test collection for: ${styleText("bold", target)}`));
   ensureReportDir(reportDir, logger);
   const jsonPath = `${reportDir}/newman-${target}.json`;
   const junitPath = `${reportDir}/newman-${target}.xml`;
-  const collectionTimeout = readPositiveIntegerEnv("NEWMAN_TIMEOUT", 600_000, logger);
-  const requestTimeout = readPositiveIntegerEnv("NEWMAN_TIMEOUT_REQUEST", 30_000, logger);
-  const scriptTimeout = readPositiveIntegerEnv("NEWMAN_TIMEOUT_SCRIPT", 10_000, logger);
-  const strictMode = readBooleanEnv("NEWMAN_STRICT_MODE", false, logger);
+  const collectionTimeout = readPositiveIntegerEnv("NEWMAN_TIMEOUT", 600_000, logger, env);
+  const requestTimeout = readPositiveIntegerEnv("NEWMAN_TIMEOUT_REQUEST", 30_000, logger, env);
+  const scriptTimeout = readPositiveIntegerEnv("NEWMAN_TIMEOUT_SCRIPT", 10_000, logger, env);
+  const strictMode = readBooleanEnv("NEWMAN_STRICT_MODE", false, logger, env);
 
   logger.line(styleText("gray", `   📦 Collection path: ${collectionPath}`));
   logger.line(styleText("gray", `   🌍 Environment path: ${environmentPath}`));
@@ -402,6 +470,19 @@ const runOpenAPITestCollection = async (
     } catch (e) {
       logger.line(formatText(styleText("red", "   ✗ Failed sanitizing Newman JSON report:"), e), "stderr");
     }
+
+    try {
+      sanitizeNewmanTextReport(junitPath, logger, runtimeAuthToken);
+    } catch (e) {
+      logger.line(formatText(styleText("red", "   ✗ Failed sanitizing Newman JUnit report:"), e), "stderr");
+    }
+
+    try {
+      const summaryPath = `${reportDir}/newman-${target}-summary.md`;
+      sanitizeNewmanTextReport(summaryPath, logger, runtimeAuthToken);
+    } catch (e) {
+      logger.line(formatText(styleText("red", "   ✗ Failed sanitizing Newman summary report:"), e), "stderr");
+    }
   }
 };
 
@@ -437,7 +518,9 @@ const startNewmanTesting = async (
   const environmentProfile = resolveEnvironmentProfile(env);
   const environmentPath = loadOpenAPITestEnvironmentPath(target, environmentProfile, cwd);
   const authToken = (env["E2E_TEST_AUTH_TOKEN"] ?? "").trim();
-  const reportDir = env["NEWMAN_REPORT_DIR"] || "e2e-logs";
+  const rawReportDir = env["NEWMAN_REPORT_DIR"] || "e2e-logs";
+  // Resolve relative report directories against injected cwd, not process.cwd.
+  const reportDir = resolve(cwd, rawReportDir);
 
   if (!existsSync(collectionPath)) {
     throw new Error(`Collection file not found: ${collectionPath}`);
@@ -478,6 +561,7 @@ const startNewmanTesting = async (
     reportDir,
     logger.child("newman"),
     runner,
+    env,
     shouldPassAuthToken ? authToken : undefined,
   );
 
