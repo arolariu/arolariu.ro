@@ -11,7 +11,7 @@
  * diagnostic ever fabricates a healthy value from missing facts.
  */
 
-import {boundEvidence, diagnosticResult, skippedDiagnostic as skipHelper, STANDARD_EVIDENCE_LIMIT} from "./doctor.diagnostics.ts";
+import {boundEvidence, diagnosticResult, STANDARD_EVIDENCE_LIMIT} from "./doctor.diagnostics.ts";
 import {
   DIAGNOSTIC_DEFAULT_TIMEOUT_MS,
   skippedDiagnostic,

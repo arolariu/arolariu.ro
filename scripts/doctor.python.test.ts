@@ -101,6 +101,7 @@ function createPythonFixture(
     requirements?: RepositoryRequirements | "invalid";
     outcome?: InspectionOutcome<PythonFacts>;
     networkResult?: DiagnosticNetworkResult;
+    env?: Readonly<NodeJS.ProcessEnv>;
   }> = {},
 ): PythonFixture {
   const outcome: InspectionOutcome<PythonFacts> = input.outcome ?? {
@@ -148,7 +149,7 @@ function createPythonFixture(
     logger: new MonorepositoryConsoleLogger("doctor::python", {color: false, sink}),
     platform: "win32",
     arch: "x64",
-    env: {},
+    env: input.env ?? {},
     now: () => ++now,
     probes: {run: probeRun as unknown as DoctorContext["probes"]["run"]},
     inspection: {
@@ -256,8 +257,8 @@ describe("pythonDoctorModule", () => {
   });
 
   it("fails python.runtime when no selected interpreter exists", async () => {
-    const facts = healthyPythonFacts({selected: undefined});
-    const fixture = createPythonFixture({outcome: {kind: "available", value: facts, durationMs: 0}});
+    const {selected: _selected, ...noSelectedFacts} = healthyPythonFacts();
+    const fixture = createPythonFixture({outcome: {kind: "available", value: noSelectedFacts as PythonFacts, durationMs: 0}});
 
     const results = await pythonDoctorModule.run(fixture.context);
 
@@ -582,12 +583,10 @@ describe("pythonDoctorModule", () => {
   // --- CI environment ---
 
   it("produces identical results with CI=true and CI=false", async () => {
-    const factsCi = createPythonFixture();
-    factsCi.context.env["CI"] = "true";
+    const factsCi = createPythonFixture({env: {CI: "true"}});
     const resultsCi = await pythonDoctorModule.run(factsCi.context);
 
-    const factsNoCi = createPythonFixture();
-    factsNoCi.context.env["CI"] = "false";
+    const factsNoCi = createPythonFixture({env: {CI: "false"}});
     const resultsNoCi = await pythonDoctorModule.run(factsNoCi.context);
 
     expect(resultIds(resultsCi)).toEqual(resultIds(resultsNoCi));

@@ -154,33 +154,6 @@ function getExportedInterfacePropertyNames(source: ts.SourceFile, name: string):
   throw new Error(`Missing exported interface ${name}.`);
 }
 
-function getExportedInterfacePropertyType(source: ts.SourceFile, interfaceName: string, propertyName: string): string {
-  for (const statement of source.statements) {
-    if (!ts.isInterfaceDeclaration(statement) || statement.name.text !== interfaceName || !isExported(statement)) {
-      continue;
-    }
-
-    for (const member of statement.members) {
-      if (!ts.isPropertySignature(member) || member.type === undefined || member.name === undefined) {
-        continue;
-      }
-
-      const name =
-        ts.isIdentifier(member.name)
-        || ts.isStringLiteral(member.name)
-        || ts.isNumericLiteral(member.name)
-        || ts.isNoSubstitutionTemplateLiteral(member.name)
-          ? member.name.text
-          : null;
-      if (name === propertyName) {
-        return member.type.getText(source).replaceAll(/\s+/gu, " ").trim();
-      }
-    }
-  }
-
-  throw new Error(`Missing property ${interfaceName}.${propertyName}.`);
-}
-
 function discoverDoctorProductionFiles(): readonly string[] {
   const doctorFiles = readdirSync(resolve(process.cwd(), "scripts"), {withFileTypes: true})
     .filter((entry) => entry.isFile() && entry.name.startsWith("doctor"))
@@ -427,15 +400,16 @@ function declareConstantBinding(name: ts.BindingName, scope: Map<string, StaticV
 
   for (let index = 0; index < name.elements.length; index++) {
     const element = name.elements[index];
-    if (ts.isOmittedExpression(element)) {
+    if (element === undefined || ts.isOmittedExpression(element)) {
       continue;
     }
 
-    const elementValue =
+    const indexedValue = value.kind === "stringArray" ? value.value[index] : undefined;
+    const elementValue: StaticValue =
       value.kind === "stringArray"
         ? element.dotDotDotToken === undefined
-          ? value.value[index] !== undefined
-            ? ({kind: "string", value: value.value[index]} satisfies StaticStringValue)
+          ? indexedValue !== undefined
+            ? ({kind: "string", value: indexedValue} satisfies StaticStringValue)
             : UNKNOWN_STATIC_VALUE
           : ({kind: "stringArray", value: value.value.slice(index)} satisfies StaticStringArrayValue)
         : UNKNOWN_STATIC_VALUE;
@@ -1061,7 +1035,11 @@ describe("isReadOnlyDiagnosticCommand", () => {
   it("rejects mutating, test-running, trust-broadening, and injection-shaped commands", async () => {
     const module = await loadDoctorTypesModule();
 
-    const forbidden = [
+    const windowsProbeScript = module.createPortOwnerProbeCommand("win32", [3000]).args[3];
+    expect(windowsProbeScript).toBeDefined();
+    if (windowsProbeScript === undefined) throw new Error("Expected args[3] to be defined.");
+
+    const forbidden: readonly Readonly<CommandSpec>[] = [
       {command: "npm", args: ["ci"]},
       {command: "dotnet", args: ["restore"]},
       {command: "dotnet", args: ["build"]},
@@ -1079,16 +1057,10 @@ describe("isReadOnlyDiagnosticCommand", () => {
       {command: "dotnet", args: ["dev-certs", "https", "--trust"]},
       {
         command: "powershell",
-        args: [
-          "-NoProfile",
-          "-NonInteractive",
-          "-Command",
-          module.createPortOwnerProbeCommand("win32", [3000]).args[3],
-          "3000; Remove-Item",
-        ],
+        args: ["-NoProfile", "-NonInteractive", "-Command", windowsProbeScript, "3000; Remove-Item"],
       },
       {command: "which", args: ["node && rm -rf ."]},
-    ] as const;
+    ];
 
     expect(forbidden.every((command) => !module.isReadOnlyDiagnosticCommand(command))).toBe(true);
   });

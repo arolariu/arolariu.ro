@@ -95,6 +95,7 @@ function createDotnetFixture(
     requirements?: RepositoryRequirements | "invalid";
     outcome?: InspectionOutcome<DotnetFacts>;
     networkResult?: DiagnosticNetworkResult;
+    env?: Readonly<NodeJS.ProcessEnv>;
   }> = {},
 ): DotnetFixture {
   const outcome: InspectionOutcome<DotnetFacts> = input.outcome ?? {
@@ -145,7 +146,7 @@ function createDotnetFixture(
     logger: new MonorepositoryConsoleLogger("doctor::dotnet", {color: false, sink}),
     platform: "win32",
     arch: "x64",
-    env: {},
+    env: input.env ?? {},
     now: () => ++now,
     probes: {run: probeRun as unknown as DoctorContext["probes"]["run"]},
     inspection: {
@@ -324,8 +325,7 @@ describe("dotnetDoctorModule", () => {
   });
 
   it("fails dotnet.host when host facts are missing", async () => {
-    const facts = healthyDotnetFacts();
-    const noHost = {...facts, host: undefined};
+    const {host: _host, ...noHost} = healthyDotnetFacts();
     const fixture = createDotnetFixture({outcome: {kind: "available", value: noHost as DotnetFacts, durationMs: 0}});
 
     const results = await dotnetDoctorModule.run(fixture.context);
@@ -376,8 +376,7 @@ describe("dotnetDoctorModule", () => {
   });
 
   it("warns dotnet.nuget-state when cache path is missing", async () => {
-    const facts = healthyDotnetFacts();
-    const noCacheFacts = {...facts, nugetCachePath: undefined};
+    const {nugetCachePath: _nugetCachePath, ...noCacheFacts} = healthyDotnetFacts();
     const fixture = createDotnetFixture({outcome: {kind: "available", value: noCacheFacts as DotnetFacts, durationMs: 0}});
 
     const results = await dotnetDoctorModule.run(fixture.context);
@@ -681,12 +680,10 @@ describe("dotnetDoctorModule", () => {
   // --- CI environment ---
 
   it("produces identical results with CI=true and CI=false", async () => {
-    const factsCi = createDotnetFixture();
-    factsCi.context.env["CI"] = "true";
+    const factsCi = createDotnetFixture({env: {CI: "true"}});
     const resultsCi = await dotnetDoctorModule.run(factsCi.context);
 
-    const factsNoCi = createDotnetFixture();
-    factsNoCi.context.env["CI"] = "false";
+    const factsNoCi = createDotnetFixture({env: {CI: "false"}});
     const resultsNoCi = await dotnetDoctorModule.run(factsNoCi.context);
 
     expect(resultIds(resultsCi)).toEqual(resultIds(resultsNoCi));

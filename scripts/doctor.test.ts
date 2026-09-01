@@ -149,14 +149,14 @@ const noopNetwork: DiagnosticNetworkProbe = {
 /** Fake inspection session that resolves to unavailable for all keys. */
 function createFakeInspectionSession(): RepositoryInspectionSession {
   return {
-    inspect: async <Key extends string>(_key: Key): Promise<InspectionOutcome<unknown>> => ({
+    inspect: async (_key: string): Promise<InspectionOutcome<unknown>> => ({
       kind: "unavailable" as const,
       reason: "Fake test session",
       durationMs: 0,
     }),
     invalidate: (): void => {},
     updateInfrastructureEngine: (): void => {},
-  };
+  } as unknown as RepositoryInspectionSession;
 }
 
 /** Fixed, deterministic runtime seam shared by every orchestrator test so it never reads the live checkout or a real network. */
@@ -598,7 +598,7 @@ describe("module-error weighting", () => {
   ];
 
   it("weighs a module crash as the sum of its module's ordinary weights", () => {
-    const expectedWeight = workspaceOrdinaryIds.reduce((total, id) => total + diagnosticWeights[id], 0);
+    const expectedWeight = workspaceOrdinaryIds.reduce((total, id) => total + (diagnosticWeights[id] ?? 0), 0);
 
     expect(diagnosticWeights["workspace.module-error"]).toBe(expectedWeight);
     expect(diagnosticWeights["workspace.module-error"]).toBe(135);

@@ -12,15 +12,7 @@
  */
 
 import {satisfiesMinimum, type MinimumVersion} from "./common/requirements.ts";
-import {
-  boundEvidence,
-  diagnosticResult,
-  failDiagnostic,
-  passDiagnostic as passHelper,
-  skippedDiagnostic as skipHelper,
-  warnDiagnostic,
-  STANDARD_EVIDENCE_LIMIT,
-} from "./doctor.diagnostics.ts";
+import {boundEvidence, diagnosticResult, STANDARD_EVIDENCE_LIMIT} from "./doctor.diagnostics.ts";
 import {
   DIAGNOSTIC_DEFAULT_TIMEOUT_MS,
   skippedDiagnostic,
