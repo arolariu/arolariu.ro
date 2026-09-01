@@ -14,6 +14,24 @@ vi.mock("execa", async (importOriginal) => {
   return {...actual, execa: vi.fn()};
 });
 
+const mockedExeca = vi.mocked(execa);
+
+/**
+ * Implementation shape the Execa mock accepts.
+ *
+ * @remarks
+ * Execa exports `execa` as a callable object that also carries template-tag and
+ * option-binding overloads. The mocked view exposes only the plain call signature,
+ * so the real implementation has to be re-typed to that narrower signature.
+ */
+type ExecaImplementation = Parameters<typeof mockedExeca.mockImplementation>[0];
+
+/** Restores the real Execa implementation behind the module mock. */
+async function useRealExeca(): Promise<void> {
+  const actual = await vi.importActual<typeof import("execa")>("execa");
+  mockedExeca.mockImplementation(actual.execa as unknown as ExecaImplementation);
+}
+
 const splitUtf8Script = [
   "const stdoutBytes = Buffer.from('€');",
   "const stderrBytes = Buffer.from('漢');",
@@ -37,10 +55,7 @@ const splitRedactionScript = [
 ].join("");
 
 describe("controlled command lifecycle", () => {
-  beforeEach(async () => {
-    const actual = await vi.importActual<typeof import("execa")>("execa");
-    vi.mocked(execa).mockImplementation(actual.execa);
-  });
+  beforeEach(useRealExeca);
 
   it("decodes split UTF-8 chunks independently for stdout and stderr while retaining capture", async () => {
     const sink = new InMemoryLoggerSink();
@@ -91,10 +106,7 @@ describe("controlled command lifecycle", () => {
 });
 
 describe("stdin selection by output mode", () => {
-  beforeEach(async () => {
-    const actual = await vi.importActual<typeof import("execa")>("execa");
-    vi.mocked(execa).mockImplementation(actual.execa);
-  });
+  beforeEach(useRealExeca);
 
   it("inherits stdin from the parent process for inherited output", async () => {
     await defaultCommandRunner.run({command: process.execPath, args: ["-e", ""]}, {output: "inherit"});

@@ -133,11 +133,6 @@ async function createInfrastructureFixture(
     options: doctorOptions(input.options),
     paths,
     requirements: {status: "valid", requirements: validRequirements},
-    runner: {
-      run: vi.fn(async () => {
-        throw new Error("runner should not be invoked in infrastructure fact tests.");
-      }),
-    },
     network: {
       get: vi.fn(async (): Promise<DiagnosticNetworkResult> => ({status: "reachable", statusCode: 200, durationMs: 1})),
     },

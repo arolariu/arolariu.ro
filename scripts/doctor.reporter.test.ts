@@ -231,13 +231,6 @@ function createFailDiagnostic(
   });
 }
 
-function replaceReportCheck(report: Readonly<DoctorReport>, check: Readonly<DiagnosticResult>): DoctorReport {
-  return {
-    ...report,
-    checks: report.checks.map((existingCheck) => (existingCheck.id === check.id ? check : existingCheck)),
-  };
-}
-
 const invalidDetailedDiagnosticCases = [
   {
     title: "warn diagnostics without evidence",
@@ -296,6 +289,26 @@ const invalidDetailedDiagnosticCases = [
   },
 ] as const;
 
+describe("doctor report semantic validation", () => {
+  it.each(invalidDetailedDiagnosticCases)("rejects $title", ({diagnostic, error}) => {
+    expect(() => createDoctorReport([diagnostic], "2026-08-30T01:23:45.000Z")).toThrow(error);
+  });
+});
+
+/**
+ * Reads a declared diagnostic weight, failing loudly when the id is not registered.
+ *
+ * @param id - Stable diagnostic id.
+ * @returns The declared weight for that id.
+ */
+function weightOf(id: string): number {
+  const weight = diagnosticWeights[id];
+  if (weight === undefined) {
+    throw new Error(`Diagnostic id '${id}' has no declared weight.`);
+  }
+  return weight;
+}
+
 describe("doctor reporter scoring", () => {
   it("defines explicit stable weights for every Task 3-8 diagnostic id", () => {
     expect(Object.keys(diagnosticWeights).toSorted()).toEqual([...stableDiagnosticIds].toSorted());
@@ -330,10 +343,8 @@ describe("doctor reporter scoring", () => {
     ];
 
     const expected = Math.round(
-      ((diagnosticWeights["workspace.node-runtime"] + diagnosticWeights["workspace.root-dependencies"] * 0.5)
-        / (diagnosticWeights["workspace.node-runtime"]
-          + diagnosticWeights["workspace.root-dependencies"]
-          + diagnosticWeights["workspace.git"]))
+      ((weightOf("workspace.node-runtime") + weightOf("workspace.root-dependencies") * 0.5)
+        / (weightOf("workspace.node-runtime") + weightOf("workspace.root-dependencies") + weightOf("workspace.git")))
         * 100,
     );
 

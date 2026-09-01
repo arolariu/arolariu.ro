@@ -8,8 +8,8 @@
  * `context.requirements` for version policy, and `context.network.get()` for PyPI reachability.
  * These tests never write a fixture file, spawn a command, or construct a `CommandSpec`: they
  * configure a fake inspection session that returns a deterministic `InspectionOutcome<PythonFacts>`,
- * and assert on the produced `DiagnosticResult` rows. `context.runner` and `context.probes` are
- * wired to throw if the module ever touches them.
+ * and assert on the produced `DiagnosticResult` rows. `context.probes` is wired to throw if the
+ * module ever touches it, and a source guard proves the module never references `context.runner`.
  */
 
 import {readFileSync} from "node:fs";
@@ -92,7 +92,6 @@ interface PythonFixture {
   readonly context: DoctorContext;
   readonly inspect: Mock<(key: string) => Promise<InspectionOutcome<unknown>>>;
   readonly probeRun: Mock<(...args: readonly unknown[]) => Promise<never>>;
-  readonly runnerRun: Mock<(...args: readonly unknown[]) => Promise<never>>;
 }
 
 function createPythonFixture(
@@ -121,10 +120,6 @@ function createPythonFixture(
     throw new Error("doctor.python.ts must never call context.probes.");
   });
 
-  const runnerRun = vi.fn(async (): Promise<never> => {
-    throw new Error("doctor.python.ts must never call context.runner.");
-  });
-
   const networkGet = vi.fn(
     async (): Promise<DiagnosticNetworkResult> =>
       input.networkResult ?? {
@@ -144,7 +139,6 @@ function createPythonFixture(
       input.requirements === "invalid"
         ? {status: "invalid", errors: ["pyproject.toml uses unsupported syntax"]}
         : {status: "valid", requirements: input.requirements ?? validRequirements()},
-    runner: {run: runnerRun as unknown as DoctorContext["runner"]["run"]},
     network: {get: networkGet},
     logger: new MonorepositoryConsoleLogger("doctor::python", {color: false, sink}),
     platform: "win32",
@@ -159,7 +153,7 @@ function createPythonFixture(
     } as RepositoryInspectionSession,
   };
 
-  return {context, inspect, probeRun, runnerRun};
+  return {context, inspect, probeRun};
 }
 
 afterEach(() => {
@@ -217,21 +211,19 @@ describe("pythonDoctorModule", () => {
     expect(fixture.inspect).toHaveBeenCalledExactlyOnceWith("python");
   });
 
-  it("never calls context.runner or context.probes in normal mode", async () => {
+  it("never calls context.probes in normal mode", async () => {
     const fixture = createPythonFixture();
 
     await pythonDoctorModule.run(fixture.context);
 
-    expect(fixture.runnerRun).not.toHaveBeenCalled();
     expect(fixture.probeRun).not.toHaveBeenCalled();
   });
 
-  it("never calls context.runner or context.probes in quick mode", async () => {
+  it("never calls context.probes in quick mode", async () => {
     const fixture = createPythonFixture({options: {quick: true}});
 
     await pythonDoctorModule.run(fixture.context);
 
-    expect(fixture.runnerRun).not.toHaveBeenCalled();
     expect(fixture.probeRun).not.toHaveBeenCalled();
   });
 

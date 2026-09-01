@@ -81,7 +81,6 @@ interface SvelteFixture {
   readonly context: DoctorContext;
   readonly inspect: ReturnType<typeof vi.fn<(key: string) => Promise<InspectionOutcome<unknown>>>>;
   readonly probeRun: ReturnType<typeof vi.fn<(...args: readonly unknown[]) => Promise<never>>>;
-  readonly runnerRun: ReturnType<typeof vi.fn<(...args: readonly unknown[]) => Promise<never>>>;
 }
 
 function createSvelteFixture(
@@ -109,10 +108,6 @@ function createSvelteFixture(
     throw new Error("doctor.svelte.ts must never call context.probes.");
   });
 
-  const runnerRun = vi.fn(async (): Promise<never> => {
-    throw new Error("doctor.svelte.ts must never call context.runner.");
-  });
-
   const sink = new InMemoryLoggerSink();
   let now = 0;
   const context: DoctorContext = {
@@ -122,7 +117,6 @@ function createSvelteFixture(
       input.requirementsValid === false
         ? {status: "invalid", errors: [".nvmrc disagrees with package.json#engines.node"]}
         : {status: "valid", requirements: validRequirements()},
-    runner: {run: runnerRun as unknown as DoctorContext["runner"]["run"]},
     network: {
       get: vi.fn(async (): Promise<DiagnosticNetworkResult> => ({status: "reachable", statusCode: 200, durationMs: 1})),
     },
@@ -139,7 +133,7 @@ function createSvelteFixture(
     } as RepositoryInspectionSession,
   };
 
-  return {context, inspect, probeRun, runnerRun};
+  return {context, inspect, probeRun};
 }
 
 afterEach(() => {
@@ -330,12 +324,11 @@ describe("svelteDoctorModule", () => {
     expect(adapter.summary).toContain("does not configure a recognizable kit.adapter");
   });
 
-  it("never invokes context.runner or context.probes", async () => {
+  it("never invokes context.probes", async () => {
     const fixture = createSvelteFixture();
 
     await svelteDoctorModule.run(fixture.context);
 
-    expect(fixture.runnerRun).not.toHaveBeenCalled();
     expect(fixture.probeRun).not.toHaveBeenCalled();
   });
 

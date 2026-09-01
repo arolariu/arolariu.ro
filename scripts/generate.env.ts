@@ -506,21 +506,36 @@ function copyEnvFileToSubRepos(sourcePath: string, targetPaths: string[], verbos
 }
 
 /**
+ * Resolves the effective verbosity from the CLI flag and the `VERBOSE` environment variable.
+ *
+ * @remarks
+ * Verbosity is resolved per invocation instead of through a module-level constant so
+ * callers and tests observe the environment as it is at call time.
+ *
+ * @param flag - Verbosity requested through the CLI flag.
+ * @returns True when either the flag or the environment enables verbose logging.
+ */
+function resolveVerbose(flag: boolean): boolean {
+  return flag || process.env["VERBOSE"] === "true";
+}
+
+/**
  * Runs the environment generator CLI.
  *
  * @remarks
  * This is the script entrypoint used by `npm run generate:env`.
  *
- * @param verbose - Enables verbose logging.
+ * @param verbose - Enables verbose logging; `VERBOSE=true` enables it as well.
  * @param logger - Logger used for all script-authored output.
  * @param prompts - Optional injected prompt provider.
  * @returns Process exit code (0 for success, non-zero for failure).
  */
 export async function main(
   verbose: boolean = false,
-  logger: MonorepositoryLogger = new MonorepositoryConsoleLogger("generate::env"),
+  logger: MonorepositoryLogger = new MonorepositoryConsoleLogger("generate::env", {verbose: resolveVerbose(verbose)}),
   prompts: PromptProvider = createTerminalPromptProvider(),
 ): Promise<number> {
+  const effectiveVerbose = resolveVerbose(verbose);
   const isAzure = process.env["INFRA"] === "azure";
   const isProduction = process.env["PRODUCTION"] === "true";
   logger.line([{text: "🔧 Configuration:", styles: ["cyan"]}]);
@@ -535,7 +550,7 @@ export async function main(
   ]);
   logger.line([
     {text: "   Verbose: ", styles: ["gray"]},
-    {text: verbose ? "✅ Enabled" : "❌ Disabled", styles: [verbose ? "green" : "gray"]},
+    {text: effectiveVerbose ? "✅ Enabled" : "❌ Disabled", styles: [effectiveVerbose ? "green" : "gray"]},
   ]);
   logger.line([
     {text: "   Agent: ", styles: ["gray"]},
@@ -550,22 +565,22 @@ export async function main(
     {text: ".env", styles: ["cyan"]},
   ]);
   logger.line();
-  if (verbose) {
+  if (effectiveVerbose) {
     logger.debug("SITE_ENV was evaluated without logging its value.");
   }
 
   let config: GeneratedEnvironmentConfiguration = {};
   try {
     if (isAzure) {
-      if (verbose) {
+      if (effectiveVerbose) {
         logger.debug("Fetching configuration from the exp service.");
       }
-      config = await fetchConfigurationFromExp(verbose, logger);
+      config = await fetchConfigurationFromExp(effectiveVerbose, logger);
     } else {
-      if (verbose) {
+      if (effectiveVerbose) {
         logger.debug("Populating configuration via manual input.");
       }
-      config = await ensureLocalEnvIsComplete(verbose, logger, prompts);
+      config = await ensureLocalEnvIsComplete(effectiveVerbose, logger, prompts);
     }
   } catch (error: unknown) {
     logger.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
@@ -590,7 +605,7 @@ export async function main(
   logger.line();
 
   // Copy to sub-repositories if needed
-  copyEnvFileToSubRepos(".env", ["/sites/arolariu.ro/.env"], verbose, logger);
+  copyEnvFileToSubRepos(".env", ["/sites/arolariu.ro/.env"], effectiveVerbose, logger);
   return 0;
 }
 
@@ -613,7 +628,7 @@ if (import.meta.main) {
   }
 
   const {verbose = false} = program.opts<{verbose?: boolean}>();
-  const runLogger = new MonorepositoryConsoleLogger("generate::env", {verbose});
+  const runLogger = new MonorepositoryConsoleLogger("generate::env", {verbose: resolveVerbose(verbose)});
 
   try {
     const code = await main(verbose, runLogger);

@@ -148,7 +148,6 @@ interface WorkspaceFixture {
   readonly context: DoctorContext;
   readonly probeRun: Mock<(probe: InspectionProbe, options?: unknown) => Promise<CommandResult>>;
   readonly inspect: Mock<(key: string) => Promise<InspectionOutcome<unknown>>>;
-  readonly runnerRun: Mock<(...args: readonly unknown[]) => Promise<never>>;
 }
 
 async function createWorkspaceFixture(
@@ -225,10 +224,6 @@ async function createWorkspaceFixture(
     return outcome;
   });
 
-  const runnerRun = vi.fn(async (): Promise<never> => {
-    throw new Error("doctor.workspace.ts must never call context.runner.");
-  });
-
   const sink = new InMemoryLoggerSink();
   let now = 0;
   const context: DoctorContext = {
@@ -238,7 +233,6 @@ async function createWorkspaceFixture(
       input.requirementsValid === false
         ? {status: "invalid", errors: [".nvmrc disagrees with package.json#engines.node"]}
         : {status: "valid", requirements: validRequirements},
-    runner: {run: runnerRun as unknown as DoctorContext["runner"]["run"]},
     network: {
       get: vi.fn(async (): Promise<DiagnosticNetworkResult> => ({status: "reachable", statusCode: 200, durationMs: 1})),
     },
@@ -255,7 +249,7 @@ async function createWorkspaceFixture(
     } as RepositoryInspectionSession,
   };
 
-  return {root, cacheRoot, context, probeRun, inspect, runnerRun};
+  return {root, cacheRoot, context, probeRun, inspect};
 }
 
 afterEach(async () => {
@@ -666,7 +660,6 @@ describe("workspaceDoctorModule", () => {
     expect(fixture.context.probes.run).toBe(probeRunFn);
     expect(fixture.inspect.mock.calls.length).toBeGreaterThan(0);
     expect(fixture.probeRun.mock.calls.length).toBeGreaterThan(0);
-    expect(fixture.runnerRun).not.toHaveBeenCalled();
   });
 
   it("never imports CommandSpec or calls context.runner", async () => {

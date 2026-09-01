@@ -8,8 +8,8 @@
  * `context.requirements` for version policy, and `context.network.get()` for NuGet reachability.
  * These tests never write a fixture file, spawn a command, or construct a `CommandSpec`: they
  * configure a fake inspection session that returns a deterministic `InspectionOutcome<DotnetFacts>`,
- * and assert on the produced `DiagnosticResult` rows. `context.runner` and `context.probes` are
- * wired to throw if the module ever touches them.
+ * and assert on the produced `DiagnosticResult` rows. `context.probes` is wired to throw if the
+ * module ever touches it, and a source guard proves the module never references `context.runner`.
  */
 
 import {readFileSync} from "node:fs";
@@ -86,7 +86,6 @@ interface DotnetFixture {
   readonly context: DoctorContext;
   readonly inspect: Mock<(key: string) => Promise<InspectionOutcome<unknown>>>;
   readonly probeRun: Mock<(...args: readonly unknown[]) => Promise<never>>;
-  readonly runnerRun: Mock<(...args: readonly unknown[]) => Promise<never>>;
 }
 
 function createDotnetFixture(
@@ -115,10 +114,6 @@ function createDotnetFixture(
     throw new Error("doctor.dotnet.ts must never call context.probes.");
   });
 
-  const runnerRun = vi.fn(async (): Promise<never> => {
-    throw new Error("doctor.dotnet.ts must never call context.runner.");
-  });
-
   const networkGet = vi.fn(
     async (): Promise<DiagnosticNetworkResult> =>
       input.networkResult ?? {
@@ -141,7 +136,6 @@ function createDotnetFixture(
       input.requirements === "invalid"
         ? {status: "invalid", errors: [".nvmrc disagrees with package.json#engines.node"]}
         : {status: "valid", requirements: input.requirements ?? validRequirements()},
-    runner: {run: runnerRun as unknown as DoctorContext["runner"]["run"]},
     network: {get: networkGet},
     logger: new MonorepositoryConsoleLogger("doctor::dotnet", {color: false, sink}),
     platform: "win32",
@@ -156,7 +150,7 @@ function createDotnetFixture(
     } as RepositoryInspectionSession,
   };
 
-  return {context, inspect, probeRun, runnerRun};
+  return {context, inspect, probeRun};
 }
 
 afterEach(() => {
@@ -212,21 +206,19 @@ describe("dotnetDoctorModule", () => {
     expect(fixture.inspect).toHaveBeenCalledExactlyOnceWith("dotnet");
   });
 
-  it("never calls context.runner or context.probes in normal mode", async () => {
+  it("never calls context.probes in normal mode", async () => {
     const fixture = createDotnetFixture();
 
     await dotnetDoctorModule.run(fixture.context);
 
-    expect(fixture.runnerRun).not.toHaveBeenCalled();
     expect(fixture.probeRun).not.toHaveBeenCalled();
   });
 
-  it("never calls context.runner or context.probes in quick mode", async () => {
+  it("never calls context.probes in quick mode", async () => {
     const fixture = createDotnetFixture({options: {quick: true}});
 
     await dotnetDoctorModule.run(fixture.context);
 
-    expect(fixture.runnerRun).not.toHaveBeenCalled();
     expect(fixture.probeRun).not.toHaveBeenCalled();
   });
 

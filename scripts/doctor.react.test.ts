@@ -115,7 +115,6 @@ interface ReactFixture {
   readonly context: DoctorContext;
   readonly inspect: Mock<(key: string) => Promise<InspectionOutcome<unknown>>>;
   readonly probeRun: Mock<(...args: readonly unknown[]) => Promise<never>>;
-  readonly runnerRun: Mock<(...args: readonly unknown[]) => Promise<never>>;
 }
 
 function createReactFixture(
@@ -138,10 +137,6 @@ function createReactFixture(
     throw new Error("doctor.react.ts must never call context.probes.");
   });
 
-  const runnerRun = vi.fn(async (): Promise<never> => {
-    throw new Error("doctor.react.ts must never call context.runner.");
-  });
-
   const sink = new InMemoryLoggerSink();
   let now = 0;
   const context: DoctorContext = {
@@ -151,7 +146,6 @@ function createReactFixture(
       input.requirements === "invalid"
         ? {status: "invalid", errors: [".nvmrc disagrees with package.json#engines.node"]}
         : {status: "valid", requirements: input.requirements ?? validRequirements()},
-    runner: {run: runnerRun as unknown as DoctorContext["runner"]["run"]},
     network: {
       get: vi.fn(async (): Promise<DiagnosticNetworkResult> => ({status: "reachable", statusCode: 200, durationMs: 1})),
     },
@@ -168,7 +162,7 @@ function createReactFixture(
     } as RepositoryInspectionSession,
   };
 
-  return {context, inspect, probeRun, runnerRun};
+  return {context, inspect, probeRun};
 }
 
 afterEach(() => {
@@ -399,12 +393,11 @@ describe("reactDoctorModule", () => {
     expect(frameworkConfig.rootCause).toBe("next.config.ts does not wire next-intl message declaration generation.");
   });
 
-  it("never invokes context.runner or context.probes", async () => {
+  it("never invokes context.probes", async () => {
     const fixture = createReactFixture();
 
     await reactDoctorModule.run(fixture.context);
 
-    expect(fixture.runnerRun).not.toHaveBeenCalled();
     expect(fixture.probeRun).not.toHaveBeenCalled();
   });
 
