@@ -183,6 +183,7 @@ function createProvider(
   overrides: Readonly<{
     aggregate?: () => Promise<InspectionOutcome<AggregateFacts>>;
     requestedEngine?: ContainerEngine | undefined;
+    resolveEngine?: () => ContainerEngine | undefined;
     env?: Readonly<NodeJS.ProcessEnv>;
     platform?: NodeJS.Platform;
     now?: () => number;
@@ -193,6 +194,7 @@ function createProvider(
     probes: createInspectionProbeRunner({run: fixture.run}),
     aggregate: overrides.aggregate ?? aggregateWithPortOwners([]),
     ...(overrides.requestedEngine === undefined ? {} : {requestedEngine: overrides.requestedEngine}),
+    ...(overrides.resolveEngine === undefined ? {} : {resolveEngine: overrides.resolveEngine}),
     env: overrides.env ?? {},
     platform: overrides.platform ?? "linux",
     now: overrides.now ?? clock(),
@@ -650,5 +652,85 @@ describe("createInfrastructureProvider timing", () => {
     const outcome = await provider();
 
     expect(outcome.durationMs).toBeGreaterThan(0);
+  });
+});
+
+// ============================================================================
+// resolveEngine precedence
+// ============================================================================
+
+describe("createInfrastructureProvider resolveEngine", () => {
+  it("resolveEngine takes precedence over requestedEngine on each invocation", async () => {
+    const fixture = await createInfrastructureFixture();
+    fixture.setResponse(runtimeVersionCommand("podman"), commandResult({stdout: "podman version 4.9.0\n"}));
+    fixture.setResponse(composeVersionCommand("podman"), commandResult({stdout: "podman-compose version 1.0.6\n"}));
+    fixture.setResponse(runtimeContextCommand("podman"), commandResult({stdout: "[]\n"}));
+    fixture.setResponse(containerListCommand("podman"), commandResult({stdout: ""}));
+
+    const provider = createProvider(fixture, {
+      requestedEngine: "rancher",
+      resolveEngine: () => "podman",
+    });
+
+    const outcome = await provider();
+
+    expect(outcome.kind).toBe("available");
+    const facts = (outcome as Readonly<{value: InfrastructureFacts}>).value;
+    expect(facts.selectedEngine).toBe("podman");
+    expect(facts.cliAvailable).toBe(true);
+    // The rancher CLI should never have been probed since resolveEngine returned "podman".
+    expect(fixture.run).not.toHaveBeenCalledWith(runtimeVersionCommand("rancher"), expect.anything());
+  });
+
+  it("resolveEngine is evaluated lazily on each provider invocation", async () => {
+    const fixture = await createInfrastructureFixture();
+
+    // Wire both engines' commands so either path can succeed.
+    fixture.setResponse(runtimeVersionCommand("rancher"), commandResult({stdout: "Docker version 24.0.5\n"}));
+    fixture.setResponse(composeVersionCommand("rancher"), commandResult({stdout: "Docker Compose version v2.23.0\n"}));
+    fixture.setResponse(runtimeContextCommand("rancher"), commandResult({stdout: "rancher-desktop\n"}));
+    fixture.setResponse(containerListCommand("rancher"), commandResult({stdout: ""}));
+    fixture.setResponse(runtimeVersionCommand("podman"), commandResult({stdout: "podman version 4.9.0\n"}));
+    fixture.setResponse(composeVersionCommand("podman"), commandResult({stdout: "podman-compose version 1.0.6\n"}));
+    fixture.setResponse(runtimeContextCommand("podman"), commandResult({stdout: "[]\n"}));
+    fixture.setResponse(containerListCommand("podman"), commandResult({stdout: ""}));
+
+    let currentEngine: ContainerEngine = "rancher";
+    const provider = createProvider(fixture, {
+      resolveEngine: () => currentEngine,
+    });
+
+    // First invocation: resolveEngine returns "rancher".
+    const first = await provider();
+    expect(first.kind).toBe("available");
+    expect((first as Readonly<{value: InfrastructureFacts}>).value.selectedEngine).toBe("rancher");
+
+    // Update the closure's captured engine.
+    currentEngine = "podman";
+
+    // Second invocation: resolveEngine now returns "podman".
+    const second = await provider();
+    expect(second.kind).toBe("available");
+    expect((second as Readonly<{value: InfrastructureFacts}>).value.selectedEngine).toBe("podman");
+  });
+
+  it("falls back to requestedEngine when resolveEngine returns undefined", async () => {
+    const fixture = await createInfrastructureFixture();
+    fixture.setResponse(runtimeVersionCommand("rancher"), commandResult({stdout: "Docker version 24.0.5\n"}));
+    fixture.setResponse(composeVersionCommand("rancher"), commandResult({stdout: "Docker Compose version v2.23.0\n"}));
+    fixture.setResponse(runtimeContextCommand("rancher"), commandResult({stdout: "rancher-desktop\n"}));
+    fixture.setResponse(containerListCommand("rancher"), commandResult({stdout: ""}));
+
+    const provider = createProvider(fixture, {
+      requestedEngine: "rancher",
+      resolveEngine: () => undefined,
+    });
+
+    const outcome = await provider();
+
+    expect(outcome.kind).toBe("available");
+    const facts = (outcome as Readonly<{value: InfrastructureFacts}>).value;
+    expect(facts.selectedEngine).toBe("rancher");
+    expect(facts.cliAvailable).toBe(true);
   });
 });

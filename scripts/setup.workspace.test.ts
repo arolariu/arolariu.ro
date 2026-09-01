@@ -116,7 +116,7 @@ function createInspectionHarness(
   });
   const invalidate = vi.fn();
   return {
-    session: {inspect, invalidate} as unknown as RepositoryInspectionSession,
+    session: {inspect, invalidate, updateInfrastructureEngine: vi.fn()} as unknown as RepositoryInspectionSession,
     inspect,
     invalidate,
   };

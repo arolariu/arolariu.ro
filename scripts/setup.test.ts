@@ -24,6 +24,7 @@ function createFakeInspectionSession(): RepositoryInspectionSession {
   return {
     inspect: async () => ({kind: "unavailable", reason: "Not exercised by this test.", durationMs: 0}),
     invalidate: () => {},
+    updateInfrastructureEngine: () => {},
   };
 }
 

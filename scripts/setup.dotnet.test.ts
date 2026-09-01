@@ -140,7 +140,11 @@ function createDotnetInspectionHarness(outcomes: readonly InspectionOutcome<Dotn
     return outcome;
   });
   const invalidate = vi.fn();
-  return {session: {inspect, invalidate} as unknown as RepositoryInspectionSession, inspect, invalidate};
+  return {
+    session: {inspect, invalidate, updateInfrastructureEngine: vi.fn()} as unknown as RepositoryInspectionSession,
+    inspect,
+    invalidate,
+  };
 }
 
 function defaultResponse(): CommandResult {

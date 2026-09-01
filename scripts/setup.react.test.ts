@@ -237,7 +237,12 @@ function createInspectionHarness(
   const invalidate = vi.fn((...keys: readonly string[]) => {
     events.push(`invalidate:${keys.join("+")}`);
   });
-  return {session: {inspect, invalidate} as unknown as RepositoryInspectionSession, inspect, invalidate, events};
+  return {
+    session: {inspect, invalidate, updateInfrastructureEngine: vi.fn()} as unknown as RepositoryInspectionSession,
+    inspect,
+    invalidate,
+    events,
+  };
 }
 
 interface VirtualFilesystem {

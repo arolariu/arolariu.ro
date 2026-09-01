@@ -224,3 +224,61 @@ describe("createRepositoryInspectionSession targeted invalidation", () => {
     expect(packagesProviderState.invocationCalls).toBe(2);
   });
 });
+
+// ============================================================================
+// updateInfrastructureEngine + invalidation + reinspection
+// ============================================================================
+
+describe("createRepositoryInspectionSession updateInfrastructureEngine", () => {
+  it("exposes updateInfrastructureEngine as a function on the returned session", () => {
+    const {session} = buildSession();
+    expect(typeof session.updateInfrastructureEngine).toBe("function");
+  });
+
+  it("updateInfrastructureEngine followed by invalidate and reinspect causes the composed infrastructure provider to observe the updated engine", async () => {
+    // Build a session with no initial engine so the first infrastructure inspection skips engine probes.
+    const {session} = buildSession({platform: "aix" as NodeJS.Platform});
+
+    const first = await session.inspect("infrastructure");
+    expect(first.kind).toBe("available");
+    const firstFacts = (first as Readonly<{value: {selectedEngine?: string}}>).value;
+    expect(firstFacts.selectedEngine).toBeUndefined();
+
+    // Update the engine to "podman", invalidate, and reinspect.
+    session.updateInfrastructureEngine("podman");
+    session.invalidate("infrastructure");
+
+    const second = await session.inspect("infrastructure");
+    expect(second.kind).toBe("available");
+    const secondFacts = (second as Readonly<{value: {selectedEngine?: string}}>).value;
+    expect(secondFacts.selectedEngine).toBe("podman");
+  });
+
+  it("updateInfrastructureEngine without invalidation does not change the cached outcome", async () => {
+    const {session} = buildSession({platform: "aix" as NodeJS.Platform});
+
+    const first = await session.inspect("infrastructure");
+    session.updateInfrastructureEngine("rancher");
+
+    // Without invalidation, the cached outcome is returned.
+    const second = await session.inspect("infrastructure");
+    expect(second).toBe(first);
+  });
+
+  it("exact infrastructure invalidation does not disturb other cached keys", async () => {
+    const {session} = buildSession({platform: "aix" as NodeJS.Platform});
+
+    // Cache both workspace and infrastructure — capture the workspace promise identity.
+    const workspacePromise = session.inspect("workspace");
+    await session.inspect("infrastructure");
+    await workspacePromise;
+
+    // Invalidate only infrastructure.
+    session.updateInfrastructureEngine("podman");
+    session.invalidate("infrastructure");
+
+    // Workspace's cached promise identity is preserved (same memoized promise reference).
+    const workspaceAfterPromise = session.inspect("workspace");
+    expect(workspaceAfterPromise).toBe(workspacePromise);
+  });
+});
