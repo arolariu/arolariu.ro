@@ -1,19 +1,21 @@
 import {describe, it, expect, beforeEach, afterEach} from "vitest";
 import {mkdtempSync, rmSync, writeFileSync, mkdirSync, existsSync, readFileSync} from "node:fs";
 import {tmpdir} from "node:os";
-import {dirname, join} from "node:path";
+import {dirname, join, resolve} from "node:path";
 import {
   syncProse,
   assertNonEmpty,
-  runCommand,
   discoverDotnetProjects,
   findDotnetBuildRoots,
   assertExpectedDocumentationTiers,
   flushExtractorLog,
   getDefaultDocumentationArgs,
   getDefaultDocumentationCommand,
+  main,
+  type AssembleDependencies,
 } from "./docs-assemble";
 import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "./common/logger";
+import type {CommandResult, CommandRunner, CommandRunOptions, CommandSpec} from "./common/process";
 
 describe("syncProse", () => {
   let srcDir: string;
@@ -165,24 +167,6 @@ describe("findDotnetBuildRoots", () => {
   });
 });
 
-describe("runCommand (buffered mode)", () => {
-  it("captures stdout and returns it as a string", async () => {
-    const out = await runCommand(process.execPath, ["-e", "process.stdout.write('hello-buffered')"], process.cwd(), {buffered: true});
-    expect(out).toContain("hello-buffered");
-  });
-
-  it("non-buffered mode returns the empty string", async () => {
-    const out = await runCommand(process.execPath, ["-e", "process.stdout.write('streamed')"], process.cwd());
-    expect(out).toBe("");
-  });
-
-  it("rejects with exit code AND output tail when buffered child exits non-zero", async () => {
-    await expect(
-      runCommand(process.execPath, ["-e", "process.stderr.write('boom'); process.exit(7)"], process.cwd(), {buffered: true}),
-    ).rejects.toThrow(/exited with 7[\s\S]*boom/);
-  });
-});
-
 describe("flushExtractorLog", () => {
   it("preserves the assembled documentation log bytes", () => {
     const sink = new InMemoryLoggerSink();
@@ -300,5 +284,220 @@ describe("DefaultDocumentation invocation", () => {
     const {args} = getDefaultDocumentationCommand("api.dll", "out");
 
     expect(args.slice(1)).toEqual(getDefaultDocumentationArgs("api.dll", "out"));
+  });
+});
+
+// ============================================================================
+// Helpers for fake-runner tests
+// ============================================================================
+
+const REPO_ROOT = resolve(import.meta.dirname, "..");
+const EXP_DIR = join(REPO_ROOT, "sites", "exp.arolariu.ro");
+const API_ROOT = join(REPO_ROOT, "sites", "api.arolariu.ro");
+
+function commandKey(command: Readonly<CommandSpec>): string {
+  return [command.command, ...command.args].join(" ");
+}
+
+function commandResult(overrides: Partial<CommandResult> = {}): CommandResult {
+  return {code: 0, stdout: "", stderr: "", durationMs: 1, timedOut: false, ...overrides};
+}
+
+/** Records every call and replies from a keyed response table; throws for unknown commands. */
+function createRecordingRunner(responses: ReadonlyMap<string, CommandResult>): Readonly<{
+  runner: CommandRunner;
+  calls: readonly Readonly<{command: CommandSpec; options?: CommandRunOptions}>[];
+}> {
+  const calls: {command: CommandSpec; options?: CommandRunOptions}[] = [];
+  const runner: CommandRunner = {
+    run: async (command, options) => {
+      calls.push(options === undefined ? {command} : {command, options});
+      const response = responses.get(commandKey(command));
+      if (response === undefined) {
+        throw new Error(`Unexpected command in fake runner: ${commandKey(command)}`);
+      }
+      return response;
+    },
+  };
+  return {runner, calls};
+}
+
+/** A runner that returns the given result for every command it receives. */
+function createUniformRunner(result: CommandResult): Readonly<{
+  runner: CommandRunner;
+  calls: readonly Readonly<{command: CommandSpec; options?: CommandRunOptions}>[];
+}> {
+  const calls: {command: CommandSpec; options?: CommandRunOptions}[] = [];
+  const runner: CommandRunner = {
+    run: async (command, options) => {
+      calls.push(options === undefined ? {command} : {command, options});
+      return result;
+    },
+  };
+  return {runner, calls};
+}
+
+const runnerThatMustNotBeCalled: CommandRunner = {
+  run: async () => {
+    throw new Error("docs-assemble test: runner must not be called on this path");
+  },
+};
+
+function createLogger(): Readonly<{logger: MonorepositoryConsoleLogger; sink: InMemoryLoggerSink}> {
+  const sink = new InMemoryLoggerSink();
+  const logger = new MonorepositoryConsoleLogger("docs::assemble", {color: false, sink});
+  return {logger, sink};
+}
+
+// ============================================================================
+// main — help and option parsing
+// ============================================================================
+
+describe("main — help and option parsing", () => {
+  it("emits usage and exits 0 for --help without invoking any extractor", async () => {
+    const {logger, sink} = createLogger();
+
+    const exitCode = await main(["--help"], {logger, runner: runnerThatMustNotBeCalled});
+
+    expect(exitCode).toBe(0);
+    expect(sink.records.map((r) => r.text).join("")).toMatch(/Usage: docs-assemble/);
+  });
+
+  it("emits usage and exits 0 for -h without invoking any extractor", async () => {
+    const {logger} = createLogger();
+
+    await expect(main(["-h"], {logger, runner: runnerThatMustNotBeCalled})).resolves.toBe(0);
+  });
+
+  it("emits usage and exits 0 for /h without invoking any extractor", async () => {
+    const {logger} = createLogger();
+
+    await expect(main(["/h"], {logger, runner: runnerThatMustNotBeCalled})).resolves.toBe(0);
+  });
+
+  it("exits 1 for an unknown option without invoking any extractor", async () => {
+    const {logger} = createLogger();
+
+    await expect(main(["--bogus"], {logger, runner: runnerThatMustNotBeCalled})).resolves.toBe(1);
+  });
+
+  it("exits 1 for an excess positional argument without invoking any extractor", async () => {
+    const {logger} = createLogger();
+
+    await expect(main(["unexpected-arg"], {logger, runner: runnerThatMustNotBeCalled})).resolves.toBe(1);
+  });
+});
+
+// ============================================================================
+// main — runner dispatch: CommandSpec, cwd, output mode
+// ============================================================================
+
+describe("main — runner dispatch: CommandSpec, cwd, output mode", () => {
+  it("dispatches typedoc components with capture output at REPO_ROOT before typedoc website", async () => {
+    const {logger} = createLogger();
+    // The runner fails on typedoc components immediately — we just need to capture the call spec.
+    const {runner, calls} = createUniformRunner(commandResult({spawnError: "npx not found"}));
+
+    await main([], {logger, runner});
+
+    const typedocComponentsCall = calls.find((c) => c.command.command === "npx" && c.command.args.includes("typedoc.components.json"));
+    expect(typedocComponentsCall).toBeDefined();
+    expect(typedocComponentsCall?.command).toEqual({
+      command: "npx",
+      args: ["typedoc", "--options", "typedoc.components.json"],
+    });
+    expect(typedocComponentsCall?.options?.cwd).toBe(REPO_ROOT);
+    expect(typedocComponentsCall?.options?.output).toBe("capture");
+  });
+
+  it("dispatches typedoc website with capture output at REPO_ROOT", async () => {
+    const {logger} = createLogger();
+    const responses = new Map<string, CommandResult>([
+      ["npx typedoc --options typedoc.components.json", commandResult({stdout: "ts-components ok"})],
+    ]);
+    const {runner, calls} = createRecordingRunner(responses);
+
+    await main([], {logger, runner});
+
+    const typedocWebsiteCall = calls.find((c) => c.command.command === "npx" && c.command.args.includes("typedoc.website.json"));
+    expect(typedocWebsiteCall).toBeDefined();
+    expect(typedocWebsiteCall?.command).toEqual({
+      command: "npx",
+      args: ["typedoc", "--options", "typedoc.website.json"],
+    });
+    expect(typedocWebsiteCall?.options?.cwd).toBe(REPO_ROOT);
+    expect(typedocWebsiteCall?.options?.output).toBe("capture");
+  });
+
+  it("dispatches pydoc-markdown with capture output at the exp.arolariu.ro directory", async () => {
+    const {logger} = createLogger();
+    const {runner, calls} = createUniformRunner(commandResult({spawnError: "python not found"}));
+
+    await main([], {logger, runner});
+
+    const pydocCall = calls.find((c) => c.command.command === "python" && c.command.args.includes("pydoc_markdown.main"));
+    expect(pydocCall).toBeDefined();
+    expect(pydocCall?.command).toEqual({command: "python", args: ["-m", "pydoc_markdown.main"]});
+    expect(pydocCall?.options?.cwd).toBe(EXP_DIR);
+    expect(pydocCall?.options?.output).toBe("capture");
+  });
+
+  it("dispatches dotnet build for each graph root with capture output at API_ROOT", async () => {
+    const {logger} = createLogger();
+    const {runner, calls} = createUniformRunner(commandResult({spawnError: "dotnet not found"}));
+
+    await main([], {logger, runner});
+
+    const dotnetBuildCalls = calls.filter((c) => c.command.command === "dotnet" && c.command.args[0] === "build");
+    expect(dotnetBuildCalls.length).toBeGreaterThan(0);
+    for (const call of dotnetBuildCalls) {
+      expect(call.options?.cwd).toBe(API_ROOT);
+      expect(call.options?.output).toBe("capture");
+      expect(call.command.args).toContain("-c");
+      expect(call.command.args).toContain("Release");
+    }
+  });
+});
+
+// ============================================================================
+// main — spawn failure and nonzero exit → bounded excerpt
+// ============================================================================
+
+describe("main — spawn failure and nonzero exit surface bounded excerpts", () => {
+  it("returns exit code 1 and logs spawn failure with concise message when typedoc cannot start", async () => {
+    const {logger, sink} = createLogger();
+    const {runner} = createUniformRunner(commandResult({spawnError: "spawn npx ENOENT"}));
+
+    const exitCode = await main([], {logger, runner});
+
+    expect(exitCode).toBe(1);
+    const logged = sink.records.map((r) => r.text).join("");
+    expect(logged).toMatch(/spawn npx ENOENT/);
+    expect(logged).toMatch(/spawn failed/);
+  });
+
+  it("returns exit code 1 and includes last-output excerpt when typedoc exits non-zero", async () => {
+    const {logger, sink} = createLogger();
+    const {runner} = createUniformRunner(commandResult({code: 5, stderr: "TypeDoc fatal: configuration not found", stdout: ""}));
+
+    const exitCode = await main([], {logger, runner});
+
+    expect(exitCode).toBe(1);
+    const logged = sink.records.map((r) => r.text).join("");
+    expect(logged).toMatch(/exited with 5/);
+    expect(logged).toMatch(/TypeDoc fatal/);
+  });
+
+  it("truncates output excerpt to at most 2000 characters", async () => {
+    const {logger, sink} = createLogger();
+    const longOutput = "x".repeat(5000);
+    const {runner} = createUniformRunner(commandResult({code: 1, stderr: longOutput}));
+
+    await main([], {logger, runner});
+
+    const logged = sink.records.map((r) => r.text).join("");
+    // The logged error should contain a 2000-char excerpt, not the full 5000 chars
+    expect(logged.length).toBeLessThan(longOutput.length);
+    expect(logged).toMatch(/exited with 1/);
   });
 });

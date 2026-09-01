@@ -19,9 +19,10 @@
 
 import {cpSync, rmSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync, existsSync} from "node:fs";
 import {dirname, join, resolve} from "node:path";
-import {pathToFileURL} from "node:url";
-import {spawn, type StdioOptions} from "node:child_process";
+import {fileURLToPath} from "node:url";
+import {commanderExitCode, createToolProgram} from "./common/cli.ts";
 import {MonorepositoryConsoleLogger, type MonorepositoryLogger} from "./common/logger.ts";
+import {defaultCommandRunner, formatCommand, type CommandRunner, type CommandSpec} from "./common/process.ts";
 import {normalizeDirectory, serializeFrontmatter} from "./docs-assemble.normalize.ts";
 
 const REPO_ROOT = resolve(import.meta.dirname, "..");
@@ -40,29 +41,6 @@ const PROSE_SRC = join(REPO_ROOT, "docs");
 const DOTNET_TFM = "net10.0";
 
 /**
- * Commands that, on Windows, ship as `.cmd` shims rather than real
- * `.exe` binaries. `spawn` can't locate those without either the
- * explicit `.cmd` extension or `shell: true`, so we reserve
- * `shell: true` exclusively for this set. Everything else (`dotnet`,
- * `python`) is a real executable on PATH and runs faster + safer
- * without cmd.exe in between. DefaultDocumentation is no longer
- * spawned directly — it is a local tool invoked through `dotnet`.
- */
-const NPM_FAMILY_COMMANDS = new Set(["npm", "npx", "node"]);
-
-/**
- * Resolve a bare command name to an invocable form. On Windows, the
- * npm-family shims (`npm`, `npx`, `node`) are published as `.cmd` files,
- * which `child_process.spawn` can't locate without the extension when
- * `shell: false` — so we rewrite them here.
- */
-function resolveCommand(command: string): string {
-  if (process.platform !== "win32") return command;
-  if (NPM_FAMILY_COMMANDS.has(command)) return `${command}.cmd`;
-  return command;
-}
-
-/**
  * Mirror the repo's top-level `/docs/` prose into the Docusaurus source
  * tree under `docs/monorepo/`, wiping the destination first so stale
  * files never survive a rename. The `superpowers/` subtree is excluded
@@ -79,60 +57,27 @@ export async function syncProse(src: string, dest: string): Promise<void> {
   rmSync(join(dest, "superpowers"), {recursive: true, force: true});
 }
 
-/** Optional knobs for {@link runCommand}. */
-export type RunOptions = {
-  /**
-   * When true, stdout and stderr are captured and returned as a single
-   * string. When false (default), they stream live to the parent's TTY
-   * via `stdio: 'inherit'`. Buffered mode is used by the parallel
-   * extractor functions so their output doesn't interleave at the
-   * terminal — each block is replayed as a whole after its extractor
-   * finishes.
-   */
-  readonly buffered?: boolean;
-};
-
 /**
- * Spawn a child process and resolve when it exits with status 0.
+ * Runs one command through the shared {@link CommandRunner} in capture mode, collecting stdout and
+ * stderr. Throws with a concise bounded excerpt on spawn failure or nonzero exit so CI logs
+ * always surface the real failure without overwhelming the terminal.
  *
- * @param command - Command name, rewritten via {@link resolveCommand}
- *   so Windows callers can use `npm`/`npx`/`node` without `.cmd`.
- * @param args    - Argument vector. No shell interpolation: `shell:true`
- *   is set only for npm-family shims on Windows (required to locate the
- *   `.cmd` launcher); native binaries are spawned directly.
- * @param cwd     - Working directory for the child process.
- * @param options - See {@link RunOptions}.
- * @returns Captured output when `buffered: true`, otherwise the empty
- *   string. Non-zero exit rejects with the command line, exit code,
- *   and (when buffered) the last 2KB of output so CI logs surface the
- *   real failure instead of just "exited with N".
+ * @param runner - Shared command runner.
+ * @param command - Executable and arguments.
+ * @param cwd - Working directory for the child process.
+ * @returns Combined stdout + stderr captured from the process.
  */
-export function runCommand(command: string, args: readonly string[], cwd: string, options: RunOptions = {}): Promise<string> {
-  const buffered = options.buffered === true;
-  const isNpmFamily = NPM_FAMILY_COMMANDS.has(command);
-  const shell = process.platform === "win32" && isNpmFamily;
-  const stdio: StdioOptions = buffered ? ["ignore", "pipe", "pipe"] : "inherit";
-
-  return new Promise<string>((resolvePromise, reject) => {
-    const child = spawn(resolveCommand(command), args as string[], {cwd, stdio, shell});
-    let output = "";
-    if (buffered) {
-      child.stdout?.setEncoding("utf8");
-      child.stderr?.setEncoding("utf8");
-      child.stdout?.on("data", (chunk: string) => {
-        output += chunk;
-      });
-      child.stderr?.on("data", (chunk: string) => {
-        output += chunk;
-      });
-    }
-    child.on("error", reject);
-    child.on("exit", (code) => {
-      if (code === 0) return resolvePromise(output);
-      const tail = buffered && output ? `\n--- last output ---\n${output.slice(-2000)}` : "";
-      reject(new Error(`${command} ${args.join(" ")} exited with ${code}${tail}`));
-    });
-  });
+async function runCapture(runner: CommandRunner, command: Readonly<CommandSpec>, cwd: string): Promise<string> {
+  const result = await runner.run(command, {cwd, output: "capture"});
+  if (result.spawnError !== undefined) {
+    throw new Error(`${formatCommand(command)}: spawn failed — ${result.spawnError}`);
+  }
+  if (result.code !== 0) {
+    const combined = (result.stdout + result.stderr).trimEnd();
+    const excerpt = combined.length > 0 ? combined.slice(-2000) : "(no output)";
+    throw new Error(`${formatCommand(command)}: exited with ${result.code}\n--- last output ---\n${excerpt}`);
+  }
+  return result.stdout + result.stderr;
 }
 
 /**
@@ -360,13 +305,15 @@ export function getDefaultDocumentationCommand(dll: string, outDir: string): {re
  * MSBuild covers the whole graph via ProjectReference transitivity),
  * then run `DefaultDocumentation` against each compiled DLL. Output
  * lands under `_generated/dotnet-internals/<assembly>/`.
+ *
+ * @param runner - Shared command runner used to dispatch build and documentation commands.
  */
-async function runDotnetInternals(): Promise<string> {
+async function runDotnetInternals(runner: CommandRunner): Promise<string> {
   let log = "";
   const projects = discoverDotnetProjects();
   const roots = findDotnetBuildRoots(projects);
   for (const root of roots) {
-    log += await runCommand("dotnet", ["build", root.csprojRelative, "-c", "Release"], API_ROOT, {buffered: true});
+    log += await runCapture(runner, {command: "dotnet", args: ["build", root.csprojRelative, "-c", "Release"]}, API_ROOT);
   }
   mkdirSync(DOTNET_INTERNALS_DIR, {recursive: true});
   for (const proj of projects) {
@@ -376,7 +323,7 @@ async function runDotnetInternals(): Promise<string> {
     // DefaultDocumentation.Console is declared as a **local** tool in
     // `.config/dotnet-tools.json` and restored with `dotnet tool restore`.
     const {command, args} = getDefaultDocumentationCommand(dll, outDir);
-    log += await runCommand(command, args, API_ROOT, {buffered: true});
+    log += await runCapture(runner, {command, args}, API_ROOT);
   }
   assertNonEmpty(DOTNET_INTERNALS_DIR, "defaultdocumentation");
   return log;
@@ -386,11 +333,13 @@ async function runDotnetInternals(): Promise<string> {
  * Invoke TypeDoc twice — once for `@arolariu/components`, once for
  * selected modules of the `arolariu.ro` website — emitting markdown
  * under `_generated/ts-reference/{components,website}/`.
+ *
+ * @param runner - Shared command runner used to dispatch TypeDoc.
  */
-async function runTypedoc(): Promise<string> {
+async function runTypedoc(runner: CommandRunner): Promise<string> {
   let log = "";
-  log += await runCommand("npx", ["typedoc", "--options", "typedoc.components.json"], REPO_ROOT, {buffered: true});
-  log += await runCommand("npx", ["typedoc", "--options", "typedoc.website.json"], REPO_ROOT, {buffered: true});
+  log += await runCapture(runner, {command: "npx", args: ["typedoc", "--options", "typedoc.components.json"]}, REPO_ROOT);
+  log += await runCapture(runner, {command: "npx", args: ["typedoc", "--options", "typedoc.website.json"]}, REPO_ROOT);
   assertNonEmpty(TS_REFERENCE_DIR, "typedoc");
   return log;
 }
@@ -417,10 +366,12 @@ function normalizeLineEndings(dir: string): void {
  * file committed there. Output lands under `_generated/experimental/`.
  * Line endings are normalized after extraction so the downstream
  * frontmatter pass sees consistent `\n` separators.
+ *
+ * @param runner - Shared command runner used to dispatch pydoc-markdown.
  */
-async function runPydocMarkdown(): Promise<string> {
+async function runPydocMarkdown(runner: CommandRunner): Promise<string> {
   const expDir = join(REPO_ROOT, "sites", "exp.arolariu.ro");
-  const log = await runCommand("python", ["-m", "pydoc_markdown.main"], expDir, {buffered: true});
+  const log = await runCapture(runner, {command: "python", args: ["-m", "pydoc_markdown.main"]}, expDir);
   assertNonEmpty(PYTHON_DIR, "pydoc-markdown");
   // pydoc-markdown emits CRLF on Windows; normalize so downstream frontmatter parsers match on \n.
   normalizeLineEndings(PYTHON_DIR);
@@ -483,72 +434,110 @@ export function flushExtractorLog(label: string, body: string, logger: Monorepos
   logger.write(body.endsWith("\n") ? body : `${body}\n`);
 }
 
+/** Example CLI invocations rendered in `--help` output. */
+const ASSEMBLE_EXAMPLES: readonly string[] = ["npm run docs:assemble", "node --experimental-strip-types scripts/docs-assemble.ts"];
+
 /**
- * Entry point. Runs the three markdown-producing extractors in parallel
- * with their stdio buffered so output from one doesn't interleave with
- * another, replays each block in a fixed order once they all finish,
- * normalizes each tier's frontmatter, writes landing pages, and mirrors
- * prose. Designed to be idempotent — see module-level docs.
+ * Boundary values {@link main} needs to execute the assembly pipeline.
  *
- * @param logger - Optional logger used for deterministic extractor output.
+ * @remarks
+ * Exported so tests can inject a deterministic {@link CommandRunner} and
+ * {@link MonorepositoryLogger} without touching live tool executables.
  */
-export async function main(logger?: MonorepositoryLogger): Promise<void> {
-  const output = logger ?? new MonorepositoryConsoleLogger("docs::assemble");
-  cleanGenerated();
-  const [tsOut, pyOut, dotnetOut] = await Promise.all([runTypedoc(), runPydocMarkdown(), runDotnetInternals()]);
-  flushExtractorLog("TypeScript (TypeDoc)", tsOut, output.child("typedoc"));
-  flushExtractorLog("Python (pydoc-markdown)", pyOut, output.child("pydoc-markdown"));
-  flushExtractorLog(".NET internals (DefaultDocumentation)", dotnetOut, output.child("defaultdocumentation"));
-  // Validate extractor output before normalization and synthetic landing pages
-  // can obscure missing-tier failures.
-  assertExpectedDocumentationTiers();
-  await normalizeDirectory(TS_REFERENCE_DIR);
-  await normalizeDirectory(PYTHON_DIR);
-  await normalizeDirectory(DOTNET_INTERNALS_DIR);
-  // Navbar links target each plugin's routeBasePath (e.g. /internals/dotnet); without
-  // an index.md at the tier root, Docusaurus has no page to serve there. Generate one
-  // after normalization so the landing pages appear in the sidebar at position 0.
-  writeLandingPage({
-    dir: TS_REFERENCE_DIR,
-    title: "TypeScript reference",
-    summary: "Generated from TSDoc / JSDoc comments across `@arolariu/components` and the `arolariu.ro` website.",
-    routeBase: "/reference/typescript",
-  });
-  writeLandingPage({
-    dir: PYTHON_DIR,
-    title: "Experimental service (Python)",
-    summary:
-      "Internal documentation for `exp.arolariu.ro`, a FastAPI configuration-proxy service. Extracted from Google-style docstrings via `pydoc-markdown`.",
-    routeBase: "/internals/experimental",
-  });
-  writeLandingPage({
-    dir: DOTNET_INTERNALS_DIR,
-    title: ".NET internals",
-    summary:
-      "Reference documentation for internal types, services, and brokers of `api.arolariu.ro`. Generated from XML doc comments via `DefaultDocumentation`.",
-    routeBase: "/internals/dotnet",
-  });
-  await syncProse(PROSE_SRC, PROSE_DEST);
+export interface AssembleDependencies {
+  /** Executes extractor commands. Defaults to {@link defaultCommandRunner}. */
+  readonly runner: CommandRunner;
+  /** Receives assembly presentation and semantic output. */
+  readonly logger: MonorepositoryLogger;
 }
 
-// Robust entrypoint guard: compare the fully-resolved URL of this module
-// against the URL form of argv[1] so that relative paths, symlinks, and
-// different runtime invocation styles all agree. Prevents main() from
-// running when the module is imported by Vitest or other test harnesses.
-const invokedAsEntrypoint = (() => {
-  const entry = process.argv[1];
-  if (!entry) return false;
-  try {
-    return import.meta.url === pathToFileURL(entry).href;
-  } catch {
-    return false;
-  }
-})();
+/**
+ * Docs assembly CLI entrypoint.
+ *
+ * @remarks
+ * Commander owns `--help`/`-h`/`/h` and every option-parse error: help
+ * exits zero and runs no extractors; an unknown option or excess positional
+ * argument exits one without running any extractor. Assembly errors are
+ * caught, logged with a concise bounded excerpt, and returned as exit code 1.
+ *
+ * @param argv - Arguments following the entrypoint. Defaults to `process.argv.slice(2)`.
+ * @param dependencies - Optional boundary replacements, primarily for tests.
+ * @returns Process exit code.
+ */
+export async function main(
+  argv: readonly string[] = process.argv.slice(2),
+  dependencies: Readonly<Partial<AssembleDependencies>> = {},
+): Promise<number> {
+  const logger = dependencies.logger ?? new MonorepositoryConsoleLogger("docs::assemble");
 
-if (invokedAsEntrypoint) {
-  const output = new MonorepositoryConsoleLogger("docs::assemble");
-  main(output).catch((err) => {
-    output.error(err instanceof Error ? (err.stack ?? err.message) : String(err));
-    process.exit(1);
+  const program = createToolProgram({
+    name: "docs-assemble",
+    description:
+      "Runs TypeDoc, pydoc-markdown, and DefaultDocumentation in parallel, normalizes frontmatter, writes landing pages, and mirrors prose into the Docusaurus source tree.",
+    examples: ASSEMBLE_EXAMPLES,
+    logger,
   });
+  program.allowExcessArguments(false);
+
+  try {
+    program.parse(argv, {from: "user"});
+  } catch (error: unknown) {
+    return commanderExitCode(error) ?? 1;
+  }
+
+  const runner = dependencies.runner ?? defaultCommandRunner;
+
+  try {
+    cleanGenerated();
+    const [tsOut, pyOut, dotnetOut] = await Promise.all([runTypedoc(runner), runPydocMarkdown(runner), runDotnetInternals(runner)]);
+    flushExtractorLog("TypeScript (TypeDoc)", tsOut, logger.child("typedoc"));
+    flushExtractorLog("Python (pydoc-markdown)", pyOut, logger.child("pydoc-markdown"));
+    flushExtractorLog(".NET internals (DefaultDocumentation)", dotnetOut, logger.child("defaultdocumentation"));
+    // Validate extractor output before normalization and synthetic landing pages
+    // can obscure missing-tier failures.
+    assertExpectedDocumentationTiers();
+    await normalizeDirectory(TS_REFERENCE_DIR);
+    await normalizeDirectory(PYTHON_DIR);
+    await normalizeDirectory(DOTNET_INTERNALS_DIR);
+    // Navbar links target each plugin's routeBasePath (e.g. /internals/dotnet); without
+    // an index.md at the tier root, Docusaurus has no page to serve there. Generate one
+    // after normalization so the landing pages appear in the sidebar at position 0.
+    writeLandingPage({
+      dir: TS_REFERENCE_DIR,
+      title: "TypeScript reference",
+      summary: "Generated from TSDoc / JSDoc comments across `@arolariu/components` and the `arolariu.ro` website.",
+      routeBase: "/reference/typescript",
+    });
+    writeLandingPage({
+      dir: PYTHON_DIR,
+      title: "Experimental service (Python)",
+      summary:
+        "Internal documentation for `exp.arolariu.ro`, a FastAPI configuration-proxy service. Extracted from Google-style docstrings via `pydoc-markdown`.",
+      routeBase: "/internals/experimental",
+    });
+    writeLandingPage({
+      dir: DOTNET_INTERNALS_DIR,
+      title: ".NET internals",
+      summary:
+        "Reference documentation for internal types, services, and brokers of `api.arolariu.ro`. Generated from XML doc comments via `DefaultDocumentation`.",
+      routeBase: "/internals/dotnet",
+    });
+    await syncProse(PROSE_SRC, PROSE_DEST);
+    return 0;
+  } catch (error: unknown) {
+    logger.error(error instanceof Error ? (error.stack ?? error.message) : String(error));
+    return 1;
+  }
+}
+
+const entrypointPath = process.argv[1];
+if (entrypointPath !== undefined && fileURLToPath(import.meta.url) === resolve(entrypointPath)) {
+  main()
+    .then((exitCode) => {
+      process.exitCode = exitCode;
+    })
+    .catch((error: unknown) => {
+      new MonorepositoryConsoleLogger("docs::assemble").error(error instanceof Error ? (error.stack ?? error.message) : String(error));
+      process.exitCode = 1;
+    });
 }
