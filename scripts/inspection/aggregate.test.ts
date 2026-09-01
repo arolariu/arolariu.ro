@@ -377,6 +377,70 @@ function envinfoMockModule(cli: (options: unknown) => Promise<string>): Record<s
   return {default: {cli}};
 }
 
+/**
+ * Builds the exact `systeminformation` `dockerInfo()` sentinel observed when no Docker-compatible
+ * socket is reachable: the full result record with every own value left `undefined`.
+ *
+ * @remarks
+ * Live capture on the supported Podman host reported `ownKeys: 46, allValuesUndefined: true`, and
+ * the value serializes as `{}`. The key list below is that captured field set, so the fixture
+ * cannot be satisfied by a hand-simplified empty object.
+ *
+ * @returns The no-engine `dockerInfo` sentinel record.
+ */
+function noEngineDockerInfoSentinel(): Record<string, unknown> {
+  const capturedFields = [
+    "id",
+    "containers",
+    "containersRunning",
+    "containersPaused",
+    "containersStopped",
+    "images",
+    "driver",
+    "memoryLimit",
+    "swapLimit",
+    "kernelMemory",
+    "cpuCfsPeriod",
+    "cpuCfsQuota",
+    "cpuShares",
+    "cpuSet",
+    "ipv4Forwarding",
+    "bridgeNfIptables",
+    "bridgeNfIp6tables",
+    "debug",
+    "nfd",
+    "oomKillDisable",
+    "ngoroutines",
+    "systemTime",
+    "loggingDriver",
+    "cgroupDriver",
+    "nEventsListener",
+    "kernelVersion",
+    "operatingSystem",
+    "osType",
+    "architecture",
+    "ncpu",
+    "memTotal",
+    "dockerRootDir",
+    "httpProxy",
+    "httpsProxy",
+    "noProxy",
+    "name",
+    "labels",
+    "experimentalBuild",
+    "serverVersion",
+    "clusterStore",
+    "clusterAdvertise",
+    "defaultRuntime",
+    "liveRestoreEnabled",
+    "isolation",
+    "initBinary",
+    "productLicense",
+  ];
+
+  return Object.fromEntries(capturedFields.map((field) => [field, undefined]));
+}
+
 function systeminformationMockModule(overrides: HostDocumentOverrides = {}): Record<string, unknown> {
   const api = {
     getAllData: overrides.getAllData ?? (async (): Promise<unknown> => validRawHostDocument()),
@@ -521,20 +585,18 @@ describe("collectAggregateWorkerDocument component collection", () => {
     }
   });
 
-  it("keeps every non-Docker host fact when an unreachable engine fulfils Docker calls with empty sentinels", async () => {
+  it("keeps every non-Docker host fact when an unreachable engine fulfils dockerInfo with the no-engine sentinel", async () => {
     // `systeminformation` fulfils (never rejects) when no Docker-compatible socket is reachable,
-    // which is the normal state on a Podman-only host. `dockerInfo()` then resolves a fully-keyed
-    // record whose values are all `undefined` (it serializes as `{}`), and the list calls resolve
-    // `[]`. This mirrors the exact observed shape rather than a hand-simplified empty object.
-    const unreachableDockerInfo = Object.fromEntries(
-      ["id", "containers", "containersRunning", "containersPaused", "containersStopped", "images", "serverVersion", "ncpu", "memTotal"].map(
-        (key) => [key, undefined],
-      ),
-    );
+    // which is the normal state on the supported Podman host. Live capture there:
+    //   dockerInfo isRecord: true / ownKeys: 46 / allValuesUndefined: true
+    //   dockerContainers isArray: true length: 0 / dockerImages isArray: true length: 0
+    // The sentinel is a fully-keyed record whose own values are every one `undefined`, so it
+    // serializes as `{}` and cannot be recognized by an own-key count. Fulfilled list results are
+    // forwarded unchanged: an empty list is genuine evidence of zero containers/images.
     const worker = await loadWorkerWithMocks({
       envinfo: envinfoMockModule(async () => JSON.stringify({})),
       systeminformation: systeminformationMockModule({
-        dockerInfo: async (): Promise<unknown> => unreachableDockerInfo,
+        dockerInfo: async (): Promise<unknown> => noEngineDockerInfoSentinel(),
         dockerContainers: async (): Promise<unknown> => [],
         dockerImages: async (): Promise<unknown> => [],
       }),
@@ -544,19 +606,37 @@ describe("collectAggregateWorkerDocument component collection", () => {
 
     expect(document.host.kind).toBe("available");
     if (document.host.kind === "available") {
-      expect(document.host.value.containers).toEqual({available: false, running: 0, stopped: 0, images: 0, repositoryContainers: []});
       expect(document.host.value.memory).toEqual({totalBytes: 100, usedBytes: 40, availableBytes: 60});
       expect(document.host.value.filesystems.length).toBeGreaterThan(0);
       expect(document.host.value.os.platform).toBe("win32");
+      expect(document.host.value.processes.total).toBe(100);
+      // The forwarded empty lists remain the only Docker evidence, so the counts are derived from
+      // them rather than from an omitted `dockerInfo`.
+      expect(document.host.value.containers).toEqual({available: true, running: 0, stopped: 0, images: 0, repositoryContainers: []});
     }
   });
 
-  it("still invalidates the host projection when a reachable engine reports a malformed Docker record", async () => {
+  it.each([
+    {label: "a primitive dockerInfo", overrides: {dockerInfo: async (): Promise<unknown> => "not-a-record"}},
+    {label: "an empty plain dockerInfo object carrying no sentinel keys", overrides: {dockerInfo: async (): Promise<unknown> => ({})}},
+    {
+      label: "a partially populated dockerInfo record",
+      overrides: {dockerInfo: async (): Promise<unknown> => ({...noEngineDockerInfoSentinel(), containersRunning: 1})},
+    },
+    {
+      label: "a wrong-shape dockerInfo count",
+      overrides: {dockerInfo: async (): Promise<unknown> => ({containersRunning: "1", containersStopped: 0, images: 2})},
+    },
+    {
+      label: "an out-of-range dockerInfo count",
+      overrides: {dockerInfo: async (): Promise<unknown> => ({containersRunning: -3, containersStopped: 0, images: 2})},
+    },
+    {label: "a non-array dockerContainers result", overrides: {dockerContainers: async (): Promise<unknown> => ({length: 0})}},
+    {label: "a non-array dockerImages result", overrides: {dockerImages: async (): Promise<unknown> => "not-an-array"}},
+  ])("still invalidates the host projection for $label", async ({overrides}) => {
     const worker = await loadWorkerWithMocks({
       envinfo: envinfoMockModule(async () => JSON.stringify({})),
-      systeminformation: systeminformationMockModule({
-        dockerInfo: async (): Promise<unknown> => ({containersRunning: -3, containersStopped: 0, images: 2}),
-      }),
+      systeminformation: systeminformationMockModule(overrides),
     });
 
     const document = await worker.collectAggregateWorkerDocument(WORKER_ROOT);

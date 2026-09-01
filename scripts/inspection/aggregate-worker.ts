@@ -115,45 +115,38 @@ async function importHostCollectionApi(): Promise<HostCollectionApi> {
 }
 
 /**
- * Count fields {@link projectSystemInformation} requires from a present `dockerInfo` record.
- *
- * @remarks
- * Kept in sync with the `dockerInfo` branch of `projectContainers` in `./host.ts`. A record that
- * supplies all three is treated as a real Docker observation and is validated strictly by the
- * projection; a record that supplies none of them carries no observation.
- */
-const DOCKER_INFO_COUNT_FIELDS = ["containersRunning", "containersStopped", "images"] as const;
-
-/**
- * Determines whether a fulfilled `dockerInfo` value carries an actual Docker observation.
+ * Detects the `systeminformation` "no reachable Docker engine" `dockerInfo` sentinel.
  *
  * @remarks
  * `systeminformation` does not reject when no Docker-compatible socket is reachable: `dockerInfo()`
- * fulfils with a fully-keyed record whose values are all `undefined` (it serializes as `{}`, so an
- * own-key count cannot distinguish it). That sentinel carries no Docker observation, yet composing
- * it presented an unreachable engine as a malformed Docker record and invalidated the *entire* host
- * projection — discarding the memory, filesystem, process, and port facts that have nothing to do
- * with Docker. Treating it as unobserved reuses the established "every Docker call failed"
- * contract instead.
+ * fulfils with its **fully-keyed** result record whose own values are every one `undefined`. Live
+ * capture on the supported Podman host:
  *
- * Strictness is preserved: a record that does supply the required count fields is composed and the
- * projection still rejects invalid numeric values.
+ * ```text
+ * dockerInfo isRecord: true
+ * dockerInfo ownKeys: 46 allValuesUndefined: true
+ * ```
+ *
+ * Because it serializes as `{}`, neither `JSON.stringify` inspection nor an own-key count can
+ * distinguish it. Composing it presented an unreachable engine as a malformed Docker record, and
+ * the resulting projection throw invalidated the *entire* host outcome — discarding the memory,
+ * filesystem, process, and port facts that have nothing to do with Docker.
+ *
+ * The detector is deliberately narrow: it matches only that captured sentinel. Every other
+ * fulfilled payload — a primitive, an empty plain object, a partially populated record, a
+ * wrong-shape record, or an out-of-range count — is still forwarded to `projectSystemInformation`
+ * and still produces an `invalid` host outcome through the existing validators.
  *
  * @param value - Fulfilled `dockerInfo` value of unknown shape.
- * @returns `true` when the value is a record supplying every required count field.
+ * @returns `true` only for a non-empty record whose own values are all `undefined`.
  */
-function hasDockerInfoObservation(value: unknown): boolean {
-  return isRecord(value) && DOCKER_INFO_COUNT_FIELDS.every((field) => value[field] !== undefined);
-}
+function isNoEngineDockerInfoSentinel(value: unknown): boolean {
+  if (!isRecord(value)) {
+    return false;
+  }
 
-/**
- * Determines whether a fulfilled `dockerContainers`/`dockerImages` value carries an observation.
- *
- * @param value - Fulfilled Docker list value of unknown shape.
- * @returns `true` when the value is a non-empty array.
- */
-function hasDockerListObservation(value: unknown): boolean {
-  return Array.isArray(value) && value.length > 0;
+  const keys = Object.keys(value);
+  return keys.length > 0 && keys.every((key) => value[key] === undefined);
 }
 
 /**
@@ -161,9 +154,12 @@ function hasDockerListObservation(value: unknown): boolean {
  *
  * @remarks
  * The base host collection and each Docker call run through {@link Promise.allSettled} so a missing
- * Docker daemon never discards fulfilled base host data. Only fulfilled Docker values that carry an
- * actual observation (see {@link hasDockerObservation}) are composed as the optional `dockerInfo`,
- * `dockerContainers`, and `dockerImages` fields before projection.
+ * Docker daemon never discards fulfilled base host data. Every fulfilled Docker value is composed
+ * as the optional `dockerInfo`, `dockerContainers`, and `dockerImages` field, with one exception:
+ * the captured no-engine `dockerInfo` sentinel (see {@link isNoEngineDockerInfoSentinel}) is
+ * omitted, because it is an absence of evidence rather than Docker evidence. Fulfilled container
+ * and image results are never filtered — an empty list is genuine evidence of zero containers or
+ * images, and a wrong-shape list must still reach the projection's `requireArray` validator.
  *
  * @param root - Resolved repository root used only for path-boundary correlation.
  * @returns A nested host outcome: `available` for a successful projection, `invalid` for
@@ -196,13 +192,13 @@ async function collectHost(root: string): Promise<InspectionOutcome<HostFacts>> 
   }
 
   const dockerFields: Record<string, unknown> = {};
-  if (infoSettled?.status === "fulfilled" && hasDockerInfoObservation(infoSettled.value)) {
+  if (infoSettled?.status === "fulfilled" && !isNoEngineDockerInfoSentinel(infoSettled.value)) {
     dockerFields["dockerInfo"] = infoSettled.value;
   }
-  if (containersSettled?.status === "fulfilled" && hasDockerListObservation(containersSettled.value)) {
+  if (containersSettled?.status === "fulfilled") {
     dockerFields["dockerContainers"] = containersSettled.value;
   }
-  if (imagesSettled?.status === "fulfilled" && hasDockerListObservation(imagesSettled.value)) {
+  if (imagesSettled?.status === "fulfilled") {
     dockerFields["dockerImages"] = imagesSettled.value;
   }
 
