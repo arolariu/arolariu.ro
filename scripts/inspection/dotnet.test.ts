@@ -107,6 +107,11 @@ async function writeFixtureFile(path: string, contents: string): Promise<void> {
   await writeFile(path, contents, "utf8");
 }
 
+/** Writes the generated NuGet restore asset a healthy managed solution project is expected to own. */
+async function writeRestoreAssets(root: string, projectPath: string, contents = '{"version": 3}\n'): Promise<void> {
+  await writeFixtureFile(resolve(root, dirname(projectPath), "obj", "project.assets.json"), contents);
+}
+
 interface DotnetFixture {
   readonly root: string;
   readonly paths: RepositoryPaths;
@@ -128,6 +133,8 @@ async function createDotnetFixture(platform: NodeJS.Platform = "win32"): Promise
     ),
     writeFixtureFile(resolve(root, commonProject), '<Project Sdk="Microsoft.NET.Sdk" />\n'),
     writeFixtureFile(resolve(root, APPHOST_PROJECT), '<Project Sdk="Microsoft.NET.Sdk" />\n'),
+    writeRestoreAssets(root, commonProject),
+    writeRestoreAssets(root, APPHOST_PROJECT),
     writeFixtureFile(
       resolve(root, "tooling", "AppHost", "appsettings.Development.json"),
       JSON.stringify({Parameters: {"sql-password": "tracked-value-marker"}}),
@@ -205,6 +212,7 @@ describe("createDotnetProvider", () => {
         workloads: ["aspire", "wasm-tools"],
         nugetCachePath: resolve(fixture.root, ".nuget", "packages"),
         solutionIssues: [],
+        solutionRestoreIssues: [],
         localTools: [{name: "defaultdocumentation.console", version: "1.2.4"}],
         certificate: {exists: true, trusted: true},
         appHost: {
@@ -835,5 +843,124 @@ describe("createDotnetProvider", () => {
       {command: "which", args: ["dotnet"]},
       {cwd: fixture.root, timeoutMs: 15_000, output: "capture"},
     );
+  });
+});
+
+describe("createDotnetProvider NuGet restore assets", () => {
+  const commonProject = "sites/api.arolariu.ro/src/Common/arolariu.Backend.Common.csproj";
+
+  async function removeRestoreAssets(root: string, projectPath: string): Promise<void> {
+    await rm(resolve(root, dirname(projectPath), "obj"), {recursive: true, force: true});
+  }
+
+  it("reports no restore issues when every managed solution project owns non-empty generated assets", async () => {
+    const fixture = await createDotnetFixture();
+
+    const outcome = await fixture.provider();
+
+    expect(outcome).toMatchObject({kind: "available", value: {solutionIssues: [], solutionRestoreIssues: []}});
+  });
+
+  it("reports sorted repository-relative issues for managed projects without generated assets", async () => {
+    const fixture = await createDotnetFixture();
+    await removeRestoreAssets(fixture.root, commonProject);
+    await removeRestoreAssets(fixture.root, APPHOST_PROJECT);
+
+    const outcome = await fixture.provider();
+
+    expect(outcome).toMatchObject({
+      kind: "available",
+      value: {
+        solutionIssues: [],
+        solutionRestoreIssues: [`Missing NuGet restore assets: ${commonProject}`, `Missing NuGet restore assets: ${APPHOST_PROJECT}`],
+      },
+    });
+    expect(JSON.stringify((outcome as {value?: {solutionRestoreIssues?: unknown}}).value?.solutionRestoreIssues)).not.toMatch(
+      /arolariu-inspection-dotnet/iu,
+    );
+  });
+
+  it("reports an empty generated restore asset as an explicit restore issue", async () => {
+    const fixture = await createDotnetFixture();
+    await writeRestoreAssets(fixture.root, commonProject, "");
+
+    const outcome = await fixture.provider();
+
+    expect(outcome).toMatchObject({
+      kind: "available",
+      value: {solutionRestoreIssues: [`Empty NuGet restore assets: ${commonProject}`]},
+    });
+  });
+
+  it("rejects a generated restore asset path that names a directory", async () => {
+    const fixture = await createDotnetFixture();
+    await removeRestoreAssets(fixture.root, commonProject);
+    await mkdir(resolve(fixture.root, dirname(commonProject), "obj", "project.assets.json"), {recursive: true});
+
+    const outcome = await fixture.provider();
+
+    expect(outcome).toMatchObject({
+      kind: "available",
+      value: {solutionRestoreIssues: [`Invalid NuGet restore assets: ${commonProject}`]},
+    });
+  });
+
+  it("rejects generated restore assets reached through a link that escapes the canonical root", async () => {
+    const fixture = await createDotnetFixture();
+    const externalRoot = await mkdtemp(join(tmpdir(), "arolariu-inspection-dotnet-assets-"));
+    fixtureRoots.push(externalRoot);
+    await writeFixtureFile(resolve(externalRoot, "project.assets.json"), '{"version": 3}\n');
+    await removeRestoreAssets(fixture.root, commonProject);
+    await symlink(externalRoot, resolve(fixture.root, dirname(commonProject), "obj"), process.platform === "win32" ? "junction" : "dir");
+
+    const outcome = await fixture.provider();
+
+    expect(outcome).toMatchObject({
+      kind: "available",
+      value: {solutionRestoreIssues: [`Invalid NuGet restore assets: ${commonProject}`]},
+    });
+    expect(JSON.stringify(outcome)).not.toMatch(/arolariu-inspection-dotnet-assets/iu);
+  });
+
+  it("skips frontend .esproj declarations that never generate NuGet restore assets", async () => {
+    const fixture = await createDotnetFixture();
+    const frontendProject = "sites/arolariu.ro/arolariu.ro.esproj";
+    await writeFixtureFile(resolve(fixture.root, frontendProject), "<Project />\n");
+    await writeFixtureFile(
+      fixture.paths.solution,
+      ["<Solution>", `  <Project Path="${frontendProject}" />`, `  <Project Path="${APPHOST_PROJECT}" />`, "</Solution>", ""].join("\n"),
+    );
+
+    const outcome = await fixture.provider();
+
+    expect(outcome).toMatchObject({kind: "available", value: {solutionIssues: [], solutionRestoreIssues: []}});
+  });
+
+  it("never turns a structurally invalid solution project into a restore-asset issue", async () => {
+    const fixture = await createDotnetFixture();
+    await writeFixtureFile(
+      fixture.paths.solution,
+      ["<Solution>", '  <Project Path="sites/api.arolariu.ro/src/Missing/Missing.csproj" />', "</Solution>", ""].join("\n"),
+    );
+
+    const outcome = await fixture.provider();
+
+    expect(outcome).toMatchObject({
+      kind: "available",
+      value: {
+        solutionIssues: ["Missing solution project: sites/api.arolariu.ro/src/Missing/Missing.csproj"],
+        solutionRestoreIssues: [],
+      },
+    });
+  });
+
+  it("keeps missing restore assets out of provider unavailability", async () => {
+    const fixture = await createDotnetFixture();
+    await removeRestoreAssets(fixture.root, commonProject);
+    await removeRestoreAssets(fixture.root, APPHOST_PROJECT);
+
+    const outcome = await fixture.provider();
+
+    expect(outcome.kind).toBe("available");
   });
 });

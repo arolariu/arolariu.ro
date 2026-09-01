@@ -5,11 +5,13 @@
  * @remarks
  * Every command runs through an opaque named probe. Command output is projected immediately into
  * small facts; SDK installation paths, command errors, AppHost parameter values, and user-secret
- * values are never returned or included in outcome text.
+ * values are never returned or included in outcome text. Generated NuGet restore assets are
+ * inspected read-only on the filesystem and reported as bounded repository-relative issues; their
+ * contents are never read or retained, and their absence never makes the provider unavailable.
  */
 
 import {readFile, realpath, stat} from "node:fs/promises";
-import {isAbsolute, posix, relative, resolve, sep, win32} from "node:path";
+import {isAbsolute, dirname, posix, relative, resolve, sep, win32} from "node:path";
 
 import type {CommandResult} from "../common/process.ts";
 import type {RepositoryPaths} from "../common/repository-paths.ts";
@@ -45,6 +47,11 @@ export interface DotnetFacts {
   readonly nugetCachePath?: string;
   /** Deterministic repository-relative solution integrity issues. */
   readonly solutionIssues: readonly string[];
+  /**
+   * Deterministic repository-relative NuGet restore-asset issues for the managed projects declared
+   * by the repository solution. Absent generated assets are a restore fact, never unavailability.
+   */
+  readonly solutionRestoreIssues: readonly string[];
   /** Installed local .NET tools. */
   readonly localTools: readonly Readonly<{name: string; version: string}>[];
   /** Local HTTPS development-certificate state. */
@@ -87,6 +94,11 @@ interface SolutionProjectDeclarations {
   readonly paths: readonly string[];
 }
 
+interface SolutionInspection {
+  readonly issues: readonly string[];
+  readonly restoreIssues: readonly string[];
+}
+
 interface ParsedXmlTag {
   readonly attributes: ReadonlyMap<string, string>;
   readonly closing: boolean;
@@ -104,6 +116,8 @@ type JsonObjectContext = "root" | "parameters" | "other";
 
 const APPHOST_PROJECT_RELATIVE_PATH = "tooling/AppHost/AppHost.csproj";
 const APPHOST_SETTINGS_RELATIVE_PATH = "tooling/AppHost/appsettings.Development.json";
+const RESTORE_ASSET_PROJECT_EXTENSIONS: ReadonlySet<string> = new Set([".csproj", ".fsproj", ".vbproj"]);
+const RESTORE_ASSET_RELATIVE_SEGMENTS = ["obj", "project.assets.json"] as const;
 const REQUIRED_APPHOST_PARAMETER_KEYS = ["Parameters:sql-password", "Parameters:redis-password"] as const;
 type RequiredAppHostParameterKey = (typeof REQUIRED_APPHOST_PARAMETER_KEYS)[number];
 const SUPPORTED_PLATFORMS: ReadonlySet<NodeJS.Platform> = new Set(["win32", "darwin", "linux"]);
@@ -666,30 +680,84 @@ function parseSolutionProjectDeclarations(source: string): SolutionProjectDeclar
   return rootSeen && openElements.length === 0 ? {declarationCount, hasInvalidPath, paths} : undefined;
 }
 
-async function inspectSolution(paths: RepositoryPaths): Promise<readonly string[]> {
+/**
+ * Decides whether one declared solution project is a managed .NET project that a NuGet restore is
+ * expected to generate `obj/project.assets.json` for. Frontend `.esproj` declarations never are.
+ *
+ * @param projectPath - An already normalized, containment-validated repository-relative path.
+ * @returns Whether generated NuGet restore assets are required for the project.
+ */
+function requiresRestoreAssets(projectPath: string): boolean {
+  const extensionIndex = projectPath.lastIndexOf(".");
+  return extensionIndex >= 0 && RESTORE_ASSET_PROJECT_EXTENSIONS.has(projectPath.slice(extensionIndex).toLowerCase());
+}
+
+/**
+ * Inspects the generated NuGet restore asset owned by one already validated solution project.
+ *
+ * @param canonicalRoot - Canonical repository root used for containment validation.
+ * @param canonicalProject - Canonical, contained project file path.
+ * @param projectPath - Repository-relative project path used for bounded issue text.
+ * @returns One bounded, repository-relative issue, or `undefined` when the assets are healthy.
+ */
+async function inspectProjectRestoreAssets(
+  canonicalRoot: string,
+  canonicalProject: string,
+  projectPath: string,
+): Promise<string | undefined> {
+  if (!requiresRestoreAssets(projectPath)) {
+    return undefined;
+  }
+
+  try {
+    const canonicalAssets = await realpath(resolve(dirname(canonicalProject), ...RESTORE_ASSET_RELATIVE_SEGMENTS));
+    const relativeAssets = relative(canonicalRoot, canonicalAssets);
+    if (relativeAssets === ".." || relativeAssets.startsWith(`..${sep}`) || isAbsolute(relativeAssets)) {
+      return `Invalid NuGet restore assets: ${projectPath}`;
+    }
+
+    const assetsStat = await stat(canonicalAssets);
+    if (!assetsStat.isFile()) {
+      return `Invalid NuGet restore assets: ${projectPath}`;
+    }
+    return assetsStat.size === 0 ? `Empty NuGet restore assets: ${projectPath}` : undefined;
+  } catch (error: unknown) {
+    return hasErrorCode(error, "ENOENT") || hasErrorCode(error, "ENOTDIR")
+      ? `Missing NuGet restore assets: ${projectPath}`
+      : `NuGet restore assets could not be inspected: ${projectPath}`;
+  }
+}
+
+async function inspectSolution(paths: RepositoryPaths): Promise<SolutionInspection> {
   let canonicalRoot: string;
   try {
     canonicalRoot = await realpath(paths.root);
   } catch {
-    return ["The repository root could not be inspected for solution integrity."];
+    return {issues: ["The repository root could not be inspected for solution integrity."], restoreIssues: []};
   }
 
   let contents: string;
   try {
     contents = await readFile(paths.solution, "utf8");
   } catch (error: unknown) {
-    return [hasErrorCode(error, "ENOENT") ? "The repository solution file is missing." : "The repository solution file could not be read."];
+    return {
+      issues: [
+        hasErrorCode(error, "ENOENT") ? "The repository solution file is missing." : "The repository solution file could not be read.",
+      ],
+      restoreIssues: [],
+    };
   }
 
   const declarations = parseSolutionProjectDeclarations(contents);
   if (declarations === undefined) {
-    return ["The repository solution file is malformed."];
+    return {issues: ["The repository solution file is malformed."], restoreIssues: []};
   }
   if (declarations.declarationCount === 0) {
-    return ["The repository solution declares no projects."];
+    return {issues: ["The repository solution declares no projects."], restoreIssues: []};
   }
 
   const issues = new Set<string>();
+  const restoreIssues = new Set<string>();
   if (declarations.hasInvalidPath) {
     issues.add("The repository solution contains an invalid project path.");
   }
@@ -730,6 +798,12 @@ async function inspectSolution(paths: RepositoryPaths): Promise<readonly string[
       const projectStat = await stat(canonicalProject);
       if (!projectStat.isFile()) {
         issues.add(`Invalid solution project path: ${projectPath}`);
+        continue;
+      }
+
+      const restoreIssue = await inspectProjectRestoreAssets(canonicalRoot, canonicalProject, projectPath);
+      if (restoreIssue !== undefined) {
+        restoreIssues.add(restoreIssue);
       }
     } catch (error: unknown) {
       issues.add(
@@ -739,7 +813,7 @@ async function inspectSolution(paths: RepositoryPaths): Promise<readonly string[
       );
     }
   }
-  return [...issues].sort(compareText);
+  return {issues: [...issues].sort(compareText), restoreIssues: [...restoreIssues].sort(compareText)};
 }
 
 function skipJsonWhitespace(state: JsonScanState): void {
@@ -1057,7 +1131,7 @@ export function createDotnetProvider(
       nugetResult,
       localToolsResult,
       certificateResult,
-      solutionIssues,
+      solutionInspection,
       appHostFiles,
     ] = await Promise.all([
       input.probes.run(probes.workspace.executableResolution(executableName, input.platform), {cwd: input.paths.root}),
@@ -1159,7 +1233,8 @@ export function createDotnetProvider(
       host,
       workloads,
       nugetCachePath,
-      solutionIssues,
+      solutionIssues: solutionInspection.issues,
+      solutionRestoreIssues: solutionInspection.restoreIssues,
       localTools,
       certificate: {exists: certificateExists, trusted: certificateTrusted},
       appHost: {
