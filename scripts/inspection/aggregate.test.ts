@@ -379,66 +379,78 @@ function envinfoMockModule(cli: (options: unknown) => Promise<string>): Record<s
 
 /**
  * Builds the exact `systeminformation` `dockerInfo()` sentinel observed when no Docker-compatible
- * socket is reachable: the full result record with every own value left `undefined`.
+ * socket is reachable: the complete result record with every own value left `undefined`.
  *
  * @remarks
  * Live capture on the supported Podman host reported `ownKeys: 46, allValuesUndefined: true`, and
- * the value serializes as `{}`. The key list below is that captured field set, so the fixture
- * cannot be satisfied by a hand-simplified empty object.
+ * the value serializes as `{}`. The key list below is that captured own key set verbatim, so the
+ * fixture cannot be satisfied by a hand-simplified empty object and any drift in the worker's
+ * expected key set breaks the exact-sentinel case.
  *
  * @returns The no-engine `dockerInfo` sentinel record.
  */
 function noEngineDockerInfoSentinel(): Record<string, unknown> {
-  const capturedFields = [
-    "id",
-    "containers",
-    "containersRunning",
-    "containersPaused",
-    "containersStopped",
-    "images",
-    "driver",
-    "memoryLimit",
-    "swapLimit",
-    "kernelMemory",
-    "cpuCfsPeriod",
-    "cpuCfsQuota",
-    "cpuShares",
-    "cpuSet",
-    "ipv4Forwarding",
-    "bridgeNfIptables",
-    "bridgeNfIp6tables",
-    "debug",
-    "nfd",
-    "oomKillDisable",
-    "ngoroutines",
-    "systemTime",
-    "loggingDriver",
-    "cgroupDriver",
-    "nEventsListener",
-    "kernelVersion",
-    "operatingSystem",
-    "osType",
-    "architecture",
-    "ncpu",
-    "memTotal",
-    "dockerRootDir",
-    "httpProxy",
-    "httpsProxy",
-    "noProxy",
-    "name",
-    "labels",
-    "experimentalBuild",
-    "serverVersion",
-    "clusterStore",
-    "clusterAdvertise",
-    "defaultRuntime",
-    "liveRestoreEnabled",
-    "isolation",
-    "initBinary",
-    "productLicense",
-  ];
+  return Object.fromEntries(CAPTURED_NO_ENGINE_DOCKER_INFO_KEYS.map((field) => [field, undefined]));
+}
 
-  return Object.fromEntries(capturedFields.map((field) => [field, undefined]));
+/** The captured own key set of the no-engine `dockerInfo()` sentinel, as observed live. */
+const CAPTURED_NO_ENGINE_DOCKER_INFO_KEYS: readonly string[] = [
+  "architecture",
+  "bridgeNfIp6tables",
+  "bridgeNfIptables",
+  "cgroupDriver",
+  "clusterAdvertise",
+  "clusterStore",
+  "containers",
+  "containersPaused",
+  "containersRunning",
+  "containersStopped",
+  "cpuCfsPeriod",
+  "cpuCfsQuota",
+  "cpuSet",
+  "cpuShares",
+  "debug",
+  "defaultRuntime",
+  "dockerRootDir",
+  "driver",
+  "experimentalBuild",
+  "httpProxy",
+  "httpsProxy",
+  "id",
+  "images",
+  "initBinary",
+  "ipv4Forwarding",
+  "isolation",
+  "kernelMemory",
+  "kernelVersion",
+  "labels",
+  "liveRestoreEnabled",
+  "loggingDriver",
+  "memTotal",
+  "memoryLimit",
+  "nEventsListener",
+  "name",
+  "ncpu",
+  "nfd",
+  "ngoroutines",
+  "noProxy",
+  "oomKillDisable",
+  "operatingSystem",
+  "osType",
+  "productLicense",
+  "serverVersion",
+  "swapLimit",
+  "systemTime",
+];
+
+/**
+ * Builds the captured sentinel record with exactly one own key removed.
+ *
+ * @param omitted - Sentinel key to drop.
+ * @returns The sentinel record without `omitted`.
+ */
+function sentinelWithoutKey(omitted: string): Record<string, unknown> {
+  return Object.fromEntries(CAPTURED_NO_ENGINE_DOCKER_INFO_KEYS.filter((field) => field !== omitted).map((field) => [field, undefined]));
 }
 
 function systeminformationMockModule(overrides: HostDocumentOverrides = {}): Record<string, unknown> {
@@ -619,6 +631,22 @@ describe("collectAggregateWorkerDocument component collection", () => {
   it.each([
     {label: "a primitive dockerInfo", overrides: {dockerInfo: async (): Promise<unknown> => "not-a-record"}},
     {label: "an empty plain dockerInfo object carrying no sentinel keys", overrides: {dockerInfo: async (): Promise<unknown> => ({})}},
+    {
+      label: "an all-undefined dockerInfo record holding only one sentinel key",
+      overrides: {dockerInfo: async (): Promise<unknown> => ({containersRunning: undefined})},
+    },
+    {
+      label: "an all-undefined dockerInfo record holding an unrelated key",
+      overrides: {dockerInfo: async (): Promise<unknown> => ({unexpected: undefined})},
+    },
+    {
+      label: "the exact sentinel key set plus one extra undefined key",
+      overrides: {dockerInfo: async (): Promise<unknown> => ({...noEngineDockerInfoSentinel(), unexpectedDrift: undefined})},
+    },
+    {
+      label: "the exact sentinel key set minus one key",
+      overrides: {dockerInfo: async (): Promise<unknown> => sentinelWithoutKey("serverVersion")},
+    },
     {
       label: "a partially populated dockerInfo record",
       overrides: {dockerInfo: async (): Promise<unknown> => ({...noEngineDockerInfoSentinel(), containersRunning: 1})},

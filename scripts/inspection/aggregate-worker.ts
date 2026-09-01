@@ -115,30 +115,91 @@ async function importHostCollectionApi(): Promise<HostCollectionApi> {
 }
 
 /**
- * Detects the `systeminformation` "no reachable Docker engine" `dockerInfo` sentinel.
+ * Own enumerable string keys of the `systeminformation` `dockerInfo()` result record.
  *
  * @remarks
- * `systeminformation` does not reject when no Docker-compatible socket is reachable: `dockerInfo()`
- * fulfils with its **fully-keyed** result record whose own values are every one `undefined`. Live
- * capture on the supported Podman host:
+ * Captured live on the supported Podman host, where the call fulfils with this complete key set and
+ * every value left `undefined`:
  *
  * ```text
  * dockerInfo isRecord: true
  * dockerInfo ownKeys: 46 allValuesUndefined: true
  * ```
  *
- * Because it serializes as `{}`, neither `JSON.stringify` inspection nor an own-key count can
- * distinguish it. Composing it presented an unreachable engine as a malformed Docker record, and
- * the resulting projection throw invalidated the *entire* host outcome — discarding the memory,
- * filesystem, process, and port facts that have nothing to do with Docker.
+ * The set is compared exactly (order-independent, no missing or extra own key) so that any drift in
+ * the `systeminformation` result shape stops matching the sentinel and is projected as `invalid`
+ * evidence instead of being silently suppressed.
+ */
+const NO_ENGINE_DOCKER_INFO_KEYS: ReadonlySet<string> = new Set([
+  "architecture",
+  "bridgeNfIp6tables",
+  "bridgeNfIptables",
+  "cgroupDriver",
+  "clusterAdvertise",
+  "clusterStore",
+  "containers",
+  "containersPaused",
+  "containersRunning",
+  "containersStopped",
+  "cpuCfsPeriod",
+  "cpuCfsQuota",
+  "cpuSet",
+  "cpuShares",
+  "debug",
+  "defaultRuntime",
+  "dockerRootDir",
+  "driver",
+  "experimentalBuild",
+  "httpProxy",
+  "httpsProxy",
+  "id",
+  "images",
+  "initBinary",
+  "ipv4Forwarding",
+  "isolation",
+  "kernelMemory",
+  "kernelVersion",
+  "labels",
+  "liveRestoreEnabled",
+  "loggingDriver",
+  "memTotal",
+  "memoryLimit",
+  "nEventsListener",
+  "name",
+  "ncpu",
+  "nfd",
+  "ngoroutines",
+  "noProxy",
+  "oomKillDisable",
+  "operatingSystem",
+  "osType",
+  "productLicense",
+  "serverVersion",
+  "swapLimit",
+  "systemTime",
+]);
+
+/**
+ * Detects the `systeminformation` "no reachable Docker engine" `dockerInfo` sentinel.
  *
- * The detector is deliberately narrow: it matches only that captured sentinel. Every other
- * fulfilled payload — a primitive, an empty plain object, a partially populated record, a
- * wrong-shape record, or an out-of-range count — is still forwarded to `projectSystemInformation`
- * and still produces an `invalid` host outcome through the existing validators.
+ * @remarks
+ * `systeminformation` does not reject when no Docker-compatible socket is reachable: `dockerInfo()`
+ * fulfils with its complete result record and leaves every value `undefined`. Because it serializes
+ * as `{}`, neither `JSON.stringify` inspection nor an own-key count can distinguish it. Composing
+ * it presented an unreachable engine as a malformed Docker record, and the resulting projection
+ * throw invalidated the *entire* host outcome — discarding the memory, filesystem, process, and
+ * port facts that have nothing to do with Docker.
+ *
+ * The match is deliberately exact rather than a general "all values are undefined" heuristic: the
+ * own key set must equal {@link NO_ENGINE_DOCKER_INFO_KEYS} with no missing or extra key, and every
+ * value must be `undefined`. A partial record such as `{containersRunning: undefined}`, an
+ * unrelated record such as `{unexpected: undefined}`, and any provider drift that adds or removes a
+ * key therefore remain real evidence and still reach `projectSystemInformation`, which rejects them
+ * through its existing validators.
  *
  * @param value - Fulfilled `dockerInfo` value of unknown shape.
- * @returns `true` only for a non-empty record whose own values are all `undefined`.
+ * @returns `true` only for a record whose own key set is exactly the captured sentinel key set and
+ * whose every own value is `undefined`.
  */
 function isNoEngineDockerInfoSentinel(value: unknown): boolean {
   if (!isRecord(value)) {
@@ -146,7 +207,11 @@ function isNoEngineDockerInfoSentinel(value: unknown): boolean {
   }
 
   const keys = Object.keys(value);
-  return keys.length > 0 && keys.every((key) => value[key] === undefined);
+  if (keys.length !== NO_ENGINE_DOCKER_INFO_KEYS.size) {
+    return false;
+  }
+
+  return keys.every((key) => NO_ENGINE_DOCKER_INFO_KEYS.has(key) && value[key] === undefined);
 }
 
 /**
