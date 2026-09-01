@@ -196,4 +196,16 @@ describe("parseExchangeRateOptions", () => {
       expect(() => parseExchangeRateOptions(["--year", "2023", "--unknown"])).toThrow(CommanderError);
     });
   });
+
+  describe("help behavior (single parse path proof)", () => {
+    it("throws a Commander help exit for --help", async () => {
+      const {parseExchangeRateOptions} = await import("./update-exchange-rates.ts");
+      expect(() => parseExchangeRateOptions(["--help"])).toThrow(CommanderError);
+    });
+
+    it("throws a Commander help exit for -h", async () => {
+      const {parseExchangeRateOptions} = await import("./update-exchange-rates.ts");
+      expect(() => parseExchangeRateOptions(["-h"])).toThrow(CommanderError);
+    });
+  });
 });

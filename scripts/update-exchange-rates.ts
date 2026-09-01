@@ -23,7 +23,6 @@
 import {existsSync, readFileSync, writeFileSync} from "node:fs";
 import {join} from "node:path";
 import {styleText} from "node:util";
-import {Command, CommanderError} from "commander";
 import {commanderExitCode, createToolProgram} from "./common/cli.ts";
 import {MonorepositoryConsoleLogger, type MonorepositoryLogger} from "./common/logger.ts";
 
@@ -188,31 +187,38 @@ function sleep(ms: number): Promise<void> {
 }
 
 /**
- * Parses and validates exchange-rate CLI arguments, returning a typed options object.
+ * Creates a Commander program pre-configured with exchange-rate options.
  *
- * @remarks
- * Uses Commander to parse the raw argument tokens. Rejects unknown options,
- * non-integer year values, years outside the supported range (2018 → current year),
- * and ranges where `--from` exceeds `--to`.
- *
- * @param argv - Raw argument tokens (not including the node binary or script name).
- * @returns Validated year range options.
- * @throws {CommanderError} When unknown options are encountered.
- * @throws {Error} When year values fail integer or range validation.
+ * @param logger - Logger to receive Commander help and error output.
+ * @returns Configured Commander program with --year, --from, and --to options.
  */
-export function parseExchangeRateOptions(argv: readonly string[]): ExchangeRateOptions {
-  const currentYear = new Date().getFullYear();
-
-  const program = new Command().exitOverride().configureOutput({writeOut: () => {}, writeErr: () => {}});
-
+function createExchangeRateProgram(logger: MonorepositoryLogger) {
+  const program = createToolProgram({
+    name: "update-exchange-rates",
+    description: "Fetches yearly exchange rate averages from the Frankfurter API and writes them to CSV.",
+    examples: [
+      "npm run update-exchange-rates",
+      "npm run update-exchange-rates -- --year 2025",
+      "npm run update-exchange-rates -- --from 2020 --to 2025",
+    ],
+    logger,
+  });
   program
     .option("--year <year>", `Fetch a single year (${EARLIEST_SUPPORTED_YEAR}–current).`)
     .option("--from <year>", `Starting year (default: ${EARLIEST_SUPPORTED_YEAR}).`)
     .option("--to <year>", "Ending year (default: current year).");
+  return program;
+}
 
-  program.parse([...argv], {from: "user"});
-
-  const opts = program.opts<{year?: string; from?: string; to?: string}>();
+/**
+ * Validates raw parsed option strings into a typed exchange-rate options object.
+ *
+ * @param opts - Raw string options extracted from Commander's parsed output.
+ * @returns Validated year range options.
+ * @throws {Error} When year values fail integer or range validation.
+ */
+function validateExchangeRateOpts(opts: {readonly year?: string; readonly from?: string; readonly to?: string}): ExchangeRateOptions {
+  const currentYear = new Date().getFullYear();
 
   if (opts.year !== undefined) {
     const raw = opts.year.trim();
@@ -251,6 +257,30 @@ export function parseExchangeRateOptions(argv: readonly string[]): ExchangeRateO
   }
 
   return {fromYear, toYear};
+}
+
+/**
+ * Parses and validates exchange-rate CLI arguments, returning a typed options object.
+ *
+ * @remarks
+ * Uses the shared exchange-rate Commander program to parse raw argument tokens.
+ * Rejects unknown options, non-integer year values, years outside the supported
+ * range (2018 → current year), and ranges where `--from` exceeds `--to`.
+ *
+ * @param argv - Raw argument tokens (not including the node binary or script name).
+ * @returns Validated year range options.
+ * @throws Commander error when unknown options are encountered.
+ * @throws {Error} When year values fail integer or range validation.
+ */
+export function parseExchangeRateOptions(argv: readonly string[]): ExchangeRateOptions {
+  const logger = new MonorepositoryConsoleLogger("exchange-rates", {
+    color: false,
+    sink: {line: () => {}, write: () => {}},
+  });
+  const program = createExchangeRateProgram(logger);
+  program.parse([...argv], {from: "user"});
+  const opts = program.opts<{year?: string; from?: string; to?: string}>();
+  return validateExchangeRateOpts(opts);
 }
 
 /**
@@ -426,21 +456,7 @@ export async function main(options: Readonly<ExchangeRateOptions>, logger?: Mono
 
 if (import.meta.main) {
   const output = new MonorepositoryConsoleLogger("update::exchange-rates");
-
-  const program = createToolProgram({
-    name: "update-exchange-rates",
-    description: "Fetches yearly exchange rate averages from the Frankfurter API and writes them to CSV.",
-    examples: [
-      "npm run update-exchange-rates",
-      "npm run update-exchange-rates -- --year 2025",
-      "npm run update-exchange-rates -- --from 2020 --to 2025",
-    ],
-    logger: output,
-  });
-  program
-    .option("--year <year>", `Fetch a single year (${EARLIEST_SUPPORTED_YEAR}–current).`)
-    .option("--from <year>", `Starting year (default: ${EARLIEST_SUPPORTED_YEAR}).`)
-    .option("--to <year>", "Ending year (default: current year).");
+  const program = createExchangeRateProgram(output);
 
   try {
     program.parse();
@@ -450,15 +466,10 @@ if (import.meta.main) {
   }
 
   const rawOpts = program.opts<{year?: string; from?: string; to?: string}>();
-  const reconstitutedArgv = [
-    ...(rawOpts.year !== undefined ? ["--year", rawOpts.year] : []),
-    ...(rawOpts.from !== undefined ? ["--from", rawOpts.from] : []),
-    ...(rawOpts.to !== undefined ? ["--to", rawOpts.to] : []),
-  ];
 
   let exchangeOptions: ExchangeRateOptions;
   try {
-    exchangeOptions = parseExchangeRateOptions(reconstitutedArgv);
+    exchangeOptions = validateExchangeRateOpts(rawOpts);
   } catch (error: unknown) {
     output.error(error instanceof Error ? error.message : String(error));
     process.exit(1);
