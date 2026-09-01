@@ -16,10 +16,8 @@ import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "./common/logger.t
 import {defaultCommandRunner} from "./common/process.ts";
 import type {CommandResult, CommandRunner, CommandRunOptions, CommandSpec} from "./common/process.ts";
 import {createRepositoryPaths} from "./common/repository-paths.ts";
-import {createDoctorReport} from "./doctor.reporter.ts";
-import type {DiagnosticResult, DoctorReport, DoctorRunOptions} from "./doctor.types.ts";
+import type {DoctorReport, DoctorRunOptions} from "./doctor.types.ts";
 import {collectDisk, main, parseStatusOptions} from "./status.ts";
-import type {StatusDependencies} from "./status.ts";
 import type {RepositoryInspectionSession} from "./inspection/repository.ts";
 import type {InspectionOutcome} from "./inspection/types.ts";
 import type {WorkspaceFacts} from "./inspection/workspace.ts";
@@ -62,35 +60,6 @@ function commandResult(overrides: Partial<CommandResult> = {}): CommandResult {
   return {code: 0, stdout: "", stderr: "", durationMs: 1, timedOut: false, ...overrides};
 }
 
-function passCheck(id: string): DiagnosticResult {
-  return {
-    id,
-    module: "workspace",
-    name: id,
-    status: "pass",
-    summary: `${id} is healthy.`,
-    evidence: [],
-    potentialCauses: [],
-    fixes: [],
-    durationMs: 1,
-  };
-}
-
-function failCheck(id: string): DiagnosticResult {
-  return {
-    id,
-    module: "workspace",
-    name: id,
-    status: "fail",
-    summary: `${id} failed.`,
-    evidence: [`${id} evidence`],
-    rootCause: `${id} root cause`,
-    potentialCauses: [],
-    fixes: [{description: `Fix ${id}.`}],
-    durationMs: 1,
-  };
-}
-
 const HEALTHY_WORKSPACE_FACTS: WorkspaceFacts = {
   projects: [
     {name: "@arolariu/components", root: "packages/components", targets: ["build"]},
@@ -111,7 +80,7 @@ function createFakeInspection(workspaceFacts: WorkspaceFacts = HEALTHY_WORKSPACE
     },
     invalidate: (): void => {},
     updateInfrastructureEngine: (): void => {},
-  };
+  } as unknown as RepositoryInspectionSession;
 }
 
 /** Creates a fake inspection session where workspace is unavailable. */
@@ -124,7 +93,7 @@ function createUnavailableInspection(): RepositoryInspectionSession {
     }),
     invalidate: (): void => {},
     updateInfrastructureEngine: (): void => {},
-  };
+  } as unknown as RepositoryInspectionSession;
 }
 
 const FIXTURE_DEPENDENCIES = {

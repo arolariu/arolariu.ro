@@ -40,9 +40,8 @@ import {MonorepositoryConsoleLogger, type LogSegment, type MonorepositoryLogger}
 import {defaultCommandRunner, type CommandResult, type CommandRunner, type CommandSpec} from "./common/process.ts";
 import {resolveRepositoryPaths, type RepositoryPaths} from "./common/repository-paths.ts";
 import {runDoctor} from "./doctor.ts";
-import type {DoctorReport, DoctorSummary} from "./doctor.types.ts";
+import type {DoctorSummary} from "./doctor.types.ts";
 import {createRepositoryInspectionSession, type RepositoryInspectionSession} from "./inspection/repository.ts";
-import type {WorkspaceFacts, WorkspaceProjectFact, WorkspaceEdgeFact} from "./inspection/workspace.ts";
 
 // ============================================================================
 // Types
