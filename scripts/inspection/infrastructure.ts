@@ -63,6 +63,16 @@ interface InfrastructureProviderInput {
   readonly probes: InspectionProbeRunner;
   readonly aggregate: () => Promise<InspectionOutcome<AggregateFacts>>;
   readonly requestedEngine?: ContainerEngine;
+  /**
+   * Optional lazy engine accessor invoked each time the provider runs.
+   *
+   * @remarks
+   * When present, takes precedence over the static {@link requestedEngine} capture. This enables
+   * a single shared inspection session to observe an engine selected after session construction
+   * (from environment, persisted config, or an interactive prompt) without creating a second
+   * session, duplicating the provider, or mutating `process.env`.
+   */
+  readonly resolveEngine?: () => ContainerEngine | undefined;
   readonly env: Readonly<NodeJS.ProcessEnv>;
   readonly platform: NodeJS.Platform;
   readonly now: () => number;
@@ -662,7 +672,7 @@ export function createInfrastructureProvider(input: Readonly<InfrastructureProvi
         inspectManifests(input.paths),
       ]);
 
-      const engine = input.requestedEngine;
+      const engine = input.resolveEngine?.() ?? input.requestedEngine;
       if (engine === undefined) {
         const value: InfrastructureFacts = {
           cliAvailable: false,

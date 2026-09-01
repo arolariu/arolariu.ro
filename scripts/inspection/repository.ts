@@ -62,7 +62,23 @@ export interface RepositoryInspectionFacts {
 export type RepositoryInspectionKey = keyof RepositoryInspectionFacts;
 
 /** A memoized inspection session composed over every {@link RepositoryInspectionFacts} key. */
-export type RepositoryInspectionSession = InspectionSession<RepositoryInspectionFacts>;
+export interface RepositoryInspectionSession extends InspectionSession<RepositoryInspectionFacts> {
+  /**
+   * Updates the container engine that the `"infrastructure"` provider observes on its next
+   * invocation, without creating a second session or duplicating the provider.
+   *
+   * @remarks
+   * This setter does **not** invalidate any fact key by itself: the caller must follow it with
+   * an explicit {@link InspectionSession.invalidate | invalidate("infrastructure")} call (and
+   * optionally `"aggregate"`) when the new engine should be observed by a subsequent
+   * {@link InspectionSession.inspect | inspect("infrastructure")} call. Separating the update
+   * from invalidation lets callers batch an engine change with other state transitions before
+   * invalidating once.
+   *
+   * @param engine - The newly selected container engine.
+   */
+  readonly updateInfrastructureEngine: (engine: ContainerEngine) => void;
+}
 
 /** Fixed, redacted reason reported for `"aggregate"` under the quick inspection profile. */
 const QUICK_PROFILE_AGGREGATE_REASON = "Aggregate inspection is skipped under the quick inspection profile.";
@@ -133,6 +149,12 @@ export function createRepositoryInspectionSession(
 ): RepositoryInspectionSession {
   const probes = createInspectionProbeRunner(input.runner);
 
+  // Mutable engine variable: starts with the Commander-level requested engine and can be updated
+  // later by `updateInfrastructureEngine` (from environment, persisted config, or interactive
+  // prompt). The infrastructure provider reads this lazily through `resolveEngine` each time it
+  // runs, so an invalidate-then-inspect cycle always observes the current selection.
+  let currentEngine: ContainerEngine | undefined = input.requestedEngine;
+
   // Declared before assignment so the lazy `packages`/`aggregate` closures below can capture this
   // exact binding. Neither closure can run before a caller receives the session below and calls
   // `inspect`, so the binding is always assigned by the time either closure executes.
@@ -168,13 +190,20 @@ export function createRepositoryInspectionSession(
       paths: input.paths,
       probes,
       aggregate: (): Promise<InspectionOutcome<AggregateFacts>> => session.inspect("aggregate"),
-      ...(input.requestedEngine === undefined ? {} : {requestedEngine: input.requestedEngine}),
+      resolveEngine: (): ContainerEngine | undefined => currentEngine,
       env: input.env,
       platform: input.platform,
       now: input.now,
     }),
   };
 
-  session = createInspectionSession<RepositoryInspectionFacts>(providers);
+  const baseSession = createInspectionSession<RepositoryInspectionFacts>(providers);
+  session = {
+    inspect: baseSession.inspect,
+    invalidate: baseSession.invalidate,
+    updateInfrastructureEngine: (engine: ContainerEngine): void => {
+      currentEngine = engine;
+    },
+  };
   return session;
 }
