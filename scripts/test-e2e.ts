@@ -4,14 +4,16 @@
  *
  * @remarks
  * This script executes Postman collections (one per target) using Newman.
- * It keeps `injectAuthTokenIntoCollection` as the auth injection strategy,
- * while guaranteeing collection restoration after every run.
+ * Auth tokens are injected exclusively via Newman `--env-var` arguments;
+ * tracked collection files are never mutated.
  */
 
 import {existsSync, mkdirSync, readFileSync, rmSync, writeFileSync} from "node:fs";
+import {resolve} from "node:path";
 import {format as formatText, styleText} from "node:util";
+import {commanderExitCode, createToolProgram} from "./common/cli.ts";
 import {MonorepositoryConsoleLogger, type MonorepositoryLogger} from "./common/logger.ts";
-import {defaultCommandRunner} from "./common/process.ts";
+import {defaultCommandRunner, type CommandRunner} from "./common/process.ts";
 
 type E2ETestTarget = "frontend" | "backend" | "cv" | "all";
 type RunnableTarget = Exclude<E2ETestTarget, "all">;
@@ -22,17 +24,6 @@ interface TargetConfiguration {
   readonly authPolicy: AuthPolicy;
   readonly directory: string;
   readonly label: string;
-}
-
-interface CollectionVariable {
-  readonly key: string;
-  readonly type?: string;
-  value: string;
-}
-
-interface PostmanCollectionDocument {
-  variable?: CollectionVariable[];
-  readonly [key: string]: unknown;
 }
 
 interface NewmanFailure {
@@ -57,6 +48,16 @@ interface NewmanReport {
 
 interface SanitizeAccumulator {
   redactionCount: number;
+}
+
+/** Runtime overrides accepted by {@link main} for testing and composition. */
+export interface E2ERunOptions {
+  /** Command runner used for Newman execution. */
+  readonly runner?: CommandRunner;
+  /** Working directory used to resolve collection and environment paths. */
+  readonly cwd?: string;
+  /** Environment variable overrides merged over `process.env`. */
+  readonly env?: Readonly<Record<string, string>>;
 }
 
 const SENSITIVE_KEY_PATTERN = /(authorization|auth[_-]?token|access[_-]?token|refresh[_-]?token|id[_-]?token|token)/i;
@@ -84,65 +85,13 @@ const targetConfigurationMap: Record<RunnableTarget, TargetConfiguration> = {
 };
 
 /**
- * Injects an authentication token into a Postman collection JSON file.
+ * Resolves an E2E environment profile from an environment map.
  *
- * @remarks
- * Newman collections may store variables under `collection.variable`.
- * This function ensures an `authToken` variable exists and is set.
- *
- * @param collectionPath - File path to the Postman collection JSON file.
- * @param token - Authentication token to inject.
- * @returns Nothing.
- */
-const injectAuthTokenIntoCollection = (collectionPath: string, token: string, logger: MonorepositoryLogger): void => {
-  logger.line(styleText("cyan", `\n🔑 Injecting auth token into collection...`));
-  logger.line(styleText("gray", `   Path: ${collectionPath}`));
-
-  const parsedCollection = JSON.parse(readFileSync(collectionPath, "utf-8")) as unknown;
-  if (typeof parsedCollection !== "object" || parsedCollection === null) {
-    throw new TypeError(`Collection at ${collectionPath} is not a valid JSON object.`);
-  }
-
-  const collection = parsedCollection as PostmanCollectionDocument;
-  const collectionVariables = Array.isArray(collection.variable) ? collection.variable : [];
-  const authTokenVariable = collectionVariables.find((variable) => variable.key === "authToken");
-
-  if (authTokenVariable) {
-    authTokenVariable.value = token;
-  } else {
-    collectionVariables.push({key: "authToken", type: "string", value: token});
-  }
-
-  collection.variable = collectionVariables;
-  writeFileSync(collectionPath, JSON.stringify(collection, null, 2));
-  logger.line(styleText("green", `   ✓ Auth token injected successfully`));
-};
-
-/**
- * Restores a collection file to its exact original content.
- *
- * @param collectionPath - File path to the Postman collection JSON file.
- * @param originalContent - Original content captured before mutation.
- * @returns Nothing.
- */
-const restoreCollectionContent = (collectionPath: string, originalContent: string, logger: MonorepositoryLogger): void => {
-  writeFileSync(collectionPath, originalContent, "utf-8");
-  const restoredContent = readFileSync(collectionPath, "utf-8");
-
-  if (restoredContent !== originalContent) {
-    throw new Error(`Collection restore verification failed for ${collectionPath}.`);
-  }
-
-  logger.line(styleText("green", `   ✓ Collection restored to original content`));
-};
-
-/**
- * Resolves an E2E environment profile from process environment.
- *
+ * @param env - Environment variables to read from.
  * @returns The selected environment profile.
  */
-const resolveEnvironmentProfile = (): EnvironmentProfile => {
-  const rawEnvironment = (process.env["E2E_TEST_ENVIRONMENT"] ?? process.env["NEWMAN_ENVIRONMENT"] ?? "production").toLowerCase();
+const resolveEnvironmentProfile = (env: Readonly<Record<string, string | undefined>>): EnvironmentProfile => {
+  const rawEnvironment = (env["E2E_TEST_ENVIRONMENT"] ?? env["NEWMAN_ENVIRONMENT"] ?? "production").toLowerCase();
   return rawEnvironment === "local" ? "local" : "production";
 };
 
@@ -150,11 +99,12 @@ const resolveEnvironmentProfile = (): EnvironmentProfile => {
  * Resolves the collection path for a target.
  *
  * @param target - The target to load the collection for.
+ * @param cwd - Working directory used to resolve the path.
  * @returns File path to the Postman collection JSON.
  */
-const loadOpenAPITestCollectionPath = (target: RunnableTarget): string => {
+const loadOpenAPITestCollectionPath = (target: RunnableTarget, cwd: string): string => {
   const directory = targetConfigurationMap[target].directory;
-  return `${directory}/postman-collection.json`;
+  return resolve(cwd, directory, "postman-collection.json");
 };
 
 /**
@@ -162,11 +112,12 @@ const loadOpenAPITestCollectionPath = (target: RunnableTarget): string => {
  *
  * @param target - Target under test.
  * @param profile - Runtime environment profile.
+ * @param cwd - Working directory used to resolve the path.
  * @returns File path to the Postman environment JSON.
  */
-const loadOpenAPITestEnvironmentPath = (target: RunnableTarget, profile: EnvironmentProfile): string => {
+const loadOpenAPITestEnvironmentPath = (target: RunnableTarget, profile: EnvironmentProfile, cwd: string): string => {
   const directory = targetConfigurationMap[target].directory;
-  return `${directory}/postman-environment.${profile}.json`;
+  return resolve(cwd, directory, `postman-environment.${profile}.json`);
 };
 
 /**
@@ -379,7 +330,7 @@ const sanitizeNewmanJsonReport = (jsonPath: string, logger: MonorepositoryLogger
  * @param environmentPath - Path to the Postman environment JSON.
  * @param reportDir - Directory to write report artifacts.
  * @param logger - Logger used for Newman lifecycle and report output.
- * @param runtimeAuthToken - Optional runtime auth token passed as Newman env-var.
+ * @param runner - Command runner used for Newman execution.
  * @returns A promise that resolves when execution completes.
  */
 const runOpenAPITestCollection = async (
@@ -388,6 +339,7 @@ const runOpenAPITestCollection = async (
   environmentPath: string,
   reportDir: string,
   logger: MonorepositoryLogger,
+  runner: CommandRunner,
   runtimeAuthToken?: string,
 ): Promise<void> => {
   logger.line(styleText("cyan", `\n🧪 Running Newman test collection for: ${styleText("bold", target)}`));
@@ -429,7 +381,7 @@ const runOpenAPITestCollection = async (
       String(scriptTimeout),
       ...(strictMode ? ["--bail"] : []),
     ];
-    const result = await defaultCommandRunner.run({command: "npx", args}, {output: "inherit"});
+    const result = await runner.run({command: "npx", args}, {output: "inherit"});
     if (result.code !== 0) {
       throw new Error(result.spawnError ?? `Newman exited with code ${result.code}.`);
     }
@@ -464,19 +416,28 @@ const runOpenAPITestCollection = async (
  *
  * @param target - The target to run Newman tests for.
  * @param logger - Target-specific child logger.
+ * @param runner - Command runner used for Newman execution.
+ * @param cwd - Working directory for path resolution.
+ * @param env - Environment variable overrides.
  * @returns A promise that resolves when the flow completes.
  */
-const startNewmanTesting = async (target: RunnableTarget, logger: MonorepositoryLogger): Promise<void> => {
+const startNewmanTesting = async (
+  target: RunnableTarget,
+  logger: MonorepositoryLogger,
+  runner: CommandRunner,
+  cwd: string,
+  env: Readonly<Record<string, string | undefined>>,
+): Promise<void> => {
   logger.line(styleText(["bold", "magenta"], `\n╔════════════════════════════════════════╗`));
   logger.line(styleText(["bold", "magenta"], `║   E2E Testing: ${target.padEnd(23)} ║`));
   logger.line(styleText(["bold", "magenta"], `╚════════════════════════════════════════╝`));
 
   const targetConfiguration = targetConfigurationMap[target];
-  const collectionPath = loadOpenAPITestCollectionPath(target);
-  const environmentProfile = resolveEnvironmentProfile();
-  const environmentPath = loadOpenAPITestEnvironmentPath(target, environmentProfile);
-  const authToken = (process.env["E2E_TEST_AUTH_TOKEN"] ?? "").trim();
-  const reportDir = process.env["NEWMAN_REPORT_DIR"] || "e2e-logs";
+  const collectionPath = loadOpenAPITestCollectionPath(target, cwd);
+  const environmentProfile = resolveEnvironmentProfile(env);
+  const environmentPath = loadOpenAPITestEnvironmentPath(target, environmentProfile, cwd);
+  const authToken = (env["E2E_TEST_AUTH_TOKEN"] ?? "").trim();
+  const reportDir = env["NEWMAN_REPORT_DIR"] || "e2e-logs";
 
   if (!existsSync(collectionPath)) {
     throw new Error(`Collection file not found: ${collectionPath}`);
@@ -498,34 +459,27 @@ const startNewmanTesting = async (target: RunnableTarget, logger: Monorepository
     logger.line(styleText("gray", `ℹ ${target} does not require auth token; skipping auth injection.`));
   }
 
+  const shouldPassAuthToken = targetConfiguration.authPolicy !== "ignored" && authToken.length > 0;
+
+  // Register the token for redaction before any command construction or logging.
+  if (authToken.length > 0) {
+    logger.redact(authToken);
+  }
+
   logger.line(styleText("cyan", `\n📦 Target: ${styleText("bold", target)} (${targetConfiguration.label})`));
   logger.line(styleText("gray", `   Collection: ${collectionPath}`));
   logger.line(styleText("gray", `   Environment: ${environmentPath} (${environmentProfile})`));
   logger.line(styleText("gray", `   Reports: ${reportDir}`));
 
-  const shouldInjectAuthToken = targetConfiguration.authPolicy !== "ignored" && authToken.length > 0;
-  const originalCollectionContent = shouldInjectAuthToken ? readFileSync(collectionPath, "utf-8") : "";
-
-  try {
-    if (shouldInjectAuthToken) {
-      logger.redact(authToken);
-      injectAuthTokenIntoCollection(collectionPath, authToken, logger.child("auth"));
-    }
-
-    await runOpenAPITestCollection(
-      target,
-      collectionPath,
-      environmentPath,
-      reportDir,
-      logger.child("newman"),
-      shouldInjectAuthToken ? authToken : undefined,
-    );
-  } finally {
-    if (shouldInjectAuthToken) {
-      logger.line(styleText("cyan", `\n🔄 Restoring collection content...`));
-      restoreCollectionContent(collectionPath, originalCollectionContent, logger.child("auth"));
-    }
-  }
+  await runOpenAPITestCollection(
+    target,
+    collectionPath,
+    environmentPath,
+    reportDir,
+    logger.child("newman"),
+    runner,
+    shouldPassAuthToken ? authToken : undefined,
+  );
 
   logger.line(styleText(["bold", "green"], `\n✅ Completed Newman tests for: ${target}\n`));
 };
@@ -536,54 +490,75 @@ const startNewmanTesting = async (target: RunnableTarget, logger: Monorepository
  * @remarks
  * This is the script entrypoint used by `npm run test:e2e`.
  *
- * @param arg - Target selector (`frontend`, `backend`, `cv`, `all`).
+ * @param arg - Target selector (`frontend`, `backend`, `cv`, `all`) or help flag.
  * @param logger - Optional logger used for E2E output and target child contexts.
+ * @param options - Optional runtime overrides for runner, working directory, and environment.
  * @returns Process exit code (0 for success, non-zero for failure).
  */
-export async function main(arg?: string, logger?: MonorepositoryLogger): Promise<number> {
+export async function main(arg?: string, logger?: MonorepositoryLogger, options?: Readonly<E2ERunOptions>): Promise<number> {
   const output = logger ?? new MonorepositoryConsoleLogger("test::e2e");
+  const runner = options?.runner ?? defaultCommandRunner;
+  const cwd = options?.cwd ?? process.cwd();
+  const env: Readonly<Record<string, string | undefined>> = options?.env ?? process.env;
+
+  const program = createToolProgram({
+    name: "test:e2e",
+    description: "Run E2E tests for arolariu.ro targets using Newman.",
+    usage: "<target>",
+    examples: ["npm run test:e2e -- backend", "npm run test:e2e -- frontend", "npm run test:e2e -- cv", "npm run test:e2e -- all"],
+    logger: output,
+  });
+
+  program.argument("<target>", "Target to test", (value: string) => {
+    const valid: readonly string[] = ["all", "backend", "frontend", "cv"];
+    if (!valid.includes(value)) {
+      throw new Error(`Invalid target "${value}". Valid targets: ${valid.join(", ")}`);
+    }
+    return value as E2ETestTarget;
+  });
+
+  let parsedTarget: E2ETestTarget | undefined;
+  try {
+    program.action((target: E2ETestTarget) => {
+      parsedTarget = target;
+    });
+    program.parse(arg === undefined ? process.argv : ["node", "test:e2e", arg]);
+  } catch (error: unknown) {
+    const exitCode = commanderExitCode(error);
+    if (exitCode !== null) {
+      return exitCode;
+    }
+    output.line(styleText("red", `✗ ${error instanceof Error ? error.message : String(error)}`), "stderr");
+    return 1;
+  }
+
+  if (parsedTarget === undefined) {
+    return 1;
+  }
+
   output.line(styleText(["bold", "magenta"], "\n╔════════════════════════════════════════╗"));
   output.line(styleText(["bold", "magenta"], "║   arolariu.ro E2E Test Runner          ║"));
   output.line(styleText(["bold", "magenta"], "╚════════════════════════════════════════╝\n"));
 
-  if (!arg) {
-    output.line(styleText("red", "✗ Missing target argument"), "stderr");
-    output.line(styleText("gray", "\n💡 Usage: test:e2e <frontend|backend|cv|all>"));
-    output.line(styleText("gray", "   - frontend: Run frontend E2E tests"));
-    output.line(styleText("gray", "   - backend:  Run backend API tests"));
-    output.line(styleText("gray", "   - cv:       Run CV website/API tests"));
-    output.line(styleText("gray", "   - all:      Run all E2E tests"));
-    output.line(styleText("yellow", "\n⚠️  Notes:"));
-    output.line(styleText("yellow", "   - E2E_TEST_AUTH_TOKEN is required for backend"));
-    output.line(styleText("yellow", "   - E2E_TEST_AUTH_TOKEN is optional for frontend"));
-    output.line(styleText("yellow", "   - E2E_TEST_AUTH_TOKEN is ignored for cv"));
-    output.line(styleText("yellow", "   - E2E_TEST_ENVIRONMENT can be local|production (default: production)\n"));
-    return 1;
-  }
-
   try {
-    switch (arg) {
+    switch (parsedTarget) {
       case "frontend":
-        await startNewmanTesting("frontend", output.child("frontend"));
+        await startNewmanTesting("frontend", output.child("frontend"), runner, cwd, env);
         break;
       case "backend":
-        await startNewmanTesting("backend", output.child("backend"));
+        await startNewmanTesting("backend", output.child("backend"), runner, cwd, env);
         break;
       case "cv":
-        await startNewmanTesting("cv", output.child("cv"));
+        await startNewmanTesting("cv", output.child("cv"), runner, cwd, env);
         break;
       case "all":
         output.section("Running all E2E tests", "🎯");
-        await startNewmanTesting("frontend", output.child("frontend"));
+        await startNewmanTesting("frontend", output.child("frontend"), runner, cwd, env);
         output.line(styleText("gray", "\n─────────────────────────────────────────────────\n"));
-        await startNewmanTesting("backend", output.child("backend"));
+        await startNewmanTesting("backend", output.child("backend"), runner, cwd, env);
         output.line(styleText("gray", "\n─────────────────────────────────────────────────\n"));
-        await startNewmanTesting("cv", output.child("cv"));
+        await startNewmanTesting("cv", output.child("cv"), runner, cwd, env);
         break;
-      default:
-        output.line(styleText("red", `✗ Invalid target: "${arg}"`), "stderr");
-        output.line(styleText("gray", "\n💡 Valid targets: frontend, backend, cv, all\n"));
-        return 1;
     }
 
     output.line(styleText(["bold", "green"], "\n🎉 All E2E tests completed successfully!\n"));
