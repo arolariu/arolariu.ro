@@ -11,7 +11,7 @@
  * failure or skip; no diagnostic ever fabricates a healthy value from missing facts.
  */
 
-import {diagnosticResult, skippedDiagnostic, STANDARD_EVIDENCE_LIMIT} from "./doctor.diagnostics.ts";
+import {boundEvidence, diagnosticResult, skippedDiagnostic, STANDARD_EVIDENCE_LIMIT} from "./doctor.diagnostics.ts";
 import type {DiagnosticFix, DiagnosticModule, DiagnosticPotentialCause, DiagnosticResult, DoctorContext} from "./doctor.types.ts";
 import type {ReactFacts} from "./inspection/frontend.ts";
 import type {InstalledPackageFact, PackageInventoryFacts} from "./inspection/packages.ts";
@@ -100,11 +100,7 @@ function passDiagnostic(
  * @returns At most {@link STANDARD_EVIDENCE_LIMIT} entries, never a full unbounded copy.
  */
 function boundedIssues(issues: readonly string[]): readonly string[] {
-  if (issues.length <= STANDARD_EVIDENCE_LIMIT) {
-    return issues;
-  }
-  const shown = issues.slice(0, STANDARD_EVIDENCE_LIMIT);
-  return [...shown, `${String(issues.length - STANDARD_EVIDENCE_LIMIT)} additional issue(s) omitted.`];
+  return boundEvidence(issues, false);
 }
 
 function buildIssueDiagnosis(
@@ -114,7 +110,9 @@ function buildIssueDiagnosis(
   if (issues.length === 1 && rootCause !== undefined) {
     return {rootCause, potentialCauses: []};
   }
-  return {potentialCauses: issues.map((cause) => ({cause, confidence: "high" as const}))};
+  return {
+    potentialCauses: issues.slice(0, STANDARD_EVIDENCE_LIMIT).map((cause) => ({cause, confidence: "high" as const})),
+  };
 }
 
 function skippedPackagesForInvalidRequirements(): DiagnosticResult {
@@ -206,7 +204,7 @@ function diagnosePackages(context: Readonly<DoctorContext>, facts: Readonly<Reac
     status: "fail",
     summary: `${String(issues.length)} React ecosystem package${issues.length === 1 ? "" : "s"} failed installation verification.`,
     evidence,
-    ...buildIssueDiagnosis(evidence),
+    ...buildIssueDiagnosis(issues),
     fixes: [{description: "Reinstall root dependencies and verify workspace links, then rerun doctor.", command: "npm install"}],
   });
 }
@@ -236,7 +234,7 @@ function diagnoseWorkspaceLink(context: Readonly<DoctorContext>, facts: Readonly
     status: "fail",
     summary: "The website's dependency on @arolariu/components is not fully linked.",
     evidence,
-    ...buildIssueDiagnosis(evidence),
+    ...buildIssueDiagnosis(issues),
     fixes: [{description: "Restore the @arolariu/components dependency declaration and Nx dependsOn linkage."}],
   });
 }
@@ -253,20 +251,21 @@ function diagnoseEnvironment(context: Readonly<DoctorContext>, facts: Readonly<R
       status: "fail",
       summary: "The website .env file contains syntax errors.",
       evidence,
-      ...buildIssueDiagnosis(evidence),
+      ...buildIssueDiagnosis(environment.syntaxErrors),
       fixes: [{description: "Correct the malformed or duplicate entries in sites/arolariu.ro/.env, then rerun doctor."}],
     });
   }
 
   if (environment.missingCoreKeys.length > 0) {
-    const evidence = boundedIssues(environment.missingCoreKeys.map((key) => `Missing required core key: ${key}`));
+    const issues = environment.missingCoreKeys.map((key) => `Missing required core key: ${key}`);
+    const evidence = boundedIssues(issues);
     return issueDiagnostic(context, startedAt, {
       id: "react.environment",
       name: "React environment",
       status: "fail",
       summary: "The website .env file is missing required core site keys.",
       evidence,
-      ...buildIssueDiagnosis(evidence),
+      ...buildIssueDiagnosis(issues),
       fixes: [{description: "Add the missing core site keys to sites/arolariu.ro/.env, then rerun doctor."}],
     });
   }
@@ -330,7 +329,7 @@ function diagnoseI18n(context: Readonly<DoctorContext>, facts: Readonly<ReactFac
     status: "fail",
     summary: "Source locale dictionaries or the generated message declaration have issues.",
     evidence,
-    ...buildIssueDiagnosis(evidence),
+    ...buildIssueDiagnosis(issues),
     fixes: [{description: "Restore identical key shape across en.json, ro.json, and fr.json.", command: "npm run generate:i18n"}],
   });
 }
@@ -357,7 +356,7 @@ function diagnoseTaxonomyAndLicenses(context: Readonly<DoctorContext>, facts: Re
     status: "fail",
     summary: "Website taxonomy artifacts or license metadata are incomplete or invalid.",
     evidence,
-    ...buildIssueDiagnosis(evidence),
+    ...buildIssueDiagnosis(issues),
     fixes: [{description: "Regenerate taxonomy and license artifacts, then rerun doctor.", command: "npm run generate -- /a"}],
   });
 }
@@ -442,7 +441,7 @@ function diagnoseFrameworkConfig(context: Readonly<DoctorContext>, facts: Readon
     status: "fail",
     summary: "Website or docs framework configuration is missing required wiring.",
     evidence,
-    ...buildIssueDiagnosis(evidence),
+    ...buildIssueDiagnosis(issues),
     fixes: [{description: "Restore the required Next.js and Docusaurus configuration wiring."}],
   });
 }
@@ -461,9 +460,11 @@ function diagnoseFrameworkConfig(context: Readonly<DoctorContext>, facts: Readon
  * @param evidence - Bounded, non-empty evidence describing the degraded outcome.
  * @returns The seven `react.*` diagnostic rows, in required order.
  */
-function degradedResults(context: Readonly<DoctorContext>, evidence: readonly string[]): readonly DiagnosticResult[] {
+function degradedResults(context: Readonly<DoctorContext>, issues: readonly string[]): readonly DiagnosticResult[] {
   const startedAt = context.now();
   const summary = "The shared React inspection facts could not be produced.";
+  const evidence = boundedIssues(issues);
+  const diagnosis = buildIssueDiagnosis(issues);
 
   const genericFail = (id: string, name: string): DiagnosticResult =>
     issueDiagnostic(context, startedAt, {
@@ -472,6 +473,7 @@ function degradedResults(context: Readonly<DoctorContext>, evidence: readonly st
       status: "fail",
       summary,
       evidence,
+      ...diagnosis,
       fixes: [{description: REACT_INSPECTION_RESOLUTION_FIX}],
     });
 
@@ -512,7 +514,7 @@ export const reactDoctorModule: DiagnosticModule = {
       return degradedResults(context, [outcome.reason]);
     }
     if (outcome.kind === "invalid") {
-      return degradedResults(context, boundedIssues(outcome.issues));
+      return degradedResults(context, outcome.issues);
     }
 
     const facts = outcome.value;

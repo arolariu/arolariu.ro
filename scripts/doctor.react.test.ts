@@ -20,6 +20,7 @@ import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "./common/logger.t
 import {createRepositoryPaths} from "./common/repository-paths.ts";
 import type {RepositoryRequirements} from "./common/requirements.ts";
 import {reactDoctorModule} from "./doctor.react.ts";
+import {createDoctorReport} from "./doctor.reporter.ts";
 import type {DiagnosticNetworkResult, DiagnosticResult, DoctorContext, DoctorRunOptions} from "./doctor.types.ts";
 import type {EnvironmentFacts, ReactFacts} from "./inspection/frontend.ts";
 import type {InstalledPackageFact, PackageInventoryFacts} from "./inspection/packages.ts";
@@ -226,10 +227,13 @@ describe("reactDoctorModule", () => {
     for (const result of results) {
       expect(result.status).toBe("fail");
       expect(result.evidence).toContain("React inspection issue 0.");
-      expect(result.evidence).toContain("React inspection issue 4.");
-      expect(result.evidence).not.toContain("React inspection issue 5.");
-      expect(result.evidence.at(-1)).toBe("2 additional issue(s) omitted.");
+      expect(result.evidence).toContain("React inspection issue 3.");
+      expect(result.evidence).not.toContain("React inspection issue 4.");
+      expect(result.evidence.at(-1)).toBe("3 additional evidence entries omitted.");
+      expect(result.potentialCauses).toHaveLength(5);
+      expect(result.potentialCauses.map(({cause}) => cause)).not.toContain("3 additional evidence entries omitted.");
     }
+    expect(() => createDoctorReport(results, "2026-08-31T00:00:00.000Z")).not.toThrow();
   });
 
   it("skips package comparison when requirements are invalid", async () => {

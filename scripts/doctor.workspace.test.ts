@@ -389,6 +389,29 @@ describe("workspaceDoctorModule", () => {
     );
   });
 
+  it("uses total npm problemCount when the provider retained only a shorter bounded problem list", async () => {
+    const facts: NpmTreeFacts = {
+      scope: "root",
+      valid: false,
+      packageCount: 12,
+      problemCount: 25,
+      problems: [
+        {code: "missing", detail: "npm reported missing package alpha."},
+        {code: "invalid", detail: "npm reported invalid package beta."},
+        {detail: "npm reported problem gamma."},
+      ],
+    };
+    const fixture = await createWorkspaceFixture({
+      inspectionOverrides: new Map([["npm.root", {kind: "available", value: facts, durationMs: 0}]]),
+    });
+
+    const results = await workspaceDoctorModule.run(fixture.context);
+
+    const root = resultById(results, "workspace.root-dependencies");
+    expect(root.evidence[0]).toBe("25 dependency problems reported.");
+    expect(root.evidence.at(-1)).toBe("22 additional problems omitted.");
+  });
+
   it("diagnoses unavailable npm tree as explicit failure", async () => {
     const fixture = await createWorkspaceFixture({
       inspectionOverrides: new Map([

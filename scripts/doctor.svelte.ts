@@ -11,7 +11,7 @@
  * no diagnostic ever fabricates a healthy value from missing facts.
  */
 
-import {diagnosticResult, skippedDiagnostic, STANDARD_EVIDENCE_LIMIT} from "./doctor.diagnostics.ts";
+import {boundEvidence, diagnosticResult, skippedDiagnostic, STANDARD_EVIDENCE_LIMIT} from "./doctor.diagnostics.ts";
 import {satisfiesMinimum, type MinimumVersion} from "./common/requirements.ts";
 import type {DiagnosticFix, DiagnosticModule, DiagnosticPotentialCause, DiagnosticResult, DoctorContext} from "./doctor.types.ts";
 import type {SvelteFacts, SvelteProjectId} from "./inspection/frontend.ts";
@@ -89,11 +89,7 @@ function passDiagnostic(
  * @returns At most {@link STANDARD_EVIDENCE_LIMIT} entries, never a full unbounded copy.
  */
 function boundedIssues(issues: readonly string[]): readonly string[] {
-  if (issues.length <= STANDARD_EVIDENCE_LIMIT) {
-    return issues;
-  }
-  const shown = issues.slice(0, STANDARD_EVIDENCE_LIMIT);
-  return [...shown, `${String(issues.length - STANDARD_EVIDENCE_LIMIT)} additional issue(s) omitted.`];
+  return boundEvidence(issues, false);
 }
 
 function buildIssueDiagnosis(
@@ -103,7 +99,9 @@ function buildIssueDiagnosis(
   if (issues.length === 1 && rootCause !== undefined) {
     return {rootCause, potentialCauses: []};
   }
-  return {potentialCauses: issues.map((cause) => ({cause, confidence: "high" as const}))};
+  return {
+    potentialCauses: issues.slice(0, STANDARD_EVIDENCE_LIMIT).map((cause) => ({cause, confidence: "high" as const})),
+  };
 }
 
 function skippedNodeEngineForInvalidRequirements(projectId: SvelteProjectId): DiagnosticResult {
@@ -139,7 +137,7 @@ function diagnosePackages(context: Readonly<DoctorContext>, projectId: SveltePro
     status: "fail",
     summary: `${String(issues.length)} SvelteKit ecosystem package check${issues.length === 1 ? "" : "s"} failed.`,
     evidence,
-    ...buildIssueDiagnosis(evidence),
+    ...buildIssueDiagnosis(issues),
     fixes: [{description: "Install the site's dependencies and rerun doctor.", command: "npm install"}],
   });
 }
@@ -232,7 +230,7 @@ function diagnoseScripts(context: Readonly<DoctorContext>, projectId: SvelteProj
     status: "fail",
     summary: "Required SvelteKit lifecycle scripts are missing, misconfigured, or incorrectly wired.",
     evidence,
-    ...buildIssueDiagnosis(evidence),
+    ...buildIssueDiagnosis(issues),
     fixes: [{description: "Restore the required package.json scripts, project.json targets, and Vite plugin wiring."}],
   });
 }
@@ -275,7 +273,7 @@ function diagnoseAdapter(context: Readonly<DoctorContext>, projectId: SvelteProj
       status: "fail",
       summary: "The configured SvelteKit adapter is missing, undeclared, or not installed.",
       evidence,
-      ...buildIssueDiagnosis(evidence),
+      ...buildIssueDiagnosis(issues),
       fixes: [{description: "Import a declared, installed adapter and set kit.adapter to its invocation in svelte.config."}],
     });
   }
@@ -314,16 +312,18 @@ function diagnoseAdapter(context: Readonly<DoctorContext>, projectId: SvelteProj
  *
  * @param context - Shared doctor execution context.
  * @param projectId - Identity of the standalone project (`"cv"` or `"status"`) being degraded.
- * @param evidence - Bounded, non-empty evidence describing the degraded outcome.
+ * @param issues - Raw, non-empty issues describing the degraded outcome.
  * @returns The five `svelte.<project>.*` diagnostic rows, in required order.
  */
 function degradedResults(
   context: Readonly<DoctorContext>,
   projectId: SvelteProjectId,
-  evidence: readonly string[],
+  issues: readonly string[],
 ): readonly DiagnosticResult[] {
   const startedAt = context.now();
   const summary = "The shared Svelte inspection facts could not be produced.";
+  const evidence = boundedIssues(issues);
+  const diagnosis = buildIssueDiagnosis(issues);
 
   const genericFail = (id: string, name: string): DiagnosticResult =>
     issueDiagnostic(context, startedAt, {
@@ -332,6 +332,7 @@ function degradedResults(
       status: "fail",
       summary,
       evidence,
+      ...diagnosis,
       fixes: [{description: SVELTE_INSPECTION_RESOLUTION_FIX}],
     });
 
@@ -367,7 +368,7 @@ export async function inspectSvelteProject(
     return degradedResults(context, projectId, [outcome.reason]);
   }
   if (outcome.kind === "invalid") {
-    return degradedResults(context, projectId, boundedIssues(outcome.issues));
+    return degradedResults(context, projectId, outcome.issues);
   }
 
   const facts = outcome.value;

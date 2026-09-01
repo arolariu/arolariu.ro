@@ -20,6 +20,7 @@ import {afterEach, describe, expect, it, vi} from "vitest";
 import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "./common/logger.ts";
 import {createRepositoryPaths} from "./common/repository-paths.ts";
 import type {RepositoryRequirements} from "./common/requirements.ts";
+import {createDoctorReport} from "./doctor.reporter.ts";
 import {svelteDoctorModule} from "./doctor.svelte.ts";
 import type {DiagnosticNetworkResult, DiagnosticResult, DoctorContext, DoctorRunOptions} from "./doctor.types.ts";
 import type {SvelteFacts} from "./inspection/frontend.ts";
@@ -217,9 +218,11 @@ describe("svelteDoctorModule", () => {
       const result = resultById(results, id);
       expect(result.status, `${id} should fail`).toBe("fail");
       expect(result.evidence).toContain("Status Svelte inspection issue 0.");
-      expect(result.evidence).toContain("Status Svelte inspection issue 4.");
-      expect(result.evidence).not.toContain("Status Svelte inspection issue 5.");
-      expect(result.evidence.at(-1)).toBe("2 additional issue(s) omitted.");
+      expect(result.evidence).toContain("Status Svelte inspection issue 3.");
+      expect(result.evidence).not.toContain("Status Svelte inspection issue 4.");
+      expect(result.evidence.at(-1)).toBe("3 additional evidence entries omitted.");
+      expect(result.potentialCauses).toHaveLength(5);
+      expect(result.potentialCauses.map(({cause}) => cause)).not.toContain("3 additional evidence entries omitted.");
     }
     for (const id of [
       "svelte.cv.packages",
@@ -230,6 +233,7 @@ describe("svelteDoctorModule", () => {
     ]) {
       expect(resultById(results, id).status, `${id} should pass`).toBe("pass");
     }
+    expect(() => createDoctorReport(results, "2026-08-31T00:00:00.000Z")).not.toThrow();
   });
 
   it("detects package issues from SvelteFacts", async () => {
