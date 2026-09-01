@@ -1,13 +1,12 @@
 import {describe, expect, it} from "vitest";
 
 import {InMemoryLoggerSink, MonorepositoryConsoleLogger, type MonorepositoryLogger} from "./common/logger.ts";
-import type {DiagnosticResult, DoctorOptions, DoctorReportV1} from "./doctor.types.ts";
+import type {DiagnosticResult, DoctorReport, DoctorRunOptions} from "./doctor.types.ts";
 import {
   computeHealthScore,
   createDoctorReport,
   diagnosticWeights,
   gradeFromScore,
-  parseDoctorReport,
   renderDoctorReport,
   summarizeDiagnostics,
 } from "./doctor.reporter.ts";
@@ -124,19 +123,15 @@ function createLogger(options: Readonly<{json?: boolean; color?: boolean}> = {})
   return {sink, logger};
 }
 
-function createOptions(overrides: Readonly<Partial<DoctorOptions>> = {}): DoctorOptions {
+function createOptions(overrides: Readonly<Partial<DoctorRunOptions>> = {}): DoctorRunOptions {
   return {
     verbose: false,
-    ci: false,
-    score: false,
-    json: false,
     quick: false,
-    help: false,
     ...overrides,
   };
 }
 
-function createValidReport(): DoctorReportV1 {
+function createValidReport(): DoctorReport {
   return createDoctorReport(
     [
       createDiagnostic({
@@ -159,10 +154,7 @@ function createValidReport(): DoctorReportV1 {
           {cause: "High-confidence cause.", confidence: "high"},
           {cause: "Medium-confidence cause.", confidence: "medium"},
         ],
-        fixes: [
-          {description: "First warning fix.", command: "echo warn-one"},
-          {description: "Second warning fix."},
-        ],
+        fixes: [{description: "First warning fix.", command: "echo warn-one"}, {description: "Second warning fix."}],
         durationMs: 20,
       }),
       createDiagnostic({
@@ -239,7 +231,7 @@ function createFailDiagnostic(
   });
 }
 
-function replaceReportCheck(report: Readonly<DoctorReportV1>, check: Readonly<DiagnosticResult>): DoctorReportV1 {
+function replaceReportCheck(report: Readonly<DoctorReport>, check: Readonly<DiagnosticResult>): DoctorReport {
   return {
     ...report,
     checks: report.checks.map((existingCheck) => (existingCheck.id === check.id ? check : existingCheck)),
@@ -263,7 +255,8 @@ const invalidDetailedDiagnosticCases = [
       rootCause: undefined,
       potentialCauses: [],
     }),
-    error: "Doctor diagnostic 'react.environment' with status 'warn' must include exactly one diagnosis form: rootCause or potentialCauses.",
+    error:
+      "Doctor diagnostic 'react.environment' with status 'warn' must include exactly one diagnosis form: rootCause or potentialCauses.",
   },
   {
     title: "warn diagnostics with both diagnosis forms",
@@ -271,7 +264,8 @@ const invalidDetailedDiagnosticCases = [
       rootCause: "A direct root cause is already known.",
       potentialCauses: [{cause: "A second possible cause.", confidence: "medium"}],
     }),
-    error: "Doctor diagnostic 'react.environment' with status 'warn' must include exactly one diagnosis form: rootCause or potentialCauses.",
+    error:
+      "Doctor diagnostic 'react.environment' with status 'warn' must include exactly one diagnosis form: rootCause or potentialCauses.",
   },
   {
     title: "fail diagnostics without evidence",
@@ -289,14 +283,16 @@ const invalidDetailedDiagnosticCases = [
       rootCause: undefined,
       potentialCauses: [],
     }),
-    error: "Doctor diagnostic 'python.configuration' with status 'fail' must include exactly one diagnosis form: rootCause or potentialCauses.",
+    error:
+      "Doctor diagnostic 'python.configuration' with status 'fail' must include exactly one diagnosis form: rootCause or potentialCauses.",
   },
   {
     title: "fail diagnostics with both diagnosis forms",
     diagnostic: createFailDiagnostic({
       potentialCauses: [{cause: "A second possible cause.", confidence: "medium"}],
     }),
-    error: "Doctor diagnostic 'python.configuration' with status 'fail' must include exactly one diagnosis form: rootCause or potentialCauses.",
+    error:
+      "Doctor diagnostic 'python.configuration' with status 'fail' must include exactly one diagnosis form: rootCause or potentialCauses.",
   },
 ] as const;
 
@@ -334,17 +330,11 @@ describe("doctor reporter scoring", () => {
     ];
 
     const expected = Math.round(
-      (
-        (
-          diagnosticWeights["workspace.node-runtime"]
-          + (diagnosticWeights["workspace.root-dependencies"] * 0.5)
-        )
-        / (
-          diagnosticWeights["workspace.node-runtime"]
+      ((diagnosticWeights["workspace.node-runtime"] + diagnosticWeights["workspace.root-dependencies"] * 0.5)
+        / (diagnosticWeights["workspace.node-runtime"]
           + diagnosticWeights["workspace.root-dependencies"]
-          + diagnosticWeights["workspace.git"]
-        )
-      ) * 100,
+          + diagnosticWeights["workspace.git"]))
+        * 100,
     );
 
     expect(computeHealthScore(checks)).toBe(expected);
@@ -370,9 +360,7 @@ describe("doctor reporter scoring", () => {
 
   it("rejects unknown diagnostic ids while scoring", () => {
     expect(() =>
-      computeHealthScore([
-        createDiagnostic({id: "workspace.unknown", module: "workspace", name: "Unknown check", status: "pass"}),
-      ]),
+      computeHealthScore([createDiagnostic({id: "workspace.unknown", module: "workspace", name: "Unknown check", status: "pass"})]),
     ).toThrow("Unknown diagnostic id 'workspace.unknown'.");
   });
 
@@ -387,216 +375,6 @@ describe("doctor reporter scoring", () => {
     expect(gradeFromScore(69)).toBe("D");
     expect(gradeFromScore(60)).toBe("D");
     expect(gradeFromScore(59)).toBe("F");
-  });
-});
-
-describe("doctor report semantic validation", () => {
-  for (const testCase of invalidDetailedDiagnosticCases) {
-    it(`createDoctorReport rejects ${testCase.title}`, () => {
-      expect(() => createDoctorReport([testCase.diagnostic], "2026-08-30T01:23:45.000Z")).toThrow(testCase.error);
-    });
-
-    it(`parseDoctorReport rejects ${testCase.title}`, () => {
-      const report = replaceReportCheck(createValidReport(), testCase.diagnostic);
-
-      expect(() => parseDoctorReport(report)).toThrow(testCase.error);
-    });
-  }
-});
-
-describe("doctor report parsing", () => {
-  it("parses a valid version 1 doctor report", () => {
-    const report = createValidReport();
-
-    expect(parseDoctorReport(report)).toEqual(report);
-  });
-
-  it("rejects unsupported schema versions explicitly", () => {
-    expect(() =>
-      parseDoctorReport({
-        schemaVersion: 2,
-        score: 100,
-      }),
-    ).toThrow("Unsupported doctor report schemaVersion '2'. Expected version 1.");
-  });
-
-  it("rejects unknown schemas that omit schemaVersion", () => {
-    expect(() =>
-      parseDoctorReport({
-        score: 100,
-      }),
-    ).toThrow("Unsupported doctor report schemaVersion 'undefined'. Expected version 1.");
-  });
-
-  it("rejects non-finite numeric values, invalid unions, and malformed timestamps", () => {
-    expect(() =>
-      parseDoctorReport({
-        schemaVersion: 1,
-        score: Number.POSITIVE_INFINITY,
-        grade: "A+",
-        summary: {
-          passed: 1,
-          warnings: 0,
-          failed: 0,
-          skipped: 0,
-        },
-        checks: [],
-        timestamp: "2026-08-30T01:23:45.000Z",
-      }),
-    ).toThrow("Doctor report score must be a finite number between 0 and 100.");
-
-    expect(() =>
-      parseDoctorReport({
-        schemaVersion: 1,
-        score: 100,
-        grade: "A+",
-        summary: {
-          passed: 1,
-          warnings: 0,
-          failed: 0,
-          skipped: 0,
-        },
-        checks: [
-          {
-            id: "workspace.repository-root",
-            module: "workspace",
-            name: "Repository root",
-            status: "broken",
-            summary: "Repository root detected.",
-            evidence: [],
-            potentialCauses: [],
-            fixes: [],
-            durationMs: 5,
-          },
-        ],
-        timestamp: "2026-08-30T01:23:45.000Z",
-      }),
-    ).toThrow("Doctor diagnostic status must be one of: pass, warn, fail, skipped.");
-
-    expect(() =>
-      parseDoctorReport({
-        schemaVersion: 1,
-        score: 100,
-        grade: "A+",
-        summary: {
-          passed: 1,
-          warnings: 0,
-          failed: 0,
-          skipped: 0,
-        },
-        checks: [
-          {
-            id: "workspace.repository-root",
-            module: "unknown",
-            name: "Repository root",
-            status: "pass",
-            summary: "Repository root detected.",
-            evidence: [],
-            potentialCauses: [],
-            fixes: [],
-            durationMs: 5,
-          },
-        ],
-        timestamp: "2026-08-30T01:23:45.000Z",
-      }),
-    ).toThrow("Doctor diagnostic module must be one of: workspace, dotnet, react, svelte, python, infrastructure.");
-
-    expect(() =>
-      parseDoctorReport({
-        schemaVersion: 1,
-        score: 100,
-        grade: "A+",
-        summary: {
-          passed: 1,
-          warnings: 0,
-          failed: 0,
-          skipped: 0,
-        },
-        checks: [
-          {
-            id: "workspace.repository-root",
-            module: "workspace",
-            name: "Repository root",
-            status: "pass",
-            summary: "Repository root detected.",
-            evidence: [],
-            potentialCauses: [{cause: "Unknown cause.", confidence: "certain"}],
-            fixes: [],
-            durationMs: 5,
-          },
-        ],
-        timestamp: "not-a-timestamp",
-      }),
-    ).toThrow("Doctor diagnostic confidence must be one of: high, medium, low.");
-  });
-
-  it("rejects duplicate and unknown diagnostic ids while parsing", () => {
-    const report = createValidReport();
-
-    expect(() =>
-      parseDoctorReport({
-        ...report,
-        checks: [
-          report.checks[0],
-          {
-            ...report.checks[0],
-            name: "Duplicate repository root",
-          },
-        ],
-        summary: {
-          passed: 2,
-          warnings: 0,
-          failed: 0,
-          skipped: 0,
-        },
-        score: 100,
-        grade: "A+",
-      }),
-    ).toThrow("Duplicate diagnostic id 'workspace.repository-root'.");
-
-    expect(() =>
-      parseDoctorReport({
-        ...report,
-        checks: [
-          {
-            ...report.checks[0],
-            id: "workspace.unknown",
-          },
-        ],
-        summary: {
-          passed: 1,
-          warnings: 0,
-          failed: 0,
-          skipped: 0,
-        },
-        score: 100,
-        grade: "A+",
-      }),
-    ).toThrow("Unknown diagnostic id 'workspace.unknown'.");
-  });
-
-  it("rejects ANSI escape sequences anywhere in the payload", () => {
-    const report = createValidReport();
-
-    expect(() =>
-      parseDoctorReport({
-        ...report,
-        checks: [
-          {
-            ...report.checks[0],
-            summary: "\u001B[31mansi summary\u001B[0m",
-          },
-        ],
-        summary: {
-          passed: 1,
-          warnings: 0,
-          failed: 0,
-          skipped: 0,
-        },
-        score: 100,
-        grade: "A+",
-      }),
-    ).toThrow("Doctor report strings must not contain ANSI escape sequences.");
   });
 });
 
@@ -689,7 +467,7 @@ describe("doctor report rendering", () => {
     expect(rendered).toContain("2. Second warning fix.");
     expect(rendered).toContain("$ echo warn-one");
     expect(rendered).toContain("$ node -e \"throw new Error('should-not-run')\"");
-    expect(rendered).not.toContain("Health Score");
+    expect(rendered).toContain("Health Score");
 
     const headingIndexes = moduleOrder.map((heading) => rendered.indexOf(heading));
     expect(headingIndexes.every((index) => index >= 0)).toBe(true);
@@ -753,8 +531,8 @@ describe("doctor report rendering", () => {
     const verboseOutput = verbose.sink.records.map((record) => record.text).join("\n");
     expect(standardOutput).toMatch(/stdout: omitted 102 lines .*--verbose/u);
     expect(standardOutput).toContain("react@18 does not match react@19.");
-    expect(standardOutput).not.toContain("\"package-99\"");
-    expect(verboseOutput).toContain("\"package-99\"");
+    expect(standardOutput).not.toContain('"package-99"');
+    expect(verboseOutput).toContain('"package-99"');
   });
 
   it("bounds the number of human evidence entries unless verbose output is enabled", () => {
@@ -789,25 +567,12 @@ describe("doctor report rendering", () => {
     expect(verboseOutput).not.toContain("additional evidence entries omitted");
   });
 
-  it("renders the score box only when score output is requested", () => {
+  it("always renders the score box", () => {
     const report = createValidReport();
     const {sink, logger} = createLogger();
 
-    renderDoctorReport(report, createOptions({score: true}), logger);
+    renderDoctorReport(report, createOptions(), logger);
 
     expect(sink.records.map((record) => record.text).join("\n")).toContain("Health Score");
-  });
-
-  it("emits exactly one JSON document with no human records or ANSI escapes", () => {
-    const report = createValidReport();
-    const {sink, logger} = createLogger({color: true});
-
-    renderDoctorReport(report, createOptions({json: true}), logger);
-
-    expect(sink.records).toHaveLength(1);
-    expect(sink.records[0]?.stream).toBe("stdout");
-    expect(sink.records[0]?.write).toBe(false);
-    expect(sink.records[0]?.text).not.toMatch(/\u001B/u);
-    expect(JSON.parse(sink.records[0]?.text ?? "null")).toEqual(report);
   });
 });

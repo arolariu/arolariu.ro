@@ -16,6 +16,8 @@ import type {RepositoryRequirements} from "./common/requirements.ts";
 import {getExpectedTaxonomyArtifactPaths, taxonomyArtifactFileNames} from "./common/taxonomy-artifacts.ts";
 import {inspectWebsiteEnvironment, reactDoctorModule} from "./doctor.react.ts";
 import type {DiagnosticCommandRunner, DiagnosticNetworkResult, DoctorContext, DoctorOptions} from "./doctor.types.ts";
+import type {RepositoryInspectionSession} from "./inspection/repository.ts";
+import type {InspectionOutcome} from "./inspection/types.ts";
 
 const fixtureRoots: string[] = [];
 
@@ -30,9 +32,7 @@ const REACT_PACKAGE_VERSIONS: ReadonlyMap<string, string> = new Map([
 ]);
 
 function validRequirements(): RepositoryRequirements {
-  const packages = new Map(
-    [...REACT_PACKAGE_VERSIONS].map(([name, version]) => [name, {name, version}]),
-  );
+  const packages = new Map([...REACT_PACKAGE_VERSIONS].map(([name, version]) => [name, {name, version}]));
   return {
     node: {major: 24, minor: 0, patch: 0},
     npm: {major: 11, minor: 0, patch: 0},
@@ -60,11 +60,7 @@ function commandKey(command: Readonly<CommandSpec>, cwd?: string): string {
 function doctorOptions(patch: Partial<DoctorOptions> = {}): DoctorOptions {
   return {
     verbose: false,
-    ci: false,
-    score: false,
-    json: false,
     quick: false,
-    help: false,
     ...patch,
   };
 }
@@ -155,7 +151,9 @@ async function createReactFixture(
     skipLicenses?: boolean;
     licensesOverride?: unknown;
     skipTaxonomy?: readonly string[];
-    taxonomyOverrides?: Readonly<Record<string, Partial<{version: string; generatedAt: string; system: string; sourceUrl: string; attribution: string}>>>;
+    taxonomyOverrides?: Readonly<
+      Record<string, Partial<{version: string; generatedAt: string; system: string; sourceUrl: string; attribution: string}>>
+    >;
     nextConfigOverride?: string;
     docusaurusConfigOverride?: string;
     npmLsOverride?: CommandResult;
@@ -194,15 +192,15 @@ async function createReactFixture(
     await writeFixtureFile(
       paths.websiteEnvironment,
       input.envContents
-      ?? [
-        "SITE_ENV=DEVELOPMENT",
-        "SITE_NAME=dev.arolariu.ro",
-        "SITE_URL=https://localhost:3000",
-        "USE_CDN=false",
-        "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_abc123",
-        "CLERK_SECRET_KEY=sk_test_def456",
-        "",
-      ].join("\n"),
+        ?? [
+          "SITE_ENV=DEVELOPMENT",
+          "SITE_NAME=dev.arolariu.ro",
+          "SITE_URL=https://localhost:3000",
+          "USE_CDN=false",
+          "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_abc123",
+          "CLERK_SECRET_KEY=sk_test_def456",
+          "",
+        ].join("\n"),
     );
   }
 
@@ -244,27 +242,27 @@ async function createReactFixture(
   await writeFixtureFile(
     resolve(websiteRoot, "next.config.ts"),
     input.nextConfigOverride
-    ?? [
-      "import createNextIntlPlugin from \"next-intl/plugin\";",
-      "const withTranslation = createNextIntlPlugin({",
-      "  experimental: {",
-      "    createMessagesDeclaration: \"./messages/en.json\",",
-      "  },",
-      "});",
-      "export default withTranslation({});",
-      "",
-    ].join("\n"),
+      ?? [
+        'import createNextIntlPlugin from "next-intl/plugin";',
+        "const withTranslation = createNextIntlPlugin({",
+        "  experimental: {",
+        '    createMessagesDeclaration: "./messages/en.json",',
+        "  },",
+        "});",
+        "export default withTranslation({});",
+        "",
+      ].join("\n"),
   );
 
   await writeFixtureFile(
     resolve(docsRoot, "docusaurus.config.ts"),
     input.docusaurusConfigOverride
-    ?? [
-      "import type * as Preset from '@docusaurus/preset-classic';",
-      "const config = {presets: [['classic', {}]]};",
-      "export default config;",
-      "",
-    ].join("\n"),
+      ?? [
+        "import type * as Preset from '@docusaurus/preset-classic';",
+        "const config = {presets: [['classic', {}]]};",
+        "export default config;",
+        "",
+      ].join("\n"),
   );
 
   const responses = new Map<string, CommandResult>();
@@ -280,19 +278,19 @@ async function createReactFixture(
 
   const run = vi.fn<DiagnosticCommandRunner["run"]>(
     async (command: Readonly<CommandSpec>, options): Promise<CommandResult> =>
-      responses.get(commandKey(command, options?.cwd))
-      ?? commandResult({code: 127, spawnError: `Unexpected command ${command.command}`}),
+      responses.get(commandKey(command, options?.cwd)) ?? commandResult({code: 127, spawnError: `Unexpected command ${command.command}`}),
   );
   const runner: DiagnosticCommandRunner = {run};
-  const networkGet = vi.fn(
-    async (): Promise<DiagnosticNetworkResult> => ({status: "reachable", statusCode: 200, durationMs: 1}),
-  );
+  const networkGet = vi.fn(async (): Promise<DiagnosticNetworkResult> => ({status: "reachable", statusCode: 200, durationMs: 1}));
   const sink = new InMemoryLoggerSink();
   let now = 0;
   const context: DoctorContext = {
     options: doctorOptions(input.options),
     paths,
-    requirements: input.requirementsValid === false ? {status: "invalid", errors: ["synthetic invalid requirements"]} : {status: "valid", requirements: validRequirements()},
+    requirements:
+      input.requirementsValid === false
+        ? {status: "invalid", errors: ["synthetic invalid requirements"]}
+        : {status: "valid", requirements: validRequirements()},
     runner,
     network: {get: networkGet},
     logger: new MonorepositoryConsoleLogger("doctor::react", {color: false, sink}),
@@ -300,6 +298,11 @@ async function createReactFixture(
     arch: "x64",
     env: {PATH: resolve(root, "bin")},
     now: () => ++now,
+    inspection: {
+      inspect: async () => ({kind: "unavailable" as const, reason: "test", durationMs: 0}),
+      invalidate: () => {},
+      updateInfrastructureEngine: () => {},
+    } as RepositoryInspectionSession,
   };
 
   return {root, context, run, responses, setResponse, websiteRoot, docsRoot};
@@ -327,14 +330,7 @@ describe("inspectWebsiteEnvironment", () => {
     expect(result.missingCoreKeys).toEqual([]);
     expect(result.missingAuthenticationKeys).toEqual([]);
     expect(result.presentKeys).toEqual(
-      [
-        "CLERK_SECRET_KEY",
-        "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY",
-        "SITE_ENV",
-        "SITE_NAME",
-        "SITE_URL",
-        "USE_CDN",
-      ].toSorted(),
+      ["CLERK_SECRET_KEY", "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY", "SITE_ENV", "SITE_NAME", "SITE_URL", "USE_CDN"].toSorted(),
     );
   });
 
@@ -365,7 +361,9 @@ describe("inspectWebsiteEnvironment", () => {
   });
 
   it("reports both Clerk keys missing when neither is present", () => {
-    const result = inspectWebsiteEnvironment(["SITE_ENV=DEVELOPMENT", "SITE_NAME=dev.arolariu.ro", "SITE_URL=https://localhost:3000", "USE_CDN=false"].join("\n"));
+    const result = inspectWebsiteEnvironment(
+      ["SITE_ENV=DEVELOPMENT", "SITE_NAME=dev.arolariu.ro", "SITE_URL=https://localhost:3000", "USE_CDN=false"].join("\n"),
+    );
 
     expect(result.missingAuthenticationKeys).toEqual(["NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY", "CLERK_SECRET_KEY"].toSorted());
   });
@@ -385,7 +383,9 @@ describe("inspectWebsiteEnvironment", () => {
   });
 
   it("treats an empty value as absent", () => {
-    const result = inspectWebsiteEnvironment(["SITE_ENV=DEVELOPMENT", "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=", "CLERK_SECRET_KEY="].join("\n"));
+    const result = inspectWebsiteEnvironment(
+      ["SITE_ENV=DEVELOPMENT", "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=", "CLERK_SECRET_KEY="].join("\n"),
+    );
 
     expect(result.missingAuthenticationKeys).toEqual(["NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY", "CLERK_SECRET_KEY"].toSorted());
   });
@@ -515,9 +515,7 @@ describe("reactDoctorModule", () => {
       const result = results.find(({id}) => id === "react.packages");
 
       expect(result?.status).toBe("fail");
-      expect(result?.evidence).toEqual([
-        "@arolariu/components installed version '2.3.0' does not match the locked version '2.2.0'.",
-      ]);
+      expect(result?.evidence).toEqual(["@arolariu/components installed version '2.3.0' does not match the locked version '2.2.0'."]);
       expect(JSON.stringify(result)).not.toContain("unrelated-noise-package");
     });
 
@@ -594,12 +592,8 @@ describe("reactDoctorModule", () => {
       const result = results.find(({id}) => id === "react.environment");
 
       expect(result?.status).toBe("warn");
-      expect(result?.summary).toBe(
-        "Both Clerk credentials are absent; ordinary non-CI Next.js development may use Clerk keyless mode.",
-      );
-      expect(result?.rootCause).toBe(
-        "Both Clerk credentials are absent; ordinary non-CI Next.js development may use Clerk keyless mode.",
-      );
+      expect(result?.summary).toBe("Both Clerk credentials are absent; ordinary non-CI Next.js development may use Clerk keyless mode.");
+      expect(result?.rootCause).toBe("Both Clerk credentials are absent; ordinary non-CI Next.js development may use Clerk keyless mode.");
     });
 
     it("fails when only one Clerk key is present", async () => {
@@ -737,9 +731,13 @@ describe("reactDoctorModule", () => {
     it("fails when no installed browser inventory matches the locked version", async () => {
       const fixture = await createReactFixture({
         playwrightListOverride: commandResult({
-          stdout: ["Playwright version: 1.50.0", "  Browsers:", "    C:\\ms-playwright\\chromium-1000", "  References:", "    C:\\other\\playwright-core"].join(
-            "\n",
-          ),
+          stdout: [
+            "Playwright version: 1.50.0",
+            "  Browsers:",
+            "    C:\\ms-playwright\\chromium-1000",
+            "  References:",
+            "    C:\\other\\playwright-core",
+          ].join("\n"),
         }),
       });
 
@@ -752,9 +750,13 @@ describe("reactDoctorModule", () => {
     it("fails when the matching version's inventory does not include chromium", async () => {
       const fixture = await createReactFixture({
         playwrightListOverride: commandResult({
-          stdout: ["Playwright version: 1.62.1", "  Browsers:", "    C:\\ms-playwright\\firefox-1509", "  References:", "    C:\\repo\\node_modules\\playwright-core"].join(
-            "\n",
-          ),
+          stdout: [
+            "Playwright version: 1.62.1",
+            "  Browsers:",
+            "    C:\\ms-playwright\\firefox-1509",
+            "  References:",
+            "    C:\\repo\\node_modules\\playwright-core",
+          ].join("\n"),
         }),
       });
 

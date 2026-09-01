@@ -15,6 +15,7 @@ import {createRepositoryPaths} from "./common/repository-paths.ts";
 import type {RepositoryRequirements} from "./common/requirements.ts";
 import {inspectSvelteProject, svelteDoctorModule} from "./doctor.svelte.ts";
 import type {DiagnosticCommandRunner, DiagnosticNetworkResult, DoctorContext, DoctorOptions} from "./doctor.types.ts";
+import type {RepositoryInspectionSession} from "./inspection/repository.ts";
 
 const fixtureRoots: string[] = [];
 
@@ -40,11 +41,7 @@ function validRequirements(): RepositoryRequirements {
 function doctorOptions(patch: Partial<DoctorOptions> = {}): DoctorOptions {
   return {
     verbose: false,
-    ci: false,
-    score: false,
-    json: false,
     quick: false,
-    help: false,
     ...patch,
   };
 }
@@ -56,14 +53,14 @@ async function writeFixtureFile(path: string, contents: string): Promise<void> {
 
 function svelteConfigSource(): string {
   return [
-    "import {vitePreprocess} from \"@sveltejs/vite-plugin-svelte\";",
-    "import azure from \"svelte-adapter-azure-swa\";",
+    'import {vitePreprocess} from "@sveltejs/vite-plugin-svelte";',
+    'import azure from "svelte-adapter-azure-swa";',
     "",
     "const config = {",
     "  preprocess: vitePreprocess(),",
     "  kit: {",
     "    adapter: azure(),",
-    "    alias: {\"@/*\": \"src/*\"},",
+    '    alias: {"@/*": "src/*"},',
     "  },",
     "};",
     "",
@@ -74,8 +71,8 @@ function svelteConfigSource(): string {
 
 function viteConfigSource(): string {
   return [
-    "import {sveltekit} from \"@sveltejs/kit/vite\";",
-    "import {defineConfig} from \"vite\";",
+    'import {sveltekit} from "@sveltejs/kit/vite";',
+    'import {defineConfig} from "vite";',
     "",
     "export default defineConfig({",
     "  plugins: [sveltekit()],",
@@ -171,10 +168,7 @@ async function writeHealthySite(
   }
 
   if (options.skipProjectJson !== true) {
-    await writeFixtureFile(
-      resolve(siteRoot, "project.json"),
-      options.projectJsonContents ?? projectJsonSource(name, siteRelativeRoot),
-    );
+    await writeFixtureFile(resolve(siteRoot, "project.json"), options.projectJsonContents ?? projectJsonSource(name, siteRelativeRoot));
   }
 
   if (options.skipSvelteConfig !== true) {
@@ -221,10 +215,7 @@ async function createSvelteFixture(
     if (input.skipNodeModules?.includes(name) === true) {
       continue;
     }
-    await writeFixtureFile(
-      resolve(root, "node_modules", ...name.split("/"), "package.json"),
-      JSON.stringify({name, version}),
-    );
+    await writeFixtureFile(resolve(root, "node_modules", ...name.split("/"), "package.json"), JSON.stringify({name, version}));
   }
 
   if (input.skipPackageLock !== true) {
@@ -232,18 +223,20 @@ async function createSvelteFixture(
     for (const [name, version] of PACKAGE_VERSIONS) {
       lockPackages[`node_modules/${name}`] = {version};
     }
-    await writeFixtureFile(
-      paths.packageLock,
-      input.packageLockContents ?? JSON.stringify({lockfileVersion: 3, packages: lockPackages}),
-    );
+    await writeFixtureFile(paths.packageLock, input.packageLockContents ?? JSON.stringify({lockfileVersion: 3, packages: lockPackages}));
   }
 
   await writeHealthySite(root, paths.cvRoot, "@arolariu/cv", "sites/cv.arolariu.ro", {engines: ">=22.8", ...input.cv});
   await writeHealthySite(root, paths.statusRoot, "@arolariu/status", "sites/status.arolariu.ro", {engines: ">=24", ...input.status});
 
-  const run = vi.fn<DiagnosticCommandRunner["run"]>(
-    async (): Promise<CommandResult> => ({code: 127, stdout: "", stderr: "", durationMs: 1, timedOut: false, spawnError: "unexpected call"}),
-  );
+  const run = vi.fn<DiagnosticCommandRunner["run"]>(async (): Promise<CommandResult> => ({
+    code: 127,
+    stdout: "",
+    stderr: "",
+    durationMs: 1,
+    timedOut: false,
+    spawnError: "unexpected call",
+  }));
   const runner: DiagnosticCommandRunner = {run};
   const networkGet = vi.fn(async (): Promise<DiagnosticNetworkResult> => ({status: "reachable", statusCode: 200, durationMs: 1}));
   const sink = new InMemoryLoggerSink();
@@ -262,6 +255,11 @@ async function createSvelteFixture(
     arch: "x64",
     env: {PATH: resolve(root, "bin")},
     now: () => ++now,
+    inspection: {
+      inspect: async () => ({kind: "unavailable" as const, reason: "test", durationMs: 0}),
+      invalidate: () => {},
+      updateInfrastructureEngine: () => {},
+    } as RepositoryInspectionSession,
   };
 
   return {root, context, run, cvRoot: paths.cvRoot, statusRoot: paths.statusRoot};
@@ -574,11 +572,7 @@ describe("inspectSvelteProject", () => {
     it("fails when the adapter identifier has no matching import", async () => {
       const fixture = await createSvelteFixture({
         cv: {
-          svelteConfigContents: [
-            "const config = {kit: {adapter: azure()}};",
-            "export default config;",
-            "",
-          ].join("\n"),
+          svelteConfigContents: ["const config = {kit: {adapter: azure()}};", "export default config;", ""].join("\n"),
         },
       });
 

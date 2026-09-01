@@ -15,6 +15,7 @@ import {createRepositoryPaths} from "./common/repository-paths.ts";
 import type {RepositoryRequirements} from "./common/requirements.ts";
 import {dotnetDoctorModule, inspectAppHostParameters, parseDotnetInfo} from "./doctor.dotnet.ts";
 import type {DiagnosticCommandRunner, DiagnosticNetworkResult, DoctorContext, DoctorOptions} from "./doctor.types.ts";
+import type {RepositoryInspectionSession} from "./inspection/repository.ts";
 
 const fixtureRoots: string[] = [];
 
@@ -44,18 +45,12 @@ function commandKey(command: Readonly<CommandSpec>, cwd?: string): string {
 function doctorOptions(patch: Partial<DoctorOptions> = {}): DoctorOptions {
   return {
     verbose: false,
-    ci: false,
-    score: false,
-    json: false,
     quick: false,
-    help: false,
     ...patch,
   };
 }
 
-function dotnetInfoOutput(
-  input: Readonly<{sdkVersion?: string; hostVersion?: string; architecture?: string; rid?: string}> = {},
-): string {
+function dotnetInfoOutput(input: Readonly<{sdkVersion?: string; hostVersion?: string; architecture?: string; rid?: string}> = {}): string {
   const sdkVersion = input.sdkVersion ?? "10.0.111";
   const hostVersion = input.hostVersion ?? "10.0.11";
   const architecture = input.architecture ?? "x64";
@@ -126,8 +121,15 @@ async function createDotnetFixture(
         "",
       ].join("\n"),
     ),
-    writeFixtureFile(paths.dotnetToolManifest, JSON.stringify({version: 1, isRoot: true, tools: {"defaultdocumentation.console": {version: "1.2.4", commands: ["defaultdocumentation"]}}})),
-    writeFixtureFile(commonProjectPath, "<Project Sdk=\"Microsoft.NET.Sdk\" />\n"),
+    writeFixtureFile(
+      paths.dotnetToolManifest,
+      JSON.stringify({
+        version: 1,
+        isRoot: true,
+        tools: {"defaultdocumentation.console": {version: "1.2.4", commands: ["defaultdocumentation"]}},
+      }),
+    ),
+    writeFixtureFile(commonProjectPath, '<Project Sdk="Microsoft.NET.Sdk" />\n'),
     writeFixtureFile(lockFilePath, JSON.stringify({version: 1, dependencies: {}})),
     writeFixtureFile(
       appHostProjectPath,
@@ -186,8 +188,7 @@ async function createDotnetFixture(
 
   const run = vi.fn<DiagnosticCommandRunner["run"]>(
     async (command: Readonly<CommandSpec>, options): Promise<CommandResult> =>
-      responses.get(commandKey(command, options?.cwd))
-      ?? commandResult({code: 127, spawnError: `Unexpected command ${command.command}`}),
+      responses.get(commandKey(command, options?.cwd)) ?? commandResult({code: 127, spawnError: `Unexpected command ${command.command}`}),
   );
   const runner: DiagnosticCommandRunner = {run};
   const networkGet = vi.fn(
@@ -222,6 +223,11 @@ async function createDotnetFixture(
       LOCALAPPDATA: resolve(root, "Local"),
     },
     now: () => ++now,
+    inspection: {
+      inspect: async () => ({kind: "unavailable" as const, reason: "test", durationMs: 0}),
+      invalidate: () => {},
+      updateInfrastructureEngine: () => {},
+    } as RepositoryInspectionSession,
   };
 
   return {root, cacheRoot, appHostProjectPath, context, run, responses, setResponse};
@@ -233,7 +239,9 @@ afterEach(async () => {
 
 describe("parseDotnetInfo", () => {
   it("extracts the SDK version, host version, architecture, and RID from a healthy dotnet --info document", () => {
-    const parsed = parseDotnetInfo(dotnetInfoOutput({sdkVersion: "10.0.400-preview.0.26356.102", hostVersion: "10.0.11", architecture: "arm64", rid: "win-arm64"}));
+    const parsed = parseDotnetInfo(
+      dotnetInfoOutput({sdkVersion: "10.0.400-preview.0.26356.102", hostVersion: "10.0.11", architecture: "arm64", rid: "win-arm64"}),
+    );
 
     expect(parsed).toEqual({
       sdkVersion: "10.0.400-preview.0.26356.102",
@@ -324,14 +332,15 @@ describe("dotnetDoctorModule", () => {
     const executable = results.find(({id}) => id === "dotnet.executable");
     expect(executable?.status).toBe("fail");
     expect(executable?.evidence.join("\n")).toContain("Quick mode omitted");
-    expect(
-      fixture.run.mock.calls.some(([command]) => command.command === "where.exe" && command.args[0] === "dotnet.exe"),
-    ).toBe(false);
+    expect(fixture.run.mock.calls.some(([command]) => command.command === "where.exe" && command.args[0] === "dotnet.exe")).toBe(false);
   });
 
   it("fails sdk-inventory when only incompatible SDKs are installed", async () => {
     const fixture = await createDotnetFixture();
-    fixture.setResponse({command: "dotnet", args: ["--list-sdks"]}, commandResult({stdout: "8.0.130 [C:\\Program Files\\dotnet\\sdk]\n9.0.317 [C:\\Program Files\\dotnet\\sdk]\n"}));
+    fixture.setResponse(
+      {command: "dotnet", args: ["--list-sdks"]},
+      commandResult({stdout: "8.0.130 [C:\\Program Files\\dotnet\\sdk]\n9.0.317 [C:\\Program Files\\dotnet\\sdk]\n"}),
+    );
 
     const results = await dotnetDoctorModule.run(fixture.context);
 
@@ -343,7 +352,10 @@ describe("dotnetDoctorModule", () => {
 
   it("passes sdk-inventory for a compatible .NET 10 preview SDK", async () => {
     const fixture = await createDotnetFixture();
-    fixture.setResponse({command: "dotnet", args: ["--list-sdks"]}, commandResult({stdout: "9.0.317 [C:\\Program Files\\dotnet\\sdk]\n10.0.400-preview.0.26356.102 [C:\\Program Files\\dotnet\\sdk]\n"}));
+    fixture.setResponse(
+      {command: "dotnet", args: ["--list-sdks"]},
+      commandResult({stdout: "9.0.317 [C:\\Program Files\\dotnet\\sdk]\n10.0.400-preview.0.26356.102 [C:\\Program Files\\dotnet\\sdk]\n"}),
+    );
 
     const results = await dotnetDoctorModule.run(fixture.context);
 
@@ -395,7 +407,10 @@ describe("dotnetDoctorModule", () => {
   it("warns dotnet.nuget-state when the global-packages cache has not been populated", async () => {
     const fixture = await createDotnetFixture();
     const missingCache = resolve(fixture.root, "does-not-exist-cache");
-    fixture.setResponse({command: "dotnet", args: ["nuget", "locals", "global-packages", "--list"]}, commandResult({stdout: `global-packages: ${missingCache}\n`}));
+    fixture.setResponse(
+      {command: "dotnet", args: ["nuget", "locals", "global-packages", "--list"]},
+      commandResult({stdout: `global-packages: ${missingCache}\n`}),
+    );
 
     const results = await dotnetDoctorModule.run(fixture.context);
 
@@ -428,7 +443,10 @@ describe("dotnetDoctorModule", () => {
 
   it("warns dotnet.local-tools when a manifest tool is not installed locally", async () => {
     const fixture = await createDotnetFixture();
-    fixture.setResponse({command: "dotnet", args: ["tool", "list", "--local"]}, commandResult({stdout: "Package Id   Version   Commands\n----------------------------\n"}));
+    fixture.setResponse(
+      {command: "dotnet", args: ["tool", "list", "--local"]},
+      commandResult({stdout: "Package Id   Version   Commands\n----------------------------\n"}),
+    );
 
     const results = await dotnetDoctorModule.run(fixture.context);
 
@@ -444,14 +462,15 @@ describe("dotnetDoctorModule", () => {
 
     expect(results.find(({id}) => id === "dotnet.https-certificate")?.status).toBe("skipped");
     expect(results.find(({id}) => id === "dotnet.apphost")?.status).toBe("skipped");
-    expect(
-      fixture.run.mock.calls.some(([command]) => command.command === "dotnet" && command.args[0] === "dev-certs"),
-    ).toBe(false);
+    expect(fixture.run.mock.calls.some(([command]) => command.command === "dotnet" && command.args[0] === "dev-certs")).toBe(false);
   });
 
   it("warns dotnet.https-certificate when a certificate exists but is not trusted", async () => {
     const fixture = await createDotnetFixture();
-    fixture.setResponse({command: "dotnet", args: ["dev-certs", "https", "--check", "--trust"]}, commandResult({code: 7, stdout: "none of them is trusted\n"}));
+    fixture.setResponse(
+      {command: "dotnet", args: ["dev-certs", "https", "--check", "--trust"]},
+      commandResult({code: 7, stdout: "none of them is trusted\n"}),
+    );
 
     const results = await dotnetDoctorModule.run(fixture.context);
 
@@ -460,7 +479,10 @@ describe("dotnetDoctorModule", () => {
 
   it("fails dotnet.https-certificate when no certificate is present", async () => {
     const fixture = await createDotnetFixture();
-    fixture.setResponse({command: "dotnet", args: ["dev-certs", "https", "--check"]}, commandResult({code: 1, stdout: "No valid certificate was found\n"}));
+    fixture.setResponse(
+      {command: "dotnet", args: ["dev-certs", "https", "--check"]},
+      commandResult({code: 1, stdout: "No valid certificate was found\n"}),
+    );
 
     const results = await dotnetDoctorModule.run(fixture.context);
 

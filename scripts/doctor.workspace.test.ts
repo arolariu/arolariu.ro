@@ -15,12 +15,8 @@ import {createRepositoryPaths} from "./common/repository-paths.ts";
 import type {RepositoryRequirements} from "./common/requirements.ts";
 import {getExpectedTaxonomyArtifactPaths} from "./common/taxonomy-artifacts.ts";
 import {diagnoseNpmIntegrity, workspaceDoctorModule} from "./doctor.workspace.ts";
-import type {
-  DiagnosticCommandRunner,
-  DiagnosticNetworkResult,
-  DoctorContext,
-  DoctorOptions,
-} from "./doctor.types.ts";
+import type {DiagnosticCommandRunner, DiagnosticNetworkResult, DoctorContext, DoctorOptions} from "./doctor.types.ts";
+import type {RepositoryInspectionSession} from "./inspection/repository.ts";
 
 const fixtureRoots: string[] = [];
 
@@ -98,11 +94,7 @@ async function writeFixtureFile(path: string, contents = "{}\n"): Promise<void> 
 function doctorOptions(patch: Partial<DoctorOptions> = {}): DoctorOptions {
   return {
     verbose: false,
-    ci: false,
-    score: false,
-    json: false,
     quick: false,
-    help: false,
     ...patch,
   };
 }
@@ -124,7 +116,10 @@ async function createWorkspaceFixture(
     writeFixtureFile(paths.githubScriptsPackageJson, JSON.stringify({name: "@arolariu/github-scripts"})),
     writeFixtureFile(paths.githubScriptsPackageLock),
     writeFixtureFile(paths.solution, "<Solution />\n"),
-    writeFixtureFile(paths.dotnetBuildProps, "<Project><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup></Project>\n"),
+    writeFixtureFile(
+      paths.dotnetBuildProps,
+      "<Project><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup></Project>\n",
+    ),
     writeFixtureFile(paths.dotnetToolManifest, JSON.stringify({version: 1, tools: {}})),
     writeFixtureFile(paths.pythonProject, '[project]\nrequires-python = ">=3.12"\n'),
     writeFixtureFile(paths.pythonRequirements, "pytest==9.1.1\n"),
@@ -165,11 +160,7 @@ async function createWorkspaceFixture(
   setResponse({command: "node", args: ["--version"]}, commandResult({stdout: "v26.3.1\n"}));
   setResponse({command: "npm", args: ["--version"]}, commandResult({stdout: "11.16.0\n"}));
   setResponse({command: "npm", args: ["ls", "--all", "--json"]}, commandResult({stdout: '{"problems":[]}\n'}));
-  setResponse(
-    {command: "npm", args: ["ls", "--all", "--json"]},
-    commandResult({stdout: '{"problems":[]}\n'}),
-    paths.githubScriptsRoot,
-  );
+  setResponse({command: "npm", args: ["ls", "--all", "--json"]}, commandResult({stdout: '{"problems":[]}\n'}), paths.githubScriptsRoot);
   setResponse({command: "npm", args: ["config", "get", "cache"]}, commandResult({stdout: `${cacheRoot}\n`}));
   setResponse(
     {command: "npm", args: ["audit", "--json"]},
@@ -183,8 +174,7 @@ async function createWorkspaceFixture(
 
   const run = vi.fn<DiagnosticCommandRunner["run"]>(
     async (command: Readonly<CommandSpec>, options): Promise<CommandResult> =>
-      responses.get(commandKey(command, options?.cwd))
-      ?? commandResult({code: 127, spawnError: `Unexpected command ${command.command}`}),
+      responses.get(commandKey(command, options?.cwd)) ?? commandResult({code: 127, spawnError: `Unexpected command ${command.command}`}),
   );
   const runner: DiagnosticCommandRunner = {run};
   const sink = new InMemoryLoggerSink();
@@ -209,6 +199,11 @@ async function createWorkspaceFixture(
       LOCALAPPDATA: resolve(root, "Local"),
     },
     now: () => ++now,
+    inspection: {
+      inspect: async () => ({kind: "unavailable" as const, reason: "test", durationMs: 0}),
+      invalidate: () => {},
+      updateInfrastructureEngine: () => {},
+    } as RepositoryInspectionSession,
   };
 
   return {root, cacheRoot, context, run, responses};
@@ -342,11 +337,9 @@ describe("workspaceDoctorModule", () => {
     expect(results.find(({id}) => id === "workspace.git")?.evidence.join("\n")).toContain("preview");
     expect(results.find(({id}) => id === "workspace.git")?.evidence.join("\n")).toContain("1 changed path");
     expect(results.find(({id}) => id === "workspace.host-capacity")?.evidence.join("\n")).toMatch(/disk|memory/iu);
-    expect(
-      fixture.run.mock.calls.some(
-        ([command]) => command.command === "npm" && command.args.join(" ") === "ls --all --json",
-      ),
-    ).toBe(true);
+    expect(fixture.run.mock.calls.some(([command]) => command.command === "npm" && command.args.join(" ") === "ls --all --json")).toBe(
+      true,
+    );
   });
 
   it("reports requirement-source drift while still probing independent workspace checks", async () => {
@@ -365,10 +358,7 @@ describe("workspaceDoctorModule", () => {
 
   it("runs executable follow-ups only after a failed probe and outside quick mode", async () => {
     const normal = await createWorkspaceFixture();
-    normal.responses.set(
-      commandKey({command: "node", args: ["--version"]}, normal.root),
-      commandResult({code: 1, spawnError: "ENOENT"}),
-    );
+    normal.responses.set(commandKey({command: "node", args: ["--version"]}, normal.root), commandResult({code: 1, spawnError: "ENOENT"}));
     normal.responses.set(
       commandKey({command: "where.exe", args: ["node.exe"]}, normal.root),
       commandResult({code: 1, stderr: "INFO: Could not find files"}),
@@ -380,35 +370,21 @@ describe("workspaceDoctorModule", () => {
     expect(normal.run).toHaveBeenCalledWith({command: "where.exe", args: ["node.exe"]}, expect.any(Object));
 
     const quick = await createWorkspaceFixture({options: {quick: true}});
-    quick.responses.set(
-      commandKey({command: "node", args: ["--version"]}, quick.root),
-      commandResult({code: 1, spawnError: "ENOENT"}),
-    );
+    quick.responses.set(commandKey({command: "node", args: ["--version"]}, quick.root), commandResult({code: 1, spawnError: "ENOENT"}));
 
     await workspaceDoctorModule.run(quick.context);
 
-    expect(
-      quick.run.mock.calls.some(
-        ([command]) => command.command === "where.exe" && command.args[0] === "node.exe",
-      ),
-    ).toBe(false);
+    expect(quick.run.mock.calls.some(([command]) => command.command === "where.exe" && command.args[0] === "node.exe")).toBe(false);
   });
 
   it("does not run executable follow-ups when an installed command returns an invalid version", async () => {
     const fixture = await createWorkspaceFixture();
-    fixture.responses.set(
-      commandKey({command: "node", args: ["--version"]}, fixture.root),
-      commandResult({stdout: "nightly\n"}),
-    );
+    fixture.responses.set(commandKey({command: "node", args: ["--version"]}, fixture.root), commandResult({stdout: "nightly\n"}));
 
     const results = await workspaceDoctorModule.run(fixture.context);
 
     expect(results.find(({id}) => id === "workspace.node-runtime")?.status).toBe("fail");
-    expect(
-      fixture.run.mock.calls.some(
-        ([command]) => command.command === "where.exe" && command.args[0] === "node.exe",
-      ),
-    ).toBe(false);
+    expect(fixture.run.mock.calls.some(([command]) => command.command === "where.exe" && command.args[0] === "node.exe")).toBe(false);
   });
 
   it("reports missing config and mismatched mirrored taxonomy artifacts without regenerating", async () => {
@@ -448,10 +424,7 @@ describe("workspaceDoctorModule", () => {
     const fixture = await createWorkspaceFixture();
     const artifacts = getExpectedTaxonomyArtifactPaths(fixture.root);
     const malformedFreshness = taxonomyArtifactContents(artifacts[0]!, "not-a-date");
-    await Promise.all([
-      writeFile(artifacts[0]!, malformedFreshness, "utf8"),
-      writeFile(artifacts[1]!, malformedFreshness, "utf8"),
-    ]);
+    await Promise.all([writeFile(artifacts[0]!, malformedFreshness, "utf8"), writeFile(artifacts[1]!, malformedFreshness, "utf8")]);
 
     const results = await workspaceDoctorModule.run(fixture.context);
     const artifactsResult = results.find(({id}) => id === "workspace.generated-artifacts");
@@ -471,10 +444,7 @@ describe("workspaceDoctorModule", () => {
       generatedAt: "2026-08-29T00:00:00.000Z",
       nodes: [],
     })}\n`;
-    await Promise.all([
-      writeFile(artifacts[0]!, staleRelease, "utf8"),
-      writeFile(artifacts[1]!, staleRelease, "utf8"),
-    ]);
+    await Promise.all([writeFile(artifacts[0]!, staleRelease, "utf8"), writeFile(artifacts[1]!, staleRelease, "utf8")]);
 
     const results = await workspaceDoctorModule.run(fixture.context);
     const artifactsResult = results.find(({id}) => id === "workspace.generated-artifacts");
@@ -515,9 +485,7 @@ describe("workspaceDoctorModule", () => {
     expect(results.find(({id}) => id === "workspace.nx-graph")).toMatchObject({status: "pass"});
     expect(results.find(({id}) => id === "workspace.nx-projects")?.evidence.join("\n")).toContain("@arolariu/website");
     expect(results.find(({id}) => id === "workspace.nx-graph")?.evidence.join("\n")).toContain("@arolariu/components");
-    expect(
-      fixture.run.mock.calls.filter(([command]) => command.command === "npx" || command.args.includes("nx")),
-    ).toEqual([]);
+    expect(fixture.run.mock.calls.filter(([command]) => command.command === "npx" || command.args.includes("nx"))).toEqual([]);
   });
 
   it("fails both Nx checks when the workspace declares no discoverable project", async () => {

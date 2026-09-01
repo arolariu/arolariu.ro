@@ -14,11 +14,7 @@ import type {CommandResult, CommandSpec} from "./common/process.ts";
 import {createRepositoryPaths} from "./common/repository-paths.ts";
 import type {RepositoryRequirements} from "./common/requirements.ts";
 import {requiredLocalPorts} from "./container-runtime/preflight.ts";
-import {
-  buildPortOwnerProbe,
-  classifyContainerFailure,
-  infrastructureDoctorModule,
-} from "./doctor.infrastructure.ts";
+import {buildPortOwnerProbe, classifyContainerFailure, infrastructureDoctorModule} from "./doctor.infrastructure.ts";
 import {createDoctorReport} from "./doctor.reporter.ts";
 import {
   createPortOwnerProbeCommand,
@@ -27,6 +23,7 @@ import {
   type DoctorContext,
   type DoctorOptions,
 } from "./doctor.types.ts";
+import type {RepositoryInspectionSession} from "./inspection/repository.ts";
 
 const fixtureRoots: string[] = [];
 
@@ -79,11 +76,7 @@ function commandKey(command: Readonly<CommandSpec>, cwd?: string): string {
 function doctorOptions(patch: Partial<DoctorOptions> = {}): DoctorOptions {
   return {
     verbose: false,
-    ci: false,
-    score: false,
-    json: false,
     quick: false,
-    help: false,
     ...patch,
   };
 }
@@ -164,9 +157,7 @@ async function createInfrastructureFixture(
   const paths = createRepositoryPaths(root);
 
   if (input.createManifests !== false) {
-    await Promise.all(
-      REQUIRED_MANIFEST_RELATIVE_SEGMENTS.map((segments) => writeFixtureFile(resolve(root, ...segments), "manifest\n")),
-    );
+    await Promise.all(REQUIRED_MANIFEST_RELATIVE_SEGMENTS.map((segments) => writeFixtureFile(resolve(root, ...segments), "manifest\n")));
   }
   if (input.createCertificates !== false) {
     await Promise.all([
@@ -197,15 +188,18 @@ async function createInfrastructureFixture(
     requirements: {status: "valid", requirements: validRequirements},
     runner,
     network: {
-      get: vi.fn(
-        async (): Promise<DiagnosticNetworkResult> => ({status: "reachable", statusCode: 200, durationMs: 1}),
-      ),
+      get: vi.fn(async (): Promise<DiagnosticNetworkResult> => ({status: "reachable", statusCode: 200, durationMs: 1})),
     },
     logger: new MonorepositoryConsoleLogger("doctor::infrastructure", {color: false, sink}),
     platform: input.platform ?? "linux",
     arch: "x64",
     env: input.env ?? {},
     now: () => ++now,
+    inspection: {
+      inspect: async () => ({kind: "unavailable" as const, reason: "test", durationMs: 0}),
+      invalidate: () => {},
+      updateInfrastructureEngine: () => {},
+    } as RepositoryInspectionSession,
   };
 
   return {root, context, run, setResponse};
@@ -215,7 +209,10 @@ function seedHealthyRancherResponses(fixture: InfrastructureFixture): void {
   fixture.setResponse({command: "docker", args: ["--version"]}, commandResult({stdout: "Docker version 27.3.1, build abc123\n"}));
   fixture.setResponse({command: "docker", args: ["info"]}, commandResult({stdout: "Server:\n Version: 27.3.1\n"}));
   fixture.setResponse({command: "docker", args: ["compose", "version"]}, commandResult({stdout: "Docker Compose version v2.29.7\n"}));
-  fixture.setResponse({command: "docker", args: ["version"]}, commandResult({stdout: "Client:\n Version: 27.3.1\nServer:\n Version: 27.3.1\n"}));
+  fixture.setResponse(
+    {command: "docker", args: ["version"]},
+    commandResult({stdout: "Client:\n Version: 27.3.1\nServer:\n Version: 27.3.1\n"}),
+  );
   fixture.setResponse({command: "docker", args: ["context", "show"]}, commandResult({stdout: "rancher-desktop\n"}));
   fixture.setResponse({command: "docker", args: ["ps", "-a", "--format", "{{json .}}"]}, commandResult({stdout: ""}));
   fixture.setResponse(createPortOwnerProbeCommand(fixture.context.platform, requiredLocalPorts), commandResult({stdout: ""}));
@@ -224,12 +221,15 @@ function seedHealthyRancherResponses(fixture: InfrastructureFixture): void {
 
 function seedHealthyPodmanResponses(fixture: InfrastructureFixture): void {
   fixture.setResponse({command: "podman", args: ["--version"]}, commandResult({stdout: "podman version 5.8.2\n"}));
-  fixture.setResponse({command: "podman", args: ["info", "--format", "json"]}, commandResult({stdout: JSON.stringify({host: {os: "linux"}})}));
-  fixture.setResponse({command: "podman", args: ["compose", "version"]}, commandResult({stdout: "podman version 5.8.2\npodman-compose version 1.5.0\n"}));
   fixture.setResponse(
-    {command: "podman", args: ["system", "connection", "list", "--format", "json"]},
-    commandResult({stdout: "[]\n"}),
+    {command: "podman", args: ["info", "--format", "json"]},
+    commandResult({stdout: JSON.stringify({host: {os: "linux"}})}),
   );
+  fixture.setResponse(
+    {command: "podman", args: ["compose", "version"]},
+    commandResult({stdout: "podman version 5.8.2\npodman-compose version 1.5.0\n"}),
+  );
+  fixture.setResponse({command: "podman", args: ["system", "connection", "list", "--format", "json"]}, commandResult({stdout: "[]\n"}));
   fixture.setResponse({command: "podman", args: ["machine", "list", "--format", "json"]}, commandResult({stdout: "[]\n"}));
   fixture.setResponse({command: "podman", args: ["ps", "-a", "--format", "{{json .}}"]}, commandResult({stdout: ""}));
   fixture.setResponse(createPortOwnerProbeCommand(fixture.context.platform, requiredLocalPorts), commandResult({stdout: ""}));
@@ -288,7 +288,9 @@ describe("classifyContainerFailure", () => {
     const classification = classifyContainerFailure({
       engine: "podman",
       cli: commandResult({stdout: "podman version 5.8.2\n"}),
-      compose: commandResult({stdout: 'Executing external compose provider "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker-compose.exe"\n'}),
+      compose: commandResult({
+        stdout: 'Executing external compose provider "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker-compose.exe"\n',
+      }),
     });
 
     expect(classification.rootCause).toMatch(/delegated/u);
@@ -397,7 +399,14 @@ describe("infrastructureDoctorModule", () => {
     expect(selection?.status).toBe("fail");
     expect(selection?.fixes.some((fix) => fix.command === "npm run setup")).toBe(true);
 
-    for (const id of ["infrastructure.cli", "infrastructure.backend", "infrastructure.compose", "infrastructure.docker-conflict", "infrastructure.socket-context", "infrastructure.containers"]) {
+    for (const id of [
+      "infrastructure.cli",
+      "infrastructure.backend",
+      "infrastructure.compose",
+      "infrastructure.docker-conflict",
+      "infrastructure.socket-context",
+      "infrastructure.containers",
+    ]) {
       expect(results.find((result) => result.id === id)?.status).toBe("skipped");
     }
 
@@ -442,7 +451,13 @@ describe("infrastructureDoctorModule", () => {
     const results = await infrastructureDoctorModule.run(fixture.context);
 
     expect(results.find(({id}) => id === "infrastructure.cli")?.status).toBe("fail");
-    for (const id of ["infrastructure.backend", "infrastructure.compose", "infrastructure.docker-conflict", "infrastructure.socket-context", "infrastructure.containers"]) {
+    for (const id of [
+      "infrastructure.backend",
+      "infrastructure.compose",
+      "infrastructure.docker-conflict",
+      "infrastructure.socket-context",
+      "infrastructure.containers",
+    ]) {
       const result = results.find((entry) => entry.id === id);
       expect(result?.status).toBe("skipped");
     }
@@ -543,7 +558,9 @@ describe("infrastructureDoctorModule", () => {
     seedHealthyPodmanResponses(fixture);
     fixture.setResponse(
       {command: "podman", args: ["compose", "version"]},
-      commandResult({stdout: 'Executing external compose provider "/Applications/Docker.app/Contents/Resources/cli-plugins/docker-compose"\n'}),
+      commandResult({
+        stdout: 'Executing external compose provider "/Applications/Docker.app/Contents/Resources/cli-plugins/docker-compose"\n',
+      }),
     );
 
     const results = await infrastructureDoctorModule.run(fixture.context);
@@ -575,7 +592,11 @@ describe("infrastructureDoctorModule", () => {
     await infrastructureDoctorModule.run(fixture.context);
 
     const expectedCommand = createPortOwnerProbeCommand("linux", requiredLocalPorts);
-    expect(fixture.run.mock.calls.some(([command]) => command.command === expectedCommand.command && JSON.stringify(command.args) === JSON.stringify(expectedCommand.args))).toBe(true);
+    expect(
+      fixture.run.mock.calls.some(
+        ([command]) => command.command === expectedCommand.command && JSON.stringify(command.args) === JSON.stringify(expectedCommand.args),
+      ),
+    ).toBe(true);
   });
 
   it("skips the ports check without dispatching a command in --ci mode", async () => {
@@ -592,7 +613,9 @@ describe("infrastructureDoctorModule", () => {
     expect(results.find(({id}) => id === "infrastructure.containers")?.status).toBe("skipped");
     expect(results.find(({id}) => id === "infrastructure.manifests")?.status).toBe("pass");
     expect(
-      fixture.run.mock.calls.some(([command]) => command.command === "sh" || (command.command === "powershell" && command.args.includes("--"))),
+      fixture.run.mock.calls.some(
+        ([command]) => command.command === "sh" || (command.command === "powershell" && command.args.includes("--")),
+      ),
     ).toBe(false);
   });
 
@@ -602,11 +625,15 @@ describe("infrastructureDoctorModule", () => {
     const port = requiredLocalPorts[0] as number;
     fixture.setResponse(
       createPortOwnerProbeCommand("linux", requiredLocalPorts),
-      commandResult({stdout: `LISTEN 0      4096      0.0.0.0:${String(port)}      0.0.0.0:*      users:(("docker-proxy",pid=4242,fd=7))\n`}),
+      commandResult({
+        stdout: `LISTEN 0      4096      0.0.0.0:${String(port)}      0.0.0.0:*      users:(("docker-proxy",pid=4242,fd=7))\n`,
+      }),
     );
     fixture.setResponse(
       {command: "docker", args: ["ps", "-a", "--format", "{{json .}}"]},
-      commandResult({stdout: containerListLine({name: "website-arolariu-ro", state: "running", ports: `0.0.0.0:${String(port)}->${String(port)}/tcp`})}),
+      commandResult({
+        stdout: containerListLine({name: "website-arolariu-ro", state: "running", ports: `0.0.0.0:${String(port)}->${String(port)}/tcp`}),
+      }),
     );
 
     const results = await infrastructureDoctorModule.run(fixture.context);
@@ -636,10 +663,7 @@ describe("infrastructureDoctorModule", () => {
   it("warns about port ownership when the probe reports a permission or tool limitation", async () => {
     const fixture = await createInfrastructureFixture({env: {AROLARIU_CONTAINER_ENGINE: "rancher"}, platform: "linux"});
     seedHealthyRancherResponses(fixture);
-    fixture.setResponse(
-      createPortOwnerProbeCommand("linux", requiredLocalPorts),
-      commandResult({code: 1, stderr: "Permission denied"}),
-    );
+    fixture.setResponse(createPortOwnerProbeCommand("linux", requiredLocalPorts), commandResult({code: 1, stderr: "Permission denied"}));
 
     const results = await infrastructureDoctorModule.run(fixture.context);
 
@@ -672,10 +696,7 @@ describe("infrastructureDoctorModule", () => {
   it("treats an all-free macOS lsof exit 1 with empty stdout as evidence that every required port is free", async () => {
     const fixture = await createInfrastructureFixture({env: {AROLARIU_CONTAINER_ENGINE: "rancher"}, platform: "darwin"});
     seedHealthyRancherResponses(fixture);
-    fixture.setResponse(
-      createPortOwnerProbeCommand("darwin", requiredLocalPorts),
-      commandResult({code: 1, stdout: "", stderr: ""}),
-    );
+    fixture.setResponse(createPortOwnerProbeCommand("darwin", requiredLocalPorts), commandResult({code: 1, stdout: "", stderr: ""}));
 
     const results = await infrastructureDoctorModule.run(fixture.context);
 
@@ -707,7 +728,10 @@ describe("infrastructureDoctorModule", () => {
       commandResult({stdout: JSON.stringify({LocalAddress: "0.0.0.0", LocalPort: port, OwningProcess: 4242})}),
     );
     fixture.setResponse(
-      {command: "powershell", args: ["-NoProfile", "-NonInteractive", "-Command", "Get-Process | Select-Object Id, ProcessName, Path | ConvertTo-Json -Compress"]},
+      {
+        command: "powershell",
+        args: ["-NoProfile", "-NonInteractive", "-Command", "Get-Process | Select-Object Id, ProcessName, Path | ConvertTo-Json -Compress"],
+      },
       commandResult({stdout: JSON.stringify([{Id: 4242, ProcessName: "node", Path: "C:\\Program Files\\nodejs\\node.exe"}])}),
     );
 
@@ -790,10 +814,7 @@ describe("infrastructureDoctorModule", () => {
     fixture.setResponse(
       {command: "docker", args: ["ps", "-a", "--format", "{{json .}}"]},
       commandResult({
-        stdout: [
-          containerListLine({name: "mssql", state: "running"}),
-          containerListLine({name: "redis", state: "running"}),
-        ].join("\n"),
+        stdout: [containerListLine({name: "mssql", state: "running"}), containerListLine({name: "redis", state: "running"})].join("\n"),
       }),
     );
 

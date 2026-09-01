@@ -44,9 +44,7 @@ interface GuardScopeFrame {
 }
 
 type CommandSpecExtraction =
-  | {readonly kind: "not-command"}
-  | {readonly kind: "resolved"; readonly spec: Readonly<CommandSpec>}
-  | {readonly kind: "unresolved"};
+  {readonly kind: "not-command"} | {readonly kind: "resolved"; readonly spec: Readonly<CommandSpec>} | {readonly kind: "unresolved"};
 
 const UNKNOWN_STATIC_VALUE: StaticUnknownValue = {kind: "unknown"};
 const NOT_A_COMMAND_SPEC: CommandSpecExtraction = {kind: "not-command"};
@@ -58,10 +56,7 @@ interface DoctorTypesModule {
   readonly PYTHON_INTERPRETER_METADATA_SNIPPET: string;
   readonly createPortOwnerProbeCommand: (platform: NodeJS.Platform, ports: readonly number[]) => Readonly<CommandSpec>;
   readonly createReadOnlyDiagnosticRunner: (runner: CommandRunner) => {
-    readonly run: (
-      command: Readonly<CommandSpec>,
-      options?: Readonly<Record<string, unknown>>,
-    ) => Promise<CommandResult>;
+    readonly run: (command: Readonly<CommandSpec>, options?: Readonly<Record<string, unknown>>) => Promise<CommandResult>;
   };
   readonly diagnosticResult: (
     result: Readonly<Record<string, unknown>>,
@@ -198,21 +193,13 @@ function discoverDoctorProductionFiles(): readonly string[] {
   // These pure shared modules are production dependencies of doctor specialists. Guard them
   // alongside the specialists so future filesystem writes or command dispatch cannot bypass
   // the doctor read-only boundary.
-  const SHARED_PRODUCTION_FILES = [
-    "scripts/common/taxonomy-artifacts.ts",
-    "scripts/common/workspace-graph.ts",
-  ];
+  const SHARED_PRODUCTION_FILES = ["scripts/common/taxonomy-artifacts.ts", "scripts/common/workspace-graph.ts"];
 
   return [...doctorFiles, ...SHARED_PRODUCTION_FILES].toSorted();
 }
 
 function getPropertyNameText(name: ts.PropertyName): string | null {
-  if (
-    ts.isIdentifier(name)
-    || ts.isStringLiteral(name)
-    || ts.isNumericLiteral(name)
-    || ts.isNoSubstitutionTemplateLiteral(name)
-  ) {
+  if (ts.isIdentifier(name) || ts.isStringLiteral(name) || ts.isNumericLiteral(name) || ts.isNoSubstitutionTemplateLiteral(name)) {
     return name.text;
   }
 
@@ -447,8 +434,10 @@ function declareConstantBinding(name: ts.BindingName, scope: Map<string, StaticV
     const elementValue =
       value.kind === "stringArray"
         ? element.dotDotDotToken === undefined
-          ? (value.value[index] !== undefined ? {kind: "string", value: value.value[index]} satisfies StaticStringValue : UNKNOWN_STATIC_VALUE)
-          : {kind: "stringArray", value: value.value.slice(index)} satisfies StaticStringArrayValue
+          ? value.value[index] !== undefined
+            ? ({kind: "string", value: value.value[index]} satisfies StaticStringValue)
+            : UNKNOWN_STATIC_VALUE
+          : ({kind: "stringArray", value: value.value.slice(index)} satisfies StaticStringArrayValue)
         : UNKNOWN_STATIC_VALUE;
     declareConstantBinding(element.name, scope, elementValue);
   }
@@ -472,10 +461,7 @@ function isForbiddenOutputExpression(expression: ts.Expression, scopes: readonly
   );
 }
 
-function extractCommandSpec(
-  node: ts.ObjectLiteralExpression,
-  scopes: readonly GuardScopeFrame[],
-): CommandSpecExtraction {
+function extractCommandSpec(node: ts.ObjectLiteralExpression, scopes: readonly GuardScopeFrame[]): CommandSpecExtraction {
   const value = evaluateStaticExpression(node, scopes);
   if (value.kind !== "object") {
     return NOT_A_COMMAND_SPEC;
@@ -550,14 +536,8 @@ const READ_ONLY_FS_IMPORTS: ReadonlyMap<string, ReadonlySet<string>> = new Map([
       "statfsSync",
     ]),
   ],
-  [
-    "fs/promises",
-    new Set(["access", "lstat", "readFile", "readdir", "readlink", "realpath", "stat", "statfs"]),
-  ],
-  [
-    "node:fs/promises",
-    new Set(["access", "lstat", "readFile", "readdir", "readlink", "realpath", "stat", "statfs"]),
-  ],
+  ["fs/promises", new Set(["access", "lstat", "readFile", "readdir", "readlink", "realpath", "stat", "statfs"])],
+  ["node:fs/promises", new Set(["access", "lstat", "readFile", "readdir", "readlink", "realpath", "stat", "statfs"])],
 ]);
 
 const APPROVED_DOCTOR_REPOSITORY_IMPORTS: ReadonlyMap<string, ReadonlySet<string>> = new Map([
@@ -565,8 +545,10 @@ const APPROVED_DOCTOR_REPOSITORY_IMPORTS: ReadonlyMap<string, ReadonlySet<string
     "scripts/doctor.ts",
     new Set([
       "./common/logger.ts",
+      "./common/process.ts",
       "./common/repository-paths.ts",
       "./common/requirements.ts",
+      "./doctor.diagnostics.ts",
       "./doctor.dotnet.ts",
       "./doctor.infrastructure.ts",
       "./doctor.python.ts",
@@ -575,6 +557,7 @@ const APPROVED_DOCTOR_REPOSITORY_IMPORTS: ReadonlyMap<string, ReadonlySet<string
       "./doctor.svelte.ts",
       "./doctor.types.ts",
       "./doctor.workspace.ts",
+      "./inspection/repository.ts",
     ]),
   ],
   [
@@ -584,13 +567,12 @@ const APPROVED_DOCTOR_REPOSITORY_IMPORTS: ReadonlyMap<string, ReadonlySet<string
       "./common/process.ts",
       "./common/repository-paths.ts",
       "./common/requirements.ts",
+      "./inspection/repository.ts",
     ]),
   ],
   ["scripts/doctor.reporter.ts", new Set(["./common/logger.ts", "./doctor.types.ts"])],
-  [
-    "scripts/doctor.dotnet.ts",
-    new Set(["./common/process.ts", "./common/requirements.ts", "./doctor.types.ts"]),
-  ],
+  ["scripts/doctor.diagnostics.ts", new Set(["./common/process.ts", "./doctor.types.ts"])],
+  ["scripts/doctor.dotnet.ts", new Set(["./common/process.ts", "./common/requirements.ts", "./doctor.types.ts"])],
   [
     "scripts/doctor.infrastructure.ts",
     new Set([
@@ -602,14 +584,8 @@ const APPROVED_DOCTOR_REPOSITORY_IMPORTS: ReadonlyMap<string, ReadonlySet<string
       "./doctor.types.ts",
     ]),
   ],
-  [
-    "scripts/doctor.python.ts",
-    new Set(["./common/process.ts", "./common/requirements.ts", "./doctor.types.ts"]),
-  ],
-  [
-    "scripts/doctor.react.ts",
-    new Set(["./common/process.ts", "./common/taxonomy-artifacts.ts", "./doctor.types.ts"]),
-  ],
+  ["scripts/doctor.python.ts", new Set(["./common/process.ts", "./common/requirements.ts", "./doctor.types.ts"])],
+  ["scripts/doctor.react.ts", new Set(["./common/process.ts", "./common/taxonomy-artifacts.ts", "./doctor.types.ts"])],
   ["scripts/doctor.svelte.ts", new Set(["./common/requirements.ts", "./doctor.types.ts"])],
   [
     "scripts/doctor.workspace.ts",
@@ -665,7 +641,7 @@ function findDoctorGuardViolations(
 ): readonly string[] {
   const source = ts.createSourceFile(fileName, sourceText, ts.ScriptTarget.Latest, true);
   const violations: string[] = [];
-  const allowCommonProcessImports = fileName === "scripts/doctor.types.ts";
+  const allowCommonProcessImports = fileName === "scripts/doctor.types.ts" || fileName === "scripts/doctor.ts";
 
   const report = (node: ts.Node, message: string): void => {
     const position = source.getLineAndCharacterOfPosition(node.getStart(source));
@@ -686,7 +662,11 @@ function findDoctorGuardViolations(
     if (!allowCommonProcessImports && /(?:^|[./\\])common\/process\.ts$/u.test(moduleSpecifier.replaceAll("\\", "/"))) {
       if (statement.importClause?.namedBindings !== undefined && ts.isNamedImports(statement.importClause.namedBindings)) {
         for (const element of statement.importClause.namedBindings.elements) {
-          if (element.propertyName?.text === "CommandRunner" || element.name.text === "CommandRunner" || element.name.text === "defaultCommandRunner") {
+          if (
+            element.propertyName?.text === "CommandRunner"
+            || element.name.text === "CommandRunner"
+            || element.name.text === "defaultCommandRunner"
+          ) {
             report(element, "direct common CommandRunner use");
           }
         }
@@ -865,23 +845,9 @@ describe("doctor diagnostic contracts", () => {
       "fixes",
       "durationMs",
     ]);
-    expect(getExportedInterfacePropertyNames(source, "DoctorOptions")).toEqual([
-      "verbose",
-      "ci",
-      "score",
-      "json",
-      "quick",
-      "help",
-    ]);
+    expect(getExportedInterfacePropertyNames(source, "DoctorRunOptions")).toEqual(["quick", "verbose"]);
     expect(getExportedInterfacePropertyNames(source, "DoctorSummary")).toEqual(["passed", "warnings", "failed", "skipped"]);
-    expect(getExportedInterfacePropertyNames(source, "DoctorReportV1")).toEqual([
-      "schemaVersion",
-      "score",
-      "grade",
-      "summary",
-      "checks",
-      "timestamp",
-    ]);
+    expect(getExportedInterfacePropertyNames(source, "DoctorReport")).toEqual(["score", "grade", "summary", "checks", "timestamp"]);
     expect(getExportedInterfacePropertyNames(source, "DiagnosticNetworkResult")).toEqual([
       "status",
       "statusCode",
@@ -900,9 +866,9 @@ describe("doctor diagnostic contracts", () => {
       "arch",
       "env",
       "now",
+      "inspection",
     ]);
     expect(getExportedInterfacePropertyNames(source, "DiagnosticModule")).toEqual(["id", "title", "run"]);
-    expect(getExportedInterfacePropertyType(source, "DoctorReportV1", "schemaVersion")).toBe("1");
   });
 
   it("builds skipped diagnostics and elapsed results from the shared helpers", async () => {
@@ -1034,23 +1000,11 @@ describe("isReadOnlyDiagnosticCommand", () => {
 
     expect(module.createPortOwnerProbeCommand("darwin", [3000, 4200])).toEqual({
       command: "sh",
-      args: [
-        "-c",
-        'for port in "$@"; do lsof -nP -a -iTCP:"$port" -sTCP:LISTEN -Fpcn; done',
-        "--",
-        "3000",
-        "4200",
-      ],
+      args: ["-c", 'for port in "$@"; do lsof -nP -a -iTCP:"$port" -sTCP:LISTEN -Fpcn; done', "--", "3000", "4200"],
     });
     expect(module.createPortOwnerProbeCommand("linux", [3000, 4200])).toEqual({
       command: "sh",
-      args: [
-        "-c",
-        'for port in "$@"; do ss -ltnp "sport = :$port"; done',
-        "--",
-        "3000",
-        "4200",
-      ],
+      args: ["-c", 'for port in "$@"; do ss -ltnp "sport = :$port"; done', "--", "3000", "4200"],
     });
     // Regression proof: the Windows script must wrap the foreach statement's result with the
     // `$(...)` subexpression operator (a bare `foreach (...) { ... } | ConvertTo-Json` is
@@ -1190,22 +1144,13 @@ describe("createReadOnlyDiagnosticRunner", () => {
     const guarded = module.createReadOnlyDiagnosticRunner(harness.runner);
 
     await expect(
-      guarded.run(
-        {command: "node", args: ["--version"]},
-        {input: "secret"} as Readonly<Record<string, unknown>>,
-      ),
+      guarded.run({command: "node", args: ["--version"]}, {input: "secret"} as Readonly<Record<string, unknown>>),
     ).rejects.toBeInstanceOf(module.DiagnosticPolicyError);
     await expect(
-      guarded.run(
-        {command: "node", args: ["--version"]},
-        {output: "inherit"} as Readonly<Record<string, unknown>>,
-      ),
+      guarded.run({command: "node", args: ["--version"]}, {output: "inherit"} as Readonly<Record<string, unknown>>),
     ).rejects.toBeInstanceOf(module.DiagnosticPolicyError);
     await expect(
-      guarded.run(
-        {command: "node", args: ["--version"]},
-        {output: "tee"} as Readonly<Record<string, unknown>>,
-      ),
+      guarded.run({command: "node", args: ["--version"]}, {output: "tee"} as Readonly<Record<string, unknown>>),
     ).rejects.toBeInstanceOf(module.DiagnosticPolicyError);
 
     expect(harness.run).not.toHaveBeenCalled();
@@ -1314,24 +1259,16 @@ describe("doctor source-level read-only guard", () => {
 
   it("includes each shared pure production dependency in the read-only guard set", () => {
     expect(discoverDoctorProductionFiles()).toEqual(
-      expect.arrayContaining([
-        "scripts/common/taxonomy-artifacts.ts",
-        "scripts/common/workspace-graph.ts",
-      ]),
+      expect.arrayContaining(["scripts/common/taxonomy-artifacts.ts", "scripts/common/workspace-graph.ts"]),
     );
   });
 
   it("keeps every doctor production file read-only compliant", async () => {
     const module = await loadDoctorTypesModule();
 
-    const violations = discoverDoctorProductionFiles()
-      .flatMap((fileName) =>
-        findDoctorGuardViolations(
-          readFileSync(resolve(process.cwd(), fileName), "utf8"),
-          fileName,
-          module.isReadOnlyDiagnosticCommand,
-        ),
-      );
+    const violations = discoverDoctorProductionFiles().flatMap((fileName) =>
+      findDoctorGuardViolations(readFileSync(resolve(process.cwd(), fileName), "utf8"), fileName, module.isReadOnlyDiagnosticCommand),
+    );
 
     expect(violations).toEqual([]);
   });

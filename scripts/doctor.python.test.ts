@@ -27,6 +27,7 @@ import {
   type DoctorContext,
   type DoctorOptions,
 } from "./doctor.types.ts";
+import type {RepositoryInspectionSession} from "./inspection/repository.ts";
 
 const fixtureRoots: string[] = [];
 
@@ -81,18 +82,12 @@ function commandKey(command: Readonly<CommandSpec>, cwd?: string): string {
 function doctorOptions(patch: Partial<DoctorOptions> = {}): DoctorOptions {
   return {
     verbose: false,
-    ci: false,
-    score: false,
-    json: false,
     quick: false,
-    help: false,
     ...patch,
   };
 }
 
-function metadataOutput(
-  input: Readonly<{executable: string; version?: string; prefix: string; basePrefix?: string}>,
-): string {
+function metadataOutput(input: Readonly<{executable: string; version?: string; prefix: string; basePrefix?: string}>): string {
   return JSON.stringify({
     executable: input.executable,
     version: input.version ?? "3.12.6",
@@ -151,8 +146,11 @@ async function createPythonFixture(
   await writeFile(
     resolve(paths.expRoot, "config.docker.json"),
     JSON.stringify(
-      input.dockerConfig
-      ?? {"Auth:Clerk:PublishableKey": "docker-value", "Site:Name": "docker-name", "Endpoints:AI:OpenAI": "extra-docker-only-key"},
+      input.dockerConfig ?? {
+        "Auth:Clerk:PublishableKey": "docker-value",
+        "Site:Name": "docker-name",
+        "Endpoints:AI:OpenAI": "extra-docker-only-key",
+      },
     ),
     "utf8",
   );
@@ -172,21 +170,27 @@ async function createPythonFixture(
   );
   setResponse(
     VENV_METADATA_COMMAND[kind],
-    commandResult({stdout: metadataOutput({executable: venvPythonPath, prefix: expectedVenvDirectory, basePrefix: resolve(root, "Python312")})}),
+    commandResult({
+      stdout: metadataOutput({executable: venvPythonPath, prefix: expectedVenvDirectory, basePrefix: resolve(root, "Python312")}),
+    }),
     paths.expRoot,
   );
   setResponse(VENV_PIP_VERSION_COMMAND[kind], commandResult({stdout: "pip 24.0 from .venv (python 3.12)\n"}), paths.expRoot);
   setResponse(
     VENV_PIP_LIST_COMMAND[kind],
-    commandResult({stdout: JSON.stringify([{name: "requests", version: "2.31.0"}, {name: "pytest", version: "8.3.2"}])}),
+    commandResult({
+      stdout: JSON.stringify([
+        {name: "requests", version: "2.31.0"},
+        {name: "pytest", version: "8.3.2"},
+      ]),
+    }),
     paths.expRoot,
   );
   setResponse(VENV_PIP_CHECK_COMMAND[kind], commandResult({stdout: "No broken requirements found.\n"}), paths.expRoot);
 
   const run = vi.fn<DiagnosticCommandRunner["run"]>(
     async (command: Readonly<CommandSpec>, options): Promise<CommandResult> =>
-      responses.get(commandKey(command, options?.cwd))
-      ?? commandResult({code: 127, spawnError: `Unexpected command ${command.command}`}),
+      responses.get(commandKey(command, options?.cwd)) ?? commandResult({code: 127, spawnError: `Unexpected command ${command.command}`}),
   );
   const runner: DiagnosticCommandRunner = {run};
   const networkGet = vi.fn(
@@ -214,6 +218,11 @@ async function createPythonFixture(
     arch: "x64",
     env: {},
     now: () => ++now,
+    inspection: {
+      inspect: async () => ({kind: "unavailable" as const, reason: "test", durationMs: 0}),
+      invalidate: () => {},
+      updateInfrastructureEngine: () => {},
+    } as RepositoryInspectionSession,
   };
 
   return {root, context, run, setResponse, expectedVenvDirectory, venvPythonPath};
@@ -255,9 +264,9 @@ describe("parseRequirementsTree", () => {
       [bPath]: "-r a.txt\n",
     };
 
-    await expect(
-      parseRequirementsTree(aPath, async (path) => files[path] ?? Promise.reject(new Error("ENOENT"))),
-    ).rejects.toThrow(RequirementsParseError);
+    await expect(parseRequirementsTree(aPath, async (path) => files[path] ?? Promise.reject(new Error("ENOENT")))).rejects.toThrow(
+      RequirementsParseError,
+    );
   });
 
   it("rejects a duplicate -r include of the same file", async () => {
@@ -268,9 +277,9 @@ describe("parseRequirementsTree", () => {
       [sharedPath]: "requests==2.31.0\n",
     };
 
-    await expect(
-      parseRequirementsTree(rootPath, async (path) => files[path] ?? Promise.reject(new Error("ENOENT"))),
-    ).rejects.toThrow(/Duplicate requirements include/u);
+    await expect(parseRequirementsTree(rootPath, async (path) => files[path] ?? Promise.reject(new Error("ENOENT")))).rejects.toThrow(
+      /Duplicate requirements include/u,
+    );
   });
 
   it("rejects a duplicate requirement name declared in two files", async () => {
@@ -281,9 +290,9 @@ describe("parseRequirementsTree", () => {
       [includedPath]: "Requests==2.30.0\n",
     };
 
-    await expect(
-      parseRequirementsTree(rootPath, async (path) => files[path] ?? Promise.reject(new Error("ENOENT"))),
-    ).rejects.toThrow(/Duplicate requirement 'requests'/u);
+    await expect(parseRequirementsTree(rootPath, async (path) => files[path] ?? Promise.reject(new Error("ENOENT")))).rejects.toThrow(
+      /Duplicate requirement 'requests'/u,
+    );
   });
 
   it("treats a non-exact requirement specifier as recognized-but-unverified rather than a parse failure", async () => {
@@ -325,18 +334,18 @@ describe("parseRequirementsTree", () => {
     const rootPath = resolve("virtual-repo", "root.txt");
     const files: Record<string, string> = {[rootPath]: "@@@not-a-real-entry@@@\n"};
 
-    await expect(
-      parseRequirementsTree(rootPath, async (path) => files[path] ?? Promise.reject(new Error("ENOENT"))),
-    ).rejects.toThrow(RequirementsParseError);
+    await expect(parseRequirementsTree(rootPath, async (path) => files[path] ?? Promise.reject(new Error("ENOENT")))).rejects.toThrow(
+      RequirementsParseError,
+    );
   });
 
   it("rejects a malformed -r include directive with no path", async () => {
     const rootPath = resolve("virtual-repo", "root.txt");
     const files: Record<string, string> = {[rootPath]: '-r ""\n'};
 
-    await expect(
-      parseRequirementsTree(rootPath, async (path) => files[path] ?? Promise.reject(new Error("ENOENT"))),
-    ).rejects.toThrow(/Malformed requirements include directive/u);
+    await expect(parseRequirementsTree(rootPath, async (path) => files[path] ?? Promise.reject(new Error("ENOENT")))).rejects.toThrow(
+      /Malformed requirements include directive/u,
+    );
   });
 });
 
@@ -433,11 +442,7 @@ describe("pythonDoctorModule", () => {
 
   it("fails python.runtime when the Unix python3.12 interpreter is missing", async () => {
     const fixture = await createPythonFixture({platform: "linux"});
-    fixture.setResponse(
-      SYSTEM_METADATA_COMMAND.posix,
-      commandResult({code: 127, spawnError: "ENOENT"}),
-      fixture.context.paths.root,
-    );
+    fixture.setResponse(SYSTEM_METADATA_COMMAND.posix, commandResult({code: 127, spawnError: "ENOENT"}), fixture.context.paths.root);
 
     const results = await pythonDoctorModule.run(fixture.context);
 
@@ -515,7 +520,12 @@ describe("pythonDoctorModule", () => {
     fixture.setResponse(
       VENV_METADATA_COMMAND.win32,
       commandResult({
-        stdout: metadataOutput({executable: fixture.venvPythonPath, version: "3.10.1", prefix: fixture.expectedVenvDirectory, basePrefix: "C:\\Python312"}),
+        stdout: metadataOutput({
+          executable: fixture.venvPythonPath,
+          version: "3.10.1",
+          prefix: fixture.expectedVenvDirectory,
+          basePrefix: "C:\\Python312",
+        }),
       }),
       fixture.context.paths.expRoot,
     );
@@ -604,7 +614,12 @@ describe("pythonDoctorModule", () => {
     const fixture = await createPythonFixture({platform: "win32"});
     fixture.setResponse(
       VENV_PIP_LIST_COMMAND.win32,
-      commandResult({stdout: JSON.stringify([{name: "requests", version: "2.31.0"}, {name: "pytest", version: "8.0.0"}])}),
+      commandResult({
+        stdout: JSON.stringify([
+          {name: "requests", version: "2.31.0"},
+          {name: "pytest", version: "8.0.0"},
+        ]),
+      }),
       fixture.context.paths.expRoot,
     );
 

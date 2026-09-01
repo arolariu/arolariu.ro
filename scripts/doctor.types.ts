@@ -3,10 +3,18 @@
  * @module scripts/doctor.types
  */
 
-import {defaultCommandRunner, formatCommand, type CommandResult, type CommandRunner, type CommandRunOptions, type CommandSpec} from "./common/process.ts";
+import {
+  defaultCommandRunner,
+  formatCommand,
+  type CommandResult,
+  type CommandRunner,
+  type CommandRunOptions,
+  type CommandSpec,
+} from "./common/process.ts";
 import type {MonorepositoryLogger} from "./common/logger.ts";
 import type {RepositoryPaths} from "./common/repository-paths.ts";
 import type {RequirementLoadResult} from "./common/requirements.ts";
+import type {RepositoryInspectionSession} from "./inspection/repository.ts";
 
 /** One bounded timeout applied to diagnostic commands that do not supply one explicitly. */
 export const DIAGNOSTIC_DEFAULT_TIMEOUT_MS = 15_000;
@@ -25,11 +33,10 @@ export const PYTHON_INTERPRETER_METADATA_SNIPPET =
 
 const WINDOWS_PROBE_SHELL = ["-NoProfile", "-NonInteractive", "-Command"] as const;
 const WINDOWS_DISK_PROBE_SCRIPT =
-  "Get-CimInstance Win32_LogicalDisk -Filter \"DriveType = 3\" | Select-Object DeviceID, Size, FreeSpace | ConvertTo-Json -Compress";
+  'Get-CimInstance Win32_LogicalDisk -Filter "DriveType = 3" | Select-Object DeviceID, Size, FreeSpace | ConvertTo-Json -Compress';
 const WINDOWS_PORTS_PROBE_SCRIPT =
   "Get-NetTCPConnection -State Listen -ErrorAction Stop | Select-Object LocalAddress, LocalPort, State, OwningProcess | ConvertTo-Json -Compress";
-const WINDOWS_PROCESS_PROBE_SCRIPT =
-  "Get-Process | Select-Object Id, ProcessName, Path | ConvertTo-Json -Compress";
+const WINDOWS_PROCESS_PROBE_SCRIPT = "Get-Process | Select-Object Id, ProcessName, Path | ConvertTo-Json -Compress";
 /**
  * Windows read-only port-owner probe script.
  *
@@ -72,13 +79,7 @@ export type DiagnosticStatus = "pass" | "warn" | "fail" | "skipped";
 export type DiagnosticConfidence = "high" | "medium" | "low";
 
 /** Identifies the stable bounded-context owner of one diagnostic row. */
-export type DiagnosticModuleId =
-  | "workspace"
-  | "dotnet"
-  | "react"
-  | "svelte"
-  | "python"
-  | "infrastructure";
+export type DiagnosticModuleId = "workspace" | "dotnet" | "react" | "svelte" | "python" | "infrastructure";
 
 /** One possible contributor to a diagnostic outcome. */
 export interface DiagnosticPotentialCause {
@@ -106,14 +107,27 @@ export interface DiagnosticResult {
   readonly durationMs: number;
 }
 
-/** Parsed doctor CLI options. */
-export interface DoctorOptions {
-  readonly verbose: boolean;
-  readonly ci: boolean;
-  readonly score: boolean;
-  readonly json: boolean;
+/** Runtime options consumed by the doctor orchestrator and modules. */
+export interface DoctorRunOptions {
   readonly quick: boolean;
-  readonly help: boolean;
+  readonly verbose: boolean;
+}
+
+/**
+ * Legacy parsed doctor CLI options.
+ *
+ * @deprecated Use {@link DoctorRunOptions}. Retained temporarily so unmigrated specialist
+ * modules compile without broad import changes until Tasks 23-26.
+ */
+export interface DoctorOptions extends DoctorRunOptions {
+  /** @deprecated Removed from CLI; always false. Retained for specialist module compile safety. */
+  readonly ci?: boolean;
+  /** @deprecated Removed from CLI; always false. Retained for specialist module compile safety. */
+  readonly json?: boolean;
+  /** @deprecated Removed from CLI; score is always rendered. Retained for specialist module compile safety. */
+  readonly score?: boolean;
+  /** @deprecated Removed from CLI; help is Commander-owned. Retained for specialist module compile safety. */
+  readonly help?: boolean;
 }
 
 /** Totals by result status. */
@@ -124,9 +138,8 @@ export interface DoctorSummary {
   readonly skipped: number;
 }
 
-/** Version 1 doctor report payload. */
-export interface DoctorReportV1 {
-  readonly schemaVersion: 1;
+/** Typed doctor report payload. */
+export interface DoctorReport {
   readonly score: number;
   readonly grade: string;
   readonly summary: DoctorSummary;
@@ -134,13 +147,18 @@ export interface DoctorReportV1 {
   readonly timestamp: string;
 }
 
+/**
+ * Legacy version 1 doctor report payload.
+ *
+ * @deprecated Use {@link DoctorReport}. Retained temporarily for compile safety.
+ */
+export type DoctorReportV1 = DoctorReport;
+
 /** Read-only command runner contract exposed to doctor modules. */
 export interface DiagnosticCommandRunner {
   readonly run: (
     command: Readonly<CommandSpec>,
-    options?: Readonly<
-      Pick<CommandRunOptions, "cwd" | "env" | "timeoutMs" | "signal">
-    >,
+    options?: Readonly<Pick<CommandRunOptions, "cwd" | "env" | "timeoutMs" | "signal">>,
   ) => Promise<CommandResult>;
 }
 
@@ -155,10 +173,7 @@ export interface DiagnosticNetworkResult {
 
 /** Read-only HTTP probe contract for doctor modules. */
 export interface DiagnosticNetworkProbe {
-  readonly get: (
-    url: URL,
-    timeoutMs: number,
-  ) => Promise<DiagnosticNetworkResult>;
+  readonly get: (url: URL, timeoutMs: number) => Promise<DiagnosticNetworkResult>;
 }
 
 /** Shared module execution context for one doctor run. */
@@ -173,15 +188,15 @@ export interface DoctorContext {
   readonly arch: string;
   readonly env: Readonly<NodeJS.ProcessEnv>;
   readonly now: () => number;
+  /** Shared repository inspection session for this run. */
+  readonly inspection: RepositoryInspectionSession;
 }
 
 /** One stable doctor module implementation. */
 export interface DiagnosticModule {
   readonly id: DiagnosticModuleId;
   readonly title: string;
-  readonly run: (
-    context: Readonly<DoctorContext>,
-  ) => Promise<readonly DiagnosticResult[]>;
+  readonly run: (context: Readonly<DoctorContext>) => Promise<readonly DiagnosticResult[]>;
 }
 
 /** Reports a diagnostic policy violation before any external command runs. */
@@ -265,8 +280,7 @@ function isPythonInvocation(command: Readonly<CommandSpec>, tail: readonly strin
 }
 
 function isWindowsProbe(command: Readonly<CommandSpec>, script: string): boolean {
-  return normalizedCommandName(command.command) === "powershell"
-    && hasExactArguments(command.args, [...WINDOWS_PROBE_SHELL, script]);
+  return normalizedCommandName(command.command) === "powershell" && hasExactArguments(command.args, [...WINDOWS_PROBE_SHELL, script]);
 }
 
 function isWindowsPortOwnerProbe(command: Readonly<CommandSpec>): boolean {
@@ -323,12 +337,7 @@ export function createPortOwnerProbeCommand(platform: NodeJS.Platform, ports: re
 
   return {
     command: "sh",
-    args: [
-      "-c",
-      platform === "darwin" ? MACOS_PORT_OWNER_PROBE_SCRIPT : LINUX_PORT_OWNER_PROBE_SCRIPT,
-      "--",
-      ...normalizedPorts,
-    ],
+    args: ["-c", platform === "darwin" ? MACOS_PORT_OWNER_PROBE_SCRIPT : LINUX_PORT_OWNER_PROBE_SCRIPT, "--", ...normalizedPorts],
   };
 }
 
@@ -492,11 +501,7 @@ export const defaultDiagnosticRunner: DiagnosticCommandRunner = createReadOnlyDi
  * @param now - Monotonic clock for duration capture.
  * @returns The completed diagnostic result.
  */
-export function diagnosticResult(
-  result: Omit<DiagnosticResult, "durationMs">,
-  startedAt: number,
-  now: () => number,
-): DiagnosticResult {
+export function diagnosticResult(result: Omit<DiagnosticResult, "durationMs">, startedAt: number, now: () => number): DiagnosticResult {
   return {
     ...result,
     durationMs: Math.max(0, now() - startedAt),

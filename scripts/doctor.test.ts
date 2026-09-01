@@ -34,8 +34,10 @@ import type {
   DiagnosticNetworkProbe,
   DiagnosticResult,
   DoctorContext,
-  DoctorOptions,
+  DoctorRunOptions,
 } from "./doctor.types.ts";
+import type {RepositoryInspectionSession} from "./inspection/repository.ts";
+import type {InspectionOutcome} from "./inspection/types.ts";
 
 const MODULE_ORDER: readonly DiagnosticModuleId[] = ["workspace", "dotnet", "react", "svelte", "python", "infrastructure"];
 
@@ -92,14 +94,10 @@ function skippedCheck(id: string, module: DiagnosticModuleId): DiagnosticResult 
   };
 }
 
-function doctorOptions(patch: Partial<DoctorOptions> = {}): DoctorOptions {
+function doctorOptions(patch: Partial<DoctorRunOptions> = {}): DoctorRunOptions {
   return {
     verbose: false,
-    ci: false,
-    score: false,
-    json: false,
     quick: false,
-    help: false,
     ...patch,
   };
 }
@@ -148,9 +146,34 @@ const noopNetwork: DiagnosticNetworkProbe = {
   }),
 };
 
+/** Fake inspection session that resolves to unavailable for all keys. */
+function createFakeInspectionSession(): RepositoryInspectionSession {
+  return {
+    inspect: async <Key extends string>(_key: Key): Promise<InspectionOutcome<unknown>> => ({
+      kind: "unavailable" as const,
+      reason: "Fake test session",
+      durationMs: 0,
+    }),
+    invalidate: (): void => {},
+    updateInfrastructureEngine: (): void => {},
+  };
+}
+
 /** Fixed, deterministic runtime seam shared by every orchestrator test so it never reads the live checkout or a real network. */
 function fixedRuntimeDependencies(): Readonly<
-  Pick<DoctorDependencies, "resolveRepositoryPaths" | "loadRepositoryRequirements" | "runner" | "network" | "platform" | "arch" | "env" | "now" | "timestamp">
+  Pick<
+    DoctorDependencies,
+    | "resolveRepositoryPaths"
+    | "loadRepositoryRequirements"
+    | "runner"
+    | "network"
+    | "platform"
+    | "arch"
+    | "env"
+    | "now"
+    | "timestamp"
+    | "inspection"
+  >
 > {
   let tick = 0;
   return {
@@ -163,6 +186,7 @@ function fixedRuntimeDependencies(): Readonly<
     env: {},
     now: () => (tick += 1),
     timestamp: () => "2026-08-29T00:00:00.000Z",
+    inspection: createFakeInspectionSession(),
   };
 }
 
@@ -197,20 +221,23 @@ describe("parseDoctorOptions", () => {
   it.each([
     ["--verbose", "verbose"],
     ["-v", "verbose"],
-    ["--ci", "ci"],
-    ["--score", "score"],
-    ["--json", "json"],
+    ["/v", "verbose"],
     ["--quick", "quick"],
-    ["--help", "help"],
-    ["-h", "help"],
+    ["/q", "quick"],
   ] as const)("enables '%s'", (flag, key) => {
     expect(parseDoctorOptions([flag])[key]).toBe(true);
   });
 
   it("enables every flag and alias together", () => {
-    expect(parseDoctorOptions(["--verbose", "--ci", "--score", "--json", "--quick", "--help"])).toEqual(
-      doctorOptions({verbose: true, ci: true, score: true, json: true, quick: true, help: true}),
-    );
+    expect(parseDoctorOptions(["--verbose", "--quick"])).toEqual(doctorOptions({verbose: true, quick: true}));
+  });
+
+  it("returns {quick: true, verbose: true} for ['/q', '/v']", () => {
+    expect(parseDoctorOptions(["/q", "/v"])).toEqual({quick: true, verbose: true});
+  });
+
+  it.each(["--ci", "--json", "--score"])("rejects removed flag '%s' as an unknown option returning 1", (flag) => {
+    expect(() => parseDoctorOptions([flag])).toThrow(/unknown doctor option/i);
   });
 
   it("rejects an unknown flag", () => {
@@ -294,8 +321,6 @@ describe("runDoctor", () => {
   it.each([
     ["default", doctorOptions()],
     ["quick", doctorOptions({quick: true})],
-    ["ci", doctorOptions({ci: true})],
-    ["json", doctorOptions({json: true})],
   ] as const)("invokes every module exactly once with the exact %s options", async (_label, options) => {
     const {modules, calls} = createFakeModules();
 
@@ -549,15 +574,33 @@ describe("main", () => {
     await expect(main(["--help"], {logger, resolveRepositoryPaths: resolvePaths})).resolves.toBe(0);
 
     expect(resolvePaths).not.toHaveBeenCalled();
-    expect(sink.records.some((record) => record.text.includes("Usage: node scripts/doctor.ts"))).toBe(true);
+    expect(sink.records.some((record) => record.text.includes("Usage:"))).toBe(true);
   });
 
   it("supports the -h short alias for help", async () => {
     await expect(main(["-h"])).resolves.toBe(0);
   });
 
+  it("supports the /h help alias", async () => {
+    await expect(main(["/h"])).resolves.toBe(0);
+  });
+
+  it("supports the /? help alias", async () => {
+    await expect(main(["/?"])).resolves.toBe(0);
+  });
+
   it("short-circuits help even when combined with an otherwise-unknown flag", async () => {
-    await expect(main(["--bogus", "--help"])).resolves.toBe(0);
+    const resolvePaths = vi.fn((): RepositoryPaths => {
+      throw new Error("must not resolve repository paths for help");
+    });
+    await expect(main(["/h", "--bogus"], {resolveRepositoryPaths: resolvePaths})).resolves.toBe(0);
+    expect(resolvePaths).not.toHaveBeenCalled();
+  });
+
+  it.each(["--ci", "--json", "--score"])("returns 1 for removed flag '%s'", async (flag) => {
+    const {logger, sink} = createLogger();
+    await expect(main([flag], {logger})).resolves.toBe(1);
+    expect(sink.records.map((record) => record.text).join("\n")).toMatch(/unknown doctor option/i);
   });
 
   it("returns 1 and renders the option error for an unknown flag", async () => {
@@ -584,7 +627,7 @@ describe("main", () => {
     await expect(main([], {...fixedRuntimeDependencies(), modules, logger})).resolves.toBe(1);
   });
 
-  it("calls renderDoctorReport exactly once in human mode", async () => {
+  it("calls renderDoctorReport exactly once", async () => {
     const {logger} = createLogger();
     const {modules} = createFakeModules();
 
@@ -593,28 +636,19 @@ describe("main", () => {
     expect(renderDoctorReportMock).toHaveBeenCalledTimes(1);
   });
 
-  it("never calls renderDoctorReport in JSON mode", async () => {
-    const {logger} = createLogger("json");
+  it("always renders the score in the report output", async () => {
     const {modules} = createFakeModules();
+    const sink = new InMemoryLoggerSink();
+    const logger = new MonorepositoryConsoleLogger("doctor", {color: false, sink, verbose: false});
 
-    await main(["--json"], {...fixedRuntimeDependencies(), modules, logger});
+    await main([], {...fixedRuntimeDependencies(), modules, logger});
 
-    expect(renderDoctorReportMock).not.toHaveBeenCalled();
-  });
-
-  it("emits exactly one parsable schema-1 JSON document with no banner, ANSI, or preamble", async () => {
-    const {logger, sink} = createLogger("json");
-    const {modules} = createFakeModules();
-
-    const exitCode = await main(["--json", "--quick"], {...fixedRuntimeDependencies(), modules, logger});
-
-    expect(exitCode).toBe(0);
-    expect(sink.records).toHaveLength(1);
-    const [record] = sink.records;
-    expect(record?.stream).toBe("stdout");
-    expect(record?.text).not.toMatch(/\u001B/);
-    const parsed = JSON.parse(record?.text ?? "") as {schemaVersion: number};
-    expect(parsed.schemaVersion).toBe(1);
+    // renderDoctorReport is called by main; check the mock was called
+    expect(renderDoctorReportMock).toHaveBeenCalledTimes(1);
+    // The report passed to renderDoctorReport should have a score
+    const [report] = renderDoctorReportMock.mock.calls[0] as [unknown];
+    expect(report).toHaveProperty("score");
+    expect(report).toHaveProperty("grade");
   });
 
   it("returns 1, renders no report, and writes one non-empty human stderr error for a context-resolution failure", async () => {
@@ -633,30 +667,6 @@ describe("main", () => {
     expect(errorRecords[0]?.text).toMatch(/context assembly boom/);
   });
 
-  it("returns 1, emits no stdout document, and routes one non-empty stderr error through a separate fatal logger for a JSON-mode context-resolution failure", async () => {
-    const {logger, sink} = createLogger("json");
-    const {logger: errorLogger, sink: errorSink} = createLogger();
-    const {modules} = createFakeModules();
-    const resolvePaths = vi.fn((): RepositoryPaths => {
-      throw new Error("context assembly boom");
-    });
-
-    const exitCode = await main(["--json"], {
-      ...fixedRuntimeDependencies(),
-      modules,
-      logger,
-      errorLogger,
-      resolveRepositoryPaths: resolvePaths,
-    });
-
-    expect(exitCode).toBe(1);
-    expect(sink.records).toHaveLength(0);
-    expect(renderDoctorReportMock).not.toHaveBeenCalled();
-    const errorRecords = errorSink.records.filter((record) => record.stream === "stderr");
-    expect(errorRecords).toHaveLength(1);
-    expect(errorRecords[0]?.text).toMatch(/context assembly boom/);
-  });
-
   it("returns 1, renders no report, and writes one non-empty human stderr error for a report-validation failure", async () => {
     const {logger, sink} = createLogger();
     const {modules} = createFakeModules({
@@ -668,23 +678,6 @@ describe("main", () => {
     expect(exitCode).toBe(1);
     expect(renderDoctorReportMock).not.toHaveBeenCalled();
     const errorRecords = sink.records.filter((record) => record.stream === "stderr");
-    expect(errorRecords).toHaveLength(1);
-    expect(errorRecords[0]?.text).toMatch(/duplicate/i);
-  });
-
-  it("returns 1, emits no stdout document, and routes one non-empty stderr error through a separate fatal logger for a JSON-mode report-validation failure", async () => {
-    const {logger, sink} = createLogger("json");
-    const {logger: errorLogger, sink: errorSink} = createLogger();
-    const {modules} = createFakeModules({
-      react: async () => [passCheck("workspace.repository-root", "react")],
-    });
-
-    const exitCode = await main(["--json"], {...fixedRuntimeDependencies(), modules, logger, errorLogger});
-
-    expect(exitCode).toBe(1);
-    expect(sink.records).toHaveLength(0);
-    expect(renderDoctorReportMock).not.toHaveBeenCalled();
-    const errorRecords = errorSink.records.filter((record) => record.stream === "stderr");
     expect(errorRecords).toHaveLength(1);
     expect(errorRecords[0]?.text).toMatch(/duplicate/i);
   });
@@ -733,7 +726,7 @@ describe("direct entrypoint", () => {
     const result = await runDirect(["--help"]);
 
     expect(result.code).toBe(0);
-    expect(result.output).toMatch(/Usage: node scripts\/doctor\.ts/);
+    expect(result.output).toMatch(/Usage:/);
   });
 
   it("emits a diagnostic and exits 1 for a direct process invocation of an unknown flag", async () => {

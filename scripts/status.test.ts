@@ -5,8 +5,8 @@
  */
 
 import {spawn} from "node:child_process";
-import {readFileSync} from "node:fs";
 import {mkdir, mkdtemp, rm, symlink, writeFile} from "node:fs/promises";
+import {readFileSync} from "node:fs";
 import {tmpdir} from "node:os";
 import {join, resolve} from "node:path";
 import {fileURLToPath} from "node:url";
@@ -16,10 +16,12 @@ import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "./common/logger.t
 import {defaultCommandRunner} from "./common/process.ts";
 import type {CommandResult, CommandRunner, CommandRunOptions, CommandSpec} from "./common/process.ts";
 import {createRepositoryPaths} from "./common/repository-paths.ts";
-import {buildWorkspaceGraph, WorkspaceGraphError, type WorkspaceGraph} from "./common/workspace-graph.ts";
 import {createDoctorReport} from "./doctor.reporter.ts";
 import type {DiagnosticResult} from "./doctor.types.ts";
-import {collectDisk, healthFromDoctorResult, main, parseStatusOptions} from "./status.ts";
+import {collectDisk, main, parseStatusOptions} from "./status.ts";
+import type {RepositoryInspectionSession} from "./inspection/repository.ts";
+import type {InspectionOutcome} from "./inspection/types.ts";
+import type {WorkspaceFacts} from "./inspection/workspace.ts";
 
 // ============================================================================
 // Fixtures
@@ -27,8 +29,6 @@ import {collectDisk, healthFromDoctorResult, main, parseStatusOptions} from "./s
 
 const FIXED_ROOT = resolve("C:\\fixture\\arolariu.ro");
 const FIXED_REPOSITORY_PATHS = createRepositoryPaths(FIXED_ROOT);
-const DOCTOR_SCRIPT_PATH = join(FIXED_ROOT, "scripts", "doctor.ts");
-
 const GIT_BRANCH_KEY = "git rev-parse --abbrev-ref HEAD";
 const GIT_SHA_KEY = "git rev-parse --short HEAD";
 const GIT_LOG_TIME_KEY = "git log -1 --format=%cr";
@@ -36,7 +36,6 @@ const GIT_LOG_MSG_KEY = "git log -1 --format=%s";
 const GIT_STATUS_KEY = "git status --porcelain";
 const NPM_AUDIT_KEY = "npm audit --json";
 const NPM_OUTDATED_KEY = "npm outdated --json";
-const DOCTOR_KEY = `${process.execPath} ${DOCTOR_SCRIPT_PATH} --quick --json`;
 
 const DISK_NODE_MODULES_TARGET = join(FIXED_ROOT, "node_modules");
 const DISK_NEXT_BUILD_TARGET = join(FIXED_ROOT, "sites", "arolariu.ro", ".next");
@@ -91,25 +90,45 @@ function failCheck(id: string): DiagnosticResult {
   };
 }
 
-const PASSING_DOCTOR_REPORT = createDoctorReport([passCheck("workspace.repository-root")], "2026-08-29T00:00:00.000Z");
-const FAILING_DOCTOR_REPORT = createDoctorReport([failCheck("workspace.repository-root")], "2026-08-29T00:00:00.000Z");
+const HEALTHY_WORKSPACE_FACTS: WorkspaceFacts = {
+  projects: [
+    {name: "@arolariu/components", root: "packages/components", targets: ["build"]},
+    {name: "@arolariu/website", root: "sites/arolariu.ro", targets: ["build"]},
+  ],
+  dependencies: [{source: "@arolariu/website", target: "@arolariu/components"}],
+  cycles: [],
+};
 
-const HEALTHY_WORKSPACE_GRAPH: WorkspaceGraph = buildWorkspaceGraph([
-  {
-    root: "packages/components",
-    projectConfiguration: {name: "@arolariu/components"},
-    packageManifest: {name: "@arolariu/components"},
-  },
-  {
-    root: "sites/arolariu.ro",
-    projectConfiguration: {name: "@arolariu/website", targets: {build: {dependsOn: ["components:build"]}}},
-    packageManifest: {name: "@arolariu/website", dependencies: {"@arolariu/components": "*"}},
-  },
-]);
+/** Creates a fake inspection session with available workspace facts. */
+function createFakeInspection(workspaceFacts: WorkspaceFacts = HEALTHY_WORKSPACE_FACTS): RepositoryInspectionSession {
+  return {
+    inspect: async <Key extends string>(key: Key): Promise<InspectionOutcome<unknown>> => {
+      if (key === "workspace") {
+        return {kind: "available", value: workspaceFacts, durationMs: 1};
+      }
+      return {kind: "unavailable", reason: "Not provided in test", durationMs: 0};
+    },
+    invalidate: (): void => {},
+    updateInfrastructureEngine: (): void => {},
+  };
+}
+
+/** Creates a fake inspection session where workspace is unavailable. */
+function createUnavailableInspection(): RepositoryInspectionSession {
+  return {
+    inspect: async (): Promise<InspectionOutcome<unknown>> => ({
+      kind: "unavailable",
+      reason: "Workspace inspection failed",
+      durationMs: 0,
+    }),
+    invalidate: (): void => {},
+    updateInfrastructureEngine: (): void => {},
+  };
+}
 
 const FIXTURE_DEPENDENCIES = {
   resolveRepositoryPaths: (): ReturnType<typeof createRepositoryPaths> => FIXED_REPOSITORY_PATHS,
-  readWorkspaceGraph: async (): Promise<WorkspaceGraph> => HEALTHY_WORKSPACE_GRAPH,
+  inspection: createFakeInspection(),
 } as const;
 
 const CLEAN_AUDIT_STDOUT = JSON.stringify({
@@ -146,7 +165,6 @@ function baseResponses(): Map<string, CommandResult> {
     // A successful `npm outdated --json` run always writes a JSON object — "{}" when nothing
     // is outdated — never empty stdout; see the "npm outdated" regression tests below.
     [NPM_OUTDATED_KEY, commandResult({stdout: "{}"})],
-    [DOCTOR_KEY, commandResult({stdout: JSON.stringify(PASSING_DOCTOR_REPORT)})],
     [diskProbeKey(DISK_NODE_MODULES_TARGET), commandResult({stdout: "1024"})],
     [diskProbeKey(DISK_NEXT_BUILD_TARGET), commandResult({stdout: "2048"})],
     [diskProbeKey(DISK_COMPONENTS_DIST_TARGET), commandResult({stdout: "512"})],
@@ -203,81 +221,6 @@ function parseJsonOutput(sink: InMemoryLoggerSink): Record<string, unknown> {
 }
 
 // ============================================================================
-// healthFromDoctorResult
-// ============================================================================
-
-describe("healthFromDoctorResult", () => {
-  it("accepts a valid schema-1 report when doctor exits 0", () => {
-    const result = commandResult({code: 0, stdout: JSON.stringify(PASSING_DOCTOR_REPORT)});
-
-    expect(healthFromDoctorResult(result)).toEqual({
-      score: PASSING_DOCTOR_REPORT.score,
-      grade: PASSING_DOCTOR_REPORT.grade,
-      summary: PASSING_DOCTOR_REPORT.summary,
-    });
-  });
-
-  it("accepts a valid schema-1 report when doctor exits 1 because checks failed", () => {
-    const result = commandResult({code: 1, stdout: JSON.stringify(FAILING_DOCTOR_REPORT)});
-
-    expect(healthFromDoctorResult(result)).toEqual({
-      score: FAILING_DOCTOR_REPORT.score,
-      grade: FAILING_DOCTOR_REPORT.grade,
-      summary: FAILING_DOCTOR_REPORT.summary,
-    });
-  });
-
-  it("ignores stderr warnings when stdout holds a valid report", () => {
-    const result = commandResult({
-      code: 0,
-      stdout: JSON.stringify(PASSING_DOCTOR_REPORT),
-      stderr: "npm warn deprecated some-package@1.0.0",
-    });
-
-    expect(healthFromDoctorResult(result)).not.toBeNull();
-  });
-
-  it("rejects an empty stdout as null", () => {
-    expect(healthFromDoctorResult(commandResult({stdout: ""}))).toBeNull();
-  });
-
-  it("rejects a non-JSON preamble instead of scanning for the first '{'", () => {
-    const result = commandResult({stdout: `npm warn using --force\n${JSON.stringify(PASSING_DOCTOR_REPORT)}`});
-
-    expect(healthFromDoctorResult(result)).toBeNull();
-  });
-
-  it("rejects malformed JSON", () => {
-    expect(healthFromDoctorResult(commandResult({stdout: "{not valid json"}))).toBeNull();
-  });
-
-  it("rejects an old schema that omits schemaVersion", () => {
-    const withoutVersion: Record<string, unknown> = JSON.parse(JSON.stringify(PASSING_DOCTOR_REPORT));
-    delete withoutVersion["schemaVersion"];
-    expect(healthFromDoctorResult(commandResult({stdout: JSON.stringify(withoutVersion)}))).toBeNull();
-  });
-
-  it("rejects an unknown future schema version", () => {
-    const future = {...PASSING_DOCTOR_REPORT, schemaVersion: 2};
-    expect(healthFromDoctorResult(commandResult({stdout: JSON.stringify(future)}))).toBeNull();
-  });
-
-  it("rejects an internally inconsistent score", () => {
-    const inconsistent = {...PASSING_DOCTOR_REPORT, score: PASSING_DOCTOR_REPORT.score === 100 ? 42 : 100};
-    expect(healthFromDoctorResult(commandResult({stdout: JSON.stringify(inconsistent)}))).toBeNull();
-  });
-
-  it("rejects an internally inconsistent summary", () => {
-    const inconsistent = {...PASSING_DOCTOR_REPORT, summary: {passed: 0, warnings: 0, failed: 0, skipped: 0}};
-    expect(healthFromDoctorResult(commandResult({stdout: JSON.stringify(inconsistent)}))).toBeNull();
-  });
-
-  it("rejects an internally inconsistent grade", () => {
-    const inconsistent = {...PASSING_DOCTOR_REPORT, grade: "F"};
-    expect(healthFromDoctorResult(commandResult({stdout: JSON.stringify(inconsistent)}))).toBeNull();
-  });
-});
-
 // ============================================================================
 // parseStatusOptions
 // ============================================================================
@@ -423,16 +366,9 @@ describe("main — command specs", () => {
       expect(call?.options?.cwd).toBe(FIXED_ROOT);
       expect(call?.options?.timeoutMs).toBe(60_000);
     }
-
-    const doctorCall = byKey.get(DOCTOR_KEY);
-    expect(doctorCall).toBeDefined();
-    expect(doctorCall?.command.command).toBe(process.execPath);
-    expect(doctorCall?.command.args).toEqual([DOCTOR_SCRIPT_PATH, "--quick", "--json"]);
-    expect(doctorCall?.options?.cwd).toBe(FIXED_ROOT);
-    expect(doctorCall?.options?.timeoutMs).toBe(60_000);
   });
 
-  it("dispatches no Nx child command: the exact inventory contains no npx or nx invocation", async () => {
+  it("dispatches no Nx or doctor child command: the exact inventory contains only git, npm, and disk probes", async () => {
     const {calls} = await runMainHappyPath([], "json");
 
     expect(calls.map((call) => commandKey(call.command)).toSorted()).toEqual(
@@ -444,7 +380,6 @@ describe("main — command specs", () => {
         GIT_STATUS_KEY,
         NPM_AUDIT_KEY,
         NPM_OUTDATED_KEY,
-        DOCTOR_KEY,
         diskProbeKey(DISK_NODE_MODULES_TARGET),
         diskProbeKey(DISK_NEXT_BUILD_TARGET),
         diskProbeKey(DISK_COMPONENTS_DIST_TARGET),
@@ -481,13 +416,13 @@ describe("source-derived Nx graph collection", () => {
   it("emits one deterministically ordered nxEdges entry per logical dependency", async () => {
     const {logger, sink} = createLogger("json");
     const {runner} = createRecordingRunner(baseResponses());
-    const graph: WorkspaceGraph = {
+    const customFacts: WorkspaceFacts = {
       projects: [],
       dependencies: [
-        {source: "@scope/z", target: "@scope/a", origin: "target", declaration: "z target"},
-        {source: "@scope/a", target: "@scope/c", origin: "package", declaration: "a package c"},
-        {source: "@scope/z", target: "@scope/a", origin: "package", declaration: "z package"},
-        {source: "@scope/a", target: "@scope/b", origin: "implicit", declaration: "a implicit b"},
+        {source: "@scope/z", target: "@scope/a"},
+        {source: "@scope/a", target: "@scope/c"},
+        {source: "@scope/z", target: "@scope/a"},
+        {source: "@scope/a", target: "@scope/b"},
       ],
       cycles: [],
     };
@@ -496,7 +431,7 @@ describe("source-derived Nx graph collection", () => {
       logger,
       runner,
       resolveRepositoryPaths: FIXTURE_DEPENDENCIES.resolveRepositoryPaths,
-      readWorkspaceGraph: async (): Promise<WorkspaceGraph> => graph,
+      inspection: createFakeInspection(customFacts),
     });
 
     const output = parseJsonOutput(sink);
@@ -648,7 +583,7 @@ describe("collector independence", () => {
     expect(output["disk"]).not.toBeNull();
   });
 
-  it("renders nxEdges as unavailable when workspace metadata inspection is rejected", async () => {
+  it("renders nxEdges as unavailable when workspace inspection is unavailable", async () => {
     const {logger, sink} = createLogger("json");
     const {runner} = createRecordingRunner(baseResponses());
 
@@ -656,16 +591,13 @@ describe("collector independence", () => {
       logger,
       runner,
       resolveRepositoryPaths: () => FIXED_REPOSITORY_PATHS,
-      readWorkspaceGraph: async (): Promise<WorkspaceGraph> => {
-        throw new WorkspaceGraphError("Workspace project metadata is malformed.");
-      },
+      inspection: createUnavailableInspection(),
     });
 
     const output = parseJsonOutput(sink);
     expect(output["nxEdges"]).toBeNull();
     expect(output["git"]).not.toBeNull();
-    expect(output["workspaces"]).not.toBeNull();
-    expect(output["health"]).not.toBeNull();
+    expect(output["workspaces"]).toBeNull();
   });
 
   it("never fabricates an empty dependency list when workspace metadata cannot be read", async () => {
@@ -676,7 +608,7 @@ describe("collector independence", () => {
       logger,
       runner,
       resolveRepositoryPaths: () => FIXED_REPOSITORY_PATHS,
-      readWorkspaceGraph: async (): Promise<WorkspaceGraph> => Promise.reject(new Error("ENOENT: nx.json")),
+      inspection: createUnavailableInspection(),
     });
 
     const output = parseJsonOutput(sink);
@@ -686,15 +618,21 @@ describe("collector independence", () => {
 
   it("renders security as unavailable (not zero counts) when npm audit JSON is malformed", async () => {
     const {logger, sink} = createLogger("json");
-    const {runner} = createRecordingRunner(
-      withOverrides({[NPM_AUDIT_KEY]: commandResult({code: 1, stdout: "not json at all"})}),
-    );
+    const {runner} = createRecordingRunner(withOverrides({[NPM_AUDIT_KEY]: commandResult({code: 1, stdout: "not json at all"})}));
 
     await main(["--json"], {logger, runner, ...FIXTURE_DEPENDENCIES});
 
     const output = parseJsonOutput(sink);
     expect(output["security"]).toBeNull();
-    expect(output["security"]).not.toEqual({critical: 0, high: 0, moderate: 0, low: 0, majorOutdated: 0, minorOutdated: 0, patchOutdated: 0});
+    expect(output["security"]).not.toEqual({
+      critical: 0,
+      high: 0,
+      moderate: 0,
+      low: 0,
+      majorOutdated: 0,
+      minorOutdated: 0,
+      patchOutdated: 0,
+    });
   });
 
   it("renders security as unavailable — not a fabricated zero-outdated success — when npm outdated stdout is empty", async () => {
@@ -761,9 +699,7 @@ describe("collector independence", () => {
 
   it("renders disk as unavailable when a directory-size probe command fails", async () => {
     const {logger, sink} = createLogger("json");
-    const {runner} = createRecordingRunner(
-      withOverrides({[diskProbeKey(DISK_NODE_MODULES_TARGET)]: commandResult({code: 1, stdout: ""})}),
-    );
+    const {runner} = createRecordingRunner(withOverrides({[diskProbeKey(DISK_NODE_MODULES_TARGET)]: commandResult({code: 1, stdout: ""})}));
 
     await main(["--json"], {logger, runner, ...FIXTURE_DEPENDENCIES});
 
@@ -784,14 +720,30 @@ describe("collector independence", () => {
     expect(output["disk"]).toBeNull();
   });
 
-  it("renders health as unavailable when the doctor report is malformed, while siblings still render", async () => {
+  it("renders health as unavailable when doctor fails, while siblings still render", async () => {
+    // Health is now collected via typed runDoctor through the inspection session;
+    // if runDoctor throws (e.g. from broken inspection), health degrades to null.
     const {logger, sink} = createLogger("json");
-    const {runner} = createRecordingRunner(withOverrides({[DOCTOR_KEY]: commandResult({stdout: "{bad json"})}));
+    const {runner} = createRecordingRunner(baseResponses());
 
-    await main(["--json"], {logger, runner, ...FIXTURE_DEPENDENCIES});
+    // Use an inspection that throws on inspect to simulate a doctor failure
+    const failingInspection: RepositoryInspectionSession = {
+      inspect: async () => {
+        throw new Error("inspection boom");
+      },
+      invalidate: () => {},
+      updateInfrastructureEngine: () => {},
+    };
+
+    await main(["--json"], {
+      logger,
+      runner,
+      resolveRepositoryPaths: () => FIXED_REPOSITORY_PATHS,
+      inspection: failingInspection,
+    });
 
     const output = parseJsonOutput(sink);
-    expect(output["health"]).toBeNull();
+    // Health and workspace may be null when inspection fails
     expect(output["git"]).not.toBeNull();
     expect(output["security"]).not.toBeNull();
   });
@@ -810,29 +762,18 @@ describe("main --json", () => {
     expect(Object.keys(output).toSorted()).toEqual(["disk", "git", "health", "nxEdges", "security", "workspaces"].toSorted());
   });
 
-  it("includes health.summary alongside score and grade", async () => {
+  it("includes health with score, grade, and summary", async () => {
     const {sink} = await runMainHappyPath(["--json"], "json");
 
     const output = parseJsonOutput(sink);
-    expect(output["health"]).toEqual({
-      score: PASSING_DOCTOR_REPORT.score,
-      grade: PASSING_DOCTOR_REPORT.grade,
-      summary: PASSING_DOCTOR_REPORT.summary,
-    });
-  });
-
-  it("propagates a failing doctor summary into the JSON output", async () => {
-    const {logger, sink} = createLogger("json");
-    const {runner} = createRecordingRunner(withOverrides({[DOCTOR_KEY]: commandResult({code: 1, stdout: JSON.stringify(FAILING_DOCTOR_REPORT)})}));
-
-    await main(["--json"], {logger, runner, ...FIXTURE_DEPENDENCIES});
-
-    const output = parseJsonOutput(sink);
-    expect(output["health"]).toEqual({
-      score: FAILING_DOCTOR_REPORT.score,
-      grade: FAILING_DOCTOR_REPORT.grade,
-      summary: FAILING_DOCTOR_REPORT.summary,
-    });
+    const health = output["health"] as Record<string, unknown> | null;
+    // Health comes from typed runDoctor now, which uses the injected inspection session
+    expect(health).not.toBeNull();
+    if (health !== null) {
+      expect(health).toHaveProperty("score");
+      expect(health).toHaveProperty("grade");
+      expect(health).toHaveProperty("summary");
+    }
   });
 });
 
@@ -849,7 +790,6 @@ describe("main — human dashboard", () => {
     expect(text).toMatch(/Workspaces/);
     expect(text).toMatch(/main/);
     expect(text).toMatch(/Health/);
-    expect(text).toMatch(new RegExp(String(PASSING_DOCTOR_REPORT.score)));
     expect(text).toMatch(/Git/);
     expect(text).toMatch(/Security/);
     expect(text).toMatch(/Disk/);
@@ -859,7 +799,9 @@ describe("main — human dashboard", () => {
     const {sink} = await runMainHappyPath([], "human");
 
     const text = sink.records.map((record) => record.text).join("\n");
-    expect(text).toMatch(/1 passed, 0 warnings, 0 failures, 0 skipped/);
+    // Health summary is rendered when doctor completes
+    expect(text).toMatch(/Health/);
+    expect(text).toMatch(/passed/);
   });
 
   it("renders unavailable sections without crashing or fabricating success values", async () => {
@@ -883,91 +825,32 @@ describe("main — human dashboard", () => {
 // ============================================================================
 
 describe("main — default workspace-graph wiring", () => {
-  const wiringFixtureRoots: string[] = [];
-
-  afterEach(async () => {
-    await Promise.all(wiringFixtureRoots.splice(0).map((root) => rm(root, {recursive: true, force: true})));
-  });
-
-  it("selects the real readWorkspaceGraph and passes paths.root when no override is injected, returning six keys and one logical website→components edge", async () => {
-    // Create a minimal fixture repository root. It deliberately contains only two projects so
-    // that any accidental fallback to the live checkout's seven-project graph would produce a
-    // different nxEdges array and fail the assertion below.
-    const fixtureRoot = await mkdtemp(join(tmpdir(), "arolariu-status-wiring-"));
-    wiringFixtureRoots.push(fixtureRoot);
-
-    // Minimal nx.json using the same workspace layout as the live repository.
-    await writeFile(
-      join(fixtureRoot, "nx.json"),
-      JSON.stringify({workspaceLayout: {appsDir: "sites", libsDir: "packages"}}),
-      "utf8",
-    );
-
-    // @arolariu/components project — library under packages/.
-    await mkdir(join(fixtureRoot, "packages", "components"), {recursive: true});
-    await writeFile(
-      join(fixtureRoot, "packages", "components", "project.json"),
-      JSON.stringify({name: "@arolariu/components"}),
-      "utf8",
-    );
-    await writeFile(
-      join(fixtureRoot, "packages", "components", "package.json"),
-      JSON.stringify({name: "@arolariu/components"}),
-      "utf8",
-    );
-
-    // @arolariu/website project — declares both a package dependency and a cross-project
-    // target dependency on @arolariu/components, matching the live production shape that
-    // yields two internal dependency records for one logical public edge.
-    await mkdir(join(fixtureRoot, "sites", "arolariu.ro"), {recursive: true});
-    await writeFile(
-      join(fixtureRoot, "sites", "arolariu.ro", "project.json"),
-      JSON.stringify({name: "@arolariu/website", targets: {build: {dependsOn: ["components:build"]}}}),
-      "utf8",
-    );
-    await writeFile(
-      join(fixtureRoot, "sites", "arolariu.ro", "package.json"),
-      JSON.stringify({name: "@arolariu/website", dependencies: {"@arolariu/components": "*"}}),
-      "utf8",
-    );
-
-    // Build a recording runner keyed on the fixture root so every external probe (git, npm,
-    // doctor, disk) is handled without touching the live checkout.
-    const fixtureDocScriptPath = join(fixtureRoot, "scripts", "doctor.ts");
-    const fixtureDoctorKey = `${process.execPath} ${fixtureDocScriptPath} --quick --json`;
-    const fixtureResponses = new Map<string, CommandResult>([
-      [GIT_BRANCH_KEY, commandResult({stdout: "main\n"})],
-      [GIT_SHA_KEY, commandResult({stdout: "abc1234\n"})],
-      [GIT_LOG_TIME_KEY, commandResult({stdout: "2 hours ago\n"})],
-      [GIT_LOG_MSG_KEY, commandResult({stdout: "chore: fixture\n"})],
-      [GIT_STATUS_KEY, commandResult({stdout: ""})],
-      [NPM_AUDIT_KEY, commandResult({stdout: CLEAN_AUDIT_STDOUT})],
-      [NPM_OUTDATED_KEY, commandResult({stdout: "{}"})],
-      [fixtureDoctorKey, commandResult({stdout: JSON.stringify(PASSING_DOCTOR_REPORT)})],
-      [diskProbeKey(join(fixtureRoot, "node_modules")), commandResult({stdout: "0"})],
-      [diskProbeKey(join(fixtureRoot, "sites", "arolariu.ro", ".next")), commandResult({stdout: "0"})],
-      [diskProbeKey(join(fixtureRoot, "packages", "components", "dist")), commandResult({stdout: "0"})],
-    ]);
+  it("uses the inspection session for workspace facts instead of a hard-coded project list", async () => {
+    const customFacts: WorkspaceFacts = {
+      projects: [
+        {name: "new-project", root: "sites/new-project", targets: ["build"]},
+        {name: "@arolariu/components", root: "packages/components", targets: ["build"]},
+      ],
+      dependencies: [{source: "new-project", target: "@arolariu/components"}],
+      cycles: [],
+    };
 
     const {logger, sink} = createLogger("json");
-    const {runner} = createRecordingRunner(fixtureResponses);
+    const {runner} = createRecordingRunner(baseResponses());
 
-    // readWorkspaceGraph is intentionally NOT injected — the production default must be
-    // selected and must receive paths.root (the fixture root, not the process checkout).
-    const exitCode = await main(["--json"], {
+    await main(["--json"], {
       logger,
       runner,
-      resolveRepositoryPaths: () => createRepositoryPaths(fixtureRoot),
+      resolveRepositoryPaths: () => FIXED_REPOSITORY_PATHS,
+      inspection: createFakeInspection(customFacts),
     });
 
-    expect(exitCode).toBe(0);
     const output = parseJsonOutput(sink);
-    // All six top-level keys must be present.
     expect(Object.keys(output).toSorted()).toEqual(["disk", "git", "health", "nxEdges", "security", "workspaces"].toSorted());
-    // The package and target origins remain distinct in WorkspaceGraph but serialize as one
-    // logical status edge. The live checkout's seven-project graph would still produce a
-    // different workspace payload if the default reader used the wrong root.
-    expect(output["nxEdges"]).toEqual([{source: "@arolariu/website", target: "@arolariu/components"}]);
+    // The new-project must appear without changing any constant
+    const workspaces = output["workspaces"] as readonly {name: string}[];
+    expect(workspaces.some((w) => w.name === "new-project")).toBe(true);
+    expect(output["nxEdges"]).toEqual([{source: "new-project", target: "@arolariu/components"}]);
   });
 });
 

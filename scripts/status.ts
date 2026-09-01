@@ -38,9 +38,10 @@ import {formatBytes} from "./common/index.ts";
 import {MonorepositoryConsoleLogger, type LogSegment, type MonorepositoryLogger} from "./common/logger.ts";
 import {defaultCommandRunner, type CommandResult, type CommandRunner, type CommandSpec} from "./common/process.ts";
 import {resolveRepositoryPaths, type RepositoryPaths} from "./common/repository-paths.ts";
-import {readWorkspaceGraph, type WorkspaceGraph} from "./common/workspace-graph.ts";
-import {parseDoctorReport} from "./doctor.reporter.ts";
-import type {DoctorSummary} from "./doctor.types.ts";
+import {runDoctor} from "./doctor.ts";
+import type {DoctorReport, DoctorSummary} from "./doctor.types.ts";
+import {createRepositoryInspectionSession, type RepositoryInspectionSession} from "./inspection/repository.ts";
+import type {WorkspaceFacts, WorkspaceProjectFact, WorkspaceEdgeFact} from "./inspection/workspace.ts";
 
 // ============================================================================
 // Types
@@ -129,40 +130,22 @@ export interface StatusDependencies {
   /**
    * Receives a fatal, pre-collection diagnostic (a repository-context
    * failure) so it always reaches stderr.
-   *
-   * @remarks
-   * In JSON mode the primary `logger`'s semantic `error` is a no-op, so a
-   * fatal failure here must be routed through a logger that always reaches
-   * stderr. Human mode's primary logger already reaches stderr, so it may
-   * serve both roles.
    */
   readonly errorLogger: MonorepositoryLogger;
   /**
-   * Reads the workspace project graph from tracked repository metadata.
-   *
-   * @remarks
-   * Defaults to the shared read-only reader. Focused tests inject a
-   * deterministic graph so they never read the live checkout.
+   * Pre-created repository inspection session for workspace facts and
+   * typed doctor. When supplied, status reuses it; otherwise it creates
+   * one quick session after path resolution.
    */
-  readonly readWorkspaceGraph: (root: string) => Promise<WorkspaceGraph>;
+  readonly inspection: RepositoryInspectionSession;
 }
 
 // ============================================================================
 // Constants
 // ============================================================================
 
-/** Relative paths (from the repository root) to every workspace project. */
-const WORKSPACE_DIRS: readonly string[] = [
-  "packages/components",
-  "sites/arolariu.ro",
-  "sites/cv.arolariu.ro",
-  "sites/api.arolariu.ro",
-  "sites/docs.arolariu.ro",
-];
-
 const GIT_TIMEOUT_MS = 30_000;
 const NPM_TIMEOUT_MS = 60_000;
-const DOCTOR_TIMEOUT_MS = 60_000;
 const DISK_PROBE_TIMEOUT_MS = 60_000;
 
 const GIT_BRANCH_COMMAND = {command: "git", args: ["rev-parse", "--abbrev-ref", "HEAD"]} as const satisfies CommandSpec;
@@ -214,7 +197,7 @@ const DISK_PROBE_SCRIPT = [
   "try {",
   "  process.stdout.write(String(sizeOf(target)));",
   "} catch (error) {",
-  '  process.stderr.write(error && error.message ? error.message : String(error));',
+  "  process.stderr.write(error && error.message ? error.message : String(error));",
   "  process.exitCode = 1;",
   "}",
 ].join("\n");
@@ -250,14 +233,6 @@ function hasCommandTransportFailure(result: Readonly<CommandResult>): boolean {
 
 function isSuccessfulCommand(result: Readonly<CommandResult>): boolean {
   return result.code === 0 && !hasCommandTransportFailure(result);
-}
-
-/** Builds the `node <repo>/scripts/doctor.ts --quick --json` command run through the process runner. */
-function doctorCommand(paths: Readonly<RepositoryPaths>): CommandSpec {
-  return {
-    command: process.execPath,
-    args: [join(paths.root, "scripts", "doctor.ts"), "--quick", "--json"],
-  };
 }
 
 /**
@@ -303,62 +278,31 @@ function parseDiskProbeSize(result: Readonly<CommandResult>): number | null {
 }
 
 // ============================================================================
-// Doctor Health Parsing
-// ============================================================================
-
-/**
- * Parses a doctor command result into a health summary.
- *
- * @remarks
- * Parses {@link CommandResult.stdout} directly with `JSON.parse` followed by
- * {@link parseDoctorReport} — it never scans for the first `{` and never
- * reuses a stale value. A schema-v1 report is accepted whether the doctor
- * process exited `0` or `1` (doctor exits `1` when checks fail, not when the
- * report itself is invalid), and `stderr` warnings are ignored whenever
- * `stdout` holds a valid report. An empty `stdout`, a non-JSON preamble, a
- * missing/old/future schema, malformed JSON, or an internally inconsistent
- * score/grade/summary all resolve to `null`.
- *
- * @param result - The complete result of running the doctor command.
- * @returns The parsed health summary, or `null` when unavailable.
- */
-export function healthFromDoctorResult(result: Readonly<CommandResult>): HealthInfo | null {
-  if (result.stdout.trim().length === 0) {
-    return null;
-  }
-
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(result.stdout);
-  } catch {
-    return null;
-  }
-
-  try {
-    const report = parseDoctorReport(parsed);
-    return {score: report.score, grade: report.grade, summary: report.summary};
-  } catch {
-    return null;
-  }
-}
-
-// ============================================================================
 // Data Collectors
 // ============================================================================
 
 /**
- * Reads workspace metadata from `package.json` and `project.json` for each
- * project directory listed in {@link WORKSPACE_DIRS}.
+ * Collects workspace metadata from the inspection session's WorkspaceFacts.
  *
+ * @remarks
+ * Project metadata is derived from the shared inspection session's workspace
+ * facts instead of a hard-coded project list. A newly added Nx project
+ * automatically appears.
+ *
+ * @param inspection - The shared repository inspection session.
  * @param root - Absolute repository root.
- * @returns Array of workspace info objects.
+ * @returns Array of workspace info objects, or `null` when unavailable.
  */
-async function collectWorkspaces(root: string): Promise<readonly WorkspaceInfo[]> {
-  const workspaces: WorkspaceInfo[] = [];
+async function collectWorkspaces(inspection: RepositoryInspectionSession, root: string): Promise<readonly WorkspaceInfo[] | null> {
+  const outcome = await inspection.inspect("workspace");
+  if (outcome.kind !== "available") {
+    return null;
+  }
 
-  for (const dir of WORKSPACE_DIRS) {
-    const absDir = join(root, dir);
-    let name = dir;
+  const workspaces: WorkspaceInfo[] = [];
+  for (const project of outcome.value.projects) {
+    const absDir = join(root, project.root);
+    let name = project.name;
     let version = "—";
     let type = "unknown";
     let tags: string[] = [];
@@ -401,42 +345,48 @@ async function collectWorkspaces(root: string): Promise<readonly WorkspaceInfo[]
 }
 
 /**
- * Derives inter-project dependency edges from tracked workspace metadata.
+ * Derives inter-project dependency edges from the inspection session's WorkspaceFacts.
  *
- * @remarks
- * Shares {@link readWorkspaceGraph} with `doctor.workspace.ts`, so status and
- * doctor report identical workspace-graph semantics. No Nx child process is
- * dispatched and no temporary file is written or read: Nx's project-graph
- * construction rewrites its native workspace database, which the strict
- * read-only contract forbids. {@link WorkspaceGraph} retains one record per
- * independent metadata origin, while the public status payload emits each
- * logical source/target pair once in deterministic order.
- *
- * @param readGraph - Injected workspace-graph reader.
- * @param root - Absolute repository root.
- * @returns Dependency edges between workspace projects, or `null` when the
- * metadata cannot be inspected.
+ * @param inspection - The shared repository inspection session.
+ * @returns Dependency edges, or `null` when unavailable.
  */
-async function collectNxGraph(
-  readGraph: (root: string) => Promise<WorkspaceGraph>,
-  root: string,
-): Promise<readonly DependencyEdge[] | null> {
-  try {
-    const graph = await readGraph(root);
-    const targetsBySource = new Map<string, Set<string>>();
-    for (const {source, target} of graph.dependencies) {
-      const targets = targetsBySource.get(source) ?? new Set<string>();
-      targets.add(target);
-      targetsBySource.set(source, targets);
-    }
+async function collectNxGraph(inspection: RepositoryInspectionSession): Promise<readonly DependencyEdge[] | null> {
+  const outcome = await inspection.inspect("workspace");
+  if (outcome.kind !== "available") {
+    return null;
+  }
 
-    return [...targetsBySource.entries()]
-      .toSorted(([left], [right]) => (left < right ? -1 : left > right ? 1 : 0))
-      .flatMap(([source, targets]) =>
-        [...targets]
-          .toSorted((left, right) => (left < right ? -1 : left > right ? 1 : 0))
-          .map((target) => ({source, target})),
-      );
+  const targetsBySource = new Map<string, Set<string>>();
+  for (const dep of outcome.value.dependencies) {
+    const targets = targetsBySource.get(dep.source) ?? new Set<string>();
+    targets.add(dep.target);
+    targetsBySource.set(dep.source, targets);
+  }
+
+  return [...targetsBySource.entries()]
+    .toSorted(([left], [right]) => (left < right ? -1 : left > right ? 1 : 0))
+    .flatMap(([source, targets]) =>
+      [...targets].toSorted((left, right) => (left < right ? -1 : left > right ? 1 : 0)).map((target) => ({source, target})),
+    );
+}
+
+/**
+ * Runs the typed doctor in quick mode and returns the health summary.
+ *
+ * @param inspection - The exact same inspection session used for workspaces.
+ * @param paths - Canonical repository paths.
+ * @returns The health summary, or `null` if doctor fails.
+ */
+async function collectHealth(inspection: RepositoryInspectionSession, paths: Readonly<RepositoryPaths>): Promise<HealthInfo | null> {
+  try {
+    const report = await runDoctor(
+      {quick: true, verbose: false},
+      {
+        inspection,
+        resolveRepositoryPaths: () => paths,
+      },
+    );
+    return {score: report.score, grade: report.grade, summary: report.summary};
   } catch {
     return null;
   }
@@ -632,29 +582,17 @@ export async function collectDisk(runner: CommandRunner, root: string): Promise<
   );
   const [nodeModules, nextBuild, componentsDist] = results.map(parseDiskProbeSize);
   if (
-    nodeModules === null ||
-    nodeModules === undefined ||
-    nextBuild === null ||
-    nextBuild === undefined ||
-    componentsDist === null ||
-    componentsDist === undefined
+    nodeModules === null
+    || nodeModules === undefined
+    || nextBuild === null
+    || nextBuild === undefined
+    || componentsDist === null
+    || componentsDist === undefined
   ) {
     return null;
   }
 
   return {nodeModules, nextBuild, componentsDist};
-}
-
-/**
- * Runs the doctor script in quick JSON mode and parses its health report.
- *
- * @param runner - Command runner used to invoke doctor.
- * @param paths - Canonical repository paths.
- * @returns The health summary, or `null` if the report is unavailable.
- */
-async function collectHealth(runner: CommandRunner, paths: Readonly<RepositoryPaths>): Promise<HealthInfo | null> {
-  const result = await runner.run(doctorCommand(paths), {cwd: paths.root, timeoutMs: DOCTOR_TIMEOUT_MS});
-  return healthFromDoctorResult(result);
 }
 
 // ============================================================================
@@ -854,8 +792,7 @@ export async function main(
     return 1;
   }
 
-  const logger =
-    dependencies.logger ?? new MonorepositoryConsoleLogger("status", {mode: options.json ? "json" : "human", verbose: false});
+  const logger = dependencies.logger ?? new MonorepositoryConsoleLogger("status", {mode: options.json ? "json" : "human", verbose: false});
 
   // In JSON mode the primary `logger`'s semantic `error` is a no-op, so a fatal
   // failure here must be routed through a logger that always reaches stderr.
@@ -864,7 +801,6 @@ export async function main(
 
   const resolvePaths = dependencies.resolveRepositoryPaths ?? ((): RepositoryPaths => resolveRepositoryPaths());
   const runner = dependencies.runner ?? defaultCommandRunner;
-  const readGraph = dependencies.readWorkspaceGraph ?? readWorkspaceGraph;
 
   let paths: RepositoryPaths;
   try {
@@ -874,13 +810,24 @@ export async function main(
     return 1;
   }
 
+  const inspection =
+    dependencies.inspection
+    ?? createRepositoryInspectionSession({
+      profile: "quick",
+      paths,
+      runner,
+      env: process.env,
+      platform: process.platform,
+      now: () => performance.now(),
+    });
+
   const [workspacesResult, nxGraphResult, gitResult, securityResult, diskResult, healthResult] = await Promise.allSettled([
-    collectWorkspaces(paths.root),
-    collectNxGraph(readGraph, paths.root),
+    collectWorkspaces(inspection, paths.root),
+    collectNxGraph(inspection),
     collectGit(runner, paths.root),
     collectSecurity(runner, paths.root),
     collectDisk(runner, paths.root),
-    collectHealth(runner, paths),
+    collectHealth(inspection, paths),
   ]);
 
   const output: StatusOutput = {
