@@ -1,26 +1,33 @@
 # RFC 0002: Lean Monorepo Tooling Architecture
 
 - **Status**: Accepted
-- **Date**: 2026-08-31
+- **Date**: 2026-09-01
+- **Revision**: 2 - Declarative Monorepo Command Runtime
 - **Authors**: Alexandru-Razvan Olariu, GitHub Copilot
 - **Related Components**: `scripts/`, `package.json`, `package-lock.json`, `.arolariu/tooling.local.json`
+- **Supersedes**: RFC 0002 revision 1, dated 2026-08-31
 
 ---
 
 ## Abstract
 
-This RFC defines a leaner architecture for the repository tooling under
-`scripts/`. It replaces bespoke command-line parsing, process mechanics,
-workspace graph construction, and host inventory code with exact-pinned
-industry packages while preserving repository-specific setup, diagnosis,
-security, redaction, and orchestration policy.
+This RFC defines the shared runtime for repository tooling under `scripts/`.
+Every production script except the format and lint Piscina stack is authored as
+a declarative command object backed by one Commander lifecycle, one
+invocation-scoped capability runtime, and a generic runner contract with an
+Execa implementation.
 
-The design keeps the existing specialist setup and doctor modules, introduces
-a shared typed inspection core, removes obsolete persisted fingerprints and
-serialization boundaries, and makes `npm run setup` the comprehensive
-post-install workspace wizard. A normal doctor run performs comprehensive host
-and tooling inspection; `--quick` remains the bounded path for status and
-routine automation.
+The design centralizes argument parsing, help, terminal presentation, process
+execution, filesystem and HTTP access, environment and signal handling,
+concurrency, delays, cleanup, failure normalization, and process exit behavior.
+Script modules retain only repository business policy: setup phases, Doctor
+diagnoses, Status degradation, generators, documentation assembly, E2E report
+handling, exchange-rate transformation, and container lifecycle rules.
+
+This revision replaces the narrower Commander factory and Execa
+`CommandRunner` architecture from the previous revision. It preserves all
+still-valid setup, Doctor, inspection, redaction, read-only, security, and
+cross-platform contracts.
 
 ---
 
@@ -28,232 +35,1006 @@ routine automation.
 
 ### 1.1 Current State
 
-The tooling currently owns substantial infrastructure that mature packages or
-existing platform APIs can provide:
+The first revision of this RFC successfully established:
 
-- hand-written argument parsing and help output;
-- low-level cross-platform child-process mechanics;
-- an Nx-compatible workspace graph implementation;
-- repeated setup and doctor discovery for the same toolchains and packages;
-- dependency fingerprints persisted in local tooling configuration;
-- a duplicated, documentation-heavy script environment type model;
-- a serialized doctor report parser used only by the status command;
-- a large TypeScript source interpreter that checks doctor read-only policy;
-- temporary Postman collection mutation for authentication values already
-  supported by Newman runtime variables;
-- a second child-process implementation in the documentation assembler.
+- Commander as the parser for most user-facing scripts;
+- Execa as the sole production child-process engine;
+- a shared logger with chunk-safe redaction;
+- a shared prompt adapter;
+- an inspection session reused by Setup, Doctor, and Status;
+- typed setup phases and Doctor diagnostic modules;
+- architecture tests for output and process boundaries.
 
-After excluding the lint and format worker stack, which is outside this RFC,
-the current scope is approximately 23,061 production lines and 18,873 test
-lines. Setup and doctor account for most of the remaining implementation and
-test footprint.
+Those improvements removed low-level process code and several duplicated
+inspection paths, but the command layer remains only partially centralized.
+The current `scripts/common/cli.ts` factory configures a Commander instance,
+while each entrypoint still owns some combination of:
 
-The current design also repeats expensive observations. React, Svelte, setup,
-doctor, and status independently inspect package trees, project metadata,
-tool versions, infrastructure, and repository state. Failure paths can attach
-large command payloads to diagnostics, producing noisy output that obscures
-the actionable error.
+- logger construction and re-construction after parsing;
+- `try`/`catch` around Commander;
+- Commander error-to-exit mapping;
+- direct-entry detection;
+- `process.exit()` or `process.exitCode`;
+- unknown-error formatting;
+- SIGINT and prompt interruption mapping;
+- human, JSON, and fatal-error output selection;
+- command-scoped timeout and logging wrappers;
+- repeated child-process success and transport-failure checks;
+- repeated filesystem, HTTP, timer, environment, and concurrency mechanics.
 
-### 1.2 Goals
+The shared Execa adapter also returns a flag-based result that callers must
+interpret repeatedly:
+
+```typescript
+result.code === 0
+  && !result.timedOut
+  && result.signal === undefined
+  && result.spawnError === undefined
+```
+
+That logic, command-failure evidence formatting, and top-level lifecycle code
+now appear in multiple Setup modules, Status, documentation assembly,
+container runtime commands, generators, and E2E tooling.
+
+### 1.2 Command Inventory
+
+This RFC covers these user-facing command families:
+
+| Family | Entry points |
+| --- | --- |
+| Documentation | `docs-assemble.ts` |
+| Health | `doctor.ts`, `status.ts` |
+| Generation | `generate.ts`, `generate.env.ts`, `generate.gql.ts`, `generate.i18n.ts`, `generate.artifacts.ts` |
+| Setup | `setup.ts` and `setup.*.ts` |
+| Testing | `test-e2e.ts` |
+| Data maintenance | `update-exchange-rates.ts` |
+| Local containers | `container-runtime/aspire.ts`, `selfhost.ts`, `compose.ts`, `image.ts` |
+
+The capability boundary also applies to supporting production modules under
+`scripts/**`, including inspection providers and internal worker entrypoints.
+The exclusions are defined in section 3.
+
+### 1.3 Problem Statement
+
+The current design centralizes libraries without centralizing the full command
+lifecycle. As a result:
+
+1. script entrypoints remain larger than their business behavior requires;
+2. command semantics differ between scripts;
+3. infrastructure access remains ambient and difficult to restrict by type;
+4. command composition depends on exported `main()` or `run*()` functions;
+5. process outcomes require repetitive, error-prone flag interpretation;
+6. cleanup and cancellation policies are implemented inconsistently;
+7. tests replace many individual dependencies instead of one invocation
+   runtime;
+8. architectural drift is easy because a script can still reach Node or Execa
+   APIs directly.
+
+### 1.4 Goals
 
 This RFC has the following goals:
 
-1. Reduce the net production and test code owned under `scripts/`.
-2. Use established packages for generic CLI, process, graph, and host
-   inspection mechanics.
-3. Keep repository policy explicit, typed, testable, and independent of those
-   packages.
-4. Make the supported fresh-clone flow predictable:
+1. Make each migrated script declare only metadata, typed input, business
+   execution, and business completion policy.
+2. Make the command object the only executable API for direct and composed
+   invocation.
+3. Centralize Commander, terminal, runner, HTTP, filesystem, environment,
+   signal, timer, concurrency, cleanup, and exit mechanics.
+4. Define a generic runner protocol and an Execa-backed process runner without
+   exposing Execa types.
+5. Replace flag combinations with discriminated execution outcomes.
+6. Preserve repository-specific behavior, security, read-only, redaction, and
+   cross-platform contracts.
+7. Keep every invocation re-entrant and independently testable.
+8. Enforce the architecture with focused TypeScript AST tests.
+9. Preserve separate npm command entrypoints; do not require a root umbrella
+   CLI.
+10. Avoid new dependencies unless implementation proves a concrete capability
+    gap.
 
-   ```text
-   git clone
-   npm install  # or: npm ci
-   npm run setup
-   ```
-
-5. Make setup a comprehensive, dependency-aware, consent-controlled wizard.
-6. Make doctor comprehensive by default while keeping a fast `--quick` mode.
-7. Preserve first-class Windows, Linux, and macOS behavior.
-8. Prevent raw package or command output from flooding human diagnostics.
-9. Keep doctor repository-read-only and keep secrets out of logs and reports.
-10. Retain stable npm script names and existing behavior unless this RFC
-    explicitly changes it.
-
-### 1.3 Non-goals
+### 1.5 Non-goals
 
 This RFC does not:
 
-- change `lint.ts`, `format.ts`, their Piscina workers, or their behavior;
-- migrate Python tooling from pip and `.venv` to `uv`;
-- add a Windows/macOS GitHub Actions matrix;
-- replace repository-specific taxonomy, license, i18n, environment,
-  exchange-rate, container lifecycle, or Newman report logic;
-- make `npm run setup` bootstrap its own root npm dependencies;
-- add a generic setup or doctor framework;
-- make raw `envinfo` or `systeminformation` output part of a public contract.
-
-The lint/format architecture and a potential `uv` migration require separate
-designs.
-
----
-
-## 2. Developer-facing Contracts
-
-### 2.1 Bootstrap Contract
-
-Contributors must run either `npm install` or `npm ci` before
-`npm run setup`. This guarantees that Commander, Execa, Nx Devkit, envinfo,
-systeminformation, and all other root tooling dependencies are available when
-setup starts.
-
-Setup validates the root npm tree and lock/manifests. It does not rerun root
-`npm ci`. If the root tree is missing or invalid, setup fails early with a
-concise explanation and the exact repair command.
-
-Setup continues to own dependency restoration outside the root npm tree,
-including:
-
-- `.github/scripts` through `npm ci`;
-- .NET packages through `dotnet restore`;
-- the Python `.venv`, requirements installation, and `pip check`.
-
-### 2.2 Stable Commands
-
-Existing npm script names remain stable. Existing command flags remain stable
-except for the doctor simplification in section 2.3.
-
-Commander becomes the help and argument owner for migrated commands. Every
-migrated command presents a consistent repository banner, usage, options,
-examples, and logger-backed error output.
-
-### 2.3 Doctor CLI
-
-Doctor exposes only these user options:
-
-| Purpose | Long | Short | Slash |
-| --- | --- | --- | --- |
-| Fast bounded profile | `--quick` | `-q` | `/q` |
-| Additional bounded evidence | `--verbose` | `-v` | `/v` |
-| Help | `--help` | `-h` | `/h` |
-
-The following flags are removed:
-
-- `--ci`: doctor no longer has a special CI mode;
-- `--json`: the typed report becomes an internal API;
-- `--score`: the health score and grade are always rendered.
-
-A normal doctor run performs all local-host diagnostics regardless of the
-`CI` environment variable. Callers that require the bounded profile use
-`--quick` explicitly.
-
-### 2.4 Read-only Contract
-
-Doctor must not mutate tracked files, repository-local ignored state,
-`.nx`, or `.arolariu`. Nx state is redirected to an operating-system
-temporary directory.
-
-A normal doctor run is not globally side-effect-free. The approved
-`envinfo` and `systeminformation` collectors may execute observational native
-commands, read container sockets and operating-system interfaces, populate
-external operating-system caches, and perform their built-in network probes.
-Those operations must not write into the checkout.
+- change `format.ts`, `lint.ts`, their Piscina pools, their workers, or their
+  behavior;
+- unify Execa and Piscina in this implementation;
+- introduce a single `arolariu` root command;
+- replace the existing logger, progress, redaction, or prompt implementations;
+- replace Nx Devkit, envinfo, systeminformation, Commander, or Execa;
+- redesign setup consent, Doctor scoring, Status schemas, generation
+  algorithms, exchange-rate calculations, container plans, or Newman report
+  sanitization;
+- make every pure helper a runtime service;
+- impose a line-count quota;
+- add a dependency solely to reduce a small amount of adapter code.
 
 ---
 
-## 3. Architecture
+## 2. Decision
 
-### 3.1 Overview
+### 2.1 Chosen Architecture
+
+The repository adopts a hybrid of:
+
+- a **capability kernel** for internal isolation; and
+- a **declarative command host** for script authoring.
 
 ```text
-Commander CLI entrypoints
+script command definition
   |
-  +-- setup policy modules --------------------------+
-  |                                                  |
-  +-- doctor policy modules -------------------------+--> shared InspectionSession
-  |                                                  |      |
-  +-- status and auxiliary commands ----------------+      +-- Nx workspace provider
-                                                            +-- envinfo tooling provider
-                                                            +-- systeminformation host provider
-                                                            +-- package/repository inspectors
-                                                            +-- Execa-backed CommandRunner
+  v
+MonorepoCommand<TInput, TOutput>
+  |
+  v
+AbstractMonorepoCommand<TInput, TOutput>
+  |
+  +-- fresh Commander parser per run
+  +-- run(argv) and invoke(input)
+  +-- output, signal, error, cleanup, and exit lifecycle
+  |
+  v
+CommandRuntime
+  |
+  +-- logger and prompts
+  +-- generic runner
+  +-- HTTP client
+  +-- filesystem
+  +-- clock and delay
+  +-- task orchestration
+  +-- immutable environment/platform snapshot
+  |
+  v
+Node adapters and Execa
 ```
+
+The command object owns the public lifecycle. It does not implement every
+capability in one God class. Instead, it composes immutable, invocation-scoped
+capabilities and passes either the full runtime or a narrower capability view
+to business modules.
+
+### 2.2 Responsibility Split
 
 The architecture separates three responsibilities:
 
-1. **Mechanics** are delegated to pinned packages and narrow adapters.
-2. **Facts** are collected by read-only inspectors and represented as typed
-   outcomes.
-3. **Policy** remains in setup, doctor, status, and domain-specific scripts.
+1. **Lifecycle**
+   - Commander parser construction;
+   - slash aliases;
+   - help and usage behavior;
+   - logger mode;
+   - cancellation;
+   - error normalization;
+   - cleanup;
+   - process exit mapping.
+2. **Capabilities**
+   - external command execution;
+   - filesystem access;
+   - HTTP requests;
+   - prompts and terminal progress;
+   - timing and delays;
+   - controlled concurrency;
+   - environment and platform values.
+3. **Business policy**
+   - what a command validates;
+   - what operations it performs;
+   - what failures mean;
+   - what data it renders or returns;
+   - whether a partial failure degrades, blocks, or aborts.
 
-Inspectors do not return setup actions or doctor diagnostics. They return
-facts such as installed versions, package state, project dependencies,
-container state, host resources, and configuration presence. Setup and doctor
-interpret the same fact differently without depending on one another.
+### 2.3 Why This Is Not a God Class
 
-### 3.2 CLI Adapter
+One class still coordinates every invocation, but unrelated implementations
+remain isolated behind interfaces. This preserves the requested single command
+facade while avoiding:
 
-A shared `createToolProgram()` factory wraps Commander and owns:
+- a large inheritance surface;
+- shared mutable state between commands;
+- unrestricted capabilities in Doctor modules;
+- tests that must subclass a monolithic object;
+- command-specific policy embedded in generic infrastructure.
 
-- repository banner and help layout;
-- logger-backed help and error output;
-- `exitOverride()` so entrypoints retain `main(): Promise<number>`;
-- argument normalization for existing slash aliases;
-- consistent unknown-option and missing-argument behavior;
-- help-before-work behavior;
-- examples and command-specific epilogues.
+---
 
-Each command declares only its arguments, options, subcommands, and semantic
-validation. Command modules must not write directly to process streams.
+## 3. Scope and Exclusions
 
-### 3.3 Process Adapter
+### 3.1 Included Production Code
 
-Execa replaces the low-level `spawn()` implementation but remains behind the
-existing repository interfaces:
+The architecture applies to every production module under `scripts/**` that
+participates in the commands listed in section 1.2. Included modules must not
+directly own stateful platform mechanics after migration.
 
-- `CommandSpec`;
-- `CommandRunOptions`;
-- `CommandResult`;
-- `CommandRunner`.
+Representative included code:
 
-The adapter preserves repository behavior that Execa does not own:
+- direct CLI entrypoints;
+- Setup, Doctor, Status, generation, documentation, E2E, exchange-rate, and
+  container support modules;
+- inspection sessions and providers;
+- aggregate and workspace inspection worker entrypoints;
+- repository path, requirement, and tooling configuration modules;
+- shared command-oriented utilities.
 
-- a pre-aborted signal must not start a child process;
-- results remain non-throwing and map transport failures explicitly;
-- command execution remains injectable in tests;
-- stdin and environment values are never logged;
-- tee output passes through chunk-safe logger redaction;
-- timeout classes and caller overrides remain repository policy;
-- `shell` remains disabled unless an existing command explicitly requires it;
-- repository-local executable preference is never enabled globally.
+### 3.2 Explicit Format and Lint Exclusion
 
-Direct Execa imports are restricted to the process adapter and approved
-inspection-worker boundaries.
+The following remain outside this RFC:
 
-### 3.4 Inspection Session
+- `scripts/format.ts`;
+- `scripts/lint.ts`;
+- `scripts/workers/format.worker.ts`;
+- `scripts/workers/lint.worker.ts`;
+- `scripts/types/format.ts`;
+- `scripts/types/lint.ts`;
+- focused tests that exercise only those Piscina contracts.
 
-One `InspectionSession` is created per setup, doctor, or status run. It
-memoizes immutable typed observations so multiple policy modules do not repeat
-the same command or host probe.
+They continue to use Piscina and worker-thread-specific contracts. They may
+reuse the logger, but they are not migrated to the command runtime or generic
+runner in this record.
 
-Representative providers are:
+`scripts/workers/shell.ts` is intentionally not excluded. Its legacy
+`{code, output}` API remains stable for the format and lint workers, while its
+implementation migrates from `common/process.ts` to the generic process
+runner. This adapter-only migration must not change Piscina scheduling,
+serialization, worker messages, or format/lint behavior.
 
-- workspace and package inventory;
-- Nx projects and dependency graph;
-- generic tool inventory;
-- comprehensive host information;
-- .NET SDK, workload, certificate, and AppHost state;
-- Python interpreter, virtual environment, requirements, and package health;
-- container runtime, port, process, and certificate state;
-- React and Svelte package/configuration state;
-- generated artifact and environment configuration state.
+### 3.3 Pure Platform Utilities
 
-Mutating setup phases invalidate only the observations they changed and then
-rerun those inspectors to verify postconditions. No cache survives the
-process, and no inspection result is written to tooling configuration.
+The runtime boundary covers stateful or effectful mechanics. Pure operations
+such as `node:path` joins/resolution, URL construction, string decoding, and
+data transformation may remain direct imports where they do not perform I/O,
+inspect ambient process state, or write presentation output.
 
-### 3.5 Inspection Outcomes
+---
 
-Providers return an outcome equivalent to:
+## 4. Command Authoring Contract
+
+### 4.1 Declarative Definition
+
+The following names and semantics are the normative authoring contract:
+
+```typescript
+type CommandPresentation = "human" | "json" | "silent";
+type CommandExitCode = 0 | 1 | 2 | 130 | 143;
+
+type JsonValue =
+  | string
+  | number
+  | boolean
+  | null
+  | readonly JsonValue[]
+  | Readonly<{[key: string]: JsonValue}>;
+
+interface CommandMetadata {
+  readonly name: string;
+  readonly description: string;
+  readonly usage?: string;
+  readonly examples?: readonly string[];
+  readonly slashAliases?: Readonly<Record<string, string>>;
+}
+
+interface CommandContext {
+  readonly runtime: CommandRuntime;
+  readonly presentation: CommandPresentation;
+}
+
+interface CommandCompletion {
+  readonly exitCode: 0 | 1;
+  readonly human?: (
+    logger: MonorepositoryLogger,
+  ) => void | Promise<void>;
+  readonly json?: JsonValue;
+}
+
+interface CommandDefinition<TInput, TOutput> {
+  readonly metadata: CommandMetadata;
+  readonly configure: (program: Command) => void;
+  readonly decode: (program: Command) => TInput;
+  readonly presentation?: (input: Readonly<TInput>) => CommandPresentation;
+  readonly execute: (
+    context: Readonly<CommandContext>,
+    input: Readonly<TInput>,
+  ) => Promise<TOutput>;
+  readonly completion: (
+    output: Readonly<TOutput>,
+    context: Readonly<CommandContext>,
+  ) => CommandCompletion | Promise<CommandCompletion>;
+}
+```
+
+`configure()` declares Commander arguments and options. `decode()` converts
+Commander state into one typed input and owns command-specific semantic
+validation. `execute()` contains business orchestration. `completion()` builds
+a deferred final presentation and maps the completed business output to exit
+code `0` or `1`; it does not write output itself.
+
+The lifecycle invokes `human` only in human mode, serializes `json` exactly
+once in JSON mode, and invokes neither in silent mode. A command that selects
+JSON mode must supply `json`; absence is an internal command-definition
+failure, not an empty success document.
+
+### 4.2 Abstract and Concrete Classes
+
+`scripts/common/commander.ts` defines:
+
+```typescript
+interface CommandInvocationOptions {
+  readonly parent?: Readonly<CommandContext>;
+  readonly presentation?: CommandPresentation;
+  readonly signal?: AbortSignal;
+}
+
+interface RuntimeCreationOptions {
+  readonly presentation: CommandPresentation;
+  readonly signal?: AbortSignal;
+  readonly registerProcessSignals: boolean;
+}
+
+interface CommandProcessHost {
+  readonly argv: readonly string[];
+  readonly isDirectEntry: (moduleUrl: string) => boolean;
+  readonly setExitCode: (exitCode: CommandExitCode) => void;
+}
+
+interface CommandRuntimeFactory {
+  readonly processHost: CommandProcessHost;
+  readonly createParseLogger: () => MonorepositoryLogger;
+  readonly createRoot: (
+    options: Readonly<RuntimeCreationOptions>,
+  ) => Promise<CommandRuntime>;
+  readonly createChild: (
+    parent: Readonly<CommandContext>,
+    options: Readonly<RuntimeCreationOptions>,
+  ) => Promise<CommandRuntime>;
+}
+
+abstract class AbstractMonorepoCommand<TInput, TOutput> {
+  public run(argv?: readonly string[]): Promise<CommandExecution<TOutput>>;
+
+  public invoke(
+    input: Readonly<TInput>,
+    options?: Readonly<CommandInvocationOptions>,
+  ): Promise<CommandExecution<TOutput>>;
+
+  public runIfMain(moduleUrl: string): Promise<void>;
+}
+
+class MonorepoCommand<TInput, TOutput>
+  extends AbstractMonorepoCommand<TInput, TOutput> {
+  public constructor(
+    definition: Readonly<CommandDefinition<TInput, TOutput>>,
+    runtimeFactory?: CommandRuntimeFactory,
+  );
+}
+```
+
+The abstract class owns the lifecycle template. The concrete class delegates
+command-specific behavior to a typed definition. The production runtime
+factory creates Node-backed root and child scopes; tests may inject a factory
+without replacing command business code. An omitted `run()` argv reads the
+immutable value from `processHost`; the command host itself does not import
+ambient process state.
+
+### 4.3 Fresh Parser Per Invocation
+
+Commander `Command` instances are mutable. An exported command object must
+therefore create a fresh parser for every `run()` call.
+
+This guarantees:
+
+- repeated tests do not retain prior options or arguments;
+- nested invocation cannot corrupt a later CLI run;
+- exported command objects are safe to reuse;
+- help and error configuration remains invocation-local.
+
+The command host normalizes slash aliases before calling `parseAsync()`. It
+does not monkey-patch Commander's `parse()` or `parseAsync()` methods.
+
+### 4.4 Command-only Execution API
+
+Migrated commands do not export `main()`, `runDoctor()`, `runSetup()`, or
+equivalent execution functions as parallel entrypoints.
+
+They export a command object:
+
+```typescript
+export const doctorCommand = new MonorepoCommand(doctorDefinition);
+
+await doctorCommand.runIfMain(import.meta.url);
+```
+
+Pure types, parsers, domain helpers, renderers, and builders may remain
+exported where tests or other modules legitimately consume them. The command
+object is the only API that starts a command execution.
+
+### 4.5 Direct and Composed Invocation
+
+`run(argv)` is the CLI path:
+
+1. normalize aliases;
+2. build and parse a fresh Commander program;
+3. decode typed input;
+4. select presentation;
+5. create an owned root runtime with process-signal handling;
+6. execute business behavior and build the deferred completion;
+7. run invocation cleanup;
+8. render the completion or normalized failure;
+9. return a typed execution result.
+
+`run()` returns the exit meaning but never writes it to the process. Only
+`runIfMain()` assigns that exit code when the module is the direct entrypoint.
+
+`invoke(input)` is the composition and programmatic path:
+
+1. skip argv and Commander parsing;
+2. default presentation to `silent` unless explicitly overridden;
+3. derive a child runtime when `parent` is supplied, otherwise create an owned
+   standalone root runtime without process-signal registration;
+4. execute business behavior;
+5. build completion, run child-owned cleanup, and apply presentation;
+6. return a typed execution result;
+7. never write a process exit code or register OS signal handlers.
+
+Commands compose commands through `invoke()`. They never spawn sibling CLI
+scripts.
+
+Examples:
+
+- `statusCommand` invokes `doctorCommand` in quick, silent mode;
+- `generateCommand` invokes the selected generator commands;
+- image and selfhost commands may invoke artifact generation through the
+  generator command object.
+
+### 4.6 Invocation Outcomes
+
+Command boundaries do not leak thrown exceptions:
+
+```typescript
+type CommandExecution<TOutput> =
+  | {
+      readonly status: "completed";
+      readonly value: TOutput;
+      readonly exitCode: 0 | 1;
+    }
+  | {
+      readonly status: "failed";
+      readonly failure: CommandFailure;
+      readonly exitCode: 1 | 2;
+    }
+  | {
+      readonly status: "cancelled";
+      readonly failure: CommandFailure;
+      readonly exitCode: 130 | 143;
+    }
+  | {
+      readonly status: "help";
+      readonly exitCode: 0;
+    };
+```
+
+Business code may throw internally. The command lifecycle classifies the
+failure once and returns the appropriate variant. `completed` means the
+business operation produced its typed output; it does not imply exit code
+`0`. Doctor, for example, returns a completed report with exit code `1` when
+diagnostics ran successfully but checks failed. A composing command may still
+consume that report.
+
+### 4.7 Presentation Modes
+
+The shared lifecycle supports:
+
+- `human`;
+- `json`;
+- `silent`.
+
+Human mode uses the existing logger and prompt contracts. JSON mode emits
+exactly one success document. Silent mode is used for nested command
+composition when the parent owns presentation.
+
+Help and usage errors always route through the runtime factory's parse logger.
+Help aliases short-circuit before business execution.
+
+---
+
+## 5. Invocation Runtime
+
+### 5.1 Runtime Contract
+
+`scripts/common/runtime.ts` defines the capability kernel:
+
+```typescript
+interface CommandRuntime {
+  readonly logger: MonorepositoryLogger;
+  readonly prompts: PromptProvider;
+  readonly runner: ProcessRunner;
+  readonly http: HttpClient;
+  readonly files: FileSystem;
+  readonly clock: Clock;
+  readonly tasks: TaskScheduler;
+  readonly inspection: InspectionSession;
+  readonly environment: RuntimeEnvironment;
+  readonly signal: AbortSignal;
+  readonly cleanup: CleanupRegistry;
+}
+```
+
+The runtime is immutable for one invocation. The inspection session is lazily
+created so commands that do not inspect the workspace pay no discovery cost.
+Child loggers, scoped runners, read-only capability views, and linked
+cancellation signals may be derived without mutating the parent.
+
+### 5.2 Invocation Scope Ownership
+
+Every command execution that reaches runtime creation owns exactly one cleanup
+scope and one `AbortController`. Help and parse failures return before a
+business runtime exists.
+
+- `run()` creates a root scope, registers SIGINT and SIGTERM, and disposes the
+  scope before returning.
+- standalone `invoke()` creates a root scope linked to an optional caller
+  signal, registers no OS signal handlers, and disposes the scope before
+  returning.
+- nested `invoke()` creates a child scope linked to both the parent signal and
+  an optional caller signal. It shares the parent's immutable environment,
+  redaction registry, and lazy inspection session, but receives a child logger,
+  scoped runner, cancellation controller, and cleanup registry.
+
+Child cleanup runs before nested `invoke()` returns. A child may dispose only
+resources registered in its own cleanup scope; parent-owned resources remain
+alive until the parent finishes. Child cancellation does not abort the parent.
+Parent cancellation always aborts the child.
+
+Completion is built before cleanup but rendered only after cleanup succeeds.
+If cleanup fails, the lifecycle discards the success presentation, preserves
+the primary failure when one exists, aggregates cleanup evidence, and returns
+one normalized failed outcome. This ordering prevents a JSON success document
+from being emitted before a cleanup failure is known.
+
+### 5.3 Production Adapter
+
+`scripts/common/runtime.node.ts` is the approved production adapter for:
+
+- filesystem access;
+- native `fetch`;
+- timers and delays;
+- process environment, current directory, executable path, platform, and
+  architecture;
+- SIGINT and SIGTERM registration;
+- final process exit-code assignment;
+- task orchestration over native promises.
+
+It supplies the production `CommandProcessHost` used by `run()` and
+`runIfMain()` for default argv, direct-entry detection, and final exit-code
+assignment. `commander.ts` and business modules do not read these ambient
+sources directly.
+
+### 5.4 Logger and Prompt Ownership
+
+The current `MonorepositoryConsoleLogger` remains the semantic and presentation
+boundary. The current prompt adapter remains the interactive terminal-protocol
+boundary.
+
+The command runtime:
+
+- creates the parse logger before input is available;
+- creates the final invocation logger after presentation options are decoded;
+- shares one redaction registry across child loggers and streamed process
+  output;
+- ensures JSON and silent modes do not accidentally emit human presentation;
+- never logs submitted prompt secrets.
+
+Direct `console`, process stream, and `styleText()` presentation remains
+confined to approved logger or prompt adapters.
+
+### 5.5 Filesystem Capability
+
+The filesystem capability is async-first and covers the operations production
+tooling requires, including:
+
+- text and binary reads and writes;
+- atomic or mode-aware writes where required;
+- existence and kind inspection;
+- directory creation, traversal, copy, move, and removal;
+- temporary directories;
+- file metadata;
+- globbing.
+
+Command policy still owns:
+
+- which paths are valid;
+- whether a missing path is acceptable;
+- schemas and content validation;
+- overwrite and cleanup rules;
+- security-sensitive file modes;
+- whether an operation is read-only or mutating.
+
+Doctor and Status receive read-only filesystem views. Setup and generators may
+receive mutating views.
+
+### 5.6 HTTP Capability
+
+The HTTP capability wraps native `fetch` and provides:
+
+- linked cancellation;
+- bounded timeout;
+- request method, headers, and body;
+- response status, headers, text, bytes, and JSON acquisition;
+- bounded error detail;
+- optional explicit retry policy.
+
+It does not own repository payload schemas or domain validation.
+
+Examples:
+
+- Doctor retains GET-only reachability classification;
+- environment generation retains exp-service mapping validation;
+- exchange-rate generation retains Frankfurter response validation and RON
+  calculation;
+- selfhost retains Cosmos bootstrap status semantics.
+
+There are no implicit global retries. A command may opt into retries only for
+an idempotent operation with an explicit bound.
+
+### 5.7 Clock, Delay, and Task Scheduling
+
+The runtime clock provides monotonic time and ISO timestamps. Delay operations
+honor the invocation cancellation signal.
+
+The task scheduler provides explicit operations equivalent to:
+
+- ordered parallel execution;
+- ordered all-settled execution;
+- sequential execution;
+- bounded-concurrency mapping.
+
+This centralizes cancellation, ordering, and concurrency limits. Ordinary
+`await` remains language-native. The excluded format/lint stack retains
+Piscina.
+
+### 5.8 Environment Snapshot
+
+Each invocation receives an immutable environment snapshot containing:
+
+- environment variables;
+- current working directory;
+- executable path;
+- platform;
+- architecture;
+- TTY and CI indicators.
+
+Business modules do not read or mutate `process.env`. Child-process environment
+overrides are applied through the runner without changing the parent snapshot.
+
+### 5.9 Narrow Capability Views
+
+The command object owns the full runtime, but lower-level modules receive only
+what they need.
+
+Examples:
+
+- Doctor modules receive the inspection session, read-only files, GET-only
+  HTTP, clock, logger, and opaque probe runner;
+- Setup phases receive mutation actions, files, prompts, runner, inspection,
+  clock, and logger;
+- pure parsers receive no runtime;
+- renderers receive only the logger and typed data.
+
+This keeps the facade comprehensive without turning every module dependency
+into the full runtime.
+
+---
+
+## 6. Generic Runner and Execa Adapter
+
+### 6.1 Generic Runner Protocol
+
+`scripts/common/runner.ts` defines an engine-neutral protocol:
+
+```typescript
+interface Runner<TRequest, TOptions, TOutcome> {
+  run(
+    request: Readonly<TRequest>,
+    options?: Readonly<TOptions>,
+  ): Promise<TOutcome>;
+}
+```
+
+The first implementation is an external-process runner. The generic contract
+leaves room for a future Piscina adapter, but this RFC does not implement or
+migrate one.
+
+### 6.2 Process Request
+
+The engine-neutral process request retains argument separation:
+
+```typescript
+interface ProcessRequest {
+  readonly command: string;
+  readonly args: readonly string[];
+}
+```
+
+Shell strings are not part of the public request contract.
+
+### 6.3 Process Options
+
+The process options support:
+
+- working directory;
+- environment overrides;
+- `capture`, `tee`, and `inherit` output;
+- optional stdin payload;
+- timeout;
+- cancellation signal;
+- logger for tee output.
+
+A scoped runner can apply invocation, phase, or command defaults:
+
+```typescript
+const phaseRunner = runtime.runner.scope({
+  cwd: paths.root,
+  logger: phaseLogger,
+  signal: runtime.signal,
+  timeoutMs: 120_000,
+  logCommands: options.verbose,
+});
+```
+
+Explicit call options override scoped defaults.
+
+### 6.4 Discriminated Process Outcomes
+
+The flag-based `CommandResult` is replaced by a discriminated outcome:
+
+```typescript
+interface ProcessOutput {
+  readonly stdout: string;
+  readonly stderr: string;
+  readonly durationMs: number;
+}
+
+type ProcessOutcome =
+  | (ProcessOutput & {
+      readonly kind: "succeeded";
+      readonly exitCode: 0;
+    })
+  | (ProcessOutput & {
+      readonly kind: "exited";
+      readonly exitCode: number;
+    })
+  | (ProcessOutput & {
+      readonly kind: "signalled";
+      readonly signal: NodeJS.Signals;
+    })
+  | (ProcessOutput & {
+      readonly kind: "spawn-failed";
+      readonly message: string;
+    })
+  | (ProcessOutput & {
+      readonly kind: "timed-out";
+      readonly signal?: NodeJS.Signals;
+    })
+  | (ProcessOutput & {
+      readonly kind: "cancelled";
+      readonly signal?: NodeJS.Signals;
+    });
+```
+
+Callers switch on `kind`; they do not reconstruct transport state from
+independent fields. `exited` represents a nonzero numeric exit code.
+`signalled` represents child termination by a signal that was not caused by
+the invocation's cancellation signal or timeout. Adapter configuration and
+programmer errors are typed runner failures; they are not misreported as
+child-process outcomes.
+
+Outcome mapping uses this precedence: a pre-aborted or linked caller signal is
+`cancelled`; an elapsed runner timeout is `timed-out`; an unrelated child
+signal is `signalled`; exit code `0` is `succeeded`; a nonzero numeric code is
+`exited`; and failure to start the process is `spawn-failed`.
+
+### 6.5 Inspection and Required-success Policies
+
+The process runner exposes two semantic paths:
+
+1. `run()`
+   - returns a process outcome for every child-process lifecycle result;
+   - suitable for probes, npm audit/outdated JSON, and commands where a
+     nonzero exit has business meaning.
+2. `expectSuccess()`
+   - returns the successful output;
+   - throws a typed `RunnerError` for every other outcome;
+   - suitable for installs, generation, documentation extraction, image
+     operations, and Newman execution.
+
+The command lifecycle owns the final handling of `RunnerError`.
+
+### 6.6 Shared Process Diagnostics
+
+`runner.ts` owns:
+
+- safe command formatting;
+- success and transport classification;
+- stderr/stdout/spawn-failure precedence;
+- bounded excerpts;
+- structured evidence generation;
+- redacted `RunnerError`;
+- command-result test builders where useful.
+
+This removes duplicated helpers from Setup, Status, container preflight,
+documentation assembly, E2E, workers outside the exclusion, and artifact
+extraction.
+
+### 6.7 Execa Implementation
+
+`scripts/common/runner.execa.ts` owns the configured reusable Execa instance.
+Its stable defaults include:
+
+- `reject: false`;
+- `shell: false`;
+- `cleanup: true`;
+- `windowsHide: true`;
+- `stripFinalNewline: false`;
+- authoritative environment merging;
+- bounded force-kill behavior.
+
+The adapter also owns:
+
+- capture, tee, and inherit stdio mapping;
+- stdin mapping;
+- linked cancellation and timeout;
+- pre-aborted no-spawn behavior;
+- independent UTF-8 decoders for stdout and stderr;
+- chunk-safe logger redaction in tee mode;
+- Execa result and exception mapping;
+- the existing Windows unresolved-command versus resolved `.cmd` shim
+  distinction.
+
+Execa types and result shapes do not escape this module.
+
+---
+
+## 7. Lifecycle, Error, and Exit Policy
+
+### 7.1 Standard Exit Meanings
+
+Migrated direct CLIs use:
+
+| Exit code | Meaning |
+| ---: | --- |
+| `0` | Success or help displayed |
+| `1` | Operational or business failure |
+| `2` | Usage, option, argument, or command-input validation failure |
+| `130` | SIGINT or user-cancelled interactive input |
+| `143` | SIGTERM |
+
+`runIfMain()` is the only migrated production lifecycle that requests a final
+process exit code, and it delegates the assignment to the production
+`CommandProcessHost`.
+
+### 7.2 Failure Types
+
+The command lifecycle normalizes failures into:
+
+- usage/input failure;
+- operational failure;
+- runner failure;
+- HTTP failure;
+- filesystem failure;
+- cancellation;
+- unexpected failure.
+
+Command-specific error classes may add safe metadata, but they do not bypass
+the common rendering and exit policy.
+
+### 7.3 No Framework-level Silent Degradation
+
+The shared runtime never converts a failure into a success-shaped default.
+
+Only explicit business policy may degrade:
+
+- Status maps an unavailable collector to `null`;
+- Doctor maps an unhandled module failure to one failed diagnostic row;
+- Setup records independent phase failures and dependency-based skips;
+- exchange-rate generation retains its approved per-year continuation policy;
+- E2E report cleanup records a cleanup warning while preserving the Newman
+  failure.
+
+### 7.4 Cancellation
+
+Each invocation creates one `AbortController`.
+
+Direct CLI runs:
+
+- register SIGINT and SIGTERM;
+- abort runner, HTTP, delay, and task operations;
+- stop prompts safely;
+- run cleanup;
+- set `130` or `143`.
+
+Nested invocation links the parent signal and does not register duplicate
+process handlers. Standalone programmatic invocation links only the optional
+caller signal and never registers process handlers. A child command has its
+own controller and cleanup scope as defined in section 5.2.
+
+### 7.5 Cleanup
+
+The runtime exposes a LIFO cleanup registry. Cleanup:
+
+- runs after success, failure, or cancellation;
+- completes before the process exit code is written;
+- preserves the primary failure;
+- aggregates cleanup failures instead of swallowing them;
+- supports temporary directories, signal listeners, terminal state, generated
+  transient files, and other invocation-owned resources.
+
+### 7.6 Error Detail and Redaction
+
+Command, HTTP, and filesystem failures include enough context to diagnose the
+operation without exposing secrets.
+
+The runtime must not include in logs or thrown messages:
+
+- stdin payloads;
+- environment values;
+- prompt secrets;
+- bearer tokens;
+- unredacted child output;
+- raw envinfo or systeminformation payloads.
+
+Logger redaction remains the final output boundary.
+
+### 7.7 JSON Failure Behavior
+
+JSON success emits exactly one JSON document.
+
+If parsing, context assembly, or execution fails before the document exists:
+
+- the command writes one normalized fatal diagnostic to stderr;
+- it emits no fabricated or partial success document;
+- it returns a failed command outcome.
+
+---
+
+## 8. Per-command Business Boundaries
+
+| Command family | Business logic retained | Shared mechanics removed |
+| --- | --- | --- |
+| Documentation assembly | Extractor selection, tier validation, normalization, landing pages, prose mirror rules | Commander lifecycle, parallel tasks, capture runner, filesystem, bounded errors |
+| Doctor | Read-only probe allowlist, modules, scoring, evidence, fixed ordering, quick/full policy | CLI parsing, HTTP timeout, task orchestration, runtime state, failure normalization |
+| Status | Six-section schema, strict payload parsing, null-on-unavailable policy, dashboard/JSON rendering | CLI shell, process classification, filesystem, task settling, Doctor composition |
+| Generate | Selected tasks, ordering, stop-on-first-failure, aggregate summary | CLI shell, child-command composition, logger and exit lifecycle |
+| Generate environment | Azure/local source, required keys, secret classification, env content, copy destinations | HTTP, prompts, filesystem, environment, redaction wiring |
+| Generate i18n | English source of truth, locale traversal, missing-key insertion, deterministic serialization | Filesystem, runtime paths, logger lifecycle |
+| Generate GraphQL | Output location and placeholder behavior until a separate GraphQL design replaces it | Filesystem and entry lifecycle |
+| Generate artifacts | Taxonomy/license algorithms, source validation, archive entry rules, output consistency | HTTP, filesystem, process runner, parallel tasks, delay |
+| Setup | Phase graph, readiness, mutation scopes, consent, prerequisites, remediation, postconditions | CLI shell, scoped runner defaults, prompts, files, HTTP, clock, interruption mapping |
+| E2E | Target/auth policy, collection/environment selection, Newman arguments, report sanitization | CLI shell, inherit runner, files, environment, redaction, cleanup |
+| Exchange rates | Year validation, Frankfurter request and schema, RON calculation, merge/write policy | CLI shell, HTTP, filesystem, delay, top-level errors |
+| Aspire | Engine selection, preflight, AppHost command/environment | CLI shell, inherit runner, exit handling |
+| Compose | File requirement, exact pass-through args, engine adapter | CLI shell, tee runner, failure formatting |
+| Image | Target mapping, tags, ports, build args, artifact prerequisite | CLI shell, tee runner, child-command composition |
+| Selfhost | Plans, bootstrap order, SQL secret, Cosmos/Azurite rules, Traefik lifecycle | CLI shell, runner, HTTP, files, delay, redaction, cleanup |
+
+### 8.1 Preserved Execution Shapes
+
+- documentation extractors remain parallel, followed by normalization;
+- Doctor modules remain independently concurrent with fixed report order;
+- generation remains `env -> i18n -> gql -> artifacts`;
+- Setup phases remain sequential and dependency-aware;
+- Status collectors remain independently all-settled;
+- E2E `all` remains sequential;
+- exchange-rate years remain sequential with a polite delay;
+- selfhost commands remain ordered with storage/bootstrap delays;
+- long-running Aspire output remains inherited;
+- Compose and image output remains logger-backed tee output.
+
+---
+
+## 9. Inspection, Setup, Doctor, and Status Contracts
+
+### 9.1 Inspection Session
+
+The existing per-invocation inspection session remains. It memoizes immutable
+typed observations and supports exact invalidation after Setup mutations.
+
+Inspectors continue to return:
 
 ```typescript
 type InspectionOutcome<T> =
@@ -262,711 +1043,544 @@ type InspectionOutcome<T> =
   | {readonly kind: "invalid"; readonly issues: readonly string[]; readonly durationMs: number};
 ```
 
-The exact type may differ during implementation, but it must preserve these
-semantics:
+No provider returns raw process output or a success-shaped fallback.
 
-- absence, invalid state, and transport failure are distinct;
-- no provider returns a success-shaped default;
-- raw command or package output is not an outcome;
-- callers decide whether an unavailable fact is a warning, failure, skipped
-  check, or blocked setup phase.
+### 9.2 Aggregate Worker Isolation
+
+envinfo and systeminformation remain isolated in the aggregate worker. The
+worker:
+
+- accepts no user-selected command or field;
+- projects and redacts before emitting;
+- emits one validated JSON document;
+- is invoked through the process runner with a bounded timeout;
+- retains raw host data only in worker memory;
+- remains disabled for quick inspection.
+
+Internal inspection workers adopt the same command runtime entry lifecycle,
+using silent or JSON presentation as appropriate.
+
+### 9.3 Doctor Read-only Profile
+
+Doctor retains:
+
+- repository read-only behavior;
+- opaque named inspection probes;
+- no unrestricted runner access in specialist modules;
+- GET-only network probing;
+- read-only filesystem capabilities;
+- bounded evidence;
+- score and grade validation;
+- module-error degradation.
+
+The runtime profile and architecture tests replace direct import access as the
+enforcement mechanism.
+
+### 9.4 Setup Mutation Profile
+
+Setup retains:
+
+- repository, user, and system mutation scopes;
+- `--dry-run`;
+- `--yes` only for system-scoped approval;
+- prompt interruption;
+- dependency-based skips;
+- exact inspection invalidation;
+- postcondition verification;
+- independent phase continuation.
+
+The command runtime supplies capabilities; it does not decide whether a
+mutation is permitted.
+
+### 9.5 Status Composition
+
+Status invokes Doctor through the Doctor command object:
+
+```typescript
+const health = await doctorCommand.invoke(
+  {quick: true, verbose: false},
+  {
+    parent: context,
+    presentation: "silent",
+  },
+);
+```
+
+Status does not spawn Doctor, parse Doctor JSON, or call a parallel execution
+function. The child runtime reuses `context.runtime.inspection`. Status accepts
+both `completed` exit codes, consumes `health.value`, and treats `failed` or
+`cancelled` as command-execution failures.
 
 ---
 
-## 4. Package Ownership
+## 10. Architecture Enforcement
 
-The following exact root dev dependencies are approved:
+### 10.1 Architecture Tests Only
+
+The new command/runtime boundary is enforced by focused Vitest architecture
+tests using the TypeScript compiler API.
+
+No new ESLint rule is added for this boundary. Existing duplicate tooling
+import restrictions may be removed after equivalent architecture tests pass.
+General TypeScript, security, React, and repository lint rules remain.
+
+The architecture suite is tightened with each migration cohort. Temporary
+compatibility files and an explicit current-debt allowlist keep intermediate
+cohorts green; each cohort removes the entries it migrates, and the final
+cohort removes the allowlist.
+
+### 10.2 Required Checks
+
+Architecture tests scan production modules and verify:
+
+1. only `runner.execa.ts` imports `execa`;
+2. only approved Node runtime adapters import filesystem, fetch, timers, or
+   process-control APIs;
+3. only logger and prompt adapters access direct console or process streams;
+4. migrated commands do not call `process.exit()` or assign
+   `process.exitCode`;
+5. migrated commands do not implement direct-entry detection manually;
+6. migrated commands export command objects and use shared `runIfMain()`;
+7. migrated modules do not import the superseded `cli.ts` or `process.ts`;
+8. explicit parallel/all-settled/delay orchestration uses runtime tasks and
+   clock capabilities;
+9. Doctor modules receive only approved read-only and opaque probe
+   capabilities;
+10. format/lint and their Piscina files are explicit, narrow exclusions;
+11. `workers/shell.ts` depends on the generic runner while preserving its
+    legacy worker-facing result.
+
+Architecture tests do not replace command behavior tests.
+
+### 10.3 Output Policy
+
+The existing AST output-policy tests remain and are updated for the new file
+names and adapters. Direct output remains prohibited outside logger and prompt
+boundaries.
+
+---
+
+## 11. Package Ownership
+
+The existing exact dependencies remain authoritative:
 
 | Package | Version | Ownership |
 | --- | --- | --- |
 | `@nx/devkit` | `23.1.1` | Project discovery and dependency graph |
-| `commander` | `15.0.0` | CLI parsing, validation, subcommands, and help |
-| `execa` | `10.0.1` | Child-process mechanics behind `CommandRunner` |
-| `envinfo` | `7.21.0` | Comprehensive generic tooling inventory |
-| `systeminformation` | `5.33.6` | Comprehensive host and operating-system inventory |
+| `commander` | `15.0.0` | CLI parsing, validation, and help |
+| `execa` | `10.0.1` | External process mechanics |
+| `envinfo` | `7.21.0` | Generic tooling inventory |
+| `systeminformation` | `5.33.6` | Generic host inventory |
 
-`@nx/devkit@23.1.1` is already resolved transitively through the matching Nx
-workspace package. Commander and envinfo have no declared runtime
-dependencies. Execa adds its maintained process-support dependency graph.
-Systeminformation is already present transitively at an older patch and
-becomes an intentional exact direct dependency at the approved version.
+No additional package is approved by default.
 
-The packages own generic acquisition and mechanics only. They do not own:
+Commander 15 supports local command objects, `parseAsync()`,
+`configureOutput()`, `exitOverride()`, and lifecycle hooks. Execa 10 supports
+reusable configured instances, `reject: false`, output modes, timeouts,
+cancellation signals, cleanup, and custom verbose integration. Node 24
+provides the required fetch, filesystem, timer, signal, and language runtime.
 
-- repository version requirements;
-- setup consent or mutation scopes;
-- pass, warning, failure, and skipped policy;
-- root-cause and fix text;
-- secret classification or output redaction;
-- diagnostic scoring;
-- repository-specific package, framework, environment, or generated-artifact
-  contracts.
+A new package requires:
 
-Package versions remain exact. Updates to envinfo or systeminformation require
-a targeted review of changed native commands, sockets, network behavior,
-collected fields, and security advisories.
+1. a concrete missing capability;
+2. comparison against the existing platform;
+3. exact version approval;
+4. security and transitive-dependency review;
+5. adapter ownership and rollback.
 
 ---
 
-## 5. Workspace and Host Providers
+## 12. Security and Privacy
 
-### 5.1 Nx Workspace Provider
+### 12.1 Process Safety
 
-The custom workspace graph implementation is replaced by
-`createProjectGraphAsync()` and other public Nx Devkit APIs.
+- command and arguments remain separate;
+- `shell` remains disabled by default;
+- stdin and environment are never included in command diagnostics;
+- tee output passes through chunk-safe redaction;
+- a pre-aborted signal does not start a child process;
+- timeout and cancellation terminate descendants according to the Execa
+  policy;
+- Windows unresolved commands remain distinguishable from resolved command
+  shims.
 
-The adapter must:
+### 12.2 Capability Profiles
 
-- disable the Nx daemon;
-- disable Nx dotenv loading where supported;
-- redirect workspace data and task cache to unique operating-system temporary
-  paths;
-- filter nodes and edges to repository projects;
-- normalize duplicate static/dynamic edges into the repository's logical view;
-- perform a small local cycle interpretation only if no suitable public Nx
-  helper exists;
-- clean its temporary namespace or leave it safe for operating-system cleanup;
-- never mutate repository `.nx` state.
+The command facade owns all capabilities, but commands receive typed profiles:
 
-If dependencies are unavailable, the CLI itself cannot start under the
-documented bootstrap contract. If Nx graph construction fails after startup,
-the provider returns an unavailable or invalid outcome; it does not fall back
-to a second graph implementation.
+- Doctor and Status: read-only files and bounded observational HTTP;
+- Setup and generators: mutating files and explicit HTTP methods;
+- container commands: process, HTTP, files, delay, and secret redaction;
+- inspection workers: bounded JSON output and no interactive prompts.
 
-### 5.2 envinfo Tooling Provider
+### 12.3 Sensitive Data
 
-A normal run requests envinfo's full supported inventory. The adapter parses
-the package JSON representation and projects it into a repository-owned typed
-model.
+The runtime must keep these values out of logs, reports, and errors:
 
-The normalized model may contain:
+- user-entered secrets;
+- AppHost and SQL secrets;
+- E2E bearer tokens;
+- environment values classified as secret;
+- raw host inventory;
+- unbounded third-party response bodies;
+- raw process arguments that contain registered sensitive literals.
 
-- operating-system and shell identity;
-- Node and package-manager versions;
-- language and build tool versions;
-- utility and virtualization tool versions;
-- package inventory facts needed by setup or doctor.
+### 12.4 Repository Mutation
 
-Repository-specific inspectors remain authoritative for contracts envinfo
-cannot establish, including npm tree integrity, .NET SDK/workloads, Python
-virtual-environment isolation, framework package relationships, certificates,
-and generated artifacts.
+Doctor and Status remain checkout-read-only. Nx workspace data and task cache
+remain redirected to operating-system temporary directories.
 
-Raw envinfo output is never rendered or persisted.
-
-### 5.3 systeminformation Host Provider
-
-A normal run uses the package's comprehensive aggregate host collectors. The
-result can include OS, CPU, virtualization, memory, storage, processes,
-network endpoints, hardware identifiers, services, and Docker information.
-Built-in aggregate network probes are allowed.
-
-The adapter immediately projects that raw result into repository facts such
-as:
-
-- supported platform and architecture;
-- CPU and virtualization capability;
-- available memory and storage;
-- resource pressure relevant to local development;
-- ownership of required development ports;
-- container/runtime observations;
-- network reachability evidence;
-- conflicts that explain setup or doctor failures.
-
-Unrelated process, network, user, serial, hardware, and container details are
-discarded. Raw aggregate data is not logged, returned by the public provider,
-or persisted.
-
-### 5.4 Collector Isolation
-
-The broad envinfo and systeminformation collection should execute in a
-dedicated inspection worker invoked through the Execa-backed runner. The
-worker:
-
-- imports and invokes the third-party packages;
-- accepts no user-controlled command, function, or field selectors;
-- projects and redacts inside the worker;
-- emits one normalized JSON document;
-- is subject to a bounded parent timeout and best-effort descendant cleanup;
-- emits no progress or package-native output.
-
-This boundary limits memory retention, prevents raw host data from reaching
-the main logger, and gives the parent a process-level timeout even though the
-packages own their internal commands.
-
-`--quick` does not start the aggregate worker.
+Setup, generators, documentation assembly, E2E report generation, exchange
+rates, and container tooling retain their explicitly documented mutation
+boundaries.
 
 ---
 
-## 6. Setup Design
+## 13. Performance
 
-### 6.1 Execution Flow
+The runtime is created once per invocation. A fresh Commander parser is cheap
+and prevents retained state. The Execa implementation uses a configured
+instance so stable options are not reconstructed inconsistently.
 
-Setup executes four stages:
+Task scheduling preserves current parallelism while making ordering and
+cancellation explicit:
 
-1. **Inspect**
-   - Validate root dependencies and repository prerequisites.
-   - Collect one shared host, tooling, workspace, and package snapshot.
-   - Identify missing tools, invalid state, and already-satisfied
-     postconditions.
-2. **Plan**
-   - Convert facts into dependency-ordered setup actions.
-   - Preserve existing action scopes, consent, `--yes`, `--dry-run`, and
-     interruption behavior.
-   - Present platform-specific installation proposals for missing system
-     tools.
-3. **Execute**
-   - Run approved mutations through the shared runner and logger.
-   - Restore setup-owned dependency domains using their standard tools.
-   - Prepare certificates, browsers, environments, framework state, and
-     generated artifacts.
-4. **Verify**
-   - Refresh affected observations.
-   - Check explicit postconditions.
-   - Produce a final readiness summary from the same typed facts.
+- no new unbounded fan-out;
+- no serialization of currently independent Doctor or Status work;
+- no parallelization of consent, rate-limited, or order-dependent workflows;
+- no worker thread introduced outside the existing format/lint stack.
 
-### 6.2 Root npm Validation
-
-The root dependency phase:
-
-- verifies `node_modules` is a directory;
-- verifies the package manifest and lockfile are coherent;
-- runs one structured npm integrity inspection;
-- summarizes invalid, missing, or extraneous dependencies without attaching
-  the entire npm tree.
-
-It never runs root `npm ci`. Failure directs the contributor to run
-`npm ci`, then rerun setup.
-
-### 6.3 Setup-owned Restores
-
-When their phases execute, setup runs deterministic tool-native operations:
-
-- `.github/scripts`: `npm ci --prefer-offline --no-audit --no-fund`;
-- .NET: the established `dotnet restore` selection;
-- Python: create or reuse the canonical `.venv`, install the requirements
-  files, and run `pip check`.
-
-Framework sync, Playwright/browser preparation, certificates, environment
-generation, and repository generators continue through their established
-commands and policies.
-
-### 6.4 Removal of Fingerprints
-
-The following concepts are removed:
-
-- `SetupFingerprints`;
-- Node-version fingerprints;
-- root and `.github/scripts` lockfile hashes;
-- Python requirements hashes;
-- fingerprint invalidation and merge rules;
-- fingerprint write actions;
-- fingerprint-specific setup tests;
-- `sha256File` when no remaining caller needs it.
-
-`.arolariu/tooling.local.json` retains only schema information and durable
-non-secret preferences such as the selected container engine.
-
-### 6.5 Failure Behavior
-
-Critical prerequisite failures block dependent phases. Independent phases may
-continue where their inputs are valid.
-
-Setup must:
-
-- distinguish declined, planned, failed, blocked, and succeeded actions;
-- surface transport failures and postcondition failures explicitly;
-- never install a system dependency without the existing consent policy;
-- never report success solely because a mutation command exited zero;
-- verify the resulting state through the relevant inspector.
+The migration must not add a second process execution layer or duplicate
+filesystem/HTTP wrappers per command.
 
 ---
 
-## 7. Doctor and Status Design
+## 14. Testing Strategy
 
-### 7.1 Profiles
+### 14.1 Characterization First
 
-Normal doctor:
+Before each command cohort migrates, tests characterize:
 
-- runs the full envinfo and systeminformation aggregate worker;
-- runs repository-specific workspace, .NET, React, Svelte, Python, and
-  infrastructure checks;
-- performs applicable network, package security, and slow checks;
-- always renders the health score and grade.
+- accepted options and aliases;
+- execution order;
+- output mode;
+- business exit meaning;
+- partial-failure behavior;
+- read-only or mutation boundaries;
+- redaction;
+- cleanup.
 
-Quick doctor:
+The CLI shell may intentionally standardize help, usage errors, and exit
+taxonomy. Business behavior changes require a separate explicit decision.
 
-- skips the aggregate worker;
-- skips network and other expensive checks;
-- emits explicit skipped diagnostics;
-- remains suitable for status and routine automation.
-
-There is no CI-specific profile.
-
-### 7.2 Specialist Modules
-
-The specialist modules remain:
-
-- workspace;
-- .NET;
-- React;
-- Svelte;
-- Python;
-- infrastructure.
-
-They consume shared facts and own only diagnosis:
-
-- status;
-- concise summary;
-- bounded evidence;
-- root cause or potential causes;
-- ordered fixes;
-- duration and score weight.
-
-Repeated diagnostic factories, command classification, error normalization,
-version formatting, package inventory, and evidence formatting move to focused
-shared helpers.
-
-### 7.3 Evidence Budget
-
-Diagnostic evidence is structured and bounded:
-
-- parsers keep counts and the most actionable offending items;
-- human output renders a limited number of entries plus an omitted count;
-- verbose mode raises the limit but remains bounded;
-- unparseable command failures show transport state and a short excerpt;
-- full stdout, stderr, npm trees, and third-party payloads are never copied
-  into diagnostics;
-- JSON-like internal reports contain normalized facts, not raw payloads.
-
-A large failing npm payload must produce a concise diagnosis rather than
-hundreds of package lines.
-
-### 7.4 Repository-authored Command Policy
-
-Doctor modules receive a `DiagnosticProbeRunner` that accepts opaque commands
-created by named registry factories. Modules cannot construct arbitrary
-`CommandSpec` values for diagnostic execution.
-
-Scoped ESLint rules:
-
-- forbid direct Execa and `node:child_process` imports in doctor modules;
-- forbid runtime imports of the unrestricted process runner;
-- forbid mutating filesystem imports;
-- permit the narrow read APIs required for repository inspection.
-
-This replaces the custom TypeScript source interpreter test. The command
-registry remains covered by focused unit tests.
-
-The registry governs repository-authored commands. It does not claim to
-enumerate the internal native commands executed by the separately approved
-envinfo and systeminformation worker.
-
-### 7.5 Reporting
-
-`createDoctorReport()` validates typed diagnostics and constructs the report
-directly. It does not serialize and parse its own output.
-
-The following remain:
-
-- diagnostic semantic validation;
-- duplicate identifier rejection;
-- score weights and grade calculation;
-- grouped human rendering;
-- suggested fixes;
-- nonzero exit status when failures exist.
-
-The serialized `parseDoctorReport()` boundary and its untrusted-report tests
-are removed.
-
-### 7.6 Status
-
-Status calls `runDoctor({quick: true, verbose: false})` in-process and consumes
-the typed report. It does not spawn doctor or parse doctor JSON.
-
-Status obtains projects from the Nx provider instead of a hard-coded workspace
-list. Every current and future Nx project is included unless status has an
-explicit documented exclusion.
-
-Status retains its own public output options and report format.
-
----
-
-## 8. Auxiliary Script Simplifications
-
-| Current implementation | Replacement |
-| --- | --- |
-| `scripts/common/workspace-graph.ts` | Isolated Nx Devkit adapter |
-| `scripts/types/environment.ts` | Types derived from `APP_CONFIGURATION_MAPPING` and a narrow partial record |
-| Manual dotenv line parsing where compatible | `node:util.parseEnv` |
-| Manual discovery walks where compatible | `node:fs/promises.glob` |
-| Hand-written CLI loops and help arrays | Shared Commander factory |
-| Low-level `spawn()` implementation | Execa-backed `CommandRunner` |
-| `docs-assemble.ts` private runner | Shared `CommandRunner` |
-| Doctor subprocess and report parser in status | In-process typed doctor API |
-| Newman collection mutation/restoration | Runtime `--env-var` injection only |
-| Repeated package and host inspection | Shared `InspectionSession` providers |
-
-The E2E runner retains:
-
-- target and authentication policy;
-- runtime token redaction;
-- Newman execution and timeouts;
-- report sanitization;
-- JSON and JUnit reports;
-- assertion summaries.
-
-The following remain custom because they encode repository behavior:
-
-- console logger, semantic output, and chunk-safe secret redaction;
-- prompt adapter, consent, dry-run, and setup action scopes;
-- repository diagnoses and fixes;
-- taxonomy and license artifact generation;
-- next-intl synchronization;
-- environment value generation and Azure mapping;
-- exchange-rate transformation;
-- container lifecycle policy;
-- Newman report and token sanitization;
-- lint and format worker tooling.
-
----
-
-## 9. Proposed Module Boundaries
-
-The exact file split may be refined during implementation, but responsibilities
-must remain equivalent to:
-
-```text
-scripts/
-  common/
-    cli.ts                 Commander factory and slash-alias normalization
-    process.ts             Execa-backed CommandRunner
-    logger.ts              Existing logger and redaction
-    prompts.ts             Existing prompt boundary
-  inspection/
-    session.ts             Per-run memoization and invalidation
-    types.ts               Inspection outcomes and normalized facts
-    workspace.ts           Nx and repository metadata
-    packages.ts            npm and installed-package inventory
-    tooling.ts             envinfo projection
-    host.ts                systeminformation projection
-    aggregate-worker.ts    Isolated comprehensive collection
-  setup.ts
-  setup.*.ts               Mutation planning and postcondition policy
-  doctor.ts
-  doctor.*.ts              Diagnosis policy
-  doctor.probes.ts         Opaque approved command registry
-  doctor.reporter.ts       Typed report construction and human rendering
-  status.ts
-```
-
-Strong deletion candidates are:
-
-- `scripts/common/workspace-graph.ts`;
-- `scripts/common/workspace-graph.test.ts`;
-- `scripts/types/environment.ts`;
-- fingerprint-related code and tests;
-- serialized doctor report parsing and tests;
-- most of `scripts/doctor.readonly.test.ts`;
-- collection mutation/restoration helpers in `test-e2e.ts`;
-- the private process runner in `docs-assemble.ts`;
-- duplicated argument parsers, help arrays, and common result factories.
-
----
-
-## 10. Security and Privacy
-
-### 10.1 Explicit Boundary Change
-
-The current doctor can enumerate repository-authored child commands. Under
-this RFC, a normal doctor also invokes pinned third-party aggregate collectors
-whose internal commands, sockets, and network calls are not governed by that
-registry.
-
-This is an explicit accepted trade-off. The mitigation is boundary isolation,
-exact version ownership, no user-controlled selectors, bounded execution, and
-strict projection before data leaves the worker.
-
-### 10.2 Sensitive Host Data
-
-The aggregate collectors may observe:
-
-- usernames and home paths;
-- process names, arguments, and executable paths;
-- IP addresses and network endpoints;
-- MAC addresses;
-- hardware and filesystem identifiers;
-- container names, roots, and socket data;
-- globally installed package information.
-
-The worker must remove or normalize those values before emitting its result.
-Raw aggregate data:
-
-- remains in worker memory only;
-- is never logged;
-- is never written to disk;
-- is never included in doctor or status reports;
-- is never attached to thrown errors.
-
-The existing logger redaction remains the final output boundary.
-
-### 10.3 Package Updates
-
-Updates to the five direct tooling packages require:
-
-- exact target versions;
-- release-note and security-advisory review;
-- review of new dependencies;
-- review of changed native commands and platform behavior;
-- adapter contract tests;
-- rollback to the prior exact version if behavior regresses.
-
-### 10.4 Repository Mutation
-
-Doctor and status must leave the checkout unchanged. Tests must verify that Nx
-does not modify repository workspace data and that E2E authentication values
-are never written to collections.
-
----
-
-## 11. Performance
-
-A normal doctor run intentionally performs more host discovery than the
-current implementation. The shared inspection session offsets that cost by
-executing each provider once per process and reusing normalized facts across
-modules.
-
-The aggregate worker has a bounded timeout. Its result is projected before
-crossing the process boundary to limit serialization and memory cost.
-
-`--quick` avoids:
-
-- envinfo full inventory;
-- systeminformation aggregate collection;
-- generic outbound host probes;
-- network and other slow repository checks.
-
-Setup performs the full snapshot once, refreshes only invalidated facts after
-mutations, and does not repeat root dependency installation.
-
----
-
-## 12. Testing Strategy
-
-### 12.1 Adapter Contract Tests
-
-Tests cover repository behavior at each package boundary:
-
-- Commander aliases, help, logger routing, semantic validation, and exit codes;
-- Execa success, spawn failure, timeout, cancellation, pre-aborted no-spawn,
-  capture, tee, and chunk-safe redaction mapping;
-- Nx project and edge normalization plus zero checkout mutation;
-- envinfo parsing, projection, malformed output, and redaction;
-- systeminformation projection, malformed/partial data, and redaction;
-- aggregate-worker timeout, nonzero exit, and single-document output.
-
-Tests do not duplicate upstream parsing, spawning, or host-detection test
-suites.
-
-### 12.2 Setup Tests
-
-Setup tests cover:
-
-- root npm validation without root reinstall;
-- deterministic `.github/scripts`, .NET, and Python restores;
-- action dependencies, consent, decline, dry-run, and interruption;
-- missing-tool installation proposals;
-- inspector invalidation and postcondition verification;
-- tooling configuration without fingerprints;
-- final ready, blocked, and failed summaries.
-
-### 12.3 Doctor and Status Tests
+### 14.2 Commander Runtime Tests
 
 Tests cover:
 
-- normal full profile and quick profile;
-- accepted `-q`, `/q`, `--quick`, `-v`, `/v`, and `--verbose` forms;
-- Commander help through `-h`, `/h`, and `--help`;
-- rejection of removed and unknown doctor flags;
-- always-visible score and grade;
-- no CI-specific suppression;
-- bounded evidence for a very large npm failure;
-- explicit provider and module failure behavior;
-- opaque diagnostic command registry use;
-- status consuming typed doctor and Nx results;
-- inclusion of all Nx projects.
+- metadata, usage, examples, and slash aliases;
+- help short-circuiting;
+- unknown options and invalid arguments;
+- async parsing;
+- fresh parser state across repeated runs;
+- human, JSON, and silent presentation;
+- `run()` versus `invoke()`;
+- nested command composition;
+- completed business output with exit code `1`;
+- parent/child cleanup ownership;
+- shared lazy inspection reuse;
+- linked cancellation;
+- SIGINT and SIGTERM exit mapping;
+- cleanup order and aggregated cleanup failure;
+- fatal JSON-mode behavior;
+- logger and runtime injection.
 
-### 12.4 Auxiliary Tests
+### 14.3 Runner Tests
 
 Tests cover:
 
-- Newman runtime authentication without collection mutation;
-- token absence from reports and logs;
-- documentation command execution through the shared runner;
-- derived environment keys and compatible dotenv parsing;
-- unchanged CLI contracts for migrated auxiliary commands.
+- success and nonzero exit;
+- signal-only termination;
+- spawn failure;
+- timeout;
+- cancellation;
+- pre-aborted no-spawn;
+- capture, tee, and inherit;
+- stdin;
+- environment merge and removal;
+- working directory;
+- trailing newlines;
+- split UTF-8 chunks;
+- chunk-split redaction;
+- scoped defaults and call overrides;
+- `run()` and `expectSuccess()`;
+- bounded failure detail;
+- Windows unresolved command detection;
+- resolved npm/cmd shim classification.
 
-### 12.5 Cross-platform Validation
+### 14.4 Capability Tests
 
-No new GitHub Actions operating-system matrix is added. Platform branches are
-tested through injected platform values and fixtures, and implementation
-validation runs on the available Windows development host.
+Tests cover:
 
-Commander, Execa, and systeminformation have upstream Windows, Linux, and
-macOS coverage, but that does not replace repository-specific live
-integration. Live macOS and Linux execution remains a documented residual
-risk until a future workflow or manual validation adds that evidence.
+- read-only and mutating filesystem views;
+- HTTP timeout, cancellation, status, body limits, and explicit retries;
+- environment snapshot immutability;
+- cancellation-aware delay;
+- ordered parallel and all-settled tasks;
+- bounded concurrency;
+- LIFO cleanup and primary-failure preservation.
 
----
+### 14.5 Command-family Tests
 
-## 13. Migration and Rollback
+Existing focused tests migrate to command objects without weakening their
+business assertions.
 
-Implementation proceeds in reversible layers:
+Black-box tests cover each public entrypoint's:
 
-1. Add exact dependencies and adapters without changing orchestration.
-2. Replace the process backend and migrate eligible CLIs.
-3. Add the shared inspection session and package-backed providers.
-4. Move setup modules onto shared facts and remove fingerprints.
-5. Move doctor and status onto shared facts and typed in-process reporting.
-6. Remove redundant graph, environment, E2E mutation, docs runner, helpers,
-   and tests.
-7. Update setup, doctor, development, and tooling documentation.
+- help;
+- invalid input;
+- success exit;
+- representative failure exit;
+- direct-entry behavior.
 
-Old implementations are deleted only after their replacement contract tests
-pass. Each package is contained behind a narrow repository interface, so a
-failed adoption can roll back one adapter without rewriting specialist setup
-or doctor policy.
+Doctor read-only, Setup consent/dry-run, Status JSON, E2E redaction,
+documentation cleanup, generator ordering, exchange-rate transformation, and
+container pass-through contracts remain explicitly tested.
 
-The doctor flag removal and bootstrap contract are intentional user-facing
-changes and must land with their documentation updates.
+### 14.6 Architecture Tests
 
----
+The architecture checks from section 10 run with the root tooling test suite.
+Tests use current source discovery and explicit exclusions, not a manually
+maintained list of every production file.
 
-## 14. Alternatives Considered
+### 14.7 Cross-platform Validation
 
-### 14.1 Native-only Consolidation
-
-This option would use Node built-ins and shared helpers without adding direct
-dependencies. It has the lowest package risk but retains the custom graph,
-process mechanics, and substantial CLI code. It removes less owned code and
-provides fewer host-diagnostic capabilities.
-
-### 14.2 Narrow Package Adoption
-
-This option would adopt only Nx Devkit, Commander, and Execa while keeping
-custom host inspection. It preserves the strongest command audit boundary but
-does not meet the accepted goal of broad default envinfo and
-systeminformation coverage.
-
-### 14.3 Generic Setup or Doctor Framework
-
-No mature framework was found that models this repository's toolchains,
-consent scopes, read-only requirements, fixes, scoring, and specialist
-framework diagnostics. Adopting one would replace clear policy with adapter
-code and framework constraints rather than materially reducing maintenance.
-
-### 14.4 Dev Container as the Only Setup
-
-A dev container could eliminate much host setup logic, but it would replace
-rather than improve the supported native Windows, Linux, and macOS workflow.
-It is not acceptable as the sole development path.
+Platform branches continue to use injected Windows, Linux, and macOS values in
+unit tests. Live validation runs on the available Windows development host.
+The lack of a repository-wide live Linux/macOS matrix remains a documented
+residual risk.
 
 ---
 
-## 15. Expected Reduction
+## 15. Migration and Rollback
 
-The target net reduction, after adding adapters and richer diagnostics, is:
+Implementation uses one plan with eight reversible cohorts.
 
-- approximately 4,500 to 6,000 production lines;
-- approximately 5,000 to 7,000 test lines.
+### 15.1 Cohort 1: Characterize and Guard
 
-This is a planning range, not a delivery quota. The implementation must not
-weaken redaction, consent, error handling, repository read-only behavior, or
-cross-platform contracts to meet a line-count target.
+- capture current business contracts;
+- add the architecture-test harness with an explicit current-debt allowlist;
+- define explicit format/lint exclusions;
+- record direct platform imports and duplicated lifecycle helpers;
+- require every later cohort to remove its migrated entries without leaving
+  the committed test suite failing.
 
-The largest expected reductions are:
+### 15.2 Cohort 2: Runner Foundation
 
-- duplicated environment type documentation and definitions;
-- custom workspace graph and graph tests;
-- setup fingerprint state and tests;
-- duplicated setup/doctor inspectors and result factories;
-- doctor source-interpreter and serialized-report tests;
-- manual CLI parsing/help;
-- low-level process mechanics;
-- status, E2E, and documentation-runner duplication.
+- add `runner.ts`;
+- add `runner.execa.ts`;
+- port process contract tests;
+- migrate `workers/shell.ts` to the generic runner while preserving its
+  worker-facing `{code, output}` contract;
+- add temporary compatibility exports from `process.ts`;
+- migrate callers only after outcome parity is proven.
+
+### 15.3 Cohort 3: Command Runtime
+
+- add `commander.ts`;
+- add `runtime.ts`;
+- add `runtime.node.ts`;
+- implement `run()`, `invoke()`, `runIfMain()`, presentation, cancellation,
+  cleanup, and exit policy;
+- retain `cli.ts` compatibility only while command cohorts migrate.
+
+### 15.4 Cohort 4: Generation and Data
+
+- migrate `generate.ts`;
+- migrate environment, i18n, GraphQL, and artifact generators;
+- migrate exchange rates;
+- replace direct child-module execution with command `invoke()`.
+
+### 15.5 Cohort 5: Doctor, Status, and Inspection
+
+- migrate inspection providers and worker entrypoints to runtime capabilities;
+- migrate Doctor to the read-only runtime profile;
+- migrate Status;
+- replace typed `runDoctor()` composition with `doctorCommand.invoke()`;
+- preserve inspection reuse.
+
+### 15.6 Cohort 6: Setup
+
+- migrate Setup and all phase modules;
+- replace phase runner wrappers with scoped runner defaults;
+- preserve consent, dry-run, invalidation, and postcondition behavior;
+- preserve interruption mapping.
+
+### 15.7 Cohort 7: Documentation, E2E, and Containers
+
+- migrate documentation assembly;
+- migrate E2E;
+- migrate Aspire, Compose, Image, and Selfhost;
+- prove capture, tee, inherit, pass-through, long-running cancellation,
+  cleanup, and secret redaction.
+
+### 15.8 Cohort 8: Delete and Document
+
+- delete `common/cli.ts` and tests made obsolete by `commander.ts`;
+- delete `common/process.ts` after all imports move;
+- delete obsolete entry helpers, error helpers, and duplicate result checks;
+- delete unused `runWithSpinner()` if format/lint no longer consume it;
+- remove duplicate ESLint import-boundary configuration after architecture
+  tests cover it;
+- update `scripts/README.md`, `DEVELOPMENT.md`, command help examples, and this
+  RFC.
+
+### 15.9 Rollback
+
+Compatibility exports keep each intermediate cohort reversible.
+
+If a cohort fails:
+
+1. retain the new shared foundation;
+2. revert only that command cohort to its compatibility imports;
+3. keep prior migrated cohorts operational;
+4. do not remove old files until every caller and test has moved.
+
+No cohort changes package script names or requires a root CLI.
 
 ---
 
-## 16. Documentation Requirements
+## 16. Alternatives Considered
 
-Implementation must update:
+### 16.1 Inheritance-heavy God Command
+
+One base class would directly implement Commander, logger, HTTP, filesystem,
+runner, tasks, environment, and errors.
+
+Rejected because it:
+
+- couples unrelated capabilities;
+- weakens Doctor's read-only boundary;
+- makes tests mock or subclass one large object;
+- encourages shared mutable state;
+- turns the base class into repository business infrastructure.
+
+### 16.2 Pure Declarative Host Without Capability Kernel
+
+Scripts would export descriptors consumed by one generic host, while support
+modules continued to use ambient Node and process APIs.
+
+Rejected because it makes entry files smaller without solving the deeper
+infrastructure boundary.
+
+### 16.3 Explicit Command Subclass Per Script
+
+Every script would subclass an abstract command and override lifecycle hooks.
+
+Rejected as the default authoring surface because it adds repetitive
+constructors and overrides. The declarative concrete host provides the same
+typed lifecycle with less ceremony.
+
+### 16.4 One Root CLI
+
+A root command would register all scripts as subcommands.
+
+Deferred because current npm scripts are clear, independent, and used by
+automation. The command objects can be composed into a root CLI later without
+changing their business implementation.
+
+### 16.5 New TUI Framework
+
+Clack, Listr, or a similar package could standardize prompts and progress.
+
+Rejected because the current logger and prompt adapters already own redaction,
+JSON suppression, terminal behavior, and tested output policy. Replacing them
+does not solve the command-runtime problem.
+
+### 16.6 Unified Execa and Piscina Runner Now
+
+The generic runner could immediately model both external processes and worker
+threads.
+
+Deferred because their lifecycle, cancellation, serialization, output, and
+failure semantics differ. Format and lint require a separate approved design.
+
+---
+
+## 17. Documentation Requirements
+
+Implementation updates:
 
 - `scripts/README.md`;
 - `DEVELOPMENT.md`;
-- setup and doctor help output;
-- root package dependency declarations;
-- any examples that use removed doctor flags;
-- the repository RFC indexes.
+- command help and examples;
+- architecture-test documentation;
+- any JSDoc that names `createToolProgram`, `CommandRunner`,
+  `defaultCommandRunner`, or `process.ts`;
+- this RFC when implementation refines a public contract.
 
-Documentation must state that contributors run `npm install` or `npm ci`
-before setup, that normal doctor performs comprehensive host inspection, and
-that `--quick` is the bounded profile.
+The RFC index keeps RFC 0002 as the canonical process/tooling architecture
+record.
 
 ---
 
-## 17. Success Criteria
+## 18. Success Criteria
 
 The redesign is complete when:
 
-1. The documented clone/install/setup flow succeeds on a supported
-   development environment.
-2. Root npm dependencies are validated but not reinstalled by setup.
-3. Setup-owned dependency domains use deterministic restores and verified
-   postconditions.
-4. Doctor accepts only the approved quick, verbose, and help aliases.
-5. Doctor always renders its score and has no CI-specific mode.
-6. A large npm failure produces concise bounded evidence.
-7. Status consumes doctor and Nx through typed in-process APIs.
-8. Doctor and status do not modify the checkout.
-9. Raw envinfo/systeminformation data and authentication values never reach
-   logs, reports, or repository files.
-10. The custom workspace graph, setup fingerprints, duplicated script
-    environment type, doctor serialized parser, and E2E collection mutation
-    are removed.
-11. Lint/format behavior remains unchanged.
-12. Targeted tooling tests, lint, TypeScript validation, and repository diff
-    checks pass.
+1. every included direct entrypoint exports a declarative command object;
+2. direct execution uses shared `runIfMain()` and no migrated script calls
+   `process.exit()` or assigns `process.exitCode`;
+3. command composition uses typed `invoke()`, not sibling subprocesses or
+   parallel execution functions;
+4. all included production filesystem, HTTP, process, timer, environment, and
+   explicit concurrency access flows through approved runtime adapters;
+5. every external command flows through the generic runner and Execa adapter;
+6. process outcomes are discriminated and duplicate success/transport checks
+   are removed;
+7. Execa types do not escape `runner.execa.ts`;
+8. Doctor remains repository-read-only and its modules retain opaque probes;
+9. Setup retains consent, dry-run, invalidation, and postcondition behavior;
+10. Status retains nullable degradation and single-document JSON behavior;
+11. generator, documentation, E2E, exchange-rate, and container business
+    contracts remain covered;
+12. logger redaction prevents secrets from reaching command, HTTP, filesystem,
+    or process diagnostics;
+13. format/lint and their Piscina workers remain behaviorally unchanged;
+14. `workers/shell.ts` uses the generic runner without changing its public
+    worker contract;
+15. compatibility `cli.ts` and `process.ts` are removed after the final cohort;
+16. command runtime, runner, capability, architecture, command-family, and
+    black-box tests pass;
+17. the repository builds and type-checks with no explicit TypeScript `any`.
 
 ---
 
-## 18. Future Work
+## 19. Future Work
 
-The following work is intentionally deferred:
+The following are intentionally deferred:
 
-- evaluate Astral `uv` as a separate Python toolchain migration;
-- evaluate Nx-native lint/format execution after the current worker behavior
-  is reconsidered;
-- add live Windows/Linux/macOS repository tooling validation in CI;
-- narrow Nx cache inputs so unrelated script changes do not invalidate every
-  project target;
-- evaluate a separately exportable redacted support bundle if consumers need
-  a shareable host report.
+- a Piscina implementation of the generic runner;
+- migration of format and lint;
+- a root `arolariu` CLI composed from command objects;
+- live Windows/Linux/macOS tooling validation in CI;
+- a separately exportable command-runtime package;
+- structured machine-readable error documents for every JSON-mode command;
+- replacing the GraphQL placeholder with a separately designed generator.
 
 ---
 
-## 19. References
+## 20. References
 
-- [Nx Devkit API](https://nx.dev/reference/core-api/devkit/documents/createProjectGraphAsync)
-- [Commander](https://github.com/tj/commander.js)
+- [Commander.js](https://github.com/tj/commander.js)
 - [Execa](https://github.com/sindresorhus/execa)
+- [Nx Devkit](https://nx.dev/reference/core-api/devkit/documents/createProjectGraphAsync)
 - [envinfo](https://github.com/tabrindle/envinfo)
 - [systeminformation](https://systeminformation.io/)
-- [systeminformation security guidance](https://systeminformation.io/security.html)
 - [`scripts/README.md`](../../scripts/README.md)
 - [`AGENTS.md`](../../AGENTS.md)
 
 ---
 
-**Document Version**: 1.0.0
-**Last Updated**: 2026-08-31
+**Document Version**: 2.0.0
+**Last Updated**: 2026-09-01
 **Status**: Accepted
