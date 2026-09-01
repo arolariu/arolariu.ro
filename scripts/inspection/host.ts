@@ -497,33 +497,62 @@ function countContainersByState(containers: readonly unknown[], predicate: (stat
   return count;
 }
 
+/**
+ * One optional Docker observation composed into the aggregate document.
+ *
+ * @remarks
+ * `present` records whether the aggregate document carried an **own property** for the field, which
+ * is deliberately independent of the value. The worker omits the property for a rejected
+ * `systeminformation` call and for the known no-engine `dockerInfo` sentinel, and includes it for
+ * every other fulfilled result — including a result that is itself `undefined`. Distinguishing
+ * presence from value is what lets an explicitly fulfilled `undefined` reach {@link requireRecord}
+ * or {@link requireArray} and be rejected instead of being silently read as "not observed".
+ */
+interface DockerObservation {
+  /** Whether the aggregate document carried an own property for this field. */
+  readonly present: boolean;
+  /** The observed value; meaningful only when `present` is `true`. */
+  readonly value: unknown;
+}
+
+/**
+ * Reads one optional Docker field from the aggregate document by own-property presence.
+ *
+ * @param document - The untrusted aggregate document.
+ * @param key - Docker field name.
+ * @returns The presence-tagged observation.
+ */
+function dockerObservation(document: UnknownRecord, key: string): DockerObservation {
+  return {present: Object.hasOwn(document, key), value: document[key]};
+}
+
 function projectContainers(
-  dockerInfoValue: unknown,
-  dockerContainersValue: unknown,
-  dockerImagesValue: unknown,
+  info: Readonly<DockerObservation>,
+  containerList: Readonly<DockerObservation>,
+  imageList: Readonly<DockerObservation>,
   approvedNames: ReadonlySet<string>,
 ): HostContainerFacts {
-  const available = dockerInfoValue !== undefined || dockerContainersValue !== undefined || dockerImagesValue !== undefined;
+  const available = info.present || containerList.present || imageList.present;
   if (!available) {
     return {available: false, running: 0, stopped: 0, images: 0, repositoryContainers: []};
   }
 
-  const containers = dockerContainersValue === undefined ? [] : requireArray(dockerContainersValue, "dockerContainers");
-  const images = dockerImagesValue === undefined ? [] : requireArray(dockerImagesValue, "dockerImages");
+  const containers = containerList.present ? requireArray(containerList.value, "dockerContainers") : [];
+  const images = imageList.present ? requireArray(imageList.value, "dockerImages") : [];
 
   let running: number;
   let stopped: number;
   let imageCount: number;
 
-  if (dockerInfoValue === undefined) {
-    running = countContainersByState(containers, (state) => state === "running");
-    stopped = countContainersByState(containers, (state) => state !== "running" && state !== "paused");
-    imageCount = images.length;
-  } else {
-    const dockerInfo = requireRecord(dockerInfoValue, "dockerInfo");
+  if (info.present) {
+    const dockerInfo = requireRecord(info.value, "dockerInfo");
     running = requireNonNegativeInteger(dockerInfo, "containersRunning", "dockerInfo");
     stopped = requireNonNegativeInteger(dockerInfo, "containersStopped", "dockerInfo");
     imageCount = requireNonNegativeInteger(dockerInfo, "images", "dockerInfo");
+  } else {
+    running = countContainersByState(containers, (state) => state === "running");
+    stopped = countContainersByState(containers, (state) => state !== "running" && state !== "paused");
+    imageCount = images.length;
   }
 
   const repositoryContainers = new Set<string>();
@@ -598,7 +627,12 @@ export function projectSystemInformation(value: unknown, input: Readonly<SystemI
     filesystems: projectFilesystems(document["fsSize"], root),
     processes: projectProcesses(document["processes"]),
     portOwners: projectRequiredPorts(document["networkConnections"], requiredPorts, processIndex, root),
-    containers: projectContainers(document["dockerInfo"], document["dockerContainers"], document["dockerImages"], approvedNames),
+    containers: projectContainers(
+      dockerObservation(document, "dockerInfo"),
+      dockerObservation(document, "dockerContainers"),
+      dockerObservation(document, "dockerImages"),
+      approvedNames,
+    ),
     network: projectNetwork(document["net"], document["inetLatency"]),
   };
 }

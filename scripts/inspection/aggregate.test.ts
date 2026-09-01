@@ -659,6 +659,22 @@ describe("collectAggregateWorkerDocument component collection", () => {
       label: "an out-of-range dockerInfo count",
       overrides: {dockerInfo: async (): Promise<unknown> => ({containersRunning: -3, containersStopped: 0, images: 2})},
     },
+    {
+      label: "the exact sentinel key set with one expected key swapped for an unknown key",
+      overrides: {dockerInfo: async (): Promise<unknown> => ({...sentinelWithoutKey("serverVersion"), unknownServerVersion: undefined})},
+    },
+    {
+      label: "a fulfilled-undefined dockerInfo result",
+      overrides: {dockerInfo: async (): Promise<unknown> => undefined},
+    },
+    {
+      label: "a fulfilled-undefined dockerContainers result",
+      overrides: {dockerContainers: async (): Promise<unknown> => undefined},
+    },
+    {
+      label: "a fulfilled-undefined dockerImages result",
+      overrides: {dockerImages: async (): Promise<unknown> => undefined},
+    },
     {label: "a non-array dockerContainers result", overrides: {dockerContainers: async (): Promise<unknown> => ({length: 0})}},
     {label: "a non-array dockerImages result", overrides: {dockerImages: async (): Promise<unknown> => "not-an-array"}},
   ])("still invalidates the host projection for $label", async ({overrides}) => {
@@ -672,6 +688,49 @@ describe("collectAggregateWorkerDocument component collection", () => {
     expect(document.host.kind).toBe("invalid");
     if (document.host.kind === "invalid") {
       expect(document.host.issues.join("\n")).toContain("projectSystemInformation");
+    }
+  });
+
+  it("recognizes the no-engine sentinel regardless of own-key insertion order", async () => {
+    // Own-key order carries no meaning in the captured result, so the detector compares the key
+    // set order-independently. This fixture rotates the captured order by half and reverses it, a
+    // permutation that shares neither prefix nor suffix with the original.
+    const rotated = [...CAPTURED_NO_ENGINE_DOCKER_INFO_KEYS.slice(23), ...CAPTURED_NO_ENGINE_DOCKER_INFO_KEYS.slice(0, 23)].reverse();
+    const permuted = Object.fromEntries(rotated.map((field) => [field, undefined]));
+    expect(Object.keys(permuted)).toHaveLength(CAPTURED_NO_ENGINE_DOCKER_INFO_KEYS.length);
+    expect(Object.keys(permuted)).not.toEqual([...CAPTURED_NO_ENGINE_DOCKER_INFO_KEYS]);
+    expect([...Object.keys(permuted)].toSorted()).toEqual([...CAPTURED_NO_ENGINE_DOCKER_INFO_KEYS].toSorted());
+
+    const worker = await loadWorkerWithMocks({
+      envinfo: envinfoMockModule(async () => JSON.stringify({})),
+      systeminformation: systeminformationMockModule({dockerInfo: async (): Promise<unknown> => permuted}),
+    });
+
+    const document = await worker.collectAggregateWorkerDocument(WORKER_ROOT);
+
+    expect(document.host.kind).toBe("available");
+    if (document.host.kind === "available") {
+      expect(document.host.value.memory).toEqual({totalBytes: 100, usedBytes: 40, availableBytes: 60});
+      expect(document.host.value.filesystems.length).toBeGreaterThan(0);
+      expect(document.host.value.processes.total).toBe(100);
+    }
+  });
+
+  it("keeps host facts available when every Docker call rejects, proving rejection still omits the property", async () => {
+    const reject = async (): Promise<unknown> => {
+      throw new Error("docker-secret-do-not-leak");
+    };
+    const worker = await loadWorkerWithMocks({
+      envinfo: envinfoMockModule(async () => JSON.stringify({})),
+      systeminformation: systeminformationMockModule({dockerInfo: reject, dockerContainers: reject, dockerImages: reject}),
+    });
+
+    const document = await worker.collectAggregateWorkerDocument(WORKER_ROOT);
+
+    expect(document.host.kind).toBe("available");
+    if (document.host.kind === "available") {
+      expect(document.host.value.containers).toEqual({available: false, running: 0, stopped: 0, images: 0, repositoryContainers: []});
+      expect(document.host.value.memory).toEqual({totalBytes: 100, usedBytes: 40, availableBytes: 60});
     }
   });
 

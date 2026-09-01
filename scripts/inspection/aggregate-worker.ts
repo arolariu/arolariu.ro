@@ -219,12 +219,21 @@ function isNoEngineDockerInfoSentinel(value: unknown): boolean {
  *
  * @remarks
  * The base host collection and each Docker call run through {@link Promise.allSettled} so a missing
- * Docker daemon never discards fulfilled base host data. Every fulfilled Docker value is composed
- * as the optional `dockerInfo`, `dockerContainers`, and `dockerImages` field, with one exception:
- * the captured no-engine `dockerInfo` sentinel (see {@link isNoEngineDockerInfoSentinel}) is
- * omitted, because it is an absence of evidence rather than Docker evidence. Fulfilled container
- * and image results are never filtered — an empty list is genuine evidence of zero containers or
- * images, and a wrong-shape list must still reach the projection's `requireArray` validator.
+ * Docker daemon never discards fulfilled base host data.
+ *
+ * The composition contract is **presence-based**, and the host projection reads it with
+ * `Object.hasOwn` rather than an `!== undefined` test:
+ *
+ * - a **rejected** call omits its property entirely;
+ * - the captured no-engine `dockerInfo` sentinel (see {@link isNoEngineDockerInfoSentinel}) omits
+ *   its property, because it is an absence of evidence rather than Docker evidence;
+ * - **every other fulfilled result sets its own property**, including a result whose value is
+ *   itself `undefined`, so that explicitly fulfilled `undefined` still reaches the projection's
+ *   `requireRecord`/`requireArray` validators and yields `invalid` instead of being read as
+ *   "not observed".
+ *
+ * Fulfilled container and image results are never filtered — an empty list is genuine evidence of
+ * zero containers or images, and a wrong-shape list must still reach `requireArray`.
  *
  * @param root - Resolved repository root used only for path-boundary correlation.
  * @returns A nested host outcome: `available` for a successful projection, `invalid` for
