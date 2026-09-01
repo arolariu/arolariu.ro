@@ -3,14 +3,7 @@
  * @module scripts.types
  */
 
-export type {
-  AllEnvironmentVariablesKeys,
-  SecretEnvironmentVariablesType,
-  TypedConfigurationType,
-  TypedDevelopmentEnvironmentVariablesType,
-  TypedEnvironment,
-  TypedProductionEnvironmentVariablesType,
-} from "./environment.ts";
+export type {AppConfigurationEnvironmentKey, GeneratedEnvironmentConfiguration, GeneratedEnvironmentKey} from "../azure/index.ts";
 
 export type {FormatTarget, FormatWorkerInput, FormatWorkerResult} from "./format.ts";
 export type {

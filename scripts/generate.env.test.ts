@@ -285,3 +285,37 @@ describe("generator PromptProvider compatibility", () => {
     });
   });
 });
+
+describe("parseEnvironmentFile - semantic characterization", () => {
+  it("preserves inline # as part of the value for unquoted assignments", async () => {
+    const {parseEnvironmentFile} = await import("./generate.env.ts");
+    const parsed = parseEnvironmentFile("KEY=value # inline comment\n");
+    expect([...parsed]).toEqual([["KEY", "value # inline comment"]]);
+  });
+
+  it("treats export-prefixed lines as having a compound key, not as a bare variable name", async () => {
+    const {parseEnvironmentFile} = await import("./generate.env.ts");
+    const parsed = parseEnvironmentFile("export KEY=value\n");
+    expect([...parsed]).toEqual([["export KEY", "value"]]);
+  });
+});
+
+describe("azure mapping source-of-truth", () => {
+  it("exports AZURE_RUNTIME_IDENTITY_KEYS with the three standard Azure identity keys", async () => {
+    const azureModule = await import("./azure/index.ts");
+    const runtimeKeys = (azureModule as Record<string, unknown>)["AZURE_RUNTIME_IDENTITY_KEYS"];
+    expect(runtimeKeys).toEqual(["AZURE_CLIENT_ID", "AZURE_TENANT_ID", "AZURE_SUBSCRIPTION_ID"]);
+  });
+
+  it("preserves APP_CONFIGURATION_MAPPING key/value pairs byte-for-byte", async () => {
+    const {APP_CONFIGURATION_MAPPING} = await import("./azure/index.ts");
+    expect(Object.entries(APP_CONFIGURATION_MAPPING)).toEqual([
+      ["Site:Environment", "SITE_ENV"],
+      ["Site:Name", "SITE_NAME"],
+      ["Site:Url", "SITE_URL"],
+      ["Auth:Clerk:PublishableKey", "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY"],
+      ["Auth:Clerk:SecretKey", "CLERK_SECRET_KEY"],
+      ["Site:UseCdn", "USE_CDN"],
+    ]);
+  });
+});
