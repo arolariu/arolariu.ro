@@ -113,23 +113,6 @@ export interface DoctorRunOptions {
   readonly verbose: boolean;
 }
 
-/**
- * Legacy parsed doctor CLI options.
- *
- * @deprecated Use {@link DoctorRunOptions}. Retained temporarily so unmigrated specialist
- * modules compile without broad import changes until Tasks 23-26.
- */
-export interface DoctorOptions extends DoctorRunOptions {
-  /** @deprecated Removed from CLI; always false. Retained for specialist module compile safety. */
-  readonly ci?: boolean;
-  /** @deprecated Removed from CLI; always false. Retained for specialist module compile safety. */
-  readonly json?: boolean;
-  /** @deprecated Removed from CLI; score is always rendered. Retained for specialist module compile safety. */
-  readonly score?: boolean;
-  /** @deprecated Removed from CLI; help is Commander-owned. Retained for specialist module compile safety. */
-  readonly help?: boolean;
-}
-
 /** Totals by result status. */
 export interface DoctorSummary {
   readonly passed: number;
@@ -146,13 +129,6 @@ export interface DoctorReport {
   readonly checks: readonly DiagnosticResult[];
   readonly timestamp: string;
 }
-
-/**
- * Legacy version 1 doctor report payload.
- *
- * @deprecated Use {@link DoctorReport}. Retained temporarily for compile safety.
- */
-export type DoctorReportV1 = DoctorReport;
 
 /** Read-only command runner contract exposed to doctor modules. */
 export interface DiagnosticCommandRunner {
@@ -178,7 +154,7 @@ export interface DiagnosticNetworkProbe {
 
 /** Shared module execution context for one doctor run. */
 export interface DoctorContext {
-  readonly options: DoctorOptions;
+  readonly options: DoctorRunOptions;
   readonly paths: RepositoryPaths;
   readonly requirements: RequirementLoadResult;
   readonly runner: DiagnosticCommandRunner;
@@ -493,45 +469,6 @@ export function createReadOnlyDiagnosticRunner(runner: CommandRunner): Diagnosti
  */
 export const defaultDiagnosticRunner: DiagnosticCommandRunner = createReadOnlyDiagnosticRunner(defaultCommandRunner);
 
-/**
- * Finalizes a diagnostic row with elapsed timing metadata.
- *
- * @param result - Diagnostic fields excluding elapsed duration.
- * @param startedAt - Monotonic start timestamp.
- * @param now - Monotonic clock for duration capture.
- * @returns The completed diagnostic result.
- */
-export function diagnosticResult(result: Omit<DiagnosticResult, "durationMs">, startedAt: number, now: () => number): DiagnosticResult {
-  return {
-    ...result,
-    durationMs: Math.max(0, now() - startedAt),
-  };
-}
-
-/**
- * Creates a standardized skipped diagnostic row.
- *
- * @param input - Stable skipped-diagnostic inputs.
- * @returns A completed skipped result with default empty causes and fixes.
- */
-export function skippedDiagnostic(
-  input: Readonly<{
-    id: string;
-    module: DiagnosticModuleId;
-    name: string;
-    summary: string;
-    evidence?: readonly string[];
-  }>,
-): DiagnosticResult {
-  return {
-    id: input.id,
-    module: input.module,
-    name: input.name,
-    status: "skipped",
-    summary: input.summary,
-    evidence: input.evidence ?? [],
-    potentialCauses: [],
-    fixes: [],
-    durationMs: 0,
-  };
-}
+// Re-export diagnostic helpers from doctor.diagnostics.ts to avoid broad import churn
+// in specialist modules that still import from this file.
+export {diagnosticResult, skippedDiagnostic} from "./doctor.diagnostics.ts";

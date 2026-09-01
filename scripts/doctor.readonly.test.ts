@@ -567,10 +567,11 @@ const APPROVED_DOCTOR_REPOSITORY_IMPORTS: ReadonlyMap<string, ReadonlySet<string
       "./common/process.ts",
       "./common/repository-paths.ts",
       "./common/requirements.ts",
+      "./doctor.diagnostics.ts",
       "./inspection/repository.ts",
     ]),
   ],
-  ["scripts/doctor.reporter.ts", new Set(["./common/logger.ts", "./doctor.types.ts"])],
+  ["scripts/doctor.reporter.ts", new Set(["./common/logger.ts", "./doctor.diagnostics.ts", "./doctor.types.ts"])],
   ["scripts/doctor.diagnostics.ts", new Set(["./common/process.ts", "./doctor.types.ts"])],
   ["scripts/doctor.dotnet.ts", new Set(["./common/process.ts", "./common/requirements.ts", "./doctor.types.ts"])],
   [

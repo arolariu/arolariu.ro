@@ -25,7 +25,7 @@ import {
   type DiagnosticCommandRunner,
   type DiagnosticNetworkResult,
   type DoctorContext,
-  type DoctorOptions,
+  type DoctorRunOptions,
 } from "./doctor.types.ts";
 import type {RepositoryInspectionSession} from "./inspection/repository.ts";
 
@@ -79,7 +79,7 @@ function commandKey(command: Readonly<CommandSpec>, cwd?: string): string {
   return `${cwd ?? ""}\u0000${command.command}\u0000${JSON.stringify(command.args)}`;
 }
 
-function doctorOptions(patch: Partial<DoctorOptions> = {}): DoctorOptions {
+function doctorOptions(patch: Partial<DoctorRunOptions> = {}): DoctorRunOptions {
   return {
     verbose: false,
     quick: false,
@@ -108,7 +108,7 @@ interface PythonFixture {
 
 async function createPythonFixture(
   input: Readonly<{
-    options?: Partial<DoctorOptions>;
+    options?: Partial<DoctorRunOptions>;
     requirementsValid?: boolean;
     platform?: NodeJS.Platform;
     networkResult?: DiagnosticNetworkResult;

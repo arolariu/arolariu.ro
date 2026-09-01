@@ -15,7 +15,7 @@ import {createRepositoryPaths} from "./common/repository-paths.ts";
 import type {RepositoryRequirements} from "./common/requirements.ts";
 import {getExpectedTaxonomyArtifactPaths, taxonomyArtifactFileNames} from "./common/taxonomy-artifacts.ts";
 import {inspectWebsiteEnvironment, reactDoctorModule} from "./doctor.react.ts";
-import type {DiagnosticCommandRunner, DiagnosticNetworkResult, DoctorContext, DoctorOptions} from "./doctor.types.ts";
+import type {DiagnosticCommandRunner, DiagnosticNetworkResult, DoctorContext, DoctorRunOptions} from "./doctor.types.ts";
 import type {RepositoryInspectionSession} from "./inspection/repository.ts";
 import type {InspectionOutcome} from "./inspection/types.ts";
 
@@ -57,7 +57,7 @@ function commandKey(command: Readonly<CommandSpec>, cwd?: string): string {
   return `${cwd ?? ""}\u0000${command.command}\u0000${JSON.stringify(command.args)}`;
 }
 
-function doctorOptions(patch: Partial<DoctorOptions> = {}): DoctorOptions {
+function doctorOptions(patch: Partial<DoctorRunOptions> = {}): DoctorRunOptions {
   return {
     verbose: false,
     quick: false,
@@ -138,7 +138,7 @@ interface ReactFixture {
 
 async function createReactFixture(
   input: Readonly<{
-    options?: Partial<DoctorOptions>;
+    options?: Partial<DoctorRunOptions>;
     requirementsValid?: boolean;
     skipNodeModules?: boolean;
     skipWebsitePackageJson?: boolean;

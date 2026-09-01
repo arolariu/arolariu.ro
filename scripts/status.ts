@@ -138,6 +138,10 @@ export interface StatusDependencies {
    * one quick session after path resolution.
    */
   readonly inspection: RepositoryInspectionSession;
+  /** Factory for creating an inspection session; defaults to {@link createRepositoryInspectionSession}. */
+  readonly createInspectionSession: typeof createRepositoryInspectionSession;
+  /** Typed doctor runner; defaults to the production {@link runDoctor}. */
+  readonly runDoctor: typeof runDoctor;
 }
 
 // ============================================================================
@@ -375,11 +379,16 @@ async function collectNxGraph(inspection: RepositoryInspectionSession): Promise<
  *
  * @param inspection - The exact same inspection session used for workspaces.
  * @param paths - Canonical repository paths.
+ * @param doctorRunner - The typed doctor runner function.
  * @returns The health summary, or `null` if doctor fails.
  */
-async function collectHealth(inspection: RepositoryInspectionSession, paths: Readonly<RepositoryPaths>): Promise<HealthInfo | null> {
+async function collectHealth(
+  inspection: RepositoryInspectionSession,
+  paths: Readonly<RepositoryPaths>,
+  doctorRunner: typeof runDoctor,
+): Promise<HealthInfo | null> {
   try {
-    const report = await runDoctor(
+    const report = await doctorRunner(
       {quick: true, verbose: false},
       {
         inspection,
@@ -812,7 +821,7 @@ export async function main(
 
   const inspection =
     dependencies.inspection
-    ?? createRepositoryInspectionSession({
+    ?? (dependencies.createInspectionSession ?? createRepositoryInspectionSession)({
       profile: "quick",
       paths,
       runner,
@@ -821,13 +830,15 @@ export async function main(
       now: () => performance.now(),
     });
 
+  const doctorRunner = dependencies.runDoctor ?? runDoctor;
+
   const [workspacesResult, nxGraphResult, gitResult, securityResult, diskResult, healthResult] = await Promise.allSettled([
     collectWorkspaces(inspection, paths.root),
     collectNxGraph(inspection),
     collectGit(runner, paths.root),
     collectSecurity(runner, paths.root),
     collectDisk(runner, paths.root),
-    collectHealth(inspection, paths),
+    collectHealth(inspection, paths, doctorRunner),
   ]);
 
   const output: StatusOutput = {

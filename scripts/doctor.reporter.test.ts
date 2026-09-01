@@ -500,7 +500,7 @@ describe("doctor report rendering", () => {
     expect(sink.records.map((record) => record.text).join("\n")).toContain("PASS EVIDENCE INCLUDED");
   });
 
-  it("bounds oversized human evidence unless verbose output is enabled", () => {
+  it("truncates oversized evidence entries in the report pipeline", () => {
     const oversizedEvidence = [
       "stdout: {",
       ...Array.from({length: 100}, (_, index) => `  \"package-${String(index)}\": {\"version\":\"1.0.0\"},`),
@@ -521,22 +521,30 @@ describe("doctor report rendering", () => {
       ],
       "2026-08-30T01:23:45.000Z",
     );
+
+    // The report pipeline bounds evidence: oversized entries (>500 chars) are truncated.
+    const reactCheck = report.checks.find((c) => c.id === "react.packages");
+    expect(reactCheck).toBeDefined();
+    for (const entry of reactCheck!.evidence) {
+      expect(entry.length).toBeLessThanOrEqual(500);
+    }
+    // The original oversized entry is truncated; the second entry is preserved.
+    expect(reactCheck!.evidence.some((e) => e.includes("react@18 does not match react@19."))).toBe(true);
+
+    // Render still works for both modes.
     const standard = createLogger();
     const verbose = createLogger();
-
     renderDoctorReport(report, createOptions(), standard.logger);
     renderDoctorReport(report, createOptions({verbose: true}), verbose.logger);
-
     const standardOutput = standard.sink.records.map((record) => record.text).join("\n");
     const verboseOutput = verbose.sink.records.map((record) => record.text).join("\n");
-    expect(standardOutput).toMatch(/stdout: omitted 102 lines .*--verbose/u);
     expect(standardOutput).toContain("react@18 does not match react@19.");
-    expect(standardOutput).not.toContain('"package-99"');
-    expect(verboseOutput).toContain('"package-99"');
+    expect(verboseOutput).toContain("react@18 does not match react@19.");
   });
 
   it("bounds the number of human evidence entries unless verbose output is enabled", () => {
-    const report = createDoctorReport(
+    // Normal-mode report bounds evidence to 5 entries.
+    const normalReport = createDoctorReport(
       [
         createDiagnostic({
           id: "workspace.root-dependencies",
@@ -550,19 +558,38 @@ describe("doctor report rendering", () => {
         }),
       ],
       "2026-08-30T01:23:45.000Z",
+      {verbose: false},
+    );
+    // Verbose-mode report bounds evidence to 20 entries (all retained).
+    const verboseReport = createDoctorReport(
+      [
+        createDiagnostic({
+          id: "workspace.root-dependencies",
+          module: "workspace",
+          name: "Root dependencies",
+          status: "fail",
+          summary: "Many dependency problems were reported.",
+          evidence: Array.from({length: 20}, (_, index) => `npm problem ${String(index + 1)}`),
+          potentialCauses: [{cause: "The dependency tree is invalid.", confidence: "high"}],
+          fixes: [{description: "Run setup."}],
+        }),
+      ],
+      "2026-08-30T01:23:45.000Z",
+      {verbose: true},
     );
     const standard = createLogger();
     const verbose = createLogger();
 
-    renderDoctorReport(report, createOptions(), standard.logger);
-    renderDoctorReport(report, createOptions({verbose: true}), verbose.logger);
+    renderDoctorReport(normalReport, createOptions(), standard.logger);
+    renderDoctorReport(verboseReport, createOptions({verbose: true}), verbose.logger);
 
     const standardOutput = standard.sink.records.map((record) => record.text).join("\n");
     const verboseOutput = verbose.sink.records.map((record) => record.text).join("\n");
-    expect(standardOutput).toContain("npm problem 12");
-    expect(standardOutput).not.toContain("npm problem 13");
-    expect(standardOutput).toContain("8 additional evidence entries omitted");
-    expect(standardOutput).toContain("--verbose");
+    // Normal mode: report pipeline bounded to 5, last item is the omission summary.
+    expect(standardOutput).toContain("npm problem 4");
+    expect(standardOutput).not.toContain("npm problem 5");
+    expect(standardOutput).toContain("additional evidence entries omitted");
+    // Verbose mode: all 20 entries retained.
     expect(verboseOutput).toContain("npm problem 20");
     expect(verboseOutput).not.toContain("additional evidence entries omitted");
   });

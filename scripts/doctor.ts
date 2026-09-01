@@ -21,8 +21,9 @@
  * @example
  * ```bash
  * node --experimental-strip-types scripts/doctor.ts
- * node --experimental-strip-types scripts/doctor.ts --verbose --score
- * node --experimental-strip-types scripts/doctor.ts --ci --json
+ * node --experimental-strip-types scripts/doctor.ts --verbose
+ * node --experimental-strip-types scripts/doctor.ts --quick
+ * node --experimental-strip-types scripts/doctor.ts --help
  * ```
  */
 
@@ -33,9 +34,9 @@ import {MonorepositoryConsoleLogger, type MonorepositoryLogger} from "./common/l
 import {loadRepositoryRequirements, type RequirementLoadResult} from "./common/requirements.ts";
 import {defaultCommandRunner} from "./common/process.ts";
 import {resolveRepositoryPaths, type RepositoryPaths} from "./common/repository-paths.ts";
-import {normalizeErrorForReport} from "./doctor.diagnostics.ts";
+import {normalizeErrorForReport, diagnosticResult} from "./doctor.diagnostics.ts";
 import {renderDoctorReport, createDoctorReport} from "./doctor.reporter.ts";
-import {defaultDiagnosticRunner, diagnosticResult} from "./doctor.types.ts";
+import {defaultDiagnosticRunner} from "./doctor.types.ts";
 import {createRepositoryInspectionSession, type RepositoryInspectionSession} from "./inspection/repository.ts";
 import {dotnetDoctorModule} from "./doctor.dotnet.ts";
 import {infrastructureDoctorModule} from "./doctor.infrastructure.ts";
@@ -103,6 +104,8 @@ export interface DoctorDependencies {
   readonly timestamp: () => string;
   /** Pre-created inspection session; when supplied, doctor reuses it instead of creating one. */
   readonly inspection: RepositoryInspectionSession;
+  /** Factory for creating an inspection session; defaults to {@link createRepositoryInspectionSession}. */
+  readonly createInspectionSession: typeof createRepositoryInspectionSession;
 }
 
 function errorMessage(error: unknown): string {
@@ -289,7 +292,7 @@ export async function runDoctor(
 
   const inspection =
     dependencies.inspection
-    ?? createRepositoryInspectionSession({
+    ?? (dependencies.createInspectionSession ?? createRepositoryInspectionSession)({
       profile: options.quick ? "quick" : "full",
       paths,
       runner: defaultCommandRunner,
@@ -315,7 +318,7 @@ export async function runDoctor(
   const settledResults = await Promise.all(modules.map((module) => runDoctorModule(module, context)));
   const checks = settledResults.flat();
 
-  return createDoctorReport(checks, timestamp());
+  return createDoctorReport(checks, timestamp(), {verbose: options.verbose});
 }
 
 const HELP_LINES: readonly string[] = [

@@ -15,11 +15,14 @@ import {
   warnDiagnostic,
   failDiagnostic,
   skippedDiagnostic as skipDiagnosticFactory,
+  diagnosticResult,
   STANDARD_EVIDENCE_LIMIT,
   VERBOSE_EVIDENCE_LIMIT,
   EVIDENCE_ENTRY_MAX_CHARS,
   COMMAND_EXCERPT_MAX_CHARS,
 } from "./doctor.diagnostics.ts";
+import {createDoctorReport} from "./doctor.reporter.ts";
+import type {DiagnosticResult} from "./doctor.types.ts";
 
 // ============================================================================
 // Evidence bounding constants
@@ -243,5 +246,122 @@ describe("skipDiagnosticFactory", () => {
     });
     expect(result.status).toBe("skipped");
     expect(result.durationMs).toBe(0);
+  });
+});
+
+// ============================================================================
+// diagnosticResult (timing-aware)
+// ============================================================================
+
+describe("diagnosticResult", () => {
+  it("records elapsed timing from monotonic clock", () => {
+    const result = diagnosticResult(
+      {
+        id: "workspace.repository-root",
+        module: "workspace",
+        name: "Repository root",
+        status: "pass",
+        summary: "ok",
+        evidence: [],
+        potentialCauses: [],
+        fixes: [],
+      },
+      100,
+      () => 142,
+    );
+    expect(result.durationMs).toBe(42);
+  });
+});
+
+// ============================================================================
+// Integration: evidence bounding through createDoctorReport
+// ============================================================================
+
+describe("evidence bounding through createDoctorReport", () => {
+  it("bounds a 10,000-entry diagnostic to at most 5 entries in normal mode", () => {
+    const megaEvidence = Array.from({length: 10_000}, (_, i) => `evidence-line-${String(i)}`);
+    const check: DiagnosticResult = {
+      id: "workspace.repository-root",
+      module: "workspace",
+      name: "Repository root",
+      status: "fail",
+      summary: "Massive evidence test.",
+      evidence: megaEvidence,
+      rootCause: "test",
+      potentialCauses: [],
+      fixes: [{description: "fix it"}],
+      durationMs: 1,
+    };
+    const report = createDoctorReport([check], "2026-01-01T00:00:00.000Z", {verbose: false});
+    const bounded = report.checks.find((c) => c.id === "workspace.repository-root");
+    expect(bounded).toBeDefined();
+    expect(bounded!.evidence.length).toBeLessThanOrEqual(STANDARD_EVIDENCE_LIMIT);
+    expect(bounded!.evidence[bounded!.evidence.length - 1]).toMatch(/omitted/i);
+    for (const entry of bounded!.evidence) {
+      expect(entry.length).toBeLessThanOrEqual(EVIDENCE_ENTRY_MAX_CHARS);
+    }
+  });
+
+  it("bounds a 10,000-entry diagnostic to at most 20 entries in verbose mode", () => {
+    const megaEvidence = Array.from({length: 10_000}, (_, i) => `evidence-line-${String(i)}`);
+    const check: DiagnosticResult = {
+      id: "workspace.repository-root",
+      module: "workspace",
+      name: "Repository root",
+      status: "fail",
+      summary: "Massive evidence test.",
+      evidence: megaEvidence,
+      rootCause: "test",
+      potentialCauses: [],
+      fixes: [{description: "fix it"}],
+      durationMs: 1,
+    };
+    const report = createDoctorReport([check], "2026-01-01T00:00:00.000Z", {verbose: true});
+    const bounded = report.checks.find((c) => c.id === "workspace.repository-root");
+    expect(bounded).toBeDefined();
+    expect(bounded!.evidence.length).toBeLessThanOrEqual(VERBOSE_EVIDENCE_LIMIT);
+    expect(bounded!.evidence[bounded!.evidence.length - 1]).toMatch(/omitted/i);
+    for (const entry of bounded!.evidence) {
+      expect(entry.length).toBeLessThanOrEqual(EVIDENCE_ENTRY_MAX_CHARS);
+    }
+  });
+
+  it("truncates oversized evidence strings to at most 500 chars through createDoctorReport", () => {
+    const oversizedEvidence = ["x".repeat(1000)];
+    const check: DiagnosticResult = {
+      id: "workspace.repository-root",
+      module: "workspace",
+      name: "Repository root",
+      status: "fail",
+      summary: "Oversized evidence test.",
+      evidence: oversizedEvidence,
+      rootCause: "test",
+      potentialCauses: [],
+      fixes: [{description: "fix it"}],
+      durationMs: 1,
+    };
+    const report = createDoctorReport([check], "2026-01-01T00:00:00.000Z", {verbose: false});
+    const bounded = report.checks.find((c) => c.id === "workspace.repository-root");
+    expect(bounded).toBeDefined();
+    for (const entry of bounded!.evidence) {
+      expect(entry.length).toBeLessThanOrEqual(EVIDENCE_ENTRY_MAX_CHARS);
+    }
+  });
+
+  it("preserves backward-compatible default for direct callers (normal mode)", () => {
+    const check: DiagnosticResult = {
+      id: "workspace.repository-root",
+      module: "workspace",
+      name: "Repository root",
+      status: "pass",
+      summary: "Clean check.",
+      evidence: [],
+      potentialCauses: [],
+      fixes: [],
+      durationMs: 1,
+    };
+    // Calling without options should default to normal mode
+    const report = createDoctorReport([check], "2026-01-01T00:00:00.000Z");
+    expect(report.checks).toHaveLength(1);
   });
 });

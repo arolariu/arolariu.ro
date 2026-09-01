@@ -12,6 +12,7 @@ import type {
   DoctorRunOptions,
   DoctorSummary,
 } from "./doctor.types.ts";
+import {boundEvidence} from "./doctor.diagnostics.ts";
 import type {MonorepositoryLogger} from "./common/logger.ts";
 
 type UnknownRecord = Readonly<Record<string, unknown>>;
@@ -482,15 +483,31 @@ export function gradeFromScore(score: number): string {
   return "F";
 }
 
+/** Options controlling evidence bounding in report construction. */
+export interface DoctorReportOptions {
+  /** When true, allows up to {@link VERBOSE_EVIDENCE_LIMIT} entries per diagnostic. */
+  readonly verbose: boolean;
+}
+
 /**
  * Creates a validated doctor report payload.
  *
  * @param checks - Diagnostic rows for one doctor run.
  * @param timestamp - ISO timestamp representing report creation time.
+ * @param options - Optional report options controlling evidence bounding.
+ *   Defaults to normal (non-verbose) mode when omitted for backward compatibility.
  * @returns Validated report payload.
  */
-export function createDoctorReport(checks: readonly DiagnosticResult[], timestamp: string): DoctorReport {
-  const clonedChecks = checks.map((check) => cloneDiagnostic(check));
+export function createDoctorReport(
+  checks: readonly DiagnosticResult[],
+  timestamp: string,
+  options?: Readonly<DoctorReportOptions>,
+): DoctorReport {
+  const verbose = options?.verbose ?? false;
+  const clonedChecks = checks.map((check) => ({
+    ...cloneDiagnostic(check),
+    evidence: [...boundEvidence(check.evidence, verbose)],
+  }));
   validateDiagnosticSemantics(clonedChecks);
   const score = computeHealthScore(clonedChecks);
   const report: DoctorReport = {

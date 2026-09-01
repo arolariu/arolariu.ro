@@ -81,8 +81,10 @@ function isSuccessfulCommand(result: Readonly<CommandResult>): boolean {
 
 function isMissingExecutable(result: Readonly<CommandResult>): boolean {
   const detail = `${result.spawnError ?? ""}\n${result.stderr}`;
-  return result.code === 127
-    || /\bENOENT\b|command not found|not recognized as an internal or external command|no such file or directory/iu.test(detail);
+  return (
+    result.code === 127
+    || /\bENOENT\b|command not found|not recognized as an internal or external command|no such file or directory/iu.test(detail)
+  );
 }
 
 function commandEvidence(result: Readonly<CommandResult>): readonly string[] {
@@ -412,14 +414,9 @@ async function diagnoseWorkloads(context: Readonly<DoctorContext>): Promise<Diag
   }
 
   const trimmed = result.stdout.trim();
-  return passDiagnostic(
-    context,
-    startedAt,
-    "dotnet.workloads",
-    "Installed workloads",
-    "Installed .NET workloads were read successfully.",
-    [trimmed === "" ? "No workloads are installed." : trimmed],
-  );
+  return passDiagnostic(context, startedAt, "dotnet.workloads", "Installed workloads", "Installed .NET workloads were read successfully.", [
+    trimmed === "" ? "No workloads are installed." : trimmed,
+  ]);
 }
 
 async function findPackagesLockFiles(root: string): Promise<readonly string[]> {
@@ -534,9 +531,7 @@ async function diagnoseNugetState(context: Readonly<DoctorContext>): Promise<Dia
 }
 
 function parseSolutionProjectPaths(contents: string): readonly string[] {
-  return [...contents.matchAll(/<Project\s+Path="([^"]+)"/gu)]
-    .map((match) => match[1] ?? "")
-    .filter((value) => value !== "");
+  return [...contents.matchAll(/<Project\s+Path="([^"]+)"/gu)].map((match) => match[1] ?? "").filter((value) => value !== "");
 }
 
 async function diagnoseSolution(context: Readonly<DoctorContext>): Promise<DiagnosticResult> {
@@ -670,16 +665,6 @@ async function diagnoseLocalTools(context: Readonly<DoctorContext>): Promise<Dia
 }
 
 async function diagnoseHttpsCertificate(context: Readonly<DoctorContext>): Promise<DiagnosticResult> {
-  if (context.options.ci) {
-    return skippedDiagnostic({
-      id: "dotnet.https-certificate",
-      module: "dotnet",
-      name: "HTTPS development certificate",
-      summary: "Certificate trust inspection was skipped under CI.",
-      evidence: ["--ci intentionally skips host-local certificate trust inspection."],
-    });
-  }
-
   const startedAt = context.now();
   const [checkResult, trustResult] = await Promise.all([
     context.runner.run(DOTNET_DEV_CERTS_CHECK_COMMAND, {cwd: context.paths.root}),
@@ -783,16 +768,6 @@ function parseAppHostTargetFramework(contents: string): Readonly<{major: number;
 }
 
 async function diagnoseAppHost(context: Readonly<DoctorContext>): Promise<DiagnosticResult> {
-  if (context.options.ci) {
-    return skippedDiagnostic({
-      id: "dotnet.apphost",
-      module: "dotnet",
-      name: "AppHost configuration",
-      summary: "AppHost local-parameter inspection was skipped under CI.",
-      evidence: ["--ci intentionally skips host-local Aspire parameter inspection."],
-    });
-  }
-
   const startedAt = context.now();
   const projectPath = resolve(context.paths.root, ...APPHOST_PROJECT_RELATIVE_PATH);
   let projectContents: string;
@@ -946,23 +921,16 @@ async function diagnoseNugetFeed(context: Readonly<DoctorContext>): Promise<Diag
       summary: "The NuGet feed returned a malformed service index.",
       evidence: [
         `HTTP status: ${String(probe.statusCode)}`,
-        probe.body === undefined || probe.body.trim() === ""
-          ? "No response body was captured."
-          : `Response body: ${probe.body.trim()}`,
+        probe.body === undefined || probe.body.trim() === "" ? "No response body was captured." : `Response body: ${probe.body.trim()}`,
       ],
       rootCause: "The NuGet v3 service index response did not contain a JSON object with a resources array.",
       fixes: [{description: "Verify NuGet feed availability and configured sources, then rerun doctor."}],
     });
   }
 
-  return passDiagnostic(
-    context,
-    startedAt,
-    "dotnet.nuget-feed",
-    "NuGet feed reachability",
-    "The public NuGet feed is reachable.",
-    [`HTTP status: ${String(probe.statusCode)}`],
-  );
+  return passDiagnostic(context, startedAt, "dotnet.nuget-feed", "NuGet feed reachability", "The public NuGet feed is reachable.", [
+    `HTTP status: ${String(probe.statusCode)}`,
+  ]);
 }
 
 /** Read-only .NET diagnostic module. */

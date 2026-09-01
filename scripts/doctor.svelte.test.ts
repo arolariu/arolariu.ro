@@ -14,7 +14,7 @@ import type {CommandResult, CommandSpec} from "./common/process.ts";
 import {createRepositoryPaths} from "./common/repository-paths.ts";
 import type {RepositoryRequirements} from "./common/requirements.ts";
 import {inspectSvelteProject, svelteDoctorModule} from "./doctor.svelte.ts";
-import type {DiagnosticCommandRunner, DiagnosticNetworkResult, DoctorContext, DoctorOptions} from "./doctor.types.ts";
+import type {DiagnosticCommandRunner, DiagnosticNetworkResult, DoctorContext, DoctorRunOptions} from "./doctor.types.ts";
 import type {RepositoryInspectionSession} from "./inspection/repository.ts";
 
 const fixtureRoots: string[] = [];
@@ -38,7 +38,7 @@ function validRequirements(): RepositoryRequirements {
   };
 }
 
-function doctorOptions(patch: Partial<DoctorOptions> = {}): DoctorOptions {
+function doctorOptions(patch: Partial<DoctorRunOptions> = {}): DoctorRunOptions {
   return {
     verbose: false,
     quick: false,

@@ -157,8 +157,10 @@ function isAcceptablePortProbeResult(platform: NodeJS.Platform, result: Readonly
 
 function isMissingExecutable(result: Readonly<CommandResult>): boolean {
   const detail = `${result.spawnError ?? ""}\n${result.stderr}`;
-  return result.code === 127
-    || /\bENOENT\b|command not found|not recognized as an internal or external command|no such file or directory/iu.test(detail);
+  return (
+    result.code === 127
+    || /\bENOENT\b|command not found|not recognized as an internal or external command|no such file or directory/iu.test(detail)
+  );
 }
 
 function commandEvidence(result: Readonly<CommandResult>): readonly string[] {
@@ -295,9 +297,7 @@ export function classifyContainerFailure(
     return {
       rootCause: `The ${cliDisplayName} CLI is not installed or not on PATH.`,
       potentialCauses: [],
-      fixes: [
-        {description: `Install ${engineLabel(engine)} and ensure ${cliDisplayName} is available on PATH, then rerun doctor.`},
-      ],
+      fixes: [{description: `Install ${engineLabel(engine)} and ensure ${cliDisplayName} is available on PATH, then rerun doctor.`}],
     };
   }
 
@@ -311,9 +311,7 @@ export function classifyContainerFailure(
     return {
       rootCause: `The ${cliDisplayName} CLI command failed, timed out, or was terminated unexpectedly.`,
       potentialCauses: [],
-      fixes: [
-        {description: `Re-run '${cliDisplayName} --version' manually to diagnose the failure, then rerun doctor.`},
-      ],
+      fixes: [{description: `Re-run '${cliDisplayName} --version' manually to diagnose the failure, then rerun doctor.`}],
     };
   }
 
@@ -328,7 +326,8 @@ export function classifyContainerFailure(
   if (engine === "podman" && compose !== undefined) {
     const composeOutput = compose.stdout.toLowerCase();
     const usesPodmanCompose = composeOutput.includes("podman-compose");
-    const delegatedToDocker = !usesPodmanCompose && DOCKER_DESKTOP_COMPOSE_INDICATORS.some((indicator) => composeOutput.includes(indicator));
+    const delegatedToDocker =
+      !usesPodmanCompose && DOCKER_DESKTOP_COMPOSE_INDICATORS.some((indicator) => composeOutput.includes(indicator));
     if (delegatedToDocker) {
       return {
         rootCause: "Podman Compose is currently delegated to a Docker Desktop compose provider.",
@@ -386,10 +385,7 @@ async function diagnoseSelection(context: Readonly<DoctorContext>): Promise<Sele
         summary: isInvalidConfiguredValue
           ? "An invalid or unsupported container engine value is configured."
           : "No supported local container engine is selected.",
-        evidence: [
-          message,
-          ...(configRead.status === "invalid" ? [configRead.error] : []),
-        ],
+        evidence: [message, ...(configRead.status === "invalid" ? [configRead.error] : [])],
         rootCause: isInvalidConfiguredValue
           ? "The configured container engine value is invalid, unsupported, or deprecated."
           : "No container engine is selected via environment variable or persisted local tooling configuration.",
@@ -465,7 +461,11 @@ async function diagnoseCli(context: Readonly<DoctorContext>, engine: ContainerEn
   };
 }
 
-async function diagnoseBackend(context: Readonly<DoctorContext>, engine: ContainerEngine, cli: CommandResult): Promise<{
+async function diagnoseBackend(
+  context: Readonly<DoctorContext>,
+  engine: ContainerEngine,
+  cli: CommandResult,
+): Promise<{
   readonly diagnostic: DiagnosticResult;
   readonly result: CommandResult;
 }> {
@@ -501,7 +501,11 @@ async function diagnoseBackend(context: Readonly<DoctorContext>, engine: Contain
   };
 }
 
-async function diagnoseCompose(context: Readonly<DoctorContext>, engine: ContainerEngine, cli: CommandResult): Promise<{
+async function diagnoseCompose(
+  context: Readonly<DoctorContext>,
+  engine: ContainerEngine,
+  cli: CommandResult,
+): Promise<{
   readonly diagnostic: DiagnosticResult;
   readonly result: CommandResult;
 }> {
@@ -575,7 +579,10 @@ async function diagnoseDockerConflict(
       );
     }
 
-    const result = await context.runner.run(DOCKER_VERSION_FULL_COMMAND, {cwd: context.paths.root, timeoutMs: DIAGNOSTIC_DEFAULT_TIMEOUT_MS});
+    const result = await context.runner.run(DOCKER_VERSION_FULL_COMMAND, {
+      cwd: context.paths.root,
+      timeoutMs: DIAGNOSTIC_DEFAULT_TIMEOUT_MS,
+    });
     if (!isSuccessfulCommand(result)) {
       return issueDiagnostic(context, startedAt, {
         id: "infrastructure.docker-conflict",
@@ -649,7 +656,10 @@ async function diagnoseSocketContext(
   const startedAt = context.now();
 
   if (engine === "rancher") {
-    const result = await context.runner.run(DOCKER_CONTEXT_SHOW_COMMAND, {cwd: context.paths.root, timeoutMs: DIAGNOSTIC_DEFAULT_TIMEOUT_MS});
+    const result = await context.runner.run(DOCKER_CONTEXT_SHOW_COMMAND, {
+      cwd: context.paths.root,
+      timeoutMs: DIAGNOSTIC_DEFAULT_TIMEOUT_MS,
+    });
     if (!isSuccessfulCommand(result)) {
       return issueDiagnostic(context, startedAt, {
         id: "infrastructure.socket-context",
@@ -808,11 +818,7 @@ function parseContainerListLine(line: string): ParsedContainerRecord | null {
 
     const rawPorts = record["Ports"];
     const hostPorts =
-      typeof rawPorts === "string"
-        ? parseDockerPortsString(rawPorts)
-        : Array.isArray(rawPorts)
-          ? parsePodmanPortsArray(rawPorts)
-          : [];
+      typeof rawPorts === "string" ? parseDockerPortsString(rawPorts) : Array.isArray(rawPorts) ? parsePodmanPortsArray(rawPorts) : [];
 
     return {names, state, status, hostPorts};
   } catch {
@@ -1003,24 +1009,12 @@ async function diagnosePorts(
   context: Readonly<DoctorContext>,
   knownContainers: readonly ParsedContainerRecord[] | null,
 ): Promise<DiagnosticResult> {
-  if (context.options.ci) {
-    return skipDiagnostic(
-      "infrastructure.ports",
-      "Required local ports",
-      "Port ownership inspection was skipped under CI.",
-      ["--ci intentionally skips host-local port inspection."],
-    );
-  }
-
   const startedAt = context.now();
   const command = buildPortOwnerProbe(context.platform, [...requiredLocalPorts]);
   if (command === null) {
-    return skipDiagnostic(
-      "infrastructure.ports",
-      "Required local ports",
-      "Port ownership inspection is not supported on this platform.",
-      [`Unsupported diagnostic platform: ${context.platform}.`],
-    );
+    return skipDiagnostic("infrastructure.ports", "Required local ports", "Port ownership inspection is not supported on this platform.", [
+      `Unsupported diagnostic platform: ${context.platform}.`,
+    ]);
   }
 
   const {owners, probeResult} = await collectPortOwners(context, command);
@@ -1041,14 +1035,9 @@ async function diagnosePorts(
   }
 
   if (owners.length === 0) {
-    return passDiagnostic(
-      context,
-      startedAt,
-      "infrastructure.ports",
-      "Required local ports",
-      "All required local ports are free.",
-      [`Inspected ports: ${requiredLocalPorts.join(", ")}.`],
-    );
+    return passDiagnostic(context, startedAt, "infrastructure.ports", "Required local ports", "All required local ports are free.", [
+      `Inspected ports: ${requiredLocalPorts.join(", ")}.`,
+    ]);
   }
 
   const knownPorts = knownContainers === null ? new Set<number>() : knownContainerHostPorts(knownContainers);
@@ -1081,15 +1070,6 @@ async function diagnosePorts(
 }
 
 async function diagnoseCertificates(context: Readonly<DoctorContext>): Promise<DiagnosticResult> {
-  if (context.options.ci) {
-    return skipDiagnostic(
-      "infrastructure.certificates",
-      "Selfhost TLS certificates",
-      "Certificate inspection was skipped under CI.",
-      ["--ci intentionally skips host-local certificate inspection."],
-    );
-  }
-
   const startedAt = context.now();
   const certificatePath = resolve(context.paths.root, ...CERTIFICATE_RELATIVE_PATH);
   const keyPath = resolve(context.paths.root, ...KEY_RELATIVE_PATH);
@@ -1106,10 +1086,7 @@ async function diagnoseCertificates(context: Readonly<DoctorContext>): Promise<D
   ]);
 
   if (!certificateExists || !keyExists) {
-    const missing = [
-      ...(certificateExists ? [] : [certificatePath]),
-      ...(keyExists ? [] : [keyPath]),
-    ];
+    const missing = [...(certificateExists ? [] : [certificatePath]), ...(keyExists ? [] : [keyPath])];
     return issueDiagnostic(context, startedAt, {
       id: "infrastructure.certificates",
       name: "Selfhost TLS certificates",
@@ -1122,7 +1099,10 @@ async function diagnoseCertificates(context: Readonly<DoctorContext>): Promise<D
   }
 
   const evidence = [`Certificate present: ${certificatePath}`, `Key present: ${keyPath}`];
-  const mkcertVersion = await context.runner.run(MKCERT_VERSION_COMMAND, {cwd: context.paths.root, timeoutMs: DIAGNOSTIC_DEFAULT_TIMEOUT_MS});
+  const mkcertVersion = await context.runner.run(MKCERT_VERSION_COMMAND, {
+    cwd: context.paths.root,
+    timeoutMs: DIAGNOSTIC_DEFAULT_TIMEOUT_MS,
+  });
   if (isSuccessfulCommand(mkcertVersion)) {
     evidence.push(`mkcert available: ${mkcertVersion.stdout.trim()}`);
     const caRoot = await context.runner.run(MKCERT_CAROOT_COMMAND, {cwd: context.paths.root, timeoutMs: DIAGNOSTIC_DEFAULT_TIMEOUT_MS});
@@ -1183,18 +1163,6 @@ async function diagnoseContainers(
   context: Readonly<DoctorContext>,
   containerListResult: CommandResult | null,
 ): Promise<{readonly diagnostic: DiagnosticResult; readonly records: readonly ParsedContainerRecord[] | null}> {
-  if (context.options.ci) {
-    return {
-      diagnostic: skipDiagnostic(
-        "infrastructure.containers",
-        "Known local containers",
-        "Container inventory inspection was skipped under CI.",
-        ["--ci intentionally skips host-local container inspection."],
-      ),
-      records: null,
-    };
-  }
-
   const startedAt = context.now();
   if (containerListResult === null) {
     return {
@@ -1260,9 +1228,7 @@ async function diagnoseContainers(
   // check evidence through the `Status` field (for example `"Up 3 hours (unhealthy)"`), which is
   // materially different information than `State` and must never be inferred by mirroring
   // `State`. A running-but-unhealthy known container must not PASS.
-  const unhealthyRecords = knownRecords.filter(
-    (record) => record.state.toLowerCase() === "running" && /unhealthy/iu.test(record.status),
-  );
+  const unhealthyRecords = knownRecords.filter((record) => record.state.toLowerCase() === "running" && /unhealthy/iu.test(record.status));
   if (unhealthyRecords.length > 0) {
     return {
       diagnostic: issueDiagnostic(context, startedAt, {
@@ -1301,13 +1267,20 @@ export const infrastructureDoctorModule: DiagnosticModule = {
 
     if (selectionOutcome.selection === null) {
       const reason = [selectionOutcome.diagnostic.summary];
-      results.push(skipDiagnostic("infrastructure.cli", "Container CLI", "Container CLI check was skipped because engine selection failed.", reason));
+      results.push(
+        skipDiagnostic("infrastructure.cli", "Container CLI", "Container CLI check was skipped because engine selection failed.", reason),
+      );
       results.push(...skipBackendDependentChecks("engine selection failed", reason));
       results.push(await diagnosePorts(context, null));
       results.push(await diagnoseCertificates(context));
       results.push(await diagnoseManifests(context));
       results.push(
-        skipDiagnostic("infrastructure.containers", "Known local containers", "Container inventory check was skipped because engine selection failed.", reason),
+        skipDiagnostic(
+          "infrastructure.containers",
+          "Known local containers",
+          "Container inventory check was skipped because engine selection failed.",
+          reason,
+        ),
       );
       return results;
     }
@@ -1344,17 +1317,16 @@ export const infrastructureDoctorModule: DiagnosticModule = {
     const composeOk = composeOutcome.diagnostic.status === "pass";
     const followUpTriggered = !backendOk || !composeOk || context.options.verbose;
 
-    results.push(
-      await diagnoseDockerConflict(context, engine, cli, backendOutcome.result, composeOutcome.result, followUpTriggered),
-    );
+    results.push(await diagnoseDockerConflict(context, engine, cli, backendOutcome.result, composeOutcome.result, followUpTriggered));
     results.push(await diagnoseSocketContext(context, engine, followUpTriggered));
 
     const containerListCommand = engine === "rancher" ? DOCKER_PS_COMMAND : PODMAN_PS_COMMAND;
-    const containerListResult = context.options.ci
-      ? null
-      : await context.runner.run(containerListCommand, {cwd: context.paths.root, timeoutMs: DIAGNOSTIC_DEFAULT_TIMEOUT_MS});
+    const containerListResult = await context.runner.run(containerListCommand, {
+      cwd: context.paths.root,
+      timeoutMs: DIAGNOSTIC_DEFAULT_TIMEOUT_MS,
+    });
 
-    results.push(await diagnosePorts(context, containerListResult === null ? null : parseContainerList(containerListResult.stdout)));
+    results.push(await diagnosePorts(context, parseContainerList(containerListResult.stdout)));
     results.push(await diagnoseCertificates(context));
     results.push(await diagnoseManifests(context));
 

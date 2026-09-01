@@ -15,7 +15,7 @@ import {createRepositoryPaths} from "./common/repository-paths.ts";
 import type {RepositoryRequirements} from "./common/requirements.ts";
 import {getExpectedTaxonomyArtifactPaths} from "./common/taxonomy-artifacts.ts";
 import {diagnoseNpmIntegrity, workspaceDoctorModule} from "./doctor.workspace.ts";
-import type {DiagnosticCommandRunner, DiagnosticNetworkResult, DoctorContext, DoctorOptions} from "./doctor.types.ts";
+import type {DiagnosticCommandRunner, DiagnosticNetworkResult, DoctorContext, DoctorRunOptions} from "./doctor.types.ts";
 import type {RepositoryInspectionSession} from "./inspection/repository.ts";
 
 const fixtureRoots: string[] = [];
@@ -91,7 +91,7 @@ async function writeFixtureFile(path: string, contents = "{}\n"): Promise<void> 
   await writeFile(path, contents, "utf8");
 }
 
-function doctorOptions(patch: Partial<DoctorOptions> = {}): DoctorOptions {
+function doctorOptions(patch: Partial<DoctorRunOptions> = {}): DoctorRunOptions {
   return {
     verbose: false,
     quick: false,
@@ -101,7 +101,7 @@ function doctorOptions(patch: Partial<DoctorOptions> = {}): DoctorOptions {
 
 async function createWorkspaceFixture(
   input: Readonly<{
-    options?: Partial<DoctorOptions>;
+    options?: Partial<DoctorRunOptions>;
     requirementsValid?: boolean;
   }> = {},
 ): Promise<WorkspaceFixture> {

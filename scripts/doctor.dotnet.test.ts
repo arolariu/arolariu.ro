@@ -14,7 +14,7 @@ import type {CommandResult, CommandSpec} from "./common/process.ts";
 import {createRepositoryPaths} from "./common/repository-paths.ts";
 import type {RepositoryRequirements} from "./common/requirements.ts";
 import {dotnetDoctorModule, inspectAppHostParameters, parseDotnetInfo} from "./doctor.dotnet.ts";
-import type {DiagnosticCommandRunner, DiagnosticNetworkResult, DoctorContext, DoctorOptions} from "./doctor.types.ts";
+import type {DiagnosticCommandRunner, DiagnosticNetworkResult, DoctorContext, DoctorRunOptions} from "./doctor.types.ts";
 import type {RepositoryInspectionSession} from "./inspection/repository.ts";
 
 const fixtureRoots: string[] = [];
@@ -42,7 +42,7 @@ function commandKey(command: Readonly<CommandSpec>, cwd?: string): string {
   return `${cwd ?? ""}\u0000${command.command}\u0000${JSON.stringify(command.args)}`;
 }
 
-function doctorOptions(patch: Partial<DoctorOptions> = {}): DoctorOptions {
+function doctorOptions(patch: Partial<DoctorRunOptions> = {}): DoctorRunOptions {
   return {
     verbose: false,
     quick: false,
@@ -92,7 +92,7 @@ interface DotnetFixture {
 
 async function createDotnetFixture(
   input: Readonly<{
-    options?: Partial<DoctorOptions>;
+    options?: Partial<DoctorRunOptions>;
     requirementsValid?: boolean;
     networkResult?: DiagnosticNetworkResult;
   }> = {},
@@ -453,16 +453,6 @@ describe("dotnetDoctorModule", () => {
     const localTools = results.find(({id}) => id === "dotnet.local-tools");
     expect(localTools?.status).toBe("warn");
     expect(localTools?.evidence.join("\n")).toContain("defaultdocumentation.console");
-  });
-
-  it("skips certificate and apphost checks under --ci", async () => {
-    const fixture = await createDotnetFixture({options: {ci: true}});
-
-    const results = await dotnetDoctorModule.run(fixture.context);
-
-    expect(results.find(({id}) => id === "dotnet.https-certificate")?.status).toBe("skipped");
-    expect(results.find(({id}) => id === "dotnet.apphost")?.status).toBe("skipped");
-    expect(fixture.run.mock.calls.some(([command]) => command.command === "dotnet" && command.args[0] === "dev-certs")).toBe(false);
   });
 
   it("warns dotnet.https-certificate when a certificate exists but is not trusted", async () => {

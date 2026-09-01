@@ -10,15 +10,16 @@ import {readFileSync} from "node:fs";
 import {tmpdir} from "node:os";
 import {join, resolve} from "node:path";
 import {fileURLToPath} from "node:url";
-import {afterEach, describe, expect, it} from "vitest";
+import {afterEach, describe, expect, it, vi} from "vitest";
 
 import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "./common/logger.ts";
 import {defaultCommandRunner} from "./common/process.ts";
 import type {CommandResult, CommandRunner, CommandRunOptions, CommandSpec} from "./common/process.ts";
 import {createRepositoryPaths} from "./common/repository-paths.ts";
 import {createDoctorReport} from "./doctor.reporter.ts";
-import type {DiagnosticResult} from "./doctor.types.ts";
+import type {DiagnosticResult, DoctorReport, DoctorRunOptions} from "./doctor.types.ts";
 import {collectDisk, main, parseStatusOptions} from "./status.ts";
+import type {StatusDependencies} from "./status.ts";
 import type {RepositoryInspectionSession} from "./inspection/repository.ts";
 import type {InspectionOutcome} from "./inspection/types.ts";
 import type {WorkspaceFacts} from "./inspection/workspace.ts";
@@ -851,6 +852,96 @@ describe("main — default workspace-graph wiring", () => {
     const workspaces = output["workspaces"] as readonly {name: string}[];
     expect(workspaces.some((w) => w.name === "new-project")).toBe(true);
     expect(output["nxEdges"]).toEqual([{source: "new-project", target: "@arolariu/components"}]);
+  });
+});
+
+// ============================================================================
+// Exact-session and runDoctor injection tests
+// ============================================================================
+
+describe("exact-session construction seams", () => {
+  it("creates exactly one profile:'quick' inspection session when none is injected", async () => {
+    const fakeSession = createFakeInspection();
+    const sessionFactory = vi.fn(() => fakeSession);
+    const {logger} = createLogger("json");
+    const {runner} = createRecordingRunner(baseResponses());
+    const fakeRunDoctor = vi.fn(async (): Promise<DoctorReport> => ({
+      score: 100,
+      grade: "A+",
+      summary: {passed: 1, warnings: 0, failed: 0, skipped: 0},
+      checks: [],
+      timestamp: "2026-01-01T00:00:00.000Z",
+    }));
+
+    await main(["--json"], {
+      logger,
+      runner,
+      resolveRepositoryPaths: () => FIXED_REPOSITORY_PATHS,
+      createInspectionSession: sessionFactory,
+      runDoctor: fakeRunDoctor,
+    });
+
+    expect(sessionFactory).toHaveBeenCalledTimes(1);
+    expect(sessionFactory).toHaveBeenCalledWith(expect.objectContaining({profile: "quick"}));
+  });
+
+  it("passes the exact same session object to workspace collection and typed runDoctor", async () => {
+    const fakeSession = createFakeInspection();
+    const sessionFactory = vi.fn(() => fakeSession);
+    const {logger} = createLogger("json");
+    const {runner} = createRecordingRunner(baseResponses());
+    let capturedInspection: RepositoryInspectionSession | undefined;
+    const fakeRunDoctor = vi.fn(
+      async (
+        _options: Readonly<DoctorRunOptions>,
+        deps?: Readonly<Partial<{inspection: RepositoryInspectionSession}>>,
+      ): Promise<DoctorReport> => {
+        capturedInspection = deps?.inspection;
+        return {
+          score: 100,
+          grade: "A+",
+          summary: {passed: 1, warnings: 0, failed: 0, skipped: 0},
+          checks: [],
+          timestamp: "2026-01-01T00:00:00.000Z",
+        };
+      },
+    );
+
+    await main(["--json"], {
+      logger,
+      runner,
+      resolveRepositoryPaths: () => FIXED_REPOSITORY_PATHS,
+      createInspectionSession: sessionFactory,
+      runDoctor: fakeRunDoctor,
+    });
+
+    expect(fakeRunDoctor).toHaveBeenCalledTimes(1);
+    expect(capturedInspection).toBe(fakeSession);
+  });
+
+  it("does not create a session when one is injected", async () => {
+    const injectedSession = createFakeInspection();
+    const sessionFactory = vi.fn(() => createFakeInspection());
+    const {logger} = createLogger("json");
+    const {runner} = createRecordingRunner(baseResponses());
+    const fakeRunDoctor = vi.fn(async (): Promise<DoctorReport> => ({
+      score: 100,
+      grade: "A+",
+      summary: {passed: 1, warnings: 0, failed: 0, skipped: 0},
+      checks: [],
+      timestamp: "2026-01-01T00:00:00.000Z",
+    }));
+
+    await main(["--json"], {
+      logger,
+      runner,
+      resolveRepositoryPaths: () => FIXED_REPOSITORY_PATHS,
+      inspection: injectedSession,
+      createInspectionSession: sessionFactory,
+      runDoctor: fakeRunDoctor,
+    });
+
+    expect(sessionFactory).not.toHaveBeenCalled();
   });
 });
 

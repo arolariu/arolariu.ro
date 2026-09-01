@@ -272,3 +272,18 @@ export function skippedDiagnostic(
     durationMs: 0,
   };
 }
+
+/**
+ * Finalizes a diagnostic row with elapsed timing metadata.
+ *
+ * @param result - Diagnostic fields excluding elapsed duration.
+ * @param startedAt - Monotonic start timestamp.
+ * @param now - Monotonic clock for duration capture.
+ * @returns The completed diagnostic result.
+ */
+export function diagnosticResult(result: Omit<DiagnosticResult, "durationMs">, startedAt: number, now: () => number): DiagnosticResult {
+  return {
+    ...result,
+    durationMs: Math.max(0, now() - startedAt),
+  };
+}

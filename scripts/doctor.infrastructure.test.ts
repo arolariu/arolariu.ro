@@ -21,7 +21,7 @@ import {
   type DiagnosticCommandRunner,
   type DiagnosticNetworkResult,
   type DoctorContext,
-  type DoctorOptions,
+  type DoctorRunOptions,
 } from "./doctor.types.ts";
 import type {RepositoryInspectionSession} from "./inspection/repository.ts";
 
@@ -73,7 +73,7 @@ function commandKey(command: Readonly<CommandSpec>, cwd?: string): string {
   return `${cwd ?? ""}\u0000${command.command}\u0000${JSON.stringify(command.args)}`;
 }
 
-function doctorOptions(patch: Partial<DoctorOptions> = {}): DoctorOptions {
+function doctorOptions(patch: Partial<DoctorRunOptions> = {}): DoctorRunOptions {
   return {
     verbose: false,
     quick: false,
@@ -143,7 +143,7 @@ interface InfrastructureFixture {
 
 async function createInfrastructureFixture(
   input: Readonly<{
-    options?: Partial<DoctorOptions>;
+    options?: Partial<DoctorRunOptions>;
     platform?: NodeJS.Platform;
     env?: Readonly<NodeJS.ProcessEnv>;
     /** Pass `null` to omit the local tooling configuration file entirely. */
@@ -599,26 +599,6 @@ describe("infrastructureDoctorModule", () => {
     ).toBe(true);
   });
 
-  it("skips the ports check without dispatching a command in --ci mode", async () => {
-    const fixture = await createInfrastructureFixture({
-      env: {AROLARIU_CONTAINER_ENGINE: "rancher"},
-      options: {ci: true},
-    });
-    seedHealthyRancherResponses(fixture);
-
-    const results = await infrastructureDoctorModule.run(fixture.context);
-
-    expect(results.find(({id}) => id === "infrastructure.ports")?.status).toBe("skipped");
-    expect(results.find(({id}) => id === "infrastructure.certificates")?.status).toBe("skipped");
-    expect(results.find(({id}) => id === "infrastructure.containers")?.status).toBe("skipped");
-    expect(results.find(({id}) => id === "infrastructure.manifests")?.status).toBe("pass");
-    expect(
-      fixture.run.mock.calls.some(
-        ([command]) => command.command === "sh" || (command.command === "powershell" && command.args.includes("--")),
-      ),
-    ).toBe(false);
-  });
-
   it("warns that the known local stack already occupies a required port", async () => {
     const fixture = await createInfrastructureFixture({env: {AROLARIU_CONTAINER_ENGINE: "rancher"}, platform: "linux"});
     seedHealthyRancherResponses(fixture);
@@ -768,18 +748,6 @@ describe("infrastructureDoctorModule", () => {
     const certificates = results.find(({id}) => id === "infrastructure.certificates");
     expect(certificates?.status).toBe("pass");
     expect(certificates?.evidence.join("\n")).toContain("mkcert");
-  });
-
-  it("skips certificates in --ci mode without dispatching mkcert commands", async () => {
-    const fixture = await createInfrastructureFixture({
-      env: {AROLARIU_CONTAINER_ENGINE: "rancher"},
-      options: {ci: true},
-    });
-    seedHealthyRancherResponses(fixture);
-
-    await infrastructureDoctorModule.run(fixture.context);
-
-    expect(fixture.run.mock.calls.some(([command]) => command.command === "mkcert")).toBe(false);
   });
 
   it("fails manifests when a required runtime manifest is missing", async () => {

@@ -517,6 +517,66 @@ describe("runDoctor", () => {
 
     expect(report.timestamp).toBe("2030-01-01T00:00:00.000Z");
   });
+
+  it("creates exactly one session via the factory and passes the same instance to every module", async () => {
+    const fakeSession = createFakeInspectionSession();
+    const sessionFactory = vi.fn(() => fakeSession);
+    const {modules, calls} = createFakeModules();
+
+    await runDoctor(doctorOptions(), {
+      ...fixedRuntimeDependencies(),
+      modules,
+      inspection: undefined as unknown as RepositoryInspectionSession,
+      createInspectionSession: sessionFactory,
+    });
+
+    expect(sessionFactory).toHaveBeenCalledTimes(1);
+    for (const moduleId of MODULE_ORDER) {
+      const [context] = calls[moduleId].mock.calls[0] as [DoctorContext];
+      expect(context.inspection).toBe(fakeSession);
+    }
+  });
+
+  it("creates a full session for default options and a quick session for quick options", async () => {
+    const sessionFactory = vi.fn(() => createFakeInspectionSession());
+    const {modules} = createFakeModules();
+
+    await runDoctor(doctorOptions(), {
+      ...fixedRuntimeDependencies(),
+      modules,
+      inspection: undefined as unknown as RepositoryInspectionSession,
+      createInspectionSession: sessionFactory,
+    });
+    expect(sessionFactory).toHaveBeenCalledWith(expect.objectContaining({profile: "full"}));
+
+    sessionFactory.mockClear();
+    await runDoctor(doctorOptions({quick: true}), {
+      ...fixedRuntimeDependencies(),
+      modules,
+      inspection: undefined as unknown as RepositoryInspectionSession,
+      createInspectionSession: sessionFactory,
+    });
+    expect(sessionFactory).toHaveBeenCalledWith(expect.objectContaining({profile: "quick"}));
+  });
+
+  it("does not invoke the factory when dependencies.inspection is provided", async () => {
+    const injectedSession = createFakeInspectionSession();
+    const sessionFactory = vi.fn(() => createFakeInspectionSession());
+    const {modules, calls} = createFakeModules();
+
+    await runDoctor(doctorOptions(), {
+      ...fixedRuntimeDependencies(),
+      modules,
+      inspection: injectedSession,
+      createInspectionSession: sessionFactory,
+    });
+
+    expect(sessionFactory).not.toHaveBeenCalled();
+    for (const moduleId of MODULE_ORDER) {
+      const [context] = calls[moduleId].mock.calls[0] as [DoctorContext];
+      expect(context.inspection).toBe(injectedSession);
+    }
+  });
 });
 
 describe("module-error weighting", () => {
