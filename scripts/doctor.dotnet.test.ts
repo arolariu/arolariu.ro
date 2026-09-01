@@ -228,6 +228,11 @@ async function createDotnetFixture(
       invalidate: () => {},
       updateInfrastructureEngine: () => {},
     } as RepositoryInspectionSession,
+    probes: {
+      run: vi.fn(async () => {
+        throw new Error("Probe runner should not be invoked by dotnet tests.");
+      }),
+    },
   };
 
   return {root, cacheRoot, appHostProjectPath, context, run, responses, setResponse};

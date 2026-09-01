@@ -200,6 +200,11 @@ async function createInfrastructureFixture(
       invalidate: () => {},
       updateInfrastructureEngine: () => {},
     } as RepositoryInspectionSession,
+    probes: {
+      run: vi.fn(async () => {
+        throw new Error("Probe runner should not be invoked by infrastructure tests.");
+      }),
+    },
   };
 
   return {root, context, run, setResponse};

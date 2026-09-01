@@ -223,6 +223,11 @@ async function createPythonFixture(
       invalidate: () => {},
       updateInfrastructureEngine: () => {},
     } as RepositoryInspectionSession,
+    probes: {
+      run: vi.fn(async () => {
+        throw new Error("Probe runner should not be invoked by python tests.");
+      }),
+    },
   };
 
   return {root, context, run, setResponse, expectedVenvDirectory, venvPythonPath};

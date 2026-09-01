@@ -3,34 +3,38 @@
  * @module scripts.doctor.workspace
  *
  * @remarks
- * The Nx project and graph checks are derived from tracked workspace metadata
- * through {@link readWorkspaceGraph}; no Nx child process is ever dispatched,
- * because Nx's project-graph construction rewrites its native workspace
- * database and therefore violates the strict read-only diagnostic contract.
+ * Every check in this module is derived exclusively from one of three sources:
+ * memoized {@link https://en.wikipedia.org/wiki/Inspection | inspection} facts obtained through
+ * `context.inspection.inspect(...)` (Nx workspace projects/graph, and both npm dependency trees),
+ * opaque allowlisted probes executed through `context.probes.run(...)` (Git, node/npm runtime
+ * versions, npm cache/audit/outdated), or direct, narrowly-scoped filesystem reads for
+ * repository-wide configuration files and generated taxonomy artifacts that no fact model
+ * represents. This module never imports `CommandSpec`/`CommandRunner` from `./common/process.ts`
+ * and never touches `context.runner`; it consumes only the `CommandResult` type produced by
+ * probe execution.
  */
 
 import {constants as fsConstants} from "node:fs";
-import {access, readFile, stat, statfs} from "node:fs/promises";
-import {freemem, homedir, totalmem} from "node:os";
+import {access, readFile, stat} from "node:fs/promises";
 import {basename, join, resolve} from "node:path";
 
-import type {CommandResult, CommandSpec} from "./common/process.ts";
+import type {CommandResult} from "./common/process.ts";
 import {parseVersion, satisfiesMinimum, type MinimumVersion} from "./common/requirements.ts";
-import {
-  readWorkspaceGraph,
-  workspaceDependencyTargets,
-  type WorkspaceGraph,
-} from "./common/workspace-graph.ts";
 import {getExpectedTaxonomyArtifactPaths} from "./common/taxonomy-artifacts.ts";
 import {
+  boundCommandExcerpt,
+  boundEvidence,
   diagnosticResult,
+  normalizeErrorForReport,
   skippedDiagnostic,
-  type DiagnosticFix,
-  type DiagnosticPotentialCause,
-  type DiagnosticResult,
-  type DoctorContext,
-  type DiagnosticModule,
-} from "./doctor.types.ts";
+  STANDARD_EVIDENCE_LIMIT,
+} from "./doctor.diagnostics.ts";
+import type {DiagnosticFix, DiagnosticModule, DiagnosticPotentialCause, DiagnosticResult, DoctorContext} from "./doctor.types.ts";
+import type {AggregateFacts} from "./inspection/aggregate.ts";
+import type {NpmTreeFacts, NpmProblemFact} from "./inspection/packages.ts";
+import {probes} from "./inspection/probes.ts";
+import type {InspectionOutcome} from "./inspection/types.ts";
+import type {WorkspaceFacts} from "./inspection/workspace.ts";
 
 const REPOSITORY_PACKAGE_NAME = "@arolariu/monorepo";
 const WEBSITE_PROJECT = "@arolariu/website";
@@ -39,16 +43,6 @@ const GIBIBYTE = 1024 ** 3;
 const MINIMUM_DISK_BYTES = GIBIBYTE;
 const RECOMMENDED_DISK_BYTES = 5 * GIBIBYTE;
 const RECOMMENDED_MEMORY_BYTES = GIBIBYTE;
-
-const GIT_VERSION_COMMAND = {command: "git", args: ["--version"]} as const satisfies CommandSpec;
-const GIT_STATUS_COMMAND = {command: "git", args: ["status", "--short", "--branch"]} as const satisfies CommandSpec;
-const GIT_LOG_COMMAND = {command: "git", args: ["log", "--oneline", "-1", "HEAD"]} as const satisfies CommandSpec;
-const NODE_VERSION_COMMAND = {command: "node", args: ["--version"]} as const satisfies CommandSpec;
-const NPM_VERSION_COMMAND = {command: "npm", args: ["--version"]} as const satisfies CommandSpec;
-const NPM_TREE_COMMAND = {command: "npm", args: ["ls", "--all", "--json"]} as const satisfies CommandSpec;
-const NPM_CACHE_COMMAND = {command: "npm", args: ["config", "get", "cache"]} as const satisfies CommandSpec;
-const NPM_AUDIT_COMMAND = {command: "npm", args: ["audit", "--json"]} as const satisfies CommandSpec;
-const NPM_OUTDATED_COMMAND = {command: "npm", args: ["outdated", "--json"]} as const satisfies CommandSpec;
 
 const REQUIRED_CONFIG_PATHS = [
   ".nvmrc",
@@ -66,23 +60,8 @@ const REQUIRED_CONFIG_PATHS = [
 
 type UnknownRecord = Readonly<Record<string, unknown>>;
 
-/**
- * Outcome of one strictly read-only workspace-graph inspection.
- *
- * @remarks
- * A rejected inspection is never converted into an empty graph — the two Nx
- * diagnostics classify it as an explicit failure with normalized evidence.
- */
-type WorkspaceGraphOutcome =
-  | Readonly<{status: "available"; graph: WorkspaceGraph}>
-  | Readonly<{status: "unavailable"; error: string}>;
-
 function isRecord(value: unknown): value is UnknownRecord {
   return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-function errorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
 }
 
 function hasErrorCode(error: unknown, code: string): boolean {
@@ -95,8 +74,10 @@ function isSuccessfulCommand(result: Readonly<CommandResult>): boolean {
 
 function isMissingExecutable(result: Readonly<CommandResult>): boolean {
   const detail = `${result.spawnError ?? ""}\n${result.stderr}`;
-  return result.code === 127
-    || /\bENOENT\b|command not found|not recognized as an internal or external command|no such file or directory/iu.test(detail);
+  return (
+    result.code === 127
+    || /\bENOENT\b|command not found|not recognized as an internal or external command|no such file or directory/iu.test(detail)
+  );
 }
 
 function commandStatusEvidence(result: Readonly<CommandResult>): readonly string[] {
@@ -111,8 +92,8 @@ function commandStatusEvidence(result: Readonly<CommandResult>): readonly string
 function commandEvidence(result: Readonly<CommandResult>): readonly string[] {
   return [
     ...commandStatusEvidence(result),
-    ...(result.stdout.trim() === "" ? [] : [`stdout: ${result.stdout.trim()}`]),
-    ...(result.stderr.trim() === "" ? [] : [`stderr: ${result.stderr.trim()}`]),
+    ...(result.stdout.trim() === "" ? [] : [`stdout: ${boundCommandExcerpt(result.stdout.trim())}`]),
+    ...(result.stderr.trim() === "" ? [] : [`stderr: ${boundCommandExcerpt(result.stderr.trim())}`]),
   ];
 }
 
@@ -180,169 +161,45 @@ function passDiagnostic(
   });
 }
 
-function treeIdentity(treeName: string): Readonly<{id: string; name: string; cwdLabel: string}> {
-  const github = treeName.toLowerCase().includes("github");
-  return github
-    ? {
-        id: "workspace.github-scripts-dependencies",
-        name: "GitHub scripts dependencies",
-        cwdLabel: ".github scripts",
-      }
-    : {
-        id: "workspace.root-dependencies",
-        name: "Root dependencies",
-        cwdLabel: "root workspace",
-      };
-}
-
-function addPotentialCause(
-  causes: DiagnosticPotentialCause[],
-  seen: Set<string>,
-  cause: string,
-  confidence: DiagnosticPotentialCause["confidence"],
-): void {
-  if (!seen.has(cause)) {
-    seen.add(cause);
-    causes.push({cause, confidence});
-  }
+/**
+ * Resolves the stable diagnostic identity for one npm dependency-tree lock domain.
+ *
+ * @param scope - The lock domain the tree belongs to.
+ * @returns The diagnostic id, display name, and human-readable label for that lock domain.
+ */
+function treeIdentity(scope: "root" | "github-scripts"): Readonly<{id: string; name: string; label: string}> {
+  return scope === "github-scripts"
+    ? {id: "workspace.github-scripts-dependencies", name: "GitHub scripts dependencies", label: ".github scripts"}
+    : {id: "workspace.root-dependencies", name: "Root dependencies", label: "root workspace"};
 }
 
 /**
- * Classifies one `npm ls --all --json` result into concise problem evidence.
+ * Classifies normalized npm dependency problems into concise potential causes.
  *
- * @param result - Complete npm command result.
- * @param treeName - Human-readable dependency-tree owner.
- * @returns One stable dependency-integrity diagnostic.
+ * @param problems - Bounded, already-normalized npm problem facts.
+ * @returns Deterministic potential causes for the reported dependency-tree problems.
  */
-export function diagnoseNpmIntegrity(result: Readonly<CommandResult>, treeName: string): DiagnosticResult {
-  const tree = treeIdentity(treeName);
-  const evidence = [...commandStatusEvidence(result)];
-  const combined = `${result.stdout}\n${result.stderr}\n${result.spawnError ?? ""}`;
-  const permissionFailure = /\b(?:EACCES|EPERM)\b|permission denied|access is denied/iu.test(combined);
+function npmTreePotentialCauses(problems: readonly NpmProblemFact[]): readonly DiagnosticPotentialCause[] {
+  const codes = new Set(problems.map((problem) => problem.code).filter((code): code is string => code !== undefined));
   const causes: DiagnosticPotentialCause[] = [];
-  const seenCauses = new Set<string>();
-  let validDocument = false;
-  let problems: readonly string[] = [];
 
-  if (result.stdout.trim() !== "") {
-    try {
-      const parsed: unknown = JSON.parse(result.stdout);
-      if (isRecord(parsed)) {
-        const rawProblems = parsed["problems"];
-        if (
-          rawProblems === undefined
-          || (Array.isArray(rawProblems) && rawProblems.every((problem) => typeof problem === "string" && problem.trim() !== ""))
-        ) {
-          validDocument = true;
-          problems = rawProblems === undefined ? [] : rawProblems;
-        }
-
-        const rawError = parsed["error"];
-        if (isRecord(rawError)) {
-          for (const key of ["code", "summary", "detail"] as const) {
-            const value = rawError[key];
-            if (typeof value === "string" && value.trim() !== "") {
-              evidence.push(`npm ${key}: ${value.trim()}`);
-            }
-          }
-        }
-      }
-    } catch (error: unknown) {
-      evidence.push(`Unable to parse npm ls JSON: ${errorMessage(error)}`);
-    }
-  } else {
-    evidence.push("npm ls produced no JSON output.");
+  if (codes.has("missing")) {
+    causes.push({cause: "Required packages are missing from the installed dependency tree.", confidence: "high"});
   }
-
-  if (validDocument && problems.length === 0 && isSuccessfulCommand(result)) {
-    return {
-      id: tree.id,
-      module: "workspace",
-      name: tree.name,
-      status: "pass",
-      summary: `${tree.cwdLabel} dependencies are installed and valid.`,
-      evidence: [`npm ls --all --json passed for the ${tree.cwdLabel}.`],
-      potentialCauses: [],
-      fixes: [],
-      durationMs: result.durationMs,
-    };
+  if (codes.has("invalid")) {
+    causes.push({cause: "Invalid installed package versions do not satisfy the locked dependency graph.", confidence: "medium"});
   }
-
-  for (const problem of problems) {
-    evidence.push(`npm problem: ${problem}`);
-    if (/missing:/iu.test(problem)) {
-      addPotentialCause(causes, seenCauses, "Required packages are missing from the installed dependency tree.", "high");
-    }
-    if (/invalid:/iu.test(problem)) {
-      addPotentialCause(causes, seenCauses, "Invalid installed package versions do not satisfy the locked dependency graph.", "medium");
-    }
-    if (/peer dep|peer dependency/iu.test(problem)) {
-      addPotentialCause(causes, seenCauses, "One or more peer dependency requirements are unsatisfied.", "medium");
-    }
-    if (/extraneous:/iu.test(problem)) {
-      addPotentialCause(causes, seenCauses, "Extraneous packages are present but not described by the lockfile.", "low");
-    }
+  if (codes.has("extraneous")) {
+    causes.push({cause: "Extraneous packages are present but not described by the lockfile.", confidence: "low"});
   }
-
-  if (/package-lock|lockfile|ELSPROBLEMS/iu.test(combined)) {
-    addPotentialCause(causes, seenCauses, "The installed dependency tree and package lockfile are out of sync.", "high");
-  }
-  if (result.timedOut) {
-    addPotentialCause(causes, seenCauses, "The npm integrity command exceeded its diagnostic timeout.", "high");
-  }
-  if (result.spawnError !== undefined) {
-    addPotentialCause(causes, seenCauses, "The npm executable could not be started.", "high");
-  }
-  if (!validDocument) {
-    addPotentialCause(causes, seenCauses, "npm returned missing or malformed dependency metadata.", "medium");
+  if (codes.has("npm-exit")) {
+    causes.push({cause: "npm dependency inspection exited unsuccessfully.", confidence: "high"});
   }
   if (causes.length === 0) {
-    addPotentialCause(causes, seenCauses, "npm reported an integrity failure that could not be classified uniquely.", "low");
+    causes.push({cause: "npm reported a dependency problem that could not be classified uniquely.", confidence: "low"});
   }
 
-  const orderedCauses = causes.toSorted((left, right) => {
-    const rank = {high: 0, medium: 1, low: 2} as const;
-    return rank[left.confidence] - rank[right.confidence];
-  });
-
-  return {
-    id: tree.id,
-    module: "workspace",
-    name: tree.name,
-    status: "fail",
-    summary: `${tree.cwdLabel} dependency integrity could not be verified.`,
-    evidence,
-    ...(permissionFailure
-      ? {rootCause: "npm cannot inspect the dependency tree because filesystem permissions deny access."}
-      : {}),
-    potentialCauses: permissionFailure ? [] : orderedCauses,
-    fixes: [
-      {
-        description: `Restore and verify the ${tree.cwdLabel} dependency tree through repository setup.`,
-        command: "npm run setup",
-      },
-    ],
-    durationMs: result.durationMs,
-  };
-}
-
-async function inspectWorkspaceGraph(root: string): Promise<WorkspaceGraphOutcome> {
-  try {
-    return {status: "available", graph: await readWorkspaceGraph(root)};
-  } catch (error: unknown) {
-    return {status: "unavailable", error: errorMessage(error)};
-  }
-}
-
-async function pathIsDirectory(path: string): Promise<boolean> {
-  try {
-    return (await stat(path)).isDirectory();
-  } catch (error: unknown) {
-    if (hasErrorCode(error, "ENOENT")) {
-      return false;
-    }
-    throw error;
-  }
+  return causes;
 }
 
 async function pathIsFile(path: string): Promise<boolean> {
@@ -356,97 +213,42 @@ async function pathIsFile(path: string): Promise<boolean> {
   }
 }
 
-function commonExecutableCandidates(
-  executable: "git" | "node" | "npm",
-  context: Readonly<DoctorContext>,
-): readonly string[] {
-  if (context.platform === "win32") {
-    const programFiles = context.env["ProgramFiles"];
-    const localAppData = context.env["LOCALAPPDATA"];
-    const nvmHome = context.env["NVM_HOME"];
-    const fileName = executable === "npm" ? "npm.cmd" : `${executable}.exe`;
-    return [
-      ...(programFiles === undefined
-        ? []
-        : [
-            executable === "git"
-              ? resolve(programFiles, "Git", "cmd", fileName)
-              : resolve(programFiles, "nodejs", fileName),
-          ]),
-      ...(localAppData === undefined
-        ? []
-        : [
-            executable === "git"
-              ? resolve(localAppData, "Programs", "Git", "cmd", fileName)
-              : resolve(localAppData, "Programs", "nodejs", fileName),
-          ]),
-      ...(nvmHome === undefined || executable === "git" ? [] : [resolve(nvmHome, fileName)]),
-    ];
+/**
+ * Resolves the exact executable filename an executable-resolution probe should look up.
+ *
+ * @param executable - Bare executable domain (`git`, `node`, or `npm`).
+ * @param platform - Target platform.
+ * @returns The extension-qualified filename on Windows (for example `npm.cmd`), or the bare
+ * executable name on every other platform.
+ */
+function executableProbeName(executable: "git" | "node" | "npm", platform: NodeJS.Platform): string {
+  if (platform !== "win32") {
+    return executable;
   }
-
-  const home = context.env["HOME"] ?? homedir();
-  return [
-    `/usr/local/bin/${executable}`,
-    `/opt/homebrew/bin/${executable}`,
-    resolve(home, ".volta", "bin", executable),
-    ...(context.env["NVM_BIN"] === undefined ? [] : [resolve(context.env["NVM_BIN"], executable)]),
-  ];
+  return executable === "npm" ? "npm.cmd" : `${executable}.exe`;
 }
 
-async function executableFailureEvidence(
-  executable: "git" | "node" | "npm",
-  context: Readonly<DoctorContext>,
-): Promise<readonly string[]> {
+/**
+ * Runs the opaque executable-resolution follow-up probe and formats its result as evidence.
+ *
+ * @param executable - Bare executable domain whose resolution should be probed.
+ * @param context - Shared doctor execution context.
+ * @returns Bounded follow-up evidence, or a fixed explanatory entry in quick mode.
+ */
+async function executableFailureEvidence(executable: "git" | "node" | "npm", context: Readonly<DoctorContext>): Promise<readonly string[]> {
   if (context.options.quick) {
-    return ["Quick mode omitted PATH and common-location follow-up probes."];
+    return ["Quick mode omitted the executable-resolution follow-up probe."];
   }
 
-  const resolution = await runExecutableResolutionProbe(executable, context);
+  const resolution = await context.probes.run(
+    probes.workspace.executableResolution(executableProbeName(executable, context.platform), context.platform),
+    {cwd: context.paths.root},
+  );
   const evidence = commandEvidence(resolution).map((entry) => `Resolution probe: ${entry}`);
   if (isSuccessfulCommand(resolution) && resolution.stdout.trim() !== "") {
-    evidence.push(`Resolution candidates: ${resolution.stdout.trim()}`);
+    evidence.push(`Resolution candidates: ${boundCommandExcerpt(resolution.stdout.trim())}`);
   }
-
-  const existingCandidates: string[] = [];
-  for (const candidate of commonExecutableCandidates(executable, context)) {
-    try {
-      await access(candidate, fsConstants.X_OK);
-      existingCandidates.push(candidate);
-    } catch {
-      // A failed read-only access probe is represented by absence from evidence.
-    }
-  }
-  evidence.push(
-    existingCandidates.length === 0
-      ? "No executable was found in supported common installation locations."
-      : `Executable exists outside the active PATH: ${existingCandidates.join(", ")}`,
-  );
-  return evidence;
-}
-
-async function runExecutableResolutionProbe(
-  executable: "git" | "node" | "npm",
-  context: Readonly<DoctorContext>,
-): Promise<CommandResult> {
-  const options = {cwd: context.paths.root};
-
-  if (context.platform === "win32") {
-    if (executable === "git") {
-      return context.runner.run({command: "where.exe", args: ["git.exe"]}, options);
-    }
-    if (executable === "node") {
-      return context.runner.run({command: "where.exe", args: ["node.exe"]}, options);
-    }
-    return context.runner.run({command: "where.exe", args: ["npm.cmd"]}, options);
-  }
-
-  if (executable === "git") {
-    return context.runner.run({command: "which", args: ["git"]}, options);
-  }
-  if (executable === "node") {
-    return context.runner.run({command: "which", args: ["node"]}, options);
-  }
-  return context.runner.run({command: "which", args: ["npm"]}, options);
+  return evidence.length === 0 ? ["Resolution probe returned no additional detail."] : evidence;
 }
 
 async function diagnoseRepositoryRoot(context: Readonly<DoctorContext>): Promise<DiagnosticResult> {
@@ -465,21 +267,16 @@ async function diagnoseRepositoryRoot(context: Readonly<DoctorContext>): Promise
         fixes: [{description: "Run doctor from a valid checkout of the arolariu.ro monorepository."}],
       });
     }
-    return passDiagnostic(
-      context,
-      startedAt,
-      "workspace.repository-root",
-      "Repository root",
-      "Canonical repository identity is valid.",
-      [context.paths.root],
-    );
+    return passDiagnostic(context, startedAt, "workspace.repository-root", "Repository root", "Canonical repository identity is valid.", [
+      context.paths.root,
+    ]);
   } catch (error: unknown) {
     return issueDiagnostic(context, startedAt, {
       id: "workspace.repository-root",
       name: "Repository root",
       status: "fail",
       summary: "The canonical repository identity could not be read.",
-      evidence: [errorMessage(error)],
+      evidence: [normalizeErrorForReport(error, "The repository package manifest could not be read.")],
       rootCause: "The repository package manifest is missing, inaccessible, or malformed.",
       fixes: [{description: "Restore a valid root package.json and rerun doctor."}],
     });
@@ -488,7 +285,7 @@ async function diagnoseRepositoryRoot(context: Readonly<DoctorContext>): Promise
 
 async function diagnoseGit(context: Readonly<DoctorContext>): Promise<DiagnosticResult> {
   const startedAt = context.now();
-  const version = await context.runner.run(GIT_VERSION_COMMAND, {cwd: context.paths.root});
+  const version = await context.probes.run(probes.workspace.gitVersion(), {cwd: context.paths.root});
   if (!isSuccessfulCommand(version) || !/^git version \d+\.\d+\.\d+/u.test(version.stdout.trim())) {
     const followUp = isMissingExecutable(version) ? await executableFailureEvidence("git", context) : [];
     return issueDiagnostic(context, startedAt, {
@@ -506,8 +303,8 @@ async function diagnoseGit(context: Readonly<DoctorContext>): Promise<Diagnostic
   }
 
   const [statusResult, logResult] = await Promise.all([
-    context.runner.run(GIT_STATUS_COMMAND, {cwd: context.paths.root}),
-    context.runner.run(GIT_LOG_COMMAND, {cwd: context.paths.root}),
+    context.probes.run(probes.workspace.gitStatus(), {cwd: context.paths.root}),
+    context.probes.run(probes.workspace.gitLastCommit(), {cwd: context.paths.root}),
   ]);
   if (!isSuccessfulCommand(statusResult) || !isSuccessfulCommand(logResult)) {
     return issueDiagnostic(context, startedAt, {
@@ -568,7 +365,7 @@ async function diagnoseRuntime(
     id: "workspace.node-runtime" | "workspace.npm-runtime";
     name: "Node.js runtime" | "npm runtime";
     executable: "node" | "npm";
-    command: Readonly<CommandSpec>;
+    runProbe: () => Promise<CommandResult>;
     minimum: MinimumVersion | null;
   }>,
 ): Promise<DiagnosticResult> {
@@ -583,7 +380,7 @@ async function diagnoseRuntime(
     });
   }
 
-  const result = await context.runner.run(input.command, {cwd: context.paths.root});
+  const result = await input.runProbe();
   const version = parseVersion(result.stdout);
   if (!isSuccessfulCommand(result) || version === null) {
     const followUp = isMissingExecutable(result) ? await executableFailureEvidence(input.executable, context) : [];
@@ -594,9 +391,7 @@ async function diagnoseRuntime(
       summary: `${input.name} is unavailable or returned an invalid version.`,
       evidence: [
         ...commandEvidence(result),
-        ...(isSuccessfulCommand(result) && version === null
-          ? [`Unsupported version output: '${result.stdout.trim()}'.`]
-          : []),
+        ...(isSuccessfulCommand(result) && version === null ? [`Unsupported version output: '${result.stdout.trim()}'.`] : []),
         ...followUp,
       ],
       potentialCauses: [
@@ -612,10 +407,7 @@ async function diagnoseRuntime(
       name: input.name,
       status: "fail",
       summary: `${input.name} does not meet the repository minimum.`,
-      evidence: [
-        `Installed: ${formattedVersion(version)}`,
-        `Required: >=${formattedVersion(input.minimum)}`,
-      ],
+      evidence: [`Installed: ${formattedVersion(version)}`, `Required: >=${formattedVersion(input.minimum)}`],
       rootCause: `${input.name} is older than the repository minimum.`,
       fixes: [{description: `Install a supported ${input.name} version, then rerun doctor.`}],
     });
@@ -627,48 +419,77 @@ async function diagnoseRuntime(
   ]);
 }
 
-async function diagnoseNpmTree(
+/**
+ * Maps one inspected npm dependency-tree outcome into a diagnostic result.
+ *
+ * @param context - Shared doctor execution context.
+ * @param scope - The lock domain the tree belongs to.
+ * @param outcome - The memoized inspection outcome for that lock domain's full dependency tree.
+ * @returns The completed diagnostic result for the given lock domain.
+ */
+function diagnoseNpmTree(
   context: Readonly<DoctorContext>,
-  treeName: "root workspace" | ".github scripts",
-  root: string,
-): Promise<DiagnosticResult> {
-  let directoryExists = false;
-  try {
-    directoryExists = await pathIsDirectory(resolve(root, "node_modules"));
-  } catch (error: unknown) {
-    return issueDiagnostic(context, context.now(), {
-      id: treeIdentity(treeName).id,
-      name: treeIdentity(treeName).name,
+  scope: "root" | "github-scripts",
+  outcome: InspectionOutcome<NpmTreeFacts>,
+): DiagnosticResult {
+  const startedAt = context.now();
+  const identity = treeIdentity(scope);
+
+  if (outcome.kind === "unavailable") {
+    return issueDiagnostic(context, startedAt, {
+      id: identity.id,
+      name: identity.name,
       status: "fail",
-      summary: `${treeName} dependency directory could not be inspected.`,
-      evidence: [errorMessage(error)],
-      potentialCauses: [{cause: "Filesystem permissions prevent dependency inspection.", confidence: "high"}],
-      fixes: [{description: `Correct filesystem access for ${root}, then rerun doctor.`}],
+      summary: `${identity.label} dependencies could not be inspected.`,
+      evidence: [outcome.reason],
+      potentialCauses: [
+        {cause: "The dependency tree has not been restored for this checkout.", confidence: "high"},
+        {cause: "Filesystem or process permissions prevent dependency inspection.", confidence: "medium"},
+      ],
+      fixes: [{description: `Restore the ${identity.label} dependency tree through repository setup.`, command: "npm run setup"}],
+    });
+  }
+  if (outcome.kind === "invalid") {
+    return issueDiagnostic(context, startedAt, {
+      id: identity.id,
+      name: identity.name,
+      status: "fail",
+      summary: `${identity.label} dependency data is malformed.`,
+      evidence: outcome.issues,
+      rootCause: "npm dependency inspection returned malformed dependency-tree data.",
+      fixes: [{description: `Restore the ${identity.label} dependency tree through repository setup.`, command: "npm run setup"}],
     });
   }
 
-  const result = await context.runner.run(NPM_TREE_COMMAND, {cwd: root});
-  const diagnosticResultValue = diagnoseNpmIntegrity(result, treeName);
-  if (directoryExists) {
-    return diagnosticResultValue;
+  const facts = outcome.value;
+  if (facts.valid) {
+    return passDiagnostic(context, startedAt, identity.id, identity.name, `${identity.label} dependencies are installed and valid.`, [
+      `${String(facts.packageCount)} dependency node${facts.packageCount === 1 ? "" : "s"} verified.`,
+    ]);
   }
 
-  return {
-    id: diagnosticResultValue.id,
-    module: diagnosticResultValue.module,
-    name: diagnosticResultValue.name,
+  const problemLines = facts.problems.map((problem) => problem.detail);
+  const shownProblems = problemLines.slice(0, STANDARD_EVIDENCE_LIMIT);
+  const omittedProblems = facts.problemCount - shownProblems.length;
+
+  return issueDiagnostic(context, startedAt, {
+    id: identity.id,
+    name: identity.name,
     status: "fail",
-    summary: `${treeName} dependencies are not installed.`,
-    evidence: [`Missing directory: ${resolve(root, "node_modules")}`, ...diagnosticResultValue.evidence],
-    potentialCauses: [{cause: "The dependency tree has not been restored for this checkout.", confidence: "high"}],
-    fixes: [{description: `Restore the ${treeName} dependency tree through repository setup.`, command: "npm run setup"}],
-    durationMs: diagnosticResultValue.durationMs,
-  };
+    summary: `${identity.label} dependency integrity could not be verified.`,
+    evidence: [
+      `${String(facts.problemCount)} dependency problem${facts.problemCount === 1 ? "" : "s"} reported.`,
+      ...shownProblems,
+      ...(omittedProblems > 0 ? [`${String(omittedProblems)} additional problems omitted.`] : []),
+    ],
+    potentialCauses: npmTreePotentialCauses(facts.problems),
+    fixes: [{description: `Restore and verify the ${identity.label} dependency tree through repository setup.`, command: "npm run setup"}],
+  });
 }
 
 async function diagnoseNpmCache(context: Readonly<DoctorContext>): Promise<DiagnosticResult> {
   const startedAt = context.now();
-  const result = await context.runner.run(NPM_CACHE_COMMAND, {cwd: context.paths.root});
+  const result = await context.probes.run(probes.workspace.npmCache(), {cwd: context.paths.root});
   const cachePath = result.stdout.trim();
   if (!isSuccessfulCommand(result) || cachePath === "") {
     return issueDiagnostic(context, startedAt, {
@@ -695,7 +516,7 @@ async function diagnoseNpmCache(context: Readonly<DoctorContext>): Promise<Diagn
       name: "npm cache",
       status: "fail",
       summary: "npm cache is not usable by the current user.",
-      evidence: [cachePath, errorMessage(error)],
+      evidence: [cachePath, normalizeErrorForReport(error, "npm cache access failed.")],
       ...(permissionFailure
         ? {rootCause: "The current user does not have read/write access to the configured npm cache."}
         : {
@@ -709,19 +530,16 @@ async function diagnoseNpmCache(context: Readonly<DoctorContext>): Promise<Diagn
   }
 }
 
-function diagnoseNxProjects(
-  context: Readonly<DoctorContext>,
-  outcome: WorkspaceGraphOutcome,
-): DiagnosticResult {
+function diagnoseNxProjects(context: Readonly<DoctorContext>, outcome: InspectionOutcome<WorkspaceFacts>): DiagnosticResult {
   const startedAt = context.now();
 
-  if (outcome.status === "unavailable") {
+  if (outcome.kind === "unavailable") {
     return issueDiagnostic(context, startedAt, {
       id: "workspace.nx-projects",
       name: "Nx projects",
       status: "fail",
-      summary: "Nx project metadata is missing or malformed.",
-      evidence: [outcome.error],
+      summary: "Nx project metadata could not be inspected.",
+      evidence: [outcome.reason],
       potentialCauses: [
         {cause: "The Nx workspace metadata is invalid.", confidence: "high"},
         {cause: "A tracked project or package manifest is malformed, duplicated, or ambiguous.", confidence: "medium"},
@@ -729,8 +547,19 @@ function diagnoseNxProjects(
       fixes: [{description: "Correct nx.json, project.json, and workspace package metadata before rerunning doctor."}],
     });
   }
+  if (outcome.kind === "invalid") {
+    return issueDiagnostic(context, startedAt, {
+      id: "workspace.nx-projects",
+      name: "Nx projects",
+      status: "fail",
+      summary: "Nx project metadata is malformed.",
+      evidence: outcome.issues,
+      potentialCauses: [{cause: "A tracked project or package manifest is malformed, duplicated, or ambiguous.", confidence: "high"}],
+      fixes: [{description: "Correct nx.json, project.json, and workspace package metadata before rerunning doctor."}],
+    });
+  }
 
-  const projects = outcome.graph.projects.map(({name}) => name);
+  const projects = outcome.value.projects.map(({name}) => name);
   if (projects.length === 0) {
     return issueDiagnostic(context, startedAt, {
       id: "workspace.nx-projects",
@@ -743,21 +572,26 @@ function diagnoseNxProjects(
     });
   }
 
+  const shownProjects = projects.slice(0, STANDARD_EVIDENCE_LIMIT);
+  const omittedProjects = projects.length - shownProjects.length;
   return passDiagnostic(context, startedAt, "workspace.nx-projects", "Nx projects", "Nx project discovery succeeded.", [
-    `${String(projects.length)} projects: ${projects.join(", ")}`,
+    `${String(projects.length)} project${projects.length === 1 ? "" : "s"} discovered.`,
+    omittedProjects > 0
+      ? `Projects: ${shownProjects.join(", ")}; ${String(omittedProjects)} additional project names omitted.`
+      : `Projects: ${shownProjects.join(", ")}`,
   ]);
 }
 
-function diagnoseNxGraph(context: Readonly<DoctorContext>, outcome: WorkspaceGraphOutcome): DiagnosticResult {
+function diagnoseNxGraph(context: Readonly<DoctorContext>, outcome: InspectionOutcome<WorkspaceFacts>): DiagnosticResult {
   const startedAt = context.now();
 
-  if (outcome.status === "unavailable") {
+  if (outcome.kind === "unavailable") {
     return issueDiagnostic(context, startedAt, {
       id: "workspace.nx-graph",
       name: "Nx graph",
       status: "fail",
-      summary: "Nx graph metadata is missing or malformed.",
-      evidence: [outcome.error],
+      summary: "Nx graph metadata could not be inspected.",
+      evidence: [outcome.reason],
       potentialCauses: [
         {cause: "The Nx project graph could not be derived from tracked workspace metadata.", confidence: "high"},
         {cause: "A project dependency declaration is unresolved, ambiguous, or unsupported.", confidence: "medium"},
@@ -765,9 +599,20 @@ function diagnoseNxGraph(context: Readonly<DoctorContext>, outcome: WorkspaceGra
       fixes: [{description: "Correct the reported Nx workspace metadata declaration and rerun doctor."}],
     });
   }
+  if (outcome.kind === "invalid") {
+    return issueDiagnostic(context, startedAt, {
+      id: "workspace.nx-graph",
+      name: "Nx graph",
+      status: "fail",
+      summary: "Nx graph metadata is malformed.",
+      evidence: outcome.issues,
+      rootCause: "Nx workspace metadata produced malformed project-graph data.",
+      fixes: [{description: "Correct the reported Nx workspace metadata declaration and rerun doctor."}],
+    });
+  }
 
-  const {graph} = outcome;
-  const projects = graph.projects.map(({name}) => name);
+  const {projects: projectFacts, dependencies, cycles} = outcome.value;
+  const projects = projectFacts.map(({name}) => name);
   if (projects.length === 0) {
     return issueDiagnostic(context, startedAt, {
       id: "workspace.nx-graph",
@@ -779,43 +624,52 @@ function diagnoseNxGraph(context: Readonly<DoctorContext>, outcome: WorkspaceGra
       fixes: [{description: "Correct the Nx project configuration and rerun doctor."}],
     });
   }
-  if (graph.cycles.length > 0) {
+  if (cycles.length > 0) {
     return issueDiagnostic(context, startedAt, {
       id: "workspace.nx-graph",
       name: "Nx graph",
       status: "fail",
       summary: "Nx graph contains circular project dependencies.",
-      evidence: graph.cycles,
+      evidence: boundEvidence(
+        cycles.map((cycle) => cycle.join(" -> ")),
+        context.options.verbose,
+      ),
       rootCause: "The Nx project dependency graph contains a cycle.",
       fixes: [{description: "Break the reported project dependency cycle before rerunning doctor."}],
     });
   }
 
-  const websiteDependencies = workspaceDependencyTargets(graph, WEBSITE_PROJECT);
-  if (
-    !projects.includes(WEBSITE_PROJECT)
-    || !projects.includes(COMPONENTS_PROJECT)
-    || !websiteDependencies.includes(COMPONENTS_PROJECT)
-  ) {
+  const websiteDependencies = dependencies.filter(({source}) => source === WEBSITE_PROJECT).map(({target}) => target);
+  if (!projects.includes(WEBSITE_PROJECT) || !projects.includes(COMPONENTS_PROJECT) || !websiteDependencies.includes(COMPONENTS_PROJECT)) {
     return issueDiagnostic(context, startedAt, {
       id: "workspace.nx-graph",
       name: "Nx graph",
       status: "fail",
       summary: "The expected website-to-components Nx dependency is missing.",
-      evidence: [
-        `Projects: ${projects.join(", ")}`,
-        `${WEBSITE_PROJECT} dependencies: ${websiteDependencies.join(", ") || "(none)"}`,
-      ],
+      evidence: boundEvidence(
+        [`Projects: ${projects.join(", ")}`, `${WEBSITE_PROJECT} dependencies: ${websiteDependencies.join(", ") || "(none)"}`],
+        context.options.verbose,
+      ),
       rootCause: "Workspace metadata does not declare the required website dependency on the shared components project.",
       fixes: [{description: "Restore the website project dependency on @arolariu/components."}],
     });
   }
 
-  return passDiagnostic(context, startedAt, "workspace.nx-graph", "Nx graph", "Nx graph is valid and acyclic.", [
-    `${String(projects.length)} projects.`,
-    `${WEBSITE_PROJECT} depends on ${COMPONENTS_PROJECT}.`,
-    ...graph.dependencies.map(({source, target, origin}) => `${source} -> ${target} (${origin})`),
-  ]);
+  return passDiagnostic(
+    context,
+    startedAt,
+    "workspace.nx-graph",
+    "Nx graph",
+    "Nx graph is valid and acyclic.",
+    boundEvidence(
+      [
+        `${String(projects.length)} projects.`,
+        `${WEBSITE_PROJECT} depends on ${COMPONENTS_PROJECT}.`,
+        ...dependencies.map(({source, target}) => `${source} -> ${target}`),
+      ],
+      context.options.verbose,
+    ),
+  );
 }
 
 async function diagnoseConfigFiles(context: Readonly<DoctorContext>): Promise<DiagnosticResult> {
@@ -829,7 +683,7 @@ async function diagnoseConfigFiles(context: Readonly<DoctorContext>): Promise<Di
         missing.push(relativePath);
       }
     } catch (error: unknown) {
-      inaccessible.push(`${relativePath}: ${errorMessage(error)}`);
+      inaccessible.push(`${relativePath}: ${normalizeErrorForReport(error, "configuration file access failed.")}`);
     }
   }
 
@@ -839,10 +693,10 @@ async function diagnoseConfigFiles(context: Readonly<DoctorContext>): Promise<Di
       name: "Required configuration",
       status: "fail",
       summary: "Required repository configuration files are missing or inaccessible.",
-      evidence: [
-        ...missing.map((path) => `Missing: ${path}`),
-        ...inaccessible.map((detail) => `Inaccessible: ${detail}`),
-      ],
+      evidence: boundEvidence(
+        [...missing.map((path) => `Missing: ${path}`), ...inaccessible.map((detail) => `Inaccessible: ${detail}`)],
+        context.options.verbose,
+      ),
       rootCause: "The checkout is missing required tracked configuration or cannot read it.",
       fixes: [{description: "Restore the missing tracked files or correct their permissions."}],
     });
@@ -891,7 +745,7 @@ async function diagnoseGeneratedArtifacts(context: Readonly<DoctorContext>): Pro
       name: "Generated artifacts",
       status: "fail",
       summary: "Generated artifact metadata could not be inspected.",
-      evidence: [errorMessage(error)],
+      evidence: [normalizeErrorForReport(error, "Generated artifact metadata could not be inspected.")],
       potentialCauses: [{cause: "Generated artifact paths or their source file are inaccessible.", confidence: "high"}],
       fixes: [{description: "Correct filesystem access and regenerate repository artifacts.", command: "npm run generate -- /a"}],
     });
@@ -935,7 +789,7 @@ async function diagnoseGeneratedArtifacts(context: Readonly<DoctorContext>): Pro
         freshnessEvidence.push(`${name}: generated at ${generatedAt}.`);
       }
     } catch (error: unknown) {
-      metadataErrors.push(`${name}: ${errorMessage(error)}`);
+      metadataErrors.push(`${name}: ${normalizeErrorForReport(error, "artifact metadata is malformed.")}`);
     }
   }
 
@@ -945,16 +799,17 @@ async function diagnoseGeneratedArtifacts(context: Readonly<DoctorContext>): Pro
       name: "Generated artifacts",
       status: "fail",
       summary: "Required mirrored taxonomy artifacts are incomplete, inconsistent, or invalid.",
-      evidence: [
-        ...missing.map((path) => `Missing artifact: ${path}`),
-        ...mismatched.map((name) => `Mirrored taxonomy bytes differ: ${name}`),
-        ...metadataErrors,
-        ...freshnessWarnings,
-      ],
+      evidence: boundEvidence(
+        [
+          ...missing.map((path) => `Missing artifact: ${path}`),
+          ...mismatched.map((name) => `Mirrored taxonomy bytes differ: ${name}`),
+          ...metadataErrors,
+          ...freshnessWarnings,
+        ],
+        context.options.verbose,
+      ),
       potentialCauses: [
-        ...(missing.length > 0
-          ? [{cause: "Required taxonomy generation output is missing.", confidence: "high" as const}]
-          : []),
+        ...(missing.length > 0 ? [{cause: "Required taxonomy generation output is missing.", confidence: "high" as const}] : []),
         ...(mismatched.length > 0
           ? [{cause: "API and website taxonomy mirrors were generated from different content.", confidence: "high" as const}]
           : []),
@@ -971,7 +826,7 @@ async function diagnoseGeneratedArtifacts(context: Readonly<DoctorContext>): Pro
       name: "Generated artifacts",
       status: "warn",
       summary: "Mirrored taxonomy artifacts have invalid freshness metadata.",
-      evidence: [...freshnessWarnings, ...freshnessEvidence],
+      evidence: boundEvidence([...freshnessWarnings, ...freshnessEvidence], context.options.verbose),
       rootCause: "One or more taxonomy artifacts have invalid embedded generation timestamps.",
       fixes: [{description: "Regenerate taxonomy artifacts.", command: "npm run generate -- /a"}],
     });
@@ -983,10 +838,7 @@ async function diagnoseGeneratedArtifacts(context: Readonly<DoctorContext>): Pro
     "workspace.generated-artifacts",
     "Generated artifacts",
     "Mirrored taxonomy artifacts are present, metadata-valid, and byte-identical.",
-    [
-      `Verified ${String(paths.length)} taxonomy artifacts across ${String(byName.size)} mirrored sets.`,
-      ...freshnessEvidence,
-    ],
+    [`Verified ${String(paths.length)} taxonomy artifacts across ${String(byName.size)} mirrored sets.`, ...freshnessEvidence],
   );
 }
 
@@ -996,58 +848,109 @@ function formatBytes(bytes: number): string {
 
 async function diagnoseHostCapacity(context: Readonly<DoctorContext>): Promise<DiagnosticResult> {
   const startedAt = context.now();
-  try {
-    const filesystem = await statfs(context.paths.root);
-    const freeDisk = Number(filesystem.bavail) * Number(filesystem.bsize);
-    const availableMemory = freemem();
-    const installedMemory = totalmem();
-    const evidence = [
-      `Free disk: ${formatBytes(freeDisk)}`,
-      `Available memory: ${formatBytes(availableMemory)} of ${formatBytes(installedMemory)}`,
-    ];
+  if (context.options.quick) {
+    return skippedDiagnostic({
+      id: "workspace.host-capacity",
+      module: "workspace",
+      name: "Host capacity",
+      summary: "Host capacity inspection was skipped in quick mode.",
+      evidence: ["--quick omits full host capacity inspection."],
+    });
+  }
 
-    if (freeDisk < MINIMUM_DISK_BYTES) {
-      return issueDiagnostic(context, startedAt, {
-        id: "workspace.host-capacity",
-        name: "Host capacity",
-        status: "fail",
-        summary: "The workspace filesystem has critically low free space.",
-        evidence,
-        rootCause: "Less than 1 GiB of disk space is available on the workspace filesystem.",
-        fixes: [{description: "Free disk space before restoring dependencies or running local services."}],
-      });
-    }
-    if (freeDisk < RECOMMENDED_DISK_BYTES || availableMemory < RECOMMENDED_MEMORY_BYTES) {
-      return issueDiagnostic(context, startedAt, {
-        id: "workspace.host-capacity",
-        name: "Host capacity",
-        status: "warn",
-        summary: "Host capacity is below the recommended development headroom.",
-        evidence,
-        potentialCauses: [
-          ...(freeDisk < RECOMMENDED_DISK_BYTES
-            ? [{cause: "Less than 5 GiB of disk space is available.", confidence: "high" as const}]
-            : []),
-          ...(availableMemory < RECOMMENDED_MEMORY_BYTES
-            ? [{cause: "Less than 1 GiB of memory is currently available.", confidence: "medium" as const}]
-            : []),
-        ],
-        fixes: [{description: "Free host disk or memory before starting the complete local stack."}],
-      });
-    }
-
-    return passDiagnostic(context, startedAt, "workspace.host-capacity", "Host capacity", "Host capacity is sufficient.", evidence);
-  } catch (error: unknown) {
+  const aggregate: InspectionOutcome<AggregateFacts> = await context.inspection.inspect("aggregate");
+  if (aggregate.kind === "unavailable") {
     return issueDiagnostic(context, startedAt, {
       id: "workspace.host-capacity",
       name: "Host capacity",
       status: "warn",
       summary: "Host capacity could not be measured.",
-      evidence: [errorMessage(error)],
-      potentialCauses: [{cause: "The platform did not expose filesystem capacity metadata.", confidence: "medium"}],
+      evidence: [aggregate.reason],
+      potentialCauses: [{cause: "The host inspection worker could not observe system capacity.", confidence: "medium"}],
       fixes: [{description: "Verify available disk and memory manually before starting the local stack."}],
     });
   }
+  if (aggregate.kind === "invalid") {
+    return issueDiagnostic(context, startedAt, {
+      id: "workspace.host-capacity",
+      name: "Host capacity",
+      status: "warn",
+      summary: "Host capacity metadata is malformed.",
+      evidence: aggregate.issues,
+      potentialCauses: [{cause: "The host inspection worker returned malformed capacity data.", confidence: "medium"}],
+      fixes: [{description: "Verify available disk and memory manually before starting the local stack."}],
+    });
+  }
+
+  const {host} = aggregate.value;
+  if (host.kind === "unavailable") {
+    return issueDiagnostic(context, startedAt, {
+      id: "workspace.host-capacity",
+      name: "Host capacity",
+      status: "warn",
+      summary: "Host capacity could not be measured.",
+      evidence: [host.reason],
+      potentialCauses: [{cause: "The platform did not expose host capacity metadata.", confidence: "medium"}],
+      fixes: [{description: "Verify available disk and memory manually before starting the local stack."}],
+    });
+  }
+  if (host.kind === "invalid") {
+    return issueDiagnostic(context, startedAt, {
+      id: "workspace.host-capacity",
+      name: "Host capacity",
+      status: "warn",
+      summary: "Host capacity metadata is malformed.",
+      evidence: host.issues,
+      potentialCauses: [{cause: "The host inspection worker returned malformed capacity data.", confidence: "medium"}],
+      fixes: [{description: "Verify available disk and memory manually before starting the local stack."}],
+    });
+  }
+
+  const facts = host.value;
+  const repositoryFilesystem = facts.filesystems.find((filesystem) => filesystem.repositoryVolume);
+  const relevantFilesystems = repositoryFilesystem === undefined ? facts.filesystems : [repositoryFilesystem];
+  const freeDisk =
+    relevantFilesystems.length === 0
+      ? undefined
+      : relevantFilesystems.reduce((minimum, filesystem) => Math.min(minimum, filesystem.availableBytes), Number.POSITIVE_INFINITY);
+  const availableMemory = facts.memory.availableBytes;
+
+  const evidence = [
+    freeDisk === undefined ? "Free disk: unavailable." : `Free disk: ${formatBytes(freeDisk)}`,
+    `Available memory: ${formatBytes(availableMemory)} of ${formatBytes(facts.memory.totalBytes)}`,
+  ];
+
+  if (freeDisk !== undefined && freeDisk < MINIMUM_DISK_BYTES) {
+    return issueDiagnostic(context, startedAt, {
+      id: "workspace.host-capacity",
+      name: "Host capacity",
+      status: "fail",
+      summary: "The workspace filesystem has critically low free space.",
+      evidence,
+      rootCause: "Less than 1 GiB of disk space is available on the workspace filesystem.",
+      fixes: [{description: "Free disk space before restoring dependencies or running local services."}],
+    });
+  }
+  if ((freeDisk !== undefined && freeDisk < RECOMMENDED_DISK_BYTES) || availableMemory < RECOMMENDED_MEMORY_BYTES) {
+    return issueDiagnostic(context, startedAt, {
+      id: "workspace.host-capacity",
+      name: "Host capacity",
+      status: "warn",
+      summary: "Host capacity is below the recommended development headroom.",
+      evidence,
+      potentialCauses: [
+        ...(freeDisk !== undefined && freeDisk < RECOMMENDED_DISK_BYTES
+          ? [{cause: "Less than 5 GiB of disk space is available.", confidence: "high" as const}]
+          : []),
+        ...(availableMemory < RECOMMENDED_MEMORY_BYTES
+          ? [{cause: "Less than 1 GiB of memory is currently available.", confidence: "medium" as const}]
+          : []),
+      ],
+      fixes: [{description: "Free host disk or memory before starting the complete local stack."}],
+    });
+  }
+
+  return passDiagnostic(context, startedAt, "workspace.host-capacity", "Host capacity", "Host capacity is sufficient.", evidence);
 }
 
 function isNetworkUnavailable(result: Readonly<CommandResult>): boolean {
@@ -1093,7 +996,7 @@ async function diagnoseNpmAudit(context: Readonly<DoctorContext>): Promise<Diagn
   }
 
   const startedAt = context.now();
-  const result = await context.runner.run(NPM_AUDIT_COMMAND, {cwd: context.paths.root});
+  const result = await context.probes.run(probes.workspace.npmAudit(), {cwd: context.paths.root});
   if (isNetworkUnavailable(result)) {
     return skippedDiagnostic({
       id: "workspace.npm-audit",
@@ -1139,7 +1042,7 @@ async function diagnoseNpmAudit(context: Readonly<DoctorContext>): Promise<Diagn
       name: "npm audit",
       status: "warn",
       summary: "npm audit returned an unrecognized response.",
-      evidence: [...commandEvidence(result), errorMessage(error)],
+      evidence: [...commandEvidence(result), normalizeErrorForReport(error, "npm audit returned malformed JSON.")],
       potentialCauses: [
         {cause: "npm returned malformed or unsupported audit JSON.", confidence: "high"},
         {cause: "The configured registry returned a nonstandard error response.", confidence: "medium"},
@@ -1161,7 +1064,7 @@ async function diagnoseNpmOutdated(context: Readonly<DoctorContext>): Promise<Di
   }
 
   const startedAt = context.now();
-  const result = await context.runner.run(NPM_OUTDATED_COMMAND, {cwd: context.paths.root});
+  const result = await context.probes.run(probes.workspace.npmOutdated(), {cwd: context.paths.root});
   if (isNetworkUnavailable(result)) {
     return skippedDiagnostic({
       id: "workspace.npm-outdated",
@@ -1184,26 +1087,23 @@ async function diagnoseNpmOutdated(context: Readonly<DoctorContext>): Promise<Di
         name: "Outdated npm packages",
         status: "warn",
         summary: `${String(packages.length)} npm package${packages.length === 1 ? "" : "s"} can be updated.`,
-        evidence: packages,
+        evidence: boundEvidence(packages, context.options.verbose),
         rootCause: "The locked npm dependency graph is behind currently available package versions.",
-        fixes: [{description: "Review available updates through the repository dependency-update workflow.", command: "npm outdated --json"}],
+        fixes: [
+          {description: "Review available updates through the repository dependency-update workflow.", command: "npm outdated --json"},
+        ],
       });
     }
-    return passDiagnostic(
-      context,
-      startedAt,
-      "workspace.npm-outdated",
-      "Outdated npm packages",
-      "Locked npm packages are current.",
-      ["npm outdated returned no packages."],
-    );
+    return passDiagnostic(context, startedAt, "workspace.npm-outdated", "Outdated npm packages", "Locked npm packages are current.", [
+      "npm outdated returned no packages.",
+    ]);
   } catch (error: unknown) {
     return issueDiagnostic(context, startedAt, {
       id: "workspace.npm-outdated",
       name: "Outdated npm packages",
       status: "warn",
       summary: "npm outdated returned an unrecognized response.",
-      evidence: [...commandEvidence(result), errorMessage(error)],
+      evidence: [...commandEvidence(result), normalizeErrorForReport(error, "npm outdated returned malformed JSON.")],
       potentialCauses: [
         {cause: "npm returned malformed or unsupported outdated-package JSON.", confidence: "high"},
         {cause: "The configured registry returned a nonstandard error response.", confidence: "medium"},
@@ -1221,7 +1121,12 @@ export const workspaceDoctorModule: DiagnosticModule = {
     const requirementSources = diagnoseRequirementSources(context);
     const nodeMinimum = context.requirements.status === "valid" ? context.requirements.requirements.node : null;
     const npmMinimum = context.requirements.status === "valid" ? context.requirements.requirements.npm : null;
-    const workspaceGraph = await inspectWorkspaceGraph(context.paths.root);
+
+    const [workspaceOutcome, npmRootOutcome, npmGithubScriptsOutcome] = await Promise.all([
+      context.inspection.inspect("workspace"),
+      context.inspection.inspect("npm.root"),
+      context.inspection.inspect("npm.github-scripts"),
+    ]);
 
     return [
       await diagnoseRepositoryRoot(context),
@@ -1231,21 +1136,21 @@ export const workspaceDoctorModule: DiagnosticModule = {
         id: "workspace.node-runtime",
         name: "Node.js runtime",
         executable: "node",
-        command: NODE_VERSION_COMMAND,
+        runProbe: () => context.probes.run(probes.workspace.nodeVersion(), {cwd: context.paths.root}),
         minimum: nodeMinimum,
       }),
       await diagnoseRuntime(context, {
         id: "workspace.npm-runtime",
         name: "npm runtime",
         executable: "npm",
-        command: NPM_VERSION_COMMAND,
+        runProbe: () => context.probes.run(probes.workspace.npmVersion(), {cwd: context.paths.root}),
         minimum: npmMinimum,
       }),
-      await diagnoseNpmTree(context, "root workspace", context.paths.root),
-      await diagnoseNpmTree(context, ".github scripts", context.paths.githubScriptsRoot),
+      diagnoseNpmTree(context, "root", npmRootOutcome),
+      diagnoseNpmTree(context, "github-scripts", npmGithubScriptsOutcome),
       await diagnoseNpmCache(context),
-      diagnoseNxProjects(context, workspaceGraph),
-      diagnoseNxGraph(context, workspaceGraph),
+      diagnoseNxProjects(context, workspaceOutcome),
+      diagnoseNxGraph(context, workspaceOutcome),
       await diagnoseConfigFiles(context),
       await diagnoseGeneratedArtifacts(context),
       await diagnoseHostCapacity(context),

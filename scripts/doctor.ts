@@ -37,6 +37,7 @@ import {resolveRepositoryPaths, type RepositoryPaths} from "./common/repository-
 import {normalizeErrorForReport, diagnosticResult} from "./doctor.diagnostics.ts";
 import {renderDoctorReport, createDoctorReport} from "./doctor.reporter.ts";
 import {defaultDiagnosticRunner} from "./doctor.types.ts";
+import {createInspectionProbeRunner, type InspectionProbeRunner} from "./inspection/probes.ts";
 import {createRepositoryInspectionSession, type RepositoryInspectionSession} from "./inspection/repository.ts";
 import {dotnetDoctorModule} from "./doctor.dotnet.ts";
 import {infrastructureDoctorModule} from "./doctor.infrastructure.ts";
@@ -106,6 +107,8 @@ export interface DoctorDependencies {
   readonly inspection: RepositoryInspectionSession;
   /** Factory for creating an inspection session; defaults to {@link createRepositoryInspectionSession}. */
   readonly createInspectionSession: typeof createRepositoryInspectionSession;
+  /** Opaque inspection probe runner; defaults to one created from {@link defaultCommandRunner}. */
+  readonly probes: InspectionProbeRunner;
 }
 
 function errorMessage(error: unknown): string {
@@ -301,6 +304,8 @@ export async function runDoctor(
       now,
     });
 
+  const probes = dependencies.probes ?? createInspectionProbeRunner(defaultCommandRunner);
+
   const context: DoctorContext = {
     options,
     paths,
@@ -313,6 +318,7 @@ export async function runDoctor(
     env,
     now,
     inspection,
+    probes,
   };
 
   const settledResults = await Promise.all(modules.map((module) => runDoctorModule(module, context)));

@@ -173,6 +173,7 @@ function fixedRuntimeDependencies(): Readonly<
     | "now"
     | "timestamp"
     | "inspection"
+    | "probes"
   >
 > {
   let tick = 0;
@@ -187,6 +188,11 @@ function fixedRuntimeDependencies(): Readonly<
     now: () => (tick += 1),
     timestamp: () => "2026-08-29T00:00:00.000Z",
     inspection: createFakeInspectionSession(),
+    probes: {
+      run: vi.fn(async () => {
+        throw new Error("Doctor test probe runner should not be invoked by a fake module.");
+      }),
+    },
   };
 }
 

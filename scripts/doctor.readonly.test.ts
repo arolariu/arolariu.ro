@@ -557,6 +557,7 @@ const APPROVED_DOCTOR_REPOSITORY_IMPORTS: ReadonlyMap<string, ReadonlySet<string
       "./doctor.svelte.ts",
       "./doctor.types.ts",
       "./doctor.workspace.ts",
+      "./inspection/probes.ts",
       "./inspection/repository.ts",
     ]),
   ],
@@ -568,6 +569,7 @@ const APPROVED_DOCTOR_REPOSITORY_IMPORTS: ReadonlyMap<string, ReadonlySet<string
       "./common/repository-paths.ts",
       "./common/requirements.ts",
       "./doctor.diagnostics.ts",
+      "./inspection/probes.ts",
       "./inspection/repository.ts",
     ]),
   ],
@@ -586,16 +588,39 @@ const APPROVED_DOCTOR_REPOSITORY_IMPORTS: ReadonlyMap<string, ReadonlySet<string
     ]),
   ],
   ["scripts/doctor.python.ts", new Set(["./common/process.ts", "./common/requirements.ts", "./doctor.types.ts"])],
-  ["scripts/doctor.react.ts", new Set(["./common/process.ts", "./common/taxonomy-artifacts.ts", "./doctor.types.ts"])],
-  ["scripts/doctor.svelte.ts", new Set(["./common/requirements.ts", "./doctor.types.ts"])],
+  [
+    "scripts/doctor.react.ts",
+    new Set([
+      "./doctor.diagnostics.ts",
+      "./doctor.types.ts",
+      "./inspection/frontend.ts",
+      "./inspection/packages.ts",
+      "./inspection/types.ts",
+    ]),
+  ],
+  [
+    "scripts/doctor.svelte.ts",
+    new Set([
+      "./common/requirements.ts",
+      "./doctor.diagnostics.ts",
+      "./doctor.types.ts",
+      "./inspection/frontend.ts",
+      "./inspection/types.ts",
+    ]),
+  ],
   [
     "scripts/doctor.workspace.ts",
     new Set([
       "./common/process.ts",
       "./common/requirements.ts",
       "./common/taxonomy-artifacts.ts",
-      "./common/workspace-graph.ts",
+      "./doctor.diagnostics.ts",
       "./doctor.types.ts",
+      "./inspection/aggregate.ts",
+      "./inspection/packages.ts",
+      "./inspection/probes.ts",
+      "./inspection/types.ts",
+      "./inspection/workspace.ts",
     ]),
   ],
   ["scripts/common/taxonomy-artifacts.ts", new Set()],
@@ -868,6 +893,7 @@ describe("doctor diagnostic contracts", () => {
       "env",
       "now",
       "inspection",
+      "probes",
     ]);
     expect(getExportedInterfacePropertyNames(source, "DiagnosticModule")).toEqual(["id", "title", "run"]);
   });
@@ -1177,6 +1203,7 @@ describe("doctor source-level read-only guard", () => {
       "scripts/doctor.react.ts:4: mutating fs import",
       "scripts/doctor.react.ts:5: setup import",
       "scripts/doctor.react.ts:6: direct common CommandRunner use",
+      "scripts/doctor.react.ts:6: unapproved repository import",
       "scripts/doctor.react.ts:7: forbidden command specification",
       "scripts/doctor.react.ts:8: direct output",
       "scripts/doctor.react.ts:9: direct output",
@@ -1248,10 +1275,9 @@ describe("doctor source-level read-only guard", () => {
 
   it("rejects repository imports outside the approved doctor surface", async () => {
     const module = await loadDoctorTypesModule();
-    const source = [
-      'import {getExpectedTaxonomyArtifactPaths} from "./common/taxonomy-artifacts.ts";',
-      'import {main} from "./generate.artifacts.ts";',
-    ].join("\n");
+    const source = ['import {diagnosticResult} from "./doctor.diagnostics.ts";', 'import {main} from "./generate.artifacts.ts";'].join(
+      "\n",
+    );
 
     expect(findDoctorGuardViolations(source, "scripts/doctor.react.ts", module.isReadOnlyDiagnosticCommand)).toEqual([
       "scripts/doctor.react.ts:2: unapproved repository import",

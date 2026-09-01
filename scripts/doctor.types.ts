@@ -14,6 +14,7 @@ import {
 import type {MonorepositoryLogger} from "./common/logger.ts";
 import type {RepositoryPaths} from "./common/repository-paths.ts";
 import type {RequirementLoadResult} from "./common/requirements.ts";
+import type {InspectionProbeRunner} from "./inspection/probes.ts";
 import type {RepositoryInspectionSession} from "./inspection/repository.ts";
 
 /** One bounded timeout applied to diagnostic commands that do not supply one explicitly. */
@@ -166,6 +167,8 @@ export interface DoctorContext {
   readonly now: () => number;
   /** Shared repository inspection session for this run. */
   readonly inspection: RepositoryInspectionSession;
+  /** Opaque inspection probe runner for allowlisted read-only command probes. */
+  readonly probes: InspectionProbeRunner;
 }
 
 /** One stable doctor module implementation. */
