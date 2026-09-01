@@ -34,6 +34,7 @@ import {existsSync, readFileSync} from "node:fs";
 import {join, resolve} from "node:path";
 import {fileURLToPath} from "node:url";
 
+import {commanderExitCode, createToolProgram} from "./common/cli.ts";
 import {formatBytes} from "./common/index.ts";
 import {MonorepositoryConsoleLogger, type LogSegment, type MonorepositoryLogger} from "./common/logger.ts";
 import {defaultCommandRunner, type CommandResult, type CommandRunner, type CommandSpec} from "./common/process.ts";
@@ -208,14 +209,6 @@ const DISK_PROBE_SCRIPT = [
 
 /** Strict, sign-free, decimal-point-free byte-count pattern for probe stdout. */
 const NONNEGATIVE_INTEGER_PATTERN = /^[0-9]+$/;
-
-const HELP_LINES: readonly string[] = [
-  "Usage: node scripts/status.ts [options]",
-  "",
-  "Options:",
-  "  --json        Output all collected data as a single JSON document.",
-  "  --help, -h    Show this help message.",
-];
 
 // ============================================================================
 // Small Utilities
@@ -718,6 +711,35 @@ function renderDashboard(logger: MonorepositoryLogger, output: Readonly<StatusOu
 }
 
 // ============================================================================
+// CLI
+// ============================================================================
+
+/**
+ * Builds the Commander program that owns status CLI help rendering and
+ * slash-alias normalization (`/h` → `--help`).
+ *
+ * @remarks
+ * `allowUnknownOption(true)` lets unknown flags pass through to
+ * {@link parseStatusOptions} so the existing human-friendly error-message
+ * contract is preserved.
+ *
+ * @param logger - Logger that receives Commander's rendered help output.
+ * @returns A configured, not-yet-parsed Commander program.
+ */
+function buildStatusProgram(logger: MonorepositoryLogger) {
+  const program = createToolProgram({
+    name: "node scripts/status.ts",
+    description: "Collects and renders monorepo health, workspace, git, security, and disk data.",
+    usage: "[options]",
+    logger,
+  });
+
+  program.option("--json", "Output all collected data as a single JSON document.").allowUnknownOption(true).allowExcessArguments(true);
+
+  return program;
+}
+
+// ============================================================================
 // Options
 // ============================================================================
 
@@ -783,21 +805,20 @@ export async function main(
   argv: readonly string[] = process.argv.slice(2),
   dependencies: Readonly<Partial<StatusDependencies>> = {},
 ): Promise<number> {
-  if (argv.includes("--help") || argv.includes("-h")) {
-    const logger = dependencies.logger ?? new MonorepositoryConsoleLogger("status", {verbose: false});
-    logger.banner(["arolariu.ro monorepo status dashboard"]);
-    for (const line of HELP_LINES) {
-      logger.line(line);
-    }
-    return 0;
+  const parseLogger = dependencies.logger ?? new MonorepositoryConsoleLogger("status", {verbose: false});
+  const program = buildStatusProgram(parseLogger);
+
+  try {
+    program.parse(argv, {from: "user"});
+  } catch (error: unknown) {
+    return commanderExitCode(error) ?? 1;
   }
 
   let options: StatusOptions;
   try {
     options = parseStatusOptions(argv);
   } catch (error: unknown) {
-    const logger = dependencies.logger ?? new MonorepositoryConsoleLogger("status", {verbose: false});
-    logger.error(errorMessage(error));
+    parseLogger.error(errorMessage(error));
     return 1;
   }
 

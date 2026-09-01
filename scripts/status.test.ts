@@ -274,6 +274,14 @@ describe("main — help and option parsing", () => {
     ).resolves.toBe(0);
   });
 
+  it("emits usage and exits 0 for /h without invoking any collector", async () => {
+    const {logger} = createLogger();
+
+    await expect(
+      main(["/h"], {logger, runner: runnerThatMustNotBeCalled, resolveRepositoryPaths: resolvePathsThatMustNotBeCalled}),
+    ).resolves.toBe(0);
+  });
+
   it("returns 1 and renders the option error for an unknown flag, without invoking any collector", async () => {
     const {logger, sink} = createLogger();
 
@@ -942,6 +950,29 @@ describe("exact-session construction seams", () => {
     });
 
     expect(sessionFactory).not.toHaveBeenCalled();
+  });
+
+  it("calls runDoctor with quick:true, verbose:false, and the shared inspection session", async () => {
+    const inspection = createFakeInspection();
+    const {logger} = createLogger("json");
+    const {runner} = createRecordingRunner(baseResponses());
+    const fakeRunDoctor = vi.fn(async (): Promise<DoctorReport> => ({
+      score: 100,
+      grade: "A+",
+      summary: {passed: 1, warnings: 0, failed: 0, skipped: 0},
+      checks: [],
+      timestamp: "2026-01-01T00:00:00.000Z",
+    }));
+
+    await main(["--json"], {
+      logger,
+      runner,
+      resolveRepositoryPaths: () => FIXED_REPOSITORY_PATHS,
+      inspection,
+      runDoctor: fakeRunDoctor,
+    });
+
+    expect(fakeRunDoctor).toHaveBeenCalledWith({quick: true, verbose: false}, expect.objectContaining({inspection}));
   });
 });
 
