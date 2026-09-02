@@ -81,6 +81,10 @@ function exited(exitCode: number, patch: Readonly<{stdout?: string; stderr?: str
   return {kind: "exited", exitCode, stdout: patch.stdout ?? "", stderr: patch.stderr ?? "", durationMs: 1};
 }
 
+function cancelledOutcome(): ProcessOutcome {
+  return {kind: "cancelled", stdout: "", stderr: "", durationMs: 1};
+}
+
 function commandKey(command: Readonly<ProcessRequest>): string {
   return [command.command, ...command.args].join("\u0000");
 }
@@ -724,6 +728,21 @@ describe("generated SvelteKit configuration", () => {
     expect(result.status).toBe("failed");
     expect(result.evidence.join("\n")).toContain("sync failed");
     expect(harness.invalidate).toHaveBeenCalledExactlyOnceWith("svelte.cv", "svelte.status");
+  });
+
+  it("does not report success and invalidates only svelte.cv and svelte.status when a typed cancelled outcome is returned", async () => {
+    const harness = await createHarness({
+      cv: [svelteAvailable("cv", {generatedConfigExists: false})],
+      responses: {[commandKey(prepareCommand)]: cancelledOutcome()},
+    });
+
+    const result = await runPhase(harness);
+
+    expect(result.status).not.toBe("succeeded");
+    expect(result.status).toBe("failed");
+    expect(result.evidence.join("\n")).toContain("Command was cancelled.");
+    expect(harness.invalidate).toHaveBeenCalledExactlyOnceWith("svelte.cv", "svelte.status");
+    expect(harness.invalidate).not.toHaveBeenCalledWith("packages");
   });
 
   it("fails without invalidating when the required preparation is declined", async () => {

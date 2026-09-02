@@ -103,6 +103,10 @@ function timedOut(): ProcessOutcome {
   return {kind: "timed-out", stdout: "", stderr: "", durationMs: 1};
 }
 
+function cancelledOutcome(): ProcessOutcome {
+  return {kind: "cancelled", stdout: "", stderr: "", durationMs: 1};
+}
+
 function commandKey(command: Readonly<ProcessRequest>): string {
   return [command.command, ...command.args].join("\u0000");
 }
@@ -1385,6 +1389,23 @@ describe("Playwright Chromium preparation", () => {
     const result = await runPhase(harness);
 
     expect(result.status).toBe("failed");
+  });
+
+  it("treats a typed cancelled Linux dependency probe as inconclusive without attempting the install action", async () => {
+    const harness = await createHarness({
+      fixture: createReactFixture({platform: "linux"}),
+      responses: {[commandKey(dependencyProbeCommand)]: cancelledOutcome()},
+    });
+
+    const result = await runPhase(harness);
+
+    expect(result.status).toBe("failed");
+    expect(result.evidence.join("\n")).toContain("Playwright Linux dependency probe was inconclusive.");
+    expect(result.evidence.join("\n")).toContain("Command was cancelled.");
+    expect(harness.actionIds).not.toContain("react.playwright.system-dependencies.install");
+    expect(harness.actionIds).toEqual([]);
+    expect(callsFor(harness, dependencyInstallCommand)).toHaveLength(0);
+    expect(harness.invalidate).not.toHaveBeenCalled();
   });
 });
 
