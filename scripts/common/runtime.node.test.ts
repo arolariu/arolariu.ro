@@ -9,6 +9,7 @@ import {createServer, type Server} from "node:http";
 import {mkdir, mkdtemp, readdir, readFile, realpath as nodeRealpath, rm, stat, symlink, writeFile} from "node:fs/promises";
 import {tmpdir} from "node:os";
 import {dirname, resolve} from "node:path";
+import {pathToFileURL} from "node:url";
 import {afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi} from "vitest";
 
 const {mockedAccess} = vi.hoisted(() => ({mockedAccess: vi.fn()}));
@@ -19,12 +20,19 @@ vi.mock("node:fs/promises", async (importOriginal) => {
   return {...actual, access: mockedAccess};
 });
 
-import {FILE_SYSTEM_MAX_BYTES_EXCEEDED_CODE, FileSystemError, HttpError, type RuntimeEnvironment} from "./runtime.ts";
+import {FILE_SYSTEM_MAX_BYTES_EXCEEDED_CODE, FileSystemError, HttpError, CommandCancellation, type RuntimeEnvironment} from "./runtime.ts";
+import type {CommandContext} from "./commander.ts";
+import {createRepositoryPaths} from "./repository-paths.ts";
+import {createRepositoryInspectionSessionStub} from "./runtime.testing.ts";
 import {
+  createNodeCommandRuntimeFactory,
   createNodeProcessRunner,
+  createNodeRuntimeScope,
   nodeClock,
   nodeFileSystem,
   nodeHttpClient,
+  nodeLoggerRuntimeHost,
+  nodeProcessHost,
   nodeProcessRunner,
   nodeTaskScheduler,
   snapshotNodeEnvironment,
@@ -649,5 +657,278 @@ describe("snapshotNodeEnvironment", () => {
     expect(snapshot.variables["RUNTIME_SNAPSHOT_TEST"]).toBe("before");
 
     delete process.env["RUNTIME_SNAPSHOT_TEST"];
+  });
+});
+
+describe("nodeProcessHost", () => {
+  it("exposes an immutable argv snapshot excluding the executable and script path", () => {
+    expect(nodeProcessHost.argv).toEqual(process.argv.slice(2));
+    expect(Object.isFrozen(nodeProcessHost.argv)).toBe(true);
+  });
+
+  it("recognizes only the module the process was started with", () => {
+    const entrypoint = process.argv[1];
+    expect(entrypoint).toBeDefined();
+    expect(nodeProcessHost.isDirectEntry(pathToFileURL(entrypoint ?? "").href)).toBe(true);
+    expect(nodeProcessHost.isDirectEntry(pathToFileURL(resolve(dirname(entrypoint ?? ""), "not-the-entry.ts")).href)).toBe(false);
+  });
+
+  it("assigns the requested process exit code", () => {
+    const previousExitCode = process.exitCode;
+    try {
+      nodeProcessHost.setExitCode(2);
+      expect(process.exitCode).toBe(2);
+    } finally {
+      process.exitCode = previousExitCode;
+    }
+  });
+});
+
+describe("nodeLoggerRuntimeHost", () => {
+  it("snapshots the terminal and color policy from the runtime environment", () => {
+    const environment = snapshotNodeEnvironment();
+
+    expect(nodeLoggerRuntimeHost.stdoutIsTTY).toBe(environment.stdoutIsTTY);
+    expect(nodeLoggerRuntimeHost.noColor).toBe(Object.hasOwn(environment.variables, "NO_COLOR"));
+  });
+
+  it("schedules and cancels a native interval behind the scheduled-interval handle", () => {
+    vi.useFakeTimers();
+    try {
+      let ticks = 0;
+      const interval = nodeLoggerRuntimeHost.scheduleInterval(() => {
+        ticks += 1;
+      }, 80);
+      interval.unref();
+      vi.advanceTimersByTime(160);
+      interval.cancel();
+      vi.advanceTimersByTime(160);
+
+      expect(ticks).toBe(2);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+});
+
+describe("createNodeRuntimeScope", () => {
+  it("assembles a root scope from the Node primitives and a fresh environment snapshot", async () => {
+    const runtime = await createNodeRuntimeScope({
+      commandName: "sample",
+      verbose: false,
+      presentation: "human",
+      registerProcessSignals: false,
+    });
+
+    expect(runtime.files).toBe(nodeFileSystem);
+    expect(runtime.http).toBe(nodeHttpClient);
+    expect(runtime.clock).toBe(nodeClock);
+    expect(runtime.tasks).toBe(nodeTaskScheduler);
+    expect(runtime.environment.platform).toBe(process.platform);
+    expect(runtime.signal.aborted).toBe(false);
+
+    await runtime.cleanup.drain();
+  });
+
+  it("fails fast only when an unwired inspection session is actually requested", async () => {
+    const runtime = await createNodeRuntimeScope({
+      commandName: "sample",
+      verbose: false,
+      presentation: "silent",
+      registerProcessSignals: false,
+    });
+
+    expect(() =>
+      runtime.inspection.getRepositorySession({profile: "quick", paths: createRepositoryPaths(process.cwd())}),
+    ).toThrow(/inspection capability is not wired/u);
+
+    await runtime.cleanup.drain();
+  });
+
+  it("uses an injected inspection runtime when one is supplied", async () => {
+    const session = createRepositoryInspectionSessionStub();
+    const runtime = await createNodeRuntimeScope({
+      commandName: "sample",
+      verbose: false,
+      presentation: "silent",
+      registerProcessSignals: false,
+      inspection: {getRepositorySession: () => session},
+    });
+
+    expect(runtime.inspection.getRepositorySession({profile: "quick", paths: createRepositoryPaths(process.cwd())})).toBe(session);
+
+    await runtime.cleanup.drain();
+  });
+
+  it.each<readonly [NodeJS.Signals, 130 | 143]>([
+    ["SIGINT", 130],
+    ["SIGTERM", 143],
+  ])("registers %s, aborts the scope, and unregisters it during cleanup", async (signalName, exitCode) => {
+    const listenersBefore = process.listeners(signalName);
+    const runtime = await createNodeRuntimeScope({
+      commandName: "sample",
+      verbose: false,
+      presentation: "human",
+      registerProcessSignals: true,
+    });
+
+    const added = process.listeners(signalName).filter((listener) => !listenersBefore.includes(listener));
+    expect(added).toHaveLength(1);
+    added.forEach((listener) => {
+      listener(signalName);
+    });
+
+    expect(runtime.signal.aborted).toBe(true);
+    const reason: unknown = runtime.signal.reason;
+    expect(reason).toBeInstanceOf(CommandCancellation);
+    expect(reason instanceof CommandCancellation ? reason.exitCode : 0).toBe(exitCode);
+
+    await runtime.cleanup.drain();
+
+    expect(process.listeners(signalName)).toEqual(listenersBefore);
+  });
+
+  it("registers no operating-system signal handler when the scope does not own them", async () => {
+    const interruptListenersBefore = process.listeners("SIGINT").length;
+    const terminateListenersBefore = process.listeners("SIGTERM").length;
+
+    const runtime = await createNodeRuntimeScope({
+      commandName: "sample",
+      verbose: false,
+      presentation: "silent",
+      registerProcessSignals: false,
+    });
+
+    expect(process.listeners("SIGINT")).toHaveLength(interruptListenersBefore);
+    expect(process.listeners("SIGTERM")).toHaveLength(terminateListenersBefore);
+
+    await runtime.cleanup.drain();
+  });
+
+  it("links an already-aborted caller signal into the created scope", async () => {
+    const controller = new AbortController();
+    controller.abort(new CommandCancellation("Cancelled before start.", 143));
+
+    const runtime = await createNodeRuntimeScope({
+      commandName: "sample",
+      verbose: false,
+      presentation: "silent",
+      registerProcessSignals: false,
+      signal: controller.signal,
+    });
+
+    expect(runtime.signal.aborted).toBe(true);
+
+    await runtime.cleanup.drain();
+  });
+
+  it("shares immutable parent capabilities with a child scope while isolating its own state", async () => {
+    const parentRuntime = await createNodeRuntimeScope({
+      commandName: "status",
+      verbose: false,
+      presentation: "human",
+      registerProcessSignals: false,
+    });
+    const parent: CommandContext = {runtime: parentRuntime, presentation: "human"};
+
+    const childRuntime = await createNodeRuntimeScope({
+      commandName: "doctor",
+      verbose: false,
+      presentation: "silent",
+      registerProcessSignals: false,
+      parent,
+    });
+
+    expect(childRuntime.environment).toBe(parentRuntime.environment);
+    expect(childRuntime.prompts).toBe(parentRuntime.prompts);
+    expect(childRuntime.inspection).toBe(parentRuntime.inspection);
+    expect(childRuntime.logger).not.toBe(parentRuntime.logger);
+    expect(childRuntime.runner).not.toBe(parentRuntime.runner);
+    expect(childRuntime.cleanup).not.toBe(parentRuntime.cleanup);
+    expect(childRuntime.signal).not.toBe(parentRuntime.signal);
+
+    parentRuntime.logger.redact("parent-secret");
+    expect(childRuntime.logger.sanitize("parent-secret")).toBe("[REDACTED]");
+
+    await childRuntime.cleanup.drain();
+    await parentRuntime.cleanup.drain();
+  });
+
+  it("propagates cancellation from parent to child but never from child to parent", async () => {
+    const parentController = new AbortController();
+    const parentRuntime = await createNodeRuntimeScope({
+      commandName: "status",
+      verbose: false,
+      presentation: "silent",
+      registerProcessSignals: false,
+      signal: parentController.signal,
+    });
+    const parent: CommandContext = {runtime: parentRuntime, presentation: "silent"};
+
+    const childController = new AbortController();
+    const firstChild = await createNodeRuntimeScope({
+      commandName: "doctor",
+      verbose: false,
+      presentation: "silent",
+      registerProcessSignals: false,
+      parent,
+      signal: childController.signal,
+    });
+
+    childController.abort();
+    expect(firstChild.signal.aborted).toBe(true);
+    expect(parentRuntime.signal.aborted).toBe(false);
+
+    const secondChild = await createNodeRuntimeScope({
+      commandName: "generate",
+      verbose: false,
+      presentation: "silent",
+      registerProcessSignals: false,
+      parent,
+    });
+
+    parentController.abort();
+    expect(secondChild.signal.aborted).toBe(true);
+
+    await firstChild.cleanup.drain();
+    await secondChild.cleanup.drain();
+    await parentRuntime.cleanup.drain();
+  });
+});
+
+describe("createNodeCommandRuntimeFactory", () => {
+  it("exposes the Node process host and a non-verbose human parse logger", () => {
+    const factory = createNodeCommandRuntimeFactory("sample", true);
+
+    expect(factory.processHost).toBe(nodeProcessHost);
+
+    const debug = vi.spyOn(console, "debug").mockImplementation(() => undefined);
+    const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
+    const info = vi.spyOn(console, "info").mockImplementation(() => undefined);
+
+    const parseLogger = factory.createParseLogger();
+    parseLogger.debug("suppressed regardless of command verbosity");
+    parseLogger.json({ignored: true});
+    parseLogger.info("visible");
+
+    expect(debug).not.toHaveBeenCalled();
+    expect(log).not.toHaveBeenCalled();
+    expect(info).toHaveBeenCalledWith("[arolariu::sample] ℹ️ visible");
+  });
+
+  it("creates root and child scopes carrying the command name and verbosity", async () => {
+    const factory = createNodeCommandRuntimeFactory("sample", true);
+    const rootRuntime = await factory.createRoot({presentation: "human", registerProcessSignals: false});
+    const childRuntime = await factory.createChild(
+      {runtime: rootRuntime, presentation: "human"},
+      {presentation: "silent", registerProcessSignals: false},
+    );
+
+    expect(rootRuntime.environment.platform).toBe(process.platform);
+    expect(childRuntime.environment).toBe(rootRuntime.environment);
+    expect(childRuntime.signal).not.toBe(rootRuntime.signal);
+
+    await childRuntime.cleanup.drain();
+    await rootRuntime.cleanup.drain();
   });
 });

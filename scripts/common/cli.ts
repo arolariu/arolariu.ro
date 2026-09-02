@@ -1,17 +1,19 @@
 /**
  * @fileoverview Shared Commander adapter for monorepository scripts.
  * @module scripts.common.cli
+ *
+ * @remarks
+ * Transitional compatibility facade retained only for commands that have not yet been migrated to
+ * the declarative host in `commander.ts`. Alias normalization is delegated to that host so both
+ * paths share one behavior; no new consumer may be added here.
  */
 
 import {Command, CommanderError, type ParseOptions} from "commander";
 
+import {normalizeSlashArguments} from "./commander.ts";
 import type {MonorepositoryLogger} from "./logger.ts";
 
-/** Default slash-prefixed aliases recognized by every tool program. */
-const defaultSlashAliases: Readonly<Record<string, string>> = {
-  "/h": "--help",
-  "/help": "--help",
-};
+export {normalizeSlashArguments};
 
 /** Options used to construct a configured Commander program. */
 export interface ToolProgramOptions {
@@ -21,25 +23,6 @@ export interface ToolProgramOptions {
   readonly examples?: readonly string[];
   readonly logger: MonorepositoryLogger;
   readonly slashAliases?: Readonly<Record<string, string>>;
-}
-
-/**
- * Rewrites argv tokens when an exact slash alias is registered.
- *
- * @param argv - Raw argv tokens to normalize.
- * @param aliases - Optional exact-match slash alias map.
- * @returns Normalized argv tokens.
- */
-export function normalizeSlashArguments(
-  argv: readonly string[],
-  aliases?: Readonly<Record<string, string>>,
-): readonly string[] {
-  const effectiveAliases: Readonly<Record<string, string>> = {
-    ...defaultSlashAliases,
-    ...(aliases ?? {}),
-  };
-
-  return argv.map((argument) => effectiveAliases[argument] ?? argument);
 }
 
 /**

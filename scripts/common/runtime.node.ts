@@ -12,23 +12,42 @@
  * exemption. Every other command receives these primitives only through the capability objects
  * exported here (or, transitionally, by importing this module directly until the command tasks
  * that follow this one finish routing every caller through an injected {@link CommandRuntime}).
+ *
+ * This module also assembles those primitives into the production {@link CommandRuntimeFactory}
+ * that `commander.ts` uses: the process host, the logger runtime host, and the root/child runtime
+ * scopes. Every import from `commander.ts` here is type-only, so the declarative command host and
+ * this adapter never form a module initialization cycle.
  */
 
 import {constants as fsConstants} from "node:fs";
 import {access, chmod, cp, mkdir, mkdtemp, open, readdir, readFile, realpath, rename, rm, stat, writeFile, glob as fsGlob} from "node:fs/promises";
 import {tmpdir} from "node:os";
 import {basename, dirname, resolve} from "node:path";
+import {fileURLToPath} from "node:url";
 import {randomBytes} from "node:crypto";
 import {setTimeout as delay} from "node:timers/promises";
 
+import type {
+  CommandContext,
+  CommandExitCode,
+  CommandPresentation,
+  CommandProcessHost,
+  CommandRuntimeFactory,
+  RuntimeCreationOptions,
+} from "./commander.ts";
+import {MonorepositoryConsoleLogger, type LoggerRuntimeHost, type LoggerScheduledInterval, type MonorepositoryLogger} from "./logger.ts";
+import {createTerminalPromptProvider} from "./prompts.ts";
 import {ExecaProcessRunner} from "./runner.execa.ts";
 import type {ProcessRunner} from "./runner.ts";
 import {
+  CommandCancellation,
   FILE_SYSTEM_MAX_BYTES_EXCEEDED_CODE,
   FileSystemError,
   HttpError,
+  LifoCleanupRegistry,
   linkAbortSignals,
   type Clock,
+  type CommandRuntime,
   type DirectoryEntry,
   type FileKind,
   type FileMetadata,
@@ -36,11 +55,13 @@ import {
   type HttpClient,
   type HttpRequest,
   type HttpResponse,
+  type RepositoryInspectionRuntime,
   type RuntimeEnvironment,
   type TaskScheduler,
   type TemporaryDirectory,
 } from "./runtime.ts";
 import {DefaultTaskScheduler} from "./runtime.ts";
+import type {RepositoryInspectionSession} from "../inspection/repository.ts";
 
 /** Maximum number of response bytes buffered when a request omits `maximumResponseBytes`. */
 const DEFAULT_MAX_RESPONSE_BYTES = 10 * 1024 * 1024;
@@ -616,3 +637,183 @@ export const nodeProcessRunner: ProcessRunner = {
   expectSuccess: (request, options) => createNodeProcessRunner(snapshotNodeEnvironment()).expectSuccess(request, options),
   scope: (defaults) => createNodeProcessRunner(snapshotNodeEnvironment()).scope(defaults),
 };
+
+/**
+ * Sole Node.js-backed {@link CommandProcessHost}: the exact ambient process facts and effects the
+ * declarative command host is allowed to depend on.
+ *
+ * @remarks
+ * `argv` is frozen at module load from `process.argv.slice(2)`, so a later mutation of
+ * `process.argv` can never change what an already-started command observes.
+ */
+export const nodeProcessHost: CommandProcessHost = {
+  argv: Object.freeze(process.argv.slice(2)),
+  isDirectEntry: (moduleUrl: string): boolean => {
+    const entrypoint = process.argv[1];
+    return entrypoint !== undefined && fileURLToPath(moduleUrl) === resolve(entrypoint);
+  },
+  setExitCode: (exitCode: CommandExitCode): void => {
+    process.exitCode = exitCode;
+  },
+};
+
+/** Environment snapshot the logger runtime host derives its terminal and color policy from. */
+const nodeLoggerEnvironment: RuntimeEnvironment = snapshotNodeEnvironment();
+
+/**
+ * Sole Node.js-backed {@link LoggerRuntimeHost}: terminal and color policy snapshotted from the
+ * runtime environment, plus native interval scheduling behind an explicit cancellation handle.
+ */
+export const nodeLoggerRuntimeHost: LoggerRuntimeHost = {
+  stdoutIsTTY: nodeLoggerEnvironment.stdoutIsTTY,
+  noColor: Object.hasOwn(nodeLoggerEnvironment.variables, "NO_COLOR"),
+  scheduleInterval: (callback: () => void, intervalMs: number): LoggerScheduledInterval => {
+    const timer = setInterval(callback, intervalMs);
+    return {
+      cancel: (): void => {
+        clearInterval(timer);
+      },
+      unref: (): void => {
+        timer.unref();
+      },
+    };
+  },
+};
+
+/** Message thrown by the transitional placeholder installed until inspection is wired in. */
+const UNWIRED_INSPECTION_MESSAGE = "The repository inspection capability is not wired into this command runtime.";
+
+/**
+ * Builds the transitional inspection capability used until the inspection migration lands.
+ *
+ * @remarks
+ * Creating a runtime scope must never fail because of inspection, so the placeholder throws only
+ * when a command actually requests a session. It is replaced by the real Node inspection factory
+ * once repository inspection is migrated.
+ *
+ * @returns An inspection runtime whose session accessor always fails fast.
+ */
+function createUnwiredInspectionRuntime(): RepositoryInspectionRuntime {
+  return {
+    getRepositorySession: (): RepositoryInspectionSession => {
+      throw new Error(UNWIRED_INSPECTION_MESSAGE);
+    },
+  };
+}
+
+/** Describes one Node-backed runtime scope the command host asks this adapter to assemble. */
+export interface NodeRuntimeScopeOptions {
+  /** Logical command name used as the logger context. */
+  readonly commandName: string;
+  /** Whether the scope's logger emits diagnostic messages. */
+  readonly verbose: boolean;
+  /** Presentation mode the scope's logger must honor. */
+  readonly presentation: CommandPresentation;
+  /** Whether this scope owns SIGINT and SIGTERM registration. */
+  readonly registerProcessSignals: boolean;
+  /** Caller cancellation signal linked into this scope. */
+  readonly signal?: AbortSignal;
+  /** Owning parent context whose immutable capabilities this scope shares. */
+  readonly parent?: Readonly<CommandContext>;
+  /** Repository inspection capability injected into a root scope. */
+  readonly inspection?: RepositoryInspectionRuntime;
+}
+
+/**
+ * Assembles one Node-backed {@link CommandRuntime} scope from the primitive adapters in this
+ * module.
+ *
+ * @remarks
+ * A root scope snapshots the environment once, owns its logger and prompts, and optionally
+ * registers SIGINT/SIGTERM (unregistered again by its own cleanup entry). A child scope reuses
+ * the parent's immutable environment, prompts, and inspection registry, while receiving its own
+ * forked logger, invocation runner, cancellation controller, and cleanup registry. Cancellation
+ * always flows parent to child and never child to parent.
+ *
+ * @param options - Scope name, verbosity, presentation, signal ownership, and optional parent.
+ * @returns The assembled runtime scope.
+ */
+export function createNodeRuntimeScope(options: Readonly<NodeRuntimeScopeOptions>): Promise<CommandRuntime> {
+  const {parent} = options;
+  const environment = parent?.runtime.environment ?? snapshotNodeEnvironment();
+  const controller = new AbortController();
+  const link = linkAbortSignals(parent?.runtime.signal, options.signal);
+  const cleanup = new LifoCleanupRegistry();
+
+  const abortScope = (reason: unknown): void => {
+    if (!controller.signal.aborted) {
+      controller.abort(reason);
+    }
+  };
+
+  if (link.signal.aborted) {
+    abortScope(link.signal.reason);
+  } else {
+    link.signal.addEventListener("abort", () => {
+      abortScope(link.signal.reason);
+    }, {once: true});
+  }
+  cleanup.register("cancellation link", () => {
+    link.dispose();
+  });
+
+  if (options.registerProcessSignals) {
+    const onInterrupt = (): void => {
+      abortScope(new CommandCancellation("Command interrupted by SIGINT.", 130));
+    };
+    const onTerminate = (): void => {
+      abortScope(new CommandCancellation("Command terminated by SIGTERM.", 143));
+    };
+
+    process.on("SIGINT", onInterrupt);
+    process.on("SIGTERM", onTerminate);
+    cleanup.register("process signal handlers", () => {
+      process.off("SIGINT", onInterrupt);
+      process.off("SIGTERM", onTerminate);
+    });
+  }
+
+  const logger: MonorepositoryLogger =
+    parent === undefined
+      ? new MonorepositoryConsoleLogger(options.commandName, {
+          mode: options.presentation,
+          verbose: options.verbose,
+          runtimeHost: nodeLoggerRuntimeHost,
+        })
+      : parent.runtime.logger.fork(options.commandName, {mode: options.presentation, verbose: options.verbose});
+
+  return Promise.resolve({
+    logger,
+    prompts: parent?.runtime.prompts ?? createTerminalPromptProvider(),
+    runner: createNodeProcessRunner(environment),
+    http: nodeHttpClient,
+    files: nodeFileSystem,
+    clock: nodeClock,
+    tasks: nodeTaskScheduler,
+    inspection: options.inspection ?? parent?.runtime.inspection ?? createUnwiredInspectionRuntime(),
+    environment,
+    signal: controller.signal,
+    cleanup,
+  });
+}
+
+/**
+ * Builds the production {@link CommandRuntimeFactory} every migrated command uses by default.
+ *
+ * @param commandName - Logical command name used as the logger context.
+ * @param verbose - Whether invocation loggers emit diagnostic messages.
+ * @returns A factory that creates Node-backed parse loggers, root scopes, and child scopes.
+ */
+export function createNodeCommandRuntimeFactory(commandName: string, verbose: boolean): CommandRuntimeFactory {
+  return {
+    processHost: nodeProcessHost,
+    createParseLogger: (): MonorepositoryLogger =>
+      new MonorepositoryConsoleLogger(commandName, {mode: "human", verbose: false, runtimeHost: nodeLoggerRuntimeHost}),
+    createRoot: (options: Readonly<RuntimeCreationOptions>): Promise<CommandRuntime> =>
+      createNodeRuntimeScope({commandName, verbose, ...options}),
+    createChild: (
+      parent: Readonly<CommandContext>,
+      options: Readonly<RuntimeCreationOptions>,
+    ): Promise<CommandRuntime> => createNodeRuntimeScope({commandName, verbose, parent, ...options}),
+  };
+}

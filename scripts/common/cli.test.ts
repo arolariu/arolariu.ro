@@ -8,6 +8,7 @@ import {CommanderError} from "commander";
 import {describe, expect, it} from "vitest";
 
 import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "./logger.ts";
+import {normalizeSlashArguments as hostNormalizeSlashArguments} from "./commander.ts";
 import {commanderExitCode, createToolProgram, normalizeSlashArguments} from "./cli.ts";
 
 describe("normalizeSlashArguments", () => {
@@ -18,6 +19,11 @@ describe("normalizeSlashArguments", () => {
         {"/h": "--help", "/v": "--verbose"},
       ),
     ).toEqual(["--help", "--verbose", "C:\\work\\file.txt", "/unknown"]);
+  });
+
+  it("delegates to the declarative command host, including its pass-through rule", () => {
+    expect(normalizeSlashArguments).toBe(hostNormalizeSlashArguments);
+    expect(normalizeSlashArguments(["/h", "--", "/h"])).toEqual(["--help", "--", "/h"]);
   });
 });
 

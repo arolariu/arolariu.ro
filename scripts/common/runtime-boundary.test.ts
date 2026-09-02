@@ -666,12 +666,12 @@ describe("runtime boundary policy", () => {
       [
         {
           "file": "scripts/common/cli.ts",
-          "line": 78,
+          "line": 61,
           "rule": "ambient-os-state",
         },
         {
           "file": "scripts/common/cli.ts",
-          "line": 84,
+          "line": 67,
           "rule": "ambient-os-state",
         },
         {
@@ -706,13 +706,18 @@ describe("runtime boundary policy", () => {
         },
         {
           "file": "scripts/common/logger.ts",
-          "line": 275,
+          "line": 161,
           "rule": "ambient-environment",
         },
         {
           "file": "scripts/common/logger.ts",
-          "line": 520,
+          "line": 163,
           "rule": "ambient-timer",
+        },
+        {
+          "file": "scripts/common/runtime.node.ts",
+          "line": 656,
+          "rule": "direct-exit",
         },
         {
           "file": "scripts/container-runtime/adapters.ts",
