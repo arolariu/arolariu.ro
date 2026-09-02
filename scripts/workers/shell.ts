@@ -15,7 +15,7 @@
  * desired lifetime — caching across runs of the same worker process is safe.
  */
 
-import {defaultCommandRunner} from "../common/process.ts";
+import {defaultProcessRunner} from "../common/runner.execa.ts";
 
 /**
  * Runs a command and captures merged stdout+stderr output.
@@ -33,11 +33,11 @@ export async function runCommand(
   args: readonly string[],
   opts?: Readonly<{cwd?: string}>,
 ): Promise<{code: number; output: string}> {
-  const result = await defaultCommandRunner.run({command, args}, opts?.cwd === undefined ? undefined : {cwd: opts.cwd});
+  const outcome = await defaultProcessRunner.run({command, args}, opts?.cwd === undefined ? undefined : {cwd: opts.cwd});
 
   return {
-    code: result.code,
-    output: result.stdout + result.stderr + (result.spawnError === undefined ? "" : result.spawnError),
+    code: outcome.kind === "succeeded" ? 0 : outcome.kind === "exited" ? outcome.exitCode : 1,
+    output: outcome.stdout + outcome.stderr + (outcome.kind === "spawn-failed" ? outcome.message : ""),
   };
 }
 

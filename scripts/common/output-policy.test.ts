@@ -480,15 +480,16 @@ const PROCESS_BOUNDARY_CASES: readonly [string, string, string, boolean][] = [
   ["prod-container-child_process", 'import {spawn} from "node:child_process";', "scripts/container-runtime/aspire.ts", true],
   ["prod-inspection-child_process", 'import {execFile} from "node:child_process";', "scripts/inspection/workspace.ts", true],
 
-  // Production scripts outside process.ts cannot import execa
+  // Production scripts outside runner.execa.ts cannot import execa
   ["prod-execa-setup", 'import {execa} from "execa";', "scripts/setup.ts", true],
   ["prod-execa-doctor", 'import {execa} from "execa";', "scripts/doctor.ts", true],
   ["prod-execa-status", 'import {execa} from "execa";', "scripts/status.ts", true],
   ["prod-execa-worker", 'import {execa} from "execa";', "scripts/workers/shell.ts", true],
   ["prod-execa-container", 'import {execa} from "execa";', "scripts/container-runtime/aspire.ts", true],
 
-  // process.ts may import execa
-  ["process-execa-allowed", 'import {execa} from "execa";', "scripts/common/process.ts", false],
+  // runner.execa.ts may import execa
+  ["runner-execa-allowed", 'import {execa} from "execa";', "scripts/common/runner.execa.ts", false],
+  ["process-execa-banned", 'import {execa} from "execa";', "scripts/common/process.ts", true],
 
   // process.ts still cannot import node:child_process
   ["process-child_process-banned", 'import {spawn} from "node:child_process";', "scripts/common/process.ts", true],

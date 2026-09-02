@@ -706,48 +706,13 @@ describe("runtime boundary policy", () => {
         },
         {
           "file": "scripts/common/logger.ts",
-          "line": 272,
+          "line": 275,
           "rule": "ambient-environment",
         },
         {
           "file": "scripts/common/logger.ts",
-          "line": 512,
+          "line": 520,
           "rule": "ambient-timer",
-        },
-        {
-          "file": "scripts/common/process.ts",
-          "line": 8,
-          "rule": "execa-import",
-        },
-        {
-          "file": "scripts/common/process.ts",
-          "line": 107,
-          "rule": "ambient-timer",
-        },
-        {
-          "file": "scripts/common/process.ts",
-          "line": 113,
-          "rule": "ambient-timer",
-        },
-        {
-          "file": "scripts/common/process.ts",
-          "line": 222,
-          "rule": "ambient-timer",
-        },
-        {
-          "file": "scripts/common/process.ts",
-          "line": 260,
-          "rule": "ambient-os-state",
-        },
-        {
-          "file": "scripts/common/process.ts",
-          "line": 290,
-          "rule": "ambient-timer",
-        },
-        {
-          "file": "scripts/common/process.ts",
-          "line": 322,
-          "rule": "ambient-environment",
         },
         {
           "file": "scripts/common/repository-paths.ts",
@@ -763,6 +728,21 @@ describe("runtime boundary policy", () => {
           "file": "scripts/common/requirements.ts",
           "line": 230,
           "rule": "explicit-concurrency",
+        },
+        {
+          "file": "scripts/common/runner.execa.ts",
+          "line": 57,
+          "rule": "ambient-environment",
+        },
+        {
+          "file": "scripts/common/runner.execa.ts",
+          "line": 58,
+          "rule": "ambient-os-state",
+        },
+        {
+          "file": "scripts/common/runner.execa.ts",
+          "line": 59,
+          "rule": "ambient-timer",
         },
         {
           "file": "scripts/common/tooling-config.ts",
@@ -1913,11 +1893,6 @@ describe("runtime boundary policy", () => {
           "file": "scripts/update-exchange-rates.ts",
           "line": 480,
           "rule": "direct-exit",
-        },
-        {
-          "file": "scripts/workers/shell.ts",
-          "line": 18,
-          "rule": "legacy-process-import",
         },
       ]
     `);

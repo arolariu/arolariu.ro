@@ -964,19 +964,20 @@ for (const individualEslintConfig of projectEslintConfig) {
 
 /**
  * Bans direct `node:child_process`, `child_process`, and `execa` imports across all production
- * scripts except `scripts/common/process.ts` (the sole process adapter). Every command must go
- * through the shared `CommandRunner` interface. Test files are excluded so black-box contract
- * tests can spawn child processes.
+ * scripts except `scripts/common/runner.execa.ts` (the sole Execa boundary). Every command must
+ * go through the shared runner contracts or the deprecated legacy compatibility facade. Test files
+ * are excluded so black-box contract tests can spawn child processes.
  *
  * Because flat config replaces the entire `no-restricted-imports` rule value when multiple
  * configs match the same file, this single block covers both child_process and execa so
  * neither is silently dropped by a later override. `scripts/common/process.ts` is handled
- * by `toolingProcessBoundaryConfig` below, which bans only child_process while allowing execa.
+ * by `toolingProcessBoundaryConfig` below, which keeps the legacy child_process restriction
+ * without allowing direct Execa access.
  */
 const toolingExecaBoundaryConfig: Config = defineConfig({
   name: "[@arolariu/tooling-execa-boundary]",
   files: ["scripts/**/*.ts"],
-  ignores: ["scripts/**/*.test.ts", "scripts/common/process.ts"],
+  ignores: ["scripts/**/*.test.ts", "scripts/common/runner.execa.ts"],
   languageOptions: {
     parser: tseslint.parser,
     ecmaVersion: "latest",
@@ -988,9 +989,9 @@ const toolingExecaBoundaryConfig: Config = defineConfig({
       "error",
       {
         paths: [
-          {name: "node:child_process", message: "Use the shared command runner in scripts/common/process.ts instead of node:child_process."},
-          {name: "child_process", message: "Use the shared command runner in scripts/common/process.ts instead of child_process."},
-          {name: "execa", message: "Only scripts/common/process.ts may import execa; use the shared CommandRunner interface."},
+          {name: "node:child_process", message: "Use the shared command runners in scripts/common/process.ts or scripts/common/runner.execa.ts instead of node:child_process."},
+          {name: "child_process", message: "Use the shared command runners in scripts/common/process.ts or scripts/common/runner.execa.ts instead of child_process."},
+          {name: "execa", message: "Only scripts/common/runner.execa.ts may import execa; use the shared runner contracts instead."},
         ],
       },
     ],
