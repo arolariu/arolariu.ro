@@ -35,6 +35,9 @@ export interface GenerateLeafResult {
   readonly changedFiles: readonly string[];
 }
 
+/** Logical command name shared by this command's metadata and its effective-verbosity logger fork. */
+const COMMAND_NAME = "generate:env";
+
 /** exp service URL — same deterministic logic as the runtime consumers. EXP_PROXY_URL overrides for bare-metal dev. */
 const AZURE_EXP_URL = "https://exp.arolariu.ro";
 
@@ -565,9 +568,23 @@ async function generateEnvironment(
   context: Readonly<CommandContext>,
   input: Readonly<GenerateLeafInput>,
 ): Promise<GenerateLeafResult> {
-  const {runtime} = context;
-  const {logger, environment} = runtime;
+  const {environment} = context.runtime;
   const effectiveVerbose = resolveVerbose(input.verbose, environment.variables);
+
+  // `commander.ts` derives the invocation logger's own verbosity from the typed CLI flag alone
+  // (see `readVerboseFlag`), so `VERBOSE=true` alone would otherwise leave every `logger.debug()`
+  // call below silently suppressed. Forking a scope keyed to the effective verbosity preserves
+  // the documented environment override while still sharing this invocation's sink, redactions,
+  // and presentation mode.
+  const scopedContext: Readonly<CommandContext> = {
+    ...context,
+    runtime: {
+      ...context.runtime,
+      logger: context.runtime.logger.fork(COMMAND_NAME, {mode: context.presentation, verbose: effectiveVerbose}),
+    },
+  };
+  const {runtime} = scopedContext;
+  const {logger} = runtime;
   const isAzure = environment.variables["INFRA"] === "azure";
   const isProduction = environment.variables["PRODUCTION"] === "true";
 
@@ -603,15 +620,15 @@ async function generateEnvironment(
   }
 
   const config = isAzure
-    ? await fetchConfigurationFromExp(context, effectiveVerbose)
-    : await ensureLocalEnvIsComplete(context, effectiveVerbose);
+    ? await fetchConfigurationFromExp(scopedContext, effectiveVerbose)
+    : await ensureLocalEnvIsComplete(scopedContext, effectiveVerbose);
 
   for (const [key, value] of Object.entries(config)) {
     if (isSecretKey(key) && typeof value === "string") {
       logger.redact(value);
     }
   }
-  const content = generateEnvFileContent(context, config);
+  const content = generateEnvFileContent(scopedContext, config);
 
   logger.info("Writing .env file.");
   await runtime.files.writeText(".env", content, {mode: 0o600});
@@ -624,7 +641,7 @@ async function generateEnvironment(
   logger.line();
 
   // Copy to sub-repositories if needed
-  const copiedFiles = await copyEnvFileToSubRepos(context, ".env", ["/sites/arolariu.ro/.env"], effectiveVerbose);
+  const copiedFiles = await copyEnvFileToSubRepos(scopedContext, ".env", ["/sites/arolariu.ro/.env"], effectiveVerbose);
 
   return {
     summary: `Generated ${Object.keys(config).length} environment variable(s).`,
@@ -644,7 +661,7 @@ export function createGenerateEnvironmentCommand(
   return new MonorepoCommand<GenerateLeafInput, GenerateLeafResult>(
     {
       metadata: {
-        name: "generate:env",
+        name: COMMAND_NAME,
         description: "Generate the website environment file.",
         examples: ["npm run generate:env", "npm run generate:env -- --verbose"],
         slashAliases: {"/v": "--verbose", "/verbose": "--verbose"},

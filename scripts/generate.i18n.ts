@@ -566,7 +566,11 @@ export function createGenerateI18nCommand(
       decode: (program) => ({verbose: program.opts<{verbose?: boolean}>().verbose === true}),
       execute: generateI18n,
       completion: (result) => ({
-        exitCode: 0,
+        // Mirrors the pre-migration leaf's `totalMissingKeys` exit contract under the normative
+        // `CommandExitCode` shape: `0` when every locale already matched English, `1` when
+        // missing keys caused this invocation to change one or more locale files. The aggregate
+        // (`generate.ts`) stops before later leaves whenever this is nonzero.
+        exitCode: result.changedFiles.length > 0 ? 1 : 0,
         human: (logger) => logger.success(result.summary),
       }),
     },

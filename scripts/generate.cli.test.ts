@@ -212,6 +212,50 @@ describe("generator execution order", () => {
     expect(result).toBe(1);
     expect(order).toEqual(["env"]);
   });
+
+  it("stops before gql and artifacts when i18n resolves as completed with a nonzero exit code", async () => {
+    vi.doMock("./generate.env.ts", () => ({
+      generateEnvironmentCommand: {
+        invoke: vi.fn(async () => {
+          order.push("env");
+          return {status: "completed", exitCode: 0};
+        }),
+      },
+    }));
+    vi.doMock("./generate.i18n.ts", () => ({
+      generateI18nCommand: {
+        invoke: vi.fn(async () => {
+          order.push("i18n");
+          // Mirrors the real `generate:i18n` command's exit contract: "completed" but nonzero
+          // when missing translation keys changed one or more locale files.
+          return {status: "completed", exitCode: 1};
+        }),
+      },
+    }));
+    vi.doMock("./generate.gql.ts", () => ({
+      generateGraphqlCommand: {
+        invoke: vi.fn(async () => {
+          order.push("gql");
+          return {status: "completed", exitCode: 0};
+        }),
+      },
+    }));
+    vi.doMock("./generate.artifacts.ts", () => ({
+      main: vi.fn(async () => {
+        order.push("artifacts");
+        return 0;
+      }),
+    }));
+
+    const {main} = await import("./generate.ts");
+    const result = await main(
+      {verbose: false, generateEnv: true, generateI18n: true, generateGql: true, generateArtifacts: true},
+      new MonorepositoryConsoleLogger("test", {sink: new InMemoryLoggerSink()}),
+    );
+
+    expect(result).toBe(1);
+    expect(order).toEqual(["env", "i18n"]);
+  });
 });
 
 // ---------------------------------------------------------------------------

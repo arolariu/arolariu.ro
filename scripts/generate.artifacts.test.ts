@@ -966,7 +966,10 @@ describe("Artifact orchestration and CLI contracts", () => {
       const {createGenerateEnvironmentCommand} = await import("./generate.env.ts");
       const command = createGenerateEnvironmentCommand(createTestRuntimeFactory({files, logger, environment}));
 
-      await expect(command.invoke({verbose: false}, {presentation: "silent"})).resolves.toMatchObject({
+      // "human" presentation matches this test's own logger fixture (constructed in human mode)
+      // so the effective-verbosity scope generateEnvironment forks (which shares this
+      // invocation's presentation) actually renders through the shared sink.
+      await expect(command.invoke({verbose: false}, {presentation: "human"})).resolves.toMatchObject({
         status: "completed",
         exitCode: 0,
       });
@@ -1102,7 +1105,9 @@ describe("Artifact orchestration and CLI contracts", () => {
       try {
         const {createGenerateEnvironmentCommand} = await import("./generate.env.ts");
         const command = createGenerateEnvironmentCommand(createTestRuntimeFactory({files, logger}));
-        await expect(command.invoke({verbose: false}, {presentation: "silent"})).resolves.toMatchObject({
+        // "human" presentation matches this test's own logger fixture so the effective-verbosity
+        // scope generateEnvironment forks still renders its completion output through the sink.
+        await expect(command.invoke({verbose: false}, {presentation: "human"})).resolves.toMatchObject({
           status: "completed",
           exitCode: 0,
         });

@@ -8,7 +8,8 @@ import {afterEach, describe, expect, it, vi} from "vitest";
 
 import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "./common/logger.ts";
 import type {PromptProvider} from "./common/prompts.ts";
-import {createMemoryFileSystem, createTestProcessHost, createTestRuntimeFactory} from "./common/runtime.testing.ts";
+import type {RuntimeEnvironment} from "./common/runtime.ts";
+import {createMemoryFileSystem, createTestProcessHost, createTestRuntimeFactory, repositoryFixtureRoot} from "./common/runtime.testing.ts";
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -238,12 +239,10 @@ describe("generateEnvironmentCommand", () => {
     };
     const sink = new InMemoryLoggerSink();
     const logger = new MonorepositoryConsoleLogger("generate::env", {color: false, sink});
-    const redactions: string[] = [];
-    const originalRedact = logger.redact.bind(logger);
-    logger.redact = (value: string): void => {
-      redactions.push(value);
-      originalRedact(value);
-    };
+    // Spies on the shared prototype method (not an instance monkeypatch) because the effective-
+    // verbosity fix in `generateEnvironment` forks its own logger scope, so redaction happens on
+    // a distinct forked instance that still shares this logger's `#state` redaction set.
+    const redactSpy = vi.spyOn(MonorepositoryConsoleLogger.prototype, "redact");
 
     const {createGenerateEnvironmentCommand} = await import("./generate.env.ts");
     const command = createGenerateEnvironmentCommand(createTestRuntimeFactory({files, prompts, logger}));
@@ -254,6 +253,7 @@ describe("generateEnvironmentCommand", () => {
     expect(confirm).toHaveBeenCalledOnce();
     expect(text).toHaveBeenCalled();
     expect(secretPrompt.mock.calls.map(([message]) => message)).toEqual(["NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY", "CLERK_SECRET_KEY"]);
+    const redactions = redactSpy.mock.calls.map(([value]) => value);
     expect(redactions).toContain(publishable);
     expect(redactions).toContain(secretValue);
     expect(consoleSpies.every((spy) => spy.mock.calls.length === 0)).toBe(true);
@@ -275,6 +275,63 @@ describe("generateEnvironmentCommand", () => {
       parseEnvironmentFile: expect.any(Function),
       quoteIfNeeded: expect.any(Function),
       createGenerateEnvironmentCommand: expect.any(Function),
+    });
+  });
+
+  describe("effective verbosity (VERBOSE environment override)", () => {
+    const completeEnvContent = [
+      "SITE_ENV=DEVELOPMENT",
+      "SITE_NAME=dev.arolariu.ro",
+      "SITE_URL=https://localhost:3000",
+      "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_existing",
+      "CLERK_SECRET_KEY=sk_test_existing",
+      "USE_CDN=false",
+    ].join("\n");
+
+    function buildTestEnvironment(variables: Readonly<Record<string, string | undefined>>): RuntimeEnvironment {
+      return {
+        variables,
+        cwd: repositoryFixtureRoot,
+        executablePath: "/usr/bin/node",
+        platform: "linux",
+        architecture: "x64",
+        stdinIsTTY: false,
+        stdoutIsTTY: false,
+        isCI: true,
+      };
+    }
+
+    it("emits a real debug record from VERBOSE=true even without the --verbose CLI flag", async () => {
+      const files = createMemoryFileSystem({".env": completeEnvContent});
+      const sink = new InMemoryLoggerSink();
+      // `verbose: false` mirrors production: `commander.ts` derives the invocation logger's own
+      // verbosity from the CLI flag alone (see `readVerboseFlag`), never from `VERBOSE`.
+      const logger = new MonorepositoryConsoleLogger("generate::env", {color: false, verbose: false, sink});
+      const environment = buildTestEnvironment({VERBOSE: "true"});
+
+      const {createGenerateEnvironmentCommand} = await import("./generate.env.ts");
+      const command = createGenerateEnvironmentCommand(createTestRuntimeFactory({files, logger, environment}));
+
+      // `presentation: "human"` matches how the aggregate (`generate.ts`) invokes every leaf.
+      const execution = await command.invoke({verbose: false}, {presentation: "human"});
+
+      expect(execution).toMatchObject({status: "completed", exitCode: 0});
+      expect(sink.records.some((record) => record.text.includes("SITE_ENV was evaluated without logging its value."))).toBe(true);
+    });
+
+    it("suppresses debug diagnostics when both the CLI flag and VERBOSE are false", async () => {
+      const files = createMemoryFileSystem({".env": completeEnvContent});
+      const sink = new InMemoryLoggerSink();
+      const logger = new MonorepositoryConsoleLogger("generate::env", {color: false, verbose: false, sink});
+      const environment = buildTestEnvironment({});
+
+      const {createGenerateEnvironmentCommand} = await import("./generate.env.ts");
+      const command = createGenerateEnvironmentCommand(createTestRuntimeFactory({files, logger, environment}));
+
+      const execution = await command.invoke({verbose: false}, {presentation: "human"});
+
+      expect(execution).toMatchObject({status: "completed", exitCode: 0});
+      expect(sink.records.some((record) => record.text.includes("SITE_ENV was evaluated without logging its value."))).toBe(false);
     });
   });
 });
