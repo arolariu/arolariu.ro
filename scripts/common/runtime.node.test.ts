@@ -473,6 +473,18 @@ describe("nodeHttpClient", {timeout: REAL_SPAWN_TIMEOUT_MS}, () => {
     ).rejects.toBeInstanceOf(HttpError);
   });
 
+  it("returns a bounded HttpError, not a raw DOMException, when the timeout elapses while streaming a slow response body", async () => {
+    const startedAt = Date.now();
+
+    // `/large` writes headers immediately, then streams chunks every 5ms without ever ending, so
+    // a short timeout always fires mid-stream (after headers, during the body read) rather than
+    // during the initial `fetch()` call.
+    await expect(
+      nodeHttpClient.request({url: new URL("/large", baseUrl), timeoutMs: 50, maximumResponseBytes: 10 * 1_024 * 1_024}),
+    ).rejects.toBeInstanceOf(HttpError);
+    expect(Date.now() - startedAt).toBeLessThan(1_500);
+  });
+
   it("retries an idempotent GET only for an explicitly listed status until it succeeds", async () => {
     const response = await nodeHttpClient.request({
       url: new URL("/retry-then-success", baseUrl),
@@ -494,6 +506,44 @@ describe("nodeHttpClient", {timeout: REAL_SPAWN_TIMEOUT_MS}, () => {
 
     expect(response.status).toBe(503);
     expect(requestCounts.get("/always-unavailable")).toBe(1);
+  });
+
+  it("returns a bounded HttpError, not a raw DOMException, when the caller aborts during retry backoff", async () => {
+    const before = requestCounts.get("/always-unavailable") ?? 0;
+    const controller = new AbortController();
+    setTimeout(() => controller.abort(), 20);
+
+    await expect(
+      nodeHttpClient.request({
+        url: new URL("/always-unavailable", baseUrl),
+        method: "GET",
+        retry: {attempts: 5, delayMs: 500, statuses: [503]},
+        signal: controller.signal,
+      }),
+    ).rejects.toBeInstanceOf(HttpError);
+
+    // The caller abort must land during the backoff wait after the first attempt, not after every
+    // attempt has already run its course.
+    expect((requestCounts.get("/always-unavailable") ?? 0) - before).toBeLessThan(5);
+  });
+
+  it("bounds every retry attempt and backoff delay together by one overall timeoutMs budget", async () => {
+    const before = requestCounts.get("/always-unavailable") ?? 0;
+    const startedAt = Date.now();
+
+    await expect(
+      nodeHttpClient.request({
+        url: new URL("/always-unavailable", baseUrl),
+        method: "GET",
+        timeoutMs: 50,
+        retry: {attempts: 10, delayMs: 200, statuses: [503]},
+      }),
+    ).rejects.toBeInstanceOf(HttpError);
+
+    // A per-attempt (rather than one overall) timeout would let every one of the 10 configured
+    // attempts (plus its 200ms backoff) run to completion, taking well over a second.
+    expect(Date.now() - startedAt).toBeLessThan(300);
+    expect((requestCounts.get("/always-unavailable") ?? 0) - before).toBeLessThan(3);
   });
 
   it("rejects with a bounded HttpError for an unreachable host", async () => {

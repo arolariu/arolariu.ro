@@ -379,6 +379,24 @@ function headersToRecord(headers: Readonly<Headers>): Readonly<Record<string, st
   return record;
 }
 
+/**
+ * Normalizes any failure that is not already an {@link HttpError} into a bounded, redacted one so
+ * every escape path from {@link NativeHttpClient} — the initial `fetch()` call, a body-stream
+ * read, a caller/timeout abort, a connection reset, or an abort during retry backoff — carries
+ * only `{url, method}` diagnostics behind the same contract.
+ *
+ * @param error - The failure to normalize; an existing {@link HttpError} is returned unchanged.
+ * @param request - The request's URL and method, without headers or body.
+ * @param context - Short phrase describing which phase failed, embedded in the message.
+ * @returns `error` unchanged when it is already an {@link HttpError}; otherwise a new bounded one.
+ */
+function toHttpError(error: unknown, request: Readonly<Pick<HttpRequest, "url" | "method">>, context: string): HttpError {
+  if (error instanceof HttpError) {
+    return error;
+  }
+  return new HttpError(`${context}: ${boundedText(errorMessage(error))}`, request, {cause: error});
+}
+
 async function readBoundedResponseBytes(
   response: Response,
   maximumBytes: number,
@@ -394,10 +412,20 @@ async function readBoundedResponseBytes(
 
   try {
     while (true) {
-      // Intentionally sequential: each chunk must be measured against the running total before
-      // the next chunk is requested, so the limit is enforced before any further bytes are read.
-      // eslint-disable-next-line no-await-in-loop
-      const {done, value} = await reader.read();
+      let done: boolean;
+      let value: Uint8Array | undefined;
+      try {
+        // Intentionally sequential: each chunk must be measured against the running total before
+        // the next chunk is requested, so the limit is enforced before any further bytes are read.
+        // eslint-disable-next-line no-await-in-loop
+        ({done, value} = await reader.read());
+      } catch (error: unknown) {
+        // A caller/timeout abort, a connection reset, or any other body-stream failure surfaces
+        // here as a raw platform error (for example a `DOMException`) once headers have already
+        // been received; normalize it through the same bounded `HttpError` contract as every
+        // other failure path instead of letting it escape unwrapped.
+        throw toHttpError(error, request, "HTTP response body read failed");
+      }
       if (done) {
         break;
       }
@@ -439,12 +467,17 @@ function toFetchBody(body: string | Uint8Array): string | Buffer<ArrayBuffer> {
  * Sole Node.js-backed {@link HttpClient} implementation, built on the native `fetch`.
  *
  * @remarks
- * Every request links the caller's optional {@link HttpRequest.signal} with a per-request timeout
- * signal so either one cancels the underlying `fetch`; response bytes are bounded and measured
- * while still streaming so an oversized response is rejected before it is fully buffered or
- * decoded; and a retry is only ever attempted when the caller supplies an explicit
- * {@link HttpRequest.retry} policy for a request whose method
- * ({@link IDEMPOTENT_HTTP_METHODS}) is safe to repeat.
+ * `request()` links the caller's optional {@link HttpRequest.signal} with exactly one
+ * {@link HttpRequest.timeoutMs}-based deadline signal covering the entire call, so
+ * `timeoutMs` bounds every retried attempt plus every backoff delay together instead of
+ * restarting on each attempt; either signal cancels the underlying `fetch` and the retry
+ * backoff `delay()`. Response bytes are bounded and measured while still streaming so an
+ * oversized response is rejected before it is fully buffered or decoded; a retry is only ever
+ * attempted when the caller supplies an explicit {@link HttpRequest.retry} policy for a request
+ * whose method ({@link IDEMPOTENT_HTTP_METHODS}) is safe to repeat; and every failure — the
+ * initial `fetch()` call, a body-stream read, a caller/timeout abort, a connection reset, or an
+ * abort during retry backoff — is normalized into a bounded {@link HttpError} via
+ * {@link toHttpError} instead of escaping as a raw platform error (for example `DOMException`).
  */
 export class NativeHttpClient implements HttpClient {
   /** {@inheritDoc HttpClient.request} */
@@ -452,60 +485,68 @@ export class NativeHttpClient implements HttpClient {
     const method = request.method ?? "GET";
     const retryPolicy = request.retry;
     const attemptsAllowed = retryPolicy !== undefined && isIdempotentHttpMethod(method) ? Math.max(1, retryPolicy.attempts) : 1;
+    const requestIdentity = {url: request.url, method};
 
-    let attempt = 1;
-    while (true) {
-      // Intentionally sequential: a retry must observe the previous attempt's response status
-      // before deciding whether to wait and try again.
-      // eslint-disable-next-line no-await-in-loop
-      const response = await this.#send(request, method);
-      const shouldRetry = retryPolicy !== undefined && attempt < attemptsAllowed && retryPolicy.statuses.includes(response.status);
-      if (!shouldRetry) {
-        return response;
+    // One deadline signal for the whole call: created once here (not per attempt), it links the
+    // caller's signal with a single `timeoutMs`-based timeout so the overall budget covers every
+    // attempt and every retry delay together, instead of each attempt resetting its own timer.
+    const deadlineTimeoutSignal = request.timeoutMs === undefined ? undefined : AbortSignal.timeout(request.timeoutMs);
+    const deadline = linkAbortSignals(request.signal, deadlineTimeoutSignal);
+
+    try {
+      let attempt = 1;
+      while (true) {
+        // Intentionally sequential: a retry must observe the previous attempt's response status
+        // before deciding whether to wait and try again.
+        // eslint-disable-next-line no-await-in-loop
+        const response = await this.#send(request, method, deadline.signal, requestIdentity);
+        const shouldRetry = retryPolicy !== undefined && attempt < attemptsAllowed && retryPolicy.statuses.includes(response.status);
+        if (!shouldRetry) {
+          return response;
+        }
+
+        try {
+          // eslint-disable-next-line no-await-in-loop
+          await delay(retryPolicy.delayMs, undefined, {signal: deadline.signal});
+        } catch (error: unknown) {
+          // A caller abort or the overall timeout firing while waiting to retry surfaces here as
+          // a raw `DOMException`; normalize it through the same bounded `HttpError` contract.
+          throw toHttpError(error, requestIdentity, "HTTP request cancelled during retry backoff");
+        }
+        attempt += 1;
       }
-
-      // eslint-disable-next-line no-await-in-loop
-      await delay(retryPolicy.delayMs, undefined, {signal: request.signal});
-      attempt += 1;
+    } finally {
+      deadline.dispose();
     }
   }
 
-  async #send(request: Readonly<HttpRequest>, method: NonNullable<HttpRequest["method"]>): Promise<HttpResponse> {
-    const timeoutSignal = request.timeoutMs === undefined ? undefined : AbortSignal.timeout(request.timeoutMs);
-    const linked = linkAbortSignals(request.signal, timeoutSignal);
-
+  async #send(
+    request: Readonly<HttpRequest>,
+    method: NonNullable<HttpRequest["method"]>,
+    signal: AbortSignal,
+    requestIdentity: Readonly<Pick<HttpRequest, "url" | "method">>,
+  ): Promise<HttpResponse> {
+    let response: Response;
     try {
-      let response: Response;
-      try {
-        response = await fetch(request.url, {
-          method,
-          ...(request.headers === undefined ? {} : {headers: request.headers}),
-          ...(request.body === undefined ? {} : {body: toFetchBody(request.body)}),
-          signal: linked.signal,
-        });
-      } catch (error: unknown) {
-        throw new HttpError(
-          `HTTP request failed: ${boundedText(errorMessage(error))}`,
-          {url: request.url, method},
-          {cause: error},
-        );
-      }
-
-      const bytes = await readBoundedResponseBytes(response, request.maximumResponseBytes ?? DEFAULT_MAX_RESPONSE_BYTES, {
-        url: request.url,
+      response = await fetch(request.url, {
         method,
+        ...(request.headers === undefined ? {} : {headers: request.headers}),
+        ...(request.body === undefined ? {} : {body: toFetchBody(request.body)}),
+        signal,
       });
-
-      return {
-        status: response.status,
-        ok: response.ok,
-        headers: headersToRecord(response.headers),
-        bytes,
-        text: new TextDecoder("utf-8").decode(bytes),
-      };
-    } finally {
-      linked.dispose();
+    } catch (error: unknown) {
+      throw toHttpError(error, requestIdentity, "HTTP request failed");
     }
+
+    const bytes = await readBoundedResponseBytes(response, request.maximumResponseBytes ?? DEFAULT_MAX_RESPONSE_BYTES, requestIdentity);
+
+    return {
+      status: response.status,
+      ok: response.ok,
+      headers: headersToRecord(response.headers),
+      bytes,
+      text: new TextDecoder("utf-8").decode(bytes),
+    };
   }
 }
 
