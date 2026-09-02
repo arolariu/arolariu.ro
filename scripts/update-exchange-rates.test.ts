@@ -221,6 +221,61 @@ describe("createUpdateExchangeRatesCommand decode", () => {
 
       expect(execution).toMatchObject({status: "failed", exitCode: 2, failure: {kind: "usage"}});
     });
+
+    it("rejects a non-finite toYear instead of silently defaulting it to the current year", async () => {
+      const requestedYears: number[] = [];
+      const http: HttpClient = {
+        request: async (request: Readonly<HttpRequest>) => {
+          requestedYears.push(Number(/\/v1\/(\d{4})-01-01\.\./.exec(request.url.pathname)?.[1]));
+          return createHttpResponse(200, emptyRatesJson);
+        },
+      };
+      const files = createMemoryFileSystem();
+      const command = createUpdateExchangeRatesCommand(
+        createTestRuntimeFactory({clock: fixedClock("2025-06-01T00:00:00.000Z"), http, files}),
+      );
+
+      const execution = await command.invoke({fromYear: 2024, toYear: Number.POSITIVE_INFINITY});
+
+      expect(execution).toMatchObject({status: "failed", exitCode: 2, failure: {kind: "usage"}});
+      // The CLI-only "default to the current year" sentinel must never be reachable from invoke().
+      expect(requestedYears).toEqual([]);
+      expect(await files.exists(CSV_PATH)).toBe(false);
+    });
+
+    it.each([
+      ["a NaN fromYear", {fromYear: Number.NaN, toYear: 2024}],
+      ["a NaN toYear", {fromYear: 2024, toYear: Number.NaN}],
+      ["a negatively infinite fromYear", {fromYear: Number.NEGATIVE_INFINITY, toYear: 2024}],
+      ["a fractional fromYear", {fromYear: 2024.5, toYear: 2024}],
+      ["a fractional toYear", {fromYear: 2020, toYear: 2024.5}],
+      ["a fromYear below the supported minimum", {fromYear: 2017, toYear: 2020}],
+      ["a toYear below the supported minimum", {fromYear: 2017, toYear: 2017}],
+    ])("rejects %s with a usage failure", async (_label, input) => {
+      const files = createMemoryFileSystem();
+      const command = createUpdateExchangeRatesCommand(
+        createTestRuntimeFactory({clock: fixedClock("2025-06-01T00:00:00.000Z"), files}),
+      );
+
+      const execution = await command.invoke(input);
+
+      expect(execution).toMatchObject({status: "failed", exitCode: 2, failure: {kind: "usage"}});
+      expect(await files.exists(CSV_PATH)).toBe(false);
+    });
+  });
+
+  describe("range invariants knowable without a clock", () => {
+    it("rejects --from > --to during decode, before any runtime scope exists", async () => {
+      const command = createUpdateExchangeRatesCommand({
+        ...createTestRuntimeFactory({clock: fixedClock("2025-06-01T00:00:00.000Z")}),
+        createRoot: () => Promise.reject(new Error("No runtime scope may be created for an already-invalid range.")),
+      });
+
+      const execution = await command.run(["--from", "2025", "--to", "2020"]);
+
+      expect(execution).toMatchObject({status: "failed", exitCode: 2, failure: {kind: "usage"}});
+      expect(execution.status === "failed" ? execution.failure.message : "").toMatch(/2025[\s\S]*2020/);
+    });
   });
 
   describe("unknown options", () => {

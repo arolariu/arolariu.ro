@@ -157,15 +157,15 @@ const REQUEST_DELAY_MS = 1500;
 const EARLIEST_SUPPORTED_YEAR = 2018;
 
 /**
- * Sentinel {@link ExchangeRateInput.toYear} produced by {@link decodeExchangeRateInput} when
- * neither `--year` nor `--to` was supplied.
+ * Placeholder {@link ExchangeRateInput.toYear} carried by parser-produced input whose upper bound
+ * must default to the current year.
  *
  * @remarks
  * `decode()` runs before any runtime scope exists, so it has no {@link Clock} to resolve "the
- * current year" against. `updateExchangeRates` resolves this sentinel to the injected clock's
- * current year once a runtime scope exists, and validates the resolved upper bound there.
+ * current year" against. The value is deliberately not a valid year: it is never read (the
+ * identity registry below decides), and it fails upper-bound validation loudly if it ever escapes.
  */
-const CURRENT_YEAR_UNSET = Number.POSITIVE_INFINITY;
+const CURRENT_YEAR_PLACEHOLDER = Number.POSITIVE_INFINITY;
 
 // ---------------------------------------------------------------------------
 // Types
@@ -205,6 +205,26 @@ export interface ExchangeRateResult {
 // ---------------------------------------------------------------------------
 
 /**
+ * Validates one already-numeric year bound.
+ *
+ * @param label - Bound name used in thrown diagnostics.
+ * @param value - Candidate year.
+ * @returns The validated year.
+ * @throws {CommandInputError} When `value` is not a finite integer or is below
+ * {@link EARLIEST_SUPPORTED_YEAR}.
+ */
+function requireSupportedYear(label: string, value: number): number {
+  if (!Number.isInteger(value)) {
+    throw new CommandInputError(`${label} must be a finite integer year, got: ${String(value)}`);
+  }
+  if (value < EARLIEST_SUPPORTED_YEAR) {
+    throw new CommandInputError(`${label} must be >= ${EARLIEST_SUPPORTED_YEAR} (earliest supported), got: ${value}`);
+  }
+
+  return value;
+}
+
+/**
  * Parses and validates one `--year`/`--from`/`--to` option value.
  *
  * @param name - Option name used in thrown diagnostics.
@@ -218,24 +238,62 @@ function parseYearOption(name: string, raw: string): number {
   if (trimmed === "" || !Number.isInteger(year)) {
     throw new CommandInputError(`${name} must be an integer, got: "${raw}"`);
   }
-  if (year < EARLIEST_SUPPORTED_YEAR) {
-    throw new CommandInputError(`${name} must be >= ${EARLIEST_SUPPORTED_YEAR} (earliest supported), got: ${year}`);
+
+  return requireSupportedYear(name, year);
+}
+
+/**
+ * Identity registry of the exact input objects {@link decodeExchangeRateInput} produced with an
+ * unset upper bound.
+ *
+ * @remarks
+ * Membership — not the numeric value of {@link ExchangeRateInput.toYear} — is what authorizes the
+ * "default to the current year" resolution, so a programmatic `invoke()` caller cannot forge the
+ * CLI-only default by passing {@link CURRENT_YEAR_PLACEHOLDER} (or any other non-finite value) and
+ * receives a usage failure instead. This keeps the published `ExchangeRateInput` contract exactly
+ * `{fromYear, toYear}`.
+ */
+const parserDefaultedUpperBound = new WeakSet<ExchangeRateInput>();
+
+/**
+ * Builds the parser-produced range whose upper bound defaults to the current year.
+ *
+ * @param fromYear - Validated lower bound.
+ * @returns A range registered as carrying a defaulted upper bound.
+ */
+function createDefaultedUpperBoundRange(fromYear: number): ExchangeRateInput {
+  const input: ExchangeRateInput = {fromYear, toYear: CURRENT_YEAR_PLACEHOLDER};
+  parserDefaultedUpperBound.add(input);
+  return input;
+}
+
+/**
+ * Enforces the `fromYear <= toYear` invariant.
+ *
+ * @param fromYear - Inclusive lower bound.
+ * @param toYear - Inclusive upper bound.
+ * @throws {CommandInputError} When the range is inverted.
+ */
+function requireOrderedRange(fromYear: number, toYear: number): void {
+  if (fromYear > toYear) {
+    throw new CommandInputError(`--from (${fromYear}) must be <= --to (${toYear})`);
   }
-  return year;
 }
 
 /**
  * Converts parsed Commander option strings into a typed year range.
  *
  * @remarks
- * Rejects non-integer year values and years below {@link EARLIEST_SUPPORTED_YEAR}. The current-year
- * upper bound and the `fromYear <= toYear` invariant both depend on "the current year" and are
- * validated later, in `updateExchangeRates`, against the injected {@link Clock}.
+ * Rejects non-integer year values, years below {@link EARLIEST_SUPPORTED_YEAR}, and — whenever both
+ * bounds are already known without a clock — an inverted `fromYear <= toYear` range. Only the
+ * current-year upper bound, which is meaningless without "today", is deferred to
+ * `updateExchangeRates` and the injected {@link Clock}.
  *
  * @param opts - Raw string options extracted from Commander's parsed output.
- * @returns A year range; `toYear` is {@link CURRENT_YEAR_UNSET} when neither `--year` nor `--to`
- * was supplied.
- * @throws {CommandInputError} When a year value fails integer or lower-bound validation.
+ * @returns A year range; when neither `--year` nor `--to` was supplied, the returned object is
+ * registered as carrying a defaulted upper bound.
+ * @throws {CommandInputError} When a year value fails integer or lower-bound validation, or when
+ * both explicit bounds are inverted.
  */
 function decodeExchangeRateInput(opts: Readonly<{year?: string; from?: string; to?: string}>): ExchangeRateInput {
   if (opts.year !== undefined) {
@@ -244,32 +302,42 @@ function decodeExchangeRateInput(opts: Readonly<{year?: string; from?: string; t
   }
 
   const fromYear = opts.from === undefined ? EARLIEST_SUPPORTED_YEAR : parseYearOption("--from", opts.from);
-  const toYear = opts.to === undefined ? CURRENT_YEAR_UNSET : parseYearOption("--to", opts.to);
+  if (opts.to === undefined) {
+    return createDefaultedUpperBoundRange(fromYear);
+  }
+
+  const toYear = parseYearOption("--to", opts.to);
+  requireOrderedRange(fromYear, toYear);
   return {fromYear, toYear};
 }
 
 /**
- * Resolves a decoded year range against the current year and validates its remaining invariants.
+ * Resolves a decoded or programmatic year range against the current year and validates every
+ * remaining invariant.
  *
- * @param input - Decoded year range, possibly carrying the {@link CURRENT_YEAR_UNSET} sentinel.
+ * @remarks
+ * `invoke()` bypasses `decode()`, so this is the only validation point for programmatic input: both
+ * bounds are re-checked here, and the current-year default applies exclusively to the parser-produced
+ * range registered in {@link parserDefaultedUpperBound}.
+ *
+ * @param input - Decoded or programmatic year range.
  * @param currentYear - Current year observed from the injected {@link Clock}.
  * @returns The fully resolved, validated year range.
- * @throws {CommandInputError} When the resolved `toYear` exceeds `currentYear`, or `fromYear`
- * exceeds the resolved `toYear`.
+ * @throws {CommandInputError} When either bound is not a supported year, the resolved `toYear`
+ * exceeds `currentYear`, or `fromYear` exceeds the resolved `toYear`.
  */
 function resolveYearRange(
   input: Readonly<ExchangeRateInput>,
   currentYear: number,
 ): Readonly<{fromYear: number; toYear: number}> {
-  const toYear = Number.isFinite(input.toYear) ? input.toYear : currentYear;
+  const fromYear = requireSupportedYear("fromYear", input.fromYear);
+  const toYear = parserDefaultedUpperBound.has(input) ? currentYear : requireSupportedYear("toYear", input.toYear);
   if (toYear > currentYear) {
     throw new CommandInputError(`--to must be <= ${currentYear} (current year), got: ${toYear}`);
   }
-  if (input.fromYear > toYear) {
-    throw new CommandInputError(`--from (${input.fromYear}) must be <= --to (${toYear})`);
-  }
+  requireOrderedRange(fromYear, toYear);
 
-  return {fromYear: input.fromYear, toYear};
+  return {fromYear, toYear};
 }
 
 /**
@@ -461,10 +529,11 @@ async function writeCSV(files: FileSystem, csvPath: string, records: RateRecord[
  * cancellation propagates past the loop.
  *
  * @param context - Command context providing HTTP, filesystem, clock, and cancellation capabilities.
- * @param input - Decoded year range, possibly still carrying the {@link CURRENT_YEAR_UNSET} sentinel.
+ * @param input - Decoded or programmatic year range; both bounds are validated here because
+ * `invoke()` never runs `decode()`.
  * @returns The years attempted, the years successfully updated, and any per-year failures.
- * @throws {CommandInputError} When the resolved year range violates the current-year upper bound
- * or the `fromYear <= toYear` invariant.
+ * @throws {CommandInputError} When either bound is not a supported year, or the resolved year range
+ * violates the current-year upper bound or the `fromYear <= toYear` invariant.
  */
 async function updateExchangeRates(
   context: Readonly<CommandContext>,
