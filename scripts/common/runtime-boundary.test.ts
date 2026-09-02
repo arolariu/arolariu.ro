@@ -1078,13 +1078,8 @@ describe("runtime boundary policy", () => {
           "rule": "legacy-process-import",
         },
         {
-          "file": "scripts/setup.ts",
-          "line": 36,
-          "rule": "legacy-process-import",
-        },
-        {
           "file": "scripts/setup.types.ts",
-          "line": 15,
+          "line": 17,
           "rule": "legacy-process-import",
         },
         {

@@ -735,7 +735,7 @@ describe("workspace generators", () => {
     ]);
     expect(runner.calls[0]?.options.cwd).toBe(FIXTURE_ROOT);
     expect(generate).toHaveBeenCalledTimes(1);
-    expect(generate).toHaveBeenCalledWith({verbose: false, env: true, i18n: true, gql: true, artifacts: true});
+    expect(generate).toHaveBeenCalledWith({verbose: false, env: false, i18n: true, gql: true, artifacts: true});
   });
 
   it("propagates the setup verbosity into the nested generation invocation", async () => {

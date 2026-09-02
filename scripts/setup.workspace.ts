@@ -576,9 +576,12 @@ async function runGenerators(context: SetupContext): Promise<SetupPhaseResult> {
         }
         projectCount = projects.length;
 
+        // Exactly the pre-migration `generate /a /g /i` selection: environment generation is
+        // deliberately excluded because it performs network, prompt, and local file mutations
+        // setup never requested.
         const generation = await runtime.invokeGenerate({
           verbose: context.options.verbose,
-          env: true,
+          env: false,
           i18n: true,
           gql: true,
           artifacts: true,

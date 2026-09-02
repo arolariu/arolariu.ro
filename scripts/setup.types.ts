@@ -7,12 +7,14 @@
  * from {@link SetupPhaseRuntime}, the invocation-scoped capability bundle the setup command
  * populates on every {@link SetupContext}. The deprecated {@link SetupContext.runner} and
  * {@link SetupContext.now} members exist only while the .NET, React, Svelte, Python, and
- * infrastructure phases are still being migrated; they are removed with the last of them.
+ * infrastructure phases are still being migrated; they are removed with the last of them, together
+ * with {@link toDeprecatedSetupCommandRunner}, the bridge that carries the pre-migration mutation
+ * timeout policy those phases still depend on.
  */
 
 import type {CommandContext, CommandExecution} from "./common/commander.ts";
 import type {MonorepositoryLogger} from "./common/logger.ts";
-import type {CommandRunner} from "./common/process.ts";
+import {toLegacyCommandRunner, type CommandRunner} from "./common/process.ts";
 import type {PromptProvider} from "./common/prompts.ts";
 import type {RepositoryPaths} from "./common/repository-paths.ts";
 import type {RepositoryRequirements} from "./common/requirements.ts";
@@ -192,4 +194,39 @@ export function requireSetupPhaseRuntime(context: Readonly<SetupContext>): Setup
   }
 
   return runtime;
+}
+
+/** Pre-migration default timeout for `tee`/`inherit` mutation and installation commands. */
+const LEGACY_MUTATION_TIMEOUT_MS = 1_200_000;
+
+/**
+ * Adapts the invocation-scoped process runner to the deprecated {@link SetupContext.runner}.
+ *
+ * @remarks
+ * The unmigrated .NET, React, Svelte, Python, and infrastructure phases still issue long-running
+ * installs (SDK and workload restores, `playwright install`, `pip install`, container-engine and
+ * certificate installs) through this bridge without ever requesting a timeout. Before the command
+ * runtime migration those commands received a dual default: the phase-scoped probe timeout for
+ * captured output and {@link LEGACY_MUTATION_TIMEOUT_MS} for `tee`/`inherit` output. This adapter
+ * keeps exactly that mutation ceiling for the legacy contract, so no unmigrated install is
+ * silently truncated to the scoped probe timeout, while an explicit caller timeout and every
+ * migrated {@link SetupPhaseRuntime.runner} call keep the scope's own bounded default untouched.
+ *
+ * @param runner - The phase-scoped process runner every setup command already flows through.
+ * @returns A legacy command runner carrying the pre-migration mutation timeout policy.
+ * @deprecated Deleted with {@link SetupContext.runner} once every specialist phase migrates.
+ */
+export function toDeprecatedSetupCommandRunner(runner: ProcessRunner): CommandRunner {
+  const legacyRunner = toLegacyCommandRunner(runner);
+
+  return {
+    run: (command, options) => {
+      const isMutation = options?.output === "tee" || options?.output === "inherit";
+      if (options?.timeoutMs !== undefined || !isMutation) {
+        return legacyRunner.run(command, options);
+      }
+
+      return legacyRunner.run(command, {...options, timeoutMs: LEGACY_MUTATION_TIMEOUT_MS});
+    },
+  };
 }

@@ -801,6 +801,57 @@ describe("setup phase command execution", () => {
     expect(recordedOptions(runner)).toMatchObject({cwd: FIXTURE_PATHS.root, timeoutMs: 120_000});
   });
 
+  it("gives a deprecated capture command the scoped probe timeout", async () => {
+    const runner = createProcessRunner();
+    const {command} = createSetupFixture({
+      runner,
+      phases: [commandPhase((context) => context.runner.run({command: "dotnet", args: ["--version"]}, {output: "capture"}))],
+    });
+
+    await command.invoke(options());
+
+    expect(recordedOptions(runner)).toMatchObject({output: "capture", timeoutMs: 120_000});
+  });
+
+  it.each(["tee", "inherit"] as const)(
+    "gives a deprecated '%s' mutation command the pre-migration mutation timeout",
+    async (output) => {
+      const runner = createProcessRunner();
+      const {command} = createSetupFixture({
+        runner,
+        phases: [commandPhase((context) => context.runner.run({command: "npm", args: ["ci"]}, {output}))],
+      });
+
+      await command.invoke(options());
+
+      expect(recordedOptions(runner)).toMatchObject({cwd: FIXTURE_PATHS.root, output, timeoutMs: 1_200_000});
+    },
+  );
+
+  it("preserves an explicit deprecated mutation timeout instead of the pre-migration default", async () => {
+    const runner = createProcessRunner();
+    const {command} = createSetupFixture({
+      runner,
+      phases: [commandPhase((context) => context.runner.run({command: "npm", args: ["ci"]}, {output: "tee", timeoutMs: 7_000}))],
+    });
+
+    await command.invoke(options());
+
+    expect(recordedOptions(runner)).toMatchObject({output: "tee", timeoutMs: 7_000});
+  });
+
+  it("keeps the scoped default for a migrated mutation command instead of the deprecated bridge policy", async () => {
+    const runner = createProcessRunner();
+    const {command} = createSetupFixture({
+      runner,
+      phases: [commandPhase((context) => context.runtime?.runner.run({command: "npm", args: ["ci"]}, {output: "tee"}) ?? Promise.resolve())],
+    });
+
+    await command.invoke(options());
+
+    expect(recordedOptions(runner)).toMatchObject({output: "tee", timeoutMs: 120_000});
+  });
+
   it("does not echo command evidence in normal mode", async () => {
     const {logger, sink} = createLogger(false);
     const runner = createProcessRunner();

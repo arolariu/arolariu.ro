@@ -33,7 +33,6 @@ import {
   type CommandRuntimeFactory,
 } from "./common/commander.ts";
 import type {MonorepositoryLogger} from "./common/logger.ts";
-import {toLegacyCommandRunner} from "./common/process.ts";
 import type {PromptProvider} from "./common/prompts.ts";
 import {loadRepositoryRequirements} from "./common/requirements.ts";
 import {resolveRepositoryPaths} from "./common/repository-paths.ts";
@@ -45,13 +44,14 @@ import {infrastructureSetupPhase} from "./setup.infrastructure.ts";
 import {pythonSetupPhase} from "./setup.python.ts";
 import {reactSetupPhase} from "./setup.react.ts";
 import {svelteSetupPhase} from "./setup.svelte.ts";
-import type {
-  SetupActionExecutor,
-  SetupContext,
-  SetupInput,
-  SetupPhaseDefinition,
-  SetupPhaseResult,
-  SetupPhaseRuntime,
+import {
+  toDeprecatedSetupCommandRunner,
+  type SetupActionExecutor,
+  type SetupContext,
+  type SetupInput,
+  type SetupPhaseDefinition,
+  type SetupPhaseResult,
+  type SetupPhaseRuntime,
 } from "./setup.types.ts";
 import {workspaceSetupPhases} from "./setup.workspace.ts";
 
@@ -385,7 +385,7 @@ async function executeSetup(
         paths,
         requirements: requirementLoad.requirements,
         inspection,
-        runner: toLegacyCommandRunner(phaseRuntime.runner),
+        runner: toDeprecatedSetupCommandRunner(phaseRuntime.runner),
         now: runtime.clock.monotonicNow,
         runtime: phaseRuntime,
         prompts: runtime.prompts,
