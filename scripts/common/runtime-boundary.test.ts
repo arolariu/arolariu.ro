@@ -319,7 +319,9 @@ function scanRuntimeBoundarySource(
       || startsWithPath(path, ["process", "execPath"])
       || startsWithPath(path, ["process", "platform"])
       || startsWithPath(path, ["process", "arch"])
-      || startsWithPath(path, ["process", "pid"]);
+      || startsWithPath(path, ["process", "pid"])
+      || startsWithPath(path, ["process", "version"])
+      || startsWithPath(path, ["process", "versions"]);
   }
 
   function isAmbientOsStateCallPath(path: AccessPath): boolean {
@@ -683,6 +685,23 @@ describe("runtime boundary policy", () => {
       {file: "scripts/example.ts", line: 13, rule: "explicit-concurrency"},
       {file: "scripts/example.ts", line: 14, rule: "ambient-os-state"},
       {file: "scripts/example.ts", line: 14, rule: "manual-entrypoint"},
+    ]);
+  });
+
+  it("flags the running Node runtime version as ambient OS state", () => {
+    const source = [
+      "const major = process.versions.node;",
+      'void process.versions["node"];',
+      "void process.version;",
+      "const {versions} = process;",
+      "void versions.node;",
+    ].join("\n");
+
+    expect(scanRuntimeBoundarySource("scripts/example.ts", source)).toEqual([
+      {file: "scripts/example.ts", line: 1, rule: "ambient-os-state"},
+      {file: "scripts/example.ts", line: 2, rule: "ambient-os-state"},
+      {file: "scripts/example.ts", line: 3, rule: "ambient-os-state"},
+      {file: "scripts/example.ts", line: 5, rule: "ambient-os-state"},
     ]);
   });
 
@@ -1117,6 +1136,16 @@ describe("runtime boundary policy", () => {
           "file": "scripts/setup.workspace.ts",
           "line": 222,
           "rule": "explicit-concurrency",
+        },
+        {
+          "file": "scripts/setup.workspace.ts",
+          "line": 250,
+          "rule": "ambient-os-state",
+        },
+        {
+          "file": "scripts/setup.workspace.ts",
+          "line": 256,
+          "rule": "ambient-os-state",
         },
         {
           "file": "scripts/setup.workspace.ts",

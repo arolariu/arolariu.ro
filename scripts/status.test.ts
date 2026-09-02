@@ -58,6 +58,8 @@ const GIT_LOG_MSG_KEY = "git log -1 --format=%s";
 const GIT_STATUS_KEY = "git status --porcelain";
 const NPM_AUDIT_KEY = "npm audit --json";
 const NPM_OUTDATED_KEY = "npm outdated --json";
+/** The test runtime environment reports `/usr/bin/node` as the running executable. */
+const NODE_VERSION_KEY = "/usr/bin/node --version";
 
 const DISK_NODE_MODULES_TARGET = join(FIXTURE_ROOT, "node_modules");
 const DISK_NEXT_BUILD_TARGET = join(FIXTURE_ROOT, "sites", "arolariu.ro", ".next");
@@ -133,6 +135,32 @@ class ScriptedProcessRunner extends AbstractProcessRunner {
   }
 }
 
+/**
+ * Records ordered start and settle events for every probe so collector/doctor concurrency can be
+ * asserted without wall-clock timing.
+ */
+class TimelineProcessRunner extends ScriptedProcessRunner {
+  readonly #events: string[];
+
+  public constructor(outcomes: ReadonlyMap<string, ProcessOutcome>, events: string[]) {
+    super(outcomes);
+    this.#events = events;
+  }
+
+  /** {@inheritDoc AbstractProcessRunner.execute} */
+  protected override async execute(
+    request: Readonly<ProcessRequest>,
+    options: Readonly<ProcessRunOptions>,
+  ): Promise<ProcessOutcome> {
+    this.#events.push(`probe:start ${processKey(request)}`);
+    try {
+      return await super.execute(request, options);
+    } finally {
+      this.#events.push(`probe:end ${processKey(request)}`);
+    }
+  }
+}
+
 function baseResponses(): Map<string, ProcessOutcome> {
   return new Map<string, ProcessOutcome>([
     [GIT_BRANCH_KEY, succeeded("main\n")],
@@ -144,6 +172,7 @@ function baseResponses(): Map<string, ProcessOutcome> {
     // A successful `npm outdated --json` run always writes a JSON object — "{}" when nothing is
     // outdated — never empty stdout; see the "npm outdated" regression tests below.
     [NPM_OUTDATED_KEY, succeeded("{}")],
+    [NODE_VERSION_KEY, succeeded("v26.3.1\n")],
     [diskProbeKey(DISK_NODE_MODULES_TARGET), succeeded("1024")],
     [diskProbeKey(DISK_NEXT_BUILD_TARGET), succeeded("2048")],
     [diskProbeKey(DISK_COMPONENTS_DIST_TARGET), succeeded("512")],
@@ -228,6 +257,7 @@ function createDoctorStub(implementation?: DoctorInvoke): DoctorStub {
 
 interface StatusFixtureOptions {
   readonly responses?: ReadonlyMap<string, ProcessOutcome>;
+  readonly runner?: ScriptedProcessRunner;
   readonly workspace?: () => Promise<InspectionOutcome<WorkspaceFacts>>;
   readonly doctor?: DoctorStub;
   readonly mode?: "human" | "json";
@@ -247,8 +277,8 @@ interface StatusFixture {
  * Assembles a status command wired to the in-memory repository fixture, a scripted process
  * runner, the real memoized inspection registry, and a recording doctor stub.
  *
- * @param options - Optional process outcomes, workspace facts, doctor stub, logger mode, and
- * extra fixture files.
+ * @param options - Optional process outcomes, a pre-built recording runner, workspace facts,
+ * doctor stub, logger mode, and extra fixture files.
  * @returns The command plus every recorded seam.
  */
 function createStatusFixture(options: Readonly<StatusFixtureOptions> = {}): StatusFixture {
@@ -259,7 +289,7 @@ function createStatusFixture(options: Readonly<StatusFixtureOptions> = {}): Stat
     verbose: false,
     mode: options.mode ?? "human",
   });
-  const runner = new ScriptedProcessRunner(options.responses ?? baseResponses());
+  const runner = options.runner ?? new ScriptedProcessRunner(options.responses ?? baseResponses());
   const session = createFixtureSession(options.workspace ?? availableWorkspace());
   const createSession = vi.fn<(request: Readonly<RepositoryInspectionRequest>) => RepositoryInspectionSession>(() => session);
   const inspection = createRepositoryInspectionRuntime(createSession);
@@ -477,6 +507,39 @@ describe("status command — doctor composition", () => {
     }
     expect(fixture.sink.records.filter((record) => record.stream === "stdout")).toHaveLength(0);
   });
+
+  it("starts doctor concurrently with the degradation-tolerant collectors instead of after them", async () => {
+    const events: string[] = [];
+    const runner = new TimelineProcessRunner(baseResponses(), events);
+    const doctor = createDoctorStub(() => {
+      events.push("doctor:start");
+      return Promise.resolve({status: "completed", value: doctorReport(), exitCode: 0});
+    });
+    const fixture = createStatusFixture({runner, doctor});
+
+    const execution = await fixture.command.run([]);
+
+    expect(execution.status).toBe("completed");
+    const doctorStart = events.indexOf("doctor:start");
+    const firstProbeSettled = events.findIndex((event) => event.startsWith("probe:end"));
+    expect(doctorStart).toBeGreaterThanOrEqual(0);
+    expect(firstProbeSettled).toBeGreaterThanOrEqual(0);
+    expect(doctorStart).toBeLessThan(firstProbeSettled);
+  });
+
+  it("fails instead of degrading health to null when the composed doctor invoker rejects", async () => {
+    const doctor = createDoctorStub(() => Promise.reject(new Error("doctor invoker exploded")));
+    const fixture = createStatusFixture({doctor, mode: "json"});
+
+    const execution = await fixture.command.run(["--json"]);
+
+    expect(execution.status).toBe("failed");
+    expect(execution.exitCode).toBe(1);
+    if (execution.status === "failed") {
+      expect(execution.failure.message).toMatch(/doctor invoker exploded/);
+    }
+    expect(fixture.sink.records.filter((record) => record.stream === "stdout")).toHaveLength(0);
+  });
 });
 
 // ============================================================================
@@ -556,6 +619,97 @@ describe("status command — process requests", () => {
 });
 
 // ============================================================================
+// Node runtime label
+// ============================================================================
+
+describe("status command — Node runtime label", () => {
+  it("renders the major version the runtime executable reports", async () => {
+    const fixture = createStatusFixture({responses: withOverrides({[NODE_VERSION_KEY]: succeeded("v42.1.0\n")})});
+
+    const execution = await fixture.command.run([]);
+
+    expect(execution.exitCode).toBe(0);
+    expect(renderedText(fixture.sink)).toMatch(/Node: 42\.x/);
+  });
+
+  it("issues the version probe through the runtime executable with cwd, a bounded timeout, and the invocation signal", async () => {
+    const fixture = createStatusFixture();
+
+    await fixture.command.run([]);
+
+    const call = fixture.runner.calls.find((entry) => entry.request.args[0] === "--version");
+    expect(call).toBeDefined();
+    expect(call?.request.command).toBe("/usr/bin/node");
+    expect(call?.request.args).toEqual(["--version"]);
+    expect(call?.options.cwd).toBe(FIXTURE_ROOT);
+    expect(call?.options.timeoutMs).toBe(10_000);
+    expect(call?.options.signal).toBeInstanceOf(AbortSignal);
+  });
+
+  it("adds exactly one version probe to the human dashboard process inventory", async () => {
+    const fixture = createStatusFixture();
+
+    await fixture.command.run([]);
+
+    expect(fixture.runner.calls.map((call) => processKey(call.request)).toSorted()).toEqual(
+      [
+        GIT_BRANCH_KEY,
+        GIT_SHA_KEY,
+        GIT_LOG_TIME_KEY,
+        GIT_LOG_MSG_KEY,
+        GIT_STATUS_KEY,
+        NPM_AUDIT_KEY,
+        NPM_OUTDATED_KEY,
+        NODE_VERSION_KEY,
+        diskProbeKey(DISK_NODE_MODULES_TARGET),
+        diskProbeKey(DISK_NEXT_BUILD_TARGET),
+        diskProbeKey(DISK_COMPONENTS_DIST_TARGET),
+      ].toSorted(),
+    );
+  });
+
+  it("never probes the runtime version for machine-readable output", async () => {
+    const fixture = createStatusFixture({mode: "json"});
+
+    const document = await runJson(fixture);
+
+    expect(fixture.runner.calls.some((call) => call.request.args[0] === "--version")).toBe(false);
+    expect(Object.keys(document).toSorted()).toEqual(["disk", "git", "health", "nxEdges", "security", "workspaces"].toSorted());
+  });
+
+  it.each([
+    ["a spawn failure", spawnFailed("node is missing")],
+    ["a timeout", timedOut()],
+    ["a signal termination", signalled()],
+    ["a nonzero exit", exited(1, "v26.3.1")],
+    ["malformed output", succeeded("not-a-version")],
+  ])("falls back to an unknown label instead of failing on %s", async (_label, outcome) => {
+    const fixture = createStatusFixture({responses: withOverrides({[NODE_VERSION_KEY]: outcome})});
+
+    const execution = await fixture.command.run([]);
+
+    expect(execution.status).toBe("completed");
+    expect(execution.exitCode).toBe(0);
+    const text = renderedText(fixture.sink);
+    expect(text).toMatch(/Node: \?\.x/);
+    expect(text).toMatch(/Health: 92 \(A\)/);
+  });
+
+  it("falls back to an unknown label when the version probe rejects, without degrading a sibling section", async () => {
+    const responses = baseResponses();
+    responses.delete(NODE_VERSION_KEY);
+    const fixture = createStatusFixture({responses});
+
+    const execution = await fixture.command.run([]);
+
+    expect(execution.exitCode).toBe(0);
+    const text = renderedText(fixture.sink);
+    expect(text).toMatch(/Node: \?\.x/);
+    expect(text).toMatch(/main/);
+  });
+});
+
+// ============================================================================
 // Source-derived Nx graph collection
 // ============================================================================
 
@@ -573,6 +727,11 @@ describe("source-derived Nx graph collection", () => {
   it("composes doctor through the typed command object rather than the deleted runDoctor adapter", () => {
     expect(sourceText).not.toMatch(/runDoctor/);
     expect(sourceText).toMatch(/doctorCommand/);
+  });
+
+  it("reads no ambient Node runtime version in production source", () => {
+    expect(sourceText).not.toMatch(/process\.versions/);
+    expect(sourceText).not.toMatch(/process\.version\b/);
   });
 
   it("emits one deterministically ordered nxEdges entry per logical dependency", async () => {

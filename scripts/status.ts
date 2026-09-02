@@ -18,14 +18,16 @@
  * inspection session Status already obtained for its own collectors. Both doctor completion exit
  * codes are health data, while a failed, cancelled, or help child outcome is owned by Status: it
  * becomes a command failure or cancellation instead of a fabricated "unavailable" health section,
- * and no dashboard or JSON document is rendered in that case.
+ * and no dashboard or JSON document is rendered in that case. Doctor starts in the same concurrent
+ * batch as the five collectors, so composing it serializes nothing.
  *
- * Every external probe (git, npm, and the disk usage probe) is issued through the runtime process
- * runner as an explicit {@link ProcessRequest} — never a shell string — and the command never
- * writes a temporary file, never mutates the repository, and never inherits child process output.
- * The workspace graph is read from tracked metadata instead of an Nx child process, which would
- * rewrite Nx's native workspace database. All human or machine-readable output is produced by the
- * runtime logger.
+ * Every external probe (git, npm, the disk usage probe, and — for the human dashboard header only
+ * — the Node runtime version probe) is issued through the runtime process runner as an explicit
+ * {@link ProcessRequest} — never a shell string — and the command never writes a temporary file,
+ * never mutates the repository, never inherits child process output, and never reads ambient
+ * process state. The workspace graph is read from tracked metadata instead of an Nx child process,
+ * which would rewrite Nx's native workspace database. All human or machine-readable output is
+ * produced by the runtime logger.
  *
  * @example
  * ```bash
@@ -37,7 +39,14 @@
 
 import {join} from "node:path";
 
-import {MonorepoCommand, toJsonValue, type CommandContext, type CommandInvoker, type CommandRuntimeFactory} from "./common/commander.ts";
+import {
+  MonorepoCommand,
+  toJsonValue,
+  type CommandContext,
+  type CommandExecution,
+  type CommandInvoker,
+  type CommandRuntimeFactory,
+} from "./common/commander.ts";
 import {formatBytes} from "./common/index.ts";
 import type {LogSegment, MonorepositoryLogger} from "./common/logger.ts";
 import {resolveRepositoryPaths, type RepositoryPaths} from "./common/repository-paths.ts";
@@ -146,6 +155,9 @@ type ProbeSources = Pick<StatusSources, "runner" | "tasks" | "paths" | "signal">
 /** Capabilities the disk-usage collector observes. */
 type DiskSources = Pick<StatusSources, "runner" | "tasks" | "paths" | "executablePath" | "signal">;
 
+/** Capabilities the Node runtime-version probe observes. */
+type RuntimeVersionSources = Pick<StatusSources, "runner" | "paths" | "executablePath" | "signal">;
+
 /** The five degradation-tolerant sections collected before doctor is composed. */
 interface OrdinaryStatusSections {
   readonly workspaces: readonly WorkspaceInfo[] | null;
@@ -153,6 +165,25 @@ interface OrdinaryStatusSections {
   readonly git: GitInfo | null;
   readonly security: SecurityInfo | null;
   readonly disk: DiskInfo | null;
+}
+
+/**
+ * One contribution produced by a single task of the status invocation's concurrent batch.
+ *
+ * @remarks
+ * Every task in the batch resolves to this shape so the five degradation-tolerant collectors, the
+ * presentation-only Node version probe, and the composed doctor child can start together in one
+ * {@link TaskScheduler.allSettled} call without a raw `Promise` combinator and without widening the
+ * published {@link StatusDocument}. Exactly one field is populated per task, and only `sections`
+ * ever reaches the emitted document.
+ */
+interface StatusContribution {
+  /** Document sections contributed by one degradation-tolerant collector. */
+  readonly sections?: Partial<OrdinaryStatusSections>;
+  /** Node major version label contributed by the human-dashboard version probe. */
+  readonly nodeMajor?: string;
+  /** Typed execution outcome of the composed doctor child, owned by status rather than degraded. */
+  readonly health?: CommandExecution<DoctorReport>;
 }
 
 /** Construction seams {@link createStatusCommand} accepts. */
@@ -170,7 +201,14 @@ export interface StatusCommandDependencies {
 const GIT_TIMEOUT_MS = 30_000;
 const NPM_TIMEOUT_MS = 60_000;
 const DISK_PROBE_TIMEOUT_MS = 60_000;
+const NODE_VERSION_TIMEOUT_MS = 10_000;
 const WORKSPACE_MANIFEST_CONCURRENCY = 8;
+
+/** Dashboard label used when the running binary does not report a parseable version. */
+const UNKNOWN_NODE_MAJOR = "?";
+
+/** Leading major-version group of a `node --version` line such as `v26.3.1`. */
+const NODE_MAJOR_VERSION_PATTERN = /^v?(\d+)(?:\.|$)/;
 
 const GIT_BRANCH_COMMAND = {command: "git", args: ["rev-parse", "--abbrev-ref", "HEAD"]} as const satisfies ProcessRequest;
 const GIT_SHA_COMMAND = {command: "git", args: ["rev-parse", "--short", "HEAD"]} as const satisfies ProcessRequest;
@@ -610,6 +648,34 @@ export async function collectDisk(sources: Readonly<DiskSources>): Promise<DiskI
   return {nodeModules, nextBuild, componentsDist};
 }
 
+/**
+ * Reads the major version of the Node runtime executing this command through the process runner.
+ *
+ * @remarks
+ * The version is presentation-only: it labels the human dashboard header and never enters the
+ * status document. Status owns no ambient process state, so the running binary is asked for its
+ * own version through the same runtime capability every other probe uses — `<executablePath>
+ * --version`, argument-separated, with the repository `cwd`, a bounded timeout, and the
+ * invocation cancellation signal. A transport failure, a nonzero exit, or output that does not
+ * start with a numeric major version degrades the label to {@link UNKNOWN_NODE_MAJOR} instead of
+ * failing the command or fabricating a version.
+ *
+ * @param sources - Process runner, repository paths, executable path, and cancellation signal.
+ * @returns The Node major version, or `"?"` when the running binary does not report one.
+ */
+async function collectNodeMajorVersion(sources: Readonly<RuntimeVersionSources>): Promise<string> {
+  const outcome = await sources.runner.run(
+    {command: sources.executablePath, args: ["--version"]},
+    {cwd: sources.paths.root, timeoutMs: NODE_VERSION_TIMEOUT_MS, signal: sources.signal},
+  );
+
+  if (!isSuccessfulOutcome(outcome)) {
+    return UNKNOWN_NODE_MAJOR;
+  }
+
+  return NODE_MAJOR_VERSION_PATTERN.exec(outcome.stdout.trim())?.[1] ?? UNKNOWN_NODE_MAJOR;
+}
+
 // ============================================================================
 // Rendering
 // ============================================================================
@@ -727,29 +793,91 @@ function renderDashboard(logger: MonorepositoryLogger, document: Readonly<Status
 // Collection
 // ============================================================================
 
+/**
+ * Identity registry of the Node major version label collected for each produced document.
+ *
+ * @remarks
+ * Module-private on purpose: it lets the deferred human completion render the version this run
+ * actually observed, without adding a seventh key to the published {@link StatusDocument}, without
+ * changing the emitted JSON document, and without reading ambient process state at render time. A
+ * document with no recorded label (an invocation that never probed, or a probe that could not
+ * report) renders the {@link UNKNOWN_NODE_MAJOR} fallback.
+ */
+const dashboardNodeMajors = new WeakMap<object, string>();
+
 function toHealthInfo(report: Readonly<DoctorReport>): HealthInfo {
   return {score: report.score, grade: report.grade, summary: report.summary};
+}
+
+/**
+ * Claims the composed doctor outcome from the concurrent batch.
+ *
+ * @remarks
+ * Health is the one contribution that is never degradation-tolerant: the composed child owns its
+ * own failure classification, so a failed, cancelled, help, or outright rejected doctor task is
+ * rethrown for the status lifecycle to own instead of collapsing into a `null` health section.
+ * Both doctor completion exit codes (`0` and `1`) are ordinary health data.
+ *
+ * @param outcome - Settled outcome of the doctor task declared in the concurrent batch.
+ * @returns The typed doctor report of a completed child invocation.
+ * @throws {CommandCancellation} When the composed doctor invocation was cancelled.
+ * @throws {Error} When the composed doctor invocation failed, returned help, or rejected.
+ */
+function claimDoctorReport(outcome: PromiseSettledResult<StatusContribution> | undefined): DoctorReport {
+  if (outcome === undefined) {
+    throw new Error("The composed doctor invocation produced no settled outcome.");
+  }
+
+  if (outcome.status === "rejected") {
+    const {reason} = outcome;
+    throw reason instanceof Error ? reason : new Error("The composed doctor invocation rejected.", {cause: reason});
+  }
+
+  const execution = outcome.value.health;
+  if (execution === undefined) {
+    throw new Error("The composed doctor invocation produced no typed execution outcome.");
+  }
+
+  let report: DoctorReport;
+  switch (execution.status) {
+    case "completed":
+      report = execution.value;
+      break;
+    case "cancelled":
+      throw new CommandCancellation(execution.failure.message, execution.exitCode);
+    case "failed":
+      throw new Error(execution.failure.message, {cause: execution.failure.cause});
+    case "help":
+      throw new Error("Doctor returned help during typed invocation.");
+  }
+
+  return report;
 }
 
 /**
  * Collects every status section for one invocation.
  *
  * @remarks
- * The five ordinary collectors run concurrently through {@link TaskScheduler.allSettled}, so a
- * rejected or unavailable collector degrades to exactly one `null` section in the fixed six-key
- * document while its siblings keep their data. Health is different: Status obtains its own quick
- * inspection session from the runtime registry *before* composing doctor, and the child doctor
- * invocation resolves the identical `{profile: "quick", paths}` request from the shared parent
- * registry, so both lookups return one session instead of tripping the conflicting-request guard
- * or starting a second inspection. Both doctor completion exit codes contribute their typed
- * report, while a cancelled, failed, or help outcome is rethrown so the command lifecycle owns it
- * and no success document is ever rendered.
+ * Every source starts together in one {@link TaskScheduler.allSettled} call: the five ordinary
+ * collectors, the presentation-only Node version probe, and the composed doctor child. Nothing is
+ * serialized behind a sibling, which preserves the concurrency status had before it became a
+ * command. A rejected or unavailable ordinary collector degrades to exactly one `null` section in
+ * the fixed six-key document while its siblings keep their data, and a version probe that cannot
+ * report a version degrades to an unknown label rather than a failure.
+ *
+ * Health is the one contribution status never degrades: it is claimed through
+ * {@link claimDoctorReport}, so a cancelled, failed, help, or rejected doctor outcome propagates
+ * as a status cancellation or failure and no success document is ever rendered. Status obtains its
+ * own quick inspection session from the runtime registry *before* the batch starts, and the child
+ * doctor invocation resolves the identical `{profile: "quick", paths}` request from the shared
+ * parent registry, so both lookups return one session instead of tripping the conflicting-request
+ * guard or starting a second inspection.
  *
  * @param context - The invocation context owning every capability this run may use.
  * @param doctor - Typed doctor command composed as the health source.
  * @returns The complete six-section status document.
  * @throws {CommandCancellation} When the composed doctor invocation was cancelled.
- * @throws {Error} When the composed doctor invocation failed or returned help.
+ * @throws {Error} When the composed doctor invocation failed, returned help, or rejected.
  */
 async function collectStatus(
   context: Readonly<CommandContext>,
@@ -778,40 +906,42 @@ async function collectStatus(
     signal: runtime.signal,
   };
 
-  const settled = await runtime.tasks.allSettled<Partial<OrdinaryStatusSections>>(
+  // The Node version labels the human dashboard header only, so machine-readable and silent
+  // invocations never pay for the extra probe and their process inventory stays unchanged.
+  const degradableExtras: readonly (() => Promise<StatusContribution>)[] =
+    context.presentation === "human"
+      ? [async (): Promise<StatusContribution> => ({nodeMajor: await collectNodeMajorVersion(sources)})]
+      : [];
+
+  const settled = await runtime.tasks.allSettled<StatusContribution>(
     [
-      async (): Promise<Partial<OrdinaryStatusSections>> => ({workspaces: await collectWorkspaces(sources)}),
-      async (): Promise<Partial<OrdinaryStatusSections>> => ({nxEdges: await collectNxGraph(sources)}),
-      async (): Promise<Partial<OrdinaryStatusSections>> => ({git: await collectGit(sources)}),
-      async (): Promise<Partial<OrdinaryStatusSections>> => ({security: await collectSecurity(sources)}),
-      async (): Promise<Partial<OrdinaryStatusSections>> => ({disk: await collectDisk(sources)}),
+      async (): Promise<StatusContribution> => ({sections: {workspaces: await collectWorkspaces(sources)}}),
+      async (): Promise<StatusContribution> => ({sections: {nxEdges: await collectNxGraph(sources)}}),
+      async (): Promise<StatusContribution> => ({sections: {git: await collectGit(sources)}}),
+      async (): Promise<StatusContribution> => ({sections: {security: await collectSecurity(sources)}}),
+      async (): Promise<StatusContribution> => ({sections: {disk: await collectDisk(sources)}}),
+      ...degradableExtras,
+      async (): Promise<StatusContribution> => ({
+        health: await doctor.invoke({quick: true, verbose: false}, {parent: context, presentation: "silent"}),
+      }),
     ],
     runtime.signal,
   );
 
   let sections: OrdinaryStatusSections = {workspaces: null, nxEdges: null, git: null, security: null, disk: null};
-  for (const outcome of settled) {
+  let nodeMajor = UNKNOWN_NODE_MAJOR;
+  for (const outcome of settled.slice(0, -1)) {
     if (outcome.status === "fulfilled") {
-      sections = {...sections, ...outcome.value};
+      sections = {...sections, ...outcome.value.sections};
+      nodeMajor = outcome.value.nodeMajor ?? nodeMajor;
     }
   }
 
-  const healthExecution = await doctor.invoke({quick: true, verbose: false}, {parent: context, presentation: "silent"});
-
-  let health: HealthInfo;
-  switch (healthExecution.status) {
-    case "completed":
-      health = toHealthInfo(healthExecution.value);
-      break;
-    case "cancelled":
-      throw new CommandCancellation(healthExecution.failure.message, healthExecution.exitCode);
-    case "failed":
-      throw new Error(healthExecution.failure.message, {cause: healthExecution.failure.cause});
-    case "help":
-      throw new Error("Doctor returned help during typed invocation.");
-  }
-
-  return {...sections, health};
+  // The doctor task is declared last, so its settled outcome is the final entry; it is claimed
+  // rather than merged because status never degrades a composed child failure to `null` health.
+  const document = {...sections, health: toHealthInfo(claimDoctorReport(settled.at(-1)))};
+  dashboardNodeMajors.set(document, nodeMajor);
+  return document;
 }
 
 /** The complete, six-section status payload produced by one status invocation. */
@@ -820,20 +950,6 @@ export type StatusDocument = Awaited<ReturnType<typeof collectStatus>>;
 // ============================================================================
 // Command
 // ============================================================================
-
-/**
- * Reads the major version label of the Node runtime executing this command.
- *
- * @remarks
- * `process.versions` is an immutable, effect-free description of the running binary; the runtime
- * environment snapshot exposes no equivalent, and widening that capability is outside this
- * command's contract. Every other ambient value the dashboard needs arrives through the runtime.
- *
- * @returns The Node major version, or `"?"` when the running binary does not report one.
- */
-function nodeMajorVersion(): string {
-  return process.versions["node"]?.split(".")[0] ?? "?";
-}
 
 /**
  * Creates the status command.
@@ -864,7 +980,7 @@ export function createStatusCommand(dependencies: Readonly<StatusCommandDependen
       completion: (document) => ({
         exitCode: 0,
         human: (logger) => {
-          renderDashboard(logger, document, nodeMajorVersion());
+          renderDashboard(logger, document, dashboardNodeMajors.get(document) ?? UNKNOWN_NODE_MAJOR);
         },
         json: toJsonValue(document),
       }),
