@@ -192,6 +192,9 @@ export abstract class MonorepositoryLogger {
   /** Writes successful lifecycle completion. */
   public abstract success(message: string): void;
 
+  /** Redacts sensitive values without emitting output. */
+  public abstract sanitize(text: string, includeJsonEscapes?: boolean): string;
+
   /** Creates a logger whose context is appended to this logger's context. */
   public abstract child(context: string): MonorepositoryLogger;
 
@@ -314,6 +317,11 @@ export class MonorepositoryConsoleLogger extends MonorepositoryLogger {
   /** {@inheritDoc MonorepositoryLogger.success} */
   public override success(message: string): void {
     this.emitSemantic("success", "✅", "green", message);
+  }
+
+  /** {@inheritDoc MonorepositoryLogger.sanitize} */
+  public override sanitize(text: string, includeJsonEscapes = false): string {
+    return this.redactText(text, includeJsonEscapes);
   }
 
   /** {@inheritDoc MonorepositoryLogger.child} */
@@ -651,7 +659,7 @@ export class MonorepositoryConsoleLogger extends MonorepositoryLogger {
    * @param includeJsonEscapes - Whether JSON-escaped redaction variants are matched.
    */
   private writeToSink(stream: LoggerStream, text: string, write: boolean, semanticLevel?: SemanticLevel, includeJsonEscapes = false): void {
-    const redacted = this.redactText(text, includeJsonEscapes);
+    const redacted = this.sanitize(text, includeJsonEscapes);
     if (semanticLevel !== undefined && this.#state.sink instanceof ConsoleLoggerSink) {
       this.#state.sink.semantic(semanticLevel, redacted);
       return;

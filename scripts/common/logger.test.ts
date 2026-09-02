@@ -302,6 +302,18 @@ describe("MonorepositoryConsoleLogger", () => {
     ]);
   });
 
+  it("sanitizes registered values without emitting output", () => {
+    const sink = new InMemoryLoggerSink();
+    const logger = new MonorepositoryConsoleLogger("setup", {
+      color: false,
+      sink,
+      redactions: ["secret-value"],
+    });
+
+    expect(logger.sanitize("token=secret-value")).toBe("token=[REDACTED]");
+    expect(sink.records).toEqual([]);
+  });
+
   it("shares runtime redactions with child contexts", () => {
     const sink = new InMemoryLoggerSink();
     const logger = new MonorepositoryConsoleLogger("setup", {
@@ -340,6 +352,21 @@ describe("MonorepositoryConsoleLogger", () => {
         write: false,
       },
     ]);
+  });
+
+  it("sanitizes JSON-escaped secrets on demand without emitting output", () => {
+    const secret = 'quote"slash\\line\nend';
+    const sink = new InMemoryLoggerSink();
+    const logger = new MonorepositoryConsoleLogger("doctor", {
+      color: false,
+      sink,
+      redactions: [secret],
+    });
+    const escaped = JSON.stringify(secret).slice(1, -1);
+
+    expect(logger.sanitize(escaped)).toBe(escaped);
+    expect(logger.sanitize(escaped, true)).toBe("[REDACTED]");
+    expect(sink.records).toEqual([]);
   });
 
   it("cleans up TTY progress before terminal output and stops future frames", () => {
