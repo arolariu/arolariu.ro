@@ -725,38 +725,6 @@ function createNodeInspectionRuntime(
   );
 }
 
-/**
- * Assembles one repository inspection session directly from the Node adapters.
- *
- * @remarks
- * Transitional: only the not-yet-migrated Doctor, Status, and Setup entrypoints use this, because
- * they still own their inspection session instead of reading it from an injected
- * {@link CommandRuntime}. It is removed once those commands migrate. Every capability is snapshotted
- * per call, so two calls never share an environment snapshot or a process runner.
- *
- * @param request - Inspection profile, canonical repository paths, and optional container engine.
- * @param signal - Optional cancellation signal; defaults to a signal that never aborts.
- * @returns A fresh repository inspection session bound to the Node adapters.
- */
-export function createNodeRepositoryInspectionSession(
-  request: Readonly<RepositoryInspectionRequest>,
-  signal: AbortSignal = new AbortController().signal,
-): RepositoryInspectionSession {
-  const environment = snapshotNodeEnvironment();
-  return createRepositoryInspectionSession({
-    ...request,
-    runner: createNodeProcessRunner(environment),
-    files: asReadOnlyFileSystem(nodeFileSystem),
-    temporaryDirectories: {
-      createTemporaryDirectory: (prefix: string): Promise<TemporaryDirectory> => nodeFileSystem.createTemporaryDirectory(prefix),
-    },
-    clock: nodeClock,
-    tasks: nodeTaskScheduler,
-    environment,
-    signal,
-  });
-}
-
 /** Describes one Node-backed runtime scope the command host asks this adapter to assemble. */
 export interface NodeRuntimeScopeOptions {
   /** Logical command name used as the logger context. */

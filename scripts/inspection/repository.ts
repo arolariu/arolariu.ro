@@ -122,17 +122,6 @@ export interface RepositoryInspectionSessionOptions extends RepositoryInspection
 }
 
 /**
- * Creates one {@link RepositoryInspectionSession} for a caller's request.
- *
- * @remarks
- * The runtime's memoized inspection registry owns exactly one factory of this shape, so a command
- * never assembles capabilities itself.
- */
-export type RepositoryInspectionSessionFactory = (
-  request: Readonly<RepositoryInspectionRequest>,
-) => RepositoryInspectionSession;
-
-/**
  * Creates the bounded `"aggregate"` provider used under the quick inspection profile.
  *
  * @remarks

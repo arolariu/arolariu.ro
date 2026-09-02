@@ -1,26 +1,41 @@
 /**
  * @fileoverview Dependency-free workspace bootstrap phases for repository setup.
  * @module scripts.setup.workspace
+ *
+ * @remarks
+ * Every phase in this module reads its capabilities from the invocation-scoped
+ * {@link SetupPhaseRuntime}: the filesystem, the phase-scoped process runner, the clock, the task
+ * scheduler, the environment snapshot, and the typed nested generation invocation. No phase here
+ * touches an ambient Node global, spawns a sibling script, or measures time itself.
  */
 
-import {readFile, stat} from "node:fs/promises";
 import {resolve} from "node:path";
 
-import type {CommandResult, CommandSpec} from "./common/process.ts";
+import type {CommandExecution} from "./common/commander.ts";
 import {loadRepositoryRequirements, parseVersion, satisfiesMinimum, type MinimumVersion} from "./common/requirements.ts";
-import {nodeFileSystem, nodeTaskScheduler} from "./common/runtime.node.ts";
+import type {ProcessOutcome, ProcessRequest, SucceededProcessOutcome} from "./common/runner.ts";
+import {CommandCancellation, type FileSystem} from "./common/runtime.ts";
 import {getExpectedTaxonomyArtifactPaths} from "./common/taxonomy-artifacts.ts";
+import type {GenerateResult} from "./generate.ts";
 import type {NpmTreeFacts} from "./inspection/packages.ts";
-import type {SetupContext, SetupPhaseDefinition, SetupPhaseResult} from "./setup.types.ts";
+import {
+  requireSetupPhaseRuntime,
+  type SetupContext,
+  type SetupPhaseDefinition,
+  type SetupPhaseResult,
+  type SetupPhaseRuntime,
+} from "./setup.types.ts";
 
 const REPOSITORY_PACKAGE_NAME = "@arolariu/monorepo";
 /** Exact contributor remediation for a missing, unavailable, invalid, or broken root npm tree. */
 const ROOT_NPM_CI_GUIDANCE = "Run `npm ci` in the repository root, then rerun setup.";
-const NPM_RESTORE_COMMAND: CommandSpec = {
+/** Bounded timeout for the long-running lockfile restoration this module owns. */
+const NPM_RESTORE_TIMEOUT_MS = 1_200_000;
+const NPM_RESTORE_COMMAND: ProcessRequest = {
   command: "npm",
   args: ["ci", "--prefer-offline", "--no-audit", "--no-fund"],
 };
-const NX_PROJECTS_COMMAND: CommandSpec = {
+const NX_PROJECTS_COMMAND: ProcessRequest = {
   command: "npx",
   args: ["--no-install", "nx", "show", "projects", "--json"],
 };
@@ -39,29 +54,59 @@ function hasErrorCode(error: unknown, code: string): boolean {
   return error instanceof Error && "code" in error && error.code === code;
 }
 
-function isSuccessfulCommand(result: Readonly<CommandResult>): boolean {
-  return result.code === 0 && !result.timedOut && result.signal === undefined && result.spawnError === undefined;
+function isInterruption(error: unknown): boolean {
+  return error instanceof CommandCancellation || (error instanceof Error && error.name === "AbortError");
 }
 
-function commandFailureEvidence(result: Readonly<CommandResult>): readonly string[] {
-  return [
-    ...(result.spawnError === undefined ? [] : [`Unable to start command: ${result.spawnError}`]),
-    ...(result.timedOut ? ["Command timed out."] : []),
-    ...(result.signal === undefined ? [] : [`Command stopped with signal ${result.signal}.`]),
-    ...(result.code === 0 ? [] : [`Command exited with code ${result.code}.`]),
-    ...(result.stdout.trim() === "" ? [] : [`stdout: ${result.stdout.trim()}`]),
-    ...(result.stderr.trim() === "" ? [] : [`stderr: ${result.stderr.trim()}`]),
-  ];
+function isSuccessfulOutcome(outcome: Readonly<ProcessOutcome>): outcome is SucceededProcessOutcome {
+  return outcome.kind === "succeeded";
 }
 
-function duration(startedAt: number, context: SetupContext): number {
-  return Math.max(0, context.now() - startedAt);
+/**
+ * Renders one failed process outcome as concise, secret-free setup evidence.
+ *
+ * @param outcome - Completed process outcome.
+ * @returns Evidence lines naming the transport failure and any captured output.
+ */
+function commandFailureEvidence(outcome: Readonly<ProcessOutcome>): readonly string[] {
+  const evidence: string[] = [];
+  switch (outcome.kind) {
+    case "succeeded":
+      break;
+    case "exited":
+      evidence.push(`Command exited with code ${String(outcome.exitCode)}.`);
+      break;
+    case "signalled":
+      evidence.push(`Command stopped with signal ${outcome.signal}.`);
+      break;
+    case "spawn-failed":
+      evidence.push(`Unable to start command: ${outcome.message}`);
+      break;
+    case "timed-out":
+      evidence.push("Command timed out.");
+      if (outcome.signal !== undefined) {
+        evidence.push(`Command stopped with signal ${outcome.signal}.`);
+      }
+      break;
+    case "cancelled":
+      evidence.push("Command was cancelled.");
+      break;
+  }
+
+  if (outcome.stdout.trim() !== "") {
+    evidence.push(`stdout: ${outcome.stdout.trim()}`);
+  }
+  if (outcome.stderr.trim() !== "") {
+    evidence.push(`stderr: ${outcome.stderr.trim()}`);
+  }
+
+  return evidence;
 }
 
-function result(context: SetupContext, startedAt: number, input: Omit<SetupPhaseResult, "durationMs">): SetupPhaseResult {
+function result(runtime: SetupPhaseRuntime, startedAt: number, input: Omit<SetupPhaseResult, "durationMs">): SetupPhaseResult {
   return {
     ...input,
-    durationMs: duration(startedAt, context),
+    durationMs: Math.max(0, runtime.clock.monotonicNow() - startedAt),
   };
 }
 
@@ -73,13 +118,10 @@ function validRequirement(version: MinimumVersion): boolean {
   return [version.major, version.minor, version.patch].every((part) => Number.isSafeInteger(part) && part >= 0);
 }
 
-async function isFile(path: string): Promise<boolean> {
+async function isFile(path: string, files: FileSystem): Promise<boolean> {
   try {
-    return (await stat(path)).isFile();
+    return (await files.inspect(path)).kind === "file";
   } catch (error: unknown) {
-    if (hasErrorCode(error, "ENOENT")) {
-      return false;
-    }
     throw new Error(`Unable to inspect generated artifact '${path}': ${errorMessage(error)}`);
   }
 }
@@ -87,10 +129,10 @@ async function isFile(path: string): Promise<boolean> {
 type RepositoryIdentityReadResult =
   {readonly status: "missing"} | {readonly status: "valid"; readonly name: string} | {readonly status: "invalid"; readonly error: string};
 
-async function readRepositoryIdentity(packageJsonPath: string): Promise<RepositoryIdentityReadResult> {
+async function readRepositoryIdentity(packageJsonPath: string, files: FileSystem): Promise<RepositoryIdentityReadResult> {
   let contents: string;
   try {
-    contents = await readFile(packageJsonPath, "utf8");
+    contents = await files.readText(packageJsonPath);
   } catch (error: unknown) {
     if (hasErrorCode(error, "ENOENT")) {
       return {status: "missing"};
@@ -124,22 +166,22 @@ function hasValidGitVersionOutput(value: string): boolean {
 
 function inspectRuntimeVersion(
   name: "Node.js" | "npm",
-  commandResult: Readonly<CommandResult>,
+  outcome: Readonly<ProcessOutcome>,
   minimum: MinimumVersion,
 ): Readonly<{
   version: MinimumVersion | null;
   evidence: readonly string[];
   nextActions: readonly string[];
 }> {
-  const parsed = parseVersion(commandResult.stdout);
-  if (!isSuccessfulCommand(commandResult) || parsed === null) {
+  const parsed = parseVersion(outcome.stdout);
+  if (!isSuccessfulOutcome(outcome) || parsed === null) {
     return {
       version: null,
       evidence: [
         `${name} version probe failed.`,
-        ...commandFailureEvidence(commandResult),
-        ...(isSuccessfulCommand(commandResult) && parsed === null
-          ? [`${name} returned an unsupported version value '${commandResult.stdout.trim()}'.`]
+        ...commandFailureEvidence(outcome),
+        ...(isSuccessfulOutcome(outcome) && parsed === null
+          ? [`${name} returned an unsupported version value '${outcome.stdout.trim()}'.`]
           : []),
       ],
       nextActions: [`Install a supported ${name} version manually, then rerun setup.`],
@@ -154,18 +196,19 @@ function inspectRuntimeVersion(
   }
   return {
     version: parsed,
-    evidence: [`${name} ${commandResult.stdout.trim()} satisfies >=${normalizedVersion(minimum)}.`],
+    evidence: [`${name} ${outcome.stdout.trim()} satisfies >=${normalizedVersion(minimum)}.`],
     nextActions: [],
   };
 }
 
 async function runPrerequisites(context: SetupContext): Promise<SetupPhaseResult> {
-  const startedAt = context.now();
+  const runtime = requireSetupPhaseRuntime(context);
+  const startedAt = runtime.clock.monotonicNow();
   const id = "workspace.prerequisites";
-  const repositoryIdentity = await readRepositoryIdentity(context.paths.packageJson);
+  const repositoryIdentity = await readRepositoryIdentity(context.paths.packageJson, runtime.files);
 
   if (repositoryIdentity.status === "missing") {
-    return result(context, startedAt, {
+    return result(runtime, startedAt, {
       id,
       status: "failed",
       summary: "The canonical repository path does not identify the arolariu.ro monorepository.",
@@ -174,7 +217,7 @@ async function runPrerequisites(context: SetupContext): Promise<SetupPhaseResult
     });
   }
   if (repositoryIdentity.status === "invalid") {
-    return result(context, startedAt, {
+    return result(runtime, startedAt, {
       id,
       status: "failed",
       summary: "The canonical repository identity could not be validated.",
@@ -183,7 +226,7 @@ async function runPrerequisites(context: SetupContext): Promise<SetupPhaseResult
     });
   }
   if (repositoryIdentity.name !== REPOSITORY_PACKAGE_NAME) {
-    return result(context, startedAt, {
+    return result(runtime, startedAt, {
       id,
       status: "failed",
       summary: "The canonical repository path does not identify the arolariu.ro monorepository.",
@@ -192,9 +235,9 @@ async function runPrerequisites(context: SetupContext): Promise<SetupPhaseResult
     });
   }
 
-  const liveRequirements = await loadRepositoryRequirements(context.paths, {files: nodeFileSystem, tasks: nodeTaskScheduler});
+  const liveRequirements = await loadRepositoryRequirements(context.paths, {files: runtime.files, tasks: runtime.tasks});
   if (liveRequirements.status === "invalid") {
-    return result(context, startedAt, {
+    return result(runtime, startedAt, {
       id,
       status: "failed",
       summary: "Manifest-derived repository requirements are invalid or contradictory.",
@@ -210,7 +253,7 @@ async function runPrerequisites(context: SetupContext): Promise<SetupPhaseResult
     context.requirements.python,
   ];
   if (!runtimeRequirements.every(validRequirement)) {
-    return result(context, startedAt, {
+    return result(runtime, startedAt, {
       id,
       status: "failed",
       summary: "Manifest-derived repository requirements are invalid or contradictory.",
@@ -219,20 +262,36 @@ async function runPrerequisites(context: SetupContext): Promise<SetupPhaseResult
     });
   }
 
-  const [gitResult, nodeResult, npmResult] = await Promise.all([
-    context.runner.run({command: "git", args: ["--version"]}, {cwd: context.paths.root}),
-    context.runner.run({command: "node", args: ["--version"]}, {cwd: context.paths.root}),
-    context.runner.run({command: "npm", args: ["--version"]}, {cwd: context.paths.root}),
-  ]);
+  const probes: readonly ProcessRequest[] = [
+    {command: "git", args: ["--version"]},
+    {command: "node", args: ["--version"]},
+    {command: "npm", args: ["--version"]},
+    // The running binary is asked for its own version through the same runtime capability every
+    // other probe uses, so this phase never reads an ambient `process.version`.
+    {command: runtime.environment.executablePath, args: ["--version"]},
+  ];
+  const [gitResult, nodeResult, npmResult, runningNodeResult] = await runtime.tasks.parallel(
+    probes.map((probe) => () => runtime.runner.run(probe, {cwd: context.paths.root})),
+  );
+
+  if (gitResult === undefined || nodeResult === undefined || npmResult === undefined || runningNodeResult === undefined) {
+    return result(runtime, startedAt, {
+      id,
+      status: "failed",
+      summary: "Workspace prerequisites are not satisfied.",
+      evidence: ["The workspace prerequisite probes did not all produce an outcome."],
+      nextActions: ["Rerun setup; if the failure persists, inspect the reported prerequisite probes."],
+    });
+  }
 
   const evidence: string[] = [];
   const nextActions: string[] = [];
   const gitVersion = hasValidGitVersionOutput(gitResult.stdout);
-  if (!isSuccessfulCommand(gitResult) || !gitVersion) {
+  if (!isSuccessfulOutcome(gitResult) || !gitVersion) {
     evidence.push(
       "Git version probe failed.",
       ...commandFailureEvidence(gitResult),
-      ...(isSuccessfulCommand(gitResult) && !gitVersion ? [`Git returned malformed output '${gitResult.stdout.trim()}'.`] : []),
+      ...(isSuccessfulOutcome(gitResult) && !gitVersion ? [`Git returned malformed output '${gitResult.stdout.trim()}'.`] : []),
     );
     nextActions.push("Install Git manually and ensure it is available on PATH, then rerun setup.");
   } else {
@@ -247,19 +306,21 @@ async function runPrerequisites(context: SetupContext): Promise<SetupPhaseResult
   evidence.push(...npmInspection.evidence);
   nextActions.push(...npmInspection.nextActions);
 
-  const processNodeVersion = parseVersion(process.version);
+  const runningNodeVersion = isSuccessfulOutcome(runningNodeResult) ? parseVersion(runningNodeResult.stdout) : null;
   if (
     nodeInspection.version !== null
-    && (processNodeVersion === null || normalizedVersion(nodeInspection.version) !== normalizedVersion(processNodeVersion))
+    && (runningNodeVersion === null || normalizedVersion(nodeInspection.version) !== normalizedVersion(runningNodeVersion))
   ) {
+    const reported = runningNodeVersion === null ? "no usable version" : normalizedVersion(runningNodeVersion);
     evidence.push(
-      `node --version reported ${normalizedVersion(nodeInspection.version)}, but the running process.version is ${process.version}.`,
+      `node --version reported ${normalizedVersion(nodeInspection.version)}, but the running Node.js runtime `
+        + `'${runtime.environment.executablePath}' reported ${reported}.`,
     );
     nextActions.push("Run setup with the same supported Node.js executable resolved by the node command.");
   }
 
   if (nextActions.length > 0) {
-    return result(context, startedAt, {
+    return result(runtime, startedAt, {
       id,
       status: "failed",
       summary: "Workspace prerequisites are not satisfied.",
@@ -268,7 +329,7 @@ async function runPrerequisites(context: SetupContext): Promise<SetupPhaseResult
     });
   }
 
-  return result(context, startedAt, {
+  return result(runtime, startedAt, {
     id,
     status: "succeeded",
     summary: "Repository identity, Git, Node.js, and npm prerequisites are valid.",
@@ -300,12 +361,13 @@ function npmProblemEvidence(facts: Readonly<NpmTreeFacts>): readonly string[] {
  * @returns The completed phase result.
  */
 async function runRootDependencies(context: SetupContext): Promise<SetupPhaseResult> {
-  const startedAt = context.now();
+  const runtime = requireSetupPhaseRuntime(context);
+  const startedAt = runtime.clock.monotonicNow();
   const id = "workspace.root-dependencies";
   const outcome = await context.inspection.inspect("npm.root");
 
   if (outcome.kind === "unavailable") {
-    return result(context, startedAt, {
+    return result(runtime, startedAt, {
       id,
       status: "failed",
       summary: "Root workspace dependencies could not be validated.",
@@ -314,7 +376,7 @@ async function runRootDependencies(context: SetupContext): Promise<SetupPhaseRes
     });
   }
   if (outcome.kind === "invalid") {
-    return result(context, startedAt, {
+    return result(runtime, startedAt, {
       id,
       status: "failed",
       summary: "Root workspace dependency inspection produced invalid data.",
@@ -323,7 +385,7 @@ async function runRootDependencies(context: SetupContext): Promise<SetupPhaseRes
     });
   }
   if (!outcome.value.valid) {
-    return result(context, startedAt, {
+    return result(runtime, startedAt, {
       id,
       status: "failed",
       summary: "Root workspace dependencies are missing or broken.",
@@ -332,7 +394,7 @@ async function runRootDependencies(context: SetupContext): Promise<SetupPhaseRes
     });
   }
 
-  return result(context, startedAt, {
+  return result(runtime, startedAt, {
     id,
     status: "succeeded",
     summary: "Root workspace dependencies are valid.",
@@ -353,9 +415,11 @@ async function runRootDependencies(context: SetupContext): Promise<SetupPhaseRes
  *
  * @param context - Shared setup dependencies, including the repository inspection session.
  * @returns The completed phase result.
+ * @throws When the invocation was interrupted while the restoration ran.
  */
 async function runGithubScriptsDependencies(context: SetupContext): Promise<SetupPhaseResult> {
-  const startedAt = context.now();
+  const runtime = requireSetupPhaseRuntime(context);
+  const startedAt = runtime.clock.monotonicNow();
   const id = "workspace.github-scripts-dependencies";
   const actionId = `${id}.npm-ci`;
 
@@ -365,19 +429,21 @@ async function runGithubScriptsDependencies(context: SetupContext): Promise<Setu
       scope: "repository",
       summary: "Restore .github scripts dependencies from the lockfile.",
       execute: async () => {
-        const restoreResult = await context.runner.run(NPM_RESTORE_COMMAND, {
+        const restoreOutcome = await runtime.runner.run(NPM_RESTORE_COMMAND, {
           cwd: context.paths.githubScriptsRoot,
           output: "tee",
-          logger: context.logger,
+          timeoutMs: NPM_RESTORE_TIMEOUT_MS,
         });
-        if (!isSuccessfulCommand(restoreResult)) {
-          throw new Error([`npm ci failed in ${context.paths.githubScriptsRoot}.`, ...commandFailureEvidence(restoreResult)].join("\n"));
+        if (!isSuccessfulOutcome(restoreOutcome)) {
+          throw new Error(
+            [`npm ci failed in ${context.paths.githubScriptsRoot}.`, ...commandFailureEvidence(restoreOutcome)].join("\n"),
+          );
         }
       },
     });
 
     if (disposition === "planned") {
-      return result(context, startedAt, {
+      return result(runtime, startedAt, {
         id,
         status: "skipped",
         summary: ".github scripts dependency restoration is planned by dry-run.",
@@ -386,7 +452,7 @@ async function runGithubScriptsDependencies(context: SetupContext): Promise<Setu
       });
     }
     if (disposition === "declined") {
-      return result(context, startedAt, {
+      return result(runtime, startedAt, {
         id,
         status: "failed",
         summary: ".github scripts dependency restoration was declined.",
@@ -399,7 +465,7 @@ async function runGithubScriptsDependencies(context: SetupContext): Promise<Setu
     const outcome = await context.inspection.inspect("npm.github-scripts");
 
     if (outcome.kind === "unavailable") {
-      return result(context, startedAt, {
+      return result(runtime, startedAt, {
         id,
         status: "failed",
         summary: ".github scripts dependencies could not be verified after npm ci.",
@@ -408,7 +474,7 @@ async function runGithubScriptsDependencies(context: SetupContext): Promise<Setu
       });
     }
     if (outcome.kind === "invalid") {
-      return result(context, startedAt, {
+      return result(runtime, startedAt, {
         id,
         status: "failed",
         summary: ".github scripts dependencies could not be verified after npm ci.",
@@ -417,7 +483,7 @@ async function runGithubScriptsDependencies(context: SetupContext): Promise<Setu
       });
     }
     if (!outcome.value.valid) {
-      return result(context, startedAt, {
+      return result(runtime, startedAt, {
         id,
         status: "failed",
         summary: ".github scripts dependencies remain invalid after npm ci.",
@@ -426,7 +492,7 @@ async function runGithubScriptsDependencies(context: SetupContext): Promise<Setu
       });
     }
 
-    return result(context, startedAt, {
+    return result(runtime, startedAt, {
       id,
       status: "succeeded",
       summary: ".github scripts dependencies were restored and verified.",
@@ -437,7 +503,10 @@ async function runGithubScriptsDependencies(context: SetupContext): Promise<Setu
       nextActions: [],
     });
   } catch (error: unknown) {
-    return result(context, startedAt, {
+    if (isInterruption(error)) {
+      throw error;
+    }
+    return result(runtime, startedAt, {
       id,
       status: "failed",
       summary: ".github scripts dependency setup failed.",
@@ -447,12 +516,12 @@ async function runGithubScriptsDependencies(context: SetupContext): Promise<Setu
   }
 }
 
-function parseNxProjects(commandResult: Readonly<CommandResult>): readonly string[] | null {
-  if (!isSuccessfulCommand(commandResult) || commandResult.stdout.trim() === "") {
+function parseNxProjects(outcome: Readonly<ProcessOutcome>): readonly string[] | null {
+  if (!isSuccessfulOutcome(outcome) || outcome.stdout.trim() === "") {
     return null;
   }
   try {
-    const parsed: unknown = JSON.parse(commandResult.stdout);
+    const parsed: unknown = JSON.parse(outcome.stdout);
     if (!Array.isArray(parsed) || parsed.length === 0 || !parsed.every((project) => typeof project === "string" && project.trim() !== "")) {
       return null;
     }
@@ -462,8 +531,29 @@ function parseNxProjects(commandResult: Readonly<CommandResult>): readonly strin
   }
 }
 
+/**
+ * Converts one cancelled nested generation back into the typed cancellation the setup lifecycle
+ * maps to the caller's `130`/`143` exit contract.
+ *
+ * @param execution - Cancelled child execution.
+ * @returns The cancellation to rethrow.
+ */
+function toCancellation(execution: Extract<CommandExecution<GenerateResult>, {status: "cancelled"}>): CommandCancellation {
+  const {cause} = execution.failure;
+  return cause instanceof CommandCancellation ? cause : new CommandCancellation(execution.failure.message, execution.exitCode);
+}
+
+/**
+ * Validates Nx workspace metadata, generates every required checkout artifact through one typed
+ * nested generation invocation, and asserts the generated postconditions.
+ *
+ * @param context - Shared setup dependencies.
+ * @returns The completed phase result.
+ * @throws {CommandCancellation} When the nested generation invocation was cancelled.
+ */
 async function runGenerators(context: SetupContext): Promise<SetupPhaseResult> {
-  const startedAt = context.now();
+  const runtime = requireSetupPhaseRuntime(context);
+  const startedAt = runtime.clock.monotonicNow();
   const id = "workspace.generators";
   const generatorActionId = "workspace.generators.generate";
   let projectCount: number | undefined;
@@ -473,40 +563,43 @@ async function runGenerators(context: SetupContext): Promise<SetupPhaseResult> {
       scope: "repository",
       summary: "Generate taxonomy, GraphQL, and internationalization checkout artifacts.",
       execute: async () => {
-        const nxResult = await context.runner.run(NX_PROJECTS_COMMAND, {
-          cwd: context.paths.root,
-        });
-        const projects = parseNxProjects(nxResult);
+        const nxOutcome = await runtime.runner.run(NX_PROJECTS_COMMAND, {cwd: context.paths.root});
+        const projects = parseNxProjects(nxOutcome);
         if (projects === null) {
           throw new Error(
             [
               "Nx project metadata is unavailable or malformed.",
-              ...commandFailureEvidence(nxResult),
-              ...(nxResult.stdout.trim() === "" ? ["Nx returned no project JSON."] : [`Nx output: ${nxResult.stdout.trim()}`]),
+              ...commandFailureEvidence(nxOutcome),
+              ...(nxOutcome.stdout.trim() === "" ? ["Nx returned no project JSON."] : [`Nx output: ${nxOutcome.stdout.trim()}`]),
             ].join("\n"),
           );
         }
         projectCount = projects.length;
 
-        const generatorResult = await context.runner.run(
-          {
-            command: process.execPath,
-            args: [resolve(context.paths.root, "scripts", "generate.ts"), "/a", "/g", "/i"],
-          },
-          {
-            cwd: context.paths.root,
-            output: "tee",
-            logger: context.logger,
-          },
-        );
-        if (!isSuccessfulCommand(generatorResult)) {
-          throw new Error(["Repository generator command failed.", ...commandFailureEvidence(generatorResult)].join("\n"));
+        const generation = await runtime.invokeGenerate({
+          verbose: context.options.verbose,
+          env: true,
+          i18n: true,
+          gql: true,
+          artifacts: true,
+        });
+
+        if (generation.status === "cancelled") {
+          throw toCancellation(generation);
+        }
+        if (generation.status === "failed") {
+          throw new Error(
+            ["Repository artifact generation failed.", generation.failure.message, ...generation.failure.evidence].join("\n"),
+          );
+        }
+        if (generation.status !== "completed" || generation.exitCode !== 0) {
+          throw new Error("Repository artifact generation reported a nonzero result.");
         }
       },
     });
 
     if (disposition === "planned") {
-      return result(context, startedAt, {
+      return result(runtime, startedAt, {
         id,
         status: "skipped",
         summary: "Repository artifact generation is planned by dry-run.",
@@ -515,7 +608,7 @@ async function runGenerators(context: SetupContext): Promise<SetupPhaseResult> {
       });
     }
     if (disposition === "declined") {
-      return result(context, startedAt, {
+      return result(runtime, startedAt, {
         id,
         status: "failed",
         summary: "Repository artifact generation was declined.",
@@ -524,7 +617,10 @@ async function runGenerators(context: SetupContext): Promise<SetupPhaseResult> {
       });
     }
   } catch (error: unknown) {
-    return result(context, startedAt, {
+    if (isInterruption(error)) {
+      throw error;
+    }
+    return result(runtime, startedAt, {
       id,
       status: "failed",
       summary: "Repository artifact generation failed.",
@@ -534,7 +630,7 @@ async function runGenerators(context: SetupContext): Promise<SetupPhaseResult> {
   }
 
   if (projectCount === undefined) {
-    return result(context, startedAt, {
+    return result(runtime, startedAt, {
       id,
       status: "failed",
       summary: "Repository artifact generation completed without validated Nx metadata.",
@@ -549,9 +645,14 @@ async function runGenerators(context: SetupContext): Promise<SetupPhaseResult> {
   ];
   let artifactChecks: readonly Readonly<{path: string; exists: boolean}>[];
   try {
-    artifactChecks = await Promise.all(expectedArtifacts.map(async (path) => ({path, exists: await isFile(path)})));
+    artifactChecks = await runtime.tasks.parallel(
+      expectedArtifacts.map((path) => async () => ({path, exists: await isFile(path, runtime.files)})),
+    );
   } catch (error: unknown) {
-    return result(context, startedAt, {
+    if (isInterruption(error)) {
+      throw error;
+    }
+    return result(runtime, startedAt, {
       id,
       status: "failed",
       summary: "Repository generator postconditions could not be inspected.",
@@ -561,7 +662,7 @@ async function runGenerators(context: SetupContext): Promise<SetupPhaseResult> {
   }
   const missingArtifacts = artifactChecks.filter(({exists}) => !exists).map(({path}) => path);
   if (missingArtifacts.length > 0) {
-    return result(context, startedAt, {
+    return result(runtime, startedAt, {
       id,
       status: "failed",
       summary: "Repository generators completed without every required checkout artifact.",
@@ -570,7 +671,7 @@ async function runGenerators(context: SetupContext): Promise<SetupPhaseResult> {
     });
   }
 
-  return result(context, startedAt, {
+  return result(runtime, startedAt, {
     id,
     status: "succeeded",
     summary: "Nx metadata and required generated checkout artifacts are valid.",

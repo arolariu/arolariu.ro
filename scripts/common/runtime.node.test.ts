@@ -27,7 +27,6 @@ import {createRepositoryInspectionSessionStub, repositoryFixtureRoot} from "./ru
 import {
   createNodeCommandRuntimeFactory,
   createNodeProcessRunner,
-  createNodeRepositoryInspectionSession,
   createNodeRuntimeScope,
   nodeClock,
   nodeFileSystem,
@@ -995,24 +994,5 @@ describe("createNodeCommandRuntimeFactory", () => {
 
     await childRuntime.cleanup.drain();
     await parentRuntime.cleanup.drain();
-  });
-});
-
-describe("createNodeRepositoryInspectionSession", () => {
-  it("assembles a session from the Node adapters for a transitional caller", () => {
-    const session = createNodeRepositoryInspectionSession({
-      profile: "quick",
-      paths: createRepositoryPaths(repositoryFixtureRoot),
-    });
-
-    expect(typeof session.inspect).toBe("function");
-    expect(typeof session.invalidate).toBe("function");
-    expect(typeof session.updateInfrastructureEngine).toBe("function");
-  });
-
-  it("creates an independent session per call instead of memoizing", () => {
-    const request: RepositoryInspectionRequest = {profile: "quick", paths: createRepositoryPaths(repositoryFixtureRoot)};
-
-    expect(createNodeRepositoryInspectionSession(request)).not.toBe(createNodeRepositoryInspectionSession(request));
   });
 });

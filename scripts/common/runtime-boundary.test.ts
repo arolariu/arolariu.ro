@@ -1079,83 +1079,13 @@ describe("runtime boundary policy", () => {
         },
         {
           "file": "scripts/setup.ts",
-          "line": 21,
-          "rule": "legacy-cli-import",
-        },
-        {
-          "file": "scripts/setup.ts",
-          "line": 22,
+          "line": 36,
           "rule": "legacy-process-import",
-        },
-        {
-          "file": "scripts/setup.ts",
-          "line": 353,
-          "rule": "ambient-timer",
-        },
-        {
-          "file": "scripts/setup.ts",
-          "line": 512,
-          "rule": "ambient-os-state",
-        },
-        {
-          "file": "scripts/setup.ts",
-          "line": 539,
-          "rule": "ambient-os-state",
-        },
-        {
-          "file": "scripts/setup.ts",
-          "line": 540,
-          "rule": "manual-entrypoint",
-        },
-        {
-          "file": "scripts/setup.ts",
-          "line": 543,
-          "rule": "direct-exit",
-        },
-        {
-          "file": "scripts/setup.ts",
-          "line": 547,
-          "rule": "direct-exit",
         },
         {
           "file": "scripts/setup.types.ts",
-          "line": 8,
+          "line": 15,
           "rule": "legacy-process-import",
-        },
-        {
-          "file": "scripts/setup.workspace.ts",
-          "line": 6,
-          "rule": "ambient-filesystem",
-        },
-        {
-          "file": "scripts/setup.workspace.ts",
-          "line": 9,
-          "rule": "legacy-process-import",
-        },
-        {
-          "file": "scripts/setup.workspace.ts",
-          "line": 222,
-          "rule": "explicit-concurrency",
-        },
-        {
-          "file": "scripts/setup.workspace.ts",
-          "line": 250,
-          "rule": "ambient-os-state",
-        },
-        {
-          "file": "scripts/setup.workspace.ts",
-          "line": 256,
-          "rule": "ambient-os-state",
-        },
-        {
-          "file": "scripts/setup.workspace.ts",
-          "line": 493,
-          "rule": "ambient-os-state",
-        },
-        {
-          "file": "scripts/setup.workspace.ts",
-          "line": 552,
-          "rule": "explicit-concurrency",
         },
         {
           "file": "scripts/test-e2e.ts",
