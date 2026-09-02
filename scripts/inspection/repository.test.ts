@@ -16,9 +16,10 @@
 
 import {beforeEach, describe, expect, it, vi} from "vitest";
 
-import type {CommandResult, CommandRunner, CommandSpec} from "../common/process.ts";
+import type {ProcessOutcome, ProcessRequest, ProcessRunner} from "../common/runner.ts";
 import {resolveRepositoryPaths, type RepositoryPaths} from "../common/repository-paths.ts";
 import {nodeFileSystem} from "../common/runtime.node.ts";
+import {asReadOnlyFileSystem, DefaultTaskScheduler, type Clock, type FileSystem, type RuntimeEnvironment} from "../common/runtime.ts";
 import {INSPECTED_PACKAGE_NAMES} from "./packages.ts";
 import {createRepositoryInspectionSession, type RepositoryInspectionSession} from "./repository.ts";
 
@@ -72,28 +73,60 @@ vi.mock("./aggregate.ts", async (importOriginal) => {
 const repositoryPaths: RepositoryPaths = await resolveRepositoryPaths(import.meta.url, nodeFileSystem);
 
 /** Monotonically increasing fake clock, matching the pattern used by sibling provider tests. */
-function clock(): () => number {
+function clock(): Clock {
   let current = 0;
-  return () => {
-    current += 1;
-    return current;
+  return {
+    monotonicNow: (): number => {
+      current += 1;
+      return current;
+    },
+    isoTimestamp: (): string => "2025-01-01T00:00:00.000Z",
+    delay: (): Promise<void> => Promise.resolve(),
   };
 }
 
-/** A fake {@link CommandRunner} that reports every command as a bounded, non-throwing failure. */
-function createFakeRunner(): {runner: CommandRunner; calls: Readonly<CommandSpec>[]} {
-  const calls: Readonly<CommandSpec>[] = [];
-  const run = vi.fn(async (command: Readonly<CommandSpec>): Promise<CommandResult> => {
+/** Immutable environment every composed provider observes; the platform is fixed for determinism. */
+function environmentFor(platform: NodeJS.Platform): RuntimeEnvironment {
+  return {
+    variables: {},
+    cwd: repositoryPaths.root,
+    executablePath: "/usr/bin/node",
+    platform,
+    architecture: "x64",
+    stdinIsTTY: false,
+    stdoutIsTTY: false,
+    isCI: true,
+  };
+}
+
+/** Narrow temporary-directory capability shared by the composed Nx workspace provider. */
+const temporaryDirectories: Pick<FileSystem, "createTemporaryDirectory"> = {
+  createTemporaryDirectory: (prefix) => nodeFileSystem.createTemporaryDirectory(prefix),
+};
+
+/** A fake {@link ProcessRunner} that reports every command as a bounded, non-throwing failure. */
+function createFakeRunner(): {runner: ProcessRunner; calls: Readonly<ProcessRequest>[]} {
+  const calls: Readonly<ProcessRequest>[] = [];
+  const run = vi.fn(async (command: Readonly<ProcessRequest>): Promise<ProcessOutcome> => {
     calls.push(command);
-    return {code: 1, stdout: "", stderr: "", durationMs: 1, timedOut: false};
+    return {kind: "exited", exitCode: 1, stdout: "", stderr: "", durationMs: 1};
   });
-  return {runner: {run}, calls};
+  const runner: ProcessRunner = {
+    run,
+    expectSuccess: () => {
+      throw new Error("The composed session never calls expectSuccess.");
+    },
+    scope: () => {
+      throw new Error("The composed session never scopes the shared runner.");
+    },
+  };
+  return {runner, calls};
 }
 
 /** Builds one repository inspection session over a fresh fake runner for one test. */
-function buildSession(overrides: Readonly<Partial<{profile: "full" | "quick"; platform: NodeJS.Platform; runner: CommandRunner}>> = {}): {
+function buildSession(overrides: Readonly<Partial<{profile: "full" | "quick"; platform: NodeJS.Platform; runner: ProcessRunner}>> = {}): {
   session: RepositoryInspectionSession;
-  runnerCalls: Readonly<CommandSpec>[];
+  runnerCalls: Readonly<ProcessRequest>[];
 } {
   const fake = createFakeRunner();
   const runner = overrides.runner ?? fake.runner;
@@ -101,9 +134,12 @@ function buildSession(overrides: Readonly<Partial<{profile: "full" | "quick"; pl
     profile: overrides.profile ?? "full",
     paths: repositoryPaths,
     runner,
-    env: {},
-    platform: overrides.platform ?? "linux",
-    now: clock(),
+    files: asReadOnlyFileSystem(nodeFileSystem),
+    temporaryDirectories,
+    clock: clock(),
+    tasks: new DefaultTaskScheduler(),
+    environment: environmentFor(overrides.platform ?? "linux"),
+    signal: new AbortController().signal,
   });
   return {session, runnerCalls: fake.calls};
 }

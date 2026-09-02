@@ -9,16 +9,16 @@
  * opaque allowlisted probes executed through `context.probes.run(...)` (Git, node/npm runtime
  * versions, npm cache/audit/outdated), or direct, narrowly-scoped filesystem reads for
  * repository-wide configuration files and generated taxonomy artifacts that no fact model
- * represents. This module never imports `CommandSpec`/`CommandRunner` from `./common/process.ts`
- * and never touches `context.runner`; it consumes only the `CommandResult` type produced by
- * probe execution.
+ * represents. This module never imports `ProcessRequest`/`ProcessRunner` from `./common/runner.ts`
+ * and never touches `context.runner`; it consumes only the typed `ProcessOutcome` produced by
+ * probe execution, and classifies every one of its variants explicitly.
  */
 
 import {constants as fsConstants} from "node:fs";
 import {access, readFile, stat} from "node:fs/promises";
 import {basename, join, resolve} from "node:path";
 
-import type {CommandResult} from "./common/process.ts";
+import type {ProcessOutcome} from "./common/runner.ts";
 import {parseVersion, satisfiesMinimum, type MinimumVersion} from "./common/requirements.ts";
 import {getExpectedTaxonomyArtifactPaths} from "./common/taxonomy-artifacts.ts";
 import {
@@ -68,32 +68,74 @@ function hasErrorCode(error: unknown, code: string): boolean {
   return error instanceof Error && "code" in error && error.code === code;
 }
 
-function isSuccessfulCommand(result: Readonly<CommandResult>): boolean {
-  return result.code === 0 && !result.timedOut && result.signal === undefined && result.spawnError === undefined;
+function isSuccessfulCommand(outcome: Readonly<ProcessOutcome>): boolean {
+  return outcome.kind === "succeeded";
 }
 
-function isMissingExecutable(result: Readonly<CommandResult>): boolean {
-  const detail = `${result.spawnError ?? ""}\n${result.stderr}`;
+/**
+ * Maps one probe {@link ProcessOutcome} onto the numeric exit code doctor's evidence reports.
+ *
+ * @param outcome - Typed probe outcome.
+ * @returns `0` for success, the reported exit code for a completed nonzero exit, `1` otherwise.
+ */
+function processExitCode(outcome: Readonly<ProcessOutcome>): number {
+  switch (outcome.kind) {
+    case "succeeded":
+      return 0;
+    case "exited":
+      return outcome.exitCode;
+    case "spawn-failed":
+    case "timed-out":
+    case "signalled":
+    case "cancelled":
+      return 1;
+  }
+}
+
+/**
+ * Reads the terminating signal from one probe outcome, when the runner reported one.
+ *
+ * @param outcome - Typed probe outcome.
+ * @returns The signal name, or `undefined` when the child was not stopped by a signal.
+ */
+function processSignal(outcome: Readonly<ProcessOutcome>): NodeJS.Signals | undefined {
+  switch (outcome.kind) {
+    case "signalled":
+      return outcome.signal;
+    case "timed-out":
+    case "cancelled":
+      return outcome.signal;
+    case "succeeded":
+    case "exited":
+    case "spawn-failed":
+      return undefined;
+  }
+}
+
+function isMissingExecutable(outcome: Readonly<ProcessOutcome>): boolean {
+  const detail = `${outcome.kind === "spawn-failed" ? outcome.message : ""}\n${outcome.stderr}`;
   return (
-    result.code === 127
+    processExitCode(outcome) === 127
     || /\bENOENT\b|command not found|not recognized as an internal or external command|no such file or directory/iu.test(detail)
   );
 }
 
-function commandStatusEvidence(result: Readonly<CommandResult>): readonly string[] {
+function commandStatusEvidence(outcome: Readonly<ProcessOutcome>): readonly string[] {
+  const exitCode = processExitCode(outcome);
+  const signal = processSignal(outcome);
   return [
-    ...(result.spawnError === undefined ? [] : [`Unable to start command: ${result.spawnError}`]),
-    ...(result.timedOut ? ["Command timed out."] : []),
-    ...(result.signal === undefined ? [] : [`Command stopped with signal ${result.signal}.`]),
-    ...(result.code === 0 ? [] : [`Command exited with code ${String(result.code)}.`]),
+    ...(outcome.kind === "spawn-failed" ? [`Unable to start command: ${outcome.message}`] : []),
+    ...(outcome.kind === "timed-out" ? ["Command timed out."] : []),
+    ...(signal === undefined ? [] : [`Command stopped with signal ${signal}.`]),
+    ...(exitCode === 0 ? [] : [`Command exited with code ${String(exitCode)}.`]),
   ];
 }
 
-function commandEvidence(result: Readonly<CommandResult>): readonly string[] {
+function commandEvidence(outcome: Readonly<ProcessOutcome>): readonly string[] {
   return [
-    ...commandStatusEvidence(result),
-    ...(result.stdout.trim() === "" ? [] : [`stdout: ${boundCommandExcerpt(result.stdout.trim())}`]),
-    ...(result.stderr.trim() === "" ? [] : [`stderr: ${boundCommandExcerpt(result.stderr.trim())}`]),
+    ...commandStatusEvidence(outcome),
+    ...(outcome.stdout.trim() === "" ? [] : [`stdout: ${boundCommandExcerpt(outcome.stdout.trim())}`]),
+    ...(outcome.stderr.trim() === "" ? [] : [`stderr: ${boundCommandExcerpt(outcome.stderr.trim())}`]),
   ];
 }
 
@@ -365,7 +407,7 @@ async function diagnoseRuntime(
     id: "workspace.node-runtime" | "workspace.npm-runtime";
     name: "Node.js runtime" | "npm runtime";
     executable: "node" | "npm";
-    runProbe: () => Promise<CommandResult>;
+    runProbe: () => Promise<ProcessOutcome>;
     minimum: MinimumVersion | null;
   }>,
 ): Promise<DiagnosticResult> {
@@ -953,11 +995,11 @@ async function diagnoseHostCapacity(context: Readonly<DoctorContext>): Promise<D
   return passDiagnostic(context, startedAt, "workspace.host-capacity", "Host capacity", "Host capacity is sufficient.", evidence);
 }
 
-function isNetworkUnavailable(result: Readonly<CommandResult>): boolean {
-  if (result.timedOut) {
+function isNetworkUnavailable(outcome: Readonly<ProcessOutcome>): boolean {
+  if (outcome.kind === "timed-out") {
     return true;
   }
-  const detail = `${result.stdout}\n${result.stderr}\n${result.spawnError ?? ""}`;
+  const detail = `${outcome.stdout}\n${outcome.stderr}\n${outcome.kind === "spawn-failed" ? outcome.message : ""}`;
   return /\b(?:ENOTFOUND|EAI_AGAIN|ENETUNREACH|ECONNRESET|ETIMEDOUT)\b|timed?\s*out|network is unreachable/iu.test(detail);
 }
 

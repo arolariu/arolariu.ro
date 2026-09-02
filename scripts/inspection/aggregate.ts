@@ -7,20 +7,21 @@
  * @remarks
  * This module never imports `envinfo` or `systeminformation`; the worker (`./aggregate-worker.ts`)
  * is the only production boundary that touches those packages. The parent spawns the worker through
- * the shared {@link CommandRunner}, applies a bounded timeout, and treats the worker's stdout as one
+ * the injected {@link ProcessRunner}, applies a bounded timeout, and treats the worker's stdout as one
  * untrusted JSON document. That document is never cast or returned directly: every outcome and fact
  * is runtime-validated and reconstructed into a fresh, exact copy so an accidental worker-only raw
- * field cannot cross the parent boundary. Spawn/timeout/nonzero failures and malformed documents map
- * to bounded `unavailable`/`invalid` outcomes that never carry stdout, stderr, spawn-error, or source
- * detail. A valid schema-v1 document always yields an outer `available` outcome, preserving each
- * component's usable result even when the other nested outcome is `unavailable` or `invalid`.
+ * field cannot cross the parent boundary. Spawn/timeout/signal/cancellation/nonzero failures and
+ * malformed documents map to bounded `unavailable`/`invalid` outcomes that never carry stdout,
+ * stderr, spawn-error, or source detail. A valid schema-v1 document always yields an outer
+ * `available` outcome, preserving each component's usable result even when the other nested outcome
+ * is `unavailable` or `invalid`.
  */
 
 import {resolve} from "node:path";
-import type {CommandRunner} from "../common/process.ts";
+import type {ProcessOutcome} from "../common/runner.ts";
 import type {HostContainerFacts, HostCpuFacts, HostFacts, HostFilesystemFact, HostLoadFacts, HostMemoryFacts, HostNetworkFacts, HostOsFacts, HostPortOwnerFact, HostProcessFacts} from "./host.ts";
 import type {PackageFact, ToolFact, ToolingFacts} from "./tooling.ts";
-import type {InspectionOutcome, InspectionProvider} from "./types.ts";
+import type {InspectionOutcome, InspectionProvider, InspectionProviderContext} from "./types.ts";
 
 /** Deterministic aggregate facts: the tooling and host component outcomes, preserved independently. */
 export interface AggregateFacts {
@@ -39,13 +40,9 @@ export interface AggregateWorkerDocument {
 export const AGGREGATE_TIMEOUT_MS = 60_000;
 
 /** Dependencies required to create the isolated aggregate inspection provider. */
-interface AggregateProviderInput {
+interface AggregateProviderInput extends Pick<InspectionProviderContext, "runner" | "clock" | "environment"> {
   /** Repository root to inspect. */
   readonly root: string;
-  /** Shared command runner used to invoke the isolated worker process. */
-  readonly runner: CommandRunner;
-  /** Monotonic time source used to measure `durationMs`. */
-  readonly now: () => number;
 }
 
 /** Bounded generic evidence emitted when the worker never started. */
@@ -56,6 +53,32 @@ const WORKER_TIMEOUT_REASON = "The aggregate inspection worker timed out.";
 
 /** Bounded generic evidence emitted when the worker exited unsuccessfully. */
 const WORKER_EXIT_REASON = "The aggregate inspection worker exited unsuccessfully.";
+
+/**
+ * Classifies one worker {@link ProcessOutcome} exhaustively into its bounded unavailable reason.
+ *
+ * @remarks
+ * A signalled or cancelled child never produced a document either, so both are reported with the
+ * same bounded exit evidence the legacy nonzero-exit branch used. No stdout, stderr, spawn message,
+ * signal name, or exit code is ever echoed.
+ *
+ * @param outcome - Typed outcome of the isolated worker invocation.
+ * @returns The bounded reason, or `undefined` when the worker completed successfully.
+ */
+function workerFailureReason(outcome: Readonly<ProcessOutcome>): string | undefined {
+  switch (outcome.kind) {
+    case "succeeded":
+      return undefined;
+    case "spawn-failed":
+      return WORKER_SPAWN_REASON;
+    case "timed-out":
+      return WORKER_TIMEOUT_REASON;
+    case "exited":
+    case "signalled":
+    case "cancelled":
+      return WORKER_EXIT_REASON;
+  }
+}
 
 /** Reports a malformed worker document, outcome, or fact model. Never echoes source values. */
 class AggregateDocumentError extends Error {}
@@ -367,42 +390,37 @@ function reconstructAggregateFacts(value: unknown): AggregateFacts {
  *
  * @remarks
  * Each invocation resolves the repository root, runs `aggregate-worker.ts` as a native Node child
- * process with captured output and a {@link AGGREGATE_TIMEOUT_MS} timeout, and maps the result:
- * a spawn failure, timeout, or nonzero exit becomes a bounded outer `unavailable` outcome with no
- * stdout/stderr/spawn-error detail; empty, malformed, multiple-document, wrong-schema, or malformed
- * nested outcome/fact output becomes outer `invalid`; and a validated schema-v1 document becomes
- * outer `available` whose value preserves both reconstructed component outcomes even when one is
- * `unavailable` or `invalid`.
+ * process with captured output and a {@link AGGREGATE_TIMEOUT_MS} timeout, and maps the typed
+ * {@link ProcessOutcome} exhaustively: a spawn failure, timeout, signal, cancellation, or nonzero
+ * exit becomes a bounded outer `unavailable` outcome with no stdout/stderr/spawn-error detail;
+ * empty, malformed, multiple-document, wrong-schema, or malformed nested outcome/fact output
+ * becomes outer `invalid`; and a validated schema-v1 document becomes outer `available` whose value
+ * preserves both reconstructed component outcomes even when one is `unavailable` or `invalid`.
  *
- * @param input - Repository root, shared command runner, and monotonic time source.
+ * @param input - Repository root plus the runner, clock, and environment capabilities.
  * @returns An {@link InspectionProvider} for {@link AggregateFacts}.
  */
 export function createAggregateProvider(input: Readonly<AggregateProviderInput>): InspectionProvider<AggregateFacts> {
   return async (): Promise<InspectionOutcome<AggregateFacts>> => {
-    const startedAt = input.now();
+    const startedAt = input.clock.monotonicNow();
     const resolvedRoot = resolve(input.root);
     const resolvedWorkerPath = resolve(resolvedRoot, "scripts", "inspection", "aggregate-worker.ts");
 
-    const result = await input.runner.run(
-      {command: process.execPath, args: [resolvedWorkerPath, resolvedRoot]},
+    const outcome = await input.runner.run(
+      {command: input.environment.executablePath, args: [resolvedWorkerPath, resolvedRoot]},
       {cwd: resolvedRoot, output: "capture", timeoutMs: AGGREGATE_TIMEOUT_MS},
     );
 
-    const durationMs = Math.max(0, input.now() - startedAt);
+    const durationMs = Math.max(0, input.clock.monotonicNow() - startedAt);
 
-    if (result.spawnError !== undefined) {
-      return {kind: "unavailable", reason: WORKER_SPAWN_REASON, durationMs};
-    }
-    if (result.timedOut) {
-      return {kind: "unavailable", reason: WORKER_TIMEOUT_REASON, durationMs};
-    }
-    if (result.code !== 0) {
-      return {kind: "unavailable", reason: WORKER_EXIT_REASON, durationMs};
+    const transportReason = workerFailureReason(outcome);
+    if (transportReason !== undefined) {
+      return {kind: "unavailable", reason: transportReason, durationMs};
     }
 
     let parsedDocument: unknown;
     try {
-      parsedDocument = JSON.parse(result.stdout.trim());
+      parsedDocument = JSON.parse(outcome.stdout.trim());
     } catch {
       return {kind: "invalid", issues: ["The aggregate worker did not emit a single valid JSON document."], durationMs};
     }

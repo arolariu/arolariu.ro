@@ -19,7 +19,7 @@ import {fileURLToPath} from "node:url";
 import {afterEach, describe, expect, it, vi, type Mock} from "vitest";
 
 import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "./common/logger.ts";
-import type {CommandResult} from "./common/process.ts";
+import type {ProcessOutcome} from "./common/runner.ts";
 import {createRepositoryPaths} from "./common/repository-paths.ts";
 import type {RepositoryRequirements} from "./common/requirements.ts";
 import {getExpectedTaxonomyArtifactPaths} from "./common/taxonomy-artifacts.ts";
@@ -43,8 +43,37 @@ const validRequirements: RepositoryRequirements = {
   packages: new Map(),
 };
 
-function commandResult(patch: Partial<CommandResult> = {}): CommandResult {
-  return {code: 0, stdout: "", stderr: "", durationMs: 4, timedOut: false, ...patch};
+/** Legacy-shaped fixture description translated into one typed {@link ProcessOutcome}. */
+interface ProcessOutcomeFixture {
+  readonly code?: number;
+  readonly stdout?: string;
+  readonly stderr?: string;
+  readonly durationMs?: number;
+  readonly timedOut?: boolean;
+  readonly signal?: NodeJS.Signals;
+  readonly spawnError?: string;
+}
+
+/**
+ * Builds one typed {@link ProcessOutcome} from a fixture description, so every probe case keeps
+ * naming the exact spawn/timeout/signal/exit classification it exercises.
+ *
+ * @param patch - Fixture description of the probe outcome under test.
+ * @returns The equivalent typed process outcome.
+ */
+function commandResult(patch: ProcessOutcomeFixture = {}): ProcessOutcome {
+  const output = {stdout: patch.stdout ?? "", stderr: patch.stderr ?? "", durationMs: patch.durationMs ?? 4};
+  if (patch.spawnError !== undefined) {
+    return {kind: "spawn-failed", message: patch.spawnError, ...output};
+  }
+  if (patch.timedOut === true) {
+    return {kind: "timed-out", ...(patch.signal === undefined ? {} : {signal: patch.signal}), ...output};
+  }
+  if (patch.signal !== undefined) {
+    return {kind: "signalled", signal: patch.signal, ...output};
+  }
+  const code = patch.code ?? 0;
+  return code === 0 ? {kind: "succeeded", exitCode: 0, ...output} : {kind: "exited", exitCode: code, ...output};
 }
 
 function doctorOptions(patch: Partial<DoctorRunOptions> = {}): DoctorRunOptions {
@@ -146,7 +175,7 @@ interface WorkspaceFixture {
   readonly root: string;
   readonly cacheRoot: string;
   readonly context: DoctorContext;
-  readonly probeRun: Mock<(probe: InspectionProbe, options?: unknown) => Promise<CommandResult>>;
+  readonly probeRun: Mock<(probe: InspectionProbe, options?: unknown) => Promise<ProcessOutcome>>;
   readonly inspect: Mock<(key: string) => Promise<InspectionOutcome<unknown>>>;
 }
 
@@ -154,7 +183,7 @@ async function createWorkspaceFixture(
   input: Readonly<{
     options?: Partial<DoctorRunOptions>;
     requirementsValid?: boolean;
-    probeOverrides?: ReadonlyMap<string, CommandResult>;
+    probeOverrides?: ReadonlyMap<string, ProcessOutcome>;
     inspectionOverrides?: ReadonlyMap<string, InspectionOutcome<unknown>>;
     omitConfigPaths?: readonly string[];
     taxonomyContentOverrides?: ReadonlyMap<string, string>;
@@ -183,7 +212,7 @@ async function createWorkspaceFixture(
     await utimes(artifactPath, generatedAt, generatedAt);
   }
 
-  const probeResponses = new Map<string, CommandResult>([
+  const probeResponses = new Map<string, ProcessOutcome>([
     ["workspace.git.version", commandResult({stdout: "git version 2.50.1\n"})],
     ["workspace.git.status", commandResult({stdout: "## preview...origin/preview\n M docs/example.md\n"})],
     ["workspace.git.last-commit", commandResult({stdout: "abc1234 example\n"})],
@@ -208,7 +237,7 @@ async function createWorkspaceFixture(
     ...(input.inspectionOverrides ?? []),
   ]);
 
-  const probeRun = vi.fn(async (probe: InspectionProbe): Promise<CommandResult> => {
+  const probeRun = vi.fn(async (probe: InspectionProbe): Promise<ProcessOutcome> => {
     const response = probeResponses.get(probe.id);
     if (response === undefined) {
       throw new Error(`Unexpected inspection probe requested: '${probe.id}'.`);

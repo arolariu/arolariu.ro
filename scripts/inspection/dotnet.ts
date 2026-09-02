@@ -10,14 +10,16 @@
  * contents are never read or retained, and their absence never makes the provider unavailable.
  */
 
-import {readFile, realpath, stat} from "node:fs/promises";
 import {isAbsolute, dirname, posix, relative, resolve, sep, win32} from "node:path";
 
-import type {CommandResult} from "../common/process.ts";
+import type {ProcessOutcome} from "../common/runner.ts";
 import type {RepositoryPaths} from "../common/repository-paths.ts";
 import type {InspectionProbeRunner} from "./probes.ts";
 import {probes} from "./probes.ts";
-import type {InspectionOutcome, InspectionProvider} from "./types.ts";
+import type {InspectionOutcome, InspectionProvider, InspectionProviderContext} from "./types.ts";
+
+/** Read-only filesystem capability every .NET repository inspection helper observes disk through. */
+type InspectionFiles = InspectionProviderContext["files"];
 
 /** Complete normalized .NET observations shared by setup and doctor policy. */
 export interface DotnetFacts {
@@ -177,12 +179,21 @@ function elapsedMilliseconds(startedAt: number, now: () => number): number {
   return Number.isFinite(elapsed) ? Math.max(0, elapsed) : 0;
 }
 
-function isSuccessfulCommand(result: Readonly<CommandResult>): boolean {
-  return result.code === 0 && !result.timedOut && result.signal === undefined && result.spawnError === undefined;
+function isSuccessfulCommand(outcome: Readonly<ProcessOutcome>): boolean {
+  return outcome.kind === "succeeded";
 }
 
-function hasTransportFailure(result: Readonly<CommandResult>): boolean {
-  return result.timedOut || result.signal !== undefined || result.spawnError !== undefined;
+function hasTransportFailure(outcome: Readonly<ProcessOutcome>): boolean {
+  switch (outcome.kind) {
+    case "succeeded":
+    case "exited":
+      return false;
+    case "spawn-failed":
+    case "timed-out":
+    case "signalled":
+    case "cancelled":
+      return true;
+  }
 }
 
 function safeToken(value: string, maximumLength: number): string | undefined {
@@ -695,12 +706,14 @@ function requiresRestoreAssets(projectPath: string): boolean {
 /**
  * Inspects the generated NuGet restore asset owned by one already validated solution project.
  *
+ * @param files - Read-only filesystem capability.
  * @param canonicalRoot - Canonical repository root used for containment validation.
  * @param canonicalProject - Canonical, contained project file path.
  * @param projectPath - Repository-relative project path used for bounded issue text.
  * @returns One bounded, repository-relative issue, or `undefined` when the assets are healthy.
  */
 async function inspectProjectRestoreAssets(
+  files: InspectionFiles,
   canonicalRoot: string,
   canonicalProject: string,
   projectPath: string,
@@ -710,17 +723,20 @@ async function inspectProjectRestoreAssets(
   }
 
   try {
-    const canonicalAssets = await realpath(resolve(dirname(canonicalProject), ...RESTORE_ASSET_RELATIVE_SEGMENTS));
+    const canonicalAssets = await files.realPath(resolve(dirname(canonicalProject), ...RESTORE_ASSET_RELATIVE_SEGMENTS));
     const relativeAssets = relative(canonicalRoot, canonicalAssets);
     if (relativeAssets === ".." || relativeAssets.startsWith(`..${sep}`) || isAbsolute(relativeAssets)) {
       return `Invalid NuGet restore assets: ${projectPath}`;
     }
 
-    const assetsStat = await stat(canonicalAssets);
-    if (!assetsStat.isFile()) {
+    const assetsMetadata = await files.inspect(canonicalAssets);
+    if (assetsMetadata.kind === "missing") {
+      return `Missing NuGet restore assets: ${projectPath}`;
+    }
+    if (assetsMetadata.kind !== "file") {
       return `Invalid NuGet restore assets: ${projectPath}`;
     }
-    return assetsStat.size === 0 ? `Empty NuGet restore assets: ${projectPath}` : undefined;
+    return assetsMetadata.size === 0 ? `Empty NuGet restore assets: ${projectPath}` : undefined;
   } catch (error: unknown) {
     return hasErrorCode(error, "ENOENT") || hasErrorCode(error, "ENOTDIR")
       ? `Missing NuGet restore assets: ${projectPath}`
@@ -728,17 +744,17 @@ async function inspectProjectRestoreAssets(
   }
 }
 
-async function inspectSolution(paths: RepositoryPaths): Promise<SolutionInspection> {
+async function inspectSolution(files: InspectionFiles, paths: RepositoryPaths): Promise<SolutionInspection> {
   let canonicalRoot: string;
   try {
-    canonicalRoot = await realpath(paths.root);
+    canonicalRoot = await files.realPath(paths.root);
   } catch {
     return {issues: ["The repository root could not be inspected for solution integrity."], restoreIssues: []};
   }
 
   let contents: string;
   try {
-    contents = await readFile(paths.solution, "utf8");
+    contents = await files.readText(paths.solution);
   } catch (error: unknown) {
     return {
       issues: [
@@ -788,20 +804,24 @@ async function inspectSolution(paths: RepositoryPaths): Promise<SolutionInspecti
     }
 
     try {
-      const canonicalProject = await realpath(resolvedProject);
+      const canonicalProject = await files.realPath(resolvedProject);
       const canonicalRelativeProject = relative(canonicalRoot, canonicalProject);
       if (canonicalRelativeProject === ".." || canonicalRelativeProject.startsWith(`..${sep}`) || isAbsolute(canonicalRelativeProject)) {
         issues.add(`Invalid solution project path: ${projectPath}`);
         continue;
       }
 
-      const projectStat = await stat(canonicalProject);
-      if (!projectStat.isFile()) {
+      const projectMetadata = await files.inspect(canonicalProject);
+      if (projectMetadata.kind === "missing") {
+        issues.add(`Missing solution project: ${projectPath}`);
+        continue;
+      }
+      if (projectMetadata.kind !== "file") {
         issues.add(`Invalid solution project path: ${projectPath}`);
         continue;
       }
 
-      const restoreIssue = await inspectProjectRestoreAssets(canonicalRoot, canonicalProject, projectPath);
+      const restoreIssue = await inspectProjectRestoreAssets(files, canonicalRoot, canonicalProject, projectPath);
       if (restoreIssue !== undefined) {
         restoreIssues.add(restoreIssue);
       }
@@ -987,22 +1007,23 @@ function configuredTrackedParameters(document: unknown): readonly string[] | und
   return configured;
 }
 
-async function inspectAppHostFiles(paths: RepositoryPaths): Promise<AppHostFileOutcome> {
+async function inspectAppHostFiles(files: InspectionFiles, paths: RepositoryPaths): Promise<AppHostFileOutcome> {
   const projectPath = resolve(paths.root, APPHOST_PROJECT_RELATIVE_PATH);
   try {
-    const projectStat = await stat(projectPath);
-    if (!projectStat.isFile()) {
+    const projectMetadata = await files.inspect(projectPath);
+    if (projectMetadata.kind === "missing") {
+      return {kind: "available", value: {projectExists: false, configuredParameterKeys: []}};
+    }
+    if (projectMetadata.kind !== "file") {
       return {kind: "invalid"};
     }
-  } catch (error: unknown) {
-    return hasErrorCode(error, "ENOENT")
-      ? {kind: "available", value: {projectExists: false, configuredParameterKeys: []}}
-      : {kind: "unavailable"};
+  } catch {
+    return {kind: "unavailable"};
   }
 
   let settingsSource: string;
   try {
-    settingsSource = await readFile(resolve(paths.root, APPHOST_SETTINGS_RELATIVE_PATH), "utf8");
+    settingsSource = await files.readText(resolve(paths.root, APPHOST_SETTINGS_RELATIVE_PATH));
   } catch (error: unknown) {
     return hasErrorCode(error, "ENOENT")
       ? {kind: "available", value: {projectExists: true, configuredParameterKeys: []}}
@@ -1095,58 +1116,96 @@ function invalidOutcome(issue: string, startedAt: number, now: () => number): In
 /**
  * Creates one read-only provider for normalized .NET and AppHost facts.
  *
- * @param input - Canonical repository paths, opaque probe runner, target platform, and monotonic clock.
+ * @param input - Canonical repository paths, opaque probe runner, and the read-only filesystem,
+ * clock, task-scheduler, and environment capabilities.
  * @returns An inspection provider with explicit unavailable/invalid outcomes at command and parse boundaries.
  */
 export function createDotnetProvider(
-  input: Readonly<{
+  input: Readonly<Pick<InspectionProviderContext, "files" | "clock" | "tasks" | "environment"> & {
     paths: RepositoryPaths;
     probes: InspectionProbeRunner;
-    platform: NodeJS.Platform;
-    now: () => number;
   }>,
 ): InspectionProvider<DotnetFacts> {
+  const now = (): number => input.clock.monotonicNow();
+  const platform = input.environment.platform;
+
   return async (): Promise<InspectionOutcome<DotnetFacts>> => {
-    const startedAt = input.now();
-    if (!SUPPORTED_PLATFORMS.has(input.platform)) {
-      return invalidOutcome("The requested .NET inspection platform is unsupported.", startedAt, input.now);
+    const startedAt = now();
+    if (!SUPPORTED_PLATFORMS.has(platform)) {
+      return invalidOutcome("The requested .NET inspection platform is unsupported.", startedAt, now);
     }
 
     const dotnetProbeOptions = {cwd: input.paths.root, env: DOTNET_PROBE_ENVIRONMENT};
     const versionResult = await input.probes.run(probes.dotnet.version(), dotnetProbeOptions);
     if (!isSuccessfulCommand(versionResult)) {
-      return unavailableOutcome("The dotnet executable is unavailable.", startedAt, input.now);
+      return unavailableOutcome("The dotnet executable is unavailable.", startedAt, now);
     }
     const selectedVersion = parseDotnetVersion(versionResult.stdout);
     if (selectedVersion === undefined) {
-      return invalidOutcome("dotnet --version returned malformed output.", startedAt, input.now);
+      return invalidOutcome("dotnet --version returned malformed output.", startedAt, now);
     }
 
-    const executableName = input.platform === "win32" ? "dotnet.exe" : "dotnet";
-    const [
-      resolutionResult,
-      sdkResult,
-      infoResult,
-      workloadResult,
-      nugetResult,
-      localToolsResult,
-      certificateResult,
-      solutionInspection,
-      appHostFiles,
-    ] = await Promise.all([
-      input.probes.run(probes.workspace.executableResolution(executableName, input.platform), {cwd: input.paths.root}),
-      input.probes.run(probes.dotnet.sdkList(), dotnetProbeOptions),
-      input.probes.run(probes.dotnet.info(), dotnetProbeOptions),
-      input.probes.run(probes.dotnet.workloads(), dotnetProbeOptions),
-      input.probes.run(probes.dotnet.nugetLocals(), dotnetProbeOptions),
-      input.probes.run(probes.dotnet.localTools(), dotnetProbeOptions),
-      input.probes.run(probes.dotnet.certificate("presence"), dotnetProbeOptions),
-      inspectSolution(input.paths),
-      inspectAppHostFiles(input.paths),
+    const executableName = platform === "win32" ? "dotnet.exe" : "dotnet";
+    let resolutionResult: ProcessOutcome | undefined;
+    let sdkResult: ProcessOutcome | undefined;
+    let infoResult: ProcessOutcome | undefined;
+    let workloadResult: ProcessOutcome | undefined;
+    let nugetResult: ProcessOutcome | undefined;
+    let localToolsResult: ProcessOutcome | undefined;
+    let certificateResult: ProcessOutcome | undefined;
+    let solutionInspection: SolutionInspection | undefined;
+    let appHostFiles: AppHostFileOutcome | undefined;
+
+    // Every observation below starts concurrently, exactly as the previous `Promise.all` did; each
+    // task assigns its own binding so the heterogeneous results keep their exact types.
+    await input.tasks.parallel<void>([
+      async () => {
+        resolutionResult = await input.probes.run(probes.workspace.executableResolution(executableName, platform), {
+          cwd: input.paths.root,
+        });
+      },
+      async () => {
+        sdkResult = await input.probes.run(probes.dotnet.sdkList(), dotnetProbeOptions);
+      },
+      async () => {
+        infoResult = await input.probes.run(probes.dotnet.info(), dotnetProbeOptions);
+      },
+      async () => {
+        workloadResult = await input.probes.run(probes.dotnet.workloads(), dotnetProbeOptions);
+      },
+      async () => {
+        nugetResult = await input.probes.run(probes.dotnet.nugetLocals(), dotnetProbeOptions);
+      },
+      async () => {
+        localToolsResult = await input.probes.run(probes.dotnet.localTools(), dotnetProbeOptions);
+      },
+      async () => {
+        certificateResult = await input.probes.run(probes.dotnet.certificate("presence"), dotnetProbeOptions);
+      },
+      async () => {
+        solutionInspection = await inspectSolution(input.files, input.paths);
+      },
+      async () => {
+        appHostFiles = await inspectAppHostFiles(input.files, input.paths);
+      },
     ]);
 
+    if (
+      resolutionResult === undefined
+      || sdkResult === undefined
+      || infoResult === undefined
+      || workloadResult === undefined
+      || nugetResult === undefined
+      || localToolsResult === undefined
+      || certificateResult === undefined
+      || solutionInspection === undefined
+      || appHostFiles === undefined
+    ) {
+      return unavailableOutcome("The .NET inspection did not resolve every concurrent observation.", startedAt, now);
+    }
+
     const requiredCommands: readonly Readonly<{
-      result: CommandResult;
+      result: ProcessOutcome;
       reason: string;
     }>[] = [
       {result: resolutionResult, reason: "The dotnet executable path could not be resolved."},
@@ -1158,51 +1217,51 @@ export function createDotnetProvider(
     ];
     const failedRequiredCommand = requiredCommands.find(({result}) => !isSuccessfulCommand(result));
     if (failedRequiredCommand !== undefined) {
-      return unavailableOutcome(failedRequiredCommand.reason, startedAt, input.now);
+      return unavailableOutcome(failedRequiredCommand.reason, startedAt, now);
     }
     if (hasTransportFailure(certificateResult)) {
-      return unavailableOutcome("The HTTPS development certificate could not be inspected.", startedAt, input.now);
+      return unavailableOutcome("The HTTPS development certificate could not be inspected.", startedAt, now);
     }
     if (appHostFiles.kind === "unavailable") {
-      return unavailableOutcome("The AppHost project files could not be inspected.", startedAt, input.now);
+      return unavailableOutcome("The AppHost project files could not be inspected.", startedAt, now);
     }
     if (appHostFiles.kind === "invalid") {
-      return invalidOutcome("AppHost development configuration is malformed.", startedAt, input.now);
+      return invalidOutcome("AppHost development configuration is malformed.", startedAt, now);
     }
 
-    const resolvedPaths = parseResolvedPaths(resolutionResult.stdout, input.platform);
+    const resolvedPaths = parseResolvedPaths(resolutionResult.stdout, platform);
     if (resolvedPaths === undefined) {
-      return invalidOutcome("dotnet executable resolution returned malformed output.", startedAt, input.now);
+      return invalidOutcome("dotnet executable resolution returned malformed output.", startedAt, now);
     }
     const sdks = parseSdkVersions(sdkResult.stdout);
     if (sdks === undefined) {
-      return invalidOutcome("dotnet --list-sdks returned malformed output.", startedAt, input.now);
+      return invalidOutcome("dotnet --list-sdks returned malformed output.", startedAt, now);
     }
     const host = parseDotnetHost(infoResult.stdout);
     if (host === undefined) {
-      return invalidOutcome("dotnet --info returned malformed output.", startedAt, input.now);
+      return invalidOutcome("dotnet --info returned malformed output.", startedAt, now);
     }
     const workloads = parseWorkloads(workloadResult.stdout);
     if (workloads === undefined) {
-      return invalidOutcome("dotnet workload list returned malformed output.", startedAt, input.now);
+      return invalidOutcome("dotnet workload list returned malformed output.", startedAt, now);
     }
-    const nugetCachePath = parseNugetCachePath(nugetResult.stdout, input.platform);
+    const nugetCachePath = parseNugetCachePath(nugetResult.stdout, platform);
     if (nugetCachePath === undefined) {
-      return invalidOutcome("dotnet nuget locals returned malformed output.", startedAt, input.now);
+      return invalidOutcome("dotnet nuget locals returned malformed output.", startedAt, now);
     }
     const localTools = parseLocalTools(localToolsResult.stdout);
     if (localTools === undefined) {
-      return invalidOutcome("dotnet tool list returned malformed output.", startedAt, input.now);
+      return invalidOutcome("dotnet tool list returned malformed output.", startedAt, now);
     }
 
-    const certificateExists = certificateResult.code === 0;
+    const certificateExists = isSuccessfulCommand(certificateResult);
     let certificateTrusted = false;
     if (certificateExists) {
       const trustResult = await input.probes.run(probes.dotnet.certificate("trust"), dotnetProbeOptions);
       if (hasTransportFailure(trustResult)) {
-        return unavailableOutcome("HTTPS development certificate trust could not be inspected.", startedAt, input.now);
+        return unavailableOutcome("HTTPS development certificate trust could not be inspected.", startedAt, now);
       }
-      certificateTrusted = trustResult.code === 0;
+      certificateTrusted = isSuccessfulCommand(trustResult);
     }
 
     let userSecretFacts: UserSecretFacts = {keys: [], presentParameterKeys: [], configuredParameterKeys: []};
@@ -1211,11 +1270,11 @@ export function createDotnetProvider(
         ...dotnetProbeOptions,
       });
       if (!isSuccessfulCommand(secretsResult)) {
-        return unavailableOutcome("AppHost user-secret keys could not be inspected.", startedAt, input.now);
+        return unavailableOutcome("AppHost user-secret keys could not be inspected.", startedAt, now);
       }
       const parsedSecrets = parseUserSecrets(secretsResult.stdout);
       if (parsedSecrets === undefined) {
-        return invalidOutcome("dotnet user-secrets returned malformed output.", startedAt, input.now);
+        return invalidOutcome("dotnet user-secrets returned malformed output.", startedAt, now);
       }
       userSecretFacts = parsedSecrets;
     }
@@ -1243,6 +1302,6 @@ export function createDotnetProvider(
         userSecretKeys: userSecretFacts.keys,
       },
     };
-    return {kind: "available", value, durationMs: elapsedMilliseconds(startedAt, input.now)};
+    return {kind: "available", value, durationMs: elapsedMilliseconds(startedAt, now)};
   };
 }

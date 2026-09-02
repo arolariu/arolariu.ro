@@ -13,10 +13,9 @@
  * container, and port projection is a small, deterministic, bounded fact.
  */
 
-import {stat} from "node:fs/promises";
 import {resolve} from "node:path";
 
-import type {CommandResult} from "../common/process.ts";
+import type {ProcessEnvironment, ProcessOutcome} from "../common/runner.ts";
 import type {RepositoryPaths} from "../common/repository-paths.ts";
 import {requiredLocalPorts} from "../container-runtime/preflight.ts";
 import type {ContainerEngine} from "../container-runtime/types.ts";
@@ -24,7 +23,10 @@ import type {AggregateFacts} from "./aggregate.ts";
 import type {HostPortOwnerFact} from "./host.ts";
 import type {InspectionProbeRunner} from "./probes.ts";
 import {probes} from "./probes.ts";
-import type {InspectionOutcome, InspectionProvider} from "./types.ts";
+import type {InspectionOutcome, InspectionProvider, InspectionProviderContext} from "./types.ts";
+
+/** Read-only filesystem capability every infrastructure inspection helper observes disk through. */
+type InspectionFiles = InspectionProviderContext["files"];
 
 /** Read-only availability and ownership evidence for one required local TCP port. */
 export interface PortFact {
@@ -60,7 +62,7 @@ export interface InfrastructureFacts {
 type ContainerFact = InfrastructureFacts["containers"][number];
 
 /** Dependencies required to create the shared infrastructure inspection provider. */
-interface InfrastructureProviderInput {
+interface InfrastructureProviderInput extends Pick<InspectionProviderContext, "files" | "clock" | "tasks" | "environment"> {
   readonly paths: RepositoryPaths;
   readonly probes: InspectionProbeRunner;
   readonly aggregate: () => Promise<InspectionOutcome<AggregateFacts>>;
@@ -72,12 +74,9 @@ interface InfrastructureProviderInput {
    * When present, takes precedence over the static {@link requestedEngine} capture. This enables
    * a single shared inspection session to observe an engine selected after session construction
    * (from environment, persisted config, or an interactive prompt) without creating a second
-   * session, duplicating the provider, or mutating `process.env`.
+   * session, duplicating the provider, or mutating the runtime environment snapshot.
    */
   readonly resolveEngine?: () => ContainerEngine | undefined;
-  readonly env: Readonly<NodeJS.ProcessEnv>;
-  readonly platform: NodeJS.Platform;
-  readonly now: () => number;
 }
 
 /** Reports an environmental failure that prevents any reliable infrastructure observation. */
@@ -162,8 +161,8 @@ function invalidOutcome(issue: string, startedAt: number, now: () => number): In
   return {kind: "invalid", issues: [issue], durationMs: elapsedMilliseconds(startedAt, now)};
 }
 
-function isSuccessfulCommand(result: Readonly<CommandResult>): boolean {
-  return result.code === 0 && !result.timedOut && result.signal === undefined && result.spawnError === undefined;
+function isSuccessfulCommand(outcome: Readonly<ProcessOutcome>): boolean {
+  return outcome.kind === "succeeded";
 }
 
 /**
@@ -172,32 +171,25 @@ function isSuccessfulCommand(result: Readonly<CommandResult>): boolean {
  * though earlier ports may have produced valid, already-flushed stdout.
  *
  * @param platform - Target platform the probe executed for.
- * @param result - Captured probe result.
- * @returns Whether the result's stdout should be parsed as port-ownership evidence.
+ * @param outcome - Captured probe outcome.
+ * @returns Whether the outcome's stdout should be parsed as port-ownership evidence.
  */
-function isAcceptablePortProbeResult(platform: NodeJS.Platform, result: Readonly<CommandResult>): boolean {
-  if (isSuccessfulCommand(result)) {
+function isAcceptablePortProbeResult(platform: NodeJS.Platform, outcome: Readonly<ProcessOutcome>): boolean {
+  if (isSuccessfulCommand(outcome)) {
     return true;
   }
-  return (
-    platform === "darwin"
-    && result.code === 1
-    && !result.timedOut
-    && result.signal === undefined
-    && result.spawnError === undefined
-    && result.stderr.trim() === ""
-  );
+  return platform === "darwin" && outcome.kind === "exited" && outcome.exitCode === 1 && outcome.stderr.trim() === "";
 }
 
 /**
  * Strips known secret environment values before any diagnostic command inherits the caller's
  * environment, matching `setup.infrastructure.ts`'s established credential isolation.
  *
- * @param environment - Caller-supplied environment.
+ * @param environment - Caller-supplied environment snapshot.
  * @returns A copy with the local SQL password variable removed.
  */
-function credentialIsolatedEnvironment(environment: Readonly<NodeJS.ProcessEnv>): NodeJS.ProcessEnv {
-  const isolated: NodeJS.ProcessEnv = {};
+function credentialIsolatedEnvironment(environment: ProcessEnvironment): ProcessEnvironment {
+  const isolated: Record<string, string | undefined> = {};
   for (const key of Object.keys(environment)) {
     if (key.toUpperCase() !== SQL_PASSWORD_ENVIRONMENT_KEY) {
       isolated[key] = environment[key];
@@ -207,8 +199,8 @@ function credentialIsolatedEnvironment(environment: Readonly<NodeJS.ProcessEnv>)
   return isolated;
 }
 
-function combinedOutput(result: Readonly<CommandResult>): string {
-  return `${result.stdout}\n${result.stderr}`.toLowerCase();
+function combinedOutput(outcome: Readonly<ProcessOutcome>): string {
+  return `${outcome.stdout}\n${outcome.stderr}`.toLowerCase();
 }
 
 // ============================================================================
@@ -349,7 +341,7 @@ function parseLinuxPortOwners(stdout: string): readonly ParsedPortOwner[] {
  * @returns One {@link PortFact} per required local port.
  */
 async function inspectPortsViaProbe(
-  input: Readonly<{paths: RepositoryPaths; probes: InspectionProbeRunner; env: Readonly<NodeJS.ProcessEnv>; platform: NodeJS.Platform}>,
+  input: Readonly<{paths: RepositoryPaths; probes: InspectionProbeRunner; env: ProcessEnvironment; platform: NodeJS.Platform}>,
 ): Promise<readonly PortFact[]> {
   const ports = [...requiredLocalPorts];
 
@@ -399,7 +391,7 @@ async function inspectPorts(
     aggregate: () => Promise<InspectionOutcome<AggregateFacts>>;
     paths: RepositoryPaths;
     probes: InspectionProbeRunner;
-    env: Readonly<NodeJS.ProcessEnv>;
+    env: ProcessEnvironment;
     platform: NodeJS.Platform;
   }>,
 ): Promise<readonly PortFact[]> {
@@ -416,14 +408,11 @@ async function inspectPorts(
 
 type FileKind = "file" | "missing" | "directory" | "other";
 
-async function inspectFileKind(path: string): Promise<FileKind> {
+async function inspectFileKind(files: InspectionFiles, path: string): Promise<FileKind> {
   try {
-    const info = await stat(path);
-    return info.isFile() ? "file" : info.isDirectory() ? "directory" : "other";
-  } catch (error: unknown) {
-    if (error instanceof Error && "code" in error && error.code === "ENOENT") {
-      return "missing";
-    }
+    const info = await files.inspect(path);
+    return info.kind;
+  } catch {
     throw new InfrastructureInspectionFailure("unavailable", "A required local infrastructure path could not be inspected.");
   }
 }
@@ -431,13 +420,29 @@ async function inspectFileKind(path: string): Promise<FileKind> {
 /**
  * Inspects the optional selfhost TLS certificate and key file state.
  *
+ * @param files - Read-only filesystem capability.
+ * @param tasks - Task scheduler used to inspect both paths concurrently.
  * @param paths - Canonical repository paths.
  * @returns Bounded issue strings; empty when both files are present regular files.
  */
-async function inspectCertificates(paths: RepositoryPaths): Promise<readonly string[]> {
+async function inspectCertificates(
+  files: InspectionFiles,
+  tasks: InspectionProviderContext["tasks"],
+  paths: RepositoryPaths,
+): Promise<readonly string[]> {
   const certificatePath = resolve(paths.root, ...CERTIFICATE_RELATIVE_SEGMENTS);
   const keyPath = resolve(paths.root, ...KEY_RELATIVE_SEGMENTS);
-  const [certificateKind, keyKind] = await Promise.all([inspectFileKind(certificatePath), inspectFileKind(keyPath)]);
+  const kinds = await tasks.parallel<FileKind>([
+    () => inspectFileKind(files, certificatePath),
+    () => inspectFileKind(files, keyPath),
+  ]);
+  // `tasks.parallel` returns a plain `readonly T[]`, so indexing under `noUncheckedIndexedAccess`
+  // widens each element; the explicit guard keeps both kinds exactly as narrow as before.
+  const certificateKind = kinds[0];
+  const keyKind = kinds[1];
+  if (certificateKind === undefined || keyKind === undefined) {
+    throw new InfrastructureInspectionFailure("unavailable", "A required local infrastructure path could not be inspected.");
+  }
 
   const certificateRelative = CERTIFICATE_RELATIVE_SEGMENTS.join("/");
   const keyRelative = KEY_RELATIVE_SEGMENTS.join("/");
@@ -459,13 +464,19 @@ async function inspectCertificates(paths: RepositoryPaths): Promise<readonly str
 /**
  * Inspects the presence of every required local Aspire/selfhost runtime manifest.
  *
+ * @param files - Read-only filesystem capability.
+ * @param tasks - Task scheduler used to inspect every manifest concurrently.
  * @param paths - Canonical repository paths.
  * @returns Bounded issue strings; empty when every required manifest is present.
  */
-async function inspectManifests(paths: RepositoryPaths): Promise<readonly string[]> {
-  const results = await Promise.all(
-    REQUIRED_MANIFEST_RELATIVE_SEGMENTS.map(async (segments) => {
-      const kind = await inspectFileKind(resolve(paths.root, ...segments));
+async function inspectManifests(
+  files: InspectionFiles,
+  tasks: InspectionProviderContext["tasks"],
+  paths: RepositoryPaths,
+): Promise<readonly string[]> {
+  const results = await tasks.parallel(
+    REQUIRED_MANIFEST_RELATIVE_SEGMENTS.map((segments) => async (): Promise<Readonly<{relative: string; missing: boolean}>> => {
+      const kind = await inspectFileKind(files, resolve(paths.root, ...segments));
       return {relative: segments.join("/"), missing: kind === "missing"};
     }),
   );
@@ -635,8 +646,8 @@ function projectContainers(stdout: string): readonly ContainerFact[] {
  */
 function classifyDockerConflict(
   engine: ContainerEngine,
-  composeResult: Readonly<CommandResult>,
-  runtimeInfoResult: Readonly<CommandResult> | undefined,
+  composeResult: Readonly<ProcessOutcome>,
+  runtimeInfoResult: Readonly<ProcessOutcome> | undefined,
 ): boolean {
   if (engine === "podman") {
     if (!isSuccessfulCommand(composeResult)) {
@@ -662,29 +673,52 @@ function classifyDockerConflict(
  * manifest facts, shared by future setup and doctor policy modules.
  *
  * @param input - Canonical repository paths, opaque probe runner, aggregate host facts accessor,
- * already-resolved container engine, isolated environment, target platform, and monotonic clock.
+ * already-resolved container engine, and the read-only filesystem, clock, task-scheduler, and
+ * environment capabilities.
  * @returns An inspection provider whose `available` outcome always carries a complete
  * {@link InfrastructureFacts} document; `unavailable` is reserved for environmental failures that
  * prevent any reliable observation (for example an unreadable certificate/manifest path).
  */
 export function createInfrastructureProvider(input: Readonly<InfrastructureProviderInput>): InspectionProvider<InfrastructureFacts> {
+  const now = (): number => input.clock.monotonicNow();
+  const platform = input.environment.platform;
+
   return async (): Promise<InspectionOutcome<InfrastructureFacts>> => {
-    const startedAt = input.now();
+    const startedAt = now();
 
     try {
-      const isolatedEnvironment = credentialIsolatedEnvironment(input.env);
+      const isolatedEnvironment = credentialIsolatedEnvironment(input.environment.variables);
 
-      const [ports, certificateIssues, manifestIssues] = await Promise.all([
-        inspectPorts({
-          aggregate: input.aggregate,
-          paths: input.paths,
-          probes: input.probes,
-          env: isolatedEnvironment,
-          platform: input.platform,
-        }),
-        inspectCertificates(input.paths),
-        inspectManifests(input.paths),
+      let ports: readonly PortFact[] | undefined;
+      let certificateIssues: readonly string[] | undefined;
+      let manifestIssues: readonly string[] | undefined;
+
+      // Every observation below starts concurrently, exactly as the previous `Promise.all` did;
+      // each task assigns its own binding so the heterogeneous results keep their exact types.
+      await input.tasks.parallel<void>([
+        async () => {
+          ports = await inspectPorts({
+            aggregate: input.aggregate,
+            paths: input.paths,
+            probes: input.probes,
+            env: isolatedEnvironment,
+            platform,
+          });
+        },
+        async () => {
+          certificateIssues = await inspectCertificates(input.files, input.tasks, input.paths);
+        },
+        async () => {
+          manifestIssues = await inspectManifests(input.files, input.tasks, input.paths);
+        },
       ]);
+
+      if (ports === undefined || certificateIssues === undefined || manifestIssues === undefined) {
+        throw new InfrastructureInspectionFailure(
+          "unavailable",
+          "The local infrastructure inspection did not resolve every repository fact.",
+        );
+      }
 
       const engine = input.resolveEngine?.() ?? input.requestedEngine;
       if (engine === undefined) {
@@ -699,7 +733,7 @@ export function createInfrastructureProvider(input: Readonly<InfrastructureProvi
           manifestIssues,
           containers: [],
         };
-        return {kind: "available", value, durationMs: elapsedMilliseconds(startedAt, input.now)};
+        return {kind: "available", value, durationMs: elapsedMilliseconds(startedAt, now)};
       }
 
       const probeOptions = {cwd: input.paths.root, env: isolatedEnvironment};
@@ -719,15 +753,28 @@ export function createInfrastructureProvider(input: Readonly<InfrastructureProvi
           manifestIssues,
           containers: [],
         };
-        return {kind: "available", value, durationMs: elapsedMilliseconds(startedAt, input.now)};
+        return {kind: "available", value, durationMs: elapsedMilliseconds(startedAt, now)};
       }
 
-      const [composeResult, contextResult, containerListResult, runtimeInfoResult] = await Promise.all([
-        input.probes.run(probes.infrastructure.composeVersion(engine), probeOptions),
-        input.probes.run(probes.infrastructure.runtimeContext(engine), probeOptions),
-        input.probes.run(probes.infrastructure.containerList(engine), probeOptions),
-        engine === "rancher" ? input.probes.run(probes.infrastructure.runtimeInfo(engine), probeOptions) : Promise.resolve(undefined),
+      const engineOutcomes = await input.tasks.parallel<ProcessOutcome | undefined>([
+        () => input.probes.run(probes.infrastructure.composeVersion(engine), probeOptions),
+        () => input.probes.run(probes.infrastructure.runtimeContext(engine), probeOptions),
+        () => input.probes.run(probes.infrastructure.containerList(engine), probeOptions),
+        async () => (engine === "rancher" ? input.probes.run(probes.infrastructure.runtimeInfo(engine), probeOptions) : undefined),
       ]);
+      // `tasks.parallel` returns a plain `readonly T[]`, so indexing under `noUncheckedIndexedAccess`
+      // widens each element; the explicit guard keeps every required probe outcome exactly as narrow
+      // as before, while the optional `docker info` probe stays legitimately absent.
+      const composeResult = engineOutcomes[0];
+      const contextResult = engineOutcomes[1];
+      const containerListResult = engineOutcomes[2];
+      const runtimeInfoResult = engineOutcomes[3];
+      if (composeResult === undefined || contextResult === undefined || containerListResult === undefined) {
+        throw new InfrastructureInspectionFailure(
+          "unavailable",
+          "The local container runtime inspection did not resolve every probe outcome.",
+        );
+      }
 
       const composeAvailable = isSuccessfulCommand(composeResult);
       const backendAvailable = isSuccessfulCommand(containerListResult);
@@ -749,12 +796,12 @@ export function createInfrastructureProvider(input: Readonly<InfrastructureProvi
         manifestIssues,
         containers,
       };
-      return {kind: "available", value, durationMs: elapsedMilliseconds(startedAt, input.now)};
+      return {kind: "available", value, durationMs: elapsedMilliseconds(startedAt, now)};
     } catch (error: unknown) {
       if (error instanceof InfrastructureInspectionFailure) {
         return error.kind === "invalid"
-          ? invalidOutcome(error.publicMessage, startedAt, input.now)
-          : unavailableOutcome(error.publicMessage, startedAt, input.now);
+          ? invalidOutcome(error.publicMessage, startedAt, now)
+          : unavailableOutcome(error.publicMessage, startedAt, now);
       }
       throw error;
     }

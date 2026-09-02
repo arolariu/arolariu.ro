@@ -8,15 +8,17 @@
  * package-index credentials, and configuration values never cross this module's public boundary.
  */
 
-import {open, realpath, stat} from "node:fs/promises";
 import {dirname, isAbsolute, relative, resolve, sep} from "node:path";
-import {TextDecoder} from "node:util";
 
-import type {CommandResult} from "../common/process.ts";
+import {FILE_SYSTEM_MAX_BYTES_EXCEEDED_CODE} from "../common/runtime.ts";
+import type {ProcessEnvironment, ProcessOutcome} from "../common/runner.ts";
 import type {RepositoryPaths} from "../common/repository-paths.ts";
 import type {InspectionProbeRunner} from "./probes.ts";
 import {probes} from "./probes.ts";
-import type {InspectionOutcome, InspectionProvider} from "./types.ts";
+import type {InspectionOutcome, InspectionProvider, InspectionProviderContext} from "./types.ts";
+
+/** Read-only filesystem capability every Python inspection helper observes disk through. */
+type InspectionFiles = InspectionProviderContext["files"];
 
 /** One successfully observed Python interpreter candidate. */
 export interface PythonInterpreterFact {
@@ -236,19 +238,42 @@ function invalidOutcome(issue: string, startedAt: number, now: () => number): In
   return {kind: "invalid", issues: [issue], durationMs: elapsedMilliseconds(startedAt, now)};
 }
 
-function isSuccessfulCommand(result: Readonly<CommandResult>): boolean {
-  return result.code === 0 && !result.timedOut && result.signal === undefined && result.spawnError === undefined;
+function isSuccessfulCommand(outcome: Readonly<ProcessOutcome>): boolean {
+  return outcome.kind === "succeeded";
 }
 
-function hasTransportFailure(result: Readonly<CommandResult>): boolean {
-  return result.timedOut || result.signal !== undefined || result.spawnError !== undefined;
+function hasTransportFailure(outcome: Readonly<ProcessOutcome>): boolean {
+  switch (outcome.kind) {
+    case "succeeded":
+    case "exited":
+      return false;
+    case "spawn-failed":
+    case "timed-out":
+    case "signalled":
+    case "cancelled":
+      return true;
+  }
 }
 
-function isMissingExecutable(result: Readonly<CommandResult>): boolean {
-  if (result.code === 127) {
+function completedExitCode(outcome: Readonly<ProcessOutcome>): number {
+  switch (outcome.kind) {
+    case "succeeded":
+      return 0;
+    case "exited":
+      return outcome.exitCode;
+    case "spawn-failed":
+    case "timed-out":
+    case "signalled":
+    case "cancelled":
+      return 1;
+  }
+}
+
+function isMissingExecutable(outcome: Readonly<ProcessOutcome>): boolean {
+  if (completedExitCode(outcome) === 127) {
     return true;
   }
-  const detail = `${result.spawnError ?? ""}\n${result.stderr}`;
+  const detail = `${outcome.kind === "spawn-failed" ? outcome.message : ""}\n${outcome.stderr}`;
   return /\bENOENT\b|command not found|not recognized as an internal or external command|no such file or directory/iu.test(detail);
 }
 
@@ -365,8 +390,8 @@ function parsePythonCommandVersion(output: string): ParsedPythonVersion | undefi
   return version === undefined ? undefined : parsePythonVersionText(version);
 }
 
-function parsePythonVersionResult(result: Readonly<CommandResult>): ParsedPythonVersion | undefined {
-  return parsePythonCommandVersion(result.stdout) ?? parsePythonCommandVersion(result.stderr);
+function parsePythonVersionResult(outcome: Readonly<ProcessOutcome>): ParsedPythonVersion | undefined {
+  return parsePythonCommandVersion(outcome.stdout) ?? parsePythonCommandVersion(outcome.stderr);
 }
 
 function satisfiesMinimum(version: ParsedPythonVersion, minimum: PythonMinimum): boolean {
@@ -481,8 +506,8 @@ function parsePipVersion(output: string): string | undefined {
   return version === undefined ? undefined : parsePep440Version(version)?.normalized;
 }
 
-function parsePipVersionResult(result: Readonly<CommandResult>): string | undefined {
-  return parsePipVersion(result.stdout) ?? parsePipVersion(result.stderr);
+function parsePipVersionResult(outcome: Readonly<ProcessOutcome>): string | undefined {
+  return parsePipVersion(outcome.stdout) ?? parsePipVersion(outcome.stderr);
 }
 
 function normalizeDistributionName(name: string): string {
@@ -538,12 +563,12 @@ function boundGeneratedFacts(values: readonly string[], omittedLabel: string): r
   return [...values.slice(0, retainedCount), `${String(values.length - retainedCount)} additional ${omittedLabel} were omitted.`];
 }
 
-function projectPipConflicts(result: Readonly<CommandResult>): readonly string[] {
-  if (result.code === 0) {
+function projectPipConflicts(outcome: Readonly<ProcessOutcome>): readonly string[] {
+  if (isSuccessfulCommand(outcome)) {
     return [];
   }
 
-  const source = result.stdout.trim() === "" ? result.stderr : result.stdout;
+  const source = outcome.stdout.trim() === "" ? outcome.stderr : outcome.stdout;
   if (source.length > MAX_TEXT_FILE_LENGTH) {
     return ["pip reported dependency conflicts; detailed output exceeded the inspection limit."];
   }
@@ -573,11 +598,14 @@ function repositoryRelativePath(paths: RepositoryPaths, path: string): string | 
   return relativePath.split(sep).join("/");
 }
 
-async function canonicalExperimentalRoot(paths: RepositoryPaths): Promise<string> {
+async function canonicalExperimentalRoot(files: InspectionFiles, paths: RepositoryPaths): Promise<string> {
   try {
-    const canonicalRoot = await realpath(paths.expRoot);
-    const metadata = await stat(canonicalRoot);
-    if (!metadata.isDirectory()) {
+    const canonicalRoot = await files.realPath(paths.expRoot);
+    const metadata = await files.inspect(canonicalRoot);
+    if (metadata.kind === "missing") {
+      throw new PythonInspectionFailure("invalid", "The Python project root is missing.");
+    }
+    if (metadata.kind !== "directory") {
       throw new PythonInspectionFailure("invalid", "The Python project root is not a directory.");
     }
     return canonicalRoot;
@@ -592,59 +620,62 @@ async function canonicalExperimentalRoot(paths: RepositoryPaths): Promise<string
   }
 }
 
-async function readBoundedTextFile(path: string): Promise<ContainedTextObservation> {
+/**
+ * Reads one already-contained file as bounded UTF-8 text.
+ *
+ * @remarks
+ * The read is bounded by {@link MAX_TEXT_FILE_LENGTH} at the capability boundary, so an oversized
+ * file is never fully buffered: {@link ReadOnlyFileSystem.readBytes} reads at most one byte past
+ * the limit and reports {@link FILE_SYSTEM_MAX_BYTES_EXCEEDED_CODE}, which is classified as
+ * `invalid` exactly as the previous handle-based read did. A non-regular file is `invalid`, a
+ * missing path is `missing`, invalid UTF-8 (rejected by the fatal decoder) is `invalid`, and every
+ * other filesystem failure is `unavailable`.
+ *
+ * @param files - Read-only filesystem capability.
+ * @param path - Already canonical, containment-validated path.
+ * @returns The bounded contained-text observation.
+ */
+async function readBoundedTextFile(files: InspectionFiles, path: string): Promise<ContainedTextObservation> {
+  let bytes: Uint8Array;
   try {
-    const handle = await open(path, "r");
-    try {
-      const metadata = await handle.stat();
-      if (!metadata.isFile() || metadata.size > MAX_TEXT_FILE_LENGTH) {
-        return {kind: "invalid"};
-      }
-
-      const buffer = Buffer.allocUnsafe(MAX_TEXT_FILE_LENGTH + 1);
-      let bytesRead = 0;
-      while (bytesRead < buffer.length) {
-        const result = await handle.read(buffer, bytesRead, buffer.length - bytesRead, bytesRead);
-        if (result.bytesRead === 0) {
-          break;
-        }
-        bytesRead += result.bytesRead;
-      }
-      if (bytesRead > MAX_TEXT_FILE_LENGTH) {
-        return {kind: "invalid"};
-      }
-
-      try {
-        return {
-          kind: "available",
-          contents: new TextDecoder("utf-8", {fatal: true}).decode(buffer.subarray(0, bytesRead)),
-        };
-      } catch {
-        return {kind: "invalid"};
-      }
-    } finally {
-      await handle.close();
+    const metadata = await files.inspect(path);
+    if (metadata.kind === "missing") {
+      return {kind: "missing"};
     }
+    if (metadata.kind !== "file") {
+      return {kind: "invalid"};
+    }
+
+    bytes = await files.readBytes(path, {maximumBytes: MAX_TEXT_FILE_LENGTH});
   } catch (error: unknown) {
+    if (hasErrorCode(error, FILE_SYSTEM_MAX_BYTES_EXCEEDED_CODE)) {
+      return {kind: "invalid"};
+    }
     return hasErrorCode(error, "ENOENT") ? {kind: "missing"} : {kind: "unavailable"};
+  }
+
+  try {
+    return {kind: "available", contents: new TextDecoder("utf-8", {fatal: true}).decode(bytes)};
+  } catch {
+    return {kind: "invalid"};
   }
 }
 
-async function readContainedText(path: string, canonicalRoot: string): Promise<ContainedTextObservation> {
+async function readContainedText(files: InspectionFiles, path: string, canonicalRoot: string): Promise<ContainedTextObservation> {
   let canonicalPath: string;
   try {
-    canonicalPath = await realpath(path);
+    canonicalPath = await files.realPath(path);
   } catch (error: unknown) {
     return hasErrorCode(error, "ENOENT") ? {kind: "missing"} : {kind: "unavailable"};
   }
   if (!isPathWithin(canonicalRoot, canonicalPath)) {
     return {kind: "invalid"};
   }
-  return readBoundedTextFile(canonicalPath);
+  return readBoundedTextFile(files, canonicalPath);
 }
 
-async function readPythonMinimum(paths: RepositoryPaths, canonicalRoot: string): Promise<PythonMinimum> {
-  const observation = await readContainedText(paths.pythonProject, canonicalRoot);
+async function readPythonMinimum(files: InspectionFiles, paths: RepositoryPaths, canonicalRoot: string): Promise<PythonMinimum> {
+  const observation = await readContainedText(files, paths.pythonProject, canonicalRoot);
   if (observation.kind === "missing") {
     throw new PythonInspectionFailure("invalid", "pyproject.toml is missing.");
   }
@@ -934,7 +965,7 @@ function isSafeRequirementInclude(value: string): boolean {
   );
 }
 
-async function parseRequirementsTree(paths: RepositoryPaths, canonicalRoot: string): Promise<RequirementDetail> {
+async function parseRequirementsTree(files: InspectionFiles, paths: RepositoryPaths, canonicalRoot: string): Promise<RequirementDetail> {
   const declarations: Array<Readonly<{name: string; specifier: string; source: string}>> = [];
   const unverifiable: string[] = [];
   const seenNames = new Set<string>();
@@ -946,7 +977,7 @@ async function parseRequirementsTree(paths: RepositoryPaths, canonicalRoot: stri
   const parseFile = async (logicalPath: string): Promise<void> => {
     let canonicalPath: string;
     try {
-      canonicalPath = await realpath(logicalPath);
+      canonicalPath = await files.realPath(logicalPath);
     } catch (error: unknown) {
       if (hasErrorCode(error, "ENOENT")) {
         if (logicalPath === paths.pythonRequirements) {
@@ -967,7 +998,7 @@ async function parseRequirementsTree(paths: RepositoryPaths, canonicalRoot: stri
       throw new RequirementsTreeInvalidError();
     }
 
-    const observation = await readBoundedTextFile(canonicalPath);
+    const observation = await readBoundedTextFile(files, canonicalPath);
     if (observation.kind === "invalid" || observation.kind === "missing") {
       throw new RequirementsTreeInvalidError();
     }
@@ -1099,8 +1130,8 @@ function parseConfigurationObject(contents: string): readonly string[] | undefin
   return keys;
 }
 
-async function readConfigurationDocument(path: string, canonicalRoot: string): Promise<ConfigurationDocument> {
-  const observation = await readContainedText(path, canonicalRoot);
+async function readConfigurationDocument(files: InspectionFiles, path: string, canonicalRoot: string): Promise<ConfigurationDocument> {
+  const observation = await readContainedText(files, path, canonicalRoot);
   if (observation.kind !== "available") {
     return observation;
   }
@@ -1108,12 +1139,25 @@ async function readConfigurationDocument(path: string, canonicalRoot: string): P
   return keys === undefined ? {kind: "invalid"} : {kind: "available", keys};
 }
 
-async function inspectConfiguration(paths: RepositoryPaths, canonicalRoot: string): Promise<readonly string[]> {
-  const [template, docker, aspire] = await Promise.all([
-    readConfigurationDocument(resolve(paths.expRoot, "config.template.json"), canonicalRoot),
-    readConfigurationDocument(resolve(paths.expRoot, "config.docker.json"), canonicalRoot),
-    readConfigurationDocument(resolve(paths.expRoot, "config.aspire.json"), canonicalRoot),
+async function inspectConfiguration(
+  files: InspectionFiles,
+  tasks: InspectionProviderContext["tasks"],
+  paths: RepositoryPaths,
+  canonicalRoot: string,
+): Promise<readonly string[]> {
+  const documents = await tasks.parallel<ConfigurationDocument>([
+    () => readConfigurationDocument(files, resolve(paths.expRoot, "config.template.json"), canonicalRoot),
+    () => readConfigurationDocument(files, resolve(paths.expRoot, "config.docker.json"), canonicalRoot),
+    () => readConfigurationDocument(files, resolve(paths.expRoot, "config.aspire.json"), canonicalRoot),
   ]);
+  // `tasks.parallel` returns a plain `readonly T[]`, so indexing under `noUncheckedIndexedAccess`
+  // widens each element; the explicit guard keeps every document exactly as narrow as before.
+  const template = documents[0];
+  const docker = documents[1];
+  const aspire = documents[2];
+  if (template === undefined || docker === undefined || aspire === undefined) {
+    throw new PythonInspectionFailure("unavailable", "Python configuration documents could not be inspected.");
+  }
 
   const issues: string[] = [];
   const appendDocumentIssue = (name: string, document: ConfigurationDocument, optional: boolean): void => {
@@ -1147,33 +1191,38 @@ async function inspectInterpreters(
   input: Readonly<{
     paths: RepositoryPaths;
     probes: InspectionProbeRunner;
+    tasks: InspectionProviderContext["tasks"];
     platform: NodeJS.Platform;
-    environment: Readonly<NodeJS.ProcessEnv>;
+    environment: ProcessEnvironment;
   }>,
 ): Promise<readonly Readonly<{fact: PythonInterpreterFact; version: ParsedPythonVersion}>[]> {
   const candidates = pythonCandidates(input.platform);
-  const results = await Promise.all(
-    candidates.map(async (candidate) => ({
-      candidate,
-      result: await input.probes.run(probes.python.version(candidate.command, candidate.selector), {
-        cwd: input.paths.root,
-        env: input.environment,
-      }),
-    })),
+  const outcomes = await input.tasks.parallel<ProcessOutcome>(
+    candidates.map(
+      (candidate) => (): Promise<ProcessOutcome> =>
+        input.probes.run(probes.python.version(candidate.command, candidate.selector), {
+          cwd: input.paths.root,
+          env: input.environment,
+        }),
+    ),
   );
 
   const facts: Array<Readonly<{fact: PythonInterpreterFact; version: ParsedPythonVersion}>> = [];
-  for (const {candidate, result} of results) {
-    if (result.timedOut || result.signal !== undefined) {
+  for (const [index, candidate] of candidates.entries()) {
+    const result = outcomes[index];
+    if (result === undefined) {
       throw new PythonInspectionFailure("unavailable", "Python interpreter candidates could not be inspected.");
     }
-    if (result.spawnError !== undefined) {
+    if (result.kind === "timed-out" || result.kind === "signalled" || result.kind === "cancelled") {
+      throw new PythonInspectionFailure("unavailable", "Python interpreter candidates could not be inspected.");
+    }
+    if (result.kind === "spawn-failed") {
       if (isMissingExecutable(result)) {
         continue;
       }
       throw new PythonInspectionFailure("unavailable", "A Python interpreter candidate could not be started.");
     }
-    if (result.code !== 0) {
+    if (!isSuccessfulCommand(result)) {
       continue;
     }
 
@@ -1186,10 +1235,13 @@ async function inspectInterpreters(
   return facts;
 }
 
-async function inspectVenvDirectory(paths: RepositoryPaths): Promise<boolean> {
+async function inspectVenvDirectory(files: InspectionFiles, paths: RepositoryPaths): Promise<boolean> {
   try {
-    const metadata = await stat(resolve(paths.expRoot, ".venv"));
-    if (!metadata.isDirectory()) {
+    const metadata = await files.inspect(resolve(paths.expRoot, ".venv"));
+    if (metadata.kind === "missing") {
+      return false;
+    }
+    if (metadata.kind !== "directory") {
       throw new PythonInspectionFailure("invalid", "The canonical Python virtual-environment path is not a directory.");
     }
     return true;
@@ -1207,33 +1259,57 @@ async function inspectVenvDirectory(paths: RepositoryPaths): Promise<boolean> {
 /**
  * Creates one read-only provider for normalized Python, pip, requirement, and configuration facts.
  *
- * @param input - Canonical repository paths, opaque probe runner, target platform, and monotonic clock.
+ * @param input - Canonical repository paths, opaque probe runner, and the read-only filesystem,
+ * clock, task-scheduler, and environment capabilities.
  * @returns An inspection provider with explicit unavailable/invalid outcomes at command, file, and parse boundaries.
  */
 export function createPythonProvider(
-  input: Readonly<{
+  input: Readonly<Pick<InspectionProviderContext, "files" | "clock" | "tasks" | "environment"> & {
     paths: RepositoryPaths;
     probes: InspectionProbeRunner;
-    platform: NodeJS.Platform;
-    now: () => number;
   }>,
 ): InspectionProvider<PythonFacts> {
+  const now = (): number => input.clock.monotonicNow();
+  const platform = input.environment.platform;
+  const {files} = input;
+
   return async (): Promise<InspectionOutcome<PythonFacts>> => {
-    const startedAt = input.now();
-    if (!SUPPORTED_PLATFORMS.has(input.platform)) {
-      return invalidOutcome("The requested Python inspection platform is unsupported.", startedAt, input.now);
+    const startedAt = now();
+    if (!SUPPORTED_PLATFORMS.has(platform)) {
+      return invalidOutcome("The requested Python inspection platform is unsupported.", startedAt, now);
     }
 
     try {
-      const canonicalRoot = await canonicalExperimentalRoot(input.paths);
-      const environment = pythonProbeEnvironment(input.platform);
-      const minimum = await readPythonMinimum(input.paths, canonicalRoot);
-      const requirementDetail = await parseRequirementsTree(input.paths, canonicalRoot);
-      const [configurationIssues, venvExists] = await Promise.all([
-        inspectConfiguration(input.paths, canonicalRoot),
-        inspectVenvDirectory(input.paths),
+      const canonicalRoot = await canonicalExperimentalRoot(files, input.paths);
+      const environment = pythonProbeEnvironment(platform);
+      const minimum = await readPythonMinimum(files, input.paths, canonicalRoot);
+      const requirementDetail = await parseRequirementsTree(files, input.paths, canonicalRoot);
+
+      let configurationIssues: readonly string[] | undefined;
+      let venvExists: boolean | undefined;
+
+      // Both observations start concurrently, exactly as the previous `Promise.all` did; each task
+      // assigns its own binding so the heterogeneous results keep their exact types.
+      await input.tasks.parallel<void>([
+        async () => {
+          configurationIssues = await inspectConfiguration(files, input.tasks, input.paths, canonicalRoot);
+        },
+        async () => {
+          venvExists = await inspectVenvDirectory(files, input.paths);
+        },
       ]);
-      const interpreterDetails = await inspectInterpreters({...input, environment});
+
+      if (configurationIssues === undefined || venvExists === undefined) {
+        throw new PythonInspectionFailure("unavailable", "The Python inspection did not resolve every repository fact.");
+      }
+
+      const interpreterDetails = await inspectInterpreters({
+        paths: input.paths,
+        probes: input.probes,
+        tasks: input.tasks,
+        platform,
+        environment,
+      });
 
       const interpreters = interpreterDetails.map(({fact}) => fact);
       const selected = interpreterDetails.find(({version}) => satisfiesMinimum(version, minimum))?.fact;
@@ -1242,7 +1318,7 @@ export function createPythonProvider(
       let mismatches: readonly string[] = [];
 
       if (venvExists) {
-        const relativeInterpreter = platformVenvInterpreter(input.platform);
+        const relativeInterpreter = platformVenvInterpreter(platform);
         const probeOptions = {cwd: input.paths.expRoot, env: environment};
         const metadataResult = await input.probes.run(probes.python.metadata(relativeInterpreter), probeOptions);
         if (!isSuccessfulCommand(metadataResult)) {
@@ -1253,8 +1329,8 @@ export function createPythonProvider(
           throw new PythonInspectionFailure("invalid", "The Python virtual environment returned malformed metadata.");
         }
 
-        const expectedDirectory = platformVenvDirectory(input.paths.expRoot, input.platform);
-        const isWin32 = input.platform === "win32";
+        const expectedDirectory = platformVenvDirectory(input.paths.expRoot, platform);
+        const isWin32 = platform === "win32";
         const canonicalIdentity =
           isWithinVenvDirectory(metadata.executable, expectedDirectory, isWin32)
           && /^python(?:\d+(?:\.\d+)?)?(?:\.exe)?$/iu.test(metadata.executable.split(/[\\/]/u).at(-1) ?? "")
@@ -1272,16 +1348,23 @@ export function createPythonProvider(
           if (hasTransportFailure(pipVersionResult)) {
             throw new PythonInspectionFailure("unavailable", "pip availability could not be inspected.");
           }
-          if (pipVersionResult.code === 0) {
+          if (isSuccessfulCommand(pipVersionResult)) {
             const pipVersion = parsePipVersionResult(pipVersionResult);
             if (pipVersion === undefined) {
               throw new PythonInspectionFailure("invalid", "pip --version returned malformed output.");
             }
 
-            const [pipListResult, pipCheckResult] = await Promise.all([
-              input.probes.run(probes.python.pipList(relativeInterpreter), probeOptions),
-              input.probes.run(probes.python.pipCheck(relativeInterpreter), probeOptions),
+            const pipOutcomes = await input.tasks.parallel<ProcessOutcome>([
+              () => input.probes.run(probes.python.pipList(relativeInterpreter), probeOptions),
+              () => input.probes.run(probes.python.pipCheck(relativeInterpreter), probeOptions),
             ]);
+            // `tasks.parallel` returns a plain `readonly T[]`, so indexing under
+            // `noUncheckedIndexedAccess` widens each element; the guard keeps both exactly as narrow.
+            const pipListResult = pipOutcomes[0];
+            const pipCheckResult = pipOutcomes[1];
+            if (pipListResult === undefined || pipCheckResult === undefined) {
+              throw new PythonInspectionFailure("unavailable", "Installed Python distributions could not be inspected.");
+            }
             if (!isSuccessfulCommand(pipListResult)) {
               throw new PythonInspectionFailure("unavailable", "Installed Python distributions could not be inspected.");
             }
@@ -1311,18 +1394,18 @@ export function createPythonProvider(
         },
         configurationIssues,
       };
-      return {kind: "available", value, durationMs: elapsedMilliseconds(startedAt, input.now)};
+      return {kind: "available", value, durationMs: elapsedMilliseconds(startedAt, now)};
     } catch (error: unknown) {
       if (error instanceof RequirementsTreeInvalidError) {
-        return invalidOutcome(error.message, startedAt, input.now);
+        return invalidOutcome(error.message, startedAt, now);
       }
       if (error instanceof RequirementsTreeUnavailableError) {
-        return unavailableOutcome(error.message, startedAt, input.now);
+        return unavailableOutcome(error.message, startedAt, now);
       }
       if (error instanceof PythonInspectionFailure) {
         return error.kind === "invalid"
-          ? invalidOutcome(error.publicMessage, startedAt, input.now)
-          : unavailableOutcome(error.publicMessage, startedAt, input.now);
+          ? invalidOutcome(error.publicMessage, startedAt, now)
+          : unavailableOutcome(error.publicMessage, startedAt, now);
       }
       throw error;
     }

@@ -9,7 +9,9 @@ import {tmpdir} from "node:os";
 import {join, resolve} from "node:path";
 import {afterEach, describe, expect, it, vi} from "vitest";
 
-import type {CommandResult, CommandRunner, CommandSpec} from "../common/process.ts";
+import type {ProcessEnvironment, ProcessOutcome, ProcessRequest, ProcessRunner} from "../common/runner.ts";
+import {nodeFileSystem} from "../common/runtime.node.ts";
+import {asReadOnlyFileSystem, DefaultTaskScheduler, type Clock, type RuntimeEnvironment} from "../common/runtime.ts";
 import {createRepositoryPaths, type RepositoryPaths} from "../common/repository-paths.ts";
 import {requiredLocalPorts} from "../container-runtime/preflight.ts";
 import type {ContainerEngine} from "../container-runtime/types.ts";
@@ -37,47 +39,119 @@ const WINDOWS_PORT_OWNER_PROBE_SCRIPT = [
 const MACOS_PORT_OWNER_PROBE_SCRIPT = 'for port in "$@"; do lsof -nP -a -iTCP:"$port" -sTCP:LISTEN -Fpcn; done';
 const LINUX_PORT_OWNER_PROBE_SCRIPT = 'for port in "$@"; do ss -ltnp "sport = :$port"; done';
 
-function commandResult(patch: Partial<CommandResult> = {}): CommandResult {
-  return {code: 0, stdout: "", stderr: "", durationMs: 1, timedOut: false, ...patch};
+/** Legacy-shaped fixture description translated into one typed {@link ProcessOutcome}. */
+interface ProcessOutcomeFixture {
+  readonly code?: number;
+  readonly stdout?: string;
+  readonly stderr?: string;
+  readonly durationMs?: number;
+  readonly timedOut?: boolean;
+  readonly signal?: NodeJS.Signals;
+  readonly spawnError?: string;
 }
 
-function commandKey(command: Readonly<CommandSpec>, cwd?: string): string {
-  return `${cwd ?? ""}\u0000${command.command}\u0000${JSON.stringify(command.args)}`;
+/**
+ * Builds one typed {@link ProcessOutcome} from a fixture description, so every suite keeps naming
+ * the exact spawn/timeout/signal/exit classification it exercises.
+ *
+ * @param patch - Fixture description of the outcome under test.
+ * @returns The equivalent typed process outcome.
+ */
+function commandResult(patch: ProcessOutcomeFixture = {}): ProcessOutcome {
+  const output = {stdout: patch.stdout ?? "", stderr: patch.stderr ?? "", durationMs: patch.durationMs ?? 1};
+  if (patch.spawnError !== undefined) {
+    return {kind: "spawn-failed", message: patch.spawnError, ...output};
+  }
+  if (patch.timedOut === true) {
+    return {kind: "timed-out", ...(patch.signal === undefined ? {} : {signal: patch.signal}), ...output};
+  }
+  if (patch.signal !== undefined) {
+    return {kind: "signalled", signal: patch.signal, ...output};
+  }
+  const code = patch.code ?? 0;
+  return code === 0 ? {kind: "succeeded", exitCode: 0, ...output} : {kind: "exited", exitCode: code, ...output};
 }
 
-function clock(): () => number {
-  let current = 100;
-  return () => {
-    current += 5;
-    return current;
+/** Wraps one recorded `run` implementation in the full {@link ProcessRunner} probe contract. */
+function asProcessRunner(run: ProcessRunner["run"]): ProcessRunner {
+  return {
+    run,
+    expectSuccess: () => {
+      throw new Error("Inspection probes never call expectSuccess.");
+    },
+    scope: () => {
+      throw new Error("Inspection probes never scope the shared runner.");
+    },
   };
 }
 
-function runtimeVersionCommand(engine: ContainerEngine): CommandSpec {
+/** Read-only filesystem capability every fixture provider observes its temporary root through. */
+const testFiles = asReadOnlyFileSystem(nodeFileSystem);
+
+/** Deterministic task scheduler replacing the previous explicit `Promise.all` calls. */
+const testTasks = new DefaultTaskScheduler();
+
+/**
+ * Builds one immutable environment snapshot for a fixture provider.
+ *
+ * @param platform - Target platform the provider must observe.
+ * @param variables - Environment variables the provider may forward to probes.
+ * @returns The environment snapshot.
+ */
+function environmentFor(platform: NodeJS.Platform, variables: ProcessEnvironment = {}): RuntimeEnvironment {
+  return {
+    variables,
+    cwd: "/repo",
+    executablePath: "/usr/bin/node",
+    platform,
+    architecture: "x64",
+    stdinIsTTY: false,
+    stdoutIsTTY: false,
+    isCI: true,
+  };
+}
+
+function commandKey(command: Readonly<ProcessRequest>, cwd?: string): string {
+  return `${cwd ?? ""}\u0000${command.command}\u0000${JSON.stringify(command.args)}`;
+}
+
+function clock(): Clock {
+  let current = 100;
+  return {
+    monotonicNow: (): number => {
+      current += 5;
+      return current;
+    },
+    isoTimestamp: (): string => "2025-01-01T00:00:00.000Z",
+    delay: (): Promise<void> => Promise.resolve(),
+  };
+}
+
+function runtimeVersionCommand(engine: ContainerEngine): ProcessRequest {
   return engine === "rancher" ? {command: "docker", args: ["--version"]} : {command: "podman", args: ["--version"]};
 }
 
-function composeVersionCommand(engine: ContainerEngine): CommandSpec {
+function composeVersionCommand(engine: ContainerEngine): ProcessRequest {
   return engine === "rancher" ? {command: "docker", args: ["compose", "version"]} : {command: "podman", args: ["compose", "version"]};
 }
 
-function runtimeContextCommand(engine: ContainerEngine): CommandSpec {
+function runtimeContextCommand(engine: ContainerEngine): ProcessRequest {
   return engine === "rancher"
     ? {command: "docker", args: ["context", "show"]}
     : {command: "podman", args: ["system", "connection", "list", "--format", "json"]};
 }
 
-function containerListCommand(engine: ContainerEngine): CommandSpec {
+function containerListCommand(engine: ContainerEngine): ProcessRequest {
   return engine === "rancher"
     ? {command: "docker", args: ["ps", "-a", "--format", "{{json .}}"]}
     : {command: "podman", args: ["ps", "-a", "--format", "{{json .}}"]};
 }
 
-function runtimeInfoCommand(engine: ContainerEngine): CommandSpec {
+function runtimeInfoCommand(engine: ContainerEngine): ProcessRequest {
   return engine === "rancher" ? {command: "docker", args: ["info"]} : {command: "podman", args: ["info", "--format", "json"]};
 }
 
-function portOwnersCommand(platform: NodeJS.Platform, ports: readonly number[] = [...requiredLocalPorts]): CommandSpec {
+function portOwnersCommand(platform: NodeJS.Platform, ports: readonly number[] = [...requiredLocalPorts]): ProcessRequest {
   const portArguments = ports.map((port) => String(port));
   if (platform === "win32") {
     return {
@@ -134,8 +208,8 @@ async function writeFixtureFile(path: string, contents: string): Promise<void> {
 interface InfrastructureFixture {
   readonly root: string;
   readonly paths: RepositoryPaths;
-  readonly run: ReturnType<typeof vi.fn<CommandRunner["run"]>>;
-  readonly setResponse: (command: Readonly<CommandSpec>, result: CommandResult) => void;
+  readonly run: ReturnType<typeof vi.fn<ProcessRunner["run"]>>;
+  readonly setResponse: (command: Readonly<ProcessRequest>, result: ProcessOutcome) => void;
 }
 
 async function createInfrastructureFixture(
@@ -164,13 +238,13 @@ async function createInfrastructureFixture(
     ]);
   }
 
-  const responses = new Map<string, CommandResult>();
-  const setResponse = (command: Readonly<CommandSpec>, result: CommandResult): void => {
+  const responses = new Map<string, ProcessOutcome>();
+  const setResponse = (command: Readonly<ProcessRequest>, result: ProcessOutcome): void => {
     responses.set(commandKey(command, paths.root), result);
   };
 
-  const run = vi.fn<CommandRunner["run"]>(
-    async (command, options): Promise<CommandResult> =>
+  const run = vi.fn<ProcessRunner["run"]>(
+    async (command, options): Promise<ProcessOutcome> =>
       responses.get(commandKey(command, options?.cwd))
       ?? commandResult({code: 127, spawnError: `unexpected-native-command-marker:${command.command}`}),
   );
@@ -184,20 +258,21 @@ function createProvider(
     aggregate?: () => Promise<InspectionOutcome<AggregateFacts>>;
     requestedEngine?: ContainerEngine | undefined;
     resolveEngine?: () => ContainerEngine | undefined;
-    env?: Readonly<NodeJS.ProcessEnv>;
+    env?: ProcessEnvironment;
     platform?: NodeJS.Platform;
-    now?: () => number;
+    clock?: Clock;
   }> = {},
 ): ReturnType<typeof createInfrastructureProvider> {
   return createInfrastructureProvider({
     paths: fixture.paths,
-    probes: createInspectionProbeRunner({run: fixture.run}),
+    probes: createInspectionProbeRunner(asProcessRunner(fixture.run)),
     aggregate: overrides.aggregate ?? aggregateWithPortOwners([]),
     ...(overrides.requestedEngine === undefined ? {} : {requestedEngine: overrides.requestedEngine}),
     ...(overrides.resolveEngine === undefined ? {} : {resolveEngine: overrides.resolveEngine}),
-    env: overrides.env ?? {},
-    platform: overrides.platform ?? "linux",
-    now: overrides.now ?? clock(),
+    files: testFiles,
+    clock: overrides.clock ?? clock(),
+    tasks: testTasks,
+    environment: environmentFor(overrides.platform ?? "linux", overrides.env ?? {}),
   });
 }
 
@@ -647,7 +722,7 @@ describe("createInfrastructureProvider environment isolation", () => {
 describe("createInfrastructureProvider timing", () => {
   it("reports elapsed duration from the injected monotonic clock", async () => {
     const fixture = await createInfrastructureFixture();
-    const provider = createProvider(fixture, {requestedEngine: undefined, now: clock()});
+    const provider = createProvider(fixture, {requestedEngine: undefined, clock: clock()});
 
     const outcome = await provider();
 

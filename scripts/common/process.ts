@@ -113,5 +113,16 @@ export function toLegacyCommandRunner(runner: ProcessRunner): CommandRunner {
   };
 }
 
-/** Default process-backed command runner. */
-export const defaultCommandRunner: CommandRunner = toLegacyCommandRunner(nodeProcessRunner);
+/**
+ * Default process-backed command runner.
+ *
+ * @remarks
+ * The delegate is resolved on each call rather than at module load. `runtime.node.ts` is the sole
+ * Node adapter and now composes the repository inspection registry, so it can transitively import
+ * this deprecated facade; resolving `nodeProcessRunner` eagerly here would read that binding while
+ * the adapter is still initializing. Deferring the read keeps the existing per-call environment
+ * snapshot semantics of {@link nodeProcessRunner} exactly as they were.
+ */
+export const defaultCommandRunner: CommandRunner = {
+  run: (command, options) => toLegacyCommandRunner(nodeProcessRunner).run(command, options),
+};

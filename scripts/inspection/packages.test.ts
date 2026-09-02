@@ -9,7 +9,9 @@ import {tmpdir} from "node:os";
 import {dirname, join, resolve} from "node:path";
 import {afterEach, describe, expect, it, vi} from "vitest";
 
-import type {CommandResult, CommandRunner} from "../common/process.ts";
+import type {ProcessOutcome, ProcessOutput, ProcessRunner} from "../common/runner.ts";
+import {nodeFileSystem} from "../common/runtime.node.ts";
+import {asReadOnlyFileSystem, DefaultTaskScheduler, type Clock} from "../common/runtime.ts";
 import {createInspectionProbeRunner} from "./probes.ts";
 import {
   INSPECTED_PACKAGE_NAMES,
@@ -26,31 +28,56 @@ afterEach(async () => {
   await Promise.all(temporaryRoots.splice(0).map(async (root) => rm(root, {recursive: true, force: true})));
 });
 
-function commandResult(patch: Partial<CommandResult> = {}): CommandResult {
-  return {
-    code: 0,
-    stdout: "",
-    stderr: "",
-    durationMs: 1,
-    timedOut: false,
-    ...patch,
-  };
+const testFiles = asReadOnlyFileSystem(nodeFileSystem);
+const testTasks = new DefaultTaskScheduler();
+
+function succeeded(patch: Partial<ProcessOutput> = {}): ProcessOutcome {
+  return {kind: "succeeded", exitCode: 0, stdout: "", stderr: "", durationMs: 1, ...patch};
 }
 
-function clock(): () => number {
+function exited(exitCode: number, patch: Partial<ProcessOutput> = {}): ProcessOutcome {
+  return {kind: "exited", exitCode, stdout: "", stderr: "", durationMs: 1, ...patch};
+}
+
+function spawnFailed(message: string, patch: Partial<ProcessOutput> = {}): ProcessOutcome {
+  return {kind: "spawn-failed", message, stdout: "", stderr: "", durationMs: 1, ...patch};
+}
+
+function timedOut(patch: Partial<ProcessOutput> = {}): ProcessOutcome {
+  return {kind: "timed-out", stdout: "", stderr: "", durationMs: 1, ...patch};
+}
+
+function signalled(signal: NodeJS.Signals, patch: Partial<ProcessOutput> = {}): ProcessOutcome {
+  return {kind: "signalled", signal, stdout: "", stderr: "", durationMs: 1, ...patch};
+}
+
+function clock(): Clock {
   let current = 100;
-  return () => {
-    current += 5;
-    return current;
+  return {
+    monotonicNow: (): number => {
+      current += 5;
+      return current;
+    },
+    isoTimestamp: (): string => "2025-01-01T00:00:00.000Z",
+    delay: (): Promise<void> => Promise.resolve(),
   };
 }
 
-function npmHarness(result: CommandResult): Readonly<{
+function npmHarness(outcome: ProcessOutcome): Readonly<{
   probes: ReturnType<typeof createInspectionProbeRunner>;
-  run: ReturnType<typeof vi.fn<CommandRunner["run"]>>;
+  run: ReturnType<typeof vi.fn<ProcessRunner["run"]>>;
 }> {
-  const run = vi.fn<CommandRunner["run"]>(async () => result);
-  return {probes: createInspectionProbeRunner({run}), run};
+  const run = vi.fn<ProcessRunner["run"]>(async () => outcome);
+  const runner: ProcessRunner = {
+    run,
+    expectSuccess: () => {
+      throw new Error("Inspection probes never call expectSuccess.");
+    },
+    scope: () => {
+      throw new Error("Inspection probes never scope the shared runner.");
+    },
+  };
+  return {probes: createInspectionProbeRunner(runner), run};
 }
 
 async function createTemporaryRoot(prefix: string): Promise<string> {
@@ -82,8 +109,7 @@ describe("createNpmTreeProvider", () => {
         `missing: broken-package-${index.toString().padStart(4, "0")}@1.0.0, required by @arolariu/monorepo@0.0.0`,
     );
     const harness = npmHarness(
-      commandResult({
-        code: 1,
+      exited(1, {
         stdout: JSON.stringify({
           name: "@arolariu/monorepo",
           dependencies: {
@@ -95,7 +121,7 @@ describe("createNpmTreeProvider", () => {
       }),
     );
     const root = resolve(tmpdir(), "npm-tree-large-fixture");
-    const provider = createNpmTreeProvider({scope: "root", root, probes: harness.probes, now: clock()});
+    const provider = createNpmTreeProvider({scope: "root", root, probes: harness.probes, clock: clock()});
 
     const outcome = await provider();
 
@@ -125,7 +151,7 @@ describe("createNpmTreeProvider", () => {
 
   it("returns healthy facts for a successful valid dependency tree", async () => {
     const harness = npmHarness(
-      commandResult({
+      succeeded({
         stdout: JSON.stringify({
           dependencies: {
             react: {version: "19.2.8"},
@@ -138,7 +164,7 @@ describe("createNpmTreeProvider", () => {
       scope: "github-scripts",
       root: resolve(tmpdir(), "github-scripts-fixture"),
       probes: harness.probes,
-      now: clock(),
+      clock: clock(),
     });
 
     await expect(provider()).resolves.toEqual({
@@ -155,12 +181,12 @@ describe("createNpmTreeProvider", () => {
   });
 
   it("executes a fresh named probe for each provider invocation", async () => {
-    const harness = npmHarness(commandResult({stdout: JSON.stringify({dependencies: {}})}));
+    const harness = npmHarness(succeeded({stdout: JSON.stringify({dependencies: {}})}));
     const provider = createNpmTreeProvider({
       scope: "root",
       root: resolve(tmpdir(), "npm-provider-reuse-fixture"),
       probes: harness.probes,
-      now: clock(),
+      clock: clock(),
     });
 
     await expect(provider()).resolves.toMatchObject({kind: "available"});
@@ -172,25 +198,29 @@ describe("createNpmTreeProvider", () => {
   it("measures duration only after npm JSON projection finishes", async () => {
     const events: string[] = [];
     let current = 100;
-    const result: CommandResult = {
-      code: 0,
+    const outcomeFixture: ProcessOutcome = {
+      kind: "succeeded",
+      exitCode: 0,
       get stdout(): string {
         events.push("project");
         return JSON.stringify({dependencies: {react: {version: "19.2.8"}}});
       },
       stderr: "",
       durationMs: 1,
-      timedOut: false,
     };
-    const harness = npmHarness(result);
+    const harness = npmHarness(outcomeFixture);
     const provider = createNpmTreeProvider({
       scope: "root",
       root: resolve(tmpdir(), "npm-duration-fixture"),
       probes: harness.probes,
-      now: () => {
-        events.push("clock");
-        current += 5;
-        return current;
+      clock: {
+        monotonicNow: (): number => {
+          events.push("clock");
+          current += 5;
+          return current;
+        },
+        isoTimestamp: (): string => "2025-01-01T00:00:00.000Z",
+        delay: (): Promise<void> => Promise.resolve(),
       },
     });
 
@@ -203,8 +233,7 @@ describe("createNpmTreeProvider", () => {
   it("keeps valid nonzero npm JSON as bounded dependency-problem facts", async () => {
     const rawPath = String.raw`C:\Users\secret-user\repository\node_modules\react`;
     const harness = npmHarness(
-      commandResult({
-        code: 1,
+      exited(1, {
         stdout: JSON.stringify({
           dependencies: {react: {version: "0.0.0"}},
           problems: [`invalid: react@0.0.0 ${rawPath}`],
@@ -221,7 +250,7 @@ describe("createNpmTreeProvider", () => {
       scope: "root",
       root: resolve(tmpdir(), "npm-nonzero-fixture"),
       probes: harness.probes,
-      now: clock(),
+      clock: clock(),
     });
 
     const outcome = await provider();
@@ -242,8 +271,7 @@ describe("createNpmTreeProvider", () => {
 
   it("uses a top-level npm error only when no concrete problem entry exists", async () => {
     const harness = npmHarness(
-      commandResult({
-        code: 1,
+      exited(1, {
         stdout: JSON.stringify({
           error: {code: "EJSONPARSE", summary: "raw-summary-marker", detail: "raw-detail-marker"},
         }),
@@ -253,7 +281,7 @@ describe("createNpmTreeProvider", () => {
       scope: "root",
       root: resolve(tmpdir(), "npm-error-fallback-fixture"),
       probes: harness.probes,
-      now: clock(),
+      clock: clock(),
     });
 
     const outcome = await provider();
@@ -276,12 +304,12 @@ describe("createNpmTreeProvider", () => {
     ["malformed dependency data", JSON.stringify({raw: "raw-output-marker", dependencies: []})],
     ["malformed problem data", JSON.stringify({raw: "raw-output-marker", problems: [42]})],
   ])("returns invalid without retaining raw output for %s", async (_case, stdout) => {
-    const harness = npmHarness(commandResult({stdout}));
+    const harness = npmHarness(succeeded({stdout}));
     const provider = createNpmTreeProvider({
       scope: "root",
       root: resolve(tmpdir(), "npm-invalid-fixture"),
       probes: harness.probes,
-      now: clock(),
+      clock: clock(),
     });
 
     const outcome = await provider();
@@ -291,16 +319,16 @@ describe("createNpmTreeProvider", () => {
   });
 
   it.each([
-    ["missing executable", commandResult({code: 1, spawnError: "spawn raw-spawn-marker"})],
-    ["timeout", commandResult({code: 1, timedOut: true, stderr: "raw-timeout-marker"})],
-    ["signal", commandResult({code: 1, signal: "SIGTERM", stderr: "raw-signal-marker"})],
+    ["missing executable", spawnFailed("spawn raw-spawn-marker")],
+    ["timeout", timedOut({stderr: "raw-timeout-marker"})],
+    ["signal", signalled("SIGTERM", {stderr: "raw-signal-marker"})],
   ])("returns unavailable without retaining native output after %s", async (_case, result) => {
     const harness = npmHarness(result);
     const provider = createNpmTreeProvider({
       scope: "root",
       root: resolve(tmpdir(), "npm-unavailable-fixture"),
       probes: harness.probes,
-      now: clock(),
+      clock: clock(),
     });
 
     const outcome = await provider();
@@ -373,7 +401,9 @@ describe("createInstalledPackageProvider", () => {
     const provider = createInstalledPackageProvider({
       root,
       packageNames: ["react", "@arolariu/components"],
-      now: clock(),
+      clock: clock(),
+      files: testFiles,
+      tasks: testTasks,
     });
 
     await expect(provider()).resolves.toEqual({
@@ -403,7 +433,9 @@ describe("createInstalledPackageProvider", () => {
     const provider = createInstalledPackageProvider({
       root,
       packageNames: ["linked-package"],
-      now: clock(),
+      clock: clock(),
+      files: testFiles,
+      tasks: testTasks,
     });
 
     const outcome = await provider();
@@ -431,7 +463,9 @@ describe("createInstalledPackageProvider", () => {
     const provider = createInstalledPackageProvider({
       root,
       packageNames: ["react", "next"],
-      now: clock(),
+      clock: clock(),
+      files: testFiles,
+      tasks: testTasks,
     });
 
     const outcome = await provider();
@@ -450,7 +484,9 @@ describe("createInstalledPackageProvider", () => {
     const provider = createInstalledPackageProvider({
       root: rawRoot,
       packageNames: ["../secret-package"],
-      now: clock(),
+      clock: clock(),
+      files: testFiles,
+      tasks: testTasks,
     });
 
     const outcome = await provider();
@@ -469,7 +505,9 @@ describe("createInstalledPackageProvider", () => {
     const provider = createInstalledPackageProvider({
       root,
       packageNames: ["react"],
-      now: clock(),
+      clock: clock(),
+      files: testFiles,
+      tasks: testTasks,
     });
 
     const outcome = await provider();
@@ -487,7 +525,9 @@ describe("createInstalledPackageProvider", () => {
     const provider = createInstalledPackageProvider({
       root,
       packageNames: ["react"],
-      now: clock(),
+      clock: clock(),
+      files: testFiles,
+      tasks: testTasks,
     });
 
     await expect(provider()).resolves.toEqual({

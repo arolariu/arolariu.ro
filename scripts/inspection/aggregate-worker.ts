@@ -1,5 +1,5 @@
 /**
- * @fileoverview Isolated worker that performs the broad `envinfo` and `systeminformation`
+ * @fileoverview Isolated worker command that performs the broad `envinfo` and `systeminformation`
  * collection, projects and redacts it in-process, and emits exactly one normalized JSON document.
  * @module scripts/inspection/aggregate-worker
  *
@@ -12,19 +12,44 @@
  * invalid projected data become bounded nested outcomes whose text contains only the literal
  * package/projection name and a sanitized error class (for example `TypeError`) — never an error
  * message, stack, path, payload, or command output. The worker emits its single
- * {@link AggregateWorkerDocument} through the JSON-mode logger and produces no progress, console,
- * package, or raw-error output; a top-level failure still emits one normalized schema-v1 document.
+ * {@link AggregateWorkerDocument} through the command host's JSON presentation and produces no
+ * progress, console, package, or raw-error output; an invalid argument list or a top-level
+ * collection failure still completes with one normalized schema-v1 document and exit code `0`.
+ *
+ * Timing and concurrency arrive through the injected runtime: durations come from
+ * {@link Clock.monotonicNow} and every concurrent package call runs through the injected
+ * {@link TaskScheduler}, so the worker owns no ambient timer or `Promise` combinator.
  */
 
 import {resolve} from "node:path";
-import {fileURLToPath} from "node:url";
 
-import {MonorepositoryConsoleLogger} from "../common/logger.ts";
+import {MonorepoCommand, toJsonValue, type CommandContext, type CommandRuntimeFactory} from "../common/commander.ts";
+import type {Clock, TaskScheduler} from "../common/runtime.ts";
 import {requiredLocalPorts} from "../container-runtime/preflight.ts";
 import type {AggregateWorkerDocument} from "./aggregate.ts";
 import {projectSystemInformation, type HostFacts} from "./host.ts";
 import {parseEnvinfoJson, type ToolingFacts} from "./tooling.ts";
 import type {InspectionOutcome} from "./types.ts";
+
+/** Timing and concurrency capabilities the worker's collection helpers require. */
+export interface AggregateWorkerCapabilities {
+  /** Monotonic time source used to measure every nested outcome's `durationMs`. */
+  readonly clock: Clock;
+  /** Deterministic task orchestration used instead of raw `Promise` combinators. */
+  readonly tasks: TaskScheduler;
+}
+
+/** The single fixed input the aggregate worker accepts. */
+export interface AggregateWorkerInput {
+  /**
+   * Repository roots supplied positionally.
+   *
+   * @remarks
+   * Decoding never rejects a zero-length or multi-entry list: business execution normalizes every
+   * invalid shape into the bounded schema-v1 unavailable document instead of a usage diagnostic.
+   */
+  readonly repositoryRoots: readonly string[];
+}
 
 /** Exact approved selfhost container names correlated by the host projection. */
 const SELFHOST_CONTAINER_NAMES: ReadonlySet<string> = new Set([
@@ -46,6 +71,11 @@ interface HostCollectionApi {
   readonly dockerContainers: (all: boolean) => Promise<unknown>;
   readonly dockerImages: (all: boolean) => Promise<unknown>;
 }
+
+/** One labeled component outcome produced by the worker's parallel collection. */
+type AggregateComponentResult =
+  | {readonly component: "tooling"; readonly outcome: InspectionOutcome<ToolingFacts>}
+  | {readonly component: "host"; readonly outcome: InspectionOutcome<HostFacts>};
 
 function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -73,32 +103,33 @@ function invalidIssue(component: string, error: unknown): string {
   return `${component} produced invalid data (${errorClassName(error)}).`;
 }
 
-function elapsedSince(startedAt: number): number {
-  return Math.max(0, performance.now() - startedAt);
+function elapsedSince(startedAt: number, clock: Readonly<Clock>): number {
+  return Math.max(0, clock.monotonicNow() - startedAt);
 }
 
 /**
  * Collects and projects the tooling inventory through `envinfo`.
  *
+ * @param clock - Monotonic time source used to measure the nested outcome's duration.
  * @returns A nested tooling outcome: `available` for a successful projection, `invalid` for
  * fulfilled-but-unprojectable output, or `unavailable` for an import/call rejection.
  */
-async function collectTooling(): Promise<InspectionOutcome<ToolingFacts>> {
-  const startedAt = performance.now();
+async function collectTooling(clock: Readonly<Clock>): Promise<InspectionOutcome<ToolingFacts>> {
+  const startedAt = clock.monotonicNow();
 
   let serialized: string;
   try {
     const {default: envinfo} = await import("envinfo");
     serialized = await envinfo.cli({all: true, json: true, console: false, duplicates: true, fullTree: true});
   } catch (error: unknown) {
-    return {kind: "unavailable", reason: unavailableReason("envinfo", error), durationMs: elapsedSince(startedAt)};
+    return {kind: "unavailable", reason: unavailableReason("envinfo", error), durationMs: elapsedSince(startedAt, clock)};
   }
 
   try {
     const facts = parseEnvinfoJson(serialized);
-    return {kind: "available", value: facts, durationMs: elapsedSince(startedAt)};
+    return {kind: "available", value: facts, durationMs: elapsedSince(startedAt, clock)};
   } catch (error: unknown) {
-    return {kind: "invalid", issues: [invalidIssue("parseEnvinfoJson", error)], durationMs: elapsedSince(startedAt)};
+    return {kind: "invalid", issues: [invalidIssue("parseEnvinfoJson", error)], durationMs: elapsedSince(startedAt, clock)};
   }
 }
 
@@ -218,8 +249,9 @@ function isNoEngineDockerInfoSentinel(value: unknown): boolean {
  * Collects and projects the host inventory through `systeminformation`, degrading Docker gracefully.
  *
  * @remarks
- * The base host collection and each Docker call run through {@link Promise.allSettled} so a missing
- * Docker daemon never discards fulfilled base host data.
+ * The base host collection and each Docker call run through the injected
+ * {@link TaskScheduler.allSettled} so a missing Docker daemon never discards fulfilled base host
+ * data.
  *
  * The composition contract is **presence-based**, and the host projection reads it with
  * `Object.hasOwn` rather than an `!== undefined` test:
@@ -236,24 +268,34 @@ function isNoEngineDockerInfoSentinel(value: unknown): boolean {
  * zero containers or images, and a wrong-shape list must still reach `requireArray`.
  *
  * @param root - Resolved repository root used only for path-boundary correlation.
+ * @param capabilities - Injected clock and task scheduler.
  * @returns A nested host outcome: `available` for a successful projection, `invalid` for
  * fulfilled-but-unprojectable data, or `unavailable` for an import/base-call rejection.
  */
-async function collectHost(root: string): Promise<InspectionOutcome<HostFacts>> {
-  const startedAt = performance.now();
+async function collectHost(
+  root: string,
+  capabilities: Readonly<AggregateWorkerCapabilities>,
+): Promise<InspectionOutcome<HostFacts>> {
+  const {clock, tasks} = capabilities;
+  const startedAt = clock.monotonicNow();
 
   let api: HostCollectionApi;
   try {
     api = await importHostCollectionApi();
   } catch (error: unknown) {
-    return {kind: "unavailable", reason: unavailableReason("systeminformation", error), durationMs: elapsedSince(startedAt)};
+    return {kind: "unavailable", reason: unavailableReason("systeminformation", error), durationMs: elapsedSince(startedAt, clock)};
   }
 
   let settled: readonly PromiseSettledResult<unknown>[];
   try {
-    settled = await Promise.allSettled([api.getAllData(), api.dockerInfo(), api.dockerContainers(true), api.dockerImages(true)]);
+    settled = await tasks.allSettled<unknown>([
+      () => api.getAllData(),
+      () => api.dockerInfo(),
+      () => api.dockerContainers(true),
+      () => api.dockerImages(true),
+    ]);
   } catch (error: unknown) {
-    return {kind: "unavailable", reason: unavailableReason("systeminformation", error), durationMs: elapsedSince(startedAt)};
+    return {kind: "unavailable", reason: unavailableReason("systeminformation", error), durationMs: elapsedSince(startedAt, clock)};
   }
 
   const [baseSettled, infoSettled, containersSettled, imagesSettled] = settled;
@@ -261,7 +303,7 @@ async function collectHost(root: string): Promise<InspectionOutcome<HostFacts>> 
     return {
       kind: "unavailable",
       reason: unavailableReason("systeminformation.getAllData", baseSettled?.status === "rejected" ? baseSettled.reason : undefined),
-      durationMs: elapsedSince(startedAt),
+      durationMs: elapsedSince(startedAt, clock),
     };
   }
 
@@ -285,9 +327,9 @@ async function collectHost(root: string): Promise<InspectionOutcome<HostFacts>> 
       requiredPorts: [...requiredLocalPorts],
       repositoryContainerNames: SELFHOST_CONTAINER_NAMES,
     });
-    return {kind: "available", value: facts, durationMs: elapsedSince(startedAt)};
+    return {kind: "available", value: facts, durationMs: elapsedSince(startedAt, clock)};
   } catch (error: unknown) {
-    return {kind: "invalid", issues: [invalidIssue("projectSystemInformation", error)], durationMs: elapsedSince(startedAt)};
+    return {kind: "invalid", issues: [invalidIssue("projectSystemInformation", error)], durationMs: elapsedSince(startedAt, clock)};
   }
 }
 
@@ -296,18 +338,33 @@ async function collectHost(root: string): Promise<InspectionOutcome<HostFacts>> 
  *
  * @remarks
  * This is the single root-only export the worker exposes for in-process testing of its package
- * calls. It accepts only the repository root and never accepts commands, selectors, field lists, or
- * injected package functions. Each component collection catches its own failures, so this function
- * resolves with a normalized document rather than rejecting.
+ * calls. It accepts only the repository root plus injected timing/concurrency capabilities, and
+ * never accepts commands, selectors, field lists, or injected package functions. Each component
+ * collection catches its own failures, so this function resolves with a normalized document rather
+ * than rejecting.
  *
  * @param root - Repository root to inspect. Resolved for path correlation; the working directory is
  * never changed.
+ * @param capabilities - Injected clock and task scheduler.
  * @returns The normalized schema-v1 aggregate worker document.
  */
-export async function collectAggregateWorkerDocument(root: string): Promise<AggregateWorkerDocument> {
+export async function collectAggregateWorkerDocument(
+  root: string,
+  capabilities: Readonly<AggregateWorkerCapabilities>,
+): Promise<AggregateWorkerDocument> {
   const resolvedRoot = resolve(root);
-  const [tooling, host] = await Promise.all([collectTooling(), collectHost(resolvedRoot)]);
-  return {schemaVersion: 1, tooling, host};
+  const [first, second] = await capabilities.tasks.parallel<AggregateComponentResult>([
+    async () => ({component: "tooling", outcome: await collectTooling(capabilities.clock)}),
+    async () => ({component: "host", outcome: await collectHost(resolvedRoot, capabilities)}),
+  ]);
+
+  // `parallel` resolves in input order; the discriminant is checked instead of asserted so the
+  // document can never be assembled from a mis-ordered result pair.
+  if (first?.component !== "tooling" || second?.component !== "host") {
+    throw new Error("The aggregate inspection worker received component results in an unexpected order.");
+  }
+
+  return {schemaVersion: 1, tooling: first.outcome, host: second.outcome};
 }
 
 /**
@@ -327,59 +384,82 @@ function normalizedFailureDocument(reason: string): AggregateWorkerDocument {
 /**
  * Validates that exactly one non-empty repository-root argument was supplied.
  *
- * @param argv - Worker arguments (already stripped of the executable and script paths).
+ * @param repositoryRoots - Decoded positional roots.
  * @returns The single root argument, or `null` when it is missing, empty, or accompanied by extras.
  */
-function readSingleRootArgument(argv: readonly string[]): string | null {
-  if (argv.length !== 1) {
+function readSingleRootArgument(repositoryRoots: readonly string[]): string | null {
+  if (repositoryRoots.length !== 1) {
     return null;
   }
-  const [root] = argv;
-  if (typeof root !== "string" || root.trim() === "") {
+  const [root] = repositoryRoots;
+  if (root === undefined || root.trim() === "") {
     return null;
   }
   return root;
 }
 
 /**
- * Runs the worker CLI: validates arguments, collects the document, and emits it as one JSON record.
+ * Runs the worker's business collection: normalizes the decoded argument list, collects the
+ * document, and never rejects.
  *
  * @remarks
- * Invalid arguments short-circuit to a normalized failure document without invoking any package
- * collection. A collection failure that escapes the per-component handling is still normalized into
- * a schema-v1 document, so no uncaught stack, path, or raw error ever reaches stderr.
+ * An invalid argument list (zero roots, several roots, or one blank root) short-circuits to a
+ * normalized failure document without invoking any package collection, so the parent still receives
+ * a bounded schema-v1 document and exit code `0` instead of a Commander usage diagnostic. A
+ * collection failure that escapes the per-component handling is normalized the same way, so no
+ * uncaught stack, path, or raw error ever reaches stderr.
  *
- * @param argv - Worker arguments (already stripped of the executable and script paths).
+ * @param context - Owning command context supplying the runtime clock and task scheduler.
+ * @param input - Decoded worker input.
+ * @returns The normalized schema-v1 document to emit.
  */
-async function runWorkerCli(argv: readonly string[]): Promise<void> {
-  const logger = new MonorepositoryConsoleLogger("inspection::aggregate", {mode: "json"});
-
-  const root = readSingleRootArgument(argv);
+async function runAggregateWorker(
+  context: Readonly<CommandContext>,
+  input: Readonly<AggregateWorkerInput>,
+): Promise<AggregateWorkerDocument> {
+  const root = readSingleRootArgument(input.repositoryRoots);
   if (root === null) {
-    logger.json(normalizedFailureDocument("The aggregate inspection worker received invalid arguments."));
-    return;
+    return normalizedFailureDocument("The aggregate inspection worker received invalid arguments.");
   }
 
-  let document: AggregateWorkerDocument;
+  const {clock, tasks} = context.runtime;
   try {
-    document = await collectAggregateWorkerDocument(root);
+    return await collectAggregateWorkerDocument(root, {clock, tasks});
   } catch {
-    document = normalizedFailureDocument("The aggregate inspection worker failed to collect an aggregate report.");
+    return normalizedFailureDocument("The aggregate inspection worker failed to collect an aggregate report.");
   }
-
-  logger.json(document);
 }
 
 /**
- * Determines whether this module is being executed directly as a child process.
+ * Creates the isolated aggregate inspection worker command.
  *
- * @returns True only when the process entry path resolves to this module's path.
+ * @param runtimeFactory - Optional runtime factory; tests inject a fake instead of the Node adapter.
+ * @returns The typed `inspection-aggregate-worker` command object.
  */
-function isDirectlyExecuted(): boolean {
-  const entry = process.argv[1];
-  return typeof entry === "string" && resolve(entry) === resolve(fileURLToPath(import.meta.url));
+export function createAggregateWorkerCommand(
+  runtimeFactory?: CommandRuntimeFactory,
+): MonorepoCommand<AggregateWorkerInput, AggregateWorkerDocument> {
+  return new MonorepoCommand<AggregateWorkerInput, AggregateWorkerDocument>(
+    {
+      metadata: {
+        name: "inspection-aggregate-worker",
+        description: "Emits the normalized aggregate tooling and host report for one repository root.",
+        usage: "<repositoryRoot>",
+      },
+      configure: (program) => {
+        program.argument("[repositoryRoots...]", "Repository root to inspect; exactly one is expected.");
+      },
+      decode: (program) => ({repositoryRoots: [...program.args]}),
+      presentation: () => "json",
+      execute: runAggregateWorker,
+      completion: (document) => ({exitCode: 0, json: toJsonValue(document)}),
+    },
+    runtimeFactory,
+  );
 }
 
-if (isDirectlyExecuted()) {
-  await runWorkerCli(process.argv.slice(2));
-}
+/** Production singleton used by this module's direct entrypoint. */
+export const aggregateWorkerCommand: MonorepoCommand<AggregateWorkerInput, AggregateWorkerDocument> =
+  createAggregateWorkerCommand();
+
+await aggregateWorkerCommand.runIfMain(import.meta.url);

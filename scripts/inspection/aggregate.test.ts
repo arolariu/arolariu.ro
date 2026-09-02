@@ -9,8 +9,12 @@ import {resolve} from "node:path";
 import {fileURLToPath} from "node:url";
 import {describe, expect, it, vi} from "vitest";
 
-import {defaultCommandRunner, type CommandResult, type CommandRunner, type CommandSpec} from "../common/process.ts";
+import type {ProcessEnvironment, ProcessOutcome, ProcessOutput, ProcessRequest, ProcessRunner} from "../common/runner.ts";
+import {createNodeProcessRunner, snapshotNodeEnvironment} from "../common/runtime.node.ts";
+import {DefaultTaskScheduler, type Clock, type RuntimeEnvironment} from "../common/runtime.ts";
+import {createTestRuntimeFactory} from "../common/runtime.testing.ts";
 import {AGGREGATE_TIMEOUT_MS, createAggregateProvider, type AggregateWorkerDocument} from "./aggregate.ts";
+import {aggregateWorkerCommand, createAggregateWorkerCommand} from "./aggregate-worker.ts";
 import type {HostFacts} from "./host.ts";
 import type {ToolingFacts} from "./tooling.ts";
 import type {InspectionOutcome} from "./types.ts";
@@ -25,28 +29,59 @@ const REPOSITORY_ROOT = resolve(tmpdir(), "arolariu-aggregate-fixture-root");
 /** Absolute path to the worker module, used only by the CLI-argument subprocess tests. */
 const WORKER_PATH = fileURLToPath(new URL("./aggregate-worker.ts", import.meta.url));
 
-function commandResult(patch: Partial<CommandResult> = {}): CommandResult {
-  return {code: 0, stdout: "", stderr: "", durationMs: 1, timedOut: false, ...patch};
+function succeeded(patch: Partial<ProcessOutput> = {}): ProcessOutcome {
+  return {kind: "succeeded", exitCode: 0, stdout: "", stderr: "", durationMs: 1, ...patch};
 }
 
+function exited(exitCode: number, patch: Partial<ProcessOutput> = {}): ProcessOutcome {
+  return {kind: "exited", exitCode, stdout: "", stderr: "", durationMs: 1, ...patch};
+}
+
+function spawnFailed(message: string, patch: Partial<ProcessOutput> = {}): ProcessOutcome {
+  return {kind: "spawn-failed", message, stdout: "", stderr: "", durationMs: 1, ...patch};
+}
+
+function timedOut(patch: Partial<ProcessOutput> = {}): ProcessOutcome {
+  return {kind: "timed-out", stdout: "", stderr: "", durationMs: 1, ...patch};
+}
+
+/** Fixed clock returning a constant instant, so every measured duration is exactly zero. */
+const fixedClock: Clock = {
+  monotonicNow: (): number => 0,
+  isoTimestamp: (): string => "2025-01-01T00:00:00.000Z",
+  delay: (): Promise<void> => Promise.resolve(),
+};
+
+/** Immutable environment whose executable path the provider must use for the worker request. */
+const workerEnvironment: RuntimeEnvironment = snapshotNodeEnvironment();
+
 interface CapturedRun {
-  readonly command: Readonly<CommandSpec>;
+  readonly command: Readonly<ProcessRequest>;
   readonly options: Readonly<{
     cwd?: string;
-    env?: Readonly<NodeJS.ProcessEnv>;
+    env?: ProcessEnvironment;
     output?: string;
     timeoutMs?: number;
   }>;
 }
 
-function createFakeRunner(respond: (call: CapturedRun) => CommandResult): {runner: CommandRunner; calls: CapturedRun[]} {
+function createFakeRunner(respond: (call: CapturedRun) => ProcessOutcome): {runner: ProcessRunner; calls: CapturedRun[]} {
   const calls: CapturedRun[] = [];
-  const run = vi.fn(async (command: Readonly<CommandSpec>, options: Readonly<CapturedRun["options"]> = {}) => {
+  const run = vi.fn(async (command: Readonly<ProcessRequest>, options: Readonly<CapturedRun["options"]> = {}) => {
     const call: CapturedRun = {command, options};
     calls.push(call);
     return respond(call);
   });
-  return {runner: {run}, calls};
+  const runner: ProcessRunner = {
+    run,
+    expectSuccess: () => {
+      throw new Error("The aggregate provider never calls expectSuccess.");
+    },
+    scope: () => {
+      throw new Error("The aggregate provider never scopes the shared runner.");
+    },
+  };
+  return {runner, calls};
 }
 
 function validToolingFacts(): ToolingFacts {
@@ -93,9 +128,9 @@ function stdoutFor(document: unknown): string {
 
 describe("createAggregateProvider command construction", () => {
   it("invokes the current Node executable with the worker path, root, cwd, capture output, and the 60s timeout", async () => {
-    const {runner, calls} = createFakeRunner(() => commandResult({stdout: stdoutFor(validWorkerDocument())}));
+    const {runner, calls} = createFakeRunner(() => succeeded({stdout: stdoutFor(validWorkerDocument())}));
 
-    const outcome = await createAggregateProvider({root: REPOSITORY_ROOT, runner, now: () => 0})();
+    const outcome = await createAggregateProvider({root: REPOSITORY_ROOT, runner, clock: fixedClock, environment: workerEnvironment})();
 
     expect(outcome.kind).toBe("available");
     expect(calls).toHaveLength(1);
@@ -110,14 +145,18 @@ describe("createAggregateProvider command construction", () => {
 
   it("reports a non-negative duration from the injected clock", async () => {
     let tick = 0;
-    const now = (): number => {
-      const value = tick;
-      tick += 7;
-      return value;
+    const clock: Clock = {
+      monotonicNow: (): number => {
+        const value = tick;
+        tick += 7;
+        return value;
+      },
+      isoTimestamp: (): string => "2025-01-01T00:00:00.000Z",
+      delay: (): Promise<void> => Promise.resolve(),
     };
-    const {runner} = createFakeRunner(() => commandResult({stdout: stdoutFor(validWorkerDocument())}));
+    const {runner} = createFakeRunner(() => succeeded({stdout: stdoutFor(validWorkerDocument())}));
 
-    const outcome = await createAggregateProvider({root: REPOSITORY_ROOT, runner, now})();
+    const outcome = await createAggregateProvider({root: REPOSITORY_ROOT, runner, clock, environment: workerEnvironment})();
 
     expect(outcome.durationMs).toBeGreaterThanOrEqual(0);
   });
@@ -129,9 +168,9 @@ describe("createAggregateProvider command construction", () => {
 
 describe("createAggregateProvider failure mapping", () => {
   it("maps a spawn failure to unavailable without leaking the raw spawn error", async () => {
-    const {runner} = createFakeRunner(() => commandResult({spawnError: "spawn ENOENT super-secret-raw-marker"}));
+    const {runner} = createFakeRunner(() => spawnFailed("spawn ENOENT super-secret-raw-marker"));
 
-    const outcome = await createAggregateProvider({root: REPOSITORY_ROOT, runner, now: () => 0})();
+    const outcome = await createAggregateProvider({root: REPOSITORY_ROOT, runner, clock: fixedClock, environment: workerEnvironment})();
 
     expect(outcome.kind).toBe("unavailable");
     if (outcome.kind === "unavailable") {
@@ -141,9 +180,9 @@ describe("createAggregateProvider failure mapping", () => {
   });
 
   it("maps a nonzero exit to unavailable without raw stdout or stderr", async () => {
-    const {runner} = createFakeRunner(() => commandResult({code: 1, stdout: "raw-stdout-secret-marker", stderr: "raw-stderr-secret-marker"}));
+    const {runner} = createFakeRunner(() => exited(1, {stdout: "raw-stdout-secret-marker", stderr: "raw-stderr-secret-marker"}));
 
-    const outcome = await createAggregateProvider({root: REPOSITORY_ROOT, runner, now: () => 0})();
+    const outcome = await createAggregateProvider({root: REPOSITORY_ROOT, runner, clock: fixedClock, environment: workerEnvironment})();
 
     expect(outcome.kind).toBe("unavailable");
     if (outcome.kind === "unavailable") {
@@ -153,9 +192,9 @@ describe("createAggregateProvider failure mapping", () => {
   });
 
   it("maps a timeout to unavailable evidence without raw output", async () => {
-    const {runner} = createFakeRunner(() => commandResult({code: 1, timedOut: true, stdout: "raw-stdout-secret-marker", stderr: "raw-stderr-secret-marker"}));
+    const {runner} = createFakeRunner(() => timedOut({stdout: "raw-stdout-secret-marker", stderr: "raw-stderr-secret-marker"}));
 
-    const outcome = await createAggregateProvider({root: REPOSITORY_ROOT, runner, now: () => 0})();
+    const outcome = await createAggregateProvider({root: REPOSITORY_ROOT, runner, clock: fixedClock, environment: workerEnvironment})();
 
     expect(outcome.kind).toBe("unavailable");
     if (outcome.kind === "unavailable") {
@@ -172,17 +211,17 @@ describe("createAggregateProvider failure mapping", () => {
 
 describe("createAggregateProvider document validation", () => {
   it("maps empty stdout to invalid", async () => {
-    const {runner} = createFakeRunner(() => commandResult({stdout: ""}));
+    const {runner} = createFakeRunner(() => succeeded({stdout: ""}));
 
-    const outcome = await createAggregateProvider({root: REPOSITORY_ROOT, runner, now: () => 0})();
+    const outcome = await createAggregateProvider({root: REPOSITORY_ROOT, runner, clock: fixedClock, environment: workerEnvironment})();
 
     expect(outcome.kind).toBe("invalid");
   });
 
   it("maps malformed JSON to invalid without leaking raw output", async () => {
-    const {runner} = createFakeRunner(() => commandResult({stdout: "not-json-secret-marker{{{"}));
+    const {runner} = createFakeRunner(() => succeeded({stdout: "not-json-secret-marker{{{"}));
 
-    const outcome = await createAggregateProvider({root: REPOSITORY_ROOT, runner, now: () => 0})();
+    const outcome = await createAggregateProvider({root: REPOSITORY_ROOT, runner, clock: fixedClock, environment: workerEnvironment})();
 
     expect(outcome.kind).toBe("invalid");
     if (outcome.kind === "invalid") {
@@ -191,36 +230,36 @@ describe("createAggregateProvider document validation", () => {
   });
 
   it("rejects more than one worker JSON document", async () => {
-    const {runner} = createFakeRunner(() => commandResult({stdout: '{"schemaVersion":1}\n{"schemaVersion":1}\n'}));
+    const {runner} = createFakeRunner(() => succeeded({stdout: '{"schemaVersion":1}\n{"schemaVersion":1}\n'}));
 
-    const outcome = await createAggregateProvider({root: REPOSITORY_ROOT, runner, now: () => 0})();
+    const outcome = await createAggregateProvider({root: REPOSITORY_ROOT, runner, clock: fixedClock, environment: workerEnvironment})();
 
     expect(outcome.kind).toBe("invalid");
   });
 
   it("maps a wrong schema version to invalid", async () => {
     const document = {...validWorkerDocument(), schemaVersion: 2};
-    const {runner} = createFakeRunner(() => commandResult({stdout: stdoutFor(document)}));
+    const {runner} = createFakeRunner(() => succeeded({stdout: stdoutFor(document)}));
 
-    const outcome = await createAggregateProvider({root: REPOSITORY_ROOT, runner, now: () => 0})();
+    const outcome = await createAggregateProvider({root: REPOSITORY_ROOT, runner, clock: fixedClock, environment: workerEnvironment})();
 
     expect(outcome.kind).toBe("invalid");
   });
 
   it("maps a malformed nested outcome to invalid", async () => {
     const document = {schemaVersion: 1, tooling: {kind: "mystery", durationMs: 1}, host: availableOutcome(validHostFacts(), 4)};
-    const {runner} = createFakeRunner(() => commandResult({stdout: stdoutFor(document)}));
+    const {runner} = createFakeRunner(() => succeeded({stdout: stdoutFor(document)}));
 
-    const outcome = await createAggregateProvider({root: REPOSITORY_ROOT, runner, now: () => 0})();
+    const outcome = await createAggregateProvider({root: REPOSITORY_ROOT, runner, clock: fixedClock, environment: workerEnvironment})();
 
     expect(outcome.kind).toBe("invalid");
   });
 
   it("maps a negative nested duration to invalid", async () => {
     const document = {schemaVersion: 1, tooling: {kind: "available", value: validToolingFacts(), durationMs: -1}, host: availableOutcome(validHostFacts(), 4)};
-    const {runner} = createFakeRunner(() => commandResult({stdout: stdoutFor(document)}));
+    const {runner} = createFakeRunner(() => succeeded({stdout: stdoutFor(document)}));
 
-    const outcome = await createAggregateProvider({root: REPOSITORY_ROOT, runner, now: () => 0})();
+    const outcome = await createAggregateProvider({root: REPOSITORY_ROOT, runner, clock: fixedClock, environment: workerEnvironment})();
 
     expect(outcome.kind).toBe("invalid");
   });
@@ -232,9 +271,9 @@ describe("createAggregateProvider document validation", () => {
 
 describe("createAggregateProvider available reconstruction", () => {
   it("reconstructs fresh ToolingFacts and HostFacts copies for a fully available document", async () => {
-    const {runner} = createFakeRunner(() => commandResult({stdout: stdoutFor(validWorkerDocument())}));
+    const {runner} = createFakeRunner(() => succeeded({stdout: stdoutFor(validWorkerDocument())}));
 
-    const outcome = await createAggregateProvider({root: REPOSITORY_ROOT, runner, now: () => 0})();
+    const outcome = await createAggregateProvider({root: REPOSITORY_ROOT, runner, clock: fixedClock, environment: workerEnvironment})();
 
     expect(outcome.kind).toBe("available");
     if (outcome.kind === "available") {
@@ -257,9 +296,9 @@ describe("createAggregateProvider available reconstruction", () => {
       tooling: {kind: "unavailable", reason: "envinfo was unavailable (TypeError).", durationMs: 2},
       host: {kind: "invalid", issues: ["projectSystemInformation produced invalid data (SystemInformationProjectionError)."], durationMs: 6},
     };
-    const {runner} = createFakeRunner(() => commandResult({stdout: stdoutFor(document)}));
+    const {runner} = createFakeRunner(() => succeeded({stdout: stdoutFor(document)}));
 
-    const outcome = await createAggregateProvider({root: REPOSITORY_ROOT, runner, now: () => 0})();
+    const outcome = await createAggregateProvider({root: REPOSITORY_ROOT, runner, clock: fixedClock, environment: workerEnvironment})();
 
     expect(outcome.kind).toBe("available");
     if (outcome.kind === "available") {
@@ -278,9 +317,9 @@ describe("createAggregateProvider available reconstruction", () => {
       tooling: availableOutcome(validToolingFacts(), 3),
       host: {kind: "unavailable", reason: "systeminformation was unavailable (Error).", durationMs: 1},
     };
-    const {runner} = createFakeRunner(() => commandResult({stdout: stdoutFor(document)}));
+    const {runner} = createFakeRunner(() => succeeded({stdout: stdoutFor(document)}));
 
-    const outcome = await createAggregateProvider({root: REPOSITORY_ROOT, runner, now: () => 0})();
+    const outcome = await createAggregateProvider({root: REPOSITORY_ROOT, runner, clock: fixedClock, environment: workerEnvironment})();
 
     expect(outcome.kind).toBe("available");
     if (outcome.kind === "available") {
@@ -317,9 +356,9 @@ describe("createAggregateProvider available reconstruction", () => {
         durationMs: 4,
       },
     };
-    const {runner} = createFakeRunner(() => commandResult({stdout: stdoutFor(document)}));
+    const {runner} = createFakeRunner(() => succeeded({stdout: stdoutFor(document)}));
 
-    const outcome = await createAggregateProvider({root: REPOSITORY_ROOT, runner, now: () => 0})();
+    const outcome = await createAggregateProvider({root: REPOSITORY_ROOT, runner, clock: fixedClock, environment: workerEnvironment})();
 
     expect(outcome.kind).toBe("available");
     if (outcome.kind === "available") {
@@ -477,6 +516,9 @@ async function loadWorkerWithMocks(mocks: {
 
 const WORKER_ROOT = resolve(tmpdir(), "arolariu-aggregate-worker-root");
 
+/** Deterministic timing and concurrency the in-process worker collection observes. */
+const workerCapabilities = {clock: fixedClock, tasks: new DefaultTaskScheduler()} as const;
+
 describe("collectAggregateWorkerDocument component collection", () => {
   it("collects available tooling and host facts through the mocked packages", async () => {
     const worker = await loadWorkerWithMocks({
@@ -484,7 +526,7 @@ describe("collectAggregateWorkerDocument component collection", () => {
       systeminformation: systeminformationMockModule(),
     });
 
-    const document = await worker.collectAggregateWorkerDocument(WORKER_ROOT);
+    const document = await worker.collectAggregateWorkerDocument(WORKER_ROOT, workerCapabilities);
 
     expect(document.schemaVersion).toBe(1);
     expect(document.tooling.kind).toBe("available");
@@ -500,7 +542,7 @@ describe("collectAggregateWorkerDocument component collection", () => {
       systeminformation: systeminformationMockModule(),
     });
 
-    const document = await worker.collectAggregateWorkerDocument(WORKER_ROOT);
+    const document = await worker.collectAggregateWorkerDocument(WORKER_ROOT, workerCapabilities);
 
     expect(document.tooling.kind).toBe("invalid");
     if (document.tooling.kind === "invalid") {
@@ -518,7 +560,7 @@ describe("collectAggregateWorkerDocument component collection", () => {
       systeminformation: systeminformationMockModule(),
     });
 
-    const document = await worker.collectAggregateWorkerDocument(WORKER_ROOT);
+    const document = await worker.collectAggregateWorkerDocument(WORKER_ROOT, workerCapabilities);
 
     expect(document.tooling.kind).toBe("unavailable");
     if (document.tooling.kind === "unavailable") {
@@ -534,7 +576,7 @@ describe("collectAggregateWorkerDocument component collection", () => {
       systeminformation: systeminformationMockModule({getAllData: async (): Promise<unknown> => ({injectedHostSecret: "host-secret-do-not-leak"})}),
     });
 
-    const document = await worker.collectAggregateWorkerDocument(WORKER_ROOT);
+    const document = await worker.collectAggregateWorkerDocument(WORKER_ROOT, workerCapabilities);
 
     expect(document.host.kind).toBe("invalid");
     if (document.host.kind === "invalid") {
@@ -554,7 +596,7 @@ describe("collectAggregateWorkerDocument component collection", () => {
       }),
     });
 
-    const document = await worker.collectAggregateWorkerDocument(WORKER_ROOT);
+    const document = await worker.collectAggregateWorkerDocument(WORKER_ROOT, workerCapabilities);
 
     expect(document.host.kind).toBe("unavailable");
     if (document.host.kind === "unavailable") {
@@ -572,7 +614,7 @@ describe("collectAggregateWorkerDocument component collection", () => {
       }),
     });
 
-    const document = await worker.collectAggregateWorkerDocument(WORKER_ROOT);
+    const document = await worker.collectAggregateWorkerDocument(WORKER_ROOT, workerCapabilities);
 
     expect(document.host.kind).toBe("available");
     if (document.host.kind === "available") {
@@ -589,7 +631,7 @@ describe("collectAggregateWorkerDocument component collection", () => {
       systeminformation: systeminformationMockModule({dockerInfo: reject, dockerContainers: reject, dockerImages: reject}),
     });
 
-    const document = await worker.collectAggregateWorkerDocument(WORKER_ROOT);
+    const document = await worker.collectAggregateWorkerDocument(WORKER_ROOT, workerCapabilities);
 
     expect(document.host.kind).toBe("available");
     if (document.host.kind === "available") {
@@ -614,7 +656,7 @@ describe("collectAggregateWorkerDocument component collection", () => {
       }),
     });
 
-    const document = await worker.collectAggregateWorkerDocument(WORKER_ROOT);
+    const document = await worker.collectAggregateWorkerDocument(WORKER_ROOT, workerCapabilities);
 
     expect(document.host.kind).toBe("available");
     if (document.host.kind === "available") {
@@ -683,7 +725,7 @@ describe("collectAggregateWorkerDocument component collection", () => {
       systeminformation: systeminformationMockModule(overrides),
     });
 
-    const document = await worker.collectAggregateWorkerDocument(WORKER_ROOT);
+    const document = await worker.collectAggregateWorkerDocument(WORKER_ROOT, workerCapabilities);
 
     expect(document.host.kind).toBe("invalid");
     if (document.host.kind === "invalid") {
@@ -706,7 +748,7 @@ describe("collectAggregateWorkerDocument component collection", () => {
       systeminformation: systeminformationMockModule({dockerInfo: async (): Promise<unknown> => permuted}),
     });
 
-    const document = await worker.collectAggregateWorkerDocument(WORKER_ROOT);
+    const document = await worker.collectAggregateWorkerDocument(WORKER_ROOT, workerCapabilities);
 
     expect(document.host.kind).toBe("available");
     if (document.host.kind === "available") {
@@ -725,7 +767,7 @@ describe("collectAggregateWorkerDocument component collection", () => {
       systeminformation: systeminformationMockModule({dockerInfo: reject, dockerContainers: reject, dockerImages: reject}),
     });
 
-    const document = await worker.collectAggregateWorkerDocument(WORKER_ROOT);
+    const document = await worker.collectAggregateWorkerDocument(WORKER_ROOT, workerCapabilities);
 
     expect(document.host.kind).toBe("available");
     if (document.host.kind === "available") {
@@ -749,7 +791,7 @@ describe("collectAggregateWorkerDocument component collection", () => {
       }),
     });
 
-    const document = await worker.collectAggregateWorkerDocument(WORKER_ROOT);
+    const document = await worker.collectAggregateWorkerDocument(WORKER_ROOT, workerCapabilities);
 
     const serialized = JSON.stringify(document);
     expect(serialized).not.toContain("do-not-leak-marker");
@@ -767,8 +809,12 @@ describe("aggregate worker CLI argument validation", () => {
   it(
     "emits one normalized failure document and no stderr when the root argument is missing",
     async () => {
-      const result = await defaultCommandRunner.run({command: process.execPath, args: [WORKER_PATH]}, {output: "capture"});
+      const result = await createNodeProcessRunner(snapshotNodeEnvironment()).run(
+        {command: process.execPath, args: [WORKER_PATH]},
+        {output: "capture"},
+      );
 
+      expect(result.kind).toBe("succeeded");
       expect(result.stderr.trim()).toBe("");
       const parsed = JSON.parse(result.stdout.trim()) as AggregateWorkerDocument;
       expect(parsed.schemaVersion).toBe(1);
@@ -783,11 +829,12 @@ describe("aggregate worker CLI argument validation", () => {
   it(
     "emits one normalized failure document and no stderr when extra arguments are supplied",
     async () => {
-      const result = await defaultCommandRunner.run(
+      const result = await createNodeProcessRunner(snapshotNodeEnvironment()).run(
         {command: process.execPath, args: [WORKER_PATH, "root-a", "root-b"]},
         {output: "capture"},
       );
 
+      expect(result.kind).toBe("succeeded");
       expect(result.stderr.trim()).toBe("");
       const parsed = JSON.parse(result.stdout.trim()) as AggregateWorkerDocument;
       expect(parsed.schemaVersion).toBe(1);
@@ -798,6 +845,52 @@ describe("aggregate worker CLI argument validation", () => {
     },
     30_000,
   );
+});
+
+// ============================================================================
+// Worker command object — in-process, no host collection
+// ============================================================================
+
+describe("createAggregateWorkerCommand", () => {
+  it("normalizes zero roots into the bounded schema-v1 unavailable document with a completed exit code", async () => {
+    const command = createAggregateWorkerCommand(createTestRuntimeFactory());
+
+    const execution = await command.run([]);
+
+    expect(execution.status).toBe("completed");
+    expect(execution.exitCode).toBe(0);
+    if (execution.status === "completed") {
+      expect(execution.value.schemaVersion).toBe(1);
+      expect(execution.value.tooling).toEqual({kind: "unavailable", reason: expect.stringContaining("invalid arguments"), durationMs: 0});
+      expect(execution.value.host).toEqual({kind: "unavailable", reason: expect.stringContaining("invalid arguments"), durationMs: 0});
+    }
+  });
+
+  it("normalizes several roots without emitting a Commander usage diagnostic", async () => {
+    const command = createAggregateWorkerCommand(createTestRuntimeFactory());
+
+    const execution = await command.run(["root-a", "root-b"]);
+
+    expect(execution.status).toBe("completed");
+    expect(execution.exitCode).toBe(0);
+  });
+
+  it("normalizes one blank root without invoking any package collection", async () => {
+    const command = createAggregateWorkerCommand(createTestRuntimeFactory());
+
+    const execution = await command.invoke({repositoryRoots: ["   "]});
+
+    expect(execution.status).toBe("completed");
+    if (execution.status === "completed") {
+      expect(execution.value.tooling.kind).toBe("unavailable");
+      expect(execution.value.host.kind).toBe("unavailable");
+    }
+  });
+
+  it("exports one production singleton command for direct entry", () => {
+    expect(typeof aggregateWorkerCommand.runIfMain).toBe("function");
+    expect(aggregateWorkerCommand).not.toBe(createAggregateWorkerCommand());
+  });
 });
 
 // ============================================================================

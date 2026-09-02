@@ -15,7 +15,7 @@ import type {CommandRunner} from "./common/process.ts";
 import {createTerminalPromptProvider, type PromptProvider} from "./common/prompts.ts";
 import {createRepositoryPaths, type RepositoryPaths} from "./common/repository-paths.ts";
 import type {RepositoryRequirements} from "./common/requirements.ts";
-import type {createRepositoryInspectionSession, RepositoryInspectionSession} from "./inspection/repository.ts";
+import type {RepositoryInspectionSession, RepositoryInspectionSessionFactory} from "./inspection/repository.ts";
 import {createSetupActionExecutor, main, runSetup, setupPhases, type SetupDependencies} from "./setup.ts";
 import type {SetupAction, SetupContext, SetupOptions, SetupPhaseDefinition, SetupPhaseResult, SetupStatus} from "./setup.types.ts";
 
@@ -521,7 +521,7 @@ describe("runSetup", () => {
     const {prompts} = createPrompts();
     const {logger} = createLogger();
     const fakeSession = createFakeInspectionSession();
-    const createInspectionSession = vi.fn<typeof createRepositoryInspectionSession>(() => fakeSession);
+    const createInspectionSession = vi.fn<RepositoryInspectionSessionFactory>(() => fakeSession);
     const receivedContexts: SetupContext[] = [];
     const phases = [
       stubPhase("a", {
@@ -546,9 +546,6 @@ describe("runSetup", () => {
       expect.objectContaining({
         profile: "full",
         paths: FIXED_REPOSITORY_PATHS,
-        runner: noopRunner,
-        env: process.env,
-        platform: process.platform,
       }),
     );
     expect(receivedContexts).toHaveLength(2);
@@ -557,7 +554,7 @@ describe("runSetup", () => {
   });
 
   it("omits requestedEngine from the inspection session input when no engine option is set", async () => {
-    const createInspectionSession = vi.fn<typeof createRepositoryInspectionSession>(() => createFakeInspectionSession());
+    const createInspectionSession = vi.fn<RepositoryInspectionSessionFactory>(() => createFakeInspectionSession());
 
     await runSetupForTest(options(), {
       phases: [stubPhase("a")],
@@ -577,7 +574,7 @@ describe("runSetup", () => {
   });
 
   it("passes the requested engine through to the inspection session", async () => {
-    const createInspectionSession = vi.fn<typeof createRepositoryInspectionSession>(() => createFakeInspectionSession());
+    const createInspectionSession = vi.fn<RepositoryInspectionSessionFactory>(() => createFakeInspectionSession());
 
     await runSetupForTest(options({engine: "podman"}), {
       phases: [stubPhase("a")],
@@ -593,7 +590,7 @@ describe("runSetup", () => {
   it("does not construct an inspection session when repository requirements are invalid", async () => {
     const {prompts} = createPrompts();
     const {logger} = createLogger();
-    const createInspectionSession = vi.fn<typeof createRepositoryInspectionSession>(() => createFakeInspectionSession());
+    const createInspectionSession = vi.fn<RepositoryInspectionSessionFactory>(() => createFakeInspectionSession());
 
     await expect(
       runSetup(options(), {

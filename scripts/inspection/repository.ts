@@ -4,7 +4,7 @@
  *
  * @remarks
  * This module performs pure composition: it never implements domain inspection logic itself.
- * One {@link InspectionProbeRunner} is created from the caller's {@link CommandRunner} and shared
+ * One {@link InspectionProbeRunner} is created from the caller's {@link ProcessRunner} and shared
  * by every probe-driven provider; one shared installed-package provider is registered under the
  * `"packages"` key for the exact {@link INSPECTED_PACKAGE_NAMES} inventory; and the React, both
  * Svelte, and infrastructure providers receive lazy closures that call back into the composed
@@ -14,14 +14,18 @@
  * a closure can safely capture it: none of the closures can execute until a caller receives the
  * returned session and calls `inspect`, by which point the binding is always assigned.
  *
+ * Every provider receives narrow capability picks rather than ambient state: an ordinary provider
+ * only ever sees the read-only filesystem, and only the isolated Nx workspace provider receives the
+ * narrow temporary-directory capability it needs for its disposable Nx state root.
+ *
  * Under the `"quick"` profile, `"aggregate"` never constructs the isolated aggregate worker
  * provider at all: it is wired to a bounded provider that immediately reports the fact as
  * unavailable with a fixed, redacted reason identifying the quick profile, so the `envinfo`/
  * `systeminformation` worker process is never spawned.
  */
 
-import type {CommandRunner} from "../common/process.ts";
-import type {RepositoryPaths} from "../common/repository-paths.ts";
+import type {ProcessRunner} from "../common/runner.ts";
+import type {Clock, FileSystem, ReadOnlyFileSystem, RepositoryInspectionRequest, RuntimeEnvironment, TaskScheduler} from "../common/runtime.ts";
 import type {ContainerEngine} from "../container-runtime/types.ts";
 import {createAggregateProvider, type AggregateFacts} from "./aggregate.ts";
 import {createDotnetProvider, type DotnetFacts} from "./dotnet.ts";
@@ -95,6 +99,35 @@ function elapsedMilliseconds(startedAt: number, now: () => number): number {
   return Number.isFinite(elapsed) ? Math.max(0, elapsed) : 0;
 }
 
+/** Every capability {@link createRepositoryInspectionSession} needs, plus the caller's request. */
+export interface RepositoryInspectionSessionOptions extends RepositoryInspectionRequest {
+  /** Engine-neutral child-process runner shared by every probe- and worker-driven provider. */
+  readonly runner: ProcessRunner;
+  /** Read-only filesystem every ordinary provider observes repository state through. */
+  readonly files: ReadOnlyFileSystem;
+  /** The single writable capability: creation of one caller-owned temporary directory. */
+  readonly temporaryDirectories: Pick<FileSystem, "createTemporaryDirectory">;
+  /** Monotonic and wall-clock time source used for every `durationMs` measurement. */
+  readonly clock: Clock;
+  /** Deterministic task orchestration used instead of raw `Promise` combinators. */
+  readonly tasks: TaskScheduler;
+  /** Immutable environment snapshot providers read variables, platform, and paths from. */
+  readonly environment: RuntimeEnvironment;
+  /** Cancellation signal of the owning command invocation. */
+  readonly signal: AbortSignal;
+}
+
+/**
+ * Creates one {@link RepositoryInspectionSession} for a caller's request.
+ *
+ * @remarks
+ * The runtime's memoized inspection registry owns exactly one factory of this shape, so a command
+ * never assembles capabilities itself.
+ */
+export type RepositoryInspectionSessionFactory = (
+  request: Readonly<RepositoryInspectionRequest>,
+) => RepositoryInspectionSession;
+
 /**
  * Creates the bounded `"aggregate"` provider used under the quick inspection profile.
  *
@@ -131,29 +164,24 @@ function createQuickAggregateProvider(now: () => number): InspectionProvider<Agg
  * observe, and a targeted {@link InspectionSession.invalidate} call only ever forces the exact
  * keys it names to be recomputed.
  *
- * @param input - Inspection profile, canonical repository paths, shared command runner, optional
- * requested container engine, isolated environment, target platform, and monotonic time source.
+ * @param options - Inspection profile, canonical repository paths, optional requested container
+ * engine, and the runner, read-only filesystem, temporary-directory, clock, task-scheduler,
+ * environment, and cancellation capabilities every provider observes.
  * @returns A session exposing memoized `inspect` and key-scoped `invalidate` across every
  * {@link RepositoryInspectionFacts} key.
  */
 export function createRepositoryInspectionSession(
-  input: Readonly<{
-    profile: InspectionProfile;
-    paths: RepositoryPaths;
-    runner: CommandRunner;
-    requestedEngine?: ContainerEngine;
-    env: Readonly<NodeJS.ProcessEnv>;
-    platform: NodeJS.Platform;
-    now: () => number;
-  }>,
+  options: Readonly<RepositoryInspectionSessionOptions>,
 ): RepositoryInspectionSession {
-  const probes = createInspectionProbeRunner(input.runner);
+  const {files, temporaryDirectories, clock, tasks, environment, runner} = options;
+  const now = (): number => clock.monotonicNow();
+  const probes = createInspectionProbeRunner(runner);
 
   // Mutable engine variable: starts with the Commander-level requested engine and can be updated
   // later by `updateInfrastructureEngine` (from environment, persisted config, or interactive
   // prompt). The infrastructure provider reads this lazily through `resolveEngine` each time it
   // runs, so an invalidate-then-inspect cycle always observes the current selection.
-  let currentEngine: ContainerEngine | undefined = input.requestedEngine;
+  let currentEngine: ContainerEngine | undefined = options.requestedEngine;
 
   // Declared before assignment so the lazy `packages`/`aggregate` closures below can capture this
   // exact binding. Neither closure can run before a caller receives the session below and calls
@@ -161,39 +189,54 @@ export function createRepositoryInspectionSession(
   let session: RepositoryInspectionSession;
 
   const frontendInput: FrontendProviderInput = {
-    paths: input.paths,
+    paths: options.paths,
     packages: (): Promise<InspectionOutcome<PackageInventoryFacts>> => session.inspect("packages"),
     probes,
-    now: input.now,
+    files,
+    clock,
+    tasks,
   };
 
   const providers: InspectionProviders<RepositoryInspectionFacts> = {
-    workspace: createWorkspaceProvider({root: input.paths.root, runner: input.runner, now: input.now}),
+    workspace: createWorkspaceProvider({
+      root: options.paths.root,
+      runner,
+      clock,
+      environment,
+      temporaryDirectories,
+    }),
     aggregate:
-      input.profile === "quick"
-        ? createQuickAggregateProvider(input.now)
-        : createAggregateProvider({root: input.paths.root, runner: input.runner, now: input.now}),
-    "npm.root": createNpmTreeProvider({scope: "root", root: input.paths.root, probes, now: input.now}),
+      options.profile === "quick"
+        ? createQuickAggregateProvider(now)
+        : createAggregateProvider({root: options.paths.root, runner, clock, environment}),
+    "npm.root": createNpmTreeProvider({scope: "root", root: options.paths.root, probes, clock}),
     "npm.github-scripts": createNpmTreeProvider({
       scope: "github-scripts",
-      root: input.paths.githubScriptsRoot,
+      root: options.paths.githubScriptsRoot,
       probes,
-      now: input.now,
+      clock,
     }),
-    packages: createInstalledPackageProvider({root: input.paths.root, packageNames: INSPECTED_PACKAGE_NAMES, now: input.now}),
-    dotnet: createDotnetProvider({paths: input.paths, probes, platform: input.platform, now: input.now}),
-    python: createPythonProvider({paths: input.paths, probes, platform: input.platform, now: input.now}),
+    packages: createInstalledPackageProvider({
+      root: options.paths.root,
+      packageNames: INSPECTED_PACKAGE_NAMES,
+      files,
+      clock,
+      tasks,
+    }),
+    dotnet: createDotnetProvider({paths: options.paths, probes, files, clock, tasks, environment}),
+    python: createPythonProvider({paths: options.paths, probes, files, clock, tasks, environment}),
     react: createReactProvider(frontendInput),
     "svelte.cv": createSvelteProvider("cv", frontendInput),
     "svelte.status": createSvelteProvider("status", frontendInput),
     infrastructure: createInfrastructureProvider({
-      paths: input.paths,
+      paths: options.paths,
       probes,
       aggregate: (): Promise<InspectionOutcome<AggregateFacts>> => session.inspect("aggregate"),
       resolveEngine: (): ContainerEngine | undefined => currentEngine,
-      env: input.env,
-      platform: input.platform,
-      now: input.now,
+      files,
+      clock,
+      tasks,
+      environment,
     }),
   };
 

@@ -39,10 +39,10 @@ import {formatBytes} from "./common/index.ts";
 import {MonorepositoryConsoleLogger, type LogSegment, type MonorepositoryLogger} from "./common/logger.ts";
 import {defaultCommandRunner, type CommandResult, type CommandRunner, type CommandSpec} from "./common/process.ts";
 import {resolveRepositoryPaths, type RepositoryPaths} from "./common/repository-paths.ts";
-import {nodeFileSystem} from "./common/runtime.node.ts";
+import {createNodeRepositoryInspectionSession, nodeFileSystem} from "./common/runtime.node.ts";
 import {runDoctor} from "./doctor.ts";
 import type {DoctorSummary} from "./doctor.types.ts";
-import {createRepositoryInspectionSession, type RepositoryInspectionSession} from "./inspection/repository.ts";
+import type {RepositoryInspectionSession, RepositoryInspectionSessionFactory} from "./inspection/repository.ts";
 
 // ============================================================================
 // Types
@@ -139,8 +139,8 @@ export interface StatusDependencies {
    * one quick session after path resolution.
    */
   readonly inspection: RepositoryInspectionSession;
-  /** Factory for creating an inspection session; defaults to {@link createRepositoryInspectionSession}. */
-  readonly createInspectionSession: typeof createRepositoryInspectionSession;
+  /** Factory for creating an inspection session; defaults to {@link createNodeRepositoryInspectionSession}. */
+  readonly createInspectionSession: RepositoryInspectionSessionFactory;
   /** Typed doctor runner; defaults to the production {@link runDoctor}. */
   readonly runDoctor: typeof runDoctor;
 }
@@ -843,13 +843,9 @@ export async function main(
 
   const inspection =
     dependencies.inspection
-    ?? (dependencies.createInspectionSession ?? createRepositoryInspectionSession)({
+    ?? (dependencies.createInspectionSession ?? createNodeRepositoryInspectionSession)({
       profile: "quick",
       paths,
-      runner,
-      env: process.env,
-      platform: process.platform,
-      now: () => performance.now(),
     });
 
   const doctorRunner = dependencies.runDoctor ?? runDoctor;

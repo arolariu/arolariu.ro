@@ -9,7 +9,9 @@ import {tmpdir} from "node:os";
 import {dirname, join, resolve} from "node:path";
 import {afterEach, describe, expect, it, vi} from "vitest";
 
-import type {CommandResult, CommandRunner, CommandSpec} from "../common/process.ts";
+import type {ProcessEnvironment, ProcessOutcome, ProcessRequest, ProcessRunner} from "../common/runner.ts";
+import {nodeFileSystem} from "../common/runtime.node.ts";
+import {asReadOnlyFileSystem, DefaultTaskScheduler, type Clock, type RuntimeEnvironment} from "../common/runtime.ts";
 import {createRepositoryPaths, type RepositoryPaths} from "../common/repository-paths.ts";
 import {createInspectionProbeRunner} from "./probes.ts";
 import {createPythonProvider} from "./python.ts";
@@ -19,26 +21,91 @@ const fixtureRoots: string[] = [];
 const PYTHON_METADATA_PROBE_SCRIPT =
   "import json, platform, site, sys; print(json.dumps({'executable': sys.executable, 'version': platform.python_version(), 'prefix': sys.prefix, 'basePrefix': getattr(sys, 'base_prefix', sys.prefix), 'sitePackages': site.getsitepackages()}, separators=(',', ':')))";
 
-function commandResult(patch: Partial<CommandResult> = {}): CommandResult {
+/** Legacy-shaped fixture description translated into one typed {@link ProcessOutcome}. */
+interface ProcessOutcomeFixture {
+  readonly code?: number;
+  readonly stdout?: string;
+  readonly stderr?: string;
+  readonly durationMs?: number;
+  readonly timedOut?: boolean;
+  readonly signal?: NodeJS.Signals;
+  readonly spawnError?: string;
+}
+
+/**
+ * Builds one typed {@link ProcessOutcome} from a fixture description, so every suite keeps naming
+ * the exact spawn/timeout/signal/exit classification it exercises.
+ *
+ * @param patch - Fixture description of the outcome under test.
+ * @returns The equivalent typed process outcome.
+ */
+function commandResult(patch: ProcessOutcomeFixture = {}): ProcessOutcome {
+  const output = {stdout: patch.stdout ?? "", stderr: patch.stderr ?? "", durationMs: patch.durationMs ?? 1};
+  if (patch.spawnError !== undefined) {
+    return {kind: "spawn-failed", message: patch.spawnError, ...output};
+  }
+  if (patch.timedOut === true) {
+    return {kind: "timed-out", ...(patch.signal === undefined ? {} : {signal: patch.signal}), ...output};
+  }
+  if (patch.signal !== undefined) {
+    return {kind: "signalled", signal: patch.signal, ...output};
+  }
+  const code = patch.code ?? 0;
+  return code === 0 ? {kind: "succeeded", exitCode: 0, ...output} : {kind: "exited", exitCode: code, ...output};
+}
+
+/** Wraps one recorded `run` implementation in the full {@link ProcessRunner} probe contract. */
+function asProcessRunner(run: ProcessRunner["run"]): ProcessRunner {
   return {
-    code: 0,
-    stdout: "",
-    stderr: "",
-    durationMs: 1,
-    timedOut: false,
-    ...patch,
+    run,
+    expectSuccess: () => {
+      throw new Error("Inspection probes never call expectSuccess.");
+    },
+    scope: () => {
+      throw new Error("Inspection probes never scope the shared runner.");
+    },
   };
 }
 
-function commandKey(command: Readonly<CommandSpec>, cwd?: string): string {
+/** Read-only filesystem capability every fixture provider observes its temporary root through. */
+const testFiles = asReadOnlyFileSystem(nodeFileSystem);
+
+/** Deterministic task scheduler replacing the previous explicit `Promise.all` calls. */
+const testTasks = new DefaultTaskScheduler();
+
+/**
+ * Builds one immutable environment snapshot for a fixture provider.
+ *
+ * @param platform - Target platform the provider must observe.
+ * @param variables - Environment variables the provider may forward to probes.
+ * @returns The environment snapshot.
+ */
+function environmentFor(platform: NodeJS.Platform, variables: ProcessEnvironment = {}): RuntimeEnvironment {
+  return {
+    variables,
+    cwd: "/repo",
+    executablePath: "/usr/bin/node",
+    platform,
+    architecture: "x64",
+    stdinIsTTY: false,
+    stdoutIsTTY: false,
+    isCI: true,
+  };
+}
+
+function commandKey(command: Readonly<ProcessRequest>, cwd?: string): string {
   return `${cwd ?? ""}\u0000${command.command}\u0000${JSON.stringify(command.args)}`;
 }
 
-function clock(): () => number {
+function clock(): Clock {
   let current = 100;
-  return () => {
-    current += 5;
-    return current;
+  return {
+    monotonicNow: (): number => {
+      current += 5;
+      return current;
+    },
+    isoTimestamp: (): string => "2025-01-01T00:00:00.000Z",
+    delay: (): Promise<void> => Promise.resolve(),
   };
 }
 
@@ -67,7 +134,7 @@ function expectedProbeEnvironment(platform: NodeJS.Platform): Readonly<NodeJS.Pr
   };
 }
 
-function systemVersionCommands(platform: NodeJS.Platform): readonly Readonly<CommandSpec>[] {
+function systemVersionCommands(platform: NodeJS.Platform): readonly Readonly<ProcessRequest>[] {
   return platform === "win32"
     ? [
         {command: "py", args: ["-3.12", "--version"]},
@@ -85,22 +152,22 @@ function venvRelativeCommand(platform: NodeJS.Platform): string {
   return platform === "win32" ? ".venv\\Scripts\\python.exe" : ".venv/bin/python";
 }
 
-function venvMetadataCommand(platform: NodeJS.Platform): Readonly<CommandSpec> {
+function venvMetadataCommand(platform: NodeJS.Platform): Readonly<ProcessRequest> {
   return {
     command: venvRelativeCommand(platform),
     args: ["-c", PYTHON_METADATA_PROBE_SCRIPT],
   };
 }
 
-function venvPipVersionCommand(platform: NodeJS.Platform): Readonly<CommandSpec> {
+function venvPipVersionCommand(platform: NodeJS.Platform): Readonly<ProcessRequest> {
   return {command: venvRelativeCommand(platform), args: ["-m", "pip", "--isolated", "--version"]};
 }
 
-function venvPipListCommand(platform: NodeJS.Platform): Readonly<CommandSpec> {
+function venvPipListCommand(platform: NodeJS.Platform): Readonly<ProcessRequest> {
   return {command: venvRelativeCommand(platform), args: ["-m", "pip", "--isolated", "list", "--format", "json"]};
 }
 
-function venvPipCheckCommand(platform: NodeJS.Platform): Readonly<CommandSpec> {
+function venvPipCheckCommand(platform: NodeJS.Platform): Readonly<ProcessRequest> {
   return {command: venvRelativeCommand(platform), args: ["-m", "pip", "--isolated", "check"]};
 }
 
@@ -139,8 +206,8 @@ interface PythonFixture {
   readonly root: string;
   readonly paths: RepositoryPaths;
   readonly platform: NodeJS.Platform;
-  readonly run: ReturnType<typeof vi.fn<CommandRunner["run"]>>;
-  readonly setResponse: (command: Readonly<CommandSpec>, result: CommandResult, cwd?: string) => void;
+  readonly run: ReturnType<typeof vi.fn<ProcessRunner["run"]>>;
+  readonly setResponse: (command: Readonly<ProcessRequest>, result: ProcessOutcome, cwd?: string) => void;
   readonly provider: ReturnType<typeof createPythonProvider>;
   readonly venvDirectory: string;
   readonly venvInterpreter: string;
@@ -156,7 +223,7 @@ async function createPythonFixture(
     templateConfig?: string | null;
     dockerConfig?: string | null;
     aspireConfig?: string | null;
-    now?: () => number;
+    clock?: Clock;
   }> = {},
 ): Promise<PythonFixture> {
   const root = await mkdtemp(join(tmpdir(), "arolariu-inspection-python-"));
@@ -222,8 +289,8 @@ async function createPythonFixture(
     ...(input.createVenv === false ? [] : [writeFixtureFile(actualVenvInterpreter, "placeholder")]),
   ]);
 
-  const responses = new Map<string, CommandResult>();
-  const setResponse = (command: Readonly<CommandSpec>, result: CommandResult, cwd: string = paths.root): void => {
+  const responses = new Map<string, ProcessOutcome>();
+  const setResponse = (command: Readonly<ProcessRequest>, result: ProcessOutcome, cwd: string = paths.root): void => {
     responses.set(commandKey(command, cwd), result);
   };
 
@@ -268,16 +335,18 @@ async function createPythonFixture(
     );
   }
 
-  const run = vi.fn<CommandRunner["run"]>(
-    async (command, options): Promise<CommandResult> =>
+  const run = vi.fn<ProcessRunner["run"]>(
+    async (command, options): Promise<ProcessOutcome> =>
       responses.get(commandKey(command, options?.cwd))
-      ?? commandResult({code: 127, spawnError: `unexpected-native-command-marker:${command.command}`}),
+      ?? commandResult({code: 127, spawnError: `spawn ENOENT unexpected-native-command-marker:${command.command}`}),
   );
   const provider = createPythonProvider({
     paths,
-    probes: createInspectionProbeRunner({run}),
-    platform,
-    now: input.now ?? clock(),
+    probes: createInspectionProbeRunner(asProcessRunner(run)),
+    files: testFiles,
+    clock: input.clock ?? clock(),
+    tasks: testTasks,
+    environment: environmentFor(platform),
   });
   return {root, paths, platform, run, setResponse, provider, venvDirectory, venvInterpreter};
 }
@@ -340,7 +409,7 @@ describe("createPythonProvider", () => {
   it("selects a POSIX python3 fallback and preserves a valid prerelease version", async () => {
     const fixture = await createPythonFixture({platform: "linux"});
     const [python312, python3, python] = systemVersionCommands("linux");
-    fixture.setResponse(python312!, commandResult({code: 127, spawnError: "missing-python312-marker"}));
+    fixture.setResponse(python312!, commandResult({code: 127, spawnError: "spawn ENOENT missing-python312-marker"}));
     fixture.setResponse(python3!, commandResult({stderr: "Python 3.13.0rc1\n"}));
     fixture.setResponse(python!, commandResult({stdout: "Python 3.11.9\n"}));
     fixture.setResponse(
@@ -384,8 +453,8 @@ describe("createPythonProvider", () => {
     const fixture = await createPythonFixture();
     const [py, python312, python] = systemVersionCommands("win32");
     fixture.setResponse(py!, commandResult({stdout: "Python 3.12.0rc1\n"}));
-    fixture.setResponse(python312!, commandResult({code: 127, spawnError: "missing"}));
-    fixture.setResponse(python!, commandResult({code: 127, spawnError: "missing"}));
+    fixture.setResponse(python312!, commandResult({code: 127, spawnError: "spawn ENOENT missing"}));
+    fixture.setResponse(python!, commandResult({code: 127, spawnError: "spawn ENOENT missing"}));
     fixture.setResponse(
       venvMetadataCommand("win32"),
       commandResult({
@@ -414,7 +483,7 @@ describe("createPythonProvider", () => {
   it("returns available empty interpreter facts when every fixed candidate is absent", async () => {
     const fixture = await createPythonFixture({createVenv: false});
     for (const command of systemVersionCommands("win32")) {
-      fixture.setResponse(command, commandResult({code: 127, spawnError: "native-missing-marker"}));
+      fixture.setResponse(command, commandResult({code: 127, spawnError: "spawn ENOENT native-missing-marker"}));
     }
 
     const outcome = await fixture.provider();
@@ -1144,10 +1213,14 @@ describe("createPythonProvider", () => {
     let current = 100;
     const fixture = await createPythonFixture({
       createVenv: false,
-      now: () => {
-        events.push("clock");
-        current += 5;
-        return current;
+      clock: {
+        monotonicNow: (): number => {
+          events.push("clock");
+          current += 5;
+          return current;
+        },
+        isoTimestamp: (): string => "2025-01-01T00:00:00.000Z",
+        delay: (): Promise<void> => Promise.resolve(),
       },
     });
 

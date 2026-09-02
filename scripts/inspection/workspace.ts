@@ -12,11 +12,9 @@
  * cast to an Nx-owned type.
  */
 
-import {mkdtemp, rm} from "node:fs/promises";
-import {tmpdir} from "node:os";
 import {isAbsolute, join, relative, resolve, sep} from "node:path";
-import type {CommandRunner} from "../common/process.ts";
-import type {InspectionOutcome, InspectionProvider} from "./types.ts";
+import type {ProcessOutcome} from "../common/runner.ts";
+import type {InspectionOutcome, InspectionProvider, InspectionProviderContext} from "./types.ts";
 
 /** One repository project discovered in the Nx workspace graph. */
 export interface WorkspaceProjectFact {
@@ -280,45 +278,71 @@ export function projectNxGraph(value: unknown, repositoryRoot: string): Workspac
 }
 
 /** Dependencies required to create the isolated Nx workspace provider. */
-interface WorkspaceProviderInput {
+interface WorkspaceProviderInput
+  extends Pick<InspectionProviderContext, "runner" | "clock" | "environment" | "temporaryDirectories"> {
   /** Repository root to inspect. */
   readonly root: string;
-  /** Shared command runner used to invoke the isolated worker process. */
-  readonly runner: CommandRunner;
-  /** Monotonic time source used to measure `durationMs`. */
-  readonly now: () => number;
 }
 
 /** Bounded timeout applied to the isolated worker invocation. */
 const WORKER_TIMEOUT_MS = 120_000;
 
 /**
+ * Maps one worker {@link ProcessOutcome} exhaustively onto its bounded unavailable reason.
+ *
+ * @remarks
+ * A signalled or cancelled child reports the same "exited with code 1" evidence the legacy
+ * `CommandResult` mapping produced, so no caller observes a new reason string.
+ *
+ * @param outcome - Typed outcome of the isolated worker invocation.
+ * @returns The bounded reason, or `undefined` when the worker completed successfully.
+ */
+function workerFailureReason(outcome: Readonly<ProcessOutcome>): string | undefined {
+  switch (outcome.kind) {
+    case "succeeded":
+      return undefined;
+    case "spawn-failed":
+      return `Nx workspace worker failed to start: ${outcome.message}`;
+    case "timed-out":
+      return "Nx workspace worker timed out.";
+    case "exited":
+      return `Nx workspace worker exited with code ${String(outcome.exitCode)}.`;
+    case "signalled":
+    case "cancelled":
+      return "Nx workspace worker exited with code 1.";
+  }
+}
+
+/**
  * Creates the isolated Nx workspace inspection provider.
  *
  * @remarks
- * Each invocation creates a unique temporary root outside the repository, spawns
+ * Each invocation creates a unique temporary root outside the repository through the narrow
+ * temporary-directory capability (the provider's ordinary filesystem stays read-only), spawns
  * `workspace.worker.ts` as a native Node child process with Nx's daemon, dotenv loading, workspace
  * database, and task cache all redirected away from repository state, projects its single JSON
- * document through {@link projectNxGraph}, and removes the temporary root in every case — a
- * successful projection, a command failure, or a malformed/invalid document. Only worker
+ * document through {@link projectNxGraph}, and removes exactly that temporary root in every case —
+ * a successful projection, a command failure, or a malformed/invalid document. Only worker
  * spawn/nonzero/timeout failures and malformed/invalid worker output are represented as
- * `"unavailable"`/`"invalid"` outcomes; an unexpected filesystem failure (for example a
- * `mkdtemp`/`rm` failure) rejects the returned promise instead of being hidden in a
+ * `"unavailable"`/`"invalid"` outcomes; an unexpected filesystem failure (for example a temporary
+ * directory creation/removal failure) rejects the returned promise instead of being hidden in a
  * success-shaped result.
  *
- * @param input - Repository root, shared command runner, and time source.
+ * @param input - Repository root plus the runner, clock, environment, and temporary-directory
+ * capabilities.
  * @returns An {@link InspectionProvider} for {@link WorkspaceFacts}.
  */
 export function createWorkspaceProvider(input: Readonly<WorkspaceProviderInput>): InspectionProvider<WorkspaceFacts> {
   return async (): Promise<InspectionOutcome<WorkspaceFacts>> => {
-    const startedAt = input.now();
+    const startedAt = input.clock.monotonicNow();
     const resolvedRoot = resolve(input.root);
-    const tempRoot = await mkdtemp(join(tmpdir(), "arolariu-nx-"));
+    const temporaryDirectory = await input.temporaryDirectories.createTemporaryDirectory("arolariu-nx-");
+    const tempRoot = temporaryDirectory.path;
 
     try {
       const workerPath = resolve(resolvedRoot, "scripts", "inspection", "workspace.worker.ts");
-      const result = await input.runner.run(
-        {command: process.execPath, args: [workerPath, resolvedRoot]},
+      const outcome = await input.runner.run(
+        {command: input.environment.executablePath, args: [workerPath, resolvedRoot]},
         {
           cwd: resolvedRoot,
           output: "capture",
@@ -333,21 +357,16 @@ export function createWorkspaceProvider(input: Readonly<WorkspaceProviderInput>)
         },
       );
 
-      const durationMs = Math.max(0, input.now() - startedAt);
+      const durationMs = Math.max(0, input.clock.monotonicNow() - startedAt);
 
-      if (result.spawnError !== undefined) {
-        return {kind: "unavailable", reason: `Nx workspace worker failed to start: ${result.spawnError}`, durationMs};
-      }
-      if (result.timedOut) {
-        return {kind: "unavailable", reason: "Nx workspace worker timed out.", durationMs};
-      }
-      if (result.code !== 0) {
-        return {kind: "unavailable", reason: `Nx workspace worker exited with code ${result.code}.`, durationMs};
+      const failureReason = workerFailureReason(outcome);
+      if (failureReason !== undefined) {
+        return {kind: "unavailable", reason: failureReason, durationMs};
       }
 
       let parsedDocument: unknown;
       try {
-        parsedDocument = JSON.parse(result.stdout.trim());
+        parsedDocument = JSON.parse(outcome.stdout.trim());
       } catch {
         return {kind: "invalid", issues: ["Nx workspace worker did not emit a single valid JSON document."], durationMs};
       }
@@ -360,7 +379,7 @@ export function createWorkspaceProvider(input: Readonly<WorkspaceProviderInput>)
         return {kind: "invalid", issues: [message], durationMs};
       }
     } finally {
-      await rm(tempRoot, {recursive: true, force: true});
+      await temporaryDirectory.remove();
     }
   };
 }

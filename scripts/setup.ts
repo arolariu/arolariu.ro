@@ -24,8 +24,8 @@ import {MonorepositoryConsoleLogger, type MonorepositoryLogger} from "./common/l
 import {createTerminalPromptProvider, type PromptProvider} from "./common/prompts.ts";
 import {loadRepositoryRequirements, type RequirementLoadResult} from "./common/requirements.ts";
 import {resolveRepositoryPaths, type RepositoryPaths} from "./common/repository-paths.ts";
-import {nodeFileSystem, nodeTaskScheduler} from "./common/runtime.node.ts";
-import {createRepositoryInspectionSession} from "./inspection/repository.ts";
+import {createNodeRepositoryInspectionSession, nodeFileSystem, nodeTaskScheduler} from "./common/runtime.node.ts";
+import type {RepositoryInspectionSessionFactory} from "./inspection/repository.ts";
 import {dotnetSetupPhase} from "./setup.dotnet.ts";
 import {infrastructureSetupPhase} from "./setup.infrastructure.ts";
 import {pythonSetupPhase} from "./setup.python.ts";
@@ -164,7 +164,7 @@ export interface SetupDependencies {
   /** Loads manifest-derived repository requirements. */
   readonly loadRepositoryRequirements: (paths: RepositoryPaths) => Promise<RequirementLoadResult>;
   /** Composes the one full repository inspection session shared by every phase. */
-  readonly createInspectionSession: typeof createRepositoryInspectionSession;
+  readonly createInspectionSession: RepositoryInspectionSessionFactory;
   /** Executes phase commands. */
   readonly runner: CommandRunner;
   /** Resolves interactive phase prompts. */
@@ -357,7 +357,7 @@ export async function runSetup(
     dependencies.loadRepositoryRequirements
     ?? ((paths: RepositoryPaths): Promise<RequirementLoadResult> =>
       loadRepositoryRequirements(paths, {files: nodeFileSystem, tasks: nodeTaskScheduler}));
-  const createInspectionSession = dependencies.createInspectionSession ?? createRepositoryInspectionSession;
+  const createInspectionSession = dependencies.createInspectionSession ?? createNodeRepositoryInspectionSession;
   const phases = dependencies.phases ?? setupPhases;
 
   logger.banner([
@@ -378,11 +378,7 @@ export async function runSetup(
   const inspection = createInspectionSession({
     profile: "full",
     paths,
-    runner,
     ...(options.engine === undefined ? {} : {requestedEngine: options.engine}),
-    env: process.env,
-    platform: process.platform,
-    now,
   });
 
   const actions = createSetupActionExecutor({options, prompts, logger});

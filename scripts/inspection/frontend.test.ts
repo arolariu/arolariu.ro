@@ -9,7 +9,9 @@ import {tmpdir} from "node:os";
 import {join, resolve} from "node:path";
 import {afterEach, describe, expect, it, vi} from "vitest";
 
-import type {CommandResult, CommandRunner, CommandSpec} from "../common/process.ts";
+import type {ProcessOutcome, ProcessRequest, ProcessRunner} from "../common/runner.ts";
+import {nodeFileSystem} from "../common/runtime.node.ts";
+import {asReadOnlyFileSystem, DefaultTaskScheduler, type Clock} from "../common/runtime.ts";
 import {createRepositoryPaths, type RepositoryPaths} from "../common/repository-paths.ts";
 import {
   createReactProvider,
@@ -46,26 +48,71 @@ const SVELTE_PACKAGE_VERSIONS: ReadonlyMap<string, string> = new Map([
   ["typescript", "6.0.3"],
 ]);
 
-function clock(): () => number {
+function clock(): Clock {
   let current = 100;
-  return () => {
-    current += 5;
-    return current;
-  };
-}
-
-function commandResult(patch: Partial<CommandResult> = {}): CommandResult {
   return {
-    code: 0,
-    stdout: "",
-    stderr: "",
-    durationMs: 1,
-    timedOut: false,
-    ...patch,
+    monotonicNow: (): number => {
+      current += 5;
+      return current;
+    },
+    isoTimestamp: (): string => "2025-01-01T00:00:00.000Z",
+    delay: (): Promise<void> => Promise.resolve(),
   };
 }
 
-function commandKey(command: Readonly<CommandSpec>, cwd?: string): string {
+/** Legacy-shaped fixture description translated into one typed {@link ProcessOutcome}. */
+interface ProcessOutcomeFixture {
+  readonly code?: number;
+  readonly stdout?: string;
+  readonly stderr?: string;
+  readonly durationMs?: number;
+  readonly timedOut?: boolean;
+  readonly signal?: NodeJS.Signals;
+  readonly spawnError?: string;
+}
+
+/**
+ * Builds one typed {@link ProcessOutcome} from a fixture description, so every suite keeps naming
+ * the exact spawn/timeout/signal/exit classification it exercises.
+ *
+ * @param patch - Fixture description of the outcome under test.
+ * @returns The equivalent typed process outcome.
+ */
+function commandResult(patch: ProcessOutcomeFixture = {}): ProcessOutcome {
+  const output = {stdout: patch.stdout ?? "", stderr: patch.stderr ?? "", durationMs: patch.durationMs ?? 1};
+  if (patch.spawnError !== undefined) {
+    return {kind: "spawn-failed", message: patch.spawnError, ...output};
+  }
+  if (patch.timedOut === true) {
+    return {kind: "timed-out", ...(patch.signal === undefined ? {} : {signal: patch.signal}), ...output};
+  }
+  if (patch.signal !== undefined) {
+    return {kind: "signalled", signal: patch.signal, ...output};
+  }
+  const code = patch.code ?? 0;
+  return code === 0 ? {kind: "succeeded", exitCode: 0, ...output} : {kind: "exited", exitCode: code, ...output};
+}
+
+/** Wraps one recorded `run` implementation in the full {@link ProcessRunner} probe contract. */
+function asProcessRunner(run: ProcessRunner["run"]): ProcessRunner {
+  return {
+    run,
+    expectSuccess: () => {
+      throw new Error("Inspection probes never call expectSuccess.");
+    },
+    scope: () => {
+      throw new Error("Inspection probes never scope the shared runner.");
+    },
+  };
+}
+
+/** Read-only filesystem capability every fixture provider observes its temporary root through. */
+const testFiles = asReadOnlyFileSystem(nodeFileSystem);
+
+/** Deterministic task scheduler replacing the previous explicit `Promise.all` calls. */
+const testTasks = new DefaultTaskScheduler();
+
+function commandKey(command: Readonly<ProcessRequest>, cwd?: string): string {
   return `${cwd ?? ""}\u0000${command.command}\u0000${JSON.stringify(command.args)}`;
 }
 
@@ -228,8 +275,8 @@ function playwrightInventoryOutput(version: string, includeChromium = true): str
 interface FrontendFixture {
   readonly root: string;
   readonly paths: RepositoryPaths;
-  readonly run: ReturnType<typeof vi.fn<CommandRunner["run"]>>;
-  readonly setResponse: (command: Readonly<CommandSpec>, result: CommandResult, cwd?: string) => void;
+  readonly run: ReturnType<typeof vi.fn<ProcessRunner["run"]>>;
+  readonly setResponse: (command: Readonly<ProcessRequest>, result: ProcessOutcome, cwd?: string) => void;
   readonly input: FrontendProviderInput;
   readonly packages: ReturnType<typeof vi.fn<() => Promise<InspectionOutcome<PackageInventoryFacts>>>>;
 }
@@ -237,7 +284,7 @@ interface FrontendFixture {
 async function createFrontendFixture(
   input: Readonly<{
     packagesOutcome?: InspectionOutcome<PackageInventoryFacts>;
-    playwrightOutcome?: CommandResult;
+    playwrightOutcome?: ProcessOutcome;
     skipWebsiteEnv?: boolean;
     websiteEnvContents?: string;
     nextConfigContents?: string | null;
@@ -367,8 +414,8 @@ async function createFrontendFixture(
 
   await Promise.all(writes);
 
-  const responses = new Map<string, CommandResult>();
-  const setResponse = (command: Readonly<CommandSpec>, result: CommandResult, cwd: string = paths.root): void => {
+  const responses = new Map<string, ProcessOutcome>();
+  const setResponse = (command: Readonly<ProcessRequest>, result: ProcessOutcome, cwd: string = paths.root): void => {
     responses.set(commandKey(command, cwd), result);
   };
   setResponse(
@@ -376,8 +423,8 @@ async function createFrontendFixture(
     input.playwrightOutcome ?? commandResult({stdout: playwrightInventoryOutput("1.62.1")}),
   );
 
-  const run = vi.fn<CommandRunner["run"]>(
-    async (command, options): Promise<CommandResult> =>
+  const run = vi.fn<ProcessRunner["run"]>(
+    async (command, options): Promise<ProcessOutcome> =>
       responses.get(commandKey(command, options?.cwd))
       ?? commandResult({code: 127, spawnError: `unexpected-native-command-marker:${command.command}`}),
   );
@@ -389,8 +436,10 @@ async function createFrontendFixture(
   const providerInput: FrontendProviderInput = {
     paths,
     packages,
-    probes: createInspectionProbeRunner({run}),
-    now: clock(),
+    probes: createInspectionProbeRunner(asProcessRunner(run)),
+    files: testFiles,
+    clock: clock(),
+    tasks: testTasks,
   };
 
   return {root, paths, run, setResponse, input: providerInput, packages};

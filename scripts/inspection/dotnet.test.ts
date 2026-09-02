@@ -9,7 +9,9 @@ import {tmpdir} from "node:os";
 import {dirname, join, resolve} from "node:path";
 import {afterEach, describe, expect, it, vi} from "vitest";
 
-import type {CommandResult, CommandRunner, CommandSpec} from "../common/process.ts";
+import type {ProcessEnvironment, ProcessOutcome, ProcessRequest, ProcessRunner} from "../common/runner.ts";
+import {nodeFileSystem} from "../common/runtime.node.ts";
+import {asReadOnlyFileSystem, DefaultTaskScheduler, type Clock, type RuntimeEnvironment} from "../common/runtime.ts";
 import {createRepositoryPaths, type RepositoryPaths} from "../common/repository-paths.ts";
 import {createDotnetProvider} from "./dotnet.ts";
 import {createInspectionProbeRunner} from "./probes.ts";
@@ -17,27 +19,27 @@ import {createInspectionProbeRunner} from "./probes.ts";
 const fixtureRoots: string[] = [];
 const APPHOST_PROJECT = "tooling/AppHost/AppHost.csproj";
 
-const DOTNET_VERSION = {command: "dotnet", args: ["--version"]} as const satisfies CommandSpec;
-const DOTNET_SDKS = {command: "dotnet", args: ["--list-sdks"]} as const satisfies CommandSpec;
-const DOTNET_INFO = {command: "dotnet", args: ["--info"]} as const satisfies CommandSpec;
-const DOTNET_WORKLOADS = {command: "dotnet", args: ["workload", "list"]} as const satisfies CommandSpec;
+const DOTNET_VERSION = {command: "dotnet", args: ["--version"]} as const satisfies ProcessRequest;
+const DOTNET_SDKS = {command: "dotnet", args: ["--list-sdks"]} as const satisfies ProcessRequest;
+const DOTNET_INFO = {command: "dotnet", args: ["--info"]} as const satisfies ProcessRequest;
+const DOTNET_WORKLOADS = {command: "dotnet", args: ["workload", "list"]} as const satisfies ProcessRequest;
 const DOTNET_NUGET = {
   command: "dotnet",
   args: ["nuget", "locals", "global-packages", "--list"],
-} as const satisfies CommandSpec;
-const DOTNET_TOOLS = {command: "dotnet", args: ["tool", "list", "--local"]} as const satisfies CommandSpec;
+} as const satisfies ProcessRequest;
+const DOTNET_TOOLS = {command: "dotnet", args: ["tool", "list", "--local"]} as const satisfies ProcessRequest;
 const DOTNET_CERTIFICATE = {
   command: "dotnet",
   args: ["dev-certs", "https", "--check"],
-} as const satisfies CommandSpec;
+} as const satisfies ProcessRequest;
 const DOTNET_CERTIFICATE_TRUST = {
   command: "dotnet",
   args: ["dev-certs", "https", "--check", "--trust"],
-} as const satisfies CommandSpec;
+} as const satisfies ProcessRequest;
 const DOTNET_USER_SECRETS = {
   command: "dotnet",
   args: ["user-secrets", "list", "--json", "--project", APPHOST_PROJECT],
-} as const satisfies CommandSpec;
+} as const satisfies ProcessRequest;
 const DOTNET_ENVIRONMENT = {
   DOTNET_ADD_GLOBAL_TOOLS_TO_PATH: "false",
   DOTNET_CLI_TELEMETRY_OPTOUT: "true",
@@ -48,26 +50,91 @@ const DOTNET_ENVIRONMENT = {
   DOTNET_SKIP_WORKLOAD_INTEGRITY_CHECK: "true",
 } as const;
 
-function commandResult(patch: Partial<CommandResult> = {}): CommandResult {
+/** Legacy-shaped fixture description translated into one typed {@link ProcessOutcome}. */
+interface ProcessOutcomeFixture {
+  readonly code?: number;
+  readonly stdout?: string;
+  readonly stderr?: string;
+  readonly durationMs?: number;
+  readonly timedOut?: boolean;
+  readonly signal?: NodeJS.Signals;
+  readonly spawnError?: string;
+}
+
+/**
+ * Builds one typed {@link ProcessOutcome} from a fixture description, so every suite keeps naming
+ * the exact spawn/timeout/signal/exit classification it exercises.
+ *
+ * @param patch - Fixture description of the outcome under test.
+ * @returns The equivalent typed process outcome.
+ */
+function commandResult(patch: ProcessOutcomeFixture = {}): ProcessOutcome {
+  const output = {stdout: patch.stdout ?? "", stderr: patch.stderr ?? "", durationMs: patch.durationMs ?? 1};
+  if (patch.spawnError !== undefined) {
+    return {kind: "spawn-failed", message: patch.spawnError, ...output};
+  }
+  if (patch.timedOut === true) {
+    return {kind: "timed-out", ...(patch.signal === undefined ? {} : {signal: patch.signal}), ...output};
+  }
+  if (patch.signal !== undefined) {
+    return {kind: "signalled", signal: patch.signal, ...output};
+  }
+  const code = patch.code ?? 0;
+  return code === 0 ? {kind: "succeeded", exitCode: 0, ...output} : {kind: "exited", exitCode: code, ...output};
+}
+
+/** Wraps one recorded `run` implementation in the full {@link ProcessRunner} probe contract. */
+function asProcessRunner(run: ProcessRunner["run"]): ProcessRunner {
   return {
-    code: 0,
-    stdout: "",
-    stderr: "",
-    durationMs: 1,
-    timedOut: false,
-    ...patch,
+    run,
+    expectSuccess: () => {
+      throw new Error("Inspection probes never call expectSuccess.");
+    },
+    scope: () => {
+      throw new Error("Inspection probes never scope the shared runner.");
+    },
   };
 }
 
-function commandKey(command: Readonly<CommandSpec>, cwd?: string): string {
+/** Read-only filesystem capability every fixture provider observes its temporary root through. */
+const testFiles = asReadOnlyFileSystem(nodeFileSystem);
+
+/** Deterministic task scheduler replacing the previous explicit `Promise.all` calls. */
+const testTasks = new DefaultTaskScheduler();
+
+/**
+ * Builds one immutable environment snapshot for a fixture provider.
+ *
+ * @param platform - Target platform the provider must observe.
+ * @param variables - Environment variables the provider may forward to probes.
+ * @returns The environment snapshot.
+ */
+function environmentFor(platform: NodeJS.Platform, variables: ProcessEnvironment = {}): RuntimeEnvironment {
+  return {
+    variables,
+    cwd: "/repo",
+    executablePath: "/usr/bin/node",
+    platform,
+    architecture: "x64",
+    stdinIsTTY: false,
+    stdoutIsTTY: false,
+    isCI: true,
+  };
+}
+
+function commandKey(command: Readonly<ProcessRequest>, cwd?: string): string {
   return `${cwd ?? ""}\u0000${command.command}\u0000${JSON.stringify(command.args)}`;
 }
 
-function clock(): () => number {
+function clock(): Clock {
   let current = 100;
-  return () => {
-    current += 5;
-    return current;
+  return {
+    monotonicNow: (): number => {
+      current += 5;
+      return current;
+    },
+    isoTimestamp: (): string => "2025-01-01T00:00:00.000Z",
+    delay: (): Promise<void> => Promise.resolve(),
   };
 }
 
@@ -115,8 +182,8 @@ async function writeRestoreAssets(root: string, projectPath: string, contents = 
 interface DotnetFixture {
   readonly root: string;
   readonly paths: RepositoryPaths;
-  readonly run: ReturnType<typeof vi.fn<CommandRunner["run"]>>;
-  readonly setResponse: (command: Readonly<CommandSpec>, result: CommandResult) => void;
+  readonly run: ReturnType<typeof vi.fn<ProcessRunner["run"]>>;
+  readonly setResponse: (command: Readonly<ProcessRequest>, result: ProcessOutcome) => void;
   readonly provider: ReturnType<typeof createDotnetProvider>;
 }
 
@@ -141,8 +208,8 @@ async function createDotnetFixture(platform: NodeJS.Platform = "win32"): Promise
     ),
   ]);
 
-  const responses = new Map<string, CommandResult>();
-  const setResponse = (command: Readonly<CommandSpec>, result: CommandResult): void => {
+  const responses = new Map<string, ProcessOutcome>();
+  const setResponse = (command: Readonly<ProcessRequest>, result: ProcessOutcome): void => {
     responses.set(commandKey(command, root), result);
   };
 
@@ -175,16 +242,18 @@ async function createDotnetFixture(platform: NodeJS.Platform = "win32"): Promise
     }),
   );
 
-  const run = vi.fn<CommandRunner["run"]>(
-    async (command, options): Promise<CommandResult> =>
+  const run = vi.fn<ProcessRunner["run"]>(
+    async (command, options): Promise<ProcessOutcome> =>
       responses.get(commandKey(command, options?.cwd))
       ?? commandResult({code: 127, spawnError: `unexpected-command-marker:${command.command}`}),
   );
   const provider = createDotnetProvider({
     paths,
-    probes: createInspectionProbeRunner({run}),
-    platform,
-    now: clock(),
+    probes: createInspectionProbeRunner(asProcessRunner(run)),
+    files: testFiles,
+    clock: clock(),
+    tasks: testTasks,
+    environment: environmentFor(platform),
   });
   return {root, paths, run, setResponse, provider};
 }

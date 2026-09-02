@@ -11,15 +11,18 @@
  * lookup commands.
  */
 
-import {readFile, stat} from "node:fs/promises";
 import {basename, relative, resolve} from "node:path";
 
+import type {ProcessOutcome} from "../common/runner.ts";
 import type {RepositoryPaths} from "../common/repository-paths.ts";
 import {getExpectedTaxonomyArtifactPaths} from "../common/taxonomy-artifacts.ts";
 import {SVELTE_INSPECTED_PACKAGE_NAMES, type PackageInventoryFacts} from "./packages.ts";
 import type {InspectionProbeRunner} from "./probes.ts";
 import {probes} from "./probes.ts";
-import type {InspectionOutcome, InspectionProvider} from "./types.ts";
+import type {InspectionOutcome, InspectionProvider, InspectionProviderContext} from "./types.ts";
+
+/** Read-only filesystem capability every frontend inspection helper observes disk through. */
+type InspectionFiles = InspectionProviderContext["files"];
 
 type UnknownRecord = Readonly<Record<string, unknown>>;
 
@@ -75,15 +78,13 @@ export interface SvelteFacts {
 }
 
 /** Shared injectable boundaries consumed by both the React and Svelte providers. */
-export interface FrontendProviderInput {
+export interface FrontendProviderInput extends Pick<InspectionProviderContext, "files" | "clock" | "tasks"> {
   /** Canonical repository paths. */
   readonly paths: RepositoryPaths;
   /** Resolves the one shared installed-package inventory for this session. */
   readonly packages: () => Promise<InspectionOutcome<PackageInventoryFacts>>;
   /** Opaque probe runner used only for the allowlisted Playwright browser inventory probe. */
   readonly probes: InspectionProbeRunner;
-  /** Monotonic clock used to measure inspection duration. */
-  readonly now: () => number;
 }
 
 interface PlaywrightVersionInventory {
@@ -138,18 +139,27 @@ function elapsedMilliseconds(startedAt: number, now: () => number): number {
   return Number.isFinite(elapsed) ? Math.max(0, elapsed) : 0;
 }
 
-function isSuccessfulCommand(result: Readonly<{code: number; timedOut: boolean; signal?: string; spawnError?: string}>): boolean {
-  return result.code === 0 && !result.timedOut && result.signal === undefined && result.spawnError === undefined;
+function isSuccessfulCommand(outcome: Readonly<ProcessOutcome>): boolean {
+  return outcome.kind === "succeeded";
 }
 
-function hasTransportFailure(result: Readonly<{timedOut: boolean; signal?: string; spawnError?: string}>): boolean {
-  return result.timedOut || result.signal !== undefined || result.spawnError !== undefined;
+function hasTransportFailure(outcome: Readonly<ProcessOutcome>): boolean {
+  switch (outcome.kind) {
+    case "succeeded":
+    case "exited":
+      return false;
+    case "spawn-failed":
+    case "timed-out":
+    case "signalled":
+    case "cancelled":
+      return true;
+  }
 }
 
-async function readJsonRecord(path: string): Promise<JsonReadOutcome> {
+async function readJsonRecord(files: InspectionFiles, path: string): Promise<JsonReadOutcome> {
   let contents: string;
   try {
-    contents = await readFile(path, "utf8");
+    contents = await files.readText(path);
   } catch (error: unknown) {
     return hasErrorCode(error, "ENOENT") ? {kind: "missing"} : {kind: "error"};
   }
@@ -161,10 +171,13 @@ async function readJsonRecord(path: string): Promise<JsonReadOutcome> {
   }
 }
 
-async function readFirstExistingTextFile(candidates: readonly Readonly<{name: string; path: string}>[]): Promise<TextReadOutcome> {
+async function readFirstExistingTextFile(
+  files: InspectionFiles,
+  candidates: readonly Readonly<{name: string; path: string}>[],
+): Promise<TextReadOutcome> {
   for (const candidate of candidates) {
     try {
-      const contents = await readFile(candidate.path, "utf8");
+      const contents = await files.readText(candidate.path);
       return {kind: "ok", name: candidate.name, contents};
     } catch (error: unknown) {
       if (hasErrorCode(error, "ENOENT")) {
@@ -231,9 +244,9 @@ export function inspectEnvironmentContent(content: string): EnvironmentFacts {
   };
 }
 
-async function readEnvironmentContent(path: string): Promise<string> {
+async function readEnvironmentContent(files: InspectionFiles, path: string): Promise<string> {
   try {
-    return await readFile(path, "utf8");
+    return await files.readText(path);
   } catch (error: unknown) {
     if (hasErrorCode(error, "ENOENT")) {
       return "";
@@ -251,10 +264,10 @@ function getDependsOn(targets: UnknownRecord, targetName: string): readonly stri
   return Array.isArray(dependsOn) ? dependsOn.filter((entry): entry is string => typeof entry === "string") : [];
 }
 
-async function inspectWorkspaceLink(paths: RepositoryPaths, packages: PackageInventoryFacts): Promise<readonly string[]> {
+async function inspectWorkspaceLink(files: InspectionFiles, paths: RepositoryPaths, packages: PackageInventoryFacts): Promise<readonly string[]> {
   const issues: string[] = [];
 
-  const packageJsonOutcome = await readJsonRecord(resolve(paths.websiteRoot, "package.json"));
+  const packageJsonOutcome = await readJsonRecord(files, resolve(paths.websiteRoot, "package.json"));
   if (packageJsonOutcome.kind !== "ok") {
     issues.push("sites/arolariu.ro/package.json could not be read or parsed.");
   } else {
@@ -264,7 +277,7 @@ async function inspectWorkspaceLink(paths: RepositoryPaths, packages: PackageInv
     }
   }
 
-  const projectJsonOutcome = await readJsonRecord(resolve(paths.websiteRoot, "project.json"));
+  const projectJsonOutcome = await readJsonRecord(files, resolve(paths.websiteRoot, "project.json"));
   if (projectJsonOutcome.kind !== "ok") {
     issues.push("sites/arolariu.ro/project.json could not be read or parsed.");
   } else {
@@ -320,7 +333,7 @@ function extractDeclaredMessagesObject(source: string): UnknownRecord | null {
   }
 }
 
-async function inspectI18n(paths: RepositoryPaths): Promise<readonly string[]> {
+async function inspectI18n(files: InspectionFiles, paths: RepositoryPaths): Promise<readonly string[]> {
   const messagesRoot = resolve(paths.websiteRoot, "messages");
   const localePaths = {
     en: resolve(messagesRoot, "en.json"),
@@ -332,7 +345,7 @@ async function inspectI18n(paths: RepositoryPaths): Promise<readonly string[]> {
   const issues: string[] = [];
 
   for (const [locale, path] of Object.entries(localePaths)) {
-    const outcome = await readJsonRecord(path);
+    const outcome = await readJsonRecord(files, path);
     if (outcome.kind === "ok") {
       parsedLocales.set(locale, outcome.value);
     } else if (outcome.kind === "missing") {
@@ -366,7 +379,7 @@ async function inspectI18n(paths: RepositoryPaths): Promise<readonly string[]> {
   const enKeys = extractMessageKeySet(parsedLocales.get("en")!);
   const declarationPath = resolve(messagesRoot, "en.d.json.ts");
   try {
-    const declarationSource = await readFile(declarationPath, "utf8");
+    const declarationSource = await files.readText(declarationPath);
     const declaredObject = extractDeclaredMessagesObject(declarationSource);
     if (declaredObject === null) {
       issues.push("messages/en.d.json.ts could not be parsed as a generated declaration object.");
@@ -413,14 +426,14 @@ function isValidLicenseEntry(entry: unknown): boolean {
   );
 }
 
-async function inspectArtifacts(paths: RepositoryPaths): Promise<readonly string[]> {
+async function inspectArtifacts(files: InspectionFiles, paths: RepositoryPaths): Promise<readonly string[]> {
   const issues: string[] = [];
   const websiteTaxonomyDirectory = resolve(paths.websiteRoot, "src", "data", "taxonomies");
   const taxonomyPaths = getExpectedTaxonomyArtifactPaths(paths.root).filter((path) => resolve(path, "..") === websiteTaxonomyDirectory);
 
   for (const path of taxonomyPaths) {
     const name = basename(path);
-    const outcome = await readJsonRecord(path);
+    const outcome = await readJsonRecord(files, path);
     if (outcome.kind === "missing") {
       issues.push(`${name} is missing.`);
     } else if (outcome.kind === "error") {
@@ -432,13 +445,13 @@ async function inspectArtifacts(paths: RepositoryPaths): Promise<readonly string
 
   for (const fileName of ["en.json", "ro.json", "fr.json"] as const) {
     try {
-      await readFile(resolve(paths.websiteRoot, "messages", fileName), "utf8");
+      await files.readText(resolve(paths.websiteRoot, "messages", fileName));
     } catch (error: unknown) {
       issues.push(hasErrorCode(error, "ENOENT") ? `messages/${fileName} is missing.` : `messages/${fileName} could not be read.`);
     }
   }
 
-  const licensesOutcome = await readJsonRecord(resolve(paths.websiteRoot, "licenses.json"));
+  const licensesOutcome = await readJsonRecord(files, resolve(paths.websiteRoot, "licenses.json"));
   if (licensesOutcome.kind === "missing") {
     issues.push("licenses.json is missing.");
   } else if (licensesOutcome.kind === "error") {
@@ -506,11 +519,11 @@ async function inspectPlaywright(
   return {version: matching.version, browsers: matching.browsers};
 }
 
-async function inspectFrameworkConfig(paths: RepositoryPaths): Promise<readonly string[]> {
+async function inspectFrameworkConfig(files: InspectionFiles, paths: RepositoryPaths): Promise<readonly string[]> {
   const issues: string[] = [];
 
   try {
-    const source = await readFile(resolve(paths.websiteRoot, "next.config.ts"), "utf8");
+    const source = await files.readText(resolve(paths.websiteRoot, "next.config.ts"));
     if (!/createNextIntlPlugin\s*\(/u.test(source)) {
       issues.push("next.config.ts does not call createNextIntlPlugin.");
     } else if (!/createMessagesDeclaration:\s*["']\.\/messages\/en\.json["']/u.test(source)) {
@@ -523,7 +536,7 @@ async function inspectFrameworkConfig(paths: RepositoryPaths): Promise<readonly 
   }
 
   try {
-    const source = await readFile(resolve(paths.docsRoot, "docusaurus.config.ts"), "utf8");
+    const source = await files.readText(resolve(paths.docsRoot, "docusaurus.config.ts"));
     if (!/@docusaurus\/preset-classic/u.test(source)) {
       issues.push("docusaurus.config.ts does not reference @docusaurus/preset-classic.");
     } else if (!/export default/u.test(source)) {
@@ -539,29 +552,61 @@ async function inspectFrameworkConfig(paths: RepositoryPaths): Promise<readonly 
 /**
  * Creates one read-only provider for shared React and website inspection facts.
  *
- * @param input - Canonical repository paths, shared package inventory, opaque probe runner, and monotonic clock.
+ * @param input - Canonical repository paths, shared package inventory, opaque probe runner, and the
+ * read-only filesystem, clock, and task-scheduler capabilities.
  * @returns An inspection provider with explicit unavailable/invalid outcomes at package, environment, and probe boundaries.
  */
 export function createReactProvider(input: FrontendProviderInput): InspectionProvider<ReactFacts> {
+  const now = (): number => input.clock.monotonicNow();
+  const {files} = input;
+
   return async (): Promise<InspectionOutcome<ReactFacts>> => {
-    const startedAt = input.now();
+    const startedAt = now();
     try {
       const packagesOutcome = await input.packages();
       if (packagesOutcome.kind === "unavailable") {
-        return {kind: "unavailable", reason: packagesOutcome.reason, durationMs: elapsedMilliseconds(startedAt, input.now)};
+        return {kind: "unavailable", reason: packagesOutcome.reason, durationMs: elapsedMilliseconds(startedAt, now)};
       }
       if (packagesOutcome.kind === "invalid") {
-        return {kind: "invalid", issues: packagesOutcome.issues, durationMs: elapsedMilliseconds(startedAt, input.now)};
+        return {kind: "invalid", issues: packagesOutcome.issues, durationMs: elapsedMilliseconds(startedAt, now)};
       }
       const packages = packagesOutcome.value;
 
-      const [workspaceLinkIssues, envContent, i18nIssues, artifactIssues, frameworkIssues] = await Promise.all([
-        inspectWorkspaceLink(input.paths, packages),
-        readEnvironmentContent(input.paths.websiteEnvironment),
-        inspectI18n(input.paths),
-        inspectArtifacts(input.paths),
-        inspectFrameworkConfig(input.paths),
+      let workspaceLinkIssues: readonly string[] | undefined;
+      let envContent: string | undefined;
+      let i18nIssues: readonly string[] | undefined;
+      let artifactIssues: readonly string[] | undefined;
+      let frameworkIssues: readonly string[] | undefined;
+
+      // Every repository read below starts concurrently, exactly as the previous `Promise.all` did;
+      // each task assigns its own binding so the heterogeneous results keep their exact types.
+      await input.tasks.parallel<void>([
+        async () => {
+          workspaceLinkIssues = await inspectWorkspaceLink(files, input.paths, packages);
+        },
+        async () => {
+          envContent = await readEnvironmentContent(files, input.paths.websiteEnvironment);
+        },
+        async () => {
+          i18nIssues = await inspectI18n(files, input.paths);
+        },
+        async () => {
+          artifactIssues = await inspectArtifacts(files, input.paths);
+        },
+        async () => {
+          frameworkIssues = await inspectFrameworkConfig(files, input.paths);
+        },
       ]);
+
+      if (
+        workspaceLinkIssues === undefined
+        || envContent === undefined
+        || i18nIssues === undefined
+        || artifactIssues === undefined
+        || frameworkIssues === undefined
+      ) {
+        throw new FrontendInspectionFailure("unavailable", "The React inspection did not resolve every repository fact.");
+      }
 
       const playwright = await inspectPlaywright(input.probes, input.paths.root, packages.installed["playwright"]?.version);
 
@@ -574,12 +619,12 @@ export function createReactProvider(input: FrontendProviderInput): InspectionPro
         playwright,
         frameworkIssues,
       };
-      return {kind: "available", value, durationMs: elapsedMilliseconds(startedAt, input.now)};
+      return {kind: "available", value, durationMs: elapsedMilliseconds(startedAt, now)};
     } catch (error: unknown) {
       if (error instanceof FrontendInspectionFailure) {
         return error.kind === "invalid"
-          ? {kind: "invalid", issues: [error.publicMessage], durationMs: elapsedMilliseconds(startedAt, input.now)}
-          : {kind: "unavailable", reason: error.publicMessage, durationMs: elapsedMilliseconds(startedAt, input.now)};
+          ? {kind: "invalid", issues: [error.publicMessage], durationMs: elapsedMilliseconds(startedAt, now)}
+          : {kind: "unavailable", reason: error.publicMessage, durationMs: elapsedMilliseconds(startedAt, now)};
       }
       throw error;
     }
@@ -626,6 +671,7 @@ function extractAdapterImport(source: string): AdapterImport | null {
 }
 
 async function inspectSvelteScripts(
+  files: InspectionFiles,
   root: string,
   siteRelativeRoot: string,
   packageJsonOutcome: JsonReadOutcome,
@@ -665,7 +711,7 @@ async function inspectSvelteScripts(
     }
   }
 
-  const projectJsonOutcome = await readJsonRecord(resolve(root, "project.json"));
+  const projectJsonOutcome = await readJsonRecord(files, resolve(root, "project.json"));
   if (projectJsonOutcome.kind !== "ok") {
     issues.push("project.json could not be read or parsed.");
   } else {
@@ -689,7 +735,7 @@ async function inspectSvelteScripts(
     }
   }
 
-  const viteConfigOutcome = await readFirstExistingTextFile(VITE_CONFIG_FILE_NAMES.map((name) => ({name, path: resolve(root, name)})));
+  const viteConfigOutcome = await readFirstExistingTextFile(files, VITE_CONFIG_FILE_NAMES.map((name) => ({name, path: resolve(root, name)})));
   if (viteConfigOutcome.kind === "missing") {
     issues.push("vite.config was not found.");
   } else if (viteConfigOutcome.kind === "error") {
@@ -701,10 +747,10 @@ async function inspectSvelteScripts(
   return issues;
 }
 
-async function inspectGeneratedConfigExists(root: string): Promise<boolean> {
+async function inspectGeneratedConfigExists(files: InspectionFiles, root: string): Promise<boolean> {
   try {
-    const info = await stat(resolve(root, ".svelte-kit", "tsconfig.json"));
-    return info.isFile();
+    const info = await files.inspect(resolve(root, ".svelte-kit", "tsconfig.json"));
+    return info.kind === "file";
   } catch {
     return false;
   }
@@ -714,25 +760,28 @@ async function inspectGeneratedConfigExists(root: string): Promise<boolean> {
  * Creates one read-only provider for shared SvelteKit inspection facts for one standalone project.
  *
  * @param id - Standalone project identity (`"cv"` or `"status"`).
- * @param input - Canonical repository paths, shared package inventory, opaque probe runner, and monotonic clock.
+ * @param input - Canonical repository paths, shared package inventory, opaque probe runner, and the
+ * read-only filesystem, clock, and task-scheduler capabilities.
  * @returns An inspection provider with explicit unavailable/invalid outcomes at the package-inventory boundary.
  */
 export function createSvelteProvider(id: SvelteProjectId, input: FrontendProviderInput): InspectionProvider<SvelteFacts> {
   const root = id === "cv" ? input.paths.cvRoot : input.paths.statusRoot;
+  const now = (): number => input.clock.monotonicNow();
+  const {files} = input;
 
   return async (): Promise<InspectionOutcome<SvelteFacts>> => {
-    const startedAt = input.now();
+    const startedAt = now();
     try {
       const packagesOutcome = await input.packages();
       if (packagesOutcome.kind === "unavailable") {
-        return {kind: "unavailable", reason: packagesOutcome.reason, durationMs: elapsedMilliseconds(startedAt, input.now)};
+        return {kind: "unavailable", reason: packagesOutcome.reason, durationMs: elapsedMilliseconds(startedAt, now)};
       }
       if (packagesOutcome.kind === "invalid") {
-        return {kind: "invalid", issues: packagesOutcome.issues, durationMs: elapsedMilliseconds(startedAt, input.now)};
+        return {kind: "invalid", issues: packagesOutcome.issues, durationMs: elapsedMilliseconds(startedAt, now)};
       }
       const packages = packagesOutcome.value;
 
-      const packageJsonOutcome = await readJsonRecord(resolve(root, "package.json"));
+      const packageJsonOutcome = await readJsonRecord(files, resolve(root, "package.json"));
       const packageIssues: string[] = [];
       let nodeEngine: string | undefined;
 
@@ -749,6 +798,7 @@ export function createSvelteProvider(id: SvelteProjectId, input: FrontendProvide
       }
 
       const svelteConfigOutcome = await readFirstExistingTextFile(
+        files,
         SVELTE_CONFIG_FILE_NAMES.map((name) => ({name, path: resolve(root, name)})),
       );
       const adapterIssues: string[] = [];
@@ -794,10 +844,23 @@ export function createSvelteProvider(id: SvelteProjectId, input: FrontendProvide
       }
 
       const siteRelativeRoot = relative(input.paths.root, root).replaceAll("\\", "/");
-      const [scriptIssues, generatedConfigExists] = await Promise.all([
-        inspectSvelteScripts(root, siteRelativeRoot, packageJsonOutcome),
-        inspectGeneratedConfigExists(root),
+      let scriptIssues: readonly string[] | undefined;
+      let generatedConfigExists: boolean | undefined;
+
+      // Both observations start concurrently, exactly as the previous `Promise.all` did; each task
+      // assigns its own binding so the heterogeneous results keep their exact types.
+      await input.tasks.parallel<void>([
+        async () => {
+          scriptIssues = await inspectSvelteScripts(files, root, siteRelativeRoot, packageJsonOutcome);
+        },
+        async () => {
+          generatedConfigExists = await inspectGeneratedConfigExists(files, root);
+        },
       ]);
+
+      if (scriptIssues === undefined || generatedConfigExists === undefined) {
+        throw new FrontendInspectionFailure("unavailable", "The Svelte inspection did not resolve every repository fact.");
+      }
 
       const value: SvelteFacts = {
         id,
@@ -808,12 +871,12 @@ export function createSvelteProvider(id: SvelteProjectId, input: FrontendProvide
         ...(adapterSpecifier === undefined ? {} : {adapterSpecifier}),
         adapterIssues,
       };
-      return {kind: "available", value, durationMs: elapsedMilliseconds(startedAt, input.now)};
+      return {kind: "available", value, durationMs: elapsedMilliseconds(startedAt, now)};
     } catch (error: unknown) {
       if (error instanceof FrontendInspectionFailure) {
         return error.kind === "invalid"
-          ? {kind: "invalid", issues: [error.publicMessage], durationMs: elapsedMilliseconds(startedAt, input.now)}
-          : {kind: "unavailable", reason: error.publicMessage, durationMs: elapsedMilliseconds(startedAt, input.now)};
+          ? {kind: "invalid", issues: [error.publicMessage], durationMs: elapsedMilliseconds(startedAt, now)}
+          : {kind: "unavailable", reason: error.publicMessage, durationMs: elapsedMilliseconds(startedAt, now)};
       }
       throw error;
     }

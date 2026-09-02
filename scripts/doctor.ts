@@ -32,13 +32,12 @@ import {fileURLToPath} from "node:url";
 
 import {MonorepositoryConsoleLogger, type MonorepositoryLogger} from "./common/logger.ts";
 import {loadRepositoryRequirements, type RequirementLoadResult} from "./common/requirements.ts";
-import {defaultCommandRunner} from "./common/process.ts";
 import {resolveRepositoryPaths, type RepositoryPaths} from "./common/repository-paths.ts";
-import {nodeFileSystem, nodeTaskScheduler} from "./common/runtime.node.ts";
+import {createNodeRepositoryInspectionSession, nodeFileSystem, nodeProcessRunner, nodeTaskScheduler} from "./common/runtime.node.ts";
 import {normalizeErrorForReport, diagnosticResult} from "./doctor.diagnostics.ts";
 import {renderDoctorReport, createDoctorReport} from "./doctor.reporter.ts";
 import {createInspectionProbeRunner, type InspectionProbeRunner} from "./inspection/probes.ts";
-import {createRepositoryInspectionSession, type RepositoryInspectionSession} from "./inspection/repository.ts";
+import type {RepositoryInspectionSession, RepositoryInspectionSessionFactory} from "./inspection/repository.ts";
 import {dotnetDoctorModule} from "./doctor.dotnet.ts";
 import {infrastructureDoctorModule} from "./doctor.infrastructure.ts";
 import {pythonDoctorModule} from "./doctor.python.ts";
@@ -102,9 +101,9 @@ export interface DoctorDependencies {
   readonly timestamp: () => string;
   /** Pre-created inspection session; when supplied, doctor reuses it instead of creating one. */
   readonly inspection: RepositoryInspectionSession;
-  /** Factory for creating an inspection session; defaults to {@link createRepositoryInspectionSession}. */
-  readonly createInspectionSession: typeof createRepositoryInspectionSession;
-  /** Opaque inspection probe runner; defaults to one created from {@link defaultCommandRunner}. */
+  /** Factory for creating an inspection session; defaults to {@link createNodeRepositoryInspectionSession}. */
+  readonly createInspectionSession: RepositoryInspectionSessionFactory;
+  /** Opaque inspection probe runner; defaults to one created from {@link nodeProcessRunner}. */
   readonly probes: InspectionProbeRunner;
 }
 
@@ -295,16 +294,12 @@ export async function runDoctor(
 
   const inspection =
     dependencies.inspection
-    ?? (dependencies.createInspectionSession ?? createRepositoryInspectionSession)({
+    ?? (dependencies.createInspectionSession ?? createNodeRepositoryInspectionSession)({
       profile: options.quick ? "quick" : "full",
       paths,
-      runner: defaultCommandRunner,
-      env,
-      platform,
-      now,
     });
 
-  const probes = dependencies.probes ?? createInspectionProbeRunner(defaultCommandRunner);
+  const probes = dependencies.probes ?? createInspectionProbeRunner(nodeProcessRunner);
 
   // Prewarm aggregate collection in full mode only: firing-and-forgetting starts the isolated
   // worker process once so its memoized result is ready by the time the infrastructure module

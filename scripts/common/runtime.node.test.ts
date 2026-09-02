@@ -20,13 +20,14 @@ vi.mock("node:fs/promises", async (importOriginal) => {
   return {...actual, access: mockedAccess};
 });
 
-import {FILE_SYSTEM_MAX_BYTES_EXCEEDED_CODE, FileSystemError, HttpError, CommandCancellation, type RuntimeEnvironment} from "./runtime.ts";
+import {FILE_SYSTEM_MAX_BYTES_EXCEEDED_CODE, FileSystemError, HttpError, CommandCancellation, type RepositoryInspectionRequest, type RuntimeEnvironment} from "./runtime.ts";
 import type {CommandContext} from "./commander.ts";
 import {createRepositoryPaths} from "./repository-paths.ts";
-import {createRepositoryInspectionSessionStub} from "./runtime.testing.ts";
+import {createRepositoryInspectionSessionStub, repositoryFixtureRoot} from "./runtime.testing.ts";
 import {
   createNodeCommandRuntimeFactory,
   createNodeProcessRunner,
+  createNodeRepositoryInspectionSession,
   createNodeRuntimeScope,
   nodeClock,
   nodeFileSystem,
@@ -730,17 +731,42 @@ describe("createNodeRuntimeScope", () => {
     await runtime.cleanup.drain();
   });
 
-  it("fails fast only when an unwired inspection session is actually requested", async () => {
+  it("lazily memoizes one real repository inspection session per request key", async () => {
     const runtime = await createNodeRuntimeScope({
       commandName: "sample",
       verbose: false,
       presentation: "silent",
       registerProcessSignals: false,
     });
+    const request: RepositoryInspectionRequest = {profile: "quick", paths: createRepositoryPaths(repositoryFixtureRoot)};
+
+    const first = runtime.inspection.getRepositorySession(request);
+    const second = runtime.inspection.getRepositorySession({profile: "quick", paths: createRepositoryPaths(repositoryFixtureRoot)});
+
+    expect(second).toBe(first);
+    expect(typeof first.inspect).toBe("function");
+    expect(typeof first.updateInfrastructureEngine).toBe("function");
+
+    await runtime.cleanup.drain();
+  });
+
+  it("rejects a conflicting request that maps to an already-created session key", async () => {
+    const runtime = await createNodeRuntimeScope({
+      commandName: "sample",
+      verbose: false,
+      presentation: "silent",
+      registerProcessSignals: false,
+    });
+    const paths = createRepositoryPaths(repositoryFixtureRoot);
+
+    runtime.inspection.getRepositorySession({profile: "quick", paths});
 
     expect(() =>
-      runtime.inspection.getRepositorySession({profile: "quick", paths: createRepositoryPaths(process.cwd())}),
-    ).toThrow(/inspection capability is not wired/u);
+      runtime.inspection.getRepositorySession({
+        profile: "quick",
+        paths: {...paths, websiteEnvironment: `${paths.websiteEnvironment}.other`},
+      }),
+    ).toThrow(/conflicts with an already-created session/u);
 
     await runtime.cleanup.drain();
   });
@@ -930,5 +956,42 @@ describe("createNodeCommandRuntimeFactory", () => {
 
     await childRuntime.cleanup.drain();
     await rootRuntime.cleanup.drain();
+  });
+
+  it("shares the parent's inspection registry with a child created by a different factory", async () => {
+    const parentFactory = createNodeCommandRuntimeFactory("status", false);
+    const parentRuntime = await parentFactory.createRoot({presentation: "silent", registerProcessSignals: false});
+    const parent: CommandContext = {runtime: parentRuntime, presentation: "silent"};
+    const childRuntime = await createNodeCommandRuntimeFactory("doctor", false).createChild(parent, {
+      presentation: "silent",
+      registerProcessSignals: false,
+    });
+
+    expect(childRuntime.inspection).toBe(parentRuntime.inspection);
+
+    const request: RepositoryInspectionRequest = {profile: "quick", paths: createRepositoryPaths(repositoryFixtureRoot)};
+    expect(childRuntime.inspection.getRepositorySession(request)).toBe(parentRuntime.inspection.getRepositorySession(request));
+
+    await childRuntime.cleanup.drain();
+    await parentRuntime.cleanup.drain();
+  });
+});
+
+describe("createNodeRepositoryInspectionSession", () => {
+  it("assembles a session from the Node adapters for a transitional caller", () => {
+    const session = createNodeRepositoryInspectionSession({
+      profile: "quick",
+      paths: createRepositoryPaths(repositoryFixtureRoot),
+    });
+
+    expect(typeof session.inspect).toBe("function");
+    expect(typeof session.invalidate).toBe("function");
+    expect(typeof session.updateInfrastructureEngine).toBe("function");
+  });
+
+  it("creates an independent session per call instead of memoizing", () => {
+    const request: RepositoryInspectionRequest = {profile: "quick", paths: createRepositoryPaths(repositoryFixtureRoot)};
+
+    expect(createNodeRepositoryInspectionSession(request)).not.toBe(createNodeRepositoryInspectionSession(request));
   });
 });

@@ -26,6 +26,8 @@ import {
   type RepositoryInspectionRequest,
 } from "./runtime.ts";
 import type {RepositoryInspectionSession} from "../inspection/repository.ts";
+import type {CommandContext} from "./commander.ts";
+import {createTestRuntimeFactory} from "./runtime.testing.ts";
 
 interface Deferred<T> {
   readonly promise: Promise<T>;
@@ -478,6 +480,47 @@ describe("createRepositoryInspectionRuntime", () => {
     };
 
     expect(repositoryInspectionRequestKey(requestA)).toBe(repositoryInspectionRequestKey(requestB));
+  });
+});
+
+describe("createTestRuntimeFactory inspection ownership", () => {
+  it("shares one repository inspection session between a parent scope and its child scope", async () => {
+    const runtimeFactory = createTestRuntimeFactory();
+    const parentRuntime = await runtimeFactory.createRoot({
+      presentation: "silent",
+      registerProcessSignals: false,
+    });
+    const parent: CommandContext = {
+      runtime: parentRuntime,
+      presentation: "silent",
+    };
+    const childRuntime = await runtimeFactory.createChild(parent, {
+      presentation: "silent",
+      registerProcessSignals: false,
+    });
+    const request: RepositoryInspectionRequest = {
+      profile: "quick",
+      paths: createRepositoryPaths("C:\\repo"),
+    };
+
+    const parentSession = parentRuntime.inspection.getRepositorySession(request);
+    const childSession = childRuntime.inspection.getRepositorySession(request);
+    expect(childSession).toBe(parentSession);
+  });
+
+  it("rejects a conflicting request for the same profile instead of creating a second session", async () => {
+    const runtimeFactory = createTestRuntimeFactory();
+    const runtime = await runtimeFactory.createRoot({presentation: "silent", registerProcessSignals: false});
+    const paths = createRepositoryPaths("C:\\repo");
+
+    runtime.inspection.getRepositorySession({profile: "quick", paths});
+
+    expect(() =>
+      runtime.inspection.getRepositorySession({
+        profile: "quick",
+        paths: {...paths, websiteEnvironment: "C:\\repo\\other\\.env"},
+      }),
+    ).toThrow(/conflicts with an already-created session/u);
   });
 });
 

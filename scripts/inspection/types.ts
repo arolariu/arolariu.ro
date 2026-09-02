@@ -1,7 +1,41 @@
 /**
  * @fileoverview Public outcome and provider contracts for process-local inspection sessions.
  * @module scripts/inspection/types
+ *
+ * @remarks
+ * Every import here is type-only, so this module never pulls the runtime kernel (or, transitively,
+ * the Node adapter) into an inspection provider's module graph at run time.
  */
+
+import type {ProcessRunner} from "../common/runner.ts";
+import type {Clock, FileSystem, ReadOnlyFileSystem, RuntimeEnvironment, TaskScheduler} from "../common/runtime.ts";
+
+/**
+ * The exact capability surface an inspection provider is allowed to observe.
+ *
+ * @remarks
+ * Providers never read ambient state: they receive this context (or a narrower `Pick` of it) from
+ * the composed repository session, which itself receives the capabilities from one
+ * {@link CommandRuntime}. The ordinary filesystem is deliberately read-only; the single writable
+ * capability is {@link InspectionProviderContext.temporaryDirectories}, which can only create a
+ * caller-owned temporary directory outside the repository.
+ */
+export interface InspectionProviderContext {
+  /** Read-only filesystem every provider observes repository state through. */
+  readonly files: ReadOnlyFileSystem;
+  /** The single writable capability: creation of one caller-owned temporary directory. */
+  readonly temporaryDirectories: Pick<FileSystem, "createTemporaryDirectory">;
+  /** Engine-neutral child-process runner used by probe- and worker-driven providers. */
+  readonly runner: ProcessRunner;
+  /** Monotonic and wall-clock time source used for every `durationMs` measurement. */
+  readonly clock: Clock;
+  /** Deterministic task orchestration used instead of raw `Promise` combinators. */
+  readonly tasks: TaskScheduler;
+  /** Immutable environment snapshot providers read variables, platform, and paths from. */
+  readonly environment: RuntimeEnvironment;
+  /** Cancellation signal of the owning command invocation. */
+  readonly signal: AbortSignal;
+}
 
 /**
  * Result of one inspection attempt for a single fact of type `T`.

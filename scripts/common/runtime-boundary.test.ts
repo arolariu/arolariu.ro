@@ -980,13 +980,13 @@ describe("runtime boundary policy", () => {
         },
         {
           "file": "scripts/doctor.ts",
-          "line": 35,
-          "rule": "legacy-process-import",
+          "line": 160,
+          "rule": "ambient-http",
         },
         {
           "file": "scripts/doctor.ts",
-          "line": 161,
-          "rule": "ambient-http",
+          "line": 277,
+          "rule": "ambient-timer",
         },
         {
           "file": "scripts/doctor.ts",
@@ -995,8 +995,8 @@ describe("runtime boundary policy", () => {
         },
         {
           "file": "scripts/doctor.ts",
-          "line": 279,
-          "rule": "ambient-timer",
+          "line": 288,
+          "rule": "ambient-os-state",
         },
         {
           "file": "scripts/doctor.ts",
@@ -1006,41 +1006,36 @@ describe("runtime boundary policy", () => {
         {
           "file": "scripts/doctor.ts",
           "line": 290,
-          "rule": "ambient-os-state",
-        },
-        {
-          "file": "scripts/doctor.ts",
-          "line": 291,
           "rule": "ambient-environment",
         },
         {
           "file": "scripts/doctor.ts",
-          "line": 330,
+          "line": 325,
           "rule": "explicit-concurrency",
         },
         {
           "file": "scripts/doctor.ts",
-          "line": 365,
+          "line": 360,
           "rule": "ambient-os-state",
         },
         {
           "file": "scripts/doctor.ts",
-          "line": 406,
+          "line": 401,
           "rule": "ambient-os-state",
         },
         {
           "file": "scripts/doctor.ts",
-          "line": 407,
+          "line": 402,
           "rule": "manual-entrypoint",
         },
         {
           "file": "scripts/doctor.ts",
-          "line": 410,
+          "line": 405,
           "rule": "direct-exit",
         },
         {
           "file": "scripts/doctor.ts",
-          "line": 414,
+          "line": 409,
           "rule": "direct-exit",
         },
         {
@@ -1055,228 +1050,13 @@ describe("runtime boundary policy", () => {
         },
         {
           "file": "scripts/doctor.workspace.ts",
-          "line": 21,
-          "rule": "legacy-process-import",
-        },
-        {
-          "file": "scripts/doctor.workspace.ts",
-          "line": 305,
+          "line": 347,
           "rule": "explicit-concurrency",
         },
         {
           "file": "scripts/doctor.workspace.ts",
-          "line": 1125,
+          "line": 1167,
           "rule": "explicit-concurrency",
-        },
-        {
-          "file": "scripts/inspection/aggregate-worker.ts",
-          "line": 77,
-          "rule": "ambient-timer",
-        },
-        {
-          "file": "scripts/inspection/aggregate-worker.ts",
-          "line": 87,
-          "rule": "ambient-timer",
-        },
-        {
-          "file": "scripts/inspection/aggregate-worker.ts",
-          "line": 243,
-          "rule": "ambient-timer",
-        },
-        {
-          "file": "scripts/inspection/aggregate-worker.ts",
-          "line": 254,
-          "rule": "explicit-concurrency",
-        },
-        {
-          "file": "scripts/inspection/aggregate-worker.ts",
-          "line": 309,
-          "rule": "explicit-concurrency",
-        },
-        {
-          "file": "scripts/inspection/aggregate-worker.ts",
-          "line": 379,
-          "rule": "ambient-os-state",
-        },
-        {
-          "file": "scripts/inspection/aggregate-worker.ts",
-          "line": 380,
-          "rule": "manual-entrypoint",
-        },
-        {
-          "file": "scripts/inspection/aggregate-worker.ts",
-          "line": 384,
-          "rule": "ambient-os-state",
-        },
-        {
-          "file": "scripts/inspection/aggregate.ts",
-          "line": 20,
-          "rule": "legacy-process-import",
-        },
-        {
-          "file": "scripts/inspection/aggregate.ts",
-          "line": 387,
-          "rule": "ambient-os-state",
-        },
-        {
-          "file": "scripts/inspection/dotnet.ts",
-          "line": 13,
-          "rule": "ambient-filesystem",
-        },
-        {
-          "file": "scripts/inspection/dotnet.ts",
-          "line": 16,
-          "rule": "legacy-process-import",
-        },
-        {
-          "file": "scripts/inspection/dotnet.ts",
-          "line": 1136,
-          "rule": "explicit-concurrency",
-        },
-        {
-          "file": "scripts/inspection/frontend.ts",
-          "line": 14,
-          "rule": "ambient-filesystem",
-        },
-        {
-          "file": "scripts/inspection/frontend.ts",
-          "line": 558,
-          "rule": "explicit-concurrency",
-        },
-        {
-          "file": "scripts/inspection/frontend.ts",
-          "line": 797,
-          "rule": "explicit-concurrency",
-        },
-        {
-          "file": "scripts/inspection/infrastructure.ts",
-          "line": 16,
-          "rule": "ambient-filesystem",
-        },
-        {
-          "file": "scripts/inspection/infrastructure.ts",
-          "line": 19,
-          "rule": "legacy-process-import",
-        },
-        {
-          "file": "scripts/inspection/infrastructure.ts",
-          "line": 440,
-          "rule": "explicit-concurrency",
-        },
-        {
-          "file": "scripts/inspection/infrastructure.ts",
-          "line": 466,
-          "rule": "explicit-concurrency",
-        },
-        {
-          "file": "scripts/inspection/infrastructure.ts",
-          "line": 677,
-          "rule": "explicit-concurrency",
-        },
-        {
-          "file": "scripts/inspection/infrastructure.ts",
-          "line": 725,
-          "rule": "explicit-concurrency",
-        },
-        {
-          "file": "scripts/inspection/packages.ts",
-          "line": 11,
-          "rule": "ambient-filesystem",
-        },
-        {
-          "file": "scripts/inspection/packages.ts",
-          "line": 425,
-          "rule": "explicit-concurrency",
-        },
-        {
-          "file": "scripts/inspection/probes.ts",
-          "line": 6,
-          "rule": "legacy-process-import",
-        },
-        {
-          "file": "scripts/inspection/probes.ts",
-          "line": 438,
-          "rule": "ambient-os-state",
-        },
-        {
-          "file": "scripts/inspection/probes.ts",
-          "line": 726,
-          "rule": "ambient-os-state",
-        },
-        {
-          "file": "scripts/inspection/python.ts",
-          "line": 11,
-          "rule": "ambient-filesystem",
-        },
-        {
-          "file": "scripts/inspection/python.ts",
-          "line": 15,
-          "rule": "legacy-process-import",
-        },
-        {
-          "file": "scripts/inspection/python.ts",
-          "line": 1112,
-          "rule": "explicit-concurrency",
-        },
-        {
-          "file": "scripts/inspection/python.ts",
-          "line": 1155,
-          "rule": "explicit-concurrency",
-        },
-        {
-          "file": "scripts/inspection/python.ts",
-          "line": 1232,
-          "rule": "explicit-concurrency",
-        },
-        {
-          "file": "scripts/inspection/python.ts",
-          "line": 1281,
-          "rule": "explicit-concurrency",
-        },
-        {
-          "file": "scripts/inspection/repository.ts",
-          "line": 23,
-          "rule": "legacy-process-import",
-        },
-        {
-          "file": "scripts/inspection/workspace.ts",
-          "line": 15,
-          "rule": "ambient-filesystem",
-        },
-        {
-          "file": "scripts/inspection/workspace.ts",
-          "line": 16,
-          "rule": "ambient-os-state",
-        },
-        {
-          "file": "scripts/inspection/workspace.ts",
-          "line": 18,
-          "rule": "legacy-process-import",
-        },
-        {
-          "file": "scripts/inspection/workspace.ts",
-          "line": 321,
-          "rule": "ambient-os-state",
-        },
-        {
-          "file": "scripts/inspection/workspace.worker.ts",
-          "line": 24,
-          "rule": "ambient-os-state",
-        },
-        {
-          "file": "scripts/inspection/workspace.worker.ts",
-          "line": 25,
-          "rule": "ambient-os-state",
-        },
-        {
-          "file": "scripts/inspection/workspace.worker.ts",
-          "line": 29,
-          "rule": "ambient-environment",
-        },
-        {
-          "file": "scripts/inspection/workspace.worker.ts",
-          "line": 30,
-          "rule": "ambient-environment",
         },
         {
           "file": "scripts/setup.dotnet.ts",
@@ -1385,37 +1165,27 @@ describe("runtime boundary policy", () => {
         },
         {
           "file": "scripts/setup.ts",
-          "line": 383,
-          "rule": "ambient-environment",
-        },
-        {
-          "file": "scripts/setup.ts",
-          "line": 384,
+          "line": 512,
           "rule": "ambient-os-state",
         },
         {
           "file": "scripts/setup.ts",
-          "line": 516,
+          "line": 539,
           "rule": "ambient-os-state",
         },
         {
           "file": "scripts/setup.ts",
-          "line": 543,
-          "rule": "ambient-os-state",
-        },
-        {
-          "file": "scripts/setup.ts",
-          "line": 544,
+          "line": 540,
           "rule": "manual-entrypoint",
         },
         {
           "file": "scripts/setup.ts",
-          "line": 547,
+          "line": 543,
           "rule": "direct-exit",
         },
         {
           "file": "scripts/setup.ts",
-          "line": 551,
+          "line": 547,
           "rule": "direct-exit",
         },
         {
@@ -1490,42 +1260,27 @@ describe("runtime boundary policy", () => {
         },
         {
           "file": "scripts/status.ts",
-          "line": 850,
-          "rule": "ambient-environment",
-        },
-        {
-          "file": "scripts/status.ts",
-          "line": 851,
-          "rule": "ambient-os-state",
-        },
-        {
-          "file": "scripts/status.ts",
-          "line": 852,
-          "rule": "ambient-timer",
-        },
-        {
-          "file": "scripts/status.ts",
-          "line": 857,
+          "line": 853,
           "rule": "explicit-concurrency",
         },
         {
           "file": "scripts/status.ts",
-          "line": 888,
+          "line": 884,
           "rule": "ambient-os-state",
         },
         {
           "file": "scripts/status.ts",
-          "line": 889,
+          "line": 885,
           "rule": "manual-entrypoint",
         },
         {
           "file": "scripts/status.ts",
-          "line": 892,
+          "line": 888,
           "rule": "direct-exit",
         },
         {
           "file": "scripts/status.ts",
-          "line": 896,
+          "line": 892,
           "rule": "direct-exit",
         },
         {

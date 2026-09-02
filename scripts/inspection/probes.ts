@@ -3,7 +3,10 @@
  * @module scripts/inspection/probes
  */
 
-import type {CommandResult, CommandRunner, CommandSpec} from "../common/process.ts";
+import type {ProcessEnvironment, ProcessOutcome, ProcessRequest, ProcessRunner} from "../common/runner.ts";
+
+/** Exact allowlisted command specification backing one registered {@link InspectionProbe}. */
+type ProbeCommand = ProcessRequest;
 
 /**
  * Nominal brand distinguishing a registered {@link InspectionProbe} from a plain object literal.
@@ -18,7 +21,7 @@ declare const inspectionProbeBrand: unique symbol;
 /**
  * Opaque handle for one allowlisted, read-only observational command.
  *
- * The public shape exposes only a stable `id`. The underlying {@link CommandSpec} is held in a
+ * The public shape exposes only a stable `id`. The underlying {@link ProbeCommand} is held in a
  * module-private `WeakMap` that is never reachable from outside this module, so a probe can only
  * be executed after it was created by one of the factories exported through {@link probes}.
  */
@@ -30,21 +33,21 @@ export interface InspectionProbe {
 /** Options accepted by {@link InspectionProbeRunner.run}. No stdin, logger, or output-mode escape hatch is exposed. */
 export interface InspectionProbeRunOptions {
   readonly cwd?: string;
-  readonly env?: Readonly<NodeJS.ProcessEnv>;
+  readonly env?: ProcessEnvironment;
   readonly timeoutMs?: number;
   readonly signal?: AbortSignal;
 }
 
-/** Executes registered {@link InspectionProbe} handles through the shared command runner. */
+/** Executes registered {@link InspectionProbe} handles through the shared process runner. */
 export interface InspectionProbeRunner {
-  readonly run: (probe: InspectionProbe, options?: Readonly<InspectionProbeRunOptions>) => Promise<CommandResult>;
+  readonly run: (probe: InspectionProbe, options?: Readonly<InspectionProbeRunOptions>) => Promise<ProcessOutcome>;
 }
 
 /** Default timeout applied to a probe run when the caller does not supply an override. */
 const DEFAULT_INSPECTION_PROBE_TIMEOUT_MS = 15_000;
 
 /** Module-private registry mapping each opaque probe handle to its exact allowlisted command. */
-const probeCommands = new WeakMap<InspectionProbe, Readonly<CommandSpec>>();
+const probeCommands = new WeakMap<InspectionProbe, Readonly<ProbeCommand>>();
 
 /**
  * Registers one exact, read-only command and returns its opaque handle.
@@ -53,7 +56,7 @@ const probeCommands = new WeakMap<InspectionProbe, Readonly<CommandSpec>>();
  * @param command - Exact allowlisted command specification.
  * @returns The opaque, registered probe handle.
  */
-function registerProbe(id: string, command: Readonly<CommandSpec>): InspectionProbe {
+function registerProbe(id: string, command: Readonly<ProbeCommand>): InspectionProbe {
   const probe = Object.freeze({id}) as unknown as InspectionProbe;
   probeCommands.set(probe, command);
   return probe;
@@ -83,10 +86,11 @@ function resolveProbeTimeoutMs(timeoutMs: number | undefined): number {
  * `cwd`, `env`, and `signal` unchanged. It exposes no stdin, logger, or output-mode option, and
  * always resolves the shared runner with `output: "capture"`.
  *
- * @param runner - Shared command runner used to execute the resolved command.
- * @returns An inspection probe runner backed by the shared command runner.
+ * @param runner - Shared process runner used to execute the resolved command.
+ * @returns An inspection probe runner backed by the shared process runner, whose `run` resolves
+ * with the runner's own typed {@link ProcessOutcome} unchanged.
  */
-export function createInspectionProbeRunner(runner: CommandRunner): InspectionProbeRunner {
+export function createInspectionProbeRunner(runner: ProcessRunner): InspectionProbeRunner {
   return {
     run: async (probe, options = {}) => {
       const command = probeCommands.get(probe);
@@ -342,7 +346,7 @@ const LINUX_PORT_OWNER_PROBE_SCRIPT = 'for port in "$@"; do ss -ltnp "sport = :$
  * @returns The exact allowlisted command for the given platform.
  * @throws Error when `platform` is not one of the three supported platforms.
  */
-function buildPortOwnersCommand(validatedPorts: readonly number[], platform: NodeJS.Platform): CommandSpec {
+function buildPortOwnersCommand(validatedPorts: readonly number[], platform: NodeJS.Platform): ProbeCommand {
   const portArguments = validatedPorts.map((port) => String(port));
 
   if (platform === "win32") {
@@ -413,7 +417,7 @@ function gitLastCommit(): InspectionProbe {
  * @returns The exact allowlisted command for the given platform.
  * @throws Error when `platform` is not one of the three supported platforms.
  */
-function buildExecutableResolutionCommand(validatedName: string, platform: NodeJS.Platform): CommandSpec {
+function buildExecutableResolutionCommand(validatedName: string, platform: NodeJS.Platform): ProbeCommand {
   if (platform === "win32") {
     return {command: "where.exe", args: [validatedName]};
   }
@@ -429,13 +433,13 @@ function buildExecutableResolutionCommand(validatedName: string, platform: NodeJ
  *
  * @param executableName - Bare executable name or extension-qualified filename to resolve (for
  * example `git.exe`, `npm.cmd`, or `dotnet`).
- * @param platform - Target platform (`win32`, `darwin`, or `linux`); defaults to the current
- * process platform.
+ * @param platform - Target platform (`win32`, `darwin`, or `linux`), always supplied explicitly by
+ * the caller from its runtime environment snapshot.
  * @returns The registered probe handle.
  * @throws Error when `executableName` fails {@link validateBareTokenName} or `platform` is not one
  * of the three supported platforms.
  */
-function executableResolution(executableName: string, platform: NodeJS.Platform = process.platform): InspectionProbe {
+function executableResolution(executableName: string, platform: NodeJS.Platform): InspectionProbe {
   const validatedName = validateBareTokenName(executableName, "executable name");
   const command = buildExecutableResolutionCommand(validatedName, platform);
   return registerProbe(`workspace.executable-resolution:${validatedName}`, command);
@@ -632,7 +636,7 @@ function frontendPlaywrightInventory(): InspectionProbe {
  */
 function infrastructureRuntimeVersion(runtime: string): InspectionProbe {
   const validatedRuntime = validateInfrastructureRuntimeName(runtime);
-  const command: CommandSpec =
+  const command: ProbeCommand =
     validatedRuntime === "rancher" ? {command: "docker", args: ["--version"]} : {command: "podman", args: ["--version"]};
   return registerProbe(`infrastructure.runtime-version:${validatedRuntime}`, command);
 }
@@ -646,7 +650,7 @@ function infrastructureRuntimeVersion(runtime: string): InspectionProbe {
  */
 function infrastructureComposeVersion(runtime: string): InspectionProbe {
   const validatedRuntime = validateInfrastructureRuntimeName(runtime);
-  const command: CommandSpec =
+  const command: ProbeCommand =
     validatedRuntime === "rancher" ? {command: "docker", args: ["compose", "version"]} : {command: "podman", args: ["compose", "version"]};
   return registerProbe(`infrastructure.compose-version:${validatedRuntime}`, command);
 }
@@ -660,7 +664,7 @@ function infrastructureComposeVersion(runtime: string): InspectionProbe {
  */
 function infrastructureRuntimeContext(runtime: string): InspectionProbe {
   const validatedRuntime = validateInfrastructureRuntimeName(runtime);
-  const command: CommandSpec =
+  const command: ProbeCommand =
     validatedRuntime === "rancher"
       ? {command: "docker", args: ["context", "show"]}
       : {command: "podman", args: ["system", "connection", "list", "--format", "json"]};
@@ -682,7 +686,7 @@ function infrastructureRuntimeContext(runtime: string): InspectionProbe {
  */
 function infrastructureRuntimeInfo(runtime: string): InspectionProbe {
   const validatedRuntime = validateInfrastructureRuntimeName(runtime);
-  const command: CommandSpec =
+  const command: ProbeCommand =
     validatedRuntime === "rancher" ? {command: "docker", args: ["info"]} : {command: "podman", args: ["info", "--format", "json"]};
   return registerProbe(`infrastructure.runtime-info:${validatedRuntime}`, command);
 }
@@ -696,7 +700,7 @@ function infrastructureRuntimeInfo(runtime: string): InspectionProbe {
  */
 function infrastructureContainerList(runtime: string): InspectionProbe {
   const validatedRuntime = validateInfrastructureRuntimeName(runtime);
-  const command: CommandSpec =
+  const command: ProbeCommand =
     validatedRuntime === "rancher"
       ? {command: "docker", args: ["ps", "-a", "--format", "{{json .}}"]}
       : {command: "podman", args: ["ps", "-a", "--format", "{{json .}}"]};
@@ -717,13 +721,13 @@ function infrastructureMkcertCaRoot(): InspectionProbe {
  * Read-only local TCP port-owner probe for one or more ports.
  *
  * @param ports - Non-empty list of decimal TCP ports to inspect.
- * @param platform - Target platform (`win32`, `darwin`, or `linux`); defaults to the current
- * process platform.
+ * @param platform - Target platform (`win32`, `darwin`, or `linux`), always supplied explicitly by
+ * the caller from its runtime environment snapshot.
  * @returns The registered probe handle.
  * @throws Error when `ports` fails {@link validateTcpPorts} or `platform` is not one of the three
  * supported platforms.
  */
-function infrastructurePortOwners(ports: readonly number[], platform: NodeJS.Platform = process.platform): InspectionProbe {
+function infrastructurePortOwners(ports: readonly number[], platform: NodeJS.Platform): InspectionProbe {
   const validatedPorts = validateTcpPorts(ports);
   return registerProbe(`infrastructure.port-owners:${validatedPorts.join(",")}`, buildPortOwnersCommand(validatedPorts, platform));
 }

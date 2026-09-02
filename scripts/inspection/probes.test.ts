@@ -6,35 +6,37 @@
 
 import {describe, expect, it, vi, type Mock} from "vitest";
 
-import type {CommandResult, CommandRunner, CommandSpec} from "../common/process.ts";
+import type {ProcessOutcome, ProcessRequest, ProcessRunner} from "../common/runner.ts";
 import {createInspectionProbeRunner, probes, type InspectionProbe, type InspectionProbeRunOptions} from "./probes.ts";
 
-function commandResult(patch: Partial<CommandResult> = {}): CommandResult {
-  return {
-    code: 0,
-    stdout: "",
-    stderr: "",
-    durationMs: 1,
-    timedOut: false,
-    ...patch,
-  };
+function succeededOutcome(): ProcessOutcome {
+  return {kind: "succeeded", exitCode: 0, stdout: "", stderr: "", durationMs: 1};
 }
 
-function createFakeCommandRunner(): {runner: CommandRunner; run: Mock<CommandRunner["run"]>} {
-  const run = vi.fn<CommandRunner["run"]>(async () => commandResult());
-  return {runner: {run}, run};
+function createFakeProcessRunner(): {runner: ProcessRunner; run: Mock<ProcessRunner["run"]>} {
+  const run = vi.fn<ProcessRunner["run"]>(async () => succeededOutcome());
+  const runner: ProcessRunner = {
+    run,
+    expectSuccess: () => {
+      throw new Error("The inspection probe runner must never call expectSuccess.");
+    },
+    scope: () => {
+      throw new Error("The inspection probe runner must never scope the shared runner.");
+    },
+  };
+  return {runner, run};
 }
 
 describe("createInspectionProbeRunner", () => {
   it("rejects a forged probe object", async () => {
-    const {runner} = createFakeCommandRunner();
+    const {runner} = createFakeProcessRunner();
     const forged = {id: "workspace.git.version"} as unknown as InspectionProbe;
 
     await expect(createInspectionProbeRunner(runner).run(forged)).rejects.toThrow(/unregistered inspection probe/iu);
   });
 
   it("rejects a plain object with a matching id but no registration", async () => {
-    const {runner} = createFakeCommandRunner();
+    const {runner} = createFakeProcessRunner();
     const real = probes.workspace.gitVersion();
     const plainClone = {id: real.id} as unknown as InspectionProbe;
 
@@ -42,7 +44,7 @@ describe("createInspectionProbeRunner", () => {
   });
 
   it("rejects a shallow-cloned probe object even though its own properties match", async () => {
-    const {runner} = createFakeCommandRunner();
+    const {runner} = createFakeProcessRunner();
     const real = probes.workspace.gitVersion();
     const cloned = {...real} as unknown as InspectionProbe;
 
@@ -50,7 +52,7 @@ describe("createInspectionProbeRunner", () => {
   });
 
   it("maps the git version probe to one exact command", async () => {
-    const {runner, run} = createFakeCommandRunner();
+    const {runner, run} = createFakeProcessRunner();
 
     await createInspectionProbeRunner(runner).run(probes.workspace.gitVersion());
 
@@ -58,7 +60,7 @@ describe("createInspectionProbeRunner", () => {
   });
 
   it("always forces captured output even if a caller casts extra options through the public type", async () => {
-    const {runner, run} = createFakeCommandRunner();
+    const {runner, run} = createFakeProcessRunner();
     const sneaky = {output: "inherit"} as unknown as Readonly<InspectionProbeRunOptions>;
 
     await createInspectionProbeRunner(runner).run(probes.workspace.gitVersion(), sneaky);
@@ -67,7 +69,7 @@ describe("createInspectionProbeRunner", () => {
   });
 
   it("applies the 15 second default timeout when no override is supplied", async () => {
-    const {runner, run} = createFakeCommandRunner();
+    const {runner, run} = createFakeProcessRunner();
 
     await createInspectionProbeRunner(runner).run(probes.workspace.gitVersion());
 
@@ -75,7 +77,7 @@ describe("createInspectionProbeRunner", () => {
   });
 
   it("applies a caller-supplied shorter timeout override", async () => {
-    const {runner, run} = createFakeCommandRunner();
+    const {runner, run} = createFakeProcessRunner();
 
     await createInspectionProbeRunner(runner).run(probes.workspace.gitVersion(), {timeoutMs: 500});
 
@@ -83,7 +85,7 @@ describe("createInspectionProbeRunner", () => {
   });
 
   it("applies a caller-supplied longer timeout override", async () => {
-    const {runner, run} = createFakeCommandRunner();
+    const {runner, run} = createFakeProcessRunner();
 
     await createInspectionProbeRunner(runner).run(probes.workspace.gitVersion(), {timeoutMs: 60_000});
 
@@ -93,14 +95,14 @@ describe("createInspectionProbeRunner", () => {
   it.each([0, -1, Number.NaN, Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY])(
     "rejects an invalid timeout override of %s",
     async (timeoutMs) => {
-      const {runner} = createFakeCommandRunner();
+      const {runner} = createFakeProcessRunner();
 
       await expect(createInspectionProbeRunner(runner).run(probes.workspace.gitVersion(), {timeoutMs})).rejects.toThrow(/timeout/iu);
     },
   );
 
   it("preserves cwd, env, and signal unchanged", async () => {
-    const {runner, run} = createFakeCommandRunner();
+    const {runner, run} = createFakeProcessRunner();
     const controller = new AbortController();
 
     await createInspectionProbeRunner(runner).run(probes.workspace.gitVersion(), {
@@ -116,7 +118,7 @@ describe("createInspectionProbeRunner", () => {
   });
 
   it("omits cwd, env, and signal from the forwarded options when not supplied", async () => {
-    const {runner, run} = createFakeCommandRunner();
+    const {runner, run} = createFakeProcessRunner();
 
     await createInspectionProbeRunner(runner).run(probes.workspace.gitVersion());
 
@@ -126,20 +128,21 @@ describe("createInspectionProbeRunner", () => {
     expect(forwardedOptions).not.toHaveProperty("signal");
   });
 
-  it("preserves the exact CommandResult returned by the shared runner", async () => {
-    const result = commandResult({code: 2, stdout: "out", stderr: "err", durationMs: 42, timedOut: true, signal: "SIGTERM"});
-    const run = vi.fn<CommandRunner["run"]>(async () => result);
+  it("preserves the exact ProcessOutcome returned by the shared runner", async () => {
+    const outcomeFixture: ProcessOutcome = {kind: "timed-out", stdout: "out", stderr: "err", durationMs: 42, signal: "SIGTERM"};
+    const {runner, run} = createFakeProcessRunner();
+    run.mockResolvedValueOnce(outcomeFixture);
 
-    const outcome = await createInspectionProbeRunner({run}).run(probes.workspace.gitVersion());
+    const outcome = await createInspectionProbeRunner(runner).run(probes.workspace.gitVersion());
 
-    expect(outcome).toBe(result);
+    expect(outcome).toBe(outcomeFixture);
   });
 });
 
 interface FixedProbeCase {
   readonly name: string;
   readonly factory: () => InspectionProbe;
-  readonly command: CommandSpec;
+  readonly command: ProcessRequest;
 }
 
 const fixedProbeCases: readonly FixedProbeCase[] = [
@@ -190,7 +193,7 @@ const fixedProbeCases: readonly FixedProbeCase[] = [
 
 describe.each(fixedProbeCases)("probes.$name", ({factory, command}) => {
   it("maps to its exact allowlisted command", async () => {
-    const {runner, run} = createFakeCommandRunner();
+    const {runner, run} = createFakeProcessRunner();
 
     await createInspectionProbeRunner(runner).run(factory());
 
@@ -204,7 +207,7 @@ describe.each(fixedProbeCases)("probes.$name", ({factory, command}) => {
 
 describe("probes.dotnet.certificate", () => {
   it("defaults to the presence-check command when no mode is supplied", async () => {
-    const {runner, run} = createFakeCommandRunner();
+    const {runner, run} = createFakeProcessRunner();
 
     await createInspectionProbeRunner(runner).run(probes.dotnet.certificate());
 
@@ -215,7 +218,7 @@ describe("probes.dotnet.certificate", () => {
   });
 
   it("maps the explicit presence mode to the same plain check command", async () => {
-    const {runner, run} = createFakeCommandRunner();
+    const {runner, run} = createFakeProcessRunner();
 
     await createInspectionProbeRunner(runner).run(probes.dotnet.certificate("presence"));
 
@@ -226,7 +229,7 @@ describe("probes.dotnet.certificate", () => {
   });
 
   it("maps the trust mode to the check-and-trust command", async () => {
-    const {runner, run} = createFakeCommandRunner();
+    const {runner, run} = createFakeProcessRunner();
 
     await createInspectionProbeRunner(runner).run(probes.dotnet.certificate("trust"));
 
@@ -243,7 +246,7 @@ describe("probes.dotnet.certificate", () => {
 
 describe("probes.workspace.executableResolution", () => {
   it("maps to the exact win32 resolver command", async () => {
-    const {runner, run} = createFakeCommandRunner();
+    const {runner, run} = createFakeProcessRunner();
 
     await createInspectionProbeRunner(runner).run(probes.workspace.executableResolution("git.exe", "win32"));
 
@@ -251,7 +254,7 @@ describe("probes.workspace.executableResolution", () => {
   });
 
   it("maps to the exact darwin resolver command", async () => {
-    const {runner, run} = createFakeCommandRunner();
+    const {runner, run} = createFakeProcessRunner();
 
     await createInspectionProbeRunner(runner).run(probes.workspace.executableResolution("git", "darwin"));
 
@@ -259,20 +262,19 @@ describe("probes.workspace.executableResolution", () => {
   });
 
   it("maps to the exact linux resolver command", async () => {
-    const {runner, run} = createFakeCommandRunner();
+    const {runner, run} = createFakeProcessRunner();
 
     await createInspectionProbeRunner(runner).run(probes.workspace.executableResolution("git", "linux"));
 
     expect(run).toHaveBeenCalledWith({command: "which", args: ["git"]}, expect.objectContaining({output: "capture"}));
   });
 
-  it("defaults to the current process platform when no override is supplied", async () => {
-    const {runner, run} = createFakeCommandRunner();
+  it("requires an explicit platform instead of reading the ambient process platform", async () => {
+    const {runner, run} = createFakeProcessRunner();
 
-    await createInspectionProbeRunner(runner).run(probes.workspace.executableResolution("git.exe"));
+    await createInspectionProbeRunner(runner).run(probes.workspace.executableResolution("git.exe", "win32"));
 
-    const expected: CommandSpec =
-      process.platform === "win32" ? {command: "where.exe", args: ["git.exe"]} : {command: "which", args: ["git.exe"]};
+    const expected: ProcessRequest = {command: "where.exe", args: ["git.exe"]};
     expect(run).toHaveBeenCalledWith(expected, expect.objectContaining({output: "capture"}));
   });
 
@@ -281,13 +283,13 @@ describe("probes.workspace.executableResolution", () => {
   });
 
   it.each(["", "git version", "git;rm -rf /", "../git", "git\u0007", "../../bin/git"])("rejects an invalid executable name %j", (name) => {
-    expect(() => probes.workspace.executableResolution(name)).toThrow();
+    expect(() => probes.workspace.executableResolution(name, "linux")).toThrow();
   });
 });
 
 describe("probes.dotnet.userSecrets", () => {
   it("maps to the exact user-secrets command for the supplied project path", async () => {
-    const {runner, run} = createFakeCommandRunner();
+    const {runner, run} = createFakeProcessRunner();
 
     await createInspectionProbeRunner(runner).run(probes.dotnet.userSecrets("tooling/AppHost/AppHost.csproj"));
 
@@ -344,7 +346,7 @@ const pythonProbeCases: readonly PythonProbeCase[] = [
 
 describe.each(pythonProbeCases)("probes.$name", ({factory, args}) => {
   it("maps to the exact command for the supplied interpreter path", async () => {
-    const {runner, run} = createFakeCommandRunner();
+    const {runner, run} = createFakeProcessRunner();
 
     await createInspectionProbeRunner(runner).run(factory(".venv/bin/python"));
 
@@ -366,7 +368,7 @@ describe.each(pythonProbeCases)("probes.$name", ({factory, args}) => {
   );
 
   it("prefixes a valid numeric selector before the argument tail for the py launcher", async () => {
-    const {runner, run} = createFakeCommandRunner();
+    const {runner, run} = createFakeProcessRunner();
 
     await createInspectionProbeRunner(runner).run(factory("py", "-3.12"));
 
@@ -374,7 +376,7 @@ describe.each(pythonProbeCases)("probes.$name", ({factory, args}) => {
   });
 
   it("accepts a selector for the case-insensitive py.exe launcher basename", async () => {
-    const {runner, run} = createFakeCommandRunner();
+    const {runner, run} = createFakeProcessRunner();
 
     await createInspectionProbeRunner(runner).run(factory("C:\\Windows\\py.EXE", "-3"));
 
@@ -393,8 +395,8 @@ describe.each(pythonProbeCases)("probes.$name", ({factory, args}) => {
 interface RuntimeProbeCase {
   readonly name: string;
   readonly factory: (runtime: string) => InspectionProbe;
-  readonly rancherCommand: CommandSpec;
-  readonly podmanCommand: CommandSpec;
+  readonly rancherCommand: ProcessRequest;
+  readonly podmanCommand: ProcessRequest;
 }
 
 const runtimeProbeCases: readonly RuntimeProbeCase[] = [
@@ -432,7 +434,7 @@ const runtimeProbeCases: readonly RuntimeProbeCase[] = [
 
 describe.each(runtimeProbeCases)("probes.$name", ({factory, rancherCommand, podmanCommand}) => {
   it("maps the rancher runtime to its Docker-compatible CLI command", async () => {
-    const {runner, run} = createFakeCommandRunner();
+    const {runner, run} = createFakeProcessRunner();
 
     await createInspectionProbeRunner(runner).run(factory("rancher"));
 
@@ -440,7 +442,7 @@ describe.each(runtimeProbeCases)("probes.$name", ({factory, rancherCommand, podm
   });
 
   it("maps the podman runtime to its CLI command", async () => {
-    const {runner, run} = createFakeCommandRunner();
+    const {runner, run} = createFakeProcessRunner();
 
     await createInspectionProbeRunner(runner).run(factory("podman"));
 
@@ -459,7 +461,7 @@ describe("probes.infrastructure.portOwners", () => {
   const LINUX_PORT_OWNER_SCRIPT = 'for port in "$@"; do ss -ltnp "sport = :$port"; done';
 
   it("maps to the exact win32 port-owner probe command", async () => {
-    const {runner, run} = createFakeCommandRunner();
+    const {runner, run} = createFakeProcessRunner();
 
     await createInspectionProbeRunner(runner).run(probes.infrastructure.portOwners([3000, 5432], "win32"));
 
@@ -470,7 +472,7 @@ describe("probes.infrastructure.portOwners", () => {
   });
 
   it("maps to the exact darwin port-owner probe command", async () => {
-    const {runner, run} = createFakeCommandRunner();
+    const {runner, run} = createFakeProcessRunner();
 
     await createInspectionProbeRunner(runner).run(probes.infrastructure.portOwners([3000, 5432], "darwin"));
 
@@ -481,7 +483,7 @@ describe("probes.infrastructure.portOwners", () => {
   });
 
   it("maps to the exact linux port-owner probe command", async () => {
-    const {runner, run} = createFakeCommandRunner();
+    const {runner, run} = createFakeProcessRunner();
 
     await createInspectionProbeRunner(runner).run(probes.infrastructure.portOwners([3000, 5432], "linux"));
 
@@ -491,13 +493,13 @@ describe("probes.infrastructure.portOwners", () => {
     );
   });
 
-  it("defaults to the current process platform when no override is supplied", async () => {
-    const {runner, run} = createFakeCommandRunner();
+  it("requires an explicit platform instead of reading the ambient process platform", async () => {
+    const {runner, run} = createFakeProcessRunner();
 
-    await createInspectionProbeRunner(runner).run(probes.infrastructure.portOwners([3000, 5432]));
+    await createInspectionProbeRunner(runner).run(probes.infrastructure.portOwners([3000, 5432], "win32"));
 
     const [actualCommand] = run.mock.calls[0] ?? [];
-    expect(actualCommand?.command).toBe(process.platform === "win32" ? "powershell" : "sh");
+    expect(actualCommand?.command).toBe("powershell");
     expect(actualCommand?.args.join(" ")).toContain("3000");
     expect(actualCommand?.args.join(" ")).toContain("5432");
   });
@@ -507,10 +509,10 @@ describe("probes.infrastructure.portOwners", () => {
   });
 
   it("rejects an empty port list", () => {
-    expect(() => probes.infrastructure.portOwners([])).toThrow();
+    expect(() => probes.infrastructure.portOwners([], "linux")).toThrow();
   });
 
   it.each([0, -1, 65_536, 1.5, Number.NaN])("rejects an invalid TCP port %s", (port) => {
-    expect(() => probes.infrastructure.portOwners([port])).toThrow();
+    expect(() => probes.infrastructure.portOwners([port], "linux")).toThrow();
   });
 });

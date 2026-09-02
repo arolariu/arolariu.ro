@@ -40,7 +40,9 @@ import {createTerminalPromptProvider} from "./prompts.ts";
 import {ExecaProcessRunner} from "./runner.execa.ts";
 import type {ProcessRunner} from "./runner.ts";
 import {
+  asReadOnlyFileSystem,
   CommandCancellation,
+  createRepositoryInspectionRuntime,
   FILE_SYSTEM_MAX_BYTES_EXCEEDED_CODE,
   FileSystemError,
   HttpError,
@@ -55,13 +57,14 @@ import {
   type HttpClient,
   type HttpRequest,
   type HttpResponse,
+  type RepositoryInspectionRequest,
   type RepositoryInspectionRuntime,
   type RuntimeEnvironment,
   type TaskScheduler,
   type TemporaryDirectory,
 } from "./runtime.ts";
 import {DefaultTaskScheduler} from "./runtime.ts";
-import type {RepositoryInspectionSession} from "../inspection/repository.ts";
+import {createRepositoryInspectionSession, type RepositoryInspectionSession} from "../inspection/repository.ts";
 
 /** Maximum number of response bytes buffered when a request omits `maximumResponseBytes`. */
 const DEFAULT_MAX_RESPONSE_BYTES = 10 * 1024 * 1024;
@@ -680,25 +683,78 @@ export const nodeLoggerRuntimeHost: LoggerRuntimeHost = {
   },
 };
 
-/** Message thrown by the transitional placeholder installed until inspection is wired in. */
-const UNWIRED_INSPECTION_MESSAGE = "The repository inspection capability is not wired into this command runtime.";
-
 /**
- * Builds the transitional inspection capability used until the inspection migration lands.
+ * Builds the shared, memoized repository inspection capability every command scope exposes.
  *
  * @remarks
- * Creating a runtime scope must never fail because of inspection, so the placeholder throws only
- * when a command actually requests a session. It is replaced by the real Node inspection factory
- * once repository inspection is migrated.
+ * The registry is lazy: no session — and therefore no probe, worker, or filesystem read — is
+ * created until a command actually requests one, and every later request for the same repository
+ * root, profile, and requested engine returns the exact same session instance. A request that maps
+ * to an already-used key but is not structurally equivalent to the request that created that
+ * session fails explicitly instead of silently returning a session built for different inputs.
+ * Child scopes reuse their parent's registry, so one command tree shares one inspection session.
  *
- * @returns An inspection runtime whose session accessor always fails fast.
+ * @param capabilities - The scope's runner, filesystem, clock, task scheduler, environment, and
+ * cancellation signal, injected verbatim into every created session.
+ * @returns The memoized repository inspection runtime.
  */
-function createUnwiredInspectionRuntime(): RepositoryInspectionRuntime {
-  return {
-    getRepositorySession: (): RepositoryInspectionSession => {
-      throw new Error(UNWIRED_INSPECTION_MESSAGE);
+function createNodeInspectionRuntime(
+  capabilities: Readonly<{
+    runner: ProcessRunner;
+    files: FileSystem;
+    clock: Clock;
+    tasks: TaskScheduler;
+    environment: RuntimeEnvironment;
+    signal: AbortSignal;
+  }>,
+): RepositoryInspectionRuntime {
+  const {runner, files, clock, tasks, environment, signal} = capabilities;
+  return createRepositoryInspectionRuntime((request: Readonly<RepositoryInspectionRequest>): RepositoryInspectionSession =>
+    createRepositoryInspectionSession({
+      ...request,
+      runner,
+      files: asReadOnlyFileSystem(files),
+      temporaryDirectories: {
+        createTemporaryDirectory: (prefix: string): Promise<TemporaryDirectory> => files.createTemporaryDirectory(prefix),
+      },
+      clock,
+      tasks,
+      environment,
+      signal,
+    }),
+  );
+}
+
+/**
+ * Assembles one repository inspection session directly from the Node adapters.
+ *
+ * @remarks
+ * Transitional: only the not-yet-migrated Doctor, Status, and Setup entrypoints use this, because
+ * they still own their inspection session instead of reading it from an injected
+ * {@link CommandRuntime}. It is removed once those commands migrate. Every capability is snapshotted
+ * per call, so two calls never share an environment snapshot or a process runner.
+ *
+ * @param request - Inspection profile, canonical repository paths, and optional container engine.
+ * @param signal - Optional cancellation signal; defaults to a signal that never aborts.
+ * @returns A fresh repository inspection session bound to the Node adapters.
+ */
+export function createNodeRepositoryInspectionSession(
+  request: Readonly<RepositoryInspectionRequest>,
+  signal: AbortSignal = new AbortController().signal,
+): RepositoryInspectionSession {
+  const environment = snapshotNodeEnvironment();
+  return createRepositoryInspectionSession({
+    ...request,
+    runner: createNodeProcessRunner(environment),
+    files: asReadOnlyFileSystem(nodeFileSystem),
+    temporaryDirectories: {
+      createTemporaryDirectory: (prefix: string): Promise<TemporaryDirectory> => nodeFileSystem.createTemporaryDirectory(prefix),
     },
-  };
+    clock: nodeClock,
+    tasks: nodeTaskScheduler,
+    environment,
+    signal,
+  });
 }
 
 /** Describes one Node-backed runtime scope the command host asks this adapter to assemble. */
@@ -782,15 +838,27 @@ export function createNodeRuntimeScope(options: Readonly<NodeRuntimeScopeOptions
         })
       : parent.runtime.logger.fork(options.commandName, {mode: options.presentation, verbose: options.verbose});
 
+  const runner = createNodeProcessRunner(environment);
+
   return Promise.resolve({
     logger,
     prompts: parent?.runtime.prompts ?? createTerminalPromptProvider(),
-    runner: createNodeProcessRunner(environment),
+    runner,
     http: nodeHttpClient,
     files: nodeFileSystem,
     clock: nodeClock,
     tasks: nodeTaskScheduler,
-    inspection: options.inspection ?? parent?.runtime.inspection ?? createUnwiredInspectionRuntime(),
+    inspection:
+      options.inspection
+      ?? parent?.runtime.inspection
+      ?? createNodeInspectionRuntime({
+        runner,
+        files: nodeFileSystem,
+        clock: nodeClock,
+        tasks: nodeTaskScheduler,
+        environment,
+        signal: controller.signal,
+      }),
     environment,
     signal: controller.signal,
     cleanup,
