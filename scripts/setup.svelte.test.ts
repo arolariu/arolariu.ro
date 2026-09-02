@@ -2,21 +2,38 @@
 /**
  * @fileoverview Contract tests for Svelte workspace setup.
  * @module scripts.setup.svelte.test
+ *
+ * @remarks
+ * Every test drives the real phase against an injected {@link SetupPhaseRuntime}: a recording
+ * process runner replaying typed {@link ProcessOutcome} fixtures, a deterministic clock, and an
+ * immutable environment snapshot. No test in this file reads the live checkout, spawns a process,
+ * mocks a repository module, or observes ambient Node state.
  */
 
 import {resolve} from "node:path";
 import {afterEach, describe, expect, it, vi} from "vitest";
 
+import type {CommandContext} from "./common/commander.ts";
 import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "./common/logger.ts";
-import type {CommandResult, CommandRunner, CommandSpec} from "./common/process.ts";
 import {createRepositoryPaths} from "./common/repository-paths.ts";
 import type {PackageRequirement, RepositoryRequirements} from "./common/requirements.ts";
+import {AbstractProcessRunner, type ProcessOutcome, type ProcessRequest, type ProcessRunOptions} from "./common/runner.ts";
+import {createMemoryFileSystem, createTestRuntimeFactory} from "./common/runtime.testing.ts";
+import {CommandCancellation, type Clock, type RuntimeEnvironment} from "./common/runtime.ts";
 import type {SvelteFacts, SvelteProjectId} from "./inspection/frontend.ts";
 import type {InstalledPackageFact, PackageInventoryFacts} from "./inspection/packages.ts";
 import type {RepositoryInspectionSession} from "./inspection/repository.ts";
 import type {InspectionOutcome} from "./inspection/types.ts";
 import {createSvelteSetupPhase, svelteSetupPhase} from "./setup.svelte.ts";
-import type {SetupAction, SetupActionDisposition, SetupActionExecutor, SetupContext, SetupOptions} from "./setup.types.ts";
+import type {
+  SetupAction,
+  SetupActionDisposition,
+  SetupActionExecutor,
+  SetupContext,
+  SetupOptions,
+  SetupPhaseResult,
+  SetupPhaseRuntime,
+} from "./setup.types.ts";
 
 const paths = createRepositoryPaths(resolve("C:\\fixture\\arolariu.ro"));
 const requiredPackages = [
@@ -38,27 +55,33 @@ const packageVersions = new Map<string, string>([
   ["typescript", "6.0.3"],
 ]);
 const nodeEngines: Readonly<Record<SvelteProjectId, string>> = {cv: ">=22", status: ">=24"};
-const prepareCommand: CommandSpec = {
+/**
+ * Pre-migration ceiling for the long-running two-workspace `svelte-kit sync` mutation.
+ *
+ * @remarks
+ * The invocation-scoped runner defaults to 120s, which would truncate a real preparation run. The
+ * mutation that previously inherited the legacy `tee` mutation default must therefore request this
+ * timeout explicitly now that the phase no longer flows through the deprecated setup runner bridge.
+ */
+const LEGACY_MUTATION_TIMEOUT_MS = 1_200_000;
+const prepareCommand: ProcessRequest = {
   command: "npm",
   args: ["run", "prepare", "--workspace=sites/cv.arolariu.ro", "--workspace=sites/status.arolariu.ro"],
 };
-const packageInventoryCommand: CommandSpec = {
+const packageInventoryCommand: ProcessRequest = {
   command: "npm",
   args: ["ls", "--json", "--depth=0"],
 };
 
-function commandResult(patch: Partial<CommandResult> = {}): CommandResult {
-  return {
-    code: 0,
-    stdout: "",
-    stderr: "",
-    durationMs: 1,
-    timedOut: false,
-    ...patch,
-  };
+function succeeded(patch: Readonly<{stdout?: string; stderr?: string}> = {}): ProcessOutcome {
+  return {kind: "succeeded", exitCode: 0, stdout: patch.stdout ?? "", stderr: patch.stderr ?? "", durationMs: 1};
 }
 
-function commandKey(command: Readonly<CommandSpec>): string {
+function exited(exitCode: number, patch: Readonly<{stdout?: string; stderr?: string}> = {}): ProcessOutcome {
+  return {kind: "exited", exitCode, stdout: patch.stdout ?? "", stderr: patch.stderr ?? "", durationMs: 1};
+}
+
+function commandKey(command: Readonly<ProcessRequest>): string {
   return [command.command, ...command.args].join("\u0000");
 }
 
@@ -195,22 +218,48 @@ function createInspectionHarness(
   };
 }
 
-function createRunner(responses: Readonly<Record<string, CommandResult | readonly CommandResult[]>> = {}): Readonly<{
-  runner: CommandRunner;
-  run: ReturnType<typeof vi.fn<CommandRunner["run"]>>;
-}> {
-  const offsets = new Map<string, number>();
-  const run = vi.fn<CommandRunner["run"]>(async (command) => {
-    const key = commandKey(command);
-    const configured = responses[key];
-    if (Array.isArray(configured)) {
-      const offset = offsets.get(key) ?? 0;
-      offsets.set(key, offset + 1);
-      return configured[offset] ?? configured.at(-1) ?? commandResult();
+/** One recorded child invocation. */
+type RecordedCall = Readonly<{request: ProcessRequest; options: ProcessRunOptions}>;
+
+/** A scripted outcome, or a value the runner rejects with instead of completing. */
+type ScriptedOutcome = ProcessOutcome | Error;
+
+/** Records every invocation while replaying request-keyed typed outcomes. */
+class FakeProcessRunner extends AbstractProcessRunner {
+  readonly #responses: Readonly<Record<string, ScriptedOutcome | readonly ScriptedOutcome[]>>;
+  readonly #offsets = new Map<string, number>();
+  readonly #calls: RecordedCall[] = [];
+
+  public constructor(responses: Readonly<Record<string, ScriptedOutcome | readonly ScriptedOutcome[]>> = {}) {
+    super();
+    this.#responses = responses;
+  }
+
+  /** Every recorded invocation, in call order. */
+  public get calls(): readonly RecordedCall[] {
+    return this.#calls;
+  }
+
+  /** {@inheritDoc AbstractProcessRunner.execute} */
+  protected override execute(request: Readonly<ProcessRequest>, options: Readonly<ProcessRunOptions>): Promise<ProcessOutcome> {
+    this.#calls.push({request, options});
+    const key = commandKey(request);
+    const configured = this.#responses[key];
+    if (configured === undefined) {
+      return Promise.resolve(succeeded());
     }
-    return (configured as CommandResult | undefined) ?? commandResult();
-  });
-  return {runner: {run}, run};
+    if (!Array.isArray(configured)) {
+      return settle(configured as ScriptedOutcome);
+    }
+    const sequence = configured as readonly ScriptedOutcome[];
+    const offset = this.#offsets.get(key) ?? 0;
+    this.#offsets.set(key, offset + 1);
+    return settle(sequence[offset] ?? sequence.at(-1) ?? succeeded());
+  }
+}
+
+function settle(outcome: ScriptedOutcome): Promise<ProcessOutcome> {
+  return outcome instanceof Error ? Promise.reject(outcome) : Promise.resolve(outcome);
 }
 
 function createActions(dispositions: Readonly<Record<string, SetupActionDisposition>> = {}): Readonly<{
@@ -234,9 +283,54 @@ function createActions(dispositions: Readonly<Record<string, SetupActionDisposit
   return {actions, actionIds, actionRecords};
 }
 
-function createHarness(
+/**
+ * The exact context view the migrated Svelte phase reads.
+ *
+ * @remarks
+ * The deprecated {@link SetupContext.runner} and {@link SetupContext.now} members are deliberately
+ * absent: a migrated phase must read its capabilities from {@link SetupContext.runtime} only, so
+ * any relapse becomes a type error instead of a silently passing test.
+ */
+type MigratedSetupContext = Omit<SetupContext, "runner" | "now"> & Readonly<{runtime: SetupPhaseRuntime}>;
+
+function environmentSnapshot(): RuntimeEnvironment {
+  return {
+    variables: Object.freeze({}),
+    cwd: paths.root,
+    executablePath: "C:\\Program Files\\nodejs\\node.exe",
+    platform: "win32",
+    architecture: "x64",
+    stdinIsTTY: false,
+    stdoutIsTTY: false,
+    isCI: true,
+  };
+}
+
+/** Everything one Svelte phase test needs to drive and observe the migrated phase. */
+interface SvelteHarness {
+  /** The phase under test. */
+  readonly phase: ReturnType<typeof createSvelteSetupPhase>;
+  /** The migrated setup context handed to the phase. */
+  readonly context: MigratedSetupContext;
+  /** Recording process runner observed by the phase. */
+  readonly runner: FakeProcessRunner;
+  /** Action identifiers in evaluation order. */
+  readonly actionIds: string[];
+  /** Complete action records in evaluation order. */
+  readonly actionRecords: SetupAction[];
+  /** Rendered logger output. */
+  readonly sink: InMemoryLoggerSink;
+  /** Inspection session probe. */
+  readonly inspect: ReturnType<typeof vi.fn>;
+  /** Inspection invalidation probe. */
+  readonly invalidate: ReturnType<typeof vi.fn>;
+  /** Ordered inspection events. */
+  readonly events: string[];
+}
+
+async function createHarness(
   input: Readonly<{
-    responses?: Readonly<Record<string, CommandResult | readonly CommandResult[]>>;
+    responses?: Readonly<Record<string, ScriptedOutcome | readonly ScriptedOutcome[]>>;
     dispositions?: Readonly<Record<string, SetupActionDisposition>>;
     setupOptions?: SetupOptions;
     repositoryRequirements?: RepositoryRequirements;
@@ -245,32 +339,53 @@ function createHarness(
     status?: readonly InspectionOutcome<SvelteFacts>[];
     actionsOverride?: SetupActionExecutor;
   }> = {},
-): Readonly<{
-  phase: ReturnType<typeof createSvelteSetupPhase>;
-  context: SetupContext;
-  run: ReturnType<typeof vi.fn<CommandRunner["run"]>>;
-  actionIds: string[];
-  actionRecords: SetupAction[];
-  sink: InMemoryLoggerSink;
-  inspect: ReturnType<typeof vi.fn>;
-  invalidate: ReturnType<typeof vi.fn>;
-  events: string[];
-}> {
-  const {runner, run} = createRunner(input.responses);
+): Promise<SvelteHarness> {
+  const runner = new FakeProcessRunner(input.responses);
   const createdActions = createActions(input.dispositions);
   const sink = new InMemoryLoggerSink();
+  const logger = new MonorepositoryConsoleLogger("setup::svelte", {color: false, sink});
   const inspection = createInspectionHarness({
     ...(input.packages === undefined ? {} : {packages: input.packages}),
     ...(input.cv === undefined ? {} : {cv: input.cv}),
     ...(input.status === undefined ? {} : {status: input.status}),
   });
-  let time = 0;
-  const context: SetupContext = {
+
+  let elapsed = 0;
+  const clock: Clock = {
+    monotonicNow: (): number => elapsed++,
+    isoTimestamp: (): string => "2026-09-01T00:00:00.000Z",
+    delay: (): Promise<void> => Promise.resolve(),
+  };
+
+  const factory = createTestRuntimeFactory({
+    files: createMemoryFileSystem({}),
+    runner,
+    clock,
+    logger,
+    environment: environmentSnapshot(),
+  });
+  const commandRuntime = await factory.createRoot({presentation: "silent", registerProcessSignals: false});
+  const command: CommandContext = {runtime: commandRuntime, presentation: "silent"};
+
+  const runtime: SetupPhaseRuntime = {
+    command,
+    runner: commandRuntime.runner,
+    files: commandRuntime.files,
+    http: commandRuntime.http,
+    clock: commandRuntime.clock,
+    tasks: commandRuntime.tasks,
+    environment: commandRuntime.environment,
+    invokeGenerate: vi.fn<SetupPhaseRuntime["invokeGenerate"]>(() =>
+      Promise.reject(new Error("The Svelte setup phase must never invoke generation.")),
+    ),
+  };
+
+  const context: MigratedSetupContext = {
     options: input.setupOptions ?? options(),
     paths,
     requirements: input.repositoryRequirements ?? requirements(),
     inspection: inspection.session,
-    runner,
+    runtime,
     prompts: {
       confirm: async () => true,
       select: async <TValue extends string>(
@@ -287,13 +402,13 @@ function createHarness(
       secret: async () => "",
     },
     actions: input.actionsOverride ?? createdActions.actions,
-    logger: new MonorepositoryConsoleLogger("setup::svelte", {color: false, sink}),
-    now: () => time++,
+    logger,
   };
+
   return {
     phase: createSvelteSetupPhase(),
     context,
-    run,
+    runner,
     actionIds: createdActions.actionIds,
     actionRecords: createdActions.actionRecords,
     sink,
@@ -301,6 +416,21 @@ function createHarness(
     invalidate: inspection.invalidate,
     events: inspection.events,
   };
+}
+
+/**
+ * Runs the phase against the migrated context view, optionally replacing one dependency.
+ *
+ * @param harness - Assembled test harness.
+ * @param patch - Context members replaced for this run.
+ * @returns The completed phase result.
+ */
+function runPhase(harness: SvelteHarness, patch: Partial<MigratedSetupContext> = {}): Promise<SetupPhaseResult> {
+  return harness.phase.run({...harness.context, ...patch} as SetupContext);
+}
+
+function callFor(harness: SvelteHarness, command: Readonly<ProcessRequest>): RecordedCall | undefined {
+  return harness.runner.calls.find(({request}) => commandKey(request) === commandKey(command));
 }
 
 afterEach(() => {
@@ -331,13 +461,13 @@ describe("Svelte setup public contract", () => {
 
 describe("shared fact consumption", () => {
   it("consumes the shared package inventory and both Svelte facts exactly once without running a command", async () => {
-    const harness = createHarness();
+    const harness = await createHarness();
 
-    const result = await harness.phase.run(harness.context);
+    const result = await runPhase(harness);
 
     expect(result.status).toBe("succeeded");
     expect(harness.events).toEqual(["inspect:packages", "inspect:svelte.cv", "inspect:svelte.status"]);
-    expect(harness.run).not.toHaveBeenCalled();
+    expect(harness.runner.calls).toEqual([]);
     expect(harness.invalidate).not.toHaveBeenCalled();
   });
 
@@ -345,14 +475,14 @@ describe("shared fact consumption", () => {
     ["unavailable", unavailable<PackageInventoryFacts>()],
     ["invalid", invalid<PackageInventoryFacts>()],
   ])("fails when the shared package inventory is %s", async (_name, outcome) => {
-    const harness = createHarness({packages: [outcome]});
+    const harness = await createHarness({packages: [outcome]});
 
-    const result = await harness.phase.run(harness.context);
+    const result = await runPhase(harness);
 
     expect(result.status).toBe("failed");
     expect(result.evidence.join("\n")).toMatch(/installed package metadata|repository root/i);
     expect(harness.actionIds).toEqual([]);
-    expect(harness.run).not.toHaveBeenCalled();
+    expect(harness.runner.calls).toEqual([]);
   });
 
   it.each([
@@ -365,9 +495,9 @@ describe("shared fact consumption", () => {
       kind === "unavailable"
         ? unavailable<SvelteFacts>("The website environment file could not be read.")
         : invalid<SvelteFacts>(["Installed package metadata is malformed for 'svelte'."]);
-    const harness = createHarness(project === "cv" ? {cv: [outcome]} : {status: [outcome]});
+    const harness = await createHarness(project === "cv" ? {cv: [outcome]} : {status: [outcome]});
 
-    const result = await harness.phase.run(harness.context);
+    const result = await runPhase(harness);
 
     expect(result.status).toBe("failed");
     expect(result.evidence.join("\n")).toContain(project);
@@ -380,9 +510,9 @@ describe("locked package policy", () => {
     ["missing", requirements({omitPackage: "vite"})],
     ["blank", requirements({blankPackage: "vite"})],
   ])("fails before inspecting any fact when the root requirement for a package is %s", async (_name, repositoryRequirements) => {
-    const harness = createHarness({repositoryRequirements});
+    const harness = await createHarness({repositoryRequirements});
 
-    const result = await harness.phase.run(harness.context);
+    const result = await runPhase(harness);
 
     expect(result.status).toBe("failed");
     expect(result.evidence.join("\n")).toContain("vite");
@@ -390,9 +520,9 @@ describe("locked package policy", () => {
   });
 
   it("fails when an installed package version disagrees with its locked requirement", async () => {
-    const harness = createHarness({packages: [packagesAvailable(inventory({versions: new Map([["svelte", "5.0.0"]])}))]});
+    const harness = await createHarness({packages: [packagesAvailable(inventory({versions: new Map([["svelte", "5.0.0"]])}))]});
 
-    const result = await harness.phase.run(harness.context);
+    const result = await runPhase(harness);
 
     expect(result.status).toBe("failed");
     expect(result.evidence.join("\n")).toMatch(/svelte.*5\.0\.0|5\.0\.0.*svelte/i);
@@ -400,27 +530,27 @@ describe("locked package policy", () => {
   });
 
   it("fails when a required package is absent outside dry-run", async () => {
-    const harness = createHarness({
+    const harness = await createHarness({
       packages: [packagesAvailable(inventory({absent: ["vitest"]}))],
       cv: [svelteAvailable("cv", {packageIssues: ["vitest is not installed."]})],
       status: [svelteAvailable("status", {packageIssues: ["vitest is not installed."]})],
     });
 
-    const result = await harness.phase.run(harness.context);
+    const result = await runPhase(harness);
 
     expect(result.status).toBe("failed");
     expect(result.evidence.join("\n")).toContain("vitest");
   });
 
   it("defers absent required packages to the planned root-dependency action during dry-run", async () => {
-    const harness = createHarness({
+    const harness = await createHarness({
       packages: [packagesAvailable(emptyInventory)],
       cv: [svelteAvailable("cv", {packageIssues: requiredPackages.map((name) => `${name} is not installed.`)})],
       status: [svelteAvailable("status", {adapterIssues: ["svelte-adapter-azure-swa is not installed."]})],
       setupOptions: options({dryRun: true}),
     });
 
-    const result = await harness.phase.run(harness.context);
+    const result = await runPhase(harness);
 
     expect(result.status).toBe("skipped");
     expect(result.evidence.join("\n")).toMatch(/workspace\.root-dependencies/);
@@ -428,9 +558,9 @@ describe("locked package policy", () => {
   });
 
   it("fails when the shared inventory reports a malformed required package manifest", async () => {
-    const harness = createHarness({packages: [packagesAvailable(inventory({malformed: ["svelte"]}))]});
+    const harness = await createHarness({packages: [packagesAvailable(inventory({malformed: ["svelte"]}))]});
 
-    const result = await harness.phase.run(harness.context);
+    const result = await runPhase(harness);
 
     expect(result.status).toBe("failed");
     expect(result.evidence.join("\n")).toContain("svelte");
@@ -439,9 +569,9 @@ describe("locked package policy", () => {
 
 describe("project contract policy", () => {
   it("fails when the root Node minimum does not satisfy a validated project engine range", async () => {
-    const harness = createHarness({repositoryRequirements: requirements({node: {major: 22, minor: 0, patch: 0}})});
+    const harness = await createHarness({repositoryRequirements: requirements({node: {major: 22, minor: 0, patch: 0}})});
 
-    const result = await harness.phase.run(harness.context);
+    const result = await runPhase(harness);
 
     expect(result.status).toBe("failed");
     expect(result.evidence.join("\n")).toMatch(/status/);
@@ -449,13 +579,13 @@ describe("project contract policy", () => {
   });
 
   it("accepts a project engine range below the root Node minimum", async () => {
-    const harness = createHarness({cv: [svelteAvailable("cv", {nodeEngine: ">=22.8"})]});
+    const harness = await createHarness({cv: [svelteAvailable("cv", {nodeEngine: ">=22.8"})]});
 
-    await expect(harness.phase.run(harness.context)).resolves.toMatchObject({status: "succeeded"});
+    await expect(runPhase(harness)).resolves.toMatchObject({status: "succeeded"});
   });
 
   it("fails when a validated project engine range is absent", async () => {
-    const harness = createHarness({
+    const harness = await createHarness({
       cv: [
         svelteAvailable("cv", {
           nodeEngine: undefined,
@@ -464,7 +594,7 @@ describe("project contract policy", () => {
       ],
     });
 
-    const result = await harness.phase.run(harness.context);
+    const result = await runPhase(harness);
 
     expect(result.status).toBe("failed");
     expect(result.evidence.join("\n")).toContain("engines.node");
@@ -475,9 +605,9 @@ describe("project contract policy", () => {
     ["adapter", {adapterIssues: ["svelte.config does not configure a recognizable kit.adapter."]}],
     ["package", {packageIssues: ["package.json could not be read or parsed."]}],
   ])("fails on %s issues reported by shared facts", async (_name, patch) => {
-    const harness = createHarness({status: [svelteAvailable("status", patch)], setupOptions: options({dryRun: true})});
+    const harness = await createHarness({status: [svelteAvailable("status", patch)], setupOptions: options({dryRun: true})});
 
-    const result = await harness.phase.run(harness.context);
+    const result = await runPhase(harness);
 
     expect(result.status).toBe("failed");
     expect(harness.actionIds).toEqual([]);
@@ -486,40 +616,51 @@ describe("project contract policy", () => {
 
 describe("generated SvelteKit configuration", () => {
   it("runs no preparation action when both generated configs exist", async () => {
-    const harness = createHarness();
+    const harness = await createHarness();
 
-    const result = await harness.phase.run(harness.context);
+    const result = await runPhase(harness);
 
     expect(result.status).toBe("succeeded");
     expect(harness.actionIds).toEqual([]);
-    expect(harness.run).not.toHaveBeenCalled();
+    expect(harness.runner.calls).toEqual([]);
   });
 
   it.each([["cv"], ["status"]])("prepares both workspaces with one action when the %s config is absent", async (project) => {
-    const harness = createHarness(
+    const harness = await createHarness(
       project === "cv"
         ? {cv: [svelteAvailable("cv", {generatedConfigExists: false}), svelteAvailable("cv")]}
         : {status: [svelteAvailable("status", {generatedConfigExists: false}), svelteAvailable("status")]},
     );
 
-    const result = await harness.phase.run(harness.context);
+    const result = await runPhase(harness);
 
     expect(result.status).toBe("succeeded");
     expect(harness.actionRecords.map(({id, scope}) => ({id, scope}))).toEqual([{id: "svelte.prepare", scope: "repository"}]);
-    expect(harness.run).toHaveBeenCalledExactlyOnceWith(prepareCommand, {
+    expect(harness.runner.calls).toHaveLength(1);
+    expect(callFor(harness, prepareCommand)?.options).toMatchObject({
       cwd: paths.root,
       output: "tee",
       logger: harness.context.logger,
     });
   });
 
+  it("requests the legacy mutation ceiling for the generated-state preparation", async () => {
+    const harness = await createHarness({
+      cv: [svelteAvailable("cv", {generatedConfigExists: false}), svelteAvailable("cv")],
+    });
+
+    await expect(runPhase(harness)).resolves.toMatchObject({status: "succeeded"});
+
+    expect(callFor(harness, prepareCommand)?.options.timeoutMs).toBe(LEGACY_MUTATION_TIMEOUT_MS);
+  });
+
   it("invalidates both Svelte facts and re-inspects them immediately after an executed preparation", async () => {
-    const harness = createHarness({
+    const harness = await createHarness({
       cv: [svelteAvailable("cv", {generatedConfigExists: false}), svelteAvailable("cv")],
       status: [svelteAvailable("status", {generatedConfigExists: false}), svelteAvailable("status")],
     });
 
-    const result = await harness.phase.run(harness.context);
+    const result = await runPhase(harness);
 
     expect(result.status).toBe("succeeded");
     expect(harness.events).toEqual([
@@ -535,9 +676,9 @@ describe("generated SvelteKit configuration", () => {
 
   it.each([["cv"], ["status"]])("fails when the refreshed %s config remains absent after preparation", async (project) => {
     const absent = svelteAvailable(project as SvelteProjectId, {generatedConfigExists: false});
-    const harness = createHarness(project === "cv" ? {cv: [absent, absent]} : {status: [absent, absent]});
+    const harness = await createHarness(project === "cv" ? {cv: [absent, absent]} : {status: [absent, absent]});
 
-    const result = await harness.phase.run(harness.context);
+    const result = await runPhase(harness);
 
     expect(result.status).toBe("failed");
     expect(result.evidence.join("\n")).toMatch(/postcondition/i);
@@ -545,40 +686,40 @@ describe("generated SvelteKit configuration", () => {
   });
 
   it("fails when refreshed facts report a package, script, or adapter regression after preparation", async () => {
-    const harness = createHarness({
+    const harness = await createHarness({
       cv: [
         svelteAvailable("cv", {generatedConfigExists: false}),
         svelteAvailable("cv", {scriptIssues: ["package.json#scripts.build does not run vite build."]}),
       ],
     });
 
-    const result = await harness.phase.run(harness.context);
+    const result = await runPhase(harness);
 
     expect(result.status).toBe("failed");
     expect(result.evidence.join("\n")).toContain("vite build");
   });
 
   it("fails when a refreshed Svelte fact cannot be observed after preparation", async () => {
-    const harness = createHarness({
+    const harness = await createHarness({
       cv: [
         svelteAvailable("cv", {generatedConfigExists: false}),
         unavailable<SvelteFacts>("The website environment file could not be read."),
       ],
     });
 
-    const result = await harness.phase.run(harness.context);
+    const result = await runPhase(harness);
 
     expect(result.status).toBe("failed");
     expect(result.evidence.join("\n")).toContain("svelte.prepare");
   });
 
   it("invalidates both Svelte facts even when the attempted preparation command fails", async () => {
-    const harness = createHarness({
+    const harness = await createHarness({
       cv: [svelteAvailable("cv", {generatedConfigExists: false})],
-      responses: {[commandKey(prepareCommand)]: commandResult({code: 1, stderr: "sync failed"})},
+      responses: {[commandKey(prepareCommand)]: exited(1, {stderr: "sync failed"})},
     });
 
-    const result = await harness.phase.run(harness.context);
+    const result = await runPhase(harness);
 
     expect(result.status).toBe("failed");
     expect(result.evidence.join("\n")).toContain("sync failed");
@@ -586,12 +727,12 @@ describe("generated SvelteKit configuration", () => {
   });
 
   it("fails without invalidating when the required preparation is declined", async () => {
-    const harness = createHarness({
+    const harness = await createHarness({
       cv: [svelteAvailable("cv", {generatedConfigExists: false})],
       dispositions: {"svelte.prepare": "declined"},
     });
 
-    const result = await harness.phase.run(harness.context);
+    const result = await runPhase(harness);
 
     expect(result.status).toBe("failed");
     expect(result.evidence.join("\n")).toContain("svelte.prepare");
@@ -599,18 +740,18 @@ describe("generated SvelteKit configuration", () => {
   });
 
   it("plans the preparation without invalidating or fabricating facts during dry-run", async () => {
-    const harness = createHarness({
+    const harness = await createHarness({
       cv: [svelteAvailable("cv", {generatedConfigExists: false})],
       setupOptions: options({dryRun: true}),
       dispositions: {"svelte.prepare": "planned"},
     });
 
-    const result = await harness.phase.run(harness.context);
+    const result = await runPhase(harness);
 
     expect(result.status).toBe("skipped");
     expect(result.evidence.join("\n")).toContain("Planned action: svelte.prepare");
     expect(harness.invalidate).not.toHaveBeenCalled();
-    expect(harness.run).not.toHaveBeenCalled();
+    expect(harness.runner.calls).toEqual([]);
     expect(harness.events).toEqual(["inspect:packages", "inspect:svelte.cv", "inspect:svelte.status"]);
   });
 });
@@ -618,39 +759,59 @@ describe("generated SvelteKit configuration", () => {
 describe("interruption and command safety", () => {
   it("rethrows AbortError instead of converting interruption to a failure", async () => {
     const interruption = Object.assign(new Error("interrupted"), {name: "AbortError"});
-    const harness = createHarness({
+    const harness = await createHarness({
       cv: [svelteAvailable("cv", {generatedConfigExists: false})],
       actionsOverride: {run: async () => Promise.reject(interruption)},
     });
 
-    await expect(harness.phase.run(harness.context)).rejects.toBe(interruption);
+    await expect(runPhase(harness)).rejects.toBe(interruption);
     expect(harness.invalidate).not.toHaveBeenCalled();
   });
 
   it("invalidates both Svelte facts when an attempted preparation is interrupted", async () => {
     const interruption = Object.assign(new Error("interrupted"), {name: "AbortError"});
-    const harness = createHarness({cv: [svelteAvailable("cv", {generatedConfigExists: false})]});
-    harness.run.mockRejectedValueOnce(interruption);
+    const harness = await createHarness({
+      cv: [svelteAvailable("cv", {generatedConfigExists: false})],
+      responses: {[commandKey(prepareCommand)]: interruption},
+    });
 
-    await expect(harness.phase.run(harness.context)).rejects.toBe(interruption);
+    await expect(runPhase(harness)).rejects.toBe(interruption);
     expect(harness.invalidate).toHaveBeenCalledExactlyOnceWith("svelte.cv", "svelte.status");
   });
 
+  it("propagates runtime cancellation instead of degrading it into a phase failure", async () => {
+    const cancellation = new CommandCancellation("Setup was cancelled.", 130);
+    const harness = await createHarness({
+      cv: [svelteAvailable("cv", {generatedConfigExists: false})],
+      responses: {[commandKey(prepareCommand)]: cancellation},
+    });
+
+    await expect(runPhase(harness)).rejects.toBe(cancellation);
+    expect(harness.invalidate).toHaveBeenCalledExactlyOnceWith("svelte.cv", "svelte.status");
+  });
+
+  it("requires an invocation-scoped runtime instead of falling back to ambient capabilities", async () => {
+    const harness = await createHarness();
+    const {runtime: _runtime, ...withoutRuntime} = harness.context;
+
+    await expect(harness.phase.run(withoutRuntime as SetupContext)).rejects.toThrow(/setup phase runtime/i);
+  });
+
   it("uses explicit cwd and argument arrays without builds, tests, services, or package restoration", async () => {
-    const harness = createHarness({
+    const harness = await createHarness({
       cv: [svelteAvailable("cv", {generatedConfigExists: false}), svelteAvailable("cv")],
     });
     const consoleSpies = ["debug", "info", "warn", "error", "log"].map((level) =>
       vi.spyOn(console, level as "debug").mockImplementation(() => undefined),
     );
 
-    await expect(harness.phase.run(harness.context)).resolves.toMatchObject({status: "succeeded"});
+    await expect(runPhase(harness)).resolves.toMatchObject({status: "succeeded"});
 
     expect(consoleSpies.every((spy) => spy.mock.calls.length === 0)).toBe(true);
-    expect(harness.run.mock.calls.map(([command]) => commandKey(command))).not.toContain(commandKey(packageInventoryCommand));
-    for (const [command, runOptions] of harness.run.mock.calls) {
+    expect(harness.runner.calls.map(({request}) => commandKey(request))).not.toContain(commandKey(packageInventoryCommand));
+    for (const {request: command, options: runOptions} of harness.runner.calls) {
       expect(Array.isArray(command.args)).toBe(true);
-      expect(runOptions?.cwd).toBe(paths.root);
+      expect(runOptions.cwd).toBe(paths.root);
       const joined = [command.command, ...command.args].join(" ");
       expect(command.args).not.toEqual(expect.arrayContaining(["build"]));
       expect(command.args).not.toEqual(expect.arrayContaining(["test"]));

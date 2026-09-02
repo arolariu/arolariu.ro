@@ -20,14 +20,25 @@
  * `"executed"` disposition. The shared `"packages"` fact is never invalidated: `svelte-kit sync`
  * cannot change installed package metadata. Planned and declined actions never invalidate or
  * fabricate facts, and a successful command is never treated as proof of readiness.
+ *
+ * Every capability the phase observes — the process runner and the clock — comes from the
+ * invocation-scoped {@link SetupPhaseRuntime}. This phase reads no ambient Node state, owns no
+ * filesystem access of its own, and measures no time itself.
  */
 
-import type {CommandResult, CommandSpec} from "./common/process.ts";
 import {parseVersion, satisfiesMinimum, type MinimumVersion} from "./common/requirements.ts";
+import type {ProcessOutcome, ProcessRequest, SucceededProcessOutcome} from "./common/runner.ts";
+import {CommandCancellation} from "./common/runtime.ts";
 import type {SvelteFacts, SvelteProjectId} from "./inspection/frontend.ts";
 import {SVELTE_INSPECTED_PACKAGE_NAMES, type PackageInventoryFacts} from "./inspection/packages.ts";
 import type {InspectionOutcome} from "./inspection/types.ts";
-import type {SetupContext, SetupPhaseDefinition, SetupPhaseResult} from "./setup.types.ts";
+import {
+  requireSetupPhaseRuntime,
+  type SetupContext,
+  type SetupPhaseDefinition,
+  type SetupPhaseResult,
+  type SetupPhaseRuntime,
+} from "./setup.types.ts";
 
 /** Result of evaluating the `svelte.prepare` mutation and its immediate cache refresh. */
 type SveltePrepareOutcome =
@@ -45,42 +56,82 @@ const PROJECT_IDS = ["cv", "status"] as const;
 const PROJECT_KEYS = {cv: "svelte.cv", status: "svelte.status"} as const;
 const ROOT_DEPENDENCIES_ACTION = "workspace.root-dependencies";
 const PREPARE_ACTION_ID = "svelte.prepare";
-const PREPARE_COMMAND: CommandSpec = {
+/**
+ * Bounded ceiling for the long-running generated-state preparation this phase owns.
+ *
+ * @remarks
+ * The invocation-scoped runner defaults to a probe-sized timeout, which would truncate a
+ * two-workspace `svelte-kit sync`. The mutation therefore requests this ceiling explicitly,
+ * preserving the pre-migration `tee` mutation timeout the deprecated setup runner bridge used to
+ * supply implicitly.
+ */
+const LONG_RUNNING_MUTATION_TIMEOUT_MS = 1_200_000;
+const PREPARE_COMMAND: ProcessRequest = {
   command: "npm",
   args: ["run", "prepare", "--workspace=sites/cv.arolariu.ro", "--workspace=sites/status.arolariu.ro"],
 };
 
 function isInterrupted(error: unknown): boolean {
-  return error instanceof Error && error.name === "AbortError";
+  return error instanceof CommandCancellation || (error instanceof Error && error.name === "AbortError");
 }
 
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
-function isSuccessfulCommand(result: Readonly<CommandResult>): boolean {
-  return result.code === 0 && !result.timedOut && result.signal === undefined && result.spawnError === undefined;
+function isSuccessfulOutcome(outcome: Readonly<ProcessOutcome>): outcome is SucceededProcessOutcome {
+  return outcome.kind === "succeeded";
 }
 
-function commandFailureEvidence(result: Readonly<CommandResult>): readonly string[] {
-  return [
-    ...(result.spawnError === undefined ? [] : [`Unable to start command: ${result.spawnError}`]),
-    ...(result.timedOut ? ["Command timed out."] : []),
-    ...(result.signal === undefined ? [] : [`Command stopped with signal ${result.signal}.`]),
-    ...(result.code === 0 ? [] : [`Command exited with code ${result.code}.`]),
-    ...(result.stdout.trim() === "" ? [] : [`stdout: ${result.stdout.trim()}`]),
-    ...(result.stderr.trim() === "" ? [] : [`stderr: ${result.stderr.trim()}`]),
-  ];
+/**
+ * Renders one failed process outcome as concise, secret-free setup evidence.
+ *
+ * @param outcome - Completed process outcome.
+ * @returns Evidence lines naming the transport failure and any captured output.
+ */
+function commandFailureEvidence(outcome: Readonly<ProcessOutcome>): readonly string[] {
+  const evidence: string[] = [];
+  switch (outcome.kind) {
+    case "succeeded":
+      break;
+    case "exited":
+      evidence.push(`Command exited with code ${String(outcome.exitCode)}.`);
+      break;
+    case "signalled":
+      evidence.push(`Command stopped with signal ${outcome.signal}.`);
+      break;
+    case "spawn-failed":
+      evidence.push(`Unable to start command: ${outcome.message}`);
+      break;
+    case "timed-out":
+      evidence.push("Command timed out.");
+      if (outcome.signal !== undefined) {
+        evidence.push(`Command stopped with signal ${outcome.signal}.`);
+      }
+      break;
+    case "cancelled":
+      evidence.push("Command was cancelled.");
+      break;
+  }
+
+  if (outcome.stdout.trim() !== "") {
+    evidence.push(`stdout: ${outcome.stdout.trim()}`);
+  }
+  if (outcome.stderr.trim() !== "") {
+    evidence.push(`stderr: ${outcome.stderr.trim()}`);
+  }
+
+  return evidence;
 }
 
 function normalizedVersion(version: MinimumVersion): string {
   return `${version.major}.${version.minor}.${version.patch}`;
 }
 
-function phaseResult(context: SetupContext, startedAt: number, input: Omit<SetupPhaseResult, "durationMs">): SetupPhaseResult {
+function phaseResult(runtime: SetupPhaseRuntime, startedAt: number, input: Omit<SetupPhaseResult, "durationMs">): SetupPhaseResult {
   return {
     ...input,
-    durationMs: Math.max(0, context.now() - startedAt),
+    durationMs: Math.max(0, runtime.clock.monotonicNow() - startedAt),
   };
 }
 
@@ -225,10 +276,11 @@ function resolvedProjectFacts(outcomes: ProjectOutcomes): ProjectFacts | null {
  * `"executed"` disposition both already-invalidated keys are inspected exactly once.
  *
  * @param context - Active setup context, including the repository inspection session.
+ * @param runtime - Invocation-scoped capabilities the preparation command runs through.
  * @returns The action disposition, plus both refreshed outcomes when the mutation executed.
  * @throws Whatever the mutation or the action executor throws, including `AbortError`.
  */
-async function runSveltePrepare(context: SetupContext): Promise<SveltePrepareOutcome> {
+async function runSveltePrepare(context: SetupContext, runtime: SetupPhaseRuntime): Promise<SveltePrepareOutcome> {
   let attempted = false;
   try {
     const disposition = await context.actions.run({
@@ -237,12 +289,13 @@ async function runSveltePrepare(context: SetupContext): Promise<SveltePrepareOut
       summary: "Prepare generated SvelteKit workspace configuration.",
       execute: async () => {
         attempted = true;
-        const prepareResult = await context.runner.run(PREPARE_COMMAND, {
+        const prepareResult = await runtime.runner.run(PREPARE_COMMAND, {
           cwd: context.paths.root,
           output: "tee",
           logger: context.logger,
+          timeoutMs: LONG_RUNNING_MUTATION_TIMEOUT_MS,
         });
-        if (!isSuccessfulCommand(prepareResult)) {
+        if (!isSuccessfulOutcome(prepareResult)) {
           throw new Error(["svelte.prepare command failed.", ...commandFailureEvidence(prepareResult)].join("\n"));
         }
       },
@@ -262,6 +315,7 @@ async function runSveltePrepare(context: SetupContext): Promise<SveltePrepareOut
  * Ensures both generated SvelteKit configurations exist, verified from refreshed facts.
  *
  * @param context - Active setup context.
+ * @param runtime - Invocation-scoped capabilities the preparation command runs through.
  * @param facts - The facts observed before this step.
  * @param rootNode - Manifest-derived root Node minimum.
  * @param deferAbsentInstallations - Whether absent-package issues are deferred to a planned action.
@@ -270,6 +324,7 @@ async function runSveltePrepare(context: SetupContext): Promise<SveltePrepareOut
  */
 async function ensureGeneratedConfiguration(
   context: SetupContext,
+  runtime: SetupPhaseRuntime,
   facts: ProjectFacts,
   rootNode: MinimumVersion,
   deferAbsentInstallations: boolean,
@@ -280,7 +335,7 @@ async function ensureGeneratedConfiguration(
     return {planned: false};
   }
 
-  const mutation = await runSveltePrepare(context);
+  const mutation = await runSveltePrepare(context, runtime);
   if (mutation.disposition === "declined") {
     return {
       result: failedResult(
@@ -329,14 +384,15 @@ async function ensureGeneratedConfiguration(
 }
 
 async function runSvelteSetup(context: SetupContext): Promise<SetupPhaseResult> {
-  const startedAt = context.now();
+  const runtime = requireSetupPhaseRuntime(context);
+  const startedAt = runtime.clock.monotonicNow();
   const evidence: string[] = [];
 
   try {
     const locked = lockedPackageVersions(context);
     if (locked.problems.length > 0) {
       return phaseResult(
-        context,
+        runtime,
         startedAt,
         failedResult(
           "The manifest-derived Svelte package requirements are invalid.",
@@ -349,7 +405,7 @@ async function runSvelteSetup(context: SetupContext): Promise<SetupPhaseResult> 
     const packagesOutcome = await context.inspection.inspect("packages");
     if (packagesOutcome.kind !== "available") {
       return phaseResult(
-        context,
+        runtime,
         startedAt,
         failedResult(
           "The shared installed-package inventory could not be inspected.",
@@ -363,7 +419,7 @@ async function runSvelteSetup(context: SetupContext): Promise<SetupPhaseResult> 
     const facts = resolvedProjectFacts(outcomes);
     if (facts === null) {
       return phaseResult(
-        context,
+        runtime,
         startedAt,
         failedResult(
           "The shared Svelte workspace facts could not be inspected.",
@@ -376,7 +432,7 @@ async function runSvelteSetup(context: SetupContext): Promise<SetupPhaseResult> 
     const comparison = comparePackageInventory(locked.versions, packagesOutcome.value);
     if (comparison.defects.length > 0) {
       return phaseResult(
-        context,
+        runtime,
         startedAt,
         failedResult(
           "The installed Svelte packages do not satisfy their locked requirements.",
@@ -388,7 +444,7 @@ async function runSvelteSetup(context: SetupContext): Promise<SetupPhaseResult> 
     const deferAbsentInstallations = comparison.absent.length > 0 && context.options.dryRun;
     if (comparison.absent.length > 0 && !context.options.dryRun) {
       return phaseResult(
-        context,
+        runtime,
         startedAt,
         failedResult(
           "Required Svelte packages are not installed.",
@@ -406,7 +462,7 @@ async function runSvelteSetup(context: SetupContext): Promise<SetupPhaseResult> 
     const problems = PROJECT_IDS.flatMap((id) => projectProblems(facts[id], context.requirements.node, deferAbsentInstallations));
     if (problems.length > 0) {
       return phaseResult(
-        context,
+        runtime,
         startedAt,
         failedResult(
           "The required Svelte workspace contracts are invalid.",
@@ -417,13 +473,20 @@ async function runSvelteSetup(context: SetupContext): Promise<SetupPhaseResult> 
     }
     evidence.push(...PROJECT_IDS.map((id) => `${id}: package, script, adapter, and Node engine contracts are valid.`));
 
-    const generated = await ensureGeneratedConfiguration(context, facts, context.requirements.node, deferAbsentInstallations, evidence);
+    const generated = await ensureGeneratedConfiguration(
+      context,
+      runtime,
+      facts,
+      context.requirements.node,
+      deferAbsentInstallations,
+      evidence,
+    );
     if ("result" in generated) {
-      return phaseResult(context, startedAt, generated.result);
+      return phaseResult(runtime, startedAt, generated.result);
     }
 
     if (generated.planned || deferAbsentInstallations) {
-      return phaseResult(context, startedAt, {
+      return phaseResult(runtime, startedAt, {
         id: "svelte",
         status: "skipped",
         summary: "Svelte workspace preparation actions and postconditions are planned by dry-run.",
@@ -432,7 +495,7 @@ async function runSvelteSetup(context: SetupContext): Promise<SetupPhaseResult> 
       });
     }
 
-    return phaseResult(context, startedAt, {
+    return phaseResult(runtime, startedAt, {
       id: "svelte",
       status: "succeeded",
       summary: "Both Svelte workspaces have valid package contracts and generated configuration.",
@@ -443,7 +506,7 @@ async function runSvelteSetup(context: SetupContext): Promise<SetupPhaseResult> 
     if (isInterrupted(error)) {
       throw error;
     }
-    return phaseResult(context, startedAt, {
+    return phaseResult(runtime, startedAt, {
       id: "svelte",
       status: "failed",
       summary: "The required Svelte workspace preparation phase failed.",

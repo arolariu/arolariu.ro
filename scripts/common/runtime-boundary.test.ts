@@ -1038,31 +1038,6 @@ describe("runtime boundary policy", () => {
           "rule": "ambient-os-state",
         },
         {
-          "file": "scripts/setup.react.ts",
-          "line": 27,
-          "rule": "ambient-filesystem",
-        },
-        {
-          "file": "scripts/setup.react.ts",
-          "line": 30,
-          "rule": "legacy-process-import",
-        },
-        {
-          "file": "scripts/setup.react.ts",
-          "line": 220,
-          "rule": "ambient-os-state",
-        },
-        {
-          "file": "scripts/setup.react.ts",
-          "line": 237,
-          "rule": "ambient-os-state",
-        },
-        {
-          "file": "scripts/setup.svelte.ts",
-          "line": 25,
-          "rule": "legacy-process-import",
-        },
-        {
           "file": "scripts/setup.types.ts",
           "line": 17,
           "rule": "legacy-process-import",

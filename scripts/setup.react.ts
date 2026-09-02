@@ -21,34 +21,31 @@
  * successful command is never treated as proof: each mutation asserts its own postcondition
  * against the refreshed facts. The Linux system-dependency action is deliberately excluded because
  * the shared fact contract does not model host libraries.
+ *
+ * The phase reads every capability from the invocation-scoped {@link SetupPhaseRuntime}: the
+ * process runner, the atomic filesystem, the clock, and the immutable environment snapshot that
+ * supplies both the host platform and the non-interactive decision. It owns no ambient Node state
+ * and no injected host boundary of its own; {@link prepareWebsiteEnvironment} stays exported
+ * because the secret-bearing additive `.env` policy is business logic, not a runtime capability.
  */
 
-import {randomBytes} from "node:crypto";
-import {chmod, readFile, rename, rm, writeFile} from "node:fs/promises";
-import {basename, dirname, resolve} from "node:path";
-
-import type {CommandResult, CommandSpec} from "./common/process.ts";
+import type {ProcessOutcome, ProcessRequest, SucceededProcessOutcome} from "./common/runner.ts";
+import {CommandCancellation, type FileSystem} from "./common/runtime.ts";
 import {appendMissingEnvironmentValues, parseEnvironmentFile} from "./generate.env.ts";
 import type {ReactFacts} from "./inspection/frontend.ts";
 import type {PackageInventoryFacts} from "./inspection/packages.ts";
 import type {InspectionOutcome} from "./inspection/types.ts";
-import type {SetupActionDisposition, SetupActionScope, SetupContext, SetupPhaseDefinition, SetupPhaseResult} from "./setup.types.ts";
+import {
+  requireSetupPhaseRuntime,
+  type SetupActionDisposition,
+  type SetupActionScope,
+  type SetupContext,
+  type SetupPhaseDefinition,
+  type SetupPhaseResult,
+  type SetupPhaseRuntime,
+} from "./setup.types.ts";
 
 type ClerkMode = "test" | "live";
-
-/** Injectable filesystem and host boundaries used by the React setup phase. */
-export interface ReactSetupDependencies {
-  /** Host platform used for Playwright and file-mode behavior. */
-  readonly platform: NodeJS.Platform;
-  /** Whether both setup input and output are interactive terminals. */
-  readonly interactive: boolean;
-  /** Reads one UTF-8 text file. */
-  readonly readTextFile: (path: string) => Promise<string>;
-  /** Writes one UTF-8 text file with the requested creation mode. */
-  readonly writeTextFile: (path: string, content: string, mode: number) => Promise<void>;
-  /** Enforces one file mode after a successful write. */
-  readonly setFileMode: (path: string, mode: number) => Promise<void>;
-}
 
 /** Outcome of additive website environment preparation. */
 export interface EnvironmentPreparationResult {
@@ -104,44 +101,92 @@ const BROWSER_INSTALL_ACTION = "react.playwright.chromium.install";
 const SYSTEM_DEPENDENCIES_ACTION = "react.playwright.system-dependencies.install";
 const CHROMIUM_BROWSER_PREFIX = "chromium-";
 const REACT_NEXT_ACTION = "Resolve the reported React setup failure, then rerun setup.";
-const BROWSER_INSTALL_COMMAND: CommandSpec = {
+/** POSIX permission bits the secret-bearing website environment file is created and kept at. */
+const ENVIRONMENT_FILE_MODE = 0o600;
+/**
+ * Bounded ceiling for the long-running Playwright installation mutations this phase owns.
+ *
+ * @remarks
+ * The invocation-scoped runner defaults to a probe-sized timeout, which is correct for the
+ * `install-deps --dry-run` probe but would truncate a browser or host-library download. Both
+ * installs therefore request this ceiling explicitly, preserving the pre-migration `tee` mutation
+ * timeout the deprecated setup runner bridge used to supply implicitly.
+ */
+const LONG_RUNNING_MUTATION_TIMEOUT_MS = 1_200_000;
+const BROWSER_INSTALL_COMMAND: ProcessRequest = {
   command: "npx",
   args: ["--no-install", "playwright", "install", "chromium"],
 };
-const SYSTEM_DEPENDENCIES_PROBE: CommandSpec = {
+const SYSTEM_DEPENDENCIES_PROBE: ProcessRequest = {
   command: "npx",
   args: ["--no-install", "playwright", "install-deps", "--dry-run", "chromium"],
 };
-const SYSTEM_DEPENDENCIES_INSTALL: CommandSpec = {
+const SYSTEM_DEPENDENCIES_INSTALL: ProcessRequest = {
   command: "npx",
   args: ["--no-install", "playwright", "install-deps", "chromium"],
 };
 
-function isSuccessfulCommand(result: Readonly<CommandResult>): boolean {
-  return result.code === 0 && !result.timedOut && result.signal === undefined && result.spawnError === undefined;
+function isSuccessfulOutcome(outcome: Readonly<ProcessOutcome>): outcome is SucceededProcessOutcome {
+  return outcome.kind === "succeeded";
 }
 
-function transportSucceeded(result: Readonly<CommandResult>): boolean {
-  return !result.timedOut && result.signal === undefined && result.spawnError === undefined;
+/**
+ * Reports whether the child actually ran to completion and produced its own exit code.
+ *
+ * @param outcome - Completed process outcome.
+ * @returns Whether the outcome carries a child-reported exit code rather than a transport failure.
+ */
+function transportCompleted(outcome: Readonly<ProcessOutcome>): boolean {
+  return outcome.kind === "succeeded" || outcome.kind === "exited";
 }
 
 function isInterrupted(error: unknown): boolean {
-  return error instanceof Error && error.name === "AbortError";
+  return error instanceof CommandCancellation || (error instanceof Error && error.name === "AbortError");
 }
 
 function hasErrorCode(error: unknown, code: string): boolean {
   return error instanceof Error && "code" in error && error.code === code;
 }
 
-function commandFailureEvidence(result: Readonly<CommandResult>): readonly string[] {
-  return [
-    ...(result.spawnError === undefined ? [] : [`Unable to start command: ${result.spawnError}`]),
-    ...(result.timedOut ? ["Command timed out."] : []),
-    ...(result.signal === undefined ? [] : [`Command stopped with signal ${result.signal}.`]),
-    ...(result.code === 0 ? [] : [`Command exited with code ${result.code}.`]),
-    ...(result.stdout.trim() === "" ? [] : [`stdout: ${result.stdout.trim()}`]),
-    ...(result.stderr.trim() === "" ? [] : [`stderr: ${result.stderr.trim()}`]),
-  ];
+/**
+ * Renders one failed process outcome as concise, secret-free setup evidence.
+ *
+ * @param outcome - Completed process outcome.
+ * @returns Evidence lines naming the transport failure and any captured output.
+ */
+function commandFailureEvidence(outcome: Readonly<ProcessOutcome>): readonly string[] {
+  const evidence: string[] = [];
+  switch (outcome.kind) {
+    case "succeeded":
+      break;
+    case "exited":
+      evidence.push(`Command exited with code ${String(outcome.exitCode)}.`);
+      break;
+    case "signalled":
+      evidence.push(`Command stopped with signal ${outcome.signal}.`);
+      break;
+    case "spawn-failed":
+      evidence.push(`Unable to start command: ${outcome.message}`);
+      break;
+    case "timed-out":
+      evidence.push("Command timed out.");
+      if (outcome.signal !== undefined) {
+        evidence.push(`Command stopped with signal ${outcome.signal}.`);
+      }
+      break;
+    case "cancelled":
+      evidence.push("Command was cancelled.");
+      break;
+  }
+
+  if (outcome.stdout.trim() !== "") {
+    evidence.push(`stdout: ${outcome.stdout.trim()}`);
+  }
+  if (outcome.stderr.trim() !== "") {
+    evidence.push(`stderr: ${outcome.stderr.trim()}`);
+  }
+
+  return evidence;
 }
 
 function sanitize(value: string, secrets: readonly string[]): string {
@@ -156,14 +201,14 @@ function errorMessage(error: unknown, secrets: readonly string[]): string {
   return sanitize(error instanceof Error ? error.message : String(error), secrets);
 }
 
-function duration(startedAt: number, context: SetupContext): number {
-  return Math.max(0, context.now() - startedAt);
+function duration(startedAt: number, runtime: SetupPhaseRuntime): number {
+  return Math.max(0, runtime.clock.monotonicNow() - startedAt);
 }
 
-function phaseResult(context: SetupContext, startedAt: number, input: Omit<SetupPhaseResult, "durationMs">): SetupPhaseResult {
+function phaseResult(runtime: SetupPhaseRuntime, startedAt: number, input: Omit<SetupPhaseResult, "durationMs">): SetupPhaseResult {
   return {
     ...input,
-    durationMs: duration(startedAt, context),
+    durationMs: duration(startedAt, runtime),
   };
 }
 
@@ -196,52 +241,6 @@ function outcomeEvidence(outcome: Readonly<InspectionOutcome<unknown>>): readonl
     return [...outcome.issues];
   }
   return [];
-}
-
-/**
- * Writes text content through a temporary sibling file and an atomic rename.
- *
- * @remarks
- * Mirrors the temporary-sibling-plus-rename pattern in
- * `scripts/common/tooling-config.ts` (without depending on that module) so a
- * crash, interruption, or full disk cannot leave a truncated or empty
- * destination file — a real risk for `sites/arolariu.ro/.env`, which in
- * practice holds the developer's Clerk secret key. The temporary file is
- * created exclusively (`wx`) in the destination's own directory so the
- * rename is same-filesystem, and it is removed if the write or rename fails,
- * leaving any existing destination file byte-for-byte untouched.
- *
- * @param path - Destination file path.
- * @param content - UTF-8 text content to write.
- * @param mode - POSIX file mode applied to the temporary file before rename.
- */
-export async function writeTextFileAtomically(path: string, content: string, mode: number): Promise<void> {
-  const parent = dirname(path);
-  const temporaryPath = resolve(parent, `${basename(path)}.${process.pid}.${randomBytes(8).toString("hex")}.tmp`);
-
-  try {
-    await writeFile(temporaryPath, content, {encoding: "utf8", flag: "wx", mode});
-    await rename(temporaryPath, path);
-  } catch (error) {
-    try {
-      await rm(temporaryPath, {force: true});
-    } catch {
-      // Preserve the original write/rename failure and never broaden cleanup.
-    }
-    throw error;
-  }
-}
-
-function defaultDependencies(): ReactSetupDependencies {
-  return {
-    platform: process.platform,
-    interactive: process.stdin.isTTY === true && process.stdout.isTTY === true,
-    readTextFile: (path) => readFile(path, "utf8"),
-    writeTextFile: (path, content, mode) => writeTextFileAtomically(path, content, mode),
-    setFileMode: async (path, mode) => {
-      await chmod(path, mode);
-    },
-  };
 }
 
 /**
@@ -398,9 +397,9 @@ function registerSensitiveValue(context: SetupContext, knownSecrets: string[], v
   context.logger.redact(value);
 }
 
-async function readEnvironment(path: string, dependencies: ReactSetupDependencies): Promise<string> {
+async function readEnvironment(path: string, files: FileSystem): Promise<string> {
   try {
-    return await dependencies.readTextFile(path);
+    return await files.readText(path);
   } catch (error: unknown) {
     if (hasErrorCode(error, "ENOENT")) {
       return "";
@@ -419,17 +418,21 @@ async function readEnvironment(path: string, dependencies: ReactSetupDependencie
  * are appended, and every observed or entered credential is registered for redaction before it can
  * reach retained output.
  *
+ * Interactivity is decided from the immutable {@link SetupPhaseRuntime.environment} snapshot,
+ * using the same standard-input terminal signal the injected prompt provider itself requires, so
+ * a non-interactive invocation degrades instead of rejecting inside a prompt.
+ *
  * @param context - Active setup context.
- * @param dependencies - Filesystem and TTY boundaries.
+ * @param runtime - Invocation-scoped filesystem, environment, and clock capabilities.
  * @param knownSecrets - Mutable accumulator of values that must never reach evidence.
  * @returns Preserved, written, and degraded credential state plus the mutation disposition.
  */
-async function prepareWebsiteEnvironmentWithDependencies(
+async function prepareEnvironment(
   context: SetupContext,
-  dependencies: ReactSetupDependencies,
+  runtime: SetupPhaseRuntime,
   knownSecrets: string[],
 ): Promise<EnvironmentPreparationOutcome> {
-  const original = await readEnvironment(context.paths.websiteEnvironment, dependencies);
+  const original = await readEnvironment(context.paths.websiteEnvironment, runtime.files);
   const existing = parseEnvironmentFile(original);
   const additions = new Map<string, string>();
   const prompted = new Map<(typeof CLERK_KEYS)[number], string>();
@@ -445,7 +448,7 @@ async function prepareWebsiteEnvironmentWithDependencies(
     if (current !== undefined && current !== "") {
       registerSensitiveValue(context, knownSecrets, current);
     }
-    if (existing.has(key) || context.options.dryRun || !dependencies.interactive) {
+    if (existing.has(key) || context.options.dryRun || !runtime.environment.stdinIsTTY) {
       continue;
     }
 
@@ -495,9 +498,9 @@ async function prepareWebsiteEnvironmentWithDependencies(
       scope: "repository",
       summary: "Append missing setup-owned website environment keys.",
       mutate: async () => {
-        await dependencies.writeTextFile(context.paths.websiteEnvironment, nextContent, 0o600);
-        if (dependencies.platform !== "win32") {
-          await dependencies.setFileMode(context.paths.websiteEnvironment, 0o600);
+        await runtime.files.writeTextAtomic(context.paths.websiteEnvironment, nextContent, {mode: ENVIRONMENT_FILE_MODE});
+        if (runtime.environment.platform !== "win32") {
+          await runtime.files.setMode(context.paths.websiteEnvironment, ENVIRONMENT_FILE_MODE);
         }
       },
     });
@@ -521,13 +524,18 @@ async function prepareWebsiteEnvironmentWithDependencies(
 }
 
 /**
- * Additively prepares the website environment with production filesystem and TTY boundaries.
+ * Additively prepares the website environment over the invocation-scoped capabilities.
+ *
+ * @remarks
+ * The secret-bearing `.env` policy stays business logic here; every boundary it needs — the atomic
+ * filesystem, the host platform, and the terminal snapshot — comes from the setup phase runtime.
  *
  * @param context - Active setup context.
  * @returns Preserved, written, and degraded credential state.
+ * @throws When the context carries no invocation-scoped setup phase runtime.
  */
 export function prepareWebsiteEnvironment(context: SetupContext): Promise<EnvironmentPreparationResult> {
-  return prepareWebsiteEnvironmentWithDependencies(context, defaultDependencies(), []);
+  return prepareEnvironment(context, requireSetupPhaseRuntime(context), []);
 }
 
 /**
@@ -539,16 +547,22 @@ export function prepareWebsiteEnvironment(context: SetupContext): Promise<Enviro
  * invalidates the shared `"react"` fact: it cannot change any observation that fact carries.
  *
  * @param context - Active setup context.
+ * @param runtime - Invocation-scoped capabilities the probe and installation run through.
  * @param evidence - Mutable accumulator of human-readable phase evidence.
  * @param plannedActions - Mutable accumulator of dry-run-planned action identifiers.
  * @throws When the probe is inconclusive, the required action is declined, or the install fails.
  */
-async function ensureLinuxDependencies(context: SetupContext, evidence: string[], plannedActions: string[]): Promise<void> {
-  const initialProbe = await context.runner.run(SYSTEM_DEPENDENCIES_PROBE, {cwd: context.paths.root});
-  if (!transportSucceeded(initialProbe)) {
+async function ensureLinuxDependencies(
+  context: SetupContext,
+  runtime: SetupPhaseRuntime,
+  evidence: string[],
+  plannedActions: string[],
+): Promise<void> {
+  const initialProbe = await runtime.runner.run(SYSTEM_DEPENDENCIES_PROBE, {cwd: context.paths.root});
+  if (!transportCompleted(initialProbe)) {
     throw new Error(["Playwright Linux dependency probe was inconclusive.", ...commandFailureEvidence(initialProbe)].join("\n"));
   }
-  if (initialProbe.code === 0) {
+  if (isSuccessfulOutcome(initialProbe)) {
     evidence.push("Playwright Chromium Linux system dependencies are ready.");
     return;
   }
@@ -558,12 +572,13 @@ async function ensureLinuxDependencies(context: SetupContext, evidence: string[]
     scope: "system",
     summary: "Install Playwright Chromium Linux system dependencies.",
     execute: async () => {
-      const installation = await context.runner.run(SYSTEM_DEPENDENCIES_INSTALL, {
+      const installation = await runtime.runner.run(SYSTEM_DEPENDENCIES_INSTALL, {
         cwd: context.paths.root,
         output: "tee",
         logger: context.logger,
+        timeoutMs: LONG_RUNNING_MUTATION_TIMEOUT_MS,
       });
-      if (!isSuccessfulCommand(installation)) {
+      if (!isSuccessfulOutcome(installation)) {
         throw new Error(["Playwright Linux dependency installation failed.", ...commandFailureEvidence(installation)].join("\n"));
       }
     },
@@ -577,8 +592,8 @@ async function ensureLinuxDependencies(context: SetupContext, evidence: string[]
     return;
   }
 
-  const verifiedProbe = await context.runner.run(SYSTEM_DEPENDENCIES_PROBE, {cwd: context.paths.root});
-  if (!isSuccessfulCommand(verifiedProbe)) {
+  const verifiedProbe = await runtime.runner.run(SYSTEM_DEPENDENCIES_PROBE, {cwd: context.paths.root});
+  if (!isSuccessfulOutcome(verifiedProbe)) {
     throw new Error(
       ["Playwright Linux dependencies remain unavailable after installation.", ...commandFailureEvidence(verifiedProbe)].join("\n"),
     );
@@ -590,7 +605,7 @@ async function ensureLinuxDependencies(context: SetupContext, evidence: string[]
  * Ensures the locked Playwright Chromium browser is installed, verified from refreshed facts.
  *
  * @param context - Active setup context.
- * @param platform - Host platform selecting Linux system-dependency behavior.
+ * @param runtime - Invocation-scoped capabilities, including the host-platform snapshot.
  * @param lockedVersion - Manifest-derived locked Playwright version.
  * @param facts - The newest verified `react` facts.
  * @param evidence - Mutable accumulator of human-readable phase evidence.
@@ -599,7 +614,7 @@ async function ensureLinuxDependencies(context: SetupContext, evidence: string[]
  */
 async function preparePlaywright(
   context: SetupContext,
-  platform: NodeJS.Platform,
+  runtime: SetupPhaseRuntime,
   lockedVersion: string,
   facts: Readonly<ReactFacts>,
   evidence: string[],
@@ -607,8 +622,8 @@ async function preparePlaywright(
 ): Promise<ReactStepOutcome> {
   const readinessIssues = playwrightReadinessIssues(facts, lockedVersion);
 
-  if (platform === "linux") {
-    await ensureLinuxDependencies(context, evidence, plannedActions);
+  if (runtime.environment.platform === "linux") {
+    await ensureLinuxDependencies(context, runtime, evidence, plannedActions);
   }
 
   if (readinessIssues.length === 0) {
@@ -622,12 +637,13 @@ async function preparePlaywright(
     scope: "repository",
     summary: "Install the locked Playwright Chromium browser.",
     mutate: async () => {
-      const installation = await context.runner.run(BROWSER_INSTALL_COMMAND, {
+      const installation = await runtime.runner.run(BROWSER_INSTALL_COMMAND, {
         cwd: context.paths.root,
         output: "tee",
         logger: context.logger,
+        timeoutMs: LONG_RUNNING_MUTATION_TIMEOUT_MS,
       });
-      if (!isSuccessfulCommand(installation)) {
+      if (!isSuccessfulOutcome(installation)) {
         throw new Error(["Playwright Chromium installation failed.", ...commandFailureEvidence(installation)].join("\n"));
       }
     },
@@ -683,18 +699,18 @@ async function preparePlaywright(
  * mutation happens on this path. An `"invalid"` React fact is a defect, never a deferral.
  *
  * @param context - Active setup context.
- * @param dependencies - Filesystem and TTY boundaries.
+ * @param runtime - Invocation-scoped filesystem, environment, and clock capabilities.
  * @param knownSecrets - Mutable accumulator of values that must never reach evidence.
  * @param evidence - Mutable accumulator of human-readable phase evidence.
  * @returns The deferred, dry-run-only phase result.
  */
 async function planFreshCheckoutDryRun(
   context: SetupContext,
-  dependencies: ReactSetupDependencies,
+  runtime: SetupPhaseRuntime,
   knownSecrets: string[],
   evidence: string[],
 ): Promise<SetupPhaseResult> {
-  const environment = await prepareWebsiteEnvironmentWithDependencies(context, dependencies, knownSecrets);
+  const environment = await prepareEnvironment(context, runtime, knownSecrets);
   const browser = await runReactMutation(context, {
     id: BROWSER_INSTALL_ACTION,
     scope: "repository",
@@ -773,8 +789,9 @@ function verifyEnvironmentWrite(environment: EnvironmentPreparationOutcome, evid
   return {facts: refreshed.value};
 }
 
-async function runReactSetup(context: SetupContext, dependencies: ReactSetupDependencies): Promise<SetupPhaseResult> {
-  const startedAt = context.now();
+async function runReactSetup(context: SetupContext): Promise<SetupPhaseResult> {
+  const runtime = requireSetupPhaseRuntime(context);
+  const startedAt = runtime.clock.monotonicNow();
   const evidence: string[] = [];
   const knownSecrets: string[] = [];
   const plannedActions: string[] = [];
@@ -785,7 +802,7 @@ async function runReactSetup(context: SetupContext, dependencies: ReactSetupDepe
     const packagesOutcome = await context.inspection.inspect("packages");
     if (packagesOutcome.kind !== "available") {
       return phaseResult(
-        context,
+        runtime,
         startedAt,
         failedResult("The shared installed-package inventory could not be inspected.", [...evidence, ...outcomeEvidence(packagesOutcome)]),
       );
@@ -796,10 +813,10 @@ async function runReactSetup(context: SetupContext, dependencies: ReactSetupDepe
     const reactOutcome = await context.inspection.inspect("react");
     if (reactOutcome.kind !== "available") {
       if (freshCheckout && reactOutcome.kind === "unavailable") {
-        return phaseResult(context, startedAt, await planFreshCheckoutDryRun(context, dependencies, knownSecrets, evidence));
+        return phaseResult(runtime, startedAt, await planFreshCheckoutDryRun(context, runtime, knownSecrets, evidence));
       }
       return phaseResult(
-        context,
+        runtime,
         startedAt,
         failedResult("The shared React workspace facts could not be inspected.", [...evidence, ...outcomeEvidence(reactOutcome)]),
       );
@@ -808,7 +825,7 @@ async function runReactSetup(context: SetupContext, dependencies: ReactSetupDepe
 
     if (comparison.defects.length > 0) {
       return phaseResult(
-        context,
+        runtime,
         startedAt,
         failedResult("The installed React workspace packages do not satisfy their locked requirements.", [
           ...evidence,
@@ -820,7 +837,7 @@ async function runReactSetup(context: SetupContext, dependencies: ReactSetupDepe
     if (deferredPackages) {
       if (!context.options.dryRun) {
         return phaseResult(
-          context,
+          runtime,
           startedAt,
           failedResult(
             "Required React workspace packages are not installed.",
@@ -835,7 +852,7 @@ async function runReactSetup(context: SetupContext, dependencies: ReactSetupDepe
     } else {
       if (facts.workspaceLinkIssues.length > 0) {
         return phaseResult(
-          context,
+          runtime,
           startedAt,
           failedResult("The website does not consume the linked component workspace.", [...evidence, ...facts.workspaceLinkIssues]),
         );
@@ -848,7 +865,7 @@ async function runReactSetup(context: SetupContext, dependencies: ReactSetupDepe
     const contractIssues = [...facts.i18nIssues, ...facts.frameworkIssues];
     if (contractIssues.length > 0) {
       return phaseResult(
-        context,
+        runtime,
         startedAt,
         failedResult("The website i18n or framework configuration contracts are invalid.", [...evidence, ...contractIssues]),
       );
@@ -859,7 +876,7 @@ async function runReactSetup(context: SetupContext, dependencies: ReactSetupDepe
     const invalidArtifacts = facts.artifactIssues.filter((issue) => !isAbsentArtifactIssue(issue));
     if (invalidArtifacts.length > 0) {
       return phaseResult(
-        context,
+        runtime,
         startedAt,
         failedResult("The generated website artifacts are invalid.", [...evidence, ...invalidArtifacts]),
       );
@@ -868,7 +885,7 @@ async function runReactSetup(context: SetupContext, dependencies: ReactSetupDepe
     if (deferredArtifacts) {
       if (!context.options.dryRun) {
         return phaseResult(
-          context,
+          runtime,
           startedAt,
           failedResult(
             "The generated website artifacts are incomplete.",
@@ -886,13 +903,13 @@ async function runReactSetup(context: SetupContext, dependencies: ReactSetupDepe
 
     if (facts.environment.syntaxErrors.length > 0) {
       return phaseResult(
-        context,
+        runtime,
         startedAt,
         failedResult("The website environment file has syntax errors.", [...evidence, ...facts.environment.syntaxErrors]),
       );
     }
 
-    const environment = await prepareWebsiteEnvironmentWithDependencies(context, dependencies, knownSecrets);
+    const environment = await prepareEnvironment(context, runtime, knownSecrets);
     evidence.push(
       `Preserved setup-owned environment keys: ${environment.preservedKeys.join(", ") || "none"}.`,
       `${environment.actionDisposition === "planned" ? "Planned" : "Wrote"} setup-owned environment keys: ${
@@ -905,7 +922,7 @@ async function runReactSetup(context: SetupContext, dependencies: ReactSetupDepe
     const environmentVerification = verifyEnvironmentWrite(environment, evidence);
     if (environmentVerification !== null) {
       if ("result" in environmentVerification) {
-        return phaseResult(context, startedAt, environmentVerification.result);
+        return phaseResult(runtime, startedAt, environmentVerification.result);
       }
       facts = environmentVerification.facts;
     }
@@ -913,13 +930,13 @@ async function runReactSetup(context: SetupContext, dependencies: ReactSetupDepe
       evidence.push(`Missing or invalid external keys: ${environment.missingExternalKeys.join(", ")}.`);
     }
 
-    const playwright = await preparePlaywright(context, dependencies.platform, policy.playwrightVersion, facts, evidence, plannedActions);
+    const playwright = await preparePlaywright(context, runtime, policy.playwrightVersion, facts, evidence, plannedActions);
     if ("result" in playwright) {
-      return phaseResult(context, startedAt, playwright.result);
+      return phaseResult(runtime, startedAt, playwright.result);
     }
 
     if (plannedActions.length > 0 || environment.actionDisposition === "planned" || deferredArtifacts || deferredPackages) {
-      return phaseResult(context, startedAt, {
+      return phaseResult(runtime, startedAt, {
         id: "react",
         status: "skipped",
         summary: "React workspace preparation actions and postconditions are planned by dry-run.",
@@ -929,7 +946,7 @@ async function runReactSetup(context: SetupContext, dependencies: ReactSetupDepe
     }
 
     if (environment.status === "degraded") {
-      return phaseResult(context, startedAt, {
+      return phaseResult(runtime, startedAt, {
         id: "react",
         status: "degraded",
         summary: "React tooling is ready, but Clerk credentials are incomplete or invalid outside keyless local development.",
@@ -938,7 +955,7 @@ async function runReactSetup(context: SetupContext, dependencies: ReactSetupDepe
       });
     }
 
-    return phaseResult(context, startedAt, {
+    return phaseResult(runtime, startedAt, {
       id: "react",
       status: "succeeded",
       summary: "React packages, generated artifacts, website environment, and Playwright Chromium are ready.",
@@ -949,7 +966,7 @@ async function runReactSetup(context: SetupContext, dependencies: ReactSetupDepe
     if (isInterrupted(error)) {
       throw error;
     }
-    return phaseResult(context, startedAt, {
+    return phaseResult(runtime, startedAt, {
       id: "react",
       status: "failed",
       summary: "The required React workspace preparation phase failed.",
@@ -960,26 +977,23 @@ async function runReactSetup(context: SetupContext, dependencies: ReactSetupDepe
 }
 
 /**
- * Creates the React setup phase with explicit host and filesystem boundaries.
+ * Creates the React setup phase over the invocation-scoped setup phase runtime.
  *
- * @param dependencies - Optional production-boundary replacements for tests.
+ * @remarks
+ * The phase no longer accepts host or filesystem boundaries: the platform, the terminal snapshot,
+ * the atomic filesystem, the process runner, and the clock all come from
+ * {@link SetupPhaseRuntime}, so a test replaces capabilities on the runtime rather than on this
+ * factory.
+ *
  * @returns The required React setup phase definition.
  */
-export function createReactSetupPhase(dependencies: Partial<ReactSetupDependencies> = {}): SetupPhaseDefinition {
-  const defaults = defaultDependencies();
-  const resolvedDependencies: ReactSetupDependencies = {
-    platform: dependencies.platform ?? defaults.platform,
-    interactive: dependencies.interactive ?? defaults.interactive,
-    readTextFile: dependencies.readTextFile ?? defaults.readTextFile,
-    writeTextFile: dependencies.writeTextFile ?? defaults.writeTextFile,
-    setFileMode: dependencies.setFileMode ?? defaults.setFileMode,
-  };
+export function createReactSetupPhase(): SetupPhaseDefinition {
   return {
     id: "react",
     title: "React workspace",
     required: true,
     dependsOn: [ROOT_DEPENDENCIES_ACTION, GENERATORS_ACTION],
-    run: (context) => runReactSetup(context, resolvedDependencies),
+    run: (context) => runReactSetup(context),
   };
 }
 
