@@ -12,9 +12,11 @@ import {afterEach, describe, expect, it, vi} from "vitest";
 import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "./common/logger.ts";
 import {createRepositoryPaths} from "./common/repository-paths.ts";
 import type {RepositoryRequirements} from "./common/requirements.ts";
+import {asReadOnlyFileSystem, type Clock, type RuntimeEnvironment} from "./common/runtime.ts";
+import {nodeFileSystem} from "./common/runtime.node.ts";
 import {infrastructureDoctorModule} from "./doctor.infrastructure.ts";
 import {createDoctorReport} from "./doctor.reporter.ts";
-import {type DiagnosticNetworkResult, type DoctorContext, type DoctorRunOptions} from "./doctor.types.ts";
+import {type DiagnosticNetworkResult, type DoctorContext, type DoctorInput} from "./doctor.types.ts";
 import type {InfrastructureFacts} from "./inspection/infrastructure.ts";
 import type {RepositoryInspectionSession} from "./inspection/repository.ts";
 import type {InspectionOutcome} from "./inspection/types.ts";
@@ -52,8 +54,35 @@ const REQUIRED_MANIFEST_RELATIVE_SEGMENTS: readonly (readonly string[])[] = [
 const CERT_RELATIVE_SEGMENTS = ["infra", "Local", "Management", "certs", "local-cert.pem"];
 const KEY_RELATIVE_SEGMENTS = ["infra", "Local", "Management", "certs", "local-key.pem"];
 
-function doctorOptions(patch: Partial<DoctorRunOptions> = {}): DoctorRunOptions {
+function doctorOptions(patch: Partial<DoctorInput> = {}): DoctorInput {
   return {verbose: false, quick: false, ...patch};
+}
+
+/** Deterministic monotonic clock every fixture context observes. */
+function fixtureClock(): Clock {
+  let current = 0;
+  return {
+    monotonicNow: (): number => ++current,
+    isoTimestamp: (): string => "2026-08-29T00:00:00.000Z",
+    delay: (): Promise<void> => Promise.resolve(),
+  };
+}
+
+/** Immutable environment snapshot every fixture context observes. */
+function fixtureEnvironment(
+  variables: Readonly<Record<string, string | undefined>> = {},
+  platform: NodeJS.Platform = "win32",
+): RuntimeEnvironment {
+  return {
+    variables,
+    cwd: "C:\\fixture\\arolariu.ro",
+    executablePath: "C:\\Program Files\\nodejs\\node.exe",
+    platform,
+    architecture: "x64",
+    stdinIsTTY: false,
+    stdoutIsTTY: false,
+    isCI: false,
+  };
 }
 
 async function writeFixtureFile(path: string, contents: string): Promise<void> {
@@ -86,7 +115,7 @@ interface InfrastructureFixture {
 
 async function createInfrastructureFixture(
   input: Readonly<{
-    options?: Partial<DoctorRunOptions>;
+    options?: Partial<DoctorInput>;
     env?: Readonly<NodeJS.ProcessEnv>;
     toolingConfig?: string | null;
     createManifests?: boolean;
@@ -128,7 +157,6 @@ async function createInfrastructureFixture(
   } as unknown as RepositoryInspectionSession;
 
   const sink = new InMemoryLoggerSink();
-  let now = 0;
   const context: DoctorContext = {
     options: doctorOptions(input.options),
     paths,
@@ -137,10 +165,9 @@ async function createInfrastructureFixture(
       get: vi.fn(async (): Promise<DiagnosticNetworkResult> => ({status: "reachable", statusCode: 200, durationMs: 1})),
     },
     logger: new MonorepositoryConsoleLogger("doctor::infrastructure", {color: false, sink}),
-    platform: "linux",
-    arch: "x64",
-    env: input.env ?? {},
-    now: () => ++now,
+    files: asReadOnlyFileSystem(nodeFileSystem),
+    clock: fixtureClock(),
+    environment: fixtureEnvironment(input.env ?? {}, "linux"),
     inspection,
     probes: {
       run: vi.fn(async () => {

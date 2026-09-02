@@ -1,7 +1,7 @@
 import {describe, expect, it} from "vitest";
 
 import {InMemoryLoggerSink, MonorepositoryConsoleLogger, type MonorepositoryLogger} from "./common/logger.ts";
-import type {DiagnosticResult, DoctorReport, DoctorRunOptions} from "./doctor.types.ts";
+import type {DiagnosticResult, DoctorReport, DoctorInput} from "./doctor.types.ts";
 import {
   computeHealthScore,
   createDoctorReport,
@@ -123,7 +123,7 @@ function createLogger(options: Readonly<{json?: boolean; color?: boolean}> = {})
   return {sink, logger};
 }
 
-function createOptions(overrides: Readonly<Partial<DoctorRunOptions>> = {}): DoctorRunOptions {
+function createOptions(overrides: Readonly<Partial<DoctorInput>> = {}): DoctorInput {
   return {
     verbose: false,
     quick: false,

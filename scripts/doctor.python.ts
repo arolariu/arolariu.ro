@@ -6,7 +6,7 @@
  * Every diagnostic row in this module is derived exclusively from the shared `PythonFacts`
  * produced by `context.inspection.inspect("python")`, `context.requirements` for version policy,
  * and `context.network.get()` for PyPI reachability. This module never spawns a command, never
- * reads a file, and never uses `context.runner` or `context.probes`. When the shared inspection
+ * reads a file, and never uses an unrestricted runner or `context.probes`. When the shared inspection
  * outcome is `unavailable` or `invalid`, every fact-dependent row is an explicit failure; no
  * diagnostic ever fabricates a healthy value from missing facts.
  */
@@ -40,7 +40,7 @@ function diagnostic(
   startedAt: number,
   input: Omit<DiagnosticResult, "durationMs" | "module">,
 ): DiagnosticResult {
-  return diagnosticResult({module: "python", ...input}, startedAt, ctx.now);
+  return diagnosticResult({module: "python", ...input}, startedAt, ctx.clock.monotonicNow);
 }
 
 function issueDiagnostic(
@@ -101,7 +101,7 @@ function buildIssueDiagnosis(
 // ============================================================================
 
 function diagnoseRuntime(ctx: Readonly<DoctorContext>, facts: Readonly<PythonFacts>): DiagnosticResult {
-  const startedAt = ctx.now();
+  const startedAt = ctx.clock.monotonicNow();
 
   if (facts.selected === undefined) {
     return issueDiagnostic(ctx, startedAt, {
@@ -128,7 +128,7 @@ function diagnoseRuntime(ctx: Readonly<DoctorContext>, facts: Readonly<PythonFac
 }
 
 function diagnoseVirtualEnvironment(ctx: Readonly<DoctorContext>, facts: Readonly<PythonFacts>): DiagnosticResult {
-  const startedAt = ctx.now();
+  const startedAt = ctx.clock.monotonicNow();
 
   if (!facts.virtualEnvironment.exists) {
     return issueDiagnostic(ctx, startedAt, {
@@ -186,7 +186,7 @@ function diagnosePip(ctx: Readonly<DoctorContext>, facts: Readonly<PythonFacts>,
     });
   }
 
-  const startedAt = ctx.now();
+  const startedAt = ctx.clock.monotonicNow();
   if (!facts.pip.available) {
     return issueDiagnostic(ctx, startedAt, {
       id: "python.pip",
@@ -220,7 +220,7 @@ function diagnoseRequirements(ctx: Readonly<DoctorContext>, facts: Readonly<Pyth
     });
   }
 
-  const startedAt = ctx.now();
+  const startedAt = ctx.clock.monotonicNow();
 
   if (facts.requirements.mismatches.length > 0) {
     const evidence = boundedIssues([...facts.requirements.mismatches, ...facts.requirements.unverifiable]);
@@ -277,7 +277,7 @@ function diagnoseConflicts(ctx: Readonly<DoctorContext>, facts: Readonly<PythonF
     });
   }
 
-  const startedAt = ctx.now();
+  const startedAt = ctx.clock.monotonicNow();
   if (facts.pip.conflicts.length > 0) {
     return issueDiagnostic(ctx, startedAt, {
       id: "python.conflicts",
@@ -296,7 +296,7 @@ function diagnoseConflicts(ctx: Readonly<DoctorContext>, facts: Readonly<PythonF
 }
 
 function diagnoseConfiguration(ctx: Readonly<DoctorContext>, facts: Readonly<PythonFacts>): DiagnosticResult {
-  const startedAt = ctx.now();
+  const startedAt = ctx.clock.monotonicNow();
   if (facts.configurationIssues.length > 0) {
     const evidence = boundedIssues(facts.configurationIssues);
     const diagnosis = buildIssueDiagnosis(facts.configurationIssues);
@@ -349,7 +349,7 @@ async function diagnosePyPi(ctx: Readonly<DoctorContext>): Promise<DiagnosticRes
     });
   }
 
-  const startedAt = ctx.now();
+  const startedAt = ctx.clock.monotonicNow();
   const probe = await ctx.network.get(PYPI_PIP_INDEX_URL, DIAGNOSTIC_DEFAULT_TIMEOUT_MS);
   if (probe.status !== "reachable") {
     return skippedDiagnostic({
@@ -398,7 +398,7 @@ async function diagnosePyPi(ctx: Readonly<DoctorContext>): Promise<DiagnosticRes
 // ============================================================================
 
 function degradedResults(ctx: Readonly<DoctorContext>, issues: readonly string[]): readonly DiagnosticResult[] {
-  const startedAt = ctx.now();
+  const startedAt = ctx.clock.monotonicNow();
   const summary = "The shared Python inspection facts could not be produced.";
   const evidence = boundedIssues(issues);
   const diagnosis = buildIssueDiagnosis(issues);

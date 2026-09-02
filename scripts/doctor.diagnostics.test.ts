@@ -10,7 +10,6 @@ import {
   boundEvidence,
   boundCommandExcerpt,
   normalizeErrorForReport,
-  classifyCommandOutcome,
   passDiagnostic,
   warnDiagnostic,
   failDiagnostic,
@@ -156,32 +155,6 @@ describe("normalizeErrorForReport", () => {
 
   it("stringifies a non-Error thrown value", () => {
     expect(normalizeErrorForReport(42, "fallback")).toBe("42");
-  });
-});
-
-// ============================================================================
-// classifyCommandOutcome
-// ============================================================================
-
-describe("classifyCommandOutcome", () => {
-  it("classifies a successful command as 'success'", () => {
-    const result = classifyCommandOutcome({code: 0, stdout: "ok", stderr: "", durationMs: 1, timedOut: false});
-    expect(result).toBe("success");
-  });
-
-  it("classifies an absent command (spawn error) as 'missing'", () => {
-    const result = classifyCommandOutcome({code: 1, stdout: "", stderr: "", durationMs: 1, timedOut: false, spawnError: "ENOENT"});
-    expect(result).toBe("missing");
-  });
-
-  it("classifies a non-zero exit as 'failure'", () => {
-    const result = classifyCommandOutcome({code: 1, stdout: "", stderr: "", durationMs: 1, timedOut: false});
-    expect(result).toBe("failure");
-  });
-
-  it("classifies a timeout as 'failure'", () => {
-    const result = classifyCommandOutcome({code: 1, stdout: "", stderr: "", durationMs: 1, timedOut: true});
-    expect(result).toBe("failure");
   });
 });
 

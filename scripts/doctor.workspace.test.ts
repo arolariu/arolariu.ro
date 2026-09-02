@@ -22,9 +22,11 @@ import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "./common/logger.t
 import type {ProcessOutcome} from "./common/runner.ts";
 import {createRepositoryPaths} from "./common/repository-paths.ts";
 import type {RepositoryRequirements} from "./common/requirements.ts";
+import {asReadOnlyFileSystem, FileSystemError, type Clock, type ReadOnlyFileSystem, type RuntimeEnvironment} from "./common/runtime.ts";
+import {nodeFileSystem} from "./common/runtime.node.ts";
 import {getExpectedTaxonomyArtifactPaths} from "./common/taxonomy-artifacts.ts";
 import {workspaceDoctorModule} from "./doctor.workspace.ts";
-import type {DiagnosticNetworkResult, DiagnosticResult, DoctorContext, DoctorRunOptions} from "./doctor.types.ts";
+import type {DiagnosticNetworkResult, DiagnosticResult, DoctorContext, DoctorInput} from "./doctor.types.ts";
 import type {InspectionProbe, InspectionProbeRunner} from "./inspection/probes.ts";
 import type {RepositoryInspectionSession} from "./inspection/repository.ts";
 import type {InspectionOutcome} from "./inspection/types.ts";
@@ -76,8 +78,35 @@ function commandResult(patch: ProcessOutcomeFixture = {}): ProcessOutcome {
   return code === 0 ? {kind: "succeeded", exitCode: 0, ...output} : {kind: "exited", exitCode: code, ...output};
 }
 
-function doctorOptions(patch: Partial<DoctorRunOptions> = {}): DoctorRunOptions {
+function doctorOptions(patch: Partial<DoctorInput> = {}): DoctorInput {
   return {verbose: false, quick: false, ...patch};
+}
+
+/** Deterministic monotonic clock every fixture context observes. */
+function fixtureClock(): Clock {
+  let current = 0;
+  return {
+    monotonicNow: (): number => ++current,
+    isoTimestamp: (): string => "2026-08-29T00:00:00.000Z",
+    delay: (): Promise<void> => Promise.resolve(),
+  };
+}
+
+/** Immutable environment snapshot every fixture context observes. */
+function fixtureEnvironment(
+  variables: Readonly<Record<string, string | undefined>> = {},
+  platform: NodeJS.Platform = "win32",
+): RuntimeEnvironment {
+  return {
+    variables,
+    cwd: "C:\\fixture\\arolariu.ro",
+    executablePath: "C:\\Program Files\\nodejs\\node.exe",
+    platform,
+    architecture: "x64",
+    stdinIsTTY: false,
+    stdoutIsTTY: false,
+    isCI: false,
+  };
 }
 
 function healthyWorkspaceFacts(): WorkspaceFacts {
@@ -145,6 +174,20 @@ function stripComments(source: string): string {
   return source.replace(/\/\*[\s\S]*?\*\//gu, "").replace(/\/\/[^\n]*/gu, "");
 }
 
+/**
+ * Wraps the real read-only filesystem so only `assertAccessible` fails, keeping every other
+ * fixture read (repository identity, configuration files, taxonomy artifacts) intact.
+ *
+ * @param failure - The code-preserving failure `assertAccessible` rejects with.
+ * @returns A read-only filesystem whose access assertion always fails.
+ */
+function readOnlyFilesWithAccessFailure(failure: FileSystemError): ReadOnlyFileSystem {
+  return {
+    ...asReadOnlyFileSystem(nodeFileSystem),
+    assertAccessible: (): Promise<void> => Promise.reject(failure),
+  };
+}
+
 function resultIds(results: readonly DiagnosticResult[]): readonly string[] {
   return results.map((result) => result.id);
 }
@@ -181,12 +224,13 @@ interface WorkspaceFixture {
 
 async function createWorkspaceFixture(
   input: Readonly<{
-    options?: Partial<DoctorRunOptions>;
+    options?: Partial<DoctorInput>;
     requirementsValid?: boolean;
     probeOverrides?: ReadonlyMap<string, ProcessOutcome>;
     inspectionOverrides?: ReadonlyMap<string, InspectionOutcome<unknown>>;
     omitConfigPaths?: readonly string[];
     taxonomyContentOverrides?: ReadonlyMap<string, string>;
+    files?: ReadOnlyFileSystem;
   }> = {},
 ): Promise<WorkspaceFixture> {
   const root = await mkdtemp(join(tmpdir(), "arolariu-doctor-workspace-"));
@@ -254,7 +298,6 @@ async function createWorkspaceFixture(
   });
 
   const sink = new InMemoryLoggerSink();
-  let now = 0;
   const context: DoctorContext = {
     options: doctorOptions(input.options),
     paths,
@@ -266,10 +309,9 @@ async function createWorkspaceFixture(
       get: vi.fn(async (): Promise<DiagnosticNetworkResult> => ({status: "reachable", statusCode: 200, durationMs: 1})),
     },
     logger: new MonorepositoryConsoleLogger("doctor::workspace", {color: false, sink}),
-    platform: "win32",
-    arch: "x64",
-    env: {PATH: resolve(root, "bin")},
-    now: () => ++now,
+    files: input.files ?? asReadOnlyFileSystem(nodeFileSystem),
+    clock: fixtureClock(),
+    environment: fixtureEnvironment({PATH: resolve(root, "bin")}),
     probes: {run: probeRun as unknown as InspectionProbeRunner["run"]},
     inspection: {
       inspect: inspect as unknown as RepositoryInspectionSession["inspect"],
@@ -689,6 +731,39 @@ describe("workspaceDoctorModule", () => {
     expect(fixture.context.probes.run).toBe(probeRunFn);
     expect(fixture.inspect.mock.calls.length).toBeGreaterThan(0);
     expect(fixture.probeRun.mock.calls.length).toBeGreaterThan(0);
+  });
+
+  it.each([
+    ["EACCES", "The current user does not have read/write access to the configured npm cache."],
+    ["EPERM", "The current user does not have read/write access to the configured npm cache."],
+  ])("classifies a %s npm cache access failure as a permission root cause", async (code, rootCause) => {
+    const fixture = await createWorkspaceFixture({
+      files: readOnlyFilesWithAccessFailure(new FileSystemError("assertAccessible", "cache", "Failed to access the npm cache.", {code})),
+    });
+
+    const results = await workspaceDoctorModule.run(fixture.context);
+
+    const cache = resultById(results, "workspace.npm-cache");
+    expect(cache.status).toBe("fail");
+    expect(cache.rootCause).toBe(rootCause);
+    expect(cache.potentialCauses).toEqual([]);
+    expect(cache.evidence.some((entry) => entry.includes("Failed to access the npm cache."))).toBe(true);
+  });
+
+  it("classifies a non-permission npm cache access failure as potential causes", async () => {
+    const fixture = await createWorkspaceFixture({
+      files: readOnlyFilesWithAccessFailure(new FileSystemError("assertAccessible", "cache", "npm cache is missing.", {code: "ENOENT"})),
+    });
+
+    const results = await workspaceDoctorModule.run(fixture.context);
+
+    const cache = resultById(results, "workspace.npm-cache");
+    expect(cache.status).toBe("fail");
+    expect(cache.rootCause).toBeUndefined();
+    expect(cache.potentialCauses.map(({cause}) => cause)).toEqual([
+      "The configured npm cache directory does not exist.",
+      "npm points at a stale or unavailable filesystem path.",
+    ]);
   });
 
   it("never imports CommandSpec or calls context.runner", async () => {

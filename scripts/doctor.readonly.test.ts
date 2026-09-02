@@ -15,12 +15,10 @@ import {existsSync, readFileSync} from "node:fs";
 import {execFileSync, spawn} from "node:child_process";
 import {resolve} from "node:path";
 import {fileURLToPath} from "node:url";
-import {describe, expect, it, vi, beforeAll} from "vitest";
-import {MonorepositoryConsoleLogger} from "./common/logger.ts";
-import {createRepositoryPaths, type RepositoryPaths} from "./common/repository-paths.ts";
-import type {RepositoryRequirements} from "./common/requirements.ts";
-import {runDoctor} from "./doctor.ts";
-import type {DiagnosticModule, DiagnosticModuleId, DiagnosticResult} from "./doctor.types.ts";
+import {describe, expect, it, beforeAll} from "vitest";
+import {nodeFileSystem} from "./common/runtime.node.ts";
+import {createTestRuntimeFactory} from "./common/runtime.testing.ts";
+import {createDoctorCommand} from "./doctor.ts";
 import type {RepositoryInspectionSession} from "./inspection/repository.ts";
 import type {InspectionOutcome} from "./inspection/types.ts";
 
@@ -58,12 +56,28 @@ const BOUNDARY_CASES: readonly [string, string, string, boolean][] = [
   ["fsp-appendFile", 'import {appendFile} from "node:fs/promises";', "scripts/doctor.workspace.ts", true],
   ["fsp-default", 'import fsp from "node:fs/promises";', "scripts/doctor.workspace.ts", true],
   ["fsp-namespace", 'import * as fsp from "node:fs/promises";', "scripts/doctor.workspace.ts", true],
+  // Rejected read-only command-runtime boundaries
+  ["runtime-FileSystem", 'import type {FileSystem} from "./common/runtime.ts";', "scripts/doctor.workspace.ts", true],
+  ["runtime-FileSystem-value", 'import {FileSystem} from "./common/runtime.ts";', "scripts/doctor.workspace.ts", true],
+  ["runtime-namespace", 'import * as runtime from "./common/runtime.ts";', "scripts/doctor.workspace.ts", true],
+  ["runtime-node-value", 'import {nodeFileSystem} from "./common/runtime.node.ts";', "scripts/doctor.workspace.ts", true],
+  ["runtime-node-type", 'import type {NodeRuntimeScopeOptions} from "./common/runtime.node.ts";', "scripts/doctor.workspace.ts", true],
+  ["runner-execa", 'import {ExecaProcessRunner} from "./common/runner.execa.ts";', "scripts/doctor.workspace.ts", true],
+  ["runner-ProcessRunner", 'import type {ProcessRunner} from "./common/runner.ts";', "scripts/doctor.workspace.ts", true],
   // Allowed read-only imports
   ["fs-constants", 'import {constants} from "node:fs";', "scripts/doctor.workspace.ts", false],
   ["fs-existsSync", 'import {existsSync} from "node:fs";', "scripts/doctor.workspace.ts", false],
   ["fs-readFileSync", 'import {readFileSync} from "node:fs";', "scripts/doctor.workspace.ts", false],
   ["fsp-access-readFile-stat", 'import {access, readFile, stat} from "node:fs/promises";', "scripts/doctor.workspace.ts", false],
   ["fsp-readdir", 'import {readdir} from "node:fs/promises";', "scripts/doctor.workspace.ts", false],
+  ["runtime-ReadOnlyFileSystem", 'import type {ReadOnlyFileSystem} from "./common/runtime.ts";', "scripts/doctor.workspace.ts", false],
+  [
+    "runtime-narrow-types",
+    'import {FileSystemError, type Clock, type RuntimeEnvironment} from "./common/runtime.ts";',
+    "scripts/doctor.workspace.ts",
+    false,
+  ],
+  ["runner-ProcessOutcome", 'import type {ProcessOutcome} from "./common/runner.ts";', "scripts/doctor.workspace.ts", false],
 ];
 
 /**
@@ -132,41 +146,10 @@ function snapshotSentinelFiles(root: string): ReadonlyMap<string, FileSnapshot> 
 
 // ===== Test fixtures =====
 
-const MODULE_ORDER: readonly DiagnosticModuleId[] = ["workspace", "dotnet", "react", "svelte", "python", "infrastructure"];
-const REPRESENTATIVE_ID: Readonly<Record<DiagnosticModuleId, string>> = {
-  workspace: "workspace.repository-root",
-  dotnet: "dotnet.executable",
-  react: "react.packages",
-  svelte: "svelte.cv.packages",
-  python: "python.runtime",
-  infrastructure: "infrastructure.selection",
-};
-
-function passCheck(id: string, module: DiagnosticModuleId): DiagnosticResult {
-  return {id, module, name: id, status: "pass", summary: `${id} healthy.`, evidence: [], potentialCauses: [], fixes: [], durationMs: 1};
-}
-
-function createFakeModules(): Readonly<{modules: readonly DiagnosticModule[]}> {
-  const modules = MODULE_ORDER.map((id): DiagnosticModule => ({
-    id,
-    title: id,
-    run: async (): Promise<readonly DiagnosticResult[]> => [passCheck(REPRESENTATIVE_ID[id], id)],
-  }));
-  return {modules};
-}
-
-const FIXED_REPOSITORY_PATHS: RepositoryPaths = createRepositoryPaths(resolve("C:\\fixture\\arolariu.ro"));
-const FIXED_REQUIREMENTS: RepositoryRequirements = {
-  node: {major: 24, minor: 0, patch: 0},
-  npm: {major: 11, minor: 0, patch: 0},
-  dotnet: {major: 10, minor: 0, patch: 0},
-  python: {major: 3, minor: 12, patch: 0},
-  packages: new Map(),
-};
-
+/** Fake session that reports every fact as unavailable, so no worker or probe ever runs. */
 function createFakeInspectionSession(): RepositoryInspectionSession {
   return {
-    inspect: async (_key: string): Promise<InspectionOutcome<unknown>> => ({
+    inspect: async (): Promise<InspectionOutcome<unknown>> => ({
       kind: "unavailable" as const,
       reason: "Fake session for immutability test",
       durationMs: 0,
@@ -174,29 +157,6 @@ function createFakeInspectionSession(): RepositoryInspectionSession {
     invalidate: (): void => {},
     updateInfrastructureEngine: (): void => {},
   } as unknown as RepositoryInspectionSession;
-}
-
-function fixedDependencies() {
-  let tick = 0;
-  return {
-    resolveRepositoryPaths: () => FIXED_REPOSITORY_PATHS,
-    loadRepositoryRequirements: async () => ({status: "valid" as const, requirements: FIXED_REQUIREMENTS}),
-    network: {
-      get: vi.fn(async () => ({status: "unavailable" as const, durationMs: 0, error: "Fake network probe"})),
-    },
-    platform: "win32" as NodeJS.Platform,
-    arch: "x64",
-    env: {} as NodeJS.ProcessEnv,
-    now: () => (tick += 1),
-    timestamp: () => "2026-08-31T00:00:00.000Z",
-    inspection: createFakeInspectionSession(),
-    probes: {
-      run: vi.fn(async () => {
-        throw new Error("Probes must not be invoked by fake modules.");
-      }),
-    },
-    logger: new MonorepositoryConsoleLogger("doctor", {verbose: false}),
-  };
 }
 
 // ===== ESLint boundary tests =====
@@ -224,6 +184,20 @@ describe("doctor ESLint boundary restrictions", () => {
     it("rejects child_process (bare alias) imports in doctor modules", () => expectRestricted("child_process-bare"));
     it("rejects defaultCommandRunner from process.ts in specialist modules", () => expectRestricted("defaultCommandRunner"));
     it("rejects CommandRunner type from process.ts in specialist modules", () => expectRestricted("CommandRunner-type"));
+
+    it("rejects the mutable FileSystem capability from the runtime kernel", () => {
+      expectRestricted("runtime-FileSystem");
+      expectRestricted("runtime-FileSystem-value");
+      expectRestricted("runtime-namespace");
+    });
+
+    it("rejects every import of the Node runtime adapter in specialist modules", () => {
+      expectRestricted("runtime-node-value");
+      expectRestricted("runtime-node-type");
+    });
+
+    it("rejects the Execa runner adapter in specialist modules", () => expectRestricted("runner-execa"));
+    it("rejects the unrestricted ProcessRunner contract in specialist modules", () => expectRestricted("runner-ProcessRunner"));
 
     it("rejects mutating node:fs named imports", () => {
       for (const suffix of [
@@ -261,6 +235,9 @@ describe("doctor ESLint boundary restrictions", () => {
     it("allows readFileSync from node:fs", () => expectAllowed("fs-readFileSync"));
     it("allows access, readFile, stat from node:fs/promises", () => expectAllowed("fsp-access-readFile-stat"));
     it("allows readdir from node:fs/promises", () => expectAllowed("fsp-readdir"));
+    it("allows the read-only filesystem capability from the runtime kernel", () => expectAllowed("runtime-ReadOnlyFileSystem"));
+    it("allows narrow runtime capability types and the filesystem error", () => expectAllowed("runtime-narrow-types"));
+    it("allows the typed ProcessOutcome produced by opaque probes", () => expectAllowed("runner-ProcessOutcome"));
   });
 });
 
@@ -323,7 +300,7 @@ describe("doctor runtime immutability", () => {
     expect(snapshotAfter, "sentinel files must not be mutated by quick doctor").toEqual(snapshotBefore);
   }, 120_000);
 
-  it("full-profile runDoctor with injected inspection session does not mutate .nx or .arolariu", async () => {
+  it("full-profile doctor command with the real filesystem does not mutate .nx or .arolariu", async () => {
     const root = resolve(process.cwd());
     const nxPath = resolve(root, ".nx");
     const arolaruPath = resolve(root, ".arolariu");
@@ -332,14 +309,24 @@ describe("doctor runtime immutability", () => {
     const arolaruExistedBefore = existsSync(arolaruPath);
     const snapshotBefore = snapshotSentinelFiles(root);
 
-    const {modules} = createFakeModules();
-    await runDoctor(
-      {quick: false, verbose: false},
-      {
-        ...fixedDependencies(),
-        modules,
-      },
-    );
+    // This is the one doctor test that intentionally uses the real Node filesystem: its whole
+    // purpose is to prove that a real full-profile run leaves repository sentinels untouched.
+    // Every ordinary doctor command test uses the in-memory repository fixture instead.
+    const existingSession = createFakeInspectionSession();
+    const command = createDoctorCommand({
+      runtimeFactory: createTestRuntimeFactory({
+        files: nodeFileSystem,
+        inspection: {getRepositorySession: (): RepositoryInspectionSession => existingSession},
+      }),
+    });
+
+    const execution = await command.invoke({quick: false, verbose: false}, {presentation: "silent"});
+
+    const failureDetail =
+      execution.status === "failed" || execution.status === "cancelled"
+        ? [execution.failure.message, ...execution.failure.evidence].join(" | ")
+        : "";
+    expect(execution.status, `full-profile doctor must complete: ${failureDetail}`).toBe("completed");
 
     if (!nxExistedBefore) {
       expect(existsSync(nxPath), ".nx must not be created during full-profile immutability test").toBe(false);

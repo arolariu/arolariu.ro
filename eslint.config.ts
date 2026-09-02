@@ -891,7 +891,7 @@ const toolingPromptOutputConfig: Config = defineConfig({
 /**
  * Shared read-only paths that apply to all doctor production modules. Uses `allowImportNames`
  * instead of `importNames` so that default and namespace imports (which bypass named-import
- * restrictions) are also blocked.
+ * restrictions) are also blocked, except where exactly one capability name is prohibited.
  */
 const doctorReadOnlyPaths: readonly object[] = [
   {name: "execa", message: "Doctor modules must not use execa directly; use context.probes instead."},
@@ -907,6 +907,11 @@ const doctorReadOnlyPaths: readonly object[] = [
     allowImportNames: ["access", "readFile", "readdir", "stat", "statfs"],
     message: "Doctor modules must use only read-only fs/promises operations.",
   },
+  {
+    name: "./common/runtime.ts",
+    importNames: ["FileSystem"],
+    message: "Doctor modules must never take the mutable FileSystem capability; use ReadOnlyFileSystem (context.files).",
+  },
 ];
 
 const doctorReadOnlyConfig: Config = defineConfig({
@@ -920,8 +925,11 @@ const doctorReadOnlyConfig: Config = defineConfig({
 
 /**
  * Bans direct runtime imports of `defaultCommandRunner` and `CommandRunner` from
- * `./common/process.ts` in doctor specialist modules. `doctor.ts` (the sole orchestrator
- * wiring point) is excluded; all `*.test.ts` files are also excluded.
+ * `./common/process.ts`, every import of the Node runtime adapter and the Execa runner adapter,
+ * and the unrestricted `ProcessRunner` contract in doctor specialist modules: those modules
+ * receive only the narrow read-only capabilities carried by `DoctorContext`. `doctor.ts` (the
+ * sole orchestrator wiring point, which still owns the deprecated `runDoctor` compatibility
+ * adapter) is excluded; all `*.test.ts` files are also excluded.
  *
  * Because flat config merges later entries on top of earlier ones for the same rule, this
  * config must include the shared read-only paths or it would silently replace them.
@@ -941,6 +949,19 @@ const doctorModuleIsolationConfig: Config = defineConfig({
             importNames: ["defaultCommandRunner", "CommandRunner"],
             message:
               "Doctor specialist modules must obtain the command runner through context.probes, not directly from ./common/process.ts.",
+          },
+          {
+            name: "./common/runtime.node.ts",
+            message: "Doctor specialist modules must never import the Node runtime adapter; capabilities arrive through DoctorContext.",
+          },
+          {
+            name: "./common/runner.execa.ts",
+            message: "Doctor specialist modules must never import the Execa runner adapter; use context.probes instead.",
+          },
+          {
+            name: "./common/runner.ts",
+            importNames: ["ProcessRunner"],
+            message: "Doctor specialist modules must never take an unrestricted ProcessRunner; run allowlisted probes via context.probes.",
           },
         ],
       },

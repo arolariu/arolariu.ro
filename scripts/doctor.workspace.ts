@@ -7,15 +7,15 @@
  * memoized {@link https://en.wikipedia.org/wiki/Inspection | inspection} facts obtained through
  * `context.inspection.inspect(...)` (Nx workspace projects/graph, and both npm dependency trees),
  * opaque allowlisted probes executed through `context.probes.run(...)` (Git, node/npm runtime
- * versions, npm cache/audit/outdated), or direct, narrowly-scoped filesystem reads for
- * repository-wide configuration files and generated taxonomy artifacts that no fact model
- * represents. This module never imports `ProcessRequest`/`ProcessRunner` from `./common/runner.ts`
- * and never touches `context.runner`; it consumes only the typed `ProcessOutcome` produced by
- * probe execution, and classifies every one of its variants explicitly.
+ * versions, npm cache/audit/outdated), or narrowly-scoped reads issued through the injected
+ * read-only filesystem (`context.files`) for repository-wide configuration files and generated
+ * taxonomy artifacts that no fact model represents. This module never imports a Node filesystem
+ * API, never imports `ProcessRequest`/`ProcessRunner` from `./common/runner.ts`, and never
+ * receives a mutable filesystem or unrestricted runner; it consumes only the typed
+ * `ProcessOutcome` produced by probe execution, and classifies every one of its variants
+ * explicitly.
  */
 
-import {constants as fsConstants} from "node:fs";
-import {access, readFile, stat} from "node:fs/promises";
 import {basename, join, resolve} from "node:path";
 
 import type {ProcessOutcome} from "./common/runner.ts";
@@ -43,6 +43,9 @@ const GIBIBYTE = 1024 ** 3;
 const MINIMUM_DISK_BYTES = GIBIBYTE;
 const RECOMMENDED_DISK_BYTES = 5 * GIBIBYTE;
 const RECOMMENDED_MEMORY_BYTES = GIBIBYTE;
+
+/** Shared decoder for mirrored taxonomy artifact bytes. */
+const artifactDecoder = new TextDecoder("utf-8");
 
 const REQUIRED_CONFIG_PATHS = [
   ".nvmrc",
@@ -139,6 +142,23 @@ function commandEvidence(outcome: Readonly<ProcessOutcome>): readonly string[] {
   ];
 }
 
+/**
+ * Guarantees at least one evidence entry for a probe-derived failure.
+ *
+ * @remarks
+ * A probe can exit successfully and still print nothing recognizable — a shim that swallows its
+ * own output, for example — in which case {@link commandEvidence} is empty. The reporter rejects
+ * a failed row without evidence and aborts the whole report, so the empty case is described
+ * explicitly instead of collapsing every sibling diagnostic.
+ *
+ * @param entries - Evidence already derived from one or more probe outcomes.
+ * @param fallback - Stable description used when no probe evidence exists.
+ * @returns Non-empty evidence entries.
+ */
+function probeEvidence(entries: readonly string[], fallback: string): readonly string[] {
+  return entries.length === 0 ? [fallback] : entries;
+}
+
 function formattedVersion(version: MinimumVersion): string {
   return `${String(version.major)}.${String(version.minor)}.${String(version.patch)}`;
 }
@@ -154,7 +174,7 @@ function diagnostic(
       ...input,
     },
     startedAt,
-    context.now,
+    context.clock.monotonicNow,
   );
 }
 
@@ -244,15 +264,22 @@ function npmTreePotentialCauses(problems: readonly NpmProblemFact[]): readonly D
   return causes;
 }
 
-async function pathIsFile(path: string): Promise<boolean> {
-  try {
-    return (await stat(path)).isFile();
-  } catch (error: unknown) {
-    if (hasErrorCode(error, "ENOENT")) {
-      return false;
-    }
-    throw error;
+async function pathIsFile(context: Readonly<DoctorContext>, path: string): Promise<boolean> {
+  return (await context.files.inspect(path)).kind === "file";
+}
+
+/**
+ * Compares two artifact byte sequences without materializing an intermediate string.
+ *
+ * @param left - First artifact contents.
+ * @param right - Second artifact contents.
+ * @returns Whether both mirrors are byte-identical.
+ */
+function sameBytes(left: Uint8Array, right: Uint8Array): boolean {
+  if (left.byteLength !== right.byteLength) {
+    return false;
   }
+  return left.every((byte, index) => byte === right[index]);
 }
 
 /**
@@ -283,7 +310,7 @@ async function executableFailureEvidence(executable: "git" | "node" | "npm", con
   }
 
   const resolution = await context.probes.run(
-    probes.workspace.executableResolution(executableProbeName(executable, context.platform), context.platform),
+    probes.workspace.executableResolution(executableProbeName(executable, context.environment.platform), context.environment.platform),
     {cwd: context.paths.root},
   );
   const evidence = commandEvidence(resolution).map((entry) => `Resolution probe: ${entry}`);
@@ -294,9 +321,9 @@ async function executableFailureEvidence(executable: "git" | "node" | "npm", con
 }
 
 async function diagnoseRepositoryRoot(context: Readonly<DoctorContext>): Promise<DiagnosticResult> {
-  const startedAt = context.now();
+  const startedAt = context.clock.monotonicNow();
   try {
-    const contents = await readFile(context.paths.packageJson, "utf8");
+    const contents = await context.files.readText(context.paths.packageJson);
     const parsed: unknown = JSON.parse(contents);
     if (!isRecord(parsed) || parsed["name"] !== REPOSITORY_PACKAGE_NAME) {
       return issueDiagnostic(context, startedAt, {
@@ -326,7 +353,7 @@ async function diagnoseRepositoryRoot(context: Readonly<DoctorContext>): Promise
 }
 
 async function diagnoseGit(context: Readonly<DoctorContext>): Promise<DiagnosticResult> {
-  const startedAt = context.now();
+  const startedAt = context.clock.monotonicNow();
   const version = await context.probes.run(probes.workspace.gitVersion(), {cwd: context.paths.root});
   if (!isSuccessfulCommand(version) || !/^git version \d+\.\d+\.\d+/u.test(version.stdout.trim())) {
     const followUp = isMissingExecutable(version) ? await executableFailureEvidence("git", context) : [];
@@ -335,7 +362,10 @@ async function diagnoseGit(context: Readonly<DoctorContext>): Promise<Diagnostic
       name: "Git",
       status: "fail",
       summary: "Git is unavailable or returned an invalid version.",
-      evidence: [...commandEvidence(version), ...followUp],
+      evidence: probeEvidence(
+        [...commandEvidence(version), ...followUp],
+        "The git version probe completed without producing a recognizable version.",
+      ),
       potentialCauses: [
         {cause: "Git is not installed or is not available on the active PATH.", confidence: "high"},
         {cause: "A version-manager or installation path is not active in this shell.", confidence: "medium"},
@@ -344,17 +374,20 @@ async function diagnoseGit(context: Readonly<DoctorContext>): Promise<Diagnostic
     });
   }
 
-  const [statusResult, logResult] = await Promise.all([
-    context.probes.run(probes.workspace.gitStatus(), {cwd: context.paths.root}),
-    context.probes.run(probes.workspace.gitLastCommit(), {cwd: context.paths.root}),
-  ]);
+  // Intentionally sequential: doctor modules receive no task scheduler, so repository-state
+  // probes are issued one after the other rather than through an ad-hoc concurrency primitive.
+  const statusResult = await context.probes.run(probes.workspace.gitStatus(), {cwd: context.paths.root});
+  const logResult = await context.probes.run(probes.workspace.gitLastCommit(), {cwd: context.paths.root});
   if (!isSuccessfulCommand(statusResult) || !isSuccessfulCommand(logResult)) {
     return issueDiagnostic(context, startedAt, {
       id: "workspace.git",
       name: "Git",
       status: "fail",
       summary: "Git is installed but repository state could not be inspected.",
-      evidence: [...commandEvidence(statusResult), ...commandEvidence(logResult)],
+      evidence: probeEvidence(
+        [...commandEvidence(statusResult), ...commandEvidence(logResult)],
+        "The git status and last-commit probes completed without producing any output.",
+      ),
       potentialCauses: [
         {cause: "The checkout metadata is incomplete or inaccessible.", confidence: "high"},
         {cause: "The current path is not inside the expected Git worktree.", confidence: "medium"},
@@ -375,7 +408,7 @@ async function diagnoseGit(context: Readonly<DoctorContext>): Promise<Diagnostic
 }
 
 function diagnoseRequirementSources(context: Readonly<DoctorContext>): DiagnosticResult {
-  const startedAt = context.now();
+  const startedAt = context.clock.monotonicNow();
   if (context.requirements.status === "invalid") {
     return issueDiagnostic(context, startedAt, {
       id: "workspace.node-sources",
@@ -411,7 +444,7 @@ async function diagnoseRuntime(
     minimum: MinimumVersion | null;
   }>,
 ): Promise<DiagnosticResult> {
-  const startedAt = context.now();
+  const startedAt = context.clock.monotonicNow();
   if (input.minimum === null) {
     return skippedDiagnostic({
       id: input.id,
@@ -474,7 +507,7 @@ function diagnoseNpmTree(
   scope: "root" | "github-scripts",
   outcome: InspectionOutcome<NpmTreeFacts>,
 ): DiagnosticResult {
-  const startedAt = context.now();
+  const startedAt = context.clock.monotonicNow();
   const identity = treeIdentity(scope);
 
   if (outcome.kind === "unavailable") {
@@ -530,7 +563,7 @@ function diagnoseNpmTree(
 }
 
 async function diagnoseNpmCache(context: Readonly<DoctorContext>): Promise<DiagnosticResult> {
-  const startedAt = context.now();
+  const startedAt = context.clock.monotonicNow();
   const result = await context.probes.run(probes.workspace.npmCache(), {cwd: context.paths.root});
   const cachePath = result.stdout.trim();
   if (!isSuccessfulCommand(result) || cachePath === "") {
@@ -549,7 +582,7 @@ async function diagnoseNpmCache(context: Readonly<DoctorContext>): Promise<Diagn
   }
 
   try {
-    await access(cachePath, fsConstants.R_OK | fsConstants.W_OK);
+    await context.files.assertAccessible(cachePath, {read: true, write: true});
     return passDiagnostic(context, startedAt, "workspace.npm-cache", "npm cache", "npm cache is readable and writable.", [cachePath]);
   } catch (error: unknown) {
     const permissionFailure = hasErrorCode(error, "EACCES") || hasErrorCode(error, "EPERM");
@@ -573,7 +606,7 @@ async function diagnoseNpmCache(context: Readonly<DoctorContext>): Promise<Diagn
 }
 
 function diagnoseNxProjects(context: Readonly<DoctorContext>, outcome: InspectionOutcome<WorkspaceFacts>): DiagnosticResult {
-  const startedAt = context.now();
+  const startedAt = context.clock.monotonicNow();
 
   if (outcome.kind === "unavailable") {
     return issueDiagnostic(context, startedAt, {
@@ -625,7 +658,7 @@ function diagnoseNxProjects(context: Readonly<DoctorContext>, outcome: Inspectio
 }
 
 function diagnoseNxGraph(context: Readonly<DoctorContext>, outcome: InspectionOutcome<WorkspaceFacts>): DiagnosticResult {
-  const startedAt = context.now();
+  const startedAt = context.clock.monotonicNow();
 
   if (outcome.kind === "unavailable") {
     return issueDiagnostic(context, startedAt, {
@@ -715,13 +748,13 @@ function diagnoseNxGraph(context: Readonly<DoctorContext>, outcome: InspectionOu
 }
 
 async function diagnoseConfigFiles(context: Readonly<DoctorContext>): Promise<DiagnosticResult> {
-  const startedAt = context.now();
+  const startedAt = context.clock.monotonicNow();
   const missing: string[] = [];
   const inaccessible: string[] = [];
   for (const relativePath of REQUIRED_CONFIG_PATHS) {
     const path = resolve(context.paths.root, relativePath);
     try {
-      if (!(await pathIsFile(path))) {
+      if (!(await pathIsFile(context, path))) {
         missing.push(relativePath);
       }
     } catch (error: unknown) {
@@ -755,24 +788,24 @@ async function diagnoseConfigFiles(context: Readonly<DoctorContext>): Promise<Di
 }
 
 async function diagnoseGeneratedArtifacts(context: Readonly<DoctorContext>): Promise<DiagnosticResult> {
-  const startedAt = context.now();
+  const startedAt = context.clock.monotonicNow();
   const paths = getExpectedTaxonomyArtifactPaths(context.paths.root);
   const missing: string[] = [];
   const mismatched: string[] = [];
   const metadataErrors: string[] = [];
   const freshnessWarnings: string[] = [];
   const freshnessEvidence: string[] = [];
-  const contents = new Map<string, Buffer>();
+  const contents = new Map<string, Uint8Array>();
 
   try {
     for (const path of paths) {
       try {
-        const metadata = await stat(path);
-        if (!metadata.isFile()) {
+        const metadata = await context.files.inspect(path);
+        if (metadata.kind !== "file") {
           missing.push(path);
           continue;
         }
-        contents.set(path, await readFile(path));
+        contents.set(path, await context.files.readBytes(path));
       } catch (error: unknown) {
         if (hasErrorCode(error, "ENOENT")) {
           missing.push(path);
@@ -804,13 +837,13 @@ async function diagnoseGeneratedArtifacts(context: Readonly<DoctorContext>): Pro
     }
     const first = contents.get(mirrors[0]!);
     const second = contents.get(mirrors[1]!);
-    if (first !== undefined && second !== undefined && !first.equals(second)) {
+    if (first !== undefined && second !== undefined && !sameBytes(first, second)) {
       mismatched.push(name);
       continue;
     }
 
     try {
-      const parsed: unknown = JSON.parse(first!.toString("utf8"));
+      const parsed: unknown = JSON.parse(artifactDecoder.decode(first!));
       if (!isRecord(parsed)) {
         throw new Error("artifact root must be an object");
       }
@@ -889,7 +922,7 @@ function formatBytes(bytes: number): string {
 }
 
 async function diagnoseHostCapacity(context: Readonly<DoctorContext>): Promise<DiagnosticResult> {
-  const startedAt = context.now();
+  const startedAt = context.clock.monotonicNow();
   if (context.options.quick) {
     return skippedDiagnostic({
       id: "workspace.host-capacity",
@@ -1037,7 +1070,7 @@ async function diagnoseNpmAudit(context: Readonly<DoctorContext>): Promise<Diagn
     });
   }
 
-  const startedAt = context.now();
+  const startedAt = context.clock.monotonicNow();
   const result = await context.probes.run(probes.workspace.npmAudit(), {cwd: context.paths.root});
   if (isNetworkUnavailable(result)) {
     return skippedDiagnostic({
@@ -1105,7 +1138,7 @@ async function diagnoseNpmOutdated(context: Readonly<DoctorContext>): Promise<Di
     });
   }
 
-  const startedAt = context.now();
+  const startedAt = context.clock.monotonicNow();
   const result = await context.probes.run(probes.workspace.npmOutdated(), {cwd: context.paths.root});
   if (isNetworkUnavailable(result)) {
     return skippedDiagnostic({
@@ -1164,11 +1197,13 @@ export const workspaceDoctorModule: DiagnosticModule = {
     const nodeMinimum = context.requirements.status === "valid" ? context.requirements.requirements.node : null;
     const npmMinimum = context.requirements.status === "valid" ? context.requirements.requirements.npm : null;
 
-    const [workspaceOutcome, npmRootOutcome, npmGithubScriptsOutcome] = await Promise.all([
-      context.inspection.inspect("workspace"),
-      context.inspection.inspect("npm.root"),
-      context.inspection.inspect("npm.github-scripts"),
-    ]);
+    const [workspaceOutcome, npmRootOutcome, npmGithubScriptsOutcome] = [
+      // Intentionally sequential: every inspection result is memoized by the shared session, so
+      // requesting them one at a time keeps this module free of ad-hoc concurrency primitives.
+      await context.inspection.inspect("workspace"),
+      await context.inspection.inspect("npm.root"),
+      await context.inspection.inspect("npm.github-scripts"),
+    ];
 
     return [
       await diagnoseRepositoryRoot(context),

@@ -6,6 +6,7 @@
 import type {MonorepositoryLogger} from "./common/logger.ts";
 import type {RepositoryPaths} from "./common/repository-paths.ts";
 import type {RequirementLoadResult} from "./common/requirements.ts";
+import type {Clock, ReadOnlyFileSystem, RuntimeEnvironment} from "./common/runtime.ts";
 import type {InspectionProbeRunner} from "./inspection/probes.ts";
 import type {RepositoryInspectionSession} from "./inspection/repository.ts";
 
@@ -47,11 +48,19 @@ export interface DiagnosticResult {
   readonly durationMs: number;
 }
 
-/** Runtime options consumed by the doctor orchestrator and modules. */
-export interface DoctorRunOptions {
+/** Typed doctor command input decoded from the CLI or supplied by a programmatic caller. */
+export interface DoctorInput {
   readonly quick: boolean;
   readonly verbose: boolean;
 }
+
+/**
+ * Runtime options consumed by the doctor orchestrator and modules.
+ *
+ * @deprecated Renamed to {@link DoctorInput}; removed in Task 12 once legacy status adopts
+ * `doctorCommand.invoke()`.
+ */
+export type DoctorRunOptions = DoctorInput;
 
 /** Totals by result status. */
 export interface DoctorSummary {
@@ -84,17 +93,31 @@ export interface DiagnosticNetworkProbe {
   readonly get: (url: URL, timeoutMs: number) => Promise<DiagnosticNetworkResult>;
 }
 
-/** Shared module execution context for one doctor run. */
+/**
+ * Shared module execution context for one doctor run.
+ *
+ * @remarks
+ * Every member is a narrow, read-only capability: a specialist module can read the repository,
+ * probe an allowlisted command, issue a bounded `GET`, and observe time and the environment, but
+ * it can never mutate disk state, spawn an arbitrary command, or reach an ambient Node global.
+ */
 export interface DoctorContext {
-  readonly options: DoctorRunOptions;
+  /** Typed input for this run. */
+  readonly options: DoctorInput;
+  /** Canonical repository paths resolved once for this run. */
   readonly paths: RepositoryPaths;
+  /** Manifest-derived repository requirements, including an invalid/drift result. */
   readonly requirements: RequirementLoadResult;
+  /** Bounded, `GET`-only network reachability probe. */
   readonly network: DiagnosticNetworkProbe;
+  /** Structured, redaction-aware logger for this run. */
   readonly logger: MonorepositoryLogger;
-  readonly platform: NodeJS.Platform;
-  readonly arch: string;
-  readonly env: Readonly<NodeJS.ProcessEnv>;
-  readonly now: () => number;
+  /** Read-only filesystem view; no module can mutate repository state. */
+  readonly files: ReadOnlyFileSystem;
+  /** Monotonic and wall-clock time source. */
+  readonly clock: Clock;
+  /** Immutable snapshot of the ambient environment. */
+  readonly environment: RuntimeEnvironment;
   /** Shared repository inspection session for this run. */
   readonly inspection: RepositoryInspectionSession;
   /** Opaque inspection probe runner for allowlisted read-only command probes. */

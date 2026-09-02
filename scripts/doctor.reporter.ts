@@ -8,8 +8,8 @@ import type {
   DiagnosticModuleId,
   DiagnosticPotentialCause,
   DiagnosticResult,
+  DoctorInput,
   DoctorReport,
-  DoctorRunOptions,
   DoctorSummary,
 } from "./doctor.types.ts";
 import {boundEvidence} from "./doctor.diagnostics.ts";
@@ -570,11 +570,7 @@ function validateDoctorReport(value: Readonly<DoctorReport>): DoctorReport {
  * @param options - CLI rendering options.
  * @param logger - Repository logger abstraction.
  */
-export function renderDoctorReport(
-  report: Readonly<DoctorReport>,
-  options: Readonly<DoctorRunOptions>,
-  logger: MonorepositoryLogger,
-): void {
+export function renderDoctorReport(report: Readonly<DoctorReport>, options: Readonly<DoctorInput>, logger: MonorepositoryLogger): void {
   logger.banner(["🩺 arolariu.ro Workspace Doctor"], "green");
   logger.line(renderSummary(report.summary));
 

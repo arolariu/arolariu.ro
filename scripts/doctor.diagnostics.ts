@@ -10,7 +10,6 @@
 import {stripVTControlCharacters} from "node:util";
 
 import type {DiagnosticFix, DiagnosticModuleId, DiagnosticPotentialCause, DiagnosticResult, DiagnosticStatus} from "./doctor.types.ts";
-import type {CommandResult} from "./common/process.ts";
 
 // ============================================================================
 // Evidence bounding constants
@@ -124,29 +123,6 @@ function isUsableErrorText(value: string): boolean {
 export function normalizeErrorForReport(error: unknown, fallbackMessage: string): string {
   const normalized = stripVTControlCharacters(extractThrownMessage(error)).trim();
   return isUsableErrorText(normalized) ? normalized : fallbackMessage;
-}
-
-// ============================================================================
-// Command outcome classification
-// ============================================================================
-
-/** Outcome classification for a diagnostic command. */
-export type CommandOutcome = "success" | "missing" | "failure";
-
-/**
- * Classifies a command result into a diagnostic outcome.
- *
- * @param result - The command result to classify.
- * @returns The classified outcome.
- */
-export function classifyCommandOutcome(result: Readonly<CommandResult>): CommandOutcome {
-  if (result.spawnError !== undefined) {
-    return "missing";
-  }
-  if (result.code === 0 && !result.timedOut && result.signal === undefined) {
-    return "success";
-  }
-  return "failure";
 }
 
 // ============================================================================

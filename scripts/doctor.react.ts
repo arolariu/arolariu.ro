@@ -6,7 +6,7 @@
  * Every diagnostic row in this module is derived exclusively from the shared
  * `ReactFacts` produced by `context.inspection.inspect("react")`. This module never spawns a
  * command, never reads a package manifest, environment file, message dictionary, artifact file,
- * or framework configuration file, and never uses `context.runner`. When the shared React
+ * or framework configuration file, and never uses an unrestricted runner. When the shared React
  * inspection outcome itself is `unavailable` or `invalid`, every row below is an explicit
  * failure or skip; no diagnostic ever fabricates a healthy value from missing facts.
  */
@@ -43,7 +43,7 @@ function diagnostic(
       ...input,
     },
     startedAt,
-    context.now,
+    context.clock.monotonicNow,
   );
 }
 
@@ -146,7 +146,7 @@ function skippedPlaywrightForMissingLockedVersion(): DiagnosticResult {
 }
 
 function diagnosePackages(context: Readonly<DoctorContext>, facts: Readonly<ReactFacts>): DiagnosticResult {
-  const startedAt = context.now();
+  const startedAt = context.clock.monotonicNow();
   if (context.requirements.status === "invalid") {
     return skippedPackagesForInvalidRequirements();
   }
@@ -210,7 +210,7 @@ function diagnosePackages(context: Readonly<DoctorContext>, facts: Readonly<Reac
 }
 
 function diagnoseWorkspaceLink(context: Readonly<DoctorContext>, facts: Readonly<ReactFacts>): DiagnosticResult {
-  const startedAt = context.now();
+  const startedAt = context.clock.monotonicNow();
   const issues = facts.workspaceLinkIssues;
 
   if (issues.length === 0) {
@@ -240,7 +240,7 @@ function diagnoseWorkspaceLink(context: Readonly<DoctorContext>, facts: Readonly
 }
 
 function diagnoseEnvironment(context: Readonly<DoctorContext>, facts: Readonly<ReactFacts>): DiagnosticResult {
-  const startedAt = context.now();
+  const startedAt = context.clock.monotonicNow();
   const environment = facts.environment;
 
   if (environment.syntaxErrors.length > 0) {
@@ -308,7 +308,7 @@ function diagnoseEnvironment(context: Readonly<DoctorContext>, facts: Readonly<R
 }
 
 function diagnoseI18n(context: Readonly<DoctorContext>, facts: Readonly<ReactFacts>): DiagnosticResult {
-  const startedAt = context.now();
+  const startedAt = context.clock.monotonicNow();
   const issues = facts.i18nIssues;
 
   if (issues.length === 0) {
@@ -335,7 +335,7 @@ function diagnoseI18n(context: Readonly<DoctorContext>, facts: Readonly<ReactFac
 }
 
 function diagnoseTaxonomyAndLicenses(context: Readonly<DoctorContext>, facts: Readonly<ReactFacts>): DiagnosticResult {
-  const startedAt = context.now();
+  const startedAt = context.clock.monotonicNow();
   const issues = facts.artifactIssues;
 
   if (issues.length === 0) {
@@ -362,7 +362,7 @@ function diagnoseTaxonomyAndLicenses(context: Readonly<DoctorContext>, facts: Re
 }
 
 function diagnosePlaywright(context: Readonly<DoctorContext>, facts: Readonly<ReactFacts>): DiagnosticResult {
-  const startedAt = context.now();
+  const startedAt = context.clock.monotonicNow();
   if (context.requirements.status === "invalid") {
     return skippedPlaywrightForInvalidRequirements();
   }
@@ -420,7 +420,7 @@ function diagnosePlaywright(context: Readonly<DoctorContext>, facts: Readonly<Re
 }
 
 function diagnoseFrameworkConfig(context: Readonly<DoctorContext>, facts: Readonly<ReactFacts>): DiagnosticResult {
-  const startedAt = context.now();
+  const startedAt = context.clock.monotonicNow();
   const issues = facts.frameworkIssues;
 
   if (issues.length === 0) {
@@ -461,7 +461,7 @@ function diagnoseFrameworkConfig(context: Readonly<DoctorContext>, facts: Readon
  * @returns The seven `react.*` diagnostic rows, in required order.
  */
 function degradedResults(context: Readonly<DoctorContext>, issues: readonly string[]): readonly DiagnosticResult[] {
-  const startedAt = context.now();
+  const startedAt = context.clock.monotonicNow();
   const summary = "The shared React inspection facts could not be produced.";
   const evidence = boundedIssues(issues);
   const diagnosis = buildIssueDiagnosis(issues);

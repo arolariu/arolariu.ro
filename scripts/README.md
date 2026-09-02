@@ -115,9 +115,12 @@ too; it exercises every setup, container-runtime, and worker test file under `sc
 
 ## Doctor diagnostics (`npm run doctor`)
 
-`npm run doctor` is [`doctor.ts`](./doctor.ts)'s CLI entrypoint (`--verbose`/`-v`, `--quick`, `--help`/`-h`).
-It resolves the same canonical repository paths and manifest-derived requirements setup uses, then runs every bounded-context module
-independently and concurrently, flattening their results back into a fixed rendering order. Doctor is strictly read-only at the repository
+`npm run doctor` is [`doctor.ts`](./doctor.ts)'s command entrypoint (`--verbose`/`-v`, `--quick`, `--help`/`-h`, plus the `/v`, `/q`,
+`/h`, `/help`, and `/?` aliases). It resolves canonical repository paths and manifest-derived requirements through injected runtime
+capabilities, obtains one shared repository inspection session, then runs every bounded-context module concurrently through the runtime
+task scheduler, flattening their results back into a fixed rendering order. Every specialist module receives only read-only capabilities
+(read-only filesystem, `GET`-only bounded network probe, clock, immutable environment, shared inspection session, and opaque probes).
+Doctor is strictly read-only at the repository
 and local-tooling boundary: it never mutates repository files, `.nx`, or `.arolariu`, and never installs/upgrades, restores, generates,
 starts/stops a service, builds, type-checks, or tests. Approved metadata/status probes may update external package-manager caches or
 container-engine client/cache state outside that boundary.
@@ -126,8 +129,8 @@ container-engine client/cache state outside that boundary.
 
 | Module | Owns |
 |--------|------|
-| [`doctor.ts`](./doctor.ts) | CLI parsing, help, module orchestration/ordering, and the exit-code rollup |
-| [`doctor.types.ts`](./doctor.types.ts) | Shared `DiagnosticResult`/`DoctorContext`/`DoctorRunOptions` contracts and diagnostic-result helpers |
+| [`doctor.ts`](./doctor.ts) | Command definition (parsing, help, presentation), module orchestration/ordering, and the exit-code rollup |
+| [`doctor.types.ts`](./doctor.types.ts) | Shared `DiagnosticResult`/`DoctorContext`/`DoctorInput` contracts and diagnostic-result helpers |
 | [`doctor.reporter.ts`](./doctor.reporter.ts) | Stable per-check score weights, schema-v1 validation (`createDoctorReport`), and human rendering |
 | [`doctor.workspace.ts`](./doctor.workspace.ts) | Repository root, git, Node/npm runtime, dependency trees, Nx workspace graph (read from repository metadata, see below), config files, generated artifacts, host capacity, npm audit/outdated |
 | [`doctor.dotnet.ts`](./doctor.dotnet.ts) | .NET SDK/host/workloads, NuGet state, solution, local tools, HTTPS certificate trust, AppHost configuration and required local parameters, NuGet feed reachability |

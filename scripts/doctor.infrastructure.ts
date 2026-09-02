@@ -5,9 +5,11 @@
  * @remarks
  * Every diagnostic row in this module is derived from two shared inspection fact sets obtained
  * through `context.inspection.inspect("infrastructure")` and
- * `context.inspection.inspect("aggregate")`, plus a bounded tooling-configuration read for the
- * engine-selection diagnostic. This module never spawns a command, never reads a port directly,
- * and never uses `context.runner` or `context.probes` for any diagnostic purpose.
+ * `context.inspection.inspect("aggregate")`, plus a bounded tooling-configuration read issued
+ * through the injected read-only filesystem (`context.files`) for the engine-selection
+ * diagnostic. This module never spawns a command, never reads a port directly, never imports a
+ * Node filesystem API, and never uses an unrestricted runner or `context.probes` for any
+ * diagnostic purpose.
  *
  * When the infrastructure inspection outcome is `unavailable` or `invalid`, every
  * fact-dependent row is an explicit failure; no diagnostic fabricates a healthy value from
@@ -17,7 +19,6 @@
  */
 
 import {readToolingConfig} from "./common/tooling-config.ts";
-import {nodeFileSystem} from "./common/runtime.node.ts";
 import {resolveContainerEngine} from "./container-runtime/selection.ts";
 import {ContainerRuntimeError, type ContainerEngine} from "./container-runtime/types.ts";
 import {boundEvidence, diagnosticResult} from "./doctor.diagnostics.ts";
@@ -56,7 +57,7 @@ function diagnostic(
       ...input,
     },
     startedAt,
-    context.now,
+    context.clock.monotonicNow,
   );
 }
 
@@ -134,15 +135,15 @@ interface SelectionOutcome {
 }
 
 async function diagnoseSelection(context: Readonly<DoctorContext>): Promise<SelectionOutcome> {
-  const startedAt = context.now();
-  const configRead = await readToolingConfig(context.paths.toolingConfig, nodeFileSystem);
+  const startedAt = context.clock.monotonicNow();
+  const configRead = await readToolingConfig(context.paths.toolingConfig, context.files);
   const configuredEngine = configRead.status === "valid" ? configRead.config.containerEngine : undefined;
 
   let selection: Readonly<{engine: ContainerEngine; source: "argument" | "environment" | "configuration"}>;
   try {
     selection = resolveContainerEngine({
       argv: [],
-      env: context.env,
+      env: context.environment.variables,
       ...(configuredEngine === undefined ? {} : {configuredEngine}),
     });
   } catch (error) {
@@ -195,7 +196,7 @@ async function diagnoseSelection(context: Readonly<DoctorContext>): Promise<Sele
 }
 
 function diagnoseCli(context: Readonly<DoctorContext>, facts: Readonly<InfrastructureFacts>, engine: ContainerEngine): DiagnosticResult {
-  const startedAt = context.now();
+  const startedAt = context.clock.monotonicNow();
   const cli = cliName(engine);
 
   if (!facts.cliAvailable) {
@@ -221,7 +222,7 @@ function diagnoseBackend(
   facts: Readonly<InfrastructureFacts>,
   engine: ContainerEngine,
 ): DiagnosticResult {
-  const startedAt = context.now();
+  const startedAt = context.clock.monotonicNow();
   const label = engineLabel(engine);
 
   if (!facts.backendAvailable) {
@@ -247,7 +248,7 @@ function diagnoseCompose(
   facts: Readonly<InfrastructureFacts>,
   engine: ContainerEngine,
 ): DiagnosticResult {
-  const startedAt = context.now();
+  const startedAt = context.clock.monotonicNow();
   const label = engineLabel(engine);
 
   if (!facts.composeAvailable) {
@@ -280,7 +281,7 @@ function diagnoseDockerConflict(
   facts: Readonly<InfrastructureFacts>,
   engine: ContainerEngine,
 ): DiagnosticResult {
-  const startedAt = context.now();
+  const startedAt = context.clock.monotonicNow();
 
   if (facts.dockerConflict) {
     const summary =
@@ -331,7 +332,7 @@ function diagnoseSocketContext(
     );
   }
 
-  const startedAt = context.now();
+  const startedAt = context.clock.monotonicNow();
 
   if (facts.socketContextIssues.length > 0) {
     return issueDiagnostic(context, startedAt, {
@@ -356,7 +357,7 @@ function diagnoseSocketContext(
 }
 
 function diagnosePorts(context: Readonly<DoctorContext>, facts: Readonly<InfrastructureFacts>): DiagnosticResult {
-  const startedAt = context.now();
+  const startedAt = context.clock.monotonicNow();
 
   const portsWithErrors = facts.ports.filter((p) => p.error !== undefined);
   if (portsWithErrors.length > 0) {
@@ -436,7 +437,7 @@ function diagnosePorts(context: Readonly<DoctorContext>, facts: Readonly<Infrast
 }
 
 function diagnoseCertificates(context: Readonly<DoctorContext>, facts: Readonly<InfrastructureFacts>): DiagnosticResult {
-  const startedAt = context.now();
+  const startedAt = context.clock.monotonicNow();
 
   if (facts.certificateIssues.length > 0) {
     return issueDiagnostic(context, startedAt, {
@@ -461,7 +462,7 @@ function diagnoseCertificates(context: Readonly<DoctorContext>, facts: Readonly<
 }
 
 function diagnoseManifests(context: Readonly<DoctorContext>, facts: Readonly<InfrastructureFacts>): DiagnosticResult {
-  const startedAt = context.now();
+  const startedAt = context.clock.monotonicNow();
 
   if (facts.manifestIssues.length > 0) {
     return issueDiagnostic(context, startedAt, {
@@ -486,7 +487,7 @@ function diagnoseManifests(context: Readonly<DoctorContext>, facts: Readonly<Inf
 }
 
 function diagnoseContainers(context: Readonly<DoctorContext>, facts: Readonly<InfrastructureFacts>): DiagnosticResult {
-  const startedAt = context.now();
+  const startedAt = context.clock.monotonicNow();
 
   if (facts.containers.length === 0) {
     return passDiagnostic(
@@ -558,7 +559,7 @@ function diagnoseContainers(context: Readonly<DoctorContext>, facts: Readonly<In
  * @returns Fail rows for all ten infrastructure diagnostics, starting at infrastructure.cli.
  */
 function degradedInfraResults(context: Readonly<DoctorContext>, issues: readonly string[]): readonly DiagnosticResult[] {
-  const startedAt = context.now();
+  const startedAt = context.clock.monotonicNow();
   const evidence = boundEvidence(issues, context.options.verbose);
   const summary = "The shared infrastructure inspection facts could not be produced.";
   const fix: DiagnosticFix = {description: "Resolve the reported infrastructure inspection problem, then rerun doctor."};
@@ -619,7 +620,7 @@ export const infrastructureDoctorModule: DiagnosticModule = {
         const evidence = boundEvidence(issues, context.options.verbose);
         const fix: DiagnosticFix = {description: "Resolve the reported infrastructure inspection problem, then rerun doctor."};
         const summary = "The shared infrastructure inspection facts could not be produced.";
-        const startedAt = context.now();
+        const startedAt = context.clock.monotonicNow();
         const [singleIssue] = issues;
         const rootCause = issues.length === 1 && singleIssue !== undefined ? singleIssue : undefined;
         const potentialCauses = issues.length !== 1 ? issues.slice(0, 5).map((c) => ({cause: c, confidence: "high" as const})) : [];

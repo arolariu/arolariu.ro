@@ -6,7 +6,7 @@
  * Every diagnostic row in this module is derived exclusively from the shared `SvelteFacts`
  * produced by `context.inspection.inspect("svelte.cv")` and `context.inspection.inspect("svelte.status")`.
  * This module never spawns a command, never reads a package manifest, config file, or lockfile,
- * and never uses `context.runner`. When a shared Svelte inspection outcome itself is `unavailable`
+ * and never uses an unrestricted runner. When a shared Svelte inspection outcome itself is `unavailable`
  * or `invalid`, every row for that project is an explicit failure describing the degraded outcome;
  * no diagnostic ever fabricates a healthy value from missing facts.
  */
@@ -32,7 +32,7 @@ function diagnostic(
       ...input,
     },
     startedAt,
-    context.now,
+    context.clock.monotonicNow,
   );
 }
 
@@ -115,7 +115,7 @@ function skippedNodeEngineForInvalidRequirements(projectId: SvelteProjectId): Di
 }
 
 function diagnosePackages(context: Readonly<DoctorContext>, projectId: SvelteProjectId, facts: Readonly<SvelteFacts>): DiagnosticResult {
-  const startedAt = context.now();
+  const startedAt = context.clock.monotonicNow();
   const id = `svelte.${projectId}.packages`;
   const issues = facts.packageIssues;
 
@@ -143,7 +143,7 @@ function diagnosePackages(context: Readonly<DoctorContext>, projectId: SveltePro
 }
 
 function diagnoseNodeEngine(context: Readonly<DoctorContext>, projectId: SvelteProjectId, facts: Readonly<SvelteFacts>): DiagnosticResult {
-  const startedAt = context.now();
+  const startedAt = context.clock.monotonicNow();
   const id = `svelte.${projectId}.node-engine`;
 
   if (context.requirements.status === "invalid") {
@@ -204,7 +204,7 @@ function diagnoseNodeEngine(context: Readonly<DoctorContext>, projectId: SvelteP
 }
 
 function diagnoseScripts(context: Readonly<DoctorContext>, projectId: SvelteProjectId, facts: Readonly<SvelteFacts>): DiagnosticResult {
-  const startedAt = context.now();
+  const startedAt = context.clock.monotonicNow();
   const id = `svelte.${projectId}.scripts`;
   const issues = facts.scriptIssues;
 
@@ -240,7 +240,7 @@ function diagnoseGeneratedState(
   projectId: SvelteProjectId,
   facts: Readonly<SvelteFacts>,
 ): DiagnosticResult {
-  const startedAt = context.now();
+  const startedAt = context.clock.monotonicNow();
   const id = `svelte.${projectId}.generated-state`;
 
   if (!facts.generatedConfigExists) {
@@ -261,7 +261,7 @@ function diagnoseGeneratedState(
 }
 
 function diagnoseAdapter(context: Readonly<DoctorContext>, projectId: SvelteProjectId, facts: Readonly<SvelteFacts>): DiagnosticResult {
-  const startedAt = context.now();
+  const startedAt = context.clock.monotonicNow();
   const id = `svelte.${projectId}.adapter`;
   const issues = facts.adapterIssues;
 
@@ -320,7 +320,7 @@ function degradedResults(
   projectId: SvelteProjectId,
   issues: readonly string[],
 ): readonly DiagnosticResult[] {
-  const startedAt = context.now();
+  const startedAt = context.clock.monotonicNow();
   const summary = "The shared Svelte inspection facts could not be produced.";
   const evidence = boundedIssues(issues);
   const diagnosis = buildIssueDiagnosis(issues);
@@ -386,10 +386,10 @@ export const svelteDoctorModule: DiagnosticModule = {
   id: "svelte",
   title: "Svelte",
   async run(context): Promise<readonly DiagnosticResult[]> {
-    const [cvOutcome, statusOutcome] = await Promise.all([
-      context.inspection.inspect("svelte.cv"),
-      context.inspection.inspect("svelte.status"),
-    ]);
+    // Intentionally sequential: both project fact sets are memoized by the shared inspection
+    // session, so this module never needs an ad-hoc concurrency primitive of its own.
+    const cvOutcome = await context.inspection.inspect("svelte.cv");
+    const statusOutcome = await context.inspection.inspect("svelte.status");
     return [...(await inspectSvelteProject(context, "cv", cvOutcome)), ...(await inspectSvelteProject(context, "status", statusOutcome))];
   },
 };

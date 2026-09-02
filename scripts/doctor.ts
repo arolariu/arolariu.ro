@@ -1,22 +1,25 @@
 /**
- * @fileoverview Modular workspace health diagnostics orchestrator for the arolariu.ro monorepo.
+ * @fileoverview Modular workspace health diagnostics command for the arolariu.ro monorepo.
  * @module scripts/doctor
  *
  * @remarks
- * Resolves the shared read-only diagnostic context once, then runs every
- * bounded-context doctor module — `workspace`, `dotnet`, `react`, `svelte`,
- * `python`, and `infrastructure` — independently and concurrently. Module
- * results are flattened back into that fixed order regardless of which
- * module finishes first, an unhandled module exception is normalized into a
- * single failed `<module>.module-error` row without stopping its siblings,
- * and the collected checks are validated and scored by
+ * Doctor is a read-only command: it resolves canonical repository paths and manifest
+ * requirements through injected runtime capabilities, obtains exactly one shared repository
+ * inspection session from the runtime-owned inspection registry, and then runs every
+ * bounded-context module — `workspace`, `dotnet`, `react`, `svelte`, `python`, and
+ * `infrastructure` — concurrently through {@link CommandRuntime.tasks}. Module results are
+ * flattened back into the fixed {@link doctorModules} order regardless of which module finishes
+ * first, an unhandled module exception is normalized into a single failed `<module>.module-error`
+ * row without stopping its siblings, and the collected checks are validated and scored by
  * {@link createDoctorReport}.
  *
- * The script never mutates the repository, never inherits child process
- * output, and never writes directly to the console: every human or
- * machine-readable line is produced by {@link MonorepositoryLogger} or
- * {@link renderDoctorReport}. It exits `0` when the report has no failed
- * checks and `1` otherwise.
+ * Specialist modules never receive a mutable filesystem, an unrestricted process runner, or an
+ * ambient Node global: they observe a {@link ReadOnlyFileSystem}, a `GET`-only bounded network
+ * probe, the runtime clock, an immutable environment snapshot, the shared inspection session, and
+ * opaque allowlisted probes. The command never mutates the repository, never inherits child
+ * process output, and never writes directly to the console: every human line is produced by the
+ * runtime logger or {@link renderDoctorReport}. It completes with exit `0` when the report has no
+ * failed checks and `1` otherwise.
  *
  * @example
  * ```bash
@@ -27,17 +30,23 @@
  * ```
  */
 
-import {resolve} from "node:path";
-import {fileURLToPath} from "node:url";
-
-import {MonorepositoryConsoleLogger, type MonorepositoryLogger} from "./common/logger.ts";
-import {loadRepositoryRequirements, type RequirementLoadResult} from "./common/requirements.ts";
+import {MonorepoCommand, toJsonValue, type CommandContext, type CommandRuntimeFactory} from "./common/commander.ts";
+import {loadRepositoryRequirements} from "./common/requirements.ts";
 import {resolveRepositoryPaths, type RepositoryPaths} from "./common/repository-paths.ts";
-import {createNodeRepositoryInspectionSession, nodeFileSystem, nodeProcessRunner, nodeTaskScheduler} from "./common/runtime.node.ts";
+import {
+  asGetOnlyHttpClient,
+  asReadOnlyFileSystem,
+  HttpError,
+  type Clock,
+  type CommandRuntime,
+  type GetOnlyHttpClient,
+  type RepositoryInspectionRequest,
+} from "./common/runtime.ts";
+import {createNodeRuntimeScope} from "./common/runtime.node.ts";
 import {normalizeErrorForReport, diagnosticResult} from "./doctor.diagnostics.ts";
 import {renderDoctorReport, createDoctorReport} from "./doctor.reporter.ts";
 import {createInspectionProbeRunner, type InspectionProbeRunner} from "./inspection/probes.ts";
-import type {RepositoryInspectionSession, RepositoryInspectionSessionFactory} from "./inspection/repository.ts";
+import type {RepositoryInspectionSession} from "./inspection/repository.ts";
 import {dotnetDoctorModule} from "./doctor.dotnet.ts";
 import {infrastructureDoctorModule} from "./doctor.infrastructure.ts";
 import {pythonDoctorModule} from "./doctor.python.ts";
@@ -50,11 +59,13 @@ import type {
   DiagnosticNetworkResult,
   DiagnosticResult,
   DoctorContext,
+  DoctorInput,
   DoctorReport,
-  DoctorRunOptions,
 } from "./doctor.types.ts";
 
-/** Every doctor diagnostic module in the exact order `runDoctor` executes and reports them. */
+export type {DoctorInput} from "./doctor.types.ts";
+
+/** Every doctor diagnostic module in the exact order the command executes and reports them. */
 export const doctorModules: readonly DiagnosticModule[] = [
   workspaceDoctorModule,
   dotnetDoctorModule,
@@ -64,75 +75,64 @@ export const doctorModules: readonly DiagnosticModule[] = [
   infrastructureDoctorModule,
 ];
 
+/** Construction seams {@link createDoctorCommand} accepts. */
+export interface DoctorCommandDependencies {
+  /** Runtime factory used for every scope; tests inject a fake instead of the Node adapter. */
+  readonly runtimeFactory?: CommandRuntimeFactory;
+  /** Ordered modules to execute; defaults to {@link doctorModules}. */
+  readonly modules?: readonly DiagnosticModule[];
+}
+
 /**
- * Boundary values {@link runDoctor} needs to resolve repository context and
- * execute every module.
+ * Boundary replacements the deprecated {@link runDoctor} adapter accepts.
  *
- * @remarks
- * Exported so tests can inject fake modules and deterministic boundaries
- * without replacing the repository modules that own path discovery,
- * manifest loading, command execution, network probing, or logging.
+ * @deprecated Removed in Task 12 together with {@link runDoctor}.
  */
 export interface DoctorDependencies {
   /** Ordered modules to execute; defaults to {@link doctorModules}. */
   readonly modules: readonly DiagnosticModule[];
+  /** Pre-created inspection session reused instead of one obtained from the runtime registry. */
+  readonly inspection: RepositoryInspectionSession;
   /** Resolves canonical repository paths; may be synchronous or asynchronous. */
   readonly resolveRepositoryPaths: () => RepositoryPaths | Promise<RepositoryPaths>;
-  /** Loads manifest-derived repository requirements, including an invalid/drift result. */
-  readonly loadRepositoryRequirements: (paths: RepositoryPaths) => Promise<RequirementLoadResult>;
-  /** Executes bounded read-only network reachability probes. */
-  readonly network: DiagnosticNetworkProbe;
-  /** Receives doctor presentation and semantic output. */
-  readonly logger: MonorepositoryLogger;
-  /**
-   * Receives exactly one fatal error when context assembly or report
-   * validation prevents any report from being produced.
-   */
-  readonly errorLogger: MonorepositoryLogger;
-  /** Target runtime platform. */
-  readonly platform: NodeJS.Platform;
-  /** Target runtime architecture. */
-  readonly arch: string;
-  /** Process environment made available to modules. */
-  readonly env: Readonly<NodeJS.ProcessEnv>;
-  /** Monotonic time source used for module and check durations. */
-  readonly now: () => number;
-  /** Produces the ISO-8601 timestamp recorded on the completed report. */
-  readonly timestamp: () => string;
-  /** Pre-created inspection session; when supplied, doctor reuses it instead of creating one. */
-  readonly inspection: RepositoryInspectionSession;
-  /** Factory for creating an inspection session; defaults to {@link createNodeRepositoryInspectionSession}. */
-  readonly createInspectionSession: RepositoryInspectionSessionFactory;
-  /** Opaque inspection probe runner; defaults to one created from {@link nodeProcessRunner}. */
-  readonly probes: InspectionProbeRunner;
 }
 
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
+function isTimeoutFailure(error: unknown): boolean {
+  return error instanceof DOMException && error.name === "TimeoutError";
+}
+
+function isUnreachableFailure(error: unknown): boolean {
+  return error instanceof TypeError;
+}
+
 /**
  * Classifies one bounded network probe failure.
  *
  * @remarks
- * A request that is cancelled by {@link AbortSignal.timeout} surfaces as a
- * `DOMException` named `TimeoutError`; a request that never reaches a server
- * (DNS failure, refused connection, TLS failure) surfaces as a `TypeError`
- * from the underlying `fetch` implementation. Both are classified as
- * `unavailable` — a network condition the caller can recover from — while
- * every other failure is classified as `error` so it is never mistaken for
- * an ordinary connectivity gap.
+ * A request cancelled by its own deadline surfaces as a `DOMException` named `TimeoutError`, and
+ * a request that never reaches a server (DNS failure, refused connection, TLS failure) surfaces
+ * as a `TypeError`. Both are classified as `unavailable` — a network condition the caller can
+ * recover from — while every other failure is classified as `error` so it is never mistaken for
+ * an ordinary connectivity gap. The {@link GetOnlyHttpClient} normalizes both into a bounded
+ * {@link HttpError} that preserves the original failure as its `cause`, so the same
+ * classification is applied to the wrapped cause as to a directly thrown platform error.
  *
- * @param error - The error thrown by `fetch`.
+ * @param error - The error thrown by the `GET`-only HTTP capability.
  * @param timeoutMs - The bounded timeout applied to the request.
  * @returns The classified status and human-readable error detail.
  */
 function classifyNetworkFailure(error: unknown, timeoutMs: number): Pick<DiagnosticNetworkResult, "status" | "error"> {
-  if (error instanceof DOMException && error.name === "TimeoutError") {
+  const cause: unknown = error instanceof HttpError ? error.cause : undefined;
+
+  if (isTimeoutFailure(error) || isTimeoutFailure(cause)) {
     return {status: "unavailable", error: `Network probe timed out after ${String(timeoutMs)}ms.`};
   }
 
-  if (error instanceof TypeError) {
+  if (isUnreachableFailure(error) || isUnreachableFailure(cause)) {
     return {status: "unavailable", error: `Network probe could not reach the target: ${errorMessage(error)}`};
   }
 
@@ -140,35 +140,39 @@ function classifyNetworkFailure(error: unknown, timeoutMs: number): Pick<Diagnos
 }
 
 /**
- * Creates the production bounded read-only network reachability probe.
+ * Creates the bounded read-only network reachability probe doctor modules observe.
  *
  * @remarks
- * Every request is bounded by {@link AbortSignal.timeout}, never follows a
- * caller-supplied body, and captures the response body only for a reachable
- * response so callers can validate its shape. This probe never throws: every
- * outcome — reachable, unavailable, or an unexpected error — is returned as
- * a classified {@link DiagnosticNetworkResult}.
+ * Every request is a `GET` bounded by the caller's timeout, never carries a body, and captures
+ * the response text only for a reachable response so callers can validate its shape. This probe
+ * never throws: every outcome — reachable, unavailable, or an unexpected error — is returned as a
+ * classified {@link DiagnosticNetworkResult}.
  *
- * @param now - Monotonic time source used to capture probe duration.
+ * @param http - `GET`-only HTTP capability owned by the invocation.
+ * @param clock - Time source used to capture probe duration.
+ * @param signal - Optional invocation cancellation signal linked into every request.
  * @returns A bounded, read-only network probe.
  */
-export function createBoundedNetworkProbe(now: () => number): DiagnosticNetworkProbe {
+export function createBoundedNetworkProbe(
+  http: Readonly<GetOnlyHttpClient>,
+  clock: Readonly<Clock>,
+  signal?: AbortSignal,
+): DiagnosticNetworkProbe {
   return {
     async get(url: URL, timeoutMs: number): Promise<DiagnosticNetworkResult> {
-      const startedAt = now();
+      const startedAt = clock.monotonicNow();
       try {
-        const response = await fetch(url, {signal: AbortSignal.timeout(timeoutMs)});
-        const body = await response.text();
+        const response = await http.get({url, timeoutMs, ...(signal === undefined ? {} : {signal})});
         return {
           status: "reachable",
           statusCode: response.status,
-          durationMs: Math.max(0, now() - startedAt),
-          body,
+          durationMs: Math.max(0, clock.monotonicNow() - startedAt),
+          body: response.text,
         };
       } catch (error: unknown) {
         return {
           ...classifyNetworkFailure(error, timeoutMs),
-          durationMs: Math.max(0, now() - startedAt),
+          durationMs: Math.max(0, clock.monotonicNow() - startedAt),
         };
       }
     },
@@ -176,24 +180,36 @@ export function createBoundedNetworkProbe(now: () => number): DiagnosticNetworkP
 }
 
 /**
+ * Wraps the opaque probe runner so every module probe is linked to invocation cancellation
+ * without a specialist module ever handling a signal itself.
+ *
+ * @param runtime - The invocation's runtime capabilities.
+ * @returns A probe runner whose runs abort with the invocation.
+ */
+function createCancellableProbeRunner(runtime: Readonly<CommandRuntime>): InspectionProbeRunner {
+  const probes = createInspectionProbeRunner(runtime.runner);
+  return {
+    run: (probe, options = {}) => probes.run(probe, {signal: runtime.signal, ...options}),
+  };
+}
+
+/**
  * Runs one doctor module and normalizes an unhandled exception.
  *
  * @remarks
- * A module exception never becomes a passing or skipped result: it is
- * replaced with exactly one failed `<module>.module-error` row. The thrown
- * value is normalized through {@link normalizeErrorForReport} before it becomes
- * evidence — an empty, whitespace-only, or ANSI-bearing message would
- * otherwise be rejected by the doctor reporter's semantic validation and
- * abort the entire report (siblings included) instead of degrading to one
- * failed row, so a crashed module is scored as a complete module loss
- * rather than silently shrinking the report.
+ * A module exception never becomes a passing or skipped result: it is replaced with exactly one
+ * failed `<module>.module-error` row. The thrown value is normalized through
+ * {@link normalizeErrorForReport} before it becomes evidence — an empty, whitespace-only, or
+ * ANSI-bearing message would otherwise be rejected by the doctor reporter's semantic validation
+ * and abort the entire report (siblings included) instead of degrading to one failed row, so a
+ * crashed module is scored as a complete module loss rather than silently shrinking the report.
  *
  * @param module - The diagnostic module to execute.
  * @param context - The shared read-only diagnostic context.
  * @returns The module's own results, or one normalized failure row.
  */
 async function runDoctorModule(module: Readonly<DiagnosticModule>, context: Readonly<DoctorContext>): Promise<readonly DiagnosticResult[]> {
-  const startedAt = context.now();
+  const startedAt = context.clock.monotonicNow();
   try {
     return await module.run(context);
   } catch (error: unknown) {
@@ -212,200 +228,168 @@ async function runDoctorModule(module: Readonly<DiagnosticModule>, context: Read
           fixes: [{description: `Investigate the ${module.title} module failure captured in evidence, then rerun doctor.`}],
         },
         startedAt,
-        context.now,
+        context.clock.monotonicNow,
       ),
     ];
   }
 }
 
 /**
- * Parses doctor command-line options.
+ * Identity registry of the exact typed input that produced each report.
  *
- * @param argv - Arguments following the doctor entrypoint.
- * @returns Strict doctor options consumed by the orchestrator.
- * @throws When an argument is not a supported doctor option.
+ * @remarks
+ * Module-private on purpose: it lets the deferred human completion render with the same
+ * `--verbose` decision the run used, without widening the published `DoctorReport` contract with
+ * presentation state or re-reading argv after parsing.
  */
-export function parseDoctorOptions(argv: readonly string[]): DoctorRunOptions {
-  let verbose = false;
-  let quick = false;
+const reportInputs = new WeakMap<DoctorReport, DoctorInput>();
 
-  for (const argument of argv) {
-    switch (argument) {
-      case "--verbose":
-      case "-v":
-      case "/v":
-        verbose = true;
-        break;
-      case "--quick":
-      case "/q":
-        quick = true;
-        break;
-      default:
-        throw new Error(`Unknown doctor option '${String(argument)}'.`);
-    }
-  }
-
-  return {verbose, quick};
+/** Optional seams the shared doctor business function accepts. */
+interface DoctorExecutionSeams {
+  /** Ordered modules to execute; defaults to {@link doctorModules}. */
+  readonly modules?: readonly DiagnosticModule[];
+  /** Repository path resolution override used only by the deprecated compatibility adapter. */
+  readonly resolveRepositoryPaths?: () => RepositoryPaths | Promise<RepositoryPaths>;
+  /** Pre-created inspection session used only by the deprecated compatibility adapter. */
+  readonly inspection?: RepositoryInspectionSession;
 }
 
 /**
- * Runs every doctor module against a shared read-only diagnostic context and
- * returns the validated, scored report.
+ * Runs every doctor module against one shared read-only diagnostic context and returns the
+ * validated, scored report.
  *
  * @remarks
- * Every module always receives the full parsed options and is responsible
- * for emitting its own explicit skipped diagnostics. Modules run
- * independently and concurrently; `Promise.all` preserves the fixed
- * `doctorModules` order in the flattened result regardless of which module
- * settles first. Duplicate or malformed diagnostic ids are rejected by
- * {@link createDoctorReport}, the sole authority for report schema and
- * semantic validation.
+ * This is the single doctor business function: both the command definition and the deprecated
+ * {@link runDoctor} adapter call it, so neither owns an independent orchestration path. Modules
+ * always receive the full typed input and are responsible for emitting their own explicit
+ * skipped diagnostics. Modules run concurrently through {@link CommandRuntime.tasks}, which
+ * preserves the declared module order in the flattened result regardless of which module settles
+ * first and cancels with the invocation. Duplicate or malformed diagnostic ids are rejected by
+ * {@link createDoctorReport}, the sole authority for report schema and semantic validation.
  *
- * When `dependencies.inspection` is supplied, that exact session is reused
- * instead of creating a new one; this is the integration path for status.
+ * @param context - The invocation context owning every capability this run may use.
+ * @param input - Typed doctor input.
+ * @param seams - Optional module, path, and session replacements.
+ * @returns The validated, scored doctor report.
+ */
+async function executeDoctor(
+  context: Readonly<CommandContext>,
+  input: Readonly<DoctorInput>,
+  seams: Readonly<DoctorExecutionSeams> = {},
+): Promise<DoctorReport> {
+  const {runtime} = context;
+  const files = asReadOnlyFileSystem(runtime.files);
+  const modules = seams.modules ?? doctorModules;
+
+  const paths = await (seams.resolveRepositoryPaths ?? ((): Promise<RepositoryPaths> => resolveRepositoryPaths(import.meta.url, files)))();
+  const requirements = await loadRepositoryRequirements(paths, {files, tasks: runtime.tasks});
+
+  const request: RepositoryInspectionRequest = {profile: input.quick ? "quick" : "full", paths};
+  const inspection = seams.inspection ?? runtime.inspection.getRepositorySession(request);
+
+  if (!input.quick) {
+    // Prewarm aggregate collection in full mode only: starting the isolated worker once here means
+    // its memoized result is ready by the time the infrastructure module consumes it, without
+    // blocking module startup. Quick mode never starts the worker. The prewarm is deliberately not
+    // awaited, so its rejection (for example when the invocation is cancelled) is claimed here and
+    // ignored; the real consumer still awaits the same memoized promise and classifies its failure.
+    void inspection.inspect("aggregate").catch(() => undefined);
+  }
+
+  const doctorContext: DoctorContext = {
+    options: input,
+    paths,
+    requirements,
+    network: createBoundedNetworkProbe(asGetOnlyHttpClient(runtime.http), runtime.clock, runtime.signal),
+    logger: runtime.logger,
+    files,
+    clock: runtime.clock,
+    environment: runtime.environment,
+    inspection,
+    probes: createCancellableProbeRunner(runtime),
+  };
+
+  const settledResults = await runtime.tasks.parallel(
+    modules.map((module) => () => runDoctorModule(module, doctorContext)),
+    runtime.signal,
+  );
+
+  const report = createDoctorReport(settledResults.flat(), runtime.clock.isoTimestamp(), {verbose: input.verbose});
+  reportInputs.set(report, input);
+  return report;
+}
+
+/**
+ * Creates the doctor command.
  *
- * @param options - Parsed doctor run options.
- * @param dependencies - Optional boundary replacements, primarily for tests
- * that must inject deterministic modules, repository context, or a fixed
- * timestamp without reading the live checkout or a real network.
+ * @param dependencies - Optional runtime factory and module list; tests inject deterministic
+ * fakes instead of replacing command business code.
+ * @returns The typed `doctor` command object.
+ */
+export function createDoctorCommand(dependencies: Readonly<DoctorCommandDependencies> = {}): MonorepoCommand<DoctorInput, DoctorReport> {
+  const {modules} = dependencies;
+
+  return new MonorepoCommand<DoctorInput, DoctorReport>(
+    {
+      metadata: {
+        name: "doctor",
+        description: "Runs read-only workspace health diagnostics across every bounded context.",
+        slashAliases: {"/v": "--verbose", "/q": "--quick", "/?": "--help"},
+        examples: ["npm run doctor", "npm run doctor -- --verbose", "npm run doctor -- --quick"],
+      },
+      configure: (program) => {
+        program
+          .option("-v, --verbose", "Show diagnostic evidence for every check.", false)
+          .option("--quick", "Skip slower and network-dependent checks.", false);
+      },
+      decode: (program) => {
+        const options = program.opts<{verbose?: boolean; quick?: boolean}>();
+        return {verbose: options.verbose === true, quick: options.quick === true};
+      },
+      execute: (context, input) => executeDoctor(context, input, modules === undefined ? {} : {modules}),
+      completion: (report) => ({
+        exitCode: report.summary.failed > 0 ? 1 : 0,
+        human: (logger) => {
+          renderDoctorReport(report, reportInputs.get(report) ?? {quick: false, verbose: false}, logger);
+        },
+        json: toJsonValue(report),
+      }),
+    },
+    dependencies.runtimeFactory,
+  );
+}
+
+/** Production singleton used by the aggregate CLI and this module's direct entrypoint. */
+export const doctorCommand: MonorepoCommand<DoctorInput, DoctorReport> = createDoctorCommand();
+
+/**
+ * Runs doctor from typed options and returns the validated report.
+ *
+ * @deprecated Removed in Task 12. This thin compatibility adapter exists only because legacy
+ * `status.ts` still consumes a typed doctor report directly; it owns no business logic of its
+ * own and simply runs {@link executeDoctor} inside one Node runtime scope. Every other caller
+ * must use `doctorCommand.invoke()`.
+ *
+ * @param options - Typed doctor input.
+ * @param dependencies - Optional module, repository path, and inspection session replacements.
  * @returns The validated, scored doctor report.
  */
 export async function runDoctor(
-  options: Readonly<DoctorRunOptions>,
+  options: Readonly<DoctorInput>,
   dependencies: Readonly<Partial<DoctorDependencies>> = {},
 ): Promise<DoctorReport> {
-  const now = dependencies.now ?? ((): number => performance.now());
-  const timestamp = dependencies.timestamp ?? ((): string => new Date().toISOString());
-  const resolvePaths =
-    dependencies.resolveRepositoryPaths ?? ((): Promise<RepositoryPaths> => resolveRepositoryPaths(import.meta.url, nodeFileSystem));
-  const loadRequirements =
-    dependencies.loadRepositoryRequirements
-    ?? ((paths: RepositoryPaths): Promise<RequirementLoadResult> =>
-      loadRepositoryRequirements(paths, {files: nodeFileSystem, tasks: nodeTaskScheduler}));
-  const network = dependencies.network ?? createBoundedNetworkProbe(now);
-  const logger = dependencies.logger ?? new MonorepositoryConsoleLogger("doctor", {verbose: options.verbose});
-  const modules = dependencies.modules ?? doctorModules;
-  const platform = dependencies.platform ?? process.platform;
-  const arch = dependencies.arch ?? process.arch;
-  const env = dependencies.env ?? process.env;
+  const runtime = await createNodeRuntimeScope({
+    commandName: "doctor",
+    verbose: options.verbose,
+    presentation: "silent",
+    registerProcessSignals: false,
+  });
 
-  const paths = await resolvePaths();
-  const requirements = await loadRequirements(paths);
-
-  const inspection =
-    dependencies.inspection
-    ?? (dependencies.createInspectionSession ?? createNodeRepositoryInspectionSession)({
-      profile: options.quick ? "quick" : "full",
-      paths,
-    });
-
-  const probes = dependencies.probes ?? createInspectionProbeRunner(nodeProcessRunner);
-
-  // Prewarm aggregate collection in full mode only: firing-and-forgetting starts the isolated
-  // worker process once so its memoized result is ready by the time the infrastructure module
-  // consumes it, without blocking module startup. Quick mode never starts the worker.
-  if (!options.quick) {
-    void inspection.inspect("aggregate");
-  }
-
-  const context: DoctorContext = {
-    options,
-    paths,
-    requirements,
-    network,
-    logger,
-    platform,
-    arch,
-    env,
-    now,
-    inspection,
-    probes,
-  };
-
-  const settledResults = await Promise.all(modules.map((module) => runDoctorModule(module, context)));
-  const checks = settledResults.flat();
-
-  return createDoctorReport(checks, timestamp(), {verbose: options.verbose});
-}
-
-const HELP_LINES: readonly string[] = [
-  "Usage: node --experimental-strip-types scripts/doctor.ts [options]",
-  "",
-  "Options:",
-  "  --verbose, -v, /v   Show diagnostic evidence for every check.",
-  "  --quick, /q         Skip slower and network-dependent checks.",
-  "  --help, -h, /h, /?  Show this help message.",
-];
-
-/**
- * Runs the doctor CLI entrypoint.
- *
- * @remarks
- * Help aliases (`--help`, `-h`, `/h`, `/?`) are detected before options are
- * parsed or any repository or module work runs, so an unsupported flag
- * combined with help never surfaces a parse error. Removed flags (`--ci`,
- * `--json`, `--score`) are hard errors routed through normal CLI error
- * presentation, each returning 1.
- *
- * Score and grade are always rendered. Doctor has no machine JSON output
- * after this task.
- *
- * @param argv - Arguments following the doctor entrypoint.
- * @param dependencies - Optional boundary replacements, primarily for tests
- * that must inject a deterministic logger, modules, or repository seam
- * without reading the live checkout.
- * @returns Process exit code.
- */
-export async function main(
-  argv: readonly string[] = process.argv.slice(2),
-  dependencies: Readonly<Partial<DoctorDependencies>> = {},
-): Promise<number> {
-  if (argv.includes("--help") || argv.includes("-h") || argv.includes("/h") || argv.includes("/?")) {
-    const logger = dependencies.logger ?? new MonorepositoryConsoleLogger("doctor", {verbose: false});
-    logger.banner(["arolariu.ro workspace doctor"]);
-    for (const line of HELP_LINES) {
-      logger.line(line);
-    }
-    return 0;
-  }
-
-  let options: DoctorRunOptions;
   try {
-    options = parseDoctorOptions(argv);
-  } catch (error: unknown) {
-    const logger = dependencies.logger ?? new MonorepositoryConsoleLogger("doctor", {verbose: false});
-    logger.error(errorMessage(error));
-    return 1;
+    return await executeDoctor({runtime, presentation: "silent"}, options, dependencies);
+  } finally {
+    await runtime.cleanup.drain();
   }
-
-  const logger = dependencies.logger ?? new MonorepositoryConsoleLogger("doctor", {verbose: options.verbose});
-  const errorLogger = dependencies.errorLogger ?? logger;
-
-  let report: DoctorReport;
-  try {
-    report = await runDoctor(options, {...dependencies, logger});
-  } catch (error: unknown) {
-    errorLogger.error(
-      normalizeErrorForReport(
-        error,
-        "Doctor failed to produce a report because context assembly or report validation failed unexpectedly.",
-      ),
-    );
-    return 1;
-  }
-
-  renderDoctorReport(report, options, logger);
-  return report.summary.failed > 0 ? 1 : 0;
 }
 
-const doctorEntrypointPath = process.argv[1];
-if (doctorEntrypointPath !== undefined && fileURLToPath(import.meta.url) === resolve(doctorEntrypointPath)) {
-  main()
-    .then((exitCode) => {
-      process.exitCode = exitCode;
-    })
-    .catch((error: unknown) => {
-      new MonorepositoryConsoleLogger("doctor", {verbose: false}).error(errorMessage(error));
-      process.exitCode = 1;
-    });
-}
+await doctorCommand.runIfMain(import.meta.url);

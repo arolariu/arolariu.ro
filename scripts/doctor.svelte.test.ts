@@ -20,9 +20,11 @@ import {afterEach, describe, expect, it, vi} from "vitest";
 import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "./common/logger.ts";
 import {createRepositoryPaths} from "./common/repository-paths.ts";
 import type {RepositoryRequirements} from "./common/requirements.ts";
+import {asReadOnlyFileSystem, type Clock, type RuntimeEnvironment} from "./common/runtime.ts";
+import {createMemoryFileSystem} from "./common/runtime.testing.ts";
 import {createDoctorReport} from "./doctor.reporter.ts";
 import {svelteDoctorModule} from "./doctor.svelte.ts";
-import type {DiagnosticNetworkResult, DiagnosticResult, DoctorContext, DoctorRunOptions} from "./doctor.types.ts";
+import type {DiagnosticNetworkResult, DiagnosticResult, DoctorContext, DoctorInput} from "./doctor.types.ts";
 import type {SvelteFacts} from "./inspection/frontend.ts";
 import type {RepositoryInspectionSession} from "./inspection/repository.ts";
 import type {InspectionOutcome} from "./inspection/types.ts";
@@ -40,8 +42,32 @@ function validRequirements(): RepositoryRequirements {
   };
 }
 
-function doctorOptions(patch: Partial<DoctorRunOptions> = {}): DoctorRunOptions {
+function doctorOptions(patch: Partial<DoctorInput> = {}): DoctorInput {
   return {verbose: false, quick: false, ...patch};
+}
+
+/** Deterministic monotonic clock every fixture context observes. */
+function fixtureClock(): Clock {
+  let current = 0;
+  return {
+    monotonicNow: (): number => ++current,
+    isoTimestamp: (): string => "2026-08-29T00:00:00.000Z",
+    delay: (): Promise<void> => Promise.resolve(),
+  };
+}
+
+/** Immutable environment snapshot every fixture context observes. */
+function fixtureEnvironment(variables: Readonly<Record<string, string | undefined>> = {}): RuntimeEnvironment {
+  return {
+    variables,
+    cwd: "C:\\fixture\\arolariu.ro",
+    executablePath: "C:\\Program Files\\nodejs\\node.exe",
+    platform: "win32",
+    architecture: "x64",
+    stdinIsTTY: false,
+    stdoutIsTTY: false,
+    isCI: false,
+  };
 }
 
 function healthySvelteFacts(id: "cv" | "status"): SvelteFacts {
@@ -85,7 +111,7 @@ interface SvelteFixture {
 
 function createSvelteFixture(
   input: Readonly<{
-    options?: Partial<DoctorRunOptions>;
+    options?: Partial<DoctorInput>;
     requirementsValid?: boolean;
     cvOutcome?: InspectionOutcome<SvelteFacts>;
     statusOutcome?: InspectionOutcome<SvelteFacts>;
@@ -109,7 +135,6 @@ function createSvelteFixture(
   });
 
   const sink = new InMemoryLoggerSink();
-  let now = 0;
   const context: DoctorContext = {
     options: doctorOptions(input.options),
     paths: createRepositoryPaths(fixtureRoot),
@@ -121,10 +146,9 @@ function createSvelteFixture(
       get: vi.fn(async (): Promise<DiagnosticNetworkResult> => ({status: "reachable", statusCode: 200, durationMs: 1})),
     },
     logger: new MonorepositoryConsoleLogger("doctor::svelte", {color: false, sink}),
-    platform: "win32",
-    arch: "x64",
-    env: {},
-    now: () => ++now,
+    files: asReadOnlyFileSystem(createMemoryFileSystem()),
+    clock: fixtureClock(),
+    environment: fixtureEnvironment(),
     probes: {run: probeRun as unknown as DoctorContext["probes"]["run"]},
     inspection: {
       inspect: inspect as unknown as RepositoryInspectionSession["inspect"],

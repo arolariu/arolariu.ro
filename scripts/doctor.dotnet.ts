@@ -6,7 +6,7 @@
  * Every diagnostic row in this module is derived exclusively from the shared `DotnetFacts`
  * produced by `context.inspection.inspect("dotnet")`, `context.requirements` for version policy,
  * and `context.network.get()` for NuGet feed reachability. This module never spawns a command,
- * never reads a file, and never uses `context.runner` or `context.probes`. When the shared
+ * never reads a file, and never uses an unrestricted runner or `context.probes`. When the shared
  * inspection outcome is `unavailable` or `invalid`, every fact-dependent row is an explicit
  * failure; no diagnostic ever fabricates a healthy value from missing facts.
  */
@@ -47,7 +47,7 @@ function diagnostic(
   startedAt: number,
   input: Omit<DiagnosticResult, "durationMs" | "module">,
 ): DiagnosticResult {
-  return diagnosticResult({module: "dotnet", ...input}, startedAt, ctx.now);
+  return diagnosticResult({module: "dotnet", ...input}, startedAt, ctx.clock.monotonicNow);
 }
 
 function issueDiagnostic(
@@ -120,7 +120,7 @@ function parseSdkMajorMinor(version: string): MinimumVersion | null {
 // ============================================================================
 
 function diagnoseExecutable(ctx: Readonly<DoctorContext>, facts: Readonly<DotnetFacts>): DiagnosticResult {
-  const startedAt = ctx.now();
+  const startedAt = ctx.clock.monotonicNow();
   if (!facts.executable.available) {
     return issueDiagnostic(ctx, startedAt, {
       id: "dotnet.executable",
@@ -160,7 +160,7 @@ function diagnoseSdkInventory(ctx: Readonly<DoctorContext>, facts: Readonly<Dotn
     });
   }
 
-  const startedAt = ctx.now();
+  const startedAt = ctx.clock.monotonicNow();
   const required = ctx.requirements.requirements.dotnet;
   const compatible = facts.sdks.filter((sdk) => {
     const parsed = parseSdkMajorMinor(sdk);
@@ -203,7 +203,7 @@ function diagnoseSdkInventory(ctx: Readonly<DoctorContext>, facts: Readonly<Dotn
 }
 
 function diagnoseHost(ctx: Readonly<DoctorContext>, facts: Readonly<DotnetFacts>): DiagnosticResult {
-  const startedAt = ctx.now();
+  const startedAt = ctx.clock.monotonicNow();
   if (facts.host === undefined) {
     return issueDiagnostic(ctx, startedAt, {
       id: "dotnet.host",
@@ -217,13 +217,13 @@ function diagnoseHost(ctx: Readonly<DoctorContext>, facts: Readonly<DotnetFacts>
   }
 
   const normalizedHostArch = normalizedNodeArch(facts.host.architecture);
-  if (normalizedHostArch !== ctx.arch) {
+  if (normalizedHostArch !== ctx.environment.architecture) {
     return issueDiagnostic(ctx, startedAt, {
       id: "dotnet.host",
       name: ".NET host",
       status: "fail",
       summary: "The installed .NET host architecture does not match the current process architecture.",
-      evidence: [`Host architecture: ${facts.host.architecture}`, `Process architecture: ${ctx.arch}`],
+      evidence: [`Host architecture: ${facts.host.architecture}`, `Process architecture: ${ctx.environment.architecture}`],
       rootCause: "A mismatched .NET host architecture can degrade native performance or break architecture-specific tooling.",
       fixes: [{description: "Install a .NET SDK matching the host process architecture, then rerun doctor."}],
     });
@@ -237,7 +237,7 @@ function diagnoseHost(ctx: Readonly<DoctorContext>, facts: Readonly<DotnetFacts>
 }
 
 function diagnoseWorkloads(ctx: Readonly<DoctorContext>, facts: Readonly<DotnetFacts>): DiagnosticResult {
-  const startedAt = ctx.now();
+  const startedAt = ctx.clock.monotonicNow();
   return passDiagnostic(
     ctx,
     startedAt,
@@ -249,7 +249,7 @@ function diagnoseWorkloads(ctx: Readonly<DoctorContext>, facts: Readonly<DotnetF
 }
 
 function diagnoseNugetState(ctx: Readonly<DoctorContext>, facts: Readonly<DotnetFacts>): DiagnosticResult {
-  const startedAt = ctx.now();
+  const startedAt = ctx.clock.monotonicNow();
   if (facts.nugetCachePath === undefined) {
     return issueDiagnostic(ctx, startedAt, {
       id: "dotnet.nuget-state",
@@ -268,7 +268,7 @@ function diagnoseNugetState(ctx: Readonly<DoctorContext>, facts: Readonly<Dotnet
 }
 
 function diagnoseSolution(ctx: Readonly<DoctorContext>, facts: Readonly<DotnetFacts>): DiagnosticResult {
-  const startedAt = ctx.now();
+  const startedAt = ctx.clock.monotonicNow();
   if (facts.solutionIssues.length > 0) {
     const evidence = boundedIssues(facts.solutionIssues);
     const diagnosis = buildIssueDiagnosis(facts.solutionIssues);
@@ -307,7 +307,7 @@ function diagnoseSolution(ctx: Readonly<DoctorContext>, facts: Readonly<DotnetFa
 }
 
 function diagnoseLocalTools(ctx: Readonly<DoctorContext>, facts: Readonly<DotnetFacts>): DiagnosticResult {
-  const startedAt = ctx.now();
+  const startedAt = ctx.clock.monotonicNow();
   const installedNames = new Set(facts.localTools.map((t) => t.name.toLowerCase()));
 
   if (!installedNames.has(REQUIRED_LOCAL_TOOL.toLowerCase())) {
@@ -333,7 +333,7 @@ function diagnoseLocalTools(ctx: Readonly<DoctorContext>, facts: Readonly<Dotnet
 }
 
 function diagnoseHttpsCertificate(ctx: Readonly<DoctorContext>, facts: Readonly<DotnetFacts>): DiagnosticResult {
-  const startedAt = ctx.now();
+  const startedAt = ctx.clock.monotonicNow();
   if (!facts.certificate.exists) {
     return issueDiagnostic(ctx, startedAt, {
       id: "dotnet.https-certificate",
@@ -369,7 +369,7 @@ function diagnoseHttpsCertificate(ctx: Readonly<DoctorContext>, facts: Readonly<
 }
 
 function diagnoseAppHost(ctx: Readonly<DoctorContext>, facts: Readonly<DotnetFacts>): DiagnosticResult {
-  const startedAt = ctx.now();
+  const startedAt = ctx.clock.monotonicNow();
   if (!facts.appHost.projectExists) {
     return issueDiagnostic(ctx, startedAt, {
       id: "dotnet.apphost",
@@ -432,7 +432,7 @@ async function diagnoseNugetFeed(ctx: Readonly<DoctorContext>): Promise<Diagnost
     });
   }
 
-  const startedAt = ctx.now();
+  const startedAt = ctx.clock.monotonicNow();
   const probe = await ctx.network.get(NUGET_FEED_URL, DIAGNOSTIC_DEFAULT_TIMEOUT_MS);
   if (probe.status !== "reachable") {
     return skippedDiagnostic({
@@ -481,7 +481,7 @@ async function diagnoseNugetFeed(ctx: Readonly<DoctorContext>): Promise<Diagnost
 // ============================================================================
 
 function degradedResults(ctx: Readonly<DoctorContext>, issues: readonly string[]): readonly DiagnosticResult[] {
-  const startedAt = ctx.now();
+  const startedAt = ctx.clock.monotonicNow();
   const summary = "The shared .NET inspection facts could not be produced.";
   const evidence = boundedIssues(issues);
   const diagnosis = buildIssueDiagnosis(issues);
