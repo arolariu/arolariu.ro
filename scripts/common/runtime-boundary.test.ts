@@ -988,21 +988,6 @@ describe("runtime boundary policy", () => {
           "rule": "direct-exit",
         },
         {
-          "file": "scripts/setup.dotnet.ts",
-          "line": 25,
-          "rule": "legacy-process-import",
-        },
-        {
-          "file": "scripts/setup.dotnet.ts",
-          "line": 332,
-          "rule": "explicit-concurrency",
-        },
-        {
-          "file": "scripts/setup.dotnet.ts",
-          "line": 983,
-          "rule": "ambient-os-state",
-        },
-        {
           "file": "scripts/setup.infrastructure.ts",
           "line": 20,
           "rule": "ambient-filesystem",

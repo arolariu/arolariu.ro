@@ -17,21 +17,40 @@
  * declined actions never invalidate anything. A successful mutation command or an `"executed"`
  * disposition alone is never treated as proof of readiness: each mutation asserts its own
  * action-specific postcondition against the refreshed facts.
+ *
+ * The phase reads every capability from the invocation-scoped {@link SetupPhaseRuntime}: the
+ * process runner, the clock, the task scheduler, and the host-platform snapshot. The only injected
+ * dependency it still owns is the cryptographic byte source behind the generated local-development
+ * passwords, which is security-sensitive business input rather than an ambient runtime capability.
  */
 
 import {randomBytes as nodeRandomBytes} from "node:crypto";
 import {resolve} from "node:path";
 
-import type {CommandResult, CommandSpec} from "./common/process.ts";
 import {satisfiesMinimum, type MinimumVersion} from "./common/requirements.ts";
+import {
+  processFailureEvidence,
+  RunnerError,
+  type ProcessOutcome,
+  type ProcessRequest,
+  type SucceededProcessOutcome,
+} from "./common/runner.ts";
+import {CommandCancellation} from "./common/runtime.ts";
 import type {DotnetFacts} from "./inspection/dotnet.ts";
 import type {InspectionOutcome} from "./inspection/types.ts";
-import type {InstallationProposal, SetupActionScope, SetupContext, SetupPhaseDefinition, SetupPhaseResult} from "./setup.types.ts";
+import {
+  requireSetupPhaseRuntime,
+  type InstallationProposal,
+  type SetupActionScope,
+  type SetupContext,
+  type SetupPhaseDefinition,
+  type SetupPhaseResult,
+  type SetupPhaseRuntime,
+} from "./setup.types.ts";
 
 type RandomByteSource = (size: number) => Uint8Array;
 
 interface DotnetSetupDependencies {
-  readonly platform: NodeJS.Platform;
   readonly randomBytes: RandomByteSource;
 }
 
@@ -39,7 +58,7 @@ interface RestoreDefinition {
   readonly id: string;
   readonly scope: SetupActionScope;
   readonly summary: string;
-  readonly command: CommandSpec;
+  readonly command: ProcessRequest;
   /** Action-specific postcondition evaluated against the facts observed before and after the restore. */
   readonly verify: (input: Readonly<{before: DotnetFacts | undefined; after: DotnetFacts}>) => RestoreVerification;
 }
@@ -79,34 +98,85 @@ const USER_SECRETS_ACTION = "dotnet.user-secrets.set";
 const CERTIFICATE_CREATE_ACTION = "dotnet.certificate.create";
 const CERTIFICATE_TRUST_ACTION = "dotnet.certificate.trust";
 const LEADING_VERSION_PATTERN = /^(\d+)\.(\d+)\.(\d+)/u;
+/**
+ * Bounded ceiling for every long-running .NET installation, restore, and trust mutation.
+ *
+ * @remarks
+ * The invocation-scoped runner defaults to a probe-sized timeout, which is correct for a
+ * `--version` probe but would truncate an SDK install or a full solution restore. Each such
+ * mutation therefore requests this ceiling explicitly, preserving the pre-migration mutation
+ * timeout the deprecated setup runner bridge used to supply implicitly.
+ */
+const LONG_RUNNING_MUTATION_TIMEOUT_MS = 1_200_000;
 
-function isSuccessfulCommand(result: Readonly<CommandResult>): boolean {
-  return result.code === 0 && !result.timedOut && result.signal === undefined && result.spawnError === undefined;
+function isSuccessfulOutcome(outcome: Readonly<ProcessOutcome>): outcome is SucceededProcessOutcome {
+  return outcome.kind === "succeeded";
 }
 
 function isInterrupted(error: unknown): boolean {
-  return error instanceof Error && error.name === "AbortError";
+  return error instanceof CommandCancellation || (error instanceof Error && error.name === "AbortError");
 }
 
-function duration(startedAt: number, context: SetupContext): number {
-  return Math.max(0, context.now() - startedAt);
+function duration(startedAt: number, runtime: SetupPhaseRuntime): number {
+  return Math.max(0, runtime.clock.monotonicNow() - startedAt);
 }
 
-function phaseResult(context: SetupContext, startedAt: number, input: Omit<SetupPhaseResult, "durationMs">): SetupPhaseResult {
+function phaseResult(
+  runtime: SetupPhaseRuntime,
+  startedAt: number,
+  input: Omit<SetupPhaseResult, "durationMs">,
+): SetupPhaseResult {
   return {
     ...input,
-    durationMs: duration(startedAt, context),
+    durationMs: duration(startedAt, runtime),
   };
 }
 
-function commandFailureEvidence(result: Readonly<CommandResult>, options: Readonly<{includeStdout?: boolean}> = {}): readonly string[] {
+/**
+ * Wraps a failed mutation attempt in an action-specific error carrying bounded child evidence.
+ *
+ * @param summary - Non-secret summary naming the mutation that failed.
+ * @param error - Whatever the runner or the mutation threw.
+ * @param secrets - Generated values to redact from the rendered message.
+ * @returns An error whose message names the action and its bounded child evidence.
+ * @throws The original error when it represents an interruption, which is never degraded.
+ */
+function mutationFailure(summary: string, error: unknown, secrets: readonly string[] = []): Error {
+  if (isInterrupted(error)) {
+    throw error;
+  }
+  return new Error([summary, errorMessage(error, secrets)].join("\n"));
+}
+
+/**
+ * Renders one failed secret-carrying mutation without ever exposing child standard output.
+ *
+ * @remarks
+ * The user-secret write is the only command in this phase that receives generated passwords. Its
+ * stderr and the registered logger redactions are still used for diagnostics, but its stdout is
+ * discarded before any evidence is rendered, so a child that echoes part of its stdin payload can
+ * never surface it through phase evidence.
+ *
+ * @param error - Whatever the runner threw for the secret write.
+ * @param context - Setup context owning the redacting logger.
+ * @returns Bounded, non-secret evidence lines.
+ */
+function secretCommandFailureEvidence(error: unknown, context: SetupContext): readonly string[] {
+  if (!(error instanceof RunnerError)) {
+    // A non-transport failure (runner validation, for example) carries no child output at all, so
+    // its own message is the only diagnostic available; the caller still sanitizes it.
+    return [error instanceof Error ? error.message : String(error)];
+  }
+
+  const {outcome} = error;
+  const evidence = processFailureEvidence({...outcome, stdout: ""}, context.logger);
   return [
-    ...(result.spawnError === undefined ? [] : [`Unable to start command: ${result.spawnError}`]),
-    ...(result.timedOut ? ["Command timed out."] : []),
-    ...(result.signal === undefined ? [] : [`Command stopped with signal ${result.signal}.`]),
-    ...(result.code === 0 ? [] : [`Command exited with code ${result.code}.`]),
-    ...(options.includeStdout === false || result.stdout.trim() === "" ? [] : [`stdout: ${result.stdout.trim()}`]),
-    ...(result.stderr.trim() === "" ? [] : [`stderr: ${result.stderr.trim()}`]),
+    ...(outcome.kind === "exited" ? [`Command exited with code ${String(outcome.exitCode)}.`] : []),
+    ...(outcome.kind === "timed-out" ? ["Command timed out."] : []),
+    ...(outcome.kind === "signalled" ? [`Command stopped with signal ${outcome.signal}.`] : []),
+    ...(outcome.kind === "cancelled" ? ["Command was cancelled."] : []),
+    ...(outcome.kind === "spawn-failed" ? [`Unable to start command: ${outcome.message}`] : []),
+    ...(evidence === "" ? [] : [`stderr: ${evidence.trim()}`]),
   ];
 }
 
@@ -307,19 +377,23 @@ export function generateLocalDevelopmentPassword(randomBytes: RandomByteSource =
   return `Aa1!${Buffer.from(bytes).toString("base64url")}`;
 }
 
-async function discoverPackageManagers(context: SetupContext, platform: NodeJS.Platform): Promise<ReadonlySet<string>> {
+async function discoverPackageManagers(
+  context: SetupContext,
+  runtime: SetupPhaseRuntime,
+  platform: NodeJS.Platform,
+): Promise<ReadonlySet<string>> {
   const managers = new Set<string>();
   if (platform === "win32") {
-    const winget = await context.runner.run({command: "winget", args: ["--version"]}, {cwd: context.paths.root});
-    if (isSuccessfulCommand(winget)) {
+    const winget = await runtime.runner.run({command: "winget", args: ["--version"]}, {cwd: context.paths.root});
+    if (isSuccessfulOutcome(winget)) {
       managers.add("winget");
     }
     return managers;
   }
 
   if (platform === "darwin") {
-    const brew = await context.runner.run({command: "brew", args: ["--version"]}, {cwd: context.paths.root});
-    if (isSuccessfulCommand(brew)) {
+    const brew = await runtime.runner.run({command: "brew", args: ["--version"]}, {cwd: context.paths.root});
+    if (isSuccessfulOutcome(brew)) {
       managers.add("brew");
     }
     return managers;
@@ -329,17 +403,20 @@ async function discoverPackageManagers(context: SetupContext, platform: NodeJS.P
     return managers;
   }
 
-  const [apt, dnf] = await Promise.all([
-    context.runner.run({command: "apt-get", args: ["--version"]}, {cwd: context.paths.root}),
-    context.runner.run({command: "dnf", args: ["--version"]}, {cwd: context.paths.root}),
+  const [apt, dnf] = await runtime.tasks.parallel([
+    () => runtime.runner.run({command: "apt-get", args: ["--version"]}, {cwd: context.paths.root}),
+    () => runtime.runner.run({command: "dnf", args: ["--version"]}, {cwd: context.paths.root}),
   ]);
-  if (isSuccessfulCommand(apt)) {
-    const policy = await context.runner.run({command: "apt-cache", args: ["policy", "dotnet-sdk-10.0"]}, {cwd: context.paths.root});
-    if (isSuccessfulCommand(policy) && /^\s*Candidate:\s*(?!\(none\)\s*$)\S+/imu.test(policy.stdout)) {
+  if (apt !== undefined && isSuccessfulOutcome(apt)) {
+    const policy = await runtime.runner.run(
+      {command: "apt-cache", args: ["policy", "dotnet-sdk-10.0"]},
+      {cwd: context.paths.root},
+    );
+    if (isSuccessfulOutcome(policy) && /^\s*Candidate:\s*(?!\(none\)\s*$)\S+/imu.test(policy.stdout)) {
       managers.add("apt-get");
     }
   }
-  if (isSuccessfulCommand(dnf)) {
+  if (dnf !== undefined && isSuccessfulOutcome(dnf)) {
     managers.add("dnf");
   }
   return managers;
@@ -404,6 +481,7 @@ function restores(context: SetupContext): readonly RestoreDefinition[] {
  * tool.
  *
  * @param context - Shared setup dependencies, including the repository inspection session.
+ * @param runtime - Invocation-scoped capabilities the restore commands run through.
  * @param initialFacts - The newest verified facts, or `undefined` when none were observable.
  * @param plannedActions - Mutable accumulator of dry-run-planned action identifiers.
  * @param evidence - Mutable accumulator of human-readable phase evidence.
@@ -411,6 +489,7 @@ function restores(context: SetupContext): readonly RestoreDefinition[] {
  */
 async function runRestoreActions(
   context: SetupContext,
+  runtime: SetupPhaseRuntime,
   initialFacts: DotnetFacts | undefined,
   plannedActions: string[],
   evidence: string[],
@@ -422,13 +501,15 @@ async function runRestoreActions(
       scope: restore.scope,
       summary: restore.summary,
       mutate: async () => {
-        const restoreResult = await context.runner.run(restore.command, {
-          cwd: context.paths.root,
-          output: "tee",
-          logger: context.logger,
-        });
-        if (!isSuccessfulCommand(restoreResult)) {
-          throw new Error([`Restore action '${restore.id}' failed.`, ...commandFailureEvidence(restoreResult)].join("\n"));
+        try {
+          await runtime.runner.expectSuccess(restore.command, {
+            cwd: context.paths.root,
+            output: "tee",
+            logger: context.logger,
+            timeoutMs: LONG_RUNNING_MUTATION_TIMEOUT_MS,
+          });
+        } catch (error: unknown) {
+          throw mutationFailure(`Restore action '${restore.id}' failed.`, error);
         }
       },
     });
@@ -521,6 +602,7 @@ function userSecretKeysNeedingProvisioning(facts: Readonly<DotnetFacts>): readon
  * policy requires, then verifies every required key against refreshed facts.
  *
  * @param context - Shared setup dependencies, including the repository inspection session.
+ * @param runtime - Invocation-scoped capabilities the secret write runs through.
  * @param facts - The `dotnet` facts observed before this step.
  * @param dependencies - Independent random-byte source used to generate new passwords.
  * @param plannedActions - Mutable accumulator of dry-run-planned action identifiers.
@@ -531,6 +613,7 @@ function userSecretKeysNeedingProvisioning(facts: Readonly<DotnetFacts>): readon
  */
 async function ensureUserSecrets(
   context: SetupContext,
+  runtime: SetupPhaseRuntime,
   facts: Readonly<DotnetFacts>,
   dependencies: DotnetSetupDependencies,
   plannedActions: string[],
@@ -556,12 +639,16 @@ async function ensureUserSecrets(
         context.logger.redact(value);
         payload[key] = value;
       }
-      const setResult = await context.runner.run(
-        {command: "dotnet", args: ["user-secrets", "set", "--project", appHostProject]},
-        {cwd: context.paths.root, input: JSON.stringify(payload)},
-      );
-      if (!isSuccessfulCommand(setResult)) {
-        const safeEvidence = commandFailureEvidence(setResult, {includeStdout: false}).map((item) => sanitize(item, knownSecrets));
+      try {
+        await runtime.runner.expectSuccess(
+          {command: "dotnet", args: ["user-secrets", "set", "--project", appHostProject]},
+          {cwd: context.paths.root, input: JSON.stringify(payload), logger: context.logger},
+        );
+      } catch (error: unknown) {
+        if (isInterrupted(error)) {
+          throw error;
+        }
+        const safeEvidence = secretCommandFailureEvidence(error, context).map((item) => sanitize(item, knownSecrets));
         throw new Error(["Unable to set missing AppHost user-secret keys.", ...safeEvidence].join("\n"));
       }
     },
@@ -606,6 +693,7 @@ async function ensureUserSecrets(
  * from the observed `dotnet` facts, verifying each executed mutation against refreshed facts.
  *
  * @param context - Shared setup dependencies, including the repository inspection session.
+ * @param runtime - Invocation-scoped capabilities the certificate commands run through.
  * @param facts - The `dotnet` facts observed before this step.
  * @param plannedActions - Mutable accumulator of dry-run-planned action identifiers.
  * @param evidence - Mutable accumulator of human-readable phase evidence.
@@ -614,6 +702,7 @@ async function ensureUserSecrets(
  */
 async function ensureCertificate(
   context: SetupContext,
+  runtime: SetupPhaseRuntime,
   facts: Readonly<DotnetFacts>,
   plannedActions: string[],
   evidence: string[],
@@ -627,9 +716,13 @@ async function ensureCertificate(
       scope: "user",
       summary: "Create a local HTTPS development certificate.",
       mutate: async () => {
-        const createResult = await context.runner.run({command: "dotnet", args: ["dev-certs", "https"]}, {cwd: context.paths.root});
-        if (!isSuccessfulCommand(createResult)) {
-          throw new Error(["HTTPS development certificate creation failed.", ...commandFailureEvidence(createResult)].join("\n"));
+        try {
+          await runtime.runner.expectSuccess(
+            {command: "dotnet", args: ["dev-certs", "https"]},
+            {cwd: context.paths.root, logger: context.logger},
+          );
+        } catch (error: unknown) {
+          throw mutationFailure("HTTPS development certificate creation failed.", error, knownSecrets);
         }
       },
     });
@@ -682,12 +775,18 @@ async function ensureCertificate(
       scope: "system",
       summary: "Trust the local HTTPS development certificate.",
       mutate: async () => {
-        const trustMutation = await context.runner.run(
-          {command: "dotnet", args: ["dev-certs", "https", "--trust"]},
-          {cwd: context.paths.root, output: "inherit"},
-        );
-        if (!isSuccessfulCommand(trustMutation)) {
-          throw new Error(["HTTPS development certificate trust failed.", ...commandFailureEvidence(trustMutation)].join("\n"));
+        try {
+          await runtime.runner.expectSuccess(
+            {command: "dotnet", args: ["dev-certs", "https", "--trust"]},
+            {
+              cwd: context.paths.root,
+              output: "inherit",
+              logger: context.logger,
+              timeoutMs: LONG_RUNNING_MUTATION_TIMEOUT_MS,
+            },
+          );
+        } catch (error: unknown) {
+          throw mutationFailure("HTTPS development certificate trust failed.", error, knownSecrets);
         }
       },
     });
@@ -746,7 +845,7 @@ async function ensureCertificate(
  * such a machine, so dry-run planning of dependent restores proceeds without any facts at all.
  *
  * @param context - Shared setup dependencies, including the repository inspection session.
- * @param dependencies - Independent platform boundary used to select an installation proposal.
+ * @param runtime - Invocation-scoped capabilities, including the host-platform snapshot.
  * @param initial - The `dotnet` state observed before this step.
  * @param plannedActions - Mutable accumulator of dry-run-planned action identifiers.
  * @param evidence - Mutable accumulator of human-readable phase evidence.
@@ -755,7 +854,7 @@ async function ensureCertificate(
  */
 async function ensureDotnetSdk(
   context: SetupContext,
-  dependencies: DotnetSetupDependencies,
+  runtime: SetupPhaseRuntime,
   initial: InitialDotnetState,
   plannedActions: string[],
   evidence: string[],
@@ -764,9 +863,10 @@ async function ensureDotnetSdk(
     return {facts: initial.facts};
   }
 
-  const packageManagers = await discoverPackageManagers(context, dependencies.platform);
+  const {platform} = runtime.environment;
+  const packageManagers = await discoverPackageManagers(context, runtime, platform);
   const proposal = selectDotnetInstallationProposal({
-    platform: dependencies.platform,
+    platform,
     availablePackageManagers: packageManagers,
     required: context.requirements.dotnet,
   });
@@ -788,9 +888,15 @@ async function ensureDotnetSdk(
     scope: "system",
     summary: proposal.explanation,
     mutate: async () => {
-      const installResult = await context.runner.run(proposal.command, {cwd: context.paths.root, output: "inherit"});
-      if (!isSuccessfulCommand(installResult)) {
-        throw new Error(["The supported .NET SDK installation command failed.", ...commandFailureEvidence(installResult)].join("\n"));
+      try {
+        await runtime.runner.expectSuccess(proposal.command, {
+          cwd: context.paths.root,
+          output: "inherit",
+          logger: context.logger,
+          timeoutMs: LONG_RUNNING_MUTATION_TIMEOUT_MS,
+        });
+      } catch (error: unknown) {
+        throw mutationFailure("The supported .NET SDK installation command failed.", error);
       }
     },
   });
@@ -813,6 +919,7 @@ async function ensureDotnetSdk(
     evidence.push(`Planned action: ${DOTNET_INSTALL_ACTION}`);
     const restoreOutcome = await runRestoreActions(
       context,
+      runtime,
       initial.kind === "available" ? initial.facts : undefined,
       plannedActions,
       evidence,
@@ -865,7 +972,8 @@ async function ensureDotnetSdk(
 }
 
 async function runDotnetSetup(context: SetupContext, dependencies: DotnetSetupDependencies): Promise<SetupPhaseResult> {
-  const startedAt = context.now();
+  const runtime = requireSetupPhaseRuntime(context);
+  const startedAt = runtime.clock.monotonicNow();
   const evidence: string[] = [];
   const plannedActions: string[] = [];
   const knownSecrets: string[] = [];
@@ -873,7 +981,7 @@ async function runDotnetSetup(context: SetupContext, dependencies: DotnetSetupDe
   try {
     const initialOutcome = await context.inspection.inspect("dotnet");
     if (initialOutcome.kind === "invalid") {
-      return phaseResult(context, startedAt, {
+      return phaseResult(runtime, startedAt, {
         id: "dotnet",
         status: "failed",
         summary: "The .NET environment could not be inspected.",
@@ -892,14 +1000,14 @@ async function runDotnetSetup(context: SetupContext, dependencies: DotnetSetupDe
       ...(initial.kind === "available" ? dotnetCompatibilityEvidence(initial.facts, context.requirements.dotnet) : [initial.reason]),
     );
 
-    const sdkOutcome = await ensureDotnetSdk(context, dependencies, initial, plannedActions, evidence);
+    const sdkOutcome = await ensureDotnetSdk(context, runtime, initial, plannedActions, evidence);
     if ("result" in sdkOutcome) {
-      return phaseResult(context, startedAt, sdkOutcome.result);
+      return phaseResult(runtime, startedAt, sdkOutcome.result);
     }
     let facts = sdkOutcome.facts;
 
     if (facts.solutionIssues.length > 0) {
-      return phaseResult(context, startedAt, {
+      return phaseResult(runtime, startedAt, {
         id: "dotnet",
         status: "failed",
         summary: "The repository solution reports integrity issues.",
@@ -908,14 +1016,14 @@ async function runDotnetSetup(context: SetupContext, dependencies: DotnetSetupDe
       });
     }
 
-    const restoreOutcome = await runRestoreActions(context, facts, plannedActions, evidence);
+    const restoreOutcome = await runRestoreActions(context, runtime, facts, plannedActions, evidence);
     if ("result" in restoreOutcome) {
-      return phaseResult(context, startedAt, restoreOutcome.result);
+      return phaseResult(runtime, startedAt, restoreOutcome.result);
     }
     facts = restoreOutcome.facts ?? facts;
 
     if (!facts.appHost.projectExists) {
-      return phaseResult(context, startedAt, {
+      return phaseResult(runtime, startedAt, {
         id: "dotnet",
         status: "failed",
         summary: "The required AppHost project does not exist.",
@@ -925,19 +1033,19 @@ async function runDotnetSetup(context: SetupContext, dependencies: DotnetSetupDe
     }
     evidence.push("The AppHost project exists.");
 
-    const secretsOutcome = await ensureUserSecrets(context, facts, dependencies, plannedActions, evidence, knownSecrets);
+    const secretsOutcome = await ensureUserSecrets(context, runtime, facts, dependencies, plannedActions, evidence, knownSecrets);
     if ("result" in secretsOutcome) {
-      return phaseResult(context, startedAt, secretsOutcome.result);
+      return phaseResult(runtime, startedAt, secretsOutcome.result);
     }
     facts = secretsOutcome.facts;
 
-    const certificateOutcome = await ensureCertificate(context, facts, plannedActions, evidence, knownSecrets);
+    const certificateOutcome = await ensureCertificate(context, runtime, facts, plannedActions, evidence, knownSecrets);
     if (certificateOutcome !== null) {
-      return phaseResult(context, startedAt, certificateOutcome);
+      return phaseResult(runtime, startedAt, certificateOutcome);
     }
 
     if (plannedActions.length > 0) {
-      return phaseResult(context, startedAt, {
+      return phaseResult(runtime, startedAt, {
         id: "dotnet",
         status: "skipped",
         summary: "Required .NET preparation actions are planned by dry-run.",
@@ -946,7 +1054,7 @@ async function runDotnetSetup(context: SetupContext, dependencies: DotnetSetupDe
       });
     }
 
-    return phaseResult(context, startedAt, {
+    return phaseResult(runtime, startedAt, {
       id: "dotnet",
       status: "succeeded",
       summary: "The .NET SDK, restores, AppHost parameters, and HTTPS certificate are ready.",
@@ -958,7 +1066,7 @@ async function runDotnetSetup(context: SetupContext, dependencies: DotnetSetupDe
       throw error;
     }
     const safeError = errorMessage(error, knownSecrets);
-    return phaseResult(context, startedAt, {
+    return phaseResult(runtime, startedAt, {
       id: "dotnet",
       status: "failed",
       summary: "The required .NET preparation phase failed.",
@@ -973,14 +1081,19 @@ async function runDotnetSetup(context: SetupContext, dependencies: DotnetSetupDe
 }
 
 /**
- * Creates the .NET setup phase with an explicit platform and random-byte source boundary.
+ * Creates the .NET setup phase with an explicit random-byte source boundary.
+ *
+ * @remarks
+ * The host platform is no longer a constructor dependency: it is read from the invocation-scoped
+ * runtime environment snapshot, together with every other capability this phase observes. Only the
+ * cryptographic byte source behind generated local-development passwords stays injectable, because
+ * it is security-sensitive business input rather than an ambient runtime capability.
  *
  * @param dependencies - Optional production-boundary replacements for tests.
  * @returns The independent .NET setup phase definition.
  */
 export function createDotnetSetupPhase(dependencies: Partial<DotnetSetupDependencies> = {}): SetupPhaseDefinition {
   const resolvedDependencies: DotnetSetupDependencies = {
-    platform: dependencies.platform ?? process.platform,
     randomBytes: dependencies.randomBytes ?? nodeRandomBytes,
   };
   return {
