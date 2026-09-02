@@ -10,9 +10,15 @@ import {tmpdir} from "node:os";
 import {describe, expect, it} from "vitest";
 
 import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "./logger.ts";
-import {defaultProcessRunner} from "./runner.execa.ts";
+import {ExecaProcessRunner} from "./runner.execa.ts";
 
 const scriptsDirectory = resolve(process.cwd(), "scripts");
+
+const defaultProcessRunner = new ExecaProcessRunner({
+  baseEnvironment: process.env,
+  platform: process.platform,
+  monotonicNow: () => performance.now(),
+});
 
 /**
  * Explicit wall-clock budget for cases that spawn a real child process.

@@ -8,6 +8,7 @@ import {resolve} from "node:path";
 
 import type {CommandResult, CommandSpec} from "./common/process.ts";
 import {loadRepositoryRequirements, parseVersion, satisfiesMinimum, type MinimumVersion} from "./common/requirements.ts";
+import {nodeFileSystem, nodeTaskScheduler} from "./common/runtime.node.ts";
 import {getExpectedTaxonomyArtifactPaths} from "./common/taxonomy-artifacts.ts";
 import type {NpmTreeFacts} from "./inspection/packages.ts";
 import type {SetupContext, SetupPhaseDefinition, SetupPhaseResult} from "./setup.types.ts";
@@ -191,7 +192,7 @@ async function runPrerequisites(context: SetupContext): Promise<SetupPhaseResult
     });
   }
 
-  const liveRequirements = await loadRepositoryRequirements(context.paths);
+  const liveRequirements = await loadRepositoryRequirements(context.paths, {files: nodeFileSystem, tasks: nodeTaskScheduler});
   if (liveRequirements.status === "invalid") {
     return result(context, startedAt, {
       id,

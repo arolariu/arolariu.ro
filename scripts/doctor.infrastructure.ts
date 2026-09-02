@@ -17,6 +17,7 @@
  */
 
 import {readToolingConfig} from "./common/tooling-config.ts";
+import {nodeFileSystem} from "./common/runtime.node.ts";
 import {resolveContainerEngine} from "./container-runtime/selection.ts";
 import {ContainerRuntimeError, type ContainerEngine} from "./container-runtime/types.ts";
 import {boundEvidence, diagnosticResult} from "./doctor.diagnostics.ts";
@@ -134,7 +135,7 @@ interface SelectionOutcome {
 
 async function diagnoseSelection(context: Readonly<DoctorContext>): Promise<SelectionOutcome> {
   const startedAt = context.now();
-  const configRead = await readToolingConfig(context.paths.toolingConfig);
+  const configRead = await readToolingConfig(context.paths.toolingConfig, nodeFileSystem);
   const configuredEngine = configRead.status === "valid" ? configRead.config.containerEngine : undefined;
 
   let selection: Readonly<{engine: ContainerEngine; source: "argument" | "environment" | "configuration"}>;

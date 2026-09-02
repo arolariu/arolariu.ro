@@ -34,6 +34,7 @@ import {MonorepositoryConsoleLogger, type MonorepositoryLogger} from "./common/l
 import {loadRepositoryRequirements, type RequirementLoadResult} from "./common/requirements.ts";
 import {defaultCommandRunner} from "./common/process.ts";
 import {resolveRepositoryPaths, type RepositoryPaths} from "./common/repository-paths.ts";
+import {nodeFileSystem, nodeTaskScheduler} from "./common/runtime.node.ts";
 import {normalizeErrorForReport, diagnosticResult} from "./doctor.diagnostics.ts";
 import {renderDoctorReport, createDoctorReport} from "./doctor.reporter.ts";
 import {createInspectionProbeRunner, type InspectionProbeRunner} from "./inspection/probes.ts";
@@ -76,8 +77,8 @@ export const doctorModules: readonly DiagnosticModule[] = [
 export interface DoctorDependencies {
   /** Ordered modules to execute; defaults to {@link doctorModules}. */
   readonly modules: readonly DiagnosticModule[];
-  /** Resolves canonical repository paths. */
-  readonly resolveRepositoryPaths: () => RepositoryPaths;
+  /** Resolves canonical repository paths; may be synchronous or asynchronous. */
+  readonly resolveRepositoryPaths: () => RepositoryPaths | Promise<RepositoryPaths>;
   /** Loads manifest-derived repository requirements, including an invalid/drift result. */
   readonly loadRepositoryRequirements: (paths: RepositoryPaths) => Promise<RequirementLoadResult>;
   /** Executes bounded read-only network reachability probes. */
@@ -276,8 +277,12 @@ export async function runDoctor(
 ): Promise<DoctorReport> {
   const now = dependencies.now ?? ((): number => performance.now());
   const timestamp = dependencies.timestamp ?? ((): string => new Date().toISOString());
-  const resolvePaths = dependencies.resolveRepositoryPaths ?? ((): RepositoryPaths => resolveRepositoryPaths());
-  const loadRequirements = dependencies.loadRepositoryRequirements ?? loadRepositoryRequirements;
+  const resolvePaths =
+    dependencies.resolveRepositoryPaths ?? ((): Promise<RepositoryPaths> => resolveRepositoryPaths(import.meta.url, nodeFileSystem));
+  const loadRequirements =
+    dependencies.loadRepositoryRequirements
+    ?? ((paths: RepositoryPaths): Promise<RequirementLoadResult> =>
+      loadRepositoryRequirements(paths, {files: nodeFileSystem, tasks: nodeTaskScheduler}));
   const network = dependencies.network ?? createBoundedNetworkProbe(now);
   const logger = dependencies.logger ?? new MonorepositoryConsoleLogger("doctor", {verbose: options.verbose});
   const modules = dependencies.modules ?? doctorModules;
@@ -285,7 +290,7 @@ export async function runDoctor(
   const arch = dependencies.arch ?? process.arch;
   const env = dependencies.env ?? process.env;
 
-  const paths = resolvePaths();
+  const paths = await resolvePaths();
   const requirements = await loadRequirements(paths);
 
   const inspection =

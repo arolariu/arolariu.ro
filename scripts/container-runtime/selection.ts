@@ -4,6 +4,7 @@
  */
 
 import {readToolingConfig} from "../common/tooling-config.ts";
+import {nodeFileSystem} from "../common/runtime.node.ts";
 import {ContainerRuntimeError, type ContainerEngine, type ContainerEngineSelection, type SelectionInputs} from "./types.ts";
 
 const supportedEngines: ReadonlySet<string> = new Set(["rancher", "podman"]);
@@ -110,7 +111,7 @@ export async function resolveRuntimeContainerEngine(input: Readonly<RuntimeSelec
     return {engine: normalizeEngine(environmentValue), source: "environment"};
   }
 
-  const localConfig = await readToolingConfig(input.toolingConfigPath);
+  const localConfig = await readToolingConfig(input.toolingConfigPath, nodeFileSystem);
   if (localConfig.status === "invalid") {
     throw new ContainerRuntimeError(localConfig.error);
   }

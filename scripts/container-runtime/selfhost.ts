@@ -12,6 +12,7 @@ import {commanderExitCode, createToolProgram} from "../common/cli.ts";
 import {MonorepositoryConsoleLogger, type MonorepositoryLogger} from "../common/logger.ts";
 import {defaultCommandRunner, formatCommand, type CommandRunner, type CommandRunOptions} from "../common/process.ts";
 import {resolveRepositoryPaths} from "../common/repository-paths.ts";
+import {nodeFileSystem} from "../common/runtime.node.ts";
 import {getContainerAdapter, type ContainerRuntimeAdapter, type RuntimeCommand} from "./adapters.ts";
 import {describeCommandFailure, runArtifactGeneration, runSharedPreflight} from "./preflight.ts";
 import {resolveRuntimeContainerEngine} from "./selection.ts";
@@ -295,7 +296,7 @@ export async function runSelfhost(
 ): Promise<void> {
   const runner = options.runner ?? defaultCommandRunner;
   const logger = options.logger ?? new MonorepositoryConsoleLogger("container::selfhost");
-  const paths = resolveRepositoryPaths();
+  const paths = await resolveRepositoryPaths(import.meta.url, nodeFileSystem);
   const selection = await resolveRuntimeContainerEngine({
     ...(options.requestedEngine === undefined ? {} : {requestedEngine: options.requestedEngine}),
     env: process.env,

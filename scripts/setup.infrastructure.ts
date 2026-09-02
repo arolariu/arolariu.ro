@@ -23,6 +23,7 @@ import {dirname, resolve} from "node:path";
 import type {CommandResult, CommandRunner, CommandRunOptions} from "./common/process.ts";
 import type {ToolingConfigReadResult, ToolingConfigV1} from "./common/tooling-config.ts";
 import {mergeToolingConfig, readToolingConfig, writeToolingConfig} from "./common/tooling-config.ts";
+import {nodeFileSystem} from "./common/runtime.node.ts";
 import {getContainerAdapter, type ContainerRuntimeAdapter} from "./container-runtime/adapters.ts";
 import {resolveContainerEngine} from "./container-runtime/selection.ts";
 import type {ContainerEngine, EngineSelectionSource} from "./container-runtime/types.ts";
@@ -703,8 +704,8 @@ const defaultDependencies: InfrastructureSetupDependencies = {
   platform: process.platform,
   environment: process.env,
   interactive: process.stdin.isTTY === true,
-  readConfig: readToolingConfig,
-  writeConfig: writeToolingConfig,
+  readConfig: (path) => readToolingConfig(path, nodeFileSystem),
+  writeConfig: (path, config) => writeToolingConfig(path, config, nodeFileSystem),
   createDirectory: (path) => mkdir(path, {recursive: true}).then(() => undefined),
 };
 

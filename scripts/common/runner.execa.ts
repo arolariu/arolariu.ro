@@ -7,7 +7,7 @@ import {basename} from "node:path";
 import {StringDecoder} from "node:string_decoder";
 import {execa} from "execa";
 
-import {AbstractProcessRunner, type ProcessEnvironment, type ProcessOutcome, type ProcessRequest, type ProcessRunOptions, type ProcessRunner} from "./runner.ts";
+import {AbstractProcessRunner, type ProcessEnvironment, type ProcessOutcome, type ProcessRequest, type ProcessRunOptions} from "./runner.ts";
 
 interface ExecaResultLike {
   readonly code?: string | number | undefined;
@@ -52,11 +52,11 @@ export class ExecaProcessRunner extends AbstractProcessRunner {
   readonly #platform: NodeJS.Platform;
   readonly #monotonicNow: () => number;
 
-  public constructor(options: Readonly<Partial<ExecaProcessRunnerOptions>> = {}) {
+  public constructor(options: Readonly<ExecaProcessRunnerOptions>) {
     super();
-    this.#baseEnvironment = options.baseEnvironment ?? process.env;
-    this.#platform = options.platform ?? process.platform;
-    this.#monotonicNow = options.monotonicNow ?? (() => performance.now());
+    this.#baseEnvironment = options.baseEnvironment;
+    this.#platform = options.platform;
+    this.#monotonicNow = options.monotonicNow;
   }
 
   protected override execute(
@@ -74,9 +74,6 @@ export class ExecaProcessRunner extends AbstractProcessRunner {
     });
   }
 }
-
-/** Default Execa-backed process runner. */
-export const defaultProcessRunner: ProcessRunner = new ExecaProcessRunner();
 
 async function runExeca(
   request: Readonly<ProcessRequest>,

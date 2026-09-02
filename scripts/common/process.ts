@@ -4,7 +4,7 @@
  */
 
 import {formatProcessRequest, type ProcessOutcome, type ProcessOutputMode, type ProcessRequest, type ProcessRunOptions, type ProcessRunner} from "./runner.ts";
-import {defaultProcessRunner} from "./runner.execa.ts";
+import {nodeProcessRunner} from "./runtime.node.ts";
 
 /** @deprecated Use {@link ProcessRequest} from `runner.ts`. */
 export type CommandSpec = ProcessRequest;
@@ -114,4 +114,4 @@ export function toLegacyCommandRunner(runner: ProcessRunner): CommandRunner {
 }
 
 /** Default process-backed command runner. */
-export const defaultCommandRunner: CommandRunner = toLegacyCommandRunner(defaultProcessRunner);
+export const defaultCommandRunner: CommandRunner = toLegacyCommandRunner(nodeProcessRunner);

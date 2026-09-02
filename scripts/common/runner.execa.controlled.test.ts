@@ -8,11 +8,17 @@ import {beforeEach, describe, expect, it, vi} from "vitest";
 import {execa} from "execa";
 
 import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "./logger.ts";
-import {defaultProcessRunner} from "./runner.execa.ts";
+import {ExecaProcessRunner} from "./runner.execa.ts";
 
 vi.mock("execa", {spy: true});
 
 const mockedExeca = vi.mocked(execa);
+
+const defaultProcessRunner = new ExecaProcessRunner({
+  baseEnvironment: process.env,
+  platform: process.platform,
+  monotonicNow: () => performance.now(),
+});
 
 const splitUtf8Script = [
   "const stdoutBytes = Buffer.from('€');",

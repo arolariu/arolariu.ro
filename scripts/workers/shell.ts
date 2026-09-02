@@ -15,7 +15,7 @@
  * desired lifetime — caching across runs of the same worker process is safe.
  */
 
-import {defaultProcessRunner} from "../common/runner.execa.ts";
+import {nodeProcessRunner} from "../common/runtime.node.ts";
 
 /**
  * Runs a command and captures merged stdout+stderr output.
@@ -33,7 +33,7 @@ export async function runCommand(
   args: readonly string[],
   opts?: Readonly<{cwd?: string}>,
 ): Promise<{code: number; output: string}> {
-  const outcome = await defaultProcessRunner.run({command, args}, opts?.cwd === undefined ? undefined : {cwd: opts.cwd});
+  const outcome = await nodeProcessRunner.run({command, args}, opts?.cwd === undefined ? undefined : {cwd: opts.cwd});
 
   return {
     code: outcome.kind === "succeeded" ? 0 : outcome.kind === "exited" ? outcome.exitCode : 1,

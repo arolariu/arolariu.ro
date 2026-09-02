@@ -24,6 +24,7 @@ import {MonorepositoryConsoleLogger, type MonorepositoryLogger} from "./common/l
 import {createTerminalPromptProvider, type PromptProvider} from "./common/prompts.ts";
 import {loadRepositoryRequirements, type RequirementLoadResult} from "./common/requirements.ts";
 import {resolveRepositoryPaths, type RepositoryPaths} from "./common/repository-paths.ts";
+import {nodeFileSystem, nodeTaskScheduler} from "./common/runtime.node.ts";
 import {createRepositoryInspectionSession} from "./inspection/repository.ts";
 import {dotnetSetupPhase} from "./setup.dotnet.ts";
 import {infrastructureSetupPhase} from "./setup.infrastructure.ts";
@@ -158,8 +159,8 @@ export const setupPhases: readonly SetupPhaseDefinition[] = [
 export interface SetupDependencies {
   /** Ordered phases to execute; defaults to {@link setupPhases}. */
   readonly phases: readonly SetupPhaseDefinition[];
-  /** Resolves canonical repository paths. */
-  readonly resolveRepositoryPaths: () => RepositoryPaths;
+  /** Resolves canonical repository paths; may be synchronous or asynchronous. */
+  readonly resolveRepositoryPaths: () => RepositoryPaths | Promise<RepositoryPaths>;
   /** Loads manifest-derived repository requirements. */
   readonly loadRepositoryRequirements: (paths: RepositoryPaths) => Promise<RequirementLoadResult>;
   /** Composes the one full repository inspection session shared by every phase. */
@@ -350,8 +351,12 @@ export async function runSetup(
   const prompts = dependencies.prompts ?? createTerminalPromptProvider();
   const runner = dependencies.runner ?? defaultCommandRunner;
   const now = dependencies.now ?? ((): number => performance.now());
-  const resolvePaths = dependencies.resolveRepositoryPaths ?? ((): RepositoryPaths => resolveRepositoryPaths());
-  const loadRequirements = dependencies.loadRepositoryRequirements ?? loadRepositoryRequirements;
+  const resolvePaths =
+    dependencies.resolveRepositoryPaths ?? ((): Promise<RepositoryPaths> => resolveRepositoryPaths(import.meta.url, nodeFileSystem));
+  const loadRequirements =
+    dependencies.loadRepositoryRequirements
+    ?? ((paths: RepositoryPaths): Promise<RequirementLoadResult> =>
+      loadRepositoryRequirements(paths, {files: nodeFileSystem, tasks: nodeTaskScheduler}));
   const createInspectionSession = dependencies.createInspectionSession ?? createRepositoryInspectionSession;
   const phases = dependencies.phases ?? setupPhases;
 
@@ -362,7 +367,7 @@ export async function runSetup(
       : "Preparing every required workspace, toolchain, and local dependency.",
   ]);
 
-  const paths = resolvePaths();
+  const paths = await resolvePaths();
   const requirementLoad = await loadRequirements(paths);
   if (requirementLoad.status === "invalid") {
     throw new Error(`Repository requirements are invalid:\n${requirementLoad.errors.join("\n")}`);

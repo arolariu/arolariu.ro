@@ -8,6 +8,7 @@ import {mkdir, mkdtemp, readFile, readdir, rm, stat, writeFile} from "node:fs/pr
 import {tmpdir} from "node:os";
 import {dirname, join} from "node:path";
 import {afterEach, beforeEach, describe, expect, it} from "vitest";
+import {nodeFileSystem} from "./runtime.node.ts";
 import {mergeToolingConfig, parseToolingConfig, readToolingConfig, writeToolingConfig} from "./tooling-config.ts";
 
 const temporaryRoots: string[] = [];
@@ -25,14 +26,14 @@ afterEach(async () => {
 
 describe("readToolingConfig", () => {
   it("reports a missing file", async () => {
-    await expect(readToolingConfig(configPath)).resolves.toEqual({status: "missing"});
+    await expect(readToolingConfig(configPath, nodeFileSystem)).resolves.toEqual({status: "missing"});
   });
 
   it("reads a valid version 1 document", async () => {
     await mkdir(dirname(configPath), {recursive: true});
     await writeFile(configPath, JSON.stringify({schemaVersion: 1, containerEngine: "podman"}), "utf8");
 
-    await expect(readToolingConfig(configPath)).resolves.toEqual({
+    await expect(readToolingConfig(configPath, nodeFileSystem)).resolves.toEqual({
       status: "valid",
       config: {schemaVersion: 1, containerEngine: "podman"},
     });
@@ -42,7 +43,7 @@ describe("readToolingConfig", () => {
     await mkdir(dirname(configPath), {recursive: true});
     await writeFile(configPath, "{not json", "utf8");
 
-    const result = await readToolingConfig(configPath);
+    const result = await readToolingConfig(configPath, nodeFileSystem);
 
     expect(result.status).toBe("invalid");
     if (result.status === "invalid") {
@@ -118,20 +119,28 @@ describe("parseToolingConfig", () => {
 
 describe("writeToolingConfig", () => {
   it("writes through a temporary sibling and atomically renames it", async () => {
-    await writeToolingConfig(configPath, {
-      schemaVersion: 1,
-      containerEngine: "rancher",
-    });
+    await writeToolingConfig(
+      configPath,
+      {
+        schemaVersion: 1,
+        containerEngine: "rancher",
+      },
+      nodeFileSystem,
+    );
 
     await expect(readFile(configPath, "utf8")).resolves.toContain('"schemaVersion": 1');
     await expect(readdir(dirname(configPath))).resolves.toEqual(["tooling.local.json"]);
   });
 
   it("writes permission-conscious files where POSIX modes are supported", async () => {
-    await writeToolingConfig(configPath, {
-      schemaVersion: 1,
-      containerEngine: "podman",
-    });
+    await writeToolingConfig(
+      configPath,
+      {
+        schemaVersion: 1,
+        containerEngine: "podman",
+      },
+      nodeFileSystem,
+    );
 
     if (process.platform !== "win32") {
       const metadata = await stat(configPath);
@@ -147,7 +156,7 @@ describe("writeToolingConfig", () => {
     };
 
     const parsed = parseToolingConfig(untrusted);
-    await writeToolingConfig(configPath, parsed);
+    await writeToolingConfig(configPath, parsed, nodeFileSystem);
 
     await expect(readFile(configPath, "utf8")).resolves.not.toContain("unexpected");
   });
@@ -157,10 +166,14 @@ describe("writeToolingConfig", () => {
     await writeFile(join(configPath, "preserved.txt"), "keep", "utf8");
 
     await expect(
-      writeToolingConfig(configPath, {
-        schemaVersion: 1,
-        containerEngine: "rancher",
-      }),
+      writeToolingConfig(
+        configPath,
+        {
+          schemaVersion: 1,
+          containerEngine: "rancher",
+        },
+        nodeFileSystem,
+      ),
     ).rejects.toThrow();
 
     await expect(readdir(dirname(configPath))).resolves.toEqual(["tooling.local.json"]);

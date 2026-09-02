@@ -715,46 +715,6 @@ describe("runtime boundary policy", () => {
           "rule": "ambient-timer",
         },
         {
-          "file": "scripts/common/repository-paths.ts",
-          "line": 6,
-          "rule": "ambient-filesystem",
-        },
-        {
-          "file": "scripts/common/requirements.ts",
-          "line": 6,
-          "rule": "ambient-filesystem",
-        },
-        {
-          "file": "scripts/common/requirements.ts",
-          "line": 230,
-          "rule": "explicit-concurrency",
-        },
-        {
-          "file": "scripts/common/runner.execa.ts",
-          "line": 57,
-          "rule": "ambient-environment",
-        },
-        {
-          "file": "scripts/common/runner.execa.ts",
-          "line": 58,
-          "rule": "ambient-os-state",
-        },
-        {
-          "file": "scripts/common/runner.execa.ts",
-          "line": 59,
-          "rule": "ambient-timer",
-        },
-        {
-          "file": "scripts/common/tooling-config.ts",
-          "line": 7,
-          "rule": "ambient-filesystem",
-        },
-        {
-          "file": "scripts/common/tooling-config.ts",
-          "line": 145,
-          "rule": "ambient-os-state",
-        },
-        {
           "file": "scripts/container-runtime/adapters.ts",
           "line": 6,
           "rule": "legacy-process-import",
@@ -771,27 +731,27 @@ describe("runtime boundary policy", () => {
         },
         {
           "file": "scripts/container-runtime/aspire.ts",
-          "line": 42,
+          "line": 43,
           "rule": "ambient-environment",
         },
         {
           "file": "scripts/container-runtime/aspire.ts",
-          "line": 92,
+          "line": 93,
           "rule": "ambient-environment",
         },
         {
           "file": "scripts/container-runtime/aspire.ts",
-          "line": 106,
+          "line": 107,
           "rule": "ambient-os-state",
         },
         {
           "file": "scripts/container-runtime/aspire.ts",
-          "line": 106,
+          "line": 107,
           "rule": "manual-entrypoint",
         },
         {
           "file": "scripts/container-runtime/aspire.ts",
-          "line": 110,
+          "line": 111,
           "rule": "ambient-os-state",
         },
         {
@@ -806,22 +766,22 @@ describe("runtime boundary policy", () => {
         },
         {
           "file": "scripts/container-runtime/compose.ts",
-          "line": 90,
+          "line": 91,
           "rule": "ambient-environment",
         },
         {
           "file": "scripts/container-runtime/compose.ts",
-          "line": 106,
+          "line": 107,
           "rule": "ambient-os-state",
         },
         {
           "file": "scripts/container-runtime/compose.ts",
-          "line": 106,
+          "line": 107,
           "rule": "manual-entrypoint",
         },
         {
           "file": "scripts/container-runtime/compose.ts",
-          "line": 110,
+          "line": 111,
           "rule": "ambient-os-state",
         },
         {
@@ -836,22 +796,22 @@ describe("runtime boundary policy", () => {
         },
         {
           "file": "scripts/container-runtime/image.ts",
-          "line": 155,
+          "line": 156,
           "rule": "ambient-environment",
         },
         {
           "file": "scripts/container-runtime/image.ts",
-          "line": 190,
+          "line": 191,
           "rule": "ambient-os-state",
         },
         {
           "file": "scripts/container-runtime/image.ts",
-          "line": 190,
+          "line": 191,
           "rule": "manual-entrypoint",
         },
         {
           "file": "scripts/container-runtime/image.ts",
-          "line": 194,
+          "line": 195,
           "rule": "ambient-os-state",
         },
         {
@@ -886,13 +846,8 @@ describe("runtime boundary policy", () => {
         },
         {
           "file": "scripts/container-runtime/selfhost.ts",
-          "line": 176,
+          "line": 177,
           "rule": "ambient-http",
-        },
-        {
-          "file": "scripts/container-runtime/selfhost.ts",
-          "line": 276,
-          "rule": "ambient-environment",
         },
         {
           "file": "scripts/container-runtime/selfhost.ts",
@@ -901,22 +856,27 @@ describe("runtime boundary policy", () => {
         },
         {
           "file": "scripts/container-runtime/selfhost.ts",
-          "line": 301,
+          "line": 278,
           "rule": "ambient-environment",
         },
         {
           "file": "scripts/container-runtime/selfhost.ts",
-          "line": 337,
+          "line": 302,
+          "rule": "ambient-environment",
+        },
+        {
+          "file": "scripts/container-runtime/selfhost.ts",
+          "line": 338,
           "rule": "ambient-os-state",
         },
         {
           "file": "scripts/container-runtime/selfhost.ts",
-          "line": 337,
+          "line": 338,
           "rule": "manual-entrypoint",
         },
         {
           "file": "scripts/container-runtime/selfhost.ts",
-          "line": 399,
+          "line": 400,
           "rule": "ambient-os-state",
         },
         {
@@ -996,13 +956,8 @@ describe("runtime boundary policy", () => {
         },
         {
           "file": "scripts/doctor.ts",
-          "line": 160,
+          "line": 161,
           "rule": "ambient-http",
-        },
-        {
-          "file": "scripts/doctor.ts",
-          "line": 277,
-          "rule": "ambient-timer",
         },
         {
           "file": "scripts/doctor.ts",
@@ -1011,47 +966,52 @@ describe("runtime boundary policy", () => {
         },
         {
           "file": "scripts/doctor.ts",
-          "line": 284,
+          "line": 279,
+          "rule": "ambient-timer",
+        },
+        {
+          "file": "scripts/doctor.ts",
+          "line": 289,
           "rule": "ambient-os-state",
         },
         {
           "file": "scripts/doctor.ts",
-          "line": 285,
+          "line": 290,
           "rule": "ambient-os-state",
         },
         {
           "file": "scripts/doctor.ts",
-          "line": 286,
+          "line": 291,
           "rule": "ambient-environment",
         },
         {
           "file": "scripts/doctor.ts",
-          "line": 325,
+          "line": 330,
           "rule": "explicit-concurrency",
         },
         {
           "file": "scripts/doctor.ts",
-          "line": 360,
+          "line": 365,
           "rule": "ambient-os-state",
         },
         {
           "file": "scripts/doctor.ts",
-          "line": 401,
+          "line": 406,
           "rule": "ambient-os-state",
         },
         {
           "file": "scripts/doctor.ts",
-          "line": 402,
+          "line": 407,
           "rule": "manual-entrypoint",
         },
         {
           "file": "scripts/doctor.ts",
-          "line": 405,
+          "line": 410,
           "rule": "direct-exit",
         },
         {
           "file": "scripts/doctor.ts",
-          "line": 409,
+          "line": 414,
           "rule": "direct-exit",
         },
         {
@@ -1581,12 +1541,12 @@ describe("runtime boundary policy", () => {
         },
         {
           "file": "scripts/setup.infrastructure.ts",
-          "line": 703,
+          "line": 704,
           "rule": "ambient-os-state",
         },
         {
           "file": "scripts/setup.infrastructure.ts",
-          "line": 704,
+          "line": 705,
           "rule": "ambient-environment",
         },
         {
@@ -1656,42 +1616,42 @@ describe("runtime boundary policy", () => {
         },
         {
           "file": "scripts/setup.ts",
-          "line": 352,
+          "line": 353,
           "rule": "ambient-timer",
         },
         {
           "file": "scripts/setup.ts",
-          "line": 378,
+          "line": 383,
           "rule": "ambient-environment",
         },
         {
           "file": "scripts/setup.ts",
-          "line": 379,
+          "line": 384,
           "rule": "ambient-os-state",
         },
         {
           "file": "scripts/setup.ts",
-          "line": 511,
+          "line": 516,
           "rule": "ambient-os-state",
         },
         {
           "file": "scripts/setup.ts",
-          "line": 538,
+          "line": 543,
           "rule": "ambient-os-state",
         },
         {
           "file": "scripts/setup.ts",
-          "line": 539,
+          "line": 544,
           "rule": "manual-entrypoint",
         },
         {
           "file": "scripts/setup.ts",
-          "line": 542,
+          "line": 547,
           "rule": "direct-exit",
         },
         {
           "file": "scripts/setup.ts",
-          "line": 546,
+          "line": 551,
           "rule": "direct-exit",
         },
         {
@@ -1711,17 +1671,17 @@ describe("runtime boundary policy", () => {
         },
         {
           "file": "scripts/setup.workspace.ts",
-          "line": 221,
+          "line": 222,
           "rule": "explicit-concurrency",
         },
         {
           "file": "scripts/setup.workspace.ts",
-          "line": 492,
+          "line": 493,
           "rule": "ambient-os-state",
         },
         {
           "file": "scripts/setup.workspace.ts",
-          "line": 551,
+          "line": 552,
           "rule": "explicit-concurrency",
         },
         {
@@ -1741,67 +1701,67 @@ describe("runtime boundary policy", () => {
         },
         {
           "file": "scripts/status.ts",
-          "line": 247,
+          "line": 248,
           "rule": "ambient-os-state",
         },
         {
           "file": "scripts/status.ts",
-          "line": 411,
+          "line": 412,
           "rule": "explicit-concurrency",
         },
         {
           "file": "scripts/status.ts",
-          "line": 477,
+          "line": 478,
           "rule": "explicit-concurrency",
         },
         {
           "file": "scripts/status.ts",
-          "line": 581,
+          "line": 582,
           "rule": "explicit-concurrency",
         },
         {
           "file": "scripts/status.ts",
-          "line": 804,
-          "rule": "ambient-os-state",
-        },
-        {
-          "file": "scripts/status.ts",
-          "line": 848,
-          "rule": "ambient-environment",
-        },
-        {
-          "file": "scripts/status.ts",
-          "line": 849,
+          "line": 805,
           "rule": "ambient-os-state",
         },
         {
           "file": "scripts/status.ts",
           "line": 850,
-          "rule": "ambient-timer",
+          "rule": "ambient-environment",
         },
         {
           "file": "scripts/status.ts",
-          "line": 855,
-          "rule": "explicit-concurrency",
-        },
-        {
-          "file": "scripts/status.ts",
-          "line": 886,
+          "line": 851,
           "rule": "ambient-os-state",
         },
         {
           "file": "scripts/status.ts",
-          "line": 887,
+          "line": 852,
+          "rule": "ambient-timer",
+        },
+        {
+          "file": "scripts/status.ts",
+          "line": 857,
+          "rule": "explicit-concurrency",
+        },
+        {
+          "file": "scripts/status.ts",
+          "line": 888,
+          "rule": "ambient-os-state",
+        },
+        {
+          "file": "scripts/status.ts",
+          "line": 889,
           "rule": "manual-entrypoint",
         },
         {
           "file": "scripts/status.ts",
-          "line": 890,
+          "line": 892,
           "rule": "direct-exit",
         },
         {
           "file": "scripts/status.ts",
-          "line": 894,
+          "line": 896,
           "rule": "direct-exit",
         },
         {

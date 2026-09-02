@@ -3,10 +3,8 @@
  * @module scripts/common/tooling-config
  */
 
-import {randomBytes} from "node:crypto";
-import {mkdir, readFile, rename, rm, writeFile} from "node:fs/promises";
-import {basename, dirname, resolve} from "node:path";
 import type {ContainerEngine} from "../container-runtime/types.ts";
+import type {FileSystem, ReadOnlyFileSystem} from "./runtime.ts";
 
 const supportedContainerEngines: ReadonlySet<string> = new Set(["rancher", "podman"]);
 const secretKeyFragments = ["token", "secret", "password", "connectionstring"] as const;
@@ -106,12 +104,13 @@ export function parseToolingConfig(value: unknown): ToolingConfigV1 {
  * Reads and validates optional repository-local tooling configuration.
  *
  * @param path - Absolute or repository-relative configuration path.
+ * @param files - Read-only filesystem capability used to read the configuration file.
  * @returns Missing, valid, or explicit invalid status.
  */
-export async function readToolingConfig(path: string): Promise<ToolingConfigReadResult> {
+export async function readToolingConfig(path: string, files: ReadOnlyFileSystem): Promise<ToolingConfigReadResult> {
   let contents: string;
   try {
-    contents = await readFile(path, "utf8");
+    contents = await files.readText(path);
   } catch (error) {
     if (hasErrorCode(error, "ENOENT")) {
       return {status: "missing"};
@@ -134,33 +133,17 @@ export async function readToolingConfig(path: string): Promise<ToolingConfigRead
 }
 
 /**
- * Writes validated configuration through a permission-conscious temporary sibling.
+ * Writes validated configuration through a permission-conscious atomic write.
  *
  * @param path - Destination configuration path.
  * @param config - Version 1 configuration to persist.
+ * @param files - Filesystem capability used to perform the atomic write.
  */
-export async function writeToolingConfig(path: string, config: Readonly<ToolingConfigV1>): Promise<void> {
+export async function writeToolingConfig(path: string, config: Readonly<ToolingConfigV1>, files: FileSystem): Promise<void> {
   const parsed = parseToolingConfig(config);
-  const parent = dirname(path);
-  const temporaryPath = resolve(parent, `${basename(path)}.${process.pid}.${randomBytes(8).toString("hex")}.tmp`);
   const document = `${JSON.stringify(parsed, null, 2)}\n`;
 
-  try {
-    await mkdir(parent, {recursive: true, mode: 0o700});
-    await writeFile(temporaryPath, document, {
-      encoding: "utf8",
-      flag: "wx",
-      mode: 0o600,
-    });
-    await rename(temporaryPath, path);
-  } catch (error) {
-    try {
-      await rm(temporaryPath, {force: true});
-    } catch {
-      // Preserve the original write/rename failure and never broaden cleanup.
-    }
-    throw error;
-  }
+  await files.writeTextAtomic(path, document, {mode: 0o600, directoryMode: 0o700});
 }
 
 /**

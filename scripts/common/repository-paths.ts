@@ -3,9 +3,9 @@
  * @module scripts/common/repository-paths
  */
 
-import {readFileSync} from "node:fs";
 import {dirname, parse, resolve} from "node:path";
 import {fileURLToPath} from "node:url";
+import type {ReadOnlyFileSystem} from "./runtime.ts";
 
 const REPOSITORY_PACKAGE_NAME = "@arolariu/monorepo";
 
@@ -70,9 +70,9 @@ export function createRepositoryPaths(root: string): RepositoryPaths {
   };
 }
 
-function hasRepositoryIdentity(directory: string): boolean {
+async function hasRepositoryIdentity(directory: string, files: ReadOnlyFileSystem): Promise<boolean> {
   try {
-    const packageJson: unknown = JSON.parse(readFileSync(resolve(directory, "package.json"), "utf8"));
+    const packageJson: unknown = JSON.parse(await files.readText(resolve(directory, "package.json")));
     return typeof packageJson === "object" && packageJson !== null && "name" in packageJson && packageJson.name === REPOSITORY_PACKAGE_NAME;
   } catch {
     return false;
@@ -83,15 +83,16 @@ function hasRepositoryIdentity(directory: string): boolean {
  * Discovers the repository root from a module URL and verifies its package identity.
  *
  * @param moduleUrl - File URL belonging to a module within the repository.
+ * @param files - Read-only filesystem capability used to read candidate `package.json` files.
  * @returns Canonical paths anchored to the verified repository root.
  * @throws When no ancestor package identifies the arolariu.ro monorepository.
  */
-export function resolveRepositoryPaths(moduleUrl: string = import.meta.url): RepositoryPaths {
+export async function resolveRepositoryPaths(moduleUrl: string, files: ReadOnlyFileSystem): Promise<RepositoryPaths> {
   let candidate = dirname(fileURLToPath(moduleUrl));
   const filesystemRoot = parse(candidate).root;
 
   while (true) {
-    if (hasRepositoryIdentity(candidate)) {
+    if (await hasRepositoryIdentity(candidate, files)) {
       return createRepositoryPaths(candidate);
     }
     if (candidate === filesystemRoot) {

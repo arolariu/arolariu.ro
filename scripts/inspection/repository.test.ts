@@ -18,6 +18,7 @@ import {beforeEach, describe, expect, it, vi} from "vitest";
 
 import type {CommandResult, CommandRunner, CommandSpec} from "../common/process.ts";
 import {resolveRepositoryPaths, type RepositoryPaths} from "../common/repository-paths.ts";
+import {nodeFileSystem} from "../common/runtime.node.ts";
 import {INSPECTED_PACKAGE_NAMES} from "./packages.ts";
 import {createRepositoryInspectionSession, type RepositoryInspectionSession} from "./repository.ts";
 
@@ -68,7 +69,7 @@ vi.mock("./aggregate.ts", async (importOriginal) => {
 // ============================================================================
 
 /** Canonical real repository paths; every read this suite triggers is read-only. */
-const repositoryPaths: RepositoryPaths = resolveRepositoryPaths();
+const repositoryPaths: RepositoryPaths = await resolveRepositoryPaths(import.meta.url, nodeFileSystem);
 
 /** Monotonically increasing fake clock, matching the pattern used by sibling provider tests. */
 function clock(): () => number {

@@ -9,6 +9,7 @@ import {commanderExitCode, createToolProgram} from "../common/cli.ts";
 import {MonorepositoryConsoleLogger, type MonorepositoryLogger} from "../common/logger.ts";
 import {defaultCommandRunner, type CommandRunner} from "../common/process.ts";
 import {resolveRepositoryPaths} from "../common/repository-paths.ts";
+import {nodeFileSystem} from "../common/runtime.node.ts";
 import {getContainerAdapter, type ContainerRuntimeAdapter} from "./adapters.ts";
 import {runSharedPreflight} from "./preflight.ts";
 import {resolveRuntimeContainerEngine} from "./selection.ts";
@@ -83,7 +84,7 @@ export async function runAspire(
 
   const options = program.opts<{engine?: string}>();
   const runner = dependencies.runner ?? defaultCommandRunner;
-  const paths = resolveRepositoryPaths();
+  const paths = await resolveRepositoryPaths(import.meta.url, nodeFileSystem);
   const selection = await resolveRuntimeContainerEngine({
     // Commander only yields untyped strings; resolveRuntimeContainerEngine
     // validates the value (including the docker-deprecation message) before

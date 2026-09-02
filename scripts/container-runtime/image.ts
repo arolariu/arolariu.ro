@@ -9,6 +9,7 @@ import {commanderExitCode, createToolProgram} from "../common/cli.ts";
 import {MonorepositoryConsoleLogger, type MonorepositoryLogger} from "../common/logger.ts";
 import {defaultCommandRunner, formatCommand, type CommandRunner} from "../common/process.ts";
 import {resolveRepositoryPaths} from "../common/repository-paths.ts";
+import {nodeFileSystem} from "../common/runtime.node.ts";
 import {getContainerAdapter, type ContainerRuntimeAdapter, type RuntimeCommand} from "./adapters.ts";
 import {describeCommandFailure, runArtifactGeneration, runSharedPreflight} from "./preflight.ts";
 import {resolveRuntimeContainerEngine} from "./selection.ts";
@@ -146,7 +147,7 @@ export async function runImageCli(
   const options = program.opts<{target?: string; engine?: string}>();
 
   const runner = dependencies.runner ?? defaultCommandRunner;
-  const paths = resolveRepositoryPaths();
+  const paths = await resolveRepositoryPaths(import.meta.url, nodeFileSystem);
   const selection = await resolveRuntimeContainerEngine({
     // Commander only yields untyped strings; resolveRuntimeContainerEngine
     // validates the value (including the docker-deprecation message) before

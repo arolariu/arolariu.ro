@@ -39,6 +39,7 @@ import {formatBytes} from "./common/index.ts";
 import {MonorepositoryConsoleLogger, type LogSegment, type MonorepositoryLogger} from "./common/logger.ts";
 import {defaultCommandRunner, type CommandResult, type CommandRunner, type CommandSpec} from "./common/process.ts";
 import {resolveRepositoryPaths, type RepositoryPaths} from "./common/repository-paths.ts";
+import {nodeFileSystem} from "./common/runtime.node.ts";
 import {runDoctor} from "./doctor.ts";
 import type {DoctorSummary} from "./doctor.types.ts";
 import {createRepositoryInspectionSession, type RepositoryInspectionSession} from "./inspection/repository.ts";
@@ -125,8 +126,8 @@ export interface StatusDependencies {
   readonly runner: CommandRunner;
   /** Receives dashboard presentation and JSON output. */
   readonly logger: MonorepositoryLogger;
-  /** Resolves canonical repository paths. */
-  readonly resolveRepositoryPaths: () => RepositoryPaths;
+  /** Resolves canonical repository paths; may be synchronous or asynchronous. */
+  readonly resolveRepositoryPaths: () => RepositoryPaths | Promise<RepositoryPaths>;
   /**
    * Receives a fatal, pre-collection diagnostic (a repository-context
    * failure) so it always reaches stderr.
@@ -828,12 +829,13 @@ export async function main(
   // Human mode's primary logger already reaches stderr, so it may serve both roles.
   const errorLogger = dependencies.errorLogger ?? (options.json ? new MonorepositoryConsoleLogger("status", {verbose: false}) : logger);
 
-  const resolvePaths = dependencies.resolveRepositoryPaths ?? ((): RepositoryPaths => resolveRepositoryPaths());
+  const resolvePaths =
+    dependencies.resolveRepositoryPaths ?? ((): Promise<RepositoryPaths> => resolveRepositoryPaths(import.meta.url, nodeFileSystem));
   const runner = dependencies.runner ?? defaultCommandRunner;
 
   let paths: RepositoryPaths;
   try {
-    paths = resolvePaths();
+    paths = await resolvePaths();
   } catch (error: unknown) {
     errorLogger.error(errorMessage(error));
     return 1;

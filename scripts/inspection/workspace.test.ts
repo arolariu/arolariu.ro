@@ -12,6 +12,7 @@ import {describe, expect, it, vi} from "vitest";
 
 import {defaultCommandRunner, type CommandResult, type CommandRunner, type CommandSpec} from "../common/process.ts";
 import {resolveRepositoryPaths} from "../common/repository-paths.ts";
+import {nodeFileSystem} from "../common/runtime.node.ts";
 import {createWorkspaceProvider, projectNxGraph, type WorkspaceFacts} from "./workspace.ts";
 
 // ============================================================================
@@ -521,7 +522,7 @@ describe("createWorkspaceProvider live integration", () => {
   it(
     "reflects the current seven-project workspace graph and leaves top-level .nx files, .nx/workspace-data, and .arolariu unchanged",
     async () => {
-      const paths = resolveRepositoryPaths();
+      const paths = await resolveRepositoryPaths(import.meta.url, nodeFileSystem);
 
       const nxTopLevelBefore = await snapshotPath(join(paths.root, ".nx"), {recursive: false});
       const workspaceDataBefore = await snapshotPath(join(paths.root, ".nx", "workspace-data"), {recursive: true});
