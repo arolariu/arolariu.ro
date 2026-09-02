@@ -385,9 +385,11 @@ export async function inspectSvelteProject(
 export const svelteDoctorModule: DiagnosticModule = {
   id: "svelte",
   title: "Svelte",
+  facts: ["svelte.cv", "svelte.status"],
   async run(context): Promise<readonly DiagnosticResult[]> {
-    // Intentionally sequential: both project fact sets are memoized by the shared inspection
-    // session, so this module never needs an ad-hoc concurrency primitive of its own.
+    // Sequential by design, concurrent in effect: both project fact sets are declared above, so
+    // the command already started them together through the runtime task scheduler and each await
+    // below resolves the memoized promise of an inspection that is already in flight.
     const cvOutcome = await context.inspection.inspect("svelte.cv");
     const statusOutcome = await context.inspection.inspect("svelte.status");
     return [...(await inspectSvelteProject(context, "cv", cvOutcome)), ...(await inspectSvelteProject(context, "status", statusOutcome))];

@@ -25,6 +25,7 @@ import type {RepositoryRequirements} from "./common/requirements.ts";
 import {asReadOnlyFileSystem, FileSystemError, type Clock, type ReadOnlyFileSystem, type RuntimeEnvironment} from "./common/runtime.ts";
 import {nodeFileSystem} from "./common/runtime.node.ts";
 import {getExpectedTaxonomyArtifactPaths} from "./common/taxonomy-artifacts.ts";
+import {createDoctorReport} from "./doctor.reporter.ts";
 import {workspaceDoctorModule} from "./doctor.workspace.ts";
 import type {DiagnosticNetworkResult, DiagnosticResult, DoctorContext, DoctorInput} from "./doctor.types.ts";
 import type {InspectionProbe, InspectionProbeRunner} from "./inspection/probes.ts";
@@ -396,6 +397,45 @@ describe("workspaceDoctorModule", () => {
     const git = resultById(results, "workspace.git");
     expect(git.status).toBe("fail");
     expect(git.summary).toContain("unavailable or returned an invalid version");
+    // Probe-derived evidence is preserved exactly; the empty-evidence fallback never applies here.
+    expect(git.evidence).toContain("Command exited with code 127.");
+    expect(git.evidence.some((entry) => entry.includes("is not recognized as an internal or external command"))).toBe(true);
+    expect(git.evidence.some((entry) => entry.includes("without producing"))).toBe(false);
+  });
+
+  it("declares the facts the command prewarms so they are never inspected serially", () => {
+    expect(workspaceDoctorModule.facts).toEqual(["workspace", "npm.root", "npm.github-scripts"]);
+  });
+
+  it("keeps a silent successful git version probe as one reportable failure instead of an empty-evidence row", async () => {
+    const fixture = await createWorkspaceFixture({
+      probeOverrides: new Map([["workspace.git.version", commandResult({stdout: "  \n"})]]),
+    });
+
+    const results = await workspaceDoctorModule.run(fixture.context);
+
+    const git = resultById(results, "workspace.git");
+    expect(git.status).toBe("fail");
+    expect(git.evidence).toEqual(["The git version probe completed without producing a recognizable version."]);
+    // A failed row with no evidence aborts the entire report instead of degrading one check.
+    expect(() => createDoctorReport(results, "2026-08-29T00:00:00.000Z", {verbose: false})).not.toThrow();
+  });
+
+  it("keeps a silent failing git state probe as one reportable failure instead of an empty-evidence row", async () => {
+    const fixture = await createWorkspaceFixture({
+      probeOverrides: new Map<string, ProcessOutcome>([
+        ["workspace.git.status", {kind: "exited", exitCode: 0, stdout: "", stderr: "", durationMs: 4}],
+        ["workspace.git.last-commit", {kind: "exited", exitCode: 0, stdout: "", stderr: "", durationMs: 4}],
+      ]),
+    });
+
+    const results = await workspaceDoctorModule.run(fixture.context);
+
+    const git = resultById(results, "workspace.git");
+    expect(git.status).toBe("fail");
+    expect(git.summary).toContain("repository state could not be inspected");
+    expect(git.evidence).toEqual(["The git status and last-commit probes completed without producing any output."]);
+    expect(() => createDoctorReport(results, "2026-08-29T00:00:00.000Z", {verbose: false})).not.toThrow();
   });
 
   it("reports unavailable workspace facts as explicit Nx failures", async () => {

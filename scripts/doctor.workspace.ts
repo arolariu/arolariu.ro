@@ -1192,14 +1192,16 @@ async function diagnoseNpmOutdated(context: Readonly<DoctorContext>): Promise<Di
 export const workspaceDoctorModule: DiagnosticModule = {
   id: "workspace",
   title: "Workspace",
+  facts: ["workspace", "npm.root", "npm.github-scripts"],
   async run(context): Promise<readonly DiagnosticResult[]> {
     const requirementSources = diagnoseRequirementSources(context);
     const nodeMinimum = context.requirements.status === "valid" ? context.requirements.requirements.node : null;
     const npmMinimum = context.requirements.status === "valid" ? context.requirements.requirements.npm : null;
 
     const [workspaceOutcome, npmRootOutcome, npmGithubScriptsOutcome] = [
-      // Intentionally sequential: every inspection result is memoized by the shared session, so
-      // requesting them one at a time keeps this module free of ad-hoc concurrency primitives.
+      // Sequential by design, concurrent in effect: these three facts are declared above, so the
+      // command already started them together through the runtime task scheduler and each await
+      // below resolves the memoized promise of an inspection that is already in flight.
       await context.inspection.inspect("workspace"),
       await context.inspection.inspect("npm.root"),
       await context.inspection.inspect("npm.github-scripts"),

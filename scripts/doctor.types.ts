@@ -8,7 +8,7 @@ import type {RepositoryPaths} from "./common/repository-paths.ts";
 import type {RequirementLoadResult} from "./common/requirements.ts";
 import type {Clock, ReadOnlyFileSystem, RuntimeEnvironment} from "./common/runtime.ts";
 import type {InspectionProbeRunner} from "./inspection/probes.ts";
-import type {RepositoryInspectionSession} from "./inspection/repository.ts";
+import type {RepositoryInspectionKey, RepositoryInspectionSession} from "./inspection/repository.ts";
 
 /** One bounded timeout applied to network probes that do not supply one explicitly. */
 export const DIAGNOSTIC_DEFAULT_TIMEOUT_MS = 15_000;
@@ -128,6 +128,20 @@ export interface DoctorContext {
 export interface DiagnosticModule {
   readonly id: DiagnosticModuleId;
   readonly title: string;
+  /**
+   * Inspection facts this module always requests, declared so the command can start them
+   * concurrently through the runtime task scheduler before any module runs.
+   *
+   * @remarks
+   * A module that consumes more than one fact would otherwise have to await them one at a time —
+   * a specialist module owns no scheduler and must never reach for an ad-hoc `Promise` combinator
+   * — which would serialize independent inspections that previously ran concurrently. Declaring
+   * them here keeps the concurrency decision in the command that owns cancellation and ordering,
+   * while the module still reads each memoized outcome with an ordinary sequential `await`. A
+   * module that consumes at most one fact declares nothing: its single inspection already starts
+   * as soon as the module runs, concurrently with every sibling module.
+   */
+  readonly facts?: readonly RepositoryInspectionKey[];
   readonly run: (context: Readonly<DoctorContext>) => Promise<readonly DiagnosticResult[]>;
 }
 

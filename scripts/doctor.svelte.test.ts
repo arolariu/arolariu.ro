@@ -165,6 +165,10 @@ afterEach(() => {
 });
 
 describe("svelteDoctorModule", () => {
+  it("declares the facts the command prewarms so they are never inspected serially", () => {
+    expect(svelteDoctorModule.facts).toEqual(["svelte.cv", "svelte.status"]);
+  });
+
   it("returns every stable svelte check in CV-then-status order for a healthy baseline", async () => {
     const fixture = createSvelteFixture();
 

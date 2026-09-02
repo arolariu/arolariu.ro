@@ -46,7 +46,7 @@ import {
 import {computeHealthScore, diagnosticWeights} from "./doctor.reporter.ts";
 import {createBoundedNetworkProbe, createDoctorCommand, doctorModules, runDoctor} from "./doctor.ts";
 import type {DiagnosticModule, DiagnosticModuleId, DiagnosticResult, DoctorContext, DoctorInput, DoctorReport} from "./doctor.types.ts";
-import type {RepositoryInspectionSession} from "./inspection/repository.ts";
+import type {RepositoryInspectionKey, RepositoryInspectionSession} from "./inspection/repository.ts";
 import type {InspectionOutcome} from "./inspection/types.ts";
 
 const expectedModuleOrder: readonly DiagnosticModuleId[] = ["workspace", "dotnet", "react", "svelte", "python", "infrastructure"];
@@ -113,9 +113,13 @@ function doctorInput(patch: Partial<DoctorInput> = {}): DoctorInput {
  * returning one representative passing check by default.
  *
  * @param overrides - Per-module `run` replacements for the modules under test.
+ * @param facts - Per-module declared inspection facts the command must prewarm.
  * @returns The fake modules in fixed order plus their recorded `run` mocks.
  */
-function createFakeModules(overrides: Partial<Record<DiagnosticModuleId, DiagnosticModule["run"]>> = {}): Readonly<{
+function createFakeModules(
+  overrides: Partial<Record<DiagnosticModuleId, DiagnosticModule["run"]>> = {},
+  facts: Partial<Record<DiagnosticModuleId, readonly RepositoryInspectionKey[]>> = {},
+): Readonly<{
   modules: readonly DiagnosticModule[];
   calls: Readonly<Record<DiagnosticModuleId, Mock<DiagnosticModule["run"]>>>;
 }> {
@@ -124,7 +128,8 @@ function createFakeModules(overrides: Partial<Record<DiagnosticModuleId, Diagnos
     const defaultRun: DiagnosticModule["run"] = async () => [passCheck(REPRESENTATIVE_ID[id], id)];
     const run = vi.fn<DiagnosticModule["run"]>(overrides[id] ?? defaultRun);
     calls[id] = run;
-    return {id, title: id, run};
+    const declaredFacts = facts[id];
+    return {id, title: id, ...(declaredFacts === undefined ? {} : {facts: declaredFacts}), run};
   });
 
   return {modules, calls};
@@ -185,16 +190,18 @@ interface DoctorFixture {
  * Assembles a doctor command wired to fake modules, the in-memory repository fixture, and a
  * deterministic inspection registry.
  *
- * @param input - Optional module overrides and inspection session replacement.
+ * @param input - Optional module overrides, declared module facts, and inspection session
+ * replacement.
  * @returns The command plus its recorded module and inspection seams.
  */
 function createDoctorFixture(
   input: Readonly<{
     overrides?: Partial<Record<DiagnosticModuleId, DiagnosticModule["run"]>>;
+    facts?: Partial<Record<DiagnosticModuleId, readonly RepositoryInspectionKey[]>>;
     session?: RepositoryInspectionSession;
   }> = {},
 ): DoctorFixture {
-  const {modules, calls} = createFakeModules(input.overrides ?? {});
+  const {modules, calls} = createFakeModules(input.overrides ?? {}, input.facts ?? {});
   const inspection = createFixtureInspection(input.session ?? createFixtureSession());
   const command = createDoctorCommand({runtimeFactory: createFixtureRuntimeFactory(inspection.inspection), modules});
   return {command, calls, inspection};
@@ -586,6 +593,96 @@ describe("doctorCommand.invoke", () => {
 
       const execution = await fixture.command.invoke(doctorInput(), {presentation: "silent"});
       expectCompleted(execution);
+
+      await new Promise((resolveTick) => setTimeout(resolveTick, 10));
+      expect(unhandled).toEqual([]);
+    } finally {
+      process.off("unhandledRejection", onUnhandledRejection);
+    }
+  });
+
+  it("starts every module-declared fact before the first module runs", async () => {
+    const requested: string[] = [];
+    let requestedWhenModulesStarted: readonly string[] = [];
+    const fixture = createDoctorFixture({
+      session: createFixtureSession(async (key: string): Promise<InspectionOutcome<unknown>> => {
+        requested.push(key);
+        return {kind: "unavailable", reason: "Doctor test session.", durationMs: 0};
+      }),
+      facts: {
+        workspace: ["workspace", "npm.root", "npm.github-scripts"],
+        svelte: ["svelte.cv", "svelte.status"],
+      },
+      overrides: {
+        workspace: async (): Promise<readonly DiagnosticResult[]> => {
+          requestedWhenModulesStarted = [...requested];
+          return [passCheck(REPRESENTATIVE_ID.workspace, "workspace")];
+        },
+      },
+    });
+
+    expectCompleted(await fixture.command.invoke(doctorInput(), {presentation: "silent"}));
+
+    // Every declared fact is already in flight before the first module awaits any of them, so
+    // independent inspections stay concurrent even though each module awaits them sequentially.
+    expect(requestedWhenModulesStarted).toEqual(["aggregate", "workspace", "npm.root", "npm.github-scripts", "svelte.cv", "svelte.status"]);
+  });
+
+  it("requests a prewarmed fact exactly once when the declaring module also inspects it", async () => {
+    const provider = vi.fn(async (): Promise<InspectionOutcome<unknown>> => ({
+      kind: "unavailable",
+      reason: "Doctor test session.",
+      durationMs: 0,
+    }));
+    const memoized = new Map<string, Promise<InspectionOutcome<unknown>>>();
+    const fixture = createDoctorFixture({
+      session: createFixtureSession((key: string): Promise<InspectionOutcome<unknown>> => {
+        const cached = memoized.get(key) ?? provider();
+        memoized.set(key, cached);
+        return cached;
+      }),
+      facts: {workspace: ["workspace", "npm.root"]},
+      overrides: {
+        workspace: async (context): Promise<readonly DiagnosticResult[]> => {
+          await context.inspection.inspect("workspace");
+          await context.inspection.inspect("npm.root");
+          return [passCheck(REPRESENTATIVE_ID.workspace, "workspace")];
+        },
+      },
+    });
+
+    expectCompleted(await fixture.command.invoke(doctorInput({quick: true}), {presentation: "silent"}));
+
+    expect(provider).toHaveBeenCalledTimes(2);
+    expect([...memoized.keys()]).toEqual(["workspace", "npm.root"]);
+  });
+
+  it("never swallows a prewarmed fact failure the declaring module consumes", async () => {
+    const unhandled: unknown[] = [];
+    const onUnhandledRejection = (reason: unknown): void => {
+      unhandled.push(reason);
+    };
+    process.on("unhandledRejection", onUnhandledRejection);
+
+    try {
+      const fixture = createDoctorFixture({
+        session: createFixtureSession(async (): Promise<InspectionOutcome<unknown>> => {
+          throw new Error("Repository inspection was cancelled.");
+        }),
+        facts: {workspace: ["workspace", "npm.root"]},
+        overrides: {
+          workspace: async (context): Promise<readonly DiagnosticResult[]> => {
+            await context.inspection.inspect("workspace");
+            return [passCheck(REPRESENTATIVE_ID.workspace, "workspace")];
+          },
+        },
+      });
+
+      const report = expectCompleted(await fixture.command.invoke(doctorInput(), {presentation: "silent"}));
+
+      const crashRow = report.checks.find((check) => check.id === "workspace.module-error");
+      expect(crashRow?.status).toBe("fail");
+      expect(crashRow?.evidence).toContain("Repository inspection was cancelled.");
 
       await new Promise((resolveTick) => setTimeout(resolveTick, 10));
       expect(unhandled).toEqual([]);

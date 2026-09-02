@@ -7,7 +7,10 @@
  * requirements through injected runtime capabilities, obtains exactly one shared repository
  * inspection session from the runtime-owned inspection registry, and then runs every
  * bounded-context module — `workspace`, `dotnet`, `react`, `svelte`, `python`, and
- * `infrastructure` — concurrently through {@link CommandRuntime.tasks}. Module results are
+ * `infrastructure` — concurrently through {@link CommandRuntime.tasks}. The facts a module
+ * declares through {@link DiagnosticModule.facts} are started together through the same scheduler
+ * before the first module runs, so a module that reads several independent inspections still
+ * observes them concurrently while awaiting each memoized outcome sequentially. Module results are
  * flattened back into the fixed {@link doctorModules} order regardless of which module finishes
  * first, an unhandled module exception is normalized into a single failed `<module>.module-error`
  * row without stopping its siblings, and the collected checks are validated and scored by
@@ -46,7 +49,7 @@ import {createNodeRuntimeScope} from "./common/runtime.node.ts";
 import {normalizeErrorForReport, diagnosticResult} from "./doctor.diagnostics.ts";
 import {renderDoctorReport, createDoctorReport} from "./doctor.reporter.ts";
 import {createInspectionProbeRunner, type InspectionProbeRunner} from "./inspection/probes.ts";
-import type {RepositoryInspectionSession} from "./inspection/repository.ts";
+import type {RepositoryInspectionKey, RepositoryInspectionSession} from "./inspection/repository.ts";
 import {dotnetDoctorModule} from "./doctor.dotnet.ts";
 import {infrastructureDoctorModule} from "./doctor.infrastructure.ts";
 import {pythonDoctorModule} from "./doctor.python.ts";
@@ -255,6 +258,44 @@ interface DoctorExecutionSeams {
 }
 
 /**
+ * Starts every declared inspection concurrently without awaiting the result.
+ *
+ * @remarks
+ * Doctor modules own no task scheduler and must never reach for a raw `Promise` combinator, so
+ * the command starts the facts they declared through {@link CommandRuntime.tasks} before the
+ * first module runs. Each module then reads the memoized promise of an inspection that is already
+ * in flight with an ordinary sequential `await`, which keeps independent inspections concurrent
+ * exactly as they were before doctor became a command.
+ *
+ * The prewarm is deliberately not awaited: awaiting it would delay every module until the slowest
+ * declared fact settled. Its rejection is claimed here (for example when the invocation is
+ * cancelled) so it can never surface as an unhandled rejection, and claiming it never hides a
+ * failure — the scheduler starts each inspection through the same session, so the module that
+ * actually consumes the fact still awaits and classifies the identical memoized outcome.
+ *
+ * @param inspection - The shared repository inspection session for this run.
+ * @param runtime - The invocation's runtime capabilities.
+ * @param facts - Inspection keys to start concurrently; duplicates are collapsed.
+ */
+function prewarmInspections(
+  inspection: RepositoryInspectionSession,
+  runtime: Readonly<CommandRuntime>,
+  facts: readonly RepositoryInspectionKey[],
+): void {
+  const distinctFacts = [...new Set(facts)];
+  if (distinctFacts.length === 0) {
+    return;
+  }
+
+  void runtime.tasks
+    .parallel(
+      distinctFacts.map((fact) => async () => inspection.inspect(fact)),
+      runtime.signal,
+    )
+    .catch(() => undefined);
+}
+
+/**
  * Runs every doctor module against one shared read-only diagnostic context and returns the
  * validated, scored report.
  *
@@ -290,11 +331,15 @@ async function executeDoctor(
   if (!input.quick) {
     // Prewarm aggregate collection in full mode only: starting the isolated worker once here means
     // its memoized result is ready by the time the infrastructure module consumes it, without
-    // blocking module startup. Quick mode never starts the worker. The prewarm is deliberately not
-    // awaited, so its rejection (for example when the invocation is cancelled) is claimed here and
-    // ignored; the real consumer still awaits the same memoized promise and classifies its failure.
-    void inspection.inspect("aggregate").catch(() => undefined);
+    // blocking module startup. Quick mode never starts the worker.
+    prewarmInspections(inspection, runtime, ["aggregate"]);
   }
+
+  prewarmInspections(
+    inspection,
+    runtime,
+    modules.flatMap((module) => module.facts ?? []),
+  );
 
   const doctorContext: DoctorContext = {
     options: input,

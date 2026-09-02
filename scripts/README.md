@@ -140,8 +140,11 @@ container-engine client/cache state outside that boundary.
 | [`doctor.infrastructure.ts`](./doctor.infrastructure.ts) | Container engine selection, CLI/backend/Compose/socket checks, ports, certificates, manifests, known containers |
 
 Modules are invoked independently and concurrently, but `doctor.ts` always flattens their results back into the module-map order above
-regardless of which module settles first. An unhandled module exception never produces a passing or skipped result — it becomes exactly
-one failed `<module>.module-error` row so the report degrades to one row instead of losing the whole run.
+regardless of which module settles first. A module that reads more than one inspection fact declares those facts (`DiagnosticModule.facts`)
+so `doctor.ts` starts them together through the runtime task scheduler before the first module runs; the module then awaits each memoized
+outcome sequentially without ever owning a concurrency primitive of its own. An unhandled module exception never produces a passing or
+skipped result — it becomes exactly one failed `<module>.module-error` row so the report degrades to one row instead of losing the whole
+run.
 
 ### Stable result contract
 
