@@ -1573,51 +1573,6 @@ describe("runtime boundary policy", () => {
           "line": 663,
           "rule": "direct-exit",
         },
-        {
-          "file": "scripts/update-exchange-rates.ts",
-          "line": 23,
-          "rule": "ambient-filesystem",
-        },
-        {
-          "file": "scripts/update-exchange-rates.ts",
-          "line": 26,
-          "rule": "legacy-cli-import",
-        },
-        {
-          "file": "scripts/update-exchange-rates.ts",
-          "line": 186,
-          "rule": "ambient-timer",
-        },
-        {
-          "file": "scripts/update-exchange-rates.ts",
-          "line": 221,
-          "rule": "ambient-timer",
-        },
-        {
-          "file": "scripts/update-exchange-rates.ts",
-          "line": 300,
-          "rule": "ambient-timer",
-        },
-        {
-          "file": "scripts/update-exchange-rates.ts",
-          "line": 308,
-          "rule": "ambient-http",
-        },
-        {
-          "file": "scripts/update-exchange-rates.ts",
-          "line": 465,
-          "rule": "direct-exit",
-        },
-        {
-          "file": "scripts/update-exchange-rates.ts",
-          "line": 475,
-          "rule": "direct-exit",
-        },
-        {
-          "file": "scripts/update-exchange-rates.ts",
-          "line": 480,
-          "rule": "direct-exit",
-        },
       ]
     `);
   });

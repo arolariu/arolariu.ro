@@ -1,10 +1,14 @@
 /**
- * @fileoverview CLI script to update exchange rates from Frankfurter API.
+ * @fileoverview Command to update exchange rates from the Frankfurter API.
  * @module scripts/update-exchange-rates
  *
  * @remarks
- * Fetches daily exchange rates from the Frankfurter API for each year,
- * computes yearly averages, and writes the result to the static CSV file.
+ * Fetches daily exchange rates from the Frankfurter API for each year, computes yearly averages,
+ * and writes the result to the static CSV file. Every ambient effect this command used to reach
+ * for directly (`node:fs`, `fetch`, `setTimeout`, `process.exit()`) now arrives through one
+ * injected runtime capability bundle, so the full year-range and per-year continuation behavior
+ * is exercised by the declarative command runtime's test fakes without touching real disk,
+ * network, or process state.
  *
  * **Usage:**
  * ```bash
@@ -20,18 +24,17 @@
  * @see {@link https://frankfurter.dev/docs} for Frankfurter API documentation
  */
 
-import {existsSync, readFileSync, writeFileSync} from "node:fs";
 import {join} from "node:path";
-import {styleText} from "node:util";
-import {commanderExitCode, createToolProgram} from "./common/cli.ts";
-import {MonorepositoryConsoleLogger, type MonorepositoryLogger} from "./common/logger.ts";
+
+import {CommandInputError, MonorepoCommand, type CommandContext, type CommandRuntimeFactory} from "./common/commander.ts";
+import type {MonorepositoryLogger} from "./common/logger.ts";
+import {CommandCancellation, type Clock, type FileSystem, type HttpClient} from "./common/runtime.ts";
 
 // ---------------------------------------------------------------------------
 // Configuration
 // ---------------------------------------------------------------------------
 
 const FRANKFURTER_API = "https://api.frankfurter.dev";
-const CSV_PATH = join(import.meta.dirname, "..", "sites", "arolariu.ro", "public", "data", "exchange-rates.csv");
 
 /** Top 100 currencies to track (by global relevance + Romanian context). */
 const TARGET_CURRENCIES = [
@@ -150,6 +153,20 @@ const TARGET_CURRENCIES = [
 /** Delay between API requests to avoid overwhelming the service (in ms). */
 const REQUEST_DELAY_MS = 1500;
 
+/** Earliest year for which Frankfurter data is reliably available. */
+const EARLIEST_SUPPORTED_YEAR = 2018;
+
+/**
+ * Sentinel {@link ExchangeRateInput.toYear} produced by {@link decodeExchangeRateInput} when
+ * neither `--year` nor `--to` was supplied.
+ *
+ * @remarks
+ * `decode()` runs before any runtime scope exists, so it has no {@link Clock} to resolve "the
+ * current year" against. `updateExchangeRates` resolves this sentinel to the injected clock's
+ * current year once a runtime scope exists, and validates the resolved upper bound there.
+ */
+const CURRENT_YEAR_UNSET = Number.POSITIVE_INFINITY;
+
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
@@ -167,120 +184,121 @@ type FrankfurterResponse = {
   rates: Record<string, Record<string, number>>;
 };
 
-/**
- * Validated year range for the exchange-rate update operation.
- */
-export interface ExchangeRateOptions {
+/** Validated year range for the exchange-rate update operation. */
+export interface ExchangeRateInput {
   readonly fromYear: number;
   readonly toYear: number;
 }
 
-/** Earliest year for which Frankfurter data is reliably available. */
-const EARLIEST_SUPPORTED_YEAR = 2018;
+/** Typed business result of one exchange-rate update invocation. */
+export interface ExchangeRateResult {
+  /** Every year in the resolved `fromYear`–`toYear` range, ascending. */
+  readonly years: readonly number[];
+  /** Years whose Frankfurter fetch succeeded and were merged into the CSV. */
+  readonly updatedYears: readonly number[];
+  /** Years whose Frankfurter fetch failed, with the failure message. */
+  readonly failedYears: readonly Readonly<{year: number; message: string}>[];
+}
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
 /**
- * Creates a Commander program pre-configured with exchange-rate options.
+ * Parses and validates one `--year`/`--from`/`--to` option value.
  *
- * @param logger - Logger to receive Commander help and error output.
- * @returns Configured Commander program with --year, --from, and --to options.
+ * @param name - Option name used in thrown diagnostics.
+ * @param raw - Raw option value.
+ * @returns The parsed year.
+ * @throws {CommandInputError} When `raw` is not an integer or is below {@link EARLIEST_SUPPORTED_YEAR}.
  */
-function createExchangeRateProgram(logger: MonorepositoryLogger) {
-  const program = createToolProgram({
-    name: "update-exchange-rates",
-    description: "Fetches yearly exchange rate averages from the Frankfurter API and writes them to CSV.",
-    examples: [
-      "npm run update-exchange-rates",
-      "npm run update-exchange-rates -- --year 2025",
-      "npm run update-exchange-rates -- --from 2020 --to 2025",
-    ],
-    logger,
-  });
-  program
-    .option("--year <year>", `Fetch a single year (${EARLIEST_SUPPORTED_YEAR}–current).`)
-    .option("--from <year>", `Starting year (default: ${EARLIEST_SUPPORTED_YEAR}).`)
-    .option("--to <year>", "Ending year (default: current year).");
-  return program;
+function parseYearOption(name: string, raw: string): number {
+  const trimmed = raw.trim();
+  const year = Number(trimmed);
+  if (trimmed === "" || !Number.isInteger(year)) {
+    throw new CommandInputError(`${name} must be an integer, got: "${raw}"`);
+  }
+  if (year < EARLIEST_SUPPORTED_YEAR) {
+    throw new CommandInputError(`${name} must be >= ${EARLIEST_SUPPORTED_YEAR} (earliest supported), got: ${year}`);
+  }
+  return year;
 }
 
 /**
- * Validates raw parsed option strings into a typed exchange-rate options object.
+ * Converts parsed Commander option strings into a typed year range.
+ *
+ * @remarks
+ * Rejects non-integer year values and years below {@link EARLIEST_SUPPORTED_YEAR}. The current-year
+ * upper bound and the `fromYear <= toYear` invariant both depend on "the current year" and are
+ * validated later, in `updateExchangeRates`, against the injected {@link Clock}.
  *
  * @param opts - Raw string options extracted from Commander's parsed output.
- * @returns Validated year range options.
- * @throws {Error} When year values fail integer or range validation.
+ * @returns A year range; `toYear` is {@link CURRENT_YEAR_UNSET} when neither `--year` nor `--to`
+ * was supplied.
+ * @throws {CommandInputError} When a year value fails integer or lower-bound validation.
  */
-function validateExchangeRateOpts(opts: {readonly year?: string; readonly from?: string; readonly to?: string}): ExchangeRateOptions {
-  const currentYear = new Date().getFullYear();
-
+function decodeExchangeRateInput(opts: Readonly<{year?: string; from?: string; to?: string}>): ExchangeRateInput {
   if (opts.year !== undefined) {
-    const raw = opts.year.trim();
-    const year = Number(raw);
-    if (!Number.isInteger(year) || raw === "") {
-      throw new Error(`--year must be an integer, got: "${opts.year}"`);
-    }
-    if (year < EARLIEST_SUPPORTED_YEAR) {
-      throw new Error(`--year must be >= ${EARLIEST_SUPPORTED_YEAR} (earliest supported), got: ${year}`);
-    }
-    if (year > currentYear) {
-      throw new Error(`--year must be <= ${currentYear} (current year), got: ${year}`);
-    }
+    const year = parseYearOption("--year", opts.year);
     return {fromYear: year, toYear: year};
   }
 
-  const fromRaw = opts.from?.trim();
-  const toRaw = opts.to?.trim();
-  const fromYear = fromRaw !== undefined ? Number(fromRaw) : EARLIEST_SUPPORTED_YEAR;
-  const toYear = toRaw !== undefined ? Number(toRaw) : currentYear;
-
-  if (fromRaw !== undefined && (!Number.isInteger(fromYear) || fromRaw === "")) {
-    throw new Error(`--from must be an integer, got: "${opts.from}"`);
-  }
-  if (toRaw !== undefined && (!Number.isInteger(toYear) || toRaw === "")) {
-    throw new Error(`--to must be an integer, got: "${opts.to}"`);
-  }
-  if (fromYear < EARLIEST_SUPPORTED_YEAR) {
-    throw new Error(`--from must be >= ${EARLIEST_SUPPORTED_YEAR} (earliest supported), got: ${fromYear}`);
-  }
-  if (toYear > currentYear) {
-    throw new Error(`--to must be <= ${currentYear} (current year), got: ${toYear}`);
-  }
-  if (fromYear > toYear) {
-    throw new Error(`--from (${fromYear}) must be <= --to (${toYear})`);
-  }
-
+  const fromYear = opts.from === undefined ? EARLIEST_SUPPORTED_YEAR : parseYearOption("--from", opts.from);
+  const toYear = opts.to === undefined ? CURRENT_YEAR_UNSET : parseYearOption("--to", opts.to);
   return {fromYear, toYear};
 }
 
 /**
- * Parses and validates exchange-rate CLI arguments, returning a typed options object.
+ * Resolves a decoded year range against the current year and validates its remaining invariants.
  *
- * @remarks
- * Uses the shared exchange-rate Commander program to parse raw argument tokens.
- * Rejects unknown options, non-integer year values, years outside the supported
- * range (2018 → current year), and ranges where `--from` exceeds `--to`.
- *
- * @param argv - Raw argument tokens (not including the node binary or script name).
- * @returns Validated year range options.
- * @throws Commander error when unknown options are encountered.
- * @throws {Error} When year values fail integer or range validation.
+ * @param input - Decoded year range, possibly carrying the {@link CURRENT_YEAR_UNSET} sentinel.
+ * @param currentYear - Current year observed from the injected {@link Clock}.
+ * @returns The fully resolved, validated year range.
+ * @throws {CommandInputError} When the resolved `toYear` exceeds `currentYear`, or `fromYear`
+ * exceeds the resolved `toYear`.
  */
-export function parseExchangeRateOptions(argv: readonly string[]): ExchangeRateOptions {
-  const logger = new MonorepositoryConsoleLogger("exchange-rates", {
-    color: false,
-    sink: {line: () => {}, write: () => {}},
-  });
-  const program = createExchangeRateProgram(logger);
-  program.parse([...argv], {from: "user"});
-  const opts = program.opts<{year?: string; from?: string; to?: string}>();
-  return validateExchangeRateOpts(opts);
+function resolveYearRange(
+  input: Readonly<ExchangeRateInput>,
+  currentYear: number,
+): Readonly<{fromYear: number; toYear: number}> {
+  const toYear = Number.isFinite(input.toYear) ? input.toYear : currentYear;
+  if (toYear > currentYear) {
+    throw new CommandInputError(`--to must be <= ${currentYear} (current year), got: ${toYear}`);
+  }
+  if (input.fromYear > toYear) {
+    throw new CommandInputError(`--from (${input.fromYear}) must be <= --to (${toYear})`);
+  }
+
+  return {fromYear: input.fromYear, toYear};
+}
+
+/**
+ * Derives the current year and today's date from the injected clock.
+ *
+ * @param clock - Injected clock capability; never read from ambient wall-clock state.
+ * @returns The current year and today's date (`YYYY-MM-DD`), both derived from one ISO timestamp
+ * so they never observe two different instants.
+ */
+function resolveNowContext(clock: Clock): Readonly<{currentYear: number; today: string}> {
+  const nowIso = clock.isoTimestamp();
+  return {currentYear: Number(nowIso.slice(0, 4)), today: nowIso.slice(0, 10)};
+}
+
+/**
+ * Parses one Frankfurter response body, guarding against an unexpected payload shape.
+ *
+ * @param text - Raw response body text.
+ * @returns The parsed response.
+ * @throws {Error} When the body is not valid JSON or its `rates` field is not an object.
+ */
+function parseFrankfurterResponse(text: string): FrankfurterResponse {
+  const parsed: unknown = JSON.parse(text);
+  const rates = (parsed as {rates?: unknown} | null)?.rates;
+  if (typeof parsed !== "object" || parsed === null || typeof rates !== "object" || rates === null) {
+    throw new Error("Frankfurter API returned an unexpected response shape.");
+  }
+
+  return parsed as FrankfurterResponse;
 }
 
 /**
@@ -295,22 +313,29 @@ export function parseExchangeRateOptions(argv: readonly string[]): ExchangeRateO
  *
  * Where eur_to_ron and eur_to_currency come from the same daily snapshot.
  */
-async function fetchYearlyRates(year: number, logger: MonorepositoryLogger): Promise<RateRecord[]> {
+async function fetchYearlyRates(
+  year: number,
+  currentYear: number,
+  today: string,
+  http: HttpClient,
+  signal: AbortSignal,
+  logger: MonorepositoryLogger,
+): Promise<RateRecord[]> {
   const startDate = `${year}-01-01`;
-  const endDate = year === new Date().getFullYear() ? new Date().toISOString().split("T")[0] : `${year}-12-31`;
+  const endDate = year === currentYear ? today : `${year}-12-31`;
 
-  logger.line(styleText("cyan", `  Fetching ${startDate} → ${endDate}...`));
+  logger.debug(`Fetching ${startDate} to ${endDate}.`);
 
   // Fetch EUR-based rates (includes RON and all target currencies)
   const currenciesParam = ["RON", ...TARGET_CURRENCIES].join(",");
-  const url = `${FRANKFURTER_API}/v1/${startDate}..${endDate}?base=EUR&symbols=${currenciesParam}`;
+  const url = new URL(`${FRANKFURTER_API}/v1/${startDate}..${endDate}?base=EUR&symbols=${currenciesParam}`);
 
-  const response = await fetch(url);
+  const response = await http.request({url, method: "GET", signal});
   if (!response.ok) {
-    throw new Error(`Frankfurter API error: ${response.status} ${response.statusText}`);
+    throw new Error(`Frankfurter API error: ${response.status}`);
   }
 
-  const data = (await response.json()) as FrankfurterResponse;
+  const data = parseFrankfurterResponse(response.text);
   const dailyRates = data.rates;
 
   // Compute yearly averages for each currency → RON
@@ -356,18 +381,30 @@ async function fetchYearlyRates(year: number, logger: MonorepositoryLogger): Pro
   // Sort by currency code for consistent output
   records.sort((a, b) => a.currency.localeCompare(b.currency));
 
-  logger.line(styleText("green", `  ✓ Got ${records.length} currency averages from ${Object.keys(dailyRates).length} trading days`));
+  logger.success(`Got ${records.length} currency average(s) from ${Object.keys(dailyRates).length} trading day(s).`);
 
   return records;
 }
 
 /**
  * Reads existing CSV records, preserving data for years not being updated.
+ *
+ * @param files - Filesystem capability used to read the CSV file.
+ * @param csvPath - Absolute path to the exchange-rate CSV file.
+ * @param fromYear - Inclusive lower bound of the years being updated.
+ * @param toYear - Inclusive upper bound of the years being updated.
+ * @returns Records for every year outside `[fromYear, toYear]`, or an empty array when the CSV
+ * file does not yet exist.
  */
-function readExistingRecords(fromYear: number, toYear: number): RateRecord[] {
-  if (!existsSync(CSV_PATH)) return [];
+async function readExistingRecords(
+  files: FileSystem,
+  csvPath: string,
+  fromYear: number,
+  toYear: number,
+): Promise<RateRecord[]> {
+  if (!(await files.exists(csvPath))) return [];
 
-  const content = readFileSync(CSV_PATH, "utf-8");
+  const content = await files.readText(csvPath);
   const lines = content.split("\n").slice(1); // Skip header
   const records: RateRecord[] = [];
 
@@ -392,91 +429,143 @@ function readExistingRecords(fromYear: number, toYear: number): RateRecord[] {
 }
 
 /**
- * Writes all records to the CSV file.
+ * Writes all records to the CSV file, atomically and creating missing parent directories.
+ *
+ * @param files - Filesystem capability used to write the CSV file.
+ * @param csvPath - Absolute path to the exchange-rate CSV file.
+ * @param records - Every record to persist, merged across preserved and updated years.
  */
-function writeCSV(records: RateRecord[]): void {
+async function writeCSV(files: FileSystem, csvPath: string, records: RateRecord[]): Promise<void> {
   // Sort by year then currency
-  records.sort((a, b) => a.year - b.year || a.currency.localeCompare(b.currency));
+  const sorted = [...records].sort((a, b) => a.year - b.year || a.currency.localeCompare(b.currency));
 
   const lines = ["year,currency,rate_to_ron"];
-  for (const record of records) {
+  for (const record of sorted) {
     lines.push(`${record.year},${record.currency},${record.rateToRon}`);
   }
 
-  writeFileSync(CSV_PATH, lines.join("\n") + "\n", "utf-8");
+  await files.writeTextAtomic(csvPath, `${lines.join("\n")}\n`);
 }
 
 // ---------------------------------------------------------------------------
-// Main
+// Command
 // ---------------------------------------------------------------------------
 
 /**
  * Updates the configured exchange-rate CSV for the selected year range.
  *
- * @param options - Validated year range to fetch and update.
- * @param logger - Optional logger used for update lifecycle output.
+ * @remarks
+ * Resolves the current-year upper bound from the injected {@link Clock}, then fetches years in
+ * strict ascending order with a polite delay between requests. A per-year Frankfurter failure is
+ * recorded in {@link ExchangeRateResult.failedYears} and does not stop later years; only a
+ * cancellation propagates past the loop.
+ *
+ * @param context - Command context providing HTTP, filesystem, clock, and cancellation capabilities.
+ * @param input - Decoded year range, possibly still carrying the {@link CURRENT_YEAR_UNSET} sentinel.
+ * @returns The years attempted, the years successfully updated, and any per-year failures.
+ * @throws {CommandInputError} When the resolved year range violates the current-year upper bound
+ * or the `fromYear <= toYear` invariant.
  */
-export async function main(options: Readonly<ExchangeRateOptions>, logger?: MonorepositoryLogger): Promise<void> {
-  const output = logger ?? new MonorepositoryConsoleLogger("update::exchange-rates");
-  const {fromYear, toYear} = options;
+async function updateExchangeRates(
+  context: Readonly<CommandContext>,
+  input: Readonly<ExchangeRateInput>,
+): Promise<ExchangeRateResult> {
+  const {http, files, clock, signal, logger, environment} = context.runtime;
 
-  output.line(styleText("bold", "\n📊 Exchange Rate Updater"));
-  output.line(styleText("dim", `Fetching yearly averages from Frankfurter API\n`));
-  output.line(`  Years: ${fromYear} → ${toYear}`);
-  output.line(`  Currencies: ${TARGET_CURRENCIES.length} currencies`);
-  output.line(`  Output: ${CSV_PATH}\n`);
+  const {currentYear, today} = resolveNowContext(clock);
+  const {fromYear, toYear} = resolveYearRange(input, currentYear);
 
-  // Read existing records (preserve years outside update range)
-  const existingRecords = readExistingRecords(fromYear, toYear);
+  const csvPath = join(environment.cwd, "sites", "arolariu.ro", "public", "data", "exchange-rates.csv");
+  logger.info(`Updating exchange rates for ${fromYear}-${toYear} (${TARGET_CURRENCIES.length} currencies).`);
+
+  const existingRecords = await readExistingRecords(files, csvPath, fromYear, toYear);
   const newRecords: RateRecord[] = [];
+  const years: number[] = [];
+  const updatedYears: number[] = [];
+  const failedYears: {year: number; message: string}[] = [];
 
-  for (let year = fromYear; year <= toYear; year++) {
-    const yearOutput = output.child(String(year));
-    yearOutput.line(styleText("bold", `\n📅 Year ${year}`));
+  for (let year = fromYear; year <= toYear; year += 1) {
+    years.push(year);
+    const yearLogger = logger.child(String(year));
+
     try {
-      const yearRecords = await fetchYearlyRates(year, yearOutput);
+      // eslint-disable-next-line no-await-in-loop -- years must be fetched in strict ascending sequence.
+      const yearRecords = await fetchYearlyRates(year, currentYear, today, http, signal, yearLogger);
       newRecords.push(...yearRecords);
-    } catch (error) {
-      yearOutput.line(styleText("red", `  ✗ Failed for ${year}: ${error instanceof Error ? error.message : String(error)}`), "stderr");
+      updatedYears.push(year);
+    } catch (error: unknown) {
+      if (error instanceof CommandCancellation || signal.aborted) throw error;
+      const message = error instanceof Error ? error.message : String(error);
+      failedYears.push({year, message});
+      yearLogger.error(`Failed for ${year}: ${message}`);
     }
 
-    // Be polite to the API
+    // Be polite to the API.
     if (year < toYear) {
-      await sleep(REQUEST_DELAY_MS);
+      // eslint-disable-next-line no-await-in-loop -- the delay must land between sequential requests.
+      await clock.delay(REQUEST_DELAY_MS, signal);
     }
   }
 
-  // Merge and write
+  // Merge and write.
   const allRecords = [...existingRecords, ...newRecords];
-  writeCSV(allRecords);
+  await writeCSV(files, csvPath, allRecords);
 
-  output.line(styleText("bold", `\n✅ Done! Wrote ${allRecords.length} records to CSV`));
-  output.line(styleText("dim", `   File: ${CSV_PATH}\n`));
+  logger.info(`Wrote ${allRecords.length} record(s) to ${csvPath}.`);
+
+  return {years, updatedYears, failedYears};
 }
 
-if (import.meta.main) {
-  const output = new MonorepositoryConsoleLogger("update::exchange-rates");
-  const program = createExchangeRateProgram(output);
+/**
+ * Creates the exchange-rate update command.
+ *
+ * @param runtimeFactory - Optional runtime factory; tests inject a fake instead of the Node adapter.
+ * @returns The typed `update-exchange-rates` command object.
+ */
+export function createUpdateExchangeRatesCommand(
+  runtimeFactory?: CommandRuntimeFactory,
+): MonorepoCommand<ExchangeRateInput, ExchangeRateResult> {
+  return new MonorepoCommand<ExchangeRateInput, ExchangeRateResult>(
+    {
+      metadata: {
+        name: "update-exchange-rates",
+        description: "Fetches yearly exchange rate averages from the Frankfurter API and writes them to CSV.",
+        examples: [
+          "npm run update-exchange-rates",
+          "npm run update-exchange-rates -- --year 2025",
+          "npm run update-exchange-rates -- --from 2020 --to 2025",
+        ],
+      },
+      configure: (program) => {
+        program
+          .option("--year <year>", `Fetch a single year (${EARLIEST_SUPPORTED_YEAR}-current).`)
+          .option("--from <year>", `Starting year (default: ${EARLIEST_SUPPORTED_YEAR}).`)
+          .option("--to <year>", "Ending year (default: current year).");
+      },
+      decode: (program) => decodeExchangeRateInput(program.opts<{year?: string; from?: string; to?: string}>()),
+      execute: updateExchangeRates,
+      completion: (result) => {
+        const exitCode = result.failedYears.length > 0 ? 1 : 0;
+        return {
+          exitCode,
+          human: (logger) => {
+            if (result.failedYears.length === 0) {
+              logger.success(`Updated ${result.updatedYears.length} of ${result.years.length} year(s).`);
+              return;
+            }
 
-  try {
-    program.parse();
-  } catch (error: unknown) {
-    const code = commanderExitCode(error);
-    process.exit(code ?? 1);
-  }
-
-  const rawOpts = program.opts<{year?: string; from?: string; to?: string}>();
-
-  let exchangeOptions: ExchangeRateOptions;
-  try {
-    exchangeOptions = validateExchangeRateOpts(rawOpts);
-  } catch (error: unknown) {
-    output.error(error instanceof Error ? error.message : String(error));
-    process.exit(1);
-  }
-
-  main(exchangeOptions, output).catch((error) => {
-    output.line(styleText("red", `\n❌ Fatal error: ${error instanceof Error ? error.message : String(error)}`), "stderr");
-    process.exit(1);
-  });
+            const failures = result.failedYears.map((failure) => `${failure.year} (${failure.message})`).join(", ");
+            logger.warn(`Updated ${result.updatedYears.length} of ${result.years.length} year(s); failed: ${failures}.`);
+          },
+        };
+      },
+    },
+    runtimeFactory,
+  );
 }
+
+/** Production singleton used by the aggregate CLI and this module's direct entrypoint. */
+export const updateExchangeRatesCommand: MonorepoCommand<ExchangeRateInput, ExchangeRateResult> =
+  createUpdateExchangeRatesCommand();
+
+await updateExchangeRatesCommand.runIfMain(import.meta.url);
