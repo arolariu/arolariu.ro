@@ -1008,36 +1008,6 @@ describe("runtime boundary policy", () => {
           "rule": "ambient-environment",
         },
         {
-          "file": "scripts/setup.python.ts",
-          "line": 24,
-          "rule": "ambient-filesystem",
-        },
-        {
-          "file": "scripts/setup.python.ts",
-          "line": 26,
-          "rule": "legacy-process-import",
-        },
-        {
-          "file": "scripts/setup.python.ts",
-          "line": 27,
-          "rule": "legacy-process-import",
-        },
-        {
-          "file": "scripts/setup.python.ts",
-          "line": 240,
-          "rule": "explicit-concurrency",
-        },
-        {
-          "file": "scripts/setup.python.ts",
-          "line": 245,
-          "rule": "explicit-concurrency",
-        },
-        {
-          "file": "scripts/setup.python.ts",
-          "line": 691,
-          "rule": "ambient-os-state",
-        },
-        {
           "file": "scripts/setup.types.ts",
           "line": 17,
           "rule": "legacy-process-import",

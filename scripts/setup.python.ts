@@ -19,21 +19,44 @@
  * action-specific postcondition against the refreshed facts. A compatible canonical virtual
  * environment is never recreated, but pip is always upgraded and `requirements-dev.txt` is always
  * (re)installed, each verified from refreshed facts.
+ *
+ * The phase reads every capability from the invocation-scoped {@link SetupPhaseRuntime}: the
+ * process runner, the clock, the task scheduler, the recursive-removal filesystem, and the
+ * host-platform snapshot. It owns no ambient Node state and no test-only constructor dependency.
  */
 
-import {rm} from "node:fs/promises";
-
-import type {CommandResult, CommandSpec} from "./common/process.ts";
-import {formatCommand} from "./common/process.ts";
+import {
+  formatProcessRequest,
+  processFailureEvidence,
+  type ProcessOutcome,
+  type ProcessRequest,
+  type SucceededProcessOutcome,
+} from "./common/runner.ts";
+import {CommandCancellation} from "./common/runtime.ts";
 import type {MinimumVersion} from "./common/requirements.ts";
 import type {PythonFacts} from "./inspection/python.ts";
 import type {InspectionOutcome} from "./inspection/types.ts";
-import type {InstallationProposal, SetupActionScope, SetupContext, SetupPhaseDefinition, SetupPhaseResult} from "./setup.types.ts";
+import {
+  requireSetupPhaseRuntime,
+  type InstallationProposal,
+  type SetupActionScope,
+  type SetupContext,
+  type SetupPhaseDefinition,
+  type SetupPhaseResult,
+  type SetupPhaseRuntime,
+} from "./setup.types.ts";
 
-interface PythonSetupDependencies {
-  readonly platform: NodeJS.Platform;
-  readonly removeDirectory: (path: string) => Promise<void>;
-}
+/**
+ * Bounded ceiling for every long-running Python interpreter installation and pip mutation.
+ *
+ * @remarks
+ * The invocation-scoped runner defaults to a probe-sized timeout, which is correct for a
+ * `--version` probe but would truncate an interpreter install or a full requirements install. Each
+ * such mutation therefore requests this ceiling explicitly, preserving the pre-migration mutation
+ * timeout the deprecated setup runner bridge used to supply implicitly for `tee`/`inherit` output.
+ * Capture-only virtual-environment creation keeps the runner's own bounded default instead.
+ */
+const LONG_RUNNING_MUTATION_TIMEOUT_MS = 1_200_000;
 
 /** One completed setup step: either a terminal phase result, or refreshed `python` facts to continue with. */
 type PythonStepOutcome = Readonly<{result: SetupPhaseResult}> | Readonly<{facts: PythonFacts}>;
@@ -50,26 +73,26 @@ const PIP_UPGRADE_ACTION = "python.pip.upgrade";
 const DEPENDENCIES_INSTALL_ACTION = "python.dependencies.install";
 const PYTHON_MANUAL_INSTALL = "Install a compatible Python interpreter from https://www.python.org/downloads/, then rerun setup.";
 
-function isSuccessfulCommand(result: Readonly<CommandResult>): boolean {
-  return result.code === 0 && !result.timedOut && result.signal === undefined && result.spawnError === undefined;
+function isSuccessfulOutcome(outcome: Readonly<ProcessOutcome>): outcome is SucceededProcessOutcome {
+  return outcome.kind === "succeeded";
 }
 
 function isInterrupted(error: unknown): boolean {
-  return error instanceof Error && error.name === "AbortError";
+  return error instanceof CommandCancellation || (error instanceof Error && error.name === "AbortError");
 }
 
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
-function duration(startedAt: number, context: SetupContext): number {
-  return Math.max(0, context.now() - startedAt);
+function duration(startedAt: number, runtime: SetupPhaseRuntime): number {
+  return Math.max(0, runtime.clock.monotonicNow() - startedAt);
 }
 
-function phaseResult(context: SetupContext, startedAt: number, input: Omit<SetupPhaseResult, "durationMs">): SetupPhaseResult {
+function phaseResult(runtime: SetupPhaseRuntime, startedAt: number, input: Omit<SetupPhaseResult, "durationMs">): SetupPhaseResult {
   return {
     ...input,
-    durationMs: duration(startedAt, context),
+    durationMs: duration(startedAt, runtime),
   };
 }
 
@@ -77,14 +100,25 @@ function normalizedVersion(version: MinimumVersion): string {
   return `${version.major}.${version.minor}.${version.patch}`;
 }
 
-function commandFailureEvidence(result: Readonly<CommandResult>): readonly string[] {
+/**
+ * Converts one failed/interrupted process outcome into bounded, non-secret evidence.
+ *
+ * @param outcome - A non-`"succeeded"` {@link ProcessOutcome}.
+ * @param context - Shared setup dependencies, whose logger sanitizes the rendered evidence.
+ * @returns Bounded, sanitized evidence lines describing the failure.
+ */
+function commandFailureEvidence(
+  outcome: Readonly<Exclude<ProcessOutcome, SucceededProcessOutcome>>,
+  context: SetupContext,
+): readonly string[] {
+  const evidence = processFailureEvidence(outcome, context.logger);
   return [
-    ...(result.spawnError === undefined ? [] : [`Unable to start command: ${result.spawnError}`]),
-    ...(result.timedOut ? ["Command timed out."] : []),
-    ...(result.signal === undefined ? [] : [`Command stopped with signal ${result.signal}.`]),
-    ...(result.code === 0 ? [] : [`Command exited with code ${result.code}.`]),
-    ...(result.stdout.trim() === "" ? [] : [`stdout: ${result.stdout.trim()}`]),
-    ...(result.stderr.trim() === "" ? [] : [`stderr: ${result.stderr.trim()}`]),
+    ...(outcome.kind === "exited" ? [`Command exited with code ${outcome.exitCode}.`] : []),
+    ...(outcome.kind === "timed-out" ? ["Command timed out."] : []),
+    ...(outcome.kind === "signalled" ? [`Command stopped with signal ${outcome.signal}.`] : []),
+    ...(outcome.kind === "cancelled" ? ["Command was cancelled."] : []),
+    ...(outcome.kind === "spawn-failed" ? [`Unable to start command: ${outcome.message}`] : []),
+    ...(evidence === "" ? [] : [evidence]),
   ];
 }
 
@@ -126,7 +160,7 @@ function selectedInterpreterEvidence(facts: Readonly<PythonFacts>, required: Min
   if (facts.selected === undefined) {
     return [`No available interpreter satisfies >=${normalizedVersion(required)}.`];
   }
-  const formatted = formatCommand({command: facts.selected.command, args: facts.selected.prefixArgs});
+  const formatted = formatProcessRequest({command: facts.selected.command, args: facts.selected.prefixArgs});
   return [`Selected interpreter '${formatted}' (Python ${facts.selected.version}) satisfies >=${normalizedVersion(required)}.`];
 }
 
@@ -201,33 +235,37 @@ function virtualEnvironmentDirectory(expRoot: string, platform: NodeJS.Platform)
  *
  * @param expRoot - Absolute path to the experimental service root.
  * @param platform - Target process platform.
- * @returns A command spec whose executable is the venv-owned Python interpreter.
+ * @returns A process request whose executable is the venv-owned Python interpreter.
  */
-export function pythonInVirtualEnvironment(expRoot: string, platform: NodeJS.Platform): CommandSpec {
+export function pythonInVirtualEnvironment(expRoot: string, platform: NodeJS.Platform): ProcessRequest {
   const venvDirectory = virtualEnvironmentDirectory(expRoot, platform);
   return platform === "win32"
     ? {command: `${venvDirectory}\\Scripts\\python.exe`, args: []}
     : {command: `${venvDirectory}/bin/python`, args: []};
 }
 
-function hasAptCandidate(result: Readonly<CommandResult>): boolean {
-  return isSuccessfulCommand(result) && /^\s*Candidate:\s*(?!\(none\)\s*$)\S+/imu.test(result.stdout);
+function hasAptCandidate(result: Readonly<ProcessOutcome>): boolean {
+  return isSuccessfulOutcome(result) && /^\s*Candidate:\s*(?!\(none\)\s*$)\S+/imu.test(result.stdout);
 }
 
-async function discoverPythonPackageManagers(context: SetupContext, platform: NodeJS.Platform): Promise<ReadonlySet<string>> {
+async function discoverPythonPackageManagers(
+  context: SetupContext,
+  runtime: SetupPhaseRuntime,
+  platform: NodeJS.Platform,
+): Promise<ReadonlySet<string>> {
   const managers = new Set<string>();
 
   if (platform === "win32") {
-    const winget = await context.runner.run({command: "winget", args: ["--version"]}, {cwd: context.paths.root});
-    if (isSuccessfulCommand(winget)) {
+    const winget = await runtime.runner.run({command: "winget", args: ["--version"]}, {cwd: context.paths.root});
+    if (isSuccessfulOutcome(winget)) {
       managers.add("winget");
     }
     return managers;
   }
 
   if (platform === "darwin") {
-    const brew = await context.runner.run({command: "brew", args: ["--version"]}, {cwd: context.paths.root});
-    if (isSuccessfulCommand(brew)) {
+    const brew = await runtime.runner.run({command: "brew", args: ["--version"]}, {cwd: context.paths.root});
+    if (isSuccessfulOutcome(brew)) {
       managers.add("brew");
     }
     return managers;
@@ -237,22 +275,22 @@ async function discoverPythonPackageManagers(context: SetupContext, platform: No
     return managers;
   }
 
-  const [apt, dnf] = await Promise.all([
-    context.runner.run({command: "apt-get", args: ["--version"]}, {cwd: context.paths.root}),
-    context.runner.run({command: "dnf", args: ["--version"]}, {cwd: context.paths.root}),
+  const [apt, dnf] = await runtime.tasks.parallel([
+    () => runtime.runner.run({command: "apt-get", args: ["--version"]}, {cwd: context.paths.root}),
+    () => runtime.runner.run({command: "dnf", args: ["--version"]}, {cwd: context.paths.root}),
   ]);
-  if (isSuccessfulCommand(apt)) {
-    const [pythonPolicy, venvPolicy] = await Promise.all([
-      context.runner.run({command: "apt-cache", args: ["policy", "python3.12"]}, {cwd: context.paths.root}),
-      context.runner.run({command: "apt-cache", args: ["policy", "python3.12-venv"]}, {cwd: context.paths.root}),
+  if (apt !== undefined && isSuccessfulOutcome(apt)) {
+    const [pythonPolicy, venvPolicy] = await runtime.tasks.parallel([
+      () => runtime.runner.run({command: "apt-cache", args: ["policy", "python3.12"]}, {cwd: context.paths.root}),
+      () => runtime.runner.run({command: "apt-cache", args: ["policy", "python3.12-venv"]}, {cwd: context.paths.root}),
     ]);
-    if (hasAptCandidate(pythonPolicy) && hasAptCandidate(venvPolicy)) {
+    if (pythonPolicy !== undefined && venvPolicy !== undefined && hasAptCandidate(pythonPolicy) && hasAptCandidate(venvPolicy)) {
       managers.add("apt-get");
     }
   }
-  if (isSuccessfulCommand(dnf)) {
-    const info = await context.runner.run({command: "dnf", args: ["info", "python3.12"]}, {cwd: context.paths.root});
-    if (isSuccessfulCommand(info)) {
+  if (dnf !== undefined && isSuccessfulOutcome(dnf)) {
+    const info = await runtime.runner.run({command: "dnf", args: ["info", "python3.12"]}, {cwd: context.paths.root});
+    if (isSuccessfulOutcome(info)) {
       managers.add("dnf");
     }
   }
@@ -315,14 +353,14 @@ export function selectPythonInstallationProposal(
  * readiness observation and installing only through the reviewed proposal contract.
  *
  * @param context - Shared setup dependencies, including the repository inspection session.
- * @param dependencies - Independent platform boundary used to select an installation proposal.
+ * @param runtime - Invocation-scoped capabilities, including the host-platform snapshot.
  * @param facts - The `python` facts observed before this step.
  * @param evidence - Mutable accumulator of human-readable phase evidence.
  * @returns Either a terminal phase result, or the facts to continue with.
  */
 async function ensureInterpreter(
   context: SetupContext,
-  dependencies: PythonSetupDependencies,
+  runtime: SetupPhaseRuntime,
   facts: Readonly<PythonFacts>,
   evidence: string[],
 ): Promise<PythonStepOutcome> {
@@ -330,9 +368,10 @@ async function ensureInterpreter(
     return {facts};
   }
 
-  const packageManagers = await discoverPythonPackageManagers(context, dependencies.platform);
+  const {platform} = runtime.environment;
+  const packageManagers = await discoverPythonPackageManagers(context, runtime, platform);
   const proposal = selectPythonInstallationProposal({
-    platform: dependencies.platform,
+    platform,
     availablePackageManagers: packageManagers,
     required: context.requirements.python,
   });
@@ -354,10 +393,14 @@ async function ensureInterpreter(
     scope: "system",
     summary: proposal.explanation,
     mutate: async () => {
-      const installResult = await context.runner.run(proposal.command, {cwd: context.paths.root, output: "inherit"});
-      if (!isSuccessfulCommand(installResult)) {
+      const installResult = await runtime.runner.run(proposal.command, {
+        cwd: context.paths.root,
+        output: "inherit",
+        timeoutMs: LONG_RUNNING_MUTATION_TIMEOUT_MS,
+      });
+      if (!isSuccessfulOutcome(installResult)) {
         throw new Error(
-          ["The supported Python interpreter installation command failed.", ...commandFailureEvidence(installResult)].join("\n"),
+          ["The supported Python interpreter installation command failed.", ...commandFailureEvidence(installResult, context)].join("\n"),
         );
       }
     },
@@ -426,7 +469,8 @@ async function ensureInterpreter(
  * `python.venv.create` action when it exists but is incompatible.
  *
  * @param context - Shared setup dependencies, including the repository inspection session.
- * @param dependencies - Independent platform and filesystem-removal boundary.
+ * @param runtime - Invocation-scoped capabilities, including the host platform and the recursive
+ * removal filesystem.
  * @param facts - The `python` facts observed before this step (a selected interpreter is required).
  * @param evidence - Mutable accumulator of human-readable phase evidence.
  * @param plannedActions - Mutable accumulator of dry-run-planned action identifiers.
@@ -434,7 +478,7 @@ async function ensureInterpreter(
  */
 async function ensureVirtualEnvironment(
   context: SetupContext,
-  dependencies: PythonSetupDependencies,
+  runtime: SetupPhaseRuntime,
   facts: Readonly<PythonFacts>,
   evidence: string[],
   plannedActions: string[],
@@ -450,7 +494,7 @@ async function ensureVirtualEnvironment(
     throw new Error("A selected Python interpreter is required before the virtual environment can be created.");
   }
 
-  const venvDirectory = virtualEnvironmentDirectory(context.paths.expRoot, dependencies.platform);
+  const venvDirectory = virtualEnvironmentDirectory(context.paths.expRoot, runtime.environment.platform);
   const existedBeforeCreation = facts.virtualEnvironment.exists;
 
   const mutation = await runPythonMutation(context, {
@@ -459,14 +503,14 @@ async function ensureVirtualEnvironment(
     summary: "Create the isolated exp.arolariu.ro Python virtual environment.",
     mutate: async () => {
       if (existedBeforeCreation) {
-        await dependencies.removeDirectory(venvDirectory);
+        await runtime.files.remove(venvDirectory, {recursive: true, force: true});
       }
-      const createResult = await context.runner.run(
+      const createResult = await runtime.runner.run(
         {command: interpreter.command, args: [...interpreter.prefixArgs, "-m", "venv", venvDirectory]},
         {cwd: context.paths.root},
       );
-      if (!isSuccessfulCommand(createResult)) {
-        throw new Error(["Python virtual environment creation failed.", ...commandFailureEvidence(createResult)].join("\n"));
+      if (!isSuccessfulOutcome(createResult)) {
+        throw new Error(["Python virtual environment creation failed.", ...commandFailureEvidence(createResult, context)].join("\n"));
       }
     },
   });
@@ -503,12 +547,12 @@ interface PipStepDefinition {
   readonly id: string;
   readonly summary: string;
   readonly failureSummary: string;
-  readonly command: CommandSpec;
+  readonly command: ProcessRequest;
   /** Bounded, non-secret reasons the refreshed facts do not satisfy this step's postcondition. */
   readonly verify: (facts: Readonly<PythonFacts>) => readonly string[];
 }
 
-function pipStepDefinitions(context: SetupContext, venvSpec: Readonly<CommandSpec>): readonly PipStepDefinition[] {
+function pipStepDefinitions(context: SetupContext, venvSpec: Readonly<ProcessRequest>): readonly PipStepDefinition[] {
   return [
     {
       id: PIP_UPGRADE_ACTION,
@@ -544,7 +588,8 @@ function pipStepDefinitions(context: SetupContext, venvSpec: Readonly<CommandSpe
  * environment was already compatible: a successful command is never treated as proof of readiness.
  *
  * @param context - Shared setup dependencies, including the repository inspection session.
- * @param venvSpec - The venv-owned Python interpreter command spec.
+ * @param runtime - Invocation-scoped capabilities the pip commands run through.
+ * @param venvSpec - The venv-owned Python interpreter process request.
  * @param facts - The `python` facts observed before this step.
  * @param evidence - Mutable accumulator of human-readable phase evidence.
  * @param plannedActions - Mutable accumulator of dry-run-planned action identifiers.
@@ -552,7 +597,8 @@ function pipStepDefinitions(context: SetupContext, venvSpec: Readonly<CommandSpe
  */
 async function ensurePipDependencies(
   context: SetupContext,
-  venvSpec: Readonly<CommandSpec>,
+  runtime: SetupPhaseRuntime,
+  venvSpec: Readonly<ProcessRequest>,
   facts: PythonFacts,
   evidence: string[],
   plannedActions: string[],
@@ -563,9 +609,14 @@ async function ensurePipDependencies(
       scope: "repository",
       summary: step.summary,
       mutate: async () => {
-        const result = await context.runner.run(step.command, {cwd: context.paths.expRoot, output: "tee", logger: context.logger});
-        if (!isSuccessfulCommand(result)) {
-          throw new Error([step.failureSummary, ...commandFailureEvidence(result)].join("\n"));
+        const result = await runtime.runner.run(step.command, {
+          cwd: context.paths.expRoot,
+          output: "tee",
+          logger: context.logger,
+          timeoutMs: LONG_RUNNING_MUTATION_TIMEOUT_MS,
+        });
+        if (!isSuccessfulOutcome(result)) {
+          throw new Error([step.failureSummary, ...commandFailureEvidence(result, context)].join("\n"));
         }
       },
     });
@@ -611,15 +662,16 @@ async function ensurePipDependencies(
   return {facts};
 }
 
-async function runPythonSetup(context: SetupContext, dependencies: PythonSetupDependencies): Promise<SetupPhaseResult> {
-  const startedAt = context.now();
+async function runPythonSetup(context: SetupContext): Promise<SetupPhaseResult> {
+  const runtime = requireSetupPhaseRuntime(context);
+  const startedAt = runtime.clock.monotonicNow();
   const evidence: string[] = [];
   const plannedActions: string[] = [];
 
   try {
     const initialOutcome = await context.inspection.inspect("python");
     if (initialOutcome.kind !== "available") {
-      return phaseResult(context, startedAt, {
+      return phaseResult(runtime, startedAt, {
         id: "python",
         status: "failed",
         summary: "The Python environment could not be inspected.",
@@ -631,26 +683,26 @@ async function runPythonSetup(context: SetupContext, dependencies: PythonSetupDe
     let facts = initialOutcome.value;
     evidence.push(...selectedInterpreterEvidence(facts, context.requirements.python));
 
-    const interpreterOutcome = await ensureInterpreter(context, dependencies, facts, evidence);
+    const interpreterOutcome = await ensureInterpreter(context, runtime, facts, evidence);
     if ("result" in interpreterOutcome) {
-      return phaseResult(context, startedAt, interpreterOutcome.result);
+      return phaseResult(runtime, startedAt, interpreterOutcome.result);
     }
     facts = interpreterOutcome.facts;
 
-    const venvOutcome = await ensureVirtualEnvironment(context, dependencies, facts, evidence, plannedActions);
+    const venvOutcome = await ensureVirtualEnvironment(context, runtime, facts, evidence, plannedActions);
     if ("result" in venvOutcome) {
-      return phaseResult(context, startedAt, venvOutcome.result);
+      return phaseResult(runtime, startedAt, venvOutcome.result);
     }
     facts = venvOutcome.facts;
 
-    const venvSpec = pythonInVirtualEnvironment(context.paths.expRoot, dependencies.platform);
-    const pipOutcome = await ensurePipDependencies(context, venvSpec, facts, evidence, plannedActions);
+    const venvSpec = pythonInVirtualEnvironment(context.paths.expRoot, runtime.environment.platform);
+    const pipOutcome = await ensurePipDependencies(context, runtime, venvSpec, facts, evidence, plannedActions);
     if ("result" in pipOutcome) {
-      return phaseResult(context, startedAt, pipOutcome.result);
+      return phaseResult(runtime, startedAt, pipOutcome.result);
     }
 
     if (plannedActions.length > 0) {
-      return phaseResult(context, startedAt, {
+      return phaseResult(runtime, startedAt, {
         id: "python",
         status: "skipped",
         summary: "Required Python preparation actions are planned by dry-run.",
@@ -659,7 +711,7 @@ async function runPythonSetup(context: SetupContext, dependencies: PythonSetupDe
       });
     }
 
-    return phaseResult(context, startedAt, {
+    return phaseResult(runtime, startedAt, {
       id: "python",
       status: "succeeded",
       summary: "The Python interpreter, isolated virtual environment, and pinned requirements are ready.",
@@ -670,7 +722,7 @@ async function runPythonSetup(context: SetupContext, dependencies: PythonSetupDe
     if (isInterrupted(error)) {
       throw error;
     }
-    return phaseResult(context, startedAt, {
+    return phaseResult(runtime, startedAt, {
       id: "python",
       status: "failed",
       summary: "The required Python preparation phase failed.",
@@ -681,26 +733,22 @@ async function runPythonSetup(context: SetupContext, dependencies: PythonSetupDe
 }
 
 /**
- * Creates the Python setup phase with an explicit platform and filesystem-removal boundary.
+ * Creates the Python setup phase over the invocation-scoped setup phase runtime.
  *
- * @param dependencies - Optional production-boundary replacements for tests.
+ * @remarks
+ * The phase no longer accepts a host or filesystem-removal boundary: the platform, the process
+ * runner, the recursive-removal filesystem, and the clock all come from {@link SetupPhaseRuntime},
+ * so a test replaces capabilities on the runtime rather than on this factory.
+ *
  * @returns The independent Python setup phase definition.
  */
-export function createPythonSetupPhase(dependencies: Partial<PythonSetupDependencies> = {}): SetupPhaseDefinition {
-  const resolvedDependencies: PythonSetupDependencies = {
-    platform: dependencies.platform ?? process.platform,
-    removeDirectory:
-      dependencies.removeDirectory
-      ?? (async (path) => {
-        await rm(path, {recursive: true, force: true});
-      }),
-  };
+export function createPythonSetupPhase(): SetupPhaseDefinition {
   return {
     id: "python",
     title: "Python toolchain",
     required: true,
     dependsOn: [],
-    run: (context) => runPythonSetup(context, resolvedDependencies),
+    run: (context) => runPythonSetup(context),
   };
 }
 
