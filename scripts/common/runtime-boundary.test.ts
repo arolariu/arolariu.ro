@@ -1154,183 +1154,28 @@ describe("runtime boundary policy", () => {
           "rule": "explicit-concurrency",
         },
         {
-          "file": "scripts/generate.env.ts",
-          "line": 14,
-          "rule": "ambient-filesystem",
-        },
-        {
-          "file": "scripts/generate.env.ts",
-          "line": 18,
-          "rule": "legacy-cli-import",
-        },
-        {
-          "file": "scripts/generate.env.ts",
-          "line": 120,
-          "rule": "ambient-environment",
-        },
-        {
-          "file": "scripts/generate.env.ts",
-          "line": 122,
-          "rule": "ambient-environment",
-        },
-        {
-          "file": "scripts/generate.env.ts",
-          "line": 137,
-          "rule": "ambient-environment",
-        },
-        {
-          "file": "scripts/generate.env.ts",
-          "line": 157,
-          "rule": "ambient-http",
-        },
-        {
-          "file": "scripts/generate.env.ts",
-          "line": 445,
-          "rule": "ambient-environment",
-        },
-        {
-          "file": "scripts/generate.env.ts",
-          "line": 447,
-          "rule": "ambient-environment",
-        },
-        {
-          "file": "scripts/generate.env.ts",
-          "line": 448,
-          "rule": "ambient-timer",
-        },
-        {
-          "file": "scripts/generate.env.ts",
-          "line": 464,
-          "rule": "ambient-timer",
-        },
-        {
-          "file": "scripts/generate.env.ts",
-          "line": 465,
-          "rule": "ambient-environment",
-        },
-        {
-          "file": "scripts/generate.env.ts",
-          "line": 519,
-          "rule": "ambient-environment",
-        },
-        {
-          "file": "scripts/generate.env.ts",
-          "line": 539,
-          "rule": "ambient-environment",
-        },
-        {
-          "file": "scripts/generate.env.ts",
-          "line": 540,
-          "rule": "ambient-environment",
-        },
-        {
-          "file": "scripts/generate.env.ts",
-          "line": 627,
-          "rule": "direct-exit",
-        },
-        {
-          "file": "scripts/generate.env.ts",
-          "line": 635,
-          "rule": "direct-exit",
-        },
-        {
-          "file": "scripts/generate.env.ts",
-          "line": 638,
-          "rule": "direct-exit",
-        },
-        {
-          "file": "scripts/generate.gql.ts",
-          "line": 12,
-          "rule": "ambient-filesystem",
-        },
-        {
-          "file": "scripts/generate.gql.ts",
-          "line": 14,
-          "rule": "legacy-cli-import",
-        },
-        {
-          "file": "scripts/generate.gql.ts",
-          "line": 42,
-          "rule": "ambient-os-state",
-        },
-        {
-          "file": "scripts/generate.gql.ts",
-          "line": 54,
-          "rule": "ambient-timer",
-        },
-        {
-          "file": "scripts/generate.gql.ts",
-          "line": 79,
-          "rule": "direct-exit",
-        },
-        {
-          "file": "scripts/generate.gql.ts",
-          "line": 87,
-          "rule": "direct-exit",
-        },
-        {
-          "file": "scripts/generate.gql.ts",
-          "line": 90,
-          "rule": "direct-exit",
-        },
-        {
-          "file": "scripts/generate.i18n.ts",
-          "line": 22,
-          "rule": "ambient-filesystem",
-        },
-        {
-          "file": "scripts/generate.i18n.ts",
-          "line": 24,
-          "rule": "legacy-cli-import",
-        },
-        {
-          "file": "scripts/generate.i18n.ts",
-          "line": 449,
-          "rule": "ambient-os-state",
-        },
-        {
-          "file": "scripts/generate.i18n.ts",
-          "line": 454,
-          "rule": "ambient-os-state",
-        },
-        {
-          "file": "scripts/generate.i18n.ts",
-          "line": 520,
-          "rule": "direct-exit",
-        },
-        {
-          "file": "scripts/generate.i18n.ts",
-          "line": 528,
-          "rule": "direct-exit",
-        },
-        {
-          "file": "scripts/generate.i18n.ts",
-          "line": 531,
-          "rule": "direct-exit",
-        },
-        {
           "file": "scripts/generate.ts",
           "line": 12,
           "rule": "legacy-cli-import",
         },
         {
           "file": "scripts/generate.ts",
-          "line": 75,
+          "line": 100,
           "rule": "ambient-os-state",
         },
         {
           "file": "scripts/generate.ts",
-          "line": 188,
+          "line": 213,
           "rule": "direct-exit",
         },
         {
           "file": "scripts/generate.ts",
-          "line": 206,
+          "line": 231,
           "rule": "direct-exit",
         },
         {
           "file": "scripts/generate.ts",
-          "line": 209,
+          "line": 234,
           "rule": "direct-exit",
         },
         {

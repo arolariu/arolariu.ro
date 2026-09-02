@@ -1,5 +1,5 @@
 /**
- * @fileoverview Environment generator from the exp service or manual prompts.
+ * @fileoverview Environment generator command object.
  * @module scripts/generate.env
  *
  * @remarks
@@ -9,16 +9,31 @@
  * - fetches build-time configuration from the exp service
  *   (`/api/v1/build-time?for=website`), or
  * - prompts the developer for missing values based on required keys.
+ *
+ * Every ambient effect (filesystem, HTTP, prompts, environment variables, and the wall clock)
+ * is routed through the injected {@link CommandContext.runtime} instead of touching Node globals
+ * directly, so the command is fully exercised by the declarative command runtime's test fakes.
  */
 
-import fs from "node:fs";
 import path from "node:path";
 import {APP_CONFIGURATION_MAPPING, AZURE_RUNTIME_IDENTITY_KEYS, isSecretKey} from "./azure/index.ts";
 import type {AppConfigurationEnvironmentKey, GeneratedEnvironmentConfiguration, GeneratedEnvironmentKey} from "./azure/index.ts";
-import {commanderExitCode, createToolProgram} from "./common/cli.ts";
-import {isInCI} from "./common/index.ts";
-import {MonorepositoryConsoleLogger, type MonorepositoryLogger} from "./common/logger.ts";
-import {createTerminalPromptProvider, type PromptProvider} from "./common/prompts.ts";
+import {MonorepoCommand, type CommandContext, type CommandRuntimeFactory} from "./common/commander.ts";
+import type {MonorepositoryLogger} from "./common/logger.ts";
+
+/** Typed input accepted by every migrated `generate` leaf command. */
+export interface GenerateLeafInput {
+  /** Enables diagnostic output. */
+  readonly verbose: boolean;
+}
+
+/** Typed business result produced by every migrated `generate` leaf command. */
+export interface GenerateLeafResult {
+  /** Human-readable completion summary rendered by the command's human presentation. */
+  readonly summary: string;
+  /** Paths of every file this command created or modified. */
+  readonly changedFiles: readonly string[];
+}
 
 /** exp service URL — same deterministic logic as the runtime consumers. EXP_PROXY_URL overrides for bare-metal dev. */
 const AZURE_EXP_URL = "https://exp.arolariu.ro";
@@ -112,14 +127,19 @@ export function appendMissingEnvironmentValues(original: string, additions: Read
  * document, then maps exp config keys to environment variable names using
  * {@link APP_CONFIGURATION_MAPPING}.
  *
+ * @param context - Command context whose runtime owns environment, HTTP, and logging.
  * @param verbose - Enables verbose logging.
- * @param logger - Logger used for fetch, mapping, and failure output.
  * @returns A promise that resolves to the typed configuration object.
  */
-async function fetchConfigurationFromExp(verbose: boolean, logger: MonorepositoryLogger): Promise<GeneratedEnvironmentConfiguration> {
-  const expBaseUrl = process.env["EXP_PROXY_URL"]?.trim() || (process.env["AZURE_CLIENT_ID"] ? AZURE_EXP_URL : "http://exp");
+async function fetchConfigurationFromExp(
+  context: Readonly<CommandContext>,
+  verbose: boolean,
+): Promise<GeneratedEnvironmentConfiguration> {
+  const {logger, environment, http, signal} = context.runtime;
+  const expBaseUrl =
+    environment.variables["EXP_PROXY_URL"]?.trim() || (environment.variables["AZURE_CLIENT_ID"] ? AZURE_EXP_URL : "http://exp");
   const useAzureAuth = expBaseUrl === AZURE_EXP_URL;
-  const configLabel: string = (process.env["SITE_ENV"] ?? "").toUpperCase() === "PRODUCTION" ? "PRODUCTION" : "DEVELOPMENT";
+  const configLabel: string = (environment.variables["SITE_ENV"] ?? "").toUpperCase() === "PRODUCTION" ? "PRODUCTION" : "DEVELOPMENT";
 
   if (verbose) {
     logger.debug(`Exp service URL: ${expBaseUrl}`);
@@ -134,11 +154,11 @@ async function fetchConfigurationFromExp(verbose: boolean, logger: Monorepositor
       // In CI (GitHub Actions), azure/login sets up AzureCliCredential via OIDC.
       // DefaultAzureCredential with AZURE_CLIENT_ID tries ManagedIdentity first,
       // which doesn't exist in CI. Use AzureCliCredential directly in CI.
-      const isCI = Boolean(process.env["CI"] || process.env["GITHUB_ACTIONS"]);
-      const credential = isCI ? new AzureCliCredential() : new DefaultAzureCredential();
-      logger.info(`Acquiring token for scope ${EXP_TOKEN_SCOPE} via ${isCI ? "AzureCliCredential" : "DefaultAzureCredential"}.`);
+      const credential = environment.isCI ? new AzureCliCredential() : new DefaultAzureCredential();
+      logger.info(`Acquiring token for scope ${EXP_TOKEN_SCOPE} via ${environment.isCI ? "AzureCliCredential" : "DefaultAzureCredential"}.`);
       const token = await credential.getToken(EXP_TOKEN_SCOPE);
       if (token?.token) {
+        logger.redact(token.token);
         headers["Authorization"] = `Bearer ${token.token}`;
         logger.success("Bearer token acquired successfully.");
       } else {
@@ -154,21 +174,22 @@ async function fetchConfigurationFromExp(verbose: boolean, logger: Monorepositor
   const url = `${expBaseUrl}/api/v1/build-time?for=website&label=${configLabel}`;
   logger.info(`Fetching ${url}.`);
 
-  const response = await fetch(url, {
+  const response = await http.request({
+    url: new URL(url),
     headers,
-    signal: AbortSignal.timeout(30_000),
+    timeoutMs: 30_000,
+    signal,
   });
 
   if (!response.ok) {
-    const errorBody = await response.text().catch(() => "");
     logger.error(`exp returned ${response.status} for ${url}.`);
-    if (errorBody && verbose) {
-      logger.debug(`exp response included a non-empty error body (${errorBody.length} characters).`);
+    if (response.text !== "" && verbose) {
+      logger.debug(`exp response included a non-empty error body (${response.text.length} characters).`);
     }
     throw new Error(`exp returned ${response.status} for /api/v1/build-time?for=website`);
   }
 
-  const payload = (await response.json()) as {config: Record<string, string>};
+  const payload = JSON.parse(response.text) as {config?: Record<string, string>};
   if (!payload?.config || typeof payload.config !== "object") {
     throw new Error("exp build-time response missing 'config' object");
   }
@@ -199,30 +220,31 @@ async function fetchConfigurationFromExp(verbose: boolean, logger: Monorepositor
  * @remarks
  * This is a best-effort parser intended for local developer convenience.
  *
+ * @param context - Command context whose runtime owns the filesystem and logging.
  * @param envPath - Path to the `.env` file (defaults to `.env`).
  * @param verbose - Enables verbose error logging.
- * @param logger - Logger used for parsing and failure output.
  * @returns The parsed configuration as a partial typed object.
  */
-function fetchConfigurationFromLocalEnvFile(
+async function fetchConfigurationFromLocalEnvFile(
+  context: Readonly<CommandContext>,
   envPath: string,
   verbose: boolean,
-  logger: MonorepositoryLogger,
-): GeneratedEnvironmentConfiguration {
+): Promise<GeneratedEnvironmentConfiguration> {
+  const {logger, files, environment} = context.runtime;
   const config: GeneratedEnvironmentConfiguration = {};
 
-  if (!fs.existsSync(envPath)) {
+  if (!(await files.exists(envPath))) {
     logger.info("No existing .env file found in the supplied path.");
     logger.info(`Supplied path (raw): ${envPath}`);
-    logger.info(`Supplied path (built): ${path.resolve(envPath)}`);
+    logger.info(`Supplied path (built): ${path.resolve(environment.cwd, envPath)}`);
     return config;
   }
 
-  logger.info(`Path found: ${path.resolve(envPath)}`);
+  logger.info(`Path found: ${path.resolve(environment.cwd, envPath)}`);
   logger.info("Parsing existing .env file.");
 
   try {
-    const content = fs.readFileSync(envPath, "utf-8");
+    const content = await files.readText(envPath);
     for (const [key, value] of parseEnvironmentFile(content)) {
       if (isReemittableEnvironmentKey(key)) {
         config[key as GeneratedEnvironmentKey] = value;
@@ -249,18 +271,17 @@ function fetchConfigurationFromLocalEnvFile(
  *
  * Secret keys are treated specially (they are not echoed back plainly).
  *
+ * @param context - Command context whose runtime owns prompts and logging.
  * @param missingKeys - Keys representing missing environment variables.
  * @param verbose - Enables verbose logging.
- * @param logger - Logger used for prompts without exposing entered values.
- * @param prompts - Shared interactive prompt provider.
  * @returns A partial configuration object containing newly provided values.
  */
 async function promptForMissingKeys(
-  missingKeys: AppConfigurationEnvironmentKey[],
+  context: Readonly<CommandContext>,
+  missingKeys: readonly AppConfigurationEnvironmentKey[],
   verbose: boolean,
-  logger: MonorepositoryLogger,
-  prompts: PromptProvider,
 ): Promise<GeneratedEnvironmentConfiguration> {
+  const {logger, prompts} = context.runtime;
   logger.section("Prompting for missing environment variables", "🔍");
 
   if (missingKeys.length === 0) {
@@ -306,21 +327,20 @@ async function promptForMissingKeys(
  * The function first parses any existing `.env` file and then prompts for
  * missing required keys.
  *
+ * @param context - Command context whose runtime owns the filesystem, prompts, and logging.
  * @param verbose - Enables verbose logging.
- * @param logger - Logger used for parsing, prompts, and completion output.
- * @param prompts - Shared interactive prompt provider.
  * @returns The completed typed configuration.
  */
 async function ensureLocalEnvIsComplete(
+  context: Readonly<CommandContext>,
   verbose: boolean,
-  logger: MonorepositoryLogger,
-  prompts: PromptProvider,
 ): Promise<GeneratedEnvironmentConfiguration> {
+  const {logger, prompts} = context.runtime;
   logger.section("Ensuring local environment configuration is complete", "🔧");
   const configurationKeys = Object.values(APP_CONFIGURATION_MAPPING);
 
   // Parse existing .env if it exists, first (redundant in cloud / ci);
-  const existingConfig = fetchConfigurationFromLocalEnvFile(".env", verbose, logger);
+  const existingConfig = await fetchConfigurationFromLocalEnvFile(context, ".env", verbose);
   const existingConfigKeys = Object.keys(existingConfig);
   if (verbose) {
     logger.debug(`Existing configuration keys: ${JSON.stringify(existingConfigKeys, null, 2)}`);
@@ -344,7 +364,7 @@ async function ensureLocalEnvIsComplete(
   }
 
   // Prompt user for missing keys
-  const newValues = await promptForMissingKeys(missingKeys, verbose, logger, prompts);
+  const newValues = await promptForMissingKeys(context, missingKeys, verbose);
   // Merge and return complete config
   logger.success("Configuration merged successfully.");
 
@@ -433,19 +453,23 @@ function addConfigSection(
 /**
  * Generates the `.env` file content from a configuration object.
  *
+ * @param context - Command context whose runtime owns environment and clock capabilities.
  * @param config - Completed configuration object.
- * @param logger - Logger used for content-construction progress.
  * @returns A newline-separated `.env` payload.
  */
-function generateEnvFileContent(config: GeneratedEnvironmentConfiguration, logger: MonorepositoryLogger): string {
+function generateEnvFileContent(context: Readonly<CommandContext>, config: GeneratedEnvironmentConfiguration): string {
+  const {logger, environment, clock} = context.runtime;
   logger.section("Generating .env file content", "📝");
+
+  const timestamp = clock.isoTimestamp();
+  const commitSha = environment.variables["COMMIT_SHA"] ?? environment.variables["GITHUB_SHA"] ?? "N/A";
 
   const lines = [
     "# Generated environment configuration file",
-    `# Site Environment: ${process.env["NODE_ENV"] || "development"}`,
-    `# CI/CD: ${isInCI ? "true" : "false"}`,
-    `# Commit SHA: ${process.env["COMMIT_SHA"] ?? process.env["GITHUB_SHA"] ?? "N/A"}`,
-    `# Generated at: ${new Date().toISOString()}`,
+    `# Site Environment: ${environment.variables["NODE_ENV"] || "development"}`,
+    `# CI/CD: ${environment.isCI ? "true" : "false"}`,
+    `# Commit SHA: ${commitSha}`,
+    `# Generated at: ${timestamp}`,
     "# !!!! DO NOT EDIT MANUALLY !!!",
     "",
   ];
@@ -461,8 +485,6 @@ function generateEnvFileContent(config: GeneratedEnvironmentConfiguration, logge
 
   // Metadata config
   logger.info("📊 Adding Metadata Configuration.");
-  const timestamp = new Date().toISOString();
-  const commitSha = process.env["COMMIT_SHA"] ?? process.env["GITHUB_SHA"] ?? "N/A";
   const useCdn = config["USE_CDN"] ?? "false";
 
   lines.push(
@@ -482,20 +504,30 @@ function generateEnvFileContent(config: GeneratedEnvironmentConfiguration, logge
 /**
  * Copies the generated `.env` file into configured sub-repositories.
  *
+ * @param context - Command context whose runtime owns the filesystem, environment, and logging.
  * @param sourcePath - Source `.env` path.
  * @param targetPaths - Relative target paths to copy to.
  * @param verbose - Enables verbose error logging.
- * @param logger - Logger used for copy progress and failures.
- * @returns Nothing.
+ * @returns Absolute destination paths that were successfully written.
  */
-function copyEnvFileToSubRepos(sourcePath: string, targetPaths: string[], verbose: boolean, logger: MonorepositoryLogger): void {
+async function copyEnvFileToSubRepos(
+  context: Readonly<CommandContext>,
+  sourcePath: string,
+  targetPaths: readonly string[],
+  verbose: boolean,
+): Promise<readonly string[]> {
+  const {logger, files, environment} = context.runtime;
   logger.section("Copying .env file to sub-repositories", "📂");
+  const copiedFiles: string[] = [];
+
   for (const targetPath of targetPaths) {
     logger.info(`Raw target path: ${targetPath}`);
-    const builtTargetPath = path.resolve(`.${targetPath}`);
+    const builtTargetPath = path.resolve(environment.cwd, `.${targetPath}`);
     logger.info(`Built target path: ${builtTargetPath}`);
     try {
-      fs.copyFileSync(sourcePath, builtTargetPath);
+      // eslint-disable-next-line no-await-in-loop
+      await files.copy(sourcePath, builtTargetPath);
+      copiedFiles.push(builtTargetPath);
     } catch (error: unknown) {
       logger.error(`Error copying to ${builtTargetPath}.`);
       if (verbose) {
@@ -503,6 +535,8 @@ function copyEnvFileToSubRepos(sourcePath: string, targetPaths: string[], verbos
       }
     }
   }
+
+  return copiedFiles;
 }
 
 /**
@@ -513,31 +547,30 @@ function copyEnvFileToSubRepos(sourcePath: string, targetPaths: string[], verbos
  * callers and tests observe the environment as it is at call time.
  *
  * @param flag - Verbosity requested through the CLI flag.
+ * @param variables - Environment variables snapshot used to resolve `VERBOSE`.
  * @returns True when either the flag or the environment enables verbose logging.
  */
-function resolveVerbose(flag: boolean): boolean {
-  return flag || process.env["VERBOSE"] === "true";
+function resolveVerbose(flag: boolean, variables: Readonly<Record<string, string | undefined>>): boolean {
+  return flag || variables["VERBOSE"] === "true";
 }
 
 /**
- * Runs the environment generator CLI.
+ * Runs the environment generator's business logic.
  *
- * @remarks
- * This is the script entrypoint used by `npm run generate:env`.
- *
- * @param verbose - Enables verbose logging; `VERBOSE=true` enables it as well.
- * @param logger - Logger used for all script-authored output.
- * @param prompts - Optional injected prompt provider.
- * @returns Process exit code (0 for success, non-zero for failure).
+ * @param context - Command context whose runtime owns every ambient capability.
+ * @param input - Typed command input.
+ * @returns The completion summary and every file this invocation created or modified.
  */
-export async function main(
-  verbose: boolean = false,
-  logger: MonorepositoryLogger = new MonorepositoryConsoleLogger("generate::env", {verbose: resolveVerbose(verbose)}),
-  prompts: PromptProvider = createTerminalPromptProvider(),
-): Promise<number> {
-  const effectiveVerbose = resolveVerbose(verbose);
-  const isAzure = process.env["INFRA"] === "azure";
-  const isProduction = process.env["PRODUCTION"] === "true";
+async function generateEnvironment(
+  context: Readonly<CommandContext>,
+  input: Readonly<GenerateLeafInput>,
+): Promise<GenerateLeafResult> {
+  const {runtime} = context;
+  const {logger, environment} = runtime;
+  const effectiveVerbose = resolveVerbose(input.verbose, environment.variables);
+  const isAzure = environment.variables["INFRA"] === "azure";
+  const isProduction = environment.variables["PRODUCTION"] === "true";
+
   logger.line([{text: "🔧 Configuration:", styles: ["cyan"]}]);
   logger.line();
   logger.line([
@@ -554,11 +587,11 @@ export async function main(
   ]);
   logger.line([
     {text: "   Agent: ", styles: ["gray"]},
-    {text: isInCI ? "CI/CD" : "Local", styles: [isInCI ? "cyan" : "yellow"]},
+    {text: environment.isCI ? "CI/CD" : "Local", styles: [environment.isCI ? "cyan" : "yellow"]},
   ]);
   logger.line([
     {text: "   Working Directory: ", styles: ["gray"]},
-    {text: path.resolve("."), styles: ["dim"]},
+    {text: environment.cwd, styles: ["dim"]},
   ]);
   logger.line([
     {text: "   Output File: ", styles: ["gray"]},
@@ -569,72 +602,68 @@ export async function main(
     logger.debug("SITE_ENV was evaluated without logging its value.");
   }
 
-  let config: GeneratedEnvironmentConfiguration = {};
-  try {
-    if (isAzure) {
-      if (effectiveVerbose) {
-        logger.debug("Fetching configuration from the exp service.");
-      }
-      config = await fetchConfigurationFromExp(effectiveVerbose, logger);
-    } else {
-      if (effectiveVerbose) {
-        logger.debug("Populating configuration via manual input.");
-      }
-      config = await ensureLocalEnvIsComplete(effectiveVerbose, logger, prompts);
-    }
-  } catch (error: unknown) {
-    logger.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
-    return 1;
-  }
+  const config = isAzure
+    ? await fetchConfigurationFromExp(context, effectiveVerbose)
+    : await ensureLocalEnvIsComplete(context, effectiveVerbose);
 
   for (const [key, value] of Object.entries(config)) {
     if (isSecretKey(key) && typeof value === "string") {
       logger.redact(value);
     }
   }
-  const content = generateEnvFileContent(config, logger);
+  const content = generateEnvFileContent(context, config);
 
   logger.info("Writing .env file.");
-  fs.writeFileSync(".env", content, {mode: 0o600});
+  await runtime.files.writeText(".env", content, {mode: 0o600});
 
   logger.success(`Generated ${Object.keys(config).length} environment variables.`);
   logger.line([
     {text: "   File: ", styles: ["green"]},
-    {text: path.resolve(".env"), styles: ["cyan"]},
+    {text: path.resolve(environment.cwd, ".env"), styles: ["cyan"]},
   ]);
   logger.line();
 
   // Copy to sub-repositories if needed
-  copyEnvFileToSubRepos(".env", ["/sites/arolariu.ro/.env"], effectiveVerbose, logger);
-  return 0;
+  const copiedFiles = await copyEnvFileToSubRepos(context, ".env", ["/sites/arolariu.ro/.env"], effectiveVerbose);
+
+  return {
+    summary: `Generated ${Object.keys(config).length} environment variable(s).`,
+    changedFiles: [".env", ...copiedFiles],
+  };
 }
 
-if (import.meta.main) {
-  const cliLogger = new MonorepositoryConsoleLogger("generate::env");
-  const program = createToolProgram({
-    name: "generate:env",
-    description: "Generates a .env file from Azure App Configuration or manual prompts.",
-    examples: ["npm run generate:env", "npm run generate:env -- --verbose"],
-    logger: cliLogger,
-    slashAliases: {"/v": "--verbose", "/verbose": "--verbose"},
-  });
-  program.option("-v, --verbose", "Enable verbose logging.");
-
-  try {
-    program.parse();
-  } catch (error: unknown) {
-    const code = commanderExitCode(error);
-    process.exit(code ?? 1);
-  }
-
-  const {verbose = false} = program.opts<{verbose?: boolean}>();
-  const runLogger = new MonorepositoryConsoleLogger("generate::env", {verbose: resolveVerbose(verbose)});
-
-  try {
-    const code = await main(verbose, runLogger);
-    process.exit(code);
-  } catch (error: unknown) {
-    runLogger.error(error instanceof Error ? error.message : String(error));
-    process.exit(1);
-  }
+/**
+ * Creates the environment generator command.
+ *
+ * @param runtimeFactory - Optional runtime factory; tests inject a fake instead of the Node adapter.
+ * @returns The typed `generate:env` command object.
+ */
+export function createGenerateEnvironmentCommand(
+  runtimeFactory?: CommandRuntimeFactory,
+): MonorepoCommand<GenerateLeafInput, GenerateLeafResult> {
+  return new MonorepoCommand<GenerateLeafInput, GenerateLeafResult>(
+    {
+      metadata: {
+        name: "generate:env",
+        description: "Generate the website environment file.",
+        examples: ["npm run generate:env", "npm run generate:env -- --verbose"],
+        slashAliases: {"/v": "--verbose", "/verbose": "--verbose"},
+      },
+      configure: (program) => {
+        program.option("-v, --verbose", "Enable diagnostic output.");
+      },
+      decode: (program) => ({verbose: program.opts<{verbose?: boolean}>().verbose === true}),
+      execute: generateEnvironment,
+      completion: (result) => ({
+        exitCode: 0,
+        human: (logger) => logger.success(result.summary),
+      }),
+    },
+    runtimeFactory,
+  );
 }
+
+/** Production singleton used by the aggregate CLI and this module's direct entrypoint. */
+export const generateEnvironmentCommand: MonorepoCommand<GenerateLeafInput, GenerateLeafResult> = createGenerateEnvironmentCommand();
+
+await generateEnvironmentCommand.runIfMain(import.meta.url);

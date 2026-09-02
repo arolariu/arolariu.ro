@@ -10,7 +10,32 @@
 import type {Command} from "commander";
 
 import {commanderExitCode, createToolProgram} from "./common/cli.ts";
+import type {CommandInvoker} from "./common/commander.ts";
 import {MonorepositoryConsoleLogger, type MonorepositoryLogger} from "./common/logger.ts";
+import {generateEnvironmentCommand} from "./generate.env.ts";
+import {generateGraphqlCommand} from "./generate.gql.ts";
+import {generateI18nCommand} from "./generate.i18n.ts";
+
+/**
+ * Invokes one migrated `generate` leaf command programmatically and returns its exit code.
+ *
+ * @remarks
+ * This bridges the legacy aggregate orchestrator to the declarative command runtime until
+ * Task 8 migrates the aggregate entrypoint itself. Each leaf command creates its own runtime
+ * scope (its own logger, environment snapshot, and cancellation) rather than nesting under the
+ * aggregate's shared logger.
+ *
+ * @param command - The migrated leaf command to invoke.
+ * @param verbose - Enables verbose diagnostic output for this leaf invocation.
+ * @returns The leaf command's exit code.
+ */
+async function invokeLeaf<TOutput>(
+  command: CommandInvoker<Readonly<{verbose: boolean}>, TOutput>,
+  verbose: boolean,
+): Promise<number> {
+  const execution = await command.invoke({verbose}, {presentation: "human"});
+  return execution.exitCode;
+}
 
 /**
  * Selects the generators and verbosity used by the generation orchestrator.
@@ -99,7 +124,7 @@ export async function main(options: Readonly<CommandLineOptions>, logger?: Monor
 
   if (generateEnv) {
     output.info("Running environment configuration generator...");
-    const result = await import("./generate.env.ts").then((module) => module.main(verbose, output.child("env")));
+    const result = await invokeLeaf(generateEnvironmentCommand, verbose);
     if (result !== 0) {
       return result;
     }
@@ -108,7 +133,7 @@ export async function main(options: Readonly<CommandLineOptions>, logger?: Monor
 
   if (generateI18n) {
     output.info("Running internationalization (i18n) generator...");
-    const result = await import("./generate.i18n.ts").then((module) => module.main(verbose, output.child("i18n")));
+    const result = await invokeLeaf(generateI18nCommand, verbose);
     if (result !== 0) {
       return result;
     }
@@ -117,7 +142,7 @@ export async function main(options: Readonly<CommandLineOptions>, logger?: Monor
 
   if (generateGql) {
     output.info("Running GraphQL types generator...");
-    const result = await import("./generate.gql.ts").then((module) => module.main(verbose, output.child("gql")));
+    const result = await invokeLeaf(generateGraphqlCommand, verbose);
     if (result !== 0) {
       return result;
     }

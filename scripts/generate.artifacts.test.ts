@@ -4,7 +4,6 @@
  * @module scripts/generate.artifacts.test
  */
 
-import fs from "node:fs";
 import {mkdir, mkdtemp, readFile, rm, writeFile} from "node:fs/promises";
 import {tmpdir} from "node:os";
 import {basename, dirname, join} from "node:path";
@@ -24,6 +23,9 @@ import {
 } from "./generate.artifacts.ts";
 import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "./common/logger.ts";
 import {defaultCommandRunner, type CommandRunner} from "./common/process.ts";
+import type {PromptProvider} from "./common/prompts.ts";
+import type {RuntimeEnvironment} from "./common/runtime.ts";
+import {createMemoryFileSystem, createTestRuntimeFactory, repositoryFixtureRoot} from "./common/runtime.testing.ts";
 import {main as generate} from "./generate.ts";
 import type {TaxonomyArtifact} from "./types";
 
@@ -938,13 +940,10 @@ describe("Artifact orchestration and CLI contracts", () => {
 
   describe("generation logger injection", () => {
     it("enables key-only environment diagnostics when VERBOSE=true", async () => {
-      vi.stubEnv("INFRA", "local");
-      vi.stubEnv("VERBOSE", "true");
-      vi.stubEnv("SITE_ENV", "VALUE_THAT_MUST_NOT_BE_LOGGED");
-      vi.resetModules();
-      vi.spyOn(fs, "existsSync").mockReturnValue(true);
-      vi.spyOn(fs, "readFileSync").mockReturnValue(
-        [
+      const sink = new InMemoryLoggerSink();
+      const logger = new MonorepositoryConsoleLogger("generate::env", {color: false, sink});
+      const files = createMemoryFileSystem({
+        ".env": [
           "SITE_ENV=DEVELOPMENT",
           "SITE_NAME=Test",
           "SITE_URL=https://example.test",
@@ -952,62 +951,59 @@ describe("Artifact orchestration and CLI contracts", () => {
           "CLERK_SECRET_KEY=sk_test",
           "USE_CDN=false",
         ].join("\n"),
-      );
-      vi.spyOn(fs, "writeFileSync").mockImplementation(() => undefined);
-      vi.spyOn(fs, "copyFileSync").mockImplementation(() => undefined);
-      const debug = vi.spyOn(console, "debug").mockImplementation(() => undefined);
-      for (const level of ["info", "warn", "error", "log"] as const) {
-        vi.spyOn(console, level).mockImplementation(() => undefined);
-      }
+      });
+      const environment: RuntimeEnvironment = {
+        variables: {INFRA: "local", VERBOSE: "true", SITE_ENV: "VALUE_THAT_MUST_NOT_BE_LOGGED"},
+        cwd: repositoryFixtureRoot,
+        executablePath: "/usr/bin/node",
+        platform: "linux",
+        architecture: "x64",
+        stdinIsTTY: false,
+        stdoutIsTTY: false,
+        isCI: true,
+      };
 
-      try {
-        const {main: generateEnv} = await import("./generate.env.ts");
-        await expect(generateEnv()).resolves.toBe(0);
-      } finally {
-        vi.unstubAllEnvs();
-      }
+      const {createGenerateEnvironmentCommand} = await import("./generate.env.ts");
+      const command = createGenerateEnvironmentCommand(createTestRuntimeFactory({files, logger, environment}));
 
-      const debugOutput = debug.mock.calls.flat().join("\n");
+      await expect(command.invoke({verbose: false}, {presentation: "silent"})).resolves.toMatchObject({
+        status: "completed",
+        exitCode: 0,
+      });
+
+      const debugOutput = sink.records.map((record) => record.text).join("\n");
       expect(debugOutput).toContain("SITE_ENV");
       expect(debugOutput).not.toContain("VALUE_THAT_MUST_NOT_BE_LOGGED");
     });
 
     it("uses the injected environment PromptProvider without reading real input", async () => {
-      vi.stubEnv("INFRA", "local");
-      vi.stubEnv("VERBOSE", "false");
-      vi.resetModules();
-      vi.spyOn(fs, "existsSync").mockReturnValue(true);
-      vi.spyOn(fs, "readFileSync").mockReturnValue("");
-      vi.spyOn(fs, "writeFileSync").mockImplementation(() => undefined);
-      vi.spyOn(fs, "copyFileSync").mockImplementation(() => undefined);
+      const files = createMemoryFileSystem({".env": ""});
       const confirm = vi.fn().mockResolvedValue(true);
       const text = vi.fn().mockResolvedValue("value");
       const secret = vi.fn().mockResolvedValue("value");
-      const sink = new InMemoryLoggerSink();
-      const logger = new MonorepositoryConsoleLogger("generate::env", {color: false, sink});
+      const prompts: PromptProvider = {
+        confirm,
+        select: async <TValue extends string>(
+          _message: string,
+          choices: readonly Readonly<{value: TValue; label: string}>[],
+        ): Promise<TValue> => {
+          const selected = choices[0]?.value;
+          if (selected === undefined) {
+            throw new Error("A test choice is required.");
+          }
+          return selected;
+        },
+        text,
+        secret,
+      };
 
-      try {
-        const {main: generateEnv} = await import("./generate.env.ts");
-        await expect(
-          generateEnv(false, logger, {
-            confirm,
-            select: async <TValue extends string>(
-              _message: string,
-              choices: readonly Readonly<{value: TValue; label: string}>[],
-            ): Promise<TValue> => {
-              const selected = choices[0]?.value;
-              if (selected === undefined) {
-                throw new Error("A test choice is required.");
-              }
-              return selected;
-            },
-            text,
-            secret,
-          }),
-        ).resolves.toBe(0);
-      } finally {
-        vi.unstubAllEnvs();
-      }
+      const {createGenerateEnvironmentCommand} = await import("./generate.env.ts");
+      const command = createGenerateEnvironmentCommand(createTestRuntimeFactory({files, prompts}));
+
+      await expect(command.invoke({verbose: false}, {presentation: "silent"})).resolves.toMatchObject({
+        status: "completed",
+        exitCode: 0,
+      });
 
       expect(confirm).toHaveBeenCalledOnce();
       expect(text).toHaveBeenCalled();
@@ -1044,11 +1040,15 @@ describe("Artifact orchestration and CLI contracts", () => {
       );
       const sink = new InMemoryLoggerSink();
       const logger = new MonorepositoryConsoleLogger("generate::gql", {color: false, sink});
-      vi.spyOn(fs, "mkdirSync").mockImplementation(() => undefined);
-      vi.spyOn(fs, "writeFileSync").mockImplementation(() => undefined);
+      const files = createMemoryFileSystem();
 
-      const {main: generateGql} = await import("./generate.gql.ts");
-      await expect(generateGql(false, logger)).resolves.toBe(0);
+      const {createGenerateGraphqlCommand} = await import("./generate.gql.ts");
+      const command = createGenerateGraphqlCommand(createTestRuntimeFactory({files, logger}));
+
+      await expect(command.invoke({verbose: false}, {presentation: "silent"})).resolves.toMatchObject({
+        status: "completed",
+        exitCode: 0,
+      });
 
       expect(consoleSpies.every((spy) => spy.mock.calls.length === 0)).toBe(true);
       expect(sink.records.some((record) => record.text.includes("GraphQL generation completed"))).toBe(true);
@@ -1060,10 +1060,19 @@ describe("Artifact orchestration and CLI contracts", () => {
       );
       const sink = new InMemoryLoggerSink();
       const logger = new MonorepositoryConsoleLogger("generate::i18n", {color: false, sink});
-      vi.spyOn(fs, "readFileSync").mockReturnValue('{"greeting":"Hello"}');
+      const files = createMemoryFileSystem({
+        [`${repositoryFixtureRoot}/sites/arolariu.ro/messages/en.json`]: '{"greeting":"Hello"}',
+        [`${repositoryFixtureRoot}/sites/arolariu.ro/messages/ro.json`]: '{"greeting":"Hello"}',
+        [`${repositoryFixtureRoot}/sites/arolariu.ro/messages/fr.json`]: '{"greeting":"Hello"}',
+      });
 
-      const {main: generateI18n} = await import("./generate.i18n.ts");
-      await expect(generateI18n(false, logger)).resolves.toBe(0);
+      const {createGenerateI18nCommand} = await import("./generate.i18n.ts");
+      const command = createGenerateI18nCommand(createTestRuntimeFactory({files, logger}));
+
+      await expect(command.invoke({verbose: false}, {presentation: "silent"})).resolves.toMatchObject({
+        status: "completed",
+        exitCode: 0,
+      });
 
       expect(consoleSpies.every((spy) => spy.mock.calls.length === 0)).toBe(true);
       expect(sink.records.some((record) => record.text.includes("i18n synchronization completed"))).toBe(true);
@@ -1076,14 +1085,11 @@ describe("Artifact orchestration and CLI contracts", () => {
       );
       const sink = new InMemoryLoggerSink();
       const logger = new MonorepositoryConsoleLogger("generate::env", {color: false, sink});
-      vi.stubEnv("INFRA", "local");
-      vi.stubEnv("VERBOSE", "false");
       vi.doMock("@azure/identity", () => {
         throw new Error("Azure identity loaded eagerly");
       });
-      vi.spyOn(fs, "existsSync").mockReturnValue(true);
-      vi.spyOn(fs, "readFileSync").mockReturnValue(
-        [
+      const files = createMemoryFileSystem({
+        ".env": [
           "SITE_ENV=DEVELOPMENT",
           "SITE_NAME=Test",
           "SITE_URL=https://example.test",
@@ -1091,13 +1097,15 @@ describe("Artifact orchestration and CLI contracts", () => {
           `CLERK_SECRET_KEY=${secretValue}`,
           "USE_CDN=false",
         ].join("\n"),
-      );
-      vi.spyOn(fs, "writeFileSync").mockImplementation(() => undefined);
-      vi.spyOn(fs, "copyFileSync").mockImplementation(() => undefined);
+      });
 
       try {
-        const {main: generateEnv} = await import("./generate.env.ts");
-        await expect(generateEnv(false, logger)).resolves.toBe(0);
+        const {createGenerateEnvironmentCommand} = await import("./generate.env.ts");
+        const command = createGenerateEnvironmentCommand(createTestRuntimeFactory({files, logger}));
+        await expect(command.invoke({verbose: false}, {presentation: "silent"})).resolves.toMatchObject({
+          status: "completed",
+          exitCode: 0,
+        });
       } finally {
         vi.doUnmock("@azure/identity");
       }

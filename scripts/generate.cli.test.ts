@@ -100,10 +100,10 @@ describe("unknown option", () => {
 
   it("does not execute any generator when an unknown option is passed", async () => {
     vi.resetModules();
-    const envMain = vi.fn(async () => 0);
-    vi.doMock("./generate.env.ts", () => ({main: envMain}));
-    vi.doMock("./generate.i18n.ts", () => ({main: vi.fn(async () => 0)}));
-    vi.doMock("./generate.gql.ts", () => ({main: vi.fn(async () => 0)}));
+    const envInvoke = vi.fn(async () => ({status: "completed", exitCode: 0}));
+    vi.doMock("./generate.env.ts", () => ({generateEnvironmentCommand: {invoke: envInvoke}}));
+    vi.doMock("./generate.i18n.ts", () => ({generateI18nCommand: {invoke: vi.fn(async () => ({status: "completed", exitCode: 0}))}}));
+    vi.doMock("./generate.gql.ts", () => ({generateGraphqlCommand: {invoke: vi.fn(async () => ({status: "completed", exitCode: 0}))}}));
     vi.doMock("./generate.artifacts.ts", () => ({main: vi.fn(async () => 0)}));
 
     const {main} = await import("./generate.ts");
@@ -113,7 +113,7 @@ describe("unknown option", () => {
       new MonorepositoryConsoleLogger("test", {sink: new InMemoryLoggerSink()}),
     );
     expect(result).toBe(0);
-    expect(envMain).not.toHaveBeenCalled();
+    expect(envInvoke).not.toHaveBeenCalled();
   });
 });
 
@@ -131,22 +131,28 @@ describe("generator execution order", () => {
 
   it("runs env → i18n → gql → artifacts in that order", async () => {
     vi.doMock("./generate.env.ts", () => ({
-      main: vi.fn(async () => {
-        order.push("env");
-        return 0;
-      }),
+      generateEnvironmentCommand: {
+        invoke: vi.fn(async () => {
+          order.push("env");
+          return {status: "completed", exitCode: 0};
+        }),
+      },
     }));
     vi.doMock("./generate.i18n.ts", () => ({
-      main: vi.fn(async () => {
-        order.push("i18n");
-        return 0;
-      }),
+      generateI18nCommand: {
+        invoke: vi.fn(async () => {
+          order.push("i18n");
+          return {status: "completed", exitCode: 0};
+        }),
+      },
     }));
     vi.doMock("./generate.gql.ts", () => ({
-      main: vi.fn(async () => {
-        order.push("gql");
-        return 0;
-      }),
+      generateGraphqlCommand: {
+        invoke: vi.fn(async () => {
+          order.push("gql");
+          return {status: "completed", exitCode: 0};
+        }),
+      },
     }));
     vi.doMock("./generate.artifacts.ts", () => ({
       main: vi.fn(async () => {
@@ -167,22 +173,28 @@ describe("generator execution order", () => {
 
   it("stops at the first non-zero result and does not run subsequent generators", async () => {
     vi.doMock("./generate.env.ts", () => ({
-      main: vi.fn(async () => {
-        order.push("env");
-        return 1;
-      }),
+      generateEnvironmentCommand: {
+        invoke: vi.fn(async () => {
+          order.push("env");
+          return {status: "failed", exitCode: 1};
+        }),
+      },
     }));
     vi.doMock("./generate.i18n.ts", () => ({
-      main: vi.fn(async () => {
-        order.push("i18n");
-        return 0;
-      }),
+      generateI18nCommand: {
+        invoke: vi.fn(async () => {
+          order.push("i18n");
+          return {status: "completed", exitCode: 0};
+        }),
+      },
     }));
     vi.doMock("./generate.gql.ts", () => ({
-      main: vi.fn(async () => {
-        order.push("gql");
-        return 0;
-      }),
+      generateGraphqlCommand: {
+        invoke: vi.fn(async () => {
+          order.push("gql");
+          return {status: "completed", exitCode: 0};
+        }),
+      },
     }));
     vi.doMock("./generate.artifacts.ts", () => ({
       main: vi.fn(async () => {
@@ -199,26 +211,6 @@ describe("generator execution order", () => {
 
     expect(result).toBe(1);
     expect(order).toEqual(["env"]);
-  });
-});
-
-// ---------------------------------------------------------------------------
-// Direct entrypoints (callable API contract)
-// ---------------------------------------------------------------------------
-
-describe("direct GQL entrypoint", () => {
-  it("exports a callable main function that accepts (verbose, logger) parameters", async () => {
-    const {main} = await import("./generate.gql.ts");
-    expect(typeof main).toBe("function");
-    expect(main.length).toBeGreaterThanOrEqual(0);
-  });
-});
-
-describe("direct i18n entrypoint", () => {
-  it("exports a callable main function that accepts (verbose, logger) parameters", async () => {
-    const {main} = await import("./generate.i18n.ts");
-    expect(typeof main).toBe("function");
-    expect(main.length).toBeGreaterThanOrEqual(0);
   });
 });
 
