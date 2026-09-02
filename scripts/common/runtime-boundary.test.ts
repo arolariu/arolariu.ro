@@ -42,6 +42,11 @@ const runtimeBoundaryExclusions = new Set([
 
 const productionScriptExtensions = new Set([".ts", ".js", ".mjs", ".cjs"]);
 const directOutputAdapters = new Set(["scripts/common/logger.ts", "scripts/common/prompts.ts"]);
+/**
+ * Approved production adapter of RFC 0002 section 5.3. It owns ambient filesystem, fetch, timer,
+ * OS-state, signal, and final `process.exitCode` assignment access. `process.exit()` stays
+ * prohibited everywhere, including here.
+ */
 const runtimeNodeAdapter = "scripts/common/runtime.node.ts";
 const execaAdapter = "scripts/common/runner.execa.ts";
 const assignmentOperators = new Set<ts.SyntaxKind>([
@@ -521,6 +526,7 @@ function scanRuntimeBoundarySource(
         leftPath !== null
         && startsWithPath(leftPath, ["process", "exitCode"])
         && assignmentOperators.has(node.operatorToken.kind)
+        && normalizedFile !== runtimeNodeAdapter
       ) {
         add(node, "direct-exit");
       }
@@ -578,6 +584,29 @@ describe("runtime boundary policy", () => {
     expect(scanRuntimeBoundarySource("scripts/example.ts", source)).toEqual([
       {file: "scripts/example.ts", line: 2, rule: "direct-exit"},
       {file: "scripts/example.ts", line: 4, rule: "ambient-http"},
+    ]);
+  });
+
+  it("allows only the runtime Node adapter to assign the final exit code", () => {
+    const source = [
+      "process.exitCode = 1;",
+      "const processAlias = process;",
+      "processAlias.exitCode ??= 2;",
+    ].join("\n");
+
+    expect(scanRuntimeBoundarySource("scripts/common/runtime.node.ts", source)).toEqual([]);
+    expect(scanRuntimeBoundarySource("scripts/common/commander.ts", source)).toEqual([
+      {file: "scripts/common/commander.ts", line: 1, rule: "direct-exit"},
+      {file: "scripts/common/commander.ts", line: 3, rule: "direct-exit"},
+    ]);
+  });
+
+  it("keeps flagging process.exit() inside the runtime Node adapter", () => {
+    const source = ["process.exit(1);", "const exit = process.exit;", "exit(2);"].join("\n");
+
+    expect(scanRuntimeBoundarySource("scripts/common/runtime.node.ts", source)).toEqual([
+      {file: "scripts/common/runtime.node.ts", line: 1, rule: "direct-exit"},
+      {file: "scripts/common/runtime.node.ts", line: 3, rule: "direct-exit"},
     ]);
   });
 
@@ -713,11 +742,6 @@ describe("runtime boundary policy", () => {
           "file": "scripts/common/logger.ts",
           "line": 163,
           "rule": "ambient-timer",
-        },
-        {
-          "file": "scripts/common/runtime.node.ts",
-          "line": 656,
-          "rule": "direct-exit",
         },
         {
           "file": "scripts/container-runtime/adapters.ts",
