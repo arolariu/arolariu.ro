@@ -54,6 +54,7 @@ import type {ProcessOutcome, ProcessRequest, ProcessRunner} from "./common/runne
 import {
   asReadOnlyFileSystem,
   CommandCancellation,
+  commandCancellationFromSignal,
   type ReadOnlyFileSystem,
   type RepositoryInspectionRequest,
   type TaskScheduler,
@@ -873,10 +874,19 @@ function claimDoctorReport(outcome: PromiseSettledResult<StatusContribution> | u
  * parent registry, so both lookups return one session instead of tripping the conflicting-request
  * guard or starting a second inspection.
  *
+ * The batch is started without handing the invocation signal to the scheduler, because every
+ * collector, probe, and the composed doctor child already carries that signal. Racing the batch
+ * against the abort would abandon the started tasks, letting status return while its own doctor
+ * child was still draining the cleanup scope that RFC 0002 sections 5.2 and 7.5 require to finish
+ * first. Cancellation is instead preserved explicitly once every started task has settled, so an
+ * aborted invocation still fails with the signal's exact `130`/`143` cancellation even when a
+ * composed child ignores the signal and completes.
+ *
  * @param context - The invocation context owning every capability this run may use.
  * @param doctor - Typed doctor command composed as the health source.
  * @returns The complete six-section status document.
- * @throws {CommandCancellation} When the composed doctor invocation was cancelled.
+ * @throws {CommandCancellation} When the invocation was cancelled or the composed doctor
+ * invocation was cancelled.
  * @throws {Error} When the composed doctor invocation failed, returned help, or rejected.
  */
 async function collectStatus(
@@ -913,20 +923,27 @@ async function collectStatus(
       ? [async (): Promise<StatusContribution> => ({nodeMajor: await collectNodeMajorVersion(sources)})]
       : [];
 
-  const settled = await runtime.tasks.allSettled<StatusContribution>(
-    [
-      async (): Promise<StatusContribution> => ({sections: {workspaces: await collectWorkspaces(sources)}}),
-      async (): Promise<StatusContribution> => ({sections: {nxEdges: await collectNxGraph(sources)}}),
-      async (): Promise<StatusContribution> => ({sections: {git: await collectGit(sources)}}),
-      async (): Promise<StatusContribution> => ({sections: {security: await collectSecurity(sources)}}),
-      async (): Promise<StatusContribution> => ({sections: {disk: await collectDisk(sources)}}),
-      ...degradableExtras,
-      async (): Promise<StatusContribution> => ({
-        health: await doctor.invoke({quick: true, verbose: false}, {parent: context, presentation: "silent"}),
-      }),
-    ],
-    runtime.signal,
-  );
+  const settled = await runtime.tasks.allSettled<StatusContribution>([
+    async (): Promise<StatusContribution> => ({sections: {workspaces: await collectWorkspaces(sources)}}),
+    async (): Promise<StatusContribution> => ({sections: {nxEdges: await collectNxGraph(sources)}}),
+    async (): Promise<StatusContribution> => ({sections: {git: await collectGit(sources)}}),
+    async (): Promise<StatusContribution> => ({sections: {security: await collectSecurity(sources)}}),
+    async (): Promise<StatusContribution> => ({sections: {disk: await collectDisk(sources)}}),
+    ...degradableExtras,
+    async (): Promise<StatusContribution> => ({
+      health: await doctor.invoke({quick: true, verbose: false}, {parent: context, presentation: "silent"}),
+    }),
+  ]);
+
+  // The batch is deliberately started without the scheduler's immediate-abort race: every
+  // collector, probe, and the composed doctor child already observes `runtime.signal` itself, so
+  // abandoning the batch on abort would only let status return while the child was still draining
+  // its own cleanup scope. Cancellation is preserved exactly once every started task has settled,
+  // which also keeps an injected child that ignores the signal from turning cancellation into a
+  // rendered success document.
+  if (runtime.signal.aborted) {
+    throw commandCancellationFromSignal(runtime.signal);
+  }
 
   let sections: OrdinaryStatusSections = {workspaces: null, nxEdges: null, git: null, security: null, disk: null};
   let nodeMajor = UNKNOWN_NODE_MAJOR;

@@ -19,7 +19,7 @@ import {join, resolve} from "node:path";
 import {fileURLToPath} from "node:url";
 import {afterEach, describe, expect, it, vi, type Mock} from "vitest";
 
-import type {CommandExecution, CommandInvoker} from "./common/commander.ts";
+import {MonorepoCommand, type CommandExecution, type CommandInvoker, type CommandRuntimeFactory} from "./common/commander.ts";
 import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "./common/logger.ts";
 import {createRepositoryPaths} from "./common/repository-paths.ts";
 import {AbstractProcessRunner, type ProcessOutcome, type ProcessRequest, type ProcessRunOptions} from "./common/runner.ts";
@@ -31,6 +31,8 @@ import {
   repositoryFixtureRoot,
 } from "./common/runtime.testing.ts";
 import {
+  CommandCancellation,
+  commandCancellationFromSignal,
   createRepositoryInspectionRuntime,
   DefaultTaskScheduler,
   MemoizedInspectionRuntime,
@@ -253,6 +255,86 @@ function createDoctorStub(implementation?: DoctorInvoke): DoctorStub {
     implementation ?? ((): Promise<CommandExecution<DoctorReport>> => Promise.resolve({status: "completed", value: doctorReport(), exitCode: 0})),
   );
   return {invoke};
+}
+
+/** Opens once, letting a test await a specific point inside a composed child invocation. */
+interface Gate {
+  readonly opened: Promise<void>;
+  readonly open: () => void;
+}
+
+function createGate(): Gate {
+  let open = (): void => undefined;
+  const opened = new Promise<void>((resolve) => {
+    open = resolve;
+  });
+  return {opened, open};
+}
+
+/**
+ * Resolves on the next macrotask, so a cleanup callback provably outlives every pending
+ * microtask without depending on wall-clock timing.
+ *
+ * @returns A promise settled after the current microtask queue drains.
+ */
+function nextMacrotask(): Promise<void> {
+  return new Promise<void>((resolve) => {
+    setImmediate(resolve);
+  });
+}
+
+/**
+ * A child execution that never settles on its own and rejects with the exact cancellation its
+ * own invocation signal carries.
+ *
+ * @param signal - The child invocation's cancellation signal.
+ * @returns A promise that rejects only once `signal` aborts.
+ */
+function rejectOnAbort(signal: AbortSignal): Promise<never> {
+  return new Promise<never>((_resolve, reject) => {
+    signal.addEventListener(
+      "abort",
+      () => {
+        reject(commandCancellationFromSignal(signal));
+      },
+      {once: true},
+    );
+  });
+}
+
+/**
+ * Builds a real {@link MonorepoCommand} doctor child whose execution stays pending until its own
+ * scope aborts and whose cleanup callback only completes on a later macrotask.
+ *
+ * @param factory - Runtime factory shared with status, so the child receives a real nested scope.
+ * @param events - Ordered event log the cleanup callback appends to when it finishes draining.
+ * @returns The composed child command and a gate opened once its execution has started.
+ */
+function createPendingDoctorChild(
+  factory: CommandRuntimeFactory,
+  events: string[],
+): Readonly<{doctor: CommandInvoker<DoctorInput, DoctorReport>; started: Promise<void>}> {
+  const gate = createGate();
+  const doctor = new MonorepoCommand<DoctorInput, DoctorReport>(
+    {
+      metadata: {name: "doctor", description: "Runs read-only monorepo health checks."},
+      configure: () => undefined,
+      decode: () => ({quick: true, verbose: false}),
+      presentation: () => "silent",
+      execute: (context) => {
+        context.runtime.cleanup.register("doctor child probe", async () => {
+          await nextMacrotask();
+          events.push("doctor:cleanup-drained");
+        });
+        gate.open();
+        return rejectOnAbort(context.runtime.signal);
+      },
+      completion: () => ({exitCode: 0}),
+    },
+    factory,
+  );
+
+  return {doctor, started: gate.opened};
 }
 
 interface StatusFixtureOptions {
@@ -538,6 +620,54 @@ describe("status command — doctor composition", () => {
     if (execution.status === "failed") {
       expect(execution.failure.message).toMatch(/doctor invoker exploded/);
     }
+    expect(fixture.sink.records.filter((record) => record.stream === "stdout")).toHaveLength(0);
+  });
+});
+
+// ============================================================================
+// Composed child cancellation
+// ============================================================================
+
+describe("status command — composed child cancellation", () => {
+  it("returns the exact signal cancellation only after the composed doctor child drained its own cleanup", async () => {
+    const events: string[] = [];
+    const controller = new AbortController();
+    const sink = new InMemoryLoggerSink();
+    const factory = createTestRuntimeFactory({
+      files: createRepositoryFixtureFileSystem(),
+      inspection: createRepositoryInspectionRuntime(() => createFixtureSession(availableWorkspace())),
+      logger: new MonorepositoryConsoleLogger("status", {color: false, sink, verbose: false, mode: "human"}),
+      runner: new ScriptedProcessRunner(baseResponses()),
+    });
+    const {doctor, started} = createPendingDoctorChild(factory, events);
+    const command = createStatusCommand({runtimeFactory: factory, doctor});
+
+    const pending = command.invoke({json: false}, {presentation: "human", signal: controller.signal});
+    void pending.then(() => {
+      events.push("status:settled");
+    });
+    await started;
+    controller.abort(new CommandCancellation("Command terminated by SIGTERM.", 143));
+    const execution = await pending;
+
+    expect(execution.status).toBe("cancelled");
+    expect(execution.exitCode).toBe(143);
+    expect(events).toEqual(["doctor:cleanup-drained", "status:settled"]);
+    expect(sink.records.filter((record) => record.stream === "stdout")).toHaveLength(0);
+  });
+
+  it("cancels instead of completing when the invocation was aborted and the composed child ignored it", async () => {
+    const controller = new AbortController();
+    const doctor = createDoctorStub(() => {
+      controller.abort(new CommandCancellation("Command interrupted by SIGINT.", 130));
+      return Promise.resolve({status: "completed", value: doctorReport(), exitCode: 0});
+    });
+    const fixture = createStatusFixture({doctor, mode: "json"});
+
+    const execution = await fixture.command.invoke({json: true}, {presentation: "json", signal: controller.signal});
+
+    expect(execution.status).toBe("cancelled");
+    expect(execution.exitCode).toBe(130);
     expect(fixture.sink.records.filter((record) => record.stream === "stdout")).toHaveLength(0);
   });
 });
