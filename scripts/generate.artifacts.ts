@@ -1,23 +1,111 @@
 /**
- * @fileoverview Generates taxonomy and license artifacts for the monorepo.
- * @module scripts.generate.artifacts
+ * @fileoverview Taxonomy and license artifact generation command.
+ * @module scripts/generate.artifacts
+ *
+ * @remarks
+ * The taxonomy and license algorithms stay in the generator classes below; every ambient effect
+ * they used to reach for directly (`node:fs/promises`, `node:os`, `fetch`, `setTimeout`,
+ * `process.platform`, `process.cwd()`, and `Promise.all`) now arrives through one injected
+ * {@link ArtifactGeneratorRuntime} bundle, so the command is fully exercised by the declarative
+ * command runtime's test fakes without touching real disk, network, or process state.
  */
 
-import {access, glob, mkdir, mkdtemp, readFile, rm, writeFile} from "node:fs/promises";
-import {tmpdir} from "node:os";
 import {basename, dirname, join, resolve} from "node:path";
-import {MonorepositoryConsoleLogger, MonorepositoryLogger} from "./common/logger.ts";
-import {defaultCommandRunner, type CommandResult, type CommandRunner} from "./common/process.ts";
+
+import {MonorepoCommand, type CommandContext, type CommandRuntimeFactory} from "./common/commander.ts";
+import type {MonorepositoryLogger} from "./common/logger.ts";
+import {RunnerError, type ProcessOutcome, type ProcessRequest, type ProcessRunner, type SucceededProcessOutcome} from "./common/runner.ts";
+import {
+  CommandCancellation,
+  type Clock,
+  type FileSystem,
+  type HttpClient,
+  type HttpResponse,
+  type RuntimeEnvironment,
+  type TaskScheduler,
+} from "./common/runtime.ts";
 import {taxonomyArtifactFileNames, taxonomyArtifactOutputRoots} from "./common/taxonomy-artifacts.ts";
 import type {NodePackageDependencyType, NodePackageInformation, TaxonomyArtifact, TaxonomyArtifactNode} from "./types";
 
 export {getExpectedTaxonomyArtifactPaths, taxonomyArtifactFileNames} from "./common/taxonomy-artifacts.ts";
 
-/** Delays between the three bounded taxonomy source attempts. */
+/** Backoff delays between the three bounded taxonomy transport attempts. */
 const TAXONOMY_SOURCE_RETRY_DELAYS_MS = [1_000, 4_000] as const;
 
-/** Per-attempt timeout that replaces Node's five-minute fetch default. */
-const TAXONOMY_SOURCE_TIMEOUT_MS = 30_000;
+/** Total bounded attempts one taxonomy source request is allowed. */
+const TAXONOMY_SOURCE_ATTEMPTS = TAXONOMY_SOURCE_RETRY_DELAYS_MS.length + 1;
+
+/** Per-attempt budget that replaces Node's five-minute fetch default. */
+const TAXONOMY_SOURCE_ATTEMPT_TIMEOUT_MS = 30_000;
+
+/**
+ * Overall request budget handed to the HTTP capability.
+ *
+ * @remarks
+ * {@link HttpClient.request} bounds one whole call — every retried attempt plus every backoff
+ * delay — with a single timeout, so the per-attempt budget is multiplied out here instead of
+ * being restarted per attempt.
+ */
+const TAXONOMY_SOURCE_TIMEOUT_MS =
+  TAXONOMY_SOURCE_ATTEMPT_TIMEOUT_MS * TAXONOMY_SOURCE_ATTEMPTS
+  + TAXONOMY_SOURCE_RETRY_DELAYS_MS.reduce((total, delay) => total + delay, 0);
+
+/** Response statuses that mean a taxonomy source is temporarily unavailable. */
+const TRANSIENT_HTTP_STATUSES: readonly number[] = [408, 425, 429, ...Array.from({length: 100}, (_, offset) => 500 + offset)];
+
+/** Explicit bounded retry policy applied to every taxonomy source request. */
+const TAXONOMY_SOURCE_RETRY_POLICY: Readonly<{attempts: number; delayMs: number; statuses: readonly number[]}> = {
+  attempts: TAXONOMY_SOURCE_ATTEMPTS,
+  delayMs: TAXONOMY_SOURCE_RETRY_DELAYS_MS[0],
+  statuses: TRANSIENT_HTTP_STATUSES,
+};
+
+/**
+ * Upper bound on one buffered taxonomy response.
+ *
+ * @remarks
+ * The pinned GS1 archive is the largest response any generator reads and is well below this
+ * bound; the explicit limit keeps an unexpected redirect or error page from being buffered
+ * without a ceiling.
+ */
+const TAXONOMY_SOURCE_MAX_RESPONSE_BYTES = 64 * 1024 * 1024;
+
+/** Decoder shared by every archive and taxonomy source payload. */
+const utf8Decoder = new TextDecoder("utf-8");
+
+/** Every capability one artifact generator is allowed to depend on. */
+export interface ArtifactGeneratorRuntime {
+  /** Filesystem capability used for mirrors, manifests, and temporary extraction workspaces. */
+  readonly files: FileSystem;
+  /** HTTP capability used for pinned taxonomy sources. */
+  readonly http: HttpClient;
+  /** Process capability used for host archive extraction. */
+  readonly runner: ProcessRunner;
+  /** Time capability used for generation timestamps and bounded retry backoff. */
+  readonly clock: Clock;
+  /** Task orchestration capability used instead of raw `Promise` combinators. */
+  readonly tasks: TaskScheduler;
+  /** Immutable environment snapshot used for output roots and host platform selection. */
+  readonly environment: RuntimeEnvironment;
+  /** Logger used for lifecycle, diagnostic, failure, and completion output. */
+  readonly logger: MonorepositoryLogger;
+  /** Cancellation signal threaded into every request, delay, and child process. */
+  readonly signal: AbortSignal;
+}
+
+/** Typed input accepted by the artifact generation command. */
+export interface GenerateArtifactsInput {
+  /** Enables diagnostic output. */
+  readonly verbose: boolean;
+}
+
+/** Typed business result produced by the artifact generation command. */
+export interface ArtifactGenerationResult {
+  /** Human-readable completion summary rendered by the command's human presentation. */
+  readonly summary: string;
+  /** Every artifact path written or preserved by this invocation, in generator declaration order. */
+  readonly generatedFiles: readonly string[];
+}
 
 /** Stable fields that identify the exact taxonomy expected by one generator. */
 type TaxonomyArtifactIdentity = Readonly<Pick<TaxonomyArtifact, "system" | "version" | "sourceUrl" | "attribution">>;
@@ -36,30 +124,29 @@ class TaxonomySourceUnavailableError extends Error {
  * @remarks
  * Concrete generators own source-specific fetching and parsing. This base owns
  * runtime guards, normalization, hierarchy reconstruction, artifact validation,
- * mirrored serialization, and lifecycle logging dependencies.
+ * mirrored serialization, and the injected capability bundle.
  */
 export abstract class TaxonomyClassificationGenerator {
-  /** Default API and website directories that receive byte-identical artifacts. */
-  protected static readonly defaultOutputRoots = taxonomyArtifactOutputRoots.map((root) => resolve(root));
-
-  /** Runtime directories that receive mirrored taxonomy artifacts. */
-  protected readonly outputRoots: readonly string[];
+  /** Capabilities this generator is allowed to use. */
+  protected readonly runtime: ArtifactGeneratorRuntime;
 
   /** Logger used for lifecycle, diagnostic, failure, and completion output. */
   protected readonly logger: MonorepositoryLogger;
 
+  /** Runtime directories that receive mirrored taxonomy artifacts. */
+  protected readonly outputRoots: readonly string[];
+
   /**
    * Creates a taxonomy generator.
    *
-   * @param outputRoots - Runtime directories that receive mirrored artifacts.
-   * @param logger - Logger used for lifecycle and failure output.
+   * @param runtime - Injected capability bundle.
+   * @param outputRoots - Runtime directories that receive mirrored artifacts; defaults to the
+   * canonical repository roots resolved against the runtime working directory.
    */
-  protected constructor(
-    outputRoots: readonly string[] = TaxonomyClassificationGenerator.defaultOutputRoots,
-    logger: MonorepositoryLogger = new MonorepositoryConsoleLogger("generate::artifacts"),
-  ) {
-    this.outputRoots = outputRoots;
-    this.logger = logger;
+  protected constructor(runtime: ArtifactGeneratorRuntime, outputRoots?: readonly string[]) {
+    this.runtime = runtime;
+    this.logger = runtime.logger;
+    this.outputRoots = outputRoots ?? taxonomyArtifactOutputRoots.map((root) => resolve(runtime.environment.cwd, root));
   }
 
   /**
@@ -226,66 +313,65 @@ export abstract class TaxonomyClassificationGenerator {
   }
 
   /**
-   * Fetches and consumes one taxonomy response with bounded transient retries.
+   * Requests one taxonomy source with bounded transient retries.
+   *
+   * @remarks
+   * Retries are bounded twice over, and never unbounded in either layer: the HTTP capability
+   * replays {@link TAXONOMY_SOURCE_RETRY_POLICY} for a transient response status, and this loop
+   * replays the whole request for a transport failure, which the HTTP contract never retries on
+   * its own. Both paths stop after {@link TAXONOMY_SOURCE_ATTEMPTS} attempts and surface a
+   * {@link TaxonomySourceUnavailableError}, the single failure a validated cached mirror may
+   * satisfy.
    *
    * @param sourceName - Generator label used in retry diagnostics.
    * @param requestName - Request label used in HTTP failure messages.
-   * @param input - Source URL.
-   * @param init - Fetch options.
-   * @param consume - Response body consumer executed inside the timeout boundary.
-   * @returns Consumed response value.
+   * @param url - Source URL.
+   * @param headers - Request headers.
+   * @returns The successful response.
    * @throws {TaxonomySourceUnavailableError} After transient attempts are exhausted.
-   * @throws {Error} Immediately for non-transient HTTP or response-consumption failures.
+   * @throws {Error} Immediately for non-transient HTTP failures.
+   * @throws {CommandCancellation} When the invocation was cancelled.
    */
-  protected async fetchSource<T>(
+  protected async fetchSource(
     sourceName: string,
     requestName: string,
-    input: string | URL,
-    init: RequestInit,
-    consume: (response: Response) => Promise<T>,
-  ): Promise<T> {
-    const totalAttempts = TAXONOMY_SOURCE_RETRY_DELAYS_MS.length + 1;
+    url: URL,
+    headers: Readonly<Record<string, string>>,
+  ): Promise<HttpResponse> {
     let lastFailure: Error | undefined;
 
-    for (let attempt = 1; attempt <= totalAttempts; attempt += 1) {
-      const timeoutSignal = AbortSignal.timeout(TAXONOMY_SOURCE_TIMEOUT_MS);
-      const signal = init.signal === undefined || init.signal === null ? timeoutSignal : AbortSignal.any([init.signal, timeoutSignal]);
-      let response: Response;
-
+    for (let attempt = 1; attempt <= TAXONOMY_SOURCE_ATTEMPTS; attempt += 1) {
+      let response: HttpResponse;
       try {
-        response = await fetch(input, {...init, signal});
+        // Intentionally sequential: one attempt must settle before the next one is considered.
+        // eslint-disable-next-line no-await-in-loop
+        response = await this.runtime.http.request({
+          url,
+          method: "GET",
+          headers,
+          timeoutMs: TAXONOMY_SOURCE_TIMEOUT_MS,
+          maximumResponseBytes: TAXONOMY_SOURCE_MAX_RESPONSE_BYTES,
+          signal: this.runtime.signal,
+          retry: TAXONOMY_SOURCE_RETRY_POLICY,
+        });
       } catch (error: unknown) {
-        if (init.signal?.aborted === true) throw error;
+        if (error instanceof CommandCancellation || this.runtime.signal.aborted) throw error;
         lastFailure = this.toError(error);
         const retryDelay = TAXONOMY_SOURCE_RETRY_DELAYS_MS[attempt - 1];
         if (retryDelay === undefined) break;
-        this.logSourceRetry(sourceName, lastFailure, attempt, totalAttempts, retryDelay);
-        await this.wait(retryDelay);
+        this.logSourceRetry(sourceName, lastFailure, attempt, retryDelay);
+        // eslint-disable-next-line no-await-in-loop
+        await this.runtime.clock.delay(retryDelay, this.runtime.signal);
         continue;
       }
 
-      if (!response.ok) {
-        const failure = new Error(`${requestName} failed with HTTP ${response.status} ${response.statusText}.`);
-        if (!this.isTransientHttpStatus(response.status)) throw failure;
+      if (response.ok) return response;
 
-        lastFailure = failure;
-        const retryDelay = TAXONOMY_SOURCE_RETRY_DELAYS_MS[attempt - 1];
-        if (retryDelay === undefined) break;
-        this.logSourceRetry(sourceName, failure, attempt, totalAttempts, retryDelay);
-        await this.wait(retryDelay);
-        continue;
-      }
-
-      try {
-        return await consume(response);
-      } catch (error: unknown) {
-        if (!this.isTransientTransportError(error)) throw error;
-        lastFailure = this.toError(error);
-        const retryDelay = TAXONOMY_SOURCE_RETRY_DELAYS_MS[attempt - 1];
-        if (retryDelay === undefined) break;
-        this.logSourceRetry(sourceName, lastFailure, attempt, totalAttempts, retryDelay);
-        await this.wait(retryDelay);
-      }
+      // The HTTP capability already replayed every allowed attempt for a transient status, so a
+      // transient status observed here means the source stayed unavailable for all of them.
+      const failure = new Error(`${requestName} failed with HTTP ${String(response.status)}.`);
+      if (!this.isTransientHttpStatus(response.status)) throw failure;
+      throw new TaxonomySourceUnavailableError(failure.message, failure);
     }
 
     const failure = lastFailure ?? new Error(`${requestName} failed without an error.`);
@@ -342,7 +428,10 @@ export abstract class TaxonomyClassificationGenerator {
 
     let cachedContents: readonly string[];
     try {
-      cachedContents = await Promise.all(paths.map((path) => readFile(path, "utf8")));
+      cachedContents = await this.runtime.tasks.parallel(
+        paths.map((path) => (): Promise<string> => this.runtime.files.readText(path)),
+        this.runtime.signal,
+      );
     } catch (error: unknown) {
       const cacheError = this.toError(error);
       throw new Error(`${sourceError.message} Cached taxonomy artifact '${fileName}' could not be read: ${cacheError.message}`, {
@@ -380,21 +469,26 @@ export abstract class TaxonomyClassificationGenerator {
    */
   protected async writeArtifact(fileName: string, artifact: Readonly<TaxonomyArtifact>): Promise<readonly string[]> {
     this.validateArtifact(artifact);
+    const {files, tasks, signal} = this.runtime;
     const paths = this.outputRoots.map((root) => resolve(root, fileName));
     const existingContents = await this.readExistingArtifactContents(paths);
     const contents = this.selectStableArtifactContents(fileName, artifact, existingContents);
 
-    await Promise.all(
-      paths.map(async (path, index) => {
+    await tasks.parallel(
+      paths.map((path, index) => async (): Promise<void> => {
         if (existingContents[index] === contents) return;
         const root = this.outputRoots[index];
         if (root === undefined) throw new Error(`Output root for '${path}' was not found.`);
-        await mkdir(root, {recursive: true});
-        await writeFile(path, contents, "utf8");
+        await files.createDirectory(root, {recursive: true});
+        await files.writeText(path, contents);
       }),
+      signal,
     );
 
-    const writtenContents = await Promise.all(paths.map((path) => readFile(path, "utf8")));
+    const writtenContents = await tasks.parallel(
+      paths.map((path) => (): Promise<string> => files.readText(path)),
+      signal,
+    );
     if (writtenContents.some((writtenContent) => writtenContent !== contents)) {
       throw new Error(`Mirrored artifact '${fileName}' was not written identically.`);
     }
@@ -409,15 +503,16 @@ export abstract class TaxonomyClassificationGenerator {
    * @returns Existing contents, using `null` only for missing paths.
    */
   private async readExistingArtifactContents(paths: readonly string[]): Promise<readonly (string | null)[]> {
-    return await Promise.all(
-      paths.map(async (path) => {
+    return await this.runtime.tasks.parallel(
+      paths.map((path) => async (): Promise<string | null> => {
         try {
-          return await readFile(path, "utf8");
+          return await this.runtime.files.readText(path);
         } catch (error: unknown) {
           if (this.isMissingPathError(error)) return null;
           throw error;
         }
       }),
+      this.runtime.signal,
     );
   }
 
@@ -570,11 +665,12 @@ export abstract class TaxonomyClassificationGenerator {
    * @param sourceName - Generator label.
    * @param failure - Transient failure.
    * @param attempt - Completed attempt number.
-   * @param totalAttempts - Maximum attempt count.
    * @param retryDelay - Delay before the next attempt.
    */
-  private logSourceRetry(sourceName: string, failure: Error, attempt: number, totalAttempts: number, retryDelay: number): void {
-    this.logger.warn(`[${sourceName}] ${failure.message} Retrying in ${retryDelay}ms (attempt ${attempt + 1}/${totalAttempts}).`);
+  private logSourceRetry(sourceName: string, failure: Error, attempt: number, retryDelay: number): void {
+    this.logger.warn(
+      `[${sourceName}] ${failure.message} Retrying in ${String(retryDelay)}ms (attempt ${String(attempt + 1)}/${String(TAXONOMY_SOURCE_ATTEMPTS)}).`,
+    );
   }
 
   /**
@@ -585,21 +681,6 @@ export abstract class TaxonomyClassificationGenerator {
    */
   private isTransientHttpStatus(status: number): boolean {
     return status === 408 || status === 425 || status === 429 || (status >= 500 && status <= 599);
-  }
-
-  /**
-   * Determines whether response consumption failed at the transport boundary.
-   *
-   * @remarks
-   * Fetch reports network failures during body consumption as `TypeError`.
-   * Consumers passed to `fetchSource` must therefore only read the body and
-   * must keep shape validation outside that callback.
-   *
-   * @param error - Unknown response-consumption failure.
-   * @returns `true` for network and abort/timeout errors.
-   */
-  private isTransientTransportError(error: unknown): boolean {
-    return error instanceof TypeError || (error instanceof Error && (error.name === "AbortError" || error.name === "TimeoutError"));
   }
 
   /**
@@ -622,17 +703,6 @@ export abstract class TaxonomyClassificationGenerator {
    */
   private toError(error: unknown): Error {
     return error instanceof Error ? error : new Error(String(error));
-  }
-
-  /**
-   * Waits between bounded source attempts.
-   *
-   * @param delayMs - Delay in milliseconds.
-   */
-  private async wait(delayMs: number): Promise<void> {
-    await new Promise<void>((resolveDelay) => {
-      setTimeout(resolveDelay, delayMs);
-    });
   }
 
   /**
@@ -697,7 +767,7 @@ export abstract class TaxonomyClassificationGenerator {
  *
  * @example
  * ```typescript
- * const generator = new Gs1GpcTaxonomyClassificationGenerator();
+ * const generator = new Gs1GpcTaxonomyClassificationGenerator(runtime);
  * const outputs = await generator.generate();
  * ```
  */
@@ -728,17 +798,12 @@ export class Gs1GpcTaxonomyClassificationGenerator extends TaxonomyClassificatio
   /**
    * Creates the GPC generator.
    *
+   * @param runtime - Injected capability bundle.
    * @param outputRoots - Optional mirrored artifact output directories.
-   * @param logger - Optional lifecycle logger.
-   * @param archiveCommandRunner - Optional archive-extraction command runner.
    */
-  public constructor(
-    outputRoots?: readonly string[],
-    logger?: MonorepositoryLogger,
-    archiveCommandRunner: CommandRunner = defaultCommandRunner,
-  ) {
-    super(outputRoots, logger);
-    this.#archiveExtractor = new SystemArchiveExtractor(archiveCommandRunner);
+  public constructor(runtime: ArtifactGeneratorRuntime, outputRoots?: readonly string[]) {
+    super(runtime, outputRoots);
+    this.#archiveExtractor = new SystemArchiveExtractor(runtime);
   }
 
   /**
@@ -751,16 +816,12 @@ export class Gs1GpcTaxonomyClassificationGenerator extends TaxonomyClassificatio
     this.logger.info("[GPC] Starting generation.");
     try {
       this.logger.info("[GPC] Fetching the GS1 GPC source.");
-      const archive = await this.fetchSource(
-        "GPC",
-        "GPC download",
-        Gs1GpcTaxonomyClassificationGenerator.#sourceUrl,
-        {headers: {Accept: "application/zip"}},
-        async (response) => new Uint8Array(await response.arrayBuffer()),
-      );
+      const response = await this.fetchSource("GPC", "GPC download", new URL(Gs1GpcTaxonomyClassificationGenerator.#sourceUrl), {
+        Accept: "application/zip",
+      });
 
-      const jsonBytes = await this.#archiveExtractor.extractEntry(archive, Gs1GpcTaxonomyClassificationGenerator.#archiveEntryName);
-      const parsed: unknown = JSON.parse(Buffer.from(jsonBytes).toString("utf8"));
+      const jsonBytes = await this.#archiveExtractor.extractEntry(response.bytes, Gs1GpcTaxonomyClassificationGenerator.#archiveEntryName);
+      const parsed: unknown = JSON.parse(utf8Decoder.decode(jsonBytes));
       const nodes = this.parseDocument(parsed);
       this.logger.debug(`[GPC] Normalized ${nodes.length} taxonomy node(s).`);
       this.logger.info("[GPC] Writing mirrored taxonomy artifacts.");
@@ -769,7 +830,7 @@ export class Gs1GpcTaxonomyClassificationGenerator extends TaxonomyClassificatio
         system: "GS1_GPC",
         version: Gs1GpcTaxonomyClassificationGenerator.#version,
         sourceUrl: Gs1GpcTaxonomyClassificationGenerator.#sourceUrl,
-        generatedAt: new Date().toISOString(),
+        generatedAt: this.runtime.clock.isoTimestamp(),
         attribution: Gs1GpcTaxonomyClassificationGenerator.#attribution,
         nodes,
       });
@@ -879,7 +940,7 @@ export class Gs1GpcTaxonomyClassificationGenerator extends TaxonomyClassificatio
  *
  * @example
  * ```typescript
- * const generator = new EcoicopTaxonomyClassificationGenerator();
+ * const generator = new EcoicopTaxonomyClassificationGenerator(runtime);
  * await generator.generate();
  * ```
  */
@@ -903,11 +964,11 @@ export class EcoicopTaxonomyClassificationGenerator extends TaxonomyClassificati
   /**
    * Creates the ECOICOP generator.
    *
+   * @param runtime - Injected capability bundle.
    * @param outputRoots - Optional mirrored artifact output directories.
-   * @param logger - Optional lifecycle logger.
    */
-  public constructor(outputRoots?: readonly string[], logger?: MonorepositoryLogger) {
-    super(outputRoots, logger);
+  public constructor(runtime: ArtifactGeneratorRuntime, outputRoots?: readonly string[]) {
+    super(runtime, outputRoots);
   }
 
   /**
@@ -929,7 +990,7 @@ export class EcoicopTaxonomyClassificationGenerator extends TaxonomyClassificati
         system: "ECOICOP_V2",
         version: EcoicopTaxonomyClassificationGenerator.#version,
         sourceUrl: `${EcoicopTaxonomyClassificationGenerator.#endpoint}#${EcoicopTaxonomyClassificationGenerator.#scheme}`,
-        generatedAt: new Date().toISOString(),
+        generatedAt: this.runtime.clock.isoTimestamp(),
         attribution: EcoicopTaxonomyClassificationGenerator.#attribution,
         nodes,
       });
@@ -975,14 +1036,11 @@ export class EcoicopTaxonomyClassificationGenerator extends TaxonomyClassificati
       const url = new URL(EcoicopTaxonomyClassificationGenerator.#endpoint);
       url.searchParams.set("query", this.createQuery(offset));
       url.searchParams.set("format", "application/sparql-results+json");
-      const response = await this.fetchSource<unknown>(
-        "ECOICOP",
-        "SPARQL request",
-        url,
-        {headers: {Accept: "application/sparql-results+json"}},
-        async (sourceResponse) => await sourceResponse.json(),
-      );
-      const page = this.parseResponse(response);
+      // Intentionally sequential: the next page offset depends on the current page's size.
+      // eslint-disable-next-line no-await-in-loop
+      const response = await this.fetchSource("ECOICOP", "SPARQL request", url, {Accept: "application/sparql-results+json"});
+      const parsed: unknown = JSON.parse(response.text);
+      const page = this.parseResponse(parsed);
       bindings.push(...page);
       if (page.length < EcoicopTaxonomyClassificationGenerator.#pageSize) break;
     }
@@ -1138,7 +1196,7 @@ OFFSET ${offset}`;
  *
  * @example
  * ```typescript
- * const generator = new NaceTaxonomyClassificationGenerator();
+ * const generator = new NaceTaxonomyClassificationGenerator(runtime);
  * await generator.generate();
  * ```
  */
@@ -1162,11 +1220,11 @@ export class NaceTaxonomyClassificationGenerator extends TaxonomyClassificationG
   /**
    * Creates the NACE generator.
    *
+   * @param runtime - Injected capability bundle.
    * @param outputRoots - Optional mirrored artifact output directories.
-   * @param logger - Optional lifecycle logger.
    */
-  public constructor(outputRoots?: readonly string[], logger?: MonorepositoryLogger) {
-    super(outputRoots, logger);
+  public constructor(runtime: ArtifactGeneratorRuntime, outputRoots?: readonly string[]) {
+    super(runtime, outputRoots);
   }
 
   /**
@@ -1188,7 +1246,7 @@ export class NaceTaxonomyClassificationGenerator extends TaxonomyClassificationG
         system: "NACE_2_1",
         version: NaceTaxonomyClassificationGenerator.#version,
         sourceUrl: `${NaceTaxonomyClassificationGenerator.#endpoint}#${NaceTaxonomyClassificationGenerator.#scheme}`,
-        generatedAt: new Date().toISOString(),
+        generatedAt: this.runtime.clock.isoTimestamp(),
         attribution: NaceTaxonomyClassificationGenerator.#attribution,
         nodes,
       });
@@ -1234,14 +1292,11 @@ export class NaceTaxonomyClassificationGenerator extends TaxonomyClassificationG
       const url = new URL(NaceTaxonomyClassificationGenerator.#endpoint);
       url.searchParams.set("query", this.createQuery(offset));
       url.searchParams.set("format", "application/sparql-results+json");
-      const response = await this.fetchSource<unknown>(
-        "NACE",
-        "SPARQL request",
-        url,
-        {headers: {Accept: "application/sparql-results+json"}},
-        async (sourceResponse) => await sourceResponse.json(),
-      );
-      const page = this.parseResponse(response);
+      // Intentionally sequential: the next page offset depends on the current page's size.
+      // eslint-disable-next-line no-await-in-loop
+      const response = await this.fetchSource("NACE", "SPARQL request", url, {Accept: "application/sparql-results+json"});
+      const parsed: unknown = JSON.parse(response.text);
+      const page = this.parseResponse(parsed);
       bindings.push(...page);
       if (page.length < NaceTaxonomyClassificationGenerator.#pageSize) break;
     }
@@ -1406,19 +1461,23 @@ OFFSET ${offset}`;
  * @remarks
  * Concrete generators own discovery and output behavior. This base centralizes
  * manifest parsing, primitive field validation, dependency-map validation, and
- * lifecycle logging dependencies.
+ * the injected capability bundle.
  */
 export abstract class LicenseGenerator {
+  /** Capabilities this generator is allowed to use. */
+  protected readonly runtime: ArtifactGeneratorRuntime;
+
   /** Logger used for lifecycle, warning, failure, and completion output. */
   protected readonly logger: MonorepositoryLogger;
 
   /**
    * Creates a license generator.
    *
-   * @param logger - Logger used for lifecycle, warning, and failure output.
+   * @param runtime - Injected capability bundle.
    */
-  protected constructor(logger: MonorepositoryLogger = new MonorepositoryConsoleLogger("generate::artifacts")) {
-    this.logger = logger;
+  protected constructor(runtime: ArtifactGeneratorRuntime) {
+    this.runtime = runtime;
+    this.logger = runtime.logger;
   }
 
   /**
@@ -1515,7 +1574,7 @@ export abstract class LicenseGenerator {
  *
  * @example
  * ```typescript
- * const generator = new FrontendLicenseGenerator();
+ * const generator = new FrontendLicenseGenerator(runtime);
  * await generator.generate();
  * ```
  */
@@ -1526,12 +1585,13 @@ export class FrontendLicenseGenerator extends LicenseGenerator {
   /**
    * Creates the frontend license generator.
    *
-   * @param workspaceRoot - Repository root containing the frontend and node_modules.
-   * @param logger - Optional lifecycle logger.
+   * @param runtime - Injected capability bundle.
+   * @param workspaceRoot - Repository root containing the frontend and node_modules; defaults to
+   * the runtime working directory.
    */
-  public constructor(workspaceRoot: string = process.cwd(), logger?: MonorepositoryLogger) {
-    super(logger);
-    this.workspaceRoot = workspaceRoot;
+  public constructor(runtime: ArtifactGeneratorRuntime, workspaceRoot?: string) {
+    super(runtime);
+    this.workspaceRoot = workspaceRoot ?? runtime.environment.cwd;
   }
 
   /**
@@ -1547,8 +1607,11 @@ export class FrontendLicenseGenerator extends LicenseGenerator {
       const declaredDependencies = await this.readDeclaredDependencies();
       const manifestPaths = await this.findInstalledManifestPaths(declaredDependencies);
       this.logger.debug(`[Frontend licenses] Discovered ${manifestPaths.length} direct installed package manifest(s).`);
-      const resolvedPackages = await Promise.all(
-        manifestPaths.map((manifestPath) => this.readInstalledPackage(manifestPath, declaredDependencies)),
+      const resolvedPackages = await this.runtime.tasks.parallel(
+        manifestPaths.map(
+          (manifestPath) => () => this.readInstalledPackage(manifestPath, declaredDependencies),
+        ),
+        this.runtime.signal,
       );
       const groupedPackages = new Map<NodePackageDependencyType, NodePackageInformation[]>();
 
@@ -1572,8 +1635,8 @@ export class FrontendLicenseGenerator extends LicenseGenerator {
       }
 
       this.logger.info("[Frontend licenses] Writing licenses.json.");
-      await mkdir(dirname(outputPath), {recursive: true});
-      await writeFile(outputPath, `${JSON.stringify(Object.fromEntries(sortedPackages))}\n`, "utf8");
+      await this.runtime.files.createDirectory(dirname(outputPath), {recursive: true});
+      await this.runtime.files.writeText(outputPath, `${JSON.stringify(Object.fromEntries(sortedPackages))}\n`);
       this.logger.success("[Frontend licenses] Generated 1 artifact file(s).");
       return [outputPath];
     } catch (error: unknown) {
@@ -1590,7 +1653,7 @@ export class FrontendLicenseGenerator extends LicenseGenerator {
    */
   private async readDeclaredDependencies(): Promise<ReadonlyMap<NodePackageDependencyType, readonly string[]>> {
     const manifestPath = join(this.workspaceRoot, "sites", "arolariu.ro", "package.json");
-    const manifest = this.readJsonRecord(await readFile(manifestPath, "utf8"), manifestPath);
+    const manifest = this.readJsonRecord(await this.runtime.files.readText(manifestPath), manifestPath);
     return new Map<NodePackageDependencyType, readonly string[]>([
       ["production", Object.keys(this.readDependencyMap(manifest, "dependencies", manifestPath))],
       ["development", Object.keys(this.readDependencyMap(manifest, "devDependencies", manifestPath))],
@@ -1627,12 +1690,12 @@ export class FrontendLicenseGenerator extends LicenseGenerator {
       let resolvedPath: string | undefined;
 
       for (const candidate of candidates) {
-        try {
-          await access(candidate);
+        // Intentionally sequential: the first existing candidate wins, so later candidates must
+        // not be probed once one resolves.
+        // eslint-disable-next-line no-await-in-loop
+        if (await this.runtime.files.exists(candidate)) {
           resolvedPath = candidate;
           break;
-        } catch (error: unknown) {
-          if (!(this.isRecord(error) && error["code"] === "ENOENT")) throw error;
         }
       }
 
@@ -1662,7 +1725,7 @@ export class FrontendLicenseGenerator extends LicenseGenerator {
     dependencyType: NodePackageDependencyType;
     packageInformation: NodePackageInformation;
   }> | null> {
-    const manifest = this.readJsonRecord(await readFile(manifestPath, "utf8"), manifestPath);
+    const manifest = this.readJsonRecord(await this.runtime.files.readText(manifestPath), manifestPath);
     const packageName = this.readOptionalString(manifest, "name", manifestPath) ?? basename(dirname(manifestPath));
     const dependencyType = this.resolveDependencyType(packageName, declaredDependencies);
     if (dependencyType === null) return null;
@@ -1744,7 +1807,7 @@ export class FrontendLicenseGenerator extends LicenseGenerator {
  *
  * @example
  * ```typescript
- * const generator = new BackendLicenseGenerator();
+ * const generator = new BackendLicenseGenerator(runtime);
  * await generator.generate(); // []
  * ```
  */
@@ -1752,10 +1815,10 @@ export class BackendLicenseGenerator extends LicenseGenerator {
   /**
    * Creates the deferred backend license generator.
    *
-   * @param logger - Optional lifecycle logger.
+   * @param runtime - Injected capability bundle.
    */
-  public constructor(logger?: MonorepositoryLogger) {
-    super(logger);
+  public constructor(runtime: ArtifactGeneratorRuntime) {
+    super(runtime);
   }
 
   /**
@@ -1773,24 +1836,26 @@ export class BackendLicenseGenerator extends LicenseGenerator {
  * Extracts ZIP entries by delegating to the host operating system.
  *
  * @remarks
- * Windows uses `tar.exe`; Linux and macOS use `unzip`. Every extraction runs
- * inside a unique temporary directory that is removed in a `finally` block.
+ * Windows uses `tar.exe`; Linux and macOS use `unzip`. Every extraction runs inside one
+ * temporary workspace whose exact removal handle is captured before any extraction work starts,
+ * so the workspace is removed in a `finally` block even when download, extraction, matching, or
+ * reading fails, and never removes anything other than the directory it created.
  */
 class SystemArchiveExtractor {
-  /** Shared command runner used for archive extraction. */
-  readonly #commandRunner: CommandRunner;
+  /** Capabilities used for the temporary workspace and the extraction child process. */
+  readonly #runtime: ArtifactGeneratorRuntime;
 
   /**
    * Creates the archive extractor.
    *
-   * @param commandRunner - Shared command runner used for extraction commands.
+   * @param runtime - Injected capability bundle.
    */
-  public constructor(commandRunner: CommandRunner = defaultCommandRunner) {
-    this.#commandRunner = commandRunner;
+  public constructor(runtime: ArtifactGeneratorRuntime) {
+    this.#runtime = runtime;
   }
 
   /**
-   * Extracts one archive entry selected by suffix.
+   * Extracts one archive entry selected by exact name.
    *
    * @param archive - Complete ZIP archive bytes.
    * @param entryName - Exact extracted file name identifying the desired entry.
@@ -1799,21 +1864,24 @@ class SystemArchiveExtractor {
    * matching entry is missing or ambiguous.
    */
   public async extractEntry(archive: Uint8Array, entryName: string): Promise<Uint8Array> {
-    const temporaryRoot = await mkdtemp(join(tmpdir(), "arolariu-taxonomy-"));
-    const archivePath = join(temporaryRoot, "source.zip");
-    const outputDirectory = join(temporaryRoot, "extracted");
-    const extractionCommand = this.createCommand(archivePath, outputDirectory);
+    const {files, runner, environment, logger, signal} = this.#runtime;
+    const temporaryDirectory = await files.createTemporaryDirectory("arolariu-taxonomy-");
+    const removeTemporaryWorkspace = (): Promise<void> => temporaryDirectory.remove();
+    const archivePath = join(temporaryDirectory.path, "source.zip");
+    const outputDirectory = join(temporaryDirectory.path, "extracted");
+    const request = this.createRequest(environment.platform, archivePath, outputDirectory);
 
     try {
-      await mkdir(outputDirectory, {recursive: true});
-      await writeFile(archivePath, archive);
-      const result = await this.#commandRunner.run(extractionCommand, {output: "capture"});
-      this.throwIfExtractionFailed(extractionCommand, result);
-
-      const matchingPaths: string[] = [];
-      for await (const extractedPath of glob("**/*", {cwd: outputDirectory})) {
-        if (basename(extractedPath) === entryName) matchingPaths.push(extractedPath);
+      await files.createDirectory(outputDirectory, {recursive: true});
+      await files.writeBytes(archivePath, archive);
+      const outcome = await runner.run(request, {output: "capture", signal, logger});
+      if (!this.isSucceeded(outcome)) {
+        this.throwExtractionFailure(request, outcome, environment.platform, logger);
       }
+
+      const matchingPaths = (await files.glob("**/*", {cwd: outputDirectory, onlyFiles: true})).filter(
+        (extractedPath) => basename(extractedPath) === entryName,
+      );
 
       if (matchingPaths.length === 0) {
         throw new Error(`Extracted archive entry '${entryName}' was not found.`);
@@ -1827,72 +1895,57 @@ class SystemArchiveExtractor {
         throw new Error(`Extracted archive entry '${entryName}' was not found.`);
       }
 
-      return new Uint8Array(await readFile(join(outputDirectory, matchingPath)));
+      return await files.readBytes(matchingPath);
     } finally {
-      await rm(temporaryRoot, {recursive: true, force: true});
+      await removeTemporaryWorkspace();
     }
   }
 
   /**
-   * Builds the platform-specific extraction command.
+   * Narrows one process outcome to the successful case.
    *
+   * @param outcome - Outcome reported by the process runner.
+   * @returns `true` when the extraction command exited successfully.
+   */
+  private isSucceeded(outcome: Readonly<ProcessOutcome>): outcome is SucceededProcessOutcome {
+    return outcome.kind === "succeeded";
+  }
+
+  /**
+   * Builds the platform-specific extraction request.
+   *
+   * @param platform - Host platform reported by the runtime environment.
    * @param archivePath - Temporary ZIP path.
    * @param outputDirectory - Temporary extraction directory.
    * @returns Executable and argument list.
    */
-  private createCommand(archivePath: string, outputDirectory: string): Readonly<{command: string; args: readonly string[]}> {
-    return process.platform === "win32"
+  private createRequest(platform: NodeJS.Platform, archivePath: string, outputDirectory: string): ProcessRequest {
+    return platform === "win32"
       ? {command: "tar.exe", args: ["-xf", archivePath, "-C", outputDirectory]}
       : {command: "unzip", args: ["-qq", archivePath, "-d", outputDirectory]};
   }
 
   /**
-   * Throws the legacy extraction failure classification for a failed command.
+   * Throws the extraction failure classification for a failed command.
    *
-   * @param command - Extraction command that was executed.
-   * @param result - Shared command result.
+   * @param request - Extraction request that was executed.
+   * @param outcome - Failed or interrupted process outcome.
+   * @param platform - Host platform reported by the runtime environment.
+   * @param logger - Logger used to redact command diagnostics.
    */
-  private throwIfExtractionFailed(command: Readonly<{command: string; args: readonly string[]}>, result: CommandResult): void {
-    if (result.spawnError?.includes("ENOENT") === true) {
-      throw new Error(`Required archive extractor '${command.command}' was not found on '${process.platform}'.`, {
-        cause: new Error(result.spawnError),
+  private throwExtractionFailure(
+    request: Readonly<ProcessRequest>,
+    outcome: Readonly<Exclude<ProcessOutcome, SucceededProcessOutcome>>,
+    platform: NodeJS.Platform,
+    logger: MonorepositoryLogger,
+  ): never {
+    if (outcome.kind === "spawn-failed" && outcome.message.includes("ENOENT")) {
+      throw new Error(`Required archive extractor '${request.command}' was not found on '${platform}'.`, {
+        cause: new Error(outcome.message),
       });
     }
 
-    if (result.spawnError !== undefined) {
-      throw Object.assign(new Error(result.spawnError), {
-        code: result.code,
-        cmd: this.formatExecFileCommand(command),
-        signal: result.signal ?? null,
-        stderr: result.stderr,
-        stdout: result.stdout,
-      });
-    }
-
-    if (result.code === 0) {
-      return;
-    }
-
-    throw Object.assign(
-      new Error(`Command failed: ${this.formatExecFileCommand(command)}\n${result.stderr}`),
-      {
-        code: result.code,
-        cmd: this.formatExecFileCommand(command),
-        signal: result.signal ?? null,
-        stderr: result.stderr,
-        stdout: result.stdout,
-      },
-    );
-  }
-
-  /**
-   * Formats an extraction command using Node's `execFile` command text shape.
-   *
-   * @param command - Extraction command to format.
-   * @returns Space-joined command text.
-   */
-  private formatExecFileCommand(command: Readonly<{command: string; args: readonly string[]}>): string {
-    return [command.command, ...command.args].join(" ");
+    throw new RunnerError(request, outcome, logger);
   }
 }
 
@@ -1900,42 +1953,94 @@ class SystemArchiveExtractor {
  * Runs every taxonomy and license generator.
  *
  * @remarks
- * The five concrete generators run concurrently and share one logger so
- * interleaved messages retain a stable prefix and generator label.
+ * The five concrete generators run concurrently through the injected task scheduler and share
+ * one logger, so interleaved messages retain a stable prefix and generator label, while their
+ * outputs are flattened back into generator declaration order.
  *
- * @param options - Optional roots used by targeted tests and alternate workspaces.
- * @param logger - Logger used by the unified generator lifecycle.
- * @returns Process exit code.
+ * @param context - Command context whose runtime owns every ambient capability.
+ * @param input - Typed command input.
+ * @returns The completion summary and every artifact path this invocation produced.
  * @throws {Error} When any generator fails.
  */
-export interface ArtifactMainOptions {
-  /** Optional mirrored taxonomy output roots. */
-  readonly outputRoots?: readonly string[];
-  /** Optional repository root used for frontend-license discovery and output. */
-  readonly workspaceRoot?: string;
-  /** Optional command runner used by archive extraction in tests. */
-  readonly archiveCommandRunner?: CommandRunner;
-}
+async function generateArtifacts(
+  context: Readonly<CommandContext>,
+  input: Readonly<GenerateArtifactsInput>,
+): Promise<ArtifactGenerationResult> {
+  const {runtime} = context;
+  const {logger, tasks, signal} = runtime;
+  const generatorRuntime: ArtifactGeneratorRuntime = {
+    files: runtime.files,
+    http: runtime.http,
+    runner: runtime.runner,
+    clock: runtime.clock,
+    tasks: runtime.tasks,
+    environment: runtime.environment,
+    logger: runtime.logger,
+    signal: runtime.signal,
+  };
 
-export async function main(
-  options: Readonly<ArtifactMainOptions> = {},
-  logger: MonorepositoryLogger = new MonorepositoryConsoleLogger("generate::artifacts"),
-): Promise<number> {
+  if (input.verbose) {
+    logger.debug(`Generating artifacts from working directory: ${runtime.environment.cwd}`);
+  }
+
   logger.info("Starting 5 artifact generator(s).");
   const generators = [
-    new Gs1GpcTaxonomyClassificationGenerator(
-      options.outputRoots,
-      logger,
-      options.archiveCommandRunner ?? defaultCommandRunner,
-    ),
-    new EcoicopTaxonomyClassificationGenerator(options.outputRoots, logger),
-    new NaceTaxonomyClassificationGenerator(options.outputRoots, logger),
-    new FrontendLicenseGenerator(options.workspaceRoot, logger),
-    new BackendLicenseGenerator(logger),
+    new Gs1GpcTaxonomyClassificationGenerator(generatorRuntime),
+    new EcoicopTaxonomyClassificationGenerator(generatorRuntime),
+    new NaceTaxonomyClassificationGenerator(generatorRuntime),
+    new FrontendLicenseGenerator(generatorRuntime),
+    new BackendLicenseGenerator(generatorRuntime),
   ] as const;
-  const outputs = (await Promise.all(generators.map((generator) => generator.generate()))).flat();
 
-  logger.success(`Generated ${outputs.length} artifact file(s).`);
-  logger.debug(`Output paths: ${outputs.join(", ")}`);
-  return 0;
+  const generatedFiles = (
+    await tasks.parallel(
+      generators.map((generator) => () => generator.generate()),
+      signal,
+    )
+  ).flat();
+
+  const summary = `Generated ${generatedFiles.length} artifact file(s).`;
+  logger.success(summary);
+  logger.debug(`Output paths: ${generatedFiles.join(", ")}`);
+  return {summary, generatedFiles};
 }
+
+/**
+ * Creates the taxonomy and license artifact generator command.
+ *
+ * @param runtimeFactory - Optional runtime factory; tests inject a fake instead of the Node adapter.
+ * @returns The typed `generate:artifacts` command object.
+ */
+export function createGenerateArtifactsCommand(
+  runtimeFactory?: CommandRuntimeFactory,
+): MonorepoCommand<GenerateArtifactsInput, ArtifactGenerationResult> {
+  return new MonorepoCommand<GenerateArtifactsInput, ArtifactGenerationResult>(
+    {
+      metadata: {
+        name: "generate:artifacts",
+        description: "Generates taxonomy and license artifacts (GPC, ECOICOP, NACE, frontend licenses).",
+        examples: ["npm run generate:artifacts", "npm run generate /a -- --verbose"],
+        slashAliases: {"/v": "--verbose", "/verbose": "--verbose"},
+      },
+      configure: (program) => {
+        program.option("-v, --verbose", "Enable verbose logging.");
+      },
+      decode: (program) => ({verbose: program.opts<{verbose?: boolean}>().verbose === true}),
+      execute: generateArtifacts,
+      completion: (result) => ({
+        // Every artifact failure path (unavailable source with an unusable cache, invalid source
+        // document, hierarchy violation, or divergent mirror) throws and is normalized by the
+        // command lifecycle, so a resolved business result is always the successful one.
+        exitCode: 0,
+        human: (logger) => logger.success(result.summary),
+      }),
+    },
+    runtimeFactory,
+  );
+}
+
+/** Production singleton used by the aggregate CLI and this module's direct entrypoint. */
+export const generateArtifactsCommand: MonorepoCommand<GenerateArtifactsInput, ArtifactGenerationResult> =
+  createGenerateArtifactsCommand();
+
+await generateArtifactsCommand.runIfMain(import.meta.url);

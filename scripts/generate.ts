@@ -1,84 +1,113 @@
 /**
- * @fileoverview Generation CLI orchestrator for monorepo build artifacts.
+ * @fileoverview Generation orchestrator command for monorepository build artifacts.
  * @module scripts/generate
  *
  * @remarks
- * This module wires together multiple generators (env, i18n, gql, artifacts) under
- * a single CLI command, keeping output consistent across tools.
+ * The orchestrator composes the four generator command objects (`env`, `i18n`, `gql`, and
+ * `artifacts`) through typed nested {@link CommandInvoker.invoke} calls inside its own runtime
+ * scope. It never spawns a sibling script, never parses another command's argv, and never writes
+ * a process exit code itself: every child runs as a nested invocation of this command's context,
+ * so one cancellation, one logger, and one cleanup lifecycle cover the whole run.
  */
 
-import type {Command} from "commander";
-
-import {commanderExitCode, createToolProgram} from "./common/cli.ts";
-import type {CommandInvoker} from "./common/commander.ts";
-import {MonorepositoryConsoleLogger, type MonorepositoryLogger} from "./common/logger.ts";
-import {generateEnvironmentCommand} from "./generate.env.ts";
+import {
+  MonorepoCommand,
+  type CommandContext,
+  type CommandExecution,
+  type CommandInvoker,
+  type CommandRuntimeFactory,
+} from "./common/commander.ts";
+import {CommandCancellation} from "./common/runtime.ts";
+import {generateArtifactsCommand, type ArtifactGenerationResult, type GenerateArtifactsInput} from "./generate.artifacts.ts";
+import {generateEnvironmentCommand, type GenerateLeafInput, type GenerateLeafResult} from "./generate.env.ts";
 import {generateGraphqlCommand} from "./generate.gql.ts";
 import {generateI18nCommand} from "./generate.i18n.ts";
 
-/**
- * Invokes one migrated `generate` leaf command programmatically and returns its exit code.
- *
- * @remarks
- * This bridges the legacy aggregate orchestrator to the declarative command runtime until
- * Task 8 migrates the aggregate entrypoint itself. Each leaf command creates its own runtime
- * scope (its own logger, environment snapshot, and cancellation) rather than nesting under the
- * aggregate's shared logger.
- *
- * @param command - The migrated leaf command to invoke.
- * @param verbose - Enables verbose diagnostic output for this leaf invocation.
- * @returns The leaf command's exit code.
- */
-async function invokeLeaf<TOutput>(
-  command: CommandInvoker<Readonly<{verbose: boolean}>, TOutput>,
-  verbose: boolean,
-): Promise<number> {
-  const execution = await command.invoke({verbose}, {presentation: "human"});
-  return execution.exitCode;
+/** Every generator the orchestrator can select, in fixed execution order. */
+export type GenerateTaskName = "env" | "i18n" | "gql" | "artifacts";
+
+/** Typed input accepted by the generation orchestrator. */
+export interface GenerateInput {
+  /** Enables verbose logging for the orchestrator and every selected generator. */
+  readonly verbose: boolean;
+  /** Selects the environment configuration generator. */
+  readonly env: boolean;
+  /** Selects the internationalization generator. */
+  readonly i18n: boolean;
+  /** Selects the GraphQL type generator. */
+  readonly gql: boolean;
+  /** Selects the taxonomy and license artifact generator. */
+  readonly artifacts: boolean;
+}
+
+/** Typed business result produced by the generation orchestrator. */
+export interface GenerateResult {
+  /** Selected generators, in fixed execution order. */
+  readonly selected: readonly GenerateTaskName[];
+  /** Generators that completed successfully before the run ended. */
+  readonly completed: readonly GenerateTaskName[];
+  /** The first generator that failed or completed with a nonzero exit code, when one did. */
+  readonly failed?: GenerateTaskName;
+}
+
+/** Child generator commands the orchestrator composes. */
+export interface GenerateCommandDependencies {
+  /** Environment configuration generator. */
+  readonly env: CommandInvoker<GenerateLeafInput, GenerateLeafResult>;
+  /** Internationalization generator. */
+  readonly i18n: CommandInvoker<GenerateLeafInput, GenerateLeafResult>;
+  /** GraphQL type generator. */
+  readonly gql: CommandInvoker<GenerateLeafInput, GenerateLeafResult>;
+  /** Taxonomy and license artifact generator. */
+  readonly artifacts: CommandInvoker<GenerateArtifactsInput, ArtifactGenerationResult>;
 }
 
 /**
- * Selects the generators and verbosity used by the generation orchestrator.
+ * The narrowest child contract the orchestrator depends on: one `{verbose}` input and one
+ * summarized business result, satisfied by every generator command object.
  */
-export type CommandLineOptions = {
-  /**
-   * Enables verbose logging during the generation process.
-   */
-  verbose: boolean;
+type GenerateChildInvoker = CommandInvoker<GenerateArtifactsInput, Readonly<{summary: string}>>;
 
-  /**
-   * Indicates whether to generate GraphQL types.
-   */
-  generateGql: boolean;
-
-  /**
-   * Indicates whether to generate internationalization (i18n) assets.
-   */
-  generateI18n: boolean;
-
-  /**
-   * Indicates whether to generate environment configuration files.
-   */
-  generateEnv: boolean;
-
-  /**
-   * Indicates whether to generate official taxonomy artifacts (GPC and EU standards).
-   */
-  generateArtifacts: boolean;
-};
+/** One selectable generator: its input key, its child command, and its human label. */
+interface GenerateTask {
+  /** Input key and result identity of this generator. */
+  readonly name: GenerateTaskName;
+  /** Child command invoked when this generator is selected. */
+  readonly invoker: GenerateChildInvoker;
+  /** Label rendered in orchestrator progress output. */
+  readonly label: string;
+}
 
 /**
- * Runs the selected monorepository generators with one shared logging context.
+ * Builds the fixed `env -> i18n -> gql -> artifacts` execution plan.
  *
- * @param options - Selected generators and verbose-output preference.
- * @param logger - Optional caller-owned logger whose child contexts are passed to each selected generator.
- * @returns Zero after every selected generator succeeds, or the first nonzero generator result.
+ * @param dependencies - Child generator commands.
+ * @returns Every selectable generator in fixed execution order.
  */
-export async function main(options: Readonly<CommandLineOptions>, logger?: MonorepositoryLogger): Promise<number> {
-  const {verbose, generateGql, generateI18n, generateEnv, generateArtifacts} = options;
-  const output = logger ?? new MonorepositoryConsoleLogger("generate", {verbose});
+function createGenerateTasks(dependencies: Readonly<GenerateCommandDependencies>): readonly GenerateTask[] {
+  return [
+    {name: "env", invoker: dependencies.env, label: "environment configuration generator"},
+    {name: "i18n", invoker: dependencies.i18n, label: "internationalization (i18n) generator"},
+    {name: "gql", invoker: dependencies.gql, label: "GraphQL types generator"},
+    {name: "artifacts", invoker: dependencies.artifacts, label: "taxonomy and license artifact generator"},
+  ];
+}
 
-  output.banner(
+/**
+ * Renders the orchestrator banner, configuration, and selected-task summary.
+ *
+ * @param context - Command context whose runtime owns logging and the environment snapshot.
+ * @param input - Typed command input.
+ * @param tasks - Fixed execution plan.
+ */
+function renderConfiguration(
+  context: Readonly<CommandContext>,
+  input: Readonly<GenerateInput>,
+  tasks: readonly GenerateTask[],
+): void {
+  const {logger, environment} = context.runtime;
+
+  logger.banner(
     [
       "",
       "╔══════════════════════════════════════════════════════════════════╗",
@@ -89,148 +118,215 @@ export async function main(options: Readonly<CommandLineOptions>, logger?: Monor
     "magenta",
   );
 
-  output.line([{text: "🔧 Configuration:", styles: ["cyan"]}]);
-  output.line();
-  output.line([
+  logger.line([{text: "🔧 Configuration:", styles: ["cyan"]}]);
+  logger.line();
+  logger.line([
     {text: "   Verbose: ", styles: ["gray"]},
-    {text: verbose ? "✅ Enabled" : "❌ Disabled", styles: [verbose ? "green" : "red"]},
+    {text: input.verbose ? "✅ Enabled" : "❌ Disabled", styles: [input.verbose ? "green" : "red"]},
   ]);
-  output.line([
+  logger.line([
     {text: "   Working Directory: ", styles: ["gray"]},
-    {text: process.cwd(), styles: ["dim"]},
+    {text: environment.cwd, styles: ["dim"]},
   ]);
-  output.line([{text: "   Selected Tasks:", styles: ["gray"]}]);
-  for (const [name, selected] of [
-    ["Env", generateEnv],
-    ["i18n", generateI18n],
-    ["GraphQL", generateGql],
-    ["Artifacts", generateArtifacts],
-  ] as const) {
-    output.line([
-      {text: `     • ${name} (`, styles: ["gray"]},
+  logger.line([{text: "   Selected Tasks:", styles: ["gray"]}]);
+  for (const task of tasks) {
+    const selected = input[task.name];
+    logger.line([
+      {text: `     • ${displayName(task.name)} (`, styles: ["gray"]},
       {text: selected ? "✓" : "✗", styles: [selected ? "green" : "red"]},
       {text: ")", styles: ["gray"]},
     ]);
   }
-  output.line();
-
-  if (!(generateEnv || generateI18n || generateGql || generateArtifacts)) {
-    output.warn("No generation tasks selected. Nothing to do.");
-    output.line([{text: "   Tip: Use one or more flags (e.g. /env /i18n /gql /artifacts).", styles: ["gray"]}]);
-    return 0;
-  }
-
-  let tasksExecuted = 0;
-
-  if (generateEnv) {
-    output.info("Running environment configuration generator...");
-    const result = await invokeLeaf(generateEnvironmentCommand, verbose);
-    if (result !== 0) {
-      return result;
-    }
-    tasksExecuted++;
-  }
-
-  if (generateI18n) {
-    output.info("Running internationalization (i18n) generator...");
-    const result = await invokeLeaf(generateI18nCommand, verbose);
-    if (result !== 0) {
-      return result;
-    }
-    tasksExecuted++;
-  }
-
-  if (generateGql) {
-    output.info("Running GraphQL types generator...");
-    const result = await invokeLeaf(generateGraphqlCommand, verbose);
-    if (result !== 0) {
-      return result;
-    }
-    tasksExecuted++;
-  }
-
-  if (generateArtifacts) {
-    output.info("Running taxonomy and license artifact generator...");
-    const result = await import("./generate.artifacts.ts").then((module) => module.main({}, output.child("artifacts")));
-    if (result !== 0) {
-      return result;
-    }
-    tasksExecuted++;
-  }
-
-  output.line();
-  output.success("All requested generation tasks completed.");
-  output.line([
-    {text: "   Executed ", styles: ["gray"]},
-    {text: String(tasksExecuted), styles: ["green"]},
-    {text: " task(s).", styles: ["gray"]},
-  ]);
-  return 0;
+  logger.line();
 }
 
 /**
- * Builds a configured Commander program for the generation orchestrator CLI.
+ * Returns the short display name used in the selected-task summary.
  *
- * @param logger - Logger used to route Commander help and error output.
- * @returns Configured Commander program with all generation flag options and slash aliases.
+ * @param name - Generator identity.
+ * @returns Human-readable generator name.
  */
-export function createGenerateProgram(logger: MonorepositoryLogger): Command {
-  const program = createToolProgram({
-    name: "generate",
-    description: "Generation orchestrator for monorepo build artifacts.",
-    examples: ["npm run generate /env /artifacts", "npm run generate --env --i18n --artifacts --verbose", "npm run generate -e -g -a -v"],
-    logger,
-    slashAliases: {
-      "/v": "--verbose",
-      "/verbose": "--verbose",
-      "/e": "--env",
-      "/env": "--env",
-      "/i": "--i18n",
-      "/i18n": "--i18n",
-      "/g": "--gql",
-      "/gql": "--gql",
-      "/a": "--artifacts",
-      "/artifacts": "--artifacts",
-    },
-  });
-  program
-    .option("-v, --verbose", "Enable verbose logging. 🔊")
-    .option("-e, --env", "Generate environment configuration file (.env). ☁️")
-    .option("-i, --i18n", "Synchronize translation keys (messages). 🌍")
-    .option("-g, --gql", "Generate GraphQL type artifacts. 🧬")
-    .option("-a, --artifacts", "Generate taxonomy and license artifacts. 🏷️");
-  return program;
+function displayName(name: GenerateTaskName): string {
+  switch (name) {
+    case "env": {
+      return "Env";
+    }
+    case "i18n": {
+      return "i18n";
+    }
+    case "gql": {
+      return "GraphQL";
+    }
+    case "artifacts": {
+      return "Artifacts";
+    }
+  }
 }
 
-if (import.meta.main) {
-  const cliLogger = new MonorepositoryConsoleLogger("generate");
-  const program = createGenerateProgram(cliLogger);
+/**
+ * Converts one cancelled child execution back into a typed cancellation the command lifecycle
+ * maps to the caller's `130`/`143` exit contract.
+ *
+ * @param execution - Cancelled child execution.
+ * @returns The cancellation to rethrow.
+ */
+function toCancellation(execution: Extract<CommandExecution<unknown>, {status: "cancelled"}>): CommandCancellation {
+  const {cause} = execution.failure;
+  return cause instanceof CommandCancellation ? cause : new CommandCancellation(execution.failure.message, execution.exitCode);
+}
 
-  try {
-    program.parse();
-  } catch (error: unknown) {
-    const code = commanderExitCode(error);
-    process.exit(code ?? 1);
+/**
+ * Runs every selected generator sequentially inside this orchestrator's runtime scope.
+ *
+ * @remarks
+ * Each child is invoked with `{parent: context, presentation: "silent"}`, so it inherits this
+ * invocation's cancellation, redactions, and cleanup ownership while the orchestrator stays the
+ * only renderer of progress. A child that completes with a nonzero exit code or fails stops the
+ * run and is reported as {@link GenerateResult.failed}; a cancelled child cancels the whole
+ * orchestrator instead of being downgraded to a business failure.
+ *
+ * @param dependencies - Child generator commands.
+ * @param context - Command context whose runtime owns every ambient capability.
+ * @param input - Typed command input.
+ * @returns Selected generators, completed generators, and the first failing generator.
+ * @throws {CommandCancellation} When a child invocation was cancelled.
+ */
+async function executeGenerate(
+  dependencies: Readonly<GenerateCommandDependencies>,
+  context: Readonly<CommandContext>,
+  input: Readonly<GenerateInput>,
+): Promise<GenerateResult> {
+  const {logger} = context.runtime;
+  const tasks = createGenerateTasks(dependencies);
+  const selected = tasks.filter((task) => input[task.name]).map((task) => task.name);
+
+  renderConfiguration(context, input, tasks);
+
+  if (selected.length === 0) {
+    logger.warn("No generation tasks selected. Nothing to do.");
+    logger.line([{text: "   Tip: Use one or more flags (e.g. /env /i18n /gql /artifacts).", styles: ["gray"]}]);
+    return {selected, completed: []};
   }
 
-  const opts = program.opts<{verbose?: boolean; env?: boolean; i18n?: boolean; gql?: boolean; artifacts?: boolean}>();
-  const {verbose = false} = opts;
-  const logger = new MonorepositoryConsoleLogger("generate", {verbose});
+  const completed: GenerateTaskName[] = [];
 
-  try {
-    const code = await main(
-      {
-        verbose,
-        generateEnv: opts.env ?? false,
-        generateI18n: opts.i18n ?? false,
-        generateGql: opts.gql ?? false,
-        generateArtifacts: opts.artifacts ?? false,
+  for (const task of tasks) {
+    if (!input[task.name]) continue;
+
+    logger.info(`Running ${task.label}...`);
+    // Intentionally sequential: a later generator must observe every earlier generator's written
+    // artifacts, and the first nonzero result must stop the run.
+    // eslint-disable-next-line no-await-in-loop
+    const execution = await task.invoker.invoke({verbose: input.verbose}, {parent: context, presentation: "silent"});
+
+    if (execution.status === "cancelled") {
+      throw toCancellation(execution);
+    }
+
+    if (execution.status === "failed") {
+      logger.error(`The ${task.label} failed: ${execution.failure.message}`);
+      for (const evidence of execution.failure.evidence) {
+        logger.error(evidence);
+      }
+      return {selected, completed, failed: task.name};
+    }
+
+    if (execution.status !== "completed" || execution.exitCode !== 0) {
+      logger.warn(`The ${task.label} reported a nonzero result; later generators were skipped.`);
+      return {selected, completed, failed: task.name};
+    }
+
+    logger.success(execution.value.summary);
+    completed.push(task.name);
+  }
+
+  return {selected, completed};
+}
+
+/**
+ * Creates the generation orchestrator command.
+ *
+ * @param dependencies - Child generator commands composed by this orchestrator.
+ * @param runtimeFactory - Optional runtime factory; tests inject a fake instead of the Node adapter.
+ * @returns The typed `generate` command object.
+ */
+export function createGenerateCommand(
+  dependencies: Readonly<GenerateCommandDependencies>,
+  runtimeFactory?: CommandRuntimeFactory,
+): MonorepoCommand<GenerateInput, GenerateResult> {
+  return new MonorepoCommand<GenerateInput, GenerateResult>(
+    {
+      metadata: {
+        name: "generate",
+        description: "Generation orchestrator for monorepo build artifacts.",
+        examples: [
+          "npm run generate /env /artifacts",
+          "npm run generate --env --i18n --artifacts --verbose",
+          "npm run generate -e -g -a -v",
+        ],
+        slashAliases: {
+          "/v": "--verbose",
+          "/verbose": "--verbose",
+          "/e": "--env",
+          "/env": "--env",
+          "/i": "--i18n",
+          "/i18n": "--i18n",
+          "/g": "--gql",
+          "/gql": "--gql",
+          "/a": "--artifacts",
+          "/artifacts": "--artifacts",
+        },
       },
-      logger,
-    );
-    process.exit(code);
-  } catch (error: unknown) {
-    logger.error(`Unexpected error in generation orchestrator: ${error instanceof Error ? error.message : String(error)}`);
-    process.exit(1);
-  }
+      configure: (program) => {
+        program
+          .option("-v, --verbose", "Enable verbose logging. 🔊")
+          .option("-e, --env", "Generate environment configuration file (.env). ☁️")
+          .option("-i, --i18n", "Synchronize translation keys (messages). 🌍")
+          .option("-g, --gql", "Generate GraphQL type artifacts. 🧬")
+          .option("-a, --artifacts", "Generate taxonomy and license artifacts. 🏷️");
+      },
+      decode: (program) => {
+        const options = program.opts<{verbose?: boolean; env?: boolean; i18n?: boolean; gql?: boolean; artifacts?: boolean}>();
+        return {
+          verbose: options.verbose === true,
+          env: options.env === true,
+          i18n: options.i18n === true,
+          gql: options.gql === true,
+          artifacts: options.artifacts === true,
+        };
+      },
+      execute: (context, input) => executeGenerate(dependencies, context, input),
+      completion: (result) => ({
+        exitCode: result.failed === undefined ? 0 : 1,
+        human: (logger) => {
+          if (result.failed !== undefined) {
+            logger.error(`Generation stopped at the ${displayName(result.failed)} task.`);
+            return;
+          }
+          if (result.selected.length === 0) {
+            return;
+          }
+
+          logger.line();
+          logger.success("All requested generation tasks completed.");
+          logger.line([
+            {text: "   Executed ", styles: ["gray"]},
+            {text: String(result.completed.length), styles: ["green"]},
+            {text: " task(s).", styles: ["gray"]},
+          ]);
+        },
+      }),
+    },
+    runtimeFactory,
+  );
 }
+
+/** Production singleton used by `npm run generate` and this module's direct entrypoint. */
+export const generateCommand: MonorepoCommand<GenerateInput, GenerateResult> = createGenerateCommand({
+  env: generateEnvironmentCommand,
+  i18n: generateI18nCommand,
+  gql: generateGraphqlCommand,
+  artifacts: generateArtifactsCommand,
+});
+
+await generateCommand.runIfMain(import.meta.url);

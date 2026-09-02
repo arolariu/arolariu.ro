@@ -1,279 +1,258 @@
 // @vitest-environment node
 /**
- * @fileoverview Commander contract tests for the generate orchestrator CLI.
+ * @fileoverview Composition, alias, and lifecycle contract tests for the generate orchestrator.
  * @module scripts/generate.cli.test
  */
 
-import {CommanderError} from "commander";
-import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
+import {describe, expect, it} from "vitest";
 
+import type {CommandExecution, CommandInvoker, CommandPresentation} from "./common/commander.ts";
 import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "./common/logger.ts";
-import {createGenerateProgram} from "./generate.ts";
+import {createTestRuntimeFactory} from "./common/runtime.testing.ts";
+import type {ArtifactGenerationResult, GenerateArtifactsInput} from "./generate.artifacts.ts";
+import type {GenerateLeafInput, GenerateLeafResult} from "./generate.env.ts";
+import {createGenerateCommand, type GenerateCommandDependencies, type GenerateTaskName} from "./generate.ts";
 
-function makeLogger() {
-  const sink = new InMemoryLoggerSink();
-  const logger = new MonorepositoryConsoleLogger("test::generate", {color: false, sink});
-  return {logger, sink};
+/** One recorded nested generator invocation. */
+interface RecordedGeneratorCall {
+  /** Selected generator that was invoked. */
+  readonly name: GenerateTaskName;
+  /** Verbosity the aggregate propagated into the child input. */
+  readonly verbose: boolean;
+  /** Presentation the aggregate selected for the child invocation. */
+  readonly presentation: CommandPresentation | undefined;
+  /** Whether the child invocation was scoped to the aggregate's own context. */
+  readonly parented: boolean;
 }
 
-afterEach(() => {
-  vi.restoreAllMocks();
-  vi.resetModules();
-});
+/** Overridable child executions used by one aggregate composition test. */
+interface DependencyOverrides {
+  readonly env?: CommandExecution<GenerateLeafResult>;
+  readonly i18n?: CommandExecution<GenerateLeafResult>;
+  readonly gql?: CommandExecution<GenerateLeafResult>;
+  readonly artifacts?: CommandExecution<ArtifactGenerationResult>;
+}
 
-// ---------------------------------------------------------------------------
-// Alias matrix
-// ---------------------------------------------------------------------------
+function completedLeaf(summary: string, exitCode: 0 | 1 = 0): CommandExecution<GenerateLeafResult> {
+  return {status: "completed", value: {summary, changedFiles: []}, exitCode};
+}
 
-describe("env aliases", () => {
-  it.each(["/env", "/e", "--env"])("selects env for %s", (alias) => {
-    const {logger} = makeLogger();
-    const program = createGenerateProgram(logger);
-    program.parse([alias], {from: "user"});
-    expect(program.opts<{env?: boolean}>().env).toBe(true);
+function completedArtifacts(exitCode: 0 | 1 = 0): CommandExecution<ArtifactGenerationResult> {
+  return {status: "completed", value: {summary: "Generated 7 artifact file(s).", generatedFiles: []}, exitCode};
+}
+
+function failedLeaf(message: string): CommandExecution<GenerateLeafResult> {
+  return {status: "failed", failure: {kind: "operational", message, evidence: []}, exitCode: 1};
+}
+
+function cancelledLeaf(message: string): CommandExecution<GenerateLeafResult> {
+  return {status: "cancelled", failure: {kind: "cancelled", message, evidence: []}, exitCode: 130};
+}
+
+/**
+ * Builds recording fakes for every child generator without spawning a process or touching disk.
+ *
+ * @param overrides - Executions returned by individual children.
+ * @returns The recorded call log and the typed dependency bundle.
+ */
+function createRecordingDependencies(
+  overrides: Readonly<DependencyOverrides> = {},
+): Readonly<{calls: RecordedGeneratorCall[]; dependencies: GenerateCommandDependencies}> {
+  const calls: RecordedGeneratorCall[] = [];
+
+  const leaf = (name: GenerateTaskName, execution: CommandExecution<GenerateLeafResult>): CommandInvoker<GenerateLeafInput, GenerateLeafResult> => ({
+    invoke: async (input, options) => {
+      calls.push({
+        name,
+        verbose: input.verbose,
+        presentation: options?.presentation,
+        parented: options?.parent !== undefined,
+      });
+      return execution;
+    },
   });
 
-  it.each(["-i", "--i18n", "/gql"])("does not select env for unrelated %s", (alias) => {
-    const {logger} = makeLogger();
-    const program = createGenerateProgram(logger);
-    try {
-      program.parse([alias], {from: "user"});
-    } catch {
-      // unknown options throw; just verify env not set
-    }
-    expect(program.opts<{env?: boolean}>().env).toBeFalsy();
-  });
-});
+  const artifacts: CommandInvoker<GenerateArtifactsInput, ArtifactGenerationResult> = {
+    invoke: async (input, options) => {
+      calls.push({
+        name: "artifacts",
+        verbose: input.verbose,
+        presentation: options?.presentation,
+        parented: options?.parent !== undefined,
+      });
+      return overrides.artifacts ?? completedArtifacts();
+    },
+  };
 
-describe("i18n aliases", () => {
-  it.each(["/i18n", "/i", "--i18n"])("selects i18n for %s", (alias) => {
-    const {logger} = makeLogger();
-    const program = createGenerateProgram(logger);
-    program.parse([alias], {from: "user"});
-    expect(program.opts<{i18n?: boolean}>().i18n).toBe(true);
-  });
-});
+  return {
+    calls,
+    dependencies: {
+      env: leaf("env", overrides.env ?? completedLeaf("env")),
+      i18n: leaf("i18n", overrides.i18n ?? completedLeaf("i18n")),
+      gql: leaf("gql", overrides.gql ?? completedLeaf("gql")),
+      artifacts,
+    },
+  };
+}
 
-describe("gql aliases", () => {
-  it.each(["/gql", "/g", "--gql"])("selects gql for %s", (alias) => {
-    const {logger} = makeLogger();
-    const program = createGenerateProgram(logger);
-    program.parse([alias], {from: "user"});
-    expect(program.opts<{gql?: boolean}>().gql).toBe(true);
-  });
-});
+function makeLoggerFixture(): Readonly<{logger: MonorepositoryConsoleLogger; sink: InMemoryLoggerSink}> {
+  const sink = new InMemoryLoggerSink();
+  return {logger: new MonorepositoryConsoleLogger("test::generate", {color: false, sink}), sink};
+}
 
-describe("artifacts aliases", () => {
-  it.each(["/artifacts", "/a", "--artifacts"])("selects artifacts for %s", (alias) => {
-    const {logger} = makeLogger();
-    const program = createGenerateProgram(logger);
-    program.parse([alias], {from: "user"});
-    expect(program.opts<{artifacts?: boolean}>().artifacts).toBe(true);
-  });
-});
+describe("generate composition", () => {
+  it("invokes selected generators in fixed order and stops on first nonzero completion", async () => {
+    const {calls, dependencies} = createRecordingDependencies({i18n: completedLeaf("i18n", 1)});
+    const command = createGenerateCommand(dependencies, createTestRuntimeFactory());
 
-describe("verbose aliases", () => {
-  it.each(["/verbose", "/v", "--verbose", "-v"])("selects verbose for %s", (alias) => {
-    const {logger} = makeLogger();
-    const program = createGenerateProgram(logger);
-    program.parse([alias], {from: "user"});
-    expect(program.opts<{verbose?: boolean}>().verbose).toBe(true);
-  });
-});
+    const execution = await command.invoke({verbose: false, env: true, i18n: true, gql: true, artifacts: true});
 
-describe("help aliases", () => {
-  it.each(["/help", "/h", "--help", "-h"])("emits help and throws for %s", (alias) => {
-    const {logger, sink} = makeLogger();
-    const program = createGenerateProgram(logger);
-    expect(() => program.parse([alias], {from: "user"})).toThrow(CommanderError);
-    const output = sink.records.map((r) => r.text).join("");
-    expect(output).toContain("Usage:");
-  });
-});
-
-describe("unknown option", () => {
-  it.each(["--unknown", "/unknown", "--xyz"])("throws a CommanderError for %s", (alias) => {
-    const {logger} = makeLogger();
-    const program = createGenerateProgram(logger);
-    expect(() => program.parse([alias], {from: "user"})).toThrow(CommanderError);
+    expect(calls.map((call) => call.name)).toEqual(["env", "i18n"]);
+    expect(execution).toMatchObject({status: "completed", exitCode: 1});
   });
 
-  it("does not execute any generator when an unknown option is passed", async () => {
-    vi.resetModules();
-    const envInvoke = vi.fn(async () => ({status: "completed", exitCode: 0}));
-    vi.doMock("./generate.env.ts", () => ({generateEnvironmentCommand: {invoke: envInvoke}}));
-    vi.doMock("./generate.i18n.ts", () => ({generateI18nCommand: {invoke: vi.fn(async () => ({status: "completed", exitCode: 0}))}}));
-    vi.doMock("./generate.gql.ts", () => ({generateGraphqlCommand: {invoke: vi.fn(async () => ({status: "completed", exitCode: 0}))}}));
-    vi.doMock("./generate.artifacts.ts", () => ({main: vi.fn(async () => 0)}));
+  it("reports the failing generator and the generators that already completed", async () => {
+    const {calls, dependencies} = createRecordingDependencies({gql: failedLeaf("GraphQL codegen exploded.")});
+    const command = createGenerateCommand(dependencies, createTestRuntimeFactory());
 
-    const {main} = await import("./generate.ts");
-    // no flags → main returns 0 with warning, never calls sub-generators
-    const result = await main(
-      {verbose: false, generateEnv: false, generateI18n: false, generateGql: false, generateArtifacts: false},
-      new MonorepositoryConsoleLogger("test", {sink: new InMemoryLoggerSink()}),
-    );
-    expect(result).toBe(0);
-    expect(envInvoke).not.toHaveBeenCalled();
-  });
-});
+    const execution = await command.invoke({verbose: false, env: true, i18n: true, gql: true, artifacts: true});
 
-// ---------------------------------------------------------------------------
-// Execution order
-// ---------------------------------------------------------------------------
-
-describe("generator execution order", () => {
-  let order: string[];
-
-  beforeEach(() => {
-    order = [];
-    vi.resetModules();
+    expect(calls.map((call) => call.name)).toEqual(["env", "i18n", "gql"]);
+    expect(execution).toMatchObject({
+      status: "completed",
+      exitCode: 1,
+      value: {selected: ["env", "i18n", "gql", "artifacts"], completed: ["env", "i18n"], failed: "gql"},
+    });
   });
 
-  it("runs env → i18n → gql → artifacts in that order", async () => {
-    vi.doMock("./generate.env.ts", () => ({
-      generateEnvironmentCommand: {
-        invoke: vi.fn(async () => {
-          order.push("env");
-          return {status: "completed", exitCode: 0};
-        }),
-      },
-    }));
-    vi.doMock("./generate.i18n.ts", () => ({
-      generateI18nCommand: {
-        invoke: vi.fn(async () => {
-          order.push("i18n");
-          return {status: "completed", exitCode: 0};
-        }),
-      },
-    }));
-    vi.doMock("./generate.gql.ts", () => ({
-      generateGraphqlCommand: {
-        invoke: vi.fn(async () => {
-          order.push("gql");
-          return {status: "completed", exitCode: 0};
-        }),
-      },
-    }));
-    vi.doMock("./generate.artifacts.ts", () => ({
-      main: vi.fn(async () => {
-        order.push("artifacts");
-        return 0;
-      }),
-    }));
+  it("propagates a cancelled child as a cancelled aggregate invocation", async () => {
+    const {calls, dependencies} = createRecordingDependencies({env: cancelledLeaf("Command interrupted by SIGINT.")});
+    const command = createGenerateCommand(dependencies, createTestRuntimeFactory());
 
-    const {main} = await import("./generate.ts");
-    const result = await main(
-      {verbose: false, generateEnv: true, generateI18n: true, generateGql: true, generateArtifacts: true},
-      new MonorepositoryConsoleLogger("test", {sink: new InMemoryLoggerSink()}),
+    const execution = await command.invoke({verbose: false, env: true, i18n: true, gql: false, artifacts: false});
+
+    expect(calls.map((call) => call.name)).toEqual(["env"]);
+    expect(execution).toMatchObject({status: "cancelled", exitCode: 130});
+  });
+
+  it("runs every selected generator in the fixed env, i18n, gql, artifacts order", async () => {
+    const {calls, dependencies} = createRecordingDependencies();
+    const command = createGenerateCommand(dependencies, createTestRuntimeFactory());
+
+    const execution = await command.invoke({verbose: false, env: true, i18n: true, gql: true, artifacts: true});
+
+    expect(calls.map((call) => call.name)).toEqual(["env", "i18n", "gql", "artifacts"]);
+    expect(execution).toMatchObject({
+      status: "completed",
+      exitCode: 0,
+      value: {selected: ["env", "i18n", "gql", "artifacts"], completed: ["env", "i18n", "gql", "artifacts"]},
+    });
+  });
+
+  it("invokes every child in the aggregate's own runtime scope without rendering child output", async () => {
+    const {calls, dependencies} = createRecordingDependencies();
+    const command = createGenerateCommand(dependencies, createTestRuntimeFactory());
+
+    await command.invoke({verbose: false, env: true, i18n: false, gql: false, artifacts: true}, {presentation: "human"});
+
+    expect(calls).toEqual([
+      {name: "env", verbose: false, presentation: "silent", parented: true},
+      {name: "artifacts", verbose: false, presentation: "silent", parented: true},
+    ]);
+  });
+
+  it("executes no generator and completes successfully when no task is selected", async () => {
+    const {calls, dependencies} = createRecordingDependencies();
+    const {logger, sink} = makeLoggerFixture();
+    const command = createGenerateCommand(dependencies, createTestRuntimeFactory({logger}));
+
+    const execution = await command.invoke(
+      {verbose: false, env: false, i18n: false, gql: false, artifacts: false},
+      {presentation: "human"},
     );
 
-    expect(result).toBe(0);
-    expect(order).toEqual(["env", "i18n", "gql", "artifacts"]);
-  });
-
-  it("stops at the first non-zero result and does not run subsequent generators", async () => {
-    vi.doMock("./generate.env.ts", () => ({
-      generateEnvironmentCommand: {
-        invoke: vi.fn(async () => {
-          order.push("env");
-          return {status: "failed", exitCode: 1};
-        }),
-      },
-    }));
-    vi.doMock("./generate.i18n.ts", () => ({
-      generateI18nCommand: {
-        invoke: vi.fn(async () => {
-          order.push("i18n");
-          return {status: "completed", exitCode: 0};
-        }),
-      },
-    }));
-    vi.doMock("./generate.gql.ts", () => ({
-      generateGraphqlCommand: {
-        invoke: vi.fn(async () => {
-          order.push("gql");
-          return {status: "completed", exitCode: 0};
-        }),
-      },
-    }));
-    vi.doMock("./generate.artifacts.ts", () => ({
-      main: vi.fn(async () => {
-        order.push("artifacts");
-        return 0;
-      }),
-    }));
-
-    const {main} = await import("./generate.ts");
-    const result = await main(
-      {verbose: false, generateEnv: true, generateI18n: true, generateGql: true, generateArtifacts: true},
-      new MonorepositoryConsoleLogger("test", {sink: new InMemoryLoggerSink()}),
-    );
-
-    expect(result).toBe(1);
-    expect(order).toEqual(["env"]);
-  });
-
-  it("stops before gql and artifacts when i18n resolves as completed with a nonzero exit code", async () => {
-    vi.doMock("./generate.env.ts", () => ({
-      generateEnvironmentCommand: {
-        invoke: vi.fn(async () => {
-          order.push("env");
-          return {status: "completed", exitCode: 0};
-        }),
-      },
-    }));
-    vi.doMock("./generate.i18n.ts", () => ({
-      generateI18nCommand: {
-        invoke: vi.fn(async () => {
-          order.push("i18n");
-          // Mirrors the real `generate:i18n` command's exit contract: "completed" but nonzero
-          // when missing translation keys changed one or more locale files.
-          return {status: "completed", exitCode: 1};
-        }),
-      },
-    }));
-    vi.doMock("./generate.gql.ts", () => ({
-      generateGraphqlCommand: {
-        invoke: vi.fn(async () => {
-          order.push("gql");
-          return {status: "completed", exitCode: 0};
-        }),
-      },
-    }));
-    vi.doMock("./generate.artifacts.ts", () => ({
-      main: vi.fn(async () => {
-        order.push("artifacts");
-        return 0;
-      }),
-    }));
-
-    const {main} = await import("./generate.ts");
-    const result = await main(
-      {verbose: false, generateEnv: true, generateI18n: true, generateGql: true, generateArtifacts: true},
-      new MonorepositoryConsoleLogger("test", {sink: new InMemoryLoggerSink()}),
-    );
-
-    expect(result).toBe(1);
-    expect(order).toEqual(["env", "i18n"]);
+    expect(calls).toEqual([]);
+    expect(execution).toMatchObject({status: "completed", exitCode: 0, value: {selected: [], completed: []}});
+    expect(sink.records.some((record) => record.text.includes("No generation tasks selected"))).toBe(true);
   });
 });
 
-// ---------------------------------------------------------------------------
-// Verbose propagation
-// ---------------------------------------------------------------------------
+describe("generate CLI aliases", () => {
+  it.each([
+    ["/e", "env"],
+    ["/env", "env"],
+    ["-e", "env"],
+    ["--env", "env"],
+    ["/i", "i18n"],
+    ["/i18n", "i18n"],
+    ["-i", "i18n"],
+    ["--i18n", "i18n"],
+    ["/g", "gql"],
+    ["/gql", "gql"],
+    ["-g", "gql"],
+    ["--gql", "gql"],
+    ["/a", "artifacts"],
+    ["/artifacts", "artifacts"],
+    ["-a", "artifacts"],
+    ["--artifacts", "artifacts"],
+  ])("selects only %s for the %s generator", async (alias, expected) => {
+    const {calls, dependencies} = createRecordingDependencies();
+    const command = createGenerateCommand(dependencies, createTestRuntimeFactory());
 
-describe("verbose propagation", () => {
-  it("sets verbose: true when --verbose is passed to the Commander program", () => {
-    const {logger} = makeLogger();
-    const program = createGenerateProgram(logger);
-    program.parse(["--verbose"], {from: "user"});
-    expect(program.opts<{verbose?: boolean}>().verbose).toBe(true);
+    const execution = await command.run([alias]);
+
+    expect(execution).toMatchObject({status: "completed", exitCode: 0});
+    expect(calls.map((call) => call.name)).toEqual([expected]);
   });
 
-  it("sets verbose: false when no verbose flag is passed", () => {
-    const {logger} = makeLogger();
-    const program = createGenerateProgram(logger);
-    program.parse([], {from: "user"});
-    expect(program.opts<{verbose?: boolean}>().verbose).toBeFalsy();
+  it.each(["/v", "/verbose", "-v", "--verbose"])("propagates verbose into every child for %s", async (alias) => {
+    const {calls, dependencies} = createRecordingDependencies();
+    const command = createGenerateCommand(dependencies, createTestRuntimeFactory());
+
+    await command.run([alias, "--env", "--artifacts"]);
+
+    expect(calls).toEqual([
+      {name: "env", verbose: true, presentation: "silent", parented: true},
+      {name: "artifacts", verbose: true, presentation: "silent", parented: true},
+    ]);
+  });
+
+  it("leaves verbose disabled when no verbosity flag is supplied", async () => {
+    const {calls, dependencies} = createRecordingDependencies();
+    const command = createGenerateCommand(dependencies, createTestRuntimeFactory());
+
+    await command.run(["--env"]);
+
+    expect(calls.map((call) => call.verbose)).toEqual([false]);
+  });
+
+  it.each(["/h", "/help", "-h", "--help"])("renders help without executing a generator for %s", async (alias) => {
+    const {calls, dependencies} = createRecordingDependencies();
+    const command = createGenerateCommand(dependencies, createTestRuntimeFactory());
+
+    const execution = await command.run([alias]);
+
+    expect(execution).toEqual({status: "help", exitCode: 0});
+    expect(calls).toEqual([]);
+  });
+
+  it.each(["--unknown", "/unknown", "--xyz"])("fails with a usage exit code and no generator for %s", async (alias) => {
+    const {calls, dependencies} = createRecordingDependencies();
+    const command = createGenerateCommand(dependencies, createTestRuntimeFactory());
+
+    const execution = await command.run([alias]);
+
+    expect(execution).toMatchObject({status: "failed", exitCode: 2, failure: {kind: "usage"}});
+    expect(calls).toEqual([]);
+  });
+
+  it("executes no generator when argv selects nothing", async () => {
+    const {calls, dependencies} = createRecordingDependencies();
+    const command = createGenerateCommand(dependencies, createTestRuntimeFactory());
+
+    const execution = await command.run([]);
+
+    expect(execution).toMatchObject({status: "completed", exitCode: 0, value: {selected: []}});
+    expect(calls).toEqual([]);
   });
 });

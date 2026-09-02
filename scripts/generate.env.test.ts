@@ -6,10 +6,18 @@
 
 import {afterEach, describe, expect, it, vi} from "vitest";
 
+import type {CommandInvoker} from "./common/commander.ts";
 import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "./common/logger.ts";
 import type {PromptProvider} from "./common/prompts.ts";
-import type {RuntimeEnvironment} from "./common/runtime.ts";
-import {createMemoryFileSystem, createTestProcessHost, createTestRuntimeFactory, repositoryFixtureRoot} from "./common/runtime.testing.ts";
+import type {HttpClient, HttpResponse, RuntimeEnvironment} from "./common/runtime.ts";
+import {
+  createHttpResponse,
+  createMemoryFileSystem,
+  createTestProcessHost,
+  createTestRuntimeFactory,
+  repositoryFixtureRoot,
+} from "./common/runtime.testing.ts";
+import type {GenerateLeafInput, GenerateLeafResult} from "./generate.env.ts";
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -182,30 +190,48 @@ describe("generateEnvironmentCommand", () => {
   });
 
   it("stops aggregate generation and propagates a real environment generator failure", async () => {
-    vi.resetModules();
-    vi.stubEnv("INFRA", "azure");
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async () => new Response("unavailable", {status: 503})),
-    );
+    const files = createMemoryFileSystem({".env": ""});
+    const environment: RuntimeEnvironment = {
+      variables: {INFRA: "azure"},
+      cwd: repositoryFixtureRoot,
+      executablePath: "/usr/bin/node",
+      platform: "linux",
+      architecture: "x64",
+      stdinIsTTY: false,
+      stdoutIsTTY: false,
+      isCI: true,
+    };
+    const http: HttpClient = {
+      request: async (): Promise<HttpResponse> => createHttpResponse(503, "unavailable"),
+    };
     const sink = new InMemoryLoggerSink();
     const logger = new MonorepositoryConsoleLogger("generate", {color: false, sink});
-    const {main} = await import("./generate.ts");
 
-    await expect(
-      main(
-        {
-          verbose: false,
-          generateEnv: true,
-          generateGql: true,
-          generateI18n: false,
-          generateArtifacts: false,
-        },
-        logger,
-      ),
-    ).resolves.toBe(1);
+    const {createGenerateEnvironmentCommand} = await import("./generate.env.ts");
+    const {createGenerateCommand} = await import("./generate.ts");
+    const gqlInvoke = vi.fn<CommandInvoker<GenerateLeafInput, GenerateLeafResult>["invoke"]>();
+    const unusedLeaf: CommandInvoker<GenerateLeafInput, GenerateLeafResult> = {invoke: gqlInvoke};
+    const command = createGenerateCommand(
+      {
+        // The real environment generator, wired to a failing exp endpoint, is the child under test.
+        env: createGenerateEnvironmentCommand(createTestRuntimeFactory({files, environment, http})),
+        i18n: unusedLeaf,
+        gql: unusedLeaf,
+        artifacts: {invoke: vi.fn()},
+      },
+      createTestRuntimeFactory({logger}),
+    );
+
+    const execution = await command.invoke(
+      {verbose: false, env: true, i18n: false, gql: true, artifacts: false},
+      {presentation: "human"},
+    );
+
+    expect(execution).toMatchObject({status: "completed", exitCode: 1, value: {completed: [], failed: "env"}});
+    expect(gqlInvoke).not.toHaveBeenCalled();
 
     const retained = sink.records.map((record) => record.text).join("\n");
+    expect(retained).toContain("exp returned 503");
     expect(retained).not.toContain("Running GraphQL types generator");
     expect(retained).not.toContain("All requested generation tasks completed");
   });

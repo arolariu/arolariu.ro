@@ -7,46 +7,170 @@
 import {mkdir, mkdtemp, readFile, rm, writeFile} from "node:fs/promises";
 import {tmpdir} from "node:os";
 import {basename, dirname, join} from "node:path";
-import {stripVTControlCharacters} from "node:util";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 
 import {
   BackendLicenseGenerator,
+  createGenerateArtifactsCommand,
   EcoicopTaxonomyClassificationGenerator,
   FrontendLicenseGenerator,
   getExpectedTaxonomyArtifactPaths,
   Gs1GpcTaxonomyClassificationGenerator,
-  main,
   NaceTaxonomyClassificationGenerator,
   taxonomyArtifactFileNames,
   TaxonomyClassificationGenerator,
+  type ArtifactGeneratorRuntime,
 } from "./generate.artifacts.ts";
-import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "./common/logger.ts";
-import {defaultCommandRunner, type CommandRunner} from "./common/process.ts";
+import type {CommandExecution, CommandInvoker} from "./common/commander.ts";
+import {InMemoryLoggerSink, MonorepositoryConsoleLogger, type MonorepositoryLogger} from "./common/logger.ts";
 import type {PromptProvider} from "./common/prompts.ts";
-import type {RuntimeEnvironment} from "./common/runtime.ts";
-import {createMemoryFileSystem, createTestRuntimeFactory, repositoryFixtureRoot} from "./common/runtime.testing.ts";
-import {main as generate} from "./generate.ts";
+import {
+  AbstractProcessRunner,
+  type ProcessOutcome,
+  type ProcessRequest,
+  type ProcessRunOptions,
+  type ProcessRunner,
+} from "./common/runner.ts";
+import {
+  DefaultTaskScheduler,
+  type Clock,
+  type FileSystem,
+  type HttpClient,
+  type HttpRequest,
+  type HttpResponse,
+  type RuntimeEnvironment,
+} from "./common/runtime.ts";
+import {nodeFileSystem} from "./common/runtime.node.ts";
+import {
+  createHttpResponse,
+  createMemoryFileSystem,
+  createTestRuntimeFactory,
+  repositoryFixtureRoot,
+} from "./common/runtime.testing.ts";
+import type {ArtifactGenerationResult, GenerateArtifactsInput} from "./generate.artifacts.ts";
+import type {GenerateLeafInput, GenerateLeafResult} from "./generate.env.ts";
+import {createGenerateCommand, type GenerateCommandDependencies} from "./generate.ts";
 import type {TaxonomyArtifact} from "./types";
 
+/** Decides what one scripted HTTP send returns, by request and global send ordinal. */
+type ArtifactHttpRoute = (request: Readonly<HttpRequest>, send: number) => HttpResponse | Error;
+
 /**
- * Owns external-boundary mocks, fixtures, temporary paths, and output readers
- * used by artifact-generator tests.
+ * HTTP capability fake that honors {@link HttpRequest.retry} exactly like the production client:
+ * bounded status-based replays only, and no retry for a transport failure.
+ */
+class ScriptedHttpClient implements HttpClient {
+  /** Every send performed, including retried sends, in call order. */
+  public readonly sends: Readonly<HttpRequest>[] = [];
+
+  #route: ArtifactHttpRoute;
+
+  public constructor(route: ArtifactHttpRoute) {
+    this.#route = route;
+  }
+
+  /**
+   * Replaces the active route without dropping the recorded send history.
+   *
+   * @param route - New routing function.
+   */
+  public useRoute(route: ArtifactHttpRoute): void {
+    this.#route = route;
+  }
+
+  /** {@inheritDoc HttpClient.request} */
+  public async request(request: Readonly<HttpRequest>): Promise<HttpResponse> {
+    const attemptsAllowed = request.retry === undefined ? 1 : Math.max(1, request.retry.attempts);
+
+    for (let attempt = 1; attempt <= attemptsAllowed; attempt += 1) {
+      this.sends.push(request);
+      const outcome = this.#route(request, this.sends.length);
+      if (outcome instanceof Error) {
+        throw outcome;
+      }
+
+      const retryPolicy = request.retry;
+      const shouldRetry = retryPolicy !== undefined && attempt < attemptsAllowed && retryPolicy.statuses.includes(outcome.status);
+      if (!shouldRetry) {
+        return outcome;
+      }
+    }
+
+    throw new Error("The scripted HTTP client exhausted its attempts without a response.");
+  }
+}
+
+/** Process runner fake that materializes the GPC archive entries the extractor expects to find. */
+class ArchiveExtractionRunner extends AbstractProcessRunner {
+  /** Every recorded invocation, in call order. */
+  public readonly calls: Readonly<{request: ProcessRequest; options: ProcessRunOptions}>[] = [];
+
+  readonly #files: FileSystem;
+  #document: unknown;
+
+  public constructor(files: FileSystem, document: unknown) {
+    super();
+    this.#files = files;
+    this.#document = document;
+  }
+
+  /**
+   * Replaces the document written into the extraction directory.
+   *
+   * @param document - GPC source document written by the next extraction.
+   */
+  public useDocument(document: unknown): void {
+    this.#document = document;
+  }
+
+  /** {@inheritDoc AbstractProcessRunner.execute} */
+  protected override async execute(
+    request: Readonly<ProcessRequest>,
+    options: Readonly<ProcessRunOptions>,
+  ): Promise<ProcessOutcome> {
+    this.calls.push({request, options});
+    const outputIndex = request.args.findIndex((value) => value === "-C" || value === "-d");
+    const outputDirectory = request.args[outputIndex + 1];
+    if (outputDirectory === undefined) {
+      throw new Error("Output directory argument is missing.");
+    }
+
+    const contents = JSON.stringify(this.#document);
+    await this.#files.writeText(join(outputDirectory, "GPC as of May 2026 (2026-05-20) EN.json"), contents);
+    await this.#files.writeText(join(outputDirectory, "Delta - GPC as of May 2026 (20260520 v 20251127) EN.json"), contents);
+
+    return {kind: "succeeded", exitCode: 0, stdout: "", stderr: "", durationMs: 0};
+  }
+}
+
+/**
+ * Owns capability fakes, fixtures, temporary paths, and output readers used by artifact
+ * generator tests. No test here reads the live taxonomy cache or the network.
  */
 class ArtifactGeneratorTestHarness {
   /** Temporary directories registered for cleanup after the current test. */
   readonly #temporaryDirectories: string[] = [];
 
-  /** Injected archive-extraction command runner used by GPC tests. */
-  #archiveCommandRunner: CommandRunner | undefined;
+  /** Ordered logger output captured for semantic assertions. */
+  public readonly sink: InMemoryLoggerSink = new InMemoryLoggerSink();
 
-  /** ANSI-normalized console messages captured by semantic console level. */
-  readonly #consoleMessages: Record<"debug" | "info" | "warn" | "error", string[]> = {
-    debug: [],
-    info: [],
-    warn: [],
-    error: [],
-  };
+  /** Logger injected into every generator built by this harness. */
+  public readonly logger: MonorepositoryLogger = new MonorepositoryConsoleLogger("generate::artifacts", {
+    color: false,
+    sink: this.sink,
+  });
+
+  /** Backoff delays every generator requested from the injected clock. */
+  public readonly delays: number[] = [];
+
+  /** Scripted HTTP capability shared by every generator built by this harness. */
+  public readonly http: ScriptedHttpClient = new ScriptedHttpClient(() => new Error("No taxonomy source was stubbed."));
+
+  /** Archive-extraction process runner used by GPC tests. */
+  public readonly runner: ArchiveExtractionRunner;
+
+  /** Deterministic clock recording every requested backoff delay. */
+  public readonly clock: Clock;
 
   /** Valid English GPC source document used by successful generation tests. */
   public readonly gpcDocument = {
@@ -74,6 +198,56 @@ class ArtifactGeneratorTestHarness {
       },
     ],
   } as const;
+
+  public constructor() {
+    this.runner = new ArchiveExtractionRunner(nodeFileSystem, this.gpcDocument);
+    this.clock = {
+      monotonicNow: (): number => 0,
+      isoTimestamp: (): string => "2026-08-19T00:00:00.000Z",
+      delay: async (milliseconds: number): Promise<void> => {
+        this.delays.push(milliseconds);
+      },
+    };
+  }
+
+  /**
+   * Builds the capability bundle injected into every generator class under test.
+   *
+   * @param overrides - Capabilities replacing the harness defaults.
+   * @returns A complete artifact generator runtime.
+   */
+  public createRuntime(overrides: Readonly<Partial<ArtifactGeneratorRuntime>> = {}): ArtifactGeneratorRuntime {
+    return {
+      files: nodeFileSystem,
+      http: this.http,
+      runner: this.runner,
+      clock: this.clock,
+      tasks: new DefaultTaskScheduler(),
+      environment: this.createEnvironment(),
+      logger: this.logger,
+      signal: new AbortController().signal,
+      ...overrides,
+    };
+  }
+
+  /**
+   * Builds the immutable environment snapshot generators observe.
+   *
+   * @param cwd - Working directory reported to the generators.
+   * @returns A deterministic environment snapshot.
+   */
+  public createEnvironment(cwd: string = repositoryFixtureRoot): RuntimeEnvironment {
+    return {
+      variables: {},
+      cwd,
+      executablePath: "/usr/bin/node",
+      platform: process.platform,
+      architecture: "x64",
+      stdinIsTTY: false,
+      stdoutIsTTY: false,
+      isCI: true,
+    };
+  }
 
   /**
    * Creates and registers one temporary directory.
@@ -130,160 +304,94 @@ class ArtifactGeneratorTestHarness {
   }
 
   /**
-   * Configures archive extraction by injecting a fake shared command runner.
-   *
-   * @param document - GPC document written into the mocked extraction directory.
-   */
-  public mockArchiveExtraction(document: unknown = this.gpcDocument): void {
-    this.#archiveCommandRunner = {
-      run: vi.fn<CommandRunner["run"]>(async (command) => {
-        const outputIndex = command.args.findIndex((value) => value === "-C" || value === "-d");
-        const outputDirectory = command.args[outputIndex + 1];
-        if (outputDirectory === undefined) {
-          throw new Error("Output directory argument is missing.");
-        }
-
-        await Promise.all([
-          writeFile(join(outputDirectory, "GPC as of May 2026 (2026-05-20) EN.json"), JSON.stringify(document), "utf8"),
-          writeFile(
-            join(outputDirectory, "Delta - GPC as of May 2026 (20260520 v 20251127) EN.json"),
-            JSON.stringify(document),
-            "utf8",
-          ),
-        ]);
-
-        return {
-          code: 0,
-          stdout: "",
-          stderr: "",
-          durationMs: 0,
-          timedOut: false,
-        };
-      }),
-    };
-  }
-
-  /**
    * Creates a SPARQL JSON response.
    *
    * @param bindings - Raw SPARQL bindings.
    * @returns JSON response containing the bindings.
    */
-  public createSparqlResponse(bindings: readonly unknown[]): Response {
-    return Response.json({results: {bindings}});
-  }
-
-  /** Stubs global fetch for successful unified GPC, ECOICOP, and NACE generation. */
-  public stubUnifiedFetch(): void {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async (input: string | URL | Request) => {
-        const url = new URL(String(input));
-        if (url.href === "https://ref.gs1.org/standards/gpc/2026-05/") {
-          return new Response(new Uint8Array([1, 2, 3]), {status: 200});
-        }
-
-        const query = url.searchParams.get("query") ?? "";
-        const isEcoicop = query.includes("ecoicop2");
-        return this.createSparqlResponse([
-          {
-            concept: {value: isEcoicop ? "eco:01" : "nace:A"},
-            notation: {value: isEcoicop ? "01" : "A"},
-            label: {value: isEcoicop ? "01 Food" : "A Agriculture"},
-          },
-        ]);
-      }),
-    );
+  public createSparqlResponse(bindings: readonly unknown[]): HttpResponse {
+    return createHttpResponse(200, JSON.stringify({results: {bindings}}));
   }
 
   /**
-   * Stubs the GPC request with one specific failure.
+   * Routes every source request through one scripted function.
    *
-   * @param error - Error thrown by the GPC fetch boundary.
+   * @param route - Routing function applied to every send.
+   */
+  public stubSources(route: ArtifactHttpRoute): void {
+    this.http.useRoute(route);
+  }
+
+  /** Stubs successful GPC, ECOICOP, and NACE responses. */
+  public stubUnifiedSources(): void {
+    this.stubSources((request) => {
+      if (request.url.href === "https://ref.gs1.org/standards/gpc/2026-05/") {
+        return createHttpResponse(200, "zip-archive");
+      }
+
+      const query = request.url.searchParams.get("query") ?? "";
+      const isEcoicop = query.includes("ecoicop2");
+      return this.createSparqlResponse([
+        {
+          concept: {value: isEcoicop ? "eco:01" : "nace:A"},
+          notation: {value: isEcoicop ? "01" : "A"},
+          label: {value: isEcoicop ? "01 Food" : "A Agriculture"},
+        },
+      ]);
+    });
+  }
+
+  /**
+   * Stubs every request with one unavailable response status.
+   *
+   * @param status - Response status returned by every send.
+   */
+  public stubUnavailableSources(status = 503): void {
+    this.stubSources(() => createHttpResponse(status, "Unavailable"));
+  }
+
+  /**
+   * Stubs the GPC request with one specific transport failure.
+   *
+   * @param error - Error thrown by the HTTP capability for the GPC source.
    */
   public stubGpcFailure(error: Error): void {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async (input: string | URL | Request) => {
-        if (String(input) === "https://ref.gs1.org/standards/gpc/2026-05/") throw error;
-        return this.createSparqlResponse([]);
-      }),
-    );
-  }
-
-  /** Captures and suppresses debug, info, warning, and error console output. */
-  public captureConsole(): void {
-    for (const level of ["debug", "info", "warn", "error"] as const) {
-      vi.spyOn(console, level).mockImplementation((...args: readonly unknown[]) => {
-        this.#consoleMessages[level].push(stripVTControlCharacters(args.map((argument) => String(argument)).join(" ")));
-      });
-    }
+    this.stubSources((request) => {
+      if (request.url.href === "https://ref.gs1.org/standards/gpc/2026-05/") return error;
+      return this.createSparqlResponse([]);
+    });
   }
 
   /**
-   * Asserts that one captured console level contains a semantic message.
+   * Creates a memory-backed workspace usable by the artifact command object.
    *
-   * @param level - Captured console level.
+   * @returns The seeded filesystem and the working directory generators observe.
+   */
+  public createCommandWorkspace(): Readonly<{files: FileSystem; cwd: string}> {
+    const cwd = repositoryFixtureRoot;
+    const files = createMemoryFileSystem({
+      [`${cwd}/package.json`]: JSON.stringify({name: "@arolariu/monorepo"}),
+      [`${cwd}/sites/arolariu.ro/package.json`]: JSON.stringify({}),
+    });
+    this.runner.useDocument(this.gpcDocument);
+    return {files, cwd};
+  }
+
+  /**
+   * Asserts that one captured logger stream contains a semantic message.
+   *
+   * @param level - Semantic output level.
    * @param expected - Stable message fragment.
    */
   public expectMessage(level: "debug" | "info" | "warn" | "error", expected: string): void {
-    expect(this.#consoleMessages[level]).toEqual(expect.arrayContaining([expect.stringContaining(expected)]));
-  }
-
-  /**
-   * Creates a complete temporary environment for `main`.
-   *
-   * @returns Output-root and workspace options accepted by `main`.
-   */
-  public async createUnifiedMainOptions(): Promise<Readonly<{
-    archiveCommandRunner: CommandRunner;
-    outputRoots: readonly string[];
-    workspaceRoot: string;
-  }>> {
-    const workspaceRoot = await this.createTemporaryDirectory("arolariu-unified-main-");
-    const outputRoots = [join(workspaceRoot, "api"), join(workspaceRoot, "web")];
-    await this.writeJson(join(workspaceRoot, "sites", "arolariu.ro", "package.json"), {});
-    this.mockArchiveExtraction();
-    this.stubUnifiedFetch();
-    return {
-      archiveCommandRunner: this.requireArchiveCommandRunner(),
-      outputRoots,
-      workspaceRoot,
-    };
-  }
-
-  /**
-   * Creates a GPC generator bound to the configured archive runner.
-   *
-   * @param outputRoots - Optional mirrored output roots.
-   * @returns A generator using the configured archive runner.
-   */
-  public createGpcGenerator(outputRoots?: readonly string[]): Gs1GpcTaxonomyClassificationGenerator {
-    return new Gs1GpcTaxonomyClassificationGenerator(
-      outputRoots,
-      undefined,
-      this.#archiveCommandRunner ?? defaultCommandRunner,
+    const stream = level === "warn" || level === "error" ? "stderr" : "stdout";
+    expect(this.sink.records.filter((record) => record.stream === stream).map((record) => record.text)).toEqual(
+      expect.arrayContaining([expect.stringContaining(expected)]),
     );
-  }
-
-  /**
-   * Returns the configured archive-extraction runner.
-   *
-   * @returns Archive-extraction command runner.
-   */
-  public requireArchiveCommandRunner(): CommandRunner {
-    const archiveCommandRunner = this.#archiveCommandRunner;
-    if (archiveCommandRunner === undefined) {
-      throw new Error("Archive extraction runner was not configured.");
-    }
-
-    return archiveCommandRunner;
   }
 
   /** Restores mocks and removes every registered temporary directory. */
   public async cleanup(): Promise<void> {
-    vi.useRealTimers();
-    vi.unstubAllGlobals();
     vi.restoreAllMocks();
     await Promise.all(this.#temporaryDirectories.splice(0).map((directory) => rm(directory, {recursive: true, force: true})));
   }
@@ -303,121 +411,112 @@ describe("Taxonomy classification generators", () => {
   describe("Gs1GpcTaxonomyClassificationGenerator", () => {
     describe("generate", () => {
       it("generates the mirrored GPC artifact", async () => {
-        vi.stubGlobal(
-          "fetch",
-          vi.fn(async () => new Response(new Uint8Array([1]), {status: 200})),
-        );
-        harness.mockArchiveExtraction();
+        harness.stubUnifiedSources();
         const roots = await harness.createOutputRoots("arolariu-gpc-class-");
 
-        const outputs = await harness.createGpcGenerator(roots).generate();
+        const outputs = await new Gs1GpcTaxonomyClassificationGenerator(harness.createRuntime(), roots).generate();
 
         expect(outputs.map((output) => basename(output))).toEqual(["gpc-2026-05.min.json", "gpc-2026-05.min.json"]);
       });
 
       it("retries a transient HTTP failure before generating", async () => {
-        vi.useFakeTimers();
-        const fetchMock = vi
-          .fn()
-          .mockResolvedValueOnce(new Response("Unavailable", {status: 503, statusText: "Service Unavailable"}))
-          .mockResolvedValueOnce(new Response(new Uint8Array([1]), {status: 200}));
-        vi.stubGlobal("fetch", fetchMock);
-        harness.mockArchiveExtraction();
+        harness.stubSources((_request, send) =>
+          send === 1 ? createHttpResponse(503, "Unavailable") : createHttpResponse(200, "zip-archive"),
+        );
         const roots = await harness.createOutputRoots("arolariu-gpc-retry-");
 
-        const generation = harness.createGpcGenerator(roots).generate();
-        await vi.runAllTimersAsync();
+        await expect(new Gs1GpcTaxonomyClassificationGenerator(harness.createRuntime(), roots).generate()).resolves.toHaveLength(2);
+        expect(harness.http.sends).toHaveLength(2);
+      });
 
-        await expect(generation).resolves.toHaveLength(2);
-        expect(fetchMock).toHaveBeenCalledTimes(2);
+      it("requests an explicit bounded retry policy for every taxonomy source", async () => {
+        harness.stubUnifiedSources();
+        const roots = await harness.createOutputRoots("arolariu-gpc-policy-");
+
+        await new Gs1GpcTaxonomyClassificationGenerator(harness.createRuntime(), roots).generate();
+
+        const [request] = harness.http.sends;
+        expect(request?.retry).toMatchObject({attempts: 3, delayMs: 1_000});
+        expect(request?.retry?.statuses).toEqual(expect.arrayContaining([408, 425, 429, 500, 503, 599]));
+        expect(request?.timeoutMs).toBeGreaterThan(0);
+        expect(request?.maximumResponseBytes).toBeGreaterThan(0);
       });
 
       it("surfaces HTTP failures", async () => {
-        vi.useFakeTimers();
-        const fetchMock = vi.fn(async () => new Response("Unavailable", {status: 503, statusText: "Service Unavailable"}));
-        vi.stubGlobal("fetch", fetchMock);
+        harness.stubUnavailableSources();
 
-        const expectation = expect(harness.createGpcGenerator([]).generate()).rejects.toThrow(
-          "GPC download failed with HTTP 503 Service Unavailable.",
+        await expect(new Gs1GpcTaxonomyClassificationGenerator(harness.createRuntime(), []).generate()).rejects.toThrow(
+          "GPC download failed with HTTP 503.",
         );
-        await vi.runAllTimersAsync();
-
-        await expectation;
-        expect(fetchMock).toHaveBeenCalledTimes(3);
+        expect(harness.http.sends).toHaveLength(3);
       });
 
       it("logs a generator error and rethrows the original failure", async () => {
-        vi.useFakeTimers();
-        harness.captureConsole();
-        const failure = new Error("GPC unavailable");
-        harness.stubGpcFailure(failure);
+        harness.stubGpcFailure(new Error("GPC unavailable"));
         const roots = await harness.createOutputRoots("arolariu-gpc-error-");
 
-        const expectation = expect(harness.createGpcGenerator(roots).generate()).rejects.toThrow("GPC unavailable");
-        await vi.runAllTimersAsync();
+        await expect(new Gs1GpcTaxonomyClassificationGenerator(harness.createRuntime(), roots).generate()).rejects.toThrow(
+          "GPC unavailable",
+        );
 
-        await expectation;
+        expect(harness.http.sends).toHaveLength(3);
+        expect(harness.delays).toEqual([1_000, 4_000]);
         harness.expectMessage("error", "[GPC] GPC unavailable");
       });
 
       it("rejects a source document outside the pinned release month", async () => {
-        vi.stubGlobal(
-          "fetch",
-          vi.fn(async () => new Response(new Uint8Array([1]), {status: 200})),
-        );
-        harness.mockArchiveExtraction({...harness.gpcDocument, DateUtc: "2025-04-01"});
+        harness.stubUnifiedSources();
+        harness.runner.useDocument({...harness.gpcDocument, DateUtc: "2025-04-01"});
         const roots = await harness.createOutputRoots("arolariu-gpc-date-");
 
-        await expect(harness.createGpcGenerator(roots).generate()).rejects.toThrow(
+        await expect(new Gs1GpcTaxonomyClassificationGenerator(harness.createRuntime(), roots).generate()).rejects.toThrow(
           "GPC source DateUtc must belong to the pinned 2026-05 release.",
         );
       });
 
-      it("uses the injected command runner for archive extraction", async () => {
-        vi.stubGlobal(
-          "fetch",
-          vi.fn(async () => new Response(new Uint8Array([1]), {status: 200})),
-        );
+      it("uses the injected process runner for archive extraction", async () => {
+        harness.stubUnifiedSources();
         const roots = await harness.createOutputRoots("arolariu-gpc-runner-");
-        const run = vi.fn<CommandRunner["run"]>(async (command) => {
-          const outputIndex = command.args.findIndex((value) => value === "-C" || value === "-d");
-          const outputDirectory = command.args[outputIndex + 1];
-          if (outputDirectory === undefined) {
-            throw new Error("Output directory argument is missing.");
-          }
 
-          await Promise.all([
-            writeFile(join(outputDirectory, "GPC as of May 2026 (2026-05-20) EN.json"), JSON.stringify(harness.gpcDocument), "utf8"),
-            writeFile(
-              join(outputDirectory, "Delta - GPC as of May 2026 (20260520 v 20251127) EN.json"),
-              JSON.stringify(harness.gpcDocument),
-              "utf8",
-            ),
-          ]);
-
-          return {
-            code: 0,
-            stdout: "",
-            stderr: "",
-            durationMs: 0,
-            timedOut: false,
-          };
-        });
-        const runner: CommandRunner = {run};
-        const generator = new Gs1GpcTaxonomyClassificationGenerator(roots, undefined, runner);
-
-        const outputs = await generator.generate();
+        const outputs = await new Gs1GpcTaxonomyClassificationGenerator(harness.createRuntime(), roots).generate();
 
         expect(outputs.map((output) => basename(output))).toEqual(["gpc-2026-05.min.json", "gpc-2026-05.min.json"]);
-        expect(run).toHaveBeenCalledWith(
-          {
-            command: process.platform === "win32" ? "tar.exe" : "unzip",
-            args: process.platform === "win32"
-              ? expect.arrayContaining(["-xf", expect.any(String), "-C", expect.any(String)])
-              : expect.arrayContaining(["-qq", expect.any(String), "-d", expect.any(String)]),
+        expect(harness.runner.calls).toHaveLength(1);
+        expect(harness.runner.calls[0]?.request).toEqual({
+          command: process.platform === "win32" ? "tar.exe" : "unzip",
+          args: process.platform === "win32"
+            ? expect.arrayContaining(["-xf", expect.any(String), "-C", expect.any(String)])
+            : expect.arrayContaining(["-qq", expect.any(String), "-d", expect.any(String)]),
+        });
+        expect(harness.runner.calls[0]?.options).toMatchObject({output: "capture"});
+      });
+
+      it("removes its temporary extraction workspace even when extraction fails", async () => {
+        harness.stubUnifiedSources();
+        const temporaryDirectories: string[] = [];
+        const files: FileSystem = {
+          ...nodeFileSystem,
+          createTemporaryDirectory: async (prefix: string) => {
+            const handle = await nodeFileSystem.createTemporaryDirectory(prefix);
+            temporaryDirectories.push(handle.path);
+            return handle;
           },
-          {output: "capture"},
-        );
+        };
+        const runner: ProcessRunner = {
+          run: async () => ({kind: "exited", exitCode: 9, stdout: "", stderr: "extraction failed", durationMs: 0}),
+          expectSuccess: () => {
+            throw new Error("expectSuccess is not used by archive extraction.");
+          },
+          scope: () => runner,
+        };
+        const roots = await harness.createOutputRoots("arolariu-gpc-cleanup-");
+
+        await expect(
+          new Gs1GpcTaxonomyClassificationGenerator(harness.createRuntime({files, runner}), roots).generate(),
+        ).rejects.toThrow();
+
+        expect(temporaryDirectories).toHaveLength(1);
+        await expect(nodeFileSystem.exists(temporaryDirectories[0] ?? "")).resolves.toBe(false);
       });
     });
   });
@@ -426,8 +525,8 @@ describe("Taxonomy classification generators", () => {
     describe("artifact validation", () => {
       it("rejects hierarchy arrays that disagree with the parent chain", async () => {
         class TaxonomyGeneratorProbe extends TaxonomyClassificationGenerator {
-          public constructor(outputRoots: readonly string[]) {
-            super(outputRoots);
+          public constructor(runtime: ArtifactGeneratorRuntime, outputRoots: readonly string[]) {
+            super(runtime, outputRoots);
           }
 
           public override async generate(): Promise<readonly string[]> {
@@ -440,7 +539,7 @@ describe("Taxonomy classification generators", () => {
         }
 
         const roots = await harness.createOutputRoots("arolariu-hierarchy-validation-");
-        const generator = new TaxonomyGeneratorProbe(roots);
+        const generator = new TaxonomyGeneratorProbe(harness.createRuntime(), roots);
 
         await expect(
           generator.write({
@@ -477,8 +576,8 @@ describe("Taxonomy classification generators", () => {
 
       it("preserves existing bytes when only the generation timestamp changes", async () => {
         class TaxonomyGeneratorProbe extends TaxonomyClassificationGenerator {
-          public constructor(outputRoots: readonly string[]) {
-            super(outputRoots);
+          public constructor(runtime: ArtifactGeneratorRuntime, outputRoots: readonly string[]) {
+            super(runtime, outputRoots);
           }
 
           public override async generate(): Promise<readonly string[]> {
@@ -491,7 +590,7 @@ describe("Taxonomy classification generators", () => {
         }
 
         const roots = await harness.createOutputRoots("arolariu-stable-artifact-");
-        const generator = new TaxonomyGeneratorProbe(roots);
+        const generator = new TaxonomyGeneratorProbe(harness.createRuntime(), roots);
         const artifact: TaxonomyArtifact = {
           system: "NACE_2_1",
           version: "2.1",
@@ -528,23 +627,20 @@ describe("Taxonomy classification generators", () => {
   describe("EcoicopTaxonomyClassificationGenerator", () => {
     describe("generate", () => {
       it("generates a mirrored ECOICOP v2 hierarchy", async () => {
-        vi.stubGlobal(
-          "fetch",
-          vi.fn(async () =>
-            harness.createSparqlResponse([
-              {concept: {value: "eco:01"}, notation: {value: "01"}, label: {value: "01 Food"}},
-              {
-                concept: {value: "eco:011"},
-                notation: {value: "01.1"},
-                label: {value: "01.1 Food products"},
-                broader: {value: "eco:01"},
-              },
-            ]),
-          ),
+        harness.stubSources(() =>
+          harness.createSparqlResponse([
+            {concept: {value: "eco:01"}, notation: {value: "01"}, label: {value: "01 Food"}},
+            {
+              concept: {value: "eco:011"},
+              notation: {value: "01.1"},
+              label: {value: "01.1 Food products"},
+              broader: {value: "eco:01"},
+            },
+          ]),
         );
         const roots = await harness.createOutputRoots("arolariu-ecoicop-class-");
 
-        const outputs = await new EcoicopTaxonomyClassificationGenerator(roots).generate();
+        const outputs = await new EcoicopTaxonomyClassificationGenerator(harness.createRuntime(), roots).generate();
         const nodes = harness.readObjectArray(await readFile(outputs[0] ?? "", "utf8"), "nodes");
 
         expect(outputs.map((output) => basename(output))).toEqual(["ecoicop-v2.min.json", "ecoicop-v2.min.json"]);
@@ -557,38 +653,60 @@ describe("Taxonomy classification generators", () => {
           notation: {value: String(index).padStart(4, "0")},
           label: {value: `Label ${index}`},
         }));
-        const fetchMock = vi
-          .fn()
-          .mockResolvedValueOnce(harness.createSparqlResponse(firstPage))
-          .mockResolvedValueOnce(
-            harness.createSparqlResponse([{concept: {value: "eco:final"}, notation: {value: "9999.1"}, label: {value: "Final"}}]),
-          );
-        vi.stubGlobal("fetch", fetchMock);
+        harness.stubSources((_request, send) =>
+          send === 1
+            ? harness.createSparqlResponse(firstPage)
+            : harness.createSparqlResponse([{concept: {value: "eco:final"}, notation: {value: "9999.1"}, label: {value: "Final"}}]),
+        );
         const roots = await harness.createOutputRoots("arolariu-ecoicop-pages-");
 
-        await new EcoicopTaxonomyClassificationGenerator(roots).generate();
+        await new EcoicopTaxonomyClassificationGenerator(harness.createRuntime(), roots).generate();
 
-        expect(fetchMock).toHaveBeenCalledTimes(2);
+        expect(harness.http.sends).toHaveLength(2);
       });
 
       it("rejects malformed optional bindings", async () => {
-        vi.stubGlobal(
-          "fetch",
-          vi.fn(async () =>
-            harness.createSparqlResponse([
-              {
-                concept: {value: "eco:01"},
-                notation: {value: "01"},
-                label: {value: "Food"},
-                broader: {type: "uri"},
-              },
-            ]),
-          ),
+        harness.stubSources(() =>
+          harness.createSparqlResponse([
+            {
+              concept: {value: "eco:01"},
+              notation: {value: "01"},
+              label: {value: "Food"},
+              broader: {type: "uri"},
+            },
+          ]),
         );
 
-        await expect(new EcoicopTaxonomyClassificationGenerator([]).generate()).rejects.toThrow(
+        await expect(new EcoicopTaxonomyClassificationGenerator(harness.createRuntime(), []).generate()).rejects.toThrow(
           "SPARQL binding 'broader'.value must be a non-empty string.",
         );
+      });
+
+      it("rejects a divergent cached mirror when the source is unavailable", async () => {
+        const roots = await harness.createOutputRoots("arolariu-divergent-cache-");
+        harness.stubSources(() =>
+          harness.createSparqlResponse([{concept: {value: "eco:01"}, notation: {value: "01"}, label: {value: "Food"}}]),
+        );
+        const generator = new EcoicopTaxonomyClassificationGenerator(harness.createRuntime(), roots);
+        const outputs = await generator.generate();
+        await writeFile(outputs[1] ?? "", "{}", "utf8");
+        harness.stubUnavailableSources();
+
+        await expect(generator.generate()).rejects.toThrow("Cached taxonomy artifact 'ecoicop-v2.min.json' is not byte-identical");
+      });
+
+      it("does not use cached artifacts for non-transient HTTP failures", async () => {
+        const roots = await harness.createOutputRoots("arolariu-non-transient-");
+        harness.stubSources(() =>
+          harness.createSparqlResponse([{concept: {value: "eco:01"}, notation: {value: "01"}, label: {value: "Food"}}]),
+        );
+        const generator = new EcoicopTaxonomyClassificationGenerator(harness.createRuntime(), roots);
+        await generator.generate();
+        const sendsBeforeFailure = harness.http.sends.length;
+        harness.stubSources(() => createHttpResponse(404, "Missing"));
+
+        await expect(generator.generate()).rejects.toThrow("SPARQL request failed with HTTP 404.");
+        expect(harness.http.sends).toHaveLength(sendsBeforeFailure + 1);
       });
     });
   });
@@ -596,23 +714,20 @@ describe("Taxonomy classification generators", () => {
   describe("NaceTaxonomyClassificationGenerator", () => {
     describe("generate", () => {
       it("generates NACE 2.1 levels and hierarchy", async () => {
-        vi.stubGlobal(
-          "fetch",
-          vi.fn(async () =>
-            harness.createSparqlResponse([
-              {concept: {value: "nace:A"}, notation: {value: "A"}, label: {value: "A Agriculture"}},
-              {
-                concept: {value: "nace:01"},
-                notation: {value: "01"},
-                label: {value: "01 Crop production"},
-                broader: {value: "nace:A"},
-              },
-            ]),
-          ),
+        harness.stubSources(() =>
+          harness.createSparqlResponse([
+            {concept: {value: "nace:A"}, notation: {value: "A"}, label: {value: "A Agriculture"}},
+            {
+              concept: {value: "nace:01"},
+              notation: {value: "01"},
+              label: {value: "01 Crop production"},
+              broader: {value: "nace:A"},
+            },
+          ]),
         );
         const roots = await harness.createOutputRoots("arolariu-nace-class-");
 
-        const outputs = await new NaceTaxonomyClassificationGenerator(roots).generate();
+        const outputs = await new NaceTaxonomyClassificationGenerator(harness.createRuntime(), roots).generate();
         const nodes = harness.readObjectArray(await readFile(outputs[0] ?? "", "utf8"), "nodes");
 
         expect(outputs.map((output) => basename(output))).toEqual(["nace-2.1.min.json", "nace-2.1.min.json"]);
@@ -661,7 +776,7 @@ describe("License generators", () => {
           license: "BSD-3-Clause",
         });
 
-        const [output] = await new FrontendLicenseGenerator(workspace).generate();
+        const [output] = await new FrontendLicenseGenerator(harness.createRuntime(), workspace).generate();
 
         expect(harness.readObjectArray(await readFile(output ?? "", "utf8"), "production")).toMatchObject([{name: "production-package"}]);
         expect(harness.readObjectArray(await readFile(output ?? "", "utf8"), "development")).toMatchObject([{name: "development-package"}]);
@@ -682,7 +797,7 @@ describe("License generators", () => {
           author: {name: "Alpha Author"},
         });
 
-        const [output] = await new FrontendLicenseGenerator(workspace).generate();
+        const [output] = await new FrontendLicenseGenerator(harness.createRuntime(), workspace).generate();
         const packages = harness.readObjectArray(await readFile(output ?? "", "utf8"), "production");
 
         expect(packages).toEqual([
@@ -706,7 +821,7 @@ describe("License generators", () => {
         });
         await harness.writeJson(manifestPath, {name: "broken-package", description: 42});
 
-        await expect(new FrontendLicenseGenerator(workspace).generate()).rejects.toThrow(
+        await expect(new FrontendLicenseGenerator(harness.createRuntime(), workspace).generate()).rejects.toThrow(
           `Package manifest '${manifestPath}' field 'description' must be a string.`,
         );
       });
@@ -717,7 +832,7 @@ describe("License generators", () => {
           dependencies: {"missing-package": "1.0.0"},
         });
 
-        await expect(new FrontendLicenseGenerator(workspace).generate()).rejects.toThrow(
+        await expect(new FrontendLicenseGenerator(harness.createRuntime(), workspace).generate()).rejects.toThrow(
           "Unable to resolve declared frontend package manifest(s): missing-package.",
         );
       });
@@ -736,7 +851,7 @@ describe("License generators", () => {
           });
         }
 
-        const [output] = await new FrontendLicenseGenerator(workspace).generate();
+        const [output] = await new FrontendLicenseGenerator(harness.createRuntime(), workspace).generate();
         const contents = await readFile(output ?? "", "utf8");
 
         expect(contents.startsWith('{"production":')).toBe(true);
@@ -759,7 +874,7 @@ describe("License generators", () => {
           peerDependencies: {shared: "^3.0.0"},
         });
 
-        const [output] = await new FrontendLicenseGenerator(workspace).generate();
+        const [output] = await new FrontendLicenseGenerator(harness.createRuntime(), workspace).generate();
         const [packageInformation] = harness.readObjectArray(await readFile(output ?? "", "utf8"), "production");
 
         expect(packageInformation).toMatchObject({
@@ -772,7 +887,7 @@ describe("License generators", () => {
   describe("BackendLicenseGenerator", () => {
     describe("generate", () => {
       it("returns no outputs", async () => {
-        await expect(new BackendLicenseGenerator().generate()).resolves.toEqual([]);
+        await expect(new BackendLicenseGenerator(harness.createRuntime()).generate()).resolves.toEqual([]);
       });
     });
   });
@@ -790,7 +905,7 @@ describe("Artifact orchestration and CLI contracts", () => {
   });
 
   describe("module surface", () => {
-    it("exports the generators and canonical taxonomy artifact manifest", async () => {
+    it("exports the generators, the command object, and the canonical taxonomy artifact manifest", async () => {
       const artifactModule = await import("./generate.artifacts.ts");
 
       expect(Object.keys(artifactModule).toSorted()).toEqual([
@@ -801,96 +916,79 @@ describe("Artifact orchestration and CLI contracts", () => {
         "LicenseGenerator",
         "NaceTaxonomyClassificationGenerator",
         "TaxonomyClassificationGenerator",
+        "createGenerateArtifactsCommand",
+        "generateArtifactsCommand",
         "getExpectedTaxonomyArtifactPaths",
-        "main",
         "taxonomyArtifactFileNames",
       ]);
     });
   });
 
-  describe("main", () => {
-    it("returns zero after unified generation succeeds", async () => {
-      const options = await harness.createUnifiedMainOptions();
+  describe("generateArtifactsCommand", () => {
+    it("completes with exit code zero after unified generation succeeds", async () => {
+      const {files, cwd} = harness.createCommandWorkspace();
+      harness.stubUnifiedSources();
+      const command = createGenerateArtifactsCommand(
+        createTestRuntimeFactory({
+          files,
+          http: harness.http,
+          runner: new ArchiveExtractionRunner(files, harness.gpcDocument),
+          clock: harness.clock,
+          environment: harness.createEnvironment(cwd),
+          logger: harness.logger,
+        }),
+      );
 
-      await expect(main(options)).resolves.toBe(0);
+      const execution = await command.invoke({verbose: false});
+
+      expect(execution).toMatchObject({status: "completed", exitCode: 0});
+      expect(execution.status === "completed" && execution.value.generatedFiles).toHaveLength(7);
     });
 
-    it("uses the supplied logger without writing through direct console methods", async () => {
-      const options = await harness.createUnifiedMainOptions();
+    it("routes every message through the injected logger without writing to the console", async () => {
       const consoleSpies = ["debug", "info", "warn", "error", "log"].map((level) =>
         vi.spyOn(console, level as "debug").mockImplementation(() => undefined),
       );
       const sink = new InMemoryLoggerSink();
       const logger = new MonorepositoryConsoleLogger("test::artifacts", {color: false, sink});
+      const {files, cwd} = harness.createCommandWorkspace();
+      harness.stubUnifiedSources();
+      const command = createGenerateArtifactsCommand(
+        createTestRuntimeFactory({
+          files,
+          http: harness.http,
+          runner: new ArchiveExtractionRunner(files, harness.gpcDocument),
+          clock: harness.clock,
+          environment: harness.createEnvironment(cwd),
+          logger,
+        }),
+      );
 
-      await expect(main(options, logger)).resolves.toBe(0);
+      await expect(command.invoke({verbose: false}, {presentation: "human"})).resolves.toMatchObject({
+        status: "completed",
+        exitCode: 0,
+      });
 
       expect(consoleSpies.every((spy) => spy.mock.calls.length === 0)).toBe(true);
       expect(sink.records.some((record) => record.text.includes("[arolariu::test::artifacts]"))).toBe(true);
       expect(sink.records.some((record) => record.text.includes("Generated 7 artifact file(s)."))).toBe(true);
     });
 
-    it("uses validated mirrored taxonomy artifacts when sources remain unavailable", async () => {
-      harness.captureConsole();
-      const options = await harness.createUnifiedMainOptions();
-      await main(options);
-      vi.useFakeTimers();
-      const fetchMock = vi.fn(async () => new Response("Unavailable", {status: 503, statusText: "Service Unavailable"}));
-      vi.stubGlobal("fetch", fetchMock);
-
-      const generation = main(options);
-      await vi.runAllTimersAsync();
-
-      await expect(generation).resolves.toBe(0);
-      expect(fetchMock).toHaveBeenCalledTimes(9);
-      harness.expectMessage("warn", "[GPC] Source unavailable after retries; using validated cached artifact");
-      harness.expectMessage("warn", "[ECOICOP] Source unavailable after retries; using validated cached artifact");
-      harness.expectMessage("warn", "[NACE] Source unavailable after retries; using validated cached artifact");
-    });
-
-    it("rejects a divergent cached mirror when the source is unavailable", async () => {
-      const roots = await harness.createOutputRoots("arolariu-divergent-cache-");
-      vi.stubGlobal(
-        "fetch",
-        vi.fn(async () => harness.createSparqlResponse([{concept: {value: "eco:01"}, notation: {value: "01"}, label: {value: "Food"}}])),
-      );
-      const generator = new EcoicopTaxonomyClassificationGenerator(roots);
-      const outputs = await generator.generate();
-      await writeFile(outputs[1] ?? "", "{}", "utf8");
-      vi.useFakeTimers();
-      vi.stubGlobal(
-        "fetch",
-        vi.fn(async () => new Response("Unavailable", {status: 503, statusText: "Service Unavailable"})),
-      );
-
-      const expectation = expect(generator.generate()).rejects.toThrow(
-        "Cached taxonomy artifact 'ecoicop-v2.min.json' is not byte-identical",
-      );
-      await vi.runAllTimersAsync();
-
-      await expectation;
-    });
-
-    it("does not use cached artifacts for non-transient HTTP failures", async () => {
-      const roots = await harness.createOutputRoots("arolariu-non-transient-");
-      vi.stubGlobal(
-        "fetch",
-        vi.fn(async () => harness.createSparqlResponse([{concept: {value: "eco:01"}, notation: {value: "01"}, label: {value: "Food"}}])),
-      );
-      const generator = new EcoicopTaxonomyClassificationGenerator(roots);
-      await generator.generate();
-      const fetchMock = vi.fn(async () => new Response("Missing", {status: 404, statusText: "Not Found"}));
-      vi.stubGlobal("fetch", fetchMock);
-
-      await expect(generator.generate()).rejects.toThrow("SPARQL request failed with HTTP 404 Not Found.");
-      expect(fetchMock).toHaveBeenCalledTimes(1);
-    });
-
     it("logs unified lifecycle progress with the artifact prefix", async () => {
-      harness.captureConsole();
-      const options = await harness.createUnifiedMainOptions();
+      const {files, cwd} = harness.createCommandWorkspace();
+      harness.stubUnifiedSources();
+      const command = createGenerateArtifactsCommand(
+        createTestRuntimeFactory({
+          files,
+          http: harness.http,
+          runner: new ArchiveExtractionRunner(files, harness.gpcDocument),
+          clock: harness.clock,
+          environment: harness.createEnvironment(cwd),
+          logger: harness.logger,
+        }),
+      );
 
-      await main(options);
+      await expect(command.invoke({verbose: false}, {presentation: "human"})).resolves.toMatchObject({status: "completed"});
 
       harness.expectMessage("info", "[arolariu::generate::artifacts]");
       harness.expectMessage("info", "[GPC] Fetching");
@@ -899,6 +997,59 @@ describe("Artifact orchestration and CLI contracts", () => {
       harness.expectMessage("info", "[Frontend licenses] Reading");
       harness.expectMessage("warn", "[Backend licenses] Generation is intentionally deferred");
       harness.expectMessage("info", "✅ Generated 7 artifact file(s).");
+    });
+
+    it("uses validated mirrored taxonomy artifacts when sources remain unavailable", async () => {
+      const {files, cwd} = harness.createCommandWorkspace();
+      const runner = new ArchiveExtractionRunner(files, harness.gpcDocument);
+      const factory = createTestRuntimeFactory({
+        files,
+        http: harness.http,
+        runner,
+        clock: harness.clock,
+        environment: harness.createEnvironment(cwd),
+        logger: harness.logger,
+      });
+      harness.stubUnifiedSources();
+      await expect(createGenerateArtifactsCommand(factory).invoke({verbose: false})).resolves.toMatchObject({
+        status: "completed",
+        exitCode: 0,
+      });
+
+      const sendsBeforeOutage = harness.http.sends.length;
+      harness.stubUnavailableSources();
+
+      await expect(createGenerateArtifactsCommand(factory).invoke({verbose: false})).resolves.toMatchObject({
+        status: "completed",
+        exitCode: 0,
+      });
+
+      expect(harness.http.sends.length - sendsBeforeOutage).toBe(9);
+      harness.expectMessage("warn", "[GPC] Source unavailable after retries; using validated cached artifact");
+      harness.expectMessage("warn", "[ECOICOP] Source unavailable after retries; using validated cached artifact");
+      harness.expectMessage("warn", "[NACE] Source unavailable after retries; using validated cached artifact");
+    });
+
+    it("fails the invocation when a taxonomy source is unavailable and no cache exists", async () => {
+      const files = createMemoryFileSystem({
+        [`${repositoryFixtureRoot}/package.json`]: JSON.stringify({name: "@arolariu/monorepo"}),
+        [`${repositoryFixtureRoot}/sites/arolariu.ro/package.json`]: JSON.stringify({}),
+      });
+      harness.stubUnavailableSources();
+      const command = createGenerateArtifactsCommand(
+        createTestRuntimeFactory({
+          files,
+          http: harness.http,
+          runner: new ArchiveExtractionRunner(files, harness.gpcDocument),
+          clock: harness.clock,
+          environment: harness.createEnvironment(repositoryFixtureRoot),
+          logger: harness.logger,
+        }),
+      );
+
+      const execution = await command.invoke({verbose: false});
+
+      expect(execution).toMatchObject({status: "failed", exitCode: 1, failure: {kind: "operational"}});
     });
   });
 
@@ -909,14 +1060,14 @@ describe("Artifact orchestration and CLI contracts", () => {
         join(workspaceRoot, "sites", "api.arolariu.ro", "src", "Invoices", "Resources", "Taxonomies"),
         join(workspaceRoot, "sites", "arolariu.ro", "src", "data", "taxonomies"),
       ];
-      harness.mockArchiveExtraction();
-      harness.stubUnifiedFetch();
+      harness.stubUnifiedSources();
+      const runtime = harness.createRuntime();
 
       const actualPaths = (
         await Promise.all([
-          harness.createGpcGenerator(outputRoots).generate(),
-          new EcoicopTaxonomyClassificationGenerator(outputRoots).generate(),
-          new NaceTaxonomyClassificationGenerator(outputRoots).generate(),
+          new Gs1GpcTaxonomyClassificationGenerator(runtime, outputRoots).generate(),
+          new EcoicopTaxonomyClassificationGenerator(runtime, outputRoots).generate(),
+          new NaceTaxonomyClassificationGenerator(runtime, outputRoots).generate(),
         ])
       ).flat();
       const expectedPaths = [
@@ -1019,19 +1170,29 @@ describe("Artifact orchestration and CLI contracts", () => {
       );
       const sink = new InMemoryLoggerSink();
       const logger = new MonorepositoryConsoleLogger("generate", {color: false, sink});
+      const unusedLeaf: CommandInvoker<GenerateLeafInput, GenerateLeafResult> = {
+        invoke: (): Promise<CommandExecution<GenerateLeafResult>> => {
+          throw new Error("No generator may run when no task is selected.");
+        },
+      };
+      const dependencies: GenerateCommandDependencies = {
+        env: unusedLeaf,
+        i18n: unusedLeaf,
+        gql: unusedLeaf,
+        artifacts: {
+          invoke: (): Promise<CommandExecution<ArtifactGenerationResult>> => {
+            throw new Error("No generator may run when no task is selected.");
+          },
+        } satisfies CommandInvoker<GenerateArtifactsInput, ArtifactGenerationResult>,
+      };
+      const command = createGenerateCommand(dependencies, createTestRuntimeFactory({logger}));
 
       await expect(
-        generate(
-          {
-            verbose: false,
-            generateEnv: false,
-            generateGql: false,
-            generateI18n: false,
-            generateArtifacts: false,
-          },
-          logger,
+        command.invoke(
+          {verbose: false, env: false, gql: false, i18n: false, artifacts: false},
+          {presentation: "human"},
         ),
-      ).resolves.toBe(0);
+      ).resolves.toMatchObject({status: "completed", exitCode: 0});
 
       expect(consoleSpies.every((spy) => spy.mock.calls.length === 0)).toBe(true);
       expect(sink.records.some((record) => record.text.includes("No generation tasks selected"))).toBe(true);
