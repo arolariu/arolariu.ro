@@ -16,7 +16,10 @@
  *
  * Every provider receives narrow capability picks rather than ambient state: an ordinary provider
  * only ever sees the read-only filesystem, and only the isolated Nx workspace provider receives the
- * narrow temporary-directory capability it needs for its disposable Nx state root.
+ * narrow temporary-directory capability it needs for its disposable Nx state root. The shared
+ * process runner is scoped to the owning invocation's cancellation signal, and every provider is
+ * registered behind the same signal, so cancellation reaches probes and isolated workers instead
+ * of being degraded into an `"unavailable"` fact.
  *
  * Under the `"quick"` profile, `"aggregate"` never constructs the isolated aggregate worker
  * provider at all: it is wired to a bounded provider that immediately reports the fact as
@@ -26,6 +29,7 @@
 
 import type {ProcessRunner} from "../common/runner.ts";
 import type {Clock, FileSystem, ReadOnlyFileSystem, RepositoryInspectionRequest, RuntimeEnvironment, TaskScheduler} from "../common/runtime.ts";
+import {commandCancellationFromSignal} from "../common/runtime.ts";
 import type {ContainerEngine} from "../container-runtime/types.ts";
 import {createAggregateProvider, type AggregateFacts} from "./aggregate.ts";
 import {createDotnetProvider, type DotnetFacts} from "./dotnet.ts";
@@ -152,6 +156,25 @@ function createQuickAggregateProvider(now: () => number): InspectionProvider<Agg
 }
 
 /**
+ * Rejects an inspection whose owning command invocation was cancelled.
+ *
+ * @remarks
+ * Cancellation is not an inspection fact: RFC 0002 section 7.3 lets only explicit business policy
+ * degrade a failure, and section 9.5 requires a cancelled invocation to stay a command-execution
+ * failure. Reporting a cancelled probe or worker as an `"unavailable"` fact would hide an
+ * interrupted run inside an otherwise successful report, so the invocation's typed
+ * {@link CommandCancellation} is raised instead and the command lifecycle classifies it once.
+ *
+ * @param signal - Cancellation signal of the owning command invocation.
+ * @throws {CommandCancellation} When `signal` is already aborted.
+ */
+function throwIfCancelled(signal: AbortSignal): void {
+  if (signal.aborted) {
+    throw commandCancellationFromSignal(signal);
+  }
+}
+
+/**
  * Composes every repository inspection provider into one shared, memoized
  * {@link RepositoryInspectionSession}.
  *
@@ -164,6 +187,13 @@ function createQuickAggregateProvider(now: () => number): InspectionProvider<Agg
  * observe, and a targeted {@link InspectionSession.invalidate} call only ever forces the exact
  * keys it names to be recomputed.
  *
+ * Every provider is registered behind the invocation's cancellation signal, and the shared runner
+ * is scoped to that same signal, so a cancelled invocation aborts in-flight probes and workers
+ * instead of waiting out their bounded timeouts, and no provider can report a cancelled run as a
+ * degraded fact. Wrapping each provider (rather than the session) keeps the memoized promise
+ * identity and the reject-evicts-its-own-entry semantics of {@link createInspectionSession}
+ * unchanged.
+ *
  * @param options - Inspection profile, canonical repository paths, optional requested container
  * engine, and the runner, read-only filesystem, temporary-directory, clock, task-scheduler,
  * environment, and cancellation capabilities every provider observes.
@@ -173,9 +203,18 @@ function createQuickAggregateProvider(now: () => number): InspectionProvider<Agg
 export function createRepositoryInspectionSession(
   options: Readonly<RepositoryInspectionSessionOptions>,
 ): RepositoryInspectionSession {
-  const {files, temporaryDirectories, clock, tasks, environment, runner} = options;
+  const {files, temporaryDirectories, clock, tasks, environment, signal} = options;
   const now = (): number => clock.monotonicNow();
+  const runner = options.runner.scope({signal});
   const probes = createInspectionProbeRunner(runner);
+
+  const cancellable = <T>(provider: InspectionProvider<T>): InspectionProvider<T> =>
+    async (): Promise<InspectionOutcome<T>> => {
+      throwIfCancelled(signal);
+      const outcome = await provider();
+      throwIfCancelled(signal);
+      return outcome;
+    };
 
   // Mutable engine variable: starts with the Commander-level requested engine and can be updated
   // later by `updateInfrastructureEngine` (from environment, persisted config, or interactive
@@ -198,46 +237,55 @@ export function createRepositoryInspectionSession(
   };
 
   const providers: InspectionProviders<RepositoryInspectionFacts> = {
-    workspace: createWorkspaceProvider({
-      root: options.paths.root,
-      runner,
-      clock,
-      environment,
-      temporaryDirectories,
-    }),
-    aggregate:
+    workspace: cancellable(
+      createWorkspaceProvider({
+        root: options.paths.root,
+        runner,
+        clock,
+        environment,
+        temporaryDirectories,
+      }),
+    ),
+    aggregate: cancellable(
       options.profile === "quick"
         ? createQuickAggregateProvider(now)
         : createAggregateProvider({root: options.paths.root, runner, clock, environment}),
-    "npm.root": createNpmTreeProvider({scope: "root", root: options.paths.root, probes, clock}),
-    "npm.github-scripts": createNpmTreeProvider({
-      scope: "github-scripts",
-      root: options.paths.githubScriptsRoot,
-      probes,
-      clock,
-    }),
-    packages: createInstalledPackageProvider({
-      root: options.paths.root,
-      packageNames: INSPECTED_PACKAGE_NAMES,
-      files,
-      clock,
-      tasks,
-    }),
-    dotnet: createDotnetProvider({paths: options.paths, probes, files, clock, tasks, environment}),
-    python: createPythonProvider({paths: options.paths, probes, files, clock, tasks, environment}),
-    react: createReactProvider(frontendInput),
-    "svelte.cv": createSvelteProvider("cv", frontendInput),
-    "svelte.status": createSvelteProvider("status", frontendInput),
-    infrastructure: createInfrastructureProvider({
-      paths: options.paths,
-      probes,
-      aggregate: (): Promise<InspectionOutcome<AggregateFacts>> => session.inspect("aggregate"),
-      resolveEngine: (): ContainerEngine | undefined => currentEngine,
-      files,
-      clock,
-      tasks,
-      environment,
-    }),
+    ),
+    "npm.root": cancellable(createNpmTreeProvider({scope: "root", root: options.paths.root, probes, clock})),
+    "npm.github-scripts": cancellable(
+      createNpmTreeProvider({
+        scope: "github-scripts",
+        root: options.paths.githubScriptsRoot,
+        probes,
+        clock,
+      }),
+    ),
+    packages: cancellable(
+      createInstalledPackageProvider({
+        root: options.paths.root,
+        packageNames: INSPECTED_PACKAGE_NAMES,
+        files,
+        clock,
+        tasks,
+      }),
+    ),
+    dotnet: cancellable(createDotnetProvider({paths: options.paths, probes, files, clock, tasks, environment})),
+    python: cancellable(createPythonProvider({paths: options.paths, probes, files, clock, tasks, environment})),
+    react: cancellable(createReactProvider(frontendInput)),
+    "svelte.cv": cancellable(createSvelteProvider("cv", frontendInput)),
+    "svelte.status": cancellable(createSvelteProvider("status", frontendInput)),
+    infrastructure: cancellable(
+      createInfrastructureProvider({
+        paths: options.paths,
+        probes,
+        aggregate: (): Promise<InspectionOutcome<AggregateFacts>> => session.inspect("aggregate"),
+        resolveEngine: (): ContainerEngine | undefined => currentEngine,
+        files,
+        clock,
+        tasks,
+        environment,
+      }),
+    ),
   };
 
   const baseSession = createInspectionSession<RepositoryInspectionFacts>(providers);

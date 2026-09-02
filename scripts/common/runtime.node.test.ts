@@ -771,6 +771,27 @@ describe("createNodeRuntimeScope", () => {
     await runtime.cleanup.drain();
   });
 
+  it("binds every session it creates to the scope's own cancellation signal", async () => {
+    const controller = new AbortController();
+    const runtime = await createNodeRuntimeScope({
+      commandName: "sample",
+      verbose: false,
+      presentation: "silent",
+      registerProcessSignals: false,
+      signal: controller.signal,
+    });
+    const session = runtime.inspection.getRepositorySession({
+      profile: "quick",
+      paths: createRepositoryPaths(repositoryFixtureRoot),
+    });
+
+    controller.abort(new CommandCancellation("Command interrupted by SIGINT.", 130));
+
+    await expect(session.inspect("packages")).rejects.toBeInstanceOf(CommandCancellation);
+
+    await runtime.cleanup.drain();
+  });
+
   it("uses an injected inspection runtime when one is supplied", async () => {
     const session = createRepositoryInspectionSessionStub();
     const runtime = await createNodeRuntimeScope({

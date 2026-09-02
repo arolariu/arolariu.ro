@@ -16,12 +16,19 @@
 
 import {beforeEach, describe, expect, it, vi} from "vitest";
 
-import type {ProcessOutcome, ProcessRequest, ProcessRunner} from "../common/runner.ts";
+import type {ProcessOutcome, ProcessRequest, ProcessRunner, ProcessRunOptions} from "../common/runner.ts";
 import {resolveRepositoryPaths, type RepositoryPaths} from "../common/repository-paths.ts";
 import {nodeFileSystem} from "../common/runtime.node.ts";
-import {asReadOnlyFileSystem, DefaultTaskScheduler, type Clock, type FileSystem, type RuntimeEnvironment} from "../common/runtime.ts";
+import {
+  asReadOnlyFileSystem,
+  CommandCancellation,
+  DefaultTaskScheduler,
+  type Clock,
+  type FileSystem,
+  type RuntimeEnvironment,
+} from "../common/runtime.ts";
 import {INSPECTED_PACKAGE_NAMES} from "./packages.ts";
-import {createRepositoryInspectionSession, type RepositoryInspectionSession} from "./repository.ts";
+import {createRepositoryInspectionSession, type RepositoryInspectionKey, type RepositoryInspectionSession} from "./repository.ts";
 
 const packagesProviderState = vi.hoisted(() => ({
   factoryCalls: 0,
@@ -104,31 +111,58 @@ const temporaryDirectories: Pick<FileSystem, "createTemporaryDirectory"> = {
   createTemporaryDirectory: (prefix) => nodeFileSystem.createTemporaryDirectory(prefix),
 };
 
-/** A fake {@link ProcessRunner} that reports every command as a bounded, non-throwing failure. */
-function createFakeRunner(): {runner: ProcessRunner; calls: Readonly<ProcessRequest>[]} {
-  const calls: Readonly<ProcessRequest>[] = [];
-  const run = vi.fn(async (command: Readonly<ProcessRequest>): Promise<ProcessOutcome> => {
-    calls.push(command);
-    return {kind: "exited", exitCode: 1, stdout: "", stderr: "", durationMs: 1};
-  });
-  const runner: ProcessRunner = {
-    run,
+/** One recorded fake-runner invocation, including the options the composed session supplied. */
+interface RecordedRun {
+  readonly request: Readonly<ProcessRequest>;
+  readonly options: Readonly<ProcessRunOptions>;
+}
+
+/** Produces the outcome a fake runner reports for one recorded invocation. */
+type FakeRunnerOutcome = (run: Readonly<RecordedRun>) => ProcessOutcome;
+
+/** Default fake outcome: every command is a bounded, non-throwing completed failure. */
+const completedFailure: FakeRunnerOutcome = () => ({kind: "exited", exitCode: 1, stdout: "", stderr: "", durationMs: 1});
+
+/**
+ * A fake {@link ProcessRunner} that records every request together with the effective options,
+ * and supports {@link ProcessRunner.scope} exactly as the real scoped runner does: scoped defaults
+ * are merged under explicit per-call options.
+ *
+ * @param outcome - Outcome reported for each recorded invocation.
+ * @returns The runner and the list of recorded invocations.
+ */
+function createFakeRunner(outcome: FakeRunnerOutcome = completedFailure): {runner: ProcessRunner; runs: RecordedRun[]} {
+  const runs: RecordedRun[] = [];
+  const build = (defaults: Readonly<ProcessRunOptions>): ProcessRunner => ({
+    run: (request: Readonly<ProcessRequest>, options: Readonly<ProcessRunOptions> = {}): Promise<ProcessOutcome> => {
+      const recorded: RecordedRun = {request, options: {...defaults, ...options}};
+      runs.push(recorded);
+      return Promise.resolve(outcome(recorded));
+    },
     expectSuccess: () => {
       throw new Error("The composed session never calls expectSuccess.");
     },
-    scope: () => {
-      throw new Error("The composed session never scopes the shared runner.");
-    },
-  };
-  return {runner, calls};
+    scope: (nested: Readonly<ProcessRunOptions>): ProcessRunner => build({...defaults, ...nested}),
+  });
+  return {runner: build({}), runs};
 }
 
 /** Builds one repository inspection session over a fresh fake runner for one test. */
-function buildSession(overrides: Readonly<Partial<{profile: "full" | "quick"; platform: NodeJS.Platform; runner: ProcessRunner}>> = {}): {
+function buildSession(
+  overrides: Readonly<
+    Partial<{
+      profile: "full" | "quick";
+      platform: NodeJS.Platform;
+      runner: ProcessRunner;
+      signal: AbortSignal;
+      outcome: FakeRunnerOutcome;
+    }>
+  > = {},
+): {
   session: RepositoryInspectionSession;
-  runnerCalls: Readonly<ProcessRequest>[];
+  runs: RecordedRun[];
 } {
-  const fake = createFakeRunner();
+  const fake = createFakeRunner(overrides.outcome ?? completedFailure);
   const runner = overrides.runner ?? fake.runner;
   const session = createRepositoryInspectionSession({
     profile: overrides.profile ?? "full",
@@ -139,9 +173,9 @@ function buildSession(overrides: Readonly<Partial<{profile: "full" | "quick"; pl
     clock: clock(),
     tasks: new DefaultTaskScheduler(),
     environment: environmentFor(overrides.platform ?? "linux"),
-    signal: new AbortController().signal,
+    signal: overrides.signal ?? new AbortController().signal,
   });
-  return {session, runnerCalls: fake.calls};
+  return {session, runs: fake.runs};
 }
 
 beforeEach(() => {
@@ -167,7 +201,7 @@ describe("createRepositoryInspectionSession aggregate wiring", () => {
   });
 
   it("never constructs the real aggregate worker provider under the quick profile", async () => {
-    const {session, runnerCalls} = buildSession({profile: "quick"});
+    const {session, runs} = buildSession({profile: "quick"});
 
     const outcome = await session.inspect("aggregate");
 
@@ -177,7 +211,7 @@ describe("createRepositoryInspectionSession aggregate wiring", () => {
     }
     expect(aggregateProviderState.factoryCalls).toBe(0);
     expect(aggregateProviderState.invocationCalls).toBe(0);
-    expect(runnerCalls.some((call) => call.args.some((arg) => arg.includes("aggregate-worker")))).toBe(false);
+    expect(runs.some((run) => run.request.args.some((arg) => arg.includes("aggregate-worker")))).toBe(false);
   });
 
   it("reuses the already-cached aggregate outcome when infrastructure is inspected afterward", async () => {
@@ -317,5 +351,132 @@ describe("createRepositoryInspectionSession updateInfrastructureEngine", () => {
     // Workspace's cached promise identity is preserved (same memoized promise reference).
     const workspaceAfterPromise = session.inspect("workspace");
     expect(workspaceAfterPromise).toBe(workspacePromise);
+  });
+});
+
+// ============================================================================
+// Invocation cancellation
+// ============================================================================
+
+/**
+ * Every {@link RepositoryInspectionKey}, kept exhaustive by the compiler: a new fact key that is
+ * not listed here fails the `satisfies` check, so the cancellation coverage below can never
+ * silently miss a provider.
+ */
+const inspectionKeys: readonly RepositoryInspectionKey[] = Object.values({
+  workspace: "workspace",
+  aggregate: "aggregate",
+  "npm.root": "npm.root",
+  "npm.github-scripts": "npm.github-scripts",
+  packages: "packages",
+  dotnet: "dotnet",
+  python: "python",
+  react: "react",
+  "svelte.cv": "svelte.cv",
+  "svelte.status": "svelte.status",
+  infrastructure: "infrastructure",
+} satisfies Record<RepositoryInspectionKey, RepositoryInspectionKey>);
+
+describe("createRepositoryInspectionSession invocation cancellation", () => {
+  it("links the invocation signal into every process the composed session runs", async () => {
+    const controller = new AbortController();
+    const {session, runs} = buildSession({profile: "full", signal: controller.signal});
+
+    await session.inspect("npm.root");
+    await session.inspect("aggregate");
+
+    expect(runs.length).toBeGreaterThanOrEqual(2);
+    expect(runs.some((run) => run.request.args.some((arg) => arg.includes("aggregate-worker")))).toBe(true);
+    for (const run of runs) {
+      expect(run.options.signal).toBe(controller.signal);
+    }
+  });
+
+  it("preserves each probe's own bounded timeout while carrying the invocation signal", async () => {
+    const controller = new AbortController();
+    const {session, runs} = buildSession({profile: "full", signal: controller.signal});
+
+    await session.inspect("npm.root");
+
+    for (const run of runs) {
+      expect(run.options.timeoutMs).toBeGreaterThan(0);
+      expect(run.options.signal).toBe(controller.signal);
+    }
+  });
+
+  it("rejects every fact with CommandCancellation once the invocation is cancelled, without running anything", async () => {
+    const controller = new AbortController();
+    const {session, runs} = buildSession({profile: "full", signal: controller.signal});
+    controller.abort(new CommandCancellation("Command interrupted by SIGINT.", 130));
+
+    for (const key of inspectionKeys) {
+      await expect(session.inspect(key)).rejects.toBeInstanceOf(CommandCancellation);
+    }
+
+    expect(runs).toHaveLength(0);
+  });
+
+  it("preserves the cancellation exit code the runtime aborted the invocation with", async () => {
+    const controller = new AbortController();
+    const {session} = buildSession({profile: "full", signal: controller.signal});
+    controller.abort(new CommandCancellation("Command terminated by SIGTERM.", 143));
+
+    await expect(session.inspect("packages")).rejects.toMatchObject({exitCode: 143});
+  });
+
+  it("propagates a runtime-caused cancelled process outcome instead of degrading it to an unavailable fact", async () => {
+    const controller = new AbortController();
+    const {session} = buildSession({
+      profile: "full",
+      signal: controller.signal,
+      outcome: () => {
+        controller.abort(new CommandCancellation("Command interrupted by SIGINT.", 130));
+        return {kind: "cancelled", stdout: "", stderr: "", durationMs: 1};
+      },
+    });
+
+    await expect(session.inspect("npm.root")).rejects.toBeInstanceOf(CommandCancellation);
+  });
+
+  it("propagates a runtime-caused worker cancellation instead of reporting an unavailable aggregate", async () => {
+    const controller = new AbortController();
+    const {session} = buildSession({
+      profile: "full",
+      signal: controller.signal,
+      outcome: () => {
+        controller.abort(new CommandCancellation("Command interrupted by SIGINT.", 130));
+        return {kind: "cancelled", stdout: "", stderr: "", durationMs: 1};
+      },
+    });
+
+    await expect(session.inspect("aggregate")).rejects.toBeInstanceOf(CommandCancellation);
+  });
+
+  it("still classifies a cancelled outcome as an unavailable fact when the invocation itself was not cancelled", async () => {
+    const {session} = buildSession({
+      profile: "full",
+      outcome: () => ({kind: "cancelled", stdout: "", stderr: "", durationMs: 1}),
+    });
+
+    const outcome = await session.inspect("npm.root");
+
+    expect(outcome.kind).toBe("unavailable");
+    if (outcome.kind === "unavailable") {
+      expect(outcome.reason).toMatch(/interrupted/iu);
+    }
+  });
+
+  it("keeps every non-cancelled transport classification unchanged", async () => {
+    const {session} = buildSession({
+      profile: "full",
+      outcome: () => ({kind: "timed-out", stdout: "", stderr: "", durationMs: 1}),
+    });
+
+    const outcome = await session.inspect("npm.root");
+
+    expect(outcome.kind).toBe("unavailable");
+    if (outcome.kind === "unavailable") {
+      expect(outcome.reason).toMatch(/timed out/iu);
+    }
   });
 });
