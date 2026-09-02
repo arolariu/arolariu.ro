@@ -232,6 +232,12 @@ async function executeGenerate(
     }
 
     if (execution.status !== "completed" || execution.exitCode !== 0) {
+      // A "completed" child still carries its typed business summary even on a nonzero exit
+      // (e.g. i18n explaining which keys were added); surface it before the generic stop
+      // warning instead of discarding it, since the silent child never rendered it itself.
+      if (execution.status === "completed") {
+        logger.warn(execution.value.summary);
+      }
       logger.warn(`The ${task.label} reported a nonzero result; later generators were skipped.`);
       return {selected, completed, failed: task.name};
     }

@@ -111,6 +111,21 @@ describe("generate composition", () => {
     expect(execution).toMatchObject({status: "completed", exitCode: 1});
   });
 
+  it("logs the completed child's typed summary before stopping on a nonzero exit", async () => {
+    const {calls, dependencies} = createRecordingDependencies({i18n: completedLeaf("Added 3 missing translation keys.", 1)});
+    const {logger, sink} = makeLoggerFixture();
+    const command = createGenerateCommand(dependencies, createTestRuntimeFactory({logger}));
+
+    const execution = await command.invoke(
+      {verbose: false, env: true, i18n: true, gql: true, artifacts: true},
+      {presentation: "human"},
+    );
+
+    expect(calls.map((call) => call.name)).toEqual(["env", "i18n"]);
+    expect(execution).toMatchObject({status: "completed", exitCode: 1});
+    expect(sink.records.some((record) => record.text.includes("Added 3 missing translation keys."))).toBe(true);
+  });
+
   it("reports the failing generator and the generators that already completed", async () => {
     const {calls, dependencies} = createRecordingDependencies({gql: failedLeaf("GraphQL codegen exploded.")});
     const command = createGenerateCommand(dependencies, createTestRuntimeFactory());
