@@ -29,36 +29,20 @@ import type {NodePackageDependencyType, NodePackageInformation, TaxonomyArtifact
 
 export {getExpectedTaxonomyArtifactPaths, taxonomyArtifactFileNames} from "./common/taxonomy-artifacts.ts";
 
-/** Backoff delays between the three bounded taxonomy transport attempts. */
+/** Backoff delays between the three bounded taxonomy source attempts. */
 const TAXONOMY_SOURCE_RETRY_DELAYS_MS = [1_000, 4_000] as const;
 
 /** Total bounded attempts one taxonomy source request is allowed. */
 const TAXONOMY_SOURCE_ATTEMPTS = TAXONOMY_SOURCE_RETRY_DELAYS_MS.length + 1;
 
-/** Per-attempt budget that replaces Node's five-minute fetch default. */
-const TAXONOMY_SOURCE_ATTEMPT_TIMEOUT_MS = 30_000;
-
 /**
- * Overall request budget handed to the HTTP capability.
+ * Per-attempt budget that replaces Node's five-minute fetch default.
  *
  * @remarks
- * {@link HttpClient.request} bounds one whole call — every retried attempt plus every backoff
- * delay — with a single timeout, so the per-attempt budget is multiplied out here instead of
- * being restarted per attempt.
+ * {@link HttpClient.request} bounds one whole call with a single timeout, and every taxonomy
+ * request is exactly one attempt, so this stays the per-attempt budget it has always been.
  */
-const TAXONOMY_SOURCE_TIMEOUT_MS =
-  TAXONOMY_SOURCE_ATTEMPT_TIMEOUT_MS * TAXONOMY_SOURCE_ATTEMPTS
-  + TAXONOMY_SOURCE_RETRY_DELAYS_MS.reduce((total, delay) => total + delay, 0);
-
-/** Response statuses that mean a taxonomy source is temporarily unavailable. */
-const TRANSIENT_HTTP_STATUSES: readonly number[] = [408, 425, 429, ...Array.from({length: 100}, (_, offset) => 500 + offset)];
-
-/** Explicit bounded retry policy applied to every taxonomy source request. */
-const TAXONOMY_SOURCE_RETRY_POLICY: Readonly<{attempts: number; delayMs: number; statuses: readonly number[]}> = {
-  attempts: TAXONOMY_SOURCE_ATTEMPTS,
-  delayMs: TAXONOMY_SOURCE_RETRY_DELAYS_MS[0],
-  statuses: TRANSIENT_HTTP_STATUSES,
-};
+const TAXONOMY_SOURCE_TIMEOUT_MS = 30_000;
 
 /**
  * Upper bound on one buffered taxonomy response.
@@ -316,12 +300,15 @@ export abstract class TaxonomyClassificationGenerator {
    * Requests one taxonomy source with bounded transient retries.
    *
    * @remarks
-   * Retries are bounded twice over, and never unbounded in either layer: the HTTP capability
-   * replays {@link TAXONOMY_SOURCE_RETRY_POLICY} for a transient response status, and this loop
-   * replays the whole request for a transport failure, which the HTTP contract never retries on
-   * its own. Both paths stop after {@link TAXONOMY_SOURCE_ATTEMPTS} attempts and surface a
-   * {@link TaxonomySourceUnavailableError}, the single failure a validated cached mirror may
-   * satisfy.
+   * One explicitly bounded schedule owns every retry: a transport failure and a transient
+   * response status share the same {@link TAXONOMY_SOURCE_ATTEMPTS} budget and the same
+   * {@link TAXONOMY_SOURCE_RETRY_DELAYS_MS} backoff, exactly as they did before the runtime
+   * migration. The retries deliberately stay here rather than in the shared `HttpRequest.retry`
+   * policy: that policy carries one uniform `delayMs`, so it can neither express this two-step
+   * backoff nor share an attempt budget with the transport failures the HTTP contract never
+   * retries, and nesting the two layers would multiply the bounded request budget. Exhausting
+   * the schedule surfaces a {@link TaxonomySourceUnavailableError}, the single failure a
+   * validated cached mirror may satisfy.
    *
    * @param sourceName - Generator label used in retry diagnostics.
    * @param requestName - Request label used in HTTP failure messages.
@@ -341,37 +328,37 @@ export abstract class TaxonomyClassificationGenerator {
     let lastFailure: Error | undefined;
 
     for (let attempt = 1; attempt <= TAXONOMY_SOURCE_ATTEMPTS; attempt += 1) {
-      let response: HttpResponse;
+      let outcome: HttpResponse | Error;
       try {
         // Intentionally sequential: one attempt must settle before the next one is considered.
         // eslint-disable-next-line no-await-in-loop
-        response = await this.runtime.http.request({
+        outcome = await this.runtime.http.request({
           url,
           method: "GET",
           headers,
           timeoutMs: TAXONOMY_SOURCE_TIMEOUT_MS,
           maximumResponseBytes: TAXONOMY_SOURCE_MAX_RESPONSE_BYTES,
           signal: this.runtime.signal,
-          retry: TAXONOMY_SOURCE_RETRY_POLICY,
         });
       } catch (error: unknown) {
         if (error instanceof CommandCancellation || this.runtime.signal.aborted) throw error;
-        lastFailure = this.toError(error);
-        const retryDelay = TAXONOMY_SOURCE_RETRY_DELAYS_MS[attempt - 1];
-        if (retryDelay === undefined) break;
-        this.logSourceRetry(sourceName, lastFailure, attempt, retryDelay);
-        // eslint-disable-next-line no-await-in-loop
-        await this.runtime.clock.delay(retryDelay, this.runtime.signal);
-        continue;
+        outcome = this.toError(error);
       }
 
-      if (response.ok) return response;
+      if (!(outcome instanceof Error)) {
+        if (outcome.ok) return outcome;
 
-      // The HTTP capability already replayed every allowed attempt for a transient status, so a
-      // transient status observed here means the source stayed unavailable for all of them.
-      const failure = new Error(`${requestName} failed with HTTP ${String(response.status)}.`);
-      if (!this.isTransientHttpStatus(response.status)) throw failure;
-      throw new TaxonomySourceUnavailableError(failure.message, failure);
+        const failure = new Error(`${requestName} failed with HTTP ${String(outcome.status)}.`);
+        if (!this.isTransientHttpStatus(outcome.status)) throw failure;
+        outcome = failure;
+      }
+
+      lastFailure = outcome;
+      const retryDelay = TAXONOMY_SOURCE_RETRY_DELAYS_MS[attempt - 1];
+      if (retryDelay === undefined) break;
+      this.logSourceRetry(sourceName, outcome, attempt, retryDelay);
+      // eslint-disable-next-line no-await-in-loop
+      await this.runtime.clock.delay(retryDelay, this.runtime.signal);
     }
 
     const failure = lastFailure ?? new Error(`${requestName} failed without an error.`);

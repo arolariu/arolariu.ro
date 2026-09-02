@@ -427,19 +427,21 @@ describe("Taxonomy classification generators", () => {
 
         await expect(new Gs1GpcTaxonomyClassificationGenerator(harness.createRuntime(), roots).generate()).resolves.toHaveLength(2);
         expect(harness.http.sends).toHaveLength(2);
+        expect(harness.delays).toEqual([1_000]);
+        harness.expectMessage("warn", "[GPC] GPC download failed with HTTP 503. Retrying in 1000ms (attempt 2/3).");
       });
 
-      it("requests an explicit bounded retry policy for every taxonomy source", async () => {
+      it("bounds every taxonomy request per attempt and keeps the retry schedule in one layer", async () => {
         harness.stubUnifiedSources();
         const roots = await harness.createOutputRoots("arolariu-gpc-policy-");
 
         await new Gs1GpcTaxonomyClassificationGenerator(harness.createRuntime(), roots).generate();
 
         const [request] = harness.http.sends;
-        expect(request?.retry).toMatchObject({attempts: 3, delayMs: 1_000});
-        expect(request?.retry?.statuses).toEqual(expect.arrayContaining([408, 425, 429, 500, 503, 599]));
-        expect(request?.timeoutMs).toBeGreaterThan(0);
-        expect(request?.maximumResponseBytes).toBeGreaterThan(0);
+        expect(request?.timeoutMs).toBe(30_000);
+        expect(request?.maximumResponseBytes).toBe(64 * 1_024 * 1_024);
+        // A nested capability retry policy would multiply the bounded three-attempt budget.
+        expect(request?.retry).toBeUndefined();
       });
 
       it("surfaces HTTP failures", async () => {
@@ -449,6 +451,20 @@ describe("Taxonomy classification generators", () => {
           "GPC download failed with HTTP 503.",
         );
         expect(harness.http.sends).toHaveLength(3);
+        expect(harness.delays).toEqual([1_000, 4_000]);
+      });
+
+      it("shares one bounded attempt budget between transport and transient status failures", async () => {
+        harness.stubSources((_request, send) => (send === 1 ? new Error("connection reset") : createHttpResponse(503, "Unavailable")));
+
+        await expect(new Gs1GpcTaxonomyClassificationGenerator(harness.createRuntime(), []).generate()).rejects.toThrow(
+          "GPC download failed with HTTP 503.",
+        );
+
+        expect(harness.http.sends).toHaveLength(3);
+        expect(harness.delays).toEqual([1_000, 4_000]);
+        harness.expectMessage("warn", "[GPC] connection reset Retrying in 1000ms (attempt 2/3).");
+        harness.expectMessage("warn", "[GPC] GPC download failed with HTTP 503. Retrying in 4000ms (attempt 3/3).");
       });
 
       it("logs a generator error and rethrows the original failure", async () => {
