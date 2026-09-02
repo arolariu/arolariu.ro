@@ -23,7 +23,12 @@ import {createTerminalPromptProvider, type PromptProvider} from "./common/prompt
 import {createRepositoryPaths, type RepositoryPaths} from "./common/repository-paths.ts";
 import type {ProcessRequest, ProcessRunOptions, ProcessRunner} from "./common/runner.ts";
 import {createMemoryFileSystem, createProcessRunner, createTestRuntimeFactory, repositoryFixtureRoot} from "./common/runtime.testing.ts";
-import type {FileSystem, RepositoryInspectionRequest, RepositoryInspectionRuntime} from "./common/runtime.ts";
+import {
+  CommandCancellation,
+  type FileSystem,
+  type RepositoryInspectionRequest,
+  type RepositoryInspectionRuntime,
+} from "./common/runtime.ts";
 import type {GenerateInput, GenerateResult} from "./generate.ts";
 import type {RepositoryInspectionSession} from "./inspection/repository.ts";
 import {createSetupActionExecutor, createSetupCommand, setupPhases, type SetupResult} from "./setup.ts";
@@ -591,6 +596,48 @@ describe("setupCommand", () => {
     expect(execution.status).toBe("cancelled");
     expect(execution.exitCode).toBe(130);
     expect(pythonRun).not.toHaveBeenCalled();
+  });
+
+  it("cancels the command when the invocation aborts during a phase that degraded its own cancellation", async () => {
+    const controller = new AbortController();
+    const {logger, sink} = createLogger();
+    const pythonRun = vi.fn<() => Promise<SetupPhaseResult>>(() => Promise.resolve(phaseResult("python", "succeeded")));
+    const {command} = createSetupFixture({
+      logger,
+      phases: [
+        stubPhase("dotnet", {
+          // A phase whose runner returned a typed cancelled outcome may report an ordinary failed
+          // result instead of rethrowing; the orchestrator must still observe the aborted signal.
+          run: () => {
+            controller.abort(new CommandCancellation("The command was interrupted.", 130));
+            return Promise.resolve(phaseResult("dotnet", "failed"));
+          },
+        }),
+        stubPhase("python", {run: pythonRun}),
+      ],
+    });
+
+    const execution = await command.invoke(options(), {signal: controller.signal, presentation: "human"});
+
+    expect(execution.status).toBe("cancelled");
+    expect(execution.exitCode).toBe(130);
+    expect(pythonRun).not.toHaveBeenCalled();
+    const rendered = sink.records.map((record) => record.text).join("\n");
+    expect(rendered).not.toContain("Setup summary");
+    expect(rendered).not.toContain("Setup is ready");
+  });
+
+  it("cancels before running any phase when the invocation signal is already aborted", async () => {
+    const controller = new AbortController();
+    controller.abort(new CommandCancellation("The command was terminated.", 143));
+    const dotnetRun = vi.fn<() => Promise<SetupPhaseResult>>(() => Promise.resolve(phaseResult("dotnet", "succeeded")));
+    const {command} = createSetupFixture({phases: [stubPhase("dotnet", {run: dotnetRun})]});
+
+    const execution = await command.invoke(options(), {signal: controller.signal});
+
+    expect(execution.status).toBe("cancelled");
+    expect(execution.exitCode).toBe(143);
+    expect(dotnetRun).not.toHaveBeenCalled();
   });
 
   it("cancels the command when a setup prompt is interrupted", async () => {

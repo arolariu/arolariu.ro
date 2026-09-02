@@ -544,6 +544,31 @@ function toCancellation(execution: Extract<CommandExecution<GenerateResult>, {st
 }
 
 /**
+ * Describes a completed generation that ended with a nonzero exit code, using the child's typed
+ * result instead of a generic sentence.
+ *
+ * @remarks
+ * The nested generation runs with silent presentation, so it renders nothing itself. Without the
+ * typed detail below, setup would hide which generator stopped the run. Only the closed
+ * {@link GenerateResult} generator names are reported, so no unbounded or unsafe child output can
+ * reach setup evidence.
+ *
+ * @param execution - The completed nested generation execution.
+ * @returns Evidence naming the failing generator and its bounded selection context.
+ */
+function describeStoppedGeneration(execution: Extract<CommandExecution<GenerateResult>, {status: "completed"}>): string {
+  const {failed, completed, selected} = execution.value;
+  return [
+    `Repository artifact generation reported exit code ${execution.exitCode}.`,
+    failed === undefined
+      ? "The generation command named no failing generator."
+      : `The '${failed}' generator stopped the generation run.`,
+    `Completed generators: ${completed.length === 0 ? "none" : completed.join(", ")}.`,
+    `Selected generators: ${selected.join(", ")}.`,
+  ].join("\n");
+}
+
+/**
  * Validates Nx workspace metadata, generates every required checkout artifact through one typed
  * nested generation invocation, and asserts the generated postconditions.
  *
@@ -595,8 +620,11 @@ async function runGenerators(context: SetupContext): Promise<SetupPhaseResult> {
             ["Repository artifact generation failed.", generation.failure.message, ...generation.failure.evidence].join("\n"),
           );
         }
-        if (generation.status !== "completed" || generation.exitCode !== 0) {
-          throw new Error("Repository artifact generation reported a nonzero result.");
+        if (generation.status !== "completed") {
+          throw new Error(`Repository artifact generation ended with status '${generation.status}' instead of a completed run.`);
+        }
+        if (generation.exitCode !== 0) {
+          throw new Error(describeStoppedGeneration(generation));
         }
       },
     });

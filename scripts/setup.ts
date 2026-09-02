@@ -36,7 +36,7 @@ import type {MonorepositoryLogger} from "./common/logger.ts";
 import type {PromptProvider} from "./common/prompts.ts";
 import {loadRepositoryRequirements} from "./common/requirements.ts";
 import {resolveRepositoryPaths} from "./common/repository-paths.ts";
-import {CommandCancellation, type RepositoryInspectionRequest} from "./common/runtime.ts";
+import {CommandCancellation, commandCancellationFromSignal, type RepositoryInspectionRequest} from "./common/runtime.ts";
 import type {ContainerEngine} from "./container-runtime/types.ts";
 import {generateCommand, type GenerateInput, type GenerateResult} from "./generate.ts";
 import {dotnetSetupPhase} from "./setup.dotnet.ts";
@@ -356,6 +356,13 @@ async function executeSetup(
   const blockerSkipIds = new Set<string>();
 
   for (const phase of phases) {
+    // Structured phase boundary: the invocation may have been cancelled by the previous phase's
+    // work, a prompt, or the caller's signal, and a phase that degraded its own cancellation into
+    // an ordinary result must never let setup start another phase.
+    if (runtime.signal.aborted) {
+      throw commandCancellationFromSignal(runtime.signal);
+    }
+
     const phaseLogger = logger.child(phase.id);
     phaseLogger.section(phase.title);
 
@@ -410,6 +417,13 @@ async function executeSetup(
           durationMs: Math.max(0, runtime.clock.monotonicNow() - startedAt),
         };
       }
+    }
+
+    // Structured phase boundary: an aborted invocation outranks whatever the phase returned, so a
+    // typed cancellation the phase swallowed still cancels the command instead of being recorded,
+    // rendered, and completed as an ordinary failure.
+    if (runtime.signal.aborted) {
+      throw commandCancellationFromSignal(runtime.signal);
     }
 
     results.push(result);

@@ -26,7 +26,7 @@ import {
 import {createMemoryFileSystem, createTestRuntimeFactory} from "./common/runtime.testing.ts";
 import {FileSystemError, type Clock, type FileSystem} from "./common/runtime.ts";
 import {getExpectedTaxonomyArtifactPaths} from "./common/taxonomy-artifacts.ts";
-import type {GenerateResult} from "./generate.ts";
+import type {GenerateResult, GenerateTaskName} from "./generate.ts";
 import type {NpmTreeFacts} from "./inspection/packages.ts";
 import type {RepositoryInspectionSession} from "./inspection/repository.ts";
 import type {InspectionOutcome} from "./inspection/types.ts";
@@ -203,11 +203,26 @@ function createActions(
 }
 
 /** Completed generation outcome returned by the fake generation invoker unless a test overrides it. */
-function completedGeneration(exitCode: 0 | 1 = 0): CommandExecution<GenerateResult> {
+function completedGeneration(): CommandExecution<GenerateResult> {
   return {
     status: "completed",
-    value: {selected: ["env", "i18n", "gql", "artifacts"], completed: ["env", "i18n", "gql", "artifacts"]},
-    exitCode,
+    value: {selected: ["i18n", "gql", "artifacts"], completed: ["i18n", "gql", "artifacts"]},
+    exitCode: 0,
+  };
+}
+
+/**
+ * The realistic nonzero completed generation: the child ran, one generator stopped the run, and
+ * the typed result names it even though the composed child renders nothing itself.
+ *
+ * @param failed - Generator that stopped the run.
+ * @returns A completed generation execution reporting exit code 1.
+ */
+function stoppedGeneration(failed: GenerateTaskName): CommandExecution<GenerateResult> {
+  return {
+    status: "completed",
+    value: {selected: ["i18n", "gql", "artifacts"], completed: ["i18n"], failed},
+    exitCode: 1,
   };
 }
 
@@ -782,13 +797,18 @@ describe("workspace generators", () => {
     expect(generate).not.toHaveBeenCalled();
   });
 
-  it("fails when the nested generation completes with a nonzero exit code", async () => {
-    const {context} = await createHarness({files: generatedArtifactFiles(), generation: completedGeneration(1)});
+  it("names the generator that stopped a nonzero completed nested generation", async () => {
+    const {context} = await createHarness({files: generatedArtifactFiles(), generation: stoppedGeneration("gql")});
 
     const result = await runPhase("workspace.generators", context);
 
     expect(result.status).toBe("failed");
-    expect(result.evidence.join("\n")).toMatch(/generat/i);
+    const evidence = result.evidence.join("\n");
+    expect(evidence).toContain("gql");
+    expect(evidence).toMatch(/generat/i);
+    // Bounded typed context only: no unsafe child output is copied into setup evidence.
+    expect(evidence).toContain("i18n");
+    expect(evidence).not.toContain("env");
   });
 
   it("fails when the nested generation itself failed", async () => {
