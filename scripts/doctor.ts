@@ -35,7 +35,7 @@
 
 import {MonorepoCommand, toJsonValue, type CommandContext, type CommandRuntimeFactory} from "./common/commander.ts";
 import {loadRepositoryRequirements} from "./common/requirements.ts";
-import {resolveRepositoryPaths, type RepositoryPaths} from "./common/repository-paths.ts";
+import {resolveRepositoryPaths} from "./common/repository-paths.ts";
 import {
   asGetOnlyHttpClient,
   asReadOnlyFileSystem,
@@ -45,7 +45,6 @@ import {
   type GetOnlyHttpClient,
   type RepositoryInspectionRequest,
 } from "./common/runtime.ts";
-import {createNodeRuntimeScope} from "./common/runtime.node.ts";
 import {normalizeErrorForReport, diagnosticResult} from "./doctor.diagnostics.ts";
 import {renderDoctorReport, createDoctorReport} from "./doctor.reporter.ts";
 import {createInspectionProbeRunner, type InspectionProbeRunner} from "./inspection/probes.ts";
@@ -84,20 +83,6 @@ export interface DoctorCommandDependencies {
   readonly runtimeFactory?: CommandRuntimeFactory;
   /** Ordered modules to execute; defaults to {@link doctorModules}. */
   readonly modules?: readonly DiagnosticModule[];
-}
-
-/**
- * Boundary replacements the deprecated {@link runDoctor} adapter accepts.
- *
- * @deprecated Removed in Task 12 together with {@link runDoctor}.
- */
-export interface DoctorDependencies {
-  /** Ordered modules to execute; defaults to {@link doctorModules}. */
-  readonly modules: readonly DiagnosticModule[];
-  /** Pre-created inspection session reused instead of one obtained from the runtime registry. */
-  readonly inspection: RepositoryInspectionSession;
-  /** Resolves canonical repository paths; may be synchronous or asynchronous. */
-  readonly resolveRepositoryPaths: () => RepositoryPaths | Promise<RepositoryPaths>;
 }
 
 function errorMessage(error: unknown): string {
@@ -251,10 +236,6 @@ const reportInputs = new WeakMap<DoctorReport, DoctorInput>();
 interface DoctorExecutionSeams {
   /** Ordered modules to execute; defaults to {@link doctorModules}. */
   readonly modules?: readonly DiagnosticModule[];
-  /** Repository path resolution override used only by the deprecated compatibility adapter. */
-  readonly resolveRepositoryPaths?: () => RepositoryPaths | Promise<RepositoryPaths>;
-  /** Pre-created inspection session used only by the deprecated compatibility adapter. */
-  readonly inspection?: RepositoryInspectionSession;
 }
 
 /**
@@ -300,17 +281,17 @@ function prewarmInspections(
  * validated, scored report.
  *
  * @remarks
- * This is the single doctor business function: both the command definition and the deprecated
- * {@link runDoctor} adapter call it, so neither owns an independent orchestration path. Modules
- * always receive the full typed input and are responsible for emitting their own explicit
- * skipped diagnostics. Modules run concurrently through {@link CommandRuntime.tasks}, which
- * preserves the declared module order in the flattened result regardless of which module settles
- * first and cancels with the invocation. Duplicate or malformed diagnostic ids are rejected by
- * {@link createDoctorReport}, the sole authority for report schema and semantic validation.
+ * This is the single doctor business function the command definition calls, so no second
+ * orchestration path exists. Modules always receive the full typed input and are responsible for
+ * emitting their own explicit skipped diagnostics. Modules run concurrently through
+ * {@link CommandRuntime.tasks}, which preserves the declared module order in the flattened result
+ * regardless of which module settles first and cancels with the invocation. Duplicate or
+ * malformed diagnostic ids are rejected by {@link createDoctorReport}, the sole authority for
+ * report schema and semantic validation.
  *
  * @param context - The invocation context owning every capability this run may use.
  * @param input - Typed doctor input.
- * @param seams - Optional module, path, and session replacements.
+ * @param seams - Optional module replacement.
  * @returns The validated, scored doctor report.
  */
 async function executeDoctor(
@@ -322,11 +303,11 @@ async function executeDoctor(
   const files = asReadOnlyFileSystem(runtime.files);
   const modules = seams.modules ?? doctorModules;
 
-  const paths = await (seams.resolveRepositoryPaths ?? ((): Promise<RepositoryPaths> => resolveRepositoryPaths(import.meta.url, files)))();
+  const paths = await resolveRepositoryPaths(import.meta.url, files);
   const requirements = await loadRepositoryRequirements(paths, {files, tasks: runtime.tasks});
 
   const request: RepositoryInspectionRequest = {profile: input.quick ? "quick" : "full", paths};
-  const inspection = seams.inspection ?? runtime.inspection.getRepositorySession(request);
+  const inspection = runtime.inspection.getRepositorySession(request);
 
   if (!input.quick) {
     // Prewarm aggregate collection in full mode only: starting the isolated worker once here means
@@ -406,35 +387,5 @@ export function createDoctorCommand(dependencies: Readonly<DoctorCommandDependen
 
 /** Production singleton used by the aggregate CLI and this module's direct entrypoint. */
 export const doctorCommand: MonorepoCommand<DoctorInput, DoctorReport> = createDoctorCommand();
-
-/**
- * Runs doctor from typed options and returns the validated report.
- *
- * @deprecated Removed in Task 12. This thin compatibility adapter exists only because legacy
- * `status.ts` still consumes a typed doctor report directly; it owns no business logic of its
- * own and simply runs {@link executeDoctor} inside one Node runtime scope. Every other caller
- * must use `doctorCommand.invoke()`.
- *
- * @param options - Typed doctor input.
- * @param dependencies - Optional module, repository path, and inspection session replacements.
- * @returns The validated, scored doctor report.
- */
-export async function runDoctor(
-  options: Readonly<DoctorInput>,
-  dependencies: Readonly<Partial<DoctorDependencies>> = {},
-): Promise<DoctorReport> {
-  const runtime = await createNodeRuntimeScope({
-    commandName: "doctor",
-    verbose: options.verbose,
-    presentation: "silent",
-    registerProcessSignals: false,
-  });
-
-  try {
-    return await executeDoctor({runtime, presentation: "silent"}, options, dependencies);
-  } finally {
-    await runtime.cleanup.drain();
-  }
-}
 
 await doctorCommand.runIfMain(import.meta.url);

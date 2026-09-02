@@ -1,26 +1,31 @@
 /**
- * @fileoverview Monorepo status dashboard for the arolariu.ro monorepo.
+ * @fileoverview Monorepo status dashboard command for the arolariu.ro monorepo.
  * @module scripts/status
  *
  * @remarks
- * Collects data from multiple sources concurrently (workspaces, the Nx
- * dependency graph derived from tracked workspace metadata, git state, npm
- * audit/outdated, disk usage, and the doctor health report) then renders a
- * dashboard through {@link MonorepositoryLogger} or emits it as a single JSON
- * document.
+ * Status is a read-only command: it resolves canonical repository paths through the runtime's
+ * read-only filesystem, obtains exactly one quick repository inspection session from the
+ * runtime-owned inspection registry, and then collects five degradation-tolerant sections
+ * (workspaces, the Nx dependency graph derived from tracked workspace metadata, git state, npm
+ * audit/outdated, and disk usage) concurrently through {@link CommandRuntime.tasks}. A failure or
+ * malformed result from any single one of those sources degrades that section to `null`
+ * ("unavailable") without invalidating the rest of the report and without inventing a zero,
+ * `"unknown"`, or empty-array stand-in for a genuine failure.
  *
- * Every collector runs independently through `Promise.allSettled()`, so a
- * failure or malformed result from any single source degrades that section
- * to `null` ("unavailable") without invalidating the rest of the report and
- * without inventing a zero, `"unknown"`, or empty-array stand-in for a
- * genuine failure. Every external probe (git, npm, the disk usage probe, and
- * the doctor report) is issued through the shared
- * {@link CommandRunner} as an explicit {@link CommandSpec} — never a shell
- * string — and the script never writes a temporary file or inherits child
- * process output. The workspace graph is read from tracked metadata instead of
- * an Nx child process, which would rewrite Nx's native workspace database. All
- * human or machine-readable output is produced by
- * {@link MonorepositoryLogger}.
+ * The sixth section, health, is not a collector at all: doctor is composed as a typed child
+ * command through `doctorCommand.invoke()` inside this invocation's runtime scope, so the child
+ * shares this command's cancellation, cleanup ownership, and — decisively — the exact same shared
+ * inspection session Status already obtained for its own collectors. Both doctor completion exit
+ * codes are health data, while a failed, cancelled, or help child outcome is owned by Status: it
+ * becomes a command failure or cancellation instead of a fabricated "unavailable" health section,
+ * and no dashboard or JSON document is rendered in that case.
+ *
+ * Every external probe (git, npm, and the disk usage probe) is issued through the runtime process
+ * runner as an explicit {@link ProcessRequest} — never a shell string — and the command never
+ * writes a temporary file, never mutates the repository, and never inherits child process output.
+ * The workspace graph is read from tracked metadata instead of an Nx child process, which would
+ * rewrite Nx's native workspace database. All human or machine-readable output is produced by the
+ * runtime logger.
  *
  * @example
  * ```bash
@@ -30,19 +35,23 @@
  * ```
  */
 
-import {existsSync, readFileSync} from "node:fs";
-import {join, resolve} from "node:path";
-import {fileURLToPath} from "node:url";
+import {join} from "node:path";
 
-import {commanderExitCode, createToolProgram} from "./common/cli.ts";
+import {MonorepoCommand, toJsonValue, type CommandContext, type CommandInvoker, type CommandRuntimeFactory} from "./common/commander.ts";
 import {formatBytes} from "./common/index.ts";
-import {MonorepositoryConsoleLogger, type LogSegment, type MonorepositoryLogger} from "./common/logger.ts";
-import {defaultCommandRunner, type CommandResult, type CommandRunner, type CommandSpec} from "./common/process.ts";
+import type {LogSegment, MonorepositoryLogger} from "./common/logger.ts";
 import {resolveRepositoryPaths, type RepositoryPaths} from "./common/repository-paths.ts";
-import {createNodeRepositoryInspectionSession, nodeFileSystem} from "./common/runtime.node.ts";
-import {runDoctor} from "./doctor.ts";
-import type {DoctorSummary} from "./doctor.types.ts";
-import type {RepositoryInspectionSession, RepositoryInspectionSessionFactory} from "./inspection/repository.ts";
+import type {ProcessOutcome, ProcessRequest, ProcessRunner} from "./common/runner.ts";
+import {
+  asReadOnlyFileSystem,
+  CommandCancellation,
+  type ReadOnlyFileSystem,
+  type RepositoryInspectionRequest,
+  type TaskScheduler,
+} from "./common/runtime.ts";
+import {doctorCommand} from "./doctor.ts";
+import type {DoctorInput, DoctorReport, DoctorSummary} from "./doctor.types.ts";
+import type {RepositoryInspectionSession} from "./inspection/repository.ts";
 
 // ============================================================================
 // Types
@@ -89,60 +98,69 @@ export interface DiskInfo {
   readonly componentsDist: number;
 }
 
-/** Health score and summary from the doctor script. */
+/** Health score and summary from the composed doctor command. */
 export interface HealthInfo {
   readonly score: number;
   readonly grade: string;
   readonly summary: DoctorSummary;
 }
 
-/** The complete, six-section status payload. */
-interface StatusOutput {
+/** Typed status command input decoded from the CLI or supplied by a programmatic caller. */
+export interface StatusInput {
+  readonly json: boolean;
+}
+
+/**
+ * Read-only capabilities and repository context every status collector observes.
+ *
+ * @remarks
+ * Each collector declares the narrow `Pick` of this shape it actually needs, so no collector can
+ * reach a capability it has no business using, and every collector stays free of ambient state.
+ */
+interface StatusSources {
+  /** Read-only filesystem used for workspace manifests. */
+  readonly files: ReadOnlyFileSystem;
+  /** Engine-neutral process runner used for every external probe. */
+  readonly runner: ProcessRunner;
+  /** Deterministic task orchestration used instead of raw `Promise` combinators. */
+  readonly tasks: TaskScheduler;
+  /** The single shared repository inspection session for this invocation. */
+  readonly inspection: RepositoryInspectionSession;
+  /** Canonical repository paths resolved once for this invocation. */
+  readonly paths: RepositoryPaths;
+  /** Absolute path to the executable running this command, used by the disk probe. */
+  readonly executablePath: string;
+  /** Cancellation signal of the owning command invocation. */
+  readonly signal: AbortSignal;
+}
+
+/** Capabilities the workspace metadata collector observes. */
+type WorkspaceSources = Pick<StatusSources, "inspection" | "files" | "tasks" | "paths" | "signal">;
+
+/** Capabilities the dependency-graph collector observes. */
+type GraphSources = Pick<StatusSources, "inspection">;
+
+/** Capabilities the git and npm collectors observe. */
+type ProbeSources = Pick<StatusSources, "runner" | "tasks" | "paths" | "signal">;
+
+/** Capabilities the disk-usage collector observes. */
+type DiskSources = Pick<StatusSources, "runner" | "tasks" | "paths" | "executablePath" | "signal">;
+
+/** The five degradation-tolerant sections collected before doctor is composed. */
+interface OrdinaryStatusSections {
   readonly workspaces: readonly WorkspaceInfo[] | null;
   readonly nxEdges: readonly DependencyEdge[] | null;
   readonly git: GitInfo | null;
   readonly security: SecurityInfo | null;
   readonly disk: DiskInfo | null;
-  readonly health: HealthInfo | null;
 }
 
-/** Parsed CLI options. */
-interface StatusOptions {
-  readonly json: boolean;
-  readonly help: boolean;
-}
-
-/**
- * Boundary values {@link main} needs to resolve repository context and
- * execute every collector.
- *
- * @remarks
- * Exported so tests can inject a deterministic command runner, logger,
- * repository-path resolver, or fatal-error logger without replacing the
- * repository modules that own those boundaries.
- */
-export interface StatusDependencies {
-  /** Executes read-only status commands. */
-  readonly runner: CommandRunner;
-  /** Receives dashboard presentation and JSON output. */
-  readonly logger: MonorepositoryLogger;
-  /** Resolves canonical repository paths; may be synchronous or asynchronous. */
-  readonly resolveRepositoryPaths: () => RepositoryPaths | Promise<RepositoryPaths>;
-  /**
-   * Receives a fatal, pre-collection diagnostic (a repository-context
-   * failure) so it always reaches stderr.
-   */
-  readonly errorLogger: MonorepositoryLogger;
-  /**
-   * Pre-created repository inspection session for workspace facts and
-   * typed doctor. When supplied, status reuses it; otherwise it creates
-   * one quick session after path resolution.
-   */
-  readonly inspection: RepositoryInspectionSession;
-  /** Factory for creating an inspection session; defaults to {@link createNodeRepositoryInspectionSession}. */
-  readonly createInspectionSession: RepositoryInspectionSessionFactory;
-  /** Typed doctor runner; defaults to the production {@link runDoctor}. */
-  readonly runDoctor: typeof runDoctor;
+/** Construction seams {@link createStatusCommand} accepts. */
+export interface StatusCommandDependencies {
+  /** Runtime factory used for every scope; tests inject a fake instead of the Node adapter. */
+  readonly runtimeFactory?: CommandRuntimeFactory;
+  /** Typed doctor command composed as the health source; defaults to the production singleton. */
+  readonly doctor?: CommandInvoker<DoctorInput, DoctorReport>;
 }
 
 // ============================================================================
@@ -152,29 +170,28 @@ export interface StatusDependencies {
 const GIT_TIMEOUT_MS = 30_000;
 const NPM_TIMEOUT_MS = 60_000;
 const DISK_PROBE_TIMEOUT_MS = 60_000;
+const WORKSPACE_MANIFEST_CONCURRENCY = 8;
 
-const GIT_BRANCH_COMMAND = {command: "git", args: ["rev-parse", "--abbrev-ref", "HEAD"]} as const satisfies CommandSpec;
-const GIT_SHA_COMMAND = {command: "git", args: ["rev-parse", "--short", "HEAD"]} as const satisfies CommandSpec;
-const GIT_LAST_COMMIT_TIME_COMMAND = {command: "git", args: ["log", "-1", "--format=%cr"]} as const satisfies CommandSpec;
-const GIT_LAST_COMMIT_MSG_COMMAND = {command: "git", args: ["log", "-1", "--format=%s"]} as const satisfies CommandSpec;
-const GIT_STATUS_COMMAND = {command: "git", args: ["status", "--porcelain"]} as const satisfies CommandSpec;
-const NPM_AUDIT_COMMAND = {command: "npm", args: ["audit", "--json"]} as const satisfies CommandSpec;
-const NPM_OUTDATED_COMMAND = {command: "npm", args: ["outdated", "--json"]} as const satisfies CommandSpec;
+const GIT_BRANCH_COMMAND = {command: "git", args: ["rev-parse", "--abbrev-ref", "HEAD"]} as const satisfies ProcessRequest;
+const GIT_SHA_COMMAND = {command: "git", args: ["rev-parse", "--short", "HEAD"]} as const satisfies ProcessRequest;
+const GIT_LAST_COMMIT_TIME_COMMAND = {command: "git", args: ["log", "-1", "--format=%cr"]} as const satisfies ProcessRequest;
+const GIT_LAST_COMMIT_MSG_COMMAND = {command: "git", args: ["log", "-1", "--format=%s"]} as const satisfies ProcessRequest;
+const GIT_STATUS_COMMAND = {command: "git", args: ["status", "--porcelain"]} as const satisfies ProcessRequest;
+const NPM_AUDIT_COMMAND = {command: "npm", args: ["audit", "--json"]} as const satisfies ProcessRequest;
+const NPM_OUTDATED_COMMAND = {command: "npm", args: ["outdated", "--json"]} as const satisfies ProcessRequest;
 
 /**
- * Read-only Node.js source, executed as a separate process via `node --eval`,
- * that measures the total byte size of a directory or file tree.
+ * Read-only Node.js source, executed as a separate process via `node --eval`, that measures the
+ * total byte size of a directory or file tree.
  *
  * @remarks
- * Runs entirely inside the spawned child process — no parent-process
- * recursion, no unbounded pending-task fan-out, and no temp file. Traversal
- * is single-threaded and therefore inherently sequential/bounded. A
- * directory/file entry reported as a symbolic link (which also covers
- * Windows junctions, verified cross-platform via `Dirent#isSymbolicLink()`)
- * is skipped rather than followed, so no cycle or double counting is
- * possible. A missing target resolves to `0`; every other filesystem error
- * (permission failure, etc.) is written to stderr and the process exits
- * non-zero so the parent can classify the whole disk section unavailable.
+ * Runs entirely inside the spawned child process — no parent-process recursion, no unbounded
+ * pending-task fan-out, and no temp file. Traversal is single-threaded and therefore inherently
+ * sequential/bounded. A directory/file entry reported as a symbolic link (which also covers
+ * Windows junctions, verified cross-platform via `Dirent#isSymbolicLink()`) is skipped rather
+ * than followed, so no cycle or double counting is possible. A missing target resolves to `0`;
+ * every other filesystem error (permission failure, etc.) is written to stderr and the process
+ * exits non-zero so the parent can classify the whole disk section unavailable.
  */
 const DISK_PROBE_SCRIPT = [
   '"use strict";',
@@ -220,52 +237,76 @@ function isRecord(value: unknown): value is UnknownRecord {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function errorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
-}
-
-function hasCommandTransportFailure(result: Readonly<CommandResult>): boolean {
-  return result.spawnError !== undefined || result.timedOut || result.signal !== undefined;
-}
-
-function isSuccessfulCommand(result: Readonly<CommandResult>): boolean {
-  return result.code === 0 && !hasCommandTransportFailure(result);
+function isSuccessfulOutcome(outcome: Readonly<ProcessOutcome>): boolean {
+  return outcome.kind === "succeeded";
 }
 
 /**
- * Builds the disk-size probe command for one absolute target path.
+ * Reports whether an outcome failed before the child could report its own exit status.
  *
  * @remarks
- * The executable, the fixed `--eval` script literal, and the target path are
- * three separate {@link CommandSpec.args} elements — never an interpolated
- * or shell-joined string — so the child process receives the target purely
- * as `process.argv[1]`.
+ * A spawn failure, timeout, cancellation, or signal termination means the probe never produced
+ * trustworthy output, while an ordinary nonzero exit (`"exited"`) is normal for `npm audit` and
+ * `npm outdated` and keeps its JSON payload.
  *
- * @param absolutePath - Absolute directory or file path to measure.
- * @returns The disk-size probe command.
+ * @param outcome - The completed process outcome.
+ * @returns `true` when the transport itself failed.
  */
-function buildDiskSizeCommand(absolutePath: string): CommandSpec {
-  return {command: process.execPath, args: ["--eval", DISK_PROBE_SCRIPT, absolutePath]};
+function hasTransportFailure(outcome: Readonly<ProcessOutcome>): boolean {
+  return (
+    outcome.kind === "spawn-failed" || outcome.kind === "timed-out" || outcome.kind === "cancelled" || outcome.kind === "signalled"
+  );
+}
+
+/**
+ * Reads and parses one optional JSON manifest without failing the caller.
+ *
+ * @param files - Read-only filesystem capability.
+ * @param path - Absolute manifest path.
+ * @returns The parsed value, or `undefined` when the file is absent or malformed.
+ */
+async function readOptionalJson(files: ReadOnlyFileSystem, path: string): Promise<unknown> {
+  try {
+    const parsed: unknown = JSON.parse(await files.readText(path));
+    return parsed;
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * Builds the disk-size probe request for one absolute target path.
+ *
+ * @remarks
+ * The executable, the fixed `--eval` script literal, and the target path are three separate
+ * {@link ProcessRequest.args} elements — never an interpolated or shell-joined string — so the
+ * child process receives the target purely as `process.argv[1]`.
+ *
+ * @param executablePath - Absolute path to the Node executable running this command.
+ * @param absolutePath - Absolute directory or file path to measure.
+ * @returns The disk-size probe request.
+ */
+function buildDiskSizeRequest(executablePath: string, absolutePath: string): ProcessRequest {
+  return {command: executablePath, args: ["--eval", DISK_PROBE_SCRIPT, absolutePath]};
 }
 
 /**
  * Parses one disk-size probe result into a strict nonnegative byte count.
  *
  * @remarks
- * A runner-level transport failure (spawn error, timeout, or signal
- * termination), a nonzero exit code, or stdout that is empty or does not
- * match a strict nonnegative integer all resolve to `null` — never a
- * fabricated `0`.
+ * A transport failure (spawn error, timeout, cancellation, or signal termination), a nonzero exit
+ * code, or stdout that is empty or does not match a strict nonnegative integer all resolve to
+ * `null` — never a fabricated `0`.
  *
- * @param result - The complete result of running the disk-size probe.
+ * @param outcome - The complete outcome of running the disk-size probe.
  * @returns The parsed byte count, or `null` when unavailable.
  */
-function parseDiskProbeSize(result: Readonly<CommandResult>): number | null {
-  if (!isSuccessfulCommand(result)) {
+function parseDiskProbeSize(outcome: Readonly<ProcessOutcome>): number | null {
+  if (!isSuccessfulOutcome(outcome)) {
     return null;
   }
 
-  const trimmed = result.stdout.trim();
+  const trimmed = outcome.stdout.trim();
   if (!NONNEGATIVE_INTEGER_PATTERN.test(trimmed)) {
     return null;
   }
@@ -282,82 +323,70 @@ function parseDiskProbeSize(result: Readonly<CommandResult>): number | null {
  * Collects workspace metadata from the inspection session's WorkspaceFacts.
  *
  * @remarks
- * Project metadata is derived from the shared inspection session's workspace
- * facts instead of a hard-coded project list. A newly added Nx project
- * automatically appears.
+ * Project metadata is derived from the shared inspection session's workspace facts instead of a
+ * hard-coded project list, so a newly added Nx project automatically appears. Manifests are read
+ * through the read-only filesystem with bounded concurrency and in declared project order.
  *
- * @param inspection - The shared repository inspection session.
- * @param root - Absolute repository root.
+ * @param sources - Inspection session, read-only filesystem, scheduler, paths, and signal.
  * @returns Array of workspace info objects, or `null` when unavailable.
  */
-async function collectWorkspaces(inspection: RepositoryInspectionSession, root: string): Promise<readonly WorkspaceInfo[] | null> {
-  const outcome = await inspection.inspect("workspace");
+async function collectWorkspaces(sources: Readonly<WorkspaceSources>): Promise<readonly WorkspaceInfo[] | null> {
+  const outcome = await sources.inspection.inspect("workspace");
   if (outcome.kind !== "available") {
     return null;
   }
 
-  const workspaces: WorkspaceInfo[] = [];
-  for (const project of outcome.value.projects) {
-    const absDir = join(root, project.root);
-    let name = project.name;
-    let version = "—";
-    let type = "unknown";
-    let tags: string[] = [];
+  return sources.tasks.mapBounded(
+    [...outcome.value.projects],
+    WORKSPACE_MANIFEST_CONCURRENCY,
+    async (project): Promise<WorkspaceInfo> => {
+      const projectDirectory = join(sources.paths.root, project.root);
+      let name = project.name;
+      let version = "—";
+      let type = "unknown";
+      let tags: readonly string[] = [];
 
-    const pkgPath = join(absDir, "package.json");
-    if (existsSync(pkgPath)) {
-      try {
-        const pkg: unknown = JSON.parse(readFileSync(pkgPath, "utf-8"));
-        if (isRecord(pkg)) {
-          if (typeof pkg["name"] === "string") name = pkg["name"];
-          if (typeof pkg["version"] === "string") version = pkg["version"];
-        }
-      } catch {
-        // ignore parse errors
+      const manifest = await readOptionalJson(sources.files, join(projectDirectory, "package.json"));
+      if (isRecord(manifest)) {
+        if (typeof manifest["name"] === "string") name = manifest["name"];
+        if (typeof manifest["version"] === "string") version = manifest["version"];
       }
-    }
 
-    const projPath = join(absDir, "project.json");
-    if (existsSync(projPath)) {
-      try {
-        const proj: unknown = JSON.parse(readFileSync(projPath, "utf-8"));
-        if (isRecord(proj)) {
-          if (typeof proj["name"] === "string") name = proj["name"];
-          if (typeof proj["projectType"] === "string") {
-            type = proj["projectType"] === "library" ? "lib" : "app";
-          }
-          if (Array.isArray(proj["tags"])) {
-            tags = (proj["tags"] as unknown[]).filter((t): t is string => typeof t === "string");
-          }
+      const projectFile = await readOptionalJson(sources.files, join(projectDirectory, "project.json"));
+      if (isRecord(projectFile)) {
+        if (typeof projectFile["name"] === "string") name = projectFile["name"];
+        if (typeof projectFile["projectType"] === "string") {
+          type = projectFile["projectType"] === "library" ? "lib" : "app";
         }
-      } catch {
-        // ignore parse errors
+        const declaredTags: unknown = projectFile["tags"];
+        if (Array.isArray(declaredTags)) {
+          tags = declaredTags.filter((tag: unknown): tag is string => typeof tag === "string");
+        }
       }
-    }
 
-    workspaces.push({name, version, type, tags});
-  }
-
-  return workspaces;
+      return {name, version, type, tags};
+    },
+    sources.signal,
+  );
 }
 
 /**
  * Derives inter-project dependency edges from the inspection session's WorkspaceFacts.
  *
- * @param inspection - The shared repository inspection session.
+ * @param sources - The shared repository inspection session.
  * @returns Dependency edges, or `null` when unavailable.
  */
-async function collectNxGraph(inspection: RepositoryInspectionSession): Promise<readonly DependencyEdge[] | null> {
-  const outcome = await inspection.inspect("workspace");
+async function collectNxGraph(sources: Readonly<GraphSources>): Promise<readonly DependencyEdge[] | null> {
+  const outcome = await sources.inspection.inspect("workspace");
   if (outcome.kind !== "available") {
     return null;
   }
 
   const targetsBySource = new Map<string, Set<string>>();
-  for (const dep of outcome.value.dependencies) {
-    const targets = targetsBySource.get(dep.source) ?? new Set<string>();
-    targets.add(dep.target);
-    targetsBySource.set(dep.source, targets);
+  for (const dependency of outcome.value.dependencies) {
+    const targets = targetsBySource.get(dependency.source) ?? new Set<string>();
+    targets.add(dependency.target);
+    targetsBySource.set(dependency.source, targets);
   }
 
   return [...targetsBySource.entries()]
@@ -368,56 +397,37 @@ async function collectNxGraph(inspection: RepositoryInspectionSession): Promise<
 }
 
 /**
- * Runs the typed doctor in quick mode and returns the health summary.
- *
- * @param inspection - The exact same inspection session used for workspaces.
- * @param paths - Canonical repository paths.
- * @param doctorRunner - The typed doctor runner function.
- * @returns The health summary, or `null` if doctor fails.
- */
-async function collectHealth(
-  inspection: RepositoryInspectionSession,
-  paths: Readonly<RepositoryPaths>,
-  doctorRunner: typeof runDoctor,
-): Promise<HealthInfo | null> {
-  try {
-    const report = await doctorRunner(
-      {quick: true, verbose: false},
-      {
-        inspection,
-        resolveRepositoryPaths: () => paths,
-      },
-    );
-    return {score: report.score, grade: report.grade, summary: report.summary};
-  } catch {
-    return null;
-  }
-}
-
-/**
- * Collects current git repository state: branch, SHA, last commit info, and
- * the number of dirty (uncommitted) files.
+ * Collects current git repository state: branch, SHA, last commit info, and the number of dirty
+ * (uncommitted) files.
  *
  * @remarks
- * Every underlying git command must succeed for git state to be considered
- * available; a single failing command makes the whole section `null`
- * instead of substituting `"unknown"` per field.
+ * Every underlying git command must succeed for git state to be considered available; a single
+ * failing command makes the whole section `null` instead of substituting `"unknown"` per field.
  *
- * @param runner - Command runner used to invoke git.
- * @param root - Absolute repository root.
+ * @param sources - Process runner, scheduler, repository paths, and cancellation signal.
  * @returns Git info, or `null` when any underlying command fails.
  */
-async function collectGit(runner: CommandRunner, root: string): Promise<GitInfo | null> {
-  const options = {cwd: root, timeoutMs: GIT_TIMEOUT_MS};
-  const [branch, sha, lastCommitTime, lastCommitMsg, status] = await Promise.all([
-    runner.run(GIT_BRANCH_COMMAND, options),
-    runner.run(GIT_SHA_COMMAND, options),
-    runner.run(GIT_LAST_COMMIT_TIME_COMMAND, options),
-    runner.run(GIT_LAST_COMMIT_MSG_COMMAND, options),
-    runner.run(GIT_STATUS_COMMAND, options),
-  ]);
+async function collectGit(sources: Readonly<ProbeSources>): Promise<GitInfo | null> {
+  const options = {cwd: sources.paths.root, timeoutMs: GIT_TIMEOUT_MS, signal: sources.signal};
+  const outcomes = await sources.tasks.parallel(
+    [GIT_BRANCH_COMMAND, GIT_SHA_COMMAND, GIT_LAST_COMMIT_TIME_COMMAND, GIT_LAST_COMMIT_MSG_COMMAND, GIT_STATUS_COMMAND].map(
+      (request) => (): Promise<ProcessOutcome> => sources.runner.run(request, options),
+    ),
+    sources.signal,
+  );
 
-  if (![branch, sha, lastCommitTime, lastCommitMsg, status].every(isSuccessfulCommand)) {
+  const [branch, sha, lastCommitTime, lastCommitMsg, status] = outcomes;
+  if (
+    branch === undefined
+    || sha === undefined
+    || lastCommitTime === undefined
+    || lastCommitMsg === undefined
+    || status === undefined
+  ) {
+    return null;
+  }
+
+  if (![branch, sha, lastCommitTime, lastCommitMsg, status].every(isSuccessfulOutcome)) {
     return null;
   }
 
@@ -459,34 +469,36 @@ function classifyOutdatedBump(current: string, latest: string): "major" | "minor
 }
 
 /**
- * Runs `npm audit --json` and `npm outdated --json` to gather vulnerability
- * counts by severity and outdated-package counts by semver bump level.
+ * Runs `npm audit --json` and `npm outdated --json` to gather vulnerability counts by severity
+ * and outdated-package counts by semver bump level.
  *
  * @remarks
- * Both commands may exit non-zero in normal operation (vulnerabilities or
- * outdated packages found) — that nonzero JSON is preserved. Only a spawn
- * failure, timeout, or signal termination, or JSON that does not match the
- * expected shape, makes the whole section `null`; it never falls back to
- * all-zero counts.
+ * Both commands may exit non-zero in normal operation (vulnerabilities or outdated packages
+ * found) — that nonzero JSON is preserved. Only a transport failure, or JSON that does not match
+ * the expected shape, makes the whole section `null`; it never falls back to all-zero counts.
  *
- * @param runner - Command runner used to invoke npm.
- * @param root - Absolute repository root.
+ * @param sources - Process runner, scheduler, repository paths, and cancellation signal.
  * @returns Security info, or `null` when unavailable.
  */
-async function collectSecurity(runner: CommandRunner, root: string): Promise<SecurityInfo | null> {
-  const options = {cwd: root, timeoutMs: NPM_TIMEOUT_MS};
-  const [auditResult, outdatedResult] = await Promise.all([
-    runner.run(NPM_AUDIT_COMMAND, options),
-    runner.run(NPM_OUTDATED_COMMAND, options),
-  ]);
+async function collectSecurity(sources: Readonly<ProbeSources>): Promise<SecurityInfo | null> {
+  const options = {cwd: sources.paths.root, timeoutMs: NPM_TIMEOUT_MS, signal: sources.signal};
+  const outcomes = await sources.tasks.parallel(
+    [NPM_AUDIT_COMMAND, NPM_OUTDATED_COMMAND].map((request) => (): Promise<ProcessOutcome> => sources.runner.run(request, options)),
+    sources.signal,
+  );
 
-  if (hasCommandTransportFailure(auditResult) || hasCommandTransportFailure(outdatedResult)) {
+  const [auditOutcome, outdatedOutcome] = outcomes;
+  if (auditOutcome === undefined || outdatedOutcome === undefined) {
+    return null;
+  }
+
+  if (hasTransportFailure(auditOutcome) || hasTransportFailure(outdatedOutcome)) {
     return null;
   }
 
   let auditPayload: unknown;
   try {
-    auditPayload = JSON.parse(auditResult.stdout);
+    auditPayload = JSON.parse(auditOutcome.stdout);
   } catch {
     return null;
   }
@@ -519,7 +531,7 @@ async function collectSecurity(runner: CommandRunner, root: string): Promise<Sec
   // `{}` when nothing is outdated — because npm's JSON branch is unconditional. Empty stdout
   // is therefore unambiguously a failed probe (registry/auth error, arborist load failure,
   // EJSONPARSE, etc.) and must never be treated as a "0 outdated" success.
-  const trimmedOutdated = outdatedResult.stdout.trim();
+  const trimmedOutdated = outdatedOutcome.stdout.trim();
   if (trimmedOutdated.length === 0) {
     return null;
   }
@@ -550,39 +562,40 @@ async function collectSecurity(runner: CommandRunner, root: string): Promise<Sec
 }
 
 /**
- * Measures on-disk size of key directories through the shared, out-of-process
- * disk-size probe.
+ * Measures on-disk size of key directories through the shared, out-of-process disk-size probe.
  *
  * @remarks
  * Each of the three targets is measured by a separate, argument-separated
- * `process.execPath --eval <script> <targetPath>` invocation issued through
- * the shared {@link CommandRunner} — never an in-process recursive
- * traversal, a shell string, or a temp file. Every probe carries the
- * repository `cwd` and a bounded 60 s `timeoutMs`; the runner terminates
- * (`SIGTERM`, then `SIGKILL`) a stalled child rather than merely racing a
- * promise while filesystem work continues. The three probes are independent
- * child processes, so running them concurrently adds no unbounded
- * parent-process queue. A transport failure (spawn error, timeout, signal),
- * a nonzero exit code, or malformed/negative/non-integer stdout from any
- * single probe makes the whole disk section `null` — never a fabricated `0`
- * for a real I/O failure. A probe legitimately reports `0` only when its
- * target is absent.
+ * `<node> --eval <script> <targetPath>` invocation issued through the runtime process runner —
+ * never an in-process recursive traversal, a shell string, or a temp file. Every probe carries
+ * the repository `cwd`, a bounded 60 s `timeoutMs`, and the invocation cancellation signal; the
+ * runner terminates a stalled child rather than merely racing a promise while filesystem work
+ * continues. The three probes are independent child processes started through the runtime
+ * scheduler, so running them concurrently adds no unbounded parent-process queue. A transport
+ * failure, a nonzero exit code, or malformed/negative/non-integer stdout from any single probe
+ * makes the whole disk section `null` — never a fabricated `0` for a real I/O failure. A probe
+ * legitimately reports `0` only when its target is absent.
  *
- * @param runner - Command runner used to invoke each disk-size probe.
- * @param root - Absolute repository root.
+ * @param sources - Process runner, scheduler, repository paths, executable path, and signal.
  * @returns Byte counts for `node_modules`, `.next`, and `dist`, or `null`.
  */
-export async function collectDisk(runner: CommandRunner, root: string): Promise<DiskInfo | null> {
+export async function collectDisk(sources: Readonly<DiskSources>): Promise<DiskInfo | null> {
+  const {root} = sources.paths;
   const targets = [
     join(root, "node_modules"),
     join(root, "sites", "arolariu.ro", ".next"),
     join(root, "packages", "components", "dist"),
   ] as const;
+  const options = {cwd: root, timeoutMs: DISK_PROBE_TIMEOUT_MS, signal: sources.signal};
 
-  const results = await Promise.all(
-    targets.map((target) => runner.run(buildDiskSizeCommand(target), {cwd: root, timeoutMs: DISK_PROBE_TIMEOUT_MS})),
+  const outcomes = await sources.tasks.parallel(
+    targets.map(
+      (target) => (): Promise<ProcessOutcome> => sources.runner.run(buildDiskSizeRequest(sources.executablePath, target), options),
+    ),
+    sources.signal,
   );
-  const [nodeModules, nextBuild, componentsDist] = results.map(parseDiskProbeSize);
+
+  const [nodeModules, nextBuild, componentsDist] = outcomes.map(parseDiskProbeSize);
   if (
     nodeModules === null
     || nodeModules === undefined
@@ -606,14 +619,14 @@ function renderHealthSummary(summary: Readonly<DoctorSummary>): string {
 }
 
 /**
- * Renders the full status dashboard through the injected logger.
+ * Renders the full status dashboard through the invocation logger.
  *
  * @param logger - Repository logger abstraction.
- * @param output - The complete, six-section status payload.
+ * @param document - The complete, six-section status payload.
+ * @param nodeMajor - Major version label of the Node runtime executing this command.
  */
-function renderDashboard(logger: MonorepositoryLogger, output: Readonly<StatusOutput>): void {
-  const {workspaces, nxEdges, git, security, disk, health} = output;
-  const nodeMajor = process.versions["node"]?.split(".")[0] ?? "?";
+function renderDashboard(logger: MonorepositoryLogger, document: Readonly<StatusDocument>, nodeMajor: string): void {
+  const {workspaces, nxEdges, git, security, disk, health} = document;
   const healthLabel = health ? `${String(health.score)} (${health.grade})` : "unavailable";
   const branchLabel = git?.branch ?? "unavailable";
 
@@ -627,13 +640,13 @@ function renderDashboard(logger: MonorepositoryLogger, output: Readonly<StatusOu
   if (workspaces) {
     logger.table({
       headers: ["Package", "Version", "Type", "Tags"],
-      rows: workspaces.map((ws) => [
-        ws.name.replace("@arolariu/", ""),
-        ws.version,
-        ws.type,
-        ws.tags
-          .filter((t) => t.startsWith("domain:"))
-          .map((t) => t.replace("domain:", ""))
+      rows: workspaces.map((workspace) => [
+        workspace.name.replace("@arolariu/", ""),
+        workspace.version,
+        workspace.type,
+        workspace.tags
+          .filter((tag) => tag.startsWith("domain:"))
+          .map((tag) => tag.replace("domain:", ""))
           .join(", "),
       ]),
     });
@@ -647,15 +660,15 @@ function renderDashboard(logger: MonorepositoryLogger, output: Readonly<StatusOu
     const mentioned = new Set<string>();
 
     for (const edge of nxEdges) {
-      const src = edge.source.replace("@arolariu/", "");
-      const tgt = edge.target.replace("@arolariu/", "");
-      mentioned.add(src);
-      mentioned.add(tgt);
-      const list = inbound.get(tgt);
+      const source = edge.source.replace("@arolariu/", "");
+      const target = edge.target.replace("@arolariu/", "");
+      mentioned.add(source);
+      mentioned.add(target);
+      const list = inbound.get(target);
       if (list) {
-        if (!list.includes(src)) list.push(src);
+        if (!list.includes(source)) list.push(source);
       } else {
-        inbound.set(tgt, [src]);
+        inbound.set(target, [source]);
       }
     }
 
@@ -664,8 +677,8 @@ function renderDashboard(logger: MonorepositoryLogger, output: Readonly<StatusOu
     }
 
     if (workspaces) {
-      for (const ws of workspaces) {
-        const short = ws.name.replace("@arolariu/", "");
+      for (const workspace of workspaces) {
+        const short = workspace.name.replace("@arolariu/", "");
         if (!mentioned.has(short)) {
           logger.line([{text: `${short} (isolated)`, styles: ["gray"]}]);
         }
@@ -711,184 +724,156 @@ function renderDashboard(logger: MonorepositoryLogger, output: Readonly<StatusOu
 }
 
 // ============================================================================
-// CLI
+// Collection
 // ============================================================================
 
-/**
- * Builds the Commander program that owns status CLI help rendering and
- * slash-alias normalization (`/h` → `--help`).
- *
- * @remarks
- * `allowUnknownOption(true)` lets unknown flags pass through to
- * {@link parseStatusOptions} so the existing human-friendly error-message
- * contract is preserved.
- *
- * @param logger - Logger that receives Commander's rendered help output.
- * @returns A configured, not-yet-parsed Commander program.
- */
-function buildStatusProgram(logger: MonorepositoryLogger) {
-  const program = createToolProgram({
-    name: "node scripts/status.ts",
-    description: "Collects and renders monorepo health, workspace, git, security, and disk data.",
-    usage: "[options]",
-    logger,
-  });
-
-  program.option("--json", "Output all collected data as a single JSON document.").allowUnknownOption(true).allowExcessArguments(true);
-
-  return program;
+function toHealthInfo(report: Readonly<DoctorReport>): HealthInfo {
+  return {score: report.score, grade: report.grade, summary: report.summary};
 }
 
-// ============================================================================
-// Options
-// ============================================================================
-
 /**
- * Parses status command-line options.
+ * Collects every status section for one invocation.
  *
- * @param argv - Arguments following the status entrypoint.
- * @returns Strict status options.
- * @throws When an argument is not a supported status option.
+ * @remarks
+ * The five ordinary collectors run concurrently through {@link TaskScheduler.allSettled}, so a
+ * rejected or unavailable collector degrades to exactly one `null` section in the fixed six-key
+ * document while its siblings keep their data. Health is different: Status obtains its own quick
+ * inspection session from the runtime registry *before* composing doctor, and the child doctor
+ * invocation resolves the identical `{profile: "quick", paths}` request from the shared parent
+ * registry, so both lookups return one session instead of tripping the conflicting-request guard
+ * or starting a second inspection. Both doctor completion exit codes contribute their typed
+ * report, while a cancelled, failed, or help outcome is rethrown so the command lifecycle owns it
+ * and no success document is ever rendered.
+ *
+ * @param context - The invocation context owning every capability this run may use.
+ * @param doctor - Typed doctor command composed as the health source.
+ * @returns The complete six-section status document.
+ * @throws {CommandCancellation} When the composed doctor invocation was cancelled.
+ * @throws {Error} When the composed doctor invocation failed or returned help.
  */
-export function parseStatusOptions(argv: readonly string[]): StatusOptions {
-  let json = false;
-  let help = false;
+async function collectStatus(
+  context: Readonly<CommandContext>,
+  doctor: CommandInvoker<DoctorInput, DoctorReport> = doctorCommand,
+): Promise<{
+  readonly workspaces: Awaited<ReturnType<typeof collectWorkspaces>> | null;
+  readonly nxEdges: Awaited<ReturnType<typeof collectNxGraph>> | null;
+  readonly git: Awaited<ReturnType<typeof collectGit>> | null;
+  readonly security: Awaited<ReturnType<typeof collectSecurity>> | null;
+  readonly disk: DiskInfo | null;
+  readonly health: HealthInfo | null;
+}> {
+  const {runtime} = context;
+  const files = asReadOnlyFileSystem(runtime.files);
+  const paths = await resolveRepositoryPaths(import.meta.url, files);
 
-  for (const argument of argv) {
-    switch (argument) {
-      case "--json":
-        json = true;
-        break;
-      case "--help":
-      case "-h":
-        help = true;
-        break;
-      default:
-        throw new Error(`Unknown status option '${String(argument)}'.`);
+  const request: RepositoryInspectionRequest = {profile: "quick", paths};
+  const inspection = runtime.inspection.getRepositorySession(request);
+  const sources: StatusSources = {
+    files,
+    runner: runtime.runner,
+    tasks: runtime.tasks,
+    inspection,
+    paths,
+    executablePath: runtime.environment.executablePath,
+    signal: runtime.signal,
+  };
+
+  const settled = await runtime.tasks.allSettled<Partial<OrdinaryStatusSections>>(
+    [
+      async (): Promise<Partial<OrdinaryStatusSections>> => ({workspaces: await collectWorkspaces(sources)}),
+      async (): Promise<Partial<OrdinaryStatusSections>> => ({nxEdges: await collectNxGraph(sources)}),
+      async (): Promise<Partial<OrdinaryStatusSections>> => ({git: await collectGit(sources)}),
+      async (): Promise<Partial<OrdinaryStatusSections>> => ({security: await collectSecurity(sources)}),
+      async (): Promise<Partial<OrdinaryStatusSections>> => ({disk: await collectDisk(sources)}),
+    ],
+    runtime.signal,
+  );
+
+  let sections: OrdinaryStatusSections = {workspaces: null, nxEdges: null, git: null, security: null, disk: null};
+  for (const outcome of settled) {
+    if (outcome.status === "fulfilled") {
+      sections = {...sections, ...outcome.value};
     }
   }
 
-  return {json, help};
+  const healthExecution = await doctor.invoke({quick: true, verbose: false}, {parent: context, presentation: "silent"});
+
+  let health: HealthInfo;
+  switch (healthExecution.status) {
+    case "completed":
+      health = toHealthInfo(healthExecution.value);
+      break;
+    case "cancelled":
+      throw new CommandCancellation(healthExecution.failure.message, healthExecution.exitCode);
+    case "failed":
+      throw new Error(healthExecution.failure.message, {cause: healthExecution.failure.cause});
+    case "help":
+      throw new Error("Doctor returned help during typed invocation.");
+  }
+
+  return {...sections, health};
 }
 
+/** The complete, six-section status payload produced by one status invocation. */
+export type StatusDocument = Awaited<ReturnType<typeof collectStatus>>;
+
 // ============================================================================
-// Main
+// Command
 // ============================================================================
 
 /**
- * Runs the status CLI entrypoint.
+ * Reads the major version label of the Node runtime executing this command.
  *
  * @remarks
- * `--help`/`-h` is detected before options are parsed or any collector runs,
- * so an unsupported flag combined with `--help` never surfaces a parse
- * error. An option-parsing failure renders through the primary logger and
- * returns `1` without invoking any collector. A repository-context
- * (path-resolution) failure is fatal and pre-collection: no partial or
- * success-shaped payload is ever synthesized, no document reaches
- * {@link MonorepositoryLogger.json}, and exactly one normalized, non-empty
- * diagnostic is written through {@link StatusDependencies.errorLogger} —
- * never through the primary `logger`, whose semantic methods (including
- * `error`) are silently suppressed in JSON mode. On a successful run every
- * collector executes independently via `Promise.allSettled()`; a failed or
- * malformed collector renders/serializes as `null` ("unavailable") without
- * fabricating a failure report, and the command always returns `0`. JSON
- * mode emits exactly one document through {@link MonorepositoryLogger.json};
- * human mode renders the dashboard exclusively through logger methods.
+ * `process.versions` is an immutable, effect-free description of the running binary; the runtime
+ * environment snapshot exposes no equivalent, and widening that capability is outside this
+ * command's contract. Every other ambient value the dashboard needs arrives through the runtime.
  *
- * @param argv - Arguments following the status entrypoint.
- * @param dependencies - Optional boundary replacements, primarily for tests
- * that must inject a deterministic runner, logger, repository-path
- * resolver, or fatal-error logger without reading the live checkout.
- * @returns Process exit code.
+ * @returns The Node major version, or `"?"` when the running binary does not report one.
  */
-export async function main(
-  argv: readonly string[] = process.argv.slice(2),
-  dependencies: Readonly<Partial<StatusDependencies>> = {},
-): Promise<number> {
-  const parseLogger = dependencies.logger ?? new MonorepositoryConsoleLogger("status", {verbose: false});
-  const program = buildStatusProgram(parseLogger);
-
-  try {
-    program.parse(argv, {from: "user"});
-  } catch (error: unknown) {
-    return commanderExitCode(error) ?? 1;
-  }
-
-  let options: StatusOptions;
-  try {
-    options = parseStatusOptions(argv);
-  } catch (error: unknown) {
-    parseLogger.error(errorMessage(error));
-    return 1;
-  }
-
-  const logger = dependencies.logger ?? new MonorepositoryConsoleLogger("status", {mode: options.json ? "json" : "human", verbose: false});
-
-  // In JSON mode the primary `logger`'s semantic `error` is a no-op, so a fatal
-  // failure here must be routed through a logger that always reaches stderr.
-  // Human mode's primary logger already reaches stderr, so it may serve both roles.
-  const errorLogger = dependencies.errorLogger ?? (options.json ? new MonorepositoryConsoleLogger("status", {verbose: false}) : logger);
-
-  const resolvePaths =
-    dependencies.resolveRepositoryPaths ?? ((): Promise<RepositoryPaths> => resolveRepositoryPaths(import.meta.url, nodeFileSystem));
-  const runner = dependencies.runner ?? defaultCommandRunner;
-
-  let paths: RepositoryPaths;
-  try {
-    paths = await resolvePaths();
-  } catch (error: unknown) {
-    errorLogger.error(errorMessage(error));
-    return 1;
-  }
-
-  const inspection =
-    dependencies.inspection
-    ?? (dependencies.createInspectionSession ?? createNodeRepositoryInspectionSession)({
-      profile: "quick",
-      paths,
-    });
-
-  const doctorRunner = dependencies.runDoctor ?? runDoctor;
-
-  const [workspacesResult, nxGraphResult, gitResult, securityResult, diskResult, healthResult] = await Promise.allSettled([
-    collectWorkspaces(inspection, paths.root),
-    collectNxGraph(inspection),
-    collectGit(runner, paths.root),
-    collectSecurity(runner, paths.root),
-    collectDisk(runner, paths.root),
-    collectHealth(inspection, paths, doctorRunner),
-  ]);
-
-  const output: StatusOutput = {
-    workspaces: workspacesResult.status === "fulfilled" ? workspacesResult.value : null,
-    nxEdges: nxGraphResult.status === "fulfilled" ? nxGraphResult.value : null,
-    git: gitResult.status === "fulfilled" ? gitResult.value : null,
-    security: securityResult.status === "fulfilled" ? securityResult.value : null,
-    disk: diskResult.status === "fulfilled" ? diskResult.value : null,
-    health: healthResult.status === "fulfilled" ? healthResult.value : null,
-  };
-
-  if (options.json) {
-    logger.json(output);
-    return 0;
-  }
-
-  renderDashboard(logger, output);
-  return 0;
+function nodeMajorVersion(): string {
+  return process.versions["node"]?.split(".")[0] ?? "?";
 }
 
-// ============================================================================
-// Entry Point
-// ============================================================================
+/**
+ * Creates the status command.
+ *
+ * @param dependencies - Optional runtime factory and composed doctor command; tests inject
+ * deterministic fakes instead of replacing command business code.
+ * @returns The typed `status` command object.
+ */
+export function createStatusCommand(dependencies: Readonly<StatusCommandDependencies> = {}): MonorepoCommand<StatusInput, StatusDocument> {
+  const doctor = dependencies.doctor ?? doctorCommand;
 
-const statusEntrypointPath = process.argv[1];
-if (statusEntrypointPath !== undefined && fileURLToPath(import.meta.url) === resolve(statusEntrypointPath)) {
-  main()
-    .then((exitCode) => {
-      process.exitCode = exitCode;
-    })
-    .catch((error: unknown) => {
-      new MonorepositoryConsoleLogger("status", {verbose: false}).error(errorMessage(error));
-      process.exitCode = 1;
-    });
+  return new MonorepoCommand<StatusInput, StatusDocument>(
+    {
+      metadata: {
+        name: "status",
+        description: "Collects and renders monorepo health, workspace, git, security, and disk data.",
+        examples: ["npm run status", "npm run status -- --json"],
+      },
+      configure: (program) => {
+        program.option("--json", "Output all collected data as a single JSON document.", false);
+      },
+      decode: (program) => {
+        const options = program.opts<{json?: boolean}>();
+        return {json: options.json === true};
+      },
+      presentation: (input) => (input.json ? "json" : "human"),
+      execute: (context) => collectStatus(context, doctor),
+      completion: (document) => ({
+        exitCode: 0,
+        human: (logger) => {
+          renderDashboard(logger, document, nodeMajorVersion());
+        },
+        json: toJsonValue(document),
+      }),
+    },
+    dependencies.runtimeFactory,
+  );
 }
+
+/** Production singleton used by `npm run status` and this module's direct entrypoint. */
+export const statusCommand: MonorepoCommand<StatusInput, StatusDocument> = createStatusCommand();
+
+await statusCommand.runIfMain(import.meta.url);

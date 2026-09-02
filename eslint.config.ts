@@ -928,8 +928,7 @@ const doctorReadOnlyConfig: Config = defineConfig({
  * `./common/process.ts`, every import of the Node runtime adapter and the Execa runner adapter,
  * and the unrestricted `ProcessRunner` contract in doctor specialist modules: those modules
  * receive only the narrow read-only capabilities carried by `DoctorContext`. `doctor.ts` (the
- * sole orchestrator wiring point, which still owns the deprecated `runDoctor` compatibility
- * adapter) is excluded; all `*.test.ts` files are also excluded.
+ * sole orchestrator wiring point) is excluded; all `*.test.ts` files are also excluded.
  *
  * Because flat config merges later entries on top of earlier ones for the same rule, this
  * config must include the shared read-only paths or it would silently replace them.

@@ -44,7 +44,7 @@ import {
   type RepositoryInspectionRuntime,
 } from "./common/runtime.ts";
 import {computeHealthScore, diagnosticWeights} from "./doctor.reporter.ts";
-import {createBoundedNetworkProbe, createDoctorCommand, doctorModules, runDoctor} from "./doctor.ts";
+import {createBoundedNetworkProbe, createDoctorCommand, doctorModules} from "./doctor.ts";
 import type {DiagnosticModule, DiagnosticModuleId, DiagnosticResult, DoctorContext, DoctorInput, DoctorReport} from "./doctor.types.ts";
 import type {RepositoryInspectionKey, RepositoryInspectionSession} from "./inspection/repository.ts";
 import type {InspectionOutcome} from "./inspection/types.ts";
@@ -782,29 +782,6 @@ describe("doctorCommand.run", () => {
     for (const moduleId of expectedModuleOrder) {
       expect(fixture.calls[moduleId]).not.toHaveBeenCalled();
     }
-  });
-});
-
-describe("runDoctor compatibility adapter", () => {
-  it("returns the typed report for the injected inspection session and repository paths", async () => {
-    const session = createFixtureSession();
-    const {modules, calls} = createFakeModules();
-
-    const report = await runDoctor(doctorInput({quick: true}), {inspection: session, modules});
-
-    expect(report.checks.map((check) => check.module)).toEqual(expectedModuleOrder);
-    expect(report.summary.passed).toBe(6);
-    for (const moduleId of expectedModuleOrder) {
-      expect(moduleContext(calls[moduleId]).inspection).toBe(session);
-    }
-  });
-
-  it("propagates report validation failures to the caller", async () => {
-    const {modules} = createFakeModules({
-      react: async () => [passCheck("workspace.repository-root", "react")],
-    });
-
-    await expect(runDoctor(doctorInput({quick: true}), {inspection: createFixtureSession(), modules})).rejects.toThrow(/duplicate/i);
   });
 });
 

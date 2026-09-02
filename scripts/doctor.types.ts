@@ -54,14 +54,6 @@ export interface DoctorInput {
   readonly verbose: boolean;
 }
 
-/**
- * Runtime options consumed by the doctor orchestrator and modules.
- *
- * @deprecated Renamed to {@link DoctorInput}; removed in Task 12 once legacy status adopts
- * `doctorCommand.invoke()`.
- */
-export type DoctorRunOptions = DoctorInput;
-
 /** Totals by result status. */
 export interface DoctorSummary {
   readonly passed: number;
