@@ -119,7 +119,7 @@ describe("createImageCommand", () => {
         command: "podman",
         args: ["build", "-f", "infra/containers/Dockerfile.backend", "-t", "arolariu-backend", "--build-arg", "VERSION=local", "."],
       },
-      options: {output: "tee"},
+      options: {output: "tee", logCommands: true},
     });
   });
 
@@ -132,7 +132,7 @@ describe("createImageCommand", () => {
 
     expect(runner.calls.at(-1)).toMatchObject({
       request: {command: "podman", args: ["run", "--rm", "-p", "5002:80", "-e", "INFRA=local", "arolariu-exp"]},
-      options: {output: "tee"},
+      options: {output: "tee", logCommands: true},
     });
   });
 
@@ -176,6 +176,23 @@ describe("createImageCommand", () => {
 
     expect(execution).toMatchObject({status: "cancelled", exitCode: 130});
     expect(runner.calls).toHaveLength(podmanPreflightOutcomes.length);
+  });
+
+  it("preserves the invocation's cancellation reason when the run command itself is cancelled on an aborted invocation", async () => {
+    const controller = new AbortController();
+    controller.abort(new CommandCancellation("Terminated by test signal.", 143));
+    const runner = createProcessRunner([...podmanPreflightOutcomes, {kind: "cancelled", stdout: "", stderr: "", durationMs: 0}]);
+    const artifacts = createArtifactsStub();
+    const command = createImageCommand({runtimeFactory: createTestRuntimeFactory({runner}), artifacts});
+
+    const execution = await command.invoke({action: "run", target: "exp", engine: "podman"}, {signal: controller.signal});
+
+    expect(execution).toMatchObject({
+      status: "cancelled",
+      exitCode: 143,
+      failure: {kind: "cancelled", message: "Terminated by test signal."},
+    });
+    expect(runner.calls).toHaveLength(podmanPreflightOutcomes.length + 1);
   });
 
   describe("parser lifecycle", () => {

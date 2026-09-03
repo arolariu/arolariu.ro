@@ -6,6 +6,7 @@
 import {describe, expect, it} from "vitest";
 import type {ProcessOutcome} from "../common/runner.ts";
 import {createProcessRunner, createTestRuntimeFactory} from "../common/runtime.testing.ts";
+import {CommandCancellation} from "../common/runtime.ts";
 import {getContainerAdapter} from "./adapters.ts";
 import {buildAspireCommand, createAspireCommand} from "./aspire.ts";
 
@@ -95,6 +96,22 @@ describe("createAspireCommand", () => {
 
     expect(execution).toMatchObject({status: "failed", exitCode: 1});
     expect(execution.status === "failed" ? execution.failure.message : "").toContain("Docker Desktop appears to be active");
+  });
+
+  it("stops before starting AppHost when preflight itself is cancelled on an aborted invocation", async () => {
+    const controller = new AbortController();
+    controller.abort(new CommandCancellation("Terminated by test signal.", 130));
+    const runner = createProcessRunner([{kind: "cancelled", stdout: "", stderr: "", durationMs: 0}]);
+    const command = createAspireCommand(createTestRuntimeFactory({runner}));
+
+    const execution = await command.invoke({engine: "rancher"}, {signal: controller.signal});
+
+    expect(execution).toMatchObject({
+      status: "cancelled",
+      exitCode: 130,
+      failure: {kind: "cancelled", message: "Terminated by test signal."},
+    });
+    expect(runner.calls).toHaveLength(1);
   });
 
   it("rejects the deprecated docker engine value as a usage failure", async () => {

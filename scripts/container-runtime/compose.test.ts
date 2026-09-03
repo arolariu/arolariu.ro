@@ -6,6 +6,7 @@
 import {describe, expect, it} from "vitest";
 import type {ProcessOutcome} from "../common/runner.ts";
 import {createProcessRunner, createTestRuntimeFactory} from "../common/runtime.testing.ts";
+import {CommandCancellation} from "../common/runtime.ts";
 import {getContainerAdapter} from "./adapters.ts";
 import {buildComposeCommand, createComposeCommand} from "./compose.ts";
 
@@ -48,7 +49,7 @@ describe("createComposeCommand", () => {
         command: "podman",
         args: ["compose", "-f", "infra\\Local\\Storage\\docker-compose.yml", "up", "-d"],
       },
-      options: {output: "tee"},
+      options: {output: "tee", logCommands: true},
     });
   });
 
@@ -91,6 +92,31 @@ describe("createComposeCommand", () => {
     const execution = await command.invoke({engine: "rancher", file: "docker-compose.yml", passthrough: ["up", "-d"]});
 
     expect(execution).toMatchObject({status: "failed", exitCode: 1, failure: {kind: "operational"}});
+  });
+
+  it("preserves the invocation's cancellation reason when Compose itself is cancelled on an aborted invocation", async () => {
+    const controller = new AbortController();
+    controller.abort(new CommandCancellation("Terminated by test signal.", 143));
+    const runner = createProcessRunner([
+      succeeded(), // docker --version
+      succeeded(), // docker version
+      succeeded(), // docker compose version
+      succeeded(), // docker ps -a
+      {kind: "cancelled", stdout: "", stderr: "", durationMs: 0}, // actual compose invocation, cancelled
+    ]);
+    const command = createComposeCommand(createTestRuntimeFactory({runner}));
+
+    const execution = await command.invoke(
+      {engine: "rancher", file: "docker-compose.yml", passthrough: ["up", "-d"]},
+      {signal: controller.signal},
+    );
+
+    expect(execution).toMatchObject({
+      status: "cancelled",
+      exitCode: 143,
+      failure: {kind: "cancelled", message: "Terminated by test signal."},
+    });
+    expect(runner.calls).toHaveLength(5);
   });
 
   describe("parser lifecycle", () => {

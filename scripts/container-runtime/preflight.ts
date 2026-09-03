@@ -23,7 +23,7 @@ import {
   type ProcessRunOptions,
   type ProcessRunner,
 } from "../common/runner.ts";
-import type {RuntimeEnvironment} from "../common/runtime.ts";
+import {commandCancellationFromSignal, type RuntimeEnvironment} from "../common/runtime.ts";
 import type {ContainerRuntimeAdapter, RuntimeCommand} from "./adapters.ts";
 import {ContainerRuntimeError} from "./types.ts";
 
@@ -126,14 +126,40 @@ export async function runArtifactGeneration(
 }
 
 /**
+ * Translates a preflight probe's cancelled outcome into the invocation's own typed cancellation
+ * reason instead of an operational {@link ContainerRuntimeError}.
+ *
+ * @remarks
+ * A cancelled invocation's exact SIGINT/SIGTERM exit code (`130`/`143`) is owned by its own
+ * {@link CommandCancellation} reason; letting a cancelled preflight probe fall through to a
+ * generic tool-unavailable message would misreport an interrupted invocation as an operational
+ * failure and the shared Commander lifecycle would classify it as exit code `1`. A
+ * `{kind:"cancelled"}` outcome observed while `signal` is not the invocation's own aborted signal
+ * is not this invocation's cancellation and stays an operational failure.
+ *
+ * @param outcome - Preflight probe outcome to inspect.
+ * @param signal - The owning invocation's cancellation signal, supplied only when the probe runs
+ * through {@link runContainerPreflight}.
+ * @throws {CommandCancellation} When `outcome` is cancelled and `signal` is aborted.
+ */
+function throwIfPreflightCancelled(outcome: Readonly<ProcessOutcome>, signal?: AbortSignal): void {
+  if (outcome.kind === "cancelled" && signal?.aborted === true) {
+    throw commandCancellationFromSignal(signal);
+  }
+}
+
+/**
  * Verifies a required CLI tool is available.
  *
  * @param tool - CLI tool name to probe.
  * @param runner - Process runner used for probing.
+ * @param signal - The owning invocation's cancellation signal, when probing through
+ * {@link runContainerPreflight}.
  * @throws {ContainerRuntimeError} When the tool cannot be executed.
  */
-export async function assertToolAvailable(tool: string, runner: ProcessRunner): Promise<void> {
+export async function assertToolAvailable(tool: string, runner: ProcessRunner, signal?: AbortSignal): Promise<void> {
   const outcome = await runner.run({command: tool, args: ["--version"]});
+  throwIfPreflightCancelled(outcome, signal);
   if (outcome.kind !== "succeeded") {
     throw new ContainerRuntimeError(`Required tool '${tool}' is not available. Output: ${describeOutcomeFailure(outcome)}`);
   }
@@ -159,10 +185,13 @@ export async function assertNoDockerDesktopBackend(runner: ProcessRunner): Promi
  * Verifies Rancher Desktop owns the Docker-compatible CLI path.
  *
  * @param runner - Process runner used for probing.
+ * @param signal - The owning invocation's cancellation signal, when probing through
+ * {@link runContainerPreflight}.
  * @throws {ContainerRuntimeError} When the backend is unavailable or Docker Desktop is active.
  */
-export async function assertRancherBackend(runner: ProcessRunner): Promise<void> {
+export async function assertRancherBackend(runner: ProcessRunner, signal?: AbortSignal): Promise<void> {
   const outcome = await runner.run({command: "docker", args: ["version"]});
+  throwIfPreflightCancelled(outcome, signal);
 
   if (outcome.kind !== "succeeded") {
     throw new ContainerRuntimeError(`Rancher Desktop Docker-compatible CLI is not available. Output: ${describeOutcomeFailure(outcome)}`);
@@ -179,15 +208,19 @@ export async function assertRancherBackend(runner: ProcessRunner): Promise<void>
  * Verifies Podman and its Compose provider are available.
  *
  * @param runner - Process runner used for probing.
+ * @param signal - The owning invocation's cancellation signal, when probing through
+ * {@link runContainerPreflight}.
  * @throws {ContainerRuntimeError} When Podman or Compose support is unavailable.
  */
-export async function assertPodmanBackend(runner: ProcessRunner): Promise<void> {
+export async function assertPodmanBackend(runner: ProcessRunner, signal?: AbortSignal): Promise<void> {
   const podman = await runner.run({command: "podman", args: ["--version"]});
+  throwIfPreflightCancelled(podman, signal);
   if (podman.kind !== "succeeded") {
     throw new ContainerRuntimeError(`Podman is not available. Output: ${describeOutcomeFailure(podman)}`);
   }
 
   const compose = await runner.run({command: "podman", args: ["compose", "version"]});
+  throwIfPreflightCancelled(compose, signal);
   if (compose.kind !== "succeeded") {
     throw new ContainerRuntimeError(
       `Podman Compose provider is not available. Configure Podman Desktop Compose support. Output: ${describeOutcomeFailure(compose)}`,
@@ -259,16 +292,17 @@ export interface ContainerPreflightContext {
 export async function runContainerPreflight(adapter: ContainerRuntimeAdapter, context: Readonly<ContainerPreflightContext>): Promise<void> {
   const runner = context.runner.scope({signal: context.signal});
 
-  await assertToolAvailable(adapter.primaryCli, runner);
+  await assertToolAvailable(adapter.primaryCli, runner, context.signal);
 
   if (adapter.engine === "rancher") {
-    await assertRancherBackend(runner);
+    await assertRancherBackend(runner, context.signal);
   } else {
     await assertNoDockerDesktopBackend(runner);
-    await assertPodmanBackend(runner);
+    await assertPodmanBackend(runner, context.signal);
   }
 
   const composeOutcome = await runner.run(adapter.compose(["version"]));
+  throwIfPreflightCancelled(composeOutcome, context.signal);
   if (composeOutcome.kind !== "succeeded") {
     throw new ContainerRuntimeError(
       `${adapter.displayName} Compose provider is not available. Output: ${describeOutcomeFailure(composeOutcome)}`,

@@ -20,8 +20,10 @@ import {
   type CommandInvoker,
   type CommandRuntimeFactory,
 } from "../common/commander.ts";
+import type {MonorepositoryLogger} from "../common/logger.ts";
 import {resolveRepositoryPaths} from "../common/repository-paths.ts";
-import {CommandCancellation} from "../common/runtime.ts";
+import {RunnerError, type ProcessRunner} from "../common/runner.ts";
+import {CommandCancellation, commandCancellationFromSignal} from "../common/runtime.ts";
 import {generateArtifactsCommand, type ArtifactGenerationResult, type GenerateArtifactsInput} from "../generate.artifacts.ts";
 import {getContainerAdapter, type ContainerRuntimeAdapter, type RuntimeCommand} from "./adapters.ts";
 import {runContainerPreflight} from "./preflight.ts";
@@ -127,6 +129,42 @@ async function runArtifactPrerequisite(
 }
 
 /**
+ * Runs the resolved engine-owned image build/run command, translating a cancelled runner outcome
+ * on the invocation's own aborted signal into the invocation's typed cancellation reason instead
+ * of an operational failure.
+ *
+ * @remarks
+ * A cancelled invocation's exact SIGINT/SIGTERM exit code (`130`/`143`) is owned by its own
+ * {@link CommandCancellation} reason; letting `expectSuccess`'s `RunnerError` for a cancelled
+ * outcome escape unclassified would misreport an interrupted invocation as an operational failure
+ * and the shared Commander lifecycle would classify it as exit code `1`. A `{kind:"cancelled"}`
+ * outcome observed while `signal` is not the invocation's own aborted signal is not this
+ * invocation's cancellation and stays an operational failure.
+ *
+ * @param runner - Process runner used to run `command`.
+ * @param command - Engine-owned build or run command to execute.
+ * @param logger - Logger used for tee output and command echo.
+ * @param signal - The owning invocation's cancellation signal.
+ * @throws {CommandCancellation} When `command` is cancelled on `signal`.
+ * @throws {RunnerError} When `command` fails for any other reason.
+ */
+async function runImageBusinessCommand(
+  runner: ProcessRunner,
+  command: Readonly<RuntimeCommand>,
+  logger: MonorepositoryLogger,
+  signal: AbortSignal,
+): Promise<void> {
+  try {
+    await runner.expectSuccess(command, {output: "tee", logCommands: true, logger, signal});
+  } catch (error) {
+    if (error instanceof RunnerError && error.outcome.kind === "cancelled" && signal.aborted) {
+      throw commandCancellationFromSignal(signal);
+    }
+    throw error;
+  }
+}
+
+/**
  * Builds and runs the local image build/run business logic.
  *
  * @param artifacts - Taxonomy and license artifact generator command.
@@ -176,12 +214,12 @@ async function executeImage(
       context: ".",
       buildArgs: {VERSION: "local"},
     });
-    await runtime.runner.expectSuccess(command, {output: "tee", logger: runtime.logger, signal: runtime.signal});
+    await runImageBusinessCommand(runtime.runner, command, runtime.logger, runtime.signal);
     return {engine: adapter.engine, action: "build", target: input.target};
   }
 
   const command = buildImageRunCommand(adapter, {tag, ports: portsByTarget[input.target], environment: {INFRA: "local"}});
-  await runtime.runner.expectSuccess(command, {output: "tee", logger: runtime.logger, signal: runtime.signal});
+  await runImageBusinessCommand(runtime.runner, command, runtime.logger, runtime.signal);
   return {engine: adapter.engine, action: "run", target: input.target};
 }
 

@@ -12,6 +12,8 @@
 
 import {MonorepoCommand, type CommandContext, type CommandRuntimeFactory} from "../common/commander.ts";
 import {resolveRepositoryPaths} from "../common/repository-paths.ts";
+import {RunnerError} from "../common/runner.ts";
+import {commandCancellationFromSignal} from "../common/runtime.ts";
 import {getContainerAdapter, type ContainerRuntimeAdapter} from "./adapters.ts";
 import {runContainerPreflight} from "./preflight.ts";
 import {resolveRuntimeContainerEngine} from "./selection.ts";
@@ -78,10 +80,17 @@ async function executeAspire(context: Readonly<CommandContext>, input: Readonly<
   });
 
   const command = buildAspireCommand(adapter, runtime.environment.variables);
-  await runtime.runner.expectSuccess(
-    {command: command.command, args: command.args},
-    {env: command.env, output: "inherit", signal: runtime.signal},
-  );
+  try {
+    await runtime.runner.expectSuccess(
+      {command: command.command, args: command.args},
+      {env: command.env, output: "inherit", signal: runtime.signal},
+    );
+  } catch (error) {
+    if (error instanceof RunnerError && error.outcome.kind === "cancelled" && runtime.signal.aborted) {
+      throw commandCancellationFromSignal(runtime.signal);
+    }
+    throw error;
+  }
 
   return {engine: adapter.engine};
 }

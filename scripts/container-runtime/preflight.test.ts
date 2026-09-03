@@ -8,6 +8,7 @@ import {InMemoryLoggerSink, MonorepositoryConsoleLogger, type MonorepositoryLogg
 import type {CommandResult, CommandRunner} from "../common/process.ts";
 import type {ProcessOutcome} from "../common/runner.ts";
 import {createProcessRunner} from "../common/runtime.testing.ts";
+import {CommandCancellation} from "../common/runtime.ts";
 import {getContainerAdapter} from "./adapters.ts";
 import {
   assertNoDockerDesktopBackend,
@@ -38,6 +39,10 @@ function succeeded(stdout = "", stderr = ""): ProcessOutcome {
 
 function exited(code: number, stdout = "", stderr = ""): ProcessOutcome {
   return {kind: "exited", exitCode: code, stdout, stderr, durationMs: 0};
+}
+
+function cancelled(): ProcessOutcome {
+  return {kind: "cancelled", stdout: "", stderr: "", durationMs: 0};
 }
 
 function createTestLogger(): Readonly<{sink: InMemoryLoggerSink; logger: MonorepositoryLogger}> {
@@ -95,6 +100,23 @@ describe("assertToolAvailable", () => {
 
   it("throws when the tool is missing", async () => {
     await expect(assertToolAvailable("podman", createProcessRunner([exited(1, "not found")]))).rejects.toThrow(
+      "Required tool 'podman' is not available",
+    );
+  });
+
+  it("throws the invocation's cancellation reason when the probe is cancelled on an aborted signal", async () => {
+    const controller = new AbortController();
+    controller.abort(new CommandCancellation("Terminated by test signal.", 130));
+
+    await expect(assertToolAvailable("podman", createProcessRunner([cancelled()]), controller.signal)).rejects.toMatchObject({
+      name: "CommandCancellation",
+      exitCode: 130,
+      message: "Terminated by test signal.",
+    });
+  });
+
+  it("treats a standalone cancelled outcome without an aborted signal as an operational failure", async () => {
+    await expect(assertToolAvailable("podman", createProcessRunner([cancelled()]))).rejects.toThrow(
       "Required tool 'podman' is not available",
     );
   });
@@ -231,6 +253,7 @@ describe("runContainerPreflight", () => {
     runner: ReturnType<typeof createProcessRunner>;
     logger: MonorepositoryLogger;
     sink: InMemoryLoggerSink;
+    controller: AbortController;
   }> {
     const runner = createProcessRunner(outcomes);
     const {sink, logger} = createTestLogger();
@@ -251,7 +274,7 @@ describe("runContainerPreflight", () => {
       signal: controller.signal,
     };
 
-    return {context, runner, logger, sink};
+    return {context, runner, logger, sink, controller};
   }
 
   it("runs Rancher validation and compose checks in order", async () => {
@@ -294,6 +317,24 @@ describe("runContainerPreflight", () => {
     await runContainerPreflight(getContainerAdapter("podman"), context);
 
     expect(sink.records.some((record) => record.text.includes("Existing local containers detected for Podman Desktop: mssql"))).toBe(true);
+  });
+
+  it("throws the invocation's cancellation reason when a probe is cancelled on an aborted signal, with no later probes", async () => {
+    const {context, runner, controller} = contextFor([cancelled()]);
+    controller.abort(new CommandCancellation("Terminated by test signal.", 130));
+
+    await expect(runContainerPreflight(getContainerAdapter("rancher"), context)).rejects.toMatchObject({
+      name: "CommandCancellation",
+      exitCode: 130,
+      message: "Terminated by test signal.",
+    });
+    expect(runner.calls).toHaveLength(1);
+  });
+
+  it("keeps a standalone cancelled outcome an operational failure when the invocation signal is not aborted", async () => {
+    const {context} = contextFor([cancelled()]);
+
+    await expect(runContainerPreflight(getContainerAdapter("rancher"), context)).rejects.toThrow("Required tool 'docker' is not available");
   });
 });
 

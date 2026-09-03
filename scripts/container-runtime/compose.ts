@@ -21,6 +21,8 @@ import {
   type CommandRuntimeFactory,
 } from "../common/commander.ts";
 import {resolveRepositoryPaths} from "../common/repository-paths.ts";
+import {RunnerError} from "../common/runner.ts";
+import {commandCancellationFromSignal} from "../common/runtime.ts";
 import {getContainerAdapter, type ContainerRuntimeAdapter, type RuntimeCommand} from "./adapters.ts";
 import {runContainerPreflight} from "./preflight.ts";
 import {resolveRuntimeContainerEngine} from "./selection.ts";
@@ -79,7 +81,19 @@ async function executeCompose(context: Readonly<CommandContext>, input: Readonly
   });
 
   const command = buildComposeCommand(adapter, {file: input.file, args: input.passthrough});
-  await runtime.runner.expectSuccess(command, {output: "tee", logger: runtime.logger, signal: runtime.signal});
+  try {
+    await runtime.runner.expectSuccess(command, {
+      output: "tee",
+      logCommands: true,
+      logger: runtime.logger,
+      signal: runtime.signal,
+    });
+  } catch (error) {
+    if (error instanceof RunnerError && error.outcome.kind === "cancelled" && runtime.signal.aborted) {
+      throw commandCancellationFromSignal(runtime.signal);
+    }
+    throw error;
+  }
 
   return {engine: adapter.engine, file: input.file, passthrough: input.passthrough};
 }
