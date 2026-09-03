@@ -362,6 +362,31 @@ npx eslint scripts\doctor.ts scripts\doctor.types.ts scripts\doctor.reporter.ts 
 git --no-pager diff --check
 ```
 
+## Architecture analysis
+
+The preparatory scripts-architecture cohort keeps one typed entrypoint inventory and three complementary checks:
+
+```powershell
+npm run analyze:scripts:unused
+npm run typecheck:scripts
+npm run analyze:scripts:loc
+npm run analyze:scripts:architecture
+```
+
+- `analyze:scripts:unused` runs Knip against the scripts project and reports unused files, exports, types, and root dependencies not owned
+  by a child workspace.
+- `typecheck:scripts` checks production and non-test support with strict root compiler options. Its sole temporary production exclusion is
+  `workers/lint.worker.ts`, which Cohort 7 removes.
+- `analyze:scripts:loc` reports the fixed 73,377-line baseline, the temporary 75,500-line Cohort 0 ceiling, the final 55,032-line target,
+  production/test-support totals, family totals, committed line churn, and detected rename/relocation evidence from baseline commit
+  `11773ff3d`.
+- `analyze:scripts:architecture` reports static runtime graph size and three-sample `--help` medians for every Commander entrypoint. Timing
+  is informational; AST boundary tests enforce lazy-loading structure.
+
+Architecture checks live under `scripts/testing/architecture/`; public CLI snapshots and behavior-evidence mappings live under
+`scripts/testing/compatibility/`. Both are excluded from production runtime and coverage policies but remain included in the maintained-line
+total.
+
 ## Targeted validation
 
 Run the policy tests after changing script output or the runtime boundary:
