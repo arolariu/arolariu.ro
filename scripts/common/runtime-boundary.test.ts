@@ -937,51 +937,6 @@ describe("runtime boundary policy", () => {
           "line": 43,
           "rule": "direct-exit",
         },
-        {
-          "file": "scripts/test-e2e.ts",
-          "line": 11,
-          "rule": "ambient-filesystem",
-        },
-        {
-          "file": "scripts/test-e2e.ts",
-          "line": 14,
-          "rule": "legacy-cli-import",
-        },
-        {
-          "file": "scripts/test-e2e.ts",
-          "line": 16,
-          "rule": "legacy-process-import",
-        },
-        {
-          "file": "scripts/test-e2e.ts",
-          "line": 585,
-          "rule": "ambient-os-state",
-        },
-        {
-          "file": "scripts/test-e2e.ts",
-          "line": 586,
-          "rule": "ambient-environment",
-        },
-        {
-          "file": "scripts/test-e2e.ts",
-          "line": 609,
-          "rule": "ambient-os-state",
-        },
-        {
-          "file": "scripts/test-e2e.ts",
-          "line": 658,
-          "rule": "ambient-os-state",
-        },
-        {
-          "file": "scripts/test-e2e.ts",
-          "line": 660,
-          "rule": "direct-exit",
-        },
-        {
-          "file": "scripts/test-e2e.ts",
-          "line": 663,
-          "rule": "direct-exit",
-        },
       ]
     `);
   });

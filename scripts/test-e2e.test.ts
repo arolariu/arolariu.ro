@@ -1,391 +1,41 @@
 // @vitest-environment node
 /**
- * @fileoverview Contract tests for the E2E Newman runner.
+ * @fileoverview Tests for the declarative E2E command and its report-cleanup helpers.
  * @module scripts/test-e2e.test
+ *
+ * @remarks
+ * Every scenario runs through deterministic in-memory fixtures: {@link createE2eCommand}
+ * scenarios run through the declarative command runtime's test factory with a fake
+ * {@link AbstractProcessRunner} that simulates Newman's reporter output instead of spawning a
+ * real Newman process, and the exported sanitization/summary helpers are exercised directly
+ * against a fake {@link FileSystem}. No test in this file touches real disk, spawns a real
+ * process, or mutates `process.env`/`process.argv`.
  */
 
-import {mkdtemp, readFile, rm, writeFile, mkdir} from "node:fs/promises";
-import {tmpdir} from "node:os";
-import {join, isAbsolute} from "node:path";
-import {afterEach, describe, expect, it} from "vitest";
+import {dirname, join} from "node:path";
+import {describe, expect, it} from "vitest";
+
 import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "./common/logger.ts";
-import type {CommandResult, CommandRunner, CommandSpec} from "./common/process.ts";
-
-/** Minimal Postman collection fixture that is valid JSON. */
-const MINIMAL_COLLECTION = JSON.stringify(
-  {info: {name: "test-collection"}, item: [], variable: [{key: "baseUrl", value: "http://localhost"}]},
-  null,
-  2,
-);
-
-/** Minimal Postman environment fixture. */
-const MINIMAL_ENVIRONMENT = JSON.stringify(
-  {name: "test-env", values: [{key: "baseUrl", value: "http://localhost", enabled: true}]},
-  null,
-  2,
-);
-
-const FAKE_TOKEN = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.signature";
-
-/** Creates a fake runner that records every command and returns a configurable result. */
-function createFakeRunner(result: Partial<CommandResult> = {}): {runner: CommandRunner; calls: Array<{command: CommandSpec}>} {
-  const calls: Array<{command: CommandSpec}> = [];
-  const runner: CommandRunner = {
-    run: async (command: Readonly<CommandSpec>) => {
-      calls.push({command: {...command, args: [...command.args]}});
-      return {
-        code: 0,
-        stdout: "",
-        stderr: "",
-        durationMs: 100,
-        timedOut: false,
-        ...result,
-      };
-    },
-  };
-  return {runner, calls};
-}
-
-/** Scaffolds a temporary target directory with collection and environment files. */
-async function scaffoldTarget(root: string, relativeDir: string): Promise<{collectionPath: string; environmentPath: string}> {
-  const targetDir = join(root, relativeDir);
-  await mkdir(targetDir, {recursive: true});
-  const collectionPath = join(targetDir, "postman-collection.json");
-  const environmentPath = join(targetDir, "postman-environment.production.json");
-  await writeFile(collectionPath, MINIMAL_COLLECTION, "utf-8");
-  await writeFile(environmentPath, MINIMAL_ENVIRONMENT, "utf-8");
-  return {collectionPath, environmentPath};
-}
-
-/** Scaffolds a full temporary tree with all three targets and a report directory. */
-async function scaffoldAll(): Promise<{
-  root: string;
-  paths: Record<string, {collectionPath: string; environmentPath: string}>;
-  reportDir: string;
-}> {
-  const root = await mkdtemp(join(tmpdir(), "e2e-test-"));
-  const targets = {
-    backend: "sites/api.arolariu.ro",
-    frontend: "sites/arolariu.ro",
-    cv: "sites/cv.arolariu.ro",
-  } as const;
-
-  const paths: Record<string, {collectionPath: string; environmentPath: string}> = {};
-  for (const [key, dir] of Object.entries(targets)) {
-    paths[key] = await scaffoldTarget(root, dir);
-  }
-
-  const reportDir = join(root, "e2e-logs");
-  await mkdir(reportDir, {recursive: true});
-
-  return {root, paths, reportDir};
-}
-
-let tempRoot: string | undefined;
-
-afterEach(async () => {
-  if (tempRoot !== undefined) {
-    await rm(tempRoot, {recursive: true, force: true});
-    tempRoot = undefined;
-  }
-});
-
-describe("test-e2e: collection immutability", () => {
-  it("backend success run does not modify the collection file", async () => {
-    const {root, paths, reportDir} = await scaffoldAll();
-    tempRoot = root;
-    const originalBytes = await readFile(paths["backend"]!.collectionPath, "utf-8");
-    const {runner, calls} = createFakeRunner();
-
-    const sink = new InMemoryLoggerSink();
-    const logger = new MonorepositoryConsoleLogger("test", {color: false, sink});
-
-    const {main} = await import("./test-e2e.ts");
-    const code = await main("backend", logger, {
-      runner,
-      cwd: root,
-      env: {E2E_TEST_AUTH_TOKEN: FAKE_TOKEN, NEWMAN_REPORT_DIR: reportDir},
-    });
-
-    expect(code).toBe(0);
-    expect(await readFile(paths["backend"]!.collectionPath, "utf-8")).toBe(originalBytes);
-
-    // Verify --env-var authToken transport
-    const recorded = calls[0]!.command;
-    expect(recorded.args).toContain("--env-var");
-    const envVarIndex = recorded.args.indexOf("--env-var");
-    expect(recorded.args[envVarIndex + 1]).toBe(`authToken=${FAKE_TOKEN}`);
-  });
-
-  it("frontend optional token run does not modify the collection file", async () => {
-    const {root, paths, reportDir} = await scaffoldAll();
-    tempRoot = root;
-    const originalBytes = await readFile(paths["frontend"]!.collectionPath, "utf-8");
-    const {runner, calls} = createFakeRunner();
-
-    const sink = new InMemoryLoggerSink();
-    const logger = new MonorepositoryConsoleLogger("test", {color: false, sink});
-
-    const {main} = await import("./test-e2e.ts");
-    const code = await main("frontend", logger, {
-      runner,
-      cwd: root,
-      env: {E2E_TEST_AUTH_TOKEN: FAKE_TOKEN, NEWMAN_REPORT_DIR: reportDir},
-    });
-
-    expect(code).toBe(0);
-    expect(await readFile(paths["frontend"]!.collectionPath, "utf-8")).toBe(originalBytes);
-
-    // Frontend with token should also use --env-var
-    const recorded = calls[0]!.command;
-    expect(recorded.args).toContain("--env-var");
-  });
-
-  it("frontend without token still does not modify the collection", async () => {
-    const {root, paths, reportDir} = await scaffoldAll();
-    tempRoot = root;
-    const originalBytes = await readFile(paths["frontend"]!.collectionPath, "utf-8");
-    const {runner, calls} = createFakeRunner();
-
-    const sink = new InMemoryLoggerSink();
-    const logger = new MonorepositoryConsoleLogger("test", {color: false, sink});
-
-    const {main} = await import("./test-e2e.ts");
-    const code = await main("frontend", logger, {
-      runner,
-      cwd: root,
-      env: {E2E_TEST_AUTH_TOKEN: "", NEWMAN_REPORT_DIR: reportDir},
-    });
-
-    expect(code).toBe(0);
-    expect(await readFile(paths["frontend"]!.collectionPath, "utf-8")).toBe(originalBytes);
-
-    // Without token, --env-var should not be present
-    const recorded = calls[0]!.command;
-    expect(recorded.args).not.toContain("--env-var");
-  });
-
-  it("cv ignores the token and does not modify the collection", async () => {
-    const {root, paths, reportDir} = await scaffoldAll();
-    tempRoot = root;
-    const originalBytes = await readFile(paths["cv"]!.collectionPath, "utf-8");
-    const {runner, calls} = createFakeRunner();
-
-    const sink = new InMemoryLoggerSink();
-    const logger = new MonorepositoryConsoleLogger("test", {color: false, sink});
-
-    const {main} = await import("./test-e2e.ts");
-    const code = await main("cv", logger, {
-      runner,
-      cwd: root,
-      env: {E2E_TEST_AUTH_TOKEN: FAKE_TOKEN, NEWMAN_REPORT_DIR: reportDir},
-    });
-
-    expect(code).toBe(0);
-    expect(await readFile(paths["cv"]!.collectionPath, "utf-8")).toBe(originalBytes);
-
-    // CV should never include --env-var for auth
-    const recorded = calls[0]!.command;
-    expect(recorded.args).not.toContain("--env-var");
-  });
-});
-
-describe("test-e2e: nonzero exit preserves collection", () => {
-  it("nonzero Newman exit code does not corrupt the collection", async () => {
-    const {root, paths, reportDir} = await scaffoldAll();
-    tempRoot = root;
-    const originalBytes = await readFile(paths["backend"]!.collectionPath, "utf-8");
-    const {runner} = createFakeRunner({code: 1});
-
-    const sink = new InMemoryLoggerSink();
-    const logger = new MonorepositoryConsoleLogger("test", {color: false, sink});
-
-    const {main} = await import("./test-e2e.ts");
-    const code = await main("backend", logger, {
-      runner,
-      cwd: root,
-      env: {E2E_TEST_AUTH_TOKEN: FAKE_TOKEN, NEWMAN_REPORT_DIR: reportDir},
-    });
-
-    expect(code).not.toBe(0);
-    expect(await readFile(paths["backend"]!.collectionPath, "utf-8")).toBe(originalBytes);
-  });
-});
-
-describe("test-e2e: timeout preserves collection", () => {
-  it("timed-out Newman preserves the collection", async () => {
-    const {root, paths, reportDir} = await scaffoldAll();
-    tempRoot = root;
-    const originalBytes = await readFile(paths["backend"]!.collectionPath, "utf-8");
-    const {runner} = createFakeRunner({code: 1, timedOut: true});
-
-    const sink = new InMemoryLoggerSink();
-    const logger = new MonorepositoryConsoleLogger("test", {color: false, sink});
-
-    const {main} = await import("./test-e2e.ts");
-    const code = await main("backend", logger, {
-      runner,
-      cwd: root,
-      env: {E2E_TEST_AUTH_TOKEN: FAKE_TOKEN, NEWMAN_REPORT_DIR: reportDir},
-    });
-
-    expect(code).not.toBe(0);
-    expect(await readFile(paths["backend"]!.collectionPath, "utf-8")).toBe(originalBytes);
-  });
-});
-
-describe("test-e2e: spawn failure preserves collection", () => {
-  it("spawn failure does not corrupt the collection", async () => {
-    const {root, paths, reportDir} = await scaffoldAll();
-    tempRoot = root;
-    const originalBytes = await readFile(paths["backend"]!.collectionPath, "utf-8");
-    const {runner} = createFakeRunner({code: 1, spawnError: "ENOENT"});
-
-    const sink = new InMemoryLoggerSink();
-    const logger = new MonorepositoryConsoleLogger("test", {color: false, sink});
-
-    const {main} = await import("./test-e2e.ts");
-    const code = await main("backend", logger, {
-      runner,
-      cwd: root,
-      env: {E2E_TEST_AUTH_TOKEN: FAKE_TOKEN, NEWMAN_REPORT_DIR: reportDir},
-    });
-
-    expect(code).not.toBe(0);
-    expect(await readFile(paths["backend"]!.collectionPath, "utf-8")).toBe(originalBytes);
-  });
-});
-
-describe("test-e2e: token redaction", () => {
-  it("logger records never contain the raw token", async () => {
-    const {root, reportDir} = await scaffoldAll();
-    tempRoot = root;
-    const {runner} = createFakeRunner();
-
-    const sink = new InMemoryLoggerSink();
-    const logger = new MonorepositoryConsoleLogger("test", {color: false, sink});
-
-    const {main} = await import("./test-e2e.ts");
-    await main("backend", logger, {
-      runner,
-      cwd: root,
-      env: {E2E_TEST_AUTH_TOKEN: FAKE_TOKEN, NEWMAN_REPORT_DIR: reportDir},
-    });
-
-    const allText = sink.records.map((r) => r.text).join("\n");
-    expect(allText).not.toContain(FAKE_TOKEN);
-  });
-
-  it("token is redacted even on nonzero exit", async () => {
-    const {root, reportDir} = await scaffoldAll();
-    tempRoot = root;
-    const {runner} = createFakeRunner({code: 1});
-
-    const sink = new InMemoryLoggerSink();
-    const logger = new MonorepositoryConsoleLogger("test", {color: false, sink});
-
-    const {main} = await import("./test-e2e.ts");
-    await main("backend", logger, {
-      runner,
-      cwd: root,
-      env: {E2E_TEST_AUTH_TOKEN: FAKE_TOKEN, NEWMAN_REPORT_DIR: reportDir},
-    });
-
-    const allText = sink.records.map((r) => r.text).join("\n");
-    expect(allText).not.toContain(FAKE_TOKEN);
-  });
-});
-
-describe("test-e2e: Commander help and invalid targets", () => {
-  it("--help returns exit code 0 without runner work", async () => {
-    const sink = new InMemoryLoggerSink();
-    const logger = new MonorepositoryConsoleLogger("test", {color: false, sink});
-    const {runner, calls} = createFakeRunner();
-
-    const {main} = await import("./test-e2e.ts");
-    const code = await main("--help", logger, {runner});
-
-    expect(code).toBe(0);
-    expect(calls).toHaveLength(0);
-  });
-
-  it("-h returns exit code 0", async () => {
-    const sink = new InMemoryLoggerSink();
-    const logger = new MonorepositoryConsoleLogger("test", {color: false, sink});
-    const {runner, calls} = createFakeRunner();
-
-    const {main} = await import("./test-e2e.ts");
-    const code = await main("-h", logger, {runner});
-
-    expect(code).toBe(0);
-    expect(calls).toHaveLength(0);
-  });
-
-  it("/h returns exit code 0", async () => {
-    const sink = new InMemoryLoggerSink();
-    const logger = new MonorepositoryConsoleLogger("test", {color: false, sink});
-    const {runner, calls} = createFakeRunner();
-
-    const {main} = await import("./test-e2e.ts");
-    const code = await main("/h", logger, {runner});
-
-    expect(code).toBe(0);
-    expect(calls).toHaveLength(0);
-  });
-
-  it("invalid target returns nonzero exit before any runner work", async () => {
-    const sink = new InMemoryLoggerSink();
-    const logger = new MonorepositoryConsoleLogger("test", {color: false, sink});
-    const {runner, calls} = createFakeRunner();
-
-    const {main} = await import("./test-e2e.ts");
-    const code = await main("nope", logger, {runner});
-
-    expect(code).toBe(1);
-    expect(calls).toHaveLength(0);
-  });
-
-  it("unknown option returns nonzero exit before any runner work", async () => {
-    const sink = new InMemoryLoggerSink();
-    const logger = new MonorepositoryConsoleLogger("test", {color: false, sink});
-    const {runner, calls} = createFakeRunner();
-
-    const {main} = await import("./test-e2e.ts");
-    const code = await main("--unknown-flag", logger, {runner});
-
-    expect(code).toBe(1);
-    expect(calls).toHaveLength(0);
-  });
-});
-
-describe("test-e2e: fake runner transport proof", () => {
-  it("backend command carries the token only inside --env-var", async () => {
-    const {root, reportDir} = await scaffoldAll();
-    tempRoot = root;
-    const {runner, calls} = createFakeRunner();
-
-    const sink = new InMemoryLoggerSink();
-    const logger = new MonorepositoryConsoleLogger("test", {color: false, sink});
-
-    const {main} = await import("./test-e2e.ts");
-    await main("backend", logger, {
-      runner,
-      cwd: root,
-      env: {E2E_TEST_AUTH_TOKEN: FAKE_TOKEN, NEWMAN_REPORT_DIR: reportDir},
-    });
-
-    expect(calls).toHaveLength(1);
-    const rawArgs = calls[0]!.command.args;
-    // Token only appears as the value after --env-var
-    const envVarIndices = rawArgs.reduce<number[]>((acc, arg, i) => (arg === "--env-var" ? [...acc, i] : acc), []);
-    expect(envVarIndices).toHaveLength(1);
-    expect(rawArgs[envVarIndices[0]! + 1]).toBe(`authToken=${FAKE_TOKEN}`);
-  });
-});
+import {AbstractProcessRunner, type ProcessOutcome, type ProcessRequest, type ProcessRunOptions} from "./common/runner.ts";
+import {createMemoryFileSystem, createTestRuntimeFactory, repositoryFixtureRoot} from "./common/runtime.testing.ts";
+import type {FileSystem, RuntimeEnvironment} from "./common/runtime.ts";
+import {
+  createE2eCommand,
+  redactSensitiveString,
+  sanitizeJsonValue,
+  sanitizeNewmanJsonReport,
+  sanitizeNewmanTextReport,
+  writeAssertionSummary,
+} from "./test-e2e.ts";
+
+/** Deliberately non-JWT-shaped fake secret used for exact-match and `--env-var` transport proofs. */
+const FAKE_TOKEN = "e2e-test-secret-value";
+
+/** Every runnable target's fixture directory, matching the production target configuration. */
+const TARGET_DIRS = {backend: "sites/api.arolariu.ro", frontend: "sites/arolariu.ro", cv: "sites/cv.arolariu.ro"} as const;
 
 /**
- * Generates a synthetic JWT-shaped token at runtime.
- * Uses base64url-encoded harmless header/payload with a test signature.
+ * Generates a synthetic JWT-shaped token at runtime (harmless header/payload, fake signature).
  */
 function generateSyntheticJwt(): string {
   const header = Buffer.from(JSON.stringify({alg: "HS256", typ: "JWT"})).toString("base64url");
@@ -394,365 +44,742 @@ function generateSyntheticJwt(): string {
   return `${header}.${payload}.${signature}`;
 }
 
-/**
- * Creates a fake runner that writes token-bearing Newman JSON and JUnit artifacts
- * to the exact report arguments it receives, simulating real Newman output.
- */
-function createArtifactWritingFakeRunner(
-  token: string,
-  result: Partial<CommandResult> = {},
-): {runner: CommandRunner; calls: Array<{command: CommandSpec}>} {
-  const calls: Array<{command: CommandSpec}> = [];
-  const runner: CommandRunner = {
-    run: async (command: Readonly<CommandSpec>) => {
-      calls.push({command: {...command, args: [...command.args]}});
-
-      // Extract report paths from the command arguments
-      const args = command.args;
-      const jsonExportIndex = args.indexOf("--reporter-json-export");
-      const junitExportIndex = args.indexOf("--reporter-junit-export");
-
-      if (jsonExportIndex >= 0 && jsonExportIndex + 1 < args.length) {
-        const jsonPath = args[jsonExportIndex + 1]!;
-        const jsonReport = {
-          run: {
-            failures: [],
-            executions: [
-              {
-                request: {headers: [{key: "Authorization", value: `Bearer ${token}`}]},
-                response: {body: `{"authToken": "${token}"}`},
-              },
-            ],
-          },
-          environment: {
-            values: [{key: "authToken", value: token, type: "text"}],
-          },
-        };
-        const {writeFileSync, mkdirSync} = await import("node:fs");
-        const {dirname} = await import("node:path");
-        mkdirSync(dirname(jsonPath), {recursive: true});
-        writeFileSync(jsonPath, JSON.stringify(jsonReport, null, 2), "utf-8");
-      }
-
-      if (junitExportIndex >= 0 && junitExportIndex + 1 < args.length) {
-        const junitPath = args[junitExportIndex + 1]!;
-        const junitXml = `<?xml version="1.0" encoding="UTF-8"?>
-<testsuites name="newman" tests="2" failures="0">
-  <testsuite name="Test Suite" tests="2">
-    <testcase name="Auth test" classname="AuthTest">
-      <system-out>Authorization: Bearer ${token}</system-out>
-    </testcase>
-    <testcase name="Token check" classname="TokenTest">
-      <system-out>authToken=${token}</system-out>
-    </testcase>
-  </testsuite>
-</testsuites>`;
-        const {writeFileSync, mkdirSync} = await import("node:fs");
-        const {dirname} = await import("node:path");
-        mkdirSync(dirname(junitPath), {recursive: true});
-        writeFileSync(junitPath, junitXml, "utf-8");
-      }
-
-      return {
-        code: 0,
-        stdout: "",
-        stderr: "",
-        durationMs: 100,
-        timedOut: false,
-        ...result,
-      };
-    },
-  };
-  return {runner, calls};
+/** Builds an in-memory fixture filesystem seeded with every target's collection and environment file. */
+function fixtureFiles(overrides: Readonly<Record<string, string>> = {}): FileSystem {
+  const seeded: Record<string, string> = {};
+  for (const directory of Object.values(TARGET_DIRS)) {
+    seeded[join(repositoryFixtureRoot, directory, "postman-collection.json")] = JSON.stringify({info: {name: "test"}, item: []});
+    seeded[join(repositoryFixtureRoot, directory, "postman-environment.production.json")] = JSON.stringify({name: "env", values: []});
+  }
+  return createMemoryFileSystem({...seeded, ...overrides});
 }
 
-describe("test-e2e: artifact sanitization", () => {
-  it("sanitizes JWT tokens from JSON reports after successful run", async () => {
-    const syntheticJwt = generateSyntheticJwt();
-    const {root, reportDir} = await scaffoldAll();
-    tempRoot = root;
-    const {runner} = createArtifactWritingFakeRunner(syntheticJwt);
+/** Builds a deterministic {@link RuntimeEnvironment} anchored to the fixture repository root. */
+function testEnvironment(variables: Readonly<Record<string, string>> = {}): RuntimeEnvironment {
+  return {
+    variables,
+    cwd: repositoryFixtureRoot,
+    executablePath: "/usr/bin/node",
+    platform: "linux",
+    architecture: "x64",
+    stdinIsTTY: false,
+    stdoutIsTTY: false,
+    isCI: true,
+  };
+}
 
-    const sink = new InMemoryLoggerSink();
-    const logger = new MonorepositoryConsoleLogger("test", {color: false, sink});
+function succeeded(patch: Readonly<{stdout?: string; stderr?: string}> = {}): ProcessOutcome {
+  return {kind: "succeeded", exitCode: 0, stdout: patch.stdout ?? "", stderr: patch.stderr ?? "", durationMs: 1};
+}
 
-    const {main} = await import("./test-e2e.ts");
-    const code = await main("backend", logger, {
-      runner,
-      cwd: root,
-      env: {E2E_TEST_AUTH_TOKEN: syntheticJwt, NEWMAN_REPORT_DIR: reportDir},
-    });
+function exited(exitCode: number, patch: Readonly<{stdout?: string; stderr?: string}> = {}): ProcessOutcome {
+  return {kind: "exited", exitCode, stdout: patch.stdout ?? "", stderr: patch.stderr ?? "", durationMs: 1};
+}
 
-    expect(code).toBe(0);
+function timedOut(): ProcessOutcome {
+  return {kind: "timed-out", stdout: "", stderr: "", durationMs: 1};
+}
 
-    const jsonPath = join(reportDir, "newman-backend.json");
-    const jsonContent = await readFile(jsonPath, "utf-8");
-    expect(jsonContent).not.toContain(syntheticJwt);
-    expect(jsonContent).not.toMatch(/eyJ[A-Za-z0-9_-]*\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/);
+function spawnFailed(message: string): ProcessOutcome {
+  return {kind: "spawn-failed", message, stdout: "", stderr: "", durationMs: 1};
+}
+
+function cancelledOutcome(): ProcessOutcome {
+  return {kind: "cancelled", stdout: "", stderr: "", durationMs: 1};
+}
+
+/** One recorded invocation of {@link FakeNewmanRunner}. */
+type RecordedCall = Readonly<{request: ProcessRequest; options: ProcessRunOptions}>;
+
+/**
+ * Fake {@link AbstractProcessRunner} that records every invocation and, instead of spawning
+ * Newman, optionally writes token-bearing JSON/JUnit reporter artifacts to the exact paths Newman
+ * would have been given — but only when the simulated process actually completed (`succeeded` or
+ * `exited`), matching real Newman's behavior of writing reporters even when assertions fail.
+ */
+class FakeNewmanRunner extends AbstractProcessRunner {
+  readonly #files: FileSystem;
+  readonly #outcomeFor: (request: Readonly<ProcessRequest>) => ProcessOutcome;
+  readonly #artifactToken: string | undefined;
+  readonly #calls: RecordedCall[] = [];
+
+  public constructor(
+    files: FileSystem,
+    options: Readonly<{outcomeFor?: (request: Readonly<ProcessRequest>) => ProcessOutcome; artifactToken?: string}> = {},
+  ) {
+    super();
+    this.#files = files;
+    this.#outcomeFor = options.outcomeFor ?? (() => succeeded());
+    this.#artifactToken = options.artifactToken;
+  }
+
+  /** Every recorded invocation, in call order. */
+  public get calls(): readonly RecordedCall[] {
+    return this.#calls;
+  }
+
+  /** {@inheritDoc AbstractProcessRunner.execute} */
+  protected override async execute(request: Readonly<ProcessRequest>, options: Readonly<ProcessRunOptions>): Promise<ProcessOutcome> {
+    this.#calls.push({request, options});
+    const outcome = this.#outcomeFor(request);
+    if (this.#artifactToken !== undefined && (outcome.kind === "succeeded" || outcome.kind === "exited")) {
+      await this.writeArtifacts(request, this.#artifactToken);
+    }
+    return outcome;
+  }
+
+  private async writeArtifacts(request: Readonly<ProcessRequest>, token: string): Promise<void> {
+    const jsonIndex = request.args.indexOf("--reporter-json-export");
+    const junitIndex = request.args.indexOf("--reporter-junit-export");
+
+    if (jsonIndex >= 0) {
+      const jsonPath = request.args[jsonIndex + 1]!;
+      await this.#files.createDirectory(dirname(jsonPath), {recursive: true});
+      const jsonReport = {
+        run: {
+          failures: [],
+          executions: [
+            {
+              request: {headers: [{key: "Authorization", value: `Bearer ${token}`}]},
+              response: {body: `{"authToken":"${token}"}`},
+            },
+          ],
+        },
+        environment: {values: [{key: "authToken", value: token, type: "text"}]},
+      };
+      await this.#files.writeText(jsonPath, JSON.stringify(jsonReport, null, 2));
+    }
+
+    if (junitIndex >= 0) {
+      const junitPath = request.args[junitIndex + 1]!;
+      await this.#files.createDirectory(dirname(junitPath), {recursive: true});
+      const junitXml = [
+        '<?xml version="1.0" encoding="UTF-8"?>',
+        '<testsuites name="newman" tests="2" failures="0">',
+        '  <testsuite name="Test Suite" tests="2">',
+        '    <testcase name="Auth test" classname="AuthTest">',
+        `      <system-out>Authorization: Bearer ${token}</system-out>`,
+        "    </testcase>",
+        '    <testcase name="Token check" classname="TokenTest">',
+        `      <system-out>authToken=${token}</system-out>`,
+        "    </testcase>",
+        "  </testsuite>",
+        "</testsuites>",
+      ].join("\n");
+      await this.#files.writeText(junitPath, junitXml);
+    }
+  }
+}
+
+/** Wraps a {@link FileSystem} so `writeText`/`remove` calls against report artifact paths are recorded in call order. */
+function withReportCallOrder(files: FileSystem, order: string[]): FileSystem {
+  const isReportArtifact = (path: string): boolean => /newman-.*\.(json|xml)$|newman-.*-summary\.md$/.test(path);
+  return {
+    ...files,
+    writeText: async (path, contents, options) => {
+      if (isReportArtifact(path)) {
+        order.push(`write:${path.split(/[/\\]/).pop()}`);
+      }
+      return files.writeText(path, contents, options);
+    },
+    remove: async (path, options) => {
+      if (isReportArtifact(path)) {
+        order.push(`remove:${path.split(/[/\\]/).pop()}`);
+      }
+      return files.remove(path, options);
+    },
+  };
+}
+
+function createSinkLogger(): {logger: MonorepositoryConsoleLogger; sink: InMemoryLoggerSink} {
+  const sink = new InMemoryLoggerSink();
+  const logger = new MonorepositoryConsoleLogger("test", {color: false, sink});
+  return {logger, sink};
+}
+
+// ============================================================================
+// createE2eCommand — collection immutability and token transport
+// ============================================================================
+
+describe("createE2eCommand: collection immutability and token transport", () => {
+  it("backend success does not modify the collection file and carries the token only inside --env-var", async () => {
+    const files = fixtureFiles();
+    const collectionPath = join(repositoryFixtureRoot, TARGET_DIRS.backend, "postman-collection.json");
+    const originalBytes = await files.readText(collectionPath);
+    const runner = new FakeNewmanRunner(files);
+    const environment = testEnvironment({E2E_TEST_AUTH_TOKEN: FAKE_TOKEN});
+    const command = createE2eCommand(createTestRuntimeFactory({files, runner, environment}));
+
+    const execution = await command.invoke({target: "backend"}, {presentation: "silent"});
+
+    expect(execution).toMatchObject({status: "completed", exitCode: 0, value: {targets: ["backend"], completed: ["backend"]}});
+    expect(await files.readText(collectionPath)).toBe(originalBytes);
+
+    expect(runner.calls).toHaveLength(1);
+    const rawArgs = runner.calls[0]!.request.args;
+    const envVarIndices = rawArgs.reduce<number[]>((acc, arg, index) => (arg === "--env-var" ? [...acc, index] : acc), []);
+    expect(envVarIndices).toHaveLength(1);
+    expect(rawArgs[envVarIndices[0]! + 1]).toBe(`authToken=${FAKE_TOKEN}`);
   });
 
-  it("sanitizes JWT tokens from JUnit XML reports after successful run", async () => {
-    const syntheticJwt = generateSyntheticJwt();
-    const {root, reportDir} = await scaffoldAll();
-    tempRoot = root;
-    const {runner} = createArtifactWritingFakeRunner(syntheticJwt);
+  it("frontend optional token run transports the token via --env-var", async () => {
+    const files = fixtureFiles();
+    const runner = new FakeNewmanRunner(files);
+    const environment = testEnvironment({E2E_TEST_AUTH_TOKEN: FAKE_TOKEN});
+    const command = createE2eCommand(createTestRuntimeFactory({files, runner, environment}));
 
-    const sink = new InMemoryLoggerSink();
-    const logger = new MonorepositoryConsoleLogger("test", {color: false, sink});
+    const execution = await command.invoke({target: "frontend"}, {presentation: "silent"});
 
-    const {main} = await import("./test-e2e.ts");
-    const code = await main("backend", logger, {
-      runner,
-      cwd: root,
-      env: {E2E_TEST_AUTH_TOKEN: syntheticJwt, NEWMAN_REPORT_DIR: reportDir},
+    expect(execution.status).toBe("completed");
+    expect(runner.calls[0]!.request.args).toContain("--env-var");
+  });
+
+  it("frontend without a token omits --env-var and still succeeds", async () => {
+    const files = fixtureFiles();
+    const runner = new FakeNewmanRunner(files);
+    const environment = testEnvironment({E2E_TEST_AUTH_TOKEN: ""});
+    const command = createE2eCommand(createTestRuntimeFactory({files, runner, environment}));
+
+    const execution = await command.invoke({target: "frontend"}, {presentation: "silent"});
+
+    expect(execution.status).toBe("completed");
+    expect(runner.calls[0]!.request.args).not.toContain("--env-var");
+  });
+
+  it("cv ignores a present token and never includes --env-var", async () => {
+    const files = fixtureFiles();
+    const runner = new FakeNewmanRunner(files);
+    const environment = testEnvironment({E2E_TEST_AUTH_TOKEN: FAKE_TOKEN});
+    const command = createE2eCommand(createTestRuntimeFactory({files, runner, environment}));
+
+    const execution = await command.invoke({target: "cv"}, {presentation: "silent"});
+
+    expect(execution.status).toBe("completed");
+    expect(runner.calls[0]!.request.args).not.toContain("--env-var");
+  });
+});
+
+// ============================================================================
+// createE2eCommand — required token and missing fixture validation
+// ============================================================================
+
+describe("createE2eCommand: required token and missing fixture validation", () => {
+  it("fails backend before invoking Newman when the required auth token is absent", async () => {
+    const files = fixtureFiles();
+    const runner = new FakeNewmanRunner(files);
+    const environment = testEnvironment({});
+    const command = createE2eCommand(createTestRuntimeFactory({files, runner, environment}));
+
+    const execution = await command.invoke({target: "backend"}, {presentation: "silent"});
+
+    expect(execution).toMatchObject({status: "failed", exitCode: 1, failure: {kind: "operational"}});
+    expect(runner.calls).toHaveLength(0);
+  });
+
+  it("fails before invoking Newman when the collection file is missing", async () => {
+    const files = createMemoryFileSystem({
+      [join(repositoryFixtureRoot, TARGET_DIRS.backend, "postman-environment.production.json")]: "{}",
     });
+    const runner = new FakeNewmanRunner(files);
+    const environment = testEnvironment({E2E_TEST_AUTH_TOKEN: FAKE_TOKEN});
+    const command = createE2eCommand(createTestRuntimeFactory({files, runner, environment}));
 
-    expect(code).toBe(0);
+    const execution = await command.invoke({target: "backend"}, {presentation: "silent"});
 
-    const junitPath = join(reportDir, "newman-backend.xml");
-    const junitContent = await readFile(junitPath, "utf-8");
-    expect(junitContent).not.toContain(syntheticJwt);
-    expect(junitContent).not.toMatch(/eyJ[A-Za-z0-9_-]*\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/);
-    // Non-secret content is preserved
+    expect(execution).toMatchObject({status: "failed", exitCode: 1, failure: {kind: "operational"}});
+    expect(execution.status === "failed" ? execution.failure.message : "").toMatch(/Collection file not found/);
+    expect(runner.calls).toHaveLength(0);
+  });
+});
+
+// ============================================================================
+// createE2eCommand — invalid input
+// ============================================================================
+
+describe("createE2eCommand: invalid input", () => {
+  it("rejects an invalid target as a CommandInputError with exit code 2", async () => {
+    const files = fixtureFiles();
+    const runner = new FakeNewmanRunner(files);
+    const command = createE2eCommand(createTestRuntimeFactory({files, runner}));
+
+    const execution = await command.invoke({target: "nope" as never}, {presentation: "silent"});
+
+    expect(execution).toMatchObject({status: "failed", exitCode: 2, failure: {kind: "usage"}});
+    expect(runner.calls).toHaveLength(0);
+  });
+});
+
+// ============================================================================
+// createE2eCommand — target expansion and sequential execution
+// ============================================================================
+
+describe("createE2eCommand: target expansion and sequential execution", () => {
+  it("expands 'all' into frontend, backend, cv and completes them in that order", async () => {
+    const files = fixtureFiles();
+    const runner = new FakeNewmanRunner(files);
+    const environment = testEnvironment({E2E_TEST_AUTH_TOKEN: FAKE_TOKEN});
+    const command = createE2eCommand(createTestRuntimeFactory({files, runner, environment}));
+
+    const execution = await command.invoke({target: "all"}, {presentation: "silent"});
+
+    expect(execution).toMatchObject({
+      status: "completed",
+      exitCode: 0,
+      value: {targets: ["frontend", "backend", "cv"], completed: ["frontend", "backend", "cv"]},
+    });
+    expect(runner.calls).toHaveLength(3);
+    expect(
+      runner.calls.map((call) =>
+        call.request.args.includes(join(repositoryFixtureRoot, TARGET_DIRS.frontend, "postman-collection.json")),
+      )[0],
+    ).toBe(true);
+  });
+
+  it("stops at the first failing target and never starts an unreached one", async () => {
+    const files = fixtureFiles();
+    const runner = new FakeNewmanRunner(files, {
+      outcomeFor: (request) =>
+        request.args.includes(join(repositoryFixtureRoot, TARGET_DIRS.backend, "postman-collection.json")) ? exited(1) : succeeded(),
+    });
+    const environment = testEnvironment({E2E_TEST_AUTH_TOKEN: FAKE_TOKEN});
+    const command = createE2eCommand(createTestRuntimeFactory({files, runner, environment}));
+
+    const execution = await command.invoke({target: "all"}, {presentation: "silent"});
+
+    expect(execution.status).toBe("failed");
+    // Only frontend and backend were attempted; cv was never reached.
+    expect(runner.calls).toHaveLength(2);
+  });
+});
+
+// ============================================================================
+// createE2eCommand — report directory resolution
+// ============================================================================
+
+describe("createE2eCommand: report directory resolution", () => {
+  it("resolves the default e2e-logs directory under the injected cwd", async () => {
+    const files = fixtureFiles();
+    const runner = new FakeNewmanRunner(files);
+    const environment = testEnvironment({E2E_TEST_AUTH_TOKEN: FAKE_TOKEN});
+    const command = createE2eCommand(createTestRuntimeFactory({files, runner, environment}));
+
+    const execution = await command.invoke({target: "backend"}, {presentation: "silent"});
+    expect(execution.status).toBe("completed");
+
+    const rawArgs = runner.calls[0]!.request.args;
+    const jsonPath = rawArgs[rawArgs.indexOf("--reporter-json-export") + 1]!;
+    expect(jsonPath.startsWith(repositoryFixtureRoot)).toBe(true);
+    expect(jsonPath).toContain("e2e-logs");
+  });
+
+  it("uses an explicit NEWMAN_REPORT_DIR instead of the default", async () => {
+    const files = fixtureFiles();
+    const runner = new FakeNewmanRunner(files);
+    const reportDir = join(repositoryFixtureRoot, "custom-e2e-logs");
+    const environment = testEnvironment({E2E_TEST_AUTH_TOKEN: FAKE_TOKEN, NEWMAN_REPORT_DIR: reportDir});
+    const command = createE2eCommand(createTestRuntimeFactory({files, runner, environment}));
+
+    const execution = await command.invoke({target: "backend"}, {presentation: "silent"});
+    expect(execution.status).toBe("completed");
+
+    const rawArgs = runner.calls[0]!.request.args;
+    const jsonPath = rawArgs[rawArgs.indexOf("--reporter-json-export") + 1]!;
+    expect(jsonPath.startsWith(reportDir)).toBe(true);
+  });
+});
+
+// ============================================================================
+// createE2eCommand — env-derived Newman arguments
+// ============================================================================
+
+describe("createE2eCommand: env-derived Newman arguments", () => {
+  it("reflects NEWMAN_TIMEOUT, NEWMAN_TIMEOUT_REQUEST, and NEWMAN_STRICT_MODE from the injected environment", async () => {
+    const files = fixtureFiles();
+    const runner = new FakeNewmanRunner(files);
+    const environment = testEnvironment({
+      E2E_TEST_AUTH_TOKEN: FAKE_TOKEN,
+      NEWMAN_TIMEOUT: "42000",
+      NEWMAN_TIMEOUT_REQUEST: "5000",
+      NEWMAN_STRICT_MODE: "true",
+    });
+    const command = createE2eCommand(createTestRuntimeFactory({files, runner, environment}));
+
+    const execution = await command.invoke({target: "backend"}, {presentation: "silent"});
+    expect(execution.status).toBe("completed");
+
+    const rawArgs = runner.calls[0]!.request.args;
+    expect(rawArgs[rawArgs.indexOf("--timeout") + 1]).toBe("42000");
+    expect(rawArgs[rawArgs.indexOf("--timeout-request") + 1]).toBe("5000");
+    expect(rawArgs).toContain("--bail");
+  });
+
+  it("falls back to defaults and warns on an invalid NEWMAN_TIMEOUT", async () => {
+    const files = fixtureFiles();
+    const runner = new FakeNewmanRunner(files);
+    const environment = testEnvironment({E2E_TEST_AUTH_TOKEN: FAKE_TOKEN, NEWMAN_TIMEOUT: "not-a-number"});
+    const {logger, sink} = createSinkLogger();
+    const command = createE2eCommand(createTestRuntimeFactory({files, runner, environment, logger}));
+
+    const execution = await command.invoke({target: "backend"}, {presentation: "silent"});
+    expect(execution.status).toBe("completed");
+
+    const rawArgs = runner.calls[0]!.request.args;
+    expect(rawArgs[rawArgs.indexOf("--timeout") + 1]).toBe("600000");
+    expect(sink.records.some((record) => record.text.includes("Invalid NEWMAN_TIMEOUT"))).toBe(true);
+  });
+});
+
+// ============================================================================
+// createE2eCommand — process invocation shape
+// ============================================================================
+
+describe("createE2eCommand: process invocation shape", () => {
+  it("invokes Newman with the injected cwd, inherited output, and an invocation signal", async () => {
+    const files = fixtureFiles();
+    const runner = new FakeNewmanRunner(files);
+    const environment = testEnvironment({E2E_TEST_AUTH_TOKEN: FAKE_TOKEN});
+    const command = createE2eCommand(createTestRuntimeFactory({files, runner, environment}));
+
+    const execution = await command.invoke({target: "backend"}, {presentation: "silent"});
+    expect(execution.status).toBe("completed");
+
+    const {options, request} = runner.calls[0]!;
+    expect(request.command).toBe("npx");
+    expect(options.cwd).toBe(repositoryFixtureRoot);
+    expect(options.output).toBe("inherit");
+    expect(options.signal).toBeInstanceOf(AbortSignal);
+    expect(options.logger).toBeDefined();
+  });
+});
+
+// ============================================================================
+// createE2eCommand — token redaction in logs
+// ============================================================================
+
+describe("createE2eCommand: token redaction in logs", () => {
+  it("never writes the raw token to the logger on success", async () => {
+    const files = fixtureFiles();
+    const runner = new FakeNewmanRunner(files);
+    const environment = testEnvironment({E2E_TEST_AUTH_TOKEN: FAKE_TOKEN});
+    const {logger, sink} = createSinkLogger();
+    const command = createE2eCommand(createTestRuntimeFactory({files, runner, environment, logger}));
+
+    await command.invoke({target: "backend"}, {presentation: "human"});
+
+    const allText = sink.records.map((record) => record.text).join("\n");
+    expect(allText).not.toContain(FAKE_TOKEN);
+  });
+
+  it("never writes the raw token to the logger on a nonzero Newman exit", async () => {
+    const files = fixtureFiles();
+    const runner = new FakeNewmanRunner(files, {outcomeFor: () => exited(1)});
+    const environment = testEnvironment({E2E_TEST_AUTH_TOKEN: FAKE_TOKEN});
+    const {logger, sink} = createSinkLogger();
+    const command = createE2eCommand(createTestRuntimeFactory({files, runner, environment, logger}));
+
+    const execution = await command.invoke({target: "backend"}, {presentation: "human"});
+    expect(execution.status).toBe("failed");
+
+    const allText = sink.records.map((record) => record.text).join("\n");
+    expect(allText).not.toContain(FAKE_TOKEN);
+  });
+});
+
+// ============================================================================
+// createE2eCommand — typed runner failure outcomes and cleanup
+// ============================================================================
+
+describe("createE2eCommand: typed runner failure outcomes and cleanup", () => {
+  it.each([
+    ["nonzero exit", () => exited(1)],
+    ["timeout", () => timedOut()],
+    ["spawn failure", () => spawnFailed("ENOENT")],
+    ["cancellation", () => cancelledOutcome()],
+  ] as const)("preserves collection immutability and fails the command on %s", async (_label, outcomeFor) => {
+    const files = fixtureFiles();
+    const collectionPath = join(repositoryFixtureRoot, TARGET_DIRS.backend, "postman-collection.json");
+    const originalBytes = await files.readText(collectionPath);
+    const runner = new FakeNewmanRunner(files, {outcomeFor});
+    const environment = testEnvironment({E2E_TEST_AUTH_TOKEN: FAKE_TOKEN});
+    const command = createE2eCommand(createTestRuntimeFactory({files, runner, environment}));
+
+    const execution = await command.invoke({target: "backend"}, {presentation: "silent"});
+
+    expect(execution.status).toBe("failed");
+    expect(execution.exitCode).not.toBe(0);
+    expect(await files.readText(collectionPath)).toBe(originalBytes);
+  });
+});
+
+// ============================================================================
+// createE2eCommand — report artifact JWT sanitization
+// ============================================================================
+
+describe("createE2eCommand: report artifact JWT sanitization", () => {
+  it("sanitizes JSON, JUnit, and summary artifacts after a successful run", async () => {
+    const syntheticJwt = generateSyntheticJwt();
+    const files = fixtureFiles();
+    const runner = new FakeNewmanRunner(files, {artifactToken: syntheticJwt});
+    const environment = testEnvironment({E2E_TEST_AUTH_TOKEN: syntheticJwt});
+    const command = createE2eCommand(createTestRuntimeFactory({files, runner, environment}));
+
+    const execution = await command.invoke({target: "backend"}, {presentation: "silent"});
+    expect(execution.status).toBe("completed");
+
+    const reportDir = join(repositoryFixtureRoot, "e2e-logs");
+    const jsonContent = await files.readText(join(reportDir, "newman-backend.json"));
+    const junitContent = await files.readText(join(reportDir, "newman-backend.xml"));
+    const summaryContent = await files.readText(join(reportDir, "newman-backend-summary.md"));
+
+    for (const content of [jsonContent, junitContent, summaryContent]) {
+      expect(content).not.toContain(syntheticJwt);
+      expect(content).not.toMatch(/eyJ[A-Za-z0-9_-]*\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/);
+    }
     expect(junitContent).toContain("testsuites");
     expect(junitContent).toContain("Auth test");
   });
 
-  it("sanitizes summary Markdown after successful run with JWT in JSON report", async () => {
+  it("sanitizes artifacts on the failure path (nonzero exit) even though the command fails", async () => {
     const syntheticJwt = generateSyntheticJwt();
-    const {root, reportDir} = await scaffoldAll();
-    tempRoot = root;
-    const {runner} = createArtifactWritingFakeRunner(syntheticJwt);
+    const files = fixtureFiles();
+    const runner = new FakeNewmanRunner(files, {outcomeFor: () => exited(1), artifactToken: syntheticJwt});
+    const environment = testEnvironment({E2E_TEST_AUTH_TOKEN: syntheticJwt});
+    const command = createE2eCommand(createTestRuntimeFactory({files, runner, environment}));
 
-    const sink = new InMemoryLoggerSink();
-    const logger = new MonorepositoryConsoleLogger("test", {color: false, sink});
+    const execution = await command.invoke({target: "backend"}, {presentation: "silent"});
+    expect(execution.status).toBe("failed");
 
-    const {main} = await import("./test-e2e.ts");
-    const code = await main("backend", logger, {
-      runner,
-      cwd: root,
-      env: {E2E_TEST_AUTH_TOKEN: syntheticJwt, NEWMAN_REPORT_DIR: reportDir},
-    });
+    const reportDir = join(repositoryFixtureRoot, "e2e-logs");
+    const jsonContent = await files.readText(join(reportDir, "newman-backend.json"));
+    const junitContent = await files.readText(join(reportDir, "newman-backend.xml"));
 
-    expect(code).toBe(0);
-
-    const summaryPath = join(reportDir, "newman-backend-summary.md");
-    const summaryContent = await readFile(summaryPath, "utf-8");
-    expect(summaryContent).not.toContain(syntheticJwt);
-    expect(summaryContent).not.toMatch(/eyJ[A-Za-z0-9_-]*\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/);
-  });
-
-  it("sanitizes artifacts on failure path (nonzero exit)", async () => {
-    const syntheticJwt = generateSyntheticJwt();
-    const {root, reportDir} = await scaffoldAll();
-    tempRoot = root;
-    const {runner} = createArtifactWritingFakeRunner(syntheticJwt, {code: 1});
-
-    const sink = new InMemoryLoggerSink();
-    const logger = new MonorepositoryConsoleLogger("test", {color: false, sink});
-
-    const {main} = await import("./test-e2e.ts");
-    const code = await main("backend", logger, {
-      runner,
-      cwd: root,
-      env: {E2E_TEST_AUTH_TOKEN: syntheticJwt, NEWMAN_REPORT_DIR: reportDir},
-    });
-
-    expect(code).not.toBe(0);
-
-    const jsonPath = join(reportDir, "newman-backend.json");
-    const junitPath = join(reportDir, "newman-backend.xml");
-
-    const jsonContent = await readFile(jsonPath, "utf-8");
     expect(jsonContent).not.toContain(syntheticJwt);
-    expect(jsonContent).not.toMatch(/eyJ[A-Za-z0-9_-]*\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/);
-
-    const junitContent = await readFile(junitPath, "utf-8");
     expect(junitContent).not.toContain(syntheticJwt);
-    expect(junitContent).not.toMatch(/eyJ[A-Za-z0-9_-]*\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/);
   });
 });
 
-describe("test-e2e: injected env isolation", () => {
-  it("NEWMAN_TIMEOUT from injected env overrides process.env", async () => {
-    const {root, reportDir} = await scaffoldAll();
-    tempRoot = root;
-    const {runner, calls} = createFakeRunner();
+// ============================================================================
+// createE2eCommand — cleanup ordering and failure precedence
+// ============================================================================
 
-    const sink = new InMemoryLoggerSink();
-    const logger = new MonorepositoryConsoleLogger("test", {color: false, sink});
+describe("createE2eCommand: cleanup ordering and failure precedence", () => {
+  it("performs report cleanup in assertion-summary, JSON, JUnit, summary order", async () => {
+    const rawFiles = fixtureFiles();
+    const order: string[] = [];
+    const recordingFiles = withReportCallOrder(rawFiles, order);
+    const runner = new FakeNewmanRunner(rawFiles, {artifactToken: FAKE_TOKEN});
+    const environment = testEnvironment({E2E_TEST_AUTH_TOKEN: FAKE_TOKEN});
+    const command = createE2eCommand(createTestRuntimeFactory({files: recordingFiles, runner, environment}));
 
-    const savedTimeout = process.env["NEWMAN_TIMEOUT"];
-    try {
-      // Set a deliberately conflicting value in process.env
-      process.env["NEWMAN_TIMEOUT"] = "999999";
+    const execution = await command.invoke({target: "backend"}, {presentation: "silent"});
+    expect(execution.status).toBe("completed");
 
-      const {main} = await import("./test-e2e.ts");
-      const code = await main("backend", logger, {
-        runner,
-        cwd: root,
-        env: {
-          E2E_TEST_AUTH_TOKEN: FAKE_TOKEN,
-          NEWMAN_REPORT_DIR: reportDir,
-          NEWMAN_TIMEOUT: "42000",
-        },
-      });
-
-      expect(code).toBe(0);
-      const rawArgs = calls[0]!.command.args;
-      // The --timeout value must come from the injected env (42000), not process.env (999999)
-      const timeoutIndex = rawArgs.indexOf("--timeout");
-      expect(timeoutIndex).toBeGreaterThanOrEqual(0);
-      expect(rawArgs[timeoutIndex + 1]).toBe("42000");
-      expect(rawArgs[timeoutIndex + 1]).not.toBe("999999");
-    } finally {
-      if (savedTimeout === undefined) {
-        delete process.env["NEWMAN_TIMEOUT"];
-      } else {
-        process.env["NEWMAN_TIMEOUT"] = savedTimeout;
-      }
-    }
+    expect(order).toEqual([
+      "write:newman-backend-summary.md",
+      "write:newman-backend.json",
+      "write:newman-backend.xml",
+      "write:newman-backend-summary.md",
+    ]);
   });
 
-  it("NEWMAN_STRICT_MODE from injected env overrides process.env", async () => {
-    const {root, reportDir} = await scaffoldAll();
-    tempRoot = root;
-    const {runner, calls} = createFakeRunner();
+  it("fails the command when Newman succeeds but a report-cleanup step fails", async () => {
+    const rawFiles = fixtureFiles();
+    const failingFiles: FileSystem = {
+      ...rawFiles,
+      writeText: async (path, contents, options) => {
+        if (path.endsWith("newman-backend.json")) {
+          throw new Error("disk full");
+        }
+        return rawFiles.writeText(path, contents, options);
+      },
+    };
+    const runner = new FakeNewmanRunner(rawFiles, {artifactToken: FAKE_TOKEN});
+    const environment = testEnvironment({E2E_TEST_AUTH_TOKEN: FAKE_TOKEN});
+    const command = createE2eCommand(createTestRuntimeFactory({files: failingFiles, runner, environment}));
 
-    const sink = new InMemoryLoggerSink();
-    const logger = new MonorepositoryConsoleLogger("test", {color: false, sink});
+    const execution = await command.invoke({target: "backend"}, {presentation: "silent"});
 
-    const savedStrict = process.env["NEWMAN_STRICT_MODE"];
-    try {
-      // Set conflicting process.env: strict OFF
-      process.env["NEWMAN_STRICT_MODE"] = "false";
-
-      const {main} = await import("./test-e2e.ts");
-      const code = await main("backend", logger, {
-        runner,
-        cwd: root,
-        env: {
-          E2E_TEST_AUTH_TOKEN: FAKE_TOKEN,
-          NEWMAN_REPORT_DIR: reportDir,
-          NEWMAN_STRICT_MODE: "true",
-        },
-      });
-
-      expect(code).toBe(0);
-      const rawArgs = calls[0]!.command.args;
-      // The injected env says strict=true, so --bail must be present
-      expect(rawArgs).toContain("--bail");
-    } finally {
-      if (savedStrict === undefined) {
-        delete process.env["NEWMAN_STRICT_MODE"];
-      } else {
-        process.env["NEWMAN_STRICT_MODE"] = savedStrict;
-      }
-    }
+    expect(execution).toMatchObject({status: "failed", exitCode: 1, failure: {kind: "cleanup"}});
   });
 
-  it("NEWMAN_TIMEOUT_REQUEST from injected env overrides process.env", async () => {
-    const {root, reportDir} = await scaffoldAll();
-    tempRoot = root;
-    const {runner, calls} = createFakeRunner();
+  it("preserves the Newman RunnerError as primary and appends a cleanup failure as evidence", async () => {
+    const rawFiles = fixtureFiles();
+    const failingFiles: FileSystem = {
+      ...rawFiles,
+      writeText: async (path, contents, options) => {
+        if (path.endsWith("newman-backend.json")) {
+          throw new Error("disk full");
+        }
+        return rawFiles.writeText(path, contents, options);
+      },
+    };
+    const runner = new FakeNewmanRunner(rawFiles, {outcomeFor: () => exited(1), artifactToken: FAKE_TOKEN});
+    const environment = testEnvironment({E2E_TEST_AUTH_TOKEN: FAKE_TOKEN});
+    const command = createE2eCommand(createTestRuntimeFactory({files: failingFiles, runner, environment}));
 
-    const sink = new InMemoryLoggerSink();
-    const logger = new MonorepositoryConsoleLogger("test", {color: false, sink});
+    const execution = await command.invoke({target: "backend"}, {presentation: "silent"});
 
-    const savedValue = process.env["NEWMAN_TIMEOUT_REQUEST"];
-    try {
-      process.env["NEWMAN_TIMEOUT_REQUEST"] = "888888";
+    expect(execution.status).toBe("failed");
+    if (execution.status !== "failed") return;
+    expect(execution.failure.kind).toBe("operational");
+    expect(execution.failure.message).toMatch(/exited with code 1/);
+    expect(execution.failure.evidence.some((line) => line.includes("disk full"))).toBe(true);
+  });
 
-      const {main} = await import("./test-e2e.ts");
-      const code = await main("backend", logger, {
-        runner,
-        cwd: root,
-        env: {
-          E2E_TEST_AUTH_TOKEN: FAKE_TOKEN,
-          NEWMAN_REPORT_DIR: reportDir,
-          NEWMAN_TIMEOUT_REQUEST: "5000",
-        },
-      });
+  it("attempts every report-cleanup step even when an earlier step fails", async () => {
+    const rawFiles = fixtureFiles();
+    let junitWriteAttempted = false;
+    let summaryWriteAttempted = false;
+    const failingFiles: FileSystem = {
+      ...rawFiles,
+      writeText: async (path, contents, options) => {
+        if (path.endsWith("newman-backend.json")) {
+          throw new Error("disk full");
+        }
+        if (path.endsWith("newman-backend.xml")) {
+          junitWriteAttempted = true;
+        }
+        if (path.endsWith("newman-backend-summary.md")) {
+          summaryWriteAttempted = true;
+        }
+        return rawFiles.writeText(path, contents, options);
+      },
+    };
+    const runner = new FakeNewmanRunner(rawFiles, {artifactToken: FAKE_TOKEN});
+    const environment = testEnvironment({E2E_TEST_AUTH_TOKEN: FAKE_TOKEN});
+    const command = createE2eCommand(createTestRuntimeFactory({files: failingFiles, runner, environment}));
 
-      expect(code).toBe(0);
-      const rawArgs = calls[0]!.command.args;
-      const index = rawArgs.indexOf("--timeout-request");
-      expect(index).toBeGreaterThanOrEqual(0);
-      expect(rawArgs[index + 1]).toBe("5000");
-      expect(rawArgs[index + 1]).not.toBe("888888");
-    } finally {
-      if (savedValue === undefined) {
-        delete process.env["NEWMAN_TIMEOUT_REQUEST"];
-      } else {
-        process.env["NEWMAN_TIMEOUT_REQUEST"] = savedValue;
-      }
-    }
+    await command.invoke({target: "backend"}, {presentation: "silent"});
+
+    expect(junitWriteAttempted).toBe(true);
+    expect(summaryWriteAttempted).toBe(true);
   });
 });
 
-describe("test-e2e: report path/cwd guarantee", () => {
-  it("default e2e-logs directory resolves under injected cwd", async () => {
-    const {root} = await scaffoldAll();
-    tempRoot = root;
-    const {runner, calls} = createFakeRunner();
+// ============================================================================
+// writeAssertionSummary
+// ============================================================================
 
-    const sink = new InMemoryLoggerSink();
-    const logger = new MonorepositoryConsoleLogger("test", {color: false, sink});
-
-    const {main} = await import("./test-e2e.ts");
-    const code = await main("backend", logger, {
-      runner,
-      cwd: root,
-      // No NEWMAN_REPORT_DIR — should default to e2e-logs under root
-      env: {E2E_TEST_AUTH_TOKEN: FAKE_TOKEN},
-    });
-
-    expect(code).toBe(0);
-    const rawArgs = calls[0]!.command.args;
-
-    // Every reporter path argument must be absolute and start with the fixture root
-    const jsonExportIndex = rawArgs.indexOf("--reporter-json-export");
-    const junitExportIndex = rawArgs.indexOf("--reporter-junit-export");
-    expect(jsonExportIndex).toBeGreaterThanOrEqual(0);
-    expect(junitExportIndex).toBeGreaterThanOrEqual(0);
-
-    const jsonPath = rawArgs[jsonExportIndex + 1]!;
-    const junitPath = rawArgs[junitExportIndex + 1]!;
-
-    expect(isAbsolute(jsonPath)).toBe(true);
-    expect(isAbsolute(junitPath)).toBe(true);
-    // Both paths must be under the injected cwd, not process.cwd
-    expect(jsonPath.startsWith(root)).toBe(true);
-    expect(junitPath.startsWith(root)).toBe(true);
-    expect(jsonPath).toContain("e2e-logs");
-    expect(junitPath).toContain("e2e-logs");
+describe("writeAssertionSummary", () => {
+  it("is a no-op when the JSON report does not exist", async () => {
+    const files = createMemoryFileSystem();
+    const {logger} = createSinkLogger();
+    await expect(writeAssertionSummary(files, "backend", "/reports", logger)).resolves.toBeUndefined();
+    expect(await files.exists("/reports/newman-backend-summary.md")).toBe(false);
   });
 
-  it("explicit NEWMAN_REPORT_DIR semantics are preserved", async () => {
-    const {root, reportDir} = await scaffoldAll();
-    tempRoot = root;
-    const {runner, calls} = createFakeRunner();
+  it("writes a 'no failed assertions' summary when the report has none", async () => {
+    const files = createMemoryFileSystem({"/reports/newman-backend.json": JSON.stringify({run: {failures: []}})});
+    const {logger} = createSinkLogger();
+    await writeAssertionSummary(files, "backend", "/reports", logger);
+    const summary = await files.readText("/reports/newman-backend-summary.md");
+    expect(summary).toContain("No failed assertions");
+  });
 
-    const sink = new InMemoryLoggerSink();
-    const logger = new MonorepositoryConsoleLogger("test", {color: false, sink});
-
-    const {main} = await import("./test-e2e.ts");
-    const code = await main("backend", logger, {
-      runner,
-      cwd: root,
-      env: {E2E_TEST_AUTH_TOKEN: FAKE_TOKEN, NEWMAN_REPORT_DIR: reportDir},
+  it("writes failure detail when the report contains failures", async () => {
+    const files = createMemoryFileSystem({
+      "/reports/newman-backend.json": JSON.stringify({
+        run: {failures: [{assertion: "Status is 200", error: "expected 200 but got 500", source: {name: "Get invoice"}}]},
+      }),
     });
+    const {logger} = createSinkLogger();
+    await writeAssertionSummary(files, "backend", "/reports", logger);
+    const summary = await files.readText("/reports/newman-backend-summary.md");
+    expect(summary).toContain("Status is 200");
+    expect(summary).toContain("Get invoice");
+  });
 
-    expect(code).toBe(0);
-    const rawArgs = calls[0]!.command.args;
+  it("throws when the JSON report cannot be parsed", async () => {
+    const files = createMemoryFileSystem({"/reports/newman-backend.json": "{not valid json"});
+    const {logger} = createSinkLogger();
+    await expect(writeAssertionSummary(files, "backend", "/reports", logger)).rejects.toThrow(/Failed to read Newman JSON report/);
+  });
+});
 
-    const jsonExportIndex = rawArgs.indexOf("--reporter-json-export");
-    const junitExportIndex = rawArgs.indexOf("--reporter-junit-export");
-    const jsonPath = rawArgs[jsonExportIndex + 1]!;
-    const junitPath = rawArgs[junitExportIndex + 1]!;
+// ============================================================================
+// sanitizeNewmanJsonReport
+// ============================================================================
 
-    // Explicit absolute NEWMAN_REPORT_DIR should be used directly
-    expect(jsonPath.startsWith(reportDir)).toBe(true);
-    expect(junitPath.startsWith(reportDir)).toBe(true);
+describe("sanitizeNewmanJsonReport", () => {
+  it("is a no-op when the report does not exist", async () => {
+    const files = createMemoryFileSystem();
+    const {logger} = createSinkLogger();
+    await expect(sanitizeNewmanJsonReport(files, "/reports/missing.json", logger)).resolves.toBeUndefined();
+  });
+
+  it("redacts a JWT-shaped value and rewrites the report", async () => {
+    const jwt = generateSyntheticJwt();
+    const files = createMemoryFileSystem({"/reports/newman-backend.json": JSON.stringify({token: jwt, safe: "value"})});
+    const {logger} = createSinkLogger();
+    await sanitizeNewmanJsonReport(files, "/reports/newman-backend.json", logger);
+    const content = await files.readText("/reports/newman-backend.json");
+    expect(content).not.toContain(jwt);
+    expect(content).toContain("value");
+  });
+
+  it("throws and removes the artifact when the JSON report cannot be parsed", async () => {
+    const files = createMemoryFileSystem({"/reports/newman-backend.json": "{not valid json"});
+    const {logger} = createSinkLogger();
+    await expect(sanitizeNewmanJsonReport(files, "/reports/newman-backend.json", logger)).rejects.toThrow(
+      /Failed to parse Newman JSON report/,
+    );
+    expect(await files.exists("/reports/newman-backend.json")).toBe(false);
+  });
+});
+
+// ============================================================================
+// sanitizeNewmanTextReport
+// ============================================================================
+
+describe("sanitizeNewmanTextReport", () => {
+  it("is a no-op when the report does not exist", async () => {
+    const files = createMemoryFileSystem();
+    const {logger} = createSinkLogger();
+    await expect(sanitizeNewmanTextReport(files, "/reports/missing.xml", logger)).resolves.toBeUndefined();
+  });
+
+  it("redacts the runtime auth token by exact match", async () => {
+    const files = createMemoryFileSystem({"/reports/newman-backend.xml": "<testcase>authToken=super-secret-value</testcase>"});
+    const {logger} = createSinkLogger();
+    await sanitizeNewmanTextReport(files, "/reports/newman-backend.xml", logger, "super-secret-value");
+    const content = await files.readText("/reports/newman-backend.xml");
+    expect(content).not.toContain("super-secret-value");
+    expect(content).toContain("[REDACTED]");
+  });
+
+  it("redacts a bearer JWT pattern from text content", async () => {
+    const jwt = generateSyntheticJwt();
+    const files = createMemoryFileSystem({"/reports/newman-backend.xml": `<system-out>Authorization: Bearer ${jwt}</system-out>`});
+    const {logger} = createSinkLogger();
+    await sanitizeNewmanTextReport(files, "/reports/newman-backend.xml", logger);
+    const content = await files.readText("/reports/newman-backend.xml");
+    expect(content).not.toContain(jwt);
+  });
+});
+
+// ============================================================================
+// sanitizeJsonValue / redactSensitiveString
+// ============================================================================
+
+describe("sanitizeJsonValue and redactSensitiveString", () => {
+  it("redacts values under sensitive keys regardless of shape", () => {
+    const accumulator = {redactionCount: 0};
+    const sanitized = sanitizeJsonValue({authToken: "abc123", nested: {accessToken: "def456"}, safe: "ok"}, accumulator);
+    expect(sanitized).toEqual({authToken: "[REDACTED]", nested: {accessToken: "[REDACTED]"}, safe: "ok"});
+    expect(accumulator.redactionCount).toBe(2);
+  });
+
+  it("redacts JWT-shaped strings even under non-sensitive keys", () => {
+    const jwt = generateSyntheticJwt();
+    const accumulator = {redactionCount: 0};
+    const sanitized = redactSensitiveString(`payload: ${jwt}`, "message", accumulator);
+    expect(sanitized).not.toContain(jwt);
+    expect(accumulator.redactionCount).toBeGreaterThan(0);
+  });
+
+  it("recurses through arrays", () => {
+    const accumulator = {redactionCount: 0};
+    const sanitized = sanitizeJsonValue([{token: "secret"}, {safe: "ok"}], accumulator);
+    expect(sanitized).toEqual([{token: "[REDACTED]"}, {safe: "ok"}]);
   });
 });
