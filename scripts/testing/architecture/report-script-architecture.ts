@@ -8,7 +8,10 @@
  * `MonorepositoryConsoleLogger`, and it is excluded from production script source discovery.
  * It reports the static runtime source-graph size and a three-sample `--help` median for every
  * Commander entrypoint; the timings are informational, while the AST import-boundary tests remain
- * the structural enforcement mechanism. Run it with `npm run analyze:scripts:architecture`.
+ * the structural enforcement mechanism. The runtime graph follows every non-type-only edge,
+ * including literal dynamic imports, so `runtimeGraphMaintainedLineCount` measures transitive
+ * literal runtime reachability rather than the eager `--help` import graph and is not comparable
+ * to frozen historical `runtimeGraphLineCounts`. Run it with `npm run analyze:scripts:architecture`.
  */
 
 import {spawnSync} from "node:child_process";
