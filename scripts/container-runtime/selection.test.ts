@@ -7,6 +7,8 @@ import {mkdtemp, rm, writeFile} from "node:fs/promises";
 import {tmpdir} from "node:os";
 import {resolve} from "node:path";
 import {afterEach, describe, expect, it} from "vitest";
+import {createMemoryFileSystem} from "../common/runtime.testing.ts";
+import type {ReadOnlyFileSystem} from "../common/runtime.ts";
 import {resolveContainerEngine, resolveRuntimeContainerEngine} from "./selection.ts";
 import type {ContainerEngine} from "./types.ts";
 
@@ -153,5 +155,52 @@ describe("resolveRuntimeContainerEngine", () => {
         toolingConfigPath,
       }),
     ).rejects.toThrow("Unsupported container engine 'colima'");
+  });
+
+  it("reads persisted configuration through an explicitly supplied filesystem instead of the real disk", async () => {
+    const toolingConfigPath = "/virtual/tooling.local.json";
+    const files: ReadOnlyFileSystem = createMemoryFileSystem({
+      [toolingConfigPath]: JSON.stringify({schemaVersion: 1, containerEngine: "podman"}),
+    });
+
+    await expect(
+      resolveRuntimeContainerEngine(
+        {
+          env: {},
+          toolingConfigPath,
+        },
+        files,
+      ),
+    ).resolves.toEqual({engine: "podman", source: "configuration"});
+  });
+
+  it("surfaces malformed configuration read through an explicitly supplied filesystem", async () => {
+    const toolingConfigPath = "/virtual/tooling.local.json";
+    const files: ReadOnlyFileSystem = createMemoryFileSystem({
+      [toolingConfigPath]: "{ not valid json",
+    });
+
+    await expect(
+      resolveRuntimeContainerEngine(
+        {
+          env: {},
+          toolingConfigPath,
+        },
+        files,
+      ),
+    ).rejects.toThrow("Invalid local tooling configuration");
+  });
+
+  it("defaults to the real disk filesystem when the files parameter is omitted", async () => {
+    const toolingConfigPath = await malformedToolingConfigPath();
+
+    // Omitting `files` is a deprecated compatibility path retained only for the still-legacy
+    // container entrypoints (Tasks 20-21 pass invocation files explicitly).
+    await expect(
+      resolveRuntimeContainerEngine({
+        env: {},
+        toolingConfigPath,
+      }),
+    ).rejects.toThrow("Invalid local tooling configuration");
   });
 });

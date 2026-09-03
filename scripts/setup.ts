@@ -45,7 +45,6 @@ import {pythonSetupPhase} from "./setup.python.ts";
 import {reactSetupPhase} from "./setup.react.ts";
 import {svelteSetupPhase} from "./setup.svelte.ts";
 import {
-  toDeprecatedSetupCommandRunner,
   type SetupActionExecutor,
   type SetupContext,
   type SetupInput,
@@ -392,8 +391,6 @@ async function executeSetup(
         paths,
         requirements: requirementLoad.requirements,
         inspection,
-        runner: toDeprecatedSetupCommandRunner(phaseRuntime.runner),
-        now: runtime.clock.monotonicNow,
         runtime: phaseRuntime,
         prompts: runtime.prompts,
         actions,

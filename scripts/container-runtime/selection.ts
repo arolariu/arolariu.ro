@@ -5,6 +5,7 @@
 
 import {readToolingConfig} from "../common/tooling-config.ts";
 import {nodeFileSystem} from "../common/runtime.node.ts";
+import type {ReadOnlyFileSystem} from "../common/runtime.ts";
 import {ContainerRuntimeError, type ContainerEngine, type ContainerEngineSelection, type SelectionInputs} from "./types.ts";
 
 const supportedEngines: ReadonlySet<string> = new Set(["rancher", "podman"]);
@@ -98,10 +99,17 @@ export function resolveContainerEngine(inputs: SelectionInputs): ContainerEngine
  * `requestedEngine` explicitly; this function never reads `process.argv`.
  *
  * @param input - Explicit engine request, environment, and local tooling configuration path.
+ * @param files - Read-only filesystem capability used to read the persisted configuration.
+ * Omitting it is a deprecated compatibility path that delegates to {@link nodeFileSystem}, kept
+ * only for the still-legacy container entry points that have not yet migrated to an
+ * invocation-scoped filesystem.
  * @returns The resolved engine and configuration source.
  * @throws {ContainerRuntimeError} When an explicit source or required persisted configuration is invalid.
  */
-export async function resolveRuntimeContainerEngine(input: Readonly<RuntimeSelectionInput>): Promise<ContainerEngineSelection> {
+export async function resolveRuntimeContainerEngine(
+  input: Readonly<RuntimeSelectionInput>,
+  files: ReadOnlyFileSystem = nodeFileSystem,
+): Promise<ContainerEngineSelection> {
   if (input.requestedEngine !== undefined) {
     return {engine: normalizeEngine(input.requestedEngine), source: "argument"};
   }
@@ -111,7 +119,7 @@ export async function resolveRuntimeContainerEngine(input: Readonly<RuntimeSelec
     return {engine: normalizeEngine(environmentValue), source: "environment"};
   }
 
-  const localConfig = await readToolingConfig(input.toolingConfigPath, nodeFileSystem);
+  const localConfig = await readToolingConfig(input.toolingConfigPath, files);
   if (localConfig.status === "invalid") {
     throw new ContainerRuntimeError(localConfig.error);
   }

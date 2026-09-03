@@ -15,22 +15,33 @@
  * interrupted mutation can never leave a partially mutated repository described by stale cached
  * facts. Planned and declined actions never set the attempted flag and therefore never invalidate.
  * After an executed disposition the already-invalidated key is re-inspected exactly once.
+ *
+ * The phase reads every capability from the invocation-scoped {@link SetupPhaseRuntime}: the
+ * process runner, the recursive-removal filesystem, the clock, and the host environment snapshot.
+ * It owns no ambient Node state and no test-only constructor dependency; `createInfrastructureSetupPhase`
+ * accepts no arguments.
  */
 
-import {mkdir} from "node:fs/promises";
 import {dirname, resolve} from "node:path";
 
-import type {CommandResult, CommandRunner, CommandRunOptions} from "./common/process.ts";
-import type {ToolingConfigReadResult, ToolingConfigV1} from "./common/tooling-config.ts";
+import {processFailureEvidence, type ProcessOutcome, type ProcessRunner, type SucceededProcessOutcome} from "./common/runner.ts";
+import {CommandCancellation} from "./common/runtime.ts";
 import {mergeToolingConfig, readToolingConfig, writeToolingConfig} from "./common/tooling-config.ts";
-import {nodeFileSystem} from "./common/runtime.node.ts";
 import {getContainerAdapter, type ContainerRuntimeAdapter} from "./container-runtime/adapters.ts";
 import {resolveContainerEngine} from "./container-runtime/selection.ts";
 import type {ContainerEngine, EngineSelectionSource} from "./container-runtime/types.ts";
 import type {InfrastructureFacts} from "./inspection/infrastructure.ts";
 import type {RepositoryInspectionKey} from "./inspection/repository.ts";
 import type {InspectionOutcome} from "./inspection/types.ts";
-import type {InstallationProposal, SetupActionScope, SetupContext, SetupPhaseDefinition, SetupPhaseResult} from "./setup.types.ts";
+import {
+  requireSetupPhaseRuntime,
+  type InstallationProposal,
+  type SetupActionScope,
+  type SetupContext,
+  type SetupPhaseDefinition,
+  type SetupPhaseResult,
+  type SetupPhaseRuntime,
+} from "./setup.types.ts";
 
 const ENGINE_PERSIST_ACTION = "infrastructure.engine.persist";
 const CONTAINER_INSTALL_ACTION = "infrastructure.container.install";
@@ -42,54 +53,89 @@ const MKCERT_MANUAL_URL = "https://github.com/FiloSottile/mkcert#installation";
 const MKCERT_MANUAL_ACTION = `Install mkcert from ${MKCERT_MANUAL_URL}, then rerun setup.`;
 const SQL_PASSWORD_ENVIRONMENT_KEY = "MSSQL_SA_PASSWORD";
 
+/**
+ * Bounded ceiling for every long-running container-desktop installation, mkcert install/trust, and
+ * certificate-generation mutation.
+ *
+ * @remarks
+ * The invocation-scoped runner defaults to a probe-sized timeout, which is correct for a
+ * `--version` probe but would truncate a container-desktop or mkcert install. Each such mutation
+ * therefore requests this ceiling explicitly, preserving the pre-migration mutation timeout the
+ * deprecated setup runner bridge used to supply implicitly for `tee`/`inherit` output. Probes keep
+ * the runner's own bounded default instead.
+ */
+const LONG_RUNNING_MUTATION_TIMEOUT_MS = 1_200_000;
+
 // ---------------------------------------------------------------------------
 // Credential isolation
 // ---------------------------------------------------------------------------
 
-function credentialIsolatedEnvironment(environment?: Readonly<NodeJS.ProcessEnv>): NodeJS.ProcessEnv {
-  const isolated: NodeJS.ProcessEnv = {};
-  if (environment !== undefined) {
-    for (const key of Object.keys(environment)) {
-      if (key.toUpperCase() !== SQL_PASSWORD_ENVIRONMENT_KEY) {
-        isolated[key] = environment[key];
-      }
-    }
-  }
-  isolated[SQL_PASSWORD_ENVIRONMENT_KEY] = undefined;
-  return isolated;
-}
-
-function createCredentialIsolatedRunner(runner: CommandRunner): CommandRunner {
-  return {
-    run: (command, options: Readonly<CommandRunOptions> = {}) =>
-      runner.run(command, {
-        ...options,
-        env: credentialIsolatedEnvironment(options.env),
-      }),
-  };
+/**
+ * Scopes the invocation-scoped runner so every command this phase runs never observes
+ * `MSSQL_SA_PASSWORD`.
+ *
+ * @remarks
+ * The scope default explicitly maps the credential key to `undefined`; the scoped runner's
+ * environment merge (defaults, then any per-call override) drops keys with an `undefined` value
+ * before spawning, so the credential is absent from the child's environment regardless of what
+ * `runtime.environment.variables` carries, without ever mutating that immutable snapshot. Any
+ * other per-command `env` override a caller supplies is preserved because it is merged on top of
+ * this scope's defaults, not replaced by them.
+ *
+ * @param runner - The invocation-scoped process runner every setup command already flows through.
+ * @returns A credential-isolated process runner scoped to this phase.
+ */
+function createCredentialIsolatedRunner(runner: ProcessRunner): ProcessRunner {
+  return runner.scope({env: {[SQL_PASSWORD_ENVIRONMENT_KEY]: undefined}});
 }
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
+function isSuccessfulOutcome(outcome: Readonly<ProcessOutcome>): outcome is SucceededProcessOutcome {
+  return outcome.kind === "succeeded";
+}
+
 function isInterrupted(error: unknown): boolean {
-  return error instanceof Error && error.name === "AbortError";
+  return error instanceof CommandCancellation || (error instanceof Error && error.name === "AbortError");
 }
 
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
-function isSuccessfulCommand(result: Readonly<CommandResult>): boolean {
-  return result.code === 0 && !result.timedOut && result.signal === undefined && result.spawnError === undefined;
+function duration(startedAt: number, runtime: SetupPhaseRuntime): number {
+  return Math.max(0, runtime.clock.monotonicNow() - startedAt);
 }
 
-function phaseResult(context: SetupContext, startedAt: number, input: Omit<SetupPhaseResult, "durationMs">): SetupPhaseResult {
+function phaseResult(runtime: SetupPhaseRuntime, startedAt: number, input: Omit<SetupPhaseResult, "durationMs">): SetupPhaseResult {
   return {
     ...input,
-    durationMs: Math.max(0, context.now() - startedAt),
+    durationMs: duration(startedAt, runtime),
   };
+}
+
+/**
+ * Converts one failed/interrupted process outcome into bounded, non-secret evidence.
+ *
+ * @param outcome - A non-`"succeeded"` {@link ProcessOutcome}.
+ * @param context - Shared setup dependencies, whose logger sanitizes the rendered evidence.
+ * @returns Bounded, sanitized evidence lines describing the failure.
+ */
+function commandFailureEvidence(
+  outcome: Readonly<Exclude<ProcessOutcome, SucceededProcessOutcome>>,
+  context: SetupContext,
+): readonly string[] {
+  const evidence = processFailureEvidence(outcome, context.logger);
+  return [
+    ...(outcome.kind === "exited" ? [`Command exited with code ${outcome.exitCode}.`] : []),
+    ...(outcome.kind === "timed-out" ? ["Command timed out."] : []),
+    ...(outcome.kind === "signalled" ? [`Command stopped with signal ${outcome.signal}.`] : []),
+    ...(outcome.kind === "cancelled" ? ["Command was cancelled."] : []),
+    ...(outcome.kind === "spawn-failed" ? [`Unable to start command: ${outcome.message}`] : []),
+    ...(evidence === "" ? [] : [evidence]),
+  ];
 }
 
 function deduplicate(values: readonly string[]): readonly string[] {
@@ -235,12 +281,12 @@ function selectMkcertInstallationProposal(
 // Package manager discovery
 // ---------------------------------------------------------------------------
 
-async function discoverPackageManagers(context: SetupContext, platform: NodeJS.Platform): Promise<ReadonlySet<string>> {
+async function discoverPackageManagers(runner: ProcessRunner, root: string, platform: NodeJS.Platform): Promise<ReadonlySet<string>> {
   const managers = platform === "win32" ? ["winget"] : platform === "darwin" ? ["brew"] : platform === "linux" ? ["apt-get", "dnf"] : [];
   const available = new Set<string>();
   for (const manager of managers) {
-    const result = await context.runner.run({command: manager, args: ["--version"]}, {cwd: context.paths.root});
-    if (isSuccessfulCommand(result)) {
+    const outcome = await runner.run({command: manager, args: ["--version"]}, {cwd: root});
+    if (isSuccessfulOutcome(outcome)) {
       available.add(manager);
     }
   }
@@ -258,22 +304,22 @@ interface SelectedEngine {
 
 async function selectEngine(
   context: SetupContext,
-  dependencies: InfrastructureSetupDependencies,
+  runtime: SetupPhaseRuntime,
   configuredEngine: string | undefined,
 ): Promise<SelectedEngine> {
   try {
     return resolveContainerEngine({
       argv: context.options.engine === undefined ? [] : ["--engine", context.options.engine],
-      env: dependencies.environment,
+      env: runtime.environment.variables,
       ...(configuredEngine === undefined ? {} : {configuredEngine}),
     });
   } catch (error) {
+    const configuredEngineVariable = runtime.environment.variables["AROLARIU_CONTAINER_ENGINE"];
     const noConfiguredSelection =
       context.options.engine === undefined
-      && (dependencies.environment["AROLARIU_CONTAINER_ENGINE"] === undefined
-        || dependencies.environment["AROLARIU_CONTAINER_ENGINE"]?.trim() === "")
+      && (configuredEngineVariable === undefined || configuredEngineVariable.trim() === "")
       && configuredEngine === undefined;
-    if (!noConfiguredSelection || !dependencies.interactive) {
+    if (!noConfiguredSelection || !runtime.environment.stdinIsTTY) {
       throw error;
     }
 
@@ -295,15 +341,20 @@ async function selectEngine(
 // Shared command helpers
 // ---------------------------------------------------------------------------
 
-async function runRequiredCommand(context: SetupContext, command: InstallationProposal["command"], failureSummary: string): Promise<void> {
-  const result = await context.runner.run(command, {
-    cwd: context.paths.root,
+async function runRequiredCommand(
+  runner: ProcessRunner,
+  context: SetupContext,
+  root: string,
+  command: InstallationProposal["command"],
+  failureSummary: string,
+): Promise<void> {
+  const outcome = await runner.run(command, {
+    cwd: root,
     output: "inherit",
+    timeoutMs: LONG_RUNNING_MUTATION_TIMEOUT_MS,
   });
-  if (!isSuccessfulCommand(result)) {
-    throw new Error(
-      `${failureSummary}: ${result.stderr.trim() || result.stdout.trim() || result.spawnError || `exit code ${result.code}`}`,
-    );
+  if (!isSuccessfulOutcome(outcome)) {
+    throw new Error([`${failureSummary}.`, ...commandFailureEvidence(outcome, context)].join("\n"));
   }
 }
 
@@ -386,7 +437,9 @@ interface RuntimeOutcome {
 
 async function prepareRuntime(
   context: SetupContext,
-  dependencies: InfrastructureSetupDependencies,
+  runner: ProcessRunner,
+  root: string,
+  platform: NodeJS.Platform,
   adapter: ContainerRuntimeAdapter,
   facts: InfrastructureFacts,
 ): Promise<RuntimeOutcome> {
@@ -407,10 +460,10 @@ async function prepareRuntime(
     };
   }
 
-  const packageManagers = await discoverPackageManagers(context, dependencies.platform);
+  const packageManagers = await discoverPackageManagers(runner, root, platform);
   const proposal = selectContainerInstallationProposal({
     engine: adapter.engine,
-    platform: dependencies.platform,
+    platform,
     availablePackageManagers: packageManagers,
   });
   if (proposal === null) {
@@ -428,7 +481,7 @@ async function prepareRuntime(
       id: CONTAINER_INSTALL_ACTION,
       scope: "system",
       summary: proposal.explanation,
-      mutate: () => runRequiredCommand(context, proposal.command, "Container runtime installation failed"),
+      mutate: () => runRequiredCommand(runner, context, root, proposal.command, "Container runtime installation failed"),
     },
     ["infrastructure", "aggregate"],
   );
@@ -550,7 +603,8 @@ function degradedCertificateOutcome(evidence: readonly string[], nextActions: re
 
 async function prepareCertificates(
   context: SetupContext,
-  dependencies: InfrastructureSetupDependencies,
+  runtime: SetupPhaseRuntime,
+  runner: ProcessRunner,
   facts: InfrastructureFacts,
 ): Promise<CertificateOutcome> {
   if (facts.certificateIssues.length === 0) {
@@ -565,16 +619,18 @@ async function prepareCertificates(
     );
   }
 
-  const certificatePath = resolve(context.paths.root, "infra", "Local", "Management", "certs", "local-cert.pem");
-  const keyPath = resolve(context.paths.root, "infra", "Local", "Management", "certs", "local-key.pem");
+  const root = context.paths.root;
+  const platform = runtime.environment.platform;
+  const certificatePath = resolve(root, "infra", "Local", "Management", "certs", "local-cert.pem");
+  const keyPath = resolve(root, "infra", "Local", "Management", "certs", "local-key.pem");
   const evidence: string[] = ["Optional selfhost certificate generation is required."];
   let planned = false;
 
   try {
-    let mkcertProbe = await context.runner.run({command: "mkcert", args: ["--version"]}, {cwd: context.paths.root});
-    if (!isSuccessfulCommand(mkcertProbe)) {
-      const managers = await discoverPackageManagers(context, dependencies.platform);
-      const proposal = selectMkcertInstallationProposal(dependencies.platform, managers);
+    let mkcertProbe = await runner.run({command: "mkcert", args: ["--version"]}, {cwd: root});
+    if (!isSuccessfulOutcome(mkcertProbe)) {
+      const managers = await discoverPackageManagers(runner, root, platform);
+      const proposal = selectMkcertInstallationProposal(platform, managers);
       if (proposal === null) {
         return degradedCertificateOutcome(
           [...evidence, "mkcert is unavailable and no reviewed installer was discovered."],
@@ -587,7 +643,7 @@ async function prepareCertificates(
           id: MKCERT_INSTALL_ACTION,
           scope: "system",
           summary: proposal.explanation,
-          mutate: () => runRequiredCommand(context, proposal.command, "mkcert installation failed"),
+          mutate: () => runRequiredCommand(runner, context, root, proposal.command, "mkcert installation failed"),
         },
         ["infrastructure"],
       );
@@ -602,8 +658,8 @@ async function prepareCertificates(
         evidence.push(`Planned action: ${MKCERT_INSTALL_ACTION}`);
       } else {
         evidence.push(`Executed action: ${MKCERT_INSTALL_ACTION}`);
-        mkcertProbe = await context.runner.run({command: "mkcert", args: ["--version"]}, {cwd: context.paths.root});
-        if (!isSuccessfulCommand(mkcertProbe)) {
+        mkcertProbe = await runner.run({command: "mkcert", args: ["--version"]}, {cwd: root});
+        if (!isSuccessfulOutcome(mkcertProbe)) {
           return degradedCertificateOutcome([...evidence, "mkcert remains unavailable after installation."], [MKCERT_MANUAL_ACTION]);
         }
       }
@@ -617,7 +673,8 @@ async function prepareCertificates(
         id: MKCERT_TRUST_ACTION,
         scope: "system",
         summary: "Install the mkcert local certificate authority into the system trust stores.",
-        mutate: () => runRequiredCommand(context, {command: "mkcert", args: ["-install"]}, "mkcert trust installation failed"),
+        mutate: () =>
+          runRequiredCommand(runner, context, root, {command: "mkcert", args: ["-install"]}, "mkcert trust installation failed"),
       },
       ["infrastructure"],
     );
@@ -641,9 +698,11 @@ async function prepareCertificates(
         scope: "user",
         summary: "Generate the ignored localhost certificate and private key for selfhost.",
         mutate: async () => {
-          await dependencies.createDirectory(dirname(certificatePath));
+          await runtime.files.createDirectory(dirname(certificatePath), {recursive: true});
           await runRequiredCommand(
+            runner,
             context,
+            root,
             {
               command: "mkcert",
               args: ["-key-file", keyPath, "-cert-file", certificatePath, "localhost", "*.localhost"],
@@ -688,43 +747,19 @@ async function prepareCertificates(
 }
 
 // ---------------------------------------------------------------------------
-// Dependencies
-// ---------------------------------------------------------------------------
-
-interface InfrastructureSetupDependencies {
-  readonly platform: NodeJS.Platform;
-  readonly environment: Readonly<NodeJS.ProcessEnv>;
-  readonly interactive: boolean;
-  readonly readConfig: (path: string) => Promise<ToolingConfigReadResult>;
-  readonly writeConfig: (path: string, config: Readonly<ToolingConfigV1>) => Promise<void>;
-  readonly createDirectory: (path: string) => Promise<void>;
-}
-
-const defaultDependencies: InfrastructureSetupDependencies = {
-  platform: process.platform,
-  environment: process.env,
-  interactive: process.stdin.isTTY === true,
-  readConfig: (path) => readToolingConfig(path, nodeFileSystem),
-  writeConfig: (path, config) => writeToolingConfig(path, config, nodeFileSystem),
-  createDirectory: (path) => mkdir(path, {recursive: true}).then(() => undefined),
-};
-
-// ---------------------------------------------------------------------------
 // Phase
 // ---------------------------------------------------------------------------
 
-async function runInfrastructureSetup(context: SetupContext, dependencies: InfrastructureSetupDependencies): Promise<SetupPhaseResult> {
-  const startedAt = context.now();
+async function runInfrastructureSetup(context: SetupContext): Promise<SetupPhaseResult> {
+  const runtime = requireSetupPhaseRuntime(context);
+  const startedAt = runtime.clock.monotonicNow();
   const evidence: string[] = [];
-  const phaseContext: SetupContext = {
-    ...context,
-    runner: createCredentialIsolatedRunner(context.runner),
-  };
+  const runner = createCredentialIsolatedRunner(runtime.runner);
 
   try {
-    const configRead = await dependencies.readConfig(context.paths.toolingConfig);
+    const configRead = await readToolingConfig(context.paths.toolingConfig, runtime.files);
     if (configRead.status === "invalid") {
-      return phaseResult(context, startedAt, {
+      return phaseResult(runtime, startedAt, {
         id: "infrastructure",
         status: "failed",
         summary: "The local tooling configuration is invalid; infrastructure was not changed.",
@@ -736,12 +771,12 @@ async function runInfrastructureSetup(context: SetupContext, dependencies: Infra
     const currentConfig = configRead.status === "valid" ? configRead.config : undefined;
     let selection: SelectedEngine;
     try {
-      selection = await selectEngine(context, dependencies, currentConfig?.containerEngine);
+      selection = await selectEngine(context, runtime, currentConfig?.containerEngine);
     } catch (error) {
       if (isInterrupted(error)) {
         throw error;
       }
-      return phaseResult(context, startedAt, {
+      return phaseResult(runtime, startedAt, {
         id: "infrastructure",
         status: "failed",
         summary: "A supported local container engine was not selected.",
@@ -770,22 +805,23 @@ async function runInfrastructureSetup(context: SetupContext, dependencies: Infra
           scope: "repository",
           summary: `Persist ${adapter.displayName} as the non-secret local container engine selection.`,
           mutate: async () => {
-            const latest = await dependencies.readConfig(context.paths.toolingConfig);
+            const latest = await readToolingConfig(context.paths.toolingConfig, runtime.files);
             if (latest.status === "invalid") {
               throw new Error(latest.error);
             }
-            await dependencies.writeConfig(
+            await writeToolingConfig(
               context.paths.toolingConfig,
               mergeToolingConfig(latest.status === "valid" ? latest.config : undefined, {
                 containerEngine: selection.engine,
               }),
+              runtime.files,
             );
           },
         },
         ["infrastructure"],
       );
       if (persistMutation.disposition === "declined") {
-        return phaseResult(context, startedAt, {
+        return phaseResult(runtime, startedAt, {
           id: "infrastructure",
           status: "failed",
           summary: "Persisting the required container engine selection was declined.",
@@ -805,7 +841,7 @@ async function runInfrastructureSetup(context: SetupContext, dependencies: Infra
 
     const infraOutcome = await context.inspection.inspect("infrastructure");
     if (infraOutcome.kind !== "available") {
-      return phaseResult(context, startedAt, {
+      return phaseResult(runtime, startedAt, {
         id: "infrastructure",
         status: "failed",
         summary: "Shared infrastructure inspection failed.",
@@ -815,14 +851,14 @@ async function runInfrastructureSetup(context: SetupContext, dependencies: Infra
     }
     let facts = infraOutcome.value;
 
-    const runtime = await prepareRuntime(phaseContext, dependencies, adapter, facts);
-    evidence.push(...runtime.evidence);
-    planned ||= runtime.planned;
+    const runtimeOutcome = await prepareRuntime(context, runner, context.paths.root, runtime.environment.platform, adapter, facts);
+    evidence.push(...runtimeOutcome.evidence);
+    planned ||= runtimeOutcome.planned;
 
     // If a runtime installation executed successfully, facts were already invalidated and
     // re-inspected inside prepareRuntime. Re-inspect here so the rest of the phase uses the
     // refreshed ports, certificates, and manifests.
-    if (!runtime.blocked && !runtime.planned && runtime.evidence.some((line) => line.startsWith("Executed action:"))) {
+    if (!runtimeOutcome.blocked && !runtimeOutcome.planned && runtimeOutcome.evidence.some((line) => line.startsWith("Executed action:"))) {
       const refreshed = await context.inspection.inspect("infrastructure");
       if (refreshed.kind === "available") {
         facts = refreshed.value;
@@ -840,19 +876,19 @@ async function runInfrastructureSetup(context: SetupContext, dependencies: Infra
     }
     evidence.push(...manifestEvidence);
 
-    const certificates = await prepareCertificates(phaseContext, dependencies, facts);
+    const certificates = await prepareCertificates(context, runtime, runner, facts);
     evidence.push(...certificates.evidence);
     planned ||= certificates.planned;
     const degraded = ports.degraded || certificates.degraded;
-    const blocked = runtime.blocked || ports.blocked || manifestBlocked;
+    const blocked = runtimeOutcome.blocked || ports.blocked || manifestBlocked;
     const nextActions = deduplicate([
-      ...runtime.nextActions,
+      ...runtimeOutcome.nextActions,
       ...ports.nextActions,
       ...(manifestBlocked ? ["Restore the required tracked local infrastructure files, then rerun setup."] : []),
       ...certificates.nextActions,
     ]);
 
-    return phaseResult(context, startedAt, {
+    return phaseResult(runtime, startedAt, {
       id: "infrastructure",
       status: blocked ? "failed" : planned ? "skipped" : degraded ? "degraded" : "succeeded",
       summary: blocked
@@ -869,7 +905,7 @@ async function runInfrastructureSetup(context: SetupContext, dependencies: Infra
     if (isInterrupted(error)) {
       throw error;
     }
-    return phaseResult(context, startedAt, {
+    return phaseResult(runtime, startedAt, {
       id: "infrastructure",
       status: "failed",
       summary: "Local infrastructure preparation failed.",
@@ -880,19 +916,23 @@ async function runInfrastructureSetup(context: SetupContext, dependencies: Infra
 }
 
 /**
- * Creates the independently executable infrastructure setup phase.
+ * Creates the infrastructure setup phase over the invocation-scoped setup phase runtime.
  *
- * @param overrides - Optional production-boundary overrides for deterministic tests.
- * @returns Infrastructure setup phase definition.
+ * @remarks
+ * The phase no longer accepts a test-only platform, environment, filesystem, or tooling-config
+ * override: the platform, the process runner, the filesystem, and the environment all come from
+ * {@link SetupPhaseRuntime}, so a test replaces capabilities on the runtime rather than on this
+ * factory.
+ *
+ * @returns The infrastructure setup phase definition.
  */
-export function createInfrastructureSetupPhase(overrides: Readonly<Partial<InfrastructureSetupDependencies>> = {}): SetupPhaseDefinition {
-  const dependencies: InfrastructureSetupDependencies = {...defaultDependencies, ...overrides};
+export function createInfrastructureSetupPhase(): SetupPhaseDefinition {
   return {
     id: "infrastructure",
     title: "Local infrastructure",
     required: true,
     dependsOn: [],
-    run: (context) => runInfrastructureSetup(context, dependencies),
+    run: (context) => runInfrastructureSetup(context),
   };
 }
 

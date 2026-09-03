@@ -32,14 +32,7 @@ import {
 import type {GenerateInput, GenerateResult} from "./generate.ts";
 import type {RepositoryInspectionSession} from "./inspection/repository.ts";
 import {createSetupActionExecutor, createSetupCommand, setupPhases, type SetupResult} from "./setup.ts";
-import type {
-  SetupAction,
-  SetupContext,
-  SetupInput,
-  SetupPhaseDefinition,
-  SetupPhaseResult,
-  SetupStatus,
-} from "./setup.types.ts";
+import type {SetupAction, SetupContext, SetupInput, SetupPhaseDefinition, SetupPhaseResult, SetupStatus} from "./setup.types.ts";
 
 /** Canonical paths of the in-memory repository fixture every orchestrator test resolves. */
 const FIXTURE_PATHS: RepositoryPaths = createRepositoryPaths(repositoryFixtureRoot);
@@ -835,63 +828,13 @@ describe("setup phase command execution", () => {
     expect(recordedOptions(runner)).toMatchObject({timeoutMs: 5_000});
   });
 
-  it("routes the deprecated legacy runner through the same scoped phase runner", async () => {
+  it("keeps the scoped default for a mutation command instead of the pre-migration bridge policy", async () => {
     const runner = createProcessRunner();
     const {command} = createSetupFixture({
       runner,
-      phases: [commandPhase((context) => context.runner.run({command: "dotnet", args: ["--version"]}))],
-    });
-
-    await command.invoke(options());
-
-    expect(runner.calls.map(({request}) => request)).toEqual([{command: "dotnet", args: ["--version"]}]);
-    expect(recordedOptions(runner)).toMatchObject({cwd: FIXTURE_PATHS.root, timeoutMs: 120_000});
-  });
-
-  it("gives a deprecated capture command the scoped probe timeout", async () => {
-    const runner = createProcessRunner();
-    const {command} = createSetupFixture({
-      runner,
-      phases: [commandPhase((context) => context.runner.run({command: "dotnet", args: ["--version"]}, {output: "capture"}))],
-    });
-
-    await command.invoke(options());
-
-    expect(recordedOptions(runner)).toMatchObject({output: "capture", timeoutMs: 120_000});
-  });
-
-  it.each(["tee", "inherit"] as const)(
-    "gives a deprecated '%s' mutation command the pre-migration mutation timeout",
-    async (output) => {
-      const runner = createProcessRunner();
-      const {command} = createSetupFixture({
-        runner,
-        phases: [commandPhase((context) => context.runner.run({command: "npm", args: ["ci"]}, {output}))],
-      });
-
-      await command.invoke(options());
-
-      expect(recordedOptions(runner)).toMatchObject({cwd: FIXTURE_PATHS.root, output, timeoutMs: 1_200_000});
-    },
-  );
-
-  it("preserves an explicit deprecated mutation timeout instead of the pre-migration default", async () => {
-    const runner = createProcessRunner();
-    const {command} = createSetupFixture({
-      runner,
-      phases: [commandPhase((context) => context.runner.run({command: "npm", args: ["ci"]}, {output: "tee", timeoutMs: 7_000}))],
-    });
-
-    await command.invoke(options());
-
-    expect(recordedOptions(runner)).toMatchObject({output: "tee", timeoutMs: 7_000});
-  });
-
-  it("keeps the scoped default for a migrated mutation command instead of the deprecated bridge policy", async () => {
-    const runner = createProcessRunner();
-    const {command} = createSetupFixture({
-      runner,
-      phases: [commandPhase((context) => context.runtime?.runner.run({command: "npm", args: ["ci"]}, {output: "tee"}) ?? Promise.resolve())],
+      phases: [
+        commandPhase((context) => context.runtime?.runner.run({command: "npm", args: ["ci"]}, {output: "tee"}) ?? Promise.resolve()),
+      ],
     });
 
     await command.invoke(options());
@@ -905,7 +848,7 @@ describe("setup phase command execution", () => {
     const {command} = createSetupFixture({
       logger,
       runner,
-      phases: [commandPhase((context) => context.runner.run({command: "dotnet", args: ["--version"]}))],
+      phases: [commandPhase((context) => context.runtime?.runner.run({command: "dotnet", args: ["--version"]}) ?? Promise.resolve())],
     });
 
     await command.run([]);
@@ -922,10 +865,12 @@ describe("setup phase command execution", () => {
       runner,
       phases: [
         commandPhase((context) =>
-          context.runner.run(
-            {command: "dotnet", args: ["user-secrets", "set"]},
-            {input: "super-secret-stdin-payload", env: {SOME_TOKEN: "super-secret-env-value"}},
-          ),
+          context.runtime === undefined
+            ? Promise.resolve()
+            : context.runtime.runner.run(
+                {command: "dotnet", args: ["user-secrets", "set"]},
+                {input: "super-secret-stdin-payload", env: {SOME_TOKEN: "super-secret-env-value"}},
+              ),
         ),
       ],
     });

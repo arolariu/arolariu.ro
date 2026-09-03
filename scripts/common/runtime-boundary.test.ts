@@ -988,31 +988,6 @@ describe("runtime boundary policy", () => {
           "rule": "direct-exit",
         },
         {
-          "file": "scripts/setup.infrastructure.ts",
-          "line": 20,
-          "rule": "ambient-filesystem",
-        },
-        {
-          "file": "scripts/setup.infrastructure.ts",
-          "line": 23,
-          "rule": "legacy-process-import",
-        },
-        {
-          "file": "scripts/setup.infrastructure.ts",
-          "line": 704,
-          "rule": "ambient-os-state",
-        },
-        {
-          "file": "scripts/setup.infrastructure.ts",
-          "line": 705,
-          "rule": "ambient-environment",
-        },
-        {
-          "file": "scripts/setup.types.ts",
-          "line": 17,
-          "rule": "legacy-process-import",
-        },
-        {
           "file": "scripts/test-e2e.ts",
           "line": 11,
           "rule": "ambient-filesystem",
