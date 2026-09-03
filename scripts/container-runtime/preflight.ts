@@ -1,11 +1,29 @@
 /**
  * @fileoverview Preflight checks for local container runtime scripts.
  * @module scripts/container-runtime/preflight
+ *
+ * @remarks
+ * The context-based {@link runContainerPreflight} implementation is the production preflight
+ * path for every migrated declarative container command (Aspire, Compose, Image): it depends
+ * only on the typed {@link ProcessRunner} boundary, never on Node's child-process module
+ * directly. `runSharedPreflight()`, `describeCommandFailure()`, and `exitWithError()` (the last
+ * defined in `types.ts`) stay as deprecated compatibility surfaces for the still-legacy Selfhost
+ * cohort until it migrates in Task 21; `runSharedPreflight()` delegates to
+ * {@link runContainerPreflight} instead of duplicating the check sequence.
  */
 
 import {resolve} from "node:path";
 import {MonorepositoryConsoleLogger, type MonorepositoryLogger} from "../common/logger.ts";
 import {formatCommand, type CommandResult, type CommandRunner} from "../common/process.ts";
+import {
+  AbstractProcessRunner,
+  processFailureEvidence,
+  type ProcessOutcome,
+  type ProcessRequest,
+  type ProcessRunOptions,
+  type ProcessRunner,
+} from "../common/runner.ts";
+import type {RuntimeEnvironment} from "../common/runtime.ts";
 import type {ContainerRuntimeAdapter, RuntimeCommand} from "./adapters.ts";
 import {ContainerRuntimeError} from "./types.ts";
 
@@ -15,6 +33,8 @@ export const requiredLocalPorts = [3000, 3002, 4173, 5000, 5002, 6379, 8081, 808
 /**
  * Builds a human-readable failure detail from a structured command result.
  *
+ * @deprecated Removed when Selfhost migrates in Task 21. Use {@link processFailureEvidence} for
+ * typed {@link ProcessOutcome} failures.
  * @remarks
  * Preserves the `stdout`/`stderr`/`spawnError` distinction all the way to
  * diagnostics text instead of concatenating the fields into one opaque blob
@@ -41,11 +61,35 @@ export function describeCommandFailure(result: Readonly<CommandResult>, fallback
  * streams; this is unrelated to {@link describeCommandFailure}'s
  * stderr-first precedence, which is used only for diagnostic failure text.
  *
- * @param result - Structured command result to inspect.
+ * @param outcome - Process outcome to inspect.
  * @returns Lowercased stdout and stderr joined for substring detection.
  */
-function combinedOutputForBannerDetection(result: Readonly<CommandResult>): string {
-  return `${result.stdout}\n${result.stderr}`.toLowerCase();
+function combinedOutputForBannerDetection(outcome: Readonly<Pick<ProcessOutcome, "stdout" | "stderr">>): string {
+  return `${outcome.stdout}\n${outcome.stderr}`.toLowerCase();
+}
+
+/**
+ * Builds a diagnostic failure detail from a typed process outcome.
+ *
+ * @param outcome - Failed or interrupted process outcome.
+ * @returns The most relevant available diagnostic text, falling back to a kind-specific summary.
+ */
+function describeOutcomeFailure(outcome: Readonly<Exclude<ProcessOutcome, {readonly kind: "succeeded"}>>): string {
+  const evidence = processFailureEvidence(outcome);
+  if (evidence !== "") return evidence;
+
+  switch (outcome.kind) {
+    case "exited":
+      return `exit code ${outcome.exitCode}`;
+    case "signalled":
+      return `terminated by ${outcome.signal}`;
+    case "spawn-failed":
+      return outcome.message;
+    case "timed-out":
+      return outcome.signal === undefined ? "timed out" : `timed out with ${outcome.signal}`;
+    case "cancelled":
+      return outcome.signal === undefined ? "cancelled" : `cancelled by ${outcome.signal}`;
+  }
 }
 
 /**
@@ -63,6 +107,8 @@ export function buildArtifactGenerationCommand(): RuntimeCommand {
 /**
  * Generates required artifacts before local frontend/backend container builds.
  *
+ * @deprecated Removed when Selfhost migrates in Task 21. Migrated commands invoke
+ * `generateArtifactsCommand` directly through `CommandInvoker.invoke` instead.
  * @param runner - Command runner used to execute the generator.
  * @param logger - Logger used for command and child-process output.
  * @throws {ContainerRuntimeError} When generation fails.
@@ -83,28 +129,26 @@ export async function runArtifactGeneration(
  * Verifies a required CLI tool is available.
  *
  * @param tool - CLI tool name to probe.
- * @param runner - Command runner used for probing.
+ * @param runner - Process runner used for probing.
  * @throws {ContainerRuntimeError} When the tool cannot be executed.
  */
-export async function assertToolAvailable(tool: string, runner: CommandRunner): Promise<void> {
-  const result = await runner.run({command: tool, args: ["--version"]});
-  if (result.code !== 0) {
-    throw new ContainerRuntimeError(
-      `Required tool '${tool}' is not available. Output: ${describeCommandFailure(result, `exit code ${result.code}`)}`,
-    );
+export async function assertToolAvailable(tool: string, runner: ProcessRunner): Promise<void> {
+  const outcome = await runner.run({command: tool, args: ["--version"]});
+  if (outcome.kind !== "succeeded") {
+    throw new ContainerRuntimeError(`Required tool '${tool}' is not available. Output: ${describeOutcomeFailure(outcome)}`);
   }
 }
 
 /**
  * Rejects Docker Desktop when it appears as the active Docker-compatible backend.
  *
- * @param runner - Command runner used for probing.
+ * @param runner - Process runner used for probing.
  * @throws {ContainerRuntimeError} When Docker Desktop is detected.
  */
-export async function assertNoDockerDesktopBackend(runner: CommandRunner): Promise<void> {
-  const result = await runner.run({command: "docker", args: ["version"]});
+export async function assertNoDockerDesktopBackend(runner: ProcessRunner): Promise<void> {
+  const outcome = await runner.run({command: "docker", args: ["version"]});
 
-  if (result.code === 0 && combinedOutputForBannerDetection(result).includes("docker desktop")) {
+  if (outcome.kind === "succeeded" && combinedOutputForBannerDetection(outcome).includes("docker desktop")) {
     throw new ContainerRuntimeError(
       "Docker Desktop is the active backend. Stop Docker Desktop and select Rancher Desktop or Podman Desktop.",
     );
@@ -114,19 +158,17 @@ export async function assertNoDockerDesktopBackend(runner: CommandRunner): Promi
 /**
  * Verifies Rancher Desktop owns the Docker-compatible CLI path.
  *
- * @param runner - Command runner used for probing.
+ * @param runner - Process runner used for probing.
  * @throws {ContainerRuntimeError} When the backend is unavailable or Docker Desktop is active.
  */
-export async function assertRancherBackend(runner: CommandRunner): Promise<void> {
-  const result = await runner.run({command: "docker", args: ["version"]});
+export async function assertRancherBackend(runner: ProcessRunner): Promise<void> {
+  const outcome = await runner.run({command: "docker", args: ["version"]});
 
-  if (result.code !== 0) {
-    throw new ContainerRuntimeError(
-      `Rancher Desktop Docker-compatible CLI is not available. Output: ${describeCommandFailure(result, `exit code ${result.code}`)}`,
-    );
+  if (outcome.kind !== "succeeded") {
+    throw new ContainerRuntimeError(`Rancher Desktop Docker-compatible CLI is not available. Output: ${describeOutcomeFailure(outcome)}`);
   }
 
-  if (combinedOutputForBannerDetection(result).includes("docker desktop")) {
+  if (combinedOutputForBannerDetection(outcome).includes("docker desktop")) {
     throw new ContainerRuntimeError(
       "Rancher engine selected but Docker Desktop appears to be active. Start Rancher Desktop in Moby/dockerd mode and stop Docker Desktop.",
     );
@@ -136,19 +178,19 @@ export async function assertRancherBackend(runner: CommandRunner): Promise<void>
 /**
  * Verifies Podman and its Compose provider are available.
  *
- * @param runner - Command runner used for probing.
+ * @param runner - Process runner used for probing.
  * @throws {ContainerRuntimeError} When Podman or Compose support is unavailable.
  */
-export async function assertPodmanBackend(runner: CommandRunner): Promise<void> {
+export async function assertPodmanBackend(runner: ProcessRunner): Promise<void> {
   const podman = await runner.run({command: "podman", args: ["--version"]});
-  if (podman.code !== 0) {
-    throw new ContainerRuntimeError(`Podman is not available. Output: ${describeCommandFailure(podman, `exit code ${podman.code}`)}`);
+  if (podman.kind !== "succeeded") {
+    throw new ContainerRuntimeError(`Podman is not available. Output: ${describeOutcomeFailure(podman)}`);
   }
 
   const compose = await runner.run({command: "podman", args: ["compose", "version"]});
-  if (compose.code !== 0) {
+  if (compose.kind !== "succeeded") {
     throw new ContainerRuntimeError(
-      `Podman Compose provider is not available. Configure Podman Desktop Compose support. Output: ${describeCommandFailure(compose, `exit code ${compose.code}`)}`,
+      `Podman Compose provider is not available. Configure Podman Desktop Compose support. Output: ${describeOutcomeFailure(compose)}`,
     );
   }
 
@@ -166,20 +208,20 @@ export async function assertPodmanBackend(runner: CommandRunner): Promise<void> 
  * Warns when known local containers already exist for the selected engine.
  *
  * @param adapter - Selected runtime adapter.
- * @param runner - Command runner used for probing.
+ * @param runner - Process runner used for probing.
  * @param logger - Logger used for warning output.
  */
 export async function warnOnExistingLocalContainers(
   adapter: ContainerRuntimeAdapter,
-  runner: CommandRunner,
+  runner: ProcessRunner,
   logger: MonorepositoryLogger = new MonorepositoryConsoleLogger("container::preflight"),
 ): Promise<void> {
   const names = ["traefik", "mssql", "cosmosdb", "azurite", "redis", "exp-arolariu-ro", "api-arolariu-ro", "website-arolariu-ro"];
-  const result = await runner.run({command: adapter.primaryCli, args: ["ps", "-a", "--format", "{{.Names}}"]});
+  const outcome = await runner.run({command: adapter.primaryCli, args: ["ps", "-a", "--format", "{{.Names}}"]});
 
-  if (result.code !== 0) return;
+  if (outcome.kind !== "succeeded") return;
 
-  const active = result.stdout
+  const active = outcome.stdout
     .split(/\r?\n/)
     .map((line) => line.trim())
     .filter((line) => line.length > 0);
@@ -190,19 +232,33 @@ export async function warnOnExistingLocalContainers(
   }
 }
 
+/** Capabilities {@link runContainerPreflight} depends on for one preflight run. */
+export interface ContainerPreflightContext {
+  /** Process runner used for every preflight probe. */
+  readonly runner: ProcessRunner;
+  /** Logger used for warning and diagnostic output. */
+  readonly logger: MonorepositoryLogger;
+  /** Immutable snapshot of the ambient environment. */
+  readonly environment: RuntimeEnvironment;
+  /** Cancellation signal threaded into every preflight probe. */
+  readonly signal: AbortSignal;
+}
+
 /**
  * Runs common preflight checks for engine-aware local runtime commands.
  *
+ * @remarks
+ * This is the production preflight path for every migrated declarative container command; the
+ * deprecated {@link runSharedPreflight} overload delegates to this implementation instead of
+ * duplicating the check sequence.
+ *
  * @param adapter - Selected runtime adapter.
- * @param runner - Command runner used for probing.
- * @param logger - Logger used for preflight output.
+ * @param context - Capabilities this preflight run depends on.
  * @throws {ContainerRuntimeError} When required runtime capabilities are missing.
  */
-export async function runSharedPreflight(
-  adapter: ContainerRuntimeAdapter,
-  runner: CommandRunner,
-  logger: MonorepositoryLogger = new MonorepositoryConsoleLogger("container::preflight"),
-): Promise<void> {
+export async function runContainerPreflight(adapter: ContainerRuntimeAdapter, context: Readonly<ContainerPreflightContext>): Promise<void> {
+  const runner = context.runner.scope({signal: context.signal});
+
   await assertToolAvailable(adapter.primaryCli, runner);
 
   if (adapter.engine === "rancher") {
@@ -212,12 +268,95 @@ export async function runSharedPreflight(
     await assertPodmanBackend(runner);
   }
 
-  const composeResult = await runner.run(adapter.compose(["version"]));
-  if (composeResult.code !== 0) {
+  const composeOutcome = await runner.run(adapter.compose(["version"]));
+  if (composeOutcome.kind !== "succeeded") {
     throw new ContainerRuntimeError(
-      `${adapter.displayName} Compose provider is not available. Output: ${describeCommandFailure(composeResult, `exit code ${composeResult.code}`)}`,
+      `${adapter.displayName} Compose provider is not available. Output: ${describeOutcomeFailure(composeOutcome)}`,
     );
   }
 
-  await warnOnExistingLocalContainers(adapter, runner, logger);
+  await warnOnExistingLocalContainers(adapter, runner, context.logger);
+}
+
+/**
+ * Converts a legacy {@link CommandResult} into a typed {@link ProcessOutcome}.
+ *
+ * @param result - Legacy command result to convert.
+ * @returns The equivalent typed process outcome.
+ */
+function toProcessOutcome(result: Readonly<CommandResult>): ProcessOutcome {
+  const output = {stdout: result.stdout, stderr: result.stderr, durationMs: result.durationMs};
+
+  if (result.spawnError !== undefined) {
+    return {...output, kind: "spawn-failed", message: result.spawnError};
+  }
+  if (result.timedOut) {
+    return {...output, kind: "timed-out", ...(result.signal === undefined ? {} : {signal: result.signal})};
+  }
+  if (result.signal !== undefined) {
+    return {...output, kind: "signalled", signal: result.signal};
+  }
+  if (result.code === 0) {
+    return {...output, kind: "succeeded", exitCode: 0};
+  }
+
+  return {...output, kind: "exited", exitCode: result.code};
+}
+
+/** Adapts a legacy {@link CommandRunner} to the typed {@link ProcessRunner} contract. */
+class LegacyProcessRunnerAdapter extends AbstractProcessRunner {
+  readonly #runner: CommandRunner;
+
+  public constructor(runner: CommandRunner) {
+    super();
+    this.#runner = runner;
+  }
+
+  /** {@inheritDoc AbstractProcessRunner.execute} */
+  protected override async execute(request: Readonly<ProcessRequest>, options: Readonly<ProcessRunOptions>): Promise<ProcessOutcome> {
+    return toProcessOutcome(await this.#runner.run(request, options));
+  }
+}
+
+/**
+ * Inert environment snapshot for the deprecated {@link runSharedPreflight} overload.
+ *
+ * @remarks
+ * Never read by {@link runContainerPreflight}'s check sequence; it exists only to satisfy the
+ * {@link ContainerPreflightContext} contract without reading ambient `process.env`/`process.cwd`
+ * state from this still-legacy overload.
+ */
+const legacyPreflightEnvironment: RuntimeEnvironment = {
+  variables: {},
+  cwd: "",
+  executablePath: "",
+  platform: "linux",
+  architecture: "x64",
+  stdinIsTTY: false,
+  stdoutIsTTY: false,
+  isCI: false,
+};
+
+/**
+ * Runs common preflight checks for engine-aware local runtime commands.
+ *
+ * @deprecated Removed when Selfhost migrates in Task 21. Delegates to
+ * {@link runContainerPreflight}; migrated commands call that function directly with their own
+ * runtime capabilities instead.
+ * @param adapter - Selected runtime adapter.
+ * @param runner - Command runner used for probing.
+ * @param logger - Logger used for preflight output.
+ * @throws {ContainerRuntimeError} When required runtime capabilities are missing.
+ */
+export function runSharedPreflight(
+  adapter: ContainerRuntimeAdapter,
+  runner: CommandRunner,
+  logger: MonorepositoryLogger = new MonorepositoryConsoleLogger("container::preflight"),
+): Promise<void> {
+  return runContainerPreflight(adapter, {
+    runner: new LegacyProcessRunnerAdapter(runner),
+    logger,
+    environment: legacyPreflightEnvironment,
+    signal: new AbortController().signal,
+  });
 }

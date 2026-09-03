@@ -763,113 +763,13 @@ describe("runtime boundary policy", () => {
           "rule": "ambient-timer",
         },
         {
-          "file": "scripts/container-runtime/adapters.ts",
-          "line": 6,
-          "rule": "legacy-process-import",
-        },
-        {
-          "file": "scripts/container-runtime/aspire.ts",
-          "line": 8,
-          "rule": "legacy-cli-import",
-        },
-        {
-          "file": "scripts/container-runtime/aspire.ts",
-          "line": 10,
-          "rule": "legacy-process-import",
-        },
-        {
-          "file": "scripts/container-runtime/aspire.ts",
-          "line": 43,
-          "rule": "ambient-environment",
-        },
-        {
-          "file": "scripts/container-runtime/aspire.ts",
-          "line": 93,
-          "rule": "ambient-environment",
-        },
-        {
-          "file": "scripts/container-runtime/aspire.ts",
-          "line": 107,
-          "rule": "ambient-os-state",
-        },
-        {
-          "file": "scripts/container-runtime/aspire.ts",
-          "line": 107,
-          "rule": "manual-entrypoint",
-        },
-        {
-          "file": "scripts/container-runtime/aspire.ts",
-          "line": 111,
-          "rule": "ambient-os-state",
-        },
-        {
-          "file": "scripts/container-runtime/compose.ts",
-          "line": 8,
-          "rule": "legacy-cli-import",
-        },
-        {
-          "file": "scripts/container-runtime/compose.ts",
-          "line": 10,
-          "rule": "legacy-process-import",
-        },
-        {
-          "file": "scripts/container-runtime/compose.ts",
-          "line": 91,
-          "rule": "ambient-environment",
-        },
-        {
-          "file": "scripts/container-runtime/compose.ts",
-          "line": 107,
-          "rule": "ambient-os-state",
-        },
-        {
-          "file": "scripts/container-runtime/compose.ts",
-          "line": 107,
-          "rule": "manual-entrypoint",
-        },
-        {
-          "file": "scripts/container-runtime/compose.ts",
-          "line": 111,
-          "rule": "ambient-os-state",
-        },
-        {
-          "file": "scripts/container-runtime/image.ts",
-          "line": 8,
-          "rule": "legacy-cli-import",
-        },
-        {
-          "file": "scripts/container-runtime/image.ts",
-          "line": 10,
-          "rule": "legacy-process-import",
-        },
-        {
-          "file": "scripts/container-runtime/image.ts",
-          "line": 156,
-          "rule": "ambient-environment",
-        },
-        {
-          "file": "scripts/container-runtime/image.ts",
-          "line": 191,
-          "rule": "ambient-os-state",
-        },
-        {
-          "file": "scripts/container-runtime/image.ts",
-          "line": 191,
-          "rule": "manual-entrypoint",
-        },
-        {
-          "file": "scripts/container-runtime/image.ts",
-          "line": 195,
-          "rule": "ambient-os-state",
-        },
-        {
           "file": "scripts/container-runtime/preflight.ts",
-          "line": 8,
+          "line": 17,
           "rule": "legacy-process-import",
         },
         {
           "file": "scripts/container-runtime/preflight.ts",
-          "line": 58,
+          "line": 102,
           "rule": "ambient-os-state",
         },
         {
@@ -934,7 +834,7 @@ describe("runtime boundary policy", () => {
         },
         {
           "file": "scripts/container-runtime/types.ts",
-          "line": 43,
+          "line": 99,
           "rule": "direct-exit",
         },
       ]

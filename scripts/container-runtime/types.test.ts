@@ -7,6 +7,9 @@ import {afterEach, describe, expect, it} from "vitest";
 import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "../common/logger.ts";
 import {exitWithError} from "./types.ts";
 
+// `exitWithError` is a deprecated compatibility surface kept only for the still-legacy Selfhost
+// cohort (Task 21 removes it); every migrated declarative container command reports failures
+// through its typed `CommandExecution` instead of ambient `process.exitCode`.
 describe("exitWithError", () => {
   afterEach(() => {
     process.exitCode = undefined;

@@ -1,21 +1,20 @@
 /**
- * @fileoverview Tests for engine-aware Compose helper.
+ * @fileoverview Tests for the declarative Compose command.
  * @module scripts/container-runtime/compose.test
  */
 
 import {describe, expect, it} from "vitest";
-import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "../common/logger.ts";
-import type {CommandRunner} from "../common/process.ts";
+import type {ProcessOutcome} from "../common/runner.ts";
+import {createProcessRunner, createTestRuntimeFactory} from "../common/runtime.testing.ts";
 import {getContainerAdapter} from "./adapters.ts";
-import {buildComposeCommand, runComposeCli} from "./compose.ts";
+import {buildComposeCommand, createComposeCommand} from "./compose.ts";
 
-function successfulRunner(commands: string[] = []): CommandRunner {
-  return {
-    run: async (command) => {
-      commands.push([command.command, ...command.args].join(" "));
-      return {code: 0, stdout: "Rancher Desktop", stderr: "", durationMs: 0, timedOut: false};
-    },
-  };
+function succeeded(stdout = ""): ProcessOutcome {
+  return {kind: "succeeded", exitCode: 0, stdout, stderr: "", durationMs: 0};
+}
+
+function exited(code: number): ProcessOutcome {
+  return {kind: "exited", exitCode: code, stdout: "", stderr: "", durationMs: 0};
 }
 
 describe("buildComposeCommand", () => {
@@ -32,61 +31,143 @@ describe("buildComposeCommand", () => {
   });
 });
 
-describe("runComposeCli", () => {
-  it("preserves pass-through argument order and bytes after --", async () => {
-    const commands: string[] = [];
-    const runner = successfulRunner(commands);
+describe("createComposeCommand", () => {
+  it("preserves pass-through argument order and bytes with tee output", async () => {
+    const runner = createProcessRunner();
+    const command = createComposeCommand(createTestRuntimeFactory({runner}));
 
-    await runComposeCli(
-      ["--file", "infra/Local/Storage/docker-compose.yml", "--engine", "rancher", "--", "up", "-d", "--remove-orphans"],
-      {runner},
-    );
+    const execution = await command.invoke({
+      engine: "podman",
+      file: "infra\\Local\\Storage\\docker-compose.yml",
+      passthrough: ["up", "-d"],
+    });
 
-    expect(commands.at(-1)).toBe(
-      "docker compose -f infra/Local/Storage/docker-compose.yml up -d --remove-orphans",
-    );
-  });
-
-  it("rejects a missing --file with the existing usage error", async () => {
-    await expect(runComposeCli(["--engine", "rancher", "--", "up", "-d"], {runner: successfulRunner()})).rejects.toThrow(
-      "Use --file <compose-file> -- <compose arguments>",
-    );
-  });
-
-  it("rejects missing pass-through arguments with the existing usage error", async () => {
-    await expect(
-      runComposeCli(["--file", "infra/Local/Storage/docker-compose.yml", "--engine", "rancher"], {runner: successfulRunner()}),
-    ).rejects.toThrow("Use --file <compose-file> -- <compose arguments>");
-  });
-
-  it("rejects an unknown option instead of exiting silently", async () => {
-    const sink = new InMemoryLoggerSink();
-    const logger = new MonorepositoryConsoleLogger("test", {color: false, sink});
-
-    await expect(runComposeCli(["--bogus"], {runner: successfulRunner(), logger})).rejects.toThrow(/unknown option/iu);
-  });
-
-  it("rejects a missing --file argument instead of exiting silently", async () => {
-    const sink = new InMemoryLoggerSink();
-    const logger = new MonorepositoryConsoleLogger("test", {color: false, sink});
-
-    await expect(runComposeCli(["--file"], {runner: successfulRunner(), logger})).rejects.toThrow(/argument missing/iu);
-  });
-
-  it.each(["--help", "-h", "/h"])("routes %s through the injected logger without executing anything", async (helpFlag) => {
-    const sink = new InMemoryLoggerSink();
-    const logger = new MonorepositoryConsoleLogger("test", {color: false, sink});
-    let executed = false;
-    const runner: CommandRunner = {
-      run: async () => {
-        executed = true;
-        return {code: 0, stdout: "", stderr: "", durationMs: 0, timedOut: false};
+    expect(execution).toMatchObject({status: "completed", exitCode: 0});
+    expect(runner.calls.at(-1)).toMatchObject({
+      request: {
+        command: "podman",
+        args: ["compose", "-f", "infra\\Local\\Storage\\docker-compose.yml", "up", "-d"],
       },
-    };
+      options: {output: "tee"},
+    });
+  });
 
-    await expect(runComposeCli([helpFlag], {runner, logger})).resolves.toBeUndefined();
+  it("runs preflight before invoking Compose", async () => {
+    const runner = createProcessRunner([
+      succeeded(), // docker --version
+      succeeded(), // docker version
+      succeeded(), // docker compose version
+      succeeded(), // docker ps -a
+      succeeded(), // actual compose invocation
+    ]);
+    const command = createComposeCommand(createTestRuntimeFactory({runner}));
 
-    expect(executed).toBe(false);
-    expect(sink.records.some((record) => record.text.includes("Usage:"))).toBe(true);
+    const execution = await command.invoke({
+      engine: "rancher",
+      file: "infra/Local/Storage/docker-compose.yml",
+      passthrough: ["up", "-d", "--remove-orphans"],
+    });
+
+    expect(execution).toMatchObject({
+      status: "completed",
+      exitCode: 0,
+      value: {engine: "rancher", file: "infra/Local/Storage/docker-compose.yml", passthrough: ["up", "-d", "--remove-orphans"]},
+    });
+    expect(runner.calls.map((call) => call.request.command)).toEqual(["docker", "docker", "docker", "docker", "docker"]);
+    expect(runner.calls.at(-1)?.request.args).toEqual([
+      "compose",
+      "-f",
+      "infra/Local/Storage/docker-compose.yml",
+      "up",
+      "-d",
+      "--remove-orphans",
+    ]);
+  });
+
+  it("surfaces a nonzero Compose exit as a failed execution", async () => {
+    const runner = createProcessRunner([succeeded(), succeeded(), succeeded(), succeeded(), exited(1)]);
+    const command = createComposeCommand(createTestRuntimeFactory({runner}));
+
+    const execution = await command.invoke({engine: "rancher", file: "docker-compose.yml", passthrough: ["up", "-d"]});
+
+    expect(execution).toMatchObject({status: "failed", exitCode: 1, failure: {kind: "operational"}});
+  });
+
+  describe("parser lifecycle", () => {
+    it("requires the literal -- delimiter even when trailing tokens are present", async () => {
+      const runner = createProcessRunner();
+      const command = createComposeCommand(createTestRuntimeFactory({runner}));
+
+      const execution = await command.run(["--file", "infra/Local/Storage/docker-compose.yml", "--engine", "rancher", "up"]);
+
+      expect(execution).toMatchObject({status: "failed", exitCode: 2});
+      expect(execution.status === "failed" ? execution.failure.message : "").toBe("Use --file <compose-file> -- <compose arguments>");
+      expect(runner.calls).toHaveLength(0);
+    });
+
+    it("rejects a missing --file with the existing usage error", async () => {
+      const runner = createProcessRunner();
+      const command = createComposeCommand(createTestRuntimeFactory({runner}));
+
+      const execution = await command.run(["--engine", "rancher", "--", "up", "-d"]);
+
+      expect(execution).toMatchObject({status: "failed", exitCode: 2});
+      expect(execution.status === "failed" ? execution.failure.message : "").toBe("Use --file <compose-file> -- <compose arguments>");
+    });
+
+    it("rejects missing pass-through arguments with the existing usage error", async () => {
+      const runner = createProcessRunner();
+      const command = createComposeCommand(createTestRuntimeFactory({runner}));
+
+      const execution = await command.run(["--file", "infra/Local/Storage/docker-compose.yml", "--engine", "rancher"]);
+
+      expect(execution).toMatchObject({status: "failed", exitCode: 2});
+      expect(execution.status === "failed" ? execution.failure.message : "").toBe("Use --file <compose-file> -- <compose arguments>");
+    });
+
+    it("rejects an empty pass-through list after a literal --", async () => {
+      const runner = createProcessRunner();
+      const command = createComposeCommand(createTestRuntimeFactory({runner}));
+
+      const execution = await command.run(["--file", "infra/Local/Storage/docker-compose.yml", "--engine", "rancher", "--"]);
+
+      expect(execution).toMatchObject({status: "failed", exitCode: 2});
+    });
+
+    it("decodes every pass-through byte unchanged through the full CLI parse path", async () => {
+      const runner = createProcessRunner();
+      const command = createComposeCommand(createTestRuntimeFactory({runner}));
+
+      const execution = await command.run([
+        "--file",
+        "infra/Local/Storage/docker-compose.yml",
+        "--engine",
+        "rancher",
+        "--",
+        "up",
+        "-d",
+        "--remove-orphans",
+      ]);
+
+      expect(execution).toMatchObject({status: "completed", exitCode: 0});
+      expect(runner.calls.at(-1)?.request.args).toEqual([
+        "compose",
+        "-f",
+        "infra/Local/Storage/docker-compose.yml",
+        "up",
+        "-d",
+        "--remove-orphans",
+      ]);
+    });
+
+    it("rejects an unknown option as a usage failure instead of throwing", async () => {
+      const runner = createProcessRunner();
+      const command = createComposeCommand(createTestRuntimeFactory({runner}));
+
+      const execution = await command.run(["--bogus"]);
+
+      expect(execution).toMatchObject({status: "failed", exitCode: 2});
+      expect(runner.calls).toHaveLength(0);
+    });
   });
 });

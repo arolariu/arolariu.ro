@@ -1,87 +1,132 @@
 /**
- * @fileoverview Tests for engine-aware Aspire startup.
+ * @fileoverview Tests for the declarative Aspire AppHost startup command.
  * @module scripts/container-runtime/aspire.test
  */
 
 import {describe, expect, it} from "vitest";
-import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "../common/logger.ts";
-import type {CommandRunner} from "../common/process.ts";
+import type {ProcessOutcome} from "../common/runner.ts";
+import {createProcessRunner, createTestRuntimeFactory} from "../common/runtime.testing.ts";
 import {getContainerAdapter} from "./adapters.ts";
-import {buildAspireCommand, runAspire} from "./aspire.ts";
+import {buildAspireCommand, createAspireCommand} from "./aspire.ts";
 
-function successfulRunner(): CommandRunner {
-  return {
-    run: async () => ({code: 0, stdout: "Rancher Desktop", stderr: "", durationMs: 0, timedOut: false}),
-  };
+function succeeded(stdout = ""): ProcessOutcome {
+  return {kind: "succeeded", exitCode: 0, stdout, stderr: "", durationMs: 0};
 }
 
+function exited(code: number): ProcessOutcome {
+  return {kind: "exited", exitCode: code, stdout: "", stderr: "", durationMs: 0};
+}
+
+/** One `succeeded` outcome per Rancher preflight probe: tool, backend, compose, existing containers. */
+const rancherPreflightOutcomes: readonly ProcessOutcome[] = [succeeded(), succeeded(), succeeded(), succeeded()];
+
 describe("buildAspireCommand", () => {
-  it("sets Rancher Aspire runtime", () => {
-    const command = buildAspireCommand(getContainerAdapter("rancher"));
+  it("sets the Rancher Aspire runtime over the supplied base environment", () => {
+    const command = buildAspireCommand(getContainerAdapter("rancher"), {EXISTING: "value"});
 
     expect(command.command).toBe("dotnet");
     expect(command.args).toEqual(["run", "--project", "tooling/AppHost"]);
-    expect(command.env["DOTNET_ASPIRE_CONTAINER_RUNTIME"]).toBe("docker");
+    expect(command.env).toEqual({EXISTING: "value", DOTNET_ASPIRE_CONTAINER_RUNTIME: "docker"});
   });
 
-  it("sets Podman Aspire runtime", () => {
-    const command = buildAspireCommand(getContainerAdapter("podman"));
+  it("sets the Podman Aspire runtime", () => {
+    const command = buildAspireCommand(getContainerAdapter("podman"), {});
 
-    expect(command.command).toBe("dotnet");
-    expect(command.args).toEqual(["run", "--project", "tooling/AppHost"]);
     expect(command.env["DOTNET_ASPIRE_CONTAINER_RUNTIME"]).toBe("podman");
   });
 });
 
-describe("runAspire", () => {
-  it("resolves the requested engine from an explicit CLI argument, not process.argv", async () => {
-    const sink = new InMemoryLoggerSink();
-    const logger = new MonorepositoryConsoleLogger("test", {color: false, sink});
-    const commands: string[] = [];
-    const runner: CommandRunner = {
-      run: async (command) => {
-        commands.push([command.command, ...command.args].join(" "));
-        return {code: 0, stdout: "Rancher Desktop", stderr: "", durationMs: 0, timedOut: false};
-      },
-    };
+describe("createAspireCommand", () => {
+  it("resolves the requested engine, runs preflight, and starts AppHost with inherited output", async () => {
+    const runner = createProcessRunner([...rancherPreflightOutcomes, succeeded()]);
+    const command = createAspireCommand(createTestRuntimeFactory({runner}));
 
-    await runAspire(["--engine", "rancher"], {runner, logger});
+    const execution = await command.invoke({engine: "rancher"});
 
-    expect(commands).toContain("dotnet run --project tooling/AppHost");
+    expect(execution).toMatchObject({status: "completed", exitCode: 0, value: {engine: "rancher"}});
+    expect(runner.calls.at(-1)).toMatchObject({
+      request: {command: "dotnet", args: ["run", "--project", "tooling/AppHost"]},
+      options: {output: "inherit"},
+    });
+    expect(runner.calls.at(-1)?.options.env?.["DOTNET_ASPIRE_CONTAINER_RUNTIME"]).toBe("docker");
   });
 
-  it("rejects an unsupported engine value", async () => {
-    await expect(runAspire(["--engine", "docker"], {runner: successfulRunner()})).rejects.toThrow("Docker Desktop is deprecated");
+  it("runs Podman preflight before starting AppHost", async () => {
+    const runner = createProcessRunner([
+      succeeded(), // podman --version (assertToolAvailable)
+      succeeded(), // docker version (assertNoDockerDesktopBackend)
+      succeeded(), // podman --version (assertPodmanBackend)
+      succeeded("podman-compose version 1.5.0"), // podman compose version (assertPodmanBackend)
+      succeeded("podman-compose version 1.5.0"), // podman compose version (compose provider check)
+      succeeded(), // podman ps -a (warnOnExistingLocalContainers)
+      succeeded(), // dotnet run
+    ]);
+    const command = createAspireCommand(createTestRuntimeFactory({runner}));
+
+    const execution = await command.invoke({engine: "podman"});
+
+    expect(execution).toMatchObject({status: "completed", exitCode: 0, value: {engine: "podman"}});
+    expect(runner.calls.map((call) => call.request.command)).toEqual([
+      "podman",
+      "docker",
+      "podman",
+      "podman",
+      "podman",
+      "podman",
+      "dotnet",
+    ]);
+    expect(runner.calls.at(-1)?.options.env?.["DOTNET_ASPIRE_CONTAINER_RUNTIME"]).toBe("podman");
   });
 
-  it("rejects an unknown option instead of exiting silently", async () => {
-    const sink = new InMemoryLoggerSink();
-    const logger = new MonorepositoryConsoleLogger("test", {color: false, sink});
+  it("surfaces a nonzero AppHost exit as a failed execution", async () => {
+    const runner = createProcessRunner([...rancherPreflightOutcomes, exited(1)]);
+    const command = createAspireCommand(createTestRuntimeFactory({runner}));
 
-    await expect(runAspire(["--bogus"], {runner: successfulRunner(), logger})).rejects.toThrow(/unknown option/iu);
+    const execution = await command.invoke({engine: "rancher"});
+
+    expect(execution).toMatchObject({status: "failed", exitCode: 1, failure: {kind: "operational"}});
   });
 
-  it("rejects a missing --engine argument instead of exiting silently", async () => {
-    const sink = new InMemoryLoggerSink();
-    const logger = new MonorepositoryConsoleLogger("test", {color: false, sink});
+  it("rejects Docker Desktop before starting AppHost", async () => {
+    const runner = createProcessRunner([succeeded("docker version 27.0"), succeeded("Docker Desktop 4.40.0")]);
+    const command = createAspireCommand(createTestRuntimeFactory({runner}));
 
-    await expect(runAspire(["--engine"], {runner: successfulRunner(), logger})).rejects.toThrow(/argument missing/iu);
+    const execution = await command.invoke({engine: "rancher"});
+
+    expect(execution).toMatchObject({status: "failed", exitCode: 1});
+    expect(execution.status === "failed" ? execution.failure.message : "").toContain("Docker Desktop appears to be active");
   });
 
-  it.each(["--help", "-h", "/h"])("routes %s through the injected logger without executing anything", async (helpFlag) => {
-    const sink = new InMemoryLoggerSink();
-    const logger = new MonorepositoryConsoleLogger("test", {color: false, sink});
-    let executed = false;
-    const runner: CommandRunner = {
-      run: async () => {
-        executed = true;
-        return {code: 0, stdout: "", stderr: "", durationMs: 0, timedOut: false};
-      },
-    };
+  it("rejects the deprecated docker engine value as a usage failure", async () => {
+    const runner = createProcessRunner();
+    const command = createAspireCommand(createTestRuntimeFactory({runner}));
 
-    await expect(runAspire([helpFlag], {runner, logger})).resolves.toBeUndefined();
+    const execution = await command.invoke({engine: "docker" as never});
 
-    expect(executed).toBe(false);
-    expect(sink.records.some((record) => record.text.includes("Usage:"))).toBe(true);
+    expect(execution).toMatchObject({status: "failed", exitCode: 1});
+    expect(execution.status === "failed" ? execution.failure.message : "").toContain("Docker Desktop is deprecated");
+    expect(runner.calls).toHaveLength(0);
+  });
+
+  describe("parser lifecycle", () => {
+    it("decodes an explicit --engine argument and starts AppHost", async () => {
+      const runner = createProcessRunner([...rancherPreflightOutcomes, succeeded()]);
+      const command = createAspireCommand(createTestRuntimeFactory({runner}));
+
+      const execution = await command.run(["--engine", "rancher"]);
+
+      expect(execution).toMatchObject({status: "completed", exitCode: 0});
+      expect(runner.calls.at(-1)?.request).toEqual({command: "dotnet", args: ["run", "--project", "tooling/AppHost"]});
+    });
+
+    it("rejects an unknown option as a usage failure instead of throwing", async () => {
+      const runner = createProcessRunner();
+      const command = createAspireCommand(createTestRuntimeFactory({runner}));
+
+      const execution = await command.run(["--bogus"]);
+
+      expect(execution).toMatchObject({status: "failed", exitCode: 2});
+      expect(runner.calls).toHaveLength(0);
+    });
   });
 });
