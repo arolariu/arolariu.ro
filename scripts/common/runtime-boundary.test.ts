@@ -4,10 +4,20 @@
  * @module scripts.common.runtime-boundary.test
  */
 
-import {existsSync, readdirSync, readFileSync} from "node:fs";
-import {join} from "node:path";
+import {existsSync, readFileSync} from "node:fs";
 import ts from "typescript";
 import {describe, expect, it} from "vitest";
+
+import {
+  commanderEntrypointSourcePaths,
+  piscinaRuntimeBoundaryExclusionSourcePaths,
+} from "../testing/architecture/script-entrypoint-definitions.ts";
+import {
+  discoverProductionScriptFiles,
+  discoverScriptSourceFiles,
+  isScriptConfigurationFile,
+  isScriptTestFile,
+} from "../testing/architecture/script-source-files.ts";
 
 type RuntimeBoundaryRule =
   | "execa-import"
@@ -32,15 +42,11 @@ interface RuntimeBoundaryViolation {
 }
 
 const runtimeBoundaryExclusions = new Set([
-  "scripts/format.ts",
-  "scripts/lint.ts",
-  "scripts/workers/format.worker.ts",
-  "scripts/workers/lint.worker.ts",
+  ...piscinaRuntimeBoundaryExclusionSourcePaths,
   "scripts/types/format.ts",
   "scripts/types/lint.ts",
 ]);
 
-const productionScriptExtensions = new Set([".ts", ".js", ".mjs", ".cjs"]);
 const directOutputAdapters = new Set(["scripts/common/logger.ts", "scripts/common/prompts.ts"]);
 
 /**
@@ -49,27 +55,26 @@ const directOutputAdapters = new Set(["scripts/common/logger.ts", "scripts/commo
  * @remarks
  * Each entry must export a typed command singleton and hand direct-entry detection to the shared
  * `runIfMain()` on the command host. The four excluded format/lint entrypoints are deliberately
- * absent: RFC 0002 section 3.2 keeps them on Piscina outside the command runtime.
+ * absent: RFC 0002 section 3.2 keeps them on Piscina outside the command runtime. Derived from the
+ * authoritative {@link commanderEntrypointSourcePaths} inventory instead of a parallel list.
  */
-const directEntrypoints: readonly string[] = [
-  "scripts/container-runtime/aspire.ts",
-  "scripts/container-runtime/compose.ts",
-  "scripts/container-runtime/image.ts",
-  "scripts/container-runtime/selfhost.ts",
-  "scripts/docs-assemble.ts",
-  "scripts/doctor.ts",
-  "scripts/generate.artifacts.ts",
-  "scripts/generate.env.ts",
-  "scripts/generate.gql.ts",
-  "scripts/generate.i18n.ts",
-  "scripts/generate.ts",
-  "scripts/inspection/aggregate-worker.ts",
-  "scripts/inspection/workspace.worker.ts",
-  "scripts/setup.ts",
-  "scripts/status.ts",
-  "scripts/test-e2e.ts",
-  "scripts/update-exchange-rates.ts",
-];
+const directEntrypoints: readonly string[] = commanderEntrypointSourcePaths;
+
+/**
+ * Production script source files scanned by the runtime-boundary, shared-entrypoint, and Doctor
+ * capability policies.
+ *
+ * @remarks
+ * This preserves the current policy surface, including `scripts/common/runtime.testing.ts`, while
+ * excluding only the new non-production `scripts/testing/**` architecture and compatibility
+ * support added by this cohort.
+ */
+const runtimeBoundaryScanSourcePaths = discoverScriptSourceFiles().filter(
+  (sourcePath) =>
+    !isScriptTestFile(sourcePath)
+    && !isScriptConfigurationFile(sourcePath)
+    && !sourcePath.startsWith("scripts/testing/"),
+);
 
 /** Modules deleted with the declarative migration; no production module may reference them again. */
 const removedCompatibilityModules: readonly string[] = [
@@ -146,38 +151,15 @@ function normalizeFilePath(file: string): string {
   return file.replaceAll("\\", "/");
 }
 
-function isTestFile(file: string): boolean {
-  return /\.(?:spec|test)\.(?:cjs|js|mjs|ts)$/.test(file);
-}
-
-function isConfigurationFile(file: string): boolean {
-  return /\.config\.(?:cjs|js|mjs|ts)$/.test(file);
-}
-
-function discoverProductionScripts(directory: string = "scripts"): readonly string[] {
-  const files: string[] = [];
-
-  for (const entry of readdirSync(directory, {withFileTypes: true})) {
-    const path = join(directory, entry.name);
-    if (entry.isDirectory()) {
-      files.push(...discoverProductionScripts(path));
-      continue;
-    }
-
-    const normalizedPath = normalizeFilePath(path);
-    const extension = normalizedPath.slice(normalizedPath.lastIndexOf("."));
-    if (productionScriptExtensions.has(extension) && !isTestFile(normalizedPath) && !isConfigurationFile(normalizedPath)) {
-      files.push(normalizedPath);
-    }
-  }
-
-  return files.toSorted();
-}
-
+/**
+ * Production script source files scanned by the runtime-boundary policy's static AST scan.
+ *
+ * @returns {@link discoverProductionScriptFiles} filtered by the existing runtime-boundary
+ * exclusions; that graph-shaped scan already excludes `runtime.testing.ts` because it is
+ * test-support source.
+ */
 function discoverRuntimeBoundaryProductionScripts(): readonly string[] {
-  return discoverProductionScripts().filter(
-    (file) => file !== "scripts/common/runtime.testing.ts" && !runtimeBoundaryExclusions.has(file),
-  );
+  return discoverProductionScriptFiles().filter((file) => !runtimeBoundaryExclusions.has(file));
 }
 
 function isPropertyNameLike(
@@ -797,7 +779,7 @@ function analyzeCommandEntrypoint(sourceText: string): CommandEntrypointShape {
  * @returns Sorted module paths that call `runIfMain(import.meta.url)`.
  */
 function discoverSharedEntrypointModules(): readonly string[] {
-  return discoverProductionScripts().filter(
+  return runtimeBoundaryScanSourcePaths.filter(
     (file) => analyzeCommandEntrypoint(readFileSync(file, "utf8")).usesSharedRunIfMain,
   );
 }
@@ -835,7 +817,7 @@ function scanDoctorCapabilitySource(file: string, sourceText: string): readonly 
  * @returns Every forbidden Doctor capability import.
  */
 function scanDoctorCapabilities(): readonly DoctorCapabilityViolation[] {
-  return discoverProductionScripts()
+  return runtimeBoundaryScanSourcePaths
     .filter((file) => /^scripts\/doctor[.\w-]*\.ts$/.test(file))
     .flatMap((file) => scanDoctorCapabilitySource(file, readFileSync(file, "utf8")));
 }
@@ -987,7 +969,7 @@ describe("runtime boundary policy", () => {
   });
 
   it("keeps every production script free of direct Execa and child-process imports", () => {
-    const violations = discoverProductionScripts().flatMap((file) =>
+    const violations = runtimeBoundaryScanSourcePaths.flatMap((file) =>
       collectModuleImports(readFileSync(file, "utf8"))
         .filter(
           (moduleImport) =>

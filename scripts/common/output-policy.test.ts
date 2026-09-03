@@ -4,12 +4,12 @@
  * @module scripts.common.output-policy.test
  */
 
-import {existsSync, readdirSync, readFileSync} from "node:fs";
-import {join} from "node:path";
+import {existsSync, readFileSync} from "node:fs";
 import ts from "typescript";
 import {describe, expect, it} from "vitest";
 
-const productionScriptExtensions = new Set([".ts", ".js", ".mjs", ".cjs"]);
+import {discoverScriptSourceFiles, isScriptTestFile} from "../testing/architecture/script-source-files.ts";
+
 const transitionalEntrypoints = new Set<string>();
 const interactiveTerminalAdapters = new Set(["scripts/common/prompts.ts"]);
 
@@ -17,29 +17,21 @@ type AccessPath = readonly string[];
 type AliasScope = Map<string, AccessPath | null>;
 type OutputExpressionPredicate = (expression: ts.Expression, scopes: readonly AliasScope[]) => boolean;
 
-function discoverProductionScripts(directory: string = "scripts"): readonly string[] {
-  const files: string[] = [];
-
-  for (const entry of readdirSync(directory, {withFileTypes: true})) {
-    const path = join(directory, entry.name);
-    if (entry.isDirectory()) {
-      files.push(...discoverProductionScripts(path));
-      continue;
-    }
-
-    const normalizedPath = path.replaceAll("\\", "/");
-    const extension = normalizedPath.slice(normalizedPath.lastIndexOf("."));
-    if (
-      productionScriptExtensions.has(extension)
-      && !/\.(?:spec|test)\.(?:cjs|js|mjs|ts)$/.test(normalizedPath)
-      && normalizedPath !== "scripts/common/logger.ts"
-    ) {
-      files.push(normalizedPath);
-    }
-  }
-
-  return files.toSorted();
-}
+/**
+ * Production script source files scanned by the output-boundary policy.
+ *
+ * @remarks
+ * This intentionally continues scanning `scripts/common/runtime.testing.ts` and
+ * `scripts/vitest.config.ts`; the runtime-graph definition of production must not silently narrow
+ * this direct output policy. Only the new non-production `scripts/testing/**` architecture and
+ * compatibility support is excluded.
+ */
+const outputPolicySourcePaths = discoverScriptSourceFiles().filter(
+  (sourcePath) =>
+    !isScriptTestFile(sourcePath)
+    && !sourcePath.startsWith("scripts/testing/")
+    && sourcePath !== "scripts/common/logger.ts",
+);
 
 function getConfigObjectLiteral(expression: ts.Expression): ts.ObjectLiteralExpression | null {
   if (
@@ -415,7 +407,7 @@ describe("direct output policy", () => {
   });
 
   it("routes production script output through the logger outside transitional entrypoints", () => {
-    const violations = discoverProductionScripts()
+    const violations = outputPolicySourcePaths
       .filter((fileName) => !transitionalEntrypoints.has(fileName))
       .flatMap((fileName) => findForbiddenOutputCalls(readFileSync(fileName, "utf8"), fileName));
 
@@ -451,7 +443,7 @@ describe("direct output policy", () => {
       "fixture.ts:11",
     ]);
 
-    const violations = discoverProductionScripts()
+    const violations = outputPolicySourcePaths
       .filter((fileName) => !interactiveTerminalAdapters.has(fileName))
       .flatMap((fileName) => findPromptTerminalOutputCalls(readFileSync(fileName, "utf8"), fileName));
 

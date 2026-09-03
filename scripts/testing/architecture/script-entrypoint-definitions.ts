@@ -1,0 +1,222 @@
+/**
+ * @fileoverview Authoritative inventory of every script entrypoint and its runtime host.
+ * @module scripts/testing/architecture/script-entrypoint-definitions
+ *
+ * @remarks
+ * This module is the single source of truth mapping each Commander- or Piscina-hosted script
+ * entrypoint to its runtime host kind, role, and owning root `package.json#scripts` names.
+ * `scripts/common/runtime-boundary.test.ts` derives its Commander direct-entrypoint list and its
+ * Piscina runtime-boundary exclusions from this inventory instead of maintaining parallel,
+ * hand-written lists.
+ */
+
+/** The runtime host that starts a script entrypoint. */
+type ScriptEntrypointHostKind = "commander" | "piscina-host" | "piscina-worker";
+
+/** Whether an entrypoint is a user-facing command or an internal worker process. */
+type ScriptEntrypointRole = "public-command" | "internal-worker";
+
+/** One authoritative record describing a single script entrypoint. */
+interface ScriptEntrypointDefinition {
+  /** Forward-slash relative path to the entrypoint's source file. */
+  readonly sourcePath: string;
+  /** Runtime host that starts this entrypoint. */
+  readonly hostKind: ScriptEntrypointHostKind;
+  /** Whether this entrypoint is directly user-facing or an internal worker. */
+  readonly role: ScriptEntrypointRole;
+  /** Exported Commander command singleton name, when the entrypoint hosts one. */
+  readonly exportedCommandName?: string;
+  /** Root `package.json#scripts` names that invoke this entrypoint directly. */
+  readonly packageScriptNames: readonly string[];
+}
+
+/**
+ * The authoritative, exhaustive inventory of every script entrypoint in `scripts/**`.
+ *
+ * @remarks
+ * Every entry's `sourcePath` must exist and be unique, and every `packageScriptNames` entry must
+ * be unique across the whole inventory; `scripts/testing/architecture/script-entrypoint-definitions.test.ts`
+ * enforces both invariants plus parity with root `package.json#scripts`.
+ */
+export const scriptEntrypointDefinitions = [
+  {
+    sourcePath: "scripts/container-runtime/aspire.ts",
+    hostKind: "commander",
+    role: "public-command",
+    exportedCommandName: "aspireCommand",
+    packageScriptNames: ["dev", "dev:aspire", "dev:aspire:podman", "dev:aspire:rancher"],
+  },
+  {
+    sourcePath: "scripts/container-runtime/compose.ts",
+    hostKind: "commander",
+    role: "public-command",
+    exportedCommandName: "composeCommand",
+    packageScriptNames: ["containers:compose"],
+  },
+  {
+    sourcePath: "scripts/container-runtime/image.ts",
+    hostKind: "commander",
+    role: "public-command",
+    exportedCommandName: "imageCommand",
+    packageScriptNames: ["containers:build", "containers:run"],
+  },
+  {
+    sourcePath: "scripts/container-runtime/selfhost.ts",
+    hostKind: "commander",
+    role: "public-command",
+    exportedCommandName: "selfhostCommand",
+    packageScriptNames: ["dev:selfhost", "dev:selfhost:logs", "dev:selfhost:stop"],
+  },
+  {
+    sourcePath: "scripts/docs-assemble.ts",
+    hostKind: "commander",
+    role: "public-command",
+    exportedCommandName: "docsAssembleCommand",
+    packageScriptNames: ["docs:assemble"],
+  },
+  {
+    sourcePath: "scripts/doctor.ts",
+    hostKind: "commander",
+    role: "public-command",
+    exportedCommandName: "doctorCommand",
+    packageScriptNames: ["doctor"],
+  },
+  {
+    sourcePath: "scripts/generate.artifacts.ts",
+    hostKind: "commander",
+    role: "public-command",
+    exportedCommandName: "generateArtifactsCommand",
+    packageScriptNames: [],
+  },
+  {
+    sourcePath: "scripts/generate.env.ts",
+    hostKind: "commander",
+    role: "public-command",
+    exportedCommandName: "generateEnvironmentCommand",
+    packageScriptNames: ["generate:env"],
+  },
+  {
+    sourcePath: "scripts/generate.gql.ts",
+    hostKind: "commander",
+    role: "public-command",
+    exportedCommandName: "generateGraphqlCommand",
+    packageScriptNames: ["generate:gql"],
+  },
+  {
+    sourcePath: "scripts/generate.i18n.ts",
+    hostKind: "commander",
+    role: "public-command",
+    exportedCommandName: "generateI18nCommand",
+    packageScriptNames: ["generate:i18n"],
+  },
+  {
+    sourcePath: "scripts/generate.ts",
+    hostKind: "commander",
+    role: "public-command",
+    exportedCommandName: "generateCommand",
+    packageScriptNames: ["generate", "generate:artifacts"],
+  },
+  {
+    sourcePath: "scripts/setup.ts",
+    hostKind: "commander",
+    role: "public-command",
+    exportedCommandName: "setupCommand",
+    packageScriptNames: ["setup"],
+  },
+  {
+    sourcePath: "scripts/status.ts",
+    hostKind: "commander",
+    role: "public-command",
+    exportedCommandName: "statusCommand",
+    packageScriptNames: ["status"],
+  },
+  {
+    sourcePath: "scripts/test-e2e.ts",
+    hostKind: "commander",
+    role: "public-command",
+    exportedCommandName: "e2eCommand",
+    packageScriptNames: ["test:e2e", "test:e2e:backend", "test:e2e:cv", "test:e2e:frontend"],
+  },
+  {
+    sourcePath: "scripts/update-exchange-rates.ts",
+    hostKind: "commander",
+    role: "public-command",
+    exportedCommandName: "updateExchangeRatesCommand",
+    packageScriptNames: [],
+  },
+  {
+    sourcePath: "scripts/inspection/aggregate-worker.ts",
+    hostKind: "commander",
+    role: "internal-worker",
+    exportedCommandName: "aggregateWorkerCommand",
+    packageScriptNames: [],
+  },
+  {
+    sourcePath: "scripts/inspection/workspace.worker.ts",
+    hostKind: "commander",
+    role: "internal-worker",
+    exportedCommandName: "workspaceWorkerCommand",
+    packageScriptNames: [],
+  },
+  {
+    sourcePath: "scripts/format.ts",
+    hostKind: "piscina-host",
+    role: "public-command",
+    packageScriptNames: [
+      "format",
+      "format:api",
+      "format:components",
+      "format:cv",
+      "format:exp",
+      "format:status",
+      "format:website",
+    ],
+  },
+  {
+    sourcePath: "scripts/lint.ts",
+    hostKind: "piscina-host",
+    role: "public-command",
+    packageScriptNames: [
+      "lint",
+      "lint:api",
+      "lint:components",
+      "lint:cv",
+      "lint:exp",
+      "lint:status",
+      "lint:website",
+    ],
+  },
+  {
+    sourcePath: "scripts/workers/format.worker.ts",
+    hostKind: "piscina-worker",
+    role: "internal-worker",
+    packageScriptNames: [],
+  },
+  {
+    sourcePath: "scripts/workers/lint.worker.ts",
+    hostKind: "piscina-worker",
+    role: "internal-worker",
+    packageScriptNames: [],
+  },
+] as const satisfies readonly ScriptEntrypointDefinition[];
+
+/**
+ * Every entrypoint source path started directly through the declarative Commander command
+ * runtime, sorted and deduplicated.
+ */
+export const commanderEntrypointSourcePaths: readonly string[] = scriptEntrypointDefinitions
+  .filter(({hostKind}) => hostKind === "commander")
+  .map(({sourcePath}) => sourcePath)
+  .toSorted();
+
+/**
+ * Every entrypoint source path excluded from the Commander runtime boundary scan because it runs
+ * on Piscina (host or worker) instead, sorted and deduplicated.
+ */
+export const piscinaRuntimeBoundaryExclusionSourcePaths: readonly string[] = scriptEntrypointDefinitions
+  .filter(({hostKind}) => hostKind !== "commander")
+  .map(({sourcePath}) => sourcePath)
+  .toSorted();
+
+/** Additional non-discoverable script source roots tracked outside the recursive file walk. */
+export const additionalScriptSourceRootPaths = ["scripts/types/envinfo.d.ts"] as const;
