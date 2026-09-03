@@ -841,7 +841,7 @@ const statusEslintConfig: Config = defineConfig({
 const toolingOutputConfig: Config = defineConfig({
   name: "[@arolariu/tooling-output]",
   files: ["scripts/**/*.{ts,js,mjs,cjs}"],
-  ignores: ["scripts/**/*.test.ts", "scripts/common/logger.ts"],
+  ignores: ["scripts/**/*.test.ts", "scripts/common/logger.ts", "scripts/testing/architecture/report-*.ts"],
   languageOptions: {
     parser: tseslint.parser,
     ecmaVersion: "latest",
@@ -864,7 +864,12 @@ const toolingOutputConfig: Config = defineConfig({
 const toolingPromptOutputConfig: Config = defineConfig({
   name: "[@arolariu/tooling-prompt-output]",
   files: ["scripts/**/*.{ts,js,mjs,cjs}"],
-  ignores: ["scripts/**/*.test.ts", "scripts/common/logger.ts", "scripts/common/prompts.ts"],
+  ignores: [
+    "scripts/**/*.test.ts",
+    "scripts/common/logger.ts",
+    "scripts/common/prompts.ts",
+    "scripts/testing/architecture/report-*.ts",
+  ],
   languageOptions: {
     parser: tseslint.parser,
     ecmaVersion: "latest",

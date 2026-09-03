@@ -90,6 +90,7 @@
     "test:scripts": "vitest run --config scripts/vitest.config.ts",
     "typecheck:scripts": "tsc --project scripts/tsconfig.json --pretty false",
     "analyze:scripts:unused": "knip --config knip.config.ts --workspace . --no-progress",
+    "analyze:scripts:loc": "node scripts/testing/architecture/report-maintained-source-lines.ts",
     "generate": "node scripts/generate.ts",
     "generate:artifacts": "node scripts/generate.ts /a",
     "generate:env": "node scripts/generate.env.ts",

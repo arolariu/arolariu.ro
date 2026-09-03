@@ -352,6 +352,15 @@ describe("direct output policy", () => {
     expect(ignores).not.toContain("scripts/setup.ts");
   });
 
+  it("allows raw streams only for architecture JSON reporters", () => {
+    const architectureReportPattern = "scripts/testing/architecture/report-*.ts";
+    const outputIgnores = readConfigStringArrayProperty("eslint.config.ts", "toolingOutputConfig", "ignores");
+    const promptIgnores = readConfigStringArrayProperty("eslint.config.ts", "toolingPromptOutputConfig", "ignores");
+
+    expect(outputIgnores).toContain(architectureReportPattern);
+    expect(promptIgnores).toContain(architectureReportPattern);
+  });
+
   it("keeps process restrictions when the prompt ESLint policy is applied later", () => {
     const outputMessages = readRestrictedSyntaxMessages("eslint.config.ts", "toolingOutputConfig");
     const promptMessages = readRestrictedSyntaxMessages("eslint.config.ts", "toolingPromptOutputConfig");

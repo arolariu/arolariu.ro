@@ -28,6 +28,7 @@ export default defineConfig({
         ...additionalScriptSourceRootPaths,
         "scripts/**/*.test.{ts,tsx,js,mjs,cjs}",
         "scripts/vitest.config.ts",
+        "scripts/testing/architecture/report-*.ts",
       ],
       project: ["scripts/**/*.{ts,tsx,js,mjs,cjs}"],
       ignore: [".github/scripts/**"],

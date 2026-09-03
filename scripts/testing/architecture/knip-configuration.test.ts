@@ -26,6 +26,7 @@ describe("Knip configuration", () => {
     for (const sourcePath of additionalScriptSourceRootPaths) {
       expect(configuredEntries).toContain(sourcePath);
     }
+    expect(configuredEntries).toContain("scripts/testing/architecture/report-*.ts");
 
     expect(rootWorkspace?.project).toEqual(["scripts/**/*.{ts,tsx,js,mjs,cjs}"]);
     expect(knipConfiguration.ignore).toBeUndefined();
