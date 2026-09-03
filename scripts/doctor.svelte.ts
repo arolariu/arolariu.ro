@@ -21,6 +21,19 @@ const SITE_ENGINE_PATTERN = /^>=(0|[1-9]\d*)(?:\.(0|[1-9]\d*))?$/u;
 
 const SVELTE_INSPECTION_RESOLUTION_FIX = "Resolve the reported Svelte inspection problem, then rerun doctor.";
 
+const SVELTE_PROJECT_PACKAGE_NAMES = {
+  cv: "@arolariu/cv",
+  status: "@arolariu/status",
+} as const satisfies Readonly<Record<SvelteProjectId, string>>;
+
+function qualifyProjectDiagnosticNames(
+  projectId: SvelteProjectId,
+  results: readonly DiagnosticResult[],
+): readonly DiagnosticResult[] {
+  const packageName = SVELTE_PROJECT_PACKAGE_NAMES[projectId];
+  return results.map((result) => ({...result, name: `${packageName}: ${result.name}`}));
+}
+
 function diagnostic(
   context: Readonly<DoctorContext>,
   startedAt: number,
@@ -365,20 +378,20 @@ export async function inspectSvelteProject(
   outcome: InspectionOutcome<SvelteFacts>,
 ): Promise<readonly DiagnosticResult[]> {
   if (outcome.kind === "unavailable") {
-    return degradedResults(context, projectId, [outcome.reason]);
+    return qualifyProjectDiagnosticNames(projectId, degradedResults(context, projectId, [outcome.reason]));
   }
   if (outcome.kind === "invalid") {
-    return degradedResults(context, projectId, outcome.issues);
+    return qualifyProjectDiagnosticNames(projectId, degradedResults(context, projectId, outcome.issues));
   }
 
   const facts = outcome.value;
-  return [
+  return qualifyProjectDiagnosticNames(projectId, [
     diagnosePackages(context, projectId, facts),
     diagnoseNodeEngine(context, projectId, facts),
     diagnoseScripts(context, projectId, facts),
     diagnoseGeneratedState(context, projectId, facts),
     diagnoseAdapter(context, projectId, facts),
-  ];
+  ]);
 }
 
 /** Read-only SvelteKit diagnostic module covering the CV and status sites, sourced exclusively from shared `SvelteFacts`. */

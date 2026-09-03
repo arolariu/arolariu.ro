@@ -194,6 +194,25 @@ describe("svelteDoctorModule", () => {
     expect(fixture.inspect).toHaveBeenCalledTimes(2);
   });
 
+  it("uses package-qualified names to distinguish CV and status diagnostics", async () => {
+    const fixture = createSvelteFixture();
+
+    const results = await svelteDoctorModule.run(fixture.context);
+
+    expect(results.map(({name}) => name)).toEqual([
+      "@arolariu/cv: SvelteKit ecosystem packages",
+      "@arolariu/cv: SvelteKit Node.js engine compatibility",
+      "@arolariu/cv: SvelteKit lifecycle scripts",
+      "@arolariu/cv: SvelteKit generated local state",
+      "@arolariu/cv: SvelteKit adapter configuration",
+      "@arolariu/status: SvelteKit ecosystem packages",
+      "@arolariu/status: SvelteKit Node.js engine compatibility",
+      "@arolariu/status: SvelteKit lifecycle scripts",
+      "@arolariu/status: SvelteKit generated local state",
+      "@arolariu/status: SvelteKit adapter configuration",
+    ]);
+  });
+
   it("produces degraded results when cv inspection is unavailable", async () => {
     const fixture = createSvelteFixture({
       cvOutcome: {kind: "unavailable", reason: "The CV Svelte inspection worker crashed.", durationMs: 0},
@@ -222,6 +241,9 @@ describe("svelteDoctorModule", () => {
     ]) {
       expect(resultById(results, id).status, `${id} should pass`).toBe("pass");
     }
+    expect(resultById(results, "svelte.cv.node-engine").name).toBe(
+      "@arolariu/cv: SvelteKit Node.js engine compatibility",
+    );
   });
 
   it("produces degraded results when status inspection is invalid", async () => {
@@ -255,6 +277,7 @@ describe("svelteDoctorModule", () => {
     ]) {
       expect(resultById(results, id).status, `${id} should pass`).toBe("pass");
     }
+    expect(resultById(results, "svelte.status.packages").name).toBe("@arolariu/status: SvelteKit ecosystem packages");
     expect(() => createDoctorReport(results, "2026-08-31T00:00:00.000Z")).not.toThrow();
   });
 
@@ -276,6 +299,12 @@ describe("svelteDoctorModule", () => {
 
     expect(resultById(results, "svelte.cv.node-engine").status).toBe("skipped");
     expect(resultById(results, "svelte.status.node-engine").status).toBe("skipped");
+    expect(resultById(results, "svelte.cv.node-engine").name).toBe(
+      "@arolariu/cv: SvelteKit Node.js engine compatibility",
+    );
+    expect(resultById(results, "svelte.status.node-engine").name).toBe(
+      "@arolariu/status: SvelteKit Node.js engine compatibility",
+    );
     // Independent checks still evaluate from the available facts.
     expect(resultById(results, "svelte.cv.packages").status).toBe("pass");
     expect(resultById(results, "svelte.status.scripts").status).toBe("pass");
