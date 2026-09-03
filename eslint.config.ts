@@ -924,11 +924,10 @@ const doctorReadOnlyConfig: Config = defineConfig({
 })[0] as Config;
 
 /**
- * Bans direct runtime imports of `defaultCommandRunner` and `CommandRunner` from
- * `./common/process.ts`, every import of the Node runtime adapter and the Execa runner adapter,
- * and the unrestricted `ProcessRunner` contract in doctor specialist modules: those modules
- * receive only the narrow read-only capabilities carried by `DoctorContext`. `doctor.ts` (the
- * sole orchestrator wiring point) is excluded; all `*.test.ts` files are also excluded.
+ * Bans every import of the Node runtime adapter and the Execa runner adapter, plus the
+ * unrestricted `ProcessRunner` contract, in doctor specialist modules: those modules receive only
+ * the narrow read-only capabilities carried by `DoctorContext`. `doctor.ts` (the sole orchestrator
+ * wiring point) is excluded; all `*.test.ts` files are also excluded.
  *
  * Because flat config merges later entries on top of earlier ones for the same rule, this
  * config must include the shared read-only paths or it would silently replace them.
@@ -943,12 +942,6 @@ const doctorModuleIsolationConfig: Config = defineConfig({
       {
         paths: [
           ...doctorReadOnlyPaths,
-          {
-            name: "./common/process.ts",
-            importNames: ["defaultCommandRunner", "CommandRunner"],
-            message:
-              "Doctor specialist modules must obtain the command runner through context.probes, not directly from ./common/process.ts.",
-          },
           {
             name: "./common/runtime.node.ts",
             message: "Doctor specialist modules must never import the Node runtime adapter; capabilities arrive through DoctorContext.",
@@ -982,74 +975,10 @@ for (const individualEslintConfig of projectEslintConfig) {
     : [...eslintPathsIgnoreList];
 }
 
-/**
- * Bans direct `node:child_process`, `child_process`, and `execa` imports across all production
- * scripts except `scripts/common/runner.execa.ts` (the sole Execa boundary). Every command must
- * go through the shared runner contracts or the deprecated legacy compatibility facade. Test files
- * are excluded so black-box contract tests can spawn child processes.
- *
- * Because flat config replaces the entire `no-restricted-imports` rule value when multiple
- * configs match the same file, this single block covers both child_process and execa so
- * neither is silently dropped by a later override. `scripts/common/process.ts` is handled
- * by `toolingProcessBoundaryConfig` below, which keeps the legacy child_process restriction
- * without allowing direct Execa access.
- */
-const toolingExecaBoundaryConfig: Config = defineConfig({
-  name: "[@arolariu/tooling-execa-boundary]",
-  files: ["scripts/**/*.ts"],
-  ignores: ["scripts/**/*.test.ts", "scripts/common/runner.execa.ts"],
-  languageOptions: {
-    parser: tseslint.parser,
-    ecmaVersion: "latest",
-    sourceType: "module",
-    globals: globals.node,
-  },
-  rules: {
-    "no-restricted-imports": [
-      "error",
-      {
-        paths: [
-          {name: "node:child_process", message: "Use the shared command runners in scripts/common/process.ts or scripts/common/runner.execa.ts instead of node:child_process."},
-          {name: "child_process", message: "Use the shared command runners in scripts/common/process.ts or scripts/common/runner.execa.ts instead of child_process."},
-          {name: "execa", message: "Only scripts/common/runner.execa.ts may import execa; use the shared runner contracts instead."},
-        ],
-      },
-    ],
-  },
-})[0] as Config;
-
-/**
- * Bans `node:child_process` and `child_process` in `scripts/common/process.ts`.
- * The process adapter may use Execa but must not bypass it with direct child_process imports.
- */
-const toolingProcessBoundaryConfig: Config = defineConfig({
-  name: "[@arolariu/tooling-process-boundary]",
-  files: ["scripts/common/process.ts"],
-  languageOptions: {
-    parser: tseslint.parser,
-    ecmaVersion: "latest",
-    sourceType: "module",
-    globals: globals.node,
-  },
-  rules: {
-    "no-restricted-imports": [
-      "error",
-      {
-        paths: [
-          {name: "node:child_process", message: "The process adapter must not import node:child_process; use execa instead."},
-          {name: "child_process", message: "The process adapter must not import child_process; use execa instead."},
-        ],
-      },
-    ],
-  },
-})[0] as Config;
-
 const eslintConfig = defineConfig(
   projectEslintConfig,
   toolingOutputConfig,
   toolingPromptOutputConfig,
-  toolingProcessBoundaryConfig,
-  toolingExecaBoundaryConfig,
   doctorReadOnlyConfig,
   doctorModuleIsolationConfig,
 );

@@ -692,6 +692,35 @@ describe("nodeLoggerRuntimeHost", () => {
     expect(nodeLoggerRuntimeHost.noColor).toBe(Object.hasOwn(environment.variables, "NO_COLOR"));
   });
 
+  it("keeps the snapshotted terminal and color inputs stable when ambient state changes later", () => {
+    const snapshot = {stdoutIsTTY: nodeLoggerRuntimeHost.stdoutIsTTY, noColor: nodeLoggerRuntimeHost.noColor};
+    const stdoutIsTTYDescriptor = Object.getOwnPropertyDescriptor(process.stdout, "isTTY");
+    const hadNoColor = Object.hasOwn(process.env, "NO_COLOR");
+
+    try {
+      Object.defineProperty(process.stdout, "isTTY", {configurable: true, value: !snapshot.stdoutIsTTY});
+      if (hadNoColor) {
+        Reflect.deleteProperty(process.env, "NO_COLOR");
+      } else {
+        process.env["NO_COLOR"] = "1";
+      }
+
+      expect({stdoutIsTTY: nodeLoggerRuntimeHost.stdoutIsTTY, noColor: nodeLoggerRuntimeHost.noColor}).toEqual(snapshot);
+    } finally {
+      if (stdoutIsTTYDescriptor === undefined) {
+        Reflect.deleteProperty(process.stdout, "isTTY");
+      } else {
+        Object.defineProperty(process.stdout, "isTTY", stdoutIsTTYDescriptor);
+      }
+
+      if (hadNoColor) {
+        process.env["NO_COLOR"] = "1";
+      } else {
+        Reflect.deleteProperty(process.env, "NO_COLOR");
+      }
+    }
+  });
+
   it("schedules and cancels a native interval behind the scheduled-interval handle", () => {
     vi.useFakeTimers();
     try {
@@ -705,8 +734,24 @@ describe("nodeLoggerRuntimeHost", () => {
       vi.advanceTimersByTime(160);
 
       expect(ticks).toBe(2);
+      expect(vi.getTimerCount()).toBe(0);
     } finally {
       vi.useRealTimers();
+    }
+  });
+
+  it("releases the event-loop hold of every scheduled interval it unreferences", () => {
+    const countReferencedTimers = (): number =>
+      process.getActiveResourcesInfo().filter((resource) => resource === "Timeout").length;
+    const baseline = countReferencedTimers();
+    const interval = nodeLoggerRuntimeHost.scheduleInterval(() => undefined, 80);
+
+    try {
+      expect(countReferencedTimers()).toBe(baseline + 1);
+      interval.unref();
+      expect(countReferencedTimers()).toBe(baseline);
+    } finally {
+      interval.cancel();
     }
   });
 });

@@ -96,9 +96,11 @@ export interface LoggerOptions {
    * Terminal policy and timer scheduling supplied by the runtime.
    *
    * @remarks
-   * Transitional: when omitted, the logger falls back to ambient `process.stdout.isTTY`,
-   * `process.env.NO_COLOR`, and native `setInterval` so unmigrated command entrypoints stay
-   * behavior-compatible. The production runtime always supplies a host.
+   * When omitted, the logger uses a deterministic non-TTY, no-color, no-interval host: it emits
+   * no spinner frames, no ANSI styling, and schedules nothing. Production commands receive the
+   * Node host from `runtime.node.ts`; tests that exercise color or animated progress inject an
+   * explicit fake host. The logger itself never reads ambient terminal, environment, or timer
+   * state.
    */
   readonly runtimeHost?: LoggerRuntimeHost;
 }
@@ -146,32 +148,22 @@ const REDACTION_MARKER = "[REDACTED]";
 const PROGRESS_INTERVAL_MS = 80;
 
 /**
- * Builds the transitional {@link LoggerRuntimeHost} used when no host is injected.
+ * Deterministic {@link LoggerRuntimeHost} used when no host is injected.
  *
  * @remarks
- * This is the only place `logger.ts` still reads ambient terminal state, `NO_COLOR`, and native
- * timers. It exists so unmigrated command entrypoints keep their current behavior while the
- * migration cohorts route every command through an injected runtime host.
- *
- * @returns A host reflecting the current ambient terminal and timer facilities.
+ * Library-only and test construction must never depend on ambient terminal state, `NO_COLOR`, or
+ * native timers, so the omitted host reports a non-interactive, colorless terminal and schedules
+ * nothing. Every production logger receives `nodeLoggerRuntimeHost` from `runtime.node.ts`
+ * instead, which is the sole place real TTY, `NO_COLOR`, and `setInterval` access lives.
  */
-function createAmbientLoggerRuntimeHost(): LoggerRuntimeHost {
-  return {
-    stdoutIsTTY: process.stdout.isTTY === true,
-    noColor: Object.hasOwn(process.env, "NO_COLOR"),
-    scheduleInterval: (callback: () => void, intervalMs: number): LoggerScheduledInterval => {
-      const timer = setInterval(callback, intervalMs);
-      return {
-        cancel: (): void => {
-          clearInterval(timer);
-        },
-        unref: (): void => {
-          timer.unref();
-        },
-      };
-    },
-  };
-}
+const INERT_LOGGER_RUNTIME_HOST: LoggerRuntimeHost = {
+  stdoutIsTTY: false,
+  noColor: true,
+  scheduleInterval: (): LoggerScheduledInterval => ({
+    cancel: (): void => undefined,
+    unref: (): void => undefined,
+  }),
+};
 
 /**
  * Writes rendered logger output to the process console and output streams.
@@ -357,7 +349,7 @@ export class MonorepositoryConsoleLogger extends MonorepositoryLogger {
     }
 
     const mode = options.mode ?? "human";
-    const runtimeHost = options.runtimeHost ?? createAmbientLoggerRuntimeHost();
+    const runtimeHost = options.runtimeHost ?? INERT_LOGGER_RUNTIME_HOST;
     const tty = runtimeHost.stdoutIsTTY;
     const colorAllowed = tty && options.color !== false && !runtimeHost.noColor;
     const redactions = new Set<string>();

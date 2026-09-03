@@ -1111,6 +1111,12 @@ function. The child runtime reuses `context.runtime.inspection`. Status accepts
 both `completed` exit codes, consumes `health.value`, and treats `failed` or
 `cancelled` as command-execution failures.
 
+**Implemented.** Health is therefore the one Status section that is not
+degradation-tolerant: a `failed`, `cancelled`, or `help` Doctor outcome becomes
+a Status command failure or cancellation and renders no document at all, rather
+than a `null` health section. The five collector sections (`workspaces`,
+`nxEdges`, `git`, `security`, `disk`) remain individually nullable.
+
 ---
 
 ## 10. Architecture Enforcement
@@ -1434,6 +1440,37 @@ Implementation uses one plan with eight reversible cohorts.
 - update `scripts/README.md`, `DEVELOPMENT.md`, command help examples, and this
   RFC.
 
+**Implemented.** `common/cli.ts`, `common/process.ts`, and their three test
+files are deleted, and no production or test module imports them; the
+`legacy-cli-import`/`legacy-process-import` rules stay in the architecture scan
+so neither can return. `runWithSpinner()` is gone along with the module-level
+`isProductionEnvironment`/`isAzureInfrastructure`/`isVerboseMode`/`isInCI`
+environment flags. `common/index.ts` now holds only the byte-size, duration,
+worker-lifecycle, progress, and timeline presentation that the excluded
+format/lint pair shares (plus `formatBytes` for Status); `formatTimestamp`,
+`logWorkerSpawn`, and `logWorkerComplete` take an explicit `Date`, so that
+module reads no clock and no environment of its own.
+
+`MonorepositoryConsoleLogger` no longer has an ambient fallback: an omitted
+`LoggerOptions.runtimeHost` is a deterministic non-TTY, no-color, no-interval
+host. `runtime.node.ts` owns the only host that reads real TTY state,
+`NO_COLOR`, and native `setInterval`, and every production logger — including
+the excluded `format.ts`/`lint.ts` orchestrators and the `common/index.ts`
+presentation helpers they share — receives it explicitly.
+
+`toolingExecaBoundaryConfig` and `toolingProcessBoundaryConfig` are removed;
+`runtime-boundary.test.ts` now scans **every** production script, including the
+six format/lint exclusions, for direct Execa and `child_process` imports, which
+is strictly wider than the deleted rules. The output, prompt, and Doctor
+read-only ESLint restrictions are retained.
+
+The architecture scan reports zero production runtime-boundary debt and
+additionally asserts: every direct entrypoint exports a `MonorepoCommand`
+singleton and uses shared `runIfMain()`; no production module performs manual
+direct-entry detection or direct process exit; Doctor modules take only
+read-only and opaque capabilities; `workers/shell.ts` uses the generic process
+runner; and the exclusion list is exactly the six approved format/lint files.
+
 ### 15.9 Rollback
 
 Compatibility exports keep each intermediate cohort reversible.
@@ -1446,6 +1483,10 @@ If a cohort fails:
 4. do not remove old files until every caller and test has moved.
 
 No cohort changes package script names or requires a root CLI.
+
+**Implemented.** Cohort 8 removed the last compatibility exports, so rollback
+after that cohort is a revert of its commit rather than a re-import of
+`cli.ts`/`process.ts`.
 
 ---
 
@@ -1521,6 +1562,15 @@ Implementation updates:
 The RFC index keeps RFC 0002 as the canonical process/tooling architecture
 record.
 
+**Implemented.** `scripts/README.md` documents command definition anatomy,
+production singletons and their typed factory seams, `run()`/`invoke()`/
+`runIfMain()`, the completed exit `1` with typed output, runner outcome
+switching and `expectSuccess()`, capability profiles and child scope ownership,
+JSON/human/silent output, cancellation and cleanup, the format/lint exclusion
+and the `workers/shell.ts` exception, and the exact targeted test commands.
+`DEVELOPMENT.md` documents the resulting help, exit-code, cancellation, and
+composition behavior of the root scripts. No JSDoc names a deleted symbol.
+
 ---
 
 ## 18. Success Criteria
@@ -1540,7 +1590,8 @@ The redesign is complete when:
 7. Execa types do not escape `runner.execa.ts`;
 8. Doctor remains repository-read-only and its modules retain opaque probes;
 9. Setup retains consent, dry-run, invalidation, and postcondition behavior;
-10. Status retains nullable degradation and single-document JSON behavior;
+10. Status retains nullable degradation of its collector sections and
+    single-document JSON behavior;
 11. generator, documentation, E2E, exchange-rate, and container business
     contracts remain covered;
 12. logger redaction prevents secrets from reaching command, HTTP, filesystem,
@@ -1552,6 +1603,8 @@ The redesign is complete when:
 16. command runtime, runner, capability, architecture, command-family, and
     black-box tests pass;
 17. the repository builds and type-checks with no explicit TypeScript `any`.
+
+**Implemented.** All seventeen criteria are satisfied at the end of Cohort 8.
 
 ---
 
@@ -1581,6 +1634,6 @@ The following are intentionally deferred:
 
 ---
 
-**Document Version**: 2.0.0
-**Last Updated**: 2026-09-01
+**Document Version**: 2.1.0
+**Last Updated**: 2026-09-03
 **Status**: Accepted

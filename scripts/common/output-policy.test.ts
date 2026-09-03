@@ -1,14 +1,13 @@
 // @vitest-environment node
 /**
- * @fileoverview AST policy tests for direct monorepository script output and process-import boundaries.
+ * @fileoverview AST policy tests for direct monorepository script output boundaries.
  * @module scripts.common.output-policy.test
  */
 
-import {execFileSync} from "node:child_process";
 import {existsSync, readdirSync, readFileSync} from "node:fs";
 import {join} from "node:path";
 import ts from "typescript";
-import {beforeAll, describe, expect, it} from "vitest";
+import {describe, expect, it} from "vitest";
 
 const productionScriptExtensions = new Set([".ts", ".js", ".mjs", ".cjs"]);
 const transitionalEntrypoints = new Set<string>();
@@ -457,89 +456,5 @@ describe("direct output policy", () => {
       .flatMap((fileName) => findPromptTerminalOutputCalls(readFileSync(fileName, "utf8"), fileName));
 
     expect(violations).toEqual([]);
-  });
-});
-
-// ============================================================================
-// Process-import boundary policy
-// ============================================================================
-
-/**
- * Virtual fixture sources for the process-import boundary ESLint policy.
- * Each entry is [label, code, filename, expectViolation].
- *
- * A single Node.js subprocess loads the ESLint config once and lints every
- * source, reusing the same batched pattern as doctor.readonly.test.ts.
- */
-const PROCESS_BOUNDARY_CASES: readonly [string, string, string, boolean][] = [
-  // Production scripts cannot import node:child_process or child_process
-  ["prod-node:child_process", 'import {spawn} from "node:child_process";', "scripts/setup.ts", true],
-  ["prod-child_process", 'import {execFile} from "child_process";', "scripts/doctor.ts", true],
-  ["prod-worker-child_process", 'import {fork} from "node:child_process";', "scripts/workers/shell.ts", true],
-  ["prod-generator-child_process", 'import {exec} from "node:child_process";', "scripts/generate.ts", true],
-  ["prod-container-child_process", 'import {spawn} from "node:child_process";', "scripts/container-runtime/aspire.ts", true],
-  ["prod-inspection-child_process", 'import {execFile} from "node:child_process";', "scripts/inspection/workspace.ts", true],
-
-  // Production scripts outside runner.execa.ts cannot import execa
-  ["prod-execa-setup", 'import {execa} from "execa";', "scripts/setup.ts", true],
-  ["prod-execa-doctor", 'import {execa} from "execa";', "scripts/doctor.ts", true],
-  ["prod-execa-status", 'import {execa} from "execa";', "scripts/status.ts", true],
-  ["prod-execa-worker", 'import {execa} from "execa";', "scripts/workers/shell.ts", true],
-  ["prod-execa-container", 'import {execa} from "execa";', "scripts/container-runtime/aspire.ts", true],
-
-  // runner.execa.ts may import execa
-  ["runner-execa-allowed", 'import {execa} from "execa";', "scripts/common/runner.execa.ts", false],
-  ["process-execa-banned", 'import {execa} from "execa";', "scripts/common/process.ts", true],
-
-  // process.ts still cannot import node:child_process
-  ["process-child_process-banned", 'import {spawn} from "node:child_process";', "scripts/common/process.ts", true],
-  ["process-child_process-bare-banned", 'import {execFile} from "child_process";', "scripts/common/process.ts", true],
-
-  // Test files may use child_process and execa
-  ["test-child_process-allowed", 'import {execFileSync} from "node:child_process";', "scripts/common/process.test.ts", false],
-  ["test-execa-allowed", 'import {execa} from "execa";', "scripts/setup.test.ts", false],
-];
-
-/**
- * Runs all process-boundary lint cases in a single Node.js subprocess.
- * Returns a label → no-restricted-imports violation count map.
- */
-function runProcessBoundaryLintBatch(): ReadonlyMap<string, number> {
-  const casesJson = JSON.stringify(PROCESS_BOUNDARY_CASES.map(([label, code, filename]) => [label, code, filename]));
-  const script = `
-    import {ESLint} from "eslint";
-    const eslint = new ESLint();
-    const cases = ${casesJson};
-    const out = {};
-    for (const [label, code, filename] of cases) {
-      const r = await eslint.lintText(code + "\\n", {filePath: filename});
-      out[label] = r[0].messages.filter(m => m.ruleId === "no-restricted-imports" && m.severity === 2).length;
-    }
-    process.stdout.write(JSON.stringify(out));
-  `;
-  const output = execFileSync(process.execPath, ["--input-type=module"], {
-    input: script,
-    cwd: process.cwd(),
-    encoding: "utf8",
-    maxBuffer: 4 * 1024 * 1024,
-    timeout: 120_000,
-  });
-  return new Map(Object.entries(JSON.parse(output) as Record<string, number>));
-}
-
-let processBoundaryResults: ReadonlyMap<string, number>;
-
-describe("process-import boundary policy", () => {
-  beforeAll(() => {
-    processBoundaryResults = runProcessBoundaryLintBatch();
-  });
-
-  it.each(PROCESS_BOUNDARY_CASES)("%s", (label, _code, _filename, expectViolation) => {
-    const violations = processBoundaryResults.get(label) ?? 0;
-    if (expectViolation) {
-      expect(violations, `expected a no-restricted-imports violation for ${label}`).toBeGreaterThan(0);
-    } else {
-      expect(violations, `expected no no-restricted-imports violation for ${label}`).toBe(0);
-    }
   });
 });

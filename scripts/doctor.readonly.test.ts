@@ -35,8 +35,6 @@ const BOUNDARY_CASES: readonly [string, string, string, boolean][] = [
   ["execa", 'import {execa} from "execa";', "scripts/doctor.workspace.ts", true],
   ["node:child_process", 'import {spawn} from "node:child_process";', "scripts/doctor.workspace.ts", true],
   ["child_process-bare", 'import {execFile} from "child_process";', "scripts/doctor.workspace.ts", true],
-  ["defaultCommandRunner", 'import {defaultCommandRunner} from "./common/process.ts";', "scripts/doctor.workspace.ts", true],
-  ["CommandRunner-type", 'import type {CommandRunner} from "./common/process.ts";', "scripts/doctor.workspace.ts", true],
   ["fs-writeFile", 'import {writeFile} from "node:fs";', "scripts/doctor.workspace.ts", true],
   ["fs-writeFileSync", 'import {writeFileSync} from "node:fs";', "scripts/doctor.workspace.ts", true],
   ["fs-rm", 'import {rm} from "node:fs";', "scripts/doctor.workspace.ts", true],
@@ -182,8 +180,6 @@ describe("doctor ESLint boundary restrictions", () => {
     it("rejects execa imports in doctor modules", () => expectRestricted("execa"));
     it("rejects node:child_process imports in doctor modules", () => expectRestricted("node:child_process"));
     it("rejects child_process (bare alias) imports in doctor modules", () => expectRestricted("child_process-bare"));
-    it("rejects defaultCommandRunner from process.ts in specialist modules", () => expectRestricted("defaultCommandRunner"));
-    it("rejects CommandRunner type from process.ts in specialist modules", () => expectRestricted("CommandRunner-type"));
 
     it("rejects the mutable FileSystem capability from the runtime kernel", () => {
       expectRestricted("runtime-FileSystem");

@@ -9,9 +9,12 @@
  * `node:timers`, `node:timers/promises`, call bare `fetch`/`setTimeout`/`setInterval`, or read
  * `process.env`/`process.platform`/`process.arch`/`process.execPath`/`process.pid`/`process.cwd()`
  * directly — the architecture guard (`runtime-boundary.test.ts`) enforces this file as the single
- * exemption. Every other command receives these primitives only through the capability objects
- * exported here (or, transitionally, by importing this module directly until the command tasks
- * that follow this one finish routing every caller through an injected {@link CommandRuntime}).
+ * exemption. Migrated commands receive these primitives only through the capability objects
+ * exported here. Three narrow production callers import this module directly instead: the
+ * Piscina-hosted `workers/shell.ts` takes {@link nodeProcessRunner} because it has no command
+ * scope, and the excluded `format.ts`/`lint.ts` orchestrators (with the presentation helpers in
+ * `common/index.ts` that they share) take {@link nodeLoggerRuntimeHost} so their loggers keep
+ * real TTY, `NO_COLOR`, and progress behavior without being migrated to the command runtime.
  *
  * This module also assembles those primitives into the production {@link CommandRuntimeFactory}
  * that `commander.ts` uses: the process host, the logger runtime host, and the root/child runtime
@@ -625,12 +628,12 @@ export function snapshotNodeEnvironment(): RuntimeEnvironment {
 }
 
 /**
- * Compatibility facade over {@link createNodeProcessRunner} that snapshots the ambient
- * environment fresh at each standalone call instead of once at module load.
+ * Standalone facade over {@link createNodeProcessRunner} that snapshots the ambient environment
+ * fresh at each call instead of once at module load.
  *
  * @remarks
- * Reserved for the legacy `scripts/common/process.ts` facade and `scripts/workers/shell.ts`
- * worker helpers, both of which invoke a runner exactly once per call with no shared lifetime
+ * Reserved for `scripts/workers/shell.ts`, which runs inside a Piscina worker thread with no
+ * command runtime scope and invokes a runner exactly once per call, with no shared lifetime
  * across invocations. Command scopes must construct their own runner from one
  * {@link snapshotNodeEnvironment} call via {@link createNodeProcessRunner} instead of using this
  * facade, so every command observes one environment snapshot for its entire run.

@@ -1,8 +1,10 @@
 # Root Tooling Scripts
 
 The root [`package.json`](../package.json) owns the supported npm commands that invoke this directory. Root scripts coordinate repository
-tooling; shared presentation and process behavior belongs in [`common`](./common), container runtime behavior belongs in
-[`container-runtime`](./container-runtime), and worker entry points belong in [`workers`](./workers).
+tooling; the declarative command runtime, capability kernel, and process runner belong in [`common`](./common), container runtime behavior
+belongs in [`container-runtime`](./container-runtime), and worker entry points belong in [`workers`](./workers).
+
+[RFC 0002](../docs/rfc/0002-lean-monorepo-tooling-architecture.md) is the accepted architecture record for everything below.
 
 ## Output boundary
 
@@ -21,14 +23,182 @@ for partial raw chunks, `section()`, `banner()`, and `table()` for structured di
 In JSON mode, semantic and human-presentation methods are suppressed. `json()` emits the single machine-readable document for the
 invocation.
 
-## Commands and sensitive values
+## Command runtime
 
-Use the argument-array interfaces in the shared [`command runner`](./common/process.ts). Keep executable arguments separate from the command
-name, select `capture`, `tee`, or `inherit` explicitly when needed, and render command diagnostics with
-`logger.command(formatCommand(command))`. Standard input is not part of the formatted command.
+Every root script except the format/lint pair is one declarative command object built on
+[`common/commander.ts`](./common/commander.ts) and one injected capability kernel from
+[`common/runtime.ts`](./common/runtime.ts).
 
-Register runtime secrets with `logger.redact()` before any output that could contain them. Logger children share the same redaction
-registry. Do not place secret values in command echoes or other manually formatted diagnostics.
+### Command definition anatomy
+
+A command is a `CommandDefinition<TInput, TOutput>` handed to `MonorepoCommand`. Each member owns exactly one concern:
+
+| Member | Owns |
+|--------|------|
+| `metadata` | `name`, `description`, optional `usage`, `examples`, and extra exact-match `slashAliases` (`/h` and `/help` are always present) |
+| `configure(program)` | Declares Commander arguments and options on a fresh parser |
+| `decode(program)` | Converts parsed Commander state into one typed input; throws `CommandInputError` for semantically invalid input |
+| `presentation(input)` | Selects `"human"`, `"json"`, or `"silent"`; defaults to `"human"` |
+| `execute(context, input)` | Runs business orchestration against `context.runtime` capabilities only |
+| `completion(output, context)` | Maps completed business output to `{exitCode, human?, json?}` |
+
+```typescript
+export function createGenerateGraphqlCommand(
+  runtimeFactory?: CommandRuntimeFactory,
+): MonorepoCommand<GenerateLeafInput, GenerateLeafResult> {
+  return new MonorepoCommand<GenerateLeafInput, GenerateLeafResult>(
+    {
+      metadata: {
+        name: "generate:gql",
+        description: "Generates GraphQL type artifacts (placeholder implementation).",
+        examples: ["npm run generate:gql", "npm run generate:gql -- --verbose"],
+        slashAliases: {"/v": "--verbose", "/verbose": "--verbose"},
+      },
+      configure: (program) => {
+        program.option("-v, --verbose", "Enable verbose logging.");
+      },
+      decode: (program) => ({verbose: program.opts<{verbose?: boolean}>().verbose === true}),
+      execute: generateGraphql,
+      completion: (result) => ({exitCode: 0, human: (logger) => logger.success(result.summary)}),
+    },
+    runtimeFactory,
+  );
+}
+```
+
+Business code never constructs a parser, never reads `process.argv`, and never writes `process.exitCode`. `getInvocationArgv(program)`
+is the only way a definition can read its own pre-normalization argv tokens.
+
+### Production singletons and typed factory seams
+
+Each command module exports a `create<Name>Command(...)` factory and one production singleton built from it:
+
+```typescript
+export const doctorCommand: MonorepoCommand<DoctorInput, DoctorReport> = createDoctorCommand();
+```
+
+The factory is the deterministic test seam. It accepts either a `CommandRuntimeFactory` directly or a small `dependencies` object
+carrying one, so a test replaces the whole capability kernel instead of mocking repository modules:
+
+```typescript
+const command = createStatusCommand({runtimeFactory: createTestRuntimeFactory({runner, files}), doctor: fakeDoctor});
+```
+
+[`common/runtime.testing.ts`](./common/runtime.testing.ts) owns those typed fakes — a scripted process runner, in-memory logger sink,
+fixture filesystem, deterministic clock, and stub inspection session. It is test infrastructure and is excluded from coverage.
+
+### `run()`, `invoke()`, and `runIfMain()`
+
+| Entry | Argv | Signals | Exit code | Default presentation |
+|-------|------|---------|-----------|-----------------------|
+| `run(argv?)` | Parses argv (defaults to the process host's frozen argv) | Owns SIGINT/SIGTERM in its root scope | Returned, never assigned | From `presentation(input)` |
+| `invoke(input, options?)` | None — typed input only | Never registers an OS signal handler | Returned, never assigned | `"silent"` |
+| `runIfMain(moduleUrl)` | Delegates to `run()` | Same as `run()` | Assigns the returned code through the process host | From `presentation(input)` |
+
+`runIfMain()` is the only place a command may reach the process exit code, and it does nothing unless `moduleUrl` is the module the
+process was started with. No script implements direct-entry detection itself, and no script calls `process.exit()`.
+
+`invoke()` is how commands compose. `status.ts` runs doctor as a typed child (`doctorCommand.invoke({quick: true, verbose: false},
+{parent: context, presentation: "silent"})`) rather than spawning a sibling process or parsing JSON.
+
+### Invocation outcomes
+
+`run()` and `invoke()` never throw across the command boundary; they return a discriminated `CommandExecution<TOutput>`:
+
+| `status` | `exitCode` | Meaning |
+|----------|-----------|---------|
+| `completed` | `0` or `1` | Business execution finished and produced typed `value` |
+| `failed` | `1` or `2` | `usage` (`2`), or `operational`/`cleanup`/`internal` (`1`) |
+| `cancelled` | `130` or `143` | SIGINT / SIGTERM or a linked caller abort |
+| `help` | `0` | Commander displayed help or version text; no business work ran |
+
+A **completed exit `1` is not an error**. It is the normal way a command reports a negative business result while still returning typed
+output: doctor completes with `exitCode: 1` and a full `DoctorReport` when a check fails, and the caller may still read
+`execution.value`. Reserve `failed` for conditions that produced no usable output.
+
+`CommandFailure` carries a `kind`, a redacted `message`, bounded `evidence` lines, and the original `cause`. Cleanup evidence is appended
+to the failure that caused it rather than replacing it.
+
+### Runner outcomes and `expectSuccess()`
+
+`context.runtime.runner` is a `ProcessRunner` from [`common/runner.ts`](./common/runner.ts). `run()` resolves a discriminated
+`ProcessOutcome` — switch on `kind` instead of re-deriving success from an exit code:
+
+```typescript
+const outcome = await runner.run({command: "git", args: ["status", "--porcelain"]}, {output: "capture"});
+switch (outcome.kind) {
+  case "succeeded":  return outcome.stdout;          // exitCode is narrowed to 0
+  case "exited":     return degrade(outcome.exitCode);
+  case "timed-out":
+  case "signalled":
+  case "cancelled":
+  case "spawn-failed": throw new Error(processFailureEvidence(outcome, logger));
+}
+```
+
+`expectSuccess()` is the required-success policy: it returns a `SucceededProcessOutcome` or throws a `RunnerError` whose message,
+retained `request`, and retained `outcome` are all redacted through the supplied logger and bounded to 2,000 characters.
+`runner.scope(defaults)` returns a new runner with reusable defaults and never mutates its parent. Keep the executable and its arguments
+separate; `formatProcessRequest()` renders diagnostics and never includes stdin or environment values.
+
+### Capability profiles and child scope ownership
+
+`context.runtime` is the only source of effects. It carries `logger`, `prompts`, `runner`, `http`, `files`, `clock`, `tasks`,
+`inspection`, `environment`, `signal`, and `cleanup`. [`common/runtime.node.ts`](./common/runtime.node.ts) is the single production
+adapter that implements them; it is the only production module allowed to import `node:fs`, `node:os`, or `node:timers`, to call bare
+`fetch`/`setInterval`, to read `process.env`/`process.cwd()`, to register SIGINT/SIGTERM, or to assign `process.exitCode`.
+
+Narrow a capability before handing it to a consumer that must not widen it: `asReadOnlyFileSystem()` and `asGetOnlyHttpClient()` produce
+the read-only profiles doctor modules receive, and `inspection/probes.ts` produces the opaque, allowlisted probe runner.
+
+A **root scope** snapshots the environment once, owns its logger and prompts, and (only under `run()`/`runIfMain()`) owns process signals.
+A **child scope** created by `invoke({parent})` reuses the parent's immutable environment, prompts, and inspection registry, and receives
+its own forked logger, invocation runner, cancellation controller, and cleanup registry. Cancellation always flows parent to child and
+never child to parent.
+
+### JSON, human, and silent output
+
+Presentation is decided from typed input before any capability exists, and rendering is deferred to `completion()`:
+
+- **human** — `completion.human(logger)` runs; semantic and presentation methods are live.
+- **json** — `completion.json` is serialized exactly once through `logger.json()`. A JSON-mode command that omits `json` is an internal
+  failure rather than a silently empty document. A fatal error writes exactly one plain redacted line to standard error so no partial
+  success document is emitted.
+- **silent** — nothing is rendered, including failure diagnostics. This is the default for composed `invoke()` calls, whose caller owns
+  presentation.
+
+### Cancellation and cleanup
+
+`runtime.signal` is the single cancellation source: SIGINT maps to `CommandCancellation(…, 130)`, SIGTERM to `143`, and a linked caller
+signal propagates the same way. Long-running work passes `runtime.signal` into the runner, the HTTP client, and `clock.delay()` instead
+of polling.
+
+`runtime.cleanup` is a LIFO registry. Register a compensating action as soon as the resource exists:
+
+```typescript
+context.runtime.cleanup.register("temporary compose file", () => files.remove(composeFile));
+```
+
+The lifecycle drains the registry **before** rendering the completion, so a cleanup failure can still change the outcome. Every cleanup
+entry runs even when an earlier one throws; each failure becomes bounded evidence on the reported failure.
+
+### Sensitive values
+
+Register runtime secrets with `logger.redact()` before any output that could contain them. Logger children and forks share one redaction
+registry, and `RunnerError` redacts its retained request and outcome through the same registry. Do not place secret values in manually
+formatted diagnostics.
+
+### Format, lint, and the worker-shell exception
+
+[`format.ts`](./format.ts), [`lint.ts`](./lint.ts), [`workers/format.worker.ts`](./workers/format.worker.ts),
+[`workers/lint.worker.ts`](./workers/lint.worker.ts), [`types/format.ts`](./types/format.ts), and [`types/lint.ts`](./types/lint.ts) are
+the six approved exclusions of RFC 0002 section 3.2. They stay on Piscina and are not command objects. They still use the shared logger
+(with the Node logger runtime host, so their TTY, `NO_COLOR`, and progress behavior is unchanged) and the shared presentation helpers in
+[`common/index.ts`](./common/index.ts), which take an explicit `Date` rather than reading the clock themselves.
+
+[`workers/shell.ts`](./workers/shell.ts) is deliberately **not** excluded. It runs inside those Piscina workers, so it has no command
+scope; it takes `nodeProcessRunner` — the generic process runner — directly, while keeping its legacy `{code, output}` worker-facing API
+so format/lint behavior is unchanged.
 
 ## Output-policy exemptions
 
@@ -39,9 +209,11 @@ That adapter may emit only prompt labels, questions, choices, validation feedbac
 submitted secret values remain forbidden there.
 
 [`output-policy.test.ts`](./common/output-policy.test.ts)'s AST guards enforce both boundaries, including property, direct-function, and
-destructured aliases. The root ESLint configuration provides immediate feedback for direct syntax. Direct console/process-stream output
-stays confined to the logger sink, while injected `output.write(...)` prompt presentation stays confined to the prompt adapter. Neither
-exemption includes a script entry point.
+destructured aliases. [`runtime-boundary.test.ts`](./common/runtime-boundary.test.ts) enforces the wider runtime boundary — Execa and
+child-process imports, ambient filesystem/HTTP/timer/environment/OS-state access, direct process exit, manual direct-entry detection,
+explicit concurrency, doctor capability width, and the exact six format/lint exclusions. The root ESLint configuration provides immediate
+feedback for direct output syntax. Direct console/process-stream output stays confined to the logger sink, while injected
+`output.write(...)` prompt presentation stays confined to the prompt adapter. Neither exemption includes a script entry point.
 
 Every production script under root `scripts/**` — including [`setup.ts`](./setup.ts), [`doctor.ts`](./doctor.ts), and
 [`status.ts`](./status.ts) — routes its presentation and semantic output through `MonorepositoryConsoleLogger`. There are no remaining
@@ -110,8 +282,8 @@ git --no-pager diff --check
 ```
 
 The full root-tooling suite in [Targeted validation](#targeted-validation) below enumerates these setup and shared-dependency test files
-too; it exercises every setup, container-runtime, and worker test file under `scripts/`. Doctor, its reporter and specialist modules, and
-`status.ts` have their own focused command in [Doctor test commands](#doctor-test-commands).
+too; it exercises every common, setup, doctor, inspection, container-runtime, and worker test file under `scripts/`. Doctor, its reporter
+and specialist modules, and `status.ts` also have a narrower focused command in [Doctor test commands](#doctor-test-commands).
 
 ## Doctor diagnostics (`npm run doctor`)
 
@@ -158,10 +330,13 @@ earns full weight, a warn half, a fail none, and a `skipped` check contributes t
 ### Read-only command policy
 
 Every diagnostic command runs through the shared inspection probe runner backed by the allowlisted read-only command set in
-[`inspection/probes.ts`](./inspection/probes.ts). Specialist modules never use `CommandRunner` or `defaultCommandRunner` directly; approved
-type-only command contracts may come from [`common/process.ts`](./common/process.ts).
-[`doctor.readonly.test.ts`](./doctor.readonly.test.ts)'s source-level AST guard rejects mutation-capable/unrestricted filesystem imports,
-child-process imports, unapproved repository imports, and unresolved/forbidden command specifications across the doctor production surface.
+[`inspection/probes.ts`](./inspection/probes.ts). Specialist modules never take a `ProcessRunner`, the Node runtime adapter, the Execa
+adapter, or the mutable `FileSystem` capability: `DoctorContext` carries only a read-only filesystem, a `GET`-only bounded HTTP probe,
+the clock, the immutable environment snapshot, the shared inspection session, and the opaque probe runner.
+[`doctor.readonly.test.ts`](./doctor.readonly.test.ts)'s ESLint boundary batch and source-level AST guard reject mutation-capable or
+unrestricted filesystem imports, child-process imports, unapproved repository imports, and unresolved/forbidden command specifications
+across the doctor production surface; [`runtime-boundary.test.ts`](./common/runtime-boundary.test.ts) asserts the same capability width
+independently of ESLint.
 
 No Nx child command is dispatched by doctor or status, and none is allowlisted. Nx always opens (and rewrites) its native workspace
 database when it constructs a project graph. `workspace.nx-projects`, `workspace.nx-graph`, and status's `nxEdges` are instead derived
@@ -170,60 +345,57 @@ from the shared inspection session's workspace facts, which use an isolated Nx D
 
 ### Status integration
 
-[`status.ts`](./status.ts) invokes doctor internally as a typed quick doctor call (not a subprocess) and extracts `score`, `grade`, and
-`summary` directly from the returned report. A doctor failure makes the `health` section `null` ("unavailable") instead of stale or
-fabricated data.
+[`status.ts`](./status.ts) composes doctor as a typed child command (`doctorCommand.invoke(…, {parent: context, presentation: "silent"})`)
+rather than a subprocess, and the child reuses status's own inspection session. Health is the one status section that is **not**
+degradation-tolerant: both doctor completion exit codes (`0` and `1`) are ordinary health data, while a `failed`, `cancelled`, or `help`
+child outcome is owned by status and becomes a status command failure or cancellation. No dashboard or JSON document is rendered in that
+case, so status never reports a fabricated "unavailable" health section for a broken doctor. The five collector sections
+(`workspaces`, `nxEdges`, `git`, `security`, `disk`) remain individually degradation-tolerant and may still be `null`.
 
 ### Doctor test commands
 
 Focused validation for doctor, its reporter, every specialist module, and `status.ts`:
 
 ```powershell
-npx vitest run --coverage.enabled=false scripts\common\logger.test.ts scripts\common\process.test.ts scripts\common\output-policy.test.ts scripts\doctor.test.ts scripts\doctor.reporter.test.ts scripts\doctor.readonly.test.ts scripts\doctor.workspace.test.ts scripts\doctor.dotnet.test.ts scripts\doctor.react.test.ts scripts\doctor.svelte.test.ts scripts\doctor.python.test.ts scripts\doctor.infrastructure.test.ts scripts\doctor.diagnostics.test.ts scripts\status.test.ts scripts\setup.test.ts
+npx vitest run --coverage.enabled=false scripts\common\logger.test.ts scripts\common\runner.test.ts scripts\common\output-policy.test.ts scripts\doctor.test.ts scripts\doctor.reporter.test.ts scripts\doctor.readonly.test.ts scripts\doctor.workspace.test.ts scripts\doctor.dotnet.test.ts scripts\doctor.react.test.ts scripts\doctor.svelte.test.ts scripts\doctor.python.test.ts scripts\doctor.infrastructure.test.ts scripts\doctor.diagnostics.test.ts scripts\status.test.ts scripts\setup.test.ts
 npx eslint scripts\doctor.ts scripts\doctor.types.ts scripts\doctor.reporter.ts scripts\doctor.workspace.ts scripts\doctor.dotnet.ts scripts\doctor.react.ts scripts\doctor.svelte.ts scripts\doctor.python.ts scripts\doctor.infrastructure.ts scripts\status.ts scripts\common\taxonomy-artifacts.ts
 git --no-pager diff --check
 ```
 
 ## Targeted validation
 
-Run the policy test after changing script output:
+Run the policy tests after changing script output or the runtime boundary:
 
 ```powershell
-npx vitest run --coverage.enabled=false scripts\common\output-policy.test.ts
+npx vitest run --coverage.enabled=false scripts\common\output-policy.test.ts scripts\common\runtime-boundary.test.ts
 ```
 
-Run the complete root-tooling suite by enumerating the setup, container-runtime, and worker tests on Windows so every intended file is
-passed explicitly:
+Run the complete root-tooling suite by enumerating the common, setup, doctor, inspection, container-runtime, and worker tests on Windows
+so every intended file is passed explicitly:
 
 ```powershell
-$setupTests = Get-ChildItem scripts\setup*.test.ts |
-  Sort-Object FullName |
-  ForEach-Object FullName
-$containerRuntimeTests = Get-ChildItem scripts\container-runtime\*.test.ts |
-  Sort-Object FullName |
-  ForEach-Object FullName
-$workerTests = Get-ChildItem scripts\workers\*.test.ts |
-  Sort-Object FullName |
-  ForEach-Object FullName
+$commonTests = Get-ChildItem scripts\common\*.test.ts | Sort-Object FullName | ForEach-Object FullName
+$setupTests = Get-ChildItem scripts\setup*.test.ts | Sort-Object FullName | ForEach-Object FullName
+$doctorTests = Get-ChildItem scripts\doctor*.test.ts | Sort-Object FullName | ForEach-Object FullName
+$inspectionTests = Get-ChildItem scripts\inspection\*.test.ts | Sort-Object FullName | ForEach-Object FullName
+$containerTests = Get-ChildItem scripts\container-runtime\*.test.ts | Sort-Object FullName | ForEach-Object FullName
+$workerTests = Get-ChildItem scripts\workers\*.test.ts | Sort-Object FullName | ForEach-Object FullName
 
 npx vitest run --coverage.enabled=false `
-  scripts\common\logger.test.ts `
-  scripts\common\process.test.ts `
-  scripts\common\process.controlled.test.ts `
-  scripts\common\index.test.ts `
-  scripts\common\output-policy.test.ts `
-  scripts\common\repository-paths.test.ts `
-  scripts\common\requirements.test.ts `
-  scripts\common\tooling-config.test.ts `
-  scripts\common\prompts.test.ts `
+  @commonTests `
   @setupTests `
-  scripts\generate.env.test.ts `
-  @containerRuntimeTests `
+  @doctorTests `
+  @inspectionTests `
+  @containerTests `
   @workerTests `
+  scripts\generate.cli.test.ts `
+  scripts\generate.env.test.ts `
   scripts\generate.artifacts.test.ts `
   scripts\update-exchange-rates.test.ts `
   scripts\docs-assemble.test.ts `
-  scripts\docs-assemble.normalize.test.ts
+  scripts\docs-assemble.normalize.test.ts `
+  scripts\status.test.ts `
+  scripts\test-e2e.test.ts
 npx eslint scripts
 git --no-pager diff --check
 ```

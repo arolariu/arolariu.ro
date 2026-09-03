@@ -297,6 +297,28 @@ npm run generate:i18n    # i18n translation sync
 npm run generate:gql     # GraphQL type generation
 ```
 
+### Root tooling scripts
+
+Every root script under `scripts/` — setup, doctor, status, the generators, documentation
+assembly, exchange rates, E2E, and the container-runtime commands — is one declarative command
+object on the shared runtime in `scripts/common/`. Practical consequences when you run or extend
+them:
+
+- **Help always wins.** `node scripts/<name>.ts --help` (and `/h`, `/help`) prints usage and exits
+  `0` without doing any work. `npm run <script> -- --help` behaves identically.
+- **Exit codes are uniform.** `0` success, `1` a completed-but-negative result or an operational
+  failure, `2` invalid usage, `130` SIGINT, `143` SIGTERM.
+- **Ctrl+C is graceful.** A command cancels its in-flight work, drains its cleanup registry, and
+  exits `130` instead of leaving partial state behind.
+- **Commands compose in-process.** `npm run status` runs doctor as a typed child call rather than
+  spawning a second Node process, so both share one repository inspection session.
+- **`npm run format` and `npm run lint` are deliberately different.** They stay on Piscina worker
+  pools and are the only root scripts outside the command runtime.
+
+See [scripts/README.md](scripts/README.md) for the authoring contract and
+[docs/rfc/0002-lean-monorepo-tooling-architecture.md](docs/rfc/0002-lean-monorepo-tooling-architecture.md)
+for the accepted architecture record.
+
 ---
 
 ## Diagnosing with npm run doctor
@@ -362,10 +384,13 @@ failure. `--quick` skips the same remote checks intentionally, independent of co
 (backed by an isolated Nx Devkit worker) rather than a direct Nx child process, because
 Nx's project-graph construction rewrites its native workspace database and would break the
 read-only contract. Status emits one deterministically ordered logical edge per source/target
-pair; an unreadable or ambiguous graph makes the section unavailable (`null`) instead of an
-empty list. It invokes doctor internally as a typed quick doctor call (not a subprocess) and
-extracts `score`, `grade`, and `summary` directly from the returned report. A doctor failure
-makes `health` unavailable (`null`) instead of stale or fabricated data.
+pair; an unreadable or ambiguous graph makes that section unavailable (`null`) instead of an
+empty list. Status composes doctor as a typed child command inside its own runtime scope (not a
+subprocess) and extracts `score`, `grade`, and `summary` directly from the returned report.
+Health is the one section status never degrades: a doctor run that *completes* with failing
+checks is ordinary health data, while a failed or cancelled doctor invocation becomes a status
+command failure or cancellation and renders no dashboard or JSON document at all — status never
+fabricates an "unavailable" health section for a broken doctor.
 `status` supports only `--json` and `--help`/`-h`, and its JSON output is a single ANSI-free
 six-key document.
 
@@ -546,6 +571,7 @@ sites/arolariu.ro ←── API calls ──→ sites/api.arolariu.ro
 ## Further Reading
 
 - **[CONTRIBUTING.md](CONTRIBUTING.md)** — PR workflow, branch naming, commit conventions
+- **[scripts/README.md](scripts/README.md)** — Root tooling command-runtime authoring contract
 - **[docs/rfc/](docs/rfc/)** — Architecture decisions (RFCs 1xxx=frontend, 2xxx=backend)
 - **[infra/Local/readme.md](infra/Local/readme.md)** — Full selfhost Compose setup guide
 - **[scripts/README.md](scripts/README.md)** — Setup/doctor/status implementation ownership and output policy

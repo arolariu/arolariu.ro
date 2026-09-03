@@ -4,7 +4,7 @@
  * @module scripts.common.runtime-boundary.test
  */
 
-import {readdirSync, readFileSync} from "node:fs";
+import {existsSync, readdirSync, readFileSync} from "node:fs";
 import {join} from "node:path";
 import ts from "typescript";
 import {describe, expect, it} from "vitest";
@@ -42,6 +42,70 @@ const runtimeBoundaryExclusions = new Set([
 
 const productionScriptExtensions = new Set([".ts", ".js", ".mjs", ".cjs"]);
 const directOutputAdapters = new Set(["scripts/common/logger.ts", "scripts/common/prompts.ts"]);
+
+/**
+ * Every production module the process may be started with directly.
+ *
+ * @remarks
+ * Each entry must export a typed command singleton and hand direct-entry detection to the shared
+ * `runIfMain()` on the command host. The four excluded format/lint entrypoints are deliberately
+ * absent: RFC 0002 section 3.2 keeps them on Piscina outside the command runtime.
+ */
+const directEntrypoints: readonly string[] = [
+  "scripts/container-runtime/aspire.ts",
+  "scripts/container-runtime/compose.ts",
+  "scripts/container-runtime/image.ts",
+  "scripts/container-runtime/selfhost.ts",
+  "scripts/docs-assemble.ts",
+  "scripts/doctor.ts",
+  "scripts/generate.artifacts.ts",
+  "scripts/generate.env.ts",
+  "scripts/generate.gql.ts",
+  "scripts/generate.i18n.ts",
+  "scripts/generate.ts",
+  "scripts/inspection/aggregate-worker.ts",
+  "scripts/inspection/workspace.worker.ts",
+  "scripts/setup.ts",
+  "scripts/status.ts",
+  "scripts/test-e2e.ts",
+  "scripts/update-exchange-rates.ts",
+];
+
+/** Modules deleted with the declarative migration; no production module may reference them again. */
+const removedCompatibilityModules: readonly string[] = [
+  "scripts/common/cli.ts",
+  "scripts/common/process.ts",
+];
+
+/** Module specifiers that spawn an operating-system process outside the approved runner adapter. */
+const processSpawningModules: ReadonlySet<string> = new Set(["node:child_process", "child_process"]);
+
+/** Sole worker adapter allowed to reuse the Node process runner outside a command runtime scope. */
+const workerShellAdapter = "scripts/workers/shell.ts";
+
+/**
+ * Module specifiers no Doctor production module may import, because each one would hand Doctor a
+ * mutating, process-spawning, or otherwise non-opaque capability.
+ */
+const doctorForbiddenModules: ReadonlySet<string> = new Set([
+  "execa",
+  "node:child_process",
+  "child_process",
+  "node:fs",
+  "node:fs/promises",
+  "fs",
+  "fs/promises",
+  "node:os",
+  "os",
+  "./common/runtime.node.ts",
+  "./common/runner.execa.ts",
+]);
+
+/** Imported names no Doctor production module may take, even from an otherwise approved module. */
+const doctorForbiddenImportNames: ReadonlyMap<string, ReadonlySet<string>> = new Map([
+  ["./common/runtime.ts", new Set(["FileSystem"])],
+  ["./common/runner.ts", new Set(["ProcessRunner"])],
+]);
 /**
  * Approved production adapter of RFC 0002 section 5.3. It owns ambient filesystem, fetch, timer,
  * OS-state, signal, and final `process.exitCode` assignment access. `process.exit()` stays
@@ -85,29 +149,30 @@ function isTestFile(file: string): boolean {
   return /\.(?:spec|test)\.(?:cjs|js|mjs|ts)$/.test(file);
 }
 
-function discoverRuntimeBoundaryProductionScripts(directory: string = "scripts"): readonly string[] {
+function discoverProductionScripts(directory: string = "scripts"): readonly string[] {
   const files: string[] = [];
 
   for (const entry of readdirSync(directory, {withFileTypes: true})) {
     const path = join(directory, entry.name);
     if (entry.isDirectory()) {
-      files.push(...discoverRuntimeBoundaryProductionScripts(path));
+      files.push(...discoverProductionScripts(path));
       continue;
     }
 
     const normalizedPath = normalizeFilePath(path);
     const extension = normalizedPath.slice(normalizedPath.lastIndexOf("."));
-    if (
-      productionScriptExtensions.has(extension)
-      && !isTestFile(normalizedPath)
-      && normalizedPath !== "scripts/common/runtime.testing.ts"
-      && !runtimeBoundaryExclusions.has(normalizedPath)
-    ) {
+    if (productionScriptExtensions.has(extension) && !isTestFile(normalizedPath)) {
       files.push(normalizedPath);
     }
   }
 
   return files.toSorted();
+}
+
+function discoverRuntimeBoundaryProductionScripts(): readonly string[] {
+  return discoverProductionScripts().filter(
+    (file) => file !== "scripts/common/runtime.testing.ts" && !runtimeBoundaryExclusions.has(file),
+  );
 }
 
 function isPropertyNameLike(
@@ -563,6 +628,180 @@ function scanRuntimeBoundarySource(
   );
 }
 
+/**
+ * Scans every included production script against the runtime boundary rules.
+ *
+ * @returns The complete, deterministically ordered production runtime-boundary debt.
+ */
+function scanRuntimeBoundaryRepository(): readonly RuntimeBoundaryViolation[] {
+  return discoverRuntimeBoundaryProductionScripts().flatMap((fileName) =>
+    scanRuntimeBoundarySource(fileName, readFileSync(fileName, "utf8")),
+  );
+}
+
+/** One statically resolvable module specifier and the names it binds. */
+interface ModuleImport {
+  /** The literal module specifier text. */
+  readonly specifier: string;
+  /** Names imported from the module; empty for side-effect, namespace, or dynamic imports. */
+  readonly names: readonly string[];
+}
+
+/**
+ * Collects every statically resolvable module specifier of one source file.
+ *
+ * @param sourceText - Source text to parse.
+ * @returns Static imports, re-exports, and literal dynamic imports, in source order.
+ */
+function collectModuleImports(sourceText: string): readonly ModuleImport[] {
+  const source = ts.createSourceFile("module.ts", sourceText, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
+  const imports: ModuleImport[] = [];
+
+  function namesOf(clause: ts.ImportClause | undefined): readonly string[] {
+    const bindings = clause?.namedBindings;
+    if (bindings === undefined || !ts.isNamedImports(bindings)) {
+      return [];
+    }
+
+    return bindings.elements.map((element) => (element.propertyName ?? element.name).text);
+  }
+
+  function visit(node: ts.Node): void {
+    if (ts.isImportDeclaration(node) && ts.isStringLiteral(node.moduleSpecifier)) {
+      imports.push({specifier: node.moduleSpecifier.text, names: namesOf(node.importClause)});
+    }
+
+    if (ts.isExportDeclaration(node) && node.moduleSpecifier !== undefined && ts.isStringLiteral(node.moduleSpecifier)) {
+      imports.push({specifier: node.moduleSpecifier.text, names: []});
+    }
+
+    if (ts.isCallExpression(node) && isDynamicImport(node) && node.arguments.length === 1) {
+      const specifier = node.arguments[0];
+      if (specifier !== undefined && (ts.isStringLiteral(specifier) || ts.isNoSubstitutionTemplateLiteral(specifier))) {
+        imports.push({specifier: specifier.text, names: []});
+      }
+    }
+
+    ts.forEachChild(node, visit);
+  }
+
+  visit(source);
+  return imports;
+}
+
+/** Structural facts a direct entrypoint must satisfy to stay inside the declarative contract. */
+interface CommandEntrypointShape {
+  /** Whether the module exports a `MonorepoCommand`-typed singleton. */
+  readonly exportsCommandSingleton: boolean;
+  /** Whether the module hands direct-entry detection to `runIfMain(import.meta.url)`. */
+  readonly usesSharedRunIfMain: boolean;
+}
+
+function isImportMetaUrlArgument(argument: ts.Expression): boolean {
+  return (
+    ts.isPropertyAccessExpression(argument)
+    && argument.name.text === "url"
+    && ts.isMetaProperty(argument.expression)
+    && argument.expression.keywordToken === ts.SyntaxKind.ImportKeyword
+    && argument.expression.name.text === "meta"
+  );
+}
+
+/**
+ * Describes how one production module exposes and starts its command.
+ *
+ * @param sourceText - Source text to parse.
+ * @returns Whether the module exports a command singleton and uses shared direct-entry detection.
+ */
+function analyzeCommandEntrypoint(sourceText: string): CommandEntrypointShape {
+  const source = ts.createSourceFile("entrypoint.ts", sourceText, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
+  let exportsCommandSingleton = false;
+  let usesSharedRunIfMain = false;
+
+  for (const statement of source.statements) {
+    if (!ts.isVariableStatement(statement)) {
+      continue;
+    }
+
+    const isExported = statement.modifiers?.some((modifier) => modifier.kind === ts.SyntaxKind.ExportKeyword) === true;
+    if (!isExported) {
+      continue;
+    }
+
+    for (const declaration of statement.declarationList.declarations) {
+      const {type} = declaration;
+      if (type !== undefined && ts.isTypeReferenceNode(type) && ts.isIdentifier(type.typeName) && type.typeName.text === "MonorepoCommand") {
+        exportsCommandSingleton = true;
+      }
+    }
+  }
+
+  function visit(node: ts.Node): void {
+    if (
+      ts.isCallExpression(node)
+      && ts.isPropertyAccessExpression(node.expression)
+      && node.expression.name.text === "runIfMain"
+      && node.arguments.length === 1
+      && node.arguments[0] !== undefined
+      && isImportMetaUrlArgument(node.arguments[0])
+    ) {
+      usesSharedRunIfMain = true;
+    }
+
+    ts.forEachChild(node, visit);
+  }
+
+  visit(source);
+  return {exportsCommandSingleton, usesSharedRunIfMain};
+}
+
+/**
+ * Finds every production module that starts itself through the shared command host.
+ *
+ * @returns Sorted module paths that call `runIfMain(import.meta.url)`.
+ */
+function discoverSharedEntrypointModules(): readonly string[] {
+  return discoverProductionScripts().filter(
+    (file) => analyzeCommandEntrypoint(readFileSync(file, "utf8")).usesSharedRunIfMain,
+  );
+}
+
+/** One Doctor module import that would widen Doctor beyond read-only, opaque capabilities. */
+interface DoctorCapabilityViolation {
+  /** Doctor module holding the import. */
+  readonly file: string;
+  /** Module specifier that carries the forbidden capability. */
+  readonly specifier: string;
+  /** Imported name when the module itself is approved but the name is not. */
+  readonly name?: string;
+}
+
+/**
+ * Scans the Doctor production surface for capabilities wider than read-only and opaque probes.
+ *
+ * @returns Every forbidden Doctor capability import.
+ */
+function scanDoctorCapabilities(): readonly DoctorCapabilityViolation[] {
+  return discoverProductionScripts()
+    .filter((file) => /^scripts\/doctor[.\w-]*\.ts$/.test(file))
+    .flatMap((file) =>
+      collectModuleImports(readFileSync(file, "utf8")).flatMap((moduleImport): readonly DoctorCapabilityViolation[] => {
+        if (doctorForbiddenModules.has(moduleImport.specifier)) {
+          return [{file, specifier: moduleImport.specifier}];
+        }
+
+        const forbiddenNames = doctorForbiddenImportNames.get(moduleImport.specifier);
+        if (forbiddenNames === undefined) {
+          return [];
+        }
+
+        return moduleImport.names
+          .filter((name) => forbiddenNames.has(name))
+          .map((name) => ({file, specifier: moduleImport.specifier, name}));
+      }),
+    );
+}
+
 describe("runtime boundary policy", () => {
   it("keeps the exact production exclusions", () => {
     expect([...runtimeBoundaryExclusions]).toEqual([
@@ -705,64 +944,64 @@ describe("runtime boundary policy", () => {
     ]);
   });
 
-  it("captures the current production runtime-boundary debt", () => {
-    const violations = discoverRuntimeBoundaryProductionScripts().flatMap((fileName) =>
-      scanRuntimeBoundarySource(fileName, readFileSync(fileName, "utf8")),
+  it("leaves no production runtime-boundary debt", () => {
+    expect(scanRuntimeBoundaryRepository()).toEqual([]);
+  });
+
+  it("keeps every production script free of direct Execa and child-process imports", () => {
+    const violations = discoverProductionScripts().flatMap((file) =>
+      collectModuleImports(readFileSync(file, "utf8"))
+        .filter(
+          (moduleImport) =>
+            processSpawningModules.has(moduleImport.specifier)
+            || (moduleImport.specifier === "execa" && file !== execaAdapter),
+        )
+        .map((moduleImport) => ({file, specifier: moduleImport.specifier})),
     );
 
-    expect(violations).toMatchInlineSnapshot(`
-      [
-        {
-          "file": "scripts/common/cli.ts",
-          "line": 61,
-          "rule": "ambient-os-state",
-        },
-        {
-          "file": "scripts/common/cli.ts",
-          "line": 67,
-          "rule": "ambient-os-state",
-        },
-        {
-          "file": "scripts/common/index.ts",
-          "line": 11,
-          "rule": "legacy-process-import",
-        },
-        {
-          "file": "scripts/common/index.ts",
-          "line": 89,
-          "rule": "ambient-environment",
-        },
-        {
-          "file": "scripts/common/index.ts",
-          "line": 94,
-          "rule": "ambient-environment",
-        },
-        {
-          "file": "scripts/common/index.ts",
-          "line": 100,
-          "rule": "ambient-environment",
-        },
-        {
-          "file": "scripts/common/index.ts",
-          "line": 105,
-          "rule": "ambient-environment",
-        },
-        {
-          "file": "scripts/common/index.ts",
-          "line": 147,
-          "rule": "ambient-timer",
-        },
-        {
-          "file": "scripts/common/logger.ts",
-          "line": 161,
-          "rule": "ambient-environment",
-        },
-        {
-          "file": "scripts/common/logger.ts",
-          "line": 163,
-          "rule": "ambient-timer",
-        },
-      ]
-    `);
+    expect(violations).toEqual([]);
+    expect(collectModuleImports(readFileSync(execaAdapter, "utf8")).map((moduleImport) => moduleImport.specifier)).toContain("execa");
+  });
+
+  it("removed every compatibility module and every reference to one", () => {
+    expect(removedCompatibilityModules.filter((file) => existsSync(file))).toEqual([]);
+    expect(
+      scanRuntimeBoundaryRepository().filter(
+        (violation) => violation.rule === "legacy-cli-import" || violation.rule === "legacy-process-import",
+      ),
+    ).toEqual([]);
+  });
+
+  it("leaves no manual direct-entry detection or direct process exit in production", () => {
+    expect(
+      scanRuntimeBoundaryRepository().filter(
+        (violation) => violation.rule === "manual-entrypoint" || violation.rule === "direct-exit",
+      ),
+    ).toEqual([]);
+  });
+
+  it("starts every direct entrypoint through an exported command and shared runIfMain", () => {
+    expect(discoverSharedEntrypointModules()).toEqual(directEntrypoints);
+
+    const violations = directEntrypoints
+      .map((file) => ({file, ...analyzeCommandEntrypoint(readFileSync(file, "utf8"))}))
+      .filter((entrypoint) => !entrypoint.exportsCommandSingleton || !entrypoint.usesSharedRunIfMain);
+
+    expect(violations).toEqual([]);
+  });
+
+  it("keeps doctor modules on read-only and opaque capabilities", () => {
+    expect(scanDoctorCapabilities()).toEqual([]);
+  });
+
+  it("keeps the worker shell on the generic process runner", () => {
+    const specifiers = collectModuleImports(readFileSync(workerShellAdapter, "utf8"));
+
+    expect(specifiers).toContainEqual({specifier: "../common/runtime.node.ts", names: ["nodeProcessRunner"]});
+    expect(
+      specifiers.filter(
+        (moduleImport) => processSpawningModules.has(moduleImport.specifier) || moduleImport.specifier === "execa",
+      ),
+    ).toEqual([]);
   });
 });

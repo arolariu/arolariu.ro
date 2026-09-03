@@ -81,6 +81,7 @@ export default defineConfig({
         // Test files
         "**/*.test.{ts,tsx,js,jsx}",
         "**/*.spec.{ts,tsx,js,jsx}",
+        "scripts/common/runtime.testing.ts",
 
         // Configuration files
         "**/*.config.{js,ts,mjs,mts}",

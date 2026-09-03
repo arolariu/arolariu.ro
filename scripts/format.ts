@@ -15,6 +15,7 @@ import {styleText} from "node:util";
 import Piscina from "piscina";
 import {createProgressTracker, formatBytes, formatTimestamp, logWorkerComplete, printWorkerTimeline} from "./common/index.ts";
 import {MonorepositoryConsoleLogger, type MonorepositoryLogger} from "./common/logger.ts";
+import {nodeLoggerRuntimeHost} from "./common/runtime.node.ts";
 import type {FormatTarget, FormatWorkerInput, FormatWorkerResult} from "./types/format.ts";
 
 /** All available format targets in consistent order */
@@ -353,7 +354,7 @@ async function runOnAllTargets(filePatterns: readonly string[] | undefined, logg
     // Log all spawn events first with target-specific icons
     for (const [index, target] of allTargets.entries()) {
       const config = targetConfig[target];
-      const timestamp = styleText("gray", `[${formatTimestamp()}]`);
+      const timestamp = styleText("gray", `[${formatTimestamp(new Date())}]`);
       const workerLabel = styleText("cyan", `Worker #${index + 1}`);
       logger.line(`${timestamp} 🚀 ${workerLabel} spawned for ${config.icon} ${config.color(styleText("bold", target))}`);
     }
@@ -423,7 +424,7 @@ async function runOnAllTargets(filePatterns: readonly string[] | undefined, logg
     // Log completion events in order they finished
     logger.line();
     for (const event of completionEvents) {
-      logWorkerComplete(event.index, event.target, event.durationMs, event.status, logger.child("workers"));
+      logWorkerComplete(event.index, event.target, event.durationMs, event.status, logger.child("workers"), new Date());
     }
 
     // Show graceful degradation notice if any workers failed
@@ -584,7 +585,7 @@ function printHelp(logger: MonorepositoryLogger): void {
  * @returns Process exit code (0 for success, non-zero for failure).
  */
 export async function main(arg?: string, filePatterns?: readonly string[], logger?: MonorepositoryLogger): Promise<number> {
-  const output = logger ?? new MonorepositoryConsoleLogger("format");
+  const output = logger ?? new MonorepositoryConsoleLogger("format", {runtimeHost: nodeLoggerRuntimeHost});
   printHeader(output);
 
   if (!arg) {
@@ -664,7 +665,7 @@ export async function main(arg?: string, filePatterns?: readonly string[], logge
 }
 
 if (import.meta.main) {
-  const output = new MonorepositoryConsoleLogger("format");
+  const output = new MonorepositoryConsoleLogger("format", {runtimeHost: nodeLoggerRuntimeHost});
   const arg = process.argv[2];
   // Collect additional arguments as file patterns for selective targeting
   const filePatterns = process.argv.slice(3).filter((p) => p.length > 0);

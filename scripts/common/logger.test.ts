@@ -414,22 +414,26 @@ describe("MonorepositoryConsoleLogger", () => {
     expect(sink.records).toHaveLength(recordCountAfterSuccess);
   });
 
-  it("falls back to ambient TTY, color, and timer policy when no runtime host is injected", () => {
+  it("uses a deterministic non-TTY, colorless, timer-free host when none is injected", () => {
     vi.useFakeTimers();
     const stdoutIsTTYDescriptor = Object.getOwnPropertyDescriptor(process.stdout, "isTTY");
     Object.defineProperty(process.stdout, "isTTY", {configurable: true, value: true});
     const sink = new InMemoryLoggerSink();
 
     try {
-      const logger = new MonorepositoryConsoleLogger("setup", {color: false, sink});
+      const logger = new MonorepositoryConsoleLogger("setup", {sink});
       const progress = logger.progress("Installing");
       vi.advanceTimersByTime(160);
       progress.succeed("Configured");
-      const recordCountAfterSuccess = sink.records.length;
-      vi.advanceTimersByTime(160);
+      logger.line([{text: "styled", styles: ["red"]}]);
 
-      expect(sink.records.some((record) => record.write && record.text.includes("Installing"))).toBe(true);
-      expect(sink.records).toHaveLength(recordCountAfterSuccess);
+      // An ambient TTY is deliberately ignored: no spinner frame, no cursor escape, no timer.
+      expect(sink.records.filter((record) => record.write)).toEqual([]);
+      expect(vi.getTimerCount()).toBe(0);
+      expect(sink.records).toEqual([
+        {stream: "stdout", text: "✔ Configured", write: false},
+        {stream: "stdout", text: "styled", write: false},
+      ]);
     } finally {
       if (stdoutIsTTYDescriptor === undefined) {
         Reflect.deleteProperty(process.stdout, "isTTY");
