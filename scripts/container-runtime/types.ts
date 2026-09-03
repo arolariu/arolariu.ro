@@ -3,8 +3,6 @@
  * @module scripts/container-runtime/types
  */
 
-import type {MonorepositoryLogger} from "../common/logger.ts";
-
 /** Supported local container engines for this repository. */
 export type ContainerEngine = "rancher" | "podman";
 
@@ -60,6 +58,26 @@ export interface ImageInput extends ContainerEngineInput {
   readonly target: ImageTarget;
 }
 
+/** Supported selfhost orchestration actions. */
+export type SelfhostAction = "start" | "stop" | "logs";
+
+/** Typed input accepted by the declarative Selfhost command. */
+export interface SelfhostInput {
+  /** Selected selfhost action; the CLI defaults the optional argument to `start`. */
+  readonly action: SelfhostAction;
+  /** Explicit engine override; omitted values fall back to environment or persisted configuration. */
+  readonly engine?: ContainerEngine;
+}
+
+/**
+ * One local stack an invocation of the Selfhost command operated on.
+ *
+ * @remarks
+ * `profile` is the `selfhost`-profile service inside the Storage stack (`exp-arolariu-ro`), which
+ * the start action brings up through `--profile selfhost` and the logs action tails directly.
+ */
+export type SelfhostStack = "management" | "storage" | "profile" | "backend" | "frontend";
+
 /** Typed business result produced by the declarative Aspire command. */
 export interface AspireResult {
   /** Container engine Aspire AppHost ran with. */
@@ -86,15 +104,12 @@ export interface ImageResult {
   readonly target: ImageTarget;
 }
 
-/**
- * Prints a CLI-safe error message and marks the process as failed.
- *
- * @deprecated Removed when Selfhost migrates in Task 21. Migrated commands report failures
- * through their typed {@link CommandExecution} instead of ambient `process.exitCode`.
- * @param error - Unknown error thrown by a CLI entrypoint.
- * @param logger - Logger used for the error message.
- */
-export function exitWithError(error: unknown, logger: MonorepositoryLogger): void {
-  logger.error(error instanceof Error ? error.message : String(error));
-  process.exitCode = 1;
+/** Typed business result produced by the declarative Selfhost command. */
+export interface SelfhostResult {
+  /** Selfhost action that ran. */
+  readonly action: SelfhostAction;
+  /** Container engine the selfhost action ran with. */
+  readonly engine: ContainerEngine;
+  /** Local stacks this invocation operated on, in execution order. */
+  readonly stacks: readonly SelfhostStack[];
 }

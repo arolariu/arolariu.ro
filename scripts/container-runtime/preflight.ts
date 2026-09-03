@@ -3,53 +3,22 @@
  * @module scripts/container-runtime/preflight
  *
  * @remarks
- * The context-based {@link runContainerPreflight} implementation is the production preflight
- * path for every migrated declarative container command (Aspire, Compose, Image): it depends
- * only on the typed {@link ProcessRunner} boundary, never on Node's child-process module
- * directly. `runSharedPreflight()`, `describeCommandFailure()`, and `exitWithError()` (the last
- * defined in `types.ts`) stay as deprecated compatibility surfaces for the still-legacy Selfhost
- * cohort until it migrates in Task 21; `runSharedPreflight()` delegates to
- * {@link runContainerPreflight} instead of duplicating the check sequence.
+ * The context-based {@link runContainerPreflight} implementation is the only preflight path: it
+ * depends solely on the typed {@link ProcessRunner} boundary, never on Node's child-process
+ * module directly, and every declarative container command (Aspire, Compose, Image, Selfhost)
+ * calls it with its own invocation capabilities. The deprecated `runSharedPreflight()`,
+ * `describeCommandFailure()`, `runArtifactGeneration()`, and `exitWithError()` (the last defined
+ * in `types.ts`) compatibility surfaces were removed once Selfhost migrated in Task 21.
  */
 
-import {resolve} from "node:path";
 import {MonorepositoryConsoleLogger, type MonorepositoryLogger} from "../common/logger.ts";
-import {formatCommand, type CommandResult, type CommandRunner} from "../common/process.ts";
-import {
-  AbstractProcessRunner,
-  processFailureEvidence,
-  type ProcessOutcome,
-  type ProcessRequest,
-  type ProcessRunOptions,
-  type ProcessRunner,
-} from "../common/runner.ts";
+import {processFailureEvidence, type ProcessOutcome, type ProcessRunner} from "../common/runner.ts";
 import {commandCancellationFromSignal, type RuntimeEnvironment} from "../common/runtime.ts";
-import type {ContainerRuntimeAdapter, RuntimeCommand} from "./adapters.ts";
+import type {ContainerRuntimeAdapter} from "./adapters.ts";
 import {ContainerRuntimeError} from "./types.ts";
 
 /** Fixed ports used by local Aspire and selfhost resources. */
 export const requiredLocalPorts = [3000, 3002, 4173, 5000, 5002, 6379, 8081, 8082, 10000] as const;
-
-/**
- * Builds a human-readable failure detail from a structured command result.
- *
- * @deprecated Removed when Selfhost migrates in Task 21. Use {@link processFailureEvidence} for
- * typed {@link ProcessOutcome} failures.
- * @remarks
- * Preserves the `stdout`/`stderr`/`spawnError` distinction all the way to
- * diagnostics text instead of concatenating the fields into one opaque blob
- * and then guessing at the failure cause: standard error is preferred when
- * present, standard output is used when standard error is empty, a spawn
- * failure message is used when the process never started, and `fallback`
- * covers the remaining case where none of those are available.
- *
- * @param result - Structured command result to describe.
- * @param fallback - Text used when no stream or spawn error carries detail.
- * @returns The most relevant available diagnostic text.
- */
-export function describeCommandFailure(result: Readonly<CommandResult>, fallback: string): string {
-  return result.stderr.trim() || result.stdout.trim() || result.spawnError || fallback;
-}
 
 /**
  * Combines stdout and stderr for backend/provider banner detection.
@@ -58,7 +27,7 @@ export function describeCommandFailure(result: Readonly<CommandResult>, fallback
  * Some container CLI banners (for example Podman's external compose
  * provider notice, or a Docker Desktop version banner) are written to
  * stderr rather than stdout. Detection heuristics must inspect both
- * streams; this is unrelated to {@link describeCommandFailure}'s
+ * streams; this is unrelated to {@link describeOutcomeFailure}'s
  * stderr-first precedence, which is used only for diagnostic failure text.
  *
  * @param outcome - Process outcome to inspect.
@@ -89,39 +58,6 @@ function describeOutcomeFailure(outcome: Readonly<Exclude<ProcessOutcome, {reado
       return outcome.signal === undefined ? "timed out" : `timed out with ${outcome.signal}`;
     case "cancelled":
       return outcome.signal === undefined ? "cancelled" : `cancelled by ${outcome.signal}`;
-  }
-}
-
-/**
- * Builds the host command that generates taxonomy and license artifacts.
- *
- * @returns Platform-safe Node command using the unified `/a` alias.
- */
-export function buildArtifactGenerationCommand(): RuntimeCommand {
-  return {
-    command: process.execPath,
-    args: [resolve("scripts/generate.ts"), "/a"],
-  };
-}
-
-/**
- * Generates required artifacts before local frontend/backend container builds.
- *
- * @deprecated Removed when Selfhost migrates in Task 21. Migrated commands invoke
- * `generateArtifactsCommand` directly through `CommandInvoker.invoke` instead.
- * @param runner - Command runner used to execute the generator.
- * @param logger - Logger used for command and child-process output.
- * @throws {ContainerRuntimeError} When generation fails.
- */
-export async function runArtifactGeneration(
-  runner: CommandRunner,
-  logger: MonorepositoryLogger = new MonorepositoryConsoleLogger("container::preflight"),
-): Promise<void> {
-  const command = buildArtifactGenerationCommand();
-  logger.command(formatCommand(command));
-  const result = await runner.run(command, {output: "tee", logger});
-  if (result.code !== 0) {
-    throw new ContainerRuntimeError(`Artifact generation failed. Output: ${describeCommandFailure(result, `exit code ${result.code}`)}`);
   }
 }
 
@@ -168,11 +104,20 @@ export async function assertToolAvailable(tool: string, runner: ProcessRunner, s
 /**
  * Rejects Docker Desktop when it appears as the active Docker-compatible backend.
  *
+ * @remarks
+ * The probe itself is advisory: a failed `docker version` cannot confirm a Docker Desktop banner,
+ * so it is not an error. A cancelled probe on the invocation's own aborted signal is different
+ * and now surfaces the invocation's cancellation immediately, instead of letting the next
+ * signal-aware probe report it one probe later.
+ *
  * @param runner - Process runner used for probing.
+ * @param signal - The owning invocation's cancellation signal, when probing through
+ * {@link runContainerPreflight}.
  * @throws {ContainerRuntimeError} When Docker Desktop is detected.
  */
-export async function assertNoDockerDesktopBackend(runner: ProcessRunner): Promise<void> {
+export async function assertNoDockerDesktopBackend(runner: ProcessRunner, signal?: AbortSignal): Promise<void> {
   const outcome = await runner.run({command: "docker", args: ["version"]});
+  throwIfPreflightCancelled(outcome, signal);
 
   if (outcome.kind === "succeeded" && combinedOutputForBannerDetection(outcome).includes("docker desktop")) {
     throw new ContainerRuntimeError(
@@ -281,9 +226,8 @@ export interface ContainerPreflightContext {
  * Runs common preflight checks for engine-aware local runtime commands.
  *
  * @remarks
- * This is the production preflight path for every migrated declarative container command; the
- * deprecated {@link runSharedPreflight} overload delegates to this implementation instead of
- * duplicating the check sequence.
+ * This is the only preflight path: every declarative container command calls it with its own
+ * invocation runner, logger, environment snapshot, and cancellation signal.
  *
  * @param adapter - Selected runtime adapter.
  * @param context - Capabilities this preflight run depends on.
@@ -297,7 +241,7 @@ export async function runContainerPreflight(adapter: ContainerRuntimeAdapter, co
   if (adapter.engine === "rancher") {
     await assertRancherBackend(runner, context.signal);
   } else {
-    await assertNoDockerDesktopBackend(runner);
+    await assertNoDockerDesktopBackend(runner, context.signal);
     await assertPodmanBackend(runner, context.signal);
   }
 
@@ -310,87 +254,4 @@ export async function runContainerPreflight(adapter: ContainerRuntimeAdapter, co
   }
 
   await warnOnExistingLocalContainers(adapter, runner, context.logger);
-}
-
-/**
- * Converts a legacy {@link CommandResult} into a typed {@link ProcessOutcome}.
- *
- * @param result - Legacy command result to convert.
- * @returns The equivalent typed process outcome.
- */
-function toProcessOutcome(result: Readonly<CommandResult>): ProcessOutcome {
-  const output = {stdout: result.stdout, stderr: result.stderr, durationMs: result.durationMs};
-
-  if (result.spawnError !== undefined) {
-    return {...output, kind: "spawn-failed", message: result.spawnError};
-  }
-  if (result.timedOut) {
-    return {...output, kind: "timed-out", ...(result.signal === undefined ? {} : {signal: result.signal})};
-  }
-  if (result.signal !== undefined) {
-    return {...output, kind: "signalled", signal: result.signal};
-  }
-  if (result.code === 0) {
-    return {...output, kind: "succeeded", exitCode: 0};
-  }
-
-  return {...output, kind: "exited", exitCode: result.code};
-}
-
-/** Adapts a legacy {@link CommandRunner} to the typed {@link ProcessRunner} contract. */
-class LegacyProcessRunnerAdapter extends AbstractProcessRunner {
-  readonly #runner: CommandRunner;
-
-  public constructor(runner: CommandRunner) {
-    super();
-    this.#runner = runner;
-  }
-
-  /** {@inheritDoc AbstractProcessRunner.execute} */
-  protected override async execute(request: Readonly<ProcessRequest>, options: Readonly<ProcessRunOptions>): Promise<ProcessOutcome> {
-    return toProcessOutcome(await this.#runner.run(request, options));
-  }
-}
-
-/**
- * Inert environment snapshot for the deprecated {@link runSharedPreflight} overload.
- *
- * @remarks
- * Never read by {@link runContainerPreflight}'s check sequence; it exists only to satisfy the
- * {@link ContainerPreflightContext} contract without reading ambient `process.env`/`process.cwd`
- * state from this still-legacy overload.
- */
-const legacyPreflightEnvironment: RuntimeEnvironment = {
-  variables: {},
-  cwd: "",
-  executablePath: "",
-  platform: "linux",
-  architecture: "x64",
-  stdinIsTTY: false,
-  stdoutIsTTY: false,
-  isCI: false,
-};
-
-/**
- * Runs common preflight checks for engine-aware local runtime commands.
- *
- * @deprecated Removed when Selfhost migrates in Task 21. Delegates to
- * {@link runContainerPreflight}; migrated commands call that function directly with their own
- * runtime capabilities instead.
- * @param adapter - Selected runtime adapter.
- * @param runner - Command runner used for probing.
- * @param logger - Logger used for preflight output.
- * @throws {ContainerRuntimeError} When required runtime capabilities are missing.
- */
-export function runSharedPreflight(
-  adapter: ContainerRuntimeAdapter,
-  runner: CommandRunner,
-  logger: MonorepositoryLogger = new MonorepositoryConsoleLogger("container::preflight"),
-): Promise<void> {
-  return runContainerPreflight(adapter, {
-    runner: new LegacyProcessRunnerAdapter(runner),
-    logger,
-    environment: legacyPreflightEnvironment,
-    signal: new AbortController().signal,
-  });
 }

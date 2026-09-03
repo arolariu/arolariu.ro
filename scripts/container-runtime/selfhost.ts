@@ -1,24 +1,46 @@
 /**
- * @fileoverview Engine-aware selfhost orchestration.
+ * @fileoverview Engine-aware selfhost orchestration command.
  * @module scripts/container-runtime/selfhost
+ *
+ * @remarks
+ * Every ambient effect this command used to reach for directly (the child process, the
+ * repository filesystem, the process environment, Node's timers, and the global `fetch` used for
+ * Cosmos provisioning) now arrives through the injected {@link CommandContext.runtime}, so the
+ * command is fully exercised by the declarative command runtime's test fakes and never spawns
+ * Docker or Podman, and never reaches Cosmos or Azurite, in a test. The taxonomy artifact
+ * prerequisite runs as a nested, silent invocation of `generateArtifactsCommand` instead of a
+ * spawned Node subprocess, so it inherits this invocation's cancellation, redactions, and cleanup
+ * ownership.
+ *
+ * Started stacks and the generated Traefik file are requested persistent state: neither is ever
+ * registered as invocation cleanup, a partially completed start leaves everything it already
+ * started running, and the generated Traefik file is removed only by the explicit `stop` action.
  */
 
-import {BlobServiceClient} from "@azure/storage-blob";
-import {access, mkdir} from "node:fs/promises";
-import {resolve} from "node:path";
-import {setTimeout as delay} from "node:timers/promises";
-import {fileURLToPath} from "node:url";
-import {commanderExitCode, createToolProgram} from "../common/cli.ts";
-import {MonorepositoryConsoleLogger, type MonorepositoryLogger} from "../common/logger.ts";
-import {defaultCommandRunner, formatCommand, type CommandRunner, type CommandRunOptions} from "../common/process.ts";
+import {
+  CommandInputError,
+  MonorepoCommand,
+  type CommandContext,
+  type CommandInvoker,
+  type CommandRuntimeFactory,
+} from "../common/commander.ts";
 import {resolveRepositoryPaths} from "../common/repository-paths.ts";
-import {nodeFileSystem} from "../common/runtime.node.ts";
+import {RunnerError, type ProcessEnvironment} from "../common/runner.ts";
+import {CommandCancellation, commandCancellationFromSignal, type CommandRuntime} from "../common/runtime.ts";
+import {generateArtifactsCommand, type ArtifactGenerationResult, type GenerateArtifactsInput} from "../generate.artifacts.ts";
 import {getContainerAdapter, type ContainerRuntimeAdapter, type RuntimeCommand} from "./adapters.ts";
-import {describeCommandFailure, runArtifactGeneration, runSharedPreflight} from "./preflight.ts";
+import {runContainerPreflight} from "./preflight.ts";
+import {azuriteDevelopmentConnectionString, createLocalStorageBootstrap, type LocalStorageBootstrap} from "./selfhost.bootstrap.ts";
 import {resolveRuntimeContainerEngine} from "./selection.ts";
-import {removeSelfhostTraefikConfig, writeSelfhostTraefikConfig} from "./traefik.ts";
-import type {ContainerEngine} from "./types.ts";
-import {ContainerRuntimeError, exitWithError} from "./types.ts";
+import {buildSelfhostTraefikConfig, removeSelfhostTraefikConfig, writeSelfhostTraefikConfig} from "./traefik.ts";
+import {
+  ContainerRuntimeError,
+  type ContainerEngine,
+  type SelfhostAction,
+  type SelfhostInput,
+  type SelfhostResult,
+  type SelfhostStack,
+} from "./types.ts";
 
 /** Time to wait for storage containers to accept bootstrap calls after compose start. */
 const storageReadyDelayMs = 10_000;
@@ -26,21 +48,18 @@ const storageReadyDelayMs = 10_000;
 /** Time to wait between compose stack operations to reduce local runtime contention. */
 const stackOperationDelayMs = 3_000;
 
-/**
- * Azurite's documented development storage connection string.
- *
- * @remarks
- * The development account name and key are public Azurite emulator constants,
- * not production credentials. They are used only against localhost Azurite.
- *
- * @see {@link https://learn.microsoft.com/azure/storage/common/storage-use-azurite}
- */
-const azuriteDevelopmentConnectionString = "UseDevelopmentStorage=true";
+/** Working directory every selfhost compose, exec, mkcert, and bootstrap command runs from. */
+const selfhostWorkingDirectory = "infra/Local";
+
 const certFilePath = "Management/certs/local-cert.pem";
 const keyFilePath = "Management/certs/local-key.pem";
 
-/** Supported selfhost orchestration actions. */
-export type SelfhostAction = "start" | "stop" | "logs";
+/** Local stacks each selfhost action operates on, in execution order. */
+const stacksByAction: Readonly<Record<SelfhostAction, readonly SelfhostStack[]>> = {
+  start: ["management", "storage", "profile", "backend", "frontend"],
+  stop: ["frontend", "backend", "storage", "management"],
+  logs: ["profile", "backend", "frontend"],
+};
 
 /** Inputs used to build a selfhost command plan. */
 export interface SelfhostPlanInputs {
@@ -48,17 +67,20 @@ export interface SelfhostPlanInputs {
   readonly adapter: ContainerRuntimeAdapter;
 }
 
-/** Optional boundary replacements for {@link runSelfhost}. */
-export interface RunSelfhostOptions {
-  readonly requestedEngine?: ContainerEngine;
-  readonly runner?: CommandRunner;
-  readonly logger?: MonorepositoryLogger;
+/** Optional collaborators {@link createSelfhostCommand} composes. */
+export interface SelfhostCommandDependencies {
+  /** Optional runtime factory; tests inject a fake instead of the Node adapter. */
+  readonly runtimeFactory?: CommandRuntimeFactory;
+  /** Local Cosmos/Azurite provisioning; defaults to the runtime-HTTP-backed adapter. */
+  readonly bootstrap?: LocalStorageBootstrap;
+  /** Taxonomy and license artifact generator invoked as the start prerequisite. */
+  readonly artifacts?: CommandInvoker<GenerateArtifactsInput, ArtifactGenerationResult>;
 }
 
-/** Optional boundary replacements for {@link runSelfhostEntrypoint}. */
-export interface SelfhostCliDependencies {
-  readonly runner?: CommandRunner;
-  readonly logger?: MonorepositoryLogger;
+/** Collaborators resolved once when the command object is created. */
+interface ResolvedSelfhostDependencies {
+  readonly artifacts: CommandInvoker<GenerateArtifactsInput, ArtifactGenerationResult>;
+  readonly bootstrap?: LocalStorageBootstrap;
 }
 
 /**
@@ -107,26 +129,6 @@ export function buildSelfhostPlan(inputs: SelfhostPlanInputs): readonly RuntimeC
   ];
 }
 
-async function runCommandOrThrow(
-  runner: CommandRunner,
-  command: RuntimeCommand,
-  logger: MonorepositoryLogger,
-  options: CommandRunOptions = {},
-): Promise<void> {
-  logger.command(formatCommand(command));
-  const result = await runner.run(command, {
-    cwd: options.cwd ?? "infra/Local",
-    output: options.output ?? "tee",
-    logger,
-    ...(options.env === undefined ? {} : {env: options.env}),
-  });
-  if (result.code !== 0) {
-    throw new ContainerRuntimeError(
-      `Command failed: ${formatCommand(command)}\n${describeCommandFailure(result, `exit code ${result.code}`)}`,
-    );
-  }
-}
-
 /**
  * Builds the shared storage-only local bootstrap command.
  *
@@ -139,101 +141,135 @@ export function buildLocalStorageBootstrapCommand(): RuntimeCommand {
   };
 }
 
-async function pathExists(path: string): Promise<boolean> {
+/**
+ * Reads the required local SQL Server password from an environment snapshot.
+ *
+ * @param variables - Immutable environment snapshot owned by the invocation.
+ * @returns The configured local SQL Server password.
+ * @throws {ContainerRuntimeError} When the password is not configured.
+ *
+ * @remarks
+ * Keep this value in the shell/session environment only. Do not commit it to
+ * `.env` files, VS Code launch profiles, or source control.
+ */
+export function getRequiredSqlPassword(variables: Readonly<Record<string, string | undefined>>): string {
+  const sqlPassword = variables["MSSQL_SA_PASSWORD"];
+  if (sqlPassword === undefined || sqlPassword.trim() === "") {
+    throw new ContainerRuntimeError(
+      "MSSQL_SA_PASSWORD environment variable is required for selfhost SQL bootstrap. Set it in your shell/session environment only; do not commit it to .env files, launch profiles, or source control.",
+    );
+  }
+
+  return sqlPassword;
+}
+
+/**
+ * Runs one selfhost runtime command, translating a cancelled runner outcome on the invocation's
+ * own aborted signal into the invocation's typed cancellation reason.
+ *
+ * @remarks
+ * A cancelled invocation's exact SIGINT/SIGTERM exit code (`130`/`143`) is owned by its own
+ * {@link CommandCancellation} reason; letting `expectSuccess`'s `RunnerError` for a cancelled
+ * outcome escape unclassified would misreport an interrupted invocation as an operational failure
+ * and the shared Commander lifecycle would classify it as exit code `1`. A `{kind:"cancelled"}`
+ * outcome observed while the invocation signal is not aborted is not this invocation's
+ * cancellation and stays an operational failure. The invocation logger is always supplied so the
+ * retained request and outcome inside a {@link RunnerError} are redacted.
+ *
+ * @param runtime - Capabilities owned by the invocation.
+ * @param command - Engine-owned runtime command to execute.
+ * @param env - Optional environment values merged over the child's inherited defaults.
+ * @throws {CommandCancellation} When `command` is cancelled on the invocation's aborted signal.
+ * @throws {RunnerError} When `command` fails for any other reason.
+ */
+async function runSelfhostCommand(runtime: CommandRuntime, command: Readonly<RuntimeCommand>, env?: ProcessEnvironment): Promise<void> {
   try {
-    await access(path);
-    return true;
-  } catch {
-    return false;
+    await runtime.runner.expectSuccess(command, {
+      cwd: selfhostWorkingDirectory,
+      output: "tee",
+      logCommands: true,
+      logger: runtime.logger,
+      signal: runtime.signal,
+      ...(env === undefined ? {} : {env}),
+    });
+  } catch (error: unknown) {
+    if (error instanceof RunnerError && error.outcome.kind === "cancelled" && runtime.signal.aborted) {
+      throw commandCancellationFromSignal(runtime.signal);
+    }
+    throw error;
   }
 }
 
-async function ensureHttpsCertificates(runner: CommandRunner, logger: MonorepositoryLogger): Promise<void> {
-  if ((await pathExists(`infra/Local/${certFilePath}`)) && (await pathExists(`infra/Local/${keyFilePath}`))) {
+/**
+ * Generates trusted localhost certificates for Traefik when they are missing.
+ *
+ * @remarks
+ * A missing `mkcert` stays advisory rather than fatal: Traefik then serves its own self-signed
+ * certificate and the start action continues, exactly as it did before this command was migrated.
+ *
+ * @param runtime - Capabilities owned by the invocation.
+ * @throws When `mkcert` is available but certificate generation fails.
+ */
+async function ensureHttpsCertificates(runtime: CommandRuntime): Promise<void> {
+  if (
+    (await runtime.files.exists(`${selfhostWorkingDirectory}/${certFilePath}`))
+    && (await runtime.files.exists(`${selfhostWorkingDirectory}/${keyFilePath}`))
+  ) {
     return;
   }
 
-  const mkcert = await runner.run({command: "mkcert", args: ["--version"]});
-  if (mkcert.code !== 0) {
-    logger.warn(
+  const mkcert = await runtime.runner.run({command: "mkcert", args: ["--version"]}, {signal: runtime.signal});
+  if (mkcert.kind !== "succeeded") {
+    runtime.logger.warn(
       "mkcert is not available; Traefik HTTPS will use its default self-signed certificate. Install mkcert and rerun selfhost to generate trusted localhost certificates.",
     );
     return;
   }
 
-  await mkdir("infra/Local/Management/certs", {recursive: true});
-  await runCommandOrThrow(runner, {command: "mkcert", args: ["-install"]}, logger);
-  await runCommandOrThrow(
-    runner,
-    {
-      command: "mkcert",
-      args: ["-key-file", keyFilePath, "-cert-file", certFilePath, "localhost", "*.localhost"],
-    },
-    logger,
-  );
-}
-
-async function postCosmosResource(url: string, body: unknown): Promise<void> {
-  const response = await fetch(url, {
-    method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify(body),
+  await runtime.files.createDirectory(`${selfhostWorkingDirectory}/Management/certs`, {recursive: true});
+  await runSelfhostCommand(runtime, {command: "mkcert", args: ["-install"]});
+  await runSelfhostCommand(runtime, {
+    command: "mkcert",
+    args: ["-key-file", keyFilePath, "-cert-file", certFilePath, "localhost", "*.localhost"],
   });
-
-  if (!response.ok && response.status !== 409) {
-    throw new ContainerRuntimeError(`Cosmos bootstrap failed for ${url}: HTTP ${response.status} ${await response.text()}`);
-  }
 }
 
-async function bootstrapCosmos(): Promise<void> {
-  try {
-    await postCosmosResource("http://localhost:8081/dbs", {id: "primary"});
-    await postCosmosResource("http://localhost:8081/dbs/primary/colls", {
-      id: "invoices",
-      partitionKey: {paths: ["/UserIdentifier"], kind: "Hash"},
-    });
-    await postCosmosResource("http://localhost:8081/dbs/primary/colls", {
-      id: "merchants",
-      partitionKey: {paths: ["/ParentCompanyId"], kind: "Hash"},
-    });
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    throw new ContainerRuntimeError(
-      `Cosmos bootstrap failed. Ensure the cosmosdb container is running and reachable at http://localhost:8081. Original error: ${message}`,
-    );
-  }
+/**
+ * Runs the start-only preparation that must happen before any stack command is issued.
+ *
+ * @param runtime - Capabilities owned by the invocation.
+ * @returns The local SQL Server password, already registered with the invocation logger.
+ * @throws {ContainerRuntimeError} When the SQL password is not configured.
+ */
+async function prepareSelfhostStart(runtime: CommandRuntime): Promise<string> {
+  // Registering the redaction before anything else guarantees that every later command echo, tee
+  // line, and retained runner diagnostic containing the password is already sanitized.
+  const sqlPassword = getRequiredSqlPassword(runtime.environment.variables);
+  runtime.logger.redact(sqlPassword);
+
+  await ensureHttpsCertificates(runtime);
+  await writeSelfhostTraefikConfig(runtime.files, buildSelfhostTraefikConfig());
+
+  return sqlPassword;
 }
 
-async function bootstrapAzurite(): Promise<void> {
-  try {
-    const client = BlobServiceClient.fromConnectionString(azuriteDevelopmentConnectionString);
-    const container = client.getContainerClient("invoices");
-    await container.createIfNotExists();
-    await container.setAccessPolicy("blob");
-    await client.setProperties({
-      cors: [
-        {
-          allowedOrigins: "*",
-          allowedMethods: "GET,HEAD,OPTIONS",
-          allowedHeaders: "*",
-          exposedHeaders: "*",
-          maxAgeInSeconds: 3600,
-        },
-      ],
-    });
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    throw new ContainerRuntimeError(
-      `Azurite bootstrap failed. Ensure the azurite container is running and reachable at http://localhost:10000. Original error: ${message}`,
-    );
-  }
-}
-
-async function bootstrapSelfhost(adapter: ContainerRuntimeAdapter, runner: CommandRunner, logger: MonorepositoryLogger): Promise<void> {
-  const sqlPassword = getRequiredSqlPassword();
-
-  await runCommandOrThrow(
-    runner,
+/**
+ * Provisions SQL, Cosmos, Azurite, and local storage once the storage stack is ready.
+ *
+ * @param runtime - Capabilities owned by the invocation.
+ * @param adapter - Selected runtime adapter.
+ * @param bootstrap - Local Cosmos/Azurite provisioning.
+ * @param sqlPassword - Local SQL Server password, already registered with the invocation logger.
+ * @throws When any provisioning step fails or the invocation is cancelled.
+ */
+async function bootstrapSelfhost(
+  runtime: CommandRuntime,
+  adapter: ContainerRuntimeAdapter,
+  bootstrap: LocalStorageBootstrap,
+  sqlPassword: string,
+): Promise<void> {
+  await runSelfhostCommand(
+    runtime,
     adapter.exec("mssql", [
       "/opt/mssql-tools/bin/sqlcmd",
       "-C",
@@ -249,153 +285,188 @@ async function bootstrapSelfhost(adapter: ContainerRuntimeAdapter, runner: Comma
       "/usr/sql/sqlSchema.sql",
       "-No",
     ]),
-    logger,
   );
-  await bootstrapCosmos();
-  await bootstrapAzurite();
-  await runCommandOrThrow(runner, buildLocalStorageBootstrapCommand(), logger, {
-    env: {
-      DOTNET_ENVIRONMENT: "Development",
-      INFRA: "local",
-      ConnectionStrings__blobs: azuriteDevelopmentConnectionString,
-      ConnectionStrings__queues: azuriteDevelopmentConnectionString,
-    },
+  await bootstrap.ensureCosmos(runtime.signal);
+  await bootstrap.ensureAzurite(runtime.signal);
+  await runSelfhostCommand(runtime, buildLocalStorageBootstrapCommand(), {
+    DOTNET_ENVIRONMENT: "Development",
+    INFRA: "local",
+    ConnectionStrings__blobs: azuriteDevelopmentConnectionString,
+    ConnectionStrings__queues: azuriteDevelopmentConnectionString,
   });
 }
 
 /**
- * Reads the required local SQL Server password from the process environment.
+ * Runs the taxonomy and license artifact generator as a nested, silent invocation.
  *
- * @returns The configured local SQL Server password.
- * @throws {ContainerRuntimeError} When the password is not configured.
- *
- * @remarks
- * Keep this value in the shell/session environment only. Do not commit it to
- * `.env` files, VS Code launch profiles, or source control.
+ * @param artifacts - Taxonomy and license artifact generator command.
+ * @param context - Command context whose runtime scope owns the nested invocation.
+ * @throws {CommandCancellation} When the nested invocation was cancelled.
+ * @throws When the nested invocation failed or unexpectedly returned help.
  */
-export function getRequiredSqlPassword(): string {
-  const sqlPassword = process.env["MSSQL_SA_PASSWORD"];
-  if (sqlPassword === undefined || sqlPassword.trim() === "") {
-    throw new ContainerRuntimeError(
-      "MSSQL_SA_PASSWORD environment variable is required for selfhost SQL bootstrap. Set it in your shell/session environment only; do not commit it to .env files, launch profiles, or source control.",
-    );
-  }
-
-  return sqlPassword;
-}
-
-/**
- * Runs selfhost orchestration with the selected runtime engine.
- *
- * @param action - Selfhost action to execute.
- * @param options - Explicit engine request and optional injected command runner/logger.
- */
-export async function runSelfhost(
-  action: SelfhostAction,
-  options: Readonly<RunSelfhostOptions> = {},
+async function runArtifactPrerequisite(
+  artifacts: CommandInvoker<GenerateArtifactsInput, ArtifactGenerationResult>,
+  context: Readonly<CommandContext>,
 ): Promise<void> {
-  const runner = options.runner ?? defaultCommandRunner;
-  const logger = options.logger ?? new MonorepositoryConsoleLogger("container::selfhost");
-  const paths = await resolveRepositoryPaths(import.meta.url, nodeFileSystem);
-  const selection = await resolveRuntimeContainerEngine({
-    ...(options.requestedEngine === undefined ? {} : {requestedEngine: options.requestedEngine}),
-    env: process.env,
-    toolingConfigPath: paths.toolingConfig,
-  });
-  const adapter = getContainerAdapter(selection.engine);
-  const preflightLogger = logger.child("preflight");
+  const execution = await artifacts.invoke({verbose: false}, {parent: context, presentation: "silent"});
 
-  await runSharedPreflight(adapter, runner, preflightLogger);
-
-  if (shouldGenerateTaxonomyArtifacts(action)) {
-    await runArtifactGeneration(runner, preflightLogger);
-  }
-
-  if (action === "start") {
-    const sqlPassword = getRequiredSqlPassword();
-    logger.redact(sqlPassword);
-    await ensureHttpsCertificates(runner, logger);
-    await writeSelfhostTraefikConfig();
-  }
-
-  const commands = buildSelfhostPlan({action, adapter});
-  for (const command of commands) {
-    await runCommandOrThrow(runner, command, logger);
-    if (action === "start" && command.args.includes("Storage/docker-compose.yml")) {
-      await delay(storageReadyDelayMs);
-      await bootstrapSelfhost(adapter, runner, logger);
-    }
-    if (action !== "logs") {
-      await delay(stackOperationDelayMs);
-    }
-  }
-
-  if (action === "stop") {
-    await removeSelfhostTraefikConfig();
-  }
-}
-
-const isDirectExecution = process.argv[1] !== undefined && fileURLToPath(import.meta.url) === resolve(process.argv[1]);
-
-/**
- * Parses selfhost CLI arguments and runs the direct selfhost CLI with one
- * logger shared by orchestration and failure reporting.
- *
- * @remarks
- * Accepts `argv` explicitly (a Commander "user" argument list, without a
- * leading node executable or script path) so tests never mutate
- * `process.argv`. `--help`/`-h`/`/h` route through the injected `logger` and
- * return without running any selfhost action.
- *
- * @param argv - Raw CLI arguments following the selfhost entrypoint.
- * @param dependencies - Optional injected command runner and logger.
- */
-export async function runSelfhostEntrypoint(
-  argv: readonly string[],
-  dependencies: Readonly<SelfhostCliDependencies> = {},
-): Promise<void> {
-  const logger = dependencies.logger ?? new MonorepositoryConsoleLogger("container::selfhost");
-  const program = createToolProgram({
-    name: "selfhost",
-    description: "Runs selfhost container orchestration for the selected local engine.",
-    usage: "<start|stop|logs> [--engine <rancher|podman>]",
-    examples: ["npm run dev:selfhost -- --engine rancher", "npm run dev:selfhost:stop -- --engine podman"],
-    logger,
-  });
-  program.argument("[action]", "Selfhost action to run: start, stop, or logs.");
-  program.option("--engine <engine>", "Container engine to use (rancher or podman).");
-
-  try {
-    program.parse(argv, {from: "user"});
-  } catch (error) {
-    if (commanderExitCode(error) === 0) {
+  switch (execution.status) {
+    case "completed":
       return;
-    }
-    exitWithError(error, logger);
-    return;
-  }
-
-  const [requestedAction] = program.args as [string | undefined];
-  const options = program.opts<{engine?: string}>();
-
-  try {
-    if (requestedAction !== "start" && requestedAction !== "stop" && requestedAction !== "logs") {
-      throw new ContainerRuntimeError("Usage: node scripts/container-runtime/selfhost.ts <start|stop|logs> --engine rancher|podman");
-    }
-
-    await runSelfhost(requestedAction, {
-      // Commander only yields untyped strings; resolveRuntimeContainerEngine
-      // validates the value (including the docker-deprecation message)
-      // before it is ever treated as a real ContainerEngine.
-      ...(options.engine === undefined ? {} : {requestedEngine: options.engine as ContainerEngine}),
-      ...(dependencies.runner === undefined ? {} : {runner: dependencies.runner}),
-      logger,
-    });
-  } catch (error) {
-    exitWithError(error, logger);
+    case "cancelled":
+      throw new CommandCancellation(execution.failure.message, execution.exitCode);
+    case "failed":
+      throw new Error(execution.failure.message, {cause: execution.failure.cause});
+    case "help":
+      throw new Error("Artifact generation returned help during a nested invocation.");
   }
 }
 
-if (isDirectExecution) {
-  await runSelfhostEntrypoint(process.argv.slice(2));
+/**
+ * Normalizes and validates an untyped `--engine` value exactly like engine selection does.
+ *
+ * @param value - Raw Commander option value.
+ * @returns The validated engine, or `undefined` when no override was supplied.
+ * @throws {CommandInputError} When the requested engine is deprecated or unsupported.
+ */
+function decodeSelfhostEngine(value: string | undefined): ContainerEngine | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  const normalized = value.trim().toLowerCase();
+  if (normalized === "rancher" || normalized === "podman") {
+    return normalized;
+  }
+
+  if (normalized === "docker" || normalized === "docker-desktop") {
+    throw new CommandInputError("Docker Desktop is deprecated for this repository. Select --engine rancher or --engine podman.");
+  }
+
+  throw new CommandInputError(`Unsupported container engine '${value}'. Supported engines: rancher, podman.`);
 }
+
+/**
+ * Runs selfhost orchestration with the resolved local container engine.
+ *
+ * @param dependencies - Artifact generator and optional storage bootstrap collaborators.
+ * @param context - Command context whose runtime owns every ambient capability.
+ * @param input - Typed command input.
+ * @returns The action, engine, and ordered stacks this invocation operated on.
+ * @throws When the engine cannot be resolved, preflight fails, the artifact prerequisite fails,
+ * the SQL password is missing, bootstrap fails, or a stack command exits with a nonzero code.
+ */
+async function executeSelfhost(
+  dependencies: Readonly<ResolvedSelfhostDependencies>,
+  context: Readonly<CommandContext>,
+  input: Readonly<SelfhostInput>,
+): Promise<SelfhostResult> {
+  const {runtime} = context;
+  const paths = await resolveRepositoryPaths(import.meta.url, runtime.files);
+  const selection = await resolveRuntimeContainerEngine(
+    {
+      // The declarative command host only decodes untyped CLI strings; resolveRuntimeContainerEngine
+      // validates the value (including the docker-deprecation message) before it is ever treated
+      // as a real ContainerEngine.
+      ...(input.engine === undefined ? {} : {requestedEngine: input.engine}),
+      env: runtime.environment.variables,
+      toolingConfigPath: paths.toolingConfig,
+    },
+    runtime.files,
+  );
+  const adapter = getContainerAdapter(selection.engine);
+
+  await runContainerPreflight(adapter, {
+    runner: runtime.runner,
+    logger: runtime.logger.child("preflight"),
+    environment: runtime.environment,
+    signal: runtime.signal,
+  });
+
+  if (shouldGenerateTaxonomyArtifacts(input.action)) {
+    await runArtifactPrerequisite(dependencies.artifacts, context);
+  }
+
+  // A defined password is exactly the start action: only `prepareSelfhostStart()` produces one,
+  // and only the start action runs the storage bootstrap that consumes it.
+  const sqlPassword = input.action === "start" ? await prepareSelfhostStart(runtime) : undefined;
+  const bootstrap = dependencies.bootstrap ?? createLocalStorageBootstrap({http: runtime.http});
+  const commands = buildSelfhostPlan({action: input.action, adapter});
+
+  for (const command of commands) {
+    // Intentionally sequential: each stack depends on the previous one already being up (or, for
+    // stop, already down), and the storage stack must settle before bootstrap runs against it.
+    // eslint-disable-next-line no-await-in-loop
+    await runSelfhostCommand(runtime, command);
+
+    if (sqlPassword !== undefined && command.args.includes("Storage/docker-compose.yml")) {
+      // eslint-disable-next-line no-await-in-loop
+      await runtime.clock.delay(storageReadyDelayMs, runtime.signal);
+      // eslint-disable-next-line no-await-in-loop
+      await bootstrapSelfhost(runtime, adapter, bootstrap, sqlPassword);
+    }
+
+    if (input.action !== "logs") {
+      // eslint-disable-next-line no-await-in-loop
+      await runtime.clock.delay(stackOperationDelayMs, runtime.signal);
+    }
+  }
+
+  if (input.action === "stop") {
+    await removeSelfhostTraefikConfig(runtime.files);
+  }
+
+  return {action: input.action, engine: adapter.engine, stacks: stacksByAction[input.action]};
+}
+
+/**
+ * Creates the selfhost orchestration command.
+ *
+ * @param dependencies - Optional runtime factory, storage bootstrap, and artifact collaborators.
+ * @returns The typed `dev:selfhost` command object.
+ */
+export function createSelfhostCommand(
+  dependencies: Readonly<SelfhostCommandDependencies> = {},
+): MonorepoCommand<SelfhostInput, SelfhostResult> {
+  const resolved: ResolvedSelfhostDependencies = {
+    artifacts: dependencies.artifacts ?? generateArtifactsCommand,
+    ...(dependencies.bootstrap === undefined ? {} : {bootstrap: dependencies.bootstrap}),
+  };
+
+  return new MonorepoCommand<SelfhostInput, SelfhostResult>(
+    {
+      metadata: {
+        name: "selfhost",
+        description: "Runs selfhost container orchestration for the selected local engine.",
+        usage: "[start|stop|logs] [--engine <rancher|podman>]",
+        examples: ["npm run dev:selfhost -- --engine rancher", "npm run dev:selfhost:stop -- --engine podman"],
+      },
+      configure: (program) => {
+        program.argument("[action]", "Selfhost action to run: start, stop, or logs (default: start).");
+        program.option("--engine <engine>", "Container engine to use (rancher or podman).");
+      },
+      decode: (program) => {
+        const {engine} = program.opts<{engine?: string}>();
+        const [action = "start"] = program.args as [string | undefined];
+
+        if (action !== "start" && action !== "stop" && action !== "logs") {
+          throw new CommandInputError("Use start, stop, or logs as the first argument.");
+        }
+
+        const requestedEngine = decodeSelfhostEngine(engine);
+        return {action, ...(requestedEngine === undefined ? {} : {engine: requestedEngine})};
+      },
+      execute: (context, input) => executeSelfhost(resolved, context, input),
+      completion: (result) => ({
+        exitCode: 0,
+        human: (logger) => logger.success(`Selfhost ${result.action} completed for engine '${result.engine}'.`),
+      }),
+    },
+    dependencies.runtimeFactory,
+  );
+}
+
+/** Production singleton used by the `npm run dev:selfhost*` scripts and this module's direct entrypoint. */
+export const selfhostCommand: MonorepoCommand<SelfhostInput, SelfhostResult> = createSelfhostCommand();
+
+await selfhostCommand.runIfMain(import.meta.url);

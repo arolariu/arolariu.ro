@@ -5,7 +5,6 @@
 
 import {describe, expect, it} from "vitest";
 import {InMemoryLoggerSink, MonorepositoryConsoleLogger, type MonorepositoryLogger} from "../common/logger.ts";
-import type {CommandResult, CommandRunner} from "../common/process.ts";
 import type {ProcessOutcome} from "../common/runner.ts";
 import {createProcessRunner} from "../common/runtime.testing.ts";
 import {CommandCancellation} from "../common/runtime.ts";
@@ -15,23 +14,11 @@ import {
   assertPodmanBackend,
   assertRancherBackend,
   assertToolAvailable,
-  buildArtifactGenerationCommand,
-  describeCommandFailure,
   requiredLocalPorts,
-  runArtifactGeneration,
   runContainerPreflight,
-  runSharedPreflight,
   warnOnExistingLocalContainers,
   type ContainerPreflightContext,
 } from "./preflight.ts";
-
-function commandResult(stdout: string, code = 0): CommandResult {
-  return {code, stdout, stderr: "", durationMs: 0, timedOut: false};
-}
-
-function commandResultWithStderr(stderr: string, code = 0): CommandResult {
-  return {code, stdout: "", stderr, durationMs: 0, timedOut: false};
-}
 
 function succeeded(stdout = "", stderr = ""): ProcessOutcome {
   return {kind: "succeeded", exitCode: 0, stdout, stderr, durationMs: 0};
@@ -54,44 +41,6 @@ function createTestLogger(): Readonly<{sink: InMemoryLoggerSink; logger: Monorep
 
   return {sink, logger};
 }
-
-describe("describeCommandFailure", () => {
-  it("prefers stderr, then stdout, then spawnError, then the fallback", () => {
-    expect(describeCommandFailure({code: 1, stdout: "out", stderr: "err", durationMs: 0, timedOut: false}, "fallback")).toBe("err");
-    expect(describeCommandFailure({code: 1, stdout: "out", stderr: "", durationMs: 0, timedOut: false}, "fallback")).toBe("out");
-    expect(
-      describeCommandFailure({code: 1, stdout: "", stderr: "", durationMs: 0, timedOut: false, spawnError: "spawn failed"}, "fallback"),
-    ).toBe("spawn failed");
-    expect(describeCommandFailure({code: 1, stdout: "", stderr: "", durationMs: 0, timedOut: false}, "fallback")).toBe("fallback");
-  });
-});
-
-describe("buildArtifactGenerationCommand", () => {
-  it("uses the current Node executable and unified artifact alias", () => {
-    expect(buildArtifactGenerationCommand()).toEqual({
-      command: process.execPath,
-      args: [expect.stringMatching(/scripts[\\/]generate\.ts$/u), "/a"],
-    });
-  });
-});
-
-describe("runArtifactGeneration", () => {
-  it("logs the command and supplies the logger for tee output", async () => {
-    const {sink, logger} = createTestLogger();
-    let receivedLogger: MonorepositoryLogger | undefined;
-    const runner: CommandRunner = {
-      run: async (_command, options) => {
-        receivedLogger = options?.logger;
-        return commandResult("");
-      },
-    };
-
-    await runArtifactGeneration(runner, logger);
-
-    expect(sink.records.some((record) => record.text.includes("generate.ts") && record.text.startsWith("$ "))).toBe(true);
-    expect(receivedLogger).toBe(logger);
-  });
-});
 
 describe("assertToolAvailable", () => {
   it("passes when the tool exits successfully", async () => {
@@ -141,6 +90,21 @@ describe("assertNoDockerDesktopBackend", () => {
 
   it("passes when the probe itself fails, since a failed probe cannot confirm a Docker Desktop banner", async () => {
     await expect(assertNoDockerDesktopBackend(createProcessRunner([exited(1, "not found")]))).resolves.toBeUndefined();
+  });
+
+  it("throws the invocation's cancellation reason when the advisory probe is cancelled on an aborted signal", async () => {
+    const controller = new AbortController();
+    controller.abort(new CommandCancellation("Terminated by test signal.", 130));
+
+    await expect(assertNoDockerDesktopBackend(createProcessRunner([cancelled()]), controller.signal)).rejects.toMatchObject({
+      name: "CommandCancellation",
+      exitCode: 130,
+      message: "Terminated by test signal.",
+    });
+  });
+
+  it("keeps a standalone cancelled outcome advisory when no invocation signal is aborted", async () => {
+    await expect(assertNoDockerDesktopBackend(createProcessRunner([cancelled()]))).resolves.toBeUndefined();
   });
 });
 
@@ -336,45 +300,20 @@ describe("runContainerPreflight", () => {
 
     await expect(runContainerPreflight(getContainerAdapter("rancher"), context)).rejects.toThrow("Required tool 'docker' is not available");
   });
-});
 
-describe("runSharedPreflight", () => {
-  it("runs Rancher validation and compose checks", async () => {
-    const calls: string[] = [];
-    const runner: CommandRunner = {
-      run: async (command) => {
-        calls.push([command.command, ...command.args].join(" "));
-        return commandResult("Rancher Desktop");
-      },
-    };
+  it("surfaces an aborted invocation at the advisory Docker Desktop probe without an extra probe", async () => {
+    const {context, runner, controller} = contextFor([succeeded("podman version 5.8.2"), cancelled()]);
+    controller.abort(new CommandCancellation("Terminated by test signal.", 143));
 
-    await runSharedPreflight(getContainerAdapter("rancher"), runner);
-
-    expect(calls).toEqual(["docker --version", "docker version", "docker compose version", "docker ps -a --format {{.Names}}"]);
-  });
-
-  it("rejects Docker Desktop before validating Podman", async () => {
-    const runner: CommandRunner = {
-      run: async (command) => {
-        if (command.command === "podman") {
-          return commandResult("podman version 5.4.0");
-        }
-
-        return commandResult("Docker Desktop 4.40.0");
-      },
-    };
-
-    await expect(runSharedPreflight(getContainerAdapter("podman"), runner)).rejects.toThrow("Docker Desktop is the active backend");
-  });
-
-  it("preserves a Docker Desktop banner detected only on stderr through the legacy CommandRunner adapter", async () => {
-    const runner: CommandRunner = {
-      run: async () => commandResultWithStderr("Docker Desktop 4.40.0"),
-    };
-
-    await expect(runSharedPreflight(getContainerAdapter("rancher"), runner)).rejects.toThrow(
-      "Rancher engine selected but Docker Desktop appears to be active",
-    );
+    await expect(runContainerPreflight(getContainerAdapter("podman"), context)).rejects.toMatchObject({
+      name: "CommandCancellation",
+      exitCode: 143,
+      message: "Terminated by test signal.",
+    });
+    expect(runner.calls.map((call) => [call.request.command, ...call.request.args].join(" "))).toEqual([
+      "podman --version",
+      "docker version",
+    ]);
   });
 });
 

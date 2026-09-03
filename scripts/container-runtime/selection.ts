@@ -4,7 +4,6 @@
  */
 
 import {readToolingConfig} from "../common/tooling-config.ts";
-import {nodeFileSystem} from "../common/runtime.node.ts";
 import type {ReadOnlyFileSystem} from "../common/runtime.ts";
 import {ContainerRuntimeError, type ContainerEngine, type ContainerEngineSelection, type SelectionInputs} from "./types.ts";
 
@@ -99,16 +98,15 @@ export function resolveContainerEngine(inputs: SelectionInputs): ContainerEngine
  * `requestedEngine` explicitly; this function never reads `process.argv`.
  *
  * @param input - Explicit engine request, environment, and local tooling configuration path.
- * @param files - Read-only filesystem capability used to read the persisted configuration.
- * Omitting it is a deprecated compatibility path that delegates to {@link nodeFileSystem}, kept
- * only for the still-legacy container entry points that have not yet migrated to an
- * invocation-scoped filesystem.
+ * @param files - Read-only filesystem capability, owned by the calling invocation, used to read
+ * the persisted configuration. Every container command supplies its own `runtime.files`; there is
+ * no ambient filesystem fallback.
  * @returns The resolved engine and configuration source.
  * @throws {ContainerRuntimeError} When an explicit source or required persisted configuration is invalid.
  */
 export async function resolveRuntimeContainerEngine(
   input: Readonly<RuntimeSelectionInput>,
-  files: ReadOnlyFileSystem = nodeFileSystem,
+  files: ReadOnlyFileSystem,
 ): Promise<ContainerEngineSelection> {
   if (input.requestedEngine !== undefined) {
     return {engine: normalizeEngine(input.requestedEngine), source: "argument"};
