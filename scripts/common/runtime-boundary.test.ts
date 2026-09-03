@@ -82,6 +82,7 @@ const processSpawningModules: ReadonlySet<string> = new Set(["node:child_process
 
 /** Sole worker adapter allowed to reuse the Node process runner outside a command runtime scope. */
 const workerShellAdapter = "scripts/workers/shell.ts";
+const wholeModuleImportName = "*";
 
 /**
  * Module specifiers no Doctor production module may import, because each one would hand Doctor a
@@ -149,6 +150,10 @@ function isTestFile(file: string): boolean {
   return /\.(?:spec|test)\.(?:cjs|js|mjs|ts)$/.test(file);
 }
 
+function isConfigurationFile(file: string): boolean {
+  return /\.config\.(?:cjs|js|mjs|ts)$/.test(file);
+}
+
 function discoverProductionScripts(directory: string = "scripts"): readonly string[] {
   const files: string[] = [];
 
@@ -161,7 +166,7 @@ function discoverProductionScripts(directory: string = "scripts"): readonly stri
 
     const normalizedPath = normalizeFilePath(path);
     const extension = normalizedPath.slice(normalizedPath.lastIndexOf("."));
-    if (productionScriptExtensions.has(extension) && !isTestFile(normalizedPath)) {
+    if (productionScriptExtensions.has(extension) && !isTestFile(normalizedPath) && !isConfigurationFile(normalizedPath)) {
       files.push(normalizedPath);
     }
   }
@@ -643,7 +648,7 @@ function scanRuntimeBoundaryRepository(): readonly RuntimeBoundaryViolation[] {
 interface ModuleImport {
   /** The literal module specifier text. */
   readonly specifier: string;
-  /** Names imported from the module; empty for side-effect, namespace, or dynamic imports. */
+  /** Imported names; `*` represents access to the complete module namespace. */
   readonly names: readonly string[];
 }
 
@@ -658,12 +663,43 @@ function collectModuleImports(sourceText: string): readonly ModuleImport[] {
   const imports: ModuleImport[] = [];
 
   function namesOf(clause: ts.ImportClause | undefined): readonly string[] {
-    const bindings = clause?.namedBindings;
-    if (bindings === undefined || !ts.isNamedImports(bindings)) {
+    if (clause === undefined) {
       return [];
     }
 
-    return bindings.elements.map((element) => (element.propertyName ?? element.name).text);
+    const names = new Set<string>();
+    if (clause.name !== undefined) {
+      names.add(wholeModuleImportName);
+    }
+
+    const bindings = clause?.namedBindings;
+    if (bindings === undefined) {
+      return [...names];
+    }
+
+    if (ts.isNamespaceImport(bindings)) {
+      names.add(wholeModuleImportName);
+      return [...names];
+    }
+
+    for (const element of bindings.elements) {
+      const importedName = (element.propertyName ?? element.name).text;
+      names.add(importedName === "default" ? wholeModuleImportName : importedName);
+    }
+
+    return [...names];
+  }
+
+  function namesOfExport(node: ts.ExportDeclaration): readonly string[] {
+    const clause = node.exportClause;
+    if (clause === undefined || ts.isNamespaceExport(clause)) {
+      return [wholeModuleImportName];
+    }
+
+    return clause.elements.map((element) => {
+      const exportedName = (element.propertyName ?? element.name).text;
+      return exportedName === "default" ? wholeModuleImportName : exportedName;
+    });
   }
 
   function visit(node: ts.Node): void {
@@ -672,13 +708,13 @@ function collectModuleImports(sourceText: string): readonly ModuleImport[] {
     }
 
     if (ts.isExportDeclaration(node) && node.moduleSpecifier !== undefined && ts.isStringLiteral(node.moduleSpecifier)) {
-      imports.push({specifier: node.moduleSpecifier.text, names: []});
+      imports.push({specifier: node.moduleSpecifier.text, names: namesOfExport(node)});
     }
 
     if (ts.isCallExpression(node) && isDynamicImport(node) && node.arguments.length === 1) {
       const specifier = node.arguments[0];
       if (specifier !== undefined && (ts.isStringLiteral(specifier) || ts.isNoSubstitutionTemplateLiteral(specifier))) {
-        imports.push({specifier: specifier.text, names: []});
+        imports.push({specifier: specifier.text, names: [wholeModuleImportName]});
       }
     }
 
@@ -776,6 +812,23 @@ interface DoctorCapabilityViolation {
   readonly name?: string;
 }
 
+function scanDoctorCapabilitySource(file: string, sourceText: string): readonly DoctorCapabilityViolation[] {
+  return collectModuleImports(sourceText).flatMap((moduleImport): readonly DoctorCapabilityViolation[] => {
+    if (doctorForbiddenModules.has(moduleImport.specifier)) {
+      return [{file, specifier: moduleImport.specifier}];
+    }
+
+    const forbiddenNames = doctorForbiddenImportNames.get(moduleImport.specifier);
+    if (forbiddenNames === undefined) {
+      return [];
+    }
+
+    return moduleImport.names
+      .filter((name) => name === wholeModuleImportName || forbiddenNames.has(name))
+      .map((name) => ({file, specifier: moduleImport.specifier, name}));
+  });
+}
+
 /**
  * Scans the Doctor production surface for capabilities wider than read-only and opaque probes.
  *
@@ -784,22 +837,7 @@ interface DoctorCapabilityViolation {
 function scanDoctorCapabilities(): readonly DoctorCapabilityViolation[] {
   return discoverProductionScripts()
     .filter((file) => /^scripts\/doctor[.\w-]*\.ts$/.test(file))
-    .flatMap((file) =>
-      collectModuleImports(readFileSync(file, "utf8")).flatMap((moduleImport): readonly DoctorCapabilityViolation[] => {
-        if (doctorForbiddenModules.has(moduleImport.specifier)) {
-          return [{file, specifier: moduleImport.specifier}];
-        }
-
-        const forbiddenNames = doctorForbiddenImportNames.get(moduleImport.specifier);
-        if (forbiddenNames === undefined) {
-          return [];
-        }
-
-        return moduleImport.names
-          .filter((name) => forbiddenNames.has(name))
-          .map((name) => ({file, specifier: moduleImport.specifier, name}));
-      }),
-    );
+    .flatMap((file) => scanDoctorCapabilitySource(file, readFileSync(file, "utf8")));
 }
 
 describe("runtime boundary policy", () => {
@@ -992,6 +1030,24 @@ describe("runtime boundary policy", () => {
 
   it("keeps doctor modules on read-only and opaque capabilities", () => {
     expect(scanDoctorCapabilities()).toEqual([]);
+  });
+
+  it("rejects named and whole-module imports that widen Doctor capabilities", () => {
+    const source = [
+      'import type {FileSystem, Clock} from "./common/runtime.ts";',
+      'import * as runtime from "./common/runtime.ts";',
+      'import runner from "./common/runner.ts";',
+      'export * from "./common/runner.ts";',
+      'void import("./common/runtime.ts");',
+    ].join("\n");
+
+    expect(scanDoctorCapabilitySource("scripts/doctor.example.ts", source)).toEqual([
+      {file: "scripts/doctor.example.ts", specifier: "./common/runtime.ts", name: "FileSystem"},
+      {file: "scripts/doctor.example.ts", specifier: "./common/runtime.ts", name: "*"},
+      {file: "scripts/doctor.example.ts", specifier: "./common/runner.ts", name: "*"},
+      {file: "scripts/doctor.example.ts", specifier: "./common/runner.ts", name: "*"},
+      {file: "scripts/doctor.example.ts", specifier: "./common/runtime.ts", name: "*"},
+    ]);
   });
 
   it("keeps the worker shell on the generic process runner", () => {

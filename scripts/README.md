@@ -276,12 +276,12 @@ action is `executed`, `planned` (always the outcome under `--dry-run`), or `decl
 Focused validation for setup and its direct shared dependencies:
 
 ```powershell
-npx vitest run --coverage.enabled=false scripts\common\repository-paths.test.ts scripts\common\requirements.test.ts scripts\common\tooling-config.test.ts scripts\common\prompts.test.ts scripts\setup.test.ts scripts\setup.workspace.test.ts scripts\setup.dotnet.test.ts scripts\setup.react.test.ts scripts\setup.svelte.test.ts scripts\setup.python.test.ts scripts\setup.infrastructure.test.ts scripts\generate.env.test.ts scripts\container-runtime\selection.test.ts scripts\common\output-policy.test.ts
+npx vitest run --config scripts\vitest.config.ts --coverage.enabled=false scripts\common\repository-paths.test.ts scripts\common\requirements.test.ts scripts\common\tooling-config.test.ts scripts\common\prompts.test.ts scripts\setup.test.ts scripts\setup.workspace.test.ts scripts\setup.dotnet.test.ts scripts\setup.react.test.ts scripts\setup.svelte.test.ts scripts\setup.python.test.ts scripts\setup.infrastructure.test.ts scripts\generate.env.test.ts scripts\container-runtime\selection.test.ts scripts\common\output-policy.test.ts
 npx eslint scripts\setup.ts scripts\setup.types.ts scripts\setup.*.ts scripts\common\repository-paths.ts scripts\common\requirements.ts scripts\common\tooling-config.ts scripts\common\prompts.ts scripts\generate.env.ts scripts\container-runtime
 git --no-pager diff --check
 ```
 
-The full root-tooling suite in [Targeted validation](#targeted-validation) below enumerates these setup and shared-dependency test files
+The full root-tooling suite in [Targeted validation](#targeted-validation) below includes these setup and shared-dependency test files
 too; it exercises every common, setup, doctor, inspection, container-runtime, and worker test file under `scripts/`. Doctor, its reporter
 and specialist modules, and `status.ts` also have a narrower focused command in [Doctor test commands](#doctor-test-commands).
 
@@ -333,10 +333,10 @@ Every diagnostic command runs through the shared inspection probe runner backed 
 [`inspection/probes.ts`](./inspection/probes.ts). Specialist modules never take a `ProcessRunner`, the Node runtime adapter, the Execa
 adapter, or the mutable `FileSystem` capability: `DoctorContext` carries only a read-only filesystem, a `GET`-only bounded HTTP probe,
 the clock, the immutable environment snapshot, the shared inspection session, and the opaque probe runner.
-[`doctor.readonly.test.ts`](./doctor.readonly.test.ts)'s ESLint boundary batch and source-level AST guard reject mutation-capable or
-unrestricted filesystem imports, child-process imports, unapproved repository imports, and unresolved/forbidden command specifications
-across the doctor production surface; [`runtime-boundary.test.ts`](./common/runtime-boundary.test.ts) asserts the same capability width
-independently of ESLint.
+[`runtime-boundary.test.ts`](./common/runtime-boundary.test.ts)'s source-level AST guard rejects mutation-capable or unrestricted
+filesystem imports, child-process imports, widened runtime imports, and direct adapter imports across the Doctor production surface.
+[`doctor.readonly.test.ts`](./doctor.readonly.test.ts) independently snapshots `.nx` and `.arolariu` sentinel files to prove real quick
+and full-profile Doctor runs do not mutate them.
 
 No Nx child command is dispatched by doctor or status, and none is allowlisted. Nx always opens (and rewrites) its native workspace
 database when it constructs a project graph. `workspace.nx-projects`, `workspace.nx-graph`, and status's `nxEdges` are instead derived
@@ -357,7 +357,7 @@ case, so status never reports a fabricated "unavailable" health section for a br
 Focused validation for doctor, its reporter, every specialist module, and `status.ts`:
 
 ```powershell
-npx vitest run --coverage.enabled=false scripts\common\logger.test.ts scripts\common\runner.test.ts scripts\common\output-policy.test.ts scripts\doctor.test.ts scripts\doctor.reporter.test.ts scripts\doctor.readonly.test.ts scripts\doctor.workspace.test.ts scripts\doctor.dotnet.test.ts scripts\doctor.react.test.ts scripts\doctor.svelte.test.ts scripts\doctor.python.test.ts scripts\doctor.infrastructure.test.ts scripts\doctor.diagnostics.test.ts scripts\status.test.ts scripts\setup.test.ts
+npx vitest run --config scripts\vitest.config.ts --coverage.enabled=false scripts\common\logger.test.ts scripts\common\runner.test.ts scripts\common\output-policy.test.ts scripts\doctor.test.ts scripts\doctor.reporter.test.ts scripts\doctor.readonly.test.ts scripts\doctor.workspace.test.ts scripts\doctor.dotnet.test.ts scripts\doctor.react.test.ts scripts\doctor.svelte.test.ts scripts\doctor.python.test.ts scripts\doctor.infrastructure.test.ts scripts\doctor.diagnostics.test.ts scripts\status.test.ts scripts\setup.test.ts
 npx eslint scripts\doctor.ts scripts\doctor.types.ts scripts\doctor.reporter.ts scripts\doctor.workspace.ts scripts\doctor.dotnet.ts scripts\doctor.react.ts scripts\doctor.svelte.ts scripts\doctor.python.ts scripts\doctor.infrastructure.ts scripts\status.ts scripts\common\taxonomy-artifacts.ts
 git --no-pager diff --check
 ```
@@ -367,35 +367,13 @@ git --no-pager diff --check
 Run the policy tests after changing script output or the runtime boundary:
 
 ```powershell
-npx vitest run --coverage.enabled=false scripts\common\output-policy.test.ts scripts\common\runtime-boundary.test.ts
+npx vitest run --config scripts\vitest.config.ts --coverage.enabled=false scripts\common\output-policy.test.ts scripts\common\runtime-boundary.test.ts
 ```
 
-Run the complete root-tooling suite by enumerating the common, setup, doctor, inspection, container-runtime, and worker tests on Windows
-so every intended file is passed explicitly:
+Run the complete root-tooling suite through the scripts-scoped Vitest configuration:
 
 ```powershell
-$commonTests = Get-ChildItem scripts\common\*.test.ts | Sort-Object FullName | ForEach-Object FullName
-$setupTests = Get-ChildItem scripts\setup*.test.ts | Sort-Object FullName | ForEach-Object FullName
-$doctorTests = Get-ChildItem scripts\doctor*.test.ts | Sort-Object FullName | ForEach-Object FullName
-$inspectionTests = Get-ChildItem scripts\inspection\*.test.ts | Sort-Object FullName | ForEach-Object FullName
-$containerTests = Get-ChildItem scripts\container-runtime\*.test.ts | Sort-Object FullName | ForEach-Object FullName
-$workerTests = Get-ChildItem scripts\workers\*.test.ts | Sort-Object FullName | ForEach-Object FullName
-
-npx vitest run --coverage.enabled=false `
-  @commonTests `
-  @setupTests `
-  @doctorTests `
-  @inspectionTests `
-  @containerTests `
-  @workerTests `
-  scripts\generate.cli.test.ts `
-  scripts\generate.env.test.ts `
-  scripts\generate.artifacts.test.ts `
-  scripts\update-exchange-rates.test.ts `
-  scripts\docs-assemble.test.ts `
-  scripts\docs-assemble.normalize.test.ts `
-  scripts\status.test.ts `
-  scripts\test-e2e.test.ts
+npx vitest run --config scripts\vitest.config.ts --coverage.enabled=false
 npx eslint scripts
 git --no-pager diff --check
 ```
