@@ -31,7 +31,7 @@ export interface TypeScriptModuleReferenceDefinition {
 }
 
 /** Complete static module-reference evidence collected from one source file. */
-export interface TypeScriptModuleAnalysisResult {
+interface TypeScriptModuleAnalysisResult {
   /** Every statically resolvable import, re-export, and literal dynamic import, in source order. */
   readonly references: readonly TypeScriptModuleReferenceDefinition[];
   /** One-based source line numbers of every non-literal (dynamic path) `import()` call. */
@@ -39,7 +39,7 @@ export interface TypeScriptModuleAnalysisResult {
 }
 
 /** Structural facts a direct entrypoint must satisfy to stay inside the declarative contract. */
-export interface CommandEntrypointAnalysisResult {
+interface CommandEntrypointAnalysisResult {
   /** Whether the module exports a `MonorepoCommand`-typed singleton. */
   readonly exportsCommandSingleton: boolean;
   /** Whether the module hands direct-entry detection to `runIfMain(import.meta.url)`. */
