@@ -364,7 +364,7 @@ git --no-pager diff --check
 
 ## Architecture analysis
 
-The preparatory scripts-architecture cohort keeps one typed entrypoint inventory and three complementary checks:
+The preparatory scripts-architecture cohort keeps one typed entrypoint inventory and four complementary checks:
 
 ```powershell
 npm run analyze:scripts:unused
@@ -402,3 +402,8 @@ npx vitest run --config scripts\vitest.config.ts --coverage.enabled=false
 npx eslint scripts
 git --no-pager diff --check
 ```
+
+`npm run test:scripts` runs this same complete suite without coverage and is the green correctness command. Running
+`npx vitest run --config scripts\vitest.config.ts` (coverage enabled) explicitly evaluates the unchanged 90% statement, branch,
+function, and line thresholds; every test still passes, but branch coverage currently sits at 80.83%, a pre-existing shortfall
+that later migration cohorts own.

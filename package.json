@@ -87,7 +87,7 @@
     "test:e2e:backend": "node scripts/test-e2e.ts backend",
     "test:e2e:cv": "node scripts/test-e2e.ts cv",
     "test:e2e:frontend": "node scripts/test-e2e.ts frontend",
-    "test:scripts": "vitest run --config scripts/vitest.config.ts",
+    "test:scripts": "vitest run --config scripts/vitest.config.ts --coverage.enabled=false",
     "typecheck:scripts": "tsc --project scripts/tsconfig.json --pretty false",
     "analyze:scripts:unused": "knip --config knip.config.ts --workspace . --no-progress",
     "analyze:scripts:loc": "node scripts/testing/architecture/report-maintained-source-lines.ts",
