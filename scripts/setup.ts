@@ -24,14 +24,10 @@
  * ```
  */
 
-import {
-  CommandInputError,
-  MonorepoCommand,
-  type CommandContext,
-  type CommandExecution,
-  type CommandInvoker,
-  type CommandRuntimeFactory,
-} from "./common/commander.ts";
+import {CommandInputError, type CommandExecution, type CommandInvoker} from "./core/command/command-execution.ts";
+import type {CommandExecutionContext} from "./core/command/command-execution.ts";
+import {defineCommand, type LazyMonorepoCommand} from "./core/command/lazy-monorepo-command.ts";
+import type {CommandConstructionOptions, CommandHost} from "./core/command/command-specification.ts";
 import type {MonorepositoryLogger} from "./common/logger.ts";
 import type {PromptProvider} from "./common/prompts.ts";
 import {loadRepositoryRequirements} from "./common/requirements.ts";
@@ -70,8 +66,6 @@ export interface SetupResult {
 
 /** Construction seams {@link createSetupCommand} accepts. */
 export interface SetupCommandDependencies {
-  /** Runtime factory used for every scope; tests inject a fake instead of the Node adapter. */
-  readonly runtimeFactory?: CommandRuntimeFactory;
   /** Ordered phases to execute; defaults to {@link setupPhases}. */
   readonly phases?: readonly SetupPhaseDefinition[];
   /** Composed generation command migrated phases invoke; defaults to the production singleton. */
@@ -265,7 +259,7 @@ const setupOutcomes = new WeakMap<SetupResult, SetupOutcome>();
  * @returns The capability bundle placed on the phase's {@link SetupContext}.
  */
 function createPhaseRuntime(
-  context: Readonly<CommandContext>,
+  context: Readonly<CommandExecutionContext>,
   input: Readonly<SetupInput>,
   phaseLogger: MonorepositoryLogger,
   root: string,
@@ -318,7 +312,7 @@ interface SetupExecutionSeams {
  * @throws When repository requirements are invalid, or when a phase is interrupted.
  */
 async function executeSetup(
-  context: Readonly<CommandContext>,
+  context: Readonly<CommandExecutionContext>,
   input: Readonly<SetupInput>,
   seams: Readonly<SetupExecutionSeams> = {},
 ): Promise<SetupResult> {
@@ -500,24 +494,32 @@ function decodeEngine(value: string | undefined): ContainerEngine | undefined {
   return engine;
 }
 
+/** Production command host. This literal dynamic import is the only edge from this entrypoint
+ *  into the Node adapter; core never names it. */
+const loadProductionCommandHost = async (): Promise<CommandHost> =>
+  import("./adapters/node/node-command-host.ts").then(({createNodeCommandHost}) => createNodeCommandHost("setup"));
+
 /**
  * Creates the setup command.
  *
- * @param dependencies - Optional runtime factory, phase list, and composed generation command;
- * tests inject deterministic fakes instead of replacing command business code.
+ * @param dependencies - Optional phase list and composed generation command; tests inject
+ * deterministic fakes instead of replacing command business code.
+ * @param options - The injected command host or a literal loader; defaults to the production
+ * Node adapter.
  * @returns The typed `setup` command object.
  */
-export function createSetupCommand(dependencies: Readonly<SetupCommandDependencies> = {}): MonorepoCommand<SetupInput, SetupResult> {
+export function createSetupCommand(
+  dependencies: Readonly<SetupCommandDependencies> = {},
+  options: Readonly<CommandConstructionOptions> = {loadHost: loadProductionCommandHost},
+): LazyMonorepoCommand<SetupInput, SetupResult, never> {
   const {phases, generate} = dependencies;
 
-  return new MonorepoCommand<SetupInput, SetupResult>(
+  return defineCommand<SetupInput, SetupResult>(
     {
-      metadata: {
-        name: "setup",
-        description:
-          "Prepares a fresh checkout end to end: workspace dependencies, generated artifacts, and the .NET, React, Svelte, Python, and local infrastructure toolchains.",
-        examples: ["npm run setup", "npm run setup -- --dry-run", "npm run setup -- --engine podman"],
-      },
+      name: "setup",
+      description:
+        "Prepares a fresh checkout end to end: workspace dependencies, generated artifacts, and the .NET, React, Svelte, Python, and local infrastructure toolchains.",
+      examples: ["npm run setup", "npm run setup -- --dry-run", "npm run setup -- --engine podman"],
       configure: (program) => {
         program
           .option("--verbose", "Show diagnostic detail for each phase.", false)
@@ -540,21 +542,22 @@ export function createSetupCommand(dependencies: Readonly<SetupCommandDependenci
           ...(phases === undefined ? {} : {phases}),
           ...(generate === undefined ? {} : {generate}),
         }),
-      completion: (result) => {
+      complete: (result) => {
         const outcome = setupOutcomes.get(result) ?? "ready";
         return {
           exitCode: outcome === "failed" ? 1 : 0,
+          value: result,
           human: (logger) => {
             renderSetupSummary(logger, result, outcome);
           },
         };
       },
     },
-    dependencies.runtimeFactory,
+    options,
   );
 }
 
 /** Production singleton used by `npm run setup` and this module's direct entrypoint. */
-export const setupCommand: MonorepoCommand<SetupInput, SetupResult> = createSetupCommand();
+export const setupCommand: LazyMonorepoCommand<SetupInput, SetupResult, never> = createSetupCommand();
 
 await setupCommand.runIfMain(import.meta.url);

@@ -14,7 +14,8 @@
 import {dirname, resolve} from "node:path";
 import {fileURLToPath} from "node:url";
 
-import type {CommandContext, CommandProcessHost, CommandRuntimeFactory, RuntimeCreationOptions} from "./commander.ts";
+import type {CommandExecutionContext} from "../core/command/command-execution.ts";
+import type {CommandRuntimeFactory, RuntimeCreationOptions} from "../core/command/command-specification.ts";
 import {
   InMemoryLoggerSink,
   MonorepositoryConsoleLogger,
@@ -565,33 +566,6 @@ export function createProcessRunner(
   return new RecordingProcessRunner(outcomes);
 }
 
-/**
- * Creates a process host that records requested exit codes instead of assigning them.
- *
- * @remarks
- * `isDirectEntry` always reports `true`; a test that needs the non-entrypoint path spreads the
- * host and replaces that member while keeping the same recorder.
- *
- * @param argv - Invocation argv the host reports.
- * @returns A process host and its ordered record of requested exit codes.
- */
-export function createTestProcessHost(
-  argv: readonly string[] = [],
-): CommandProcessHost & Readonly<{assignedExitCodes: readonly number[]}> {
-  const assignedExitCodes: number[] = [];
-
-  return {
-    argv: Object.freeze([...argv]),
-    isDirectEntry: (): boolean => true,
-    setExitCode: (exitCode: number): void => {
-      assignedExitCodes.push(exitCode);
-    },
-    get assignedExitCodes(): readonly number[] {
-      return assignedExitCodes;
-    },
-  };
-}
-
 /** Immutable environment every test runtime observes unless a test replaces it. */
 const testRuntimeEnvironment: RuntimeEnvironment = {
   variables: Object.freeze({}),
@@ -654,7 +628,7 @@ export function createTestRuntimeFactory(overrides: Readonly<Partial<CommandRunt
 
   const createScope = (
     options: Readonly<RuntimeCreationOptions>,
-    parent?: Readonly<CommandContext>,
+    parent?: Readonly<CommandExecutionContext>,
   ): CommandRuntime => {
     const link = linkAbortSignals(parent?.runtime.signal, options.signal);
     const cleanup = new LifoCleanupRegistry();
@@ -690,17 +664,9 @@ export function createTestRuntimeFactory(overrides: Readonly<Partial<CommandRunt
   };
 
   return {
-    processHost: createTestProcessHost(),
-    createParseLogger: (): MonorepositoryLogger =>
-      new MonorepositoryConsoleLogger("test", {
-        verbose: false,
-        color: false,
-        sink: new InMemoryLoggerSink(),
-        runtimeHost: testLoggerRuntimeHost,
-      }),
     createRoot: (options: Readonly<RuntimeCreationOptions>): Promise<CommandRuntime> =>
       Promise.resolve(createScope(options)),
-    createChild: (parent: Readonly<CommandContext>, options: Readonly<RuntimeCreationOptions>): Promise<CommandRuntime> =>
+    createChild: (parent: Readonly<CommandExecutionContext>, options: Readonly<RuntimeCreationOptions>): Promise<CommandRuntime> =>
       Promise.resolve(createScope(options, parent)),
   };
 }

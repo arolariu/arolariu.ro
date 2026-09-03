@@ -11,15 +11,16 @@
  * integration tests and the direct-entrypoint smoke tests, which do so deliberately.
  */
 
-import {spawn} from "node:child_process";
 import {readFileSync} from "node:fs";
 import {mkdir, mkdtemp, rm, symlink, writeFile} from "node:fs/promises";
 import {tmpdir} from "node:os";
-import {join, resolve} from "node:path";
+import {join} from "node:path";
 import {fileURLToPath} from "node:url";
 import {afterEach, describe, expect, it, vi, type Mock} from "vitest";
 
-import {MonorepoCommand, type CommandExecution, type CommandInvoker, type CommandRuntimeFactory} from "./common/commander.ts";
+import type {CommandExecution, CommandInvoker} from "./core/command/command-execution.ts";
+import {defineCommand} from "./core/command/lazy-monorepo-command.ts";
+import {buildCommandHost} from "./testing/builders/command-host.builder.ts";
 import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "./common/logger.ts";
 import {createRepositoryPaths} from "./common/repository-paths.ts";
 import {AbstractProcessRunner, type ProcessOutcome, type ProcessRequest, type ProcessRunOptions} from "./common/runner.ts";
@@ -27,7 +28,6 @@ import {createNodeProcessRunner, snapshotNodeEnvironment} from "./common/runtime
 import {
   createRepositoryFixtureFileSystem,
   createRepositoryInspectionSessionStub,
-  createTestRuntimeFactory,
   repositoryFixtureRoot,
 } from "./common/runtime.testing.ts";
 import {
@@ -303,21 +303,20 @@ function rejectOnAbort(signal: AbortSignal): Promise<never> {
 }
 
 /**
- * Builds a real {@link MonorepoCommand} doctor child whose execution stays pending until its own
+ * Builds a real composed doctor child whose execution stays pending until its own
  * scope aborts and whose cleanup callback only completes on a later macrotask.
  *
- * @param factory - Runtime factory shared with status, so the child receives a real nested scope.
  * @param events - Ordered event log the cleanup callback appends to when it finishes draining.
  * @returns The composed child command and a gate opened once its execution has started.
  */
 function createPendingDoctorChild(
-  factory: CommandRuntimeFactory,
   events: string[],
 ): Readonly<{doctor: CommandInvoker<DoctorInput, DoctorReport>; started: Promise<void>}> {
   const gate = createGate();
-  const doctor = new MonorepoCommand<DoctorInput, DoctorReport>(
+  const doctor = defineCommand<DoctorInput, DoctorReport>(
     {
-      metadata: {name: "doctor", description: "Runs read-only monorepo health checks."},
+      name: "doctor",
+      description: "Runs read-only monorepo health checks.",
       configure: () => undefined,
       decode: () => ({quick: true, verbose: false}),
       presentation: () => "silent",
@@ -329,9 +328,9 @@ function createPendingDoctorChild(
         gate.open();
         return rejectOnAbort(context.runtime.signal);
       },
-      completion: () => ({exitCode: 0}),
+      complete: (report) => ({exitCode: 0, value: report}),
     },
-    factory,
+    {host: buildCommandHost()},
   );
 
   return {doctor, started: gate.opened};
@@ -376,15 +375,19 @@ function createStatusFixture(options: Readonly<StatusFixtureOptions> = {}): Stat
   const createSession = vi.fn<(request: Readonly<RepositoryInspectionRequest>) => RepositoryInspectionSession>(() => session);
   const inspection = createRepositoryInspectionRuntime(createSession);
   const doctor = options.doctor ?? createDoctorStub();
-  const command = createStatusCommand({
-    runtimeFactory: createTestRuntimeFactory({
-      files: createRepositoryFixtureFileSystem(options.files ?? {}),
-      inspection,
-      logger,
-      runner,
-    }),
-    doctor,
-  });
+  const command = createStatusCommand(
+    {doctor},
+    {
+      host: buildCommandHost({
+        runtime: {
+          files: createRepositoryFixtureFileSystem(options.files ?? {}),
+          inspection,
+          logger,
+          runner,
+        },
+      }),
+    },
+  );
 
   return {command, sink, runner, doctor, inspection, createSession};
 }
@@ -413,28 +416,6 @@ async function runJson(fixture: StatusFixture): Promise<Record<string, unknown>>
 // ============================================================================
 
 describe("status command — parser", () => {
-  it.each(["--help", "-h", "/h", "/help"])("renders help and completes with exit 0 for '%s'", async (flag) => {
-    const fixture = createStatusFixture();
-
-    const execution = await fixture.command.run([flag]);
-
-    expect(execution).toEqual({status: "help", exitCode: 0});
-    expect(fixture.runner.calls).toHaveLength(0);
-    expect(fixture.doctor.invoke).not.toHaveBeenCalled();
-  });
-
-  it.each(["--bogus", "-x", "workspace", "--verbose"])("rejects '%s' as a usage failure with exit 2", async (argument) => {
-    const fixture = createStatusFixture();
-
-    const execution = await fixture.command.run([argument]);
-
-    expect(execution.status).toBe("failed");
-    expect(execution.exitCode).toBe(2);
-    expect(fixture.runner.calls).toHaveLength(0);
-    expect(fixture.doctor.invoke).not.toHaveBeenCalled();
-    expect(fixture.createSession).not.toHaveBeenCalled();
-  });
-
   it("accepts --json and selects machine-readable presentation", async () => {
     const fixture = createStatusFixture({mode: "json"});
 
@@ -475,14 +456,18 @@ describe("status command — doctor composition", () => {
         };
       },
     };
-    const command = createStatusCommand({
-      runtimeFactory: createTestRuntimeFactory({
-        files: createRepositoryFixtureFileSystem(),
-        inspection,
-        runner: new ScriptedProcessRunner(baseResponses()),
-      }),
-      doctor,
-    });
+    const command = createStatusCommand(
+      {doctor},
+      {
+        host: buildCommandHost({
+          runtime: {
+            files: createRepositoryFixtureFileSystem(),
+            inspection,
+            runner: new ScriptedProcessRunner(baseResponses()),
+          },
+        }),
+      },
+    );
 
     const execution = await command.invoke({json: true}, {presentation: "silent"});
 
@@ -633,14 +618,16 @@ describe("status command — composed child cancellation", () => {
     const events: string[] = [];
     const controller = new AbortController();
     const sink = new InMemoryLoggerSink();
-    const factory = createTestRuntimeFactory({
-      files: createRepositoryFixtureFileSystem(),
-      inspection: createRepositoryInspectionRuntime(() => createFixtureSession(availableWorkspace())),
-      logger: new MonorepositoryConsoleLogger("status", {color: false, sink, verbose: false, mode: "human"}),
-      runner: new ScriptedProcessRunner(baseResponses()),
+    const host = buildCommandHost({
+      runtime: {
+        files: createRepositoryFixtureFileSystem(),
+        inspection: createRepositoryInspectionRuntime(() => createFixtureSession(availableWorkspace())),
+        logger: new MonorepositoryConsoleLogger("status", {color: false, sink, verbose: false, mode: "human"}),
+        runner: new ScriptedProcessRunner(baseResponses()),
+      },
     });
-    const {doctor, started} = createPendingDoctorChild(factory, events);
-    const command = createStatusCommand({runtimeFactory: factory, doctor});
+    const {doctor, started} = createPendingDoctorChild(events);
+    const command = createStatusCommand({doctor}, {host});
 
     const pending = command.invoke({json: false}, {presentation: "human", signal: controller.signal});
     void pending.then(() => {
@@ -1214,46 +1201,4 @@ describe("status command — human dashboard", () => {
     expect(execution.exitCode).toBe(0);
     expect(renderedText(fixture.sink)).toMatch(/unavailable/);
   });
-});
-
-// ============================================================================
-// Direct entrypoint smoke
-// ============================================================================
-
-describe("direct entrypoint", () => {
-  const statusEntrypoint = fileURLToPath(new URL("./status.ts", import.meta.url));
-
-  function runDirect(args: readonly string[]): Promise<Readonly<{code: number | null; output: string}>> {
-    return new Promise((resolveProcess, rejectProcess) => {
-      const child = spawn(process.execPath, [statusEntrypoint, ...args], {
-        cwd: resolve(statusEntrypoint, "..", ".."),
-        stdio: ["ignore", "pipe", "pipe"],
-      });
-      let output = "";
-      child.stdout.on("data", (chunk: Buffer) => {
-        output += chunk.toString("utf8");
-      });
-      child.stderr.on("data", (chunk: Buffer) => {
-        output += chunk.toString("utf8");
-      });
-      child.once("error", rejectProcess);
-      child.once("close", (code) => {
-        resolveProcess({code, output});
-      });
-    });
-  }
-
-  it("emits help and exits 0 for a direct process invocation of --help", async () => {
-    const result = await runDirect(["--help"]);
-
-    expect(result.code).toBe(0);
-    expect(result.output).toMatch(/Usage: status \[options\]/);
-  }, 30_000);
-
-  it("emits a usage diagnostic and exits 2 for a direct process invocation of an unknown flag", async () => {
-    const result = await runDirect(["--bogus"]);
-
-    expect(result.code).toBe(2);
-    expect(result.output).toMatch(/unknown option/i);
-  }, 30_000);
 });

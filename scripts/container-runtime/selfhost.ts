@@ -5,7 +5,7 @@
  * @remarks
  * Every ambient effect this command used to reach for directly (the child process, the
  * repository filesystem, the process environment, Node's timers, and the global `fetch` used for
- * Cosmos provisioning) now arrives through the injected {@link CommandContext.runtime}, so the
+ * Cosmos provisioning) now arrives through the injected {@link CommandExecutionContext.runtime}, so the
  * command is fully exercised by the declarative command runtime's test fakes and never spawns
  * Docker or Podman, and never reaches Cosmos or Azurite, in a test. The taxonomy artifact
  * prerequisite runs as a nested, silent invocation of `generateArtifactsCommand` instead of a
@@ -17,13 +17,10 @@
  * started running, and the generated Traefik file is removed only by the explicit `stop` action.
  */
 
-import {
-  CommandInputError,
-  MonorepoCommand,
-  type CommandContext,
-  type CommandInvoker,
-  type CommandRuntimeFactory,
-} from "../common/commander.ts";
+import {CommandInputError, type CommandInvoker} from "../core/command/command-execution.ts";
+import type {CommandExecutionContext} from "../core/command/command-execution.ts";
+import {defineCommand, type LazyMonorepoCommand} from "../core/command/lazy-monorepo-command.ts";
+import type {CommandConstructionOptions, CommandHost} from "../core/command/command-specification.ts";
 import {resolveRepositoryPaths} from "../common/repository-paths.ts";
 import {RunnerError, type ProcessEnvironment} from "../common/runner.ts";
 import {CommandCancellation, commandCancellationFromSignal, type CommandRuntime} from "../common/runtime.ts";
@@ -69,8 +66,6 @@ export interface SelfhostPlanInputs {
 
 /** Optional collaborators {@link createSelfhostCommand} composes. */
 export interface SelfhostCommandDependencies {
-  /** Optional runtime factory; tests inject a fake instead of the Node adapter. */
-  readonly runtimeFactory?: CommandRuntimeFactory;
   /** Local Cosmos/Azurite provisioning; defaults to the runtime-HTTP-backed adapter. */
   readonly bootstrap?: LocalStorageBootstrap;
   /** Taxonomy and license artifact generator invoked as the start prerequisite. */
@@ -306,7 +301,7 @@ async function bootstrapSelfhost(
  */
 async function runArtifactPrerequisite(
   artifacts: CommandInvoker<GenerateArtifactsInput, ArtifactGenerationResult>,
-  context: Readonly<CommandContext>,
+  context: Readonly<CommandExecutionContext>,
 ): Promise<void> {
   const execution = await artifacts.invoke({verbose: false}, {parent: context, presentation: "silent"});
 
@@ -358,7 +353,7 @@ function decodeSelfhostEngine(value: string | undefined): ContainerEngine | unde
  */
 async function executeSelfhost(
   dependencies: Readonly<ResolvedSelfhostDependencies>,
-  context: Readonly<CommandContext>,
+  context: Readonly<CommandExecutionContext>,
   input: Readonly<SelfhostInput>,
 ): Promise<SelfhostResult> {
   const {runtime} = context;
@@ -419,28 +414,34 @@ async function executeSelfhost(
   return {action: input.action, engine: adapter.engine, stacks: stacksByAction[input.action]};
 }
 
+/** Production command host. This literal dynamic import is the only edge from this entrypoint
+ *  into the Node adapter; core never names it. */
+const loadProductionCommandHost = async (): Promise<CommandHost> =>
+  import("../adapters/node/node-command-host.ts").then(({createNodeCommandHost}) => createNodeCommandHost("selfhost"));
+
 /**
  * Creates the selfhost orchestration command.
  *
- * @param dependencies - Optional runtime factory, storage bootstrap, and artifact collaborators.
+ * @param dependencies - Optional storage bootstrap and artifact collaborators.
+ * @param options - The injected command host or a literal loader; defaults to the production
+ * Node adapter.
  * @returns The typed `dev:selfhost` command object.
  */
 export function createSelfhostCommand(
   dependencies: Readonly<SelfhostCommandDependencies> = {},
-): MonorepoCommand<SelfhostInput, SelfhostResult> {
+  options: Readonly<CommandConstructionOptions> = {loadHost: loadProductionCommandHost},
+): LazyMonorepoCommand<SelfhostInput, SelfhostResult, never> {
   const resolved: ResolvedSelfhostDependencies = {
     artifacts: dependencies.artifacts ?? generateArtifactsCommand,
     ...(dependencies.bootstrap === undefined ? {} : {bootstrap: dependencies.bootstrap}),
   };
 
-  return new MonorepoCommand<SelfhostInput, SelfhostResult>(
+  return defineCommand<SelfhostInput, SelfhostResult>(
     {
-      metadata: {
-        name: "selfhost",
-        description: "Runs selfhost container orchestration for the selected local engine.",
-        usage: "[start|stop|logs] [--engine <rancher|podman>]",
-        examples: ["npm run dev:selfhost -- --engine rancher", "npm run dev:selfhost:stop -- --engine podman"],
-      },
+      name: "selfhost",
+      description: "Runs selfhost container orchestration for the selected local engine.",
+      usage: "[start|stop|logs] [--engine <rancher|podman>]",
+      examples: ["npm run dev:selfhost -- --engine rancher", "npm run dev:selfhost:stop -- --engine podman"],
       configure: (program) => {
         program.argument("[action]", "Selfhost action to run: start, stop, or logs (default: start).");
         program.option("--engine <engine>", "Container engine to use (rancher or podman).");
@@ -457,16 +458,17 @@ export function createSelfhostCommand(
         return {action, ...(requestedEngine === undefined ? {} : {engine: requestedEngine})};
       },
       execute: (context, input) => executeSelfhost(resolved, context, input),
-      completion: (result) => ({
+      complete: (result) => ({
         exitCode: 0,
+        value: result,
         human: (logger) => logger.success(`Selfhost ${result.action} completed for engine '${result.engine}'.`),
       }),
     },
-    dependencies.runtimeFactory,
+    options,
   );
 }
 
 /** Production singleton used by the `npm run dev:selfhost*` scripts and this module's direct entrypoint. */
-export const selfhostCommand: MonorepoCommand<SelfhostInput, SelfhostResult> = createSelfhostCommand();
+export const selfhostCommand: LazyMonorepoCommand<SelfhostInput, SelfhostResult, never> = createSelfhostCommand();
 
 await selfhostCommand.runIfMain(import.meta.url);

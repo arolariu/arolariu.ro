@@ -12,7 +12,7 @@ import {describe, expect, it, vi} from "vitest";
 import type {ProcessEnvironment, ProcessOutcome, ProcessOutput, ProcessRequest, ProcessRunner} from "../common/runner.ts";
 import {createNodeProcessRunner, snapshotNodeEnvironment} from "../common/runtime.node.ts";
 import {DefaultTaskScheduler, type Clock, type RuntimeEnvironment} from "../common/runtime.ts";
-import {createTestRuntimeFactory} from "../common/runtime.testing.ts";
+import {buildCommandHost} from "../testing/builders/command-host.builder.ts";
 import {AGGREGATE_TIMEOUT_MS, createAggregateProvider, type AggregateWorkerDocument} from "./aggregate.ts";
 import {aggregateWorkerCommand, createAggregateWorkerCommand} from "./aggregate-worker.ts";
 import type {HostFacts} from "./host.ts";
@@ -853,7 +853,7 @@ describe("aggregate worker CLI argument validation", () => {
 
 describe("createAggregateWorkerCommand", () => {
   it("normalizes zero roots into the bounded schema-v1 unavailable document with a completed exit code", async () => {
-    const command = createAggregateWorkerCommand(createTestRuntimeFactory());
+    const command = createAggregateWorkerCommand({host: buildCommandHost()});
 
     const execution = await command.run([]);
 
@@ -867,7 +867,7 @@ describe("createAggregateWorkerCommand", () => {
   });
 
   it("normalizes several roots without emitting a Commander usage diagnostic", async () => {
-    const command = createAggregateWorkerCommand(createTestRuntimeFactory());
+    const command = createAggregateWorkerCommand({host: buildCommandHost()});
 
     const execution = await command.run(["root-a", "root-b"]);
 
@@ -876,7 +876,7 @@ describe("createAggregateWorkerCommand", () => {
   });
 
   it("normalizes one blank root without invoking any package collection", async () => {
-    const command = createAggregateWorkerCommand(createTestRuntimeFactory());
+    const command = createAggregateWorkerCommand({host: buildCommandHost()});
 
     const execution = await command.invoke({repositoryRoots: ["   "]});
 

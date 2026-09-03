@@ -23,7 +23,9 @@
 
 import {resolve} from "node:path";
 
-import {MonorepoCommand, toJsonValue, type CommandContext, type CommandRuntimeFactory} from "../common/commander.ts";
+import {toJsonValue, type CommandExecutionContext} from "../core/command/command-execution.ts";
+import {defineCommand, type LazyMonorepoCommand} from "../core/command/lazy-monorepo-command.ts";
+import type {CommandConstructionOptions, CommandHost} from "../core/command/command-specification.ts";
 import type {Clock, TaskScheduler} from "../common/runtime.ts";
 import {requiredLocalPorts} from "../container-runtime/preflight.ts";
 import type {AggregateWorkerDocument} from "./aggregate.ts";
@@ -414,7 +416,7 @@ function readSingleRootArgument(repositoryRoots: readonly string[]): string | nu
  * @returns The normalized schema-v1 document to emit.
  */
 async function runAggregateWorker(
-  context: Readonly<CommandContext>,
+  context: Readonly<CommandExecutionContext>,
   input: Readonly<AggregateWorkerInput>,
 ): Promise<AggregateWorkerDocument> {
   const root = readSingleRootArgument(input.repositoryRoots);
@@ -430,36 +432,40 @@ async function runAggregateWorker(
   }
 }
 
+/** Production command host. This literal dynamic import is the only edge from this entrypoint
+ *  into the Node adapter; core never names it. */
+const loadProductionCommandHost = async (): Promise<CommandHost> =>
+  import("../adapters/node/node-command-host.ts").then(({createNodeCommandHost}) => createNodeCommandHost("inspection-aggregate-worker"));
+
 /**
  * Creates the isolated aggregate inspection worker command.
  *
- * @param runtimeFactory - Optional runtime factory; tests inject a fake instead of the Node adapter.
+ * @param options - The injected command host or a literal loader; defaults to the production
+ * Node adapter.
  * @returns The typed `inspection-aggregate-worker` command object.
  */
 export function createAggregateWorkerCommand(
-  runtimeFactory?: CommandRuntimeFactory,
-): MonorepoCommand<AggregateWorkerInput, AggregateWorkerDocument> {
-  return new MonorepoCommand<AggregateWorkerInput, AggregateWorkerDocument>(
+  options: Readonly<CommandConstructionOptions> = {loadHost: loadProductionCommandHost},
+): LazyMonorepoCommand<AggregateWorkerInput, AggregateWorkerDocument, never> {
+  return defineCommand<AggregateWorkerInput, AggregateWorkerDocument>(
     {
-      metadata: {
-        name: "inspection-aggregate-worker",
-        description: "Emits the normalized aggregate tooling and host report for one repository root.",
-        usage: "<repositoryRoot>",
-      },
+      name: "inspection-aggregate-worker",
+      description: "Emits the normalized aggregate tooling and host report for one repository root.",
+      usage: "<repositoryRoot>",
       configure: (program) => {
         program.argument("[repositoryRoots...]", "Repository root to inspect; exactly one is expected.");
       },
       decode: (program) => ({repositoryRoots: [...program.args]}),
       presentation: () => "json",
       execute: runAggregateWorker,
-      completion: (document) => ({exitCode: 0, json: toJsonValue(document)}),
+      complete: (document) => ({exitCode: 0, value: document, json: toJsonValue(document)}),
     },
-    runtimeFactory,
+    options,
   );
 }
 
 /** Production singleton used by this module's direct entrypoint. */
-export const aggregateWorkerCommand: MonorepoCommand<AggregateWorkerInput, AggregateWorkerDocument> =
+export const aggregateWorkerCommand: LazyMonorepoCommand<AggregateWorkerInput, AggregateWorkerDocument, never> =
   createAggregateWorkerCommand();
 
 await aggregateWorkerCommand.runIfMain(import.meta.url);

@@ -9,11 +9,13 @@
  * Future work would likely include schema introspection + codegen.
  *
  * Every ambient effect (filesystem and the wall clock) is routed through the injected
- * {@link CommandContext.runtime} instead of touching Node globals directly.
+ * {@link CommandExecutionContext.runtime} instead of touching Node globals directly.
  */
 
 import path from "node:path";
-import {MonorepoCommand, type CommandContext, type CommandRuntimeFactory} from "./common/commander.ts";
+import type {CommandExecutionContext} from "./core/command/command-execution.ts";
+import {defineCommand, type LazyMonorepoCommand} from "./core/command/lazy-monorepo-command.ts";
+import type {CommandConstructionOptions, CommandHost} from "./core/command/command-specification.ts";
 
 /** Typed input accepted by every migrated `generate` leaf command. */
 export interface GenerateLeafInput {
@@ -43,7 +45,7 @@ export interface GenerateLeafResult {
  * @returns The completion summary and every file this invocation created or modified.
  */
 async function generateGraphql(
-  context: Readonly<CommandContext>,
+  context: Readonly<CommandExecutionContext>,
   input: Readonly<GenerateLeafInput>,
 ): Promise<GenerateLeafResult> {
   const {logger, environment, files, clock} = context.runtime;
@@ -80,39 +82,44 @@ async function generateGraphql(
   return {summary: "GraphQL generation completed (placeholder).", changedFiles: [outputFile]};
 }
 
+/** Production command host. This literal dynamic import is the only edge from this entrypoint
+ *  into the Node adapter; core never names it. */
+const loadProductionCommandHost = async (): Promise<CommandHost> =>
+  import("./adapters/node/node-command-host.ts").then(({createNodeCommandHost}) => createNodeCommandHost("generate:gql"));
+
 /**
  * Creates the GraphQL generator command.
  *
- * @param runtimeFactory - Optional runtime factory; tests inject a fake instead of the Node adapter.
+ * @param options - The injected command host or a literal loader; defaults to the production
+ * Node adapter.
  * @returns The typed `generate:gql` command object.
  */
 export function createGenerateGraphqlCommand(
-  runtimeFactory?: CommandRuntimeFactory,
-): MonorepoCommand<GenerateLeafInput, GenerateLeafResult> {
-  return new MonorepoCommand<GenerateLeafInput, GenerateLeafResult>(
+  options: Readonly<CommandConstructionOptions> = {loadHost: loadProductionCommandHost},
+): LazyMonorepoCommand<GenerateLeafInput, GenerateLeafResult, never> {
+  return defineCommand<GenerateLeafInput, GenerateLeafResult>(
     {
-      metadata: {
-        name: "generate:gql",
-        description: "Generates GraphQL type artifacts (placeholder implementation).",
-        examples: ["npm run generate:gql", "npm run generate:gql -- --verbose"],
-        slashAliases: {"/v": "--verbose", "/verbose": "--verbose"},
-      },
+      name: "generate:gql",
+      description: "Generates GraphQL type artifacts (placeholder implementation).",
+      examples: ["npm run generate:gql", "npm run generate:gql -- --verbose"],
+      slashAliases: {"/v": "--verbose", "/verbose": "--verbose"},
       configure: (program) => {
         program.option("-v, --verbose", "Enable verbose logging.");
       },
       decode: (program) => ({verbose: program.opts<{verbose?: boolean}>().verbose === true}),
       execute: generateGraphql,
-      completion: (result) => ({
+      complete: (result) => ({
         exitCode: 0,
+        value: result,
         human: (logger) => logger.success(result.summary),
       }),
     },
-    runtimeFactory,
+    options,
   );
 }
 
 /** Production singleton used by the aggregate CLI and this module's direct entrypoint. */
-export const generateGraphqlCommand: MonorepoCommand<GenerateLeafInput, GenerateLeafResult> = createGenerateGraphqlCommand();
+export const generateGraphqlCommand: LazyMonorepoCommand<GenerateLeafInput, GenerateLeafResult, never> = createGenerateGraphqlCommand();
 
 await generateGraphqlCommand.runIfMain(import.meta.url);
 

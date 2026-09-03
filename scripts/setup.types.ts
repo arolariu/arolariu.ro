@@ -10,7 +10,7 @@
  * `runner`/`now` bridge remains.
  */
 
-import type {CommandContext, CommandExecution} from "./common/commander.ts";
+import type {CommandExecution, CommandExecutionContext} from "./core/command/command-execution.ts";
 import type {MonorepositoryLogger} from "./common/logger.ts";
 import type {PromptProvider} from "./common/prompts.ts";
 import type {RepositoryPaths} from "./common/repository-paths.ts";
@@ -118,7 +118,7 @@ export interface SetupActionExecutor {
  */
 export interface SetupPhaseRuntime {
   /** The owning command invocation context, used to scope nested command invocations. */
-  readonly command: CommandContext;
+  readonly command: CommandExecutionContext;
   /** Phase-scoped child-process runner. */
   readonly runner: ProcessRunner;
   /** Filesystem capability. */

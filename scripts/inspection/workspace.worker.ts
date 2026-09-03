@@ -19,12 +19,12 @@ import {resolve} from "node:path";
 
 import {
   CommandInputError,
-  MonorepoCommand,
   toJsonValue,
-  type CommandContext,
-  type CommandRuntimeFactory,
+  type CommandExecutionContext,
   type JsonValue,
-} from "../common/commander.ts";
+} from "../core/command/command-execution.ts";
+import {defineCommand, type LazyMonorepoCommand} from "../core/command/lazy-monorepo-command.ts";
+import type {CommandConstructionOptions, CommandHost} from "../core/command/command-specification.ts";
 
 /** The single fixed input the Nx workspace worker accepts. */
 export interface WorkspaceWorkerInput {
@@ -75,7 +75,7 @@ export function projectWorkerDocument(graph: unknown): WorkspaceWorkerDocument {
  * path as the supplied repository root.
  */
 async function collectWorkspaceWorkerDocument(
-  context: Readonly<CommandContext>,
+  context: Readonly<CommandExecutionContext>,
   input: Readonly<WorkspaceWorkerInput>,
 ): Promise<WorkspaceWorkerDocument> {
   const workspaceRootEnvironmentValue = context.runtime.environment.variables["NX_WORKSPACE_ROOT_PATH"];
@@ -94,22 +94,26 @@ async function collectWorkspaceWorkerDocument(
   return projectWorkerDocument(graph);
 }
 
+/** Production command host. This literal dynamic import is the only edge from this entrypoint
+ *  into the Node adapter; core never names it. */
+const loadProductionCommandHost = async (): Promise<CommandHost> =>
+  import("../adapters/node/node-command-host.ts").then(({createNodeCommandHost}) => createNodeCommandHost("inspection-workspace-worker"));
+
 /**
  * Creates the isolated Nx workspace worker command.
  *
- * @param runtimeFactory - Optional runtime factory; tests inject a fake instead of the Node adapter.
+ * @param options - The injected command host or a literal loader; defaults to the production
+ * Node adapter.
  * @returns The typed `inspection-workspace-worker` command object.
  */
 export function createWorkspaceWorkerCommand(
-  runtimeFactory?: CommandRuntimeFactory,
-): MonorepoCommand<WorkspaceWorkerInput, WorkspaceWorkerDocument> {
-  return new MonorepoCommand<WorkspaceWorkerInput, WorkspaceWorkerDocument>(
+  options: Readonly<CommandConstructionOptions> = {loadHost: loadProductionCommandHost},
+): LazyMonorepoCommand<WorkspaceWorkerInput, WorkspaceWorkerDocument, never> {
+  return defineCommand<WorkspaceWorkerInput, WorkspaceWorkerDocument>(
     {
-      metadata: {
-        name: "inspection-workspace-worker",
-        description: "Emits the isolated Nx project graph for one repository root as a single JSON document.",
-        usage: "<repositoryRoot>",
-      },
+      name: "inspection-workspace-worker",
+      description: "Emits the isolated Nx project graph for one repository root as a single JSON document.",
+      usage: "<repositoryRoot>",
       configure: (program) => {
         program.argument("[repositoryRoot]", "Absolute repository root whose Nx project graph is constructed.");
       },
@@ -122,14 +126,14 @@ export function createWorkspaceWorkerCommand(
       },
       presentation: () => "json",
       execute: collectWorkspaceWorkerDocument,
-      completion: (document) => ({exitCode: 0, json: document}),
+      complete: (document) => ({exitCode: 0, value: document, json: document}),
     },
-    runtimeFactory,
+    options,
   );
 }
 
 /** Production singleton used by this module's direct entrypoint. */
-export const workspaceWorkerCommand: MonorepoCommand<WorkspaceWorkerInput, WorkspaceWorkerDocument> =
+export const workspaceWorkerCommand: LazyMonorepoCommand<WorkspaceWorkerInput, WorkspaceWorkerDocument, never> =
   createWorkspaceWorkerCommand();
 
 await workspaceWorkerCommand.runIfMain(import.meta.url);

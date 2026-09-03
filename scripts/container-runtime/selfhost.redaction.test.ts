@@ -7,15 +7,11 @@
 import {describe, expect, it} from "vitest";
 import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "../common/logger.ts";
 import {RunnerError, type ProcessOutcome} from "../common/runner.ts";
-import {
-  createProcessRunner,
-  createRepositoryFixtureFileSystem,
-  createTestProcessHost,
-  createTestRuntimeFactory,
-  repositoryFixtureRoot,
-} from "../common/runtime.testing.ts";
+import {createProcessRunner, createRepositoryFixtureFileSystem, repositoryFixtureRoot} from "../common/runtime.testing.ts";
 import type {Clock, RuntimeEnvironment} from "../common/runtime.ts";
-import type {CommandExecution, CommandInvoker} from "../common/commander.ts";
+import type {CommandExecution, CommandInvoker} from "../core/command/command-execution.ts";
+import type {CommandHost} from "../core/command/command-specification.ts";
+import {buildCommandHost} from "../testing/builders/command-host.builder.ts";
 import type {ArtifactGenerationResult, GenerateArtifactsInput} from "../generate.artifacts.ts";
 import type {LocalStorageBootstrap} from "./selfhost.bootstrap.ts";
 import {createSelfhostCommand} from "./selfhost.ts";
@@ -69,7 +65,7 @@ function createFailingSqlHarness(): Readonly<{
   command: ReturnType<typeof createSelfhostCommand>;
   runner: ReturnType<typeof createProcessRunner>;
   sink: InMemoryLoggerSink;
-  processHost: ReturnType<typeof createTestProcessHost>;
+  host: CommandHost & Readonly<{assignedExitCodes: readonly number[]}>;
 }> {
   const runner = createProcessRunner([
     ...Array.from({length: podmanPreflightProbeCount + 2}, () => succeeded()),
@@ -77,23 +73,22 @@ function createFailingSqlHarness(): Readonly<{
   ]);
   const sink = new InMemoryLoggerSink();
   const logger = new MonorepositoryConsoleLogger("test", {color: false, sink});
-  const processHost = createTestProcessHost(["start", "--engine", "podman"]);
-  const runtimeFactory = {
-    ...createTestRuntimeFactory({
+  const host = buildCommandHost({
+    argv: ["start", "--engine", "podman"],
+    runtime: {
       runner,
       logger,
       clock: immediateClock,
       files: createRepositoryFixtureFileSystem({[certFixturePath]: "local-cert", [keyFixturePath]: "local-key"}),
       environment: environmentWith({MSSQL_SA_PASSWORD: sqlPassword}),
-    }),
-    processHost,
-  };
+    },
+  });
 
   return {
-    command: createSelfhostCommand({runtimeFactory, bootstrap: bootstrapStub, artifacts: artifactsStub}),
+    command: createSelfhostCommand({bootstrap: bootstrapStub, artifacts: artifactsStub}, {host}),
     runner,
     sink,
-    processHost,
+    host,
   };
 }
 
@@ -134,12 +129,12 @@ describe("selfhost SQL password redaction", () => {
   });
 
   it("reuses the invocation logger when the direct entrypoint reports a password-bearing failure", async () => {
-    const {command, sink, processHost} = createFailingSqlHarness();
+    const {command, sink, host} = createFailingSqlHarness();
 
     await command.runIfMain("file:///repo/scripts/container-runtime/selfhost.ts");
 
     const output = sink.records.map((record) => record.text).join("\n");
-    expect(processHost.assignedExitCodes).toEqual([1]);
+    expect(host.assignedExitCodes).toEqual([1]);
     expect(output).toContain("[REDACTED]");
     expect(output).not.toContain(sqlPassword);
   });

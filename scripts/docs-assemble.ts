@@ -14,7 +14,7 @@
  * Invoked via `npm run docs:assemble` before `npm run build:docs` / `dev:docs`. Designed to be
  * idempotent — each run starts by cleaning the staging dir (`sites/docs.arolariu.ro/_generated/`)
  * so CI builds behave the same as a fresh local clone. Every filesystem, process, and concurrency
- * concern flows through the injected {@link CommandContext.runtime} instead of `node:fs`, a
+ * concern flows through the injected {@link CommandExecutionContext.runtime} instead of `node:fs`, a
  * bespoke command runner, or `Promise.all`, so the whole pipeline is exercised deterministically
  * by the declarative command runtime's test fakes. The cleaned `_generated` tree is
  * invocation-transient: a cleanup callback registered right after it is created removes it again
@@ -23,7 +23,9 @@
  */
 
 import {dirname, join, resolve} from "node:path";
-import {MonorepoCommand, type CommandContext, type CommandRuntimeFactory} from "./common/commander.ts";
+import type {CommandExecutionContext} from "./core/command/command-execution.ts";
+import {defineCommand, type LazyMonorepoCommand} from "./core/command/lazy-monorepo-command.ts";
+import type {CommandConstructionOptions, CommandHost} from "./core/command/command-specification.ts";
 import {resolveRepositoryPaths} from "./common/repository-paths.ts";
 import type {ProcessRunner} from "./common/runner.ts";
 import type {FileSystem} from "./common/runtime.ts";
@@ -491,7 +493,7 @@ export interface DocumentationAssemblyResult {
  * cleanup capabilities.
  * @returns The ordered generated tiers and the number of extractor families that ran.
  */
-async function executeDocsAssemble(context: Readonly<CommandContext>): Promise<DocumentationAssemblyResult> {
+async function executeDocsAssemble(context: Readonly<CommandExecutionContext>): Promise<DocumentationAssemblyResult> {
   const {files, runner, tasks, cleanup, signal} = context.runtime;
   const paths = await resolveRepositoryPaths(import.meta.url, files);
 
@@ -561,30 +563,35 @@ async function executeDocsAssemble(context: Readonly<CommandContext>): Promise<D
   return {generatedTiers: GENERATED_TIER_IDENTITIES, extractorCount: 3};
 }
 
+/** Production command host. This literal dynamic import is the only edge from this entrypoint
+ *  into the Node adapter; core never names it. */
+const loadProductionCommandHost = async (): Promise<CommandHost> =>
+  import("./adapters/node/node-command-host.ts").then(({createNodeCommandHost}) => createNodeCommandHost("docs-assemble"));
+
 /**
  * Creates the documentation assembly command.
  *
- * @param runtimeFactory - Optional runtime factory; tests inject a fake instead of the Node adapter.
+ * @param options - The injected command host or a literal loader; defaults to the production
+ * Node adapter.
  * @returns The typed `docs-assemble` command object.
  */
 export function createDocsAssembleCommand(
-  runtimeFactory?: CommandRuntimeFactory,
-): MonorepoCommand<Record<never, never>, DocumentationAssemblyResult> {
-  return new MonorepoCommand<Record<never, never>, DocumentationAssemblyResult>(
+  options: Readonly<CommandConstructionOptions> = {loadHost: loadProductionCommandHost},
+): LazyMonorepoCommand<Record<never, never>, DocumentationAssemblyResult, never> {
+  return defineCommand<Record<never, never>, DocumentationAssemblyResult>(
     {
-      metadata: {
-        name: "docs-assemble",
-        description:
-          "Runs TypeDoc, pydoc-markdown, and DefaultDocumentation in parallel, normalizes frontmatter, writes landing pages, and mirrors prose into the Docusaurus source tree.",
-        examples: ["npm run docs:assemble", "node --experimental-strip-types scripts/docs-assemble.ts"],
-      },
+      name: "docs-assemble",
+      description:
+        "Runs TypeDoc, pydoc-markdown, and DefaultDocumentation in parallel, normalizes frontmatter, writes landing pages, and mirrors prose into the Docusaurus source tree.",
+      examples: ["npm run docs:assemble", "node --experimental-strip-types scripts/docs-assemble.ts"],
       configure: (program) => {
         program.allowExcessArguments(false);
       },
       decode: () => ({}),
       execute: (context) => executeDocsAssemble(context),
-      completion: (result) => ({
+      complete: (result) => ({
         exitCode: 0,
+        value: result,
         human: (logger) => {
           logger.success(
             `Assembled documentation from ${String(result.extractorCount)} extractor(s) across ${String(result.generatedTiers.length)} tier(s).`,
@@ -592,11 +599,12 @@ export function createDocsAssembleCommand(
         },
       }),
     },
-    runtimeFactory,
+    options,
   );
 }
 
 /** Production singleton used by `npm run docs:assemble` and this module's direct entrypoint. */
-export const docsAssembleCommand: MonorepoCommand<Record<never, never>, DocumentationAssemblyResult> = createDocsAssembleCommand();
+export const docsAssembleCommand: LazyMonorepoCommand<Record<never, never>, DocumentationAssemblyResult, never> =
+  createDocsAssembleCommand();
 
 await docsAssembleCommand.runIfMain(import.meta.url);

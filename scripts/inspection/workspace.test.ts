@@ -13,7 +13,7 @@ import {describe, expect, it, vi} from "vitest";
 import type {ProcessEnvironment, ProcessOutcome, ProcessOutput, ProcessRequest, ProcessRunner} from "../common/runner.ts";
 import {createNodeProcessRunner, nodeClock, nodeFileSystem, snapshotNodeEnvironment} from "../common/runtime.node.ts";
 import type {Clock, FileSystem, RuntimeEnvironment} from "../common/runtime.ts";
-import {createTestRuntimeFactory} from "../common/runtime.testing.ts";
+import {buildCommandHost} from "../testing/builders/command-host.builder.ts";
 import {resolveRepositoryPaths} from "../common/repository-paths.ts";
 import {createWorkspaceProvider, projectNxGraph, type WorkspaceFacts} from "./workspace.ts";
 import {createWorkspaceWorkerCommand, projectWorkerDocument, workspaceWorkerCommand} from "./workspace.worker.ts";
@@ -449,7 +449,7 @@ describe("workspace worker document projection", () => {
 
 describe("createWorkspaceWorkerCommand", () => {
   it("rejects a missing repository root argument as invalid usage", async () => {
-    const command = createWorkspaceWorkerCommand(createTestRuntimeFactory());
+    const command = createWorkspaceWorkerCommand({host: buildCommandHost()});
 
     const execution = await command.run([]);
 
@@ -458,7 +458,7 @@ describe("createWorkspaceWorkerCommand", () => {
   });
 
   it("rejects more than one repository root argument as invalid usage", async () => {
-    const command = createWorkspaceWorkerCommand(createTestRuntimeFactory());
+    const command = createWorkspaceWorkerCommand({host: buildCommandHost()});
 
     const execution = await command.run(["root-a", "root-b"]);
 
@@ -467,7 +467,7 @@ describe("createWorkspaceWorkerCommand", () => {
   });
 
   it("fails without importing Nx when NX_WORKSPACE_ROOT_PATH is missing", async () => {
-    const command = createWorkspaceWorkerCommand(createTestRuntimeFactory());
+    const command = createWorkspaceWorkerCommand({host: buildCommandHost()});
 
     const execution = await command.invoke({repositoryRoot: REPOSITORY_ROOT});
 
@@ -482,7 +482,7 @@ describe("createWorkspaceWorkerCommand", () => {
       ...snapshotNodeEnvironment(),
       variables: {NX_WORKSPACE_ROOT_PATH: resolve(REPOSITORY_ROOT, "elsewhere")},
     };
-    const command = createWorkspaceWorkerCommand(createTestRuntimeFactory({environment}));
+    const command = createWorkspaceWorkerCommand({host: buildCommandHost({runtime: {environment}})});
 
     const execution = await command.invoke({repositoryRoot: REPOSITORY_ROOT});
 

@@ -18,7 +18,8 @@ import {describe, expect, it} from "vitest";
 
 import {createRepositoryPaths, type RepositoryPaths} from "./common/repository-paths.ts";
 import {AbstractProcessRunner, type ProcessOutcome, type ProcessRequest, type ProcessRunOptions} from "./common/runner.ts";
-import {createMemoryFileSystem, createTestRuntimeFactory, repositoryFixtureRoot} from "./common/runtime.testing.ts";
+import {createMemoryFileSystem, repositoryFixtureRoot} from "./common/runtime.testing.ts";
+import {buildCommandHost} from "./testing/builders/command-host.builder.ts";
 import type {FileSystem} from "./common/runtime.ts";
 import {
   assertExpectedDocumentationTiers,
@@ -375,7 +376,7 @@ describe("createDocsAssembleCommand", () => {
   it("assembles every required documentation tier using a fake runner and in-memory filesystem", async () => {
     const files = documentationFixtureFileSystem();
     const runner = new DocumentationFixtureRunner(files);
-    const command = createDocsAssembleCommand(createTestRuntimeFactory({files, runner}));
+    const command = createDocsAssembleCommand({host: buildCommandHost({runtime: {files, runner}})});
 
     const execution = await command.invoke({}, {presentation: "silent"});
 
@@ -404,7 +405,7 @@ describe("createDocsAssembleCommand", () => {
   it("dispatches typedoc components before typedoc website, both with capture output at the repository root", async () => {
     const files = documentationFixtureFileSystem();
     const runner = new DocumentationFixtureRunner(files);
-    const command = createDocsAssembleCommand(createTestRuntimeFactory({files, runner}));
+    const command = createDocsAssembleCommand({host: buildCommandHost({runtime: {files, runner}})});
 
     const execution = await command.invoke({}, {presentation: "silent"});
     expect(execution.status).toBe("completed");
@@ -423,7 +424,7 @@ describe("createDocsAssembleCommand", () => {
   it("dispatches pydoc-markdown with capture output at the exp.arolariu.ro directory", async () => {
     const files = documentationFixtureFileSystem();
     const runner = new DocumentationFixtureRunner(files);
-    const command = createDocsAssembleCommand(createTestRuntimeFactory({files, runner}));
+    const command = createDocsAssembleCommand({host: buildCommandHost({runtime: {files, runner}})});
 
     const execution = await command.invoke({}, {presentation: "silent"});
     expect(execution.status).toBe("completed");
@@ -438,7 +439,7 @@ describe("createDocsAssembleCommand", () => {
   it("builds each dotnet graph root before running defaultdocumentation, both with capture output at the API root", async () => {
     const files = documentationFixtureFileSystem();
     const runner = new DocumentationFixtureRunner(files);
-    const command = createDocsAssembleCommand(createTestRuntimeFactory({files, runner}));
+    const command = createDocsAssembleCommand({host: buildCommandHost({runtime: {files, runner}})});
 
     const execution = await command.invoke({}, {presentation: "silent"});
     expect(execution.status).toBe("completed");
@@ -455,7 +456,7 @@ describe("createDocsAssembleCommand", () => {
   it("reports extractorCount as 3 regardless of how many child commands each family dispatches", async () => {
     const files = documentationFixtureFileSystem();
     const runner = new DocumentationFixtureRunner(files);
-    const command = createDocsAssembleCommand(createTestRuntimeFactory({files, runner}));
+    const command = createDocsAssembleCommand({host: buildCommandHost({runtime: {files, runner}})});
 
     const execution = await command.invoke({}, {presentation: "silent"});
 
@@ -478,7 +479,7 @@ describe("createDocsAssembleCommand", () => {
       ],
     ]);
     const runner = new DocumentationFixtureRunner(files, overrides);
-    const command = createDocsAssembleCommand(createTestRuntimeFactory({files, runner}));
+    const command = createDocsAssembleCommand({host: buildCommandHost({runtime: {files, runner}})});
 
     const execution = await command.invoke({}, {presentation: "silent"});
 
@@ -495,7 +496,7 @@ describe("createDocsAssembleCommand", () => {
       [["python", "-m", "pydoc_markdown.main"].join("\u0000"), exited(1, {stderr: longOutput})],
     ]);
     const runner = new DocumentationFixtureRunner(files, overrides);
-    const command = createDocsAssembleCommand(createTestRuntimeFactory({files, runner}));
+    const command = createDocsAssembleCommand({host: buildCommandHost({runtime: {files, runner}})});
 
     const execution = await command.invoke({}, {presentation: "silent"});
 
@@ -515,7 +516,7 @@ describe("createDocsAssembleCommand", () => {
       [["npx", "typedoc", "--options", "typedoc.website.json"].join("\u0000"), succeeded()],
     ]);
     const runner = new DocumentationFixtureRunner(files, overrides);
-    const command = createDocsAssembleCommand(createTestRuntimeFactory({files, runner}));
+    const command = createDocsAssembleCommand({host: buildCommandHost({runtime: {files, runner}})});
 
     const execution = await command.invoke({}, {presentation: "silent"});
 
@@ -529,7 +530,7 @@ describe("createDocsAssembleCommand", () => {
     const controller = new AbortController();
     const overrides = new Map<string, ProcessOutcome>();
     const runner = new DocumentationFixtureRunner(files, overrides);
-    const command = createDocsAssembleCommand(createTestRuntimeFactory({files, runner}));
+    const command = createDocsAssembleCommand({host: buildCommandHost({runtime: {files, runner}})});
 
     controller.abort();
     const execution = await command.invoke({}, {presentation: "silent", signal: controller.signal});
@@ -544,7 +545,7 @@ describe("createDocsAssembleCommand", () => {
 
   it("reports help for --help instead of running any extractor", async () => {
     const runnerThatMustNotBeCalled = new DocumentationFixtureRunner(createMemoryFileSystem());
-    const command = createDocsAssembleCommand(createTestRuntimeFactory({runner: runnerThatMustNotBeCalled}));
+    const command = createDocsAssembleCommand({host: buildCommandHost({runtime: {runner: runnerThatMustNotBeCalled}})});
 
     const execution = await command.run(["--help"]);
 
@@ -554,7 +555,7 @@ describe("createDocsAssembleCommand", () => {
 
   it("rejects an unknown option without invoking any extractor", async () => {
     const runnerThatMustNotBeCalled = new DocumentationFixtureRunner(createMemoryFileSystem());
-    const command = createDocsAssembleCommand(createTestRuntimeFactory({runner: runnerThatMustNotBeCalled}));
+    const command = createDocsAssembleCommand({host: buildCommandHost({runtime: {runner: runnerThatMustNotBeCalled}})});
 
     const execution = await command.run(["--bogus"]);
 
@@ -564,7 +565,7 @@ describe("createDocsAssembleCommand", () => {
 
   it("rejects an excess positional argument without invoking any extractor", async () => {
     const runnerThatMustNotBeCalled = new DocumentationFixtureRunner(createMemoryFileSystem());
-    const command = createDocsAssembleCommand(createTestRuntimeFactory({runner: runnerThatMustNotBeCalled}));
+    const command = createDocsAssembleCommand({host: buildCommandHost({runtime: {runner: runnerThatMustNotBeCalled}})});
 
     const execution = await command.run(["unexpected-arg"]);
 

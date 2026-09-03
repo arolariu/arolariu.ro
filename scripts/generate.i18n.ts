@@ -18,11 +18,13 @@
  *
  * This command is used by `npm run generate` as part of the build toolchain. Every ambient
  * effect (filesystem and environment) is routed through the injected
- * {@link CommandContext.runtime} instead of touching Node globals directly.
+ * {@link CommandExecutionContext.runtime} instead of touching Node globals directly.
  */
 
 import path from "node:path";
-import {MonorepoCommand, type CommandContext, type CommandRuntimeFactory} from "./common/commander.ts";
+import type {CommandExecutionContext} from "./core/command/command-execution.ts";
+import {defineCommand, type LazyMonorepoCommand} from "./core/command/lazy-monorepo-command.ts";
+import type {CommandConstructionOptions, CommandHost} from "./core/command/command-specification.ts";
 import type {MonorepositoryLogger} from "./common/logger.ts";
 
 /** Typed input accepted by every migrated `generate` leaf command. */
@@ -63,7 +65,7 @@ type MessageFormat = {
  * @param verbose - Enables verbose logging.
  * @returns The translation file as a `MessageFormat` object.
  */
-async function loadTranslationFile(context: Readonly<CommandContext>, filePath: string, verbose: boolean): Promise<MessageFormat> {
+async function loadTranslationFile(context: Readonly<CommandExecutionContext>, filePath: string, verbose: boolean): Promise<MessageFormat> {
   const {logger, files} = context.runtime;
   try {
     const translationFile = await files.readText(filePath);
@@ -380,7 +382,7 @@ function addMissingKey(existing: MessageFormat, compoundKey: string, verbose: bo
  * @param verbose Whether to emit key-segment diagnostics.
  */
 async function writeTranslationKeysFile(
-  context: Readonly<CommandContext>,
+  context: Readonly<CommandExecutionContext>,
   filePath: string,
   translationKeys: readonly string[],
   verbose: boolean,
@@ -429,7 +431,7 @@ interface LocaleValidationResult {
  * @returns The target locale file path and the number of missing keys that were added.
  */
 async function validateLocale(
-  context: Readonly<CommandContext>,
+  context: Readonly<CommandExecutionContext>,
   enTranslations: MessageFormat,
   enKeys: string[],
   targetLocale: string,
@@ -466,7 +468,7 @@ async function validateLocale(
  * @returns The completion summary and every locale file this invocation modified.
  */
 async function generateI18n(
-  context: Readonly<CommandContext>,
+  context: Readonly<CommandExecutionContext>,
   input: Readonly<GenerateLeafInput>,
 ): Promise<GenerateLeafResult> {
   const {logger, environment} = context.runtime;
@@ -543,43 +545,48 @@ async function generateI18n(
   };
 }
 
+/** Production command host. This literal dynamic import is the only edge from this entrypoint
+ *  into the Node adapter; core never names it. */
+const loadProductionCommandHost = async (): Promise<CommandHost> =>
+  import("./adapters/node/node-command-host.ts").then(({createNodeCommandHost}) => createNodeCommandHost("generate:i18n"));
+
 /**
  * Creates the i18n generator command.
  *
- * @param runtimeFactory - Optional runtime factory; tests inject a fake instead of the Node adapter.
+ * @param options - The injected command host or a literal loader; defaults to the production
+ * Node adapter.
  * @returns The typed `generate:i18n` command object.
  */
 export function createGenerateI18nCommand(
-  runtimeFactory?: CommandRuntimeFactory,
-): MonorepoCommand<GenerateLeafInput, GenerateLeafResult> {
-  return new MonorepoCommand<GenerateLeafInput, GenerateLeafResult>(
+  options: Readonly<CommandConstructionOptions> = {loadHost: loadProductionCommandHost},
+): LazyMonorepoCommand<GenerateLeafInput, GenerateLeafResult, never> {
+  return defineCommand<GenerateLeafInput, GenerateLeafResult>(
     {
-      metadata: {
-        name: "generate:i18n",
-        description: "Validates and synchronizes translation files against English (en.json).",
-        examples: ["npm run generate:i18n", "npm run generate:i18n -- --verbose"],
-        slashAliases: {"/v": "--verbose", "/verbose": "--verbose"},
-      },
+      name: "generate:i18n",
+      description: "Validates and synchronizes translation files against English (en.json).",
+      examples: ["npm run generate:i18n", "npm run generate:i18n -- --verbose"],
+      slashAliases: {"/v": "--verbose", "/verbose": "--verbose"},
       configure: (program) => {
         program.option("-v, --verbose", "Enable verbose logging.");
       },
       decode: (program) => ({verbose: program.opts<{verbose?: boolean}>().verbose === true}),
       execute: generateI18n,
-      completion: (result) => ({
+      complete: (result) => ({
         // Mirrors the pre-migration leaf's `totalMissingKeys` exit contract under the normative
         // `CommandExitCode` shape: `0` when every locale already matched English, `1` when
         // missing keys caused this invocation to change one or more locale files. The aggregate
         // (`generate.ts`) stops before later leaves whenever this is nonzero.
         exitCode: result.changedFiles.length > 0 ? 1 : 0,
+        value: result,
         human: (logger) => logger.success(result.summary),
       }),
     },
-    runtimeFactory,
+    options,
   );
 }
 
 /** Production singleton used by the aggregate CLI and this module's direct entrypoint. */
-export const generateI18nCommand: MonorepoCommand<GenerateLeafInput, GenerateLeafResult> = createGenerateI18nCommand();
+export const generateI18nCommand: LazyMonorepoCommand<GenerateLeafInput, GenerateLeafResult, never> = createGenerateI18nCommand();
 
 await generateI18nCommand.runIfMain(import.meta.url);
 

@@ -6,17 +6,12 @@
 
 import {afterEach, describe, expect, it, vi} from "vitest";
 
-import type {CommandInvoker} from "./common/commander.ts";
+import type {CommandInvoker} from "./core/command/command-execution.ts";
+import {buildCommandHost} from "./testing/builders/command-host.builder.ts";
 import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "./common/logger.ts";
 import type {PromptProvider} from "./common/prompts.ts";
 import type {HttpClient, HttpResponse, RuntimeEnvironment} from "./common/runtime.ts";
-import {
-  createHttpResponse,
-  createMemoryFileSystem,
-  createTestProcessHost,
-  createTestRuntimeFactory,
-  repositoryFixtureRoot,
-} from "./common/runtime.testing.ts";
+import {createHttpResponse, createMemoryFileSystem, repositoryFixtureRoot} from "./common/runtime.testing.ts";
 import type {GenerateLeafInput, GenerateLeafResult} from "./generate.env.ts";
 
 afterEach(() => {
@@ -176,7 +171,7 @@ describe("generateEnvironmentCommand", () => {
     };
 
     const {createGenerateEnvironmentCommand} = await import("./generate.env.ts");
-    const command = createGenerateEnvironmentCommand(createTestRuntimeFactory({files, prompts}));
+    const command = createGenerateEnvironmentCommand({host: buildCommandHost({runtime: {files, prompts}})});
 
     const execution = await command.invoke({verbose: false}, {presentation: "silent"});
 
@@ -214,12 +209,12 @@ describe("generateEnvironmentCommand", () => {
     const command = createGenerateCommand(
       {
         // The real environment generator, wired to a failing exp endpoint, is the child under test.
-        env: createGenerateEnvironmentCommand(createTestRuntimeFactory({files, environment, http})),
+        env: createGenerateEnvironmentCommand({host: buildCommandHost({runtime: {files, environment, http}})}),
         i18n: unusedLeaf,
         gql: unusedLeaf,
         artifacts: {invoke: vi.fn()},
       },
-      createTestRuntimeFactory({logger}),
+      {host: buildCommandHost({runtime: {logger}})},
     );
 
     const execution = await command.invoke(
@@ -271,7 +266,7 @@ describe("generateEnvironmentCommand", () => {
     const redactSpy = vi.spyOn(MonorepositoryConsoleLogger.prototype, "redact");
 
     const {createGenerateEnvironmentCommand} = await import("./generate.env.ts");
-    const command = createGenerateEnvironmentCommand(createTestRuntimeFactory({files, prompts, logger}));
+    const command = createGenerateEnvironmentCommand({host: buildCommandHost({runtime: {files, prompts, logger}})});
 
     const execution = await command.invoke({verbose: false}, {presentation: "silent"});
 
@@ -330,13 +325,13 @@ describe("generateEnvironmentCommand", () => {
     it("emits a real debug record from VERBOSE=true even without the --verbose CLI flag", async () => {
       const files = createMemoryFileSystem({".env": completeEnvContent});
       const sink = new InMemoryLoggerSink();
-      // `verbose: false` mirrors production: `commander.ts` derives the invocation logger's own
-      // verbosity from the CLI flag alone (see `readVerboseFlag`), never from `VERBOSE`.
+      // `verbose: false` mirrors production: the abstract command lifecycle derives the invocation
+      // logger's own verbosity from the CLI flag alone (see `readVerboseFlag`), never from `VERBOSE`.
       const logger = new MonorepositoryConsoleLogger("generate::env", {color: false, verbose: false, sink});
       const environment = buildTestEnvironment({VERBOSE: "true"});
 
       const {createGenerateEnvironmentCommand} = await import("./generate.env.ts");
-      const command = createGenerateEnvironmentCommand(createTestRuntimeFactory({files, logger, environment}));
+      const command = createGenerateEnvironmentCommand({host: buildCommandHost({runtime: {files, logger, environment}})});
 
       // `presentation: "human"` matches how the aggregate (`generate.ts`) invokes every leaf.
       const execution = await command.invoke({verbose: false}, {presentation: "human"});
@@ -352,7 +347,7 @@ describe("generateEnvironmentCommand", () => {
       const environment = buildTestEnvironment({});
 
       const {createGenerateEnvironmentCommand} = await import("./generate.env.ts");
-      const command = createGenerateEnvironmentCommand(createTestRuntimeFactory({files, logger, environment}));
+      const command = createGenerateEnvironmentCommand({host: buildCommandHost({runtime: {files, logger, environment}})});
 
       const execution = await command.invoke({verbose: false}, {presentation: "human"});
 
@@ -377,7 +372,7 @@ describe("generateEnvironmentCommand parser lifecycle", () => {
     const sink = new InMemoryLoggerSink();
     const logger = new MonorepositoryConsoleLogger("generate::env", {color: false, sink});
     const {createGenerateEnvironmentCommand} = await import("./generate.env.ts");
-    const command = createGenerateEnvironmentCommand(createTestRuntimeFactory({files, logger}));
+    const command = createGenerateEnvironmentCommand({host: buildCommandHost({runtime: {files, logger}})});
 
     const execution = await command.run([flag]);
 
@@ -385,47 +380,6 @@ describe("generateEnvironmentCommand parser lifecycle", () => {
     expect(sink.records.some((record) => record.text.includes("SITE_ENV was evaluated without logging its value."))).toBe(true);
   });
 
-  it("parses a fresh Commander program on every repeated run() call instead of retaining prior decoded state", async () => {
-    const files = createMemoryFileSystem({".env": completeEnvContent});
-    const sink = new InMemoryLoggerSink();
-    const logger = new MonorepositoryConsoleLogger("generate::env", {color: false, sink});
-    const {createGenerateEnvironmentCommand} = await import("./generate.env.ts");
-    const command = createGenerateEnvironmentCommand(createTestRuntimeFactory({files, logger}));
-
-    const verboseExecution = await command.run(["--verbose"]);
-    const quietExecution = await command.run([]);
-
-    expect(verboseExecution).toMatchObject({status: "completed", exitCode: 0});
-    expect(quietExecution).toMatchObject({status: "completed", exitCode: 0});
-
-    const verboseOnlyDiagnostic = sink.records.filter((record) =>
-      record.text.includes("SITE_ENV was evaluated without logging its value."),
-    );
-    // Exactly one occurrence proves the second, flag-less run() call did not inherit the first
-    // call's decoded verbose flag: each run() rebuilds its own fresh Commander parser and input.
-    expect(verboseOnlyDiagnostic).toHaveLength(1);
-  });
-
-  it("assigns an exit code through runIfMain() only when the module is the direct entrypoint", async () => {
-    const files = createMemoryFileSystem({".env": completeEnvContent});
-    const {createGenerateEnvironmentCommand} = await import("./generate.env.ts");
-
-    const nonEntryProcessHost = createTestProcessHost([]);
-    const nonEntryCommand = createGenerateEnvironmentCommand({
-      ...createTestRuntimeFactory({files}),
-      processHost: {...nonEntryProcessHost, isDirectEntry: (): boolean => false},
-    });
-    await nonEntryCommand.runIfMain("file:///repo/scripts/generate.env.ts");
-    expect(nonEntryProcessHost.assignedExitCodes).toEqual([]);
-
-    const entryProcessHost = createTestProcessHost([]);
-    const entryCommand = createGenerateEnvironmentCommand({
-      ...createTestRuntimeFactory({files}),
-      processHost: entryProcessHost,
-    });
-    await entryCommand.runIfMain("file:///repo/scripts/generate.env.ts");
-    expect(entryProcessHost.assignedExitCodes).toEqual([0]);
-  });
 });
 
 describe("parseEnvironmentFile - semantic characterization", () => {

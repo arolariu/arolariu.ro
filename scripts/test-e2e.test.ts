@@ -17,7 +17,8 @@ import {describe, expect, it} from "vitest";
 
 import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "./common/logger.ts";
 import {AbstractProcessRunner, RunnerError, type ProcessOutcome, type ProcessRequest, type ProcessRunOptions} from "./common/runner.ts";
-import {createMemoryFileSystem, createTestRuntimeFactory, repositoryFixtureRoot} from "./common/runtime.testing.ts";
+import {createMemoryFileSystem, repositoryFixtureRoot} from "./common/runtime.testing.ts";
+import {buildCommandHost} from "./testing/builders/command-host.builder.ts";
 import {CommandCancellation, type FileSystem, type RuntimeEnvironment} from "./common/runtime.ts";
 import {
   createE2eCommand,
@@ -221,11 +222,8 @@ function createCliFixture(variables: Readonly<Record<string, string>> = {}): {
   const runner = new FakeNewmanRunner(files);
   const environment = testEnvironment(variables);
   const {logger, sink} = createSinkLogger();
-  const runtimeFactory = {
-    ...createTestRuntimeFactory({files, runner, environment, logger}),
-    createParseLogger: () => logger,
-  };
-  return {command: createE2eCommand(runtimeFactory), runner, sink};
+  const host = buildCommandHost({runtime: {files, runner, environment, logger}});
+  return {command: createE2eCommand({host}), runner, sink};
 }
 
 // ============================================================================
@@ -239,7 +237,7 @@ describe("createE2eCommand: collection immutability and token transport", () => 
     const originalBytes = await files.readText(collectionPath);
     const runner = new FakeNewmanRunner(files);
     const environment = testEnvironment({E2E_TEST_AUTH_TOKEN: FAKE_TOKEN});
-    const command = createE2eCommand(createTestRuntimeFactory({files, runner, environment}));
+    const command = createE2eCommand({host: buildCommandHost({runtime: {files, runner, environment}})});
 
     const execution = await command.invoke({target: "backend"}, {presentation: "silent"});
 
@@ -257,7 +255,7 @@ describe("createE2eCommand: collection immutability and token transport", () => 
     const files = fixtureFiles();
     const runner = new FakeNewmanRunner(files);
     const environment = testEnvironment({E2E_TEST_AUTH_TOKEN: FAKE_TOKEN});
-    const command = createE2eCommand(createTestRuntimeFactory({files, runner, environment}));
+    const command = createE2eCommand({host: buildCommandHost({runtime: {files, runner, environment}})});
 
     const execution = await command.invoke({target: "frontend"}, {presentation: "silent"});
 
@@ -269,7 +267,7 @@ describe("createE2eCommand: collection immutability and token transport", () => 
     const files = fixtureFiles();
     const runner = new FakeNewmanRunner(files);
     const environment = testEnvironment({E2E_TEST_AUTH_TOKEN: ""});
-    const command = createE2eCommand(createTestRuntimeFactory({files, runner, environment}));
+    const command = createE2eCommand({host: buildCommandHost({runtime: {files, runner, environment}})});
 
     const execution = await command.invoke({target: "frontend"}, {presentation: "silent"});
 
@@ -281,7 +279,7 @@ describe("createE2eCommand: collection immutability and token transport", () => 
     const files = fixtureFiles();
     const runner = new FakeNewmanRunner(files);
     const environment = testEnvironment({E2E_TEST_AUTH_TOKEN: FAKE_TOKEN});
-    const command = createE2eCommand(createTestRuntimeFactory({files, runner, environment}));
+    const command = createE2eCommand({host: buildCommandHost({runtime: {files, runner, environment}})});
 
     const execution = await command.invoke({target: "cv"}, {presentation: "silent"});
 
@@ -299,7 +297,7 @@ describe("createE2eCommand: required token and missing fixture validation", () =
     const files = fixtureFiles();
     const runner = new FakeNewmanRunner(files);
     const environment = testEnvironment({});
-    const command = createE2eCommand(createTestRuntimeFactory({files, runner, environment}));
+    const command = createE2eCommand({host: buildCommandHost({runtime: {files, runner, environment}})});
 
     const execution = await command.invoke({target: "backend"}, {presentation: "silent"});
 
@@ -313,7 +311,7 @@ describe("createE2eCommand: required token and missing fixture validation", () =
     });
     const runner = new FakeNewmanRunner(files);
     const environment = testEnvironment({E2E_TEST_AUTH_TOKEN: FAKE_TOKEN});
-    const command = createE2eCommand(createTestRuntimeFactory({files, runner, environment}));
+    const command = createE2eCommand({host: buildCommandHost({runtime: {files, runner, environment}})});
 
     const execution = await command.invoke({target: "backend"}, {presentation: "silent"});
 
@@ -331,7 +329,7 @@ describe("createE2eCommand: invalid input", () => {
   it("rejects an invalid target as a CommandInputError with exit code 2", async () => {
     const files = fixtureFiles();
     const runner = new FakeNewmanRunner(files);
-    const command = createE2eCommand(createTestRuntimeFactory({files, runner}));
+    const command = createE2eCommand({host: buildCommandHost({runtime: {files, runner}})});
 
     const execution = await command.invoke({target: "nope" as never}, {presentation: "silent"});
 
@@ -388,7 +386,7 @@ describe("createE2eCommand: target expansion and sequential execution", () => {
     const files = fixtureFiles();
     const runner = new FakeNewmanRunner(files);
     const environment = testEnvironment({E2E_TEST_AUTH_TOKEN: FAKE_TOKEN});
-    const command = createE2eCommand(createTestRuntimeFactory({files, runner, environment}));
+    const command = createE2eCommand({host: buildCommandHost({runtime: {files, runner, environment}})});
 
     const execution = await command.invoke({target: "all"}, {presentation: "silent"});
 
@@ -419,7 +417,7 @@ describe("createE2eCommand: target expansion and sequential execution", () => {
         request.args.includes(join(repositoryFixtureRoot, TARGET_DIRS.backend, "postman-collection.json")) ? exited(1) : succeeded(),
     });
     const environment = testEnvironment({E2E_TEST_AUTH_TOKEN: FAKE_TOKEN});
-    const command = createE2eCommand(createTestRuntimeFactory({files, runner, environment}));
+    const command = createE2eCommand({host: buildCommandHost({runtime: {files, runner, environment}})});
 
     const execution = await command.invoke({target: "all"}, {presentation: "silent"});
 
@@ -438,7 +436,7 @@ describe("createE2eCommand: report directory resolution", () => {
     const files = fixtureFiles();
     const runner = new FakeNewmanRunner(files);
     const environment = testEnvironment({E2E_TEST_AUTH_TOKEN: FAKE_TOKEN});
-    const command = createE2eCommand(createTestRuntimeFactory({files, runner, environment}));
+    const command = createE2eCommand({host: buildCommandHost({runtime: {files, runner, environment}})});
 
     const execution = await command.invoke({target: "backend"}, {presentation: "silent"});
     expect(execution.status).toBe("completed");
@@ -454,7 +452,7 @@ describe("createE2eCommand: report directory resolution", () => {
     const runner = new FakeNewmanRunner(files);
     const reportDir = join(repositoryFixtureRoot, "custom-e2e-logs");
     const environment = testEnvironment({E2E_TEST_AUTH_TOKEN: FAKE_TOKEN, NEWMAN_REPORT_DIR: reportDir});
-    const command = createE2eCommand(createTestRuntimeFactory({files, runner, environment}));
+    const command = createE2eCommand({host: buildCommandHost({runtime: {files, runner, environment}})});
 
     const execution = await command.invoke({target: "backend"}, {presentation: "silent"});
     expect(execution.status).toBe("completed");
@@ -479,7 +477,7 @@ describe("createE2eCommand: env-derived Newman arguments", () => {
       NEWMAN_TIMEOUT_REQUEST: "5000",
       NEWMAN_STRICT_MODE: "true",
     });
-    const command = createE2eCommand(createTestRuntimeFactory({files, runner, environment}));
+    const command = createE2eCommand({host: buildCommandHost({runtime: {files, runner, environment}})});
 
     const execution = await command.invoke({target: "backend"}, {presentation: "silent"});
     expect(execution.status).toBe("completed");
@@ -495,7 +493,7 @@ describe("createE2eCommand: env-derived Newman arguments", () => {
     const runner = new FakeNewmanRunner(files);
     const environment = testEnvironment({E2E_TEST_AUTH_TOKEN: FAKE_TOKEN, NEWMAN_TIMEOUT: "not-a-number"});
     const {logger, sink} = createSinkLogger();
-    const command = createE2eCommand(createTestRuntimeFactory({files, runner, environment, logger}));
+    const command = createE2eCommand({host: buildCommandHost({runtime: {files, runner, environment, logger}})});
 
     const execution = await command.invoke({target: "backend"}, {presentation: "silent"});
     expect(execution.status).toBe("completed");
@@ -515,7 +513,7 @@ describe("createE2eCommand: process invocation shape", () => {
     const files = fixtureFiles();
     const runner = new FakeNewmanRunner(files);
     const environment = testEnvironment({E2E_TEST_AUTH_TOKEN: FAKE_TOKEN});
-    const command = createE2eCommand(createTestRuntimeFactory({files, runner, environment}));
+    const command = createE2eCommand({host: buildCommandHost({runtime: {files, runner, environment}})});
 
     const execution = await command.invoke({target: "backend"}, {presentation: "silent"});
     expect(execution.status).toBe("completed");
@@ -539,7 +537,7 @@ describe("createE2eCommand: token redaction in logs", () => {
     const runner = new FakeNewmanRunner(files);
     const environment = testEnvironment({E2E_TEST_AUTH_TOKEN: FAKE_TOKEN});
     const {logger, sink} = createSinkLogger();
-    const command = createE2eCommand(createTestRuntimeFactory({files, runner, environment, logger}));
+    const command = createE2eCommand({host: buildCommandHost({runtime: {files, runner, environment, logger}})});
 
     await command.invoke({target: "backend"}, {presentation: "human"});
 
@@ -552,7 +550,7 @@ describe("createE2eCommand: token redaction in logs", () => {
     const runner = new FakeNewmanRunner(files, {outcomeFor: () => exited(1)});
     const environment = testEnvironment({E2E_TEST_AUTH_TOKEN: FAKE_TOKEN});
     const {logger, sink} = createSinkLogger();
-    const command = createE2eCommand(createTestRuntimeFactory({files, runner, environment, logger}));
+    const command = createE2eCommand({host: buildCommandHost({runtime: {files, runner, environment, logger}})});
 
     const execution = await command.invoke({target: "backend"}, {presentation: "human"});
     expect(execution.status).toBe("failed");
@@ -571,7 +569,7 @@ describe("createE2eCommand: token redaction in logs", () => {
         }),
     });
     const environment = testEnvironment({E2E_TEST_AUTH_TOKEN: FAKE_TOKEN});
-    const command = createE2eCommand(createTestRuntimeFactory({files, runner, environment}));
+    const command = createE2eCommand({host: buildCommandHost({runtime: {files, runner, environment}})});
 
     const execution = await command.invoke({target: "backend"}, {presentation: "silent"});
 
@@ -608,7 +606,7 @@ describe("createE2eCommand: typed runner failure outcomes and cleanup", () => {
     const originalBytes = await files.readText(collectionPath);
     const runner = new FakeNewmanRunner(files, {outcomeFor});
     const environment = testEnvironment({E2E_TEST_AUTH_TOKEN: FAKE_TOKEN});
-    const command = createE2eCommand(createTestRuntimeFactory({files, runner, environment}));
+    const command = createE2eCommand({host: buildCommandHost({runtime: {files, runner, environment}})});
 
     const execution = await command.invoke({target: "backend"}, {presentation: "silent"});
 
@@ -621,7 +619,7 @@ describe("createE2eCommand: typed runner failure outcomes and cleanup", () => {
     const files = fixtureFiles();
     const runner = new FakeNewmanRunner(files, {outcomeFor: () => cancelledOutcome()});
     const environment = testEnvironment({E2E_TEST_AUTH_TOKEN: FAKE_TOKEN});
-    const command = createE2eCommand(createTestRuntimeFactory({files, runner, environment}));
+    const command = createE2eCommand({host: buildCommandHost({runtime: {files, runner, environment}})});
 
     const execution = await command.invoke({target: "backend"}, {presentation: "silent"});
 
@@ -660,7 +658,7 @@ describe("createE2eCommand: typed runner failure outcomes and cleanup", () => {
       },
     });
     const environment = testEnvironment({E2E_TEST_AUTH_TOKEN: FAKE_TOKEN});
-    const command = createE2eCommand(createTestRuntimeFactory({files, runner, environment}));
+    const command = createE2eCommand({host: buildCommandHost({runtime: {files, runner, environment}})});
 
     const executionPromise = command.invoke({target: "backend"}, {presentation: "silent", signal: controller.signal});
     await newmanStarted;
@@ -695,7 +693,7 @@ describe("createE2eCommand: report artifact JWT sanitization", () => {
     const files = fixtureFiles();
     const runner = new FakeNewmanRunner(files, {artifactToken: syntheticJwt});
     const environment = testEnvironment({E2E_TEST_AUTH_TOKEN: syntheticJwt});
-    const command = createE2eCommand(createTestRuntimeFactory({files, runner, environment}));
+    const command = createE2eCommand({host: buildCommandHost({runtime: {files, runner, environment}})});
 
     const execution = await command.invoke({target: "backend"}, {presentation: "silent"});
     expect(execution.status).toBe("completed");
@@ -718,7 +716,7 @@ describe("createE2eCommand: report artifact JWT sanitization", () => {
     const files = fixtureFiles();
     const runner = new FakeNewmanRunner(files, {outcomeFor: () => exited(1), artifactToken: syntheticJwt});
     const environment = testEnvironment({E2E_TEST_AUTH_TOKEN: syntheticJwt});
-    const command = createE2eCommand(createTestRuntimeFactory({files, runner, environment}));
+    const command = createE2eCommand({host: buildCommandHost({runtime: {files, runner, environment}})});
 
     const execution = await command.invoke({target: "backend"}, {presentation: "silent"});
     expect(execution.status).toBe("failed");
@@ -735,7 +733,7 @@ describe("createE2eCommand: report artifact JWT sanitization", () => {
     const files = fixtureFiles();
     const runner = new FakeNewmanRunner(files, {artifactToken: FAKE_TOKEN});
     const environment = testEnvironment({E2E_TEST_AUTH_TOKEN: FAKE_TOKEN});
-    const command = createE2eCommand(createTestRuntimeFactory({files, runner, environment}));
+    const command = createE2eCommand({host: buildCommandHost({runtime: {files, runner, environment}})});
 
     const execution = await command.invoke({target: "backend"}, {presentation: "silent"});
     expect(execution.status).toBe("completed");
@@ -764,7 +762,7 @@ describe("createE2eCommand: cleanup ordering and failure precedence", () => {
     const recordingFiles = withReportCallOrder(rawFiles, order);
     const runner = new FakeNewmanRunner(rawFiles, {artifactToken: FAKE_TOKEN});
     const environment = testEnvironment({E2E_TEST_AUTH_TOKEN: FAKE_TOKEN});
-    const command = createE2eCommand(createTestRuntimeFactory({files: recordingFiles, runner, environment}));
+    const command = createE2eCommand({host: buildCommandHost({runtime: {files: recordingFiles, runner, environment}})});
 
     const execution = await command.invoke({target: "backend"}, {presentation: "silent"});
     expect(execution.status).toBe("completed");
@@ -790,7 +788,7 @@ describe("createE2eCommand: cleanup ordering and failure precedence", () => {
     };
     const runner = new FakeNewmanRunner(rawFiles, {artifactToken: FAKE_TOKEN});
     const environment = testEnvironment({E2E_TEST_AUTH_TOKEN: FAKE_TOKEN});
-    const command = createE2eCommand(createTestRuntimeFactory({files: failingFiles, runner, environment}));
+    const command = createE2eCommand({host: buildCommandHost({runtime: {files: failingFiles, runner, environment}})});
 
     const execution = await command.invoke({target: "backend"}, {presentation: "silent"});
 
@@ -810,7 +808,7 @@ describe("createE2eCommand: cleanup ordering and failure precedence", () => {
     };
     const runner = new FakeNewmanRunner(rawFiles, {outcomeFor: () => exited(1), artifactToken: FAKE_TOKEN});
     const environment = testEnvironment({E2E_TEST_AUTH_TOKEN: FAKE_TOKEN});
-    const command = createE2eCommand(createTestRuntimeFactory({files: failingFiles, runner, environment}));
+    const command = createE2eCommand({host: buildCommandHost({runtime: {files: failingFiles, runner, environment}})});
 
     const execution = await command.invoke({target: "backend"}, {presentation: "silent"});
 
@@ -842,7 +840,7 @@ describe("createE2eCommand: cleanup ordering and failure precedence", () => {
     };
     const runner = new FakeNewmanRunner(rawFiles, {artifactToken: FAKE_TOKEN});
     const environment = testEnvironment({E2E_TEST_AUTH_TOKEN: FAKE_TOKEN});
-    const command = createE2eCommand(createTestRuntimeFactory({files: failingFiles, runner, environment}));
+    const command = createE2eCommand({host: buildCommandHost({runtime: {files: failingFiles, runner, environment}})});
 
     await command.invoke({target: "backend"}, {presentation: "silent"});
 

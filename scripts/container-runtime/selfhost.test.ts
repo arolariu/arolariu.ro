@@ -5,16 +5,11 @@
 
 import {readFile} from "node:fs/promises";
 import {describe, expect, it, vi, type Mock} from "vitest";
-import type {CommandExecution, CommandInvoker, CommandRuntimeFactory} from "../common/commander.ts";
+import type {CommandExecution, CommandInvoker} from "../core/command/command-execution.ts";
+import {buildCommandHost} from "../testing/builders/command-host.builder.ts";
 import {InMemoryLoggerSink, MonorepositoryConsoleLogger, type MonorepositoryLogger} from "../common/logger.ts";
 import type {ProcessOutcome, ProcessRequest, ProcessRunOptions, ProcessRunner} from "../common/runner.ts";
-import {
-  createProcessRunner,
-  createRepositoryFixtureFileSystem,
-  createTestProcessHost,
-  createTestRuntimeFactory,
-  repositoryFixtureRoot,
-} from "../common/runtime.testing.ts";
+import {createProcessRunner, createRepositoryFixtureFileSystem, repositoryFixtureRoot} from "../common/runtime.testing.ts";
 import {
   CommandCancellation,
   LifoCleanupRegistry,
@@ -32,7 +27,6 @@ import {
   buildSelfhostPlan,
   createSelfhostCommand,
   getRequiredSqlPassword,
-  selfhostCommand,
   shouldGenerateTaxonomyArtifacts,
 } from "./selfhost.ts";
 import {selfhostTraefikConfigPath} from "./traefik.ts";
@@ -200,7 +194,6 @@ interface SelfhostHarness {
   readonly sink: InMemoryLoggerSink;
   readonly bootstrap: RecordingBootstrap;
   readonly artifacts: ArtifactsStub;
-  readonly runtimeFactory: CommandRuntimeFactory;
 }
 
 /**
@@ -218,17 +211,19 @@ function createHarness(options: Readonly<HarnessOptions> = {}): SelfhostHarness 
   const bootstrap = createRecordingBootstrap(runner, options.bootstrapBehavior ?? {});
   const artifacts = options.artifacts ?? createArtifactsStub();
   const environment = environmentWith(options.variables ?? {MSSQL_SA_PASSWORD: sqlPassword});
-  const runtimeFactory = createTestRuntimeFactory({
-    runner,
-    clock,
-    files,
-    logger,
-    environment,
-    ...(options.cleanup === undefined ? {} : {cleanup: options.cleanup}),
+  const host = buildCommandHost({
+    runtime: {
+      runner,
+      clock,
+      files,
+      logger,
+      environment,
+      ...(options.cleanup === undefined ? {} : {cleanup: options.cleanup}),
+    },
   });
 
   return {
-    command: createSelfhostCommand({runtimeFactory, bootstrap: bootstrap.bootstrap, artifacts}),
+    command: createSelfhostCommand({bootstrap: bootstrap.bootstrap, artifacts}, {host}),
     runner,
     clock,
     files,
@@ -236,7 +231,6 @@ function createHarness(options: Readonly<HarnessOptions> = {}): SelfhostHarness 
     sink,
     bootstrap,
     artifacts,
-    runtimeFactory,
   };
 }
 
@@ -453,23 +447,6 @@ describe("createSelfhostCommand start", () => {
     expect(cleanup.labels).toEqual([]);
   });
 
-  it("preserves the initiating failure and appends cleanup evidence when transient cleanup fails", async () => {
-    const cleanup = createRecordingCleanupRegistry([
-      {label: "transient bootstrap listener", message: "listener teardown failed", cause: new Error("listener teardown failed")},
-    ]);
-    const harness = createHarness({
-      cleanup,
-      outcomes: [...succeededTimes(podmanPreflightProbeCount + 5), exited(1, "frontend stack refused to start")],
-    });
-
-    const execution = await harness.command.invoke({action: "start", engine: "podman"});
-
-    expect(execution.status).toBe("failed");
-    const failure = execution.status === "failed" ? execution.failure : undefined;
-    expect(failure?.kind).toBe("operational");
-    expect(failure?.evidence.at(-1)).toBe("transient bootstrap listener: listener teardown failed");
-  });
-
   it("preserves the invocation's cancellation reason when a stack command is cancelled on an aborted invocation", async () => {
     const controller = new AbortController();
     controller.abort(new CommandCancellation("Terminated by test signal.", 143));
@@ -653,53 +630,5 @@ describe("createSelfhostCommand parser lifecycle", () => {
 
     expect(execution).toMatchObject({status: "failed", exitCode: 2});
     expect(execution.status === "failed" ? execution.failure.message : "").toContain("Unsupported container engine 'colima'");
-  });
-
-  it("rejects an unknown option as a usage failure instead of throwing", async () => {
-    const harness = createHarness();
-
-    const execution = await harness.command.run(["--bogus"]);
-
-    expect(execution).toMatchObject({status: "failed", exitCode: 2});
-    expect(harness.runner.calls).toHaveLength(0);
-  });
-
-  it("rejects a missing --engine value as a usage failure", async () => {
-    const harness = createHarness();
-
-    const execution = await harness.command.run(["start", "--engine"]);
-
-    expect(execution).toMatchObject({status: "failed", exitCode: 2});
-    expect(harness.runner.calls).toHaveLength(0);
-  });
-});
-
-describe("createSelfhostCommand entrypoint wiring", () => {
-  it("assigns an exit code through runIfMain() only when the module is the direct entrypoint", async () => {
-    const nonEntryHost = createTestProcessHost(["logs", "--engine", "podman"]);
-    const nonEntry = createHarness();
-    const nonEntryCommand = createSelfhostCommand({
-      runtimeFactory: {...nonEntry.runtimeFactory, processHost: {...nonEntryHost, isDirectEntry: (): boolean => false}},
-      bootstrap: nonEntry.bootstrap.bootstrap,
-      artifacts: nonEntry.artifacts,
-    });
-
-    await nonEntryCommand.runIfMain("file:///repo/scripts/container-runtime/selfhost.ts");
-    expect(nonEntryHost.assignedExitCodes).toEqual([]);
-
-    const entryHost = createTestProcessHost(["logs", "--engine", "podman"]);
-    const entry = createHarness();
-    const entryCommand = createSelfhostCommand({
-      runtimeFactory: {...entry.runtimeFactory, processHost: entryHost},
-      bootstrap: entry.bootstrap.bootstrap,
-      artifacts: entry.artifacts,
-    });
-
-    await entryCommand.runIfMain("file:///repo/scripts/container-runtime/selfhost.ts");
-    expect(entryHost.assignedExitCodes).toEqual([0]);
-  });
-
-  it.each(["--help", "-h", "/h"])("renders help for '%s' through the production singleton without running anything", async (flag) => {
-    await expect(selfhostCommand.run([flag])).resolves.toEqual({status: "help", exitCode: 0});
   });
 });

@@ -21,7 +21,8 @@ import {
   TaxonomyClassificationGenerator,
   type ArtifactGeneratorRuntime,
 } from "./generate.artifacts.ts";
-import type {CommandExecution, CommandInvoker} from "./common/commander.ts";
+import type {CommandExecution, CommandInvoker} from "./core/command/command-execution.ts";
+import {buildCommandHost} from "./testing/builders/command-host.builder.ts";
 import {InMemoryLoggerSink, MonorepositoryConsoleLogger, type MonorepositoryLogger} from "./common/logger.ts";
 import type {PromptProvider} from "./common/prompts.ts";
 import {
@@ -41,12 +42,7 @@ import {
   type RuntimeEnvironment,
 } from "./common/runtime.ts";
 import {nodeFileSystem} from "./common/runtime.node.ts";
-import {
-  createHttpResponse,
-  createMemoryFileSystem,
-  createTestRuntimeFactory,
-  repositoryFixtureRoot,
-} from "./common/runtime.testing.ts";
+import {createHttpResponse, createMemoryFileSystem, repositoryFixtureRoot} from "./common/runtime.testing.ts";
 import type {ArtifactGenerationResult, GenerateArtifactsInput} from "./generate.artifacts.ts";
 import type {GenerateLeafInput, GenerateLeafResult} from "./generate.env.ts";
 import {createGenerateCommand, type GenerateCommandDependencies} from "./generate.ts";
@@ -944,16 +940,18 @@ describe("Artifact orchestration and CLI contracts", () => {
     it("completes with exit code zero after unified generation succeeds", async () => {
       const {files, cwd} = harness.createCommandWorkspace();
       harness.stubUnifiedSources();
-      const command = createGenerateArtifactsCommand(
-        createTestRuntimeFactory({
-          files,
-          http: harness.http,
-          runner: new ArchiveExtractionRunner(files, harness.gpcDocument),
-          clock: harness.clock,
-          environment: harness.createEnvironment(cwd),
-          logger: harness.logger,
+      const command = createGenerateArtifactsCommand({
+        host: buildCommandHost({
+          runtime: {
+            files,
+            http: harness.http,
+            runner: new ArchiveExtractionRunner(files, harness.gpcDocument),
+            clock: harness.clock,
+            environment: harness.createEnvironment(cwd),
+            logger: harness.logger,
+          },
         }),
-      );
+      });
 
       const execution = await command.invoke({verbose: false});
 
@@ -969,16 +967,18 @@ describe("Artifact orchestration and CLI contracts", () => {
       const logger = new MonorepositoryConsoleLogger("test::artifacts", {color: false, sink});
       const {files, cwd} = harness.createCommandWorkspace();
       harness.stubUnifiedSources();
-      const command = createGenerateArtifactsCommand(
-        createTestRuntimeFactory({
-          files,
-          http: harness.http,
-          runner: new ArchiveExtractionRunner(files, harness.gpcDocument),
-          clock: harness.clock,
-          environment: harness.createEnvironment(cwd),
-          logger,
+      const command = createGenerateArtifactsCommand({
+        host: buildCommandHost({
+          runtime: {
+            files,
+            http: harness.http,
+            runner: new ArchiveExtractionRunner(files, harness.gpcDocument),
+            clock: harness.clock,
+            environment: harness.createEnvironment(cwd),
+            logger,
+          },
         }),
-      );
+      });
 
       await expect(command.invoke({verbose: false}, {presentation: "human"})).resolves.toMatchObject({
         status: "completed",
@@ -993,16 +993,18 @@ describe("Artifact orchestration and CLI contracts", () => {
     it("logs unified lifecycle progress with the artifact prefix", async () => {
       const {files, cwd} = harness.createCommandWorkspace();
       harness.stubUnifiedSources();
-      const command = createGenerateArtifactsCommand(
-        createTestRuntimeFactory({
-          files,
-          http: harness.http,
-          runner: new ArchiveExtractionRunner(files, harness.gpcDocument),
-          clock: harness.clock,
-          environment: harness.createEnvironment(cwd),
-          logger: harness.logger,
+      const command = createGenerateArtifactsCommand({
+        host: buildCommandHost({
+          runtime: {
+            files,
+            http: harness.http,
+            runner: new ArchiveExtractionRunner(files, harness.gpcDocument),
+            clock: harness.clock,
+            environment: harness.createEnvironment(cwd),
+            logger: harness.logger,
+          },
         }),
-      );
+      });
 
       await expect(command.invoke({verbose: false}, {presentation: "human"})).resolves.toMatchObject({status: "completed"});
 
@@ -1018,16 +1020,18 @@ describe("Artifact orchestration and CLI contracts", () => {
     it("uses validated mirrored taxonomy artifacts when sources remain unavailable", async () => {
       const {files, cwd} = harness.createCommandWorkspace();
       const runner = new ArchiveExtractionRunner(files, harness.gpcDocument);
-      const factory = createTestRuntimeFactory({
-        files,
-        http: harness.http,
-        runner,
-        clock: harness.clock,
-        environment: harness.createEnvironment(cwd),
-        logger: harness.logger,
+      const host = buildCommandHost({
+        runtime: {
+          files,
+          http: harness.http,
+          runner,
+          clock: harness.clock,
+          environment: harness.createEnvironment(cwd),
+          logger: harness.logger,
+        },
       });
       harness.stubUnifiedSources();
-      await expect(createGenerateArtifactsCommand(factory).invoke({verbose: false})).resolves.toMatchObject({
+      await expect(createGenerateArtifactsCommand({host}).invoke({verbose: false})).resolves.toMatchObject({
         status: "completed",
         exitCode: 0,
       });
@@ -1035,7 +1039,7 @@ describe("Artifact orchestration and CLI contracts", () => {
       const sendsBeforeOutage = harness.http.sends.length;
       harness.stubUnavailableSources();
 
-      await expect(createGenerateArtifactsCommand(factory).invoke({verbose: false})).resolves.toMatchObject({
+      await expect(createGenerateArtifactsCommand({host}).invoke({verbose: false})).resolves.toMatchObject({
         status: "completed",
         exitCode: 0,
       });
@@ -1052,16 +1056,18 @@ describe("Artifact orchestration and CLI contracts", () => {
         [`${repositoryFixtureRoot}/sites/arolariu.ro/package.json`]: JSON.stringify({}),
       });
       harness.stubUnavailableSources();
-      const command = createGenerateArtifactsCommand(
-        createTestRuntimeFactory({
-          files,
-          http: harness.http,
-          runner: new ArchiveExtractionRunner(files, harness.gpcDocument),
-          clock: harness.clock,
-          environment: harness.createEnvironment(repositoryFixtureRoot),
-          logger: harness.logger,
+      const command = createGenerateArtifactsCommand({
+        host: buildCommandHost({
+          runtime: {
+            files,
+            http: harness.http,
+            runner: new ArchiveExtractionRunner(files, harness.gpcDocument),
+            clock: harness.clock,
+            environment: harness.createEnvironment(repositoryFixtureRoot),
+            logger: harness.logger,
+          },
         }),
-      );
+      });
 
       const execution = await command.invoke({verbose: false});
 
@@ -1131,7 +1137,7 @@ describe("Artifact orchestration and CLI contracts", () => {
       };
 
       const {createGenerateEnvironmentCommand} = await import("./generate.env.ts");
-      const command = createGenerateEnvironmentCommand(createTestRuntimeFactory({files, logger, environment}));
+      const command = createGenerateEnvironmentCommand({host: buildCommandHost({runtime: {files, logger, environment}})});
 
       // "human" presentation matches this test's own logger fixture (constructed in human mode)
       // so the effective-verbosity scope generateEnvironment forks (which shares this
@@ -1168,7 +1174,7 @@ describe("Artifact orchestration and CLI contracts", () => {
       };
 
       const {createGenerateEnvironmentCommand} = await import("./generate.env.ts");
-      const command = createGenerateEnvironmentCommand(createTestRuntimeFactory({files, prompts}));
+      const command = createGenerateEnvironmentCommand({host: buildCommandHost({runtime: {files, prompts}})});
 
       await expect(command.invoke({verbose: false}, {presentation: "silent"})).resolves.toMatchObject({
         status: "completed",
@@ -1201,7 +1207,7 @@ describe("Artifact orchestration and CLI contracts", () => {
           },
         } satisfies CommandInvoker<GenerateArtifactsInput, ArtifactGenerationResult>,
       };
-      const command = createGenerateCommand(dependencies, createTestRuntimeFactory({logger}));
+      const command = createGenerateCommand(dependencies, {host: buildCommandHost({runtime: {logger}})});
 
       await expect(
         command.invoke(
@@ -1223,7 +1229,7 @@ describe("Artifact orchestration and CLI contracts", () => {
       const files = createMemoryFileSystem();
 
       const {createGenerateGraphqlCommand} = await import("./generate.gql.ts");
-      const command = createGenerateGraphqlCommand(createTestRuntimeFactory({files, logger}));
+      const command = createGenerateGraphqlCommand({host: buildCommandHost({runtime: {files, logger}})});
 
       await expect(command.invoke({verbose: false}, {presentation: "silent"})).resolves.toMatchObject({
         status: "completed",
@@ -1247,7 +1253,7 @@ describe("Artifact orchestration and CLI contracts", () => {
       });
 
       const {createGenerateI18nCommand} = await import("./generate.i18n.ts");
-      const command = createGenerateI18nCommand(createTestRuntimeFactory({files, logger}));
+      const command = createGenerateI18nCommand({host: buildCommandHost({runtime: {files, logger}})});
 
       await expect(command.invoke({verbose: false}, {presentation: "silent"})).resolves.toMatchObject({
         status: "completed",
@@ -1281,7 +1287,7 @@ describe("Artifact orchestration and CLI contracts", () => {
 
       try {
         const {createGenerateEnvironmentCommand} = await import("./generate.env.ts");
-        const command = createGenerateEnvironmentCommand(createTestRuntimeFactory({files, logger}));
+        const command = createGenerateEnvironmentCommand({host: buildCommandHost({runtime: {files, logger}})});
         // "human" presentation matches this test's own logger fixture so the effective-verbosity
         // scope generateEnvironment forks still renders its completion output through the sink.
         await expect(command.invoke({verbose: false}, {presentation: "human"})).resolves.toMatchObject({

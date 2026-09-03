@@ -30,14 +30,8 @@ import {fileURLToPath} from "node:url";
 import {randomBytes} from "node:crypto";
 import {setTimeout as delay} from "node:timers/promises";
 
-import type {
-  CommandContext,
-  CommandExitCode,
-  CommandPresentation,
-  CommandProcessHost,
-  CommandRuntimeFactory,
-  RuntimeCreationOptions,
-} from "./commander.ts";
+import type {CommandExecutionContext, CommandExitCode, CommandPresentationMode} from "../core/command/command-execution.ts";
+import type {CommandProcessHost, CommandRuntimeFactory, RuntimeCreationOptions} from "../core/command/command-specification.ts";
 import {MonorepositoryConsoleLogger, type LoggerRuntimeHost, type LoggerScheduledInterval, type MonorepositoryLogger} from "./logger.ts";
 import {createTerminalPromptProvider} from "./prompts.ts";
 import {ExecaProcessRunner} from "./runner.execa.ts";
@@ -735,13 +729,13 @@ export interface NodeRuntimeScopeOptions {
   /** Whether the scope's logger emits diagnostic messages. */
   readonly verbose: boolean;
   /** Presentation mode the scope's logger must honor. */
-  readonly presentation: CommandPresentation;
+  readonly presentation: CommandPresentationMode;
   /** Whether this scope owns SIGINT and SIGTERM registration. */
   readonly registerProcessSignals: boolean;
   /** Caller cancellation signal linked into this scope. */
   readonly signal?: AbortSignal;
   /** Owning parent context whose immutable capabilities this scope shares. */
-  readonly parent?: Readonly<CommandContext>;
+  readonly parent?: Readonly<CommandExecutionContext>;
   /** Repository inspection capability injected into a root scope. */
   readonly inspection?: RepositoryInspectionRuntime;
 }
@@ -841,17 +835,14 @@ export function createNodeRuntimeScope(options: Readonly<NodeRuntimeScopeOptions
  *
  * @param commandName - Logical command name used as the logger context.
  * @param verbose - Whether invocation loggers emit diagnostic messages.
- * @returns A factory that creates Node-backed parse loggers, root scopes, and child scopes.
+ * @returns A factory that creates Node-backed root scopes and child scopes.
  */
 export function createNodeCommandRuntimeFactory(commandName: string, verbose: boolean): CommandRuntimeFactory {
   return {
-    processHost: nodeProcessHost,
-    createParseLogger: (): MonorepositoryLogger =>
-      new MonorepositoryConsoleLogger(commandName, {mode: "human", verbose: false, runtimeHost: nodeLoggerRuntimeHost}),
     createRoot: (options: Readonly<RuntimeCreationOptions>): Promise<CommandRuntime> =>
       createNodeRuntimeScope({commandName, verbose, ...options}),
     createChild: (
-      parent: Readonly<CommandContext>,
+      parent: Readonly<CommandExecutionContext>,
       options: Readonly<RuntimeCreationOptions>,
     ): Promise<CommandRuntime> => createNodeRuntimeScope({commandName, verbose, parent, ...options}),
   };

@@ -681,9 +681,9 @@ describe("runtime boundary policy", () => {
     const source = ["process.exitCode = 1;", "const processAlias = process;", "processAlias.exitCode ??= 2;"].join("\n");
 
     expect(scanRuntimeBoundarySource("scripts/common/runtime.node.ts", source)).toEqual([]);
-    expect(scanRuntimeBoundarySource("scripts/common/commander.ts", source)).toEqual([
-      {file: "scripts/common/commander.ts", line: 1, rule: "direct-exit"},
-      {file: "scripts/common/commander.ts", line: 3, rule: "direct-exit"},
+    expect(scanRuntimeBoundarySource("scripts/core/command/abstract-monorepo-command.ts", source)).toEqual([
+      {file: "scripts/core/command/abstract-monorepo-command.ts", line: 1, rule: "direct-exit"},
+      {file: "scripts/core/command/abstract-monorepo-command.ts", line: 3, rule: "direct-exit"},
     ]);
   });
 

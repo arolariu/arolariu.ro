@@ -26,7 +26,9 @@
 
 import {join} from "node:path";
 
-import {CommandInputError, MonorepoCommand, type CommandContext, type CommandRuntimeFactory} from "./common/commander.ts";
+import {CommandInputError, type CommandExecutionContext} from "./core/command/command-execution.ts";
+import {defineCommand, type LazyMonorepoCommand} from "./core/command/lazy-monorepo-command.ts";
+import type {CommandConstructionOptions, CommandHost} from "./core/command/command-specification.ts";
 import type {MonorepositoryLogger} from "./common/logger.ts";
 import {CommandCancellation, type Clock, type FileSystem, type HttpClient} from "./common/runtime.ts";
 
@@ -536,7 +538,7 @@ async function writeCSV(files: FileSystem, csvPath: string, records: RateRecord[
  * violates the current-year upper bound or the `fromYear <= toYear` invariant.
  */
 async function updateExchangeRates(
-  context: Readonly<CommandContext>,
+  context: Readonly<CommandExecutionContext>,
   input: Readonly<ExchangeRateInput>,
 ): Promise<ExchangeRateResult> {
   const {http, files, clock, signal, logger, environment} = context.runtime;
@@ -585,26 +587,30 @@ async function updateExchangeRates(
   return {years, updatedYears, failedYears};
 }
 
+/** Production command host. This literal dynamic import is the only edge from this entrypoint
+ *  into the Node adapter; core never names it. */
+const loadProductionCommandHost = async (): Promise<CommandHost> =>
+  import("./adapters/node/node-command-host.ts").then(({createNodeCommandHost}) => createNodeCommandHost("update-exchange-rates"));
+
 /**
  * Creates the exchange-rate update command.
  *
- * @param runtimeFactory - Optional runtime factory; tests inject a fake instead of the Node adapter.
+ * @param options - The injected command host or a literal loader; defaults to the production
+ * Node adapter.
  * @returns The typed `update-exchange-rates` command object.
  */
 export function createUpdateExchangeRatesCommand(
-  runtimeFactory?: CommandRuntimeFactory,
-): MonorepoCommand<ExchangeRateInput, ExchangeRateResult> {
-  return new MonorepoCommand<ExchangeRateInput, ExchangeRateResult>(
+  options: Readonly<CommandConstructionOptions> = {loadHost: loadProductionCommandHost},
+): LazyMonorepoCommand<ExchangeRateInput, ExchangeRateResult, never> {
+  return defineCommand<ExchangeRateInput, ExchangeRateResult>(
     {
-      metadata: {
-        name: "update-exchange-rates",
-        description: "Fetches yearly exchange rate averages from the Frankfurter API and writes them to CSV.",
-        examples: [
-          "npm run update-exchange-rates",
-          "npm run update-exchange-rates -- --year 2025",
-          "npm run update-exchange-rates -- --from 2020 --to 2025",
-        ],
-      },
+      name: "update-exchange-rates",
+      description: "Fetches yearly exchange rate averages from the Frankfurter API and writes them to CSV.",
+      examples: [
+        "npm run update-exchange-rates",
+        "npm run update-exchange-rates -- --year 2025",
+        "npm run update-exchange-rates -- --from 2020 --to 2025",
+      ],
       configure: (program) => {
         program
           .option("--year <year>", `Fetch a single year (${EARLIEST_SUPPORTED_YEAR}-current).`)
@@ -613,10 +619,11 @@ export function createUpdateExchangeRatesCommand(
       },
       decode: (program) => decodeExchangeRateInput(program.opts<{year?: string; from?: string; to?: string}>()),
       execute: updateExchangeRates,
-      completion: (result) => {
+      complete: (result) => {
         const exitCode = result.failedYears.length > 0 ? 1 : 0;
         return {
           exitCode,
+          value: result,
           human: (logger) => {
             if (result.failedYears.length === 0) {
               logger.success(`Updated ${result.updatedYears.length} of ${result.years.length} year(s).`);
@@ -629,12 +636,12 @@ export function createUpdateExchangeRatesCommand(
         };
       },
     },
-    runtimeFactory,
+    options,
   );
 }
 
 /** Production singleton used by the aggregate CLI and this module's direct entrypoint. */
-export const updateExchangeRatesCommand: MonorepoCommand<ExchangeRateInput, ExchangeRateResult> =
+export const updateExchangeRatesCommand: LazyMonorepoCommand<ExchangeRateInput, ExchangeRateResult, never> =
   createUpdateExchangeRatesCommand();
 
 await updateExchangeRatesCommand.runIfMain(import.meta.url);

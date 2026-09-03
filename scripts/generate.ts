@@ -10,14 +10,10 @@
  * so one cancellation, one logger, and one cleanup lifecycle cover the whole run.
  */
 
-import {
-  MonorepoCommand,
-  type CommandContext,
-  type CommandExecution,
-  type CommandInvoker,
-  type CommandRuntimeFactory,
-} from "./common/commander.ts";
 import {CommandCancellation} from "./common/runtime.ts";
+import type {CommandExecution, CommandExecutionContext, CommandInvoker} from "./core/command/command-execution.ts";
+import {defineCommand, type LazyMonorepoCommand} from "./core/command/lazy-monorepo-command.ts";
+import type {CommandConstructionOptions, CommandHost} from "./core/command/command-specification.ts";
 import {generateArtifactsCommand, type ArtifactGenerationResult, type GenerateArtifactsInput} from "./generate.artifacts.ts";
 import {generateEnvironmentCommand, type GenerateLeafInput, type GenerateLeafResult} from "./generate.env.ts";
 import {generateGraphqlCommand} from "./generate.gql.ts";
@@ -101,7 +97,7 @@ function createGenerateTasks(dependencies: Readonly<GenerateCommandDependencies>
  * @param tasks - Fixed execution plan.
  */
 function renderConfiguration(
-  context: Readonly<CommandContext>,
+  context: Readonly<CommandExecutionContext>,
   input: Readonly<GenerateInput>,
   tasks: readonly GenerateTask[],
 ): void {
@@ -193,7 +189,7 @@ function toCancellation(execution: Extract<CommandExecution<unknown>, {status: "
  */
 async function executeGenerate(
   dependencies: Readonly<GenerateCommandDependencies>,
-  context: Readonly<CommandContext>,
+  context: Readonly<CommandExecutionContext>,
   input: Readonly<GenerateInput>,
 ): Promise<GenerateResult> {
   const {logger} = context.runtime;
@@ -249,39 +245,43 @@ async function executeGenerate(
   return {selected, completed};
 }
 
+/** Production command host. This literal dynamic import is the only edge from this entrypoint
+ *  into the Node adapter; core never names it. */
+const loadProductionCommandHost = async (): Promise<CommandHost> =>
+  import("./adapters/node/node-command-host.ts").then(({createNodeCommandHost}) => createNodeCommandHost("generate"));
+
 /**
  * Creates the generation orchestrator command.
  *
  * @param dependencies - Child generator commands composed by this orchestrator.
- * @param runtimeFactory - Optional runtime factory; tests inject a fake instead of the Node adapter.
+ * @param options - The injected command host or a literal loader; defaults to the production
+ * Node adapter.
  * @returns The typed `generate` command object.
  */
 export function createGenerateCommand(
   dependencies: Readonly<GenerateCommandDependencies>,
-  runtimeFactory?: CommandRuntimeFactory,
-): MonorepoCommand<GenerateInput, GenerateResult> {
-  return new MonorepoCommand<GenerateInput, GenerateResult>(
+  options: Readonly<CommandConstructionOptions> = {loadHost: loadProductionCommandHost},
+): LazyMonorepoCommand<GenerateInput, GenerateResult, never> {
+  return defineCommand<GenerateInput, GenerateResult>(
     {
-      metadata: {
-        name: "generate",
-        description: "Generation orchestrator for monorepo build artifacts.",
-        examples: [
-          "npm run generate /env /artifacts",
-          "npm run generate --env --i18n --artifacts --verbose",
-          "npm run generate -e -g -a -v",
-        ],
-        slashAliases: {
-          "/v": "--verbose",
-          "/verbose": "--verbose",
-          "/e": "--env",
-          "/env": "--env",
-          "/i": "--i18n",
-          "/i18n": "--i18n",
-          "/g": "--gql",
-          "/gql": "--gql",
-          "/a": "--artifacts",
-          "/artifacts": "--artifacts",
-        },
+      name: "generate",
+      description: "Generation orchestrator for monorepo build artifacts.",
+      examples: [
+        "npm run generate /env /artifacts",
+        "npm run generate --env --i18n --artifacts --verbose",
+        "npm run generate -e -g -a -v",
+      ],
+      slashAliases: {
+        "/v": "--verbose",
+        "/verbose": "--verbose",
+        "/e": "--env",
+        "/env": "--env",
+        "/i": "--i18n",
+        "/i18n": "--i18n",
+        "/g": "--gql",
+        "/gql": "--gql",
+        "/a": "--artifacts",
+        "/artifacts": "--artifacts",
       },
       configure: (program) => {
         program
@@ -302,8 +302,9 @@ export function createGenerateCommand(
         };
       },
       execute: (context, input) => executeGenerate(dependencies, context, input),
-      completion: (result) => ({
+      complete: (result) => ({
         exitCode: result.failed === undefined ? 0 : 1,
+        value: result,
         human: (logger) => {
           if (result.failed !== undefined) {
             logger.error(`Generation stopped at the ${displayName(result.failed)} task.`);
@@ -323,12 +324,12 @@ export function createGenerateCommand(
         },
       }),
     },
-    runtimeFactory,
+    options,
   );
 }
 
 /** Production singleton used by `npm run generate` and this module's direct entrypoint. */
-export const generateCommand: MonorepoCommand<GenerateInput, GenerateResult> = createGenerateCommand({
+export const generateCommand: LazyMonorepoCommand<GenerateInput, GenerateResult, never> = createGenerateCommand({
   env: generateEnvironmentCommand,
   i18n: generateI18nCommand,
   gql: generateGraphqlCommand,

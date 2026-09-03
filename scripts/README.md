@@ -25,43 +25,46 @@ invocation.
 
 ## Command runtime
 
-Every root script except the format/lint pair is one declarative command object built on
-[`common/commander.ts`](./common/commander.ts) and one injected capability kernel from
-[`common/runtime.ts`](./common/runtime.ts).
+Every root script except the format/lint pair is one composed command object built on
+[`core/command/`](./core/command) and [`core/workflow/`](./core/workflow), backed by one injected
+[`CommandHost`](./core/command/command-specification.ts) and one capability kernel from
+[`common/runtime.ts`](./common/runtime.ts). Core never imports an adapter: every production command
+supplies its own literal `loadHost` loader of [`adapters/node/node-command-host.ts`](./adapters/node/node-command-host.ts).
 
-### Command definition anatomy
+### Command specification anatomy
 
-A command is a `CommandDefinition<TInput, TOutput>` handed to `MonorepoCommand`. Each member owns exactly one concern:
+A direct command is a `DirectCommandSpecification<TInput, TOutput>` handed to `defineCommand`. Each member owns exactly one concern:
 
 | Member | Owns |
 |--------|------|
-| `metadata` | `name`, `description`, optional `usage`, `examples`, and extra exact-match `slashAliases` (`/h` and `/help` are always present) |
+| `name`, `description`, `usage?`, `examples?`, `slashAliases?` | Identity and help text (`/h` and `/help` are always present) |
 | `configure(program)` | Declares Commander arguments and options on a fresh parser |
 | `decode(program)` | Converts parsed Commander state into one typed input; throws `CommandInputError` for semantically invalid input |
 | `presentation(input)` | Selects `"human"`, `"json"`, or `"silent"`; defaults to `"human"` |
 | `execute(context, input)` | Runs business orchestration against `context.runtime` capabilities only |
-| `completion(output, context)` | Maps completed business output to `{exitCode, human?, json?}` |
+| `complete(output, context)` | Maps completed business output to `{exitCode, value, human?, json?}` |
 
 ```typescript
+const loadProductionCommandHost = async (): Promise<CommandHost> =>
+  import("./adapters/node/node-command-host.ts").then(({createNodeCommandHost}) => createNodeCommandHost("generate:gql"));
+
 export function createGenerateGraphqlCommand(
-  runtimeFactory?: CommandRuntimeFactory,
-): MonorepoCommand<GenerateLeafInput, GenerateLeafResult> {
-  return new MonorepoCommand<GenerateLeafInput, GenerateLeafResult>(
+  options: Readonly<CommandConstructionOptions> = {loadHost: loadProductionCommandHost},
+): LazyMonorepoCommand<GenerateLeafInput, GenerateLeafResult, never> {
+  return defineCommand<GenerateLeafInput, GenerateLeafResult>(
     {
-      metadata: {
-        name: "generate:gql",
-        description: "Generates GraphQL type artifacts (placeholder implementation).",
-        examples: ["npm run generate:gql", "npm run generate:gql -- --verbose"],
-        slashAliases: {"/v": "--verbose", "/verbose": "--verbose"},
-      },
+      name: "generate:gql",
+      description: "Generates GraphQL type artifacts (placeholder implementation).",
+      examples: ["npm run generate:gql", "npm run generate:gql -- --verbose"],
+      slashAliases: {"/v": "--verbose", "/verbose": "--verbose"},
       configure: (program) => {
         program.option("-v, --verbose", "Enable verbose logging.");
       },
       decode: (program) => ({verbose: program.opts<{verbose?: boolean}>().verbose === true}),
       execute: generateGraphql,
-      completion: (result) => ({exitCode: 0, human: (logger) => logger.success(result.summary)}),
+      complete: (result) => ({exitCode: 0, value: result, human: (logger) => logger.success(result.summary)}),
     },
-    runtimeFactory,
+    options,
   );
 }
 ```
@@ -74,26 +77,28 @@ is the only way a definition can read its own pre-normalization argv tokens.
 Each command module exports a `create<Name>Command(...)` factory and one production singleton built from it:
 
 ```typescript
-export const doctorCommand: MonorepoCommand<DoctorInput, DoctorReport> = createDoctorCommand();
+export const doctorCommand: LazyMonorepoCommand<DoctorInput, DoctorReport, never> = createDoctorCommand();
 ```
 
-The factory is the deterministic test seam. It accepts either a `CommandRuntimeFactory` directly or a small `dependencies` object
-carrying one, so a test replaces the whole capability kernel instead of mocking repository modules:
+The factory is the deterministic test seam: it accepts a construction-options parameter (`{host}` or `{loadHost}`), plus any typed
+dependency collaborators, so a test replaces the whole capability kernel instead of mocking repository modules:
 
 ```typescript
-const command = createStatusCommand({runtimeFactory: createTestRuntimeFactory({runner, files}), doctor: fakeDoctor});
+const command = createStatusCommand({doctor: fakeDoctor}, {host: buildCommandHost({runtime: {runner, files}})});
 ```
 
-[`common/runtime.testing.ts`](./common/runtime.testing.ts) owns those typed fakes — a scripted process runner, in-memory logger sink,
-fixture filesystem, deterministic clock, and stub inspection session. It is test infrastructure and is excluded from coverage.
+[`testing/builders/command-host.builder.ts`](./testing/builders/command-host.builder.ts) owns `buildCommandHost`, and
+[`common/runtime.testing.ts`](./common/runtime.testing.ts) owns the typed runtime fakes it composes — a scripted process runner,
+in-memory logger sink, fixture filesystem, deterministic clock, and stub inspection session. Both are test infrastructure and are
+excluded from coverage.
 
 ### `run()`, `invoke()`, and `runIfMain()`
 
 | Entry | Argv | Signals | Exit code | Default presentation |
 |-------|------|---------|-----------|-----------------------|
-| `run(argv?)` | Parses argv (defaults to the process host's frozen argv) | Owns SIGINT/SIGTERM in its root scope | Returned, never assigned | From `presentation(input)` |
+| `run(argv?)` | Parses argv (defaults to the command host's frozen argv) | Owns SIGINT/SIGTERM in its root scope | Returned, never assigned | From `presentation(input)` |
 | `invoke(input, options?)` | None — typed input only | Never registers an OS signal handler | Returned, never assigned | `"silent"` |
-| `runIfMain(moduleUrl)` | Delegates to `run()` | Same as `run()` | Assigns the returned code through the process host | From `presentation(input)` |
+| `runIfMain(moduleUrl)` | Delegates to `run()` | Same as `run()` | Assigns the returned code through the command host | From `presentation(input)` |
 
 `runIfMain()` is the only place a command may reach the process exit code, and it does nothing unless `moduleUrl` is the module the
 process was started with. No script implements direct-entry detection itself, and no script calls `process.exit()`.

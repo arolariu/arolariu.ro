@@ -13,7 +13,7 @@
 import {resolve} from "node:path";
 import {describe, expect, it, vi} from "vitest";
 
-import type {CommandContext} from "./common/commander.ts";
+import type {CommandExecutionContext} from "./core/command/command-execution.ts";
 import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "./common/logger.ts";
 import {createRepositoryPaths} from "./common/repository-paths.ts";
 import type {MinimumVersion, RepositoryRequirements} from "./common/requirements.ts";
@@ -322,7 +322,7 @@ async function createHarness(
     environment: environmentSnapshot(input.platform ?? "win32"),
   });
   const commandRuntime = await factory.createRoot({presentation: "silent", registerProcessSignals: false});
-  const command: CommandContext = {runtime: commandRuntime, presentation: "silent"};
+  const command: CommandExecutionContext = {runtime: commandRuntime, presentation: "silent"};
 
   const runtime: SetupPhaseRuntime = {
     command,

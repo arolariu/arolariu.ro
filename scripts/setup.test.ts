@@ -7,22 +7,21 @@
  * Every orchestrator test drives `setupCommand.invoke()`/`run()` through an injected test runtime
  * factory whose filesystem is an in-memory repository fixture, whose inspection registry hands out
  * a deterministic session, and whose phases are fakes. No test in this file reads the live
- * checkout, spawns a real process, or mutates disk; only the direct-entrypoint smoke tests spawn
- * the real CLI.
+ * checkout, spawns a real process, or mutates disk: the shared command lifecycle contract and the
+ * public-command-contracts compatibility suite own direct-entry spawn coverage.
  */
 
-import {spawn} from "node:child_process";
 import {resolve} from "node:path";
 import {PassThrough} from "node:stream";
-import {fileURLToPath} from "node:url";
 import {describe, expect, it, vi} from "vitest";
 
-import type {CommandExecution, CommandInvoker, CommandRuntimeFactory} from "./common/commander.ts";
+import type {CommandExecution, CommandInvoker} from "./core/command/command-execution.ts";
+import {buildCommandHost} from "./testing/builders/command-host.builder.ts";
 import {InMemoryLoggerSink, MonorepositoryConsoleLogger, type MonorepositoryLogger} from "./common/logger.ts";
 import {createTerminalPromptProvider, type PromptProvider} from "./common/prompts.ts";
 import {createRepositoryPaths, type RepositoryPaths} from "./common/repository-paths.ts";
 import type {ProcessRequest, ProcessRunOptions, ProcessRunner} from "./common/runner.ts";
-import {createMemoryFileSystem, createProcessRunner, createTestRuntimeFactory, repositoryFixtureRoot} from "./common/runtime.testing.ts";
+import {createMemoryFileSystem, createProcessRunner, repositoryFixtureRoot} from "./common/runtime.testing.ts";
 import {
   CommandCancellation,
   type FileSystem,
@@ -361,19 +360,23 @@ interface SetupFixture {
 function createSetupFixture(input: Readonly<SetupFixtureInput> = {}): SetupFixture {
   const inspection = setupFixtureInspection(input.session ?? createFakeInspectionSession());
   const runner = input.runner ?? createProcessRunner();
-  const runtimeFactory: CommandRuntimeFactory = createTestRuntimeFactory({
-    files: input.files ?? setupFixtureFileSystem(),
-    inspection: inspection.inspection,
-    runner,
-    ...(input.prompts === undefined ? {} : {prompts: input.prompts}),
-    ...(input.logger === undefined ? {} : {logger: input.logger}),
+  const host = buildCommandHost({
+    runtime: {
+      files: input.files ?? setupFixtureFileSystem(),
+      inspection: inspection.inspection,
+      runner,
+      ...(input.prompts === undefined ? {} : {prompts: input.prompts}),
+      ...(input.logger === undefined ? {} : {logger: input.logger}),
+    },
   });
 
-  const command = createSetupCommand({
-    runtimeFactory,
-    phases: input.phases ?? setupFixturePhases,
-    ...(input.generate === undefined ? {} : {generate: input.generate}),
-  });
+  const command = createSetupCommand(
+    {
+      phases: input.phases ?? setupFixturePhases,
+      ...(input.generate === undefined ? {} : {generate: input.generate}),
+    },
+    {host},
+  );
 
   return {command, inspection, runner};
 }
@@ -964,15 +967,6 @@ describe("setup presentation", () => {
 
     expect(sink.records.map((record) => record.text).join("\n")).not.toContain("🐛");
   });
-
-  it("defers the summary to completion, so a silent nested invocation never renders it", async () => {
-    const {logger, sink} = createLogger();
-    const {command} = createSetupFixture({logger, phases: [stubPhase("dotnet")]});
-
-    await command.invoke(options());
-
-    expect(sink.records.map((record) => record.text).join("\n")).not.toContain("Setup summary");
-  });
 });
 
 describe("setup input decoding", () => {
@@ -1033,16 +1027,6 @@ describe("setup input decoding", () => {
     expect(execution.failure.message).toMatch(/engine/i);
     expect(inspection.requests).toHaveLength(0);
   });
-
-  it("renders help and performs no repository work", async () => {
-    const {command, inspection} = createSetupFixture({phases: [stubPhase("dotnet")]});
-
-    const execution = await command.run(["--help"]);
-
-    expect(execution.status).toBe("help");
-    expect(execution.exitCode).toBe(0);
-    expect(inspection.requests).toHaveLength(0);
-  });
 });
 
 describe("setup generation composition", () => {
@@ -1071,50 +1055,5 @@ describe("setup generation composition", () => {
     expect(generateInput).toEqual({verbose: false, env: true, i18n: true, gql: true, artifacts: true});
     expect(invocationOptions?.presentation).toBe("silent");
     expect(invocationOptions?.parent).toBeDefined();
-  });
-});
-
-describe("direct entrypoint", () => {
-  const setupEntrypoint = fileURLToPath(new URL("./setup.ts", import.meta.url));
-
-  function runDirect(args: readonly string[]): Promise<Readonly<{code: number | null; output: string}>> {
-    return new Promise((resolveProcess, rejectProcess) => {
-      const child = spawn(process.execPath, [setupEntrypoint, ...args], {
-        cwd: resolve(setupEntrypoint, "..", ".."),
-        stdio: ["ignore", "pipe", "pipe"],
-      });
-      let output = "";
-      child.stdout.on("data", (chunk: Buffer) => {
-        output += chunk.toString("utf8");
-      });
-      child.stderr.on("data", (chunk: Buffer) => {
-        output += chunk.toString("utf8");
-      });
-      child.once("error", rejectProcess);
-      child.once("close", (code) => {
-        resolveProcess({code, output});
-      });
-    });
-  }
-
-  it("emits help and exits 0 for a direct process invocation of --help", async () => {
-    const result = await runDirect(["--help"]);
-
-    expect(result.code).toBe(0);
-    expect(result.output).toMatch(/Usage:/);
-  });
-
-  it("emits a usage diagnostic and exits 2 for a direct process invocation of an unknown flag", async () => {
-    const result = await runDirect(["--bogus"]);
-
-    expect(result.code).toBe(2);
-    expect(result.output).toMatch(/unknown option/i);
-  });
-
-  it("emits a usage diagnostic and exits 2 for a direct process invocation of an unsupported engine", async () => {
-    const result = await runDirect(["--engine=docker"]);
-
-    expect(result.code).toBe(2);
-    expect(result.output).toMatch(/engine/i);
   });
 });

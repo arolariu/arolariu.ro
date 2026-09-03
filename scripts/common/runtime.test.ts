@@ -26,7 +26,7 @@ import {
   type RepositoryInspectionRequest,
 } from "./runtime.ts";
 import type {RepositoryInspectionSession} from "../inspection/repository.ts";
-import type {CommandContext} from "./commander.ts";
+import type {CommandExecutionContext} from "../core/command/command-execution.ts";
 import {createTestRuntimeFactory} from "./runtime.testing.ts";
 
 interface Deferred<T> {
@@ -490,7 +490,7 @@ describe("createTestRuntimeFactory inspection ownership", () => {
       presentation: "silent",
       registerProcessSignals: false,
     });
-    const parent: CommandContext = {
+    const parent: CommandExecutionContext = {
       runtime: parentRuntime,
       presentation: "silent",
     };

@@ -12,8 +12,10 @@
 
 import {basename, dirname, join, resolve} from "node:path";
 
-import {MonorepoCommand, type CommandContext, type CommandRuntimeFactory} from "./common/commander.ts";
 import type {MonorepositoryLogger} from "./common/logger.ts";
+import type {CommandExecutionContext} from "./core/command/command-execution.ts";
+import {defineCommand, type LazyMonorepoCommand} from "./core/command/lazy-monorepo-command.ts";
+import type {CommandConstructionOptions, CommandHost} from "./core/command/command-specification.ts";
 import {RunnerError, type ProcessOutcome, type ProcessRequest, type ProcessRunner, type SucceededProcessOutcome} from "./common/runner.ts";
 import {
   CommandCancellation,
@@ -1950,7 +1952,7 @@ class SystemArchiveExtractor {
  * @throws {Error} When any generator fails.
  */
 async function generateArtifacts(
-  context: Readonly<CommandContext>,
+  context: Readonly<CommandExecutionContext>,
   input: Readonly<GenerateArtifactsInput>,
 ): Promise<ArtifactGenerationResult> {
   const {runtime} = context;
@@ -1992,42 +1994,47 @@ async function generateArtifacts(
   return {summary, generatedFiles};
 }
 
+/** Production command host. This literal dynamic import is the only edge from this entrypoint
+ *  into the Node adapter; core never names it. */
+const loadProductionCommandHost = async (): Promise<CommandHost> =>
+  import("./adapters/node/node-command-host.ts").then(({createNodeCommandHost}) => createNodeCommandHost("generate:artifacts"));
+
 /**
  * Creates the taxonomy and license artifact generator command.
  *
- * @param runtimeFactory - Optional runtime factory; tests inject a fake instead of the Node adapter.
+ * @param options - The injected command host or a literal loader; defaults to the production
+ * Node adapter.
  * @returns The typed `generate:artifacts` command object.
  */
 export function createGenerateArtifactsCommand(
-  runtimeFactory?: CommandRuntimeFactory,
-): MonorepoCommand<GenerateArtifactsInput, ArtifactGenerationResult> {
-  return new MonorepoCommand<GenerateArtifactsInput, ArtifactGenerationResult>(
+  options: Readonly<CommandConstructionOptions> = {loadHost: loadProductionCommandHost},
+): LazyMonorepoCommand<GenerateArtifactsInput, ArtifactGenerationResult, never> {
+  return defineCommand<GenerateArtifactsInput, ArtifactGenerationResult>(
     {
-      metadata: {
-        name: "generate:artifacts",
-        description: "Generates taxonomy and license artifacts (GPC, ECOICOP, NACE, frontend licenses).",
-        examples: ["npm run generate:artifacts", "npm run generate /a -- --verbose"],
-        slashAliases: {"/v": "--verbose", "/verbose": "--verbose"},
-      },
+      name: "generate:artifacts",
+      description: "Generates taxonomy and license artifacts (GPC, ECOICOP, NACE, frontend licenses).",
+      examples: ["npm run generate:artifacts", "npm run generate /a -- --verbose"],
+      slashAliases: {"/v": "--verbose", "/verbose": "--verbose"},
       configure: (program) => {
         program.option("-v, --verbose", "Enable verbose logging.");
       },
       decode: (program) => ({verbose: program.opts<{verbose?: boolean}>().verbose === true}),
       execute: generateArtifacts,
-      completion: (result) => ({
+      complete: (result) => ({
         // Every artifact failure path (unavailable source with an unusable cache, invalid source
         // document, hierarchy violation, or divergent mirror) throws and is normalized by the
         // command lifecycle, so a resolved business result is always the successful one.
         exitCode: 0,
+        value: result,
         human: (logger) => logger.success(result.summary),
       }),
     },
-    runtimeFactory,
+    options,
   );
 }
 
 /** Production singleton used by the aggregate CLI and this module's direct entrypoint. */
-export const generateArtifactsCommand: MonorepoCommand<GenerateArtifactsInput, ArtifactGenerationResult> =
+export const generateArtifactsCommand: LazyMonorepoCommand<GenerateArtifactsInput, ArtifactGenerationResult, never> =
   createGenerateArtifactsCommand();
 
 await generateArtifactsCommand.runIfMain(import.meta.url);

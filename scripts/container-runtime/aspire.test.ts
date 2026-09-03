@@ -5,7 +5,8 @@
 
 import {describe, expect, it} from "vitest";
 import type {ProcessOutcome} from "../common/runner.ts";
-import {createProcessRunner, createTestRuntimeFactory} from "../common/runtime.testing.ts";
+import {createProcessRunner} from "../common/runtime.testing.ts";
+import {buildCommandHost} from "../testing/builders/command-host.builder.ts";
 import {CommandCancellation} from "../common/runtime.ts";
 import {getContainerAdapter} from "./adapters.ts";
 import {buildAspireCommand, createAspireCommand} from "./aspire.ts";
@@ -40,7 +41,7 @@ describe("buildAspireCommand", () => {
 describe("createAspireCommand", () => {
   it("resolves the requested engine, runs preflight, and starts AppHost with inherited output", async () => {
     const runner = createProcessRunner([...rancherPreflightOutcomes, succeeded()]);
-    const command = createAspireCommand(createTestRuntimeFactory({runner}));
+    const command = createAspireCommand({host: buildCommandHost({runtime: {runner}})});
 
     const execution = await command.invoke({engine: "rancher"});
 
@@ -62,7 +63,7 @@ describe("createAspireCommand", () => {
       succeeded(), // podman ps -a (warnOnExistingLocalContainers)
       succeeded(), // dotnet run
     ]);
-    const command = createAspireCommand(createTestRuntimeFactory({runner}));
+    const command = createAspireCommand({host: buildCommandHost({runtime: {runner}})});
 
     const execution = await command.invoke({engine: "podman"});
 
@@ -81,7 +82,7 @@ describe("createAspireCommand", () => {
 
   it("surfaces a nonzero AppHost exit as a failed execution", async () => {
     const runner = createProcessRunner([...rancherPreflightOutcomes, exited(1)]);
-    const command = createAspireCommand(createTestRuntimeFactory({runner}));
+    const command = createAspireCommand({host: buildCommandHost({runtime: {runner}})});
 
     const execution = await command.invoke({engine: "rancher"});
 
@@ -90,7 +91,7 @@ describe("createAspireCommand", () => {
 
   it("rejects Docker Desktop before starting AppHost", async () => {
     const runner = createProcessRunner([succeeded("docker version 27.0"), succeeded("Docker Desktop 4.40.0")]);
-    const command = createAspireCommand(createTestRuntimeFactory({runner}));
+    const command = createAspireCommand({host: buildCommandHost({runtime: {runner}})});
 
     const execution = await command.invoke({engine: "rancher"});
 
@@ -102,7 +103,7 @@ describe("createAspireCommand", () => {
     const controller = new AbortController();
     controller.abort(new CommandCancellation("Terminated by test signal.", 130));
     const runner = createProcessRunner([{kind: "cancelled", stdout: "", stderr: "", durationMs: 0}]);
-    const command = createAspireCommand(createTestRuntimeFactory({runner}));
+    const command = createAspireCommand({host: buildCommandHost({runtime: {runner}})});
 
     const execution = await command.invoke({engine: "rancher"}, {signal: controller.signal});
 
@@ -116,7 +117,7 @@ describe("createAspireCommand", () => {
 
   it("rejects the deprecated docker engine value as a usage failure", async () => {
     const runner = createProcessRunner();
-    const command = createAspireCommand(createTestRuntimeFactory({runner}));
+    const command = createAspireCommand({host: buildCommandHost({runtime: {runner}})});
 
     const execution = await command.invoke({engine: "docker" as never});
 
@@ -128,22 +129,12 @@ describe("createAspireCommand", () => {
   describe("parser lifecycle", () => {
     it("decodes an explicit --engine argument and starts AppHost", async () => {
       const runner = createProcessRunner([...rancherPreflightOutcomes, succeeded()]);
-      const command = createAspireCommand(createTestRuntimeFactory({runner}));
+      const command = createAspireCommand({host: buildCommandHost({runtime: {runner}})});
 
       const execution = await command.run(["--engine", "rancher"]);
 
       expect(execution).toMatchObject({status: "completed", exitCode: 0});
       expect(runner.calls.at(-1)?.request).toEqual({command: "dotnet", args: ["run", "--project", "tooling/AppHost"]});
-    });
-
-    it("rejects an unknown option as a usage failure instead of throwing", async () => {
-      const runner = createProcessRunner();
-      const command = createAspireCommand(createTestRuntimeFactory({runner}));
-
-      const execution = await command.run(["--bogus"]);
-
-      expect(execution).toMatchObject({status: "failed", exitCode: 2});
-      expect(runner.calls).toHaveLength(0);
     });
   });
 });

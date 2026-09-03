@@ -5,7 +5,7 @@
  * @remarks
  * Every ambient effect this command used to reach for directly (the child process, the
  * repository filesystem, and the process environment) now arrives through the injected
- * {@link CommandContext.runtime} instead of Node globals, so the command is fully exercised by
+ * {@link CommandExecutionContext.runtime} instead of Node globals, so the command is fully exercised by
  * the declarative command runtime's test fakes and never spawns Docker or Podman in a test. The
  * frontend/backend taxonomy artifact prerequisite runs as a nested, in-process invocation of
  * `generateArtifactsCommand` (through `{parent: context, presentation: "silent"}`) instead of a
@@ -13,13 +13,10 @@
  * cleanup ownership.
  */
 
-import {
-  CommandInputError,
-  MonorepoCommand,
-  type CommandContext,
-  type CommandInvoker,
-  type CommandRuntimeFactory,
-} from "../common/commander.ts";
+import {CommandInputError, type CommandInvoker} from "../core/command/command-execution.ts";
+import type {CommandExecutionContext} from "../core/command/command-execution.ts";
+import {defineCommand, type LazyMonorepoCommand} from "../core/command/lazy-monorepo-command.ts";
+import type {CommandConstructionOptions, CommandHost} from "../core/command/command-specification.ts";
 import type {MonorepositoryLogger} from "../common/logger.ts";
 import {resolveRepositoryPaths} from "../common/repository-paths.ts";
 import {RunnerError, type ProcessRunner} from "../common/runner.ts";
@@ -47,8 +44,6 @@ export interface ImageRunOptions {
 
 /** Optional collaborators {@link createImageCommand} composes. */
 export interface ImageCommandDependencies {
-  /** Optional runtime factory; tests inject a fake instead of the Node adapter. */
-  readonly runtimeFactory?: CommandRuntimeFactory;
   /** Taxonomy and license artifact generator invoked as the frontend/backend build prerequisite. */
   readonly artifacts?: CommandInvoker<GenerateArtifactsInput, ArtifactGenerationResult>;
 }
@@ -112,7 +107,7 @@ export function buildImageRunCommand(adapter: ContainerRuntimeAdapter, options: 
  */
 async function runArtifactPrerequisite(
   artifacts: CommandInvoker<GenerateArtifactsInput, ArtifactGenerationResult>,
-  context: Readonly<CommandContext>,
+  context: Readonly<CommandExecutionContext>,
 ): Promise<void> {
   const execution = await artifacts.invoke({verbose: false}, {parent: context, presentation: "silent"});
 
@@ -176,7 +171,7 @@ async function runImageBusinessCommand(
  */
 async function executeImage(
   artifacts: CommandInvoker<GenerateArtifactsInput, ArtifactGenerationResult>,
-  context: Readonly<CommandContext>,
+  context: Readonly<CommandExecutionContext>,
   input: Readonly<ImageInput>,
 ): Promise<ImageResult> {
   const {runtime} = context;
@@ -223,26 +218,34 @@ async function executeImage(
   return {engine: adapter.engine, action: "run", target: input.target};
 }
 
+/** Production command host. This literal dynamic import is the only edge from this entrypoint
+ *  into the Node adapter; core never names it. */
+const loadProductionCommandHost = async (): Promise<CommandHost> =>
+  import("../adapters/node/node-command-host.ts").then(({createNodeCommandHost}) => createNodeCommandHost("image"));
+
 /**
  * Creates the local image build/run command.
  *
- * @param dependencies - Optional runtime factory and artifact generator collaborators.
+ * @param dependencies - Optional artifact generator collaborator.
+ * @param options - The injected command host or a literal loader; defaults to the production
+ * Node adapter.
  * @returns The typed `containers:build`/`containers:run` command object.
  */
-export function createImageCommand(dependencies: Readonly<ImageCommandDependencies> = {}): MonorepoCommand<ImageInput, ImageResult> {
+export function createImageCommand(
+  dependencies: Readonly<ImageCommandDependencies> = {},
+  options: Readonly<CommandConstructionOptions> = {loadHost: loadProductionCommandHost},
+): LazyMonorepoCommand<ImageInput, ImageResult, never> {
   const artifacts = dependencies.artifacts ?? generateArtifactsCommand;
 
-  return new MonorepoCommand<ImageInput, ImageResult>(
+  return defineCommand<ImageInput, ImageResult>(
     {
-      metadata: {
-        name: "image",
-        description: "Builds or runs a local container image with the selected engine.",
-        usage: "<build|run> --target <frontend|backend|cv|exp> [--engine <rancher|podman>]",
-        examples: [
-          "npm run containers:build -- --target frontend --engine rancher",
-          "npm run containers:run -- --target backend --engine podman",
-        ],
-      },
+      name: "image",
+      description: "Builds or runs a local container image with the selected engine.",
+      usage: "<build|run> --target <frontend|backend|cv|exp> [--engine <rancher|podman>]",
+      examples: [
+        "npm run containers:build -- --target frontend --engine rancher",
+        "npm run containers:run -- --target backend --engine podman",
+      ],
       configure: (program) => {
         program.argument("[action]", "Image action to run: build or run.");
         program.option("--target <target>", "Image target: frontend, backend, cv, or exp.");
@@ -267,16 +270,17 @@ export function createImageCommand(dependencies: Readonly<ImageCommandDependenci
         };
       },
       execute: (context, input) => executeImage(artifacts, context, input),
-      completion: (result) => ({
+      complete: (result) => ({
         exitCode: 0,
+        value: result,
         human: (logger) => logger.success(`Image ${result.action} completed for target '${result.target}' with engine '${result.engine}'.`),
       }),
     },
-    dependencies.runtimeFactory,
+    options,
   );
 }
 
 /** Production singleton used by `npm run containers:build`/`npm run containers:run` and this module's direct entrypoint. */
-export const imageCommand: MonorepoCommand<ImageInput, ImageResult> = createImageCommand();
+export const imageCommand: LazyMonorepoCommand<ImageInput, ImageResult, never> = createImageCommand();
 
 await imageCommand.runIfMain(import.meta.url);

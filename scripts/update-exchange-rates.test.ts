@@ -14,13 +14,8 @@ import {join} from "node:path";
 import {describe, expect, it} from "vitest";
 
 import {CommandCancellation, type Clock, type HttpClient, type HttpRequest} from "./common/runtime.ts";
-import {
-  createHttpResponse,
-  createMemoryFileSystem,
-  createTestProcessHost,
-  createTestRuntimeFactory,
-  repositoryFixtureRoot,
-} from "./common/runtime.testing.ts";
+import {createHttpResponse, createMemoryFileSystem, repositoryFixtureRoot} from "./common/runtime.testing.ts";
+import {buildCommandHost} from "./testing/builders/command-host.builder.ts";
 import {createUpdateExchangeRatesCommand} from "./update-exchange-rates.ts";
 
 const CSV_PATH = join(repositoryFixtureRoot, "sites", "arolariu.ro", "public", "data", "exchange-rates.csv");
@@ -46,9 +41,7 @@ describe("createUpdateExchangeRatesCommand decode", () => {
   describe("defaults", () => {
     it("uses fromYear=2018 and toYear=<current year> when no options are given", async () => {
       const http: HttpClient = {request: async () => createHttpResponse(200, emptyRatesJson)};
-      const command = createUpdateExchangeRatesCommand(
-        createTestRuntimeFactory({clock: fixedClock("2020-03-01T00:00:00.000Z"), http, files: createMemoryFileSystem()}),
-      );
+      const command = createUpdateExchangeRatesCommand({host: buildCommandHost({runtime: {clock: fixedClock("2020-03-01T00:00:00.000Z"), http, files: createMemoryFileSystem()}})});
 
       const execution = await command.run([]);
 
@@ -63,9 +56,7 @@ describe("createUpdateExchangeRatesCommand decode", () => {
   describe("--year", () => {
     it("sets fromYear and toYear to the same value", async () => {
       const http: HttpClient = {request: async () => createHttpResponse(200, emptyRatesJson)};
-      const command = createUpdateExchangeRatesCommand(
-        createTestRuntimeFactory({clock: fixedClock("2025-06-01T00:00:00.000Z"), http, files: createMemoryFileSystem()}),
-      );
+      const command = createUpdateExchangeRatesCommand({host: buildCommandHost({runtime: {clock: fixedClock("2025-06-01T00:00:00.000Z"), http, files: createMemoryFileSystem()}})});
 
       const execution = await command.run(["--year", "2023"]);
 
@@ -73,7 +64,7 @@ describe("createUpdateExchangeRatesCommand decode", () => {
     });
 
     it.each(["2023.5", "abc"])("rejects a non-integer value (%s)", async (value) => {
-      const command = createUpdateExchangeRatesCommand(createTestRuntimeFactory());
+      const command = createUpdateExchangeRatesCommand({host: buildCommandHost()});
 
       const execution = await command.run(["--year", value]);
 
@@ -82,7 +73,7 @@ describe("createUpdateExchangeRatesCommand decode", () => {
     });
 
     it("rejects a year below the supported minimum (2018)", async () => {
-      const command = createUpdateExchangeRatesCommand(createTestRuntimeFactory());
+      const command = createUpdateExchangeRatesCommand({host: buildCommandHost()});
 
       const execution = await command.run(["--year", "2015"]);
 
@@ -91,7 +82,7 @@ describe("createUpdateExchangeRatesCommand decode", () => {
     });
 
     it("rejects a year above the injected clock's current year", async () => {
-      const command = createUpdateExchangeRatesCommand(createTestRuntimeFactory({clock: fixedClock("2025-06-01T00:00:00.000Z")}));
+      const command = createUpdateExchangeRatesCommand({host: buildCommandHost({runtime: {clock: fixedClock("2025-06-01T00:00:00.000Z")}})});
 
       const execution = await command.run(["--year", "2026"]);
 
@@ -101,9 +92,7 @@ describe("createUpdateExchangeRatesCommand decode", () => {
 
     it("accepts the earliest supported year (2018)", async () => {
       const http: HttpClient = {request: async () => createHttpResponse(200, emptyRatesJson)};
-      const command = createUpdateExchangeRatesCommand(
-        createTestRuntimeFactory({clock: fixedClock("2025-06-01T00:00:00.000Z"), http, files: createMemoryFileSystem()}),
-      );
+      const command = createUpdateExchangeRatesCommand({host: buildCommandHost({runtime: {clock: fixedClock("2025-06-01T00:00:00.000Z"), http, files: createMemoryFileSystem()}})});
 
       const execution = await command.run(["--year", "2018"]);
 
@@ -112,9 +101,7 @@ describe("createUpdateExchangeRatesCommand decode", () => {
 
     it("accepts the injected clock's current year", async () => {
       const http: HttpClient = {request: async () => createHttpResponse(200, emptyRatesJson)};
-      const command = createUpdateExchangeRatesCommand(
-        createTestRuntimeFactory({clock: fixedClock("2025-06-01T00:00:00.000Z"), http, files: createMemoryFileSystem()}),
-      );
+      const command = createUpdateExchangeRatesCommand({host: buildCommandHost({runtime: {clock: fixedClock("2025-06-01T00:00:00.000Z"), http, files: createMemoryFileSystem()}})});
 
       const execution = await command.run(["--year", "2025"]);
 
@@ -125,9 +112,7 @@ describe("createUpdateExchangeRatesCommand decode", () => {
   describe("--from and --to", () => {
     it("sets fromYear and toYear independently", async () => {
       const http: HttpClient = {request: async () => createHttpResponse(200, emptyRatesJson)};
-      const command = createUpdateExchangeRatesCommand(
-        createTestRuntimeFactory({clock: fixedClock("2025-06-01T00:00:00.000Z"), http, files: createMemoryFileSystem()}),
-      );
+      const command = createUpdateExchangeRatesCommand({host: buildCommandHost({runtime: {clock: fixedClock("2025-06-01T00:00:00.000Z"), http, files: createMemoryFileSystem()}})});
 
       const execution = await command.run(["--from", "2020", "--to", "2021"]);
 
@@ -135,7 +120,7 @@ describe("createUpdateExchangeRatesCommand decode", () => {
     });
 
     it("rejects from > to", async () => {
-      const command = createUpdateExchangeRatesCommand(createTestRuntimeFactory({clock: fixedClock("2025-06-01T00:00:00.000Z")}));
+      const command = createUpdateExchangeRatesCommand({host: buildCommandHost({runtime: {clock: fixedClock("2025-06-01T00:00:00.000Z")}})});
 
       const execution = await command.run(["--from", "2025", "--to", "2020"]);
 
@@ -144,9 +129,7 @@ describe("createUpdateExchangeRatesCommand decode", () => {
 
     it("accepts from === to", async () => {
       const http: HttpClient = {request: async () => createHttpResponse(200, emptyRatesJson)};
-      const command = createUpdateExchangeRatesCommand(
-        createTestRuntimeFactory({clock: fixedClock("2025-06-01T00:00:00.000Z"), http, files: createMemoryFileSystem()}),
-      );
+      const command = createUpdateExchangeRatesCommand({host: buildCommandHost({runtime: {clock: fixedClock("2025-06-01T00:00:00.000Z"), http, files: createMemoryFileSystem()}})});
 
       const execution = await command.run(["--from", "2022", "--to", "2022"]);
 
@@ -157,7 +140,7 @@ describe("createUpdateExchangeRatesCommand decode", () => {
       ["--from", "abc"],
       ["--to", "abc"],
     ])("rejects a non-integer %s value", async (flag, value) => {
-      const command = createUpdateExchangeRatesCommand(createTestRuntimeFactory());
+      const command = createUpdateExchangeRatesCommand({host: buildCommandHost()});
 
       const execution = await command.run([flag, value]);
 
@@ -166,7 +149,7 @@ describe("createUpdateExchangeRatesCommand decode", () => {
     });
 
     it("rejects --from below the supported minimum", async () => {
-      const command = createUpdateExchangeRatesCommand(createTestRuntimeFactory());
+      const command = createUpdateExchangeRatesCommand({host: buildCommandHost()});
 
       const execution = await command.run(["--from", "2015"]);
 
@@ -175,7 +158,7 @@ describe("createUpdateExchangeRatesCommand decode", () => {
     });
 
     it("rejects --to above the injected clock's current year", async () => {
-      const command = createUpdateExchangeRatesCommand(createTestRuntimeFactory({clock: fixedClock("2025-06-01T00:00:00.000Z")}));
+      const command = createUpdateExchangeRatesCommand({host: buildCommandHost({runtime: {clock: fixedClock("2025-06-01T00:00:00.000Z")}})});
 
       const execution = await command.run(["--to", "2026"]);
 
@@ -184,9 +167,7 @@ describe("createUpdateExchangeRatesCommand decode", () => {
 
     it("uses default fromYear=2018 when only --to is given", async () => {
       const http: HttpClient = {request: async () => createHttpResponse(200, emptyRatesJson)};
-      const command = createUpdateExchangeRatesCommand(
-        createTestRuntimeFactory({clock: fixedClock("2025-06-01T00:00:00.000Z"), http, files: createMemoryFileSystem()}),
-      );
+      const command = createUpdateExchangeRatesCommand({host: buildCommandHost({runtime: {clock: fixedClock("2025-06-01T00:00:00.000Z"), http, files: createMemoryFileSystem()}})});
 
       const execution = await command.run(["--to", "2018"]);
 
@@ -195,9 +176,7 @@ describe("createUpdateExchangeRatesCommand decode", () => {
 
     it("uses default toYear=<current year> when only --from is given", async () => {
       const http: HttpClient = {request: async () => createHttpResponse(200, emptyRatesJson)};
-      const command = createUpdateExchangeRatesCommand(
-        createTestRuntimeFactory({clock: fixedClock("2020-03-01T00:00:00.000Z"), http, files: createMemoryFileSystem()}),
-      );
+      const command = createUpdateExchangeRatesCommand({host: buildCommandHost({runtime: {clock: fixedClock("2020-03-01T00:00:00.000Z"), http, files: createMemoryFileSystem()}})});
 
       const execution = await command.run(["--from", "2020"]);
 
@@ -207,7 +186,7 @@ describe("createUpdateExchangeRatesCommand decode", () => {
 
   describe("invalid ranges supplied directly through invoke(), bypassing decode()", () => {
     it("rejects fromYear > toYear with a usage failure", async () => {
-      const command = createUpdateExchangeRatesCommand(createTestRuntimeFactory({clock: fixedClock("2025-01-01T00:00:00.000Z")}));
+      const command = createUpdateExchangeRatesCommand({host: buildCommandHost({runtime: {clock: fixedClock("2025-01-01T00:00:00.000Z")}})});
 
       const execution = await command.invoke({fromYear: 2025, toYear: 2020});
 
@@ -215,7 +194,7 @@ describe("createUpdateExchangeRatesCommand decode", () => {
     });
 
     it("rejects a toYear beyond the injected clock's current year", async () => {
-      const command = createUpdateExchangeRatesCommand(createTestRuntimeFactory({clock: fixedClock("2025-01-01T00:00:00.000Z")}));
+      const command = createUpdateExchangeRatesCommand({host: buildCommandHost({runtime: {clock: fixedClock("2025-01-01T00:00:00.000Z")}})});
 
       const execution = await command.invoke({fromYear: 2020, toYear: 2030});
 
@@ -231,9 +210,7 @@ describe("createUpdateExchangeRatesCommand decode", () => {
         },
       };
       const files = createMemoryFileSystem();
-      const command = createUpdateExchangeRatesCommand(
-        createTestRuntimeFactory({clock: fixedClock("2025-06-01T00:00:00.000Z"), http, files}),
-      );
+      const command = createUpdateExchangeRatesCommand({host: buildCommandHost({runtime: {clock: fixedClock("2025-06-01T00:00:00.000Z"), http, files}})});
 
       const execution = await command.invoke({fromYear: 2024, toYear: Number.POSITIVE_INFINITY});
 
@@ -253,9 +230,7 @@ describe("createUpdateExchangeRatesCommand decode", () => {
       ["a toYear below the supported minimum", {fromYear: 2017, toYear: 2017}],
     ])("rejects %s with a usage failure", async (_label, input) => {
       const files = createMemoryFileSystem();
-      const command = createUpdateExchangeRatesCommand(
-        createTestRuntimeFactory({clock: fixedClock("2025-06-01T00:00:00.000Z"), files}),
-      );
+      const command = createUpdateExchangeRatesCommand({host: buildCommandHost({runtime: {clock: fixedClock("2025-06-01T00:00:00.000Z"), files}})});
 
       const execution = await command.invoke(input);
 
@@ -266,9 +241,15 @@ describe("createUpdateExchangeRatesCommand decode", () => {
 
   describe("range invariants knowable without a clock", () => {
     it("rejects --from > --to during decode, before any runtime scope exists", async () => {
+      const host = buildCommandHost();
       const command = createUpdateExchangeRatesCommand({
-        ...createTestRuntimeFactory({clock: fixedClock("2025-06-01T00:00:00.000Z")}),
-        createRoot: () => Promise.reject(new Error("No runtime scope may be created for an already-invalid range.")),
+        host: {
+          ...host,
+          loadRuntimeFactory: async () => ({
+            createRoot: () => Promise.reject(new Error("No runtime scope may be created for an already-invalid range.")),
+            createChild: () => Promise.reject(new Error("No runtime scope may be created for an already-invalid range.")),
+          }),
+        },
       });
 
       const execution = await command.run(["--from", "2025", "--to", "2020"]);
@@ -280,7 +261,7 @@ describe("createUpdateExchangeRatesCommand decode", () => {
 
   describe("unknown options", () => {
     it("rejects unknown options", async () => {
-      const command = createUpdateExchangeRatesCommand(createTestRuntimeFactory());
+      const command = createUpdateExchangeRatesCommand({host: buildCommandHost()});
 
       const execution = await command.run(["--unknown"]);
 
@@ -288,7 +269,7 @@ describe("createUpdateExchangeRatesCommand decode", () => {
     });
 
     it("rejects unknown options even when valid options are also present", async () => {
-      const command = createUpdateExchangeRatesCommand(createTestRuntimeFactory());
+      const command = createUpdateExchangeRatesCommand({host: buildCommandHost()});
 
       const execution = await command.run(["--year", "2023", "--unknown"]);
 
@@ -298,7 +279,7 @@ describe("createUpdateExchangeRatesCommand decode", () => {
 
   describe("help behavior", () => {
     it.each(["--help", "-h"])("reports help for %s instead of running", async (flag) => {
-      const command = createUpdateExchangeRatesCommand(createTestRuntimeFactory());
+      const command = createUpdateExchangeRatesCommand({host: buildCommandHost()});
 
       const execution = await command.run([flag]);
 
@@ -337,13 +318,9 @@ describe("createUpdateExchangeRatesCommand execution", () => {
       isoTimestamp: () => "2025-06-01T00:00:00.000Z",
       delay: () => Promise.resolve(),
     };
-    const command = createUpdateExchangeRatesCommand(
-      createTestRuntimeFactory({
-        clock,
-        http,
-        files: createMemoryFileSystem(),
-      }),
-    );
+    const command = createUpdateExchangeRatesCommand({
+      host: buildCommandHost({runtime: {clock, http, files: createMemoryFileSystem()}}),
+    });
 
     const execution = await command.invoke({fromYear: 2024, toYear: 2025});
 
@@ -374,7 +351,7 @@ describe("createUpdateExchangeRatesCommand execution", () => {
         return Promise.resolve();
       },
     };
-    const command = createUpdateExchangeRatesCommand(createTestRuntimeFactory({clock, http, files: createMemoryFileSystem()}));
+    const command = createUpdateExchangeRatesCommand({host: buildCommandHost({runtime: {clock, http, files: createMemoryFileSystem()}})});
 
     const execution = await command.invoke({fromYear: 2020, toYear: 2022});
 
@@ -389,9 +366,7 @@ describe("createUpdateExchangeRatesCommand execution", () => {
         throw new CommandCancellation("cancelled by caller", 130);
       },
     };
-    const command = createUpdateExchangeRatesCommand(
-      createTestRuntimeFactory({clock: fixedClock("2024-01-01T00:00:00.000Z"), http, files: createMemoryFileSystem()}),
-    );
+    const command = createUpdateExchangeRatesCommand({host: buildCommandHost({runtime: {clock: fixedClock("2024-01-01T00:00:00.000Z"), http, files: createMemoryFileSystem()}})});
 
     const execution = await command.invoke({fromYear: 2024, toYear: 2024});
 
@@ -406,9 +381,7 @@ describe("createUpdateExchangeRatesCommand execution", () => {
 describe("createUpdateExchangeRatesCommand business behavior", () => {
   it("rejects a malformed Frankfurter response as a per-year failure", async () => {
     const http: HttpClient = {request: async () => createHttpResponse(200, JSON.stringify({base: "EUR"}))};
-    const command = createUpdateExchangeRatesCommand(
-      createTestRuntimeFactory({clock: fixedClock("2024-01-01T00:00:00.000Z"), http, files: createMemoryFileSystem()}),
-    );
+    const command = createUpdateExchangeRatesCommand({host: buildCommandHost({runtime: {clock: fixedClock("2024-01-01T00:00:00.000Z"), http, files: createMemoryFileSystem()}})});
 
     const execution = await command.invoke({fromYear: 2024, toYear: 2024});
 
@@ -432,7 +405,7 @@ describe("createUpdateExchangeRatesCommand business behavior", () => {
     });
     const http: HttpClient = {request: async () => createHttpResponse(200, ratesJson)};
     const files = createMemoryFileSystem();
-    const command = createUpdateExchangeRatesCommand(createTestRuntimeFactory({clock: fixedClock("2024-01-01T00:00:00.000Z"), http, files}));
+    const command = createUpdateExchangeRatesCommand({host: buildCommandHost({runtime: {clock: fixedClock("2024-01-01T00:00:00.000Z"), http, files}})});
 
     const execution = await command.run(["--year", "2023"]);
 
@@ -457,7 +430,7 @@ describe("createUpdateExchangeRatesCommand business behavior", () => {
       rates: {"2024-06-01": {RON: 5, USD: 1.1}},
     });
     const http: HttpClient = {request: async () => createHttpResponse(200, ratesJson)};
-    const command = createUpdateExchangeRatesCommand(createTestRuntimeFactory({clock: fixedClock("2024-12-31T00:00:00.000Z"), http, files}));
+    const command = createUpdateExchangeRatesCommand({host: buildCommandHost({runtime: {clock: fixedClock("2024-12-31T00:00:00.000Z"), http, files}})});
 
     const execution = await command.run(["--year", "2024"]);
 
@@ -480,20 +453,21 @@ describe("createUpdateExchangeRatesCommand runIfMain", () => {
   it("assigns an exit code through runIfMain() only when the module is the direct entrypoint", async () => {
     const http: HttpClient = {request: async () => createHttpResponse(200, emptyRatesJson)};
 
-    const nonEntryProcessHost = createTestProcessHost(["--year", "2024"]);
-    const nonEntryCommand = createUpdateExchangeRatesCommand({
-      ...createTestRuntimeFactory({clock: fixedClock("2024-01-01T00:00:00.000Z"), http, files: createMemoryFileSystem()}),
-      processHost: {...nonEntryProcessHost, isDirectEntry: (): boolean => false},
+    const nonEntryHost = buildCommandHost({
+      argv: ["--year", "2024"],
+      isDirectEntry: false,
+      runtime: {clock: fixedClock("2024-01-01T00:00:00.000Z"), http, files: createMemoryFileSystem()},
     });
+    const nonEntryCommand = createUpdateExchangeRatesCommand({host: nonEntryHost});
     await nonEntryCommand.runIfMain("file:///repo/scripts/update-exchange-rates.ts");
-    expect(nonEntryProcessHost.assignedExitCodes).toEqual([]);
+    expect(nonEntryHost.assignedExitCodes).toEqual([]);
 
-    const entryProcessHost = createTestProcessHost(["--year", "2024"]);
-    const entryCommand = createUpdateExchangeRatesCommand({
-      ...createTestRuntimeFactory({clock: fixedClock("2024-01-01T00:00:00.000Z"), http, files: createMemoryFileSystem()}),
-      processHost: entryProcessHost,
+    const entryHost = buildCommandHost({
+      argv: ["--year", "2024"],
+      runtime: {clock: fixedClock("2024-01-01T00:00:00.000Z"), http, files: createMemoryFileSystem()},
     });
+    const entryCommand = createUpdateExchangeRatesCommand({host: entryHost});
     await entryCommand.runIfMain("file:///repo/scripts/update-exchange-rates.ts");
-    expect(entryProcessHost.assignedExitCodes).toEqual([0]);
+    expect(entryHost.assignedExitCodes).toEqual([0]);
   });
 });

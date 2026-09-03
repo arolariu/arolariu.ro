@@ -39,14 +39,10 @@
 
 import {join} from "node:path";
 
-import {
-  MonorepoCommand,
-  toJsonValue,
-  type CommandContext,
-  type CommandExecution,
-  type CommandInvoker,
-  type CommandRuntimeFactory,
-} from "./common/commander.ts";
+import {toJsonValue, type CommandExecution, type CommandInvoker} from "./core/command/command-execution.ts";
+import type {CommandExecutionContext} from "./core/command/command-execution.ts";
+import {defineCommand, type LazyMonorepoCommand} from "./core/command/lazy-monorepo-command.ts";
+import type {CommandConstructionOptions, CommandHost} from "./core/command/command-specification.ts";
 import {formatBytes} from "./common/index.ts";
 import type {LogSegment, MonorepositoryLogger} from "./common/logger.ts";
 import {resolveRepositoryPaths, type RepositoryPaths} from "./common/repository-paths.ts";
@@ -189,8 +185,6 @@ interface StatusContribution {
 
 /** Construction seams {@link createStatusCommand} accepts. */
 export interface StatusCommandDependencies {
-  /** Runtime factory used for every scope; tests inject a fake instead of the Node adapter. */
-  readonly runtimeFactory?: CommandRuntimeFactory;
   /** Typed doctor command composed as the health source; defaults to the production singleton. */
   readonly doctor?: CommandInvoker<DoctorInput, DoctorReport>;
 }
@@ -890,7 +884,7 @@ function claimDoctorReport(outcome: PromiseSettledResult<StatusContribution> | u
  * @throws {Error} When the composed doctor invocation failed, returned help, or rejected.
  */
 async function collectStatus(
-  context: Readonly<CommandContext>,
+  context: Readonly<CommandExecutionContext>,
   doctor: CommandInvoker<DoctorInput, DoctorReport> = doctorCommand,
 ): Promise<{
   readonly workspaces: Awaited<ReturnType<typeof collectWorkspaces>> | null;
@@ -968,23 +962,31 @@ export type StatusDocument = Awaited<ReturnType<typeof collectStatus>>;
 // Command
 // ============================================================================
 
+/** Production command host. This literal dynamic import is the only edge from this entrypoint
+ *  into the Node adapter; core never names it. */
+const loadProductionCommandHost = async (): Promise<CommandHost> =>
+  import("./adapters/node/node-command-host.ts").then(({createNodeCommandHost}) => createNodeCommandHost("status"));
+
 /**
  * Creates the status command.
  *
- * @param dependencies - Optional runtime factory and composed doctor command; tests inject
- * deterministic fakes instead of replacing command business code.
+ * @param dependencies - Optional composed doctor command; tests inject deterministic fakes
+ * instead of replacing command business code.
+ * @param options - The injected command host or a literal loader; defaults to the production
+ * Node adapter.
  * @returns The typed `status` command object.
  */
-export function createStatusCommand(dependencies: Readonly<StatusCommandDependencies> = {}): MonorepoCommand<StatusInput, StatusDocument> {
+export function createStatusCommand(
+  dependencies: Readonly<StatusCommandDependencies> = {},
+  options: Readonly<CommandConstructionOptions> = {loadHost: loadProductionCommandHost},
+): LazyMonorepoCommand<StatusInput, StatusDocument, never> {
   const doctor = dependencies.doctor ?? doctorCommand;
 
-  return new MonorepoCommand<StatusInput, StatusDocument>(
+  return defineCommand<StatusInput, StatusDocument>(
     {
-      metadata: {
-        name: "status",
-        description: "Collects and renders monorepo health, workspace, git, security, and disk data.",
-        examples: ["npm run status", "npm run status -- --json"],
-      },
+      name: "status",
+      description: "Collects and renders monorepo health, workspace, git, security, and disk data.",
+      examples: ["npm run status", "npm run status -- --json"],
       configure: (program) => {
         program.option("--json", "Output all collected data as a single JSON document.", false);
       },
@@ -994,19 +996,20 @@ export function createStatusCommand(dependencies: Readonly<StatusCommandDependen
       },
       presentation: (input) => (input.json ? "json" : "human"),
       execute: (context) => collectStatus(context, doctor),
-      completion: (document) => ({
+      complete: (document) => ({
         exitCode: 0,
+        value: document,
         human: (logger) => {
           renderDashboard(logger, document, dashboardNodeMajors.get(document) ?? UNKNOWN_NODE_MAJOR);
         },
         json: toJsonValue(document),
       }),
     },
-    dependencies.runtimeFactory,
+    options,
   );
 }
 
 /** Production singleton used by `npm run status` and this module's direct entrypoint. */
-export const statusCommand: MonorepoCommand<StatusInput, StatusDocument> = createStatusCommand();
+export const statusCommand: LazyMonorepoCommand<StatusInput, StatusDocument, never> = createStatusCommand();
 
 await statusCommand.runIfMain(import.meta.url);

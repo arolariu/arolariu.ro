@@ -5,12 +5,14 @@
  * @remarks
  * Every ambient effect this command used to reach for directly (the child process, the
  * repository filesystem, and the process environment) now arrives through the injected
- * {@link CommandContext.runtime} instead of Node globals, so the command is fully exercised by
+ * {@link CommandExecutionContext.runtime} instead of Node globals, so the command is fully exercised by
  * the declarative command runtime's test fakes and never spawns Docker, Podman, or AppHost in a
  * test.
  */
 
-import {MonorepoCommand, type CommandContext, type CommandRuntimeFactory} from "../common/commander.ts";
+import type {CommandExecutionContext} from "../core/command/command-execution.ts";
+import {defineCommand, type LazyMonorepoCommand} from "../core/command/lazy-monorepo-command.ts";
+import type {CommandConstructionOptions, CommandHost} from "../core/command/command-specification.ts";
 import {resolveRepositoryPaths} from "../common/repository-paths.ts";
 import {RunnerError} from "../common/runner.ts";
 import {commandCancellationFromSignal} from "../common/runtime.ts";
@@ -56,7 +58,7 @@ export function buildAspireCommand(
  * @throws When the engine cannot be resolved, preflight fails, or Aspire AppHost exits with a
  * nonzero code.
  */
-async function executeAspire(context: Readonly<CommandContext>, input: Readonly<ContainerEngineInput>): Promise<AspireResult> {
+async function executeAspire(context: Readonly<CommandExecutionContext>, input: Readonly<ContainerEngineInput>): Promise<AspireResult> {
   const {runtime} = context;
   const paths = await resolveRepositoryPaths(import.meta.url, runtime.files);
   const selection = await resolveRuntimeContainerEngine(
@@ -95,21 +97,27 @@ async function executeAspire(context: Readonly<CommandContext>, input: Readonly<
   return {engine: adapter.engine};
 }
 
+/** Production command host. This literal dynamic import is the only edge from this entrypoint
+ *  into the Node adapter; core never names it. */
+const loadProductionCommandHost = async (): Promise<CommandHost> =>
+  import("../adapters/node/node-command-host.ts").then(({createNodeCommandHost}) => createNodeCommandHost("aspire"));
+
 /**
  * Creates the Aspire AppHost startup command.
  *
- * @param runtimeFactory - Optional runtime factory; tests inject a fake instead of the Node adapter.
+ * @param options - The injected command host or a literal loader; defaults to the production
+ * Node adapter.
  * @returns The typed `dev`/`aspire` command object.
  */
-export function createAspireCommand(runtimeFactory?: CommandRuntimeFactory): MonorepoCommand<ContainerEngineInput, AspireResult> {
-  return new MonorepoCommand<ContainerEngineInput, AspireResult>(
+export function createAspireCommand(
+  options: Readonly<CommandConstructionOptions> = {loadHost: loadProductionCommandHost},
+): LazyMonorepoCommand<ContainerEngineInput, AspireResult, never> {
+  return defineCommand<ContainerEngineInput, AspireResult>(
     {
-      metadata: {
-        name: "aspire",
-        description: "Starts the Aspire AppHost with the selected local container engine.",
-        usage: "[--engine <rancher|podman>]",
-        examples: ["npm run dev -- --engine rancher", "npm run dev -- --engine podman"],
-      },
+      name: "aspire",
+      description: "Starts the Aspire AppHost with the selected local container engine.",
+      usage: "[--engine <rancher|podman>]",
+      examples: ["npm run dev -- --engine rancher", "npm run dev -- --engine podman"],
       configure: (program) => {
         program.option("--engine <engine>", "Container engine to use (rancher or podman).");
       },
@@ -118,16 +126,17 @@ export function createAspireCommand(runtimeFactory?: CommandRuntimeFactory): Mon
         return engine === undefined ? {} : {engine: engine as ContainerEngine};
       },
       execute: executeAspire,
-      completion: (result) => ({
+      complete: (result) => ({
         exitCode: 0,
+        value: result,
         human: (logger) => logger.success(`Aspire AppHost exited successfully for engine '${result.engine}'.`),
       }),
     },
-    runtimeFactory,
+    options,
   );
 }
 
 /** Production singleton used by `npm run dev` and this module's direct entrypoint. */
-export const aspireCommand: MonorepoCommand<ContainerEngineInput, AspireResult> = createAspireCommand();
+export const aspireCommand: LazyMonorepoCommand<ContainerEngineInput, AspireResult, never> = createAspireCommand();
 
 await aspireCommand.runIfMain(import.meta.url);

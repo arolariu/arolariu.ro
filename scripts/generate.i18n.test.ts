@@ -13,7 +13,8 @@
 
 import {describe, expect, it} from "vitest";
 
-import {createMemoryFileSystem, createTestRuntimeFactory, repositoryFixtureRoot} from "./common/runtime.testing.ts";
+import {createMemoryFileSystem, repositoryFixtureRoot} from "./common/runtime.testing.ts";
+import {buildCommandHost} from "./testing/builders/command-host.builder.ts";
 
 describe("generateI18nCommand", () => {
   it("resolves as completed with exitCode: 1 when missing keys change one or more locale files", async () => {
@@ -24,7 +25,7 @@ describe("generateI18nCommand", () => {
     });
 
     const {createGenerateI18nCommand} = await import("./generate.i18n.ts");
-    const command = createGenerateI18nCommand(createTestRuntimeFactory({files}));
+    const command = createGenerateI18nCommand({host: buildCommandHost({runtime: {files}})});
 
     const execution = await command.invoke({verbose: false}, {presentation: "silent"});
 
@@ -54,7 +55,7 @@ describe("generateI18nCommand", () => {
     });
 
     const {createGenerateI18nCommand} = await import("./generate.i18n.ts");
-    const command = createGenerateI18nCommand(createTestRuntimeFactory({files}));
+    const command = createGenerateI18nCommand({host: buildCommandHost({runtime: {files}})});
 
     const execution = await command.invoke({verbose: false}, {presentation: "silent"});
 

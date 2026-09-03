@@ -11,7 +11,7 @@
 
 import {resolve} from "node:path";
 
-import type {CommandExecution} from "./common/commander.ts";
+import type {CommandExecution} from "./core/command/command-execution.ts";
 import {loadRepositoryRequirements, parseVersion, satisfiesMinimum, type MinimumVersion} from "./common/requirements.ts";
 import type {ProcessOutcome, ProcessRequest, SucceededProcessOutcome} from "./common/runner.ts";
 import {CommandCancellation, type FileSystem} from "./common/runtime.ts";

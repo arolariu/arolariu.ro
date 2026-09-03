@@ -6,7 +6,7 @@
  * Runs Postman collections (one per target) through Newman. Auth tokens are injected exclusively
  * via a Newman `--env-var authToken=...` argument; tracked collection and environment files are
  * never mutated. Every filesystem, process, and cancellation concern flows through the injected
- * {@link CommandContext.runtime} instead of `node:fs`, a bespoke command runner, or ambient
+ * {@link CommandExecutionContext.runtime} instead of `node:fs`, a bespoke command runner, or ambient
  * `process` state, so the whole pipeline is exercised deterministically by the declarative
  * command runtime's test fakes.
  *
@@ -19,7 +19,9 @@
  */
 
 import {join, resolve} from "node:path";
-import {CommandInputError, MonorepoCommand, type CommandContext, type CommandRuntimeFactory} from "./common/commander.ts";
+import {CommandInputError, type CommandExecutionContext} from "./core/command/command-execution.ts";
+import {defineCommand, type LazyMonorepoCommand} from "./core/command/lazy-monorepo-command.ts";
+import type {CommandConstructionOptions, CommandHost} from "./core/command/command-specification.ts";
 import type {MonorepositoryLogger} from "./common/logger.ts";
 import {RunnerError} from "./common/runner.ts";
 import {commandCancellationFromSignal, type FileSystem} from "./common/runtime.ts";
@@ -549,7 +551,7 @@ async function performReportCleanup(
  * @throws When the collection or environment file is missing, a required auth token is absent, or
  * Newman does not succeed.
  */
-async function runNewmanForTarget(context: Readonly<CommandContext>, target: RunnableE2ETarget, cwd: string): Promise<void> {
+async function runNewmanForTarget(context: Readonly<CommandExecutionContext>, target: RunnableE2ETarget, cwd: string): Promise<void> {
   const {files, runner, signal, cleanup, environment} = context.runtime;
   const env = environment.variables;
   const logger = context.runtime.logger.child(target);
@@ -662,7 +664,7 @@ async function runNewmanForTarget(context: Readonly<CommandContext>, target: Run
  * call, which never runs through `decode()`).
  * @throws When any target's Newman run does not succeed.
  */
-async function executeE2e(context: Readonly<CommandContext>, input: Readonly<E2EInput>): Promise<E2EResult> {
+async function executeE2e(context: Readonly<CommandExecutionContext>, input: Readonly<E2EInput>): Promise<E2EResult> {
   const {tasks, signal, environment, logger} = context.runtime;
   const validatedTarget = requireValidTarget(input.target);
   const targets: readonly RunnableE2ETarget[] = validatedTarget === "all" ? [...EXECUTION_ORDER] : [validatedTarget];
@@ -681,21 +683,27 @@ async function executeE2e(context: Readonly<CommandContext>, input: Readonly<E2E
   return {targets, completed};
 }
 
+/** Production command host. This literal dynamic import is the only edge from this entrypoint
+ *  into the Node adapter; core never names it. */
+const loadProductionCommandHost = async (): Promise<CommandHost> =>
+  import("./adapters/node/node-command-host.ts").then(({createNodeCommandHost}) => createNodeCommandHost("test:e2e"));
+
 /**
  * Creates the E2E command.
  *
- * @param runtimeFactory - Optional runtime factory; tests inject a fake instead of the Node adapter.
+ * @param options - The injected command host or a literal loader; defaults to the production
+ * Node adapter.
  * @returns The typed `test:e2e` command object.
  */
-export function createE2eCommand(runtimeFactory?: CommandRuntimeFactory): MonorepoCommand<E2EInput, E2EResult> {
-  return new MonorepoCommand<E2EInput, E2EResult>(
+export function createE2eCommand(
+  options: Readonly<CommandConstructionOptions> = {loadHost: loadProductionCommandHost},
+): LazyMonorepoCommand<E2EInput, E2EResult, never> {
+  return defineCommand<E2EInput, E2EResult>(
     {
-      metadata: {
-        name: "test:e2e",
-        description: "Runs Postman/Newman E2E tests for arolariu.ro targets.",
-        usage: "<target>",
-        examples: ["npm run test:e2e -- backend", "npm run test:e2e -- frontend", "npm run test:e2e -- cv", "npm run test:e2e -- all"],
-      },
+      name: "test:e2e",
+      description: "Runs Postman/Newman E2E tests for arolariu.ro targets.",
+      usage: "<target>",
+      examples: ["npm run test:e2e -- backend", "npm run test:e2e -- frontend", "npm run test:e2e -- cv", "npm run test:e2e -- all"],
       configure: (program) => {
         program.argument("<target>", "Target to test: all, backend, frontend, or cv.").allowExcessArguments(false);
       },
@@ -704,8 +712,9 @@ export function createE2eCommand(runtimeFactory?: CommandRuntimeFactory): Monore
         return {target: requireValidTarget(rawTarget ?? "")};
       },
       execute: (context, input) => executeE2e(context, input),
-      completion: (result) => ({
+      complete: (result) => ({
         exitCode: 0,
+        value: result,
         human: (logger) => {
           logger.success(
             `Completed ${String(result.completed.length)} of ${String(result.targets.length)} E2E target(s): ${result.completed.join(", ")}.`,
@@ -713,11 +722,11 @@ export function createE2eCommand(runtimeFactory?: CommandRuntimeFactory): Monore
         },
       }),
     },
-    runtimeFactory,
+    options,
   );
 }
 
 /** Production singleton used by `npm run test:e2e` and this module's direct entrypoint. */
-export const e2eCommand: MonorepoCommand<E2EInput, E2EResult> = createE2eCommand();
+export const e2eCommand: LazyMonorepoCommand<E2EInput, E2EResult, never> = createE2eCommand();
 
 await e2eCommand.runIfMain(import.meta.url);

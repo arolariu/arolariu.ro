@@ -6,9 +6,9 @@
 
 import {describe, expect, it} from "vitest";
 
-import type {CommandExecution, CommandInvoker, CommandPresentation} from "./common/commander.ts";
+import type {CommandExecution, CommandInvoker, CommandPresentationMode} from "./core/command/command-execution.ts";
+import {buildCommandHost} from "./testing/builders/command-host.builder.ts";
 import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "./common/logger.ts";
-import {createTestRuntimeFactory} from "./common/runtime.testing.ts";
 import type {ArtifactGenerationResult, GenerateArtifactsInput} from "./generate.artifacts.ts";
 import type {GenerateLeafInput, GenerateLeafResult} from "./generate.env.ts";
 import {createGenerateCommand, type GenerateCommandDependencies, type GenerateTaskName} from "./generate.ts";
@@ -20,7 +20,7 @@ interface RecordedGeneratorCall {
   /** Verbosity the aggregate propagated into the child input. */
   readonly verbose: boolean;
   /** Presentation the aggregate selected for the child invocation. */
-  readonly presentation: CommandPresentation | undefined;
+  readonly presentation: CommandPresentationMode | undefined;
   /** Whether the child invocation was scoped to the aggregate's own context. */
   readonly parented: boolean;
 }
@@ -103,7 +103,7 @@ function makeLoggerFixture(): Readonly<{logger: MonorepositoryConsoleLogger; sin
 describe("generate composition", () => {
   it("invokes selected generators in fixed order and stops on first nonzero completion", async () => {
     const {calls, dependencies} = createRecordingDependencies({i18n: completedLeaf("i18n", 1)});
-    const command = createGenerateCommand(dependencies, createTestRuntimeFactory());
+    const command = createGenerateCommand(dependencies, {host: buildCommandHost()});
 
     const execution = await command.invoke({verbose: false, env: true, i18n: true, gql: true, artifacts: true});
 
@@ -114,7 +114,7 @@ describe("generate composition", () => {
   it("logs the completed child's typed summary before stopping on a nonzero exit", async () => {
     const {calls, dependencies} = createRecordingDependencies({i18n: completedLeaf("Added 3 missing translation keys.", 1)});
     const {logger, sink} = makeLoggerFixture();
-    const command = createGenerateCommand(dependencies, createTestRuntimeFactory({logger}));
+    const command = createGenerateCommand(dependencies, {host: buildCommandHost({runtime: {logger}})});
 
     const execution = await command.invoke(
       {verbose: false, env: true, i18n: true, gql: true, artifacts: true},
@@ -128,7 +128,7 @@ describe("generate composition", () => {
 
   it("reports the failing generator and the generators that already completed", async () => {
     const {calls, dependencies} = createRecordingDependencies({gql: failedLeaf("GraphQL codegen exploded.")});
-    const command = createGenerateCommand(dependencies, createTestRuntimeFactory());
+    const command = createGenerateCommand(dependencies, {host: buildCommandHost()});
 
     const execution = await command.invoke({verbose: false, env: true, i18n: true, gql: true, artifacts: true});
 
@@ -142,7 +142,7 @@ describe("generate composition", () => {
 
   it("propagates a cancelled child as a cancelled aggregate invocation", async () => {
     const {calls, dependencies} = createRecordingDependencies({env: cancelledLeaf("Command interrupted by SIGINT.")});
-    const command = createGenerateCommand(dependencies, createTestRuntimeFactory());
+    const command = createGenerateCommand(dependencies, {host: buildCommandHost()});
 
     const execution = await command.invoke({verbose: false, env: true, i18n: true, gql: false, artifacts: false});
 
@@ -152,7 +152,7 @@ describe("generate composition", () => {
 
   it("runs every selected generator in the fixed env, i18n, gql, artifacts order", async () => {
     const {calls, dependencies} = createRecordingDependencies();
-    const command = createGenerateCommand(dependencies, createTestRuntimeFactory());
+    const command = createGenerateCommand(dependencies, {host: buildCommandHost()});
 
     const execution = await command.invoke({verbose: false, env: true, i18n: true, gql: true, artifacts: true});
 
@@ -166,7 +166,7 @@ describe("generate composition", () => {
 
   it("invokes every child in the aggregate's own runtime scope without rendering child output", async () => {
     const {calls, dependencies} = createRecordingDependencies();
-    const command = createGenerateCommand(dependencies, createTestRuntimeFactory());
+    const command = createGenerateCommand(dependencies, {host: buildCommandHost()});
 
     await command.invoke({verbose: false, env: true, i18n: false, gql: false, artifacts: true}, {presentation: "human"});
 
@@ -179,7 +179,7 @@ describe("generate composition", () => {
   it("executes no generator and completes successfully when no task is selected", async () => {
     const {calls, dependencies} = createRecordingDependencies();
     const {logger, sink} = makeLoggerFixture();
-    const command = createGenerateCommand(dependencies, createTestRuntimeFactory({logger}));
+    const command = createGenerateCommand(dependencies, {host: buildCommandHost({runtime: {logger}})});
 
     const execution = await command.invoke(
       {verbose: false, env: false, i18n: false, gql: false, artifacts: false},
@@ -212,7 +212,7 @@ describe("generate CLI aliases", () => {
     ["--artifacts", "artifacts"],
   ])("selects only %s for the %s generator", async (alias, expected) => {
     const {calls, dependencies} = createRecordingDependencies();
-    const command = createGenerateCommand(dependencies, createTestRuntimeFactory());
+    const command = createGenerateCommand(dependencies, {host: buildCommandHost()});
 
     const execution = await command.run([alias]);
 
@@ -222,7 +222,7 @@ describe("generate CLI aliases", () => {
 
   it.each(["/v", "/verbose", "-v", "--verbose"])("propagates verbose into every child for %s", async (alias) => {
     const {calls, dependencies} = createRecordingDependencies();
-    const command = createGenerateCommand(dependencies, createTestRuntimeFactory());
+    const command = createGenerateCommand(dependencies, {host: buildCommandHost()});
 
     await command.run([alias, "--env", "--artifacts"]);
 
@@ -234,36 +234,16 @@ describe("generate CLI aliases", () => {
 
   it("leaves verbose disabled when no verbosity flag is supplied", async () => {
     const {calls, dependencies} = createRecordingDependencies();
-    const command = createGenerateCommand(dependencies, createTestRuntimeFactory());
+    const command = createGenerateCommand(dependencies, {host: buildCommandHost()});
 
     await command.run(["--env"]);
 
     expect(calls.map((call) => call.verbose)).toEqual([false]);
   });
 
-  it.each(["/h", "/help", "-h", "--help"])("renders help without executing a generator for %s", async (alias) => {
-    const {calls, dependencies} = createRecordingDependencies();
-    const command = createGenerateCommand(dependencies, createTestRuntimeFactory());
-
-    const execution = await command.run([alias]);
-
-    expect(execution).toEqual({status: "help", exitCode: 0});
-    expect(calls).toEqual([]);
-  });
-
-  it.each(["--unknown", "/unknown", "--xyz"])("fails with a usage exit code and no generator for %s", async (alias) => {
-    const {calls, dependencies} = createRecordingDependencies();
-    const command = createGenerateCommand(dependencies, createTestRuntimeFactory());
-
-    const execution = await command.run([alias]);
-
-    expect(execution).toMatchObject({status: "failed", exitCode: 2, failure: {kind: "usage"}});
-    expect(calls).toEqual([]);
-  });
-
   it("executes no generator when argv selects nothing", async () => {
     const {calls, dependencies} = createRecordingDependencies();
-    const command = createGenerateCommand(dependencies, createTestRuntimeFactory());
+    const command = createGenerateCommand(dependencies, {host: buildCommandHost()});
 
     const execution = await command.run([]);
 

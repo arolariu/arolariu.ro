@@ -33,18 +33,14 @@
  * ```
  */
 
-import {MonorepoCommand, toJsonValue, type CommandContext, type CommandRuntimeFactory} from "./common/commander.ts";
+import type {Clock, CommandRuntime, GetOnlyHttpClient, RepositoryInspectionRequest} from "./common/runtime.ts";
+import {asGetOnlyHttpClient, asReadOnlyFileSystem, HttpError} from "./common/runtime.ts";
 import {loadRepositoryRequirements} from "./common/requirements.ts";
 import {resolveRepositoryPaths} from "./common/repository-paths.ts";
-import {
-  asGetOnlyHttpClient,
-  asReadOnlyFileSystem,
-  HttpError,
-  type Clock,
-  type CommandRuntime,
-  type GetOnlyHttpClient,
-  type RepositoryInspectionRequest,
-} from "./common/runtime.ts";
+import {toJsonValue} from "./core/command/command-execution.ts";
+import type {CommandExecutionContext} from "./core/command/command-execution.ts";
+import {defineCommand, type LazyMonorepoCommand} from "./core/command/lazy-monorepo-command.ts";
+import type {CommandConstructionOptions, CommandHost} from "./core/command/command-specification.ts";
 import {normalizeErrorForReport, diagnosticResult} from "./doctor.diagnostics.ts";
 import {renderDoctorReport, createDoctorReport} from "./doctor.reporter.ts";
 import {createInspectionProbeRunner, type InspectionProbeRunner} from "./inspection/probes.ts";
@@ -79,8 +75,6 @@ export const doctorModules: readonly DiagnosticModule[] = [
 
 /** Construction seams {@link createDoctorCommand} accepts. */
 export interface DoctorCommandDependencies {
-  /** Runtime factory used for every scope; tests inject a fake instead of the Node adapter. */
-  readonly runtimeFactory?: CommandRuntimeFactory;
   /** Ordered modules to execute; defaults to {@link doctorModules}. */
   readonly modules?: readonly DiagnosticModule[];
 }
@@ -295,7 +289,7 @@ function prewarmInspections(
  * @returns The validated, scored doctor report.
  */
 async function executeDoctor(
-  context: Readonly<CommandContext>,
+  context: Readonly<CommandExecutionContext>,
   input: Readonly<DoctorInput>,
   seams: Readonly<DoctorExecutionSeams> = {},
 ): Promise<DoctorReport> {
@@ -345,24 +339,32 @@ async function executeDoctor(
   return report;
 }
 
+/** Production command host. This literal dynamic import is the only edge from this entrypoint
+ *  into the Node adapter; core never names it. */
+const loadProductionCommandHost = async (): Promise<CommandHost> =>
+  import("./adapters/node/node-command-host.ts").then(({createNodeCommandHost}) => createNodeCommandHost("doctor"));
+
 /**
  * Creates the doctor command.
  *
- * @param dependencies - Optional runtime factory and module list; tests inject deterministic
- * fakes instead of replacing command business code.
+ * @param dependencies - Optional module list; tests inject deterministic fakes instead of
+ * replacing command business code.
+ * @param options - The injected command host or a literal loader; defaults to the production
+ * Node adapter.
  * @returns The typed `doctor` command object.
  */
-export function createDoctorCommand(dependencies: Readonly<DoctorCommandDependencies> = {}): MonorepoCommand<DoctorInput, DoctorReport> {
+export function createDoctorCommand(
+  dependencies: Readonly<DoctorCommandDependencies> = {},
+  options: Readonly<CommandConstructionOptions> = {loadHost: loadProductionCommandHost},
+): LazyMonorepoCommand<DoctorInput, DoctorReport, never> {
   const {modules} = dependencies;
 
-  return new MonorepoCommand<DoctorInput, DoctorReport>(
+  return defineCommand<DoctorInput, DoctorReport>(
     {
-      metadata: {
-        name: "doctor",
-        description: "Runs read-only workspace health diagnostics across every bounded context.",
-        slashAliases: {"/v": "--verbose", "/q": "--quick", "/?": "--help"},
-        examples: ["npm run doctor", "npm run doctor -- --verbose", "npm run doctor -- --quick"],
-      },
+      name: "doctor",
+      description: "Runs read-only workspace health diagnostics across every bounded context.",
+      slashAliases: {"/v": "--verbose", "/q": "--quick", "/?": "--help"},
+      examples: ["npm run doctor", "npm run doctor -- --verbose", "npm run doctor -- --quick"],
       configure: (program) => {
         program
           .option("-v, --verbose", "Show diagnostic evidence for every check.", false)
@@ -373,19 +375,20 @@ export function createDoctorCommand(dependencies: Readonly<DoctorCommandDependen
         return {verbose: options.verbose === true, quick: options.quick === true};
       },
       execute: (context, input) => executeDoctor(context, input, modules === undefined ? {} : {modules}),
-      completion: (report) => ({
+      complete: (report) => ({
         exitCode: report.summary.failed > 0 ? 1 : 0,
+        value: report,
         human: (logger) => {
           renderDoctorReport(report, reportInputs.get(report) ?? {quick: false, verbose: false}, logger);
         },
         json: toJsonValue(report),
       }),
     },
-    dependencies.runtimeFactory,
+    options,
   );
 }
 
 /** Production singleton used by the aggregate CLI and this module's direct entrypoint. */
-export const doctorCommand: MonorepoCommand<DoctorInput, DoctorReport> = createDoctorCommand();
+export const doctorCommand: LazyMonorepoCommand<DoctorInput, DoctorReport, never> = createDoctorCommand();
 
 await doctorCommand.runIfMain(import.meta.url);

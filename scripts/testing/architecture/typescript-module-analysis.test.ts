@@ -37,7 +37,7 @@ describe("TypeScript module analysis", () => {
   it("recognizes the exported command singleton and shared direct-entry call", () => {
     const result = analyzeCommandEntrypointSource(
       [
-        "export const doctorCommand: MonorepoCommand<Input, Output> = createDoctorCommand();",
+        "export const doctorCommand: LazyMonorepoCommand<Input, Output, never> = createDoctorCommand();",
         "await doctorCommand.runIfMain(import.meta.url);",
       ].join("\n"),
       "scripts/doctor.ts",

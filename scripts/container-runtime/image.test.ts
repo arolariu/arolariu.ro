@@ -4,9 +4,10 @@
  */
 
 import {describe, expect, it, vi, type Mock} from "vitest";
-import type {CommandExecution, CommandInvoker} from "../common/commander.ts";
+import type {CommandExecution, CommandInvoker} from "../core/command/command-execution.ts";
+import {buildCommandHost} from "../testing/builders/command-host.builder.ts";
 import type {ProcessOutcome} from "../common/runner.ts";
-import {createProcessRunner, createTestRuntimeFactory} from "../common/runtime.testing.ts";
+import {createProcessRunner} from "../common/runtime.testing.ts";
 import {CommandCancellation} from "../common/runtime.ts";
 import type {ArtifactGenerationResult, GenerateArtifactsInput} from "../generate.artifacts.ts";
 import {getContainerAdapter} from "./adapters.ts";
@@ -85,7 +86,7 @@ describe("createImageCommand", () => {
   ] as const)("gates the artifact prerequisite for %s builds", async (target, shouldGenerate) => {
     const runner = createProcessRunner([...podmanPreflightOutcomes, succeeded()]);
     const artifacts = createArtifactsStub();
-    const command = createImageCommand({runtimeFactory: createTestRuntimeFactory({runner}), artifacts});
+    const command = createImageCommand({artifacts}, {host: buildCommandHost({runtime: {runner}})});
 
     const execution = await command.invoke({action: "build", target, engine: "podman"});
 
@@ -99,7 +100,7 @@ describe("createImageCommand", () => {
   it("never invokes the artifact prerequisite for run actions", async () => {
     const runner = createProcessRunner([...podmanPreflightOutcomes, succeeded()]);
     const artifacts = createArtifactsStub();
-    const command = createImageCommand({runtimeFactory: createTestRuntimeFactory({runner}), artifacts});
+    const command = createImageCommand({artifacts}, {host: buildCommandHost({runtime: {runner}})});
 
     const execution = await command.invoke({action: "run", target: "frontend", engine: "podman"});
 
@@ -110,7 +111,7 @@ describe("createImageCommand", () => {
   it("builds the exact engine-owned build command with tee output", async () => {
     const runner = createProcessRunner([...podmanPreflightOutcomes, succeeded()]);
     const artifacts = createArtifactsStub();
-    const command = createImageCommand({runtimeFactory: createTestRuntimeFactory({runner}), artifacts});
+    const command = createImageCommand({artifacts}, {host: buildCommandHost({runtime: {runner}})});
 
     await command.invoke({action: "build", target: "backend", engine: "podman"});
 
@@ -126,7 +127,7 @@ describe("createImageCommand", () => {
   it("runs the exact engine-owned run command with tee output", async () => {
     const runner = createProcessRunner([...podmanPreflightOutcomes, succeeded()]);
     const artifacts = createArtifactsStub();
-    const command = createImageCommand({runtimeFactory: createTestRuntimeFactory({runner}), artifacts});
+    const command = createImageCommand({artifacts}, {host: buildCommandHost({runtime: {runner}})});
 
     await command.invoke({action: "run", target: "exp", engine: "podman"});
 
@@ -139,7 +140,7 @@ describe("createImageCommand", () => {
   it("surfaces a nonzero build exit as a failed execution", async () => {
     const runner = createProcessRunner([...podmanPreflightOutcomes, exited(1)]);
     const artifacts = createArtifactsStub();
-    const command = createImageCommand({runtimeFactory: createTestRuntimeFactory({runner}), artifacts});
+    const command = createImageCommand({artifacts}, {host: buildCommandHost({runtime: {runner}})});
 
     const execution = await command.invoke({action: "build", target: "cv", engine: "podman"});
 
@@ -155,7 +156,7 @@ describe("createImageCommand", () => {
         exitCode: 1,
       }),
     );
-    const command = createImageCommand({runtimeFactory: createTestRuntimeFactory({runner}), artifacts});
+    const command = createImageCommand({artifacts}, {host: buildCommandHost({runtime: {runner}})});
 
     const execution = await command.invoke({action: "build", target: "frontend", engine: "podman"});
 
@@ -170,7 +171,7 @@ describe("createImageCommand", () => {
     const artifacts = createArtifactsStub(() =>
       Promise.resolve({status: "cancelled", failure: {kind: "cancelled", message: cause.message, evidence: [], cause}, exitCode: 130}),
     );
-    const command = createImageCommand({runtimeFactory: createTestRuntimeFactory({runner}), artifacts});
+    const command = createImageCommand({artifacts}, {host: buildCommandHost({runtime: {runner}})});
 
     const execution = await command.invoke({action: "build", target: "backend", engine: "podman"});
 
@@ -183,7 +184,7 @@ describe("createImageCommand", () => {
     controller.abort(new CommandCancellation("Terminated by test signal.", 143));
     const runner = createProcessRunner([...podmanPreflightOutcomes, {kind: "cancelled", stdout: "", stderr: "", durationMs: 0}]);
     const artifacts = createArtifactsStub();
-    const command = createImageCommand({runtimeFactory: createTestRuntimeFactory({runner}), artifacts});
+    const command = createImageCommand({artifacts}, {host: buildCommandHost({runtime: {runner}})});
 
     const execution = await command.invoke({action: "run", target: "exp", engine: "podman"}, {signal: controller.signal});
 
@@ -198,7 +199,7 @@ describe("createImageCommand", () => {
   describe("parser lifecycle", () => {
     it("reports a clean target error when --target is missing", async () => {
       const runner = createProcessRunner();
-      const command = createImageCommand({runtimeFactory: createTestRuntimeFactory({runner})});
+      const command = createImageCommand({}, {host: buildCommandHost({runtime: {runner}})});
 
       const execution = await command.run(["build", "--engine", "podman"]);
 
@@ -209,7 +210,7 @@ describe("createImageCommand", () => {
 
     it("reports a clean action error when build/run is missing", async () => {
       const runner = createProcessRunner();
-      const command = createImageCommand({runtimeFactory: createTestRuntimeFactory({runner})});
+      const command = createImageCommand({}, {host: buildCommandHost({runtime: {runner}})});
 
       const execution = await command.run(["--target", "backend", "--engine", "podman"]);
 
@@ -217,20 +218,10 @@ describe("createImageCommand", () => {
       expect(execution.status === "failed" ? execution.failure.message : "").toBe("Use build or run as the first argument.");
     });
 
-    it("rejects an unknown option as a usage failure instead of throwing", async () => {
-      const runner = createProcessRunner();
-      const command = createImageCommand({runtimeFactory: createTestRuntimeFactory({runner})});
-
-      const execution = await command.run(["--bogus"]);
-
-      expect(execution).toMatchObject({status: "failed", exitCode: 2});
-      expect(runner.calls).toHaveLength(0);
-    });
-
     it("decodes build/target/engine end to end", async () => {
       const runner = createProcessRunner([...podmanPreflightOutcomes, succeeded()]);
       const artifacts = createArtifactsStub();
-      const command = createImageCommand({runtimeFactory: createTestRuntimeFactory({runner}), artifacts});
+      const command = createImageCommand({artifacts}, {host: buildCommandHost({runtime: {runner}})});
 
       const execution = await command.run(["build", "--target", "backend", "--engine", "podman"]);
 

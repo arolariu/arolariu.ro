@@ -40,7 +40,7 @@ interface TypeScriptModuleAnalysisResult {
 
 /** Structural facts a direct entrypoint must satisfy to stay inside the declarative contract. */
 interface CommandEntrypointAnalysisResult {
-  /** Whether the module exports a `MonorepoCommand`-typed singleton. */
+  /** Whether the module exports a `LazyMonorepoCommand`-typed singleton. */
   readonly exportsCommandSingleton: boolean;
   /** Whether the module hands direct-entry detection to `runIfMain(import.meta.url)`. */
   readonly usesSharedRunIfMain: boolean;
@@ -174,7 +174,7 @@ export function analyzeCommandEntrypointSource(sourceText: string, fileName: str
         type !== undefined
         && ts.isTypeReferenceNode(type)
         && ts.isIdentifier(type.typeName)
-        && type.typeName.text === "MonorepoCommand"
+        && type.typeName.text === "LazyMonorepoCommand"
       ) {
         exportsCommandSingleton = true;
       }

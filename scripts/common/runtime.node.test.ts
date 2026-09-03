@@ -21,7 +21,7 @@ vi.mock("node:fs/promises", async (importOriginal) => {
 });
 
 import {FILE_SYSTEM_MAX_BYTES_EXCEEDED_CODE, FileSystemError, HttpError, CommandCancellation, type RepositoryInspectionRequest, type RuntimeEnvironment} from "./runtime.ts";
-import type {CommandContext} from "./commander.ts";
+import type {CommandExecutionContext} from "../core/command/command-execution.ts";
 import {createRepositoryPaths} from "./repository-paths.ts";
 import {createRepositoryInspectionSessionStub, repositoryFixtureRoot} from "./runtime.testing.ts";
 import {
@@ -920,7 +920,7 @@ describe("createNodeRuntimeScope", () => {
       presentation: "human",
       registerProcessSignals: false,
     });
-    const parent: CommandContext = {runtime: parentRuntime, presentation: "human"};
+    const parent: CommandExecutionContext = {runtime: parentRuntime, presentation: "human"};
 
     const childRuntime = await createNodeRuntimeScope({
       commandName: "doctor",
@@ -954,7 +954,7 @@ describe("createNodeRuntimeScope", () => {
       registerProcessSignals: false,
       signal: parentController.signal,
     });
-    const parent: CommandContext = {runtime: parentRuntime, presentation: "silent"};
+    const parent: CommandExecutionContext = {runtime: parentRuntime, presentation: "silent"};
 
     const childController = new AbortController();
     const firstChild = await createNodeRuntimeScope({
@@ -988,25 +988,6 @@ describe("createNodeRuntimeScope", () => {
 });
 
 describe("createNodeCommandRuntimeFactory", () => {
-  it("exposes the Node process host and a non-verbose human parse logger", () => {
-    const factory = createNodeCommandRuntimeFactory("sample", true);
-
-    expect(factory.processHost).toBe(nodeProcessHost);
-
-    const debug = vi.spyOn(console, "debug").mockImplementation(() => undefined);
-    const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
-    const info = vi.spyOn(console, "info").mockImplementation(() => undefined);
-
-    const parseLogger = factory.createParseLogger();
-    parseLogger.debug("suppressed regardless of command verbosity");
-    parseLogger.json({ignored: true});
-    parseLogger.info("visible");
-
-    expect(debug).not.toHaveBeenCalled();
-    expect(log).not.toHaveBeenCalled();
-    expect(info).toHaveBeenCalledWith("[arolariu::sample] ℹ️ visible");
-  });
-
   it("creates root and child scopes carrying the command name and verbosity", async () => {
     const factory = createNodeCommandRuntimeFactory("sample", true);
     const rootRuntime = await factory.createRoot({presentation: "human", registerProcessSignals: false});
@@ -1026,7 +1007,7 @@ describe("createNodeCommandRuntimeFactory", () => {
   it("shares the parent's inspection registry with a child created by a different factory", async () => {
     const parentFactory = createNodeCommandRuntimeFactory("status", false);
     const parentRuntime = await parentFactory.createRoot({presentation: "silent", registerProcessSignals: false});
-    const parent: CommandContext = {runtime: parentRuntime, presentation: "silent"};
+    const parent: CommandExecutionContext = {runtime: parentRuntime, presentation: "silent"};
     const childRuntime = await createNodeCommandRuntimeFactory("doctor", false).createChild(parent, {
       presentation: "silent",
       registerProcessSignals: false,
