@@ -46,6 +46,16 @@ const paths = createRepositoryPaths(ROOT);
 const certificatePath = resolve(ROOT, "infra", "Local", "Management", "certs", "local-cert.pem");
 const certificateKeyPath = resolve(ROOT, "infra", "Local", "Management", "certs", "local-key.pem");
 
+/**
+ * Mirrors `setup.ts`'s `PHASE_COMMAND_TIMEOUT_MS`: the invocation-scoped runner default every
+ * migrated phase's `runtime.runner` already carries before the phase ever sees it. Scoping the
+ * harness's runner with this same default (rather than leaving it unscoped) lets these tests
+ * observe the exact merged options a `--version` probe exposes versus the long mutation ceiling
+ * `setup.infrastructure.ts` requests explicitly, instead of the unscoped `undefined` a harness
+ * that skipped this default would produce.
+ */
+const PHASE_PROBE_TIMEOUT_MS = 120_000;
+
 function allPortsAvailable(): readonly PortFact[] {
   return requiredLocalPorts.map((port) => ({port, available: true}));
 }
@@ -346,7 +356,7 @@ async function createHarness(input: HarnessInput = {}): Promise<Harness> {
 
   const runtime: SetupPhaseRuntime = {
     command,
-    runner: commandRuntime.runner,
+    runner: commandRuntime.runner.scope({timeoutMs: PHASE_PROBE_TIMEOUT_MS}),
     files: commandRuntime.files,
     http: commandRuntime.http,
     clock: commandRuntime.clock,
@@ -1026,6 +1036,89 @@ describe("credential isolation", () => {
     for (const call of harness.runner.calls) {
       expect(call.options.env).toHaveProperty("MSSQL_SA_PASSWORD", undefined);
     }
+  });
+});
+
+describe("long mutation timeout ceiling", () => {
+  it("requests the long mutation timeout for container runtime installation and keeps the probe-scoped default for the package-manager version probe", async () => {
+    const harness = await createHarness({
+      responses: {[commandKey({command: "winget", args: ["--version"]})]: succeeded({stdout: "v1.10"})},
+      infrastructure: [
+        infrastructureAvailable({cliAvailable: false}),
+        infrastructureAvailable(), // refreshed after install
+      ],
+      config: {status: "valid", config: {schemaVersion: 1, containerEngine: "rancher"}},
+    });
+
+    const result = await runPhase(harness);
+
+    expect(result.status).toBe("succeeded");
+    const probe = harness.runner.calls.find(({request}) => commandKey(request) === "winget --version");
+    const install = harness.runner.calls.find(
+      ({request}) =>
+        commandKey(request) === "winget install --id SUSE.RancherDesktop --exact --accept-package-agreements --accept-source-agreements",
+    );
+    expect(probe?.options).toMatchObject({timeoutMs: PHASE_PROBE_TIMEOUT_MS});
+    expect(install?.options).toMatchObject({output: "inherit", timeoutMs: 1_200_000});
+  });
+
+  it("requests the long mutation timeout for mkcert installation and keeps the probe-scoped default for the mkcert and package-manager version probes", async () => {
+    const harness = await createHarness({
+      responses: {
+        [commandKey({command: "mkcert", args: ["--version"]})]: spawnFailed("ENOENT"),
+        [commandKey({command: "winget", args: ["--version"]})]: succeeded({stdout: "v1.10"}),
+      },
+      infrastructure: [
+        infrastructureAvailable({
+          certificateIssues: ["Missing selfhost certificate file: infra/Local/Management/certs/local-cert.pem"],
+        }),
+        infrastructureAvailable({certificateIssues: []}), // refreshed after mkcert install
+        infrastructureAvailable({certificateIssues: []}), // refreshed after trust
+        infrastructureAvailable({certificateIssues: []}), // refreshed after generate
+      ],
+      config: {status: "valid", config: {schemaVersion: 1, containerEngine: "rancher"}},
+    });
+
+    await runPhase(harness);
+
+    expect(harness.actionRecords.map(({id}) => id)).toContain("infrastructure.mkcert.install");
+    const mkcertProbes = harness.runner.calls.filter(({request}) => commandKey(request) === "mkcert --version");
+    const wingetProbe = harness.runner.calls.find(({request}) => commandKey(request) === "winget --version");
+    const install = harness.runner.calls.find(
+      ({request}) =>
+        commandKey(request) === "winget install --id FiloSottile.mkcert --exact --accept-package-agreements --accept-source-agreements",
+    );
+    expect(mkcertProbes.length).toBeGreaterThan(0);
+    for (const probe of mkcertProbes) {
+      expect(probe.options).toMatchObject({timeoutMs: PHASE_PROBE_TIMEOUT_MS});
+    }
+    expect(wingetProbe?.options).toMatchObject({timeoutMs: PHASE_PROBE_TIMEOUT_MS});
+    expect(install?.options).toMatchObject({output: "inherit", timeoutMs: 1_200_000});
+  });
+
+  it("requests the long mutation timeout for mkcert trust and certificate generation and keeps the probe-scoped default for the mkcert version probe", async () => {
+    const harness = await createHarness({
+      infrastructure: [
+        infrastructureAvailable({
+          certificateIssues: ["Missing selfhost certificate file: infra/Local/Management/certs/local-cert.pem"],
+        }),
+        infrastructureAvailable({certificateIssues: []}), // after trust
+        infrastructureAvailable({certificateIssues: []}), // after generate
+      ],
+      config: {status: "valid", config: {schemaVersion: 1, containerEngine: "rancher"}},
+    });
+
+    const result = await runPhase(harness);
+
+    expect(result.status).toBe("succeeded");
+    const mkcertProbe = harness.runner.calls.find(({request}) => commandKey(request) === "mkcert --version");
+    const trust = harness.runner.calls.find(({request}) => commandKey(request) === "mkcert -install");
+    const generate = harness.runner.calls.find(
+      ({request}) => commandKey(request) === `mkcert -key-file ${certificateKeyPath} -cert-file ${certificatePath} localhost *.localhost`,
+    );
+    expect(mkcertProbe?.options).toMatchObject({timeoutMs: PHASE_PROBE_TIMEOUT_MS});
+    expect(trust?.options).toMatchObject({output: "inherit", timeoutMs: 1_200_000});
+    expect(generate?.options).toMatchObject({output: "inherit", timeoutMs: 1_200_000});
   });
 });
 
