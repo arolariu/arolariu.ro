@@ -220,3 +220,21 @@ export const piscinaRuntimeBoundaryExclusionSourcePaths: readonly string[] = scr
 
 /** Additional non-discoverable script source roots tracked outside the recursive file walk. */
 export const additionalScriptSourceRootPaths = ["scripts/types/envinfo.d.ts"] as const;
+
+/**
+ * The exhaustive, exact inventory of literal relative module references that intentionally leave
+ * the `scripts/**` production source graph.
+ *
+ * @remarks
+ * `scripts/testing/architecture/script-source-graph.ts` never silently drops an unresolved
+ * relative import: every one it finds must appear here, or the reachability policy in
+ * `scripts/testing/architecture/orphan-modules.test.ts` fails. The sole current entry is the lint
+ * worker's reference to the repository root ESLint configuration; Cohort 7 owns its removal.
+ */
+export const temporaryExternalScriptModuleReferenceDefinitions = [
+  {
+    sourcePath: "scripts/workers/lint.worker.ts",
+    specifier: "../../eslint.config.ts",
+    removalCohort: 7,
+  },
+] as const;

@@ -20,10 +20,14 @@ const scriptSourceExtensions: ReadonlySet<string> = new Set([".ts", ".tsx", ".js
  * Normalizes a filesystem path to forward-slash form so classifiers behave identically on
  * Windows and POSIX runners.
  *
+ * @remarks
+ * Exported because `scripts/testing/architecture/script-source-graph.ts` reuses this exact
+ * normalization when resolving relative module specifiers into local source-graph node keys.
+ *
  * @param path - A relative or absolute filesystem path.
  * @returns The same path with every backslash replaced by a forward slash.
  */
-function normalizeScriptSourcePath(path: string): string {
+export function normalizeScriptSourcePath(path: string): string {
   return path.replaceAll("\\", "/");
 }
 

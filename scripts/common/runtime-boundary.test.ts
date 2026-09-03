@@ -18,6 +18,11 @@ import {
   isScriptConfigurationFile,
   isScriptTestFile,
 } from "../testing/architecture/script-source-files.ts";
+import {
+  analyzeCommandEntrypointSource,
+  collectTypeScriptModuleReferences,
+  completeModuleNamespaceImportName,
+} from "../testing/architecture/typescript-module-analysis.ts";
 
 type RuntimeBoundaryRule =
   | "execa-import"
@@ -87,7 +92,6 @@ const processSpawningModules: ReadonlySet<string> = new Set(["node:child_process
 
 /** Sole worker adapter allowed to reuse the Node process runner outside a command runtime scope. */
 const workerShellAdapter = "scripts/workers/shell.ts";
-const wholeModuleImportName = "*";
 
 /**
  * Module specifiers no Doctor production module may import, because each one would hand Doctor a
@@ -626,153 +630,6 @@ function scanRuntimeBoundaryRepository(): readonly RuntimeBoundaryViolation[] {
   );
 }
 
-/** One statically resolvable module specifier and the names it binds. */
-interface ModuleImport {
-  /** The literal module specifier text. */
-  readonly specifier: string;
-  /** Imported names; `*` represents access to the complete module namespace. */
-  readonly names: readonly string[];
-}
-
-/**
- * Collects every statically resolvable module specifier of one source file.
- *
- * @param sourceText - Source text to parse.
- * @returns Static imports, re-exports, and literal dynamic imports, in source order.
- */
-function collectModuleImports(sourceText: string): readonly ModuleImport[] {
-  const source = ts.createSourceFile("module.ts", sourceText, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
-  const imports: ModuleImport[] = [];
-
-  function namesOf(clause: ts.ImportClause | undefined): readonly string[] {
-    if (clause === undefined) {
-      return [];
-    }
-
-    const names = new Set<string>();
-    if (clause.name !== undefined) {
-      names.add(wholeModuleImportName);
-    }
-
-    const bindings = clause?.namedBindings;
-    if (bindings === undefined) {
-      return [...names];
-    }
-
-    if (ts.isNamespaceImport(bindings)) {
-      names.add(wholeModuleImportName);
-      return [...names];
-    }
-
-    for (const element of bindings.elements) {
-      const importedName = (element.propertyName ?? element.name).text;
-      names.add(importedName === "default" ? wholeModuleImportName : importedName);
-    }
-
-    return [...names];
-  }
-
-  function namesOfExport(node: ts.ExportDeclaration): readonly string[] {
-    const clause = node.exportClause;
-    if (clause === undefined || ts.isNamespaceExport(clause)) {
-      return [wholeModuleImportName];
-    }
-
-    return clause.elements.map((element) => {
-      const exportedName = (element.propertyName ?? element.name).text;
-      return exportedName === "default" ? wholeModuleImportName : exportedName;
-    });
-  }
-
-  function visit(node: ts.Node): void {
-    if (ts.isImportDeclaration(node) && ts.isStringLiteral(node.moduleSpecifier)) {
-      imports.push({specifier: node.moduleSpecifier.text, names: namesOf(node.importClause)});
-    }
-
-    if (ts.isExportDeclaration(node) && node.moduleSpecifier !== undefined && ts.isStringLiteral(node.moduleSpecifier)) {
-      imports.push({specifier: node.moduleSpecifier.text, names: namesOfExport(node)});
-    }
-
-    if (ts.isCallExpression(node) && isDynamicImport(node) && node.arguments.length === 1) {
-      const specifier = node.arguments[0];
-      if (specifier !== undefined && (ts.isStringLiteral(specifier) || ts.isNoSubstitutionTemplateLiteral(specifier))) {
-        imports.push({specifier: specifier.text, names: [wholeModuleImportName]});
-      }
-    }
-
-    ts.forEachChild(node, visit);
-  }
-
-  visit(source);
-  return imports;
-}
-
-/** Structural facts a direct entrypoint must satisfy to stay inside the declarative contract. */
-interface CommandEntrypointShape {
-  /** Whether the module exports a `MonorepoCommand`-typed singleton. */
-  readonly exportsCommandSingleton: boolean;
-  /** Whether the module hands direct-entry detection to `runIfMain(import.meta.url)`. */
-  readonly usesSharedRunIfMain: boolean;
-}
-
-function isImportMetaUrlArgument(argument: ts.Expression): boolean {
-  return (
-    ts.isPropertyAccessExpression(argument)
-    && argument.name.text === "url"
-    && ts.isMetaProperty(argument.expression)
-    && argument.expression.keywordToken === ts.SyntaxKind.ImportKeyword
-    && argument.expression.name.text === "meta"
-  );
-}
-
-/**
- * Describes how one production module exposes and starts its command.
- *
- * @param sourceText - Source text to parse.
- * @returns Whether the module exports a command singleton and uses shared direct-entry detection.
- */
-function analyzeCommandEntrypoint(sourceText: string): CommandEntrypointShape {
-  const source = ts.createSourceFile("entrypoint.ts", sourceText, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
-  let exportsCommandSingleton = false;
-  let usesSharedRunIfMain = false;
-
-  for (const statement of source.statements) {
-    if (!ts.isVariableStatement(statement)) {
-      continue;
-    }
-
-    const isExported = statement.modifiers?.some((modifier) => modifier.kind === ts.SyntaxKind.ExportKeyword) === true;
-    if (!isExported) {
-      continue;
-    }
-
-    for (const declaration of statement.declarationList.declarations) {
-      const {type} = declaration;
-      if (type !== undefined && ts.isTypeReferenceNode(type) && ts.isIdentifier(type.typeName) && type.typeName.text === "MonorepoCommand") {
-        exportsCommandSingleton = true;
-      }
-    }
-  }
-
-  function visit(node: ts.Node): void {
-    if (
-      ts.isCallExpression(node)
-      && ts.isPropertyAccessExpression(node.expression)
-      && node.expression.name.text === "runIfMain"
-      && node.arguments.length === 1
-      && node.arguments[0] !== undefined
-      && isImportMetaUrlArgument(node.arguments[0])
-    ) {
-      usesSharedRunIfMain = true;
-    }
-
-    ts.forEachChild(node, visit);
-  }
-
-  visit(source);
-  return {exportsCommandSingleton, usesSharedRunIfMain};
-}
-
 /**
  * Finds every production module that starts itself through the shared command host.
  *
@@ -780,7 +637,7 @@ function analyzeCommandEntrypoint(sourceText: string): CommandEntrypointShape {
  */
 function discoverSharedEntrypointModules(): readonly string[] {
   return runtimeBoundaryScanSourcePaths.filter(
-    (file) => analyzeCommandEntrypoint(readFileSync(file, "utf8")).usesSharedRunIfMain,
+    (file) => analyzeCommandEntrypointSource(readFileSync(file, "utf8")).usesSharedRunIfMain,
   );
 }
 
@@ -795,20 +652,22 @@ interface DoctorCapabilityViolation {
 }
 
 function scanDoctorCapabilitySource(file: string, sourceText: string): readonly DoctorCapabilityViolation[] {
-  return collectModuleImports(sourceText).flatMap((moduleImport): readonly DoctorCapabilityViolation[] => {
-    if (doctorForbiddenModules.has(moduleImport.specifier)) {
-      return [{file, specifier: moduleImport.specifier}];
-    }
+  return collectTypeScriptModuleReferences(sourceText).references.flatMap(
+    (moduleReference): readonly DoctorCapabilityViolation[] => {
+      if (doctorForbiddenModules.has(moduleReference.specifier)) {
+        return [{file, specifier: moduleReference.specifier}];
+      }
 
-    const forbiddenNames = doctorForbiddenImportNames.get(moduleImport.specifier);
-    if (forbiddenNames === undefined) {
-      return [];
-    }
+      const forbiddenNames = doctorForbiddenImportNames.get(moduleReference.specifier);
+      if (forbiddenNames === undefined) {
+        return [];
+      }
 
-    return moduleImport.names
-      .filter((name) => name === wholeModuleImportName || forbiddenNames.has(name))
-      .map((name) => ({file, specifier: moduleImport.specifier, name}));
-  });
+      return moduleReference.importedNames
+        .filter((name) => name === completeModuleNamespaceImportName || forbiddenNames.has(name))
+        .map((name) => ({file, specifier: moduleReference.specifier, name}));
+    },
+  );
 }
 
 /**
@@ -970,17 +829,21 @@ describe("runtime boundary policy", () => {
 
   it("keeps every production script free of direct Execa and child-process imports", () => {
     const violations = runtimeBoundaryScanSourcePaths.flatMap((file) =>
-      collectModuleImports(readFileSync(file, "utf8"))
-        .filter(
-          (moduleImport) =>
-            processSpawningModules.has(moduleImport.specifier)
-            || (moduleImport.specifier === "execa" && file !== execaAdapter),
+      collectTypeScriptModuleReferences(readFileSync(file, "utf8"))
+        .references.filter(
+          (moduleReference) =>
+            processSpawningModules.has(moduleReference.specifier)
+            || (moduleReference.specifier === "execa" && file !== execaAdapter),
         )
-        .map((moduleImport) => ({file, specifier: moduleImport.specifier})),
+        .map((moduleReference) => ({file, specifier: moduleReference.specifier})),
     );
 
     expect(violations).toEqual([]);
-    expect(collectModuleImports(readFileSync(execaAdapter, "utf8")).map((moduleImport) => moduleImport.specifier)).toContain("execa");
+    expect(
+      collectTypeScriptModuleReferences(readFileSync(execaAdapter, "utf8")).references.map(
+        (moduleReference) => moduleReference.specifier,
+      ),
+    ).toContain("execa");
   });
 
   it("removed every compatibility module and every reference to one", () => {
@@ -1004,7 +867,7 @@ describe("runtime boundary policy", () => {
     expect(discoverSharedEntrypointModules()).toEqual(directEntrypoints);
 
     const violations = directEntrypoints
-      .map((file) => ({file, ...analyzeCommandEntrypoint(readFileSync(file, "utf8"))}))
+      .map((file) => ({file, ...analyzeCommandEntrypointSource(readFileSync(file, "utf8"))}))
       .filter((entrypoint) => !entrypoint.exportsCommandSingleton || !entrypoint.usesSharedRunIfMain);
 
     expect(violations).toEqual([]);
@@ -1033,12 +896,18 @@ describe("runtime boundary policy", () => {
   });
 
   it("keeps the worker shell on the generic process runner", () => {
-    const specifiers = collectModuleImports(readFileSync(workerShellAdapter, "utf8"));
+    const specifiers = collectTypeScriptModuleReferences(readFileSync(workerShellAdapter, "utf8")).references;
 
-    expect(specifiers).toContainEqual({specifier: "../common/runtime.node.ts", names: ["nodeProcessRunner"]});
+    expect(specifiers).toContainEqual({
+      specifier: "../common/runtime.node.ts",
+      importedNames: ["nodeProcessRunner"],
+      referenceKind: "import",
+      typeOnly: false,
+    });
     expect(
       specifiers.filter(
-        (moduleImport) => processSpawningModules.has(moduleImport.specifier) || moduleImport.specifier === "execa",
+        (moduleReference) =>
+          processSpawningModules.has(moduleReference.specifier) || moduleReference.specifier === "execa",
       ),
     ).toEqual([]);
   });
