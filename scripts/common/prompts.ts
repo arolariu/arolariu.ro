@@ -6,7 +6,7 @@ import {createInterface} from "node:readline";
 import {StringDecoder} from "node:string_decoder";
 
 /** One selectable prompt value and its human-readable label. */
-export interface PromptChoice<TValue extends string> {
+interface PromptChoice<TValue extends string> {
   /** Value returned when this choice is selected. */
   readonly value: TValue;
   /** Human-readable choice label. */

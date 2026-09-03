@@ -86,10 +86,10 @@ export interface CommandDefinition<TInput, TOutput> {
 }
 
 /** Classifies why one command invocation did not complete successfully. */
-export type CommandFailureKind = "usage" | "operational" | "cleanup" | "cancelled" | "internal";
+type CommandFailureKind = "usage" | "operational" | "cleanup" | "cancelled" | "internal";
 
 /** Normalized, secret-free description of one command failure. */
-export interface CommandFailure {
+interface CommandFailure {
   /** Failure classification used for exit mapping and diagnostics. */
   readonly kind: CommandFailureKind;
   /** Human-readable failure message. */
@@ -108,7 +108,7 @@ export type CommandExecution<TOutput> =
   | {readonly status: "help"; readonly exitCode: 0};
 
 /** Options accepted by a programmatic or composed command invocation. */
-export interface CommandInvocationOptions {
+interface CommandInvocationOptions {
   /** Parent context whose runtime scope owns this nested invocation. */
   readonly parent?: Readonly<CommandContext>;
   /** Presentation override; defaults to `"silent"` for nested composition. */
@@ -482,7 +482,7 @@ type ExecutionAttempt<TOutput> =
  * presentation selection, runtime scope ownership, failure normalization, and the strict
  * cleanup-before-presentation ordering every migrated command relies on.
  */
-export abstract class AbstractMonorepoCommand<TInput, TOutput> implements CommandInvoker<TInput, TOutput> {
+abstract class AbstractMonorepoCommand<TInput, TOutput> implements CommandInvoker<TInput, TOutput> {
   readonly #injectedRuntimeFactory: CommandRuntimeFactory | undefined;
 
   /**

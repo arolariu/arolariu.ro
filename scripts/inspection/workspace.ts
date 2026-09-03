@@ -17,7 +17,7 @@ import type {ProcessOutcome} from "../common/runner.ts";
 import type {InspectionOutcome, InspectionProvider, InspectionProviderContext} from "./types.ts";
 
 /** One repository project discovered in the Nx workspace graph. */
-export interface WorkspaceProjectFact {
+interface WorkspaceProjectFact {
   /** Canonical Nx project name. */
   readonly name: string;
   /** Repository-relative project root, using `/` separators. */
@@ -27,7 +27,7 @@ export interface WorkspaceProjectFact {
 }
 
 /** One logical repository-to-repository project dependency. */
-export interface WorkspaceEdgeFact {
+interface WorkspaceEdgeFact {
   /** Canonical name of the depending project. */
   readonly source: string;
   /** Canonical name of the depended-upon project. */

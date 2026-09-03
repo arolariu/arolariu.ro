@@ -158,7 +158,7 @@ function classifyFileKind(stats: Readonly<{isDirectory: () => boolean; isFile: (
  * `node:fs/promises` rejection unchanged so its platform error `code` is preserved without an
  * extra wrapping layer.
  */
-export class NodeFileSystem implements FileSystem {
+class NodeFileSystem implements FileSystem {
   /** {@inheritDoc ReadOnlyFileSystem.readText} */
   public readText(path: string): Promise<string> {
     return readFile(path, "utf8");
@@ -506,7 +506,7 @@ function toFetchBody(body: string | Uint8Array): string | Buffer<ArrayBuffer> {
  * abort during retry backoff — is normalized into a bounded {@link HttpError} via
  * {@link toHttpError} instead of escaping as a raw platform error (for example `DOMException`).
  */
-export class NativeHttpClient implements HttpClient {
+class NativeHttpClient implements HttpClient {
   /** {@inheritDoc HttpClient.request} */
   public async request(request: Readonly<HttpRequest>): Promise<HttpResponse> {
     const method = request.method ?? "GET";

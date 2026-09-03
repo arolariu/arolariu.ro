@@ -48,9 +48,6 @@ import {createInspectionSession} from "./session.ts";
 import type {InspectionOutcome, InspectionProvider, InspectionProviders, InspectionSession} from "./types.ts";
 import {createWorkspaceProvider, type WorkspaceFacts} from "./workspace.ts";
 
-/** Selects how thoroughly {@link createRepositoryInspectionSession} inspects the repository. */
-export type InspectionProfile = "full" | "quick";
-
 /** Every repository fact reachable through one composed {@link RepositoryInspectionSession}. */
 export interface RepositoryInspectionFacts {
   readonly workspace: WorkspaceFacts;

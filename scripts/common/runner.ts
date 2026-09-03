@@ -6,7 +6,7 @@
 import type {MonorepositoryLogger} from "./logger.ts";
 
 /** Runs one request with optional execution options. */
-export interface Runner<TRequest, TOptions, TOutcome> {
+interface Runner<TRequest, TOptions, TOutcome> {
   /** Executes one request. */
   run(request: Readonly<TRequest>, options?: Readonly<TOptions>): Promise<TOutcome>;
 }
@@ -20,7 +20,7 @@ export interface ProcessRequest {
 }
 
 /** Selects captured, tee, or inherited child output behavior. */
-export type ProcessOutputMode = "capture" | "tee" | "inherit";
+type ProcessOutputMode = "capture" | "tee" | "inherit";
 
 /** Defines invocation-specific environment overrides. */
 export type ProcessEnvironment = Readonly<Record<string, string | undefined>>;

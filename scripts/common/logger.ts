@@ -6,7 +6,7 @@
 import {styleText} from "node:util";
 
 /** Selects human-oriented, machine-readable, or fully suppressed logger output. */
-export type LoggerMode = "human" | "json" | "silent";
+type LoggerMode = "human" | "json" | "silent";
 
 /** Identifies the process stream that receives logger output. */
 export type LoggerStream = "stdout" | "stderr";
@@ -33,7 +33,7 @@ export interface LoggerTable {
 }
 
 /** Receives fully rendered logger output. */
-export interface LoggerSink {
+interface LoggerSink {
   /** Writes one complete line without a caller-supplied newline. */
   readonly line: (stream: LoggerStream, text: string) => void;
   /** Writes an incomplete or raw output chunk. */

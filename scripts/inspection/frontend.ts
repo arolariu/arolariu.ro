@@ -195,7 +195,7 @@ async function readFirstExistingTextFile(
  * @param content - Complete `.env` file contents.
  * @returns Syntax errors, recognized present keys, and missing core or authentication keys.
  */
-export function inspectEnvironmentContent(content: string): EnvironmentFacts {
+function inspectEnvironmentContent(content: string): EnvironmentFacts {
   const syntaxErrors: string[] = [];
   const seenAtLine = new Map<string, number>();
   const presentKeys = new Set<string>();

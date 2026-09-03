@@ -21,7 +21,7 @@ import {ContainerRuntimeError} from "./types.ts";
 export const localCosmosEndpoint = "http://localhost:8081";
 
 /** Azurite blob endpoint referenced by local selfhost bootstrap diagnostics. */
-export const localAzuriteBlobEndpoint = "http://localhost:10000";
+const localAzuriteBlobEndpoint = "http://localhost:10000";
 
 /**
  * Azurite's documented development storage connection string.

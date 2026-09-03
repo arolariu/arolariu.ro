@@ -17,7 +17,7 @@ export const DIAGNOSTIC_DEFAULT_TIMEOUT_MS = 15_000;
 export type DiagnosticStatus = "pass" | "warn" | "fail" | "skipped";
 
 /** Classifies the certainty of an inferred root or contributing cause. */
-export type DiagnosticConfidence = "high" | "medium" | "low";
+type DiagnosticConfidence = "high" | "medium" | "low";
 
 /** Identifies the stable bounded-context owner of one diagnostic row. */
 export type DiagnosticModuleId = "workspace" | "dotnet" | "react" | "svelte" | "python" | "infrastructure";
@@ -139,4 +139,4 @@ export interface DiagnosticModule {
 
 // Re-export diagnostic helpers from doctor.diagnostics.ts to avoid broad import churn
 // in specialist modules that still import from this file.
-export {diagnosticResult, skippedDiagnostic} from "./doctor.diagnostics.ts";
+export {skippedDiagnostic} from "./doctor.diagnostics.ts";

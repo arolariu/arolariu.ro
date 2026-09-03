@@ -4,7 +4,7 @@
  */
 
 /** Classification systems represented by generated taxonomy artifacts. */
-export type ArtifactClassificationSystem = "GS1_GPC" | "ECOICOP_V2" | "NACE_2_1";
+type ArtifactClassificationSystem = "GS1_GPC" | "ECOICOP_V2" | "NACE_2_1";
 
 /** Single normalized taxonomy node. */
 export interface TaxonomyArtifactNode {

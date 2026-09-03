@@ -50,7 +50,7 @@ import {
 import type {ArtifactGenerationResult, GenerateArtifactsInput} from "./generate.artifacts.ts";
 import type {GenerateLeafInput, GenerateLeafResult} from "./generate.env.ts";
 import {createGenerateCommand, type GenerateCommandDependencies} from "./generate.ts";
-import type {TaxonomyArtifact} from "./types";
+import type {TaxonomyArtifact} from "./types/generators.ts";
 
 /** Decides what one scripted HTTP send returns, by request and global send ordinal. */
 type ArtifactHttpRoute = (request: Readonly<HttpRequest>, send: number) => HttpResponse | Error;

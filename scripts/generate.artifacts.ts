@@ -25,7 +25,7 @@ import {
   type TaskScheduler,
 } from "./common/runtime.ts";
 import {taxonomyArtifactFileNames, taxonomyArtifactOutputRoots} from "./common/taxonomy-artifacts.ts";
-import type {NodePackageDependencyType, NodePackageInformation, TaxonomyArtifact, TaxonomyArtifactNode} from "./types";
+import type {NodePackageDependencyType, NodePackageInformation, TaxonomyArtifact, TaxonomyArtifactNode} from "./types/generators.ts";
 
 export {getExpectedTaxonomyArtifactPaths, taxonomyArtifactFileNames} from "./common/taxonomy-artifacts.ts";
 

@@ -23,7 +23,7 @@ const scriptSourceExtensions: ReadonlySet<string> = new Set([".ts", ".tsx", ".js
  * @param path - A relative or absolute filesystem path.
  * @returns The same path with every backslash replaced by a forward slash.
  */
-export function normalizeScriptSourcePath(path: string): string {
+function normalizeScriptSourcePath(path: string): string {
   return path.replaceAll("\\", "/");
 }
 

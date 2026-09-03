@@ -372,7 +372,7 @@ function degradedResults(
  * @param outcome - The shared `SvelteFacts` inspection outcome for this project.
  * @returns The five stable diagnostic results for this project, in fixed order.
  */
-export async function inspectSvelteProject(
+async function inspectSvelteProject(
   context: Readonly<DoctorContext>,
   projectId: SvelteProjectId,
   outcome: InspectionOutcome<SvelteFacts>,

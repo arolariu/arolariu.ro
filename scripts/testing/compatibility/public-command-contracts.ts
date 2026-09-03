@@ -6,7 +6,7 @@
 /**
  * A single explicitly accepted compatibility gap that remains scheduled for a later cohort.
  */
-export interface PublicCommandCharacterizationGapDefinition {
+interface PublicCommandCharacterizationGapDefinition {
   /** The public behavior that still lacks counted characterization evidence. */
   readonly missingBehavior: string;
   /** The implementation cohort that owns the remaining characterization work. */
