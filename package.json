@@ -234,7 +234,7 @@
     "three": "0.185.1",
     "typedoc": "0.28.20",
     "typedoc-plugin-markdown": "4.12.0",
-    "typescript": "6.0.3",
+    "typescript": "7.0.2",
     "typescript-eslint": "8.66.0",
     "uuid": "14.0.1",
     "vite": "8.2.0",
@@ -242,7 +242,7 @@
     "zustand": "5.0.14"
   },
   "overrides": {
-    "typescript": "6.0.3",
+    "typescript": "7.0.2",
     "webpackbar": "7.0.0",
     "eslint-plugin-react-hooks": {
       "zod-validation-error": "^4.0.2"
