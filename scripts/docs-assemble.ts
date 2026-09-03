@@ -1,35 +1,33 @@
 /**
- * @fileoverview Docs pipeline orchestrator for `sites/docs.arolariu.ro`.
+ * @fileoverview Docs pipeline command for `sites/docs.arolariu.ro`.
+ * @module scripts/docs-assemble
  *
  * @remarks
- * Runs the three markdown-producing extractors in parallel (TypeDoc,
- * pydoc-markdown, DefaultDocumentation), normalizes the generated
- * frontmatter, writes per-tier landing index pages, and mirrors
- * `/docs/` prose into the Docusaurus source tree under `docs/monorepo/`.
+ * Runs the three markdown-producing extractor families concurrently (TypeDoc, pydoc-markdown,
+ * DefaultDocumentation), normalizes the generated frontmatter, writes per-tier landing index
+ * pages, and mirrors `/docs/` prose into the Docusaurus source tree under `docs/monorepo/`.
  *
  * HTTP API reference is intentionally excluded: `api.arolariu.ro`
  * hosts Swagger UI from the live OpenAPI spec, so re-publishing the
  * spec here would just duplicate that browser.
  *
- * Invoked via `npm run docs:assemble` before `npm run build:docs` /
- * `dev:docs`. Designed to be idempotent — each run starts by cleaning
- * the staging dir (`sites/docs.arolariu.ro/_generated/`) so CI builds
- * behave the same as a fresh local clone.
+ * Invoked via `npm run docs:assemble` before `npm run build:docs` / `dev:docs`. Designed to be
+ * idempotent — each run starts by cleaning the staging dir (`sites/docs.arolariu.ro/_generated/`)
+ * so CI builds behave the same as a fresh local clone. Every filesystem, process, and concurrency
+ * concern flows through the injected {@link CommandContext.runtime} instead of `node:fs`, a
+ * bespoke command runner, or `Promise.all`, so the whole pipeline is exercised deterministically
+ * by the declarative command runtime's test fakes. The cleaned `_generated` tree is
+ * invocation-transient: a cleanup callback registered right after it is created removes it again
+ * on any failure or cancellation, and is unregistered only once normalization, required-tier
+ * validation, landing pages, and prose mirroring have all succeeded.
  */
 
-import {cpSync, rmSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync, existsSync} from "node:fs";
 import {dirname, join, resolve} from "node:path";
-import {fileURLToPath} from "node:url";
-import {commanderExitCode, createToolProgram} from "./common/cli.ts";
-import {MonorepositoryConsoleLogger, type MonorepositoryLogger} from "./common/logger.ts";
-import {defaultCommandRunner, formatCommand, type CommandRunner, type CommandSpec} from "./common/process.ts";
+import {MonorepoCommand, type CommandContext, type CommandRuntimeFactory} from "./common/commander.ts";
+import {resolveRepositoryPaths} from "./common/repository-paths.ts";
+import type {ProcessRunner} from "./common/runner.ts";
+import type {FileSystem} from "./common/runtime.ts";
 import {normalizeDirectory, serializeFrontmatter} from "./docs-assemble.normalize.ts";
-
-const REPO_ROOT = resolve(import.meta.dirname, "..");
-const DOCS_ROOT = join(REPO_ROOT, "sites", "docs.arolariu.ro");
-const GENERATED_ROOT = join(DOCS_ROOT, "_generated");
-const PROSE_DEST = join(DOCS_ROOT, "docs", "monorepo");
-const PROSE_SRC = join(REPO_ROOT, "docs");
 
 /**
  * .NET target framework shared across every project under
@@ -47,37 +45,16 @@ const DOTNET_TFM = "net10.0";
  * because it holds per-author planning docs that are gitignored and
  * must never reach the published site.
  *
+ * @param files - Injected filesystem capability used for every removal, directory creation, and
+ * copy performed by the sync.
  * @param src  - Source directory (normally the repo's `/docs`).
  * @param dest - Destination directory (normally `docs/monorepo/`).
  */
-export async function syncProse(src: string, dest: string): Promise<void> {
-  rmSync(dest, {recursive: true, force: true});
-  mkdirSync(dest, {recursive: true});
-  cpSync(src, dest, {recursive: true});
-  rmSync(join(dest, "superpowers"), {recursive: true, force: true});
-}
-
-/**
- * Runs one command through the shared {@link CommandRunner} in capture mode, collecting stdout and
- * stderr. Throws with a concise bounded excerpt on spawn failure or nonzero exit so CI logs
- * always surface the real failure without overwhelming the terminal.
- *
- * @param runner - Shared command runner.
- * @param command - Executable and arguments.
- * @param cwd - Working directory for the child process.
- * @returns Combined stdout + stderr captured from the process.
- */
-async function runCapture(runner: CommandRunner, command: Readonly<CommandSpec>, cwd: string): Promise<string> {
-  const result = await runner.run(command, {cwd, output: "capture"});
-  if (result.spawnError !== undefined) {
-    throw new Error(`${formatCommand(command)}: spawn failed — ${result.spawnError}`);
-  }
-  if (result.code !== 0) {
-    const combined = (result.stdout + result.stderr).trimEnd();
-    const excerpt = combined.length > 0 ? combined.slice(-2000) : "(no output)";
-    throw new Error(`${formatCommand(command)}: exited with ${result.code}\n--- last output ---\n${excerpt}`);
-  }
-  return result.stdout + result.stderr;
+export async function syncProse(files: FileSystem, src: string, dest: string): Promise<void> {
+  await files.remove(dest, {recursive: true, force: true});
+  await files.createDirectory(dest, {recursive: true});
+  await files.copy(src, dest, {recursive: true, force: true});
+  await files.remove(join(dest, "superpowers"), {recursive: true, force: true});
 }
 
 /**
@@ -85,21 +62,25 @@ async function runCapture(runner: CommandRunner, command: Readonly<CommandSpec>,
  * but produces no content. Throws if the given directory is missing or
  * contains zero `.md`/`.mdx`/`.json` files.
  *
+ * @param files - Injected filesystem capability used to walk the directory.
  * @param dir   - Absolute path expected to contain extractor output.
  * @param label - Short human-readable name used in the thrown error
  *   message (for example `'typedoc'`, `'pydoc-markdown'`).
  */
-export function assertNonEmpty(dir: string, label: string): void {
-  if (!existsSync(dir)) throw new Error(`${label}: expected directory not found at ${dir}`);
+export async function assertNonEmpty(files: FileSystem, dir: string, label: string): Promise<void> {
+  if (!(await files.exists(dir))) throw new Error(`${label}: expected directory not found at ${dir}`);
   let count = 0;
-  const walk = (d: string): void => {
-    for (const name of readdirSync(d)) {
-      const full = join(d, name);
-      if (statSync(full).isDirectory()) walk(full);
-      else if (isDocumentationOutputFile(name)) count++;
+  const walk = async (d: string): Promise<void> => {
+    for (const entry of await files.readDirectory(d)) {
+      const full = join(d, entry.name);
+      if (entry.kind === "directory") {
+        await walk(full);
+      } else if (isDocumentationOutputFile(entry.name)) {
+        count++;
+      }
     }
   };
-  walk(dir);
+  await walk(dir);
   if (count === 0) throw new Error(`${label}: extracted 0 files into ${dir}`);
 }
 
@@ -107,16 +88,14 @@ export function assertNonEmpty(dir: string, label: string): void {
  * Reset the `_generated/` staging directory. Ensures each run starts
  * from a known-empty state so stale extractor output from a previous
  * build can never survive into the current one.
+ *
+ * @param files - Injected filesystem capability.
+ * @param generatedRoot - Absolute path to the `_generated` staging directory.
  */
-export function cleanGenerated(): void {
-  rmSync(GENERATED_ROOT, {recursive: true, force: true});
-  mkdirSync(GENERATED_ROOT, {recursive: true});
+async function cleanGenerated(files: FileSystem, generatedRoot: string): Promise<void> {
+  await files.remove(generatedRoot, {recursive: true, force: true});
+  await files.createDirectory(generatedRoot, {recursive: true});
 }
-
-const TS_REFERENCE_DIR = join(GENERATED_ROOT, "ts-reference");
-const PYTHON_DIR = join(GENERATED_ROOT, "experimental");
-const DOTNET_INTERNALS_DIR = join(GENERATED_ROOT, "dotnet-internals");
-const API_ROOT = join(REPO_ROOT, "sites", "api.arolariu.ro");
 
 /**
  * Required generated documentation tiers mounted by Docusaurus.
@@ -134,19 +113,32 @@ export const REQUIRED_DOCUMENTATION_TIERS = [
   {relativePath: "dotnet-internals", label: "defaultdocumentation"},
 ] as const;
 
+/**
+ * Platform-stable, POSIX-separated identity of every {@link REQUIRED_DOCUMENTATION_TIERS} entry,
+ * in the same fixed order. {@link DocumentationAssemblyResult.generatedTiers} reports this list
+ * instead of {@link REQUIRED_DOCUMENTATION_TIERS}'s `relativePath` values, which use the host's
+ * path separator.
+ */
+const GENERATED_TIER_IDENTITIES: readonly string[] = [
+  "ts-reference/components",
+  "ts-reference/website",
+  "experimental",
+  "dotnet-internals",
+];
+
 const ROOT_LANDING_FILE_NAMES = new Set(["index.md", "index.mdx", "readme.md", "readme.mdx"]);
 
 function isDocumentationOutputFile(fileName: string): boolean {
   return /\.mdx?$|\.json$/i.test(fileName);
 }
 
-function countExtractorOutputFiles(dir: string, isRoot: boolean = true): number {
+async function countExtractorOutputFiles(files: FileSystem, dir: string, isRoot: boolean = true): Promise<number> {
   let count = 0;
-  for (const name of readdirSync(dir)) {
-    const full = join(dir, name);
-    if (statSync(full).isDirectory()) {
-      count += countExtractorOutputFiles(full, false);
-    } else if (isDocumentationOutputFile(name) && !(isRoot && ROOT_LANDING_FILE_NAMES.has(name.toLowerCase()))) {
+  for (const entry of await files.readDirectory(dir)) {
+    const full = join(dir, entry.name);
+    if (entry.kind === "directory") {
+      count += await countExtractorOutputFiles(files, full, false);
+    } else if (isDocumentationOutputFile(entry.name) && !(isRoot && ROOT_LANDING_FILE_NAMES.has(entry.name.toLowerCase()))) {
       count++;
     }
   }
@@ -156,13 +148,14 @@ function countExtractorOutputFiles(dir: string, isRoot: boolean = true): number 
 /**
  * Verify that every documentation tier mounted by Docusaurus contains extractor output.
  *
+ * @param files - Injected filesystem capability.
  * @param generatedRoot - Root `_generated` directory to validate.
  */
-export function assertExpectedDocumentationTiers(generatedRoot: string = GENERATED_ROOT): void {
+export async function assertExpectedDocumentationTiers(files: FileSystem, generatedRoot: string): Promise<void> {
   for (const tier of REQUIRED_DOCUMENTATION_TIERS) {
     const tierRoot = join(generatedRoot, tier.relativePath);
-    if (!existsSync(tierRoot)) throw new Error(`${tier.label}: expected directory not found at ${tierRoot}`);
-    if (countExtractorOutputFiles(tierRoot) === 0) {
+    if (!(await files.exists(tierRoot))) throw new Error(`${tier.label}: expected directory not found at ${tierRoot}`);
+    if ((await countExtractorOutputFiles(files, tierRoot)) === 0) {
       throw new Error(`${tier.label}: extracted 0 non-landing files into ${tierRoot}`);
     }
   }
@@ -189,8 +182,8 @@ export type DotnetProject = {
 };
 
 /** Extract `<ProjectReference Include="..." />` paths from a csproj. */
-function parseProjectReferences(csprojPath: string): readonly string[] {
-  const content = readFileSync(csprojPath, "utf8");
+async function parseProjectReferences(files: FileSystem, csprojPath: string): Promise<readonly string[]> {
+  const content = await files.readText(csprojPath);
   const refs: string[] = [];
   const regex = /<ProjectReference\s+Include\s*=\s*["']([^"']+)["']/g;
   for (let match: RegExpExecArray | null; (match = regex.exec(content)) !== null;) {
@@ -211,26 +204,34 @@ function parseProjectReferences(csprojPath: string): readonly string[] {
  * sibling are the entry points MSBuild needs; building each one once
  * cascades through the entire graph via `BuildProjectReferences=true`
  * (the default).
+ *
+ * @param files - Injected filesystem capability.
+ * @param apiRoot - Absolute path to `sites/api.arolariu.ro/`.
+ * @param tfm - Target framework moniker used to locate each project's bin output.
  */
-export function discoverDotnetProjects(apiRoot: string = API_ROOT, tfm: string = DOTNET_TFM): readonly DotnetProject[] {
+export async function discoverDotnetProjects(
+  files: FileSystem,
+  apiRoot: string,
+  tfm: string = DOTNET_TFM,
+): Promise<readonly DotnetProject[]> {
   const srcRoot = join(apiRoot, "src");
   const projects: DotnetProject[] = [];
-  for (const dir of readdirSync(srcRoot)) {
-    const dirPath = join(srcRoot, dir);
-    if (!statSync(dirPath).isDirectory()) continue;
-    for (const file of readdirSync(dirPath)) {
-      if (!file.endsWith(".csproj")) continue;
-      const csproj = join(dirPath, file);
+  for (const dirEntry of await files.readDirectory(srcRoot)) {
+    if (dirEntry.kind !== "directory") continue;
+    const dirPath = join(srcRoot, dirEntry.name);
+    for (const fileEntry of await files.readDirectory(dirPath)) {
+      if (fileEntry.kind !== "file" || !fileEntry.name.endsWith(".csproj")) continue;
+      const csproj = join(dirPath, fileEntry.name);
       projects.push({
         csproj,
-        csprojRelative: `src/${dir}/${file}`,
-        assemblyName: file.replace(/\.csproj$/, ""),
-        binRelative: `src/${dir}/bin/Release/${tfm}`,
-        projectReferences: parseProjectReferences(csproj),
+        csprojRelative: `src/${dirEntry.name}/${fileEntry.name}`,
+        assemblyName: fileEntry.name.replace(/\.csproj$/, ""),
+        binRelative: `src/${dirEntry.name}/bin/Release/${tfm}`,
+        projectReferences: await parseProjectReferences(files, csproj),
       });
     }
   }
-  return projects.sort((a, b) => a.csproj.localeCompare(b.csproj));
+  return projects.toSorted((a, b) => a.csproj.localeCompare(b.csproj));
 }
 
 /**
@@ -308,27 +309,38 @@ export function getDefaultDocumentationCommand(dll: string, outDir: string): {re
  * then run `DefaultDocumentation` against each compiled DLL. Output
  * lands under `_generated/dotnet-internals/<assembly>/`.
  *
- * @param runner - Shared command runner used to dispatch build and documentation commands.
+ * @param runner - Shared process runner used to dispatch build and documentation commands.
+ * @param files - Injected filesystem capability.
+ * @param apiRoot - Absolute path to `sites/api.arolariu.ro/`.
+ * @param dotnetInternalsDir - Absolute path to `_generated/dotnet-internals/`.
+ * @param signal - Invocation cancellation signal.
  */
-async function runDotnetInternals(runner: CommandRunner): Promise<string> {
-  let log = "";
-  const projects = discoverDotnetProjects();
+async function runDotnetInternals(
+  runner: ProcessRunner,
+  files: FileSystem,
+  apiRoot: string,
+  dotnetInternalsDir: string,
+  signal: AbortSignal,
+): Promise<void> {
+  const projects = await discoverDotnetProjects(files, apiRoot);
   const roots = findDotnetBuildRoots(projects);
   for (const root of roots) {
-    log += await runCapture(runner, {command: "dotnet", args: ["build", root.csprojRelative, "-c", "Release"]}, API_ROOT);
+    await runner.expectSuccess(
+      {command: "dotnet", args: ["build", root.csprojRelative, "-c", "Release"]},
+      {cwd: apiRoot, output: "capture", signal},
+    );
   }
-  mkdirSync(DOTNET_INTERNALS_DIR, {recursive: true});
+  await files.createDirectory(dotnetInternalsDir, {recursive: true});
   for (const proj of projects) {
-    const outDir = join(DOTNET_INTERNALS_DIR, proj.assemblyName);
-    mkdirSync(outDir, {recursive: true});
-    const dll = join(API_ROOT, proj.binRelative, `${proj.assemblyName}.dll`);
+    const outDir = join(dotnetInternalsDir, proj.assemblyName);
+    await files.createDirectory(outDir, {recursive: true});
+    const dll = join(apiRoot, proj.binRelative, `${proj.assemblyName}.dll`);
     // DefaultDocumentation.Console is declared as a **local** tool in
     // `.config/dotnet-tools.json` and restored with `dotnet tool restore`.
     const {command, args} = getDefaultDocumentationCommand(dll, outDir);
-    log += await runCapture(runner, {command, args}, API_ROOT);
+    await runner.expectSuccess({command, args}, {cwd: apiRoot, output: "capture", signal});
   }
-  assertNonEmpty(DOTNET_INTERNALS_DIR, "defaultdocumentation");
-  return log;
+  await assertNonEmpty(files, dotnetInternalsDir, "defaultdocumentation");
 }
 
 /**
@@ -336,14 +348,28 @@ async function runDotnetInternals(runner: CommandRunner): Promise<string> {
  * selected modules of the `arolariu.ro` website — emitting markdown
  * under `_generated/ts-reference/{components,website}/`.
  *
- * @param runner - Shared command runner used to dispatch TypeDoc.
+ * @param runner - Shared process runner used to dispatch TypeDoc.
+ * @param files - Injected filesystem capability.
+ * @param repoRoot - Absolute repository root, TypeDoc's working directory.
+ * @param tsReferenceDir - Absolute path to `_generated/ts-reference/`.
+ * @param signal - Invocation cancellation signal.
  */
-async function runTypedoc(runner: CommandRunner): Promise<string> {
-  let log = "";
-  log += await runCapture(runner, {command: "npx", args: ["typedoc", "--options", "typedoc.components.json"]}, REPO_ROOT);
-  log += await runCapture(runner, {command: "npx", args: ["typedoc", "--options", "typedoc.website.json"]}, REPO_ROOT);
-  assertNonEmpty(TS_REFERENCE_DIR, "typedoc");
-  return log;
+async function runTypedoc(
+  runner: ProcessRunner,
+  files: FileSystem,
+  repoRoot: string,
+  tsReferenceDir: string,
+  signal: AbortSignal,
+): Promise<void> {
+  await runner.expectSuccess(
+    {command: "npx", args: ["typedoc", "--options", "typedoc.components.json"]},
+    {cwd: repoRoot, output: "capture", signal},
+  );
+  await runner.expectSuccess(
+    {command: "npx", args: ["typedoc", "--options", "typedoc.website.json"]},
+    {cwd: repoRoot, output: "capture", signal},
+  );
+  await assertNonEmpty(files, tsReferenceDir, "typedoc");
 }
 
 /**
@@ -351,14 +377,20 @@ async function runTypedoc(runner: CommandRunner): Promise<string> {
  * `pydoc-markdown` emits CRLF on Windows which confuses the frontmatter
  * parser in {@link normalizeDirectory}; running this pass first keeps
  * the normalizer platform-agnostic.
+ *
+ * @param files - Injected filesystem capability.
+ * @param dir - Absolute path to the root of the walk.
  */
-function normalizeLineEndings(dir: string): void {
-  for (const name of readdirSync(dir)) {
-    const full = join(dir, name);
-    if (statSync(full).isDirectory()) normalizeLineEndings(full);
-    else if (/\.mdx?$|\.json$/i.test(name)) {
-      const content = readFileSync(full, "utf8");
-      if (content.includes("\r\n")) writeFileSync(full, content.replaceAll("\r\n", "\n"));
+async function normalizeLineEndings(files: FileSystem, dir: string): Promise<void> {
+  for (const entry of await files.readDirectory(dir)) {
+    const full = join(dir, entry.name);
+    if (entry.kind === "directory") {
+      await normalizeLineEndings(files, full);
+    } else if (/\.mdx?$|\.json$/i.test(entry.name)) {
+      const content = await files.readText(full);
+      if (content.includes("\r\n")) {
+        await files.writeText(full, content.replaceAll("\r\n", "\n"));
+      }
     }
   }
 }
@@ -369,15 +401,23 @@ function normalizeLineEndings(dir: string): void {
  * Line endings are normalized after extraction so the downstream
  * frontmatter pass sees consistent `\n` separators.
  *
- * @param runner - Shared command runner used to dispatch pydoc-markdown.
+ * @param runner - Shared process runner used to dispatch pydoc-markdown.
+ * @param files - Injected filesystem capability.
+ * @param expRoot - Absolute path to `sites/exp.arolariu.ro/`.
+ * @param pythonDir - Absolute path to `_generated/experimental/`.
+ * @param signal - Invocation cancellation signal.
  */
-async function runPydocMarkdown(runner: CommandRunner): Promise<string> {
-  const expDir = join(REPO_ROOT, "sites", "exp.arolariu.ro");
-  const log = await runCapture(runner, {command: "python", args: ["-m", "pydoc_markdown.main"]}, expDir);
-  assertNonEmpty(PYTHON_DIR, "pydoc-markdown");
+async function runPydocMarkdown(
+  runner: ProcessRunner,
+  files: FileSystem,
+  expRoot: string,
+  pythonDir: string,
+  signal: AbortSignal,
+): Promise<void> {
+  await runner.expectSuccess({command: "python", args: ["-m", "pydoc_markdown.main"]}, {cwd: expRoot, output: "capture", signal});
+  await assertNonEmpty(files, pythonDir, "pydoc-markdown");
   // pydoc-markdown emits CRLF on Windows; normalize so downstream frontmatter parsers match on \n.
-  normalizeLineEndings(PYTHON_DIR);
-  return log;
+  await normalizeLineEndings(files, pythonDir);
 }
 
 /** Inputs for the per-tier landing page writer. */
@@ -401,145 +441,162 @@ type LandingPage = {
  * Frontmatter is rendered via {@link serializeFrontmatter} so a title
  * containing YAML-reserved characters (or a YAML keyword literal)
  * gets quoted the same way the normalizer quotes extractor output.
+ *
+ * @param files - Injected filesystem capability.
+ * @param page - Tier root, title, summary, and route base for the landing page.
  */
-function writeLandingPage({dir, title, summary, routeBase}: LandingPage): void {
-  if (!existsSync(dir)) return;
-  const children = readdirSync(dir)
-    .filter((name) => {
-      const full = join(dir, name);
-      return statSync(full).isDirectory() || /\.mdx?$/i.test(name);
-    })
-    .filter((name) => !/^index\.mdx?$/i.test(name))
-    .sort();
+async function writeLandingPage(files: FileSystem, {dir, title, summary, routeBase}: LandingPage): Promise<void> {
+  if (!(await files.exists(dir))) return;
+  const entries = await files.readDirectory(dir);
+  const children = entries
+    .filter((entry) => entry.kind === "directory" || /\.mdx?$/i.test(entry.name))
+    .filter((entry) => !/^index\.mdx?$/i.test(entry.name))
+    .toSorted((left, right) => left.name.localeCompare(right.name));
   const bullets = children
-    .map((name) => {
-      const label = name.replace(/\.mdx?$/i, "");
-      const href = statSync(join(dir, name)).isDirectory() ? `${routeBase}/${label}/` : `${routeBase}/${label}`;
+    .map((entry) => {
+      const label = entry.name.replace(/\.mdx?$/i, "");
+      const href = entry.kind === "directory" ? `${routeBase}/${label}/` : `${routeBase}/${label}`;
       return `- [${label}](${href})`;
     })
     .join("\n");
   const body = `\n# ${title}\n\n${summary}\n\n${bullets}\n`;
   const full = serializeFrontmatter({title, sidebar_position: 0}, body);
-  writeFileSync(join(dir, "index.md"), full);
+  await files.writeText(join(dir, "index.md"), full);
+}
+
+/** Typed business result produced by one documentation assembly invocation. */
+export interface DocumentationAssemblyResult {
+  /**
+   * The ordered, platform-stable identity of every required documentation tier that was
+   * validated, normalized, and given a landing page. Always
+   * `["ts-reference/components", "ts-reference/website", "experimental", "dotnet-internals"]`.
+   */
+  readonly generatedTiers: readonly string[];
+  /** Number of extractor families run concurrently (TypeDoc, pydoc-markdown, DefaultDocumentation): always `3`. */
+  readonly extractorCount: number;
 }
 
 /**
- * Write a labeled block of buffered extractor output to the active logger.
- *
- * @param label - Extractor label used as the block heading.
- * @param body - Buffered extractor output.
- * @param logger - Logger used to preserve the assembled output bytes.
- */
-export function flushExtractorLog(label: string, body: string, logger: MonorepositoryLogger): void {
-  if (body.length === 0) return;
-  logger.write(`\n=== ${label} ===\n`);
-  logger.write(body.endsWith("\n") ? body : `${body}\n`);
-}
-
-/** Example CLI invocations rendered in `--help` output. */
-const ASSEMBLE_EXAMPLES: readonly string[] = ["npm run docs:assemble", "node --experimental-strip-types scripts/docs-assemble.ts"];
-
-/**
- * Boundary values {@link main} needs to execute the assembly pipeline.
+ * Runs the full documentation assembly pipeline: clean the staging directory, run every
+ * extractor family concurrently, validate required tiers, normalize frontmatter, write landing
+ * pages, and mirror prose.
  *
  * @remarks
- * Exported so tests can inject a deterministic {@link CommandRunner} and
- * {@link MonorepositoryLogger} without touching live tool executables.
- */
-export interface AssembleDependencies {
-  /** Executes extractor commands. Defaults to {@link defaultCommandRunner}. */
-  readonly runner: CommandRunner;
-  /** Receives assembly presentation and semantic output. */
-  readonly logger: MonorepositoryLogger;
-}
-
-/**
- * Docs assembly CLI entrypoint.
+ * The `_generated` staging tree is invocation-transient until the whole pipeline succeeds: a
+ * cleanup callback registered immediately after it is (re)created removes it again on any later
+ * failure or cancellation, and is unregistered only once every remaining step — tier validation,
+ * normalization, landing pages, and prose mirroring — has completed.
  *
- * @remarks
- * Commander owns `--help`/`-h`/`/h` and every option-parse error: help
- * exits zero and runs no extractors; an unknown option or excess positional
- * argument exits one without running any extractor. Assembly errors are
- * caught, logged with a concise bounded excerpt, and returned as exit code 1.
- *
- * @param argv - Arguments following the entrypoint. Defaults to `process.argv.slice(2)`.
- * @param dependencies - Optional boundary replacements, primarily for tests.
- * @returns Process exit code.
+ * @param context - Command context providing filesystem, process runner, task scheduler, and
+ * cleanup capabilities.
+ * @returns The ordered generated tiers and the number of extractor families that ran.
  */
-export async function main(
-  argv: readonly string[] = process.argv.slice(2),
-  dependencies: Readonly<Partial<AssembleDependencies>> = {},
-): Promise<number> {
-  const logger = dependencies.logger ?? new MonorepositoryConsoleLogger("docs::assemble");
+async function executeDocsAssemble(context: Readonly<CommandContext>): Promise<DocumentationAssemblyResult> {
+  const {files, runner, tasks, cleanup, signal} = context.runtime;
+  const paths = await resolveRepositoryPaths(import.meta.url, files);
 
-  const program = createToolProgram({
-    name: "docs-assemble",
-    description:
-      "Runs TypeDoc, pydoc-markdown, and DefaultDocumentation in parallel, normalizes frontmatter, writes landing pages, and mirrors prose into the Docusaurus source tree.",
-    examples: ASSEMBLE_EXAMPLES,
-    logger,
+  const generatedRoot = join(paths.docsRoot, "_generated");
+  const tsReferenceDir = join(generatedRoot, "ts-reference");
+  const pythonDir = join(generatedRoot, "experimental");
+  const dotnetInternalsDir = join(generatedRoot, "dotnet-internals");
+  const proseDest = join(paths.docsRoot, "docs", "monorepo");
+  const proseSrc = join(paths.root, "docs");
+
+  await cleanGenerated(files, generatedRoot);
+  const unregisterGeneratedCleanup = cleanup.register("generated documentation tree", () =>
+    files.remove(generatedRoot, {recursive: true, force: true}),
+  );
+
+  // `allSettled` (not `parallel`) is required here: every extractor family must fully finish —
+  // success or failure — before this command decides whether the invocation succeeded. Bailing
+  // out on the first rejection while sibling extractors are still writing into `_generated` would
+  // let a straggling extractor recreate content after the failure cleanup above already removed
+  // the tree, violating the "no partial `_generated` tree survives a failure" contract.
+  const outcomes = await tasks.allSettled(
+    [
+      () => runTypedoc(runner, files, paths.root, tsReferenceDir, signal),
+      () => runPydocMarkdown(runner, files, paths.expRoot, pythonDir, signal),
+      () => runDotnetInternals(runner, files, paths.apiRoot, dotnetInternalsDir, signal),
+    ],
+    signal,
+  );
+  const failedExtractor = outcomes.find((outcome): outcome is PromiseRejectedResult => outcome.status === "rejected");
+  if (failedExtractor !== undefined) {
+    throw failedExtractor.reason;
+  }
+
+  // Validate extractor output before normalization and synthetic landing pages
+  // can obscure missing-tier failures.
+  await assertExpectedDocumentationTiers(files, generatedRoot);
+  await normalizeDirectory(files, tsReferenceDir);
+  await normalizeDirectory(files, pythonDir);
+  await normalizeDirectory(files, dotnetInternalsDir);
+  // Navbar links target each plugin's routeBasePath (e.g. /internals/dotnet); without
+  // an index.md at the tier root, Docusaurus has no page to serve there. Generate one
+  // after normalization so the landing pages appear in the sidebar at position 0.
+  await writeLandingPage(files, {
+    dir: tsReferenceDir,
+    title: "TypeScript reference",
+    summary: "Generated from TSDoc / JSDoc comments across `@arolariu/components` and the `arolariu.ro` website.",
+    routeBase: "/reference/typescript",
   });
-  program.allowExcessArguments(false);
+  await writeLandingPage(files, {
+    dir: pythonDir,
+    title: "Experimental service (Python)",
+    summary:
+      "Internal documentation for `exp.arolariu.ro`, a FastAPI configuration-proxy service. Extracted from Google-style docstrings via `pydoc-markdown`.",
+    routeBase: "/internals/experimental",
+  });
+  await writeLandingPage(files, {
+    dir: dotnetInternalsDir,
+    title: ".NET internals",
+    summary:
+      "Reference documentation for internal types, services, and brokers of `api.arolariu.ro`. Generated from XML doc comments via `DefaultDocumentation`.",
+    routeBase: "/internals/dotnet",
+  });
+  await syncProse(files, proseSrc, proseDest);
 
-  try {
-    program.parse(argv, {from: "user"});
-  } catch (error: unknown) {
-    return commanderExitCode(error) ?? 1;
-  }
+  unregisterGeneratedCleanup();
 
-  const runner = dependencies.runner ?? defaultCommandRunner;
-
-  try {
-    cleanGenerated();
-    const [tsOut, pyOut, dotnetOut] = await Promise.all([runTypedoc(runner), runPydocMarkdown(runner), runDotnetInternals(runner)]);
-    flushExtractorLog("TypeScript (TypeDoc)", tsOut, logger.child("typedoc"));
-    flushExtractorLog("Python (pydoc-markdown)", pyOut, logger.child("pydoc-markdown"));
-    flushExtractorLog(".NET internals (DefaultDocumentation)", dotnetOut, logger.child("defaultdocumentation"));
-    // Validate extractor output before normalization and synthetic landing pages
-    // can obscure missing-tier failures.
-    assertExpectedDocumentationTiers();
-    await normalizeDirectory(TS_REFERENCE_DIR);
-    await normalizeDirectory(PYTHON_DIR);
-    await normalizeDirectory(DOTNET_INTERNALS_DIR);
-    // Navbar links target each plugin's routeBasePath (e.g. /internals/dotnet); without
-    // an index.md at the tier root, Docusaurus has no page to serve there. Generate one
-    // after normalization so the landing pages appear in the sidebar at position 0.
-    writeLandingPage({
-      dir: TS_REFERENCE_DIR,
-      title: "TypeScript reference",
-      summary: "Generated from TSDoc / JSDoc comments across `@arolariu/components` and the `arolariu.ro` website.",
-      routeBase: "/reference/typescript",
-    });
-    writeLandingPage({
-      dir: PYTHON_DIR,
-      title: "Experimental service (Python)",
-      summary:
-        "Internal documentation for `exp.arolariu.ro`, a FastAPI configuration-proxy service. Extracted from Google-style docstrings via `pydoc-markdown`.",
-      routeBase: "/internals/experimental",
-    });
-    writeLandingPage({
-      dir: DOTNET_INTERNALS_DIR,
-      title: ".NET internals",
-      summary:
-        "Reference documentation for internal types, services, and brokers of `api.arolariu.ro`. Generated from XML doc comments via `DefaultDocumentation`.",
-      routeBase: "/internals/dotnet",
-    });
-    await syncProse(PROSE_SRC, PROSE_DEST);
-    return 0;
-  } catch (error: unknown) {
-    logger.error(error instanceof Error ? (error.stack ?? error.message) : String(error));
-    return 1;
-  }
+  return {generatedTiers: GENERATED_TIER_IDENTITIES, extractorCount: 3};
 }
 
-const entrypointPath = process.argv[1];
-if (entrypointPath !== undefined && fileURLToPath(import.meta.url) === resolve(entrypointPath)) {
-  main()
-    .then((exitCode) => {
-      process.exitCode = exitCode;
-    })
-    .catch((error: unknown) => {
-      new MonorepositoryConsoleLogger("docs::assemble").error(error instanceof Error ? (error.stack ?? error.message) : String(error));
-      process.exitCode = 1;
-    });
+/**
+ * Creates the documentation assembly command.
+ *
+ * @param runtimeFactory - Optional runtime factory; tests inject a fake instead of the Node adapter.
+ * @returns The typed `docs-assemble` command object.
+ */
+export function createDocsAssembleCommand(
+  runtimeFactory?: CommandRuntimeFactory,
+): MonorepoCommand<Record<never, never>, DocumentationAssemblyResult> {
+  return new MonorepoCommand<Record<never, never>, DocumentationAssemblyResult>(
+    {
+      metadata: {
+        name: "docs-assemble",
+        description:
+          "Runs TypeDoc, pydoc-markdown, and DefaultDocumentation in parallel, normalizes frontmatter, writes landing pages, and mirrors prose into the Docusaurus source tree.",
+        examples: ["npm run docs:assemble", "node --experimental-strip-types scripts/docs-assemble.ts"],
+      },
+      configure: (program) => {
+        program.allowExcessArguments(false);
+      },
+      decode: () => ({}),
+      execute: (context) => executeDocsAssemble(context),
+      completion: (result) => ({
+        exitCode: 0,
+        human: (logger) => {
+          logger.success(
+            `Assembled documentation from ${String(result.extractorCount)} extractor(s) across ${String(result.generatedTiers.length)} tier(s).`,
+          );
+        },
+      }),
+    },
+    runtimeFactory,
+  );
 }
+
+/** Production singleton used by `npm run docs:assemble` and this module's direct entrypoint. */
+export const docsAssembleCommand: MonorepoCommand<Record<never, never>, DocumentationAssemblyResult> = createDocsAssembleCommand();
+
+await docsAssembleCommand.runIfMain(import.meta.url);

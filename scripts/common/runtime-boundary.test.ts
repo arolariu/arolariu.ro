@@ -938,56 +938,6 @@ describe("runtime boundary policy", () => {
           "rule": "direct-exit",
         },
         {
-          "file": "scripts/docs-assemble.normalize.ts",
-          "line": 25,
-          "rule": "ambient-filesystem",
-        },
-        {
-          "file": "scripts/docs-assemble.ts",
-          "line": 20,
-          "rule": "ambient-filesystem",
-        },
-        {
-          "file": "scripts/docs-assemble.ts",
-          "line": 23,
-          "rule": "legacy-cli-import",
-        },
-        {
-          "file": "scripts/docs-assemble.ts",
-          "line": 25,
-          "rule": "legacy-process-import",
-        },
-        {
-          "file": "scripts/docs-assemble.ts",
-          "line": 470,
-          "rule": "ambient-os-state",
-        },
-        {
-          "file": "scripts/docs-assemble.ts",
-          "line": 494,
-          "rule": "explicit-concurrency",
-        },
-        {
-          "file": "scripts/docs-assemble.ts",
-          "line": 535,
-          "rule": "ambient-os-state",
-        },
-        {
-          "file": "scripts/docs-assemble.ts",
-          "line": 536,
-          "rule": "manual-entrypoint",
-        },
-        {
-          "file": "scripts/docs-assemble.ts",
-          "line": 539,
-          "rule": "direct-exit",
-        },
-        {
-          "file": "scripts/docs-assemble.ts",
-          "line": 543,
-          "rule": "direct-exit",
-        },
-        {
           "file": "scripts/test-e2e.ts",
           "line": 11,
           "rule": "ambient-filesystem",
