@@ -16,9 +16,9 @@ import {dirname, join} from "node:path";
 import {describe, expect, it} from "vitest";
 
 import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "./common/logger.ts";
-import {AbstractProcessRunner, type ProcessOutcome, type ProcessRequest, type ProcessRunOptions} from "./common/runner.ts";
+import {AbstractProcessRunner, RunnerError, type ProcessOutcome, type ProcessRequest, type ProcessRunOptions} from "./common/runner.ts";
 import {createMemoryFileSystem, createTestRuntimeFactory, repositoryFixtureRoot} from "./common/runtime.testing.ts";
-import type {FileSystem, RuntimeEnvironment} from "./common/runtime.ts";
+import {CommandCancellation, type FileSystem, type RuntimeEnvironment} from "./common/runtime.ts";
 import {
   createE2eCommand,
   redactSensitiveString,
@@ -80,8 +80,8 @@ function timedOut(): ProcessOutcome {
   return {kind: "timed-out", stdout: "", stderr: "", durationMs: 1};
 }
 
-function spawnFailed(message: string): ProcessOutcome {
-  return {kind: "spawn-failed", message, stdout: "", stderr: "", durationMs: 1};
+function spawnFailed(message: string, patch: Readonly<{stdout?: string; stderr?: string}> = {}): ProcessOutcome {
+  return {kind: "spawn-failed", message, stdout: patch.stdout ?? "", stderr: patch.stderr ?? "", durationMs: 1};
 }
 
 function cancelledOutcome(): ProcessOutcome {
@@ -99,18 +99,27 @@ type RecordedCall = Readonly<{request: ProcessRequest; options: ProcessRunOption
  */
 class FakeNewmanRunner extends AbstractProcessRunner {
   readonly #files: FileSystem;
-  readonly #outcomeFor: (request: Readonly<ProcessRequest>) => ProcessOutcome;
+  readonly #outcomeFor: (
+    request: Readonly<ProcessRequest>,
+    options: Readonly<ProcessRunOptions>,
+  ) => ProcessOutcome | Promise<ProcessOutcome>;
   readonly #artifactToken: string | undefined;
+  readonly #artifactOutcomeKinds: readonly ProcessOutcome["kind"][];
   readonly #calls: RecordedCall[] = [];
 
   public constructor(
     files: FileSystem,
-    options: Readonly<{outcomeFor?: (request: Readonly<ProcessRequest>) => ProcessOutcome; artifactToken?: string}> = {},
+    options: Readonly<{
+      outcomeFor?: (request: Readonly<ProcessRequest>, runOptions: Readonly<ProcessRunOptions>) => ProcessOutcome | Promise<ProcessOutcome>;
+      artifactToken?: string;
+      artifactOutcomeKinds?: readonly ProcessOutcome["kind"][];
+    }> = {},
   ) {
     super();
     this.#files = files;
     this.#outcomeFor = options.outcomeFor ?? (() => succeeded());
     this.#artifactToken = options.artifactToken;
+    this.#artifactOutcomeKinds = options.artifactOutcomeKinds ?? ["succeeded", "exited"];
   }
 
   /** Every recorded invocation, in call order. */
@@ -121,8 +130,8 @@ class FakeNewmanRunner extends AbstractProcessRunner {
   /** {@inheritDoc AbstractProcessRunner.execute} */
   protected override async execute(request: Readonly<ProcessRequest>, options: Readonly<ProcessRunOptions>): Promise<ProcessOutcome> {
     this.#calls.push({request, options});
-    const outcome = this.#outcomeFor(request);
-    if (this.#artifactToken !== undefined && (outcome.kind === "succeeded" || outcome.kind === "exited")) {
+    const outcome = await this.#outcomeFor(request, options);
+    if (this.#artifactToken !== undefined && this.#artifactOutcomeKinds.includes(outcome.kind)) {
       await this.writeArtifacts(request, this.#artifactToken);
     }
     return outcome;
@@ -137,7 +146,13 @@ class FakeNewmanRunner extends AbstractProcessRunner {
       await this.#files.createDirectory(dirname(jsonPath), {recursive: true});
       const jsonReport = {
         run: {
-          failures: [],
+          failures: [
+            {
+              assertion: `Token ${token} must be accepted`,
+              error: `Request rejected token ${token}`,
+              source: {name: `Authenticated request ${token}`},
+            },
+          ],
           executions: [
             {
               request: {headers: [{key: "Authorization", value: `Bearer ${token}`}]},
@@ -195,6 +210,22 @@ function createSinkLogger(): {logger: MonorepositoryConsoleLogger; sink: InMemor
   const sink = new InMemoryLoggerSink();
   const logger = new MonorepositoryConsoleLogger("test", {color: false, sink});
   return {logger, sink};
+}
+
+function createCliFixture(variables: Readonly<Record<string, string>> = {}): {
+  command: ReturnType<typeof createE2eCommand>;
+  runner: FakeNewmanRunner;
+  sink: InMemoryLoggerSink;
+} {
+  const files = fixtureFiles();
+  const runner = new FakeNewmanRunner(files);
+  const environment = testEnvironment(variables);
+  const {logger, sink} = createSinkLogger();
+  const runtimeFactory = {
+    ...createTestRuntimeFactory({files, runner, environment, logger}),
+    createParseLogger: () => logger,
+  };
+  return {command: createE2eCommand(runtimeFactory), runner, sink};
 }
 
 // ============================================================================
@@ -310,6 +341,45 @@ describe("createE2eCommand: invalid input", () => {
 });
 
 // ============================================================================
+// createE2eCommand — CLI parsing
+// ============================================================================
+
+describe("createE2eCommand: CLI parsing", () => {
+  it("returns help without invoking Newman", async () => {
+    const {command, runner, sink} = createCliFixture();
+
+    const execution = await command.run(["--help"]);
+
+    expect(execution).toEqual({status: "help", exitCode: 0});
+    expect(sink.records.map((record) => record.text).join("")).toContain("Usage:");
+    expect(runner.calls).toHaveLength(0);
+  });
+
+  it.each([
+    ["an invalid target", ["nope"]],
+    ["a missing required target", []],
+    ["excess arguments", ["frontend", "extra"]],
+  ] as const)("returns a usage failure for %s without invoking Newman", async (_label, argv) => {
+    const {command, runner} = createCliFixture();
+
+    const execution = await command.run(argv);
+
+    expect(execution).toMatchObject({status: "failed", exitCode: 2, failure: {kind: "usage"}});
+    expect(runner.calls).toHaveLength(0);
+  });
+
+  it("decodes a valid target and invokes only that Newman collection", async () => {
+    const {command, runner} = createCliFixture({E2E_TEST_AUTH_TOKEN: FAKE_TOKEN});
+
+    const execution = await command.run(["backend"]);
+
+    expect(execution).toMatchObject({status: "completed", exitCode: 0, value: {targets: ["backend"], completed: ["backend"]}});
+    expect(runner.calls).toHaveLength(1);
+    expect(runner.calls[0]!.request.args).toContain(join(repositoryFixtureRoot, TARGET_DIRS.backend, "postman-collection.json"));
+  });
+});
+
+// ============================================================================
 // createE2eCommand — target expansion and sequential execution
 // ============================================================================
 
@@ -333,6 +403,13 @@ describe("createE2eCommand: target expansion and sequential execution", () => {
         call.request.args.includes(join(repositoryFixtureRoot, TARGET_DIRS.frontend, "postman-collection.json")),
       )[0],
     ).toBe(true);
+
+    const secondExecution = await command.invoke({target: "all"}, {presentation: "silent"});
+    expect(secondExecution.status).toBe("completed");
+    if (execution.status === "completed" && secondExecution.status === "completed") {
+      expect(secondExecution.value.targets).toEqual(execution.value.targets);
+      expect(secondExecution.value.targets).not.toBe(execution.value.targets);
+    }
   });
 
   it("stops at the first failing target and never starts an unreached one", async () => {
@@ -483,6 +560,37 @@ describe("createE2eCommand: token redaction in logs", () => {
     const allText = sink.records.map((record) => record.text).join("\n");
     expect(allText).not.toContain(FAKE_TOKEN);
   });
+
+  it("returns a RunnerError cause with no raw token in retained diagnostics", async () => {
+    const files = fixtureFiles();
+    const runner = new FakeNewmanRunner(files, {
+      outcomeFor: () =>
+        spawnFailed(`spawn failed for ${FAKE_TOKEN}`, {
+          stdout: `stdout ${FAKE_TOKEN}`,
+          stderr: `stderr ${FAKE_TOKEN}`,
+        }),
+    });
+    const environment = testEnvironment({E2E_TEST_AUTH_TOKEN: FAKE_TOKEN});
+    const command = createE2eCommand(createTestRuntimeFactory({files, runner, environment}));
+
+    const execution = await command.invoke({target: "backend"}, {presentation: "silent"});
+
+    expect(execution.status).toBe("failed");
+    if (execution.status !== "failed") return;
+    expect(execution.failure.message).not.toContain(FAKE_TOKEN);
+    expect(execution.failure.evidence.join("\n")).not.toContain(FAKE_TOKEN);
+    expect(execution.failure.cause).toBeInstanceOf(RunnerError);
+    if (!(execution.failure.cause instanceof RunnerError)) return;
+    expect(execution.failure.cause.message).not.toContain(FAKE_TOKEN);
+    expect(execution.failure.cause.request.command).not.toContain(FAKE_TOKEN);
+    expect(execution.failure.cause.request.args.join("\n")).not.toContain(FAKE_TOKEN);
+    expect(execution.failure.cause.outcome.stdout).not.toContain(FAKE_TOKEN);
+    expect(execution.failure.cause.outcome.stderr).not.toContain(FAKE_TOKEN);
+    expect(execution.failure.cause.outcome.kind).toBe("spawn-failed");
+    if (execution.failure.cause.outcome.kind === "spawn-failed") {
+      expect(execution.failure.cause.outcome.message).not.toContain(FAKE_TOKEN);
+    }
+  });
 });
 
 // ============================================================================
@@ -494,7 +602,6 @@ describe("createE2eCommand: typed runner failure outcomes and cleanup", () => {
     ["nonzero exit", () => exited(1)],
     ["timeout", () => timedOut()],
     ["spawn failure", () => spawnFailed("ENOENT")],
-    ["cancellation", () => cancelledOutcome()],
   ] as const)("preserves collection immutability and fails the command on %s", async (_label, outcomeFor) => {
     const files = fixtureFiles();
     const collectionPath = join(repositoryFixtureRoot, TARGET_DIRS.backend, "postman-collection.json");
@@ -508,6 +615,73 @@ describe("createE2eCommand: typed runner failure outcomes and cleanup", () => {
     expect(execution.status).toBe("failed");
     expect(execution.exitCode).not.toBe(0);
     expect(await files.readText(collectionPath)).toBe(originalBytes);
+  });
+
+  it("treats a standalone typed process cancellation without an aborted invocation signal as an operational failure", async () => {
+    const files = fixtureFiles();
+    const runner = new FakeNewmanRunner(files, {outcomeFor: () => cancelledOutcome()});
+    const environment = testEnvironment({E2E_TEST_AUTH_TOKEN: FAKE_TOKEN});
+    const command = createE2eCommand(createTestRuntimeFactory({files, runner, environment}));
+
+    const execution = await command.invoke({target: "backend"}, {presentation: "silent"});
+
+    expect(execution).toMatchObject({status: "failed", exitCode: 1, failure: {kind: "operational"}});
+    if (execution.status === "failed") {
+      expect(execution.failure.cause).toBeInstanceOf(RunnerError);
+      expect(execution.failure.cause).toMatchObject({outcome: {kind: "cancelled"}});
+    }
+  });
+
+  it("preserves invocation cancellation and returns only after token-bearing reports are sanitized", async () => {
+    const files = fixtureFiles();
+    const controller = new AbortController();
+    let markNewmanStarted: (() => void) | undefined;
+    const newmanStarted = new Promise<void>((resolveStarted) => {
+      markNewmanStarted = resolveStarted;
+    });
+    const runner = new FakeNewmanRunner(files, {
+      artifactToken: FAKE_TOKEN,
+      artifactOutcomeKinds: ["cancelled"],
+      outcomeFor: async (_request, options) => {
+        markNewmanStarted?.();
+        await new Promise<void>((resolveCancelled) => {
+          if (options.signal?.aborted === true) {
+            resolveCancelled();
+            return;
+          }
+          options.signal?.addEventListener("abort", () => resolveCancelled(), {once: true});
+        });
+        return {
+          kind: "cancelled",
+          stdout: `cancelled stdout ${FAKE_TOKEN}`,
+          stderr: `cancelled stderr ${FAKE_TOKEN}`,
+          durationMs: 1,
+        };
+      },
+    });
+    const environment = testEnvironment({E2E_TEST_AUTH_TOKEN: FAKE_TOKEN});
+    const command = createE2eCommand(createTestRuntimeFactory({files, runner, environment}));
+
+    const executionPromise = command.invoke({target: "backend"}, {presentation: "silent", signal: controller.signal});
+    await newmanStarted;
+    controller.abort(new CommandCancellation("Terminated by test signal.", 143));
+    const execution = await executionPromise;
+
+    expect(execution).toMatchObject({
+      status: "cancelled",
+      exitCode: 143,
+      failure: {kind: "cancelled", message: "Terminated by test signal."},
+    });
+    const reportDir = join(repositoryFixtureRoot, "e2e-logs");
+    const artifactContents = await Promise.all([
+      files.readText(join(reportDir, "newman-backend.json")),
+      files.readText(join(reportDir, "newman-backend.xml")),
+      files.readText(join(reportDir, "newman-backend-summary.md")),
+    ]);
+    for (const content of artifactContents) {
+      expect(content).not.toContain(FAKE_TOKEN);
+      expect(content).toContain("[REDACTED]");
+    }
   });
 });
 
@@ -555,6 +729,27 @@ describe("createE2eCommand: report artifact JWT sanitization", () => {
 
     expect(jsonContent).not.toContain(syntheticJwt);
     expect(junitContent).not.toContain(syntheticJwt);
+  });
+
+  it("sanitizes a plain runtime token from every retained report artifact", async () => {
+    const files = fixtureFiles();
+    const runner = new FakeNewmanRunner(files, {artifactToken: FAKE_TOKEN});
+    const environment = testEnvironment({E2E_TEST_AUTH_TOKEN: FAKE_TOKEN});
+    const command = createE2eCommand(createTestRuntimeFactory({files, runner, environment}));
+
+    const execution = await command.invoke({target: "backend"}, {presentation: "silent"});
+    expect(execution.status).toBe("completed");
+
+    const reportDir = join(repositoryFixtureRoot, "e2e-logs");
+    const artifactContents = await Promise.all([
+      files.readText(join(reportDir, "newman-backend.json")),
+      files.readText(join(reportDir, "newman-backend.xml")),
+      files.readText(join(reportDir, "newman-backend-summary.md")),
+    ]);
+    for (const content of artifactContents) {
+      expect(content).not.toContain(FAKE_TOKEN);
+      expect(content).toContain("[REDACTED]");
+    }
   });
 });
 
@@ -629,7 +824,7 @@ describe("createE2eCommand: cleanup ordering and failure precedence", () => {
   it("attempts every report-cleanup step even when an earlier step fails", async () => {
     const rawFiles = fixtureFiles();
     let junitWriteAttempted = false;
-    let summaryWriteAttempted = false;
+    const summaryWrites: string[] = [];
     const failingFiles: FileSystem = {
       ...rawFiles,
       writeText: async (path, contents, options) => {
@@ -640,7 +835,7 @@ describe("createE2eCommand: cleanup ordering and failure precedence", () => {
           junitWriteAttempted = true;
         }
         if (path.endsWith("newman-backend-summary.md")) {
-          summaryWriteAttempted = true;
+          summaryWrites.push(contents);
         }
         return rawFiles.writeText(path, contents, options);
       },
@@ -652,7 +847,10 @@ describe("createE2eCommand: cleanup ordering and failure precedence", () => {
     await command.invoke({target: "backend"}, {presentation: "silent"});
 
     expect(junitWriteAttempted).toBe(true);
-    expect(summaryWriteAttempted).toBe(true);
+    expect(summaryWrites).toHaveLength(2);
+    expect(summaryWrites[0]).toContain(FAKE_TOKEN);
+    expect(summaryWrites[1]).not.toContain(FAKE_TOKEN);
+    expect(summaryWrites[1]).toContain("[REDACTED]");
   });
 });
 
@@ -715,6 +913,22 @@ describe("sanitizeNewmanJsonReport", () => {
     const content = await files.readText("/reports/newman-backend.json");
     expect(content).not.toContain(jwt);
     expect(content).toContain("value");
+  });
+
+  it("redacts a plain runtime token from environment values and opaque response bodies", async () => {
+    const files = createMemoryFileSystem({
+      "/reports/newman-backend.json": JSON.stringify({
+        environment: {values: [{key: "authToken", value: FAKE_TOKEN}]},
+        response: {body: `opaque-prefix:${FAKE_TOKEN}:opaque-suffix`},
+      }),
+    });
+    const {logger} = createSinkLogger();
+
+    await sanitizeNewmanJsonReport(files, "/reports/newman-backend.json", logger, FAKE_TOKEN);
+
+    const content = await files.readText("/reports/newman-backend.json");
+    expect(content).not.toContain(FAKE_TOKEN);
+    expect(content.match(/\[REDACTED\]/g)).toHaveLength(2);
   });
 
   it("throws and removes the artifact when the JSON report cannot be parsed", async () => {

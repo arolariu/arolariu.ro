@@ -70,10 +70,7 @@ export type SucceededProcessOutcome = Extract<ProcessOutcome, {readonly kind: "s
 /** Engine-neutral process runner contract. */
 export interface ProcessRunner extends Runner<ProcessRequest, ProcessRunOptions, ProcessOutcome> {
   /** Executes one process and throws when it does not succeed. */
-  expectSuccess(
-    request: Readonly<ProcessRequest>,
-    options?: Readonly<ProcessRunOptions>,
-  ): Promise<SucceededProcessOutcome>;
+  expectSuccess(request: Readonly<ProcessRequest>, options?: Readonly<ProcessRunOptions>): Promise<SucceededProcessOutcome>;
 
   /** Applies reusable default options without mutating the parent runner. */
   scope(defaults: Readonly<ProcessRunOptions>): ProcessRunner;
@@ -111,10 +108,10 @@ export function processFailureEvidence(
  * Typed process-runner failure thrown by `expectSuccess`.
  */
 export class RunnerError extends Error {
-  /** Original request whose failure is being reported. */
+  /** Retained request, redacted when the caller supplied a logger. */
   public readonly request: Readonly<ProcessRequest>;
 
-  /** Typed failed outcome for programmatic classification. */
+  /** Retained failed outcome, redacted when the caller supplied a logger. */
   public readonly outcome: Readonly<Exclude<ProcessOutcome, SucceededProcessOutcome>>;
 
   /**
@@ -129,15 +126,17 @@ export class RunnerError extends Error {
     outcome: Readonly<Exclude<ProcessOutcome, SucceededProcessOutcome>>,
     logger?: MonorepositoryLogger,
   ) {
-    const failureSummary = describeFailure(outcome);
-    const command = sanitizeDiagnosticText(formatProcessRequest(request), logger);
-    const evidence = processFailureEvidence(outcome, logger);
+    const retainedRequest = logger === undefined ? request : sanitizeProcessRequest(request, logger);
+    const retainedOutcome = logger === undefined ? outcome : sanitizeFailedProcessOutcome(outcome, logger);
+    const failureSummary = describeFailure(retainedOutcome);
+    const command = sanitizeDiagnosticText(formatProcessRequest(retainedRequest), logger);
+    const evidence = processFailureEvidence(retainedOutcome, logger);
 
     super(evidence === "" ? `${failureSummary}: ${command}` : `${failureSummary}: ${command}\n${evidence}`);
 
     this.name = "RunnerError";
-    this.request = request;
-    this.outcome = outcome;
+    this.request = retainedRequest;
+    this.outcome = retainedOutcome;
   }
 }
 
@@ -146,10 +145,7 @@ export class RunnerError extends Error {
  */
 export abstract class AbstractProcessRunner implements ProcessRunner {
   /** {@inheritDoc ProcessRunner.run} */
-  public run(
-    request: Readonly<ProcessRequest>,
-    options: Readonly<ProcessRunOptions> = EMPTY_PROCESS_RUN_OPTIONS,
-  ): Promise<ProcessOutcome> {
+  public run(request: Readonly<ProcessRequest>, options: Readonly<ProcessRunOptions> = EMPTY_PROCESS_RUN_OPTIONS): Promise<ProcessOutcome> {
     const normalizedOptions = cloneProcessRunOptions(options);
     validateProcessRequest(request, normalizedOptions);
 
@@ -185,10 +181,7 @@ export abstract class AbstractProcessRunner implements ProcessRunner {
    * @param options - Validated execution options.
    * @returns Typed process outcome.
    */
-  protected abstract execute(
-    request: Readonly<ProcessRequest>,
-    options: Readonly<ProcessRunOptions>,
-  ): Promise<ProcessOutcome>;
+  protected abstract execute(request: Readonly<ProcessRequest>, options: Readonly<ProcessRunOptions>): Promise<ProcessOutcome>;
 }
 
 class ScopedProcessRunner implements ProcessRunner {
@@ -200,10 +193,7 @@ class ScopedProcessRunner implements ProcessRunner {
     this.#defaults = cloneProcessRunOptions(defaults);
   }
 
-  public run(
-    request: Readonly<ProcessRequest>,
-    options: Readonly<ProcessRunOptions> = EMPTY_PROCESS_RUN_OPTIONS,
-  ): Promise<ProcessOutcome> {
+  public run(request: Readonly<ProcessRequest>, options: Readonly<ProcessRunOptions> = EMPTY_PROCESS_RUN_OPTIONS): Promise<ProcessOutcome> {
     return this.#runner.run(request, mergeProcessRunOptions(this.#defaults, options));
   }
 
@@ -262,6 +252,31 @@ function sanitizeDiagnosticText(text: string, logger?: MonorepositoryLogger): st
   return sanitized.slice(0, MAX_PROCESS_DIAGNOSTIC_TEXT_LENGTH);
 }
 
+function sanitizeProcessRequest(request: Readonly<ProcessRequest>, logger: MonorepositoryLogger): ProcessRequest {
+  return {
+    command: logger.sanitize(request.command),
+    args: request.args.map((argument) => logger.sanitize(argument)),
+  };
+}
+
+function sanitizeFailedProcessOutcome(
+  outcome: Readonly<Exclude<ProcessOutcome, SucceededProcessOutcome>>,
+  logger: MonorepositoryLogger,
+): Exclude<ProcessOutcome, SucceededProcessOutcome> {
+  const stdout = logger.sanitize(outcome.stdout);
+  const stderr = logger.sanitize(outcome.stderr);
+
+  switch (outcome.kind) {
+    case "cancelled":
+    case "exited":
+    case "signalled":
+    case "timed-out":
+      return {...outcome, stdout, stderr};
+    case "spawn-failed":
+      return {...outcome, message: logger.sanitize(outcome.message), stdout, stderr};
+  }
+}
+
 function describeFailure(outcome: Readonly<Exclude<ProcessOutcome, SucceededProcessOutcome>>): string {
   switch (outcome.kind) {
     case "cancelled":
@@ -281,10 +296,7 @@ function cloneProcessRunOptions(options: Readonly<ProcessRunOptions>): ProcessRu
   return mergeProcessRunOptions(EMPTY_PROCESS_RUN_OPTIONS, options);
 }
 
-function mergeProcessRunOptions(
-  defaults: Readonly<ProcessRunOptions>,
-  overrides: Readonly<ProcessRunOptions>,
-): ProcessRunOptions {
+function mergeProcessRunOptions(defaults: Readonly<ProcessRunOptions>, overrides: Readonly<ProcessRunOptions>): ProcessRunOptions {
   const {env: _defaultEnvironment, ...defaultRest} = defaults;
   const {env: _overrideEnvironment, ...overrideRest} = overrides;
   const mergedEnvironment = mergeProcessEnvironment(defaults.env, overrides.env);
@@ -296,10 +308,7 @@ function mergeProcessRunOptions(
   } satisfies ProcessRunOptions;
 }
 
-function mergeProcessEnvironment(
-  defaults?: ProcessEnvironment,
-  overrides?: ProcessEnvironment,
-): ProcessEnvironment | undefined {
+function mergeProcessEnvironment(defaults?: ProcessEnvironment, overrides?: ProcessEnvironment): ProcessEnvironment | undefined {
   if (defaults === undefined && overrides === undefined) {
     return undefined;
   }

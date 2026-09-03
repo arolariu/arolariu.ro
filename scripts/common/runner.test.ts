@@ -26,10 +26,7 @@ class FakeProcessRunner extends AbstractProcessRunner {
     this.#outcome = outcome;
   }
 
-  protected override execute(
-    request: Readonly<ProcessRequest>,
-    options: Readonly<ProcessRunOptions>,
-  ): Promise<ProcessOutcome> {
+  protected override execute(request: Readonly<ProcessRequest>, options: Readonly<ProcessRunOptions>): Promise<ProcessOutcome> {
     this.calls.push({request, options});
     return Promise.resolve(this.#outcome);
   }
@@ -117,10 +114,7 @@ describe("AbstractProcessRunner", () => {
 
     await runner
       .scope({cwd: "C:\\repo", env: {KEEP: "parent", REMOVE: "value"}, timeoutMs: 10})
-      .run(
-        {command: "tool", args: ["check"]},
-        {env: {REMOVE: undefined}, timeoutMs: 20},
-      );
+      .run({command: "tool", args: ["check"]}, {env: {REMOVE: undefined}, timeoutMs: 20});
 
     expect(runner.calls[0]?.options).toMatchObject({
       cwd: "C:\\repo",
@@ -213,8 +207,7 @@ describe("AbstractProcessRunner", () => {
   ] as const)("throws RunnerError for %s outcomes", async (_kind, outcome) => {
     const runner = new FakeProcessRunner(outcome);
 
-    await expect(runner.expectSuccess({command: "tool", args: ["check"]}))
-      .rejects.toMatchObject({name: "RunnerError", outcome});
+    await expect(runner.expectSuccess({command: "tool", args: ["check"]})).rejects.toMatchObject({name: "RunnerError", outcome});
   });
 
   it("throws RunnerError with sanitized bounded evidence", async () => {
@@ -227,8 +220,10 @@ describe("AbstractProcessRunner", () => {
     });
     const logger = createLogger(["secret"]);
 
-    await expect(runner.expectSuccess({command: "secret command", args: ["check"]}, {logger}))
-      .rejects.toMatchObject({name: "RunnerError", outcome: {kind: "exited", exitCode: 7}});
+    await expect(runner.expectSuccess({command: "secret command", args: ["check"]}, {logger})).rejects.toMatchObject({
+      name: "RunnerError",
+      outcome: {kind: "exited", exitCode: 7},
+    });
 
     await runner.expectSuccess({command: "secret command", args: ["check"]}, {logger}).catch((error: unknown) => {
       expect(error).toBeInstanceOf(RunnerError);
@@ -239,6 +234,59 @@ describe("AbstractProcessRunner", () => {
       expect(error.message).toContain("[REDACTED]");
       expect(error.message).not.toContain("secret");
       expect(error.message.length).toBeLessThanOrEqual(4_200);
+    });
+  });
+
+  it("redacts every retained request and outcome string when a logger is supplied", async () => {
+    const token = "runner-retained-secret";
+    const request = {command: `tool-${token}`, args: ["check", `authToken=${token}`]} satisfies ProcessRequest;
+    const outcome = {
+      kind: "spawn-failed",
+      message: `spawn failed for ${token}`,
+      stdout: `stdout ${token}`,
+      stderr: `stderr ${token}`,
+      durationMs: 23,
+    } as const satisfies ProcessOutcome;
+    const runner = new FakeProcessRunner(outcome);
+    const logger = createLogger([token]);
+
+    await runner.expectSuccess(request, {logger}).catch((error: unknown) => {
+      expect(error).toBeInstanceOf(RunnerError);
+      if (!(error instanceof RunnerError)) {
+        return;
+      }
+
+      expect(error.message).not.toContain(token);
+      expect(error.request).toEqual({command: "tool-[REDACTED]", args: ["check", "authToken=[REDACTED]"]});
+      expect(error.outcome).toEqual({
+        kind: "spawn-failed",
+        message: "spawn failed for [REDACTED]",
+        stdout: "stdout [REDACTED]",
+        stderr: "stderr [REDACTED]",
+        durationMs: 23,
+      });
+    });
+  });
+
+  it("retains the original request and outcome when no logger is supplied", async () => {
+    const request = {command: "tool", args: ["check"]} satisfies ProcessRequest;
+    const outcome = {
+      kind: "exited",
+      exitCode: 7,
+      stdout: "raw stdout",
+      stderr: "raw stderr",
+      durationMs: 2,
+    } as const satisfies ProcessOutcome;
+    const runner = new FakeProcessRunner(outcome);
+
+    await runner.expectSuccess(request).catch((error: unknown) => {
+      expect(error).toBeInstanceOf(RunnerError);
+      if (!(error instanceof RunnerError)) {
+        return;
+      }
+
+      expect(error.request).toBe(request);
+      expect(error.outcome).toBe(outcome);
     });
   });
 
@@ -263,8 +311,8 @@ describe("AbstractProcessRunner", () => {
       durationMs: 1,
     });
 
-    expect(() =>
-      runner.run({command: "tool", args: []}, {input: "payload", output: "inherit"}),
-    ).toThrow("Cannot supply input when output is inherited");
+    expect(() => runner.run({command: "tool", args: []}, {input: "payload", output: "inherit"})).toThrow(
+      "Cannot supply input when output is inherited",
+    );
   });
 });

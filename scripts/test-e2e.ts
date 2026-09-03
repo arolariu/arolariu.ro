@@ -21,7 +21,8 @@
 import {join, resolve} from "node:path";
 import {CommandInputError, MonorepoCommand, type CommandContext, type CommandRuntimeFactory} from "./common/commander.ts";
 import type {MonorepositoryLogger} from "./common/logger.ts";
-import type {FileSystem} from "./common/runtime.ts";
+import {RunnerError} from "./common/runner.ts";
+import {commandCancellationFromSignal, type FileSystem} from "./common/runtime.ts";
 
 /** Every target the `test:e2e` command accepts, including the `all` alias. */
 export type E2ETarget = "all" | "backend" | "frontend" | "cv";
@@ -72,7 +73,7 @@ export interface E2EInput {
 export interface E2EResult {
   /** Every target this invocation ran, in the exact order they were attempted. */
   readonly targets: readonly RunnableE2ETarget[];
-  /** Targets whose Newman run and report cleanup both completed, in completion order. */
+  /** Targets whose Newman run completed before invocation cleanup, in completion order. */
   readonly completed: readonly RunnableE2ETarget[];
 }
 
@@ -206,15 +207,29 @@ function readBooleanEnv(
  * @param value - The raw value to sanitize.
  * @param key - The owning object key, when available.
  * @param accumulator - Mutable counter of performed redactions.
+ * @param runtimeAuthToken - Optional runtime auth token to redact by exact match.
  * @returns The sanitized string value.
  */
-export function redactSensitiveString(value: string, key: string | null, accumulator: SanitizeAccumulator): string {
+export function redactSensitiveString(
+  value: string,
+  key: string | null,
+  accumulator: SanitizeAccumulator,
+  runtimeAuthToken?: string,
+): string {
   if (key !== null && SENSITIVE_KEY_PATTERN.test(key) && value.trim().length > 0) {
     accumulator.redactionCount++;
     return "[REDACTED]";
   }
 
   let sanitizedValue = value;
+
+  if (runtimeAuthToken !== undefined && runtimeAuthToken.length > 0) {
+    const redactedRuntimeToken = sanitizedValue.replaceAll(runtimeAuthToken, "[REDACTED]");
+    if (redactedRuntimeToken !== sanitizedValue) {
+      accumulator.redactionCount++;
+      sanitizedValue = redactedRuntimeToken;
+    }
+  }
 
   const redactedBearerValue = sanitizedValue.replace(BEARER_JWT_REPLACEMENT_PATTERN, "******");
   if (redactedBearerValue !== sanitizedValue) {
@@ -237,15 +252,21 @@ export function redactSensitiveString(value: string, key: string | null, accumul
  * @param value - The value to sanitize.
  * @param accumulator - Mutable counter of performed redactions.
  * @param key - The owning object key, when available.
+ * @param runtimeAuthToken - Optional runtime auth token to redact from every string leaf.
  * @returns The sanitized value.
  */
-export function sanitizeJsonValue(value: unknown, accumulator: SanitizeAccumulator, key: string | null = null): unknown {
+export function sanitizeJsonValue(
+  value: unknown,
+  accumulator: SanitizeAccumulator,
+  key: string | null = null,
+  runtimeAuthToken?: string,
+): unknown {
   if (typeof value === "string") {
-    return redactSensitiveString(value, key, accumulator);
+    return redactSensitiveString(value, key, accumulator, runtimeAuthToken);
   }
 
   if (Array.isArray(value)) {
-    return value.map((item) => sanitizeJsonValue(item, accumulator));
+    return value.map((item) => sanitizeJsonValue(item, accumulator, null, runtimeAuthToken));
   }
 
   if (typeof value === "object" && value !== null) {
@@ -253,7 +274,7 @@ export function sanitizeJsonValue(value: unknown, accumulator: SanitizeAccumulat
     const sanitizedRecord: Record<string, unknown> = {};
 
     for (const [entryKey, entryValue] of Object.entries(recordValue)) {
-      sanitizedRecord[entryKey] = sanitizeJsonValue(entryValue, accumulator, entryKey);
+      sanitizedRecord[entryKey] = sanitizeJsonValue(entryValue, accumulator, entryKey, runtimeAuthToken);
     }
 
     return sanitizedRecord;
@@ -343,9 +364,15 @@ export async function writeAssertionSummary(
  * @param files - Injected filesystem capability.
  * @param jsonPath - Path to the Newman JSON report.
  * @param logger - Logger used for diagnostic output.
+ * @param runtimeAuthToken - Optional runtime auth token to redact from every string leaf.
  * @throws When the existing report cannot be parsed or the sanitized document cannot be written.
  */
-export async function sanitizeNewmanJsonReport(files: FileSystem, jsonPath: string, logger: MonorepositoryLogger): Promise<void> {
+export async function sanitizeNewmanJsonReport(
+  files: FileSystem,
+  jsonPath: string,
+  logger: MonorepositoryLogger,
+  runtimeAuthToken?: string,
+): Promise<void> {
   if (!(await files.exists(jsonPath))) {
     return;
   }
@@ -359,7 +386,7 @@ export async function sanitizeNewmanJsonReport(files: FileSystem, jsonPath: stri
   }
 
   const accumulator: SanitizeAccumulator = {redactionCount: 0};
-  const sanitizedReport = sanitizeJsonValue(parsedReport, accumulator);
+  const sanitizedReport = sanitizeJsonValue(parsedReport, accumulator, null, runtimeAuthToken);
   const serializedReport = JSON.stringify(sanitizedReport, null, 2);
 
   if (BEARER_JWT_DETECTION_PATTERN.test(serializedReport) || JWT_DETECTION_PATTERN.test(serializedReport)) {
@@ -483,7 +510,7 @@ async function performReportCleanup(
   }
 
   try {
-    await sanitizeNewmanJsonReport(files, jsonPath, logger);
+    await sanitizeNewmanJsonReport(files, jsonPath, logger, runtimeAuthToken);
   } catch (error: unknown) {
     failures.push(`JSON report sanitization: ${describeError(error)}`);
   }
@@ -610,7 +637,15 @@ async function runNewmanForTarget(context: Readonly<CommandContext>, target: Run
     ...(strictMode ? ["--bail"] : []),
   ];
 
-  await runner.expectSuccess({command: "npx", args}, {cwd, output: "inherit", signal, logger});
+  try {
+    await runner.expectSuccess({command: "npx", args}, {cwd, output: "inherit", signal, logger});
+  } catch (error: unknown) {
+    if (error instanceof RunnerError && error.outcome.kind === "cancelled" && signal.aborted) {
+      throw commandCancellationFromSignal(signal);
+    }
+
+    throw error;
+  }
 
   logger.success(`Completed Newman tests for: ${target}`);
 }
@@ -630,7 +665,7 @@ async function runNewmanForTarget(context: Readonly<CommandContext>, target: Run
 async function executeE2e(context: Readonly<CommandContext>, input: Readonly<E2EInput>): Promise<E2EResult> {
   const {tasks, signal, environment, logger} = context.runtime;
   const validatedTarget = requireValidTarget(input.target);
-  const targets: readonly RunnableE2ETarget[] = validatedTarget === "all" ? EXECUTION_ORDER : [validatedTarget];
+  const targets: readonly RunnableE2ETarget[] = validatedTarget === "all" ? [...EXECUTION_ORDER] : [validatedTarget];
   const completed: RunnableE2ETarget[] = [];
 
   logger.section("arolariu.ro E2E Test Runner", "🎯");
