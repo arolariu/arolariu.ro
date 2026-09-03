@@ -1,19 +1,34 @@
 /**
- * @fileoverview Engine-aware local image build/run helper.
+ * @fileoverview Engine-aware local image build/run command.
  * @module scripts/container-runtime/image
+ *
+ * @remarks
+ * Every ambient effect this command used to reach for directly (the child process, the
+ * repository filesystem, and the process environment) now arrives through the injected
+ * {@link CommandContext.runtime} instead of Node globals, so the command is fully exercised by
+ * the declarative command runtime's test fakes and never spawns Docker or Podman in a test. The
+ * frontend/backend taxonomy artifact prerequisite runs as a nested, in-process invocation of
+ * `generateArtifactsCommand` (through `{parent: context, presentation: "silent"}`) instead of a
+ * spawned Node subprocess, so it inherits this invocation's cancellation, redactions, and
+ * cleanup ownership.
  */
 
-import {resolve} from "node:path";
-import {fileURLToPath} from "node:url";
-import {MonorepositoryConsoleLogger, type MonorepositoryLogger} from "../common/logger.ts";
+import {
+  CommandInputError,
+  MonorepoCommand,
+  type CommandContext,
+  type CommandInvoker,
+  type CommandRuntimeFactory,
+} from "../common/commander.ts";
+import type {MonorepositoryLogger} from "../common/logger.ts";
 import {resolveRepositoryPaths} from "../common/repository-paths.ts";
+import {RunnerError, type ProcessRunner} from "../common/runner.ts";
+import {CommandCancellation, commandCancellationFromSignal} from "../common/runtime.ts";
+import {generateArtifactsCommand, type ArtifactGenerationResult, type GenerateArtifactsInput} from "../generate.artifacts.ts";
 import {getContainerAdapter, type ContainerRuntimeAdapter, type RuntimeCommand} from "./adapters.ts";
-import {runArtifactGeneration, runSharedPreflight} from "./preflight.ts";
-import {defaultRunner, formatCommand, type CommandRunner} from "./process.ts";
+import {runContainerPreflight} from "./preflight.ts";
 import {resolveRuntimeContainerEngine} from "./selection.ts";
-import {exitWithError} from "./types.ts";
-
-type ImageTarget = "frontend" | "backend" | "cv" | "exp";
+import type {ContainerEngine, ImageInput, ImageResult, ImageTarget} from "./types.ts";
 
 /** Options for building a local image with the selected engine. */
 export interface ImageBuildOptions {
@@ -30,6 +45,14 @@ export interface ImageRunOptions {
   readonly environment: Readonly<Record<string, string>>;
 }
 
+/** Optional collaborators {@link createImageCommand} composes. */
+export interface ImageCommandDependencies {
+  /** Optional runtime factory; tests inject a fake instead of the Node adapter. */
+  readonly runtimeFactory?: CommandRuntimeFactory;
+  /** Taxonomy and license artifact generator invoked as the frontend/backend build prerequisite. */
+  readonly artifacts?: CommandInvoker<GenerateArtifactsInput, ArtifactGenerationResult>;
+}
+
 const dockerfilesByTarget: Readonly<Record<ImageTarget, string>> = {
   frontend: "infra/containers/Dockerfile.frontend",
   backend: "infra/containers/Dockerfile.backend",
@@ -43,16 +66,6 @@ const portsByTarget: Readonly<Record<ImageTarget, readonly string[]>> = {
   cv: ["4173:3000"],
   exp: ["5002:80"],
 };
-
-function parseTarget(argv: readonly string[]): ImageTarget {
-  const targetIndex = argv.indexOf("--target");
-  const target = targetIndex === -1 ? undefined : argv[targetIndex + 1];
-  if (target === "frontend" || target === "backend" || target === "cv" || target === "exp") {
-    return target;
-  }
-
-  throw new Error("Use --target frontend|backend|cv|exp");
-}
 
 /**
  * Determines whether an image consumes generated taxonomy artifacts.
@@ -89,67 +102,181 @@ export function buildImageRunCommand(adapter: ContainerRuntimeAdapter, options: 
   return adapter.run(["--rm", ...ports, ...environment, options.tag]);
 }
 
-async function runImageCommand(runner: CommandRunner, command: RuntimeCommand, logger: MonorepositoryLogger): Promise<void> {
-  logger.command(formatCommand(command));
-  const result = await runner.run(command, {stdio: "tee", logger});
-  if (result.code !== 0) throw new Error(result.output);
+/**
+ * Runs the taxonomy and license artifact generator as a nested, silent invocation.
+ *
+ * @param artifacts - Taxonomy and license artifact generator command.
+ * @param context - Command context whose runtime scope owns the nested invocation.
+ * @throws {CommandCancellation} When the nested invocation was cancelled.
+ * @throws When the nested invocation failed or unexpectedly returned help.
+ */
+async function runArtifactPrerequisite(
+  artifacts: CommandInvoker<GenerateArtifactsInput, ArtifactGenerationResult>,
+  context: Readonly<CommandContext>,
+): Promise<void> {
+  const execution = await artifacts.invoke({verbose: false}, {parent: context, presentation: "silent"});
+
+  switch (execution.status) {
+    case "completed":
+      return;
+    case "cancelled":
+      throw new CommandCancellation(execution.failure.message, execution.exitCode);
+    case "failed":
+      throw new Error(execution.failure.message, {cause: execution.failure.cause});
+    case "help":
+      throw new Error("Artifact generation returned help during a nested invocation.");
+  }
 }
 
 /**
- * Runs the local image build/run CLI wrapper.
+ * Runs the resolved engine-owned image build/run command, translating a cancelled runner outcome
+ * on the invocation's own aborted signal into the invocation's typed cancellation reason instead
+ * of an operational failure.
  *
- * @param runner - Command runner used to execute runtime commands.
- * @param logger - Logger used for orchestration output.
+ * @remarks
+ * A cancelled invocation's exact SIGINT/SIGTERM exit code (`130`/`143`) is owned by its own
+ * {@link CommandCancellation} reason; letting `expectSuccess`'s `RunnerError` for a cancelled
+ * outcome escape unclassified would misreport an interrupted invocation as an operational failure
+ * and the shared Commander lifecycle would classify it as exit code `1`. A `{kind:"cancelled"}`
+ * outcome observed while `signal` is not the invocation's own aborted signal is not this
+ * invocation's cancellation and stays an operational failure.
+ *
+ * @param runner - Process runner used to run `command`.
+ * @param command - Engine-owned build or run command to execute.
+ * @param logger - Logger used for tee output and command echo.
+ * @param signal - The owning invocation's cancellation signal.
+ * @throws {CommandCancellation} When `command` is cancelled on `signal`.
+ * @throws {RunnerError} When `command` fails for any other reason.
  */
-export async function runImageCli(
-  runner: CommandRunner = defaultRunner,
-  logger: MonorepositoryLogger = new MonorepositoryConsoleLogger("container::image"),
+async function runImageBusinessCommand(
+  runner: ProcessRunner,
+  command: Readonly<RuntimeCommand>,
+  logger: MonorepositoryLogger,
+  signal: AbortSignal,
 ): Promise<void> {
-  const paths = resolveRepositoryPaths();
-  const selection = await resolveRuntimeContainerEngine({
-    argv: process.argv,
-    env: process.env,
-    toolingConfigPath: paths.toolingConfig,
-  });
+  try {
+    await runner.expectSuccess(command, {output: "tee", logCommands: true, logger, signal});
+  } catch (error) {
+    if (error instanceof RunnerError && error.outcome.kind === "cancelled" && signal.aborted) {
+      throw commandCancellationFromSignal(signal);
+    }
+    throw error;
+  }
+}
+
+/**
+ * Builds and runs the local image build/run business logic.
+ *
+ * @param artifacts - Taxonomy and license artifact generator command.
+ * @param context - Command context whose runtime owns every ambient capability.
+ * @param input - Typed command input.
+ * @returns The engine, action, and target this invocation ran with.
+ * @throws When the engine cannot be resolved, preflight fails, the artifact prerequisite fails,
+ * or the runtime command exits with a nonzero code.
+ */
+async function executeImage(
+  artifacts: CommandInvoker<GenerateArtifactsInput, ArtifactGenerationResult>,
+  context: Readonly<CommandContext>,
+  input: Readonly<ImageInput>,
+): Promise<ImageResult> {
+  const {runtime} = context;
+  const paths = await resolveRepositoryPaths(import.meta.url, runtime.files);
+  const selection = await resolveRuntimeContainerEngine(
+    {
+      // The declarative command host only decodes untyped CLI strings; resolveRuntimeContainerEngine
+      // validates the value (including the docker-deprecation message) before it is ever treated
+      // as a real ContainerEngine.
+      ...(input.engine === undefined ? {} : {requestedEngine: input.engine}),
+      env: runtime.environment.variables,
+      toolingConfigPath: paths.toolingConfig,
+    },
+    runtime.files,
+  );
   const adapter = getContainerAdapter(selection.engine);
-  const preflightLogger = logger.child("preflight");
-  await runSharedPreflight(adapter, runner, preflightLogger);
 
-  const action = process.argv[2];
-  const target = parseTarget(process.argv);
-  const tag = `arolariu-${target}`;
+  await runContainerPreflight(adapter, {
+    runner: runtime.runner,
+    logger: runtime.logger.child("preflight"),
+    environment: runtime.environment,
+    signal: runtime.signal,
+  });
 
-  if (action === "build") {
-    if (requiresTaxonomyArtifacts(target)) {
-      await runArtifactGeneration(runner, preflightLogger);
+  const tag = `arolariu-${input.target}`;
+
+  if (input.action === "build") {
+    if (requiresTaxonomyArtifacts(input.target)) {
+      await runArtifactPrerequisite(artifacts, context);
     }
 
-    await runImageCommand(
-      runner,
-      buildImageBuildCommand(adapter, {dockerfile: dockerfilesByTarget[target], tag, context: ".", buildArgs: {VERSION: "local"}}),
-      logger,
-    );
-    return;
+    const command = buildImageBuildCommand(adapter, {
+      dockerfile: dockerfilesByTarget[input.target],
+      tag,
+      context: ".",
+      buildArgs: {VERSION: "local"},
+    });
+    await runImageBusinessCommand(runtime.runner, command, runtime.logger, runtime.signal);
+    return {engine: adapter.engine, action: "build", target: input.target};
   }
 
-  if (action === "run") {
-    await runImageCommand(
-      runner,
-      buildImageRunCommand(adapter, {tag, ports: portsByTarget[target], environment: {INFRA: "local"}}),
-      logger,
-    );
-    return;
-  }
-
-  throw new Error("Use build or run as the first argument.");
+  const command = buildImageRunCommand(adapter, {tag, ports: portsByTarget[input.target], environment: {INFRA: "local"}});
+  await runImageBusinessCommand(runtime.runner, command, runtime.logger, runtime.signal);
+  return {engine: adapter.engine, action: "run", target: input.target};
 }
 
-const isDirectExecution = process.argv[1] !== undefined && fileURLToPath(import.meta.url) === resolve(process.argv[1]);
+/**
+ * Creates the local image build/run command.
+ *
+ * @param dependencies - Optional runtime factory and artifact generator collaborators.
+ * @returns The typed `containers:build`/`containers:run` command object.
+ */
+export function createImageCommand(dependencies: Readonly<ImageCommandDependencies> = {}): MonorepoCommand<ImageInput, ImageResult> {
+  const artifacts = dependencies.artifacts ?? generateArtifactsCommand;
 
-if (isDirectExecution) {
-  try {
-    await runImageCli();
-  } catch (error) {
-    exitWithError(error, new MonorepositoryConsoleLogger("container::image"));
-  }
+  return new MonorepoCommand<ImageInput, ImageResult>(
+    {
+      metadata: {
+        name: "image",
+        description: "Builds or runs a local container image with the selected engine.",
+        usage: "<build|run> --target <frontend|backend|cv|exp> [--engine <rancher|podman>]",
+        examples: [
+          "npm run containers:build -- --target frontend --engine rancher",
+          "npm run containers:run -- --target backend --engine podman",
+        ],
+      },
+      configure: (program) => {
+        program.argument("[action]", "Image action to run: build or run.");
+        program.option("--target <target>", "Image target: frontend, backend, cv, or exp.");
+        program.option("--engine <engine>", "Container engine to use (rancher or podman).");
+      },
+      decode: (program) => {
+        const options = program.opts<{target?: string; engine?: string}>();
+        const [action] = program.args as [string | undefined];
+
+        if (options.target !== "frontend" && options.target !== "backend" && options.target !== "cv" && options.target !== "exp") {
+          throw new CommandInputError("Use --target frontend|backend|cv|exp");
+        }
+
+        if (action !== "build" && action !== "run") {
+          throw new CommandInputError("Use build or run as the first argument.");
+        }
+
+        return {
+          action,
+          target: options.target,
+          ...(options.engine === undefined ? {} : {engine: options.engine as ContainerEngine}),
+        };
+      },
+      execute: (context, input) => executeImage(artifacts, context, input),
+      completion: (result) => ({
+        exitCode: 0,
+        human: (logger) => logger.success(`Image ${result.action} completed for target '${result.target}' with engine '${result.engine}'.`),
+      }),
+    },
+    dependencies.runtimeFactory,
+  );
 }
+
+/** Production singleton used by `npm run containers:build`/`npm run containers:run` and this module's direct entrypoint. */
+export const imageCommand: MonorepoCommand<ImageInput, ImageResult> = createImageCommand();
+
+await imageCommand.runIfMain(import.meta.url);

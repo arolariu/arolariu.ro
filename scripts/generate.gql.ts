@@ -1,5 +1,5 @@
 /**
- * @fileoverview GraphQL types generation script (placeholder implementation).
+ * @fileoverview GraphQL types generation command (placeholder implementation).
  * @module scripts/generate.gql
  *
  * @remarks
@@ -7,14 +7,30 @@
  * `scripts/__generated__/gql` so the pipeline has a stable output location.
  *
  * Future work would likely include schema introspection + codegen.
+ *
+ * Every ambient effect (filesystem and the wall clock) is routed through the injected
+ * {@link CommandContext.runtime} instead of touching Node globals directly.
  */
 
-import fs from "node:fs";
 import path from "node:path";
-import {MonorepositoryConsoleLogger, type MonorepositoryLogger} from "./common/logger.ts";
+import {MonorepoCommand, type CommandContext, type CommandRuntimeFactory} from "./common/commander.ts";
+
+/** Typed input accepted by every migrated `generate` leaf command. */
+export interface GenerateLeafInput {
+  /** Enables diagnostic output. */
+  readonly verbose: boolean;
+}
+
+/** Typed business result produced by every migrated `generate` leaf command. */
+export interface GenerateLeafResult {
+  /** Human-readable completion summary rendered by the command's human presentation. */
+  readonly summary: string;
+  /** Paths of every file this command created or modified. */
+  readonly changedFiles: readonly string[];
+}
 
 /**
- * GraphQL Types generator (placeholder).
+ * GraphQL Types generator business logic (placeholder).
  *
  * @remarks
  * Placeholder implementation that can be extended to:
@@ -22,14 +38,17 @@ import {MonorepositoryConsoleLogger, type MonorepositoryLogger} from "./common/l
  *  2. Generate TypeScript types via codegen
  *  3. Output artifacts into a designated cache folder
  *
- * @param verbose - Whether to emit diagnostic filesystem details.
- * @param logger - Logger used for configuration, diagnostics, and completion output.
- * @returns Zero after the placeholder artifact is written.
+ * @param context - Command context whose runtime owns the filesystem, clock, and logging.
+ * @param input - Typed command input.
+ * @returns The completion summary and every file this invocation created or modified.
  */
-export async function main(
-  verbose: boolean = false,
-  logger: MonorepositoryLogger = new MonorepositoryConsoleLogger("generate::gql", {verbose}),
-): Promise<number> {
+async function generateGraphql(
+  context: Readonly<CommandContext>,
+  input: Readonly<GenerateLeafInput>,
+): Promise<GenerateLeafResult> {
+  const {logger, environment, files, clock} = context.runtime;
+  const {verbose} = input;
+
   logger.line([{text: "🔧 Configuration:", styles: ["cyan"]}]);
   logger.line();
   logger.line([
@@ -38,64 +57,62 @@ export async function main(
   ]);
   logger.line([
     {text: "   Working Directory: ", styles: ["gray"]},
-    {text: process.cwd(), styles: ["dim"]},
+    {text: environment.cwd, styles: ["dim"]},
   ]);
   logger.line();
 
   // Placeholder logic – ensure folder exists.
-  const outDir = path.resolve("scripts", "__generated__", "gql");
-  fs.mkdirSync(outDir, {recursive: true});
+  const outDir = path.resolve(environment.cwd, "scripts", "__generated__", "gql");
+  await files.createDirectory(outDir, {recursive: true});
   if (verbose) {
     logger.debug(`Ensured output directory: ${outDir}`);
   }
 
   // In the future replace with actual schema + codegen steps.
-  const placeholder = `// Generated at ${new Date().toISOString()}\n// TODO: Integrate GraphQL Codegen here.\n`;
-  fs.writeFileSync(path.join(outDir, "README.placeholder.txt"), placeholder, "utf-8");
+  const placeholder = `// Generated at ${clock.isoTimestamp()}\n// TODO: Integrate GraphQL Codegen here.\n`;
+  const outputFile = path.join(outDir, "README.placeholder.txt");
+  await files.writeText(outputFile, placeholder);
   if (verbose) {
     logger.debug("Wrote placeholder artifact.");
   }
 
   logger.success("GraphQL generation completed (placeholder).");
-  return 0;
+  return {summary: "GraphQL generation completed (placeholder).", changedFiles: [outputFile]};
 }
 
-if (import.meta.main) {
-  const argv = process.argv.slice(2);
-  const verbose = argv.some((a) => ["/verbose", "/v", "--verbose", "-v"].includes(a));
-  const wantsHelp = argv.some((a) => ["/help", "/h", "--help", "-h"].includes(a));
-  const logger = new MonorepositoryConsoleLogger("generate::gql", {verbose});
-
-  if (wantsHelp) {
-    logger.banner(
-      [
-        "",
-        "╔══════════════════════════════════════════════════════════════════╗",
-        "║               ||arolariu.ro|| GQL Types Generator - Help         ║",
-        "╚══════════════════════════════════════════════════════════════════╝",
-        "",
-      ],
-      "magenta",
-    );
-    logger.line([
-      {text: "Usage: ", styles: ["cyan"]},
-      {text: "npm run generate /gql [optional flags]", styles: ["gray"]},
-    ]);
-    logger.line();
-    logger.line([{text: "Flags:", styles: ["cyan"]}]);
-    logger.line([{text: "  /verbose     /v    --verbose     -v", styles: ["green"]}, {text: "  Enable verbose logging 🔊"}]);
-    logger.line([{text: "  /help        /h    --help        -h", styles: ["green"]}, {text: "  Show this help menu ❓"}]);
-    logger.line();
-    logger.line("Example:");
-    logger.line([{text: "  npm run generate /gql /verbose", styles: ["gray"]}]);
-    process.exit(0);
-  }
-
-  try {
-    const code = await main(verbose, logger);
-    process.exit(code);
-  } catch (error: unknown) {
-    logger.error(`GraphQL generation failed: ${error instanceof Error ? error.message : String(error)}`);
-    process.exit(1);
-  }
+/**
+ * Creates the GraphQL generator command.
+ *
+ * @param runtimeFactory - Optional runtime factory; tests inject a fake instead of the Node adapter.
+ * @returns The typed `generate:gql` command object.
+ */
+export function createGenerateGraphqlCommand(
+  runtimeFactory?: CommandRuntimeFactory,
+): MonorepoCommand<GenerateLeafInput, GenerateLeafResult> {
+  return new MonorepoCommand<GenerateLeafInput, GenerateLeafResult>(
+    {
+      metadata: {
+        name: "generate:gql",
+        description: "Generates GraphQL type artifacts (placeholder implementation).",
+        examples: ["npm run generate:gql", "npm run generate:gql -- --verbose"],
+        slashAliases: {"/v": "--verbose", "/verbose": "--verbose"},
+      },
+      configure: (program) => {
+        program.option("-v, --verbose", "Enable verbose logging.");
+      },
+      decode: (program) => ({verbose: program.opts<{verbose?: boolean}>().verbose === true}),
+      execute: generateGraphql,
+      completion: (result) => ({
+        exitCode: 0,
+        human: (logger) => logger.success(result.summary),
+      }),
+    },
+    runtimeFactory,
+  );
 }
+
+/** Production singleton used by the aggregate CLI and this module's direct entrypoint. */
+export const generateGraphqlCommand: MonorepoCommand<GenerateLeafInput, GenerateLeafResult> = createGenerateGraphqlCommand();
+
+await generateGraphqlCommand.runIfMain(import.meta.url);
+

@@ -1,10 +1,10 @@
 /**
- * @fileoverview i18n asset generator for the monorepo.
+ * @fileoverview i18n asset generator command for the monorepo.
  * @module scripts/generate.i18n
  *
  * @remarks
  * Validates and synchronizes translation files for all supported locales against
- * the English source of truth. The script ensures all locales (Romanian and French)
+ * the English source of truth. The command ensures all locales (Romanian and French)
  * have complete translation coverage by:
  * 1. Loading the English translations as the source of truth
  * 2. Validating each target locale against English keys
@@ -16,12 +16,28 @@
  * - ro.json (Romanian)
  * - fr.json (French)
  *
- * This script is used by `npm run generate` as part of the build toolchain.
+ * This command is used by `npm run generate` as part of the build toolchain. Every ambient
+ * effect (filesystem and environment) is routed through the injected
+ * {@link CommandContext.runtime} instead of touching Node globals directly.
  */
 
-import fs from "node:fs";
 import path from "node:path";
-import {MonorepositoryConsoleLogger, type MonorepositoryLogger} from "./common/logger.ts";
+import {MonorepoCommand, type CommandContext, type CommandRuntimeFactory} from "./common/commander.ts";
+import type {MonorepositoryLogger} from "./common/logger.ts";
+
+/** Typed input accepted by every migrated `generate` leaf command. */
+export interface GenerateLeafInput {
+  /** Enables diagnostic output. */
+  readonly verbose: boolean;
+}
+
+/** Typed business result produced by every migrated `generate` leaf command. */
+export interface GenerateLeafResult {
+  /** Human-readable completion summary rendered by the command's human presentation. */
+  readonly summary: string;
+  /** Paths of every file this command created or modified. */
+  readonly changedFiles: readonly string[];
+}
 
 /**
  * Represents either a plain string message or a message formatted with `MessageFormat`.
@@ -42,14 +58,15 @@ type MessageFormat = {
  * The translation file should be a JSON file.
  *
  * This JSON file respects the {@link MessageFormat} structure.
+ * @param context - Command context whose runtime owns the filesystem and logging.
  * @param filePath - The path to the translation file.
  * @param verbose - Enables verbose logging.
- * @param logger - Logger used for diagnostics and failures.
  * @returns The translation file as a `MessageFormat` object.
  */
-function loadTranslationFile(filePath: string, verbose: boolean, logger: MonorepositoryLogger): MessageFormat {
+async function loadTranslationFile(context: Readonly<CommandContext>, filePath: string, verbose: boolean): Promise<MessageFormat> {
+  const {logger, files} = context.runtime;
   try {
-    const translationFile = fs.readFileSync(filePath, "utf-8");
+    const translationFile = await files.readText(filePath);
     if (verbose) {
       logger.debug(`[loadTranslationFile] Loaded translation file: ${filePath}`);
     }
@@ -357,27 +374,33 @@ function addMissingKey(existing: MessageFormat, compoundKey: string, verbose: bo
 /**
  * Writes missing translation keys to a locale file.
  *
+ * @param context The command context whose runtime owns the filesystem and logging.
  * @param filePath The locale file to update.
  * @param translationKeys The compound missing keys to add.
  * @param verbose Whether to emit key-segment diagnostics.
- * @param logger Logger used for filesystem lifecycle and failure output.
  */
-function writeTranslationKeysFile(filePath: string, translationKeys: string[], verbose: boolean, logger: MonorepositoryLogger): void {
+async function writeTranslationKeysFile(
+  context: Readonly<CommandContext>,
+  filePath: string,
+  translationKeys: readonly string[],
+  verbose: boolean,
+): Promise<void> {
+  const {logger, files} = context.runtime;
   try {
     let existingMessages: MessageFormat = {};
 
-    if (fs.existsSync(filePath)) {
+    if (await files.exists(filePath)) {
       logger.info(`[writeTranslationKeysFile] Translations file already exists: ${filePath}`);
-      const existingFile = fs.readFileSync(filePath, "utf-8");
+      const existingFile = await files.readText(filePath);
       existingMessages = JSON.parse(existingFile);
     } else {
       logger.warn(`[writeTranslationKeysFile] File does not exist: ${filePath}`);
-      fs.writeFileSync(filePath, "{}", "utf-8");
+      await files.writeText(filePath, "{}");
       logger.warn(`[writeTranslationKeysFile] Created file: ${filePath}`);
     }
 
     for (const key of translationKeys) addMissingKey(existingMessages, key, verbose, logger);
-    fs.writeFileSync(filePath, JSON.stringify(existingMessages, null, 2), "utf-8");
+    await files.writeText(filePath, JSON.stringify(existingMessages, null, 2));
 
     logger.info(`[writeTranslationKeysFile] Wrote missing keys to file: ${filePath}`);
   } catch (error: unknown) {
@@ -387,28 +410,37 @@ function writeTranslationKeysFile(filePath: string, translationKeys: string[], v
   }
 }
 
+/** Outcome of validating one target locale against the English source of truth. */
+interface LocaleValidationResult {
+  /** Number of missing keys that were found (and, when positive, added) for this locale. */
+  readonly missingKeyCount: number;
+  /** Absolute path to the locale file that was validated. */
+  readonly targetFile: string;
+}
+
 /**
  * Validates and synchronizes a single target locale against the English source.
+ * @param context The command context whose runtime owns the filesystem and logging.
  * @param enTranslations The English translations (source of truth).
  * @param enKeys The extracted English translation keys.
  * @param targetLocale The target locale code (e.g., "ro", "fr").
  * @param translationsPath The base path to the messages directory.
  * @param verbose Whether to enable verbose logging.
- * @param logger Logger used for locale validation output.
- * @returns The number of missing keys that were added.
+ * @returns The target locale file path and the number of missing keys that were added.
  */
-function validateLocale(
+async function validateLocale(
+  context: Readonly<CommandContext>,
   enTranslations: MessageFormat,
   enKeys: string[],
   targetLocale: string,
   translationsPath: string,
   verbose: boolean,
-  logger: MonorepositoryLogger,
-): number {
+): Promise<LocaleValidationResult> {
+  const {logger} = context.runtime;
   const targetFile = path.resolve(translationsPath, `${targetLocale}.json`);
   logger.section(`Validating ${targetLocale.toUpperCase()} translations`, "📋");
 
-  const targetTranslations = loadTranslationFile(targetFile, verbose, logger);
+  const targetTranslations = await loadTranslationFile(context, targetFile, verbose);
   const targetKeys = extractMessageKeys(targetTranslations, verbose, logger);
 
   logger.info(`[generateTranslations] Finding missing keys for ${targetLocale}.`);
@@ -416,27 +448,30 @@ function validateLocale(
 
   if (missingKeys.length > 0) {
     logger.warn(`[generateTranslations] Writing ${missingKeys.length} missing keys to ${targetLocale}.json.`);
-    writeTranslationKeysFile(targetFile, missingKeys, verbose, logger);
+    await writeTranslationKeysFile(context, targetFile, missingKeys, verbose);
   } else {
     logger.success(`[generateTranslations] No missing keys detected for ${targetLocale}.`);
   }
 
   areMessageValuesEqual(enTranslations, targetTranslations, verbose, logger);
 
-  return missingKeys.length;
+  return {missingKeyCount: missingKeys.length, targetFile};
 }
 
 /**
- * This is the main function of the script.
+ * Runs the i18n generator's business logic.
  * Validates all supported locales (Romanian and French) against the English source of truth.
- * @param verbose A boolean flag that indicates if the script should log verbose output.
- * @param logger Logger used for all script-authored output.
- * @returns The total number of missing keys added across supported locales.
+ * @param context The command context whose runtime owns every ambient capability.
+ * @param input Typed command input.
+ * @returns The completion summary and every locale file this invocation modified.
  */
-export async function main(
-  verbose: boolean = false,
-  logger: MonorepositoryLogger = new MonorepositoryConsoleLogger("generate::i18n", {verbose}),
-): Promise<number> {
+async function generateI18n(
+  context: Readonly<CommandContext>,
+  input: Readonly<GenerateLeafInput>,
+): Promise<GenerateLeafResult> {
+  const {logger, environment} = context.runtime;
+  const {verbose} = input;
+
   logger.line([{text: "🔧 Configuration:", styles: ["cyan"]}]);
   logger.line();
   logger.line([
@@ -445,13 +480,12 @@ export async function main(
   ]);
   logger.line([
     {text: "   Working Directory: ", styles: ["gray"]},
-    {text: process.cwd(), styles: ["dim"]},
+    {text: environment.cwd, styles: ["dim"]},
   ]);
   logger.line();
 
   logger.info("[generateTranslations] Generating translations.");
-  const currentDirectory = process.cwd();
-  const TRANSLATIONS_PATH = currentDirectory.concat("/sites/arolariu.ro/messages").replaceAll("\\", "/");
+  const TRANSLATIONS_PATH = environment.cwd.concat("/sites/arolariu.ro/messages").replaceAll("\\", "/");
   logger.info(`[generateTranslations] Base translation path set as:\n\t >> ${TRANSLATIONS_PATH}`);
 
   // Supported locales to validate against English (source of truth)
@@ -460,7 +494,7 @@ export async function main(
   const EN_TRANSLATIONS_FILE = path.resolve(TRANSLATIONS_PATH, "en.json");
 
   logger.info("[generateTranslations] Loading English translations (source of truth).");
-  const enTranslations = loadTranslationFile(EN_TRANSLATIONS_FILE, verbose, logger);
+  const enTranslations = await loadTranslationFile(context, EN_TRANSLATIONS_FILE, verbose);
 
   logger.info("[generateTranslations] Extracting English translation keys.");
   const enKeys = extractMessageKeys(enTranslations, verbose, logger);
@@ -472,11 +506,16 @@ export async function main(
   // Validate each supported locale against English
   let totalMissingKeys = 0;
   const localeResults: Record<string, number> = {};
+  const changedFiles: string[] = [];
 
   for (const locale of SUPPORTED_LOCALES) {
-    const missingCount = validateLocale(enTranslations, enKeys, locale, TRANSLATIONS_PATH, verbose, logger);
-    localeResults[locale] = missingCount;
-    totalMissingKeys += missingCount;
+    // eslint-disable-next-line no-await-in-loop
+    const result = await validateLocale(context, enTranslations, enKeys, locale, TRANSLATIONS_PATH, verbose);
+    localeResults[locale] = result.missingKeyCount;
+    totalMissingKeys += result.missingKeyCount;
+    if (result.missingKeyCount > 0) {
+      changedFiles.push(result.targetFile);
+    }
   }
 
   logger.line();
@@ -498,54 +537,49 @@ export async function main(
     {text: String(totalMissingKeys), styles: ["green"]},
   ]);
 
-  return totalMissingKeys;
+  return {
+    summary: `i18n synchronization completed with ${String(totalMissingKeys)} missing key(s) added.`,
+    changedFiles,
+  };
 }
 
-if (import.meta.main) {
-  const argv = process.argv.slice(2);
-  const verbose = argv.some((a) => ["/verbose", "/v", "--verbose", "-v"].includes(a));
-  const wantsHelp = argv.some((a) => ["/help", "/h", "--help", "-h"].includes(a));
-  const logger = new MonorepositoryConsoleLogger("generate::i18n", {verbose});
-
-  if (wantsHelp) {
-    logger.banner(
-      [
-        "",
-        "╔══════════════════════════════════════════════════════════════════╗",
-        "║                   ||arolariu.ro|| i18n Generator - Help          ║",
-        "╚══════════════════════════════════════════════════════════════════╝",
-        "",
-      ],
-      "magenta",
-    );
-    logger.line([
-      {text: "Usage: ", styles: ["cyan"]},
-      {text: "npm run generate /i18n [flags]", styles: ["gray"]},
-    ]);
-    logger.line();
-    logger.line([{text: "Description:", styles: ["cyan"]}]);
-    logger.line([{text: "  Validates and synchronizes translation files against English (en.json).", styles: ["gray"]}]);
-    logger.line([{text: "  Ensures all supported locales have matching translation keys.", styles: ["gray"]}]);
-    logger.line();
-    logger.line([{text: "Supported Locales:", styles: ["cyan"]}]);
-    logger.line([{text: "  • en.json - English (source of truth)", styles: ["gray"]}]);
-    logger.line([{text: "  • ro.json - Romanian", styles: ["gray"]}]);
-    logger.line([{text: "  • fr.json - French", styles: ["gray"]}]);
-    logger.line();
-    logger.line([{text: "Flags:", styles: ["cyan"]}]);
-    logger.line([{text: "  /verbose     /v    --verbose     -v", styles: ["green"]}, {text: "  Enable verbose logging 🔊"}]);
-    logger.line([{text: "  /help        /h    --help        -h", styles: ["green"]}, {text: "  Show this help menu ❓"}]);
-    logger.line();
-    logger.line("Example:");
-    logger.line([{text: "  npm run generate /i18n /verbose", styles: ["gray"]}]);
-    process.exit(0);
-  }
-
-  try {
-    const code = await main(verbose, logger);
-    process.exit(code);
-  } catch (error: unknown) {
-    logger.error(`i18n generation failed: ${error instanceof Error ? error.message : String(error)}`);
-    process.exit(1);
-  }
+/**
+ * Creates the i18n generator command.
+ *
+ * @param runtimeFactory - Optional runtime factory; tests inject a fake instead of the Node adapter.
+ * @returns The typed `generate:i18n` command object.
+ */
+export function createGenerateI18nCommand(
+  runtimeFactory?: CommandRuntimeFactory,
+): MonorepoCommand<GenerateLeafInput, GenerateLeafResult> {
+  return new MonorepoCommand<GenerateLeafInput, GenerateLeafResult>(
+    {
+      metadata: {
+        name: "generate:i18n",
+        description: "Validates and synchronizes translation files against English (en.json).",
+        examples: ["npm run generate:i18n", "npm run generate:i18n -- --verbose"],
+        slashAliases: {"/v": "--verbose", "/verbose": "--verbose"},
+      },
+      configure: (program) => {
+        program.option("-v, --verbose", "Enable verbose logging.");
+      },
+      decode: (program) => ({verbose: program.opts<{verbose?: boolean}>().verbose === true}),
+      execute: generateI18n,
+      completion: (result) => ({
+        // Mirrors the pre-migration leaf's `totalMissingKeys` exit contract under the normative
+        // `CommandExitCode` shape: `0` when every locale already matched English, `1` when
+        // missing keys caused this invocation to change one or more locale files. The aggregate
+        // (`generate.ts`) stops before later leaves whenever this is nonzero.
+        exitCode: result.changedFiles.length > 0 ? 1 : 0,
+        human: (logger) => logger.success(result.summary),
+      }),
+    },
+    runtimeFactory,
+  );
 }
+
+/** Production singleton used by the aggregate CLI and this module's direct entrypoint. */
+export const generateI18nCommand: MonorepoCommand<GenerateLeafInput, GenerateLeafResult> = createGenerateI18nCommand();
+
+await generateI18nCommand.runIfMain(import.meta.url);
+

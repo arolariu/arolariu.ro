@@ -5,35 +5,54 @@
  */
 
 import {stripVTControlCharacters} from "node:util";
-import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
+import {afterEach, describe, expect, it, vi} from "vitest";
 
-import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "./logger.ts";
+import {InMemoryLoggerSink, MonorepositoryConsoleLogger, type LoggerRuntimeHost, type LoggerScheduledInterval} from "./logger.ts";
+
+/** Deterministic {@link LoggerRuntimeHost} whose progress interval is advanced explicitly. */
+interface TestLoggerRuntimeHost extends LoggerRuntimeHost {
+  /** Invokes every still-scheduled interval callback the requested number of times. */
+  readonly tick: (times?: number) => void;
+  /** Number of intervals that are currently scheduled and not yet cancelled. */
+  readonly scheduledCount: () => number;
+  /** Number of scheduled intervals that were explicitly unreferenced. */
+  readonly unreferencedCount: () => number;
+}
+
+function createTestLoggerRuntimeHost(
+  options: Readonly<{stdoutIsTTY?: boolean; noColor?: boolean}> = {},
+): TestLoggerRuntimeHost {
+  const callbacks = new Set<() => void>();
+  let unreferencedCount = 0;
+
+  return {
+    stdoutIsTTY: options.stdoutIsTTY ?? false,
+    noColor: options.noColor ?? false,
+    scheduleInterval: (callback: () => void): LoggerScheduledInterval => {
+      callbacks.add(callback);
+      return {
+        cancel: (): void => {
+          callbacks.delete(callback);
+        },
+        unref: (): void => {
+          unreferencedCount += 1;
+        },
+      };
+    },
+    tick: (times = 1): void => {
+      for (let iteration = 0; iteration < times; iteration += 1) {
+        for (const callback of [...callbacks]) {
+          callback();
+        }
+      }
+    },
+    scheduledCount: (): number => callbacks.size,
+    unreferencedCount: (): number => unreferencedCount,
+  };
+}
 
 describe("MonorepositoryConsoleLogger", () => {
-  let stdoutIsTTYDescriptor: PropertyDescriptor | undefined;
-  let noColorWasSet: boolean;
-  let noColorValue: string | undefined;
-
-  beforeEach(() => {
-    stdoutIsTTYDescriptor = Object.getOwnPropertyDescriptor(process.stdout, "isTTY");
-    noColorWasSet = Object.hasOwn(process.env, "NO_COLOR");
-    noColorValue = process.env["NO_COLOR"];
-    delete process.env["NO_COLOR"];
-  });
-
   afterEach(() => {
-    if (stdoutIsTTYDescriptor === undefined) {
-      Reflect.deleteProperty(process.stdout, "isTTY");
-    } else {
-      Object.defineProperty(process.stdout, "isTTY", stdoutIsTTYDescriptor);
-    }
-
-    if (noColorWasSet) {
-      process.env["NO_COLOR"] = noColorValue;
-    } else {
-      delete process.env["NO_COLOR"];
-    }
-
     vi.useRealTimers();
     vi.restoreAllMocks();
   });
@@ -167,11 +186,11 @@ describe("MonorepositoryConsoleLogger", () => {
   });
 
   it("renders styled segments and preserves line versus write semantics", () => {
-    Object.defineProperty(process.stdout, "isTTY", {configurable: true, value: true});
     const sink = new InMemoryLoggerSink();
     const logger = new MonorepositoryConsoleLogger("format", {
       color: true,
       sink,
+      runtimeHost: createTestLoggerRuntimeHost({stdoutIsTTY: true}),
     });
 
     logger.line([
@@ -233,11 +252,11 @@ describe("MonorepositoryConsoleLogger", () => {
   });
 
   it("suppresses ANSI styling when stdout is not a TTY", () => {
-    Object.defineProperty(process.stdout, "isTTY", {configurable: true, value: false});
     const sink = new InMemoryLoggerSink();
     const logger = new MonorepositoryConsoleLogger("doctor", {
       color: true,
       sink,
+      runtimeHost: createTestLoggerRuntimeHost({stdoutIsTTY: false}),
     });
 
     logger.line([{text: "plain", styles: ["bold", "green"]}]);
@@ -246,12 +265,11 @@ describe("MonorepositoryConsoleLogger", () => {
   });
 
   it("suppresses ANSI styling when NO_COLOR is present", () => {
-    Object.defineProperty(process.stdout, "isTTY", {configurable: true, value: true});
-    process.env["NO_COLOR"] = "";
     const sink = new InMemoryLoggerSink();
     const logger = new MonorepositoryConsoleLogger("doctor", {
       color: true,
       sink,
+      runtimeHost: createTestLoggerRuntimeHost({stdoutIsTTY: true, noColor: true}),
     });
 
     logger.line([{text: "plain", styles: ["bold", "green"]}]);
@@ -260,12 +278,12 @@ describe("MonorepositoryConsoleLogger", () => {
   });
 
   it("emits JSON without human output or ANSI escapes", () => {
-    Object.defineProperty(process.stdout, "isTTY", {configurable: true, value: true});
     const sink = new InMemoryLoggerSink();
     const logger = new MonorepositoryConsoleLogger("doctor", {
       mode: "json",
       color: true,
       sink,
+      runtimeHost: createTestLoggerRuntimeHost({stdoutIsTTY: true}),
     });
 
     logger.info("hidden human message");
@@ -300,6 +318,18 @@ describe("MonorepositoryConsoleLogger", () => {
       "$ tool --token [REDACTED]",
       "[arolariu::setup] ℹ️ Received [REDACTED]",
     ]);
+  });
+
+  it("sanitizes registered values without emitting output", () => {
+    const sink = new InMemoryLoggerSink();
+    const logger = new MonorepositoryConsoleLogger("setup", {
+      color: false,
+      sink,
+      redactions: ["secret-value"],
+    });
+
+    expect(logger.sanitize("token=secret-value")).toBe("token=[REDACTED]");
+    expect(sink.records).toEqual([]);
   });
 
   it("shares runtime redactions with child contexts", () => {
@@ -342,22 +372,39 @@ describe("MonorepositoryConsoleLogger", () => {
     ]);
   });
 
+  it("sanitizes JSON-escaped secrets on demand without emitting output", () => {
+    const secret = 'quote"slash\\line\nend';
+    const sink = new InMemoryLoggerSink();
+    const logger = new MonorepositoryConsoleLogger("doctor", {
+      color: false,
+      sink,
+      redactions: [secret],
+    });
+    const escaped = JSON.stringify(secret).slice(1, -1);
+
+    expect(logger.sanitize(escaped)).toBe(escaped);
+    expect(logger.sanitize(escaped, true)).toBe("[REDACTED]");
+    expect(sink.records).toEqual([]);
+  });
+
   it("cleans up TTY progress before terminal output and stops future frames", () => {
-    vi.useFakeTimers();
-    Object.defineProperty(process.stdout, "isTTY", {configurable: true, value: true});
+    const runtimeHost = createTestLoggerRuntimeHost({stdoutIsTTY: true});
     const sink = new InMemoryLoggerSink();
     const logger = new MonorepositoryConsoleLogger("setup", {
       color: false,
       sink,
+      runtimeHost,
     });
 
     const progress = logger.progress("Installing");
-    vi.advanceTimersByTime(160);
+    runtimeHost.tick(2);
     progress.update("Configuring");
     progress.succeed("Configured");
     const recordCountAfterSuccess = sink.records.length;
-    vi.advanceTimersByTime(160);
+    runtimeHost.tick(2);
 
+    expect(runtimeHost.unreferencedCount()).toBeGreaterThan(0);
+    expect(runtimeHost.scheduledCount()).toBe(0);
     expect(sink.records.some((record) => record.write && record.text === "\r\u001B[K")).toBe(true);
     expect(sink.records.at(-1)).toEqual({
       stream: "stdout",
@@ -367,13 +414,42 @@ describe("MonorepositoryConsoleLogger", () => {
     expect(sink.records).toHaveLength(recordCountAfterSuccess);
   });
 
-  it.each([true, false])("keeps progress active after interleaved output when TTY is %s", (isTTY) => {
+  it("uses a deterministic non-TTY, colorless, timer-free host when none is injected", () => {
     vi.useFakeTimers();
-    Object.defineProperty(process.stdout, "isTTY", {configurable: true, value: isTTY});
+    const stdoutIsTTYDescriptor = Object.getOwnPropertyDescriptor(process.stdout, "isTTY");
+    Object.defineProperty(process.stdout, "isTTY", {configurable: true, value: true});
+    const sink = new InMemoryLoggerSink();
+
+    try {
+      const logger = new MonorepositoryConsoleLogger("setup", {sink});
+      const progress = logger.progress("Installing");
+      vi.advanceTimersByTime(160);
+      progress.succeed("Configured");
+      logger.line([{text: "styled", styles: ["red"]}]);
+
+      // An ambient TTY is deliberately ignored: no spinner frame, no cursor escape, no timer.
+      expect(sink.records.filter((record) => record.write)).toEqual([]);
+      expect(vi.getTimerCount()).toBe(0);
+      expect(sink.records).toEqual([
+        {stream: "stdout", text: "✔ Configured", write: false},
+        {stream: "stdout", text: "styled", write: false},
+      ]);
+    } finally {
+      if (stdoutIsTTYDescriptor === undefined) {
+        Reflect.deleteProperty(process.stdout, "isTTY");
+      } else {
+        Object.defineProperty(process.stdout, "isTTY", stdoutIsTTYDescriptor);
+      }
+    }
+  });
+
+  it.each([true, false])("keeps progress active after interleaved output when TTY is %s", (isTTY) => {
+    const runtimeHost = createTestLoggerRuntimeHost({stdoutIsTTY: isTTY});
     const sink = new InMemoryLoggerSink();
     const logger = new MonorepositoryConsoleLogger("setup", {
       color: false,
       sink,
+      runtimeHost,
     });
 
     const progress = logger.progress("Installing");
@@ -383,7 +459,7 @@ describe("MonorepositoryConsoleLogger", () => {
     progress.succeed("Duplicate success");
     progress.fail("Late failure");
     const recordCountAfterSuccess = sink.records.length;
-    vi.advanceTimersByTime(160);
+    runtimeHost.tick(2);
 
     expect(sink.records.filter((record) => record.text.includes("Using fallback"))).toEqual([
       {
@@ -410,12 +486,11 @@ describe("MonorepositoryConsoleLogger", () => {
   });
 
   it.each([true, false])("emits one failure after interleaved progress output when TTY is %s", (isTTY) => {
-    vi.useFakeTimers();
-    Object.defineProperty(process.stdout, "isTTY", {configurable: true, value: isTTY});
     const sink = new InMemoryLoggerSink();
     const logger = new MonorepositoryConsoleLogger("setup", {
       color: false,
       sink,
+      runtimeHost: createTestLoggerRuntimeHost({stdoutIsTTY: isTTY}),
     });
 
     const progress = logger.progress("Installing");
@@ -435,12 +510,12 @@ describe("MonorepositoryConsoleLogger", () => {
   });
 
   it.each([true, false])("stops progress without a final line after interleaved output when TTY is %s", (isTTY) => {
-    vi.useFakeTimers();
-    Object.defineProperty(process.stdout, "isTTY", {configurable: true, value: isTTY});
+    const runtimeHost = createTestLoggerRuntimeHost({stdoutIsTTY: isTTY});
     const sink = new InMemoryLoggerSink();
     const logger = new MonorepositoryConsoleLogger("setup", {
       color: false,
       sink,
+      runtimeHost,
     });
 
     const progress = logger.progress("Installing");
@@ -450,7 +525,7 @@ describe("MonorepositoryConsoleLogger", () => {
     progress.succeed("Late success");
     progress.fail("Late failure");
     const recordCountAfterStop = sink.records.length;
-    vi.advanceTimersByTime(160);
+    runtimeHost.tick(2);
 
     expect(sink.records.some((record) => record.text.includes("Ignored update"))).toBe(false);
     expect(sink.records.some((record) => record.text.includes("Late success"))).toBe(false);
@@ -459,11 +534,11 @@ describe("MonorepositoryConsoleLogger", () => {
   });
 
   it("keeps non-TTY progress line-oriented and free of carriage returns", () => {
-    Object.defineProperty(process.stdout, "isTTY", {configurable: true, value: false});
     const sink = new InMemoryLoggerSink();
     const logger = new MonorepositoryConsoleLogger("setup", {
       color: false,
       sink,
+      runtimeHost: createTestLoggerRuntimeHost({stdoutIsTTY: false}),
     });
 
     const progress = logger.progress("Installing");
@@ -478,5 +553,157 @@ describe("MonorepositoryConsoleLogger", () => {
       },
     ]);
     expect(sink.records.every((record) => !record.text.includes("\r"))).toBe(true);
+  });
+
+  it("suppresses every output method in silent mode", () => {
+    const sink = new InMemoryLoggerSink();
+    const logger = new MonorepositoryConsoleLogger("nested", {
+      mode: "silent",
+      color: false,
+      sink,
+    });
+
+    logger.info("hidden");
+    logger.error("hidden");
+    logger.line("hidden");
+    logger.write("hidden");
+    logger.json({hidden: true});
+    logger.progress("hidden").succeed("hidden");
+
+    expect(sink.records).toEqual([]);
+  });
+
+  it("suppresses fatal diagnostics, sections, tables, and stream writers in silent mode", () => {
+    const sink = new InMemoryLoggerSink();
+    const logger = new MonorepositoryConsoleLogger("nested", {
+      mode: "silent",
+      color: false,
+      sink,
+    });
+
+    logger.fatal("hidden");
+    logger.section("hidden");
+    logger.banner(["hidden"]);
+    logger.table({headers: ["hidden"], rows: [["hidden"]]});
+    logger.command("hidden");
+    logger.debug("hidden");
+    logger.warn("hidden");
+    logger.success("hidden");
+    const writer = logger.createStreamWriter();
+    writer.write("hidden");
+    writer.end();
+
+    expect(sink.records).toEqual([]);
+  });
+
+  it("emits one redacted fatal diagnostic to stderr in JSON mode", () => {
+    const sink = new InMemoryLoggerSink();
+    const logger = new MonorepositoryConsoleLogger("status", {
+      mode: "json",
+      color: false,
+      sink,
+      redactions: ["secret"],
+    });
+
+    logger.fatal("failed with secret");
+
+    expect(sink.records).toEqual([{stream: "stderr", text: "failed with [REDACTED]", write: false}]);
+  });
+
+  it("renders a fatal diagnostic in the normal error form in human mode", () => {
+    const sink = new InMemoryLoggerSink();
+    const logger = new MonorepositoryConsoleLogger("status", {
+      color: false,
+      sink,
+      redactions: ["secret"],
+    });
+
+    logger.fatal("failed with secret");
+
+    expect(sink.records).toEqual([
+      {stream: "stderr", text: "[arolariu::status] ⛔ failed with [REDACTED]", write: false},
+    ]);
+  });
+
+  it("ignores json() outside JSON mode so human presentation never emits a document", () => {
+    const sink = new InMemoryLoggerSink();
+    const logger = new MonorepositoryConsoleLogger("status", {color: false, sink});
+
+    logger.json({schemaVersion: 1});
+
+    expect(sink.records).toEqual([]);
+  });
+});
+
+describe("MonorepositoryConsoleLogger.fork", () => {
+  it("shares the redaction registry in both directions", () => {
+    const sink = new InMemoryLoggerSink();
+    const parent = new MonorepositoryConsoleLogger("status", {color: false, sink});
+    const fork = parent.fork("doctor", {mode: "human", verbose: true});
+
+    parent.redact("parent-secret");
+    fork.redact("fork-secret");
+    parent.info("parent-secret and fork-secret");
+    fork.info("parent-secret and fork-secret");
+
+    expect(sink.records.map((record) => record.text)).toEqual([
+      "[arolariu::status] ℹ️ [REDACTED] and [REDACTED]",
+      "[arolariu::doctor] ℹ️ [REDACTED] and [REDACTED]",
+    ]);
+  });
+
+  it("suppresses a silent fork without silencing its human parent", () => {
+    const sink = new InMemoryLoggerSink();
+    const parent = new MonorepositoryConsoleLogger("status", {color: false, sink});
+    const fork = parent.fork("doctor", {mode: "silent", verbose: true});
+
+    fork.info("hidden");
+    parent.info("visible");
+
+    expect(sink.records.map((record) => record.text)).toEqual(["[arolariu::status] ℹ️ visible"]);
+  });
+
+  it("gives a fork an independent single-document JSON slot", () => {
+    const sink = new InMemoryLoggerSink();
+    const parent = new MonorepositoryConsoleLogger("status", {mode: "json", color: false, sink});
+    const fork = parent.fork("doctor", {mode: "json", verbose: false});
+
+    fork.json({fork: 1});
+    fork.json({fork: 2});
+    parent.json({parent: 1});
+    parent.json({parent: 2});
+
+    expect(sink.records.map((record) => record.text)).toEqual(['{\n  "fork": 1\n}', '{\n  "parent": 1\n}']);
+  });
+
+  it("gives a fork independent verbosity and progress state", () => {
+    const runtimeHost = createTestLoggerRuntimeHost({stdoutIsTTY: true});
+    const sink = new InMemoryLoggerSink();
+    const parent = new MonorepositoryConsoleLogger("status", {color: false, sink, verbose: false, runtimeHost});
+    const fork = parent.fork("doctor", {mode: "human", verbose: true});
+
+    const parentProgress = parent.progress("parent work");
+    fork.debug("fork debug");
+    parent.debug("parent debug");
+    fork.progress("fork work").stop();
+    parentProgress.succeed("parent done");
+
+    expect(sink.records.filter((record) => !record.write).map((record) => record.text)).toEqual([
+      "[arolariu::doctor] 🐛 fork debug",
+      "✔ parent done",
+    ]);
+  });
+
+  it("keeps child contexts appended while a fork replaces the invocation context", () => {
+    const sink = new InMemoryLoggerSink();
+    const parent = new MonorepositoryConsoleLogger("status", {color: false, sink});
+
+    parent.child("collector").info("child");
+    parent.fork("doctor", {mode: "human", verbose: true}).child("dotnet").info("fork child");
+
+    expect(sink.records.map((record) => record.text)).toEqual([
+      "[arolariu::status::collector] ℹ️ child",
+      "[arolariu::doctor::dotnet] ℹ️ fork child",
+    ]);
   });
 });

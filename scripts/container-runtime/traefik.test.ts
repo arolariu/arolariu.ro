@@ -3,11 +3,9 @@
  * @module scripts/container-runtime/traefik.test
  */
 
-import {mkdtemp, readFile, rm} from "node:fs/promises";
-import {tmpdir} from "node:os";
-import {join} from "node:path";
 import {describe, expect, it} from "vitest";
-import {buildSelfhostTraefikConfig, removeSelfhostTraefikConfig, writeSelfhostTraefikConfig} from "./traefik.ts";
+import {createMemoryFileSystem} from "../common/runtime.testing.ts";
+import {buildSelfhostTraefikConfig, removeSelfhostTraefikConfig, selfhostTraefikConfigPath, writeSelfhostTraefikConfig} from "./traefik.ts";
 
 describe("buildSelfhostTraefikConfig", () => {
   it("creates static routes without Docker provider labels", () => {
@@ -24,18 +22,51 @@ describe("buildSelfhostTraefikConfig", () => {
     expect(yaml).not.toContain("/var/run/docker.sock");
   });
 
-  it("writes and removes the generated config at the default path", async () => {
-    const tempRoot = await mkdtemp(join(tmpdir(), "container-runtime-traefik-"));
-    const targetPath = join(tempRoot, "infra", "Local", "Management", "traefik", "dynamic", "selfhost-services.yml");
+  it("stays pure: repeated builds produce identical content without any capability", () => {
+    expect(buildSelfhostTraefikConfig()).toBe(buildSelfhostTraefikConfig());
+  });
+});
 
-    try {
-      await writeSelfhostTraefikConfig(targetPath);
-      await expect(readFile(targetPath, "utf8")).resolves.toContain("website-localhost");
+describe("writeSelfhostTraefikConfig", () => {
+  it("writes the supplied config at the fixed path through the injected filesystem, creating missing parents", async () => {
+    const files = createMemoryFileSystem();
 
-      await removeSelfhostTraefikConfig(targetPath);
-      await expect(readFile(targetPath, "utf8")).rejects.toThrow();
-    } finally {
-      await rm(tempRoot, {recursive: true, force: true});
-    }
+    await writeSelfhostTraefikConfig(files, buildSelfhostTraefikConfig());
+
+    await expect(files.readText(selfhostTraefikConfigPath)).resolves.toContain("website-localhost");
+  });
+
+  it("writes exactly the supplied content instead of rebuilding it", async () => {
+    const files = createMemoryFileSystem();
+
+    await writeSelfhostTraefikConfig(files, "http:\n  routers: {}\n");
+
+    await expect(files.readText(selfhostTraefikConfigPath)).resolves.toBe("http:\n  routers: {}\n");
+  });
+
+  it("replaces an existing generated config", async () => {
+    const files = createMemoryFileSystem();
+
+    await writeSelfhostTraefikConfig(files, "first");
+    await writeSelfhostTraefikConfig(files, "second");
+
+    await expect(files.readText(selfhostTraefikConfigPath)).resolves.toBe("second");
+  });
+});
+
+describe("removeSelfhostTraefikConfig", () => {
+  it("removes the generated config through the injected filesystem", async () => {
+    const files = createMemoryFileSystem();
+    await writeSelfhostTraefikConfig(files, buildSelfhostTraefikConfig());
+
+    await removeSelfhostTraefikConfig(files);
+
+    await expect(files.exists(selfhostTraefikConfigPath)).resolves.toBe(false);
+  });
+
+  it("succeeds when the generated config was never written", async () => {
+    const files = createMemoryFileSystem();
+
+    await expect(removeSelfhostTraefikConfig(files)).resolves.toBeUndefined();
   });
 });

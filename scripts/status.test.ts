@@ -1,7 +1,14 @@
 // @vitest-environment node
 /**
- * @fileoverview Contract tests for the monorepo status dashboard.
+ * @fileoverview Contract tests for the monorepo status command.
  * @module scripts.status.test
+ *
+ * @remarks
+ * Every orchestrator test drives `statusCommand.run()`/`invoke()` through an injected test runtime
+ * factory whose filesystem is the in-memory repository fixture, whose inspection registry is the
+ * real memoized runtime, and whose process runner replays keyed outcomes. No test in this file
+ * reads the live checkout or spawns a real child process, except the bounded disk-probe
+ * integration tests and the direct-entrypoint smoke tests, which do so deliberately.
  */
 
 import {spawn} from "node:child_process";
@@ -10,24 +17,41 @@ import {mkdir, mkdtemp, rm, symlink, writeFile} from "node:fs/promises";
 import {tmpdir} from "node:os";
 import {join, resolve} from "node:path";
 import {fileURLToPath} from "node:url";
-import {afterEach, describe, expect, it} from "vitest";
+import {afterEach, describe, expect, it, vi, type Mock} from "vitest";
 
+import {MonorepoCommand, type CommandExecution, type CommandInvoker, type CommandRuntimeFactory} from "./common/commander.ts";
 import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "./common/logger.ts";
-import {defaultCommandRunner} from "./common/process.ts";
-import type {CommandResult, CommandRunner, CommandRunOptions, CommandSpec} from "./common/process.ts";
 import {createRepositoryPaths} from "./common/repository-paths.ts";
-import {buildWorkspaceGraph, WorkspaceGraphError, type WorkspaceGraph} from "./common/workspace-graph.ts";
-import {createDoctorReport} from "./doctor.reporter.ts";
-import type {DiagnosticResult} from "./doctor.types.ts";
-import {collectDisk, healthFromDoctorResult, main, parseStatusOptions} from "./status.ts";
+import {AbstractProcessRunner, type ProcessOutcome, type ProcessRequest, type ProcessRunOptions} from "./common/runner.ts";
+import {createNodeProcessRunner, snapshotNodeEnvironment} from "./common/runtime.node.ts";
+import {
+  createRepositoryFixtureFileSystem,
+  createRepositoryInspectionSessionStub,
+  createTestRuntimeFactory,
+  repositoryFixtureRoot,
+} from "./common/runtime.testing.ts";
+import {
+  CommandCancellation,
+  commandCancellationFromSignal,
+  createRepositoryInspectionRuntime,
+  DefaultTaskScheduler,
+  MemoizedInspectionRuntime,
+  type RepositoryInspectionRequest,
+  type RepositoryInspectionRuntime,
+} from "./common/runtime.ts";
+import type {DoctorInput, DoctorReport} from "./doctor.types.ts";
+import type {RepositoryInspectionFacts, RepositoryInspectionSession} from "./inspection/repository.ts";
+import {createInspectionSession} from "./inspection/session.ts";
+import type {InspectionOutcome} from "./inspection/types.ts";
+import type {WorkspaceFacts} from "./inspection/workspace.ts";
+import {collectDisk, createStatusCommand, type StatusDocument} from "./status.ts";
 
 // ============================================================================
 // Fixtures
 // ============================================================================
 
-const FIXED_ROOT = resolve("C:\\fixture\\arolariu.ro");
-const FIXED_REPOSITORY_PATHS = createRepositoryPaths(FIXED_ROOT);
-const DOCTOR_SCRIPT_PATH = join(FIXED_ROOT, "scripts", "doctor.ts");
+const FIXTURE_ROOT = repositoryFixtureRoot;
+const FIXTURE_PATHS = createRepositoryPaths(FIXTURE_ROOT);
 
 const GIT_BRANCH_KEY = "git rev-parse --abbrev-ref HEAD";
 const GIT_SHA_KEY = "git rev-parse --short HEAD";
@@ -36,124 +60,128 @@ const GIT_LOG_MSG_KEY = "git log -1 --format=%s";
 const GIT_STATUS_KEY = "git status --porcelain";
 const NPM_AUDIT_KEY = "npm audit --json";
 const NPM_OUTDATED_KEY = "npm outdated --json";
-const DOCTOR_KEY = `${process.execPath} ${DOCTOR_SCRIPT_PATH} --quick --json`;
+/** The test runtime environment reports `/usr/bin/node` as the running executable. */
+const NODE_VERSION_KEY = "/usr/bin/node --version";
 
-const DISK_NODE_MODULES_TARGET = join(FIXED_ROOT, "node_modules");
-const DISK_NEXT_BUILD_TARGET = join(FIXED_ROOT, "sites", "arolariu.ro", ".next");
-const DISK_COMPONENTS_DIST_TARGET = join(FIXED_ROOT, "packages", "components", "dist");
+const DISK_NODE_MODULES_TARGET = join(FIXTURE_ROOT, "node_modules");
+const DISK_NEXT_BUILD_TARGET = join(FIXTURE_ROOT, "sites", "arolariu.ro", ".next");
+const DISK_COMPONENTS_DIST_TARGET = join(FIXTURE_ROOT, "packages", "components", "dist");
+
+const CLEAN_AUDIT_STDOUT = JSON.stringify({metadata: {vulnerabilities: {critical: 0, high: 0, moderate: 0, low: 0}}});
 
 /**
- * The disk-size probe is `process.execPath --eval <script> <targetPath>`. The generated
- * script text is an implementation detail tests must not duplicate, so responses/calls are
- * keyed on the target path alone.
+ * The disk-size probe is `<node> --eval <script> <targetPath>`. The generated script text is an
+ * implementation detail tests must not duplicate, so responses/calls are keyed on the target path.
+ *
+ * @param targetPath - Absolute path the probe measures.
+ * @returns The keyed disk-probe identity.
  */
 function diskProbeKey(targetPath: string): string {
   return `disk-probe ${targetPath}`;
 }
 
-function commandKey(command: Readonly<CommandSpec>): string {
-  if (command.command === process.execPath && command.args[0] === "--eval") {
-    return diskProbeKey(command.args[command.args.length - 1] ?? "");
+function processKey(request: Readonly<ProcessRequest>): string {
+  if (request.args[0] === "--eval") {
+    return diskProbeKey(request.args.at(-1) ?? "");
   }
-  return [command.command, ...command.args].join(" ");
+  return [request.command, ...request.args].join(" ");
 }
 
-function commandResult(overrides: Partial<CommandResult> = {}): CommandResult {
-  return {code: 0, stdout: "", stderr: "", durationMs: 1, timedOut: false, ...overrides};
+function succeeded(stdout: string): ProcessOutcome {
+  return {kind: "succeeded", exitCode: 0, stdout, stderr: "", durationMs: 1};
 }
 
-function passCheck(id: string): DiagnosticResult {
-  return {
-    id,
-    module: "workspace",
-    name: id,
-    status: "pass",
-    summary: `${id} is healthy.`,
-    evidence: [],
-    potentialCauses: [],
-    fixes: [],
-    durationMs: 1,
-  };
+function exited(exitCode: number, stdout = "", stderr = ""): ProcessOutcome {
+  return {kind: "exited", exitCode, stdout, stderr, durationMs: 1};
 }
 
-function failCheck(id: string): DiagnosticResult {
-  return {
-    id,
-    module: "workspace",
-    name: id,
-    status: "fail",
-    summary: `${id} failed.`,
-    evidence: [`${id} evidence`],
-    rootCause: `${id} root cause`,
-    potentialCauses: [],
-    fixes: [{description: `Fix ${id}.`}],
-    durationMs: 1,
-  };
+function timedOut(): ProcessOutcome {
+  return {kind: "timed-out", stdout: "", stderr: "", durationMs: 1};
 }
 
-const PASSING_DOCTOR_REPORT = createDoctorReport([passCheck("workspace.repository-root")], "2026-08-29T00:00:00.000Z");
-const FAILING_DOCTOR_REPORT = createDoctorReport([failCheck("workspace.repository-root")], "2026-08-29T00:00:00.000Z");
-
-const HEALTHY_WORKSPACE_GRAPH: WorkspaceGraph = buildWorkspaceGraph([
-  {
-    root: "packages/components",
-    projectConfiguration: {name: "@arolariu/components"},
-    packageManifest: {name: "@arolariu/components"},
-  },
-  {
-    root: "sites/arolariu.ro",
-    projectConfiguration: {name: "@arolariu/website", targets: {build: {dependsOn: ["components:build"]}}},
-    packageManifest: {name: "@arolariu/website", dependencies: {"@arolariu/components": "*"}},
-  },
-]);
-
-const FIXTURE_DEPENDENCIES = {
-  resolveRepositoryPaths: (): ReturnType<typeof createRepositoryPaths> => FIXED_REPOSITORY_PATHS,
-  readWorkspaceGraph: async (): Promise<WorkspaceGraph> => HEALTHY_WORKSPACE_GRAPH,
-} as const;
-
-const CLEAN_AUDIT_STDOUT = JSON.stringify({
-  metadata: {vulnerabilities: {critical: 0, high: 0, moderate: 0, low: 0}},
-});
-
-/** Records every command issued to a fake runner and replies from a keyed response table. */
-function createRecordingRunner(responses: ReadonlyMap<string, CommandResult>): Readonly<{
-  runner: CommandRunner;
-  calls: readonly Readonly<{command: CommandSpec; options?: CommandRunOptions}>[];
-}> {
-  const calls: {command: CommandSpec; options?: CommandRunOptions}[] = [];
-  const runner: CommandRunner = {
-    run: async (command, options) => {
-      calls.push(options === undefined ? {command} : {command, options});
-      const response = responses.get(commandKey(command));
-      if (response === undefined) {
-        throw new Error(`Unexpected command in test: ${commandKey(command)}`);
-      }
-      return response;
-    },
-  };
-  return {runner, calls};
+function spawnFailed(message: string): ProcessOutcome {
+  return {kind: "spawn-failed", message, stdout: "", stderr: "", durationMs: 1};
 }
 
-function baseResponses(): Map<string, CommandResult> {
-  return new Map<string, CommandResult>([
-    [GIT_BRANCH_KEY, commandResult({stdout: "main\n"})],
-    [GIT_SHA_KEY, commandResult({stdout: "abc1234\n"})],
-    [GIT_LOG_TIME_KEY, commandResult({stdout: "2 hours ago\n"})],
-    [GIT_LOG_MSG_KEY, commandResult({stdout: "chore: something\n"})],
-    [GIT_STATUS_KEY, commandResult({stdout: ""})],
-    [NPM_AUDIT_KEY, commandResult({stdout: CLEAN_AUDIT_STDOUT})],
-    // A successful `npm outdated --json` run always writes a JSON object — "{}" when nothing
-    // is outdated — never empty stdout; see the "npm outdated" regression tests below.
-    [NPM_OUTDATED_KEY, commandResult({stdout: "{}"})],
-    [DOCTOR_KEY, commandResult({stdout: JSON.stringify(PASSING_DOCTOR_REPORT)})],
-    [diskProbeKey(DISK_NODE_MODULES_TARGET), commandResult({stdout: "1024"})],
-    [diskProbeKey(DISK_NEXT_BUILD_TARGET), commandResult({stdout: "2048"})],
-    [diskProbeKey(DISK_COMPONENTS_DIST_TARGET), commandResult({stdout: "512"})],
+function signalled(): ProcessOutcome {
+  return {kind: "signalled", signal: "SIGTERM", stdout: "", stderr: "", durationMs: 1};
+}
+
+interface RecordedProcessCall {
+  readonly request: Readonly<ProcessRequest>;
+  readonly options: Readonly<ProcessRunOptions>;
+}
+
+/** Records every process invocation and replays one keyed outcome per command. */
+class ScriptedProcessRunner extends AbstractProcessRunner {
+  readonly #outcomes: ReadonlyMap<string, ProcessOutcome>;
+  readonly #calls: RecordedProcessCall[] = [];
+
+  public constructor(outcomes: ReadonlyMap<string, ProcessOutcome>) {
+    super();
+    this.#outcomes = outcomes;
+  }
+
+  /** Every recorded invocation, in call order. */
+  public get calls(): readonly RecordedProcessCall[] {
+    return this.#calls;
+  }
+
+  /** {@inheritDoc AbstractProcessRunner.execute} */
+  protected override execute(request: Readonly<ProcessRequest>, options: Readonly<ProcessRunOptions>): Promise<ProcessOutcome> {
+    this.#calls.push({request, options});
+    const outcome = this.#outcomes.get(processKey(request));
+    return outcome === undefined
+      ? Promise.reject(new Error(`Unexpected command in status test: ${processKey(request)}`))
+      : Promise.resolve(outcome);
+  }
+}
+
+/**
+ * Records ordered start and settle events for every probe so collector/doctor concurrency can be
+ * asserted without wall-clock timing.
+ */
+class TimelineProcessRunner extends ScriptedProcessRunner {
+  readonly #events: string[];
+
+  public constructor(outcomes: ReadonlyMap<string, ProcessOutcome>, events: string[]) {
+    super(outcomes);
+    this.#events = events;
+  }
+
+  /** {@inheritDoc AbstractProcessRunner.execute} */
+  protected override async execute(
+    request: Readonly<ProcessRequest>,
+    options: Readonly<ProcessRunOptions>,
+  ): Promise<ProcessOutcome> {
+    this.#events.push(`probe:start ${processKey(request)}`);
+    try {
+      return await super.execute(request, options);
+    } finally {
+      this.#events.push(`probe:end ${processKey(request)}`);
+    }
+  }
+}
+
+function baseResponses(): Map<string, ProcessOutcome> {
+  return new Map<string, ProcessOutcome>([
+    [GIT_BRANCH_KEY, succeeded("main\n")],
+    [GIT_SHA_KEY, succeeded("abc1234\n")],
+    [GIT_LOG_TIME_KEY, succeeded("2 hours ago\n")],
+    [GIT_LOG_MSG_KEY, succeeded("chore: something\n")],
+    [GIT_STATUS_KEY, succeeded("")],
+    [NPM_AUDIT_KEY, succeeded(CLEAN_AUDIT_STDOUT)],
+    // A successful `npm outdated --json` run always writes a JSON object — "{}" when nothing is
+    // outdated — never empty stdout; see the "npm outdated" regression tests below.
+    [NPM_OUTDATED_KEY, succeeded("{}")],
+    [NODE_VERSION_KEY, succeeded("v26.3.1\n")],
+    [diskProbeKey(DISK_NODE_MODULES_TARGET), succeeded("1024")],
+    [diskProbeKey(DISK_NEXT_BUILD_TARGET), succeeded("2048")],
+    [diskProbeKey(DISK_COMPONENTS_DIST_TARGET), succeeded("512")],
   ]);
 }
 
-function withOverrides(overrides: Readonly<Record<string, CommandResult>>): Map<string, CommandResult> {
+function withOverrides(overrides: Readonly<Record<string, ProcessOutcome>>): Map<string, ProcessOutcome> {
   const responses = baseResponses();
   for (const [key, value] of Object.entries(overrides)) {
     responses.set(key, value);
@@ -161,281 +189,521 @@ function withOverrides(overrides: Readonly<Record<string, CommandResult>>): Map<
   return responses;
 }
 
-const runnerThatMustNotBeCalled: CommandRunner = {
-  run: async () => {
-    throw new Error("Status test runner should not be invoked for this path.");
-  },
+const HEALTHY_WORKSPACE_FACTS: WorkspaceFacts = {
+  projects: [
+    {name: "@arolariu/components", root: "packages/components", targets: ["build"]},
+    {name: "@arolariu/website", root: "sites/arolariu.ro", targets: ["build"]},
+  ],
+  dependencies: [{source: "@arolariu/website", target: "@arolariu/components"}],
+  cycles: [],
 };
 
-function resolvePathsThatMustNotBeCalled(): never {
-  throw new Error("Status test resolveRepositoryPaths should not be invoked for this path.");
+function unavailableFact<TValue>(): Promise<InspectionOutcome<TValue>> {
+  return Promise.resolve({kind: "unavailable", reason: "Not provided by the status fixture.", durationMs: 0});
 }
 
-function createLogger(mode?: "human" | "json"): Readonly<{logger: MonorepositoryConsoleLogger; sink: InMemoryLoggerSink}> {
+/**
+ * Builds a real memoized inspection session whose only populated fact is `workspace`.
+ *
+ * @param workspace - Provider for the workspace fact under test.
+ * @returns A repository inspection session usable by every status collector.
+ */
+function createFixtureSession(workspace: () => Promise<InspectionOutcome<WorkspaceFacts>>): RepositoryInspectionSession {
+  const session = createInspectionSession<RepositoryInspectionFacts>({
+    workspace,
+    aggregate: unavailableFact,
+    "npm.root": unavailableFact,
+    "npm.github-scripts": unavailableFact,
+    packages: unavailableFact,
+    dotnet: unavailableFact,
+    python: unavailableFact,
+    react: unavailableFact,
+    "svelte.cv": unavailableFact,
+    "svelte.status": unavailableFact,
+    infrastructure: unavailableFact,
+  });
+
+  return {...session, updateInfrastructureEngine: (): void => undefined};
+}
+
+function availableWorkspace(facts: WorkspaceFacts = HEALTHY_WORKSPACE_FACTS): () => Promise<InspectionOutcome<WorkspaceFacts>> {
+  return () => Promise.resolve({kind: "available", value: facts, durationMs: 1});
+}
+
+function doctorReport(overrides: Partial<DoctorReport> = {}): DoctorReport {
+  return {
+    score: 92,
+    grade: "A",
+    summary: {passed: 3, warnings: 1, failed: 0, skipped: 2},
+    checks: [],
+    timestamp: "2026-01-01T00:00:00.000Z",
+    ...overrides,
+  };
+}
+
+type DoctorInvoke = CommandInvoker<DoctorInput, DoctorReport>["invoke"];
+type DoctorStub = CommandInvoker<DoctorInput, DoctorReport> & Readonly<{invoke: Mock<DoctorInvoke>}>;
+
+/**
+ * Creates a typed doctor stub recording every composed invocation.
+ *
+ * @param implementation - Behavior the stub replays; defaults to a healthy completed report.
+ * @returns A recording {@link CommandInvoker}.
+ */
+function createDoctorStub(implementation?: DoctorInvoke): DoctorStub {
+  const invoke = vi.fn<DoctorInvoke>(
+    implementation ?? ((): Promise<CommandExecution<DoctorReport>> => Promise.resolve({status: "completed", value: doctorReport(), exitCode: 0})),
+  );
+  return {invoke};
+}
+
+/** Opens once, letting a test await a specific point inside a composed child invocation. */
+interface Gate {
+  readonly opened: Promise<void>;
+  readonly open: () => void;
+}
+
+function createGate(): Gate {
+  let open = (): void => undefined;
+  const opened = new Promise<void>((resolve) => {
+    open = resolve;
+  });
+  return {opened, open};
+}
+
+/**
+ * Resolves on the next macrotask, so a cleanup callback provably outlives every pending
+ * microtask without depending on wall-clock timing.
+ *
+ * @returns A promise settled after the current microtask queue drains.
+ */
+function nextMacrotask(): Promise<void> {
+  return new Promise<void>((resolve) => {
+    setImmediate(resolve);
+  });
+}
+
+/**
+ * A child execution that never settles on its own and rejects with the exact cancellation its
+ * own invocation signal carries.
+ *
+ * @param signal - The child invocation's cancellation signal.
+ * @returns A promise that rejects only once `signal` aborts.
+ */
+function rejectOnAbort(signal: AbortSignal): Promise<never> {
+  return new Promise<never>((_resolve, reject) => {
+    signal.addEventListener(
+      "abort",
+      () => {
+        reject(commandCancellationFromSignal(signal));
+      },
+      {once: true},
+    );
+  });
+}
+
+/**
+ * Builds a real {@link MonorepoCommand} doctor child whose execution stays pending until its own
+ * scope aborts and whose cleanup callback only completes on a later macrotask.
+ *
+ * @param factory - Runtime factory shared with status, so the child receives a real nested scope.
+ * @param events - Ordered event log the cleanup callback appends to when it finishes draining.
+ * @returns The composed child command and a gate opened once its execution has started.
+ */
+function createPendingDoctorChild(
+  factory: CommandRuntimeFactory,
+  events: string[],
+): Readonly<{doctor: CommandInvoker<DoctorInput, DoctorReport>; started: Promise<void>}> {
+  const gate = createGate();
+  const doctor = new MonorepoCommand<DoctorInput, DoctorReport>(
+    {
+      metadata: {name: "doctor", description: "Runs read-only monorepo health checks."},
+      configure: () => undefined,
+      decode: () => ({quick: true, verbose: false}),
+      presentation: () => "silent",
+      execute: (context) => {
+        context.runtime.cleanup.register("doctor child probe", async () => {
+          await nextMacrotask();
+          events.push("doctor:cleanup-drained");
+        });
+        gate.open();
+        return rejectOnAbort(context.runtime.signal);
+      },
+      completion: () => ({exitCode: 0}),
+    },
+    factory,
+  );
+
+  return {doctor, started: gate.opened};
+}
+
+interface StatusFixtureOptions {
+  readonly responses?: ReadonlyMap<string, ProcessOutcome>;
+  readonly runner?: ScriptedProcessRunner;
+  readonly workspace?: () => Promise<InspectionOutcome<WorkspaceFacts>>;
+  readonly doctor?: DoctorStub;
+  readonly mode?: "human" | "json";
+  readonly files?: Readonly<Record<string, string>>;
+}
+
+interface StatusFixture {
+  readonly command: ReturnType<typeof createStatusCommand>;
+  readonly sink: InMemoryLoggerSink;
+  readonly runner: ScriptedProcessRunner;
+  readonly doctor: DoctorStub;
+  readonly inspection: RepositoryInspectionRuntime;
+  readonly createSession: Mock<(request: Readonly<RepositoryInspectionRequest>) => RepositoryInspectionSession>;
+}
+
+/**
+ * Assembles a status command wired to the in-memory repository fixture, a scripted process
+ * runner, the real memoized inspection registry, and a recording doctor stub.
+ *
+ * @param options - Optional process outcomes, a pre-built recording runner, workspace facts,
+ * doctor stub, logger mode, and extra fixture files.
+ * @returns The command plus every recorded seam.
+ */
+function createStatusFixture(options: Readonly<StatusFixtureOptions> = {}): StatusFixture {
   const sink = new InMemoryLoggerSink();
   const logger = new MonorepositoryConsoleLogger("status", {
     color: false,
     sink,
     verbose: false,
-    ...(mode === undefined ? {} : {mode}),
+    mode: options.mode ?? "human",
   });
-  return {logger, sink};
+  const runner = options.runner ?? new ScriptedProcessRunner(options.responses ?? baseResponses());
+  const session = createFixtureSession(options.workspace ?? availableWorkspace());
+  const createSession = vi.fn<(request: Readonly<RepositoryInspectionRequest>) => RepositoryInspectionSession>(() => session);
+  const inspection = createRepositoryInspectionRuntime(createSession);
+  const doctor = options.doctor ?? createDoctorStub();
+  const command = createStatusCommand({
+    runtimeFactory: createTestRuntimeFactory({
+      files: createRepositoryFixtureFileSystem(options.files ?? {}),
+      inspection,
+      logger,
+      runner,
+    }),
+    doctor,
+  });
+
+  return {command, sink, runner, doctor, inspection, createSession};
 }
 
-/** Runs `main` against the fixed repository fixture with a fully successful command table. */
-async function runMainHappyPath(argv: readonly string[], mode?: "human" | "json") {
-  const {logger, sink} = createLogger(mode);
-  const {runner, calls} = createRecordingRunner(baseResponses());
-  const exitCode = await main(argv, {
-    logger,
-    runner,
-    ...FIXTURE_DEPENDENCIES,
-  });
-  return {exitCode, sink, calls};
-}
-
-function parseJsonOutput(sink: InMemoryLoggerSink): Record<string, unknown> {
-  expect(sink.records).toHaveLength(1);
-  const [record] = sink.records;
-  expect(record?.stream).toBe("stdout");
+function jsonDocument(sink: InMemoryLoggerSink): Record<string, unknown> {
+  const stdout = sink.records.filter((record) => record.stream === "stdout");
+  expect(stdout).toHaveLength(1);
+  const [record] = stdout;
   expect(record?.text).not.toMatch(/\u001B/);
   return JSON.parse(record?.text ?? "") as Record<string, unknown>;
 }
 
+function renderedText(sink: InMemoryLoggerSink): string {
+  return sink.records.map((record) => record.text).join("\n");
+}
+
+async function runJson(fixture: StatusFixture): Promise<Record<string, unknown>> {
+  const execution = await fixture.command.run(["--json"]);
+  expect(execution.status).toBe("completed");
+  expect(execution.exitCode).toBe(0);
+  return jsonDocument(fixture.sink);
+}
+
 // ============================================================================
-// healthFromDoctorResult
+// Parser
 // ============================================================================
 
-describe("healthFromDoctorResult", () => {
-  it("accepts a valid schema-1 report when doctor exits 0", () => {
-    const result = commandResult({code: 0, stdout: JSON.stringify(PASSING_DOCTOR_REPORT)});
+describe("status command — parser", () => {
+  it.each(["--help", "-h", "/h", "/help"])("renders help and completes with exit 0 for '%s'", async (flag) => {
+    const fixture = createStatusFixture();
 
-    expect(healthFromDoctorResult(result)).toEqual({
-      score: PASSING_DOCTOR_REPORT.score,
-      grade: PASSING_DOCTOR_REPORT.grade,
-      summary: PASSING_DOCTOR_REPORT.summary,
-    });
+    const execution = await fixture.command.run([flag]);
+
+    expect(execution).toEqual({status: "help", exitCode: 0});
+    expect(fixture.runner.calls).toHaveLength(0);
+    expect(fixture.doctor.invoke).not.toHaveBeenCalled();
   });
 
-  it("accepts a valid schema-1 report when doctor exits 1 because checks failed", () => {
-    const result = commandResult({code: 1, stdout: JSON.stringify(FAILING_DOCTOR_REPORT)});
+  it.each(["--bogus", "-x", "workspace", "--verbose"])("rejects '%s' as a usage failure with exit 2", async (argument) => {
+    const fixture = createStatusFixture();
 
-    expect(healthFromDoctorResult(result)).toEqual({
-      score: FAILING_DOCTOR_REPORT.score,
-      grade: FAILING_DOCTOR_REPORT.grade,
-      summary: FAILING_DOCTOR_REPORT.summary,
-    });
+    const execution = await fixture.command.run([argument]);
+
+    expect(execution.status).toBe("failed");
+    expect(execution.exitCode).toBe(2);
+    expect(fixture.runner.calls).toHaveLength(0);
+    expect(fixture.doctor.invoke).not.toHaveBeenCalled();
+    expect(fixture.createSession).not.toHaveBeenCalled();
   });
 
-  it("ignores stderr warnings when stdout holds a valid report", () => {
-    const result = commandResult({
-      code: 0,
-      stdout: JSON.stringify(PASSING_DOCTOR_REPORT),
-      stderr: "npm warn deprecated some-package@1.0.0",
-    });
+  it("accepts --json and selects machine-readable presentation", async () => {
+    const fixture = createStatusFixture({mode: "json"});
 
-    expect(healthFromDoctorResult(result)).not.toBeNull();
-  });
+    const document = await runJson(fixture);
 
-  it("rejects an empty stdout as null", () => {
-    expect(healthFromDoctorResult(commandResult({stdout: ""}))).toBeNull();
-  });
-
-  it("rejects a non-JSON preamble instead of scanning for the first '{'", () => {
-    const result = commandResult({stdout: `npm warn using --force\n${JSON.stringify(PASSING_DOCTOR_REPORT)}`});
-
-    expect(healthFromDoctorResult(result)).toBeNull();
-  });
-
-  it("rejects malformed JSON", () => {
-    expect(healthFromDoctorResult(commandResult({stdout: "{not valid json"}))).toBeNull();
-  });
-
-  it("rejects an old schema that omits schemaVersion", () => {
-    const withoutVersion: Record<string, unknown> = JSON.parse(JSON.stringify(PASSING_DOCTOR_REPORT));
-    delete withoutVersion["schemaVersion"];
-    expect(healthFromDoctorResult(commandResult({stdout: JSON.stringify(withoutVersion)}))).toBeNull();
-  });
-
-  it("rejects an unknown future schema version", () => {
-    const future = {...PASSING_DOCTOR_REPORT, schemaVersion: 2};
-    expect(healthFromDoctorResult(commandResult({stdout: JSON.stringify(future)}))).toBeNull();
-  });
-
-  it("rejects an internally inconsistent score", () => {
-    const inconsistent = {...PASSING_DOCTOR_REPORT, score: PASSING_DOCTOR_REPORT.score === 100 ? 42 : 100};
-    expect(healthFromDoctorResult(commandResult({stdout: JSON.stringify(inconsistent)}))).toBeNull();
-  });
-
-  it("rejects an internally inconsistent summary", () => {
-    const inconsistent = {...PASSING_DOCTOR_REPORT, summary: {passed: 0, warnings: 0, failed: 0, skipped: 0}};
-    expect(healthFromDoctorResult(commandResult({stdout: JSON.stringify(inconsistent)}))).toBeNull();
-  });
-
-  it("rejects an internally inconsistent grade", () => {
-    const inconsistent = {...PASSING_DOCTOR_REPORT, grade: "F"};
-    expect(healthFromDoctorResult(commandResult({stdout: JSON.stringify(inconsistent)}))).toBeNull();
+    expect(Object.keys(document).toSorted()).toEqual(["disk", "git", "health", "nxEdges", "security", "workspaces"].toSorted());
   });
 });
 
 // ============================================================================
-// parseStatusOptions
+// Typed doctor composition
 // ============================================================================
 
-describe("parseStatusOptions", () => {
-  it("returns every flag disabled by default", () => {
-    expect(parseStatusOptions([])).toEqual({json: false, help: false});
-  });
-
-  it("enables --json", () => {
-    expect(parseStatusOptions(["--json"]).json).toBe(true);
-  });
-
-  it.each(["--help", "-h"])("enables help via '%s'", (flag) => {
-    expect(parseStatusOptions([flag]).help).toBe(true);
-  });
-
-  it("rejects an unknown flag", () => {
-    expect(() => parseStatusOptions(["--bogus"])).toThrow(/unknown status option/i);
-  });
-
-  it("rejects a bare positional argument", () => {
-    expect(() => parseStatusOptions(["workspace"])).toThrow(/unknown status option/i);
-  });
-});
-
-// ============================================================================
-// main: help, unknown option
-// ============================================================================
-
-describe("main — help and option parsing", () => {
-  it("emits usage and exits 0 for --help without invoking any collector", async () => {
-    const {logger, sink} = createLogger();
-
-    const exitCode = await main(["--help"], {
-      logger,
-      runner: runnerThatMustNotBeCalled,
-      resolveRepositoryPaths: resolvePathsThatMustNotBeCalled,
-    });
-
-    expect(exitCode).toBe(0);
-    expect(sink.records.map((record) => record.text).join("\n")).toMatch(/Usage: node scripts\/status\.ts/);
-  });
-
-  it("emits usage and exits 0 for -h combined with an otherwise-unknown flag", async () => {
-    const {logger} = createLogger();
-
-    await expect(
-      main(["--bogus", "-h"], {logger, runner: runnerThatMustNotBeCalled, resolveRepositoryPaths: resolvePathsThatMustNotBeCalled}),
-    ).resolves.toBe(0);
-  });
-
-  it("returns 1 and renders the option error for an unknown flag, without invoking any collector", async () => {
-    const {logger, sink} = createLogger();
-
-    const exitCode = await main(["--bogus"], {
-      logger,
-      runner: runnerThatMustNotBeCalled,
-      resolveRepositoryPaths: resolvePathsThatMustNotBeCalled,
-    });
-
-    expect(exitCode).toBe(1);
-    expect(sink.records.map((record) => record.text).join("\n")).toMatch(/unknown status option/i);
-  });
-
-  it("returns 1 and renders the error when repository-path resolution fails", async () => {
-    const {logger, sink} = createLogger();
-
-    const exitCode = await main([], {
-      logger,
-      runner: runnerThatMustNotBeCalled,
-      resolveRepositoryPaths: () => {
-        throw new Error("context assembly boom");
+describe("status command — doctor composition", () => {
+  it("reuses the parent inspection session and consumes a completed Doctor report with exit one", async () => {
+    const request: RepositoryInspectionRequest = {
+      profile: "quick",
+      paths: createRepositoryPaths(repositoryFixtureRoot),
+    };
+    const createSession = vi.fn(() => createRepositoryInspectionSessionStub());
+    const inspection = new MemoizedInspectionRuntime<RepositoryInspectionRequest, RepositoryInspectionSession>(
+      createSession,
+      ({paths, profile, requestedEngine}) => `${paths.root}:${profile}:${requestedEngine ?? "auto"}`,
+    );
+    const doctor: CommandInvoker<DoctorInput, DoctorReport> = {
+      invoke: async (_input, options) => {
+        options?.parent?.runtime.inspection.getRepositorySession(request);
+        return {
+          status: "completed",
+          value: {
+            score: 75,
+            grade: "C",
+            summary: {passed: 3, warnings: 1, failed: 1, skipped: 0},
+            checks: [],
+            timestamp: "2025-06-01T00:00:00.000Z",
+          },
+          exitCode: 1,
+        };
       },
+    };
+    const command = createStatusCommand({
+      runtimeFactory: createTestRuntimeFactory({
+        files: createRepositoryFixtureFileSystem(),
+        inspection,
+        runner: new ScriptedProcessRunner(baseResponses()),
+      }),
+      doctor,
     });
 
-    expect(exitCode).toBe(1);
-    expect(sink.records.map((record) => record.text).join("\n")).toMatch(/context assembly boom/);
+    const execution = await command.invoke({json: true}, {presentation: "silent"});
+
+    expect(execution).toMatchObject({
+      status: "completed",
+      exitCode: 0,
+      value: {health: expect.objectContaining({score: expect.any(Number)})},
+    });
+    expect(createSession).toHaveBeenCalledOnce();
   });
 
-  it("returns 1, emits no stdout/partial JSON, and writes exactly one stderr diagnostic through the injected errorLogger when repository-path resolution fails under --json", async () => {
-    // In JSON mode the primary logger's semantic `error` is a no-op (it only ever emits the
-    // single JSON document), so a fatal failure here must be routed through a dedicated
-    // human-mode `errorLogger` that always reaches stderr — mirroring doctor.ts's fatal path.
-    const {logger, sink} = createLogger("json");
-    const {logger: errorLogger, sink: errorSink} = createLogger();
+  it("invokes doctor once with quick input, silent presentation, and the status invocation as parent", async () => {
+    const fixture = createStatusFixture({mode: "json"});
 
-    const exitCode = await main(["--json"], {
-      logger,
-      errorLogger,
-      runner: runnerThatMustNotBeCalled,
-      resolveRepositoryPaths: () => {
-        throw new Error("context assembly boom");
-      },
-    });
+    await fixture.command.run(["--json"]);
 
-    expect(exitCode).toBe(1);
-    expect(sink.records).toHaveLength(0);
-    const errorRecords = errorSink.records.filter((record) => record.stream === "stderr");
-    expect(errorRecords).toHaveLength(1);
-    expect(errorRecords[0]?.text).toMatch(/context assembly boom/);
+    expect(fixture.doctor.invoke).toHaveBeenCalledTimes(1);
+    const call = fixture.doctor.invoke.mock.calls[0];
+    expect(call?.[0]).toEqual({quick: true, verbose: false});
+    expect(call?.[1]?.presentation).toBe("silent");
+    expect(call?.[1]?.parent?.runtime.inspection).toBe(fixture.inspection);
   });
 
-  it("keeps emitting exactly one JSON document on a successful --json run when an errorLogger is injected but never invoked", async () => {
-    const {logger, sink} = createLogger("json");
-    const {logger: errorLogger, sink: errorSink} = createLogger();
-    const {runner} = createRecordingRunner(baseResponses());
-
-    const exitCode = await main(["--json"], {
-      logger,
-      errorLogger,
-      runner,
-      ...FIXTURE_DEPENDENCIES,
+  it("obtains its own quick collector session before invoking doctor and shares exactly one session", async () => {
+    const observed: RepositoryInspectionSession[] = [];
+    const doctor = createDoctorStub(async (_input, options) => {
+      const parent = options?.parent;
+      if (parent !== undefined) {
+        observed.push(parent.runtime.inspection.getRepositorySession({profile: "quick", paths: FIXTURE_PATHS}));
+      }
+      return {status: "completed", value: doctorReport(), exitCode: 0};
     });
+    const fixture = createStatusFixture({doctor, mode: "json"});
 
-    expect(exitCode).toBe(0);
-    expect(sink.records).toHaveLength(1);
-    expect(errorSink.records).toHaveLength(0);
+    await fixture.command.run(["--json"]);
+
+    expect(fixture.createSession).toHaveBeenCalledTimes(1);
+    expect(fixture.createSession).toHaveBeenCalledWith(expect.objectContaining({profile: "quick"}));
+    expect(observed).toHaveLength(1);
+  });
+
+  it("renders the completed doctor report as the health section", async () => {
+    const doctor = createDoctorStub(() =>
+      Promise.resolve({
+        status: "completed",
+        value: doctorReport({score: 64, grade: "D", summary: {passed: 2, warnings: 3, failed: 4, skipped: 5}}),
+        exitCode: 1,
+      }),
+    );
+    const fixture = createStatusFixture({doctor, mode: "json"});
+
+    const document = await runJson(fixture);
+
+    expect(document["health"]).toEqual({score: 64, grade: "D", summary: {passed: 2, warnings: 3, failed: 4, skipped: 5}});
+  });
+
+  it("fails with exit 1 and renders no success document when doctor fails", async () => {
+    const doctor = createDoctorStub(() =>
+      Promise.resolve({
+        status: "failed",
+        failure: {kind: "operational", message: "doctor exploded", evidence: [], cause: new Error("doctor exploded")},
+        exitCode: 1,
+      }),
+    );
+    const fixture = createStatusFixture({doctor, mode: "json"});
+
+    const execution = await fixture.command.run(["--json"]);
+
+    expect(execution.status).toBe("failed");
+    expect(execution.exitCode).toBe(1);
+    if (execution.status === "failed") {
+      expect(execution.failure.message).toMatch(/doctor exploded/);
+    }
+    expect(fixture.sink.records.filter((record) => record.stream === "stdout")).toHaveLength(0);
+  });
+
+  it.each([130, 143] as const)("propagates a cancelled doctor execution with its exact %i exit code", async (exitCode) => {
+    const doctor = createDoctorStub(() =>
+      Promise.resolve({
+        status: "cancelled",
+        failure: {kind: "cancelled", message: "doctor cancelled", evidence: []},
+        exitCode,
+      }),
+    );
+    const fixture = createStatusFixture({doctor, mode: "json"});
+
+    const execution = await fixture.command.run(["--json"]);
+
+    expect(execution.status).toBe("cancelled");
+    expect(execution.exitCode).toBe(exitCode);
+    expect(fixture.sink.records.filter((record) => record.stream === "stdout")).toHaveLength(0);
+  });
+
+  it("treats a doctor help outcome as an internal operational failure", async () => {
+    const doctor = createDoctorStub(() => Promise.resolve({status: "help", exitCode: 0}));
+    const fixture = createStatusFixture({doctor, mode: "json"});
+
+    const execution = await fixture.command.run(["--json"]);
+
+    expect(execution.status).toBe("failed");
+    expect(execution.exitCode).toBe(1);
+    if (execution.status === "failed") {
+      expect(execution.failure.message).toMatch(/help/i);
+    }
+    expect(fixture.sink.records.filter((record) => record.stream === "stdout")).toHaveLength(0);
+  });
+
+  it("starts doctor concurrently with the degradation-tolerant collectors instead of after them", async () => {
+    const events: string[] = [];
+    const runner = new TimelineProcessRunner(baseResponses(), events);
+    const doctor = createDoctorStub(() => {
+      events.push("doctor:start");
+      return Promise.resolve({status: "completed", value: doctorReport(), exitCode: 0});
+    });
+    const fixture = createStatusFixture({runner, doctor});
+
+    const execution = await fixture.command.run([]);
+
+    expect(execution.status).toBe("completed");
+    const doctorStart = events.indexOf("doctor:start");
+    const firstProbeSettled = events.findIndex((event) => event.startsWith("probe:end"));
+    expect(doctorStart).toBeGreaterThanOrEqual(0);
+    expect(firstProbeSettled).toBeGreaterThanOrEqual(0);
+    expect(doctorStart).toBeLessThan(firstProbeSettled);
+  });
+
+  it("fails instead of degrading health to null when the composed doctor invoker rejects", async () => {
+    const doctor = createDoctorStub(() => Promise.reject(new Error("doctor invoker exploded")));
+    const fixture = createStatusFixture({doctor, mode: "json"});
+
+    const execution = await fixture.command.run(["--json"]);
+
+    expect(execution.status).toBe("failed");
+    expect(execution.exitCode).toBe(1);
+    if (execution.status === "failed") {
+      expect(execution.failure.message).toMatch(/doctor invoker exploded/);
+    }
+    expect(fixture.sink.records.filter((record) => record.stream === "stdout")).toHaveLength(0);
   });
 });
 
 // ============================================================================
-// main: command specs (no shell strings, exact Nx/doctor/git/npm forms)
+// Composed child cancellation
 // ============================================================================
 
-describe("main — command specs", () => {
-  it("issues every external probe as an explicit CommandSpec with the expected cwd and timeout", async () => {
-    const {calls} = await runMainHappyPath([], "json");
+describe("status command — composed child cancellation", () => {
+  it("returns the exact signal cancellation only after the composed doctor child drained its own cleanup", async () => {
+    const events: string[] = [];
+    const controller = new AbortController();
+    const sink = new InMemoryLoggerSink();
+    const factory = createTestRuntimeFactory({
+      files: createRepositoryFixtureFileSystem(),
+      inspection: createRepositoryInspectionRuntime(() => createFixtureSession(availableWorkspace())),
+      logger: new MonorepositoryConsoleLogger("status", {color: false, sink, verbose: false, mode: "human"}),
+      runner: new ScriptedProcessRunner(baseResponses()),
+    });
+    const {doctor, started} = createPendingDoctorChild(factory, events);
+    const command = createStatusCommand({runtimeFactory: factory, doctor});
 
-    const byKey = new Map(calls.map((call) => [commandKey(call.command), call] as const));
+    const pending = command.invoke({json: false}, {presentation: "human", signal: controller.signal});
+    void pending.then(() => {
+      events.push("status:settled");
+    });
+    await started;
+    controller.abort(new CommandCancellation("Command terminated by SIGTERM.", 143));
+    const execution = await pending;
 
-    const git = [GIT_BRANCH_KEY, GIT_SHA_KEY, GIT_LOG_TIME_KEY, GIT_LOG_MSG_KEY, GIT_STATUS_KEY];
-    for (const key of git) {
+    expect(execution.status).toBe("cancelled");
+    expect(execution.exitCode).toBe(143);
+    expect(events).toEqual(["doctor:cleanup-drained", "status:settled"]);
+    expect(sink.records.filter((record) => record.stream === "stdout")).toHaveLength(0);
+  });
+
+  it("cancels instead of completing when the invocation was aborted and the composed child ignored it", async () => {
+    const controller = new AbortController();
+    const doctor = createDoctorStub(() => {
+      controller.abort(new CommandCancellation("Command interrupted by SIGINT.", 130));
+      return Promise.resolve({status: "completed", value: doctorReport(), exitCode: 0});
+    });
+    const fixture = createStatusFixture({doctor, mode: "json"});
+
+    const execution = await fixture.command.invoke({json: true}, {presentation: "json", signal: controller.signal});
+
+    expect(execution.status).toBe("cancelled");
+    expect(execution.exitCode).toBe(130);
+    expect(fixture.sink.records.filter((record) => record.stream === "stdout")).toHaveLength(0);
+  });
+});
+
+// ============================================================================
+// Command specs
+// ============================================================================
+
+describe("status command — process requests", () => {
+  it("issues every external probe as an explicit request with the expected cwd and timeout", async () => {
+    const fixture = createStatusFixture({mode: "json"});
+
+    await fixture.command.run(["--json"]);
+
+    const byKey = new Map(fixture.runner.calls.map((call) => [processKey(call.request), call] as const));
+    for (const key of [GIT_BRANCH_KEY, GIT_SHA_KEY, GIT_LOG_TIME_KEY, GIT_LOG_MSG_KEY, GIT_STATUS_KEY]) {
       const call = byKey.get(key);
       expect(call, key).toBeDefined();
-      expect(call?.options?.cwd).toBe(FIXED_ROOT);
-      expect(call?.options?.timeoutMs).toBe(30_000);
+      expect(call?.options.cwd).toBe(FIXTURE_ROOT);
+      expect(call?.options.timeoutMs).toBe(30_000);
     }
 
     for (const key of [NPM_AUDIT_KEY, NPM_OUTDATED_KEY]) {
       const call = byKey.get(key);
       expect(call, key).toBeDefined();
-      expect(call?.options?.cwd).toBe(FIXED_ROOT);
-      expect(call?.options?.timeoutMs).toBe(60_000);
+      expect(call?.options.cwd).toBe(FIXTURE_ROOT);
+      expect(call?.options.timeoutMs).toBe(60_000);
     }
-
-    const doctorCall = byKey.get(DOCTOR_KEY);
-    expect(doctorCall).toBeDefined();
-    expect(doctorCall?.command.command).toBe(process.execPath);
-    expect(doctorCall?.command.args).toEqual([DOCTOR_SCRIPT_PATH, "--quick", "--json"]);
-    expect(doctorCall?.options?.cwd).toBe(FIXED_ROOT);
-    expect(doctorCall?.options?.timeoutMs).toBe(60_000);
   });
 
-  it("dispatches no Nx child command: the exact inventory contains no npx or nx invocation", async () => {
-    const {calls} = await runMainHappyPath([], "json");
+  it("dispatches no Nx or doctor child process: the exact inventory contains only git, npm, and disk probes", async () => {
+    const fixture = createStatusFixture({mode: "json"});
 
-    expect(calls.map((call) => commandKey(call.command)).toSorted()).toEqual(
+    await fixture.command.run(["--json"]);
+
+    expect(fixture.runner.calls.map((call) => processKey(call.request)).toSorted()).toEqual(
       [
         GIT_BRANCH_KEY,
         GIT_SHA_KEY,
@@ -444,22 +712,130 @@ describe("main — command specs", () => {
         GIT_STATUS_KEY,
         NPM_AUDIT_KEY,
         NPM_OUTDATED_KEY,
-        DOCTOR_KEY,
         diskProbeKey(DISK_NODE_MODULES_TARGET),
         diskProbeKey(DISK_NEXT_BUILD_TARGET),
         diskProbeKey(DISK_COMPONENTS_DIST_TARGET),
       ].toSorted(),
     );
-    expect(calls.some((call) => call.command.command === "npx" || call.command.args.includes("nx"))).toBe(false);
+    expect(fixture.runner.calls.some((call) => call.request.command === "npx" || call.request.args.includes("nx"))).toBe(false);
   });
 
-  it("never passes a shell string: every command is {command, args}", async () => {
-    const {calls} = await runMainHappyPath([], "json");
+  it("links every probe to the invocation cancellation signal and never passes a shell string", async () => {
+    const fixture = createStatusFixture({mode: "json"});
 
-    for (const call of calls) {
-      expect(typeof call.command.command).toBe("string");
-      expect(Array.isArray(call.command.args)).toBe(true);
+    await fixture.command.run(["--json"]);
+
+    for (const call of fixture.runner.calls) {
+      expect(typeof call.request.command).toBe("string");
+      expect(Array.isArray(call.request.args)).toBe(true);
+      expect(call.options.signal).toBeInstanceOf(AbortSignal);
     }
+  });
+
+  it("issues each disk probe through the runtime executable with the target as its own argument", async () => {
+    const fixture = createStatusFixture({mode: "json"});
+
+    await fixture.command.run(["--json"]);
+
+    const probes = fixture.runner.calls.filter((call) => call.request.args[0] === "--eval");
+    expect(probes).toHaveLength(3);
+    for (const probe of probes) {
+      expect(probe.request.args).toHaveLength(3);
+      expect(typeof probe.request.args[1]).toBe("string");
+      expect([DISK_NODE_MODULES_TARGET, DISK_NEXT_BUILD_TARGET, DISK_COMPONENTS_DIST_TARGET]).toContain(probe.request.args[2]);
+      expect(probe.options.timeoutMs).toBe(60_000);
+    }
+  });
+});
+
+// ============================================================================
+// Node runtime label
+// ============================================================================
+
+describe("status command — Node runtime label", () => {
+  it("renders the major version the runtime executable reports", async () => {
+    const fixture = createStatusFixture({responses: withOverrides({[NODE_VERSION_KEY]: succeeded("v42.1.0\n")})});
+
+    const execution = await fixture.command.run([]);
+
+    expect(execution.exitCode).toBe(0);
+    expect(renderedText(fixture.sink)).toMatch(/Node: 42\.x/);
+  });
+
+  it("issues the version probe through the runtime executable with cwd, a bounded timeout, and the invocation signal", async () => {
+    const fixture = createStatusFixture();
+
+    await fixture.command.run([]);
+
+    const call = fixture.runner.calls.find((entry) => entry.request.args[0] === "--version");
+    expect(call).toBeDefined();
+    expect(call?.request.command).toBe("/usr/bin/node");
+    expect(call?.request.args).toEqual(["--version"]);
+    expect(call?.options.cwd).toBe(FIXTURE_ROOT);
+    expect(call?.options.timeoutMs).toBe(10_000);
+    expect(call?.options.signal).toBeInstanceOf(AbortSignal);
+  });
+
+  it("adds exactly one version probe to the human dashboard process inventory", async () => {
+    const fixture = createStatusFixture();
+
+    await fixture.command.run([]);
+
+    expect(fixture.runner.calls.map((call) => processKey(call.request)).toSorted()).toEqual(
+      [
+        GIT_BRANCH_KEY,
+        GIT_SHA_KEY,
+        GIT_LOG_TIME_KEY,
+        GIT_LOG_MSG_KEY,
+        GIT_STATUS_KEY,
+        NPM_AUDIT_KEY,
+        NPM_OUTDATED_KEY,
+        NODE_VERSION_KEY,
+        diskProbeKey(DISK_NODE_MODULES_TARGET),
+        diskProbeKey(DISK_NEXT_BUILD_TARGET),
+        diskProbeKey(DISK_COMPONENTS_DIST_TARGET),
+      ].toSorted(),
+    );
+  });
+
+  it("never probes the runtime version for machine-readable output", async () => {
+    const fixture = createStatusFixture({mode: "json"});
+
+    const document = await runJson(fixture);
+
+    expect(fixture.runner.calls.some((call) => call.request.args[0] === "--version")).toBe(false);
+    expect(Object.keys(document).toSorted()).toEqual(["disk", "git", "health", "nxEdges", "security", "workspaces"].toSorted());
+  });
+
+  it.each([
+    ["a spawn failure", spawnFailed("node is missing")],
+    ["a timeout", timedOut()],
+    ["a signal termination", signalled()],
+    ["a nonzero exit", exited(1, "v26.3.1")],
+    ["malformed output", succeeded("not-a-version")],
+  ])("falls back to an unknown label instead of failing on %s", async (_label, outcome) => {
+    const fixture = createStatusFixture({responses: withOverrides({[NODE_VERSION_KEY]: outcome})});
+
+    const execution = await fixture.command.run([]);
+
+    expect(execution.status).toBe("completed");
+    expect(execution.exitCode).toBe(0);
+    const text = renderedText(fixture.sink);
+    expect(text).toMatch(/Node: \?\.x/);
+    expect(text).toMatch(/Health: 92 \(A\)/);
+  });
+
+  it("falls back to an unknown label when the version probe rejects, without degrading a sibling section", async () => {
+    const responses = baseResponses();
+    responses.delete(NODE_VERSION_KEY);
+    const fixture = createStatusFixture({responses});
+
+    const execution = await fixture.command.run([]);
+
+    expect(execution.exitCode).toBe(0);
+    const text = renderedText(fixture.sink);
+    expect(text).toMatch(/Node: \?\.x/);
+    expect(text).toMatch(/main/);
   });
 });
 
@@ -478,29 +854,34 @@ describe("source-derived Nx graph collection", () => {
     expect(sourceText).not.toMatch(/"npx"/);
   });
 
-  it("emits one deterministically ordered nxEdges entry per logical dependency", async () => {
-    const {logger, sink} = createLogger("json");
-    const {runner} = createRecordingRunner(baseResponses());
-    const graph: WorkspaceGraph = {
-      projects: [],
-      dependencies: [
-        {source: "@scope/z", target: "@scope/a", origin: "target", declaration: "z target"},
-        {source: "@scope/a", target: "@scope/c", origin: "package", declaration: "a package c"},
-        {source: "@scope/z", target: "@scope/a", origin: "package", declaration: "z package"},
-        {source: "@scope/a", target: "@scope/b", origin: "implicit", declaration: "a implicit b"},
-      ],
-      cycles: [],
-    };
+  it("composes doctor through the typed command object rather than the deleted runDoctor adapter", () => {
+    expect(sourceText).not.toMatch(/runDoctor/);
+    expect(sourceText).toMatch(/doctorCommand/);
+  });
 
-    await main(["--json"], {
-      logger,
-      runner,
-      resolveRepositoryPaths: FIXTURE_DEPENDENCIES.resolveRepositoryPaths,
-      readWorkspaceGraph: async (): Promise<WorkspaceGraph> => graph,
+  it("reads no ambient Node runtime version in production source", () => {
+    expect(sourceText).not.toMatch(/process\.versions/);
+    expect(sourceText).not.toMatch(/process\.version\b/);
+  });
+
+  it("emits one deterministically ordered nxEdges entry per logical dependency", async () => {
+    const fixture = createStatusFixture({
+      mode: "json",
+      workspace: availableWorkspace({
+        projects: [],
+        dependencies: [
+          {source: "@scope/z", target: "@scope/a"},
+          {source: "@scope/a", target: "@scope/c"},
+          {source: "@scope/z", target: "@scope/a"},
+          {source: "@scope/a", target: "@scope/b"},
+        ],
+        cycles: [],
+      }),
     });
 
-    const output = parseJsonOutput(sink);
-    expect(output["nxEdges"]).toEqual([
+    const document = await runJson(fixture);
+
+    expect(document["nxEdges"]).toEqual([
       {source: "@scope/a", target: "@scope/b"},
       {source: "@scope/a", target: "@scope/c"},
       {source: "@scope/z", target: "@scope/a"},
@@ -516,70 +897,54 @@ describe("collectDisk", () => {
   const fixtureRoots: string[] = [];
 
   afterEach(async () => {
-    await Promise.all(fixtureRoots.splice(0).map((root) => rm(root, {recursive: true, force: true})));
-  });
-
-  it("issues each directory-size probe as an argument-separated CommandSpec with the target path as its own argument, repository cwd, and a 60s timeout", async () => {
-    const calls: {command: CommandSpec; options?: CommandRunOptions}[] = [];
-    const recordingRunner: CommandRunner = {
-      run: async (command, options) => {
-        calls.push(options === undefined ? {command} : {command, options});
-        return commandResult({stdout: "0"});
-      },
-    };
-
-    await collectDisk(recordingRunner, FIXED_ROOT);
-
-    expect(calls).toHaveLength(3);
-    const expectedTargets = [DISK_NODE_MODULES_TARGET, DISK_NEXT_BUILD_TARGET, DISK_COMPONENTS_DIST_TARGET];
-    for (const call of calls) {
-      expect(call.command.command).toBe(process.execPath);
-      expect(call.command.args[0]).toBe("--eval");
-      expect(typeof call.command.args[1]).toBe("string");
-      expect(call.command.args).toHaveLength(3);
-      expect(expectedTargets).toContain(call.command.args[2]);
-      expect(call.options?.cwd).toBe(FIXED_ROOT);
-      expect(call.options?.timeoutMs).toBe(60_000);
+    for (const root of fixtureRoots.splice(0)) {
+      // eslint-disable-next-line no-await-in-loop -- bounded fixture cleanup.
+      await rm(root, {recursive: true, force: true});
     }
   });
 
+  function realDiskSources(root: string) {
+    const environment = snapshotNodeEnvironment();
+    return {
+      runner: createNodeProcessRunner(environment),
+      tasks: new DefaultTaskScheduler(),
+      paths: createRepositoryPaths(root),
+      executablePath: environment.executablePath,
+      signal: new AbortController().signal,
+    };
+  }
+
+  function scriptedDiskSources(outcome: ProcessOutcome) {
+    return {
+      runner: new ScriptedProcessRunner(
+        new Map<string, ProcessOutcome>([
+          [diskProbeKey(DISK_NODE_MODULES_TARGET), outcome],
+          [diskProbeKey(DISK_NEXT_BUILD_TARGET), outcome],
+          [diskProbeKey(DISK_COMPONENTS_DIST_TARGET), outcome],
+        ]),
+      ),
+      tasks: new DefaultTaskScheduler(),
+      paths: FIXTURE_PATHS,
+      executablePath: "/usr/bin/node",
+      signal: new AbortController().signal,
+    };
+  }
+
   it("reaches disk: null when a probe command exits non-zero", async () => {
-    const failingRunner: CommandRunner = {
-      run: async () => commandResult({code: 1, stdout: "", stderr: "boom"}),
-    };
-
-    await expect(collectDisk(failingRunner, FIXED_ROOT)).resolves.toBeNull();
+    await expect(collectDisk(scriptedDiskSources(exited(1, "", "boom")))).resolves.toBeNull();
   });
 
-  it("reaches disk: null on a probe timeout/spawn failure/signal termination", async () => {
-    const timedOutRunner: CommandRunner = {
-      run: async () => commandResult({code: 1, stdout: "", timedOut: true}),
-    };
-    const spawnErrorRunner: CommandRunner = {
-      run: async () => commandResult({code: 1, stdout: "", spawnError: "ENOENT"}),
-    };
-    const signalRunner: CommandRunner = {
-      run: async () => commandResult({code: 1, stdout: "", signal: "SIGTERM"}),
-    };
-
-    await expect(collectDisk(timedOutRunner, FIXED_ROOT)).resolves.toBeNull();
-    await expect(collectDisk(spawnErrorRunner, FIXED_ROOT)).resolves.toBeNull();
-    await expect(collectDisk(signalRunner, FIXED_ROOT)).resolves.toBeNull();
+  it("reaches disk: null on a probe timeout, spawn failure, or signal termination", async () => {
+    await expect(collectDisk(scriptedDiskSources(timedOut()))).resolves.toBeNull();
+    await expect(collectDisk(scriptedDiskSources(spawnFailed("ENOENT")))).resolves.toBeNull();
+    await expect(collectDisk(scriptedDiskSources(signalled()))).resolves.toBeNull();
   });
 
-  it("reaches disk: null when probe output is empty, non-integer, or negative", async () => {
-    const emptyRunner: CommandRunner = {run: async () => commandResult({stdout: ""})};
-    const nonIntegerRunner: CommandRunner = {run: async () => commandResult({stdout: "12.5"})};
-    const negativeRunner: CommandRunner = {run: async () => commandResult({stdout: "-5"})};
-    const wordsRunner: CommandRunner = {run: async () => commandResult({stdout: "not-a-number"})};
-
-    await expect(collectDisk(emptyRunner, FIXED_ROOT)).resolves.toBeNull();
-    await expect(collectDisk(nonIntegerRunner, FIXED_ROOT)).resolves.toBeNull();
-    await expect(collectDisk(negativeRunner, FIXED_ROOT)).resolves.toBeNull();
-    await expect(collectDisk(wordsRunner, FIXED_ROOT)).resolves.toBeNull();
+  it.each(["", "12.5", "-5", "not-a-number"])("reaches disk: null for malformed probe output '%s'", async (stdout) => {
+    await expect(collectDisk(scriptedDiskSources(succeeded(stdout)))).resolves.toBeNull();
   });
 
-  it("sums nested files through the real shared CommandRunner and real probe, and reports zero for a genuinely absent directory", async () => {
+  it("sums nested files through the real runner and probe, and reports zero for a genuinely absent directory", async () => {
     const root = await mkdtemp(join(tmpdir(), "arolariu-status-disk-"));
     fixtureRoots.push(root);
 
@@ -590,7 +955,7 @@ describe("collectDisk", () => {
     await writeFile(join(root, "packages", "components", "dist", "bundle.js"), "abcdefghij"); // 10 bytes
     // sites/arolariu.ro/.next is intentionally left absent.
 
-    const disk = await collectDisk(defaultCommandRunner, root);
+    const disk = await collectDisk(realDiskSources(root));
 
     expect(disk).toEqual({nodeModules: 15, nextBuild: 0, componentsDist: 10});
   }, 20_000);
@@ -605,21 +970,16 @@ describe("collectDisk", () => {
     await mkdir(join(root, "node_modules"), {recursive: true});
     await writeFile(join(root, "node_modules", "a.txt"), "12345"); // 5 bytes
 
-    let junctionCreated = true;
     try {
       await symlink(realTarget, join(root, "node_modules", "linked"), "junction");
     } catch {
       // Cross-platform/privilege limitation: fall back to a direct proof of the fixed probe
       // logic (nested summation without the symlink) instead of the symlink-skip behavior.
-      junctionCreated = false;
     }
 
-    const disk = await collectDisk(defaultCommandRunner, root);
+    const disk = await collectDisk(realDiskSources(root));
 
     expect(disk).toEqual({nodeModules: 5, nextBuild: 0, componentsDist: 0});
-    if (!junctionCreated) {
-      expect(disk?.nodeModules).toBe(5); // Direct proof of the fixed probe logic (see above).
-    }
   }, 20_000);
 });
 
@@ -627,128 +987,114 @@ describe("collectDisk", () => {
 // Collector independence
 // ============================================================================
 
-describe("collector independence", () => {
+describe("status command — collector independence", () => {
   it("renders git as unavailable when one underlying git command fails, while siblings still render", async () => {
-    const {logger, sink} = createLogger("json");
-    const {runner} = createRecordingRunner(withOverrides({[GIT_BRANCH_KEY]: commandResult({code: 1, stdout: ""})}));
+    const fixture = createStatusFixture({mode: "json", responses: withOverrides({[GIT_BRANCH_KEY]: exited(1)})});
 
-    const exitCode = await main(["--json"], {
-      logger,
-      runner,
-      ...FIXTURE_DEPENDENCIES,
-    });
+    const document = await runJson(fixture);
 
-    expect(exitCode).toBe(0);
-    const output = parseJsonOutput(sink);
-    expect(output["git"]).toBeNull();
-    expect(output["workspaces"]).not.toBeNull();
-    expect(output["health"]).not.toBeNull();
-    expect(output["nxEdges"]).not.toBeNull();
-    expect(output["security"]).not.toBeNull();
-    expect(output["disk"]).not.toBeNull();
+    expect(document["git"]).toBeNull();
+    expect(document["workspaces"]).not.toBeNull();
+    expect(document["health"]).not.toBeNull();
+    expect(document["nxEdges"]).not.toBeNull();
+    expect(document["security"]).not.toBeNull();
+    expect(document["disk"]).not.toBeNull();
   });
 
-  it("renders nxEdges as unavailable when workspace metadata inspection is rejected", async () => {
-    const {logger, sink} = createLogger("json");
-    const {runner} = createRecordingRunner(baseResponses());
+  it("renders workspaces and nxEdges as unavailable when workspace inspection is unavailable", async () => {
+    const fixture = createStatusFixture({mode: "json", workspace: unavailableFact});
 
-    await main(["--json"], {
-      logger,
-      runner,
-      resolveRepositoryPaths: () => FIXED_REPOSITORY_PATHS,
-      readWorkspaceGraph: async (): Promise<WorkspaceGraph> => {
-        throw new WorkspaceGraphError("Workspace project metadata is malformed.");
-      },
-    });
+    const document = await runJson(fixture);
 
-    const output = parseJsonOutput(sink);
-    expect(output["nxEdges"]).toBeNull();
-    expect(output["git"]).not.toBeNull();
-    expect(output["workspaces"]).not.toBeNull();
-    expect(output["health"]).not.toBeNull();
+    expect(document["workspaces"]).toBeNull();
+    expect(document["nxEdges"]).toBeNull();
+    expect(document["nxEdges"]).not.toEqual([]);
+    expect(document["git"]).not.toBeNull();
   });
 
-  it("never fabricates an empty dependency list when workspace metadata cannot be read", async () => {
-    const {logger, sink} = createLogger("json");
-    const {runner} = createRecordingRunner(baseResponses());
-
-    await main(["--json"], {
-      logger,
-      runner,
-      resolveRepositoryPaths: () => FIXED_REPOSITORY_PATHS,
-      readWorkspaceGraph: async (): Promise<WorkspaceGraph> => Promise.reject(new Error("ENOENT: nx.json")),
+  it("degrades a rejected collector to null without invalidating its siblings", async () => {
+    const fixture = createStatusFixture({
+      mode: "json",
+      workspace: () => Promise.reject(new Error("inspection boom")),
     });
 
-    const output = parseJsonOutput(sink);
-    expect(output["nxEdges"]).toBeNull();
-    expect(output["nxEdges"]).not.toEqual([]);
+    const document = await runJson(fixture);
+
+    expect(document["workspaces"]).toBeNull();
+    expect(document["nxEdges"]).toBeNull();
+    expect(document["git"]).not.toBeNull();
+    expect(document["security"]).not.toBeNull();
+    expect(document["disk"]).not.toBeNull();
+    expect(document["health"]).not.toBeNull();
   });
 
   it("renders security as unavailable (not zero counts) when npm audit JSON is malformed", async () => {
-    const {logger, sink} = createLogger("json");
-    const {runner} = createRecordingRunner(
-      withOverrides({[NPM_AUDIT_KEY]: commandResult({code: 1, stdout: "not json at all"})}),
-    );
+    const fixture = createStatusFixture({mode: "json", responses: withOverrides({[NPM_AUDIT_KEY]: exited(1, "not json at all")})});
 
-    await main(["--json"], {logger, runner, ...FIXTURE_DEPENDENCIES});
+    const document = await runJson(fixture);
 
-    const output = parseJsonOutput(sink);
-    expect(output["security"]).toBeNull();
-    expect(output["security"]).not.toEqual({critical: 0, high: 0, moderate: 0, low: 0, majorOutdated: 0, minorOutdated: 0, patchOutdated: 0});
+    expect(document["security"]).toBeNull();
   });
 
   it("renders security as unavailable — not a fabricated zero-outdated success — when npm outdated stdout is empty", async () => {
-    // A successful current `npm outdated --json` always writes a JSON object: "{}" when
-    // nothing is outdated. Empty stdout is therefore unambiguously a failed probe (registry
-    // error, arborist load failure, etc.) and must never be treated as "no packages outdated".
-    const {logger, sink} = createLogger("json");
-    const {runner} = createRecordingRunner(withOverrides({[NPM_OUTDATED_KEY]: commandResult({stdout: ""})}));
+    const fixture = createStatusFixture({mode: "json", responses: withOverrides({[NPM_OUTDATED_KEY]: succeeded("")})});
 
-    await main(["--json"], {logger, runner, ...FIXTURE_DEPENDENCIES});
+    const document = await runJson(fixture);
 
-    const output = parseJsonOutput(sink);
-    expect(output["security"]).toBeNull();
+    expect(document["security"]).toBeNull();
   });
 
   it("retains a genuinely empty npm outdated JSON object ({}) as zero-outdated success data", async () => {
-    const {logger, sink} = createLogger("json");
-    const {runner} = createRecordingRunner(withOverrides({[NPM_OUTDATED_KEY]: commandResult({stdout: "{}"})}));
+    const fixture = createStatusFixture({mode: "json", responses: withOverrides({[NPM_OUTDATED_KEY]: succeeded("{}")})});
 
-    await main(["--json"], {logger, runner, ...FIXTURE_DEPENDENCIES});
+    const document = await runJson(fixture);
 
-    const output = parseJsonOutput(sink);
-    expect(output["security"]).toEqual({critical: 0, high: 0, moderate: 0, low: 0, majorOutdated: 0, minorOutdated: 0, patchOutdated: 0});
+    expect(document["security"]).toEqual({
+      critical: 0,
+      high: 0,
+      moderate: 0,
+      low: 0,
+      majorOutdated: 0,
+      minorOutdated: 0,
+      patchOutdated: 0,
+    });
   });
 
   it("renders security as unavailable when npm outdated JSON is malformed", async () => {
-    const {logger, sink} = createLogger("json");
-    const {runner} = createRecordingRunner(withOverrides({[NPM_OUTDATED_KEY]: commandResult({stdout: "not json"})}));
+    const fixture = createStatusFixture({mode: "json", responses: withOverrides({[NPM_OUTDATED_KEY]: succeeded("not json")})});
 
-    await main(["--json"], {logger, runner, ...FIXTURE_DEPENDENCIES});
+    const document = await runJson(fixture);
 
-    const output = parseJsonOutput(sink);
-    expect(output["security"]).toBeNull();
+    expect(document["security"]).toBeNull();
+  });
+
+  it("renders security as unavailable on an npm transport failure", async () => {
+    const fixture = createStatusFixture({mode: "json", responses: withOverrides({[NPM_AUDIT_KEY]: timedOut()})});
+
+    const document = await runJson(fixture);
+
+    expect(document["security"]).toBeNull();
   });
 
   it("retains nonzero npm audit/outdated JSON output as valid security data", async () => {
-    const {logger, sink} = createLogger("json");
-    const auditWithFindings = JSON.stringify({metadata: {vulnerabilities: {critical: 1, high: 2, moderate: 0, low: 0}}});
-    const outdatedWithPackages = JSON.stringify({
-      major: {current: "1.0.0", latest: "2.0.0"},
-      minor: {current: "1.1.0", latest: "1.2.0"},
-      patch: {current: "1.1.1", latest: "1.1.2"},
-    });
-    const {runner} = createRecordingRunner(
-      withOverrides({
-        [NPM_AUDIT_KEY]: commandResult({code: 1, stdout: auditWithFindings}),
-        [NPM_OUTDATED_KEY]: commandResult({code: 1, stdout: outdatedWithPackages}),
+    const fixture = createStatusFixture({
+      mode: "json",
+      responses: withOverrides({
+        [NPM_AUDIT_KEY]: exited(1, JSON.stringify({metadata: {vulnerabilities: {critical: 1, high: 2, moderate: 0, low: 0}}})),
+        [NPM_OUTDATED_KEY]: exited(
+          1,
+          JSON.stringify({
+            major: {current: "1.0.0", latest: "2.0.0"},
+            minor: {current: "1.1.0", latest: "1.2.0"},
+            patch: {current: "1.1.1", latest: "1.1.2"},
+          }),
+        ),
       }),
-    );
+    });
 
-    await main(["--json"], {logger, runner, ...FIXTURE_DEPENDENCIES});
+    const document = await runJson(fixture);
 
-    const output = parseJsonOutput(sink);
-    expect(output["security"]).toEqual({
+    expect(document["security"]).toEqual({
       critical: 1,
       high: 2,
       moderate: 0,
@@ -759,80 +1105,82 @@ describe("collector independence", () => {
     });
   });
 
-  it("renders disk as unavailable when a directory-size probe command fails", async () => {
-    const {logger, sink} = createLogger("json");
-    const {runner} = createRecordingRunner(
-      withOverrides({[diskProbeKey(DISK_NODE_MODULES_TARGET)]: commandResult({code: 1, stdout: ""})}),
-    );
+  it("renders disk as unavailable when a directory-size probe fails", async () => {
+    const fixture = createStatusFixture({
+      mode: "json",
+      responses: withOverrides({[diskProbeKey(DISK_NODE_MODULES_TARGET)]: exited(1)}),
+    });
 
-    await main(["--json"], {logger, runner, ...FIXTURE_DEPENDENCIES});
+    const document = await runJson(fixture);
 
-    const output = parseJsonOutput(sink);
-    expect(output["disk"]).toBeNull();
-    expect(output["git"]).not.toBeNull();
+    expect(document["disk"]).toBeNull();
+    expect(document["git"]).not.toBeNull();
   });
 
-  it("renders disk as unavailable when a directory-size probe emits malformed (non-integer) output", async () => {
-    const {logger, sink} = createLogger("json");
-    const {runner} = createRecordingRunner(
-      withOverrides({[diskProbeKey(DISK_NEXT_BUILD_TARGET)]: commandResult({stdout: "not-a-number"})}),
-    );
+  it("renders disk as unavailable when a directory-size probe emits malformed output", async () => {
+    const fixture = createStatusFixture({
+      mode: "json",
+      responses: withOverrides({[diskProbeKey(DISK_NEXT_BUILD_TARGET)]: succeeded("not-a-number")}),
+    });
 
-    await main(["--json"], {logger, runner, ...FIXTURE_DEPENDENCIES});
+    const document = await runJson(fixture);
 
-    const output = parseJsonOutput(sink);
-    expect(output["disk"]).toBeNull();
-  });
-
-  it("renders health as unavailable when the doctor report is malformed, while siblings still render", async () => {
-    const {logger, sink} = createLogger("json");
-    const {runner} = createRecordingRunner(withOverrides({[DOCTOR_KEY]: commandResult({stdout: "{bad json"})}));
-
-    await main(["--json"], {logger, runner, ...FIXTURE_DEPENDENCIES});
-
-    const output = parseJsonOutput(sink);
-    expect(output["health"]).toBeNull();
-    expect(output["git"]).not.toBeNull();
-    expect(output["security"]).not.toBeNull();
+    expect(document["disk"]).toBeNull();
   });
 });
 
 // ============================================================================
-// --json output
+// Document shape
 // ============================================================================
 
-describe("main --json", () => {
+describe("status command — document", () => {
   it("emits exactly one ANSI-free JSON document with the six preserved top-level keys", async () => {
-    const {exitCode, sink} = await runMainHappyPath(["--json"], "json");
+    const fixture = createStatusFixture({mode: "json"});
 
-    expect(exitCode).toBe(0);
-    const output = parseJsonOutput(sink);
-    expect(Object.keys(output).toSorted()).toEqual(["disk", "git", "health", "nxEdges", "security", "workspaces"].toSorted());
+    const document = await runJson(fixture);
+
+    expect(Object.keys(document).toSorted()).toEqual(["disk", "git", "health", "nxEdges", "security", "workspaces"].toSorted());
+    expect(document["health"]).toEqual({score: 92, grade: "A", summary: {passed: 3, warnings: 1, failed: 0, skipped: 2}});
   });
 
-  it("includes health.summary alongside score and grade", async () => {
-    const {sink} = await runMainHappyPath(["--json"], "json");
+  it("returns the typed document as the completed command value", async () => {
+    const fixture = createStatusFixture();
 
-    const output = parseJsonOutput(sink);
-    expect(output["health"]).toEqual({
-      score: PASSING_DOCTOR_REPORT.score,
-      grade: PASSING_DOCTOR_REPORT.grade,
-      summary: PASSING_DOCTOR_REPORT.summary,
+    const execution = await fixture.command.invoke({json: false}, {presentation: "silent"});
+
+    expect(execution.status).toBe("completed");
+    if (execution.status !== "completed") {
+      throw new Error("Status unexpectedly did not complete.");
+    }
+    const document: StatusDocument = execution.value;
+    expect(document.git).toEqual({
+      branch: "main",
+      sha: "abc1234",
+      lastCommitTime: "2 hours ago",
+      lastCommitMsg: "chore: something",
+      dirtyFiles: 0,
     });
+    expect(document.disk).toEqual({nodeModules: 1024, nextBuild: 2048, componentsDist: 512});
   });
 
-  it("propagates a failing doctor summary into the JSON output", async () => {
-    const {logger, sink} = createLogger("json");
-    const {runner} = createRecordingRunner(withOverrides({[DOCTOR_KEY]: commandResult({code: 1, stdout: JSON.stringify(FAILING_DOCTOR_REPORT)})}));
-
-    await main(["--json"], {logger, runner, ...FIXTURE_DEPENDENCIES});
-
-    const output = parseJsonOutput(sink);
-    expect(output["health"]).toEqual({
-      score: FAILING_DOCTOR_REPORT.score,
-      grade: FAILING_DOCTOR_REPORT.grade,
-      summary: FAILING_DOCTOR_REPORT.summary,
+  it("derives workspace metadata from the inspection session and repository manifests", async () => {
+    const fixture = createStatusFixture({
+      mode: "json",
+      workspace: availableWorkspace({
+        projects: [{name: "new-project", root: "sites/new-project", targets: ["build"]}],
+        dependencies: [{source: "new-project", target: "@arolariu/components"}],
+        cycles: [],
+      }),
+      files: {
+        [`${FIXTURE_ROOT}/sites/new-project/package.json`]: JSON.stringify({name: "@arolariu/new-project", version: "1.2.3"}),
+        [`${FIXTURE_ROOT}/sites/new-project/project.json`]: JSON.stringify({projectType: "library", tags: ["domain:web", "type:lib"]}),
+      },
     });
+
+    const document = await runJson(fixture);
+
+    expect(document["workspaces"]).toEqual([{name: "@arolariu/new-project", version: "1.2.3", type: "lib", tags: ["domain:web", "type:lib"]}]);
+    expect(document["nxEdges"]).toEqual([{source: "new-project", target: "@arolariu/components"}]);
   });
 });
 
@@ -840,134 +1188,31 @@ describe("main --json", () => {
 // Human dashboard
 // ============================================================================
 
-describe("main — human dashboard", () => {
-  it("renders meaningful workspace, git, security, disk, and health content only through the logger", async () => {
-    const {exitCode, sink} = await runMainHappyPath([], "human");
+describe("status command — human dashboard", () => {
+  it("renders workspace, git, security, disk, and health content only through the logger", async () => {
+    const fixture = createStatusFixture();
 
-    expect(exitCode).toBe(0);
-    const text = sink.records.map((record) => record.text).join("\n");
+    const execution = await fixture.command.run([]);
+
+    expect(execution.status).toBe("completed");
+    expect(execution.exitCode).toBe(0);
+    const text = renderedText(fixture.sink);
     expect(text).toMatch(/Workspaces/);
     expect(text).toMatch(/main/);
     expect(text).toMatch(/Health/);
-    expect(text).toMatch(new RegExp(String(PASSING_DOCTOR_REPORT.score)));
     expect(text).toMatch(/Git/);
     expect(text).toMatch(/Security/);
     expect(text).toMatch(/Disk/);
-  });
-
-  it("propagates the doctor summary into human output", async () => {
-    const {sink} = await runMainHappyPath([], "human");
-
-    const text = sink.records.map((record) => record.text).join("\n");
-    expect(text).toMatch(/1 passed, 0 warnings, 0 failures, 0 skipped/);
+    expect(text).toMatch(/passed/);
   });
 
   it("renders unavailable sections without crashing or fabricating success values", async () => {
-    const {logger, sink} = createLogger("human");
-    const {runner} = createRecordingRunner(withOverrides({[GIT_BRANCH_KEY]: commandResult({code: 1, stdout: ""})}));
+    const fixture = createStatusFixture({responses: withOverrides({[GIT_BRANCH_KEY]: exited(1)})});
 
-    const exitCode = await main([], {
-      logger,
-      runner,
-      ...FIXTURE_DEPENDENCIES,
-    });
+    const execution = await fixture.command.run([]);
 
-    expect(exitCode).toBe(0);
-    const text = sink.records.map((record) => record.text).join("\n");
-    expect(text).toMatch(/unavailable/);
-  });
-});
-
-// ============================================================================
-// Default workspace-graph wiring proof
-// ============================================================================
-
-describe("main — default workspace-graph wiring", () => {
-  const wiringFixtureRoots: string[] = [];
-
-  afterEach(async () => {
-    await Promise.all(wiringFixtureRoots.splice(0).map((root) => rm(root, {recursive: true, force: true})));
-  });
-
-  it("selects the real readWorkspaceGraph and passes paths.root when no override is injected, returning six keys and one logical website→components edge", async () => {
-    // Create a minimal fixture repository root. It deliberately contains only two projects so
-    // that any accidental fallback to the live checkout's seven-project graph would produce a
-    // different nxEdges array and fail the assertion below.
-    const fixtureRoot = await mkdtemp(join(tmpdir(), "arolariu-status-wiring-"));
-    wiringFixtureRoots.push(fixtureRoot);
-
-    // Minimal nx.json using the same workspace layout as the live repository.
-    await writeFile(
-      join(fixtureRoot, "nx.json"),
-      JSON.stringify({workspaceLayout: {appsDir: "sites", libsDir: "packages"}}),
-      "utf8",
-    );
-
-    // @arolariu/components project — library under packages/.
-    await mkdir(join(fixtureRoot, "packages", "components"), {recursive: true});
-    await writeFile(
-      join(fixtureRoot, "packages", "components", "project.json"),
-      JSON.stringify({name: "@arolariu/components"}),
-      "utf8",
-    );
-    await writeFile(
-      join(fixtureRoot, "packages", "components", "package.json"),
-      JSON.stringify({name: "@arolariu/components"}),
-      "utf8",
-    );
-
-    // @arolariu/website project — declares both a package dependency and a cross-project
-    // target dependency on @arolariu/components, matching the live production shape that
-    // yields two internal dependency records for one logical public edge.
-    await mkdir(join(fixtureRoot, "sites", "arolariu.ro"), {recursive: true});
-    await writeFile(
-      join(fixtureRoot, "sites", "arolariu.ro", "project.json"),
-      JSON.stringify({name: "@arolariu/website", targets: {build: {dependsOn: ["components:build"]}}}),
-      "utf8",
-    );
-    await writeFile(
-      join(fixtureRoot, "sites", "arolariu.ro", "package.json"),
-      JSON.stringify({name: "@arolariu/website", dependencies: {"@arolariu/components": "*"}}),
-      "utf8",
-    );
-
-    // Build a recording runner keyed on the fixture root so every external probe (git, npm,
-    // doctor, disk) is handled without touching the live checkout.
-    const fixtureDocScriptPath = join(fixtureRoot, "scripts", "doctor.ts");
-    const fixtureDoctorKey = `${process.execPath} ${fixtureDocScriptPath} --quick --json`;
-    const fixtureResponses = new Map<string, CommandResult>([
-      [GIT_BRANCH_KEY, commandResult({stdout: "main\n"})],
-      [GIT_SHA_KEY, commandResult({stdout: "abc1234\n"})],
-      [GIT_LOG_TIME_KEY, commandResult({stdout: "2 hours ago\n"})],
-      [GIT_LOG_MSG_KEY, commandResult({stdout: "chore: fixture\n"})],
-      [GIT_STATUS_KEY, commandResult({stdout: ""})],
-      [NPM_AUDIT_KEY, commandResult({stdout: CLEAN_AUDIT_STDOUT})],
-      [NPM_OUTDATED_KEY, commandResult({stdout: "{}"})],
-      [fixtureDoctorKey, commandResult({stdout: JSON.stringify(PASSING_DOCTOR_REPORT)})],
-      [diskProbeKey(join(fixtureRoot, "node_modules")), commandResult({stdout: "0"})],
-      [diskProbeKey(join(fixtureRoot, "sites", "arolariu.ro", ".next")), commandResult({stdout: "0"})],
-      [diskProbeKey(join(fixtureRoot, "packages", "components", "dist")), commandResult({stdout: "0"})],
-    ]);
-
-    const {logger, sink} = createLogger("json");
-    const {runner} = createRecordingRunner(fixtureResponses);
-
-    // readWorkspaceGraph is intentionally NOT injected — the production default must be
-    // selected and must receive paths.root (the fixture root, not the process checkout).
-    const exitCode = await main(["--json"], {
-      logger,
-      runner,
-      resolveRepositoryPaths: () => createRepositoryPaths(fixtureRoot),
-    });
-
-    expect(exitCode).toBe(0);
-    const output = parseJsonOutput(sink);
-    // All six top-level keys must be present.
-    expect(Object.keys(output).toSorted()).toEqual(["disk", "git", "health", "nxEdges", "security", "workspaces"].toSorted());
-    // The package and target origins remain distinct in WorkspaceGraph but serialize as one
-    // logical status edge. The live checkout's seven-project graph would still produce a
-    // different workspace payload if the default reader used the wrong root.
-    expect(output["nxEdges"]).toEqual([{source: "@arolariu/website", target: "@arolariu/components"}]);
+    expect(execution.exitCode).toBe(0);
+    expect(renderedText(fixture.sink)).toMatch(/unavailable/);
   });
 });
 
@@ -1002,13 +1247,13 @@ describe("direct entrypoint", () => {
     const result = await runDirect(["--help"]);
 
     expect(result.code).toBe(0);
-    expect(result.output).toMatch(/Usage: node scripts\/status\.ts/);
+    expect(result.output).toMatch(/Usage: status \[options\]/);
   }, 30_000);
 
-  it("emits a diagnostic and exits 1 for a direct process invocation of an unknown flag", async () => {
+  it("emits a usage diagnostic and exits 2 for a direct process invocation of an unknown flag", async () => {
     const result = await runDirect(["--bogus"]);
 
-    expect(result.code).toBe(1);
-    expect(result.output).toMatch(/unknown status option/i);
+    expect(result.code).toBe(2);
+    expect(result.output).toMatch(/unknown option/i);
   }, 30_000);
 });

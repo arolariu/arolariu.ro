@@ -9,6 +9,7 @@ import {dirname, join} from "node:path";
 import {afterEach, beforeEach, describe, expect, it} from "vitest";
 import {createRepositoryPaths, type RepositoryPaths} from "./repository-paths.ts";
 import {loadRepositoryRequirements, parseVersion, satisfiesMinimum} from "./requirements.ts";
+import {nodeFileSystem, nodeTaskScheduler} from "./runtime.node.ts";
 
 interface PackageJsonFixture {
   readonly name?: string;
@@ -92,7 +93,7 @@ afterEach(async () => {
 
 describe("loadRepositoryRequirements", () => {
   it("loads matching runtime requirements and exact locked package versions", async () => {
-    const result = await loadRepositoryRequirements(paths);
+    const result = await loadRepositoryRequirements(paths, {files: nodeFileSystem, tasks: nodeTaskScheduler});
 
     expect(result.status).toBe("valid");
     if (result.status === "valid") {
@@ -112,7 +113,7 @@ describe("loadRepositoryRequirements", () => {
   it("rejects contradictory Node requirement sources", async () => {
     await writeFixture(".node-version", "22\n");
 
-    const result = await loadRepositoryRequirements(paths);
+    const result = await loadRepositoryRequirements(paths, {files: nodeFileSystem, tasks: nodeTaskScheduler});
 
     expect(result).toEqual({
       status: "invalid",
@@ -123,7 +124,7 @@ describe("loadRepositoryRequirements", () => {
   it("rejects unsupported Node engine syntax instead of guessing", async () => {
     await writePackageJson({engines: {node: "^24", npm: ">=11"}});
 
-    const result = await loadRepositoryRequirements(paths);
+    const result = await loadRepositoryRequirements(paths, {files: nodeFileSystem, tasks: nodeTaskScheduler});
 
     expect(result).toEqual({
       status: "invalid",
@@ -137,7 +138,7 @@ describe("loadRepositoryRequirements", () => {
       "<Project><PropertyGroup><TargetFramework>net10</TargetFramework></PropertyGroup></Project>",
     );
 
-    const result = await loadRepositoryRequirements(paths);
+    const result = await loadRepositoryRequirements(paths, {files: nodeFileSystem, tasks: nodeTaskScheduler});
 
     expect(result).toEqual({
       status: "invalid",
@@ -148,7 +149,7 @@ describe("loadRepositoryRequirements", () => {
   it("rejects unsupported Python requirement syntax", async () => {
     await writeFixture(join("sites", "exp.arolariu.ro", "pyproject.toml"), '[project]\nrequires-python = "^3.12"\n');
 
-    const result = await loadRepositoryRequirements(paths);
+    const result = await loadRepositoryRequirements(paths, {files: nodeFileSystem, tasks: nodeTaskScheduler});
 
     expect(result).toEqual({
       status: "invalid",
@@ -159,7 +160,7 @@ describe("loadRepositoryRequirements", () => {
   it("rejects package versions that disagree with the root lock entry", async () => {
     await writePackageLock({next: "16.2.0", react: "19.2.8"});
 
-    const result = await loadRepositoryRequirements(paths);
+    const result = await loadRepositoryRequirements(paths, {files: nodeFileSystem, tasks: nodeTaskScheduler});
 
     expect(result).toEqual({
       status: "invalid",
@@ -171,7 +172,7 @@ describe("loadRepositoryRequirements", () => {
     await writePackageJson({devDependencies: {next: "^16.3.0", react: "19.2.8"}});
     await writePackageLock({next: "^16.3.0", react: "19.2.8"});
 
-    const result = await loadRepositoryRequirements(paths);
+    const result = await loadRepositoryRequirements(paths, {files: nodeFileSystem, tasks: nodeTaskScheduler});
 
     expect(result).toEqual({
       status: "invalid",
@@ -183,7 +184,7 @@ describe("loadRepositoryRequirements", () => {
     await writeFixture("package.json", "{");
     await writeFixture(join("sites", "exp.arolariu.ro", "pyproject.toml"), "[project]\n");
 
-    const result = await loadRepositoryRequirements(paths);
+    const result = await loadRepositoryRequirements(paths, {files: nodeFileSystem, tasks: nodeTaskScheduler});
 
     expect(result).toEqual({
       status: "invalid",

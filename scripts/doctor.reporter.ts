@@ -3,7 +3,16 @@
  * @module scripts.doctor.reporter
  */
 
-import type {DiagnosticFix, DiagnosticModuleId, DiagnosticPotentialCause, DiagnosticResult, DoctorOptions, DoctorReportV1, DoctorSummary} from "./doctor.types.ts";
+import type {
+  DiagnosticFix,
+  DiagnosticModuleId,
+  DiagnosticPotentialCause,
+  DiagnosticResult,
+  DoctorInput,
+  DoctorReport,
+  DoctorSummary,
+} from "./doctor.types.ts";
+import {boundEvidence} from "./doctor.diagnostics.ts";
 import type {MonorepositoryLogger} from "./common/logger.ts";
 
 type UnknownRecord = Readonly<Record<string, unknown>>;
@@ -333,7 +342,9 @@ function validateDiagnosticSemantics(checks: readonly DiagnosticResult[]): void 
     const hasRootCause = check.rootCause !== undefined;
     const hasPotentialCauses = check.potentialCauses.length > 0;
     if (hasRootCause === hasPotentialCauses) {
-      throw new Error(`Doctor diagnostic '${check.id}' with status '${check.status}' must include exactly one diagnosis form: rootCause or potentialCauses.`);
+      throw new Error(
+        `Doctor diagnostic '${check.id}' with status '${check.status}' must include exactly one diagnosis form: rootCause or potentialCauses.`,
+      );
     }
   }
 }
@@ -377,10 +388,7 @@ function cloneDiagnostic(check: Readonly<DiagnosticResult>): DiagnosticResult {
 }
 
 function sameSummary(left: Readonly<DoctorSummary>, right: Readonly<DoctorSummary>): boolean {
-  return left.passed === right.passed
-    && left.warnings === right.warnings
-    && left.failed === right.failed
-    && left.skipped === right.skipped;
+  return left.passed === right.passed && left.warnings === right.warnings && left.failed === right.failed && left.skipped === right.skipped;
 }
 
 /**
@@ -475,19 +483,34 @@ export function gradeFromScore(score: number): string {
   return "F";
 }
 
+/** Options controlling evidence bounding in report construction. */
+export interface DoctorReportOptions {
+  /** When true, allows up to {@link VERBOSE_EVIDENCE_LIMIT} entries per diagnostic. */
+  readonly verbose: boolean;
+}
+
 /**
- * Creates a validated version 1 doctor report payload.
+ * Creates a validated doctor report payload.
  *
  * @param checks - Diagnostic rows for one doctor run.
  * @param timestamp - ISO timestamp representing report creation time.
+ * @param options - Optional report options controlling evidence bounding.
+ *   Defaults to normal (non-verbose) mode when omitted for backward compatibility.
  * @returns Validated report payload.
  */
-export function createDoctorReport(checks: readonly DiagnosticResult[], timestamp: string): DoctorReportV1 {
-  const clonedChecks = checks.map((check) => cloneDiagnostic(check));
+export function createDoctorReport(
+  checks: readonly DiagnosticResult[],
+  timestamp: string,
+  options?: Readonly<DoctorReportOptions>,
+): DoctorReport {
+  const verbose = options?.verbose ?? false;
+  const clonedChecks = checks.map((check) => ({
+    ...cloneDiagnostic(check),
+    evidence: [...boundEvidence(check.evidence, verbose)],
+  }));
   validateDiagnosticSemantics(clonedChecks);
   const score = computeHealthScore(clonedChecks);
-  const report: DoctorReportV1 = {
-    schemaVersion: 1,
+  const report: DoctorReport = {
     score,
     grade: gradeFromScore(score),
     summary: summarizeDiagnostics(clonedChecks),
@@ -495,30 +518,22 @@ export function createDoctorReport(checks: readonly DiagnosticResult[], timestam
     timestamp,
   };
 
-  return parseDoctorReport(report);
+  return validateDoctorReport(report);
 }
 
 /**
- * Parses an untrusted persisted doctor report payload.
+ * Validates a doctor report payload for internal consistency.
  *
- * @param value - Unknown JSON-compatible value.
- * @returns Validated version 1 report.
+ * @param value - Report to validate.
+ * @returns Validated report.
  */
-export function parseDoctorReport(value: unknown): DoctorReportV1 {
-  if (!isRecord(value)) {
-    throw new Error("Doctor report must be an object.");
-  }
-
-  if (value["schemaVersion"] !== 1) {
-    throw new Error(`Unsupported doctor report schemaVersion '${String(value["schemaVersion"])}'. Expected version 1.`);
-  }
-
-  const checks = parseChecks(value["checks"]);
+function validateDoctorReport(value: Readonly<DoctorReport>): DoctorReport {
+  const checks = parseChecks(value.checks);
   validateDiagnosticSemantics(checks);
-  const summary = parseSummary(value["summary"]);
-  const score = parseScore(value["score"]);
-  const grade = parseGrade(value["grade"]);
-  const timestamp = parseTimestamp(value["timestamp"]);
+  const summary = parseSummary(value.summary);
+  const score = parseScore(value.score);
+  const grade = parseGrade(value.grade);
+  const timestamp = parseTimestamp(value.timestamp);
 
   const computedSummary = summarizeDiagnostics(checks);
   if (!sameSummary(summary, computedSummary)) {
@@ -536,7 +551,6 @@ export function parseDoctorReport(value: unknown): DoctorReportV1 {
   }
 
   return {
-    schemaVersion: 1,
     score,
     grade,
     summary,
@@ -546,31 +560,24 @@ export function parseDoctorReport(value: unknown): DoctorReportV1 {
 }
 
 /**
- * Renders one doctor report as human output or a single JSON document.
+ * Renders one doctor report as human output.
+ *
+ * @remarks
+ * Score and grade are always rendered. Doctor has no machine JSON output
+ * after Task 22; status retains its own `--json` output.
  *
  * @param report - Validated doctor report to render.
  * @param options - CLI rendering options.
  * @param logger - Repository logger abstraction.
  */
-export function renderDoctorReport(
-  report: Readonly<DoctorReportV1>,
-  options: Readonly<DoctorOptions>,
-  logger: MonorepositoryLogger,
-): void {
-  if (options.json) {
-    logger.json(report);
-    return;
-  }
-
+export function renderDoctorReport(report: Readonly<DoctorReport>, options: Readonly<DoctorInput>, logger: MonorepositoryLogger): void {
   logger.banner(["🩺 arolariu.ro Workspace Doctor"], "green");
   logger.line(renderSummary(report.summary));
 
-  if (options.score) {
-    logger.line();
-    logger.line("╭─────────────────────────────────────────╮");
-    logger.line(`│  🏥 Health Score: ${String(report.score)}/100  Grade: ${report.grade}  │`);
-    logger.line("╰─────────────────────────────────────────╯");
-  }
+  logger.line();
+  logger.line("╭─────────────────────────────────────────╮");
+  logger.line(`│  🏥 Health Score: ${String(report.score)}/100  Grade: ${report.grade}  │`);
+  logger.line("╰─────────────────────────────────────────╯");
 
   for (const moduleId of moduleOrder) {
     const groupedChecks = report.checks.filter((check) => check.module === moduleId);
@@ -591,7 +598,9 @@ export function renderDoctorReport(
         }
         const omittedEvidenceCount = check.evidence.length - visibleEvidence.length;
         if (omittedEvidenceCount > 0) {
-          logger.line(`      - ${String(omittedEvidenceCount)} additional evidence entries omitted; rerun with --verbose for full evidence.`);
+          logger.line(
+            `      - ${String(omittedEvidenceCount)} additional evidence entries omitted; rerun with --verbose for full evidence.`,
+          );
         }
       }
 

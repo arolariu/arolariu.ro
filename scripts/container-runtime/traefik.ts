@@ -1,10 +1,17 @@
 /**
  * @fileoverview Static Traefik config generation for engine-agnostic selfhost mode.
  * @module scripts/container-runtime/traefik
+ *
+ * @remarks
+ * {@link buildSelfhostTraefikConfig} stays a pure builder with no capability of its own; the two
+ * file operations take the invocation's {@link FileSystem} instead of reaching for Node's
+ * filesystem module, so selfhost's Traefik lifecycle is exercised entirely through runtime fakes.
+ * The generated file is requested persistent state: the selfhost start action writes it and only
+ * the explicit stop action removes it, never invocation cleanup.
  */
 
-import {mkdir, rm, writeFile} from "node:fs/promises";
 import {dirname, resolve} from "node:path";
+import type {FileSystem} from "../common/runtime.ts";
 
 const selfhostRoutes = [
   {name: "website-localhost", host: "website.localhost", service: "website", url: "http://website:3000"},
@@ -14,7 +21,7 @@ const selfhostRoutes = [
   {name: "azurite-blob-localhost", host: "azurite-blob.localhost", service: "azurite-blob", url: "http://azurite:10000"},
 ] as const;
 
-/** Default generated Traefik file-provider config path for selfhost mode. */
+/** Generated Traefik file-provider config path for selfhost mode. */
 export const selfhostTraefikConfigPath: string = resolve("infra/Local/Management/traefik/dynamic/selfhost-services.yml");
 
 /**
@@ -60,18 +67,19 @@ ${services}
 /**
  * Writes the generated selfhost Traefik file-provider config.
  *
- * @param targetPath - Destination path for the generated YAML.
+ * @param files - Filesystem capability owned by the invocation.
+ * @param config - Exact YAML content to persist, normally from {@link buildSelfhostTraefikConfig}.
  */
-export async function writeSelfhostTraefikConfig(targetPath: string = selfhostTraefikConfigPath): Promise<void> {
-  await mkdir(dirname(targetPath), {recursive: true});
-  await writeFile(targetPath, buildSelfhostTraefikConfig(), "utf8");
+export async function writeSelfhostTraefikConfig(files: FileSystem, config: string): Promise<void> {
+  await files.createDirectory(dirname(selfhostTraefikConfigPath), {recursive: true});
+  await files.writeText(selfhostTraefikConfigPath, config);
 }
 
 /**
  * Removes the generated selfhost Traefik file-provider config.
  *
- * @param targetPath - Destination path for the generated YAML.
+ * @param files - Filesystem capability owned by the invocation.
  */
-export async function removeSelfhostTraefikConfig(targetPath: string = selfhostTraefikConfigPath): Promise<void> {
-  await rm(targetPath, {force: true});
+export async function removeSelfhostTraefikConfig(files: FileSystem): Promise<void> {
+  await files.remove(selfhostTraefikConfigPath, {force: true});
 }

@@ -5,8 +5,8 @@
 
 import {styleText} from "node:util";
 
-/** Selects human-oriented or machine-readable logger output. */
-export type LoggerMode = "human" | "json";
+/** Selects human-oriented, machine-readable, or fully suppressed logger output. */
+export type LoggerMode = "human" | "json" | "silent";
 
 /** Identifies the process stream that receives logger output. */
 export type LoggerStream = "stdout" | "stderr";
@@ -48,6 +48,38 @@ export interface LoggerStreamWriter {
   readonly end: () => void;
 }
 
+/** Handle to one repeating callback scheduled through a {@link LoggerRuntimeHost}. */
+export interface LoggerScheduledInterval {
+  /** Stops the repeating callback. */
+  readonly cancel: () => void;
+  /** Releases the host's hold on the event loop for this interval. */
+  readonly unref: () => void;
+}
+
+/**
+ * Engine-neutral terminal policy and timer scheduling supplied to the logger.
+ *
+ * @remarks
+ * The Node adapter owns the only implementation that reads real TTY state, `NO_COLOR`, and
+ * native timers. Tests inject a deterministic host instead of mutating ambient process state.
+ */
+export interface LoggerRuntimeHost {
+  /** Whether standard output is attached to an interactive terminal. */
+  readonly stdoutIsTTY: boolean;
+  /** Whether the host requests colorless output. */
+  readonly noColor: boolean;
+  /** Schedules a repeating callback and returns its cancellation handle. */
+  readonly scheduleInterval: (callback: () => void, intervalMs: number) => LoggerScheduledInterval;
+}
+
+/** Independent output scope requested for one forked command invocation. */
+export interface LoggerScopeOptions {
+  /** Output mode the forked logger uses. */
+  readonly mode: LoggerMode;
+  /** Whether the forked logger emits diagnostic messages. */
+  readonly verbose: boolean;
+}
+
 /** Configures a monorepository console logger. */
 export interface LoggerOptions {
   /** Output mode. */
@@ -60,6 +92,17 @@ export interface LoggerOptions {
   readonly sink?: LoggerSink;
   /** Sensitive literal values replaced before output reaches the sink. */
   readonly redactions?: readonly string[];
+  /**
+   * Terminal policy and timer scheduling supplied by the runtime.
+   *
+   * @remarks
+   * When omitted, the logger uses a deterministic non-TTY, no-color, no-interval host: it emits
+   * no spinner frames, no ANSI styling, and schedules nothing. Production commands receive the
+   * Node host from `runtime.node.ts`; tests that exercise color or animated progress inject an
+   * explicit fake host. The logger itself never reads ambient terminal, environment, or timer
+   * state.
+   */
+  readonly runtimeHost?: LoggerRuntimeHost;
 }
 
 /** Controls an active progress line. */
@@ -85,9 +128,11 @@ interface LoggerRuntimeState {
   readonly mode: LoggerMode;
   readonly verbose: boolean;
   readonly color: boolean;
+  readonly colorAllowed: boolean;
   readonly tty: boolean;
   readonly sink: LoggerSink;
   readonly redactions: Set<string>;
+  readonly runtimeHost: LoggerRuntimeHost;
   activeProgress: ActiveProgress | null;
   jsonEmitted: boolean;
 }
@@ -101,6 +146,24 @@ type InternalLoggerOptions = LoggerOptions & {
 const PROGRESS_FRAMES = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"] as const;
 const REDACTION_MARKER = "[REDACTED]";
 const PROGRESS_INTERVAL_MS = 80;
+
+/**
+ * Deterministic {@link LoggerRuntimeHost} used when no host is injected.
+ *
+ * @remarks
+ * Library-only and test construction must never depend on ambient terminal state, `NO_COLOR`, or
+ * native timers, so the omitted host reports a non-interactive, colorless terminal and schedules
+ * nothing. Every production logger receives `nodeLoggerRuntimeHost` from `runtime.node.ts`
+ * instead, which is the sole place real TTY, `NO_COLOR`, and `setInterval` access lives.
+ */
+const INERT_LOGGER_RUNTIME_HOST: LoggerRuntimeHost = {
+  stdoutIsTTY: false,
+  noColor: true,
+  scheduleInterval: (): LoggerScheduledInterval => ({
+    cancel: (): void => undefined,
+    unref: (): void => undefined,
+  }),
+};
 
 /**
  * Writes rendered logger output to the process console and output streams.
@@ -189,11 +252,29 @@ export abstract class MonorepositoryLogger {
   /** Writes a failed operation before its error propagates. */
   public abstract error(message: string): void;
 
+  /**
+   * Writes the single terminal diagnostic that explains why an invocation failed.
+   *
+   * @remarks
+   * Human mode renders the normal error form, JSON mode writes exactly one plain redacted line
+   * to standard error so no partial success document is produced, and silent mode writes nothing.
+   */
+  public abstract fatal(message: string): void;
+
   /** Writes successful lifecycle completion. */
   public abstract success(message: string): void;
 
+  /** Redacts sensitive values without emitting output. */
+  public abstract sanitize(text: string, includeJsonEscapes?: boolean): string;
+
   /** Creates a logger whose context is appended to this logger's context. */
   public abstract child(context: string): MonorepositoryLogger;
+
+  /**
+   * Creates an independent invocation logger with its own mode, verbosity, progress, and
+   * single-JSON-document state, while sharing this logger's sink, color policy, and redactions.
+   */
+  public abstract fork(context: string, options: Readonly<LoggerScopeOptions>): MonorepositoryLogger;
 
   /** Registers a sensitive literal value for replacement before output. */
   public abstract redact(value: string): void;
@@ -268,8 +349,9 @@ export class MonorepositoryConsoleLogger extends MonorepositoryLogger {
     }
 
     const mode = options.mode ?? "human";
-    const tty = process.stdout.isTTY === true;
-    const color = mode === "human" && tty && options.color !== false && !Object.hasOwn(process.env, "NO_COLOR");
+    const runtimeHost = options.runtimeHost ?? INERT_LOGGER_RUNTIME_HOST;
+    const tty = runtimeHost.stdoutIsTTY;
+    const colorAllowed = tty && options.color !== false && !runtimeHost.noColor;
     const redactions = new Set<string>();
     for (const value of options.redactions ?? []) {
       if (value.length > 0) {
@@ -280,10 +362,12 @@ export class MonorepositoryConsoleLogger extends MonorepositoryLogger {
     this.#state = {
       mode,
       verbose: options.verbose ?? true,
-      color,
+      color: colorAllowed && mode === "human",
+      colorAllowed,
       tty,
       sink: options.sink ?? new ConsoleLoggerSink(),
       redactions,
+      runtimeHost,
       activeProgress: null,
       jsonEmitted: false,
     };
@@ -316,6 +400,26 @@ export class MonorepositoryConsoleLogger extends MonorepositoryLogger {
     this.emitSemantic("success", "✅", "green", message);
   }
 
+  /** {@inheritDoc MonorepositoryLogger.fatal} */
+  public override fatal(message: string): void {
+    if (this.#state.mode === "silent") {
+      return;
+    }
+
+    if (this.#state.mode === "json") {
+      this.prepareForOutput();
+      this.writeToSink("stderr", message, false, "error");
+      return;
+    }
+
+    this.emitSemantic("error", "⛔", "red", message);
+  }
+
+  /** {@inheritDoc MonorepositoryLogger.sanitize} */
+  public override sanitize(text: string, includeJsonEscapes = false): string {
+    return this.redactText(text, includeJsonEscapes);
+  }
+
   /** {@inheritDoc MonorepositoryLogger.child} */
   public override child(context: string): MonorepositoryLogger {
     const options: InternalLoggerOptions = {
@@ -323,6 +427,28 @@ export class MonorepositoryConsoleLogger extends MonorepositoryLogger {
     };
 
     return new MonorepositoryConsoleLogger(`${this.#context}::${context}`, options);
+  }
+
+  /** {@inheritDoc MonorepositoryLogger.fork} */
+  public override fork(context: string, options: Readonly<LoggerScopeOptions>): MonorepositoryLogger {
+    const forkedState: LoggerRuntimeState = {
+      mode: options.mode,
+      verbose: options.verbose,
+      color: this.#state.colorAllowed && options.mode === "human",
+      colorAllowed: this.#state.colorAllowed,
+      tty: this.#state.tty,
+      sink: this.#state.sink,
+      redactions: this.#state.redactions,
+      runtimeHost: this.#state.runtimeHost,
+      activeProgress: null,
+      jsonEmitted: false,
+    };
+
+    const forkOptions: InternalLoggerOptions = {
+      [LOGGER_RUNTIME_STATE]: forkedState,
+    };
+
+    return new MonorepositoryConsoleLogger(context, forkOptions);
   }
 
   /** {@inheritDoc MonorepositoryLogger.redact} */
@@ -334,7 +460,7 @@ export class MonorepositoryConsoleLogger extends MonorepositoryLogger {
 
   /** {@inheritDoc MonorepositoryLogger.line} */
   public override line(segments: string | readonly LogSegment[] = "", stream: LoggerStream = "stdout"): void {
-    if (this.#state.mode === "json") {
+    if (this.#state.mode !== "human") {
       return;
     }
 
@@ -344,7 +470,7 @@ export class MonorepositoryConsoleLogger extends MonorepositoryLogger {
 
   /** {@inheritDoc MonorepositoryLogger.write} */
   public override write(segments: string | readonly LogSegment[], stream: LoggerStream = "stdout"): void {
-    if (this.#state.mode === "json") {
+    if (this.#state.mode !== "human") {
       return;
     }
 
@@ -358,7 +484,7 @@ export class MonorepositoryConsoleLogger extends MonorepositoryLogger {
     let ended = false;
 
     const emit = (text: string): void => {
-      if (text === "" || this.#state.mode === "json") {
+      if (text === "" || this.#state.mode !== "human") {
         return;
       }
       this.prepareForOutput();
@@ -393,7 +519,7 @@ export class MonorepositoryConsoleLogger extends MonorepositoryLogger {
 
   /** {@inheritDoc MonorepositoryLogger.section} */
   public override section(title: string, icon?: string): void {
-    if (this.#state.mode === "json") {
+    if (this.#state.mode !== "human") {
       return;
     }
 
@@ -404,7 +530,7 @@ export class MonorepositoryConsoleLogger extends MonorepositoryLogger {
 
   /** {@inheritDoc MonorepositoryLogger.banner} */
   public override banner(lines: readonly string[], style: LoggerStyle = "bold"): void {
-    if (this.#state.mode === "json") {
+    if (this.#state.mode !== "human") {
       return;
     }
 
@@ -415,7 +541,7 @@ export class MonorepositoryConsoleLogger extends MonorepositoryLogger {
 
   /** {@inheritDoc MonorepositoryLogger.table} */
   public override table(table: Readonly<LoggerTable>): void {
-    if (this.#state.mode === "json") {
+    if (this.#state.mode !== "human") {
       return;
     }
 
@@ -463,7 +589,7 @@ export class MonorepositoryConsoleLogger extends MonorepositoryLogger {
 
   /** {@inheritDoc MonorepositoryLogger.json} */
   public override json(value: unknown): void {
-    if (this.#state.jsonEmitted) {
+    if (this.#state.mode !== "json" || this.#state.jsonEmitted) {
       return;
     }
 
@@ -475,7 +601,7 @@ export class MonorepositoryConsoleLogger extends MonorepositoryLogger {
 
   /** {@inheritDoc MonorepositoryLogger.progress} */
   public override progress(initialMessage: string): ProgressReporter {
-    if (this.#state.mode === "json") {
+    if (this.#state.mode !== "human") {
       return {
         update: () => undefined,
         succeed: () => undefined,
@@ -489,7 +615,7 @@ export class MonorepositoryConsoleLogger extends MonorepositoryLogger {
     let message = initialMessage;
     let frameIndex = 0;
     let active = true;
-    let timer: NodeJS.Timeout | null = null;
+    let interval: LoggerScheduledInterval | null = null;
     let progressDisplayed = false;
 
     const renderProgress = (): void => {
@@ -504,13 +630,13 @@ export class MonorepositoryConsoleLogger extends MonorepositoryLogger {
     };
 
     const startProgress = (): void => {
-      if (!active || !this.#state.tty || timer !== null) {
+      if (!active || !this.#state.tty || interval !== null) {
         return;
       }
 
       renderProgress();
-      timer = setInterval(renderProgress, PROGRESS_INTERVAL_MS);
-      timer.unref();
+      interval = this.#state.runtimeHost.scheduleInterval(renderProgress, PROGRESS_INTERVAL_MS);
+      interval.unref();
     };
 
     const pauseProgress = (): void => {
@@ -518,9 +644,9 @@ export class MonorepositoryConsoleLogger extends MonorepositoryLogger {
         return;
       }
 
-      if (timer !== null) {
-        clearInterval(timer);
-        timer = null;
+      if (interval !== null) {
+        interval.cancel();
+        interval = null;
       }
       if (this.#state.tty && progressDisplayed) {
         this.writeToSink("stdout", "\r\u001B[K", true);
@@ -564,7 +690,7 @@ export class MonorepositoryConsoleLogger extends MonorepositoryLogger {
         }
 
         message = updatedMessage;
-        if (timer === null) {
+        if (interval === null) {
           startProgress();
         } else {
           renderProgress();
@@ -589,7 +715,7 @@ export class MonorepositoryConsoleLogger extends MonorepositoryLogger {
    * @param message - Caller-supplied message.
    */
   private emitSemantic(level: SemanticLevel, icon: string, style: LoggerStyle, message: string): void {
-    if (this.#state.mode === "json") {
+    if (this.#state.mode !== "human") {
       return;
     }
 
@@ -651,7 +777,7 @@ export class MonorepositoryConsoleLogger extends MonorepositoryLogger {
    * @param includeJsonEscapes - Whether JSON-escaped redaction variants are matched.
    */
   private writeToSink(stream: LoggerStream, text: string, write: boolean, semanticLevel?: SemanticLevel, includeJsonEscapes = false): void {
-    const redacted = this.redactText(text, includeJsonEscapes);
+    const redacted = this.sanitize(text, includeJsonEscapes);
     if (semanticLevel !== undefined && this.#state.sink instanceof ConsoleLoggerSink) {
       this.#state.sink.semantic(semanticLevel, redacted);
       return;

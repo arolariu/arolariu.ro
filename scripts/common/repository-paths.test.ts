@@ -9,6 +9,7 @@ import {dirname, join, resolve} from "node:path";
 import {pathToFileURL} from "node:url";
 import {afterEach, describe, expect, it} from "vitest";
 import {createRepositoryPaths, resolveRepositoryPaths} from "./repository-paths.ts";
+import {nodeFileSystem} from "./runtime.node.ts";
 
 const temporaryRoots: string[] = [];
 
@@ -56,7 +57,7 @@ describe("resolveRepositoryPaths", () => {
     await writeFile(join(root, "package.json"), JSON.stringify({name: "@arolariu/monorepo"}), "utf8");
     await writeFile(nestedModule, "", "utf8");
 
-    const paths = resolveRepositoryPaths(pathToFileURL(nestedModule).href);
+    const paths = await resolveRepositoryPaths(pathToFileURL(nestedModule).href, nodeFileSystem);
 
     expect(paths).toEqual(createRepositoryPaths(root));
   });
@@ -71,6 +72,6 @@ describe("resolveRepositoryPaths", () => {
     await writeFile(join(root, "scripts", "package.json"), JSON.stringify({name: "@example/not-the-repository"}), "utf8");
     await writeFile(nestedModule, "", "utf8");
 
-    expect(resolveRepositoryPaths(pathToFileURL(nestedModule).href).root).toBe(root);
+    await expect(resolveRepositoryPaths(pathToFileURL(nestedModule).href, nodeFileSystem)).resolves.toMatchObject({root});
   });
 });

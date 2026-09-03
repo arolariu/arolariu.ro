@@ -1,6 +1,6 @@
 // @vitest-environment node
 /**
- * @fileoverview AST policy tests for direct monorepository script output.
+ * @fileoverview AST policy tests for direct monorepository script output boundaries.
  * @module scripts.common.output-policy.test
  */
 
@@ -190,7 +190,11 @@ function getAccessPath(expression: ts.Expression, scopes: readonly AliasScope[])
 
   if (
     ts.isElementAccessExpression(expression)
-    && (ts.isStringLiteral(expression.argumentExpression) || ts.isNoSubstitutionTemplateLiteral(expression.argumentExpression))
+    && (
+      ts.isStringLiteral(expression.argumentExpression)
+      || ts.isNoSubstitutionTemplateLiteral(expression.argumentExpression)
+      || ts.isNumericLiteral(expression.argumentExpression)
+    )
   ) {
     const receiver = getAccessPath(expression.expression, scopes);
     return receiver === null ? null : [...receiver, expression.argumentExpression.text];

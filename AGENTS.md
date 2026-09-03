@@ -318,6 +318,7 @@ lives in `.github/mcp.json`.
 | RFC | Topic |
 | --- | --- |
 | 0001 | GitHub Actions |
+| 0002 | Lean monorepo tooling |
 | 1001 | Frontend observability |
 | 1002 | JSDoc/TSDoc |
 | 1003 | Internationalization |

@@ -4,11 +4,20 @@
  * @module scripts.generate.env.test
  */
 
-import fs from "node:fs";
 import {afterEach, describe, expect, it, vi} from "vitest";
 
+import type {CommandInvoker} from "./common/commander.ts";
 import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "./common/logger.ts";
 import type {PromptProvider} from "./common/prompts.ts";
+import type {HttpClient, HttpResponse, RuntimeEnvironment} from "./common/runtime.ts";
+import {
+  createHttpResponse,
+  createMemoryFileSystem,
+  createTestProcessHost,
+  createTestRuntimeFactory,
+  repositoryFixtureRoot,
+} from "./common/runtime.testing.ts";
+import type {GenerateLeafInput, GenerateLeafResult} from "./generate.env.ts";
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -133,13 +142,10 @@ describe("appendMissingEnvironmentValues", () => {
   });
 });
 
-describe("generator PromptProvider compatibility", () => {
+describe("generateEnvironmentCommand", () => {
   it("preserves every supported Azure runtime identity value during local regeneration", async () => {
-    vi.stubEnv("INFRA", "local");
-    vi.resetModules();
-    vi.spyOn(fs, "existsSync").mockReturnValue(true);
-    vi.spyOn(fs, "readFileSync").mockReturnValue(
-      [
+    const files = createMemoryFileSystem({
+      ".env": [
         "SITE_ENV=DEVELOPMENT",
         "SITE_NAME=dev.arolariu.ro",
         "SITE_URL=https://localhost:3000",
@@ -151,11 +157,10 @@ describe("generator PromptProvider compatibility", () => {
         "AZURE_SUBSCRIPTION_ID=existing-subscription",
         "UNSUPPORTED_LOCAL_VALUE=must-not-be-reemitted",
       ].join("\n"),
-    );
-    const writeFile = vi.spyOn(fs, "writeFileSync").mockImplementation(() => undefined);
-    vi.spyOn(fs, "copyFileSync").mockImplementation(() => undefined);
+    });
+    const confirm = vi.fn<PromptProvider["confirm"]>().mockResolvedValue(false);
     const prompts: PromptProvider = {
-      confirm: vi.fn<PromptProvider["confirm"]>().mockResolvedValue(false),
+      confirm,
       select: async <TValue extends string>(
         _message: string,
         choices: readonly Readonly<{value: TValue; label: string}>[],
@@ -169,18 +174,15 @@ describe("generator PromptProvider compatibility", () => {
       text: vi.fn<PromptProvider["text"]>().mockResolvedValue(""),
       secret: vi.fn<PromptProvider["secret"]>().mockResolvedValue(""),
     };
-    const logger = new MonorepositoryConsoleLogger("generate::env", {
-      color: false,
-      sink: new InMemoryLoggerSink(),
-    });
 
-    const {main} = await import("./generate.env.ts");
-    await expect(main(false, logger, prompts)).resolves.toBe(0);
+    const {createGenerateEnvironmentCommand} = await import("./generate.env.ts");
+    const command = createGenerateEnvironmentCommand(createTestRuntimeFactory({files, prompts}));
 
-    expect(prompts.confirm).not.toHaveBeenCalled();
-    const generated = writeFile.mock.calls[0]?.[1];
-    expect(typeof generated).toBe("string");
-    const generatedText = String(generated);
+    const execution = await command.invoke({verbose: false}, {presentation: "silent"});
+
+    expect(execution).toMatchObject({status: "completed", exitCode: 0});
+    expect(confirm).not.toHaveBeenCalled();
+    const generatedText = await files.readText(".env");
     expect(generatedText).toContain("AZURE_CLIENT_ID=existing-client");
     expect(generatedText).toContain("AZURE_TENANT_ID=existing-tenant");
     expect(generatedText).toContain("AZURE_SUBSCRIPTION_ID=existing-subscription");
@@ -188,53 +190,66 @@ describe("generator PromptProvider compatibility", () => {
   });
 
   it("stops aggregate generation and propagates a real environment generator failure", async () => {
-    vi.resetModules();
-    vi.stubEnv("INFRA", "azure");
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async () => new Response("unavailable", {status: 503})),
-    );
+    const files = createMemoryFileSystem({".env": ""});
+    const environment: RuntimeEnvironment = {
+      variables: {INFRA: "azure"},
+      cwd: repositoryFixtureRoot,
+      executablePath: "/usr/bin/node",
+      platform: "linux",
+      architecture: "x64",
+      stdinIsTTY: false,
+      stdoutIsTTY: false,
+      isCI: true,
+    };
+    const http: HttpClient = {
+      request: async (): Promise<HttpResponse> => createHttpResponse(503, "unavailable"),
+    };
     const sink = new InMemoryLoggerSink();
     const logger = new MonorepositoryConsoleLogger("generate", {color: false, sink});
-    const {main} = await import("./generate.ts");
 
-    await expect(
-      main(
-        {
-          verbose: false,
-          generateEnv: true,
-          generateGql: true,
-          generateI18n: false,
-          generateArtifacts: false,
-        },
-        logger,
-      ),
-    ).resolves.toBe(1);
+    const {createGenerateEnvironmentCommand} = await import("./generate.env.ts");
+    const {createGenerateCommand} = await import("./generate.ts");
+    const gqlInvoke = vi.fn<CommandInvoker<GenerateLeafInput, GenerateLeafResult>["invoke"]>();
+    const unusedLeaf: CommandInvoker<GenerateLeafInput, GenerateLeafResult> = {invoke: gqlInvoke};
+    const command = createGenerateCommand(
+      {
+        // The real environment generator, wired to a failing exp endpoint, is the child under test.
+        env: createGenerateEnvironmentCommand(createTestRuntimeFactory({files, environment, http})),
+        i18n: unusedLeaf,
+        gql: unusedLeaf,
+        artifacts: {invoke: vi.fn()},
+      },
+      createTestRuntimeFactory({logger}),
+    );
+
+    const execution = await command.invoke(
+      {verbose: false, env: true, i18n: false, gql: true, artifacts: false},
+      {presentation: "human"},
+    );
+
+    expect(execution).toMatchObject({status: "completed", exitCode: 1, value: {completed: [], failed: "env"}});
+    expect(gqlInvoke).not.toHaveBeenCalled();
 
     const retained = sink.records.map((record) => record.text).join("\n");
+    expect(retained).toContain("exp returned 503");
     expect(retained).not.toContain("Running GraphQL types generator");
     expect(retained).not.toContain("All requested generation tasks completed");
   });
 
-  it("uses the injected provider, redacts entered secrets, and never writes directly to console", async () => {
-    vi.stubEnv("INFRA", "local");
-    vi.stubEnv("VERBOSE", "false");
-    vi.resetModules();
-    vi.spyOn(fs, "existsSync").mockReturnValue(true);
-    vi.spyOn(fs, "readFileSync").mockReturnValue("");
-    const writeFile = vi.spyOn(fs, "writeFileSync").mockImplementation(() => undefined);
-    vi.spyOn(fs, "copyFileSync").mockImplementation(() => undefined);
+  it("uses the injected prompt provider, redacts entered secrets, and never writes directly to console", async () => {
+    const files = createMemoryFileSystem({".env": ""});
     const consoleSpies = ["debug", "info", "warn", "error", "log"].map((level) =>
       vi.spyOn(console, level as "debug").mockImplementation(() => undefined),
     );
     const publishable = "pk_test_generator-publishable";
-    const secret = "sk_test_generator-secret";
+    const secretValue = "sk_test_generator-secret";
     const text = vi.fn<PromptProvider["text"]>(async () => "local-value");
     const secretPrompt = vi.fn<PromptProvider["secret"]>(async (message) =>
-      message.includes("NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY") ? publishable : secret,
+      message.includes("NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY") ? publishable : secretValue,
     );
+    const confirm = vi.fn<PromptProvider["confirm"]>().mockResolvedValue(true);
     const prompts: PromptProvider = {
-      confirm: vi.fn<PromptProvider["confirm"]>().mockResolvedValue(true),
+      confirm,
       select: async <TValue extends string>(
         _message: string,
         choices: readonly Readonly<{value: TValue; label: string}>[],
@@ -250,26 +265,29 @@ describe("generator PromptProvider compatibility", () => {
     };
     const sink = new InMemoryLoggerSink();
     const logger = new MonorepositoryConsoleLogger("generate::env", {color: false, sink});
-    const redactions: string[] = [];
-    const originalRedact = logger.redact.bind(logger);
-    logger.redact = (value: string): void => {
-      redactions.push(value);
-      originalRedact(value);
-    };
+    // Spies on the shared prototype method (not an instance monkeypatch) because the effective-
+    // verbosity fix in `generateEnvironment` forks its own logger scope, so redaction happens on
+    // a distinct forked instance that still shares this logger's `#state` redaction set.
+    const redactSpy = vi.spyOn(MonorepositoryConsoleLogger.prototype, "redact");
 
-    const {main} = await import("./generate.env.ts");
-    await expect(main(false, logger, prompts)).resolves.toBe(0);
+    const {createGenerateEnvironmentCommand} = await import("./generate.env.ts");
+    const command = createGenerateEnvironmentCommand(createTestRuntimeFactory({files, prompts, logger}));
 
-    expect(prompts.confirm).toHaveBeenCalledOnce();
+    const execution = await command.invoke({verbose: false}, {presentation: "silent"});
+
+    expect(execution).toMatchObject({status: "completed", exitCode: 0});
+    expect(confirm).toHaveBeenCalledOnce();
     expect(text).toHaveBeenCalled();
     expect(secretPrompt.mock.calls.map(([message]) => message)).toEqual(["NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY", "CLERK_SECRET_KEY"]);
+    const redactions = redactSpy.mock.calls.map(([value]) => value);
     expect(redactions).toContain(publishable);
-    expect(redactions).toContain(secret);
+    expect(redactions).toContain(secretValue);
     expect(consoleSpies.every((spy) => spy.mock.calls.length === 0)).toBe(true);
     const retained = JSON.stringify({records: sink.records});
     expect(retained).not.toContain(publishable);
-    expect(retained).not.toContain(secret);
-    expect(JSON.stringify(writeFile.mock.calls)).toContain(secret);
+    expect(retained).not.toContain(secretValue);
+    const written = await files.readText(".env");
+    expect(written).toContain(secretValue);
   });
 
   it("does not load Azure identity merely by importing the module", async () => {
@@ -282,6 +300,164 @@ describe("generator PromptProvider compatibility", () => {
       appendMissingEnvironmentValues: expect.any(Function),
       parseEnvironmentFile: expect.any(Function),
       quoteIfNeeded: expect.any(Function),
+      createGenerateEnvironmentCommand: expect.any(Function),
     });
+  });
+
+  describe("effective verbosity (VERBOSE environment override)", () => {
+    const completeEnvContent = [
+      "SITE_ENV=DEVELOPMENT",
+      "SITE_NAME=dev.arolariu.ro",
+      "SITE_URL=https://localhost:3000",
+      "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_existing",
+      "CLERK_SECRET_KEY=sk_test_existing",
+      "USE_CDN=false",
+    ].join("\n");
+
+    function buildTestEnvironment(variables: Readonly<Record<string, string | undefined>>): RuntimeEnvironment {
+      return {
+        variables,
+        cwd: repositoryFixtureRoot,
+        executablePath: "/usr/bin/node",
+        platform: "linux",
+        architecture: "x64",
+        stdinIsTTY: false,
+        stdoutIsTTY: false,
+        isCI: true,
+      };
+    }
+
+    it("emits a real debug record from VERBOSE=true even without the --verbose CLI flag", async () => {
+      const files = createMemoryFileSystem({".env": completeEnvContent});
+      const sink = new InMemoryLoggerSink();
+      // `verbose: false` mirrors production: `commander.ts` derives the invocation logger's own
+      // verbosity from the CLI flag alone (see `readVerboseFlag`), never from `VERBOSE`.
+      const logger = new MonorepositoryConsoleLogger("generate::env", {color: false, verbose: false, sink});
+      const environment = buildTestEnvironment({VERBOSE: "true"});
+
+      const {createGenerateEnvironmentCommand} = await import("./generate.env.ts");
+      const command = createGenerateEnvironmentCommand(createTestRuntimeFactory({files, logger, environment}));
+
+      // `presentation: "human"` matches how the aggregate (`generate.ts`) invokes every leaf.
+      const execution = await command.invoke({verbose: false}, {presentation: "human"});
+
+      expect(execution).toMatchObject({status: "completed", exitCode: 0});
+      expect(sink.records.some((record) => record.text.includes("SITE_ENV was evaluated without logging its value."))).toBe(true);
+    });
+
+    it("suppresses debug diagnostics when both the CLI flag and VERBOSE are false", async () => {
+      const files = createMemoryFileSystem({".env": completeEnvContent});
+      const sink = new InMemoryLoggerSink();
+      const logger = new MonorepositoryConsoleLogger("generate::env", {color: false, verbose: false, sink});
+      const environment = buildTestEnvironment({});
+
+      const {createGenerateEnvironmentCommand} = await import("./generate.env.ts");
+      const command = createGenerateEnvironmentCommand(createTestRuntimeFactory({files, logger, environment}));
+
+      const execution = await command.invoke({verbose: false}, {presentation: "human"});
+
+      expect(execution).toMatchObject({status: "completed", exitCode: 0});
+      expect(sink.records.some((record) => record.text.includes("SITE_ENV was evaluated without logging its value."))).toBe(false);
+    });
+  });
+});
+
+describe("generateEnvironmentCommand parser lifecycle", () => {
+  const completeEnvContent = [
+    "SITE_ENV=DEVELOPMENT",
+    "SITE_NAME=dev.arolariu.ro",
+    "SITE_URL=https://localhost:3000",
+    "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_existing",
+    "CLERK_SECRET_KEY=sk_test_existing",
+    "USE_CDN=false",
+  ].join("\n");
+
+  it.each(["-v", "--verbose", "/v", "/verbose"])("decodes %s to a verbose invocation", async (flag) => {
+    const files = createMemoryFileSystem({".env": completeEnvContent});
+    const sink = new InMemoryLoggerSink();
+    const logger = new MonorepositoryConsoleLogger("generate::env", {color: false, sink});
+    const {createGenerateEnvironmentCommand} = await import("./generate.env.ts");
+    const command = createGenerateEnvironmentCommand(createTestRuntimeFactory({files, logger}));
+
+    const execution = await command.run([flag]);
+
+    expect(execution).toMatchObject({status: "completed", exitCode: 0});
+    expect(sink.records.some((record) => record.text.includes("SITE_ENV was evaluated without logging its value."))).toBe(true);
+  });
+
+  it("parses a fresh Commander program on every repeated run() call instead of retaining prior decoded state", async () => {
+    const files = createMemoryFileSystem({".env": completeEnvContent});
+    const sink = new InMemoryLoggerSink();
+    const logger = new MonorepositoryConsoleLogger("generate::env", {color: false, sink});
+    const {createGenerateEnvironmentCommand} = await import("./generate.env.ts");
+    const command = createGenerateEnvironmentCommand(createTestRuntimeFactory({files, logger}));
+
+    const verboseExecution = await command.run(["--verbose"]);
+    const quietExecution = await command.run([]);
+
+    expect(verboseExecution).toMatchObject({status: "completed", exitCode: 0});
+    expect(quietExecution).toMatchObject({status: "completed", exitCode: 0});
+
+    const verboseOnlyDiagnostic = sink.records.filter((record) =>
+      record.text.includes("SITE_ENV was evaluated without logging its value."),
+    );
+    // Exactly one occurrence proves the second, flag-less run() call did not inherit the first
+    // call's decoded verbose flag: each run() rebuilds its own fresh Commander parser and input.
+    expect(verboseOnlyDiagnostic).toHaveLength(1);
+  });
+
+  it("assigns an exit code through runIfMain() only when the module is the direct entrypoint", async () => {
+    const files = createMemoryFileSystem({".env": completeEnvContent});
+    const {createGenerateEnvironmentCommand} = await import("./generate.env.ts");
+
+    const nonEntryProcessHost = createTestProcessHost([]);
+    const nonEntryCommand = createGenerateEnvironmentCommand({
+      ...createTestRuntimeFactory({files}),
+      processHost: {...nonEntryProcessHost, isDirectEntry: (): boolean => false},
+    });
+    await nonEntryCommand.runIfMain("file:///repo/scripts/generate.env.ts");
+    expect(nonEntryProcessHost.assignedExitCodes).toEqual([]);
+
+    const entryProcessHost = createTestProcessHost([]);
+    const entryCommand = createGenerateEnvironmentCommand({
+      ...createTestRuntimeFactory({files}),
+      processHost: entryProcessHost,
+    });
+    await entryCommand.runIfMain("file:///repo/scripts/generate.env.ts");
+    expect(entryProcessHost.assignedExitCodes).toEqual([0]);
+  });
+});
+
+describe("parseEnvironmentFile - semantic characterization", () => {
+  it("preserves inline # as part of the value for unquoted assignments", async () => {
+    const {parseEnvironmentFile} = await import("./generate.env.ts");
+    const parsed = parseEnvironmentFile("KEY=value # inline comment\n");
+    expect([...parsed]).toEqual([["KEY", "value # inline comment"]]);
+  });
+
+  it("treats export-prefixed lines as having a compound key, not as a bare variable name", async () => {
+    const {parseEnvironmentFile} = await import("./generate.env.ts");
+    const parsed = parseEnvironmentFile("export KEY=value\n");
+    expect([...parsed]).toEqual([["export KEY", "value"]]);
+  });
+});
+
+describe("azure mapping source-of-truth", () => {
+  it("exports AZURE_RUNTIME_IDENTITY_KEYS with the three standard Azure identity keys", async () => {
+    const azureModule = await import("./azure/index.ts");
+    const runtimeKeys = (azureModule as Record<string, unknown>)["AZURE_RUNTIME_IDENTITY_KEYS"];
+    expect(runtimeKeys).toEqual(["AZURE_CLIENT_ID", "AZURE_TENANT_ID", "AZURE_SUBSCRIPTION_ID"]);
+  });
+
+  it("preserves APP_CONFIGURATION_MAPPING key/value pairs byte-for-byte", async () => {
+    const {APP_CONFIGURATION_MAPPING} = await import("./azure/index.ts");
+    expect(Object.entries(APP_CONFIGURATION_MAPPING)).toEqual([
+      ["Site:Environment", "SITE_ENV"],
+      ["Site:Name", "SITE_NAME"],
+      ["Site:Url", "SITE_URL"],
+      ["Auth:Clerk:PublishableKey", "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY"],
+      ["Auth:Clerk:SecretKey", "CLERK_SECRET_KEY"],
+      ["Site:UseCdn", "USE_CDN"],
+    ]);
   });
 });

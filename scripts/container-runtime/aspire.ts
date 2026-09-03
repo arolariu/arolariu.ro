@@ -1,75 +1,133 @@
 /**
- * @fileoverview Engine-aware Aspire AppHost startup.
+ * @fileoverview Engine-aware Aspire AppHost startup command.
  * @module scripts/container-runtime/aspire
+ *
+ * @remarks
+ * Every ambient effect this command used to reach for directly (the child process, the
+ * repository filesystem, and the process environment) now arrives through the injected
+ * {@link CommandContext.runtime} instead of Node globals, so the command is fully exercised by
+ * the declarative command runtime's test fakes and never spawns Docker, Podman, or AppHost in a
+ * test.
  */
 
-import {resolve} from "node:path";
-import {fileURLToPath} from "node:url";
-import {MonorepositoryConsoleLogger, type MonorepositoryLogger} from "../common/logger.ts";
+import {MonorepoCommand, type CommandContext, type CommandRuntimeFactory} from "../common/commander.ts";
 import {resolveRepositoryPaths} from "../common/repository-paths.ts";
+import {RunnerError} from "../common/runner.ts";
+import {commandCancellationFromSignal} from "../common/runtime.ts";
 import {getContainerAdapter, type ContainerRuntimeAdapter} from "./adapters.ts";
-import {runSharedPreflight} from "./preflight.ts";
-import {defaultRunner, type CommandRunner} from "./process.ts";
+import {runContainerPreflight} from "./preflight.ts";
 import {resolveRuntimeContainerEngine} from "./selection.ts";
-import {exitWithError} from "./types.ts";
+import type {AspireResult, ContainerEngine, ContainerEngineInput} from "./types.ts";
 
 /** Aspire AppHost command with runtime-specific environment. */
 export interface AspireCommand {
   readonly command: string;
   readonly args: readonly string[];
-  readonly env: NodeJS.ProcessEnv;
+  readonly env: Readonly<Record<string, string | undefined>>;
 }
 
 /**
  * Builds the Aspire AppHost command for the selected container engine.
  *
  * @param adapter - Selected runtime adapter.
+ * @param baseEnvironment - Environment values merged under the Aspire runtime override.
  * @returns Command and environment for starting AppHost.
  */
-export function buildAspireCommand(adapter: ContainerRuntimeAdapter): AspireCommand {
+export function buildAspireCommand(
+  adapter: ContainerRuntimeAdapter,
+  baseEnvironment: Readonly<Record<string, string | undefined>>,
+): AspireCommand {
   return {
     command: "dotnet",
     args: ["run", "--project", "tooling/AppHost"],
     env: {
-      ...process.env,
+      ...baseEnvironment,
       DOTNET_ASPIRE_CONTAINER_RUNTIME: adapter.aspireRuntime,
     },
   };
 }
 
 /**
- * Starts Aspire AppHost with the selected container runtime.
+ * Starts Aspire AppHost with the resolved local container engine.
  *
- * @param runner - Command runner used to execute AppHost.
- * @param logger - Logger used for orchestration output.
+ * @param context - Command context whose runtime owns every ambient capability.
+ * @param input - Typed command input.
+ * @returns The engine Aspire AppHost ran with.
+ * @throws When the engine cannot be resolved, preflight fails, or Aspire AppHost exits with a
+ * nonzero code.
  */
-export async function runAspire(
-  runner: CommandRunner = defaultRunner,
-  logger: MonorepositoryLogger = new MonorepositoryConsoleLogger("container::aspire"),
-): Promise<void> {
-  const paths = resolveRepositoryPaths();
-  const selection = await resolveRuntimeContainerEngine({
-    argv: process.argv,
-    env: process.env,
-    toolingConfigPath: paths.toolingConfig,
-  });
+async function executeAspire(context: Readonly<CommandContext>, input: Readonly<ContainerEngineInput>): Promise<AspireResult> {
+  const {runtime} = context;
+  const paths = await resolveRepositoryPaths(import.meta.url, runtime.files);
+  const selection = await resolveRuntimeContainerEngine(
+    {
+      // The declarative command host only decodes untyped CLI strings; resolveRuntimeContainerEngine
+      // validates the value (including the docker-deprecation message) before it is ever treated
+      // as a real ContainerEngine.
+      ...(input.engine === undefined ? {} : {requestedEngine: input.engine}),
+      env: runtime.environment.variables,
+      toolingConfigPath: paths.toolingConfig,
+    },
+    runtime.files,
+  );
   const adapter = getContainerAdapter(selection.engine);
 
-  await runSharedPreflight(adapter, runner, logger.child("preflight"));
-  const command = buildAspireCommand(adapter);
-  const result = await runner.run(command, {env: command.env, stdio: "inherit"});
+  await runContainerPreflight(adapter, {
+    runner: runtime.runner,
+    logger: runtime.logger.child("preflight"),
+    environment: runtime.environment,
+    signal: runtime.signal,
+  });
 
-  if (result.code !== 0) {
-    throw new Error(`Aspire AppHost exited with code ${result.code} for engine '${adapter.engine}'.`);
-  }
-}
-
-const isDirectExecution = process.argv[1] !== undefined && fileURLToPath(import.meta.url) === resolve(process.argv[1]);
-
-if (isDirectExecution) {
+  const command = buildAspireCommand(adapter, runtime.environment.variables);
   try {
-    await runAspire();
+    await runtime.runner.expectSuccess(
+      {command: command.command, args: command.args},
+      {env: command.env, output: "inherit", signal: runtime.signal},
+    );
   } catch (error) {
-    exitWithError(error, new MonorepositoryConsoleLogger("container::aspire"));
+    if (error instanceof RunnerError && error.outcome.kind === "cancelled" && runtime.signal.aborted) {
+      throw commandCancellationFromSignal(runtime.signal);
+    }
+    throw error;
   }
+
+  return {engine: adapter.engine};
 }
+
+/**
+ * Creates the Aspire AppHost startup command.
+ *
+ * @param runtimeFactory - Optional runtime factory; tests inject a fake instead of the Node adapter.
+ * @returns The typed `dev`/`aspire` command object.
+ */
+export function createAspireCommand(runtimeFactory?: CommandRuntimeFactory): MonorepoCommand<ContainerEngineInput, AspireResult> {
+  return new MonorepoCommand<ContainerEngineInput, AspireResult>(
+    {
+      metadata: {
+        name: "aspire",
+        description: "Starts the Aspire AppHost with the selected local container engine.",
+        usage: "[--engine <rancher|podman>]",
+        examples: ["npm run dev -- --engine rancher", "npm run dev -- --engine podman"],
+      },
+      configure: (program) => {
+        program.option("--engine <engine>", "Container engine to use (rancher or podman).");
+      },
+      decode: (program) => {
+        const {engine} = program.opts<{engine?: string}>();
+        return engine === undefined ? {} : {engine: engine as ContainerEngine};
+      },
+      execute: executeAspire,
+      completion: (result) => ({
+        exitCode: 0,
+        human: (logger) => logger.success(`Aspire AppHost exited successfully for engine '${result.engine}'.`),
+      }),
+    },
+    runtimeFactory,
+  );
+}
+
+/** Production singleton used by `npm run dev` and this module's direct entrypoint. */
+export const aspireCommand: MonorepoCommand<ContainerEngineInput, AspireResult> = createAspireCommand();
+
+await aspireCommand.runIfMain(import.meta.url);

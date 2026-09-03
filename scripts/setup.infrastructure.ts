@@ -1,44 +1,47 @@
 /**
  * @fileoverview Local container runtime and infrastructure preparation.
  * @module scripts.setup.infrastructure
+ *
+ * @remarks
+ * All readiness observations (runtime CLI/backend/compose availability, Docker Desktop conflict,
+ * socket/context issues, required port occupancy and ownership, certificate presence, manifest
+ * presence, and container inventory) are consumed from shared {@link InfrastructureFacts} through
+ * `context.inspection.inspect("infrastructure")`. This module owns only mutation policy: engine
+ * selection/persistence, package-manager discovery, container installation proposals, mkcert
+ * install/trust/generation, credential isolation, consent, dry-run, and abort propagation.
+ *
+ * Every attempted mutation uses finally-safe exact invalidation: the attempted flag is set inside
+ * the action execute callback, and invalidation runs in `finally` so a thrown, failed, or
+ * interrupted mutation can never leave a partially mutated repository described by stale cached
+ * facts. Planned and declined actions never set the attempted flag and therefore never invalidate.
+ * After an executed disposition the already-invalidated key is re-inspected exactly once.
+ *
+ * The phase reads every capability from the invocation-scoped {@link SetupPhaseRuntime}: the
+ * process runner, the recursive-removal filesystem, the clock, and the host environment snapshot.
+ * It owns no ambient Node state and no test-only constructor dependency; `createInfrastructureSetupPhase`
+ * accepts no arguments.
  */
 
-import {mkdir, stat} from "node:fs/promises";
-import {createServer} from "node:net";
 import {dirname, resolve} from "node:path";
 
-import {defaultCommandRunner, type CommandResult, type CommandRunner, type CommandRunOptions} from "./common/process.ts";
-import type {ToolingConfigReadResult, ToolingConfigV1} from "./common/tooling-config.ts";
+import {processFailureEvidence, type ProcessOutcome, type ProcessRunner, type SucceededProcessOutcome} from "./common/runner.ts";
+import {CommandCancellation} from "./common/runtime.ts";
 import {mergeToolingConfig, readToolingConfig, writeToolingConfig} from "./common/tooling-config.ts";
 import {getContainerAdapter, type ContainerRuntimeAdapter} from "./container-runtime/adapters.ts";
-import {assertNoDockerDesktopBackend, requiredLocalPorts, runSharedPreflight} from "./container-runtime/preflight.ts";
-import {adaptCommandRunner} from "./container-runtime/process.ts";
 import {resolveContainerEngine} from "./container-runtime/selection.ts";
 import type {ContainerEngine, EngineSelectionSource} from "./container-runtime/types.ts";
-import type {InstallationProposal, SetupContext, SetupPhaseDefinition, SetupPhaseResult} from "./setup.types.ts";
-
-/** Read-only availability and ownership evidence for one required local port. */
-export interface PortState {
-  readonly port: number;
-  readonly available: boolean;
-  readonly pid?: number;
-  readonly processName?: string;
-  readonly repositoryOwned?: boolean;
-  readonly error?: string;
-}
-
-type FileKind = "file" | "missing" | "directory" | "other";
-
-interface InfrastructureSetupDependencies {
-  readonly platform: NodeJS.Platform;
-  readonly environment: Readonly<NodeJS.ProcessEnv>;
-  readonly interactive: boolean;
-  readonly readConfig: (path: string) => Promise<ToolingConfigReadResult>;
-  readonly writeConfig: (path: string, config: Readonly<ToolingConfigV1>) => Promise<void>;
-  readonly inspectPorts: (ports: readonly number[], runner: CommandRunner) => Promise<readonly PortState[]>;
-  readonly inspectFile: (path: string) => Promise<FileKind>;
-  readonly createDirectory: (path: string) => Promise<void>;
-}
+import type {InfrastructureFacts} from "./inspection/infrastructure.ts";
+import type {RepositoryInspectionKey} from "./inspection/repository.ts";
+import type {InspectionOutcome} from "./inspection/types.ts";
+import {
+  requireSetupPhaseRuntime,
+  type InstallationProposal,
+  type SetupActionScope,
+  type SetupContext,
+  type SetupPhaseDefinition,
+  type SetupPhaseResult,
+  type SetupPhaseRuntime,
+} from "./setup.types.ts";
 
 const ENGINE_PERSIST_ACTION = "infrastructure.engine.persist";
 const CONTAINER_INSTALL_ACTION = "infrastructure.container.install";
@@ -51,335 +54,142 @@ const MKCERT_MANUAL_ACTION = `Install mkcert from ${MKCERT_MANUAL_URL}, then rer
 const SQL_PASSWORD_ENVIRONMENT_KEY = "MSSQL_SA_PASSWORD";
 
 /**
- * Default timeout applied directly to listener-lookup probe commands.
+ * Bounded ceiling for every long-running container-desktop installation, mkcert install/trust, and
+ * certificate-generation mutation.
  *
  * @remarks
- * Matches the shared setup runner's default capture/probe timeout
- * (`scripts/setup.ts`). Applied explicitly here so every listener-lookup
- * child process is bounded even when `inspectRequiredPorts` is called
- * directly with a bare runner, in addition to whatever timeout a composed
- * phase runner would otherwise apply.
+ * The invocation-scoped runner defaults to a probe-sized timeout, which is correct for a
+ * `--version` probe but would truncate a container-desktop or mkcert install. Each such mutation
+ * therefore requests this ceiling explicitly, preserving the pre-migration mutation timeout the
+ * deprecated setup runner bridge used to supply implicitly for `tee`/`inherit` output. Probes keep
+ * the runner's own bounded default instead.
  */
-const LISTENER_LOOKUP_TIMEOUT_MS = 120_000;
+const LONG_RUNNING_MUTATION_TIMEOUT_MS = 1_200_000;
 
-function credentialIsolatedEnvironment(environment?: Readonly<NodeJS.ProcessEnv>): NodeJS.ProcessEnv {
-  const isolated: NodeJS.ProcessEnv = {};
-  if (environment !== undefined) {
-    for (const key of Object.keys(environment)) {
-      if (key.toUpperCase() !== SQL_PASSWORD_ENVIRONMENT_KEY) {
-        isolated[key] = environment[key];
-      }
-    }
-  }
-  isolated[SQL_PASSWORD_ENVIRONMENT_KEY] = undefined;
-  return isolated;
+// ---------------------------------------------------------------------------
+// Credential isolation
+// ---------------------------------------------------------------------------
+
+/**
+ * Scopes the invocation-scoped runner so every command this phase runs never observes
+ * `MSSQL_SA_PASSWORD`.
+ *
+ * @remarks
+ * The scope default explicitly maps the credential key to `undefined`; the scoped runner's
+ * environment merge (defaults, then any per-call override) drops keys with an `undefined` value
+ * before spawning, so the credential is absent from the child's environment regardless of what
+ * `runtime.environment.variables` carries, without ever mutating that immutable snapshot. Any
+ * other per-command `env` override a caller supplies is preserved because it is merged on top of
+ * this scope's defaults, not replaced by them.
+ *
+ * @param runner - The invocation-scoped process runner every setup command already flows through.
+ * @returns A credential-isolated process runner scoped to this phase.
+ */
+function createCredentialIsolatedRunner(runner: ProcessRunner): ProcessRunner {
+  return runner.scope({env: {[SQL_PASSWORD_ENVIRONMENT_KEY]: undefined}});
 }
 
-function createCredentialIsolatedRunner(runner: CommandRunner): CommandRunner {
-  return {
-    run: (command, options: Readonly<CommandRunOptions> = {}) =>
-      runner.run(command, {
-        ...options,
-        env: credentialIsolatedEnvironment(options.env),
-      }),
-  };
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+function isSuccessfulOutcome(outcome: Readonly<ProcessOutcome>): outcome is SucceededProcessOutcome {
+  return outcome.kind === "succeeded";
 }
 
 function isInterrupted(error: unknown): boolean {
-  return error instanceof Error && error.name === "AbortError";
+  return error instanceof CommandCancellation || (error instanceof Error && error.name === "AbortError");
 }
 
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
-function isSuccessfulCommand(result: Readonly<CommandResult>): boolean {
-  return result.code === 0 && !result.timedOut && result.signal === undefined && result.spawnError === undefined;
+function duration(startedAt: number, runtime: SetupPhaseRuntime): number {
+  return Math.max(0, runtime.clock.monotonicNow() - startedAt);
 }
 
-function invalidPortState(port: number): PortState | null {
-  return Number.isInteger(port) && port >= 1 && port <= 65_535
-    ? null
-    : {port, available: false, error: `Invalid TCP port ${String(port)}.`};
-}
-
-type ListenerFamily = "IPv4" | "IPv6";
-
-interface ListenerRecord {
-  readonly localAddress: string;
-  readonly family: ListenerFamily;
-  readonly pid: number;
-  readonly processName: string;
-  readonly commandLine: string;
-}
-
-type BindProbeResult = Readonly<{status: "available"}> | Readonly<{status: "occupied"}> | Readonly<{status: "error"; error: string}>;
-
-interface PortInspectionDependencies {
-  readonly platform: NodeJS.Platform;
-  readonly listenerRunner: CommandRunner;
-  readonly probePort: (port: number) => Promise<BindProbeResult>;
-  readonly lookupListeners?: (port: number) => Promise<readonly ListenerRecord[]>;
-}
-
-function isListenerRecord(value: unknown): value is ListenerRecord {
-  return (
-    typeof value === "object"
-    && value !== null
-    && "localAddress" in value
-    && typeof value.localAddress === "string"
-    && "family" in value
-    && (value.family === "IPv4" || value.family === "IPv6")
-    && "pid" in value
-    && typeof value.pid === "number"
-    && Number.isSafeInteger(value.pid)
-    && value.pid > 0
-    && "processName" in value
-    && typeof value.processName === "string"
-    && "commandLine" in value
-    && typeof value.commandLine === "string"
-  );
-}
-
-function commandFailure(result: Readonly<CommandResult>, fallback: string): string {
-  return result.stderr.trim() || result.stdout.trim() || result.spawnError || fallback;
-}
-
-async function lookupWindowsListeners(port: number, runner: CommandRunner): Promise<readonly ListenerRecord[]> {
-  const script = [
-    `$connections = @(Get-NetTCPConnection -State Listen -LocalPort ${port} -ErrorAction Stop);`,
-    "$records = foreach ($connection in $connections) {",
-    '$owner = Get-CimInstance Win32_Process -Filter "ProcessId = $($connection.OwningProcess)" -ErrorAction Stop;',
-    "[pscustomobject]@{",
-    "localAddress = [string]$connection.LocalAddress;",
-    "family = $(if ([string]$connection.LocalAddress -like '*:*') { 'IPv6' } else { 'IPv4' });",
-    "pid = [int]$connection.OwningProcess;",
-    "processName = [string]$owner.Name;",
-    "commandLine = $(if ($owner.CommandLine) { [string]$owner.CommandLine } else { [string]$owner.Name })",
-    "}",
-    "};",
-    "ConvertTo-Json -InputObject @($records) -Compress",
-  ].join(" ");
-  const result = await runner.run(
-    {
-      command: "powershell",
-      args: ["-NoProfile", "-NonInteractive", "-Command", script],
-    },
-    {env: credentialIsolatedEnvironment(), timeoutMs: LISTENER_LOOKUP_TIMEOUT_MS},
-  );
-  if (!isSuccessfulCommand(result)) {
-    throw new Error(commandFailure(result, `PowerShell exited with code ${result.code}.`));
-  }
-
-  const value: unknown = JSON.parse(result.stdout);
-  if (!Array.isArray(value) || !value.every(isListenerRecord)) {
-    throw new Error("PowerShell returned invalid listener ownership evidence.");
-  }
-  return value;
-}
-
-function lsofAddress(value: string, port: number): string | null {
-  const endpoint = value
-    .replace(/^TCP\s+/u, "")
-    .replace(/\s+\(LISTEN\)$/u, "")
-    .trim();
-  const suffix = `:${port}`;
-  if (!endpoint.endsWith(suffix)) {
-    return null;
-  }
-  const address = endpoint.slice(0, -suffix.length);
-  return address.startsWith("[") && address.endsWith("]") ? address.slice(1, -1) : address;
-}
-
-async function lookupLsofFamily(port: number, family: ListenerFamily, runner: CommandRunner): Promise<readonly ListenerRecord[]> {
-  const result = await runner.run(
-    {
-      command: "lsof",
-      args: ["-nP", "-a", `-i${family === "IPv4" ? "4" : "6"}TCP:${port}`, "-sTCP:LISTEN", "-Fpcn"],
-    },
-    {env: credentialIsolatedEnvironment(), timeoutMs: LISTENER_LOOKUP_TIMEOUT_MS},
-  );
-  if (!isSuccessfulCommand(result)) {
-    if (
-      result.code === 1
-      && result.stdout.trim() === ""
-      && result.stderr.trim() === ""
-      && result.spawnError === undefined
-      && !result.timedOut
-      && result.signal === undefined
-    ) {
-      return [];
-    }
-    throw new Error(commandFailure(result, `lsof exited with code ${result.code}.`));
-  }
-
-  const records: ListenerRecord[] = [];
-  let pid: number | undefined;
-  let processName = "";
-  for (const line of result.stdout.split(/\r?\n/u)) {
-    const field = line[0];
-    const value = line.slice(1);
-    if (field === "p") {
-      const parsedPid = Number(value);
-      pid = Number.isSafeInteger(parsedPid) && parsedPid > 0 ? parsedPid : undefined;
-      processName = "";
-    } else if (field === "c") {
-      processName = value;
-    } else if (field === "n" && pid !== undefined) {
-      const localAddress = lsofAddress(value, port);
-      if (localAddress !== null) {
-        records.push({localAddress, family, pid, processName, commandLine: ""});
-      }
-    }
-  }
-  return records;
-}
-
-async function lookupPosixListeners(port: number, runner: CommandRunner): Promise<readonly ListenerRecord[]> {
-  const records = (await Promise.all([lookupLsofFamily(port, "IPv4", runner), lookupLsofFamily(port, "IPv6", runner)])).flat();
-  const commandLines = new Map<number, string>();
-  for (const pid of new Set(records.map((record) => record.pid))) {
-    const result = await runner.run(
-      {
-        command: "ps",
-        args: ["-p", String(pid), "-o", "command="],
-      },
-      {env: credentialIsolatedEnvironment(), timeoutMs: LISTENER_LOOKUP_TIMEOUT_MS},
-    );
-    if (!isSuccessfulCommand(result) || result.stdout.trim() === "") {
-      throw new Error(commandFailure(result, `ps exited with code ${result.code}.`));
-    }
-    commandLines.set(pid, result.stdout.trim());
-  }
-  return records.map((record) => ({
-    ...record,
-    commandLine: commandLines.get(record.pid) ?? record.processName,
-  }));
-}
-
-async function lookupListeners(port: number, platform: NodeJS.Platform, runner: CommandRunner): Promise<readonly ListenerRecord[]> {
-  if (platform === "win32") {
-    return lookupWindowsListeners(port, runner);
-  }
-  return lookupPosixListeners(port, runner);
-}
-
-function normalizedListenerAddress(address: string): string {
-  const normalized = address.trim().toLowerCase();
-  const unwrapped = normalized.startsWith("[") && normalized.endsWith("]") ? normalized.slice(1, -1) : normalized;
-  const zoneIndex = unwrapped.indexOf("%");
-  return zoneIndex === -1 ? unwrapped : unwrapped.slice(0, zoneIndex);
-}
-
-function canBlockIpv4Loopback(record: ListenerRecord): boolean {
-  const address = normalizedListenerAddress(record.localAddress);
-  if (record.family === "IPv4") {
-    return address === "127.0.0.1" || address === "0.0.0.0" || address === "*";
-  }
-  return address === "::" || address === "*" || address === "::ffff:127.0.0.1";
-}
-
-function correlateListenerOwner(records: readonly ListenerRecord[]): Omit<PortState, "port" | "available"> {
-  const relevant = records.filter(canBlockIpv4Loopback);
-  if (relevant.length === 0) {
-    return {error: "Listener ownership failed: no listener record matched 127.0.0.1 or a wildcard address."};
-  }
-
-  const pids = [...new Set(relevant.map((record) => record.pid))].toSorted((left, right) => left - right);
-  if (pids.length !== 1) {
-    return {error: `Listener ownership is ambiguous: multiple PIDs (${pids.join(", ")}) can block 127.0.0.1.`};
-  }
-
-  const owner =
-    relevant.find((record) => record.family === "IPv4" && normalizedListenerAddress(record.localAddress) === "127.0.0.1") ?? relevant[0];
-  if (owner === undefined) {
-    return {error: "Listener ownership failed: no listener owner remained after address correlation."};
-  }
-  return {
-    pid: owner.pid,
-    processName: owner.commandLine.trim() === "" ? owner.processName : owner.commandLine,
-  };
-}
-
-async function probePort(port: number): Promise<BindProbeResult> {
-  return new Promise<BindProbeResult>((resolveProbe) => {
-    const server = createServer();
-    const settle = (state: BindProbeResult): void => {
-      server.removeAllListeners();
-      resolveProbe(state);
-    };
-    server.unref();
-    server.once("error", (error: NodeJS.ErrnoException) => {
-      settle(
-        error.code === "EADDRINUSE" ? {status: "occupied"} : {status: "error", error: `Port availability probe failed: ${error.message}`},
-      );
-    });
-    server.once("listening", () => {
-      server.close((error) => {
-        settle(error === undefined ? {status: "available"} : {status: "error", error: `Port probe cleanup failed: ${error.message}`});
-      });
-    });
-    server.listen({host: "127.0.0.1", port, exclusive: true});
-  });
-}
-
-async function inspectPort(port: number, dependencies: PortInspectionDependencies): Promise<PortState> {
-  const invalid = invalidPortState(port);
-  if (invalid !== null) {
-    return invalid;
-  }
-
-  let probe: BindProbeResult;
-  try {
-    probe = await dependencies.probePort(port);
-  } catch (error) {
-    if (isInterrupted(error)) {
-      throw error;
-    }
-    return {port, available: false, error: `Port availability probe failed: ${errorMessage(error)}`};
-  }
-  if (probe.status === "available") {
-    return {port, available: true};
-  }
-  if (probe.status === "error") {
-    return {port, available: false, error: probe.error};
-  }
-
-  try {
-    const records =
-      dependencies.lookupListeners === undefined
-        ? await lookupListeners(port, dependencies.platform, dependencies.listenerRunner)
-        : await dependencies.lookupListeners(port);
-    return {port, available: false, ...correlateListenerOwner(records)};
-  } catch (error) {
-    if (isInterrupted(error)) {
-      throw error;
-    }
-    return {
-      port,
-      available: false,
-      error: `Listener lookup failed: ${errorMessage(error)}`,
-    };
-  }
-}
-
-function phaseResult(context: SetupContext, startedAt: number, input: Omit<SetupPhaseResult, "durationMs">): SetupPhaseResult {
+function phaseResult(runtime: SetupPhaseRuntime, startedAt: number, input: Omit<SetupPhaseResult, "durationMs">): SetupPhaseResult {
   return {
     ...input,
-    durationMs: Math.max(0, context.now() - startedAt),
+    durationMs: duration(startedAt, runtime),
   };
 }
 
-async function inspectRegularFile(path: string): Promise<FileKind> {
+/**
+ * Converts one failed/interrupted process outcome into bounded, non-secret evidence.
+ *
+ * @param outcome - A non-`"succeeded"` {@link ProcessOutcome}.
+ * @param context - Shared setup dependencies, whose logger sanitizes the rendered evidence.
+ * @returns Bounded, sanitized evidence lines describing the failure.
+ */
+function commandFailureEvidence(
+  outcome: Readonly<Exclude<ProcessOutcome, SucceededProcessOutcome>>,
+  context: SetupContext,
+): readonly string[] {
+  const evidence = processFailureEvidence(outcome, context.logger);
+  return [
+    ...(outcome.kind === "exited" ? [`Command exited with code ${outcome.exitCode}.`] : []),
+    ...(outcome.kind === "timed-out" ? ["Command timed out."] : []),
+    ...(outcome.kind === "signalled" ? [`Command stopped with signal ${outcome.signal}.`] : []),
+    ...(outcome.kind === "cancelled" ? ["Command was cancelled."] : []),
+    ...(outcome.kind === "spawn-failed" ? [`Unable to start command: ${outcome.message}`] : []),
+    ...(evidence === "" ? [] : [evidence]),
+  ];
+}
+
+function deduplicate(values: readonly string[]): readonly string[] {
+  return [...new Set(values)];
+}
+
+// ---------------------------------------------------------------------------
+// Mutation wrapper
+// ---------------------------------------------------------------------------
+
+type InfrastructureMutationOutcome =
+  | Readonly<{disposition: "planned"}>
+  | Readonly<{disposition: "declined"}>
+  | Readonly<{disposition: "executed"; outcome: InspectionOutcome<InfrastructureFacts>}>;
+
+/**
+ * Runs one policy-controlled infrastructure mutation with finally-safe exact invalidation.
+ *
+ * @remarks
+ * The attempted flag is set inside the execute callback. Invalidation runs in `finally` so even a
+ * thrown, failed, or interrupted mutation cannot leave stale cached facts. Planned and declined
+ * actions never set the flag and never invalidate. After an executed disposition the
+ * already-invalidated keys are re-inspected.
+ *
+ * @param context - Shared setup context carrying the inspection session.
+ * @param action - Action identity, scope, summary, and the mutation to attempt.
+ * @param invalidationKeys - Exact fact keys to invalidate after an attempted mutation.
+ * @returns The disposition, plus refreshed infrastructure outcome when executed.
+ */
+async function runInfrastructureMutation(
+  context: SetupContext,
+  action: Readonly<{id: string; scope: SetupActionScope; summary: string; mutate: () => Promise<void>}>,
+  invalidationKeys: readonly RepositoryInspectionKey[],
+): Promise<InfrastructureMutationOutcome> {
+  let attempted = false;
   try {
-    const pathStat = await stat(path);
-    return pathStat.isFile() ? "file" : pathStat.isDirectory() ? "directory" : "other";
-  } catch (error) {
-    if (error instanceof Error && "code" in error && error.code === "ENOENT") {
-      return "missing";
+    const disposition = await context.actions.run({
+      id: action.id,
+      scope: action.scope,
+      summary: action.summary,
+      execute: async () => {
+        attempted = true;
+        await action.mutate();
+      },
+    });
+    if (disposition !== "executed") {
+      return disposition === "planned" ? {disposition: "planned"} : {disposition: "declined"};
     }
-    throw error;
+  } finally {
+    if (attempted) {
+      context.inspection.invalidate(...invalidationKeys);
+    }
   }
+  return {disposition: "executed", outcome: await context.inspection.inspect("infrastructure")};
 }
 
 /**
@@ -429,239 +239,9 @@ export function selectContainerInstallationProposal(
   return null;
 }
 
-/**
- * Inspects required local ports without starting or stopping services.
- *
- * @param ports - Optional ordered ports to inspect.
- * @param overrides - Optional external bind/listener boundaries for deterministic inspection.
- * @returns Availability and listener ownership evidence in input order.
- */
-export async function inspectRequiredPorts(
-  ports: readonly number[] = requiredLocalPorts,
-  overrides: Readonly<Partial<PortInspectionDependencies>> = {},
-): Promise<readonly PortState[]> {
-  const dependencies: PortInspectionDependencies = {
-    platform: overrides.platform ?? process.platform,
-    listenerRunner: overrides.listenerRunner ?? defaultCommandRunner,
-    probePort: overrides.probePort ?? probePort,
-    ...(overrides.lookupListeners === undefined ? {} : {lookupListeners: overrides.lookupListeners}),
-  };
-  const states: PortState[] = [];
-  for (const port of ports) {
-    states.push(await inspectPort(port, dependencies));
-  }
-  return states;
-}
-
-interface SelectedEngine {
-  readonly engine: ContainerEngine;
-  readonly source: EngineSelectionSource | "interactive";
-}
-
-interface RuntimeOutcome {
-  readonly blocked: boolean;
-  readonly planned: boolean;
-  readonly evidence: readonly string[];
-  readonly nextActions: readonly string[];
-  readonly inventory: string;
-}
-
-interface PortOutcome {
-  readonly blocked: boolean;
-  readonly degraded: boolean;
-  readonly evidence: readonly string[];
-  readonly nextActions: readonly string[];
-}
-
-interface FileOutcome {
-  readonly blocked: boolean;
-  readonly evidence: readonly string[];
-}
-
-interface CertificateOutcome {
-  readonly planned: boolean;
-  readonly degraded: boolean;
-  readonly evidence: readonly string[];
-  readonly nextActions: readonly string[];
-}
-
-const SELFHOST_CONTAINER_NAMES: ReadonlySet<string> = new Set([
-  "traefik",
-  "healthchecks",
-  "mssql",
-  "cosmosdb",
-  "azurite",
-  "redis",
-  "exp-arolariu-ro",
-  "api-arolariu-ro",
-  "website-arolariu-ro",
-]);
-const ASPIRE_RESOURCE_TOKENS = ["traefik", "healthchecks", "mssql", "cosmos", "azurite", "redis", "exp", "api", "website"] as const;
-
-function commandContainsRepositoryRoot(processName: string, root: string, platform: NodeJS.Platform): boolean {
-  let command = processName.replaceAll("\\", "/");
-  let normalizedRoot = root.replaceAll("\\", "/").replace(/\/+$/u, "");
-  if (platform === "win32") {
-    command = command.toLowerCase();
-    normalizedRoot = normalizedRoot.toLowerCase();
-  }
-  if (normalizedRoot.length <= 1) {
-    return false;
-  }
-
-  let index = command.indexOf(normalizedRoot);
-  while (index !== -1) {
-    const before = command[index - 1];
-    const after = command[index + normalizedRoot.length];
-    const hasArgumentBoundaryBefore = before === undefined || before === '"' || before === "'" || before === "=" || /\s/u.test(before);
-    const hasPathBoundaryAfter =
-      after === undefined || after === "/" || after === '"' || after === "'" || after === "," || /\s/u.test(after);
-    if (hasArgumentBoundaryBefore && hasPathBoundaryAfter) {
-      return true;
-    }
-    index = command.indexOf(normalizedRoot, index + normalizedRoot.length);
-  }
-  return false;
-}
-
-function repositoryProcessOwnsPort(port: number, processName: string, root: string, platform: NodeJS.Platform): boolean {
-  const command = processName.replaceAll("\\", "/").toLowerCase();
-  if (commandContainsRepositoryRoot(processName, root, platform)) {
-    return true;
-  }
-  if ([3000, 3002, 4173].includes(port)) {
-    return /\bnode(?:\.exe)?\b/u.test(command) && /(?:^|[^a-z0-9_])(?:arolariu|nx|next|vite|svelte)(?:$|[^a-z0-9_])/u.test(command);
-  }
-  if (port === 5000) {
-    return /\bdotnet(?:\.exe)?\b/u.test(command) && /(?:^|[^a-z0-9_])(?:apphost|api|arolariu)(?:$|[^a-z0-9_])/u.test(command);
-  }
-  if (port === 5002) {
-    return (
-      /\b(?:python(?:3(?:\.\d+)?)?|py)(?:\.exe)?\b/u.test(command)
-      && /(?:^|[^a-z0-9_])(?:uvicorn|main:app|exp|arolariu)(?:$|[^a-z0-9_])/u.test(command)
-    );
-  }
-  return false;
-}
-
-function isRepositoryContainer(name: string): boolean {
-  const normalized = name.trim().toLowerCase();
-  if (SELFHOST_CONTAINER_NAMES.has(normalized)) {
-    return true;
-  }
-  const tokens = new Set(normalized.split(/[^a-z0-9]+/u).filter((token) => token !== ""));
-  const hasMarker = tokens.has("aspire") || tokens.has("dcp");
-  return hasMarker && ASPIRE_RESOURCE_TOKENS.some((token) => tokens.has(token));
-}
-
-function repositoryContainersByPort(inventory: string): ReadonlyMap<number, string> {
-  const owners = new Map<number, string>();
-  for (const line of inventory.split(/\r?\n/u)) {
-    const [name, ports = ""] = line.split("\t", 2);
-    if (name === undefined || !isRepositoryContainer(name)) {
-      continue;
-    }
-    for (const match of ports.matchAll(/:(\d+)->/gu)) {
-      const port = Number(match[1]);
-      if (Number.isInteger(port)) {
-        owners.set(port, name);
-      }
-    }
-  }
-  return owners;
-}
-
-async function inspectInfrastructurePorts(
-  context: SetupContext,
-  dependencies: InfrastructureSetupDependencies,
-  adapter: ContainerRuntimeAdapter,
-  inventory: string,
-): Promise<PortOutcome> {
-  const states = await dependencies.inspectPorts(requiredLocalPorts, context.runner);
-  const containerOwners = repositoryContainersByPort(inventory);
-  const evidence: string[] = [];
-  let blocked = false;
-  let degraded = false;
-
-  for (const state of states) {
-    if (state.available) {
-      evidence.push(`Port ${state.port} is available.`);
-      continue;
-    }
-    if (state.error !== undefined) {
-      blocked = true;
-      evidence.push(`Port ${state.port} inspection failed: ${state.error}`);
-      continue;
-    }
-
-    const container = containerOwners.get(state.port);
-    const repositoryOwned =
-      state.repositoryOwned === true
-      || container !== undefined
-      || (state.processName !== undefined
-        && repositoryProcessOwnsPort(state.port, state.processName, context.paths.root, dependencies.platform));
-    if (repositoryOwned) {
-      degraded = true;
-      if (container !== undefined) {
-        evidence.push(`Port ${state.port} is occupied by repository container '${container}'.`);
-      } else {
-        const owner =
-          state.pid === undefined ? (state.processName ?? "a repository process") : `PID ${state.pid} (${state.processName ?? "unknown"})`;
-        evidence.push(`Port ${state.port} is occupied by repository ${owner}.`);
-      }
-      continue;
-    }
-
-    blocked = true;
-    const owner =
-      state.pid === undefined ? (state.processName ?? "an unidentified listener") : `PID ${state.pid} (${state.processName ?? "unknown"})`;
-    evidence.push(`Port ${state.port} is occupied by ${owner}.`);
-  }
-
-  return {
-    blocked,
-    degraded,
-    evidence,
-    nextActions: degraded
-      ? [`npm run dev:selfhost:stop -- --engine ${adapter.engine}`, "Stop the owning foreground Aspire/npm process directly."]
-      : [],
-  };
-}
-
-function requiredRuntimeFiles(root: string): readonly string[] {
-  return [
-    resolve(root, "tooling", "AppHost", "AppHost.csproj"),
-    resolve(root, "infra", "Local", "Management", "docker-compose.yml"),
-    resolve(root, "infra", "Local", "Storage", "docker-compose.yml"),
-    resolve(root, "infra", "Local", "Backend", "docker-compose.yml"),
-    resolve(root, "infra", "Local", "Frontend", "docker-compose.yml"),
-  ];
-}
-
-async function inspectRuntimeFiles(dependencies: InfrastructureSetupDependencies, root: string): Promise<FileOutcome> {
-  const evidence: string[] = [];
-  let blocked = false;
-  for (const path of requiredRuntimeFiles(root)) {
-    try {
-      const kind = await dependencies.inspectFile(path);
-      if (kind === "file") {
-        evidence.push(`Required runtime file is present: ${path}`);
-      } else {
-        blocked = true;
-        evidence.push(
-          kind === "missing" ? `Required runtime file is missing: ${path}` : `Required runtime path is not a regular file: ${path}`,
-        );
-      }
-    } catch (error) {
-      if (isInterrupted(error)) {
-        throw error;
-      }
-      blocked = true;
-      evidence.push(`Unable to inspect required runtime file ${path}: ${errorMessage(error)}`);
-    }
-  }
-  return {blocked, evidence};
-}
+// ---------------------------------------------------------------------------
+// Installation proposals - mkcert
+// ---------------------------------------------------------------------------
 
 function selectMkcertInstallationProposal(
   platform: NodeJS.Platform,
@@ -697,103 +277,389 @@ function selectMkcertInstallationProposal(
   return null;
 }
 
-async function runRequiredCommand(context: SetupContext, command: InstallationProposal["command"], failureSummary: string): Promise<void> {
-  const result = await context.runner.run(command, {
-    cwd: context.paths.root,
-    output: "inherit",
-  });
-  if (!isSuccessfulCommand(result)) {
-    throw new Error(
-      `${failureSummary}: ${result.stderr.trim() || result.stdout.trim() || result.spawnError || `exit code ${result.code}`}`,
-    );
+// ---------------------------------------------------------------------------
+// Package manager discovery
+// ---------------------------------------------------------------------------
+
+async function discoverPackageManagers(runner: ProcessRunner, root: string, platform: NodeJS.Platform): Promise<ReadonlySet<string>> {
+  const managers = platform === "win32" ? ["winget"] : platform === "darwin" ? ["brew"] : platform === "linux" ? ["apt-get", "dnf"] : [];
+  const available = new Set<string>();
+  for (const manager of managers) {
+    const outcome = await runner.run({command: manager, args: ["--version"]}, {cwd: root});
+    if (isSuccessfulOutcome(outcome)) {
+      available.add(manager);
+    }
   }
+  return available;
+}
+
+// ---------------------------------------------------------------------------
+// Engine selection
+// ---------------------------------------------------------------------------
+
+interface SelectedEngine {
+  readonly engine: ContainerEngine;
+  readonly source: EngineSelectionSource | "interactive";
+}
+
+async function selectEngine(
+  context: SetupContext,
+  runtime: SetupPhaseRuntime,
+  configuredEngine: string | undefined,
+): Promise<SelectedEngine> {
+  try {
+    return resolveContainerEngine({
+      argv: context.options.engine === undefined ? [] : ["--engine", context.options.engine],
+      env: runtime.environment.variables,
+      ...(configuredEngine === undefined ? {} : {configuredEngine}),
+    });
+  } catch (error) {
+    const configuredEngineVariable = runtime.environment.variables["AROLARIU_CONTAINER_ENGINE"];
+    const noConfiguredSelection =
+      context.options.engine === undefined
+      && (configuredEngineVariable === undefined || configuredEngineVariable.trim() === "")
+      && configuredEngine === undefined;
+    if (!noConfiguredSelection || !runtime.environment.stdinIsTTY) {
+      throw error;
+    }
+
+    const engine = await context.prompts.select<ContainerEngine>("Select the local container engine:", [
+      {
+        value: "rancher",
+        label: "Rancher Desktop (Moby/dockerd; Docker Desktop must be stopped)",
+      },
+      {
+        value: "podman",
+        label: "Podman Desktop (podman compose provider required)",
+      },
+    ]);
+    return {engine, source: "interactive"};
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Shared command helpers
+// ---------------------------------------------------------------------------
+
+async function runRequiredCommand(
+  runner: ProcessRunner,
+  context: SetupContext,
+  root: string,
+  command: InstallationProposal["command"],
+  failureSummary: string,
+): Promise<void> {
+  const outcome = await runner.run(command, {
+    cwd: root,
+    output: "inherit",
+    timeoutMs: LONG_RUNNING_MUTATION_TIMEOUT_MS,
+  });
+  if (!isSuccessfulOutcome(outcome)) {
+    throw new Error([`${failureSummary}.`, ...commandFailureEvidence(outcome, context)].join("\n"));
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Runtime readiness from shared facts
+// ---------------------------------------------------------------------------
+
+interface RuntimeReadiness {
+  readonly ready: boolean;
+  readonly installable: boolean;
+  readonly manualStart: boolean;
+  readonly evidence: readonly string[];
+}
+
+function evaluateRuntimeReadiness(adapter: ContainerRuntimeAdapter, facts: InfrastructureFacts): RuntimeReadiness {
+  if (facts.dockerConflict) {
+    return {
+      ready: false,
+      installable: false,
+      manualStart: false,
+      evidence: [`${adapter.displayName} runtime postcondition failed: Docker Desktop appears to be active as the container backend.`],
+    };
+  }
+  if (!facts.cliAvailable) {
+    return {
+      ready: false,
+      installable: true,
+      manualStart: false,
+      evidence: [`${adapter.displayName} runtime postcondition failed: the ${adapter.primaryCli} CLI is not available.`],
+    };
+  }
+  if (!facts.composeAvailable) {
+    return {
+      ready: false,
+      installable: true,
+      manualStart: false,
+      evidence: [`${adapter.displayName} runtime postcondition failed: the compose provider is not available.`],
+    };
+  }
+  if (!facts.backendAvailable) {
+    return {
+      ready: false,
+      installable: false,
+      manualStart: true,
+      evidence: [`${adapter.displayName} runtime postcondition failed: the container backend is not reachable.`],
+    };
+  }
+  if (facts.socketContextIssues.length > 0) {
+    return {
+      ready: false,
+      installable: false,
+      manualStart: true,
+      evidence: [`${adapter.displayName} runtime postcondition failed: ${facts.socketContextIssues.join("; ")}`],
+    };
+  }
+  return {
+    ready: true,
+    installable: false,
+    manualStart: false,
+    evidence: [`${adapter.displayName} runtime postcondition is satisfied.`],
+  };
+}
+
+function runtimeManualAction(adapter: ContainerRuntimeAdapter): string {
+  return `Start or restart ${adapter.displayName}, then rerun setup.`;
+}
+
+function manualInstallAction(engine: ContainerEngine): string {
+  return engine === "rancher"
+    ? "Install Rancher Desktop from https://rancherdesktop.io/, then rerun setup."
+    : "Install Podman Desktop from https://podman-desktop.io/downloads, then rerun setup.";
+}
+
+interface RuntimeOutcome {
+  readonly blocked: boolean;
+  readonly planned: boolean;
+  readonly evidence: readonly string[];
+  readonly nextActions: readonly string[];
+}
+
+async function prepareRuntime(
+  context: SetupContext,
+  runner: ProcessRunner,
+  root: string,
+  platform: NodeJS.Platform,
+  adapter: ContainerRuntimeAdapter,
+  facts: InfrastructureFacts,
+): Promise<RuntimeOutcome> {
+  const readiness = evaluateRuntimeReadiness(adapter, facts);
+
+  if (readiness.ready) {
+    return {blocked: false, planned: false, evidence: readiness.evidence, nextActions: []};
+  }
+
+  if (!readiness.installable) {
+    return {
+      blocked: true,
+      planned: false,
+      evidence: readiness.evidence,
+      nextActions: [
+        readiness.manualStart ? runtimeManualAction(adapter) : "Resolve the reported container runtime conflict, then rerun setup.",
+      ],
+    };
+  }
+
+  const packageManagers = await discoverPackageManagers(runner, root, platform);
+  const proposal = selectContainerInstallationProposal({
+    engine: adapter.engine,
+    platform,
+    availablePackageManagers: packageManagers,
+  });
+  if (proposal === null) {
+    return {
+      blocked: true,
+      planned: false,
+      evidence: readiness.evidence,
+      nextActions: [manualInstallAction(adapter.engine)],
+    };
+  }
+
+  const mutation = await runInfrastructureMutation(
+    context,
+    {
+      id: CONTAINER_INSTALL_ACTION,
+      scope: "system",
+      summary: proposal.explanation,
+      mutate: () => runRequiredCommand(runner, context, root, proposal.command, "Container runtime installation failed"),
+    },
+    ["infrastructure", "aggregate"],
+  );
+
+  if (mutation.disposition === "declined") {
+    return {
+      blocked: true,
+      planned: false,
+      evidence: [...readiness.evidence, `Declined action: ${CONTAINER_INSTALL_ACTION}`],
+      nextActions: [manualInstallAction(adapter.engine)],
+    };
+  }
+  if (mutation.disposition === "planned") {
+    return {
+      blocked: false,
+      planned: true,
+      evidence: [...readiness.evidence, `Planned action: ${CONTAINER_INSTALL_ACTION}`],
+      nextActions: [],
+    };
+  }
+
+  const refreshed = mutation.outcome;
+  if (refreshed.kind !== "available") {
+    return {
+      blocked: true,
+      planned: false,
+      evidence: [
+        `Executed action: ${CONTAINER_INSTALL_ACTION}`,
+        `${adapter.displayName} runtime postcondition still failed: refreshed infrastructure facts are unavailable.`,
+      ],
+      nextActions: [runtimeManualAction(adapter)],
+    };
+  }
+  const postReadiness = evaluateRuntimeReadiness(adapter, refreshed.value);
+  if (!postReadiness.ready) {
+    return {
+      blocked: true,
+      planned: false,
+      evidence: [`Executed action: ${CONTAINER_INSTALL_ACTION}`, ...postReadiness.evidence],
+      nextActions: [postReadiness.manualStart ? runtimeManualAction(adapter) : manualInstallAction(adapter.engine)],
+    };
+  }
+  return {
+    blocked: false,
+    planned: false,
+    evidence: [`Executed action: ${CONTAINER_INSTALL_ACTION}`, ...postReadiness.evidence],
+    nextActions: [],
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Port readiness from shared facts
+// ---------------------------------------------------------------------------
+
+interface PortOutcome {
+  readonly blocked: boolean;
+  readonly degraded: boolean;
+  readonly evidence: readonly string[];
+  readonly nextActions: readonly string[];
+}
+
+function evaluatePortReadiness(facts: InfrastructureFacts, adapter: ContainerRuntimeAdapter): PortOutcome {
+  const evidence: string[] = [];
+  let blocked = false;
+  let degraded = false;
+
+  for (const portFact of facts.ports) {
+    if (portFact.available) {
+      evidence.push(`Port ${portFact.port} is available.`);
+      continue;
+    }
+    if (portFact.error !== undefined) {
+      blocked = true;
+      evidence.push(`Port ${portFact.port} inspection failed: ${portFact.error}`);
+      continue;
+    }
+    if (portFact.repositoryOwned === true) {
+      degraded = true;
+      const owner =
+        portFact.pid === undefined
+          ? (portFact.processName ?? "a repository process")
+          : `PID ${portFact.pid} (${portFact.processName ?? "unknown"})`;
+      evidence.push(`Port ${portFact.port} is occupied by repository ${owner}.`);
+      continue;
+    }
+
+    blocked = true;
+    const owner =
+      portFact.pid === undefined
+        ? (portFact.processName ?? "an unidentified listener")
+        : `PID ${portFact.pid} (${portFact.processName ?? "unknown"})`;
+    evidence.push(`Port ${portFact.port} is occupied by ${owner}.`);
+  }
+
+  return {
+    blocked,
+    degraded,
+    evidence,
+    nextActions: degraded
+      ? [`npm run dev:selfhost:stop -- --engine ${adapter.engine}`, "Stop the owning foreground Aspire/npm process directly."]
+      : [],
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Certificate preparation from shared facts
+// ---------------------------------------------------------------------------
+
+interface CertificateOutcome {
+  readonly planned: boolean;
+  readonly degraded: boolean;
+  readonly evidence: readonly string[];
+  readonly nextActions: readonly string[];
 }
 
 function degradedCertificateOutcome(evidence: readonly string[], nextActions: readonly string[] = []): CertificateOutcome {
   return {planned: false, degraded: true, evidence, nextActions};
 }
 
-async function prepareCertificates(context: SetupContext, dependencies: InfrastructureSetupDependencies): Promise<CertificateOutcome> {
-  const certificatePath = resolve(context.paths.root, "infra", "Local", "Management", "certs", "local-cert.pem");
-  const keyPath = resolve(context.paths.root, "infra", "Local", "Management", "certs", "local-key.pem");
-  let certificateKind: FileKind;
-  let keyKind: FileKind;
-  try {
-    certificateKind = await dependencies.inspectFile(certificatePath);
-  } catch (error) {
-    if (isInterrupted(error)) {
-      throw error;
-    }
-    return degradedCertificateOutcome(
-      [`Unable to inspect optional selfhost certificate path ${certificatePath}: ${errorMessage(error)}`],
-      ["Check access and permissions for the optional certificate and key paths, then rerun setup."],
-    );
+async function prepareCertificates(
+  context: SetupContext,
+  runtime: SetupPhaseRuntime,
+  runner: ProcessRunner,
+  facts: InfrastructureFacts,
+): Promise<CertificateOutcome> {
+  if (facts.certificateIssues.length === 0) {
+    return {planned: false, degraded: false, evidence: ["Optional selfhost certificate and key are present."], nextActions: []};
   }
-  try {
-    keyKind = await dependencies.inspectFile(keyPath);
-  } catch (error) {
-    if (isInterrupted(error)) {
-      throw error;
-    }
+
+  const invalidKindIssues = facts.certificateIssues.filter((issue) => issue.includes("not a file"));
+  if (invalidKindIssues.length > 0) {
     return degradedCertificateOutcome(
-      [`Unable to inspect optional selfhost certificate path ${keyPath}: ${errorMessage(error)}`],
-      ["Check access and permissions for the optional certificate and key paths, then rerun setup."],
-    );
-  }
-  if (certificateKind === "file" && keyKind === "file") {
-    return {
-      planned: false,
-      degraded: false,
-      evidence: ["Optional selfhost certificate and key are present."],
-      nextActions: [],
-    };
-  }
-  if (certificateKind === "directory" || certificateKind === "other" || keyKind === "directory" || keyKind === "other") {
-    const invalidPaths = [
-      ...(certificateKind === "directory" || certificateKind === "other" ? [{path: certificatePath, kind: certificateKind}] : []),
-      ...(keyKind === "directory" || keyKind === "other" ? [{path: keyPath, kind: keyKind}] : []),
-    ];
-    const suffix = invalidPaths.length === 1 ? "" : "s";
-    return degradedCertificateOutcome(
-      [`Optional selfhost certificate paths have invalid kinds: ${invalidPaths.map(({path, kind}) => `${path} (${kind})`).join(", ")}.`],
-      [
-        `Replace or remove the invalid optional certificate path${suffix} ${invalidPaths.map(({path}) => path).join(", ")}, then rerun setup.`,
-      ],
+      [`Optional selfhost certificate paths have invalid kinds: ${invalidKindIssues.join(", ")}`],
+      ["Replace or remove the invalid optional certificate paths, then rerun setup."],
     );
   }
 
+  const root = context.paths.root;
+  const platform = runtime.environment.platform;
+  const certificatePath = resolve(root, "infra", "Local", "Management", "certs", "local-cert.pem");
+  const keyPath = resolve(root, "infra", "Local", "Management", "certs", "local-key.pem");
   const evidence: string[] = ["Optional selfhost certificate generation is required."];
   let planned = false;
+
   try {
-    let mkcertProbe = await context.runner.run({command: "mkcert", args: ["--version"]}, {cwd: context.paths.root});
-    if (!isSuccessfulCommand(mkcertProbe)) {
-      const managers = await discoverPackageManagers(context, dependencies.platform);
-      const proposal = selectMkcertInstallationProposal(dependencies.platform, managers);
+    let mkcertProbe = await runner.run({command: "mkcert", args: ["--version"]}, {cwd: root});
+    if (!isSuccessfulOutcome(mkcertProbe)) {
+      const managers = await discoverPackageManagers(runner, root, platform);
+      const proposal = selectMkcertInstallationProposal(platform, managers);
       if (proposal === null) {
         return degradedCertificateOutcome(
           [...evidence, "mkcert is unavailable and no reviewed installer was discovered."],
           [MKCERT_MANUAL_ACTION],
         );
       }
-      const installDisposition = await context.actions.run({
-        id: MKCERT_INSTALL_ACTION,
-        scope: "system",
-        summary: proposal.explanation,
-        execute: () => runRequiredCommand(context, proposal.command, "mkcert installation failed"),
-      });
-      if (installDisposition === "declined") {
+      const installMutation = await runInfrastructureMutation(
+        context,
+        {
+          id: MKCERT_INSTALL_ACTION,
+          scope: "system",
+          summary: proposal.explanation,
+          mutate: () => runRequiredCommand(runner, context, root, proposal.command, "mkcert installation failed"),
+        },
+        ["infrastructure"],
+      );
+      if (installMutation.disposition === "declined") {
         return degradedCertificateOutcome(
           [...evidence, `Declined action: ${MKCERT_INSTALL_ACTION}`],
           [`Allow action '${MKCERT_INSTALL_ACTION}' or install mkcert manually from ${MKCERT_MANUAL_URL}, then rerun setup.`],
         );
       }
-      if (installDisposition === "planned") {
+      if (installMutation.disposition === "planned") {
         planned = true;
         evidence.push(`Planned action: ${MKCERT_INSTALL_ACTION}`);
       } else {
         evidence.push(`Executed action: ${MKCERT_INSTALL_ACTION}`);
-        mkcertProbe = await context.runner.run({command: "mkcert", args: ["--version"]}, {cwd: context.paths.root});
-        if (!isSuccessfulCommand(mkcertProbe)) {
+        mkcertProbe = await runner.run({command: "mkcert", args: ["--version"]}, {cwd: root});
+        if (!isSuccessfulOutcome(mkcertProbe)) {
           return degradedCertificateOutcome([...evidence, "mkcert remains unavailable after installation."], [MKCERT_MANUAL_ACTION]);
         }
       }
@@ -801,57 +667,65 @@ async function prepareCertificates(context: SetupContext, dependencies: Infrastr
       evidence.push("mkcert is available.");
     }
 
-    const trustDisposition = await context.actions.run({
-      id: MKCERT_TRUST_ACTION,
-      scope: "system",
-      summary: "Install the mkcert local certificate authority into the system trust stores.",
-      execute: () => runRequiredCommand(context, {command: "mkcert", args: ["-install"]}, "mkcert trust installation failed"),
-    });
-    if (trustDisposition === "declined") {
+    const trustMutation = await runInfrastructureMutation(
+      context,
+      {
+        id: MKCERT_TRUST_ACTION,
+        scope: "system",
+        summary: "Install the mkcert local certificate authority into the system trust stores.",
+        mutate: () =>
+          runRequiredCommand(runner, context, root, {command: "mkcert", args: ["-install"]}, "mkcert trust installation failed"),
+      },
+      ["infrastructure"],
+    );
+    if (trustMutation.disposition === "declined") {
       return degradedCertificateOutcome(
         [...evidence, `Declined action: ${MKCERT_TRUST_ACTION}`],
         [`Allow action '${MKCERT_TRUST_ACTION}', then rerun setup.`],
       );
     }
-    if (trustDisposition === "planned") {
+    if (trustMutation.disposition === "planned") {
       planned = true;
       evidence.push(`Planned action: ${MKCERT_TRUST_ACTION}`);
     } else {
       evidence.push(`Executed action: ${MKCERT_TRUST_ACTION}`);
     }
 
-    const generationDisposition = await context.actions.run({
-      id: CERTIFICATE_GENERATE_ACTION,
-      scope: "user",
-      summary: "Generate the ignored localhost certificate and private key for selfhost.",
-      execute: async () => {
-        await dependencies.createDirectory(dirname(certificatePath));
-        await runRequiredCommand(
-          context,
-          {
-            command: "mkcert",
-            args: ["-key-file", keyPath, "-cert-file", certificatePath, "localhost", "*.localhost"],
-          },
-          "Selfhost certificate generation failed",
-        );
+    const generateMutation = await runInfrastructureMutation(
+      context,
+      {
+        id: CERTIFICATE_GENERATE_ACTION,
+        scope: "user",
+        summary: "Generate the ignored localhost certificate and private key for selfhost.",
+        mutate: async () => {
+          await runtime.files.createDirectory(dirname(certificatePath), {recursive: true});
+          await runRequiredCommand(
+            runner,
+            context,
+            root,
+            {
+              command: "mkcert",
+              args: ["-key-file", keyPath, "-cert-file", certificatePath, "localhost", "*.localhost"],
+            },
+            "Selfhost certificate generation failed",
+          );
+        },
       },
-    });
-    if (generationDisposition === "declined") {
+      ["infrastructure"],
+    );
+    if (generateMutation.disposition === "declined") {
       return degradedCertificateOutcome(
         [...evidence, `Declined action: ${CERTIFICATE_GENERATE_ACTION}`],
         [`Allow action '${CERTIFICATE_GENERATE_ACTION}', then rerun setup.`],
       );
     }
-    if (generationDisposition === "planned") {
+    if (generateMutation.disposition === "planned") {
       planned = true;
       evidence.push(`Planned action: ${CERTIFICATE_GENERATE_ACTION}`);
     } else {
       evidence.push(`Executed action: ${CERTIFICATE_GENERATE_ACTION}`);
-      const [generatedCertificate, generatedKey] = await Promise.all([
-        dependencies.inspectFile(certificatePath),
-        dependencies.inspectFile(keyPath),
-      ]);
-      if (generatedCertificate !== "file" || generatedKey !== "file") {
+      const refreshed = generateMutation.outcome;
+      if (refreshed.kind !== "available" || refreshed.value.certificateIssues.length > 0) {
         return degradedCertificateOutcome(
           [...evidence, "Optional selfhost certificate generation postcondition failed."],
           ["Resolve the reported certificate generation failure, then rerun setup."],
@@ -872,241 +746,20 @@ async function prepareCertificates(context: SetupContext, dependencies: Infrastr
   }
 }
 
-function deduplicate(values: readonly string[]): readonly string[] {
-  return [...new Set(values)];
-}
+// ---------------------------------------------------------------------------
+// Phase
+// ---------------------------------------------------------------------------
 
-async function discoverPackageManagers(context: SetupContext, platform: NodeJS.Platform): Promise<ReadonlySet<string>> {
-  const managers = platform === "win32" ? ["winget"] : platform === "darwin" ? ["brew"] : platform === "linux" ? ["apt-get", "dnf"] : [];
-  const available = new Set<string>();
-  for (const manager of managers) {
-    const result = await context.runner.run({command: manager, args: ["--version"]}, {cwd: context.paths.root});
-    if (isSuccessfulCommand(result)) {
-      available.add(manager);
-    }
-  }
-  return available;
-}
-
-function runtimeManualAction(adapter: ContainerRuntimeAdapter): string {
-  return `Start or restart ${adapter.displayName}, then rerun setup.`;
-}
-
-function manualInstallAction(engine: ContainerEngine): string {
-  return engine === "rancher"
-    ? "Install Rancher Desktop from https://rancherdesktop.io/, then rerun setup."
-    : "Install Podman Desktop from https://podman-desktop.io/downloads, then rerun setup.";
-}
-
-async function checkRuntime(
-  context: SetupContext,
-  adapter: ContainerRuntimeAdapter,
-): Promise<Readonly<{ok: true; inventory: string}> | Readonly<{ok: false; error: string; installable: boolean; manualStart: boolean}>> {
-  try {
-    await runSharedPreflight(adapter, adaptCommandRunner(context.runner), context.logger);
-    if (adapter.engine === "podman") {
-      const info = await context.runner.run({command: "podman", args: ["info", "--format", "json"]}, {cwd: context.paths.root});
-      if (!isSuccessfulCommand(info)) {
-        const detail = info.stderr.trim() || info.stdout.trim() || info.spawnError || `exit code ${info.code}`;
-        return {
-          ok: false,
-          error: `podman info --format json failed: ${detail}`,
-          installable: false,
-          manualStart: true,
-        };
-      }
-    }
-
-    const inventory = await context.runner.run(
-      {command: adapter.primaryCli, args: ["ps", "--format", "{{.Names}}\t{{.Ports}}"]},
-      {cwd: context.paths.root},
-    );
-    return {ok: true, inventory: isSuccessfulCommand(inventory) ? inventory.stdout : ""};
-  } catch (error) {
-    if (isInterrupted(error)) {
-      throw error;
-    }
-    const message = errorMessage(error);
-    const lower = message.toLowerCase();
-    const dockerConflict = lower.includes("docker desktop");
-    const composeMissing = lower.includes("compose provider is not available");
-    const cliMissing = lower.includes("required tool") || lower.includes("podman is not available");
-    const backendUnavailable =
-      lower.includes("docker-compatible cli is not available") || lower.includes("cannot connect") || lower.includes("daemon");
-    return {
-      ok: false,
-      error: message,
-      installable: !dockerConflict && (cliMissing || composeMissing),
-      manualStart: !dockerConflict && backendUnavailable && !cliMissing,
-    };
-  }
-}
-
-async function prepareRuntime(
-  context: SetupContext,
-  dependencies: InfrastructureSetupDependencies,
-  adapter: ContainerRuntimeAdapter,
-): Promise<RuntimeOutcome> {
-  const initial = await checkRuntime(context, adapter);
-  if (initial.ok) {
-    return {
-      blocked: false,
-      planned: false,
-      evidence: [`${adapter.displayName} runtime postcondition is satisfied.`],
-      nextActions: [],
-      inventory: initial.inventory,
-    };
-  }
-
-  if (!initial.installable) {
-    return {
-      blocked: true,
-      planned: false,
-      evidence: [`${adapter.displayName} runtime postcondition failed: ${initial.error}`],
-      nextActions: [
-        initial.manualStart ? runtimeManualAction(adapter) : "Resolve the reported container runtime conflict, then rerun setup.",
-      ],
-      inventory: "",
-    };
-  }
-
-  if (adapter.engine === "podman") {
-    try {
-      await assertNoDockerDesktopBackend(adaptCommandRunner(context.runner));
-    } catch (error) {
-      if (isInterrupted(error)) {
-        throw error;
-      }
-      return {
-        blocked: true,
-        planned: false,
-        evidence: [`${adapter.displayName} runtime postcondition failed: ${errorMessage(error)}`],
-        nextActions: ["Resolve the reported container runtime conflict, then rerun setup."],
-        inventory: "",
-      };
-    }
-  }
-
-  const packageManagers = await discoverPackageManagers(context, dependencies.platform);
-  const proposal = selectContainerInstallationProposal({
-    engine: adapter.engine,
-    platform: dependencies.platform,
-    availablePackageManagers: packageManagers,
-  });
-  if (proposal === null) {
-    return {
-      blocked: true,
-      planned: false,
-      evidence: [`${adapter.displayName} runtime postcondition failed: ${initial.error}`],
-      nextActions: [manualInstallAction(adapter.engine)],
-      inventory: "",
-    };
-  }
-
-  const disposition = await context.actions.run({
-    id: CONTAINER_INSTALL_ACTION,
-    scope: "system",
-    summary: proposal.explanation,
-    execute: async () => {
-      const result = await context.runner.run(proposal.command, {
-        cwd: context.paths.root,
-        output: "inherit",
-      });
-      if (!isSuccessfulCommand(result)) {
-        throw new Error(
-          `Container runtime installation failed: ${result.stderr.trim() || result.stdout.trim() || result.spawnError || `exit code ${result.code}`}`,
-        );
-      }
-    },
-  });
-  if (disposition === "declined") {
-    return {
-      blocked: true,
-      planned: false,
-      evidence: [initial.error, `Declined action: ${CONTAINER_INSTALL_ACTION}`],
-      nextActions: [manualInstallAction(adapter.engine)],
-      inventory: "",
-    };
-  }
-  if (disposition === "planned") {
-    return {
-      blocked: false,
-      planned: true,
-      evidence: [initial.error, `Planned action: ${CONTAINER_INSTALL_ACTION}`],
-      nextActions: [],
-      inventory: "",
-    };
-  }
-
-  const final = await checkRuntime(context, adapter);
-  if (!final.ok) {
-    return {
-      blocked: true,
-      planned: false,
-      evidence: [
-        `Executed action: ${CONTAINER_INSTALL_ACTION}`,
-        `${adapter.displayName} runtime postcondition still failed: ${final.error}`,
-      ],
-      nextActions: [final.manualStart || !final.installable ? runtimeManualAction(adapter) : manualInstallAction(adapter.engine)],
-      inventory: "",
-    };
-  }
-  return {
-    blocked: false,
-    planned: false,
-    evidence: [`Executed action: ${CONTAINER_INSTALL_ACTION}`, `${adapter.displayName} runtime postcondition is satisfied.`],
-    nextActions: [],
-    inventory: final.inventory,
-  };
-}
-
-async function selectEngine(
-  context: SetupContext,
-  dependencies: InfrastructureSetupDependencies,
-  configuredEngine: string | undefined,
-): Promise<SelectedEngine> {
-  try {
-    return resolveContainerEngine({
-      argv: context.options.engine === undefined ? [] : ["--engine", context.options.engine],
-      env: dependencies.environment,
-      ...(configuredEngine === undefined ? {} : {configuredEngine}),
-    });
-  } catch (error) {
-    const noConfiguredSelection =
-      context.options.engine === undefined
-      && (dependencies.environment["AROLARIU_CONTAINER_ENGINE"] === undefined
-        || dependencies.environment["AROLARIU_CONTAINER_ENGINE"]?.trim() === "")
-      && configuredEngine === undefined;
-    if (!noConfiguredSelection || !dependencies.interactive) {
-      throw error;
-    }
-
-    const engine = await context.prompts.select<ContainerEngine>("Select the local container engine:", [
-      {
-        value: "rancher",
-        label: "Rancher Desktop (Moby/dockerd; Docker Desktop must be stopped)",
-      },
-      {
-        value: "podman",
-        label: "Podman Desktop (podman compose provider required)",
-      },
-    ]);
-    return {engine, source: "interactive"};
-  }
-}
-
-async function runInfrastructureSetup(context: SetupContext, dependencies: InfrastructureSetupDependencies): Promise<SetupPhaseResult> {
-  const startedAt = context.now();
+async function runInfrastructureSetup(context: SetupContext): Promise<SetupPhaseResult> {
+  const runtime = requireSetupPhaseRuntime(context);
+  const startedAt = runtime.clock.monotonicNow();
   const evidence: string[] = [];
-  const phaseContext: SetupContext = {
-    ...context,
-    runner: createCredentialIsolatedRunner(context.runner),
-  };
+  const runner = createCredentialIsolatedRunner(runtime.runner);
 
   try {
-    const configRead = await dependencies.readConfig(context.paths.toolingConfig);
+    const configRead = await readToolingConfig(context.paths.toolingConfig, runtime.files);
     if (configRead.status === "invalid") {
-      return phaseResult(context, startedAt, {
+      return phaseResult(runtime, startedAt, {
         id: "infrastructure",
         status: "failed",
         summary: "The local tooling configuration is invalid; infrastructure was not changed.",
@@ -1118,12 +771,12 @@ async function runInfrastructureSetup(context: SetupContext, dependencies: Infra
     const currentConfig = configRead.status === "valid" ? configRead.config : undefined;
     let selection: SelectedEngine;
     try {
-      selection = await selectEngine(context, dependencies, currentConfig?.containerEngine);
+      selection = await selectEngine(context, runtime, currentConfig?.containerEngine);
     } catch (error) {
       if (isInterrupted(error)) {
         throw error;
       }
-      return phaseResult(context, startedAt, {
+      return phaseResult(runtime, startedAt, {
         id: "infrastructure",
         status: "failed",
         summary: "A supported local container engine was not selected.",
@@ -1139,27 +792,36 @@ async function runInfrastructureSetup(context: SetupContext, dependencies: Infra
         : `Selected ${adapter.displayName} from ${selection.source}.`,
     );
 
+    // Make the selected engine visible to the shared inspection session so a subsequent
+    // invalidate + inspect cycle observes the correct container runtime.
+    context.inspection.updateInfrastructureEngine(selection.engine);
+
     let planned = false;
     if (currentConfig?.containerEngine !== selection.engine) {
-      const disposition = await context.actions.run({
-        id: ENGINE_PERSIST_ACTION,
-        scope: "repository",
-        summary: `Persist ${adapter.displayName} as the non-secret local container engine selection.`,
-        execute: async () => {
-          const latest = await dependencies.readConfig(context.paths.toolingConfig);
-          if (latest.status === "invalid") {
-            throw new Error(latest.error);
-          }
-          await dependencies.writeConfig(
-            context.paths.toolingConfig,
-            mergeToolingConfig(latest.status === "valid" ? latest.config : undefined, {
-              containerEngine: selection.engine,
-            }),
-          );
+      const persistMutation = await runInfrastructureMutation(
+        context,
+        {
+          id: ENGINE_PERSIST_ACTION,
+          scope: "repository",
+          summary: `Persist ${adapter.displayName} as the non-secret local container engine selection.`,
+          mutate: async () => {
+            const latest = await readToolingConfig(context.paths.toolingConfig, runtime.files);
+            if (latest.status === "invalid") {
+              throw new Error(latest.error);
+            }
+            await writeToolingConfig(
+              context.paths.toolingConfig,
+              mergeToolingConfig(latest.status === "valid" ? latest.config : undefined, {
+                containerEngine: selection.engine,
+              }),
+              runtime.files,
+            );
+          },
         },
-      });
-      if (disposition === "declined") {
-        return phaseResult(context, startedAt, {
+        ["infrastructure"],
+      );
+      if (persistMutation.disposition === "declined") {
+        return phaseResult(runtime, startedAt, {
           id: "infrastructure",
           status: "failed",
           summary: "Persisting the required container engine selection was declined.",
@@ -1167,7 +829,7 @@ async function runInfrastructureSetup(context: SetupContext, dependencies: Infra
           nextActions: [`Allow required action '${ENGINE_PERSIST_ACTION}', then rerun setup.`],
         });
       }
-      if (disposition === "planned") {
+      if (persistMutation.disposition === "planned") {
         planned = true;
         evidence.push(`Planned action: ${ENGINE_PERSIST_ACTION}`);
       } else {
@@ -1177,29 +839,56 @@ async function runInfrastructureSetup(context: SetupContext, dependencies: Infra
       evidence.push("The persisted container engine selection is already current.");
     }
 
-    const runtime = await prepareRuntime(phaseContext, dependencies, adapter);
-    evidence.push(...runtime.evidence);
-    planned ||= runtime.planned;
+    const infraOutcome = await context.inspection.inspect("infrastructure");
+    if (infraOutcome.kind !== "available") {
+      return phaseResult(runtime, startedAt, {
+        id: "infrastructure",
+        status: "failed",
+        summary: "Shared infrastructure inspection failed.",
+        evidence: [...evidence, infraOutcome.kind === "unavailable" ? infraOutcome.reason : infraOutcome.issues.join("; ")],
+        nextActions: ["Resolve the reported infrastructure inspection failure, then rerun setup."],
+      });
+    }
+    let facts = infraOutcome.value;
 
-    const ports = await inspectInfrastructurePorts(phaseContext, dependencies, adapter, runtime.inventory);
+    const runtimeOutcome = await prepareRuntime(context, runner, context.paths.root, runtime.environment.platform, adapter, facts);
+    evidence.push(...runtimeOutcome.evidence);
+    planned ||= runtimeOutcome.planned;
+
+    // If a runtime installation executed successfully, facts were already invalidated and
+    // re-inspected inside prepareRuntime. Re-inspect here so the rest of the phase uses the
+    // refreshed ports, certificates, and manifests.
+    if (!runtimeOutcome.blocked && !runtimeOutcome.planned && runtimeOutcome.evidence.some((line) => line.startsWith("Executed action:"))) {
+      const refreshed = await context.inspection.inspect("infrastructure");
+      if (refreshed.kind === "available") {
+        facts = refreshed.value;
+      }
+    }
+
+    const ports = evaluatePortReadiness(facts, adapter);
     evidence.push(...ports.evidence);
 
-    const files = await inspectRuntimeFiles(dependencies, context.paths.root);
-    evidence.push(...files.evidence);
+    const manifestEvidence: string[] = [];
+    let manifestBlocked = false;
+    if (facts.manifestIssues.length > 0) {
+      manifestBlocked = true;
+      manifestEvidence.push(...facts.manifestIssues);
+    }
+    evidence.push(...manifestEvidence);
 
-    const certificates = await prepareCertificates(phaseContext, dependencies);
+    const certificates = await prepareCertificates(context, runtime, runner, facts);
     evidence.push(...certificates.evidence);
     planned ||= certificates.planned;
     const degraded = ports.degraded || certificates.degraded;
-    const blocked = runtime.blocked || ports.blocked || files.blocked;
+    const blocked = runtimeOutcome.blocked || ports.blocked || manifestBlocked;
     const nextActions = deduplicate([
-      ...runtime.nextActions,
+      ...runtimeOutcome.nextActions,
       ...ports.nextActions,
-      ...(files.blocked ? ["Restore the required tracked local infrastructure files, then rerun setup."] : []),
+      ...(manifestBlocked ? ["Restore the required tracked local infrastructure files, then rerun setup."] : []),
       ...certificates.nextActions,
     ]);
 
-    return phaseResult(context, startedAt, {
+    return phaseResult(runtime, startedAt, {
       id: "infrastructure",
       status: blocked ? "failed" : planned ? "skipped" : degraded ? "degraded" : "succeeded",
       summary: blocked
@@ -1216,7 +905,7 @@ async function runInfrastructureSetup(context: SetupContext, dependencies: Infra
     if (isInterrupted(error)) {
       throw error;
     }
-    return phaseResult(context, startedAt, {
+    return phaseResult(runtime, startedAt, {
       id: "infrastructure",
       status: "failed",
       summary: "Local infrastructure preparation failed.",
@@ -1227,39 +916,23 @@ async function runInfrastructureSetup(context: SetupContext, dependencies: Infra
 }
 
 /**
- * Production infrastructure setup dependencies.
+ * Creates the infrastructure setup phase over the invocation-scoped setup phase runtime.
  *
  * @remarks
- * Exported so focused tests can verify `inspectPorts` composes the supplied
- * phase runner — rather than a detached default runner — with the bounded
- * timeouts and verbose command evidence that runner applies, in addition to
- * this module's own `MSSQL_SA_PASSWORD` isolation.
- */
-export const defaultDependencies: InfrastructureSetupDependencies = {
-  platform: process.platform,
-  environment: process.env,
-  interactive: process.stdin.isTTY === true,
-  readConfig: readToolingConfig,
-  writeConfig: writeToolingConfig,
-  inspectPorts: (ports, runner) => inspectRequiredPorts(ports, {listenerRunner: runner}),
-  inspectFile: inspectRegularFile,
-  createDirectory: (path) => mkdir(path, {recursive: true}).then(() => undefined),
-};
-
-/**
- * Creates the independently executable infrastructure setup phase.
+ * The phase no longer accepts a test-only platform, environment, filesystem, or tooling-config
+ * override: the platform, the process runner, the filesystem, and the environment all come from
+ * {@link SetupPhaseRuntime}, so a test replaces capabilities on the runtime rather than on this
+ * factory.
  *
- * @param overrides - Optional production-boundary overrides for deterministic tests.
- * @returns Infrastructure setup phase definition.
+ * @returns The infrastructure setup phase definition.
  */
-export function createInfrastructureSetupPhase(overrides: Readonly<Partial<InfrastructureSetupDependencies>> = {}): SetupPhaseDefinition {
-  const dependencies: InfrastructureSetupDependencies = {...defaultDependencies, ...overrides};
+export function createInfrastructureSetupPhase(): SetupPhaseDefinition {
   return {
     id: "infrastructure",
     title: "Local infrastructure",
     required: true,
     dependsOn: [],
-    run: (context) => runInfrastructureSetup(context, dependencies),
+    run: (context) => runInfrastructureSetup(context),
   };
 }
 

@@ -1,108 +1,26 @@
 /**
- * @fileoverview Shared utilities for monorepo scripts (CI detection, spinners, environment helpers).
+ * @fileoverview Shared presentation utilities for the excluded format/lint Piscina orchestrators.
  * @module scripts/common
  *
  * @remarks
- * These helpers are consumed by various `scripts/*.ts` entry points.
- * They are intentionally runtime-lightweight and avoid importing heavy toolchains.
+ * RFC 0002 section 3.2 keeps `scripts/format.ts` and `scripts/lint.ts` on Piscina and outside the
+ * declarative command runtime. These helpers are the byte-size, duration, worker-lifecycle,
+ * progress, and timeline presentation those two orchestrators share. They own no process, no
+ * clock, and no environment: every caller passes its own logger and its own `Date`, so nothing
+ * here reads ambient state. `scripts/status.ts` reuses `formatBytes` only.
  */
 
 import {MonorepositoryConsoleLogger, type MonorepositoryLogger, type ProgressReporter} from "./logger.ts";
-import {defaultCommandRunner} from "./process.ts";
+import {nodeLoggerRuntimeHost} from "./runtime.node.ts";
 
 /**
- * Runs a command with a spinner and captures output.
+ * Builds the default presentation logger used when a caller supplies none.
  *
- * @param command - The command to run.
- * @param args - Command arguments.
- * @param spinnerText - The text to show in the spinner.
- * @param hideOutput - Whether to hide the output (useful for parallel execution).
- * @param logger - Logger used for script-authored output.
- * @returns A promise resolving to the exit code and captured output.
- * @throws Error when inputs are invalid.
+ * @returns A human-mode console logger bound to the Node terminal and timer policy.
  */
-export async function runWithSpinner(
-  command: string,
-  args: readonly string[],
-  spinnerText: string,
-  hideOutput: boolean = true,
-  logger: MonorepositoryLogger = new MonorepositoryConsoleLogger("common"),
-): Promise<{code: number; output: string}> {
-  if (!command || command.trim().length === 0) {
-    throw new Error("Command cannot be empty");
-  }
-  if (!Array.isArray(args)) {
-    throw new Error("Arguments must be an array");
-  }
-  if (!spinnerText || spinnerText.trim().length === 0) {
-    throw new Error("Spinner text cannot be empty");
-  }
-
-  switch (hideOutput) {
-    case true: {
-      const progress = logger.progress(spinnerText);
-      const result = await defaultCommandRunner.run({command, args}, {output: "capture"});
-      const output = result.stdout + result.stderr + (result.spawnError ?? "");
-
-      if (result.spawnError !== undefined) {
-        progress.fail(`${spinnerText} ✗`);
-        logger.error(`Error: ${result.spawnError}`);
-        return {code: 1, output};
-      }
-
-      if (result.code === 0) {
-        progress.succeed(`${spinnerText} ✓`);
-      } else {
-        progress.fail(`${spinnerText} ✗`);
-        if (output.trim().length > 0) {
-          logger.line([{text: `\n${output.trim()}\n`, styles: ["gray"]}]);
-        }
-      }
-
-      return {code: result.code, output};
-    }
-    case false: {
-      logger.line([{text: `\n${spinnerText} ...`, styles: ["cyan"]}]);
-      const result = await defaultCommandRunner.run({command, args}, {output: "inherit"});
-
-      if (result.spawnError !== undefined) {
-        logger.error(`  ✗ Error: ${result.spawnError}!\n`);
-        return {code: 1, output: result.spawnError};
-      }
-
-      if (result.code === 0) {
-        logger.line([{text: `  ✓ ${spinnerText} completed successfully!\n`, styles: ["green"]}]);
-      } else {
-        logger.line([{text: `  ✗ ${spinnerText} failed!\n`, styles: ["red"]}]);
-      }
-
-      return {code: result.code, output: ""};
-    }
-    default:
-      throw new Error("The `hideOutput` variable should NOT be undefined!");
-  }
+function defaultPresentationLogger(): MonorepositoryLogger {
+  return new MonorepositoryConsoleLogger("common", {runtimeHost: nodeLoggerRuntimeHost});
 }
-
-/**
- * Environment flag to determine if we are in production.
- */
-export const isProductionEnvironment = process.env["PRODUCTION"] === "true";
-
-/**
- * Environment flag to determine if we are using Azure App Configuration.
- */
-export const isAzureInfrastructure = process.env["INFRA"] === "azure";
-
-/**
- * Environment flag to determine if we are in verbose mode.
- * In verbose mode, more detailed logs are emitted through the active logger.
- */
-export const isVerboseMode = process.env["VERBOSE"] === "true";
-
-/**
- * Environment flag to determine if we are in a CI/CD environment.
- */
-export const isInCI = !!(process.env["CI"] ?? process.env["GITHUB_ACTIONS"]);
 
 /**
  * Formats bytes into a human-readable string (KB, MB, GB).
@@ -134,17 +52,17 @@ export function formatBytes(bytes: number): string {
 // ============================================================================
 
 /**
- * Formats the current time as HH:MM:SS.mmm for worker lifecycle logging.
+ * Formats a caller-supplied instant as HH:MM:SS.mmm for worker lifecycle logging.
  *
+ * @param now - The instant to render, in the host's local time zone.
  * @returns Formatted timestamp string (e.g., "14:23:45.123")
  *
  * @example
  * ```typescript
- * formatTimestamp(); // "14:23:45.123"
+ * formatTimestamp(new Date()); // "14:23:45.123"
  * ```
  */
-export function formatTimestamp(): string {
-  const now = new Date();
+export function formatTimestamp(now: Date): string {
   const hours = now.getHours().toString().padStart(2, "0");
   const minutes = now.getMinutes().toString().padStart(2, "0");
   const seconds = now.getSeconds().toString().padStart(2, "0");
@@ -158,20 +76,22 @@ export function formatTimestamp(): string {
  * @param workerId - The sequential worker ID (1-based)
  * @param taskName - Human-readable task name (e.g., "packages", "website")
  * @param logger - Logger used for worker presentation output.
+ * @param now - Instant rendered as the event timestamp.
  *
  * @example
  * ```typescript
- * logWorkerSpawn(1, "packages");
+ * logWorkerSpawn(1, "packages", logger, new Date());
  * // Output: [14:23:45.123] 🚀 Worker #1 spawned for task "packages"
  * ```
  */
 export function logWorkerSpawn(
   workerId: number,
   taskName: string,
-  logger: MonorepositoryLogger = new MonorepositoryConsoleLogger("common"),
+  logger: MonorepositoryLogger,
+  now: Date,
 ): void {
   logger.line([
-    {text: `[${formatTimestamp()}]`, styles: ["gray"]},
+    {text: `[${formatTimestamp(now)}]`, styles: ["gray"]},
     {text: " 🚀 "},
     {text: `Worker #${workerId}`, styles: ["cyan"]},
     {text: " spawned for task "},
@@ -200,10 +120,11 @@ export function formatDurationMs(ms: number): string {
  * @param durationMs - Duration of the worker execution in milliseconds
  * @param status - Whether the worker completed successfully or with an error
  * @param logger - Logger used for worker presentation output.
+ * @param now - Instant rendered as the event timestamp.
  *
  * @example
  * ```typescript
- * logWorkerComplete(1, "packages", 2222, "success");
+ * logWorkerComplete(1, "packages", 2222, "success", logger, new Date());
  * // Output: [14:23:47.345] ✅ Worker #1 finished "packages" in 2.22s
  * ```
  */
@@ -212,12 +133,13 @@ export function logWorkerComplete(
   taskName: string,
   durationMs: number,
   status: "success" | "error",
-  logger: MonorepositoryLogger = new MonorepositoryConsoleLogger("common"),
+  logger: MonorepositoryLogger,
+  now: Date,
 ): void {
   const icon = status === "success" ? "✅" : "❌";
   const colorName = status === "success" ? "green" : "red";
   logger.line([
-    {text: `[${formatTimestamp()}]`, styles: ["gray"]},
+    {text: `[${formatTimestamp(now)}]`, styles: ["gray"]},
     {text: ` ${icon} `},
     {text: `Worker #${workerId}`, styles: ["cyan"]},
     {text: " finished "},
@@ -263,7 +185,7 @@ interface ProgressTracker {
  */
 export function createProgressTracker(
   total: number,
-  logger: MonorepositoryLogger = new MonorepositoryConsoleLogger("common"),
+  logger: MonorepositoryLogger = defaultPresentationLogger(),
 ): ProgressTracker {
   let completed = 0;
   let progress: ProgressReporter | null = null;
@@ -342,7 +264,7 @@ interface TimelineEntry {
  */
 export function printWorkerTimeline(
   results: readonly TimelineEntry[],
-  logger: MonorepositoryLogger = new MonorepositoryConsoleLogger("common"),
+  logger: MonorepositoryLogger = defaultPresentationLogger(),
 ): void {
   if (results.length === 0) return;
 

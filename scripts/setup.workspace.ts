@@ -1,55 +1,46 @@
 /**
  * @fileoverview Dependency-free workspace bootstrap phases for repository setup.
  * @module scripts.setup.workspace
+ *
+ * @remarks
+ * Every phase in this module reads its capabilities from the invocation-scoped
+ * {@link SetupPhaseRuntime}: the filesystem, the phase-scoped process runner, the clock, the task
+ * scheduler, the environment snapshot, and the typed nested generation invocation. No phase here
+ * touches an ambient Node global, spawns a sibling script, or measures time itself.
  */
 
-import {readFile, stat} from "node:fs/promises";
 import {resolve} from "node:path";
 
-import type {CommandResult, CommandSpec} from "./common/process.ts";
+import type {CommandExecution} from "./common/commander.ts";
 import {loadRepositoryRequirements, parseVersion, satisfiesMinimum, type MinimumVersion} from "./common/requirements.ts";
-import {
-  mergeToolingConfig,
-  readToolingConfig,
-  sha256File,
-  writeToolingConfig,
-  type SetupFingerprints,
-  type ToolingConfigV1,
-} from "./common/tooling-config.ts";
+import type {ProcessOutcome, ProcessRequest, SucceededProcessOutcome} from "./common/runner.ts";
+import {CommandCancellation, type FileSystem} from "./common/runtime.ts";
 import {getExpectedTaxonomyArtifactPaths} from "./common/taxonomy-artifacts.ts";
-import type {SetupActionDisposition, SetupContext, SetupPhaseDefinition, SetupPhaseResult} from "./setup.types.ts";
+import type {GenerateResult} from "./generate.ts";
+import type {NpmTreeFacts} from "./inspection/packages.ts";
+import {
+  requireSetupPhaseRuntime,
+  type SetupContext,
+  type SetupPhaseDefinition,
+  type SetupPhaseResult,
+  type SetupPhaseRuntime,
+} from "./setup.types.ts";
 
 const REPOSITORY_PACKAGE_NAME = "@arolariu/monorepo";
-const NPM_INSPECTION_COMMAND: CommandSpec = {
-  command: "npm",
-  args: ["ls", "--all", "--json"],
-};
-const NPM_RESTORE_COMMAND: CommandSpec = {
+/** Exact contributor remediation for a missing, unavailable, invalid, or broken root npm tree. */
+const ROOT_NPM_CI_GUIDANCE = "Run `npm ci` in the repository root, then rerun setup.";
+/** Bounded timeout for the long-running lockfile restoration this module owns. */
+const NPM_RESTORE_TIMEOUT_MS = 1_200_000;
+const NPM_RESTORE_COMMAND: ProcessRequest = {
   command: "npm",
   args: ["ci", "--prefer-offline", "--no-audit", "--no-fund"],
 };
-const NX_PROJECTS_COMMAND: CommandSpec = {
+const NX_PROJECTS_COMMAND: ProcessRequest = {
   command: "npx",
   args: ["--no-install", "nx", "show", "projects", "--json"],
 };
 
 type UnknownRecord = Readonly<Record<string, unknown>>;
-
-interface NpmTreeDefinition {
-  readonly phaseId: "workspace.root-dependencies" | "workspace.github-scripts-dependencies";
-  readonly title: string;
-  readonly root: string;
-  readonly lockfile: string;
-  readonly lockFingerprint: "rootPackageLockSha256" | "githubScriptsPackageLockSha256";
-}
-
-/** Validated interpretation of untrusted `npm ls --all --json` output. */
-export interface NpmTreeInspection {
-  readonly valid: boolean;
-  readonly problems: readonly string[];
-  readonly stdout: string;
-  readonly stderr: string;
-}
 
 function isRecord(value: unknown): value is UnknownRecord {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -63,29 +54,59 @@ function hasErrorCode(error: unknown, code: string): boolean {
   return error instanceof Error && "code" in error && error.code === code;
 }
 
-function isSuccessfulCommand(result: Readonly<CommandResult>): boolean {
-  return result.code === 0 && !result.timedOut && result.signal === undefined && result.spawnError === undefined;
+function isInterruption(error: unknown): boolean {
+  return error instanceof CommandCancellation || (error instanceof Error && error.name === "AbortError");
 }
 
-function commandFailureEvidence(result: Readonly<CommandResult>): readonly string[] {
-  return [
-    ...(result.spawnError === undefined ? [] : [`Unable to start command: ${result.spawnError}`]),
-    ...(result.timedOut ? ["Command timed out."] : []),
-    ...(result.signal === undefined ? [] : [`Command stopped with signal ${result.signal}.`]),
-    ...(result.code === 0 ? [] : [`Command exited with code ${result.code}.`]),
-    ...(result.stdout.trim() === "" ? [] : [`stdout: ${result.stdout.trim()}`]),
-    ...(result.stderr.trim() === "" ? [] : [`stderr: ${result.stderr.trim()}`]),
-  ];
+function isSuccessfulOutcome(outcome: Readonly<ProcessOutcome>): outcome is SucceededProcessOutcome {
+  return outcome.kind === "succeeded";
 }
 
-function duration(startedAt: number, context: SetupContext): number {
-  return Math.max(0, context.now() - startedAt);
+/**
+ * Renders one failed process outcome as concise, secret-free setup evidence.
+ *
+ * @param outcome - Completed process outcome.
+ * @returns Evidence lines naming the transport failure and any captured output.
+ */
+function commandFailureEvidence(outcome: Readonly<ProcessOutcome>): readonly string[] {
+  const evidence: string[] = [];
+  switch (outcome.kind) {
+    case "succeeded":
+      break;
+    case "exited":
+      evidence.push(`Command exited with code ${String(outcome.exitCode)}.`);
+      break;
+    case "signalled":
+      evidence.push(`Command stopped with signal ${outcome.signal}.`);
+      break;
+    case "spawn-failed":
+      evidence.push(`Unable to start command: ${outcome.message}`);
+      break;
+    case "timed-out":
+      evidence.push("Command timed out.");
+      if (outcome.signal !== undefined) {
+        evidence.push(`Command stopped with signal ${outcome.signal}.`);
+      }
+      break;
+    case "cancelled":
+      evidence.push("Command was cancelled.");
+      break;
+  }
+
+  if (outcome.stdout.trim() !== "") {
+    evidence.push(`stdout: ${outcome.stdout.trim()}`);
+  }
+  if (outcome.stderr.trim() !== "") {
+    evidence.push(`stderr: ${outcome.stderr.trim()}`);
+  }
+
+  return evidence;
 }
 
-function result(context: SetupContext, startedAt: number, input: Omit<SetupPhaseResult, "durationMs">): SetupPhaseResult {
+function result(runtime: SetupPhaseRuntime, startedAt: number, input: Omit<SetupPhaseResult, "durationMs">): SetupPhaseResult {
   return {
     ...input,
-    durationMs: duration(startedAt, context),
+    durationMs: Math.max(0, runtime.clock.monotonicNow() - startedAt),
   };
 }
 
@@ -97,24 +118,10 @@ function validRequirement(version: MinimumVersion): boolean {
   return [version.major, version.minor, version.patch].every((part) => Number.isSafeInteger(part) && part >= 0);
 }
 
-async function isDirectory(path: string): Promise<boolean> {
+async function isFile(path: string, files: FileSystem): Promise<boolean> {
   try {
-    return (await stat(path)).isDirectory();
+    return (await files.inspect(path)).kind === "file";
   } catch (error: unknown) {
-    if (hasErrorCode(error, "ENOENT")) {
-      return false;
-    }
-    throw new Error(`Unable to inspect dependency directory '${path}': ${errorMessage(error)}`);
-  }
-}
-
-async function isFile(path: string): Promise<boolean> {
-  try {
-    return (await stat(path)).isFile();
-  } catch (error: unknown) {
-    if (hasErrorCode(error, "ENOENT")) {
-      return false;
-    }
     throw new Error(`Unable to inspect generated artifact '${path}': ${errorMessage(error)}`);
   }
 }
@@ -122,10 +129,10 @@ async function isFile(path: string): Promise<boolean> {
 type RepositoryIdentityReadResult =
   {readonly status: "missing"} | {readonly status: "valid"; readonly name: string} | {readonly status: "invalid"; readonly error: string};
 
-async function readRepositoryIdentity(packageJsonPath: string): Promise<RepositoryIdentityReadResult> {
+async function readRepositoryIdentity(packageJsonPath: string, files: FileSystem): Promise<RepositoryIdentityReadResult> {
   let contents: string;
   try {
-    contents = await readFile(packageJsonPath, "utf8");
+    contents = await files.readText(packageJsonPath);
   } catch (error: unknown) {
     if (hasErrorCode(error, "ENOENT")) {
       return {status: "missing"};
@@ -159,22 +166,22 @@ function hasValidGitVersionOutput(value: string): boolean {
 
 function inspectRuntimeVersion(
   name: "Node.js" | "npm",
-  commandResult: Readonly<CommandResult>,
+  outcome: Readonly<ProcessOutcome>,
   minimum: MinimumVersion,
 ): Readonly<{
   version: MinimumVersion | null;
   evidence: readonly string[];
   nextActions: readonly string[];
 }> {
-  const parsed = parseVersion(commandResult.stdout);
-  if (!isSuccessfulCommand(commandResult) || parsed === null) {
+  const parsed = parseVersion(outcome.stdout);
+  if (!isSuccessfulOutcome(outcome) || parsed === null) {
     return {
       version: null,
       evidence: [
         `${name} version probe failed.`,
-        ...commandFailureEvidence(commandResult),
-        ...(isSuccessfulCommand(commandResult) && parsed === null
-          ? [`${name} returned an unsupported version value '${commandResult.stdout.trim()}'.`]
+        ...commandFailureEvidence(outcome),
+        ...(isSuccessfulOutcome(outcome) && parsed === null
+          ? [`${name} returned an unsupported version value '${outcome.stdout.trim()}'.`]
           : []),
       ],
       nextActions: [`Install a supported ${name} version manually, then rerun setup.`],
@@ -189,18 +196,19 @@ function inspectRuntimeVersion(
   }
   return {
     version: parsed,
-    evidence: [`${name} ${commandResult.stdout.trim()} satisfies >=${normalizedVersion(minimum)}.`],
+    evidence: [`${name} ${outcome.stdout.trim()} satisfies >=${normalizedVersion(minimum)}.`],
     nextActions: [],
   };
 }
 
 async function runPrerequisites(context: SetupContext): Promise<SetupPhaseResult> {
-  const startedAt = context.now();
+  const runtime = requireSetupPhaseRuntime(context);
+  const startedAt = runtime.clock.monotonicNow();
   const id = "workspace.prerequisites";
-  const repositoryIdentity = await readRepositoryIdentity(context.paths.packageJson);
+  const repositoryIdentity = await readRepositoryIdentity(context.paths.packageJson, runtime.files);
 
   if (repositoryIdentity.status === "missing") {
-    return result(context, startedAt, {
+    return result(runtime, startedAt, {
       id,
       status: "failed",
       summary: "The canonical repository path does not identify the arolariu.ro monorepository.",
@@ -209,7 +217,7 @@ async function runPrerequisites(context: SetupContext): Promise<SetupPhaseResult
     });
   }
   if (repositoryIdentity.status === "invalid") {
-    return result(context, startedAt, {
+    return result(runtime, startedAt, {
       id,
       status: "failed",
       summary: "The canonical repository identity could not be validated.",
@@ -218,7 +226,7 @@ async function runPrerequisites(context: SetupContext): Promise<SetupPhaseResult
     });
   }
   if (repositoryIdentity.name !== REPOSITORY_PACKAGE_NAME) {
-    return result(context, startedAt, {
+    return result(runtime, startedAt, {
       id,
       status: "failed",
       summary: "The canonical repository path does not identify the arolariu.ro monorepository.",
@@ -227,9 +235,9 @@ async function runPrerequisites(context: SetupContext): Promise<SetupPhaseResult
     });
   }
 
-  const liveRequirements = await loadRepositoryRequirements(context.paths);
+  const liveRequirements = await loadRepositoryRequirements(context.paths, {files: runtime.files, tasks: runtime.tasks});
   if (liveRequirements.status === "invalid") {
-    return result(context, startedAt, {
+    return result(runtime, startedAt, {
       id,
       status: "failed",
       summary: "Manifest-derived repository requirements are invalid or contradictory.",
@@ -245,7 +253,7 @@ async function runPrerequisites(context: SetupContext): Promise<SetupPhaseResult
     context.requirements.python,
   ];
   if (!runtimeRequirements.every(validRequirement)) {
-    return result(context, startedAt, {
+    return result(runtime, startedAt, {
       id,
       status: "failed",
       summary: "Manifest-derived repository requirements are invalid or contradictory.",
@@ -254,20 +262,36 @@ async function runPrerequisites(context: SetupContext): Promise<SetupPhaseResult
     });
   }
 
-  const [gitResult, nodeResult, npmResult] = await Promise.all([
-    context.runner.run({command: "git", args: ["--version"]}, {cwd: context.paths.root}),
-    context.runner.run({command: "node", args: ["--version"]}, {cwd: context.paths.root}),
-    context.runner.run({command: "npm", args: ["--version"]}, {cwd: context.paths.root}),
-  ]);
+  const probes: readonly ProcessRequest[] = [
+    {command: "git", args: ["--version"]},
+    {command: "node", args: ["--version"]},
+    {command: "npm", args: ["--version"]},
+    // The running binary is asked for its own version through the same runtime capability every
+    // other probe uses, so this phase never reads an ambient `process.version`.
+    {command: runtime.environment.executablePath, args: ["--version"]},
+  ];
+  const [gitResult, nodeResult, npmResult, runningNodeResult] = await runtime.tasks.parallel(
+    probes.map((probe) => () => runtime.runner.run(probe, {cwd: context.paths.root})),
+  );
+
+  if (gitResult === undefined || nodeResult === undefined || npmResult === undefined || runningNodeResult === undefined) {
+    return result(runtime, startedAt, {
+      id,
+      status: "failed",
+      summary: "Workspace prerequisites are not satisfied.",
+      evidence: ["The workspace prerequisite probes did not all produce an outcome."],
+      nextActions: ["Rerun setup; if the failure persists, inspect the reported prerequisite probes."],
+    });
+  }
 
   const evidence: string[] = [];
   const nextActions: string[] = [];
   const gitVersion = hasValidGitVersionOutput(gitResult.stdout);
-  if (!isSuccessfulCommand(gitResult) || !gitVersion) {
+  if (!isSuccessfulOutcome(gitResult) || !gitVersion) {
     evidence.push(
       "Git version probe failed.",
       ...commandFailureEvidence(gitResult),
-      ...(isSuccessfulCommand(gitResult) && !gitVersion ? [`Git returned malformed output '${gitResult.stdout.trim()}'.`] : []),
+      ...(isSuccessfulOutcome(gitResult) && !gitVersion ? [`Git returned malformed output '${gitResult.stdout.trim()}'.`] : []),
     );
     nextActions.push("Install Git manually and ensure it is available on PATH, then rerun setup.");
   } else {
@@ -282,19 +306,21 @@ async function runPrerequisites(context: SetupContext): Promise<SetupPhaseResult
   evidence.push(...npmInspection.evidence);
   nextActions.push(...npmInspection.nextActions);
 
-  const processNodeVersion = parseVersion(process.version);
+  const runningNodeVersion = isSuccessfulOutcome(runningNodeResult) ? parseVersion(runningNodeResult.stdout) : null;
   if (
     nodeInspection.version !== null
-    && (processNodeVersion === null || normalizedVersion(nodeInspection.version) !== normalizedVersion(processNodeVersion))
+    && (runningNodeVersion === null || normalizedVersion(nodeInspection.version) !== normalizedVersion(runningNodeVersion))
   ) {
+    const reported = runningNodeVersion === null ? "no usable version" : normalizedVersion(runningNodeVersion);
     evidence.push(
-      `node --version reported ${normalizedVersion(nodeInspection.version)}, but the running process.version is ${process.version}.`,
+      `node --version reported ${normalizedVersion(nodeInspection.version)}, but the running Node.js runtime `
+        + `'${runtime.environment.executablePath}' reported ${reported}.`,
     );
     nextActions.push("Run setup with the same supported Node.js executable resolved by the node command.");
   }
 
   if (nextActions.length > 0) {
-    return result(context, startedAt, {
+    return result(runtime, startedAt, {
       id,
       status: "failed",
       summary: "Workspace prerequisites are not satisfied.",
@@ -303,7 +329,7 @@ async function runPrerequisites(context: SetupContext): Promise<SetupPhaseResult
     });
   }
 
-  return result(context, startedAt, {
+  return result(runtime, startedAt, {
     id,
     status: "succeeded",
     summary: "Repository identity, Git, Node.js, and npm prerequisites are valid.",
@@ -313,314 +339,189 @@ async function runPrerequisites(context: SetupContext): Promise<SetupPhaseResult
 }
 
 /**
- * Validates untrusted npm tree output without discarding useful failed-command output.
+ * Converts bounded npm dependency-problem facts into concise, safe setup evidence.
  *
- * @param commandResult - Complete `npm ls --all --json` command result.
- * @returns A safe integrity inspection retaining stdout and stderr.
+ * @param facts - Session-inspected npm tree facts for one lock domain.
+ * @returns At least one non-empty evidence line; never raw npm stdout/stderr.
  */
-export function inspectNpmTreeResult(commandResult: Readonly<CommandResult>): NpmTreeInspection {
-  const problems: string[] = [];
-  const stdout = commandResult.stdout;
-  const stderr = commandResult.stderr;
-  let validDocument = false;
-
-  if (stdout.trim() === "") {
-    problems.push("npm ls produced empty JSON output.");
-  } else {
-    try {
-      const parsed: unknown = JSON.parse(stdout);
-      if (!isRecord(parsed)) {
-        problems.push("npm ls JSON output must be an object.");
-      } else {
-        const untrustedProblems = parsed["problems"];
-        if (untrustedProblems === undefined) {
-          validDocument = true;
-        } else if (
-          Array.isArray(untrustedProblems)
-          && untrustedProblems.every((problem) => typeof problem === "string" && problem.trim() !== "")
-        ) {
-          problems.push(...untrustedProblems);
-          validDocument = true;
-        } else {
-          problems.push("npm ls JSON property 'problems' must be an array of non-empty strings.");
-        }
-      }
-    } catch (error: unknown) {
-      problems.push(`Unable to parse npm ls JSON output: ${errorMessage(error)}`);
-    }
-  }
-
-  if (validDocument && problems.length === 0 && !isSuccessfulCommand(commandResult)) {
-    if (commandResult.spawnError !== undefined) {
-      problems.push(`npm ls could not start: ${commandResult.spawnError}`);
-    } else if (commandResult.timedOut) {
-      problems.push("npm ls timed out.");
-    } else if (commandResult.signal !== undefined) {
-      problems.push(`npm ls stopped with signal ${commandResult.signal}.`);
-    } else {
-      problems.push(`npm ls exited with code ${commandResult.code}.`);
-    }
-  }
-
-  return {
-    valid: validDocument && problems.length === 0 && isSuccessfulCommand(commandResult),
-    problems,
-    stdout,
-    stderr,
-  };
+function npmProblemEvidence(facts: Readonly<NpmTreeFacts>): readonly string[] {
+  const details = facts.problems.map((problem) => problem.detail);
+  return details.length > 0 ? details : ["npm dependency inspection reported a failure without additional detail."];
 }
 
 /**
- * Determines whether an npm tree must be restored from its lockfile.
+ * Validates the root workspace npm tree from the shared inspection session.
  *
- * @param input - Live integrity state and the last successful setup fingerprint.
- * @returns `true` when the tree is missing, invalid, or stale.
+ * @remarks
+ * This phase is validation-only: contributors are expected to have already run `npm install` or
+ * `npm ci` before setup. It consumes `"npm.root"` exactly once, registers no setup action, and
+ * never executes `npm ci` itself.
+ *
+ * @param context - Shared setup dependencies, including the repository inspection session.
+ * @returns The completed phase result.
  */
-export function shouldRestoreNpmTree(
-  input: Readonly<{
-    directoryExists: boolean;
-    inspection: NpmTreeInspection;
-    currentNodeVersion: string;
-    currentLockHash: string;
-    storedNodeVersion?: string;
-    storedLockHash?: string;
-  }>,
-): boolean {
-  return (
-    !input.directoryExists
-    || !input.inspection.valid
-    || input.currentNodeVersion !== input.storedNodeVersion
-    || input.currentLockHash !== input.storedLockHash
-  );
-}
+async function runRootDependencies(context: SetupContext): Promise<SetupPhaseResult> {
+  const runtime = requireSetupPhaseRuntime(context);
+  const startedAt = runtime.clock.monotonicNow();
+  const id = "workspace.root-dependencies";
+  const outcome = await context.inspection.inspect("npm.root");
 
-function selectedConfig(readResult: Awaited<ReturnType<typeof readToolingConfig>>): ToolingConfigV1 | undefined {
-  return readResult.status === "valid" ? readResult.config : undefined;
-}
-
-function otherLockFingerprint(lockFingerprint: NpmTreeDefinition["lockFingerprint"]): NpmTreeDefinition["lockFingerprint"] {
-  return lockFingerprint === "rootPackageLockSha256" ? "githubScriptsPackageLockSha256" : "rootPackageLockSha256";
-}
-
-function withoutLockFingerprint(
-  config: ToolingConfigV1 | undefined,
-  lockFingerprint: NpmTreeDefinition["lockFingerprint"],
-): ToolingConfigV1 | undefined {
-  if (config?.fingerprints === undefined) {
-    return config;
+  if (outcome.kind === "unavailable") {
+    return result(runtime, startedAt, {
+      id,
+      status: "failed",
+      summary: "Root workspace dependencies could not be validated.",
+      evidence: [outcome.reason],
+      nextActions: [ROOT_NPM_CI_GUIDANCE],
+    });
+  }
+  if (outcome.kind === "invalid") {
+    return result(runtime, startedAt, {
+      id,
+      status: "failed",
+      summary: "Root workspace dependency inspection produced invalid data.",
+      evidence: [...outcome.issues],
+      nextActions: [ROOT_NPM_CI_GUIDANCE],
+    });
+  }
+  if (!outcome.value.valid) {
+    return result(runtime, startedAt, {
+      id,
+      status: "failed",
+      summary: "Root workspace dependencies are missing or broken.",
+      evidence: npmProblemEvidence(outcome.value),
+      nextActions: [ROOT_NPM_CI_GUIDANCE],
+    });
   }
 
-  const fingerprints = config.fingerprints;
-  const preservedFingerprints: SetupFingerprints =
-    lockFingerprint === "rootPackageLockSha256"
-      ? {
-          ...(fingerprints.nodeVersion === undefined ? {} : {nodeVersion: fingerprints.nodeVersion}),
-          ...(fingerprints.githubScriptsPackageLockSha256 === undefined
-            ? {}
-            : {githubScriptsPackageLockSha256: fingerprints.githubScriptsPackageLockSha256}),
-          ...(fingerprints.pythonRequirementsSha256 === undefined ? {} : {pythonRequirementsSha256: fingerprints.pythonRequirementsSha256}),
-        }
-      : {
-          ...(fingerprints.nodeVersion === undefined ? {} : {nodeVersion: fingerprints.nodeVersion}),
-          ...(fingerprints.rootPackageLockSha256 === undefined ? {} : {rootPackageLockSha256: fingerprints.rootPackageLockSha256}),
-          ...(fingerprints.pythonRequirementsSha256 === undefined ? {} : {pythonRequirementsSha256: fingerprints.pythonRequirementsSha256}),
-        };
-
-  return {
-    ...config,
-    fingerprints: preservedFingerprints,
-  };
-}
-
-async function writeSuccessfulFingerprint(
-  context: SetupContext,
-  tree: NpmTreeDefinition,
-  currentNodeVersion: string,
-  currentLockHash: string,
-  nodeVersionChanged: boolean,
-): Promise<SetupActionDisposition> {
-  const actionId = `${tree.phaseId}.write-fingerprint`;
-  return context.actions.run({
-    id: actionId,
-    scope: "repository",
-    summary: `Record the successful ${tree.title} dependency fingerprint.`,
-    execute: async () => {
-      const latest = await readToolingConfig(context.paths.toolingConfig);
-      if (latest.status === "invalid") {
-        throw new Error(latest.error);
-      }
-      const currentConfig = selectedConfig(latest);
-      const mergeBase = nodeVersionChanged
-        ? withoutLockFingerprint(currentConfig, otherLockFingerprint(tree.lockFingerprint))
-        : currentConfig;
-      const fingerprints: Partial<SetupFingerprints> = {
-        nodeVersion: currentNodeVersion,
-        [tree.lockFingerprint]: currentLockHash,
-      };
-      await writeToolingConfig(
-        context.paths.toolingConfig,
-        mergeToolingConfig(mergeBase, {
-          fingerprints,
-        }),
-      );
-    },
+  return result(runtime, startedAt, {
+    id,
+    status: "succeeded",
+    summary: "Root workspace dependencies are valid.",
+    evidence: [`npm reported ${outcome.value.packageCount} installed package(s) with no dependency problems.`],
+    nextActions: [],
   });
 }
 
-async function runNpmTreePhase(context: SetupContext, tree: NpmTreeDefinition): Promise<SetupPhaseResult> {
-  const startedAt = context.now();
-  const nodeModules = resolve(tree.root, "node_modules");
+/**
+ * Restores the `.github/scripts` npm tree with the exact `npm ci` restoration command, then
+ * verifies the result through the shared inspection session.
+ *
+ * @remarks
+ * Unlike the root workspace, `.github/scripts` remains setup-owned: this phase always plans or
+ * executes the exact restoration command, regardless of the tree's current state. After an
+ * executed action it invalidates only `"npm.github-scripts"`, re-inspects it, and fails if the
+ * refreshed facts are unavailable, invalid, or report a broken tree.
+ *
+ * @param context - Shared setup dependencies, including the repository inspection session.
+ * @returns The completed phase result.
+ * @throws When the invocation was interrupted while the restoration ran.
+ */
+async function runGithubScriptsDependencies(context: SetupContext): Promise<SetupPhaseResult> {
+  const runtime = requireSetupPhaseRuntime(context);
+  const startedAt = runtime.clock.monotonicNow();
+  const id = "workspace.github-scripts-dependencies";
+  const actionId = `${id}.npm-ci`;
 
   try {
-    const [directoryExists, inspectionResult, currentLockHash, configResult] = await Promise.all([
-      isDirectory(nodeModules),
-      context.runner.run(NPM_INSPECTION_COMMAND, {cwd: tree.root}),
-      sha256File(tree.lockfile),
-      readToolingConfig(context.paths.toolingConfig),
-    ]);
-
-    if (configResult.status === "invalid") {
-      return result(context, startedAt, {
-        id: tree.phaseId,
-        status: "failed",
-        summary: `The local tooling configuration is invalid; ${tree.title} dependencies were not changed.`,
-        evidence: [configResult.error],
-        nextActions: ["Correct or remove the invalid non-secret local tooling configuration, then rerun setup."],
-      });
-    }
-
-    const inspection = inspectNpmTreeResult(inspectionResult);
-    const runningNodeVersion = parseVersion(process.version);
-    if (runningNodeVersion === null) {
-      return result(context, startedAt, {
-        id: tree.phaseId,
-        status: "failed",
-        summary: `The running Node.js version cannot be fingerprinted for ${tree.title} dependencies.`,
-        evidence: [`Unsupported process.version value '${process.version}'.`],
-        nextActions: ["Run setup with a supported Node.js executable."],
-      });
-    }
-    const currentNodeVersion = normalizedVersion(runningNodeVersion);
-    const fingerprints = selectedConfig(configResult)?.fingerprints;
-    const nodeVersionChanged = fingerprints?.nodeVersion !== currentNodeVersion;
-    const restoreRequired = shouldRestoreNpmTree({
-      directoryExists,
-      inspection,
-      currentNodeVersion,
-      currentLockHash,
-      ...(fingerprints?.nodeVersion === undefined ? {} : {storedNodeVersion: fingerprints.nodeVersion}),
-      ...(fingerprints?.[tree.lockFingerprint] === undefined ? {} : {storedLockHash: fingerprints[tree.lockFingerprint]}),
-    });
-
-    if (!restoreRequired) {
-      return result(context, startedAt, {
-        id: tree.phaseId,
-        status: "succeeded",
-        summary: `${tree.title} dependencies are valid and current.`,
-        evidence: [`npm ls passed in ${tree.root}.`, `Lockfile fingerprint ${currentLockHash} matches the last successful setup.`],
-        nextActions: [],
-      });
-    }
-
-    const restoreActionId = `${tree.phaseId}.npm-ci`;
-    const restoreDisposition = await context.actions.run({
-      id: restoreActionId,
+    const disposition = await context.actions.run({
+      id: actionId,
       scope: "repository",
-      summary: `Restore ${tree.title} dependencies from the lockfile.`,
+      summary: "Restore .github scripts dependencies from the lockfile.",
       execute: async () => {
-        const restoreResult = await context.runner.run(NPM_RESTORE_COMMAND, {
-          cwd: tree.root,
+        const restoreOutcome = await runtime.runner.run(NPM_RESTORE_COMMAND, {
+          cwd: context.paths.githubScriptsRoot,
           output: "tee",
-          logger: context.logger,
+          timeoutMs: NPM_RESTORE_TIMEOUT_MS,
         });
-        if (!isSuccessfulCommand(restoreResult)) {
-          throw new Error([`npm ci failed in ${tree.root}.`, ...commandFailureEvidence(restoreResult)].join("\n"));
+        if (!isSuccessfulOutcome(restoreOutcome)) {
+          throw new Error(
+            [`npm ci failed in ${context.paths.githubScriptsRoot}.`, ...commandFailureEvidence(restoreOutcome)].join("\n"),
+          );
         }
       },
     });
 
-    if (restoreDisposition === "planned") {
-      return result(context, startedAt, {
-        id: tree.phaseId,
+    if (disposition === "planned") {
+      return result(runtime, startedAt, {
+        id,
         status: "skipped",
-        summary: `${tree.title} dependency restoration is planned by dry-run.`,
-        evidence: [`Planned action: ${restoreActionId}`],
+        summary: ".github scripts dependency restoration is planned by dry-run.",
+        evidence: [`Planned action: ${actionId}`],
         nextActions: [],
       });
     }
-    if (restoreDisposition === "declined") {
-      return result(context, startedAt, {
-        id: tree.phaseId,
+    if (disposition === "declined") {
+      return result(runtime, startedAt, {
+        id,
         status: "failed",
-        summary: `${tree.title} dependency restoration was declined.`,
-        evidence: [`Declined action: ${restoreActionId}`],
+        summary: ".github scripts dependency restoration was declined.",
+        evidence: [`Declined action: ${actionId}`],
         nextActions: ["Allow the repository-scoped dependency restoration action, then rerun setup."],
       });
     }
 
-    const restoredInspectionResult = await context.runner.run(NPM_INSPECTION_COMMAND, {
-      cwd: tree.root,
-    });
-    const restoredInspection = inspectNpmTreeResult(restoredInspectionResult);
-    if (!restoredInspection.valid) {
-      return result(context, startedAt, {
-        id: tree.phaseId,
+    context.inspection.invalidate("npm.github-scripts");
+    const outcome = await context.inspection.inspect("npm.github-scripts");
+
+    if (outcome.kind === "unavailable") {
+      return result(runtime, startedAt, {
+        id,
         status: "failed",
-        summary: `${tree.title} dependencies remain invalid after npm ci.`,
-        evidence: [
-          ...restoredInspection.problems,
-          ...(restoredInspection.stdout.trim() === "" ? [] : [`stdout: ${restoredInspection.stdout.trim()}`]),
-          ...(restoredInspection.stderr.trim() === "" ? [] : [`stderr: ${restoredInspection.stderr.trim()}`]),
-        ],
-        nextActions: [`Inspect the npm tree in ${tree.root} and rerun setup after correcting the reported problems.`],
+        summary: ".github scripts dependencies could not be verified after npm ci.",
+        evidence: [`Executed action: ${actionId}`, outcome.reason],
+        nextActions: ["Inspect the .github/scripts npm tree and rerun setup after correcting the reported problems."],
+      });
+    }
+    if (outcome.kind === "invalid") {
+      return result(runtime, startedAt, {
+        id,
+        status: "failed",
+        summary: ".github scripts dependencies could not be verified after npm ci.",
+        evidence: [`Executed action: ${actionId}`, ...outcome.issues],
+        nextActions: ["Inspect the .github/scripts npm tree and rerun setup after correcting the reported problems."],
+      });
+    }
+    if (!outcome.value.valid) {
+      return result(runtime, startedAt, {
+        id,
+        status: "failed",
+        summary: ".github scripts dependencies remain invalid after npm ci.",
+        evidence: [`Executed action: ${actionId}`, ...npmProblemEvidence(outcome.value)],
+        nextActions: ["Inspect the .github/scripts npm tree and rerun setup after correcting the reported problems."],
       });
     }
 
-    const fingerprintActionId = `${tree.phaseId}.write-fingerprint`;
-    const fingerprintDisposition = await writeSuccessfulFingerprint(context, tree, currentNodeVersion, currentLockHash, nodeVersionChanged);
-    if (fingerprintDisposition === "planned") {
-      return result(context, startedAt, {
-        id: tree.phaseId,
-        status: "skipped",
-        summary: `${tree.title} dependencies are valid; fingerprint persistence is planned by dry-run.`,
-        evidence: [`Planned action: ${fingerprintActionId}`],
-        nextActions: [],
-      });
-    }
-    if (fingerprintDisposition === "declined") {
-      return result(context, startedAt, {
-        id: tree.phaseId,
-        status: "failed",
-        summary: `${tree.title} dependencies are valid, but their fingerprint was not persisted.`,
-        evidence: [`Declined action: ${fingerprintActionId}`],
-        nextActions: ["Allow the repository-scoped fingerprint action, then rerun setup."],
-      });
-    }
-
-    return result(context, startedAt, {
-      id: tree.phaseId,
+    return result(runtime, startedAt, {
+      id,
       status: "succeeded",
-      summary: `${tree.title} dependencies were restored and verified.`,
-      evidence: [`Executed action: ${restoreActionId}`, `Executed action: ${fingerprintActionId}`, `Verified npm tree in ${tree.root}.`],
+      summary: ".github scripts dependencies were restored and verified.",
+      evidence: [
+        `Executed action: ${actionId}`,
+        `npm reported ${outcome.value.packageCount} installed package(s) with no dependency problems.`,
+      ],
       nextActions: [],
     });
   } catch (error: unknown) {
-    return result(context, startedAt, {
-      id: tree.phaseId,
+    if (isInterruption(error)) {
+      throw error;
+    }
+    return result(runtime, startedAt, {
+      id,
       status: "failed",
-      summary: `${tree.title} dependency setup failed.`,
+      summary: ".github scripts dependency setup failed.",
       evidence: [errorMessage(error)],
-      nextActions: [`Resolve the reported ${tree.title} dependency error, then rerun setup.`],
+      nextActions: ["Resolve the reported .github scripts dependency error, then rerun setup."],
     });
   }
 }
 
-function parseNxProjects(commandResult: Readonly<CommandResult>): readonly string[] | null {
-  if (!isSuccessfulCommand(commandResult) || commandResult.stdout.trim() === "") {
+function parseNxProjects(outcome: Readonly<ProcessOutcome>): readonly string[] | null {
+  if (!isSuccessfulOutcome(outcome) || outcome.stdout.trim() === "") {
     return null;
   }
   try {
-    const parsed: unknown = JSON.parse(commandResult.stdout);
+    const parsed: unknown = JSON.parse(outcome.stdout);
     if (!Array.isArray(parsed) || parsed.length === 0 || !parsed.every((project) => typeof project === "string" && project.trim() !== "")) {
       return null;
     }
@@ -630,8 +531,54 @@ function parseNxProjects(commandResult: Readonly<CommandResult>): readonly strin
   }
 }
 
+/**
+ * Converts one cancelled nested generation back into the typed cancellation the setup lifecycle
+ * maps to the caller's `130`/`143` exit contract.
+ *
+ * @param execution - Cancelled child execution.
+ * @returns The cancellation to rethrow.
+ */
+function toCancellation(execution: Extract<CommandExecution<GenerateResult>, {status: "cancelled"}>): CommandCancellation {
+  const {cause} = execution.failure;
+  return cause instanceof CommandCancellation ? cause : new CommandCancellation(execution.failure.message, execution.exitCode);
+}
+
+/**
+ * Describes a completed generation that ended with a nonzero exit code, using the child's typed
+ * result instead of a generic sentence.
+ *
+ * @remarks
+ * The nested generation runs with silent presentation, so it renders nothing itself. Without the
+ * typed detail below, setup would hide which generator stopped the run. Only the closed
+ * {@link GenerateResult} generator names are reported, so no unbounded or unsafe child output can
+ * reach setup evidence.
+ *
+ * @param execution - The completed nested generation execution.
+ * @returns Evidence naming the failing generator and its bounded selection context.
+ */
+function describeStoppedGeneration(execution: Extract<CommandExecution<GenerateResult>, {status: "completed"}>): string {
+  const {failed, completed, selected} = execution.value;
+  return [
+    `Repository artifact generation reported exit code ${execution.exitCode}.`,
+    failed === undefined
+      ? "The generation command named no failing generator."
+      : `The '${failed}' generator stopped the generation run.`,
+    `Completed generators: ${completed.length === 0 ? "none" : completed.join(", ")}.`,
+    `Selected generators: ${selected.join(", ")}.`,
+  ].join("\n");
+}
+
+/**
+ * Validates Nx workspace metadata, generates every required checkout artifact through one typed
+ * nested generation invocation, and asserts the generated postconditions.
+ *
+ * @param context - Shared setup dependencies.
+ * @returns The completed phase result.
+ * @throws {CommandCancellation} When the nested generation invocation was cancelled.
+ */
 async function runGenerators(context: SetupContext): Promise<SetupPhaseResult> {
-  const startedAt = context.now();
+  const runtime = requireSetupPhaseRuntime(context);
+  const startedAt = runtime.clock.monotonicNow();
   const id = "workspace.generators";
   const generatorActionId = "workspace.generators.generate";
   let projectCount: number | undefined;
@@ -641,40 +588,49 @@ async function runGenerators(context: SetupContext): Promise<SetupPhaseResult> {
       scope: "repository",
       summary: "Generate taxonomy, GraphQL, and internationalization checkout artifacts.",
       execute: async () => {
-        const nxResult = await context.runner.run(NX_PROJECTS_COMMAND, {
-          cwd: context.paths.root,
-        });
-        const projects = parseNxProjects(nxResult);
+        const nxOutcome = await runtime.runner.run(NX_PROJECTS_COMMAND, {cwd: context.paths.root});
+        const projects = parseNxProjects(nxOutcome);
         if (projects === null) {
           throw new Error(
             [
               "Nx project metadata is unavailable or malformed.",
-              ...commandFailureEvidence(nxResult),
-              ...(nxResult.stdout.trim() === "" ? ["Nx returned no project JSON."] : [`Nx output: ${nxResult.stdout.trim()}`]),
+              ...commandFailureEvidence(nxOutcome),
+              ...(nxOutcome.stdout.trim() === "" ? ["Nx returned no project JSON."] : [`Nx output: ${nxOutcome.stdout.trim()}`]),
             ].join("\n"),
           );
         }
         projectCount = projects.length;
 
-        const generatorResult = await context.runner.run(
-          {
-            command: process.execPath,
-            args: [resolve(context.paths.root, "scripts", "generate.ts"), "/a", "/g", "/i"],
-          },
-          {
-            cwd: context.paths.root,
-            output: "tee",
-            logger: context.logger,
-          },
-        );
-        if (!isSuccessfulCommand(generatorResult)) {
-          throw new Error(["Repository generator command failed.", ...commandFailureEvidence(generatorResult)].join("\n"));
+        // Exactly the pre-migration `generate /a /g /i` selection: environment generation is
+        // deliberately excluded because it performs network, prompt, and local file mutations
+        // setup never requested.
+        const generation = await runtime.invokeGenerate({
+          verbose: context.options.verbose,
+          env: false,
+          i18n: true,
+          gql: true,
+          artifacts: true,
+        });
+
+        if (generation.status === "cancelled") {
+          throw toCancellation(generation);
+        }
+        if (generation.status === "failed") {
+          throw new Error(
+            ["Repository artifact generation failed.", generation.failure.message, ...generation.failure.evidence].join("\n"),
+          );
+        }
+        if (generation.status !== "completed") {
+          throw new Error(`Repository artifact generation ended with status '${generation.status}' instead of a completed run.`);
+        }
+        if (generation.exitCode !== 0) {
+          throw new Error(describeStoppedGeneration(generation));
         }
       },
     });
 
     if (disposition === "planned") {
-      return result(context, startedAt, {
+      return result(runtime, startedAt, {
         id,
         status: "skipped",
         summary: "Repository artifact generation is planned by dry-run.",
@@ -683,7 +639,7 @@ async function runGenerators(context: SetupContext): Promise<SetupPhaseResult> {
       });
     }
     if (disposition === "declined") {
-      return result(context, startedAt, {
+      return result(runtime, startedAt, {
         id,
         status: "failed",
         summary: "Repository artifact generation was declined.",
@@ -692,7 +648,10 @@ async function runGenerators(context: SetupContext): Promise<SetupPhaseResult> {
       });
     }
   } catch (error: unknown) {
-    return result(context, startedAt, {
+    if (isInterruption(error)) {
+      throw error;
+    }
+    return result(runtime, startedAt, {
       id,
       status: "failed",
       summary: "Repository artifact generation failed.",
@@ -702,7 +661,7 @@ async function runGenerators(context: SetupContext): Promise<SetupPhaseResult> {
   }
 
   if (projectCount === undefined) {
-    return result(context, startedAt, {
+    return result(runtime, startedAt, {
       id,
       status: "failed",
       summary: "Repository artifact generation completed without validated Nx metadata.",
@@ -717,9 +676,14 @@ async function runGenerators(context: SetupContext): Promise<SetupPhaseResult> {
   ];
   let artifactChecks: readonly Readonly<{path: string; exists: boolean}>[];
   try {
-    artifactChecks = await Promise.all(expectedArtifacts.map(async (path) => ({path, exists: await isFile(path)})));
+    artifactChecks = await runtime.tasks.parallel(
+      expectedArtifacts.map((path) => async () => ({path, exists: await isFile(path, runtime.files)})),
+    );
   } catch (error: unknown) {
-    return result(context, startedAt, {
+    if (isInterruption(error)) {
+      throw error;
+    }
+    return result(runtime, startedAt, {
       id,
       status: "failed",
       summary: "Repository generator postconditions could not be inspected.",
@@ -729,7 +693,7 @@ async function runGenerators(context: SetupContext): Promise<SetupPhaseResult> {
   }
   const missingArtifacts = artifactChecks.filter(({exists}) => !exists).map(({path}) => path);
   if (missingArtifacts.length > 0) {
-    return result(context, startedAt, {
+    return result(runtime, startedAt, {
       id,
       status: "failed",
       summary: "Repository generators completed without every required checkout artifact.",
@@ -738,7 +702,7 @@ async function runGenerators(context: SetupContext): Promise<SetupPhaseResult> {
     });
   }
 
-  return result(context, startedAt, {
+  return result(runtime, startedAt, {
     id,
     status: "succeeded",
     summary: "Nx metadata and required generated checkout artifacts are valid.",
@@ -751,24 +715,6 @@ async function runGenerators(context: SetupContext): Promise<SetupPhaseResult> {
   });
 }
 
-const rootDependencies = (context: SetupContext): Promise<SetupPhaseResult> =>
-  runNpmTreePhase(context, {
-    phaseId: "workspace.root-dependencies",
-    title: "root workspace",
-    root: context.paths.root,
-    lockfile: context.paths.packageLock,
-    lockFingerprint: "rootPackageLockSha256",
-  });
-
-const githubScriptsDependencies = (context: SetupContext): Promise<SetupPhaseResult> =>
-  runNpmTreePhase(context, {
-    phaseId: "workspace.github-scripts-dependencies",
-    title: ".github scripts",
-    root: context.paths.githubScriptsRoot,
-    lockfile: context.paths.githubScriptsPackageLock,
-    lockFingerprint: "githubScriptsPackageLockSha256",
-  });
-
 /** Required workspace setup phases and their dependency graph. */
 export const workspaceSetupPhases: readonly SetupPhaseDefinition[] = [
   {
@@ -780,17 +726,17 @@ export const workspaceSetupPhases: readonly SetupPhaseDefinition[] = [
   },
   {
     id: "workspace.root-dependencies",
-    title: "Restore root workspace dependencies",
+    title: "Validate root workspace dependencies",
     required: true,
     dependsOn: ["workspace.prerequisites"],
-    run: rootDependencies,
+    run: runRootDependencies,
   },
   {
     id: "workspace.github-scripts-dependencies",
     title: "Restore GitHub scripts dependencies",
     required: true,
     dependsOn: ["workspace.prerequisites"],
-    run: githubScriptsDependencies,
+    run: runGithubScriptsDependencies,
   },
   {
     id: "workspace.generators",

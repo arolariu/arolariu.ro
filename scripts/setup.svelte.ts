@@ -1,551 +1,501 @@
 /**
  * @fileoverview SvelteKit workspace validation and generated-state preparation.
  * @module scripts.setup.svelte
+ *
+ * @remarks
+ * Every read-only SvelteKit observation (manifest, required lifecycle scripts and their Nx/Vite
+ * wiring, validated `engines.node` range, configured adapter, and generated
+ * `.svelte-kit/tsconfig.json` existence) is consumed exclusively through
+ * `context.inspection.inspect("svelte.cv")` and `context.inspection.inspect("svelte.status")`,
+ * over the one shared installed-package inventory resolved through
+ * `context.inspection.inspect("packages")`. This phase never runs `npm ls`, never reads a
+ * manifest, Svelte config, or Vite config, and never stats a generated path itself.
+ *
+ * Setup still owns the policy those observations cannot express: comparing installed package
+ * versions to the manifest-derived locked requirements, and comparing each validated project Node
+ * engine range to the root Node minimum.
+ *
+ * The single `svelte.prepare` mutation invalidates exactly `"svelte.cv"` and `"svelte.status"` in
+ * a `finally` block whenever it is attempted, then re-inspects both immediately after an
+ * `"executed"` disposition. The shared `"packages"` fact is never invalidated: `svelte-kit sync`
+ * cannot change installed package metadata. Planned and declined actions never invalidate or
+ * fabricate facts, and a successful command is never treated as proof of readiness.
+ *
+ * Every capability the phase observes — the process runner and the clock — comes from the
+ * invocation-scoped {@link SetupPhaseRuntime}. This phase reads no ambient Node state, owns no
+ * filesystem access of its own, and measures no time itself.
  */
 
-import {readFile, stat} from "node:fs/promises";
-import {resolve} from "node:path";
+import {parseVersion, satisfiesMinimum, type MinimumVersion} from "./common/requirements.ts";
+import type {ProcessOutcome, ProcessRequest, SucceededProcessOutcome} from "./common/runner.ts";
+import {CommandCancellation} from "./common/runtime.ts";
+import type {SvelteFacts, SvelteProjectId} from "./inspection/frontend.ts";
+import {SVELTE_INSPECTED_PACKAGE_NAMES, type PackageInventoryFacts} from "./inspection/packages.ts";
+import type {InspectionOutcome} from "./inspection/types.ts";
+import {
+  requireSetupPhaseRuntime,
+  type SetupContext,
+  type SetupPhaseDefinition,
+  type SetupPhaseResult,
+  type SetupPhaseRuntime,
+} from "./setup.types.ts";
 
-import type {CommandResult, CommandSpec} from "./common/process.ts";
-import {satisfiesMinimum, type MinimumVersion} from "./common/requirements.ts";
-import type {SetupContext, SetupPhaseDefinition, SetupPhaseResult} from "./setup.types.ts";
+/** Result of evaluating the `svelte.prepare` mutation and its immediate cache refresh. */
+type SveltePrepareOutcome =
+  Readonly<{disposition: "planned"}> | Readonly<{disposition: "declined"}> | Readonly<{disposition: "executed"; outcomes: ProjectOutcomes}>;
 
-type WorkspaceName = "cv" | "status";
-type UnknownRecord = Readonly<Record<string, unknown>>;
-type InspectedPathKind = "file" | "directory" | "other" | "missing";
-type InstalledEvidenceMode = "inspect" | "defer";
+type ProjectOutcomes = Readonly<Record<SvelteProjectId, InspectionOutcome<SvelteFacts>>>;
+type ProjectFacts = Readonly<Record<SvelteProjectId, SvelteFacts>>;
 
-interface WorkspaceDefinition {
-  readonly name: WorkspaceName;
-  readonly root: (context: SetupContext) => string;
-  readonly packageName: string;
-  readonly workspace: string;
+interface InventoryComparison {
+  readonly absent: readonly string[];
+  readonly defects: readonly string[];
 }
 
-interface SvelteWorkspaceInspection extends SvelteWorkspaceState {
-  readonly generatedConfigPath: string;
-  readonly generatedConfigKind: InspectedPathKind;
-  readonly installedEvidenceDeferred: boolean;
-}
-
-/** Injectable filesystem boundaries used by the Svelte setup phase. */
-export interface SvelteSetupDependencies {
-  /** Reads one UTF-8 text file. */
-  readonly readTextFile: (path: string) => Promise<string>;
-  /** Inspects whether a path is a file, directory, another object, or absent. */
-  readonly inspectPath: (path: string) => Promise<InspectedPathKind>;
-}
-
-/** Read-only state for one Svelte workspace. */
-export interface SvelteWorkspaceState {
-  /** Stable setup workspace name. */
-  readonly name: WorkspaceName;
-  /** Canonical workspace root. */
-  readonly root: string;
-  /** Whether manifest, Node, root requirement, and installed package contracts are valid. */
-  readonly packageContractValid: boolean;
-  /** Whether `.svelte-kit/tsconfig.json` is a regular file. */
-  readonly generatedConfigExists: boolean;
-  /** Deterministically ordered workspace problems. */
-  readonly problems: readonly string[];
-}
-
-const REQUIRED_PACKAGES = [
-  "@sveltejs/kit",
-  "@sveltejs/vite-plugin-svelte",
-  "svelte",
-  "svelte-adapter-azure-swa",
-  "vite",
-  "vitest",
-  "typescript",
-] as const;
-const WORKSPACES: Readonly<Record<WorkspaceName, WorkspaceDefinition>> = {
-  cv: {
-    name: "cv",
-    root: (context) => context.paths.cvRoot,
-    packageName: "@arolariu/cv",
-    workspace: "sites/cv.arolariu.ro",
-  },
-  status: {
-    name: "status",
-    root: (context) => context.paths.statusRoot,
-    packageName: "@arolariu/status",
-    workspace: "sites/status.arolariu.ro",
-  },
-};
+const PROJECT_IDS = ["cv", "status"] as const;
+const PROJECT_KEYS = {cv: "svelte.cv", status: "svelte.status"} as const;
+const ROOT_DEPENDENCIES_ACTION = "workspace.root-dependencies";
 const PREPARE_ACTION_ID = "svelte.prepare";
-const PREPARE_COMMAND: CommandSpec = {
+/**
+ * Bounded ceiling for the long-running generated-state preparation this phase owns.
+ *
+ * @remarks
+ * The invocation-scoped runner defaults to a probe-sized timeout, which would truncate a
+ * two-workspace `svelte-kit sync`. The mutation therefore requests this ceiling explicitly,
+ * preserving the pre-migration `tee` mutation timeout the deprecated setup runner bridge used to
+ * supply implicitly.
+ */
+const LONG_RUNNING_MUTATION_TIMEOUT_MS = 1_200_000;
+const PREPARE_COMMAND: ProcessRequest = {
   command: "npm",
   args: ["run", "prepare", "--workspace=sites/cv.arolariu.ro", "--workspace=sites/status.arolariu.ro"],
 };
 
-function isRecord(value: unknown): value is UnknownRecord {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
 function isInterrupted(error: unknown): boolean {
-  return error instanceof Error && error.name === "AbortError";
-}
-
-function hasErrorCode(error: unknown, code: string): boolean {
-  return error instanceof Error && "code" in error && error.code === code;
+  return error instanceof CommandCancellation || (error instanceof Error && error.name === "AbortError");
 }
 
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
-function isSuccessfulCommand(result: Readonly<CommandResult>): boolean {
-  return result.code === 0 && !result.timedOut && result.signal === undefined && result.spawnError === undefined;
+function isSuccessfulOutcome(outcome: Readonly<ProcessOutcome>): outcome is SucceededProcessOutcome {
+  return outcome.kind === "succeeded";
 }
 
-function commandFailureEvidence(result: Readonly<CommandResult>): readonly string[] {
-  return [
-    ...(result.spawnError === undefined ? [] : [`Unable to start command: ${result.spawnError}`]),
-    ...(result.timedOut ? ["Command timed out."] : []),
-    ...(result.signal === undefined ? [] : [`Command stopped with signal ${result.signal}.`]),
-    ...(result.code === 0 ? [] : [`Command exited with code ${result.code}.`]),
-    ...(result.stdout.trim() === "" ? [] : [`stdout: ${result.stdout.trim()}`]),
-    ...(result.stderr.trim() === "" ? [] : [`stderr: ${result.stderr.trim()}`]),
-  ];
+/**
+ * Renders one failed process outcome as concise, secret-free setup evidence.
+ *
+ * @param outcome - Completed process outcome.
+ * @returns Evidence lines naming the transport failure and any captured output.
+ */
+function commandFailureEvidence(outcome: Readonly<ProcessOutcome>): readonly string[] {
+  const evidence: string[] = [];
+  switch (outcome.kind) {
+    case "succeeded":
+      break;
+    case "exited":
+      evidence.push(`Command exited with code ${String(outcome.exitCode)}.`);
+      break;
+    case "signalled":
+      evidence.push(`Command stopped with signal ${outcome.signal}.`);
+      break;
+    case "spawn-failed":
+      evidence.push(`Unable to start command: ${outcome.message}`);
+      break;
+    case "timed-out":
+      evidence.push("Command timed out.");
+      if (outcome.signal !== undefined) {
+        evidence.push(`Command stopped with signal ${outcome.signal}.`);
+      }
+      break;
+    case "cancelled":
+      evidence.push("Command was cancelled.");
+      break;
+  }
+
+  if (outcome.stdout.trim() !== "") {
+    evidence.push(`stdout: ${outcome.stdout.trim()}`);
+  }
+  if (outcome.stderr.trim() !== "") {
+    evidence.push(`stderr: ${outcome.stderr.trim()}`);
+  }
+
+  return evidence;
 }
 
 function normalizedVersion(version: MinimumVersion): string {
   return `${version.major}.${version.minor}.${version.patch}`;
 }
 
-function parseNodeMinimum(value: string): MinimumVersion | null {
-  const match = /^>=(0|[1-9]\d*)(?:\.(0|[1-9]\d*))?(?:\.(0|[1-9]\d*))?$/u.exec(value.trim());
-  if (match === null) {
-    return null;
-  }
+function phaseResult(runtime: SetupPhaseRuntime, startedAt: number, input: Omit<SetupPhaseResult, "durationMs">): SetupPhaseResult {
   return {
-    major: Number(match[1]),
-    minor: Number(match[2] ?? 0),
-    patch: Number(match[3] ?? 0),
+    ...input,
+    durationMs: Math.max(0, runtime.clock.monotonicNow() - startedAt),
   };
 }
 
-function defaultDependencies(): SvelteSetupDependencies {
+function failedResult(summary: string, evidence: readonly string[], nextActions: readonly string[]): SetupPhaseResult {
   return {
-    readTextFile: (path) => readFile(path, "utf8"),
-    inspectPath: async (path) => {
-      try {
-        const entry = await stat(path);
-        if (entry.isFile()) {
-          return "file";
-        }
-        if (entry.isDirectory()) {
-          return "directory";
-        }
-        return "other";
-      } catch (error: unknown) {
-        if (hasErrorCode(error, "ENOENT")) {
-          return "missing";
-        }
-        throw error;
-      }
-    },
+    id: "svelte",
+    status: "failed",
+    summary,
+    evidence,
+    nextActions,
+    durationMs: 0,
   };
 }
 
-function requiredObject(record: UnknownRecord, key: string, source: string, problems: string[]): UnknownRecord | null {
-  const value = record[key];
-  if (!isRecord(value)) {
-    problems.push(`${source}#${key} must be an object.`);
-    return null;
+/**
+ * Converts a non-`"available"` inspection outcome into bounded, non-secret evidence.
+ *
+ * @param outcome - An inspection outcome that did not resolve a value.
+ * @returns Zero or more bounded evidence lines; never raw command output.
+ */
+function outcomeEvidence(outcome: Readonly<InspectionOutcome<unknown>>): readonly string[] {
+  if (outcome.kind === "unavailable") {
+    return [outcome.reason];
   }
-  return value;
+  if (outcome.kind === "invalid") {
+    return [...outcome.issues];
+  }
+  return [];
 }
 
-function validateManifest(
-  contents: string,
-  manifestPath: string,
-  definition: WorkspaceDefinition,
-  rootNode: MinimumVersion,
-  problems: string[],
-): void {
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(contents);
-  } catch (error: unknown) {
-    problems.push(`Unable to parse ${manifestPath}: ${errorMessage(error)}`);
-    return;
-  }
-  if (!isRecord(parsed)) {
-    problems.push(`${manifestPath} must contain a JSON object.`);
-    return;
-  }
-
-  if (parsed["name"] !== definition.packageName) {
-    problems.push(`${manifestPath} must declare exact package name '${definition.packageName}'.`);
-  }
-  if (typeof parsed["version"] !== "string" || parsed["version"].trim() === "") {
-    problems.push(`${manifestPath} must declare a nonempty version string.`);
-  }
-
-  const scripts = requiredObject(parsed, "scripts", manifestPath, problems);
-  if (scripts !== null && (typeof scripts["prepare"] !== "string" || scripts["prepare"].trim() === "")) {
-    problems.push(`${manifestPath}#scripts.prepare must be a nonempty string.`);
-  }
-
-  const engines = requiredObject(parsed, "engines", manifestPath, problems);
-  if (engines !== null) {
-    const node = engines["node"];
-    if (typeof node !== "string") {
-      problems.push(`${manifestPath}#engines.node must be a string.`);
-    } else {
-      const siteMinimum = parseNodeMinimum(node);
-      if (siteMinimum === null) {
-        problems.push(`${manifestPath}#engines.node uses unsupported engine syntax '${node}'.`);
-      } else if (!satisfiesMinimum(rootNode, siteMinimum)) {
-        problems.push(
-          `Root Node minimum ${normalizedVersion(rootNode)} does not satisfy ${definition.name} minimum ${normalizedVersion(siteMinimum)}.`,
-        );
-      }
-    }
-  }
-
-  const devDependencies = requiredObject(parsed, "devDependencies", manifestPath, problems);
-  if (devDependencies !== null) {
-    for (const packageName of REQUIRED_PACKAGES) {
-      if (devDependencies[packageName] !== "*") {
-        problems.push(`${manifestPath}#devDependencies.${packageName} must be declared exactly as '*'.`);
-      }
-    }
-  }
+/**
+ * Determines whether one shared Svelte issue reports absence a planned restoration can repair.
+ *
+ * @param issue - One deterministic package or adapter issue from the shared project facts.
+ * @returns Whether the issue reports an uninstalled package rather than a static defect.
+ */
+function isAbsentInstallationIssue(issue: string): boolean {
+  return issue.endsWith(" is not installed.");
 }
 
-function expectedPackageVersions(context: SetupContext, problems: string[]): ReadonlyMap<string, string> {
-  const expected = new Map<string, string>();
-  for (const packageName of REQUIRED_PACKAGES) {
+/**
+ * Selects the manifest-derived locked versions this phase enforces for both projects.
+ *
+ * @param context - Active setup context carrying the manifest-derived requirements.
+ * @returns Locked versions and every unusable root requirement.
+ */
+function lockedPackageVersions(context: SetupContext): Readonly<{versions: ReadonlyMap<string, string>; problems: readonly string[]}> {
+  const versions = new Map<string, string>();
+  const problems: string[] = [];
+  for (const packageName of SVELTE_INSPECTED_PACKAGE_NAMES) {
     const requirement = context.requirements.packages.get(packageName);
     if (requirement === undefined || requirement.version.trim() === "") {
       problems.push(`Manifest-derived root requirement '${packageName}' is missing or blank.`);
-    } else {
-      expected.set(packageName, requirement.version);
+      continue;
+    }
+    versions.set(packageName, requirement.version);
+  }
+  return {versions, problems};
+}
+
+function comparePackageInventory(locked: ReadonlyMap<string, string>, inventory: Readonly<PackageInventoryFacts>): InventoryComparison {
+  const absent: string[] = [];
+  const defects: string[] = [];
+  for (const [packageName, expected] of locked) {
+    if (inventory.malformed.includes(packageName)) {
+      defects.push(`Installed package metadata is malformed for '${packageName}'.`);
+      continue;
+    }
+    const installed = inventory.installed[packageName];
+    if (installed === undefined) {
+      absent.push(packageName);
+      continue;
+    }
+    if (installed.version !== expected) {
+      defects.push(`Required package '${packageName}' expected ${expected}, but the installed inventory reported ${installed.version}.`);
     }
   }
-  return expected;
+  return {absent, defects};
 }
 
-function packageInspectionCommand(definition: WorkspaceDefinition): CommandSpec {
-  return {
-    command: "npm",
-    args: ["ls", "--json", "--depth=0", `--workspace=${definition.workspace}`, ...REQUIRED_PACKAGES],
-  };
-}
+/**
+ * Collects every setup-owned problem for one project from its shared facts.
+ *
+ * @param facts - The newest verified facts for one standalone SvelteKit project.
+ * @param rootNode - Manifest-derived root Node minimum.
+ * @param deferAbsentInstallations - Whether absent-package issues are deferred to a planned action.
+ * @returns Deterministically ordered, project-prefixed problems.
+ */
+function projectProblems(facts: Readonly<SvelteFacts>, rootNode: MinimumVersion, deferAbsentInstallations: boolean): readonly string[] {
+  const relevant = (issues: readonly string[]): readonly string[] =>
+    deferAbsentInstallations ? issues.filter((issue) => !isAbsentInstallationIssue(issue)) : issues;
 
-function collectInstalledVersions(
-  value: unknown,
-  targets: ReadonlySet<string>,
-  versions: Map<string, string[]>,
-  problems: string[],
-  location: string,
-): void {
-  if (!isRecord(value)) {
-    return;
-  }
-  const dependencies = value["dependencies"];
-  if (!isRecord(dependencies)) {
-    return;
-  }
-  for (const [name, dependency] of Object.entries(dependencies)) {
-    const dependencyLocation = `${location} > ${name}`;
-    if (targets.has(name)) {
-      if (!isRecord(dependency) || typeof dependency["version"] !== "string" || dependency["version"].trim() === "") {
-        problems.push(`${dependencyLocation} has no installed version.`);
-      } else {
-        const found = versions.get(name) ?? [];
-        found.push(dependency["version"]);
-        versions.set(name, found);
-      }
+  const problems = [...relevant(facts.packageIssues), ...facts.scriptIssues, ...relevant(facts.adapterIssues)];
+
+  if (facts.nodeEngine !== undefined) {
+    const projectMinimum = facts.nodeEngine.startsWith(">=") ? parseVersion(facts.nodeEngine.slice(2)) : null;
+    if (projectMinimum === null) {
+      problems.push(`package.json#engines.node uses unsupported engine syntax '${facts.nodeEngine}'.`);
+    } else if (!satisfiesMinimum(rootNode, projectMinimum)) {
+      problems.push(
+        `Root Node minimum ${normalizedVersion(rootNode)} does not satisfy the project minimum ${normalizedVersion(projectMinimum)}.`,
+      );
     }
-    collectInstalledVersions(dependency, targets, versions, problems, dependencyLocation);
   }
+
+  return problems.map((problem) => `${facts.id}: ${problem}`);
 }
 
-function validateInstalledEvidence(
-  result: Readonly<CommandResult>,
-  definition: WorkspaceDefinition,
-  expected: ReadonlyMap<string, string>,
-  problems: string[],
-): void {
-  if (!isSuccessfulCommand(result)) {
-    problems.push([`Workspace package inspection failed for ${definition.name}.`, ...commandFailureEvidence(result)].join(" "));
-    return;
-  }
-  if (result.stdout.trim() === "") {
-    problems.push(`Workspace package inspection for ${definition.name} produced empty JSON output.`);
-    return;
-  }
+/**
+ * Inspects both shared standalone SvelteKit project facts, in fixed order.
+ *
+ * @param context - Active setup context, including the repository inspection session.
+ * @returns One inspection outcome per project.
+ */
+async function inspectProjects(context: SetupContext): Promise<ProjectOutcomes> {
+  const cv = await context.inspection.inspect(PROJECT_KEYS.cv);
+  const status = await context.inspection.inspect(PROJECT_KEYS.status);
+  return {cv, status};
+}
 
-  let parsed: unknown;
+function unresolvedProjectEvidence(outcomes: ProjectOutcomes): readonly string[] {
+  return PROJECT_IDS.flatMap((id) => outcomeEvidence(outcomes[id]).map((line) => `${id}: ${line}`));
+}
+
+function resolvedProjectFacts(outcomes: ProjectOutcomes): ProjectFacts | null {
+  const cv = outcomes.cv;
+  const status = outcomes.status;
+  if (cv.kind !== "available" || status.kind !== "available") {
+    return null;
+  }
+  return {cv: cv.value, status: status.value};
+}
+
+/**
+ * Runs the single policy-controlled `svelte.prepare` mutation with cache-freshness guarantees.
+ *
+ * @remarks
+ * Both Svelte fact keys are invalidated exactly once inside a `finally` block whenever the
+ * mutation was actually attempted, so a failed or interrupted `svelte-kit sync` can never leave a
+ * partially generated workspace described by stale cached facts. A `"planned"` or `"declined"`
+ * action never attempts the mutation and therefore never invalidates anything. After an
+ * `"executed"` disposition both already-invalidated keys are inspected exactly once.
+ *
+ * @param context - Active setup context, including the repository inspection session.
+ * @param runtime - Invocation-scoped capabilities the preparation command runs through.
+ * @returns The action disposition, plus both refreshed outcomes when the mutation executed.
+ * @throws Whatever the mutation or the action executor throws, including `AbortError`.
+ */
+async function runSveltePrepare(context: SetupContext, runtime: SetupPhaseRuntime): Promise<SveltePrepareOutcome> {
+  let attempted = false;
   try {
-    parsed = JSON.parse(result.stdout);
-  } catch (error: unknown) {
-    problems.push(`Unable to parse ${definition.name} npm evidence: ${errorMessage(error)}`);
-    return;
-  }
-  if (!isRecord(parsed)) {
-    problems.push(`${definition.name} npm evidence must contain a JSON object.`);
-    return;
-  }
-  const rootDependencies = parsed["dependencies"];
-  const selectedWorkspace = isRecord(rootDependencies) ? rootDependencies[definition.packageName] : undefined;
-  if (!isRecord(selectedWorkspace)) {
-    problems.push(`${definition.name} npm evidence is missing selected workspace '${definition.packageName}'.`);
-    return;
-  }
-
-  const versions = new Map<string, string[]>();
-  collectInstalledVersions(selectedWorkspace, new Set(REQUIRED_PACKAGES), versions, problems, definition.packageName);
-  for (const packageName of REQUIRED_PACKAGES) {
-    const installedVersions = versions.get(packageName) ?? [];
-    if (installedVersions.length === 0) {
-      problems.push(`Required package '${packageName}' is absent from ${definition.name} workspace npm evidence.`);
-      continue;
+    const disposition = await context.actions.run({
+      id: PREPARE_ACTION_ID,
+      scope: "repository",
+      summary: "Prepare generated SvelteKit workspace configuration.",
+      execute: async () => {
+        attempted = true;
+        const prepareResult = await runtime.runner.run(PREPARE_COMMAND, {
+          cwd: context.paths.root,
+          output: "tee",
+          logger: context.logger,
+          timeoutMs: LONG_RUNNING_MUTATION_TIMEOUT_MS,
+        });
+        if (!isSuccessfulOutcome(prepareResult)) {
+          throw new Error(["svelte.prepare command failed.", ...commandFailureEvidence(prepareResult)].join("\n"));
+        }
+      },
+    });
+    if (disposition !== "executed") {
+      return disposition === "planned" ? {disposition: "planned"} : {disposition: "declined"};
     }
-    const expectedVersion = expected.get(packageName);
-    if (expectedVersion === undefined) {
-      continue;
-    }
-    for (const installedVersion of installedVersions) {
-      if (installedVersion !== expectedVersion) {
-        problems.push(
-          `Required package '${packageName}' expected ${expectedVersion}, but ${definition.name} npm evidence reported ${installedVersion}.`,
-        );
-      }
+  } finally {
+    if (attempted) {
+      context.inspection.invalidate(PROJECT_KEYS.cv, PROJECT_KEYS.status);
     }
   }
+  return {disposition: "executed", outcomes: await inspectProjects(context)};
 }
 
-async function inspectWorkspace(
+/**
+ * Ensures both generated SvelteKit configurations exist, verified from refreshed facts.
+ *
+ * @param context - Active setup context.
+ * @param runtime - Invocation-scoped capabilities the preparation command runs through.
+ * @param facts - The facts observed before this step.
+ * @param rootNode - Manifest-derived root Node minimum.
+ * @param deferAbsentInstallations - Whether absent-package issues are deferred to a planned action.
+ * @param evidence - Mutable accumulator of human-readable phase evidence.
+ * @returns Either a terminal phase result, or `null` when preparation is unnecessary or planned.
+ */
+async function ensureGeneratedConfiguration(
   context: SetupContext,
-  definition: WorkspaceDefinition,
-  dependencies: SvelteSetupDependencies,
-  installedEvidenceMode: InstalledEvidenceMode,
-): Promise<SvelteWorkspaceInspection> {
-  const root = definition.root(context);
-  const manifestPath = resolve(root, "package.json");
-  const generatedConfigPath = resolve(root, ".svelte-kit", "tsconfig.json");
-  const packageProblems: string[] = [];
-  const generatedProblems: string[] = [];
-
-  let manifestContents: string | null = null;
-  try {
-    manifestContents = await dependencies.readTextFile(manifestPath);
-  } catch (error: unknown) {
-    if (isInterrupted(error)) {
-      throw error;
-    }
-    packageProblems.push(`Unable to read ${manifestPath}: ${errorMessage(error)}`);
+  runtime: SetupPhaseRuntime,
+  facts: ProjectFacts,
+  rootNode: MinimumVersion,
+  deferAbsentInstallations: boolean,
+  evidence: string[],
+): Promise<Readonly<{result: SetupPhaseResult}> | Readonly<{planned: boolean}>> {
+  const absentProjects = PROJECT_IDS.filter((id) => !facts[id].generatedConfigExists);
+  if (absentProjects.length === 0) {
+    return {planned: false};
   }
 
-  if (manifestContents !== null) {
-    validateManifest(manifestContents, manifestPath, definition, context.requirements.node, packageProblems);
+  const mutation = await runSveltePrepare(context, runtime);
+  if (mutation.disposition === "declined") {
+    return {
+      result: failedResult(
+        "Required SvelteKit generated-state preparation was declined.",
+        [...evidence, `Declined action: ${PREPARE_ACTION_ID}`],
+        [`Allow the repository-scoped ${PREPARE_ACTION_ID} action, then rerun setup.`],
+      ),
+    };
   }
-  const expected = expectedPackageVersions(context, packageProblems);
-
-  let generatedConfigKind: InspectedPathKind = "missing";
-  try {
-    generatedConfigKind = await dependencies.inspectPath(generatedConfigPath);
-    if (generatedConfigKind === "directory") {
-      generatedProblems.push(`Generated config path is a directory, not a regular file: ${generatedConfigPath}`);
-    } else if (generatedConfigKind === "other") {
-      generatedProblems.push(`Generated config path has invalid path kind 'other': ${generatedConfigPath}`);
-    }
-  } catch (error: unknown) {
-    if (isInterrupted(error)) {
-      throw error;
-    }
-    generatedConfigKind = "other";
-    generatedProblems.push(`Unable to inspect generated config '${generatedConfigPath}': ${errorMessage(error)}`);
-  }
-
-  if (installedEvidenceMode === "inspect") {
-    try {
-      const result = await context.runner.run(packageInspectionCommand(definition), {cwd: context.paths.root});
-      validateInstalledEvidence(result, definition, expected, packageProblems);
-    } catch (error: unknown) {
-      if (isInterrupted(error)) {
-        throw error;
-      }
-      packageProblems.push(`Unable to inspect ${definition.name} installed packages: ${errorMessage(error)}`);
-    }
-  }
-
-  return {
-    name: definition.name,
-    root,
-    packageContractValid: packageProblems.length === 0,
-    generatedConfigExists: generatedConfigKind === "file",
-    problems: [...packageProblems, ...generatedProblems],
-    generatedConfigPath,
-    generatedConfigKind,
-    installedEvidenceDeferred: installedEvidenceMode === "defer",
-  };
-}
-
-function workspaceEvidence(state: SvelteWorkspaceInspection): readonly string[] {
-  const evidence = state.problems.map((problem) => `${state.name}: ${problem}`);
-  if (state.packageContractValid) {
+  if (mutation.disposition === "planned") {
     evidence.push(
-      state.installedEvidenceDeferred
-        ? `${state.name}: package contract static validation passed; installed npm evidence is deferred.`
-        : `${state.name}: package contract and installed evidence are ready.`,
+      `Planned action: ${PREPARE_ACTION_ID}`,
+      ...absentProjects.map((id) => `${id}: the generated config remains a postcondition for ${PREPARE_ACTION_ID}.`),
     );
+    return {planned: true};
   }
-  if (state.generatedConfigExists) {
-    evidence.push(`${state.name}: generated config is a regular file: ${state.generatedConfigPath}`);
-  } else if (state.generatedConfigKind === "missing") {
-    evidence.push(`${state.name}: generated config is missing: ${state.generatedConfigPath}`);
+
+  // A successful `svelte-kit sync` command is never sufficient proof of readiness: both generated
+  // configs, and every package/script/adapter contract, must hold in refreshed, invalidated facts.
+  const refreshed = resolvedProjectFacts(mutation.outcomes);
+  if (refreshed === null) {
+    return {
+      result: failedResult(
+        "The SvelteKit workspaces could not be verified after preparation.",
+        [...evidence, `Failed postcondition for action: ${PREPARE_ACTION_ID}`, ...unresolvedProjectEvidence(mutation.outcomes)],
+        [`Resolve and rerun required action '${PREPARE_ACTION_ID}'.`],
+      ),
+    };
   }
-  return evidence;
+
+  const problems = PROJECT_IDS.flatMap((id) => [
+    ...(refreshed[id].generatedConfigExists ? [] : [`${id}: the generated config is still absent.`]),
+    ...projectProblems(refreshed[id], rootNode, deferAbsentInstallations),
+  ]);
+  if (problems.length > 0) {
+    return {
+      result: failedResult(
+        "SvelteKit preparation completed without every generated config postcondition.",
+        [...evidence, `Failed postcondition for action: ${PREPARE_ACTION_ID}`, ...problems],
+        ["Inspect the SvelteKit prepare scripts; do not replace them with a build, type-check, or test command."],
+      ),
+    };
+  }
+  evidence.push(`Executed and verified action: ${PREPARE_ACTION_ID}`);
+  return {planned: false};
 }
 
-function phaseResult(context: SetupContext, startedAt: number, input: Omit<SetupPhaseResult, "durationMs">): SetupPhaseResult {
-  return {
-    ...input,
-    durationMs: Math.max(0, context.now() - startedAt),
-  };
-}
-
-async function inspectPostconditions(
-  states: readonly SvelteWorkspaceInspection[],
-  dependencies: SvelteSetupDependencies,
-): Promise<readonly string[]> {
-  const problems: string[] = [];
-  for (const state of states) {
-    try {
-      const kind = await dependencies.inspectPath(state.generatedConfigPath);
-      if (kind !== "file") {
-        problems.push(`${state.name}: svelte.prepare postcondition is ${kind}, not a regular file: ${state.generatedConfigPath}`);
-      }
-    } catch (error: unknown) {
-      if (isInterrupted(error)) {
-        throw error;
-      }
-      problems.push(`${state.name}: unable to inspect svelte.prepare postcondition '${state.generatedConfigPath}': ${errorMessage(error)}`);
-    }
-  }
-  return problems;
-}
-
-async function runSvelteSetup(context: SetupContext, dependencies: SvelteSetupDependencies): Promise<SetupPhaseResult> {
-  const startedAt = context.now();
+async function runSvelteSetup(context: SetupContext): Promise<SetupPhaseResult> {
+  const runtime = requireSetupPhaseRuntime(context);
+  const startedAt = runtime.clock.monotonicNow();
   const evidence: string[] = [];
 
   try {
-    const nodeModulesPath = resolve(context.paths.root, "node_modules");
-    const rootDependenciesKind = await dependencies.inspectPath(nodeModulesPath);
-    const installedEvidenceMode: InstalledEvidenceMode = rootDependenciesKind === "directory" ? "inspect" : "defer";
-    const states: SvelteWorkspaceInspection[] = [];
-    for (const name of ["cv", "status"] as const) {
-      states.push(await inspectWorkspace(context, WORKSPACES[name], dependencies, installedEvidenceMode));
-    }
-    evidence.push(...states.flatMap(workspaceEvidence));
-    if (rootDependenciesKind === "missing" && context.options.dryRun) {
-      evidence.push("root: workspace-scoped npm evidence is deferred until planned workspace.root-dependencies restoration.");
+    const locked = lockedPackageVersions(context);
+    if (locked.problems.length > 0) {
+      return phaseResult(
+        runtime,
+        startedAt,
+        failedResult(
+          "The manifest-derived Svelte package requirements are invalid.",
+          [...evidence, ...locked.problems],
+          ["Correct the root package requirements, then rerun setup."],
+        ),
+      );
     }
 
-    if (rootDependenciesKind !== "directory" && rootDependenciesKind !== "missing") {
-      evidence.push(`root: node_modules must be a directory; found ${rootDependenciesKind}: ${nodeModulesPath}`);
+    const packagesOutcome = await context.inspection.inspect("packages");
+    if (packagesOutcome.kind !== "available") {
+      return phaseResult(
+        runtime,
+        startedAt,
+        failedResult(
+          "The shared installed-package inventory could not be inspected.",
+          [...evidence, ...outcomeEvidence(packagesOutcome)],
+          ["Resolve the reported Svelte setup failure, then rerun setup."],
+        ),
+      );
     }
-    const invalidGeneratedPath = states.some(
-      ({generatedConfigKind}) => generatedConfigKind !== "file" && generatedConfigKind !== "missing",
+
+    const outcomes = await inspectProjects(context);
+    const facts = resolvedProjectFacts(outcomes);
+    if (facts === null) {
+      return phaseResult(
+        runtime,
+        startedAt,
+        failedResult(
+          "The shared Svelte workspace facts could not be inspected.",
+          [...evidence, ...unresolvedProjectEvidence(outcomes)],
+          ["Resolve the reported Svelte setup failure, then rerun setup."],
+        ),
+      );
+    }
+
+    const comparison = comparePackageInventory(locked.versions, packagesOutcome.value);
+    if (comparison.defects.length > 0) {
+      return phaseResult(
+        runtime,
+        startedAt,
+        failedResult(
+          "The installed Svelte packages do not satisfy their locked requirements.",
+          [...evidence, ...comparison.defects],
+          ["Correct the reported Svelte workspace contracts, then rerun setup."],
+        ),
+      );
+    }
+    const deferAbsentInstallations = comparison.absent.length > 0 && context.options.dryRun;
+    if (comparison.absent.length > 0 && !context.options.dryRun) {
+      return phaseResult(
+        runtime,
+        startedAt,
+        failedResult(
+          "Required Svelte packages are not installed.",
+          [...evidence, `Absent required package(s): ${comparison.absent.join(", ")}.`],
+          [`Complete ${ROOT_DEPENDENCIES_ACTION}, then rerun setup.`],
+        ),
+      );
+    }
+    evidence.push(
+      deferAbsentInstallations
+        ? `Deferred absent required package(s) to the planned ${ROOT_DEPENDENCIES_ACTION} action: ${comparison.absent.join(", ")}.`
+        : `Verified ${locked.versions.size} locked Svelte package(s) from shared facts.`,
     );
-    if (
-      states.some(({packageContractValid}) => !packageContractValid)
-      || invalidGeneratedPath
-      || (rootDependenciesKind !== "directory" && rootDependenciesKind !== "missing")
-    ) {
-      return phaseResult(context, startedAt, {
-        id: "svelte",
-        status: "failed",
-        summary: "The required Svelte workspace contracts are invalid.",
-        evidence,
-        nextActions: ["Correct the reported Svelte workspace contracts, then rerun setup."],
-      });
+
+    const problems = PROJECT_IDS.flatMap((id) => projectProblems(facts[id], context.requirements.node, deferAbsentInstallations));
+    if (problems.length > 0) {
+      return phaseResult(
+        runtime,
+        startedAt,
+        failedResult(
+          "The required Svelte workspace contracts are invalid.",
+          [...evidence, ...problems],
+          ["Correct the reported Svelte workspace contracts, then rerun setup."],
+        ),
+      );
+    }
+    evidence.push(...PROJECT_IDS.map((id) => `${id}: package, script, adapter, and Node engine contracts are valid.`));
+
+    const generated = await ensureGeneratedConfiguration(
+      context,
+      runtime,
+      facts,
+      context.requirements.node,
+      deferAbsentInstallations,
+      evidence,
+    );
+    if ("result" in generated) {
+      return phaseResult(runtime, startedAt, generated.result);
     }
 
-    if (rootDependenciesKind === "missing" && !context.options.dryRun) {
-      evidence.push("root: installed package evidence requires the workspace.root-dependencies action.");
-      return phaseResult(context, startedAt, {
-        id: "svelte",
-        status: "failed",
-        summary: "Svelte installed package evidence is unavailable because root dependencies are missing.",
-        evidence,
-        nextActions: ["Complete workspace.root-dependencies, then rerun setup."],
-      });
-    }
-
-    const missingStates = states.filter(({generatedConfigKind}) => generatedConfigKind === "missing");
-    if (missingStates.length > 0) {
-      const disposition = await context.actions.run({
-        id: PREPARE_ACTION_ID,
-        scope: "repository",
-        summary: "Prepare generated SvelteKit workspace configuration.",
-        execute: async () => {
-          const prepareResult = await context.runner.run(PREPARE_COMMAND, {
-            cwd: context.paths.root,
-            output: "tee",
-            logger: context.logger,
-          });
-          if (!isSuccessfulCommand(prepareResult)) {
-            throw new Error(["svelte.prepare command failed.", ...commandFailureEvidence(prepareResult)].join("\n"));
-          }
-        },
-      });
-      if (disposition === "declined") {
-        return phaseResult(context, startedAt, {
-          id: "svelte",
-          status: "failed",
-          summary: "Required SvelteKit generated-state preparation was declined.",
-          evidence: [...evidence, `Declined action: ${PREPARE_ACTION_ID}`],
-          nextActions: [`Allow the repository-scoped ${PREPARE_ACTION_ID} action, then rerun setup.`],
-        });
-      }
-      if (disposition === "planned") {
-        return phaseResult(context, startedAt, {
-          id: "svelte",
-          status: "skipped",
-          summary: "SvelteKit generated-state preparation is planned by dry-run.",
-          evidence: [
-            ...evidence,
-            `Planned action: ${PREPARE_ACTION_ID}`,
-            ...missingStates.map(
-              (state) => `${state.name}: generated config remains a postcondition for ${PREPARE_ACTION_ID}: ${state.generatedConfigPath}`,
-            ),
-          ],
-          nextActions: [],
-        });
-      }
-
-      const postconditionProblems = await inspectPostconditions(states, dependencies);
-      if (postconditionProblems.length > 0) {
-        return phaseResult(context, startedAt, {
-          id: "svelte",
-          status: "failed",
-          summary: "SvelteKit preparation completed without every generated config postcondition.",
-          evidence: [...evidence, ...postconditionProblems],
-          nextActions: ["Inspect the SvelteKit prepare scripts; do not replace them with a build, type-check, or test command."],
-        });
-      }
-      evidence.push(`Executed and verified action: ${PREPARE_ACTION_ID}`);
-    }
-
-    if (rootDependenciesKind === "missing") {
-      return phaseResult(context, startedAt, {
+    if (generated.planned || deferAbsentInstallations) {
+      return phaseResult(runtime, startedAt, {
         id: "svelte",
         status: "skipped",
-        summary: "Svelte installed package evidence is deferred by fresh-checkout dry-run.",
+        summary: "Svelte workspace preparation actions and postconditions are planned by dry-run.",
         evidence,
         nextActions: [],
       });
     }
 
-    return phaseResult(context, startedAt, {
+    return phaseResult(runtime, startedAt, {
       id: "svelte",
       status: "succeeded",
       summary: "Both Svelte workspaces have valid package contracts and generated configuration.",
@@ -556,7 +506,7 @@ async function runSvelteSetup(context: SetupContext, dependencies: SvelteSetupDe
     if (isInterrupted(error)) {
       throw error;
     }
-    return phaseResult(context, startedAt, {
+    return phaseResult(runtime, startedAt, {
       id: "svelte",
       status: "failed",
       summary: "The required Svelte workspace preparation phase failed.",
@@ -567,70 +517,17 @@ async function runSvelteSetup(context: SetupContext, dependencies: SvelteSetupDe
 }
 
 /**
- * Inspects one Svelte workspace without mutating repository state.
+ * Creates the Svelte setup phase over the shared repository inspection session.
  *
- * @param context - Active setup context.
- * @param name - Canonical Svelte workspace name.
- * @param dependencies - Optional filesystem-boundary replacements for deterministic callers and tests.
- * @returns Manifest, installed-package, and generated-state evidence for the selected site.
- */
-export async function inspectSvelteWorkspace(
-  context: SetupContext,
-  name: WorkspaceName,
-  dependencies: Partial<SvelteSetupDependencies> = {},
-): Promise<SvelteWorkspaceState> {
-  const defaults = defaultDependencies();
-  const resolvedDependencies: SvelteSetupDependencies = {
-    readTextFile: dependencies.readTextFile ?? defaults.readTextFile,
-    inspectPath: dependencies.inspectPath ?? defaults.inspectPath,
-  };
-  const rootDependenciesPath = resolve(context.paths.root, "node_modules");
-  let rootDependenciesKind: InspectedPathKind = "other";
-  let rootInspectionProblem: string | null = null;
-  try {
-    rootDependenciesKind = await resolvedDependencies.inspectPath(rootDependenciesPath);
-  } catch (error: unknown) {
-    if (isInterrupted(error)) {
-      throw error;
-    }
-    rootInspectionProblem = `Unable to inspect root node_modules '${rootDependenciesPath}': ${errorMessage(error)} Installed package evidence could not be verified.`;
-  }
-  const installedEvidenceMode: InstalledEvidenceMode = rootDependenciesKind === "directory" ? "inspect" : "defer";
-  const inspection = await inspectWorkspace(context, WORKSPACES[name], resolvedDependencies, installedEvidenceMode);
-  const rootProblem =
-    rootInspectionProblem
-    ?? (rootDependenciesKind === "directory" || (rootDependenciesKind === "missing" && context.options.dryRun)
-      ? null
-      : rootDependenciesKind === "missing"
-        ? "Installed package evidence requires workspace.root-dependencies."
-        : `Root node_modules must be a directory; found ${rootDependenciesKind}.`);
-  return {
-    name: inspection.name,
-    root: inspection.root,
-    packageContractValid: inspection.packageContractValid && rootProblem === null,
-    generatedConfigExists: inspection.generatedConfigExists,
-    problems: rootProblem === null ? inspection.problems : [...inspection.problems, rootProblem],
-  };
-}
-
-/**
- * Creates the Svelte setup phase with explicit filesystem boundaries.
- *
- * @param dependencies - Optional production-boundary replacements for tests.
  * @returns The required Svelte setup phase definition.
  */
-export function createSvelteSetupPhase(dependencies: Partial<SvelteSetupDependencies> = {}): SetupPhaseDefinition {
-  const defaults = defaultDependencies();
-  const resolvedDependencies: SvelteSetupDependencies = {
-    readTextFile: dependencies.readTextFile ?? defaults.readTextFile,
-    inspectPath: dependencies.inspectPath ?? defaults.inspectPath,
-  };
+export function createSvelteSetupPhase(): SetupPhaseDefinition {
   return {
     id: "svelte",
     title: "Svelte workspaces",
     required: true,
-    dependsOn: ["workspace.root-dependencies"],
-    run: (context) => runSvelteSetup(context, resolvedDependencies),
+    dependsOn: [ROOT_DEPENDENCIES_ACTION],
+    run: (context) => runSvelteSetup(context),
   };
 }
 

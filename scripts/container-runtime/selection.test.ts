@@ -3,24 +3,20 @@
  * @module scripts/container-runtime/selection.test
  */
 
-import {mkdtemp, rm, writeFile} from "node:fs/promises";
-import {tmpdir} from "node:os";
-import {resolve} from "node:path";
-import {afterEach, describe, expect, it} from "vitest";
+import {describe, expect, it} from "vitest";
+import {createMemoryFileSystem} from "../common/runtime.testing.ts";
+import type {ReadOnlyFileSystem} from "../common/runtime.ts";
 import {resolveContainerEngine, resolveRuntimeContainerEngine} from "./selection.ts";
+import type {ContainerEngine} from "./types.ts";
 
-const temporaryRoots: string[] = [];
+const toolingConfigPath = "/virtual/tooling.local.json";
 
-afterEach(async () => {
-  await Promise.all(temporaryRoots.splice(0).map((path) => rm(path, {force: true, recursive: true})));
-});
+function filesWith(contents: string): ReadOnlyFileSystem {
+  return createMemoryFileSystem({[toolingConfigPath]: contents});
+}
 
-async function malformedToolingConfigPath(): Promise<string> {
-  const root = await mkdtemp(resolve(tmpdir(), "arolariu-selection-"));
-  temporaryRoots.push(root);
-  const path = resolve(root, "tooling.local.json");
-  await writeFile(path, "{ not valid json", "utf8");
-  return path;
+function malformedToolingConfig(): ReadOnlyFileSystem {
+  return filesWith("{ not valid json");
 }
 
 describe("resolveContainerEngine", () => {
@@ -108,51 +104,42 @@ describe("resolveContainerEngine", () => {
 });
 
 describe("resolveRuntimeContainerEngine", () => {
-  it("uses an explicit argument without consulting malformed persisted configuration", async () => {
-    const toolingConfigPath = await malformedToolingConfigPath();
-
+  it("uses an explicit requestedEngine without consulting malformed persisted configuration", async () => {
     await expect(
-      resolveRuntimeContainerEngine({
-        argv: ["node", "script.ts", "--engine", "podman"],
-        env: {},
-        toolingConfigPath,
-      }),
+      resolveRuntimeContainerEngine({requestedEngine: "podman", env: {}, toolingConfigPath}, malformedToolingConfig()),
     ).resolves.toEqual({engine: "podman", source: "argument"});
   });
 
   it("uses the environment without consulting malformed persisted configuration", async () => {
-    const toolingConfigPath = await malformedToolingConfigPath();
-
     await expect(
-      resolveRuntimeContainerEngine({
-        argv: ["node", "script.ts"],
-        env: {AROLARIU_CONTAINER_ENGINE: "rancher"},
-        toolingConfigPath,
-      }),
+      resolveRuntimeContainerEngine({env: {AROLARIU_CONTAINER_ENGINE: "rancher"}, toolingConfigPath}, malformedToolingConfig()),
     ).resolves.toEqual({engine: "rancher", source: "environment"});
   });
 
   it("surfaces malformed persisted configuration when no higher-priority source exists", async () => {
-    const toolingConfigPath = await malformedToolingConfigPath();
-
-    await expect(
-      resolveRuntimeContainerEngine({
-        argv: ["node", "script.ts"],
-        env: {},
-        toolingConfigPath,
-      }),
-    ).rejects.toThrow("Invalid local tooling configuration");
+    await expect(resolveRuntimeContainerEngine({env: {}, toolingConfigPath}, malformedToolingConfig())).rejects.toThrow(
+      "Invalid local tooling configuration",
+    );
   });
 
-  it("rejects an invalid explicit argument instead of falling back to persisted configuration", async () => {
-    const toolingConfigPath = await malformedToolingConfigPath();
-
+  it("rejects an invalid explicit requestedEngine instead of falling back to persisted configuration", async () => {
     await expect(
-      resolveRuntimeContainerEngine({
-        argv: ["node", "script.ts", "--engine", "colima"],
-        env: {},
-        toolingConfigPath,
-      }),
+      resolveRuntimeContainerEngine({requestedEngine: "colima" as ContainerEngine, env: {}, toolingConfigPath}, malformedToolingConfig()),
     ).rejects.toThrow("Unsupported container engine 'colima'");
+  });
+
+  it("reads persisted configuration only through the explicitly supplied filesystem", async () => {
+    const files = filesWith(JSON.stringify({schemaVersion: 1, containerEngine: "podman"}));
+
+    await expect(resolveRuntimeContainerEngine({env: {}, toolingConfigPath}, files)).resolves.toEqual({
+      engine: "podman",
+      source: "configuration",
+    });
+  });
+
+  it("requires an engine when the supplied filesystem holds no persisted configuration", async () => {
+    await expect(resolveRuntimeContainerEngine({env: {}, toolingConfigPath}, createMemoryFileSystem())).rejects.toThrow(
+      "Select a container engine with --engine rancher|podman",
+    );
   });
 });

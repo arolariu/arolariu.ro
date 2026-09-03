@@ -15,6 +15,7 @@ import {format as formatText, styleText} from "node:util";
 import Piscina from "piscina";
 import {createProgressTracker, formatBytes, logWorkerComplete, logWorkerSpawn, printWorkerTimeline} from "./common/index.ts";
 import {MonorepositoryConsoleLogger, type MonorepositoryLogger} from "./common/logger.ts";
+import {nodeLoggerRuntimeHost} from "./common/runtime.node.ts";
 import type {ESLintFileStats, LintWorkerInput, LintWorkerResult} from "./types/lint.ts";
 
 type LintTarget = "all" | "packages" | "website" | "cv" | "status" | "api" | "exp";
@@ -222,7 +223,7 @@ async function startESLint(
 
       // Log all spawn events first
       for (const [index, target] of allTargets.entries()) {
-        logWorkerSpawn(index + 1, target, logger.child("workers"));
+        logWorkerSpawn(index + 1, target, logger.child("workers"), new Date());
       }
       logger.line();
 
@@ -292,7 +293,7 @@ async function startESLint(
       // Log completion events in order they finished
       logger.line();
       for (const event of completionEvents) {
-        logWorkerComplete(event.index, event.target, event.durationMs, event.status, logger.child("workers"));
+        logWorkerComplete(event.index, event.target, event.durationMs, event.status, logger.child("workers"), new Date());
       }
 
       // Show graceful degradation notice if any workers failed
@@ -392,7 +393,7 @@ async function startESLint(
  * @returns Process exit code (0 for success, non-zero for failure).
  */
 export async function main(arg?: string, filePatterns?: readonly string[], logger?: MonorepositoryLogger): Promise<number> {
-  const output = logger ?? new MonorepositoryConsoleLogger("lint");
+  const output = logger ?? new MonorepositoryConsoleLogger("lint", {runtimeHost: nodeLoggerRuntimeHost});
   output.line(styleText(["bold", "magenta"], "\n╔════════════════════════════════════════╗"));
   output.line(styleText(["bold", "magenta"], "║    arolariu.ro Code Linter Tool        ║"));
   output.line(styleText(["bold", "magenta"], "╚════════════════════════════════════════╝\n"));
@@ -459,7 +460,7 @@ export async function main(arg?: string, filePatterns?: readonly string[], logge
 }
 
 if (import.meta.main) {
-  const output = new MonorepositoryConsoleLogger("lint");
+  const output = new MonorepositoryConsoleLogger("lint", {runtimeHost: nodeLoggerRuntimeHost});
   const arg = process.argv[2];
   // Collect additional arguments as file patterns for selective targeting
   const filePatterns = process.argv.slice(3).filter((p) => p.length > 0);

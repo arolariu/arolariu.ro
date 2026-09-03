@@ -1,194 +1,151 @@
 // @vitest-environment node
 /**
- * @fileoverview Contract tests for read-only Python diagnostics.
+ * @fileoverview Contract tests for read-only Python diagnostics sourced from shared PythonFacts.
  * @module scripts.doctor.python.test
+ *
+ * @remarks
+ * `doctor.python.ts` is sourced exclusively from `context.inspection.inspect("python")`,
+ * `context.requirements` for version policy, and `context.network.get()` for PyPI reachability.
+ * These tests never write a fixture file, spawn a command, or construct a `CommandSpec`: they
+ * configure a fake inspection session that returns a deterministic `InspectionOutcome<PythonFacts>`,
+ * and assert on the produced `DiagnosticResult` rows. `context.probes` is wired to throw if the
+ * module ever touches it, and a source guard proves the module never references `context.runner`.
  */
 
-import {mkdir, mkdtemp, rm, writeFile} from "node:fs/promises";
-import {tmpdir} from "node:os";
-import {join, resolve} from "node:path";
+import {readFileSync} from "node:fs";
+import {resolve} from "node:path";
 import {afterEach, describe, expect, it, vi, type Mock} from "vitest";
 
 import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "./common/logger.ts";
-import type {CommandResult, CommandSpec} from "./common/process.ts";
 import {createRepositoryPaths} from "./common/repository-paths.ts";
 import type {RepositoryRequirements} from "./common/requirements.ts";
-import {
-  compareInstalledDistributions,
-  parseRequirementsTree,
-  pythonDoctorModule,
-  RequirementsParseError,
-  type ParsedRequirement,
-} from "./doctor.python.ts";
-import {
-  PYTHON_INTERPRETER_METADATA_SNIPPET,
-  type DiagnosticCommandRunner,
-  type DiagnosticNetworkResult,
-  type DoctorContext,
-  type DoctorOptions,
-} from "./doctor.types.ts";
+import {asReadOnlyFileSystem, type Clock, type RuntimeEnvironment} from "./common/runtime.ts";
+import {createMemoryFileSystem} from "./common/runtime.testing.ts";
+import {pythonDoctorModule} from "./doctor.python.ts";
+import {createDoctorReport} from "./doctor.reporter.ts";
+import type {DiagnosticNetworkResult, DiagnosticResult, DoctorContext, DoctorInput} from "./doctor.types.ts";
+import type {PythonFacts, PythonInterpreterFact} from "./inspection/python.ts";
+import type {RepositoryInspectionSession} from "./inspection/repository.ts";
+import type {InspectionOutcome} from "./inspection/types.ts";
 
-const fixtureRoots: string[] = [];
+const PYTHON_IDS = [
+  "python.runtime",
+  "python.virtual-environment",
+  "python.pip",
+  "python.requirements",
+  "python.conflicts",
+  "python.configuration",
+  "python.pypi",
+] as const;
 
-const validRequirements: RepositoryRequirements = {
-  node: {major: 24, minor: 0, patch: 0},
-  npm: {major: 11, minor: 0, patch: 0},
-  dotnet: {major: 10, minor: 0, patch: 0},
-  python: {major: 3, minor: 12, patch: 0},
-  packages: new Map(),
-};
-
-const SYSTEM_METADATA_COMMAND: Readonly<Record<"win32" | "posix", Readonly<CommandSpec>>> = {
-  win32: {command: "py", args: ["-3.12", "-c", PYTHON_INTERPRETER_METADATA_SNIPPET]},
-  posix: {command: "python3.12", args: ["-c", PYTHON_INTERPRETER_METADATA_SNIPPET]},
-};
-const VENV_PYTHON_RELATIVE: Readonly<Record<"win32" | "posix", string>> = {
-  win32: ".venv\\Scripts\\python.exe",
-  posix: ".venv/bin/python",
-};
-const VENV_METADATA_COMMAND: Readonly<Record<"win32" | "posix", Readonly<CommandSpec>>> = {
-  win32: {command: VENV_PYTHON_RELATIVE.win32, args: ["-c", PYTHON_INTERPRETER_METADATA_SNIPPET]},
-  posix: {command: VENV_PYTHON_RELATIVE.posix, args: ["-c", PYTHON_INTERPRETER_METADATA_SNIPPET]},
-};
-const VENV_PIP_VERSION_COMMAND: Readonly<Record<"win32" | "posix", Readonly<CommandSpec>>> = {
-  win32: {command: VENV_PYTHON_RELATIVE.win32, args: ["-m", "pip", "--version"]},
-  posix: {command: VENV_PYTHON_RELATIVE.posix, args: ["-m", "pip", "--version"]},
-};
-const VENV_PIP_LIST_COMMAND: Readonly<Record<"win32" | "posix", Readonly<CommandSpec>>> = {
-  win32: {command: VENV_PYTHON_RELATIVE.win32, args: ["-m", "pip", "list", "--format", "json"]},
-  posix: {command: VENV_PYTHON_RELATIVE.posix, args: ["-m", "pip", "list", "--format", "json"]},
-};
-const VENV_PIP_CHECK_COMMAND: Readonly<Record<"win32" | "posix", Readonly<CommandSpec>>> = {
-  win32: {command: VENV_PYTHON_RELATIVE.win32, args: ["-m", "pip", "check"]},
-  posix: {command: VENV_PYTHON_RELATIVE.posix, args: ["-m", "pip", "check"]},
-};
-
-function commandResult(patch: Partial<CommandResult> = {}): CommandResult {
+function validRequirements(): RepositoryRequirements {
   return {
-    code: 0,
-    stdout: "",
-    stderr: "",
-    durationMs: 4,
-    timedOut: false,
-    ...patch,
+    node: {major: 24, minor: 0, patch: 0},
+    npm: {major: 11, minor: 0, patch: 0},
+    dotnet: {major: 10, minor: 0, patch: 0},
+    python: {major: 3, minor: 12, patch: 0},
+    packages: new Map(),
   };
 }
 
-function commandKey(command: Readonly<CommandSpec>, cwd?: string): string {
-  return `${cwd ?? ""}\u0000${command.command}\u0000${JSON.stringify(command.args)}`;
+function doctorOptions(patch: Partial<DoctorInput> = {}): DoctorInput {
+  return {verbose: false, quick: false, ...patch};
 }
 
-function doctorOptions(patch: Partial<DoctorOptions> = {}): DoctorOptions {
+/** Deterministic monotonic clock every fixture context observes. */
+function fixtureClock(): Clock {
+  let current = 0;
   return {
-    verbose: false,
-    ci: false,
-    score: false,
-    json: false,
-    quick: false,
-    help: false,
-    ...patch,
+    monotonicNow: (): number => ++current,
+    isoTimestamp: (): string => "2026-08-29T00:00:00.000Z",
+    delay: (): Promise<void> => Promise.resolve(),
   };
 }
 
-function metadataOutput(
-  input: Readonly<{executable: string; version?: string; prefix: string; basePrefix?: string}>,
-): string {
-  return JSON.stringify({
-    executable: input.executable,
-    version: input.version ?? "3.12.6",
-    prefix: input.prefix,
-    basePrefix: input.basePrefix ?? input.prefix,
-    sitePackages: [],
-  });
+/** Immutable environment snapshot every fixture context observes. */
+function fixtureEnvironment(variables: Readonly<Record<string, string | undefined>> = {}): RuntimeEnvironment {
+  return {
+    variables,
+    cwd: "C:\\fixture\\arolariu.ro",
+    executablePath: "C:\\Program Files\\nodejs\\node.exe",
+    platform: "win32",
+    architecture: "x64",
+    stdinIsTTY: false,
+    stdoutIsTTY: false,
+    isCI: false,
+  };
+}
+
+function selectedInterpreter(): PythonInterpreterFact {
+  return {command: "py", prefixArgs: ["-3.12"], version: "3.12.6"};
+}
+
+function healthyPythonFacts(overrides: Readonly<Partial<PythonFacts>> = {}): PythonFacts {
+  return {
+    interpreters: [
+      {command: "py", prefixArgs: ["-3.12"], version: "3.12.6"},
+      {command: "python3.12", prefixArgs: [], version: "3.12.6"},
+    ],
+    selected: selectedInterpreter(),
+    virtualEnvironment: {exists: true, compatible: true, version: "3.12.6"},
+    pip: {available: true, version: "24.0", conflicts: []},
+    requirements: {
+      declared: [
+        {name: "requests", specifier: "2.31.0", source: "sites/exp.arolariu.ro/requirements.txt"},
+        {name: "pytest", specifier: "8.3.2", source: "sites/exp.arolariu.ro/requirements-dev.txt"},
+      ],
+      unverifiable: [],
+      mismatches: [],
+    },
+    configurationIssues: [],
+    ...overrides,
+  };
+}
+
+function resultIds(results: readonly DiagnosticResult[]): readonly string[] {
+  return results.map((r) => r.id);
+}
+
+function resultById(results: readonly DiagnosticResult[], id: string): DiagnosticResult {
+  const found = results.find((r) => r.id === id);
+  if (found === undefined) {
+    throw new Error(`Diagnostic '${id}' was not produced.`);
+  }
+  return found;
 }
 
 interface PythonFixture {
-  readonly root: string;
   readonly context: DoctorContext;
-  readonly run: Mock<DiagnosticCommandRunner["run"]>;
-  readonly setResponse: (command: Readonly<CommandSpec>, result: CommandResult, cwd: string) => void;
-  readonly expectedVenvDirectory: string;
-  readonly venvPythonPath: string;
+  readonly inspect: Mock<(key: string) => Promise<InspectionOutcome<unknown>>>;
+  readonly probeRun: Mock<(...args: readonly unknown[]) => Promise<never>>;
 }
 
-async function createPythonFixture(
+function createPythonFixture(
   input: Readonly<{
-    options?: Partial<DoctorOptions>;
-    requirementsValid?: boolean;
-    platform?: NodeJS.Platform;
+    options?: Partial<DoctorInput>;
+    requirements?: RepositoryRequirements | "invalid";
+    outcome?: InspectionOutcome<PythonFacts>;
     networkResult?: DiagnosticNetworkResult;
-    requirementsTxt?: string;
-    requirementsDevTxt?: string;
-    templateConfig?: Readonly<Record<string, string>>;
-    dockerConfig?: Readonly<Record<string, string>>;
-    /** Pass `null` to omit config.aspire.json entirely; omit the field for the default fixture content. */
-    aspireConfig?: string | null;
+    env?: Readonly<Record<string, string | undefined>>;
   }> = {},
-): Promise<PythonFixture> {
-  const root = await mkdtemp(join(tmpdir(), "arolariu-doctor-python-"));
-  fixtureRoots.push(root);
-  const paths = createRepositoryPaths(root);
-  const platform = input.platform ?? "win32";
-  const isWin32 = platform === "win32";
-  const kind = isWin32 ? "win32" : "posix";
-
-  const expectedVenvDirectory = isWin32 ? `${paths.expRoot}\\.venv` : `${paths.expRoot}/.venv`;
-  const venvPythonPath = isWin32 ? `${expectedVenvDirectory}\\Scripts\\python.exe` : `${expectedVenvDirectory}/bin/python`;
-  const systemPythonPath = isWin32 ? resolve(root, "Python312", "python.exe") : resolve(root, "usr", "bin", "python3.12");
-
-  await mkdir(paths.expRoot, {recursive: true});
-  await writeFile(resolve(paths.expRoot, "requirements.txt"), input.requirementsTxt ?? "requests==2.31.0\n", "utf8");
-  await writeFile(
-    paths.pythonRequirements,
-    input.requirementsDevTxt ?? "# Dev-only dependencies\n-r requirements.txt\npytest==8.3.2\n",
-    "utf8",
-  );
-  await writeFile(
-    resolve(paths.expRoot, "config.template.json"),
-    JSON.stringify(input.templateConfig ?? {"Auth:Clerk:PublishableKey": "template-value", "Site:Name": "template-name"}),
-    "utf8",
-  );
-  await writeFile(
-    resolve(paths.expRoot, "config.docker.json"),
-    JSON.stringify(
-      input.dockerConfig
-      ?? {"Auth:Clerk:PublishableKey": "docker-value", "Site:Name": "docker-name", "Endpoints:AI:OpenAI": "extra-docker-only-key"},
-    ),
-    "utf8",
-  );
-  if (input.aspireConfig !== null) {
-    await writeFile(resolve(paths.expRoot, "config.aspire.json"), input.aspireConfig ?? JSON.stringify({Generated: true}), "utf8");
-  }
-
-  const responses = new Map<string, CommandResult>();
-  const setResponse = (command: Readonly<CommandSpec>, result: CommandResult, cwd: string): void => {
-    responses.set(commandKey(command, cwd), result);
+): PythonFixture {
+  const outcome: InspectionOutcome<PythonFacts> = input.outcome ?? {
+    kind: "available",
+    value: healthyPythonFacts(),
+    durationMs: 0,
   };
 
-  setResponse(
-    SYSTEM_METADATA_COMMAND[kind],
-    commandResult({stdout: metadataOutput({executable: systemPythonPath, prefix: resolve(root, "Python312")})}),
-    paths.root,
-  );
-  setResponse(
-    VENV_METADATA_COMMAND[kind],
-    commandResult({stdout: metadataOutput({executable: venvPythonPath, prefix: expectedVenvDirectory, basePrefix: resolve(root, "Python312")})}),
-    paths.expRoot,
-  );
-  setResponse(VENV_PIP_VERSION_COMMAND[kind], commandResult({stdout: "pip 24.0 from .venv (python 3.12)\n"}), paths.expRoot);
-  setResponse(
-    VENV_PIP_LIST_COMMAND[kind],
-    commandResult({stdout: JSON.stringify([{name: "requests", version: "2.31.0"}, {name: "pytest", version: "8.3.2"}])}),
-    paths.expRoot,
-  );
-  setResponse(VENV_PIP_CHECK_COMMAND[kind], commandResult({stdout: "No broken requirements found.\n"}), paths.expRoot);
+  const inspect = vi.fn(async (key: string): Promise<InspectionOutcome<unknown>> => {
+    if (key !== "python") {
+      throw new Error(`Unexpected inspection key requested: '${key}'.`);
+    }
+    return outcome;
+  });
 
-  const run = vi.fn<DiagnosticCommandRunner["run"]>(
-    async (command: Readonly<CommandSpec>, options): Promise<CommandResult> =>
-      responses.get(commandKey(command, options?.cwd))
-      ?? commandResult({code: 127, spawnError: `Unexpected command ${command.command}`}),
-  );
-  const runner: DiagnosticCommandRunner = {run};
+  const probeRun = vi.fn(async (): Promise<never> => {
+    throw new Error("doctor.python.ts must never call context.probes.");
+  });
+
   const networkGet = vi.fn(
     async (): Promise<DiagnosticNetworkResult> =>
       input.networkResult ?? {
@@ -198,566 +155,459 @@ async function createPythonFixture(
         body: JSON.stringify({info: {name: "pip"}}),
       },
   );
+
   const sink = new InMemoryLoggerSink();
-  let now = 0;
   const context: DoctorContext = {
     options: doctorOptions(input.options),
-    paths,
+    paths: createRepositoryPaths(process.cwd()),
     requirements:
-      input.requirementsValid === false
-        ? {status: "invalid", errors: ["pyproject.toml#requires-python uses unsupported syntax; expected >=3.12"]}
-        : {status: "valid", requirements: validRequirements},
-    runner,
+      input.requirements === "invalid"
+        ? {status: "invalid", errors: ["pyproject.toml uses unsupported syntax"]}
+        : {status: "valid", requirements: input.requirements ?? validRequirements()},
     network: {get: networkGet},
     logger: new MonorepositoryConsoleLogger("doctor::python", {color: false, sink}),
-    platform,
-    arch: "x64",
-    env: {},
-    now: () => ++now,
+    files: asReadOnlyFileSystem(createMemoryFileSystem()),
+    clock: fixtureClock(),
+    environment: fixtureEnvironment(input.env ?? {}),
+    probes: {run: probeRun as unknown as DoctorContext["probes"]["run"]},
+    inspection: {
+      inspect: inspect as unknown as RepositoryInspectionSession["inspect"],
+      invalidate: vi.fn(),
+      updateInfrastructureEngine: vi.fn(),
+    } as RepositoryInspectionSession,
   };
 
-  return {root, context, run, setResponse, expectedVenvDirectory, venvPythonPath};
+  return {context, inspect, probeRun};
 }
 
-afterEach(async () => {
-  await Promise.all(fixtureRoots.splice(0).map((root) => rm(root, {recursive: true, force: true})));
+afterEach(() => {
+  vi.restoreAllMocks();
 });
 
-describe("parseRequirementsTree", () => {
-  it("recursively resolves -r includes and normalizes PEP 503 distribution names", async () => {
-    const devPath = resolve("virtual-repo", "requirements-dev.txt");
-    const basePath = resolve("virtual-repo", "requirements.txt");
-    const files: Record<string, string> = {
-      [devPath]: "# comment\n-r requirements.txt\npytest==8.3.2\n",
-      [basePath]: "Azure_Identity==1.25.3\nFastAPI.Core==0.141.1  # inline comment\n",
-    };
+/** Strips block and line comments so source-guard assertions never match prose in doc comments. */
+function stripComments(source: string): string {
+  return source.replace(/\/\*[\s\S]*?\*\//gu, "").replace(/\/\/[^\n]*/gu, "");
+}
 
-    const parsed = await parseRequirementsTree(devPath, async (path) => {
-      const contents = files[path];
-      if (contents === undefined) {
-        throw new Error(`ENOENT: ${path}`);
-      }
-      return contents;
-    });
+describe("source guards", () => {
+  const source = stripComments(readFileSync(resolve(process.cwd(), "scripts", "doctor.python.ts"), "utf8"));
 
-    expect(parsed).toEqual<readonly ParsedRequirement[]>([
-      {name: "azure-identity", specifier: "1.25.3", source: basePath},
-      {name: "fastapi-core", specifier: "0.141.1", source: basePath},
-      {name: "pytest", specifier: "8.3.2", source: devPath},
-    ]);
+  it("never touches context.runner", () => {
+    expect(source).not.toMatch(/context\.runner/u);
   });
 
-  it("rejects a circular -r include", async () => {
-    const aPath = resolve("virtual-repo", "a.txt");
-    const bPath = resolve("virtual-repo", "b.txt");
-    const files: Record<string, string> = {
-      [aPath]: "-r b.txt\n",
-      [bPath]: "-r a.txt\n",
-    };
-
-    await expect(
-      parseRequirementsTree(aPath, async (path) => files[path] ?? Promise.reject(new Error("ENOENT"))),
-    ).rejects.toThrow(RequirementsParseError);
+  it("never touches context.probes", () => {
+    expect(source).not.toMatch(/context\.probes/u);
   });
 
-  it("rejects a duplicate -r include of the same file", async () => {
-    const rootPath = resolve("virtual-repo", "root.txt");
-    const sharedPath = resolve("virtual-repo", "shared.txt");
-    const files: Record<string, string> = {
-      [rootPath]: "-r shared.txt\n-r shared.txt\n",
-      [sharedPath]: "requests==2.31.0\n",
-    };
-
-    await expect(
-      parseRequirementsTree(rootPath, async (path) => files[path] ?? Promise.reject(new Error("ENOENT"))),
-    ).rejects.toThrow(/Duplicate requirements include/u);
+  it("never imports or constructs CommandSpec", () => {
+    expect(source).not.toMatch(/CommandSpec/u);
   });
 
-  it("rejects a duplicate requirement name declared in two files", async () => {
-    const rootPath = resolve("virtual-repo", "root.txt");
-    const includedPath = resolve("virtual-repo", "included.txt");
-    const files: Record<string, string> = {
-      [rootPath]: "-r included.txt\nrequests==2.31.0\n",
-      [includedPath]: "Requests==2.30.0\n",
-    };
-
-    await expect(
-      parseRequirementsTree(rootPath, async (path) => files[path] ?? Promise.reject(new Error("ENOENT"))),
-    ).rejects.toThrow(/Duplicate requirement 'requests'/u);
+  it("never imports node:fs or node:fs/promises", () => {
+    expect(source).not.toMatch(/from\s+["']node:fs(?:\/promises)?["']/u);
   });
 
-  it("treats a non-exact requirement specifier as recognized-but-unverified rather than a parse failure", async () => {
-    const rootPath = resolve("virtual-repo", "root.txt");
-    const files: Record<string, string> = {[rootPath]: "opentelemetry-exporter-otlp-proto-http~=1.43\n"};
-
-    const parsed = await parseRequirementsTree(rootPath, async (path) => files[path] ?? Promise.reject(new Error("ENOENT")));
-
-    expect(parsed).toEqual<readonly ParsedRequirement[]>([]);
+  it("never constructs python or pip commands", () => {
+    expect(source).not.toMatch(/command:\s*["']py["']/u);
+    expect(source).not.toMatch(/command:\s*["']python/u);
+    expect(source).not.toMatch(/command:\s*["']pip/u);
+    expect(source).not.toMatch(/\.venv/u);
   });
 
-  it("does not abort on extras, environment markers, hash/continuation lines, editable/constraint directives, or index options, and still checks exact pins that follow them", async () => {
-    const rootPath = resolve("virtual-repo", "root.txt");
-    const content = [
-      "opentelemetry-exporter-otlp-proto-http~=1.43",
-      "requests[security]==2.31.0",
-      'numpy==1.26.4; python_version >= "3.9"',
-      "certifi==2024.2.2 \\",
-      "    --hash=sha256:abcdef0123456789",
-      "-e .",
-      "-c constraints.txt",
-      "--index-url https://pypi.org/simple",
-      "--extra-index-url https://example.invalid/simple",
-      "--no-index",
-      "--find-links ./wheels",
-      "flask==3.0.3",
-    ].join("\n");
-    const files: Record<string, string> = {[rootPath]: `${content}\n`};
-
-    const parsed = await parseRequirementsTree(rootPath, async (path) => files[path] ?? Promise.reject(new Error("ENOENT")));
-
-    expect(parsed).toEqual<readonly ParsedRequirement[]>([
-      {name: "certifi", specifier: "2024.2.2", source: rootPath},
-      {name: "flask", specifier: "3.0.3", source: rootPath},
-    ]);
-  });
-
-  it("still rejects a genuinely unparseable requirements entry", async () => {
-    const rootPath = resolve("virtual-repo", "root.txt");
-    const files: Record<string, string> = {[rootPath]: "@@@not-a-real-entry@@@\n"};
-
-    await expect(
-      parseRequirementsTree(rootPath, async (path) => files[path] ?? Promise.reject(new Error("ENOENT"))),
-    ).rejects.toThrow(RequirementsParseError);
-  });
-
-  it("rejects a malformed -r include directive with no path", async () => {
-    const rootPath = resolve("virtual-repo", "root.txt");
-    const files: Record<string, string> = {[rootPath]: '-r ""\n'};
-
-    await expect(
-      parseRequirementsTree(rootPath, async (path) => files[path] ?? Promise.reject(new Error("ENOENT"))),
-    ).rejects.toThrow(/Malformed requirements include directive/u);
-  });
-});
-
-describe("compareInstalledDistributions", () => {
-  it("reports no gaps when every pin is installed at its exact version", () => {
-    const requirements: readonly ParsedRequirement[] = [{name: "requests", specifier: "2.31.0", source: "requirements.txt"}];
-    const comparison = compareInstalledDistributions(requirements, [{name: "requests", version: "2.31.0"}]);
-
-    expect(comparison).toEqual({missing: [], mismatched: []});
-  });
-
-  it("reports a missing distribution", () => {
-    const requirements: readonly ParsedRequirement[] = [{name: "requests", specifier: "2.31.0", source: "requirements.txt"}];
-    const comparison = compareInstalledDistributions(requirements, []);
-
-    expect(comparison.missing).toEqual(["requests==2.31.0"]);
-    expect(comparison.mismatched).toEqual([]);
-  });
-
-  it("reports a version mismatch and normalizes distribution names before comparing", () => {
-    const requirements: readonly ParsedRequirement[] = [{name: "azure-identity", specifier: "1.25.3", source: "requirements.txt"}];
-    const comparison = compareInstalledDistributions(requirements, [{name: "Azure_Identity", version: "1.25.2"}]);
-
-    expect(comparison.missing).toEqual([]);
-    expect(comparison.mismatched).toEqual(["azure-identity requires 1.25.3 but 1.25.2 is installed."]);
+  it("does not use the CI environment variable to alter behavior", () => {
+    expect(source).not.toMatch(/\bCI\b.*=\s*["']true["']/u);
+    expect(source).not.toMatch(/process\.env\.CI/u);
   });
 });
 
 describe("pythonDoctorModule", () => {
-  it("returns every stable python check in order for a healthy win32 baseline", async () => {
-    const fixture = await createPythonFixture({platform: "win32"});
+  it("returns every stable python check in order for a healthy baseline", async () => {
+    const fixture = createPythonFixture();
 
     const results = await pythonDoctorModule.run(fixture.context);
 
-    expect(results.map(({id}) => id)).toEqual([
-      "python.runtime",
-      "python.virtual-environment",
-      "python.pip",
-      "python.requirements",
-      "python.conflicts",
-      "python.configuration",
-      "python.pypi",
-    ]);
-    expect(results.every(({status}) => status === "pass")).toBe(true);
-    expect(results.every(({module}) => module === "python")).toBe(true);
+    expect(resultIds(results)).toEqual([...PYTHON_IDS]);
+    for (const result of results) {
+      expect(result.status, `${result.id} should pass`).toBe("pass");
+      expect(result.module).toBe("python");
+    }
+    expect(fixture.inspect).toHaveBeenCalledExactlyOnceWith("python");
   });
 
-  it("returns every stable python check in order for a healthy posix baseline", async () => {
-    const fixture = await createPythonFixture({platform: "linux"});
-
-    const results = await pythonDoctorModule.run(fixture.context);
-
-    expect(results.map(({id}) => id)).toEqual([
-      "python.runtime",
-      "python.virtual-environment",
-      "python.pip",
-      "python.requirements",
-      "python.conflicts",
-      "python.configuration",
-      "python.pypi",
-    ]);
-    expect(results.every(({status}) => status === "pass")).toBe(true);
-  });
-
-  it("issues the fixed metadata snippet exported by doctor.types.ts to both the system and venv probes", async () => {
-    const fixture = await createPythonFixture({platform: "win32"});
+  it("never calls context.probes in normal mode", async () => {
+    const fixture = createPythonFixture();
 
     await pythonDoctorModule.run(fixture.context);
 
-    expect(fixture.run).toHaveBeenCalledWith(
-      {command: "py", args: ["-3.12", "-c", PYTHON_INTERPRETER_METADATA_SNIPPET]},
-      expect.objectContaining({cwd: fixture.context.paths.root}),
-    );
-    expect(fixture.run).toHaveBeenCalledWith(
-      {command: ".venv\\Scripts\\python.exe", args: ["-c", PYTHON_INTERPRETER_METADATA_SNIPPET]},
-      expect.objectContaining({cwd: fixture.context.paths.expRoot}),
-    );
+    expect(fixture.probeRun).not.toHaveBeenCalled();
   });
 
-  it("fails python.runtime when the Windows py -3.12 launcher is missing", async () => {
-    const fixture = await createPythonFixture({platform: "win32"});
-    fixture.setResponse(
-      SYSTEM_METADATA_COMMAND.win32,
-      commandResult({code: 127, spawnError: "not recognized as an internal or external command"}),
-      fixture.context.paths.root,
-    );
+  it("never calls context.probes in quick mode", async () => {
+    const fixture = createPythonFixture({options: {quick: true}});
+
+    await pythonDoctorModule.run(fixture.context);
+
+    expect(fixture.probeRun).not.toHaveBeenCalled();
+  });
+
+  // --- Runtime ---
+
+  it("passes python.runtime when a compatible interpreter is selected", async () => {
+    const fixture = createPythonFixture();
 
     const results = await pythonDoctorModule.run(fixture.context);
 
-    const runtime = results.find(({id}) => id === "python.runtime");
-    expect(runtime?.status).toBe("fail");
-    expect(runtime?.summary).toContain("No compatible system Python interpreter");
+    const runtime = resultById(results, "python.runtime");
+    expect(runtime.status).toBe("pass");
+    expect(runtime.evidence.join("\n")).not.toMatch(/[A-Z]:\\/u);
   });
 
-  it("fails python.runtime when the Unix python3.12 interpreter is missing", async () => {
-    const fixture = await createPythonFixture({platform: "linux"});
-    fixture.setResponse(
-      SYSTEM_METADATA_COMMAND.posix,
-      commandResult({code: 127, spawnError: "ENOENT"}),
-      fixture.context.paths.root,
-    );
+  it("reports multiple interpreter candidates in evidence", async () => {
+    const fixture = createPythonFixture();
 
     const results = await pythonDoctorModule.run(fixture.context);
 
-    const runtime = results.find(({id}) => id === "python.runtime");
-    expect(runtime?.status).toBe("fail");
-    expect(runtime?.summary).toContain("No compatible system Python interpreter");
+    const runtime = resultById(results, "python.runtime");
+    expect(runtime.evidence.join("\n")).toContain("2");
   });
 
-  it("fails python.runtime when the system interpreter is older than the repository minimum", async () => {
-    const fixture = await createPythonFixture({platform: "win32"});
-    fixture.setResponse(
-      SYSTEM_METADATA_COMMAND.win32,
-      commandResult({stdout: metadataOutput({executable: "C:\\Python310\\python.exe", version: "3.10.9", prefix: "C:\\Python310"})}),
-      fixture.context.paths.root,
-    );
+  it("fails python.runtime when no selected interpreter exists", async () => {
+    const {selected: _selected, ...noSelectedFacts} = healthyPythonFacts();
+    const fixture = createPythonFixture({outcome: {kind: "available", value: noSelectedFacts as PythonFacts, durationMs: 0}});
 
     const results = await pythonDoctorModule.run(fixture.context);
 
-    const runtime = results.find(({id}) => id === "python.runtime");
-    expect(runtime?.status).toBe("fail");
-    expect(runtime?.summary).toContain("does not satisfy the repository minimum");
+    expect(resultById(results, "python.runtime").status).toBe("fail");
   });
 
-  it("fails python.runtime when the system probe returns malformed JSON", async () => {
-    const fixture = await createPythonFixture({platform: "win32"});
-    fixture.setResponse(SYSTEM_METADATA_COMMAND.win32, commandResult({stdout: "not-json"}), fixture.context.paths.root);
+  it("passes python.runtime when no interpreters exist but a selected one does", async () => {
+    const facts = healthyPythonFacts({interpreters: [], selected: selectedInterpreter()});
+    const fixture = createPythonFixture({outcome: {kind: "available", value: facts, durationMs: 0}});
 
     const results = await pythonDoctorModule.run(fixture.context);
 
-    const runtime = results.find(({id}) => id === "python.runtime");
-    expect(runtime?.status).toBe("fail");
-    expect(runtime?.summary).toContain("malformed metadata");
+    expect(resultById(results, "python.runtime").status).toBe("pass");
   });
 
-  it("skips python.runtime and python.virtual-environment when repository requirements are invalid", async () => {
-    const fixture = await createPythonFixture({platform: "win32", requirementsValid: false});
+  // --- Virtual Environment ---
+
+  it("passes python.virtual-environment when the venv exists and is compatible", async () => {
+    const fixture = createPythonFixture();
 
     const results = await pythonDoctorModule.run(fixture.context);
 
-    expect(results.find(({id}) => id === "python.runtime")?.status).toBe("skipped");
-    expect(results.find(({id}) => id === "python.virtual-environment")?.status).toBe("skipped");
-    expect(results.find(({id}) => id === "python.pip")?.status).toBe("skipped");
-    expect(results.find(({id}) => id === "python.requirements")?.status).toBe("skipped");
-    expect(results.find(({id}) => id === "python.conflicts")?.status).toBe("skipped");
-    expect(results.find(({id}) => id === "python.configuration")?.status).toBe("pass");
-    expect(results.find(({id}) => id === "python.pypi")?.status).toBe("pass");
+    expect(resultById(results, "python.virtual-environment").status).toBe("pass");
   });
 
-  it("fails python.virtual-environment and cascades explicit skips naming the blocker when the venv is absent", async () => {
-    const fixture = await createPythonFixture({platform: "win32"});
-    fixture.setResponse(
-      VENV_METADATA_COMMAND.win32,
-      commandResult({code: 127, spawnError: "ENOENT: no such file or directory"}),
-      fixture.context.paths.expRoot,
-    );
+  it("fails python.virtual-environment when the venv does not exist", async () => {
+    const facts = healthyPythonFacts({virtualEnvironment: {exists: false, compatible: false}});
+    const fixture = createPythonFixture({outcome: {kind: "available", value: facts, durationMs: 0}});
 
     const results = await pythonDoctorModule.run(fixture.context);
 
-    const virtualEnvironment = results.find(({id}) => id === "python.virtual-environment");
-    expect(virtualEnvironment?.status).toBe("fail");
-    expect(virtualEnvironment?.summary).toContain("not found");
-
-    for (const id of ["python.pip", "python.requirements", "python.conflicts"] as const) {
-      const result = results.find((entry) => entry.id === id);
-      expect(result?.status).toBe("skipped");
-      expect(result?.evidence.join("\n")).toContain("python.virtual-environment");
-    }
-
-    expect(results.find(({id}) => id === "python.configuration")?.status).toBe("pass");
-    expect(results.find(({id}) => id === "python.pypi")?.status).toBe("pass");
+    const venv = resultById(results, "python.virtual-environment");
+    expect(venv.status).toBe("fail");
+    expect(venv.summary).toContain("not found");
   });
 
-  it("fails python.virtual-environment when its Python version is older than the repository minimum", async () => {
-    const fixture = await createPythonFixture({platform: "win32"});
-    fixture.setResponse(
-      VENV_METADATA_COMMAND.win32,
-      commandResult({
-        stdout: metadataOutput({executable: fixture.venvPythonPath, version: "3.10.1", prefix: fixture.expectedVenvDirectory, basePrefix: "C:\\Python312"}),
-      }),
-      fixture.context.paths.expRoot,
-    );
+  it("fails python.virtual-environment when the venv exists but is incompatible", async () => {
+    const facts = healthyPythonFacts({virtualEnvironment: {exists: true, compatible: false, version: "3.10.1"}});
+    const fixture = createPythonFixture({outcome: {kind: "available", value: facts, durationMs: 0}});
 
     const results = await pythonDoctorModule.run(fixture.context);
 
-    const virtualEnvironment = results.find(({id}) => id === "python.virtual-environment");
-    expect(virtualEnvironment?.status).toBe("fail");
-    expect(virtualEnvironment?.summary).toContain("does not satisfy the repository minimum");
-    expect(results.find(({id}) => id === "python.pip")?.status).toBe("skipped");
+    const venv = resultById(results, "python.virtual-environment");
+    expect(venv.status).toBe("fail");
+    expect(venv.summary).toContain("incompatible");
   });
 
-  it("fails python.virtual-environment when the interpreter is outside the canonical .venv directory", async () => {
-    const fixture = await createPythonFixture({platform: "win32"});
-    const outsideExecutable = resolve(fixture.root, "Some", "Other", "python.exe");
-    fixture.setResponse(
-      VENV_METADATA_COMMAND.win32,
-      commandResult({stdout: metadataOutput({executable: outsideExecutable, prefix: outsideExecutable})}),
-      fixture.context.paths.expRoot,
-    );
-
-    const results = await pythonDoctorModule.run(fixture.context);
-
-    const virtualEnvironment = results.find(({id}) => id === "python.virtual-environment");
-    expect(virtualEnvironment?.status).toBe("fail");
-    expect(virtualEnvironment?.summary).toContain("not owned by the canonical");
-  });
-
-  it("fails python.virtual-environment when sys.prefix does not identify an isolated environment", async () => {
-    const fixture = await createPythonFixture({platform: "win32"});
-    fixture.setResponse(
-      VENV_METADATA_COMMAND.win32,
-      commandResult({
-        stdout: metadataOutput({executable: fixture.venvPythonPath, prefix: "C:\\Python312", basePrefix: "C:\\Python312"}),
-      }),
-      fixture.context.paths.expRoot,
-    );
-
-    const results = await pythonDoctorModule.run(fixture.context);
-
-    const virtualEnvironment = results.find(({id}) => id === "python.virtual-environment");
-    expect(virtualEnvironment?.status).toBe("fail");
-    expect(virtualEnvironment?.summary).toContain("does not identify itself as an isolated");
-  });
-
-  it("fails python.virtual-environment when the venv probe returns malformed JSON", async () => {
-    const fixture = await createPythonFixture({platform: "win32"});
-    fixture.setResponse(VENV_METADATA_COMMAND.win32, commandResult({stdout: "not-json"}), fixture.context.paths.expRoot);
-
-    const results = await pythonDoctorModule.run(fixture.context);
-
-    expect(results.find(({id}) => id === "python.virtual-environment")?.status).toBe("fail");
-    expect(results.find(({id}) => id === "python.pip")?.status).toBe("skipped");
-  });
-
-  it("independently fails python.pip when pip is absent without skipping python.virtual-environment", async () => {
-    const fixture = await createPythonFixture({platform: "win32"});
-    fixture.setResponse(
-      VENV_PIP_VERSION_COMMAND.win32,
-      commandResult({code: 1, stderr: "C:\\...\\python.exe: No module named pip\n"}),
-      fixture.context.paths.expRoot,
-    );
-
-    const results = await pythonDoctorModule.run(fixture.context);
-
-    expect(results.find(({id}) => id === "python.virtual-environment")?.status).toBe("pass");
-    expect(results.find(({id}) => id === "python.pip")?.status).toBe("fail");
-  });
-
-  it("fails python.requirements when a pinned distribution is missing", async () => {
-    const fixture = await createPythonFixture({platform: "win32"});
-    fixture.setResponse(
-      VENV_PIP_LIST_COMMAND.win32,
-      commandResult({stdout: JSON.stringify([{name: "requests", version: "2.31.0"}])}),
-      fixture.context.paths.expRoot,
-    );
-
-    const results = await pythonDoctorModule.run(fixture.context);
-
-    const requirements = results.find(({id}) => id === "python.requirements");
-    expect(requirements?.status).toBe("fail");
-    expect(requirements?.evidence.join("\n")).toContain("Missing: pytest==8.3.2");
-  });
-
-  it("fails python.requirements when an installed version does not match its pin", async () => {
-    const fixture = await createPythonFixture({platform: "win32"});
-    fixture.setResponse(
-      VENV_PIP_LIST_COMMAND.win32,
-      commandResult({stdout: JSON.stringify([{name: "requests", version: "2.31.0"}, {name: "pytest", version: "8.0.0"}])}),
-      fixture.context.paths.expRoot,
-    );
-
-    const results = await pythonDoctorModule.run(fixture.context);
-
-    const requirements = results.find(({id}) => id === "python.requirements");
-    expect(requirements?.status).toBe("fail");
-    expect(requirements?.evidence.join("\n")).toContain("Mismatched: pytest requires 8.3.2 but 8.0.0 is installed.");
-  });
-
-  it("fails python.requirements when pip list returns malformed JSON", async () => {
-    const fixture = await createPythonFixture({platform: "win32"});
-    fixture.setResponse(VENV_PIP_LIST_COMMAND.win32, commandResult({stdout: "not-json"}), fixture.context.paths.expRoot);
-
-    const results = await pythonDoctorModule.run(fixture.context);
-
-    expect(results.find(({id}) => id === "python.requirements")?.status).toBe("fail");
-  });
-
-  it("warns python.requirements when the repository requirements tree contains a recognized non-exact pin but every exact pin is satisfied", async () => {
-    const fixture = await createPythonFixture({platform: "win32", requirementsTxt: "opentelemetry-exporter-otlp-proto-http~=1.43\n"});
-
-    const results = await pythonDoctorModule.run(fixture.context);
-
-    const requirements = results.find(({id}) => id === "python.requirements");
-    expect(requirements?.status).toBe("warn");
-    expect(requirements?.evidence.join("\n")).toContain("opentelemetry-exporter-otlp-proto-http~=1.43");
-    expect(requirements?.rootCause).toContain("exact-pin comparator");
-    expect(requirements?.fixes.length).toBeGreaterThan(0);
-  });
-
-  it("fails python.requirements on a missing exact pin while retaining visibility of a recognized unverified entry", async () => {
-    const fixture = await createPythonFixture({
-      platform: "win32",
-      requirementsTxt: "opentelemetry-exporter-otlp-proto-http~=1.43\nrequests==2.31.0\n",
+  it("does not output venv absolute paths in evidence", async () => {
+    const facts = healthyPythonFacts({
+      virtualEnvironment: {exists: true, compatible: true, interpreterPath: "C:\\checkout\\.venv\\Scripts\\python.exe", version: "3.12.6"},
     });
-    fixture.setResponse(
-      VENV_PIP_LIST_COMMAND.win32,
-      commandResult({stdout: JSON.stringify([{name: "pytest", version: "8.3.2"}])}),
-      fixture.context.paths.expRoot,
-    );
+    const fixture = createPythonFixture({outcome: {kind: "available", value: facts, durationMs: 0}});
 
     const results = await pythonDoctorModule.run(fixture.context);
 
-    const requirements = results.find(({id}) => id === "python.requirements");
-    expect(requirements?.status).toBe("fail");
-    expect(requirements?.evidence.join("\n")).toContain("Missing: requests==2.31.0");
-    expect(requirements?.evidence.join("\n")).toContain("opentelemetry-exporter-otlp-proto-http~=1.43");
+    const venv = resultById(results, "python.virtual-environment");
+    expect(venv.evidence.join("\n")).not.toMatch(/[A-Z]:\\/u);
   });
 
-  it("fails python.conflicts when pip check reports broken requirement sets", async () => {
-    const fixture = await createPythonFixture({platform: "win32"});
-    fixture.setResponse(
-      VENV_PIP_CHECK_COMMAND.win32,
-      commandResult({code: 1, stdout: "some-package 1.0.0 requires other-package>=2.0.0, but you have other-package 1.0.0.\n"}),
-      fixture.context.paths.expRoot,
-    );
+  // --- Pip ---
+
+  it("passes python.pip when pip is available", async () => {
+    const fixture = createPythonFixture();
 
     const results = await pythonDoctorModule.run(fixture.context);
 
-    const conflicts = results.find(({id}) => id === "python.conflicts");
-    expect(conflicts?.status).toBe("fail");
-    expect(conflicts?.summary).toContain("dependency conflicts");
+    expect(resultById(results, "python.pip").status).toBe("pass");
   });
 
-  it("fails python.configuration when config.docker.json is missing a template-required key", async () => {
-    const fixture = await createPythonFixture({
-      platform: "win32",
-      templateConfig: {"Auth:Clerk:PublishableKey": "a", "Site:Name": "b", "Only:In:Template": "c"},
-      dockerConfig: {"Auth:Clerk:PublishableKey": "a2", "Site:Name": "b2"},
+  it("fails python.pip when pip is unavailable", async () => {
+    const facts = healthyPythonFacts({pip: {available: false, conflicts: []}});
+    const fixture = createPythonFixture({outcome: {kind: "available", value: facts, durationMs: 0}});
+
+    const results = await pythonDoctorModule.run(fixture.context);
+
+    expect(resultById(results, "python.pip").status).toBe("fail");
+  });
+
+  it("skips python.pip when the venv is absent", async () => {
+    const facts = healthyPythonFacts({virtualEnvironment: {exists: false, compatible: false}});
+    const fixture = createPythonFixture({outcome: {kind: "available", value: facts, durationMs: 0}});
+
+    const results = await pythonDoctorModule.run(fixture.context);
+
+    expect(resultById(results, "python.pip").status).toBe("skipped");
+  });
+
+  // --- Requirements ---
+
+  it("passes python.requirements when all exact pins match", async () => {
+    const fixture = createPythonFixture();
+
+    const results = await pythonDoctorModule.run(fixture.context);
+
+    expect(resultById(results, "python.requirements").status).toBe("pass");
+  });
+
+  it("fails python.requirements when mismatches exist", async () => {
+    const facts = healthyPythonFacts({
+      requirements: {
+        declared: [{name: "requests", specifier: "2.31.0", source: "requirements.txt"}],
+        unverifiable: [],
+        mismatches: ["requests requires 2.31.0 but 2.30.0 is installed."],
+      },
     });
+    const fixture = createPythonFixture({outcome: {kind: "available", value: facts, durationMs: 0}});
 
     const results = await pythonDoctorModule.run(fixture.context);
 
-    const configuration = results.find(({id}) => id === "python.configuration");
-    expect(configuration?.status).toBe("fail");
-    expect(configuration?.evidence).toContain("Missing key: Only:In:Template");
-    expect(JSON.stringify(configuration)).not.toContain("template-value");
+    const req = resultById(results, "python.requirements");
+    expect(req.status).toBe("fail");
+    expect(req.evidence.join("\n")).toContain("2.30.0");
   });
 
-  it("passes python.configuration when config.docker.json declares extra keys beyond the template", async () => {
-    const fixture = await createPythonFixture({platform: "win32"});
+  it("warns python.requirements when unverifiable entries exist but no mismatches", async () => {
+    const facts = healthyPythonFacts({
+      requirements: {
+        declared: [{name: "requests", specifier: "2.31.0", source: "requirements.txt"}],
+        unverifiable: ["requirements.txt:3 declares 'opentelemetry' with non-exact specifier."],
+        mismatches: [],
+      },
+    });
+    const fixture = createPythonFixture({outcome: {kind: "available", value: facts, durationMs: 0}});
 
     const results = await pythonDoctorModule.run(fixture.context);
 
-    expect(results.find(({id}) => id === "python.configuration")?.status).toBe("pass");
+    const req = resultById(results, "python.requirements");
+    expect(req.status).toBe("warn");
+    expect(req.evidence.join("\n")).toContain("opentelemetry");
   });
 
-  it("passes python.configuration and notes absence when config.aspire.json does not yet exist", async () => {
-    const fixture = await createPythonFixture({platform: "win32", aspireConfig: null});
+  it("passes python.requirements when no requirements are declared", async () => {
+    const facts = healthyPythonFacts({
+      requirements: {declared: [], unverifiable: [], mismatches: []},
+    });
+    const fixture = createPythonFixture({outcome: {kind: "available", value: facts, durationMs: 0}});
 
     const results = await pythonDoctorModule.run(fixture.context);
 
-    const configuration = results.find(({id}) => id === "python.configuration");
-    expect(configuration?.status).toBe("pass");
-    expect(configuration?.evidence.join("\n")).toContain("absent");
+    expect(resultById(results, "python.requirements").status).toBe("pass");
   });
 
-  it("warns python.configuration when config.aspire.json is present but not valid JSON", async () => {
-    const fixture = await createPythonFixture({platform: "win32", aspireConfig: "not-json"});
+  it("skips python.requirements when the venv is absent", async () => {
+    const facts = healthyPythonFacts({virtualEnvironment: {exists: false, compatible: false}});
+    const fixture = createPythonFixture({outcome: {kind: "available", value: facts, durationMs: 0}});
 
     const results = await pythonDoctorModule.run(fixture.context);
 
-    expect(results.find(({id}) => id === "python.configuration")?.status).toBe("warn");
+    expect(resultById(results, "python.requirements").status).toBe("skipped");
   });
 
-  it("skips python.pypi without a network call in quick mode", async () => {
-    const fixture = await createPythonFixture({platform: "win32", options: {quick: true}});
+  // --- Conflicts ---
+
+  it("passes python.conflicts when there are no conflicts", async () => {
+    const fixture = createPythonFixture();
 
     const results = await pythonDoctorModule.run(fixture.context);
 
-    expect(results.find(({id}) => id === "python.pypi")?.status).toBe("skipped");
+    expect(resultById(results, "python.conflicts").status).toBe("pass");
+  });
+
+  it("warns python.conflicts when conflicts are reported", async () => {
+    const facts = healthyPythonFacts({
+      pip: {available: true, version: "24.0", conflicts: ["pip reported a dependency conflict for 'requests'."]},
+    });
+    const fixture = createPythonFixture({outcome: {kind: "available", value: facts, durationMs: 0}});
+
+    const results = await pythonDoctorModule.run(fixture.context);
+
+    const conflicts = resultById(results, "python.conflicts");
+    expect(conflicts.status).toBe("warn");
+    expect(conflicts.evidence.join("\n")).toContain("requests");
+  });
+
+  it("bounds conflicts beyond evidence limits", async () => {
+    const many = Array.from({length: 10}, (_, i) => `Conflict ${String(i)}`);
+    const facts = healthyPythonFacts({pip: {available: true, version: "24.0", conflicts: many}});
+    const fixture = createPythonFixture({outcome: {kind: "available", value: facts, durationMs: 0}});
+
+    const results = await pythonDoctorModule.run(fixture.context);
+
+    const conflicts = resultById(results, "python.conflicts");
+    expect(conflicts.evidence.length).toBeLessThanOrEqual(6);
+  });
+
+  it("skips python.conflicts when the venv is absent", async () => {
+    const facts = healthyPythonFacts({virtualEnvironment: {exists: false, compatible: false}});
+    const fixture = createPythonFixture({outcome: {kind: "available", value: facts, durationMs: 0}});
+
+    const results = await pythonDoctorModule.run(fixture.context);
+
+    expect(resultById(results, "python.conflicts").status).toBe("skipped");
+  });
+
+  // --- Configuration ---
+
+  it("passes python.configuration when there are no issues", async () => {
+    const fixture = createPythonFixture();
+
+    const results = await pythonDoctorModule.run(fixture.context);
+
+    expect(resultById(results, "python.configuration").status).toBe("pass");
+  });
+
+  it("fails python.configuration when issues exist", async () => {
+    const facts = healthyPythonFacts({configurationIssues: ["config.docker.json is missing required key 'Site:Name'."]});
+    const fixture = createPythonFixture({outcome: {kind: "available", value: facts, durationMs: 0}});
+
+    const results = await pythonDoctorModule.run(fixture.context);
+
+    const config = resultById(results, "python.configuration");
+    expect(config.status).toBe("fail");
+    expect(config.evidence.join("\n")).toContain("Site:Name");
+  });
+
+  // --- PyPI ---
+
+  it("skips python.pypi in quick mode without probing the network", async () => {
+    const fixture = createPythonFixture({options: {quick: true}});
+
+    const results = await pythonDoctorModule.run(fixture.context);
+
+    expect(resultById(results, "python.pypi").status).toBe("skipped");
     expect(fixture.context.network.get).not.toHaveBeenCalled();
   });
 
+  it("passes python.pypi for a healthy PyPI response", async () => {
+    const fixture = createPythonFixture();
+
+    const results = await pythonDoctorModule.run(fixture.context);
+
+    expect(resultById(results, "python.pypi").status).toBe("pass");
+  });
+
   it("skips python.pypi when the network probe is unreachable", async () => {
-    const fixture = await createPythonFixture({
-      platform: "win32",
+    const fixture = createPythonFixture({
       networkResult: {status: "unavailable", durationMs: 2, error: "getaddrinfo ENOTFOUND pypi.org"},
     });
 
     const results = await pythonDoctorModule.run(fixture.context);
 
-    expect(results.find(({id}) => id === "python.pypi")?.status).toBe("skipped");
+    expect(resultById(results, "python.pypi").status).toBe("skipped");
   });
 
   it("warns python.pypi when the response status code is not 200", async () => {
-    const fixture = await createPythonFixture({
-      platform: "win32",
+    const fixture = createPythonFixture({
       networkResult: {status: "reachable", statusCode: 503, durationMs: 5, body: "Service Unavailable"},
     });
 
     const results = await pythonDoctorModule.run(fixture.context);
 
-    expect(results.find(({id}) => id === "python.pypi")?.status).toBe("warn");
+    expect(resultById(results, "python.pypi").status).toBe("warn");
   });
 
-  it("warns python.pypi when the response body is malformed or not the expected pip package index", async () => {
-    const fixture = await createPythonFixture({
-      platform: "win32",
+  it("warns python.pypi when the response body is malformed", async () => {
+    const fixture = createPythonFixture({
       networkResult: {status: "reachable", statusCode: 200, durationMs: 5, body: "not-json"},
     });
 
     const results = await pythonDoctorModule.run(fixture.context);
 
-    expect(results.find(({id}) => id === "python.pypi")?.status).toBe("warn");
+    expect(resultById(results, "python.pypi").status).toBe("warn");
   });
 
-  it("passes python.pypi for a well-formed reachable pip package index response", async () => {
-    const fixture = await createPythonFixture({platform: "win32"});
+  // --- Degraded outcomes ---
+
+  it("produces degraded results when python inspection is unavailable", async () => {
+    const fixture = createPythonFixture({
+      outcome: {kind: "unavailable", reason: "The Python project root is missing.", durationMs: 0},
+    });
 
     const results = await pythonDoctorModule.run(fixture.context);
 
-    expect(results.find(({id}) => id === "python.pypi")?.status).toBe("pass");
+    expect(resultIds(results)).toEqual([...PYTHON_IDS]);
+    for (const result of results) {
+      if (result.id === "python.pypi") {
+        expect(result.status === "pass" || result.status === "skipped" || result.status === "warn").toBe(true);
+      } else {
+        expect(result.status, `${result.id} should fail on unavailable`).toBe("fail");
+      }
+    }
+  });
+
+  it("produces degraded results when python inspection is invalid", async () => {
+    const issues = Array.from({length: 7}, (_, i) => `Python issue ${String(i)}.`);
+    const fixture = createPythonFixture({outcome: {kind: "invalid", issues, durationMs: 0}});
+
+    const results = await pythonDoctorModule.run(fixture.context);
+
+    for (const result of results) {
+      if (result.id === "python.pypi") {
+        continue;
+      }
+      expect(result.status).toBe("fail");
+    }
+    expect(() => createDoctorReport(results, "2026-09-01T00:00:00.000Z")).not.toThrow();
+  });
+
+  it("preserves independent PyPI behavior when facts are unavailable in normal mode", async () => {
+    const fixture = createPythonFixture({
+      outcome: {kind: "unavailable", reason: "test", durationMs: 0},
+    });
+
+    const results = await pythonDoctorModule.run(fixture.context);
+
+    expect(resultById(results, "python.pypi").status).toBe("pass");
+    expect(fixture.context.network.get).toHaveBeenCalled();
+  });
+
+  it("skips PyPI in quick mode even when facts are unavailable", async () => {
+    const fixture = createPythonFixture({
+      options: {quick: true},
+      outcome: {kind: "unavailable", reason: "test", durationMs: 0},
+    });
+
+    const results = await pythonDoctorModule.run(fixture.context);
+
+    expect(resultById(results, "python.pypi").status).toBe("skipped");
+    expect(fixture.context.network.get).not.toHaveBeenCalled();
+  });
+
+  // --- CI environment ---
+
+  it("produces identical results with CI=true and CI=false", async () => {
+    const factsCi = createPythonFixture({env: {CI: "true"}});
+    const resultsCi = await pythonDoctorModule.run(factsCi.context);
+
+    const factsNoCi = createPythonFixture({env: {CI: "false"}});
+    const resultsNoCi = await pythonDoctorModule.run(factsNoCi.context);
+
+    expect(resultIds(resultsCi)).toEqual(resultIds(resultsNoCi));
+    for (const [index, result] of resultsCi.entries()) {
+      expect(result.status).toBe(resultsNoCi[index]?.status);
+    }
   });
 });

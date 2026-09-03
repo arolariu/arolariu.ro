@@ -3,29 +3,16 @@
  * @module scripts/common/tooling-config
  */
 
-import {createHash, randomBytes} from "node:crypto";
-import {createReadStream} from "node:fs";
-import {mkdir, readFile, rename, rm, writeFile} from "node:fs/promises";
-import {basename, dirname, resolve} from "node:path";
 import type {ContainerEngine} from "../container-runtime/types.ts";
+import type {FileSystem, ReadOnlyFileSystem} from "./runtime.ts";
 
 const supportedContainerEngines: ReadonlySet<string> = new Set(["rancher", "podman"]);
-const fingerprintKeys = ["nodeVersion", "rootPackageLockSha256", "githubScriptsPackageLockSha256", "pythonRequirementsSha256"] as const;
 const secretKeyFragments = ["token", "secret", "password", "connectionstring"] as const;
-
-/** Setup inputs whose successful state can be reused while their fingerprints match. */
-export interface SetupFingerprints {
-  readonly nodeVersion?: string;
-  readonly rootPackageLockSha256?: string;
-  readonly githubScriptsPackageLockSha256?: string;
-  readonly pythonRequirementsSha256?: string;
-}
 
 /** Version 1 of the repository-local, non-secret tooling configuration. */
 export interface ToolingConfigV1 {
   readonly schemaVersion: 1;
   readonly containerEngine?: ContainerEngine;
-  readonly fingerprints?: SetupFingerprints;
 }
 
 /** Result of reading the optional repository-local tooling configuration. */
@@ -42,6 +29,14 @@ function normalizedKey(key: string): string {
   return key.replaceAll(/[^a-z0-9]/giu, "").toLowerCase();
 }
 
+/**
+ * Recursively rejects any secret-shaped property name, including inside objects (such as a
+ * discarded legacy `fingerprints` object) that are never copied into the parsed result.
+ *
+ * @param value - Untrusted candidate value.
+ * @param visited - Cycle guard shared across the recursive walk.
+ * @throws When any nested property name matches a secret-shaped fragment.
+ */
 function rejectSecretShapedKeys(value: unknown, visited: WeakSet<object> = new WeakSet()): void {
   if (typeof value !== "object" || value === null || visited.has(value)) {
     return;
@@ -55,34 +50,6 @@ function rejectSecretShapedKeys(value: unknown, visited: WeakSet<object> = new W
     }
     rejectSecretShapedKeys(child, visited);
   }
-}
-
-function readOptionalString(record: Readonly<Record<string, unknown>>, key: string): string | undefined {
-  const value = record[key];
-  if (value === undefined) {
-    return undefined;
-  }
-  if (typeof value !== "string" || value.trim() === "") {
-    throw new Error(`Tooling configuration property '${key}' must be a non-empty string.`);
-  }
-  return value;
-}
-
-function parseFingerprints(value: unknown): SetupFingerprints {
-  if (!isRecord(value)) {
-    throw new Error("Tooling configuration property 'fingerprints' must be an object.");
-  }
-
-  const parsed: {
-    -readonly [Key in keyof SetupFingerprints]?: string;
-  } = {};
-  for (const key of fingerprintKeys) {
-    const fingerprint = readOptionalString(value, key);
-    if (fingerprint !== undefined) {
-      parsed[key] = fingerprint;
-    }
-  }
-  return parsed;
 }
 
 function parseContainerEngine(value: unknown): ContainerEngine | undefined {
@@ -106,6 +73,12 @@ function hasErrorCode(error: unknown, code: string): boolean {
 /**
  * Parses untrusted local tooling configuration and returns only schema-known fields.
  *
+ * @remarks
+ * A legacy `fingerprints` object (or any other unknown property) is silently discarded from the
+ * parsed result; it is never rejected on that basis alone. Its property names are still walked for
+ * secret-shaped fragments, so a legacy document carrying a secret-shaped key nested inside a
+ * discarded object remains rejected exactly like any other secret-shaped property.
+ *
  * @param value - Untrusted JSON-compatible value.
  * @returns Validated version 1 tooling configuration.
  * @throws When the schema, values, or any secret-shaped property is invalid.
@@ -120,12 +93,10 @@ export function parseToolingConfig(value: unknown): ToolingConfigV1 {
   }
 
   const containerEngine = parseContainerEngine(value["containerEngine"]);
-  const fingerprints = value["fingerprints"] === undefined ? undefined : parseFingerprints(value["fingerprints"]);
 
   return {
     schemaVersion: 1,
     ...(containerEngine === undefined ? {} : {containerEngine}),
-    ...(fingerprints === undefined ? {} : {fingerprints}),
   };
 }
 
@@ -133,12 +104,13 @@ export function parseToolingConfig(value: unknown): ToolingConfigV1 {
  * Reads and validates optional repository-local tooling configuration.
  *
  * @param path - Absolute or repository-relative configuration path.
+ * @param files - Read-only filesystem capability used to read the configuration file.
  * @returns Missing, valid, or explicit invalid status.
  */
-export async function readToolingConfig(path: string): Promise<ToolingConfigReadResult> {
+export async function readToolingConfig(path: string, files: ReadOnlyFileSystem): Promise<ToolingConfigReadResult> {
   let contents: string;
   try {
-    contents = await readFile(path, "utf8");
+    contents = await files.readText(path);
   } catch (error) {
     if (hasErrorCode(error, "ENOENT")) {
       return {status: "missing"};
@@ -161,54 +133,24 @@ export async function readToolingConfig(path: string): Promise<ToolingConfigRead
 }
 
 /**
- * Writes validated configuration through a permission-conscious temporary sibling.
+ * Writes validated configuration through a permission-conscious atomic write.
  *
  * @param path - Destination configuration path.
  * @param config - Version 1 configuration to persist.
+ * @param files - Filesystem capability used to perform the atomic write.
  */
-export async function writeToolingConfig(path: string, config: Readonly<ToolingConfigV1>): Promise<void> {
+export async function writeToolingConfig(path: string, config: Readonly<ToolingConfigV1>, files: FileSystem): Promise<void> {
   const parsed = parseToolingConfig(config);
-  const parent = dirname(path);
-  const temporaryPath = resolve(parent, `${basename(path)}.${process.pid}.${randomBytes(8).toString("hex")}.tmp`);
   const document = `${JSON.stringify(parsed, null, 2)}\n`;
 
-  try {
-    await mkdir(parent, {recursive: true, mode: 0o700});
-    await writeFile(temporaryPath, document, {
-      encoding: "utf8",
-      flag: "wx",
-      mode: 0o600,
-    });
-    await rename(temporaryPath, path);
-  } catch (error) {
-    try {
-      await rm(temporaryPath, {force: true});
-    } catch {
-      // Preserve the original write/rename failure and never broaden cleanup.
-    }
-    throw error;
-  }
+  await files.writeTextAtomic(path, document, {mode: 0o600, directoryMode: 0o700});
 }
 
 /**
- * Calculates the lowercase hexadecimal SHA-256 digest of a file.
- *
- * @param path - File to hash.
- * @returns SHA-256 digest.
- */
-export async function sha256File(path: string): Promise<string> {
-  const hash = createHash("sha256");
-  for await (const chunk of createReadStream(path)) {
-    hash.update(chunk);
-  }
-  return hash.digest("hex");
-}
-
-/**
- * Merges a partial update without discarding existing preference or fingerprint fields.
+ * Merges a partial update without discarding an existing preference field.
  *
  * @param current - Existing configuration, when present.
- * @param patch - Preference and fingerprint fields to update.
+ * @param patch - Preference fields to update.
  * @returns Validated merged version 1 configuration.
  */
 export function mergeToolingConfig(
@@ -216,14 +158,9 @@ export function mergeToolingConfig(
   patch: Readonly<Partial<Omit<ToolingConfigV1, "schemaVersion">>>,
 ): ToolingConfigV1 {
   const containerEngine = patch.containerEngine ?? current?.containerEngine;
-  const fingerprints = {
-    ...current?.fingerprints,
-    ...patch.fingerprints,
-  };
 
   return parseToolingConfig({
     schemaVersion: 1,
     ...(containerEngine === undefined ? {} : {containerEngine}),
-    ...(Object.keys(fingerprints).length === 0 ? {} : {fingerprints}),
   });
 }

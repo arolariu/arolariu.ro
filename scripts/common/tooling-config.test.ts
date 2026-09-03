@@ -8,7 +8,8 @@ import {mkdir, mkdtemp, readFile, readdir, rm, stat, writeFile} from "node:fs/pr
 import {tmpdir} from "node:os";
 import {dirname, join} from "node:path";
 import {afterEach, beforeEach, describe, expect, it} from "vitest";
-import {mergeToolingConfig, parseToolingConfig, readToolingConfig, sha256File, writeToolingConfig} from "./tooling-config.ts";
+import {nodeFileSystem} from "./runtime.node.ts";
+import {mergeToolingConfig, parseToolingConfig, readToolingConfig, writeToolingConfig} from "./tooling-config.ts";
 
 const temporaryRoots: string[] = [];
 let configPath: string;
@@ -25,34 +26,16 @@ afterEach(async () => {
 
 describe("readToolingConfig", () => {
   it("reports a missing file", async () => {
-    await expect(readToolingConfig(configPath)).resolves.toEqual({status: "missing"});
+    await expect(readToolingConfig(configPath, nodeFileSystem)).resolves.toEqual({status: "missing"});
   });
 
   it("reads a valid version 1 document", async () => {
     await mkdir(dirname(configPath), {recursive: true});
-    await writeFile(
-      configPath,
-      JSON.stringify({
-        schemaVersion: 1,
-        containerEngine: "podman",
-        fingerprints: {
-          nodeVersion: "24.0.0",
-          rootPackageLockSha256: "abc123",
-        },
-      }),
-      "utf8",
-    );
+    await writeFile(configPath, JSON.stringify({schemaVersion: 1, containerEngine: "podman"}), "utf8");
 
-    await expect(readToolingConfig(configPath)).resolves.toEqual({
+    await expect(readToolingConfig(configPath, nodeFileSystem)).resolves.toEqual({
       status: "valid",
-      config: {
-        schemaVersion: 1,
-        containerEngine: "podman",
-        fingerprints: {
-          nodeVersion: "24.0.0",
-          rootPackageLockSha256: "abc123",
-        },
-      },
+      config: {schemaVersion: 1, containerEngine: "podman"},
     });
   });
 
@@ -60,7 +43,7 @@ describe("readToolingConfig", () => {
     await mkdir(dirname(configPath), {recursive: true});
     await writeFile(configPath, "{not json", "utf8");
 
-    const result = await readToolingConfig(configPath);
+    const result = await readToolingConfig(configPath, nodeFileSystem);
 
     expect(result.status).toBe("invalid");
     if (result.status === "invalid") {
@@ -100,24 +83,64 @@ describe("parseToolingConfig", () => {
       }),
     ).toThrow("must not contain secrets");
   });
+
+  it("discards a legacy non-secret fingerprints object entirely while retaining the engine", () => {
+    expect(
+      parseToolingConfig({
+        schemaVersion: 1,
+        containerEngine: "podman",
+        fingerprints: {
+          nodeVersion: "24.0.0",
+          pythonRequirementsSha256: "requirements-hash",
+        },
+      }),
+    ).toEqual({
+      schemaVersion: 1,
+      containerEngine: "podman",
+    });
+  });
+
+  it("still rejects a secret-shaped key nested inside an otherwise-discarded legacy object", () => {
+    expect(() =>
+      parseToolingConfig({
+        schemaVersion: 1,
+        fingerprints: {
+          pythonRequirementsSha256: "requirements-hash",
+        },
+        legacySection: {
+          nested: {
+            apiSecret: "forbidden",
+          },
+        },
+      }),
+    ).toThrow("must not contain secrets");
+  });
 });
 
 describe("writeToolingConfig", () => {
   it("writes through a temporary sibling and atomically renames it", async () => {
-    await writeToolingConfig(configPath, {
-      schemaVersion: 1,
-      containerEngine: "rancher",
-    });
+    await writeToolingConfig(
+      configPath,
+      {
+        schemaVersion: 1,
+        containerEngine: "rancher",
+      },
+      nodeFileSystem,
+    );
 
     await expect(readFile(configPath, "utf8")).resolves.toContain('"schemaVersion": 1');
     await expect(readdir(dirname(configPath))).resolves.toEqual(["tooling.local.json"]);
   });
 
   it("writes permission-conscious files where POSIX modes are supported", async () => {
-    await writeToolingConfig(configPath, {
-      schemaVersion: 1,
-      containerEngine: "podman",
-    });
+    await writeToolingConfig(
+      configPath,
+      {
+        schemaVersion: 1,
+        containerEngine: "podman",
+      },
+      nodeFileSystem,
+    );
 
     if (process.platform !== "win32") {
       const metadata = await stat(configPath);
@@ -133,7 +156,7 @@ describe("writeToolingConfig", () => {
     };
 
     const parsed = parseToolingConfig(untrusted);
-    await writeToolingConfig(configPath, parsed);
+    await writeToolingConfig(configPath, parsed, nodeFileSystem);
 
     await expect(readFile(configPath, "utf8")).resolves.not.toContain("unexpected");
   });
@@ -143,24 +166,18 @@ describe("writeToolingConfig", () => {
     await writeFile(join(configPath, "preserved.txt"), "keep", "utf8");
 
     await expect(
-      writeToolingConfig(configPath, {
-        schemaVersion: 1,
-        containerEngine: "rancher",
-      }),
+      writeToolingConfig(
+        configPath,
+        {
+          schemaVersion: 1,
+          containerEngine: "rancher",
+        },
+        nodeFileSystem,
+      ),
     ).rejects.toThrow();
 
     await expect(readdir(dirname(configPath))).resolves.toEqual(["tooling.local.json"]);
     await expect(readFile(join(configPath, "preserved.txt"), "utf8")).resolves.toBe("keep");
-  });
-});
-
-describe("sha256File", () => {
-  it("returns the lowercase SHA-256 digest", async () => {
-    const filePath = join(dirname(configPath), "fingerprint.txt");
-    await mkdir(dirname(filePath), {recursive: true});
-    await writeFile(filePath, "abc", "utf8");
-
-    await expect(sha256File(filePath)).resolves.toBe("ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad");
   });
 });
 
@@ -172,32 +189,35 @@ describe("mergeToolingConfig", () => {
     });
   });
 
-  it("preserves existing values and merges fingerprint fields", () => {
+  it("preserves the existing container engine when the patch omits it", () => {
     expect(
       mergeToolingConfig(
         {
           schemaVersion: 1,
           containerEngine: "rancher",
-          fingerprints: {
-            nodeVersion: "24.0.0",
-            rootPackageLockSha256: "old-root",
-          },
         },
-        {
-          fingerprints: {
-            rootPackageLockSha256: "new-root",
-            pythonRequirementsSha256: "python",
-          },
-        },
+        {},
       ),
     ).toEqual({
       schemaVersion: 1,
       containerEngine: "rancher",
-      fingerprints: {
-        nodeVersion: "24.0.0",
-        rootPackageLockSha256: "new-root",
-        pythonRequirementsSha256: "python",
-      },
+    });
+  });
+
+  it("overwrites the container engine with the patch value", () => {
+    expect(
+      mergeToolingConfig(
+        {
+          schemaVersion: 1,
+          containerEngine: "rancher",
+        },
+        {
+          containerEngine: "podman",
+        },
+      ),
+    ).toEqual({
+      schemaVersion: 1,
+      containerEngine: "podman",
     });
   });
 });

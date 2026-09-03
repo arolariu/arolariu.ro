@@ -1,6 +1,13 @@
+// @vitest-environment node
 /**
  * @fileoverview Unit tests for shared worker shell helpers.
  * @module scripts/workers/shell.test
+ *
+ * @remarks
+ * These tests spawn real child processes through the shared command runner, so they
+ * require the Node environment. The repository default `happy-dom` environment
+ * replaces the global `AbortController`/`AbortSignal` with DOM implementations that
+ * Node's own `events` internals reject, which breaks every real spawn in this file.
  */
 
 import {describe, expect, it} from "vitest";

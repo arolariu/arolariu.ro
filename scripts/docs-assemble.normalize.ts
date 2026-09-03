@@ -20,10 +20,15 @@
  * Slugs are NOT written by this normalizer. Docusaurus derives page URLs
  * from the filesystem path plus each plugin's `routeBasePath`, so setting
  * an explicit `slug` would double-prefix the route.
+ *
+ * Every filesystem access flows through the injected {@link FileSystem} capability instead of
+ * `node:fs`, so this module can be exercised with the declarative command runtime's deterministic
+ * in-memory fixtures. Frontmatter parsing and serialization stay business-pure functions over
+ * plain strings.
  */
 
-import {readFileSync, writeFileSync, readdirSync, statSync} from 'node:fs';
-import {join} from 'node:path';
+import {join} from "node:path";
+import type {FileSystem} from "./common/runtime.ts";
 
 /**
  * Optional knobs for {@link normalizeDirectory}.
@@ -44,7 +49,7 @@ export type NormalizeOptions = {
  */
 export type Frontmatter = Record<string, string | number>;
 
-const FRONTMATTER_DELIMITER = '---';
+const FRONTMATTER_DELIMITER = "---";
 
 /**
  * Parse the leading YAML frontmatter block of a markdown source string.
@@ -65,16 +70,16 @@ const FRONTMATTER_DELIMITER = '---';
  *   block so downstream code can fill in defaults.
  */
 function parseFrontmatter(source: string): {frontmatter: Frontmatter; body: string} {
-  if (!source.startsWith(FRONTMATTER_DELIMITER + '\n')) {
+  if (!source.startsWith(FRONTMATTER_DELIMITER + "\n")) {
     return {frontmatter: {}, body: source};
   }
-  const end = source.indexOf('\n' + FRONTMATTER_DELIMITER + '\n', FRONTMATTER_DELIMITER.length);
+  const end = source.indexOf("\n" + FRONTMATTER_DELIMITER + "\n", FRONTMATTER_DELIMITER.length);
   if (end === -1) return {frontmatter: {}, body: source};
   const raw = source.slice(FRONTMATTER_DELIMITER.length + 1, end);
   const body = source.slice(end + FRONTMATTER_DELIMITER.length + 2);
   const frontmatter: Frontmatter = {};
-  for (const line of raw.split('\n')) {
-    const colon = line.indexOf(':');
+  for (const line of raw.split("\n")) {
+    const colon = line.indexOf(":");
     if (colon === -1) continue;
     const key = line.slice(0, colon).trim();
     const value = line.slice(colon + 1).trim();
@@ -99,11 +104,11 @@ const YAML_KEYWORD_SCALAR = /^(true|false|yes|no|on|off|null|~)$/i;
  * {@link YAML_KEYWORD_SCALAR}.
  */
 function serializeValue(value: string | number): string {
-  if (typeof value === 'number') return String(value);
+  if (typeof value === "number") return String(value);
   const needsPunctuationQuoting = /^[@#&*!|>%`?{}[\]-]|[:#]|^\s|\s$/.test(value);
   const needsKeywordQuoting = YAML_KEYWORD_SCALAR.test(value);
   if (!needsPunctuationQuoting && !needsKeywordQuoting) return value;
-  return `"${value.replaceAll('\\', '\\\\').replaceAll('"', '\\"')}"`;
+  return `"${value.replaceAll("\\", "\\\\").replaceAll('"', '\\"')}"`;
 }
 
 /**
@@ -116,7 +121,9 @@ function serializeValue(value: string | number): string {
 export function serializeFrontmatter(fm: Frontmatter, body: string): string {
   const keys = Object.keys(fm);
   if (keys.length === 0) return body;
-  const lines = keys.map((k) => `${k}: ${serializeValue(fm[k])}`).join('\n');
+  const lines = Object.entries(fm)
+    .map(([k, v]) => `${k}: ${serializeValue(v)}`)
+    .join("\n");
   return `${FRONTMATTER_DELIMITER}\n${lines}\n${FRONTMATTER_DELIMITER}\n${body}`;
 }
 
@@ -134,42 +141,44 @@ function extractH1(body: string): string | undefined {
  * (from the first H1) and missing `sidebar_position` (from the caller's
  * deterministic order).
  *
+ * @param files - Injected filesystem capability used to read and rewrite the file.
  * @param filePath - Absolute path to the file being rewritten.
  * @param position - Sidebar position to assign when the file has none.
  */
-async function normalizeFile(filePath: string, position: number): Promise<void> {
-  const source = readFileSync(filePath, 'utf8');
+async function normalizeFile(files: FileSystem, filePath: string, position: number): Promise<void> {
+  const source = await files.readText(filePath);
   const {frontmatter, body} = parseFrontmatter(source);
-  if (!('title' in frontmatter)) {
+  if (!("title" in frontmatter)) {
     const heading = extractH1(body);
-    if (heading) frontmatter.title = heading;
+    if (heading) frontmatter["title"] = heading;
   }
-  if (!('sidebar_position' in frontmatter)) frontmatter.sidebar_position = position;
-  writeFileSync(filePath, serializeFrontmatter(frontmatter, body));
+  if (!("sidebar_position" in frontmatter)) frontmatter["sidebar_position"] = position;
+  await files.writeText(filePath, serializeFrontmatter(frontmatter, body));
 }
 
 /**
  * Recursively walk a directory and normalize every markdown file it
  * contains. See the module-level docs for the full contract.
  *
+ * @param files - Injected filesystem capability used for every directory listing, read, and
+ * rewrite performed by the walk.
  * @param dir - Absolute path to the root of the walk.
  * @param options - Optional per-run configuration. Currently only
  *   `skipPaths` is supported.
  */
-export async function normalizeDirectory(dir: string, options: NormalizeOptions = {}): Promise<void> {
+export async function normalizeDirectory(files: FileSystem, dir: string, options: NormalizeOptions = {}): Promise<void> {
   const skip = new Set(options.skipPaths ?? []);
   const walk = async (current: string): Promise<void> => {
-    const entries = readdirSync(current).sort();
+    const entries = (await files.readDirectory(current)).toSorted((left, right) => left.name.localeCompare(right.name));
     let position = 1;
-    for (const name of entries) {
-      const full = join(current, name);
+    for (const entry of entries) {
+      const full = join(current, entry.name);
       if (skip.has(full)) continue;
-      const stat = statSync(full);
-      if (stat.isDirectory()) {
+      if (entry.kind === "directory") {
         await walk(full);
-      } else if (stat.isFile() && /\.mdx?$/i.test(name)) {
-        const isIndex = /^(index|readme)\.mdx?$/i.test(name);
-        await normalizeFile(full, isIndex ? 0 : position++);
+      } else if (entry.kind === "file" && /\.mdx?$/i.test(entry.name)) {
+        const isIndex = /^(index|readme)\.mdx?$/i.test(entry.name);
+        await normalizeFile(files, full, isIndex ? 0 : position++);
       }
     }
   };
