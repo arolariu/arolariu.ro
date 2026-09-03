@@ -55,22 +55,14 @@ interface CommandEntrypointAnalysisResult {
  * @param fileName - Virtual file name used to select the TypeScript/TSX/JSX script kind.
  * @returns Static module references in source order and non-literal dynamic import line numbers.
  */
-export function collectTypeScriptModuleReferences(
-  sourceText: string,
-  fileName: string = "module.ts",
-): TypeScriptModuleAnalysisResult {
-  const scriptKind = fileName.endsWith(".tsx")
-    ? ts.ScriptKind.TSX
-    : fileName.endsWith(".jsx")
-      ? ts.ScriptKind.JSX
-      : ts.ScriptKind.TS;
+export function collectTypeScriptModuleReferences(sourceText: string, fileName: string = "module.ts"): TypeScriptModuleAnalysisResult {
+  const scriptKind = fileName.endsWith(".tsx") ? ts.ScriptKind.TSX : fileName.endsWith(".jsx") ? ts.ScriptKind.JSX : ts.ScriptKind.TS;
   const source = ts.createSourceFile(fileName, sourceText, ts.ScriptTarget.Latest, true, scriptKind);
   const references: TypeScriptModuleReferenceDefinition[] = [];
   const nonLiteralDynamicImportLines: number[] = [];
 
   const lineOf = (node: ts.Node): number => source.getLineAndCharacterOfPosition(node.getStart(source)).line + 1;
-  const normalizeImportedName = (name: string): string =>
-    name === "default" ? completeModuleNamespaceImportName : name;
+  const normalizeImportedName = (name: string): string => (name === "default" ? completeModuleNamespaceImportName : name);
 
   function visit(node: ts.Node): void {
     if (ts.isImportDeclaration(node) && ts.isStringLiteral(node.moduleSpecifier)) {
@@ -163,10 +155,7 @@ function isImportMetaUrlArgument(argument: ts.Expression): boolean {
  * @param fileName - Virtual file name used when constructing the source file.
  * @returns Whether the module exports a command singleton and uses shared direct-entry detection.
  */
-export function analyzeCommandEntrypointSource(
-  sourceText: string,
-  fileName: string = "entrypoint.ts",
-): CommandEntrypointAnalysisResult {
+export function analyzeCommandEntrypointSource(sourceText: string, fileName: string = "entrypoint.ts"): CommandEntrypointAnalysisResult {
   const source = ts.createSourceFile(fileName, sourceText, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
   let exportsCommandSingleton = false;
   let usesSharedRunIfMain = false;

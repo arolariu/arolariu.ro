@@ -65,12 +65,7 @@ export const explicitlyRetainedRootDependencyNames = [
   "svelte-eslint-parser",
 ] as const;
 
-const dependencyFieldNames = [
-  "dependencies",
-  "devDependencies",
-  "peerDependencies",
-  "optionalDependencies",
-] as const;
+const dependencyFieldNames = ["dependencies", "devDependencies", "peerDependencies", "optionalDependencies"] as const;
 
 function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -120,11 +115,13 @@ export function collectDelegatedWorkspaceDependencyNames(repositoryRoot: string)
  * @returns Sorted, de-duplicated dependency names Knip must ignore for the root workspace.
  */
 export function collectKnipIgnoredDependencyNames(repositoryRoot: string): readonly string[] {
-  return [...new Set([
-    ...collectDelegatedWorkspaceDependencyNames(repositoryRoot).filter(
-      (dependencyName) => !scriptsOwnedDelegatedDependencyNames.some((ownedName) => ownedName === dependencyName),
-    ),
-    ...repositoryOwnedDependencyExclusionDefinitions.map(({dependencyName}) => dependencyName),
-    ...explicitlyRetainedRootDependencyNames,
-  ])].toSorted();
+  return [
+    ...new Set([
+      ...collectDelegatedWorkspaceDependencyNames(repositoryRoot).filter(
+        (dependencyName) => !scriptsOwnedDelegatedDependencyNames.some((ownedName) => ownedName === dependencyName),
+      ),
+      ...repositoryOwnedDependencyExclusionDefinitions.map(({dependencyName}) => dependencyName),
+      ...explicitlyRetainedRootDependencyNames,
+    ]),
+  ].toSorted();
 }

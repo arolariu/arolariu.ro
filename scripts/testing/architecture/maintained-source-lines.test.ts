@@ -6,10 +6,7 @@
 
 import {describe, expect, it} from "vitest";
 
-import {
-  approvedScriptsArchitectureBaseline,
-  cohortZeroMaximumMaintainedLineCount,
-} from "./scripts-architecture-baseline.ts";
+import {approvedScriptsArchitectureBaseline, cohortZeroMaximumMaintainedLineCount} from "./scripts-architecture-baseline.ts";
 import {
   calculateMaintainedSourceLineReport,
   calculateMaintainedSourceHistoryReport,
@@ -29,13 +26,9 @@ describe("maintained scripts line accounting", () => {
   it("filters candidate paths to the approved source scope", () => {
     expect(
       parseGitScriptSourcePaths(
-        [
-          "scripts/doctor.ts",
-          "scripts/doctor.test.ts",
-          "scripts/vitest.config.ts",
-          "scripts/README.md",
-          "sites/arolariu.ro/page.tsx",
-        ].join("\n"),
+        ["scripts/doctor.ts", "scripts/doctor.test.ts", "scripts/vitest.config.ts", "scripts/README.md", "sites/arolariu.ro/page.tsx"].join(
+          "\n",
+        ),
       ),
     ).toEqual(["scripts/doctor.test.ts", "scripts/doctor.ts"]);
   });
@@ -92,15 +85,13 @@ describe("maintained scripts line accounting", () => {
     expect(approvedScriptsArchitectureBaseline.testSupportMaintainedLineCount).toBe(36_251);
     expect(
       approvedScriptsArchitectureBaseline.productionMaintainedLineCount
-      + approvedScriptsArchitectureBaseline.testSupportMaintainedLineCount,
+        + approvedScriptsArchitectureBaseline.testSupportMaintainedLineCount,
     ).toBe(approvedScriptsArchitectureBaseline.maintainedLineCount);
     expect(approvedScriptsArchitectureBaseline.finalMaximumMaintainedLineCount).toBe(55_032);
     expect(approvedScriptsArchitectureBaseline.sourceFileCount).toBe(142);
 
     const report = calculateMaintainedSourceLineReport(process.cwd());
-    expect(report.totalMaintainedLineCount, JSON.stringify(report, null, 2)).toBeLessThanOrEqual(
-      cohortZeroMaximumMaintainedLineCount,
-    );
+    expect(report.totalMaintainedLineCount, JSON.stringify(report, null, 2)).toBeLessThanOrEqual(cohortZeroMaximumMaintainedLineCount);
     expect(report.excludedSourcePaths).toEqual(["scripts/vitest.config.ts"]);
 
     const history = calculateMaintainedSourceHistoryReport(process.cwd());

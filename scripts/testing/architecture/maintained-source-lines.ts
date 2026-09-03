@@ -16,13 +16,8 @@ import {execFileSync} from "node:child_process";
 import {readFileSync} from "node:fs";
 import {resolve} from "node:path";
 
-import {
-  approvedScriptsArchitectureBaseline,
-} from "./scripts-architecture-baseline.ts";
-import {
-  isScriptTestFile,
-  normalizeScriptSourcePath,
-} from "./script-source-files.ts";
+import {approvedScriptsArchitectureBaseline} from "./scripts-architecture-baseline.ts";
+import {isScriptTestFile, normalizeScriptSourcePath} from "./script-source-files.ts";
 
 /** File extensions counted toward the maintained `scripts/**` line total. */
 const maintainedSourcePattern = /\.(?:cjs|js|mjs|ts|tsx)$/u;
@@ -121,11 +116,7 @@ export function countMaintainedSourceLineRecords(sourceText: string): number {
  * the sole approved exemption.
  */
 function isMaintainedSourcePath(sourcePath: string): boolean {
-  return (
-    sourcePath.startsWith("scripts/")
-    && maintainedSourcePattern.test(sourcePath)
-    && !excludedSourcePaths.has(sourcePath)
-  );
+  return sourcePath.startsWith("scripts/") && maintainedSourcePattern.test(sourcePath) && !excludedSourcePaths.has(sourcePath);
 }
 
 /**
@@ -135,11 +126,7 @@ function isMaintainedSourcePath(sourcePath: string): boolean {
  * @returns Every maintained source path, normalized and sorted.
  */
 export function parseGitScriptSourcePaths(stdout: string): readonly string[] {
-  return stdout
-    .split(/\r?\n/u)
-    .map(normalizeScriptSourcePath)
-    .filter(isMaintainedSourcePath)
-    .toSorted();
+  return stdout.split(/\r?\n/u).map(normalizeScriptSourcePath).filter(isMaintainedSourcePath).toSorted();
 }
 
 /**
@@ -313,9 +300,7 @@ function familyOf(sourcePath: string): string {
  * `"production"`.
  */
 function classificationOf(sourcePath: string): "production" | "test-support" {
-  return isScriptTestFile(sourcePath) || sourcePath.startsWith("scripts/testing/")
-    ? "test-support"
-    : "production";
+  return isScriptTestFile(sourcePath) || sourcePath.startsWith("scripts/testing/") ? "test-support" : "production";
 }
 
 /**
@@ -331,11 +316,10 @@ function classificationOf(sourcePath: string): "production" | "test-support" {
  * exact excluded-path set.
  */
 export function calculateMaintainedSourceLineReport(repositoryRoot: string): MaintainedSourceLineReport {
-  const stdout = execFileSync(
-    "git",
-    ["ls-files", "--cached", "--others", "--exclude-standard", "--", "scripts"],
-    {cwd: repositoryRoot, encoding: "utf8"},
-  );
+  const stdout = execFileSync("git", ["ls-files", "--cached", "--others", "--exclude-standard", "--", "scripts"], {
+    cwd: repositoryRoot,
+    encoding: "utf8",
+  });
   const deletedSourcePaths = new Set(
     parseGitScriptSourcePaths(
       execFileSync("git", ["ls-files", "--deleted", "--", "scripts"], {
@@ -344,9 +328,7 @@ export function calculateMaintainedSourceLineReport(repositoryRoot: string): Mai
       }),
     ),
   );
-  const sourcePaths = parseGitScriptSourcePaths(stdout).filter(
-    (sourcePath) => !deletedSourcePaths.has(sourcePath),
-  );
+  const sourcePaths = parseGitScriptSourcePaths(stdout).filter((sourcePath) => !deletedSourcePaths.has(sourcePath));
   const sourceFiles = sourcePaths.map((sourcePath): MaintainedSourceFileLineDefinition => ({
     sourcePath,
     classification: classificationOf(sourcePath),
@@ -355,10 +337,12 @@ export function calculateMaintainedSourceLineReport(repositoryRoot: string): Mai
   }));
   const totalMaintainedLineCount = sourceFiles.reduce((total, file) => total + file.maintainedLineCount, 0);
   const familyMaintainedLineCounts = Object.fromEntries(
-    [...new Set(sourceFiles.map(({family}) => family))].toSorted().map((family) => [
-      family,
-      sourceFiles.filter((file) => file.family === family).reduce((total, file) => total + file.maintainedLineCount, 0),
-    ]),
+    [...new Set(sourceFiles.map(({family}) => family))]
+      .toSorted()
+      .map((family) => [
+        family,
+        sourceFiles.filter((file) => file.family === family).reduce((total, file) => total + file.maintainedLineCount, 0),
+      ]),
   );
 
   return {

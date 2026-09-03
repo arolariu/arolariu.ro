@@ -2,10 +2,7 @@
 
 import {describe, expect, it} from "vitest";
 
-import {
-  analyzeCommandEntrypointSource,
-  collectTypeScriptModuleReferences,
-} from "./typescript-module-analysis.ts";
+import {analyzeCommandEntrypointSource, collectTypeScriptModuleReferences} from "./typescript-module-analysis.ts";
 
 describe("TypeScript module analysis", () => {
   it("collects imports, re-exports, literal dynamic imports, and type-only state", () => {

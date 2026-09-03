@@ -14,10 +14,7 @@
 
 import {dirname, join} from "node:path";
 
-import {
-  collectTypeScriptModuleReferences,
-  type TypeScriptModuleReferenceDefinition,
-} from "./typescript-module-analysis.ts";
+import {collectTypeScriptModuleReferences, type TypeScriptModuleReferenceDefinition} from "./typescript-module-analysis.ts";
 import {normalizeScriptSourcePath} from "./script-source-files.ts";
 
 /** Whether reachability traversal follows every reference or only runtime (non-type-only) ones. */
@@ -78,11 +75,7 @@ interface ResolvedModuleReferenceDefinition {
  * @returns The resolved local source path, or `undefined` when the specifier is not relative or
  * does not resolve to a known source path.
  */
-function resolveLocalModule(
-  importer: string,
-  specifier: string,
-  knownSourcePaths: ReadonlySet<string>,
-): string | undefined {
+function resolveLocalModule(importer: string, specifier: string, knownSourcePaths: ReadonlySet<string>): string | undefined {
   if (!specifier.startsWith(".")) {
     return undefined;
   }
@@ -109,9 +102,7 @@ function resolveLocalModule(
  * @returns The complete dependency graph plus non-literal dynamic import and unresolved relative
  * reference evidence.
  */
-export function buildScriptSourceGraph(
-  sourceFiles: ReadonlyMap<string, string>,
-): ScriptSourceGraphDefinition {
+export function buildScriptSourceGraph(sourceFiles: ReadonlyMap<string, string>): ScriptSourceGraphDefinition {
   const sourcePaths = [...sourceFiles.keys()].map(normalizeScriptSourcePath).toSorted();
   const knownSourcePaths = new Set(sourcePaths);
   const runtimeDependencies = new Map<string, readonly string[]>();
@@ -141,9 +132,7 @@ export function buildScriptSourceGraph(
       sourcePath,
       [...new Set(resolved.filter(({reference}) => !reference.typeOnly).map(({target}) => target))].toSorted(),
     );
-    nonLiteralDynamicImports.push(
-      ...analysis.nonLiteralDynamicImportLines.map((line) => ({sourcePath, line})),
-    );
+    nonLiteralDynamicImports.push(...analysis.nonLiteralDynamicImportLines.map((line) => ({sourcePath, line})));
   }
 
   return {
@@ -154,9 +143,7 @@ export function buildScriptSourceGraph(
       (left, right) => left.sourcePath.localeCompare(right.sourcePath) || left.line - right.line,
     ),
     unresolvedLocalModuleReferences: unresolvedLocalModuleReferences.toSorted(
-      (left, right) =>
-        left.sourcePath.localeCompare(right.sourcePath)
-        || left.specifier.localeCompare(right.specifier),
+      (left, right) => left.sourcePath.localeCompare(right.sourcePath) || left.specifier.localeCompare(right.specifier),
     ),
   };
 }

@@ -27,10 +27,7 @@ type OutputExpressionPredicate = (expression: ts.Expression, scopes: readonly Al
  * compatibility support is excluded.
  */
 const outputPolicySourcePaths = discoverScriptSourceFiles().filter(
-  (sourcePath) =>
-    !isScriptTestFile(sourcePath)
-    && !sourcePath.startsWith("scripts/testing/")
-    && sourcePath !== "scripts/common/logger.ts",
+  (sourcePath) => !isScriptTestFile(sourcePath) && !sourcePath.startsWith("scripts/testing/") && sourcePath !== "scripts/common/logger.ts",
 );
 
 function getConfigObjectLiteral(expression: ts.Expression): ts.ObjectLiteralExpression | null {
@@ -182,11 +179,9 @@ function getAccessPath(expression: ts.Expression, scopes: readonly AliasScope[])
 
   if (
     ts.isElementAccessExpression(expression)
-    && (
-      ts.isStringLiteral(expression.argumentExpression)
+    && (ts.isStringLiteral(expression.argumentExpression)
       || ts.isNoSubstitutionTemplateLiteral(expression.argumentExpression)
-      || ts.isNumericLiteral(expression.argumentExpression)
-    )
+      || ts.isNumericLiteral(expression.argumentExpression))
   ) {
     const receiver = getAccessPath(expression.expression, scopes);
     return receiver === null ? null : [...receiver, expression.argumentExpression.text];
@@ -356,9 +351,11 @@ describe("direct output policy", () => {
     const architectureReportPattern = "scripts/testing/architecture/report-*.ts";
     const outputIgnores = readConfigStringArrayProperty("eslint.config.ts", "toolingOutputConfig", "ignores");
     const promptIgnores = readConfigStringArrayProperty("eslint.config.ts", "toolingPromptOutputConfig", "ignores");
+    const architectureReportFiles = readConfigStringArrayProperty("eslint.config.ts", "toolingArchitectureReportConfig", "files");
 
     expect(outputIgnores).toContain(architectureReportPattern);
     expect(promptIgnores).toContain(architectureReportPattern);
+    expect(architectureReportFiles).toEqual([architectureReportPattern]);
   });
 
   it("keeps process restrictions when the prompt ESLint policy is applied later", () => {

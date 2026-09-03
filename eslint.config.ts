@@ -864,12 +864,7 @@ const toolingOutputConfig: Config = defineConfig({
 const toolingPromptOutputConfig: Config = defineConfig({
   name: "[@arolariu/tooling-prompt-output]",
   files: ["scripts/**/*.{ts,js,mjs,cjs}"],
-  ignores: [
-    "scripts/**/*.test.ts",
-    "scripts/common/logger.ts",
-    "scripts/common/prompts.ts",
-    "scripts/testing/architecture/report-*.ts",
-  ],
+  ignores: ["scripts/**/*.test.ts", "scripts/common/logger.ts", "scripts/common/prompts.ts", "scripts/testing/architecture/report-*.ts"],
   languageOptions: {
     parser: tseslint.parser,
     ecmaVersion: "latest",
@@ -893,6 +888,17 @@ const toolingPromptOutputConfig: Config = defineConfig({
   },
 })[0] as Config;
 
+const toolingArchitectureReportConfig: Config = defineConfig({
+  name: "[@arolariu/tooling-architecture-report]",
+  files: ["scripts/testing/architecture/report-*.ts"],
+  languageOptions: {
+    parser: tseslint.parser,
+    ecmaVersion: "latest",
+    sourceType: "module",
+    globals: globals.node,
+  },
+})[0] as Config;
+
 const projectEslintConfig = defineConfig(websiteEslintConfig, cvEslintConfig, packagesEslintConfig, statusEslintConfig);
 
 // Add the global ignores to the default config.
@@ -907,6 +913,6 @@ for (const individualEslintConfig of projectEslintConfig) {
     : [...eslintPathsIgnoreList];
 }
 
-const eslintConfig = defineConfig(projectEslintConfig, toolingOutputConfig, toolingPromptOutputConfig);
+const eslintConfig = defineConfig(projectEslintConfig, toolingOutputConfig, toolingPromptOutputConfig, toolingArchitectureReportConfig);
 
 export default eslintConfig;

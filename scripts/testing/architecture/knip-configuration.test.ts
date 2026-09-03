@@ -3,10 +3,7 @@
 import {describe, expect, it} from "vitest";
 
 import knipConfiguration from "../../../knip.config.ts";
-import {
-  additionalScriptSourceRootPaths,
-  scriptEntrypointDefinitions,
-} from "./script-entrypoint-definitions.ts";
+import {additionalScriptSourceRootPaths, scriptEntrypointDefinitions} from "./script-entrypoint-definitions.ts";
 import {collectKnipIgnoredDependencyNames} from "./workspace-dependency-ownership.ts";
 
 describe("Knip configuration", () => {
@@ -16,10 +13,7 @@ describe("Knip configuration", () => {
     }
 
     const rootWorkspace = knipConfiguration.workspaces?.["."];
-    const configuredEntries =
-      rootWorkspace !== undefined && Array.isArray(rootWorkspace.entry)
-        ? rootWorkspace.entry
-        : [];
+    const configuredEntries = rootWorkspace !== undefined && Array.isArray(rootWorkspace.entry) ? rootWorkspace.entry : [];
     for (const {sourcePath} of scriptEntrypointDefinitions) {
       expect(configuredEntries).toContain(sourcePath);
     }

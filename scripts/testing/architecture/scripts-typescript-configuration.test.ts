@@ -24,20 +24,8 @@ describe("scripts TypeScript project", () => {
     }
 
     expect(configuration["extends"]).toBe("../tsconfig.json");
-    expect(configuration["include"]).toEqual([
-      "**/*.ts",
-      "**/*.tsx",
-      "**/*.js",
-      "**/*.mjs",
-      "**/*.cjs",
-      "../knip.config.ts",
-    ]);
-    expect(configuration["exclude"]).toEqual([
-      "**/*.test.*",
-      "**/*.spec.*",
-      "vitest.config.ts",
-      "workers/lint.worker.ts",
-    ]);
+    expect(configuration["include"]).toEqual(["**/*.ts", "**/*.tsx", "**/*.js", "**/*.mjs", "**/*.cjs", "../knip.config.ts"]);
+    expect(configuration["exclude"]).toEqual(["**/*.test.*", "**/*.spec.*", "vitest.config.ts", "workers/lint.worker.ts"]);
     expect(compilerOptions).toMatchObject({incremental: false, pretty: false, types: ["node"]});
   });
 
@@ -48,8 +36,6 @@ describe("scripts TypeScript project", () => {
       throw new Error("Expected package.json#scripts to be an object.");
     }
 
-    expect(scripts["typecheck:scripts"]).toBe(
-      "tsc --project scripts/tsconfig.json --pretty false",
-    );
+    expect(scripts["typecheck:scripts"]).toBe("tsc --project scripts/tsconfig.json --pretty false");
   });
 });

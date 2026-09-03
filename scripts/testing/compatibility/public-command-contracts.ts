@@ -132,7 +132,8 @@ export const publicCommandBehaviorEvidenceDefinitions = [
     behaviorTestPaths: ["scripts/workers/shell.test.ts"],
     characterizationGaps: [
       {
-        missingBehavior: "Format Piscina host target decoding, task planning, worker aggregation, presentation, and direct-entry exit behavior",
+        missingBehavior:
+          "Format Piscina host target decoding, task planning, worker aggregation, presentation, and direct-entry exit behavior",
         scheduledCohort: 7,
       },
     ],
@@ -142,7 +143,8 @@ export const publicCommandBehaviorEvidenceDefinitions = [
     behaviorTestPaths: ["scripts/workers/lint.worker.test.ts", "scripts/workers/shell.test.ts"],
     characterizationGaps: [
       {
-        missingBehavior: "Lint Piscina host target decoding, task planning, worker aggregation, presentation, and direct-entry exit behavior",
+        missingBehavior:
+          "Lint Piscina host target decoding, task planning, worker aggregation, presentation, and direct-entry exit behavior",
         scheduledCohort: 7,
       },
     ],

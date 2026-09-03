@@ -75,17 +75,11 @@ const directEntrypoints: readonly string[] = commanderEntrypointSourcePaths;
  * support added by this cohort.
  */
 const runtimeBoundaryScanSourcePaths = discoverScriptSourceFiles().filter(
-  (sourcePath) =>
-    !isScriptTestFile(sourcePath)
-    && !isScriptConfigurationFile(sourcePath)
-    && !sourcePath.startsWith("scripts/testing/"),
+  (sourcePath) => !isScriptTestFile(sourcePath) && !isScriptConfigurationFile(sourcePath) && !sourcePath.startsWith("scripts/testing/"),
 );
 
 /** Modules deleted with the declarative migration; no production module may reference them again. */
-const removedCompatibilityModules: readonly string[] = [
-  "scripts/common/cli.ts",
-  "scripts/common/process.ts",
-];
+const removedCompatibilityModules: readonly string[] = ["scripts/common/cli.ts", "scripts/common/process.ts"];
 
 /** Module specifiers that spawn an operating-system process outside the approved runner adapter. */
 const processSpawningModules: ReadonlySet<string> = new Set(["node:child_process", "child_process"]);
@@ -169,12 +163,7 @@ function discoverRuntimeBoundaryProductionScripts(): readonly string[] {
 function isPropertyNameLike(
   node: ts.PropertyName | ts.Expression,
 ): node is ts.Identifier | ts.StringLiteral | ts.NumericLiteral | ts.NoSubstitutionTemplateLiteral {
-  return (
-    ts.isIdentifier(node)
-    || ts.isStringLiteral(node)
-    || ts.isNumericLiteral(node)
-    || ts.isNoSubstitutionTemplateLiteral(node)
-  );
+  return ts.isIdentifier(node) || ts.isStringLiteral(node) || ts.isNumericLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node);
 }
 
 function declareBindingName(name: ts.BindingName, scope: AliasScope, accessPath: AccessPath | null): void {
@@ -208,8 +197,7 @@ function declareBindingName(name: ts.BindingName, scope: AliasScope, accessPath:
       continue;
     }
 
-    const elementAccessPath =
-      element.dotDotDotToken === undefined && accessPath !== null ? [...accessPath, `${index}`] : null;
+    const elementAccessPath = element.dotDotDotToken === undefined && accessPath !== null ? [...accessPath, `${index}`] : null;
 
     declareBindingName(element.name, scope, elementAccessPath);
   }
@@ -257,7 +245,11 @@ function isDynamicImport(node: ts.CallExpression): boolean {
   return node.expression.kind === ts.SyntaxKind.ImportKeyword;
 }
 
-function visitFunction(node: ts.FunctionLikeDeclaration, scopes: readonly AliasScope[], visit: (node: ts.Node, scopes: readonly AliasScope[]) => void): void {
+function visitFunction(
+  node: ts.FunctionLikeDeclaration,
+  scopes: readonly AliasScope[],
+  visit: (node: ts.Node, scopes: readonly AliasScope[]) => void,
+): void {
   const functionScope: AliasScope = new Map();
   if (node.name !== undefined && ts.isIdentifier(node.name)) {
     functionScope.set(node.name.text, null);
@@ -279,18 +271,9 @@ function visitFunction(node: ts.FunctionLikeDeclaration, scopes: readonly AliasS
   }
 }
 
-function scanRuntimeBoundarySource(
-  file: string,
-  sourceText: string,
-): readonly RuntimeBoundaryViolation[] {
+function scanRuntimeBoundarySource(file: string, sourceText: string): readonly RuntimeBoundaryViolation[] {
   const normalizedFile = normalizeFilePath(file);
-  const source = ts.createSourceFile(
-    normalizedFile,
-    sourceText,
-    ts.ScriptTarget.Latest,
-    true,
-    ts.ScriptKind.TS,
-  );
+  const source = ts.createSourceFile(normalizedFile, sourceText, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
   const violations: RuntimeBoundaryViolation[] = [];
   const seen = new Set<string>();
 
@@ -345,25 +328,24 @@ function scanRuntimeBoundarySource(
       add(node, "ambient-os-state");
     }
 
-    if (
-      specifier === "node:timers"
-      || specifier === "node:timers/promises"
-      || specifier === "timers"
-      || specifier === "timers/promises"
-    ) {
+    if (specifier === "node:timers" || specifier === "node:timers/promises" || specifier === "timers" || specifier === "timers/promises") {
       add(node, "ambient-timer");
     }
   }
 
   function isDirectOutputPath(path: AccessPath): boolean {
-    return (path.length === 2 && path[0] === "console")
-      || (path.length === 3 && path[0] === "process" && (path[1] === "stdout" || path[1] === "stderr") && path[2] === "write");
+    return (
+      (path.length === 2 && path[0] === "console")
+      || (path.length === 3 && path[0] === "process" && (path[1] === "stdout" || path[1] === "stderr") && path[2] === "write")
+    );
   }
 
   function isAmbientTimerCallPath(path: AccessPath): boolean {
-    return (path.length === 1 && (path[0] === "setTimeout" || path[0] === "setInterval"))
+    return (
+      (path.length === 1 && (path[0] === "setTimeout" || path[0] === "setInterval"))
       || (path.length === 2 && path[0] === "performance" && path[1] === "now")
-      || (path.length === 2 && path[0] === "Date" && path[1] === "now");
+      || (path.length === 2 && path[0] === "Date" && path[1] === "now")
+    );
   }
 
   function isAmbientEnvironmentPath(path: AccessPath): boolean {
@@ -371,13 +353,15 @@ function scanRuntimeBoundarySource(
   }
 
   function isAmbientOsStatePath(path: AccessPath): boolean {
-    return startsWithPath(path, ["process", "argv"])
+    return (
+      startsWithPath(path, ["process", "argv"])
       || startsWithPath(path, ["process", "execPath"])
       || startsWithPath(path, ["process", "platform"])
       || startsWithPath(path, ["process", "arch"])
       || startsWithPath(path, ["process", "pid"])
       || startsWithPath(path, ["process", "version"])
-      || startsWithPath(path, ["process", "versions"]);
+      || startsWithPath(path, ["process", "versions"])
+    );
   }
 
   function isAmbientOsStateCallPath(path: AccessPath): boolean {
@@ -385,13 +369,15 @@ function scanRuntimeBoundarySource(
   }
 
   function isAmbientProcessControlPath(path: AccessPath): boolean {
-    return startsWithPath(path, ["process", "chdir"])
+    return (
+      startsWithPath(path, ["process", "chdir"])
       || startsWithPath(path, ["process", "kill"])
       || startsWithPath(path, ["process", "on"])
       || startsWithPath(path, ["process", "once"])
       || startsWithPath(path, ["process", "addListener"])
       || startsWithPath(path, ["process", "removeListener"])
-      || startsWithPath(path, ["process", "off"]);
+      || startsWithPath(path, ["process", "off"])
+    );
   }
 
   function expressionContainsAccessPath(
@@ -422,11 +408,13 @@ function scanRuntimeBoundarySource(
   }
 
   function isImportMetaUrlExpression(expression: ts.Expression): boolean {
-    return ts.isPropertyAccessExpression(expression)
+    return (
+      ts.isPropertyAccessExpression(expression)
       && expression.name.text === "url"
       && ts.isMetaProperty(expression.expression)
       && expression.expression.keywordToken === ts.SyntaxKind.ImportKeyword
-      && expression.expression.name.text === "meta";
+      && expression.expression.name.text === "meta"
+    );
   }
 
   function expressionContainsImportMetaUrl(expression: ts.Expression): boolean {
@@ -450,10 +438,7 @@ function scanRuntimeBoundarySource(
   }
 
   function isOutermostAccessPathExpression(node: ts.Expression): boolean {
-    return !(
-      (ts.isPropertyAccessExpression(node.parent) || ts.isElementAccessExpression(node.parent))
-      && node.parent.expression === node
-    );
+    return !((ts.isPropertyAccessExpression(node.parent) || ts.isElementAccessExpression(node.parent)) && node.parent.expression === node);
   }
 
   function visit(node: ts.Node, scopes: readonly AliasScope[]): void {
@@ -485,8 +470,7 @@ function scanRuntimeBoundarySource(
           visit(declaration.initializer, scopes);
         }
 
-        const accessPath =
-          isConstant && declaration.initializer !== undefined ? getAccessPath(declaration.initializer, scopes) : null;
+        const accessPath = isConstant && declaration.initializer !== undefined ? getAccessPath(declaration.initializer, scopes) : null;
 
         declareBindingName(declaration.name, scope, accessPath);
       }
@@ -552,20 +536,13 @@ function scanRuntimeBoundarySource(
           add(node, "ambient-process-control");
         }
 
-        if (
-          path.length === 2
-          && path[0] === "Promise"
-          && (path[1] === "all" || path[1] === "allSettled")
-        ) {
+        if (path.length === 2 && path[0] === "Promise" && (path[1] === "all" || path[1] === "allSettled")) {
           add(node, "explicit-concurrency");
         }
       }
     }
 
-    if (
-      (ts.isPropertyAccessExpression(node) || ts.isElementAccessExpression(node))
-      && isOutermostAccessPathExpression(node)
-    ) {
+    if ((ts.isPropertyAccessExpression(node) || ts.isElementAccessExpression(node)) && isOutermostAccessPathExpression(node)) {
       const path = getAccessPath(node, scopes);
       if (path !== null && normalizedFile !== runtimeNodeAdapter) {
         if (isAmbientEnvironmentPath(path)) {
@@ -591,10 +568,10 @@ function scanRuntimeBoundarySource(
 
       if (
         comparisonOperators.has(node.operatorToken.kind)
-        && (
-          (expressionContainsImportMetaUrl(node.left) && expressionContainsAccessPath(node.right, scopes, (path) => startsWithPath(path, ["process", "argv"])))
-          || (expressionContainsImportMetaUrl(node.right) && expressionContainsAccessPath(node.left, scopes, (path) => startsWithPath(path, ["process", "argv"])))
-        )
+        && ((expressionContainsImportMetaUrl(node.left)
+          && expressionContainsAccessPath(node.right, scopes, (path) => startsWithPath(path, ["process", "argv"])))
+          || (expressionContainsImportMetaUrl(node.right)
+            && expressionContainsAccessPath(node.left, scopes, (path) => startsWithPath(path, ["process", "argv"]))))
       ) {
         add(node, "manual-entrypoint");
       }
@@ -612,10 +589,7 @@ function scanRuntimeBoundarySource(
 
   visit(source, []);
   return violations.toSorted(
-    (left, right) =>
-      left.file.localeCompare(right.file)
-      || left.line - right.line
-      || left.rule.localeCompare(right.rule),
+    (left, right) => left.file.localeCompare(right.file) || left.line - right.line || left.rule.localeCompare(right.rule),
   );
 }
 
@@ -636,9 +610,7 @@ function scanRuntimeBoundaryRepository(): readonly RuntimeBoundaryViolation[] {
  * @returns Sorted module paths that call `runIfMain(import.meta.url)`.
  */
 function discoverSharedEntrypointModules(): readonly string[] {
-  return runtimeBoundaryScanSourcePaths.filter(
-    (file) => analyzeCommandEntrypointSource(readFileSync(file, "utf8")).usesSharedRunIfMain,
-  );
+  return runtimeBoundaryScanSourcePaths.filter((file) => analyzeCommandEntrypointSource(readFileSync(file, "utf8")).usesSharedRunIfMain);
 }
 
 /** One Doctor module import that would widen Doctor beyond read-only, opaque capabilities. */
@@ -652,22 +624,20 @@ interface DoctorCapabilityViolation {
 }
 
 function scanDoctorCapabilitySource(file: string, sourceText: string): readonly DoctorCapabilityViolation[] {
-  return collectTypeScriptModuleReferences(sourceText).references.flatMap(
-    (moduleReference): readonly DoctorCapabilityViolation[] => {
-      if (doctorForbiddenModules.has(moduleReference.specifier)) {
-        return [{file, specifier: moduleReference.specifier}];
-      }
+  return collectTypeScriptModuleReferences(sourceText).references.flatMap((moduleReference): readonly DoctorCapabilityViolation[] => {
+    if (doctorForbiddenModules.has(moduleReference.specifier)) {
+      return [{file, specifier: moduleReference.specifier}];
+    }
 
-      const forbiddenNames = doctorForbiddenImportNames.get(moduleReference.specifier);
-      if (forbiddenNames === undefined) {
-        return [];
-      }
+    const forbiddenNames = doctorForbiddenImportNames.get(moduleReference.specifier);
+    if (forbiddenNames === undefined) {
+      return [];
+    }
 
-      return moduleReference.importedNames
-        .filter((name) => name === completeModuleNamespaceImportName || forbiddenNames.has(name))
-        .map((name) => ({file, specifier: moduleReference.specifier, name}));
-    },
-  );
+    return moduleReference.importedNames
+      .filter((name) => name === completeModuleNamespaceImportName || forbiddenNames.has(name))
+      .map((name) => ({file, specifier: moduleReference.specifier, name}));
+  });
 }
 
 /**
@@ -708,11 +678,7 @@ describe("runtime boundary policy", () => {
   });
 
   it("allows only the runtime Node adapter to assign the final exit code", () => {
-    const source = [
-      "process.exitCode = 1;",
-      "const processAlias = process;",
-      "processAlias.exitCode ??= 2;",
-    ].join("\n");
+    const source = ["process.exitCode = 1;", "const processAlias = process;", "processAlias.exitCode ??= 2;"].join("\n");
 
     expect(scanRuntimeBoundarySource("scripts/common/runtime.node.ts", source)).toEqual([]);
     expect(scanRuntimeBoundarySource("scripts/common/commander.ts", source)).toEqual([
@@ -741,21 +707,9 @@ describe("runtime boundary policy", () => {
       'import {execFile} from "child_process";',
       [{file: "scripts/example.ts", line: 1, rule: "ambient-process-control"}],
     ],
-    [
-      "flags os export specifiers",
-      'export * from "node:os";',
-      [{file: "scripts/example.ts", line: 1, rule: "ambient-os-state"}],
-    ],
-    [
-      "flags timer dynamic imports",
-      'await import("timers/promises");',
-      [{file: "scripts/example.ts", line: 1, rule: "ambient-timer"}],
-    ],
-    [
-      "flags execa dynamic imports",
-      'await import("execa");',
-      [{file: "scripts/example.ts", line: 1, rule: "execa-import"}],
-    ],
+    ["flags os export specifiers", 'export * from "node:os";', [{file: "scripts/example.ts", line: 1, rule: "ambient-os-state"}]],
+    ["flags timer dynamic imports", 'await import("timers/promises");', [{file: "scripts/example.ts", line: 1, rule: "ambient-timer"}]],
+    ["flags execa dynamic imports", 'await import("execa");', [{file: "scripts/example.ts", line: 1, rule: "execa-import"}]],
     [
       "flags legacy process dynamic imports",
       'await import("./common/process.ts");',
@@ -832,17 +786,14 @@ describe("runtime boundary policy", () => {
       collectTypeScriptModuleReferences(readFileSync(file, "utf8"))
         .references.filter(
           (moduleReference) =>
-            processSpawningModules.has(moduleReference.specifier)
-            || (moduleReference.specifier === "execa" && file !== execaAdapter),
+            processSpawningModules.has(moduleReference.specifier) || (moduleReference.specifier === "execa" && file !== execaAdapter),
         )
         .map((moduleReference) => ({file, specifier: moduleReference.specifier})),
     );
 
     expect(violations).toEqual([]);
     expect(
-      collectTypeScriptModuleReferences(readFileSync(execaAdapter, "utf8")).references.map(
-        (moduleReference) => moduleReference.specifier,
-      ),
+      collectTypeScriptModuleReferences(readFileSync(execaAdapter, "utf8")).references.map((moduleReference) => moduleReference.specifier),
     ).toContain("execa");
   });
 
@@ -857,9 +808,7 @@ describe("runtime boundary policy", () => {
 
   it("leaves no manual direct-entry detection or direct process exit in production", () => {
     expect(
-      scanRuntimeBoundaryRepository().filter(
-        (violation) => violation.rule === "manual-entrypoint" || violation.rule === "direct-exit",
-      ),
+      scanRuntimeBoundaryRepository().filter((violation) => violation.rule === "manual-entrypoint" || violation.rule === "direct-exit"),
     ).toEqual([]);
   });
 
@@ -906,8 +855,7 @@ describe("runtime boundary policy", () => {
     });
     expect(
       specifiers.filter(
-        (moduleReference) =>
-          processSpawningModules.has(moduleReference.specifier) || moduleReference.specifier === "execa",
+        (moduleReference) => processSpawningModules.has(moduleReference.specifier) || moduleReference.specifier === "execa",
       ),
     ).toEqual([]);
   });

@@ -10,14 +10,8 @@
  * `scripts/testing/architecture/report-*.ts`. Run it with `npm run analyze:scripts:loc`.
  */
 
-import {
-  approvedScriptsArchitectureBaseline,
-  cohortZeroMaximumMaintainedLineCount,
-} from "./scripts-architecture-baseline.ts";
-import {
-  calculateMaintainedSourceHistoryReport,
-  calculateMaintainedSourceLineReport,
-} from "./maintained-source-lines.ts";
+import {approvedScriptsArchitectureBaseline, cohortZeroMaximumMaintainedLineCount} from "./scripts-architecture-baseline.ts";
+import {calculateMaintainedSourceHistoryReport, calculateMaintainedSourceLineReport} from "./maintained-source-lines.ts";
 
 const report = calculateMaintainedSourceLineReport(process.cwd());
 const history = calculateMaintainedSourceHistoryReport(process.cwd());

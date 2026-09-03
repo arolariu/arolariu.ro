@@ -60,13 +60,15 @@ describe("workspace dependency ownership", () => {
       expect(ignoredNames).not.toContain(dependencyName);
     }
     expect(ignoredNames).toEqual(
-      [...new Set([
-        ...delegatedNames.filter(
-          (dependencyName) => !scriptsOwnedDelegatedDependencyNames.some((ownedName) => ownedName === dependencyName),
-        ),
-        ...repositoryOwnedDependencyExclusionDefinitions.map(({dependencyName}) => dependencyName),
-        ...explicitlyRetainedRootDependencyNames,
-      ])].toSorted(),
+      [
+        ...new Set([
+          ...delegatedNames.filter(
+            (dependencyName) => !scriptsOwnedDelegatedDependencyNames.some((ownedName) => ownedName === dependencyName),
+          ),
+          ...repositoryOwnedDependencyExclusionDefinitions.map(({dependencyName}) => dependencyName),
+          ...explicitlyRetainedRootDependencyNames,
+        ]),
+      ].toSorted(),
     );
   });
 

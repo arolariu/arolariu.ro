@@ -46,11 +46,7 @@ describe("script entrypoint definitions", () => {
   it("owns every root package script that starts node under scripts", () => {
     const packageScripts = readRootScripts();
     const actualNames = Object.entries(packageScripts)
-      .filter(
-        ([, command]) =>
-          /^node scripts[\\/]/u.test(command)
-          && !/^node scripts[\\/]testing[\\/]/u.test(command),
-      )
+      .filter(([, command]) => /^node scripts[\\/]/u.test(command) && !/^node scripts[\\/]testing[\\/]/u.test(command))
       .map(([name]) => name)
       .toSorted();
     const definedNames = scriptEntrypointDefinitions.flatMap(({packageScriptNames}) => packageScriptNames).toSorted();

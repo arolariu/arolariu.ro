@@ -2,11 +2,7 @@
 
 import {describe, expect, it} from "vitest";
 
-import {
-  buildScriptSourceGraph,
-  collectReachableScriptSourcePaths,
-  findUnreachableScriptSourcePaths,
-} from "./script-source-graph.ts";
+import {buildScriptSourceGraph, collectReachableScriptSourcePaths, findUnreachableScriptSourcePaths} from "./script-source-graph.ts";
 
 describe("script source graph", () => {
   it("resolves relative imports and separates runtime from type-only reachability", () => {
@@ -14,12 +10,9 @@ describe("script source graph", () => {
       new Map([
         [
           "scripts/entry.ts",
-          [
-            'import type {Type} from "./type.ts";',
-            'import "./runtime.ts";',
-            'import "./doctor.types";',
-            'import "./missing.ts";',
-          ].join("\n"),
+          ['import type {Type} from "./type.ts";', 'import "./runtime.ts";', 'import "./doctor.types";', 'import "./missing.ts";'].join(
+            "\n",
+          ),
         ],
         ["scripts/type.ts", "export interface Type { readonly value: string; }"],
         ["scripts/runtime.ts", 'export * from "./nested.ts";'],
@@ -43,8 +36,6 @@ describe("script source graph", () => {
       "scripts/type.ts",
     ]);
     expect(findUnreachableScriptSourcePaths(graph, ["scripts/entry.ts"])).toEqual(["scripts/orphan.ts"]);
-    expect(graph.unresolvedLocalModuleReferences).toEqual([
-      {sourcePath: "scripts/entry.ts", specifier: "./missing.ts"},
-    ]);
+    expect(graph.unresolvedLocalModuleReferences).toEqual([{sourcePath: "scripts/entry.ts", specifier: "./missing.ts"}]);
   });
 });

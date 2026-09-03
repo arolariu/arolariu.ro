@@ -13,14 +13,9 @@ import {buildScriptSourceGraph, findUnreachableScriptSourcePaths} from "./script
 
 describe("script source reachability", () => {
   it("has no orphan modules, dynamic roots, or unexplained external relative imports", () => {
-    const sourceFiles = new Map(
-      discoverProductionScriptFiles().map((sourcePath) => [sourcePath, readFileSync(sourcePath, "utf8")]),
-    );
+    const sourceFiles = new Map(discoverProductionScriptFiles().map((sourcePath) => [sourcePath, readFileSync(sourcePath, "utf8")]));
     const graph = buildScriptSourceGraph(sourceFiles);
-    const roots = [
-      ...scriptEntrypointDefinitions.map(({sourcePath}) => sourcePath),
-      ...additionalScriptSourceRootPaths,
-    ];
+    const roots = [...scriptEntrypointDefinitions.map(({sourcePath}) => sourcePath), ...additionalScriptSourceRootPaths];
 
     expect(graph.nonLiteralDynamicImports).toEqual([]);
     expect(graph.unresolvedLocalModuleReferences).toEqual(
