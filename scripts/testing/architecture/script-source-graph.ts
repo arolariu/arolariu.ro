@@ -5,20 +5,31 @@
  * @remarks
  * This module resolves the static and literal-dynamic module references
  * {@link collectTypeScriptModuleReferences} collects into a directed graph of local
- * `scripts/**` source paths. It separates runtime-only reachability (type-only references
- * excluded) from complete reachability (every reference included), and it records every
- * unresolved relative import instead of silently dropping it, so
+ * `scripts/**` source paths. It separates eager reachability (static, non-type-only imports and
+ * re-exports only — what evaluating a module actually pays for) from runtime-only reachability
+ * (type-only references excluded) and from complete reachability (every reference included), and
+ * it records every unresolved relative import instead of silently dropping it, so
  * `scripts/testing/architecture/orphan-modules.test.ts` can enforce zero unexplained
  * reachability debt across the whole production source graph.
  */
 
 import {dirname, join} from "node:path";
 
-import {collectTypeScriptModuleReferences, type TypeScriptModuleReferenceDefinition} from "./typescript-module-analysis.ts";
+import {
+  collectTypeScriptModuleReferences,
+  isEagerModuleReference,
+  type TypeScriptModuleReferenceDefinition,
+} from "./typescript-module-analysis.ts";
 import {normalizeScriptSourcePath} from "./script-source-files.ts";
 
-/** Whether reachability traversal follows every reference or only runtime (non-type-only) ones. */
-type ScriptSourceGraphTraversalMode = "runtime" | "all";
+/**
+ * Whether reachability traversal follows eager edges only, every runtime edge, or every edge.
+ *
+ * @remarks
+ * Deliberately module-private: every caller passes the literal, so exporting it would create an
+ * unused export that Knip reports.
+ */
+type ScriptSourceGraphTraversalMode = "eager" | "runtime" | "all";
 
 /** One non-literal (dynamic path) `import()` call found while building the graph. */
 interface NonLiteralDynamicImportDefinition {
@@ -40,6 +51,12 @@ interface UnresolvedLocalModuleReferenceDefinition {
 export interface ScriptSourceGraphDefinition {
   /** Every known local source path, forward-slash normalized and sorted. */
   readonly sourcePaths: readonly string[];
+  /**
+   * Eager local dependency edges: static imports and re-exports that are not type-only, keyed by
+   * source path. Evaluating the key module also evaluates every module listed here, which is what
+   * a `--help` path pays for.
+   */
+  readonly eagerDependencies: ReadonlyMap<string, readonly string[]>;
   /** Runtime (non-type-only) local dependency edges, keyed by source path. */
   readonly runtimeDependencies: ReadonlyMap<string, readonly string[]>;
   /** Every local dependency edge, including type-only references, keyed by source path. */
@@ -105,6 +122,7 @@ function resolveLocalModule(importer: string, specifier: string, knownSourcePath
 export function buildScriptSourceGraph(sourceFiles: ReadonlyMap<string, string>): ScriptSourceGraphDefinition {
   const sourcePaths = [...sourceFiles.keys()].map(normalizeScriptSourcePath).toSorted();
   const knownSourcePaths = new Set(sourcePaths);
+  const eagerDependencies = new Map<string, readonly string[]>();
   const runtimeDependencies = new Map<string, readonly string[]>();
   const allDependencies = new Map<string, readonly string[]>();
   const nonLiteralDynamicImports: NonLiteralDynamicImportDefinition[] = [];
@@ -132,11 +150,16 @@ export function buildScriptSourceGraph(sourceFiles: ReadonlyMap<string, string>)
       sourcePath,
       [...new Set(resolved.filter(({reference}) => !reference.typeOnly).map(({target}) => target))].toSorted(),
     );
+    eagerDependencies.set(
+      sourcePath,
+      [...new Set(resolved.filter(({reference}) => isEagerModuleReference(reference)).map(({target}) => target))].toSorted(),
+    );
     nonLiteralDynamicImports.push(...analysis.nonLiteralDynamicImportLines.map((line) => ({sourcePath, line})));
   }
 
   return {
     sourcePaths,
+    eagerDependencies,
     runtimeDependencies,
     allDependencies,
     nonLiteralDynamicImports: nonLiteralDynamicImports.toSorted(
@@ -153,7 +176,8 @@ export function buildScriptSourceGraph(sourceFiles: ReadonlyMap<string, string>)
  *
  * @param graph - The dependency graph to traverse.
  * @param roots - Root source paths to start traversal from.
- * @param mode - `"runtime"` follows only non-type-only edges; `"all"` follows every edge.
+ * @param mode - `"eager"` follows only static, non-type-only imports and re-exports; `"runtime"`
+ * follows every non-type-only edge, including literal dynamic imports; `"all"` follows every edge.
  * @returns The set of reachable local source paths, including the roots themselves.
  */
 export function collectReachableScriptSourcePaths(
@@ -161,7 +185,7 @@ export function collectReachableScriptSourcePaths(
   roots: readonly string[],
   mode: ScriptSourceGraphTraversalMode,
 ): ReadonlySet<string> {
-  const dependencies = mode === "runtime" ? graph.runtimeDependencies : graph.allDependencies;
+  const dependencies = mode === "eager" ? graph.eagerDependencies : mode === "runtime" ? graph.runtimeDependencies : graph.allDependencies;
   const reachable = new Set<string>();
   const pending = roots.map(normalizeScriptSourcePath);
 

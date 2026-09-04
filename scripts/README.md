@@ -164,9 +164,11 @@ Narrow a capability before handing it to a consumer that must not widen it: `asR
 the read-only profiles doctor modules receive, and `inspection/probes.ts` produces the opaque, allowlisted probe runner.
 
 A **root scope** snapshots the environment once, owns its presenter and prompts, and (only under `run()`/`runIfMain()`) owns process signals.
-A **child scope** created by `invoke({parent})` shares exactly one thing by identity: the parent's immutable environment snapshot. Its
-presenter is forked from the parent's, its prompts (like `files`, `http`, and `runner`) come from its own fresh memoized lazy facades, and
-its invocation runner, cancellation controller, and cleanup registry are its own. The inspection registry is composed per command by
+A **child scope** created by `invoke({parent})` shares exactly one thing with its parent by identity: the parent's immutable environment
+snapshot. Its presenter is forked from the parent's, its prompts (like `files`, `http`, and `runner`) come from its own fresh memoized lazy
+facades, and its invocation runner, cancellation controller, and cleanup registry are its own. The clock and task scheduler are process-wide
+Node singletons that every scope observes regardless of parentage, so they are not parent-derived state. The inspection registry is composed
+per command by
 [`inspection/runtime-capability.ts`](./inspection/runtime-capability.ts), which resolves an explicit test override first, then the parent
 scope's registry when the parent already carries one, then a new registry bound to this scope. Cancellation always flows parent to child and
 never child to parent.
@@ -393,17 +395,20 @@ npm run analyze:scripts:architecture
 - `typecheck:scripts` checks production and non-test support with strict root compiler options. Its sole temporary production exclusion is
   `workers/lint.worker.ts`, which Cohort 7 removes.
 - `analyze:scripts:loc` reports the fixed 73,377-line baseline, the enforced Cohort 1 checkpoint and its immutable high-water ceiling
-  (`currentMaximum` and `highWaterMaximum`, both 76,375 while this task's checkpoint is active), the final 55,032-line target,
+  (`currentMaximum` 76,750 while this task's checkpoint is active, and `highWaterMaximum` 76,750), the final 55,032-line target,
   production/test-support totals, family totals, committed line churn, and detected rename/relocation evidence from baseline commit
   `11773ff3d`.
-- `analyze:scripts:architecture` reports each entrypoint's `architectureModel` and `removalCohort`, plus static runtime graph size and
-  three-sample `--help` medians for every Commander entrypoint. Timing is informational; AST boundary tests enforce lazy-loading structure.
+- `analyze:scripts:architecture` reports each entrypoint's `architectureModel` and `removalCohort`, the eager (`--help`) import-graph size,
+  the static runtime graph size, and three-sample `--help` medians for every Commander entrypoint. `eagerGraphFileCount` and
+  `eagerGraphMaintainedLineCount` follow only static, non-type-only imports and re-exports — what starting the entrypoint pays for before it
+  parses argv — while the `runtimeGraph*` fields keep following every non-type-only edge, including literal dynamic imports. Timing is
+  informational; AST boundary tests enforce lazy-loading structure.
 
 [`script-entrypoint-definitions.ts`](./testing/architecture/script-entrypoint-definitions.ts) is the authoritative entrypoint inventory. Every
 entry declares an `architectureModel` — `composed-command`, `legacy-command`, or `piscina` — and every entry that is not yet a
 `composed-command` declares the `removalCohort` that retires its current model; a `composed-command` entry declares none.
 
-Four ownership and structure policies run with the rest of the architecture suite:
+Four ownership and structure policies plus the eager import policy run with the rest of the architecture suite:
 
 - [`ownership-boundaries.test.ts`](./testing/architecture/ownership-boundaries.test.ts) proves that `core/` reaches no `common/`,
   `features/`, `inspection/`, `adapters/`, or `workers/` module on any edge (static, literal dynamic, or type-only) and never even names
@@ -415,8 +420,16 @@ Four ownership and structure policies run with the rest of the architecture suit
   `core/`, `adapters/`, `inspection/`, `features/`, or `testing/` — [`common/index.ts`](./common/index.ts) is the single named exception,
   removed by Cohort 3 — that every module under `core/`, `adapters/`, and `features/` plus `inspection/runtime-capability.ts` stays within
   500 maintained lines and every `composed-command` entrypoint within 50, and that the entrypoint inventory carries the exact architecture
-  model and removal cohort for all 21 entrypoints. Both suites pair each rule with a synthetic source graph that proves the detector
-  itself reacts, and neither uses an ignore list, allowlist, or suppression entry.
+  model and removal cohort for all 21 entrypoints. Both suites pair most rules with a synthetic source graph that proves the detector itself
+  reacts; the direct `core/` and `adapters/` ownership rules currently rest on real-tree and rejection evidence rather than a positive
+  synthetic case. Neither suite uses an ignore list, allowlist, or suppression entry.
+- [`eager-import-boundaries.test.ts`](./testing/architecture/eager-import-boundaries.test.ts) proves that the eager import graph of every
+  `composed-command` entrypoint and of [`node-command-host.ts`](./adapters/node/node-command-host.ts) — asserted as two separate roots so a
+  regression is attributed precisely — reaches no feature workflow or reporter, no lazy Node adapter, no Execa adapter or package, no
+  `inspection/**` module, and no generation entrypoint; that eager traversal excludes literal dynamic and type-only edges; and that every
+  `composed-command` workflow module declares a non-empty, exact capability subset covering every capability its own feature context uses.
+  The complete `runtimeCapabilityNames` set a `defineCommand`-generated legacy direct workflow declares is recorded debt owned by that
+  entry's `removalCohort` and is never evaluated by this policy.
 - [`runtime-boundary-policy.test.ts`](./testing/architecture/runtime-boundary-policy.test.ts) and
   [`output-policy.test.ts`](./testing/architecture/output-policy.test.ts) are the relocated ambient-capability scanners described above.
   They share their lexical alias machinery — dotted access-path resolution, binding-pattern declaration, and function-scope traversal —

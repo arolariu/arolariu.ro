@@ -31,7 +31,7 @@
     "build:docs": "nx run docs:build",
     "build:status": "nx run status:build",
     "build:website": "nx run website:build",
-    "docs:assemble": "node scripts/docs-assemble.ts",
+    "docs:assemble": "node scripts/features/documentation/command.ts",
     "docs:typedoc": "npm run docs:typedoc:components && npm run docs:typedoc:website",
     "docs:typedoc:components": "npx typedoc --options typedoc.components.json",
     "docs:typedoc:website": "npx typedoc --options typedoc.website.json",

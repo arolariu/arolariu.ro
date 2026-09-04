@@ -2,7 +2,7 @@
 
 import {describe, expect, it} from "vitest";
 
-import {analyzeCommandEntrypointSource, collectTypeScriptModuleReferences} from "./typescript-module-analysis.ts";
+import {analyzeCommandEntrypointSource, collectTypeScriptModuleReferences, isEagerModuleReference} from "./typescript-module-analysis.ts";
 
 describe("TypeScript module analysis", () => {
   it("collects imports, re-exports, literal dynamic imports, and type-only state", () => {
@@ -32,6 +32,24 @@ describe("TypeScript module analysis", () => {
       {specifier: "./delta.ts", importedNames: ["*"], referenceKind: "dynamic-import", typeOnly: false},
     ]);
     expect(result.nonLiteralDynamicImportLines).toEqual([9]);
+  });
+
+  it("classifies only non-type-only static imports and re-exports as eager edges", () => {
+    const result = collectTypeScriptModuleReferences(
+      [
+        'import type {Alpha} from "./alpha.ts";',
+        'import {Beta} from "./beta.ts";',
+        'export {Gamma} from "./gamma.ts";',
+        'export type {Delta} from "./delta.ts";',
+        'await import("./epsilon.ts");',
+      ].join("\n"),
+      "scripts/example.ts",
+    );
+
+    expect(result.references.filter((reference) => isEagerModuleReference(reference)).map(({specifier}) => specifier)).toEqual([
+      "./beta.ts",
+      "./gamma.ts",
+    ]);
   });
 
   it("recognizes the exported command singleton and shared direct-entry call", () => {

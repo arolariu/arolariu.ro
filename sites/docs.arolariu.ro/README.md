@@ -113,7 +113,7 @@ the same `docs:assemble` + `build:docs` pipeline and uploads
 
 ## Extractor quirks worth knowing
 
-- **.NET project discovery** (`scripts/docs-assemble.ts`): the
+- **.NET project discovery** (`scripts/features/documentation/extractors.ts`): the
   orchestrator globs `sites/api.arolariu.ro/src/*/*.csproj`, parses
   `<ProjectReference>` entries, and builds only the graph roots so
   adding a new bounded context doesn't require a hardcoded list

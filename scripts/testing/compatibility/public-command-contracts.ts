@@ -54,8 +54,12 @@ export const publicCommandBehaviorEvidenceDefinitions = [
     characterizationGaps: [],
   },
   {
-    sourcePath: "scripts/docs-assemble.ts",
-    behaviorTestPaths: ["scripts/docs-assemble.test.ts", "scripts/docs-assemble.normalize.test.ts"],
+    sourcePath: "scripts/features/documentation/command.ts",
+    behaviorTestPaths: [
+      "scripts/features/documentation/command.test.ts",
+      "scripts/features/documentation/workflow.test.ts",
+      "scripts/features/documentation/normalize.test.ts",
+    ],
     characterizationGaps: [],
   },
   {

@@ -73,11 +73,11 @@ export const approvedScriptsArchitectureBaseline = {
  * total to this value; no Cohort 1 task may raise it further, and Task 9 lowers the active value
  * below it permanently.
  */
-export const cohortOneHighWaterMaintainedLineCount = 76_375;
+export const cohortOneHighWaterMaintainedLineCount = 76_750;
 
 /**
  * The currently enforced Cohort 1 maintained-line checkpoint. Each Cohort 1 task updates this
  * value atomically with its own change; it may never exceed
  * {@link cohortOneHighWaterMaintainedLineCount}.
  */
-export const cohortOneActiveMaintainedLineCount = 76_375;
+export const cohortOneActiveMaintainedLineCount = 76_750;

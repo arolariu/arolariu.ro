@@ -6,13 +6,15 @@
  * This entrypoint is one of the narrow, named exceptions to the repository direct-output policy:
  * it emits raw JSON on `process.stdout` for CI and local consumption instead of routing through
  * `ComposedTerminalPresenter`, and it is excluded from production script source discovery.
- * It reports the static runtime source-graph size, each entrypoint's architecture model and
- * removal cohort, and a three-sample `--help` median for every Commander entrypoint; the timings
- * are informational, while the AST import-boundary tests remain
+ * It reports the static runtime source-graph size, the eager (`--help`) import-graph size, each
+ * entrypoint's architecture model and removal cohort, and a three-sample `--help` median for every
+ * Commander entrypoint; the timings are informational, while the AST import-boundary tests remain
  * the structural enforcement mechanism. The runtime graph follows every non-type-only edge,
  * including literal dynamic imports, so `runtimeGraphMaintainedLineCount` measures transitive
  * literal runtime reachability rather than the eager `--help` import graph and is not comparable
- * to frozen historical `runtimeGraphLineCounts`. Run it with `npm run analyze:scripts:architecture`.
+ * to frozen historical `runtimeGraphLineCounts`. The eager graph follows only static, non-type-only
+ * imports and re-exports, so `eagerGraphMaintainedLineCount` is what starting the entrypoint
+ * actually pays for before it parses argv. Run it with `npm run analyze:scripts:architecture`.
  */
 
 import {spawnSync} from "node:child_process";
@@ -30,9 +32,12 @@ const sampleCount = 3;
 const sourceTexts = readProductionScriptSourceFiles();
 const graph = buildScriptSourceGraph(sourceTexts);
 const entrypointModels = new Map<string, {readonly architectureModel: string; readonly removalCohort: number | null}>(
-  scriptEntrypointDefinitions.map(({sourcePath, architectureModel, removalCohort}) => [
-    sourcePath,
-    {architectureModel, removalCohort: removalCohort ?? null},
+  scriptEntrypointDefinitions.map((definition) => [
+    definition.sourcePath,
+    {
+      architectureModel: definition.architectureModel,
+      removalCohort: "removalCohort" in definition ? definition.removalCohort : null,
+    },
   ]),
 );
 
@@ -66,11 +71,10 @@ const emptyNodeMedianMilliseconds = measureInvocationMedianMilliseconds({
 
 const commands = Object.fromEntries(
   commanderEntrypointSourcePaths.map((sourcePath) => {
+    const countMaintainedLines = (reachable: ReadonlySet<string>): number =>
+      [...reachable].reduce((total, reachablePath) => total + countMaintainedSourceLineRecords(requireSourceText(reachablePath)), 0);
     const reachable = collectReachableScriptSourcePaths(graph, [sourcePath], "runtime");
-    const runtimeGraphMaintainedLineCount = [...reachable].reduce(
-      (total, reachablePath) => total + countMaintainedSourceLineRecords(requireSourceText(reachablePath)),
-      0,
-    );
+    const eagerReachable = collectReachableScriptSourcePaths(graph, [sourcePath], "eager");
     const helpMedianMilliseconds = measureInvocationMedianMilliseconds({
       sampleCount,
       now: () => performance.now(),
@@ -81,8 +85,10 @@ const commands = Object.fromEntries(
       sourcePath,
       {
         ...(entrypointModels.get(sourcePath) ?? {architectureModel: null, removalCohort: null}),
+        eagerGraphFileCount: eagerReachable.size,
+        eagerGraphMaintainedLineCount: countMaintainedLines(eagerReachable),
         runtimeGraphFileCount: reachable.size,
-        runtimeGraphMaintainedLineCount,
+        runtimeGraphMaintainedLineCount: countMaintainedLines(reachable),
         helpMedianMilliseconds,
       },
     ] as const;

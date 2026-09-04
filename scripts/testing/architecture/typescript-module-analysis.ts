@@ -133,6 +133,23 @@ export function collectTypeScriptModuleReferences(sourceText: string, fileName: 
 }
 
 /**
+ * Determines whether a module reference is an **eager** edge: a static import or re-export whose
+ * bindings survive compilation.
+ *
+ * @remarks
+ * A literal dynamic import is deferred until the loader runs, and a type-only import or re-export
+ * is erased entirely, so neither loads its target when the importing module is evaluated. This is
+ * the single classifier `scripts/testing/architecture/script-source-graph.ts` uses to build the
+ * eager dependency map the help-path import policies traverse.
+ *
+ * @param reference - One collected module reference.
+ * @returns `true` when evaluating the importing module also evaluates the referenced module.
+ */
+export function isEagerModuleReference(reference: Readonly<TypeScriptModuleReferenceDefinition>): boolean {
+  return reference.referenceKind !== "dynamic-import" && !reference.typeOnly;
+}
+
+/**
  * Determines whether an expression is the `import.meta.url` property access.
  *
  * @param argument - Call-expression argument to test.

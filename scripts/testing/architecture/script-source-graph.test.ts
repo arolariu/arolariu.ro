@@ -38,4 +38,30 @@ describe("script source graph", () => {
     expect(findUnreachableScriptSourcePaths(graph, ["scripts/entry.ts"])).toEqual(["scripts/orphan.ts"]);
     expect(graph.unresolvedLocalModuleReferences).toEqual([{sourcePath: "scripts/entry.ts", specifier: "./missing.ts"}]);
   });
+
+  it("separates eager edges from literal dynamic and type-only ones", () => {
+    const graph = buildScriptSourceGraph(
+      new Map([
+        [
+          "scripts/entry.ts",
+          [
+            'import type {Type} from "./type.ts";',
+            'export * from "./re-exported.ts";',
+            'export const load = async (): Promise<Type | undefined> => import("./lazy.ts").then(() => undefined);',
+          ].join("\n"),
+        ],
+        ["scripts/type.ts", "export interface Type { readonly value: string; }"],
+        ["scripts/re-exported.ts", "export const value = 1;"],
+        ["scripts/lazy.ts", "export const lazy = 2;"],
+      ]),
+    );
+
+    expect(graph.eagerDependencies.get("scripts/entry.ts")).toEqual(["scripts/re-exported.ts"]);
+    expect(graph.runtimeDependencies.get("scripts/entry.ts")).toEqual(["scripts/lazy.ts", "scripts/re-exported.ts"]);
+    expect(graph.allDependencies.get("scripts/entry.ts")).toEqual(["scripts/lazy.ts", "scripts/re-exported.ts", "scripts/type.ts"]);
+    expect([...collectReachableScriptSourcePaths(graph, ["scripts/entry.ts"], "eager")].toSorted()).toEqual([
+      "scripts/entry.ts",
+      "scripts/re-exported.ts",
+    ]);
+  });
 });

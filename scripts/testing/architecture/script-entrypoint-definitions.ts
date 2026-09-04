@@ -90,12 +90,11 @@ export const scriptEntrypointDefinitions = [
     packageScriptNames: ["dev:selfhost", "dev:selfhost:logs", "dev:selfhost:stop"],
   },
   {
-    sourcePath: "scripts/docs-assemble.ts",
+    sourcePath: "scripts/features/documentation/command.ts",
     hostKind: "commander",
     role: "public-command",
-    architectureModel: "legacy-command",
-    removalCohort: 1,
-    exportedCommandName: "docsAssembleCommand",
+    architectureModel: "composed-command",
+    exportedCommandName: "documentationCommand",
     packageScriptNames: ["docs:assemble"],
   },
   {

@@ -138,7 +138,7 @@ describe("module structure policy", () => {
       "scripts/container-runtime/compose.ts legacy-command 6",
       "scripts/container-runtime/image.ts legacy-command 6",
       "scripts/container-runtime/selfhost.ts legacy-command 6",
-      "scripts/docs-assemble.ts legacy-command 1",
+      "scripts/features/documentation/command.ts composed-command none",
       "scripts/doctor.ts legacy-command 2",
       "scripts/generate.artifacts.ts legacy-command 4",
       "scripts/generate.env.ts legacy-command 4",
