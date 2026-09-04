@@ -28,7 +28,7 @@
  */
 
 import {join} from "node:path";
-import type {FileSystem} from "./common/runtime.ts";
+import type {FileSystem} from "./core/runtime/runtime-capability.ts";
 
 /**
  * Optional knobs for {@link normalizeDirectory}.

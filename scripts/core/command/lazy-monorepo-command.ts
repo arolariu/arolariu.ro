@@ -10,7 +10,7 @@
  * entrypoint exports the same `LazyMonorepoCommand` type regardless of definition style.
  */
 
-import type {CommandRuntime} from "../../common/runtime.ts";
+import type {RuntimeExecutionContext} from "../runtime/runtime-execution-context.ts";
 import {runtimeCapabilityNames} from "../runtime/runtime-capability.ts";
 import {defineWorkflowModule} from "../workflow/workflow-composition.ts";
 import {succeededWorkflowExecution} from "../workflow/workflow-execution-result.ts";
@@ -52,7 +52,7 @@ export function defineLazyCommand<TInput, TOutput, TFailure>(
  * @returns The composed lazy command; its workflow never produces a failed decision, so its
  * failure generic is `never`.
  */
-export function defineCommand<TInput, TOutput, TRuntime extends CommandRuntime = CommandRuntime>(
+export function defineCommand<TInput, TOutput, TRuntime extends RuntimeExecutionContext = RuntimeExecutionContext>(
   specification: DirectCommandSpecification<TInput, TOutput, TRuntime>,
   options: Readonly<CommandConstructionOptions>,
 ): LazyMonorepoCommand<TInput, TOutput, never> {

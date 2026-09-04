@@ -15,7 +15,7 @@
 import type {Command} from "commander";
 
 import type {TerminalPresenter} from "../presentation/terminal-presenter.ts";
-import type {CommandRuntime} from "../../common/runtime.ts";
+import type {RuntimeExecutionContext} from "../runtime/runtime-execution-context.ts";
 import type {WorkflowEvent} from "../presentation/workflow-event.ts";
 import type {CommandWorkflowModuleDefinition} from "../workflow/workflow-composition.ts";
 import type {WorkflowExecutionResult} from "../workflow/workflow-execution-result.ts";
@@ -63,8 +63,11 @@ export interface RuntimeCreationOptions {
 
 /** Creates every runtime scope one command lifecycle needs. Owns runtime scope creation only. */
 export interface CommandRuntimeFactory {
-  readonly createRoot: (options: Readonly<RuntimeCreationOptions>) => Promise<CommandRuntime>;
-  readonly createChild: (parent: Readonly<CommandExecutionContext>, options: Readonly<RuntimeCreationOptions>) => Promise<CommandRuntime>;
+  readonly createRoot: (options: Readonly<RuntimeCreationOptions>) => Promise<RuntimeExecutionContext>;
+  readonly createChild: (
+    parent: Readonly<CommandExecutionContext>,
+    options: Readonly<RuntimeCreationOptions>,
+  ) => Promise<RuntimeExecutionContext>;
 }
 
 /** Options accepted by a programmatic or composed command invocation. */
@@ -140,17 +143,18 @@ export type CommandSpecification<TInput, TOutput, TFailure> = Readonly<
 >;
 
 /** Declarative description of one direct (non-composed) command's parser and eager business behavior. */
-export type DirectCommandSpecification<TInput, TOutput, TRuntime extends CommandRuntime = CommandRuntime> = Readonly<
+export type DirectCommandSpecification<TInput, TOutput, TRuntime extends RuntimeExecutionContext = RuntimeExecutionContext> = Readonly<
   CommandIdentityDefinition
     & CommandInputDefinition<TInput> & {
       /**
-       * Optional runtime-context extension applied before `execute` (Doctor, Setup, and Status
-       * supply the inspection extension in Task 3). `parent` is the *base* execution context,
-       * structurally assignable from an extended one, and arrives only through the workflow-module
-       * channel: `defineCommand`'s generated `createContext(input, context, parent)` forwards the
-       * same `parent` `invoke({parent})` received — never the runtime factory's `createChild`.
+       * Optional runtime-context extension applied before `execute`; Task 4 gave Doctor, Setup,
+       * and Status their repository-analysis extension through it. `parent` is the *base*
+       * execution context, structurally assignable from an extended one, and arrives only through
+       * the workflow-module channel: `defineCommand`'s generated
+       * `createContext(input, context, parent)` forwards the same `parent` `invoke({parent})`
+       * received — never the runtime factory's `createChild`.
        */
-      readonly createRuntimeContext?: (baseRuntime: CommandRuntime, parent?: Readonly<CommandExecutionContext>) => TRuntime;
+      readonly createRuntimeContext?: (baseRuntime: RuntimeExecutionContext, parent?: Readonly<CommandExecutionContext>) => TRuntime;
       /** Runs business orchestration for one invocation. */
       readonly execute: (context: Readonly<CommandExecutionContext<TRuntime>>, input: Readonly<TInput>) => Promise<TOutput>;
       /** Builds the deferred completion for one completed business output. */

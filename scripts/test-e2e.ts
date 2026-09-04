@@ -24,7 +24,8 @@ import {defineCommand, type LazyMonorepoCommand} from "./core/command/lazy-monor
 import type {CommandConstructionOptions, CommandHost} from "./core/command/command-specification.ts";
 import type {TerminalPresenter} from "./core/presentation/terminal-presenter.ts";
 import {ProcessRunnerError} from "./core/process/process-runner.ts";
-import {commandCancellationFromSignal, type FileSystem} from "./common/runtime.ts";
+import {commandCancellationFromSignal} from "./core/runtime/cancellation.ts";
+import type {FileSystem} from "./core/runtime/runtime-capability.ts";
 
 /** Every target the `test:e2e` command accepts, including the `all` alias. */
 export type E2ETarget = "all" | "backend" | "frontend" | "cv";

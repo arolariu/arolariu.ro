@@ -20,15 +20,10 @@ import type {ProcessExecutionOptions, ProcessExecutionRequest} from "../core/pro
 import type {ProcessExecutionResult} from "../core/process/process-execution-result.ts";
 import type {ProcessRunner} from "../core/process/process-runner.ts";
 import {resolveRepositoryPaths, type RepositoryPaths} from "../common/repository-paths.ts";
-import {nodeFileSystem} from "../common/runtime.node.ts";
-import {
-  asReadOnlyFileSystem,
-  CommandCancellation,
-  DefaultTaskScheduler,
-  type Clock,
-  type FileSystem,
-  type RuntimeEnvironment,
-} from "../common/runtime.ts";
+import {nodeFileSystem} from "../adapters/node/node-filesystem.ts";
+import {CommandCancellation} from "../core/runtime/cancellation.ts";
+import {asReadOnlyFileSystem, type Clock, type FileSystem, type RuntimeEnvironment} from "../core/runtime/runtime-capability.ts";
+import {DefaultTaskScheduler} from "../core/runtime/task-scheduler.ts";
 import {INSPECTED_PACKAGE_NAMES} from "./packages.ts";
 import {createRepositoryInspectionSession, type RepositoryInspectionKey, type RepositoryInspectionSession} from "./repository.ts";
 

@@ -6,7 +6,7 @@
 import type {TerminalPresenter} from "./core/presentation/terminal-presenter.ts";
 import type {RepositoryPaths} from "./common/repository-paths.ts";
 import type {RequirementLoadResult} from "./common/requirements.ts";
-import type {Clock, ReadOnlyFileSystem, RuntimeEnvironment} from "./common/runtime.ts";
+import type {Clock, ReadOnlyFileSystem, RuntimeEnvironment} from "./core/runtime/runtime-capability.ts";
 import type {InspectionProbeRunner} from "./inspection/probes.ts";
 import type {RepositoryInspectionKey, RepositoryInspectionSession} from "./inspection/repository.ts";
 

@@ -16,7 +16,8 @@ import {ComposedTerminalPresenter} from "../core/presentation/composed-terminal-
 import type {TerminalPresenter} from "../core/presentation/terminal-presenter.ts";
 import {processExecutionFailureEvidence, type ProcessExecutionResult} from "../core/process/process-execution-result.ts";
 import type {ProcessRunner} from "../core/process/process-runner.ts";
-import {commandCancellationFromSignal, type RuntimeEnvironment} from "../common/runtime.ts";
+import {commandCancellationFromSignal} from "../core/runtime/cancellation.ts";
+import type {RuntimeEnvironment} from "../core/runtime/runtime-capability.ts";
 import type {ContainerRuntimeAdapter} from "./adapters.ts";
 import {ContainerRuntimeError} from "./types.ts";
 

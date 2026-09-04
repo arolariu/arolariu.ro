@@ -11,7 +11,7 @@ import {describe, expect, it} from "vitest";
 import {discoverScriptSourceFiles, isScriptTestFile} from "../testing/architecture/script-source-files.ts";
 
 const transitionalEntrypoints = new Set<string>();
-const interactiveTerminalAdapters = new Set(["scripts/common/prompts.ts"]);
+const interactiveTerminalAdapters = new Set(["scripts/adapters/node/node-prompt-provider.ts"]);
 
 type AccessPath = readonly string[];
 type AliasScope = Map<string, AccessPath | null>;
@@ -21,10 +21,9 @@ type OutputExpressionPredicate = (expression: ts.Expression, scopes: readonly Al
  * Production script source files scanned by the output-boundary policy.
  *
  * @remarks
- * This intentionally continues scanning `scripts/common/runtime.testing.ts` and
- * `scripts/vitest.config.ts`; the runtime-graph definition of production must not silently narrow
- * this direct output policy. Only the new non-production `scripts/testing/**` architecture and
- * compatibility support is excluded.
+ * This intentionally continues scanning `scripts/vitest.config.ts`; the runtime-graph definition of
+ * production must not silently narrow this direct output policy. Only the non-production
+ * `scripts/testing/**` architecture and compatibility support is excluded.
  */
 const outputPolicySourcePaths = discoverScriptSourceFiles().filter(
   (sourcePath) =>
@@ -368,9 +367,12 @@ describe("direct output policy", () => {
 
     expect(outputMessages).toHaveLength(1);
     expect(promptMessages).toEqual(
-      expect.arrayContaining([...outputMessages, "Interactive terminal output is owned exclusively by scripts/common/prompts.ts."]),
+      expect.arrayContaining([
+        ...outputMessages,
+        "Interactive terminal output is owned exclusively by scripts/adapters/node/node-prompt-provider.ts.",
+      ]),
     );
-    expect(promptIgnores).toContain("scripts/common/prompts.ts");
+    expect(promptIgnores).toContain("scripts/adapters/node/node-prompt-provider.ts");
   });
 
   it("inspects executable calls without matching comments or strings", () => {

@@ -28,14 +28,10 @@ vi.mock("./doctor.reporter.ts", async (importOriginal) => {
 
 import type {CommandExecution} from "./core/command/command-execution.ts";
 import {buildCommandHost} from "./testing/builders/command-host.builder.ts";
-import {createHttpResponse, createRepositoryFixtureFileSystem, repositoryFixtureRoot} from "./common/runtime.testing.ts";
-import {
-  HttpError,
-  type Clock,
-  type GetOnlyHttpClient,
-  type RepositoryInspectionRequest,
-  type RepositoryInspectionRuntime,
-} from "./common/runtime.ts";
+import {type Clock, type GetOnlyHttpClient, HttpError} from "./core/runtime/runtime-capability.ts";
+import type {RepositoryInspectionRequest, RepositoryInspectionRuntime} from "./inspection/runtime-capability.ts";
+import {createHttpResponse} from "./testing/fixtures/network.fixture.ts";
+import {createRepositoryFixtureFileSystem, repositoryFixtureRoot} from "./testing/fixtures/repository.fixture.ts";
 import {computeHealthScore, diagnosticWeights} from "./doctor.reporter.ts";
 import {createBoundedNetworkProbe, createDoctorCommand, doctorModules} from "./doctor.ts";
 import type {DiagnosticModule, DiagnosticModuleId, DiagnosticResult, DoctorContext, DoctorInput, DoctorReport} from "./doctor.types.ts";
@@ -168,11 +164,6 @@ function createFixtureInspection(session: RepositoryInspectionSession = createFi
   };
 }
 
-/** Builds the hermetic command host every orchestrator test uses. */
-function createFixtureHost(inspection: RepositoryInspectionRuntime): ReturnType<typeof buildCommandHost> {
-  return buildCommandHost({runtime: {files: createRepositoryFixtureFileSystem(), inspection}});
-}
-
 interface DoctorFixture {
   readonly command: ReturnType<typeof createDoctorCommand>;
   readonly calls: Readonly<Record<DiagnosticModuleId, Mock<DiagnosticModule["run"]>>>;
@@ -196,7 +187,10 @@ function createDoctorFixture(
 ): DoctorFixture {
   const {modules, calls} = createFakeModules(input.overrides ?? {}, input.facts ?? {});
   const inspection = createFixtureInspection(input.session ?? createFixtureSession());
-  const command = createDoctorCommand({modules}, {host: createFixtureHost(inspection.inspection)});
+  const command = createDoctorCommand(
+    {modules, inspection: inspection.inspection},
+    {host: buildCommandHost({runtime: {files: createRepositoryFixtureFileSystem()}})},
+  );
   return {command, calls, inspection};
 }
 

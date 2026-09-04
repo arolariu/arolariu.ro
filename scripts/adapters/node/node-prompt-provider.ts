@@ -1,36 +1,18 @@
 /**
- * @fileoverview Terminal-backed prompt contracts for setup workflows.
- * @module scripts.common.prompts
+ * @fileoverview Node.js terminal-backed {@link PromptProvider}: readline questions, validated
+ * re-ask loops, and non-echoing raw-mode secret input. This adapter exclusively owns interactive
+ * terminal protocol output — questions, choices, validation feedback, cursor/echo behavior, and
+ * secret prompt labels — and never writes submitted secret values or lifecycle diagnostics.
+ * @module scripts/adapters/node/node-prompt-provider
  */
+
 import {createInterface} from "node:readline";
 import {StringDecoder} from "node:string_decoder";
 
-/** One selectable prompt value and its human-readable label. */
-interface PromptChoice<TValue extends string> {
-  /** Value returned when this choice is selected. */
-  readonly value: TValue;
-  /** Human-readable choice label. */
-  readonly label: string;
-}
-
-/** Interactive prompt operations used by setup phases. */
-export interface PromptProvider {
-  /** Requests a yes/no decision. */
-  readonly confirm: (message: string, defaultValue?: boolean) => Promise<boolean>;
-  /** Requests one value from a fixed set of choices. */
-  readonly select: <TValue extends string>(
-    message: string,
-    choices: readonly PromptChoice<TValue>[],
-    defaultValue?: TValue,
-  ) => Promise<TValue>;
-  /** Requests visible free-form text. */
-  readonly text: (message: string) => Promise<string>;
-  /** Requests secret text without echoing typed characters. */
-  readonly secret: (message: string) => Promise<string>;
-}
+import type {PromptChoice, PromptProvider} from "../../core/runtime/runtime-capability.ts";
 
 /** Terminal streams and raw-mode control injected into the prompt provider. */
-export interface PromptTerminal {
+export interface NodePromptTerminal {
   /** Stream from which prompt input is read. */
   readonly input: NodeJS.ReadableStream;
   /** Stream to which prompt presentation is written. */
@@ -61,7 +43,7 @@ function nonInteractiveError(kind: string): Error {
   return new Error(`Cannot request ${kind} without an interactive terminal. Re-run setup in a TTY.`);
 }
 
-function createProcessTerminal(): PromptTerminal {
+function createProcessTerminal(): NodePromptTerminal {
   return {
     input: process.stdin,
     output: process.stdout,
@@ -76,7 +58,11 @@ function createProcessTerminal(): PromptTerminal {
   };
 }
 
-function askValidated<TValue>(terminal: PromptTerminal, message: string, parse: (answer: string) => ParsedAnswer<TValue>): Promise<TValue> {
+function askValidated<TValue>(
+  terminal: NodePromptTerminal,
+  message: string,
+  parse: (answer: string) => ParsedAnswer<TValue>,
+): Promise<TValue> {
   return new Promise<TValue>((resolve, reject) => {
     const readline = createInterface({
       input: terminal.input,
@@ -84,7 +70,6 @@ function askValidated<TValue>(terminal: PromptTerminal, message: string, parse: 
       terminal: terminal.isTTY,
     });
     let settled = false;
-
     const settle = (result: Readonly<{value: TValue}> | Readonly<{error: unknown}>): void => {
       if (settled) {
         return;
@@ -97,7 +82,6 @@ function askValidated<TValue>(terminal: PromptTerminal, message: string, parse: 
         resolve(result.value);
       }
     };
-
     const ask = (): void => {
       readline.question(message, (answer) => {
         const parsed = parse(answer);
@@ -109,19 +93,17 @@ function askValidated<TValue>(terminal: PromptTerminal, message: string, parse: 
         ask();
       });
     };
-
     readline.once("SIGINT", () => settle({error: cancellationError()}));
     readline.once("close", () => {
       if (!settled) {
         settle({error: new Error("Prompt input ended before a response was submitted.")});
       }
     });
-
     ask();
   });
 }
 
-function readSecret(terminal: PromptTerminal, message: string): Promise<string> {
+function readSecret(terminal: NodePromptTerminal, message: string): Promise<string> {
   if (!terminal.isTTY) {
     return Promise.reject(nonInteractiveError("a secret"));
   }
@@ -135,7 +117,6 @@ function readSecret(terminal: PromptTerminal, message: string): Promise<string> 
     const characters: string[] = [];
     let settled = false;
     let rawModeEnabled = false;
-
     const cleanup = (): unknown[] => {
       const errors: unknown[] = [];
       const attempt = (operation: () => void): void => {
@@ -145,7 +126,6 @@ function readSecret(terminal: PromptTerminal, message: string): Promise<string> 
           errors.push(error);
         }
       };
-
       attempt(() => terminal.input.removeListener("data", onData));
       attempt(() => terminal.input.removeListener("end", onEnd));
       attempt(() => terminal.input.removeListener("error", onError));
@@ -156,7 +136,6 @@ function readSecret(terminal: PromptTerminal, message: string): Promise<string> 
       }
       return errors;
     };
-
     const settle = (result: Readonly<{value: string}> | Readonly<{error: unknown}>): void => {
       if (settled) {
         return;
@@ -168,7 +147,6 @@ function readSecret(terminal: PromptTerminal, message: string): Promise<string> 
       } catch (error: unknown) {
         finalizationErrors.push(error);
       }
-
       if ("error" in result) {
         if (finalizationErrors.length > 0) {
           const aggregate = new AggregateError([result.error, ...finalizationErrors], "Secret prompt failed during terminal finalization.");
@@ -194,7 +172,6 @@ function readSecret(terminal: PromptTerminal, message: string): Promise<string> 
       }
       resolve(result.value);
     };
-
     const consume = (text: string): void => {
       for (const character of text) {
         if (character === "\u0003") {
@@ -212,7 +189,6 @@ function readSecret(terminal: PromptTerminal, message: string): Promise<string> 
         characters.push(character);
       }
     };
-
     function onData(chunk: unknown): void {
       if (typeof chunk === "string") {
         consume(chunk);
@@ -224,19 +200,15 @@ function readSecret(terminal: PromptTerminal, message: string): Promise<string> 
       }
       consume(String(chunk));
     }
-
     function onEnd(): void {
       settle({error: new Error("Secret prompt input ended before a value was submitted.")});
     }
-
     function onError(error: unknown): void {
       settle({error});
     }
-
     function onClose(): void {
       settle({error: new Error("Secret prompt input closed before a value was submitted.")});
     }
-
     try {
       setRawMode(true);
       rawModeEnabled = true;
@@ -255,15 +227,9 @@ function readSecret(terminal: PromptTerminal, message: string): Promise<string> 
  * Creates prompt operations over injected or process terminal streams.
  *
  * @param terminal - Optional terminal streams and raw-mode control.
- * @returns Prompt provider suitable for setup orchestration.
- *
- * @remarks
- * This adapter exclusively owns interactive terminal protocol output:
- * questions, choices, validation feedback, cursor/echo behavior, and secret
- * prompt labels. It never writes submitted secret values or lifecycle
- * diagnostics.
+ * @returns Prompt provider suitable for interactive command orchestration.
  */
-export function createTerminalPromptProvider(terminal: PromptTerminal = createProcessTerminal()): PromptProvider {
+export function createNodePromptProvider(terminal: NodePromptTerminal = createProcessTerminal()): PromptProvider {
   return {
     confirm: async (message, defaultValue) => {
       if (!terminal.isTTY) {
@@ -272,7 +238,6 @@ export function createTerminalPromptProvider(terminal: PromptTerminal = createPr
         }
         throw nonInteractiveError("confirmation");
       }
-
       const suffix = defaultValue === undefined ? "[y/n]" : defaultValue ? "[Y/n]" : "[y/N]";
       return askValidated(terminal, `${message} ${suffix} `, (answer) => {
         const normalized = answer.trim().toLowerCase();
@@ -302,7 +267,6 @@ export function createTerminalPromptProvider(terminal: PromptTerminal = createPr
         }
         throw nonInteractiveError("a selection");
       }
-
       terminal.output.write(`${message}\n`);
       choices.forEach((choice, index) => terminal.output.write(`  ${index + 1}. ${choice.label}\n`));
       return askValidated(terminal, "Selection: ", (answer) => {
@@ -310,12 +274,10 @@ export function createTerminalPromptProvider(terminal: PromptTerminal = createPr
         if (normalized === "" && defaultValue !== undefined) {
           return {valid: true, value: defaultValue};
         }
-
         const choiceByValue = choices.find((choice) => choice.value === normalized);
         if (choiceByValue !== undefined) {
           return {valid: true, value: choiceByValue.value};
         }
-
         const selectedIndex = Number.parseInt(normalized, 10);
         if (/^[1-9]\d*$/.test(normalized)) {
           const choiceByIndex = choices[selectedIndex - 1];
@@ -323,7 +285,6 @@ export function createTerminalPromptProvider(terminal: PromptTerminal = createPr
             return {valid: true, value: choiceByIndex.value};
           }
         }
-
         return {valid: false, error: `Invalid selection. Choose 1-${choices.length}.`};
       });
     },

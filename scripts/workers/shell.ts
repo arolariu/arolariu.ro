@@ -15,7 +15,7 @@
  * desired lifetime — caching across runs of the same worker process is safe.
  */
 
-import {nodeProcessRunner} from "../common/runtime.node.ts";
+import {nodeProcessRunner} from "../adapters/node/node-process-runner.ts";
 
 /**
  * Runs a command and captures merged stdout+stderr output.

@@ -10,7 +10,7 @@
  * so one cancellation, one logger, and one cleanup lifecycle cover the whole run.
  */
 
-import {CommandCancellation} from "./common/runtime.ts";
+import {CommandCancellation} from "./core/runtime/cancellation.ts";
 import type {CommandExecution, CommandExecutionContext, CommandInvoker} from "./core/command/command-execution.ts";
 import {defineCommand, type LazyMonorepoCommand} from "./core/command/lazy-monorepo-command.ts";
 import type {CommandConstructionOptions, CommandHost} from "./core/command/command-specification.ts";

@@ -5,7 +5,8 @@
 
 import {resolve} from "node:path";
 import type {RepositoryPaths} from "./repository-paths.ts";
-import type {ReadOnlyFileSystem, TaskScheduler} from "./runtime.ts";
+import type {ReadOnlyFileSystem} from "../core/runtime/runtime-capability.ts";
+import type {TaskScheduler} from "../core/runtime/task-scheduler.ts";
 
 const EXACT_PACKAGE_VERSION =
   /^(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/;

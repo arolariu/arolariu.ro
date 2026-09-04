@@ -10,7 +10,7 @@
  *
  * The command owns no ambient capability. Repository paths, manifest requirements, the single
  * shared inspection session, the phase-scoped process runner, prompts, and the composed generation
- * command all arrive through the injected {@link CommandRuntime} of one invocation. Phases run
+ * command all arrive through the injected {@link RuntimeExecutionContext} of one invocation. Phases run
  * sequentially so prompts, package managers, and local configuration writes cannot race;
  * dependency handling, not concurrency, isolates failures. An ordinary phase exception becomes one
  * failed phase result and setup continues with independent phases, while an interruption escapes
@@ -29,10 +29,12 @@ import type {CommandExecutionContext} from "./core/command/command-execution.ts"
 import {defineCommand, type LazyMonorepoCommand} from "./core/command/lazy-monorepo-command.ts";
 import type {CommandConstructionOptions, CommandHost} from "./core/command/command-specification.ts";
 import type {TerminalPresenter} from "./core/presentation/terminal-presenter.ts";
-import type {PromptProvider} from "./common/prompts.ts";
+import {CommandCancellation, commandCancellationFromSignal} from "./core/runtime/cancellation.ts";
+import type {PromptProvider} from "./core/runtime/runtime-capability.ts";
+import type {RepositoryInspectionRequest, RepositoryInspectionRuntime} from "./inspection/runtime-capability.ts";
+import {createInspectionRuntimeExecutionContext, type InspectionRuntimeExecutionContext} from "./inspection/runtime-capability.ts";
 import {loadRepositoryRequirements} from "./common/requirements.ts";
 import {resolveRepositoryPaths} from "./common/repository-paths.ts";
-import {CommandCancellation, commandCancellationFromSignal, type RepositoryInspectionRequest} from "./common/runtime.ts";
 import type {ContainerEngine} from "./container-runtime/types.ts";
 import {generateCommand, type GenerateInput, type GenerateResult} from "./generate.ts";
 import {dotnetSetupPhase} from "./setup.dotnet.ts";
@@ -70,6 +72,8 @@ export interface SetupCommandDependencies {
   readonly phases?: readonly SetupPhaseDefinition[];
   /** Composed generation command migrated phases invoke; defaults to the production singleton. */
   readonly generate?: CommandInvoker<GenerateInput, GenerateResult>;
+  /** Repository-analysis registry injected by a test; defaults to the composed production one. */
+  readonly inspection?: RepositoryInspectionRuntime;
 }
 
 /**
@@ -312,7 +316,7 @@ interface SetupExecutionSeams {
  * @throws When repository requirements are invalid, or when a phase is interrupted.
  */
 async function executeSetup(
-  context: Readonly<CommandExecutionContext>,
+  context: Readonly<CommandExecutionContext<InspectionRuntimeExecutionContext>>,
   input: Readonly<SetupInput>,
   seams: Readonly<SetupExecutionSeams> = {},
 ): Promise<SetupResult> {
@@ -512,7 +516,7 @@ export function createSetupCommand(
 ): LazyMonorepoCommand<SetupInput, SetupResult, never> {
   const {phases, generate} = dependencies;
 
-  return defineCommand<SetupInput, SetupResult>(
+  return defineCommand<SetupInput, SetupResult, InspectionRuntimeExecutionContext>(
     {
       name: "setup",
       description:
@@ -535,6 +539,7 @@ export function createSetupCommand(
           ...(engine === undefined ? {} : {engine}),
         };
       },
+      createRuntimeContext: (baseRuntime, parent) => createInspectionRuntimeExecutionContext(baseRuntime, parent, dependencies.inspection),
       execute: (context, input) =>
         executeSetup(context, input, {
           ...(phases === undefined ? {} : {phases}),

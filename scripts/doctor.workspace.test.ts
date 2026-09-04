@@ -23,8 +23,8 @@ import {RecordingTerminalPresenterSink} from "./testing/fixtures/terminal.fixtur
 import type {ProcessExecutionResult} from "./core/process/process-execution-result.ts";
 import {createRepositoryPaths} from "./common/repository-paths.ts";
 import type {RepositoryRequirements} from "./common/requirements.ts";
-import {asReadOnlyFileSystem, FileSystemError, type Clock, type ReadOnlyFileSystem, type RuntimeEnvironment} from "./common/runtime.ts";
-import {nodeFileSystem} from "./common/runtime.node.ts";
+import {nodeFileSystem} from "./adapters/node/node-filesystem.ts";
+import {asReadOnlyFileSystem, type Clock, FileSystemError, type ReadOnlyFileSystem, type RuntimeEnvironment} from "./core/runtime/runtime-capability.ts";
 import {getExpectedTaxonomyArtifactPaths} from "./common/taxonomy-artifacts.ts";
 import {createDoctorReport} from "./doctor.reporter.ts";
 import {workspaceDoctorModule} from "./doctor.workspace.ts";

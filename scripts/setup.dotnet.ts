@@ -35,7 +35,7 @@ import {
   type SucceededProcessExecutionResult,
 } from "./core/process/process-execution-result.ts";
 import {ProcessRunnerError} from "./core/process/process-runner.ts";
-import {CommandCancellation} from "./common/runtime.ts";
+import {CommandCancellation} from "./core/runtime/cancellation.ts";
 import type {DotnetFacts} from "./inspection/dotnet.ts";
 import type {InspectionOutcome} from "./inspection/types.ts";
 import {

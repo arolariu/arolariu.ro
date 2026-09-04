@@ -52,7 +52,7 @@ const runtimeBoundaryExclusions = new Set([
   "scripts/types/lint.ts",
 ]);
 
-const directOutputAdapters = new Set(["scripts/adapters/node/node-terminal-sink.ts", "scripts/common/prompts.ts"]);
+const directOutputAdapters = new Set(["scripts/adapters/node/node-terminal-sink.ts", "scripts/adapters/node/node-prompt-provider.ts"]);
 
 /**
  * Every production module the process may be started with directly.
@@ -70,9 +70,8 @@ const directEntrypoints: readonly string[] = commanderEntrypointSourcePaths;
  * capability policies.
  *
  * @remarks
- * This preserves the current policy surface, including `scripts/common/runtime.testing.ts`, while
- * excluding only the new non-production `scripts/testing/**` architecture and compatibility
- * support added by this cohort.
+ * This preserves the current policy surface while excluding only the non-production
+ * `scripts/testing/**` architecture and compatibility support added by this cohort.
  */
 const runtimeBoundaryScanSourcePaths = discoverScriptSourceFiles().filter(
   (sourcePath) => !isScriptTestFile(sourcePath) && !isScriptConfigurationFile(sourcePath) && !sourcePath.startsWith("scripts/testing/"),
@@ -101,31 +100,44 @@ const doctorForbiddenModules: ReadonlySet<string> = new Set([
   "fs/promises",
   "node:os",
   "os",
-  "./common/runtime.node.ts",
+  "./adapters/node/node-filesystem.ts",
+  "./adapters/node/node-http-client.ts",
+  "./adapters/node/node-lazy-capabilities.ts",
+  "./adapters/node/node-platform.ts",
+  "./adapters/node/node-process-host.ts",
+  "./adapters/node/node-process-runner.ts",
+  "./adapters/node/node-runtime-scope.ts",
   "./adapters/execa/execa-process-runner.ts",
 ]);
 
 /** Imported names no Doctor production module may take, even from an otherwise approved module. */
 const doctorForbiddenImportNames: ReadonlyMap<string, ReadonlySet<string>> = new Map([
-  ["./common/runtime.ts", new Set(["FileSystem"])],
+  ["./core/runtime/runtime-capability.ts", new Set(["FileSystem"])],
   ["./core/process/process-runner.ts", new Set(["ProcessRunner"])],
 ]);
 /**
- * Approved production adapter of RFC 0002 section 5.3. It owns ambient filesystem, fetch, timer,
- * OS-state, signal, and final `process.exitCode` assignment access. `process.exit()` stays
- * prohibited everywhere, including here.
+ * Approved production Node adapters of RFC 0002 section 5.3. Together they own every ambient
+ * filesystem, fetch, timer, OS-state, signal, and final `process.exitCode` assignment the rest of
+ * the script surface is forbidden to touch. `process.exit()` stays prohibited everywhere,
+ * including here.
  */
-const runtimeNodeAdapter = "scripts/common/runtime.node.ts";
+const nodeRuntimeAdapters: ReadonlySet<string> = new Set([
+  "scripts/adapters/node/node-filesystem.ts",
+  "scripts/adapters/node/node-http-client.ts",
+  "scripts/adapters/node/node-platform.ts",
+  "scripts/adapters/node/node-process-host.ts",
+  "scripts/adapters/node/node-prompt-provider.ts",
+]);
 
 /**
  * Approved Node terminal adapter. It owns the terminal, `NO_COLOR`, and progress-interval policy
  * the presentation core is forbidden to read, so it holds the same narrow ambient timer and
- * environment exemption the runtime Node adapter already has, and nothing wider.
+ * environment exemption the Node runtime adapters already have, and nothing wider.
  */
 const nodeTerminalAdapter = "scripts/adapters/node/node-terminal-sink.ts";
 
 /** Every adapter allowed to read ambient terminal-policy state directly. */
-const ambientTerminalPolicyAdapters: ReadonlySet<string> = new Set([runtimeNodeAdapter, nodeTerminalAdapter]);
+const ambientTerminalPolicyAdapters: ReadonlySet<string> = new Set([...nodeRuntimeAdapters, nodeTerminalAdapter]);
 const execaAdapter = "scripts/adapters/execa/execa-process-runner.ts";
 const assignmentOperators = new Set<ts.SyntaxKind>([
   ts.SyntaxKind.EqualsToken,
@@ -163,8 +175,8 @@ function normalizeFilePath(file: string): string {
  * Production script source files scanned by the runtime-boundary policy's static AST scan.
  *
  * @returns {@link discoverProductionScriptFiles} filtered by the existing runtime-boundary
- * exclusions; that graph-shaped scan already excludes `runtime.testing.ts` because it is
- * test-support source.
+ * exclusions; that graph-shaped scan already excludes everything under `scripts/testing/` because
+ * it is test-support source.
  */
 function discoverRuntimeBoundaryProductionScripts(): readonly string[] {
   return discoverProductionScriptFiles().filter((file) => !runtimeBoundaryExclusions.has(file));
@@ -311,7 +323,7 @@ function scanRuntimeBoundarySource(file: string, sourceText: string): readonly R
       add(node, "legacy-process-import");
     }
 
-    if (normalizedFile === runtimeNodeAdapter) {
+    if (nodeRuntimeAdapters.has(normalizedFile)) {
       return;
     }
 
@@ -530,7 +542,7 @@ function scanRuntimeBoundarySource(file: string, sourceText: string): readonly R
           add(node, "direct-exit");
         }
 
-        if (path.length === 1 && path[0] === "fetch" && normalizedFile !== runtimeNodeAdapter) {
+        if (path.length === 1 && path[0] === "fetch" && !nodeRuntimeAdapters.has(normalizedFile)) {
           add(node, "ambient-http");
         }
 
@@ -538,11 +550,11 @@ function scanRuntimeBoundarySource(file: string, sourceText: string): readonly R
           add(node, "ambient-timer");
         }
 
-        if (isAmbientOsStateCallPath(path) && normalizedFile !== runtimeNodeAdapter) {
+        if (isAmbientOsStateCallPath(path) && !nodeRuntimeAdapters.has(normalizedFile)) {
           add(node, "ambient-os-state");
         }
 
-        if (isAmbientProcessControlPath(path) && normalizedFile !== runtimeNodeAdapter) {
+        if (isAmbientProcessControlPath(path) && !nodeRuntimeAdapters.has(normalizedFile)) {
           add(node, "ambient-process-control");
         }
 
@@ -559,7 +571,7 @@ function scanRuntimeBoundarySource(file: string, sourceText: string): readonly R
           add(node, "ambient-environment");
         }
 
-        if (isAmbientOsStatePath(path) && normalizedFile !== runtimeNodeAdapter) {
+        if (isAmbientOsStatePath(path) && !nodeRuntimeAdapters.has(normalizedFile)) {
           add(node, "ambient-os-state");
         }
       }
@@ -571,7 +583,7 @@ function scanRuntimeBoundarySource(file: string, sourceText: string): readonly R
         leftPath !== null
         && startsWithPath(leftPath, ["process", "exitCode"])
         && assignmentOperators.has(node.operatorToken.kind)
-        && normalizedFile !== runtimeNodeAdapter
+        && !nodeRuntimeAdapters.has(normalizedFile)
       ) {
         add(node, "direct-exit");
       }
@@ -589,7 +601,7 @@ function scanRuntimeBoundarySource(file: string, sourceText: string): readonly R
 
     if (ts.isNewExpression(node) && (node.arguments?.length ?? 0) === 0) {
       const path = getAccessPath(node.expression, scopes);
-      if (path !== null && path.length === 1 && path[0] === "Date" && normalizedFile !== runtimeNodeAdapter) {
+      if (path !== null && path.length === 1 && path[0] === "Date" && !nodeRuntimeAdapters.has(normalizedFile)) {
         add(node, "ambient-timer");
       }
     }
@@ -687,22 +699,22 @@ describe("runtime boundary policy", () => {
     ]);
   });
 
-  it("allows only the runtime Node adapter to assign the final exit code", () => {
+  it("allows only an approved Node runtime adapter to assign the final exit code", () => {
     const source = ["process.exitCode = 1;", "const processAlias = process;", "processAlias.exitCode ??= 2;"].join("\n");
 
-    expect(scanRuntimeBoundarySource("scripts/common/runtime.node.ts", source)).toEqual([]);
+    expect(scanRuntimeBoundarySource("scripts/adapters/node/node-process-host.ts", source)).toEqual([]);
     expect(scanRuntimeBoundarySource("scripts/core/command/abstract-monorepo-command.ts", source)).toEqual([
       {file: "scripts/core/command/abstract-monorepo-command.ts", line: 1, rule: "direct-exit"},
       {file: "scripts/core/command/abstract-monorepo-command.ts", line: 3, rule: "direct-exit"},
     ]);
   });
 
-  it("keeps flagging process.exit() inside the runtime Node adapter", () => {
+  it("keeps flagging process.exit() inside an approved Node runtime adapter", () => {
     const source = ["process.exit(1);", "const exit = process.exit;", "exit(2);"].join("\n");
 
-    expect(scanRuntimeBoundarySource("scripts/common/runtime.node.ts", source)).toEqual([
-      {file: "scripts/common/runtime.node.ts", line: 1, rule: "direct-exit"},
-      {file: "scripts/common/runtime.node.ts", line: 3, rule: "direct-exit"},
+    expect(scanRuntimeBoundarySource("scripts/adapters/node/node-process-host.ts", source)).toEqual([
+      {file: "scripts/adapters/node/node-process-host.ts", line: 1, rule: "direct-exit"},
+      {file: "scripts/adapters/node/node-process-host.ts", line: 3, rule: "direct-exit"},
     ]);
   });
 
@@ -838,19 +850,19 @@ describe("runtime boundary policy", () => {
 
   it("rejects named and whole-module imports that widen Doctor capabilities", () => {
     const source = [
-      'import type {FileSystem, Clock} from "./common/runtime.ts";',
-      'import * as runtime from "./common/runtime.ts";',
+      'import type {FileSystem, Clock} from "./core/runtime/runtime-capability.ts";',
+      'import * as runtime from "./core/runtime/runtime-capability.ts";',
       'import runner from "./core/process/process-runner.ts";',
       'export * from "./core/process/process-runner.ts";',
-      'void import("./common/runtime.ts");',
+      'void import("./core/runtime/runtime-capability.ts");',
     ].join("\n");
 
     expect(scanDoctorCapabilitySource("scripts/doctor.example.ts", source)).toEqual([
-      {file: "scripts/doctor.example.ts", specifier: "./common/runtime.ts", name: "FileSystem"},
-      {file: "scripts/doctor.example.ts", specifier: "./common/runtime.ts", name: "*"},
+      {file: "scripts/doctor.example.ts", specifier: "./core/runtime/runtime-capability.ts", name: "FileSystem"},
+      {file: "scripts/doctor.example.ts", specifier: "./core/runtime/runtime-capability.ts", name: "*"},
       {file: "scripts/doctor.example.ts", specifier: "./core/process/process-runner.ts", name: "*"},
       {file: "scripts/doctor.example.ts", specifier: "./core/process/process-runner.ts", name: "*"},
-      {file: "scripts/doctor.example.ts", specifier: "./common/runtime.ts", name: "*"},
+      {file: "scripts/doctor.example.ts", specifier: "./core/runtime/runtime-capability.ts", name: "*"},
     ]);
   });
 
@@ -858,11 +870,13 @@ describe("runtime boundary policy", () => {
     const specifiers = collectTypeScriptModuleReferences(readFileSync(workerShellAdapter, "utf8")).references;
 
     expect(specifiers).toContainEqual({
-      specifier: "../common/runtime.node.ts",
+      specifier: "../adapters/node/node-process-runner.ts",
       importedNames: ["nodeProcessRunner"],
       referenceKind: "import",
       typeOnly: false,
     });
+    expect(specifiers.map((moduleReference) => moduleReference.specifier)).not.toContain("./node-process-host.ts");
+    expect(specifiers.map((moduleReference) => moduleReference.specifier)).not.toContain("../adapters/node/node-process-host.ts");
     expect(
       specifiers.filter(
         (moduleReference) => processSpawningModules.has(moduleReference.specifier) || moduleReference.specifier === "execa",

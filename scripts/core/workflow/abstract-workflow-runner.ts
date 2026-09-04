@@ -12,7 +12,7 @@
  * workflow module uses; only its `executeWorkflow` differs from a fake runner used in a test.
  */
 
-import {CommandCancellation} from "../../common/runtime.ts";
+import {CommandCancellation} from "../runtime/cancellation.ts";
 import type {WorkflowExecutionDecision, WorkflowExecutionResult} from "./workflow-execution-result.ts";
 import type {WorkflowExecutionSupport, WorkflowSpecification} from "./workflow-specification.ts";
 

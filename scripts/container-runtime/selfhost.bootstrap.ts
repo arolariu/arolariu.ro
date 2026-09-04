@@ -14,7 +14,8 @@
  */
 
 import {BlobServiceClient} from "@azure/storage-blob";
-import {CommandCancellation, commandCancellationFromSignal, type HttpClient} from "../common/runtime.ts";
+import {CommandCancellation, commandCancellationFromSignal} from "../core/runtime/cancellation.ts";
+import type {HttpClient} from "../core/runtime/runtime-capability.ts";
 import {ContainerRuntimeError} from "./types.ts";
 
 /** Cosmos DB emulator endpoint the local selfhost stack exposes. */

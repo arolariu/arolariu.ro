@@ -7,7 +7,7 @@
  * read-only filesystem, obtains exactly one quick repository inspection session from the
  * runtime-owned inspection registry, and then collects five degradation-tolerant sections
  * (workspaces, the Nx dependency graph derived from tracked workspace metadata, git state, npm
- * audit/outdated, and disk usage) concurrently through {@link CommandRuntime.tasks}. A failure or
+ * audit/outdated, and disk usage) concurrently through {@link RuntimeExecutionContext.tasks}. A failure or
  * malformed result from any single one of those sources degrades that section to `null`
  * ("unavailable") without invalidating the rest of the report and without inventing a zero,
  * `"unknown"`, or empty-array stand-in for a genuine failure.
@@ -49,14 +49,11 @@ import {resolveRepositoryPaths, type RepositoryPaths} from "./common/repository-
 import type {ProcessExecutionRequest} from "./core/process/process-execution-request.ts";
 import type {ProcessExecutionResult} from "./core/process/process-execution-result.ts";
 import type {ProcessRunner} from "./core/process/process-runner.ts";
-import {
-  asReadOnlyFileSystem,
-  CommandCancellation,
-  commandCancellationFromSignal,
-  type ReadOnlyFileSystem,
-  type RepositoryInspectionRequest,
-  type TaskScheduler,
-} from "./common/runtime.ts";
+import {CommandCancellation, commandCancellationFromSignal} from "./core/runtime/cancellation.ts";
+import {asReadOnlyFileSystem, type ReadOnlyFileSystem} from "./core/runtime/runtime-capability.ts";
+import type {TaskScheduler} from "./core/runtime/task-scheduler.ts";
+import type {RepositoryInspectionRequest, RepositoryInspectionRuntime} from "./inspection/runtime-capability.ts";
+import {createInspectionRuntimeExecutionContext, type InspectionRuntimeExecutionContext} from "./inspection/runtime-capability.ts";
 import {doctorCommand} from "./doctor.ts";
 import type {DoctorInput, DoctorReport, DoctorSummary} from "./doctor.types.ts";
 import type {RepositoryInspectionSession} from "./inspection/repository.ts";
@@ -189,6 +186,8 @@ interface StatusContribution {
 export interface StatusCommandDependencies {
   /** Typed doctor command composed as the health source; defaults to the production singleton. */
   readonly doctor?: CommandInvoker<DoctorInput, DoctorReport>;
+  /** Repository-analysis registry injected by a test; defaults to the composed production one. */
+  readonly inspection?: RepositoryInspectionRuntime;
 }
 
 // ============================================================================
@@ -288,9 +287,7 @@ function isSuccessfulOutcome(outcome: Readonly<ProcessExecutionResult>): boolean
  * @returns `true` when the transport itself failed.
  */
 function hasTransportFailure(outcome: Readonly<ProcessExecutionResult>): boolean {
-  return (
-    outcome.kind === "spawn-failed" || outcome.kind === "timed-out" || outcome.kind === "cancelled" || outcome.kind === "signalled"
-  );
+  return outcome.kind === "spawn-failed" || outcome.kind === "timed-out" || outcome.kind === "cancelled" || outcome.kind === "signalled";
 }
 
 /**
@@ -452,13 +449,7 @@ async function collectGit(sources: Readonly<ProbeSources>): Promise<GitInfo | nu
   );
 
   const [branch, sha, lastCommitTime, lastCommitMsg, status] = outcomes;
-  if (
-    branch === undefined
-    || sha === undefined
-    || lastCommitTime === undefined
-    || lastCommitMsg === undefined
-    || status === undefined
-  ) {
+  if (branch === undefined || sha === undefined || lastCommitTime === undefined || lastCommitMsg === undefined || status === undefined) {
     return null;
   }
 
@@ -886,7 +877,7 @@ function claimDoctorReport(outcome: PromiseSettledResult<StatusContribution> | u
  * @throws {Error} When the composed doctor invocation failed, returned help, or rejected.
  */
 async function collectStatus(
-  context: Readonly<CommandExecutionContext>,
+  context: Readonly<CommandExecutionContext<InspectionRuntimeExecutionContext>>,
   doctor: CommandInvoker<DoctorInput, DoctorReport> = doctorCommand,
 ): Promise<{
   readonly workspaces: Awaited<ReturnType<typeof collectWorkspaces>> | null;
@@ -982,7 +973,7 @@ export function createStatusCommand(
 ): LazyMonorepoCommand<StatusInput, StatusDocument, never> {
   const doctor = dependencies.doctor ?? doctorCommand;
 
-  return defineCommand<StatusInput, StatusDocument>(
+  return defineCommand<StatusInput, StatusDocument, InspectionRuntimeExecutionContext>(
     {
       name: "status",
       description: "Collects and renders monorepo health, workspace, git, security, and disk data.",
@@ -995,6 +986,7 @@ export function createStatusCommand(
         return {json: options.json === true};
       },
       presentation: (input) => (input.json ? "json" : "human"),
+      createRuntimeContext: (baseRuntime, parent) => createInspectionRuntimeExecutionContext(baseRuntime, parent, dependencies.inspection),
       execute: (context) => collectStatus(context, doctor),
       complete: (document) => ({
         exitCode: 0,

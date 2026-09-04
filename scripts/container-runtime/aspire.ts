@@ -15,7 +15,7 @@ import {defineCommand, type LazyMonorepoCommand} from "../core/command/lazy-mono
 import type {CommandConstructionOptions, CommandHost} from "../core/command/command-specification.ts";
 import {resolveRepositoryPaths} from "../common/repository-paths.ts";
 import {ProcessRunnerError} from "../core/process/process-runner.ts";
-import {commandCancellationFromSignal} from "../common/runtime.ts";
+import {commandCancellationFromSignal} from "../core/runtime/cancellation.ts";
 import {getContainerAdapter, type ContainerRuntimeAdapter} from "./adapters.ts";
 import {runContainerPreflight} from "./preflight.ts";
 import {resolveRuntimeContainerEngine} from "./selection.ts";

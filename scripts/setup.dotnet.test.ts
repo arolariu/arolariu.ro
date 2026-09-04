@@ -21,8 +21,9 @@ import type {MinimumVersion, RepositoryRequirements} from "./common/requirements
 import type {ProcessExecutionOptions, ProcessExecutionRequest} from "./core/process/process-execution-request.ts";
 import type {ProcessExecutionResult} from "./core/process/process-execution-result.ts";
 import {AbstractProcessRunner} from "./core/process/process-runner.ts";
-import {createMemoryFileSystem, createTestRuntimeFactory} from "./common/runtime.testing.ts";
-import type {Clock, RuntimeEnvironment} from "./common/runtime.ts";
+import type {Clock, RuntimeEnvironment} from "./core/runtime/runtime-capability.ts";
+import {buildRuntimeExecutionContext} from "./testing/builders/runtime-context.builder.ts";
+import {createMemoryFileSystem} from "./testing/fixtures/memory-filesystem.fixture.ts";
 import type {DotnetFacts} from "./inspection/dotnet.ts";
 import type {RepositoryInspectionSession} from "./inspection/repository.ts";
 import type {InspectionOutcome} from "./inspection/types.ts";
@@ -106,7 +107,10 @@ class FakeProcessRunner extends AbstractProcessRunner {
   }
 
   /** {@inheritDoc AbstractProcessRunner.execute} */
-  protected override execute(request: Readonly<ProcessExecutionRequest>, options: Readonly<ProcessExecutionOptions>): Promise<ProcessExecutionResult> {
+  protected override execute(
+    request: Readonly<ProcessExecutionRequest>,
+    options: Readonly<ProcessExecutionOptions>,
+  ): Promise<ProcessExecutionResult> {
     this.#calls.push({request, options});
     const key = commandKey(request);
     const configured = this.#responses[key];
@@ -317,14 +321,13 @@ async function createHarness(
     delay: (): Promise<void> => Promise.resolve(),
   };
 
-  const factory = createTestRuntimeFactory({
+  const commandRuntime = buildRuntimeExecutionContext({
     files: createMemoryFileSystem({}),
     runner,
     clock,
-    logger,
+    presenter: logger,
     environment: environmentSnapshot(input.platform ?? "win32"),
   });
-  const commandRuntime = await factory.createRoot({presentation: "silent", registerProcessSignals: false});
   const command: CommandExecutionContext = {runtime: commandRuntime, presentation: "silent"};
 
   const runtime: SetupPhaseRuntime = {
@@ -675,9 +678,7 @@ describe("restore ordering and failures", () => {
       {id: "dotnet.solution-restore", scope: "repository"},
       {id: "dotnet.tool-restore", scope: "user"},
     ]);
-    const restoreCalls = harness.runner.calls.filter(
-      ({request}) => request.command === "dotnet" && request.args.includes("restore"),
-    );
+    const restoreCalls = harness.runner.calls.filter(({request}) => request.command === "dotnet" && request.args.includes("restore"));
     expect(restoreCalls.map(({request}) => request.args)).toEqual([
       ["workload", "restore", paths.solution],
       ["restore", paths.solution],

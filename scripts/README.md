@@ -29,7 +29,7 @@ invocation.
 Every root script except the format/lint pair is one composed command object built on
 [`core/command/`](./core/command) and [`core/workflow/`](./core/workflow), backed by one injected
 [`CommandHost`](./core/command/command-specification.ts) and one capability kernel from
-[`common/runtime.ts`](./common/runtime.ts). Core never imports an adapter: every production command
+[`core/runtime/`](./core/runtime). Core never imports an adapter: every production command
 supplies its own literal `loadHost` loader of [`adapters/node/node-command-host.ts`](./adapters/node/node-command-host.ts).
 
 ### Command specification anatomy
@@ -89,8 +89,8 @@ const command = createStatusCommand({doctor: fakeDoctor}, {host: buildCommandHos
 ```
 
 [`testing/builders/command-host.builder.ts`](./testing/builders/command-host.builder.ts) owns `buildCommandHost`, and
-[`common/runtime.testing.ts`](./common/runtime.testing.ts) owns the typed runtime fakes it composes — a scripted process runner,
-recording presenter sink, fixture filesystem, deterministic clock, and stub inspection session. Both are test infrastructure and are
+[`testing/builders/`](./testing/builders) and [`testing/fixtures/`](./testing/fixtures) own the typed runtime fakes it composes — a
+scripted process runner, recording presenter sink, fixture filesystem, deterministic clock, and stub inspection session. Both are test infrastructure and are
 excluded from coverage.
 
 ### `run()`, `invoke()`, and `runIfMain()`
@@ -150,9 +150,12 @@ separate; `formatProcessExecutionRequest()` renders diagnostics and never includ
 ### Capability profiles and child scope ownership
 
 `context.runtime` is the only source of effects. It carries `presenter`, `prompts`, `runner`, `http`, `files`, `clock`, `tasks`,
-`inspection`, `environment`, `signal`, and `cleanup`. [`common/runtime.node.ts`](./common/runtime.node.ts) is the single production
-adapter that implements them; it is the only production module allowed to import `node:fs`, `node:os`, or `node:timers`, to call bare
+`environment`, `signal`, and `cleanup`; Doctor, Setup, and Status additionally compose `inspection` through
+[`inspection/runtime-capability.ts`](./inspection/runtime-capability.ts). The Node adapters under [`adapters/node/`](./adapters/node)
+implement them, composed per scope by [`adapters/node/node-runtime-scope.ts`](./adapters/node/node-runtime-scope.ts); they are the only
+production modules allowed to import `node:fs`, `node:os`, or `node:timers`, to call bare
 `fetch`/`setInterval`, to read `process.env`/`process.cwd()`, to register SIGINT/SIGTERM, or to assign `process.exitCode`.
+`files`, `http`, `runner`, and `prompts` are memoized lazy facades: a command that never touches one never loads its adapter.
 [`adapters/node/node-terminal-sink.ts`](./adapters/node/node-terminal-sink.ts) additionally holds one narrow, terminal-only exemption
 from the same boundary check: it alone may call `setInterval` for progress-frame scheduling and read `process.env` to resolve
 `NO_COLOR`. No other production module gains either exemption.
@@ -212,7 +215,7 @@ so format/lint behavior is unchanged.
 ## Output-policy exemptions
 
 The Node terminal sink in [`adapters/node/node-terminal-sink.ts`](./adapters/node/node-terminal-sink.ts) is the sole owner of non-interactive presentation
-output. The interactive terminal-protocol adapter in [`common/prompts.ts`](./common/prompts.ts) is a separate narrow exemption because
+output. The interactive terminal-protocol adapter in [`adapters/node/node-prompt-provider.ts`](./adapters/node/node-prompt-provider.ts) is a separate narrow exemption because
 readline, visible input echo, cursor state, validation feedback, and non-echoing secret entry must share one writable terminal stream.
 That adapter may emit only prompt labels, questions, choices, validation feedback, and terminal-control newlines; lifecycle diagnostics and
 submitted secret values remain forbidden there.
@@ -285,8 +288,8 @@ action is `executed`, `planned` (always the outcome under `--dry-run`), or `decl
 Focused validation for setup and its direct shared dependencies:
 
 ```powershell
-npx vitest run --config scripts\vitest.config.ts --coverage.enabled=false scripts\common\repository-paths.test.ts scripts\common\requirements.test.ts scripts\common\tooling-config.test.ts scripts\common\prompts.test.ts scripts\setup.test.ts scripts\setup.workspace.test.ts scripts\setup.dotnet.test.ts scripts\setup.react.test.ts scripts\setup.svelte.test.ts scripts\setup.python.test.ts scripts\setup.infrastructure.test.ts scripts\generate.env.test.ts scripts\container-runtime\selection.test.ts scripts\common\output-policy.test.ts
-npx eslint scripts\setup.ts scripts\setup.types.ts scripts\setup.*.ts scripts\common\repository-paths.ts scripts\common\requirements.ts scripts\common\tooling-config.ts scripts\common\prompts.ts scripts\generate.env.ts scripts\container-runtime
+npx vitest run --config scripts\vitest.config.ts --coverage.enabled=false scripts\common\repository-paths.test.ts scripts\common\requirements.test.ts scripts\common\tooling-config.test.ts scripts\adapters\node\node-prompt-provider.test.ts scripts\setup.test.ts scripts\setup.workspace.test.ts scripts\setup.dotnet.test.ts scripts\setup.react.test.ts scripts\setup.svelte.test.ts scripts\setup.python.test.ts scripts\setup.infrastructure.test.ts scripts\generate.env.test.ts scripts\container-runtime\selection.test.ts scripts\common\output-policy.test.ts
+npx eslint scripts\setup.ts scripts\setup.types.ts scripts\setup.*.ts scripts\common\repository-paths.ts scripts\common\requirements.ts scripts\common\tooling-config.ts scripts\adapters\node\node-prompt-provider.ts scripts\generate.env.ts scripts\container-runtime
 git --no-pager diff --check
 ```
 

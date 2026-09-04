@@ -20,9 +20,11 @@ import {RecordingTerminalPresenterSink} from "./testing/fixtures/terminal.fixtur
 import type {ProcessExecutionOptions, ProcessExecutionRequest} from "./core/process/process-execution-request.ts";
 import type {ProcessExecutionResult} from "./core/process/process-execution-result.ts";
 import {AbstractProcessRunner, ProcessRunnerError} from "./core/process/process-runner.ts";
-import {createMemoryFileSystem, repositoryFixtureRoot} from "./common/runtime.testing.ts";
+import {CommandCancellation} from "./core/runtime/cancellation.ts";
+import type {FileSystem, RuntimeEnvironment} from "./core/runtime/runtime-capability.ts";
+import {createMemoryFileSystem} from "./testing/fixtures/memory-filesystem.fixture.ts";
+import {repositoryFixtureRoot} from "./testing/fixtures/repository.fixture.ts";
 import {buildCommandHost} from "./testing/builders/command-host.builder.ts";
-import {CommandCancellation, type FileSystem, type RuntimeEnvironment} from "./common/runtime.ts";
 import {
   createE2eCommand,
   redactSensitiveString,

@@ -29,8 +29,9 @@ import type {RepositoryRequirements} from "./common/requirements.ts";
 import type {ProcessExecutionOptions, ProcessExecutionRequest} from "./core/process/process-execution-request.ts";
 import type {ProcessExecutionResult} from "./core/process/process-execution-result.ts";
 import {AbstractProcessRunner} from "./core/process/process-runner.ts";
-import {createMemoryFileSystem, createTestRuntimeFactory} from "./common/runtime.testing.ts";
-import type {Clock, FileSystem, RuntimeEnvironment} from "./common/runtime.ts";
+import type {Clock, FileSystem, RuntimeEnvironment} from "./core/runtime/runtime-capability.ts";
+import {buildRuntimeExecutionContext} from "./testing/builders/runtime-context.builder.ts";
+import {createMemoryFileSystem} from "./testing/fixtures/memory-filesystem.fixture.ts";
 import type {ToolingConfigV1} from "./common/tooling-config.ts";
 import {requiredLocalPorts} from "./container-runtime/preflight.ts";
 import type {ContainerEngine} from "./container-runtime/types.ts";
@@ -127,7 +128,10 @@ class FakeProcessRunner extends AbstractProcessRunner {
   }
 
   /** {@inheritDoc AbstractProcessRunner.execute} */
-  protected override execute(request: Readonly<ProcessExecutionRequest>, options: Readonly<ProcessExecutionOptions>): Promise<ProcessExecutionResult> {
+  protected override execute(
+    request: Readonly<ProcessExecutionRequest>,
+    options: Readonly<ProcessExecutionOptions>,
+  ): Promise<ProcessExecutionResult> {
     this.#calls.push({request, options});
     const key = commandKey(request);
     const configured = this.#responses[key];
@@ -353,8 +357,7 @@ async function createHarness(input: HarnessInput = {}): Promise<Harness> {
 
   const environment = environmentSnapshot(input.platform ?? "win32", input.environmentVariables ?? {}, input.stdinIsTTY ?? true);
 
-  const factory = createTestRuntimeFactory({files, runner, clock, environment});
-  const commandRuntime = await factory.createRoot({presentation: "silent", registerProcessSignals: false});
+  const commandRuntime = buildRuntimeExecutionContext({files, runner, clock, environment});
   const command: CommandExecutionContext = {runtime: commandRuntime, presentation: "silent"};
 
   const runtime: SetupPhaseRuntime = {

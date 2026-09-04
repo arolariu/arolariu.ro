@@ -4,7 +4,7 @@
  */
 
 import type {ContainerEngine} from "../container-runtime/types.ts";
-import type {FileSystem, ReadOnlyFileSystem} from "./runtime.ts";
+import type {FileSystem, ReadOnlyFileSystem} from "../core/runtime/runtime-capability.ts";
 
 const supportedContainerEngines: ReadonlySet<string> = new Set(["rancher", "podman"]);
 const secretKeyFragments = ["token", "secret", "password", "connectionstring"] as const;

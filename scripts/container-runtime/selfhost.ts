@@ -24,7 +24,8 @@ import type {CommandConstructionOptions, CommandHost} from "../core/command/comm
 import {resolveRepositoryPaths} from "../common/repository-paths.ts";
 import type {ProcessEnvironment} from "../core/process/process-execution-request.ts";
 import {ProcessRunnerError} from "../core/process/process-runner.ts";
-import {CommandCancellation, commandCancellationFromSignal, type CommandRuntime} from "../common/runtime.ts";
+import {CommandCancellation, commandCancellationFromSignal} from "../core/runtime/cancellation.ts";
+import type {RuntimeExecutionContext} from "../core/runtime/runtime-execution-context.ts";
 import {generateArtifactsCommand, type ArtifactGenerationResult, type GenerateArtifactsInput} from "../generate.artifacts.ts";
 import {getContainerAdapter, type ContainerRuntimeAdapter, type RuntimeCommand} from "./adapters.ts";
 import {runContainerPreflight} from "./preflight.ts";
@@ -178,7 +179,7 @@ export function getRequiredSqlPassword(variables: Readonly<Record<string, string
  * @throws {CommandCancellation} When `command` is cancelled on the invocation's aborted signal.
  * @throws {ProcessRunnerError} When `command` fails for any other reason.
  */
-async function runSelfhostCommand(runtime: CommandRuntime, command: Readonly<RuntimeCommand>, env?: ProcessEnvironment): Promise<void> {
+async function runSelfhostCommand(runtime: RuntimeExecutionContext, command: Readonly<RuntimeCommand>, env?: ProcessEnvironment): Promise<void> {
   try {
     await runtime.runner.expectSuccess(command, {
       cwd: selfhostWorkingDirectory,
@@ -206,7 +207,7 @@ async function runSelfhostCommand(runtime: CommandRuntime, command: Readonly<Run
  * @param runtime - Capabilities owned by the invocation.
  * @throws When `mkcert` is available but certificate generation fails.
  */
-async function ensureHttpsCertificates(runtime: CommandRuntime): Promise<void> {
+async function ensureHttpsCertificates(runtime: RuntimeExecutionContext): Promise<void> {
   if (
     (await runtime.files.exists(`${selfhostWorkingDirectory}/${certFilePath}`))
     && (await runtime.files.exists(`${selfhostWorkingDirectory}/${keyFilePath}`))
@@ -237,7 +238,7 @@ async function ensureHttpsCertificates(runtime: CommandRuntime): Promise<void> {
  * @returns The local SQL Server password, already registered with the invocation logger.
  * @throws {ContainerRuntimeError} When the SQL password is not configured.
  */
-async function prepareSelfhostStart(runtime: CommandRuntime): Promise<string> {
+async function prepareSelfhostStart(runtime: RuntimeExecutionContext): Promise<string> {
   // Registering the redaction before anything else guarantees that every later command echo, tee
   // line, and retained runner diagnostic containing the password is already sanitized.
   const sqlPassword = getRequiredSqlPassword(runtime.environment.variables);
@@ -259,7 +260,7 @@ async function prepareSelfhostStart(runtime: CommandRuntime): Promise<string> {
  * @throws When any provisioning step fails or the invocation is cancelled.
  */
 async function bootstrapSelfhost(
-  runtime: CommandRuntime,
+  runtime: RuntimeExecutionContext,
   adapter: ContainerRuntimeAdapter,
   bootstrap: LocalStorageBootstrap,
   sqlPassword: string,

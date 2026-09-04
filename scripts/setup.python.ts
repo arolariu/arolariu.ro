@@ -31,7 +31,7 @@ import {
   type ProcessExecutionResult,
   type SucceededProcessExecutionResult,
 } from "./core/process/process-execution-result.ts";
-import {CommandCancellation} from "./common/runtime.ts";
+import {CommandCancellation} from "./core/runtime/cancellation.ts";
 import type {MinimumVersion} from "./common/requirements.ts";
 import type {PythonFacts} from "./inspection/python.ts";
 import type {InspectionOutcome} from "./inspection/types.ts";

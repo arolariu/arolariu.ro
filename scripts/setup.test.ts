@@ -20,18 +20,16 @@ import {buildCommandHost} from "./testing/builders/command-host.builder.ts";
 import {ComposedTerminalPresenter} from "./core/presentation/composed-terminal-presenter.ts";
 import {RecordingTerminalPresenterSink} from "./testing/fixtures/terminal.fixture.ts";
 import type {TerminalPresenter} from "./core/presentation/terminal-presenter.ts";
-import {createTerminalPromptProvider, type PromptProvider} from "./common/prompts.ts";
+import {createNodePromptProvider} from "./adapters/node/node-prompt-provider.ts";
+import {CommandCancellation} from "./core/runtime/cancellation.ts";
+import type {FileSystem, PromptProvider} from "./core/runtime/runtime-capability.ts";
+import type {RepositoryInspectionRequest, RepositoryInspectionRuntime} from "./inspection/runtime-capability.ts";
+import {createMemoryFileSystem} from "./testing/fixtures/memory-filesystem.fixture.ts";
+import {repositoryFixtureRoot} from "./testing/fixtures/repository.fixture.ts";
 import {createRepositoryPaths, type RepositoryPaths} from "./common/repository-paths.ts";
 import type {ProcessExecutionOptions, ProcessExecutionRequest} from "./core/process/process-execution-request.ts";
 import type {ProcessRunner} from "./core/process/process-runner.ts";
-import {createMemoryFileSystem, repositoryFixtureRoot} from "./common/runtime.testing.ts";
 import {buildRecordingProcessRunner} from "./testing/builders/process-result.builder.ts";
-import {
-  CommandCancellation,
-  type FileSystem,
-  type RepositoryInspectionRequest,
-  type RepositoryInspectionRuntime,
-} from "./common/runtime.ts";
 import type {GenerateInput, GenerateResult} from "./generate.ts";
 import type {RepositoryInspectionSession} from "./inspection/repository.ts";
 import {createSetupActionExecutor, createSetupCommand, setupPhases, type SetupResult} from "./setup.ts";
@@ -236,7 +234,7 @@ describe("createSetupActionExecutor", () => {
     const input = new PassThrough();
     const output = new PassThrough();
     const {logger} = createLogger();
-    const prompts = createTerminalPromptProvider({
+    const prompts = createNodePromptProvider({
       input,
       output,
       isTTY: false,
@@ -367,7 +365,6 @@ function createSetupFixture(input: Readonly<SetupFixtureInput> = {}): SetupFixtu
   const host = buildCommandHost({
     runtime: {
       files: input.files ?? setupFixtureFileSystem(),
-      inspection: inspection.inspection,
       runner,
       ...(input.prompts === undefined ? {} : {prompts: input.prompts}),
       ...(input.logger === undefined ? {} : {presenter: input.logger}),
@@ -377,6 +374,7 @@ function createSetupFixture(input: Readonly<SetupFixtureInput> = {}): SetupFixtu
   const command = createSetupCommand(
     {
       phases: input.phases ?? setupFixturePhases,
+      inspection: inspection.inspection,
       ...(input.generate === undefined ? {} : {generate: input.generate}),
     },
     {host},

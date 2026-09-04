@@ -26,21 +26,15 @@ import {buildCommandHost} from "./testing/builders/command-host.builder.ts";
 import {ComposedTerminalPresenter} from "./core/presentation/composed-terminal-presenter.ts";
 import {RecordingTerminalPresenterSink} from "./testing/fixtures/terminal.fixture.ts";
 import type {TerminalPresenter} from "./core/presentation/terminal-presenter.ts";
-import type {PromptProvider} from "./common/prompts.ts";
+import {nodeFileSystem} from "./adapters/node/node-filesystem.ts";
+import type {Clock, FileSystem, HttpClient, HttpRequest, HttpResponse, PromptProvider, RuntimeEnvironment} from "./core/runtime/runtime-capability.ts";
+import {DefaultTaskScheduler} from "./core/runtime/task-scheduler.ts";
+import {createMemoryFileSystem} from "./testing/fixtures/memory-filesystem.fixture.ts";
+import {createHttpResponse} from "./testing/fixtures/network.fixture.ts";
+import {repositoryFixtureRoot} from "./testing/fixtures/repository.fixture.ts";
 import type {ProcessExecutionOptions, ProcessExecutionRequest} from "./core/process/process-execution-request.ts";
 import type {ProcessExecutionResult} from "./core/process/process-execution-result.ts";
 import {AbstractProcessRunner, type ProcessRunner} from "./core/process/process-runner.ts";
-import {
-  DefaultTaskScheduler,
-  type Clock,
-  type FileSystem,
-  type HttpClient,
-  type HttpRequest,
-  type HttpResponse,
-  type RuntimeEnvironment,
-} from "./common/runtime.ts";
-import {nodeFileSystem} from "./common/runtime.node.ts";
-import {createHttpResponse, createMemoryFileSystem, repositoryFixtureRoot} from "./common/runtime.testing.ts";
 import type {ArtifactGenerationResult, GenerateArtifactsInput} from "./generate.artifacts.ts";
 import type {GenerateLeafInput, GenerateLeafResult} from "./generate.env.ts";
 import {createGenerateCommand, type GenerateCommandDependencies} from "./generate.ts";

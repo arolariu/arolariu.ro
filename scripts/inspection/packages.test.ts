@@ -11,8 +11,9 @@ import {afterEach, describe, expect, it, vi} from "vitest";
 
 import type {ProcessExecutionOutput, ProcessExecutionResult} from "../core/process/process-execution-result.ts";
 import type {ProcessRunner} from "../core/process/process-runner.ts";
-import {nodeFileSystem} from "../common/runtime.node.ts";
-import {asReadOnlyFileSystem, DefaultTaskScheduler, type Clock} from "../common/runtime.ts";
+import {nodeFileSystem} from "../adapters/node/node-filesystem.ts";
+import {asReadOnlyFileSystem, type Clock} from "../core/runtime/runtime-capability.ts";
+import {DefaultTaskScheduler} from "../core/runtime/task-scheduler.ts";
 import {createInspectionProbeRunner} from "./probes.ts";
 import {
   INSPECTED_PACKAGE_NAMES,

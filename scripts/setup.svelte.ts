@@ -29,7 +29,7 @@
 import {parseVersion, satisfiesMinimum, type MinimumVersion} from "./common/requirements.ts";
 import type {ProcessExecutionRequest} from "./core/process/process-execution-request.ts";
 import type {ProcessExecutionResult, SucceededProcessExecutionResult} from "./core/process/process-execution-result.ts";
-import {CommandCancellation} from "./common/runtime.ts";
+import {CommandCancellation} from "./core/runtime/cancellation.ts";
 import type {SvelteFacts, SvelteProjectId} from "./inspection/frontend.ts";
 import {SVELTE_INSPECTED_PACKAGE_NAMES, type PackageInventoryFacts} from "./inspection/packages.ts";
 import type {InspectionOutcome} from "./inspection/types.ts";

@@ -14,7 +14,7 @@ import {spawn} from "node:child_process";
 import {resolve} from "node:path";
 import {fileURLToPath} from "node:url";
 import {describe, expect, it} from "vitest";
-import {nodeFileSystem} from "./common/runtime.node.ts";
+import {nodeFileSystem} from "./adapters/node/node-filesystem.ts";
 import {buildCommandHost} from "./testing/builders/command-host.builder.ts";
 import {createDoctorCommand} from "./doctor.ts";
 import type {RepositoryInspectionSession} from "./inspection/repository.ts";
@@ -143,15 +143,8 @@ describe("doctor runtime immutability", () => {
     // Every ordinary doctor command test uses the in-memory repository fixture instead.
     const existingSession = createFakeInspectionSession();
     const command = createDoctorCommand(
-      {},
-      {
-        host: buildCommandHost({
-          runtime: {
-            files: nodeFileSystem,
-            inspection: {getRepositorySession: (): RepositoryInspectionSession => existingSession},
-          },
-        }),
-      },
+      {inspection: {getRepositorySession: (): RepositoryInspectionSession => existingSession}},
+      {host: buildCommandHost({runtime: {files: nodeFileSystem}})},
     );
 
     const execution = await command.invoke({quick: false, verbose: false}, {presentation: "silent"});

@@ -57,7 +57,7 @@ export function isScriptConfigurationFile(path: string): boolean {
  *
  * @param path - A `scripts/**` relative or absolute path.
  * @returns `true` when the path lives under `scripts/testing/` or carries a `.testing.*` suffix,
- * such as `scripts/common/runtime.testing.ts`.
+ * such as `scripts/testing/fixtures/memory-filesystem.fixture.ts`.
  */
 export function isScriptTestSupportFile(path: string): boolean {
   const normalized = normalizeScriptSourcePath(path);

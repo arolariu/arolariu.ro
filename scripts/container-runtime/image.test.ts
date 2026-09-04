@@ -8,7 +8,7 @@ import type {CommandExecution, CommandInvoker} from "../core/command/command-exe
 import {buildCommandHost} from "../testing/builders/command-host.builder.ts";
 import type {ProcessExecutionResult} from "../core/process/process-execution-result.ts";
 import {buildRecordingProcessRunner} from "../testing/builders/process-result.builder.ts";
-import {CommandCancellation} from "../common/runtime.ts";
+import {CommandCancellation} from "../core/runtime/cancellation.ts";
 import type {ArtifactGenerationResult, GenerateArtifactsInput} from "../generate.artifacts.ts";
 import {getContainerAdapter} from "./adapters.ts";
 import {buildImageBuildCommand, buildImageRunCommand, createImageCommand} from "./image.ts";

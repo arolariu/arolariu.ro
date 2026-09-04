@@ -19,15 +19,9 @@ import type {CommandConstructionOptions, CommandHost} from "./core/command/comma
 import type {ProcessExecutionRequest} from "./core/process/process-execution-request.ts";
 import type {ProcessExecutionResult, SucceededProcessExecutionResult} from "./core/process/process-execution-result.ts";
 import {ProcessRunnerError, type ProcessRunner} from "./core/process/process-runner.ts";
-import {
-  CommandCancellation,
-  type Clock,
-  type FileSystem,
-  type HttpClient,
-  type HttpResponse,
-  type RuntimeEnvironment,
-  type TaskScheduler,
-} from "./common/runtime.ts";
+import {CommandCancellation} from "./core/runtime/cancellation.ts";
+import type {Clock, FileSystem, HttpClient, HttpResponse, RuntimeEnvironment} from "./core/runtime/runtime-capability.ts";
+import type {TaskScheduler} from "./core/runtime/task-scheduler.ts";
 import {taxonomyArtifactFileNames, taxonomyArtifactOutputRoots} from "./common/taxonomy-artifacts.ts";
 import type {NodePackageDependencyType, NodePackageInformation, TaxonomyArtifact, TaxonomyArtifactNode} from "./types/generators.ts";
 

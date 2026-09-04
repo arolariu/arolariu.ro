@@ -8,7 +8,7 @@
  * conversion, execution/completion/context contracts, typed failure classification and its
  * bounded evidence, input validation errors, and argv normalization. It never touches Node's
  * process, filesystem, network, or timer APIs: every capability arrives through the injected
- * {@link CommandRuntime} carried on {@link CommandExecutionContext}.
+ * {@link RuntimeExecutionContext} carried on {@link CommandExecutionContext}.
  */
 
 import type {Command} from "commander";
@@ -16,7 +16,8 @@ import type {Command} from "commander";
 import type {TerminalPresenter} from "../presentation/terminal-presenter.ts";
 import {formatProcessExecutionRequest} from "../process/process-execution-request.ts";
 import {ProcessRunnerError} from "../process/process-runner.ts";
-import {FileSystemError, HttpError, type CommandRuntime} from "../../common/runtime.ts";
+import {FileSystemError, HttpError} from "../runtime/runtime-capability.ts";
+import type {RuntimeExecutionContext} from "../runtime/runtime-execution-context.ts";
 import type {CommandInvocationOptions} from "./command-specification.ts";
 
 /** Selects human-oriented, machine-readable, or fully suppressed command presentation. */
@@ -29,7 +30,7 @@ export type CommandExitCode = 0 | 1 | 2 | 130 | 143;
 export type JsonValue = string | number | boolean | null | readonly JsonValue[] | Readonly<{[key: string]: JsonValue}>;
 
 /** Everything one command execution observes about its own invocation. */
-export interface CommandExecutionContext<TRuntime extends CommandRuntime = CommandRuntime> {
+export interface CommandExecutionContext<TRuntime extends RuntimeExecutionContext = RuntimeExecutionContext> {
   readonly runtime: TRuntime;
   readonly presentation: CommandPresentationMode;
 }

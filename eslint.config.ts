@@ -867,7 +867,7 @@ const toolingPromptOutputConfig: Config = defineConfig({
   ignores: [
     "scripts/**/*.test.ts",
     "scripts/adapters/node/node-terminal-sink.ts",
-    "scripts/common/prompts.ts",
+    "scripts/adapters/node/node-prompt-provider.ts",
     "scripts/testing/architecture/report-*.ts",
   ],
   languageOptions: {
@@ -887,7 +887,7 @@ const toolingPromptOutputConfig: Config = defineConfig({
       {
         selector:
           "CallExpression[callee.type='MemberExpression'][callee.property.name='write'][callee.object.type='MemberExpression'][callee.object.property.name='output']",
-        message: "Interactive terminal output is owned exclusively by scripts/common/prompts.ts.",
+        message: "Interactive terminal output is owned exclusively by scripts/adapters/node/node-prompt-provider.ts.",
       },
     ],
   },

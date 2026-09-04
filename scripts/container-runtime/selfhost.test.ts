@@ -13,17 +13,11 @@ import type {TerminalPresenter} from "../core/presentation/terminal-presenter.ts
 import type {ProcessExecutionOptions, ProcessExecutionRequest} from "../core/process/process-execution-request.ts";
 import type {ProcessExecutionResult} from "../core/process/process-execution-result.ts";
 import type {ProcessRunner} from "../core/process/process-runner.ts";
-import {createRepositoryFixtureFileSystem, repositoryFixtureRoot} from "../common/runtime.testing.ts";
+import {CommandCancellation} from "../core/runtime/cancellation.ts";
+import {type CleanupFailure, type CleanupRegistry, LifoCleanupRegistry} from "../core/runtime/cleanup.ts";
+import type {Clock, FileSystem, RuntimeEnvironment} from "../core/runtime/runtime-capability.ts";
+import {createRepositoryFixtureFileSystem, repositoryFixtureRoot} from "../testing/fixtures/repository.fixture.ts";
 import {buildRecordingProcessRunner} from "../testing/builders/process-result.builder.ts";
-import {
-  CommandCancellation,
-  LifoCleanupRegistry,
-  type CleanupFailure,
-  type CleanupRegistry,
-  type Clock,
-  type FileSystem,
-  type RuntimeEnvironment,
-} from "../common/runtime.ts";
 import type {ArtifactGenerationResult, GenerateArtifactsInput} from "../generate.artifacts.ts";
 import {getContainerAdapter} from "./adapters.ts";
 import type {LocalStorageBootstrap} from "./selfhost.bootstrap.ts";

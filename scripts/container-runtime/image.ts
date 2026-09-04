@@ -20,7 +20,7 @@ import type {CommandConstructionOptions, CommandHost} from "../core/command/comm
 import type {TerminalPresenter} from "../core/presentation/terminal-presenter.ts";
 import {resolveRepositoryPaths} from "../common/repository-paths.ts";
 import {ProcessRunnerError, type ProcessRunner} from "../core/process/process-runner.ts";
-import {CommandCancellation, commandCancellationFromSignal} from "../common/runtime.ts";
+import {CommandCancellation, commandCancellationFromSignal} from "../core/runtime/cancellation.ts";
 import {generateArtifactsCommand, type ArtifactGenerationResult, type GenerateArtifactsInput} from "../generate.artifacts.ts";
 import {getContainerAdapter, type ContainerRuntimeAdapter, type RuntimeCommand} from "./adapters.ts";
 import {runContainerPreflight} from "./preflight.ts";

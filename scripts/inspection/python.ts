@@ -10,7 +10,7 @@
 
 import {dirname, isAbsolute, relative, resolve, sep} from "node:path";
 
-import {FILE_SYSTEM_MAX_BYTES_EXCEEDED_CODE} from "../common/runtime.ts";
+import {FILE_SYSTEM_MAX_BYTES_EXCEEDED_CODE} from "../core/runtime/runtime-capability.ts";
 import type {ProcessEnvironment} from "../core/process/process-execution-request.ts";
 import type {ProcessExecutionResult} from "../core/process/process-execution-result.ts";
 import type {RepositoryPaths} from "../common/repository-paths.ts";

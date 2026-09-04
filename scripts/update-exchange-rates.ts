@@ -30,7 +30,8 @@ import {CommandInputError, type CommandExecutionContext} from "./core/command/co
 import {defineCommand, type LazyMonorepoCommand} from "./core/command/lazy-monorepo-command.ts";
 import type {CommandConstructionOptions, CommandHost} from "./core/command/command-specification.ts";
 import type {TerminalPresenter} from "./core/presentation/terminal-presenter.ts";
-import {CommandCancellation, type Clock, type FileSystem, type HttpClient} from "./common/runtime.ts";
+import {CommandCancellation} from "./core/runtime/cancellation.ts";
+import type {Clock, FileSystem, HttpClient} from "./core/runtime/runtime-capability.ts";
 
 // ---------------------------------------------------------------------------
 // Configuration

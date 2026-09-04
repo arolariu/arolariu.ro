@@ -6,14 +6,12 @@
  * @remarks
  * `argv`, `isDirectEntry`, and `setExitCode` delegate to the shared {@link nodeProcessHost};
  * `createParsePresenter` builds the human presenter used for help and usage output before typed
- * input exists. `loadRuntimeFactory` literal dynamic-imports the Node runtime root, so a help or
- * usage path never pays for it. `nodeProcessHost`, the logger runtime host, and the runtime
- * factory are consumed from `scripts/common/runtime.node.ts` as a temporary edge: **Task 3**
- * relocates them into `scripts/adapters/node/node-process-host.ts` and
- * `scripts/adapters/node/node-runtime-scope.ts`, and retargets the dynamic import below.
+ * input exists. `loadRuntimeFactory` literal dynamic-imports the Node runtime scope, so a help or
+ * usage path never pays for it and the host's own eager module graph excludes every capability
+ * that scope composes.
  */
 
-import {nodeProcessHost} from "../../common/runtime.node.ts";
+import {nodeProcessHost} from "./node-process-host.ts";
 import type {CommandHost, CommandRuntimeFactory} from "../../core/command/command-specification.ts";
 import {ComposedTerminalPresenter} from "../../core/presentation/composed-terminal-presenter.ts";
 import type {TerminalPresenter} from "../../core/presentation/terminal-presenter.ts";
@@ -38,7 +36,7 @@ export function createNodeCommandHost(commandName: string): CommandHost {
         runtimeHost: nodeTerminalPresenterRuntimeHost,
       }),
     loadRuntimeFactory: async (verbose: boolean): Promise<CommandRuntimeFactory> => {
-      const {createNodeCommandRuntimeFactory} = await import("../../common/runtime.node.ts");
+      const {createNodeCommandRuntimeFactory} = await import("./node-runtime-scope.ts");
       return createNodeCommandRuntimeFactory(commandName, verbose);
     },
   };

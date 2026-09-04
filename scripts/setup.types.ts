@@ -12,12 +12,12 @@
 
 import type {CommandExecution, CommandExecutionContext} from "./core/command/command-execution.ts";
 import type {TerminalPresenter} from "./core/presentation/terminal-presenter.ts";
-import type {PromptProvider} from "./common/prompts.ts";
+import type {Clock, FileSystem, HttpClient, PromptProvider, RuntimeEnvironment} from "./core/runtime/runtime-capability.ts";
+import type {TaskScheduler} from "./core/runtime/task-scheduler.ts";
 import type {RepositoryPaths} from "./common/repository-paths.ts";
 import type {RepositoryRequirements} from "./common/requirements.ts";
 import type {ProcessExecutionRequest} from "./core/process/process-execution-request.ts";
 import type {ProcessRunner} from "./core/process/process-runner.ts";
-import type {Clock, FileSystem, HttpClient, RuntimeEnvironment, TaskScheduler} from "./common/runtime.ts";
 import type {ContainerEngine} from "./container-runtime/types.ts";
 import type {GenerateInput, GenerateResult} from "./generate.ts";
 import type {RepositoryInspectionSession} from "./inspection/repository.ts";

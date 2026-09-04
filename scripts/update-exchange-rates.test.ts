@@ -13,8 +13,11 @@
 import {join} from "node:path";
 import {describe, expect, it} from "vitest";
 
-import {CommandCancellation, type Clock, type HttpClient, type HttpRequest} from "./common/runtime.ts";
-import {createHttpResponse, createMemoryFileSystem, repositoryFixtureRoot} from "./common/runtime.testing.ts";
+import {CommandCancellation} from "./core/runtime/cancellation.ts";
+import type {Clock, HttpClient, HttpRequest} from "./core/runtime/runtime-capability.ts";
+import {createMemoryFileSystem} from "./testing/fixtures/memory-filesystem.fixture.ts";
+import {createHttpResponse} from "./testing/fixtures/network.fixture.ts";
+import {repositoryFixtureRoot} from "./testing/fixtures/repository.fixture.ts";
 import {buildCommandHost} from "./testing/builders/command-host.builder.ts";
 import {createUpdateExchangeRatesCommand} from "./update-exchange-rates.ts";
 

@@ -14,7 +14,6 @@
 import type {Command} from "commander";
 import {describe, expect, it} from "vitest";
 
-import {createTestRuntimeFactory} from "../../common/runtime.testing.ts";
 import {ComposedTerminalPresenter} from "../../core/presentation/composed-terminal-presenter.ts";
 import {RecordingTerminalPresenterSink} from "../fixtures/terminal.fixture.ts";
 import {CommandConfigurationError, CommandInputError} from "../../core/command/command-execution.ts";
@@ -28,6 +27,7 @@ import type {
 } from "../../core/command/command-specification.ts";
 import {defineCommand, type LazyMonorepoCommand} from "../../core/command/lazy-monorepo-command.ts";
 import {buildCommandHost} from "../builders/command-host.builder.ts";
+import {buildRuntimeExecutionContext} from "../builders/runtime-context.builder.ts";
 
 /** Loosely typed input every throwaway fixture in this contract decodes. */
 type FixtureInput = Readonly<Record<string, unknown>>;
@@ -286,7 +286,7 @@ export function runCommandLifecycleContract<TInput, TOutput, TFailure>(
 
     it("forwards the invoke() parent both to the child runtime scope and to createRuntimeContext", async () => {
       const observedParents: (Readonly<CommandExecutionContext> | undefined)[] = [];
-      const parentRuntime = await createTestRuntimeFactory().createRoot({presentation: "human", registerProcessSignals: false});
+      const parentRuntime = buildRuntimeExecutionContext();
       const parentContext: Readonly<CommandExecutionContext> = {runtime: parentRuntime, presentation: "human"};
       const {host, childCalls} = buildInstrumentedHost();
       const command = defineFixture<undefined>(host, {

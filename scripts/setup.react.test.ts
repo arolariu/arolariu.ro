@@ -23,8 +23,10 @@ import type {PackageRequirement, RepositoryRequirements} from "./common/requirem
 import type {ProcessExecutionOptions, ProcessExecutionRequest} from "./core/process/process-execution-request.ts";
 import type {ProcessExecutionResult} from "./core/process/process-execution-result.ts";
 import {AbstractProcessRunner} from "./core/process/process-runner.ts";
-import {createMemoryFileSystem, createTestRuntimeFactory} from "./common/runtime.testing.ts";
-import {CommandCancellation, type Clock, type FileSystem, type RuntimeEnvironment} from "./common/runtime.ts";
+import {CommandCancellation} from "./core/runtime/cancellation.ts";
+import type {Clock, FileSystem, RuntimeEnvironment} from "./core/runtime/runtime-capability.ts";
+import {buildRuntimeExecutionContext} from "./testing/builders/runtime-context.builder.ts";
+import {createMemoryFileSystem} from "./testing/fixtures/memory-filesystem.fixture.ts";
 import type {EnvironmentFacts, ReactFacts} from "./inspection/frontend.ts";
 import type {InstalledPackageFact, PackageInventoryFacts} from "./inspection/packages.ts";
 import type {RepositoryInspectionSession} from "./inspection/repository.ts";
@@ -371,7 +373,10 @@ class FakeProcessRunner extends AbstractProcessRunner {
   }
 
   /** {@inheritDoc AbstractProcessRunner.execute} */
-  protected override execute(request: Readonly<ProcessExecutionRequest>, options: Readonly<ProcessExecutionOptions>): Promise<ProcessExecutionResult> {
+  protected override execute(
+    request: Readonly<ProcessExecutionRequest>,
+    options: Readonly<ProcessExecutionOptions>,
+  ): Promise<ProcessExecutionResult> {
     this.#calls.push({request, options});
     const key = commandKey(request);
     const configured = this.#responses[key];
@@ -509,14 +514,13 @@ async function createHarness(
     delay: (): Promise<void> => Promise.resolve(),
   };
 
-  const factory = createTestRuntimeFactory({
+  const commandRuntime = buildRuntimeExecutionContext({
     files: fixture.files,
     runner,
     clock,
-    logger,
+    presenter: logger,
     environment: environmentSnapshot(input.platform ?? fixture.platform, input.interactive ?? fixture.interactive),
   });
-  const commandRuntime = await factory.createRoot({presentation: "silent", registerProcessSignals: false});
   const command: CommandExecutionContext = {runtime: commandRuntime, presentation: "silent"};
 
   const runtime: SetupPhaseRuntime = {

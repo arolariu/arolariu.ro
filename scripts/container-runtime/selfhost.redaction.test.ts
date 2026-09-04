@@ -9,9 +9,9 @@ import {ComposedTerminalPresenter} from "../core/presentation/composed-terminal-
 import {RecordingTerminalPresenterSink} from "../testing/fixtures/terminal.fixture.ts";
 import type {ProcessExecutionResult} from "../core/process/process-execution-result.ts";
 import {ProcessRunnerError} from "../core/process/process-runner.ts";
-import {createRepositoryFixtureFileSystem, repositoryFixtureRoot} from "../common/runtime.testing.ts";
+import type {Clock, RuntimeEnvironment} from "../core/runtime/runtime-capability.ts";
+import {createRepositoryFixtureFileSystem, repositoryFixtureRoot} from "../testing/fixtures/repository.fixture.ts";
 import {buildRecordingProcessRunner} from "../testing/builders/process-result.builder.ts";
-import type {Clock, RuntimeEnvironment} from "../common/runtime.ts";
 import type {CommandExecution, CommandInvoker} from "../core/command/command-execution.ts";
 import type {CommandHost} from "../core/command/command-specification.ts";
 import {buildCommandHost} from "../testing/builders/command-host.builder.ts";

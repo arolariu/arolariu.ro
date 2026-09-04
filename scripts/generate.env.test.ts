@@ -10,9 +10,10 @@ import type {CommandInvoker} from "./core/command/command-execution.ts";
 import {buildCommandHost} from "./testing/builders/command-host.builder.ts";
 import {ComposedTerminalPresenter} from "./core/presentation/composed-terminal-presenter.ts";
 import {RecordingTerminalPresenterSink} from "./testing/fixtures/terminal.fixture.ts";
-import type {PromptProvider} from "./common/prompts.ts";
-import type {HttpClient, HttpResponse, RuntimeEnvironment} from "./common/runtime.ts";
-import {createHttpResponse, createMemoryFileSystem, repositoryFixtureRoot} from "./common/runtime.testing.ts";
+import type {HttpClient, HttpResponse, PromptProvider, RuntimeEnvironment} from "./core/runtime/runtime-capability.ts";
+import {createMemoryFileSystem} from "./testing/fixtures/memory-filesystem.fixture.ts";
+import {createHttpResponse} from "./testing/fixtures/network.fixture.ts";
+import {repositoryFixtureRoot} from "./testing/fixtures/repository.fixture.ts";
 import type {GenerateLeafInput, GenerateLeafResult} from "./generate.env.ts";
 
 afterEach(() => {

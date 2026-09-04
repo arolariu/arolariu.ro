@@ -4,8 +4,8 @@
  */
 
 import {describe, expect, it} from "vitest";
-import {createMemoryFileSystem} from "../common/runtime.testing.ts";
-import type {ReadOnlyFileSystem} from "../common/runtime.ts";
+import type {ReadOnlyFileSystem} from "../core/runtime/runtime-capability.ts";
+import {createMemoryFileSystem} from "../testing/fixtures/memory-filesystem.fixture.ts";
 import {resolveContainerEngine, resolveRuntimeContainerEngine} from "./selection.ts";
 import type {ContainerEngine} from "./types.ts";
 

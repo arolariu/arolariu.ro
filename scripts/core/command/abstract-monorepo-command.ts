@@ -16,7 +16,9 @@
 import {Command, CommanderError} from "commander";
 
 import type {TerminalPresenter} from "../presentation/terminal-presenter.ts";
-import {CommandCancellation, commandCancellationFromSignal, type CleanupFailure, type CommandRuntime} from "../../common/runtime.ts";
+import {CommandCancellation, commandCancellationFromSignal} from "../runtime/cancellation.ts";
+import type {CleanupFailure} from "../runtime/cleanup.ts";
+import type {RuntimeExecutionContext} from "../runtime/runtime-execution-context.ts";
 import {
   CommandConfigurationError,
   CommandInputError,
@@ -92,7 +94,7 @@ const cleanupEvidence = (failures: readonly CleanupFailure[]): readonly string[]
   failures.map((failure) => `${failure.label}: ${failure.message}`);
 
 /** Drains cleanup without letting a failing registry itself escape the command boundary. */
-async function drainCleanup(runtime: Readonly<CommandRuntime>): Promise<readonly CleanupFailure[]> {
+async function drainCleanup(runtime: Readonly<RuntimeExecutionContext>): Promise<readonly CleanupFailure[]> {
   try {
     return await runtime.cleanup.drain();
   } catch (error: unknown) {
@@ -163,7 +165,7 @@ export abstract class AbstractMonorepoCommand<TInput, TOutput, TFailure> impleme
     }
 
     let presentation: CommandPresentationMode;
-    let runtime: CommandRuntime;
+    let runtime: RuntimeExecutionContext;
     try {
       presentation = this.#specification.presentation?.(input) ?? "human";
       const factory = await host.loadRuntimeFactory(readVerboseFlag(input));
@@ -184,7 +186,7 @@ export abstract class AbstractMonorepoCommand<TInput, TOutput, TFailure> impleme
    */
   public async invoke(input: Readonly<TInput>, options: Readonly<CommandInvocationOptions> = {}): Promise<CommandExecution<TOutput>> {
     const presentation = options.presentation ?? "silent";
-    let runtime: CommandRuntime;
+    let runtime: RuntimeExecutionContext;
     try {
       const host = await this.#resolveHost();
       const factory = await host.loadRuntimeFactory(readVerboseFlag(input));

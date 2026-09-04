@@ -9,7 +9,7 @@ import {RecordingTerminalPresenterSink} from "../testing/fixtures/terminal.fixtu
 import type {TerminalPresenter} from "../core/presentation/terminal-presenter.ts";
 import type {ProcessExecutionResult} from "../core/process/process-execution-result.ts";
 import {buildRecordingProcessRunner} from "../testing/builders/process-result.builder.ts";
-import {CommandCancellation} from "../common/runtime.ts";
+import {CommandCancellation} from "../core/runtime/cancellation.ts";
 import {getContainerAdapter} from "./adapters.ts";
 import {
   assertNoDockerDesktopBackend,

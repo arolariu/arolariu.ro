@@ -13,7 +13,8 @@
 
 import {describe, expect, it} from "vitest";
 
-import {createMemoryFileSystem, repositoryFixtureRoot} from "./common/runtime.testing.ts";
+import {createMemoryFileSystem} from "./testing/fixtures/memory-filesystem.fixture.ts";
+import {repositoryFixtureRoot} from "./testing/fixtures/repository.fixture.ts";
 import {buildCommandHost} from "./testing/builders/command-host.builder.ts";
 
 describe("generateI18nCommand", () => {

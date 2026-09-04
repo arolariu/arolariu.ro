@@ -30,7 +30,7 @@ import {
   type SucceededProcessExecutionResult,
 } from "./core/process/process-execution-result.ts";
 import type {ProcessRunner} from "./core/process/process-runner.ts";
-import {CommandCancellation} from "./common/runtime.ts";
+import {CommandCancellation} from "./core/runtime/cancellation.ts";
 import {mergeToolingConfig, readToolingConfig, writeToolingConfig} from "./common/tooling-config.ts";
 import {getContainerAdapter, type ContainerRuntimeAdapter} from "./container-runtime/adapters.ts";
 import {resolveContainerEngine} from "./container-runtime/selection.ts";

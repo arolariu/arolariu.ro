@@ -7,7 +7,7 @@ import {describe, expect, it} from "vitest";
 import type {ProcessExecutionResult} from "../core/process/process-execution-result.ts";
 import {buildRecordingProcessRunner} from "../testing/builders/process-result.builder.ts";
 import {buildCommandHost} from "../testing/builders/command-host.builder.ts";
-import {CommandCancellation} from "../common/runtime.ts";
+import {CommandCancellation} from "../core/runtime/cancellation.ts";
 import {getContainerAdapter} from "./adapters.ts";
 import {buildAspireCommand, createAspireCommand} from "./aspire.ts";
 

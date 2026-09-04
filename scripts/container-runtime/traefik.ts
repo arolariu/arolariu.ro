@@ -11,7 +11,7 @@
  */
 
 import {dirname, resolve} from "node:path";
-import type {FileSystem} from "../common/runtime.ts";
+import type {FileSystem} from "../core/runtime/runtime-capability.ts";
 
 const selfhostRoutes = [
   {name: "website-localhost", host: "website.localhost", service: "website", url: "http://website:3000"},

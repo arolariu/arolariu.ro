@@ -4,8 +4,9 @@
  */
 
 import {describe, expect, it, vi} from "vitest";
-import {createHttpResponse} from "../common/runtime.testing.ts";
-import {CommandCancellation, type HttpClient, type HttpRequest, type HttpResponse} from "../common/runtime.ts";
+import {CommandCancellation} from "../core/runtime/cancellation.ts";
+import type {HttpClient, HttpRequest, HttpResponse} from "../core/runtime/runtime-capability.ts";
+import {createHttpResponse} from "../testing/fixtures/network.fixture.ts";
 import {
   azuriteDevelopmentConnectionString,
   cosmosBootstrapMaximumResponseBytes,

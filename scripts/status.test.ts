@@ -18,7 +18,7 @@ import {join} from "node:path";
 import {fileURLToPath} from "node:url";
 import {afterEach, describe, expect, it, vi, type Mock} from "vitest";
 
-import type {CommandExecution, CommandInvoker} from "./core/command/command-execution.ts";
+import type {CommandExecution, CommandExecutionContext, CommandInvoker} from "./core/command/command-execution.ts";
 import {defineCommand} from "./core/command/lazy-monorepo-command.ts";
 import {buildCommandHost} from "./testing/builders/command-host.builder.ts";
 import {ComposedTerminalPresenter} from "./core/presentation/composed-terminal-presenter.ts";
@@ -27,21 +27,19 @@ import {createRepositoryPaths} from "./common/repository-paths.ts";
 import type {ProcessExecutionOptions, ProcessExecutionRequest} from "./core/process/process-execution-request.ts";
 import type {ProcessExecutionResult} from "./core/process/process-execution-result.ts";
 import {AbstractProcessRunner} from "./core/process/process-runner.ts";
-import {createNodeProcessRunner, snapshotNodeEnvironment} from "./common/runtime.node.ts";
+import {snapshotNodeEnvironment} from "./adapters/node/node-platform.ts";
+import {createNodeProcessRunner} from "./adapters/node/node-process-runner.ts";
+import {CommandCancellation, commandCancellationFromSignal} from "./core/runtime/cancellation.ts";
+import {DefaultTaskScheduler} from "./core/runtime/task-scheduler.ts";
 import {
-  createRepositoryFixtureFileSystem,
-  createRepositoryInspectionSessionStub,
-  repositoryFixtureRoot,
-} from "./common/runtime.testing.ts";
-import {
-  CommandCancellation,
-  commandCancellationFromSignal,
   createRepositoryInspectionRuntime,
-  DefaultTaskScheduler,
+  hasInspectionRuntimeCapability,
   MemoizedInspectionRuntime,
   type RepositoryInspectionRequest,
   type RepositoryInspectionRuntime,
-} from "./common/runtime.ts";
+} from "./inspection/runtime-capability.ts";
+import {createRepositoryInspectionSessionStub} from "./testing/fixtures/inspection.fixture.ts";
+import {createRepositoryFixtureFileSystem, repositoryFixtureRoot} from "./testing/fixtures/repository.fixture.ts";
 import type {DoctorInput, DoctorReport} from "./doctor.types.ts";
 import type {RepositoryInspectionFacts, RepositoryInspectionSession} from "./inspection/repository.ts";
 import {createInspectionSession} from "./inspection/session.ts";
@@ -203,6 +201,14 @@ const HEALTHY_WORKSPACE_FACTS: WorkspaceFacts = {
 
 function unavailableFact<TValue>(): Promise<InspectionOutcome<TValue>> {
   return Promise.resolve({kind: "unavailable", reason: "Not provided by the status fixture.", durationMs: 0});
+}
+
+/** Reads the repository-inspection registry a composed child observes on its parent context. */
+function parentInspection(parent?: Readonly<CommandExecutionContext>): RepositoryInspectionRuntime {
+  if (parent === undefined || !hasInspectionRuntimeCapability(parent.runtime)) {
+    throw new Error("The composed parent context must carry the repository-inspection capability.");
+  }
+  return parent.runtime.inspection;
 }
 
 /**
@@ -379,12 +385,11 @@ function createStatusFixture(options: Readonly<StatusFixtureOptions> = {}): Stat
   const inspection = createRepositoryInspectionRuntime(createSession);
   const doctor = options.doctor ?? createDoctorStub();
   const command = createStatusCommand(
-    {doctor},
+    {doctor, inspection},
     {
       host: buildCommandHost({
         runtime: {
           files: createRepositoryFixtureFileSystem(options.files ?? {}),
-          inspection,
           presenter: logger,
           runner,
         },
@@ -445,7 +450,7 @@ describe("status command — doctor composition", () => {
     );
     const doctor: CommandInvoker<DoctorInput, DoctorReport> = {
       invoke: async (_input, options) => {
-        options?.parent?.runtime.inspection.getRepositorySession(request);
+        parentInspection(options?.parent).getRepositorySession(request);
         return {
           status: "completed",
           value: {
@@ -460,16 +465,8 @@ describe("status command — doctor composition", () => {
       },
     };
     const command = createStatusCommand(
-      {doctor},
-      {
-        host: buildCommandHost({
-          runtime: {
-            files: createRepositoryFixtureFileSystem(),
-            inspection,
-            runner: new ScriptedProcessRunner(baseResponses()),
-          },
-        }),
-      },
+      {doctor, inspection},
+      {host: buildCommandHost({runtime: {files: createRepositoryFixtureFileSystem(), runner: new ScriptedProcessRunner(baseResponses())}})},
     );
 
     const execution = await command.invoke({json: true}, {presentation: "silent"});
@@ -491,7 +488,7 @@ describe("status command — doctor composition", () => {
     const call = fixture.doctor.invoke.mock.calls[0];
     expect(call?.[0]).toEqual({quick: true, verbose: false});
     expect(call?.[1]?.presentation).toBe("silent");
-    expect(call?.[1]?.parent?.runtime.inspection).toBe(fixture.inspection);
+    expect(parentInspection(call?.[1]?.parent)).toBe(fixture.inspection);
   });
 
   it("obtains its own quick collector session before invoking doctor and shares exactly one session", async () => {
@@ -499,7 +496,7 @@ describe("status command — doctor composition", () => {
     const doctor = createDoctorStub(async (_input, options) => {
       const parent = options?.parent;
       if (parent !== undefined) {
-        observed.push(parent.runtime.inspection.getRepositorySession({profile: "quick", paths: FIXTURE_PATHS}));
+        observed.push(parentInspection(parent).getRepositorySession({profile: "quick", paths: FIXTURE_PATHS}));
       }
       return {status: "completed", value: doctorReport(), exitCode: 0};
     });
@@ -624,13 +621,15 @@ describe("status command — composed child cancellation", () => {
     const host = buildCommandHost({
       runtime: {
         files: createRepositoryFixtureFileSystem(),
-        inspection: createRepositoryInspectionRuntime(() => createFixtureSession(availableWorkspace())),
         presenter: new ComposedTerminalPresenter("status", {color: false, sink, verbose: false, mode: "human"}),
         runner: new ScriptedProcessRunner(baseResponses()),
       },
     });
     const {doctor, started} = createPendingDoctorChild(events);
-    const command = createStatusCommand({doctor}, {host});
+    const command = createStatusCommand(
+      {doctor, inspection: createRepositoryInspectionRuntime(() => createFixtureSession(availableWorkspace()))},
+      {host},
+    );
 
     const pending = command.invoke({json: false}, {presentation: "human", signal: controller.signal});
     void pending.then(() => {

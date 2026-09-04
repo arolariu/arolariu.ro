@@ -12,8 +12,9 @@ import {afterEach, describe, expect, it, vi} from "vitest";
 import type {ProcessExecutionRequest} from "../core/process/process-execution-request.ts";
 import type {ProcessExecutionResult} from "../core/process/process-execution-result.ts";
 import type {ProcessRunner} from "../core/process/process-runner.ts";
-import {nodeFileSystem} from "../common/runtime.node.ts";
-import {asReadOnlyFileSystem, DefaultTaskScheduler, type Clock} from "../common/runtime.ts";
+import {nodeFileSystem} from "../adapters/node/node-filesystem.ts";
+import {asReadOnlyFileSystem, type Clock} from "../core/runtime/runtime-capability.ts";
+import {DefaultTaskScheduler} from "../core/runtime/task-scheduler.ts";
 import {createRepositoryPaths, type RepositoryPaths} from "../common/repository-paths.ts";
 import {
   createReactProvider,

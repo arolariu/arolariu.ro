@@ -13,8 +13,8 @@ import {ComposedTerminalPresenter} from "./core/presentation/composed-terminal-p
 import {RecordingTerminalPresenterSink} from "./testing/fixtures/terminal.fixture.ts";
 import {createRepositoryPaths} from "./common/repository-paths.ts";
 import type {RepositoryRequirements} from "./common/requirements.ts";
-import {asReadOnlyFileSystem, type Clock, type RuntimeEnvironment} from "./common/runtime.ts";
-import {nodeFileSystem} from "./common/runtime.node.ts";
+import {nodeFileSystem} from "./adapters/node/node-filesystem.ts";
+import {asReadOnlyFileSystem, type Clock, type RuntimeEnvironment} from "./core/runtime/runtime-capability.ts";
 import {infrastructureDoctorModule} from "./doctor.infrastructure.ts";
 import {createDoctorReport} from "./doctor.reporter.ts";
 import {type DiagnosticNetworkResult, type DoctorContext, type DoctorInput} from "./doctor.types.ts";

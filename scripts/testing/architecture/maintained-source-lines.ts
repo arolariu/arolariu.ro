@@ -277,7 +277,7 @@ export function parseGitNameStatus(stdout: string): ParsedGitNameStatus {
 /**
  * Derives the grouping family for a maintained source path from its first path segment.
  *
- * @param sourcePath - A maintained source path, such as `scripts/common/runtime.node.ts`.
+ * @param sourcePath - A maintained source path, such as `scripts/adapters/node/node-filesystem.ts`.
  * @returns The directory immediately under `scripts/`, or the file's base name when the file is
  * a direct child of `scripts/`.
  */
@@ -291,8 +291,8 @@ function familyOf(sourcePath: string): string {
  * Classifies a maintained source path as production or test-support for the metric subtotal.
  *
  * @remarks
- * This intentionally differs from `isScriptTestSupportFile` in `script-source-files.ts`: the
- * approved baseline classification keeps `scripts/common/runtime.testing.ts` in the production
+ * This intentionally differs from `isScriptTestSupportFile` in `script-source-files.ts`: a
+ * `.testing.*` module anywhere outside `scripts/testing/` still counts toward the production
  * subtotal even though the runtime-boundary policy treats it as a testing adapter.
  *
  * @param sourcePath - A maintained source path.

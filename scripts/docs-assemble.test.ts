@@ -20,9 +20,10 @@ import {createRepositoryPaths, type RepositoryPaths} from "./common/repository-p
 import type {ProcessExecutionOptions, ProcessExecutionRequest} from "./core/process/process-execution-request.ts";
 import type {ProcessExecutionResult} from "./core/process/process-execution-result.ts";
 import {AbstractProcessRunner} from "./core/process/process-runner.ts";
-import {createMemoryFileSystem, repositoryFixtureRoot} from "./common/runtime.testing.ts";
+import type {FileSystem} from "./core/runtime/runtime-capability.ts";
+import {createMemoryFileSystem} from "./testing/fixtures/memory-filesystem.fixture.ts";
+import {repositoryFixtureRoot} from "./testing/fixtures/repository.fixture.ts";
 import {buildCommandHost} from "./testing/builders/command-host.builder.ts";
-import type {FileSystem} from "./common/runtime.ts";
 import {
   assertExpectedDocumentationTiers,
   assertNonEmpty,

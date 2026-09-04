@@ -6,7 +6,7 @@
 
 import {describe, expect, it} from "vitest";
 
-import {CommandCancellation} from "../../common/runtime.ts";
+import {CommandCancellation} from "../../core/runtime/cancellation.ts";
 import type {WorkflowEvent} from "../../core/presentation/workflow-event.ts";
 import type {AbstractWorkflowRunner} from "../../core/workflow/abstract-workflow-runner.ts";
 import {succeededWorkflowExecution, type WorkflowExecutionDecision} from "../../core/workflow/workflow-execution-result.ts";

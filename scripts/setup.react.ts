@@ -31,7 +31,8 @@
 
 import type {ProcessExecutionRequest} from "./core/process/process-execution-request.ts";
 import type {ProcessExecutionResult, SucceededProcessExecutionResult} from "./core/process/process-execution-result.ts";
-import {CommandCancellation, type FileSystem} from "./common/runtime.ts";
+import {CommandCancellation} from "./core/runtime/cancellation.ts";
+import type {FileSystem} from "./core/runtime/runtime-capability.ts";
 import {appendMissingEnvironmentValues, parseEnvironmentFile} from "./generate.env.ts";
 import type {ReactFacts} from "./inspection/frontend.ts";
 import type {PackageInventoryFacts} from "./inspection/packages.ts";

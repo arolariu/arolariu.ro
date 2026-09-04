@@ -7,7 +7,7 @@
  * requirements through injected runtime capabilities, obtains exactly one shared repository
  * inspection session from the runtime-owned inspection registry, and then runs every
  * bounded-context module — `workspace`, `dotnet`, `react`, `svelte`, `python`, and
- * `infrastructure` — concurrently through {@link CommandRuntime.tasks}. The facts a module
+ * `infrastructure` — concurrently through {@link RuntimeExecutionContext.tasks}. The facts a module
  * declares through {@link DiagnosticModule.facts} are started together through the same scheduler
  * before the first module runs, so a module that reads several independent inspections still
  * observes them concurrently while awaiting each memoized outcome sequentially. Module results are
@@ -33,8 +33,16 @@
  * ```
  */
 
-import type {Clock, CommandRuntime, GetOnlyHttpClient, RepositoryInspectionRequest} from "./common/runtime.ts";
-import {asGetOnlyHttpClient, asReadOnlyFileSystem, HttpError} from "./common/runtime.ts";
+import {
+  asGetOnlyHttpClient,
+  asReadOnlyFileSystem,
+  type Clock,
+  type GetOnlyHttpClient,
+  HttpError,
+} from "./core/runtime/runtime-capability.ts";
+import type {RuntimeExecutionContext} from "./core/runtime/runtime-execution-context.ts";
+import type {RepositoryInspectionRequest, RepositoryInspectionRuntime} from "./inspection/runtime-capability.ts";
+import {createInspectionRuntimeExecutionContext, type InspectionRuntimeExecutionContext} from "./inspection/runtime-capability.ts";
 import {loadRepositoryRequirements} from "./common/requirements.ts";
 import {resolveRepositoryPaths} from "./common/repository-paths.ts";
 import {toJsonValue} from "./core/command/command-execution.ts";
@@ -77,6 +85,8 @@ export const doctorModules: readonly DiagnosticModule[] = [
 export interface DoctorCommandDependencies {
   /** Ordered modules to execute; defaults to {@link doctorModules}. */
   readonly modules?: readonly DiagnosticModule[];
+  /** Repository-analysis registry injected by a test; defaults to the composed production one. */
+  readonly inspection?: RepositoryInspectionRuntime;
 }
 
 function errorMessage(error: unknown): string {
@@ -168,7 +178,7 @@ export function createBoundedNetworkProbe(
  * @param runtime - The invocation's runtime capabilities.
  * @returns A probe runner whose runs abort with the invocation.
  */
-function createCancellableProbeRunner(runtime: Readonly<CommandRuntime>): InspectionProbeRunner {
+function createCancellableProbeRunner(runtime: Readonly<RuntimeExecutionContext>): InspectionProbeRunner {
   const probes = createInspectionProbeRunner(runtime.runner);
   return {
     run: (probe, options = {}) => probes.run(probe, {signal: runtime.signal, ...options}),
@@ -237,7 +247,7 @@ interface DoctorExecutionSeams {
  *
  * @remarks
  * Doctor modules own no task scheduler and must never reach for a raw `Promise` combinator, so
- * the command starts the facts they declared through {@link CommandRuntime.tasks} before the
+ * the command starts the facts they declared through {@link RuntimeExecutionContext.tasks} before the
  * first module runs. Each module then reads the memoized promise of an inspection that is already
  * in flight with an ordinary sequential `await`, which keeps independent inspections concurrent
  * exactly as they were before doctor became a command.
@@ -254,7 +264,7 @@ interface DoctorExecutionSeams {
  */
 function prewarmInspections(
   inspection: RepositoryInspectionSession,
-  runtime: Readonly<CommandRuntime>,
+  runtime: Readonly<RuntimeExecutionContext>,
   facts: readonly RepositoryInspectionKey[],
 ): void {
   const distinctFacts = [...new Set(facts)];
@@ -278,7 +288,7 @@ function prewarmInspections(
  * This is the single doctor business function the command definition calls, so no second
  * orchestration path exists. Modules always receive the full typed input and are responsible for
  * emitting their own explicit skipped diagnostics. Modules run concurrently through
- * {@link CommandRuntime.tasks}, which preserves the declared module order in the flattened result
+ * {@link RuntimeExecutionContext.tasks}, which preserves the declared module order in the flattened result
  * regardless of which module settles first and cancels with the invocation. Duplicate or
  * malformed diagnostic ids are rejected by {@link createDoctorReport}, the sole authority for
  * report schema and semantic validation.
@@ -289,7 +299,7 @@ function prewarmInspections(
  * @returns The validated, scored doctor report.
  */
 async function executeDoctor(
-  context: Readonly<CommandExecutionContext>,
+  context: Readonly<CommandExecutionContext<InspectionRuntimeExecutionContext>>,
   input: Readonly<DoctorInput>,
   seams: Readonly<DoctorExecutionSeams> = {},
 ): Promise<DoctorReport> {
@@ -357,7 +367,7 @@ export function createDoctorCommand(
 ): LazyMonorepoCommand<DoctorInput, DoctorReport, never> {
   const {modules} = dependencies;
 
-  return defineCommand<DoctorInput, DoctorReport>(
+  return defineCommand<DoctorInput, DoctorReport, InspectionRuntimeExecutionContext>(
     {
       name: "doctor",
       description: "Runs read-only workspace health diagnostics across every bounded context.",
@@ -372,6 +382,7 @@ export function createDoctorCommand(
         const options = program.opts<{verbose?: boolean; quick?: boolean}>();
         return {verbose: options.verbose === true, quick: options.quick === true};
       },
+      createRuntimeContext: (baseRuntime, parent) => createInspectionRuntimeExecutionContext(baseRuntime, parent, dependencies.inspection),
       execute: (context, input) => executeDoctor(context, input, modules === undefined ? {} : {modules}),
       complete: (report) => ({
         exitCode: report.summary.failed > 0 ? 1 : 0,
