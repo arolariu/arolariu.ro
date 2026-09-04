@@ -56,7 +56,8 @@ function streamForever(response: ServerResponse): void {
   let cancelled = false;
   response.on("close", () => {
     cancelled = true;
-  });  const writeChunk = (): void => {
+  });
+  const writeChunk = (): void => {
     if (cancelled || response.writableEnded) {
       return;
     }

@@ -238,7 +238,8 @@ export class HttpError extends Error {
     message: string,
     request: Readonly<Pick<HttpRequest, "url" | "method">>,
     options?: Readonly<{status?: number; cause?: unknown}>,
-  ) {    super(message, options?.cause === undefined ? undefined : {cause: options.cause});
+  ) {
+    super(message, options?.cause === undefined ? undefined : {cause: options.cause});
     this.name = "HttpError";
     this.request = request;
     if (options?.status !== undefined) {

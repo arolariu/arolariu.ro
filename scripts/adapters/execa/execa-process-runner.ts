@@ -13,11 +13,7 @@ import {basename} from "node:path";
 import {StringDecoder} from "node:string_decoder";
 import {execa} from "execa";
 
-import type {
-  ProcessEnvironment,
-  ProcessExecutionOptions,
-  ProcessExecutionRequest,
-} from "../../core/process/process-execution-request.ts";
+import type {ProcessEnvironment, ProcessExecutionOptions, ProcessExecutionRequest} from "../../core/process/process-execution-request.ts";
 import {
   toProcessTerminationSignal,
   type ProcessExecutionResult,

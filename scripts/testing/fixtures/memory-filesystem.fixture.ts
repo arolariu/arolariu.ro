@@ -33,8 +33,15 @@ const FIXTURE_GLOB_DEFAULT_ROOT = "/";
 const textEncoder = new TextEncoder();
 const textDecoder = new TextDecoder();
 
-interface MemoryFileEntry {readonly kind: "file"; contents: Uint8Array; mode: number}
-interface MemoryDirectoryEntry {readonly kind: "directory"; mode: number}
+interface MemoryFileEntry {
+  readonly kind: "file";
+  contents: Uint8Array;
+  mode: number;
+}
+interface MemoryDirectoryEntry {
+  readonly kind: "directory";
+  mode: number;
+}
 type MemoryEntry = MemoryFileEntry | MemoryDirectoryEntry;
 
 /** Normalizes a POSIX or Windows path into one canonical, separator-consistent absolute form. */

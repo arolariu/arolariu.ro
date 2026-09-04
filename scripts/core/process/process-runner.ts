@@ -160,10 +160,7 @@ function isSucceededProcessExecutionResult(result: ProcessExecutionResult): resu
   return result.kind === "succeeded";
 }
 
-function validateProcessExecutionRequest(
-  request: Readonly<ProcessExecutionRequest>,
-  options: Readonly<ProcessExecutionOptions>,
-): void {
+function validateProcessExecutionRequest(request: Readonly<ProcessExecutionRequest>, options: Readonly<ProcessExecutionOptions>): void {
   if (request.command.trim().length === 0) {
     throw new Error("Command cannot be empty");
   }

@@ -46,9 +46,7 @@ function withOutput(output?: Readonly<Partial<ProcessExecutionOutput>>): Process
  * @param output - Captured output overrides.
  * @returns A `succeeded` result whose exit code is narrowed to zero.
  */
-export function buildSucceededProcessExecutionResult(
-  output?: Readonly<Partial<ProcessExecutionOutput>>,
-): SucceededProcessExecutionResult {
+export function buildSucceededProcessExecutionResult(output?: Readonly<Partial<ProcessExecutionOutput>>): SucceededProcessExecutionResult {
   return {kind: "succeeded", exitCode: 0, ...withOutput(output)};
 }
 

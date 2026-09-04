@@ -33,13 +33,22 @@ import {createMemoryFileSystem} from "../fixtures/memory-filesystem.fixture.ts";
 import {buildQueuedHttpClient, createHttpResponse} from "../fixtures/network.fixture.ts";
 
 /** One isolated filesystem plus an existing absolute root it exclusively owns. */
-interface RuntimeCapabilityFileSystemScope {readonly files: FileSystem; readonly root: string}
+interface RuntimeCapabilityFileSystemScope {
+  readonly files: FileSystem;
+  readonly root: string;
+}
 
 /** One HTTP client plus the absolute URL the contract sends its request to. */
-interface RuntimeCapabilityHttpScope {readonly http: HttpClient; readonly url: URL}
+interface RuntimeCapabilityHttpScope {
+  readonly http: HttpClient;
+  readonly url: URL;
+}
 
 /** One clock plus the subject-controlled way to let a pending delay elapse. */
-interface RuntimeCapabilityClockScope {readonly clock: Clock; readonly advance: (milliseconds: number) => Promise<void>}
+interface RuntimeCapabilityClockScope {
+  readonly clock: Clock;
+  readonly advance: (milliseconds: number) => Promise<void>;
+}
 
 /** Everything one contract subject supplies so the shared behavior can be proven against it. */
 export interface RuntimeCapabilityContractDefinition {

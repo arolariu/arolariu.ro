@@ -63,10 +63,7 @@ describe("controlled process lifecycle", () => {
   it("decodes split UTF-8 chunks independently for stdout and stderr while retaining capture", async () => {
     const {presenter, sink} = buildRecordingPresenter({context: "execa"});
 
-    const result = await defaultProcessRunner.run(
-      {command: process.execPath, args: ["-e", splitUtf8Script]},
-      {presenter, output: "tee"},
-    );
+    const result = await defaultProcessRunner.run({command: process.execPath, args: ["-e", splitUtf8Script]}, {presenter, output: "tee"});
 
     expect(result).toMatchObject({kind: "succeeded", exitCode: 0, stdout: "€", stderr: "漢"});
     expect(sink.records).toEqual([
@@ -150,10 +147,7 @@ describe("stdin selection by output mode", () => {
   });
 
   it("pipes stdin for captured output when input is supplied", async () => {
-    await defaultProcessRunner.run(
-      {command: process.execPath, args: ["-e", "process.stdin.pipe(process.stdout)"]},
-      {input: "payload"},
-    );
+    await defaultProcessRunner.run({command: process.execPath, args: ["-e", "process.stdin.pipe(process.stdout)"]}, {input: "payload"});
 
     expect(mockedExeca).toHaveBeenCalledWith(
       process.execPath,

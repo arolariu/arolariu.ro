@@ -553,9 +553,7 @@ describe("ComposedTerminalPresenter colour policy", () => {
     presenter.json({schemaVersion: 1});
 
     expect(sink.segments).toEqual(
-      mode === "json"
-        ? [[{text: '{\n  "schemaVersion": 1\n}'}]]
-        : [[{text: "[arolariu::ctx] ⛔ failed"}], [{text: "plain"}]],
+      mode === "json" ? [[{text: '{\n  "schemaVersion": 1\n}'}]] : [[{text: "[arolariu::ctx] ⛔ failed"}], [{text: "plain"}]],
     );
   });
 

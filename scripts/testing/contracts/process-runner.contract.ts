@@ -81,9 +81,9 @@ export function runProcessRunnerContract(
 
   describe(`${label} process-runner contract`, () => {
     it("quotes empty, whitespace-bearing, and quote-bearing tokens in the formatted command", () => {
-      expect(
-        formatProcessExecutionRequest({command: "C:\\Program Files\\Tool\\tool.exe", args: ["plain", "two words", "", 'a"b']}),
-      ).toBe('"C:\\Program Files\\Tool\\tool.exe" plain "two words" "" "a\\"b"');
+      expect(formatProcessExecutionRequest({command: "C:\\Program Files\\Tool\\tool.exe", args: ["plain", "two words", "", 'a"b']})).toBe(
+        '"C:\\Program Files\\Tool\\tool.exe" plain "two words" "" "a\\"b"',
+      );
     });
 
     it("rejects an empty command before spawning anything", async () => {
@@ -98,9 +98,9 @@ export function runProcessRunnerContract(
       const {runner, invocations} = buildRecordingRunner();
 
       expect(() => runner.run({command: "node", args: ["-e", ""]}, {output: "inherit", input: "payload"})).toThrow(/inherit/i);
-      await expect(async () =>
-        runner.run({command: "node", args: ["-e", ""]}, {output: "inherit", input: "payload"}),
-      ).rejects.toThrow(/inherit/i);
+      await expect(async () => runner.run({command: "node", args: ["-e", ""]}, {output: "inherit", input: "payload"})).rejects.toThrow(
+        /inherit/i,
+      );
       expect(invocations).toEqual([]);
     });
 

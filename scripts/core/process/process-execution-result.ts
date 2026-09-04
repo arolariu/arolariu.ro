@@ -58,10 +58,7 @@ export type FailedProcessExecutionResult = Exclude<ProcessExecutionResult, Succe
  * @param presenter - Optional presenter used for secret redaction.
  * @returns Sanitized evidence excerpt.
  */
-export function processExecutionFailureEvidence(
-  result: Readonly<FailedProcessExecutionResult>,
-  presenter?: TerminalPresenter,
-): string {
+export function processExecutionFailureEvidence(result: Readonly<FailedProcessExecutionResult>, presenter?: TerminalPresenter): string {
   return sanitizeProcessDiagnosticText(selectFailureEvidence(result), presenter);
 }
 
