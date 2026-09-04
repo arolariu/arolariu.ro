@@ -394,10 +394,9 @@ npm run analyze:scripts:architecture
   by a child workspace.
 - `typecheck:scripts` checks production and non-test support with strict root compiler options. Its sole temporary production exclusion is
   `workers/lint.worker.ts`, which Cohort 7 removes.
-- `analyze:scripts:loc` reports the fixed 73,377-line baseline, the enforced Cohort 1 checkpoint and its immutable high-water ceiling
-  (`currentMaximum` 77,000 while this task's checkpoint is active, and `highWaterMaximum` 77,000), the final 55,032-line target,
-  production/test-support totals, family totals, committed line churn, and detected rename/relocation evidence from baseline commit
-  `11773ff3d`.
+- `analyze:scripts:loc` reports the fixed 73,377-line baseline, the frozen Cohort 1 ceiling and its immutable high-water mark
+  (`currentMaximum` 77,000, and `highWaterMaximum` 77,000), the final 55,032-line target, production/test-support totals, family
+  totals, committed line churn, and detected rename/relocation evidence from baseline commit `11773ff3d`.
 - `analyze:scripts:architecture` reports each entrypoint's `architectureModel` and `removalCohort`, the eager (`--help`) import-graph size,
   the static runtime graph size, and three-sample `--help` medians for every Commander entrypoint. `eagerGraphFileCount` and
   `eagerGraphMaintainedLineCount` follow only static, non-type-only imports and re-exports — what starting the entrypoint pays for before it

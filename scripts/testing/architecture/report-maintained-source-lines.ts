@@ -12,8 +12,8 @@
 
 import {
   approvedScriptsArchitectureBaseline,
-  cohortOneActiveMaintainedLineCount,
   cohortOneHighWaterMaintainedLineCount,
+  cohortOneMaximumMaintainedLineCount,
 } from "./scripts-architecture-baseline.ts";
 import {calculateMaintainedSourceHistoryReport, calculateMaintainedSourceLineReport} from "./maintained-source-lines.ts";
 
@@ -21,7 +21,7 @@ const report = calculateMaintainedSourceLineReport(process.cwd());
 const history = calculateMaintainedSourceHistoryReport(process.cwd());
 const document = {
   baseline: approvedScriptsArchitectureBaseline.maintainedLineCount,
-  currentMaximum: cohortOneActiveMaintainedLineCount,
+  currentMaximum: cohortOneMaximumMaintainedLineCount,
   highWaterMaximum: cohortOneHighWaterMaintainedLineCount,
   finalMaximum: approvedScriptsArchitectureBaseline.finalMaximumMaintainedLineCount,
   history,
@@ -29,6 +29,6 @@ const document = {
 };
 
 process.stdout.write(`${JSON.stringify(document, null, 2)}\n`);
-if (report.totalMaintainedLineCount > cohortOneActiveMaintainedLineCount) {
+if (report.totalMaintainedLineCount > cohortOneMaximumMaintainedLineCount) {
   process.exitCode = 1;
 }

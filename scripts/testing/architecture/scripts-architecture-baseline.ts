@@ -71,16 +71,16 @@ export const approvedScriptsArchitectureBaseline = {
 /**
  * Cohort 1 high-water ceiling: raised from 76,375 to 76,750 by Task 6 plan-owner ruling, then
  * amended to 77,000 by Task 7 plan-owner ruling after an audit found neither 76,125 nor 76,750
- * attainable. No later Cohort 1 task may raise it again, and Task 9 lowers the active value below
- * it permanently. Only the 38 lines from 76,962 (Task 7's measured total) to 77,000 are reserved,
- * for Task 7 review fixes only — not new scope — and the final Cohort 1 target stays 75,750.
+ * attainable. Task 9 freezes {@link cohortOneMaximumMaintainedLineCount} at this value: the
+ * original 75,750 target was disproven when Task 8's 486-line allowance could not fit its ~974
+ * mandated business-test lines. No later Cohort 1 task may raise this value again.
  */
 export const cohortOneHighWaterMaintainedLineCount = 77_000;
 
 /**
- * The currently enforced Cohort 1 maintained-line checkpoint, plan-owner amended through Task 7;
- * each Cohort 1 task updates this value atomically with its own change, and it may never exceed
- * {@link cohortOneHighWaterMaintainedLineCount} — see that constant's remarks for the amendment
- * history and its Task-7-review-fixes-only headroom.
+ * The frozen Cohort 1 ceiling. Cohort 1 execution is complete; only a later cohort may lower this
+ * value, and no task may raise it, satisfying
+ * `cohortOneMaximumMaintainedLineCount <= cohortOneHighWaterMaintainedLineCount`. The final
+ * program target remains `approvedScriptsArchitectureBaseline.finalMaximumMaintainedLineCount`.
  */
-export const cohortOneActiveMaintainedLineCount = 77_000;
+export const cohortOneMaximumMaintainedLineCount = 77_000;

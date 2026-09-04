@@ -8,8 +8,8 @@ import {describe, expect, it} from "vitest";
 
 import {
   approvedScriptsArchitectureBaseline,
-  cohortOneActiveMaintainedLineCount,
   cohortOneHighWaterMaintainedLineCount,
+  cohortOneMaximumMaintainedLineCount,
 } from "./scripts-architecture-baseline.ts";
 import {
   calculateMaintainedSourceLineReport,
@@ -82,7 +82,7 @@ describe("maintained scripts line accounting", () => {
     });
   });
 
-  it("keeps the approved baseline immutable and the current tree inside the temporary ceiling", () => {
+  it("keeps the approved baseline immutable and the current tree inside the frozen Cohort 1 ceiling", () => {
     expect(approvedScriptsArchitectureBaseline.commit).toBe("11773ff3d");
     expect(approvedScriptsArchitectureBaseline.maintainedLineCount).toBe(73_377);
     expect(approvedScriptsArchitectureBaseline.productionMaintainedLineCount).toBe(37_126);
@@ -95,8 +95,8 @@ describe("maintained scripts line accounting", () => {
     expect(approvedScriptsArchitectureBaseline.sourceFileCount).toBe(142);
 
     const report = calculateMaintainedSourceLineReport(process.cwd());
-    expect(cohortOneActiveMaintainedLineCount).toBeLessThanOrEqual(cohortOneHighWaterMaintainedLineCount);
-    expect(report.totalMaintainedLineCount, JSON.stringify(report, null, 2)).toBeLessThanOrEqual(cohortOneActiveMaintainedLineCount);
+    expect(cohortOneMaximumMaintainedLineCount).toBeLessThanOrEqual(cohortOneHighWaterMaintainedLineCount);
+    expect(report.totalMaintainedLineCount, JSON.stringify(report, null, 2)).toBeLessThanOrEqual(cohortOneMaximumMaintainedLineCount);
     expect(report.excludedSourcePaths).toEqual(["scripts/vitest.config.ts"]);
 
     const history = calculateMaintainedSourceHistoryReport(process.cwd());
