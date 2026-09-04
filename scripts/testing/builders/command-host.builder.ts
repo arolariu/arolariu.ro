@@ -4,18 +4,17 @@
  *
  * @remarks
  * `buildCommandHost` is the sole seam a command lifecycle test uses to inject a command host: it
- * records every exit code the lifecycle assigns, defaults `isDirectEntry` to `true`, builds an
- * in-memory parse presenter that reuses the overridden runtime logger when one is supplied (so a
- * test can observe both parse-time and runtime output through the same sink), and resolves
- * `loadRuntimeFactory` from `scripts/common/runtime.testing.ts`'s deterministic runtime factory (a
- * temporary edge; Task 3 retargets it to the new runtime builders and fixtures).
+ * records every exit code the lifecycle assigns, defaults `isDirectEntry` to `true`, and builds an
+ * in-memory parse presenter that reuses the overridden runtime logger when one is supplied, so a
+ * test observes parse-time and runtime output through the same sink. `loadRuntimeFactory` resolves
+ * `scripts/common/runtime.testing.ts`'s deterministic factory as a temporary edge; **Task 3**
+ * retargets it to the new runtime builders and fixtures.
  */
 
 import {InMemoryLoggerSink, MonorepositoryConsoleLogger, type LoggerRuntimeHost} from "../../common/logger.ts";
-import {createTestRuntimeFactory} from "../../common/runtime.testing.ts";
 import type {CommandRuntime} from "../../common/runtime.ts";
-import type {CommandExitCode} from "../../core/command/command-execution.ts";
-import type {CommandHost} from "../../core/command/command-specification.ts";
+import {createTestRuntimeFactory} from "../../common/runtime.testing.ts";
+import type {CommandHost, CommandProcessHost} from "../../core/command/command-specification.ts";
 
 /** Logger host whose progress interval never fires, so no test depends on wall-clock timing. */
 const testParsePresenterRuntimeHost: LoggerRuntimeHost = {
@@ -27,8 +26,7 @@ const testParsePresenterRuntimeHost: LoggerRuntimeHost = {
 /**
  * Builds a fully hermetic command host for a command lifecycle test.
  *
- * @param overrides - Optional invocation argv, direct-entry flag, and runtime capability
- * overrides.
+ * @param overrides - Optional invocation argv, direct-entry flag, and runtime capability overrides.
  * @returns The command host, exposing every exit code the lifecycle assigned to it.
  */
 export function buildCommandHost(
@@ -40,14 +38,16 @@ export function buildCommandHost(
 ): CommandHost & Readonly<{assignedExitCodes: readonly number[]}> {
   const assignedExitCodes: number[] = [];
   const isDirectEntry = overrides.isDirectEntry ?? true;
-  const argv = Object.freeze([...(overrides.argv ?? [])]);
-
-  return {
-    argv,
+  const processHost: CommandProcessHost = {
+    argv: Object.freeze([...(overrides.argv ?? [])]),
     isDirectEntry: (): boolean => isDirectEntry,
-    setExitCode: (exitCode: CommandExitCode): void => {
+    setExitCode: (exitCode) => {
       assignedExitCodes.push(exitCode);
     },
+  };
+
+  return {
+    ...processHost,
     createParsePresenter: () =>
       overrides.runtime?.logger
       ?? new MonorepositoryConsoleLogger("test", {

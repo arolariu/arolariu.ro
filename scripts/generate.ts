@@ -245,8 +245,7 @@ async function executeGenerate(
   return {selected, completed};
 }
 
-/** Production command host. This literal dynamic import is the only edge from this entrypoint
- *  into the Node adapter; core never names it. */
+/** The only edge from this entrypoint into the Node command host; core never names it. */
 const loadProductionCommandHost = async (): Promise<CommandHost> =>
   import("./adapters/node/node-command-host.ts").then(({createNodeCommandHost}) => createNodeCommandHost("generate"));
 
@@ -254,8 +253,7 @@ const loadProductionCommandHost = async (): Promise<CommandHost> =>
  * Creates the generation orchestrator command.
  *
  * @param dependencies - Child generator commands composed by this orchestrator.
- * @param options - The injected command host or a literal loader; defaults to the production
- * Node adapter.
+ * @param options - Injected command host or literal loader; defaults to the Node adapter.
  * @returns The typed `generate` command object.
  */
 export function createGenerateCommand(

@@ -563,16 +563,14 @@ async function executeDocsAssemble(context: Readonly<CommandExecutionContext>): 
   return {generatedTiers: GENERATED_TIER_IDENTITIES, extractorCount: 3};
 }
 
-/** Production command host. This literal dynamic import is the only edge from this entrypoint
- *  into the Node adapter; core never names it. */
+/** The only edge from this entrypoint into the Node command host; core never names it. */
 const loadProductionCommandHost = async (): Promise<CommandHost> =>
   import("./adapters/node/node-command-host.ts").then(({createNodeCommandHost}) => createNodeCommandHost("docs-assemble"));
 
 /**
  * Creates the documentation assembly command.
  *
- * @param options - The injected command host or a literal loader; defaults to the production
- * Node adapter.
+ * @param options - Injected command host or literal loader; defaults to the Node adapter.
  * @returns The typed `docs-assemble` command object.
  */
 export function createDocsAssembleCommand(

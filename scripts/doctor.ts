@@ -339,8 +339,7 @@ async function executeDoctor(
   return report;
 }
 
-/** Production command host. This literal dynamic import is the only edge from this entrypoint
- *  into the Node adapter; core never names it. */
+/** The only edge from this entrypoint into the Node command host; core never names it. */
 const loadProductionCommandHost = async (): Promise<CommandHost> =>
   import("./adapters/node/node-command-host.ts").then(({createNodeCommandHost}) => createNodeCommandHost("doctor"));
 
@@ -349,8 +348,7 @@ const loadProductionCommandHost = async (): Promise<CommandHost> =>
  *
  * @param dependencies - Optional module list; tests inject deterministic fakes instead of
  * replacing command business code.
- * @param options - The injected command host or a literal loader; defaults to the production
- * Node adapter.
+ * @param options - Injected command host or literal loader; defaults to the Node adapter.
  * @returns The typed `doctor` command object.
  */
 export function createDoctorCommand(

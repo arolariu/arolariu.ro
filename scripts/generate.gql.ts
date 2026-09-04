@@ -82,16 +82,14 @@ async function generateGraphql(
   return {summary: "GraphQL generation completed (placeholder).", changedFiles: [outputFile]};
 }
 
-/** Production command host. This literal dynamic import is the only edge from this entrypoint
- *  into the Node adapter; core never names it. */
+/** The only edge from this entrypoint into the Node command host; core never names it. */
 const loadProductionCommandHost = async (): Promise<CommandHost> =>
   import("./adapters/node/node-command-host.ts").then(({createNodeCommandHost}) => createNodeCommandHost("generate:gql"));
 
 /**
  * Creates the GraphQL generator command.
  *
- * @param options - The injected command host or a literal loader; defaults to the production
- * Node adapter.
+ * @param options - Injected command host or literal loader; defaults to the Node adapter.
  * @returns The typed `generate:gql` command object.
  */
 export function createGenerateGraphqlCommand(

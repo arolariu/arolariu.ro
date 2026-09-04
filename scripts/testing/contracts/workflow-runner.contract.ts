@@ -7,11 +7,16 @@
 import {describe, expect, it} from "vitest";
 
 import {CommandCancellation} from "../../common/runtime.ts";
-import type {AbstractWorkflowRunner} from "../../core/workflow/abstract-workflow-runner.ts";
-import {succeededWorkflowExecution} from "../../core/workflow/workflow-execution-result.ts";
-import type {WorkflowExecutionDecision, WorkflowExecutionResult} from "../../core/workflow/workflow-execution-result.ts";
-import type {WorkflowExecutionSupport, WorkflowSpecification} from "../../core/workflow/workflow-specification.ts";
 import type {WorkflowEvent} from "../../core/presentation/workflow-event.ts";
+import type {AbstractWorkflowRunner} from "../../core/workflow/abstract-workflow-runner.ts";
+import {succeededWorkflowExecution, type WorkflowExecutionDecision} from "../../core/workflow/workflow-execution-result.ts";
+import type {
+  WorkflowExecutionDefinition,
+  WorkflowExecutionSupport,
+  WorkflowIdentityDefinition,
+  WorkflowPolicyDefinition,
+  WorkflowSpecification,
+} from "../../core/workflow/workflow-specification.ts";
 
 /**
  * Runs the shared workflow runner contract.
@@ -30,36 +35,43 @@ export function runWorkflowRunnerContract<TContext, TOutput, TFailure>(
   }>,
 ): void {
   const {label, createRunner, createContext, createSpecification} = definition;
+  const identity: WorkflowIdentityDefinition = {name: "fixture"};
+  const succeeded = (): WorkflowExecutionDecision<TOutput, TFailure> => succeededWorkflowExecution({} as TOutput);
 
-  function buildSupport(
-    overrides: Readonly<Partial<WorkflowExecutionSupport>> = {},
-  ): Readonly<{support: WorkflowExecutionSupport; events: readonly WorkflowEvent[]}> {
+  /** Collects every published event while supplying a deterministic clock and signal. */
+  function buildSupport(monotonicNow: () => number = () => 0): Readonly<{
+    support: WorkflowExecutionSupport;
+    events: readonly WorkflowEvent[];
+  }> {
     const events: WorkflowEvent[] = [];
-    const support: WorkflowExecutionSupport = {
-      monotonicNow: () => 0,
-      signal: new AbortController().signal,
-      publishEvent: (event) => events.push(event),
-      ...overrides,
+    return {support: {monotonicNow, signal: new AbortController().signal, publishEvent: (event) => events.push(event)}, events};
+  }
+
+  /** Builds a specification whose `execute` always throws, optionally under a classification policy. */
+  function buildThrowingSpecification(
+    thrown: unknown,
+    policy: WorkflowPolicyDefinition<TContext, TOutput, TFailure> = {},
+  ): WorkflowSpecification<TContext, TOutput, TFailure> {
+    const execution: WorkflowExecutionDefinition<TContext, TOutput, TFailure> = {
+      execute: async () => {
+        throw thrown;
+      },
     };
-    return {support, get events(): readonly WorkflowEvent[] { return events; }} as const;
+    return {...identity, ...execution, ...policy};
   }
 
   describe(`workflow runner contract: ${label}`, () => {
     it("adds durationMilliseconds computed from the injected monotonic clock", async () => {
-      let calls = 0;
       const clockValues = [10, 35];
-      const support: WorkflowExecutionSupport = {
-        monotonicNow: () => clockValues[calls++] ?? 0,
-        signal: new AbortController().signal,
-        publishEvent: () => undefined,
-      };
-      const result = await createRunner(support).run(createSpecification(succeededWorkflowExecution({} as TOutput)), createContext());
+      let calls = 0;
+      const {support} = buildSupport(() => clockValues[calls++] ?? 0);
+      const result = await createRunner(support).run(createSpecification(succeeded()), createContext());
       expect(result.durationMilliseconds).toBe(25);
     });
 
     it("publishes exactly one workflow-started and one workflow-completed event, in that order", async () => {
       const {support, events} = buildSupport();
-      await createRunner(support).run(createSpecification(succeededWorkflowExecution({} as TOutput)), createContext());
+      await createRunner(support).run(createSpecification(succeeded()), createContext());
       expect(events.map((event) => event.kind)).toEqual(["workflow-started", "workflow-completed"]);
     });
 
@@ -68,28 +80,24 @@ export function runWorkflowRunnerContract<TContext, TOutput, TFailure>(
       const context = createContext();
       let observedContext: unknown;
       let observedSupport: unknown;
-      const specification: WorkflowSpecification<TContext, TOutput, TFailure> = {
-        name: "fixture",
-        execute: async (executeContext, executeSupport) => {
-          observedContext = executeContext;
-          observedSupport = executeSupport;
-          return succeededWorkflowExecution({} as TOutput);
+      await createRunner(support).run(
+        {
+          ...identity,
+          execute: async (executeContext, executeSupport) => {
+            observedContext = executeContext;
+            observedSupport = executeSupport;
+            return succeeded();
+          },
         },
-      };
-      await createRunner(support).run(specification, context);
+        context,
+      );
       expect(observedContext).toBe(context);
       expect(observedSupport).toBe(support);
     });
 
     it("converts a thrown CommandCancellation into an interrupted decision carrying its exit code", async () => {
       const {support} = buildSupport();
-      const cancellation = new CommandCancellation("Terminated by SIGTERM.", 143);
-      const specification: WorkflowSpecification<TContext, TOutput, TFailure> = {
-        name: "fixture",
-        execute: async () => {
-          throw cancellation;
-        },
-      };
+      const specification = buildThrowingSpecification(new CommandCancellation("Terminated by SIGTERM.", 143));
       const result = await createRunner(support).run(specification, createContext());
       expect(result).toMatchObject({kind: "interrupted", exitCode: 143, message: "Terminated by SIGTERM."});
     });
@@ -97,28 +105,17 @@ export function runWorkflowRunnerContract<TContext, TOutput, TFailure>(
     it("consults classifyUnexpectedFault before rethrowing an unexpected error", async () => {
       const {support} = buildSupport();
       const thrown = new Error("unexpected");
-      const classified: WorkflowExecutionDecision<TOutput, TFailure> = succeededWorkflowExecution({} as TOutput);
-      const specification: WorkflowSpecification<TContext, TOutput, TFailure> = {
-        name: "fixture",
-        execute: async () => {
-          throw thrown;
-        },
-        classifyUnexpectedFault: (error) => (error === thrown ? classified : undefined),
-      };
-      const result: WorkflowExecutionResult<TOutput, TFailure> = await createRunner(support).run(specification, createContext());
-      expect(result.kind).toBe(classified.kind);
+      const specification = buildThrowingSpecification(thrown, {
+        classifyUnexpectedFault: (error) => (error === thrown ? succeeded() : undefined),
+      });
+      const result = await createRunner(support).run(specification, createContext());
+      expect(result.kind).toBe("succeeded");
     });
 
     it("rethrows an unclassified unexpected error unchanged", async () => {
       const {support} = buildSupport();
       const thrown = new Error("unclassified");
-      const specification: WorkflowSpecification<TContext, TOutput, TFailure> = {
-        name: "fixture",
-        execute: async () => {
-          throw thrown;
-        },
-      };
-      await expect(createRunner(support).run(specification, createContext())).rejects.toBe(thrown);
+      await expect(createRunner(support).run(buildThrowingSpecification(thrown), createContext())).rejects.toBe(thrown);
     });
   });
 }

@@ -3,9 +3,10 @@
  * @module scripts/core/workflow/workflow-specification
  *
  * @remarks
- * A {@link WorkflowSpecification} is engine-neutral: it never touches a runner, an adapter, or a
- * concrete context type by name. `AbstractWorkflowRunner` is the only thing that executes one, and
- * it supplies the {@link WorkflowExecutionSupport} every specification's `execute` observes.
+ * A {@link WorkflowSpecification} is engine-neutral: it never touches a runner, an infrastructure
+ * implementation, or a concrete context type by name. `AbstractWorkflowRunner` is the only thing
+ * that executes one, and it supplies the {@link WorkflowExecutionSupport} every specification's
+ * `execute` observes.
  */
 
 import type {WorkflowEvent} from "../presentation/workflow-event.ts";
@@ -21,15 +22,13 @@ export interface WorkflowExecutionSupport {
   readonly publishEvent: (event: WorkflowEvent) => void;
 }
 
-/** Identity of one workflow specification. */
-interface WorkflowIdentityDefinition {
-  /** Logical workflow name, published with `workflow-started`/`workflow-completed`. */
+/** Logical workflow name, published with `workflow-started`/`workflow-completed`. */
+export interface WorkflowIdentityDefinition {
   readonly name: string;
 }
 
-/** The workflow's own execution behavior. */
-interface WorkflowExecutionDefinition<TContext, TOutput, TFailure> {
-  /** Runs the workflow against its already-derived feature context, returning a pure, duration-free decision. */
+/** The workflow's own execution behavior, returning a pure, duration-free decision. */
+export interface WorkflowExecutionDefinition<TContext, TOutput, TFailure> {
   readonly execute: (
     context: Readonly<TContext>,
     support: Readonly<WorkflowExecutionSupport>,
@@ -37,7 +36,7 @@ interface WorkflowExecutionDefinition<TContext, TOutput, TFailure> {
 }
 
 /** Optional policy a workflow specification may declare. */
-interface WorkflowPolicyDefinition<TContext, TOutput, TFailure> {
+export interface WorkflowPolicyDefinition<TContext, TOutput, TFailure> {
   /** Classifies one unexpected thrown value into a typed decision, or `undefined` to rethrow it unchanged. */
   readonly classifyUnexpectedFault?: (
     error: unknown,
@@ -47,5 +46,7 @@ interface WorkflowPolicyDefinition<TContext, TOutput, TFailure> {
 
 /** Declarative description of one workflow's identity, execution, and policy. */
 export type WorkflowSpecification<TContext, TOutput, TFailure> = Readonly<
-  WorkflowIdentityDefinition & WorkflowExecutionDefinition<TContext, TOutput, TFailure> & WorkflowPolicyDefinition<TContext, TOutput, TFailure>
+  WorkflowIdentityDefinition
+    & WorkflowExecutionDefinition<TContext, TOutput, TFailure>
+    & WorkflowPolicyDefinition<TContext, TOutput, TFailure>
 >;

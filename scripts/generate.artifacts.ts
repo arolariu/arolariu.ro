@@ -1994,16 +1994,14 @@ async function generateArtifacts(
   return {summary, generatedFiles};
 }
 
-/** Production command host. This literal dynamic import is the only edge from this entrypoint
- *  into the Node adapter; core never names it. */
+/** The only edge from this entrypoint into the Node command host; core never names it. */
 const loadProductionCommandHost = async (): Promise<CommandHost> =>
   import("./adapters/node/node-command-host.ts").then(({createNodeCommandHost}) => createNodeCommandHost("generate:artifacts"));
 
 /**
  * Creates the taxonomy and license artifact generator command.
  *
- * @param options - The injected command host or a literal loader; defaults to the production
- * Node adapter.
+ * @param options - Injected command host or literal loader; defaults to the Node adapter.
  * @returns The typed `generate:artifacts` command object.
  */
 export function createGenerateArtifactsCommand(

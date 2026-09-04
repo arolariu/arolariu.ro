@@ -18,11 +18,12 @@ import type {WorkflowExecutionSupport, WorkflowSpecification} from "./workflow-s
 
 /** Owns the shared workflow execution template every concrete runner relies on. */
 export abstract class AbstractWorkflowRunner<TContext, TOutput, TFailure> {
-  readonly #support: Readonly<WorkflowExecutionSupport>;
+  /** Timing, cancellation, and event-publishing capabilities injected into every execution. */
+  protected readonly support: Readonly<WorkflowExecutionSupport>;
 
-  /** @param support - Timing, cancellation, and event-publishing capabilities injected into every execution. */
+  /** @param support - The injected execution support object every run observes. */
   protected constructor(support: Readonly<WorkflowExecutionSupport>) {
-    this.#support = support;
+    this.support = support;
   }
 
   /**
@@ -35,8 +36,8 @@ export abstract class AbstractWorkflowRunner<TContext, TOutput, TFailure> {
     specification: WorkflowSpecification<TContext, TOutput, TFailure>,
     context: Readonly<TContext>,
   ): Promise<WorkflowExecutionResult<TOutput, TFailure>> {
-    const startedAt = this.#support.monotonicNow();
-    this.#support.publishEvent({kind: "workflow-started", workflowName: specification.name});
+    const startedAt = this.support.monotonicNow();
+    this.support.publishEvent({kind: "workflow-started", workflowName: specification.name});
 
     let decision: WorkflowExecutionDecision<TOutput, TFailure>;
     try {
@@ -53,8 +54,8 @@ export abstract class AbstractWorkflowRunner<TContext, TOutput, TFailure> {
       }
     }
 
-    const durationMilliseconds = Math.max(0, this.#support.monotonicNow() - startedAt);
-    this.#support.publishEvent({kind: "workflow-completed", workflowName: specification.name, durationMilliseconds});
+    const durationMilliseconds = Math.max(0, this.support.monotonicNow() - startedAt);
+    this.support.publishEvent({kind: "workflow-completed", workflowName: specification.name, durationMilliseconds});
     return {...decision, durationMilliseconds} as WorkflowExecutionResult<TOutput, TFailure>;
   }
 
@@ -66,15 +67,12 @@ export abstract class AbstractWorkflowRunner<TContext, TOutput, TFailure> {
 }
 
 /**
- * The concrete workflow runner every composed workflow module uses: `executeWorkflow` simply
- * forwards to `specification.execute` with the runner's own injected support object.
+ * The concrete workflow runner every composed workflow module uses: `executeWorkflow` forwards to
+ * `specification.execute` with the runner's own injected support object.
  */
 export class RuntimeWorkflowRunner<TContext, TOutput, TFailure> extends AbstractWorkflowRunner<TContext, TOutput, TFailure> {
-  readonly #support: Readonly<WorkflowExecutionSupport>;
-
   public constructor(support: Readonly<WorkflowExecutionSupport>) {
     super(support);
-    this.#support = support;
   }
 
   /** {@inheritDoc AbstractWorkflowRunner.executeWorkflow} */
@@ -82,6 +80,6 @@ export class RuntimeWorkflowRunner<TContext, TOutput, TFailure> extends Abstract
     specification: WorkflowSpecification<TContext, TOutput, TFailure>,
     context: Readonly<TContext>,
   ): Promise<WorkflowExecutionDecision<TOutput, TFailure>> {
-    return specification.execute(context, this.#support);
+    return specification.execute(context, this.support);
   }
 }

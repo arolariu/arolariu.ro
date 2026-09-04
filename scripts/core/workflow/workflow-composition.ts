@@ -38,9 +38,8 @@ export interface CommandWorkflowModuleDefinition<TInput, TOutput, TFailure, TCon
    * Method syntax and the unwrapped `TContext` parameter are intentional: the command lifecycle
    * erases `TContext` to its default `unknown` at the `loadWorkflow` boundary, while
    * `defineWorkflowModule` closes over and recovers the concrete feature context. Under
-   * `strictFunctionTypes`, changing this member to an arrow property or wrapping the erased
-   * parameter in `Readonly<TContext>` makes a concrete feature module unassignable to the erased
-   * module contract and makes the lifecycle call fail to type-check.
+   * `strictFunctionTypes`, an arrow property or a `Readonly<TContext>` parameter would make a
+   * concrete feature module unassignable to the erased contract.
    */
   runWorkflow(featureContext: TContext, support: Readonly<WorkflowExecutionSupport>): Promise<WorkflowExecutionResult<TOutput, TFailure>>;
 }
@@ -62,7 +61,10 @@ export function defineWorkflowModule<TInput, TOutput, TFailure, TContext>(
   return {
     runtimeCapabilities,
     createContext,
-    runWorkflow(featureContext: TContext, support: Readonly<WorkflowExecutionSupport>): Promise<WorkflowExecutionResult<TOutput, TFailure>> {
+    runWorkflow(
+      featureContext: TContext,
+      support: Readonly<WorkflowExecutionSupport>,
+    ): Promise<WorkflowExecutionResult<TOutput, TFailure>> {
       return new RuntimeWorkflowRunner<TContext, TOutput, TFailure>(support).run(specification, featureContext);
     },
   };

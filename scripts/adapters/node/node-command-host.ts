@@ -6,19 +6,15 @@
  * @remarks
  * `argv`, `isDirectEntry`, and `setExitCode` delegate to the shared {@link nodeProcessHost};
  * `createParsePresenter` builds the human presenter used for help and usage output before typed
- * input exists. `loadRuntimeFactory` literal dynamic-imports the Node runtime adapter root, so a
- * help or usage path never pays for it. This is the *only* production module a command's own
- * `loadHost` loader ever names; `scripts/core/**` never imports it.
- *
- * @remarks
- * `nodeProcessHost` and the human presenter constructor are consumed from
- * `scripts/common/runtime.node.ts` as a temporary edge: Task 3 relocates them into
- * `scripts/adapters/node/node-process-host.ts` and this module's own presenter construction, and
- * retargets `loadRuntimeFactory`'s dynamic import to `./node-runtime-scope.ts`.
+ * input exists. `loadRuntimeFactory` literal dynamic-imports the Node runtime root, so a help or
+ * usage path never pays for it. `nodeProcessHost`, the logger runtime host, and the runtime
+ * factory are consumed from `scripts/common/runtime.node.ts` as a temporary edge: **Task 3**
+ * relocates them into `scripts/adapters/node/node-process-host.ts` and
+ * `scripts/adapters/node/node-runtime-scope.ts`, and retargets the dynamic import below.
  */
 
-import {nodeLoggerRuntimeHost, nodeProcessHost} from "../../common/runtime.node.ts";
 import {MonorepositoryConsoleLogger, type MonorepositoryLogger} from "../../common/logger.ts";
+import {nodeLoggerRuntimeHost, nodeProcessHost} from "../../common/runtime.node.ts";
 import type {CommandHost, CommandRuntimeFactory} from "../../core/command/command-specification.ts";
 
 /**

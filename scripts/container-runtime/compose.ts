@@ -94,16 +94,14 @@ async function executeCompose(context: Readonly<CommandExecutionContext>, input:
   return {engine: adapter.engine, file: input.file, passthrough: input.passthrough};
 }
 
-/** Production command host. This literal dynamic import is the only edge from this entrypoint
- *  into the Node adapter; core never names it. */
+/** The only edge from this entrypoint into the Node command host; core never names it. */
 const loadProductionCommandHost = async (): Promise<CommandHost> =>
   import("../adapters/node/node-command-host.ts").then(({createNodeCommandHost}) => createNodeCommandHost("compose"));
 
 /**
  * Creates the Compose helper command.
  *
- * @param options - The injected command host or a literal loader; defaults to the production
- * Node adapter.
+ * @param options - Injected command host or literal loader; defaults to the Node adapter.
  * @returns The typed `containers:compose` command object.
  */
 export function createComposeCommand(

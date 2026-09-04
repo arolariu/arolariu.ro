@@ -5,11 +5,12 @@
  *
  * @remarks
  * `AbstractMonorepoCommand` resolves its host from exactly one place: the `host` supplied at
- * construction, or one memoized call of the supplied `loadHost()`. It contains no
- * `import("...adapters...")` expression and no default host — every capability arrives through
- * the injected {@link CommandHost}. `loadWorkflow()`/`loadPresentation()` are awaited concurrently
- * only after a root or child scope exists; the presentation decision is computed before cleanup
- * drains, and `CommandCompletion.human`/`.json` are emitted only after cleanup has drained.
+ * construction, or one memoized call of the supplied `loadHost()`. It names no concrete
+ * infrastructure module in an import specifier, a dynamic import, or a type position, and it has
+ * no default host — every capability arrives through the injected {@link CommandHost}.
+ * `loadWorkflow()`/`loadPresentation()` are awaited concurrently only after a root or child scope
+ * exists; the presentation decision is computed before cleanup drains, and
+ * `CommandCompletion.human`/`.json` are emitted only after cleanup has drained.
  */
 
 import {Command, CommanderError} from "commander";
@@ -27,6 +28,7 @@ import {
   type CommandExecution,
   type CommandExecutionContext,
   type CommandFailure,
+  type CommandFailureKind,
   type CommandInvoker,
   type CommandPresentationMode,
 } from "./command-execution.ts";
@@ -54,34 +56,36 @@ type NormalizedFailure =
   | {readonly status: "failed"; readonly failure: CommandFailure; readonly exitCode: 1 | 2}
   | {readonly status: "cancelled"; readonly failure: CommandFailure; readonly exitCode: 130 | 143};
 
+const failedWith = (
+  kind: Exclude<CommandFailureKind, "cancelled">,
+  exitCode: 1 | 2,
+  message: string,
+  evidence: readonly string[] = [],
+  cause?: unknown,
+): NormalizedFailure => ({status: "failed", exitCode, failure: {kind, message, evidence, ...(cause === undefined ? {} : {cause})}});
+
+const cancelledWith = (exitCode: 130 | 143, message: string, evidence: readonly string[] = [], cause?: unknown): NormalizedFailure => ({
+  status: "cancelled",
+  exitCode,
+  failure: {kind: "cancelled", message, evidence, ...(cause === undefined ? {} : {cause})},
+});
+
 /** Classifies one thrown value into a normalized failure, never a success-shaped default. */
 function normalizeThrownFailure(error: unknown, signal?: AbortSignal): NormalizedFailure {
   if (error instanceof CommandInputError) {
-    return {status: "failed", exitCode: 2, failure: {kind: "usage", message: error.message, evidence: [], cause: error}};
+    return failedWith("usage", 2, error.message, [], error);
   }
   if (error instanceof CommandCancellation) {
-    return {status: "cancelled", exitCode: error.exitCode, failure: {kind: "cancelled", message: error.message, evidence: [], cause: error}};
+    return cancelledWith(error.exitCode, error.message, [], error);
   }
   if (isAbortError(error)) {
     const cancellation = signal?.aborted === true ? commandCancellationFromSignal(signal) : new CommandCancellation(error.message, 130);
-    return {
-      status: "cancelled",
-      exitCode: cancellation.exitCode,
-      failure: {kind: "cancelled", message: cancellation.message, evidence: [], cause: error},
-    };
+    return cancelledWith(cancellation.exitCode, cancellation.message, [], error);
   }
   if (error instanceof Error) {
-    return {
-      status: "failed",
-      exitCode: 1,
-      failure: {kind: "operational", message: error.message, evidence: describeCommandFailureEvidence(error), cause: error},
-    };
+    return failedWith("operational", 1, error.message, describeCommandFailureEvidence(error), error);
   }
-  return {
-    status: "failed",
-    exitCode: 1,
-    failure: {kind: "internal", message: `Command failed with a non-error value: ${String(error)}`, evidence: [], cause: error},
-  };
+  return failedWith("internal", 1, `Command failed with a non-error value: ${String(error)}`, [], error);
 }
 
 const cleanupEvidence = (failures: readonly CleanupFailure[]): readonly string[] =>
@@ -103,14 +107,7 @@ function mergeCleanupEvidence(base: NormalizedFailure, failures: readonly Cleanu
   return {...base, failure: {...base.failure, evidence: [...base.failure.evidence, ...cleanupEvidence(failures)]}};
 }
 
-function cleanupOnlyFailure(failures: readonly CleanupFailure[]): NormalizedFailure | undefined {
-  if (failures.length === 0) {
-    return undefined;
-  }
-  return {status: "failed", exitCode: 1, failure: {kind: "cleanup", message: "Command cleanup failed.", evidence: cleanupEvidence(failures)}};
-}
-
-/** Outcome of one business execution attempt, before cleanup and presentation run. */
+/** Outcome of one business execution attempt, before cleanup and presentation output run. */
 type ExecutionAttempt<TOutput> =
   | {readonly kind: "produced"; readonly completion: CommandCompletion<TOutput>}
   | {readonly kind: "failed"; readonly failure: NormalizedFailure};
@@ -158,7 +155,11 @@ export abstract class AbstractMonorepoCommand<TInput, TOutput, TFailure> impleme
       if (isCommanderHelpRequest(error)) {
         return {status: "help", exitCode: 0};
       }
-      return this.#normalizeParseFailure(parsePresenter, error);
+      if (error instanceof CommanderError) {
+        // Commander already rendered its own message and usage hint through the parse presenter.
+        return failedWith("usage", 2, error.message, [], error);
+      }
+      return this.#reportToParsePresenter(parsePresenter, normalizeThrownFailure(error));
     }
 
     let presentation: CommandPresentationMode;
@@ -168,9 +169,7 @@ export abstract class AbstractMonorepoCommand<TInput, TOutput, TFailure> impleme
       const factory = await host.loadRuntimeFactory(readVerboseFlag(input));
       runtime = await factory.createRoot({presentation, registerProcessSignals: true});
     } catch (error: unknown) {
-      const normalized = normalizeThrownFailure(error);
-      parsePresenter.fatal(formatCommandFailureDiagnostic(normalized.failure));
-      return normalized;
+      return this.#reportToParsePresenter(parsePresenter, normalizeThrownFailure(error));
     }
 
     return this.#runLifecycle({runtime, presentation}, input);
@@ -199,7 +198,7 @@ export abstract class AbstractMonorepoCommand<TInput, TOutput, TFailure> impleme
           ? await factory.createRoot(creationOptions)
           : await factory.createChild(options.parent, creationOptions);
     } catch (error: unknown) {
-      // No parse presenter exists yet, so the caller receives the normalized outcome only.
+      // No parse presenter exists on this path, so the caller receives the normalized outcome only.
       return normalizeThrownFailure(error);
     }
 
@@ -241,14 +240,9 @@ export abstract class AbstractMonorepoCommand<TInput, TOutput, TFailure> impleme
     return program;
   }
 
-  #normalizeParseFailure(parsePresenter: MonorepositoryLogger, error: unknown): CommandExecution<TOutput> {
-    if (error instanceof CommanderError) {
-      // Commander already rendered its own message and usage hint through the parse presenter.
-      return {status: "failed", exitCode: 2, failure: {kind: "usage", message: error.message, evidence: [], cause: error}};
-    }
-    const normalized = normalizeThrownFailure(error);
-    parsePresenter.fatal(formatCommandFailureDiagnostic(normalized.failure));
-    return normalized;
+  #reportToParsePresenter(parsePresenter: MonorepositoryLogger, failure: NormalizedFailure): NormalizedFailure {
+    parsePresenter.fatal(formatCommandFailureDiagnostic(failure.failure));
+    return failure;
   }
 
   async #runLifecycle(
@@ -260,40 +254,7 @@ export abstract class AbstractMonorepoCommand<TInput, TOutput, TFailure> impleme
     let attempt: ExecutionAttempt<TOutput>;
 
     try {
-      // No signal here: a caller signal already aborted before this invocation began must still
-      // let module loading and execution start normally; cancellation is observed once execution
-      // itself reaches the signal (through the workflow runner or the business runner).
-      const loaded = await runtime.tasks.parallel<
-        CommandWorkflowModuleDefinition<TInput, TOutput, TFailure> | CommandResultPresenterDefinition<TOutput, TFailure>
-      >([() => this.#specification.loadWorkflow(), () => this.#specification.loadPresentation()]);
-      // `TaskScheduler.parallel` is homogeneous over one `T`; these positional casts recover the
-      // exact type each task was authored to load.
-      const module = loaded[0] as CommandWorkflowModuleDefinition<TInput, TOutput, TFailure>;
-      const presentationModule = loaded[1] as CommandResultPresenterDefinition<TOutput, TFailure>;
-      const featureContext = module.createContext(input, context, parent);
-      const workflowResult = await module.runWorkflow(featureContext, {
-        monotonicNow: runtime.clock.monotonicNow,
-        signal: runtime.signal,
-        publishEvent: (event) => presentationModule.reportEvent?.(event, context),
-      });
-
-      if (workflowResult.kind === "interrupted") {
-        attempt = {
-          kind: "failed",
-          failure: {
-            status: "cancelled",
-            exitCode: workflowResult.exitCode,
-            failure: {kind: "cancelled", message: workflowResult.message, evidence: workflowResult.evidence},
-          },
-        };
-      } else {
-        const presentable: PresentableWorkflowExecutionResult<TOutput, TFailure> = workflowResult;
-        const decision = await presentationModule.present(presentable, context);
-        attempt =
-          decision.kind === "complete"
-            ? {kind: "produced", completion: decision.completion}
-            : {kind: "failed", failure: {status: "failed", exitCode: 1, failure: decision.failure}};
-      }
+      attempt = await this.#executeAndDecide(context, input, parent);
     } catch (error: unknown) {
       attempt = {kind: "failed", failure: normalizeThrownFailure(error, runtime.signal)};
     }
@@ -303,10 +264,8 @@ export abstract class AbstractMonorepoCommand<TInput, TOutput, TFailure> impleme
     if (attempt.kind === "failed") {
       return this.#reportFailure(context, mergeCleanupEvidence(attempt.failure, cleanupFailures));
     }
-
-    const cleanupFailure = cleanupOnlyFailure(cleanupFailures);
-    if (cleanupFailure !== undefined) {
-      return this.#reportFailure(context, cleanupFailure);
+    if (cleanupFailures.length > 0) {
+      return this.#reportFailure(context, failedWith("cleanup", 1, "Command cleanup failed.", cleanupEvidence(cleanupFailures)));
     }
 
     const presentationFailure = await this.#renderCompletion(attempt.completion, context);
@@ -315,6 +274,42 @@ export abstract class AbstractMonorepoCommand<TInput, TOutput, TFailure> impleme
     }
 
     return {status: "completed", value: attempt.completion.value, exitCode: attempt.completion.exitCode};
+  }
+
+  /** Loads the workflow and presentation modules, runs the workflow, then computes the decision. */
+  async #executeAndDecide(
+    context: Readonly<CommandExecutionContext>,
+    input: Readonly<TInput>,
+    parent?: Readonly<CommandExecutionContext>,
+  ): Promise<ExecutionAttempt<TOutput>> {
+    const {runtime} = context;
+    // No signal here: a caller signal already aborted before this invocation began must still let
+    // module loading and execution start normally; cancellation is observed once execution itself
+    // reaches the signal (through the workflow runner or the business runner).
+    const loaded = await runtime.tasks.parallel<
+      CommandWorkflowModuleDefinition<TInput, TOutput, TFailure> | CommandResultPresenterDefinition<TOutput, TFailure>
+    >([() => this.#specification.loadWorkflow(), () => this.#specification.loadPresentation()]);
+    // `TaskScheduler.parallel` is homogeneous over one `T`; these positional casts recover the
+    // exact type each task was authored to load.
+    const module = loaded[0] as CommandWorkflowModuleDefinition<TInput, TOutput, TFailure>;
+    const presentationModule = loaded[1] as CommandResultPresenterDefinition<TOutput, TFailure>;
+    const featureContext = module.createContext(input, context, parent);
+    const workflowResult = await module.runWorkflow(featureContext, {
+      monotonicNow: runtime.clock.monotonicNow,
+      signal: runtime.signal,
+      publishEvent: (event) => presentationModule.reportEvent?.(event, context),
+    });
+
+    if (workflowResult.kind === "interrupted") {
+      const {exitCode, message, evidence} = workflowResult;
+      return {kind: "failed", failure: cancelledWith(exitCode, message, evidence)};
+    }
+
+    const presentable: PresentableWorkflowExecutionResult<TOutput, TFailure> = workflowResult;
+    const decision = await presentationModule.present(presentable, context);
+    return decision.kind === "complete"
+      ? {kind: "produced", completion: decision.completion}
+      : {kind: "failed", failure: {status: "failed", exitCode: 1, failure: decision.failure}};
   }
 
   async #renderCompletion(
@@ -327,23 +322,16 @@ export abstract class AbstractMonorepoCommand<TInput, TOutput, TFailure> impleme
     }
 
     try {
-      if (presentation === "json") {
-        const {json} = completion;
-        if (json === undefined) {
-          return {
-            status: "failed",
-            exitCode: 1,
-            failure: {
-              kind: "internal",
-              message: `Command "${this.#specification.name}" selected JSON presentation without a JSON document.`,
-              evidence: [],
-            },
-          };
-        }
-        runtime.logger.json(json);
+      if (presentation !== "json") {
+        await completion.human?.(runtime.logger);
         return undefined;
       }
-      await completion.human?.(runtime.logger);
+      const {json} = completion;
+      if (json === undefined) {
+        const name = this.#specification.name;
+        return failedWith("internal", 1, `Command "${name}" selected JSON presentation without a JSON document.`);
+      }
+      runtime.logger.json(json);
       return undefined;
     } catch (error: unknown) {
       return normalizeThrownFailure(error, runtime.signal);

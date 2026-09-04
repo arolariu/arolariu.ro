@@ -7,16 +7,15 @@
  * `defineLazyCommand` builds a composed command directly from a {@link CommandSpecification}.
  * `defineCommand` adapts a simpler, eager {@link DirectCommandSpecification} — a command with no
  * separate feature workflow or reporter module — onto the same lazy contract, so every migrated
- * entrypoint exports the same `LazyMonorepoCommand` type regardless of which definition style it
- * used.
+ * entrypoint exports the same `LazyMonorepoCommand` type regardless of definition style.
  */
 
 import type {CommandRuntime} from "../../common/runtime.ts";
+import {runtimeCapabilityNames} from "../runtime/runtime-capability.ts";
 import {defineWorkflowModule} from "../workflow/workflow-composition.ts";
 import {succeededWorkflowExecution} from "../workflow/workflow-execution-result.ts";
-import type {CommandExecutionContext} from "./command-execution.ts";
 import {AbstractMonorepoCommand} from "./abstract-monorepo-command.ts";
-import {runtimeCapabilityNames} from "../runtime/runtime-capability.ts";
+import type {CommandExecutionContext} from "./command-execution.ts";
 import type {CommandConstructionOptions, CommandSpecification, DirectCommandSpecification} from "./command-specification.ts";
 
 /** The concrete command object every migrated script exports. */
@@ -42,16 +41,13 @@ export function defineLazyCommand<TInput, TOutput, TFailure>(
  * workflow, so the returned command keeps exactly three generics.
  *
  * @remarks
- * The generated workflow declares `runtimeCapabilities: runtimeCapabilityNames` — the **complete**
- * core capability set — because a direct command has not yet narrowed its context. That complete
- * set is explicit, tracked technical debt owned by each family's removal cohort: Task 4's
- * exact-subset rule applies only to composed-command entries, and the three pilots declare exact
- * subsets in Tasks 5–7.
+ * The generated workflow declares the **complete** core capability set because a direct command
+ * has not yet narrowed its context. That complete set is explicit, tracked technical debt owned by
+ * each family's removal cohort, not a policy exception.
  *
- * The per-invocation feature context and its typed input never leave this closure: each fresh
- * `loadWorkflow()`/`loadPresentation()` pair is keyed by the exact base
- * {@link CommandExecutionContext} object the lifecycle created for that invocation, so two
- * concurrent invocations of the same command never observe each other's state.
+ * The per-invocation feature context and its typed input never leave this closure: each derived
+ * context is keyed by the exact base {@link CommandExecutionContext} the lifecycle created for
+ * that invocation, so two concurrent invocations never observe each other's state.
  *
  * @returns The composed lazy command; its workflow never produces a failed decision, so its
  * failure generic is `never`.
@@ -60,7 +56,6 @@ export function defineCommand<TInput, TOutput, TRuntime extends CommandRuntime =
   specification: DirectCommandSpecification<TInput, TOutput, TRuntime>,
   options: Readonly<CommandConstructionOptions>,
 ): LazyMonorepoCommand<TInput, TOutput, never> {
-  /** Feature context derived for one invocation, keyed by that invocation's exact base context. */
   const featureContextByBaseContext = new WeakMap<CommandExecutionContext, CommandExecutionContext<TRuntime>>();
 
   const composedSpecification: CommandSpecification<TInput, TOutput, never> = {
@@ -76,7 +71,7 @@ export function defineCommand<TInput, TOutput, TRuntime extends CommandRuntime =
       defineWorkflowModule<TInput, TOutput, never, Readonly<{feature: CommandExecutionContext<TRuntime>; input: TInput}>>({
         specification: {
           name: specification.name,
-          execute: async (featureContext) => succeededWorkflowExecution(await specification.execute(featureContext.feature, featureContext.input)),
+          execute: async ({feature, input}) => succeededWorkflowExecution(await specification.execute(feature, input)),
         },
         runtimeCapabilities: runtimeCapabilityNames,
         createContext: (input, context, parent) => {
@@ -93,8 +88,7 @@ export function defineCommand<TInput, TOutput, TRuntime extends CommandRuntime =
         }
 
         const feature = featureContextByBaseContext.get(context) ?? (context as CommandExecutionContext<TRuntime>);
-        const completion = await specification.complete(result.output, feature);
-        return {kind: "complete", completion} as const;
+        return {kind: "complete", completion: await specification.complete(result.output, feature)} as const;
       },
     }),
   };

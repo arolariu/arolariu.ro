@@ -97,16 +97,14 @@ async function executeAspire(context: Readonly<CommandExecutionContext>, input: 
   return {engine: adapter.engine};
 }
 
-/** Production command host. This literal dynamic import is the only edge from this entrypoint
- *  into the Node adapter; core never names it. */
+/** The only edge from this entrypoint into the Node command host; core never names it. */
 const loadProductionCommandHost = async (): Promise<CommandHost> =>
   import("../adapters/node/node-command-host.ts").then(({createNodeCommandHost}) => createNodeCommandHost("aspire"));
 
 /**
  * Creates the Aspire AppHost startup command.
  *
- * @param options - The injected command host or a literal loader; defaults to the production
- * Node adapter.
+ * @param options - Injected command host or literal loader; defaults to the Node adapter.
  * @returns The typed `dev`/`aspire` command object.
  */
 export function createAspireCommand(

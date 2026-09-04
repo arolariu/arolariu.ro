@@ -6,9 +6,9 @@
  * @remarks
  * Owns the *shape* of one command invocation outcome: presentation mode, exit codes, JSON
  * conversion, execution/completion/context contracts, typed failure classification and its
- * bounded evidence, input validation errors, and argv normalization. Never touches Node's process,
- * filesystem, network, or timer APIs, and never imports an adapter: every capability arrives
- * through the injected {@link CommandRuntime} carried on {@link CommandExecutionContext}.
+ * bounded evidence, input validation errors, and argv normalization. It never touches Node's
+ * process, filesystem, network, or timer APIs: every capability arrives through the injected
+ * {@link CommandRuntime} carried on {@link CommandExecutionContext}.
  */
 
 import type {Command} from "commander";
@@ -29,21 +29,19 @@ export type JsonValue = string | number | boolean | null | readonly JsonValue[] 
 
 /** Everything one command execution observes about its own invocation. */
 export interface CommandExecutionContext<TRuntime extends CommandRuntime = CommandRuntime> {
-  /** Capabilities owned by this invocation. */
   readonly runtime: TRuntime;
-  /** Presentation mode selected for this invocation. */
   readonly presentation: CommandPresentationMode;
 }
 
-/** Deferred final presentation and business exit meaning of one completed command. */
+/**
+ * Deferred final presentation and business exit meaning of one completed command. `exitCode` is
+ * `0` when the business operation succeeded and `1` when it completed but reported failure;
+ * `human` renders only in human mode and `json` is serialized exactly once in JSON mode.
+ */
 export interface CommandCompletion<TOutput> {
-  /** `0` when the business operation succeeded, `1` when it completed but reported failure. */
   readonly exitCode: 0 | 1;
-  /** The command's typed output. */
   readonly value: TOutput;
-  /** Human presentation, invoked only in human mode. */
   readonly human?: (presenter: MonorepositoryLogger) => void | Promise<void>;
-  /** Machine-readable document, serialized exactly once in JSON mode. */
   readonly json?: JsonValue;
 }
 
@@ -56,25 +54,20 @@ export type CommandExecution<TOutput> =
 
 /** Narrow contract exposing only programmatic composition of one command. */
 export interface CommandInvoker<TInput, TOutput> {
-  /** Runs the command from typed input without argv parsing. */
   readonly invoke: (input: Readonly<TInput>, options?: Readonly<CommandInvocationOptions>) => Promise<CommandExecution<TOutput>>;
 }
 
 /** Classifies why one command invocation did not complete successfully. */
-type CommandFailureKind = "usage" | "operational" | "cleanup" | "cancelled" | "internal";
+export type CommandFailureKind = "usage" | "operational" | "cleanup" | "cancelled" | "internal";
 
 /** Failure kinds a feature presenter may produce: never a usage, cleanup, or cancellation outcome. */
-type FeatureCommandFailureKind = Exclude<CommandFailureKind, "usage" | "cleanup" | "cancelled">;
+export type FeatureCommandFailureKind = Exclude<CommandFailureKind, "usage" | "cleanup" | "cancelled">;
 
-/** Normalized, secret-free description of one command failure. */
+/** Normalized, secret-free description of one failure, with evidence ordered primary to cleanup. */
 export interface CommandFailure {
-  /** Failure classification used for exit mapping and diagnostics. */
   readonly kind: CommandFailureKind;
-  /** Human-readable failure message. */
   readonly message: string;
-  /** Bounded supporting detail lines, ordered from primary to cleanup evidence. */
   readonly evidence: readonly string[];
-  /** Original thrown value, preserved for programmatic classification. */
   readonly cause?: unknown;
 }
 
@@ -93,8 +86,6 @@ function isPlainJsonObject(value: unknown): value is Readonly<Record<string, unk
   return prototype === null || prototype === Object.prototype;
 }
 
-const isUnknownArray = (value: unknown): value is readonly unknown[] => Array.isArray(value);
-
 function describeUnsupportedJsonValue(value: unknown): string {
   if (value === undefined) {
     return "undefined";
@@ -110,10 +101,7 @@ function describeUnsupportedJsonValue(value: unknown): string {
 }
 
 function convertToJsonValue(value: unknown, ancestors: readonly object[], path: string): JsonValue {
-  if (value === null) {
-    return null;
-  }
-  if (typeof value === "string" || typeof value === "boolean") {
+  if (value === null || typeof value === "string" || typeof value === "boolean") {
     return value;
   }
   if (typeof value === "number") {
@@ -122,18 +110,20 @@ function convertToJsonValue(value: unknown, ancestors: readonly object[], path: 
     }
     return value;
   }
-  if (isUnknownArray(value)) {
-    if (ancestors.includes(value)) {
+
+  const rejectCycle = (candidate: object): readonly object[] => {
+    if (ancestors.includes(candidate)) {
       throw new TypeError(`Value at ${path} contains a circular reference and cannot be serialized.`);
     }
-    const nestedAncestors = [...ancestors, value];
-    return value.map((entry, index) => convertToJsonValue(entry, nestedAncestors, `${path}[${String(index)}]`));
+    return [...ancestors, candidate];
+  };
+
+  if (Array.isArray(value)) {
+    const nestedAncestors = rejectCycle(value);
+    return value.map((entry: unknown, index) => convertToJsonValue(entry, nestedAncestors, `${path}[${String(index)}]`));
   }
   if (isPlainJsonObject(value)) {
-    if (ancestors.includes(value)) {
-      throw new TypeError(`Value at ${path} contains a circular reference and cannot be serialized.`);
-    }
-    const nestedAncestors = [...ancestors, value];
+    const nestedAncestors = rejectCycle(value);
     const converted: Record<string, JsonValue> = {};
     for (const key of Object.keys(value)) {
       converted[key] = convertToJsonValue(value[key], nestedAncestors, `${path}.${key}`);
@@ -210,23 +200,17 @@ export function normalizeSlashArguments(argv: readonly string[], aliases?: Reado
   let afterDelimiter = false;
 
   for (const argument of argv) {
-    if (afterDelimiter) {
-      normalized.push(argument);
-      continue;
-    }
-    if (argument === "--") {
+    if (!afterDelimiter && argument === "--") {
       afterDelimiter = true;
-      normalized.push(argument);
-      continue;
     }
-    normalized.push(effectiveAliases[argument] ?? argument);
+    normalized.push(afterDelimiter ? argument : (effectiveAliases[argument] ?? argument));
   }
   return normalized;
 }
 
 /**
  * Immutable pre-normalization argv captured for exactly one Commander parser. Module-private on
- * purpose: `getInvocationArgv()` is the only way a command definition can read it.
+ * purpose: {@link getInvocationArgv} is the only way a command definition can read it.
  */
 const invocationArgvRegistry = new WeakMap<Command, readonly string[]>();
 
@@ -238,7 +222,7 @@ export function registerInvocationArgv(program: Command, argv: readonly string[]
 /**
  * Reads the immutable, pre-normalization argv captured for one fresh Commander parser.
  *
- * @throws When `program` was not registered by the command lifecycle for a live invocation.
+ * @throws When `program` was not created by the command lifecycle for a live invocation.
  */
 export function getInvocationArgv(program: Command): readonly string[] {
   const argv = invocationArgvRegistry.get(program);

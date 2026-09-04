@@ -1,17 +1,27 @@
 /**
- * @fileoverview Consumer test for the shared command lifecycle contract, plus lazy-loading
- * ordering assertions and the strict-TypeScript context-erasure proof unique to this module.
+ * @fileoverview Consumer test for the shared command lifecycle contract, plus the lazy-loading,
+ * feature-failure, interruption, and strict-TypeScript context-erasure assertions unique to the
+ * composed (non-direct) command shape.
  * @module scripts/core/command/lazy-monorepo-command.test
  */
 
 import {describe, expect, it} from "vitest";
 
-import {runCommandLifecycleContract} from "../../testing/contracts/command-lifecycle.contract.ts";
 import {buildCommandHost} from "../../testing/builders/command-host.builder.ts";
-import type {CommandHost} from "./command-specification.ts";
-import {defineLazyCommand, defineCommand, type LazyMonorepoCommand} from "./lazy-monorepo-command.ts";
+import {runCommandLifecycleContract} from "../../testing/contracts/command-lifecycle.contract.ts";
 import {defineWorkflowModule, type CommandWorkflowModuleDefinition} from "../workflow/workflow-composition.ts";
-import {succeededWorkflowExecution} from "../workflow/workflow-execution-result.ts";
+import {succeededWorkflowExecution, type WorkflowInterruptedDecision} from "../workflow/workflow-execution-result.ts";
+import type {FeatureCommandFailure, FeatureCommandFailureKind} from "./command-execution.ts";
+import type {
+  CommandHost,
+  CommandIdentityDefinition,
+  CommandInputDefinition,
+  CommandPresentationDecision,
+  CommandPresentationDefinition,
+  CommandSpecification,
+  CommandWorkflowLoadingDefinition,
+} from "./command-specification.ts";
+import {defineLazyCommand, type LazyMonorepoCommand} from "./lazy-monorepo-command.ts";
 
 interface FixtureInput {
   readonly verbose?: boolean;
@@ -22,31 +32,46 @@ interface FixtureRuntimeContext {
   readonly verbose: boolean;
 }
 
-function createComposedFixtureCommand(host: CommandHost): LazyMonorepoCommand<FixtureInput, string, never> {
-  return defineLazyCommand<FixtureInput, string, never>(
-    {
-      name: "fixture-composed",
-      description: "Composed fixture command.",
-      configure: (program) => {
-        program.option("--verbose");
-      },
-      decode: (program) => program.opts<FixtureInput>(),
-      loadWorkflow: async () =>
-        defineWorkflowModule<FixtureInput, string, never, FixtureRuntimeContext>({
-          specification: {name: "fixture-composed", execute: async () => succeededWorkflowExecution("ok")},
-          runtimeCapabilities: ["presenter"],
-          createContext: (input) => ({verbose: input.verbose === true}),
-        }),
-      loadPresentation: async () => ({
-        present: (result) =>
-          result.kind === "failed"
-            ? {kind: "fail" as const, failure: {kind: "operational" as const, message: "unreachable", evidence: []}}
-            : {kind: "complete" as const, completion: {exitCode: 0 as const, value: result.output}},
-      }),
-    },
-    {host},
-  );
-}
+type FixtureCommand = LazyMonorepoCommand<FixtureInput, string, FeatureCommandFailure>;
+
+const identity: CommandIdentityDefinition = {name: "fixture-composed", description: "Composed fixture command."};
+
+const input: CommandInputDefinition<FixtureInput> = {
+  configure: (program) => {
+    program.option("--verbose");
+  },
+  decode: (program) => program.opts<FixtureInput>(),
+};
+
+const workflowLoading: CommandWorkflowLoadingDefinition<FixtureInput, string, FeatureCommandFailure> = {
+  loadWorkflow: async () =>
+    defineWorkflowModule<FixtureInput, string, FeatureCommandFailure, FixtureRuntimeContext>({
+      specification: {name: "fixture-composed", execute: async () => succeededWorkflowExecution("ok")},
+      runtimeCapabilities: ["presenter"],
+      createContext: (decoded) => ({verbose: decoded.verbose === true}),
+    }),
+};
+
+/** Completes with the workflow output, optionally recording that the deferred output was emitted. */
+const completeWith = (output: string, onEmit?: () => void): CommandPresentationDecision<string> => ({
+  kind: "complete",
+  completion: {exitCode: 0, value: output, ...(onEmit === undefined ? {} : {human: onEmit})},
+});
+
+const presentation: CommandPresentationDefinition<string, FeatureCommandFailure> = {
+  loadPresentation: async () => ({
+    present: (result) => (result.kind === "failed" ? {kind: "fail", failure: result.failure} : completeWith(result.output)),
+  }),
+};
+
+const composedSpecification: CommandSpecification<FixtureInput, string, FeatureCommandFailure> = {
+  ...identity,
+  ...input,
+  ...workflowLoading,
+  ...presentation,
+};
+
+const createComposedFixtureCommand = (host: CommandHost): FixtureCommand => defineLazyCommand(composedSpecification, {host});
 
 runCommandLifecycleContract({
   label: "composed fixture command",
@@ -59,23 +84,16 @@ describe("LazyMonorepoCommand", () => {
   it("loads neither the workflow nor the presentation module on a help path", async () => {
     let workflowLoadCount = 0;
     let presentationLoadCount = 0;
-    const command = defineLazyCommand<Record<never, never>, string, never>(
+    const command = defineLazyCommand<FixtureInput, string, FeatureCommandFailure>(
       {
-        name: "fixture",
-        description: "Fixture command.",
-        configure: (program) => program.allowExcessArguments(false),
-        decode: () => ({}),
+        ...composedSpecification,
         loadWorkflow: async () => {
           workflowLoadCount += 1;
-          return {
-            runtimeCapabilities: ["presenter", "signal", "cleanup"],
-            createContext: (_input, context) => context.runtime,
-            runWorkflow: () => Promise.resolve({kind: "succeeded", output: "ok", evidence: [], durationMilliseconds: 0} as const),
-          };
+          return workflowLoading.loadWorkflow();
         },
         loadPresentation: async () => {
           presentationLoadCount += 1;
-          return {present: (result) => ({kind: "complete", completion: {exitCode: 0, value: result.kind === "failed" ? "" : result.output}})};
+          return presentation.loadPresentation();
         },
       },
       {host: buildCommandHost()},
@@ -86,39 +104,90 @@ describe("LazyMonorepoCommand", () => {
     expect(presentationLoadCount).toBe(0);
   });
 
-  it("decides presentation before cleanup and emits completion output only after it", async () => {
+  it("runs the loaded presentation module before cleanup and emits its completion output only after", async () => {
     const order: string[] = [];
-    const command = defineCommand<Record<never, never>, undefined>(
+    const command = defineLazyCommand<FixtureInput, string, FeatureCommandFailure>(
       {
-        name: "fixture",
-        description: "Fixture command.",
-        configure: () => undefined,
-        decode: () => ({}),
-        execute: async (context) => {
-          context.runtime.cleanup.register("resource", () => order.push("cleanup"));
-          order.push("present");
-          return undefined;
-        },
-        complete: () => ({
-          exitCode: 0,
-          value: undefined,
-          human: () => {
-            order.push("emit");
+        ...composedSpecification,
+        loadWorkflow: async () =>
+          defineWorkflowModule<FixtureInput, string, FeatureCommandFailure, FixtureRuntimeContext>({
+            specification: {name: "ordered", execute: async () => succeededWorkflowExecution("ok")},
+            runtimeCapabilities: ["presenter", "cleanup"],
+            createContext: (_decoded, context) => {
+              context.runtime.cleanup.register("resource", () => order.push("cleanup"));
+              return {verbose: false};
+            },
+          }),
+        loadPresentation: async () => ({
+          present: (result) => {
+            order.push("present");
+            return result.kind === "failed"
+              ? {kind: "fail", failure: result.failure}
+              : completeWith(result.output, () => {
+                  order.push("emit");
+                });
           },
         }),
       },
       {host: buildCommandHost()},
     );
 
-    await command.run([]);
+    await expect(command.run([])).resolves.toMatchObject({status: "completed"});
     expect(order).toEqual(["present", "cleanup", "emit"]);
+  });
+
+  it.each<FeatureCommandFailureKind>(["operational", "internal"])(
+    "maps a feature presenter's %s fail decision to exit code one, keeping the feature's own kind",
+    async (kind) => {
+      const failure: FeatureCommandFailure = {kind, message: "documentation tier missing", evidence: ["tier: reference"]};
+      const command = defineLazyCommand<FixtureInput, string, FeatureCommandFailure>(
+        {...composedSpecification, loadPresentation: async () => ({present: () => ({kind: "fail", failure})})},
+        {host: buildCommandHost()},
+      );
+
+      await expect(command.run([])).resolves.toEqual({status: "failed", exitCode: 1, failure});
+    },
+  );
+
+  it("maps an interrupted workflow result to a cancelled execution without consulting the presenter", async () => {
+    const interrupted: WorkflowInterruptedDecision = {
+      kind: "interrupted",
+      exitCode: 143,
+      message: "Terminated by SIGTERM.",
+      evidence: ["signal: SIGTERM"],
+    };
+    let presentCallCount = 0;
+    const command = defineLazyCommand<FixtureInput, string, FeatureCommandFailure>(
+      {
+        ...composedSpecification,
+        loadWorkflow: async () => ({
+          runtimeCapabilities: ["presenter"],
+          createContext: () => undefined,
+          runWorkflow: async () => ({...interrupted, durationMilliseconds: 4}),
+        }),
+        loadPresentation: async () => ({
+          present: (result) => {
+            presentCallCount += 1;
+            return completeWith(result.kind === "failed" ? "" : result.output);
+          },
+        }),
+      },
+      {host: buildCommandHost()},
+    );
+
+    await expect(command.run([])).resolves.toEqual({
+      status: "cancelled",
+      exitCode: 143,
+      failure: {kind: "cancelled", message: "Terminated by SIGTERM.", evidence: ["signal: SIGTERM"]},
+    });
+    expect(presentCallCount).toBe(0);
   });
 
   it("assigns a concrete workflow module to the erased contract and executes it through the lifecycle", async () => {
     const concreteModule = defineWorkflowModule<FixtureInput, string, never, FixtureRuntimeContext>({
       specification: {name: "erasure-fixture", execute: async () => succeededWorkflowExecution("erased-ok")},
       runtimeCapabilities: ["presenter"],
-      createContext: (input) => ({verbose: input.verbose === true}),
+      createContext: (decoded) => ({verbose: decoded.verbose === true}),
     });
 
     // Compile-time proof: a concrete `CommandWorkflowModuleDefinition<..., FixtureRuntimeContext>`
@@ -128,17 +197,10 @@ describe("LazyMonorepoCommand", () => {
 
     const command = defineLazyCommand<FixtureInput, string, never>(
       {
-        name: "erasure-fixture",
-        description: "Fixture command.",
-        configure: () => undefined,
-        decode: () => ({}),
+        ...identity,
+        ...input,
         loadWorkflow: async () => erasedModule,
-        loadPresentation: async () => ({
-          present: (result) =>
-            result.kind === "failed"
-              ? {kind: "fail" as const, failure: {kind: "operational" as const, message: "unreachable", evidence: []}}
-              : {kind: "complete" as const, completion: {exitCode: 0 as const, value: result.output}},
-        }),
+        loadPresentation: async () => ({present: (result) => completeWith(result.kind === "failed" ? "" : result.output)}),
       },
       {host: buildCommandHost()},
     );
