@@ -265,15 +265,23 @@ describe("end-to-end typed failures", () => {
     const started = new Promise<void>((resolveStarted) => {
       markStarted = resolveStarted;
     });
+    const files = fixtureFiles();
+    const jsonPath = join(reportDirectory, "newman-backend.json");
+    const junitPath = join(reportDirectory, "newman-backend.xml");
+    const summaryPath = join(reportDirectory, "newman-backend-summary.md");
     const runner = buildProgrammableProcessRunner(async (_request, options) => {
       markStarted?.();
+      // Newman writes reporter output before an abort is observed, so cleanup drains a raw token.
+      await files.createDirectory(reportDirectory, {recursive: true});
+      await files.writeText(jsonPath, JSON.stringify({run: {failures: [{assertion: `Token ${FAKE_TOKEN} must pass`}]}}));
+      await files.writeText(junitPath, `<testsuites name="newman"><testcase name="Auth test">${FAKE_TOKEN}</testcase></testsuites>`);
       await new Promise<void>((resolveCancelled) => {
         if (options.signal?.aborted === true) resolveCancelled();
         else options.signal?.addEventListener("abort", () => resolveCancelled(), {once: true});
       });
       return buildCancelledProcessExecutionResult();
     });
-    const pending = invokeEndToEnd(fixtureRuntime(runner, withToken), {target: "backend"}, controller.signal);
+    const pending = invokeEndToEnd(fixtureRuntime(runner, withToken, {files}), {target: "backend"}, controller.signal);
     await started;
     controller.abort(new CommandCancellation("Terminated by test signal.", 143));
     expect(await pending).toMatchObject({
@@ -281,6 +289,12 @@ describe("end-to-end typed failures", () => {
       exitCode: 143,
       failure: {kind: "cancelled", message: "Terminated by test signal."},
     });
+    // Cleanup drains during this invocation's lifecycle, so every retained artifact is already safe.
+    for (const path of [jsonPath, junitPath, summaryPath]) {
+      const content = await files.readText(path);
+      expect(content).not.toContain(FAKE_TOKEN);
+      expect(content).toContain("[REDACTED]");
+    }
   });
 
   it("rejects an invalid programmatic target as a usage failure before any Newman invocation", async () => {
