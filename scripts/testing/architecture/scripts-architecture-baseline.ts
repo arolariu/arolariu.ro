@@ -69,15 +69,18 @@ export const approvedScriptsArchitectureBaseline = {
 } as const satisfies ScriptsArchitectureBaselineDefinition;
 
 /**
- * Cohort 1 high-water ceiling, raised once from 76,375 to 76,750 by explicit plan-owner ruling in
- * Task 6; interim architecture investment may raise the observed total to it, no later Cohort 1
- * task may raise it again, and Task 9 lowers the active value below it permanently.
+ * Cohort 1 high-water ceiling: raised from 76,375 to 76,750 by Task 6 plan-owner ruling, then
+ * amended to 77,000 by Task 7 plan-owner ruling after an audit found neither 76,125 nor 76,750
+ * attainable. No later Cohort 1 task may raise it again, and Task 9 lowers the active value below
+ * it permanently. Only the 38 lines from 76,962 (Task 7's measured total) to 77,000 are reserved,
+ * for Task 7 review fixes only — not new scope — and the final Cohort 1 target stays 75,750.
  */
-export const cohortOneHighWaterMaintainedLineCount = 76_750;
+export const cohortOneHighWaterMaintainedLineCount = 77_000;
 
 /**
- * The currently enforced Cohort 1 maintained-line checkpoint. Each Cohort 1 task updates this
- * value atomically with its own change; it may never exceed
- * {@link cohortOneHighWaterMaintainedLineCount}.
+ * The currently enforced Cohort 1 maintained-line checkpoint, plan-owner amended through Task 7;
+ * each Cohort 1 task updates this value atomically with its own change, and it may never exceed
+ * {@link cohortOneHighWaterMaintainedLineCount} — see that constant's remarks for the amendment
+ * history and its Task-7-review-fixes-only headroom.
  */
-export const cohortOneActiveMaintainedLineCount = 76_750;
+export const cohortOneActiveMaintainedLineCount = 77_000;
