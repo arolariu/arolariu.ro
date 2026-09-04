@@ -69,9 +69,9 @@ export const approvedScriptsArchitectureBaseline = {
 } as const satisfies ScriptsArchitectureBaselineDefinition;
 
 /**
- * Immutable Cohort 1 high-water ceiling. Interim architecture investment may raise the observed
- * total to this value; no Cohort 1 task may raise it further, and Task 9 lowers the active value
- * below it permanently.
+ * Cohort 1 high-water ceiling, raised once from 76,375 to 76,750 by explicit plan-owner ruling in
+ * Task 6; interim architecture investment may raise the observed total to it, no later Cohort 1
+ * task may raise it again, and Task 9 lowers the active value below it permanently.
  */
 export const cohortOneHighWaterMaintainedLineCount = 76_750;
 

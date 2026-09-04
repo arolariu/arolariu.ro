@@ -179,12 +179,11 @@ export const scriptEntrypointDefinitions = [
     packageScriptNames: ["test:e2e", "test:e2e:backend", "test:e2e:cv", "test:e2e:frontend"],
   },
   {
-    sourcePath: "scripts/update-exchange-rates.ts",
+    sourcePath: "scripts/features/exchange-rates/command.ts",
     hostKind: "commander",
     role: "public-command",
-    architectureModel: "legacy-command",
-    removalCohort: 1,
-    exportedCommandName: "updateExchangeRatesCommand",
+    architectureModel: "composed-command",
+    exportedCommandName: "exchangeRateUpdateCommand",
     packageScriptNames: [],
   },
   {

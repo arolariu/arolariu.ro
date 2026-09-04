@@ -14,7 +14,7 @@
  *
  * **Rate Source:**
  * Rates are yearly averages sourced from BNR (National Bank of Romania) / ECB data.
- * The CSV file is updated once per year via `scripts/update-exchange-rates.ts`.
+ * The CSV file is updated once per year via `scripts/features/exchange-rates/command.ts`.
  *
  * @example
  * ```typescript

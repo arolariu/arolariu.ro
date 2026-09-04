@@ -87,10 +87,14 @@ describe("docs-assemble lazy loading structure", () => {
 
   it("keeps the feature reporter out of every other production module", () => {
     const sourceFiles = readProductionScriptSourceFiles();
+    // A feature reporter may be named only by the sibling `command.ts` that lazily loads it.
     const importers = [...sourceFiles]
-      .filter(([sourcePath]) => sourcePath !== commandSourcePath)
-      .filter(([path, text]) => collectTypeScriptModuleReferences(text, path).references.some((r) => r.specifier.endsWith("/reporter.ts")))
-      .map(([sourcePath]) => sourcePath);
+      .filter(([path]) => !/^scripts\/features\/[^/]+\/command\.ts$/u.test(path))
+      .flatMap(([path, text]) =>
+        collectTypeScriptModuleReferences(text, path)
+          .references.filter(({specifier}) => specifier.endsWith("/reporter.ts"))
+          .map(({specifier}) => ({path, specifier})),
+      );
 
     expect(importers).toEqual([]);
     expect([...sourceFiles.keys()]).toEqual(expect.arrayContaining([reporterSourcePath, workflowSourcePath]));

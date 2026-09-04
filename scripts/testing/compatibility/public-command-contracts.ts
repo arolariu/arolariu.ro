@@ -127,8 +127,12 @@ export const publicCommandBehaviorEvidenceDefinitions = [
     characterizationGaps: [],
   },
   {
-    sourcePath: "scripts/update-exchange-rates.ts",
-    behaviorTestPaths: ["scripts/update-exchange-rates.test.ts"],
+    sourcePath: "scripts/features/exchange-rates/command.ts",
+    behaviorTestPaths: [
+      "scripts/features/exchange-rates/workflow.test.ts",
+      "scripts/features/exchange-rates/input.test.ts",
+      "scripts/features/exchange-rates/rate-csv.test.ts",
+    ],
     characterizationGaps: [],
   },
   {

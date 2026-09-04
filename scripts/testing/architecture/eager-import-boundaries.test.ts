@@ -22,6 +22,7 @@ import {describe, expect, it} from "vitest";
 
 import {runtimeCapabilityNames, type RuntimeCapabilityName} from "../../core/runtime/runtime-capability.ts";
 import {documentationAssemblyWorkflowModule} from "../../features/documentation/workflow.ts";
+import {exchangeRateUpdateWorkflowModule} from "../../features/exchange-rates/workflow.ts";
 import {scriptEntrypointDefinitions} from "./script-entrypoint-definitions.ts";
 import {readProductionScriptSourceFiles} from "./script-source-files.ts";
 import {buildScriptSourceGraph, collectReachableScriptSourcePaths, type ScriptSourceGraphDefinition} from "./script-source-graph.ts";
@@ -60,6 +61,7 @@ const runtimeCapabilityContextTypeNames: ReadonlyMap<string, readonly RuntimeCap
 /** Every migrated composed command's declared capability set, keyed by its entrypoint path. */
 const composedCommandCapabilityDeclarations: ReadonlyMap<string, readonly RuntimeCapabilityName[]> = new Map([
   ["scripts/features/documentation/command.ts", documentationAssemblyWorkflowModule.runtimeCapabilities],
+  ["scripts/features/exchange-rates/command.ts", exchangeRateUpdateWorkflowModule.runtimeCapabilities],
 ]);
 
 /** One forbidden eager edge, attributed to the root whose graph reached it. */
@@ -199,6 +201,9 @@ describe("eager import boundaries", () => {
 
     expect([...composedCommandCapabilityDeclarations.keys()].toSorted()).toEqual(composedCommandEntrypointSourcePaths);
     expect(documentationAssemblyWorkflowModule.runtimeCapabilities).toEqual(["presenter", "signal", "cleanup", "files", "runner", "tasks"]);
+    // The exchange-rate feature never spawns a child process, so `runner` must stay undeclared.
+    const rateCapabilities = ["presenter", "signal", "cleanup", "files", "http", "clock", "environment"];
+    expect(exchangeRateUpdateWorkflowModule.runtimeCapabilities).toEqual(rateCapabilities);
     for (const [sourcePath, capabilities] of composedCommandCapabilityDeclarations) {
       const workflowSourcePath = sourcePath.replace(/command\.ts$/u, "workflow.ts");
       const workflowSource = sourceFiles.get(workflowSourcePath);
