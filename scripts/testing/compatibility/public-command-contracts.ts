@@ -122,8 +122,13 @@ export const publicCommandBehaviorEvidenceDefinitions = [
     characterizationGaps: [],
   },
   {
-    sourcePath: "scripts/test-e2e.ts",
-    behaviorTestPaths: ["scripts/test-e2e.test.ts"],
+    sourcePath: "scripts/features/end-to-end/command.ts",
+    behaviorTestPaths: [
+      "scripts/features/end-to-end/command.test.ts",
+      "scripts/features/end-to-end/workflow.test.ts",
+      "scripts/features/end-to-end/report-cleanup.test.ts",
+      "scripts/features/end-to-end/redaction.test.ts",
+    ],
     characterizationGaps: [],
   },
   {

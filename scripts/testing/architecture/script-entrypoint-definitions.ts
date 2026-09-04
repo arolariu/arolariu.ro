@@ -34,8 +34,8 @@ interface ScriptEntrypointDefinition {
   readonly architectureModel: ScriptEntrypointArchitectureModel;
   /**
    * Cohort that removes this entrypoint's non-composed architecture; required on every
-   * non-`composed-command` entry and forbidden on a `composed-command` one. `1` is legal while
-   * this cohort runs, because its three pilots are still legacy.
+   * non-`composed-command` entry and forbidden on a `composed-command` one. Cohort 1 has migrated
+   * all three of its pilots, so `1` is no longer carried by any entry.
    */
   readonly removalCohort?: 1 | 2 | 3 | 4 | 5 | 6 | 7;
   /** Exported Commander command singleton name, when the entrypoint hosts one. */
@@ -170,12 +170,11 @@ export const scriptEntrypointDefinitions = [
     packageScriptNames: ["status"],
   },
   {
-    sourcePath: "scripts/test-e2e.ts",
+    sourcePath: "scripts/features/end-to-end/command.ts",
     hostKind: "commander",
     role: "public-command",
-    architectureModel: "legacy-command",
-    removalCohort: 1,
-    exportedCommandName: "e2eCommand",
+    architectureModel: "composed-command",
+    exportedCommandName: "endToEndCommand",
     packageScriptNames: ["test:e2e", "test:e2e:backend", "test:e2e:cv", "test:e2e:frontend"],
   },
   {

@@ -147,7 +147,7 @@ describe("module structure policy", () => {
       "scripts/generate.ts legacy-command 4",
       "scripts/setup.ts legacy-command 5",
       "scripts/status.ts legacy-command 3",
-      "scripts/test-e2e.ts legacy-command 1",
+      "scripts/features/end-to-end/command.ts composed-command none",
       "scripts/features/exchange-rates/command.ts composed-command none",
       "scripts/inspection/aggregate-worker.ts legacy-command 2",
       "scripts/inspection/workspace.worker.ts legacy-command 2",

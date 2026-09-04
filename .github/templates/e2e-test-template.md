@@ -103,4 +103,4 @@ $CV_LOG_TAIL
 2. Validate backend health first; infrastructure failures can cascade into all targets.
 3. Compare failed assertions with historical flaky routes before escalating.
 4. Re-run the workflow with the same targets to confirm deterministic failure.
-5. Reproduce locally using `node scripts/test-e2e.ts <target>` and matching environment profile.
+5. Reproduce locally using `node scripts/features/end-to-end/command.ts <target>` and matching environment profile.

@@ -14,7 +14,6 @@
  * or the prompt provider.
  */
 
-import {readFileSync} from "node:fs";
 import {join} from "node:path";
 import {describe, expect, it} from "vitest";
 
@@ -22,16 +21,15 @@ import type {NodeRuntimeCapabilityLoaders} from "../../adapters/node/node-lazy-c
 import {createNodeRuntimeScope} from "../../adapters/node/node-runtime-scope.ts";
 import type {CommandExecutionContext} from "../../core/command/command-execution.ts";
 import type {CommandHost, PresentableWorkflowExecutionResult} from "../../core/command/command-specification.ts";
-import {defineLazyCommand} from "../../core/command/lazy-monorepo-command.ts";
 import {CommandCancellation} from "../../core/runtime/cancellation.ts";
 import {FileSystemError, type Clock, type FileSystem, type HttpRequest} from "../../core/runtime/runtime-capability.ts";
 import type {RuntimeExecutionContext} from "../../core/runtime/runtime-execution-context.ts";
 import type {WorkflowExecutionResult} from "../../core/workflow/workflow-execution-result.ts";
-import {collectTypeScriptModuleReferences} from "../../testing/architecture/typescript-module-analysis.ts";
 import {buildControlledClock, type ControlledClock} from "../../testing/builders/clock.builder.ts";
 import {buildCommandHost} from "../../testing/builders/command-host.builder.ts";
 import {buildRuntimeExecutionContext} from "../../testing/builders/runtime-context.builder.ts";
 import {runCommandLifecycleContract} from "../../testing/contracts/command-lifecycle.contract.ts";
+import {runLazyCommandStructureContract} from "../../testing/contracts/lazy-command-structure.contract.ts";
 import {createMemoryFileSystem} from "../../testing/fixtures/memory-filesystem.fixture.ts";
 import {buildQueuedHttpClient, createHttpResponse} from "../../testing/fixtures/network.fixture.ts";
 import {repositoryFixtureRoot} from "../../testing/fixtures/repository.fixture.ts";
@@ -46,7 +44,6 @@ import {exchangeRateUpdateWorkflowModule, type ExchangeRateResult, type Exchange
 /** One workflow decision, before the lifecycle turns it into a command execution. */
 type RateWorkflowResult = WorkflowExecutionResult<ExchangeRateResult, ExchangeRateUpdateFailure>;
 
-const commandSourcePath = "scripts/features/exchange-rates/command.ts";
 const csvPath = join(repositoryFixtureRoot, "sites", "arolariu.ro", "public", "data", "exchange-rates.csv");
 
 /** Builds a schema-valid Frankfurter payload carrying the supplied daily rates. */
@@ -113,6 +110,14 @@ runCommandLifecycleContract({
   createCommand: createContractCommand,
   createInput: () => ({fromYear: 2024, toYear: 2024}),
   successArguments: ["--year", "2024"],
+});
+
+runLazyCommandStructureContract({
+  label: "update-exchange-rates",
+  commandSourcePath: "scripts/features/exchange-rates/command.ts",
+  workflowTypeNames: ["ExchangeRateResult", "ExchangeRateUpdateFailure"],
+  metadata: exchangeRateCommandMetadata,
+  decode: decodeExchangeRateInput,
 });
 
 describe("exchange rate command lifecycle", () => {
@@ -317,47 +322,6 @@ describe("exchange rate reporting", () => {
 });
 
 describe("exchange rate lazy loading structure", () => {
-  it("reaches the reporter only through loadPresentation and the workflow only through loadWorkflow", () => {
-    const source = readFileSync(commandSourcePath, "utf8");
-    const {references} = collectTypeScriptModuleReferences(source, commandSourcePath);
-    const lines = source.split("\n");
-
-    expect(references.filter(({specifier}) => specifier === "./reporter.ts")).toEqual([
-      {specifier: "./reporter.ts", importedNames: ["*"], referenceKind: "dynamic-import", typeOnly: false},
-    ]);
-    expect(references.filter(({specifier}) => specifier === "./workflow.ts")).toEqual([
-      {
-        specifier: "./workflow.ts",
-        importedNames: ["ExchangeRateResult", "ExchangeRateUpdateFailure"],
-        referenceKind: "import",
-        typeOnly: true,
-      },
-      {specifier: "./workflow.ts", importedNames: ["*"], referenceKind: "dynamic-import", typeOnly: false},
-    ]);
-    expect(lines.filter((line) => line.includes('import("./reporter.ts")'))).toEqual([expect.stringContaining("loadPresentation")]);
-    expect(lines.filter((line) => line.includes('import("./workflow.ts")'))).toEqual([expect.stringContaining("loadWorkflow")]);
-  });
-
-  it("loads neither the workflow nor the reporter on the help path", async () => {
-    const loaded: string[] = [];
-    const fail = (module: string) => (): never => {
-      loaded.push(module);
-      throw new Error(`The ${module} must never load on the help path.`);
-    };
-    const specification = {
-      ...exchangeRateCommandMetadata,
-      decode: decodeExchangeRateInput,
-      loadWorkflow: fail("workflow"),
-      loadPresentation: fail("reporter"),
-    };
-
-    await expect(defineLazyCommand(specification, {host: buildCommandHost()}).run(["--help"])).resolves.toEqual({
-      status: "help",
-      exitCode: 0,
-    });
-    expect(loaded).toEqual([]);
-  });
-
   it("never resolves the process runner or the prompt provider during a full Node-scope run", async () => {
     const resolved: string[] = [];
     const rejectLoader = (capability: string) => (): never => {

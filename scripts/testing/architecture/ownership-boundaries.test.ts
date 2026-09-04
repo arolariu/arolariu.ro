@@ -16,6 +16,7 @@ import {describe, expect, it} from "vitest";
 
 import {readProductionScriptSourceFiles} from "./script-source-files.ts";
 import {buildScriptSourceGraph, collectReachableScriptSourcePaths, type ScriptSourceGraphDefinition} from "./script-source-graph.ts";
+import {collectTypeScriptModuleReferences} from "./typescript-module-analysis.ts";
 
 /** Module families no `scripts/core/**` module may reach on any edge. */
 const isForbiddenCoreTarget = (candidate: string): boolean =>
@@ -39,6 +40,10 @@ const inspectionOwnershipSourcePaths = [
   "scripts/inspection/runtime-capability.ts",
   "scripts/inspection/runtime-capability.test.ts",
 ] as const;
+
+/** A feature reporter may be named only by the sibling `command.ts` that lazily loads it. */
+const isOwnReporterEdge = (sourcePath: string, specifier: string): boolean =>
+  /^scripts\/features\/[^/]+\/command\.ts$/u.test(sourcePath) && specifier === "./reporter.ts";
 
 /** One forbidden ownership edge and the module that owns it. */
 interface OwnershipViolation {
@@ -143,6 +148,26 @@ describe("adapter ownership", () => {
 
     expect(collectOwnershipViolations(graph, roots, "all", "transitive", isForbiddenAdapterTarget)).toEqual([]);
     expect(collectOwnershipViolations(graph, roots, "runtime", "direct", isForeignAdapterRuntimeTarget)).toEqual([]);
+  });
+});
+
+describe("feature ownership", () => {
+  it("lets only a feature's own sibling command name its reporter, and never another feature's", () => {
+    const sourceFiles = readProductionScriptSourceFiles();
+    const importers = [...sourceFiles].flatMap(([sourcePath, sourceText]) =>
+      collectTypeScriptModuleReferences(sourceText, sourcePath)
+        .references.filter(({specifier}) => specifier.endsWith("/reporter.ts") && !isOwnReporterEdge(sourcePath, specifier))
+        .map(({specifier}) => ({sourcePath, specifier})),
+    );
+
+    expect(importers).toEqual([]);
+    expect([...sourceFiles.keys()].filter((sourcePath) => /^scripts\/features\/[^/]+\/reporter\.ts$/u.test(sourcePath))).toHaveLength(3);
+  });
+
+  it("rejects a command that names a sibling feature's reporter through any specifier shape", () => {
+    expect(isOwnReporterEdge("scripts/features/end-to-end/command.ts", "./reporter.ts")).toBe(true);
+    expect(isOwnReporterEdge("scripts/features/end-to-end/command.ts", "../documentation/reporter.ts")).toBe(false);
+    expect(isOwnReporterEdge("scripts/features/end-to-end/workflow.ts", "./reporter.ts")).toBe(false);
   });
 });
 

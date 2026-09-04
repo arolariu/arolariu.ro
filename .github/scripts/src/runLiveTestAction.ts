@@ -362,7 +362,7 @@ function generateCompactIssueBody(
   body += "## 🔍 Next Steps\n\n";
   body += "1. Open workflow artifacts and inspect `newman-*.xml`, `newman-*-summary.md`, and `e2e-*.log`\n";
   body += "2. Inspect matrix job logs for target-specific stack traces and assertion errors\n";
-  body += "3. Reproduce locally with `node scripts/test-e2e.ts <target>`\n";
+  body += "3. Reproduce locally with `node scripts/features/end-to-end/command.ts <target>`\n";
 
   return body;
 }

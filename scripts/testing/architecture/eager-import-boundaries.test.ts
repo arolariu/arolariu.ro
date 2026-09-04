@@ -22,6 +22,7 @@ import {describe, expect, it} from "vitest";
 
 import {runtimeCapabilityNames, type RuntimeCapabilityName} from "../../core/runtime/runtime-capability.ts";
 import {documentationAssemblyWorkflowModule} from "../../features/documentation/workflow.ts";
+import {endToEndWorkflowModule} from "../../features/end-to-end/workflow.ts";
 import {exchangeRateUpdateWorkflowModule} from "../../features/exchange-rates/workflow.ts";
 import {scriptEntrypointDefinitions} from "./script-entrypoint-definitions.ts";
 import {readProductionScriptSourceFiles} from "./script-source-files.ts";
@@ -61,6 +62,7 @@ const runtimeCapabilityContextTypeNames: ReadonlyMap<string, readonly RuntimeCap
 /** Every migrated composed command's declared capability set, keyed by its entrypoint path. */
 const composedCommandCapabilityDeclarations: ReadonlyMap<string, readonly RuntimeCapabilityName[]> = new Map([
   ["scripts/features/documentation/command.ts", documentationAssemblyWorkflowModule.runtimeCapabilities],
+  ["scripts/features/end-to-end/command.ts", endToEndWorkflowModule.runtimeCapabilities],
   ["scripts/features/exchange-rates/command.ts", exchangeRateUpdateWorkflowModule.runtimeCapabilities],
 ]);
 
@@ -201,6 +203,9 @@ describe("eager import boundaries", () => {
 
     expect([...composedCommandCapabilityDeclarations.keys()].toSorted()).toEqual(composedCommandEntrypointSourcePaths);
     expect(documentationAssemblyWorkflowModule.runtimeCapabilities).toEqual(["presenter", "signal", "cleanup", "files", "runner", "tasks"]);
+    // The end-to-end feature runs its targets one at a time, so `tasks` must stay undeclared.
+    const endToEndCapabilities = ["presenter", "signal", "cleanup", "files", "runner", "environment"];
+    expect(endToEndWorkflowModule.runtimeCapabilities).toEqual(endToEndCapabilities);
     // The exchange-rate feature never spawns a child process, so `runner` must stay undeclared.
     const rateCapabilities = ["presenter", "signal", "cleanup", "files", "http", "clock", "environment"];
     expect(exchangeRateUpdateWorkflowModule.runtimeCapabilities).toEqual(rateCapabilities);
