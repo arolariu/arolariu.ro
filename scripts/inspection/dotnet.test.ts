@@ -9,7 +9,9 @@ import {tmpdir} from "node:os";
 import {dirname, join, resolve} from "node:path";
 import {afterEach, describe, expect, it, vi} from "vitest";
 
-import type {ProcessEnvironment, ProcessOutcome, ProcessRequest, ProcessRunner} from "../common/runner.ts";
+import type {ProcessEnvironment, ProcessExecutionRequest} from "../core/process/process-execution-request.ts";
+import type {ProcessExecutionResult} from "../core/process/process-execution-result.ts";
+import type {ProcessRunner} from "../core/process/process-runner.ts";
 import {nodeFileSystem} from "../common/runtime.node.ts";
 import {asReadOnlyFileSystem, DefaultTaskScheduler, type Clock, type RuntimeEnvironment} from "../common/runtime.ts";
 import {createRepositoryPaths, type RepositoryPaths} from "../common/repository-paths.ts";
@@ -19,27 +21,27 @@ import {createInspectionProbeRunner} from "./probes.ts";
 const fixtureRoots: string[] = [];
 const APPHOST_PROJECT = "tooling/AppHost/AppHost.csproj";
 
-const DOTNET_VERSION = {command: "dotnet", args: ["--version"]} as const satisfies ProcessRequest;
-const DOTNET_SDKS = {command: "dotnet", args: ["--list-sdks"]} as const satisfies ProcessRequest;
-const DOTNET_INFO = {command: "dotnet", args: ["--info"]} as const satisfies ProcessRequest;
-const DOTNET_WORKLOADS = {command: "dotnet", args: ["workload", "list"]} as const satisfies ProcessRequest;
+const DOTNET_VERSION = {command: "dotnet", args: ["--version"]} as const satisfies ProcessExecutionRequest;
+const DOTNET_SDKS = {command: "dotnet", args: ["--list-sdks"]} as const satisfies ProcessExecutionRequest;
+const DOTNET_INFO = {command: "dotnet", args: ["--info"]} as const satisfies ProcessExecutionRequest;
+const DOTNET_WORKLOADS = {command: "dotnet", args: ["workload", "list"]} as const satisfies ProcessExecutionRequest;
 const DOTNET_NUGET = {
   command: "dotnet",
   args: ["nuget", "locals", "global-packages", "--list"],
-} as const satisfies ProcessRequest;
-const DOTNET_TOOLS = {command: "dotnet", args: ["tool", "list", "--local"]} as const satisfies ProcessRequest;
+} as const satisfies ProcessExecutionRequest;
+const DOTNET_TOOLS = {command: "dotnet", args: ["tool", "list", "--local"]} as const satisfies ProcessExecutionRequest;
 const DOTNET_CERTIFICATE = {
   command: "dotnet",
   args: ["dev-certs", "https", "--check"],
-} as const satisfies ProcessRequest;
+} as const satisfies ProcessExecutionRequest;
 const DOTNET_CERTIFICATE_TRUST = {
   command: "dotnet",
   args: ["dev-certs", "https", "--check", "--trust"],
-} as const satisfies ProcessRequest;
+} as const satisfies ProcessExecutionRequest;
 const DOTNET_USER_SECRETS = {
   command: "dotnet",
   args: ["user-secrets", "list", "--json", "--project", APPHOST_PROJECT],
-} as const satisfies ProcessRequest;
+} as const satisfies ProcessExecutionRequest;
 const DOTNET_ENVIRONMENT = {
   DOTNET_ADD_GLOBAL_TOOLS_TO_PATH: "false",
   DOTNET_CLI_TELEMETRY_OPTOUT: "true",
@@ -50,7 +52,7 @@ const DOTNET_ENVIRONMENT = {
   DOTNET_SKIP_WORKLOAD_INTEGRITY_CHECK: "true",
 } as const;
 
-/** Legacy-shaped fixture description translated into one typed {@link ProcessOutcome}. */
+/** Legacy-shaped fixture description translated into one typed {@link ProcessExecutionResult}. */
 interface ProcessOutcomeFixture {
   readonly code?: number;
   readonly stdout?: string;
@@ -62,13 +64,13 @@ interface ProcessOutcomeFixture {
 }
 
 /**
- * Builds one typed {@link ProcessOutcome} from a fixture description, so every suite keeps naming
+ * Builds one typed {@link ProcessExecutionResult} from a fixture description, so every suite keeps naming
  * the exact spawn/timeout/signal/exit classification it exercises.
  *
  * @param patch - Fixture description of the outcome under test.
  * @returns The equivalent typed process outcome.
  */
-function commandResult(patch: ProcessOutcomeFixture = {}): ProcessOutcome {
+function commandResult(patch: ProcessOutcomeFixture = {}): ProcessExecutionResult {
   const output = {stdout: patch.stdout ?? "", stderr: patch.stderr ?? "", durationMs: patch.durationMs ?? 1};
   if (patch.spawnError !== undefined) {
     return {kind: "spawn-failed", message: patch.spawnError, ...output};
@@ -122,7 +124,7 @@ function environmentFor(platform: NodeJS.Platform, variables: ProcessEnvironment
   };
 }
 
-function commandKey(command: Readonly<ProcessRequest>, cwd?: string): string {
+function commandKey(command: Readonly<ProcessExecutionRequest>, cwd?: string): string {
   return `${cwd ?? ""}\u0000${command.command}\u0000${JSON.stringify(command.args)}`;
 }
 
@@ -183,7 +185,7 @@ interface DotnetFixture {
   readonly root: string;
   readonly paths: RepositoryPaths;
   readonly run: ReturnType<typeof vi.fn<ProcessRunner["run"]>>;
-  readonly setResponse: (command: Readonly<ProcessRequest>, result: ProcessOutcome) => void;
+  readonly setResponse: (command: Readonly<ProcessExecutionRequest>, result: ProcessExecutionResult) => void;
   readonly provider: ReturnType<typeof createDotnetProvider>;
 }
 
@@ -208,8 +210,8 @@ async function createDotnetFixture(platform: NodeJS.Platform = "win32"): Promise
     ),
   ]);
 
-  const responses = new Map<string, ProcessOutcome>();
-  const setResponse = (command: Readonly<ProcessRequest>, result: ProcessOutcome): void => {
+  const responses = new Map<string, ProcessExecutionResult>();
+  const setResponse = (command: Readonly<ProcessExecutionRequest>, result: ProcessExecutionResult): void => {
     responses.set(commandKey(command, root), result);
   };
 
@@ -243,7 +245,7 @@ async function createDotnetFixture(platform: NodeJS.Platform = "win32"): Promise
   );
 
   const run = vi.fn<ProcessRunner["run"]>(
-    async (command, options): Promise<ProcessOutcome> =>
+    async (command, options): Promise<ProcessExecutionResult> =>
       responses.get(commandKey(command, options?.cwd))
       ?? commandResult({code: 127, spawnError: `unexpected-command-marker:${command.command}`}),
   );

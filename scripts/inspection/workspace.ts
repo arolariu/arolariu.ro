@@ -13,7 +13,7 @@
  */
 
 import {isAbsolute, join, relative, resolve, sep} from "node:path";
-import type {ProcessOutcome} from "../common/runner.ts";
+import type {ProcessExecutionResult} from "../core/process/process-execution-result.ts";
 import type {InspectionOutcome, InspectionProvider, InspectionProviderContext} from "./types.ts";
 
 /** One repository project discovered in the Nx workspace graph. */
@@ -288,7 +288,7 @@ interface WorkspaceProviderInput
 const WORKER_TIMEOUT_MS = 120_000;
 
 /**
- * Maps one worker {@link ProcessOutcome} exhaustively onto its bounded unavailable reason.
+ * Maps one worker {@link ProcessExecutionResult} exhaustively onto its bounded unavailable reason.
  *
  * @remarks
  * A signalled or cancelled child reports the same "exited with code 1" evidence the legacy
@@ -297,7 +297,7 @@ const WORKER_TIMEOUT_MS = 120_000;
  * @param outcome - Typed outcome of the isolated worker invocation.
  * @returns The bounded reason, or `undefined` when the worker completed successfully.
  */
-function workerFailureReason(outcome: Readonly<ProcessOutcome>): string | undefined {
+function workerFailureReason(outcome: Readonly<ProcessExecutionResult>): string | undefined {
   switch (outcome.kind) {
     case "succeeded":
       return undefined;

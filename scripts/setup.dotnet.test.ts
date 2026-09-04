@@ -5,7 +5,7 @@
  *
  * @remarks
  * Every test drives the real phase against an injected {@link SetupPhaseRuntime}: a recording
- * process runner replaying typed {@link ProcessOutcome} fixtures, a deterministic clock, and an
+ * process runner replaying typed {@link ProcessExecutionResult} fixtures, a deterministic clock, and an
  * immutable environment snapshot that supplies the host platform. No test in this file reads the
  * live checkout, spawns a process, or observes ambient Node state.
  */
@@ -18,7 +18,9 @@ import {ComposedTerminalPresenter} from "./core/presentation/composed-terminal-p
 import {RecordingTerminalPresenterSink} from "./testing/fixtures/terminal.fixture.ts";
 import {createRepositoryPaths} from "./common/repository-paths.ts";
 import type {MinimumVersion, RepositoryRequirements} from "./common/requirements.ts";
-import {AbstractProcessRunner, type ProcessOutcome, type ProcessRequest, type ProcessRunOptions} from "./common/runner.ts";
+import type {ProcessExecutionOptions, ProcessExecutionRequest} from "./core/process/process-execution-request.ts";
+import type {ProcessExecutionResult} from "./core/process/process-execution-result.ts";
+import {AbstractProcessRunner} from "./core/process/process-runner.ts";
 import {createMemoryFileSystem, createTestRuntimeFactory} from "./common/runtime.testing.ts";
 import type {Clock, RuntimeEnvironment} from "./common/runtime.ts";
 import type {DotnetFacts} from "./inspection/dotnet.ts";
@@ -60,40 +62,40 @@ function expectedPasswordForRepeatedByte(byte: number): string {
   return `Aa1!${Buffer.alloc(24, byte).toString("base64url")}`;
 }
 
-function succeeded(patch: Readonly<{stdout?: string; stderr?: string}> = {}): ProcessOutcome {
+function succeeded(patch: Readonly<{stdout?: string; stderr?: string}> = {}): ProcessExecutionResult {
   return {kind: "succeeded", exitCode: 0, stdout: patch.stdout ?? "", stderr: patch.stderr ?? "", durationMs: 1};
 }
 
-function exited(exitCode: number, patch: Readonly<{stdout?: string; stderr?: string}> = {}): ProcessOutcome {
+function exited(exitCode: number, patch: Readonly<{stdout?: string; stderr?: string}> = {}): ProcessExecutionResult {
   return {kind: "exited", exitCode, stdout: patch.stdout ?? "", stderr: patch.stderr ?? "", durationMs: 1};
 }
 
-function timedOut(): ProcessOutcome {
+function timedOut(): ProcessExecutionResult {
   return {kind: "timed-out", stdout: "", stderr: "", durationMs: 1};
 }
 
-function signalled(signal: NodeJS.Signals): ProcessOutcome {
+function signalled(signal: NodeJS.Signals): ProcessExecutionResult {
   return {kind: "signalled", signal, stdout: "", stderr: "", durationMs: 1};
 }
 
-function spawnFailed(message: string): ProcessOutcome {
+function spawnFailed(message: string): ProcessExecutionResult {
   return {kind: "spawn-failed", message, stdout: "", stderr: "", durationMs: 1};
 }
 
-function commandKey(request: Readonly<ProcessRequest>): string {
+function commandKey(request: Readonly<ProcessExecutionRequest>): string {
   return [request.command, ...request.args].join("\u0000");
 }
 
 /** One recorded child invocation. */
-type RecordedCall = Readonly<{request: ProcessRequest; options: ProcessRunOptions}>;
+type RecordedCall = Readonly<{request: ProcessExecutionRequest; options: ProcessExecutionOptions}>;
 
 /** Records every invocation while replaying request-keyed typed outcomes. */
 class FakeProcessRunner extends AbstractProcessRunner {
-  readonly #responses: Readonly<Record<string, ProcessOutcome | readonly ProcessOutcome[]>>;
+  readonly #responses: Readonly<Record<string, ProcessExecutionResult | readonly ProcessExecutionResult[]>>;
   readonly #offsets = new Map<string, number>();
   readonly #calls: RecordedCall[] = [];
 
-  public constructor(responses: Readonly<Record<string, ProcessOutcome | readonly ProcessOutcome[]>> = {}) {
+  public constructor(responses: Readonly<Record<string, ProcessExecutionResult | readonly ProcessExecutionResult[]>> = {}) {
     super();
     this.#responses = responses;
   }
@@ -104,7 +106,7 @@ class FakeProcessRunner extends AbstractProcessRunner {
   }
 
   /** {@inheritDoc AbstractProcessRunner.execute} */
-  protected override execute(request: Readonly<ProcessRequest>, options: Readonly<ProcessRunOptions>): Promise<ProcessOutcome> {
+  protected override execute(request: Readonly<ProcessExecutionRequest>, options: Readonly<ProcessExecutionOptions>): Promise<ProcessExecutionResult> {
     this.#calls.push({request, options});
     const key = commandKey(request);
     const configured = this.#responses[key];
@@ -112,9 +114,9 @@ class FakeProcessRunner extends AbstractProcessRunner {
       return Promise.resolve(succeeded());
     }
     if (!Array.isArray(configured)) {
-      return Promise.resolve(configured as ProcessOutcome);
+      return Promise.resolve(configured as ProcessExecutionResult);
     }
-    const sequence = configured as readonly ProcessOutcome[];
+    const sequence = configured as readonly ProcessExecutionResult[];
     const offset = this.#offsets.get(key) ?? 0;
     this.#offsets.set(key, offset + 1);
     return Promise.resolve(sequence[offset] ?? sequence.at(-1) ?? succeeded());
@@ -288,7 +290,7 @@ interface DotnetHarness {
 
 async function createHarness(
   input: Readonly<{
-    responses?: Readonly<Record<string, ProcessOutcome | readonly ProcessOutcome[]>>;
+    responses?: Readonly<Record<string, ProcessExecutionResult | readonly ProcessExecutionResult[]>>;
     dispositions?: Readonly<Record<string, SetupActionDisposition>>;
     options?: SetupInput;
     platform?: NodeJS.Platform;
@@ -682,7 +684,7 @@ describe("restore ordering and failures", () => {
       ["tool", "restore"],
     ]);
     for (const {options} of restoreCalls) {
-      expect(options).toMatchObject({cwd: paths.root, output: "tee", logger: harness.context.logger});
+      expect(options).toMatchObject({cwd: paths.root, output: "tee", presenter: harness.context.logger});
     }
     expect(harness.invalidate).toHaveBeenCalledTimes(3);
     expect(harness.inspect).toHaveBeenCalledTimes(4);

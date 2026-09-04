@@ -19,7 +19,7 @@ import {defineCommand, type LazyMonorepoCommand} from "../core/command/lazy-mono
 import type {CommandConstructionOptions, CommandHost} from "../core/command/command-specification.ts";
 import type {TerminalPresenter} from "../core/presentation/terminal-presenter.ts";
 import {resolveRepositoryPaths} from "../common/repository-paths.ts";
-import {RunnerError, type ProcessRunner} from "../common/runner.ts";
+import {ProcessRunnerError, type ProcessRunner} from "../core/process/process-runner.ts";
 import {CommandCancellation, commandCancellationFromSignal} from "../common/runtime.ts";
 import {generateArtifactsCommand, type ArtifactGenerationResult, type GenerateArtifactsInput} from "../generate.artifacts.ts";
 import {getContainerAdapter, type ContainerRuntimeAdapter, type RuntimeCommand} from "./adapters.ts";
@@ -130,7 +130,7 @@ async function runArtifactPrerequisite(
  *
  * @remarks
  * A cancelled invocation's exact SIGINT/SIGTERM exit code (`130`/`143`) is owned by its own
- * {@link CommandCancellation} reason; letting `expectSuccess`'s `RunnerError` for a cancelled
+ * {@link CommandCancellation} reason; letting `expectSuccess`'s `ProcessRunnerError` for a cancelled
  * outcome escape unclassified would misreport an interrupted invocation as an operational failure
  * and the shared Commander lifecycle would classify it as exit code `1`. A `{kind:"cancelled"}`
  * outcome observed while `signal` is not the invocation's own aborted signal is not this
@@ -138,21 +138,21 @@ async function runArtifactPrerequisite(
  *
  * @param runner - Process runner used to run `command`.
  * @param command - Engine-owned build or run command to execute.
- * @param logger - Logger used for tee output and command echo.
+ * @param presenter - Presenter used for tee output and command echo.
  * @param signal - The owning invocation's cancellation signal.
  * @throws {CommandCancellation} When `command` is cancelled on `signal`.
- * @throws {RunnerError} When `command` fails for any other reason.
+ * @throws {ProcessRunnerError} When `command` fails for any other reason.
  */
 async function runImageBusinessCommand(
   runner: ProcessRunner,
   command: Readonly<RuntimeCommand>,
-  logger: TerminalPresenter,
+  presenter: TerminalPresenter,
   signal: AbortSignal,
 ): Promise<void> {
   try {
-    await runner.expectSuccess(command, {output: "tee", logCommands: true, logger, signal});
+    await runner.expectSuccess(command, {output: "tee", logCommands: true, presenter, signal});
   } catch (error) {
-    if (error instanceof RunnerError && error.outcome.kind === "cancelled" && signal.aborted) {
+    if (error instanceof ProcessRunnerError && error.result.kind === "cancelled" && signal.aborted) {
       throw commandCancellationFromSignal(signal);
     }
     throw error;

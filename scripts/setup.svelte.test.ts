@@ -5,7 +5,7 @@
  *
  * @remarks
  * Every test drives the real phase against an injected {@link SetupPhaseRuntime}: a recording
- * process runner replaying typed {@link ProcessOutcome} fixtures, a deterministic clock, and an
+ * process runner replaying typed {@link ProcessExecutionResult} fixtures, a deterministic clock, and an
  * immutable environment snapshot. No test in this file reads the live checkout, spawns a process,
  * mocks a repository module, or observes ambient Node state.
  */
@@ -18,7 +18,9 @@ import {ComposedTerminalPresenter} from "./core/presentation/composed-terminal-p
 import {RecordingTerminalPresenterSink} from "./testing/fixtures/terminal.fixture.ts";
 import {createRepositoryPaths} from "./common/repository-paths.ts";
 import type {PackageRequirement, RepositoryRequirements} from "./common/requirements.ts";
-import {AbstractProcessRunner, type ProcessOutcome, type ProcessRequest, type ProcessRunOptions} from "./common/runner.ts";
+import type {ProcessExecutionOptions, ProcessExecutionRequest} from "./core/process/process-execution-request.ts";
+import type {ProcessExecutionResult} from "./core/process/process-execution-result.ts";
+import {AbstractProcessRunner} from "./core/process/process-runner.ts";
 import {createMemoryFileSystem, createTestRuntimeFactory} from "./common/runtime.testing.ts";
 import {CommandCancellation, type Clock, type RuntimeEnvironment} from "./common/runtime.ts";
 import type {SvelteFacts, SvelteProjectId} from "./inspection/frontend.ts";
@@ -65,28 +67,28 @@ const nodeEngines: Readonly<Record<SvelteProjectId, string>> = {cv: ">=22", stat
  * timeout explicitly now that the phase no longer flows through the deprecated setup runner bridge.
  */
 const LEGACY_MUTATION_TIMEOUT_MS = 1_200_000;
-const prepareCommand: ProcessRequest = {
+const prepareCommand: ProcessExecutionRequest = {
   command: "npm",
   args: ["run", "prepare", "--workspace=sites/cv.arolariu.ro", "--workspace=sites/status.arolariu.ro"],
 };
-const packageInventoryCommand: ProcessRequest = {
+const packageInventoryCommand: ProcessExecutionRequest = {
   command: "npm",
   args: ["ls", "--json", "--depth=0"],
 };
 
-function succeeded(patch: Readonly<{stdout?: string; stderr?: string}> = {}): ProcessOutcome {
+function succeeded(patch: Readonly<{stdout?: string; stderr?: string}> = {}): ProcessExecutionResult {
   return {kind: "succeeded", exitCode: 0, stdout: patch.stdout ?? "", stderr: patch.stderr ?? "", durationMs: 1};
 }
 
-function exited(exitCode: number, patch: Readonly<{stdout?: string; stderr?: string}> = {}): ProcessOutcome {
+function exited(exitCode: number, patch: Readonly<{stdout?: string; stderr?: string}> = {}): ProcessExecutionResult {
   return {kind: "exited", exitCode, stdout: patch.stdout ?? "", stderr: patch.stderr ?? "", durationMs: 1};
 }
 
-function cancelledOutcome(): ProcessOutcome {
+function cancelledOutcome(): ProcessExecutionResult {
   return {kind: "cancelled", stdout: "", stderr: "", durationMs: 1};
 }
 
-function commandKey(command: Readonly<ProcessRequest>): string {
+function commandKey(command: Readonly<ProcessExecutionRequest>): string {
   return [command.command, ...command.args].join("\u0000");
 }
 
@@ -224,10 +226,10 @@ function createInspectionHarness(
 }
 
 /** One recorded child invocation. */
-type RecordedCall = Readonly<{request: ProcessRequest; options: ProcessRunOptions}>;
+type RecordedCall = Readonly<{request: ProcessExecutionRequest; options: ProcessExecutionOptions}>;
 
 /** A scripted outcome, or a value the runner rejects with instead of completing. */
-type ScriptedOutcome = ProcessOutcome | Error;
+type ScriptedOutcome = ProcessExecutionResult | Error;
 
 /** Records every invocation while replaying request-keyed typed outcomes. */
 class FakeProcessRunner extends AbstractProcessRunner {
@@ -246,7 +248,7 @@ class FakeProcessRunner extends AbstractProcessRunner {
   }
 
   /** {@inheritDoc AbstractProcessRunner.execute} */
-  protected override execute(request: Readonly<ProcessRequest>, options: Readonly<ProcessRunOptions>): Promise<ProcessOutcome> {
+  protected override execute(request: Readonly<ProcessExecutionRequest>, options: Readonly<ProcessExecutionOptions>): Promise<ProcessExecutionResult> {
     this.#calls.push({request, options});
     const key = commandKey(request);
     const configured = this.#responses[key];
@@ -263,7 +265,7 @@ class FakeProcessRunner extends AbstractProcessRunner {
   }
 }
 
-function settle(outcome: ScriptedOutcome): Promise<ProcessOutcome> {
+function settle(outcome: ScriptedOutcome): Promise<ProcessExecutionResult> {
   return outcome instanceof Error ? Promise.reject(outcome) : Promise.resolve(outcome);
 }
 
@@ -434,7 +436,7 @@ function runPhase(harness: SvelteHarness, patch: Partial<MigratedSetupContext> =
   return harness.phase.run({...harness.context, ...patch} as SetupContext);
 }
 
-function callFor(harness: SvelteHarness, command: Readonly<ProcessRequest>): RecordedCall | undefined {
+function callFor(harness: SvelteHarness, command: Readonly<ProcessExecutionRequest>): RecordedCall | undefined {
   return harness.runner.calls.find(({request}) => commandKey(request) === commandKey(command));
 }
 
@@ -645,7 +647,7 @@ describe("generated SvelteKit configuration", () => {
     expect(callFor(harness, prepareCommand)?.options).toMatchObject({
       cwd: paths.root,
       output: "tee",
-      logger: harness.context.logger,
+      presenter: harness.context.logger,
     });
   });
 

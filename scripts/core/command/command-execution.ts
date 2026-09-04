@@ -14,7 +14,8 @@
 import type {Command} from "commander";
 
 import type {TerminalPresenter} from "../presentation/terminal-presenter.ts";
-import {formatProcessRequest, RunnerError} from "../../common/runner.ts";
+import {formatProcessExecutionRequest} from "../process/process-execution-request.ts";
+import {ProcessRunnerError} from "../process/process-runner.ts";
 import {FileSystemError, HttpError, type CommandRuntime} from "../../common/runtime.ts";
 import type {CommandInvocationOptions} from "./command-specification.ts";
 
@@ -147,8 +148,8 @@ export function toJsonValue(value: unknown): JsonValue {
 
 /** Describes evidence for a known typed failure without ever including a secret. */
 export function describeCommandFailureEvidence(error: unknown): readonly string[] {
-  if (error instanceof RunnerError) {
-    return [`command: ${formatProcessRequest(error.request)}`, `outcome: ${error.outcome.kind}`];
+  if (error instanceof ProcessRunnerError) {
+    return [`command: ${formatProcessExecutionRequest(error.request)}`, `outcome: ${error.result.kind}`];
   }
   if (error instanceof HttpError) {
     const request = `request: ${error.request.method ?? "GET"} ${error.request.url.href}`;

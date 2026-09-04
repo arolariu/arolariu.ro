@@ -7,8 +7,10 @@
 import {describe, expect, it} from "vitest";
 import {ComposedTerminalPresenter} from "../core/presentation/composed-terminal-presenter.ts";
 import {RecordingTerminalPresenterSink} from "../testing/fixtures/terminal.fixture.ts";
-import {RunnerError, type ProcessOutcome} from "../common/runner.ts";
-import {createProcessRunner, createRepositoryFixtureFileSystem, repositoryFixtureRoot} from "../common/runtime.testing.ts";
+import type {ProcessExecutionResult} from "../core/process/process-execution-result.ts";
+import {ProcessRunnerError} from "../core/process/process-runner.ts";
+import {createRepositoryFixtureFileSystem, repositoryFixtureRoot} from "../common/runtime.testing.ts";
+import {buildRecordingProcessRunner} from "../testing/builders/process-result.builder.ts";
 import type {Clock, RuntimeEnvironment} from "../common/runtime.ts";
 import type {CommandExecution, CommandInvoker} from "../core/command/command-execution.ts";
 import type {CommandHost} from "../core/command/command-specification.ts";
@@ -24,7 +26,7 @@ const keyFixturePath = "infra/Local/Management/certs/local-key.pem";
 /** One `succeeded` outcome per Podman preflight probe: tool, Docker Desktop rejection, backend x2, compose, existing containers. */
 const podmanPreflightProbeCount = 6;
 
-function succeeded(): ProcessOutcome {
+function succeeded(): ProcessExecutionResult {
   return {kind: "succeeded", exitCode: 0, stdout: "", stderr: "", durationMs: 0};
 }
 
@@ -64,11 +66,11 @@ function environmentWith(variables: Readonly<Record<string, string | undefined>>
  */
 function createFailingSqlHarness(): Readonly<{
   command: ReturnType<typeof createSelfhostCommand>;
-  runner: ReturnType<typeof createProcessRunner>;
+  runner: ReturnType<typeof buildRecordingProcessRunner>;
   sink: RecordingTerminalPresenterSink;
   host: CommandHost & Readonly<{assignedExitCodes: readonly number[]}>;
 }> {
-  const runner = createProcessRunner([
+  const runner = buildRecordingProcessRunner([
     ...Array.from({length: podmanPreflightProbeCount + 2}, () => succeeded()),
     {kind: "exited", exitCode: 1, stdout: "", stderr: `sqlcmd failed with ${sqlPassword}`, durationMs: 0},
   ]);
@@ -114,11 +116,11 @@ describe("selfhost SQL password redaction", () => {
     const failure = execution.status === "failed" ? execution.failure : undefined;
     expect(failure?.message).not.toContain(sqlPassword);
     expect(failure?.message).toContain("[REDACTED]");
-    expect(failure?.cause).toBeInstanceOf(RunnerError);
-    const cause = failure?.cause instanceof RunnerError ? failure.cause : undefined;
+    expect(failure?.cause).toBeInstanceOf(ProcessRunnerError);
+    const cause = failure?.cause instanceof ProcessRunnerError ? failure.cause : undefined;
     expect(cause?.request.args).toContain("[REDACTED]");
     expect(cause?.request.args).not.toContain(sqlPassword);
-    expect(cause?.outcome.stderr).not.toContain(sqlPassword);
+    expect(cause?.result.stderr).not.toContain(sqlPassword);
   });
 
   it("never places the password in any child-process environment", async () => {

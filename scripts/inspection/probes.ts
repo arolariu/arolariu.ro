@@ -3,10 +3,12 @@
  * @module scripts/inspection/probes
  */
 
-import type {ProcessEnvironment, ProcessOutcome, ProcessRequest, ProcessRunner} from "../common/runner.ts";
+import type {ProcessEnvironment, ProcessExecutionRequest} from "../core/process/process-execution-request.ts";
+import type {ProcessExecutionResult} from "../core/process/process-execution-result.ts";
+import type {ProcessRunner} from "../core/process/process-runner.ts";
 
 /** Exact allowlisted command specification backing one registered {@link InspectionProbe}. */
-type ProbeCommand = ProcessRequest;
+type ProbeCommand = ProcessExecutionRequest;
 
 /**
  * Nominal brand distinguishing a registered {@link InspectionProbe} from a plain object literal.
@@ -30,7 +32,7 @@ export interface InspectionProbe {
   readonly [inspectionProbeBrand]: true;
 }
 
-/** Options accepted by {@link InspectionProbeRunner.run}. No stdin, logger, or output-mode escape hatch is exposed. */
+/** Options accepted by {@link InspectionProbeRunner.run}. No stdin, presenter, or output-mode escape hatch is exposed. */
 export interface InspectionProbeRunOptions {
   readonly cwd?: string;
   readonly env?: ProcessEnvironment;
@@ -40,7 +42,7 @@ export interface InspectionProbeRunOptions {
 
 /** Executes registered {@link InspectionProbe} handles through the shared process runner. */
 export interface InspectionProbeRunner {
-  readonly run: (probe: InspectionProbe, options?: Readonly<InspectionProbeRunOptions>) => Promise<ProcessOutcome>;
+  readonly run: (probe: InspectionProbe, options?: Readonly<InspectionProbeRunOptions>) => Promise<ProcessExecutionResult>;
 }
 
 /** Default timeout applied to a probe run when the caller does not supply an override. */
@@ -83,12 +85,12 @@ function resolveProbeTimeoutMs(timeoutMs: number | undefined): number {
  * Creates a runner that executes only previously registered {@link InspectionProbe} handles.
  *
  * The returned runner forces captured output, applies a bounded default timeout, and preserves
- * `cwd`, `env`, and `signal` unchanged. It exposes no stdin, logger, or output-mode option, and
+ * `cwd`, `env`, and `signal` unchanged. It exposes no stdin, presenter, or output-mode option, and
  * always resolves the shared runner with `output: "capture"`.
  *
  * @param runner - Shared process runner used to execute the resolved command.
  * @returns An inspection probe runner backed by the shared process runner, whose `run` resolves
- * with the runner's own typed {@link ProcessOutcome} unchanged.
+ * with the runner's own typed {@link ProcessExecutionResult} unchanged.
  */
 export function createInspectionProbeRunner(runner: ProcessRunner): InspectionProbeRunner {
   return {

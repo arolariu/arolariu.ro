@@ -268,7 +268,7 @@ function createPhaseRuntime(
   const {runtime} = context;
   const phaseRunner = runtime.runner.scope({
     cwd: root,
-    logger: phaseLogger,
+    presenter: phaseLogger,
     signal: runtime.signal,
     timeoutMs: PHASE_COMMAND_TIMEOUT_MS,
     logCommands: input.verbose,

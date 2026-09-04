@@ -16,7 +16,9 @@ import type {TerminalPresenter} from "./core/presentation/terminal-presenter.ts"
 import type {CommandExecutionContext} from "./core/command/command-execution.ts";
 import {defineCommand, type LazyMonorepoCommand} from "./core/command/lazy-monorepo-command.ts";
 import type {CommandConstructionOptions, CommandHost} from "./core/command/command-specification.ts";
-import {RunnerError, type ProcessOutcome, type ProcessRequest, type ProcessRunner, type SucceededProcessOutcome} from "./common/runner.ts";
+import type {ProcessExecutionRequest} from "./core/process/process-execution-request.ts";
+import type {ProcessExecutionResult, SucceededProcessExecutionResult} from "./core/process/process-execution-result.ts";
+import {ProcessRunnerError, type ProcessRunner} from "./core/process/process-runner.ts";
 import {
   CommandCancellation,
   type Clock,
@@ -1863,7 +1865,7 @@ class SystemArchiveExtractor {
     try {
       await files.createDirectory(outputDirectory, {recursive: true});
       await files.writeBytes(archivePath, archive);
-      const outcome = await runner.run(request, {output: "capture", signal, logger});
+      const outcome = await runner.run(request, {output: "capture", signal, presenter: logger});
       if (!this.isSucceeded(outcome)) {
         this.throwExtractionFailure(request, outcome, environment.platform, logger);
       }
@@ -1896,7 +1898,7 @@ class SystemArchiveExtractor {
    * @param outcome - Outcome reported by the process runner.
    * @returns `true` when the extraction command exited successfully.
    */
-  private isSucceeded(outcome: Readonly<ProcessOutcome>): outcome is SucceededProcessOutcome {
+  private isSucceeded(outcome: Readonly<ProcessExecutionResult>): outcome is SucceededProcessExecutionResult {
     return outcome.kind === "succeeded";
   }
 
@@ -1908,7 +1910,7 @@ class SystemArchiveExtractor {
    * @param outputDirectory - Temporary extraction directory.
    * @returns Executable and argument list.
    */
-  private createRequest(platform: NodeJS.Platform, archivePath: string, outputDirectory: string): ProcessRequest {
+  private createRequest(platform: NodeJS.Platform, archivePath: string, outputDirectory: string): ProcessExecutionRequest {
     return platform === "win32"
       ? {command: "tar.exe", args: ["-xf", archivePath, "-C", outputDirectory]}
       : {command: "unzip", args: ["-qq", archivePath, "-d", outputDirectory]};
@@ -1923,8 +1925,8 @@ class SystemArchiveExtractor {
    * @param logger - Logger used to redact command diagnostics.
    */
   private throwExtractionFailure(
-    request: Readonly<ProcessRequest>,
-    outcome: Readonly<Exclude<ProcessOutcome, SucceededProcessOutcome>>,
+    request: Readonly<ProcessExecutionRequest>,
+    outcome: Readonly<Exclude<ProcessExecutionResult, SucceededProcessExecutionResult>>,
     platform: NodeJS.Platform,
     logger: TerminalPresenter,
   ): never {
@@ -1934,7 +1936,7 @@ class SystemArchiveExtractor {
       });
     }
 
-    throw new RunnerError(request, outcome, logger);
+    throw new ProcessRunnerError(request, outcome, logger);
   }
 }
 

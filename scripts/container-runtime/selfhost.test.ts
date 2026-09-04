@@ -10,8 +10,11 @@ import {buildCommandHost} from "../testing/builders/command-host.builder.ts";
 import {ComposedTerminalPresenter} from "../core/presentation/composed-terminal-presenter.ts";
 import {RecordingTerminalPresenterSink} from "../testing/fixtures/terminal.fixture.ts";
 import type {TerminalPresenter} from "../core/presentation/terminal-presenter.ts";
-import type {ProcessOutcome, ProcessRequest, ProcessRunOptions, ProcessRunner} from "../common/runner.ts";
-import {createProcessRunner, createRepositoryFixtureFileSystem, repositoryFixtureRoot} from "../common/runtime.testing.ts";
+import type {ProcessExecutionOptions, ProcessExecutionRequest} from "../core/process/process-execution-request.ts";
+import type {ProcessExecutionResult} from "../core/process/process-execution-result.ts";
+import type {ProcessRunner} from "../core/process/process-runner.ts";
+import {createRepositoryFixtureFileSystem, repositoryFixtureRoot} from "../common/runtime.testing.ts";
+import {buildRecordingProcessRunner} from "../testing/builders/process-result.builder.ts";
 import {
   CommandCancellation,
   LifoCleanupRegistry,
@@ -45,19 +48,19 @@ const launcherCases = [
   {path: "../../infra/Local/selfhost-stop.sh", action: "stop", forwarding: '"$@"', shell: "bash"},
 ] as const;
 
-function succeeded(stdout = ""): ProcessOutcome {
+function succeeded(stdout = ""): ProcessExecutionResult {
   return {kind: "succeeded", exitCode: 0, stdout, stderr: "", durationMs: 0};
 }
 
-function exited(code: number, stderr = ""): ProcessOutcome {
+function exited(code: number, stderr = ""): ProcessExecutionResult {
   return {kind: "exited", exitCode: code, stdout: "", stderr, durationMs: 0};
 }
 
-function cancelled(): ProcessOutcome {
+function cancelled(): ProcessExecutionResult {
   return {kind: "cancelled", stdout: "", stderr: "", durationMs: 0};
 }
 
-function succeededTimes(count: number): readonly ProcessOutcome[] {
+function succeededTimes(count: number): readonly ProcessExecutionResult[] {
   return Array.from({length: count}, () => succeeded());
 }
 
@@ -176,10 +179,10 @@ function createRecordingCleanupRegistry(onDrain?: readonly CleanupFailure[]): Re
   };
 }
 
-type RecordedRunner = ProcessRunner & Readonly<{calls: readonly Readonly<{request: ProcessRequest; options: ProcessRunOptions}>[]}>;
+type RecordedRunner = ProcessRunner & Readonly<{calls: readonly Readonly<{request: ProcessExecutionRequest; options: ProcessExecutionOptions}>[]}>;
 
 interface HarnessOptions {
-  readonly outcomes?: readonly ProcessOutcome[];
+  readonly outcomes?: readonly ProcessExecutionResult[];
   readonly variables?: Readonly<Record<string, string | undefined>>;
   readonly files?: FileSystem;
   readonly cleanup?: CleanupRegistry;
@@ -205,7 +208,7 @@ interface SelfhostHarness {
  * @returns The command under test and every recording fake it was built with.
  */
 function createHarness(options: Readonly<HarnessOptions> = {}): SelfhostHarness {
-  const runner = createProcessRunner(options.outcomes ?? []);
+  const runner = buildRecordingProcessRunner(options.outcomes ?? []);
   const clock = createRecordingClock();
   const files = options.files ?? createRepositoryFixtureFileSystem({[certFixturePath]: "local-cert", [keyFixturePath]: "local-key"});
   const sink = new RecordingTerminalPresenterSink();

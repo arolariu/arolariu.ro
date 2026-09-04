@@ -9,7 +9,9 @@ import {tmpdir} from "node:os";
 import {join, resolve} from "node:path";
 import {afterEach, describe, expect, it, vi} from "vitest";
 
-import type {ProcessOutcome, ProcessRequest, ProcessRunner} from "../common/runner.ts";
+import type {ProcessExecutionRequest} from "../core/process/process-execution-request.ts";
+import type {ProcessExecutionResult} from "../core/process/process-execution-result.ts";
+import type {ProcessRunner} from "../core/process/process-runner.ts";
 import {nodeFileSystem} from "../common/runtime.node.ts";
 import {asReadOnlyFileSystem, DefaultTaskScheduler, type Clock} from "../common/runtime.ts";
 import {createRepositoryPaths, type RepositoryPaths} from "../common/repository-paths.ts";
@@ -60,7 +62,7 @@ function clock(): Clock {
   };
 }
 
-/** Legacy-shaped fixture description translated into one typed {@link ProcessOutcome}. */
+/** Legacy-shaped fixture description translated into one typed {@link ProcessExecutionResult}. */
 interface ProcessOutcomeFixture {
   readonly code?: number;
   readonly stdout?: string;
@@ -72,13 +74,13 @@ interface ProcessOutcomeFixture {
 }
 
 /**
- * Builds one typed {@link ProcessOutcome} from a fixture description, so every suite keeps naming
+ * Builds one typed {@link ProcessExecutionResult} from a fixture description, so every suite keeps naming
  * the exact spawn/timeout/signal/exit classification it exercises.
  *
  * @param patch - Fixture description of the outcome under test.
  * @returns The equivalent typed process outcome.
  */
-function commandResult(patch: ProcessOutcomeFixture = {}): ProcessOutcome {
+function commandResult(patch: ProcessOutcomeFixture = {}): ProcessExecutionResult {
   const output = {stdout: patch.stdout ?? "", stderr: patch.stderr ?? "", durationMs: patch.durationMs ?? 1};
   if (patch.spawnError !== undefined) {
     return {kind: "spawn-failed", message: patch.spawnError, ...output};
@@ -112,7 +114,7 @@ const testFiles = asReadOnlyFileSystem(nodeFileSystem);
 /** Deterministic task scheduler replacing the previous explicit `Promise.all` calls. */
 const testTasks = new DefaultTaskScheduler();
 
-function commandKey(command: Readonly<ProcessRequest>, cwd?: string): string {
+function commandKey(command: Readonly<ProcessExecutionRequest>, cwd?: string): string {
   return `${cwd ?? ""}\u0000${command.command}\u0000${JSON.stringify(command.args)}`;
 }
 
@@ -276,7 +278,7 @@ interface FrontendFixture {
   readonly root: string;
   readonly paths: RepositoryPaths;
   readonly run: ReturnType<typeof vi.fn<ProcessRunner["run"]>>;
-  readonly setResponse: (command: Readonly<ProcessRequest>, result: ProcessOutcome, cwd?: string) => void;
+  readonly setResponse: (command: Readonly<ProcessExecutionRequest>, result: ProcessExecutionResult, cwd?: string) => void;
   readonly input: FrontendProviderInput;
   readonly packages: ReturnType<typeof vi.fn<() => Promise<InspectionOutcome<PackageInventoryFacts>>>>;
 }
@@ -284,7 +286,7 @@ interface FrontendFixture {
 async function createFrontendFixture(
   input: Readonly<{
     packagesOutcome?: InspectionOutcome<PackageInventoryFacts>;
-    playwrightOutcome?: ProcessOutcome;
+    playwrightOutcome?: ProcessExecutionResult;
     skipWebsiteEnv?: boolean;
     websiteEnvContents?: string;
     nextConfigContents?: string | null;
@@ -414,8 +416,8 @@ async function createFrontendFixture(
 
   await Promise.all(writes);
 
-  const responses = new Map<string, ProcessOutcome>();
-  const setResponse = (command: Readonly<ProcessRequest>, result: ProcessOutcome, cwd: string = paths.root): void => {
+  const responses = new Map<string, ProcessExecutionResult>();
+  const setResponse = (command: Readonly<ProcessExecutionRequest>, result: ProcessExecutionResult, cwd: string = paths.root): void => {
     responses.set(commandKey(command, cwd), result);
   };
   setResponse(
@@ -424,7 +426,7 @@ async function createFrontendFixture(
   );
 
   const run = vi.fn<ProcessRunner["run"]>(
-    async (command, options): Promise<ProcessOutcome> =>
+    async (command, options): Promise<ProcessExecutionResult> =>
       responses.get(commandKey(command, options?.cwd))
       ?? commandResult({code: 127, spawnError: `unexpected-native-command-marker:${command.command}`}),
   );

@@ -28,13 +28,13 @@ import {randomBytes as nodeRandomBytes} from "node:crypto";
 import {resolve} from "node:path";
 
 import {satisfiesMinimum, type MinimumVersion} from "./common/requirements.ts";
+import type {ProcessExecutionRequest} from "./core/process/process-execution-request.ts";
 import {
-  processFailureEvidence,
-  RunnerError,
-  type ProcessOutcome,
-  type ProcessRequest,
-  type SucceededProcessOutcome,
-} from "./common/runner.ts";
+  processExecutionFailureEvidence,
+  type ProcessExecutionResult,
+  type SucceededProcessExecutionResult,
+} from "./core/process/process-execution-result.ts";
+import {ProcessRunnerError} from "./core/process/process-runner.ts";
 import {CommandCancellation} from "./common/runtime.ts";
 import type {DotnetFacts} from "./inspection/dotnet.ts";
 import type {InspectionOutcome} from "./inspection/types.ts";
@@ -58,7 +58,7 @@ interface RestoreDefinition {
   readonly id: string;
   readonly scope: SetupActionScope;
   readonly summary: string;
-  readonly command: ProcessRequest;
+  readonly command: ProcessExecutionRequest;
   /** Action-specific postcondition evaluated against the facts observed before and after the restore. */
   readonly verify: (input: Readonly<{before: DotnetFacts | undefined; after: DotnetFacts}>) => RestoreVerification;
 }
@@ -109,7 +109,7 @@ const LEADING_VERSION_PATTERN = /^(\d+)\.(\d+)\.(\d+)/u;
  */
 const LONG_RUNNING_MUTATION_TIMEOUT_MS = 1_200_000;
 
-function isSuccessfulOutcome(outcome: Readonly<ProcessOutcome>): outcome is SucceededProcessOutcome {
+function isSuccessfulOutcome(outcome: Readonly<ProcessExecutionResult>): outcome is SucceededProcessExecutionResult {
   return outcome.kind === "succeeded";
 }
 
@@ -162,20 +162,20 @@ function mutationFailure(summary: string, error: unknown, secrets: readonly stri
  * @returns Bounded, non-secret evidence lines.
  */
 function secretCommandFailureEvidence(error: unknown, context: SetupContext): readonly string[] {
-  if (!(error instanceof RunnerError)) {
+  if (!(error instanceof ProcessRunnerError)) {
     // A non-transport failure (runner validation, for example) carries no child output at all, so
     // its own message is the only diagnostic available; the caller still sanitizes it.
     return [error instanceof Error ? error.message : String(error)];
   }
 
-  const {outcome} = error;
-  const evidence = processFailureEvidence({...outcome, stdout: ""}, context.logger);
+  const {result} = error;
+  const evidence = processExecutionFailureEvidence({...result, stdout: ""}, context.logger);
   return [
-    ...(outcome.kind === "exited" ? [`Command exited with code ${String(outcome.exitCode)}.`] : []),
-    ...(outcome.kind === "timed-out" ? ["Command timed out."] : []),
-    ...(outcome.kind === "signalled" ? [`Command stopped with signal ${outcome.signal}.`] : []),
-    ...(outcome.kind === "cancelled" ? ["Command was cancelled."] : []),
-    ...(outcome.kind === "spawn-failed" ? [`Unable to start command: ${outcome.message}`] : []),
+    ...(result.kind === "exited" ? [`Command exited with code ${String(result.exitCode)}.`] : []),
+    ...(result.kind === "timed-out" ? ["Command timed out."] : []),
+    ...(result.kind === "signalled" ? [`Command stopped with signal ${result.signal}.`] : []),
+    ...(result.kind === "cancelled" ? ["Command was cancelled."] : []),
+    ...(result.kind === "spawn-failed" ? [`Unable to start command: ${result.message}`] : []),
     ...(evidence === "" ? [] : [`stderr: ${evidence.trim()}`]),
   ];
 }
@@ -505,7 +505,7 @@ async function runRestoreActions(
           await runtime.runner.expectSuccess(restore.command, {
             cwd: context.paths.root,
             output: "tee",
-            logger: context.logger,
+            presenter: context.logger,
             timeoutMs: LONG_RUNNING_MUTATION_TIMEOUT_MS,
           });
         } catch (error: unknown) {
@@ -642,7 +642,7 @@ async function ensureUserSecrets(
       try {
         await runtime.runner.expectSuccess(
           {command: "dotnet", args: ["user-secrets", "set", "--project", appHostProject]},
-          {cwd: context.paths.root, input: JSON.stringify(payload), logger: context.logger},
+          {cwd: context.paths.root, input: JSON.stringify(payload), presenter: context.logger},
         );
       } catch (error: unknown) {
         if (isInterrupted(error)) {
@@ -719,7 +719,7 @@ async function ensureCertificate(
         try {
           await runtime.runner.expectSuccess(
             {command: "dotnet", args: ["dev-certs", "https"]},
-            {cwd: context.paths.root, logger: context.logger},
+            {cwd: context.paths.root, presenter: context.logger},
           );
         } catch (error: unknown) {
           throw mutationFailure("HTTPS development certificate creation failed.", error, knownSecrets);
@@ -781,7 +781,7 @@ async function ensureCertificate(
             {
               cwd: context.paths.root,
               output: "inherit",
-              logger: context.logger,
+              presenter: context.logger,
               timeoutMs: LONG_RUNNING_MUTATION_TIMEOUT_MS,
             },
           );
@@ -892,7 +892,7 @@ async function ensureDotnetSdk(
         await runtime.runner.expectSuccess(proposal.command, {
           cwd: context.paths.root,
           output: "inherit",
-          logger: context.logger,
+          presenter: context.logger,
           timeoutMs: LONG_RUNNING_MUTATION_TIMEOUT_MS,
         });
       } catch (error: unknown) {

@@ -17,7 +17,9 @@ import {describe, expect, it} from "vitest";
 
 import {ComposedTerminalPresenter} from "./core/presentation/composed-terminal-presenter.ts";
 import {RecordingTerminalPresenterSink} from "./testing/fixtures/terminal.fixture.ts";
-import {AbstractProcessRunner, RunnerError, type ProcessOutcome, type ProcessRequest, type ProcessRunOptions} from "./common/runner.ts";
+import type {ProcessExecutionOptions, ProcessExecutionRequest} from "./core/process/process-execution-request.ts";
+import type {ProcessExecutionResult} from "./core/process/process-execution-result.ts";
+import {AbstractProcessRunner, ProcessRunnerError} from "./core/process/process-runner.ts";
 import {createMemoryFileSystem, repositoryFixtureRoot} from "./common/runtime.testing.ts";
 import {buildCommandHost} from "./testing/builders/command-host.builder.ts";
 import {CommandCancellation, type FileSystem, type RuntimeEnvironment} from "./common/runtime.ts";
@@ -70,28 +72,28 @@ function testEnvironment(variables: Readonly<Record<string, string>> = {}): Runt
   };
 }
 
-function succeeded(patch: Readonly<{stdout?: string; stderr?: string}> = {}): ProcessOutcome {
+function succeeded(patch: Readonly<{stdout?: string; stderr?: string}> = {}): ProcessExecutionResult {
   return {kind: "succeeded", exitCode: 0, stdout: patch.stdout ?? "", stderr: patch.stderr ?? "", durationMs: 1};
 }
 
-function exited(exitCode: number, patch: Readonly<{stdout?: string; stderr?: string}> = {}): ProcessOutcome {
+function exited(exitCode: number, patch: Readonly<{stdout?: string; stderr?: string}> = {}): ProcessExecutionResult {
   return {kind: "exited", exitCode, stdout: patch.stdout ?? "", stderr: patch.stderr ?? "", durationMs: 1};
 }
 
-function timedOut(): ProcessOutcome {
+function timedOut(): ProcessExecutionResult {
   return {kind: "timed-out", stdout: "", stderr: "", durationMs: 1};
 }
 
-function spawnFailed(message: string, patch: Readonly<{stdout?: string; stderr?: string}> = {}): ProcessOutcome {
+function spawnFailed(message: string, patch: Readonly<{stdout?: string; stderr?: string}> = {}): ProcessExecutionResult {
   return {kind: "spawn-failed", message, stdout: patch.stdout ?? "", stderr: patch.stderr ?? "", durationMs: 1};
 }
 
-function cancelledOutcome(): ProcessOutcome {
+function cancelledOutcome(): ProcessExecutionResult {
   return {kind: "cancelled", stdout: "", stderr: "", durationMs: 1};
 }
 
 /** One recorded invocation of {@link FakeNewmanRunner}. */
-type RecordedCall = Readonly<{request: ProcessRequest; options: ProcessRunOptions}>;
+type RecordedCall = Readonly<{request: ProcessExecutionRequest; options: ProcessExecutionOptions}>;
 
 /**
  * Fake {@link AbstractProcessRunner} that records every invocation and, instead of spawning
@@ -102,19 +104,19 @@ type RecordedCall = Readonly<{request: ProcessRequest; options: ProcessRunOption
 class FakeNewmanRunner extends AbstractProcessRunner {
   readonly #files: FileSystem;
   readonly #outcomeFor: (
-    request: Readonly<ProcessRequest>,
-    options: Readonly<ProcessRunOptions>,
-  ) => ProcessOutcome | Promise<ProcessOutcome>;
+    request: Readonly<ProcessExecutionRequest>,
+    options: Readonly<ProcessExecutionOptions>,
+  ) => ProcessExecutionResult | Promise<ProcessExecutionResult>;
   readonly #artifactToken: string | undefined;
-  readonly #artifactOutcomeKinds: readonly ProcessOutcome["kind"][];
+  readonly #artifactOutcomeKinds: readonly ProcessExecutionResult["kind"][];
   readonly #calls: RecordedCall[] = [];
 
   public constructor(
     files: FileSystem,
     options: Readonly<{
-      outcomeFor?: (request: Readonly<ProcessRequest>, runOptions: Readonly<ProcessRunOptions>) => ProcessOutcome | Promise<ProcessOutcome>;
+      outcomeFor?: (request: Readonly<ProcessExecutionRequest>, runOptions: Readonly<ProcessExecutionOptions>) => ProcessExecutionResult | Promise<ProcessExecutionResult>;
       artifactToken?: string;
-      artifactOutcomeKinds?: readonly ProcessOutcome["kind"][];
+      artifactOutcomeKinds?: readonly ProcessExecutionResult["kind"][];
     }> = {},
   ) {
     super();
@@ -130,7 +132,7 @@ class FakeNewmanRunner extends AbstractProcessRunner {
   }
 
   /** {@inheritDoc AbstractProcessRunner.execute} */
-  protected override async execute(request: Readonly<ProcessRequest>, options: Readonly<ProcessRunOptions>): Promise<ProcessOutcome> {
+  protected override async execute(request: Readonly<ProcessExecutionRequest>, options: Readonly<ProcessExecutionOptions>): Promise<ProcessExecutionResult> {
     this.#calls.push({request, options});
     const outcome = await this.#outcomeFor(request, options);
     if (this.#artifactToken !== undefined && this.#artifactOutcomeKinds.includes(outcome.kind)) {
@@ -139,7 +141,7 @@ class FakeNewmanRunner extends AbstractProcessRunner {
     return outcome;
   }
 
-  private async writeArtifacts(request: Readonly<ProcessRequest>, token: string): Promise<void> {
+  private async writeArtifacts(request: Readonly<ProcessExecutionRequest>, token: string): Promise<void> {
     const jsonIndex = request.args.indexOf("--reporter-json-export");
     const junitIndex = request.args.indexOf("--reporter-junit-export");
 
@@ -524,7 +526,7 @@ describe("createE2eCommand: process invocation shape", () => {
     expect(options.cwd).toBe(repositoryFixtureRoot);
     expect(options.output).toBe("inherit");
     expect(options.signal).toBeInstanceOf(AbortSignal);
-    expect(options.logger).toBeDefined();
+    expect(options.presenter).toBeDefined();
   });
 });
 
@@ -560,7 +562,7 @@ describe("createE2eCommand: token redaction in logs", () => {
     expect(allText).not.toContain(FAKE_TOKEN);
   });
 
-  it("returns a RunnerError cause with no raw token in retained diagnostics", async () => {
+  it("returns a ProcessRunnerError cause with no raw token in retained diagnostics", async () => {
     const files = fixtureFiles();
     const runner = new FakeNewmanRunner(files, {
       outcomeFor: () =>
@@ -578,16 +580,16 @@ describe("createE2eCommand: token redaction in logs", () => {
     if (execution.status !== "failed") return;
     expect(execution.failure.message).not.toContain(FAKE_TOKEN);
     expect(execution.failure.evidence.join("\n")).not.toContain(FAKE_TOKEN);
-    expect(execution.failure.cause).toBeInstanceOf(RunnerError);
-    if (!(execution.failure.cause instanceof RunnerError)) return;
+    expect(execution.failure.cause).toBeInstanceOf(ProcessRunnerError);
+    if (!(execution.failure.cause instanceof ProcessRunnerError)) return;
     expect(execution.failure.cause.message).not.toContain(FAKE_TOKEN);
     expect(execution.failure.cause.request.command).not.toContain(FAKE_TOKEN);
     expect(execution.failure.cause.request.args.join("\n")).not.toContain(FAKE_TOKEN);
-    expect(execution.failure.cause.outcome.stdout).not.toContain(FAKE_TOKEN);
-    expect(execution.failure.cause.outcome.stderr).not.toContain(FAKE_TOKEN);
-    expect(execution.failure.cause.outcome.kind).toBe("spawn-failed");
-    if (execution.failure.cause.outcome.kind === "spawn-failed") {
-      expect(execution.failure.cause.outcome.message).not.toContain(FAKE_TOKEN);
+    expect(execution.failure.cause.result.stdout).not.toContain(FAKE_TOKEN);
+    expect(execution.failure.cause.result.stderr).not.toContain(FAKE_TOKEN);
+    expect(execution.failure.cause.result.kind).toBe("spawn-failed");
+    if (execution.failure.cause.result.kind === "spawn-failed") {
+      expect(execution.failure.cause.result.message).not.toContain(FAKE_TOKEN);
     }
   });
 });
@@ -626,8 +628,8 @@ describe("createE2eCommand: typed runner failure outcomes and cleanup", () => {
 
     expect(execution).toMatchObject({status: "failed", exitCode: 1, failure: {kind: "operational"}});
     if (execution.status === "failed") {
-      expect(execution.failure.cause).toBeInstanceOf(RunnerError);
-      expect(execution.failure.cause).toMatchObject({outcome: {kind: "cancelled"}});
+      expect(execution.failure.cause).toBeInstanceOf(ProcessRunnerError);
+      expect(execution.failure.cause).toMatchObject({result: {kind: "cancelled"}});
     }
   });
 
@@ -796,7 +798,7 @@ describe("createE2eCommand: cleanup ordering and failure precedence", () => {
     expect(execution).toMatchObject({status: "failed", exitCode: 1, failure: {kind: "cleanup"}});
   });
 
-  it("preserves the Newman RunnerError as primary and appends a cleanup failure as evidence", async () => {
+  it("preserves the Newman ProcessRunnerError as primary and appends a cleanup failure as evidence", async () => {
     const rawFiles = fixtureFiles();
     const failingFiles: FileSystem = {
       ...rawFiles,

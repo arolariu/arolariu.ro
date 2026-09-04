@@ -22,8 +22,10 @@ import {RecordingTerminalPresenterSink} from "./testing/fixtures/terminal.fixtur
 import type {TerminalPresenter} from "./core/presentation/terminal-presenter.ts";
 import {createTerminalPromptProvider, type PromptProvider} from "./common/prompts.ts";
 import {createRepositoryPaths, type RepositoryPaths} from "./common/repository-paths.ts";
-import type {ProcessRequest, ProcessRunOptions, ProcessRunner} from "./common/runner.ts";
-import {createMemoryFileSystem, createProcessRunner, repositoryFixtureRoot} from "./common/runtime.testing.ts";
+import type {ProcessExecutionOptions, ProcessExecutionRequest} from "./core/process/process-execution-request.ts";
+import type {ProcessRunner} from "./core/process/process-runner.ts";
+import {createMemoryFileSystem, repositoryFixtureRoot} from "./common/runtime.testing.ts";
+import {buildRecordingProcessRunner} from "./testing/builders/process-result.builder.ts";
 import {
   CommandCancellation,
   type FileSystem,
@@ -323,7 +325,7 @@ const setupFixturePhases: readonly SetupPhaseDefinition[] = [
 ];
 
 /** Recording process runner used to assert phase-scoped command options. */
-type RecordingRunner = ProcessRunner & Readonly<{calls: readonly Readonly<{request: ProcessRequest; options: ProcessRunOptions}>[]}>;
+type RecordingRunner = ProcessRunner & Readonly<{calls: readonly Readonly<{request: ProcessExecutionRequest; options: ProcessExecutionOptions}>[]}>;
 
 /** Every seam one orchestrator test may replace. */
 interface SetupFixtureInput {
@@ -361,7 +363,7 @@ interface SetupFixture {
  */
 function createSetupFixture(input: Readonly<SetupFixtureInput> = {}): SetupFixture {
   const inspection = setupFixtureInspection(input.session ?? createFakeInspectionSession());
-  const runner = input.runner ?? createProcessRunner();
+  const runner = input.runner ?? buildRecordingProcessRunner();
   const host = buildCommandHost({
     runtime: {
       files: input.files ?? setupFixtureFileSystem(),
@@ -795,7 +797,7 @@ describe("setup phase command execution", () => {
     });
   }
 
-  function recordedOptions(runner: RecordingRunner): ProcessRunOptions {
+  function recordedOptions(runner: RecordingRunner): ProcessExecutionOptions {
     const call = runner.calls[0];
     if (call === undefined) {
       throw new Error("No process invocation was recorded.");
@@ -804,7 +806,7 @@ describe("setup phase command execution", () => {
   }
 
   it("scopes every phase command to the repository root with the bounded default timeout", async () => {
-    const runner = createProcessRunner();
+    const runner = buildRecordingProcessRunner();
     const {command} = createSetupFixture({
       runner,
       phases: [commandPhase((context) => context.runtime?.runner.run({command: "dotnet", args: ["--version"]}) ?? Promise.resolve())],
@@ -818,7 +820,7 @@ describe("setup phase command execution", () => {
   });
 
   it("preserves an explicit caller timeout instead of the scoped default", async () => {
-    const runner = createProcessRunner();
+    const runner = buildRecordingProcessRunner();
     const {command} = createSetupFixture({
       runner,
       phases: [
@@ -834,7 +836,7 @@ describe("setup phase command execution", () => {
   });
 
   it("keeps the scoped default for a mutation command instead of the pre-migration bridge policy", async () => {
-    const runner = createProcessRunner();
+    const runner = buildRecordingProcessRunner();
     const {command} = createSetupFixture({
       runner,
       phases: [
@@ -849,7 +851,7 @@ describe("setup phase command execution", () => {
 
   it("does not echo command evidence in normal mode", async () => {
     const {logger, sink} = createLogger(false);
-    const runner = createProcessRunner();
+    const runner = buildRecordingProcessRunner();
     const {command} = createSetupFixture({
       logger,
       runner,
@@ -864,7 +866,7 @@ describe("setup phase command execution", () => {
 
   it("echoes formatted command evidence in verbose mode without stdin or environment values", async () => {
     const {logger, sink} = createLogger(true);
-    const runner = createProcessRunner();
+    const runner = buildRecordingProcessRunner();
     const {command} = createSetupFixture({
       logger,
       runner,

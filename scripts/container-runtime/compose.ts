@@ -17,7 +17,7 @@ import {CommandInputError, getInvocationArgv, type CommandExecutionContext} from
 import {defineCommand, type LazyMonorepoCommand} from "../core/command/lazy-monorepo-command.ts";
 import type {CommandConstructionOptions, CommandHost} from "../core/command/command-specification.ts";
 import {resolveRepositoryPaths} from "../common/repository-paths.ts";
-import {RunnerError} from "../common/runner.ts";
+import {ProcessRunnerError} from "../core/process/process-runner.ts";
 import {commandCancellationFromSignal} from "../common/runtime.ts";
 import {getContainerAdapter, type ContainerRuntimeAdapter, type RuntimeCommand} from "./adapters.ts";
 import {runContainerPreflight} from "./preflight.ts";
@@ -81,11 +81,11 @@ async function executeCompose(context: Readonly<CommandExecutionContext>, input:
     await runtime.runner.expectSuccess(command, {
       output: "tee",
       logCommands: true,
-      logger: runtime.presenter,
+      presenter: runtime.presenter,
       signal: runtime.signal,
     });
   } catch (error) {
-    if (error instanceof RunnerError && error.outcome.kind === "cancelled" && runtime.signal.aborted) {
+    if (error instanceof ProcessRunnerError && error.result.kind === "cancelled" && runtime.signal.aborted) {
       throw commandCancellationFromSignal(runtime.signal);
     }
     throw error;

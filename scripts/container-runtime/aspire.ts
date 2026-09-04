@@ -14,7 +14,7 @@ import type {CommandExecutionContext} from "../core/command/command-execution.ts
 import {defineCommand, type LazyMonorepoCommand} from "../core/command/lazy-monorepo-command.ts";
 import type {CommandConstructionOptions, CommandHost} from "../core/command/command-specification.ts";
 import {resolveRepositoryPaths} from "../common/repository-paths.ts";
-import {RunnerError} from "../common/runner.ts";
+import {ProcessRunnerError} from "../core/process/process-runner.ts";
 import {commandCancellationFromSignal} from "../common/runtime.ts";
 import {getContainerAdapter, type ContainerRuntimeAdapter} from "./adapters.ts";
 import {runContainerPreflight} from "./preflight.ts";
@@ -88,7 +88,7 @@ async function executeAspire(context: Readonly<CommandExecutionContext>, input: 
       {env: command.env, output: "inherit", signal: runtime.signal},
     );
   } catch (error) {
-    if (error instanceof RunnerError && error.outcome.kind === "cancelled" && runtime.signal.aborted) {
+    if (error instanceof ProcessRunnerError && error.result.kind === "cancelled" && runtime.signal.aborted) {
       throw commandCancellationFromSignal(runtime.signal);
     }
     throw error;

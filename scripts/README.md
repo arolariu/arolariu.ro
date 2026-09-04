@@ -1,8 +1,9 @@
 # Root Tooling Scripts
 
 The root [`package.json`](../package.json) owns the supported npm commands that invoke this directory. Root scripts coordinate repository
-tooling; the declarative command runtime, capability kernel, and process runner belong in [`common`](./common), container runtime behavior
-belongs in [`container-runtime`](./container-runtime), and worker entry points belong in [`workers`](./workers).
+tooling; the declarative command runtime and capability kernel belong in [`common`](./common), the engine-neutral process contracts belong
+in [`core/process`](./core/process), container runtime behavior belongs in [`container-runtime`](./container-runtime), and worker entry
+points belong in [`workers`](./workers).
 
 [RFC 0002](../docs/rfc/0002-lean-monorepo-tooling-architecture.md) is the accepted architecture record for everything below.
 
@@ -126,25 +127,25 @@ to the failure that caused it rather than replacing it.
 
 ### Runner outcomes and `expectSuccess()`
 
-`context.runtime.runner` is a `ProcessRunner` from [`common/runner.ts`](./common/runner.ts). `run()` resolves a discriminated
-`ProcessOutcome` — switch on `kind` instead of re-deriving success from an exit code:
+`context.runtime.runner` is a `ProcessRunner` from [`core/process/process-runner.ts`](./core/process/process-runner.ts). `run()` resolves a
+discriminated `ProcessExecutionResult` — switch on `kind` instead of re-deriving success from an exit code:
 
 ```typescript
-const outcome = await runner.run({command: "git", args: ["status", "--porcelain"]}, {output: "capture"});
-switch (outcome.kind) {
-  case "succeeded":  return outcome.stdout;          // exitCode is narrowed to 0
-  case "exited":     return degrade(outcome.exitCode);
+const result = await runner.run({command: "git", args: ["status", "--porcelain"]}, {output: "capture"});
+switch (result.kind) {
+  case "succeeded":  return result.stdout;          // exitCode is narrowed to 0
+  case "exited":     return degrade(result.exitCode);
   case "timed-out":
   case "signalled":
   case "cancelled":
-  case "spawn-failed": throw new Error(processFailureEvidence(outcome, logger));
+  case "spawn-failed": throw new Error(processExecutionFailureEvidence(result, presenter));
 }
 ```
 
-`expectSuccess()` is the required-success policy: it returns a `SucceededProcessOutcome` or throws a `RunnerError` whose message,
-retained `request`, and retained `outcome` are all redacted through the supplied logger and bounded to 2,000 characters.
+`expectSuccess()` is the required-success policy: it returns a `SucceededProcessExecutionResult` or throws a `ProcessRunnerError` whose
+message, retained `request`, and retained `result` are all redacted through the supplied presenter and bounded to 2,000 characters.
 `runner.scope(defaults)` returns a new runner with reusable defaults and never mutates its parent. Keep the executable and its arguments
-separate; `formatProcessRequest()` renders diagnostics and never includes stdin or environment values.
+separate; `formatProcessExecutionRequest()` renders diagnostics and never includes stdin or environment values.
 
 ### Capability profiles and child scope ownership
 
@@ -193,7 +194,7 @@ entry runs even when an earlier one throws; each failure becomes bounded evidenc
 ### Sensitive values
 
 Register runtime secrets with `presenter.redact()` before any output that could contain them. Presenter children and forks share one redaction
-registry, and `RunnerError` redacts its retained request and outcome through the same registry. Do not place secret values in manually
+registry, and `ProcessRunnerError` redacts its retained request and result through the same registry. Do not place secret values in manually
 formatted diagnostics.
 
 ### Format, lint, and the worker-shell exception
@@ -365,7 +366,7 @@ case, so status never reports a fabricated "unavailable" health section for a br
 Focused validation for doctor, its reporter, every specialist module, and `status.ts`:
 
 ```powershell
-npx vitest run --config scripts\vitest.config.ts --coverage.enabled=false scripts\core\presentation\composed-terminal-presenter.test.ts scripts\common\runner.test.ts scripts\common\output-policy.test.ts scripts\doctor.test.ts scripts\doctor.reporter.test.ts scripts\doctor.readonly.test.ts scripts\doctor.workspace.test.ts scripts\doctor.dotnet.test.ts scripts\doctor.react.test.ts scripts\doctor.svelte.test.ts scripts\doctor.python.test.ts scripts\doctor.infrastructure.test.ts scripts\doctor.diagnostics.test.ts scripts\status.test.ts scripts\setup.test.ts
+npx vitest run --config scripts\vitest.config.ts --coverage.enabled=false scripts\core\presentation\composed-terminal-presenter.test.ts scripts\testing\contracts\process-runner.contract.test.ts scripts\common\output-policy.test.ts scripts\doctor.test.ts scripts\doctor.reporter.test.ts scripts\doctor.readonly.test.ts scripts\doctor.workspace.test.ts scripts\doctor.dotnet.test.ts scripts\doctor.react.test.ts scripts\doctor.svelte.test.ts scripts\doctor.python.test.ts scripts\doctor.infrastructure.test.ts scripts\doctor.diagnostics.test.ts scripts\status.test.ts scripts\setup.test.ts
 npx eslint scripts\doctor.ts scripts\doctor.types.ts scripts\doctor.reporter.ts scripts\doctor.workspace.ts scripts\doctor.dotnet.ts scripts\doctor.react.ts scripts\doctor.svelte.ts scripts\doctor.python.ts scripts\doctor.infrastructure.ts scripts\status.ts scripts\common\taxonomy-artifacts.ts
 git --no-pager diff --check
 ```

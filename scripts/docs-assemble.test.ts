@@ -17,7 +17,9 @@ import {join} from "node:path";
 import {describe, expect, it} from "vitest";
 
 import {createRepositoryPaths, type RepositoryPaths} from "./common/repository-paths.ts";
-import {AbstractProcessRunner, type ProcessOutcome, type ProcessRequest, type ProcessRunOptions} from "./common/runner.ts";
+import type {ProcessExecutionOptions, ProcessExecutionRequest} from "./core/process/process-execution-request.ts";
+import type {ProcessExecutionResult} from "./core/process/process-execution-result.ts";
+import {AbstractProcessRunner} from "./core/process/process-runner.ts";
 import {createMemoryFileSystem, repositoryFixtureRoot} from "./common/runtime.testing.ts";
 import {buildCommandHost} from "./testing/builders/command-host.builder.ts";
 import type {FileSystem} from "./common/runtime.ts";
@@ -286,17 +288,17 @@ function documentationFixtureFileSystem(): FileSystem {
 }
 
 /** One recorded invocation of {@link DocumentationFixtureRunner}. */
-type RecordedCall = Readonly<{request: ProcessRequest; options: ProcessRunOptions}>;
+type RecordedCall = Readonly<{request: ProcessExecutionRequest; options: ProcessExecutionOptions}>;
 
-function succeeded(patch: Readonly<{stdout?: string; stderr?: string}> = {}): ProcessOutcome {
+function succeeded(patch: Readonly<{stdout?: string; stderr?: string}> = {}): ProcessExecutionResult {
   return {kind: "succeeded", exitCode: 0, stdout: patch.stdout ?? "", stderr: patch.stderr ?? "", durationMs: 1};
 }
 
-function exited(exitCode: number, patch: Readonly<{stdout?: string; stderr?: string}> = {}): ProcessOutcome {
+function exited(exitCode: number, patch: Readonly<{stdout?: string; stderr?: string}> = {}): ProcessExecutionResult {
   return {kind: "exited", exitCode, stdout: patch.stdout ?? "", stderr: patch.stderr ?? "", durationMs: 1};
 }
 
-function commandKey(request: Readonly<ProcessRequest>): string {
+function commandKey(request: Readonly<ProcessExecutionRequest>): string {
   return [request.command, ...request.args].join("\u0000");
 }
 
@@ -309,10 +311,10 @@ function commandKey(request: Readonly<ProcessRequest>): string {
  */
 class DocumentationFixtureRunner extends AbstractProcessRunner {
   readonly #files: FileSystem;
-  readonly #overrides: ReadonlyMap<string, ProcessOutcome>;
+  readonly #overrides: ReadonlyMap<string, ProcessExecutionResult>;
   readonly #calls: RecordedCall[] = [];
 
-  public constructor(files: FileSystem, overrides: ReadonlyMap<string, ProcessOutcome> = new Map()) {
+  public constructor(files: FileSystem, overrides: ReadonlyMap<string, ProcessExecutionResult> = new Map()) {
     super();
     this.#files = files;
     this.#overrides = overrides;
@@ -324,7 +326,7 @@ class DocumentationFixtureRunner extends AbstractProcessRunner {
   }
 
   /** {@inheritDoc AbstractProcessRunner.execute} */
-  protected override async execute(request: Readonly<ProcessRequest>, options: Readonly<ProcessRunOptions>): Promise<ProcessOutcome> {
+  protected override async execute(request: Readonly<ProcessExecutionRequest>, options: Readonly<ProcessExecutionOptions>): Promise<ProcessExecutionResult> {
     this.#calls.push({request, options});
     const override = this.#overrides.get(commandKey(request));
     if (override !== undefined) {
@@ -335,7 +337,7 @@ class DocumentationFixtureRunner extends AbstractProcessRunner {
     return succeeded();
   }
 
-  private async simulateExtractorOutput(request: Readonly<ProcessRequest>): Promise<void> {
+  private async simulateExtractorOutput(request: Readonly<ProcessExecutionRequest>): Promise<void> {
     if (request.command === "npx" && request.args.includes("typedoc.components.json")) {
       const dir = join(TS_REFERENCE_DIR, "components");
       await this.#files.createDirectory(dir, {recursive: true});
@@ -470,9 +472,9 @@ describe("createDocsAssembleCommand", () => {
   // Failure and cleanup
   // ==========================================================================
 
-  it("removes the generated tree and reports a RunnerError-bounded failure when an extractor exits non-zero", async () => {
+  it("removes the generated tree and reports a ProcessRunnerError-bounded failure when an extractor exits non-zero", async () => {
     const files = documentationFixtureFileSystem();
-    const overrides = new Map<string, ProcessOutcome>([
+    const overrides = new Map<string, ProcessExecutionResult>([
       [
         ["npx", "typedoc", "--options", "typedoc.components.json"].join("\u0000"),
         exited(1, {stderr: "TypeDoc fatal: configuration not found"}),
@@ -489,10 +491,10 @@ describe("createDocsAssembleCommand", () => {
     expect(await files.exists(GENERATED_ROOT)).toBe(false);
   });
 
-  it("bounds a RunnerError's failure evidence to 2000 characters", async () => {
+  it("bounds a ProcessRunnerError's failure evidence to 2000 characters", async () => {
     const files = documentationFixtureFileSystem();
     const longOutput = "x".repeat(5000);
-    const overrides = new Map<string, ProcessOutcome>([
+    const overrides = new Map<string, ProcessExecutionResult>([
       [["python", "-m", "pydoc_markdown.main"].join("\u0000"), exited(1, {stderr: longOutput})],
     ]);
     const runner = new DocumentationFixtureRunner(files, overrides);
@@ -512,7 +514,7 @@ describe("createDocsAssembleCommand", () => {
     // so `assertNonEmpty` inside `runTypedoc` (which checks the whole ts-reference tree and still
     // sees the components tier's content) passes, while the top-level required-tier check later
     // catches the missing `ts-reference/website` subtree specifically.
-    const overrides = new Map<string, ProcessOutcome>([
+    const overrides = new Map<string, ProcessExecutionResult>([
       [["npx", "typedoc", "--options", "typedoc.website.json"].join("\u0000"), succeeded()],
     ]);
     const runner = new DocumentationFixtureRunner(files, overrides);
@@ -528,7 +530,7 @@ describe("createDocsAssembleCommand", () => {
   it("propagates cancellation instead of downgrading it to a business failure, and still removes the generated tree", async () => {
     const files = documentationFixtureFileSystem();
     const controller = new AbortController();
-    const overrides = new Map<string, ProcessOutcome>();
+    const overrides = new Map<string, ProcessExecutionResult>();
     const runner = new DocumentationFixtureRunner(files, overrides);
     const command = createDocsAssembleCommand({host: buildCommandHost({runtime: {files, runner}})});
 

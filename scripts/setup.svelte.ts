@@ -27,7 +27,8 @@
  */
 
 import {parseVersion, satisfiesMinimum, type MinimumVersion} from "./common/requirements.ts";
-import type {ProcessOutcome, ProcessRequest, SucceededProcessOutcome} from "./common/runner.ts";
+import type {ProcessExecutionRequest} from "./core/process/process-execution-request.ts";
+import type {ProcessExecutionResult, SucceededProcessExecutionResult} from "./core/process/process-execution-result.ts";
 import {CommandCancellation} from "./common/runtime.ts";
 import type {SvelteFacts, SvelteProjectId} from "./inspection/frontend.ts";
 import {SVELTE_INSPECTED_PACKAGE_NAMES, type PackageInventoryFacts} from "./inspection/packages.ts";
@@ -66,7 +67,7 @@ const PREPARE_ACTION_ID = "svelte.prepare";
  * supply implicitly.
  */
 const LONG_RUNNING_MUTATION_TIMEOUT_MS = 1_200_000;
-const PREPARE_COMMAND: ProcessRequest = {
+const PREPARE_COMMAND: ProcessExecutionRequest = {
   command: "npm",
   args: ["run", "prepare", "--workspace=sites/cv.arolariu.ro", "--workspace=sites/status.arolariu.ro"],
 };
@@ -79,7 +80,7 @@ function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
-function isSuccessfulOutcome(outcome: Readonly<ProcessOutcome>): outcome is SucceededProcessOutcome {
+function isSuccessfulOutcome(outcome: Readonly<ProcessExecutionResult>): outcome is SucceededProcessExecutionResult {
   return outcome.kind === "succeeded";
 }
 
@@ -89,7 +90,7 @@ function isSuccessfulOutcome(outcome: Readonly<ProcessOutcome>): outcome is Succ
  * @param outcome - Completed process outcome.
  * @returns Evidence lines naming the transport failure and any captured output.
  */
-function commandFailureEvidence(outcome: Readonly<ProcessOutcome>): readonly string[] {
+function commandFailureEvidence(outcome: Readonly<ProcessExecutionResult>): readonly string[] {
   const evidence: string[] = [];
   switch (outcome.kind) {
     case "succeeded":
@@ -292,7 +293,7 @@ async function runSveltePrepare(context: SetupContext, runtime: SetupPhaseRuntim
         const prepareResult = await runtime.runner.run(PREPARE_COMMAND, {
           cwd: context.paths.root,
           output: "tee",
-          logger: context.logger,
+          presenter: context.logger,
           timeoutMs: LONG_RUNNING_MUTATION_TIMEOUT_MS,
         });
         if (!isSuccessfulOutcome(prepareResult)) {

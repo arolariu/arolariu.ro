@@ -15,7 +15,8 @@ import type {TerminalPresenter} from "./core/presentation/terminal-presenter.ts"
 import type {PromptProvider} from "./common/prompts.ts";
 import type {RepositoryPaths} from "./common/repository-paths.ts";
 import type {RepositoryRequirements} from "./common/requirements.ts";
-import type {ProcessRequest, ProcessRunner} from "./common/runner.ts";
+import type {ProcessExecutionRequest} from "./core/process/process-execution-request.ts";
+import type {ProcessRunner} from "./core/process/process-runner.ts";
 import type {Clock, FileSystem, HttpClient, RuntimeEnvironment, TaskScheduler} from "./common/runtime.ts";
 import type {ContainerEngine} from "./container-runtime/types.ts";
 import type {GenerateInput, GenerateResult} from "./generate.ts";
@@ -95,7 +96,7 @@ export interface SetupAction {
 /** Proposed installation command and rationale. */
 export interface InstallationProposal {
   /** Installation command to run. */
-  readonly command: ProcessRequest;
+  readonly command: ProcessExecutionRequest;
   /** Reason the installation is needed. */
   readonly explanation: string;
 }

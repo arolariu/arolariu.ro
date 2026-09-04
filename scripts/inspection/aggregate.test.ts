@@ -9,7 +9,9 @@ import {resolve} from "node:path";
 import {fileURLToPath} from "node:url";
 import {describe, expect, it, vi} from "vitest";
 
-import type {ProcessEnvironment, ProcessOutcome, ProcessOutput, ProcessRequest, ProcessRunner} from "../common/runner.ts";
+import type {ProcessEnvironment, ProcessExecutionRequest} from "../core/process/process-execution-request.ts";
+import type {ProcessExecutionOutput, ProcessExecutionResult} from "../core/process/process-execution-result.ts";
+import type {ProcessRunner} from "../core/process/process-runner.ts";
 import {createNodeProcessRunner, snapshotNodeEnvironment} from "../common/runtime.node.ts";
 import {DefaultTaskScheduler, type Clock, type RuntimeEnvironment} from "../common/runtime.ts";
 import {buildCommandHost} from "../testing/builders/command-host.builder.ts";
@@ -29,19 +31,19 @@ const REPOSITORY_ROOT = resolve(tmpdir(), "arolariu-aggregate-fixture-root");
 /** Absolute path to the worker module, used only by the CLI-argument subprocess tests. */
 const WORKER_PATH = fileURLToPath(new URL("./aggregate-worker.ts", import.meta.url));
 
-function succeeded(patch: Partial<ProcessOutput> = {}): ProcessOutcome {
+function succeeded(patch: Partial<ProcessExecutionOutput> = {}): ProcessExecutionResult {
   return {kind: "succeeded", exitCode: 0, stdout: "", stderr: "", durationMs: 1, ...patch};
 }
 
-function exited(exitCode: number, patch: Partial<ProcessOutput> = {}): ProcessOutcome {
+function exited(exitCode: number, patch: Partial<ProcessExecutionOutput> = {}): ProcessExecutionResult {
   return {kind: "exited", exitCode, stdout: "", stderr: "", durationMs: 1, ...patch};
 }
 
-function spawnFailed(message: string, patch: Partial<ProcessOutput> = {}): ProcessOutcome {
+function spawnFailed(message: string, patch: Partial<ProcessExecutionOutput> = {}): ProcessExecutionResult {
   return {kind: "spawn-failed", message, stdout: "", stderr: "", durationMs: 1, ...patch};
 }
 
-function timedOut(patch: Partial<ProcessOutput> = {}): ProcessOutcome {
+function timedOut(patch: Partial<ProcessExecutionOutput> = {}): ProcessExecutionResult {
   return {kind: "timed-out", stdout: "", stderr: "", durationMs: 1, ...patch};
 }
 
@@ -56,7 +58,7 @@ const fixedClock: Clock = {
 const workerEnvironment: RuntimeEnvironment = snapshotNodeEnvironment();
 
 interface CapturedRun {
-  readonly command: Readonly<ProcessRequest>;
+  readonly command: Readonly<ProcessExecutionRequest>;
   readonly options: Readonly<{
     cwd?: string;
     env?: ProcessEnvironment;
@@ -65,9 +67,9 @@ interface CapturedRun {
   }>;
 }
 
-function createFakeRunner(respond: (call: CapturedRun) => ProcessOutcome): {runner: ProcessRunner; calls: CapturedRun[]} {
+function createFakeRunner(respond: (call: CapturedRun) => ProcessExecutionResult): {runner: ProcessRunner; calls: CapturedRun[]} {
   const calls: CapturedRun[] = [];
-  const run = vi.fn(async (command: Readonly<ProcessRequest>, options: Readonly<CapturedRun["options"]> = {}) => {
+  const run = vi.fn(async (command: Readonly<ProcessExecutionRequest>, options: Readonly<CapturedRun["options"]> = {}) => {
     const call: CapturedRun = {command, options};
     calls.push(call);
     return respond(call);

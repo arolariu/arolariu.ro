@@ -27,7 +27,7 @@ import type {CommandExecutionContext} from "./core/command/command-execution.ts"
 import {defineCommand, type LazyMonorepoCommand} from "./core/command/lazy-monorepo-command.ts";
 import type {CommandConstructionOptions, CommandHost} from "./core/command/command-specification.ts";
 import {resolveRepositoryPaths} from "./common/repository-paths.ts";
-import type {ProcessRunner} from "./common/runner.ts";
+import type {ProcessRunner} from "./core/process/process-runner.ts";
 import type {FileSystem} from "./common/runtime.ts";
 import {normalizeDirectory, serializeFrontmatter} from "./docs-assemble.normalize.ts";
 

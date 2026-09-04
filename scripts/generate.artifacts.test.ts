@@ -27,13 +27,9 @@ import {ComposedTerminalPresenter} from "./core/presentation/composed-terminal-p
 import {RecordingTerminalPresenterSink} from "./testing/fixtures/terminal.fixture.ts";
 import type {TerminalPresenter} from "./core/presentation/terminal-presenter.ts";
 import type {PromptProvider} from "./common/prompts.ts";
-import {
-  AbstractProcessRunner,
-  type ProcessOutcome,
-  type ProcessRequest,
-  type ProcessRunOptions,
-  type ProcessRunner,
-} from "./common/runner.ts";
+import type {ProcessExecutionOptions, ProcessExecutionRequest} from "./core/process/process-execution-request.ts";
+import type {ProcessExecutionResult} from "./core/process/process-execution-result.ts";
+import {AbstractProcessRunner, type ProcessRunner} from "./core/process/process-runner.ts";
 import {
   DefaultTaskScheduler,
   type Clock,
@@ -101,7 +97,7 @@ class ScriptedHttpClient implements HttpClient {
 /** Process runner fake that materializes the GPC archive entries the extractor expects to find. */
 class ArchiveExtractionRunner extends AbstractProcessRunner {
   /** Every recorded invocation, in call order. */
-  public readonly calls: Readonly<{request: ProcessRequest; options: ProcessRunOptions}>[] = [];
+  public readonly calls: Readonly<{request: ProcessExecutionRequest; options: ProcessExecutionOptions}>[] = [];
 
   readonly #files: FileSystem;
   #document: unknown;
@@ -123,9 +119,9 @@ class ArchiveExtractionRunner extends AbstractProcessRunner {
 
   /** {@inheritDoc AbstractProcessRunner.execute} */
   protected override async execute(
-    request: Readonly<ProcessRequest>,
-    options: Readonly<ProcessRunOptions>,
-  ): Promise<ProcessOutcome> {
+    request: Readonly<ProcessExecutionRequest>,
+    options: Readonly<ProcessExecutionOptions>,
+  ): Promise<ProcessExecutionResult> {
     this.calls.push({request, options});
     const outputIndex = request.args.findIndex((value) => value === "-C" || value === "-d");
     const outputDirectory = request.args[outputIndex + 1];

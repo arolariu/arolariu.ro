@@ -9,7 +9,9 @@ import {tmpdir} from "node:os";
 import {join, resolve} from "node:path";
 import {afterEach, describe, expect, it, vi} from "vitest";
 
-import type {ProcessEnvironment, ProcessOutcome, ProcessRequest, ProcessRunner} from "../common/runner.ts";
+import type {ProcessEnvironment, ProcessExecutionRequest} from "../core/process/process-execution-request.ts";
+import type {ProcessExecutionResult} from "../core/process/process-execution-result.ts";
+import type {ProcessRunner} from "../core/process/process-runner.ts";
 import {nodeFileSystem} from "../common/runtime.node.ts";
 import {asReadOnlyFileSystem, DefaultTaskScheduler, type Clock, type RuntimeEnvironment} from "../common/runtime.ts";
 import {createRepositoryPaths, type RepositoryPaths} from "../common/repository-paths.ts";
@@ -39,7 +41,7 @@ const WINDOWS_PORT_OWNER_PROBE_SCRIPT = [
 const MACOS_PORT_OWNER_PROBE_SCRIPT = 'for port in "$@"; do lsof -nP -a -iTCP:"$port" -sTCP:LISTEN -Fpcn; done';
 const LINUX_PORT_OWNER_PROBE_SCRIPT = 'for port in "$@"; do ss -ltnp "sport = :$port"; done';
 
-/** Legacy-shaped fixture description translated into one typed {@link ProcessOutcome}. */
+/** Legacy-shaped fixture description translated into one typed {@link ProcessExecutionResult}. */
 interface ProcessOutcomeFixture {
   readonly code?: number;
   readonly stdout?: string;
@@ -51,13 +53,13 @@ interface ProcessOutcomeFixture {
 }
 
 /**
- * Builds one typed {@link ProcessOutcome} from a fixture description, so every suite keeps naming
+ * Builds one typed {@link ProcessExecutionResult} from a fixture description, so every suite keeps naming
  * the exact spawn/timeout/signal/exit classification it exercises.
  *
  * @param patch - Fixture description of the outcome under test.
  * @returns The equivalent typed process outcome.
  */
-function commandResult(patch: ProcessOutcomeFixture = {}): ProcessOutcome {
+function commandResult(patch: ProcessOutcomeFixture = {}): ProcessExecutionResult {
   const output = {stdout: patch.stdout ?? "", stderr: patch.stderr ?? "", durationMs: patch.durationMs ?? 1};
   if (patch.spawnError !== undefined) {
     return {kind: "spawn-failed", message: patch.spawnError, ...output};
@@ -111,7 +113,7 @@ function environmentFor(platform: NodeJS.Platform, variables: ProcessEnvironment
   };
 }
 
-function commandKey(command: Readonly<ProcessRequest>, cwd?: string): string {
+function commandKey(command: Readonly<ProcessExecutionRequest>, cwd?: string): string {
   return `${cwd ?? ""}\u0000${command.command}\u0000${JSON.stringify(command.args)}`;
 }
 
@@ -127,31 +129,31 @@ function clock(): Clock {
   };
 }
 
-function runtimeVersionCommand(engine: ContainerEngine): ProcessRequest {
+function runtimeVersionCommand(engine: ContainerEngine): ProcessExecutionRequest {
   return engine === "rancher" ? {command: "docker", args: ["--version"]} : {command: "podman", args: ["--version"]};
 }
 
-function composeVersionCommand(engine: ContainerEngine): ProcessRequest {
+function composeVersionCommand(engine: ContainerEngine): ProcessExecutionRequest {
   return engine === "rancher" ? {command: "docker", args: ["compose", "version"]} : {command: "podman", args: ["compose", "version"]};
 }
 
-function runtimeContextCommand(engine: ContainerEngine): ProcessRequest {
+function runtimeContextCommand(engine: ContainerEngine): ProcessExecutionRequest {
   return engine === "rancher"
     ? {command: "docker", args: ["context", "show"]}
     : {command: "podman", args: ["system", "connection", "list", "--format", "json"]};
 }
 
-function containerListCommand(engine: ContainerEngine): ProcessRequest {
+function containerListCommand(engine: ContainerEngine): ProcessExecutionRequest {
   return engine === "rancher"
     ? {command: "docker", args: ["ps", "-a", "--format", "{{json .}}"]}
     : {command: "podman", args: ["ps", "-a", "--format", "{{json .}}"]};
 }
 
-function runtimeInfoCommand(engine: ContainerEngine): ProcessRequest {
+function runtimeInfoCommand(engine: ContainerEngine): ProcessExecutionRequest {
   return engine === "rancher" ? {command: "docker", args: ["info"]} : {command: "podman", args: ["info", "--format", "json"]};
 }
 
-function portOwnersCommand(platform: NodeJS.Platform, ports: readonly number[] = [...requiredLocalPorts]): ProcessRequest {
+function portOwnersCommand(platform: NodeJS.Platform, ports: readonly number[] = [...requiredLocalPorts]): ProcessExecutionRequest {
   const portArguments = ports.map((port) => String(port));
   if (platform === "win32") {
     return {
@@ -209,7 +211,7 @@ interface InfrastructureFixture {
   readonly root: string;
   readonly paths: RepositoryPaths;
   readonly run: ReturnType<typeof vi.fn<ProcessRunner["run"]>>;
-  readonly setResponse: (command: Readonly<ProcessRequest>, result: ProcessOutcome) => void;
+  readonly setResponse: (command: Readonly<ProcessExecutionRequest>, result: ProcessExecutionResult) => void;
 }
 
 async function createInfrastructureFixture(
@@ -238,13 +240,13 @@ async function createInfrastructureFixture(
     ]);
   }
 
-  const responses = new Map<string, ProcessOutcome>();
-  const setResponse = (command: Readonly<ProcessRequest>, result: ProcessOutcome): void => {
+  const responses = new Map<string, ProcessExecutionResult>();
+  const setResponse = (command: Readonly<ProcessExecutionRequest>, result: ProcessExecutionResult): void => {
     responses.set(commandKey(command, paths.root), result);
   };
 
   const run = vi.fn<ProcessRunner["run"]>(
-    async (command, options): Promise<ProcessOutcome> =>
+    async (command, options): Promise<ProcessExecutionResult> =>
       responses.get(commandKey(command, options?.cwd))
       ?? commandResult({code: 127, spawnError: `unexpected-native-command-marker:${command.command}`}),
   );

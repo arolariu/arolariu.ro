@@ -1,13 +1,29 @@
 /**
- * @fileoverview Execa-backed process runner boundary for monorepository scripts.
- * @module scripts/common/runner.execa
+ * @fileoverview Execa-backed process runner adapter for monorepository scripts.
+ * @module scripts/adapters/execa/execa-process-runner
+ *
+ * @remarks
+ * This is the only module in the scripts workspace that imports `execa`. It converts the engine's
+ * reported signal names into the core-owned {@link ProcessTerminationSignal} at its own boundary,
+ * and it never reads ambient `process.env` or `process.platform`: the caller supplies both as an
+ * immutable snapshot through {@link ExecaProcessRunnerOptions}.
  */
 
 import {basename} from "node:path";
 import {StringDecoder} from "node:string_decoder";
 import {execa} from "execa";
 
-import {AbstractProcessRunner, type ProcessEnvironment, type ProcessOutcome, type ProcessRequest, type ProcessRunOptions} from "./runner.ts";
+import type {
+  ProcessEnvironment,
+  ProcessExecutionOptions,
+  ProcessExecutionRequest,
+} from "../../core/process/process-execution-request.ts";
+import {
+  toProcessTerminationSignal,
+  type ProcessExecutionResult,
+  type ProcessTerminationSignal,
+} from "../../core/process/process-execution-result.ts";
+import {AbstractProcessRunner} from "../../core/process/process-runner.ts";
 
 interface ExecaResultLike {
   readonly code?: string | number | undefined;
@@ -60,9 +76,9 @@ export class ExecaProcessRunner extends AbstractProcessRunner {
   }
 
   protected override execute(
-    request: Readonly<ProcessRequest>,
-    options: Readonly<ProcessRunOptions>,
-  ): Promise<ProcessOutcome> {
+    request: Readonly<ProcessExecutionRequest>,
+    options: Readonly<ProcessExecutionOptions>,
+  ): Promise<ProcessExecutionResult> {
     if (options.signal?.aborted === true) {
       return Promise.resolve({kind: "cancelled", stdout: "", stderr: "", durationMs: 0});
     }
@@ -76,15 +92,15 @@ export class ExecaProcessRunner extends AbstractProcessRunner {
 }
 
 async function runExeca(
-  request: Readonly<ProcessRequest>,
-  options: Readonly<ProcessRunOptions>,
+  request: Readonly<ProcessExecutionRequest>,
+  options: Readonly<ProcessExecutionOptions>,
   context: Readonly<ExecaExecutionContext>,
-): Promise<ProcessOutcome> {
+): Promise<ProcessExecutionResult> {
   const outputMode = options.output ?? "capture";
   const startedAt = context.monotonicNow();
   const environment = buildEnvironment(context.baseEnvironment, options.env);
-  const stdoutWriter = outputMode === "tee" ? options.logger?.createStreamWriter("stdout") : undefined;
-  const stderrWriter = outputMode === "tee" ? options.logger?.createStreamWriter("stderr") : undefined;
+  const stdoutWriter = outputMode === "tee" ? options.presenter?.createStreamWriter("stdout") : undefined;
+  const stderrWriter = outputMode === "tee" ? options.presenter?.createStreamWriter("stderr") : undefined;
   const stdoutDecoder = new StringDecoder("utf8");
   const stderrDecoder = new StringDecoder("utf8");
 
@@ -125,7 +141,7 @@ async function runExeca(
     }
 
     const result = await subprocess;
-    return mapExecaOutcome(result, startedAt, request, subprocess.nodeChildProcess, context);
+    return mapExecaResult(result, startedAt, request, subprocess.nodeChildProcess, context);
   } catch (error: unknown) {
     return mapExecaFailure(error, startedAt, context);
   } finally {
@@ -145,17 +161,17 @@ async function runExeca(
   }
 }
 
-function mapExecaOutcome(
+function mapExecaResult(
   result: Readonly<ExecaResultLike>,
   startedAt: number,
-  request: Readonly<ProcessRequest>,
+  request: Readonly<ProcessExecutionRequest>,
   nodeChildProcess: Readonly<NodeChildProcessSpawnInfo> | undefined,
   context: Readonly<ExecaExecutionContext>,
-): ProcessOutcome {
+): ProcessExecutionResult {
   const durationMs = typeof result.durationMs === "number" ? result.durationMs : context.monotonicNow() - startedAt;
   const stdout = normalizeOutput(result.stdout);
   const stderr = normalizeOutput(result.stderr);
-  const signal = result.signal;
+  const signal = convertSignal(result.signal);
 
   if (result.isCanceled === true) {
     return {
@@ -227,11 +243,12 @@ function mapExecaOutcome(
   };
 }
 
-function mapExecaFailure(
-  error: unknown,
-  startedAt: number,
-  context: Readonly<ExecaExecutionContext>,
-): ProcessOutcome {
+/** Converts one Execa-reported Node signal name into the core-owned termination signal. */
+function convertSignal(signal: NodeJS.Signals | undefined): ProcessTerminationSignal | undefined {
+  return signal === undefined ? undefined : toProcessTerminationSignal(signal);
+}
+
+function mapExecaFailure(error: unknown, startedAt: number, context: Readonly<ExecaExecutionContext>): ProcessExecutionResult {
   return {
     kind: "spawn-failed",
     message: error instanceof Error ? error.message : String(error),
@@ -243,7 +260,7 @@ function mapExecaFailure(
 
 function resolveSpawnFailureMessage(
   result: Readonly<ExecaResultLike>,
-  request: Readonly<ProcessRequest>,
+  request: Readonly<ProcessExecutionRequest>,
   nodeChildProcess: Readonly<NodeChildProcessSpawnInfo> | undefined,
   platform: NodeJS.Platform,
 ): string | undefined {
@@ -265,7 +282,7 @@ const WINDOWS_CMD_SHELL_BASENAME = /^cmd(?:\.exe)?$/i;
 const WINDOWS_RESOLVED_COMMAND_LINE_PREFIX = /^"(?:[A-Za-z]:[\\/]|\\\\)/;
 
 function isUnresolvedWindowsCommand(
-  request: Readonly<ProcessRequest>,
+  request: Readonly<ProcessExecutionRequest>,
   nodeChildProcess: Readonly<NodeChildProcessSpawnInfo> | undefined,
   platform: NodeJS.Platform,
 ): boolean {

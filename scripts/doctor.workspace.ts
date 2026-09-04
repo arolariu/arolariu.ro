@@ -10,15 +10,15 @@
  * versions, npm cache/audit/outdated), or narrowly-scoped reads issued through the injected
  * read-only filesystem (`context.files`) for repository-wide configuration files and generated
  * taxonomy artifacts that no fact model represents. This module never imports a Node filesystem
- * API, never imports `ProcessRequest`/`ProcessRunner` from `./common/runner.ts`, and never
+ * API, never imports `ProcessExecutionRequest`/`ProcessRunner` from `./core/process/`, and never
  * receives a mutable filesystem or unrestricted runner; it consumes only the typed
- * `ProcessOutcome` produced by probe execution, and classifies every one of its variants
+ * `ProcessExecutionResult` produced by probe execution, and classifies every one of its variants
  * explicitly.
  */
 
 import {basename, join, resolve} from "node:path";
 
-import type {ProcessOutcome} from "./common/runner.ts";
+import type {ProcessExecutionResult, ProcessTerminationSignal} from "./core/process/process-execution-result.ts";
 import {parseVersion, satisfiesMinimum, type MinimumVersion} from "./common/requirements.ts";
 import {getExpectedTaxonomyArtifactPaths} from "./common/taxonomy-artifacts.ts";
 import {
@@ -71,17 +71,17 @@ function hasErrorCode(error: unknown, code: string): boolean {
   return error instanceof Error && "code" in error && error.code === code;
 }
 
-function isSuccessfulCommand(outcome: Readonly<ProcessOutcome>): boolean {
+function isSuccessfulCommand(outcome: Readonly<ProcessExecutionResult>): boolean {
   return outcome.kind === "succeeded";
 }
 
 /**
- * Maps one probe {@link ProcessOutcome} onto the numeric exit code doctor's evidence reports.
+ * Maps one probe {@link ProcessExecutionResult} onto the numeric exit code doctor's evidence reports.
  *
  * @param outcome - Typed probe outcome.
  * @returns `0` for success, the reported exit code for a completed nonzero exit, `1` otherwise.
  */
-function processExitCode(outcome: Readonly<ProcessOutcome>): number {
+function processExitCode(outcome: Readonly<ProcessExecutionResult>): number {
   switch (outcome.kind) {
     case "succeeded":
       return 0;
@@ -101,7 +101,7 @@ function processExitCode(outcome: Readonly<ProcessOutcome>): number {
  * @param outcome - Typed probe outcome.
  * @returns The signal name, or `undefined` when the child was not stopped by a signal.
  */
-function processSignal(outcome: Readonly<ProcessOutcome>): NodeJS.Signals | undefined {
+function processSignal(outcome: Readonly<ProcessExecutionResult>): ProcessTerminationSignal | undefined {
   switch (outcome.kind) {
     case "signalled":
       return outcome.signal;
@@ -115,7 +115,7 @@ function processSignal(outcome: Readonly<ProcessOutcome>): NodeJS.Signals | unde
   }
 }
 
-function isMissingExecutable(outcome: Readonly<ProcessOutcome>): boolean {
+function isMissingExecutable(outcome: Readonly<ProcessExecutionResult>): boolean {
   const detail = `${outcome.kind === "spawn-failed" ? outcome.message : ""}\n${outcome.stderr}`;
   return (
     processExitCode(outcome) === 127
@@ -123,7 +123,7 @@ function isMissingExecutable(outcome: Readonly<ProcessOutcome>): boolean {
   );
 }
 
-function commandStatusEvidence(outcome: Readonly<ProcessOutcome>): readonly string[] {
+function commandStatusEvidence(outcome: Readonly<ProcessExecutionResult>): readonly string[] {
   const exitCode = processExitCode(outcome);
   const signal = processSignal(outcome);
   return [
@@ -134,7 +134,7 @@ function commandStatusEvidence(outcome: Readonly<ProcessOutcome>): readonly stri
   ];
 }
 
-function commandEvidence(outcome: Readonly<ProcessOutcome>): readonly string[] {
+function commandEvidence(outcome: Readonly<ProcessExecutionResult>): readonly string[] {
   return [
     ...commandStatusEvidence(outcome),
     ...(outcome.stdout.trim() === "" ? [] : [`stdout: ${boundCommandExcerpt(outcome.stdout.trim())}`]),
@@ -440,7 +440,7 @@ async function diagnoseRuntime(
     id: "workspace.node-runtime" | "workspace.npm-runtime";
     name: "Node.js runtime" | "npm runtime";
     executable: "node" | "npm";
-    runProbe: () => Promise<ProcessOutcome>;
+    runProbe: () => Promise<ProcessExecutionResult>;
     minimum: MinimumVersion | null;
   }>,
 ): Promise<DiagnosticResult> {
@@ -1028,7 +1028,7 @@ async function diagnoseHostCapacity(context: Readonly<DoctorContext>): Promise<D
   return passDiagnostic(context, startedAt, "workspace.host-capacity", "Host capacity", "Host capacity is sufficient.", evidence);
 }
 
-function isNetworkUnavailable(outcome: Readonly<ProcessOutcome>): boolean {
+function isNetworkUnavailable(outcome: Readonly<ProcessExecutionResult>): boolean {
   if (outcome.kind === "timed-out") {
     return true;
   }

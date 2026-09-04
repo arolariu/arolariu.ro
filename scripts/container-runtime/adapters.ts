@@ -3,11 +3,11 @@
  * @module scripts/container-runtime/adapters
  */
 
-import type {ProcessRequest} from "../common/runner.ts";
+import type {ProcessExecutionRequest} from "../core/process/process-execution-request.ts";
 import type {ContainerEngine} from "./types.ts";
 
 /** Command and arguments to execute for a selected container runtime. */
-export type RuntimeCommand = ProcessRequest;
+export type RuntimeCommand = ProcessExecutionRequest;
 
 /** Engine-specific command adapter for local container workflows. */
 export interface ContainerRuntimeAdapter {

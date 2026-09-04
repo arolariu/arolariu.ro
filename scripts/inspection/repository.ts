@@ -27,7 +27,7 @@
  * `systeminformation` worker process is never spawned.
  */
 
-import type {ProcessRunner} from "../common/runner.ts";
+import type {ProcessRunner} from "../core/process/process-runner.ts";
 import type {Clock, FileSystem, ReadOnlyFileSystem, RepositoryInspectionRequest, RuntimeEnvironment, TaskScheduler} from "../common/runtime.ts";
 import {commandCancellationFromSignal} from "../common/runtime.ts";
 import type {ContainerEngine} from "../container-runtime/types.ts";

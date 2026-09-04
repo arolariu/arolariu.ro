@@ -22,7 +22,8 @@ import type {CommandExecutionContext} from "../core/command/command-execution.ts
 import {defineCommand, type LazyMonorepoCommand} from "../core/command/lazy-monorepo-command.ts";
 import type {CommandConstructionOptions, CommandHost} from "../core/command/command-specification.ts";
 import {resolveRepositoryPaths} from "../common/repository-paths.ts";
-import {RunnerError, type ProcessEnvironment} from "../common/runner.ts";
+import type {ProcessEnvironment} from "../core/process/process-execution-request.ts";
+import {ProcessRunnerError} from "../core/process/process-runner.ts";
 import {CommandCancellation, commandCancellationFromSignal, type CommandRuntime} from "../common/runtime.ts";
 import {generateArtifactsCommand, type ArtifactGenerationResult, type GenerateArtifactsInput} from "../generate.artifacts.ts";
 import {getContainerAdapter, type ContainerRuntimeAdapter, type RuntimeCommand} from "./adapters.ts";
@@ -164,18 +165,18 @@ export function getRequiredSqlPassword(variables: Readonly<Record<string, string
  *
  * @remarks
  * A cancelled invocation's exact SIGINT/SIGTERM exit code (`130`/`143`) is owned by its own
- * {@link CommandCancellation} reason; letting `expectSuccess`'s `RunnerError` for a cancelled
+ * {@link CommandCancellation} reason; letting `expectSuccess`'s `ProcessRunnerError` for a cancelled
  * outcome escape unclassified would misreport an interrupted invocation as an operational failure
  * and the shared Commander lifecycle would classify it as exit code `1`. A `{kind:"cancelled"}`
  * outcome observed while the invocation signal is not aborted is not this invocation's
- * cancellation and stays an operational failure. The invocation logger is always supplied so the
- * retained request and outcome inside a {@link RunnerError} are redacted.
+ * cancellation and stays an operational failure. The invocation presenter is always supplied so the
+ * retained request and result inside a {@link ProcessRunnerError} are redacted.
  *
  * @param runtime - Capabilities owned by the invocation.
  * @param command - Engine-owned runtime command to execute.
  * @param env - Optional environment values merged over the child's inherited defaults.
  * @throws {CommandCancellation} When `command` is cancelled on the invocation's aborted signal.
- * @throws {RunnerError} When `command` fails for any other reason.
+ * @throws {ProcessRunnerError} When `command` fails for any other reason.
  */
 async function runSelfhostCommand(runtime: CommandRuntime, command: Readonly<RuntimeCommand>, env?: ProcessEnvironment): Promise<void> {
   try {
@@ -183,12 +184,12 @@ async function runSelfhostCommand(runtime: CommandRuntime, command: Readonly<Run
       cwd: selfhostWorkingDirectory,
       output: "tee",
       logCommands: true,
-      logger: runtime.presenter,
+      presenter: runtime.presenter,
       signal: runtime.signal,
       ...(env === undefined ? {} : {env}),
     });
   } catch (error: unknown) {
-    if (error instanceof RunnerError && error.outcome.kind === "cancelled" && runtime.signal.aborted) {
+    if (error instanceof ProcessRunnerError && error.result.kind === "cancelled" && runtime.signal.aborted) {
       throw commandCancellationFromSignal(runtime.signal);
     }
     throw error;

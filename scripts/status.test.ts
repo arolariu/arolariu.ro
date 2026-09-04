@@ -24,7 +24,9 @@ import {buildCommandHost} from "./testing/builders/command-host.builder.ts";
 import {ComposedTerminalPresenter} from "./core/presentation/composed-terminal-presenter.ts";
 import {RecordingTerminalPresenterSink} from "./testing/fixtures/terminal.fixture.ts";
 import {createRepositoryPaths} from "./common/repository-paths.ts";
-import {AbstractProcessRunner, type ProcessOutcome, type ProcessRequest, type ProcessRunOptions} from "./common/runner.ts";
+import type {ProcessExecutionOptions, ProcessExecutionRequest} from "./core/process/process-execution-request.ts";
+import type {ProcessExecutionResult} from "./core/process/process-execution-result.ts";
+import {AbstractProcessRunner} from "./core/process/process-runner.ts";
 import {createNodeProcessRunner, snapshotNodeEnvironment} from "./common/runtime.node.ts";
 import {
   createRepositoryFixtureFileSystem,
@@ -81,44 +83,44 @@ function diskProbeKey(targetPath: string): string {
   return `disk-probe ${targetPath}`;
 }
 
-function processKey(request: Readonly<ProcessRequest>): string {
+function processKey(request: Readonly<ProcessExecutionRequest>): string {
   if (request.args[0] === "--eval") {
     return diskProbeKey(request.args.at(-1) ?? "");
   }
   return [request.command, ...request.args].join(" ");
 }
 
-function succeeded(stdout: string): ProcessOutcome {
+function succeeded(stdout: string): ProcessExecutionResult {
   return {kind: "succeeded", exitCode: 0, stdout, stderr: "", durationMs: 1};
 }
 
-function exited(exitCode: number, stdout = "", stderr = ""): ProcessOutcome {
+function exited(exitCode: number, stdout = "", stderr = ""): ProcessExecutionResult {
   return {kind: "exited", exitCode, stdout, stderr, durationMs: 1};
 }
 
-function timedOut(): ProcessOutcome {
+function timedOut(): ProcessExecutionResult {
   return {kind: "timed-out", stdout: "", stderr: "", durationMs: 1};
 }
 
-function spawnFailed(message: string): ProcessOutcome {
+function spawnFailed(message: string): ProcessExecutionResult {
   return {kind: "spawn-failed", message, stdout: "", stderr: "", durationMs: 1};
 }
 
-function signalled(): ProcessOutcome {
+function signalled(): ProcessExecutionResult {
   return {kind: "signalled", signal: "SIGTERM", stdout: "", stderr: "", durationMs: 1};
 }
 
 interface RecordedProcessCall {
-  readonly request: Readonly<ProcessRequest>;
-  readonly options: Readonly<ProcessRunOptions>;
+  readonly request: Readonly<ProcessExecutionRequest>;
+  readonly options: Readonly<ProcessExecutionOptions>;
 }
 
 /** Records every process invocation and replays one keyed outcome per command. */
 class ScriptedProcessRunner extends AbstractProcessRunner {
-  readonly #outcomes: ReadonlyMap<string, ProcessOutcome>;
+  readonly #outcomes: ReadonlyMap<string, ProcessExecutionResult>;
   readonly #calls: RecordedProcessCall[] = [];
 
-  public constructor(outcomes: ReadonlyMap<string, ProcessOutcome>) {
+  public constructor(outcomes: ReadonlyMap<string, ProcessExecutionResult>) {
     super();
     this.#outcomes = outcomes;
   }
@@ -129,7 +131,7 @@ class ScriptedProcessRunner extends AbstractProcessRunner {
   }
 
   /** {@inheritDoc AbstractProcessRunner.execute} */
-  protected override execute(request: Readonly<ProcessRequest>, options: Readonly<ProcessRunOptions>): Promise<ProcessOutcome> {
+  protected override execute(request: Readonly<ProcessExecutionRequest>, options: Readonly<ProcessExecutionOptions>): Promise<ProcessExecutionResult> {
     this.#calls.push({request, options});
     const outcome = this.#outcomes.get(processKey(request));
     return outcome === undefined
@@ -145,16 +147,16 @@ class ScriptedProcessRunner extends AbstractProcessRunner {
 class TimelineProcessRunner extends ScriptedProcessRunner {
   readonly #events: string[];
 
-  public constructor(outcomes: ReadonlyMap<string, ProcessOutcome>, events: string[]) {
+  public constructor(outcomes: ReadonlyMap<string, ProcessExecutionResult>, events: string[]) {
     super(outcomes);
     this.#events = events;
   }
 
   /** {@inheritDoc AbstractProcessRunner.execute} */
   protected override async execute(
-    request: Readonly<ProcessRequest>,
-    options: Readonly<ProcessRunOptions>,
-  ): Promise<ProcessOutcome> {
+    request: Readonly<ProcessExecutionRequest>,
+    options: Readonly<ProcessExecutionOptions>,
+  ): Promise<ProcessExecutionResult> {
     this.#events.push(`probe:start ${processKey(request)}`);
     try {
       return await super.execute(request, options);
@@ -164,8 +166,8 @@ class TimelineProcessRunner extends ScriptedProcessRunner {
   }
 }
 
-function baseResponses(): Map<string, ProcessOutcome> {
-  return new Map<string, ProcessOutcome>([
+function baseResponses(): Map<string, ProcessExecutionResult> {
+  return new Map<string, ProcessExecutionResult>([
     [GIT_BRANCH_KEY, succeeded("main\n")],
     [GIT_SHA_KEY, succeeded("abc1234\n")],
     [GIT_LOG_TIME_KEY, succeeded("2 hours ago\n")],
@@ -182,7 +184,7 @@ function baseResponses(): Map<string, ProcessOutcome> {
   ]);
 }
 
-function withOverrides(overrides: Readonly<Record<string, ProcessOutcome>>): Map<string, ProcessOutcome> {
+function withOverrides(overrides: Readonly<Record<string, ProcessExecutionResult>>): Map<string, ProcessExecutionResult> {
   const responses = baseResponses();
   for (const [key, value] of Object.entries(overrides)) {
     responses.set(key, value);
@@ -338,7 +340,7 @@ function createPendingDoctorChild(
 }
 
 interface StatusFixtureOptions {
-  readonly responses?: ReadonlyMap<string, ProcessOutcome>;
+  readonly responses?: ReadonlyMap<string, ProcessExecutionResult>;
   readonly runner?: ScriptedProcessRunner;
   readonly workspace?: () => Promise<InspectionOutcome<WorkspaceFacts>>;
   readonly doctor?: DoctorStub;
@@ -902,10 +904,10 @@ describe("collectDisk", () => {
     };
   }
 
-  function scriptedDiskSources(outcome: ProcessOutcome) {
+  function scriptedDiskSources(outcome: ProcessExecutionResult) {
     return {
       runner: new ScriptedProcessRunner(
-        new Map<string, ProcessOutcome>([
+        new Map<string, ProcessExecutionResult>([
           [diskProbeKey(DISK_NODE_MODULES_TARGET), outcome],
           [diskProbeKey(DISK_NEXT_BUILD_TARGET), outcome],
           [diskProbeKey(DISK_COMPONENTS_DIST_TARGET), outcome],

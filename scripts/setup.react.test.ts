@@ -6,7 +6,7 @@
  * @remarks
  * Every test drives the real phase against an injected {@link SetupPhaseRuntime}: an in-memory
  * {@link FileSystem} that records atomic writes and mode changes, a recording process runner
- * replaying typed {@link ProcessOutcome} fixtures, a deterministic clock, and an immutable
+ * replaying typed {@link ProcessExecutionResult} fixtures, a deterministic clock, and an immutable
  * environment snapshot supplying the host platform and the terminal signal. No test in this file
  * reads the live checkout, spawns a process, mocks a repository module, or observes ambient Node
  * state.
@@ -20,7 +20,9 @@ import {ComposedTerminalPresenter} from "./core/presentation/composed-terminal-p
 import {RecordingTerminalPresenterSink} from "./testing/fixtures/terminal.fixture.ts";
 import {createRepositoryPaths} from "./common/repository-paths.ts";
 import type {PackageRequirement, RepositoryRequirements} from "./common/requirements.ts";
-import {AbstractProcessRunner, type ProcessOutcome, type ProcessRequest, type ProcessRunOptions} from "./common/runner.ts";
+import type {ProcessExecutionOptions, ProcessExecutionRequest} from "./core/process/process-execution-request.ts";
+import type {ProcessExecutionResult} from "./core/process/process-execution-result.ts";
+import {AbstractProcessRunner} from "./core/process/process-runner.ts";
 import {createMemoryFileSystem, createTestRuntimeFactory} from "./common/runtime.testing.ts";
 import {CommandCancellation, type Clock, type FileSystem, type RuntimeEnvironment} from "./common/runtime.ts";
 import type {EnvironmentFacts, ReactFacts} from "./inspection/frontend.ts";
@@ -62,23 +64,23 @@ const lockedPlaywrightVersion = "1.62.1";
  * that the phase no longer flows through the deprecated setup runner bridge.
  */
 const LEGACY_MUTATION_TIMEOUT_MS = 1_200_000;
-const browserInstallCommand: ProcessRequest = {
+const browserInstallCommand: ProcessExecutionRequest = {
   command: "npx",
   args: ["--no-install", "playwright", "install", "chromium"],
 };
-const dependencyProbeCommand: ProcessRequest = {
+const dependencyProbeCommand: ProcessExecutionRequest = {
   command: "npx",
   args: ["--no-install", "playwright", "install-deps", "--dry-run", "chromium"],
 };
-const dependencyInstallCommand: ProcessRequest = {
+const dependencyInstallCommand: ProcessExecutionRequest = {
   command: "npx",
   args: ["--no-install", "playwright", "install-deps", "chromium"],
 };
-const packageInventoryCommand: ProcessRequest = {
+const packageInventoryCommand: ProcessExecutionRequest = {
   command: "npm",
   args: ["ls", "--json", "--depth=0"],
 };
-const browserInventoryCommand: ProcessRequest = {
+const browserInventoryCommand: ProcessExecutionRequest = {
   command: "npx",
   args: ["--no-install", "playwright", "install", "--list"],
 };
@@ -92,23 +94,23 @@ const completeEnvironment = [
   "",
 ].join("\n");
 
-function succeeded(patch: Readonly<{stdout?: string; stderr?: string}> = {}): ProcessOutcome {
+function succeeded(patch: Readonly<{stdout?: string; stderr?: string}> = {}): ProcessExecutionResult {
   return {kind: "succeeded", exitCode: 0, stdout: patch.stdout ?? "", stderr: patch.stderr ?? "", durationMs: 1};
 }
 
-function exited(exitCode: number, patch: Readonly<{stdout?: string; stderr?: string}> = {}): ProcessOutcome {
+function exited(exitCode: number, patch: Readonly<{stdout?: string; stderr?: string}> = {}): ProcessExecutionResult {
   return {kind: "exited", exitCode, stdout: patch.stdout ?? "", stderr: patch.stderr ?? "", durationMs: 1};
 }
 
-function timedOut(): ProcessOutcome {
+function timedOut(): ProcessExecutionResult {
   return {kind: "timed-out", stdout: "", stderr: "", durationMs: 1};
 }
 
-function cancelledOutcome(): ProcessOutcome {
+function cancelledOutcome(): ProcessExecutionResult {
   return {kind: "cancelled", stdout: "", stderr: "", durationMs: 1};
 }
 
-function commandKey(command: Readonly<ProcessRequest>): string {
+function commandKey(command: Readonly<ProcessExecutionRequest>): string {
   return [command.command, ...command.args].join("\u0000");
 }
 
@@ -347,10 +349,10 @@ function createReactFixture(
 }
 
 /** One recorded child invocation. */
-type RecordedCall = Readonly<{request: ProcessRequest; options: ProcessRunOptions}>;
+type RecordedCall = Readonly<{request: ProcessExecutionRequest; options: ProcessExecutionOptions}>;
 
 /** A scripted outcome, or a value the runner rejects with instead of completing. */
-type ScriptedOutcome = ProcessOutcome | Error;
+type ScriptedOutcome = ProcessExecutionResult | Error;
 
 /** Records every invocation while replaying request-keyed typed outcomes. */
 class FakeProcessRunner extends AbstractProcessRunner {
@@ -369,7 +371,7 @@ class FakeProcessRunner extends AbstractProcessRunner {
   }
 
   /** {@inheritDoc AbstractProcessRunner.execute} */
-  protected override execute(request: Readonly<ProcessRequest>, options: Readonly<ProcessRunOptions>): Promise<ProcessOutcome> {
+  protected override execute(request: Readonly<ProcessExecutionRequest>, options: Readonly<ProcessExecutionOptions>): Promise<ProcessExecutionResult> {
     this.#calls.push({request, options});
     const key = commandKey(request);
     const configured = this.#responses[key];
@@ -386,7 +388,7 @@ class FakeProcessRunner extends AbstractProcessRunner {
   }
 }
 
-function settle(outcome: ScriptedOutcome): Promise<ProcessOutcome> {
+function settle(outcome: ScriptedOutcome): Promise<ProcessExecutionResult> {
   return outcome instanceof Error ? Promise.reject(outcome) : Promise.resolve(outcome);
 }
 
@@ -583,11 +585,11 @@ function runPhase(harness: ReactHarness, patch: Partial<MigratedSetupContext> = 
   return harness.phase.run({...harness.context, ...patch} as SetupContext);
 }
 
-function callsFor(harness: ReactHarness, command: Readonly<ProcessRequest>): readonly RecordedCall[] {
+function callsFor(harness: ReactHarness, command: Readonly<ProcessExecutionRequest>): readonly RecordedCall[] {
   return harness.runner.calls.filter(({request}) => commandKey(request) === commandKey(command));
 }
 
-function callFor(harness: ReactHarness, command: Readonly<ProcessRequest>): RecordedCall | undefined {
+function callFor(harness: ReactHarness, command: Readonly<ProcessExecutionRequest>): RecordedCall | undefined {
   return callsFor(harness, command)[0];
 }
 
@@ -1221,7 +1223,7 @@ describe("Playwright Chromium preparation", () => {
     expect(callFor(harness, browserInstallCommand)?.options).toMatchObject({
       cwd: paths.root,
       output: "tee",
-      logger: harness.context.logger,
+      presenter: harness.context.logger,
       timeoutMs: LEGACY_MUTATION_TIMEOUT_MS,
     });
     expect(harness.events).toEqual(["inspect:packages", "inspect:react", "invalidate:react", "inspect:react"]);
@@ -1359,7 +1361,7 @@ describe("Playwright Chromium preparation", () => {
     expect(callFor(harness, dependencyInstallCommand)?.options).toMatchObject({
       cwd: paths.root,
       output: "tee",
-      logger: harness.context.logger,
+      presenter: harness.context.logger,
       timeoutMs: LEGACY_MUTATION_TIMEOUT_MS,
     });
     expect(callsFor(harness, dependencyProbeCommand)).toHaveLength(2);

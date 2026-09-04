@@ -17,15 +17,9 @@ import {fileURLToPath} from "node:url";
 import type {CommandExecutionContext} from "../core/command/command-execution.ts";
 import type {CommandRuntimeFactory, RuntimeCreationOptions} from "../core/command/command-specification.ts";
 import type {TerminalPresenter} from "../core/presentation/terminal-presenter.ts";
+import {buildRecordingProcessRunner} from "../testing/builders/process-result.builder.ts";
 import {buildRecordingPresenter} from "../testing/fixtures/terminal.fixture.ts";
 import type {PromptProvider} from "./prompts.ts";
-import {
-  AbstractProcessRunner,
-  type ProcessOutcome,
-  type ProcessRequest,
-  type ProcessRunner,
-  type ProcessRunOptions,
-} from "./runner.ts";
 import {
   commandCancellationFromSignal,
   createRepositoryInspectionRuntime,
@@ -517,51 +511,6 @@ export function createRepositoryInspectionSessionStub(): RepositoryInspectionSes
   };
 }
 
-/** Outcome returned once a scripted {@link createProcessRunner} queue is exhausted. */
-const DEFAULT_PROCESS_OUTCOME: ProcessOutcome = {
-  kind: "succeeded",
-  exitCode: 0,
-  stdout: "",
-  stderr: "",
-  durationMs: 0,
-};
-
-class RecordingProcessRunner extends AbstractProcessRunner {
-  readonly #outcomes: ProcessOutcome[];
-  readonly #calls: Readonly<{request: ProcessRequest; options: ProcessRunOptions}>[] = [];
-
-  public constructor(outcomes: readonly ProcessOutcome[]) {
-    super();
-    this.#outcomes = [...outcomes];
-  }
-
-  /** Every recorded invocation, in call order. */
-  public get calls(): readonly Readonly<{request: ProcessRequest; options: ProcessRunOptions}>[] {
-    return this.#calls;
-  }
-
-  /** {@inheritDoc AbstractProcessRunner.execute} */
-  protected override execute(
-    request: Readonly<ProcessRequest>,
-    options: Readonly<ProcessRunOptions>,
-  ): Promise<ProcessOutcome> {
-    this.#calls.push({request, options});
-    return Promise.resolve(this.#outcomes.shift() ?? DEFAULT_PROCESS_OUTCOME);
-  }
-}
-
-/**
- * Creates a process runner that records every invocation and replays scripted outcomes.
- *
- * @param outcomes - Outcomes returned in order; a successful outcome is returned once exhausted.
- * @returns A runner exposing its recorded calls.
- */
-export function createProcessRunner(
-  outcomes: readonly ProcessOutcome[] = [],
-): ProcessRunner & Readonly<{calls: readonly Readonly<{request: ProcessRequest; options: ProcessRunOptions}>[]}> {
-  return new RecordingProcessRunner(outcomes);
-}
-
 /** Immutable environment every test runtime observes unless a test replaces it. */
 const testRuntimeEnvironment: RuntimeEnvironment = {
   variables: Object.freeze({}),
@@ -633,7 +582,7 @@ export function createTestRuntimeFactory(overrides: Readonly<Partial<CommandRunt
     return {
       presenter,
       prompts: parent?.runtime.prompts ?? testPromptProvider,
-      runner: createProcessRunner(),
+      runner: buildRecordingProcessRunner(),
       http: parent?.runtime.http ?? testHttpClient,
       files: parent?.runtime.files ?? files,
       clock: testClock,

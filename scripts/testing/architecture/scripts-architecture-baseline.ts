@@ -80,4 +80,4 @@ export const cohortOneHighWaterMaintainedLineCount = 76_375;
  * value atomically with its own change; it may never exceed
  * {@link cohortOneHighWaterMaintainedLineCount}.
  */
-export const cohortOneActiveMaintainedLineCount = 75_650;
+export const cohortOneActiveMaintainedLineCount = 75_875;

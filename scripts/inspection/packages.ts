@@ -10,7 +10,7 @@
 
 import {isAbsolute, join, relative, resolve, sep} from "node:path";
 
-import type {ProcessOutcome} from "../common/runner.ts";
+import type {ProcessExecutionResult} from "../core/process/process-execution-result.ts";
 import type {InspectionProbeRunner} from "./probes.ts";
 import {probes} from "./probes.ts";
 import type {InspectionOutcome, InspectionProvider, InspectionProviderContext} from "./types.ts";
@@ -328,12 +328,12 @@ async function resolveInstalledPackage(
 }
 
 /**
- * Maps one probe {@link ProcessOutcome} onto the numeric exit code the npm tree projection expects.
+ * Maps one probe {@link ProcessExecutionResult} onto the numeric exit code the npm tree projection expects.
  *
  * @param outcome - Typed outcome of the npm dependency-tree probe.
  * @returns `0` for success, the reported exit code for a completed nonzero exit, `1` otherwise.
  */
-function completedExitCode(outcome: Readonly<ProcessOutcome>): number {
+function completedExitCode(outcome: Readonly<ProcessExecutionResult>): number {
   switch (outcome.kind) {
     case "succeeded":
       return 0;
@@ -348,12 +348,12 @@ function completedExitCode(outcome: Readonly<ProcessOutcome>): number {
 }
 
 /**
- * Classifies one npm probe {@link ProcessOutcome} exhaustively into its bounded unavailable reason.
+ * Classifies one npm probe {@link ProcessExecutionResult} exhaustively into its bounded unavailable reason.
  *
  * @param outcome - Typed outcome of the npm dependency-tree probe.
  * @returns The bounded reason, or `undefined` when the probe produced parseable output.
  */
-function npmTransportReason(outcome: Readonly<ProcessOutcome>): string | undefined {
+function npmTransportReason(outcome: Readonly<ProcessExecutionResult>): string | undefined {
   switch (outcome.kind) {
     case "succeeded":
     case "exited":

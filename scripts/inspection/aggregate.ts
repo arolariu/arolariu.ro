@@ -18,7 +18,7 @@
  */
 
 import {resolve} from "node:path";
-import type {ProcessOutcome} from "../common/runner.ts";
+import type {ProcessExecutionResult} from "../core/process/process-execution-result.ts";
 import type {HostContainerFacts, HostCpuFacts, HostFacts, HostFilesystemFact, HostLoadFacts, HostMemoryFacts, HostNetworkFacts, HostOsFacts, HostPortOwnerFact, HostProcessFacts} from "./host.ts";
 import type {PackageFact, ToolFact, ToolingFacts} from "./tooling.ts";
 import type {InspectionOutcome, InspectionProvider, InspectionProviderContext} from "./types.ts";
@@ -55,7 +55,7 @@ const WORKER_TIMEOUT_REASON = "The aggregate inspection worker timed out.";
 const WORKER_EXIT_REASON = "The aggregate inspection worker exited unsuccessfully.";
 
 /**
- * Classifies one worker {@link ProcessOutcome} exhaustively into its bounded unavailable reason.
+ * Classifies one worker {@link ProcessExecutionResult} exhaustively into its bounded unavailable reason.
  *
  * @remarks
  * A signalled or cancelled child never produced a document either, so both are reported with the
@@ -65,7 +65,7 @@ const WORKER_EXIT_REASON = "The aggregate inspection worker exited unsuccessfull
  * @param outcome - Typed outcome of the isolated worker invocation.
  * @returns The bounded reason, or `undefined` when the worker completed successfully.
  */
-function workerFailureReason(outcome: Readonly<ProcessOutcome>): string | undefined {
+function workerFailureReason(outcome: Readonly<ProcessExecutionResult>): string | undefined {
   switch (outcome.kind) {
     case "succeeded":
       return undefined;
@@ -391,7 +391,7 @@ function reconstructAggregateFacts(value: unknown): AggregateFacts {
  * @remarks
  * Each invocation resolves the repository root, runs `aggregate-worker.ts` as a native Node child
  * process with captured output and a {@link AGGREGATE_TIMEOUT_MS} timeout, and maps the typed
- * {@link ProcessOutcome} exhaustively: a spawn failure, timeout, signal, cancellation, or nonzero
+ * {@link ProcessExecutionResult} exhaustively: a spawn failure, timeout, signal, cancellation, or nonzero
  * exit becomes a bounded outer `unavailable` outcome with no stdout/stderr/spawn-error detail;
  * empty, malformed, multiple-document, wrong-schema, or malformed nested outcome/fact output
  * becomes outer `invalid`; and a validated schema-v1 document becomes outer `available` whose value

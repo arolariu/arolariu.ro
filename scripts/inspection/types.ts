@@ -7,7 +7,7 @@
  * the Node adapter) into an inspection provider's module graph at run time.
  */
 
-import type {ProcessRunner} from "../common/runner.ts";
+import type {ProcessRunner} from "../core/process/process-runner.ts";
 import type {Clock, FileSystem, ReadOnlyFileSystem, RuntimeEnvironment, TaskScheduler} from "../common/runtime.ts";
 
 /**

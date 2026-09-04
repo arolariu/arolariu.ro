@@ -16,7 +16,9 @@
 
 import {beforeEach, describe, expect, it, vi} from "vitest";
 
-import type {ProcessOutcome, ProcessRequest, ProcessRunner, ProcessRunOptions} from "../common/runner.ts";
+import type {ProcessExecutionOptions, ProcessExecutionRequest} from "../core/process/process-execution-request.ts";
+import type {ProcessExecutionResult} from "../core/process/process-execution-result.ts";
+import type {ProcessRunner} from "../core/process/process-runner.ts";
 import {resolveRepositoryPaths, type RepositoryPaths} from "../common/repository-paths.ts";
 import {nodeFileSystem} from "../common/runtime.node.ts";
 import {
@@ -113,12 +115,12 @@ const temporaryDirectories: Pick<FileSystem, "createTemporaryDirectory"> = {
 
 /** One recorded fake-runner invocation, including the options the composed session supplied. */
 interface RecordedRun {
-  readonly request: Readonly<ProcessRequest>;
-  readonly options: Readonly<ProcessRunOptions>;
+  readonly request: Readonly<ProcessExecutionRequest>;
+  readonly options: Readonly<ProcessExecutionOptions>;
 }
 
 /** Produces the outcome a fake runner reports for one recorded invocation. */
-type FakeRunnerOutcome = (run: Readonly<RecordedRun>) => ProcessOutcome;
+type FakeRunnerOutcome = (run: Readonly<RecordedRun>) => ProcessExecutionResult;
 
 /** Default fake outcome: every command is a bounded, non-throwing completed failure. */
 const completedFailure: FakeRunnerOutcome = () => ({kind: "exited", exitCode: 1, stdout: "", stderr: "", durationMs: 1});
@@ -133,8 +135,8 @@ const completedFailure: FakeRunnerOutcome = () => ({kind: "exited", exitCode: 1,
  */
 function createFakeRunner(outcome: FakeRunnerOutcome = completedFailure): {runner: ProcessRunner; runs: RecordedRun[]} {
   const runs: RecordedRun[] = [];
-  const build = (defaults: Readonly<ProcessRunOptions>): ProcessRunner => ({
-    run: (request: Readonly<ProcessRequest>, options: Readonly<ProcessRunOptions> = {}): Promise<ProcessOutcome> => {
+  const build = (defaults: Readonly<ProcessExecutionOptions>): ProcessRunner => ({
+    run: (request: Readonly<ProcessExecutionRequest>, options: Readonly<ProcessExecutionOptions> = {}): Promise<ProcessExecutionResult> => {
       const recorded: RecordedRun = {request, options: {...defaults, ...options}};
       runs.push(recorded);
       return Promise.resolve(outcome(recorded));
@@ -142,7 +144,7 @@ function createFakeRunner(outcome: FakeRunnerOutcome = completedFailure): {runne
     expectSuccess: () => {
       throw new Error("The composed session never calls expectSuccess.");
     },
-    scope: (nested: Readonly<ProcessRunOptions>): ProcessRunner => build({...defaults, ...nested}),
+    scope: (nested: Readonly<ProcessExecutionOptions>): ProcessRunner => build({...defaults, ...nested}),
   });
   return {runner: build({}), runs};
 }

@@ -31,14 +31,14 @@ import {fileURLToPath} from "node:url";
 import {randomBytes} from "node:crypto";
 import {setTimeout as delay} from "node:timers/promises";
 
+import {ExecaProcessRunner} from "../adapters/execa/execa-process-runner.ts";
 import {NodeTerminalPresenterSink, nodeTerminalPresenterRuntimeHost} from "../adapters/node/node-terminal-sink.ts";
 import type {CommandExecutionContext, CommandExitCode, CommandPresentationMode} from "../core/command/command-execution.ts";
 import type {CommandProcessHost, CommandRuntimeFactory, RuntimeCreationOptions} from "../core/command/command-specification.ts";
 import {ComposedTerminalPresenter} from "../core/presentation/composed-terminal-presenter.ts";
 import type {TerminalPresenter} from "../core/presentation/terminal-presenter.ts";
+import type {ProcessRunner} from "../core/process/process-runner.ts";
 import {createTerminalPromptProvider} from "./prompts.ts";
-import {ExecaProcessRunner} from "./runner.execa.ts";
-import type {ProcessRunner} from "./runner.ts";
 import {
   asReadOnlyFileSystem,
   CommandCancellation,

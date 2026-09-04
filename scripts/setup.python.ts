@@ -25,13 +25,12 @@
  * host-platform snapshot. It owns no ambient Node state and no test-only constructor dependency.
  */
 
+import {formatProcessExecutionRequest, type ProcessExecutionRequest} from "./core/process/process-execution-request.ts";
 import {
-  formatProcessRequest,
-  processFailureEvidence,
-  type ProcessOutcome,
-  type ProcessRequest,
-  type SucceededProcessOutcome,
-} from "./common/runner.ts";
+  processExecutionFailureEvidence,
+  type ProcessExecutionResult,
+  type SucceededProcessExecutionResult,
+} from "./core/process/process-execution-result.ts";
 import {CommandCancellation} from "./common/runtime.ts";
 import type {MinimumVersion} from "./common/requirements.ts";
 import type {PythonFacts} from "./inspection/python.ts";
@@ -73,7 +72,7 @@ const PIP_UPGRADE_ACTION = "python.pip.upgrade";
 const DEPENDENCIES_INSTALL_ACTION = "python.dependencies.install";
 const PYTHON_MANUAL_INSTALL = "Install a compatible Python interpreter from https://www.python.org/downloads/, then rerun setup.";
 
-function isSuccessfulOutcome(outcome: Readonly<ProcessOutcome>): outcome is SucceededProcessOutcome {
+function isSuccessfulOutcome(outcome: Readonly<ProcessExecutionResult>): outcome is SucceededProcessExecutionResult {
   return outcome.kind === "succeeded";
 }
 
@@ -103,15 +102,15 @@ function normalizedVersion(version: MinimumVersion): string {
 /**
  * Converts one failed/interrupted process outcome into bounded, non-secret evidence.
  *
- * @param outcome - A non-`"succeeded"` {@link ProcessOutcome}.
+ * @param outcome - A non-`"succeeded"` {@link ProcessExecutionResult}.
  * @param context - Shared setup dependencies, whose logger sanitizes the rendered evidence.
  * @returns Bounded, sanitized evidence lines describing the failure.
  */
 function commandFailureEvidence(
-  outcome: Readonly<Exclude<ProcessOutcome, SucceededProcessOutcome>>,
+  outcome: Readonly<Exclude<ProcessExecutionResult, SucceededProcessExecutionResult>>,
   context: SetupContext,
 ): readonly string[] {
-  const evidence = processFailureEvidence(outcome, context.logger);
+  const evidence = processExecutionFailureEvidence(outcome, context.logger);
   return [
     ...(outcome.kind === "exited" ? [`Command exited with code ${outcome.exitCode}.`] : []),
     ...(outcome.kind === "timed-out" ? ["Command timed out."] : []),
@@ -160,7 +159,7 @@ function selectedInterpreterEvidence(facts: Readonly<PythonFacts>, required: Min
   if (facts.selected === undefined) {
     return [`No available interpreter satisfies >=${normalizedVersion(required)}.`];
   }
-  const formatted = formatProcessRequest({command: facts.selected.command, args: facts.selected.prefixArgs});
+  const formatted = formatProcessExecutionRequest({command: facts.selected.command, args: facts.selected.prefixArgs});
   return [`Selected interpreter '${formatted}' (Python ${facts.selected.version}) satisfies >=${normalizedVersion(required)}.`];
 }
 
@@ -237,14 +236,14 @@ function virtualEnvironmentDirectory(expRoot: string, platform: NodeJS.Platform)
  * @param platform - Target process platform.
  * @returns A process request whose executable is the venv-owned Python interpreter.
  */
-export function pythonInVirtualEnvironment(expRoot: string, platform: NodeJS.Platform): ProcessRequest {
+export function pythonInVirtualEnvironment(expRoot: string, platform: NodeJS.Platform): ProcessExecutionRequest {
   const venvDirectory = virtualEnvironmentDirectory(expRoot, platform);
   return platform === "win32"
     ? {command: `${venvDirectory}\\Scripts\\python.exe`, args: []}
     : {command: `${venvDirectory}/bin/python`, args: []};
 }
 
-function hasAptCandidate(result: Readonly<ProcessOutcome>): boolean {
+function hasAptCandidate(result: Readonly<ProcessExecutionResult>): boolean {
   return isSuccessfulOutcome(result) && /^\s*Candidate:\s*(?!\(none\)\s*$)\S+/imu.test(result.stdout);
 }
 
@@ -547,12 +546,12 @@ interface PipStepDefinition {
   readonly id: string;
   readonly summary: string;
   readonly failureSummary: string;
-  readonly command: ProcessRequest;
+  readonly command: ProcessExecutionRequest;
   /** Bounded, non-secret reasons the refreshed facts do not satisfy this step's postcondition. */
   readonly verify: (facts: Readonly<PythonFacts>) => readonly string[];
 }
 
-function pipStepDefinitions(context: SetupContext, venvSpec: Readonly<ProcessRequest>): readonly PipStepDefinition[] {
+function pipStepDefinitions(context: SetupContext, venvSpec: Readonly<ProcessExecutionRequest>): readonly PipStepDefinition[] {
   return [
     {
       id: PIP_UPGRADE_ACTION,
@@ -598,7 +597,7 @@ function pipStepDefinitions(context: SetupContext, venvSpec: Readonly<ProcessReq
 async function ensurePipDependencies(
   context: SetupContext,
   runtime: SetupPhaseRuntime,
-  venvSpec: Readonly<ProcessRequest>,
+  venvSpec: Readonly<ProcessExecutionRequest>,
   facts: PythonFacts,
   evidence: string[],
   plannedActions: string[],
@@ -612,7 +611,7 @@ async function ensurePipDependencies(
         const result = await runtime.runner.run(step.command, {
           cwd: context.paths.expRoot,
           output: "tee",
-          logger: context.logger,
+          presenter: context.logger,
           timeoutMs: LONG_RUNNING_MUTATION_TIMEOUT_MS,
         });
         if (!isSuccessfulOutcome(result)) {

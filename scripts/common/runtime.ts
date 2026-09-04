@@ -16,7 +16,7 @@
 import type {TerminalPresenter} from "../core/presentation/terminal-presenter.ts";
 import type {PromptProvider} from "./prompts.ts";
 import type {RepositoryPaths} from "./repository-paths.ts";
-import type {ProcessRunner} from "./runner.ts";
+import type {ProcessRunner} from "../core/process/process-runner.ts";
 import type {ContainerEngine} from "../container-runtime/types.ts";
 import type {RepositoryInspectionSession} from "../inspection/repository.ts";
 

@@ -13,7 +13,7 @@
  * Each target registers its own report-cleanup work (assertion-summary generation, then JSON,
  * JUnit, and summary sanitization, in that order) with `runtime.cleanup` immediately before its
  * Newman invocation. Cleanup always attempts every registered step, even after an earlier step
- * failed, and a Newman failure keeps its own `RunnerError` as the primary failure: a later
+ * failed, and a Newman failure keeps its own `ProcessRunnerError` as the primary failure: a later
  * sanitization failure is appended as cleanup evidence, never replacing it. When Newman succeeds
  * but a report step fails, the command itself is reported as failed.
  */
@@ -23,7 +23,7 @@ import {CommandInputError, type CommandExecutionContext} from "./core/command/co
 import {defineCommand, type LazyMonorepoCommand} from "./core/command/lazy-monorepo-command.ts";
 import type {CommandConstructionOptions, CommandHost} from "./core/command/command-specification.ts";
 import type {TerminalPresenter} from "./core/presentation/terminal-presenter.ts";
-import {RunnerError} from "./common/runner.ts";
+import {ProcessRunnerError} from "./core/process/process-runner.ts";
 import {commandCancellationFromSignal, type FileSystem} from "./common/runtime.ts";
 
 /** Every target the `test:e2e` command accepts, including the `all` alias. */
@@ -640,9 +640,9 @@ async function runNewmanForTarget(context: Readonly<CommandExecutionContext>, ta
   ];
 
   try {
-    await runner.expectSuccess({command: "npx", args}, {cwd, output: "inherit", signal, logger});
+    await runner.expectSuccess({command: "npx", args}, {cwd, output: "inherit", signal, presenter: logger});
   } catch (error: unknown) {
-    if (error instanceof RunnerError && error.outcome.kind === "cancelled" && signal.aborted) {
+    if (error instanceof ProcessRunnerError && error.result.kind === "cancelled" && signal.aborted) {
       throw commandCancellationFromSignal(signal);
     }
 

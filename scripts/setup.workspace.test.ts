@@ -18,12 +18,9 @@ import {ComposedTerminalPresenter} from "./core/presentation/composed-terminal-p
 import {RecordingTerminalPresenterSink} from "./testing/fixtures/terminal.fixture.ts";
 import {createRepositoryPaths, type RepositoryPaths} from "./common/repository-paths.ts";
 import type {RepositoryRequirements} from "./common/requirements.ts";
-import {
-  AbstractProcessRunner,
-  type ProcessOutcome,
-  type ProcessRequest,
-  type ProcessRunOptions,
-} from "./common/runner.ts";
+import type {ProcessExecutionOptions, ProcessExecutionRequest} from "./core/process/process-execution-request.ts";
+import type {ProcessExecutionResult} from "./core/process/process-execution-result.ts";
+import {AbstractProcessRunner} from "./core/process/process-runner.ts";
 import {createMemoryFileSystem, createTestRuntimeFactory} from "./common/runtime.testing.ts";
 import {FileSystemError, type Clock, type FileSystem} from "./common/runtime.ts";
 import {getExpectedTaxonomyArtifactPaths} from "./common/taxonomy-artifacts.ts";
@@ -51,41 +48,41 @@ const FIXTURE_EXECUTABLE_PATH = "/usr/bin/node";
 /** Version reported by both `node --version` and the running runtime executable by default. */
 const FIXTURE_NODE_VERSION = "v24.5.0";
 
-function succeeded(stdout: string = "", stderr: string = ""): ProcessOutcome {
+function succeeded(stdout: string = "", stderr: string = ""): ProcessExecutionResult {
   return {kind: "succeeded", exitCode: 0, stdout, stderr, durationMs: 1};
 }
 
-function exited(exitCode: number, patch: Readonly<{stdout?: string; stderr?: string}> = {}): ProcessOutcome {
+function exited(exitCode: number, patch: Readonly<{stdout?: string; stderr?: string}> = {}): ProcessExecutionResult {
   return {kind: "exited", exitCode, stdout: patch.stdout ?? "", stderr: patch.stderr ?? "", durationMs: 1};
 }
 
-function spawnFailed(message: string): ProcessOutcome {
+function spawnFailed(message: string): ProcessExecutionResult {
   return {kind: "spawn-failed", message, stdout: "", stderr: "", durationMs: 1};
 }
 
 /** Records every invocation while replaying request-driven outcomes. */
 class FakeProcessRunner extends AbstractProcessRunner {
-  readonly #respond: (request: Readonly<ProcessRequest>) => ProcessOutcome;
-  readonly #calls: Readonly<{request: ProcessRequest; options: ProcessRunOptions}>[] = [];
+  readonly #respond: (request: Readonly<ProcessExecutionRequest>) => ProcessExecutionResult;
+  readonly #calls: Readonly<{request: ProcessExecutionRequest; options: ProcessExecutionOptions}>[] = [];
 
-  public constructor(respond: (request: Readonly<ProcessRequest>) => ProcessOutcome) {
+  public constructor(respond: (request: Readonly<ProcessExecutionRequest>) => ProcessExecutionResult) {
     super();
     this.#respond = respond;
   }
 
   /** Every recorded invocation, in call order. */
-  public get calls(): readonly Readonly<{request: ProcessRequest; options: ProcessRunOptions}>[] {
+  public get calls(): readonly Readonly<{request: ProcessExecutionRequest; options: ProcessExecutionOptions}>[] {
     return this.#calls;
   }
 
   /** {@inheritDoc AbstractProcessRunner.execute} */
-  protected override execute(request: Readonly<ProcessRequest>, options: Readonly<ProcessRunOptions>): Promise<ProcessOutcome> {
+  protected override execute(request: Readonly<ProcessExecutionRequest>, options: Readonly<ProcessExecutionOptions>): Promise<ProcessExecutionResult> {
     this.#calls.push({request, options});
     return Promise.resolve(this.#respond(request));
   }
 }
 
-function defaultOutcome(request: Readonly<ProcessRequest>): ProcessOutcome {
+function defaultOutcome(request: Readonly<ProcessExecutionRequest>): ProcessExecutionResult {
   if (request.command === "git") {
     return succeeded("git version 2.50.0\n");
   }
@@ -239,7 +236,7 @@ interface WorkspaceHarnessInput {
   /** Replaces the assembled filesystem capability, for I/O failure simulation. */
   readonly wrapFiles?: (files: FileSystem) => FileSystem;
   /** Request-driven process outcomes. */
-  readonly respond?: (request: Readonly<ProcessRequest>) => ProcessOutcome;
+  readonly respond?: (request: Readonly<ProcessExecutionRequest>) => ProcessExecutionResult;
   /** Typed generation outcome the composed generation command returns. */
   readonly generation?: CommandExecution<GenerateResult> | (() => Promise<CommandExecution<GenerateResult>>);
   /** Mutation controller; defaults to one derived from `options.dryRun`. */

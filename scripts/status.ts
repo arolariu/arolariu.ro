@@ -23,7 +23,7 @@
  *
  * Every external probe (git, npm, the disk usage probe, and — for the human dashboard header only
  * — the Node runtime version probe) is issued through the runtime process runner as an explicit
- * {@link ProcessRequest} — never a shell string — and the command never writes a temporary file,
+ * {@link ProcessExecutionRequest} — never a shell string — and the command never writes a temporary file,
  * never mutates the repository, never inherits child process output, and never reads ambient
  * process state. The workspace graph is read from tracked metadata instead of an Nx child process,
  * which would rewrite Nx's native workspace database. All human or machine-readable output is
@@ -46,7 +46,9 @@ import type {CommandConstructionOptions, CommandHost} from "./core/command/comma
 import {formatBytes} from "./common/index.ts";
 import type {PresentationSegment, TerminalPresenter} from "./core/presentation/terminal-presenter.ts";
 import {resolveRepositoryPaths, type RepositoryPaths} from "./common/repository-paths.ts";
-import type {ProcessOutcome, ProcessRequest, ProcessRunner} from "./common/runner.ts";
+import type {ProcessExecutionRequest} from "./core/process/process-execution-request.ts";
+import type {ProcessExecutionResult} from "./core/process/process-execution-result.ts";
+import type {ProcessRunner} from "./core/process/process-runner.ts";
 import {
   asReadOnlyFileSystem,
   CommandCancellation,
@@ -205,13 +207,13 @@ const UNKNOWN_NODE_MAJOR = "?";
 /** Leading major-version group of a `node --version` line such as `v26.3.1`. */
 const NODE_MAJOR_VERSION_PATTERN = /^v?(\d+)(?:\.|$)/;
 
-const GIT_BRANCH_COMMAND = {command: "git", args: ["rev-parse", "--abbrev-ref", "HEAD"]} as const satisfies ProcessRequest;
-const GIT_SHA_COMMAND = {command: "git", args: ["rev-parse", "--short", "HEAD"]} as const satisfies ProcessRequest;
-const GIT_LAST_COMMIT_TIME_COMMAND = {command: "git", args: ["log", "-1", "--format=%cr"]} as const satisfies ProcessRequest;
-const GIT_LAST_COMMIT_MSG_COMMAND = {command: "git", args: ["log", "-1", "--format=%s"]} as const satisfies ProcessRequest;
-const GIT_STATUS_COMMAND = {command: "git", args: ["status", "--porcelain"]} as const satisfies ProcessRequest;
-const NPM_AUDIT_COMMAND = {command: "npm", args: ["audit", "--json"]} as const satisfies ProcessRequest;
-const NPM_OUTDATED_COMMAND = {command: "npm", args: ["outdated", "--json"]} as const satisfies ProcessRequest;
+const GIT_BRANCH_COMMAND = {command: "git", args: ["rev-parse", "--abbrev-ref", "HEAD"]} as const satisfies ProcessExecutionRequest;
+const GIT_SHA_COMMAND = {command: "git", args: ["rev-parse", "--short", "HEAD"]} as const satisfies ProcessExecutionRequest;
+const GIT_LAST_COMMIT_TIME_COMMAND = {command: "git", args: ["log", "-1", "--format=%cr"]} as const satisfies ProcessExecutionRequest;
+const GIT_LAST_COMMIT_MSG_COMMAND = {command: "git", args: ["log", "-1", "--format=%s"]} as const satisfies ProcessExecutionRequest;
+const GIT_STATUS_COMMAND = {command: "git", args: ["status", "--porcelain"]} as const satisfies ProcessExecutionRequest;
+const NPM_AUDIT_COMMAND = {command: "npm", args: ["audit", "--json"]} as const satisfies ProcessExecutionRequest;
+const NPM_OUTDATED_COMMAND = {command: "npm", args: ["outdated", "--json"]} as const satisfies ProcessExecutionRequest;
 
 /**
  * Read-only Node.js source, executed as a separate process via `node --eval`, that measures the
@@ -270,7 +272,7 @@ function isRecord(value: unknown): value is UnknownRecord {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function isSuccessfulOutcome(outcome: Readonly<ProcessOutcome>): boolean {
+function isSuccessfulOutcome(outcome: Readonly<ProcessExecutionResult>): boolean {
   return outcome.kind === "succeeded";
 }
 
@@ -285,7 +287,7 @@ function isSuccessfulOutcome(outcome: Readonly<ProcessOutcome>): boolean {
  * @param outcome - The completed process outcome.
  * @returns `true` when the transport itself failed.
  */
-function hasTransportFailure(outcome: Readonly<ProcessOutcome>): boolean {
+function hasTransportFailure(outcome: Readonly<ProcessExecutionResult>): boolean {
   return (
     outcome.kind === "spawn-failed" || outcome.kind === "timed-out" || outcome.kind === "cancelled" || outcome.kind === "signalled"
   );
@@ -312,14 +314,14 @@ async function readOptionalJson(files: ReadOnlyFileSystem, path: string): Promis
  *
  * @remarks
  * The executable, the fixed `--eval` script literal, and the target path are three separate
- * {@link ProcessRequest.args} elements — never an interpolated or shell-joined string — so the
+ * {@link ProcessExecutionRequest.args} elements — never an interpolated or shell-joined string — so the
  * child process receives the target purely as `process.argv[1]`.
  *
  * @param executablePath - Absolute path to the Node executable running this command.
  * @param absolutePath - Absolute directory or file path to measure.
  * @returns The disk-size probe request.
  */
-function buildDiskSizeRequest(executablePath: string, absolutePath: string): ProcessRequest {
+function buildDiskSizeRequest(executablePath: string, absolutePath: string): ProcessExecutionRequest {
   return {command: executablePath, args: ["--eval", DISK_PROBE_SCRIPT, absolutePath]};
 }
 
@@ -334,7 +336,7 @@ function buildDiskSizeRequest(executablePath: string, absolutePath: string): Pro
  * @param outcome - The complete outcome of running the disk-size probe.
  * @returns The parsed byte count, or `null` when unavailable.
  */
-function parseDiskProbeSize(outcome: Readonly<ProcessOutcome>): number | null {
+function parseDiskProbeSize(outcome: Readonly<ProcessExecutionResult>): number | null {
   if (!isSuccessfulOutcome(outcome)) {
     return null;
   }
@@ -444,7 +446,7 @@ async function collectGit(sources: Readonly<ProbeSources>): Promise<GitInfo | nu
   const options = {cwd: sources.paths.root, timeoutMs: GIT_TIMEOUT_MS, signal: sources.signal};
   const outcomes = await sources.tasks.parallel(
     [GIT_BRANCH_COMMAND, GIT_SHA_COMMAND, GIT_LAST_COMMIT_TIME_COMMAND, GIT_LAST_COMMIT_MSG_COMMAND, GIT_STATUS_COMMAND].map(
-      (request) => (): Promise<ProcessOutcome> => sources.runner.run(request, options),
+      (request) => (): Promise<ProcessExecutionResult> => sources.runner.run(request, options),
     ),
     sources.signal,
   );
@@ -516,7 +518,7 @@ function classifyOutdatedBump(current: string, latest: string): "major" | "minor
 async function collectSecurity(sources: Readonly<ProbeSources>): Promise<SecurityInfo | null> {
   const options = {cwd: sources.paths.root, timeoutMs: NPM_TIMEOUT_MS, signal: sources.signal};
   const outcomes = await sources.tasks.parallel(
-    [NPM_AUDIT_COMMAND, NPM_OUTDATED_COMMAND].map((request) => (): Promise<ProcessOutcome> => sources.runner.run(request, options)),
+    [NPM_AUDIT_COMMAND, NPM_OUTDATED_COMMAND].map((request) => (): Promise<ProcessExecutionResult> => sources.runner.run(request, options)),
     sources.signal,
   );
 
@@ -623,7 +625,7 @@ export async function collectDisk(sources: Readonly<DiskSources>): Promise<DiskI
 
   const outcomes = await sources.tasks.parallel(
     targets.map(
-      (target) => (): Promise<ProcessOutcome> => sources.runner.run(buildDiskSizeRequest(sources.executablePath, target), options),
+      (target) => (): Promise<ProcessExecutionResult> => sources.runner.run(buildDiskSizeRequest(sources.executablePath, target), options),
     ),
     sources.signal,
   );

@@ -102,13 +102,13 @@ const doctorForbiddenModules: ReadonlySet<string> = new Set([
   "node:os",
   "os",
   "./common/runtime.node.ts",
-  "./common/runner.execa.ts",
+  "./adapters/execa/execa-process-runner.ts",
 ]);
 
 /** Imported names no Doctor production module may take, even from an otherwise approved module. */
 const doctorForbiddenImportNames: ReadonlyMap<string, ReadonlySet<string>> = new Map([
   ["./common/runtime.ts", new Set(["FileSystem"])],
-  ["./common/runner.ts", new Set(["ProcessRunner"])],
+  ["./core/process/process-runner.ts", new Set(["ProcessRunner"])],
 ]);
 /**
  * Approved production adapter of RFC 0002 section 5.3. It owns ambient filesystem, fetch, timer,
@@ -126,7 +126,7 @@ const nodeTerminalAdapter = "scripts/adapters/node/node-terminal-sink.ts";
 
 /** Every adapter allowed to read ambient terminal-policy state directly. */
 const ambientTerminalPolicyAdapters: ReadonlySet<string> = new Set([runtimeNodeAdapter, nodeTerminalAdapter]);
-const execaAdapter = "scripts/common/runner.execa.ts";
+const execaAdapter = "scripts/adapters/execa/execa-process-runner.ts";
 const assignmentOperators = new Set<ts.SyntaxKind>([
   ts.SyntaxKind.EqualsToken,
   ts.SyntaxKind.BarBarEqualsToken,
@@ -840,16 +840,16 @@ describe("runtime boundary policy", () => {
     const source = [
       'import type {FileSystem, Clock} from "./common/runtime.ts";',
       'import * as runtime from "./common/runtime.ts";',
-      'import runner from "./common/runner.ts";',
-      'export * from "./common/runner.ts";',
+      'import runner from "./core/process/process-runner.ts";',
+      'export * from "./core/process/process-runner.ts";',
       'void import("./common/runtime.ts");',
     ].join("\n");
 
     expect(scanDoctorCapabilitySource("scripts/doctor.example.ts", source)).toEqual([
       {file: "scripts/doctor.example.ts", specifier: "./common/runtime.ts", name: "FileSystem"},
       {file: "scripts/doctor.example.ts", specifier: "./common/runtime.ts", name: "*"},
-      {file: "scripts/doctor.example.ts", specifier: "./common/runner.ts", name: "*"},
-      {file: "scripts/doctor.example.ts", specifier: "./common/runner.ts", name: "*"},
+      {file: "scripts/doctor.example.ts", specifier: "./core/process/process-runner.ts", name: "*"},
+      {file: "scripts/doctor.example.ts", specifier: "./core/process/process-runner.ts", name: "*"},
       {file: "scripts/doctor.example.ts", specifier: "./common/runtime.ts", name: "*"},
     ]);
   });
