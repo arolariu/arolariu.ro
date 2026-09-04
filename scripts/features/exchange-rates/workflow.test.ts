@@ -115,6 +115,40 @@ runCommandLifecycleContract({
   successArguments: ["--year", "2024"],
 });
 
+describe("exchange rate command lifecycle", () => {
+  it("resolves the parser-produced defaulted upper bound to the injected current year across the full command lifecycle", async () => {
+    // Proves the identity registry survives decode -> Commander -> core dispatch -> createContext:
+    // only --from is supplied, so the placeholder upper bound must resolve to the clock's year.
+    const files = createMemoryFileSystem();
+    const http = buildQueuedHttpClient([emptyRatesResponse(), emptyRatesResponse()]);
+    const host = buildCommandHost({runtime: {files, http, clock: fixedClock("2021-06-01T00:00:00.000Z")}});
+
+    const execution = await createExchangeRateUpdateCommand({host}).run(["--from", "2020"]);
+
+    expect(execution).toMatchObject({
+      status: "completed",
+      exitCode: 0,
+      value: {years: [2020, 2021], updatedYears: [2020, 2021]},
+    });
+  });
+
+  it("rejects a future --to as a usage failure raised from createContext, consuming no HTTP request and writing no CSV", async () => {
+    const files = createMemoryFileSystem();
+    const http = buildQueuedHttpClient([]);
+    const host = buildCommandHost({runtime: {files, http, clock: fixedClock("2025-06-01T00:00:00.000Z")}});
+
+    const execution = await createExchangeRateUpdateCommand({host}).run(["--to", "2026"]);
+
+    expect(execution).toMatchObject({
+      status: "failed",
+      exitCode: 2,
+      failure: {kind: "usage", message: "--to must be <= 2025 (current year), got: 2026"},
+    });
+    expect(http.requests).toEqual([]);
+    expect(await files.exists(csvPath)).toBe(false);
+  });
+});
+
 describe("exchange rate year loop", () => {
   it("fetches years in strict ascending order and delays 1,500 ms only between requests", async () => {
     const observed: string[] = [];
