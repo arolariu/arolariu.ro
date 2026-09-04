@@ -36,7 +36,7 @@ const CONTRACT_SECRET = "hunter2";
 
 /** Failure variants `expectSuccess` must reject with, plus the exact message each one produces. */
 const failureVariants = [
-  ["exited", buildExitedProcessExecutionResult(7, {stderr: "detail"}), "Process exited with code 7: tool check\ndetail"],
+  ["exited", buildExitedProcessExecutionResult(7, {stdout: "ignored", stderr: "detail"}), "Process exited with code 7: tool check\ndetail"],
   ["signalled", buildSignalledProcessExecutionResult("SIGTERM"), "Process terminated by SIGTERM: tool check"],
   ["spawn-failed", buildSpawnFailedProcessExecutionResult("spawn tool ENOENT"), "Process failed to start: tool check\nspawn tool ENOENT"],
   ["timed-out", buildTimedOutProcessExecutionResult(), "Process timed out: tool check"],
@@ -89,6 +89,7 @@ export function runProcessRunnerContract(
     it("rejects an empty command before spawning anything", async () => {
       const {runner, invocations} = buildRecordingRunner();
 
+      expect(() => runner.run({command: "   ", args: []})).toThrow(/command cannot be empty/i);
       await expect(async () => runner.run({command: "   ", args: []})).rejects.toThrow(/command cannot be empty/i);
       expect(invocations).toEqual([]);
     });
@@ -96,6 +97,7 @@ export function runProcessRunnerContract(
     it("rejects inherit output combined with piped input", async () => {
       const {runner, invocations} = buildRecordingRunner();
 
+      expect(() => runner.run({command: "node", args: ["-e", ""]}, {output: "inherit", input: "payload"})).toThrow(/inherit/i);
       await expect(async () =>
         runner.run({command: "node", args: ["-e", ""]}, {output: "inherit", input: "payload"}),
       ).rejects.toThrow(/inherit/i);
