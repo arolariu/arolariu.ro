@@ -558,6 +558,18 @@ describe("ComposedTerminalPresenter colour policy", () => {
         : [[{text: "[arolariu::ctx] ⛔ failed"}], [{text: "plain"}]],
     );
   });
+
+  it("coalesces adjacent unstyled segments before redacting a secret that spans their boundary", () => {
+    const sink = new SegmentRecordingSink();
+    const presenter = new ComposedTerminalPresenter("ctx", {
+      color: true,
+      redactions: ["super-secret"],
+      sink,
+      runtimeHost: createTestRuntimeHost({stdoutIsTTY: true, noColor: false}),
+    });
+    presenter.line([{text: "token super-"}, {text: "secret"}, {text: " end", styles: ["dim"]}]);
+    expect(sink.segments).toEqual([[{text: "token [REDACTED]"}, {text: " end", styles: ["dim"]}]]);
+  });
 });
 
 describe("buildRecordingPresenter", () => {

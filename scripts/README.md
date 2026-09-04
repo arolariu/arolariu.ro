@@ -152,6 +152,9 @@ separate; `formatProcessRequest()` renders diagnostics and never includes stdin 
 `inspection`, `environment`, `signal`, and `cleanup`. [`common/runtime.node.ts`](./common/runtime.node.ts) is the single production
 adapter that implements them; it is the only production module allowed to import `node:fs`, `node:os`, or `node:timers`, to call bare
 `fetch`/`setInterval`, to read `process.env`/`process.cwd()`, to register SIGINT/SIGTERM, or to assign `process.exitCode`.
+[`adapters/node/node-terminal-sink.ts`](./adapters/node/node-terminal-sink.ts) additionally holds one narrow, terminal-only exemption
+from the same boundary check: it alone may call `setInterval` for progress-frame scheduling and read `process.env` to resolve
+`NO_COLOR`. No other production module gains either exemption.
 
 Narrow a capability before handing it to a consumer that must not widen it: `asReadOnlyFileSystem()` and `asGetOnlyHttpClient()` produce
 the read-only profiles doctor modules receive, and `inspection/probes.ts` produces the opaque, allowlisted probe runner.

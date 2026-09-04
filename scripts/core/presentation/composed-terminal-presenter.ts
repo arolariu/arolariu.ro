@@ -413,8 +413,8 @@ export class ComposedTerminalPresenter extends TerminalPresenter {
    * Redacts and routes one composed presentation record to the configured sink.
    *
    * When styling is not allowed the whole record is joined before redaction, so a sensitive value
-   * split across segments is still replaced exactly once. When styling is allowed each segment
-   * keeps its own style and is redacted independently, because the host styles per segment.
+   * split across segments is still replaced exactly once. When styling is allowed, unstyled runs
+   * are joined the same way; styled segments keep their boundary and are redacted independently.
    *
    * @param stream - Destination stream.
    * @param segments - Composed presentation segments.
@@ -430,10 +430,7 @@ export class ComposedTerminalPresenter extends TerminalPresenter {
     includeJsonEscapes = false,
   ): void {
     const composed: readonly PresentationSegment[] = this.#state.color
-      ? segments.map((segment) => {
-          const text = this.sanitize(segment.text, includeJsonEscapes);
-          return segment.styles === undefined ? {text} : {text, styles: segment.styles};
-        })
+      ? this.#sanitizeColoredSegments(segments, includeJsonEscapes)
       : [{text: this.sanitize(segments.map((segment) => segment.text).join(""), includeJsonEscapes)}];
 
     if (write) {
@@ -442,6 +439,23 @@ export class ComposedTerminalPresenter extends TerminalPresenter {
     }
 
     this.#state.sink.line(stream, composed, level);
+  }
+
+  /** Joins unstyled segment runs before sanitizing so a value split across them redacts once; styled segments stay independent. */
+  #sanitizeColoredSegments(segments: readonly PresentationSegment[], includeJsonEscapes: boolean): readonly PresentationSegment[] {
+    const composed: PresentationSegment[] = [];
+    let unstyledRun = "";
+    for (const segment of segments) {
+      if (segment.styles === undefined) {
+        unstyledRun += segment.text;
+        continue;
+      }
+      if (unstyledRun.length > 0) composed.push({text: this.sanitize(unstyledRun, includeJsonEscapes)});
+      unstyledRun = "";
+      composed.push({text: this.sanitize(segment.text, includeJsonEscapes), styles: segment.styles});
+    }
+    if (unstyledRun.length > 0) composed.push({text: this.sanitize(unstyledRun, includeJsonEscapes)});
+    return composed;
   }
 }
 
