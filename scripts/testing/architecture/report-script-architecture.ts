@@ -6,8 +6,9 @@
  * This entrypoint is one of the narrow, named exceptions to the repository direct-output policy:
  * it emits raw JSON on `process.stdout` for CI and local consumption instead of routing through
  * `ComposedTerminalPresenter`, and it is excluded from production script source discovery.
- * It reports the static runtime source-graph size and a three-sample `--help` median for every
- * Commander entrypoint; the timings are informational, while the AST import-boundary tests remain
+ * It reports the static runtime source-graph size, each entrypoint's architecture model and
+ * removal cohort, and a three-sample `--help` median for every Commander entrypoint; the timings
+ * are informational, while the AST import-boundary tests remain
  * the structural enforcement mechanism. The runtime graph follows every non-type-only edge,
  * including literal dynamic imports, so `runtimeGraphMaintainedLineCount` measures transitive
  * literal runtime reachability rather than the eager `--help` import graph and is not comparable
@@ -15,11 +16,10 @@
  */
 
 import {spawnSync} from "node:child_process";
-import {readFileSync} from "node:fs";
 import {performance} from "node:perf_hooks";
 
-import {commanderEntrypointSourcePaths} from "./script-entrypoint-definitions.ts";
-import {discoverProductionScriptFiles} from "./script-source-files.ts";
+import {commanderEntrypointSourcePaths, scriptEntrypointDefinitions} from "./script-entrypoint-definitions.ts";
+import {readProductionScriptSourceFiles} from "./script-source-files.ts";
 import {buildScriptSourceGraph, collectReachableScriptSourcePaths} from "./script-source-graph.ts";
 import {approvedScriptsArchitectureBaseline} from "./scripts-architecture-baseline.ts";
 import {calculateMaintainedSourceLineReport, countMaintainedSourceLineRecords} from "./maintained-source-lines.ts";
@@ -27,8 +27,14 @@ import {measureInvocationMedianMilliseconds} from "./script-startup-benchmark.ts
 
 const repositoryRoot = process.cwd();
 const sampleCount = 3;
-const sourceTexts = new Map(discoverProductionScriptFiles().map((sourcePath) => [sourcePath, readFileSync(sourcePath, "utf8")] as const));
+const sourceTexts = readProductionScriptSourceFiles();
 const graph = buildScriptSourceGraph(sourceTexts);
+const entrypointModels = new Map<string, {readonly architectureModel: string; readonly removalCohort: number | null}>(
+  scriptEntrypointDefinitions.map(({sourcePath, architectureModel, removalCohort}) => [
+    sourcePath,
+    {architectureModel, removalCohort: removalCohort ?? null},
+  ]),
+);
 
 function requireSourceText(sourcePath: string): string {
   const sourceText = sourceTexts.get(sourcePath);
@@ -74,6 +80,7 @@ const commands = Object.fromEntries(
     return [
       sourcePath,
       {
+        ...(entrypointModels.get(sourcePath) ?? {architectureModel: null, removalCohort: null}),
         runtimeGraphFileCount: reachable.size,
         runtimeGraphMaintainedLineCount,
         helpMedianMilliseconds,
@@ -91,6 +98,7 @@ process.stdout.write(
       nodeVersion: process.version,
       sampleCount,
       emptyNodeMedianMilliseconds,
+      entrypoints: Object.fromEntries(entrypointModels),
       commands,
     },
     null,

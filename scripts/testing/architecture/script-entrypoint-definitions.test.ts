@@ -63,4 +63,16 @@ describe("script entrypoint definitions", () => {
       "scripts/workers/lint.worker.ts",
     ]);
   });
+
+  it("declares a removal cohort for every entrypoint that is not yet a composed command", () => {
+    const missingRemovalCohort = scriptEntrypointDefinitions
+      .filter(({architectureModel, removalCohort}) => architectureModel !== "composed-command" && removalCohort === undefined)
+      .map(({sourcePath}) => sourcePath);
+    const composedWithRemovalCohort = scriptEntrypointDefinitions
+      .filter(({architectureModel, removalCohort}) => architectureModel === "composed-command" && removalCohort !== undefined)
+      .map(({sourcePath}) => sourcePath);
+
+    expect(missingRemovalCohort).toEqual([]);
+    expect(composedWithRemovalCohort).toEqual([]);
+  });
 });

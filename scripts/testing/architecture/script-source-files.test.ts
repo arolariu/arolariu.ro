@@ -12,6 +12,7 @@ import {
   isScriptConfigurationFile,
   isScriptTestFile,
   isScriptTestSupportFile,
+  readProductionScriptSourceFiles,
 } from "./script-source-files.ts";
 
 describe("script source discovery", () => {
@@ -33,5 +34,14 @@ describe("script source discovery", () => {
     expect(production).not.toContain("scripts/vitest.config.ts");
     expect(production).not.toContain("scripts/testing/builders/runtime-context.builder.ts");
     expect(production.some((path) => path.startsWith("scripts/testing/"))).toBe(false);
+  });
+
+  it("reads the production source text of exactly the discovered production files", () => {
+    const production = discoverProductionScriptFiles();
+    const sourceFiles = readProductionScriptSourceFiles();
+
+    expect([...sourceFiles.keys()]).toEqual([...production]);
+    expect(sourceFiles.get("scripts/testing/architecture/script-source-files.ts")).toBeUndefined();
+    expect(sourceFiles.get("scripts/doctor.ts")).toContain("doctorCommand");
   });
 });

@@ -1,7 +1,7 @@
 // @vitest-environment node
 /**
  * @fileoverview AST policy tests for the declarative command runtime boundary.
- * @module scripts.common.runtime-boundary.test
+ * @module scripts/testing/architecture/runtime-boundary-policy.test
  */
 
 import {existsSync, readFileSync} from "node:fs";
@@ -9,20 +9,24 @@ import ts from "typescript";
 import {describe, expect, it} from "vitest";
 
 import {
-  commanderEntrypointSourcePaths,
-  piscinaRuntimeBoundaryExclusionSourcePaths,
-} from "../testing/architecture/script-entrypoint-definitions.ts";
+  type ArchitectureAccessPath,
+  type ArchitectureAliasScope,
+  declareArchitectureBindingNames,
+  resolveArchitectureAccessPath,
+  visitArchitectureFunctionScope,
+} from "./architecture-source-scan.ts";
+import {commanderEntrypointSourcePaths, piscinaRuntimeBoundaryExclusionSourcePaths} from "./script-entrypoint-definitions.ts";
 import {
   discoverProductionScriptFiles,
   discoverScriptSourceFiles,
   isScriptConfigurationFile,
   isScriptTestFile,
-} from "../testing/architecture/script-source-files.ts";
+} from "./script-source-files.ts";
 import {
   analyzeCommandEntrypointSource,
   collectTypeScriptModuleReferences,
   completeModuleNamespaceImportName,
-} from "../testing/architecture/typescript-module-analysis.ts";
+} from "./typescript-module-analysis.ts";
 
 type RuntimeBoundaryRule =
   | "execa-import"
@@ -164,9 +168,6 @@ const comparisonOperators = new Set<ts.SyntaxKind>([
   ts.SyntaxKind.ExclamationEqualsEqualsToken,
 ]);
 
-type AccessPath = readonly string[];
-type AliasScope = Map<string, AccessPath | null>;
-
 function normalizeFilePath(file: string): string {
   return file.replaceAll("\\", "/");
 }
@@ -182,115 +183,12 @@ function discoverRuntimeBoundaryProductionScripts(): readonly string[] {
   return discoverProductionScriptFiles().filter((file) => !runtimeBoundaryExclusions.has(file));
 }
 
-function isPropertyNameLike(
-  node: ts.PropertyName | ts.Expression,
-): node is ts.Identifier | ts.StringLiteral | ts.NumericLiteral | ts.NoSubstitutionTemplateLiteral {
-  return ts.isIdentifier(node) || ts.isStringLiteral(node) || ts.isNumericLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node);
-}
-
-function declareBindingName(name: ts.BindingName, scope: AliasScope, accessPath: AccessPath | null): void {
-  if (ts.isIdentifier(name)) {
-    scope.set(name.text, accessPath);
-    return;
-  }
-
-  if (ts.isObjectBindingPattern(name)) {
-    for (const element of name.elements) {
-      if (ts.isOmittedExpression(element)) {
-        continue;
-      }
-
-      let elementAccessPath: AccessPath | null = null;
-      if (element.dotDotDotToken === undefined && accessPath !== null) {
-        const propertyName = element.propertyName ?? (ts.isIdentifier(element.name) ? element.name : undefined);
-        if (propertyName !== undefined && isPropertyNameLike(propertyName)) {
-          elementAccessPath = [...accessPath, propertyName.text];
-        }
-      }
-
-      declareBindingName(element.name, scope, elementAccessPath);
-    }
-
-    return;
-  }
-
-  for (const [index, element] of name.elements.entries()) {
-    if (ts.isOmittedExpression(element)) {
-      continue;
-    }
-
-    const elementAccessPath = element.dotDotDotToken === undefined && accessPath !== null ? [...accessPath, `${index}`] : null;
-
-    declareBindingName(element.name, scope, elementAccessPath);
-  }
-}
-
-function getAccessPath(expression: ts.Expression, scopes: readonly AliasScope[]): AccessPath | null {
-  if (
-    ts.isParenthesizedExpression(expression)
-    || ts.isAsExpression(expression)
-    || ts.isSatisfiesExpression(expression)
-    || ts.isNonNullExpression(expression)
-  ) {
-    return getAccessPath(expression.expression, scopes);
-  }
-
-  if (ts.isIdentifier(expression)) {
-    for (let index = scopes.length - 1; index >= 0; index--) {
-      const scope = scopes[index];
-      if (scope?.has(expression.text)) {
-        return scope.get(expression.text) ?? null;
-      }
-    }
-
-    return [expression.text];
-  }
-
-  if (ts.isPropertyAccessExpression(expression)) {
-    const receiver = getAccessPath(expression.expression, scopes);
-    return receiver === null ? null : [...receiver, expression.name.text];
-  }
-
-  if (ts.isElementAccessExpression(expression) && isPropertyNameLike(expression.argumentExpression)) {
-    const receiver = getAccessPath(expression.expression, scopes);
-    return receiver === null ? null : [...receiver, expression.argumentExpression.text];
-  }
-
-  return null;
-}
-
-function startsWithPath(path: AccessPath, prefix: readonly string[]): boolean {
+function startsWithPath(path: ArchitectureAccessPath, prefix: readonly string[]): boolean {
   return prefix.every((segment, index) => path[index] === segment);
 }
 
 function isDynamicImport(node: ts.CallExpression): boolean {
   return node.expression.kind === ts.SyntaxKind.ImportKeyword;
-}
-
-function visitFunction(
-  node: ts.FunctionLikeDeclaration,
-  scopes: readonly AliasScope[],
-  visit: (node: ts.Node, scopes: readonly AliasScope[]) => void,
-): void {
-  const functionScope: AliasScope = new Map();
-  if (node.name !== undefined && ts.isIdentifier(node.name)) {
-    functionScope.set(node.name.text, null);
-  }
-
-  for (const [index, parameter] of node.parameters.entries()) {
-    declareBindingName(parameter.name, functionScope, [`<parameter:${index}>`]);
-  }
-
-  const functionScopes = [...scopes, functionScope];
-  for (const parameter of node.parameters) {
-    if (parameter.initializer !== undefined) {
-      visit(parameter.initializer, functionScopes);
-    }
-  }
-
-  if (node.body !== undefined) {
-    visit(node.body, functionScopes);
-  }
 }
 
 function scanRuntimeBoundarySource(file: string, sourceText: string): readonly RuntimeBoundaryViolation[] {
@@ -355,14 +253,14 @@ function scanRuntimeBoundarySource(file: string, sourceText: string): readonly R
     }
   }
 
-  function isDirectOutputPath(path: AccessPath): boolean {
+  function isDirectOutputPath(path: ArchitectureAccessPath): boolean {
     return (
       (path.length === 2 && path[0] === "console")
       || (path.length === 3 && path[0] === "process" && (path[1] === "stdout" || path[1] === "stderr") && path[2] === "write")
     );
   }
 
-  function isAmbientTimerCallPath(path: AccessPath): boolean {
+  function isAmbientTimerCallPath(path: ArchitectureAccessPath): boolean {
     return (
       (path.length === 1 && (path[0] === "setTimeout" || path[0] === "setInterval"))
       || (path.length === 2 && path[0] === "performance" && path[1] === "now")
@@ -370,11 +268,11 @@ function scanRuntimeBoundarySource(file: string, sourceText: string): readonly R
     );
   }
 
-  function isAmbientEnvironmentPath(path: AccessPath): boolean {
+  function isAmbientEnvironmentPath(path: ArchitectureAccessPath): boolean {
     return startsWithPath(path, ["process", "env"]);
   }
 
-  function isAmbientOsStatePath(path: AccessPath): boolean {
+  function isAmbientOsStatePath(path: ArchitectureAccessPath): boolean {
     return (
       startsWithPath(path, ["process", "argv"])
       || startsWithPath(path, ["process", "execPath"])
@@ -386,11 +284,11 @@ function scanRuntimeBoundarySource(file: string, sourceText: string): readonly R
     );
   }
 
-  function isAmbientOsStateCallPath(path: AccessPath): boolean {
+  function isAmbientOsStateCallPath(path: ArchitectureAccessPath): boolean {
     return isAmbientOsStatePath(path) || startsWithPath(path, ["process", "cwd"]);
   }
 
-  function isAmbientProcessControlPath(path: AccessPath): boolean {
+  function isAmbientProcessControlPath(path: ArchitectureAccessPath): boolean {
     return (
       startsWithPath(path, ["process", "chdir"])
       || startsWithPath(path, ["process", "kill"])
@@ -404,8 +302,8 @@ function scanRuntimeBoundarySource(file: string, sourceText: string): readonly R
 
   function expressionContainsAccessPath(
     expression: ts.Expression,
-    scopes: readonly AliasScope[],
-    predicate: (path: AccessPath) => boolean,
+    scope: ArchitectureAliasScope,
+    predicate: (path: ArchitectureAccessPath) => boolean,
   ): boolean {
     let found = false;
 
@@ -415,7 +313,7 @@ function scanRuntimeBoundarySource(file: string, sourceText: string): readonly R
       }
 
       if (ts.isExpression(node)) {
-        const path = getAccessPath(node, scopes);
+        const path = resolveArchitectureAccessPath(node, scope);
         if (path !== null && predicate(path)) {
           found = true;
           return;
@@ -463,18 +361,13 @@ function scanRuntimeBoundarySource(file: string, sourceText: string): readonly R
     return !((ts.isPropertyAccessExpression(node.parent) || ts.isElementAccessExpression(node.parent)) && node.parent.expression === node);
   }
 
-  function visit(node: ts.Node, scopes: readonly AliasScope[]): void {
+  function visit(node: ts.Node, scope: ArchitectureAliasScope): void {
     if (ts.isSourceFile(node) || ts.isBlock(node) || ts.isModuleBlock(node)) {
-      const blockScopes = [...scopes, new Map<string, AccessPath | null>()];
+      const blockScope: ArchitectureAliasScope = {bindings: new Map(), parent: scope};
       for (const statement of node.statements) {
-        visit(statement, blockScopes);
+        visit(statement, blockScope);
       }
       return;
-    }
-
-    const scope = scopes.at(-1);
-    if (scope === undefined) {
-      throw new Error("Runtime boundary traversal requires an active lexical scope.");
     }
 
     if (ts.isImportDeclaration(node) && ts.isStringLiteral(node.moduleSpecifier)) {
@@ -489,22 +382,23 @@ function scanRuntimeBoundarySource(file: string, sourceText: string): readonly R
       const isConstant = (node.flags & ts.NodeFlags.Const) !== 0;
       for (const declaration of node.declarations) {
         if (declaration.initializer !== undefined) {
-          visit(declaration.initializer, scopes);
+          visit(declaration.initializer, scope);
         }
 
-        const accessPath = isConstant && declaration.initializer !== undefined ? getAccessPath(declaration.initializer, scopes) : null;
+        const accessPath =
+          isConstant && declaration.initializer !== undefined ? resolveArchitectureAccessPath(declaration.initializer, scope) : null;
 
-        declareBindingName(declaration.name, scope, accessPath);
+        declareArchitectureBindingNames(declaration.name, accessPath, scope, {trackParameterRoots: true});
       }
       return;
     }
 
     if (ts.isFunctionDeclaration(node)) {
       if (node.name !== undefined) {
-        scope.set(node.name.text, null);
+        scope.bindings.set(node.name.text, null);
       }
 
-      visitFunction(node, scopes, visit);
+      visitArchitectureFunctionScope(node, scope, visit, {trackParameterRoots: true});
       return;
     }
 
@@ -516,12 +410,12 @@ function scanRuntimeBoundarySource(file: string, sourceText: string): readonly R
       || ts.isGetAccessorDeclaration(node)
       || ts.isSetAccessorDeclaration(node)
     ) {
-      visitFunction(node, scopes, visit);
+      visitArchitectureFunctionScope(node, scope, visit, {trackParameterRoots: true});
       return;
     }
 
     if (ts.isClassDeclaration(node) && node.name !== undefined) {
-      scope.set(node.name.text, null);
+      scope.bindings.set(node.name.text, null);
     }
 
     if (ts.isCallExpression(node)) {
@@ -532,7 +426,7 @@ function scanRuntimeBoundarySource(file: string, sourceText: string): readonly R
         }
       }
 
-      const path = getAccessPath(node.expression, scopes);
+      const path = resolveArchitectureAccessPath(node.expression, scope);
       if (path !== null) {
         if (isDirectOutputPath(path) && !directOutputAdapters.has(normalizedFile)) {
           add(node, "direct-output");
@@ -565,7 +459,7 @@ function scanRuntimeBoundarySource(file: string, sourceText: string): readonly R
     }
 
     if ((ts.isPropertyAccessExpression(node) || ts.isElementAccessExpression(node)) && isOutermostAccessPathExpression(node)) {
-      const path = getAccessPath(node, scopes);
+      const path = resolveArchitectureAccessPath(node, scope);
       if (path !== null) {
         if (isAmbientEnvironmentPath(path) && !ambientTerminalPolicyAdapters.has(normalizedFile)) {
           add(node, "ambient-environment");
@@ -578,7 +472,7 @@ function scanRuntimeBoundarySource(file: string, sourceText: string): readonly R
     }
 
     if (ts.isBinaryExpression(node)) {
-      const leftPath = getAccessPath(node.left, scopes);
+      const leftPath = resolveArchitectureAccessPath(node.left, scope);
       if (
         leftPath !== null
         && startsWithPath(leftPath, ["process", "exitCode"])
@@ -591,25 +485,25 @@ function scanRuntimeBoundarySource(file: string, sourceText: string): readonly R
       if (
         comparisonOperators.has(node.operatorToken.kind)
         && ((expressionContainsImportMetaUrl(node.left)
-          && expressionContainsAccessPath(node.right, scopes, (path) => startsWithPath(path, ["process", "argv"])))
+          && expressionContainsAccessPath(node.right, scope, (path) => startsWithPath(path, ["process", "argv"])))
           || (expressionContainsImportMetaUrl(node.right)
-            && expressionContainsAccessPath(node.left, scopes, (path) => startsWithPath(path, ["process", "argv"]))))
+            && expressionContainsAccessPath(node.left, scope, (path) => startsWithPath(path, ["process", "argv"]))))
       ) {
         add(node, "manual-entrypoint");
       }
     }
 
     if (ts.isNewExpression(node) && (node.arguments?.length ?? 0) === 0) {
-      const path = getAccessPath(node.expression, scopes);
+      const path = resolveArchitectureAccessPath(node.expression, scope);
       if (path !== null && path.length === 1 && path[0] === "Date" && !nodeRuntimeAdapters.has(normalizedFile)) {
         add(node, "ambient-timer");
       }
     }
 
-    ts.forEachChild(node, (child) => visit(child, scopes));
+    ts.forEachChild(node, (child) => visit(child, scope));
   }
 
-  visit(source, []);
+  visit(source, {bindings: new Map()});
   return violations.toSorted(
     (left, right) => left.file.localeCompare(right.file) || left.line - right.line || left.rule.localeCompare(right.rule),
   );

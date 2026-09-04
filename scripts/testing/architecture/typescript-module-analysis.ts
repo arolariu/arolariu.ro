@@ -5,7 +5,7 @@
  * @remarks
  * This module is the single authoritative TypeScript Compiler API scan for static imports,
  * re-exports, literal dynamic imports, and command-entrypoint shape. It was extracted from
- * `scripts/common/runtime-boundary.test.ts` so `scripts/testing/architecture/script-source-graph.ts`
+ * `scripts/testing/architecture/runtime-boundary-policy.test.ts` so `scripts/testing/architecture/script-source-graph.ts`
  * can reuse the exact same AST evidence to build the repository's local source-reachability graph
  * instead of maintaining a second, drifting implementation.
  */

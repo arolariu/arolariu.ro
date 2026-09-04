@@ -1,21 +1,25 @@
 // @vitest-environment node
 /**
  * @fileoverview AST policy tests for direct monorepository script output boundaries.
- * @module scripts.common.output-policy.test
+ * @module scripts/testing/architecture/output-policy.test
  */
 
 import {existsSync, readFileSync} from "node:fs";
 import ts from "typescript";
 import {describe, expect, it} from "vitest";
 
-import {discoverScriptSourceFiles, isScriptTestFile} from "../testing/architecture/script-source-files.ts";
+import {
+  type ArchitectureAliasScope,
+  declareArchitectureBindingNames,
+  resolveArchitectureAccessPath,
+  visitArchitectureFunctionScope,
+} from "./architecture-source-scan.ts";
+import {discoverScriptSourceFiles, isScriptTestFile} from "./script-source-files.ts";
 
 const transitionalEntrypoints = new Set<string>();
 const interactiveTerminalAdapters = new Set(["scripts/adapters/node/node-prompt-provider.ts"]);
 
-type AccessPath = readonly string[];
-type AliasScope = Map<string, AccessPath | null>;
-type OutputExpressionPredicate = (expression: ts.Expression, scopes: readonly AliasScope[]) => boolean;
+type OutputExpressionPredicate = (expression: ts.Expression, scope: ArchitectureAliasScope) => boolean;
 
 /**
  * Production script source files scanned by the output-boundary policy.
@@ -153,47 +157,8 @@ function readRestrictedSyntaxMessages(fileName: string, variableName: string): r
   throw new Error(`Unable to locate ${variableName}.rules["no-restricted-syntax"] in ${fileName}.`);
 }
 
-function getAccessPath(expression: ts.Expression, scopes: readonly AliasScope[]): AccessPath | null {
-  if (
-    ts.isParenthesizedExpression(expression)
-    || ts.isAsExpression(expression)
-    || ts.isSatisfiesExpression(expression)
-    || ts.isNonNullExpression(expression)
-  ) {
-    return getAccessPath(expression.expression, scopes);
-  }
-
-  if (ts.isIdentifier(expression)) {
-    for (let index = scopes.length - 1; index >= 0; index--) {
-      const scope = scopes[index];
-      if (scope?.has(expression.text)) {
-        return scope.get(expression.text) ?? null;
-      }
-    }
-
-    return [expression.text];
-  }
-
-  if (ts.isPropertyAccessExpression(expression)) {
-    const receiver = getAccessPath(expression.expression, scopes);
-    return receiver === null ? null : [...receiver, expression.name.text];
-  }
-
-  if (
-    ts.isElementAccessExpression(expression)
-    && (ts.isStringLiteral(expression.argumentExpression)
-      || ts.isNoSubstitutionTemplateLiteral(expression.argumentExpression)
-      || ts.isNumericLiteral(expression.argumentExpression))
-  ) {
-    const receiver = getAccessPath(expression.expression, scopes);
-    return receiver === null ? null : [...receiver, expression.argumentExpression.text];
-  }
-
-  return null;
-}
-
-function isForbiddenOutputExpression(expression: ts.Expression, scopes: readonly AliasScope[]): boolean {
-  const path = getAccessPath(expression, scopes);
+function isForbiddenOutputExpression(expression: ts.Expression, scope: ArchitectureAliasScope): boolean {
+  const path = resolveArchitectureAccessPath(expression, scope);
   if (path === null) {
     return false;
   }
@@ -205,8 +170,8 @@ function isForbiddenOutputExpression(expression: ts.Expression, scopes: readonly
   return path.length === 3 && path[0] === "process" && (path[1] === "stdout" || path[1] === "stderr") && path[2] === "write";
 }
 
-function isPromptTerminalOutputExpression(expression: ts.Expression, scopes: readonly AliasScope[]): boolean {
-  const path = getAccessPath(expression, scopes);
+function isPromptTerminalOutputExpression(expression: ts.Expression, scope: ArchitectureAliasScope): boolean {
+  const path = resolveArchitectureAccessPath(expression, scope);
   return path !== null && path.length >= 2 && path.at(-2) === "output" && path.at(-1) === "write";
 }
 
@@ -219,86 +184,33 @@ function findOutputCalls(
   const source = ts.createSourceFile(fileName, sourceText, ts.ScriptTarget.Latest, true);
   const violations: string[] = [];
 
-  function declareBindingName(name: ts.BindingName, scope: AliasScope, accessPath: AccessPath | null): void {
-    if (ts.isIdentifier(name)) {
-      scope.set(name.text, accessPath);
-      return;
-    }
-
-    for (const element of name.elements) {
-      if (ts.isOmittedExpression(element)) {
-        continue;
-      }
-
-      let elementAccessPath: AccessPath | null = null;
-      if (ts.isObjectBindingPattern(name) && element.dotDotDotToken === undefined && accessPath !== null) {
-        const propertyName = element.propertyName ?? (ts.isIdentifier(element.name) ? element.name : undefined);
-        if (
-          propertyName !== undefined
-          && (ts.isIdentifier(propertyName)
-            || ts.isStringLiteral(propertyName)
-            || ts.isNumericLiteral(propertyName)
-            || ts.isNoSubstitutionTemplateLiteral(propertyName))
-        ) {
-          elementAccessPath = [...accessPath, propertyName.text];
-        }
-      }
-
-      declareBindingName(element.name, scope, elementAccessPath);
-    }
-  }
-
-  function visitFunction(node: ts.FunctionLikeDeclaration, scopes: readonly AliasScope[]): void {
-    const functionScope: AliasScope = new Map();
-    if (node.name !== undefined && ts.isIdentifier(node.name)) {
-      functionScope.set(node.name.text, null);
-    }
-    for (const [index, parameter] of node.parameters.entries()) {
-      declareBindingName(parameter.name, functionScope, trackParameterRoots ? [`<parameter:${index}>`] : null);
-    }
-
-    const functionScopes = [...scopes, functionScope];
-    for (const parameter of node.parameters) {
-      if (parameter.initializer !== undefined) {
-        visit(parameter.initializer, functionScopes);
-      }
-    }
-    if (node.body !== undefined) {
-      visit(node.body, functionScopes);
-    }
-  }
-
-  function visit(node: ts.Node, scopes: readonly AliasScope[]): void {
+  function visit(node: ts.Node, scope: ArchitectureAliasScope): void {
     if (ts.isSourceFile(node) || ts.isBlock(node)) {
-      const blockScopes = [...scopes, new Map<string, AccessPath | null>()];
+      const blockScope: ArchitectureAliasScope = {bindings: new Map(), parent: scope};
       for (const statement of node.statements) {
-        visit(statement, blockScopes);
+        visit(statement, blockScope);
       }
       return;
-    }
-
-    const scope = scopes.at(-1);
-    if (scope === undefined) {
-      throw new Error("Output policy traversal requires an active lexical scope.");
     }
 
     if (ts.isVariableDeclarationList(node)) {
       const isConstant = (node.flags & ts.NodeFlags.Const) !== 0;
       for (const declaration of node.declarations) {
         if (declaration.initializer !== undefined) {
-          visit(declaration.initializer, scopes);
+          visit(declaration.initializer, scope);
         }
-        const accessPath = isConstant && declaration.initializer !== undefined ? getAccessPath(declaration.initializer, scopes) : null;
-        declareBindingName(declaration.name, scope, accessPath);
+        const accessPath =
+          isConstant && declaration.initializer !== undefined ? resolveArchitectureAccessPath(declaration.initializer, scope) : null;
+        declareArchitectureBindingNames(declaration.name, accessPath, scope);
       }
       return;
     }
 
     if (ts.isFunctionDeclaration(node)) {
       if (node.name !== undefined) {
-        scope.set(node.name.text, null);
+        scope.bindings.set(node.name.text, null);
       }
-      visitFunction(node, scopes);
+      visitArchitectureFunctionScope(node, scope, visit, {trackParameterRoots});
       return;
     }
 
@@ -310,22 +222,22 @@ function findOutputCalls(
       || ts.isGetAccessorDeclaration(node)
       || ts.isSetAccessorDeclaration(node)
     ) {
-      visitFunction(node, scopes);
+      visitArchitectureFunctionScope(node, scope, visit, {trackParameterRoots});
       return;
     }
 
     if (ts.isClassDeclaration(node) && node.name !== undefined) {
-      scope.set(node.name.text, null);
+      scope.bindings.set(node.name.text, null);
     }
 
-    if (ts.isCallExpression(node) && predicate(node.expression, scopes)) {
+    if (ts.isCallExpression(node) && predicate(node.expression, scope)) {
       const position = source.getLineAndCharacterOfPosition(node.getStart(source));
       violations.push(`${fileName}:${position.line + 1}`);
     }
-    ts.forEachChild(node, (child) => visit(child, scopes));
+    ts.forEachChild(node, (child) => visit(child, scope));
   }
 
-  visit(source, []);
+  visit(source, {bindings: new Map()});
   return violations;
 }
 

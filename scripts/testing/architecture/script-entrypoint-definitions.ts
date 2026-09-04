@@ -4,10 +4,13 @@
  *
  * @remarks
  * This module is the single source of truth mapping each Commander- or Piscina-hosted script
- * entrypoint to its runtime host kind, role, and owning root `package.json#scripts` names.
- * `scripts/common/runtime-boundary.test.ts` derives its Commander direct-entrypoint list and its
- * Piscina runtime-boundary exclusions from this inventory instead of maintaining parallel,
- * hand-written lists.
+ * entrypoint to its runtime host kind, role, architecture model, removal cohort, and owning root
+ * `package.json#scripts` names.
+ * `scripts/testing/architecture/runtime-boundary-policy.test.ts` derives its Commander
+ * direct-entrypoint list and its Piscina runtime-boundary exclusions from this inventory instead
+ * of maintaining parallel, hand-written lists, and
+ * `scripts/testing/architecture/module-structure-policy.test.ts` enforces the architecture-model
+ * and removal-cohort invariants.
  */
 
 /** The runtime host that starts a script entrypoint. */
@@ -15,6 +18,9 @@ type ScriptEntrypointHostKind = "commander" | "piscina-host" | "piscina-worker";
 
 /** Whether an entrypoint is a user-facing command or an internal worker process. */
 type ScriptEntrypointRole = "public-command" | "internal-worker";
+
+/** The command architecture an entrypoint currently runs under. */
+type ScriptEntrypointArchitectureModel = "composed-command" | "legacy-command" | "piscina";
 
 /** One authoritative record describing a single script entrypoint. */
 interface ScriptEntrypointDefinition {
@@ -24,6 +30,14 @@ interface ScriptEntrypointDefinition {
   readonly hostKind: ScriptEntrypointHostKind;
   /** Whether this entrypoint is directly user-facing or an internal worker. */
   readonly role: ScriptEntrypointRole;
+  /** Command architecture this entrypoint currently runs under. */
+  readonly architectureModel: ScriptEntrypointArchitectureModel;
+  /**
+   * Cohort that removes this entrypoint's non-composed architecture; required on every
+   * non-`composed-command` entry and forbidden on a `composed-command` one. `1` is legal while
+   * this cohort runs, because its three pilots are still legacy.
+   */
+  readonly removalCohort?: 1 | 2 | 3 | 4 | 5 | 6 | 7;
   /** Exported Commander command singleton name, when the entrypoint hosts one. */
   readonly exportedCommandName?: string;
   /** Root `package.json#scripts` names that invoke this entrypoint directly. */
@@ -43,6 +57,8 @@ export const scriptEntrypointDefinitions = [
     sourcePath: "scripts/container-runtime/aspire.ts",
     hostKind: "commander",
     role: "public-command",
+    architectureModel: "legacy-command",
+    removalCohort: 6,
     exportedCommandName: "aspireCommand",
     packageScriptNames: ["dev", "dev:aspire", "dev:aspire:podman", "dev:aspire:rancher"],
   },
@@ -50,6 +66,8 @@ export const scriptEntrypointDefinitions = [
     sourcePath: "scripts/container-runtime/compose.ts",
     hostKind: "commander",
     role: "public-command",
+    architectureModel: "legacy-command",
+    removalCohort: 6,
     exportedCommandName: "composeCommand",
     packageScriptNames: ["containers:compose"],
   },
@@ -57,6 +75,8 @@ export const scriptEntrypointDefinitions = [
     sourcePath: "scripts/container-runtime/image.ts",
     hostKind: "commander",
     role: "public-command",
+    architectureModel: "legacy-command",
+    removalCohort: 6,
     exportedCommandName: "imageCommand",
     packageScriptNames: ["containers:build", "containers:run"],
   },
@@ -64,6 +84,8 @@ export const scriptEntrypointDefinitions = [
     sourcePath: "scripts/container-runtime/selfhost.ts",
     hostKind: "commander",
     role: "public-command",
+    architectureModel: "legacy-command",
+    removalCohort: 6,
     exportedCommandName: "selfhostCommand",
     packageScriptNames: ["dev:selfhost", "dev:selfhost:logs", "dev:selfhost:stop"],
   },
@@ -71,6 +93,8 @@ export const scriptEntrypointDefinitions = [
     sourcePath: "scripts/docs-assemble.ts",
     hostKind: "commander",
     role: "public-command",
+    architectureModel: "legacy-command",
+    removalCohort: 1,
     exportedCommandName: "docsAssembleCommand",
     packageScriptNames: ["docs:assemble"],
   },
@@ -78,6 +102,8 @@ export const scriptEntrypointDefinitions = [
     sourcePath: "scripts/doctor.ts",
     hostKind: "commander",
     role: "public-command",
+    architectureModel: "legacy-command",
+    removalCohort: 2,
     exportedCommandName: "doctorCommand",
     packageScriptNames: ["doctor"],
   },
@@ -85,6 +111,8 @@ export const scriptEntrypointDefinitions = [
     sourcePath: "scripts/generate.artifacts.ts",
     hostKind: "commander",
     role: "public-command",
+    architectureModel: "legacy-command",
+    removalCohort: 4,
     exportedCommandName: "generateArtifactsCommand",
     packageScriptNames: [],
   },
@@ -92,6 +120,8 @@ export const scriptEntrypointDefinitions = [
     sourcePath: "scripts/generate.env.ts",
     hostKind: "commander",
     role: "public-command",
+    architectureModel: "legacy-command",
+    removalCohort: 4,
     exportedCommandName: "generateEnvironmentCommand",
     packageScriptNames: ["generate:env"],
   },
@@ -99,6 +129,8 @@ export const scriptEntrypointDefinitions = [
     sourcePath: "scripts/generate.gql.ts",
     hostKind: "commander",
     role: "public-command",
+    architectureModel: "legacy-command",
+    removalCohort: 4,
     exportedCommandName: "generateGraphqlCommand",
     packageScriptNames: ["generate:gql"],
   },
@@ -106,6 +138,8 @@ export const scriptEntrypointDefinitions = [
     sourcePath: "scripts/generate.i18n.ts",
     hostKind: "commander",
     role: "public-command",
+    architectureModel: "legacy-command",
+    removalCohort: 4,
     exportedCommandName: "generateI18nCommand",
     packageScriptNames: ["generate:i18n"],
   },
@@ -113,6 +147,8 @@ export const scriptEntrypointDefinitions = [
     sourcePath: "scripts/generate.ts",
     hostKind: "commander",
     role: "public-command",
+    architectureModel: "legacy-command",
+    removalCohort: 4,
     exportedCommandName: "generateCommand",
     packageScriptNames: ["generate", "generate:artifacts"],
   },
@@ -120,6 +156,8 @@ export const scriptEntrypointDefinitions = [
     sourcePath: "scripts/setup.ts",
     hostKind: "commander",
     role: "public-command",
+    architectureModel: "legacy-command",
+    removalCohort: 5,
     exportedCommandName: "setupCommand",
     packageScriptNames: ["setup"],
   },
@@ -127,6 +165,8 @@ export const scriptEntrypointDefinitions = [
     sourcePath: "scripts/status.ts",
     hostKind: "commander",
     role: "public-command",
+    architectureModel: "legacy-command",
+    removalCohort: 3,
     exportedCommandName: "statusCommand",
     packageScriptNames: ["status"],
   },
@@ -134,6 +174,8 @@ export const scriptEntrypointDefinitions = [
     sourcePath: "scripts/test-e2e.ts",
     hostKind: "commander",
     role: "public-command",
+    architectureModel: "legacy-command",
+    removalCohort: 1,
     exportedCommandName: "e2eCommand",
     packageScriptNames: ["test:e2e", "test:e2e:backend", "test:e2e:cv", "test:e2e:frontend"],
   },
@@ -141,6 +183,8 @@ export const scriptEntrypointDefinitions = [
     sourcePath: "scripts/update-exchange-rates.ts",
     hostKind: "commander",
     role: "public-command",
+    architectureModel: "legacy-command",
+    removalCohort: 1,
     exportedCommandName: "updateExchangeRatesCommand",
     packageScriptNames: [],
   },
@@ -148,6 +192,8 @@ export const scriptEntrypointDefinitions = [
     sourcePath: "scripts/inspection/aggregate-worker.ts",
     hostKind: "commander",
     role: "internal-worker",
+    architectureModel: "legacy-command",
+    removalCohort: 2,
     exportedCommandName: "aggregateWorkerCommand",
     packageScriptNames: [],
   },
@@ -155,6 +201,8 @@ export const scriptEntrypointDefinitions = [
     sourcePath: "scripts/inspection/workspace.worker.ts",
     hostKind: "commander",
     role: "internal-worker",
+    architectureModel: "legacy-command",
+    removalCohort: 2,
     exportedCommandName: "workspaceWorkerCommand",
     packageScriptNames: [],
   },
@@ -162,24 +210,32 @@ export const scriptEntrypointDefinitions = [
     sourcePath: "scripts/format.ts",
     hostKind: "piscina-host",
     role: "public-command",
+    architectureModel: "piscina",
+    removalCohort: 7,
     packageScriptNames: ["format", "format:api", "format:components", "format:cv", "format:exp", "format:status", "format:website"],
   },
   {
     sourcePath: "scripts/lint.ts",
     hostKind: "piscina-host",
     role: "public-command",
+    architectureModel: "piscina",
+    removalCohort: 7,
     packageScriptNames: ["lint", "lint:api", "lint:components", "lint:cv", "lint:exp", "lint:status", "lint:website"],
   },
   {
     sourcePath: "scripts/workers/format.worker.ts",
     hostKind: "piscina-worker",
     role: "internal-worker",
+    architectureModel: "piscina",
+    removalCohort: 7,
     packageScriptNames: [],
   },
   {
     sourcePath: "scripts/workers/lint.worker.ts",
     hostKind: "piscina-worker",
     role: "internal-worker",
+    architectureModel: "piscina",
+    removalCohort: 7,
     packageScriptNames: [],
   },
 ] as const satisfies readonly ScriptEntrypointDefinition[];

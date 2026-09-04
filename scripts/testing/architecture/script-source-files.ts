@@ -6,11 +6,12 @@
  * This module is the single authoritative walk over `scripts/**` for architecture and policy
  * tests. It classifies test files, configuration files, and non-production test-support files
  * (including everything under `scripts/testing/**`) so every scanner in
- * `scripts/common/runtime-boundary.test.ts` and `scripts/common/output-policy.test.ts` agrees on
- * what "production script source" means.
+ * `scripts/testing/architecture/runtime-boundary-policy.test.ts` and
+ * `scripts/testing/architecture/output-policy.test.ts` agrees on what "production script source"
+ * means.
  */
 
-import {readdirSync} from "node:fs";
+import {readdirSync, readFileSync} from "node:fs";
 import {extname, join} from "node:path";
 
 /** File extensions that make a `scripts/**` entry a script source file. */
@@ -99,4 +100,18 @@ export function discoverProductionScriptFiles(directory: string = "scripts"): re
   return discoverScriptSourceFiles(directory).filter(
     (path) => !isScriptTestFile(path) && !isScriptConfigurationFile(path) && !isScriptTestSupportFile(path),
   );
+}
+
+/**
+ * Reads every production script source file into the map `buildScriptSourceGraph` consumes.
+ *
+ * @remarks
+ * This owns the production source-text read that the orphan-module, architecture-report,
+ * ownership-boundary, and module-structure consumers previously each built inline.
+ *
+ * @param directory - Root directory to walk. Defaults to `scripts`.
+ * @returns Every production script source path mapped to its source text.
+ */
+export function readProductionScriptSourceFiles(directory: string = "scripts"): ReadonlyMap<string, string> {
+  return new Map(discoverProductionScriptFiles(directory).map((sourcePath) => [sourcePath, readFileSync(sourcePath, "utf8")]));
 }

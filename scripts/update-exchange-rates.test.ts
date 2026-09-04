@@ -6,7 +6,7 @@
  * @remarks
  * Every scenario runs through {@link createUpdateExchangeRatesCommand} with a fake runtime, so no
  * test touches real disk, network, or wall-clock time. The declarative command runtime's AST
- * guard (`scripts/common/runtime-boundary.test.ts`) is what proves the production module itself
+ * guard (`scripts/testing/architecture/runtime-boundary-policy.test.ts`) is what proves the production module itself
  * never reaches for those ambient effects directly.
  */
 

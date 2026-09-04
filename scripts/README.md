@@ -164,8 +164,11 @@ Narrow a capability before handing it to a consumer that must not widen it: `asR
 the read-only profiles doctor modules receive, and `inspection/probes.ts` produces the opaque, allowlisted probe runner.
 
 A **root scope** snapshots the environment once, owns its presenter and prompts, and (only under `run()`/`runIfMain()`) owns process signals.
-A **child scope** created by `invoke({parent})` reuses the parent's immutable environment, prompts, and inspection registry, and receives
-its own forked presenter, invocation runner, cancellation controller, and cleanup registry. Cancellation always flows parent to child and
+A **child scope** created by `invoke({parent})` shares exactly one thing by identity: the parent's immutable environment snapshot. Its
+presenter is forked from the parent's, its prompts (like `files`, `http`, and `runner`) come from its own fresh memoized lazy facades, and
+its invocation runner, cancellation controller, and cleanup registry are its own. The inspection registry is composed per command by
+[`inspection/runtime-capability.ts`](./inspection/runtime-capability.ts), which resolves an explicit test override first, then the parent
+scope's registry when the parent already carries one, then a new registry bound to this scope. Cancellation always flows parent to child and
 never child to parent.
 
 ### JSON, human, and silent output
@@ -220,8 +223,8 @@ readline, visible input echo, cursor state, validation feedback, and non-echoing
 That adapter may emit only prompt labels, questions, choices, validation feedback, and terminal-control newlines; lifecycle diagnostics and
 submitted secret values remain forbidden there.
 
-[`output-policy.test.ts`](./common/output-policy.test.ts)'s AST guards enforce both boundaries, including property, direct-function, and
-destructured aliases. [`runtime-boundary.test.ts`](./common/runtime-boundary.test.ts) enforces the wider runtime boundary — Execa and
+[`output-policy.test.ts`](./testing/architecture/output-policy.test.ts)'s AST guards enforce both boundaries, including property, direct-function, and
+destructured aliases. [`runtime-boundary-policy.test.ts`](./testing/architecture/runtime-boundary-policy.test.ts) enforces the wider runtime boundary — Execa and
 child-process imports, ambient filesystem/HTTP/timer/environment/OS-state access, direct process exit, manual direct-entry detection,
 explicit concurrency, doctor capability width, and the exact six format/lint exclusions. The root ESLint configuration provides immediate
 feedback for direct output syntax. Direct console/process-stream output stays confined to the Node terminal sink, while injected
@@ -288,7 +291,7 @@ action is `executed`, `planned` (always the outcome under `--dry-run`), or `decl
 Focused validation for setup and its direct shared dependencies:
 
 ```powershell
-npx vitest run --config scripts\vitest.config.ts --coverage.enabled=false scripts\common\repository-paths.test.ts scripts\common\requirements.test.ts scripts\common\tooling-config.test.ts scripts\adapters\node\node-prompt-provider.test.ts scripts\setup.test.ts scripts\setup.workspace.test.ts scripts\setup.dotnet.test.ts scripts\setup.react.test.ts scripts\setup.svelte.test.ts scripts\setup.python.test.ts scripts\setup.infrastructure.test.ts scripts\generate.env.test.ts scripts\container-runtime\selection.test.ts scripts\common\output-policy.test.ts
+npx vitest run --config scripts\vitest.config.ts --coverage.enabled=false scripts\common\repository-paths.test.ts scripts\common\requirements.test.ts scripts\common\tooling-config.test.ts scripts\adapters\node\node-prompt-provider.test.ts scripts\setup.test.ts scripts\setup.workspace.test.ts scripts\setup.dotnet.test.ts scripts\setup.react.test.ts scripts\setup.svelte.test.ts scripts\setup.python.test.ts scripts\setup.infrastructure.test.ts scripts\generate.env.test.ts scripts\container-runtime\selection.test.ts scripts\testing\architecture\output-policy.test.ts
 npx eslint scripts\setup.ts scripts\setup.types.ts scripts\setup.*.ts scripts\common\repository-paths.ts scripts\common\requirements.ts scripts\common\tooling-config.ts scripts\adapters\node\node-prompt-provider.ts scripts\generate.env.ts scripts\container-runtime
 git --no-pager diff --check
 ```
@@ -345,7 +348,7 @@ Every diagnostic command runs through the shared inspection probe runner backed 
 [`inspection/probes.ts`](./inspection/probes.ts). Specialist modules never take a `ProcessRunner`, the Node runtime adapter, the Execa
 adapter, or the mutable `FileSystem` capability: `DoctorContext` carries only a read-only filesystem, a `GET`-only bounded HTTP probe,
 the clock, the immutable environment snapshot, the shared inspection session, and the opaque probe runner.
-[`runtime-boundary.test.ts`](./common/runtime-boundary.test.ts)'s source-level AST guard rejects mutation-capable or unrestricted
+[`runtime-boundary-policy.test.ts`](./testing/architecture/runtime-boundary-policy.test.ts)'s source-level AST guard rejects mutation-capable or unrestricted
 filesystem imports, child-process imports, widened runtime imports, and direct adapter imports across the Doctor production surface.
 [`doctor.readonly.test.ts`](./doctor.readonly.test.ts) independently snapshots `.nx` and `.arolariu` sentinel files to prove real quick
 and full-profile Doctor runs do not mutate them.
@@ -369,7 +372,7 @@ case, so status never reports a fabricated "unavailable" health section for a br
 Focused validation for doctor, its reporter, every specialist module, and `status.ts`:
 
 ```powershell
-npx vitest run --config scripts\vitest.config.ts --coverage.enabled=false scripts\core\presentation\composed-terminal-presenter.test.ts scripts\testing\contracts\process-runner.contract.test.ts scripts\common\output-policy.test.ts scripts\doctor.test.ts scripts\doctor.reporter.test.ts scripts\doctor.readonly.test.ts scripts\doctor.workspace.test.ts scripts\doctor.dotnet.test.ts scripts\doctor.react.test.ts scripts\doctor.svelte.test.ts scripts\doctor.python.test.ts scripts\doctor.infrastructure.test.ts scripts\doctor.diagnostics.test.ts scripts\status.test.ts scripts\setup.test.ts
+npx vitest run --config scripts\vitest.config.ts --coverage.enabled=false scripts\core\presentation\composed-terminal-presenter.test.ts scripts\testing\contracts\process-runner.contract.test.ts scripts\testing\architecture\output-policy.test.ts scripts\doctor.test.ts scripts\doctor.reporter.test.ts scripts\doctor.readonly.test.ts scripts\doctor.workspace.test.ts scripts\doctor.dotnet.test.ts scripts\doctor.react.test.ts scripts\doctor.svelte.test.ts scripts\doctor.python.test.ts scripts\doctor.infrastructure.test.ts scripts\doctor.diagnostics.test.ts scripts\status.test.ts scripts\setup.test.ts
 npx eslint scripts\doctor.ts scripts\doctor.types.ts scripts\doctor.reporter.ts scripts\doctor.workspace.ts scripts\doctor.dotnet.ts scripts\doctor.react.ts scripts\doctor.svelte.ts scripts\doctor.python.ts scripts\doctor.infrastructure.ts scripts\status.ts scripts\common\taxonomy-artifacts.ts
 git --no-pager diff --check
 ```
@@ -389,11 +392,35 @@ npm run analyze:scripts:architecture
   by a child workspace.
 - `typecheck:scripts` checks production and non-test support with strict root compiler options. Its sole temporary production exclusion is
   `workers/lint.worker.ts`, which Cohort 7 removes.
-- `analyze:scripts:loc` reports the fixed 73,377-line baseline, the temporary 75,500-line Cohort 0 ceiling, the final 55,032-line target,
+- `analyze:scripts:loc` reports the fixed 73,377-line baseline, the enforced Cohort 1 checkpoint and its immutable high-water ceiling
+  (`currentMaximum` and `highWaterMaximum`, both 76,375 while this task's checkpoint is active), the final 55,032-line target,
   production/test-support totals, family totals, committed line churn, and detected rename/relocation evidence from baseline commit
   `11773ff3d`.
-- `analyze:scripts:architecture` reports static runtime graph size and three-sample `--help` medians for every Commander entrypoint. Timing
-  is informational; AST boundary tests enforce lazy-loading structure.
+- `analyze:scripts:architecture` reports each entrypoint's `architectureModel` and `removalCohort`, plus static runtime graph size and
+  three-sample `--help` medians for every Commander entrypoint. Timing is informational; AST boundary tests enforce lazy-loading structure.
+
+[`script-entrypoint-definitions.ts`](./testing/architecture/script-entrypoint-definitions.ts) is the authoritative entrypoint inventory. Every
+entry declares an `architectureModel` — `composed-command`, `legacy-command`, or `piscina` — and every entry that is not yet a
+`composed-command` declares the `removalCohort` that retires its current model; a `composed-command` entry declares none.
+
+Four ownership and structure policies run with the rest of the architecture suite:
+
+- [`ownership-boundaries.test.ts`](./testing/architecture/ownership-boundaries.test.ts) proves that `core/` reaches no `common/`,
+  `features/`, `inspection/`, `adapters/`, or `workers/` module on any edge (static, literal dynamic, or type-only) and never even names
+  the `adapters` or `inspection` directories; that `adapters/` reaches no feature or inspection module and keeps every runtime edge on
+  `core/` or a sibling adapter; and that [`inspection/runtime-capability.ts`](./inspection/runtime-capability.ts) and its test take no
+  concrete adapter edge. The remaining `inspection/**` modules are deliberately outside that last rule: the two inspection entrypoints'
+  literal dynamic Node command-host loaders and the existing inspection-to-`common/**` edges are recorded Cohort 2 debt.
+- [`module-structure-policy.test.ts`](./testing/architecture/module-structure-policy.test.ts) proves that no barrel `index.ts` exists under
+  `core/`, `adapters/`, `inspection/`, `features/`, or `testing/` — [`common/index.ts`](./common/index.ts) is the single named exception,
+  removed by Cohort 3 — that every module under `core/`, `adapters/`, and `features/` plus `inspection/runtime-capability.ts` stays within
+  500 maintained lines and every `composed-command` entrypoint within 50, and that the entrypoint inventory carries the exact architecture
+  model and removal cohort for all 21 entrypoints. Both suites pair each rule with a synthetic source graph that proves the detector
+  itself reacts, and neither uses an ignore list, allowlist, or suppression entry.
+- [`runtime-boundary-policy.test.ts`](./testing/architecture/runtime-boundary-policy.test.ts) and
+  [`output-policy.test.ts`](./testing/architecture/output-policy.test.ts) are the relocated ambient-capability scanners described above.
+  They share their lexical alias machinery — dotted access-path resolution, binding-pattern declaration, and function-scope traversal —
+  through [`architecture-source-scan.ts`](./testing/architecture/architecture-source-scan.ts) instead of keeping private copies.
 
 Architecture checks live under `scripts/testing/architecture/`; public CLI snapshots and behavior-evidence mappings live under
 `scripts/testing/compatibility/`. Both are excluded from production runtime and coverage policies but remain included in the maintained-line
@@ -404,7 +431,7 @@ total.
 Run the policy tests after changing script output or the runtime boundary:
 
 ```powershell
-npx vitest run --config scripts\vitest.config.ts --coverage.enabled=false scripts\common\output-policy.test.ts scripts\common\runtime-boundary.test.ts
+npx vitest run --config scripts\vitest.config.ts --coverage.enabled=false scripts\testing\architecture\output-policy.test.ts scripts\testing\architecture\runtime-boundary-policy.test.ts
 ```
 
 Run the complete root-tooling suite through the scripts-scoped Vitest configuration:

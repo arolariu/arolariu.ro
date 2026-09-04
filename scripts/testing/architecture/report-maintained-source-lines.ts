@@ -6,7 +6,7 @@
  * This entrypoint is one of the narrow, named exceptions to the repository direct-output policy:
  * it emits raw JSON on `process.stdout` for CI and local consumption instead of routing through
  * `ComposedTerminalPresenter`, and it is excluded from production script source discovery.
- * `scripts/common/output-policy.test.ts` asserts this exemption stays limited to
+ * `scripts/testing/architecture/output-policy.test.ts` asserts this exemption stays limited to
  * `scripts/testing/architecture/report-*.ts`. Run it with `npm run analyze:scripts:loc`.
  */
 
