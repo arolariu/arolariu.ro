@@ -44,7 +44,7 @@ import type {CommandExecutionContext} from "./core/command/command-execution.ts"
 import {defineCommand, type LazyMonorepoCommand} from "./core/command/lazy-monorepo-command.ts";
 import type {CommandConstructionOptions, CommandHost} from "./core/command/command-specification.ts";
 import {formatBytes} from "./common/index.ts";
-import type {LogSegment, MonorepositoryLogger} from "./common/logger.ts";
+import type {PresentationSegment, TerminalPresenter} from "./core/presentation/terminal-presenter.ts";
 import {resolveRepositoryPaths, type RepositoryPaths} from "./common/repository-paths.ts";
 import type {ProcessOutcome, ProcessRequest, ProcessRunner} from "./common/runner.ts";
 import {
@@ -686,7 +686,7 @@ function renderHealthSummary(summary: Readonly<DoctorSummary>): string {
  * @param document - The complete, six-section status payload.
  * @param nodeMajor - Major version label of the Node runtime executing this command.
  */
-function renderDashboard(logger: MonorepositoryLogger, document: Readonly<StatusDocument>, nodeMajor: string): void {
+function renderDashboard(logger: TerminalPresenter, document: Readonly<StatusDocument>, nodeMajor: string): void {
   const {workspaces, nxEdges, git, security, disk, health} = document;
   const healthLabel = health ? `${String(health.score)} (${health.grade})` : "unavailable";
   const branchLabel = git?.branch ?? "unavailable";
@@ -755,7 +755,7 @@ function renderDashboard(logger: MonorepositoryLogger, document: Readonly<Status
   if (git) {
     logger.line(`Branch: ${git.branch} @ ${git.sha}`);
     logger.line(`Last: ${git.lastCommitTime} — "${git.lastCommitMsg}"`);
-    const treeStatus: LogSegment =
+    const treeStatus: PresentationSegment =
       git.dirtyFiles === 0
         ? {text: "clean", styles: ["green"]}
         : {text: `${String(git.dirtyFiles)} file${git.dirtyFiles === 1 ? "" : "s"} modified`, styles: ["yellow"]};

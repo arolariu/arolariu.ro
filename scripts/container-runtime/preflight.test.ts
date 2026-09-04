@@ -4,7 +4,9 @@
  */
 
 import {describe, expect, it} from "vitest";
-import {InMemoryLoggerSink, MonorepositoryConsoleLogger, type MonorepositoryLogger} from "../common/logger.ts";
+import {ComposedTerminalPresenter} from "../core/presentation/composed-terminal-presenter.ts";
+import {RecordingTerminalPresenterSink} from "../testing/fixtures/terminal.fixture.ts";
+import type {TerminalPresenter} from "../core/presentation/terminal-presenter.ts";
 import type {ProcessOutcome} from "../common/runner.ts";
 import {createProcessRunner} from "../common/runtime.testing.ts";
 import {CommandCancellation} from "../common/runtime.ts";
@@ -32,9 +34,9 @@ function cancelled(): ProcessOutcome {
   return {kind: "cancelled", stdout: "", stderr: "", durationMs: 0};
 }
 
-function createTestLogger(): Readonly<{sink: InMemoryLoggerSink; logger: MonorepositoryLogger}> {
-  const sink = new InMemoryLoggerSink();
-  const logger = new MonorepositoryConsoleLogger("test", {
+function createTestLogger(): Readonly<{sink: RecordingTerminalPresenterSink; logger: TerminalPresenter}> {
+  const sink = new RecordingTerminalPresenterSink();
+  const logger = new ComposedTerminalPresenter("test", {
     color: false,
     sink,
   });
@@ -215,8 +217,8 @@ describe("runContainerPreflight", () => {
   function contextFor(outcomes: readonly ProcessOutcome[]): Readonly<{
     context: ContainerPreflightContext;
     runner: ReturnType<typeof createProcessRunner>;
-    logger: MonorepositoryLogger;
-    sink: InMemoryLoggerSink;
+    logger: TerminalPresenter;
+    sink: RecordingTerminalPresenterSink;
     controller: AbortController;
   }> {
     const runner = createProcessRunner(outcomes);

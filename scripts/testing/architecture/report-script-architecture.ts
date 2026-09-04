@@ -5,7 +5,7 @@
  * @remarks
  * This entrypoint is one of the narrow, named exceptions to the repository direct-output policy:
  * it emits raw JSON on `process.stdout` for CI and local consumption instead of routing through
- * `MonorepositoryConsoleLogger`, and it is excluded from production script source discovery.
+ * `ComposedTerminalPresenter`, and it is excluded from production script source discovery.
  * It reports the static runtime source-graph size and a three-sample `--help` median for every
  * Commander entrypoint; the timings are informational, while the AST import-boundary tests remain
  * the structural enforcement mechanism. The runtime graph follows every non-type-only edge,

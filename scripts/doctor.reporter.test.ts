@@ -1,6 +1,8 @@
 import {describe, expect, it} from "vitest";
 
-import {InMemoryLoggerSink, MonorepositoryConsoleLogger, type MonorepositoryLogger} from "./common/logger.ts";
+import {ComposedTerminalPresenter} from "./core/presentation/composed-terminal-presenter.ts";
+import {RecordingTerminalPresenterSink} from "./testing/fixtures/terminal.fixture.ts";
+import type {TerminalPresenter} from "./core/presentation/terminal-presenter.ts";
 import type {DiagnosticResult, DoctorReport, DoctorInput} from "./doctor.types.ts";
 import {
   computeHealthScore,
@@ -110,11 +112,11 @@ function createDiagnostic(
 }
 
 function createLogger(options: Readonly<{json?: boolean; color?: boolean}> = {}): Readonly<{
-  sink: InMemoryLoggerSink;
-  logger: MonorepositoryLogger;
+  sink: RecordingTerminalPresenterSink;
+  logger: TerminalPresenter;
 }> {
-  const sink = new InMemoryLoggerSink();
-  const logger = new MonorepositoryConsoleLogger("doctor", {
+  const sink = new RecordingTerminalPresenterSink();
+  const logger = new ComposedTerminalPresenter("doctor", {
     mode: options.json === true ? "human" : "human",
     color: options.color ?? false,
     sink,

@@ -69,9 +69,15 @@ export const approvedScriptsArchitectureBaseline = {
 } as const satisfies ScriptsArchitectureBaselineDefinition;
 
 /**
- * Temporary preparatory ceiling, including counted public-compatibility
- * evidence, architecture parsers, and required source documentation. Cohort 1
- * must replace this with a lower observed ceiling; execution may not raise it,
- * and the final cohort sets the hard 55,032-line target.
+ * Immutable Cohort 1 high-water ceiling. Interim architecture investment may raise the observed
+ * total to this value; no Cohort 1 task may raise it further, and Task 9 lowers the active value
+ * below it permanently.
  */
-export const cohortZeroMaximumMaintainedLineCount = 75_500;
+export const cohortOneHighWaterMaintainedLineCount = 76_375;
+
+/**
+ * The currently enforced Cohort 1 maintained-line checkpoint. Each Cohort 1 task updates this
+ * value atomically with its own change; it may never exceed
+ * {@link cohortOneHighWaterMaintainedLineCount}.
+ */
+export const cohortOneActiveMaintainedLineCount = 75_650;

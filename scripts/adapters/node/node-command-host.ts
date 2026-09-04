@@ -13,14 +13,16 @@
  * `scripts/adapters/node/node-runtime-scope.ts`, and retargets the dynamic import below.
  */
 
-import {MonorepositoryConsoleLogger, type MonorepositoryLogger} from "../../common/logger.ts";
-import {nodeLoggerRuntimeHost, nodeProcessHost} from "../../common/runtime.node.ts";
+import {nodeProcessHost} from "../../common/runtime.node.ts";
 import type {CommandHost, CommandRuntimeFactory} from "../../core/command/command-specification.ts";
+import {ComposedTerminalPresenter} from "../../core/presentation/composed-terminal-presenter.ts";
+import type {TerminalPresenter} from "../../core/presentation/terminal-presenter.ts";
+import {NodeTerminalPresenterSink, nodeTerminalPresenterRuntimeHost} from "./node-terminal-sink.ts";
 
 /**
  * Creates the production Node-backed command host.
  *
- * @param commandName - Logical command name used as the logger context.
+ * @param commandName - Logical command name used as the presenter context.
  * @returns The command host every migrated production entrypoint constructs its command with.
  */
 export function createNodeCommandHost(commandName: string): CommandHost {
@@ -28,8 +30,13 @@ export function createNodeCommandHost(commandName: string): CommandHost {
     argv: nodeProcessHost.argv,
     isDirectEntry: nodeProcessHost.isDirectEntry,
     setExitCode: nodeProcessHost.setExitCode,
-    createParsePresenter: (): MonorepositoryLogger =>
-      new MonorepositoryConsoleLogger(commandName, {mode: "human", verbose: false, runtimeHost: nodeLoggerRuntimeHost}),
+    createParsePresenter: (): TerminalPresenter =>
+      new ComposedTerminalPresenter(commandName, {
+        mode: "human",
+        verbose: false,
+        sink: new NodeTerminalPresenterSink(),
+        runtimeHost: nodeTerminalPresenterRuntimeHost,
+      }),
     loadRuntimeFactory: async (verbose: boolean): Promise<CommandRuntimeFactory> => {
       const {createNodeCommandRuntimeFactory} = await import("../../common/runtime.node.ts");
       return createNodeCommandRuntimeFactory(commandName, verbose);

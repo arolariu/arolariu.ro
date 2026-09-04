@@ -11,7 +11,9 @@
  * in `types.ts`) compatibility surfaces were removed once Selfhost migrated in Task 21.
  */
 
-import {MonorepositoryConsoleLogger, type MonorepositoryLogger} from "../common/logger.ts";
+import {NodeTerminalPresenterSink, nodeTerminalPresenterRuntimeHost} from "../adapters/node/node-terminal-sink.ts";
+import {ComposedTerminalPresenter} from "../core/presentation/composed-terminal-presenter.ts";
+import type {TerminalPresenter} from "../core/presentation/terminal-presenter.ts";
 import {processFailureEvidence, type ProcessOutcome, type ProcessRunner} from "../common/runner.ts";
 import {commandCancellationFromSignal, type RuntimeEnvironment} from "../common/runtime.ts";
 import type {ContainerRuntimeAdapter} from "./adapters.ts";
@@ -192,7 +194,10 @@ export async function assertPodmanBackend(runner: ProcessRunner, signal?: AbortS
 export async function warnOnExistingLocalContainers(
   adapter: ContainerRuntimeAdapter,
   runner: ProcessRunner,
-  logger: MonorepositoryLogger = new MonorepositoryConsoleLogger("container::preflight"),
+  logger: TerminalPresenter = new ComposedTerminalPresenter("container::preflight", {
+    sink: new NodeTerminalPresenterSink(),
+    runtimeHost: nodeTerminalPresenterRuntimeHost,
+  }),
 ): Promise<void> {
   const names = ["traefik", "mssql", "cosmosdb", "azurite", "redis", "exp-arolariu-ro", "api-arolariu-ro", "website-arolariu-ro"];
   const outcome = await runner.run({command: adapter.primaryCli, args: ["ps", "-a", "--format", "{{.Names}}"]});
@@ -215,7 +220,7 @@ export interface ContainerPreflightContext {
   /** Process runner used for every preflight probe. */
   readonly runner: ProcessRunner;
   /** Logger used for warning and diagnostic output. */
-  readonly logger: MonorepositoryLogger;
+  readonly logger: TerminalPresenter;
   /** Immutable snapshot of the ambient environment. */
   readonly environment: RuntimeEnvironment;
   /** Cancellation signal threaded into every preflight probe. */

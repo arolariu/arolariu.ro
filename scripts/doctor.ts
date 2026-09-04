@@ -321,7 +321,7 @@ async function executeDoctor(
     paths,
     requirements,
     network: createBoundedNetworkProbe(asGetOnlyHttpClient(runtime.http), runtime.clock, runtime.signal),
-    logger: runtime.logger,
+    logger: runtime.presenter,
     files,
     clock: runtime.clock,
     environment: runtime.environment,

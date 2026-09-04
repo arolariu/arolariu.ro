@@ -9,7 +9,8 @@ import {access, mkdtemp, rm} from "node:fs/promises";
 import {tmpdir} from "node:os";
 import {describe, expect, it} from "vitest";
 
-import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "./logger.ts";
+import {ComposedTerminalPresenter} from "../core/presentation/composed-terminal-presenter.ts";
+import {RecordingTerminalPresenterSink} from "../testing/fixtures/terminal.fixture.ts";
 import {ExecaProcessRunner} from "./runner.execa.ts";
 
 const scriptsDirectory = resolve(process.cwd(), "scripts");
@@ -284,8 +285,8 @@ describe("defaultProcessRunner", {timeout: REAL_SPAWN_TIMEOUT_MS}, () => {
   });
 
   it("delivers stdin without adding it to the formatted command log", async () => {
-    const sink = new InMemoryLoggerSink();
-    const logger = new MonorepositoryConsoleLogger("runner-execa", {
+    const sink = new RecordingTerminalPresenterSink();
+    const logger = new ComposedTerminalPresenter("runner-execa", {
       color: false,
       sink,
     });
@@ -337,8 +338,8 @@ describe("defaultProcessRunner", {timeout: REAL_SPAWN_TIMEOUT_MS}, () => {
   });
 
   it("tees child chunks through the supplied logger while retaining capture", async () => {
-    const sink = new InMemoryLoggerSink();
-    const logger = new MonorepositoryConsoleLogger("runner-execa", {
+    const sink = new RecordingTerminalPresenterSink();
+    const logger = new ComposedTerminalPresenter("runner-execa", {
       color: false,
       sink,
     });

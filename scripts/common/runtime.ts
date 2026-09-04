@@ -13,7 +13,7 @@
  * and lets the Node adapter be the single, auditable boundary where real I/O happens.
  */
 
-import type {MonorepositoryLogger} from "./logger.ts";
+import type {TerminalPresenter} from "../core/presentation/terminal-presenter.ts";
 import type {PromptProvider} from "./prompts.ts";
 import type {RepositoryPaths} from "./repository-paths.ts";
 import type {ProcessRunner} from "./runner.ts";
@@ -272,8 +272,8 @@ export interface RepositoryInspectionRuntime {
 
 /** Every capability one command needs, assembled by the Node adapter and injected at the entrypoint. */
 export interface CommandRuntime {
-  /** Structured, redaction-aware command logger. */
-  readonly logger: MonorepositoryLogger;
+  /** Structured, redaction-aware command terminal presenter. */
+  readonly presenter: TerminalPresenter;
   /** Interactive terminal prompts. */
   readonly prompts: PromptProvider;
   /** Engine-neutral child-process runner. */

@@ -48,7 +48,7 @@ async function generateGraphql(
   context: Readonly<CommandExecutionContext>,
   input: Readonly<GenerateLeafInput>,
 ): Promise<GenerateLeafResult> {
-  const {logger, environment, files, clock} = context.runtime;
+  const {presenter: logger, environment, files, clock} = context.runtime;
   const {verbose} = input;
 
   logger.line([{text: "🔧 Configuration:", styles: ["cyan"]}]);

@@ -14,8 +14,9 @@
 import type {Command} from "commander";
 import {describe, expect, it} from "vitest";
 
-import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "../../common/logger.ts";
 import {createTestRuntimeFactory} from "../../common/runtime.testing.ts";
+import {ComposedTerminalPresenter} from "../../core/presentation/composed-terminal-presenter.ts";
+import {RecordingTerminalPresenterSink} from "../fixtures/terminal.fixture.ts";
 import {CommandConfigurationError, CommandInputError} from "../../core/command/command-execution.ts";
 import type {CommandExecution, CommandExecutionContext, CommandExitCode, CommandFailureKind} from "../../core/command/command-execution.ts";
 import type {
@@ -62,12 +63,12 @@ function expectFailure(execution: CommandExecution<unknown>, kind: CommandFailur
 /** Wraps the shared test host so every runtime-scope creation and every emitted record is observable. */
 function buildInstrumentedHost(mode: "human" | "json" = "human"): Readonly<{
   host: CommandHost;
-  sink: InMemoryLoggerSink;
+  sink: RecordingTerminalPresenterSink;
   rootCalls: readonly Readonly<RuntimeCreationOptions>[];
   childCalls: readonly Readonly<{parent: CommandExecutionContext; registerProcessSignals: boolean}>[];
 }> {
-  const sink = new InMemoryLoggerSink();
-  const base = buildCommandHost({runtime: {logger: new MonorepositoryConsoleLogger("test", {mode, color: false, sink})}});
+  const sink = new RecordingTerminalPresenterSink();
+  const base = buildCommandHost({runtime: {presenter: new ComposedTerminalPresenter("test", {mode, color: false, sink})}});
   const rootCalls: Readonly<RuntimeCreationOptions>[] = [];
   const childCalls: Readonly<{parent: CommandExecutionContext; registerProcessSignals: boolean}>[] = [];
   const host: CommandHost = {

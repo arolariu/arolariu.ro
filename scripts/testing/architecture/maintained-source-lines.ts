@@ -277,7 +277,7 @@ export function parseGitNameStatus(stdout: string): ParsedGitNameStatus {
 /**
  * Derives the grouping family for a maintained source path from its first path segment.
  *
- * @param sourcePath - A maintained source path, such as `scripts/common/logger.ts`.
+ * @param sourcePath - A maintained source path, such as `scripts/common/runtime.node.ts`.
  * @returns The directory immediately under `scripts/`, or the file's base name when the file is
  * a direct child of `scripts/`.
  */

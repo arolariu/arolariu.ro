@@ -28,7 +28,7 @@ import {CommandInputError, type CommandExecution, type CommandInvoker} from "./c
 import type {CommandExecutionContext} from "./core/command/command-execution.ts";
 import {defineCommand, type LazyMonorepoCommand} from "./core/command/lazy-monorepo-command.ts";
 import type {CommandConstructionOptions, CommandHost} from "./core/command/command-specification.ts";
-import type {MonorepositoryLogger} from "./common/logger.ts";
+import type {TerminalPresenter} from "./core/presentation/terminal-presenter.ts";
 import type {PromptProvider} from "./common/prompts.ts";
 import {loadRepositoryRequirements} from "./common/requirements.ts";
 import {resolveRepositoryPaths} from "./common/repository-paths.ts";
@@ -99,7 +99,7 @@ export function createSetupActionExecutor(
   dependencies: Readonly<{
     options: SetupInput;
     prompts: PromptProvider;
-    logger: MonorepositoryLogger;
+    logger: TerminalPresenter;
   }>,
 ): SetupActionExecutor {
   const {options, prompts, logger} = dependencies;
@@ -216,7 +216,7 @@ function blocksReadiness(result: SetupPhaseResult, dryRun: boolean, blockerSkipI
  * @param logger - Logger scoped to the completed phase.
  * @param result - The phase's recorded result.
  */
-function renderPhaseResult(logger: MonorepositoryLogger, result: SetupPhaseResult): void {
+function renderPhaseResult(logger: TerminalPresenter, result: SetupPhaseResult): void {
   const message = `${result.summary} (${formatDuration(result.durationMs)})`;
   switch (result.status) {
     case "succeeded":
@@ -261,7 +261,7 @@ const setupOutcomes = new WeakMap<SetupResult, SetupOutcome>();
 function createPhaseRuntime(
   context: Readonly<CommandExecutionContext>,
   input: Readonly<SetupInput>,
-  phaseLogger: MonorepositoryLogger,
+  phaseLogger: TerminalPresenter,
   root: string,
   generate: CommandInvoker<GenerateInput, GenerateResult>,
 ): SetupPhaseRuntime {
@@ -317,7 +317,7 @@ async function executeSetup(
   seams: Readonly<SetupExecutionSeams> = {},
 ): Promise<SetupResult> {
   const {runtime} = context;
-  const {logger} = runtime;
+  const {presenter: logger} = runtime;
   const phases = seams.phases ?? setupPhases;
   const generate = seams.generate ?? generateCommand;
 
@@ -441,7 +441,7 @@ async function executeSetup(
  * @param result - Completed setup result.
  * @param outcome - Overall readiness resolved during execution.
  */
-function renderSetupSummary(logger: MonorepositoryLogger, result: Readonly<SetupResult>, outcome: SetupOutcome): void {
+function renderSetupSummary(logger: TerminalPresenter, result: Readonly<SetupResult>, outcome: SetupOutcome): void {
   logger.section("Setup summary");
   logger.table({
     headers: ["Phase", "Status", "Duration", "Summary"],

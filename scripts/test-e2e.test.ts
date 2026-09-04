@@ -15,7 +15,8 @@
 import {dirname, join} from "node:path";
 import {describe, expect, it} from "vitest";
 
-import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "./common/logger.ts";
+import {ComposedTerminalPresenter} from "./core/presentation/composed-terminal-presenter.ts";
+import {RecordingTerminalPresenterSink} from "./testing/fixtures/terminal.fixture.ts";
 import {AbstractProcessRunner, RunnerError, type ProcessOutcome, type ProcessRequest, type ProcessRunOptions} from "./common/runner.ts";
 import {createMemoryFileSystem, repositoryFixtureRoot} from "./common/runtime.testing.ts";
 import {buildCommandHost} from "./testing/builders/command-host.builder.ts";
@@ -207,22 +208,22 @@ function withReportCallOrder(files: FileSystem, order: string[]): FileSystem {
   };
 }
 
-function createSinkLogger(): {logger: MonorepositoryConsoleLogger; sink: InMemoryLoggerSink} {
-  const sink = new InMemoryLoggerSink();
-  const logger = new MonorepositoryConsoleLogger("test", {color: false, sink});
+function createSinkLogger(): {logger: ComposedTerminalPresenter; sink: RecordingTerminalPresenterSink} {
+  const sink = new RecordingTerminalPresenterSink();
+  const logger = new ComposedTerminalPresenter("test", {color: false, sink});
   return {logger, sink};
 }
 
 function createCliFixture(variables: Readonly<Record<string, string>> = {}): {
   command: ReturnType<typeof createE2eCommand>;
   runner: FakeNewmanRunner;
-  sink: InMemoryLoggerSink;
+  sink: RecordingTerminalPresenterSink;
 } {
   const files = fixtureFiles();
   const runner = new FakeNewmanRunner(files);
   const environment = testEnvironment(variables);
   const {logger, sink} = createSinkLogger();
-  const host = buildCommandHost({runtime: {files, runner, environment, logger}});
+  const host = buildCommandHost({runtime: {files, runner, environment, presenter: logger}});
   return {command: createE2eCommand({host}), runner, sink};
 }
 
@@ -493,7 +494,7 @@ describe("createE2eCommand: env-derived Newman arguments", () => {
     const runner = new FakeNewmanRunner(files);
     const environment = testEnvironment({E2E_TEST_AUTH_TOKEN: FAKE_TOKEN, NEWMAN_TIMEOUT: "not-a-number"});
     const {logger, sink} = createSinkLogger();
-    const command = createE2eCommand({host: buildCommandHost({runtime: {files, runner, environment, logger}})});
+    const command = createE2eCommand({host: buildCommandHost({runtime: {files, runner, environment, presenter: logger}})});
 
     const execution = await command.invoke({target: "backend"}, {presentation: "silent"});
     expect(execution.status).toBe("completed");
@@ -537,7 +538,7 @@ describe("createE2eCommand: token redaction in logs", () => {
     const runner = new FakeNewmanRunner(files);
     const environment = testEnvironment({E2E_TEST_AUTH_TOKEN: FAKE_TOKEN});
     const {logger, sink} = createSinkLogger();
-    const command = createE2eCommand({host: buildCommandHost({runtime: {files, runner, environment, logger}})});
+    const command = createE2eCommand({host: buildCommandHost({runtime: {files, runner, environment, presenter: logger}})});
 
     await command.invoke({target: "backend"}, {presentation: "human"});
 
@@ -550,7 +551,7 @@ describe("createE2eCommand: token redaction in logs", () => {
     const runner = new FakeNewmanRunner(files, {outcomeFor: () => exited(1)});
     const environment = testEnvironment({E2E_TEST_AUTH_TOKEN: FAKE_TOKEN});
     const {logger, sink} = createSinkLogger();
-    const command = createE2eCommand({host: buildCommandHost({runtime: {files, runner, environment, logger}})});
+    const command = createE2eCommand({host: buildCommandHost({runtime: {files, runner, environment, presenter: logger}})});
 
     const execution = await command.invoke({target: "backend"}, {presentation: "human"});
     expect(execution.status).toBe("failed");

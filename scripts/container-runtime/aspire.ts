@@ -76,7 +76,7 @@ async function executeAspire(context: Readonly<CommandExecutionContext>, input: 
 
   await runContainerPreflight(adapter, {
     runner: runtime.runner,
-    logger: runtime.logger.child("preflight"),
+    logger: runtime.presenter.child("preflight"),
     environment: runtime.environment,
     signal: runtime.signal,
   });

@@ -27,7 +27,10 @@ type OutputExpressionPredicate = (expression: ts.Expression, scopes: readonly Al
  * compatibility support is excluded.
  */
 const outputPolicySourcePaths = discoverScriptSourceFiles().filter(
-  (sourcePath) => !isScriptTestFile(sourcePath) && !sourcePath.startsWith("scripts/testing/") && sourcePath !== "scripts/common/logger.ts",
+  (sourcePath) =>
+    !isScriptTestFile(sourcePath)
+    && !sourcePath.startsWith("scripts/testing/")
+    && sourcePath !== "scripts/adapters/node/node-terminal-sink.ts",
 );
 
 function getConfigObjectLiteral(expression: ts.Expression): ts.ObjectLiteralExpression | null {
@@ -412,7 +415,7 @@ describe("direct output policy", () => {
     ]);
   });
 
-  it("routes production script output through the logger outside transitional entrypoints", () => {
+  it("routes production script output through the terminal presenter outside transitional entrypoints", () => {
     const violations = outputPolicySourcePaths
       .filter((fileName) => !transitionalEntrypoints.has(fileName))
       .flatMap((fileName) => findForbiddenOutputCalls(readFileSync(fileName, "utf8"), fileName));

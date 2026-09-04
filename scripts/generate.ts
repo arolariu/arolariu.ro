@@ -101,7 +101,7 @@ function renderConfiguration(
   input: Readonly<GenerateInput>,
   tasks: readonly GenerateTask[],
 ): void {
-  const {logger, environment} = context.runtime;
+  const {presenter: logger, environment} = context.runtime;
 
   logger.banner(
     [
@@ -192,7 +192,7 @@ async function executeGenerate(
   context: Readonly<CommandExecutionContext>,
   input: Readonly<GenerateInput>,
 ): Promise<GenerateResult> {
-  const {logger} = context.runtime;
+  const {presenter: logger} = context.runtime;
   const tasks = createGenerateTasks(dependencies);
   const selected = tasks.filter((task) => input[task.name]).map((task) => task.name);
 

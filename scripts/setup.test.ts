@@ -17,7 +17,9 @@ import {describe, expect, it, vi} from "vitest";
 
 import type {CommandExecution, CommandInvoker} from "./core/command/command-execution.ts";
 import {buildCommandHost} from "./testing/builders/command-host.builder.ts";
-import {InMemoryLoggerSink, MonorepositoryConsoleLogger, type MonorepositoryLogger} from "./common/logger.ts";
+import {ComposedTerminalPresenter} from "./core/presentation/composed-terminal-presenter.ts";
+import {RecordingTerminalPresenterSink} from "./testing/fixtures/terminal.fixture.ts";
+import type {TerminalPresenter} from "./core/presentation/terminal-presenter.ts";
 import {createTerminalPromptProvider, type PromptProvider} from "./common/prompts.ts";
 import {createRepositoryPaths, type RepositoryPaths} from "./common/repository-paths.ts";
 import type {ProcessRequest, ProcessRunOptions, ProcessRunner} from "./common/runner.ts";
@@ -103,11 +105,11 @@ function setupFixtureInspection(session: RepositoryInspectionSession = createFak
 }
 
 function createLogger(verbose?: boolean): Readonly<{
-  logger: MonorepositoryConsoleLogger;
-  sink: InMemoryLoggerSink;
+  logger: ComposedTerminalPresenter;
+  sink: RecordingTerminalPresenterSink;
 }> {
-  const sink = new InMemoryLoggerSink();
-  const logger = new MonorepositoryConsoleLogger("setup", {
+  const sink = new RecordingTerminalPresenterSink();
+  const logger = new ComposedTerminalPresenter("setup", {
     color: false,
     sink,
     ...(verbose === undefined ? {} : {verbose}),
@@ -334,7 +336,7 @@ interface SetupFixtureInput {
   /** Process runner every phase command is recorded by. */
   readonly runner?: RecordingRunner;
   /** Logger every rendered line is captured through. */
-  readonly logger?: MonorepositoryLogger;
+  readonly logger?: TerminalPresenter;
   /** Inspection session the shared registry hands out. */
   readonly session?: RepositoryInspectionSession;
   /** Composed generation command. */
@@ -366,7 +368,7 @@ function createSetupFixture(input: Readonly<SetupFixtureInput> = {}): SetupFixtu
       inspection: inspection.inspection,
       runner,
       ...(input.prompts === undefined ? {} : {prompts: input.prompts}),
-      ...(input.logger === undefined ? {} : {logger: input.logger}),
+      ...(input.logger === undefined ? {} : {presenter: input.logger}),
     },
   });
 

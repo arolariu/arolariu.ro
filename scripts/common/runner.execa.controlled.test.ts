@@ -7,7 +7,8 @@
 import {beforeEach, describe, expect, it, vi} from "vitest";
 import {execa} from "execa";
 
-import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "./logger.ts";
+import {ComposedTerminalPresenter} from "../core/presentation/composed-terminal-presenter.ts";
+import {RecordingTerminalPresenterSink} from "../testing/fixtures/terminal.fixture.ts";
 import {ExecaProcessRunner} from "./runner.execa.ts";
 
 vi.mock("execa", {spy: true});
@@ -48,8 +49,8 @@ describe("controlled process lifecycle", () => {
   });
 
   it("decodes split UTF-8 chunks independently for stdout and stderr while retaining capture", async () => {
-    const sink = new InMemoryLoggerSink();
-    const logger = new MonorepositoryConsoleLogger("runner-execa", {
+    const sink = new RecordingTerminalPresenterSink();
+    const logger = new ComposedTerminalPresenter("runner-execa", {
       color: false,
       sink,
     });
@@ -74,8 +75,8 @@ describe("controlled process lifecycle", () => {
   it("redacts registered values split across arbitrary stdout and stderr chunks", async () => {
     const stdoutSecret = "stdout\nsplit-secret";
     const stderrSecret = "stderr-split-secret";
-    const sink = new InMemoryLoggerSink();
-    const logger = new MonorepositoryConsoleLogger("runner-execa", {
+    const sink = new RecordingTerminalPresenterSink();
+    const logger = new ComposedTerminalPresenter("runner-execa", {
       color: false,
       sink,
       redactions: [stdoutSecret, stderrSecret],

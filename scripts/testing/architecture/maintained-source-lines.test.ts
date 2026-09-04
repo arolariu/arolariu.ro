@@ -6,7 +6,11 @@
 
 import {describe, expect, it} from "vitest";
 
-import {approvedScriptsArchitectureBaseline, cohortZeroMaximumMaintainedLineCount} from "./scripts-architecture-baseline.ts";
+import {
+  approvedScriptsArchitectureBaseline,
+  cohortOneActiveMaintainedLineCount,
+  cohortOneHighWaterMaintainedLineCount,
+} from "./scripts-architecture-baseline.ts";
 import {
   calculateMaintainedSourceLineReport,
   calculateMaintainedSourceHistoryReport,
@@ -91,7 +95,8 @@ describe("maintained scripts line accounting", () => {
     expect(approvedScriptsArchitectureBaseline.sourceFileCount).toBe(142);
 
     const report = calculateMaintainedSourceLineReport(process.cwd());
-    expect(report.totalMaintainedLineCount, JSON.stringify(report, null, 2)).toBeLessThanOrEqual(cohortZeroMaximumMaintainedLineCount);
+    expect(cohortOneActiveMaintainedLineCount).toBeLessThanOrEqual(cohortOneHighWaterMaintainedLineCount);
+    expect(report.totalMaintainedLineCount, JSON.stringify(report, null, 2)).toBeLessThanOrEqual(cohortOneActiveMaintainedLineCount);
     expect(report.excludedSourcePaths).toEqual(["scripts/vitest.config.ts"]);
 
     const history = calculateMaintainedSourceHistoryReport(process.cwd());

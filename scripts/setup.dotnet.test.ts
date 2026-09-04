@@ -14,7 +14,8 @@ import {resolve} from "node:path";
 import {describe, expect, it, vi} from "vitest";
 
 import type {CommandExecutionContext} from "./core/command/command-execution.ts";
-import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "./common/logger.ts";
+import {ComposedTerminalPresenter} from "./core/presentation/composed-terminal-presenter.ts";
+import {RecordingTerminalPresenterSink} from "./testing/fixtures/terminal.fixture.ts";
 import {createRepositoryPaths} from "./common/repository-paths.ts";
 import type {MinimumVersion, RepositoryRequirements} from "./common/requirements.ts";
 import {AbstractProcessRunner, type ProcessOutcome, type ProcessRequest, type ProcessRunOptions} from "./common/runner.ts";
@@ -276,7 +277,7 @@ interface DotnetHarness {
   /** Complete action records in evaluation order. */
   readonly actionRecords: SetupAction[];
   /** Rendered logger output. */
-  readonly sink: InMemoryLoggerSink;
+  readonly sink: RecordingTerminalPresenterSink;
   /** Every value the phase asked the logger to redact. */
   readonly redactions: string[];
   /** Inspection session probe. */
@@ -298,9 +299,9 @@ async function createHarness(
   const runner = new FakeProcessRunner(input.responses);
   const {actions, actionIds, actionRecords} = createActions(input.dispositions);
   const {session, inspect, invalidate} = createDotnetInspectionHarness(input.dotnetOutcomes);
-  const sink = new InMemoryLoggerSink();
+  const sink = new RecordingTerminalPresenterSink();
   const redactions: string[] = [];
-  const logger = new MonorepositoryConsoleLogger("setup::dotnet", {color: false, sink});
+  const logger = new ComposedTerminalPresenter("setup::dotnet", {color: false, sink});
   const originalRedact = logger.redact.bind(logger);
   logger.redact = (value: string): void => {
     redactions.push(value);

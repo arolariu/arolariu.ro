@@ -25,7 +25,7 @@ import path from "node:path";
 import type {CommandExecutionContext} from "./core/command/command-execution.ts";
 import {defineCommand, type LazyMonorepoCommand} from "./core/command/lazy-monorepo-command.ts";
 import type {CommandConstructionOptions, CommandHost} from "./core/command/command-specification.ts";
-import type {MonorepositoryLogger} from "./common/logger.ts";
+import type {TerminalPresenter} from "./core/presentation/terminal-presenter.ts";
 
 /** Typed input accepted by every migrated `generate` leaf command. */
 export interface GenerateLeafInput {
@@ -66,7 +66,7 @@ type MessageFormat = {
  * @returns The translation file as a `MessageFormat` object.
  */
 async function loadTranslationFile(context: Readonly<CommandExecutionContext>, filePath: string, verbose: boolean): Promise<MessageFormat> {
-  const {logger, files} = context.runtime;
+  const {presenter: logger, files} = context.runtime;
   try {
     const translationFile = await files.readText(filePath);
     if (verbose) {
@@ -109,7 +109,7 @@ async function loadTranslationFile(context: Readonly<CommandExecutionContext>, f
  * @remarks The function will treat non-existent values as an empty string.
  * @returns The value of the translation key.
  */
-function extractMessageValue(messages: MessageFormat, keyNamespace: string, verbose: boolean, logger: MonorepositoryLogger): Message {
+function extractMessageValue(messages: MessageFormat, keyNamespace: string, verbose: boolean, logger: TerminalPresenter): Message {
   if (verbose) {
     logger.debug(`[extractMessageValue] Extracting message value for key: ${keyNamespace}`);
   }
@@ -155,7 +155,7 @@ function compareMessageKeysNaive(
   baseTranslationKeys: MessageFormat,
   currentTranslationsKeys: MessageFormat,
   verbose: boolean,
-  logger: MonorepositoryLogger,
+  logger: TerminalPresenter,
 ): boolean {
   logger.info("[compareMessageKeysNaive] Comparing translation keys.");
   const baseKeys = extractMessageKeys(baseTranslationKeys, verbose, logger);
@@ -219,7 +219,7 @@ function areMessageValuesEqual(
   baseTranslationMessage: Message,
   currentTranslationMessage: Message,
   verbose: boolean,
-  logger: MonorepositoryLogger,
+  logger: TerminalPresenter,
 ): boolean {
   if (verbose) {
     logger.debug("[areMessageValuesEqual] Comparing translation message values.");
@@ -288,7 +288,7 @@ function areMessageValuesEqual(
  * @param logger Logger used for extraction diagnostics.
  * @returns Compound translation keys in traversal order.
  */
-function extractMessageKeys(messages: MessageFormat, verbose: boolean, logger: MonorepositoryLogger): string[] {
+function extractMessageKeys(messages: MessageFormat, verbose: boolean, logger: TerminalPresenter): string[] {
   const keys: string[] = [];
 
   if (verbose) {
@@ -325,7 +325,7 @@ function extractMessageKeys(messages: MessageFormat, verbose: boolean, logger: M
  * @param logger Logger used for missing-key output.
  * @returns An array of keys that are missing from the translated file.
  */
-function findMissingKeys(englishKeys: string[], translatedKeys: string[], verbose: boolean, logger: MonorepositoryLogger): string[] {
+function findMissingKeys(englishKeys: string[], translatedKeys: string[], verbose: boolean, logger: TerminalPresenter): string[] {
   const missingKeys: string[] = [];
 
   for (const englishKey of englishKeys) {
@@ -355,7 +355,7 @@ function findMissingKeys(englishKeys: string[], translatedKeys: string[], verbos
  * @param verbose Whether to emit segment diagnostics.
  * @param logger Logger used for segment diagnostics.
  */
-function addMissingKey(existing: MessageFormat, compoundKey: string, verbose: boolean, logger: MonorepositoryLogger): void {
+function addMissingKey(existing: MessageFormat, compoundKey: string, verbose: boolean, logger: TerminalPresenter): void {
   let cursor: MessageFormat = existing;
   const parts = compoundKey.split(".");
   for (const [idx, part] of parts.entries()) {
@@ -387,7 +387,7 @@ async function writeTranslationKeysFile(
   translationKeys: readonly string[],
   verbose: boolean,
 ): Promise<void> {
-  const {logger, files} = context.runtime;
+  const {presenter: logger, files} = context.runtime;
   try {
     let existingMessages: MessageFormat = {};
 
@@ -438,7 +438,7 @@ async function validateLocale(
   translationsPath: string,
   verbose: boolean,
 ): Promise<LocaleValidationResult> {
-  const {logger} = context.runtime;
+  const {presenter: logger} = context.runtime;
   const targetFile = path.resolve(translationsPath, `${targetLocale}.json`);
   logger.section(`Validating ${targetLocale.toUpperCase()} translations`, "📋");
 
@@ -471,7 +471,7 @@ async function generateI18n(
   context: Readonly<CommandExecutionContext>,
   input: Readonly<GenerateLeafInput>,
 ): Promise<GenerateLeafResult> {
-  const {logger, environment} = context.runtime;
+  const {presenter: logger, environment} = context.runtime;
   const {verbose} = input;
 
   logger.line([{text: "🔧 Configuration:", styles: ["cyan"]}]);

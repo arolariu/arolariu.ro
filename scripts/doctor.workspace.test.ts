@@ -18,7 +18,8 @@ import {basename, dirname, join, resolve} from "node:path";
 import {fileURLToPath} from "node:url";
 import {afterEach, describe, expect, it, vi, type Mock} from "vitest";
 
-import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "./common/logger.ts";
+import {ComposedTerminalPresenter} from "./core/presentation/composed-terminal-presenter.ts";
+import {RecordingTerminalPresenterSink} from "./testing/fixtures/terminal.fixture.ts";
 import type {ProcessOutcome} from "./common/runner.ts";
 import {createRepositoryPaths} from "./common/repository-paths.ts";
 import type {RepositoryRequirements} from "./common/requirements.ts";
@@ -298,7 +299,7 @@ async function createWorkspaceFixture(
     return outcome;
   });
 
-  const sink = new InMemoryLoggerSink();
+  const sink = new RecordingTerminalPresenterSink();
   const context: DoctorContext = {
     options: doctorOptions(input.options),
     paths,
@@ -309,7 +310,7 @@ async function createWorkspaceFixture(
     network: {
       get: vi.fn(async (): Promise<DiagnosticNetworkResult> => ({status: "reachable", statusCode: 200, durationMs: 1})),
     },
-    logger: new MonorepositoryConsoleLogger("doctor::workspace", {color: false, sink}),
+    logger: new ComposedTerminalPresenter("doctor::workspace", {color: false, sink}),
     files: input.files ?? asReadOnlyFileSystem(nodeFileSystem),
     clock: fixtureClock(),
     environment: fixtureEnvironment({PATH: resolve(root, "bin")}),

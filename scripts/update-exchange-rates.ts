@@ -29,7 +29,7 @@ import {join} from "node:path";
 import {CommandInputError, type CommandExecutionContext} from "./core/command/command-execution.ts";
 import {defineCommand, type LazyMonorepoCommand} from "./core/command/lazy-monorepo-command.ts";
 import type {CommandConstructionOptions, CommandHost} from "./core/command/command-specification.ts";
-import type {MonorepositoryLogger} from "./common/logger.ts";
+import type {TerminalPresenter} from "./core/presentation/terminal-presenter.ts";
 import {CommandCancellation, type Clock, type FileSystem, type HttpClient} from "./common/runtime.ts";
 
 // ---------------------------------------------------------------------------
@@ -389,7 +389,7 @@ async function fetchYearlyRates(
   today: string,
   http: HttpClient,
   signal: AbortSignal,
-  logger: MonorepositoryLogger,
+  logger: TerminalPresenter,
 ): Promise<RateRecord[]> {
   const startDate = `${year}-01-01`;
   const endDate = year === currentYear ? today : `${year}-12-31`;
@@ -541,7 +541,7 @@ async function updateExchangeRates(
   context: Readonly<CommandExecutionContext>,
   input: Readonly<ExchangeRateInput>,
 ): Promise<ExchangeRateResult> {
-  const {http, files, clock, signal, logger, environment} = context.runtime;
+  const {http, files, clock, signal, presenter: logger, environment} = context.runtime;
 
   const {currentYear, today} = resolveNowContext(clock);
   const {fromYear, toYear} = resolveYearRange(input, currentYear);

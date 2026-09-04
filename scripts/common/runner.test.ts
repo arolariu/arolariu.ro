@@ -6,7 +6,8 @@
 
 import {describe, expect, it} from "vitest";
 
-import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "./logger.ts";
+import {ComposedTerminalPresenter} from "../core/presentation/composed-terminal-presenter.ts";
+import {RecordingTerminalPresenterSink} from "../testing/fixtures/terminal.fixture.ts";
 import {
   AbstractProcessRunner,
   formatProcessRequest,
@@ -32,11 +33,11 @@ class FakeProcessRunner extends AbstractProcessRunner {
   }
 }
 
-function createLogger(redactions: readonly string[] = []): MonorepositoryConsoleLogger {
-  return new MonorepositoryConsoleLogger("runner", {
+function createLogger(redactions: readonly string[] = []): ComposedTerminalPresenter {
+  return new ComposedTerminalPresenter("runner", {
     color: false,
     redactions,
-    sink: new InMemoryLoggerSink(),
+    sink: new RecordingTerminalPresenterSink(),
   });
 }
 
@@ -152,8 +153,8 @@ describe("AbstractProcessRunner", () => {
   });
 
   it("logs formatted commands without exposing stdin or environment values", async () => {
-    const sink = new InMemoryLoggerSink();
-    const logger = new MonorepositoryConsoleLogger("runner", {
+    const sink = new RecordingTerminalPresenterSink();
+    const logger = new ComposedTerminalPresenter("runner", {
       color: false,
       redactions: ["secret-argument"],
       sink,

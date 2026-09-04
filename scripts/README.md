@@ -8,8 +8,8 @@ belongs in [`container-runtime`](./container-runtime), and worker entry points b
 
 ## Output boundary
 
-Production scripts route script-authored output through [`MonorepositoryConsoleLogger`](./common/logger.ts). Create a logger with a context
-that identifies the operation, and use `child()` when a nested operation needs a more specific context.
+Production scripts route script-authored output through [`ComposedTerminalPresenter`](./core/presentation/composed-terminal-presenter.ts).
+Create a presenter with a context that identifies the operation, and use `child()` when a nested operation needs a more specific context.
 
 - `debug` emits optional diagnostics.
 - `info` reports normal lifecycle state.
@@ -62,7 +62,7 @@ export function createGenerateGraphqlCommand(
       },
       decode: (program) => ({verbose: program.opts<{verbose?: boolean}>().verbose === true}),
       execute: generateGraphql,
-      complete: (result) => ({exitCode: 0, value: result, human: (logger) => logger.success(result.summary)}),
+      complete: (result) => ({exitCode: 0, value: result, human: (presenter) => presenter.success(result.summary)}),
     },
     options,
   );
@@ -89,7 +89,7 @@ const command = createStatusCommand({doctor: fakeDoctor}, {host: buildCommandHos
 
 [`testing/builders/command-host.builder.ts`](./testing/builders/command-host.builder.ts) owns `buildCommandHost`, and
 [`common/runtime.testing.ts`](./common/runtime.testing.ts) owns the typed runtime fakes it composes — a scripted process runner,
-in-memory logger sink, fixture filesystem, deterministic clock, and stub inspection session. Both are test infrastructure and are
+recording presenter sink, fixture filesystem, deterministic clock, and stub inspection session. Both are test infrastructure and are
 excluded from coverage.
 
 ### `run()`, `invoke()`, and `runIfMain()`
@@ -148,7 +148,7 @@ separate; `formatProcessRequest()` renders diagnostics and never includes stdin 
 
 ### Capability profiles and child scope ownership
 
-`context.runtime` is the only source of effects. It carries `logger`, `prompts`, `runner`, `http`, `files`, `clock`, `tasks`,
+`context.runtime` is the only source of effects. It carries `presenter`, `prompts`, `runner`, `http`, `files`, `clock`, `tasks`,
 `inspection`, `environment`, `signal`, and `cleanup`. [`common/runtime.node.ts`](./common/runtime.node.ts) is the single production
 adapter that implements them; it is the only production module allowed to import `node:fs`, `node:os`, or `node:timers`, to call bare
 `fetch`/`setInterval`, to read `process.env`/`process.cwd()`, to register SIGINT/SIGTERM, or to assign `process.exitCode`.
@@ -156,17 +156,17 @@ adapter that implements them; it is the only production module allowed to import
 Narrow a capability before handing it to a consumer that must not widen it: `asReadOnlyFileSystem()` and `asGetOnlyHttpClient()` produce
 the read-only profiles doctor modules receive, and `inspection/probes.ts` produces the opaque, allowlisted probe runner.
 
-A **root scope** snapshots the environment once, owns its logger and prompts, and (only under `run()`/`runIfMain()`) owns process signals.
+A **root scope** snapshots the environment once, owns its presenter and prompts, and (only under `run()`/`runIfMain()`) owns process signals.
 A **child scope** created by `invoke({parent})` reuses the parent's immutable environment, prompts, and inspection registry, and receives
-its own forked logger, invocation runner, cancellation controller, and cleanup registry. Cancellation always flows parent to child and
+its own forked presenter, invocation runner, cancellation controller, and cleanup registry. Cancellation always flows parent to child and
 never child to parent.
 
 ### JSON, human, and silent output
 
 Presentation is decided from typed input before any capability exists, and rendering is deferred to `completion()`:
 
-- **human** — `completion.human(logger)` runs; semantic and presentation methods are live.
-- **json** — `completion.json` is serialized exactly once through `logger.json()`. A JSON-mode command that omits `json` is an internal
+- **human** — `completion.human(presenter)` runs; semantic and presentation methods are live.
+- **json** — `completion.json` is serialized exactly once through `presenter.json()`. A JSON-mode command that omits `json` is an internal
   failure rather than a silently empty document. A fatal error writes exactly one plain redacted line to standard error so no partial
   success document is emitted.
 - **silent** — nothing is rendered, including failure diagnostics. This is the default for composed `invoke()` calls, whose caller owns
@@ -189,7 +189,7 @@ entry runs even when an earlier one throws; each failure becomes bounded evidenc
 
 ### Sensitive values
 
-Register runtime secrets with `logger.redact()` before any output that could contain them. Logger children and forks share one redaction
+Register runtime secrets with `presenter.redact()` before any output that could contain them. Presenter children and forks share one redaction
 registry, and `RunnerError` redacts its retained request and outcome through the same registry. Do not place secret values in manually
 formatted diagnostics.
 
@@ -197,8 +197,8 @@ formatted diagnostics.
 
 [`format.ts`](./format.ts), [`lint.ts`](./lint.ts), [`workers/format.worker.ts`](./workers/format.worker.ts),
 [`workers/lint.worker.ts`](./workers/lint.worker.ts), [`types/format.ts`](./types/format.ts), and [`types/lint.ts`](./types/lint.ts) are
-the six approved exclusions of RFC 0002 section 3.2. They stay on Piscina and are not command objects. They still use the shared logger
-(with the Node logger runtime host, so their TTY, `NO_COLOR`, and progress behavior is unchanged) and the shared presentation helpers in
+the six approved exclusions of RFC 0002 section 3.2. They stay on Piscina and are not command objects. They still use the shared presenter
+(with the Node terminal sink and its runtime host, so TTY, `NO_COLOR`, and progress behavior is unchanged) and the shared helpers in
 [`common/index.ts`](./common/index.ts), which take an explicit `Date` rather than reading the clock themselves.
 
 [`workers/shell.ts`](./workers/shell.ts) is deliberately **not** excluded. It runs inside those Piscina workers, so it has no command
@@ -207,7 +207,7 @@ so format/lint behavior is unchanged.
 
 ## Output-policy exemptions
 
-The logger sink implementation in [`common/logger.ts`](./common/logger.ts) is the sole owner of semantic and non-interactive presentation
+The Node terminal sink in [`adapters/node/node-terminal-sink.ts`](./adapters/node/node-terminal-sink.ts) is the sole owner of non-interactive presentation
 output. The interactive terminal-protocol adapter in [`common/prompts.ts`](./common/prompts.ts) is a separate narrow exemption because
 readline, visible input echo, cursor state, validation feedback, and non-echoing secret entry must share one writable terminal stream.
 That adapter may emit only prompt labels, questions, choices, validation feedback, and terminal-control newlines; lifecycle diagnostics and
@@ -217,11 +217,11 @@ submitted secret values remain forbidden there.
 destructured aliases. [`runtime-boundary.test.ts`](./common/runtime-boundary.test.ts) enforces the wider runtime boundary — Execa and
 child-process imports, ambient filesystem/HTTP/timer/environment/OS-state access, direct process exit, manual direct-entry detection,
 explicit concurrency, doctor capability width, and the exact six format/lint exclusions. The root ESLint configuration provides immediate
-feedback for direct output syntax. Direct console/process-stream output stays confined to the logger sink, while injected
+feedback for direct output syntax. Direct console/process-stream output stays confined to the Node terminal sink, while injected
 `output.write(...)` prompt presentation stays confined to the prompt adapter. Neither exemption includes a script entry point.
 
 Every production script under root `scripts/**` — including [`setup.ts`](./setup.ts), [`doctor.ts`](./doctor.ts), and
-[`status.ts`](./status.ts) — routes its presentation and semantic output through `MonorepositoryConsoleLogger`. There are no remaining
+[`status.ts`](./status.ts) — routes its presentation and semantic output through `ComposedTerminalPresenter`. There are no remaining
 transitional setup/doctor/status exceptions.
 
 ## Setup orchestrator (`npm run setup`)
@@ -362,7 +362,7 @@ case, so status never reports a fabricated "unavailable" health section for a br
 Focused validation for doctor, its reporter, every specialist module, and `status.ts`:
 
 ```powershell
-npx vitest run --config scripts\vitest.config.ts --coverage.enabled=false scripts\common\logger.test.ts scripts\common\runner.test.ts scripts\common\output-policy.test.ts scripts\doctor.test.ts scripts\doctor.reporter.test.ts scripts\doctor.readonly.test.ts scripts\doctor.workspace.test.ts scripts\doctor.dotnet.test.ts scripts\doctor.react.test.ts scripts\doctor.svelte.test.ts scripts\doctor.python.test.ts scripts\doctor.infrastructure.test.ts scripts\doctor.diagnostics.test.ts scripts\status.test.ts scripts\setup.test.ts
+npx vitest run --config scripts\vitest.config.ts --coverage.enabled=false scripts\core\presentation\composed-terminal-presenter.test.ts scripts\common\runner.test.ts scripts\common\output-policy.test.ts scripts\doctor.test.ts scripts\doctor.reporter.test.ts scripts\doctor.readonly.test.ts scripts\doctor.workspace.test.ts scripts\doctor.dotnet.test.ts scripts\doctor.react.test.ts scripts\doctor.svelte.test.ts scripts\doctor.python.test.ts scripts\doctor.infrastructure.test.ts scripts\doctor.diagnostics.test.ts scripts\status.test.ts scripts\setup.test.ts
 npx eslint scripts\doctor.ts scripts\doctor.types.ts scripts\doctor.reporter.ts scripts\doctor.workspace.ts scripts\doctor.dotnet.ts scripts\doctor.react.ts scripts\doctor.svelte.ts scripts\doctor.python.ts scripts\doctor.infrastructure.ts scripts\status.ts scripts\common\taxonomy-artifacts.ts
 git --no-pager diff --check
 ```

@@ -16,7 +16,8 @@ import {resolve} from "node:path";
 import {afterEach, describe, expect, it, vi} from "vitest";
 
 import type {CommandExecutionContext} from "./core/command/command-execution.ts";
-import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "./common/logger.ts";
+import {ComposedTerminalPresenter} from "./core/presentation/composed-terminal-presenter.ts";
+import {RecordingTerminalPresenterSink} from "./testing/fixtures/terminal.fixture.ts";
 import {createRepositoryPaths} from "./common/repository-paths.ts";
 import type {PackageRequirement, RepositoryRequirements} from "./common/requirements.ts";
 import {AbstractProcessRunner, type ProcessOutcome, type ProcessRequest, type ProcessRunOptions} from "./common/runner.ts";
@@ -452,7 +453,7 @@ interface ReactHarness {
   /** Secret prompt probe. */
   readonly secret: ReturnType<typeof vi.fn<SetupContext["prompts"]["secret"]>>;
   /** Rendered logger output. */
-  readonly sink: InMemoryLoggerSink;
+  readonly sink: RecordingTerminalPresenterSink;
   /** Every value the phase asked the logger to redact. */
   readonly redactions: string[];
   /** Inspection session probe. */
@@ -486,8 +487,8 @@ async function createHarness(
   const secretAnswers = [...(input.secretAnswers ?? [])];
   const text = vi.fn<SetupContext["prompts"]["text"]>(async () => textAnswers.shift() ?? "");
   const secret = vi.fn<SetupContext["prompts"]["secret"]>(async () => secretAnswers.shift() ?? "");
-  const sink = new InMemoryLoggerSink();
-  const logger = new MonorepositoryConsoleLogger("setup::react", {color: false, sink});
+  const sink = new RecordingTerminalPresenterSink();
+  const logger = new ComposedTerminalPresenter("setup::react", {color: false, sink});
   const redactions: string[] = [];
   const originalRedact = logger.redact.bind(logger);
   logger.redact = (value: string): void => {

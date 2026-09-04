@@ -13,11 +13,12 @@
  * exported here. Three narrow production callers import this module directly instead: the
  * Piscina-hosted `workers/shell.ts` takes {@link nodeProcessRunner} because it has no command
  * scope, and the excluded `format.ts`/`lint.ts` orchestrators (with the presentation helpers in
- * `common/index.ts` that they share) take {@link nodeLoggerRuntimeHost} so their loggers keep
- * real TTY, `NO_COLOR`, and progress behavior without being migrated to the command runtime.
+ * `common/index.ts` that they share) build their own presenters from the Node terminal sink so
+ * they keep real TTY, `NO_COLOR`, and progress behavior without being migrated to the command
+ * runtime.
  *
  * This module also assembles those primitives into the production {@link CommandRuntimeFactory}
- * that `commander.ts` uses: the process host, the logger runtime host, and the root/child runtime
+ * that `commander.ts` uses: the process host, the Node terminal sink, and the root/child runtime
  * scopes. Every import from `commander.ts` here is type-only, so the declarative command host and
  * this adapter never form a module initialization cycle.
  */
@@ -30,9 +31,11 @@ import {fileURLToPath} from "node:url";
 import {randomBytes} from "node:crypto";
 import {setTimeout as delay} from "node:timers/promises";
 
+import {NodeTerminalPresenterSink, nodeTerminalPresenterRuntimeHost} from "../adapters/node/node-terminal-sink.ts";
 import type {CommandExecutionContext, CommandExitCode, CommandPresentationMode} from "../core/command/command-execution.ts";
 import type {CommandProcessHost, CommandRuntimeFactory, RuntimeCreationOptions} from "../core/command/command-specification.ts";
-import {MonorepositoryConsoleLogger, type LoggerRuntimeHost, type LoggerScheduledInterval, type MonorepositoryLogger} from "./logger.ts";
+import {ComposedTerminalPresenter} from "../core/presentation/composed-terminal-presenter.ts";
+import type {TerminalPresenter} from "../core/presentation/terminal-presenter.ts";
 import {createTerminalPromptProvider} from "./prompts.ts";
 import {ExecaProcessRunner} from "./runner.execa.ts";
 import type {ProcessRunner} from "./runner.ts";
@@ -657,29 +660,6 @@ export const nodeProcessHost: CommandProcessHost = {
   },
 };
 
-/** Environment snapshot the logger runtime host derives its terminal and color policy from. */
-const nodeLoggerEnvironment: RuntimeEnvironment = snapshotNodeEnvironment();
-
-/**
- * Sole Node.js-backed {@link LoggerRuntimeHost}: terminal and color policy snapshotted from the
- * runtime environment, plus native interval scheduling behind an explicit cancellation handle.
- */
-export const nodeLoggerRuntimeHost: LoggerRuntimeHost = {
-  stdoutIsTTY: nodeLoggerEnvironment.stdoutIsTTY,
-  noColor: Object.hasOwn(nodeLoggerEnvironment.variables, "NO_COLOR"),
-  scheduleInterval: (callback: () => void, intervalMs: number): LoggerScheduledInterval => {
-    const timer = setInterval(callback, intervalMs);
-    return {
-      cancel: (): void => {
-        clearInterval(timer);
-      },
-      unref: (): void => {
-        timer.unref();
-      },
-    };
-  },
-};
-
 /**
  * Builds the shared, memoized repository inspection capability every command scope exposes.
  *
@@ -724,11 +704,11 @@ function createNodeInspectionRuntime(
 
 /** Describes one Node-backed runtime scope the command host asks this adapter to assemble. */
 export interface NodeRuntimeScopeOptions {
-  /** Logical command name used as the logger context. */
+  /** Logical command name used as the presenter context. */
   readonly commandName: string;
-  /** Whether the scope's logger emits diagnostic messages. */
+  /** Whether the scope's presenter emits diagnostic messages. */
   readonly verbose: boolean;
-  /** Presentation mode the scope's logger must honor. */
+  /** Presentation mode the scope's presenter must honor. */
   readonly presentation: CommandPresentationMode;
   /** Whether this scope owns SIGINT and SIGTERM registration. */
   readonly registerProcessSignals: boolean;
@@ -745,10 +725,10 @@ export interface NodeRuntimeScopeOptions {
  * module.
  *
  * @remarks
- * A root scope snapshots the environment once, owns its logger and prompts, and optionally
+ * A root scope snapshots the environment once, owns its presenter and prompts, and optionally
  * registers SIGINT/SIGTERM (unregistered again by its own cleanup entry). A child scope reuses
  * the parent's immutable environment, prompts, and inspection registry, while receiving its own
- * forked logger, invocation runner, cancellation controller, and cleanup registry. Cancellation
+ * forked presenter, invocation runner, cancellation controller, and cleanup registry. Cancellation
  * always flows parent to child and never child to parent.
  *
  * @param options - Scope name, verbosity, presentation, signal ownership, and optional parent.
@@ -794,19 +774,20 @@ export function createNodeRuntimeScope(options: Readonly<NodeRuntimeScopeOptions
     });
   }
 
-  const logger: MonorepositoryLogger =
+  const presenter: TerminalPresenter =
     parent === undefined
-      ? new MonorepositoryConsoleLogger(options.commandName, {
+      ? new ComposedTerminalPresenter(options.commandName, {
           mode: options.presentation,
           verbose: options.verbose,
-          runtimeHost: nodeLoggerRuntimeHost,
+          sink: new NodeTerminalPresenterSink(),
+          runtimeHost: nodeTerminalPresenterRuntimeHost,
         })
-      : parent.runtime.logger.fork(options.commandName, {mode: options.presentation, verbose: options.verbose});
+      : parent.runtime.presenter.fork(options.commandName, {mode: options.presentation, verbose: options.verbose});
 
   const runner = createNodeProcessRunner(environment);
 
   return Promise.resolve({
-    logger,
+    presenter,
     prompts: parent?.runtime.prompts ?? createTerminalPromptProvider(),
     runner,
     http: nodeHttpClient,
@@ -833,8 +814,8 @@ export function createNodeRuntimeScope(options: Readonly<NodeRuntimeScopeOptions
 /**
  * Builds the production {@link CommandRuntimeFactory} every migrated command uses by default.
  *
- * @param commandName - Logical command name used as the logger context.
- * @param verbose - Whether invocation loggers emit diagnostic messages.
+ * @param commandName - Logical command name used as the presenter context.
+ * @param verbose - Whether invocation presenters emit diagnostic messages.
  * @returns A factory that creates Node-backed root scopes and child scopes.
  */
 export function createNodeCommandRuntimeFactory(commandName: string, verbose: boolean): CommandRuntimeFactory {

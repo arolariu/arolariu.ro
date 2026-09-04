@@ -14,7 +14,8 @@ import {resolve} from "node:path";
 import {describe, expect, it, vi} from "vitest";
 
 import type {CommandExecution, CommandExecutionContext} from "./core/command/command-execution.ts";
-import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "./common/logger.ts";
+import {ComposedTerminalPresenter} from "./core/presentation/composed-terminal-presenter.ts";
+import {RecordingTerminalPresenterSink} from "./testing/fixtures/terminal.fixture.ts";
 import {createRepositoryPaths, type RepositoryPaths} from "./common/repository-paths.ts";
 import type {RepositoryRequirements} from "./common/requirements.ts";
 import {
@@ -255,7 +256,7 @@ interface WorkspaceHarness {
   /** Recorded generation invocations. */
   readonly generate: ReturnType<typeof vi.fn<SetupPhaseRuntime["invokeGenerate"]>>;
   /** Rendered logger output. */
-  readonly sink: InMemoryLoggerSink;
+  readonly sink: RecordingTerminalPresenterSink;
 }
 
 /**
@@ -303,8 +304,8 @@ async function createHarness(input: Readonly<WorkspaceHarnessInput> = {}): Promi
     typeof generation === "function" ? generation() : generation,
   );
 
-  const sink = new InMemoryLoggerSink();
-  const logger = new MonorepositoryConsoleLogger("setup::workspace", {color: false, sink});
+  const sink = new RecordingTerminalPresenterSink();
+  const logger = new ComposedTerminalPresenter("setup::workspace", {color: false, sink});
   const factory = createTestRuntimeFactory({files, runner, clock, logger});
   const commandRuntime = await factory.createRoot({presentation: "silent", registerProcessSignals: false});
   const command: CommandExecutionContext = {runtime: commandRuntime, presentation: "silent"};

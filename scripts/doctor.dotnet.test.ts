@@ -16,7 +16,8 @@ import {readFileSync} from "node:fs";
 import {resolve} from "node:path";
 import {afterEach, describe, expect, it, vi, type Mock} from "vitest";
 
-import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "./common/logger.ts";
+import {ComposedTerminalPresenter} from "./core/presentation/composed-terminal-presenter.ts";
+import {RecordingTerminalPresenterSink} from "./testing/fixtures/terminal.fixture.ts";
 import {createRepositoryPaths} from "./common/repository-paths.ts";
 import type {RepositoryRequirements} from "./common/requirements.ts";
 import {asReadOnlyFileSystem, type Clock, type RuntimeEnvironment} from "./common/runtime.ts";
@@ -153,7 +154,7 @@ function createDotnetFixture(
       },
   );
 
-  const sink = new InMemoryLoggerSink();
+  const sink = new RecordingTerminalPresenterSink();
   const context: DoctorContext = {
     options: doctorOptions(input.options),
     paths: createRepositoryPaths(process.cwd()),
@@ -162,7 +163,7 @@ function createDotnetFixture(
         ? {status: "invalid", errors: [".nvmrc disagrees with package.json#engines.node"]}
         : {status: "valid", requirements: input.requirements ?? validRequirements()},
     network: {get: networkGet},
-    logger: new MonorepositoryConsoleLogger("doctor::dotnet", {color: false, sink}),
+    logger: new ComposedTerminalPresenter("doctor::dotnet", {color: false, sink}),
     files: asReadOnlyFileSystem(createMemoryFileSystem()),
     clock: fixtureClock(),
     environment: fixtureEnvironment(input.env ?? {}),

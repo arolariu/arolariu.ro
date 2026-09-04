@@ -841,7 +841,7 @@ const statusEslintConfig: Config = defineConfig({
 const toolingOutputConfig: Config = defineConfig({
   name: "[@arolariu/tooling-output]",
   files: ["scripts/**/*.{ts,js,mjs,cjs}"],
-  ignores: ["scripts/**/*.test.ts", "scripts/common/logger.ts", "scripts/testing/architecture/report-*.ts"],
+  ignores: ["scripts/**/*.test.ts", "scripts/adapters/node/node-terminal-sink.ts", "scripts/testing/architecture/report-*.ts"],
   languageOptions: {
     parser: tseslint.parser,
     ecmaVersion: "latest",
@@ -855,7 +855,7 @@ const toolingOutputConfig: Config = defineConfig({
       {
         selector:
           "CallExpression[callee.type='MemberExpression'][callee.property.name='write'][callee.object.type='MemberExpression'][callee.object.object.name='process'][callee.object.property.name=/^(stdout|stderr)$/]",
-        message: "Route script-authored process stream output through MonorepositoryConsoleLogger.",
+        message: "Route script-authored process stream output through ComposedTerminalPresenter.",
       },
     ],
   },
@@ -864,7 +864,12 @@ const toolingOutputConfig: Config = defineConfig({
 const toolingPromptOutputConfig: Config = defineConfig({
   name: "[@arolariu/tooling-prompt-output]",
   files: ["scripts/**/*.{ts,js,mjs,cjs}"],
-  ignores: ["scripts/**/*.test.ts", "scripts/common/logger.ts", "scripts/common/prompts.ts", "scripts/testing/architecture/report-*.ts"],
+  ignores: [
+    "scripts/**/*.test.ts",
+    "scripts/adapters/node/node-terminal-sink.ts",
+    "scripts/common/prompts.ts",
+    "scripts/testing/architecture/report-*.ts",
+  ],
   languageOptions: {
     parser: tseslint.parser,
     ecmaVersion: "latest",
@@ -877,7 +882,7 @@ const toolingPromptOutputConfig: Config = defineConfig({
       {
         selector:
           "CallExpression[callee.type='MemberExpression'][callee.property.name='write'][callee.object.type='MemberExpression'][callee.object.object.name='process'][callee.object.property.name=/^(stdout|stderr)$/]",
-        message: "Route script-authored process stream output through MonorepositoryConsoleLogger.",
+        message: "Route script-authored process stream output through ComposedTerminalPresenter.",
       },
       {
         selector:

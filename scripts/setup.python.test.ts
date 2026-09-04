@@ -15,7 +15,8 @@ import {resolve} from "node:path";
 import {describe, expect, it, vi} from "vitest";
 
 import type {CommandExecutionContext} from "./core/command/command-execution.ts";
-import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "./common/logger.ts";
+import {ComposedTerminalPresenter} from "./core/presentation/composed-terminal-presenter.ts";
+import {RecordingTerminalPresenterSink} from "./testing/fixtures/terminal.fixture.ts";
 import {createRepositoryPaths} from "./common/repository-paths.ts";
 import type {MinimumVersion, RepositoryRequirements} from "./common/requirements.ts";
 import {AbstractProcessRunner, type ProcessOutcome, type ProcessRequest, type ProcessRunOptions} from "./common/runner.ts";
@@ -241,8 +242,8 @@ async function createHarness(
   const runner = new FakeProcessRunner(input.responses);
   const {actions, actionIds, actionRecords} = createActions(input.dispositions);
   const {session, inspect, invalidate} = createPythonInspectionHarness(input.pythonOutcomes);
-  const sink = new InMemoryLoggerSink();
-  const logger = new MonorepositoryConsoleLogger("setup::python", {color: false, sink});
+  const sink = new RecordingTerminalPresenterSink();
+  const logger = new ComposedTerminalPresenter("setup::python", {color: false, sink});
 
   let elapsed = 0;
   const clock: Clock = {

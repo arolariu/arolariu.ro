@@ -14,7 +14,7 @@
 
 import type {Command} from "commander";
 
-import type {MonorepositoryLogger} from "../../common/logger.ts";
+import type {TerminalPresenter} from "../presentation/terminal-presenter.ts";
 import type {CommandRuntime} from "../../common/runtime.ts";
 import type {WorkflowEvent} from "../presentation/workflow-event.ts";
 import type {CommandWorkflowModuleDefinition} from "../workflow/workflow-composition.ts";
@@ -40,7 +40,7 @@ export interface CommandProcessHost {
 /** The injected seam through which a command reaches parse presentation and its runtime factory. */
 export interface CommandHost extends CommandProcessHost {
   /** Creates the human presenter used for help and usage output before typed input exists. */
-  readonly createParsePresenter: () => MonorepositoryLogger;
+  readonly createParsePresenter: () => TerminalPresenter;
   /** Loads the runtime factory used to create root and child scopes for this invocation. */
   readonly loadRuntimeFactory: (verbose: boolean) => Promise<CommandRuntimeFactory>;
 }

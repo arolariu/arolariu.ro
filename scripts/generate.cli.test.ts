@@ -8,7 +8,8 @@ import {describe, expect, it} from "vitest";
 
 import type {CommandExecution, CommandInvoker, CommandPresentationMode} from "./core/command/command-execution.ts";
 import {buildCommandHost} from "./testing/builders/command-host.builder.ts";
-import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "./common/logger.ts";
+import {ComposedTerminalPresenter} from "./core/presentation/composed-terminal-presenter.ts";
+import {RecordingTerminalPresenterSink} from "./testing/fixtures/terminal.fixture.ts";
 import type {ArtifactGenerationResult, GenerateArtifactsInput} from "./generate.artifacts.ts";
 import type {GenerateLeafInput, GenerateLeafResult} from "./generate.env.ts";
 import {createGenerateCommand, type GenerateCommandDependencies, type GenerateTaskName} from "./generate.ts";
@@ -95,9 +96,9 @@ function createRecordingDependencies(
   };
 }
 
-function makeLoggerFixture(): Readonly<{logger: MonorepositoryConsoleLogger; sink: InMemoryLoggerSink}> {
-  const sink = new InMemoryLoggerSink();
-  return {logger: new MonorepositoryConsoleLogger("test::generate", {color: false, sink}), sink};
+function makeLoggerFixture(): Readonly<{logger: ComposedTerminalPresenter; sink: RecordingTerminalPresenterSink}> {
+  const sink = new RecordingTerminalPresenterSink();
+  return {logger: new ComposedTerminalPresenter("test::generate", {color: false, sink}), sink};
 }
 
 describe("generate composition", () => {
@@ -114,7 +115,7 @@ describe("generate composition", () => {
   it("logs the completed child's typed summary before stopping on a nonzero exit", async () => {
     const {calls, dependencies} = createRecordingDependencies({i18n: completedLeaf("Added 3 missing translation keys.", 1)});
     const {logger, sink} = makeLoggerFixture();
-    const command = createGenerateCommand(dependencies, {host: buildCommandHost({runtime: {logger}})});
+    const command = createGenerateCommand(dependencies, {host: buildCommandHost({runtime: {presenter: logger}})});
 
     const execution = await command.invoke(
       {verbose: false, env: true, i18n: true, gql: true, artifacts: true},
@@ -179,7 +180,7 @@ describe("generate composition", () => {
   it("executes no generator and completes successfully when no task is selected", async () => {
     const {calls, dependencies} = createRecordingDependencies();
     const {logger, sink} = makeLoggerFixture();
-    const command = createGenerateCommand(dependencies, {host: buildCommandHost({runtime: {logger}})});
+    const command = createGenerateCommand(dependencies, {host: buildCommandHost({runtime: {presenter: logger}})});
 
     const execution = await command.invoke(
       {verbose: false, env: false, i18n: false, gql: false, artifacts: false},

@@ -17,7 +17,8 @@ import {dirname, resolve} from "node:path";
 import {fileURLToPath} from "node:url";
 import {afterEach, describe, expect, it, vi} from "vitest";
 
-import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "./common/logger.ts";
+import {ComposedTerminalPresenter} from "./core/presentation/composed-terminal-presenter.ts";
+import {RecordingTerminalPresenterSink} from "./testing/fixtures/terminal.fixture.ts";
 import {createRepositoryPaths} from "./common/repository-paths.ts";
 import type {RepositoryRequirements} from "./common/requirements.ts";
 import {asReadOnlyFileSystem, type Clock, type RuntimeEnvironment} from "./common/runtime.ts";
@@ -134,7 +135,7 @@ function createSvelteFixture(
     throw new Error("doctor.svelte.ts must never call context.probes.");
   });
 
-  const sink = new InMemoryLoggerSink();
+  const sink = new RecordingTerminalPresenterSink();
   const context: DoctorContext = {
     options: doctorOptions(input.options),
     paths: createRepositoryPaths(fixtureRoot),
@@ -145,7 +146,7 @@ function createSvelteFixture(
     network: {
       get: vi.fn(async (): Promise<DiagnosticNetworkResult> => ({status: "reachable", statusCode: 200, durationMs: 1})),
     },
-    logger: new MonorepositoryConsoleLogger("doctor::svelte", {color: false, sink}),
+    logger: new ComposedTerminalPresenter("doctor::svelte", {color: false, sink}),
     files: asReadOnlyFileSystem(createMemoryFileSystem()),
     clock: fixtureClock(),
     environment: fixtureEnvironment(),

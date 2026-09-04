@@ -71,7 +71,7 @@ async function executeCompose(context: Readonly<CommandExecutionContext>, input:
 
   await runContainerPreflight(adapter, {
     runner: runtime.runner,
-    logger: runtime.logger.child("preflight"),
+    logger: runtime.presenter.child("preflight"),
     environment: runtime.environment,
     signal: runtime.signal,
   });
@@ -81,7 +81,7 @@ async function executeCompose(context: Readonly<CommandExecutionContext>, input:
     await runtime.runner.expectSuccess(command, {
       output: "tee",
       logCommands: true,
-      logger: runtime.logger,
+      logger: runtime.presenter,
       signal: runtime.signal,
     });
   } catch (error) {

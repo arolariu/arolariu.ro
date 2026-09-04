@@ -17,7 +17,7 @@ import {CommandInputError, type CommandInvoker} from "../core/command/command-ex
 import type {CommandExecutionContext} from "../core/command/command-execution.ts";
 import {defineCommand, type LazyMonorepoCommand} from "../core/command/lazy-monorepo-command.ts";
 import type {CommandConstructionOptions, CommandHost} from "../core/command/command-specification.ts";
-import type {MonorepositoryLogger} from "../common/logger.ts";
+import type {TerminalPresenter} from "../core/presentation/terminal-presenter.ts";
 import {resolveRepositoryPaths} from "../common/repository-paths.ts";
 import {RunnerError, type ProcessRunner} from "../common/runner.ts";
 import {CommandCancellation, commandCancellationFromSignal} from "../common/runtime.ts";
@@ -146,7 +146,7 @@ async function runArtifactPrerequisite(
 async function runImageBusinessCommand(
   runner: ProcessRunner,
   command: Readonly<RuntimeCommand>,
-  logger: MonorepositoryLogger,
+  logger: TerminalPresenter,
   signal: AbortSignal,
 ): Promise<void> {
   try {
@@ -191,7 +191,7 @@ async function executeImage(
 
   await runContainerPreflight(adapter, {
     runner: runtime.runner,
-    logger: runtime.logger.child("preflight"),
+    logger: runtime.presenter.child("preflight"),
     environment: runtime.environment,
     signal: runtime.signal,
   });
@@ -209,12 +209,12 @@ async function executeImage(
       context: ".",
       buildArgs: {VERSION: "local"},
     });
-    await runImageBusinessCommand(runtime.runner, command, runtime.logger, runtime.signal);
+    await runImageBusinessCommand(runtime.runner, command, runtime.presenter, runtime.signal);
     return {engine: adapter.engine, action: "build", target: input.target};
   }
 
   const command = buildImageRunCommand(adapter, {tag, ports: portsByTarget[input.target], environment: {INFRA: "local"}});
-  await runImageBusinessCommand(runtime.runner, command, runtime.logger, runtime.signal);
+  await runImageBusinessCommand(runtime.runner, command, runtime.presenter, runtime.signal);
   return {engine: adapter.engine, action: "run", target: input.target};
 }
 

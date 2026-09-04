@@ -13,7 +13,7 @@
 
 import type {Command} from "commander";
 
-import type {MonorepositoryLogger} from "../../common/logger.ts";
+import type {TerminalPresenter} from "../presentation/terminal-presenter.ts";
 import {formatProcessRequest, RunnerError} from "../../common/runner.ts";
 import {FileSystemError, HttpError, type CommandRuntime} from "../../common/runtime.ts";
 import type {CommandInvocationOptions} from "./command-specification.ts";
@@ -41,7 +41,7 @@ export interface CommandExecutionContext<TRuntime extends CommandRuntime = Comma
 export interface CommandCompletion<TOutput> {
   readonly exitCode: 0 | 1;
   readonly value: TOutput;
-  readonly human?: (presenter: MonorepositoryLogger) => void | Promise<void>;
+  readonly human?: (presenter: TerminalPresenter) => void | Promise<void>;
   readonly json?: JsonValue;
 }
 

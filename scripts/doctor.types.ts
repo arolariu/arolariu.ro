@@ -3,7 +3,7 @@
  * @module scripts/doctor.types
  */
 
-import type {MonorepositoryLogger} from "./common/logger.ts";
+import type {TerminalPresenter} from "./core/presentation/terminal-presenter.ts";
 import type {RepositoryPaths} from "./common/repository-paths.ts";
 import type {RequirementLoadResult} from "./common/requirements.ts";
 import type {Clock, ReadOnlyFileSystem, RuntimeEnvironment} from "./common/runtime.ts";
@@ -103,7 +103,7 @@ export interface DoctorContext {
   /** Bounded, `GET`-only network reachability probe. */
   readonly network: DiagnosticNetworkProbe;
   /** Structured, redaction-aware logger for this run. */
-  readonly logger: MonorepositoryLogger;
+  readonly logger: TerminalPresenter;
   /** Read-only filesystem view; no module can mutate repository state. */
   readonly files: ReadOnlyFileSystem;
   /** Monotonic and wall-clock time source. */

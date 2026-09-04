@@ -10,7 +10,9 @@
  */
 
 import {describe, expect, it} from "vitest";
-import {InMemoryLoggerSink, MonorepositoryConsoleLogger, type MonorepositoryLogger} from "./logger.ts";
+import {ComposedTerminalPresenter} from "../core/presentation/composed-terminal-presenter.ts";
+import {RecordingTerminalPresenterSink} from "../testing/fixtures/terminal.fixture.ts";
+import type {TerminalPresenter} from "../core/presentation/terminal-presenter.ts";
 import {
   formatBytes,
   formatDurationMs,
@@ -25,9 +27,9 @@ import {
 // Helpers
 // ---------------------------------------------------------------------------
 
-function createTestLogger(): Readonly<{sink: InMemoryLoggerSink; logger: MonorepositoryLogger}> {
-  const sink = new InMemoryLoggerSink();
-  const logger = new MonorepositoryConsoleLogger("test", {
+function createTestLogger(): Readonly<{sink: RecordingTerminalPresenterSink; logger: TerminalPresenter}> {
+  const sink = new RecordingTerminalPresenterSink();
+  const logger = new ComposedTerminalPresenter("test", {
     color: false,
     sink,
   });

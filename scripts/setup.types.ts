@@ -11,7 +11,7 @@
  */
 
 import type {CommandExecution, CommandExecutionContext} from "./core/command/command-execution.ts";
-import type {MonorepositoryLogger} from "./common/logger.ts";
+import type {TerminalPresenter} from "./core/presentation/terminal-presenter.ts";
 import type {PromptProvider} from "./common/prompts.ts";
 import type {RepositoryPaths} from "./common/repository-paths.ts";
 import type {RepositoryRequirements} from "./common/requirements.ts";
@@ -152,7 +152,7 @@ export interface SetupContext {
   /** Policy-controlled mutation executor. */
   readonly actions: SetupActionExecutor;
   /** Setup logger. */
-  readonly logger: MonorepositoryLogger;
+  readonly logger: TerminalPresenter;
 }
 
 /**

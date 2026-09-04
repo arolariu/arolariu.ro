@@ -3,7 +3,7 @@
  * @module scripts.common.runner
  */
 
-import type {MonorepositoryLogger} from "./logger.ts";
+import type {TerminalPresenter} from "../core/presentation/terminal-presenter.ts";
 
 /** Runs one request with optional execution options. */
 interface Runner<TRequest, TOptions, TOutcome> {
@@ -40,7 +40,7 @@ export interface ProcessRunOptions {
   /** Optional cancellation signal. */
   readonly signal?: AbortSignal;
   /** Logger used for tee output and command diagnostics. */
-  readonly logger?: MonorepositoryLogger;
+  readonly logger?: TerminalPresenter;
   /** Whether the formatted command is echoed before execution. */
   readonly logCommands?: boolean;
 }
@@ -98,7 +98,7 @@ export function formatProcessRequest(request: Readonly<ProcessRequest>): string 
  */
 export function processFailureEvidence(
   outcome: Readonly<Exclude<ProcessOutcome, SucceededProcessOutcome>>,
-  logger?: MonorepositoryLogger,
+  logger?: TerminalPresenter,
 ): string {
   const candidate = selectFailureEvidence(outcome);
   return sanitizeDiagnosticText(candidate, logger);
@@ -124,7 +124,7 @@ export class RunnerError extends Error {
   public constructor(
     request: Readonly<ProcessRequest>,
     outcome: Readonly<Exclude<ProcessOutcome, SucceededProcessOutcome>>,
-    logger?: MonorepositoryLogger,
+    logger?: TerminalPresenter,
   ) {
     const retainedRequest = logger === undefined ? request : sanitizeProcessRequest(request, logger);
     const retainedOutcome = logger === undefined ? outcome : sanitizeFailedProcessOutcome(outcome, logger);
@@ -247,12 +247,12 @@ function selectFailureEvidence(outcome: Readonly<Exclude<ProcessOutcome, Succeed
   return "";
 }
 
-function sanitizeDiagnosticText(text: string, logger?: MonorepositoryLogger): string {
+function sanitizeDiagnosticText(text: string, logger?: TerminalPresenter): string {
   const sanitized = logger?.sanitize(text) ?? text;
   return sanitized.slice(0, MAX_PROCESS_DIAGNOSTIC_TEXT_LENGTH);
 }
 
-function sanitizeProcessRequest(request: Readonly<ProcessRequest>, logger: MonorepositoryLogger): ProcessRequest {
+function sanitizeProcessRequest(request: Readonly<ProcessRequest>, logger: TerminalPresenter): ProcessRequest {
   return {
     command: logger.sanitize(request.command),
     args: request.args.map((argument) => logger.sanitize(argument)),
@@ -261,7 +261,7 @@ function sanitizeProcessRequest(request: Readonly<ProcessRequest>, logger: Monor
 
 function sanitizeFailedProcessOutcome(
   outcome: Readonly<Exclude<ProcessOutcome, SucceededProcessOutcome>>,
-  logger: MonorepositoryLogger,
+  logger: TerminalPresenter,
 ): Exclude<ProcessOutcome, SucceededProcessOutcome> {
   const stdout = logger.sanitize(outcome.stdout);
   const stderr = logger.sanitize(outcome.stderr);

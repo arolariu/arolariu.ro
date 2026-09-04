@@ -22,7 +22,7 @@ import {join, resolve} from "node:path";
 import {CommandInputError, type CommandExecutionContext} from "./core/command/command-execution.ts";
 import {defineCommand, type LazyMonorepoCommand} from "./core/command/lazy-monorepo-command.ts";
 import type {CommandConstructionOptions, CommandHost} from "./core/command/command-specification.ts";
-import type {MonorepositoryLogger} from "./common/logger.ts";
+import type {TerminalPresenter} from "./core/presentation/terminal-presenter.ts";
 import {RunnerError} from "./common/runner.ts";
 import {commandCancellationFromSignal, type FileSystem} from "./common/runtime.ts";
 
@@ -153,7 +153,7 @@ function resolveEnvironmentProfile(env: Readonly<Record<string, string | undefin
 function readPositiveIntegerEnv(
   key: string,
   fallback: number,
-  logger: MonorepositoryLogger,
+  logger: TerminalPresenter,
   env: Readonly<Record<string, string | undefined>>,
 ): number {
   const rawValue = env[key];
@@ -182,7 +182,7 @@ function readPositiveIntegerEnv(
 function readBooleanEnv(
   key: string,
   fallback: boolean,
-  logger: MonorepositoryLogger,
+  logger: TerminalPresenter,
   env: Readonly<Record<string, string | undefined>>,
 ): boolean {
   const rawValue = env[key];
@@ -318,7 +318,7 @@ export async function writeAssertionSummary(
   files: FileSystem,
   target: string,
   reportDir: string,
-  logger: MonorepositoryLogger,
+  logger: TerminalPresenter,
 ): Promise<void> {
   const jsonPath = join(reportDir, `newman-${target}.json`);
   if (!(await files.exists(jsonPath))) {
@@ -372,7 +372,7 @@ export async function writeAssertionSummary(
 export async function sanitizeNewmanJsonReport(
   files: FileSystem,
   jsonPath: string,
-  logger: MonorepositoryLogger,
+  logger: TerminalPresenter,
   runtimeAuthToken?: string,
 ): Promise<void> {
   if (!(await files.exists(jsonPath))) {
@@ -425,7 +425,7 @@ export async function sanitizeNewmanJsonReport(
 export async function sanitizeNewmanTextReport(
   files: FileSystem,
   filePath: string,
-  logger: MonorepositoryLogger,
+  logger: TerminalPresenter,
   runtimeAuthToken?: string,
 ): Promise<void> {
   if (!(await files.exists(filePath))) {
@@ -497,7 +497,7 @@ async function performReportCleanup(
   files: FileSystem,
   target: RunnableE2ETarget,
   reportDir: string,
-  logger: MonorepositoryLogger,
+  logger: TerminalPresenter,
   runtimeAuthToken: string | undefined,
 ): Promise<void> {
   const jsonPath = join(reportDir, `newman-${target}.json`);
@@ -554,7 +554,7 @@ async function performReportCleanup(
 async function runNewmanForTarget(context: Readonly<CommandExecutionContext>, target: RunnableE2ETarget, cwd: string): Promise<void> {
   const {files, runner, signal, cleanup, environment} = context.runtime;
   const env = environment.variables;
-  const logger = context.runtime.logger.child(target);
+  const logger = context.runtime.presenter.child(target);
   const config = targetConfigurationMap[target];
 
   const collectionPath = resolve(cwd, config.directory, "postman-collection.json");
@@ -665,7 +665,7 @@ async function runNewmanForTarget(context: Readonly<CommandExecutionContext>, ta
  * @throws When any target's Newman run does not succeed.
  */
 async function executeE2e(context: Readonly<CommandExecutionContext>, input: Readonly<E2EInput>): Promise<E2EResult> {
-  const {tasks, signal, environment, logger} = context.runtime;
+  const {tasks, signal, environment, presenter: logger} = context.runtime;
   const validatedTarget = requireValidTarget(input.target);
   const targets: readonly RunnableE2ETarget[] = validatedTarget === "all" ? [...EXECUTION_ORDER] : [validatedTarget];
   const completed: RunnableE2ETarget[] = [];

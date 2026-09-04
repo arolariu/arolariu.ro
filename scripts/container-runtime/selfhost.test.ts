@@ -7,7 +7,9 @@ import {readFile} from "node:fs/promises";
 import {describe, expect, it, vi, type Mock} from "vitest";
 import type {CommandExecution, CommandInvoker} from "../core/command/command-execution.ts";
 import {buildCommandHost} from "../testing/builders/command-host.builder.ts";
-import {InMemoryLoggerSink, MonorepositoryConsoleLogger, type MonorepositoryLogger} from "../common/logger.ts";
+import {ComposedTerminalPresenter} from "../core/presentation/composed-terminal-presenter.ts";
+import {RecordingTerminalPresenterSink} from "../testing/fixtures/terminal.fixture.ts";
+import type {TerminalPresenter} from "../core/presentation/terminal-presenter.ts";
 import type {ProcessOutcome, ProcessRequest, ProcessRunOptions, ProcessRunner} from "../common/runner.ts";
 import {createProcessRunner, createRepositoryFixtureFileSystem, repositoryFixtureRoot} from "../common/runtime.testing.ts";
 import {
@@ -190,8 +192,8 @@ interface SelfhostHarness {
   readonly runner: RecordedRunner;
   readonly clock: RecordingClock;
   readonly files: FileSystem;
-  readonly logger: MonorepositoryLogger;
-  readonly sink: InMemoryLoggerSink;
+  readonly logger: TerminalPresenter;
+  readonly sink: RecordingTerminalPresenterSink;
   readonly bootstrap: RecordingBootstrap;
   readonly artifacts: ArtifactsStub;
 }
@@ -206,8 +208,8 @@ function createHarness(options: Readonly<HarnessOptions> = {}): SelfhostHarness 
   const runner = createProcessRunner(options.outcomes ?? []);
   const clock = createRecordingClock();
   const files = options.files ?? createRepositoryFixtureFileSystem({[certFixturePath]: "local-cert", [keyFixturePath]: "local-key"});
-  const sink = new InMemoryLoggerSink();
-  const logger = new MonorepositoryConsoleLogger("test", {color: false, sink});
+  const sink = new RecordingTerminalPresenterSink();
+  const logger = new ComposedTerminalPresenter("test", {color: false, sink});
   const bootstrap = createRecordingBootstrap(runner, options.bootstrapBehavior ?? {});
   const artifacts = options.artifacts ?? createArtifactsStub();
   const environment = environmentWith(options.variables ?? {MSSQL_SA_PASSWORD: sqlPassword});
@@ -216,7 +218,7 @@ function createHarness(options: Readonly<HarnessOptions> = {}): SelfhostHarness 
       runner,
       clock,
       files,
-      logger,
+      presenter: logger,
       environment,
       ...(options.cleanup === undefined ? {} : {cleanup: options.cleanup}),
     },

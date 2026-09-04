@@ -12,7 +12,7 @@
 
 import {basename, dirname, join, resolve} from "node:path";
 
-import type {MonorepositoryLogger} from "./common/logger.ts";
+import type {TerminalPresenter} from "./core/presentation/terminal-presenter.ts";
 import type {CommandExecutionContext} from "./core/command/command-execution.ts";
 import {defineCommand, type LazyMonorepoCommand} from "./core/command/lazy-monorepo-command.ts";
 import type {CommandConstructionOptions, CommandHost} from "./core/command/command-specification.ts";
@@ -74,7 +74,7 @@ export interface ArtifactGeneratorRuntime {
   /** Immutable environment snapshot used for output roots and host platform selection. */
   readonly environment: RuntimeEnvironment;
   /** Logger used for lifecycle, diagnostic, failure, and completion output. */
-  readonly logger: MonorepositoryLogger;
+  readonly logger: TerminalPresenter;
   /** Cancellation signal threaded into every request, delay, and child process. */
   readonly signal: AbortSignal;
 }
@@ -117,7 +117,7 @@ export abstract class TaxonomyClassificationGenerator {
   protected readonly runtime: ArtifactGeneratorRuntime;
 
   /** Logger used for lifecycle, diagnostic, failure, and completion output. */
-  protected readonly logger: MonorepositoryLogger;
+  protected readonly logger: TerminalPresenter;
 
   /** Runtime directories that receive mirrored taxonomy artifacts. */
   protected readonly outputRoots: readonly string[];
@@ -1457,7 +1457,7 @@ export abstract class LicenseGenerator {
   protected readonly runtime: ArtifactGeneratorRuntime;
 
   /** Logger used for lifecycle, warning, failure, and completion output. */
-  protected readonly logger: MonorepositoryLogger;
+  protected readonly logger: TerminalPresenter;
 
   /**
    * Creates a license generator.
@@ -1926,7 +1926,7 @@ class SystemArchiveExtractor {
     request: Readonly<ProcessRequest>,
     outcome: Readonly<Exclude<ProcessOutcome, SucceededProcessOutcome>>,
     platform: NodeJS.Platform,
-    logger: MonorepositoryLogger,
+    logger: TerminalPresenter,
   ): never {
     if (outcome.kind === "spawn-failed" && outcome.message.includes("ENOENT")) {
       throw new Error(`Required archive extractor '${request.command}' was not found on '${platform}'.`, {
@@ -1956,7 +1956,7 @@ async function generateArtifacts(
   input: Readonly<GenerateArtifactsInput>,
 ): Promise<ArtifactGenerationResult> {
   const {runtime} = context;
-  const {logger, tasks, signal} = runtime;
+  const {presenter: logger, tasks, signal} = runtime;
   const generatorRuntime: ArtifactGeneratorRuntime = {
     files: runtime.files,
     http: runtime.http,
@@ -1964,7 +1964,7 @@ async function generateArtifacts(
     clock: runtime.clock,
     tasks: runtime.tasks,
     environment: runtime.environment,
-    logger: runtime.logger,
+    logger: runtime.presenter,
     signal: runtime.signal,
   };
 

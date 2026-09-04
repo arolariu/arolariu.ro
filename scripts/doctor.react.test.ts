@@ -16,7 +16,8 @@ import {dirname, resolve} from "node:path";
 import {fileURLToPath} from "node:url";
 import {afterEach, describe, expect, it, vi, type Mock} from "vitest";
 
-import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "./common/logger.ts";
+import {ComposedTerminalPresenter} from "./core/presentation/composed-terminal-presenter.ts";
+import {RecordingTerminalPresenterSink} from "./testing/fixtures/terminal.fixture.ts";
 import {createRepositoryPaths} from "./common/repository-paths.ts";
 import type {RepositoryRequirements} from "./common/requirements.ts";
 import {asReadOnlyFileSystem, type Clock, type RuntimeEnvironment} from "./common/runtime.ts";
@@ -163,7 +164,7 @@ function createReactFixture(
     throw new Error("doctor.react.ts must never call context.probes.");
   });
 
-  const sink = new InMemoryLoggerSink();
+  const sink = new RecordingTerminalPresenterSink();
   const context: DoctorContext = {
     options: doctorOptions(input.options),
     paths: createRepositoryPaths(fixtureRoot),
@@ -174,7 +175,7 @@ function createReactFixture(
     network: {
       get: vi.fn(async (): Promise<DiagnosticNetworkResult> => ({status: "reachable", statusCode: 200, durationMs: 1})),
     },
-    logger: new MonorepositoryConsoleLogger("doctor::react", {color: false, sink}),
+    logger: new ComposedTerminalPresenter("doctor::react", {color: false, sink}),
     files: asReadOnlyFileSystem(createMemoryFileSystem()),
     clock: fixtureClock(),
     environment: fixtureEnvironment(),

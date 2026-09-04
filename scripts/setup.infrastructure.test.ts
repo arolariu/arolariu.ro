@@ -22,7 +22,8 @@ import {dirname, resolve} from "node:path";
 import {describe, expect, it, vi} from "vitest";
 
 import type {CommandExecutionContext} from "./core/command/command-execution.ts";
-import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "./common/logger.ts";
+import {ComposedTerminalPresenter} from "./core/presentation/composed-terminal-presenter.ts";
+import {RecordingTerminalPresenterSink} from "./testing/fixtures/terminal.fixture.ts";
 import {createRepositoryPaths} from "./common/repository-paths.ts";
 import type {RepositoryRequirements} from "./common/requirements.ts";
 import {AbstractProcessRunner, type ProcessOutcome, type ProcessRequest, type ProcessRunOptions} from "./common/runner.ts";
@@ -380,9 +381,9 @@ async function createHarness(input: HarnessInput = {}): Promise<Harness> {
       secret: async () => "",
     },
     actions: input.actions ?? builtActions,
-    logger: new MonorepositoryConsoleLogger("setup::infrastructure", {
+    logger: new ComposedTerminalPresenter("setup::infrastructure", {
       color: false,
-      sink: new InMemoryLoggerSink(),
+      sink: new RecordingTerminalPresenterSink(),
     }),
   };
 

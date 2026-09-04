@@ -15,7 +15,7 @@
 
 import {Command, CommanderError} from "commander";
 
-import type {MonorepositoryLogger} from "../../common/logger.ts";
+import type {TerminalPresenter} from "../presentation/terminal-presenter.ts";
 import {CommandCancellation, commandCancellationFromSignal, type CleanupFailure, type CommandRuntime} from "../../common/runtime.ts";
 import {
   CommandConfigurationError,
@@ -220,7 +220,7 @@ export abstract class AbstractMonorepoCommand<TInput, TOutput, TFailure> impleme
     return this.#hostPromise;
   }
 
-  #createInvocationProgram(parsePresenter: MonorepositoryLogger): Command {
+  #createInvocationProgram(parsePresenter: TerminalPresenter): Command {
     const {name, description, usage, examples} = this.#specification;
     const program = new Command()
       .name(name)
@@ -240,7 +240,7 @@ export abstract class AbstractMonorepoCommand<TInput, TOutput, TFailure> impleme
     return program;
   }
 
-  #reportToParsePresenter(parsePresenter: MonorepositoryLogger, failure: NormalizedFailure): NormalizedFailure {
+  #reportToParsePresenter(parsePresenter: TerminalPresenter, failure: NormalizedFailure): NormalizedFailure {
     parsePresenter.fatal(formatCommandFailureDiagnostic(failure.failure));
     return failure;
   }
@@ -323,7 +323,7 @@ export abstract class AbstractMonorepoCommand<TInput, TOutput, TFailure> impleme
 
     try {
       if (presentation !== "json") {
-        await completion.human?.(runtime.logger);
+        await completion.human?.(runtime.presenter);
         return undefined;
       }
       const {json} = completion;
@@ -331,7 +331,7 @@ export abstract class AbstractMonorepoCommand<TInput, TOutput, TFailure> impleme
         const name = this.#specification.name;
         return failedWith("internal", 1, `Command "${name}" selected JSON presentation without a JSON document.`);
       }
-      runtime.logger.json(json);
+      runtime.presenter.json(json);
       return undefined;
     } catch (error: unknown) {
       return normalizeThrownFailure(error, runtime.signal);
@@ -340,7 +340,7 @@ export abstract class AbstractMonorepoCommand<TInput, TOutput, TFailure> impleme
 
   #reportFailure(context: Readonly<CommandExecutionContext>, failure: NormalizedFailure): NormalizedFailure {
     if (context.presentation !== "silent") {
-      context.runtime.logger.fatal(formatCommandFailureDiagnostic(failure.failure));
+      context.runtime.presenter.fatal(formatCommandFailureDiagnostic(failure.failure));
     }
     return failure;
   }

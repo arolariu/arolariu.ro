@@ -21,7 +21,7 @@ import type {AppConfigurationEnvironmentKey, GeneratedEnvironmentConfiguration, 
 import type {CommandExecutionContext} from "./core/command/command-execution.ts";
 import {defineCommand, type LazyMonorepoCommand} from "./core/command/lazy-monorepo-command.ts";
 import type {CommandConstructionOptions, CommandHost} from "./core/command/command-specification.ts";
-import type {MonorepositoryLogger} from "./common/logger.ts";
+import type {TerminalPresenter} from "./core/presentation/terminal-presenter.ts";
 
 /** Typed input accepted by every migrated `generate` leaf command. */
 export interface GenerateLeafInput {
@@ -140,7 +140,7 @@ async function fetchConfigurationFromExp(
   context: Readonly<CommandExecutionContext>,
   verbose: boolean,
 ): Promise<GeneratedEnvironmentConfiguration> {
-  const {logger, environment, http, signal} = context.runtime;
+  const {presenter: logger, environment, http, signal} = context.runtime;
   const expBaseUrl =
     environment.variables["EXP_PROXY_URL"]?.trim() || (environment.variables["AZURE_CLIENT_ID"] ? AZURE_EXP_URL : "http://exp");
   const useAzureAuth = expBaseUrl === AZURE_EXP_URL;
@@ -235,7 +235,7 @@ async function fetchConfigurationFromLocalEnvFile(
   envPath: string,
   verbose: boolean,
 ): Promise<GeneratedEnvironmentConfiguration> {
-  const {logger, files, environment} = context.runtime;
+  const {presenter: logger, files, environment} = context.runtime;
   const config: GeneratedEnvironmentConfiguration = {};
 
   if (!(await files.exists(envPath))) {
@@ -286,7 +286,7 @@ async function promptForMissingKeys(
   missingKeys: readonly AppConfigurationEnvironmentKey[],
   verbose: boolean,
 ): Promise<GeneratedEnvironmentConfiguration> {
-  const {logger, prompts} = context.runtime;
+  const {presenter: logger, prompts} = context.runtime;
   logger.section("Prompting for missing environment variables", "🔍");
 
   if (missingKeys.length === 0) {
@@ -340,7 +340,7 @@ async function ensureLocalEnvIsComplete(
   context: Readonly<CommandExecutionContext>,
   verbose: boolean,
 ): Promise<GeneratedEnvironmentConfiguration> {
-  const {logger, prompts} = context.runtime;
+  const {presenter: logger, prompts} = context.runtime;
   logger.section("Ensuring local environment configuration is complete", "🔧");
   const configurationKeys = Object.values(APP_CONFIGURATION_MAPPING);
 
@@ -440,7 +440,7 @@ function addConfigSection(
   emoji: string,
   keys: readonly string[],
   config: GeneratedEnvironmentConfiguration,
-  logger: MonorepositoryLogger,
+  logger: TerminalPresenter,
 ): void {
   logger.info(`${emoji} Adding ${sectionName} Configuration.`);
   lines.push("", `# ${sectionName} Configuration Start`);
@@ -463,7 +463,7 @@ function addConfigSection(
  * @returns A newline-separated `.env` payload.
  */
 function generateEnvFileContent(context: Readonly<CommandExecutionContext>, config: GeneratedEnvironmentConfiguration): string {
-  const {logger, environment, clock} = context.runtime;
+  const {presenter: logger, environment, clock} = context.runtime;
   logger.section("Generating .env file content", "📝");
 
   const timestamp = clock.isoTimestamp();
@@ -521,7 +521,7 @@ async function copyEnvFileToSubRepos(
   targetPaths: readonly string[],
   verbose: boolean,
 ): Promise<readonly string[]> {
-  const {logger, files, environment} = context.runtime;
+  const {presenter: logger, files, environment} = context.runtime;
   logger.section("Copying .env file to sub-repositories", "📂");
   const copiedFiles: string[] = [];
 
@@ -582,11 +582,11 @@ async function generateEnvironment(
     ...context,
     runtime: {
       ...context.runtime,
-      logger: context.runtime.logger.fork(COMMAND_NAME, {mode: context.presentation, verbose: effectiveVerbose}),
+      presenter: context.runtime.presenter.fork(COMMAND_NAME, {mode: context.presentation, verbose: effectiveVerbose}),
     },
   };
   const {runtime} = scopedContext;
-  const {logger} = runtime;
+  const {presenter: logger} = runtime;
   const isAzure = environment.variables["INFRA"] === "azure";
   const isProduction = environment.variables["PRODUCTION"] === "true";
 

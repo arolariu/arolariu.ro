@@ -5,7 +5,8 @@
  */
 
 import {describe, expect, it} from "vitest";
-import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "../common/logger.ts";
+import {ComposedTerminalPresenter} from "../core/presentation/composed-terminal-presenter.ts";
+import {RecordingTerminalPresenterSink} from "../testing/fixtures/terminal.fixture.ts";
 import {RunnerError, type ProcessOutcome} from "../common/runner.ts";
 import {createProcessRunner, createRepositoryFixtureFileSystem, repositoryFixtureRoot} from "../common/runtime.testing.ts";
 import type {Clock, RuntimeEnvironment} from "../common/runtime.ts";
@@ -64,20 +65,20 @@ function environmentWith(variables: Readonly<Record<string, string | undefined>>
 function createFailingSqlHarness(): Readonly<{
   command: ReturnType<typeof createSelfhostCommand>;
   runner: ReturnType<typeof createProcessRunner>;
-  sink: InMemoryLoggerSink;
+  sink: RecordingTerminalPresenterSink;
   host: CommandHost & Readonly<{assignedExitCodes: readonly number[]}>;
 }> {
   const runner = createProcessRunner([
     ...Array.from({length: podmanPreflightProbeCount + 2}, () => succeeded()),
     {kind: "exited", exitCode: 1, stdout: "", stderr: `sqlcmd failed with ${sqlPassword}`, durationMs: 0},
   ]);
-  const sink = new InMemoryLoggerSink();
-  const logger = new MonorepositoryConsoleLogger("test", {color: false, sink});
+  const sink = new RecordingTerminalPresenterSink();
+  const logger = new ComposedTerminalPresenter("test", {color: false, sink});
   const host = buildCommandHost({
     argv: ["start", "--engine", "podman"],
     runtime: {
       runner,
-      logger,
+      presenter: logger,
       clock: immediateClock,
       files: createRepositoryFixtureFileSystem({[certFixturePath]: "local-cert", [keyFixturePath]: "local-key"}),
       environment: environmentWith({MSSQL_SA_PASSWORD: sqlPassword}),

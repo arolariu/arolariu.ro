@@ -52,7 +52,7 @@ const runtimeBoundaryExclusions = new Set([
   "scripts/types/lint.ts",
 ]);
 
-const directOutputAdapters = new Set(["scripts/common/logger.ts", "scripts/common/prompts.ts"]);
+const directOutputAdapters = new Set(["scripts/adapters/node/node-terminal-sink.ts", "scripts/common/prompts.ts"]);
 
 /**
  * Every production module the process may be started with directly.
@@ -116,6 +116,16 @@ const doctorForbiddenImportNames: ReadonlyMap<string, ReadonlySet<string>> = new
  * prohibited everywhere, including here.
  */
 const runtimeNodeAdapter = "scripts/common/runtime.node.ts";
+
+/**
+ * Approved Node terminal adapter. It owns the terminal, `NO_COLOR`, and progress-interval policy
+ * the presentation core is forbidden to read, so it holds the same narrow ambient timer and
+ * environment exemption the runtime Node adapter already has, and nothing wider.
+ */
+const nodeTerminalAdapter = "scripts/adapters/node/node-terminal-sink.ts";
+
+/** Every adapter allowed to read ambient terminal-policy state directly. */
+const ambientTerminalPolicyAdapters: ReadonlySet<string> = new Set([runtimeNodeAdapter, nodeTerminalAdapter]);
 const execaAdapter = "scripts/common/runner.execa.ts";
 const assignmentOperators = new Set<ts.SyntaxKind>([
   ts.SyntaxKind.EqualsToken,
@@ -524,7 +534,7 @@ function scanRuntimeBoundarySource(file: string, sourceText: string): readonly R
           add(node, "ambient-http");
         }
 
-        if (isAmbientTimerCallPath(path) && normalizedFile !== runtimeNodeAdapter) {
+        if (isAmbientTimerCallPath(path) && !ambientTerminalPolicyAdapters.has(normalizedFile)) {
           add(node, "ambient-timer");
         }
 
@@ -544,12 +554,12 @@ function scanRuntimeBoundarySource(file: string, sourceText: string): readonly R
 
     if ((ts.isPropertyAccessExpression(node) || ts.isElementAccessExpression(node)) && isOutermostAccessPathExpression(node)) {
       const path = getAccessPath(node, scopes);
-      if (path !== null && normalizedFile !== runtimeNodeAdapter) {
-        if (isAmbientEnvironmentPath(path)) {
+      if (path !== null) {
+        if (isAmbientEnvironmentPath(path) && !ambientTerminalPolicyAdapters.has(normalizedFile)) {
           add(node, "ambient-environment");
         }
 
-        if (isAmbientOsStatePath(path)) {
+        if (isAmbientOsStatePath(path) && normalizedFile !== runtimeNodeAdapter) {
           add(node, "ambient-os-state");
         }
       }

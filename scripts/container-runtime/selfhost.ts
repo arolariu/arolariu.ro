@@ -183,7 +183,7 @@ async function runSelfhostCommand(runtime: CommandRuntime, command: Readonly<Run
       cwd: selfhostWorkingDirectory,
       output: "tee",
       logCommands: true,
-      logger: runtime.logger,
+      logger: runtime.presenter,
       signal: runtime.signal,
       ...(env === undefined ? {} : {env}),
     });
@@ -215,7 +215,7 @@ async function ensureHttpsCertificates(runtime: CommandRuntime): Promise<void> {
 
   const mkcert = await runtime.runner.run({command: "mkcert", args: ["--version"]}, {signal: runtime.signal});
   if (mkcert.kind !== "succeeded") {
-    runtime.logger.warn(
+    runtime.presenter.warn(
       "mkcert is not available; Traefik HTTPS will use its default self-signed certificate. Install mkcert and rerun selfhost to generate trusted localhost certificates.",
     );
     return;
@@ -240,7 +240,7 @@ async function prepareSelfhostStart(runtime: CommandRuntime): Promise<string> {
   // Registering the redaction before anything else guarantees that every later command echo, tee
   // line, and retained runner diagnostic containing the password is already sanitized.
   const sqlPassword = getRequiredSqlPassword(runtime.environment.variables);
-  runtime.logger.redact(sqlPassword);
+  runtime.presenter.redact(sqlPassword);
 
   await ensureHttpsCertificates(runtime);
   await writeSelfhostTraefikConfig(runtime.files, buildSelfhostTraefikConfig());
@@ -373,7 +373,7 @@ async function executeSelfhost(
 
   await runContainerPreflight(adapter, {
     runner: runtime.runner,
-    logger: runtime.logger.child("preflight"),
+    logger: runtime.presenter.child("preflight"),
     environment: runtime.environment,
     signal: runtime.signal,
   });

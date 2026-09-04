@@ -5,23 +5,16 @@
  * @remarks
  * `buildCommandHost` is the sole seam a command lifecycle test uses to inject a command host: it
  * records every exit code the lifecycle assigns, defaults `isDirectEntry` to `true`, and builds an
- * in-memory parse presenter that reuses the overridden runtime logger when one is supplied, so a
+ * in-memory parse presenter that reuses the overridden runtime presenter when one is supplied, so a
  * test observes parse-time and runtime output through the same sink. `loadRuntimeFactory` resolves
  * `scripts/common/runtime.testing.ts`'s deterministic factory as a temporary edge; **Task 3**
  * retargets it to the new runtime builders and fixtures.
  */
 
-import {InMemoryLoggerSink, MonorepositoryConsoleLogger, type LoggerRuntimeHost} from "../../common/logger.ts";
 import type {CommandRuntime} from "../../common/runtime.ts";
 import {createTestRuntimeFactory} from "../../common/runtime.testing.ts";
 import type {CommandHost, CommandProcessHost} from "../../core/command/command-specification.ts";
-
-/** Logger host whose progress interval never fires, so no test depends on wall-clock timing. */
-const testParsePresenterRuntimeHost: LoggerRuntimeHost = {
-  stdoutIsTTY: false,
-  noColor: true,
-  scheduleInterval: () => ({cancel: (): void => undefined, unref: (): void => undefined}),
-};
+import {buildRecordingPresenter} from "../fixtures/terminal.fixture.ts";
 
 /**
  * Builds a fully hermetic command host for a command lifecycle test.
@@ -48,14 +41,7 @@ export function buildCommandHost(
 
   return {
     ...processHost,
-    createParsePresenter: () =>
-      overrides.runtime?.logger
-      ?? new MonorepositoryConsoleLogger("test", {
-        verbose: false,
-        color: false,
-        sink: new InMemoryLoggerSink(),
-        runtimeHost: testParsePresenterRuntimeHost,
-      }),
+    createParsePresenter: () => overrides.runtime?.presenter ?? buildRecordingPresenter().presenter,
     loadRuntimeFactory: async () => createTestRuntimeFactory(overrides.runtime ?? {}),
     get assignedExitCodes(): readonly number[] {
       return assignedExitCodes;

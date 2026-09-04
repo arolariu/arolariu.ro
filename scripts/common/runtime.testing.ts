@@ -16,12 +16,8 @@ import {fileURLToPath} from "node:url";
 
 import type {CommandExecutionContext} from "../core/command/command-execution.ts";
 import type {CommandRuntimeFactory, RuntimeCreationOptions} from "../core/command/command-specification.ts";
-import {
-  InMemoryLoggerSink,
-  MonorepositoryConsoleLogger,
-  type LoggerRuntimeHost,
-  type MonorepositoryLogger,
-} from "./logger.ts";
+import type {TerminalPresenter} from "../core/presentation/terminal-presenter.ts";
+import {buildRecordingPresenter} from "../testing/fixtures/terminal.fixture.ts";
 import type {PromptProvider} from "./prompts.ts";
 import {
   AbstractProcessRunner,
@@ -578,13 +574,6 @@ const testRuntimeEnvironment: RuntimeEnvironment = {
   isCI: true,
 };
 
-/** Logger host whose progress interval never fires, so no test depends on wall-clock timing. */
-const testLoggerRuntimeHost: LoggerRuntimeHost = {
-  stdoutIsTTY: false,
-  noColor: true,
-  scheduleInterval: () => ({cancel: (): void => undefined, unref: (): void => undefined}),
-};
-
 const testClock: Clock = {
   monotonicNow: (): number => 0,
   isoTimestamp: (): string => "2025-01-01T00:00:00.000Z",
@@ -614,7 +603,7 @@ const testHttpClient: HttpClient = {
  * Every scope receives fresh cancellation and cleanup state. A root scope links only the caller
  * signal; a child scope links both the parent and caller signals, shares the parent's
  * environment, inspection registry, filesystem, HTTP client, and prompts, and forks the parent
- * logger so redactions stay shared while presentation state stays independent. `overrides` are
+ * presenter so redactions stay shared while presentation state stays independent. `overrides` are
  * applied last, so a test can replace any single capability without rebuilding the rest.
  *
  * @param overrides - Capabilities that replace the defaults on every created scope.
@@ -636,19 +625,13 @@ export function createTestRuntimeFactory(overrides: Readonly<Partial<CommandRunt
       link.dispose();
     });
 
-    const logger: MonorepositoryLogger =
+    const presenter: TerminalPresenter =
       parent === undefined
-        ? new MonorepositoryConsoleLogger("test", {
-            mode: options.presentation,
-            verbose: false,
-            color: false,
-            sink: new InMemoryLoggerSink(),
-            runtimeHost: testLoggerRuntimeHost,
-          })
-        : parent.runtime.logger.fork("test", {mode: options.presentation, verbose: false});
+        ? buildRecordingPresenter({mode: options.presentation, verbose: false}).presenter
+        : parent.runtime.presenter.fork("test", {mode: options.presentation, verbose: false});
 
     return {
-      logger,
+      presenter,
       prompts: parent?.runtime.prompts ?? testPromptProvider,
       runner: createProcessRunner(),
       http: parent?.runtime.http ?? testHttpClient,

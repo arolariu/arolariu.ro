@@ -21,7 +21,8 @@ import {afterEach, describe, expect, it, vi, type Mock} from "vitest";
 import type {CommandExecution, CommandInvoker} from "./core/command/command-execution.ts";
 import {defineCommand} from "./core/command/lazy-monorepo-command.ts";
 import {buildCommandHost} from "./testing/builders/command-host.builder.ts";
-import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "./common/logger.ts";
+import {ComposedTerminalPresenter} from "./core/presentation/composed-terminal-presenter.ts";
+import {RecordingTerminalPresenterSink} from "./testing/fixtures/terminal.fixture.ts";
 import {createRepositoryPaths} from "./common/repository-paths.ts";
 import {AbstractProcessRunner, type ProcessOutcome, type ProcessRequest, type ProcessRunOptions} from "./common/runner.ts";
 import {createNodeProcessRunner, snapshotNodeEnvironment} from "./common/runtime.node.ts";
@@ -347,7 +348,7 @@ interface StatusFixtureOptions {
 
 interface StatusFixture {
   readonly command: ReturnType<typeof createStatusCommand>;
-  readonly sink: InMemoryLoggerSink;
+  readonly sink: RecordingTerminalPresenterSink;
   readonly runner: ScriptedProcessRunner;
   readonly doctor: DoctorStub;
   readonly inspection: RepositoryInspectionRuntime;
@@ -363,8 +364,8 @@ interface StatusFixture {
  * @returns The command plus every recorded seam.
  */
 function createStatusFixture(options: Readonly<StatusFixtureOptions> = {}): StatusFixture {
-  const sink = new InMemoryLoggerSink();
-  const logger = new MonorepositoryConsoleLogger("status", {
+  const sink = new RecordingTerminalPresenterSink();
+  const logger = new ComposedTerminalPresenter("status", {
     color: false,
     sink,
     verbose: false,
@@ -382,7 +383,7 @@ function createStatusFixture(options: Readonly<StatusFixtureOptions> = {}): Stat
         runtime: {
           files: createRepositoryFixtureFileSystem(options.files ?? {}),
           inspection,
-          logger,
+          presenter: logger,
           runner,
         },
       }),
@@ -392,7 +393,7 @@ function createStatusFixture(options: Readonly<StatusFixtureOptions> = {}): Stat
   return {command, sink, runner, doctor, inspection, createSession};
 }
 
-function jsonDocument(sink: InMemoryLoggerSink): Record<string, unknown> {
+function jsonDocument(sink: RecordingTerminalPresenterSink): Record<string, unknown> {
   const stdout = sink.records.filter((record) => record.stream === "stdout");
   expect(stdout).toHaveLength(1);
   const [record] = stdout;
@@ -400,7 +401,7 @@ function jsonDocument(sink: InMemoryLoggerSink): Record<string, unknown> {
   return JSON.parse(record?.text ?? "") as Record<string, unknown>;
 }
 
-function renderedText(sink: InMemoryLoggerSink): string {
+function renderedText(sink: RecordingTerminalPresenterSink): string {
   return sink.records.map((record) => record.text).join("\n");
 }
 
@@ -617,12 +618,12 @@ describe("status command — composed child cancellation", () => {
   it("returns the exact signal cancellation only after the composed doctor child drained its own cleanup", async () => {
     const events: string[] = [];
     const controller = new AbortController();
-    const sink = new InMemoryLoggerSink();
+    const sink = new RecordingTerminalPresenterSink();
     const host = buildCommandHost({
       runtime: {
         files: createRepositoryFixtureFileSystem(),
         inspection: createRepositoryInspectionRuntime(() => createFixtureSession(availableWorkspace())),
-        logger: new MonorepositoryConsoleLogger("status", {color: false, sink, verbose: false, mode: "human"}),
+        presenter: new ComposedTerminalPresenter("status", {color: false, sink, verbose: false, mode: "human"}),
         runner: new ScriptedProcessRunner(baseResponses()),
       },
     });

@@ -14,7 +14,8 @@ import {resolve} from "node:path";
 import {afterEach, describe, expect, it, vi} from "vitest";
 
 import type {CommandExecutionContext} from "./core/command/command-execution.ts";
-import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "./common/logger.ts";
+import {ComposedTerminalPresenter} from "./core/presentation/composed-terminal-presenter.ts";
+import {RecordingTerminalPresenterSink} from "./testing/fixtures/terminal.fixture.ts";
 import {createRepositoryPaths} from "./common/repository-paths.ts";
 import type {PackageRequirement, RepositoryRequirements} from "./common/requirements.ts";
 import {AbstractProcessRunner, type ProcessOutcome, type ProcessRequest, type ProcessRunOptions} from "./common/runner.ts";
@@ -323,7 +324,7 @@ interface SvelteHarness {
   /** Complete action records in evaluation order. */
   readonly actionRecords: SetupAction[];
   /** Rendered logger output. */
-  readonly sink: InMemoryLoggerSink;
+  readonly sink: RecordingTerminalPresenterSink;
   /** Inspection session probe. */
   readonly inspect: ReturnType<typeof vi.fn>;
   /** Inspection invalidation probe. */
@@ -346,8 +347,8 @@ async function createHarness(
 ): Promise<SvelteHarness> {
   const runner = new FakeProcessRunner(input.responses);
   const createdActions = createActions(input.dispositions);
-  const sink = new InMemoryLoggerSink();
-  const logger = new MonorepositoryConsoleLogger("setup::svelte", {color: false, sink});
+  const sink = new RecordingTerminalPresenterSink();
+  const logger = new ComposedTerminalPresenter("setup::svelte", {color: false, sink});
   const inspection = createInspectionHarness({
     ...(input.packages === undefined ? {} : {packages: input.packages}),
     ...(input.cv === undefined ? {} : {cv: input.cv}),

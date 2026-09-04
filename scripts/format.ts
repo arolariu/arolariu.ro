@@ -14,8 +14,9 @@ import {fileURLToPath} from "node:url";
 import {styleText} from "node:util";
 import Piscina from "piscina";
 import {createProgressTracker, formatBytes, formatTimestamp, logWorkerComplete, printWorkerTimeline} from "./common/index.ts";
-import {MonorepositoryConsoleLogger, type MonorepositoryLogger} from "./common/logger.ts";
-import {nodeLoggerRuntimeHost} from "./common/runtime.node.ts";
+import {ComposedTerminalPresenter} from "./core/presentation/composed-terminal-presenter.ts";
+import type {TerminalPresenter} from "./core/presentation/terminal-presenter.ts";
+import {NodeTerminalPresenterSink, nodeTerminalPresenterRuntimeHost} from "./adapters/node/node-terminal-sink.ts";
 import type {FormatTarget, FormatWorkerInput, FormatWorkerResult} from "./types/format.ts";
 
 /** All available format targets in consistent order */
@@ -136,7 +137,7 @@ function formatDuration(ms: number): string {
  * @param logger - Logger used for presentation output.
  * @returns Nothing.
  */
-function printWorkerResult(result: FormatWorkerResult, index: number | undefined, logger: MonorepositoryLogger): void {
+function printWorkerResult(result: FormatWorkerResult, index: number | undefined, logger: TerminalPresenter): void {
   const config = targetConfig[result.target];
   const cardWidth = 58;
   const innerWidth = cardWidth - 2; // Account for border characters
@@ -219,7 +220,7 @@ function printWorkerResult(result: FormatWorkerResult, index: number | undefined
  *
  * @param logger - Logger used for presentation output.
  */
-function printTargetOverview(logger: MonorepositoryLogger): void {
+function printTargetOverview(logger: TerminalPresenter): void {
   logger.line();
   logger.line(styleText("bold", "  📋 Targets to format:"));
   logger.line();
@@ -237,7 +238,7 @@ function printTargetOverview(logger: MonorepositoryLogger): void {
  * @param logger - Logger used for presentation output.
  * @returns Nothing.
  */
-function printSummaryBox(results: FormatWorkerResult[], logger: MonorepositoryLogger): void {
+function printSummaryBox(results: FormatWorkerResult[], logger: TerminalPresenter): void {
   const alreadyFormatted = results.filter((r) => r.checkPassed).length;
   const formatted = results.filter((r) => r.formatted).length;
   const failed = results.filter((r) => r.exitCode !== 0).length;
@@ -321,7 +322,7 @@ function printSummaryBox(results: FormatWorkerResult[], logger: MonorepositoryLo
  * @param logger - Logger used for formatting lifecycle output.
  * @returns Exit code (0 for success, non-zero for failure).
  */
-async function runOnAllTargets(filePatterns: readonly string[] | undefined, logger: MonorepositoryLogger): Promise<number> {
+async function runOnAllTargets(filePatterns: readonly string[] | undefined, logger: TerminalPresenter): Promise<number> {
   // Show what we're about to do
   printTargetOverview(logger.child("overview"));
 
@@ -479,7 +480,7 @@ async function runOnAllTargets(filePatterns: readonly string[] | undefined, logg
 async function runOnSingleTarget(
   target: FormatTarget,
   filePatterns: readonly string[] | undefined,
-  logger: MonorepositoryLogger,
+  logger: TerminalPresenter,
 ): Promise<number> {
   const config = targetConfig[target];
 
@@ -532,7 +533,7 @@ async function runOnSingleTarget(
  *
  * @param logger - Logger used for presentation output.
  */
-function printHeader(logger: MonorepositoryLogger): void {
+function printHeader(logger: TerminalPresenter): void {
   const gradient = [(s: string) => styleText("magenta", s), (s: string) => styleText("blue", s), (s: string) => styleText("cyan", s)];
 
   logger.line();
@@ -548,7 +549,7 @@ function printHeader(logger: MonorepositoryLogger): void {
  *
  * @param logger - Logger used for presentation output.
  */
-function printHelp(logger: MonorepositoryLogger): void {
+function printHelp(logger: TerminalPresenter): void {
   logger.line(styleText("bold", "  📖 Usage:") + styleText("cyan", " format <target> [glob patterns...]"));
   logger.line();
   logger.line(styleText("bold", "  Available targets:"));
@@ -584,8 +585,9 @@ function printHelp(logger: MonorepositoryLogger): void {
  * @param logger - Optional logger used for all formatter output.
  * @returns Process exit code (0 for success, non-zero for failure).
  */
-export async function main(arg?: string, filePatterns?: readonly string[], logger?: MonorepositoryLogger): Promise<number> {
-  const output = logger ?? new MonorepositoryConsoleLogger("format", {runtimeHost: nodeLoggerRuntimeHost});
+export async function main(arg?: string, filePatterns?: readonly string[], logger?: TerminalPresenter): Promise<number> {
+  const output =
+    logger ?? new ComposedTerminalPresenter("format", {sink: new NodeTerminalPresenterSink(), runtimeHost: nodeTerminalPresenterRuntimeHost});
   printHeader(output);
 
   if (!arg) {
@@ -665,7 +667,10 @@ export async function main(arg?: string, filePatterns?: readonly string[], logge
 }
 
 if (import.meta.main) {
-  const output = new MonorepositoryConsoleLogger("format", {runtimeHost: nodeLoggerRuntimeHost});
+  const output = new ComposedTerminalPresenter("format", {
+    sink: new NodeTerminalPresenterSink(),
+    runtimeHost: nodeTerminalPresenterRuntimeHost,
+  });
   const arg = process.argv[2];
   // Collect additional arguments as file patterns for selective targeting
   const filePatterns = process.argv.slice(3).filter((p) => p.length > 0);
