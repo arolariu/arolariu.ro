@@ -129,7 +129,7 @@ type FixtureInput = Readonly<{token: string}>;
 
 function defineInspectionFixtureCommand<TOutput>(
   name: string,
-  inspection: RepositoryInspectionRuntime,
+  inspection: RepositoryInspectionRuntime | undefined,
   execute: (context: Readonly<CommandExecutionContext<InspectionRuntimeExecutionContext>>, input: FixtureInput) => Promise<TOutput>,
 ): LazyMonorepoCommand<FixtureInput, TOutput, never> {
   return defineCommand<FixtureInput, TOutput, InspectionRuntimeExecutionContext>(
@@ -156,7 +156,7 @@ describe("composed inspection capability through the command lifecycle", () => {
         session: context.runtime.inspection.getRepositorySession(quickRequest()),
       });
     };
-    const child = defineInspectionFixtureCommand("child", inspection, async (context) => {
+    const child = defineInspectionFixtureCommand("child", undefined, async (context) => {
       record(context);
       return "child-done";
     });
