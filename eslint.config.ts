@@ -841,7 +841,7 @@ const statusEslintConfig: Config = defineConfig({
 const toolingOutputConfig: Config = defineConfig({
   name: "[@arolariu/tooling-output]",
   files: ["scripts/**/*.{ts,js,mjs,cjs}"],
-  ignores: ["scripts/**/*.test.ts", "scripts/common/logger.ts"],
+  ignores: ["scripts/**/*.test.ts", "scripts/adapters/node/node-terminal-sink.ts", "scripts/testing/architecture/report-*.ts"],
   languageOptions: {
     parser: tseslint.parser,
     ecmaVersion: "latest",
@@ -855,7 +855,7 @@ const toolingOutputConfig: Config = defineConfig({
       {
         selector:
           "CallExpression[callee.type='MemberExpression'][callee.property.name='write'][callee.object.type='MemberExpression'][callee.object.object.name='process'][callee.object.property.name=/^(stdout|stderr)$/]",
-        message: "Route script-authored process stream output through MonorepositoryConsoleLogger.",
+        message: "Route script-authored process stream output through ComposedTerminalPresenter.",
       },
     ],
   },
@@ -864,7 +864,12 @@ const toolingOutputConfig: Config = defineConfig({
 const toolingPromptOutputConfig: Config = defineConfig({
   name: "[@arolariu/tooling-prompt-output]",
   files: ["scripts/**/*.{ts,js,mjs,cjs}"],
-  ignores: ["scripts/**/*.test.ts", "scripts/common/logger.ts", "scripts/common/prompts.ts"],
+  ignores: [
+    "scripts/**/*.test.ts",
+    "scripts/adapters/node/node-terminal-sink.ts",
+    "scripts/adapters/node/node-prompt-provider.ts",
+    "scripts/testing/architecture/report-*.ts",
+  ],
   languageOptions: {
     parser: tseslint.parser,
     ecmaVersion: "latest",
@@ -877,14 +882,25 @@ const toolingPromptOutputConfig: Config = defineConfig({
       {
         selector:
           "CallExpression[callee.type='MemberExpression'][callee.property.name='write'][callee.object.type='MemberExpression'][callee.object.object.name='process'][callee.object.property.name=/^(stdout|stderr)$/]",
-        message: "Route script-authored process stream output through MonorepositoryConsoleLogger.",
+        message: "Route script-authored process stream output through ComposedTerminalPresenter.",
       },
       {
         selector:
           "CallExpression[callee.type='MemberExpression'][callee.property.name='write'][callee.object.type='MemberExpression'][callee.object.property.name='output']",
-        message: "Interactive terminal output is owned exclusively by scripts/common/prompts.ts.",
+        message: "Interactive terminal output is owned exclusively by scripts/adapters/node/node-prompt-provider.ts.",
       },
     ],
+  },
+})[0] as Config;
+
+const toolingArchitectureReportConfig: Config = defineConfig({
+  name: "[@arolariu/tooling-architecture-report]",
+  files: ["scripts/testing/architecture/report-*.ts"],
+  languageOptions: {
+    parser: tseslint.parser,
+    ecmaVersion: "latest",
+    sourceType: "module",
+    globals: globals.node,
   },
 })[0] as Config;
 
@@ -902,6 +918,6 @@ for (const individualEslintConfig of projectEslintConfig) {
     : [...eslintPathsIgnoreList];
 }
 
-const eslintConfig = defineConfig(projectEslintConfig, toolingOutputConfig, toolingPromptOutputConfig);
+const eslintConfig = defineConfig(projectEslintConfig, toolingOutputConfig, toolingPromptOutputConfig, toolingArchitectureReportConfig);
 
 export default eslintConfig;

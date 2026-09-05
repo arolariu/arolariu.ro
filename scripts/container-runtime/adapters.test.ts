@@ -3,9 +3,9 @@
  * @module scripts/container-runtime/adapters.test
  *
  * @remarks
- * `RuntimeCommand` is now backed by the shared `ProcessRequest` contract (`../common/runner.ts`)
- * instead of the deprecated `CommandSpec` facade; every command literal below already satisfies
- * that `{command, args}` shape unchanged.
+ * `RuntimeCommand` is now backed by the shared `ProcessExecutionRequest` contract
+ * (`../core/process/process-execution-request.ts`) instead of the deprecated `CommandSpec` facade;
+ * every command literal below already satisfies that `{command, args}` shape unchanged.
  */
 
 import {describe, expect, it} from "vitest";

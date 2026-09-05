@@ -11,7 +11,7 @@
  * `updateInfrastructureEngine` calls.
  *
  * Every test drives the real phase against an injected {@link SetupPhaseRuntime}: a recording
- * process runner replaying typed {@link ProcessOutcome} fixtures, an in-memory filesystem seeded
+ * process runner replaying typed {@link ProcessExecutionResult} fixtures, an in-memory filesystem seeded
  * with the non-secret local tooling configuration, a deterministic clock, and an immutable
  * environment snapshot that supplies the host platform, environment variables, and interactive
  * terminal state. No test in this file reads the live checkout, spawns a real process, or mutates
@@ -21,13 +21,17 @@
 import {dirname, resolve} from "node:path";
 import {describe, expect, it, vi} from "vitest";
 
-import type {CommandContext} from "./common/commander.ts";
-import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "./common/logger.ts";
+import type {CommandExecutionContext} from "./core/command/command-execution.ts";
+import {ComposedTerminalPresenter} from "./core/presentation/composed-terminal-presenter.ts";
+import {RecordingTerminalPresenterSink} from "./testing/fixtures/terminal.fixture.ts";
 import {createRepositoryPaths} from "./common/repository-paths.ts";
 import type {RepositoryRequirements} from "./common/requirements.ts";
-import {AbstractProcessRunner, type ProcessOutcome, type ProcessRequest, type ProcessRunOptions} from "./common/runner.ts";
-import {createMemoryFileSystem, createTestRuntimeFactory} from "./common/runtime.testing.ts";
-import type {Clock, FileSystem, RuntimeEnvironment} from "./common/runtime.ts";
+import type {ProcessExecutionOptions, ProcessExecutionRequest} from "./core/process/process-execution-request.ts";
+import type {ProcessExecutionResult} from "./core/process/process-execution-result.ts";
+import {AbstractProcessRunner} from "./core/process/process-runner.ts";
+import type {Clock, FileSystem, RuntimeEnvironment} from "./core/runtime/runtime-capability.ts";
+import {buildRuntimeExecutionContext} from "./testing/builders/runtime-context.builder.ts";
+import {createMemoryFileSystem} from "./testing/fixtures/memory-filesystem.fixture.ts";
 import type {ToolingConfigV1} from "./common/tooling-config.ts";
 import {requiredLocalPorts} from "./container-runtime/preflight.ts";
 import type {ContainerEngine} from "./container-runtime/types.ts";
@@ -88,32 +92,32 @@ function unavailableInfra(reason = "Test unavailable."): InspectionOutcome<Infra
 // Process outcome fixtures and fake runner
 // ---------------------------------------------------------------------------
 
-function succeeded(patch: Readonly<{stdout?: string; stderr?: string}> = {}): ProcessOutcome {
+function succeeded(patch: Readonly<{stdout?: string; stderr?: string}> = {}): ProcessExecutionResult {
   return {kind: "succeeded", exitCode: 0, stdout: patch.stdout ?? "", stderr: patch.stderr ?? "", durationMs: 1};
 }
 
-function exited(exitCode: number, patch: Readonly<{stdout?: string; stderr?: string}> = {}): ProcessOutcome {
+function exited(exitCode: number, patch: Readonly<{stdout?: string; stderr?: string}> = {}): ProcessExecutionResult {
   return {kind: "exited", exitCode, stdout: patch.stdout ?? "", stderr: patch.stderr ?? "", durationMs: 1};
 }
 
-function spawnFailed(message: string): ProcessOutcome {
+function spawnFailed(message: string): ProcessExecutionResult {
   return {kind: "spawn-failed", message, stdout: "", stderr: "", durationMs: 1};
 }
 
-function commandKey(command: Readonly<ProcessRequest>): string {
+function commandKey(command: Readonly<ProcessExecutionRequest>): string {
   return [command.command, ...command.args].join(" ");
 }
 
 /** One recorded child invocation. */
-type RecordedCall = Readonly<{request: ProcessRequest; options: ProcessRunOptions}>;
+type RecordedCall = Readonly<{request: ProcessExecutionRequest; options: ProcessExecutionOptions}>;
 
 /** Records every invocation while replaying request-keyed typed outcomes. */
 class FakeProcessRunner extends AbstractProcessRunner {
-  readonly #responses: Readonly<Record<string, ProcessOutcome | readonly ProcessOutcome[]>>;
+  readonly #responses: Readonly<Record<string, ProcessExecutionResult | readonly ProcessExecutionResult[]>>;
   readonly #offsets = new Map<string, number>();
   readonly #calls: RecordedCall[] = [];
 
-  public constructor(responses: Readonly<Record<string, ProcessOutcome | readonly ProcessOutcome[]>> = {}) {
+  public constructor(responses: Readonly<Record<string, ProcessExecutionResult | readonly ProcessExecutionResult[]>> = {}) {
     super();
     this.#responses = responses;
   }
@@ -124,7 +128,10 @@ class FakeProcessRunner extends AbstractProcessRunner {
   }
 
   /** {@inheritDoc AbstractProcessRunner.execute} */
-  protected override execute(request: Readonly<ProcessRequest>, options: Readonly<ProcessRunOptions>): Promise<ProcessOutcome> {
+  protected override execute(
+    request: Readonly<ProcessExecutionRequest>,
+    options: Readonly<ProcessExecutionOptions>,
+  ): Promise<ProcessExecutionResult> {
     this.#calls.push({request, options});
     const key = commandKey(request);
     const configured = this.#responses[key];
@@ -132,9 +139,9 @@ class FakeProcessRunner extends AbstractProcessRunner {
       return Promise.resolve(succeeded());
     }
     if (!Array.isArray(configured)) {
-      return Promise.resolve(configured as ProcessOutcome);
+      return Promise.resolve(configured as ProcessExecutionResult);
     }
-    const sequence = configured as readonly ProcessOutcome[];
+    const sequence = configured as readonly ProcessExecutionResult[];
     const offset = this.#offsets.get(key) ?? 0;
     this.#offsets.set(key, offset + 1);
     return Promise.resolve(sequence[offset] ?? sequence.at(-1) ?? succeeded());
@@ -305,7 +312,7 @@ interface HarnessInput {
   readonly stdinIsTTY?: boolean;
   readonly platform?: NodeJS.Platform;
   readonly config?: ToolingConfigSeed;
-  readonly responses?: Readonly<Record<string, ProcessOutcome | readonly ProcessOutcome[]>>;
+  readonly responses?: Readonly<Record<string, ProcessExecutionResult | readonly ProcessExecutionResult[]>>;
   readonly dispositions?: Readonly<Record<string, SetupActionDisposition>>;
   readonly actions?: SetupActionExecutor;
   readonly select?: SetupContext["prompts"]["select"];
@@ -350,9 +357,8 @@ async function createHarness(input: HarnessInput = {}): Promise<Harness> {
 
   const environment = environmentSnapshot(input.platform ?? "win32", input.environmentVariables ?? {}, input.stdinIsTTY ?? true);
 
-  const factory = createTestRuntimeFactory({files, runner, clock, environment});
-  const commandRuntime = await factory.createRoot({presentation: "silent", registerProcessSignals: false});
-  const command: CommandContext = {runtime: commandRuntime, presentation: "silent"};
+  const commandRuntime = buildRuntimeExecutionContext({files, runner, clock, environment});
+  const command: CommandExecutionContext = {runtime: commandRuntime, presentation: "silent"};
 
   const runtime: SetupPhaseRuntime = {
     command,
@@ -380,9 +386,9 @@ async function createHarness(input: HarnessInput = {}): Promise<Harness> {
       secret: async () => "",
     },
     actions: input.actions ?? builtActions,
-    logger: new MonorepositoryConsoleLogger("setup::infrastructure", {
+    logger: new ComposedTerminalPresenter("setup::infrastructure", {
       color: false,
-      sink: new InMemoryLoggerSink(),
+      sink: new RecordingTerminalPresenterSink(),
     }),
   };
 

@@ -1,15 +1,16 @@
 # Root Tooling Scripts
 
 The root [`package.json`](../package.json) owns the supported npm commands that invoke this directory. Root scripts coordinate repository
-tooling; the declarative command runtime, capability kernel, and process runner belong in [`common`](./common), container runtime behavior
-belongs in [`container-runtime`](./container-runtime), and worker entry points belong in [`workers`](./workers).
+tooling; the declarative command runtime and capability kernel belong in [`common`](./common), the engine-neutral process contracts belong
+in [`core/process`](./core/process), container runtime behavior belongs in [`container-runtime`](./container-runtime), and worker entry
+points belong in [`workers`](./workers).
 
 [RFC 0002](../docs/rfc/0002-lean-monorepo-tooling-architecture.md) is the accepted architecture record for everything below.
 
 ## Output boundary
 
-Production scripts route script-authored output through [`MonorepositoryConsoleLogger`](./common/logger.ts). Create a logger with a context
-that identifies the operation, and use `child()` when a nested operation needs a more specific context.
+Production scripts route script-authored output through [`ComposedTerminalPresenter`](./core/presentation/composed-terminal-presenter.ts).
+Create a presenter with a context that identifies the operation, and use `child()` when a nested operation needs a more specific context.
 
 - `debug` emits optional diagnostics.
 - `info` reports normal lifecycle state.
@@ -25,43 +26,46 @@ invocation.
 
 ## Command runtime
 
-Every root script except the format/lint pair is one declarative command object built on
-[`common/commander.ts`](./common/commander.ts) and one injected capability kernel from
-[`common/runtime.ts`](./common/runtime.ts).
+Every root script except the format/lint pair is one composed command object built on
+[`core/command/`](./core/command) and [`core/workflow/`](./core/workflow), backed by one injected
+[`CommandHost`](./core/command/command-specification.ts) and one capability kernel from
+[`core/runtime/`](./core/runtime). Core never imports an adapter: every production command
+supplies its own literal `loadHost` loader of [`adapters/node/node-command-host.ts`](./adapters/node/node-command-host.ts).
 
-### Command definition anatomy
+### Command specification anatomy
 
-A command is a `CommandDefinition<TInput, TOutput>` handed to `MonorepoCommand`. Each member owns exactly one concern:
+A direct command is a `DirectCommandSpecification<TInput, TOutput>` handed to `defineCommand`. Each member owns exactly one concern:
 
 | Member | Owns |
 |--------|------|
-| `metadata` | `name`, `description`, optional `usage`, `examples`, and extra exact-match `slashAliases` (`/h` and `/help` are always present) |
+| `name`, `description`, `usage?`, `examples?`, `slashAliases?` | Identity and help text (`/h` and `/help` are always present) |
 | `configure(program)` | Declares Commander arguments and options on a fresh parser |
 | `decode(program)` | Converts parsed Commander state into one typed input; throws `CommandInputError` for semantically invalid input |
 | `presentation(input)` | Selects `"human"`, `"json"`, or `"silent"`; defaults to `"human"` |
 | `execute(context, input)` | Runs business orchestration against `context.runtime` capabilities only |
-| `completion(output, context)` | Maps completed business output to `{exitCode, human?, json?}` |
+| `complete(output, context)` | Maps completed business output to `{exitCode, value, human?, json?}` |
 
 ```typescript
+const loadProductionCommandHost = async (): Promise<CommandHost> =>
+  import("./adapters/node/node-command-host.ts").then(({createNodeCommandHost}) => createNodeCommandHost("generate:gql"));
+
 export function createGenerateGraphqlCommand(
-  runtimeFactory?: CommandRuntimeFactory,
-): MonorepoCommand<GenerateLeafInput, GenerateLeafResult> {
-  return new MonorepoCommand<GenerateLeafInput, GenerateLeafResult>(
+  options: Readonly<CommandConstructionOptions> = {loadHost: loadProductionCommandHost},
+): LazyMonorepoCommand<GenerateLeafInput, GenerateLeafResult, never> {
+  return defineCommand<GenerateLeafInput, GenerateLeafResult>(
     {
-      metadata: {
-        name: "generate:gql",
-        description: "Generates GraphQL type artifacts (placeholder implementation).",
-        examples: ["npm run generate:gql", "npm run generate:gql -- --verbose"],
-        slashAliases: {"/v": "--verbose", "/verbose": "--verbose"},
-      },
+      name: "generate:gql",
+      description: "Generates GraphQL type artifacts (placeholder implementation).",
+      examples: ["npm run generate:gql", "npm run generate:gql -- --verbose"],
+      slashAliases: {"/v": "--verbose", "/verbose": "--verbose"},
       configure: (program) => {
         program.option("-v, --verbose", "Enable verbose logging.");
       },
       decode: (program) => ({verbose: program.opts<{verbose?: boolean}>().verbose === true}),
       execute: generateGraphql,
-      completion: (result) => ({exitCode: 0, human: (logger) => logger.success(result.summary)}),
+      complete: (result) => ({exitCode: 0, value: result, human: (presenter) => presenter.success(result.summary)}),
     },
-    runtimeFactory,
+    options,
   );
 }
 ```
@@ -74,26 +78,28 @@ is the only way a definition can read its own pre-normalization argv tokens.
 Each command module exports a `create<Name>Command(...)` factory and one production singleton built from it:
 
 ```typescript
-export const doctorCommand: MonorepoCommand<DoctorInput, DoctorReport> = createDoctorCommand();
+export const doctorCommand: LazyMonorepoCommand<DoctorInput, DoctorReport, never> = createDoctorCommand();
 ```
 
-The factory is the deterministic test seam. It accepts either a `CommandRuntimeFactory` directly or a small `dependencies` object
-carrying one, so a test replaces the whole capability kernel instead of mocking repository modules:
+The factory is the deterministic test seam: it accepts a construction-options parameter (`{host}` or `{loadHost}`), plus any typed
+dependency collaborators, so a test replaces the whole capability kernel instead of mocking repository modules:
 
 ```typescript
-const command = createStatusCommand({runtimeFactory: createTestRuntimeFactory({runner, files}), doctor: fakeDoctor});
+const command = createStatusCommand({doctor: fakeDoctor}, {host: buildCommandHost({runtime: {runner, files}})});
 ```
 
-[`common/runtime.testing.ts`](./common/runtime.testing.ts) owns those typed fakes — a scripted process runner, in-memory logger sink,
-fixture filesystem, deterministic clock, and stub inspection session. It is test infrastructure and is excluded from coverage.
+[`testing/builders/command-host.builder.ts`](./testing/builders/command-host.builder.ts) owns `buildCommandHost`, and
+[`testing/builders/`](./testing/builders) and [`testing/fixtures/`](./testing/fixtures) own the typed runtime fakes it composes — a
+scripted process runner, recording presenter sink, fixture filesystem, deterministic clock, and stub inspection session. Both are test infrastructure and are
+excluded from coverage.
 
 ### `run()`, `invoke()`, and `runIfMain()`
 
 | Entry | Argv | Signals | Exit code | Default presentation |
 |-------|------|---------|-----------|-----------------------|
-| `run(argv?)` | Parses argv (defaults to the process host's frozen argv) | Owns SIGINT/SIGTERM in its root scope | Returned, never assigned | From `presentation(input)` |
+| `run(argv?)` | Parses argv (defaults to the command host's frozen argv) | Owns SIGINT/SIGTERM in its root scope | Returned, never assigned | From `presentation(input)` |
 | `invoke(input, options?)` | None — typed input only | Never registers an OS signal handler | Returned, never assigned | `"silent"` |
-| `runIfMain(moduleUrl)` | Delegates to `run()` | Same as `run()` | Assigns the returned code through the process host | From `presentation(input)` |
+| `runIfMain(moduleUrl)` | Delegates to `run()` | Same as `run()` | Assigns the returned code through the command host | From `presentation(input)` |
 
 `runIfMain()` is the only place a command may reach the process exit code, and it does nothing unless `moduleUrl` is the module the
 process was started with. No script implements direct-entry detection itself, and no script calls `process.exit()`.
@@ -121,47 +127,58 @@ to the failure that caused it rather than replacing it.
 
 ### Runner outcomes and `expectSuccess()`
 
-`context.runtime.runner` is a `ProcessRunner` from [`common/runner.ts`](./common/runner.ts). `run()` resolves a discriminated
-`ProcessOutcome` — switch on `kind` instead of re-deriving success from an exit code:
+`context.runtime.runner` is a `ProcessRunner` from [`core/process/process-runner.ts`](./core/process/process-runner.ts). `run()` resolves a
+discriminated `ProcessExecutionResult` — switch on `kind` instead of re-deriving success from an exit code:
 
 ```typescript
-const outcome = await runner.run({command: "git", args: ["status", "--porcelain"]}, {output: "capture"});
-switch (outcome.kind) {
-  case "succeeded":  return outcome.stdout;          // exitCode is narrowed to 0
-  case "exited":     return degrade(outcome.exitCode);
+const result = await runner.run({command: "git", args: ["status", "--porcelain"]}, {output: "capture"});
+switch (result.kind) {
+  case "succeeded":  return result.stdout;          // exitCode is narrowed to 0
+  case "exited":     return degrade(result.exitCode);
   case "timed-out":
   case "signalled":
   case "cancelled":
-  case "spawn-failed": throw new Error(processFailureEvidence(outcome, logger));
+  case "spawn-failed": throw new Error(processExecutionFailureEvidence(result, presenter));
 }
 ```
 
-`expectSuccess()` is the required-success policy: it returns a `SucceededProcessOutcome` or throws a `RunnerError` whose message,
-retained `request`, and retained `outcome` are all redacted through the supplied logger and bounded to 2,000 characters.
+`expectSuccess()` is the required-success policy: it returns a `SucceededProcessExecutionResult` or throws a `ProcessRunnerError` whose
+message, retained `request`, and retained `result` are all redacted through the supplied presenter and bounded to 2,000 characters.
 `runner.scope(defaults)` returns a new runner with reusable defaults and never mutates its parent. Keep the executable and its arguments
-separate; `formatProcessRequest()` renders diagnostics and never includes stdin or environment values.
+separate; `formatProcessExecutionRequest()` renders diagnostics and never includes stdin or environment values.
 
 ### Capability profiles and child scope ownership
 
-`context.runtime` is the only source of effects. It carries `logger`, `prompts`, `runner`, `http`, `files`, `clock`, `tasks`,
-`inspection`, `environment`, `signal`, and `cleanup`. [`common/runtime.node.ts`](./common/runtime.node.ts) is the single production
-adapter that implements them; it is the only production module allowed to import `node:fs`, `node:os`, or `node:timers`, to call bare
+`context.runtime` is the only source of effects. It carries `presenter`, `prompts`, `runner`, `http`, `files`, `clock`, `tasks`,
+`environment`, `signal`, and `cleanup`; Doctor, Setup, and Status additionally compose `inspection` through
+[`inspection/runtime-capability.ts`](./inspection/runtime-capability.ts). The Node adapters under [`adapters/node/`](./adapters/node)
+implement them, composed per scope by [`adapters/node/node-runtime-scope.ts`](./adapters/node/node-runtime-scope.ts); they are the only
+production modules allowed to import `node:fs`, `node:os`, or `node:timers`, to call bare
 `fetch`/`setInterval`, to read `process.env`/`process.cwd()`, to register SIGINT/SIGTERM, or to assign `process.exitCode`.
+`files`, `http`, `runner`, and `prompts` are memoized lazy facades: a command that never touches one never loads its adapter.
+[`adapters/node/node-terminal-sink.ts`](./adapters/node/node-terminal-sink.ts) additionally holds one narrow, terminal-only exemption
+from the same boundary check: it alone may call `setInterval` for progress-frame scheduling and read `process.env` to resolve
+`NO_COLOR`. No other production module gains either exemption.
 
 Narrow a capability before handing it to a consumer that must not widen it: `asReadOnlyFileSystem()` and `asGetOnlyHttpClient()` produce
 the read-only profiles doctor modules receive, and `inspection/probes.ts` produces the opaque, allowlisted probe runner.
 
-A **root scope** snapshots the environment once, owns its logger and prompts, and (only under `run()`/`runIfMain()`) owns process signals.
-A **child scope** created by `invoke({parent})` reuses the parent's immutable environment, prompts, and inspection registry, and receives
-its own forked logger, invocation runner, cancellation controller, and cleanup registry. Cancellation always flows parent to child and
+A **root scope** snapshots the environment once, owns its presenter and prompts, and (only under `run()`/`runIfMain()`) owns process signals.
+A **child scope** created by `invoke({parent})` shares exactly one thing with its parent by identity: the parent's immutable environment
+snapshot. Its presenter is forked from the parent's, its prompts (like `files`, `http`, and `runner`) come from its own fresh memoized lazy
+facades, and its invocation runner, cancellation controller, and cleanup registry are its own. The clock and task scheduler are process-wide
+Node singletons that every scope observes regardless of parentage, so they are not parent-derived state. The inspection registry is composed
+per command by
+[`inspection/runtime-capability.ts`](./inspection/runtime-capability.ts), which resolves an explicit test override first, then the parent
+scope's registry when the parent already carries one, then a new registry bound to this scope. Cancellation always flows parent to child and
 never child to parent.
 
 ### JSON, human, and silent output
 
 Presentation is decided from typed input before any capability exists, and rendering is deferred to `completion()`:
 
-- **human** — `completion.human(logger)` runs; semantic and presentation methods are live.
-- **json** — `completion.json` is serialized exactly once through `logger.json()`. A JSON-mode command that omits `json` is an internal
+- **human** — `completion.human(presenter)` runs; semantic and presentation methods are live.
+- **json** — `completion.json` is serialized exactly once through `presenter.json()`. A JSON-mode command that omits `json` is an internal
   failure rather than a silently empty document. A fatal error writes exactly one plain redacted line to standard error so no partial
   success document is emitted.
 - **silent** — nothing is rendered, including failure diagnostics. This is the default for composed `invoke()` calls, whose caller owns
@@ -184,16 +201,16 @@ entry runs even when an earlier one throws; each failure becomes bounded evidenc
 
 ### Sensitive values
 
-Register runtime secrets with `logger.redact()` before any output that could contain them. Logger children and forks share one redaction
-registry, and `RunnerError` redacts its retained request and outcome through the same registry. Do not place secret values in manually
+Register runtime secrets with `presenter.redact()` before any output that could contain them. Presenter children and forks share one redaction
+registry, and `ProcessRunnerError` redacts its retained request and result through the same registry. Do not place secret values in manually
 formatted diagnostics.
 
 ### Format, lint, and the worker-shell exception
 
 [`format.ts`](./format.ts), [`lint.ts`](./lint.ts), [`workers/format.worker.ts`](./workers/format.worker.ts),
 [`workers/lint.worker.ts`](./workers/lint.worker.ts), [`types/format.ts`](./types/format.ts), and [`types/lint.ts`](./types/lint.ts) are
-the six approved exclusions of RFC 0002 section 3.2. They stay on Piscina and are not command objects. They still use the shared logger
-(with the Node logger runtime host, so their TTY, `NO_COLOR`, and progress behavior is unchanged) and the shared presentation helpers in
+the six approved exclusions of RFC 0002 section 3.2. They stay on Piscina and are not command objects. They still use the shared presenter
+(with the Node terminal sink and its runtime host, so TTY, `NO_COLOR`, and progress behavior is unchanged) and the shared helpers in
 [`common/index.ts`](./common/index.ts), which take an explicit `Date` rather than reading the clock themselves.
 
 [`workers/shell.ts`](./workers/shell.ts) is deliberately **not** excluded. It runs inside those Piscina workers, so it has no command
@@ -202,21 +219,21 @@ so format/lint behavior is unchanged.
 
 ## Output-policy exemptions
 
-The logger sink implementation in [`common/logger.ts`](./common/logger.ts) is the sole owner of semantic and non-interactive presentation
-output. The interactive terminal-protocol adapter in [`common/prompts.ts`](./common/prompts.ts) is a separate narrow exemption because
+The Node terminal sink in [`adapters/node/node-terminal-sink.ts`](./adapters/node/node-terminal-sink.ts) is the sole owner of non-interactive presentation
+output. The interactive terminal-protocol adapter in [`adapters/node/node-prompt-provider.ts`](./adapters/node/node-prompt-provider.ts) is a separate narrow exemption because
 readline, visible input echo, cursor state, validation feedback, and non-echoing secret entry must share one writable terminal stream.
 That adapter may emit only prompt labels, questions, choices, validation feedback, and terminal-control newlines; lifecycle diagnostics and
 submitted secret values remain forbidden there.
 
-[`output-policy.test.ts`](./common/output-policy.test.ts)'s AST guards enforce both boundaries, including property, direct-function, and
-destructured aliases. [`runtime-boundary.test.ts`](./common/runtime-boundary.test.ts) enforces the wider runtime boundary — Execa and
+[`output-policy.test.ts`](./testing/architecture/output-policy.test.ts)'s AST guards enforce both boundaries, including property, direct-function, and
+destructured aliases. [`runtime-boundary-policy.test.ts`](./testing/architecture/runtime-boundary-policy.test.ts) enforces the wider runtime boundary — Execa and
 child-process imports, ambient filesystem/HTTP/timer/environment/OS-state access, direct process exit, manual direct-entry detection,
 explicit concurrency, doctor capability width, and the exact six format/lint exclusions. The root ESLint configuration provides immediate
-feedback for direct output syntax. Direct console/process-stream output stays confined to the logger sink, while injected
+feedback for direct output syntax. Direct console/process-stream output stays confined to the Node terminal sink, while injected
 `output.write(...)` prompt presentation stays confined to the prompt adapter. Neither exemption includes a script entry point.
 
 Every production script under root `scripts/**` — including [`setup.ts`](./setup.ts), [`doctor.ts`](./doctor.ts), and
-[`status.ts`](./status.ts) — routes its presentation and semantic output through `MonorepositoryConsoleLogger`. There are no remaining
+[`status.ts`](./status.ts) — routes its presentation and semantic output through `ComposedTerminalPresenter`. There are no remaining
 transitional setup/doctor/status exceptions.
 
 ## Setup orchestrator (`npm run setup`)
@@ -276,8 +293,8 @@ action is `executed`, `planned` (always the outcome under `--dry-run`), or `decl
 Focused validation for setup and its direct shared dependencies:
 
 ```powershell
-npx vitest run --config scripts\vitest.config.ts --coverage.enabled=false scripts\common\repository-paths.test.ts scripts\common\requirements.test.ts scripts\common\tooling-config.test.ts scripts\common\prompts.test.ts scripts\setup.test.ts scripts\setup.workspace.test.ts scripts\setup.dotnet.test.ts scripts\setup.react.test.ts scripts\setup.svelte.test.ts scripts\setup.python.test.ts scripts\setup.infrastructure.test.ts scripts\generate.env.test.ts scripts\container-runtime\selection.test.ts scripts\common\output-policy.test.ts
-npx eslint scripts\setup.ts scripts\setup.types.ts scripts\setup.*.ts scripts\common\repository-paths.ts scripts\common\requirements.ts scripts\common\tooling-config.ts scripts\common\prompts.ts scripts\generate.env.ts scripts\container-runtime
+npx vitest run --config scripts\vitest.config.ts --coverage.enabled=false scripts\common\repository-paths.test.ts scripts\common\requirements.test.ts scripts\common\tooling-config.test.ts scripts\adapters\node\node-prompt-provider.test.ts scripts\setup.test.ts scripts\setup.workspace.test.ts scripts\setup.dotnet.test.ts scripts\setup.react.test.ts scripts\setup.svelte.test.ts scripts\setup.python.test.ts scripts\setup.infrastructure.test.ts scripts\generate.env.test.ts scripts\container-runtime\selection.test.ts scripts\testing\architecture\output-policy.test.ts
+npx eslint scripts\setup.ts scripts\setup.types.ts scripts\setup.*.ts scripts\common\repository-paths.ts scripts\common\requirements.ts scripts\common\tooling-config.ts scripts\adapters\node\node-prompt-provider.ts scripts\generate.env.ts scripts\container-runtime
 git --no-pager diff --check
 ```
 
@@ -333,7 +350,7 @@ Every diagnostic command runs through the shared inspection probe runner backed 
 [`inspection/probes.ts`](./inspection/probes.ts). Specialist modules never take a `ProcessRunner`, the Node runtime adapter, the Execa
 adapter, or the mutable `FileSystem` capability: `DoctorContext` carries only a read-only filesystem, a `GET`-only bounded HTTP probe,
 the clock, the immutable environment snapshot, the shared inspection session, and the opaque probe runner.
-[`runtime-boundary.test.ts`](./common/runtime-boundary.test.ts)'s source-level AST guard rejects mutation-capable or unrestricted
+[`runtime-boundary-policy.test.ts`](./testing/architecture/runtime-boundary-policy.test.ts)'s source-level AST guard rejects mutation-capable or unrestricted
 filesystem imports, child-process imports, widened runtime imports, and direct adapter imports across the Doctor production surface.
 [`doctor.readonly.test.ts`](./doctor.readonly.test.ts) independently snapshots `.nx` and `.arolariu` sentinel files to prove real quick
 and full-profile Doctor runs do not mutate them.
@@ -357,17 +374,76 @@ case, so status never reports a fabricated "unavailable" health section for a br
 Focused validation for doctor, its reporter, every specialist module, and `status.ts`:
 
 ```powershell
-npx vitest run --config scripts\vitest.config.ts --coverage.enabled=false scripts\common\logger.test.ts scripts\common\runner.test.ts scripts\common\output-policy.test.ts scripts\doctor.test.ts scripts\doctor.reporter.test.ts scripts\doctor.readonly.test.ts scripts\doctor.workspace.test.ts scripts\doctor.dotnet.test.ts scripts\doctor.react.test.ts scripts\doctor.svelte.test.ts scripts\doctor.python.test.ts scripts\doctor.infrastructure.test.ts scripts\doctor.diagnostics.test.ts scripts\status.test.ts scripts\setup.test.ts
+npx vitest run --config scripts\vitest.config.ts --coverage.enabled=false scripts\core\presentation\composed-terminal-presenter.test.ts scripts\testing\contracts\process-runner.contract.test.ts scripts\testing\architecture\output-policy.test.ts scripts\doctor.test.ts scripts\doctor.reporter.test.ts scripts\doctor.readonly.test.ts scripts\doctor.workspace.test.ts scripts\doctor.dotnet.test.ts scripts\doctor.react.test.ts scripts\doctor.svelte.test.ts scripts\doctor.python.test.ts scripts\doctor.infrastructure.test.ts scripts\doctor.diagnostics.test.ts scripts\status.test.ts scripts\setup.test.ts
 npx eslint scripts\doctor.ts scripts\doctor.types.ts scripts\doctor.reporter.ts scripts\doctor.workspace.ts scripts\doctor.dotnet.ts scripts\doctor.react.ts scripts\doctor.svelte.ts scripts\doctor.python.ts scripts\doctor.infrastructure.ts scripts\status.ts scripts\common\taxonomy-artifacts.ts
 git --no-pager diff --check
 ```
+
+## Architecture analysis
+
+The preparatory scripts-architecture cohort keeps one typed entrypoint inventory and four complementary checks:
+
+```powershell
+npm run analyze:scripts:unused
+npm run typecheck:scripts
+npm run analyze:scripts:loc
+npm run analyze:scripts:architecture
+```
+
+- `analyze:scripts:unused` runs Knip against the scripts project and reports unused files, exports, types, and root dependencies not owned
+  by a child workspace.
+- `typecheck:scripts` checks production and non-test support with strict root compiler options. Its sole temporary production exclusion is
+  `workers/lint.worker.ts`, which Cohort 7 removes.
+- `analyze:scripts:loc` reports the fixed 73,377-line baseline, the frozen Cohort 1 ceiling and its immutable high-water mark
+  (`currentMaximum` 77,000, and `highWaterMaximum` 77,000), the final 55,032-line target, production/test-support totals, family
+  totals, committed line churn, and detected rename/relocation evidence from baseline commit `11773ff3d`.
+- `analyze:scripts:architecture` reports each entrypoint's `architectureModel` and `removalCohort`, the eager (`--help`) import-graph size,
+  the static runtime graph size, and three-sample `--help` medians for every Commander entrypoint. `eagerGraphFileCount` and
+  `eagerGraphMaintainedLineCount` follow only static, non-type-only imports and re-exports — what starting the entrypoint pays for before it
+  parses argv — while the `runtimeGraph*` fields keep following every non-type-only edge, including literal dynamic imports. Timing is
+  informational; AST boundary tests enforce lazy-loading structure.
+
+[`script-entrypoint-definitions.ts`](./testing/architecture/script-entrypoint-definitions.ts) is the authoritative entrypoint inventory. Every
+entry declares an `architectureModel` — `composed-command`, `legacy-command`, or `piscina` — and every entry that is not yet a
+`composed-command` declares the `removalCohort` that retires its current model; a `composed-command` entry declares none.
+
+Four ownership and structure policies plus the eager import policy run with the rest of the architecture suite:
+
+- [`ownership-boundaries.test.ts`](./testing/architecture/ownership-boundaries.test.ts) proves that `core/` reaches no `common/`,
+  `features/`, `inspection/`, `adapters/`, or `workers/` module on any edge (static, literal dynamic, or type-only) and never even names
+  the `adapters` or `inspection` directories; that `adapters/` reaches no feature or inspection module and keeps every runtime edge on
+  `core/` or a sibling adapter; and that [`inspection/runtime-capability.ts`](./inspection/runtime-capability.ts) and its test take no
+  concrete adapter edge. The remaining `inspection/**` modules are deliberately outside that last rule: the two inspection entrypoints'
+  literal dynamic Node command-host loaders and the existing inspection-to-`common/**` edges are recorded Cohort 2 debt.
+- [`module-structure-policy.test.ts`](./testing/architecture/module-structure-policy.test.ts) proves that no barrel `index.ts` exists under
+  `core/`, `adapters/`, `inspection/`, `features/`, or `testing/` — [`common/index.ts`](./common/index.ts) is the single named exception,
+  removed by Cohort 3 — that every module under `core/`, `adapters/`, and `features/` plus `inspection/runtime-capability.ts` stays within
+  500 maintained lines and every `composed-command` entrypoint within 50, and that the entrypoint inventory carries the exact architecture
+  model and removal cohort for all 21 entrypoints. Both suites pair most rules with a synthetic source graph that proves the detector itself
+  reacts; the direct `core/` and `adapters/` ownership rules currently rest on real-tree and rejection evidence rather than a positive
+  synthetic case. Neither suite uses an ignore list, allowlist, or suppression entry.
+- [`eager-import-boundaries.test.ts`](./testing/architecture/eager-import-boundaries.test.ts) proves that the eager import graph of every
+  `composed-command` entrypoint and of [`node-command-host.ts`](./adapters/node/node-command-host.ts) — asserted as two separate roots so a
+  regression is attributed precisely — reaches no feature workflow or reporter, no lazy Node adapter, no Execa adapter or package, no
+  `inspection/**` module, and no generation entrypoint; that eager traversal excludes literal dynamic and type-only edges; and that every
+  `composed-command` workflow module declares a non-empty, exact capability subset covering every capability its own feature context uses.
+  The complete `runtimeCapabilityNames` set a `defineCommand`-generated legacy direct workflow declares is recorded debt owned by that
+  entry's `removalCohort` and is never evaluated by this policy.
+- [`runtime-boundary-policy.test.ts`](./testing/architecture/runtime-boundary-policy.test.ts) and
+  [`output-policy.test.ts`](./testing/architecture/output-policy.test.ts) are the relocated ambient-capability scanners described above.
+  They share their lexical alias machinery — dotted access-path resolution, binding-pattern declaration, and function-scope traversal —
+  through [`architecture-source-scan.ts`](./testing/architecture/architecture-source-scan.ts) instead of keeping private copies.
+
+Architecture checks live under `scripts/testing/architecture/`; public CLI snapshots and behavior-evidence mappings live under
+`scripts/testing/compatibility/`. Both are excluded from production runtime and coverage policies but remain included in the maintained-line
+total.
 
 ## Targeted validation
 
 Run the policy tests after changing script output or the runtime boundary:
 
 ```powershell
-npx vitest run --config scripts\vitest.config.ts --coverage.enabled=false scripts\common\output-policy.test.ts scripts\common\runtime-boundary.test.ts
+npx vitest run --config scripts\vitest.config.ts --coverage.enabled=false scripts\testing\architecture\output-policy.test.ts scripts\testing\architecture\runtime-boundary-policy.test.ts
 ```
 
 Run the complete root-tooling suite through the scripts-scoped Vitest configuration:
@@ -377,3 +453,8 @@ npx vitest run --config scripts\vitest.config.ts --coverage.enabled=false
 npx eslint scripts
 git --no-pager diff --check
 ```
+
+`npm run test:scripts` runs this same complete suite without coverage and is the green correctness command. Running
+`npx vitest run --config scripts\vitest.config.ts` (coverage enabled) explicitly evaluates the unchanged 90% statement, branch,
+function, and line thresholds; every test still passes, but branch coverage currently sits at 80.83%, a pre-existing shortfall
+that later migration cohorts own.

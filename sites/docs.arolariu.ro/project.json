@@ -7,7 +7,7 @@
     "assemble": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "node scripts/docs-assemble.ts",
+        "command": "node scripts/features/documentation/command.ts",
         "cwd": "."
       }
     },

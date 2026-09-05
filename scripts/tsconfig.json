@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "incremental": false,
+    "pretty": false,
+    "types": ["node"]
+  },
+  "include": [
+    "**/*.ts",
+    "**/*.tsx",
+    "**/*.js",
+    "**/*.mjs",
+    "**/*.cjs",
+    "../knip.config.ts"
+  ],
+  "exclude": [
+    "**/*.test.*",
+    "**/*.spec.*",
+    "vitest.config.ts",
+    "workers/lint.worker.ts"
+  ]
+}

@@ -5,7 +5,7 @@
  * @remarks
  * Every ambient effect this command used to reach for directly (the child process, the
  * repository filesystem, the process environment, Node's timers, and the global `fetch` used for
- * Cosmos provisioning) now arrives through the injected {@link CommandContext.runtime}, so the
+ * Cosmos provisioning) now arrives through the injected {@link CommandExecutionContext.runtime}, so the
  * command is fully exercised by the declarative command runtime's test fakes and never spawns
  * Docker or Podman, and never reaches Cosmos or Azurite, in a test. The taxonomy artifact
  * prerequisite runs as a nested, silent invocation of `generateArtifactsCommand` instead of a
@@ -17,16 +17,15 @@
  * started running, and the generated Traefik file is removed only by the explicit `stop` action.
  */
 
-import {
-  CommandInputError,
-  MonorepoCommand,
-  type CommandContext,
-  type CommandInvoker,
-  type CommandRuntimeFactory,
-} from "../common/commander.ts";
+import {CommandInputError, type CommandInvoker} from "../core/command/command-execution.ts";
+import type {CommandExecutionContext} from "../core/command/command-execution.ts";
+import {defineCommand, type LazyMonorepoCommand} from "../core/command/lazy-monorepo-command.ts";
+import type {CommandConstructionOptions, CommandHost} from "../core/command/command-specification.ts";
 import {resolveRepositoryPaths} from "../common/repository-paths.ts";
-import {RunnerError, type ProcessEnvironment} from "../common/runner.ts";
-import {CommandCancellation, commandCancellationFromSignal, type CommandRuntime} from "../common/runtime.ts";
+import type {ProcessEnvironment} from "../core/process/process-execution-request.ts";
+import {ProcessRunnerError} from "../core/process/process-runner.ts";
+import {CommandCancellation, commandCancellationFromSignal} from "../core/runtime/cancellation.ts";
+import type {RuntimeExecutionContext} from "../core/runtime/runtime-execution-context.ts";
 import {generateArtifactsCommand, type ArtifactGenerationResult, type GenerateArtifactsInput} from "../generate.artifacts.ts";
 import {getContainerAdapter, type ContainerRuntimeAdapter, type RuntimeCommand} from "./adapters.ts";
 import {runContainerPreflight} from "./preflight.ts";
@@ -69,8 +68,6 @@ export interface SelfhostPlanInputs {
 
 /** Optional collaborators {@link createSelfhostCommand} composes. */
 export interface SelfhostCommandDependencies {
-  /** Optional runtime factory; tests inject a fake instead of the Node adapter. */
-  readonly runtimeFactory?: CommandRuntimeFactory;
   /** Local Cosmos/Azurite provisioning; defaults to the runtime-HTTP-backed adapter. */
   readonly bootstrap?: LocalStorageBootstrap;
   /** Taxonomy and license artifact generator invoked as the start prerequisite. */
@@ -169,31 +166,31 @@ export function getRequiredSqlPassword(variables: Readonly<Record<string, string
  *
  * @remarks
  * A cancelled invocation's exact SIGINT/SIGTERM exit code (`130`/`143`) is owned by its own
- * {@link CommandCancellation} reason; letting `expectSuccess`'s `RunnerError` for a cancelled
+ * {@link CommandCancellation} reason; letting `expectSuccess`'s `ProcessRunnerError` for a cancelled
  * outcome escape unclassified would misreport an interrupted invocation as an operational failure
  * and the shared Commander lifecycle would classify it as exit code `1`. A `{kind:"cancelled"}`
  * outcome observed while the invocation signal is not aborted is not this invocation's
- * cancellation and stays an operational failure. The invocation logger is always supplied so the
- * retained request and outcome inside a {@link RunnerError} are redacted.
+ * cancellation and stays an operational failure. The invocation presenter is always supplied so the
+ * retained request and result inside a {@link ProcessRunnerError} are redacted.
  *
  * @param runtime - Capabilities owned by the invocation.
  * @param command - Engine-owned runtime command to execute.
  * @param env - Optional environment values merged over the child's inherited defaults.
  * @throws {CommandCancellation} When `command` is cancelled on the invocation's aborted signal.
- * @throws {RunnerError} When `command` fails for any other reason.
+ * @throws {ProcessRunnerError} When `command` fails for any other reason.
  */
-async function runSelfhostCommand(runtime: CommandRuntime, command: Readonly<RuntimeCommand>, env?: ProcessEnvironment): Promise<void> {
+async function runSelfhostCommand(runtime: RuntimeExecutionContext, command: Readonly<RuntimeCommand>, env?: ProcessEnvironment): Promise<void> {
   try {
     await runtime.runner.expectSuccess(command, {
       cwd: selfhostWorkingDirectory,
       output: "tee",
       logCommands: true,
-      logger: runtime.logger,
+      presenter: runtime.presenter,
       signal: runtime.signal,
       ...(env === undefined ? {} : {env}),
     });
   } catch (error: unknown) {
-    if (error instanceof RunnerError && error.outcome.kind === "cancelled" && runtime.signal.aborted) {
+    if (error instanceof ProcessRunnerError && error.result.kind === "cancelled" && runtime.signal.aborted) {
       throw commandCancellationFromSignal(runtime.signal);
     }
     throw error;
@@ -210,7 +207,7 @@ async function runSelfhostCommand(runtime: CommandRuntime, command: Readonly<Run
  * @param runtime - Capabilities owned by the invocation.
  * @throws When `mkcert` is available but certificate generation fails.
  */
-async function ensureHttpsCertificates(runtime: CommandRuntime): Promise<void> {
+async function ensureHttpsCertificates(runtime: RuntimeExecutionContext): Promise<void> {
   if (
     (await runtime.files.exists(`${selfhostWorkingDirectory}/${certFilePath}`))
     && (await runtime.files.exists(`${selfhostWorkingDirectory}/${keyFilePath}`))
@@ -220,7 +217,7 @@ async function ensureHttpsCertificates(runtime: CommandRuntime): Promise<void> {
 
   const mkcert = await runtime.runner.run({command: "mkcert", args: ["--version"]}, {signal: runtime.signal});
   if (mkcert.kind !== "succeeded") {
-    runtime.logger.warn(
+    runtime.presenter.warn(
       "mkcert is not available; Traefik HTTPS will use its default self-signed certificate. Install mkcert and rerun selfhost to generate trusted localhost certificates.",
     );
     return;
@@ -241,11 +238,11 @@ async function ensureHttpsCertificates(runtime: CommandRuntime): Promise<void> {
  * @returns The local SQL Server password, already registered with the invocation logger.
  * @throws {ContainerRuntimeError} When the SQL password is not configured.
  */
-async function prepareSelfhostStart(runtime: CommandRuntime): Promise<string> {
+async function prepareSelfhostStart(runtime: RuntimeExecutionContext): Promise<string> {
   // Registering the redaction before anything else guarantees that every later command echo, tee
   // line, and retained runner diagnostic containing the password is already sanitized.
   const sqlPassword = getRequiredSqlPassword(runtime.environment.variables);
-  runtime.logger.redact(sqlPassword);
+  runtime.presenter.redact(sqlPassword);
 
   await ensureHttpsCertificates(runtime);
   await writeSelfhostTraefikConfig(runtime.files, buildSelfhostTraefikConfig());
@@ -263,7 +260,7 @@ async function prepareSelfhostStart(runtime: CommandRuntime): Promise<string> {
  * @throws When any provisioning step fails or the invocation is cancelled.
  */
 async function bootstrapSelfhost(
-  runtime: CommandRuntime,
+  runtime: RuntimeExecutionContext,
   adapter: ContainerRuntimeAdapter,
   bootstrap: LocalStorageBootstrap,
   sqlPassword: string,
@@ -306,7 +303,7 @@ async function bootstrapSelfhost(
  */
 async function runArtifactPrerequisite(
   artifacts: CommandInvoker<GenerateArtifactsInput, ArtifactGenerationResult>,
-  context: Readonly<CommandContext>,
+  context: Readonly<CommandExecutionContext>,
 ): Promise<void> {
   const execution = await artifacts.invoke({verbose: false}, {parent: context, presentation: "silent"});
 
@@ -358,7 +355,7 @@ function decodeSelfhostEngine(value: string | undefined): ContainerEngine | unde
  */
 async function executeSelfhost(
   dependencies: Readonly<ResolvedSelfhostDependencies>,
-  context: Readonly<CommandContext>,
+  context: Readonly<CommandExecutionContext>,
   input: Readonly<SelfhostInput>,
 ): Promise<SelfhostResult> {
   const {runtime} = context;
@@ -378,7 +375,7 @@ async function executeSelfhost(
 
   await runContainerPreflight(adapter, {
     runner: runtime.runner,
-    logger: runtime.logger.child("preflight"),
+    logger: runtime.presenter.child("preflight"),
     environment: runtime.environment,
     signal: runtime.signal,
   });
@@ -419,28 +416,32 @@ async function executeSelfhost(
   return {action: input.action, engine: adapter.engine, stacks: stacksByAction[input.action]};
 }
 
+/** The only edge from this entrypoint into the Node command host; core never names it. */
+const loadProductionCommandHost = async (): Promise<CommandHost> =>
+  import("../adapters/node/node-command-host.ts").then(({createNodeCommandHost}) => createNodeCommandHost("selfhost"));
+
 /**
  * Creates the selfhost orchestration command.
  *
- * @param dependencies - Optional runtime factory, storage bootstrap, and artifact collaborators.
+ * @param dependencies - Optional storage bootstrap and artifact collaborators.
+ * @param options - Injected command host or literal loader; defaults to the Node adapter.
  * @returns The typed `dev:selfhost` command object.
  */
 export function createSelfhostCommand(
   dependencies: Readonly<SelfhostCommandDependencies> = {},
-): MonorepoCommand<SelfhostInput, SelfhostResult> {
+  options: Readonly<CommandConstructionOptions> = {loadHost: loadProductionCommandHost},
+): LazyMonorepoCommand<SelfhostInput, SelfhostResult, never> {
   const resolved: ResolvedSelfhostDependencies = {
     artifacts: dependencies.artifacts ?? generateArtifactsCommand,
     ...(dependencies.bootstrap === undefined ? {} : {bootstrap: dependencies.bootstrap}),
   };
 
-  return new MonorepoCommand<SelfhostInput, SelfhostResult>(
+  return defineCommand<SelfhostInput, SelfhostResult>(
     {
-      metadata: {
-        name: "selfhost",
-        description: "Runs selfhost container orchestration for the selected local engine.",
-        usage: "[start|stop|logs] [--engine <rancher|podman>]",
-        examples: ["npm run dev:selfhost -- --engine rancher", "npm run dev:selfhost:stop -- --engine podman"],
-      },
+      name: "selfhost",
+      description: "Runs selfhost container orchestration for the selected local engine.",
+      usage: "[start|stop|logs] [--engine <rancher|podman>]",
+      examples: ["npm run dev:selfhost -- --engine rancher", "npm run dev:selfhost:stop -- --engine podman"],
       configure: (program) => {
         program.argument("[action]", "Selfhost action to run: start, stop, or logs (default: start).");
         program.option("--engine <engine>", "Container engine to use (rancher or podman).");
@@ -457,16 +458,17 @@ export function createSelfhostCommand(
         return {action, ...(requestedEngine === undefined ? {} : {engine: requestedEngine})};
       },
       execute: (context, input) => executeSelfhost(resolved, context, input),
-      completion: (result) => ({
+      complete: (result) => ({
         exitCode: 0,
+        value: result,
         human: (logger) => logger.success(`Selfhost ${result.action} completed for engine '${result.engine}'.`),
       }),
     },
-    dependencies.runtimeFactory,
+    options,
   );
 }
 
 /** Production singleton used by the `npm run dev:selfhost*` scripts and this module's direct entrypoint. */
-export const selfhostCommand: MonorepoCommand<SelfhostInput, SelfhostResult> = createSelfhostCommand();
+export const selfhostCommand: LazyMonorepoCommand<SelfhostInput, SelfhostResult, never> = createSelfhostCommand();
 
 await selfhostCommand.runIfMain(import.meta.url);

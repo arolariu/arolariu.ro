@@ -9,11 +9,12 @@ import {tmpdir} from "node:os";
 import {dirname, join, resolve} from "node:path";
 import {afterEach, describe, expect, it, vi} from "vitest";
 
-import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "./common/logger.ts";
+import {ComposedTerminalPresenter} from "./core/presentation/composed-terminal-presenter.ts";
+import {RecordingTerminalPresenterSink} from "./testing/fixtures/terminal.fixture.ts";
 import {createRepositoryPaths} from "./common/repository-paths.ts";
 import type {RepositoryRequirements} from "./common/requirements.ts";
-import {asReadOnlyFileSystem, type Clock, type RuntimeEnvironment} from "./common/runtime.ts";
-import {nodeFileSystem} from "./common/runtime.node.ts";
+import {nodeFileSystem} from "./adapters/node/node-filesystem.ts";
+import {asReadOnlyFileSystem, type Clock, type RuntimeEnvironment} from "./core/runtime/runtime-capability.ts";
 import {infrastructureDoctorModule} from "./doctor.infrastructure.ts";
 import {createDoctorReport} from "./doctor.reporter.ts";
 import {type DiagnosticNetworkResult, type DoctorContext, type DoctorInput} from "./doctor.types.ts";
@@ -156,7 +157,7 @@ async function createInfrastructureFixture(
     updateInfrastructureEngine: (): void => {},
   } as unknown as RepositoryInspectionSession;
 
-  const sink = new InMemoryLoggerSink();
+  const sink = new RecordingTerminalPresenterSink();
   const context: DoctorContext = {
     options: doctorOptions(input.options),
     paths,
@@ -164,7 +165,7 @@ async function createInfrastructureFixture(
     network: {
       get: vi.fn(async (): Promise<DiagnosticNetworkResult> => ({status: "reachable", statusCode: 200, durationMs: 1})),
     },
-    logger: new MonorepositoryConsoleLogger("doctor::infrastructure", {color: false, sink}),
+    logger: new ComposedTerminalPresenter("doctor::infrastructure", {color: false, sink}),
     files: asReadOnlyFileSystem(nodeFileSystem),
     clock: fixtureClock(),
     environment: fixtureEnvironment(input.env ?? {}, "linux"),

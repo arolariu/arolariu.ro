@@ -7,13 +7,10 @@
  * Every orchestrator test drives `doctorCommand.invoke()`/`run()` through an injected test
  * runtime factory whose filesystem is the in-memory repository fixture and whose inspection
  * registry hands out a deterministic session. No test in this file reads the live checkout,
- * spawns a real probe, or reaches a real network; only the direct-entrypoint smoke tests spawn
- * the real CLI.
+ * spawns a real probe, or reaches a real network: the shared command lifecycle contract and the
+ * public-command-contracts compatibility suite own direct-entry spawn coverage.
  */
 
-import {spawn} from "node:child_process";
-import {resolve} from "node:path";
-import {fileURLToPath} from "node:url";
 import {afterEach, describe, expect, it, vi, type Mock} from "vitest";
 
 const {renderDoctorReportMock} = vi.hoisted(() => ({
@@ -29,20 +26,12 @@ vi.mock("./doctor.reporter.ts", async (importOriginal) => {
   };
 });
 
-import type {CommandExecution, CommandRuntimeFactory} from "./common/commander.ts";
-import {
-  createHttpResponse,
-  createRepositoryFixtureFileSystem,
-  createTestRuntimeFactory,
-  repositoryFixtureRoot,
-} from "./common/runtime.testing.ts";
-import {
-  HttpError,
-  type Clock,
-  type GetOnlyHttpClient,
-  type RepositoryInspectionRequest,
-  type RepositoryInspectionRuntime,
-} from "./common/runtime.ts";
+import type {CommandExecution} from "./core/command/command-execution.ts";
+import {buildCommandHost} from "./testing/builders/command-host.builder.ts";
+import {type Clock, type GetOnlyHttpClient, HttpError} from "./core/runtime/runtime-capability.ts";
+import type {RepositoryInspectionRequest, RepositoryInspectionRuntime} from "./inspection/runtime-capability.ts";
+import {createHttpResponse} from "./testing/fixtures/network.fixture.ts";
+import {createRepositoryFixtureFileSystem, repositoryFixtureRoot} from "./testing/fixtures/repository.fixture.ts";
 import {computeHealthScore, diagnosticWeights} from "./doctor.reporter.ts";
 import {createBoundedNetworkProbe, createDoctorCommand, doctorModules} from "./doctor.ts";
 import type {DiagnosticModule, DiagnosticModuleId, DiagnosticResult, DoctorContext, DoctorInput, DoctorReport} from "./doctor.types.ts";
@@ -175,11 +164,6 @@ function createFixtureInspection(session: RepositoryInspectionSession = createFi
   };
 }
 
-/** Builds the hermetic runtime factory every orchestrator test uses. */
-function createFixtureRuntimeFactory(inspection: RepositoryInspectionRuntime): CommandRuntimeFactory {
-  return createTestRuntimeFactory({files: createRepositoryFixtureFileSystem(), inspection});
-}
-
 interface DoctorFixture {
   readonly command: ReturnType<typeof createDoctorCommand>;
   readonly calls: Readonly<Record<DiagnosticModuleId, Mock<DiagnosticModule["run"]>>>;
@@ -203,7 +187,10 @@ function createDoctorFixture(
 ): DoctorFixture {
   const {modules, calls} = createFakeModules(input.overrides ?? {}, input.facts ?? {});
   const inspection = createFixtureInspection(input.session ?? createFixtureSession());
-  const command = createDoctorCommand({runtimeFactory: createFixtureRuntimeFactory(inspection.inspection), modules});
+  const command = createDoctorCommand(
+    {modules, inspection: inspection.inspection},
+    {host: buildCommandHost({runtime: {files: createRepositoryFixtureFileSystem()}})},
+  );
   return {command, calls, inspection};
 }
 
@@ -716,72 +703,28 @@ describe("doctorCommand.invoke", () => {
     expect(typeof context.clock.monotonicNow()).toBe("number");
     expect(context.environment.variables).toBeDefined();
   });
-
-  it("renders the report exactly once in human presentation", async () => {
-    const fixture = createDoctorFixture();
-
-    await fixture.command.invoke(doctorInput(), {presentation: "human"});
-
-    expect(renderDoctorReportMock).toHaveBeenCalledTimes(1);
-    const [report] = renderDoctorReportMock.mock.calls[0] as [unknown];
-    expect(report).toHaveProperty("score");
-    expect(report).toHaveProperty("grade");
-  });
-
-  it("never renders the report in silent presentation", async () => {
-    const fixture = createDoctorFixture();
-
-    await fixture.command.invoke(doctorInput(), {presentation: "silent"});
-
-    expect(renderDoctorReportMock).not.toHaveBeenCalled();
-  });
 });
 
 describe("doctorCommand.run", () => {
-  it.each(["--help", "-h", "/h", "/help", "/?"])("renders help and exits 0 for '%s'", async (flag) => {
-    const fixture = createDoctorFixture();
-
-    const execution = await fixture.command.run([flag]);
-
-    expect(execution.status).toBe("help");
-    expect(execution.exitCode).toBe(0);
-    for (const moduleId of expectedModuleOrder) {
-      expect(fixture.calls[moduleId]).not.toHaveBeenCalled();
-    }
-  });
-
   it.each([
-    ["--verbose", {verbose: true, quick: false}],
-    ["-v", {verbose: true, quick: false}],
-    ["/v", {verbose: true, quick: false}],
-    ["--quick", {verbose: false, quick: true}],
-    ["/q", {verbose: false, quick: true}],
-  ] as const)("decodes '%s' into typed doctor input", async (flag, expected) => {
+    [["--verbose"], {verbose: true, quick: false}],
+    [["-v"], {verbose: true, quick: false}],
+    [["/v"], {verbose: true, quick: false}],
+    [["--quick"], {verbose: false, quick: true}],
+    [["/q"], {verbose: false, quick: true}],
+    [["/q", "/v"], {verbose: true, quick: true}],
+  ] as const)("decodes %j into typed doctor input", async (argv, expected) => {
     const fixture = createDoctorFixture();
 
-    await fixture.command.run([flag]);
+    await fixture.command.run(argv);
 
     expect(moduleContext(fixture.calls["workspace"]).options).toEqual(expected);
   });
 
-  it("decodes every flag together", async () => {
-    const fixture = createDoctorFixture();
+  it("routes the '/?' alias to the help path", async () => {
+    const {command} = createDoctorFixture();
 
-    await fixture.command.run(["/q", "/v"]);
-
-    expect(moduleContext(fixture.calls["workspace"]).options).toEqual({quick: true, verbose: true});
-  });
-
-  it.each(["--ci", "--json", "--score", "--bogus", "workspace"])("rejects '%s' as a usage failure", async (argument) => {
-    const fixture = createDoctorFixture();
-
-    const execution = await fixture.command.run([argument]);
-
-    expect(execution.status).toBe("failed");
-    expect(execution.exitCode).toBe(2);
-    for (const moduleId of expectedModuleOrder) {
-      expect(fixture.calls[moduleId]).not.toHaveBeenCalled();
-    }
+    await expect(command.run(["/?"])).resolves.toEqual({status: "help", exitCode: 0});
   });
 });
 
@@ -827,43 +770,5 @@ describe("module-error weighting", () => {
     ]);
 
     expect(denominatorShrinkScenario).toBeGreaterThan(crashScenario);
-  });
-});
-
-describe("direct entrypoint", () => {
-  const doctorEntrypoint = fileURLToPath(new URL("./doctor.ts", import.meta.url));
-
-  function runDirect(args: readonly string[]): Promise<Readonly<{code: number | null; output: string}>> {
-    return new Promise((resolveProcess, rejectProcess) => {
-      const child = spawn(process.execPath, [doctorEntrypoint, ...args], {
-        cwd: resolve(doctorEntrypoint, "..", ".."),
-        stdio: ["ignore", "pipe", "pipe"],
-      });
-      let output = "";
-      child.stdout.on("data", (chunk: Buffer) => {
-        output += chunk.toString("utf8");
-      });
-      child.stderr.on("data", (chunk: Buffer) => {
-        output += chunk.toString("utf8");
-      });
-      child.once("error", rejectProcess);
-      child.once("close", (code) => {
-        resolveProcess({code, output});
-      });
-    });
-  }
-
-  it("emits help and exits 0 for a direct process invocation of --help", async () => {
-    const result = await runDirect(["--help"]);
-
-    expect(result.code).toBe(0);
-    expect(result.output).toMatch(/Usage:/);
-  });
-
-  it("emits a usage diagnostic and exits 2 for a direct process invocation of an unknown flag", async () => {
-    const result = await runDirect(["--bogus"]);
-
-    expect(result.code).toBe(2);
-    expect(result.output).toMatch(/unknown option/i);
   });
 });

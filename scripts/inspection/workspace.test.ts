@@ -10,10 +10,14 @@ import {tmpdir} from "node:os";
 import {join, resolve, sep} from "node:path";
 import {describe, expect, it, vi} from "vitest";
 
-import type {ProcessEnvironment, ProcessOutcome, ProcessOutput, ProcessRequest, ProcessRunner} from "../common/runner.ts";
-import {createNodeProcessRunner, nodeClock, nodeFileSystem, snapshotNodeEnvironment} from "../common/runtime.node.ts";
-import type {Clock, FileSystem, RuntimeEnvironment} from "../common/runtime.ts";
-import {createTestRuntimeFactory} from "../common/runtime.testing.ts";
+import type {ProcessEnvironment, ProcessExecutionRequest} from "../core/process/process-execution-request.ts";
+import type {ProcessExecutionOutput, ProcessExecutionResult} from "../core/process/process-execution-result.ts";
+import type {ProcessRunner} from "../core/process/process-runner.ts";
+import {nodeFileSystem} from "../adapters/node/node-filesystem.ts";
+import {nodeClock, snapshotNodeEnvironment} from "../adapters/node/node-platform.ts";
+import {createNodeProcessRunner} from "../adapters/node/node-process-runner.ts";
+import type {Clock, FileSystem, RuntimeEnvironment} from "../core/runtime/runtime-capability.ts";
+import {buildCommandHost} from "../testing/builders/command-host.builder.ts";
 import {resolveRepositoryPaths} from "../common/repository-paths.ts";
 import {createWorkspaceProvider, projectNxGraph, type WorkspaceFacts} from "./workspace.ts";
 import {createWorkspaceWorkerCommand, projectWorkerDocument, workspaceWorkerCommand} from "./workspace.worker.ts";
@@ -199,19 +203,19 @@ describe("projectNxGraph", () => {
 // createWorkspaceProvider — command construction
 // ============================================================================
 
-function succeeded(patch: Partial<ProcessOutput> = {}): ProcessOutcome {
+function succeeded(patch: Partial<ProcessExecutionOutput> = {}): ProcessExecutionResult {
   return {kind: "succeeded", exitCode: 0, stdout: "", stderr: "", durationMs: 1, ...patch};
 }
 
-function exited(exitCode: number, patch: Partial<ProcessOutput> = {}): ProcessOutcome {
+function exited(exitCode: number, patch: Partial<ProcessExecutionOutput> = {}): ProcessExecutionResult {
   return {kind: "exited", exitCode, stdout: "", stderr: "", durationMs: 1, ...patch};
 }
 
-function spawnFailed(message: string, patch: Partial<ProcessOutput> = {}): ProcessOutcome {
+function spawnFailed(message: string, patch: Partial<ProcessExecutionOutput> = {}): ProcessExecutionResult {
   return {kind: "spawn-failed", message, stdout: "", stderr: "", durationMs: 1, ...patch};
 }
 
-function timedOut(patch: Partial<ProcessOutput> = {}): ProcessOutcome {
+function timedOut(patch: Partial<ProcessExecutionOutput> = {}): ProcessExecutionResult {
   return {kind: "timed-out", stdout: "", stderr: "", durationMs: 1, ...patch};
 }
 
@@ -235,7 +239,7 @@ function successStdout(): string {
 }
 
 interface CapturedRun {
-  readonly command: Readonly<ProcessRequest>;
+  readonly command: Readonly<ProcessExecutionRequest>;
   readonly options: Readonly<{
     cwd?: string;
     env?: ProcessEnvironment;
@@ -244,12 +248,12 @@ interface CapturedRun {
   }>;
 }
 
-function createFakeRunner(respond: (call: CapturedRun) => ProcessOutcome): {
+function createFakeRunner(respond: (call: CapturedRun) => ProcessExecutionResult): {
   runner: ProcessRunner;
   calls: CapturedRun[];
 } {
   const calls: CapturedRun[] = [];
-  const run = vi.fn(async (command: Readonly<ProcessRequest>, options: Readonly<CapturedRun["options"]> = {}) => {
+  const run = vi.fn(async (command: Readonly<ProcessExecutionRequest>, options: Readonly<CapturedRun["options"]> = {}) => {
     const call: CapturedRun = {command, options};
     calls.push(call);
     return respond(call);
@@ -449,7 +453,7 @@ describe("workspace worker document projection", () => {
 
 describe("createWorkspaceWorkerCommand", () => {
   it("rejects a missing repository root argument as invalid usage", async () => {
-    const command = createWorkspaceWorkerCommand(createTestRuntimeFactory());
+    const command = createWorkspaceWorkerCommand({host: buildCommandHost()});
 
     const execution = await command.run([]);
 
@@ -458,7 +462,7 @@ describe("createWorkspaceWorkerCommand", () => {
   });
 
   it("rejects more than one repository root argument as invalid usage", async () => {
-    const command = createWorkspaceWorkerCommand(createTestRuntimeFactory());
+    const command = createWorkspaceWorkerCommand({host: buildCommandHost()});
 
     const execution = await command.run(["root-a", "root-b"]);
 
@@ -467,7 +471,7 @@ describe("createWorkspaceWorkerCommand", () => {
   });
 
   it("fails without importing Nx when NX_WORKSPACE_ROOT_PATH is missing", async () => {
-    const command = createWorkspaceWorkerCommand(createTestRuntimeFactory());
+    const command = createWorkspaceWorkerCommand({host: buildCommandHost()});
 
     const execution = await command.invoke({repositoryRoot: REPOSITORY_ROOT});
 
@@ -482,7 +486,7 @@ describe("createWorkspaceWorkerCommand", () => {
       ...snapshotNodeEnvironment(),
       variables: {NX_WORKSPACE_ROOT_PATH: resolve(REPOSITORY_ROOT, "elsewhere")},
     };
-    const command = createWorkspaceWorkerCommand(createTestRuntimeFactory({environment}));
+    const command = createWorkspaceWorkerCommand({host: buildCommandHost({runtime: {environment}})});
 
     const execution = await command.invoke({repositoryRoot: REPOSITORY_ROOT});
 

@@ -10,16 +10,20 @@
  * here reads ambient state. `scripts/status.ts` reuses `formatBytes` only.
  */
 
-import {MonorepositoryConsoleLogger, type MonorepositoryLogger, type ProgressReporter} from "./logger.ts";
-import {nodeLoggerRuntimeHost} from "./runtime.node.ts";
+import {NodeTerminalPresenterSink, nodeTerminalPresenterRuntimeHost} from "../adapters/node/node-terminal-sink.ts";
+import {ComposedTerminalPresenter} from "../core/presentation/composed-terminal-presenter.ts";
+import type {ProgressReporter, TerminalPresenter} from "../core/presentation/terminal-presenter.ts";
 
 /**
- * Builds the default presentation logger used when a caller supplies none.
+ * Builds the default presentation presenter used when a caller supplies none.
  *
- * @returns A human-mode console logger bound to the Node terminal and timer policy.
+ * @returns A human-mode presenter bound to the Node terminal sink and timer policy.
  */
-function defaultPresentationLogger(): MonorepositoryLogger {
-  return new MonorepositoryConsoleLogger("common", {runtimeHost: nodeLoggerRuntimeHost});
+function defaultPresentationLogger(): TerminalPresenter {
+  return new ComposedTerminalPresenter("common", {
+    sink: new NodeTerminalPresenterSink(),
+    runtimeHost: nodeTerminalPresenterRuntimeHost,
+  });
 }
 
 /**
@@ -87,7 +91,7 @@ export function formatTimestamp(now: Date): string {
 export function logWorkerSpawn(
   workerId: number,
   taskName: string,
-  logger: MonorepositoryLogger,
+  logger: TerminalPresenter,
   now: Date,
 ): void {
   logger.line([
@@ -133,7 +137,7 @@ export function logWorkerComplete(
   taskName: string,
   durationMs: number,
   status: "success" | "error",
-  logger: MonorepositoryLogger,
+  logger: TerminalPresenter,
   now: Date,
 ): void {
   const icon = status === "success" ? "✅" : "❌";
@@ -185,7 +189,7 @@ interface ProgressTracker {
  */
 export function createProgressTracker(
   total: number,
-  logger: MonorepositoryLogger = defaultPresentationLogger(),
+  logger: TerminalPresenter = defaultPresentationLogger(),
 ): ProgressTracker {
   let completed = 0;
   let progress: ProgressReporter | null = null;
@@ -264,7 +268,7 @@ interface TimelineEntry {
  */
 export function printWorkerTimeline(
   results: readonly TimelineEntry[],
-  logger: MonorepositoryLogger = defaultPresentationLogger(),
+  logger: TerminalPresenter = defaultPresentationLogger(),
 ): void {
   if (results.length === 0) return;
 

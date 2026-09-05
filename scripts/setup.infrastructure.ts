@@ -24,8 +24,13 @@
 
 import {dirname, resolve} from "node:path";
 
-import {processFailureEvidence, type ProcessOutcome, type ProcessRunner, type SucceededProcessOutcome} from "./common/runner.ts";
-import {CommandCancellation} from "./common/runtime.ts";
+import {
+  processExecutionFailureEvidence,
+  type ProcessExecutionResult,
+  type SucceededProcessExecutionResult,
+} from "./core/process/process-execution-result.ts";
+import type {ProcessRunner} from "./core/process/process-runner.ts";
+import {CommandCancellation} from "./core/runtime/cancellation.ts";
 import {mergeToolingConfig, readToolingConfig, writeToolingConfig} from "./common/tooling-config.ts";
 import {getContainerAdapter, type ContainerRuntimeAdapter} from "./container-runtime/adapters.ts";
 import {resolveContainerEngine} from "./container-runtime/selection.ts";
@@ -93,7 +98,7 @@ function createCredentialIsolatedRunner(runner: ProcessRunner): ProcessRunner {
 // Helpers
 // ---------------------------------------------------------------------------
 
-function isSuccessfulOutcome(outcome: Readonly<ProcessOutcome>): outcome is SucceededProcessOutcome {
+function isSuccessfulOutcome(outcome: Readonly<ProcessExecutionResult>): outcome is SucceededProcessExecutionResult {
   return outcome.kind === "succeeded";
 }
 
@@ -119,15 +124,15 @@ function phaseResult(runtime: SetupPhaseRuntime, startedAt: number, input: Omit<
 /**
  * Converts one failed/interrupted process outcome into bounded, non-secret evidence.
  *
- * @param outcome - A non-`"succeeded"` {@link ProcessOutcome}.
+ * @param outcome - A non-`"succeeded"` {@link ProcessExecutionResult}.
  * @param context - Shared setup dependencies, whose logger sanitizes the rendered evidence.
  * @returns Bounded, sanitized evidence lines describing the failure.
  */
 function commandFailureEvidence(
-  outcome: Readonly<Exclude<ProcessOutcome, SucceededProcessOutcome>>,
+  outcome: Readonly<Exclude<ProcessExecutionResult, SucceededProcessExecutionResult>>,
   context: SetupContext,
 ): readonly string[] {
-  const evidence = processFailureEvidence(outcome, context.logger);
+  const evidence = processExecutionFailureEvidence(outcome, context.logger);
   return [
     ...(outcome.kind === "exited" ? [`Command exited with code ${outcome.exitCode}.`] : []),
     ...(outcome.kind === "timed-out" ? ["Command timed out."] : []),

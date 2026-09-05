@@ -5,7 +5,7 @@
 
 import {dirname, parse, resolve} from "node:path";
 import {fileURLToPath} from "node:url";
-import type {ReadOnlyFileSystem} from "./runtime.ts";
+import type {ReadOnlyFileSystem} from "../core/runtime/runtime-capability.ts";
 
 const REPOSITORY_PACKAGE_NAME = "@arolariu/monorepo";
 

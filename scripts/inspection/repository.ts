@@ -27,9 +27,11 @@
  * `systeminformation` worker process is never spawned.
  */
 
-import type {ProcessRunner} from "../common/runner.ts";
-import type {Clock, FileSystem, ReadOnlyFileSystem, RepositoryInspectionRequest, RuntimeEnvironment, TaskScheduler} from "../common/runtime.ts";
-import {commandCancellationFromSignal} from "../common/runtime.ts";
+import type {ProcessRunner} from "../core/process/process-runner.ts";
+import {commandCancellationFromSignal} from "../core/runtime/cancellation.ts";
+import type {Clock, FileSystem, ReadOnlyFileSystem, RuntimeEnvironment} from "../core/runtime/runtime-capability.ts";
+import type {TaskScheduler} from "../core/runtime/task-scheduler.ts";
+import type {RepositoryInspectionRequest} from "./runtime-capability.ts";
 import type {ContainerEngine} from "../container-runtime/types.ts";
 import {createAggregateProvider, type AggregateFacts} from "./aggregate.ts";
 import {createDotnetProvider, type DotnetFacts} from "./dotnet.ts";
@@ -47,9 +49,6 @@ import {createPythonProvider, type PythonFacts} from "./python.ts";
 import {createInspectionSession} from "./session.ts";
 import type {InspectionOutcome, InspectionProvider, InspectionProviders, InspectionSession} from "./types.ts";
 import {createWorkspaceProvider, type WorkspaceFacts} from "./workspace.ts";
-
-/** Selects how thoroughly {@link createRepositoryInspectionSession} inspects the repository. */
-export type InspectionProfile = "full" | "quick";
 
 /** Every repository fact reachable through one composed {@link RepositoryInspectionSession}. */
 export interface RepositoryInspectionFacts {
@@ -189,15 +188,14 @@ function throwIfCancelled(signal: AbortSignal): void {
  * @returns A session exposing memoized `inspect` and key-scoped `invalidate` across every
  * {@link RepositoryInspectionFacts} key.
  */
-export function createRepositoryInspectionSession(
-  options: Readonly<RepositoryInspectionSessionOptions>,
-): RepositoryInspectionSession {
+export function createRepositoryInspectionSession(options: Readonly<RepositoryInspectionSessionOptions>): RepositoryInspectionSession {
   const {files, temporaryDirectories, clock, tasks, environment, signal} = options;
   const now = (): number => clock.monotonicNow();
   const runner = options.runner.scope({signal});
   const probes = createInspectionProbeRunner(runner);
 
-  const cancellable = <T>(provider: InspectionProvider<T>): InspectionProvider<T> =>
+  const cancellable =
+    <T>(provider: InspectionProvider<T>): InspectionProvider<T> =>
     async (): Promise<InspectionOutcome<T>> => {
       throwIfCancelled(signal);
       const outcome = await provider();

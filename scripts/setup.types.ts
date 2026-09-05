@@ -10,13 +10,14 @@
  * `runner`/`now` bridge remains.
  */
 
-import type {CommandContext, CommandExecution} from "./common/commander.ts";
-import type {MonorepositoryLogger} from "./common/logger.ts";
-import type {PromptProvider} from "./common/prompts.ts";
+import type {CommandExecution, CommandExecutionContext} from "./core/command/command-execution.ts";
+import type {TerminalPresenter} from "./core/presentation/terminal-presenter.ts";
+import type {Clock, FileSystem, HttpClient, PromptProvider, RuntimeEnvironment} from "./core/runtime/runtime-capability.ts";
+import type {TaskScheduler} from "./core/runtime/task-scheduler.ts";
 import type {RepositoryPaths} from "./common/repository-paths.ts";
 import type {RepositoryRequirements} from "./common/requirements.ts";
-import type {ProcessRequest, ProcessRunner} from "./common/runner.ts";
-import type {Clock, FileSystem, HttpClient, RuntimeEnvironment, TaskScheduler} from "./common/runtime.ts";
+import type {ProcessExecutionRequest} from "./core/process/process-execution-request.ts";
+import type {ProcessRunner} from "./core/process/process-runner.ts";
 import type {ContainerEngine} from "./container-runtime/types.ts";
 import type {GenerateInput, GenerateResult} from "./generate.ts";
 import type {RepositoryInspectionSession} from "./inspection/repository.ts";
@@ -95,7 +96,7 @@ export interface SetupAction {
 /** Proposed installation command and rationale. */
 export interface InstallationProposal {
   /** Installation command to run. */
-  readonly command: ProcessRequest;
+  readonly command: ProcessExecutionRequest;
   /** Reason the installation is needed. */
   readonly explanation: string;
 }
@@ -118,7 +119,7 @@ export interface SetupActionExecutor {
  */
 export interface SetupPhaseRuntime {
   /** The owning command invocation context, used to scope nested command invocations. */
-  readonly command: CommandContext;
+  readonly command: CommandExecutionContext;
   /** Phase-scoped child-process runner. */
   readonly runner: ProcessRunner;
   /** Filesystem capability. */
@@ -152,7 +153,7 @@ export interface SetupContext {
   /** Policy-controlled mutation executor. */
   readonly actions: SetupActionExecutor;
   /** Setup logger. */
-  readonly logger: MonorepositoryLogger;
+  readonly logger: TerminalPresenter;
 }
 
 /**

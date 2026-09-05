@@ -45,7 +45,7 @@ export interface ComposeInput extends ContainerEngineInput {
 }
 
 /** Local image action the declarative Image command accepts. */
-export type ImageAction = "build" | "run";
+type ImageAction = "build" | "run";
 
 /** Local image target the declarative Image command accepts. */
 export type ImageTarget = "frontend" | "backend" | "cv" | "exp";

@@ -13,18 +13,17 @@
 import {resolve} from "node:path";
 import {describe, expect, it, vi} from "vitest";
 
-import type {CommandContext, CommandExecution} from "./common/commander.ts";
-import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "./common/logger.ts";
+import type {CommandExecution, CommandExecutionContext} from "./core/command/command-execution.ts";
+import {ComposedTerminalPresenter} from "./core/presentation/composed-terminal-presenter.ts";
+import {RecordingTerminalPresenterSink} from "./testing/fixtures/terminal.fixture.ts";
 import {createRepositoryPaths, type RepositoryPaths} from "./common/repository-paths.ts";
 import type {RepositoryRequirements} from "./common/requirements.ts";
-import {
-  AbstractProcessRunner,
-  type ProcessOutcome,
-  type ProcessRequest,
-  type ProcessRunOptions,
-} from "./common/runner.ts";
-import {createMemoryFileSystem, createTestRuntimeFactory} from "./common/runtime.testing.ts";
-import {FileSystemError, type Clock, type FileSystem} from "./common/runtime.ts";
+import type {ProcessExecutionOptions, ProcessExecutionRequest} from "./core/process/process-execution-request.ts";
+import type {ProcessExecutionResult} from "./core/process/process-execution-result.ts";
+import {AbstractProcessRunner} from "./core/process/process-runner.ts";
+import {type Clock, type FileSystem, FileSystemError} from "./core/runtime/runtime-capability.ts";
+import {buildRuntimeExecutionContext} from "./testing/builders/runtime-context.builder.ts";
+import {createMemoryFileSystem} from "./testing/fixtures/memory-filesystem.fixture.ts";
 import {getExpectedTaxonomyArtifactPaths} from "./common/taxonomy-artifacts.ts";
 import type {GenerateResult, GenerateTaskName} from "./generate.ts";
 import type {NpmTreeFacts} from "./inspection/packages.ts";
@@ -50,41 +49,44 @@ const FIXTURE_EXECUTABLE_PATH = "/usr/bin/node";
 /** Version reported by both `node --version` and the running runtime executable by default. */
 const FIXTURE_NODE_VERSION = "v24.5.0";
 
-function succeeded(stdout: string = "", stderr: string = ""): ProcessOutcome {
+function succeeded(stdout: string = "", stderr: string = ""): ProcessExecutionResult {
   return {kind: "succeeded", exitCode: 0, stdout, stderr, durationMs: 1};
 }
 
-function exited(exitCode: number, patch: Readonly<{stdout?: string; stderr?: string}> = {}): ProcessOutcome {
+function exited(exitCode: number, patch: Readonly<{stdout?: string; stderr?: string}> = {}): ProcessExecutionResult {
   return {kind: "exited", exitCode, stdout: patch.stdout ?? "", stderr: patch.stderr ?? "", durationMs: 1};
 }
 
-function spawnFailed(message: string): ProcessOutcome {
+function spawnFailed(message: string): ProcessExecutionResult {
   return {kind: "spawn-failed", message, stdout: "", stderr: "", durationMs: 1};
 }
 
 /** Records every invocation while replaying request-driven outcomes. */
 class FakeProcessRunner extends AbstractProcessRunner {
-  readonly #respond: (request: Readonly<ProcessRequest>) => ProcessOutcome;
-  readonly #calls: Readonly<{request: ProcessRequest; options: ProcessRunOptions}>[] = [];
+  readonly #respond: (request: Readonly<ProcessExecutionRequest>) => ProcessExecutionResult;
+  readonly #calls: Readonly<{request: ProcessExecutionRequest; options: ProcessExecutionOptions}>[] = [];
 
-  public constructor(respond: (request: Readonly<ProcessRequest>) => ProcessOutcome) {
+  public constructor(respond: (request: Readonly<ProcessExecutionRequest>) => ProcessExecutionResult) {
     super();
     this.#respond = respond;
   }
 
   /** Every recorded invocation, in call order. */
-  public get calls(): readonly Readonly<{request: ProcessRequest; options: ProcessRunOptions}>[] {
+  public get calls(): readonly Readonly<{request: ProcessExecutionRequest; options: ProcessExecutionOptions}>[] {
     return this.#calls;
   }
 
   /** {@inheritDoc AbstractProcessRunner.execute} */
-  protected override execute(request: Readonly<ProcessRequest>, options: Readonly<ProcessRunOptions>): Promise<ProcessOutcome> {
+  protected override execute(
+    request: Readonly<ProcessExecutionRequest>,
+    options: Readonly<ProcessExecutionOptions>,
+  ): Promise<ProcessExecutionResult> {
     this.#calls.push({request, options});
     return Promise.resolve(this.#respond(request));
   }
 }
 
-function defaultOutcome(request: Readonly<ProcessRequest>): ProcessOutcome {
+function defaultOutcome(request: Readonly<ProcessExecutionRequest>): ProcessExecutionResult {
   if (request.command === "git") {
     return succeeded("git version 2.50.0\n");
   }
@@ -238,7 +240,7 @@ interface WorkspaceHarnessInput {
   /** Replaces the assembled filesystem capability, for I/O failure simulation. */
   readonly wrapFiles?: (files: FileSystem) => FileSystem;
   /** Request-driven process outcomes. */
-  readonly respond?: (request: Readonly<ProcessRequest>) => ProcessOutcome;
+  readonly respond?: (request: Readonly<ProcessExecutionRequest>) => ProcessExecutionResult;
   /** Typed generation outcome the composed generation command returns. */
   readonly generation?: CommandExecution<GenerateResult> | (() => Promise<CommandExecution<GenerateResult>>);
   /** Mutation controller; defaults to one derived from `options.dryRun`. */
@@ -255,7 +257,7 @@ interface WorkspaceHarness {
   /** Recorded generation invocations. */
   readonly generate: ReturnType<typeof vi.fn<SetupPhaseRuntime["invokeGenerate"]>>;
   /** Rendered logger output. */
-  readonly sink: InMemoryLoggerSink;
+  readonly sink: RecordingTerminalPresenterSink;
 }
 
 /**
@@ -299,15 +301,12 @@ async function createHarness(input: Readonly<WorkspaceHarnessInput> = {}): Promi
   };
 
   const generation = input.generation ?? completedGeneration();
-  const generate = vi.fn<SetupPhaseRuntime["invokeGenerate"]>(async () =>
-    typeof generation === "function" ? generation() : generation,
-  );
+  const generate = vi.fn<SetupPhaseRuntime["invokeGenerate"]>(async () => (typeof generation === "function" ? generation() : generation));
 
-  const sink = new InMemoryLoggerSink();
-  const logger = new MonorepositoryConsoleLogger("setup::workspace", {color: false, sink});
-  const factory = createTestRuntimeFactory({files, runner, clock, logger});
-  const commandRuntime = await factory.createRoot({presentation: "silent", registerProcessSignals: false});
-  const command: CommandContext = {runtime: commandRuntime, presentation: "silent"};
+  const sink = new RecordingTerminalPresenterSink();
+  const logger = new ComposedTerminalPresenter("setup::workspace", {color: false, sink});
+  const commandRuntime = buildRuntimeExecutionContext({files, runner, clock, presenter: logger});
+  const command: CommandExecutionContext = {runtime: commandRuntime, presentation: "silent"};
 
   const runtime: SetupPhaseRuntime = {
     command,
@@ -376,12 +375,7 @@ describe("workspace prerequisites", () => {
       {command: "npm", args: ["--version"]},
       {command: FIXTURE_EXECUTABLE_PATH, args: ["--version"]},
     ]);
-    expect(runner.calls.map(({options: runOptions}) => runOptions.cwd)).toEqual([
-      FIXTURE_ROOT,
-      FIXTURE_ROOT,
-      FIXTURE_ROOT,
-      FIXTURE_ROOT,
-    ]);
+    expect(runner.calls.map(({options: runOptions}) => runOptions.cwd)).toEqual([FIXTURE_ROOT, FIXTURE_ROOT, FIXTURE_ROOT, FIXTURE_ROOT]);
   });
 
   it("fails when the canonical package is not this repository", async () => {

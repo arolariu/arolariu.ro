@@ -14,8 +14,9 @@ import process from "node:process";
 import {format as formatText, styleText} from "node:util";
 import Piscina from "piscina";
 import {createProgressTracker, formatBytes, logWorkerComplete, logWorkerSpawn, printWorkerTimeline} from "./common/index.ts";
-import {MonorepositoryConsoleLogger, type MonorepositoryLogger} from "./common/logger.ts";
-import {nodeLoggerRuntimeHost} from "./common/runtime.node.ts";
+import {ComposedTerminalPresenter} from "./core/presentation/composed-terminal-presenter.ts";
+import type {TerminalPresenter} from "./core/presentation/terminal-presenter.ts";
+import {NodeTerminalPresenterSink, nodeTerminalPresenterRuntimeHost} from "./adapters/node/node-terminal-sink.ts";
 import type {ESLintFileStats, LintWorkerInput, LintWorkerResult} from "./types/lint.ts";
 
 type LintTarget = "all" | "packages" | "website" | "cv" | "status" | "api" | "exp";
@@ -81,7 +82,7 @@ function scopeForTarget(configName: string): string {
  * @param logger - Logger used for presentation output.
  * @returns Nothing.
  */
-function printWorkerResult(result: LintWorkerResult, logger: MonorepositoryLogger): void {
+function printWorkerResult(result: LintWorkerResult, logger: TerminalPresenter): void {
   const workerInfo = styleText("gray", `[Worker #${result.workerId}]`);
   const timingInfo = styleText("gray", `[init: ${result.initTimeMs}ms, work: ${result.workTimeMs}ms, total: ${result.durationMs}ms]`);
   // For ESLint targets, fileCount reflects the real number of files linted.
@@ -131,7 +132,7 @@ function printWorkerResult(result: LintWorkerResult, logger: MonorepositoryLogge
  * @param results - All worker results containing slowest files data.
  * @param logger - Logger used for presentation output.
  */
-function printSlowestFilesReport(results: readonly LintWorkerResult[], logger: MonorepositoryLogger): void {
+function printSlowestFilesReport(results: readonly LintWorkerResult[], logger: TerminalPresenter): void {
   // Collect all file stats from all workers
   const allFileStats: ESLintFileStats[] = [];
   for (const result of results) {
@@ -161,7 +162,7 @@ function printSlowestFilesReport(results: readonly LintWorkerResult[], logger: M
  * @param results - All worker results containing memory data.
  * @param logger - Logger used for presentation output.
  */
-function printMemorySummary(results: readonly LintWorkerResult[], logger: MonorepositoryLogger): void {
+function printMemorySummary(results: readonly LintWorkerResult[], logger: TerminalPresenter): void {
   const totalMemory = results.reduce((sum, r) => sum + r.peakMemoryBytes, 0);
   const maxMemory = Math.max(...results.map((r) => r.peakMemoryBytes));
   const totalFiles = results.reduce((sum, r) => sum + r.fileCount, 0);
@@ -189,7 +190,7 @@ function printMemorySummary(results: readonly LintWorkerResult[], logger: Monore
 async function startESLint(
   lintTarget: LintTarget,
   filePatterns: readonly string[] | undefined,
-  logger: MonorepositoryLogger,
+  logger: TerminalPresenter,
 ): Promise<number> {
   const hasSelectiveTargeting = filePatterns !== undefined && filePatterns.length > 0;
   const targetDisplay = hasSelectiveTargeting ? `${lintTarget} (${filePatterns.length} patterns)` : lintTarget;
@@ -392,8 +393,9 @@ async function startESLint(
  * @param logger - Optional logger used for all lint output.
  * @returns Process exit code (0 for success, non-zero for failure).
  */
-export async function main(arg?: string, filePatterns?: readonly string[], logger?: MonorepositoryLogger): Promise<number> {
-  const output = logger ?? new MonorepositoryConsoleLogger("lint", {runtimeHost: nodeLoggerRuntimeHost});
+export async function main(arg?: string, filePatterns?: readonly string[], logger?: TerminalPresenter): Promise<number> {
+  const output =
+    logger ?? new ComposedTerminalPresenter("lint", {sink: new NodeTerminalPresenterSink(), runtimeHost: nodeTerminalPresenterRuntimeHost});
   output.line(styleText(["bold", "magenta"], "\n╔════════════════════════════════════════╗"));
   output.line(styleText(["bold", "magenta"], "║    arolariu.ro Code Linter Tool        ║"));
   output.line(styleText(["bold", "magenta"], "╚════════════════════════════════════════╝\n"));
@@ -460,7 +462,10 @@ export async function main(arg?: string, filePatterns?: readonly string[], logge
 }
 
 if (import.meta.main) {
-  const output = new MonorepositoryConsoleLogger("lint", {runtimeHost: nodeLoggerRuntimeHost});
+  const output = new ComposedTerminalPresenter("lint", {
+    sink: new NodeTerminalPresenterSink(),
+    runtimeHost: nodeTerminalPresenterRuntimeHost,
+  });
   const arg = process.argv[2];
   // Collect additional arguments as file patterns for selective targeting
   const filePatterns = process.argv.slice(3).filter((p) => p.length > 0);

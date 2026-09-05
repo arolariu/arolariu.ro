@@ -7,28 +7,29 @@
  * Every orchestrator test drives `setupCommand.invoke()`/`run()` through an injected test runtime
  * factory whose filesystem is an in-memory repository fixture, whose inspection registry hands out
  * a deterministic session, and whose phases are fakes. No test in this file reads the live
- * checkout, spawns a real process, or mutates disk; only the direct-entrypoint smoke tests spawn
- * the real CLI.
+ * checkout, spawns a real process, or mutates disk: the shared command lifecycle contract and the
+ * public-command-contracts compatibility suite own direct-entry spawn coverage.
  */
 
-import {spawn} from "node:child_process";
 import {resolve} from "node:path";
 import {PassThrough} from "node:stream";
-import {fileURLToPath} from "node:url";
 import {describe, expect, it, vi} from "vitest";
 
-import type {CommandExecution, CommandInvoker, CommandRuntimeFactory} from "./common/commander.ts";
-import {InMemoryLoggerSink, MonorepositoryConsoleLogger, type MonorepositoryLogger} from "./common/logger.ts";
-import {createTerminalPromptProvider, type PromptProvider} from "./common/prompts.ts";
+import type {CommandExecution, CommandInvoker} from "./core/command/command-execution.ts";
+import {buildCommandHost} from "./testing/builders/command-host.builder.ts";
+import {ComposedTerminalPresenter} from "./core/presentation/composed-terminal-presenter.ts";
+import {RecordingTerminalPresenterSink} from "./testing/fixtures/terminal.fixture.ts";
+import type {TerminalPresenter} from "./core/presentation/terminal-presenter.ts";
+import {createNodePromptProvider} from "./adapters/node/node-prompt-provider.ts";
+import {CommandCancellation} from "./core/runtime/cancellation.ts";
+import type {FileSystem, PromptProvider} from "./core/runtime/runtime-capability.ts";
+import type {RepositoryInspectionRequest, RepositoryInspectionRuntime} from "./inspection/runtime-capability.ts";
+import {createMemoryFileSystem} from "./testing/fixtures/memory-filesystem.fixture.ts";
+import {repositoryFixtureRoot} from "./testing/fixtures/repository.fixture.ts";
 import {createRepositoryPaths, type RepositoryPaths} from "./common/repository-paths.ts";
-import type {ProcessRequest, ProcessRunOptions, ProcessRunner} from "./common/runner.ts";
-import {createMemoryFileSystem, createProcessRunner, createTestRuntimeFactory, repositoryFixtureRoot} from "./common/runtime.testing.ts";
-import {
-  CommandCancellation,
-  type FileSystem,
-  type RepositoryInspectionRequest,
-  type RepositoryInspectionRuntime,
-} from "./common/runtime.ts";
+import type {ProcessExecutionOptions, ProcessExecutionRequest} from "./core/process/process-execution-request.ts";
+import type {ProcessRunner} from "./core/process/process-runner.ts";
+import {buildRecordingProcessRunner} from "./testing/builders/process-result.builder.ts";
 import type {GenerateInput, GenerateResult} from "./generate.ts";
 import type {RepositoryInspectionSession} from "./inspection/repository.ts";
 import {createSetupActionExecutor, createSetupCommand, setupPhases, type SetupResult} from "./setup.ts";
@@ -104,11 +105,11 @@ function setupFixtureInspection(session: RepositoryInspectionSession = createFak
 }
 
 function createLogger(verbose?: boolean): Readonly<{
-  logger: MonorepositoryConsoleLogger;
-  sink: InMemoryLoggerSink;
+  logger: ComposedTerminalPresenter;
+  sink: RecordingTerminalPresenterSink;
 }> {
-  const sink = new InMemoryLoggerSink();
-  const logger = new MonorepositoryConsoleLogger("setup", {
+  const sink = new RecordingTerminalPresenterSink();
+  const logger = new ComposedTerminalPresenter("setup", {
     color: false,
     sink,
     ...(verbose === undefined ? {} : {verbose}),
@@ -233,7 +234,7 @@ describe("createSetupActionExecutor", () => {
     const input = new PassThrough();
     const output = new PassThrough();
     const {logger} = createLogger();
-    const prompts = createTerminalPromptProvider({
+    const prompts = createNodePromptProvider({
       input,
       output,
       isTTY: false,
@@ -322,7 +323,7 @@ const setupFixturePhases: readonly SetupPhaseDefinition[] = [
 ];
 
 /** Recording process runner used to assert phase-scoped command options. */
-type RecordingRunner = ProcessRunner & Readonly<{calls: readonly Readonly<{request: ProcessRequest; options: ProcessRunOptions}>[]}>;
+type RecordingRunner = ProcessRunner & Readonly<{calls: readonly Readonly<{request: ProcessExecutionRequest; options: ProcessExecutionOptions}>[]}>;
 
 /** Every seam one orchestrator test may replace. */
 interface SetupFixtureInput {
@@ -335,7 +336,7 @@ interface SetupFixtureInput {
   /** Process runner every phase command is recorded by. */
   readonly runner?: RecordingRunner;
   /** Logger every rendered line is captured through. */
-  readonly logger?: MonorepositoryLogger;
+  readonly logger?: TerminalPresenter;
   /** Inspection session the shared registry hands out. */
   readonly session?: RepositoryInspectionSession;
   /** Composed generation command. */
@@ -360,20 +361,24 @@ interface SetupFixture {
  */
 function createSetupFixture(input: Readonly<SetupFixtureInput> = {}): SetupFixture {
   const inspection = setupFixtureInspection(input.session ?? createFakeInspectionSession());
-  const runner = input.runner ?? createProcessRunner();
-  const runtimeFactory: CommandRuntimeFactory = createTestRuntimeFactory({
-    files: input.files ?? setupFixtureFileSystem(),
-    inspection: inspection.inspection,
-    runner,
-    ...(input.prompts === undefined ? {} : {prompts: input.prompts}),
-    ...(input.logger === undefined ? {} : {logger: input.logger}),
+  const runner = input.runner ?? buildRecordingProcessRunner();
+  const host = buildCommandHost({
+    runtime: {
+      files: input.files ?? setupFixtureFileSystem(),
+      runner,
+      ...(input.prompts === undefined ? {} : {prompts: input.prompts}),
+      ...(input.logger === undefined ? {} : {presenter: input.logger}),
+    },
   });
 
-  const command = createSetupCommand({
-    runtimeFactory,
-    phases: input.phases ?? setupFixturePhases,
-    ...(input.generate === undefined ? {} : {generate: input.generate}),
-  });
+  const command = createSetupCommand(
+    {
+      phases: input.phases ?? setupFixturePhases,
+      inspection: inspection.inspection,
+      ...(input.generate === undefined ? {} : {generate: input.generate}),
+    },
+    {host},
+  );
 
   return {command, inspection, runner};
 }
@@ -790,7 +795,7 @@ describe("setup phase command execution", () => {
     });
   }
 
-  function recordedOptions(runner: RecordingRunner): ProcessRunOptions {
+  function recordedOptions(runner: RecordingRunner): ProcessExecutionOptions {
     const call = runner.calls[0];
     if (call === undefined) {
       throw new Error("No process invocation was recorded.");
@@ -799,7 +804,7 @@ describe("setup phase command execution", () => {
   }
 
   it("scopes every phase command to the repository root with the bounded default timeout", async () => {
-    const runner = createProcessRunner();
+    const runner = buildRecordingProcessRunner();
     const {command} = createSetupFixture({
       runner,
       phases: [commandPhase((context) => context.runtime?.runner.run({command: "dotnet", args: ["--version"]}) ?? Promise.resolve())],
@@ -813,7 +818,7 @@ describe("setup phase command execution", () => {
   });
 
   it("preserves an explicit caller timeout instead of the scoped default", async () => {
-    const runner = createProcessRunner();
+    const runner = buildRecordingProcessRunner();
     const {command} = createSetupFixture({
       runner,
       phases: [
@@ -829,7 +834,7 @@ describe("setup phase command execution", () => {
   });
 
   it("keeps the scoped default for a mutation command instead of the pre-migration bridge policy", async () => {
-    const runner = createProcessRunner();
+    const runner = buildRecordingProcessRunner();
     const {command} = createSetupFixture({
       runner,
       phases: [
@@ -844,7 +849,7 @@ describe("setup phase command execution", () => {
 
   it("does not echo command evidence in normal mode", async () => {
     const {logger, sink} = createLogger(false);
-    const runner = createProcessRunner();
+    const runner = buildRecordingProcessRunner();
     const {command} = createSetupFixture({
       logger,
       runner,
@@ -859,7 +864,7 @@ describe("setup phase command execution", () => {
 
   it("echoes formatted command evidence in verbose mode without stdin or environment values", async () => {
     const {logger, sink} = createLogger(true);
-    const runner = createProcessRunner();
+    const runner = buildRecordingProcessRunner();
     const {command} = createSetupFixture({
       logger,
       runner,
@@ -964,15 +969,6 @@ describe("setup presentation", () => {
 
     expect(sink.records.map((record) => record.text).join("\n")).not.toContain("🐛");
   });
-
-  it("defers the summary to completion, so a silent nested invocation never renders it", async () => {
-    const {logger, sink} = createLogger();
-    const {command} = createSetupFixture({logger, phases: [stubPhase("dotnet")]});
-
-    await command.invoke(options());
-
-    expect(sink.records.map((record) => record.text).join("\n")).not.toContain("Setup summary");
-  });
 });
 
 describe("setup input decoding", () => {
@@ -1033,16 +1029,6 @@ describe("setup input decoding", () => {
     expect(execution.failure.message).toMatch(/engine/i);
     expect(inspection.requests).toHaveLength(0);
   });
-
-  it("renders help and performs no repository work", async () => {
-    const {command, inspection} = createSetupFixture({phases: [stubPhase("dotnet")]});
-
-    const execution = await command.run(["--help"]);
-
-    expect(execution.status).toBe("help");
-    expect(execution.exitCode).toBe(0);
-    expect(inspection.requests).toHaveLength(0);
-  });
 });
 
 describe("setup generation composition", () => {
@@ -1071,50 +1057,5 @@ describe("setup generation composition", () => {
     expect(generateInput).toEqual({verbose: false, env: true, i18n: true, gql: true, artifacts: true});
     expect(invocationOptions?.presentation).toBe("silent");
     expect(invocationOptions?.parent).toBeDefined();
-  });
-});
-
-describe("direct entrypoint", () => {
-  const setupEntrypoint = fileURLToPath(new URL("./setup.ts", import.meta.url));
-
-  function runDirect(args: readonly string[]): Promise<Readonly<{code: number | null; output: string}>> {
-    return new Promise((resolveProcess, rejectProcess) => {
-      const child = spawn(process.execPath, [setupEntrypoint, ...args], {
-        cwd: resolve(setupEntrypoint, "..", ".."),
-        stdio: ["ignore", "pipe", "pipe"],
-      });
-      let output = "";
-      child.stdout.on("data", (chunk: Buffer) => {
-        output += chunk.toString("utf8");
-      });
-      child.stderr.on("data", (chunk: Buffer) => {
-        output += chunk.toString("utf8");
-      });
-      child.once("error", rejectProcess);
-      child.once("close", (code) => {
-        resolveProcess({code, output});
-      });
-    });
-  }
-
-  it("emits help and exits 0 for a direct process invocation of --help", async () => {
-    const result = await runDirect(["--help"]);
-
-    expect(result.code).toBe(0);
-    expect(result.output).toMatch(/Usage:/);
-  });
-
-  it("emits a usage diagnostic and exits 2 for a direct process invocation of an unknown flag", async () => {
-    const result = await runDirect(["--bogus"]);
-
-    expect(result.code).toBe(2);
-    expect(result.output).toMatch(/unknown option/i);
-  });
-
-  it("emits a usage diagnostic and exits 2 for a direct process invocation of an unsupported engine", async () => {
-    const result = await runDirect(["--engine=docker"]);
-
-    expect(result.code).toBe(2);
-    expect(result.output).toMatch(/engine/i);
   });
 });

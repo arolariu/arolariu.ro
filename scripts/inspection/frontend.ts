@@ -13,7 +13,7 @@
 
 import {basename, relative, resolve} from "node:path";
 
-import type {ProcessOutcome} from "../common/runner.ts";
+import type {ProcessExecutionResult} from "../core/process/process-execution-result.ts";
 import type {RepositoryPaths} from "../common/repository-paths.ts";
 import {getExpectedTaxonomyArtifactPaths} from "../common/taxonomy-artifacts.ts";
 import {SVELTE_INSPECTED_PACKAGE_NAMES, type PackageInventoryFacts} from "./packages.ts";
@@ -139,11 +139,11 @@ function elapsedMilliseconds(startedAt: number, now: () => number): number {
   return Number.isFinite(elapsed) ? Math.max(0, elapsed) : 0;
 }
 
-function isSuccessfulCommand(outcome: Readonly<ProcessOutcome>): boolean {
+function isSuccessfulCommand(outcome: Readonly<ProcessExecutionResult>): boolean {
   return outcome.kind === "succeeded";
 }
 
-function hasTransportFailure(outcome: Readonly<ProcessOutcome>): boolean {
+function hasTransportFailure(outcome: Readonly<ProcessExecutionResult>): boolean {
   switch (outcome.kind) {
     case "succeeded":
     case "exited":
@@ -195,7 +195,7 @@ async function readFirstExistingTextFile(
  * @param content - Complete `.env` file contents.
  * @returns Syntax errors, recognized present keys, and missing core or authentication keys.
  */
-export function inspectEnvironmentContent(content: string): EnvironmentFacts {
+function inspectEnvironmentContent(content: string): EnvironmentFacts {
   const syntaxErrors: string[] = [];
   const seenAtLine = new Map<string, number>();
   const presentKeys = new Set<string>();

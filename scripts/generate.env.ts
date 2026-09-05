@@ -11,15 +11,17 @@
  * - prompts the developer for missing values based on required keys.
  *
  * Every ambient effect (filesystem, HTTP, prompts, environment variables, and the wall clock)
- * is routed through the injected {@link CommandContext.runtime} instead of touching Node globals
+ * is routed through the injected {@link CommandExecutionContext.runtime} instead of touching Node globals
  * directly, so the command is fully exercised by the declarative command runtime's test fakes.
  */
 
 import path from "node:path";
 import {APP_CONFIGURATION_MAPPING, AZURE_RUNTIME_IDENTITY_KEYS, isSecretKey} from "./azure/index.ts";
 import type {AppConfigurationEnvironmentKey, GeneratedEnvironmentConfiguration, GeneratedEnvironmentKey} from "./azure/index.ts";
-import {MonorepoCommand, type CommandContext, type CommandRuntimeFactory} from "./common/commander.ts";
-import type {MonorepositoryLogger} from "./common/logger.ts";
+import type {CommandExecutionContext} from "./core/command/command-execution.ts";
+import {defineCommand, type LazyMonorepoCommand} from "./core/command/lazy-monorepo-command.ts";
+import type {CommandConstructionOptions, CommandHost} from "./core/command/command-specification.ts";
+import type {TerminalPresenter} from "./core/presentation/terminal-presenter.ts";
 
 /** Typed input accepted by every migrated `generate` leaf command. */
 export interface GenerateLeafInput {
@@ -135,10 +137,10 @@ export function appendMissingEnvironmentValues(original: string, additions: Read
  * @returns A promise that resolves to the typed configuration object.
  */
 async function fetchConfigurationFromExp(
-  context: Readonly<CommandContext>,
+  context: Readonly<CommandExecutionContext>,
   verbose: boolean,
 ): Promise<GeneratedEnvironmentConfiguration> {
-  const {logger, environment, http, signal} = context.runtime;
+  const {presenter: logger, environment, http, signal} = context.runtime;
   const expBaseUrl =
     environment.variables["EXP_PROXY_URL"]?.trim() || (environment.variables["AZURE_CLIENT_ID"] ? AZURE_EXP_URL : "http://exp");
   const useAzureAuth = expBaseUrl === AZURE_EXP_URL;
@@ -229,11 +231,11 @@ async function fetchConfigurationFromExp(
  * @returns The parsed configuration as a partial typed object.
  */
 async function fetchConfigurationFromLocalEnvFile(
-  context: Readonly<CommandContext>,
+  context: Readonly<CommandExecutionContext>,
   envPath: string,
   verbose: boolean,
 ): Promise<GeneratedEnvironmentConfiguration> {
-  const {logger, files, environment} = context.runtime;
+  const {presenter: logger, files, environment} = context.runtime;
   const config: GeneratedEnvironmentConfiguration = {};
 
   if (!(await files.exists(envPath))) {
@@ -280,11 +282,11 @@ async function fetchConfigurationFromLocalEnvFile(
  * @returns A partial configuration object containing newly provided values.
  */
 async function promptForMissingKeys(
-  context: Readonly<CommandContext>,
+  context: Readonly<CommandExecutionContext>,
   missingKeys: readonly AppConfigurationEnvironmentKey[],
   verbose: boolean,
 ): Promise<GeneratedEnvironmentConfiguration> {
-  const {logger, prompts} = context.runtime;
+  const {presenter: logger, prompts} = context.runtime;
   logger.section("Prompting for missing environment variables", "🔍");
 
   if (missingKeys.length === 0) {
@@ -335,10 +337,10 @@ async function promptForMissingKeys(
  * @returns The completed typed configuration.
  */
 async function ensureLocalEnvIsComplete(
-  context: Readonly<CommandContext>,
+  context: Readonly<CommandExecutionContext>,
   verbose: boolean,
 ): Promise<GeneratedEnvironmentConfiguration> {
-  const {logger, prompts} = context.runtime;
+  const {presenter: logger, prompts} = context.runtime;
   logger.section("Ensuring local environment configuration is complete", "🔧");
   const configurationKeys = Object.values(APP_CONFIGURATION_MAPPING);
 
@@ -438,7 +440,7 @@ function addConfigSection(
   emoji: string,
   keys: readonly string[],
   config: GeneratedEnvironmentConfiguration,
-  logger: MonorepositoryLogger,
+  logger: TerminalPresenter,
 ): void {
   logger.info(`${emoji} Adding ${sectionName} Configuration.`);
   lines.push("", `# ${sectionName} Configuration Start`);
@@ -460,8 +462,8 @@ function addConfigSection(
  * @param config - Completed configuration object.
  * @returns A newline-separated `.env` payload.
  */
-function generateEnvFileContent(context: Readonly<CommandContext>, config: GeneratedEnvironmentConfiguration): string {
-  const {logger, environment, clock} = context.runtime;
+function generateEnvFileContent(context: Readonly<CommandExecutionContext>, config: GeneratedEnvironmentConfiguration): string {
+  const {presenter: logger, environment, clock} = context.runtime;
   logger.section("Generating .env file content", "📝");
 
   const timestamp = clock.isoTimestamp();
@@ -514,12 +516,12 @@ function generateEnvFileContent(context: Readonly<CommandContext>, config: Gener
  * @returns Absolute destination paths that were successfully written.
  */
 async function copyEnvFileToSubRepos(
-  context: Readonly<CommandContext>,
+  context: Readonly<CommandExecutionContext>,
   sourcePath: string,
   targetPaths: readonly string[],
   verbose: boolean,
 ): Promise<readonly string[]> {
-  const {logger, files, environment} = context.runtime;
+  const {presenter: logger, files, environment} = context.runtime;
   logger.section("Copying .env file to sub-repositories", "📂");
   const copiedFiles: string[] = [];
 
@@ -565,7 +567,7 @@ function resolveVerbose(flag: boolean, variables: Readonly<Record<string, string
  * @returns The completion summary and every file this invocation created or modified.
  */
 async function generateEnvironment(
-  context: Readonly<CommandContext>,
+  context: Readonly<CommandExecutionContext>,
   input: Readonly<GenerateLeafInput>,
 ): Promise<GenerateLeafResult> {
   const {environment} = context.runtime;
@@ -576,15 +578,15 @@ async function generateEnvironment(
   // call below silently suppressed. Forking a scope keyed to the effective verbosity preserves
   // the documented environment override while still sharing this invocation's sink, redactions,
   // and presentation mode.
-  const scopedContext: Readonly<CommandContext> = {
+  const scopedContext: Readonly<CommandExecutionContext> = {
     ...context,
     runtime: {
       ...context.runtime,
-      logger: context.runtime.logger.fork(COMMAND_NAME, {mode: context.presentation, verbose: effectiveVerbose}),
+      presenter: context.runtime.presenter.fork(COMMAND_NAME, {mode: context.presentation, verbose: effectiveVerbose}),
     },
   };
   const {runtime} = scopedContext;
-  const {logger} = runtime;
+  const {presenter: logger} = runtime;
   const isAzure = environment.variables["INFRA"] === "azure";
   const isProduction = environment.variables["PRODUCTION"] === "true";
 
@@ -649,38 +651,42 @@ async function generateEnvironment(
   };
 }
 
+/** The only edge from this entrypoint into the Node command host; core never names it. */
+const loadProductionCommandHost = async (): Promise<CommandHost> =>
+  import("./adapters/node/node-command-host.ts").then(({createNodeCommandHost}) => createNodeCommandHost(COMMAND_NAME));
+
 /**
  * Creates the environment generator command.
  *
- * @param runtimeFactory - Optional runtime factory; tests inject a fake instead of the Node adapter.
+ * @param options - Injected command host or literal loader; defaults to the Node adapter.
  * @returns The typed `generate:env` command object.
  */
 export function createGenerateEnvironmentCommand(
-  runtimeFactory?: CommandRuntimeFactory,
-): MonorepoCommand<GenerateLeafInput, GenerateLeafResult> {
-  return new MonorepoCommand<GenerateLeafInput, GenerateLeafResult>(
+  options: Readonly<CommandConstructionOptions> = {loadHost: loadProductionCommandHost},
+): LazyMonorepoCommand<GenerateLeafInput, GenerateLeafResult, never> {
+  return defineCommand<GenerateLeafInput, GenerateLeafResult>(
     {
-      metadata: {
-        name: COMMAND_NAME,
-        description: "Generate the website environment file.",
-        examples: ["npm run generate:env", "npm run generate:env -- --verbose"],
-        slashAliases: {"/v": "--verbose", "/verbose": "--verbose"},
-      },
+      name: COMMAND_NAME,
+      description: "Generate the website environment file.",
+      examples: ["npm run generate:env", "npm run generate:env -- --verbose"],
+      slashAliases: {"/v": "--verbose", "/verbose": "--verbose"},
       configure: (program) => {
         program.option("-v, --verbose", "Enable diagnostic output.");
       },
       decode: (program) => ({verbose: program.opts<{verbose?: boolean}>().verbose === true}),
       execute: generateEnvironment,
-      completion: (result) => ({
+      complete: (result) => ({
         exitCode: 0,
+        value: result,
         human: (logger) => logger.success(result.summary),
       }),
     },
-    runtimeFactory,
+    options,
   );
 }
 
 /** Production singleton used by the aggregate CLI and this module's direct entrypoint. */
-export const generateEnvironmentCommand: MonorepoCommand<GenerateLeafInput, GenerateLeafResult> = createGenerateEnvironmentCommand();
+export const generateEnvironmentCommand: LazyMonorepoCommand<GenerateLeafInput, GenerateLeafResult, never> =
+  createGenerateEnvironmentCommand();
 
 await generateEnvironmentCommand.runIfMain(import.meta.url);

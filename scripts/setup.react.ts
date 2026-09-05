@@ -29,8 +29,10 @@
  * because the secret-bearing additive `.env` policy is business logic, not a runtime capability.
  */
 
-import type {ProcessOutcome, ProcessRequest, SucceededProcessOutcome} from "./common/runner.ts";
-import {CommandCancellation, type FileSystem} from "./common/runtime.ts";
+import type {ProcessExecutionRequest} from "./core/process/process-execution-request.ts";
+import type {ProcessExecutionResult, SucceededProcessExecutionResult} from "./core/process/process-execution-result.ts";
+import {CommandCancellation} from "./core/runtime/cancellation.ts";
+import type {FileSystem} from "./core/runtime/runtime-capability.ts";
 import {appendMissingEnvironmentValues, parseEnvironmentFile} from "./generate.env.ts";
 import type {ReactFacts} from "./inspection/frontend.ts";
 import type {PackageInventoryFacts} from "./inspection/packages.ts";
@@ -113,20 +115,20 @@ const ENVIRONMENT_FILE_MODE = 0o600;
  * timeout the deprecated setup runner bridge used to supply implicitly.
  */
 const LONG_RUNNING_MUTATION_TIMEOUT_MS = 1_200_000;
-const BROWSER_INSTALL_COMMAND: ProcessRequest = {
+const BROWSER_INSTALL_COMMAND: ProcessExecutionRequest = {
   command: "npx",
   args: ["--no-install", "playwright", "install", "chromium"],
 };
-const SYSTEM_DEPENDENCIES_PROBE: ProcessRequest = {
+const SYSTEM_DEPENDENCIES_PROBE: ProcessExecutionRequest = {
   command: "npx",
   args: ["--no-install", "playwright", "install-deps", "--dry-run", "chromium"],
 };
-const SYSTEM_DEPENDENCIES_INSTALL: ProcessRequest = {
+const SYSTEM_DEPENDENCIES_INSTALL: ProcessExecutionRequest = {
   command: "npx",
   args: ["--no-install", "playwright", "install-deps", "chromium"],
 };
 
-function isSuccessfulOutcome(outcome: Readonly<ProcessOutcome>): outcome is SucceededProcessOutcome {
+function isSuccessfulOutcome(outcome: Readonly<ProcessExecutionResult>): outcome is SucceededProcessExecutionResult {
   return outcome.kind === "succeeded";
 }
 
@@ -136,7 +138,7 @@ function isSuccessfulOutcome(outcome: Readonly<ProcessOutcome>): outcome is Succ
  * @param outcome - Completed process outcome.
  * @returns Whether the outcome carries a child-reported exit code rather than a transport failure.
  */
-function transportCompleted(outcome: Readonly<ProcessOutcome>): boolean {
+function transportCompleted(outcome: Readonly<ProcessExecutionResult>): boolean {
   return outcome.kind === "succeeded" || outcome.kind === "exited";
 }
 
@@ -154,7 +156,7 @@ function hasErrorCode(error: unknown, code: string): boolean {
  * @param outcome - Completed process outcome.
  * @returns Evidence lines naming the transport failure and any captured output.
  */
-function commandFailureEvidence(outcome: Readonly<ProcessOutcome>): readonly string[] {
+function commandFailureEvidence(outcome: Readonly<ProcessExecutionResult>): readonly string[] {
   const evidence: string[] = [];
   switch (outcome.kind) {
     case "succeeded":
@@ -575,7 +577,7 @@ async function ensureLinuxDependencies(
       const installation = await runtime.runner.run(SYSTEM_DEPENDENCIES_INSTALL, {
         cwd: context.paths.root,
         output: "tee",
-        logger: context.logger,
+        presenter: context.logger,
         timeoutMs: LONG_RUNNING_MUTATION_TIMEOUT_MS,
       });
       if (!isSuccessfulOutcome(installation)) {
@@ -640,7 +642,7 @@ async function preparePlaywright(
       const installation = await runtime.runner.run(BROWSER_INSTALL_COMMAND, {
         cwd: context.paths.root,
         output: "tee",
-        logger: context.logger,
+        presenter: context.logger,
         timeoutMs: LONG_RUNNING_MUTATION_TIMEOUT_MS,
       });
       if (!isSuccessfulOutcome(installation)) {

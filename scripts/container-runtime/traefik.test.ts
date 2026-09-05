@@ -4,7 +4,7 @@
  */
 
 import {describe, expect, it} from "vitest";
-import {createMemoryFileSystem} from "../common/runtime.testing.ts";
+import {createMemoryFileSystem} from "../testing/fixtures/memory-filesystem.fixture.ts";
 import {buildSelfhostTraefikConfig, removeSelfhostTraefikConfig, selfhostTraefikConfigPath, writeSelfhostTraefikConfig} from "./traefik.ts";
 
 describe("buildSelfhostTraefikConfig", () => {

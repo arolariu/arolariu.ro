@@ -18,12 +18,14 @@
  *
  * This command is used by `npm run generate` as part of the build toolchain. Every ambient
  * effect (filesystem and environment) is routed through the injected
- * {@link CommandContext.runtime} instead of touching Node globals directly.
+ * {@link CommandExecutionContext.runtime} instead of touching Node globals directly.
  */
 
 import path from "node:path";
-import {MonorepoCommand, type CommandContext, type CommandRuntimeFactory} from "./common/commander.ts";
-import type {MonorepositoryLogger} from "./common/logger.ts";
+import type {CommandExecutionContext} from "./core/command/command-execution.ts";
+import {defineCommand, type LazyMonorepoCommand} from "./core/command/lazy-monorepo-command.ts";
+import type {CommandConstructionOptions, CommandHost} from "./core/command/command-specification.ts";
+import type {TerminalPresenter} from "./core/presentation/terminal-presenter.ts";
 
 /** Typed input accepted by every migrated `generate` leaf command. */
 export interface GenerateLeafInput {
@@ -63,8 +65,8 @@ type MessageFormat = {
  * @param verbose - Enables verbose logging.
  * @returns The translation file as a `MessageFormat` object.
  */
-async function loadTranslationFile(context: Readonly<CommandContext>, filePath: string, verbose: boolean): Promise<MessageFormat> {
-  const {logger, files} = context.runtime;
+async function loadTranslationFile(context: Readonly<CommandExecutionContext>, filePath: string, verbose: boolean): Promise<MessageFormat> {
+  const {presenter: logger, files} = context.runtime;
   try {
     const translationFile = await files.readText(filePath);
     if (verbose) {
@@ -107,7 +109,7 @@ async function loadTranslationFile(context: Readonly<CommandContext>, filePath: 
  * @remarks The function will treat non-existent values as an empty string.
  * @returns The value of the translation key.
  */
-function extractMessageValue(messages: MessageFormat, keyNamespace: string, verbose: boolean, logger: MonorepositoryLogger): Message {
+function extractMessageValue(messages: MessageFormat, keyNamespace: string, verbose: boolean, logger: TerminalPresenter): Message {
   if (verbose) {
     logger.debug(`[extractMessageValue] Extracting message value for key: ${keyNamespace}`);
   }
@@ -153,7 +155,7 @@ function compareMessageKeysNaive(
   baseTranslationKeys: MessageFormat,
   currentTranslationsKeys: MessageFormat,
   verbose: boolean,
-  logger: MonorepositoryLogger,
+  logger: TerminalPresenter,
 ): boolean {
   logger.info("[compareMessageKeysNaive] Comparing translation keys.");
   const baseKeys = extractMessageKeys(baseTranslationKeys, verbose, logger);
@@ -217,7 +219,7 @@ function areMessageValuesEqual(
   baseTranslationMessage: Message,
   currentTranslationMessage: Message,
   verbose: boolean,
-  logger: MonorepositoryLogger,
+  logger: TerminalPresenter,
 ): boolean {
   if (verbose) {
     logger.debug("[areMessageValuesEqual] Comparing translation message values.");
@@ -286,7 +288,7 @@ function areMessageValuesEqual(
  * @param logger Logger used for extraction diagnostics.
  * @returns Compound translation keys in traversal order.
  */
-function extractMessageKeys(messages: MessageFormat, verbose: boolean, logger: MonorepositoryLogger): string[] {
+function extractMessageKeys(messages: MessageFormat, verbose: boolean, logger: TerminalPresenter): string[] {
   const keys: string[] = [];
 
   if (verbose) {
@@ -323,7 +325,7 @@ function extractMessageKeys(messages: MessageFormat, verbose: boolean, logger: M
  * @param logger Logger used for missing-key output.
  * @returns An array of keys that are missing from the translated file.
  */
-function findMissingKeys(englishKeys: string[], translatedKeys: string[], verbose: boolean, logger: MonorepositoryLogger): string[] {
+function findMissingKeys(englishKeys: string[], translatedKeys: string[], verbose: boolean, logger: TerminalPresenter): string[] {
   const missingKeys: string[] = [];
 
   for (const englishKey of englishKeys) {
@@ -353,7 +355,7 @@ function findMissingKeys(englishKeys: string[], translatedKeys: string[], verbos
  * @param verbose Whether to emit segment diagnostics.
  * @param logger Logger used for segment diagnostics.
  */
-function addMissingKey(existing: MessageFormat, compoundKey: string, verbose: boolean, logger: MonorepositoryLogger): void {
+function addMissingKey(existing: MessageFormat, compoundKey: string, verbose: boolean, logger: TerminalPresenter): void {
   let cursor: MessageFormat = existing;
   const parts = compoundKey.split(".");
   for (const [idx, part] of parts.entries()) {
@@ -380,12 +382,12 @@ function addMissingKey(existing: MessageFormat, compoundKey: string, verbose: bo
  * @param verbose Whether to emit key-segment diagnostics.
  */
 async function writeTranslationKeysFile(
-  context: Readonly<CommandContext>,
+  context: Readonly<CommandExecutionContext>,
   filePath: string,
   translationKeys: readonly string[],
   verbose: boolean,
 ): Promise<void> {
-  const {logger, files} = context.runtime;
+  const {presenter: logger, files} = context.runtime;
   try {
     let existingMessages: MessageFormat = {};
 
@@ -429,14 +431,14 @@ interface LocaleValidationResult {
  * @returns The target locale file path and the number of missing keys that were added.
  */
 async function validateLocale(
-  context: Readonly<CommandContext>,
+  context: Readonly<CommandExecutionContext>,
   enTranslations: MessageFormat,
   enKeys: string[],
   targetLocale: string,
   translationsPath: string,
   verbose: boolean,
 ): Promise<LocaleValidationResult> {
-  const {logger} = context.runtime;
+  const {presenter: logger} = context.runtime;
   const targetFile = path.resolve(translationsPath, `${targetLocale}.json`);
   logger.section(`Validating ${targetLocale.toUpperCase()} translations`, "📋");
 
@@ -466,10 +468,10 @@ async function validateLocale(
  * @returns The completion summary and every locale file this invocation modified.
  */
 async function generateI18n(
-  context: Readonly<CommandContext>,
+  context: Readonly<CommandExecutionContext>,
   input: Readonly<GenerateLeafInput>,
 ): Promise<GenerateLeafResult> {
-  const {logger, environment} = context.runtime;
+  const {presenter: logger, environment} = context.runtime;
   const {verbose} = input;
 
   logger.line([{text: "🔧 Configuration:", styles: ["cyan"]}]);
@@ -543,43 +545,46 @@ async function generateI18n(
   };
 }
 
+/** The only edge from this entrypoint into the Node command host; core never names it. */
+const loadProductionCommandHost = async (): Promise<CommandHost> =>
+  import("./adapters/node/node-command-host.ts").then(({createNodeCommandHost}) => createNodeCommandHost("generate:i18n"));
+
 /**
  * Creates the i18n generator command.
  *
- * @param runtimeFactory - Optional runtime factory; tests inject a fake instead of the Node adapter.
+ * @param options - Injected command host or literal loader; defaults to the Node adapter.
  * @returns The typed `generate:i18n` command object.
  */
 export function createGenerateI18nCommand(
-  runtimeFactory?: CommandRuntimeFactory,
-): MonorepoCommand<GenerateLeafInput, GenerateLeafResult> {
-  return new MonorepoCommand<GenerateLeafInput, GenerateLeafResult>(
+  options: Readonly<CommandConstructionOptions> = {loadHost: loadProductionCommandHost},
+): LazyMonorepoCommand<GenerateLeafInput, GenerateLeafResult, never> {
+  return defineCommand<GenerateLeafInput, GenerateLeafResult>(
     {
-      metadata: {
-        name: "generate:i18n",
-        description: "Validates and synchronizes translation files against English (en.json).",
-        examples: ["npm run generate:i18n", "npm run generate:i18n -- --verbose"],
-        slashAliases: {"/v": "--verbose", "/verbose": "--verbose"},
-      },
+      name: "generate:i18n",
+      description: "Validates and synchronizes translation files against English (en.json).",
+      examples: ["npm run generate:i18n", "npm run generate:i18n -- --verbose"],
+      slashAliases: {"/v": "--verbose", "/verbose": "--verbose"},
       configure: (program) => {
         program.option("-v, --verbose", "Enable verbose logging.");
       },
       decode: (program) => ({verbose: program.opts<{verbose?: boolean}>().verbose === true}),
       execute: generateI18n,
-      completion: (result) => ({
+      complete: (result) => ({
         // Mirrors the pre-migration leaf's `totalMissingKeys` exit contract under the normative
         // `CommandExitCode` shape: `0` when every locale already matched English, `1` when
         // missing keys caused this invocation to change one or more locale files. The aggregate
         // (`generate.ts`) stops before later leaves whenever this is nonzero.
         exitCode: result.changedFiles.length > 0 ? 1 : 0,
+        value: result,
         human: (logger) => logger.success(result.summary),
       }),
     },
-    runtimeFactory,
+    options,
   );
 }
 
 /** Production singleton used by the aggregate CLI and this module's direct entrypoint. */
-export const generateI18nCommand: MonorepoCommand<GenerateLeafInput, GenerateLeafResult> = createGenerateI18nCommand();
+export const generateI18nCommand: LazyMonorepoCommand<GenerateLeafInput, GenerateLeafResult, never> = createGenerateI18nCommand();
 
 await generateI18nCommand.runIfMain(import.meta.url);
 

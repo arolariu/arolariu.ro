@@ -10,8 +10,9 @@
 
 import {dirname, isAbsolute, relative, resolve, sep} from "node:path";
 
-import {FILE_SYSTEM_MAX_BYTES_EXCEEDED_CODE} from "../common/runtime.ts";
-import type {ProcessEnvironment, ProcessOutcome} from "../common/runner.ts";
+import {FILE_SYSTEM_MAX_BYTES_EXCEEDED_CODE} from "../core/runtime/runtime-capability.ts";
+import type {ProcessEnvironment} from "../core/process/process-execution-request.ts";
+import type {ProcessExecutionResult} from "../core/process/process-execution-result.ts";
 import type {RepositoryPaths} from "../common/repository-paths.ts";
 import type {InspectionProbeRunner} from "./probes.ts";
 import {probes} from "./probes.ts";
@@ -238,11 +239,11 @@ function invalidOutcome(issue: string, startedAt: number, now: () => number): In
   return {kind: "invalid", issues: [issue], durationMs: elapsedMilliseconds(startedAt, now)};
 }
 
-function isSuccessfulCommand(outcome: Readonly<ProcessOutcome>): boolean {
+function isSuccessfulCommand(outcome: Readonly<ProcessExecutionResult>): boolean {
   return outcome.kind === "succeeded";
 }
 
-function hasTransportFailure(outcome: Readonly<ProcessOutcome>): boolean {
+function hasTransportFailure(outcome: Readonly<ProcessExecutionResult>): boolean {
   switch (outcome.kind) {
     case "succeeded":
     case "exited":
@@ -255,7 +256,7 @@ function hasTransportFailure(outcome: Readonly<ProcessOutcome>): boolean {
   }
 }
 
-function completedExitCode(outcome: Readonly<ProcessOutcome>): number {
+function completedExitCode(outcome: Readonly<ProcessExecutionResult>): number {
   switch (outcome.kind) {
     case "succeeded":
       return 0;
@@ -269,7 +270,7 @@ function completedExitCode(outcome: Readonly<ProcessOutcome>): number {
   }
 }
 
-function isMissingExecutable(outcome: Readonly<ProcessOutcome>): boolean {
+function isMissingExecutable(outcome: Readonly<ProcessExecutionResult>): boolean {
   if (completedExitCode(outcome) === 127) {
     return true;
   }
@@ -390,7 +391,7 @@ function parsePythonCommandVersion(output: string): ParsedPythonVersion | undefi
   return version === undefined ? undefined : parsePythonVersionText(version);
 }
 
-function parsePythonVersionResult(outcome: Readonly<ProcessOutcome>): ParsedPythonVersion | undefined {
+function parsePythonVersionResult(outcome: Readonly<ProcessExecutionResult>): ParsedPythonVersion | undefined {
   return parsePythonCommandVersion(outcome.stdout) ?? parsePythonCommandVersion(outcome.stderr);
 }
 
@@ -506,7 +507,7 @@ function parsePipVersion(output: string): string | undefined {
   return version === undefined ? undefined : parsePep440Version(version)?.normalized;
 }
 
-function parsePipVersionResult(outcome: Readonly<ProcessOutcome>): string | undefined {
+function parsePipVersionResult(outcome: Readonly<ProcessExecutionResult>): string | undefined {
   return parsePipVersion(outcome.stdout) ?? parsePipVersion(outcome.stderr);
 }
 
@@ -563,7 +564,7 @@ function boundGeneratedFacts(values: readonly string[], omittedLabel: string): r
   return [...values.slice(0, retainedCount), `${String(values.length - retainedCount)} additional ${omittedLabel} were omitted.`];
 }
 
-function projectPipConflicts(outcome: Readonly<ProcessOutcome>): readonly string[] {
+function projectPipConflicts(outcome: Readonly<ProcessExecutionResult>): readonly string[] {
   if (isSuccessfulCommand(outcome)) {
     return [];
   }
@@ -1197,9 +1198,9 @@ async function inspectInterpreters(
   }>,
 ): Promise<readonly Readonly<{fact: PythonInterpreterFact; version: ParsedPythonVersion}>[]> {
   const candidates = pythonCandidates(input.platform);
-  const outcomes = await input.tasks.parallel<ProcessOutcome>(
+  const outcomes = await input.tasks.parallel<ProcessExecutionResult>(
     candidates.map(
-      (candidate) => (): Promise<ProcessOutcome> =>
+      (candidate) => (): Promise<ProcessExecutionResult> =>
         input.probes.run(probes.python.version(candidate.command, candidate.selector), {
           cwd: input.paths.root,
           env: input.environment,
@@ -1354,7 +1355,7 @@ export function createPythonProvider(
               throw new PythonInspectionFailure("invalid", "pip --version returned malformed output.");
             }
 
-            const pipOutcomes = await input.tasks.parallel<ProcessOutcome>([
+            const pipOutcomes = await input.tasks.parallel<ProcessExecutionResult>([
               () => input.probes.run(probes.python.pipList(relativeInterpreter), probeOptions),
               () => input.probes.run(probes.python.pipCheck(relativeInterpreter), probeOptions),
             ]);

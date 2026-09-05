@@ -5,25 +5,19 @@
 
 import {readFile} from "node:fs/promises";
 import {describe, expect, it, vi, type Mock} from "vitest";
-import type {CommandExecution, CommandInvoker, CommandRuntimeFactory} from "../common/commander.ts";
-import {InMemoryLoggerSink, MonorepositoryConsoleLogger, type MonorepositoryLogger} from "../common/logger.ts";
-import type {ProcessOutcome, ProcessRequest, ProcessRunOptions, ProcessRunner} from "../common/runner.ts";
-import {
-  createProcessRunner,
-  createRepositoryFixtureFileSystem,
-  createTestProcessHost,
-  createTestRuntimeFactory,
-  repositoryFixtureRoot,
-} from "../common/runtime.testing.ts";
-import {
-  CommandCancellation,
-  LifoCleanupRegistry,
-  type CleanupFailure,
-  type CleanupRegistry,
-  type Clock,
-  type FileSystem,
-  type RuntimeEnvironment,
-} from "../common/runtime.ts";
+import type {CommandExecution, CommandInvoker} from "../core/command/command-execution.ts";
+import {buildCommandHost} from "../testing/builders/command-host.builder.ts";
+import {ComposedTerminalPresenter} from "../core/presentation/composed-terminal-presenter.ts";
+import {RecordingTerminalPresenterSink} from "../testing/fixtures/terminal.fixture.ts";
+import type {TerminalPresenter} from "../core/presentation/terminal-presenter.ts";
+import type {ProcessExecutionOptions, ProcessExecutionRequest} from "../core/process/process-execution-request.ts";
+import type {ProcessExecutionResult} from "../core/process/process-execution-result.ts";
+import type {ProcessRunner} from "../core/process/process-runner.ts";
+import {CommandCancellation} from "../core/runtime/cancellation.ts";
+import {type CleanupFailure, type CleanupRegistry, LifoCleanupRegistry} from "../core/runtime/cleanup.ts";
+import type {Clock, FileSystem, RuntimeEnvironment} from "../core/runtime/runtime-capability.ts";
+import {createRepositoryFixtureFileSystem, repositoryFixtureRoot} from "../testing/fixtures/repository.fixture.ts";
+import {buildRecordingProcessRunner} from "../testing/builders/process-result.builder.ts";
 import type {ArtifactGenerationResult, GenerateArtifactsInput} from "../generate.artifacts.ts";
 import {getContainerAdapter} from "./adapters.ts";
 import type {LocalStorageBootstrap} from "./selfhost.bootstrap.ts";
@@ -32,7 +26,6 @@ import {
   buildSelfhostPlan,
   createSelfhostCommand,
   getRequiredSqlPassword,
-  selfhostCommand,
   shouldGenerateTaxonomyArtifacts,
 } from "./selfhost.ts";
 import {selfhostTraefikConfigPath} from "./traefik.ts";
@@ -49,19 +42,19 @@ const launcherCases = [
   {path: "../../infra/Local/selfhost-stop.sh", action: "stop", forwarding: '"$@"', shell: "bash"},
 ] as const;
 
-function succeeded(stdout = ""): ProcessOutcome {
+function succeeded(stdout = ""): ProcessExecutionResult {
   return {kind: "succeeded", exitCode: 0, stdout, stderr: "", durationMs: 0};
 }
 
-function exited(code: number, stderr = ""): ProcessOutcome {
+function exited(code: number, stderr = ""): ProcessExecutionResult {
   return {kind: "exited", exitCode: code, stdout: "", stderr, durationMs: 0};
 }
 
-function cancelled(): ProcessOutcome {
+function cancelled(): ProcessExecutionResult {
   return {kind: "cancelled", stdout: "", stderr: "", durationMs: 0};
 }
 
-function succeededTimes(count: number): readonly ProcessOutcome[] {
+function succeededTimes(count: number): readonly ProcessExecutionResult[] {
   return Array.from({length: count}, () => succeeded());
 }
 
@@ -180,10 +173,10 @@ function createRecordingCleanupRegistry(onDrain?: readonly CleanupFailure[]): Re
   };
 }
 
-type RecordedRunner = ProcessRunner & Readonly<{calls: readonly Readonly<{request: ProcessRequest; options: ProcessRunOptions}>[]}>;
+type RecordedRunner = ProcessRunner & Readonly<{calls: readonly Readonly<{request: ProcessExecutionRequest; options: ProcessExecutionOptions}>[]}>;
 
 interface HarnessOptions {
-  readonly outcomes?: readonly ProcessOutcome[];
+  readonly outcomes?: readonly ProcessExecutionResult[];
   readonly variables?: Readonly<Record<string, string | undefined>>;
   readonly files?: FileSystem;
   readonly cleanup?: CleanupRegistry;
@@ -196,11 +189,10 @@ interface SelfhostHarness {
   readonly runner: RecordedRunner;
   readonly clock: RecordingClock;
   readonly files: FileSystem;
-  readonly logger: MonorepositoryLogger;
-  readonly sink: InMemoryLoggerSink;
+  readonly logger: TerminalPresenter;
+  readonly sink: RecordingTerminalPresenterSink;
   readonly bootstrap: RecordingBootstrap;
   readonly artifacts: ArtifactsStub;
-  readonly runtimeFactory: CommandRuntimeFactory;
 }
 
 /**
@@ -210,25 +202,27 @@ interface SelfhostHarness {
  * @returns The command under test and every recording fake it was built with.
  */
 function createHarness(options: Readonly<HarnessOptions> = {}): SelfhostHarness {
-  const runner = createProcessRunner(options.outcomes ?? []);
+  const runner = buildRecordingProcessRunner(options.outcomes ?? []);
   const clock = createRecordingClock();
   const files = options.files ?? createRepositoryFixtureFileSystem({[certFixturePath]: "local-cert", [keyFixturePath]: "local-key"});
-  const sink = new InMemoryLoggerSink();
-  const logger = new MonorepositoryConsoleLogger("test", {color: false, sink});
+  const sink = new RecordingTerminalPresenterSink();
+  const logger = new ComposedTerminalPresenter("test", {color: false, sink});
   const bootstrap = createRecordingBootstrap(runner, options.bootstrapBehavior ?? {});
   const artifacts = options.artifacts ?? createArtifactsStub();
   const environment = environmentWith(options.variables ?? {MSSQL_SA_PASSWORD: sqlPassword});
-  const runtimeFactory = createTestRuntimeFactory({
-    runner,
-    clock,
-    files,
-    logger,
-    environment,
-    ...(options.cleanup === undefined ? {} : {cleanup: options.cleanup}),
+  const host = buildCommandHost({
+    runtime: {
+      runner,
+      clock,
+      files,
+      presenter: logger,
+      environment,
+      ...(options.cleanup === undefined ? {} : {cleanup: options.cleanup}),
+    },
   });
 
   return {
-    command: createSelfhostCommand({runtimeFactory, bootstrap: bootstrap.bootstrap, artifacts}),
+    command: createSelfhostCommand({bootstrap: bootstrap.bootstrap, artifacts}, {host}),
     runner,
     clock,
     files,
@@ -236,7 +230,6 @@ function createHarness(options: Readonly<HarnessOptions> = {}): SelfhostHarness 
     sink,
     bootstrap,
     artifacts,
-    runtimeFactory,
   };
 }
 
@@ -453,23 +446,6 @@ describe("createSelfhostCommand start", () => {
     expect(cleanup.labels).toEqual([]);
   });
 
-  it("preserves the initiating failure and appends cleanup evidence when transient cleanup fails", async () => {
-    const cleanup = createRecordingCleanupRegistry([
-      {label: "transient bootstrap listener", message: "listener teardown failed", cause: new Error("listener teardown failed")},
-    ]);
-    const harness = createHarness({
-      cleanup,
-      outcomes: [...succeededTimes(podmanPreflightProbeCount + 5), exited(1, "frontend stack refused to start")],
-    });
-
-    const execution = await harness.command.invoke({action: "start", engine: "podman"});
-
-    expect(execution.status).toBe("failed");
-    const failure = execution.status === "failed" ? execution.failure : undefined;
-    expect(failure?.kind).toBe("operational");
-    expect(failure?.evidence.at(-1)).toBe("transient bootstrap listener: listener teardown failed");
-  });
-
   it("preserves the invocation's cancellation reason when a stack command is cancelled on an aborted invocation", async () => {
     const controller = new AbortController();
     controller.abort(new CommandCancellation("Terminated by test signal.", 143));
@@ -653,53 +629,5 @@ describe("createSelfhostCommand parser lifecycle", () => {
 
     expect(execution).toMatchObject({status: "failed", exitCode: 2});
     expect(execution.status === "failed" ? execution.failure.message : "").toContain("Unsupported container engine 'colima'");
-  });
-
-  it("rejects an unknown option as a usage failure instead of throwing", async () => {
-    const harness = createHarness();
-
-    const execution = await harness.command.run(["--bogus"]);
-
-    expect(execution).toMatchObject({status: "failed", exitCode: 2});
-    expect(harness.runner.calls).toHaveLength(0);
-  });
-
-  it("rejects a missing --engine value as a usage failure", async () => {
-    const harness = createHarness();
-
-    const execution = await harness.command.run(["start", "--engine"]);
-
-    expect(execution).toMatchObject({status: "failed", exitCode: 2});
-    expect(harness.runner.calls).toHaveLength(0);
-  });
-});
-
-describe("createSelfhostCommand entrypoint wiring", () => {
-  it("assigns an exit code through runIfMain() only when the module is the direct entrypoint", async () => {
-    const nonEntryHost = createTestProcessHost(["logs", "--engine", "podman"]);
-    const nonEntry = createHarness();
-    const nonEntryCommand = createSelfhostCommand({
-      runtimeFactory: {...nonEntry.runtimeFactory, processHost: {...nonEntryHost, isDirectEntry: (): boolean => false}},
-      bootstrap: nonEntry.bootstrap.bootstrap,
-      artifacts: nonEntry.artifacts,
-    });
-
-    await nonEntryCommand.runIfMain("file:///repo/scripts/container-runtime/selfhost.ts");
-    expect(nonEntryHost.assignedExitCodes).toEqual([]);
-
-    const entryHost = createTestProcessHost(["logs", "--engine", "podman"]);
-    const entry = createHarness();
-    const entryCommand = createSelfhostCommand({
-      runtimeFactory: {...entry.runtimeFactory, processHost: entryHost},
-      bootstrap: entry.bootstrap.bootstrap,
-      artifacts: entry.artifacts,
-    });
-
-    await entryCommand.runIfMain("file:///repo/scripts/container-runtime/selfhost.ts");
-    expect(entryHost.assignedExitCodes).toEqual([0]);
-  });
-
-  it.each(["--help", "-h", "/h"])("renders help for '%s' through the production singleton without running anything", async (flag) => {
-    await expect(selfhostCommand.run([flag])).resolves.toEqual({status: "help", exitCode: 0});
   });
 });

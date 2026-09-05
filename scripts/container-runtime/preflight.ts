@@ -11,9 +11,13 @@
  * in `types.ts`) compatibility surfaces were removed once Selfhost migrated in Task 21.
  */
 
-import {MonorepositoryConsoleLogger, type MonorepositoryLogger} from "../common/logger.ts";
-import {processFailureEvidence, type ProcessOutcome, type ProcessRunner} from "../common/runner.ts";
-import {commandCancellationFromSignal, type RuntimeEnvironment} from "../common/runtime.ts";
+import {NodeTerminalPresenterSink, nodeTerminalPresenterRuntimeHost} from "../adapters/node/node-terminal-sink.ts";
+import {ComposedTerminalPresenter} from "../core/presentation/composed-terminal-presenter.ts";
+import type {TerminalPresenter} from "../core/presentation/terminal-presenter.ts";
+import {processExecutionFailureEvidence, type ProcessExecutionResult} from "../core/process/process-execution-result.ts";
+import type {ProcessRunner} from "../core/process/process-runner.ts";
+import {commandCancellationFromSignal} from "../core/runtime/cancellation.ts";
+import type {RuntimeEnvironment} from "../core/runtime/runtime-capability.ts";
 import type {ContainerRuntimeAdapter} from "./adapters.ts";
 import {ContainerRuntimeError} from "./types.ts";
 
@@ -33,7 +37,7 @@ export const requiredLocalPorts = [3000, 3002, 4173, 5000, 5002, 6379, 8081, 808
  * @param outcome - Process outcome to inspect.
  * @returns Lowercased stdout and stderr joined for substring detection.
  */
-function combinedOutputForBannerDetection(outcome: Readonly<Pick<ProcessOutcome, "stdout" | "stderr">>): string {
+function combinedOutputForBannerDetection(outcome: Readonly<Pick<ProcessExecutionResult, "stdout" | "stderr">>): string {
   return `${outcome.stdout}\n${outcome.stderr}`.toLowerCase();
 }
 
@@ -43,8 +47,8 @@ function combinedOutputForBannerDetection(outcome: Readonly<Pick<ProcessOutcome,
  * @param outcome - Failed or interrupted process outcome.
  * @returns The most relevant available diagnostic text, falling back to a kind-specific summary.
  */
-function describeOutcomeFailure(outcome: Readonly<Exclude<ProcessOutcome, {readonly kind: "succeeded"}>>): string {
-  const evidence = processFailureEvidence(outcome);
+function describeOutcomeFailure(outcome: Readonly<Exclude<ProcessExecutionResult, {readonly kind: "succeeded"}>>): string {
+  const evidence = processExecutionFailureEvidence(outcome);
   if (evidence !== "") return evidence;
 
   switch (outcome.kind) {
@@ -78,7 +82,7 @@ function describeOutcomeFailure(outcome: Readonly<Exclude<ProcessOutcome, {reado
  * through {@link runContainerPreflight}.
  * @throws {CommandCancellation} When `outcome` is cancelled and `signal` is aborted.
  */
-function throwIfPreflightCancelled(outcome: Readonly<ProcessOutcome>, signal?: AbortSignal): void {
+function throwIfPreflightCancelled(outcome: Readonly<ProcessExecutionResult>, signal?: AbortSignal): void {
   if (outcome.kind === "cancelled" && signal?.aborted === true) {
     throw commandCancellationFromSignal(signal);
   }
@@ -192,7 +196,10 @@ export async function assertPodmanBackend(runner: ProcessRunner, signal?: AbortS
 export async function warnOnExistingLocalContainers(
   adapter: ContainerRuntimeAdapter,
   runner: ProcessRunner,
-  logger: MonorepositoryLogger = new MonorepositoryConsoleLogger("container::preflight"),
+  logger: TerminalPresenter = new ComposedTerminalPresenter("container::preflight", {
+    sink: new NodeTerminalPresenterSink(),
+    runtimeHost: nodeTerminalPresenterRuntimeHost,
+  }),
 ): Promise<void> {
   const names = ["traefik", "mssql", "cosmosdb", "azurite", "redis", "exp-arolariu-ro", "api-arolariu-ro", "website-arolariu-ro"];
   const outcome = await runner.run({command: adapter.primaryCli, args: ["ps", "-a", "--format", "{{.Names}}"]});
@@ -215,7 +222,7 @@ export interface ContainerPreflightContext {
   /** Process runner used for every preflight probe. */
   readonly runner: ProcessRunner;
   /** Logger used for warning and diagnostic output. */
-  readonly logger: MonorepositoryLogger;
+  readonly logger: TerminalPresenter;
   /** Immutable snapshot of the ambient environment. */
   readonly environment: RuntimeEnvironment;
   /** Cancellation signal threaded into every preflight probe. */

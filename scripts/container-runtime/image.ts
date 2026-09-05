@@ -5,7 +5,7 @@
  * @remarks
  * Every ambient effect this command used to reach for directly (the child process, the
  * repository filesystem, and the process environment) now arrives through the injected
- * {@link CommandContext.runtime} instead of Node globals, so the command is fully exercised by
+ * {@link CommandExecutionContext.runtime} instead of Node globals, so the command is fully exercised by
  * the declarative command runtime's test fakes and never spawns Docker or Podman in a test. The
  * frontend/backend taxonomy artifact prerequisite runs as a nested, in-process invocation of
  * `generateArtifactsCommand` (through `{parent: context, presentation: "silent"}`) instead of a
@@ -13,17 +13,14 @@
  * cleanup ownership.
  */
 
-import {
-  CommandInputError,
-  MonorepoCommand,
-  type CommandContext,
-  type CommandInvoker,
-  type CommandRuntimeFactory,
-} from "../common/commander.ts";
-import type {MonorepositoryLogger} from "../common/logger.ts";
+import {CommandInputError, type CommandInvoker} from "../core/command/command-execution.ts";
+import type {CommandExecutionContext} from "../core/command/command-execution.ts";
+import {defineCommand, type LazyMonorepoCommand} from "../core/command/lazy-monorepo-command.ts";
+import type {CommandConstructionOptions, CommandHost} from "../core/command/command-specification.ts";
+import type {TerminalPresenter} from "../core/presentation/terminal-presenter.ts";
 import {resolveRepositoryPaths} from "../common/repository-paths.ts";
-import {RunnerError, type ProcessRunner} from "../common/runner.ts";
-import {CommandCancellation, commandCancellationFromSignal} from "../common/runtime.ts";
+import {ProcessRunnerError, type ProcessRunner} from "../core/process/process-runner.ts";
+import {CommandCancellation, commandCancellationFromSignal} from "../core/runtime/cancellation.ts";
 import {generateArtifactsCommand, type ArtifactGenerationResult, type GenerateArtifactsInput} from "../generate.artifacts.ts";
 import {getContainerAdapter, type ContainerRuntimeAdapter, type RuntimeCommand} from "./adapters.ts";
 import {runContainerPreflight} from "./preflight.ts";
@@ -47,8 +44,6 @@ export interface ImageRunOptions {
 
 /** Optional collaborators {@link createImageCommand} composes. */
 export interface ImageCommandDependencies {
-  /** Optional runtime factory; tests inject a fake instead of the Node adapter. */
-  readonly runtimeFactory?: CommandRuntimeFactory;
   /** Taxonomy and license artifact generator invoked as the frontend/backend build prerequisite. */
   readonly artifacts?: CommandInvoker<GenerateArtifactsInput, ArtifactGenerationResult>;
 }
@@ -112,7 +107,7 @@ export function buildImageRunCommand(adapter: ContainerRuntimeAdapter, options: 
  */
 async function runArtifactPrerequisite(
   artifacts: CommandInvoker<GenerateArtifactsInput, ArtifactGenerationResult>,
-  context: Readonly<CommandContext>,
+  context: Readonly<CommandExecutionContext>,
 ): Promise<void> {
   const execution = await artifacts.invoke({verbose: false}, {parent: context, presentation: "silent"});
 
@@ -135,7 +130,7 @@ async function runArtifactPrerequisite(
  *
  * @remarks
  * A cancelled invocation's exact SIGINT/SIGTERM exit code (`130`/`143`) is owned by its own
- * {@link CommandCancellation} reason; letting `expectSuccess`'s `RunnerError` for a cancelled
+ * {@link CommandCancellation} reason; letting `expectSuccess`'s `ProcessRunnerError` for a cancelled
  * outcome escape unclassified would misreport an interrupted invocation as an operational failure
  * and the shared Commander lifecycle would classify it as exit code `1`. A `{kind:"cancelled"}`
  * outcome observed while `signal` is not the invocation's own aborted signal is not this
@@ -143,21 +138,21 @@ async function runArtifactPrerequisite(
  *
  * @param runner - Process runner used to run `command`.
  * @param command - Engine-owned build or run command to execute.
- * @param logger - Logger used for tee output and command echo.
+ * @param presenter - Presenter used for tee output and command echo.
  * @param signal - The owning invocation's cancellation signal.
  * @throws {CommandCancellation} When `command` is cancelled on `signal`.
- * @throws {RunnerError} When `command` fails for any other reason.
+ * @throws {ProcessRunnerError} When `command` fails for any other reason.
  */
 async function runImageBusinessCommand(
   runner: ProcessRunner,
   command: Readonly<RuntimeCommand>,
-  logger: MonorepositoryLogger,
+  presenter: TerminalPresenter,
   signal: AbortSignal,
 ): Promise<void> {
   try {
-    await runner.expectSuccess(command, {output: "tee", logCommands: true, logger, signal});
+    await runner.expectSuccess(command, {output: "tee", logCommands: true, presenter, signal});
   } catch (error) {
-    if (error instanceof RunnerError && error.outcome.kind === "cancelled" && signal.aborted) {
+    if (error instanceof ProcessRunnerError && error.result.kind === "cancelled" && signal.aborted) {
       throw commandCancellationFromSignal(signal);
     }
     throw error;
@@ -176,7 +171,7 @@ async function runImageBusinessCommand(
  */
 async function executeImage(
   artifacts: CommandInvoker<GenerateArtifactsInput, ArtifactGenerationResult>,
-  context: Readonly<CommandContext>,
+  context: Readonly<CommandExecutionContext>,
   input: Readonly<ImageInput>,
 ): Promise<ImageResult> {
   const {runtime} = context;
@@ -196,7 +191,7 @@ async function executeImage(
 
   await runContainerPreflight(adapter, {
     runner: runtime.runner,
-    logger: runtime.logger.child("preflight"),
+    logger: runtime.presenter.child("preflight"),
     environment: runtime.environment,
     signal: runtime.signal,
   });
@@ -214,35 +209,41 @@ async function executeImage(
       context: ".",
       buildArgs: {VERSION: "local"},
     });
-    await runImageBusinessCommand(runtime.runner, command, runtime.logger, runtime.signal);
+    await runImageBusinessCommand(runtime.runner, command, runtime.presenter, runtime.signal);
     return {engine: adapter.engine, action: "build", target: input.target};
   }
 
   const command = buildImageRunCommand(adapter, {tag, ports: portsByTarget[input.target], environment: {INFRA: "local"}});
-  await runImageBusinessCommand(runtime.runner, command, runtime.logger, runtime.signal);
+  await runImageBusinessCommand(runtime.runner, command, runtime.presenter, runtime.signal);
   return {engine: adapter.engine, action: "run", target: input.target};
 }
+
+/** The only edge from this entrypoint into the Node command host; core never names it. */
+const loadProductionCommandHost = async (): Promise<CommandHost> =>
+  import("../adapters/node/node-command-host.ts").then(({createNodeCommandHost}) => createNodeCommandHost("image"));
 
 /**
  * Creates the local image build/run command.
  *
- * @param dependencies - Optional runtime factory and artifact generator collaborators.
+ * @param dependencies - Optional artifact generator collaborator.
+ * @param options - Injected command host or literal loader; defaults to the Node adapter.
  * @returns The typed `containers:build`/`containers:run` command object.
  */
-export function createImageCommand(dependencies: Readonly<ImageCommandDependencies> = {}): MonorepoCommand<ImageInput, ImageResult> {
+export function createImageCommand(
+  dependencies: Readonly<ImageCommandDependencies> = {},
+  options: Readonly<CommandConstructionOptions> = {loadHost: loadProductionCommandHost},
+): LazyMonorepoCommand<ImageInput, ImageResult, never> {
   const artifacts = dependencies.artifacts ?? generateArtifactsCommand;
 
-  return new MonorepoCommand<ImageInput, ImageResult>(
+  return defineCommand<ImageInput, ImageResult>(
     {
-      metadata: {
-        name: "image",
-        description: "Builds or runs a local container image with the selected engine.",
-        usage: "<build|run> --target <frontend|backend|cv|exp> [--engine <rancher|podman>]",
-        examples: [
-          "npm run containers:build -- --target frontend --engine rancher",
-          "npm run containers:run -- --target backend --engine podman",
-        ],
-      },
+      name: "image",
+      description: "Builds or runs a local container image with the selected engine.",
+      usage: "<build|run> --target <frontend|backend|cv|exp> [--engine <rancher|podman>]",
+      examples: [
+        "npm run containers:build -- --target frontend --engine rancher",
+        "npm run containers:run -- --target backend --engine podman",
+      ],
       configure: (program) => {
         program.argument("[action]", "Image action to run: build or run.");
         program.option("--target <target>", "Image target: frontend, backend, cv, or exp.");
@@ -267,16 +268,17 @@ export function createImageCommand(dependencies: Readonly<ImageCommandDependenci
         };
       },
       execute: (context, input) => executeImage(artifacts, context, input),
-      completion: (result) => ({
+      complete: (result) => ({
         exitCode: 0,
+        value: result,
         human: (logger) => logger.success(`Image ${result.action} completed for target '${result.target}' with engine '${result.engine}'.`),
       }),
     },
-    dependencies.runtimeFactory,
+    options,
   );
 }
 
 /** Production singleton used by `npm run containers:build`/`npm run containers:run` and this module's direct entrypoint. */
-export const imageCommand: MonorepoCommand<ImageInput, ImageResult> = createImageCommand();
+export const imageCommand: LazyMonorepoCommand<ImageInput, ImageResult, never> = createImageCommand();
 
 await imageCommand.runIfMain(import.meta.url);

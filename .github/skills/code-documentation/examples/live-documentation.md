@@ -47,8 +47,8 @@ action, or component without browser state.
 
 **Live source**
 
-- `scripts/docs-assemble.ts`
-- `scripts/docs-assemble.test.ts`
+- `scripts/features/documentation/workflow.ts`
+- `scripts/features/documentation/workflow.test.ts`
 - `typedoc.website.json`
 - `typedoc.components.json`
 - `sites/docs.arolariu.ro/project.json`
@@ -96,7 +96,7 @@ Processing, or Broker sibling for another layer.
 
 - `sites/api.arolariu.ro/src/Common/Telemetry/Tracing/ActivityExtensions.cs`
 - `sites/api.arolariu.ro/Directory.Build.props`
-- `scripts/docs-assemble.ts`
+- `scripts/features/documentation/extractors.ts`
 
 **Why representative**
 
@@ -118,7 +118,7 @@ typed exceptions.
 
 - `sites/docs.arolariu.ro/README.md`
 - `sites/docs.arolariu.ro/project.json`
-- `scripts/docs-assemble.ts`
+- `scripts/features/documentation/command.ts`
 - `package.json`
 - `typedoc.website.json`
 - `typedoc.components.json`

@@ -3,10 +3,10 @@
  * @module scripts/doctor.types
  */
 
-import type {MonorepositoryLogger} from "./common/logger.ts";
+import type {TerminalPresenter} from "./core/presentation/terminal-presenter.ts";
 import type {RepositoryPaths} from "./common/repository-paths.ts";
 import type {RequirementLoadResult} from "./common/requirements.ts";
-import type {Clock, ReadOnlyFileSystem, RuntimeEnvironment} from "./common/runtime.ts";
+import type {Clock, ReadOnlyFileSystem, RuntimeEnvironment} from "./core/runtime/runtime-capability.ts";
 import type {InspectionProbeRunner} from "./inspection/probes.ts";
 import type {RepositoryInspectionKey, RepositoryInspectionSession} from "./inspection/repository.ts";
 
@@ -17,7 +17,7 @@ export const DIAGNOSTIC_DEFAULT_TIMEOUT_MS = 15_000;
 export type DiagnosticStatus = "pass" | "warn" | "fail" | "skipped";
 
 /** Classifies the certainty of an inferred root or contributing cause. */
-export type DiagnosticConfidence = "high" | "medium" | "low";
+type DiagnosticConfidence = "high" | "medium" | "low";
 
 /** Identifies the stable bounded-context owner of one diagnostic row. */
 export type DiagnosticModuleId = "workspace" | "dotnet" | "react" | "svelte" | "python" | "infrastructure";
@@ -103,7 +103,7 @@ export interface DoctorContext {
   /** Bounded, `GET`-only network reachability probe. */
   readonly network: DiagnosticNetworkProbe;
   /** Structured, redaction-aware logger for this run. */
-  readonly logger: MonorepositoryLogger;
+  readonly logger: TerminalPresenter;
   /** Read-only filesystem view; no module can mutate repository state. */
   readonly files: ReadOnlyFileSystem;
   /** Monotonic and wall-clock time source. */
@@ -139,4 +139,4 @@ export interface DiagnosticModule {
 
 // Re-export diagnostic helpers from doctor.diagnostics.ts to avoid broad import churn
 // in specialist modules that still import from this file.
-export {diagnosticResult, skippedDiagnostic} from "./doctor.diagnostics.ts";
+export {skippedDiagnostic} from "./doctor.diagnostics.ts";

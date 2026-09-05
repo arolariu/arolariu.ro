@@ -16,11 +16,12 @@ import {readFileSync} from "node:fs";
 import {resolve} from "node:path";
 import {afterEach, describe, expect, it, vi, type Mock} from "vitest";
 
-import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "./common/logger.ts";
+import {ComposedTerminalPresenter} from "./core/presentation/composed-terminal-presenter.ts";
+import {RecordingTerminalPresenterSink} from "./testing/fixtures/terminal.fixture.ts";
 import {createRepositoryPaths} from "./common/repository-paths.ts";
 import type {RepositoryRequirements} from "./common/requirements.ts";
-import {asReadOnlyFileSystem, type Clock, type RuntimeEnvironment} from "./common/runtime.ts";
-import {createMemoryFileSystem} from "./common/runtime.testing.ts";
+import {asReadOnlyFileSystem, type Clock, type RuntimeEnvironment} from "./core/runtime/runtime-capability.ts";
+import {createMemoryFileSystem} from "./testing/fixtures/memory-filesystem.fixture.ts";
 import {pythonDoctorModule} from "./doctor.python.ts";
 import {createDoctorReport} from "./doctor.reporter.ts";
 import type {DiagnosticNetworkResult, DiagnosticResult, DoctorContext, DoctorInput} from "./doctor.types.ts";
@@ -156,7 +157,7 @@ function createPythonFixture(
       },
   );
 
-  const sink = new InMemoryLoggerSink();
+  const sink = new RecordingTerminalPresenterSink();
   const context: DoctorContext = {
     options: doctorOptions(input.options),
     paths: createRepositoryPaths(process.cwd()),
@@ -165,7 +166,7 @@ function createPythonFixture(
         ? {status: "invalid", errors: ["pyproject.toml uses unsupported syntax"]}
         : {status: "valid", requirements: input.requirements ?? validRequirements()},
     network: {get: networkGet},
-    logger: new MonorepositoryConsoleLogger("doctor::python", {color: false, sink}),
+    logger: new ComposedTerminalPresenter("doctor::python", {color: false, sink}),
     files: asReadOnlyFileSystem(createMemoryFileSystem()),
     clock: fixtureClock(),
     environment: fixtureEnvironment(input.env ?? {}),

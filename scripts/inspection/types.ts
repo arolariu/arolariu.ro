@@ -7,8 +7,9 @@
  * the Node adapter) into an inspection provider's module graph at run time.
  */
 
-import type {ProcessRunner} from "../common/runner.ts";
-import type {Clock, FileSystem, ReadOnlyFileSystem, RuntimeEnvironment, TaskScheduler} from "../common/runtime.ts";
+import type {ProcessRunner} from "../core/process/process-runner.ts";
+import type {Clock, FileSystem, ReadOnlyFileSystem, RuntimeEnvironment} from "../core/runtime/runtime-capability.ts";
+import type {TaskScheduler} from "../core/runtime/task-scheduler.ts";
 
 /**
  * The exact capability surface an inspection provider is allowed to observe.
@@ -16,7 +17,7 @@ import type {Clock, FileSystem, ReadOnlyFileSystem, RuntimeEnvironment, TaskSche
  * @remarks
  * Providers never read ambient state: they receive this context (or a narrower `Pick` of it) from
  * the composed repository session, which itself receives the capabilities from one
- * {@link CommandRuntime}. The ordinary filesystem is deliberately read-only; the single writable
+ * {@link RuntimeExecutionContext}. The ordinary filesystem is deliberately read-only; the single writable
  * capability is {@link InspectionProviderContext.temporaryDirectories}, which can only create a
  * caller-owned temporary directory outside the repository.
  */

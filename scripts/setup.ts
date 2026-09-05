@@ -10,7 +10,7 @@
  *
  * The command owns no ambient capability. Repository paths, manifest requirements, the single
  * shared inspection session, the phase-scoped process runner, prompts, and the composed generation
- * command all arrive through the injected {@link CommandRuntime} of one invocation. Phases run
+ * command all arrive through the injected {@link RuntimeExecutionContext} of one invocation. Phases run
  * sequentially so prompts, package managers, and local configuration writes cannot race;
  * dependency handling, not concurrency, isolates failures. An ordinary phase exception becomes one
  * failed phase result and setup continues with independent phases, while an interruption escapes
@@ -24,19 +24,17 @@
  * ```
  */
 
-import {
-  CommandInputError,
-  MonorepoCommand,
-  type CommandContext,
-  type CommandExecution,
-  type CommandInvoker,
-  type CommandRuntimeFactory,
-} from "./common/commander.ts";
-import type {MonorepositoryLogger} from "./common/logger.ts";
-import type {PromptProvider} from "./common/prompts.ts";
+import {CommandInputError, type CommandExecution, type CommandInvoker} from "./core/command/command-execution.ts";
+import type {CommandExecutionContext} from "./core/command/command-execution.ts";
+import {defineCommand, type LazyMonorepoCommand} from "./core/command/lazy-monorepo-command.ts";
+import type {CommandConstructionOptions, CommandHost} from "./core/command/command-specification.ts";
+import type {TerminalPresenter} from "./core/presentation/terminal-presenter.ts";
+import {CommandCancellation, commandCancellationFromSignal} from "./core/runtime/cancellation.ts";
+import type {PromptProvider} from "./core/runtime/runtime-capability.ts";
+import type {RepositoryInspectionRequest, RepositoryInspectionRuntime} from "./inspection/runtime-capability.ts";
+import {createInspectionRuntimeExecutionContext, type InspectionRuntimeExecutionContext} from "./inspection/runtime-capability.ts";
 import {loadRepositoryRequirements} from "./common/requirements.ts";
 import {resolveRepositoryPaths} from "./common/repository-paths.ts";
-import {CommandCancellation, commandCancellationFromSignal, type RepositoryInspectionRequest} from "./common/runtime.ts";
 import type {ContainerEngine} from "./container-runtime/types.ts";
 import {generateCommand, type GenerateInput, type GenerateResult} from "./generate.ts";
 import {dotnetSetupPhase} from "./setup.dotnet.ts";
@@ -70,12 +68,12 @@ export interface SetupResult {
 
 /** Construction seams {@link createSetupCommand} accepts. */
 export interface SetupCommandDependencies {
-  /** Runtime factory used for every scope; tests inject a fake instead of the Node adapter. */
-  readonly runtimeFactory?: CommandRuntimeFactory;
   /** Ordered phases to execute; defaults to {@link setupPhases}. */
   readonly phases?: readonly SetupPhaseDefinition[];
   /** Composed generation command migrated phases invoke; defaults to the production singleton. */
   readonly generate?: CommandInvoker<GenerateInput, GenerateResult>;
+  /** Repository-analysis registry injected by a test; defaults to the composed production one. */
+  readonly inspection?: RepositoryInspectionRuntime;
 }
 
 /**
@@ -105,7 +103,7 @@ export function createSetupActionExecutor(
   dependencies: Readonly<{
     options: SetupInput;
     prompts: PromptProvider;
-    logger: MonorepositoryLogger;
+    logger: TerminalPresenter;
   }>,
 ): SetupActionExecutor {
   const {options, prompts, logger} = dependencies;
@@ -222,7 +220,7 @@ function blocksReadiness(result: SetupPhaseResult, dryRun: boolean, blockerSkipI
  * @param logger - Logger scoped to the completed phase.
  * @param result - The phase's recorded result.
  */
-function renderPhaseResult(logger: MonorepositoryLogger, result: SetupPhaseResult): void {
+function renderPhaseResult(logger: TerminalPresenter, result: SetupPhaseResult): void {
   const message = `${result.summary} (${formatDuration(result.durationMs)})`;
   switch (result.status) {
     case "succeeded":
@@ -265,16 +263,16 @@ const setupOutcomes = new WeakMap<SetupResult, SetupOutcome>();
  * @returns The capability bundle placed on the phase's {@link SetupContext}.
  */
 function createPhaseRuntime(
-  context: Readonly<CommandContext>,
+  context: Readonly<CommandExecutionContext>,
   input: Readonly<SetupInput>,
-  phaseLogger: MonorepositoryLogger,
+  phaseLogger: TerminalPresenter,
   root: string,
   generate: CommandInvoker<GenerateInput, GenerateResult>,
 ): SetupPhaseRuntime {
   const {runtime} = context;
   const phaseRunner = runtime.runner.scope({
     cwd: root,
-    logger: phaseLogger,
+    presenter: phaseLogger,
     signal: runtime.signal,
     timeoutMs: PHASE_COMMAND_TIMEOUT_MS,
     logCommands: input.verbose,
@@ -318,12 +316,12 @@ interface SetupExecutionSeams {
  * @throws When repository requirements are invalid, or when a phase is interrupted.
  */
 async function executeSetup(
-  context: Readonly<CommandContext>,
+  context: Readonly<CommandExecutionContext<InspectionRuntimeExecutionContext>>,
   input: Readonly<SetupInput>,
   seams: Readonly<SetupExecutionSeams> = {},
 ): Promise<SetupResult> {
   const {runtime} = context;
-  const {logger} = runtime;
+  const {presenter: logger} = runtime;
   const phases = seams.phases ?? setupPhases;
   const generate = seams.generate ?? generateCommand;
 
@@ -447,7 +445,7 @@ async function executeSetup(
  * @param result - Completed setup result.
  * @param outcome - Overall readiness resolved during execution.
  */
-function renderSetupSummary(logger: MonorepositoryLogger, result: Readonly<SetupResult>, outcome: SetupOutcome): void {
+function renderSetupSummary(logger: TerminalPresenter, result: Readonly<SetupResult>, outcome: SetupOutcome): void {
   logger.section("Setup summary");
   logger.table({
     headers: ["Phase", "Status", "Duration", "Summary"],
@@ -500,24 +498,30 @@ function decodeEngine(value: string | undefined): ContainerEngine | undefined {
   return engine;
 }
 
+/** The only edge from this entrypoint into the Node command host; core never names it. */
+const loadProductionCommandHost = async (): Promise<CommandHost> =>
+  import("./adapters/node/node-command-host.ts").then(({createNodeCommandHost}) => createNodeCommandHost("setup"));
+
 /**
  * Creates the setup command.
  *
- * @param dependencies - Optional runtime factory, phase list, and composed generation command;
- * tests inject deterministic fakes instead of replacing command business code.
+ * @param dependencies - Optional phase list and composed generation command; tests inject
+ * deterministic fakes instead of replacing command business code.
+ * @param options - Injected command host or literal loader; defaults to the Node adapter.
  * @returns The typed `setup` command object.
  */
-export function createSetupCommand(dependencies: Readonly<SetupCommandDependencies> = {}): MonorepoCommand<SetupInput, SetupResult> {
+export function createSetupCommand(
+  dependencies: Readonly<SetupCommandDependencies> = {},
+  options: Readonly<CommandConstructionOptions> = {loadHost: loadProductionCommandHost},
+): LazyMonorepoCommand<SetupInput, SetupResult, never> {
   const {phases, generate} = dependencies;
 
-  return new MonorepoCommand<SetupInput, SetupResult>(
+  return defineCommand<SetupInput, SetupResult, InspectionRuntimeExecutionContext>(
     {
-      metadata: {
-        name: "setup",
-        description:
-          "Prepares a fresh checkout end to end: workspace dependencies, generated artifacts, and the .NET, React, Svelte, Python, and local infrastructure toolchains.",
-        examples: ["npm run setup", "npm run setup -- --dry-run", "npm run setup -- --engine podman"],
-      },
+      name: "setup",
+      description:
+        "Prepares a fresh checkout end to end: workspace dependencies, generated artifacts, and the .NET, React, Svelte, Python, and local infrastructure toolchains.",
+      examples: ["npm run setup", "npm run setup -- --dry-run", "npm run setup -- --engine podman"],
       configure: (program) => {
         program
           .option("--verbose", "Show diagnostic detail for each phase.", false)
@@ -535,26 +539,28 @@ export function createSetupCommand(dependencies: Readonly<SetupCommandDependenci
           ...(engine === undefined ? {} : {engine}),
         };
       },
+      createRuntimeContext: (baseRuntime, parent) => createInspectionRuntimeExecutionContext(baseRuntime, parent, dependencies.inspection),
       execute: (context, input) =>
         executeSetup(context, input, {
           ...(phases === undefined ? {} : {phases}),
           ...(generate === undefined ? {} : {generate}),
         }),
-      completion: (result) => {
+      complete: (result) => {
         const outcome = setupOutcomes.get(result) ?? "ready";
         return {
           exitCode: outcome === "failed" ? 1 : 0,
+          value: result,
           human: (logger) => {
             renderSetupSummary(logger, result, outcome);
           },
         };
       },
     },
-    dependencies.runtimeFactory,
+    options,
   );
 }
 
 /** Production singleton used by `npm run setup` and this module's direct entrypoint. */
-export const setupCommand: MonorepoCommand<SetupInput, SetupResult> = createSetupCommand();
+export const setupCommand: LazyMonorepoCommand<SetupInput, SetupResult, never> = createSetupCommand();
 
 await setupCommand.runIfMain(import.meta.url);

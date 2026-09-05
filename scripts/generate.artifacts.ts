@@ -12,20 +12,18 @@
 
 import {basename, dirname, join, resolve} from "node:path";
 
-import {MonorepoCommand, type CommandContext, type CommandRuntimeFactory} from "./common/commander.ts";
-import type {MonorepositoryLogger} from "./common/logger.ts";
-import {RunnerError, type ProcessOutcome, type ProcessRequest, type ProcessRunner, type SucceededProcessOutcome} from "./common/runner.ts";
-import {
-  CommandCancellation,
-  type Clock,
-  type FileSystem,
-  type HttpClient,
-  type HttpResponse,
-  type RuntimeEnvironment,
-  type TaskScheduler,
-} from "./common/runtime.ts";
+import type {TerminalPresenter} from "./core/presentation/terminal-presenter.ts";
+import type {CommandExecutionContext} from "./core/command/command-execution.ts";
+import {defineCommand, type LazyMonorepoCommand} from "./core/command/lazy-monorepo-command.ts";
+import type {CommandConstructionOptions, CommandHost} from "./core/command/command-specification.ts";
+import type {ProcessExecutionRequest} from "./core/process/process-execution-request.ts";
+import type {ProcessExecutionResult, SucceededProcessExecutionResult} from "./core/process/process-execution-result.ts";
+import {ProcessRunnerError, type ProcessRunner} from "./core/process/process-runner.ts";
+import {CommandCancellation} from "./core/runtime/cancellation.ts";
+import type {Clock, FileSystem, HttpClient, HttpResponse, RuntimeEnvironment} from "./core/runtime/runtime-capability.ts";
+import type {TaskScheduler} from "./core/runtime/task-scheduler.ts";
 import {taxonomyArtifactFileNames, taxonomyArtifactOutputRoots} from "./common/taxonomy-artifacts.ts";
-import type {NodePackageDependencyType, NodePackageInformation, TaxonomyArtifact, TaxonomyArtifactNode} from "./types";
+import type {NodePackageDependencyType, NodePackageInformation, TaxonomyArtifact, TaxonomyArtifactNode} from "./types/generators.ts";
 
 export {getExpectedTaxonomyArtifactPaths, taxonomyArtifactFileNames} from "./common/taxonomy-artifacts.ts";
 
@@ -72,7 +70,7 @@ export interface ArtifactGeneratorRuntime {
   /** Immutable environment snapshot used for output roots and host platform selection. */
   readonly environment: RuntimeEnvironment;
   /** Logger used for lifecycle, diagnostic, failure, and completion output. */
-  readonly logger: MonorepositoryLogger;
+  readonly logger: TerminalPresenter;
   /** Cancellation signal threaded into every request, delay, and child process. */
   readonly signal: AbortSignal;
 }
@@ -115,7 +113,7 @@ export abstract class TaxonomyClassificationGenerator {
   protected readonly runtime: ArtifactGeneratorRuntime;
 
   /** Logger used for lifecycle, diagnostic, failure, and completion output. */
-  protected readonly logger: MonorepositoryLogger;
+  protected readonly logger: TerminalPresenter;
 
   /** Runtime directories that receive mirrored taxonomy artifacts. */
   protected readonly outputRoots: readonly string[];
@@ -1455,7 +1453,7 @@ export abstract class LicenseGenerator {
   protected readonly runtime: ArtifactGeneratorRuntime;
 
   /** Logger used for lifecycle, warning, failure, and completion output. */
-  protected readonly logger: MonorepositoryLogger;
+  protected readonly logger: TerminalPresenter;
 
   /**
    * Creates a license generator.
@@ -1861,7 +1859,7 @@ class SystemArchiveExtractor {
     try {
       await files.createDirectory(outputDirectory, {recursive: true});
       await files.writeBytes(archivePath, archive);
-      const outcome = await runner.run(request, {output: "capture", signal, logger});
+      const outcome = await runner.run(request, {output: "capture", signal, presenter: logger});
       if (!this.isSucceeded(outcome)) {
         this.throwExtractionFailure(request, outcome, environment.platform, logger);
       }
@@ -1894,7 +1892,7 @@ class SystemArchiveExtractor {
    * @param outcome - Outcome reported by the process runner.
    * @returns `true` when the extraction command exited successfully.
    */
-  private isSucceeded(outcome: Readonly<ProcessOutcome>): outcome is SucceededProcessOutcome {
+  private isSucceeded(outcome: Readonly<ProcessExecutionResult>): outcome is SucceededProcessExecutionResult {
     return outcome.kind === "succeeded";
   }
 
@@ -1906,7 +1904,7 @@ class SystemArchiveExtractor {
    * @param outputDirectory - Temporary extraction directory.
    * @returns Executable and argument list.
    */
-  private createRequest(platform: NodeJS.Platform, archivePath: string, outputDirectory: string): ProcessRequest {
+  private createRequest(platform: NodeJS.Platform, archivePath: string, outputDirectory: string): ProcessExecutionRequest {
     return platform === "win32"
       ? {command: "tar.exe", args: ["-xf", archivePath, "-C", outputDirectory]}
       : {command: "unzip", args: ["-qq", archivePath, "-d", outputDirectory]};
@@ -1921,10 +1919,10 @@ class SystemArchiveExtractor {
    * @param logger - Logger used to redact command diagnostics.
    */
   private throwExtractionFailure(
-    request: Readonly<ProcessRequest>,
-    outcome: Readonly<Exclude<ProcessOutcome, SucceededProcessOutcome>>,
+    request: Readonly<ProcessExecutionRequest>,
+    outcome: Readonly<Exclude<ProcessExecutionResult, SucceededProcessExecutionResult>>,
     platform: NodeJS.Platform,
-    logger: MonorepositoryLogger,
+    logger: TerminalPresenter,
   ): never {
     if (outcome.kind === "spawn-failed" && outcome.message.includes("ENOENT")) {
       throw new Error(`Required archive extractor '${request.command}' was not found on '${platform}'.`, {
@@ -1932,7 +1930,7 @@ class SystemArchiveExtractor {
       });
     }
 
-    throw new RunnerError(request, outcome, logger);
+    throw new ProcessRunnerError(request, outcome, logger);
   }
 }
 
@@ -1950,11 +1948,11 @@ class SystemArchiveExtractor {
  * @throws {Error} When any generator fails.
  */
 async function generateArtifacts(
-  context: Readonly<CommandContext>,
+  context: Readonly<CommandExecutionContext>,
   input: Readonly<GenerateArtifactsInput>,
 ): Promise<ArtifactGenerationResult> {
   const {runtime} = context;
-  const {logger, tasks, signal} = runtime;
+  const {presenter: logger, tasks, signal} = runtime;
   const generatorRuntime: ArtifactGeneratorRuntime = {
     files: runtime.files,
     http: runtime.http,
@@ -1962,7 +1960,7 @@ async function generateArtifacts(
     clock: runtime.clock,
     tasks: runtime.tasks,
     environment: runtime.environment,
-    logger: runtime.logger,
+    logger: runtime.presenter,
     signal: runtime.signal,
   };
 
@@ -1992,42 +1990,45 @@ async function generateArtifacts(
   return {summary, generatedFiles};
 }
 
+/** The only edge from this entrypoint into the Node command host; core never names it. */
+const loadProductionCommandHost = async (): Promise<CommandHost> =>
+  import("./adapters/node/node-command-host.ts").then(({createNodeCommandHost}) => createNodeCommandHost("generate:artifacts"));
+
 /**
  * Creates the taxonomy and license artifact generator command.
  *
- * @param runtimeFactory - Optional runtime factory; tests inject a fake instead of the Node adapter.
+ * @param options - Injected command host or literal loader; defaults to the Node adapter.
  * @returns The typed `generate:artifacts` command object.
  */
 export function createGenerateArtifactsCommand(
-  runtimeFactory?: CommandRuntimeFactory,
-): MonorepoCommand<GenerateArtifactsInput, ArtifactGenerationResult> {
-  return new MonorepoCommand<GenerateArtifactsInput, ArtifactGenerationResult>(
+  options: Readonly<CommandConstructionOptions> = {loadHost: loadProductionCommandHost},
+): LazyMonorepoCommand<GenerateArtifactsInput, ArtifactGenerationResult, never> {
+  return defineCommand<GenerateArtifactsInput, ArtifactGenerationResult>(
     {
-      metadata: {
-        name: "generate:artifacts",
-        description: "Generates taxonomy and license artifacts (GPC, ECOICOP, NACE, frontend licenses).",
-        examples: ["npm run generate:artifacts", "npm run generate /a -- --verbose"],
-        slashAliases: {"/v": "--verbose", "/verbose": "--verbose"},
-      },
+      name: "generate:artifacts",
+      description: "Generates taxonomy and license artifacts (GPC, ECOICOP, NACE, frontend licenses).",
+      examples: ["npm run generate:artifacts", "npm run generate /a -- --verbose"],
+      slashAliases: {"/v": "--verbose", "/verbose": "--verbose"},
       configure: (program) => {
         program.option("-v, --verbose", "Enable verbose logging.");
       },
       decode: (program) => ({verbose: program.opts<{verbose?: boolean}>().verbose === true}),
       execute: generateArtifacts,
-      completion: (result) => ({
+      complete: (result) => ({
         // Every artifact failure path (unavailable source with an unusable cache, invalid source
         // document, hierarchy violation, or divergent mirror) throws and is normalized by the
         // command lifecycle, so a resolved business result is always the successful one.
         exitCode: 0,
+        value: result,
         human: (logger) => logger.success(result.summary),
       }),
     },
-    runtimeFactory,
+    options,
   );
 }
 
 /** Production singleton used by the aggregate CLI and this module's direct entrypoint. */
-export const generateArtifactsCommand: MonorepoCommand<GenerateArtifactsInput, ArtifactGenerationResult> =
+export const generateArtifactsCommand: LazyMonorepoCommand<GenerateArtifactsInput, ArtifactGenerationResult, never> =
   createGenerateArtifactsCommand();
 
 await generateArtifactsCommand.runIfMain(import.meta.url);

@@ -4,10 +4,12 @@
  */
 
 import {describe, expect, it} from "vitest";
-import {InMemoryLoggerSink, MonorepositoryConsoleLogger, type MonorepositoryLogger} from "../common/logger.ts";
-import type {ProcessOutcome} from "../common/runner.ts";
-import {createProcessRunner} from "../common/runtime.testing.ts";
-import {CommandCancellation} from "../common/runtime.ts";
+import {ComposedTerminalPresenter} from "../core/presentation/composed-terminal-presenter.ts";
+import {RecordingTerminalPresenterSink} from "../testing/fixtures/terminal.fixture.ts";
+import type {TerminalPresenter} from "../core/presentation/terminal-presenter.ts";
+import type {ProcessExecutionResult} from "../core/process/process-execution-result.ts";
+import {buildRecordingProcessRunner} from "../testing/builders/process-result.builder.ts";
+import {CommandCancellation} from "../core/runtime/cancellation.ts";
 import {getContainerAdapter} from "./adapters.ts";
 import {
   assertNoDockerDesktopBackend,
@@ -20,21 +22,21 @@ import {
   type ContainerPreflightContext,
 } from "./preflight.ts";
 
-function succeeded(stdout = "", stderr = ""): ProcessOutcome {
+function succeeded(stdout = "", stderr = ""): ProcessExecutionResult {
   return {kind: "succeeded", exitCode: 0, stdout, stderr, durationMs: 0};
 }
 
-function exited(code: number, stdout = "", stderr = ""): ProcessOutcome {
+function exited(code: number, stdout = "", stderr = ""): ProcessExecutionResult {
   return {kind: "exited", exitCode: code, stdout, stderr, durationMs: 0};
 }
 
-function cancelled(): ProcessOutcome {
+function cancelled(): ProcessExecutionResult {
   return {kind: "cancelled", stdout: "", stderr: "", durationMs: 0};
 }
 
-function createTestLogger(): Readonly<{sink: InMemoryLoggerSink; logger: MonorepositoryLogger}> {
-  const sink = new InMemoryLoggerSink();
-  const logger = new MonorepositoryConsoleLogger("test", {
+function createTestLogger(): Readonly<{sink: RecordingTerminalPresenterSink; logger: TerminalPresenter}> {
+  const sink = new RecordingTerminalPresenterSink();
+  const logger = new ComposedTerminalPresenter("test", {
     color: false,
     sink,
   });
@@ -44,11 +46,11 @@ function createTestLogger(): Readonly<{sink: InMemoryLoggerSink; logger: Monorep
 
 describe("assertToolAvailable", () => {
   it("passes when the tool exits successfully", async () => {
-    await expect(assertToolAvailable("podman", createProcessRunner([succeeded("podman version 5")]))).resolves.toBeUndefined();
+    await expect(assertToolAvailable("podman", buildRecordingProcessRunner([succeeded("podman version 5")]))).resolves.toBeUndefined();
   });
 
   it("throws when the tool is missing", async () => {
-    await expect(assertToolAvailable("podman", createProcessRunner([exited(1, "not found")]))).rejects.toThrow(
+    await expect(assertToolAvailable("podman", buildRecordingProcessRunner([exited(1, "not found")]))).rejects.toThrow(
       "Required tool 'podman' is not available",
     );
   });
@@ -57,7 +59,7 @@ describe("assertToolAvailable", () => {
     const controller = new AbortController();
     controller.abort(new CommandCancellation("Terminated by test signal.", 130));
 
-    await expect(assertToolAvailable("podman", createProcessRunner([cancelled()]), controller.signal)).rejects.toMatchObject({
+    await expect(assertToolAvailable("podman", buildRecordingProcessRunner([cancelled()]), controller.signal)).rejects.toMatchObject({
       name: "CommandCancellation",
       exitCode: 130,
       message: "Terminated by test signal.",
@@ -65,7 +67,7 @@ describe("assertToolAvailable", () => {
   });
 
   it("treats a standalone cancelled outcome without an aborted signal as an operational failure", async () => {
-    await expect(assertToolAvailable("podman", createProcessRunner([cancelled()]))).rejects.toThrow(
+    await expect(assertToolAvailable("podman", buildRecordingProcessRunner([cancelled()]))).rejects.toThrow(
       "Required tool 'podman' is not available",
     );
   });
@@ -73,30 +75,30 @@ describe("assertToolAvailable", () => {
 
 describe("assertNoDockerDesktopBackend", () => {
   it("throws when the active backend is Docker Desktop", async () => {
-    await expect(assertNoDockerDesktopBackend(createProcessRunner([succeeded("Docker Desktop 4.40.0")]))).rejects.toThrow(
+    await expect(assertNoDockerDesktopBackend(buildRecordingProcessRunner([succeeded("Docker Desktop 4.40.0")]))).rejects.toThrow(
       "Docker Desktop is the active backend",
     );
   });
 
   it("passes when the active backend is Rancher Desktop", async () => {
-    await expect(assertNoDockerDesktopBackend(createProcessRunner([succeeded("Rancher Desktop")]))).resolves.toBeUndefined();
+    await expect(assertNoDockerDesktopBackend(buildRecordingProcessRunner([succeeded("Rancher Desktop")]))).resolves.toBeUndefined();
   });
 
   it("throws when the Docker Desktop banner is only present on stderr", async () => {
-    await expect(assertNoDockerDesktopBackend(createProcessRunner([succeeded("", "Docker Desktop 4.40.0")]))).rejects.toThrow(
+    await expect(assertNoDockerDesktopBackend(buildRecordingProcessRunner([succeeded("", "Docker Desktop 4.40.0")]))).rejects.toThrow(
       "Docker Desktop is the active backend",
     );
   });
 
   it("passes when the probe itself fails, since a failed probe cannot confirm a Docker Desktop banner", async () => {
-    await expect(assertNoDockerDesktopBackend(createProcessRunner([exited(1, "not found")]))).resolves.toBeUndefined();
+    await expect(assertNoDockerDesktopBackend(buildRecordingProcessRunner([exited(1, "not found")]))).resolves.toBeUndefined();
   });
 
   it("throws the invocation's cancellation reason when the advisory probe is cancelled on an aborted signal", async () => {
     const controller = new AbortController();
     controller.abort(new CommandCancellation("Terminated by test signal.", 130));
 
-    await expect(assertNoDockerDesktopBackend(createProcessRunner([cancelled()]), controller.signal)).rejects.toMatchObject({
+    await expect(assertNoDockerDesktopBackend(buildRecordingProcessRunner([cancelled()]), controller.signal)).rejects.toMatchObject({
       name: "CommandCancellation",
       exitCode: 130,
       message: "Terminated by test signal.",
@@ -104,29 +106,29 @@ describe("assertNoDockerDesktopBackend", () => {
   });
 
   it("keeps a standalone cancelled outcome advisory when no invocation signal is aborted", async () => {
-    await expect(assertNoDockerDesktopBackend(createProcessRunner([cancelled()]))).resolves.toBeUndefined();
+    await expect(assertNoDockerDesktopBackend(buildRecordingProcessRunner([cancelled()]))).resolves.toBeUndefined();
   });
 });
 
 describe("assertRancherBackend", () => {
   it("accepts Rancher Desktop output", async () => {
-    await expect(assertRancherBackend(createProcessRunner([succeeded("Rancher Desktop 1.20.0")]))).resolves.toBeUndefined();
+    await expect(assertRancherBackend(buildRecordingProcessRunner([succeeded("Rancher Desktop 1.20.0")]))).resolves.toBeUndefined();
   });
 
   it("rejects Docker Desktop output", async () => {
-    await expect(assertRancherBackend(createProcessRunner([succeeded("Docker Desktop 4.40.0")]))).rejects.toThrow(
+    await expect(assertRancherBackend(buildRecordingProcessRunner([succeeded("Docker Desktop 4.40.0")]))).rejects.toThrow(
       "Rancher engine selected but Docker Desktop appears to be active",
     );
   });
 
   it("rejects an unavailable Docker-compatible CLI", async () => {
-    await expect(assertRancherBackend(createProcessRunner([exited(1, "not found")]))).rejects.toThrow(
+    await expect(assertRancherBackend(buildRecordingProcessRunner([exited(1, "not found")]))).rejects.toThrow(
       "Rancher Desktop Docker-compatible CLI is not available",
     );
   });
 
   it("rejects a Docker Desktop banner reported only on stderr", async () => {
-    await expect(assertRancherBackend(createProcessRunner([succeeded("", "Docker Desktop 4.40.0")]))).rejects.toThrow(
+    await expect(assertRancherBackend(buildRecordingProcessRunner([succeeded("", "Docker Desktop 4.40.0")]))).rejects.toThrow(
       "Rancher engine selected but Docker Desktop appears to be active",
     );
   });
@@ -135,24 +137,24 @@ describe("assertRancherBackend", () => {
 describe("assertPodmanBackend", () => {
   it("accepts a working Podman CLI and compose provider", async () => {
     await expect(
-      assertPodmanBackend(createProcessRunner([succeeded("podman version 5.4.0"), succeeded("podman-compose version 1.2.0")])),
+      assertPodmanBackend(buildRecordingProcessRunner([succeeded("podman version 5.4.0"), succeeded("podman-compose version 1.2.0")])),
     ).resolves.toBeUndefined();
   });
 
   it("rejects missing Podman", async () => {
-    await expect(assertPodmanBackend(createProcessRunner([exited(1, "podman missing")]))).rejects.toThrow("Podman is not available");
+    await expect(assertPodmanBackend(buildRecordingProcessRunner([exited(1, "podman missing")]))).rejects.toThrow("Podman is not available");
   });
 
   it("rejects missing Podman Compose provider", async () => {
     await expect(
-      assertPodmanBackend(createProcessRunner([succeeded("podman version 5.4.0"), exited(1, "podman compose provider is not configured")])),
+      assertPodmanBackend(buildRecordingProcessRunner([succeeded("podman version 5.4.0"), exited(1, "podman compose provider is not configured")])),
     ).rejects.toThrow("Podman Compose provider is not available");
   });
 
   it("rejects Docker Desktop compose provider delegation", async () => {
     await expect(
       assertPodmanBackend(
-        createProcessRunner([
+        buildRecordingProcessRunner([
           succeeded("podman version 5.8.2"),
           succeeded('Executing external compose provider "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker-compose.exe"'),
         ]),
@@ -163,7 +165,7 @@ describe("assertPodmanBackend", () => {
   it("rejects macOS Docker Desktop compose provider delegation", async () => {
     await expect(
       assertPodmanBackend(
-        createProcessRunner([
+        buildRecordingProcessRunner([
           succeeded("podman version 5.8.2"),
           succeeded('Executing external compose provider "/Applications/Docker.app/Contents/Resources/cli-plugins/docker-compose"'),
         ]),
@@ -174,7 +176,7 @@ describe("assertPodmanBackend", () => {
   it("rejects Docker Desktop compose provider delegation reported only on stderr", async () => {
     await expect(
       assertPodmanBackend(
-        createProcessRunner([
+        buildRecordingProcessRunner([
           succeeded("podman version 5.8.2"),
           succeeded("", 'Executing external compose provider "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker-compose.exe"'),
         ]),
@@ -185,7 +187,7 @@ describe("assertPodmanBackend", () => {
   it("allows Podman Compose provider output", async () => {
     await expect(
       assertPodmanBackend(
-        createProcessRunner([succeeded("podman version 5.8.2"), succeeded("podman version 5.8.2\npodman-compose version 1.5.0")]),
+        buildRecordingProcessRunner([succeeded("podman version 5.8.2"), succeeded("podman version 5.8.2\npodman-compose version 1.5.0")]),
       ),
     ).resolves.toBeUndefined();
   });
@@ -195,7 +197,7 @@ describe("warnOnExistingLocalContainers", () => {
   it("warns when known local containers already exist", async () => {
     const {sink, logger} = createTestLogger();
 
-    await warnOnExistingLocalContainers(getContainerAdapter("podman"), createProcessRunner([succeeded("mssql\nredis\n")]), logger);
+    await warnOnExistingLocalContainers(getContainerAdapter("podman"), buildRecordingProcessRunner([succeeded("mssql\nredis\n")]), logger);
 
     expect(sink.records.some((record) => record.text.includes("Existing local containers detected for Podman Desktop: mssql, redis"))).toBe(
       true,
@@ -205,21 +207,21 @@ describe("warnOnExistingLocalContainers", () => {
   it("does not warn when container listing fails", async () => {
     const {sink, logger} = createTestLogger();
 
-    await warnOnExistingLocalContainers(getContainerAdapter("podman"), createProcessRunner([exited(1, "error")]), logger);
+    await warnOnExistingLocalContainers(getContainerAdapter("podman"), buildRecordingProcessRunner([exited(1, "error")]), logger);
 
     expect(sink.records).toHaveLength(0);
   });
 });
 
 describe("runContainerPreflight", () => {
-  function contextFor(outcomes: readonly ProcessOutcome[]): Readonly<{
+  function contextFor(outcomes: readonly ProcessExecutionResult[]): Readonly<{
     context: ContainerPreflightContext;
-    runner: ReturnType<typeof createProcessRunner>;
-    logger: MonorepositoryLogger;
-    sink: InMemoryLoggerSink;
+    runner: ReturnType<typeof buildRecordingProcessRunner>;
+    logger: TerminalPresenter;
+    sink: RecordingTerminalPresenterSink;
     controller: AbortController;
   }> {
-    const runner = createProcessRunner(outcomes);
+    const runner = buildRecordingProcessRunner(outcomes);
     const {sink, logger} = createTestLogger();
     const controller = new AbortController();
     const context: ContainerPreflightContext = {

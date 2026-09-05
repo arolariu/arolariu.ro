@@ -5,7 +5,7 @@
  *
  * @remarks
  * Every test drives the real phase against an injected {@link SetupPhaseRuntime}: a recording
- * process runner replaying typed {@link ProcessOutcome} fixtures, a deterministic clock, an
+ * process runner replaying typed {@link ProcessExecutionResult} fixtures, a deterministic clock, an
  * in-memory recursive-removal filesystem, and an immutable environment snapshot that supplies the
  * host platform. No test in this file reads the live checkout, spawns a process, or observes
  * ambient Node state.
@@ -14,13 +14,17 @@
 import {resolve} from "node:path";
 import {describe, expect, it, vi} from "vitest";
 
-import type {CommandContext} from "./common/commander.ts";
-import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "./common/logger.ts";
+import type {CommandExecutionContext} from "./core/command/command-execution.ts";
+import {ComposedTerminalPresenter} from "./core/presentation/composed-terminal-presenter.ts";
+import {RecordingTerminalPresenterSink} from "./testing/fixtures/terminal.fixture.ts";
 import {createRepositoryPaths} from "./common/repository-paths.ts";
 import type {MinimumVersion, RepositoryRequirements} from "./common/requirements.ts";
-import {AbstractProcessRunner, type ProcessOutcome, type ProcessRequest, type ProcessRunOptions} from "./common/runner.ts";
-import {createMemoryFileSystem, createTestRuntimeFactory} from "./common/runtime.testing.ts";
-import type {Clock, RuntimeEnvironment} from "./common/runtime.ts";
+import type {ProcessExecutionOptions, ProcessExecutionRequest} from "./core/process/process-execution-request.ts";
+import type {ProcessExecutionResult} from "./core/process/process-execution-result.ts";
+import {AbstractProcessRunner} from "./core/process/process-runner.ts";
+import type {Clock, RuntimeEnvironment} from "./core/runtime/runtime-capability.ts";
+import {buildRuntimeExecutionContext} from "./testing/builders/runtime-context.builder.ts";
+import {createMemoryFileSystem} from "./testing/fixtures/memory-filesystem.fixture.ts";
 import type {PythonFacts, PythonInterpreterFact} from "./inspection/python.ts";
 import type {RepositoryInspectionSession} from "./inspection/repository.ts";
 import type {InspectionOutcome} from "./inspection/types.ts";
@@ -41,28 +45,28 @@ const defaultInterpreter: PythonInterpreterFact = {command: "py", prefixArgs: ["
 const venvSpecWin32 = pythonInVirtualEnvironment(paths.expRoot, "win32");
 const venvDirectoryWin32 = `${paths.expRoot}\\.venv`;
 
-function succeeded(patch: Readonly<{stdout?: string; stderr?: string}> = {}): ProcessOutcome {
+function succeeded(patch: Readonly<{stdout?: string; stderr?: string}> = {}): ProcessExecutionResult {
   return {kind: "succeeded", exitCode: 0, stdout: patch.stdout ?? "", stderr: patch.stderr ?? "", durationMs: 1};
 }
 
-function exited(exitCode: number, patch: Readonly<{stdout?: string; stderr?: string}> = {}): ProcessOutcome {
+function exited(exitCode: number, patch: Readonly<{stdout?: string; stderr?: string}> = {}): ProcessExecutionResult {
   return {kind: "exited", exitCode, stdout: patch.stdout ?? "", stderr: patch.stderr ?? "", durationMs: 1};
 }
 
-function commandKey(request: Readonly<ProcessRequest>): string {
+function commandKey(request: Readonly<ProcessExecutionRequest>): string {
   return [request.command, ...request.args].join("\u0000");
 }
 
 /** One recorded child invocation. */
-type RecordedCall = Readonly<{request: ProcessRequest; options: ProcessRunOptions}>;
+type RecordedCall = Readonly<{request: ProcessExecutionRequest; options: ProcessExecutionOptions}>;
 
 /** Records every invocation while replaying request-keyed typed outcomes. */
 class FakeProcessRunner extends AbstractProcessRunner {
-  readonly #responses: Readonly<Record<string, ProcessOutcome | readonly ProcessOutcome[]>>;
+  readonly #responses: Readonly<Record<string, ProcessExecutionResult | readonly ProcessExecutionResult[]>>;
   readonly #offsets = new Map<string, number>();
   readonly #calls: RecordedCall[] = [];
 
-  public constructor(responses: Readonly<Record<string, ProcessOutcome | readonly ProcessOutcome[]>> = {}) {
+  public constructor(responses: Readonly<Record<string, ProcessExecutionResult | readonly ProcessExecutionResult[]>> = {}) {
     super();
     this.#responses = responses;
   }
@@ -73,7 +77,10 @@ class FakeProcessRunner extends AbstractProcessRunner {
   }
 
   /** {@inheritDoc AbstractProcessRunner.execute} */
-  protected override execute(request: Readonly<ProcessRequest>, options: Readonly<ProcessRunOptions>): Promise<ProcessOutcome> {
+  protected override execute(
+    request: Readonly<ProcessExecutionRequest>,
+    options: Readonly<ProcessExecutionOptions>,
+  ): Promise<ProcessExecutionResult> {
     this.#calls.push({request, options});
     const key = commandKey(request);
     const configured = this.#responses[key];
@@ -81,9 +88,9 @@ class FakeProcessRunner extends AbstractProcessRunner {
       return Promise.resolve(succeeded());
     }
     if (!Array.isArray(configured)) {
-      return Promise.resolve(configured as ProcessOutcome);
+      return Promise.resolve(configured as ProcessExecutionResult);
     }
-    const sequence = configured as readonly ProcessOutcome[];
+    const sequence = configured as readonly ProcessExecutionResult[];
     const offset = this.#offsets.get(key) ?? 0;
     this.#offsets.set(key, offset + 1);
     return Promise.resolve(sequence[offset] ?? sequence.at(-1) ?? succeeded());
@@ -231,7 +238,7 @@ interface PythonHarness {
 
 async function createHarness(
   input: Readonly<{
-    responses?: Readonly<Record<string, ProcessOutcome | readonly ProcessOutcome[]>>;
+    responses?: Readonly<Record<string, ProcessExecutionResult | readonly ProcessExecutionResult[]>>;
     dispositions?: Readonly<Record<string, SetupActionDisposition>>;
     options?: SetupInput;
     platform?: NodeJS.Platform;
@@ -241,8 +248,8 @@ async function createHarness(
   const runner = new FakeProcessRunner(input.responses);
   const {actions, actionIds, actionRecords} = createActions(input.dispositions);
   const {session, inspect, invalidate} = createPythonInspectionHarness(input.pythonOutcomes);
-  const sink = new InMemoryLoggerSink();
-  const logger = new MonorepositoryConsoleLogger("setup::python", {color: false, sink});
+  const sink = new RecordingTerminalPresenterSink();
+  const logger = new ComposedTerminalPresenter("setup::python", {color: false, sink});
 
   let elapsed = 0;
   const clock: Clock = {
@@ -257,15 +264,14 @@ async function createHarness(
     removedDirectories.push(path);
   });
 
-  const factory = createTestRuntimeFactory({
+  const commandRuntime = buildRuntimeExecutionContext({
     files,
     runner,
     clock,
-    logger,
+    presenter: logger,
     environment: environmentSnapshot(input.platform ?? "win32"),
   });
-  const commandRuntime = await factory.createRoot({presentation: "silent", registerProcessSignals: false});
-  const command: CommandContext = {runtime: commandRuntime, presentation: "silent"};
+  const command: CommandExecutionContext = {runtime: commandRuntime, presentation: "silent"};
 
   const runtime: SetupPhaseRuntime = {
     command,

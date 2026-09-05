@@ -4,7 +4,7 @@
  */
 
 import {readToolingConfig} from "../common/tooling-config.ts";
-import type {ReadOnlyFileSystem} from "../common/runtime.ts";
+import type {ReadOnlyFileSystem} from "../core/runtime/runtime-capability.ts";
 import {ContainerRuntimeError, type ContainerEngine, type ContainerEngineSelection, type SelectionInputs} from "./types.ts";
 
 const supportedEngines: ReadonlySet<string> = new Set(["rancher", "podman"]);

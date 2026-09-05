@@ -9,9 +9,11 @@ import {tmpdir} from "node:os";
 import {dirname, join, resolve} from "node:path";
 import {afterEach, describe, expect, it, vi} from "vitest";
 
-import type {ProcessOutcome, ProcessOutput, ProcessRunner} from "../common/runner.ts";
-import {nodeFileSystem} from "../common/runtime.node.ts";
-import {asReadOnlyFileSystem, DefaultTaskScheduler, type Clock} from "../common/runtime.ts";
+import type {ProcessExecutionOutput, ProcessExecutionResult} from "../core/process/process-execution-result.ts";
+import type {ProcessRunner} from "../core/process/process-runner.ts";
+import {nodeFileSystem} from "../adapters/node/node-filesystem.ts";
+import {asReadOnlyFileSystem, type Clock} from "../core/runtime/runtime-capability.ts";
+import {DefaultTaskScheduler} from "../core/runtime/task-scheduler.ts";
 import {createInspectionProbeRunner} from "./probes.ts";
 import {
   INSPECTED_PACKAGE_NAMES,
@@ -31,23 +33,23 @@ afterEach(async () => {
 const testFiles = asReadOnlyFileSystem(nodeFileSystem);
 const testTasks = new DefaultTaskScheduler();
 
-function succeeded(patch: Partial<ProcessOutput> = {}): ProcessOutcome {
+function succeeded(patch: Partial<ProcessExecutionOutput> = {}): ProcessExecutionResult {
   return {kind: "succeeded", exitCode: 0, stdout: "", stderr: "", durationMs: 1, ...patch};
 }
 
-function exited(exitCode: number, patch: Partial<ProcessOutput> = {}): ProcessOutcome {
+function exited(exitCode: number, patch: Partial<ProcessExecutionOutput> = {}): ProcessExecutionResult {
   return {kind: "exited", exitCode, stdout: "", stderr: "", durationMs: 1, ...patch};
 }
 
-function spawnFailed(message: string, patch: Partial<ProcessOutput> = {}): ProcessOutcome {
+function spawnFailed(message: string, patch: Partial<ProcessExecutionOutput> = {}): ProcessExecutionResult {
   return {kind: "spawn-failed", message, stdout: "", stderr: "", durationMs: 1, ...patch};
 }
 
-function timedOut(patch: Partial<ProcessOutput> = {}): ProcessOutcome {
+function timedOut(patch: Partial<ProcessExecutionOutput> = {}): ProcessExecutionResult {
   return {kind: "timed-out", stdout: "", stderr: "", durationMs: 1, ...patch};
 }
 
-function signalled(signal: NodeJS.Signals, patch: Partial<ProcessOutput> = {}): ProcessOutcome {
+function signalled(signal: NodeJS.Signals, patch: Partial<ProcessExecutionOutput> = {}): ProcessExecutionResult {
   return {kind: "signalled", signal, stdout: "", stderr: "", durationMs: 1, ...patch};
 }
 
@@ -63,7 +65,7 @@ function clock(): Clock {
   };
 }
 
-function npmHarness(outcome: ProcessOutcome): Readonly<{
+function npmHarness(outcome: ProcessExecutionResult): Readonly<{
   probes: ReturnType<typeof createInspectionProbeRunner>;
   run: ReturnType<typeof vi.fn<ProcessRunner["run"]>>;
 }> {
@@ -198,7 +200,7 @@ describe("createNpmTreeProvider", () => {
   it("measures duration only after npm JSON projection finishes", async () => {
     const events: string[] = [];
     let current = 100;
-    const outcomeFixture: ProcessOutcome = {
+    const outcomeFixture: ProcessExecutionResult = {
       kind: "succeeded",
       exitCode: 0,
       get stdout(): string {

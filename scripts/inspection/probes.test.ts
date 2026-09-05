@@ -6,10 +6,12 @@
 
 import {describe, expect, it, vi, type Mock} from "vitest";
 
-import type {ProcessOutcome, ProcessRequest, ProcessRunner} from "../common/runner.ts";
+import type {ProcessExecutionRequest} from "../core/process/process-execution-request.ts";
+import type {ProcessExecutionResult} from "../core/process/process-execution-result.ts";
+import type {ProcessRunner} from "../core/process/process-runner.ts";
 import {createInspectionProbeRunner, probes, type InspectionProbe, type InspectionProbeRunOptions} from "./probes.ts";
 
-function succeededOutcome(): ProcessOutcome {
+function succeededOutcome(): ProcessExecutionResult {
   return {kind: "succeeded", exitCode: 0, stdout: "", stderr: "", durationMs: 1};
 }
 
@@ -128,8 +130,8 @@ describe("createInspectionProbeRunner", () => {
     expect(forwardedOptions).not.toHaveProperty("signal");
   });
 
-  it("preserves the exact ProcessOutcome returned by the shared runner", async () => {
-    const outcomeFixture: ProcessOutcome = {kind: "timed-out", stdout: "out", stderr: "err", durationMs: 42, signal: "SIGTERM"};
+  it("preserves the exact ProcessExecutionResult returned by the shared runner", async () => {
+    const outcomeFixture: ProcessExecutionResult = {kind: "timed-out", stdout: "out", stderr: "err", durationMs: 42, signal: "SIGTERM"};
     const {runner, run} = createFakeProcessRunner();
     run.mockResolvedValueOnce(outcomeFixture);
 
@@ -142,7 +144,7 @@ describe("createInspectionProbeRunner", () => {
 interface FixedProbeCase {
   readonly name: string;
   readonly factory: () => InspectionProbe;
-  readonly command: ProcessRequest;
+  readonly command: ProcessExecutionRequest;
 }
 
 const fixedProbeCases: readonly FixedProbeCase[] = [
@@ -274,7 +276,7 @@ describe("probes.workspace.executableResolution", () => {
 
     await createInspectionProbeRunner(runner).run(probes.workspace.executableResolution("git.exe", "win32"));
 
-    const expected: ProcessRequest = {command: "where.exe", args: ["git.exe"]};
+    const expected: ProcessExecutionRequest = {command: "where.exe", args: ["git.exe"]};
     expect(run).toHaveBeenCalledWith(expected, expect.objectContaining({output: "capture"}));
   });
 
@@ -395,8 +397,8 @@ describe.each(pythonProbeCases)("probes.$name", ({factory, args}) => {
 interface RuntimeProbeCase {
   readonly name: string;
   readonly factory: (runtime: string) => InspectionProbe;
-  readonly rancherCommand: ProcessRequest;
-  readonly podmanCommand: ProcessRequest;
+  readonly rancherCommand: ProcessExecutionRequest;
+  readonly podmanCommand: ProcessExecutionRequest;
 }
 
 const runtimeProbeCases: readonly RuntimeProbeCase[] = [

@@ -15,7 +15,8 @@
 
 import {resolve} from "node:path";
 
-import type {ProcessEnvironment, ProcessOutcome} from "../common/runner.ts";
+import type {ProcessEnvironment} from "../core/process/process-execution-request.ts";
+import type {ProcessExecutionResult} from "../core/process/process-execution-result.ts";
 import type {RepositoryPaths} from "../common/repository-paths.ts";
 import {requiredLocalPorts} from "../container-runtime/preflight.ts";
 import type {ContainerEngine} from "../container-runtime/types.ts";
@@ -161,7 +162,7 @@ function invalidOutcome(issue: string, startedAt: number, now: () => number): In
   return {kind: "invalid", issues: [issue], durationMs: elapsedMilliseconds(startedAt, now)};
 }
 
-function isSuccessfulCommand(outcome: Readonly<ProcessOutcome>): boolean {
+function isSuccessfulCommand(outcome: Readonly<ProcessExecutionResult>): boolean {
   return outcome.kind === "succeeded";
 }
 
@@ -174,7 +175,7 @@ function isSuccessfulCommand(outcome: Readonly<ProcessOutcome>): boolean {
  * @param outcome - Captured probe outcome.
  * @returns Whether the outcome's stdout should be parsed as port-ownership evidence.
  */
-function isAcceptablePortProbeResult(platform: NodeJS.Platform, outcome: Readonly<ProcessOutcome>): boolean {
+function isAcceptablePortProbeResult(platform: NodeJS.Platform, outcome: Readonly<ProcessExecutionResult>): boolean {
   if (isSuccessfulCommand(outcome)) {
     return true;
   }
@@ -199,7 +200,7 @@ function credentialIsolatedEnvironment(environment: ProcessEnvironment): Process
   return isolated;
 }
 
-function combinedOutput(outcome: Readonly<ProcessOutcome>): string {
+function combinedOutput(outcome: Readonly<ProcessExecutionResult>): string {
   return `${outcome.stdout}\n${outcome.stderr}`.toLowerCase();
 }
 
@@ -646,8 +647,8 @@ function projectContainers(stdout: string): readonly ContainerFact[] {
  */
 function classifyDockerConflict(
   engine: ContainerEngine,
-  composeResult: Readonly<ProcessOutcome>,
-  runtimeInfoResult: Readonly<ProcessOutcome> | undefined,
+  composeResult: Readonly<ProcessExecutionResult>,
+  runtimeInfoResult: Readonly<ProcessExecutionResult> | undefined,
 ): boolean {
   if (engine === "podman") {
     if (!isSuccessfulCommand(composeResult)) {
@@ -756,7 +757,7 @@ export function createInfrastructureProvider(input: Readonly<InfrastructureProvi
         return {kind: "available", value, durationMs: elapsedMilliseconds(startedAt, now)};
       }
 
-      const engineOutcomes = await input.tasks.parallel<ProcessOutcome | undefined>([
+      const engineOutcomes = await input.tasks.parallel<ProcessExecutionResult | undefined>([
         () => input.probes.run(probes.infrastructure.composeVersion(engine), probeOptions),
         () => input.probes.run(probes.infrastructure.runtimeContext(engine), probeOptions),
         () => input.probes.run(probes.infrastructure.containerList(engine), probeOptions),

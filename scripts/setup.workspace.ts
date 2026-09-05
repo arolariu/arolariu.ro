@@ -11,10 +11,12 @@
 
 import {resolve} from "node:path";
 
-import type {CommandExecution} from "./common/commander.ts";
+import type {CommandExecution} from "./core/command/command-execution.ts";
 import {loadRepositoryRequirements, parseVersion, satisfiesMinimum, type MinimumVersion} from "./common/requirements.ts";
-import type {ProcessOutcome, ProcessRequest, SucceededProcessOutcome} from "./common/runner.ts";
-import {CommandCancellation, type FileSystem} from "./common/runtime.ts";
+import type {ProcessExecutionRequest} from "./core/process/process-execution-request.ts";
+import type {ProcessExecutionResult, SucceededProcessExecutionResult} from "./core/process/process-execution-result.ts";
+import {CommandCancellation} from "./core/runtime/cancellation.ts";
+import type {FileSystem} from "./core/runtime/runtime-capability.ts";
 import {getExpectedTaxonomyArtifactPaths} from "./common/taxonomy-artifacts.ts";
 import type {GenerateResult} from "./generate.ts";
 import type {NpmTreeFacts} from "./inspection/packages.ts";
@@ -31,11 +33,11 @@ const REPOSITORY_PACKAGE_NAME = "@arolariu/monorepo";
 const ROOT_NPM_CI_GUIDANCE = "Run `npm ci` in the repository root, then rerun setup.";
 /** Bounded timeout for the long-running lockfile restoration this module owns. */
 const NPM_RESTORE_TIMEOUT_MS = 1_200_000;
-const NPM_RESTORE_COMMAND: ProcessRequest = {
+const NPM_RESTORE_COMMAND: ProcessExecutionRequest = {
   command: "npm",
   args: ["ci", "--prefer-offline", "--no-audit", "--no-fund"],
 };
-const NX_PROJECTS_COMMAND: ProcessRequest = {
+const NX_PROJECTS_COMMAND: ProcessExecutionRequest = {
   command: "npx",
   args: ["--no-install", "nx", "show", "projects", "--json"],
 };
@@ -58,7 +60,7 @@ function isInterruption(error: unknown): boolean {
   return error instanceof CommandCancellation || (error instanceof Error && error.name === "AbortError");
 }
 
-function isSuccessfulOutcome(outcome: Readonly<ProcessOutcome>): outcome is SucceededProcessOutcome {
+function isSuccessfulOutcome(outcome: Readonly<ProcessExecutionResult>): outcome is SucceededProcessExecutionResult {
   return outcome.kind === "succeeded";
 }
 
@@ -68,7 +70,7 @@ function isSuccessfulOutcome(outcome: Readonly<ProcessOutcome>): outcome is Succ
  * @param outcome - Completed process outcome.
  * @returns Evidence lines naming the transport failure and any captured output.
  */
-function commandFailureEvidence(outcome: Readonly<ProcessOutcome>): readonly string[] {
+function commandFailureEvidence(outcome: Readonly<ProcessExecutionResult>): readonly string[] {
   const evidence: string[] = [];
   switch (outcome.kind) {
     case "succeeded":
@@ -166,7 +168,7 @@ function hasValidGitVersionOutput(value: string): boolean {
 
 function inspectRuntimeVersion(
   name: "Node.js" | "npm",
-  outcome: Readonly<ProcessOutcome>,
+  outcome: Readonly<ProcessExecutionResult>,
   minimum: MinimumVersion,
 ): Readonly<{
   version: MinimumVersion | null;
@@ -262,7 +264,7 @@ async function runPrerequisites(context: SetupContext): Promise<SetupPhaseResult
     });
   }
 
-  const probes: readonly ProcessRequest[] = [
+  const probes: readonly ProcessExecutionRequest[] = [
     {command: "git", args: ["--version"]},
     {command: "node", args: ["--version"]},
     {command: "npm", args: ["--version"]},
@@ -516,7 +518,7 @@ async function runGithubScriptsDependencies(context: SetupContext): Promise<Setu
   }
 }
 
-function parseNxProjects(outcome: Readonly<ProcessOutcome>): readonly string[] | null {
+function parseNxProjects(outcome: Readonly<ProcessExecutionResult>): readonly string[] | null {
   if (!isSuccessfulOutcome(outcome) || outcome.stdout.trim() === "") {
     return null;
   }

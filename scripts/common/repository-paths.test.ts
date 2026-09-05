@@ -9,7 +9,7 @@ import {dirname, join, resolve} from "node:path";
 import {pathToFileURL} from "node:url";
 import {afterEach, describe, expect, it} from "vitest";
 import {createRepositoryPaths, resolveRepositoryPaths} from "./repository-paths.ts";
-import {nodeFileSystem} from "./runtime.node.ts";
+import {nodeFileSystem} from "../adapters/node/node-filesystem.ts";
 
 const temporaryRoots: string[] = [];
 

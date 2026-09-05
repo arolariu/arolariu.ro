@@ -12,7 +12,7 @@
 
 import {isAbsolute, dirname, posix, relative, resolve, sep, win32} from "node:path";
 
-import type {ProcessOutcome} from "../common/runner.ts";
+import type {ProcessExecutionResult} from "../core/process/process-execution-result.ts";
 import type {RepositoryPaths} from "../common/repository-paths.ts";
 import type {InspectionProbeRunner} from "./probes.ts";
 import {probes} from "./probes.ts";
@@ -179,11 +179,11 @@ function elapsedMilliseconds(startedAt: number, now: () => number): number {
   return Number.isFinite(elapsed) ? Math.max(0, elapsed) : 0;
 }
 
-function isSuccessfulCommand(outcome: Readonly<ProcessOutcome>): boolean {
+function isSuccessfulCommand(outcome: Readonly<ProcessExecutionResult>): boolean {
   return outcome.kind === "succeeded";
 }
 
-function hasTransportFailure(outcome: Readonly<ProcessOutcome>): boolean {
+function hasTransportFailure(outcome: Readonly<ProcessExecutionResult>): boolean {
   switch (outcome.kind) {
     case "succeeded":
     case "exited":
@@ -1146,13 +1146,13 @@ export function createDotnetProvider(
     }
 
     const executableName = platform === "win32" ? "dotnet.exe" : "dotnet";
-    let resolutionResult: ProcessOutcome | undefined;
-    let sdkResult: ProcessOutcome | undefined;
-    let infoResult: ProcessOutcome | undefined;
-    let workloadResult: ProcessOutcome | undefined;
-    let nugetResult: ProcessOutcome | undefined;
-    let localToolsResult: ProcessOutcome | undefined;
-    let certificateResult: ProcessOutcome | undefined;
+    let resolutionResult: ProcessExecutionResult | undefined;
+    let sdkResult: ProcessExecutionResult | undefined;
+    let infoResult: ProcessExecutionResult | undefined;
+    let workloadResult: ProcessExecutionResult | undefined;
+    let nugetResult: ProcessExecutionResult | undefined;
+    let localToolsResult: ProcessExecutionResult | undefined;
+    let certificateResult: ProcessExecutionResult | undefined;
     let solutionInspection: SolutionInspection | undefined;
     let appHostFiles: AppHostFileOutcome | undefined;
 
@@ -1205,7 +1205,7 @@ export function createDotnetProvider(
     }
 
     const requiredCommands: readonly Readonly<{
-      result: ProcessOutcome;
+      result: ProcessExecutionResult;
       reason: string;
     }>[] = [
       {result: resolutionResult, reason: "The dotnet executable path could not be resolved."},

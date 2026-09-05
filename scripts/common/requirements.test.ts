@@ -9,7 +9,8 @@ import {dirname, join} from "node:path";
 import {afterEach, beforeEach, describe, expect, it} from "vitest";
 import {createRepositoryPaths, type RepositoryPaths} from "./repository-paths.ts";
 import {loadRepositoryRequirements, parseVersion, satisfiesMinimum} from "./requirements.ts";
-import {nodeFileSystem, nodeTaskScheduler} from "./runtime.node.ts";
+import {nodeFileSystem} from "../adapters/node/node-filesystem.ts";
+import {nodeTaskScheduler} from "../adapters/node/node-platform.ts";
 
 interface PackageJsonFixture {
   readonly name?: string;

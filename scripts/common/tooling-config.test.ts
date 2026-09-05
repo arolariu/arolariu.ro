@@ -8,7 +8,7 @@ import {mkdir, mkdtemp, readFile, readdir, rm, stat, writeFile} from "node:fs/pr
 import {tmpdir} from "node:os";
 import {dirname, join} from "node:path";
 import {afterEach, beforeEach, describe, expect, it} from "vitest";
-import {nodeFileSystem} from "./runtime.node.ts";
+import {nodeFileSystem} from "../adapters/node/node-filesystem.ts";
 import {mergeToolingConfig, parseToolingConfig, readToolingConfig, writeToolingConfig} from "./tooling-config.ts";
 
 const temporaryRoots: string[] = [];

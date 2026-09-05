@@ -14,8 +14,8 @@ import {spawn} from "node:child_process";
 import {resolve} from "node:path";
 import {fileURLToPath} from "node:url";
 import {describe, expect, it} from "vitest";
-import {nodeFileSystem} from "./common/runtime.node.ts";
-import {createTestRuntimeFactory} from "./common/runtime.testing.ts";
+import {nodeFileSystem} from "./adapters/node/node-filesystem.ts";
+import {buildCommandHost} from "./testing/builders/command-host.builder.ts";
 import {createDoctorCommand} from "./doctor.ts";
 import type {RepositoryInspectionSession} from "./inspection/repository.ts";
 import type {InspectionOutcome} from "./inspection/types.ts";
@@ -142,12 +142,10 @@ describe("doctor runtime immutability", () => {
     // purpose is to prove that a real full-profile run leaves repository sentinels untouched.
     // Every ordinary doctor command test uses the in-memory repository fixture instead.
     const existingSession = createFakeInspectionSession();
-    const command = createDoctorCommand({
-      runtimeFactory: createTestRuntimeFactory({
-        files: nodeFileSystem,
-        inspection: {getRepositorySession: (): RepositoryInspectionSession => existingSession},
-      }),
-    });
+    const command = createDoctorCommand(
+      {inspection: {getRepositorySession: (): RepositoryInspectionSession => existingSession}},
+      {host: buildCommandHost({runtime: {files: nodeFileSystem}})},
+    );
 
     const execution = await command.invoke({quick: false, verbose: false}, {presentation: "silent"});
 

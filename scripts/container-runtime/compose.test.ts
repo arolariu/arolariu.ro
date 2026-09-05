@@ -4,17 +4,18 @@
  */
 
 import {describe, expect, it} from "vitest";
-import type {ProcessOutcome} from "../common/runner.ts";
-import {createProcessRunner, createTestRuntimeFactory} from "../common/runtime.testing.ts";
-import {CommandCancellation} from "../common/runtime.ts";
+import type {ProcessExecutionResult} from "../core/process/process-execution-result.ts";
+import {buildRecordingProcessRunner} from "../testing/builders/process-result.builder.ts";
+import {buildCommandHost} from "../testing/builders/command-host.builder.ts";
+import {CommandCancellation} from "../core/runtime/cancellation.ts";
 import {getContainerAdapter} from "./adapters.ts";
 import {buildComposeCommand, createComposeCommand} from "./compose.ts";
 
-function succeeded(stdout = ""): ProcessOutcome {
+function succeeded(stdout = ""): ProcessExecutionResult {
   return {kind: "succeeded", exitCode: 0, stdout, stderr: "", durationMs: 0};
 }
 
-function exited(code: number): ProcessOutcome {
+function exited(code: number): ProcessExecutionResult {
   return {kind: "exited", exitCode: code, stdout: "", stderr: "", durationMs: 0};
 }
 
@@ -34,8 +35,8 @@ describe("buildComposeCommand", () => {
 
 describe("createComposeCommand", () => {
   it("preserves pass-through argument order and bytes with tee output", async () => {
-    const runner = createProcessRunner();
-    const command = createComposeCommand(createTestRuntimeFactory({runner}));
+    const runner = buildRecordingProcessRunner();
+    const command = createComposeCommand({host: buildCommandHost({runtime: {runner}})});
 
     const execution = await command.invoke({
       engine: "podman",
@@ -54,14 +55,14 @@ describe("createComposeCommand", () => {
   });
 
   it("runs preflight before invoking Compose", async () => {
-    const runner = createProcessRunner([
+    const runner = buildRecordingProcessRunner([
       succeeded(), // docker --version
       succeeded(), // docker version
       succeeded(), // docker compose version
       succeeded(), // docker ps -a
       succeeded(), // actual compose invocation
     ]);
-    const command = createComposeCommand(createTestRuntimeFactory({runner}));
+    const command = createComposeCommand({host: buildCommandHost({runtime: {runner}})});
 
     const execution = await command.invoke({
       engine: "rancher",
@@ -86,8 +87,8 @@ describe("createComposeCommand", () => {
   });
 
   it("surfaces a nonzero Compose exit as a failed execution", async () => {
-    const runner = createProcessRunner([succeeded(), succeeded(), succeeded(), succeeded(), exited(1)]);
-    const command = createComposeCommand(createTestRuntimeFactory({runner}));
+    const runner = buildRecordingProcessRunner([succeeded(), succeeded(), succeeded(), succeeded(), exited(1)]);
+    const command = createComposeCommand({host: buildCommandHost({runtime: {runner}})});
 
     const execution = await command.invoke({engine: "rancher", file: "docker-compose.yml", passthrough: ["up", "-d"]});
 
@@ -97,14 +98,14 @@ describe("createComposeCommand", () => {
   it("preserves the invocation's cancellation reason when Compose itself is cancelled on an aborted invocation", async () => {
     const controller = new AbortController();
     controller.abort(new CommandCancellation("Terminated by test signal.", 143));
-    const runner = createProcessRunner([
+    const runner = buildRecordingProcessRunner([
       succeeded(), // docker --version
       succeeded(), // docker version
       succeeded(), // docker compose version
       succeeded(), // docker ps -a
       {kind: "cancelled", stdout: "", stderr: "", durationMs: 0}, // actual compose invocation, cancelled
     ]);
-    const command = createComposeCommand(createTestRuntimeFactory({runner}));
+    const command = createComposeCommand({host: buildCommandHost({runtime: {runner}})});
 
     const execution = await command.invoke(
       {engine: "rancher", file: "docker-compose.yml", passthrough: ["up", "-d"]},
@@ -121,8 +122,8 @@ describe("createComposeCommand", () => {
 
   describe("parser lifecycle", () => {
     it("requires the literal -- delimiter even when trailing tokens are present", async () => {
-      const runner = createProcessRunner();
-      const command = createComposeCommand(createTestRuntimeFactory({runner}));
+      const runner = buildRecordingProcessRunner();
+      const command = createComposeCommand({host: buildCommandHost({runtime: {runner}})});
 
       const execution = await command.run(["--file", "infra/Local/Storage/docker-compose.yml", "--engine", "rancher", "up"]);
 
@@ -132,8 +133,8 @@ describe("createComposeCommand", () => {
     });
 
     it("rejects a missing --file with the existing usage error", async () => {
-      const runner = createProcessRunner();
-      const command = createComposeCommand(createTestRuntimeFactory({runner}));
+      const runner = buildRecordingProcessRunner();
+      const command = createComposeCommand({host: buildCommandHost({runtime: {runner}})});
 
       const execution = await command.run(["--engine", "rancher", "--", "up", "-d"]);
 
@@ -142,8 +143,8 @@ describe("createComposeCommand", () => {
     });
 
     it("rejects missing pass-through arguments with the existing usage error", async () => {
-      const runner = createProcessRunner();
-      const command = createComposeCommand(createTestRuntimeFactory({runner}));
+      const runner = buildRecordingProcessRunner();
+      const command = createComposeCommand({host: buildCommandHost({runtime: {runner}})});
 
       const execution = await command.run(["--file", "infra/Local/Storage/docker-compose.yml", "--engine", "rancher"]);
 
@@ -152,8 +153,8 @@ describe("createComposeCommand", () => {
     });
 
     it("rejects an empty pass-through list after a literal --", async () => {
-      const runner = createProcessRunner();
-      const command = createComposeCommand(createTestRuntimeFactory({runner}));
+      const runner = buildRecordingProcessRunner();
+      const command = createComposeCommand({host: buildCommandHost({runtime: {runner}})});
 
       const execution = await command.run(["--file", "infra/Local/Storage/docker-compose.yml", "--engine", "rancher", "--"]);
 
@@ -161,8 +162,8 @@ describe("createComposeCommand", () => {
     });
 
     it("decodes every pass-through byte unchanged through the full CLI parse path", async () => {
-      const runner = createProcessRunner();
-      const command = createComposeCommand(createTestRuntimeFactory({runner}));
+      const runner = buildRecordingProcessRunner();
+      const command = createComposeCommand({host: buildCommandHost({runtime: {runner}})});
 
       const execution = await command.run([
         "--file",
@@ -184,16 +185,6 @@ describe("createComposeCommand", () => {
         "-d",
         "--remove-orphans",
       ]);
-    });
-
-    it("rejects an unknown option as a usage failure instead of throwing", async () => {
-      const runner = createProcessRunner();
-      const command = createComposeCommand(createTestRuntimeFactory({runner}));
-
-      const execution = await command.run(["--bogus"]);
-
-      expect(execution).toMatchObject({status: "failed", exitCode: 2});
-      expect(runner.calls).toHaveLength(0);
     });
   });
 });

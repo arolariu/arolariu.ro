@@ -13,7 +13,7 @@ import type {
   DoctorSummary,
 } from "./doctor.types.ts";
 import {boundEvidence} from "./doctor.diagnostics.ts";
-import type {MonorepositoryLogger} from "./common/logger.ts";
+import type {TerminalPresenter} from "./core/presentation/terminal-presenter.ts";
 
 type UnknownRecord = Readonly<Record<string, unknown>>;
 
@@ -570,7 +570,7 @@ function validateDoctorReport(value: Readonly<DoctorReport>): DoctorReport {
  * @param options - CLI rendering options.
  * @param logger - Repository logger abstraction.
  */
-export function renderDoctorReport(report: Readonly<DoctorReport>, options: Readonly<DoctorInput>, logger: MonorepositoryLogger): void {
+export function renderDoctorReport(report: Readonly<DoctorReport>, options: Readonly<DoctorInput>, logger: TerminalPresenter): void {
   logger.banner(["🩺 arolariu.ro Workspace Doctor"], "green");
   logger.line(renderSummary(report.summary));
 

@@ -5,7 +5,7 @@
  * @remarks
  * Every ambient effect this command used to reach for directly (the child process, the
  * repository filesystem, and the process environment) now arrives through the injected
- * {@link CommandContext.runtime} instead of Node globals, so the command is fully exercised by
+ * {@link CommandExecutionContext.runtime} instead of Node globals, so the command is fully exercised by
  * the declarative command runtime's test fakes and never spawns Docker or Podman in a test.
  * `decode()` verifies the literal `--` delimiter against the invocation's own pre-normalization
  * argv (via {@link getInvocationArgv}) instead of relying on Commander's post-parse
@@ -13,16 +13,12 @@
  * rejected instead of silently accepted.
  */
 
-import {
-  CommandInputError,
-  getInvocationArgv,
-  MonorepoCommand,
-  type CommandContext,
-  type CommandRuntimeFactory,
-} from "../common/commander.ts";
+import {CommandInputError, getInvocationArgv, type CommandExecutionContext} from "../core/command/command-execution.ts";
+import {defineCommand, type LazyMonorepoCommand} from "../core/command/lazy-monorepo-command.ts";
+import type {CommandConstructionOptions, CommandHost} from "../core/command/command-specification.ts";
 import {resolveRepositoryPaths} from "../common/repository-paths.ts";
-import {RunnerError} from "../common/runner.ts";
-import {commandCancellationFromSignal} from "../common/runtime.ts";
+import {ProcessRunnerError} from "../core/process/process-runner.ts";
+import {commandCancellationFromSignal} from "../core/runtime/cancellation.ts";
 import {getContainerAdapter, type ContainerRuntimeAdapter, type RuntimeCommand} from "./adapters.ts";
 import {runContainerPreflight} from "./preflight.ts";
 import {resolveRuntimeContainerEngine} from "./selection.ts";
@@ -57,7 +53,7 @@ export function buildComposeCommand(adapter: ContainerRuntimeAdapter, options: C
  * @throws When the engine cannot be resolved, preflight fails, or Compose exits with a nonzero
  * code.
  */
-async function executeCompose(context: Readonly<CommandContext>, input: Readonly<ComposeInput>): Promise<ComposeResult> {
+async function executeCompose(context: Readonly<CommandExecutionContext>, input: Readonly<ComposeInput>): Promise<ComposeResult> {
   const {runtime} = context;
   const paths = await resolveRepositoryPaths(import.meta.url, runtime.files);
   const selection = await resolveRuntimeContainerEngine(
@@ -75,7 +71,7 @@ async function executeCompose(context: Readonly<CommandContext>, input: Readonly
 
   await runContainerPreflight(adapter, {
     runner: runtime.runner,
-    logger: runtime.logger.child("preflight"),
+    logger: runtime.presenter.child("preflight"),
     environment: runtime.environment,
     signal: runtime.signal,
   });
@@ -85,11 +81,11 @@ async function executeCompose(context: Readonly<CommandContext>, input: Readonly
     await runtime.runner.expectSuccess(command, {
       output: "tee",
       logCommands: true,
-      logger: runtime.logger,
+      presenter: runtime.presenter,
       signal: runtime.signal,
     });
   } catch (error) {
-    if (error instanceof RunnerError && error.outcome.kind === "cancelled" && runtime.signal.aborted) {
+    if (error instanceof ProcessRunnerError && error.result.kind === "cancelled" && runtime.signal.aborted) {
       throw commandCancellationFromSignal(runtime.signal);
     }
     throw error;
@@ -98,21 +94,25 @@ async function executeCompose(context: Readonly<CommandContext>, input: Readonly
   return {engine: adapter.engine, file: input.file, passthrough: input.passthrough};
 }
 
+/** The only edge from this entrypoint into the Node command host; core never names it. */
+const loadProductionCommandHost = async (): Promise<CommandHost> =>
+  import("../adapters/node/node-command-host.ts").then(({createNodeCommandHost}) => createNodeCommandHost("compose"));
+
 /**
  * Creates the Compose helper command.
  *
- * @param runtimeFactory - Optional runtime factory; tests inject a fake instead of the Node adapter.
+ * @param options - Injected command host or literal loader; defaults to the Node adapter.
  * @returns The typed `containers:compose` command object.
  */
-export function createComposeCommand(runtimeFactory?: CommandRuntimeFactory): MonorepoCommand<ComposeInput, ComposeResult> {
-  return new MonorepoCommand<ComposeInput, ComposeResult>(
+export function createComposeCommand(
+  options: Readonly<CommandConstructionOptions> = {loadHost: loadProductionCommandHost},
+): LazyMonorepoCommand<ComposeInput, ComposeResult, never> {
+  return defineCommand<ComposeInput, ComposeResult>(
     {
-      metadata: {
-        name: "compose",
-        description: "Runs an arbitrary Compose file through the selected local container engine.",
-        usage: "--file <compose-file> [--engine <rancher|podman>] -- <compose arguments>",
-        examples: ["npm run containers:compose -- --file infra/Local/Storage/docker-compose.yml -- up -d"],
-      },
+      name: "compose",
+      description: "Runs an arbitrary Compose file through the selected local container engine.",
+      usage: "--file <compose-file> [--engine <rancher|podman>] -- <compose arguments>",
+      examples: ["npm run containers:compose -- --file infra/Local/Storage/docker-compose.yml -- up -d"],
       configure: (program) => {
         program.option("--file <path>", "Compose file to invoke.");
         program.option("--engine <engine>", "Container engine to use (rancher or podman).");
@@ -138,16 +138,17 @@ export function createComposeCommand(runtimeFactory?: CommandRuntimeFactory): Mo
         };
       },
       execute: executeCompose,
-      completion: (result) => ({
+      complete: (result) => ({
         exitCode: 0,
+        value: result,
         human: (logger) => logger.success(`Compose completed for '${result.file}' with engine '${result.engine}'.`),
       }),
     },
-    runtimeFactory,
+    options,
   );
 }
 
 /** Production singleton used by `npm run containers:compose` and this module's direct entrypoint. */
-export const composeCommand: MonorepoCommand<ComposeInput, ComposeResult> = createComposeCommand();
+export const composeCommand: LazyMonorepoCommand<ComposeInput, ComposeResult, never> = createComposeCommand();
 
 await composeCommand.runIfMain(import.meta.url);

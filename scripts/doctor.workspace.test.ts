@@ -18,12 +18,13 @@ import {basename, dirname, join, resolve} from "node:path";
 import {fileURLToPath} from "node:url";
 import {afterEach, describe, expect, it, vi, type Mock} from "vitest";
 
-import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "./common/logger.ts";
-import type {ProcessOutcome} from "./common/runner.ts";
+import {ComposedTerminalPresenter} from "./core/presentation/composed-terminal-presenter.ts";
+import {RecordingTerminalPresenterSink} from "./testing/fixtures/terminal.fixture.ts";
+import type {ProcessExecutionResult} from "./core/process/process-execution-result.ts";
 import {createRepositoryPaths} from "./common/repository-paths.ts";
 import type {RepositoryRequirements} from "./common/requirements.ts";
-import {asReadOnlyFileSystem, FileSystemError, type Clock, type ReadOnlyFileSystem, type RuntimeEnvironment} from "./common/runtime.ts";
-import {nodeFileSystem} from "./common/runtime.node.ts";
+import {nodeFileSystem} from "./adapters/node/node-filesystem.ts";
+import {asReadOnlyFileSystem, type Clock, FileSystemError, type ReadOnlyFileSystem, type RuntimeEnvironment} from "./core/runtime/runtime-capability.ts";
 import {getExpectedTaxonomyArtifactPaths} from "./common/taxonomy-artifacts.ts";
 import {createDoctorReport} from "./doctor.reporter.ts";
 import {workspaceDoctorModule} from "./doctor.workspace.ts";
@@ -46,7 +47,7 @@ const validRequirements: RepositoryRequirements = {
   packages: new Map(),
 };
 
-/** Legacy-shaped fixture description translated into one typed {@link ProcessOutcome}. */
+/** Legacy-shaped fixture description translated into one typed {@link ProcessExecutionResult}. */
 interface ProcessOutcomeFixture {
   readonly code?: number;
   readonly stdout?: string;
@@ -58,13 +59,13 @@ interface ProcessOutcomeFixture {
 }
 
 /**
- * Builds one typed {@link ProcessOutcome} from a fixture description, so every probe case keeps
+ * Builds one typed {@link ProcessExecutionResult} from a fixture description, so every probe case keeps
  * naming the exact spawn/timeout/signal/exit classification it exercises.
  *
  * @param patch - Fixture description of the probe outcome under test.
  * @returns The equivalent typed process outcome.
  */
-function commandResult(patch: ProcessOutcomeFixture = {}): ProcessOutcome {
+function commandResult(patch: ProcessOutcomeFixture = {}): ProcessExecutionResult {
   const output = {stdout: patch.stdout ?? "", stderr: patch.stderr ?? "", durationMs: patch.durationMs ?? 4};
   if (patch.spawnError !== undefined) {
     return {kind: "spawn-failed", message: patch.spawnError, ...output};
@@ -219,7 +220,7 @@ interface WorkspaceFixture {
   readonly root: string;
   readonly cacheRoot: string;
   readonly context: DoctorContext;
-  readonly probeRun: Mock<(probe: InspectionProbe, options?: unknown) => Promise<ProcessOutcome>>;
+  readonly probeRun: Mock<(probe: InspectionProbe, options?: unknown) => Promise<ProcessExecutionResult>>;
   readonly inspect: Mock<(key: string) => Promise<InspectionOutcome<unknown>>>;
 }
 
@@ -227,7 +228,7 @@ async function createWorkspaceFixture(
   input: Readonly<{
     options?: Partial<DoctorInput>;
     requirementsValid?: boolean;
-    probeOverrides?: ReadonlyMap<string, ProcessOutcome>;
+    probeOverrides?: ReadonlyMap<string, ProcessExecutionResult>;
     inspectionOverrides?: ReadonlyMap<string, InspectionOutcome<unknown>>;
     omitConfigPaths?: readonly string[];
     taxonomyContentOverrides?: ReadonlyMap<string, string>;
@@ -257,7 +258,7 @@ async function createWorkspaceFixture(
     await utimes(artifactPath, generatedAt, generatedAt);
   }
 
-  const probeResponses = new Map<string, ProcessOutcome>([
+  const probeResponses = new Map<string, ProcessExecutionResult>([
     ["workspace.git.version", commandResult({stdout: "git version 2.50.1\n"})],
     ["workspace.git.status", commandResult({stdout: "## preview...origin/preview\n M docs/example.md\n"})],
     ["workspace.git.last-commit", commandResult({stdout: "abc1234 example\n"})],
@@ -282,7 +283,7 @@ async function createWorkspaceFixture(
     ...(input.inspectionOverrides ?? []),
   ]);
 
-  const probeRun = vi.fn(async (probe: InspectionProbe): Promise<ProcessOutcome> => {
+  const probeRun = vi.fn(async (probe: InspectionProbe): Promise<ProcessExecutionResult> => {
     const response = probeResponses.get(probe.id);
     if (response === undefined) {
       throw new Error(`Unexpected inspection probe requested: '${probe.id}'.`);
@@ -298,7 +299,7 @@ async function createWorkspaceFixture(
     return outcome;
   });
 
-  const sink = new InMemoryLoggerSink();
+  const sink = new RecordingTerminalPresenterSink();
   const context: DoctorContext = {
     options: doctorOptions(input.options),
     paths,
@@ -309,7 +310,7 @@ async function createWorkspaceFixture(
     network: {
       get: vi.fn(async (): Promise<DiagnosticNetworkResult> => ({status: "reachable", statusCode: 200, durationMs: 1})),
     },
-    logger: new MonorepositoryConsoleLogger("doctor::workspace", {color: false, sink}),
+    logger: new ComposedTerminalPresenter("doctor::workspace", {color: false, sink}),
     files: input.files ?? asReadOnlyFileSystem(nodeFileSystem),
     clock: fixtureClock(),
     environment: fixtureEnvironment({PATH: resolve(root, "bin")}),
@@ -423,7 +424,7 @@ describe("workspaceDoctorModule", () => {
 
   it("keeps a silent failing git state probe as one reportable failure instead of an empty-evidence row", async () => {
     const fixture = await createWorkspaceFixture({
-      probeOverrides: new Map<string, ProcessOutcome>([
+      probeOverrides: new Map<string, ProcessExecutionResult>([
         ["workspace.git.status", {kind: "exited", exitCode: 0, stdout: "", stderr: "", durationMs: 4}],
         ["workspace.git.last-commit", {kind: "exited", exitCode: 0, stdout: "", stderr: "", durationMs: 4}],
       ]),

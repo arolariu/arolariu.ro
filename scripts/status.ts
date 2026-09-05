@@ -7,7 +7,7 @@
  * read-only filesystem, obtains exactly one quick repository inspection session from the
  * runtime-owned inspection registry, and then collects five degradation-tolerant sections
  * (workspaces, the Nx dependency graph derived from tracked workspace metadata, git state, npm
- * audit/outdated, and disk usage) concurrently through {@link CommandRuntime.tasks}. A failure or
+ * audit/outdated, and disk usage) concurrently through {@link RuntimeExecutionContext.tasks}. A failure or
  * malformed result from any single one of those sources degrades that section to `null`
  * ("unavailable") without invalidating the rest of the report and without inventing a zero,
  * `"unknown"`, or empty-array stand-in for a genuine failure.
@@ -23,7 +23,7 @@
  *
  * Every external probe (git, npm, the disk usage probe, and — for the human dashboard header only
  * — the Node runtime version probe) is issued through the runtime process runner as an explicit
- * {@link ProcessRequest} — never a shell string — and the command never writes a temporary file,
+ * {@link ProcessExecutionRequest} — never a shell string — and the command never writes a temporary file,
  * never mutates the repository, never inherits child process output, and never reads ambient
  * process state. The workspace graph is read from tracked metadata instead of an Nx child process,
  * which would rewrite Nx's native workspace database. All human or machine-readable output is
@@ -39,26 +39,21 @@
 
 import {join} from "node:path";
 
-import {
-  MonorepoCommand,
-  toJsonValue,
-  type CommandContext,
-  type CommandExecution,
-  type CommandInvoker,
-  type CommandRuntimeFactory,
-} from "./common/commander.ts";
+import {toJsonValue, type CommandExecution, type CommandInvoker} from "./core/command/command-execution.ts";
+import type {CommandExecutionContext} from "./core/command/command-execution.ts";
+import {defineCommand, type LazyMonorepoCommand} from "./core/command/lazy-monorepo-command.ts";
+import type {CommandConstructionOptions, CommandHost} from "./core/command/command-specification.ts";
 import {formatBytes} from "./common/index.ts";
-import type {LogSegment, MonorepositoryLogger} from "./common/logger.ts";
+import type {PresentationSegment, TerminalPresenter} from "./core/presentation/terminal-presenter.ts";
 import {resolveRepositoryPaths, type RepositoryPaths} from "./common/repository-paths.ts";
-import type {ProcessOutcome, ProcessRequest, ProcessRunner} from "./common/runner.ts";
-import {
-  asReadOnlyFileSystem,
-  CommandCancellation,
-  commandCancellationFromSignal,
-  type ReadOnlyFileSystem,
-  type RepositoryInspectionRequest,
-  type TaskScheduler,
-} from "./common/runtime.ts";
+import type {ProcessExecutionRequest} from "./core/process/process-execution-request.ts";
+import type {ProcessExecutionResult} from "./core/process/process-execution-result.ts";
+import type {ProcessRunner} from "./core/process/process-runner.ts";
+import {CommandCancellation, commandCancellationFromSignal} from "./core/runtime/cancellation.ts";
+import {asReadOnlyFileSystem, type ReadOnlyFileSystem} from "./core/runtime/runtime-capability.ts";
+import type {TaskScheduler} from "./core/runtime/task-scheduler.ts";
+import type {RepositoryInspectionRequest, RepositoryInspectionRuntime} from "./inspection/runtime-capability.ts";
+import {createInspectionRuntimeExecutionContext, type InspectionRuntimeExecutionContext} from "./inspection/runtime-capability.ts";
 import {doctorCommand} from "./doctor.ts";
 import type {DoctorInput, DoctorReport, DoctorSummary} from "./doctor.types.ts";
 import type {RepositoryInspectionSession} from "./inspection/repository.ts";
@@ -189,10 +184,10 @@ interface StatusContribution {
 
 /** Construction seams {@link createStatusCommand} accepts. */
 export interface StatusCommandDependencies {
-  /** Runtime factory used for every scope; tests inject a fake instead of the Node adapter. */
-  readonly runtimeFactory?: CommandRuntimeFactory;
   /** Typed doctor command composed as the health source; defaults to the production singleton. */
   readonly doctor?: CommandInvoker<DoctorInput, DoctorReport>;
+  /** Repository-analysis registry injected by a test; defaults to the composed production one. */
+  readonly inspection?: RepositoryInspectionRuntime;
 }
 
 // ============================================================================
@@ -211,13 +206,13 @@ const UNKNOWN_NODE_MAJOR = "?";
 /** Leading major-version group of a `node --version` line such as `v26.3.1`. */
 const NODE_MAJOR_VERSION_PATTERN = /^v?(\d+)(?:\.|$)/;
 
-const GIT_BRANCH_COMMAND = {command: "git", args: ["rev-parse", "--abbrev-ref", "HEAD"]} as const satisfies ProcessRequest;
-const GIT_SHA_COMMAND = {command: "git", args: ["rev-parse", "--short", "HEAD"]} as const satisfies ProcessRequest;
-const GIT_LAST_COMMIT_TIME_COMMAND = {command: "git", args: ["log", "-1", "--format=%cr"]} as const satisfies ProcessRequest;
-const GIT_LAST_COMMIT_MSG_COMMAND = {command: "git", args: ["log", "-1", "--format=%s"]} as const satisfies ProcessRequest;
-const GIT_STATUS_COMMAND = {command: "git", args: ["status", "--porcelain"]} as const satisfies ProcessRequest;
-const NPM_AUDIT_COMMAND = {command: "npm", args: ["audit", "--json"]} as const satisfies ProcessRequest;
-const NPM_OUTDATED_COMMAND = {command: "npm", args: ["outdated", "--json"]} as const satisfies ProcessRequest;
+const GIT_BRANCH_COMMAND = {command: "git", args: ["rev-parse", "--abbrev-ref", "HEAD"]} as const satisfies ProcessExecutionRequest;
+const GIT_SHA_COMMAND = {command: "git", args: ["rev-parse", "--short", "HEAD"]} as const satisfies ProcessExecutionRequest;
+const GIT_LAST_COMMIT_TIME_COMMAND = {command: "git", args: ["log", "-1", "--format=%cr"]} as const satisfies ProcessExecutionRequest;
+const GIT_LAST_COMMIT_MSG_COMMAND = {command: "git", args: ["log", "-1", "--format=%s"]} as const satisfies ProcessExecutionRequest;
+const GIT_STATUS_COMMAND = {command: "git", args: ["status", "--porcelain"]} as const satisfies ProcessExecutionRequest;
+const NPM_AUDIT_COMMAND = {command: "npm", args: ["audit", "--json"]} as const satisfies ProcessExecutionRequest;
+const NPM_OUTDATED_COMMAND = {command: "npm", args: ["outdated", "--json"]} as const satisfies ProcessExecutionRequest;
 
 /**
  * Read-only Node.js source, executed as a separate process via `node --eval`, that measures the
@@ -276,7 +271,7 @@ function isRecord(value: unknown): value is UnknownRecord {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function isSuccessfulOutcome(outcome: Readonly<ProcessOutcome>): boolean {
+function isSuccessfulOutcome(outcome: Readonly<ProcessExecutionResult>): boolean {
   return outcome.kind === "succeeded";
 }
 
@@ -291,10 +286,8 @@ function isSuccessfulOutcome(outcome: Readonly<ProcessOutcome>): boolean {
  * @param outcome - The completed process outcome.
  * @returns `true` when the transport itself failed.
  */
-function hasTransportFailure(outcome: Readonly<ProcessOutcome>): boolean {
-  return (
-    outcome.kind === "spawn-failed" || outcome.kind === "timed-out" || outcome.kind === "cancelled" || outcome.kind === "signalled"
-  );
+function hasTransportFailure(outcome: Readonly<ProcessExecutionResult>): boolean {
+  return outcome.kind === "spawn-failed" || outcome.kind === "timed-out" || outcome.kind === "cancelled" || outcome.kind === "signalled";
 }
 
 /**
@@ -318,14 +311,14 @@ async function readOptionalJson(files: ReadOnlyFileSystem, path: string): Promis
  *
  * @remarks
  * The executable, the fixed `--eval` script literal, and the target path are three separate
- * {@link ProcessRequest.args} elements — never an interpolated or shell-joined string — so the
+ * {@link ProcessExecutionRequest.args} elements — never an interpolated or shell-joined string — so the
  * child process receives the target purely as `process.argv[1]`.
  *
  * @param executablePath - Absolute path to the Node executable running this command.
  * @param absolutePath - Absolute directory or file path to measure.
  * @returns The disk-size probe request.
  */
-function buildDiskSizeRequest(executablePath: string, absolutePath: string): ProcessRequest {
+function buildDiskSizeRequest(executablePath: string, absolutePath: string): ProcessExecutionRequest {
   return {command: executablePath, args: ["--eval", DISK_PROBE_SCRIPT, absolutePath]};
 }
 
@@ -340,7 +333,7 @@ function buildDiskSizeRequest(executablePath: string, absolutePath: string): Pro
  * @param outcome - The complete outcome of running the disk-size probe.
  * @returns The parsed byte count, or `null` when unavailable.
  */
-function parseDiskProbeSize(outcome: Readonly<ProcessOutcome>): number | null {
+function parseDiskProbeSize(outcome: Readonly<ProcessExecutionResult>): number | null {
   if (!isSuccessfulOutcome(outcome)) {
     return null;
   }
@@ -450,19 +443,13 @@ async function collectGit(sources: Readonly<ProbeSources>): Promise<GitInfo | nu
   const options = {cwd: sources.paths.root, timeoutMs: GIT_TIMEOUT_MS, signal: sources.signal};
   const outcomes = await sources.tasks.parallel(
     [GIT_BRANCH_COMMAND, GIT_SHA_COMMAND, GIT_LAST_COMMIT_TIME_COMMAND, GIT_LAST_COMMIT_MSG_COMMAND, GIT_STATUS_COMMAND].map(
-      (request) => (): Promise<ProcessOutcome> => sources.runner.run(request, options),
+      (request) => (): Promise<ProcessExecutionResult> => sources.runner.run(request, options),
     ),
     sources.signal,
   );
 
   const [branch, sha, lastCommitTime, lastCommitMsg, status] = outcomes;
-  if (
-    branch === undefined
-    || sha === undefined
-    || lastCommitTime === undefined
-    || lastCommitMsg === undefined
-    || status === undefined
-  ) {
+  if (branch === undefined || sha === undefined || lastCommitTime === undefined || lastCommitMsg === undefined || status === undefined) {
     return null;
   }
 
@@ -522,7 +509,7 @@ function classifyOutdatedBump(current: string, latest: string): "major" | "minor
 async function collectSecurity(sources: Readonly<ProbeSources>): Promise<SecurityInfo | null> {
   const options = {cwd: sources.paths.root, timeoutMs: NPM_TIMEOUT_MS, signal: sources.signal};
   const outcomes = await sources.tasks.parallel(
-    [NPM_AUDIT_COMMAND, NPM_OUTDATED_COMMAND].map((request) => (): Promise<ProcessOutcome> => sources.runner.run(request, options)),
+    [NPM_AUDIT_COMMAND, NPM_OUTDATED_COMMAND].map((request) => (): Promise<ProcessExecutionResult> => sources.runner.run(request, options)),
     sources.signal,
   );
 
@@ -629,7 +616,7 @@ export async function collectDisk(sources: Readonly<DiskSources>): Promise<DiskI
 
   const outcomes = await sources.tasks.parallel(
     targets.map(
-      (target) => (): Promise<ProcessOutcome> => sources.runner.run(buildDiskSizeRequest(sources.executablePath, target), options),
+      (target) => (): Promise<ProcessExecutionResult> => sources.runner.run(buildDiskSizeRequest(sources.executablePath, target), options),
     ),
     sources.signal,
   );
@@ -692,7 +679,7 @@ function renderHealthSummary(summary: Readonly<DoctorSummary>): string {
  * @param document - The complete, six-section status payload.
  * @param nodeMajor - Major version label of the Node runtime executing this command.
  */
-function renderDashboard(logger: MonorepositoryLogger, document: Readonly<StatusDocument>, nodeMajor: string): void {
+function renderDashboard(logger: TerminalPresenter, document: Readonly<StatusDocument>, nodeMajor: string): void {
   const {workspaces, nxEdges, git, security, disk, health} = document;
   const healthLabel = health ? `${String(health.score)} (${health.grade})` : "unavailable";
   const branchLabel = git?.branch ?? "unavailable";
@@ -761,7 +748,7 @@ function renderDashboard(logger: MonorepositoryLogger, document: Readonly<Status
   if (git) {
     logger.line(`Branch: ${git.branch} @ ${git.sha}`);
     logger.line(`Last: ${git.lastCommitTime} — "${git.lastCommitMsg}"`);
-    const treeStatus: LogSegment =
+    const treeStatus: PresentationSegment =
       git.dirtyFiles === 0
         ? {text: "clean", styles: ["green"]}
         : {text: `${String(git.dirtyFiles)} file${git.dirtyFiles === 1 ? "" : "s"} modified`, styles: ["yellow"]};
@@ -890,7 +877,7 @@ function claimDoctorReport(outcome: PromiseSettledResult<StatusContribution> | u
  * @throws {Error} When the composed doctor invocation failed, returned help, or rejected.
  */
 async function collectStatus(
-  context: Readonly<CommandContext>,
+  context: Readonly<CommandExecutionContext<InspectionRuntimeExecutionContext>>,
   doctor: CommandInvoker<DoctorInput, DoctorReport> = doctorCommand,
 ): Promise<{
   readonly workspaces: Awaited<ReturnType<typeof collectWorkspaces>> | null;
@@ -968,23 +955,29 @@ export type StatusDocument = Awaited<ReturnType<typeof collectStatus>>;
 // Command
 // ============================================================================
 
+/** The only edge from this entrypoint into the Node command host; core never names it. */
+const loadProductionCommandHost = async (): Promise<CommandHost> =>
+  import("./adapters/node/node-command-host.ts").then(({createNodeCommandHost}) => createNodeCommandHost("status"));
+
 /**
  * Creates the status command.
  *
- * @param dependencies - Optional runtime factory and composed doctor command; tests inject
- * deterministic fakes instead of replacing command business code.
+ * @param dependencies - Optional composed doctor command; tests inject deterministic fakes
+ * instead of replacing command business code.
+ * @param options - Injected command host or literal loader; defaults to the Node adapter.
  * @returns The typed `status` command object.
  */
-export function createStatusCommand(dependencies: Readonly<StatusCommandDependencies> = {}): MonorepoCommand<StatusInput, StatusDocument> {
+export function createStatusCommand(
+  dependencies: Readonly<StatusCommandDependencies> = {},
+  options: Readonly<CommandConstructionOptions> = {loadHost: loadProductionCommandHost},
+): LazyMonorepoCommand<StatusInput, StatusDocument, never> {
   const doctor = dependencies.doctor ?? doctorCommand;
 
-  return new MonorepoCommand<StatusInput, StatusDocument>(
+  return defineCommand<StatusInput, StatusDocument, InspectionRuntimeExecutionContext>(
     {
-      metadata: {
-        name: "status",
-        description: "Collects and renders monorepo health, workspace, git, security, and disk data.",
-        examples: ["npm run status", "npm run status -- --json"],
-      },
+      name: "status",
+      description: "Collects and renders monorepo health, workspace, git, security, and disk data.",
+      examples: ["npm run status", "npm run status -- --json"],
       configure: (program) => {
         program.option("--json", "Output all collected data as a single JSON document.", false);
       },
@@ -993,20 +986,22 @@ export function createStatusCommand(dependencies: Readonly<StatusCommandDependen
         return {json: options.json === true};
       },
       presentation: (input) => (input.json ? "json" : "human"),
+      createRuntimeContext: (baseRuntime, parent) => createInspectionRuntimeExecutionContext(baseRuntime, parent, dependencies.inspection),
       execute: (context) => collectStatus(context, doctor),
-      completion: (document) => ({
+      complete: (document) => ({
         exitCode: 0,
+        value: document,
         human: (logger) => {
           renderDashboard(logger, document, dashboardNodeMajors.get(document) ?? UNKNOWN_NODE_MAJOR);
         },
         json: toJsonValue(document),
       }),
     },
-    dependencies.runtimeFactory,
+    options,
   );
 }
 
 /** Production singleton used by `npm run status` and this module's direct entrypoint. */
-export const statusCommand: MonorepoCommand<StatusInput, StatusDocument> = createStatusCommand();
+export const statusCommand: LazyMonorepoCommand<StatusInput, StatusDocument, never> = createStatusCommand();
 
 await statusCommand.runIfMain(import.meta.url);

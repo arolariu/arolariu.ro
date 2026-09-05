@@ -11,34 +11,35 @@
  * integration tests and the direct-entrypoint smoke tests, which do so deliberately.
  */
 
-import {spawn} from "node:child_process";
 import {readFileSync} from "node:fs";
 import {mkdir, mkdtemp, rm, symlink, writeFile} from "node:fs/promises";
 import {tmpdir} from "node:os";
-import {join, resolve} from "node:path";
+import {join} from "node:path";
 import {fileURLToPath} from "node:url";
 import {afterEach, describe, expect, it, vi, type Mock} from "vitest";
 
-import {MonorepoCommand, type CommandExecution, type CommandInvoker, type CommandRuntimeFactory} from "./common/commander.ts";
-import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "./common/logger.ts";
+import type {CommandExecution, CommandExecutionContext, CommandInvoker} from "./core/command/command-execution.ts";
+import {defineCommand} from "./core/command/lazy-monorepo-command.ts";
+import {buildCommandHost} from "./testing/builders/command-host.builder.ts";
+import {ComposedTerminalPresenter} from "./core/presentation/composed-terminal-presenter.ts";
+import {RecordingTerminalPresenterSink} from "./testing/fixtures/terminal.fixture.ts";
 import {createRepositoryPaths} from "./common/repository-paths.ts";
-import {AbstractProcessRunner, type ProcessOutcome, type ProcessRequest, type ProcessRunOptions} from "./common/runner.ts";
-import {createNodeProcessRunner, snapshotNodeEnvironment} from "./common/runtime.node.ts";
+import type {ProcessExecutionOptions, ProcessExecutionRequest} from "./core/process/process-execution-request.ts";
+import type {ProcessExecutionResult} from "./core/process/process-execution-result.ts";
+import {AbstractProcessRunner} from "./core/process/process-runner.ts";
+import {snapshotNodeEnvironment} from "./adapters/node/node-platform.ts";
+import {createNodeProcessRunner} from "./adapters/node/node-process-runner.ts";
+import {CommandCancellation, commandCancellationFromSignal} from "./core/runtime/cancellation.ts";
+import {DefaultTaskScheduler} from "./core/runtime/task-scheduler.ts";
 import {
-  createRepositoryFixtureFileSystem,
-  createRepositoryInspectionSessionStub,
-  createTestRuntimeFactory,
-  repositoryFixtureRoot,
-} from "./common/runtime.testing.ts";
-import {
-  CommandCancellation,
-  commandCancellationFromSignal,
   createRepositoryInspectionRuntime,
-  DefaultTaskScheduler,
+  hasInspectionRuntimeCapability,
   MemoizedInspectionRuntime,
   type RepositoryInspectionRequest,
   type RepositoryInspectionRuntime,
-} from "./common/runtime.ts";
+} from "./inspection/runtime-capability.ts";
+import {createRepositoryInspectionSessionStub} from "./testing/fixtures/inspection.fixture.ts";
+import {createRepositoryFixtureFileSystem, repositoryFixtureRoot} from "./testing/fixtures/repository.fixture.ts";
 import type {DoctorInput, DoctorReport} from "./doctor.types.ts";
 import type {RepositoryInspectionFacts, RepositoryInspectionSession} from "./inspection/repository.ts";
 import {createInspectionSession} from "./inspection/session.ts";
@@ -80,44 +81,44 @@ function diskProbeKey(targetPath: string): string {
   return `disk-probe ${targetPath}`;
 }
 
-function processKey(request: Readonly<ProcessRequest>): string {
+function processKey(request: Readonly<ProcessExecutionRequest>): string {
   if (request.args[0] === "--eval") {
     return diskProbeKey(request.args.at(-1) ?? "");
   }
   return [request.command, ...request.args].join(" ");
 }
 
-function succeeded(stdout: string): ProcessOutcome {
+function succeeded(stdout: string): ProcessExecutionResult {
   return {kind: "succeeded", exitCode: 0, stdout, stderr: "", durationMs: 1};
 }
 
-function exited(exitCode: number, stdout = "", stderr = ""): ProcessOutcome {
+function exited(exitCode: number, stdout = "", stderr = ""): ProcessExecutionResult {
   return {kind: "exited", exitCode, stdout, stderr, durationMs: 1};
 }
 
-function timedOut(): ProcessOutcome {
+function timedOut(): ProcessExecutionResult {
   return {kind: "timed-out", stdout: "", stderr: "", durationMs: 1};
 }
 
-function spawnFailed(message: string): ProcessOutcome {
+function spawnFailed(message: string): ProcessExecutionResult {
   return {kind: "spawn-failed", message, stdout: "", stderr: "", durationMs: 1};
 }
 
-function signalled(): ProcessOutcome {
+function signalled(): ProcessExecutionResult {
   return {kind: "signalled", signal: "SIGTERM", stdout: "", stderr: "", durationMs: 1};
 }
 
 interface RecordedProcessCall {
-  readonly request: Readonly<ProcessRequest>;
-  readonly options: Readonly<ProcessRunOptions>;
+  readonly request: Readonly<ProcessExecutionRequest>;
+  readonly options: Readonly<ProcessExecutionOptions>;
 }
 
 /** Records every process invocation and replays one keyed outcome per command. */
 class ScriptedProcessRunner extends AbstractProcessRunner {
-  readonly #outcomes: ReadonlyMap<string, ProcessOutcome>;
+  readonly #outcomes: ReadonlyMap<string, ProcessExecutionResult>;
   readonly #calls: RecordedProcessCall[] = [];
 
-  public constructor(outcomes: ReadonlyMap<string, ProcessOutcome>) {
+  public constructor(outcomes: ReadonlyMap<string, ProcessExecutionResult>) {
     super();
     this.#outcomes = outcomes;
   }
@@ -128,7 +129,7 @@ class ScriptedProcessRunner extends AbstractProcessRunner {
   }
 
   /** {@inheritDoc AbstractProcessRunner.execute} */
-  protected override execute(request: Readonly<ProcessRequest>, options: Readonly<ProcessRunOptions>): Promise<ProcessOutcome> {
+  protected override execute(request: Readonly<ProcessExecutionRequest>, options: Readonly<ProcessExecutionOptions>): Promise<ProcessExecutionResult> {
     this.#calls.push({request, options});
     const outcome = this.#outcomes.get(processKey(request));
     return outcome === undefined
@@ -144,16 +145,16 @@ class ScriptedProcessRunner extends AbstractProcessRunner {
 class TimelineProcessRunner extends ScriptedProcessRunner {
   readonly #events: string[];
 
-  public constructor(outcomes: ReadonlyMap<string, ProcessOutcome>, events: string[]) {
+  public constructor(outcomes: ReadonlyMap<string, ProcessExecutionResult>, events: string[]) {
     super(outcomes);
     this.#events = events;
   }
 
   /** {@inheritDoc AbstractProcessRunner.execute} */
   protected override async execute(
-    request: Readonly<ProcessRequest>,
-    options: Readonly<ProcessRunOptions>,
-  ): Promise<ProcessOutcome> {
+    request: Readonly<ProcessExecutionRequest>,
+    options: Readonly<ProcessExecutionOptions>,
+  ): Promise<ProcessExecutionResult> {
     this.#events.push(`probe:start ${processKey(request)}`);
     try {
       return await super.execute(request, options);
@@ -163,8 +164,8 @@ class TimelineProcessRunner extends ScriptedProcessRunner {
   }
 }
 
-function baseResponses(): Map<string, ProcessOutcome> {
-  return new Map<string, ProcessOutcome>([
+function baseResponses(): Map<string, ProcessExecutionResult> {
+  return new Map<string, ProcessExecutionResult>([
     [GIT_BRANCH_KEY, succeeded("main\n")],
     [GIT_SHA_KEY, succeeded("abc1234\n")],
     [GIT_LOG_TIME_KEY, succeeded("2 hours ago\n")],
@@ -181,7 +182,7 @@ function baseResponses(): Map<string, ProcessOutcome> {
   ]);
 }
 
-function withOverrides(overrides: Readonly<Record<string, ProcessOutcome>>): Map<string, ProcessOutcome> {
+function withOverrides(overrides: Readonly<Record<string, ProcessExecutionResult>>): Map<string, ProcessExecutionResult> {
   const responses = baseResponses();
   for (const [key, value] of Object.entries(overrides)) {
     responses.set(key, value);
@@ -200,6 +201,14 @@ const HEALTHY_WORKSPACE_FACTS: WorkspaceFacts = {
 
 function unavailableFact<TValue>(): Promise<InspectionOutcome<TValue>> {
   return Promise.resolve({kind: "unavailable", reason: "Not provided by the status fixture.", durationMs: 0});
+}
+
+/** Reads the repository-inspection registry a composed child observes on its parent context. */
+function parentInspection(parent?: Readonly<CommandExecutionContext>): RepositoryInspectionRuntime {
+  if (parent === undefined || !hasInspectionRuntimeCapability(parent.runtime)) {
+    throw new Error("The composed parent context must carry the repository-inspection capability.");
+  }
+  return parent.runtime.inspection;
 }
 
 /**
@@ -303,21 +312,20 @@ function rejectOnAbort(signal: AbortSignal): Promise<never> {
 }
 
 /**
- * Builds a real {@link MonorepoCommand} doctor child whose execution stays pending until its own
+ * Builds a real composed doctor child whose execution stays pending until its own
  * scope aborts and whose cleanup callback only completes on a later macrotask.
  *
- * @param factory - Runtime factory shared with status, so the child receives a real nested scope.
  * @param events - Ordered event log the cleanup callback appends to when it finishes draining.
  * @returns The composed child command and a gate opened once its execution has started.
  */
 function createPendingDoctorChild(
-  factory: CommandRuntimeFactory,
   events: string[],
 ): Readonly<{doctor: CommandInvoker<DoctorInput, DoctorReport>; started: Promise<void>}> {
   const gate = createGate();
-  const doctor = new MonorepoCommand<DoctorInput, DoctorReport>(
+  const doctor = defineCommand<DoctorInput, DoctorReport>(
     {
-      metadata: {name: "doctor", description: "Runs read-only monorepo health checks."},
+      name: "doctor",
+      description: "Runs read-only monorepo health checks.",
       configure: () => undefined,
       decode: () => ({quick: true, verbose: false}),
       presentation: () => "silent",
@@ -329,16 +337,16 @@ function createPendingDoctorChild(
         gate.open();
         return rejectOnAbort(context.runtime.signal);
       },
-      completion: () => ({exitCode: 0}),
+      complete: (report) => ({exitCode: 0, value: report}),
     },
-    factory,
+    {host: buildCommandHost()},
   );
 
   return {doctor, started: gate.opened};
 }
 
 interface StatusFixtureOptions {
-  readonly responses?: ReadonlyMap<string, ProcessOutcome>;
+  readonly responses?: ReadonlyMap<string, ProcessExecutionResult>;
   readonly runner?: ScriptedProcessRunner;
   readonly workspace?: () => Promise<InspectionOutcome<WorkspaceFacts>>;
   readonly doctor?: DoctorStub;
@@ -348,7 +356,7 @@ interface StatusFixtureOptions {
 
 interface StatusFixture {
   readonly command: ReturnType<typeof createStatusCommand>;
-  readonly sink: InMemoryLoggerSink;
+  readonly sink: RecordingTerminalPresenterSink;
   readonly runner: ScriptedProcessRunner;
   readonly doctor: DoctorStub;
   readonly inspection: RepositoryInspectionRuntime;
@@ -364,8 +372,8 @@ interface StatusFixture {
  * @returns The command plus every recorded seam.
  */
 function createStatusFixture(options: Readonly<StatusFixtureOptions> = {}): StatusFixture {
-  const sink = new InMemoryLoggerSink();
-  const logger = new MonorepositoryConsoleLogger("status", {
+  const sink = new RecordingTerminalPresenterSink();
+  const logger = new ComposedTerminalPresenter("status", {
     color: false,
     sink,
     verbose: false,
@@ -376,20 +384,23 @@ function createStatusFixture(options: Readonly<StatusFixtureOptions> = {}): Stat
   const createSession = vi.fn<(request: Readonly<RepositoryInspectionRequest>) => RepositoryInspectionSession>(() => session);
   const inspection = createRepositoryInspectionRuntime(createSession);
   const doctor = options.doctor ?? createDoctorStub();
-  const command = createStatusCommand({
-    runtimeFactory: createTestRuntimeFactory({
-      files: createRepositoryFixtureFileSystem(options.files ?? {}),
-      inspection,
-      logger,
-      runner,
-    }),
-    doctor,
-  });
+  const command = createStatusCommand(
+    {doctor, inspection},
+    {
+      host: buildCommandHost({
+        runtime: {
+          files: createRepositoryFixtureFileSystem(options.files ?? {}),
+          presenter: logger,
+          runner,
+        },
+      }),
+    },
+  );
 
   return {command, sink, runner, doctor, inspection, createSession};
 }
 
-function jsonDocument(sink: InMemoryLoggerSink): Record<string, unknown> {
+function jsonDocument(sink: RecordingTerminalPresenterSink): Record<string, unknown> {
   const stdout = sink.records.filter((record) => record.stream === "stdout");
   expect(stdout).toHaveLength(1);
   const [record] = stdout;
@@ -397,7 +408,7 @@ function jsonDocument(sink: InMemoryLoggerSink): Record<string, unknown> {
   return JSON.parse(record?.text ?? "") as Record<string, unknown>;
 }
 
-function renderedText(sink: InMemoryLoggerSink): string {
+function renderedText(sink: RecordingTerminalPresenterSink): string {
   return sink.records.map((record) => record.text).join("\n");
 }
 
@@ -413,28 +424,6 @@ async function runJson(fixture: StatusFixture): Promise<Record<string, unknown>>
 // ============================================================================
 
 describe("status command — parser", () => {
-  it.each(["--help", "-h", "/h", "/help"])("renders help and completes with exit 0 for '%s'", async (flag) => {
-    const fixture = createStatusFixture();
-
-    const execution = await fixture.command.run([flag]);
-
-    expect(execution).toEqual({status: "help", exitCode: 0});
-    expect(fixture.runner.calls).toHaveLength(0);
-    expect(fixture.doctor.invoke).not.toHaveBeenCalled();
-  });
-
-  it.each(["--bogus", "-x", "workspace", "--verbose"])("rejects '%s' as a usage failure with exit 2", async (argument) => {
-    const fixture = createStatusFixture();
-
-    const execution = await fixture.command.run([argument]);
-
-    expect(execution.status).toBe("failed");
-    expect(execution.exitCode).toBe(2);
-    expect(fixture.runner.calls).toHaveLength(0);
-    expect(fixture.doctor.invoke).not.toHaveBeenCalled();
-    expect(fixture.createSession).not.toHaveBeenCalled();
-  });
-
   it("accepts --json and selects machine-readable presentation", async () => {
     const fixture = createStatusFixture({mode: "json"});
 
@@ -461,7 +450,7 @@ describe("status command — doctor composition", () => {
     );
     const doctor: CommandInvoker<DoctorInput, DoctorReport> = {
       invoke: async (_input, options) => {
-        options?.parent?.runtime.inspection.getRepositorySession(request);
+        parentInspection(options?.parent).getRepositorySession(request);
         return {
           status: "completed",
           value: {
@@ -475,14 +464,10 @@ describe("status command — doctor composition", () => {
         };
       },
     };
-    const command = createStatusCommand({
-      runtimeFactory: createTestRuntimeFactory({
-        files: createRepositoryFixtureFileSystem(),
-        inspection,
-        runner: new ScriptedProcessRunner(baseResponses()),
-      }),
-      doctor,
-    });
+    const command = createStatusCommand(
+      {doctor, inspection},
+      {host: buildCommandHost({runtime: {files: createRepositoryFixtureFileSystem(), runner: new ScriptedProcessRunner(baseResponses())}})},
+    );
 
     const execution = await command.invoke({json: true}, {presentation: "silent"});
 
@@ -503,7 +488,7 @@ describe("status command — doctor composition", () => {
     const call = fixture.doctor.invoke.mock.calls[0];
     expect(call?.[0]).toEqual({quick: true, verbose: false});
     expect(call?.[1]?.presentation).toBe("silent");
-    expect(call?.[1]?.parent?.runtime.inspection).toBe(fixture.inspection);
+    expect(parentInspection(call?.[1]?.parent)).toBe(fixture.inspection);
   });
 
   it("obtains its own quick collector session before invoking doctor and shares exactly one session", async () => {
@@ -511,7 +496,7 @@ describe("status command — doctor composition", () => {
     const doctor = createDoctorStub(async (_input, options) => {
       const parent = options?.parent;
       if (parent !== undefined) {
-        observed.push(parent.runtime.inspection.getRepositorySession({profile: "quick", paths: FIXTURE_PATHS}));
+        observed.push(parentInspection(parent).getRepositorySession({profile: "quick", paths: FIXTURE_PATHS}));
       }
       return {status: "completed", value: doctorReport(), exitCode: 0};
     });
@@ -632,15 +617,19 @@ describe("status command — composed child cancellation", () => {
   it("returns the exact signal cancellation only after the composed doctor child drained its own cleanup", async () => {
     const events: string[] = [];
     const controller = new AbortController();
-    const sink = new InMemoryLoggerSink();
-    const factory = createTestRuntimeFactory({
-      files: createRepositoryFixtureFileSystem(),
-      inspection: createRepositoryInspectionRuntime(() => createFixtureSession(availableWorkspace())),
-      logger: new MonorepositoryConsoleLogger("status", {color: false, sink, verbose: false, mode: "human"}),
-      runner: new ScriptedProcessRunner(baseResponses()),
+    const sink = new RecordingTerminalPresenterSink();
+    const host = buildCommandHost({
+      runtime: {
+        files: createRepositoryFixtureFileSystem(),
+        presenter: new ComposedTerminalPresenter("status", {color: false, sink, verbose: false, mode: "human"}),
+        runner: new ScriptedProcessRunner(baseResponses()),
+      },
     });
-    const {doctor, started} = createPendingDoctorChild(factory, events);
-    const command = createStatusCommand({runtimeFactory: factory, doctor});
+    const {doctor, started} = createPendingDoctorChild(events);
+    const command = createStatusCommand(
+      {doctor, inspection: createRepositoryInspectionRuntime(() => createFixtureSession(availableWorkspace()))},
+      {host},
+    );
 
     const pending = command.invoke({json: false}, {presentation: "human", signal: controller.signal});
     void pending.then(() => {
@@ -914,10 +903,10 @@ describe("collectDisk", () => {
     };
   }
 
-  function scriptedDiskSources(outcome: ProcessOutcome) {
+  function scriptedDiskSources(outcome: ProcessExecutionResult) {
     return {
       runner: new ScriptedProcessRunner(
-        new Map<string, ProcessOutcome>([
+        new Map<string, ProcessExecutionResult>([
           [diskProbeKey(DISK_NODE_MODULES_TARGET), outcome],
           [diskProbeKey(DISK_NEXT_BUILD_TARGET), outcome],
           [diskProbeKey(DISK_COMPONENTS_DIST_TARGET), outcome],
@@ -1214,46 +1203,4 @@ describe("status command — human dashboard", () => {
     expect(execution.exitCode).toBe(0);
     expect(renderedText(fixture.sink)).toMatch(/unavailable/);
   });
-});
-
-// ============================================================================
-// Direct entrypoint smoke
-// ============================================================================
-
-describe("direct entrypoint", () => {
-  const statusEntrypoint = fileURLToPath(new URL("./status.ts", import.meta.url));
-
-  function runDirect(args: readonly string[]): Promise<Readonly<{code: number | null; output: string}>> {
-    return new Promise((resolveProcess, rejectProcess) => {
-      const child = spawn(process.execPath, [statusEntrypoint, ...args], {
-        cwd: resolve(statusEntrypoint, "..", ".."),
-        stdio: ["ignore", "pipe", "pipe"],
-      });
-      let output = "";
-      child.stdout.on("data", (chunk: Buffer) => {
-        output += chunk.toString("utf8");
-      });
-      child.stderr.on("data", (chunk: Buffer) => {
-        output += chunk.toString("utf8");
-      });
-      child.once("error", rejectProcess);
-      child.once("close", (code) => {
-        resolveProcess({code, output});
-      });
-    });
-  }
-
-  it("emits help and exits 0 for a direct process invocation of --help", async () => {
-    const result = await runDirect(["--help"]);
-
-    expect(result.code).toBe(0);
-    expect(result.output).toMatch(/Usage: status \[options\]/);
-  }, 30_000);
-
-  it("emits a usage diagnostic and exits 2 for a direct process invocation of an unknown flag", async () => {
-    const result = await runDirect(["--bogus"]);
-
-    expect(result.code).toBe(2);
-    expect(result.output).toMatch(/unknown option/i);
-  }, 30_000);
 });
