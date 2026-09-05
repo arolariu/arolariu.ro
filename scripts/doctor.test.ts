@@ -707,25 +707,24 @@ describe("doctorCommand.invoke", () => {
 
 describe("doctorCommand.run", () => {
   it.each([
-    ["--verbose", {verbose: true, quick: false}],
-    ["-v", {verbose: true, quick: false}],
-    ["/v", {verbose: true, quick: false}],
-    ["--quick", {verbose: false, quick: true}],
-    ["/q", {verbose: false, quick: true}],
-  ] as const)("decodes '%s' into typed doctor input", async (flag, expected) => {
+    [["--verbose"], {verbose: true, quick: false}],
+    [["-v"], {verbose: true, quick: false}],
+    [["/v"], {verbose: true, quick: false}],
+    [["--quick"], {verbose: false, quick: true}],
+    [["/q"], {verbose: false, quick: true}],
+    [["/q", "/v"], {verbose: true, quick: true}],
+  ] as const)("decodes %j into typed doctor input", async (argv, expected) => {
     const fixture = createDoctorFixture();
 
-    await fixture.command.run([flag]);
+    await fixture.command.run(argv);
 
     expect(moduleContext(fixture.calls["workspace"]).options).toEqual(expected);
   });
 
-  it("decodes every flag together", async () => {
-    const fixture = createDoctorFixture();
+  it("routes the '/?' alias to the help path", async () => {
+    const {command} = createDoctorFixture();
 
-    await fixture.command.run(["/q", "/v"]);
-
-    expect(moduleContext(fixture.calls["workspace"]).options).toEqual({quick: true, verbose: true});
+    await expect(command.run(["/?"])).resolves.toEqual({status: "help", exitCode: 0});
   });
 });
 
