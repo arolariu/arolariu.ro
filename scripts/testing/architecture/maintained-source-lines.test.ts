@@ -93,6 +93,8 @@ describe("maintained scripts line accounting", () => {
     ).toBe(approvedScriptsArchitectureBaseline.maintainedLineCount);
     expect(approvedScriptsArchitectureBaseline.finalMaximumMaintainedLineCount).toBe(55_032);
     expect(approvedScriptsArchitectureBaseline.sourceFileCount).toBe(142);
+    expect(cohortOneHighWaterMaintainedLineCount).toBe(77_000);
+    expect(cohortOneMaximumMaintainedLineCount).toBe(77_000);
 
     const report = calculateMaintainedSourceLineReport(process.cwd());
     expect(cohortOneMaximumMaintainedLineCount).toBeLessThanOrEqual(cohortOneHighWaterMaintainedLineCount);
