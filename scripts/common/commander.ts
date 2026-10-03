@@ -14,6 +14,7 @@
 
 import {Command, CommanderError} from "commander";
 
+import type {JsonValue} from "../platform/Output.ts";
 import type {MonorepositoryLogger} from "./logger.ts";
 import {formatProcessRequest, RunnerError} from "./runner.ts";
 import {
@@ -31,8 +32,7 @@ export type CommandPresentation = "human" | "json" | "silent";
 /** Every process exit code a migrated command may request. */
 export type CommandExitCode = 0 | 1 | 2 | 130 | 143;
 
-/** Any value that survives a lossless round trip through `JSON.stringify`/`JSON.parse`. */
-export type JsonValue = string | number | boolean | null | readonly JsonValue[] | Readonly<{[key: string]: JsonValue}>;
+export {toJsonValue, type JsonValue} from "../platform/Output.ts";
 
 /** Identity, help text, and alias configuration of one command. */
 export interface CommandMetadata {
@@ -251,87 +251,6 @@ export function getInvocationArgv(program: Command): readonly string[] {
 
 function isUnknownRecord(value: unknown): value is Readonly<Record<string, unknown>> {
   return typeof value === "object" && value !== null;
-}
-
-function isPlainJsonObject(value: unknown): value is Readonly<Record<string, unknown>> {
-  if (typeof value !== "object" || value === null) {
-    return false;
-  }
-
-  const prototype: unknown = Object.getPrototypeOf(value);
-  return prototype === null || prototype === Object.prototype;
-}
-
-function isUnknownArray(value: unknown): value is readonly unknown[] {
-  return Array.isArray(value);
-}
-
-function describeUnsupportedJsonValue(value: unknown): string {
-  if (value === undefined) {
-    return "undefined";
-  }
-  if (typeof value === "number") {
-    return "non-finite number";
-  }
-  if (typeof value === "object" && value !== null) {
-    const constructorName: unknown = value.constructor?.name;
-    return typeof constructorName === "string" ? `${constructorName} instance` : "non-plain object";
-  }
-
-  return typeof value;
-}
-
-function convertToJsonValue(value: unknown, ancestors: readonly object[], path: string): JsonValue {
-  if (value === null) {
-    return null;
-  }
-  if (typeof value === "string" || typeof value === "boolean") {
-    return value;
-  }
-  if (typeof value === "number") {
-    if (!Number.isFinite(value)) {
-      throw new TypeError(`Value at ${path} is not JSON-serializable: non-finite number.`);
-    }
-    return value;
-  }
-
-  if (isUnknownArray(value)) {
-    if (ancestors.includes(value)) {
-      throw new TypeError(`Value at ${path} contains a circular reference and cannot be serialized.`);
-    }
-
-    const nestedAncestors = [...ancestors, value];
-    return value.map((entry, index) => convertToJsonValue(entry, nestedAncestors, `${path}[${String(index)}]`));
-  }
-
-  if (isPlainJsonObject(value)) {
-    if (ancestors.includes(value)) {
-      throw new TypeError(`Value at ${path} contains a circular reference and cannot be serialized.`);
-    }
-
-    const nestedAncestors = [...ancestors, value];
-    const converted: Record<string, JsonValue> = {};
-    for (const key of Object.keys(value)) {
-      converted[key] = convertToJsonValue(value[key], nestedAncestors, `${path}.${key}`);
-    }
-    return converted;
-  }
-
-  throw new TypeError(`Value at ${path} is not JSON-serializable: ${describeUnsupportedJsonValue(value)}.`);
-}
-
-/**
- * Converts a typed command report into a checked {@link JsonValue}, so a command assigns
- * `CommandCompletion.json` without a type assertion and never emits a document containing a
- * value `JSON.stringify` would silently drop or reject.
- *
- * @param value - Plain report data to convert.
- * @returns The equivalent JSON value.
- * @throws {TypeError} When the value contains `undefined`, a non-finite number, a `bigint`, a
- * function, a symbol, a non-plain object, or a circular reference.
- */
-export function toJsonValue(value: unknown): JsonValue {
-  return convertToJsonValue(value, [], "$");
 }
 
 /** Failure outcomes the lifecycle can produce, carrying their own exit meaning. */

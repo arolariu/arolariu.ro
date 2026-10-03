@@ -12,6 +12,7 @@ import {describe, expect, it} from "vitest";
 const productionScriptExtensions = new Set([".ts", ".js", ".mjs", ".cjs"]);
 const transitionalEntrypoints = new Set<string>();
 const interactiveTerminalAdapters = new Set(["scripts/common/prompts.ts"]);
+const outputAdapters = new Set(["scripts/common/logger.ts", "scripts/platform/Output.ts"]);
 
 type AccessPath = readonly string[];
 type AliasScope = Map<string, AccessPath | null>;
@@ -32,7 +33,7 @@ function discoverProductionScripts(directory: string = "scripts"): readonly stri
     if (
       productionScriptExtensions.has(extension)
       && !/\.(?:spec|test)\.(?:cjs|js|mjs|ts)$/.test(normalizedPath)
-      && normalizedPath !== "scripts/common/logger.ts"
+      && !outputAdapters.has(normalizedPath)
     ) {
       files.push(normalizedPath);
     }
