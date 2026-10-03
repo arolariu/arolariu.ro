@@ -341,37 +341,14 @@ describe("createE2eCommand: invalid input", () => {
 });
 
 // ============================================================================
-// createE2eCommand — CLI parsing
+// createE2eCommand — human invocation
 // ============================================================================
 
-describe("createE2eCommand: CLI parsing", () => {
-  it("returns help without invoking Newman", async () => {
-    const {command, runner, sink} = createCliFixture();
-
-    const execution = await command.run(["--help"]);
-
-    expect(execution).toEqual({status: "help", exitCode: 0});
-    expect(sink.records.map((record) => record.text).join("")).toContain("Usage:");
-    expect(runner.calls).toHaveLength(0);
-  });
-
-  it.each([
-    ["an invalid target", ["nope"]],
-    ["a missing required target", []],
-    ["excess arguments", ["frontend", "extra"]],
-  ] as const)("returns a usage failure for %s without invoking Newman", async (_label, argv) => {
-    const {command, runner} = createCliFixture();
-
-    const execution = await command.run(argv);
-
-    expect(execution).toMatchObject({status: "failed", exitCode: 2, failure: {kind: "usage"}});
-    expect(runner.calls).toHaveLength(0);
-  });
-
-  it("decodes a valid target and invokes only that Newman collection", async () => {
+describe("createE2eCommand: human invocation", () => {
+  it("invokes only the requested Newman collection", async () => {
     const {command, runner} = createCliFixture({E2E_TEST_AUTH_TOKEN: FAKE_TOKEN});
 
-    const execution = await command.run(["backend"]);
+    const execution = await command.invoke({target: "backend"}, {presentation: "human"});
 
     expect(execution).toMatchObject({status: "completed", exitCode: 0, value: {targets: ["backend"], completed: ["backend"]}});
     expect(runner.calls).toHaveLength(1);

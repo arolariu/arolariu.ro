@@ -1,7 +1,7 @@
 // @vitest-environment node
 /**
- * @fileoverview Composition, alias, and lifecycle contract tests for the generate orchestrator.
- * @module scripts/generate.cli.test
+ * @fileoverview Composition and lifecycle contract tests for the generate orchestrator.
+ * @module scripts/generate.test
  */
 
 import {describe, expect, it} from "vitest";
@@ -190,84 +190,16 @@ describe("generate composition", () => {
     expect(execution).toMatchObject({status: "completed", exitCode: 0, value: {selected: [], completed: []}});
     expect(sink.records.some((record) => record.text.includes("No generation tasks selected"))).toBe(true);
   });
-});
 
-describe("generate CLI aliases", () => {
-  it.each([
-    ["/e", "env"],
-    ["/env", "env"],
-    ["-e", "env"],
-    ["--env", "env"],
-    ["/i", "i18n"],
-    ["/i18n", "i18n"],
-    ["-i", "i18n"],
-    ["--i18n", "i18n"],
-    ["/g", "gql"],
-    ["/gql", "gql"],
-    ["-g", "gql"],
-    ["--gql", "gql"],
-    ["/a", "artifacts"],
-    ["/artifacts", "artifacts"],
-    ["-a", "artifacts"],
-    ["--artifacts", "artifacts"],
-  ])("selects only %s for the %s generator", async (alias, expected) => {
+  it("propagates verbose into every child", async () => {
     const {calls, dependencies} = createRecordingDependencies();
     const command = createGenerateCommand(dependencies, createTestRuntimeFactory());
 
-    const execution = await command.run([alias]);
-
-    expect(execution).toMatchObject({status: "completed", exitCode: 0});
-    expect(calls.map((call) => call.name)).toEqual([expected]);
-  });
-
-  it.each(["/v", "/verbose", "-v", "--verbose"])("propagates verbose into every child for %s", async (alias) => {
-    const {calls, dependencies} = createRecordingDependencies();
-    const command = createGenerateCommand(dependencies, createTestRuntimeFactory());
-
-    await command.run([alias, "--env", "--artifacts"]);
+    await command.invoke({verbose: true, env: true, i18n: false, gql: false, artifacts: true});
 
     expect(calls).toEqual([
       {name: "env", verbose: true, presentation: "silent", parented: true},
       {name: "artifacts", verbose: true, presentation: "silent", parented: true},
     ]);
-  });
-
-  it("leaves verbose disabled when no verbosity flag is supplied", async () => {
-    const {calls, dependencies} = createRecordingDependencies();
-    const command = createGenerateCommand(dependencies, createTestRuntimeFactory());
-
-    await command.run(["--env"]);
-
-    expect(calls.map((call) => call.verbose)).toEqual([false]);
-  });
-
-  it.each(["/h", "/help", "-h", "--help"])("renders help without executing a generator for %s", async (alias) => {
-    const {calls, dependencies} = createRecordingDependencies();
-    const command = createGenerateCommand(dependencies, createTestRuntimeFactory());
-
-    const execution = await command.run([alias]);
-
-    expect(execution).toEqual({status: "help", exitCode: 0});
-    expect(calls).toEqual([]);
-  });
-
-  it.each(["--unknown", "/unknown", "--xyz"])("fails with a usage exit code and no generator for %s", async (alias) => {
-    const {calls, dependencies} = createRecordingDependencies();
-    const command = createGenerateCommand(dependencies, createTestRuntimeFactory());
-
-    const execution = await command.run([alias]);
-
-    expect(execution).toMatchObject({status: "failed", exitCode: 2, failure: {kind: "usage"}});
-    expect(calls).toEqual([]);
-  });
-
-  it("executes no generator when argv selects nothing", async () => {
-    const {calls, dependencies} = createRecordingDependencies();
-    const command = createGenerateCommand(dependencies, createTestRuntimeFactory());
-
-    const execution = await command.run([]);
-
-    expect(execution).toMatchObject({status: "completed", exitCode: 0, value: {selected: []}});
-    expect(calls).toEqual([]);
   });
 });

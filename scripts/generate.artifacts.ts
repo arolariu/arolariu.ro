@@ -2003,16 +2003,7 @@ export function createGenerateArtifactsCommand(
 ): MonorepoCommand<GenerateArtifactsInput, ArtifactGenerationResult> {
   return new MonorepoCommand<GenerateArtifactsInput, ArtifactGenerationResult>(
     {
-      metadata: {
-        name: "generate:artifacts",
-        description: "Generates taxonomy and license artifacts (GPC, ECOICOP, NACE, frontend licenses).",
-        examples: ["npm run generate:artifacts", "npm run generate /a -- --verbose"],
-        slashAliases: {"/v": "--verbose", "/verbose": "--verbose"},
-      },
-      configure: (program) => {
-        program.option("-v, --verbose", "Enable verbose logging.");
-      },
-      decode: (program) => ({verbose: program.opts<{verbose?: boolean}>().verbose === true}),
+      metadata: {name: "generate:artifacts"},
       execute: generateArtifacts,
       completion: (result) => ({
         // Every artifact failure path (unavailable source with an unusable cache, invalid source
@@ -2026,8 +2017,6 @@ export function createGenerateArtifactsCommand(
   );
 }
 
-/** Production singleton used by the aggregate CLI and this module's direct entrypoint. */
+/** Production singleton used by the aggregate CLI. */
 export const generateArtifactsCommand: MonorepoCommand<GenerateArtifactsInput, ArtifactGenerationResult> =
   createGenerateArtifactsCommand();
-
-await generateArtifactsCommand.runIfMain(import.meta.url);

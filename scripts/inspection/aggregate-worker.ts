@@ -405,7 +405,7 @@ function readSingleRootArgument(repositoryRoots: readonly string[]): string | nu
  * @remarks
  * An invalid argument list (zero roots, several roots, or one blank root) short-circuits to a
  * normalized failure document without invoking any package collection, so the parent still receives
- * a bounded schema-v1 document and exit code `0` instead of a Commander usage diagnostic. A
+ * a bounded schema-v1 document and exit code `0` instead of a usage diagnostic. A
  * collection failure that escapes the per-component handling is normalized the same way, so no
  * uncaught stack, path, or raw error ever reaches stderr.
  *
@@ -431,6 +431,16 @@ async function runAggregateWorker(
 }
 
 /**
+ * Decodes the worker's argv into its single fixed input without rejecting any shape.
+ *
+ * @param argv - Worker arguments after the executable and script path.
+ * @returns The decoded worker input; business execution normalizes an invalid root list.
+ */
+export function decodeWorkerArgs(argv: readonly string[]): AggregateWorkerInput {
+  return {repositoryRoots: [...argv]};
+}
+
+/**
  * Creates the isolated aggregate inspection worker command.
  *
  * @param runtimeFactory - Optional runtime factory; tests inject a fake instead of the Node adapter.
@@ -441,16 +451,7 @@ export function createAggregateWorkerCommand(
 ): MonorepoCommand<AggregateWorkerInput, AggregateWorkerDocument> {
   return new MonorepoCommand<AggregateWorkerInput, AggregateWorkerDocument>(
     {
-      metadata: {
-        name: "inspection-aggregate-worker",
-        description: "Emits the normalized aggregate tooling and host report for one repository root.",
-        usage: "<repositoryRoot>",
-      },
-      configure: (program) => {
-        program.argument("[repositoryRoots...]", "Repository root to inspect; exactly one is expected.");
-      },
-      decode: (program) => ({repositoryRoots: [...program.args]}),
-      presentation: () => "json",
+      metadata: {name: "inspection-aggregate-worker"},
       execute: runAggregateWorker,
       completion: (document) => ({exitCode: 0, json: toJsonValue(document)}),
     },
@@ -462,4 +463,7 @@ export function createAggregateWorkerCommand(
 export const aggregateWorkerCommand: MonorepoCommand<AggregateWorkerInput, AggregateWorkerDocument> =
   createAggregateWorkerCommand();
 
-await aggregateWorkerCommand.runIfMain(import.meta.url);
+if (import.meta.main) {
+  const execution = await aggregateWorkerCommand.invoke(decodeWorkerArgs(process.argv.slice(2)), {presentation: "json"});
+  process.exitCode = execution.exitCode;
+}

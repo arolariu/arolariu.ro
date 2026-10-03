@@ -87,12 +87,11 @@ const BEARER_JWT_DETECTION_PATTERN = /Bearer\s+eyJ[A-Za-z0-9_-]*\.[A-Za-z0-9_-]+
 const EXECUTION_ORDER: readonly RunnableE2ETarget[] = ["frontend", "backend", "cv"];
 
 /**
- * Validates a target value, whether it originated from Commander parsing or a programmatic
- * `invoke()` call.
+ * Validates a target value supplied through `invoke()`.
  *
  * @remarks
- * `invoke()` bypasses `decode()`, so this is the only validation point for programmatic input;
- * `decode()` calls it too so both entry points share one source of truth.
+ * This is the command's only target validation point, so CLI-decoded and programmatic input share
+ * one source of truth.
  *
  * @param target - Candidate target value.
  * @returns The validated target.
@@ -658,8 +657,7 @@ async function runNewmanForTarget(context: Readonly<CommandContext>, target: Run
  * @param context - Command context providing every runtime capability.
  * @param input - Typed command input.
  * @returns The expanded target list and every target that completed before this invocation ended.
- * @throws {CommandInputError} When `input.target` is invalid (guards a programmatic `invoke()`
- * call, which never runs through `decode()`).
+ * @throws {CommandInputError} When `input.target` is invalid.
  * @throws When any target's Newman run does not succeed.
  */
 async function executeE2e(context: Readonly<CommandContext>, input: Readonly<E2EInput>): Promise<E2EResult> {
@@ -690,19 +688,7 @@ async function executeE2e(context: Readonly<CommandContext>, input: Readonly<E2E
 export function createE2eCommand(runtimeFactory?: CommandRuntimeFactory): MonorepoCommand<E2EInput, E2EResult> {
   return new MonorepoCommand<E2EInput, E2EResult>(
     {
-      metadata: {
-        name: "test:e2e",
-        description: "Runs Postman/Newman E2E tests for arolariu.ro targets.",
-        usage: "<target>",
-        examples: ["npm run test:e2e -- backend", "npm run test:e2e -- frontend", "npm run test:e2e -- cv", "npm run test:e2e -- all"],
-      },
-      configure: (program) => {
-        program.argument("<target>", "Target to test: all, backend, frontend, or cv.").allowExcessArguments(false);
-      },
-      decode: (program) => {
-        const [rawTarget] = program.args as [string | undefined];
-        return {target: requireValidTarget(rawTarget ?? "")};
-      },
+      metadata: {name: "test:e2e"},
       execute: (context, input) => executeE2e(context, input),
       completion: (result) => ({
         exitCode: 0,
@@ -717,7 +703,5 @@ export function createE2eCommand(runtimeFactory?: CommandRuntimeFactory): Monore
   );
 }
 
-/** Production singleton used by `npm run test:e2e` and this module's direct entrypoint. */
+/** Production singleton used by `npm run test:e2e`. */
 export const e2eCommand: MonorepoCommand<E2EInput, E2EResult> = createE2eCommand();
-
-await e2eCommand.runIfMain(import.meta.url);

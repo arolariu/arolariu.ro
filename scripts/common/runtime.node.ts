@@ -3,7 +3,7 @@
  * @module scripts/common/runtime.node
  *
  * @remarks
- * Every concrete filesystem, native `fetch`, timer, environment, and process-host primitive a
+ * Every concrete filesystem, native `fetch`, timer, environment, and process primitive a
  * command needs is implemented exactly once here, against the contracts declared in
  * `runtime.ts`. No other production script may import `node:fs`, `node:fs/promises`, `node:os`,
  * `node:timers`, `node:timers/promises`, call bare `fetch`/`setTimeout`/`setInterval`, or read
@@ -17,24 +17,21 @@
  * real TTY, `NO_COLOR`, and progress behavior without being migrated to the command runtime.
  *
  * This module also assembles those primitives into the production {@link CommandRuntimeFactory}
- * that `commander.ts` uses: the process host, the logger runtime host, and the root/child runtime
- * scopes. Every import from `commander.ts` here is type-only, so the declarative command host and
- * this adapter never form a module initialization cycle.
+ * that `commander.ts` uses: the logger runtime host and the root/child runtime scopes. Every
+ * import from `commander.ts` here is type-only, so the declarative command host and this adapter
+ * never form a module initialization cycle.
  */
 
 import {constants as fsConstants} from "node:fs";
 import {access, chmod, cp, mkdir, mkdtemp, open, readdir, readFile, realpath, rename, rm, stat, writeFile, glob as fsGlob} from "node:fs/promises";
 import {tmpdir} from "node:os";
 import {basename, dirname, resolve} from "node:path";
-import {fileURLToPath} from "node:url";
 import {randomBytes} from "node:crypto";
 import {setTimeout as delay} from "node:timers/promises";
 
 import type {
   CommandContext,
-  CommandExitCode,
   CommandPresentation,
-  CommandProcessHost,
   CommandRuntimeFactory,
   RuntimeCreationOptions,
 } from "./commander.ts";
@@ -644,25 +641,6 @@ export const nodeProcessRunner: ProcessRunner = {
   scope: (defaults) => createNodeProcessRunner(snapshotNodeEnvironment()).scope(defaults),
 };
 
-/**
- * Sole Node.js-backed {@link CommandProcessHost}: the exact ambient process facts and effects the
- * declarative command host is allowed to depend on.
- *
- * @remarks
- * `argv` is frozen at module load from `process.argv.slice(2)`, so a later mutation of
- * `process.argv` can never change what an already-started command observes.
- */
-export const nodeProcessHost: CommandProcessHost = {
-  argv: Object.freeze(process.argv.slice(2)),
-  isDirectEntry: (moduleUrl: string): boolean => {
-    const entrypoint = process.argv[1];
-    return entrypoint !== undefined && fileURLToPath(moduleUrl) === resolve(entrypoint);
-  },
-  setExitCode: (exitCode: CommandExitCode): void => {
-    process.exitCode = exitCode;
-  },
-};
-
 /** Environment snapshot the logger runtime host derives its terminal and color policy from. */
 const nodeLoggerEnvironment: RuntimeEnvironment = snapshotNodeEnvironment();
 
@@ -841,13 +819,10 @@ export function createNodeRuntimeScope(options: Readonly<NodeRuntimeScopeOptions
  *
  * @param commandName - Logical command name used as the logger context.
  * @param verbose - Whether invocation loggers emit diagnostic messages.
- * @returns A factory that creates Node-backed parse loggers, root scopes, and child scopes.
+ * @returns A factory that creates Node-backed root scopes and child scopes.
  */
 export function createNodeCommandRuntimeFactory(commandName: string, verbose: boolean): CommandRuntimeFactory {
   return {
-    processHost: nodeProcessHost,
-    createParseLogger: (): MonorepositoryLogger =>
-      new MonorepositoryConsoleLogger(commandName, {mode: "human", verbose: false, runtimeHost: nodeLoggerRuntimeHost}),
     createRoot: (options: Readonly<RuntimeCreationOptions>): Promise<CommandRuntime> =>
       createNodeRuntimeScope({commandName, verbose, ...options}),
     createChild: (

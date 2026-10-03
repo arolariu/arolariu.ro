@@ -14,7 +14,7 @@ import {createNodeProcessRunner, snapshotNodeEnvironment} from "../common/runtim
 import {DefaultTaskScheduler, type Clock, type RuntimeEnvironment} from "../common/runtime.ts";
 import {createTestRuntimeFactory} from "../common/runtime.testing.ts";
 import {AGGREGATE_TIMEOUT_MS, createAggregateProvider, type AggregateWorkerDocument} from "./aggregate.ts";
-import {aggregateWorkerCommand, createAggregateWorkerCommand} from "./aggregate-worker.ts";
+import {aggregateWorkerCommand, createAggregateWorkerCommand, decodeWorkerArgs} from "./aggregate-worker.ts";
 import type {HostFacts} from "./host.ts";
 import type {ToolingFacts} from "./tooling.ts";
 import type {InspectionOutcome} from "./types.ts";
@@ -855,7 +855,7 @@ describe("createAggregateWorkerCommand", () => {
   it("normalizes zero roots into the bounded schema-v1 unavailable document with a completed exit code", async () => {
     const command = createAggregateWorkerCommand(createTestRuntimeFactory());
 
-    const execution = await command.run([]);
+    const execution = await command.invoke(decodeWorkerArgs([]), {presentation: "json"});
 
     expect(execution.status).toBe("completed");
     expect(execution.exitCode).toBe(0);
@@ -866,10 +866,10 @@ describe("createAggregateWorkerCommand", () => {
     }
   });
 
-  it("normalizes several roots without emitting a Commander usage diagnostic", async () => {
+  it("normalizes several roots without emitting a usage diagnostic", async () => {
     const command = createAggregateWorkerCommand(createTestRuntimeFactory());
 
-    const execution = await command.run(["root-a", "root-b"]);
+    const execution = await command.invoke(decodeWorkerArgs(["root-a", "root-b"]), {presentation: "json"});
 
     expect(execution.status).toBe("completed");
     expect(execution.exitCode).toBe(0);
@@ -887,8 +887,13 @@ describe("createAggregateWorkerCommand", () => {
     }
   });
 
+  it("decodes worker argv into the repository root list without rejecting any shape", () => {
+    expect(decodeWorkerArgs([])).toEqual({repositoryRoots: []});
+    expect(decodeWorkerArgs(["root-a", "--flag"])).toEqual({repositoryRoots: ["root-a", "--flag"]});
+  });
+
   it("exports one production singleton command for direct entry", () => {
-    expect(typeof aggregateWorkerCommand.runIfMain).toBe("function");
+    expect(typeof aggregateWorkerCommand.invoke).toBe("function");
     expect(aggregateWorkerCommand).not.toBe(createAggregateWorkerCommand());
   });
 });

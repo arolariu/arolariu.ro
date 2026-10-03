@@ -91,16 +91,7 @@ export function createGenerateGraphqlCommand(
 ): MonorepoCommand<GenerateLeafInput, GenerateLeafResult> {
   return new MonorepoCommand<GenerateLeafInput, GenerateLeafResult>(
     {
-      metadata: {
-        name: "generate:gql",
-        description: "Generates GraphQL type artifacts (placeholder implementation).",
-        examples: ["npm run generate:gql", "npm run generate:gql -- --verbose"],
-        slashAliases: {"/v": "--verbose", "/verbose": "--verbose"},
-      },
-      configure: (program) => {
-        program.option("-v, --verbose", "Enable verbose logging.");
-      },
-      decode: (program) => ({verbose: program.opts<{verbose?: boolean}>().verbose === true}),
+      metadata: {name: "generate:gql"},
       execute: generateGraphql,
       completion: (result) => ({
         exitCode: 0,
@@ -111,8 +102,6 @@ export function createGenerateGraphqlCommand(
   );
 }
 
-/** Production singleton used by the aggregate CLI and this module's direct entrypoint. */
+/** Production singleton used by the aggregate CLI. */
 export const generateGraphqlCommand: MonorepoCommand<GenerateLeafInput, GenerateLeafResult> = createGenerateGraphqlCommand();
-
-await generateGraphqlCommand.runIfMain(import.meta.url);
 

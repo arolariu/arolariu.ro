@@ -1,18 +1,17 @@
 /**
- * @fileoverview Engine-neutral declarative command host built on Commander.
+ * @fileoverview Engine-neutral declarative command host for legacy commands.
  * @module scripts/common/commander
  *
  * @remarks
- * This module owns the *shape* of a monorepository command: how a fresh Commander parser is
- * built per invocation, how typed input is decoded, how presentation is selected, how failures
- * are normalized into one typed outcome, and in which order cleanup and presentation run. It
- * never touches Node's process, filesystem, network, or timer APIs itself: every capability
- * arrives through an injected {@link CommandRuntimeFactory}. The production factory lives in
- * `runtime.node.ts` and is loaded through a lazy dynamic import only when a command was
- * constructed without one, so module initialization here never depends on the Node adapter.
+ * This module owns the *shape* of a legacy monorepository command invoked from typed input: how
+ * failures are normalized into one typed outcome, and in which order cleanup and presentation run.
+ * Argv parsing lives in the effect/cli entrypoint (`scripts/cli.ts`), which reaches these commands
+ * only through {@link CommandInvoker.invoke}. This module never touches Node's process,
+ * filesystem, network, or timer APIs itself: every capability arrives through an injected
+ * {@link CommandRuntimeFactory}. The production factory lives in `runtime.node.ts` and is loaded
+ * through a lazy dynamic import only when a command was constructed without one, so module
+ * initialization here never depends on the Node adapter.
  */
-
-import {Command, CommanderError} from "commander";
 
 import type {JsonValue} from "../platform/Output.ts";
 import type {MonorepositoryLogger} from "./logger.ts";
@@ -29,23 +28,12 @@ import {
 /** Selects human-oriented, machine-readable, or fully suppressed command presentation. */
 export type CommandPresentation = "human" | "json" | "silent";
 
-/** Every process exit code a migrated command may request. */
-export type CommandExitCode = 0 | 1 | 2 | 130 | 143;
-
 export {toJsonValue, type JsonValue} from "../platform/Output.ts";
 
-/** Identity, help text, and alias configuration of one command. */
+/** Identity of one command. */
 export interface CommandMetadata {
-  /** Program name shown in help output. */
+  /** Command name used as the logger context and in lifecycle diagnostics. */
   readonly name: string;
-  /** One-line description shown in help output. */
-  readonly description: string;
-  /** Optional usage line; defaults to `"[options]"`. */
-  readonly usage?: string;
-  /** Optional example invocations appended to help output. */
-  readonly examples?: readonly string[];
-  /** Optional exact-match slash aliases in addition to `/h` and `/help`. */
-  readonly slashAliases?: Readonly<Record<string, string>>;
 }
 
 /** Everything one command execution observes about its own invocation. */
@@ -66,16 +54,10 @@ export interface CommandCompletion {
   readonly json?: JsonValue;
 }
 
-/** Declarative description of one command's parser, input, business behavior, and completion. */
+/** Declarative description of one command's identity, business behavior, and completion. */
 export interface CommandDefinition<TInput, TOutput> {
-  /** Identity and help configuration. */
+  /** Command identity. */
   readonly metadata: CommandMetadata;
-  /** Declares Commander arguments and options on a fresh parser. */
-  readonly configure: (program: Command) => void;
-  /** Converts parsed Commander state into one typed input, owning semantic validation. */
-  readonly decode: (program: Command) => TInput;
-  /** Selects presentation from typed input; defaults to `"human"` when omitted. */
-  readonly presentation?: (input: Readonly<TInput>) => CommandPresentation;
   /** Runs business orchestration. */
   readonly execute: (context: Readonly<CommandContext>, input: Readonly<TInput>) => Promise<TOutput>;
   /** Maps completed business output to a deferred presentation and exit code. */
@@ -127,22 +109,8 @@ export interface RuntimeCreationOptions {
   readonly registerProcessSignals: boolean;
 }
 
-/** Ambient process facts and effects the command host is allowed to depend on. */
-export interface CommandProcessHost {
-  /** Immutable invocation argv, excluding the executable and script path. */
-  readonly argv: readonly string[];
-  /** Reports whether `moduleUrl` is the module the process was started with. */
-  readonly isDirectEntry: (moduleUrl: string) => boolean;
-  /** Requests the final process exit code. */
-  readonly setExitCode: (exitCode: CommandExitCode) => void;
-}
-
 /** Creates every runtime scope one command lifecycle needs. */
 export interface CommandRuntimeFactory {
-  /** Ambient process facts used for default argv, entrypoint detection, and exit codes. */
-  readonly processHost: CommandProcessHost;
-  /** Creates the human logger used for help and usage output before input exists. */
-  readonly createParseLogger: () => MonorepositoryLogger;
   /** Creates an owned root scope. */
   readonly createRoot: (options: Readonly<RuntimeCreationOptions>) => Promise<CommandRuntime>;
   /** Creates a nested scope derived from an owning parent context. */
@@ -154,7 +122,7 @@ export interface CommandRuntimeFactory {
 
 /** Narrow contract exposing only programmatic composition of one command. */
 export interface CommandInvoker<TInput, TOutput> {
-  /** Runs the command from typed input without argv parsing. */
+  /** Runs the command from typed input. */
   readonly invoke: (
     input: Readonly<TInput>,
     options?: Readonly<CommandInvocationOptions>,
@@ -162,8 +130,8 @@ export interface CommandInvoker<TInput, TOutput> {
 }
 
 /**
- * Thrown by `decode()` when Commander parsed successfully but the resulting input is not a valid
- * command request. The lifecycle maps it to exit code `2`.
+ * Thrown by an input decoder or by business execution when the typed input is not a valid command
+ * request. The lifecycle maps it to exit code `2`.
  */
 export class CommandInputError extends Error {
   /**
@@ -177,78 +145,6 @@ export class CommandInputError extends Error {
   }
 }
 
-/** Default slash-prefixed aliases recognized by every command. */
-const DEFAULT_SLASH_ALIASES: Readonly<Record<string, string>> = {
-  "/h": "--help",
-  "/help": "--help",
-};
-
-/** Commander error codes that mean help or version text was displayed rather than a failure. */
-const COMMANDER_HELP_CODES: ReadonlySet<string> = new Set([
-  "commander.help",
-  "commander.helpDisplayed",
-  "commander.version",
-]);
-
-/**
- * Immutable pre-normalization argv captured for exactly one Commander parser.
- *
- * @remarks
- * Module-private on purpose: `getInvocationArgv()` is the only way a command definition can read
- * it, so no definition can reach ambient process argv or observe another invocation's tokens.
- */
-const invocationArgvRegistry = new WeakMap<Command, readonly string[]>();
-
-/**
- * Rewrites argv tokens when an exact slash alias is registered, stopping at the first literal
- * `--` so every pass-through token after the delimiter is copied unchanged.
- *
- * @param argv - Raw argv tokens to normalize.
- * @param aliases - Optional exact-match slash alias map merged over `/h` and `/help`.
- * @returns Normalized argv tokens.
- */
-export function normalizeSlashArguments(
-  argv: readonly string[],
-  aliases?: Readonly<Record<string, string>>,
-): readonly string[] {
-  const effectiveAliases: Readonly<Record<string, string>> = {...DEFAULT_SLASH_ALIASES, ...(aliases ?? {})};
-  const normalized: string[] = [];
-  let afterDelimiter = false;
-
-  for (const argument of argv) {
-    if (afterDelimiter) {
-      normalized.push(argument);
-      continue;
-    }
-
-    if (argument === "--") {
-      afterDelimiter = true;
-      normalized.push(argument);
-      continue;
-    }
-
-    normalized.push(effectiveAliases[argument] ?? argument);
-  }
-
-  return normalized;
-}
-
-/**
- * Reads the immutable, pre-normalization argv captured for one fresh Commander parser.
- *
- * @param program - The exact program instance handed to `configure()` and `decode()`.
- * @returns The frozen argv tokens of that invocation, including `--` and every suffix token.
- * @throws When `program` was not created by the command host for a live invocation.
- */
-export function getInvocationArgv(program: Command): readonly string[] {
-  const argv = invocationArgvRegistry.get(program);
-  if (argv === undefined) {
-    throw new Error("The supplied Commander program was not created by the command host for this invocation.");
-  }
-
-  return argv;
-}
-
 function isUnknownRecord(value: unknown): value is Readonly<Record<string, unknown>> {
   return typeof value === "object" && value !== null;
 }
@@ -260,10 +156,6 @@ type NormalizedFailure =
 
 function isAbortError(error: unknown): error is Error {
   return error instanceof Error && error.name === "AbortError";
-}
-
-function isCommanderHelpRequest(error: unknown): boolean {
-  return error instanceof CommanderError && COMMANDER_HELP_CODES.has(error.code);
 }
 
 function describeFailureEvidence(error: unknown): readonly string[] {
@@ -287,7 +179,7 @@ function describeFailureEvidence(error: unknown): readonly string[] {
  * Classifies one thrown value into a normalized failure outcome without ever converting it into
  * a success-shaped default.
  *
- * @param error - Value thrown by parsing, decoding, execution, or presentation.
+ * @param error - Value thrown by runtime creation, execution, or presentation.
  * @param signal - Invocation signal consulted so an abort raised while the scope was cancelled
  * preserves the cancellation reason's own exit code.
  * @returns The normalized failure and the exit code the caller should surface.
@@ -397,9 +289,8 @@ type ExecutionAttempt<TOutput> =
   | {readonly kind: "failed"; readonly failure: NormalizedFailure};
 
 /**
- * Owns the shared command lifecycle template: fresh parser construction, alias normalization,
- * presentation selection, runtime scope ownership, failure normalization, and the strict
- * cleanup-before-presentation ordering every migrated command relies on.
+ * Owns the shared command lifecycle template: runtime scope ownership, failure normalization, and
+ * the strict cleanup-before-presentation ordering every legacy command relies on.
  */
 export abstract class AbstractMonorepoCommand<TInput, TOutput> implements CommandInvoker<TInput, TOutput> {
   readonly #injectedRuntimeFactory: CommandRuntimeFactory | undefined;
@@ -415,17 +306,8 @@ export abstract class AbstractMonorepoCommand<TInput, TOutput> implements Comman
     this.#injectedRuntimeFactory = runtimeFactory;
   }
 
-  /** Identity and help configuration of this command. */
+  /** Identity of this command. */
   protected abstract get metadata(): Readonly<CommandMetadata>;
-
-  /** Declares Commander arguments and options on a fresh parser. */
-  protected abstract configureParser(program: Command): void;
-
-  /** Converts parsed Commander state into one typed input. */
-  protected abstract decodeInput(program: Command): TInput;
-
-  /** Selects the presentation mode for typed input. */
-  protected abstract selectPresentation(input: Readonly<TInput>): CommandPresentation;
 
   /** Runs business orchestration for one invocation. */
   protected abstract executeCommand(context: Readonly<CommandContext>, input: Readonly<TInput>): Promise<TOutput>;
@@ -437,49 +319,7 @@ export abstract class AbstractMonorepoCommand<TInput, TOutput> implements Comman
   ): CommandCompletion | Promise<CommandCompletion>;
 
   /**
-   * Runs the command from argv: normalizes aliases, parses a fresh Commander program, decodes
-   * typed input, creates an owned root runtime with process-signal handling, executes, drains
-   * cleanup, and only then renders the completion.
-   *
-   * @param argv - Invocation tokens; read from the runtime factory's process host when omitted.
-   * @returns The typed execution outcome; the process exit code is never written here.
-   */
-  public async run(argv?: readonly string[]): Promise<CommandExecution<TOutput>> {
-    const bootstrapFactory = await this.#resolveRuntimeFactory(false);
-    const parseLogger = bootstrapFactory.createParseLogger();
-    const invocationArgv = Object.freeze([...(argv ?? bootstrapFactory.processHost.argv)]);
-    const program = this.#createInvocationProgram(parseLogger);
-    invocationArgvRegistry.set(program, invocationArgv);
-
-    let input: TInput;
-    try {
-      await program.parseAsync([...normalizeSlashArguments(invocationArgv, this.metadata.slashAliases)], {from: "user"});
-      input = this.decodeInput(program);
-    } catch (error: unknown) {
-      if (isCommanderHelpRequest(error)) {
-        return {status: "help", exitCode: 0};
-      }
-
-      return this.#normalizeParseFailure(parseLogger, error);
-    }
-
-    let presentation: CommandPresentation;
-    let runtime: CommandRuntime;
-    try {
-      presentation = this.selectPresentation(input);
-      const factory = await this.#resolveRuntimeFactory(readVerboseFlag(input));
-      runtime = await factory.createRoot({presentation, registerProcessSignals: true});
-    } catch (error: unknown) {
-      const normalized = normalizeThrownFailure(error);
-      parseLogger.fatal(formatFailureDiagnostic(normalized.failure));
-      return normalized;
-    }
-
-    return this.#runLifecycle({runtime, presentation}, input);
-  }
-
-  /**
-   * Runs the command from typed input, skipping argv and Commander entirely.
+   * Runs the command from typed input.
    *
    * @param input - Typed command input.
    * @param options - Optional parent context, presentation override, and caller signal.
@@ -511,21 +351,6 @@ export abstract class AbstractMonorepoCommand<TInput, TOutput> implements Comman
     return this.#runLifecycle({runtime, presentation}, input);
   }
 
-  /**
-   * Runs the command and assigns its exit code only when `moduleUrl` is the process entrypoint.
-   *
-   * @param moduleUrl - `import.meta.url` of the module hosting this command.
-   */
-  public async runIfMain(moduleUrl: string): Promise<void> {
-    const factory = await this.#resolveRuntimeFactory(false);
-    if (!factory.processHost.isDirectEntry(moduleUrl)) {
-      return;
-    }
-
-    const execution = await this.run();
-    factory.processHost.setExitCode(execution.exitCode);
-  }
-
   async #resolveRuntimeFactory(verbose: boolean): Promise<CommandRuntimeFactory> {
     if (this.#injectedRuntimeFactory !== undefined) {
       return this.#injectedRuntimeFactory;
@@ -533,48 +358,6 @@ export abstract class AbstractMonorepoCommand<TInput, TOutput> implements Comman
 
     const {createNodeCommandRuntimeFactory} = await import("./runtime.node.ts");
     return createNodeCommandRuntimeFactory(this.metadata.name, verbose);
-  }
-
-  #createInvocationProgram(parseLogger: MonorepositoryLogger): Command {
-    const {name, description, usage, examples} = this.metadata;
-    const program = new Command();
-
-    program
-      .name(name)
-      .description(description)
-      .usage(usage ?? "[options]")
-      .showHelpAfterError()
-      .exitOverride()
-      .configureOutput({
-        writeOut: (text: string) => {
-          parseLogger.write(text, "stdout");
-        },
-        writeErr: (text: string) => {
-          parseLogger.write(text, "stderr");
-        },
-      });
-
-    if (examples !== undefined && examples.length > 0) {
-      program.addHelpText("after", () => ["", "Examples:", ...examples.map((example) => `  ${example}`)].join("\n"));
-    }
-
-    this.configureParser(program);
-    return program;
-  }
-
-  #normalizeParseFailure(parseLogger: MonorepositoryLogger, error: unknown): CommandExecution<TOutput> {
-    if (error instanceof CommanderError) {
-      // Commander already rendered its own message and usage hint through the parse logger.
-      return {
-        status: "failed",
-        exitCode: 2,
-        failure: {kind: "usage", message: error.message, evidence: [], cause: error},
-      };
-    }
-
-    const normalized = normalizeThrownFailure(error);
-    parseLogger.fatal(formatFailureDiagnostic(normalized.failure));
-    return normalized;
   }
 
   async #runLifecycle(context: Readonly<CommandContext>, input: Readonly<TInput>): Promise<CommandExecution<TOutput>> {
@@ -652,13 +435,13 @@ export abstract class AbstractMonorepoCommand<TInput, TOutput> implements Comman
 }
 
 /**
- * The concrete command object every migrated script exports: it delegates command-specific
+ * The concrete command object every legacy script exports: it delegates command-specific
  * behavior to one typed {@link CommandDefinition} while inheriting the shared lifecycle.
  *
  * @example
  * ```typescript
  * export const doctorCommand = new MonorepoCommand(doctorDefinition);
- * await doctorCommand.runIfMain(import.meta.url);
+ * const execution = await doctorCommand.invoke(input, {presentation: "human"});
  * ```
  */
 export class MonorepoCommand<TInput, TOutput> extends AbstractMonorepoCommand<TInput, TOutput> {
@@ -667,7 +450,7 @@ export class MonorepoCommand<TInput, TOutput> extends AbstractMonorepoCommand<TI
   /**
    * Creates a command from its declarative definition.
    *
-   * @param definition - Typed parser, input, business behavior, and completion description.
+   * @param definition - Typed identity, business behavior, and completion description.
    * @param runtimeFactory - Optional runtime factory; tests inject one instead of replacing
    * command business code.
    */
@@ -679,21 +462,6 @@ export class MonorepoCommand<TInput, TOutput> extends AbstractMonorepoCommand<TI
   /** {@inheritDoc AbstractMonorepoCommand.metadata} */
   protected override get metadata(): Readonly<CommandMetadata> {
     return this.#definition.metadata;
-  }
-
-  /** {@inheritDoc AbstractMonorepoCommand.configureParser} */
-  protected override configureParser(program: Command): void {
-    this.#definition.configure(program);
-  }
-
-  /** {@inheritDoc AbstractMonorepoCommand.decodeInput} */
-  protected override decodeInput(program: Command): TInput {
-    return this.#definition.decode(program);
-  }
-
-  /** {@inheritDoc AbstractMonorepoCommand.selectPresentation} */
-  protected override selectPresentation(input: Readonly<TInput>): CommandPresentation {
-    return this.#definition.presentation?.(input) ?? "human";
   }
 
   /** {@inheritDoc AbstractMonorepoCommand.executeCommand} */

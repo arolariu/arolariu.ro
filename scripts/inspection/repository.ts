@@ -205,7 +205,7 @@ export function createRepositoryInspectionSession(
       return outcome;
     };
 
-  // Mutable engine variable: starts with the Commander-level requested engine and can be updated
+  // Mutable engine variable: starts with the CLI-level requested engine and can be updated
   // later by `updateInfrastructureEngine` (from environment, persisted config, or interactive
   // prompt). The infrastructure provider reads this lazily through `resolveEngine` each time it
   // runs, so an invalidate-then-inspect cycle always observes the current selection.

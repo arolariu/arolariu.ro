@@ -17,13 +17,7 @@
  * started running, and the generated Traefik file is removed only by the explicit `stop` action.
  */
 
-import {
-  CommandInputError,
-  MonorepoCommand,
-  type CommandContext,
-  type CommandInvoker,
-  type CommandRuntimeFactory,
-} from "../common/commander.ts";
+import {MonorepoCommand, type CommandContext, type CommandInvoker, type CommandRuntimeFactory} from "../common/commander.ts";
 import {resolveRepositoryPaths} from "../common/repository-paths.ts";
 import {RunnerError, type ProcessEnvironment} from "../common/runner.ts";
 import {CommandCancellation, commandCancellationFromSignal, type CommandRuntime} from "../common/runtime.ts";
@@ -35,7 +29,6 @@ import {resolveRuntimeContainerEngine} from "./selection.ts";
 import {buildSelfhostTraefikConfig, removeSelfhostTraefikConfig, writeSelfhostTraefikConfig} from "./traefik.ts";
 import {
   ContainerRuntimeError,
-  type ContainerEngine,
   type SelfhostAction,
   type SelfhostInput,
   type SelfhostResult,
@@ -171,7 +164,7 @@ export function getRequiredSqlPassword(variables: Readonly<Record<string, string
  * A cancelled invocation's exact SIGINT/SIGTERM exit code (`130`/`143`) is owned by its own
  * {@link CommandCancellation} reason; letting `expectSuccess`'s `RunnerError` for a cancelled
  * outcome escape unclassified would misreport an interrupted invocation as an operational failure
- * and the shared Commander lifecycle would classify it as exit code `1`. A `{kind:"cancelled"}`
+ * and the shared command lifecycle would classify it as exit code `1`. A `{kind:"cancelled"}`
  * outcome observed while the invocation signal is not aborted is not this invocation's
  * cancellation and stays an operational failure. The invocation logger is always supplied so the
  * retained request and outcome inside a {@link RunnerError} are redacted.
@@ -323,30 +316,6 @@ async function runArtifactPrerequisite(
 }
 
 /**
- * Normalizes and validates an untyped `--engine` value exactly like engine selection does.
- *
- * @param value - Raw Commander option value.
- * @returns The validated engine, or `undefined` when no override was supplied.
- * @throws {CommandInputError} When the requested engine is deprecated or unsupported.
- */
-function decodeSelfhostEngine(value: string | undefined): ContainerEngine | undefined {
-  if (value === undefined) {
-    return undefined;
-  }
-
-  const normalized = value.trim().toLowerCase();
-  if (normalized === "rancher" || normalized === "podman") {
-    return normalized;
-  }
-
-  if (normalized === "docker" || normalized === "docker-desktop") {
-    throw new CommandInputError("Docker Desktop is deprecated for this repository. Select --engine rancher or --engine podman.");
-  }
-
-  throw new CommandInputError(`Unsupported container engine '${value}'. Supported engines: rancher, podman.`);
-}
-
-/**
  * Runs selfhost orchestration with the resolved local container engine.
  *
  * @param dependencies - Artifact generator and optional storage bootstrap collaborators.
@@ -435,27 +404,7 @@ export function createSelfhostCommand(
 
   return new MonorepoCommand<SelfhostInput, SelfhostResult>(
     {
-      metadata: {
-        name: "selfhost",
-        description: "Runs selfhost container orchestration for the selected local engine.",
-        usage: "[start|stop|logs] [--engine <rancher|podman>]",
-        examples: ["npm run dev:selfhost -- --engine rancher", "npm run dev:selfhost:stop -- --engine podman"],
-      },
-      configure: (program) => {
-        program.argument("[action]", "Selfhost action to run: start, stop, or logs (default: start).");
-        program.option("--engine <engine>", "Container engine to use (rancher or podman).");
-      },
-      decode: (program) => {
-        const {engine} = program.opts<{engine?: string}>();
-        const [action = "start"] = program.args as [string | undefined];
-
-        if (action !== "start" && action !== "stop" && action !== "logs") {
-          throw new CommandInputError("Use start, stop, or logs as the first argument.");
-        }
-
-        const requestedEngine = decodeSelfhostEngine(engine);
-        return {action, ...(requestedEngine === undefined ? {} : {engine: requestedEngine})};
-      },
+      metadata: {name: "selfhost"},
       execute: (context, input) => executeSelfhost(resolved, context, input),
       completion: (result) => ({
         exitCode: 0,
@@ -466,7 +415,5 @@ export function createSelfhostCommand(
   );
 }
 
-/** Production singleton used by the `npm run dev:selfhost*` scripts and this module's direct entrypoint. */
+/** Production singleton used by the `npm run dev:selfhost*` scripts. */
 export const selfhostCommand: MonorepoCommand<SelfhostInput, SelfhostResult> = createSelfhostCommand();
-
-await selfhostCommand.runIfMain(import.meta.url);

@@ -14,7 +14,7 @@
 import {dirname, resolve} from "node:path";
 import {fileURLToPath} from "node:url";
 
-import type {CommandContext, CommandProcessHost, CommandRuntimeFactory, RuntimeCreationOptions} from "./commander.ts";
+import type {CommandContext, CommandRuntimeFactory, RuntimeCreationOptions} from "./commander.ts";
 import {
   InMemoryLoggerSink,
   MonorepositoryConsoleLogger,
@@ -565,33 +565,6 @@ export function createProcessRunner(
   return new RecordingProcessRunner(outcomes);
 }
 
-/**
- * Creates a process host that records requested exit codes instead of assigning them.
- *
- * @remarks
- * `isDirectEntry` always reports `true`; a test that needs the non-entrypoint path spreads the
- * host and replaces that member while keeping the same recorder.
- *
- * @param argv - Invocation argv the host reports.
- * @returns A process host and its ordered record of requested exit codes.
- */
-export function createTestProcessHost(
-  argv: readonly string[] = [],
-): CommandProcessHost & Readonly<{assignedExitCodes: readonly number[]}> {
-  const assignedExitCodes: number[] = [];
-
-  return {
-    argv: Object.freeze([...argv]),
-    isDirectEntry: (): boolean => true,
-    setExitCode: (exitCode: number): void => {
-      assignedExitCodes.push(exitCode);
-    },
-    get assignedExitCodes(): readonly number[] {
-      return assignedExitCodes;
-    },
-  };
-}
-
 /** Immutable environment every test runtime observes unless a test replaces it. */
 const testRuntimeEnvironment: RuntimeEnvironment = {
   variables: Object.freeze({}),
@@ -690,14 +663,6 @@ export function createTestRuntimeFactory(overrides: Readonly<Partial<CommandRunt
   };
 
   return {
-    processHost: createTestProcessHost(),
-    createParseLogger: (): MonorepositoryLogger =>
-      new MonorepositoryConsoleLogger("test", {
-        verbose: false,
-        color: false,
-        sink: new InMemoryLoggerSink(),
-        runtimeHost: testLoggerRuntimeHost,
-      }),
     createRoot: (options: Readonly<RuntimeCreationOptions>): Promise<CommandRuntime> =>
       Promise.resolve(createScope(options)),
     createChild: (parent: Readonly<CommandContext>, options: Readonly<RuntimeCreationOptions>): Promise<CommandRuntime> =>

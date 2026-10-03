@@ -91,32 +91,26 @@ const platformBridge = "scripts/platform/bridge.ts";
 const legacyKernelModule = /^scripts\/common\/(?:runtime(?:\.node|\.testing)?|commander|runner[\w.-]*|logger|prompts|index)\.ts$/;
 
 /**
- * Every production module the process may be started with directly.
- *
- * @remarks
- * Each entry must export a typed command singleton and hand direct-entry detection to the shared
- * `runIfMain()` on the command host. The four excluded format/lint entrypoints are deliberately
- * absent: RFC 0002 section 3.2 keeps them on Piscina outside the command runtime.
+ * The legacy inspection worker entrypoints. Their parents spawn them as native Node child processes,
+ * so each one reads its own `process.argv` and assigns its own `process.exitCode` inside an
+ * `import.meta.main` block until cohort 4 replaces them.
  */
-const directEntrypoints: readonly string[] = [
-  "scripts/container-runtime/aspire.ts",
-  "scripts/container-runtime/compose.ts",
-  "scripts/container-runtime/image.ts",
-  "scripts/container-runtime/selfhost.ts",
-  "scripts/docs-assemble.ts",
-  "scripts/doctor.ts",
-  "scripts/generate.artifacts.ts",
-  "scripts/generate.env.ts",
-  "scripts/generate.gql.ts",
-  "scripts/generate.i18n.ts",
-  "scripts/generate.ts",
+const workerEntrypoints: readonly string[] = [
   "scripts/inspection/aggregate-worker.ts",
   "scripts/inspection/workspace.worker.ts",
-  "scripts/setup.ts",
-  "scripts/status.ts",
-  "scripts/test-e2e.ts",
-  "scripts/update-exchange-rates.ts",
 ];
+
+/**
+ * Every production module the process may be started with directly: the effect/cli entrypoint, the
+ * two inspection workers, and the excluded Piscina-hosted format/lint orchestrators (RFC 0002
+ * section 3.2).
+ */
+const directEntrypoints: readonly string[] = [
+  cliEntrypoint,
+  "scripts/format.ts",
+  ...workerEntrypoints,
+  "scripts/lint.ts",
+].toSorted();
 
 /** Modules deleted with the declarative migration; no production module may reference them again. */
 const removedCompatibilityModules: readonly string[] = [
@@ -211,14 +205,14 @@ function ownsAmbientRuntime(file: string): boolean {
 }
 
 /**
- * Whether an ambient OS-state access is the CLI entrypoint reading its invocation arguments.
+ * Whether an ambient OS-state access is a direct entrypoint reading its invocation arguments.
  *
  * @param file - Repository-relative module path.
  * @param path - Resolved access path.
- * @returns `true` only for `process.argv` inside {@link cliEntrypoint}.
+ * @returns `true` only for `process.argv` inside {@link cliEntrypoint} or a {@link workerEntrypoints} module.
  */
 function isCliEntrypointArgv(file: string, path: AccessPath): boolean {
-  return file === cliEntrypoint && startsWithPath(path, ["process", "argv"]);
+  return (file === cliEntrypoint || workerEntrypoints.includes(file)) && startsWithPath(path, ["process", "argv"]);
 }
 
 function discoverProductionScripts(directory: string = "scripts"): readonly string[] {
@@ -671,6 +665,7 @@ function scanRuntimeBoundarySource(
         && startsWithPath(leftPath, ["process", "exitCode"])
         && assignmentOperators.has(node.operatorToken.kind)
         && normalizedFile !== runtimeNodeAdapter
+        && !workerEntrypoints.includes(normalizedFile)
       ) {
         add(node, "direct-exit");
       }
@@ -797,21 +792,21 @@ function collectModuleImports(sourceText: string): readonly ModuleImport[] {
   return imports;
 }
 
-/** Structural facts a direct entrypoint must satisfy to stay inside the declarative contract. */
+/** Structural facts a direct entrypoint must satisfy. */
 interface CommandEntrypointShape {
   /** Whether the module exports a `MonorepoCommand`-typed singleton. */
   readonly exportsCommandSingleton: boolean;
-  /** Whether the module hands direct-entry detection to `runIfMain(import.meta.url)`. */
-  readonly usesSharedRunIfMain: boolean;
+  /** Whether the module guards its process start with `import.meta.main`. */
+  readonly usesImportMetaMain: boolean;
 }
 
-function isImportMetaUrlArgument(argument: ts.Expression): boolean {
+function isImportMetaMain(node: ts.Node): boolean {
   return (
-    ts.isPropertyAccessExpression(argument)
-    && argument.name.text === "url"
-    && ts.isMetaProperty(argument.expression)
-    && argument.expression.keywordToken === ts.SyntaxKind.ImportKeyword
-    && argument.expression.name.text === "meta"
+    ts.isPropertyAccessExpression(node)
+    && node.name.text === "main"
+    && ts.isMetaProperty(node.expression)
+    && node.expression.keywordToken === ts.SyntaxKind.ImportKeyword
+    && node.expression.name.text === "meta"
   );
 }
 
@@ -819,12 +814,12 @@ function isImportMetaUrlArgument(argument: ts.Expression): boolean {
  * Describes how one production module exposes and starts its command.
  *
  * @param sourceText - Source text to parse.
- * @returns Whether the module exports a command singleton and uses shared direct-entry detection.
+ * @returns Whether the module exports a command singleton and starts itself under `import.meta.main`.
  */
 function analyzeCommandEntrypoint(sourceText: string): CommandEntrypointShape {
   const source = ts.createSourceFile("entrypoint.ts", sourceText, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
   let exportsCommandSingleton = false;
-  let usesSharedRunIfMain = false;
+  let usesImportMetaMain = false;
 
   for (const statement of source.statements) {
     if (!ts.isVariableStatement(statement)) {
@@ -845,32 +840,25 @@ function analyzeCommandEntrypoint(sourceText: string): CommandEntrypointShape {
   }
 
   function visit(node: ts.Node): void {
-    if (
-      ts.isCallExpression(node)
-      && ts.isPropertyAccessExpression(node.expression)
-      && node.expression.name.text === "runIfMain"
-      && node.arguments.length === 1
-      && node.arguments[0] !== undefined
-      && isImportMetaUrlArgument(node.arguments[0])
-    ) {
-      usesSharedRunIfMain = true;
+    if (isImportMetaMain(node)) {
+      usesImportMetaMain = true;
     }
 
     ts.forEachChild(node, visit);
   }
 
   visit(source);
-  return {exportsCommandSingleton, usesSharedRunIfMain};
+  return {exportsCommandSingleton, usesImportMetaMain};
 }
 
 /**
- * Finds every production module that starts itself through the shared command host.
+ * Finds every production module that can start itself as the process entrypoint.
  *
- * @returns Sorted module paths that call `runIfMain(import.meta.url)`.
+ * @returns Sorted module paths that reference `import.meta.main`.
  */
-function discoverSharedEntrypointModules(): readonly string[] {
+function discoverDirectEntrypointModules(): readonly string[] {
   return discoverProductionScripts().filter(
-    (file) => analyzeCommandEntrypoint(readFileSync(file, "utf8")).usesSharedRunIfMain,
+    (file) => analyzeCommandEntrypoint(readFileSync(file, "utf8")).usesImportMetaMain,
   );
 }
 
@@ -1258,14 +1246,30 @@ describe("runtime boundary policy", () => {
     ).toEqual([]);
   });
 
-  it("starts every direct entrypoint through an exported command and shared runIfMain", () => {
-    expect(discoverSharedEntrypointModules()).toEqual(directEntrypoints);
+  it("starts the process only from the CLI, the format/lint orchestrators, and the inspection workers", () => {
+    expect(discoverDirectEntrypointModules()).toEqual(directEntrypoints);
 
-    const violations = directEntrypoints
+    const violations = workerEntrypoints
       .map((file) => ({file, ...analyzeCommandEntrypoint(readFileSync(file, "utf8"))}))
-      .filter((entrypoint) => !entrypoint.exportsCommandSingleton || !entrypoint.usesSharedRunIfMain);
+      .filter((entrypoint) => !entrypoint.exportsCommandSingleton);
 
     expect(violations).toEqual([]);
+  });
+
+  it("sanctions only process.argv and the final exit code in the inspection worker entrypoints", () => {
+    const source = [
+      "const args = process.argv.slice(2);",
+      "process.exitCode = 1;",
+      "void process.env.PATH;",
+      "process.exit(1);",
+    ].join("\n");
+
+    for (const worker of workerEntrypoints) {
+      expect(scanRuntimeBoundarySource(worker, source)).toEqual([
+        {file: worker, line: 3, rule: "ambient-environment"},
+        {file: worker, line: 4, rule: "direct-exit"},
+      ]);
+    }
   });
 
   it("keeps doctor modules on read-only and opaque capabilities", () => {

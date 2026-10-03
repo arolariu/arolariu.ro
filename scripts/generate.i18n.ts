@@ -554,16 +554,7 @@ export function createGenerateI18nCommand(
 ): MonorepoCommand<GenerateLeafInput, GenerateLeafResult> {
   return new MonorepoCommand<GenerateLeafInput, GenerateLeafResult>(
     {
-      metadata: {
-        name: "generate:i18n",
-        description: "Validates and synchronizes translation files against English (en.json).",
-        examples: ["npm run generate:i18n", "npm run generate:i18n -- --verbose"],
-        slashAliases: {"/v": "--verbose", "/verbose": "--verbose"},
-      },
-      configure: (program) => {
-        program.option("-v, --verbose", "Enable verbose logging.");
-      },
-      decode: (program) => ({verbose: program.opts<{verbose?: boolean}>().verbose === true}),
+      metadata: {name: "generate:i18n"},
       execute: generateI18n,
       completion: (result) => ({
         // Mirrors the pre-migration leaf's `totalMissingKeys` exit contract under the normative
@@ -578,8 +569,6 @@ export function createGenerateI18nCommand(
   );
 }
 
-/** Production singleton used by the aggregate CLI and this module's direct entrypoint. */
+/** Production singleton used by the aggregate CLI. */
 export const generateI18nCommand: MonorepoCommand<GenerateLeafInput, GenerateLeafResult> = createGenerateI18nCommand();
-
-await generateI18nCommand.runIfMain(import.meta.url);
 

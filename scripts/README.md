@@ -26,9 +26,10 @@ invocation.
 
 ## Command runtime
 
-Every root script except the format/lint pair is one declarative command object built on
-[`common/commander.ts`](./common/commander.ts) and one injected capability kernel from
-[`common/runtime.ts`](./common/runtime.ts).
+All argv parsing happens in the effect/cli entrypoint [`cli.ts`](./cli.ts); every npm script points there. Every root script that has not yet
+migrated to Effect, except the format/lint pair, is one declarative legacy command object built on
+[`common/commander.ts`](./common/commander.ts) and one injected capability kernel from [`common/runtime.ts`](./common/runtime.ts).
+[`commands/legacy.ts`](./commands/legacy.ts) `runLegacy` reaches those commands only through `invoke(input, {presentation, signal})`.
 
 ### Command definition anatomy
 
@@ -36,10 +37,7 @@ A command is a `CommandDefinition<TInput, TOutput>` handed to `MonorepoCommand`.
 
 | Member | Owns |
 |--------|------|
-| `metadata` | `name`, `description`, optional `usage`, `examples`, and extra exact-match `slashAliases` (`/h` and `/help` are always present) |
-| `configure(program)` | Declares Commander arguments and options on a fresh parser |
-| `decode(program)` | Converts parsed Commander state into one typed input; throws `CommandInputError` for semantically invalid input |
-| `presentation(input)` | Selects `"human"`, `"json"`, or `"silent"`; defaults to `"human"` |
+| `metadata` | `name`, used as the logger context and in lifecycle diagnostics |
 | `execute(context, input)` | Runs business orchestration against `context.runtime` capabilities only |
 | `completion(output, context)` | Maps completed business output to `{exitCode, human?, json?}` |
 
@@ -49,16 +47,7 @@ export function createGenerateGraphqlCommand(
 ): MonorepoCommand<GenerateLeafInput, GenerateLeafResult> {
   return new MonorepoCommand<GenerateLeafInput, GenerateLeafResult>(
     {
-      metadata: {
-        name: "generate:gql",
-        description: "Generates GraphQL type artifacts (placeholder implementation).",
-        examples: ["npm run generate:gql", "npm run generate:gql -- --verbose"],
-        slashAliases: {"/v": "--verbose", "/verbose": "--verbose"},
-      },
-      configure: (program) => {
-        program.option("-v, --verbose", "Enable verbose logging.");
-      },
-      decode: (program) => ({verbose: program.opts<{verbose?: boolean}>().verbose === true}),
+      metadata: {name: "generate:gql"},
       execute: generateGraphql,
       completion: (result) => ({exitCode: 0, human: (logger) => logger.success(result.summary)}),
     },
@@ -67,8 +56,8 @@ export function createGenerateGraphqlCommand(
 }
 ```
 
-Business code never constructs a parser, never reads `process.argv`, and never writes `process.exitCode`. `getInvocationArgv(program)`
-is the only way a definition can read its own pre-normalization argv tokens.
+Business code never reads `process.argv` and never writes `process.exitCode`. Semantically invalid typed input throws
+`CommandInputError`, which the lifecycle maps to a `usage` failure with exit code `2`.
 
 ### Production singletons and typed factory seams
 
@@ -88,30 +77,29 @@ const command = createStatusCommand({runtimeFactory: createTestRuntimeFactory({r
 [`common/runtime.testing.ts`](./common/runtime.testing.ts) owns those typed fakes — a scripted process runner, in-memory logger sink,
 fixture filesystem, deterministic clock, and stub inspection session. It is test infrastructure and is excluded from coverage.
 
-### `run()`, `invoke()`, and `runIfMain()`
+### `invoke()`
 
-| Entry | Argv | Signals | Exit code | Default presentation |
-|-------|------|---------|-----------|-----------------------|
-| `run(argv?)` | Parses argv (defaults to the process host's frozen argv) | Owns SIGINT/SIGTERM in its root scope | Returned, never assigned | From `presentation(input)` |
-| `invoke(input, options?)` | None — typed input only | Never registers an OS signal handler | Returned, never assigned | `"silent"` |
-| `runIfMain(moduleUrl)` | Delegates to `run()` | Same as `run()` | Assigns the returned code through the process host | From `presentation(input)` |
+`invoke(input, options?)` runs the command from typed input. It never registers an OS signal handler, never assigns an exit code, and
+defaults to `"silent"` presentation; `options.presentation` selects `"human"` or `"json"`, and `options.signal` links a caller abort.
 
-`runIfMain()` is the only place a command may reach the process exit code, and it does nothing unless `moduleUrl` is the module the
-process was started with. No script implements direct-entry detection itself, and no script calls `process.exit()`.
+Only [`cli.ts`](./cli.ts), [`format.ts`](./format.ts), [`lint.ts`](./lint.ts), and the two inspection workers
+([`inspection/aggregate-worker.ts`](./inspection/aggregate-worker.ts) and [`inspection/workspace.worker.ts`](./inspection/workspace.worker.ts))
+start a process. Each worker decodes its argv with `decodeWorkerArgs`, calls `invoke(..., {presentation: "json"})` inside an
+`import.meta.main` block, and assigns the returned exit code. No script calls `process.exit()`.
 
-`invoke()` is how commands compose. `status.ts` runs doctor as a typed child (`doctorCommand.invoke({quick: true, verbose: false},
+`invoke()` is also how commands compose. `status.ts` runs doctor as a typed child (`doctorCommand.invoke({quick: true, verbose: false},
 {parent: context, presentation: "silent"})`) rather than spawning a sibling process or parsing JSON.
 
 ### Invocation outcomes
 
-`run()` and `invoke()` never throw across the command boundary; they return a discriminated `CommandExecution<TOutput>`:
+`invoke()` never throws across the command boundary; it returns a discriminated `CommandExecution<TOutput>`:
 
 | `status` | `exitCode` | Meaning |
 |----------|-----------|---------|
 | `completed` | `0` or `1` | Business execution finished and produced typed `value` |
 | `failed` | `1` or `2` | `usage` (`2`), or `operational`/`cleanup`/`internal` (`1`) |
 | `cancelled` | `130` or `143` | SIGINT / SIGTERM or a linked caller abort |
-| `help` | `0` | Commander displayed help or version text; no business work ran |
+| `help` | `0` | Reserved for help output; `invoke()` never produces it, and `runLegacy` treats it as success |
 
 A **completed exit `1` is not an error**. It is the normal way a command reports a negative business result while still returning typed
 output: doctor completes with `exitCode: 1` and a full `DoctorReport` when a check fails, and the caller may still read
@@ -152,7 +140,7 @@ adapter that implements them; it is the only production module allowed to import
 Narrow a capability before handing it to a consumer that must not widen it: `asReadOnlyFileSystem()` and `asGetOnlyHttpClient()` produce
 the read-only profiles doctor modules receive, and `inspection/probes.ts` produces the opaque, allowlisted probe runner.
 
-A **root scope** snapshots the environment once, owns its logger and prompts, and (only under `run()`/`runIfMain()`) owns process signals.
+A **root scope** snapshots the environment once and owns its logger and prompts; `invoke()` never asks it to register process signals.
 A **child scope** created by `invoke({parent})` reuses the parent's immutable environment, prompts, and inspection registry, and receives
 its own forked logger, invocation runner, cancellation controller, and cleanup registry. Cancellation always flows parent to child and
 never child to parent.
@@ -244,7 +232,8 @@ the legacy kernel, and cohort 7 deletes it.
 ambient `process.*`, timer, and `node:*` access, and enforces three platform rules: `@effect/platform-node` is imported only inside
 `scripts/platform/` and the [`cli.ts`](./cli.ts) entrypoint; Effect runtimes (`Effect.run*`, `ManagedRuntime.make`, `NodeRuntime.runMain`)
 start only in `cli.ts`, `bridge.ts`, `testing.ts`, and `Output.ts`'s synchronous logger sink; and no platform module except `bridge.ts`
-imports the legacy kernel. `cli.ts` may also read `process.argv`, and no other ambient state.
+imports the legacy kernel. `cli.ts` may also read `process.argv`, and no other ambient state; the two inspection workers may read
+`process.argv` and assign `process.exitCode`.
 
 ## Output-policy exemptions
 

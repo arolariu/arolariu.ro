@@ -7,26 +7,16 @@
  * repository filesystem, and the process environment) now arrives through the injected
  * {@link CommandContext.runtime} instead of Node globals, so the command is fully exercised by
  * the declarative command runtime's test fakes and never spawns Docker or Podman in a test.
- * `decode()` verifies the literal `--` delimiter against the invocation's own pre-normalization
- * argv (via {@link getInvocationArgv}) instead of relying on Commander's post-parse
- * `program.args`, so a caller that supplies pass-through-looking tokens without the delimiter is
- * rejected instead of silently accepted.
  */
 
-import {
-  CommandInputError,
-  getInvocationArgv,
-  MonorepoCommand,
-  type CommandContext,
-  type CommandRuntimeFactory,
-} from "../common/commander.ts";
+import {MonorepoCommand, type CommandContext, type CommandRuntimeFactory} from "../common/commander.ts";
 import {resolveRepositoryPaths} from "../common/repository-paths.ts";
 import {RunnerError} from "../common/runner.ts";
 import {commandCancellationFromSignal} from "../common/runtime.ts";
 import {getContainerAdapter, type ContainerRuntimeAdapter, type RuntimeCommand} from "./adapters.ts";
 import {runContainerPreflight} from "./preflight.ts";
 import {resolveRuntimeContainerEngine} from "./selection.ts";
-import type {ComposeInput, ComposeResult, ContainerEngine} from "./types.ts";
+import type {ComposeInput, ComposeResult} from "./types.ts";
 
 /** Options for invoking an arbitrary Compose file through the selected engine. */
 export interface ComposeOptions {
@@ -107,36 +97,7 @@ async function executeCompose(context: Readonly<CommandContext>, input: Readonly
 export function createComposeCommand(runtimeFactory?: CommandRuntimeFactory): MonorepoCommand<ComposeInput, ComposeResult> {
   return new MonorepoCommand<ComposeInput, ComposeResult>(
     {
-      metadata: {
-        name: "compose",
-        description: "Runs an arbitrary Compose file through the selected local container engine.",
-        usage: "--file <compose-file> [--engine <rancher|podman>] -- <compose arguments>",
-        examples: ["npm run containers:compose -- --file infra/Local/Storage/docker-compose.yml -- up -d"],
-      },
-      configure: (program) => {
-        program.option("--file <path>", "Compose file to invoke.");
-        program.option("--engine <engine>", "Container engine to use (rancher or podman).");
-        program.argument("[passthrough...]", "Arguments forwarded to Compose unchanged after --.");
-      },
-      decode: (program) => {
-        const options = program.opts<{file?: string; engine?: string}>();
-        const delimiterIndex = getInvocationArgv(program).indexOf("--");
-
-        if (options.file === undefined || delimiterIndex === -1) {
-          throw new CommandInputError(COMPOSE_USAGE_MESSAGE);
-        }
-
-        const passthrough = getInvocationArgv(program).slice(delimiterIndex + 1);
-        if (passthrough.length === 0) {
-          throw new CommandInputError(COMPOSE_USAGE_MESSAGE);
-        }
-
-        return {
-          ...(options.engine === undefined ? {} : {engine: options.engine as ContainerEngine}),
-          file: options.file,
-          passthrough,
-        };
-      },
+      metadata: {name: "compose"},
       execute: executeCompose,
       completion: (result) => ({
         exitCode: 0,
@@ -147,7 +108,5 @@ export function createComposeCommand(runtimeFactory?: CommandRuntimeFactory): Mo
   );
 }
 
-/** Production singleton used by `npm run containers:compose` and this module's direct entrypoint. */
+/** Production singleton used by `npm run containers:compose`. */
 export const composeCommand: MonorepoCommand<ComposeInput, ComposeResult> = createComposeCommand();
-
-await composeCommand.runIfMain(import.meta.url);

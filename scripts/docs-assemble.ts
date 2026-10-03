@@ -572,16 +572,7 @@ export function createDocsAssembleCommand(
 ): MonorepoCommand<Record<never, never>, DocumentationAssemblyResult> {
   return new MonorepoCommand<Record<never, never>, DocumentationAssemblyResult>(
     {
-      metadata: {
-        name: "docs-assemble",
-        description:
-          "Runs TypeDoc, pydoc-markdown, and DefaultDocumentation in parallel, normalizes frontmatter, writes landing pages, and mirrors prose into the Docusaurus source tree.",
-        examples: ["npm run docs:assemble", "node --experimental-strip-types scripts/docs-assemble.ts"],
-      },
-      configure: (program) => {
-        program.allowExcessArguments(false);
-      },
-      decode: () => ({}),
+      metadata: {name: "docs-assemble"},
       execute: (context) => executeDocsAssemble(context),
       completion: (result) => ({
         exitCode: 0,
@@ -596,7 +587,5 @@ export function createDocsAssembleCommand(
   );
 }
 
-/** Production singleton used by `npm run docs:assemble` and this module's direct entrypoint. */
+/** Production singleton used by `npm run docs:assemble`. */
 export const docsAssembleCommand: MonorepoCommand<Record<never, never>, DocumentationAssemblyResult> = createDocsAssembleCommand();
-
-await docsAssembleCommand.runIfMain(import.meta.url);

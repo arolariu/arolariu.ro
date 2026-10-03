@@ -10,7 +10,6 @@ import {RunnerError, type ProcessOutcome} from "../common/runner.ts";
 import {
   createProcessRunner,
   createRepositoryFixtureFileSystem,
-  createTestProcessHost,
   createTestRuntimeFactory,
   repositoryFixtureRoot,
 } from "../common/runtime.testing.ts";
@@ -63,13 +62,12 @@ function environmentWith(variables: Readonly<Record<string, string | undefined>>
 /**
  * Builds a selfhost command whose SQL bootstrap command fails with a password-bearing stderr.
  *
- * @returns The command under test plus its recording runner, logger sink, and process host.
+ * @returns The command under test plus its recording runner and logger sink.
  */
 function createFailingSqlHarness(): Readonly<{
   command: ReturnType<typeof createSelfhostCommand>;
   runner: ReturnType<typeof createProcessRunner>;
   sink: InMemoryLoggerSink;
-  processHost: ReturnType<typeof createTestProcessHost>;
 }> {
   const runner = createProcessRunner([
     ...Array.from({length: podmanPreflightProbeCount + 2}, () => succeeded()),
@@ -77,23 +75,18 @@ function createFailingSqlHarness(): Readonly<{
   ]);
   const sink = new InMemoryLoggerSink();
   const logger = new MonorepositoryConsoleLogger("test", {color: false, sink});
-  const processHost = createTestProcessHost(["start", "--engine", "podman"]);
-  const runtimeFactory = {
-    ...createTestRuntimeFactory({
-      runner,
-      logger,
-      clock: immediateClock,
-      files: createRepositoryFixtureFileSystem({[certFixturePath]: "local-cert", [keyFixturePath]: "local-key"}),
-      environment: environmentWith({MSSQL_SA_PASSWORD: sqlPassword}),
-    }),
-    processHost,
-  };
+  const runtimeFactory = createTestRuntimeFactory({
+    runner,
+    logger,
+    clock: immediateClock,
+    files: createRepositoryFixtureFileSystem({[certFixturePath]: "local-cert", [keyFixturePath]: "local-key"}),
+    environment: environmentWith({MSSQL_SA_PASSWORD: sqlPassword}),
+  });
 
   return {
     command: createSelfhostCommand({runtimeFactory, bootstrap: bootstrapStub, artifacts: artifactsStub}),
     runner,
     sink,
-    processHost,
   };
 }
 
@@ -131,16 +124,5 @@ describe("selfhost SQL password redaction", () => {
     await command.invoke({action: "start", engine: "podman"});
 
     expect(runner.calls.every((call) => !JSON.stringify(call.options.env ?? {}).includes(sqlPassword))).toBe(true);
-  });
-
-  it("reuses the invocation logger when the direct entrypoint reports a password-bearing failure", async () => {
-    const {command, sink, processHost} = createFailingSqlHarness();
-
-    await command.runIfMain("file:///repo/scripts/container-runtime/selfhost.ts");
-
-    const output = sink.records.map((record) => record.text).join("\n");
-    expect(processHost.assignedExitCodes).toEqual([1]);
-    expect(output).toContain("[REDACTED]");
-    expect(output).not.toContain(sqlPassword);
   });
 });

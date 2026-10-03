@@ -13,13 +13,7 @@
  * cleanup ownership.
  */
 
-import {
-  CommandInputError,
-  MonorepoCommand,
-  type CommandContext,
-  type CommandInvoker,
-  type CommandRuntimeFactory,
-} from "../common/commander.ts";
+import {MonorepoCommand, type CommandContext, type CommandInvoker, type CommandRuntimeFactory} from "../common/commander.ts";
 import type {MonorepositoryLogger} from "../common/logger.ts";
 import {resolveRepositoryPaths} from "../common/repository-paths.ts";
 import {RunnerError, type ProcessRunner} from "../common/runner.ts";
@@ -28,7 +22,7 @@ import {generateArtifactsCommand, type ArtifactGenerationResult, type GenerateAr
 import {getContainerAdapter, type ContainerRuntimeAdapter, type RuntimeCommand} from "./adapters.ts";
 import {runContainerPreflight} from "./preflight.ts";
 import {resolveRuntimeContainerEngine} from "./selection.ts";
-import type {ContainerEngine, ImageInput, ImageResult, ImageTarget} from "./types.ts";
+import type {ImageInput, ImageResult, ImageTarget} from "./types.ts";
 
 /** Options for building a local image with the selected engine. */
 export interface ImageBuildOptions {
@@ -137,7 +131,7 @@ async function runArtifactPrerequisite(
  * A cancelled invocation's exact SIGINT/SIGTERM exit code (`130`/`143`) is owned by its own
  * {@link CommandCancellation} reason; letting `expectSuccess`'s `RunnerError` for a cancelled
  * outcome escape unclassified would misreport an interrupted invocation as an operational failure
- * and the shared Commander lifecycle would classify it as exit code `1`. A `{kind:"cancelled"}`
+ * and the shared command lifecycle would classify it as exit code `1`. A `{kind:"cancelled"}`
  * outcome observed while `signal` is not the invocation's own aborted signal is not this
  * invocation's cancellation and stays an operational failure.
  *
@@ -234,38 +228,7 @@ export function createImageCommand(dependencies: Readonly<ImageCommandDependenci
 
   return new MonorepoCommand<ImageInput, ImageResult>(
     {
-      metadata: {
-        name: "image",
-        description: "Builds or runs a local container image with the selected engine.",
-        usage: "<build|run> --target <frontend|backend|cv|exp> [--engine <rancher|podman>]",
-        examples: [
-          "npm run containers:build -- --target frontend --engine rancher",
-          "npm run containers:run -- --target backend --engine podman",
-        ],
-      },
-      configure: (program) => {
-        program.argument("[action]", "Image action to run: build or run.");
-        program.option("--target <target>", "Image target: frontend, backend, cv, or exp.");
-        program.option("--engine <engine>", "Container engine to use (rancher or podman).");
-      },
-      decode: (program) => {
-        const options = program.opts<{target?: string; engine?: string}>();
-        const [action] = program.args as [string | undefined];
-
-        if (options.target !== "frontend" && options.target !== "backend" && options.target !== "cv" && options.target !== "exp") {
-          throw new CommandInputError("Use --target frontend|backend|cv|exp");
-        }
-
-        if (action !== "build" && action !== "run") {
-          throw new CommandInputError("Use build or run as the first argument.");
-        }
-
-        return {
-          action,
-          target: options.target,
-          ...(options.engine === undefined ? {} : {engine: options.engine as ContainerEngine}),
-        };
-      },
+      metadata: {name: "image"},
       execute: (context, input) => executeImage(artifacts, context, input),
       completion: (result) => ({
         exitCode: 0,
@@ -276,7 +239,5 @@ export function createImageCommand(dependencies: Readonly<ImageCommandDependenci
   );
 }
 
-/** Production singleton used by `npm run containers:build`/`npm run containers:run` and this module's direct entrypoint. */
+/** Production singleton used by `npm run containers:build`/`npm run containers:run`. */
 export const imageCommand: MonorepoCommand<ImageInput, ImageResult> = createImageCommand();
-
-await imageCommand.runIfMain(import.meta.url);

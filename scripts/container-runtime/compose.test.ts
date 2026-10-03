@@ -119,61 +119,15 @@ describe("createComposeCommand", () => {
     expect(runner.calls).toHaveLength(5);
   });
 
-  describe("parser lifecycle", () => {
-    it("requires the literal -- delimiter even when trailing tokens are present", async () => {
+  describe("human invocation", () => {
+    it("forwards every pass-through byte unchanged", async () => {
       const runner = createProcessRunner();
       const command = createComposeCommand(createTestRuntimeFactory({runner}));
 
-      const execution = await command.run(["--file", "infra/Local/Storage/docker-compose.yml", "--engine", "rancher", "up"]);
-
-      expect(execution).toMatchObject({status: "failed", exitCode: 2});
-      expect(execution.status === "failed" ? execution.failure.message : "").toBe("Use --file <compose-file> -- <compose arguments>");
-      expect(runner.calls).toHaveLength(0);
-    });
-
-    it("rejects a missing --file with the existing usage error", async () => {
-      const runner = createProcessRunner();
-      const command = createComposeCommand(createTestRuntimeFactory({runner}));
-
-      const execution = await command.run(["--engine", "rancher", "--", "up", "-d"]);
-
-      expect(execution).toMatchObject({status: "failed", exitCode: 2});
-      expect(execution.status === "failed" ? execution.failure.message : "").toBe("Use --file <compose-file> -- <compose arguments>");
-    });
-
-    it("rejects missing pass-through arguments with the existing usage error", async () => {
-      const runner = createProcessRunner();
-      const command = createComposeCommand(createTestRuntimeFactory({runner}));
-
-      const execution = await command.run(["--file", "infra/Local/Storage/docker-compose.yml", "--engine", "rancher"]);
-
-      expect(execution).toMatchObject({status: "failed", exitCode: 2});
-      expect(execution.status === "failed" ? execution.failure.message : "").toBe("Use --file <compose-file> -- <compose arguments>");
-    });
-
-    it("rejects an empty pass-through list after a literal --", async () => {
-      const runner = createProcessRunner();
-      const command = createComposeCommand(createTestRuntimeFactory({runner}));
-
-      const execution = await command.run(["--file", "infra/Local/Storage/docker-compose.yml", "--engine", "rancher", "--"]);
-
-      expect(execution).toMatchObject({status: "failed", exitCode: 2});
-    });
-
-    it("decodes every pass-through byte unchanged through the full CLI parse path", async () => {
-      const runner = createProcessRunner();
-      const command = createComposeCommand(createTestRuntimeFactory({runner}));
-
-      const execution = await command.run([
-        "--file",
-        "infra/Local/Storage/docker-compose.yml",
-        "--engine",
-        "rancher",
-        "--",
-        "up",
-        "-d",
-        "--remove-orphans",
-      ]);
+      const execution = await command.invoke(
+        {file: "infra/Local/Storage/docker-compose.yml", engine: "rancher", passthrough: ["up", "-d", "--remove-orphans"]},
+        {presentation: "human"},
+      );
 
       expect(execution).toMatchObject({status: "completed", exitCode: 0});
       expect(runner.calls.at(-1)?.request.args).toEqual([
@@ -184,16 +138,6 @@ describe("createComposeCommand", () => {
         "-d",
         "--remove-orphans",
       ]);
-    });
-
-    it("rejects an unknown option as a usage failure instead of throwing", async () => {
-      const runner = createProcessRunner();
-      const command = createComposeCommand(createTestRuntimeFactory({runner}));
-
-      const execution = await command.run(["--bogus"]);
-
-      expect(execution).toMatchObject({status: "failed", exitCode: 2});
-      expect(runner.calls).toHaveLength(0);
     });
   });
 });

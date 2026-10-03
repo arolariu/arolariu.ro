@@ -9,7 +9,6 @@ import {createServer, type Server} from "node:http";
 import {mkdir, mkdtemp, readdir, readFile, realpath as nodeRealpath, rm, stat, symlink, writeFile} from "node:fs/promises";
 import {tmpdir} from "node:os";
 import {dirname, resolve} from "node:path";
-import {pathToFileURL} from "node:url";
 import {afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi} from "vitest";
 
 const {mockedAccess} = vi.hoisted(() => ({mockedAccess: vi.fn()}));
@@ -32,7 +31,6 @@ import {
   nodeFileSystem,
   nodeHttpClient,
   nodeLoggerRuntimeHost,
-  nodeProcessHost,
   nodeProcessRunner,
   nodeTaskScheduler,
   snapshotNodeEnvironment,
@@ -660,30 +658,6 @@ describe("snapshotNodeEnvironment", () => {
   });
 });
 
-describe("nodeProcessHost", () => {
-  it("exposes an immutable argv snapshot excluding the executable and script path", () => {
-    expect(nodeProcessHost.argv).toEqual(process.argv.slice(2));
-    expect(Object.isFrozen(nodeProcessHost.argv)).toBe(true);
-  });
-
-  it("recognizes only the module the process was started with", () => {
-    const entrypoint = process.argv[1];
-    expect(entrypoint).toBeDefined();
-    expect(nodeProcessHost.isDirectEntry(pathToFileURL(entrypoint ?? "").href)).toBe(true);
-    expect(nodeProcessHost.isDirectEntry(pathToFileURL(resolve(dirname(entrypoint ?? ""), "not-the-entry.ts")).href)).toBe(false);
-  });
-
-  it("assigns the requested process exit code", () => {
-    const previousExitCode = process.exitCode;
-    try {
-      nodeProcessHost.setExitCode(2);
-      expect(process.exitCode).toBe(2);
-    } finally {
-      process.exitCode = previousExitCode;
-    }
-  });
-});
-
 describe("nodeLoggerRuntimeHost", () => {
   it("snapshots the terminal and color policy from the runtime environment", () => {
     const environment = snapshotNodeEnvironment();
@@ -988,25 +962,6 @@ describe("createNodeRuntimeScope", () => {
 });
 
 describe("createNodeCommandRuntimeFactory", () => {
-  it("exposes the Node process host and a non-verbose human parse logger", () => {
-    const factory = createNodeCommandRuntimeFactory("sample", true);
-
-    expect(factory.processHost).toBe(nodeProcessHost);
-
-    const debug = vi.spyOn(console, "debug").mockImplementation(() => undefined);
-    const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
-    const info = vi.spyOn(console, "info").mockImplementation(() => undefined);
-
-    const parseLogger = factory.createParseLogger();
-    parseLogger.debug("suppressed regardless of command verbosity");
-    parseLogger.json({ignored: true});
-    parseLogger.info("visible");
-
-    expect(debug).not.toHaveBeenCalled();
-    expect(log).not.toHaveBeenCalled();
-    expect(info).toHaveBeenCalledWith("[arolariu::sample] ℹ️ visible");
-  });
-
   it("creates root and child scopes carrying the command name and verbosity", async () => {
     const factory = createNodeCommandRuntimeFactory("sample", true);
     const rootRuntime = await factory.createRoot({presentation: "human", registerProcessSignals: false});

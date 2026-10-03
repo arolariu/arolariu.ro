@@ -660,16 +660,7 @@ export function createGenerateEnvironmentCommand(
 ): MonorepoCommand<GenerateLeafInput, GenerateLeafResult> {
   return new MonorepoCommand<GenerateLeafInput, GenerateLeafResult>(
     {
-      metadata: {
-        name: COMMAND_NAME,
-        description: "Generate the website environment file.",
-        examples: ["npm run generate:env", "npm run generate:env -- --verbose"],
-        slashAliases: {"/v": "--verbose", "/verbose": "--verbose"},
-      },
-      configure: (program) => {
-        program.option("-v, --verbose", "Enable diagnostic output.");
-      },
-      decode: (program) => ({verbose: program.opts<{verbose?: boolean}>().verbose === true}),
+      metadata: {name: COMMAND_NAME},
       execute: generateEnvironment,
       completion: (result) => ({
         exitCode: 0,
@@ -680,7 +671,5 @@ export function createGenerateEnvironmentCommand(
   );
 }
 
-/** Production singleton used by the aggregate CLI and this module's direct entrypoint. */
+/** Production singleton used by the aggregate CLI. */
 export const generateEnvironmentCommand: MonorepoCommand<GenerateLeafInput, GenerateLeafResult> = createGenerateEnvironmentCommand();
-
-await generateEnvironmentCommand.runIfMain(import.meta.url);

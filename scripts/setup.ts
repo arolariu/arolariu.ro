@@ -25,7 +25,6 @@
  */
 
 import {
-  CommandInputError,
   MonorepoCommand,
   type CommandContext,
   type CommandExecution,
@@ -37,7 +36,6 @@ import type {PromptProvider} from "./common/prompts.ts";
 import {loadRepositoryRequirements} from "./common/requirements.ts";
 import {resolveRepositoryPaths} from "./common/repository-paths.ts";
 import {CommandCancellation, commandCancellationFromSignal, type RepositoryInspectionRequest} from "./common/runtime.ts";
-import type {ContainerEngine} from "./container-runtime/types.ts";
 import {generateCommand, type GenerateInput, type GenerateResult} from "./generate.ts";
 import {dotnetSetupPhase} from "./setup.dotnet.ts";
 import {infrastructureSetupPhase} from "./setup.infrastructure.ts";
@@ -58,9 +56,6 @@ export type {SetupInput} from "./setup.types.ts";
 
 /** Bounded default timeout applied to every phase command that does not request its own. */
 const PHASE_COMMAND_TIMEOUT_MS = 120_000;
-
-/** Every container engine `--engine` accepts. */
-const SUPPORTED_ENGINES: readonly ContainerEngine[] = ["rancher", "podman"];
 
 /** Typed business result produced by one setup invocation. */
 export interface SetupResult {
@@ -481,26 +476,6 @@ function renderSetupSummary(logger: MonorepositoryLogger, result: Readonly<Setup
 }
 
 /**
- * Decodes the optional `--engine` value into a supported container engine.
- *
- * @param value - Raw Commander option value.
- * @returns The selected engine, or `undefined` when the option was omitted.
- * @throws {CommandInputError} When the value is not a supported container engine.
- */
-function decodeEngine(value: string | undefined): ContainerEngine | undefined {
-  if (value === undefined) {
-    return undefined;
-  }
-
-  const engine = SUPPORTED_ENGINES.find((candidate) => candidate === value);
-  if (engine === undefined) {
-    throw new CommandInputError(`--engine must be one of ${SUPPORTED_ENGINES.join(", ")}, got: "${value}"`);
-  }
-
-  return engine;
-}
-
-/**
  * Creates the setup command.
  *
  * @param dependencies - Optional runtime factory, phase list, and composed generation command;
@@ -512,29 +487,7 @@ export function createSetupCommand(dependencies: Readonly<SetupCommandDependenci
 
   return new MonorepoCommand<SetupInput, SetupResult>(
     {
-      metadata: {
-        name: "setup",
-        description:
-          "Prepares a fresh checkout end to end: workspace dependencies, generated artifacts, and the .NET, React, Svelte, Python, and local infrastructure toolchains.",
-        examples: ["npm run setup", "npm run setup -- --dry-run", "npm run setup -- --engine podman"],
-      },
-      configure: (program) => {
-        program
-          .option("--verbose", "Show diagnostic detail for each phase.", false)
-          .option("--dry-run", "Plan every phase mutation without executing it.", false)
-          .option("--yes", "Approve system-scoped mutations without prompting.", false)
-          .option("--engine <engine>", "Select rancher or podman for infrastructure phases.");
-      },
-      decode: (program) => {
-        const options = program.opts<{verbose?: boolean; dryRun?: boolean; yes?: boolean; engine?: string}>();
-        const engine = decodeEngine(options.engine);
-        return {
-          verbose: options.verbose === true,
-          dryRun: options.dryRun === true,
-          yes: options.yes === true,
-          ...(engine === undefined ? {} : {engine}),
-        };
-      },
+      metadata: {name: "setup"},
       execute: (context, input) =>
         executeSetup(context, input, {
           ...(phases === undefined ? {} : {phases}),
@@ -554,7 +507,5 @@ export function createSetupCommand(dependencies: Readonly<SetupCommandDependenci
   );
 }
 
-/** Production singleton used by `npm run setup` and this module's direct entrypoint. */
+/** Production singleton used by `npm run setup`. */
 export const setupCommand: MonorepoCommand<SetupInput, SetupResult> = createSetupCommand();
-
-await setupCommand.runIfMain(import.meta.url);

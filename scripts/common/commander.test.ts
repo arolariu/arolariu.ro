@@ -1,18 +1,15 @@
 // @vitest-environment node
 /**
- * @fileoverview Contract tests for the declarative Commander command host.
+ * @fileoverview Contract tests for the declarative legacy command host.
  * @module scripts/common/commander.test
  */
 
-import {Command} from "commander";
 import {pathToFileURL} from "node:url";
 import {describe, expect, it} from "vitest";
 
 import {
   CommandInputError,
   MonorepoCommand,
-  getInvocationArgv,
-  normalizeSlashArguments,
   toJsonValue,
   type CommandContext,
   type CommandInvoker,
@@ -34,7 +31,6 @@ import {
   createMemoryFileSystem,
   createProcessRunner,
   createRepositoryFixtureFileSystem,
-  createTestProcessHost,
   createTestRuntimeFactory,
   repositoryFixtureRoot,
 } from "./runtime.testing.ts";
@@ -116,160 +112,21 @@ describe("toJsonValue", () => {
   });
 });
 
-describe("normalizeSlashArguments", () => {
-  it("normalizes only exact slash aliases and stops at the literal delimiter", () => {
-    expect(
-      normalizeSlashArguments(["/h", "/v", "C:\\work\\file.txt", "/unknown", "--", "/h", "/v"], {"/v": "--verbose"}),
-    ).toEqual(["--help", "--verbose", "C:\\work\\file.txt", "/unknown", "--", "/h", "/v"]);
-  });
-});
-
-describe("getInvocationArgv", () => {
-  it("returns the pre-normalization argv captured for each fresh parser", async () => {
-    const captured: (readonly string[])[] = [];
-    const command = new MonorepoCommand(
-      {
-        metadata: {name: "sample", description: "Sample.", slashAliases: {"/v": "--verbose"}},
-        configure: (program) => {
-          program.option("--verbose").argument("[passthrough...]");
-        },
-        decode: (program) => {
-          captured.push(getInvocationArgv(program));
-          return {passthrough: program.args};
-        },
-        execute: async () => undefined,
-        completion: () => ({exitCode: 0}),
-      },
-      createTestRuntimeFactory(),
-    );
-
-    await command.run(["/v", "--", "/v", "--verbose"]);
-    await command.run(["--verbose"]);
-
-    expect(captured).toEqual([
-      ["/v", "--", "/v", "--verbose"],
-      ["--verbose"],
-    ]);
-    expect(Object.isFrozen(captured[0])).toBe(true);
-  });
-
-  it("rejects a Commander instance that the command host did not create", () => {
-    expect(() => getInvocationArgv(new Command())).toThrow(/command host/u);
-  });
-});
-
-describe("MonorepoCommand.run", () => {
-  it("parses every run with a fresh Commander program", async () => {
-    const decoded: Readonly<Record<string, unknown>>[] = [];
-    const command = new MonorepoCommand(
-      {
-        metadata: {name: "sample", description: "Sample."},
-        configure: (program) => {
-          program.option("--flag");
-        },
-        decode: (program) => {
-          const options = program.opts<Readonly<{flag?: boolean}>>();
-          decoded.push(options);
-          return options;
-        },
-        execute: async () => undefined,
-        completion: () => ({exitCode: 0}),
-      },
-      createTestRuntimeFactory(),
-    );
-
-    await command.run(["--flag"]);
-    await command.run([]);
-
-    expect(decoded).toEqual([{flag: true}, {}]);
-  });
-
-  it("normalizes slash aliases but never rewrites tokens after the literal delimiter", async () => {
-    let passthrough: readonly string[] = [];
-    const command = new MonorepoCommand(
-      {
-        metadata: {name: "sample", description: "Sample.", slashAliases: {"/v": "--verbose"}},
-        configure: (program) => {
-          program.option("--verbose").argument("[passthrough...]");
-        },
-        decode: (program) => {
-          passthrough = [...program.args];
-          return program.opts<Readonly<{verbose?: boolean}>>();
-        },
-        execute: async () => undefined,
-        completion: () => ({exitCode: 0}),
-      },
-      createTestRuntimeFactory(),
-    );
-
-    const execution = await command.run(["/v", "--", "/v", "--verbose"]);
-
-    expect(execution).toEqual({status: "completed", value: undefined, exitCode: 0});
-    expect(passthrough).toEqual(["/v", "--verbose"]);
-  });
-
-  it("maps the /h slash alias to help routed through the parse logger", async () => {
+describe("MonorepoCommand lifecycle", () => {
+  it("maps a CommandInputError raised during execution to exit code two", async () => {
     const {logger, sink} = createHumanLogger();
-    const factory: CommandRuntimeFactory = {...createTestRuntimeFactory(), createParseLogger: () => logger};
     const command = new MonorepoCommand(
       {
-        metadata: {name: "sample", description: "Sample.", examples: ["npm run sample -- --verbose"]},
-        configure: () => undefined,
-        decode: () => ({}),
+        metadata: {name: "sample"},
         execute: async () => {
-          throw new Error("execute must not run for help.");
-        },
-        completion: () => ({exitCode: 0}),
-      },
-      factory,
-    );
-
-    const execution = await command.run(["/h"]);
-
-    expect(execution).toEqual({status: "help", exitCode: 0});
-    expect(sink.records.map((record) => record.text).join("")).toContain("Usage:");
-    expect(sink.records.map((record) => record.text).join("")).toContain("npm run sample -- --verbose");
-  });
-
-  it("maps a Commander usage failure to exit code two", async () => {
-    const {logger, sink} = createHumanLogger();
-    const factory: CommandRuntimeFactory = {...createTestRuntimeFactory(), createParseLogger: () => logger};
-    const command = new MonorepoCommand(
-      {
-        metadata: {name: "sample", description: "Sample."},
-        configure: () => undefined,
-        decode: () => ({}),
-        execute: async () => undefined,
-        completion: () => ({exitCode: 0}),
-      },
-      factory,
-    );
-
-    const execution = await command.run(["--unknown"]);
-
-    expect(execution.status).toBe("failed");
-    expect(execution.exitCode).toBe(2);
-    expect(execution.status === "failed" ? execution.failure.kind : "").toBe("usage");
-    expect(sink.records.map((record) => record.text).join("")).toContain("unknown option");
-  });
-
-  it("maps a CommandInputError raised while decoding to exit code two", async () => {
-    const {logger, sink} = createHumanLogger();
-    const factory: CommandRuntimeFactory = {...createTestRuntimeFactory(), createParseLogger: () => logger};
-    const command = new MonorepoCommand(
-      {
-        metadata: {name: "sample", description: "Sample."},
-        configure: () => undefined,
-        decode: () => {
           throw new CommandInputError("--engine must be rancher or podman.");
         },
-        execute: async () => undefined,
         completion: () => ({exitCode: 0}),
       },
-      factory,
+      createTestRuntimeFactory({logger}),
     );
 
-    const execution = await command.run([]);
+    const execution = await command.invoke({}, {presentation: "human"});
 
     expect(execution).toMatchObject({
       status: "failed",
@@ -279,34 +136,12 @@ describe("MonorepoCommand.run", () => {
     expect(sink.records.map((record) => record.text).join("")).toContain("--engine must be rancher or podman.");
   });
 
-  it("reads an omitted argv from the process host only", async () => {
-    const processHost = createTestProcessHost(["--flag"]);
-    const factory: CommandRuntimeFactory = {...createTestRuntimeFactory(), processHost};
-    const command = new MonorepoCommand(
-      {
-        metadata: {name: "sample", description: "Sample."},
-        configure: (program) => {
-          program.option("--flag");
-        },
-        decode: (program) => program.opts<Readonly<{flag?: boolean}>>(),
-        execute: async (_context, input) => input,
-        completion: () => ({exitCode: 0}),
-      },
-      factory,
-    );
-
-    await expect(command.run()).resolves.toEqual({status: "completed", value: {flag: true}, exitCode: 0});
-    expect(processHost.assignedExitCodes).toEqual([]);
-  });
-
   it("renders the human completion only after cleanup and returns the completion exit code", async () => {
     const {logger, sink} = createHumanLogger();
     const order: string[] = [];
     const command = new MonorepoCommand(
       {
-        metadata: {name: "sample", description: "Sample."},
-        configure: () => undefined,
-        decode: () => ({}),
+        metadata: {name: "sample"},
         execute: async ({runtime}) => {
           runtime.cleanup.register("temporary directory", () => {
             order.push("cleanup");
@@ -324,7 +159,7 @@ describe("MonorepoCommand.run", () => {
       createTestRuntimeFactory({logger}),
     );
 
-    const execution = await command.run([]);
+    const execution = await command.invoke({}, {presentation: "human"});
 
     expect(execution).toEqual({status: "completed", value: {score: 40}, exitCode: 1});
     expect(order).toEqual(["cleanup", "render"]);
@@ -335,19 +170,14 @@ describe("MonorepoCommand.run", () => {
     const {logger, sink} = createJsonLogger();
     const command = new MonorepoCommand(
       {
-        metadata: {name: "sample", description: "Sample."},
-        configure: (program) => {
-          program.option("--json");
-        },
-        decode: (program) => program.opts<Readonly<{json?: boolean}>>(),
+        metadata: {name: "sample"},
         execute: async () => ({score: 100}),
         completion: (report) => ({exitCode: 0, json: toJsonValue(report)}),
-        presentation: (input) => (input.json === true ? "json" : "human"),
       },
       createTestRuntimeFactory({logger}),
     );
 
-    const execution = await command.run(["--json"]);
+    const execution = await command.invoke({}, {presentation: "json"});
 
     expect(execution).toEqual({status: "completed", value: {score: 100}, exitCode: 0});
     expect(sink.records).toEqual([{stream: "stdout", text: '{\n  "score": 100\n}', write: false}]);
@@ -357,17 +187,14 @@ describe("MonorepoCommand.run", () => {
     const {logger, sink} = createJsonLogger();
     const command = new MonorepoCommand(
       {
-        metadata: {name: "sample", description: "Sample."},
-        configure: () => undefined,
-        decode: () => ({}),
+        metadata: {name: "sample"},
         execute: async () => ({score: 100}),
         completion: () => ({exitCode: 0}),
-        presentation: () => "json",
       },
       createTestRuntimeFactory({logger}),
     );
 
-    const execution = await command.run([]);
+    const execution = await command.invoke({}, {presentation: "json"});
 
     expect(execution).toMatchObject({status: "failed", exitCode: 1, failure: {kind: "internal"}});
     expect(sink.records.every((record) => !record.text.startsWith("{"))).toBe(true);
@@ -391,9 +218,7 @@ describe("MonorepoCommand.run", () => {
     const {logger, sink} = createHumanLogger();
     const command = new MonorepoCommand(
       {
-        metadata: {name: "sample", description: "Sample."},
-        configure: () => undefined,
-        decode: () => ({}),
+        metadata: {name: "sample"},
         execute: async () => {
           throw thrown;
         },
@@ -402,7 +227,7 @@ describe("MonorepoCommand.run", () => {
       createTestRuntimeFactory({logger}),
     );
 
-    const execution = await command.run([]);
+    const execution = await command.invoke({}, {presentation: "human"});
 
     expect(execution).toMatchObject({
       status: exitCode === 130 || exitCode === 143 ? "cancelled" : "failed",
@@ -416,9 +241,7 @@ describe("MonorepoCommand.run", () => {
   it("maps a prompt AbortError to a cancelled outcome", async () => {
     const command = new MonorepoCommand(
       {
-        metadata: {name: "sample", description: "Sample."},
-        configure: () => undefined,
-        decode: () => ({}),
+        metadata: {name: "sample"},
         execute: async () => {
           const error = new Error("Prompt cancelled by user.");
           error.name = "AbortError";
@@ -429,16 +252,14 @@ describe("MonorepoCommand.run", () => {
       createTestRuntimeFactory(),
     );
 
-    await expect(command.run([])).resolves.toMatchObject({status: "cancelled", exitCode: 130});
+    await expect(command.invoke({}, {presentation: "human"})).resolves.toMatchObject({status: "cancelled", exitCode: 130});
   });
 
   it("replaces a successful presentation with an aggregated cleanup failure", async () => {
     const {logger, sink} = createHumanLogger();
     const command = new MonorepoCommand(
       {
-        metadata: {name: "sample", description: "Sample."},
-        configure: () => undefined,
-        decode: () => ({}),
+        metadata: {name: "sample"},
         execute: async ({runtime}) => {
           runtime.cleanup.register("temporary directory", () => {
             throw new Error("could not remove directory");
@@ -455,7 +276,7 @@ describe("MonorepoCommand.run", () => {
       createTestRuntimeFactory({logger}),
     );
 
-    const execution = await command.run([]);
+    const execution = await command.invoke({}, {presentation: "human"});
 
     expect(execution).toMatchObject({
       status: "failed",
@@ -468,9 +289,7 @@ describe("MonorepoCommand.run", () => {
   it("preserves the primary failure and appends cleanup evidence", async () => {
     const command = new MonorepoCommand(
       {
-        metadata: {name: "sample", description: "Sample."},
-        configure: () => undefined,
-        decode: () => ({}),
+        metadata: {name: "sample"},
         execute: async ({runtime}) => {
           runtime.cleanup.register("temporary directory", () => {
             throw new Error("could not remove directory");
@@ -482,7 +301,7 @@ describe("MonorepoCommand.run", () => {
       createTestRuntimeFactory(),
     );
 
-    await expect(command.run([])).resolves.toMatchObject({
+    await expect(command.invoke({}, {presentation: "human"})).resolves.toMatchObject({
       status: "failed",
       exitCode: 1,
       failure: {
@@ -498,9 +317,7 @@ describe("MonorepoCommand.invoke", () => {
   it("preserves completed output with exit code one", async () => {
     const command = new MonorepoCommand(
       {
-        metadata: {name: "doctor", description: "Check health."},
-        configure: () => undefined,
-        decode: () => ({quick: true}),
+        metadata: {name: "doctor"},
         execute: async () => ({score: 75}),
         completion: (report) => ({
           exitCode: report.score === 100 ? 0 : 1,
@@ -521,9 +338,7 @@ describe("MonorepoCommand.invoke", () => {
     const {logger, sink} = createHumanLogger();
     const command = new MonorepoCommand(
       {
-        metadata: {name: "doctor", description: "Check health."},
-        configure: () => undefined,
-        decode: () => ({}),
+        metadata: {name: "doctor"},
         execute: async () => ({score: 10}),
         completion: (report) => ({
           exitCode: 1,
@@ -544,9 +359,7 @@ describe("MonorepoCommand.invoke", () => {
     const controller = new AbortController();
     const command = new MonorepoCommand(
       {
-        metadata: {name: "wait", description: "Wait."},
-        configure: () => undefined,
-        decode: () => ({}),
+        metadata: {name: "wait"},
         execute: ({runtime}) => runtime.clock.delay(60_000, runtime.signal),
         completion: () => ({exitCode: 0}),
       },
@@ -570,9 +383,7 @@ describe("MonorepoCommand.invoke", () => {
 
     const child = new MonorepoCommand(
       {
-        metadata: {name: "generate", description: "Generate."},
-        configure: () => undefined,
-        decode: () => ({}),
+        metadata: {name: "generate"},
         execute: async ({runtime}) => {
           childRuntime = runtime;
           runtime.logger.redact("child-secret");
@@ -605,9 +416,7 @@ describe("MonorepoCommand.invoke", () => {
 
     const child = new MonorepoCommand(
       {
-        metadata: {name: "generate", description: "Generate."},
-        configure: () => undefined,
-        decode: () => ({}),
+        metadata: {name: "generate"},
         execute: async ({runtime}) => {
           runtime.cleanup.register("child", () => {
             order.push("child");
@@ -640,9 +449,7 @@ describe("MonorepoCommand.invoke", () => {
 
     const child = new MonorepoCommand(
       {
-        metadata: {name: "wait", description: "Wait."},
-        configure: () => undefined,
-        decode: () => ({}),
+        metadata: {name: "wait"},
         execute: ({runtime}) => runtime.clock.delay(60_000, runtime.signal),
         completion: () => ({exitCode: 0}),
       },
@@ -664,9 +471,7 @@ describe("MonorepoCommand.invoke", () => {
 
     const child = new MonorepoCommand(
       {
-        metadata: {name: "wait", description: "Wait."},
-        configure: () => undefined,
-        decode: () => ({}),
+        metadata: {name: "wait"},
         execute: ({runtime}) => runtime.clock.delay(60_000, runtime.signal),
         completion: () => ({exitCode: 0}),
       },
@@ -683,9 +488,7 @@ describe("MonorepoCommand.invoke", () => {
   it("exposes commands through the narrow invoker contract", async () => {
     const command = new MonorepoCommand(
       {
-        metadata: {name: "doctor", description: "Check health."},
-        configure: () => undefined,
-        decode: () => ({quick: true}),
+        metadata: {name: "doctor"},
         execute: async () => ({score: 100}),
         completion: () => ({exitCode: 0}),
       },
@@ -695,85 +498,47 @@ describe("MonorepoCommand.invoke", () => {
 
     await expect(invoker.invoke({quick: true})).resolves.toMatchObject({status: "completed", exitCode: 0});
   });
-});
 
-describe("MonorepoCommand.runIfMain", () => {
-  it("runs and assigns the exit code through the process host for a direct entrypoint", async () => {
-    const processHost = createTestProcessHost([]);
-    const factory: CommandRuntimeFactory = {...createTestRuntimeFactory(), processHost};
-    const command = new MonorepoCommand(
-      {
-        metadata: {name: "sample", description: "Sample."},
-        configure: () => undefined,
-        decode: () => ({}),
-        execute: async () => ({ok: false}),
-        completion: () => ({exitCode: 1}),
+  it("lazily loads the production Node runtime factory when none is injected", async () => {
+    let observedRuntime: CommandRuntime | undefined;
+    const command = new MonorepoCommand({
+      metadata: {name: "sample"},
+      execute: async ({runtime}) => {
+        observedRuntime = runtime;
+        return null;
       },
-      factory,
-    );
+      completion: () => ({exitCode: 0}),
+    });
 
-    await command.runIfMain("file:///repo/scripts/sample.ts");
-
-    expect(processHost.assignedExitCodes).toEqual([1]);
+    await expect(command.invoke({verbose: true})).resolves.toEqual({status: "completed", value: null, exitCode: 0});
+    expect(observedRuntime?.signal.aborted).toBe(false);
+    expect(observedRuntime?.environment.cwd).toBe(process.cwd());
   });
 
-  it("does nothing when the module is not the direct entrypoint", async () => {
-    const processHost = createTestProcessHost([]);
-    const factory: CommandRuntimeFactory = {
-      ...createTestRuntimeFactory(),
-      processHost: {...processHost, isDirectEntry: () => false},
-    };
-    let executed = false;
+  it("normalizes a throwing human completion into a failed outcome", async () => {
+    const {logger, sink} = createHumanLogger();
     const command = new MonorepoCommand(
       {
-        metadata: {name: "sample", description: "Sample."},
-        configure: () => undefined,
-        decode: () => ({}),
-        execute: async () => {
-          executed = true;
-          return null;
-        },
-        completion: () => ({exitCode: 0}),
+        metadata: {name: "sample"},
+        execute: async () => ({ok: true}),
+        completion: () => ({
+          exitCode: 0,
+          human: () => {
+            throw new Error("render exploded");
+          },
+        }),
       },
-      factory,
+      createTestRuntimeFactory({logger}),
     );
 
-    await command.runIfMain("file:///repo/scripts/sample.ts");
+    const execution = await command.invoke({}, {presentation: "human"});
 
-    expect(executed).toBe(false);
-    expect(processHost.assignedExitCodes).toEqual([]);
+    expect(execution).toMatchObject({status: "failed", exitCode: 1, failure: {kind: "operational", message: "render exploded"}});
+    expect(sink.records.map((record) => record.text)).toEqual(["[arolariu::test] ⛔ render exploded"]);
   });
 });
 
 describe("command lifecycle scope failures", () => {
-  it("normalizes a runtime creation failure raised by run() through the parse logger", async () => {
-    const {logger, sink} = createHumanLogger();
-    const factory: CommandRuntimeFactory = {
-      ...createTestRuntimeFactory(),
-      createParseLogger: () => logger,
-      createRoot: () => Promise.reject(new Error("runtime scope creation failed")),
-    };
-    const command = new MonorepoCommand(
-      {
-        metadata: {name: "sample", description: "Sample."},
-        configure: () => undefined,
-        decode: () => ({}),
-        execute: async () => undefined,
-        completion: () => ({exitCode: 0}),
-      },
-      factory,
-    );
-
-    await expect(command.run([])).resolves.toMatchObject({
-      status: "failed",
-      exitCode: 1,
-      failure: {kind: "operational", message: "runtime scope creation failed"},
-    });
-    expect(sink.records.map((record) => record.text)).toEqual([
-      "[arolariu::test] ⛔ runtime scope creation failed",
-    ]);
-  });
-
   it("normalizes a runtime creation failure raised by invoke() without any logger", async () => {
     const factory: CommandRuntimeFactory = {
       ...createTestRuntimeFactory(),
@@ -781,9 +546,7 @@ describe("command lifecycle scope failures", () => {
     };
     const command = new MonorepoCommand(
       {
-        metadata: {name: "sample", description: "Sample."},
-        configure: () => undefined,
-        decode: () => ({}),
+        metadata: {name: "sample"},
         execute: async () => undefined,
         completion: () => ({exitCode: 0}),
       },
@@ -806,9 +569,7 @@ describe("command lifecycle scope failures", () => {
     });
     const command = new MonorepoCommand(
       {
-        metadata: {name: "sample", description: "Sample."},
-        configure: () => undefined,
-        decode: () => ({}),
+        metadata: {name: "sample"},
         execute: async () => ({ok: true}),
         completion: () => ({exitCode: 0}),
       },

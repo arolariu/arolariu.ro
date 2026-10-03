@@ -4,17 +4,14 @@
  * @module scripts.setup.test
  *
  * @remarks
- * Every orchestrator test drives `setupCommand.invoke()`/`run()` through an injected test runtime
+ * Every orchestrator test drives `setupCommand.invoke()` through an injected test runtime
  * factory whose filesystem is an in-memory repository fixture, whose inspection registry hands out
  * a deterministic session, and whose phases are fakes. No test in this file reads the live
- * checkout, spawns a real process, or mutates disk; only the direct-entrypoint smoke tests spawn
- * the real CLI.
+ * checkout, spawns a real process, or mutates disk.
  */
 
-import {spawn} from "node:child_process";
 import {resolve} from "node:path";
 import {PassThrough} from "node:stream";
-import {fileURLToPath} from "node:url";
 import {describe, expect, it, vi} from "vitest";
 
 import type {CommandExecution, CommandInvoker, CommandRuntimeFactory} from "./common/commander.ts";
@@ -851,7 +848,7 @@ describe("setup phase command execution", () => {
       phases: [commandPhase((context) => context.runtime?.runner.run({command: "dotnet", args: ["--version"]}) ?? Promise.resolve())],
     });
 
-    await command.run([]);
+    await command.invoke(options(), {presentation: "human"});
 
     expect(recordedOptions(runner).logCommands).toBe(false);
     expect(sink.records.some((record) => record.text.includes("dotnet --version"))).toBe(false);
@@ -875,7 +872,7 @@ describe("setup phase command execution", () => {
       ],
     });
 
-    await command.run(["--verbose"]);
+    await command.invoke(options({verbose: true}), {presentation: "human"});
 
     const rendered = sink.records.map((record) => record.text).join("\n");
     expect(rendered).toContain("$ dotnet user-secrets set");
@@ -896,7 +893,7 @@ describe("setup presentation", () => {
       ],
     });
 
-    await command.run([]);
+    await command.invoke(options(), {presentation: "human"});
 
     expect(sink.records.map((record) => record.text).join("\n")).toContain("The .NET SDK is ready. (42ms)");
   });
@@ -918,7 +915,7 @@ describe("setup presentation", () => {
       ],
     });
 
-    await command.run([]);
+    await command.invoke(options(), {presentation: "human"});
 
     const rendered = sink.records.map((record) => record.text).join("\n");
     expect(rendered).toContain("Setup summary");
@@ -939,7 +936,7 @@ describe("setup presentation", () => {
       ],
     });
 
-    await command.run(["--verbose"]);
+    await command.invoke(options({verbose: true}), {presentation: "human"});
 
     const rendered = sink.records.map((record) => record.text).join("\n");
     expect(rendered).toContain("🐛");
@@ -960,7 +957,7 @@ describe("setup presentation", () => {
       ],
     });
 
-    await command.run([]);
+    await command.invoke(options(), {presentation: "human"});
 
     expect(sink.records.map((record) => record.text).join("\n")).not.toContain("🐛");
   });
@@ -972,76 +969,6 @@ describe("setup presentation", () => {
     await command.invoke(options());
 
     expect(sink.records.map((record) => record.text).join("\n")).not.toContain("Setup summary");
-  });
-});
-
-describe("setup input decoding", () => {
-  it.each([
-    ["--verbose", {verbose: true, dryRun: false, yes: false}],
-    ["--dry-run", {verbose: false, dryRun: true, yes: false}],
-    ["--yes", {verbose: false, dryRun: false, yes: true}],
-  ] as const)("parses %s into SetupInput before running setup", async (flag, expectedOptions) => {
-    let receivedOptions: SetupInput | undefined;
-    const {command} = createSetupFixture({
-      phases: [
-        stubPhase("dotnet", {
-          run: async (context) => {
-            receivedOptions = context.options;
-            return phaseResult("dotnet", "succeeded");
-          },
-        }),
-      ],
-    });
-
-    const execution = await command.run([flag]);
-
-    expect(execution.exitCode).toBe(0);
-    expect(receivedOptions).toEqual(expectedOptions);
-  });
-
-  it.each([
-    ["--engine podman", ["--engine", "podman"]],
-    ["--engine=podman", ["--engine=podman"]],
-  ] as const)("parses %s into a podman engine before running setup", async (_case, argv) => {
-    let receivedOptions: SetupInput | undefined;
-    const {command} = createSetupFixture({
-      phases: [
-        stubPhase("dotnet", {
-          run: async (context) => {
-            receivedOptions = context.options;
-            return phaseResult("dotnet", "succeeded");
-          },
-        }),
-      ],
-    });
-
-    const execution = await command.run([...argv]);
-
-    expect(execution.exitCode).toBe(0);
-    expect(receivedOptions?.engine).toBe("podman");
-  });
-
-  it("rejects an unsupported engine with a usage failure and performs no repository work", async () => {
-    const {command, inspection} = createSetupFixture({phases: [stubPhase("dotnet")]});
-
-    const execution = await command.run(["--engine=docker"]);
-
-    expect(execution.status).toBe("failed");
-    expect(execution.exitCode).toBe(2);
-    if (execution.status !== "failed") throw new Error("Setup did not fail.");
-    expect(execution.failure.kind).toBe("usage");
-    expect(execution.failure.message).toMatch(/engine/i);
-    expect(inspection.requests).toHaveLength(0);
-  });
-
-  it("renders help and performs no repository work", async () => {
-    const {command, inspection} = createSetupFixture({phases: [stubPhase("dotnet")]});
-
-    const execution = await command.run(["--help"]);
-
-    expect(execution.status).toBe("help");
-    expect(execution.exitCode).toBe(0);
-    expect(inspection.requests).toHaveLength(0);
   });
 });
 
@@ -1071,50 +998,5 @@ describe("setup generation composition", () => {
     expect(generateInput).toEqual({verbose: false, env: true, i18n: true, gql: true, artifacts: true});
     expect(invocationOptions?.presentation).toBe("silent");
     expect(invocationOptions?.parent).toBeDefined();
-  });
-});
-
-describe("direct entrypoint", () => {
-  const setupEntrypoint = fileURLToPath(new URL("./setup.ts", import.meta.url));
-
-  function runDirect(args: readonly string[]): Promise<Readonly<{code: number | null; output: string}>> {
-    return new Promise((resolveProcess, rejectProcess) => {
-      const child = spawn(process.execPath, [setupEntrypoint, ...args], {
-        cwd: resolve(setupEntrypoint, "..", ".."),
-        stdio: ["ignore", "pipe", "pipe"],
-      });
-      let output = "";
-      child.stdout.on("data", (chunk: Buffer) => {
-        output += chunk.toString("utf8");
-      });
-      child.stderr.on("data", (chunk: Buffer) => {
-        output += chunk.toString("utf8");
-      });
-      child.once("error", rejectProcess);
-      child.once("close", (code) => {
-        resolveProcess({code, output});
-      });
-    });
-  }
-
-  it("emits help and exits 0 for a direct process invocation of --help", async () => {
-    const result = await runDirect(["--help"]);
-
-    expect(result.code).toBe(0);
-    expect(result.output).toMatch(/Usage:/);
-  });
-
-  it("emits a usage diagnostic and exits 2 for a direct process invocation of an unknown flag", async () => {
-    const result = await runDirect(["--bogus"]);
-
-    expect(result.code).toBe(2);
-    expect(result.output).toMatch(/unknown option/i);
-  });
-
-  it("emits a usage diagnostic and exits 2 for a direct process invocation of an unsupported engine", async () => {
-    const result = await runDirect(["--engine=docker"]);
-
-    expect(result.code).toBe(2);
-    expect(result.output).toMatch(/engine/i);
   });
 });

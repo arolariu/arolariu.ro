@@ -11,7 +11,6 @@ import type {ProcessOutcome, ProcessRequest, ProcessRunOptions, ProcessRunner} f
 import {
   createProcessRunner,
   createRepositoryFixtureFileSystem,
-  createTestProcessHost,
   createTestRuntimeFactory,
   repositoryFixtureRoot,
 } from "../common/runtime.testing.ts";
@@ -32,7 +31,6 @@ import {
   buildSelfhostPlan,
   createSelfhostCommand,
   getRequiredSqlPassword,
-  selfhostCommand,
   shouldGenerateTaxonomyArtifacts,
 } from "./selfhost.ts";
 import {selfhostTraefikConfigPath} from "./traefik.ts";
@@ -598,108 +596,5 @@ describe("createSelfhostCommand engine selection", () => {
     expect(execution).toMatchObject({status: "failed", exitCode: 1});
     expect(execution.status === "failed" ? execution.failure.message : "").toContain("Docker Desktop is deprecated");
     expect(harness.runner.calls).toHaveLength(0);
-  });
-});
-
-describe("createSelfhostCommand parser lifecycle", () => {
-  it("defaults the action argument to start", async () => {
-    const harness = createHarness();
-
-    const execution = await harness.command.run(["--engine", "podman"]);
-
-    expect(execution).toMatchObject({status: "completed", exitCode: 0, value: {action: "start"}});
-  });
-
-  it("decodes an explicit action and engine", async () => {
-    const harness = createHarness();
-
-    const execution = await harness.command.run(["logs", "--engine", "podman"]);
-
-    expect(execution).toMatchObject({status: "completed", exitCode: 0, value: {action: "logs", engine: "podman"}});
-  });
-
-  it("normalizes engine casing and surrounding whitespace exactly like engine selection", async () => {
-    const harness = createHarness();
-
-    const execution = await harness.command.run(["logs", "--engine", " PODMAN "]);
-
-    expect(execution).toMatchObject({status: "completed", exitCode: 0, value: {engine: "podman"}});
-  });
-
-  it("rejects an unknown action as a usage failure", async () => {
-    const harness = createHarness();
-
-    const execution = await harness.command.run(["restart"]);
-
-    expect(execution).toMatchObject({status: "failed", exitCode: 2});
-    expect(execution.status === "failed" ? execution.failure.message : "").toBe("Use start, stop, or logs as the first argument.");
-    expect(harness.runner.calls).toHaveLength(0);
-  });
-
-  it("rejects the deprecated docker engine argument as a usage failure", async () => {
-    const harness = createHarness();
-
-    const execution = await harness.command.run(["start", "--engine", "docker"]);
-
-    expect(execution).toMatchObject({status: "failed", exitCode: 2});
-    expect(execution.status === "failed" ? execution.failure.message : "").toContain("Docker Desktop is deprecated");
-    expect(harness.runner.calls).toHaveLength(0);
-  });
-
-  it("rejects an unsupported engine argument as a usage failure", async () => {
-    const harness = createHarness();
-
-    const execution = await harness.command.run(["start", "--engine", "colima"]);
-
-    expect(execution).toMatchObject({status: "failed", exitCode: 2});
-    expect(execution.status === "failed" ? execution.failure.message : "").toContain("Unsupported container engine 'colima'");
-  });
-
-  it("rejects an unknown option as a usage failure instead of throwing", async () => {
-    const harness = createHarness();
-
-    const execution = await harness.command.run(["--bogus"]);
-
-    expect(execution).toMatchObject({status: "failed", exitCode: 2});
-    expect(harness.runner.calls).toHaveLength(0);
-  });
-
-  it("rejects a missing --engine value as a usage failure", async () => {
-    const harness = createHarness();
-
-    const execution = await harness.command.run(["start", "--engine"]);
-
-    expect(execution).toMatchObject({status: "failed", exitCode: 2});
-    expect(harness.runner.calls).toHaveLength(0);
-  });
-});
-
-describe("createSelfhostCommand entrypoint wiring", () => {
-  it("assigns an exit code through runIfMain() only when the module is the direct entrypoint", async () => {
-    const nonEntryHost = createTestProcessHost(["logs", "--engine", "podman"]);
-    const nonEntry = createHarness();
-    const nonEntryCommand = createSelfhostCommand({
-      runtimeFactory: {...nonEntry.runtimeFactory, processHost: {...nonEntryHost, isDirectEntry: (): boolean => false}},
-      bootstrap: nonEntry.bootstrap.bootstrap,
-      artifacts: nonEntry.artifacts,
-    });
-
-    await nonEntryCommand.runIfMain("file:///repo/scripts/container-runtime/selfhost.ts");
-    expect(nonEntryHost.assignedExitCodes).toEqual([]);
-
-    const entryHost = createTestProcessHost(["logs", "--engine", "podman"]);
-    const entry = createHarness();
-    const entryCommand = createSelfhostCommand({
-      runtimeFactory: {...entry.runtimeFactory, processHost: entryHost},
-      bootstrap: entry.bootstrap.bootstrap,
-      artifacts: entry.artifacts,
-    });
-
-    await entryCommand.runIfMain("file:///repo/scripts/container-runtime/selfhost.ts");
-    expect(entryHost.assignedExitCodes).toEqual([0]);
-  });
-
-  it.each(["--help", "-h", "/h"])("renders help for '%s' through the production singleton without running anything", async (flag) => {
-    await expect(selfhostCommand.run([flag])).resolves.toEqual({status: "help", exitCode: 0});
   });
 });

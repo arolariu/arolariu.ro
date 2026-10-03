@@ -17,7 +17,7 @@ import {commandCancellationFromSignal} from "../common/runtime.ts";
 import {getContainerAdapter, type ContainerRuntimeAdapter} from "./adapters.ts";
 import {runContainerPreflight} from "./preflight.ts";
 import {resolveRuntimeContainerEngine} from "./selection.ts";
-import type {AspireResult, ContainerEngine, ContainerEngineInput} from "./types.ts";
+import type {AspireResult, ContainerEngineInput} from "./types.ts";
 
 /** Aspire AppHost command with runtime-specific environment. */
 export interface AspireCommand {
@@ -104,19 +104,7 @@ async function executeAspire(context: Readonly<CommandContext>, input: Readonly<
 export function createAspireCommand(runtimeFactory?: CommandRuntimeFactory): MonorepoCommand<ContainerEngineInput, AspireResult> {
   return new MonorepoCommand<ContainerEngineInput, AspireResult>(
     {
-      metadata: {
-        name: "aspire",
-        description: "Starts the Aspire AppHost with the selected local container engine.",
-        usage: "[--engine <rancher|podman>]",
-        examples: ["npm run dev -- --engine rancher", "npm run dev -- --engine podman"],
-      },
-      configure: (program) => {
-        program.option("--engine <engine>", "Container engine to use (rancher or podman).");
-      },
-      decode: (program) => {
-        const {engine} = program.opts<{engine?: string}>();
-        return engine === undefined ? {} : {engine: engine as ContainerEngine};
-      },
+      metadata: {name: "aspire"},
       execute: executeAspire,
       completion: (result) => ({
         exitCode: 0,
@@ -127,7 +115,5 @@ export function createAspireCommand(runtimeFactory?: CommandRuntimeFactory): Mon
   );
 }
 
-/** Production singleton used by `npm run dev` and this module's direct entrypoint. */
+/** Production singleton used by `npm run dev`. */
 export const aspireCommand: MonorepoCommand<ContainerEngineInput, AspireResult> = createAspireCommand();
-
-await aspireCommand.runIfMain(import.meta.url);

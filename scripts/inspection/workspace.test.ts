@@ -10,13 +10,14 @@ import {tmpdir} from "node:os";
 import {join, resolve, sep} from "node:path";
 import {describe, expect, it, vi} from "vitest";
 
+import {CommandInputError} from "../common/commander.ts";
 import type {ProcessEnvironment, ProcessOutcome, ProcessOutput, ProcessRequest, ProcessRunner} from "../common/runner.ts";
 import {createNodeProcessRunner, nodeClock, nodeFileSystem, snapshotNodeEnvironment} from "../common/runtime.node.ts";
 import type {Clock, FileSystem, RuntimeEnvironment} from "../common/runtime.ts";
 import {createTestRuntimeFactory} from "../common/runtime.testing.ts";
 import {resolveRepositoryPaths} from "../common/repository-paths.ts";
 import {createWorkspaceProvider, projectNxGraph, type WorkspaceFacts} from "./workspace.ts";
-import {createWorkspaceWorkerCommand, projectWorkerDocument, workspaceWorkerCommand} from "./workspace.worker.ts";
+import {createWorkspaceWorkerCommand, decodeWorkerArgs, projectWorkerDocument, workspaceWorkerCommand} from "./workspace.worker.ts";
 
 // ============================================================================
 // Fixtures
@@ -448,22 +449,16 @@ describe("workspace worker document projection", () => {
 });
 
 describe("createWorkspaceWorkerCommand", () => {
-  it("rejects a missing repository root argument as invalid usage", async () => {
-    const command = createWorkspaceWorkerCommand(createTestRuntimeFactory());
-
-    const execution = await command.run([]);
-
-    expect(execution.status).toBe("failed");
-    expect(execution.exitCode).toBe(2);
+  it.each<readonly [string, readonly string[]]>([
+    ["a missing repository root argument", []],
+    ["more than one repository root argument", ["root-a", "root-b"]],
+    ["a blank repository root argument", ["   "]],
+  ])("rejects %s as invalid usage", (_label, argv) => {
+    expect(() => decodeWorkerArgs(argv)).toThrow(CommandInputError);
   });
 
-  it("rejects more than one repository root argument as invalid usage", async () => {
-    const command = createWorkspaceWorkerCommand(createTestRuntimeFactory());
-
-    const execution = await command.run(["root-a", "root-b"]);
-
-    expect(execution.status).toBe("failed");
-    expect(execution.exitCode).toBe(2);
+  it("decodes exactly one repository root argument", () => {
+    expect(decodeWorkerArgs([REPOSITORY_ROOT])).toEqual({repositoryRoot: REPOSITORY_ROOT});
   });
 
   it("fails without importing Nx when NX_WORKSPACE_ROOT_PATH is missing", async () => {
@@ -494,7 +489,7 @@ describe("createWorkspaceWorkerCommand", () => {
 
   it("exports one production singleton command for direct entry", () => {
     expect(workspaceWorkerCommand).toBeInstanceOf(Object);
-    expect(typeof workspaceWorkerCommand.runIfMain).toBe("function");
+    expect(typeof workspaceWorkerCommand.invoke).toBe("function");
     expect(workspaceWorkerCommand).not.toBe(createWorkspaceWorkerCommand());
   });
 });
@@ -644,6 +639,20 @@ describe("live snapshot helper", () => {
  */
 const LIVE_WORKSPACE_TIMEOUT_MS = 180_000;
 
+/**
+ * Environment for the live Nx provider case.
+ *
+ * @remarks
+ * Under full-suite parallel load the worker's Nx host can miss the 10-second plugin-worker load
+ * handshake (another suite file spawns `cli.ts doctor --quick`, which builds its own Nx graph at the
+ * same time). `NX_PLUGIN_NO_TIMEOUTS` lifts only that Nx-internal handshake timeout; the provider's
+ * own `WORKER_TIMEOUT_MS` still bounds the invocation.
+ */
+const liveWorkerEnvironment: RuntimeEnvironment = {
+  ...workerEnvironment,
+  variables: {...workerEnvironment.variables, NX_PLUGIN_NO_TIMEOUTS: "true"},
+};
+
 describe("createWorkspaceProvider live integration", () => {
   it(
     "reflects the current seven-project workspace graph and leaves top-level .nx files, .nx/workspace-data, and .arolariu unchanged",
@@ -656,9 +665,9 @@ describe("createWorkspaceProvider live integration", () => {
 
       const outcome = await createWorkspaceProvider({
         root: paths.root,
-        runner: createNodeProcessRunner(workerEnvironment),
+        runner: createNodeProcessRunner(liveWorkerEnvironment),
         clock: nodeClock,
-        environment: workerEnvironment,
+        environment: liveWorkerEnvironment,
         temporaryDirectories,
       })();
 

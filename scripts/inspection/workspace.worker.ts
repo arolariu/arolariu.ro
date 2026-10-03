@@ -9,8 +9,8 @@
  * its own working directory, never touches repository `.nx` state, and emits exactly one JSON
  * document on stdout and no other stdout output.
  *
- * The worker accepts only one fixed typed input (the repository root Commander decodes from its
- * single positional argument) and selects JSON presentation unconditionally: it exposes no
+ * The worker accepts only one fixed typed input (the repository root {@link decodeWorkerArgs} decodes
+ * from its single positional argument) and selects JSON presentation unconditionally: it exposes no
  * user-selected command, field list, or output mode. Its parent (`./workspace.ts`) classifies any
  * nonzero exit as an `unavailable` workspace outcome.
  */
@@ -95,6 +95,21 @@ async function collectWorkspaceWorkerDocument(
 }
 
 /**
+ * Decodes the worker's argv into its single fixed input.
+ *
+ * @param argv - Worker arguments after the executable and script path.
+ * @returns The decoded worker input.
+ * @throws {CommandInputError} When `argv` is not exactly one non-blank repository root.
+ */
+export function decodeWorkerArgs(argv: readonly string[]): WorkspaceWorkerInput {
+  const repositoryRoot = argv[0];
+  if (argv.length !== 1 || repositoryRoot === undefined || repositoryRoot.trim() === "") {
+    throw new CommandInputError("Nx workspace worker requires exactly one repository root argument.");
+  }
+  return {repositoryRoot};
+}
+
+/**
  * Creates the isolated Nx workspace worker command.
  *
  * @param runtimeFactory - Optional runtime factory; tests inject a fake instead of the Node adapter.
@@ -105,22 +120,7 @@ export function createWorkspaceWorkerCommand(
 ): MonorepoCommand<WorkspaceWorkerInput, WorkspaceWorkerDocument> {
   return new MonorepoCommand<WorkspaceWorkerInput, WorkspaceWorkerDocument>(
     {
-      metadata: {
-        name: "inspection-workspace-worker",
-        description: "Emits the isolated Nx project graph for one repository root as a single JSON document.",
-        usage: "<repositoryRoot>",
-      },
-      configure: (program) => {
-        program.argument("[repositoryRoot]", "Absolute repository root whose Nx project graph is constructed.");
-      },
-      decode: (program) => {
-        const repositoryRoot = program.args[0];
-        if (program.args.length !== 1 || repositoryRoot === undefined || repositoryRoot.trim() === "") {
-          throw new CommandInputError("Nx workspace worker requires exactly one repository root argument.");
-        }
-        return {repositoryRoot};
-      },
-      presentation: () => "json",
+      metadata: {name: "inspection-workspace-worker"},
       execute: collectWorkspaceWorkerDocument,
       completion: (document) => ({exitCode: 0, json: document}),
     },
@@ -132,4 +132,7 @@ export function createWorkspaceWorkerCommand(
 export const workspaceWorkerCommand: MonorepoCommand<WorkspaceWorkerInput, WorkspaceWorkerDocument> =
   createWorkspaceWorkerCommand();
 
-await workspaceWorkerCommand.runIfMain(import.meta.url);
+if (import.meta.main) {
+  const execution = await workspaceWorkerCommand.invoke(decodeWorkerArgs(process.argv.slice(2)), {presentation: "json"});
+  process.exitCode = execution.exitCode;
+}

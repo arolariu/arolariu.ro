@@ -31,9 +31,9 @@
  *
  * @example
  * ```bash
- * node scripts/status.ts          # full dashboard
- * node scripts/status.ts --json   # machine-readable JSON
- * node scripts/status.ts --help   # usage info
+ * node scripts/cli.ts status          # full dashboard
+ * node scripts/cli.ts status --json   # machine-readable JSON
+ * node scripts/cli.ts status --help   # usage info
  * ```
  */
 
@@ -980,19 +980,7 @@ export function createStatusCommand(dependencies: Readonly<StatusCommandDependen
 
   return new MonorepoCommand<StatusInput, StatusDocument>(
     {
-      metadata: {
-        name: "status",
-        description: "Collects and renders monorepo health, workspace, git, security, and disk data.",
-        examples: ["npm run status", "npm run status -- --json"],
-      },
-      configure: (program) => {
-        program.option("--json", "Output all collected data as a single JSON document.", false);
-      },
-      decode: (program) => {
-        const options = program.opts<{json?: boolean}>();
-        return {json: options.json === true};
-      },
-      presentation: (input) => (input.json ? "json" : "human"),
+      metadata: {name: "status"},
       execute: (context) => collectStatus(context, doctor),
       completion: (document) => ({
         exitCode: 0,
@@ -1006,7 +994,5 @@ export function createStatusCommand(dependencies: Readonly<StatusCommandDependen
   );
 }
 
-/** Production singleton used by `npm run status` and this module's direct entrypoint. */
+/** Production singleton used by `npm run status`. */
 export const statusCommand: MonorepoCommand<StatusInput, StatusDocument> = createStatusCommand();
-
-await statusCommand.runIfMain(import.meta.url);

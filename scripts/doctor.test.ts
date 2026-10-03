@@ -4,16 +4,12 @@
  * @module scripts.doctor.test
  *
  * @remarks
- * Every orchestrator test drives `doctorCommand.invoke()`/`run()` through an injected test
- * runtime factory whose filesystem is the in-memory repository fixture and whose inspection
- * registry hands out a deterministic session. No test in this file reads the live checkout,
- * spawns a real probe, or reaches a real network; only the direct-entrypoint smoke tests spawn
- * the real CLI.
+ * Every orchestrator test drives `doctorCommand.invoke()` through an injected test runtime
+ * factory whose filesystem is the in-memory repository fixture and whose inspection registry
+ * hands out a deterministic session. No test in this file reads the live checkout, spawns a real
+ * probe, or reaches a real network.
  */
 
-import {spawn} from "node:child_process";
-import {resolve} from "node:path";
-import {fileURLToPath} from "node:url";
 import {afterEach, describe, expect, it, vi, type Mock} from "vitest";
 
 const {renderDoctorReportMock} = vi.hoisted(() => ({
@@ -737,53 +733,6 @@ describe("doctorCommand.invoke", () => {
   });
 });
 
-describe("doctorCommand.run", () => {
-  it.each(["--help", "-h", "/h", "/help", "/?"])("renders help and exits 0 for '%s'", async (flag) => {
-    const fixture = createDoctorFixture();
-
-    const execution = await fixture.command.run([flag]);
-
-    expect(execution.status).toBe("help");
-    expect(execution.exitCode).toBe(0);
-    for (const moduleId of expectedModuleOrder) {
-      expect(fixture.calls[moduleId]).not.toHaveBeenCalled();
-    }
-  });
-
-  it.each([
-    ["--verbose", {verbose: true, quick: false}],
-    ["-v", {verbose: true, quick: false}],
-    ["/v", {verbose: true, quick: false}],
-    ["--quick", {verbose: false, quick: true}],
-    ["/q", {verbose: false, quick: true}],
-  ] as const)("decodes '%s' into typed doctor input", async (flag, expected) => {
-    const fixture = createDoctorFixture();
-
-    await fixture.command.run([flag]);
-
-    expect(moduleContext(fixture.calls["workspace"]).options).toEqual(expected);
-  });
-
-  it("decodes every flag together", async () => {
-    const fixture = createDoctorFixture();
-
-    await fixture.command.run(["/q", "/v"]);
-
-    expect(moduleContext(fixture.calls["workspace"]).options).toEqual({quick: true, verbose: true});
-  });
-
-  it.each(["--ci", "--json", "--score", "--bogus", "workspace"])("rejects '%s' as a usage failure", async (argument) => {
-    const fixture = createDoctorFixture();
-
-    const execution = await fixture.command.run([argument]);
-
-    expect(execution.status).toBe("failed");
-    expect(execution.exitCode).toBe(2);
-    for (const moduleId of expectedModuleOrder) {
-      expect(fixture.calls[moduleId]).not.toHaveBeenCalled();
-    }
-  });
-});
 
 describe("module-error weighting", () => {
   const workspaceOrdinaryIds = Object.keys(diagnosticWeights).filter(
@@ -827,43 +776,5 @@ describe("module-error weighting", () => {
     ]);
 
     expect(denominatorShrinkScenario).toBeGreaterThan(crashScenario);
-  });
-});
-
-describe("direct entrypoint", () => {
-  const doctorEntrypoint = fileURLToPath(new URL("./doctor.ts", import.meta.url));
-
-  function runDirect(args: readonly string[]): Promise<Readonly<{code: number | null; output: string}>> {
-    return new Promise((resolveProcess, rejectProcess) => {
-      const child = spawn(process.execPath, [doctorEntrypoint, ...args], {
-        cwd: resolve(doctorEntrypoint, "..", ".."),
-        stdio: ["ignore", "pipe", "pipe"],
-      });
-      let output = "";
-      child.stdout.on("data", (chunk: Buffer) => {
-        output += chunk.toString("utf8");
-      });
-      child.stderr.on("data", (chunk: Buffer) => {
-        output += chunk.toString("utf8");
-      });
-      child.once("error", rejectProcess);
-      child.once("close", (code) => {
-        resolveProcess({code, output});
-      });
-    });
-  }
-
-  it("emits help and exits 0 for a direct process invocation of --help", async () => {
-    const result = await runDirect(["--help"]);
-
-    expect(result.code).toBe(0);
-    expect(result.output).toMatch(/Usage:/);
-  });
-
-  it("emits a usage diagnostic and exits 2 for a direct process invocation of an unknown flag", async () => {
-    const result = await runDirect(["--bogus"]);
-
-    expect(result.code).toBe(2);
-    expect(result.output).toMatch(/unknown option/i);
   });
 });

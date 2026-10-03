@@ -262,45 +262,7 @@ export function createGenerateCommand(
 ): MonorepoCommand<GenerateInput, GenerateResult> {
   return new MonorepoCommand<GenerateInput, GenerateResult>(
     {
-      metadata: {
-        name: "generate",
-        description: "Generation orchestrator for monorepo build artifacts.",
-        examples: [
-          "npm run generate /env /artifacts",
-          "npm run generate --env --i18n --artifacts --verbose",
-          "npm run generate -e -g -a -v",
-        ],
-        slashAliases: {
-          "/v": "--verbose",
-          "/verbose": "--verbose",
-          "/e": "--env",
-          "/env": "--env",
-          "/i": "--i18n",
-          "/i18n": "--i18n",
-          "/g": "--gql",
-          "/gql": "--gql",
-          "/a": "--artifacts",
-          "/artifacts": "--artifacts",
-        },
-      },
-      configure: (program) => {
-        program
-          .option("-v, --verbose", "Enable verbose logging. 🔊")
-          .option("-e, --env", "Generate environment configuration file (.env). ☁️")
-          .option("-i, --i18n", "Synchronize translation keys (messages). 🌍")
-          .option("-g, --gql", "Generate GraphQL type artifacts. 🧬")
-          .option("-a, --artifacts", "Generate taxonomy and license artifacts. 🏷️");
-      },
-      decode: (program) => {
-        const options = program.opts<{verbose?: boolean; env?: boolean; i18n?: boolean; gql?: boolean; artifacts?: boolean}>();
-        return {
-          verbose: options.verbose === true,
-          env: options.env === true,
-          i18n: options.i18n === true,
-          gql: options.gql === true,
-          artifacts: options.artifacts === true,
-        };
-      },
+      metadata: {name: "generate"},
       execute: (context, input) => executeGenerate(dependencies, context, input),
       completion: (result) => ({
         exitCode: result.failed === undefined ? 0 : 1,
@@ -327,12 +289,10 @@ export function createGenerateCommand(
   );
 }
 
-/** Production singleton used by `npm run generate` and this module's direct entrypoint. */
+/** Production singleton used by `npm run generate`. */
 export const generateCommand: MonorepoCommand<GenerateInput, GenerateResult> = createGenerateCommand({
   env: generateEnvironmentCommand,
   i18n: generateI18nCommand,
   gql: generateGraphqlCommand,
   artifacts: generateArtifactsCommand,
 });
-
-await generateCommand.runIfMain(import.meta.url);

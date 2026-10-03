@@ -125,25 +125,15 @@ describe("createAspireCommand", () => {
     expect(runner.calls).toHaveLength(0);
   });
 
-  describe("parser lifecycle", () => {
-    it("decodes an explicit --engine argument and starts AppHost", async () => {
+  describe("human invocation", () => {
+    it("starts AppHost with an explicit engine", async () => {
       const runner = createProcessRunner([...rancherPreflightOutcomes, succeeded()]);
       const command = createAspireCommand(createTestRuntimeFactory({runner}));
 
-      const execution = await command.run(["--engine", "rancher"]);
+      const execution = await command.invoke({engine: "rancher"}, {presentation: "human"});
 
       expect(execution).toMatchObject({status: "completed", exitCode: 0});
       expect(runner.calls.at(-1)?.request).toEqual({command: "dotnet", args: ["run", "--project", "tooling/AppHost"]});
-    });
-
-    it("rejects an unknown option as a usage failure instead of throwing", async () => {
-      const runner = createProcessRunner();
-      const command = createAspireCommand(createTestRuntimeFactory({runner}));
-
-      const execution = await command.run(["--bogus"]);
-
-      expect(execution).toMatchObject({status: "failed", exitCode: 2});
-      expect(runner.calls).toHaveLength(0);
     });
   });
 });

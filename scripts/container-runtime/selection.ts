@@ -15,7 +15,7 @@ const supportedEngines: ReadonlySet<string> = new Set(["rancher", "podman"]);
  *
  * @remarks
  * `requestedEngine` is supplied explicitly by the caller (typically a parsed
- * Commander CLI option); this module never inspects `process.argv` itself.
+ * CLI option); this module never inspects `process.argv` itself.
  */
 export interface RuntimeSelectionInput {
   readonly requestedEngine?: ContainerEngine;
@@ -94,7 +94,7 @@ export function resolveContainerEngine(inputs: SelectionInputs): ContainerEngine
  * @remarks
  * Priority order is an explicitly supplied `requestedEngine`, then the
  * `AROLARIU_CONTAINER_ENGINE` environment variable, then persisted local
- * tooling configuration. Callers (Commander-parsed CLI entry points) supply
+ * tooling configuration. Callers (CLI entry points) supply
  * `requestedEngine` explicitly; this function never reads `process.argv`.
  *
  * @param input - Explicit engine request, environment, and local tooling configuration path.

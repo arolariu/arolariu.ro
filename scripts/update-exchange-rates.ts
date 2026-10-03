@@ -161,8 +161,8 @@ const EARLIEST_SUPPORTED_YEAR = 2018;
  * must default to the current year.
  *
  * @remarks
- * `decode()` runs before any runtime scope exists, so it has no {@link Clock} to resolve "the
- * current year" against. The value is deliberately not a valid year: it is never read (the
+ * {@link decodeExchangeRateInput} runs before any runtime scope exists, so it has no
+ * {@link Clock} to resolve "the current year" against. The value is deliberately not a valid year: it is never read (the
  * identity registry below decides), and it fails upper-bound validation loudly if it ever escapes.
  */
 const CURRENT_YEAR_PLACEHOLDER = Number.POSITIVE_INFINITY;
@@ -281,7 +281,7 @@ function requireOrderedRange(fromYear: number, toYear: number): void {
 }
 
 /**
- * Converts parsed Commander option strings into a typed year range.
+ * Converts parsed CLI option strings into a typed year range.
  *
  * @remarks
  * Rejects non-integer year values, years below {@link EARLIEST_SUPPORTED_YEAR}, and — whenever both
@@ -289,7 +289,7 @@ function requireOrderedRange(fromYear: number, toYear: number): void {
  * current-year upper bound, which is meaningless without "today", is deferred to
  * `updateExchangeRates` and the injected {@link Clock}.
  *
- * @param opts - Raw string options extracted from Commander's parsed output.
+ * @param opts - Raw string options extracted from the parsed CLI flags.
  * @returns A year range; when neither `--year` nor `--to` was supplied, the returned object is
  * registered as carrying a defaulted upper bound.
  * @throws {CommandInputError} When a year value fails integer or lower-bound validation, or when
@@ -316,8 +316,8 @@ export function decodeExchangeRateInput(opts: Readonly<{year?: string; from?: st
  * remaining invariant.
  *
  * @remarks
- * `invoke()` bypasses `decode()`, so this is the only validation point for programmatic input: both
- * bounds are re-checked here, and the current-year default applies exclusively to the parser-produced
+ * `invoke()` bypasses {@link decodeExchangeRateInput}, so this is the only validation point for
+ * programmatic input: both bounds are re-checked here, and the current-year default applies exclusively to the parser-produced
  * range registered in {@link parserDefaultedUpperBound}.
  *
  * @param input - Decoded or programmatic year range.
@@ -530,7 +530,7 @@ async function writeCSV(files: FileSystem, csvPath: string, records: RateRecord[
  *
  * @param context - Command context providing HTTP, filesystem, clock, and cancellation capabilities.
  * @param input - Decoded or programmatic year range; both bounds are validated here because
- * `invoke()` never runs `decode()`.
+ * `invoke()` never runs {@link decodeExchangeRateInput}.
  * @returns The years attempted, the years successfully updated, and any per-year failures.
  * @throws {CommandInputError} When either bound is not a supported year, or the resolved year range
  * violates the current-year upper bound or the `fromYear <= toYear` invariant.
@@ -596,22 +596,7 @@ export function createUpdateExchangeRatesCommand(
 ): MonorepoCommand<ExchangeRateInput, ExchangeRateResult> {
   return new MonorepoCommand<ExchangeRateInput, ExchangeRateResult>(
     {
-      metadata: {
-        name: "update-exchange-rates",
-        description: "Fetches yearly exchange rate averages from the Frankfurter API and writes them to CSV.",
-        examples: [
-          "npm run update-exchange-rates",
-          "npm run update-exchange-rates -- --year 2025",
-          "npm run update-exchange-rates -- --from 2020 --to 2025",
-        ],
-      },
-      configure: (program) => {
-        program
-          .option("--year <year>", `Fetch a single year (${EARLIEST_SUPPORTED_YEAR}-current).`)
-          .option("--from <year>", `Starting year (default: ${EARLIEST_SUPPORTED_YEAR}).`)
-          .option("--to <year>", "Ending year (default: current year).");
-      },
-      decode: (program) => decodeExchangeRateInput(program.opts<{year?: string; from?: string; to?: string}>()),
+      metadata: {name: "update-exchange-rates"},
       execute: updateExchangeRates,
       completion: (result) => {
         const exitCode = result.failedYears.length > 0 ? 1 : 0;
@@ -633,8 +618,6 @@ export function createUpdateExchangeRatesCommand(
   );
 }
 
-/** Production singleton used by the aggregate CLI and this module's direct entrypoint. */
+/** Production singleton used by the aggregate CLI. */
 export const updateExchangeRatesCommand: MonorepoCommand<ExchangeRateInput, ExchangeRateResult> =
   createUpdateExchangeRatesCommand();
-
-await updateExchangeRatesCommand.runIfMain(import.meta.url);

@@ -26,10 +26,10 @@
  *
  * @example
  * ```bash
- * node --experimental-strip-types scripts/doctor.ts
- * node --experimental-strip-types scripts/doctor.ts --verbose
- * node --experimental-strip-types scripts/doctor.ts --quick
- * node --experimental-strip-types scripts/doctor.ts --help
+ * node scripts/cli.ts doctor
+ * node scripts/cli.ts doctor --verbose
+ * node scripts/cli.ts doctor --quick
+ * node scripts/cli.ts doctor --help
  * ```
  */
 
@@ -357,21 +357,7 @@ export function createDoctorCommand(dependencies: Readonly<DoctorCommandDependen
 
   return new MonorepoCommand<DoctorInput, DoctorReport>(
     {
-      metadata: {
-        name: "doctor",
-        description: "Runs read-only workspace health diagnostics across every bounded context.",
-        slashAliases: {"/v": "--verbose", "/q": "--quick", "/?": "--help"},
-        examples: ["npm run doctor", "npm run doctor -- --verbose", "npm run doctor -- --quick"],
-      },
-      configure: (program) => {
-        program
-          .option("-v, --verbose", "Show diagnostic evidence for every check.", false)
-          .option("--quick", "Skip slower and network-dependent checks.", false);
-      },
-      decode: (program) => {
-        const options = program.opts<{verbose?: boolean; quick?: boolean}>();
-        return {verbose: options.verbose === true, quick: options.quick === true};
-      },
+      metadata: {name: "doctor"},
       execute: (context, input) => executeDoctor(context, input, modules === undefined ? {} : {modules}),
       completion: (report) => ({
         exitCode: report.summary.failed > 0 ? 1 : 0,
@@ -385,7 +371,5 @@ export function createDoctorCommand(dependencies: Readonly<DoctorCommandDependen
   );
 }
 
-/** Production singleton used by the aggregate CLI and this module's direct entrypoint. */
+/** Production singleton used by the aggregate CLI. */
 export const doctorCommand: MonorepoCommand<DoctorInput, DoctorReport> = createDoctorCommand();
-
-await doctorCommand.runIfMain(import.meta.url);

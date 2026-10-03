@@ -69,7 +69,7 @@ function describeOutcomeFailure(outcome: Readonly<Exclude<ProcessOutcome, {reado
  * A cancelled invocation's exact SIGINT/SIGTERM exit code (`130`/`143`) is owned by its own
  * {@link CommandCancellation} reason; letting a cancelled preflight probe fall through to a
  * generic tool-unavailable message would misreport an interrupted invocation as an operational
- * failure and the shared Commander lifecycle would classify it as exit code `1`. A
+ * failure and the shared command lifecycle would classify it as exit code `1`. A
  * `{kind:"cancelled"}` outcome observed while `signal` is not the invocation's own aborted signal
  * is not this invocation's cancellation and stays an operational failure.
  *

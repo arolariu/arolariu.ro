@@ -538,37 +538,4 @@ describe("createDocsAssembleCommand", () => {
     expect(await files.exists(GENERATED_ROOT)).toBe(false);
   });
 
-  // ==========================================================================
-  // Help and argument parsing
-  // ==========================================================================
-
-  it("reports help for --help instead of running any extractor", async () => {
-    const runnerThatMustNotBeCalled = new DocumentationFixtureRunner(createMemoryFileSystem());
-    const command = createDocsAssembleCommand(createTestRuntimeFactory({runner: runnerThatMustNotBeCalled}));
-
-    const execution = await command.run(["--help"]);
-
-    expect(execution).toEqual({status: "help", exitCode: 0});
-    expect(runnerThatMustNotBeCalled.calls).toHaveLength(0);
-  });
-
-  it("rejects an unknown option without invoking any extractor", async () => {
-    const runnerThatMustNotBeCalled = new DocumentationFixtureRunner(createMemoryFileSystem());
-    const command = createDocsAssembleCommand(createTestRuntimeFactory({runner: runnerThatMustNotBeCalled}));
-
-    const execution = await command.run(["--bogus"]);
-
-    expect(execution).toMatchObject({status: "failed", exitCode: 2, failure: {kind: "usage"}});
-    expect(runnerThatMustNotBeCalled.calls).toHaveLength(0);
-  });
-
-  it("rejects an excess positional argument without invoking any extractor", async () => {
-    const runnerThatMustNotBeCalled = new DocumentationFixtureRunner(createMemoryFileSystem());
-    const command = createDocsAssembleCommand(createTestRuntimeFactory({runner: runnerThatMustNotBeCalled}));
-
-    const execution = await command.run(["unexpected-arg"]);
-
-    expect(execution).toMatchObject({status: "failed", exitCode: 2, failure: {kind: "usage"}});
-    expect(runnerThatMustNotBeCalled.calls).toHaveLength(0);
-  });
 });

@@ -82,14 +82,14 @@ describe("doctor runtime immutability", () => {
     const arolaruExistedBefore = existsSync(arolaruPath);
     const snapshotBefore = snapshotSentinelFiles(root);
 
-    const entrypoint = fileURLToPath(new URL("./doctor.ts", import.meta.url));
+    const entrypoint = fileURLToPath(new URL("./cli.ts", import.meta.url));
     const {exitCode, signal, stdout, stderr} = await new Promise<{
       exitCode: number | null;
       signal: NodeJS.Signals | null;
       stdout: string;
       stderr: string;
     }>((resolvePromise, reject) => {
-      const child = spawn(process.execPath, [entrypoint, "--quick"], {
+      const child = spawn(process.execPath, [entrypoint, "doctor", "--quick"], {
         cwd: root,
         stdio: ["ignore", "pipe", "pipe"],
         env: {...process.env, FORCE_COLOR: "0"},

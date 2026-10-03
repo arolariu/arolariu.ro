@@ -13,15 +13,15 @@
 import {join} from "node:path";
 import {describe, expect, it} from "vitest";
 
+import {CommandInputError} from "./common/commander.ts";
 import {CommandCancellation, type Clock, type HttpClient, type HttpRequest} from "./common/runtime.ts";
 import {
   createHttpResponse,
   createMemoryFileSystem,
-  createTestProcessHost,
   createTestRuntimeFactory,
   repositoryFixtureRoot,
 } from "./common/runtime.testing.ts";
-import {createUpdateExchangeRatesCommand} from "./update-exchange-rates.ts";
+import {createUpdateExchangeRatesCommand, decodeExchangeRateInput} from "./update-exchange-rates.ts";
 
 const CSV_PATH = join(repositoryFixtureRoot, "sites", "arolariu.ro", "public", "data", "exchange-rates.csv");
 
@@ -50,7 +50,7 @@ describe("createUpdateExchangeRatesCommand decode", () => {
         createTestRuntimeFactory({clock: fixedClock("2020-03-01T00:00:00.000Z"), http, files: createMemoryFileSystem()}),
       );
 
-      const execution = await command.run([]);
+      const execution = await command.invoke(decodeExchangeRateInput({}), {presentation: "human"});
 
       expect(execution).toMatchObject({
         status: "completed",
@@ -67,33 +67,25 @@ describe("createUpdateExchangeRatesCommand decode", () => {
         createTestRuntimeFactory({clock: fixedClock("2025-06-01T00:00:00.000Z"), http, files: createMemoryFileSystem()}),
       );
 
-      const execution = await command.run(["--year", "2023"]);
+      const execution = await command.invoke(decodeExchangeRateInput({year: "2023"}), {presentation: "human"});
 
       expect(execution).toMatchObject({status: "completed", exitCode: 0, value: {years: [2023]}});
     });
 
-    it.each(["2023.5", "abc"])("rejects a non-integer value (%s)", async (value) => {
-      const command = createUpdateExchangeRatesCommand(createTestRuntimeFactory());
-
-      const execution = await command.run(["--year", value]);
-
-      expect(execution).toMatchObject({status: "failed", exitCode: 2, failure: {kind: "usage"}});
-      expect(execution.status === "failed" ? execution.failure.message : "").toMatch(/integer/i);
+    it.each(["2023.5", "abc"])("rejects a non-integer value (%s) during decode", (value) => {
+      expect(() => decodeExchangeRateInput({year: value})).toThrow(CommandInputError);
+      expect(() => decodeExchangeRateInput({year: value})).toThrow(/integer/i);
     });
 
-    it("rejects a year below the supported minimum (2018)", async () => {
-      const command = createUpdateExchangeRatesCommand(createTestRuntimeFactory());
-
-      const execution = await command.run(["--year", "2015"]);
-
-      expect(execution).toMatchObject({status: "failed", exitCode: 2});
-      expect(execution.status === "failed" ? execution.failure.message : "").toMatch(/2018/);
+    it("rejects a year below the supported minimum (2018) during decode", () => {
+      expect(() => decodeExchangeRateInput({year: "2015"})).toThrow(CommandInputError);
+      expect(() => decodeExchangeRateInput({year: "2015"})).toThrow(/2018/);
     });
 
     it("rejects a year above the injected clock's current year", async () => {
       const command = createUpdateExchangeRatesCommand(createTestRuntimeFactory({clock: fixedClock("2025-06-01T00:00:00.000Z")}));
 
-      const execution = await command.run(["--year", "2026"]);
+      const execution = await command.invoke(decodeExchangeRateInput({year: "2026"}), {presentation: "human"});
 
       expect(execution).toMatchObject({status: "failed", exitCode: 2});
       expect(execution.status === "failed" ? execution.failure.message : "").toMatch(/2025/);
@@ -105,7 +97,7 @@ describe("createUpdateExchangeRatesCommand decode", () => {
         createTestRuntimeFactory({clock: fixedClock("2025-06-01T00:00:00.000Z"), http, files: createMemoryFileSystem()}),
       );
 
-      const execution = await command.run(["--year", "2018"]);
+      const execution = await command.invoke(decodeExchangeRateInput({year: "2018"}), {presentation: "human"});
 
       expect(execution).toMatchObject({status: "completed", exitCode: 0, value: {years: [2018]}});
     });
@@ -116,7 +108,7 @@ describe("createUpdateExchangeRatesCommand decode", () => {
         createTestRuntimeFactory({clock: fixedClock("2025-06-01T00:00:00.000Z"), http, files: createMemoryFileSystem()}),
       );
 
-      const execution = await command.run(["--year", "2025"]);
+      const execution = await command.invoke(decodeExchangeRateInput({year: "2025"}), {presentation: "human"});
 
       expect(execution).toMatchObject({status: "completed", exitCode: 0, value: {years: [2025]}});
     });
@@ -129,17 +121,13 @@ describe("createUpdateExchangeRatesCommand decode", () => {
         createTestRuntimeFactory({clock: fixedClock("2025-06-01T00:00:00.000Z"), http, files: createMemoryFileSystem()}),
       );
 
-      const execution = await command.run(["--from", "2020", "--to", "2021"]);
+      const execution = await command.invoke(decodeExchangeRateInput({from: "2020", to: "2021"}), {presentation: "human"});
 
       expect(execution).toMatchObject({status: "completed", exitCode: 0, value: {years: [2020, 2021]}});
     });
 
-    it("rejects from > to", async () => {
-      const command = createUpdateExchangeRatesCommand(createTestRuntimeFactory({clock: fixedClock("2025-06-01T00:00:00.000Z")}));
-
-      const execution = await command.run(["--from", "2025", "--to", "2020"]);
-
-      expect(execution).toMatchObject({status: "failed", exitCode: 2});
+    it("rejects from > to during decode", () => {
+      expect(() => decodeExchangeRateInput({from: "2025", to: "2020"})).toThrow(CommandInputError);
     });
 
     it("accepts from === to", async () => {
@@ -148,36 +136,28 @@ describe("createUpdateExchangeRatesCommand decode", () => {
         createTestRuntimeFactory({clock: fixedClock("2025-06-01T00:00:00.000Z"), http, files: createMemoryFileSystem()}),
       );
 
-      const execution = await command.run(["--from", "2022", "--to", "2022"]);
+      const execution = await command.invoke(decodeExchangeRateInput({from: "2022", to: "2022"}), {presentation: "human"});
 
       expect(execution).toMatchObject({status: "completed", exitCode: 0, value: {years: [2022]}});
     });
 
     it.each([
-      ["--from", "abc"],
-      ["--to", "abc"],
-    ])("rejects a non-integer %s value", async (flag, value) => {
-      const command = createUpdateExchangeRatesCommand(createTestRuntimeFactory());
-
-      const execution = await command.run([flag, value]);
-
-      expect(execution).toMatchObject({status: "failed", exitCode: 2});
-      expect(execution.status === "failed" ? execution.failure.message : "").toMatch(/integer/i);
+      ["--from", {from: "abc"}],
+      ["--to", {to: "abc"}],
+    ] as const)("rejects a non-integer %s value during decode", (_flag, options) => {
+      expect(() => decodeExchangeRateInput(options)).toThrow(CommandInputError);
+      expect(() => decodeExchangeRateInput(options)).toThrow(/integer/i);
     });
 
-    it("rejects --from below the supported minimum", async () => {
-      const command = createUpdateExchangeRatesCommand(createTestRuntimeFactory());
-
-      const execution = await command.run(["--from", "2015"]);
-
-      expect(execution).toMatchObject({status: "failed", exitCode: 2});
-      expect(execution.status === "failed" ? execution.failure.message : "").toMatch(/2018/);
+    it("rejects --from below the supported minimum during decode", () => {
+      expect(() => decodeExchangeRateInput({from: "2015"})).toThrow(CommandInputError);
+      expect(() => decodeExchangeRateInput({from: "2015"})).toThrow(/2018/);
     });
 
     it("rejects --to above the injected clock's current year", async () => {
       const command = createUpdateExchangeRatesCommand(createTestRuntimeFactory({clock: fixedClock("2025-06-01T00:00:00.000Z")}));
 
-      const execution = await command.run(["--to", "2026"]);
+      const execution = await command.invoke(decodeExchangeRateInput({to: "2026"}), {presentation: "human"});
 
       expect(execution).toMatchObject({status: "failed", exitCode: 2});
     });
@@ -188,7 +168,7 @@ describe("createUpdateExchangeRatesCommand decode", () => {
         createTestRuntimeFactory({clock: fixedClock("2025-06-01T00:00:00.000Z"), http, files: createMemoryFileSystem()}),
       );
 
-      const execution = await command.run(["--to", "2018"]);
+      const execution = await command.invoke(decodeExchangeRateInput({to: "2018"}), {presentation: "human"});
 
       expect(execution).toMatchObject({status: "completed", exitCode: 0, value: {years: [2018]}});
     });
@@ -199,13 +179,13 @@ describe("createUpdateExchangeRatesCommand decode", () => {
         createTestRuntimeFactory({clock: fixedClock("2020-03-01T00:00:00.000Z"), http, files: createMemoryFileSystem()}),
       );
 
-      const execution = await command.run(["--from", "2020"]);
+      const execution = await command.invoke(decodeExchangeRateInput({from: "2020"}), {presentation: "human"});
 
       expect(execution).toMatchObject({status: "completed", exitCode: 0, value: {years: [2020]}});
     });
   });
 
-  describe("invalid ranges supplied directly through invoke(), bypassing decode()", () => {
+  describe("invalid ranges supplied directly through invoke(), bypassing decodeExchangeRateInput", () => {
     it("rejects fromYear > toYear with a usage failure", async () => {
       const command = createUpdateExchangeRatesCommand(createTestRuntimeFactory({clock: fixedClock("2025-01-01T00:00:00.000Z")}));
 
@@ -265,44 +245,8 @@ describe("createUpdateExchangeRatesCommand decode", () => {
   });
 
   describe("range invariants knowable without a clock", () => {
-    it("rejects --from > --to during decode, before any runtime scope exists", async () => {
-      const command = createUpdateExchangeRatesCommand({
-        ...createTestRuntimeFactory({clock: fixedClock("2025-06-01T00:00:00.000Z")}),
-        createRoot: () => Promise.reject(new Error("No runtime scope may be created for an already-invalid range.")),
-      });
-
-      const execution = await command.run(["--from", "2025", "--to", "2020"]);
-
-      expect(execution).toMatchObject({status: "failed", exitCode: 2, failure: {kind: "usage"}});
-      expect(execution.status === "failed" ? execution.failure.message : "").toMatch(/2025[\s\S]*2020/);
-    });
-  });
-
-  describe("unknown options", () => {
-    it("rejects unknown options", async () => {
-      const command = createUpdateExchangeRatesCommand(createTestRuntimeFactory());
-
-      const execution = await command.run(["--unknown"]);
-
-      expect(execution).toMatchObject({status: "failed", exitCode: 2, failure: {kind: "usage"}});
-    });
-
-    it("rejects unknown options even when valid options are also present", async () => {
-      const command = createUpdateExchangeRatesCommand(createTestRuntimeFactory());
-
-      const execution = await command.run(["--year", "2023", "--unknown"]);
-
-      expect(execution).toMatchObject({status: "failed", exitCode: 2, failure: {kind: "usage"}});
-    });
-  });
-
-  describe("help behavior", () => {
-    it.each(["--help", "-h"])("reports help for %s instead of running", async (flag) => {
-      const command = createUpdateExchangeRatesCommand(createTestRuntimeFactory());
-
-      const execution = await command.run([flag]);
-
-      expect(execution).toEqual({status: "help", exitCode: 0});
+    it("rejects --from > --to during decode, before any runtime scope exists", () => {
+      expect(() => decodeExchangeRateInput({from: "2025", to: "2020"})).toThrow(/2025[\s\S]*2020/);
     });
   });
 });
@@ -434,7 +378,7 @@ describe("createUpdateExchangeRatesCommand business behavior", () => {
     const files = createMemoryFileSystem();
     const command = createUpdateExchangeRatesCommand(createTestRuntimeFactory({clock: fixedClock("2024-01-01T00:00:00.000Z"), http, files}));
 
-    const execution = await command.run(["--year", "2023"]);
+    const execution = await command.invoke(decodeExchangeRateInput({year: "2023"}), {presentation: "human"});
 
     expect(execution).toMatchObject({status: "completed", exitCode: 0});
     const written = await files.readText(CSV_PATH);
@@ -459,7 +403,7 @@ describe("createUpdateExchangeRatesCommand business behavior", () => {
     const http: HttpClient = {request: async () => createHttpResponse(200, ratesJson)};
     const command = createUpdateExchangeRatesCommand(createTestRuntimeFactory({clock: fixedClock("2024-12-31T00:00:00.000Z"), http, files}));
 
-    const execution = await command.run(["--year", "2024"]);
+    const execution = await command.invoke(decodeExchangeRateInput({year: "2024"}), {presentation: "human"});
 
     expect(execution).toMatchObject({status: "completed", exitCode: 0});
     const written = await files.readText(CSV_PATH);
@@ -469,31 +413,5 @@ describe("createUpdateExchangeRatesCommand business behavior", () => {
     // The stale 2024 USD average is replaced by the freshly computed one, not merged with it.
     expect(lines).not.toContain("2024,USD,4.9");
     expect(lines.some((line) => line.startsWith("2024,USD,"))).toBe(true);
-  });
-});
-
-// ---------------------------------------------------------------------------
-// runIfMain entrypoint wiring
-// ---------------------------------------------------------------------------
-
-describe("createUpdateExchangeRatesCommand runIfMain", () => {
-  it("assigns an exit code through runIfMain() only when the module is the direct entrypoint", async () => {
-    const http: HttpClient = {request: async () => createHttpResponse(200, emptyRatesJson)};
-
-    const nonEntryProcessHost = createTestProcessHost(["--year", "2024"]);
-    const nonEntryCommand = createUpdateExchangeRatesCommand({
-      ...createTestRuntimeFactory({clock: fixedClock("2024-01-01T00:00:00.000Z"), http, files: createMemoryFileSystem()}),
-      processHost: {...nonEntryProcessHost, isDirectEntry: (): boolean => false},
-    });
-    await nonEntryCommand.runIfMain("file:///repo/scripts/update-exchange-rates.ts");
-    expect(nonEntryProcessHost.assignedExitCodes).toEqual([]);
-
-    const entryProcessHost = createTestProcessHost(["--year", "2024"]);
-    const entryCommand = createUpdateExchangeRatesCommand({
-      ...createTestRuntimeFactory({clock: fixedClock("2024-01-01T00:00:00.000Z"), http, files: createMemoryFileSystem()}),
-      processHost: entryProcessHost,
-    });
-    await entryCommand.runIfMain("file:///repo/scripts/update-exchange-rates.ts");
-    expect(entryProcessHost.assignedExitCodes).toEqual([0]);
   });
 });

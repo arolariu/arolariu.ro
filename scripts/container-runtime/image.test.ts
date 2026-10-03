@@ -195,44 +195,13 @@ describe("createImageCommand", () => {
     expect(runner.calls).toHaveLength(podmanPreflightOutcomes.length + 1);
   });
 
-  describe("parser lifecycle", () => {
-    it("reports a clean target error when --target is missing", async () => {
-      const runner = createProcessRunner();
-      const command = createImageCommand({runtimeFactory: createTestRuntimeFactory({runner})});
-
-      const execution = await command.run(["build", "--engine", "podman"]);
-
-      expect(execution).toMatchObject({status: "failed", exitCode: 2});
-      expect(execution.status === "failed" ? execution.failure.message : "").toBe("Use --target frontend|backend|cv|exp");
-      expect(runner.calls).toHaveLength(0);
-    });
-
-    it("reports a clean action error when build/run is missing", async () => {
-      const runner = createProcessRunner();
-      const command = createImageCommand({runtimeFactory: createTestRuntimeFactory({runner})});
-
-      const execution = await command.run(["--target", "backend", "--engine", "podman"]);
-
-      expect(execution).toMatchObject({status: "failed", exitCode: 2});
-      expect(execution.status === "failed" ? execution.failure.message : "").toBe("Use build or run as the first argument.");
-    });
-
-    it("rejects an unknown option as a usage failure instead of throwing", async () => {
-      const runner = createProcessRunner();
-      const command = createImageCommand({runtimeFactory: createTestRuntimeFactory({runner})});
-
-      const execution = await command.run(["--bogus"]);
-
-      expect(execution).toMatchObject({status: "failed", exitCode: 2});
-      expect(runner.calls).toHaveLength(0);
-    });
-
-    it("decodes build/target/engine end to end", async () => {
+  describe("human invocation", () => {
+    it("builds a target end to end after the artifact prerequisite", async () => {
       const runner = createProcessRunner([...podmanPreflightOutcomes, succeeded()]);
       const artifacts = createArtifactsStub();
       const command = createImageCommand({runtimeFactory: createTestRuntimeFactory({runner}), artifacts});
 
-      const execution = await command.run(["build", "--target", "backend", "--engine", "podman"]);
+      const execution = await command.invoke({action: "build", target: "backend", engine: "podman"}, {presentation: "human"});
 
       expect(execution).toMatchObject({status: "completed", exitCode: 0});
       expect(artifacts.invoke).toHaveBeenCalledTimes(1);

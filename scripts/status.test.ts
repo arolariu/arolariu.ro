@@ -4,18 +4,17 @@
  * @module scripts.status.test
  *
  * @remarks
- * Every orchestrator test drives `statusCommand.run()`/`invoke()` through an injected test runtime
+ * Every orchestrator test drives `statusCommand.invoke()` through an injected test runtime
  * factory whose filesystem is the in-memory repository fixture, whose inspection registry is the
  * real memoized runtime, and whose process runner replays keyed outcomes. No test in this file
  * reads the live checkout or spawns a real child process, except the bounded disk-probe
- * integration tests and the direct-entrypoint smoke tests, which do so deliberately.
+ * integration tests, which do so deliberately.
  */
 
-import {spawn} from "node:child_process";
 import {readFileSync} from "node:fs";
 import {mkdir, mkdtemp, rm, symlink, writeFile} from "node:fs/promises";
 import {tmpdir} from "node:os";
-import {join, resolve} from "node:path";
+import {join} from "node:path";
 import {fileURLToPath} from "node:url";
 import {afterEach, describe, expect, it, vi, type Mock} from "vitest";
 
@@ -317,10 +316,7 @@ function createPendingDoctorChild(
   const gate = createGate();
   const doctor = new MonorepoCommand<DoctorInput, DoctorReport>(
     {
-      metadata: {name: "doctor", description: "Runs read-only monorepo health checks."},
-      configure: () => undefined,
-      decode: () => ({quick: true, verbose: false}),
-      presentation: () => "silent",
+      metadata: {name: "doctor"},
       execute: (context) => {
         context.runtime.cleanup.register("doctor child probe", async () => {
           await nextMacrotask();
@@ -402,40 +398,18 @@ function renderedText(sink: InMemoryLoggerSink): string {
 }
 
 async function runJson(fixture: StatusFixture): Promise<Record<string, unknown>> {
-  const execution = await fixture.command.run(["--json"]);
+  const execution = await fixture.command.invoke({json: true}, {presentation: "json"});
   expect(execution.status).toBe("completed");
   expect(execution.exitCode).toBe(0);
   return jsonDocument(fixture.sink);
 }
 
 // ============================================================================
-// Parser
+// Presentation
 // ============================================================================
 
-describe("status command — parser", () => {
-  it.each(["--help", "-h", "/h", "/help"])("renders help and completes with exit 0 for '%s'", async (flag) => {
-    const fixture = createStatusFixture();
-
-    const execution = await fixture.command.run([flag]);
-
-    expect(execution).toEqual({status: "help", exitCode: 0});
-    expect(fixture.runner.calls).toHaveLength(0);
-    expect(fixture.doctor.invoke).not.toHaveBeenCalled();
-  });
-
-  it.each(["--bogus", "-x", "workspace", "--verbose"])("rejects '%s' as a usage failure with exit 2", async (argument) => {
-    const fixture = createStatusFixture();
-
-    const execution = await fixture.command.run([argument]);
-
-    expect(execution.status).toBe("failed");
-    expect(execution.exitCode).toBe(2);
-    expect(fixture.runner.calls).toHaveLength(0);
-    expect(fixture.doctor.invoke).not.toHaveBeenCalled();
-    expect(fixture.createSession).not.toHaveBeenCalled();
-  });
-
-  it("accepts --json and selects machine-readable presentation", async () => {
+describe("status command — presentation", () => {
+  it("emits the machine-readable document for JSON presentation", async () => {
     const fixture = createStatusFixture({mode: "json"});
 
     const document = await runJson(fixture);
@@ -497,7 +471,7 @@ describe("status command — doctor composition", () => {
   it("invokes doctor once with quick input, silent presentation, and the status invocation as parent", async () => {
     const fixture = createStatusFixture({mode: "json"});
 
-    await fixture.command.run(["--json"]);
+    await fixture.command.invoke({json: true}, {presentation: "json"});
 
     expect(fixture.doctor.invoke).toHaveBeenCalledTimes(1);
     const call = fixture.doctor.invoke.mock.calls[0];
@@ -517,7 +491,7 @@ describe("status command — doctor composition", () => {
     });
     const fixture = createStatusFixture({doctor, mode: "json"});
 
-    await fixture.command.run(["--json"]);
+    await fixture.command.invoke({json: true}, {presentation: "json"});
 
     expect(fixture.createSession).toHaveBeenCalledTimes(1);
     expect(fixture.createSession).toHaveBeenCalledWith(expect.objectContaining({profile: "quick"}));
@@ -549,7 +523,7 @@ describe("status command — doctor composition", () => {
     );
     const fixture = createStatusFixture({doctor, mode: "json"});
 
-    const execution = await fixture.command.run(["--json"]);
+    const execution = await fixture.command.invoke({json: true}, {presentation: "json"});
 
     expect(execution.status).toBe("failed");
     expect(execution.exitCode).toBe(1);
@@ -569,7 +543,7 @@ describe("status command — doctor composition", () => {
     );
     const fixture = createStatusFixture({doctor, mode: "json"});
 
-    const execution = await fixture.command.run(["--json"]);
+    const execution = await fixture.command.invoke({json: true}, {presentation: "json"});
 
     expect(execution.status).toBe("cancelled");
     expect(execution.exitCode).toBe(exitCode);
@@ -580,7 +554,7 @@ describe("status command — doctor composition", () => {
     const doctor = createDoctorStub(() => Promise.resolve({status: "help", exitCode: 0}));
     const fixture = createStatusFixture({doctor, mode: "json"});
 
-    const execution = await fixture.command.run(["--json"]);
+    const execution = await fixture.command.invoke({json: true}, {presentation: "json"});
 
     expect(execution.status).toBe("failed");
     expect(execution.exitCode).toBe(1);
@@ -599,7 +573,7 @@ describe("status command — doctor composition", () => {
     });
     const fixture = createStatusFixture({runner, doctor});
 
-    const execution = await fixture.command.run([]);
+    const execution = await fixture.command.invoke({json: false}, {presentation: "human"});
 
     expect(execution.status).toBe("completed");
     const doctorStart = events.indexOf("doctor:start");
@@ -613,7 +587,7 @@ describe("status command — doctor composition", () => {
     const doctor = createDoctorStub(() => Promise.reject(new Error("doctor invoker exploded")));
     const fixture = createStatusFixture({doctor, mode: "json"});
 
-    const execution = await fixture.command.run(["--json"]);
+    const execution = await fixture.command.invoke({json: true}, {presentation: "json"});
 
     expect(execution.status).toBe("failed");
     expect(execution.exitCode).toBe(1);
@@ -680,7 +654,7 @@ describe("status command — process requests", () => {
   it("issues every external probe as an explicit request with the expected cwd and timeout", async () => {
     const fixture = createStatusFixture({mode: "json"});
 
-    await fixture.command.run(["--json"]);
+    await fixture.command.invoke({json: true}, {presentation: "json"});
 
     const byKey = new Map(fixture.runner.calls.map((call) => [processKey(call.request), call] as const));
     for (const key of [GIT_BRANCH_KEY, GIT_SHA_KEY, GIT_LOG_TIME_KEY, GIT_LOG_MSG_KEY, GIT_STATUS_KEY]) {
@@ -701,7 +675,7 @@ describe("status command — process requests", () => {
   it("dispatches no Nx or doctor child process: the exact inventory contains only git, npm, and disk probes", async () => {
     const fixture = createStatusFixture({mode: "json"});
 
-    await fixture.command.run(["--json"]);
+    await fixture.command.invoke({json: true}, {presentation: "json"});
 
     expect(fixture.runner.calls.map((call) => processKey(call.request)).toSorted()).toEqual(
       [
@@ -723,7 +697,7 @@ describe("status command — process requests", () => {
   it("links every probe to the invocation cancellation signal and never passes a shell string", async () => {
     const fixture = createStatusFixture({mode: "json"});
 
-    await fixture.command.run(["--json"]);
+    await fixture.command.invoke({json: true}, {presentation: "json"});
 
     for (const call of fixture.runner.calls) {
       expect(typeof call.request.command).toBe("string");
@@ -735,7 +709,7 @@ describe("status command — process requests", () => {
   it("issues each disk probe through the runtime executable with the target as its own argument", async () => {
     const fixture = createStatusFixture({mode: "json"});
 
-    await fixture.command.run(["--json"]);
+    await fixture.command.invoke({json: true}, {presentation: "json"});
 
     const probes = fixture.runner.calls.filter((call) => call.request.args[0] === "--eval");
     expect(probes).toHaveLength(3);
@@ -756,7 +730,7 @@ describe("status command — Node runtime label", () => {
   it("renders the major version the runtime executable reports", async () => {
     const fixture = createStatusFixture({responses: withOverrides({[NODE_VERSION_KEY]: succeeded("v42.1.0\n")})});
 
-    const execution = await fixture.command.run([]);
+    const execution = await fixture.command.invoke({json: false}, {presentation: "human"});
 
     expect(execution.exitCode).toBe(0);
     expect(renderedText(fixture.sink)).toMatch(/Node: 42\.x/);
@@ -765,7 +739,7 @@ describe("status command — Node runtime label", () => {
   it("issues the version probe through the runtime executable with cwd, a bounded timeout, and the invocation signal", async () => {
     const fixture = createStatusFixture();
 
-    await fixture.command.run([]);
+    await fixture.command.invoke({json: false}, {presentation: "human"});
 
     const call = fixture.runner.calls.find((entry) => entry.request.args[0] === "--version");
     expect(call).toBeDefined();
@@ -779,7 +753,7 @@ describe("status command — Node runtime label", () => {
   it("adds exactly one version probe to the human dashboard process inventory", async () => {
     const fixture = createStatusFixture();
 
-    await fixture.command.run([]);
+    await fixture.command.invoke({json: false}, {presentation: "human"});
 
     expect(fixture.runner.calls.map((call) => processKey(call.request)).toSorted()).toEqual(
       [
@@ -816,7 +790,7 @@ describe("status command — Node runtime label", () => {
   ])("falls back to an unknown label instead of failing on %s", async (_label, outcome) => {
     const fixture = createStatusFixture({responses: withOverrides({[NODE_VERSION_KEY]: outcome})});
 
-    const execution = await fixture.command.run([]);
+    const execution = await fixture.command.invoke({json: false}, {presentation: "human"});
 
     expect(execution.status).toBe("completed");
     expect(execution.exitCode).toBe(0);
@@ -830,7 +804,7 @@ describe("status command — Node runtime label", () => {
     responses.delete(NODE_VERSION_KEY);
     const fixture = createStatusFixture({responses});
 
-    const execution = await fixture.command.run([]);
+    const execution = await fixture.command.invoke({json: false}, {presentation: "human"});
 
     expect(execution.exitCode).toBe(0);
     const text = renderedText(fixture.sink);
@@ -1192,7 +1166,7 @@ describe("status command — human dashboard", () => {
   it("renders workspace, git, security, disk, and health content only through the logger", async () => {
     const fixture = createStatusFixture();
 
-    const execution = await fixture.command.run([]);
+    const execution = await fixture.command.invoke({json: false}, {presentation: "human"});
 
     expect(execution.status).toBe("completed");
     expect(execution.exitCode).toBe(0);
@@ -1209,51 +1183,9 @@ describe("status command — human dashboard", () => {
   it("renders unavailable sections without crashing or fabricating success values", async () => {
     const fixture = createStatusFixture({responses: withOverrides({[GIT_BRANCH_KEY]: exited(1)})});
 
-    const execution = await fixture.command.run([]);
+    const execution = await fixture.command.invoke({json: false}, {presentation: "human"});
 
     expect(execution.exitCode).toBe(0);
     expect(renderedText(fixture.sink)).toMatch(/unavailable/);
   });
-});
-
-// ============================================================================
-// Direct entrypoint smoke
-// ============================================================================
-
-describe("direct entrypoint", () => {
-  const statusEntrypoint = fileURLToPath(new URL("./status.ts", import.meta.url));
-
-  function runDirect(args: readonly string[]): Promise<Readonly<{code: number | null; output: string}>> {
-    return new Promise((resolveProcess, rejectProcess) => {
-      const child = spawn(process.execPath, [statusEntrypoint, ...args], {
-        cwd: resolve(statusEntrypoint, "..", ".."),
-        stdio: ["ignore", "pipe", "pipe"],
-      });
-      let output = "";
-      child.stdout.on("data", (chunk: Buffer) => {
-        output += chunk.toString("utf8");
-      });
-      child.stderr.on("data", (chunk: Buffer) => {
-        output += chunk.toString("utf8");
-      });
-      child.once("error", rejectProcess);
-      child.once("close", (code) => {
-        resolveProcess({code, output});
-      });
-    });
-  }
-
-  it("emits help and exits 0 for a direct process invocation of --help", async () => {
-    const result = await runDirect(["--help"]);
-
-    expect(result.code).toBe(0);
-    expect(result.output).toMatch(/Usage: status \[options\]/);
-  }, 30_000);
-
-  it("emits a usage diagnostic and exits 2 for a direct process invocation of an unknown flag", async () => {
-    const result = await runDirect(["--bogus"]);
-
-    expect(result.code).toBe(2);
-    expect(result.output).toMatch(/unknown option/i);
-  }, 30_000);
 });
