@@ -15,6 +15,7 @@ import {describe, expect, it} from "vitest";
 import {makeRootCommand, runCli} from "../cli.ts";
 import {exitCodeFor, type CommandExitCode} from "../platform/exit.ts";
 import type {SinkRecord} from "../platform/Output.ts";
+import {Process} from "../platform/Process.ts";
 import {makeTestLayer} from "../platform/testing.ts";
 import {EngineFlag, engineInput, withCommandOutput} from "./flags.ts";
 
@@ -23,6 +24,12 @@ const engines: (readonly unknown[])[] = [];
 const testRoot = makeRootCommand([
   Command.make("t", {}, () => Effect.logInfo("x").pipe(withCommandOutput("t"))),
   Command.make("d", {}, () => Effect.logDebug("dbg").pipe(withCommandOutput("d"))),
+  Command.make("p", {}, () =>
+    Effect.gen(function* () {
+      const process = yield* Process;
+      yield* process.run({command: "tool", args: ["x"]});
+    }).pipe(withCommandOutput("p")),
+  ),
   Command.make("e", {engine: EngineFlag}, ({engine}) =>
     Effect.sync(() => {
       engines.push([Option.getOrUndefined(engine), engineInput(engine)]);
@@ -79,6 +86,20 @@ describe("withCommandOutput", () => {
     // Assert
     expect(quiet).toEqual({code: 0, output: []});
     expect(verbose).toEqual({code: 0, output: [{stream: "stdout", text: "[arolariu::d] 🐛 dbg\n"}]});
+  });
+
+  it("keeps an ambient Process instead of the live one", async () => {
+    // Arrange
+    const harness = makeTestLayer({
+      processes: [{match: (request) => request.command === "tool", respond: {stdout: "", stderr: "", durationMs: 1}}],
+    });
+
+    // Act
+    const exit = await Effect.runPromiseExit(runCli(["p"], testRoot).pipe(Effect.provide(harness.layer)));
+
+    // Assert
+    expect(exitCodeFor(exit, undefined)).toBe(0);
+    expect(harness.processCalls()).toEqual([{request: {command: "tool", args: ["x"]}, options: {}}]);
   });
 });
 

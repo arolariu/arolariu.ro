@@ -16,10 +16,14 @@ import {Cause, Console, Effect, Sink as EffectSink, Formatter, Result, Stdio, St
 import {CliError, Command, type GlobalFlag} from "effect/cli";
 
 import packageJson from "../package.json" with {type: "json"};
+import {makeContainersCommand} from "./commands/containers/cli.ts";
+import {makeDevCommand} from "./commands/dev/cli.ts";
 import {makeDocsCommand} from "./commands/docs/cli.ts";
 import {makeDoctorCommand} from "./commands/doctor/cli.ts";
+import {makeE2eCommand} from "./commands/e2e/cli.ts";
 import {JsonFlag, VerboseFlag} from "./commands/flags.ts";
 import {makeGenerateCommand} from "./commands/generate/cli.ts";
+import {makeQualityCommands} from "./commands/quality/cli.ts";
 import {makeRatesCommand} from "./commands/rates/cli.ts";
 import {makeSetupCommand} from "./commands/setup/cli.ts";
 import {makeStatusCommand} from "./commands/status/cli.ts";
@@ -85,6 +89,10 @@ export const rootCommand: RootCommand = makeRootCommand([
   makeGenerateCommand(),
   makeDocsCommand(),
   makeRatesCommand(),
+  makeDevCommand(),
+  makeContainersCommand(),
+  makeE2eCommand(),
+  ...makeQualityCommands(),
 ]);
 
 /**

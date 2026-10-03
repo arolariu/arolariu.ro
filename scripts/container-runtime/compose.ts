@@ -35,7 +35,7 @@ export interface ComposeOptions {
 }
 
 /** Usage message shared by every Compose input validation failure. */
-const COMPOSE_USAGE_MESSAGE = "Use --file <compose-file> -- <compose arguments>";
+export const COMPOSE_USAGE_MESSAGE = "Use --file <compose-file> -- <compose arguments>";
 
 /**
  * Builds an engine-owned Compose command.
