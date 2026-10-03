@@ -49,12 +49,20 @@ const directOutputAdapters = new Set([
 
 /**
  * Effect platform layer (RFC 0002 section 21). Like `runtime.node.ts`, it is the sanctioned owner
- * of ambient `process.*`, timer, and `node:*` access, and the only home of `@effect/platform-node`.
+ * of ambient `process.*`, timer, and `node:*` access, and the only home of `@effect/platform-node`
+ * besides the CLI entrypoint.
  */
 const platformLayerDirectory = "scripts/platform/";
 
-/** Platform modules allowed to start an Effect runtime (Effect `run*` and `ManagedRuntime.make`). */
+/**
+ * The single effect/cli entrypoint. It starts the program with `NodeRuntime.runMain`, so it may
+ * import `@effect/platform-node` and read `process.argv`, but no other ambient state.
+ */
+const cliEntrypoint = "scripts/cli.ts";
+
+/** Modules allowed to start an Effect runtime (Effect `run*`, `ManagedRuntime.make`, and `NodeRuntime.runMain`). */
 const sanctionedEffectRunners: readonly string[] = [
+  cliEntrypoint,
   "scripts/platform/Output.ts",
   "scripts/platform/bridge.ts",
   "scripts/platform/testing.ts",
@@ -200,6 +208,17 @@ function isTestFixture(file: string): boolean {
 /** Whether a module may touch ambient process, timer, filesystem, network, and OS state. */
 function ownsAmbientRuntime(file: string): boolean {
   return file === runtimeNodeAdapter || file.startsWith(platformLayerDirectory);
+}
+
+/**
+ * Whether an ambient OS-state access is the CLI entrypoint reading its invocation arguments.
+ *
+ * @param file - Repository-relative module path.
+ * @param path - Resolved access path.
+ * @returns `true` only for `process.argv` inside {@link cliEntrypoint}.
+ */
+function isCliEntrypointArgv(file: string, path: AccessPath): boolean {
+  return file === cliEntrypoint && startsWithPath(path, ["process", "argv"]);
 }
 
 function discoverProductionScripts(directory: string = "scripts"): readonly string[] {
@@ -611,7 +630,7 @@ function scanRuntimeBoundarySource(
           add(node, "ambient-timer");
         }
 
-        if (isAmbientOsStateCallPath(path) && !ownsAmbientRuntime(normalizedFile)) {
+        if (isAmbientOsStateCallPath(path) && !ownsAmbientRuntime(normalizedFile) && !isCliEntrypointArgv(normalizedFile, path)) {
           add(node, "ambient-os-state");
         }
 
@@ -639,7 +658,7 @@ function scanRuntimeBoundarySource(
           add(node, "ambient-environment");
         }
 
-        if (isAmbientOsStatePath(path)) {
+        if (isAmbientOsStatePath(path) && !isCliEntrypointArgv(normalizedFile, path)) {
           add(node, "ambient-os-state");
         }
       }
@@ -905,7 +924,8 @@ interface EffectRunnerUse {
 
 /**
  * Finds every reference to an Effect runtime entry point, through named, aliased, or namespace
- * imports of `effect`, `effect/Effect`, and `effect/ManagedRuntime`.
+ * imports of `effect`, `effect/Effect`, `effect/ManagedRuntime`, `@effect/platform-node`, and
+ * `@effect/platform-node/NodeRuntime`.
  *
  * @param file - Repository-relative module path reported with each use.
  * @param sourceText - Source text to parse.
@@ -916,6 +936,8 @@ function scanEffectRunnerSource(file: string, sourceText: string): readonly Effe
   const effectRoots = new Set<string>();
   const effectModules = new Set<string>();
   const managedRuntimeModules = new Set<string>();
+  const platformNodeRoots = new Set<string>();
+  const nodeRuntimeModules = new Set<string>();
   const uses: EffectRunnerUse[] = [];
 
   function add(node: ts.Node, api: string): void {
@@ -947,6 +969,14 @@ function scanEffectRunnerSource(file: string, sourceText: string): readonly Effe
       wholeModuleNames.forEach((name) => managedRuntimeModules.add(name));
     }
 
+    if (specifier === "@effect/platform-node") {
+      wholeModuleNames.forEach((name) => platformNodeRoots.add(name));
+    }
+
+    if (specifier === "@effect/platform-node/NodeRuntime") {
+      wholeModuleNames.forEach((name) => nodeRuntimeModules.add(name));
+    }
+
     if (bindings === undefined || !ts.isNamedImports(bindings)) {
       continue;
     }
@@ -961,6 +991,10 @@ function scanEffectRunnerSource(file: string, sourceText: string): readonly Effe
         add(element, `Effect.${importedName}`);
       } else if (specifier === "effect/ManagedRuntime" && importedName === "make") {
         add(element, "ManagedRuntime.make");
+      } else if (specifier === "@effect/platform-node" && importedName === "NodeRuntime") {
+        nodeRuntimeModules.add(element.name.text);
+      } else if (specifier === "@effect/platform-node/NodeRuntime" && importedName === "runMain") {
+        add(element, "NodeRuntime.runMain");
       }
     }
   }
@@ -971,8 +1005,12 @@ function scanEffectRunnerSource(file: string, sourceText: string): readonly Effe
       return [];
     }
 
-    if (effectRoots.has(head)) {
+    if (effectRoots.has(head) || platformNodeRoots.has(head)) {
       return members;
+    }
+
+    if (nodeRuntimeModules.has(head)) {
+      return ["NodeRuntime", ...members];
     }
 
     if (effectModules.has(head)) {
@@ -991,6 +1029,10 @@ function scanEffectRunnerSource(file: string, sourceText: string): readonly Effe
 
     if (module === "Effect" && effectRunnerNames.has(member)) {
       return `Effect.${member}`;
+    }
+
+    if (module === "NodeRuntime" && member === "runMain") {
+      return "NodeRuntime.runMain";
     }
 
     return module === "ManagedRuntime" && member === "make" ? "ManagedRuntime.make" : undefined;
@@ -1278,9 +1320,9 @@ describe("runtime boundary policy", () => {
     expect(scanRuntimeBoundarySource("scripts/platform/Output.ts", "process.stdout.write('visible');")).toEqual([]);
   });
 
-  it("imports @effect/platform-node only inside scripts/platform", () => {
+  it("imports @effect/platform-node only inside scripts/platform and the CLI entrypoint", () => {
     const offenders = discoverProductionScripts()
-      .filter((file) => !file.startsWith(platformLayerDirectory))
+      .filter((file) => !file.startsWith(platformLayerDirectory) && file !== cliEntrypoint)
       .flatMap((file) =>
         collectModuleImports(readFileSync(file, "utf8"))
           .filter(
@@ -1291,6 +1333,38 @@ describe("runtime boundary policy", () => {
       );
 
     expect(offenders).toEqual([]);
+  });
+
+  it("sanctions only process.argv as ambient state in the CLI entrypoint", () => {
+    const source = ["void process.argv.slice(2);", "void process.env.PATH;", "void process.platform;"].join("\n");
+
+    expect(scanRuntimeBoundarySource(cliEntrypoint, source)).toEqual([
+      {file: cliEntrypoint, line: 2, rule: "ambient-environment"},
+      {file: cliEntrypoint, line: 3, rule: "ambient-os-state"},
+    ]);
+    expect(scanRuntimeBoundarySource("scripts/example.ts", "void process.argv.slice(2);")).toEqual([
+      {file: "scripts/example.ts", line: 1, rule: "ambient-os-state"},
+    ]);
+  });
+
+  it("detects NodeRuntime.runMain through named, aliased, and namespace imports", () => {
+    const source = [
+      'import {NodeRuntime as Runtime} from "@effect/platform-node";',
+      'import * as node from "@effect/platform-node";',
+      'import * as NR from "@effect/platform-node/NodeRuntime";',
+      'import {runMain} from "@effect/platform-node/NodeRuntime";',
+      "Runtime.runMain(program);",
+      "node.NodeRuntime.runMain(program);",
+      'NR["runMain"](program);',
+      "void node.NodeServices.layer;",
+    ].join("\n");
+
+    expect(scanEffectRunnerSource("scripts/example.ts", source)).toEqual([
+      {file: "scripts/example.ts", line: 4, api: "NodeRuntime.runMain"},
+      {file: "scripts/example.ts", line: 5, api: "NodeRuntime.runMain"},
+      {file: "scripts/example.ts", line: 6, api: "NodeRuntime.runMain"},
+      {file: "scripts/example.ts", line: 7, api: "NodeRuntime.runMain"},
+    ]);
   });
 
   it("detects Effect runners through named, aliased, and namespace imports", () => {
@@ -1322,6 +1396,7 @@ describe("runtime boundary policy", () => {
 
     expect(uses.filter((use) => !sanctionedEffectRunners.includes(use.file))).toEqual([]);
     expect([...new Set(uses.map((use) => use.file))].toSorted()).toEqual(sanctionedEffectRunners);
+    expect(uses).toContainEqual(expect.objectContaining({file: cliEntrypoint, api: "NodeRuntime.runMain"}));
   });
 
   it("resolves platform imports of the legacy kernel", () => {

@@ -242,8 +242,9 @@ the legacy kernel, and cohort 7 deletes it.
 
 [`runtime-boundary.test.ts`](./common/runtime-boundary.test.ts) sanctions `scripts/platform/**` — like `runtime.node.ts` — as an owner of
 ambient `process.*`, timer, and `node:*` access, and enforces three platform rules: `@effect/platform-node` is imported only inside
-`scripts/platform/`; Effect runtimes (`Effect.run*`, `ManagedRuntime.make`) start only in `bridge.ts`, `testing.ts`, and `Output.ts`'s
-synchronous logger sink; and no platform module except `bridge.ts` imports the legacy kernel.
+`scripts/platform/` and the [`cli.ts`](./cli.ts) entrypoint; Effect runtimes (`Effect.run*`, `ManagedRuntime.make`, `NodeRuntime.runMain`)
+start only in `cli.ts`, `bridge.ts`, `testing.ts`, and `Output.ts`'s synchronous logger sink; and no platform module except `bridge.ts`
+imports the legacy kernel. `cli.ts` may also read `process.argv`, and no other ambient state.
 
 ## Output-policy exemptions
 
