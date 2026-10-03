@@ -26,7 +26,7 @@ import {
   type RepositoryInspectionRequest,
   type RepositoryInspectionRuntime,
 } from "./common/runtime.ts";
-import type {GenerateInput, GenerateResult} from "./generate.ts";
+import type {GenerateInput, GenerateResult} from "./commands/generate/index.ts";
 import type {RepositoryInspectionSession} from "./inspection/repository.ts";
 import {createSetupActionExecutor, createSetupCommand, setupPhases, type SetupResult} from "./setup.ts";
 import type {SetupAction, SetupContext, SetupInput, SetupPhaseDefinition, SetupPhaseResult, SetupStatus} from "./setup.types.ts";

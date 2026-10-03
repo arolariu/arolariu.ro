@@ -11,7 +11,7 @@ import {Command} from "effect/cli";
 
 import type {CliSubcommand} from "../../cli.ts";
 import type {CommandInvoker} from "../../common/commander.ts";
-import {docsAssembleCommand} from "../../docs-assemble.ts";
+import {docsAssembleCommand} from "./assemble.ts";
 import {withCommandOutput} from "../flags.ts";
 import {runLegacy} from "../legacy.ts";
 

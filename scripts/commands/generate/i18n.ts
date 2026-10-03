@@ -22,8 +22,8 @@
  */
 
 import path from "node:path";
-import {MonorepoCommand, type CommandContext, type CommandRuntimeFactory} from "./common/commander.ts";
-import type {MonorepositoryLogger} from "./common/logger.ts";
+import {MonorepoCommand, type CommandContext, type CommandRuntimeFactory} from "../../common/commander.ts";
+import type {MonorepositoryLogger} from "../../common/logger.ts";
 
 /** Typed input accepted by every migrated `generate` leaf command. */
 export interface GenerateLeafInput {

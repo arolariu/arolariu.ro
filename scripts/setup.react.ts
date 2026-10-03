@@ -31,7 +31,7 @@
 
 import type {ProcessOutcome, ProcessRequest, SucceededProcessOutcome} from "./common/runner.ts";
 import {CommandCancellation, type FileSystem} from "./common/runtime.ts";
-import {appendMissingEnvironmentValues, parseEnvironmentFile} from "./generate.env.ts";
+import {appendMissingEnvironmentValues, parseEnvironmentFile} from "./commands/generate/env.ts";
 import type {ReactFacts} from "./inspection/frontend.ts";
 import type {PackageInventoryFacts} from "./inspection/packages.ts";
 import type {InspectionOutcome} from "./inspection/types.ts";

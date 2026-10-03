@@ -26,7 +26,7 @@ import {
 import {createMemoryFileSystem, createTestRuntimeFactory} from "./common/runtime.testing.ts";
 import {FileSystemError, type Clock, type FileSystem} from "./common/runtime.ts";
 import {getExpectedTaxonomyArtifactPaths} from "./common/taxonomy-artifacts.ts";
-import type {GenerateResult, GenerateTaskName} from "./generate.ts";
+import type {GenerateResult, GenerateTaskName} from "./commands/generate/index.ts";
 import type {NpmTreeFacts} from "./inspection/packages.ts";
 import type {RepositoryInspectionSession} from "./inspection/repository.ts";
 import type {InspectionOutcome} from "./inspection/types.ts";

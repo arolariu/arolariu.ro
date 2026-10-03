@@ -16,7 +16,7 @@ import {loadRepositoryRequirements, parseVersion, satisfiesMinimum, type Minimum
 import type {ProcessOutcome, ProcessRequest, SucceededProcessOutcome} from "./common/runner.ts";
 import {CommandCancellation, type FileSystem} from "./common/runtime.ts";
 import {getExpectedTaxonomyArtifactPaths} from "./common/taxonomy-artifacts.ts";
-import type {GenerateResult} from "./generate.ts";
+import type {GenerateResult} from "./commands/generate/index.ts";
 import type {NpmTreeFacts} from "./inspection/packages.ts";
 import {
   requireSetupPhaseRuntime,

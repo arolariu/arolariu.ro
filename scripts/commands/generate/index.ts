@@ -16,12 +16,12 @@ import {
   type CommandExecution,
   type CommandInvoker,
   type CommandRuntimeFactory,
-} from "./common/commander.ts";
-import {CommandCancellation} from "./common/runtime.ts";
-import {generateArtifactsCommand, type ArtifactGenerationResult, type GenerateArtifactsInput} from "./generate.artifacts.ts";
-import {generateEnvironmentCommand, type GenerateLeafInput, type GenerateLeafResult} from "./generate.env.ts";
-import {generateGraphqlCommand} from "./generate.gql.ts";
-import {generateI18nCommand} from "./generate.i18n.ts";
+} from "../../common/commander.ts";
+import {CommandCancellation} from "../../common/runtime.ts";
+import {generateArtifactsCommand, type ArtifactGenerationResult, type GenerateArtifactsInput} from "./artifacts.ts";
+import {generateEnvironmentCommand, type GenerateLeafInput, type GenerateLeafResult} from "./env.ts";
+import {generateGraphqlCommand} from "./gql.ts";
+import {generateI18nCommand} from "./i18n.ts";
 
 /** Every generator the orchestrator can select, in fixed execution order. */
 export type GenerateTaskName = "env" | "i18n" | "gql" | "artifacts";

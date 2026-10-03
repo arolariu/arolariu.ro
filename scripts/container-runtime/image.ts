@@ -18,7 +18,7 @@ import type {MonorepositoryLogger} from "../common/logger.ts";
 import {resolveRepositoryPaths} from "../common/repository-paths.ts";
 import {RunnerError, type ProcessRunner} from "../common/runner.ts";
 import {CommandCancellation, commandCancellationFromSignal} from "../common/runtime.ts";
-import {generateArtifactsCommand, type ArtifactGenerationResult, type GenerateArtifactsInput} from "../generate.artifacts.ts";
+import {generateArtifactsCommand, type ArtifactGenerationResult, type GenerateArtifactsInput} from "../commands/generate/artifacts.ts";
 import {getContainerAdapter, type ContainerRuntimeAdapter, type RuntimeCommand} from "./adapters.ts";
 import {runContainerPreflight} from "./preflight.ts";
 import {resolveRuntimeContainerEngine} from "./selection.ts";

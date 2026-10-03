@@ -20,17 +20,17 @@ import {
   taxonomyArtifactFileNames,
   TaxonomyClassificationGenerator,
   type ArtifactGeneratorRuntime,
-} from "./generate.artifacts.ts";
-import type {CommandExecution, CommandInvoker} from "./common/commander.ts";
-import {InMemoryLoggerSink, MonorepositoryConsoleLogger, type MonorepositoryLogger} from "./common/logger.ts";
-import type {PromptProvider} from "./common/prompts.ts";
+} from "./artifacts.ts";
+import type {CommandExecution, CommandInvoker} from "../../common/commander.ts";
+import {InMemoryLoggerSink, MonorepositoryConsoleLogger, type MonorepositoryLogger} from "../../common/logger.ts";
+import type {PromptProvider} from "../../common/prompts.ts";
 import {
   AbstractProcessRunner,
   type ProcessOutcome,
   type ProcessRequest,
   type ProcessRunOptions,
   type ProcessRunner,
-} from "./common/runner.ts";
+} from "../../common/runner.ts";
 import {
   DefaultTaskScheduler,
   type Clock,
@@ -39,18 +39,18 @@ import {
   type HttpRequest,
   type HttpResponse,
   type RuntimeEnvironment,
-} from "./common/runtime.ts";
-import {nodeFileSystem} from "./common/runtime.node.ts";
+} from "../../common/runtime.ts";
+import {nodeFileSystem} from "../../common/runtime.node.ts";
 import {
   createHttpResponse,
   createMemoryFileSystem,
   createTestRuntimeFactory,
   repositoryFixtureRoot,
-} from "./common/runtime.testing.ts";
-import type {ArtifactGenerationResult, GenerateArtifactsInput} from "./generate.artifacts.ts";
-import type {GenerateLeafInput, GenerateLeafResult} from "./generate.env.ts";
-import {createGenerateCommand, type GenerateCommandDependencies} from "./generate.ts";
-import type {TaxonomyArtifact} from "./types";
+} from "../../common/runtime.testing.ts";
+import type {ArtifactGenerationResult, GenerateArtifactsInput} from "./artifacts.ts";
+import type {GenerateLeafInput, GenerateLeafResult} from "./env.ts";
+import {createGenerateCommand, type GenerateCommandDependencies} from "./index.ts";
+import type {TaxonomyArtifact} from "../../types";
 
 /** Decides what one scripted HTTP send returns, by request and global send ordinal. */
 type ArtifactHttpRoute = (request: Readonly<HttpRequest>, send: number) => HttpResponse | Error;
@@ -1019,7 +1019,7 @@ describe("Artifact orchestration and CLI contracts", () => {
 
   describe("module surface", () => {
     it("exports the generators, the command object, and the canonical taxonomy artifact manifest", async () => {
-      const artifactModule = await import("./generate.artifacts.ts");
+      const artifactModule = await import("./artifacts.ts");
 
       expect(Object.keys(artifactModule).toSorted()).toEqual([
         "BackendLicenseGenerator",
@@ -1261,7 +1261,7 @@ describe("Artifact orchestration and CLI contracts", () => {
         isCI: true,
       };
 
-      const {createGenerateEnvironmentCommand} = await import("./generate.env.ts");
+      const {createGenerateEnvironmentCommand} = await import("./env.ts");
       const command = createGenerateEnvironmentCommand(createTestRuntimeFactory({files, logger, environment}));
 
       // "human" presentation matches this test's own logger fixture (constructed in human mode)
@@ -1298,7 +1298,7 @@ describe("Artifact orchestration and CLI contracts", () => {
         secret,
       };
 
-      const {createGenerateEnvironmentCommand} = await import("./generate.env.ts");
+      const {createGenerateEnvironmentCommand} = await import("./env.ts");
       const command = createGenerateEnvironmentCommand(createTestRuntimeFactory({files, prompts}));
 
       await expect(command.invoke({verbose: false}, {presentation: "silent"})).resolves.toMatchObject({
@@ -1353,7 +1353,7 @@ describe("Artifact orchestration and CLI contracts", () => {
       const logger = new MonorepositoryConsoleLogger("generate::gql", {color: false, sink});
       const files = createMemoryFileSystem();
 
-      const {createGenerateGraphqlCommand} = await import("./generate.gql.ts");
+      const {createGenerateGraphqlCommand} = await import("./gql.ts");
       const command = createGenerateGraphqlCommand(createTestRuntimeFactory({files, logger}));
 
       await expect(command.invoke({verbose: false}, {presentation: "silent"})).resolves.toMatchObject({
@@ -1371,7 +1371,7 @@ describe("Artifact orchestration and CLI contracts", () => {
       const logger = new MonorepositoryConsoleLogger("generate::gql", {color: false, sink});
       const files = createMemoryFileSystem();
       const outputFile = join(repositoryFixtureRoot, "scripts", "__generated__", "gql", "README.placeholder.txt");
-      const {createGenerateGraphqlCommand} = await import("./generate.gql.ts");
+      const {createGenerateGraphqlCommand} = await import("./gql.ts");
       const command = createGenerateGraphqlCommand(createTestRuntimeFactory({files, logger}));
 
       // Act
@@ -1403,7 +1403,7 @@ describe("Artifact orchestration and CLI contracts", () => {
         [`${repositoryFixtureRoot}/sites/arolariu.ro/messages/fr.json`]: '{"greeting":"Hello"}',
       });
 
-      const {createGenerateI18nCommand} = await import("./generate.i18n.ts");
+      const {createGenerateI18nCommand} = await import("./i18n.ts");
       const command = createGenerateI18nCommand(createTestRuntimeFactory({files, logger}));
 
       await expect(command.invoke({verbose: false}, {presentation: "silent"})).resolves.toMatchObject({
@@ -1437,7 +1437,7 @@ describe("Artifact orchestration and CLI contracts", () => {
       });
 
       try {
-        const {createGenerateEnvironmentCommand} = await import("./generate.env.ts");
+        const {createGenerateEnvironmentCommand} = await import("./env.ts");
         const command = createGenerateEnvironmentCommand(createTestRuntimeFactory({files, logger}));
         // "human" presentation matches this test's own logger fixture so the effective-verbosity
         // scope generateEnvironment forks still renders its completion output through the sink.

@@ -13,7 +13,7 @@
 
 import {describe, expect, it} from "vitest";
 
-import {createMemoryFileSystem, createTestRuntimeFactory, repositoryFixtureRoot} from "./common/runtime.testing.ts";
+import {createMemoryFileSystem, createTestRuntimeFactory, repositoryFixtureRoot} from "../../common/runtime.testing.ts";
 
 describe("generateI18nCommand", () => {
   it("resolves as completed with exitCode: 1 when missing keys change one or more locale files", async () => {
@@ -23,7 +23,7 @@ describe("generateI18nCommand", () => {
       [`${repositoryFixtureRoot}/sites/arolariu.ro/messages/fr.json`]: JSON.stringify({greeting: "Bonjour"}),
     });
 
-    const {createGenerateI18nCommand} = await import("./generate.i18n.ts");
+    const {createGenerateI18nCommand} = await import("./i18n.ts");
     const command = createGenerateI18nCommand(createTestRuntimeFactory({files}));
 
     const execution = await command.invoke({verbose: false}, {presentation: "silent"});
@@ -55,7 +55,7 @@ describe("generateI18nCommand", () => {
       [`${messages}/ro.json`]: JSON.stringify({greeting: "Salut"}),
       [`${messages}/fr.json`]: JSON.stringify({greeting: "Bonjour"}),
     });
-    const {createGenerateI18nCommand} = await import("./generate.i18n.ts");
+    const {createGenerateI18nCommand} = await import("./i18n.ts");
     const command = createGenerateI18nCommand(createTestRuntimeFactory({files}));
 
     // Act
@@ -79,7 +79,7 @@ describe("generateI18nCommand", () => {
       [`${repositoryFixtureRoot}/sites/arolariu.ro/messages/fr.json`]: JSON.stringify({greeting: "Bonjour"}),
     });
 
-    const {createGenerateI18nCommand} = await import("./generate.i18n.ts");
+    const {createGenerateI18nCommand} = await import("./i18n.ts");
     const command = createGenerateI18nCommand(createTestRuntimeFactory({files}));
 
     const execution = await command.invoke({verbose: false}, {presentation: "silent"});

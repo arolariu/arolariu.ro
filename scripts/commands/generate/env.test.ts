@@ -8,17 +8,17 @@ import {join} from "node:path";
 import {PassThrough} from "node:stream";
 import {afterEach, describe, expect, it, vi} from "vitest";
 
-import type {CommandInvoker} from "./common/commander.ts";
-import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "./common/logger.ts";
-import {createTerminalPromptProvider, type PromptProvider} from "./common/prompts.ts";
-import type {HttpClient, HttpRequest, HttpResponse, RuntimeEnvironment} from "./common/runtime.ts";
+import type {CommandInvoker} from "../../common/commander.ts";
+import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "../../common/logger.ts";
+import {createTerminalPromptProvider, type PromptProvider} from "../../common/prompts.ts";
+import type {HttpClient, HttpRequest, HttpResponse, RuntimeEnvironment} from "../../common/runtime.ts";
 import {
   createHttpResponse,
   createMemoryFileSystem,
   createTestRuntimeFactory,
   repositoryFixtureRoot,
-} from "./common/runtime.testing.ts";
-import type {GenerateLeafInput, GenerateLeafResult} from "./generate.env.ts";
+} from "../../common/runtime.testing.ts";
+import type {GenerateLeafInput, GenerateLeafResult} from "./env.ts";
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -29,7 +29,7 @@ afterEach(() => {
 
 describe("parseEnvironmentFile", () => {
   it("ignores non-assignments, splits on the first equals sign, unwraps matching quotes, and lets the last assignment win", async () => {
-    const {parseEnvironmentFile} = await import("./generate.env.ts");
+    const {parseEnvironmentFile} = await import("./env.ts");
 
     const parsed = parseEnvironmentFile(
       [
@@ -65,7 +65,7 @@ describe("quoteIfNeeded", () => {
     ["tab\tvalue", '"tab\\tvalue"'],
     ["back\\slash", '"back\\\\slash"'],
   ])("quotes %j as %j", async (value, expected) => {
-    const {quoteIfNeeded} = await import("./generate.env.ts");
+    const {quoteIfNeeded} = await import("./env.ts");
 
     expect(quoteIfNeeded(value)).toBe(expected);
   });
@@ -73,7 +73,7 @@ describe("quoteIfNeeded", () => {
 
 describe("appendMissingEnvironmentValues", () => {
   it("preserves the original bytes as a prefix and appends only missing nonempty values in insertion order", async () => {
-    const {appendMissingEnvironmentValues} = await import("./generate.env.ts");
+    const {appendMissingEnvironmentValues} = await import("./env.ts");
     const original = "# user comment\nSITE_NAME=user-site\nEMPTY_EXISTING=\n";
 
     const appended = appendMissingEnvironmentValues(
@@ -102,7 +102,7 @@ describe("appendMissingEnvironmentValues", () => {
   });
 
   it("reuses CRLF and adds exactly the separator needed after a non-newline-terminated prefix", async () => {
-    const {appendMissingEnvironmentValues} = await import("./generate.env.ts");
+    const {appendMissingEnvironmentValues} = await import("./env.ts");
     const original = "# comment\r\nSITE_ENV=DEVELOPMENT";
 
     expect(appendMissingEnvironmentValues(original, new Map([["USE_CDN", "false"]]))).toBe(
@@ -118,7 +118,7 @@ describe("appendMissingEnvironmentValues", () => {
   });
 
   it("returns the original string unchanged when every candidate is existing or empty", async () => {
-    const {appendMissingEnvironmentValues} = await import("./generate.env.ts");
+    const {appendMissingEnvironmentValues} = await import("./env.ts");
     const original = "SITE_ENV=DEVELOPMENT\n";
 
     expect(
@@ -133,7 +133,7 @@ describe("appendMissingEnvironmentValues", () => {
   });
 
   it("trims surrounding whitespace while preserving and quoting internal whitespace", async () => {
-    const {appendMissingEnvironmentValues} = await import("./generate.env.ts");
+    const {appendMissingEnvironmentValues} = await import("./env.ts");
 
     expect(appendMissingEnvironmentValues("", new Map([["DISPLAY_NAME", "  local development site  "]]))).toBe(
       ["# arolariu.ro setup-managed values", 'DISPLAY_NAME="local development site"', "# End arolariu.ro setup-managed values", ""].join(
@@ -176,7 +176,7 @@ describe("generateEnvironmentCommand", () => {
       secret: vi.fn<PromptProvider["secret"]>().mockResolvedValue(""),
     };
 
-    const {createGenerateEnvironmentCommand} = await import("./generate.env.ts");
+    const {createGenerateEnvironmentCommand} = await import("./env.ts");
     const command = createGenerateEnvironmentCommand(createTestRuntimeFactory({files, prompts}));
 
     const execution = await command.invoke({verbose: false}, {presentation: "silent"});
@@ -208,8 +208,8 @@ describe("generateEnvironmentCommand", () => {
     const sink = new InMemoryLoggerSink();
     const logger = new MonorepositoryConsoleLogger("generate", {color: false, sink});
 
-    const {createGenerateEnvironmentCommand} = await import("./generate.env.ts");
-    const {createGenerateCommand} = await import("./generate.ts");
+    const {createGenerateEnvironmentCommand} = await import("./env.ts");
+    const {createGenerateCommand} = await import("./index.ts");
     const gqlInvoke = vi.fn<CommandInvoker<GenerateLeafInput, GenerateLeafResult>["invoke"]>();
     const unusedLeaf: CommandInvoker<GenerateLeafInput, GenerateLeafResult> = {invoke: gqlInvoke};
     const command = createGenerateCommand(
@@ -271,7 +271,7 @@ describe("generateEnvironmentCommand", () => {
     // a distinct forked instance that still shares this logger's `#state` redaction set.
     const redactSpy = vi.spyOn(MonorepositoryConsoleLogger.prototype, "redact");
 
-    const {createGenerateEnvironmentCommand} = await import("./generate.env.ts");
+    const {createGenerateEnvironmentCommand} = await import("./env.ts");
     const command = createGenerateEnvironmentCommand(createTestRuntimeFactory({files, prompts, logger}));
 
     const execution = await command.invoke({verbose: false}, {presentation: "silent"});
@@ -297,7 +297,7 @@ describe("generateEnvironmentCommand", () => {
       throw new Error("Azure identity loaded eagerly");
     });
 
-    await expect(import("./generate.env.ts")).resolves.toMatchObject({
+    await expect(import("./env.ts")).resolves.toMatchObject({
       appendMissingEnvironmentValues: expect.any(Function),
       parseEnvironmentFile: expect.any(Function),
       quoteIfNeeded: expect.any(Function),
@@ -336,7 +336,7 @@ describe("generateEnvironmentCommand", () => {
       const logger = new MonorepositoryConsoleLogger("generate::env", {color: false, verbose: false, sink});
       const environment = buildTestEnvironment({VERBOSE: "true"});
 
-      const {createGenerateEnvironmentCommand} = await import("./generate.env.ts");
+      const {createGenerateEnvironmentCommand} = await import("./env.ts");
       const command = createGenerateEnvironmentCommand(createTestRuntimeFactory({files, logger, environment}));
 
       // `presentation: "human"` matches how the aggregate (`generate.ts`) invokes every leaf.
@@ -352,7 +352,7 @@ describe("generateEnvironmentCommand", () => {
       const logger = new MonorepositoryConsoleLogger("generate::env", {color: false, verbose: false, sink});
       const environment = buildTestEnvironment({});
 
-      const {createGenerateEnvironmentCommand} = await import("./generate.env.ts");
+      const {createGenerateEnvironmentCommand} = await import("./env.ts");
       const command = createGenerateEnvironmentCommand(createTestRuntimeFactory({files, logger, environment}));
 
       const execution = await command.invoke({verbose: false}, {presentation: "human"});
@@ -377,7 +377,7 @@ describe("generateEnvironmentCommand verbosity", () => {
     const files = createMemoryFileSystem({".env": completeEnvContent});
     const sink = new InMemoryLoggerSink();
     const logger = new MonorepositoryConsoleLogger("generate::env", {color: false, sink});
-    const {createGenerateEnvironmentCommand} = await import("./generate.env.ts");
+    const {createGenerateEnvironmentCommand} = await import("./env.ts");
     const command = createGenerateEnvironmentCommand(createTestRuntimeFactory({files, logger}));
 
     const execution = await command.invoke({verbose: true}, {presentation: "human"});
@@ -491,7 +491,7 @@ describe("generateEnvironmentCommand characterization", () => {
     const sink = new InMemoryLoggerSink();
     const logger = new MonorepositoryConsoleLogger("generate::env", {color: false, sink});
     const {http, requests} = recordingHttp(createHttpResponse(200, JSON.stringify({config: expConfig})));
-    const {createGenerateEnvironmentCommand} = await import("./generate.env.ts");
+    const {createGenerateEnvironmentCommand} = await import("./env.ts");
     const command = createGenerateEnvironmentCommand(
       createTestRuntimeFactory({files, logger, http, environment: ciEnvironment({INFRA: "azure"})}),
     );
@@ -520,7 +520,7 @@ describe("generateEnvironmentCommand characterization", () => {
     const logger = new MonorepositoryConsoleLogger("generate::env", {color: false, sink});
     const {"Site:UseCdn": _omitted, ...partialConfig} = expConfig;
     const {http} = recordingHttp(createHttpResponse(200, JSON.stringify({config: partialConfig})));
-    const {createGenerateEnvironmentCommand} = await import("./generate.env.ts");
+    const {createGenerateEnvironmentCommand} = await import("./env.ts");
     const command = createGenerateEnvironmentCommand(
       createTestRuntimeFactory({files, logger, http, environment: ciEnvironment({INFRA: "azure"})}),
     );
@@ -543,7 +543,7 @@ describe("generateEnvironmentCommand characterization", () => {
     const sink = new InMemoryLoggerSink();
     const logger = new MonorepositoryConsoleLogger("generate::env", {color: false, sink});
     const {http} = recordingHttp(createHttpResponse(500, "boom"));
-    const {createGenerateEnvironmentCommand} = await import("./generate.env.ts");
+    const {createGenerateEnvironmentCommand} = await import("./env.ts");
     const command = createGenerateEnvironmentCommand(
       createTestRuntimeFactory({files, logger, http, environment: ciEnvironment({INFRA: "azure"})}),
     );
@@ -571,7 +571,7 @@ describe("generateEnvironmentCommand characterization", () => {
     const sink = new InMemoryLoggerSink();
     const logger = new MonorepositoryConsoleLogger("generate::env", {color: false, sink});
     const prompts = createTerminalPromptProvider({input: new PassThrough(), output: new PassThrough(), isTTY: false});
-    const {createGenerateEnvironmentCommand} = await import("./generate.env.ts");
+    const {createGenerateEnvironmentCommand} = await import("./env.ts");
     const command = createGenerateEnvironmentCommand(createTestRuntimeFactory({files, logger, prompts}));
 
     // Act
@@ -606,7 +606,7 @@ describe("generateEnvironmentCommand characterization", () => {
       ...createTerminalPromptProvider({input: new PassThrough(), output: new PassThrough(), isTTY: false}),
       confirm: async () => false,
     };
-    const {createGenerateEnvironmentCommand} = await import("./generate.env.ts");
+    const {createGenerateEnvironmentCommand} = await import("./env.ts");
     const command = createGenerateEnvironmentCommand(createTestRuntimeFactory({files, logger, prompts}));
 
     // Act
@@ -628,13 +628,13 @@ describe("generateEnvironmentCommand characterization", () => {
 
 describe("parseEnvironmentFile - semantic characterization", () => {
   it("preserves inline # as part of the value for unquoted assignments", async () => {
-    const {parseEnvironmentFile} = await import("./generate.env.ts");
+    const {parseEnvironmentFile} = await import("./env.ts");
     const parsed = parseEnvironmentFile("KEY=value # inline comment\n");
     expect([...parsed]).toEqual([["KEY", "value # inline comment"]]);
   });
 
   it("treats export-prefixed lines as having a compound key, not as a bare variable name", async () => {
-    const {parseEnvironmentFile} = await import("./generate.env.ts");
+    const {parseEnvironmentFile} = await import("./env.ts");
     const parsed = parseEnvironmentFile("export KEY=value\n");
     expect([...parsed]).toEqual([["export KEY", "value"]]);
   });
@@ -642,13 +642,13 @@ describe("parseEnvironmentFile - semantic characterization", () => {
 
 describe("azure mapping source-of-truth", () => {
   it("exports AZURE_RUNTIME_IDENTITY_KEYS with the three standard Azure identity keys", async () => {
-    const azureModule = await import("./azure/index.ts");
+    const azureModule = await import("../../azure/index.ts");
     const runtimeKeys = (azureModule as Record<string, unknown>)["AZURE_RUNTIME_IDENTITY_KEYS"];
     expect(runtimeKeys).toEqual(["AZURE_CLIENT_ID", "AZURE_TENANT_ID", "AZURE_SUBSCRIPTION_ID"]);
   });
 
   it("preserves APP_CONFIGURATION_MAPPING key/value pairs byte-for-byte", async () => {
-    const {APP_CONFIGURATION_MAPPING} = await import("./azure/index.ts");
+    const {APP_CONFIGURATION_MAPPING} = await import("../../azure/index.ts");
     expect(Object.entries(APP_CONFIGURATION_MAPPING)).toEqual([
       ["Site:Environment", "SITE_ENV"],
       ["Site:Name", "SITE_NAME"],

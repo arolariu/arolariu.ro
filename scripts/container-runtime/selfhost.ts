@@ -21,7 +21,7 @@ import {MonorepoCommand, type CommandContext, type CommandInvoker, type CommandR
 import {resolveRepositoryPaths} from "../common/repository-paths.ts";
 import {RunnerError, type ProcessEnvironment} from "../common/runner.ts";
 import {CommandCancellation, commandCancellationFromSignal, type CommandRuntime} from "../common/runtime.ts";
-import {generateArtifactsCommand, type ArtifactGenerationResult, type GenerateArtifactsInput} from "../generate.artifacts.ts";
+import {generateArtifactsCommand, type ArtifactGenerationResult, type GenerateArtifactsInput} from "../commands/generate/artifacts.ts";
 import {getContainerAdapter, type ContainerRuntimeAdapter, type RuntimeCommand} from "./adapters.ts";
 import {runContainerPreflight} from "./preflight.ts";
 import {azuriteDevelopmentConnectionString, createLocalStorageBootstrap, type LocalStorageBootstrap} from "./selfhost.bootstrap.ts";

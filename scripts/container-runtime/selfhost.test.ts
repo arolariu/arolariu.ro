@@ -23,7 +23,7 @@ import {
   type FileSystem,
   type RuntimeEnvironment,
 } from "../common/runtime.ts";
-import type {ArtifactGenerationResult, GenerateArtifactsInput} from "../generate.artifacts.ts";
+import type {ArtifactGenerationResult, GenerateArtifactsInput} from "../commands/generate/artifacts.ts";
 import {getContainerAdapter} from "./adapters.ts";
 import type {LocalStorageBootstrap} from "./selfhost.bootstrap.ts";
 import {

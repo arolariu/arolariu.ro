@@ -15,7 +15,7 @@ import {
 } from "../common/runtime.testing.ts";
 import type {Clock, RuntimeEnvironment} from "../common/runtime.ts";
 import type {CommandExecution, CommandInvoker} from "../common/commander.ts";
-import type {ArtifactGenerationResult, GenerateArtifactsInput} from "../generate.artifacts.ts";
+import type {ArtifactGenerationResult, GenerateArtifactsInput} from "../commands/generate/artifacts.ts";
 import type {LocalStorageBootstrap} from "./selfhost.bootstrap.ts";
 import {createSelfhostCommand} from "./selfhost.ts";
 

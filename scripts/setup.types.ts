@@ -18,7 +18,7 @@ import type {RepositoryRequirements} from "./common/requirements.ts";
 import type {ProcessRequest, ProcessRunner} from "./common/runner.ts";
 import type {Clock, FileSystem, HttpClient, RuntimeEnvironment, TaskScheduler} from "./common/runtime.ts";
 import type {ContainerEngine} from "./container-runtime/types.ts";
-import type {GenerateInput, GenerateResult} from "./generate.ts";
+import type {GenerateInput, GenerateResult} from "./commands/generate/index.ts";
 import type {RepositoryInspectionSession} from "./inspection/repository.ts";
 
 /** Terminal status reported by one setup phase. */

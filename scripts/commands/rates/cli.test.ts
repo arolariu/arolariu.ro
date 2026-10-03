@@ -15,7 +15,7 @@ import {makeRootCommand, runCli} from "../../cli.ts";
 import type {CommandInvoker} from "../../common/commander.ts";
 import {exitCodeFor, type CommandExitCode} from "../../platform/exit.ts";
 import {makeTestLayer} from "../../platform/testing.ts";
-import type {ExchangeRateInput} from "../../update-exchange-rates.ts";
+import type {ExchangeRateInput} from "./update.ts";
 import {makeRatesCommand} from "./cli.ts";
 
 /**

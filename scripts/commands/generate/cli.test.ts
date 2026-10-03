@@ -13,7 +13,7 @@ import {describe, expect, it} from "vitest";
 
 import {makeRootCommand, runCli} from "../../cli.ts";
 import type {CommandInvoker} from "../../common/commander.ts";
-import type {GenerateInput} from "../../generate.ts";
+import type {GenerateInput} from "./index.ts";
 import {exitCodeFor, type CommandExitCode} from "../../platform/exit.ts";
 import {makeTestLayer} from "../../platform/testing.ts";
 import {makeGenerateCommand} from "./cli.ts";

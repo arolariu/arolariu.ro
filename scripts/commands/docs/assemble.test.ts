@@ -16,10 +16,10 @@
 import {join} from "node:path";
 import {describe, expect, it} from "vitest";
 
-import {createRepositoryPaths, type RepositoryPaths} from "./common/repository-paths.ts";
-import {AbstractProcessRunner, type ProcessOutcome, type ProcessRequest, type ProcessRunOptions} from "./common/runner.ts";
-import {createMemoryFileSystem, createTestRuntimeFactory, repositoryFixtureRoot} from "./common/runtime.testing.ts";
-import type {FileSystem} from "./common/runtime.ts";
+import {createRepositoryPaths, type RepositoryPaths} from "../../common/repository-paths.ts";
+import {AbstractProcessRunner, type ProcessOutcome, type ProcessRequest, type ProcessRunOptions} from "../../common/runner.ts";
+import {createMemoryFileSystem, createTestRuntimeFactory, repositoryFixtureRoot} from "../../common/runtime.testing.ts";
+import type {FileSystem} from "../../common/runtime.ts";
 import {
   assertExpectedDocumentationTiers,
   assertNonEmpty,
@@ -29,7 +29,7 @@ import {
   getDefaultDocumentationArgs,
   getDefaultDocumentationCommand,
   syncProse,
-} from "./docs-assemble.ts";
+} from "./assemble.ts";
 
 // ============================================================================
 // syncProse

@@ -13,7 +13,7 @@ import {Argument, Command} from "effect/cli";
 
 import type {CliSubcommand} from "../../cli.ts";
 import type {CommandInvoker} from "../../common/commander.ts";
-import {generateCommand, type GenerateInput, type GenerateTaskName} from "../../generate.ts";
+import {generateCommand, type GenerateInput, type GenerateTaskName} from "./index.ts";
 import {VerboseFlag, withCommandOutput} from "../flags.ts";
 import {runLegacy} from "../legacy.ts";
 

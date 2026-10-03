@@ -23,11 +23,11 @@
  */
 
 import {dirname, join, resolve} from "node:path";
-import {MonorepoCommand, type CommandContext, type CommandRuntimeFactory} from "./common/commander.ts";
-import {resolveRepositoryPaths} from "./common/repository-paths.ts";
-import type {ProcessRunner} from "./common/runner.ts";
-import type {FileSystem} from "./common/runtime.ts";
-import {normalizeDirectory, serializeFrontmatter} from "./docs-assemble.normalize.ts";
+import {MonorepoCommand, type CommandContext, type CommandRuntimeFactory} from "../../common/commander.ts";
+import {resolveRepositoryPaths} from "../../common/repository-paths.ts";
+import type {ProcessRunner} from "../../common/runner.ts";
+import type {FileSystem} from "../../common/runtime.ts";
+import {normalizeDirectory, serializeFrontmatter} from "./normalize.ts";
 
 /**
  * .NET target framework shared across every project under

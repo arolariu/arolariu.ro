@@ -12,9 +12,9 @@
 
 import {basename, dirname, join, resolve} from "node:path";
 
-import {MonorepoCommand, type CommandContext, type CommandRuntimeFactory} from "./common/commander.ts";
-import type {MonorepositoryLogger} from "./common/logger.ts";
-import {RunnerError, type ProcessOutcome, type ProcessRequest, type ProcessRunner, type SucceededProcessOutcome} from "./common/runner.ts";
+import {MonorepoCommand, type CommandContext, type CommandRuntimeFactory} from "../../common/commander.ts";
+import type {MonorepositoryLogger} from "../../common/logger.ts";
+import {RunnerError, type ProcessOutcome, type ProcessRequest, type ProcessRunner, type SucceededProcessOutcome} from "../../common/runner.ts";
 import {
   CommandCancellation,
   type Clock,
@@ -23,11 +23,11 @@ import {
   type HttpResponse,
   type RuntimeEnvironment,
   type TaskScheduler,
-} from "./common/runtime.ts";
-import {taxonomyArtifactFileNames, taxonomyArtifactOutputRoots} from "./common/taxonomy-artifacts.ts";
-import type {NodePackageDependencyType, NodePackageInformation, TaxonomyArtifact, TaxonomyArtifactNode} from "./types";
+} from "../../common/runtime.ts";
+import {taxonomyArtifactFileNames, taxonomyArtifactOutputRoots} from "../../common/taxonomy-artifacts.ts";
+import type {NodePackageDependencyType, NodePackageInformation, TaxonomyArtifact, TaxonomyArtifactNode} from "../../types";
 
-export {getExpectedTaxonomyArtifactPaths, taxonomyArtifactFileNames} from "./common/taxonomy-artifacts.ts";
+export {getExpectedTaxonomyArtifactPaths, taxonomyArtifactFileNames} from "../../common/taxonomy-artifacts.ts";
 
 /** Backoff delays between the three bounded taxonomy source attempts. */
 const TAXONOMY_SOURCE_RETRY_DELAYS_MS = [1_000, 4_000] as const;

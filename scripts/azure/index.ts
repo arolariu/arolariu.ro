@@ -25,7 +25,7 @@ export function isSecretKey(key: string): boolean {
  *
  * @remarks
  * This is the single source of truth for generated App Configuration keys.
- * Used by `generate.env.ts` to translate the exp `/api/v1/build-time`
+ * Used by `commands/generate/env.ts` to translate the exp `/api/v1/build-time`
  * response into a `.env` file with the correct variable names.
  */
 export const APP_CONFIGURATION_MAPPING = {

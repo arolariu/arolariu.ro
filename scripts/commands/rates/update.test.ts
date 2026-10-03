@@ -13,16 +13,16 @@
 import {join} from "node:path";
 import {describe, expect, it} from "vitest";
 
-import {CommandInputError} from "./common/commander.ts";
-import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "./common/logger.ts";
-import {CommandCancellation, type Clock, type HttpClient, type HttpRequest} from "./common/runtime.ts";
+import {CommandInputError} from "../../common/commander.ts";
+import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "../../common/logger.ts";
+import {CommandCancellation, type Clock, type HttpClient, type HttpRequest} from "../../common/runtime.ts";
 import {
   createHttpResponse,
   createMemoryFileSystem,
   createTestRuntimeFactory,
   repositoryFixtureRoot,
-} from "./common/runtime.testing.ts";
-import {createUpdateExchangeRatesCommand, decodeExchangeRateInput} from "./update-exchange-rates.ts";
+} from "../../common/runtime.testing.ts";
+import {createUpdateExchangeRatesCommand, decodeExchangeRateInput} from "./update.ts";
 
 const CSV_PATH = join(repositoryFixtureRoot, "sites", "arolariu.ro", "public", "data", "exchange-rates.csv");
 

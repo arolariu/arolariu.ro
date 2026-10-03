@@ -10,8 +10,8 @@
 
 import {describe, it, expect} from "vitest";
 import {join} from "node:path";
-import {createMemoryFileSystem} from "./common/runtime.testing.ts";
-import {normalizeDirectory, serializeFrontmatter} from "./docs-assemble.normalize.ts";
+import {createMemoryFileSystem} from "../../common/runtime.testing.ts";
+import {normalizeDirectory, serializeFrontmatter} from "./normalize.ts";
 
 const ROOT = "/norm";
 

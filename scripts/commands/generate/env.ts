@@ -16,10 +16,10 @@
  */
 
 import path from "node:path";
-import {APP_CONFIGURATION_MAPPING, AZURE_RUNTIME_IDENTITY_KEYS, isSecretKey} from "./azure/index.ts";
-import type {AppConfigurationEnvironmentKey, GeneratedEnvironmentConfiguration, GeneratedEnvironmentKey} from "./azure/index.ts";
-import {MonorepoCommand, type CommandContext, type CommandRuntimeFactory} from "./common/commander.ts";
-import type {MonorepositoryLogger} from "./common/logger.ts";
+import {APP_CONFIGURATION_MAPPING, AZURE_RUNTIME_IDENTITY_KEYS, isSecretKey} from "../../azure/index.ts";
+import type {AppConfigurationEnvironmentKey, GeneratedEnvironmentConfiguration, GeneratedEnvironmentKey} from "../../azure/index.ts";
+import {MonorepoCommand, type CommandContext, type CommandRuntimeFactory} from "../../common/commander.ts";
+import type {MonorepositoryLogger} from "../../common/logger.ts";
 
 /** Typed input accepted by every migrated `generate` leaf command. */
 export interface GenerateLeafInput {

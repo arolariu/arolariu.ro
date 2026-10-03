@@ -6,12 +6,12 @@
 
 import {describe, expect, it} from "vitest";
 
-import type {CommandExecution, CommandInvoker, CommandPresentation} from "./common/commander.ts";
-import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "./common/logger.ts";
-import {createTestRuntimeFactory} from "./common/runtime.testing.ts";
-import type {ArtifactGenerationResult, GenerateArtifactsInput} from "./generate.artifacts.ts";
-import type {GenerateLeafInput, GenerateLeafResult} from "./generate.env.ts";
-import {createGenerateCommand, type GenerateCommandDependencies, type GenerateTaskName} from "./generate.ts";
+import type {CommandExecution, CommandInvoker, CommandPresentation} from "../../common/commander.ts";
+import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "../../common/logger.ts";
+import {createTestRuntimeFactory} from "../../common/runtime.testing.ts";
+import type {ArtifactGenerationResult, GenerateArtifactsInput} from "./artifacts.ts";
+import type {GenerateLeafInput, GenerateLeafResult} from "./env.ts";
+import {createGenerateCommand, type GenerateCommandDependencies, type GenerateTaskName} from "./index.ts";
 
 /** One recorded nested generator invocation. */
 interface RecordedGeneratorCall {

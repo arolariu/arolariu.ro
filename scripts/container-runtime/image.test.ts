@@ -8,7 +8,7 @@ import type {CommandExecution, CommandInvoker} from "../common/commander.ts";
 import type {ProcessOutcome} from "../common/runner.ts";
 import {createProcessRunner, createTestRuntimeFactory} from "../common/runtime.testing.ts";
 import {CommandCancellation} from "../common/runtime.ts";
-import type {ArtifactGenerationResult, GenerateArtifactsInput} from "../generate.artifacts.ts";
+import type {ArtifactGenerationResult, GenerateArtifactsInput} from "../commands/generate/artifacts.ts";
 import {getContainerAdapter} from "./adapters.ts";
 import {buildImageBuildCommand, buildImageRunCommand, createImageCommand} from "./image.ts";
 

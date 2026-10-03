@@ -13,7 +13,7 @@ import {Command, Flag} from "effect/cli";
 
 import type {CliSubcommand} from "../../cli.ts";
 import type {CommandInvoker} from "../../common/commander.ts";
-import {decodeExchangeRateInput, updateExchangeRatesCommand, type ExchangeRateInput} from "../../update-exchange-rates.ts";
+import {decodeExchangeRateInput, updateExchangeRatesCommand, type ExchangeRateInput} from "./update.ts";
 import {withCommandOutput} from "../flags.ts";
 import {decodeInput, runLegacy} from "../legacy.ts";
 

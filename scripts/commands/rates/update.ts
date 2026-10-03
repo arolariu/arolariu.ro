@@ -26,9 +26,9 @@
 
 import {join} from "node:path";
 
-import {CommandInputError, MonorepoCommand, type CommandContext, type CommandRuntimeFactory} from "./common/commander.ts";
-import type {MonorepositoryLogger} from "./common/logger.ts";
-import {CommandCancellation, type Clock, type FileSystem, type HttpClient} from "./common/runtime.ts";
+import {CommandInputError, MonorepoCommand, type CommandContext, type CommandRuntimeFactory} from "../../common/commander.ts";
+import type {MonorepositoryLogger} from "../../common/logger.ts";
+import {CommandCancellation, type Clock, type FileSystem, type HttpClient} from "../../common/runtime.ts";
 
 // ---------------------------------------------------------------------------
 // Configuration

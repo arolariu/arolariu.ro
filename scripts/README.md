@@ -387,8 +387,8 @@ action is `executed`, `planned` (always the outcome under `--dry-run`), or `decl
 Focused validation for setup and its direct shared dependencies:
 
 ```powershell
-npx vitest run --config scripts\vitest.config.ts --coverage.enabled=false scripts\common\repository-paths.test.ts scripts\common\requirements.test.ts scripts\common\tooling-config.test.ts scripts\common\prompts.test.ts scripts\setup.test.ts scripts\setup.workspace.test.ts scripts\setup.dotnet.test.ts scripts\setup.react.test.ts scripts\setup.svelte.test.ts scripts\setup.python.test.ts scripts\setup.infrastructure.test.ts scripts\generate.env.test.ts scripts\container-runtime\selection.test.ts scripts\common\output-policy.test.ts
-npx eslint scripts\setup.ts scripts\setup.types.ts scripts\setup.*.ts scripts\common\repository-paths.ts scripts\common\requirements.ts scripts\common\tooling-config.ts scripts\common\prompts.ts scripts\generate.env.ts scripts\container-runtime
+npx vitest run --config scripts\vitest.config.ts --coverage.enabled=false scripts\common\repository-paths.test.ts scripts\common\requirements.test.ts scripts\common\tooling-config.test.ts scripts\common\prompts.test.ts scripts\setup.test.ts scripts\setup.workspace.test.ts scripts\setup.dotnet.test.ts scripts\setup.react.test.ts scripts\setup.svelte.test.ts scripts\setup.python.test.ts scripts\setup.infrastructure.test.ts scripts\commands\generate\env.test.ts scripts\container-runtime\selection.test.ts scripts\common\output-policy.test.ts
+npx eslint scripts\setup.ts scripts\setup.types.ts scripts\setup.*.ts scripts\common\repository-paths.ts scripts\common\requirements.ts scripts\common\tooling-config.ts scripts\common\prompts.ts scripts\commands\generate\env.ts scripts\container-runtime
 git --no-pager diff --check
 ```
 

@@ -36,7 +36,7 @@ import type {PromptProvider} from "./common/prompts.ts";
 import {loadRepositoryRequirements} from "./common/requirements.ts";
 import {resolveRepositoryPaths} from "./common/repository-paths.ts";
 import {CommandCancellation, commandCancellationFromSignal, type RepositoryInspectionRequest} from "./common/runtime.ts";
-import {generateCommand, type GenerateInput, type GenerateResult} from "./generate.ts";
+import {generateCommand, type GenerateInput, type GenerateResult} from "./commands/generate/index.ts";
 import {dotnetSetupPhase} from "./setup.dotnet.ts";
 import {infrastructureSetupPhase} from "./setup.infrastructure.ts";
 import {pythonSetupPhase} from "./setup.python.ts";
