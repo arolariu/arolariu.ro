@@ -9,7 +9,7 @@
  * help and error text is routed into the harness sink, so the test output stays clean.
  */
 
-import {Cause, Console, Effect, Stdio, Stream} from "effect";
+import {Cause, Console, Context, Effect, Stdio, Stream} from "effect";
 import {Command} from "effect/cli";
 import {describe, expect, it} from "vitest";
 
@@ -22,6 +22,9 @@ import {ProcessExited} from "./platform/Process.ts";
 import {makeTestLayer} from "./platform/testing.ts";
 
 const reportDocument = {status: "failed", checks: 3};
+
+/** A service no root provides; registering a command that needs it must not compile. */
+class Extra extends Context.Service<Extra, {readonly value: number}>()("arolariu/scripts/test/Extra") {}
 
 const testRoot = makeRootCommand([
   Command.make("ok", {}, () => Effect.void),
@@ -89,8 +92,98 @@ describe("runCli", () => {
 
     // Assert
     expect(result.code).toBe(2);
+    expect(result.stdout).toContain("USAGE");
     expect(result.stderrRecords.map((record) => record.text).join("")).toContain("--bogus");
     expect(result.stderrRecords.map((record) => record.text).join("")).not.toContain("[arolariu::cli]");
+  });
+
+  it("renders a usage error as one JSON document with --json", async () => {
+    // Arrange
+    const argv = ["ok", "--bogus", "--json"];
+
+    // Act
+    const result = await run(argv);
+
+    // Assert
+    expect(result.code).toBe(2);
+    expect(result.stdoutRecords).toHaveLength(1);
+    const document: unknown = JSON.parse(result.stdout);
+    expect(document).toMatchObject({status: "failed", kind: "usage", evidence: []});
+    expect(document).toHaveProperty("message", expect.stringContaining("--bogus"));
+    expect(result.stderrRecords.map((record) => record.text).join("")).toContain("USAGE");
+  });
+
+  it("keeps every usage error after the first as JSON evidence", async () => {
+    // Arrange
+    const argv = ["ok", "--bogus", "--other", "--json"];
+
+    // Act
+    const result = await run(argv);
+
+    // Assert
+    expect(result.code).toBe(2);
+    expect(result.stdoutRecords).toHaveLength(1);
+    const document: unknown = JSON.parse(result.stdout);
+    expect(document).toMatchObject({status: "failed", kind: "usage"});
+    expect(document).toHaveProperty("message", expect.stringContaining("--bogus"));
+    expect(document).toHaveProperty("evidence", [expect.stringContaining("--other")]);
+  });
+
+  it("renders an invalid built-in flag value as one JSON document with --json", async () => {
+    // Arrange
+    const argv = ["--completions", "powershell", "--json"];
+
+    // Act
+    const result = await run(argv);
+
+    // Assert
+    expect(result.code).toBe(2);
+    expect(result.stdoutRecords).toHaveLength(1);
+    const document: unknown = JSON.parse(result.stdout);
+    expect(document).toMatchObject({status: "failed", kind: "usage", evidence: []});
+    expect(document).toHaveProperty("message", expect.stringContaining("powershell"));
+  });
+
+  it("runs a group without a subcommand under --json to help on stderr and no document", async () => {
+    // Arrange
+    const argv = ["--json"];
+
+    // Act
+    const result = await run(argv);
+
+    // Assert
+    expect(result.code).toBe(0);
+    expect(result.stdoutRecords).toEqual([]);
+    expect(result.stderrRecords.map((record) => record.text).join("")).toContain("SUBCOMMANDS");
+  });
+
+  it("prints help to stderr and no document for --help --json", async () => {
+    // Arrange
+    const argv = ["--help", "--json"];
+
+    // Act
+    const result = await run(argv);
+
+    // Assert
+    expect(result.code).toBe(0);
+    expect(result.stdoutRecords).toEqual([]);
+    expect(result.stderrRecords.map((record) => record.text).join("")).toContain("USAGE");
+  });
+
+  it("rejects at compile time a subcommand that requires an unprovided service", () => {
+    // Arrange
+    const needsExtra = Command.make("extra", {}, () =>
+      Effect.gen(function* () {
+        yield* Extra;
+      }),
+    );
+
+    // Act
+    // @ts-expect-error -- `Extra` is neither a base service nor a global setting.
+    const root = makeRootCommand([needsExtra]);
+
+    // Assert
+    expect(root.name).toBe("arolariu");
   });
 
   it("prints help", async () => {
@@ -231,6 +324,7 @@ describe("runCli", () => {
   it("exposes the invocation arguments through Stdio and rejects Stdio output", async () => {
     // Arrange
     const root = makeRootCommand([
+      // @ts-expect-error -- Stdio is deliberately not a subcommand service; runCli provides it only for effect/cli.
       Command.make("stdio", {}, () =>
         Effect.gen(function* () {
           const stdio = yield* Stdio.Stdio;
