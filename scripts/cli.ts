@@ -16,7 +16,13 @@ import {Cause, Console, Effect, Sink as EffectSink, Formatter, Result, Stdio, St
 import {CliError, Command, type GlobalFlag} from "effect/cli";
 
 import packageJson from "../package.json" with {type: "json"};
+import {makeDocsCommand} from "./commands/docs/cli.ts";
+import {makeDoctorCommand} from "./commands/doctor/cli.ts";
 import {JsonFlag, VerboseFlag} from "./commands/flags.ts";
+import {makeGenerateCommand} from "./commands/generate/cli.ts";
+import {makeRatesCommand} from "./commands/rates/cli.ts";
+import {makeSetupCommand} from "./commands/setup/cli.ts";
+import {makeStatusCommand} from "./commands/status/cli.ts";
 import {exitCodeFor, ReportedFailure} from "./platform/exit.ts";
 import {NodeBaseLayer, type BaseServices} from "./platform/layers.ts";
 import {Sink, type OutputStream, type SinkShape} from "./platform/Output.ts";
@@ -71,13 +77,15 @@ export function makeRootCommand(subcommands: readonly [CliSubcommand, ...CliSubc
   );
 }
 
-/** Placeholder subcommand that keeps the root valid until the command families are registered. */
-const versionInfoCommand = Command.make("version-info", {}, () => Console.log(`arolariu ${version}`)).pipe(
-  Command.withDescription("Print the tooling version."),
-);
-
-/** The production root command. */
-export const rootCommand: RootCommand = makeRootCommand([versionInfoCommand]);
+/** The production root command with every registered command family. */
+export const rootCommand: RootCommand = makeRootCommand([
+  makeSetupCommand(),
+  makeDoctorCommand(),
+  makeStatusCommand(),
+  makeGenerateCommand(),
+  makeDocsCommand(),
+  makeRatesCommand(),
+]);
 
 /**
  * Narrows an unknown failure to a {@link ProcessError}.

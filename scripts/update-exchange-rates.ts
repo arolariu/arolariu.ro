@@ -295,7 +295,7 @@ function requireOrderedRange(fromYear: number, toYear: number): void {
  * @throws {CommandInputError} When a year value fails integer or lower-bound validation, or when
  * both explicit bounds are inverted.
  */
-function decodeExchangeRateInput(opts: Readonly<{year?: string; from?: string; to?: string}>): ExchangeRateInput {
+export function decodeExchangeRateInput(opts: Readonly<{year?: string; from?: string; to?: string}>): ExchangeRateInput {
   if (opts.year !== undefined) {
     const year = parseYearOption("--year", opts.year);
     return {fromYear: year, toYear: year};

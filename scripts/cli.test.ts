@@ -279,20 +279,19 @@ describe("runCli", () => {
     expect(JSON.parse(result.stdout)).toEqual({status: "failed", kind: "internal", message: "bug", evidence: []});
   });
 
-  it("runs the placeholder subcommand of the default root", async () => {
+  it("lists every command family in the default root's help", async () => {
     // Arrange
-    const argv = ["version-info"];
+    const argv = ["--help"];
 
     // Act
     const result = await run(argv, rootCommand);
 
     // Assert
-    expect(result).toEqual({
-      code: 0,
-      stdout: `arolariu ${packageJson.version}\n`,
-      stdoutRecords: [{stream: "stdout", text: `arolariu ${packageJson.version}\n`}],
-      stderrRecords: [],
-    });
+    expect(result.code).toBe(0);
+    for (const family of ["setup", "doctor", "status", "generate", "docs", "rates"]) {
+      expect(result.stdout).toContain(family);
+    }
+    expect(result.stderrRecords).toEqual([]);
   });
 
   it("routes effect Console output into the sink", async () => {
@@ -348,11 +347,16 @@ describe("runCli", () => {
     const harness = makeTestLayer();
 
     // Act
-    const exit = await Effect.runPromiseExit(runCli(["version-info"]).pipe(Effect.provide(harness.layer)));
+    const exit = await Effect.runPromiseExit(runCli(["--help"]).pipe(Effect.provide(harness.layer)));
 
     // Assert
     expect(exitCodeFor(exit, undefined)).toBe(0);
-    expect(harness.output()).toEqual([{stream: "stdout", text: `arolariu ${packageJson.version}\n`}]);
+    expect(
+      harness
+        .output()
+        .map((record) => record.text)
+        .join(""),
+    ).toContain("rates");
   });
 });
 
