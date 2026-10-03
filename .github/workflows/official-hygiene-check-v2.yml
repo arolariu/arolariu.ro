@@ -119,7 +119,7 @@ jobs:
           install-scripts-deps: 'true'
           run-build-components: ${{ matrix.provider.id == 'lint' || matrix.provider.id == 'test-typescript' }}
           run-generate: ${{ matrix.provider.id == 'test-dotnet' || matrix.provider.id == 'test-typescript' }}
-          generate-args: '/a'
+          generate-args: 'artifacts'
           dotnet: ${{ matrix.provider.needs-dotnet }}
           python: ${{ matrix.provider.needs-python }}
 

@@ -352,7 +352,7 @@ The Infrastructure UAMI is the CI/CD orchestrator — it handles Azure login,
 ACR push, and config fetching. It is whitelisted in exp's Easy Auth allow-list
 and granted access to both `api` and `website` targets via `EXP_CALLER_INFRA_IDS`.
 
-The `npm run generate /e` script (called during website container builds) will
+The `npm run generate -- env` script (called during website container builds) will
 fetch build-time environment variables from exp instead of directly accessing
 Azure App Configuration. This keeps the Infrastructure UAMI as the single
 identity responsible for all CI/CD operations.

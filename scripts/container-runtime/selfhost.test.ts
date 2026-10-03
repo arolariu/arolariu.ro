@@ -250,10 +250,10 @@ function businessCalls(runner: RecordedRunner): readonly string[] {
 
 describe("supported selfhost launchers", () => {
   it.each(launcherCases)(
-    "routes $path through the TypeScript entrypoint with argument and exit-code propagation",
+    "routes $path through the effect cli entrypoint with argument and exit-code propagation",
     async ({path, action, forwarding, shell}) => {
       const source = await readFile(new URL(path, import.meta.url), "utf8");
-      const command = `node scripts/container-runtime/selfhost.ts ${action} ${forwarding}`;
+      const command = `node scripts/cli.ts dev selfhost ${action} ${forwarding}`;
 
       expect(source).not.toContain("scripts/dev-selfhost.mjs");
       expect(source).toContain(command);
@@ -261,7 +261,7 @@ describe("supported selfhost launchers", () => {
       if (shell === "batch") {
         expect(source).toContain('pushd "%~dp0..\\.."');
         expect(source).toMatch(
-          /node scripts\/container-runtime\/selfhost\.ts (?:start|stop) %\*\r?\nset "EXIT_CODE=%ERRORLEVEL%"\r?\npopd\r?\nexit \/b %EXIT_CODE%/,
+          /node scripts\/cli\.ts dev selfhost (?:start|stop) %\*\r?\nset "EXIT_CODE=%ERRORLEVEL%"\r?\npopd\r?\nexit \/b %EXIT_CODE%/,
         );
       } else {
         expect(source).toContain("set -euo pipefail");

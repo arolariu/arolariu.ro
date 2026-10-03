@@ -822,7 +822,7 @@ async function diagnoseGeneratedArtifacts(context: Readonly<DoctorContext>): Pro
       summary: "Generated artifact metadata could not be inspected.",
       evidence: [normalizeErrorForReport(error, "Generated artifact metadata could not be inspected.")],
       potentialCauses: [{cause: "Generated artifact paths or their source file are inaccessible.", confidence: "high"}],
-      fixes: [{description: "Correct filesystem access and regenerate repository artifacts.", command: "npm run generate -- /a"}],
+      fixes: [{description: "Correct filesystem access and regenerate repository artifacts.", command: "npm run generate -- artifacts"}],
     });
   }
 
@@ -892,7 +892,7 @@ async function diagnoseGeneratedArtifacts(context: Readonly<DoctorContext>): Pro
           ? [{cause: "One or more taxonomy artifacts contain invalid or outdated release metadata.", confidence: "high" as const}]
           : []),
       ],
-      fixes: [{description: "Regenerate taxonomy artifacts without running a build.", command: "npm run generate -- /a"}],
+      fixes: [{description: "Regenerate taxonomy artifacts without running a build.", command: "npm run generate -- artifacts"}],
     });
   }
   if (freshnessWarnings.length > 0) {
@@ -903,7 +903,7 @@ async function diagnoseGeneratedArtifacts(context: Readonly<DoctorContext>): Pro
       summary: "Mirrored taxonomy artifacts have invalid freshness metadata.",
       evidence: boundEvidence([...freshnessWarnings, ...freshnessEvidence], context.options.verbose),
       rootCause: "One or more taxonomy artifacts have invalid embedded generation timestamps.",
-      fixes: [{description: "Regenerate taxonomy artifacts.", command: "npm run generate -- /a"}],
+      fixes: [{description: "Regenerate taxonomy artifacts.", command: "npm run generate -- artifacts"}],
     });
   }
 

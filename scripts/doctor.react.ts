@@ -357,7 +357,7 @@ function diagnoseTaxonomyAndLicenses(context: Readonly<DoctorContext>, facts: Re
     summary: "Website taxonomy artifacts or license metadata are incomplete or invalid.",
     evidence,
     ...buildIssueDiagnosis(issues),
-    fixes: [{description: "Regenerate taxonomy and license artifacts, then rerun doctor.", command: "npm run generate -- /a"}],
+    fixes: [{description: "Regenerate taxonomy and license artifacts, then rerun doctor.", command: "npm run generate -- artifacts"}],
   });
 }
 

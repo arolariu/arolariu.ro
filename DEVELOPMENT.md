@@ -291,7 +291,7 @@ npm run build:components # Build component library
 ### Code Generation
 
 ```bash
-npm run generate -- /a /g /i  # Regenerate setup-owned artifacts, GraphQL types, and i18n (excludes destructive env generation)
+npm run generate -- artifacts gql i18n  # Regenerate setup-owned artifacts, GraphQL types, and i18n (excludes destructive env generation)
 npm run generate:env     # ⚠️ Destructive manual regeneration — rewrites root .env and overwrites sites/arolariu.ro/.env; not a routine post-setup step
 npm run generate:i18n    # i18n translation sync
 npm run generate:gql     # GraphQL type generation
@@ -300,20 +300,22 @@ npm run generate:gql     # GraphQL type generation
 ### Root tooling scripts
 
 Every root script under `scripts/` — setup, doctor, status, the generators, documentation
-assembly, exchange rates, E2E, and the container-runtime commands — is one declarative command
-object on the shared runtime in `scripts/common/`. Practical consequences when you run or extend
-them:
+assembly, exchange rates, E2E, the container-runtime commands, format, and lint — is a
+subcommand of the single `scripts/cli.ts` entrypoint (for example `node scripts/cli.ts generate gql`);
+the `npm run` aliases in the root `package.json` call it. Practical consequences when you run or
+extend them:
 
-- **Help always wins.** `node scripts/<name>.ts --help` (and `/h`, `/help`) prints usage and exits
-  `0` without doing any work. `npm run <script> -- --help` behaves identically.
+- **Help always wins.** `npm run <script> -- --help` (or `node scripts/cli.ts <command> --help`)
+  prints usage and exits `0` without doing any work. Flags use the `--name` form only; `-v` is
+  `--version`, and verbose output is `--verbose`.
 - **Exit codes are uniform.** `0` success, `1` a completed-but-negative result or an operational
   failure, `2` invalid usage, `130` SIGINT, `143` SIGTERM.
 - **Ctrl+C is graceful.** A command cancels its in-flight work, drains its cleanup registry, and
   exits `130` instead of leaving partial state behind.
 - **Commands compose in-process.** `npm run status` runs doctor as a typed child call rather than
   spawning a second Node process, so both share one repository inspection session.
-- **`npm run format` and `npm run lint` are deliberately different.** They stay on Piscina worker
-  pools and are the only root scripts outside the command runtime.
+- **`npm run format` and `npm run lint` are deliberately different.** `scripts/cli.ts` routes
+  them, but they keep their own Piscina worker pools outside the shared command runtime.
 
 See [scripts/README.md](scripts/README.md) for the authoring contract and
 [docs/rfc/0002-lean-monorepo-tooling-architecture.md](docs/rfc/0002-lean-monorepo-tooling-architecture.md)
@@ -339,15 +341,16 @@ container-engine client/cache state outside the repository and local-tooling bou
 ### CLI contract
 
 ```bash
-node scripts/doctor.ts               # Human-readable report (score always rendered)
-node scripts/doctor.ts --verbose     # -v: also show evidence for passing checks
-node scripts/doctor.ts --quick       # Skip network/slow checks as explicit `skipped` rows
-node scripts/doctor.ts --help        # -h: usage — always wins over an unknown flag or any repository/module work
+npm run doctor                  # Human-readable report (score always rendered)
+npm run doctor -- --verbose     # Also show evidence for passing checks
+npm run doctor -- --quick       # Skip network/slow checks as explicit `skipped` rows
+npm run doctor -- --json        # Emit the report as one machine-readable JSON document
+npm run doctor -- --help        # Usage — always wins over an unknown flag or any repository/module work
 ```
 
-`npm run doctor -- <flag>` works identically. `--help`/`-h` is checked first and always wins; any
-other unrecognized flag fails before repository or module work begins. Only `--verbose`/`-v`,
-`--quick`, and `--help`/`-h` are supported; there are no `--ci`, `--json`, or `--score` flags.
+`--help` is checked first and always wins; any other unrecognized flag fails with exit `2` before
+repository or module work begins. Doctor accepts `--quick` plus the shared `--verbose`, `--json`,
+and `--help` flags; there are no `--ci` or `--score` flags.
 
 Doctor always runs all six diagnostic modules independently and concurrently, but always renders
 them in this fixed order: **Workspace → .NET → React → Svelte → Python → Infrastructure**.
@@ -403,7 +406,7 @@ the commands below — run them yourself only after reading that evidence.
 |-----------|-------------------------------------------------------|
 | npm / workspace | `npm run setup` (primary repair); `npm audit --json` / `npm outdated --json` to inspect the same data doctor reads |
 | .NET | `dotnet --info`, `dotnet --list-sdks`, `dotnet tool restore`, `dotnet dev-certs https --trust` — `npm run setup` remains the normal preparation path |
-| React / Playwright | `npm run setup`; `npx --no-install playwright install --list`; `npx playwright install chromium`; `npm run generate:i18n`; `npm run generate -- /a` when the diagnosed row directs it |
+| React / Playwright | `npm run setup`; `npx --no-install playwright install --list`; `npx playwright install chromium`; `npm run generate:i18n`; `npm run generate -- artifacts` when the diagnosed row directs it |
 | Svelte | `npm run setup` to regenerate `.svelte-kit` state; `npm install` only when the row indicates an actual dependency repair is needed |
 | Python | `npm run setup`; for a manual probe, run `pip check` through the venv's own interpreter — `sites\exp.arolariu.ro\.venv\Scripts\python.exe -m pip check` (Windows) or `sites/exp.arolariu.ro/.venv/bin/python -m pip check` (POSIX) |
 | Rancher / Podman | `npm run setup -- --engine rancher\|podman` to (re)select the engine explicitly; read-only `docker version`/`docker compose version` (Rancher) or `podman info --format json`/`podman compose version` (Podman); use `npm run dev:selfhost -- --engine <engine>` / `npm run dev:selfhost:stop -- --engine <engine>` only when you deliberately choose to start or stop the containerized stack |
@@ -561,7 +564,7 @@ sites/arolariu.ro ←── API calls ──→ sites/api.arolariu.ro
 | .NET API won't start | Under Aspire, check the dashboard's Health/Console-log tabs — the API waits on SQL, Cosmos, Azurite, and exp before going live (allow ~30s on first boot). Running `npm run dev:api` standalone needs a running container engine and `npm run dev:exp` started separately, since exp supplies the API's runtime config |
 | Python not found | Rerun `npm run setup -- --yes` to install Python 3.12 with consent (required by setup's `python` phase), or install it yourself |
 | Containers won't start | Ensure the selected container engine (Rancher Desktop or Podman Desktop — Docker Desktop is not supported) is running and ports 3000/5000/5002 are free |
-| Missing generated TypeScript artifacts | Rerun `npm run setup`, or explicitly run `npm run generate -- /a /g /i` |
+| Missing generated TypeScript artifacts | Rerun `npm run setup`, or explicitly run `npm run generate -- artifacts gql i18n` |
 | Tests failing | `npm run doctor` diagnoses the *environment* only (dependencies, toolchains, config) — it never runs tests. Rerun the relevant `npm run test*` command after doctor's evidence rules out an environment cause |
 | HTTPS certificate errors | See [infra/Local/readme.md](infra/Local/readme.md) for mkcert setup |
 | `*.localhost` not resolving (Windows, selfhost mode) | Add entries to `C:\Windows\System32\drivers\etc\hosts` — see selfhost setup docs |
