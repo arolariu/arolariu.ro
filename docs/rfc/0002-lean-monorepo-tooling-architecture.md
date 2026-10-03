@@ -286,6 +286,17 @@ inspect ambient process state, or write presentation output.
 
 ## 4. Command Authoring Contract
 
+> **Superseded in part by section 21.5 (cohort 2).** Every passage in sections
+> 2.2 and 4-7 that describes argv handling no longer matches live code:
+> Commander parser construction and the fresh parser per invocation (4.3),
+> slash aliases (2.2, 4.3), `run(argv)` and `runIfMain()` (4.2, 4.4, 4.5, 5.2,
+> 5.3, 7.1, 7.4), and direct-entry exit-code assignment through
+> `CommandProcessHost`. `scripts/cli.ts` now owns parsing, help, signal
+> recording, and exit mapping for every command, and legacy commands expose
+> only `invoke()`. The rest of the revision 2 contract (`invoke()`, completion,
+> cleanup, capabilities, runner) stays authoritative for unmigrated commands
+> until cohort 7 rewrites these sections.
+
 ### 4.1 Declarative Definition
 
 The following names and semantics are the normative authoring contract:
@@ -1523,6 +1534,9 @@ typed lifecycle with less ceremony.
 
 ### 16.4 One Root CLI
 
+> **Superseded by section 21.5.** Revision 3 adopts the root CLI
+> (`scripts/cli.ts`) from cohort 2; npm script names remain as aliases.
+
 A root command would register all scripts as subcommands.
 
 Deferred because current npm scripts are clear, independent, and used by
@@ -1639,9 +1653,11 @@ The following are intentionally deferred:
 **Status: Draft.** Revision 3 replaces the homegrown capability kernel with
 Effect v4. It is written in cohort 1, when the platform layer lands beside the
 legacy kernel, and finalized in cohort 7, when the legacy kernel is deleted.
-On finalization it supersedes sections 4-7 of revision 2 and the rejection of a
-root CLI in section 16.4. Until then, sections 1-20 remain the accepted contract
-for every command that has not migrated.
+On finalization it supersedes sections 4-7 of revision 2. The CLI topology
+(section 21.5) is already in force from cohort 2 and supersedes the rejection of
+a root CLI in section 16.4. Until finalization, sections 1-20 remain the
+accepted contract for every command that has not migrated, except where
+section 21.5 replaces them.
 
 ### 21.1 Decisions
 
@@ -1697,17 +1713,86 @@ not wrapped in services.
 
 `scripts/common/runtime-boundary.test.ts` sanctions `scripts/platform/**`, like
 `runtime.node.ts`, as an owner of ambient `process.*`, timer, and `node:*`
-access, and adds three rules:
+access, and adds these rules:
 
-- `@effect/platform-node` is imported only inside `scripts/platform/`;
-- Effect runtimes (`Effect.run*`, `ManagedRuntime.make`) start only in
-  `platform/bridge.ts`, `platform/testing.ts`, and the synchronous logger sink
-  in `platform/Output.ts` (cohort 2 adds `scripts/cli.ts`, cohort 4 adds
-  `platform/worker.ts`);
-- no platform module except `platform/bridge.ts` imports the legacy kernel.
+- `@effect/platform-node` is imported only inside `scripts/platform/` and
+  `scripts/cli.ts`;
+- Effect runtimes (`Effect.run*`, `ManagedRuntime.make`,
+  `NodeRuntime.runMain`) start only in `scripts/cli.ts`, `platform/bridge.ts`,
+  `platform/testing.ts`, and the synchronous logger sink in
+  `platform/Output.ts` (cohort 4 adds `platform/worker.ts`);
+- no platform module except `platform/bridge.ts` imports the legacy kernel;
+- `effect/cli` is imported only under `scripts/commands/`, by
+  `scripts/cli.ts`, and by `platform/exit.ts` (which classifies `CliError`);
+- the only production modules with an `import.meta.main` block are
+  `scripts/cli.ts`, `scripts/format.ts`, `scripts/lint.ts`, and the inspection
+  workers `scripts/inspection/aggregate-worker.ts` and
+  `scripts/inspection/workspace.worker.ts`. Inside that block, `cli.ts` may
+  read `process.argv`, and each worker may read `process.argv` and assign
+  `process.exitCode`; neither exemption applies elsewhere in those files.
+
+### 21.5 CLI topology
+
+**In force from cohort 2.** This decision supersedes the rejection of a root
+CLI in section 16.4 and the argv-handling passages of sections 2.2 and 4-7
+(see the note at section 4).
+
+`scripts/cli.ts` is the single command entrypoint. It builds the `arolariu`
+root command with `effect/cli`, owns all argv parsing, help, version, and shell
+completions, and starts the program once with `NodeRuntime.runMain`:
+
+```text
+arolariu setup [--dry-run] [--yes] [--engine <rancher|podman>]
+arolariu doctor [--quick]
+arolariu status
+arolariu generate [env] [i18n] [gql] [artifacts]
+arolariu docs assemble
+arolariu rates update [--year <y>] [--from <y>] [--to <y>]
+arolariu dev aspire [--engine <rancher|podman>]
+arolariu dev selfhost [start|stop|logs] [--engine <rancher|podman>]
+arolariu containers build|run|compose ...
+arolariu test e2e <all|backend|frontend|cv>
+arolariu format <all|packages|cv|website|api|status|exp> [patterns...]
+arolariu lint <all|packages|cv|website|api|status|exp> [patterns...]
+
+global flags: --json, --verbose, --log-level, --help/-h, --version/-v,
+              --completions <bash|zsh|fish|sh>
+```
+
+- **npm aliases.** Every npm script name is kept as an alias of one command
+  path, for example `"doctor": "node scripts/cli.ts doctor"` and
+  `"rates:update": "node scripts/cli.ts rates update"`. Slash aliases
+  (`/h`, `/v`, `/q`, `/?`) and `normalizeSlashArguments` are removed.
+- **Global flags.** `--json` and `--verbose` are root settings accepted before
+  or after the subcommand. `--verbose` has no short alias because `-v` is
+  `--version`. Under `--json`, exactly one JSON document is written to stdout,
+  including for a usage failure (`{status: "failed", kind: "usage", ...}`);
+  effect/cli help and error text goes to stderr.
+- **Exit codes.** `platform/exit.ts` `exitCodeFor` is the only mapping and
+  only `scripts/cli.ts` calls it: `0` success (including `--help`); `1`
+  `ReportedFailure{exitCode: 1}`, a typed failure, or a defect; `2` a
+  `CliError` or `ReportedFailure{exitCode: 2}`; `130` interruption after
+  SIGINT, with no recorded signal, or a terminal quit; `143` interruption after
+  SIGTERM.
+- **Command families.** Each family lives in
+  `scripts/commands/<family>/cli.ts` and exports
+  `make<Family>Command(...): CliSubcommand`, registered in the root command
+  list of `scripts/cli.ts`. `CliSubcommand` limits handler requirements to the
+  base services and the global settings, so an unprovided service fails to
+  compile. `commands/flags.ts` `withCommandOutput` provides the per-invocation
+  output services.
+- **Legacy commands.** Unmigrated commands are invoke-only:
+  `commands/legacy.ts` `runLegacy` calls `invoke(input, {presentation,
+  signal})` and maps the `CommandExecution` into the Effect exit model.
+  `invoke()` also remains the legacy composition path until cohort 7.
+- **Direct entrypoints.** Besides `scripts/cli.ts`, only the Piscina
+  format/lint orchestrators (section 3.2) and the two inspection workers, which
+  their parents spawn as Node child processes, start a process.
+- **Shell completions** come from effect/cli for bash, zsh, fish, and sh;
+  PowerShell completions are not provided.
 
 ---
 
 **Document Version**: 3.0.0-draft
-**Last Updated**: 2026-10-03
+**Last Updated**: 2026-10-04
 **Status**: Accepted

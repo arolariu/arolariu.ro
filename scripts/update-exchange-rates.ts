@@ -12,9 +12,9 @@
  *
  * **Usage:**
  * ```bash
- * npx tsx scripts/update-exchange-rates.ts
- * npx tsx scripts/update-exchange-rates.ts --year 2025
- * npx tsx scripts/update-exchange-rates.ts --from 2020 --to 2025
+ * npm run rates:update
+ * npm run rates:update -- --year 2025
+ * npm run rates:update -- --from 2020 --to 2025
  * ```
  *
  * **API:** https://frankfurter.dev/

@@ -56,9 +56,19 @@ const platformLayerDirectory = "scripts/platform/";
 
 /**
  * The single effect/cli entrypoint. It starts the program with `NodeRuntime.runMain`, so it may
- * import `@effect/platform-node` and read `process.argv`, but no other ambient state.
+ * import `@effect/platform-node` and read `process.argv` inside its `import.meta.main` block, but
+ * no other ambient state.
  */
 const cliEntrypoint = "scripts/cli.ts";
+
+/** Directory of the effect/cli command families (`scripts/commands/<family>/cli.ts`). */
+const commandFamiliesDirectory = "scripts/commands/";
+
+/**
+ * Production modules outside {@link commandFamiliesDirectory} that may import `effect/cli`: the
+ * root entrypoint and the exit-code mapping, which classifies `CliError` usage failures as exit `2`.
+ */
+const effectCliConsumers: readonly string[] = [cliEntrypoint, "scripts/platform/exit.ts"];
 
 /** Modules allowed to start an Effect runtime (Effect `run*`, `ManagedRuntime.make`, and `NodeRuntime.runMain`). */
 const sanctionedEffectRunners: readonly string[] = [
@@ -92,8 +102,8 @@ const legacyKernelModule = /^scripts\/common\/(?:runtime(?:\.node|\.testing)?|co
 
 /**
  * The legacy inspection worker entrypoints. Their parents spawn them as native Node child processes,
- * so each one reads its own `process.argv` and assigns its own `process.exitCode` inside an
- * `import.meta.main` block until cohort 4 replaces them.
+ * so each one reads its own `process.argv` and assigns its own `process.exitCode`, only inside its
+ * `import.meta.main` block, until cohort 4 replaces them.
  */
 const workerEntrypoints: readonly string[] = [
   "scripts/inspection/aggregate-worker.ts",
@@ -209,10 +219,16 @@ function ownsAmbientRuntime(file: string): boolean {
  *
  * @param file - Repository-relative module path.
  * @param path - Resolved access path.
- * @returns `true` only for `process.argv` inside {@link cliEntrypoint} or a {@link workerEntrypoints} module.
+ * @param inEntryBlock - Whether the access sits inside an `if (import.meta.main)` block.
+ * @returns `true` only for `process.argv` inside the `import.meta.main` block of
+ * {@link cliEntrypoint} or a {@link workerEntrypoints} module.
  */
-function isCliEntrypointArgv(file: string, path: AccessPath): boolean {
-  return (file === cliEntrypoint || workerEntrypoints.includes(file)) && startsWithPath(path, ["process", "argv"]);
+function isCliEntrypointArgv(file: string, path: AccessPath, inEntryBlock: boolean): boolean {
+  return (
+    inEntryBlock
+    && (file === cliEntrypoint || workerEntrypoints.includes(file))
+    && startsWithPath(path, ["process", "argv"])
+  );
 }
 
 function discoverProductionScripts(directory: string = "scripts"): readonly string[] {
@@ -373,6 +389,8 @@ function scanRuntimeBoundarySource(
   );
   const violations: RuntimeBoundaryViolation[] = [];
   const seen = new Set<string>();
+  /** Nesting depth of `if (import.meta.main)` blocks around the visited node. */
+  let entryBlockDepth = 0;
 
   function add(node: ts.Node, rule: RuntimeBoundaryRule): void {
     const line = source.getLineAndCharacterOfPosition(node.getStart(source)).line + 1;
@@ -550,6 +568,16 @@ function scanRuntimeBoundarySource(
       throw new Error("Runtime boundary traversal requires an active lexical scope.");
     }
 
+    if (ts.isIfStatement(node) && isImportMetaMain(node.expression)) {
+      entryBlockDepth++;
+      visit(node.thenStatement, scopes);
+      entryBlockDepth--;
+      if (node.elseStatement !== undefined) {
+        visit(node.elseStatement, scopes);
+      }
+      return;
+    }
+
     if (ts.isImportDeclaration(node) && ts.isStringLiteral(node.moduleSpecifier)) {
       addModuleSpecifierViolation(node, node.moduleSpecifier.text);
     }
@@ -624,7 +652,11 @@ function scanRuntimeBoundarySource(
           add(node, "ambient-timer");
         }
 
-        if (isAmbientOsStateCallPath(path) && !ownsAmbientRuntime(normalizedFile) && !isCliEntrypointArgv(normalizedFile, path)) {
+        if (
+          isAmbientOsStateCallPath(path)
+          && !ownsAmbientRuntime(normalizedFile)
+          && !isCliEntrypointArgv(normalizedFile, path, entryBlockDepth > 0)
+        ) {
           add(node, "ambient-os-state");
         }
 
@@ -652,7 +684,7 @@ function scanRuntimeBoundarySource(
           add(node, "ambient-environment");
         }
 
-        if (isAmbientOsStatePath(path) && !isCliEntrypointArgv(normalizedFile, path)) {
+        if (isAmbientOsStatePath(path) && !isCliEntrypointArgv(normalizedFile, path, entryBlockDepth > 0)) {
           add(node, "ambient-os-state");
         }
       }
@@ -665,7 +697,7 @@ function scanRuntimeBoundarySource(
         && startsWithPath(leftPath, ["process", "exitCode"])
         && assignmentOperators.has(node.operatorToken.kind)
         && normalizedFile !== runtimeNodeAdapter
-        && !workerEntrypoints.includes(normalizedFile)
+        && !(entryBlockDepth > 0 && workerEntrypoints.includes(normalizedFile))
       ) {
         add(node, "direct-exit");
       }
@@ -1068,6 +1100,19 @@ function scanLegacyKernelImportSource(file: string, sourceText: string): readonl
   });
 }
 
+/**
+ * Lists the `effect/cli` module imports of one production module.
+ *
+ * @param file - Repository-relative module path reported with each import.
+ * @param sourceText - Source text to parse.
+ * @returns Every static import, re-export, or literal dynamic import of `effect/cli` or a subpath.
+ */
+function scanEffectCliImportSource(file: string, sourceText: string): readonly {file: string; specifier: string}[] {
+  return collectModuleImports(sourceText)
+    .filter((moduleImport) => moduleImport.specifier === "effect/cli" || moduleImport.specifier.startsWith("effect/cli/"))
+    .map((moduleImport) => ({file, specifier: moduleImport.specifier}));
+}
+
 describe("runtime boundary policy", () => {
   it("keeps the exact production exclusions", () => {
     expect([...runtimeBoundaryExclusions]).toEqual([
@@ -1246,7 +1291,7 @@ describe("runtime boundary policy", () => {
     ).toEqual([]);
   });
 
-  it("starts the process only from the CLI, the format/lint orchestrators, and the inspection workers", () => {
+  it("only sanctioned modules are direct entrypoints", () => {
     expect(discoverDirectEntrypointModules()).toEqual(directEntrypoints);
 
     const violations = workerEntrypoints
@@ -1256,20 +1301,34 @@ describe("runtime boundary policy", () => {
     expect(violations).toEqual([]);
   });
 
-  it("sanctions only process.argv and the final exit code in the inspection worker entrypoints", () => {
+  it("sanctions process.argv and the final exit code only inside the inspection workers' import.meta.main block", () => {
     const source = [
       "const args = process.argv.slice(2);",
       "process.exitCode = 1;",
-      "void process.env.PATH;",
-      "process.exit(1);",
+      "if (import.meta.main) {",
+      "  const entryArgs = process.argv.slice(2);",
+      "  process.exitCode = 1;",
+      "  void process.env.PATH;",
+      "  process.exit(1);",
+      "}",
     ].join("\n");
 
     for (const worker of workerEntrypoints) {
       expect(scanRuntimeBoundarySource(worker, source)).toEqual([
-        {file: worker, line: 3, rule: "ambient-environment"},
-        {file: worker, line: 4, rule: "direct-exit"},
+        {file: worker, line: 1, rule: "ambient-os-state"},
+        {file: worker, line: 2, rule: "direct-exit"},
+        {file: worker, line: 6, rule: "ambient-environment"},
+        {file: worker, line: 7, rule: "direct-exit"},
       ]);
     }
+    expect(scanRuntimeBoundarySource("scripts/example.ts", source)).toEqual([
+      {file: "scripts/example.ts", line: 1, rule: "ambient-os-state"},
+      {file: "scripts/example.ts", line: 2, rule: "direct-exit"},
+      {file: "scripts/example.ts", line: 4, rule: "ambient-os-state"},
+      {file: "scripts/example.ts", line: 5, rule: "direct-exit"},
+      {file: "scripts/example.ts", line: 6, rule: "ambient-environment"},
+      {file: "scripts/example.ts", line: 7, rule: "direct-exit"},
+    ]);
   });
 
   it("keeps doctor modules on read-only and opaque capabilities", () => {
@@ -1339,16 +1398,56 @@ describe("runtime boundary policy", () => {
     expect(offenders).toEqual([]);
   });
 
-  it("sanctions only process.argv as ambient state in the CLI entrypoint", () => {
-    const source = ["void process.argv.slice(2);", "void process.env.PATH;", "void process.platform;"].join("\n");
+  it("sanctions only process.argv inside the import.meta.main block as ambient state in the CLI entrypoint", () => {
+    const source = [
+      "void process.argv.slice(2);",
+      "if (import.meta.main) {",
+      "  void process.argv.slice(2);",
+      "  void process.env.PATH;",
+      "  void process.platform;",
+      "  process.exitCode = 1;",
+      "}",
+    ].join("\n");
 
     expect(scanRuntimeBoundarySource(cliEntrypoint, source)).toEqual([
-      {file: cliEntrypoint, line: 2, rule: "ambient-environment"},
-      {file: cliEntrypoint, line: 3, rule: "ambient-os-state"},
+      {file: cliEntrypoint, line: 1, rule: "ambient-os-state"},
+      {file: cliEntrypoint, line: 4, rule: "ambient-environment"},
+      {file: cliEntrypoint, line: 5, rule: "ambient-os-state"},
+      {file: cliEntrypoint, line: 6, rule: "direct-exit"},
     ]);
-    expect(scanRuntimeBoundarySource("scripts/example.ts", "void process.argv.slice(2);")).toEqual([
-      {file: "scripts/example.ts", line: 1, rule: "ambient-os-state"},
+    expect(scanRuntimeBoundarySource("scripts/example.ts", "if (import.meta.main) {\n  void process.argv.slice(2);\n}")).toEqual([
+      {file: "scripts/example.ts", line: 2, rule: "ambient-os-state"},
     ]);
+  });
+
+  it("detects effect/cli imports through static, re-export, deep, and dynamic specifiers", () => {
+    const source = [
+      'import {Command} from "effect/cli";',
+      'export {Flag} from "effect/cli";',
+      'import type {Parser} from "effect/cli/internal/parser";',
+      'void import("effect/cli");',
+      'import {Effect} from "effect";',
+      'import {Option} from "effect/Option";',
+    ].join("\n");
+
+    expect(scanEffectCliImportSource("scripts/example.ts", source)).toEqual([
+      {file: "scripts/example.ts", specifier: "effect/cli"},
+      {file: "scripts/example.ts", specifier: "effect/cli"},
+      {file: "scripts/example.ts", specifier: "effect/cli/internal/parser"},
+      {file: "scripts/example.ts", specifier: "effect/cli"},
+    ]);
+  });
+
+  it("command families depend on effect/cli only through scripts/commands", () => {
+    const importers = discoverProductionScripts().filter(
+      (file) => scanEffectCliImportSource(file, readFileSync(file, "utf8")).length > 0,
+    );
+
+    expect(
+      importers.filter((file) => !file.startsWith(commandFamiliesDirectory) && !effectCliConsumers.includes(file)),
+    ).toEqual([]);
+    expect(importers).toContain(cliEntrypoint);
+    expect(importers.some((file) => /^scripts\/commands\/[\w-]+\/cli\.ts$/.test(file))).toBe(true);
   });
 
   it("detects NodeRuntime.runMain through named, aliased, and namespace imports", () => {

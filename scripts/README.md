@@ -26,12 +26,83 @@ invocation.
 
 ## Command runtime
 
-All argv parsing happens in the effect/cli entrypoint [`cli.ts`](./cli.ts); every npm script points there. Every root script that has not yet
-migrated to Effect, except the format/lint pair, is one declarative legacy command object built on
-[`common/commander.ts`](./common/commander.ts) and one injected capability kernel from [`common/runtime.ts`](./common/runtime.ts).
-[`commands/legacy.ts`](./commands/legacy.ts) `runLegacy` reaches those commands only through `invoke(input, {presentation, signal})`.
+[`cli.ts`](./cli.ts) is the single command entrypoint (`node scripts/cli.ts <command>`), recorded as
+[RFC 0002 §21.5](../docs/rfc/0002-lean-monorepo-tooling-architecture.md#215-cli-topology). It builds the `arolariu` root command with
+`effect/cli`, owns all argv parsing, and starts the program once with `NodeRuntime.runMain`. Every npm script is an alias of one command
+path, for example `"doctor": "node scripts/cli.ts doctor"` and `"generate:artifacts": "node scripts/cli.ts generate artifacts"`.
 
-### Command definition anatomy
+### Command tree
+
+```text
+arolariu setup [--dry-run] [--yes] [--engine <rancher|podman>]
+arolariu doctor [--quick]
+arolariu status
+arolariu generate [env] [i18n] [gql] [artifacts]       variadic task names; none selected warns that nothing is selected (exit 0)
+arolariu docs assemble
+arolariu rates update [--year <y>] [--from <y>] [--to <y>]
+arolariu dev aspire [--engine <rancher|podman>]
+arolariu dev selfhost [start|stop|logs] [--engine <rancher|podman>]
+arolariu containers build|run [--target <frontend|backend|cv|exp>] [--engine <rancher|podman>]
+arolariu containers compose [--file <path>] [--engine <rancher|podman>] [-- <compose arguments...>]
+arolariu test e2e <all|backend|frontend|cv>
+arolariu format <all|packages|cv|website|api|status|exp> [patterns...]
+arolariu lint <all|packages|cv|website|api|status|exp> [patterns...]
+```
+
+Pass arguments through npm after `--`: `npm run doctor -- --quick --json`, `npm run rates:update -- --year 2025`. A command group run
+without a subcommand (`arolariu`, `arolariu docs`) prints its help. Slash aliases (`/h`, `/v`, `/q`, `/?`, …) no longer exist.
+
+### Global flags
+
+Global flags are accepted before or after the subcommand.
+
+| Flag | Meaning |
+|------|---------|
+| `--json` | Writes exactly one JSON document to stdout per invocation, usage failures included; human output is suppressed and effect/cli help/error text goes to stderr |
+| `--verbose` | Also emits debug diagnostics. It has no short form: `-v` is `--version` |
+| `--log-level <level>` | effect/cli's minimum Effect log level (`all`, `trace`, `debug`, `info`, `warn`, `error`, `fatal`, `none`) |
+| `--help`, `-h` | Prints effect/cli help for the selected command |
+| `--version`, `-v` | Prints the root `package.json` version |
+| `--completions <bash\|zsh\|fish\|sh>` | Prints an effect/cli shell completion script; PowerShell is not supported |
+| `--wizard` | effect/cli's interactive wizard for building a command line |
+
+### Exit codes
+
+[`platform/exit.ts`](./platform/exit.ts) `exitCodeFor` is the only exit-code mapping, and only `cli.ts` calls it:
+
+| Exit | Outcome |
+|------|---------|
+| `0` | Success, including `--help`, `--version`, and `--completions` |
+| `1` | `ReportedFailure{exitCode: 1}` (a business-negative result, such as doctor with a failing check, after its full output), a typed failure, or a defect |
+| `2` | A `CliError` usage or parse failure, or `ReportedFailure{exitCode: 2}` (for example legacy `CommandInputError`) |
+| `130` | Interruption after `SIGINT`, interruption with no recorded signal, or a terminal quit |
+| `143` | Interruption after `SIGTERM` |
+
+`cli.ts` renders any failure that no command reported as `[arolariu::cli] ⛔ <message>` on stderr, or in JSON mode as
+`{status: "failed", kind, message, evidence}` on stdout. No script calls `process.exit()`.
+
+### Adding a subcommand
+
+1. Create `commands/<family>/cli.ts` exporting `make<Family>Command(...): CliSubcommand` (see
+   [`commands/rates/cli.ts`](./commands/rates/cli.ts)). Build it with `Command.make`, declare its flags and arguments with `Flag`/`Argument`,
+   and wrap the handler program in `withCommandOutput("<context>")` from [`commands/flags.ts`](./commands/flags.ts), which provides the
+   per-invocation `OutputSettings`, `Presenter`, and `Process` from `--json`, `--verbose`, and the environment.
+2. Give the factory a typed seam (for example the legacy invoker) so its colocated `cli.test.ts` can run the command without a real boundary.
+3. Register the factory in the `rootCommand` list of [`cli.ts`](./cli.ts) and add the npm alias to the root `package.json`.
+
+`CliSubcommand` restricts handler requirements to the base services plus the `--json`/`--verbose` settings, so a family that forgets to
+provide a service fails to compile. Only `scripts/commands/**`, `cli.ts`, and `platform/exit.ts` import `effect/cli` (enforced by
+[`runtime-boundary.test.ts`](./common/runtime-boundary.test.ts)).
+
+### Legacy command kernel (until cohort 7)
+
+Every root script that has not yet migrated to Effect, except the format/lint pair, is still one declarative legacy command object built on
+[`common/commander.ts`](./common/commander.ts) and one injected capability kernel from [`common/runtime.ts`](./common/runtime.ts). Those
+commands no longer parse argv: their family `cli.ts` decodes the typed input and [`commands/legacy.ts`](./commands/legacy.ts) `runLegacy`
+reaches them only through `invoke(input, {presentation, signal})`. `invoke()` also remains the way legacy commands compose until cohort 7
+deletes the kernel. The rest of this section documents that kernel.
+
+#### Command definition anatomy
 
 A command is a `CommandDefinition<TInput, TOutput>` handed to `MonorepoCommand`. Each member owns exactly one concern:
 
@@ -59,7 +130,7 @@ export function createGenerateGraphqlCommand(
 Business code never reads `process.argv` and never writes `process.exitCode`. Semantically invalid typed input throws
 `CommandInputError`, which the lifecycle maps to a `usage` failure with exit code `2`.
 
-### Production singletons and typed factory seams
+#### Production singletons and typed factory seams
 
 Each command module exports a `create<Name>Command(...)` factory and one production singleton built from it:
 
@@ -77,7 +148,7 @@ const command = createStatusCommand({runtimeFactory: createTestRuntimeFactory({r
 [`common/runtime.testing.ts`](./common/runtime.testing.ts) owns those typed fakes — a scripted process runner, in-memory logger sink,
 fixture filesystem, deterministic clock, and stub inspection session. It is test infrastructure and is excluded from coverage.
 
-### `invoke()`
+#### `invoke()`
 
 `invoke(input, options?)` runs the command from typed input. It never registers an OS signal handler, never assigns an exit code, and
 defaults to `"silent"` presentation; `options.presentation` selects `"human"` or `"json"`, and `options.signal` links a caller abort.
@@ -90,7 +161,7 @@ start a process. Each worker decodes its argv with `decodeWorkerArgs`, calls `in
 `invoke()` is also how commands compose. `status.ts` runs doctor as a typed child (`doctorCommand.invoke({quick: true, verbose: false},
 {parent: context, presentation: "silent"})`) rather than spawning a sibling process or parsing JSON.
 
-### Invocation outcomes
+#### Invocation outcomes
 
 `invoke()` never throws across the command boundary; it returns a discriminated `CommandExecution<TOutput>`:
 
@@ -108,7 +179,7 @@ output: doctor completes with `exitCode: 1` and a full `DoctorReport` when a che
 `CommandFailure` carries a `kind`, a redacted `message`, bounded `evidence` lines, and the original `cause`. Cleanup evidence is appended
 to the failure that caused it rather than replacing it.
 
-### Runner outcomes and `expectSuccess()`
+#### Runner outcomes and `expectSuccess()`
 
 `context.runtime.runner` is a `ProcessRunner` from [`common/runner.ts`](./common/runner.ts). `run()` resolves a discriminated
 `ProcessOutcome` — switch on `kind` instead of re-deriving success from an exit code:
@@ -130,7 +201,7 @@ retained `request`, and retained `outcome` are all redacted through the supplied
 `runner.scope(defaults)` returns a new runner with reusable defaults and never mutates its parent. Keep the executable and its arguments
 separate; `formatProcessRequest()` renders diagnostics and never includes stdin or environment values.
 
-### Capability profiles and child scope ownership
+#### Capability profiles and child scope ownership
 
 `context.runtime` is the only source of effects. It carries `logger`, `prompts`, `runner`, `http`, `files`, `clock`, `tasks`,
 `inspection`, `environment`, `signal`, and `cleanup`. [`common/runtime.node.ts`](./common/runtime.node.ts) is the single production
@@ -145,7 +216,7 @@ A **child scope** created by `invoke({parent})` reuses the parent's immutable en
 its own forked logger, invocation runner, cancellation controller, and cleanup registry. Cancellation always flows parent to child and
 never child to parent.
 
-### JSON, human, and silent output
+#### JSON, human, and silent output
 
 Presentation is decided from typed input before any capability exists, and rendering is deferred to `completion()`:
 
@@ -156,7 +227,7 @@ Presentation is decided from typed input before any capability exists, and rende
 - **silent** — nothing is rendered, including failure diagnostics. This is the default for composed `invoke()` calls, whose caller owns
   presentation.
 
-### Cancellation and cleanup
+#### Cancellation and cleanup
 
 `runtime.signal` is the single cancellation source: SIGINT maps to `CommandCancellation(…, 130)`, SIGTERM to `143`, and a linked caller
 signal propagates the same way. Long-running work passes `runtime.signal` into the runner, the HTTP client, and `clock.delay()` instead
@@ -171,7 +242,7 @@ context.runtime.cleanup.register("temporary compose file", () => files.remove(co
 The lifecycle drains the registry **before** rendering the completion, so a cleanup failure can still change the outcome. Every cleanup
 entry runs even when an earlier one throws; each failure becomes bounded evidence on the reported failure.
 
-### Sensitive values
+#### Sensitive values
 
 Register runtime secrets with `logger.redact()` before any output that could contain them. Logger children and forks share one redaction
 registry, and `RunnerError` redacts its retained request and outcome through the same registry. Do not place secret values in manually
@@ -229,11 +300,13 @@ program as a legacy `CommandInvoker`, so unmigrated callers compose it unchanged
 the legacy kernel, and cohort 7 deletes it.
 
 [`runtime-boundary.test.ts`](./common/runtime-boundary.test.ts) sanctions `scripts/platform/**` — like `runtime.node.ts` — as an owner of
-ambient `process.*`, timer, and `node:*` access, and enforces three platform rules: `@effect/platform-node` is imported only inside
+ambient `process.*`, timer, and `node:*` access, and enforces the platform and CLI rules: `@effect/platform-node` is imported only inside
 `scripts/platform/` and the [`cli.ts`](./cli.ts) entrypoint; Effect runtimes (`Effect.run*`, `ManagedRuntime.make`, `NodeRuntime.runMain`)
-start only in `cli.ts`, `bridge.ts`, `testing.ts`, and `Output.ts`'s synchronous logger sink; and no platform module except `bridge.ts`
-imports the legacy kernel. `cli.ts` may also read `process.argv`, and no other ambient state; the two inspection workers may read
-`process.argv` and assign `process.exitCode`.
+start only in `cli.ts`, `bridge.ts`, `testing.ts`, and `Output.ts`'s synchronous logger sink; no platform module except `bridge.ts`
+imports the legacy kernel; `effect/cli` is imported only under `scripts/commands/`, by `cli.ts`, and by `platform/exit.ts`; and the only
+modules with an `import.meta.main` block are `cli.ts`, `format.ts`, `lint.ts`, and the two inspection workers. Inside that block, `cli.ts`
+may read `process.argv` and no other ambient state, and each inspection worker may read `process.argv` and assign `process.exitCode`;
+neither exemption applies elsewhere in those files.
 
 ## Output-policy exemptions
 
@@ -258,7 +331,8 @@ transitional setup/doctor/status exceptions.
 
 ## Setup orchestrator (`npm run setup`)
 
-`npm run setup` is [`setup.ts`](./setup.ts)'s CLI entrypoint (`--verbose`, `--dry-run`, `--yes`, `--engine rancher|podman`, `--help`). It
+`npm run setup` runs `arolariu setup` (`--dry-run`, `--yes`, `--engine rancher|podman`, plus the global flags); [`setup.ts`](./setup.ts)
+owns the command. It
 resolves canonical paths through [`common/repository-paths.ts`](./common/repository-paths.ts), loads manifest-derived runtime and package
 requirements through [`common/requirements.ts`](./common/requirements.ts), and reads/writes the non-secret persisted selection at
 `.arolariu/tooling.local.json` through [`common/tooling-config.ts`](./common/tooling-config.ts). Setup restores dependencies, prepares
@@ -268,7 +342,7 @@ toolchains, and generates checkout artifacts; it never builds, type-checks, test
 
 | Module | Owns |
 |--------|------|
-| [`setup.ts`](./setup.ts) | CLI parsing, phase ordering, dependency gating, and the exit-code/readiness rollup |
+| [`setup.ts`](./setup.ts) | Input decoding, phase ordering, dependency gating, and the exit-code/readiness rollup; [`commands/setup/cli.ts`](./commands/setup/cli.ts) parses its flags |
 | [`setup.types.ts`](./setup.types.ts) | Shared `SetupContext`, `SetupPhaseDefinition`, `SetupAction`, and status/scope contracts |
 | [`setup.workspace.ts`](./setup.workspace.ts) | Prerequisite validation, root and `.github/scripts` npm restore, and generated taxonomy/GraphQL/i18n artifacts |
 | [`setup.dotnet.ts`](./setup.dotnet.ts) | .NET SDK install, workload/solution/tool restore, AppHost user secrets, and the local HTTPS dev certificate |
@@ -324,8 +398,8 @@ and specialist modules, and `status.ts` also have a narrower focused command in 
 
 ## Doctor diagnostics (`npm run doctor`)
 
-`npm run doctor` is [`doctor.ts`](./doctor.ts)'s command entrypoint (`--verbose`/`-v`, `--quick`, `--help`/`-h`, plus the `/v`, `/q`,
-`/h`, `/help`, and `/?` aliases). It resolves canonical repository paths and manifest-derived requirements through injected runtime
+`npm run doctor` runs `arolariu doctor` (`--quick`, plus the global `--json`, `--verbose`, and `--help` flags); [`doctor.ts`](./doctor.ts)
+owns the command. It resolves canonical repository paths and manifest-derived requirements through injected runtime
 capabilities, obtains one shared repository inspection session, then runs every bounded-context module concurrently through the runtime
 task scheduler, flattening their results back into a fixed rendering order. Every specialist module receives only read-only capabilities
 (read-only filesystem, `GET`-only bounded network probe, clock, immutable environment, shared inspection session, and opaque probes).
@@ -338,7 +412,7 @@ container-engine client/cache state outside that boundary.
 
 | Module | Owns |
 |--------|------|
-| [`doctor.ts`](./doctor.ts) | Command definition (parsing, help, presentation), module orchestration/ordering, and the exit-code rollup |
+| [`doctor.ts`](./doctor.ts) | Command definition (presentation), module orchestration/ordering, and the exit-code rollup; [`commands/doctor/cli.ts`](./commands/doctor/cli.ts) parses its flags |
 | [`doctor.types.ts`](./doctor.types.ts) | Shared `DiagnosticResult`/`DoctorContext`/`DoctorInput` contracts and diagnostic-result helpers |
 | [`doctor.reporter.ts`](./doctor.reporter.ts) | Stable per-check score weights, schema-v1 validation (`createDoctorReport`), and human rendering |
 | [`doctor.workspace.ts`](./doctor.workspace.ts) | Repository root, git, Node/npm runtime, dependency trees, Nx workspace graph (read from repository metadata, see below), config files, generated artifacts, host capacity, npm audit/outdated |
