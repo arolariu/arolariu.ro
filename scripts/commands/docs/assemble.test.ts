@@ -546,42 +546,49 @@ describe("createDocsAssembleCommand", () => {
     expect(await files.exists(GENERATED_ROOT)).toBe(false);
   });
 
-  it("characterizes the ordered dotnet, typedoc, and pydoc-markdown process invocations", async () => {
+  it("characterizes the dotnet, typedoc, and pydoc-markdown invocations: ordered within each extractor group, complete as a set", async () => {
     // Arrange
     const files = documentationFixtureFileSystem();
     const runner = new DocumentationFixtureRunner(files);
     const command = createDocsAssembleCommand(createTestRuntimeFactory({files, runner}));
+    const typedocComponents = ["npx", "typedoc", "--options", "typedoc.components.json"];
+    const typedocWebsite = ["npx", "typedoc", "--options", "typedoc.website.json"];
+    const pydocMarkdown = ["python", "-m", "pydoc_markdown.main"];
+    const dotnetBuild = ["dotnet", "build", "src/Common/arolariu.Backend.Common.csproj", "-c", "Release"];
+    const defaultDocumentation = [
+      "dotnet",
+      "defaultdocumentation",
+      "--AssemblyFilePath",
+      join(FIXTURE_PATHS.apiRoot, "src", "Common", "bin", "Release", "net10.0", "arolariu.Backend.Common.dll"),
+      "--OutputDirectoryPath",
+      join(DOTNET_INTERNALS_DIR, "arolariu.Backend.Common"),
+      "--FileNameFactory",
+      "Name",
+      "--GeneratedPages",
+      "Namespaces",
+      "--IncludeUndocumentedItems",
+      "true",
+      "--GeneratedAccessModifiers",
+      "Public",
+      "Protected",
+      "Internal",
+      "Private",
+    ];
 
     // Act
     const execution = await command.invoke({}, {presentation: "silent"});
 
     // Assert
     expect(execution).toMatchObject({status: "completed", exitCode: 0});
-    expect(runner.calls.map((call) => [call.request.command, ...call.request.args])).toEqual([
-      ["npx", "typedoc", "--options", "typedoc.components.json"],
-      ["python", "-m", "pydoc_markdown.main"],
-      ["npx", "typedoc", "--options", "typedoc.website.json"],
-      ["dotnet", "build", "src/Common/arolariu.Backend.Common.csproj", "-c", "Release"],
-      [
-        "dotnet",
-        "defaultdocumentation",
-        "--AssemblyFilePath",
-        join(FIXTURE_PATHS.apiRoot, "src", "Common", "bin", "Release", "net10.0", "arolariu.Backend.Common.dll"),
-        "--OutputDirectoryPath",
-        join(DOTNET_INTERNALS_DIR, "arolariu.Backend.Common"),
-        "--FileNameFactory",
-        "Name",
-        "--GeneratedPages",
-        "Namespaces",
-        "--IncludeUndocumentedItems",
-        "true",
-        "--GeneratedAccessModifiers",
-        "Public",
-        "Protected",
-        "Internal",
-        "Private",
-      ],
-    ]);
+    const invocations = runner.calls.map((call) => [call.request.command, ...call.request.args]);
+    // The three extractor groups run concurrently, so only the order within each group is a contract.
+    expect(invocations.filter(([executable]) => executable === "npx")).toEqual([typedocComponents, typedocWebsite]);
+    expect(invocations.filter(([executable]) => executable === "python")).toEqual([pydocMarkdown]);
+    expect(invocations.filter(([executable]) => executable === "dotnet")).toEqual([dotnetBuild, defaultDocumentation]);
+    const serialize = (invocation: readonly string[]): string => JSON.stringify(invocation);
+    expect(invocations.map(serialize).toSorted()).toEqual(
+      [typedocComponents, typedocWebsite, pydocMarkdown, dotnetBuild, defaultDocumentation].map(serialize).toSorted(),
+    );
   });
 
   it("fails with exit code 1 and removes the generated tree when a tier extracts 0 files", async () => {
