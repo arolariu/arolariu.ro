@@ -204,7 +204,7 @@ async function executeGenerate(
 
   if (selected.length === 0) {
     logger.warn("No generation tasks selected. Nothing to do.");
-    logger.line([{text: "   Tip: Use one or more flags (e.g. /env /i18n /gql /artifacts).", styles: ["gray"]}]);
+    logger.line([{text: "   Tip: Pass one or more tasks (e.g. npm run generate -- env i18n gql artifacts).", styles: ["gray"]}]);
     return {selected, completed: []};
   }
 

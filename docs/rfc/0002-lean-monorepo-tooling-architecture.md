@@ -1157,7 +1157,10 @@ Architecture tests scan production modules and verify:
 4. migrated commands do not call `process.exit()` or assign
    `process.exitCode`;
 5. migrated commands do not implement direct-entry detection manually;
-6. migrated commands export command objects and use shared `runIfMain()`;
+6. migrated commands export command objects and use shared `runIfMain()`
+   (superseded by section 21.5: only `scripts/cli.ts`, the format/lint
+   orchestrators, and the inspection workers have an `import.meta.main`
+   block; legacy commands are invoke-only);
 7. migrated modules do not import the superseded `cli.ts` or `process.ts`;
 8. explicit parallel/all-settled/delay orchestration uses runtime tasks and
    clock capabilities;
@@ -1592,7 +1595,9 @@ composition behavior of the root scripts. No JSDoc names a deleted symbol.
 The redesign is complete when:
 
 1. every included direct entrypoint exports a declarative command object;
-2. direct execution uses shared `runIfMain()` and no migrated script calls
+2. direct execution uses shared `runIfMain()` (superseded by section 21.5:
+   direct execution goes through `scripts/cli.ts`, whose `exitCodeFor` is the
+   only exit mapping) and no migrated script calls
    `process.exit()` or assigns `process.exitCode`;
 3. command composition uses typed `invoke()`, not sibling subprocesses or
    parallel execution functions;
@@ -1756,7 +1761,7 @@ arolariu format <all|packages|cv|website|api|status|exp> [patterns...]
 arolariu lint <all|packages|cv|website|api|status|exp> [patterns...]
 
 global flags: --json, --verbose, --log-level, --help/-h, --version/-v,
-              --completions <bash|zsh|fish|sh>
+              --completions <bash|zsh|fish|sh>, --wizard
 ```
 
 - **npm aliases.** Every npm script name is kept as an alias of one command

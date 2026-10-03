@@ -42,8 +42,8 @@ arolariu docs assemble
 arolariu rates update [--year <y>] [--from <y>] [--to <y>]
 arolariu dev aspire [--engine <rancher|podman>]
 arolariu dev selfhost [start|stop|logs] [--engine <rancher|podman>]
-arolariu containers build|run [--target <frontend|backend|cv|exp>] [--engine <rancher|podman>]
-arolariu containers compose [--file <path>] [--engine <rancher|podman>] [-- <compose arguments...>]
+arolariu containers build|run --target <frontend|backend|cv|exp> [--engine <rancher|podman>]
+arolariu containers compose --file <path> [--engine <rancher|podman>] -- <compose arguments...>
 arolariu test e2e <all|backend|frontend|cv>
 arolariu format <all|packages|cv|website|api|status|exp> [patterns...]
 arolariu lint <all|packages|cv|website|api|status|exp> [patterns...]

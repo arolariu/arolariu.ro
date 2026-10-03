@@ -189,6 +189,10 @@ describe("generate composition", () => {
     expect(calls).toEqual([]);
     expect(execution).toMatchObject({status: "completed", exitCode: 0, value: {selected: [], completed: []}});
     expect(sink.records.some((record) => record.text.includes("No generation tasks selected"))).toBe(true);
+    expect(
+      sink.records.some((record) => record.text.includes("Tip: Pass one or more tasks (e.g. npm run generate -- env i18n gql artifacts).")),
+    ).toBe(true);
+    expect(sink.records.some((record) => record.text.includes("/env"))).toBe(false);
   });
 
   it("propagates verbose into every child", async () => {
