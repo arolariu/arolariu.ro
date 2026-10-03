@@ -2,7 +2,7 @@
 
 - **Status**: Accepted
 - **Date**: 2026-09-01
-- **Revision**: 2 - Declarative Monorepo Command Runtime
+- **Revision**: 3 (draft) - Effect Platform; revision 2 (Declarative Monorepo Command Runtime) stays authoritative until revision 3 is finalized (see section 21)
 - **Authors**: Alexandru-Razvan Olariu, GitHub Copilot
 - **Related Components**: `scripts/`, `package.json`, `package-lock.json`, `.arolariu/tooling.local.json`
 - **Supersedes**: RFC 0002 revision 1, dated 2026-08-31
@@ -1634,6 +1634,80 @@ The following are intentionally deferred:
 
 ---
 
-**Document Version**: 2.1.0
-**Last Updated**: 2026-09-03
+## 21. Revision 3: Effect platform
+
+**Status: Draft.** Revision 3 replaces the homegrown capability kernel with
+Effect v4. It is written in cohort 1, when the platform layer lands beside the
+legacy kernel, and finalized in cohort 7, when the legacy kernel is deleted.
+On finalization it supersedes sections 4-7 of revision 2 and the rejection of a
+root CLI in section 16.4. Until then, sections 1-20 remain the accepted contract
+for every command that has not migrated.
+
+### 21.1 Decisions
+
+| Topic | Decision |
+| --- | --- |
+| Motivation | Replace the homegrown capability kernel (DI, scheduler, cleanup, cancellation, FS/HTTP adapters) with a maintained library and delete our code. |
+| Depth | Kernel first, then migrate command families to `Effect.gen` in cohorts; delete the Promise interfaces at the end. |
+| Replaced | Capability kernel, Execa, Commander, `MonorepositoryConsoleLogger`, `prompts.ts`. |
+| Kept | Piscina format/lint pools and workers (behavior unchanged) **and their whole import closure**: `common/logger.ts`, `common/index.ts`, the `nodeLoggerRuntimeHost` and `nodeProcessRunner` exports of `common/runtime.node.ts`, `common/runner.ts`, `common/runner.execa.ts`, and `execa`. Updating the Piscina workers is a separate follow-up after cohort 7. Also kept: Nx Devkit, envinfo, systeminformation, `@azure/storage-blob`. |
+| CLI compatibility | Free redesign; all callers updated in the same change. |
+| Topology | One root CLI `scripts/cli.ts` with subcommands; npm script names remain as thin aliases. |
+| Approach | Layer kernel + temporary Promise bridge, root CLI early, family cohorts, bridge deleted last. |
+| Dependencies (approved) | `effect@4.0.0`, `@effect/platform-node@4.0.0` (brings `undici`, `@effect/platform-node-shared`). Both pinned exactly and kept in lockstep. `@effect/vitest` is **not** used: 4.0.0 requires `vitest >=5`, while the repo stays on vitest 4 for `@storybook/addon-vitest`. |
+| Removed dependencies | `commander` in cohort 2. `execa` stays for the format/lint closure. |
+
+### 21.2 Kernel mapping
+
+| Revision 2 (`common/runtime.ts`) | Revision 3 replacement |
+| --- | --- |
+| `CommandRuntime` facade + `CommandRuntimeFactory` | Context services provided by `makeNodeLayer` / `makeTestLayer` (`scripts/platform/layers.ts`, `testing.ts`) |
+| `Clock` (`monotonicNow`, `isoTimestamp`, `delay`) | `Clock`, `DateTime`, `Effect.sleep` |
+| `TaskScheduler` (`parallel`, `allSettled`, `sequential`, `mapBounded`) | `Effect.all` / `Effect.forEach` with `{concurrency}`, `{mode: "result"}` |
+| `CleanupRegistry` (LIFO, failure collection) | Command `Scope`, `Effect.acquireRelease`, `Effect.addFinalizer` |
+| `AbortSignal`, `linkAbortSignals`, `CommandCancellation` | Fiber interruption |
+| `FileSystem` / `NodeFileSystem` | `effect` `FileSystem` + the Node layer; `writeTextAtomic` and `readBytesBounded` helpers in `platform/Files.ts` |
+| `ReadOnlyFileSystem`, `asReadOnlyFileSystem` | `ReadOnlyFiles` service; Doctor/Status effects never require the mutating `FileSystem` (compile-time enforcement) |
+| `HttpClient` / `NativeHttpClient`, `GetOnlyHttpClient` | `effect/http` `HttpClient` + `NodeHttpClient` layer; `GetOnlyHttp` service for read-only profiles |
+| `RuntimeEnvironment` | `Environment` service |
+| `MemoizedInspectionRuntime` | Layer-scoped memo keyed by `repositoryInspectionRequestKey` (cohort 4) |
+| `ProcessRunner` / Execa adapter | `Process` service over `ChildProcessSpawner` |
+| `MonorepositoryLogger` | Effect `Logger` + `Presenter` service over one `Sink` |
+| `MonorepositoryLogger.redact(value)` registry | Secret values are typed `Redacted<string>` and unwrapped with `Redacted.value` only at the point of use. No output masking. |
+| `PromptProvider` | `Prompts` service backed by `effect/cli` `Prompt` (cohort 3) |
+
+Pure helpers (path math, formatting, parsers) stay plain functions; they are
+not wrapped in services.
+
+### 21.3 Amendments made during planning
+
+1. The Piscina format/lint import closure (including `logger.ts`,
+   `runner.execa.ts`, `execa`) is kept until a separate follow-up.
+2. Inspection workers are child processes, not `worker_threads`.
+3. `commander.ts` survives as an `invoke()`-only lifecycle from cohort 2 to
+   cohort 7; the `commander` package goes in cohort 2.
+4. No redaction API: `Redacted<string>` only; output masking is removed
+   (accepted risk).
+5. `@effect/vitest` is dropped in favour of a local `effectTest` helper.
+6. The bridge is interop-only and reuses legacy Node adapters for legacy Promise
+   capabilities.
+7. `generate` takes variadic task names instead of subcommands.
+
+### 21.4 Interim enforcement
+
+`scripts/common/runtime-boundary.test.ts` sanctions `scripts/platform/**`, like
+`runtime.node.ts`, as an owner of ambient `process.*`, timer, and `node:*`
+access, and adds three rules:
+
+- `@effect/platform-node` is imported only inside `scripts/platform/`;
+- Effect runtimes (`Effect.run*`, `ManagedRuntime.make`) start only in
+  `platform/bridge.ts`, `platform/testing.ts`, and the synchronous logger sink
+  in `platform/Output.ts` (cohort 2 adds `scripts/cli.ts`, cohort 4 adds
+  `platform/worker.ts`);
+- no platform module except `platform/bridge.ts` imports the legacy kernel.
+
+---
+
+**Document Version**: 3.0.0-draft
+**Last Updated**: 2026-10-03
 **Status**: Accepted

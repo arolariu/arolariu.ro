@@ -5,7 +5,7 @@
  */
 
 import {existsSync, readdirSync, readFileSync} from "node:fs";
-import {join} from "node:path";
+import {join, posix} from "node:path";
 import ts from "typescript";
 import {describe, expect, it} from "vitest";
 
@@ -41,7 +41,46 @@ const runtimeBoundaryExclusions = new Set([
 ]);
 
 const productionScriptExtensions = new Set([".ts", ".js", ".mjs", ".cjs"]);
-const directOutputAdapters = new Set(["scripts/common/logger.ts", "scripts/common/prompts.ts"]);
+const directOutputAdapters = new Set([
+  "scripts/common/logger.ts",
+  "scripts/common/prompts.ts",
+  "scripts/platform/Output.ts",
+]);
+
+/**
+ * Effect platform layer (RFC 0002 section 21). Like `runtime.node.ts`, it is the sanctioned owner
+ * of ambient `process.*`, timer, and `node:*` access, and the only home of `@effect/platform-node`.
+ */
+const platformLayerDirectory = "scripts/platform/";
+
+/** Platform modules allowed to start an Effect runtime (Effect `run*` and `ManagedRuntime.make`). */
+const sanctionedEffectRunners: readonly string[] = [
+  "scripts/platform/Output.ts",
+  "scripts/platform/bridge.ts",
+  "scripts/platform/testing.ts",
+];
+
+/** Effect runtime entry points; each one starts executing a program outside the caller's fiber. */
+const effectRunnerNames: ReadonlySet<string> = new Set([
+  "runCallback",
+  "runCallbackWith",
+  "runFork",
+  "runForkWith",
+  "runPromise",
+  "runPromiseExit",
+  "runPromiseExitWith",
+  "runPromiseWith",
+  "runSync",
+  "runSyncExit",
+  "runSyncExitWith",
+  "runSyncWith",
+]);
+
+/** The legacy-kernel bridge; the only platform module that may depend on the legacy kernel. */
+const platformBridge = "scripts/platform/bridge.ts";
+
+/** Legacy command-kernel modules (and the barrel re-exporting them) the platform layer must not import. */
+const legacyKernelModule = /^scripts\/common\/(?:runtime(?:\.node|\.testing)?|commander|runner[\w.-]*|logger|prompts|index)\.ts$/;
 
 /**
  * Every production module the process may be started with directly.
@@ -154,6 +193,15 @@ function isConfigurationFile(file: string): boolean {
   return /\.config\.(?:cjs|js|mjs|ts)$/.test(file);
 }
 
+function isTestFixture(file: string): boolean {
+  return file.includes("/__fixtures__/");
+}
+
+/** Whether a module may touch ambient process, timer, filesystem, network, and OS state. */
+function ownsAmbientRuntime(file: string): boolean {
+  return file === runtimeNodeAdapter || file.startsWith(platformLayerDirectory);
+}
+
 function discoverProductionScripts(directory: string = "scripts"): readonly string[] {
   const files: string[] = [];
 
@@ -166,7 +214,12 @@ function discoverProductionScripts(directory: string = "scripts"): readonly stri
 
     const normalizedPath = normalizeFilePath(path);
     const extension = normalizedPath.slice(normalizedPath.lastIndexOf("."));
-    if (productionScriptExtensions.has(extension) && !isTestFile(normalizedPath) && !isConfigurationFile(normalizedPath)) {
+    if (
+      productionScriptExtensions.has(extension)
+      && !isTestFile(normalizedPath)
+      && !isConfigurationFile(normalizedPath)
+      && !isTestFixture(normalizedPath)
+    ) {
       files.push(normalizedPath);
     }
   }
@@ -332,7 +385,7 @@ function scanRuntimeBoundarySource(
       add(node, "legacy-process-import");
     }
 
-    if (normalizedFile === runtimeNodeAdapter) {
+    if (ownsAmbientRuntime(normalizedFile)) {
       return;
     }
 
@@ -550,19 +603,19 @@ function scanRuntimeBoundarySource(
           add(node, "direct-exit");
         }
 
-        if (path.length === 1 && path[0] === "fetch" && normalizedFile !== runtimeNodeAdapter) {
+        if (path.length === 1 && path[0] === "fetch" && !ownsAmbientRuntime(normalizedFile)) {
           add(node, "ambient-http");
         }
 
-        if (isAmbientTimerCallPath(path) && normalizedFile !== runtimeNodeAdapter) {
+        if (isAmbientTimerCallPath(path) && !ownsAmbientRuntime(normalizedFile)) {
           add(node, "ambient-timer");
         }
 
-        if (isAmbientOsStateCallPath(path) && normalizedFile !== runtimeNodeAdapter) {
+        if (isAmbientOsStateCallPath(path) && !ownsAmbientRuntime(normalizedFile)) {
           add(node, "ambient-os-state");
         }
 
-        if (isAmbientProcessControlPath(path) && normalizedFile !== runtimeNodeAdapter) {
+        if (isAmbientProcessControlPath(path) && !ownsAmbientRuntime(normalizedFile)) {
           add(node, "ambient-process-control");
         }
 
@@ -581,7 +634,7 @@ function scanRuntimeBoundarySource(
       && isOutermostAccessPathExpression(node)
     ) {
       const path = getAccessPath(node, scopes);
-      if (path !== null && normalizedFile !== runtimeNodeAdapter) {
+      if (path !== null && !ownsAmbientRuntime(normalizedFile)) {
         if (isAmbientEnvironmentPath(path)) {
           add(node, "ambient-environment");
         }
@@ -616,7 +669,7 @@ function scanRuntimeBoundarySource(
 
     if (ts.isNewExpression(node) && (node.arguments?.length ?? 0) === 0) {
       const path = getAccessPath(node.expression, scopes);
-      if (path !== null && path.length === 1 && path[0] === "Date" && normalizedFile !== runtimeNodeAdapter) {
+      if (path !== null && path.length === 1 && path[0] === "Date" && !ownsAmbientRuntime(normalizedFile)) {
         add(node, "ambient-timer");
       }
     }
@@ -840,6 +893,151 @@ function scanDoctorCapabilities(): readonly DoctorCapabilityViolation[] {
     .flatMap((file) => scanDoctorCapabilitySource(file, readFileSync(file, "utf8")));
 }
 
+/** One reference to an Effect runtime entry point. */
+interface EffectRunnerUse {
+  /** Module holding the reference. */
+  readonly file: string;
+  /** One-based source line of the reference. */
+  readonly line: number;
+  /** Qualified entry point, for example `Effect.runPromise` or `ManagedRuntime.make`. */
+  readonly api: string;
+}
+
+/**
+ * Finds every reference to an Effect runtime entry point, through named, aliased, or namespace
+ * imports of `effect`, `effect/Effect`, and `effect/ManagedRuntime`.
+ *
+ * @param file - Repository-relative module path reported with each use.
+ * @param sourceText - Source text to parse.
+ * @returns Every runner reference, in source order.
+ */
+function scanEffectRunnerSource(file: string, sourceText: string): readonly EffectRunnerUse[] {
+  const source = ts.createSourceFile(file, sourceText, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
+  const effectRoots = new Set<string>();
+  const effectModules = new Set<string>();
+  const managedRuntimeModules = new Set<string>();
+  const uses: EffectRunnerUse[] = [];
+
+  function add(node: ts.Node, api: string): void {
+    uses.push({file, line: source.getLineAndCharacterOfPosition(node.getStart(source)).line + 1, api});
+  }
+
+  for (const statement of source.statements) {
+    if (!ts.isImportDeclaration(statement) || !ts.isStringLiteral(statement.moduleSpecifier)) {
+      continue;
+    }
+
+    const specifier = statement.moduleSpecifier.text;
+    const clause = statement.importClause;
+    const bindings = clause?.namedBindings;
+    const wholeModuleNames = [
+      ...(clause?.name === undefined ? [] : [clause.name.text]),
+      ...(bindings !== undefined && ts.isNamespaceImport(bindings) ? [bindings.name.text] : []),
+    ];
+
+    if (specifier === "effect") {
+      wholeModuleNames.forEach((name) => effectRoots.add(name));
+    }
+
+    if (specifier === "effect/Effect") {
+      wholeModuleNames.forEach((name) => effectModules.add(name));
+    }
+
+    if (specifier === "effect/ManagedRuntime") {
+      wholeModuleNames.forEach((name) => managedRuntimeModules.add(name));
+    }
+
+    if (bindings === undefined || !ts.isNamedImports(bindings)) {
+      continue;
+    }
+
+    for (const element of bindings.elements) {
+      const importedName = (element.propertyName ?? element.name).text;
+      if (specifier === "effect" && importedName === "Effect") {
+        effectModules.add(element.name.text);
+      } else if (specifier === "effect" && importedName === "ManagedRuntime") {
+        managedRuntimeModules.add(element.name.text);
+      } else if (specifier === "effect/Effect" && effectRunnerNames.has(importedName)) {
+        add(element, `Effect.${importedName}`);
+      } else if (specifier === "effect/ManagedRuntime" && importedName === "make") {
+        add(element, "ManagedRuntime.make");
+      }
+    }
+  }
+
+  function qualify(path: AccessPath): readonly string[] {
+    const [head, ...members] = path;
+    if (head === undefined) {
+      return [];
+    }
+
+    if (effectRoots.has(head)) {
+      return members;
+    }
+
+    if (effectModules.has(head)) {
+      return ["Effect", ...members];
+    }
+
+    return managedRuntimeModules.has(head) ? ["ManagedRuntime", ...members] : [];
+  }
+
+  function apiOf(path: AccessPath): string | undefined {
+    const qualified = qualify(path);
+    const [module, member] = qualified;
+    if (qualified.length !== 2 || member === undefined) {
+      return undefined;
+    }
+
+    if (module === "Effect" && effectRunnerNames.has(member)) {
+      return `Effect.${member}`;
+    }
+
+    return module === "ManagedRuntime" && member === "make" ? "ManagedRuntime.make" : undefined;
+  }
+
+  function visit(node: ts.Node): void {
+    if (ts.isPropertyAccessExpression(node) || ts.isElementAccessExpression(node)) {
+      const path = getAccessPath(node, []);
+      const api = path === null ? undefined : apiOf(path);
+      if (api !== undefined) {
+        add(node, api);
+        return;
+      }
+    }
+
+    ts.forEachChild(node, visit);
+  }
+
+  visit(source);
+  return uses;
+}
+
+/**
+ * Resolves a relative module specifier against the importing module.
+ *
+ * @param file - Repository-relative importing module path.
+ * @param specifier - Module specifier as written.
+ * @returns The repository-relative target path, or `undefined` for package specifiers.
+ */
+function resolveRelativeSpecifier(file: string, specifier: string): string | undefined {
+  return specifier.startsWith(".") ? posix.join(posix.dirname(file), specifier) : undefined;
+}
+
+/**
+ * Lists the legacy-kernel modules one platform module imports.
+ *
+ * @param file - Repository-relative platform module path.
+ * @param sourceText - Source text to parse.
+ * @returns Every import of a legacy-kernel module, as `{file, target}` pairs.
+ */
+function scanLegacyKernelImportSource(file: string, sourceText: string): readonly {file: string; target: string}[] {
+  return collectModuleImports(sourceText).flatMap((moduleImport) => {
+    const target = resolveRelativeSpecifier(file, moduleImport.specifier);
+    return target !== undefined && legacyKernelModule.test(target) ? [{file, target}] : [];
+  });
+}
+
 describe("runtime boundary policy", () => {
   it("keeps the exact production exclusions", () => {
     expect([...runtimeBoundaryExclusions]).toEqual([
@@ -1059,5 +1257,96 @@ describe("runtime boundary policy", () => {
         (moduleImport) => processSpawningModules.has(moduleImport.specifier) || moduleImport.specifier === "execa",
       ),
     ).toEqual([]);
+  });
+
+  it("sanctions the platform layer for ambient access but not for exits or stray output", () => {
+    const source = [
+      'import {readFileSync} from "node:fs";',
+      "void process.env.PATH;",
+      "setTimeout(() => undefined, 10);",
+      "process.on('SIGINT', () => undefined);",
+      "process.stdout.write('visible');",
+      "process.exitCode = 1;",
+      "process.exit(1);",
+    ].join("\n");
+
+    expect(scanRuntimeBoundarySource("scripts/platform/Example.ts", source)).toEqual([
+      {file: "scripts/platform/Example.ts", line: 5, rule: "direct-output"},
+      {file: "scripts/platform/Example.ts", line: 6, rule: "direct-exit"},
+      {file: "scripts/platform/Example.ts", line: 7, rule: "direct-exit"},
+    ]);
+    expect(scanRuntimeBoundarySource("scripts/platform/Output.ts", "process.stdout.write('visible');")).toEqual([]);
+  });
+
+  it("imports @effect/platform-node only inside scripts/platform", () => {
+    const offenders = discoverProductionScripts()
+      .filter((file) => !file.startsWith(platformLayerDirectory))
+      .flatMap((file) =>
+        collectModuleImports(readFileSync(file, "utf8"))
+          .filter(
+            (moduleImport) =>
+              moduleImport.specifier === "@effect/platform-node" || moduleImport.specifier.startsWith("@effect/platform-node/"),
+          )
+          .map((moduleImport) => ({file, specifier: moduleImport.specifier})),
+      );
+
+    expect(offenders).toEqual([]);
+  });
+
+  it("detects Effect runners through named, aliased, and namespace imports", () => {
+    const source = [
+      'import {Effect as E, ManagedRuntime} from "effect";',
+      'import * as effect from "effect";',
+      'import * as Fx from "effect/Effect";',
+      'import {runFork, succeed} from "effect/Effect";',
+      'import {make} from "effect/ManagedRuntime";',
+      "void E.runPromise(E.void);",
+      "const run = effect.Effect.runSync;",
+      'void Fx["runPromiseExit"](Fx.void);',
+      "void ManagedRuntime.make(layer);",
+      "void E.succeed(1);",
+    ].join("\n");
+
+    expect(scanEffectRunnerSource("scripts/example.ts", source)).toEqual([
+      {file: "scripts/example.ts", line: 4, api: "Effect.runFork"},
+      {file: "scripts/example.ts", line: 5, api: "ManagedRuntime.make"},
+      {file: "scripts/example.ts", line: 6, api: "Effect.runPromise"},
+      {file: "scripts/example.ts", line: 7, api: "Effect.runSync"},
+      {file: "scripts/example.ts", line: 8, api: "Effect.runPromiseExit"},
+      {file: "scripts/example.ts", line: 9, api: "ManagedRuntime.make"},
+    ]);
+  });
+
+  it("runs Effect programs only at sanctioned entry points", () => {
+    const uses = discoverProductionScripts().flatMap((file) => scanEffectRunnerSource(file, readFileSync(file, "utf8")));
+
+    expect(uses.filter((use) => !sanctionedEffectRunners.includes(use.file))).toEqual([]);
+    expect([...new Set(uses.map((use) => use.file))].toSorted()).toEqual(sanctionedEffectRunners);
+  });
+
+  it("resolves platform imports of the legacy kernel", () => {
+    const source = [
+      'import {nodeProcessRunner} from "../common/runtime.node.ts";',
+      'import type {ProcessRunner} from "../common/runner.execa.ts";',
+      'export * from "../common/index.ts";',
+      'import {repositoryRoot} from "../common/repository-paths.ts";',
+      'import {Effect} from "effect";',
+    ].join("\n");
+
+    expect(scanLegacyKernelImportSource("scripts/platform/Example.ts", source)).toEqual([
+      {file: "scripts/platform/Example.ts", target: "scripts/common/runtime.node.ts"},
+      {file: "scripts/platform/Example.ts", target: "scripts/common/runner.execa.ts"},
+      {file: "scripts/platform/Example.ts", target: "scripts/common/index.ts"},
+    ]);
+  });
+
+  it("keeps the platform layer free of legacy kernel imports", () => {
+    const platformModules = discoverProductionScripts().filter((file) => file.startsWith(platformLayerDirectory));
+    const offenders = platformModules
+      .filter((file) => file !== platformBridge)
+      .flatMap((file) => scanLegacyKernelImportSource(file, readFileSync(file, "utf8")));
+
+    expect(platformModules).toContain(platformBridge);
+    expect(offenders).toEqual([]);
   });
 });

@@ -2,7 +2,8 @@
 
 The root [`package.json`](../package.json) owns the supported npm commands that invoke this directory. Root scripts coordinate repository
 tooling; the declarative command runtime, capability kernel, and process runner belong in [`common`](./common), container runtime behavior
-belongs in [`container-runtime`](./container-runtime), and worker entry points belong in [`workers`](./workers).
+belongs in [`container-runtime`](./container-runtime), the Effect platform layer that replaces them belongs in [`platform`](./platform),
+and worker entry points belong in [`workers`](./workers).
 
 [RFC 0002](../docs/rfc/0002-lean-monorepo-tooling-architecture.md) is the accepted architecture record for everything below.
 
@@ -200,20 +201,66 @@ the six approved exclusions of RFC 0002 section 3.2. They stay on Piscina and ar
 scope; it takes `nodeProcessRunner` — the generic process runner — directly, while keeping its legacy `{code, output}` worker-facing API
 so format/lint behavior is unchanged.
 
+## Platform layer (Effect)
+
+[`platform/`](./platform) is the Effect v4 replacement for the command runtime above, recorded as the draft
+[RFC 0002 revision 3](../docs/rfc/0002-lean-monorepo-tooling-architecture.md#21-revision-3-effect-platform). Commands migrate to it
+family by family; until then it runs beside the legacy kernel. Every service key is `"arolariu/scripts/<ServiceName>"`.
+
+- [`Environment`](./platform/Environment.ts) — immutable snapshot of variables, cwd, platform, architecture, CI, and TTY flags.
+- [`exit.ts`](./platform/exit.ts) — `ReportedFailure` and `exitCodeFor`, the single exit-code mapping (`0`, `1`, `2`, `130`, `143`).
+- [`signals.ts`](./platform/signals.ts) — records whether `SIGINT` or `SIGTERM` ended the run, so interruption maps to `130` or `143`.
+- [`Output.ts`](./platform/Output.ts) — `Sink` (the only direct stream writer), `OutputSettings`, the Effect logger
+  (`[arolariu::<context>]` lines, human/JSON/silent), and `Presenter` (`success`, `fatal`, `line`, `write`, `section`, `banner`, `table`,
+  `progress`, `json`).
+- [`Process`](./platform/Process.ts) — child processes over `ChildProcessSpawner` with capture/tee/inherit output, stdin, timeout, command
+  echo, bounded evidence, and typed `ProcessExited`/`ProcessSignalled`/`ProcessSpawnFailed`/`ProcessTimedOut` failures;
+  [`windows.ts`](./platform/windows.ts) resolves and escapes `.cmd` shims.
+- [`Files.ts`](./platform/Files.ts) — `Glob`, read-only `ReadOnlyFiles`, `GetOnlyHttp`, `writeTextAtomic`, and `readBytesBounded`.
+- [`layers.ts`](./platform/layers.ts) — `makeNodeLayer` (production), built from `NodeBaseLayer` and the per-invocation `commandLayer`.
+- [`testing.ts`](./platform/testing.ts) — `makeTestLayer` (in-memory files, scripted processes and HTTP, recording sink, fixed environment,
+  `TestClock`) and `effectTest`.
+- [`bridge.ts`](./platform/bridge.ts) — temporary interop with the legacy kernel (below).
+
+Write a platform test with one harness per test; unscripted processes, HTTP requests, and spawns die instead of reaching a real boundary:
+
+```ts
+const harness = makeTestLayer({
+  processes: [{match: (request) => request.command === "git", respond: {stdout: "main\n", stderr: "", durationMs: 1}}],
+});
+effectTest("reads the current branch", () => Effect.gen(function* () {
+  const result = yield* (yield* Process).run({command: "git", args: ["branch", "--show-current"]});
+  expect(result.stdout).toBe("main\n");
+  expect(harness.processCalls()).toHaveLength(1);
+}), harness.layer);
+```
+
+The bridge works in both directions. `runEffect(program, options)` lets a legacy Promise command run an Effect program on a fresh
+`makeNodeLayer`, turning its `AbortSignal` into fiber interruption. `legacyInvoker(context, program, exitCodeOf)` exposes a migrated Effect
+program as a legacy `CommandInvoker`, so unmigrated callers compose it unchanged. The bridge is the only platform module that may import
+the legacy kernel, and cohort 7 deletes it.
+
+[`runtime-boundary.test.ts`](./common/runtime-boundary.test.ts) sanctions `scripts/platform/**` — like `runtime.node.ts` — as an owner of
+ambient `process.*`, timer, and `node:*` access, and enforces three platform rules: `@effect/platform-node` is imported only inside
+`scripts/platform/`; Effect runtimes (`Effect.run*`, `ManagedRuntime.make`) start only in `bridge.ts`, `testing.ts`, and `Output.ts`'s
+synchronous logger sink; and no platform module except `bridge.ts` imports the legacy kernel.
+
 ## Output-policy exemptions
 
 The logger sink implementation in [`common/logger.ts`](./common/logger.ts) is the sole owner of semantic and non-interactive presentation
 output. The interactive terminal-protocol adapter in [`common/prompts.ts`](./common/prompts.ts) is a separate narrow exemption because
 readline, visible input echo, cursor state, validation feedback, and non-echoing secret entry must share one writable terminal stream.
 That adapter may emit only prompt labels, questions, choices, validation feedback, and terminal-control newlines; lifecycle diagnostics and
-submitted secret values remain forbidden there.
+submitted secret values remain forbidden there. The platform `Sink` in [`platform/Output.ts`](./platform/Output.ts) is the Effect
+counterpart of the logger sink and holds the same exemption.
 
-[`output-policy.test.ts`](./common/output-policy.test.ts)'s AST guards enforce both boundaries, including property, direct-function, and
+[`output-policy.test.ts`](./common/output-policy.test.ts)'s AST guards enforce these boundaries, including property, direct-function, and
 destructured aliases. [`runtime-boundary.test.ts`](./common/runtime-boundary.test.ts) enforces the wider runtime boundary — Execa and
 child-process imports, ambient filesystem/HTTP/timer/environment/OS-state access, direct process exit, manual direct-entry detection,
-explicit concurrency, doctor capability width, and the exact six format/lint exclusions. The root ESLint configuration provides immediate
-feedback for direct output syntax. Direct console/process-stream output stays confined to the logger sink, while injected
-`output.write(...)` prompt presentation stays confined to the prompt adapter. Neither exemption includes a script entry point.
+explicit concurrency, doctor capability width, the exact six format/lint exclusions, and the platform-layer rules above. The root ESLint
+configuration provides immediate feedback for direct output syntax. Direct console/process-stream output stays confined to the logger
+sinks, while injected `output.write(...)` prompt presentation stays confined to the prompt adapter. No exemption includes a script entry
+point.
 
 Every production script under root `scripts/**` — including [`setup.ts`](./setup.ts), [`doctor.ts`](./doctor.ts), and
 [`status.ts`](./status.ts) — routes its presentation and semantic output through `MonorepositoryConsoleLogger`. There are no remaining
