@@ -10,7 +10,9 @@
  * the in-memory counterpart of `makeNodeLayer`: a map-backed filesystem and glob (`./testing.fs.ts`),
  * scripted processes and HTTP responses, a recording sink, a fixed environment, and the test clock.
  * The scripted `Process` reproduces `ProcessLive`'s request invariants, command echo, output tee, and
- * timeout around each scripted response. Unscripted processes, HTTP requests, child-process spawns,
+ * timeout around each scripted response. The harness also sets `ProcessLayerFactory` to that
+ * scripted layer, so `commandLayer` rebuilds it over each CLI invocation's own output settings.
+ * Unscripted processes, HTTP requests, child-process spawns,
  * terminal reads, and unimplemented `FileSystem` members die, so a test never reaches a real external
  * boundary or a silent no-op by accident.
  */
@@ -33,6 +35,7 @@ import {
   echoProcessCommand,
   formatProcessRequest,
   Process,
+  ProcessLayerFactory,
   processTimedOut,
   teeProcessOutput,
   validateProcessRequest,
@@ -266,7 +269,12 @@ export function makeTestLayer(options: TestLayerOptions = {}): TestHarness<Platf
     ),
   );
   const settings = {mode: options.mode ?? "human", verbose: options.verbose ?? false, color: false, context: options.context ?? "test"};
-  const platform = processLayer.pipe(Layer.provideMerge(outputLayer(settings)), Layer.provideMerge(base));
+  // The harness Process serves direct effect tests; the factory reference makes `commandLayer` rebuild
+  // the same scripted process over each CLI invocation's own output settings and presenter.
+  const platform = Layer.merge(processLayer, Layer.succeed(ProcessLayerFactory, processLayer)).pipe(
+    Layer.provideMerge(outputLayer(settings)),
+    Layer.provideMerge(base),
+  );
 
   return {
     layer: options.clock === "live" ? platform : Layer.merge(platform, TestClock.layer()),

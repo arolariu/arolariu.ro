@@ -75,6 +75,20 @@ describe("quality commands", () => {
     expect(result.output).toEqual([]);
   });
 
+  it("echoes the spawned command under --verbose through the invocation settings", async () => {
+    // Arrange
+    const argv = ["--verbose", "format", "website", "src/a.ts"];
+
+    // Act
+    const result = await run(argv);
+
+    // Assert
+    expect(result.code).toBe(0);
+    expect(result.output).toEqual([
+      {stream: "stdout", text: `[arolariu::format] 🐛 $ ${executablePath} ${scripts.format} website src/a.ts\n`},
+    ]);
+  });
+
   it("spawns lint with only the target when no pattern is given", async () => {
     // Arrange
     const argv = ["lint", "exp"];

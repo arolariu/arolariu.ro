@@ -9,14 +9,14 @@
  * writes a file, or issues a request.
  */
 
-import {Effect, FileSystem, Path} from "effect";
+import {Effect, FileSystem, Layer, Path} from "effect";
 import {describe, expect, it} from "vitest";
 
 import {Environment} from "./Environment.ts";
 import {GetOnlyHttp, Glob, ReadOnlyFiles} from "./Files.ts";
-import {makeNodeLayer} from "./layers.ts";
-import {OutputSettings, Presenter} from "./Output.ts";
-import {Process} from "./Process.ts";
+import {commandLayer, makeNodeLayer, NodeBaseLayer} from "./layers.ts";
+import {OutputSettings, Presenter, type OutputSettingsShape} from "./Output.ts";
+import {Process, ProcessLayerFactory} from "./Process.ts";
 import {runScoped} from "./testing.ts";
 
 describe("makeNodeLayer", () => {
@@ -40,5 +40,31 @@ describe("makeNodeLayer", () => {
 
     // Assert
     expect(resolved).toEqual(settings);
+  });
+});
+
+describe("commandLayer", () => {
+  it("builds Process from the ProcessLayerFactory reference over the invocation output settings", async () => {
+    // Arrange
+    const settings = {mode: "human", verbose: true, color: false, context: "layers"} as const;
+    const seen: OutputSettingsShape[] = [];
+    const factory = Layer.effect(
+      Process,
+      Effect.map(Effect.service(OutputSettings), (current) => {
+        seen.push(current);
+        return Process.of({run: () => Effect.succeed({stdout: "scripted", stderr: "", durationMs: 0})});
+      }),
+    );
+    const program = Effect.gen(function* () {
+      const process = yield* Process;
+      return yield* process.run({command: "tool", args: []});
+    }).pipe(Effect.provide(commandLayer(settings)), Effect.provideService(ProcessLayerFactory, factory));
+
+    // Act
+    const result = await runScoped(program, NodeBaseLayer);
+
+    // Assert
+    expect(result.stdout).toBe("scripted");
+    expect(seen).toEqual([settings]);
   });
 });

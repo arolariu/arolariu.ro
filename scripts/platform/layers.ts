@@ -10,14 +10,14 @@
  */
 
 import {NodeHttpClient, NodeServices} from "@effect/platform-node";
-import {Layer, type FileSystem, type Path, type Terminal} from "effect";
+import {Effect, Layer, type FileSystem, type Path, type Terminal} from "effect";
 import type {HttpClient} from "effect/http";
 import type {ChildProcessSpawner} from "effect/process";
 
 import {EnvironmentLive, type Environment} from "./Environment.ts";
 import {GetOnlyHttpLive, GlobLive, ReadOnlyFilesLive, type GetOnlyHttp, type Glob, type ReadOnlyFiles} from "./Files.ts";
 import {outputLayer, SinkLive, type OutputSettings, type OutputSettingsShape, type Presenter, type Sink} from "./Output.ts";
-import {ProcessLive, type Process} from "./Process.ts";
+import {ProcessLayerFactory, type Process} from "./Process.ts";
 
 /** Services that do not depend on the invocation output settings. */
 export type BaseServices =
@@ -44,10 +44,17 @@ export const NodeBaseLayer: Layer.Layer<BaseServices> = Layer.mergeAll(ReadOnlyF
  * Builds the per-invocation layer that depends on the global output flags.
  *
  * @param settings - The invocation output settings.
- * @returns The `outputLayer` for `settings` merged with `ProcessLive`, which it also feeds.
+ * @returns The `outputLayer` for `settings` merged with the `Process` layer read from
+ * {@link ProcessLayerFactory} (`ProcessLive` unless overridden), which it also feeds.
  */
 export function commandLayer(settings: OutputSettingsShape): Layer.Layer<OutputSettings | Presenter | Process, never, BaseServices> {
-  return ProcessLive.pipe(Layer.provideMerge(outputLayer(settings)));
+  // `fresh` keeps the layer memo map from reusing a Process built over another invocation's settings.
+  const processLayer = Layer.unwrap(
+    Effect.gen(function* () {
+      return Layer.fresh(yield* ProcessLayerFactory);
+    }),
+  );
+  return processLayer.pipe(Layer.provideMerge(outputLayer(settings)));
 }
 
 /**

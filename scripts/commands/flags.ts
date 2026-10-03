@@ -16,7 +16,7 @@ import type {ContainerEngine} from "../container-runtime/types.ts";
 import {Environment} from "../platform/Environment.ts";
 import {commandLayer, type BaseServices} from "../platform/layers.ts";
 import {resolveColor, withLogContext, type OutputSettings, type Presenter} from "../platform/Output.ts";
-import {Process} from "../platform/Process.ts";
+import type {Process} from "../platform/Process.ts";
 
 /** `--json`: emit one machine-readable JSON document instead of human output. */
 export const JsonFlag: GlobalFlag.Setting<"json", boolean> = GlobalFlag.Setting("json")({
@@ -54,9 +54,7 @@ type CommandOutputServices = BaseServices | GlobalFlag.Setting.Identifier<"json"
  * @remarks
  * Reads {@link JsonFlag}, {@link VerboseFlag}, and {@link Environment}, then provides
  * `commandLayer({mode: json ? "json" : "human", verbose, color: resolveColor(environment), context})`
- * and sets the `[arolariu::<context>]` log context. A `Process` already present in the ambient
- * context (the scripted process of the test harness; production base layers have none) is kept in
- * place of the layer's `ProcessLive`.
+ * and sets the `[arolariu::<context>]` log context.
  *
  * @param context - Default `[arolariu::<context>]` prefix of the command's log lines.
  * @returns A function that provides `OutputSettings`, `Presenter`, and `Process` to a program.
@@ -74,11 +72,6 @@ export function withCommandOutput(
       const verbose = yield* VerboseFlag;
       const environment = yield* Environment;
       const layer = commandLayer({mode: json ? "json" : "human", verbose, color: resolveColor(environment), context});
-      const ambientProcess = yield* Effect.serviceOption(Process);
-      const program = Option.match(ambientProcess, {
-        onNone: () => self,
-        onSome: (process) => self.pipe(Effect.provideService(Process, process)),
-      });
-      return yield* program.pipe(withLogContext(context), Effect.provide(layer));
+      return yield* self.pipe(withLogContext(context), Effect.provide(layer));
     });
 }

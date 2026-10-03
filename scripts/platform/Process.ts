@@ -412,3 +412,21 @@ export const ProcessLive: Layer.Layer<Process, never, ChildProcessSpawner.ChildP
       return Process.of({run});
     }),
   );
+
+/** A layer building the {@link Process} service over one invocation's output and platform services. */
+export type ProcessLayer = Layer.Layer<Process, never, ChildProcessSpawner.ChildProcessSpawner | Presenter | OutputSettings | Environment>;
+
+/**
+ * The layer `commandLayer` builds each invocation's {@link Process} from; defaults to {@link ProcessLive}.
+ *
+ * @remarks
+ * The test harness sets it to its scripted process layer, so a CLI run under test still builds
+ * `Process` over that invocation's `OutputSettings` and `Presenter` (command echo under `--verbose`,
+ * tee through the invocation presenter).
+ */
+export const ProcessLayerFactory: Context.Reference<ProcessLayer> = Context.Reference<ProcessLayer>(
+  "arolariu/scripts/ProcessLayerFactory",
+  {
+    defaultValue: () => ProcessLive,
+  },
+);
