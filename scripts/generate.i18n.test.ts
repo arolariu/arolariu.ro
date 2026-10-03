@@ -46,6 +46,32 @@ describe("generateI18nCommand", () => {
     expect(roContent).toHaveProperty("farewell");
   });
 
+  it("characterizes the exact locale file diffs for one missing key", async () => {
+    // Arrange
+    const messages = `${repositoryFixtureRoot}/sites/arolariu.ro/messages`;
+    const enText = JSON.stringify({greeting: "Hello", farewell: "Goodbye"});
+    const files = createMemoryFileSystem({
+      [`${messages}/en.json`]: enText,
+      [`${messages}/ro.json`]: JSON.stringify({greeting: "Salut"}),
+      [`${messages}/fr.json`]: JSON.stringify({greeting: "Bonjour"}),
+    });
+    const {createGenerateI18nCommand} = await import("./generate.i18n.ts");
+    const command = createGenerateI18nCommand(createTestRuntimeFactory({files}));
+
+    // Act
+    const execution = await command.invoke({verbose: false}, {presentation: "silent"});
+
+    // Assert
+    expect(execution).toMatchObject({
+      status: "completed",
+      exitCode: 1,
+      value: {summary: "i18n synchronization completed with 2 missing key(s) added."},
+    });
+    expect(await files.readText(`${messages}/en.json`)).toBe(enText);
+    expect(await files.readText(`${messages}/ro.json`)).toBe('{\n  "greeting": "Salut",\n  "farewell": ""\n}');
+    expect(await files.readText(`${messages}/fr.json`)).toBe('{\n  "greeting": "Bonjour",\n  "farewell": ""\n}');
+  });
+
   it("resolves as completed with exitCode: 0 when every locale already matches English", async () => {
     const files = createMemoryFileSystem({
       [`${repositoryFixtureRoot}/sites/arolariu.ro/messages/en.json`]: JSON.stringify({greeting: "Hello"}),

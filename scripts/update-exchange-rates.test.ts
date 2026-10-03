@@ -14,6 +14,7 @@ import {join} from "node:path";
 import {describe, expect, it} from "vitest";
 
 import {CommandInputError} from "./common/commander.ts";
+import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "./common/logger.ts";
 import {CommandCancellation, type Clock, type HttpClient, type HttpRequest} from "./common/runtime.ts";
 import {
   createHttpResponse,
@@ -413,5 +414,51 @@ describe("createUpdateExchangeRatesCommand business behavior", () => {
     // The stale 2024 USD average is replaced by the freshly computed one, not merged with it.
     expect(lines).not.toContain("2024,USD,4.9");
     expect(lines.some((line) => line.startsWith("2024,USD,"))).toBe(true);
+  });
+
+  it("characterizes the exact request, CSV bytes, and success line for --year 2024", async () => {
+    // Arrange
+    const requestedUrls: string[] = [];
+    const ratesJson = JSON.stringify({
+      amount: 1,
+      base: "EUR",
+      start_date: "2024-01-02",
+      end_date: "2024-12-31",
+      rates: {
+        "2024-01-02": {RON: 4.9706, USD: 1.0956, GBP: 0.8667},
+        "2024-12-31": {RON: 4.9743, USD: 1.0389, GBP: 0.8292},
+      },
+    });
+    const http: HttpClient = {
+      request: async (request: Readonly<HttpRequest>) => {
+        requestedUrls.push(request.url.href);
+        return createHttpResponse(200, ratesJson);
+      },
+    };
+    const files = createMemoryFileSystem();
+    const sink = new InMemoryLoggerSink();
+    const logger = new MonorepositoryConsoleLogger("update-exchange-rates", {color: false, sink});
+    const command = createUpdateExchangeRatesCommand(
+      createTestRuntimeFactory({clock: fixedClock("2025-06-01T00:00:00.000Z"), http, files, logger}),
+    );
+
+    // Act
+    const execution = await command.invoke(decodeExchangeRateInput({year: "2024"}), {presentation: "human"});
+
+    // Assert
+    expect(execution).toEqual({
+      status: "completed",
+      value: {years: [2024], updatedYears: [2024], failedYears: []},
+      exitCode: 0,
+    });
+    expect(requestedUrls).toEqual([
+      "https://api.frankfurter.dev/v1/2024-01-01..2024-12-31?base=EUR&symbols=RON,EUR,USD,GBP,CHF,JPY,CAD,AUD,NZD,BRL,MXN,ARS,CLP,COP,PEN,UYU,BOB,PYG,PAB,DOP,CRC,GTQ,HNL,JMD,TTD,CUP,SEK,NOK,DKK,PLN,CZK,HUF,BGN,HRK,TRY,ISK,UAH,MDL,RSD,GEL,ALL,BAM,MKD,BYN,AMD,AZN,KZT,UZS,MNT,INR,PKR,BDT,LKR,NPR,AFN,CNY,KRW,SGD,HKD,TWD,THB,IDR,MYR,PHP,VND,MMK,KHR,LAK,ILS,AED,SAR,KWD,QAR,BHD,OMR,JOD,IQD,LBP,ZAR,EGP,KES,NGN,MAD,TND,DZD,GHS,TZS,UGX,ETB,XOF,XAF,MZN,ZMW,BWP,MUR,RWF,AOA,LYD,FJD,PGK,SOS",
+    ]);
+    expect(await files.readText(CSV_PATH)).toBe("year,currency,rate_to_ron\n2024,EUR,4.9725\n2024,GBP,5.867\n2024,USD,4.6625\n");
+    expect(sink.records.at(-1)).toEqual({
+      stream: "stdout",
+      text: "[arolariu::update-exchange-rates] ✅ Updated 1 of 1 year(s).",
+      write: false,
+    });
   });
 });

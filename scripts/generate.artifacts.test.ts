@@ -6,7 +6,7 @@
 
 import {mkdir, mkdtemp, readFile, rm, writeFile} from "node:fs/promises";
 import {tmpdir} from "node:os";
-import {basename, dirname, join} from "node:path";
+import {basename, dirname, join, relative} from "node:path";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 
 import {
@@ -395,6 +395,103 @@ class ArtifactGeneratorTestHarness {
     vi.restoreAllMocks();
     await Promise.all(this.#temporaryDirectories.splice(0).map((directory) => rm(directory, {recursive: true, force: true})));
   }
+}
+
+/** Repository-relative artifact text the unified generation writes for the harness fixtures, in reported order. */
+const EXPECTED_ARTIFACT_BYTES: Readonly<Record<string, string>> = (() => {
+  const gpc = JSON.stringify({
+    system: "GS1_GPC",
+    version: "2026-05",
+    sourceUrl: "https://ref.gs1.org/standards/gpc/2026-05/",
+    generatedAt: "2026-08-19T00:00:00.000Z",
+    attribution: "GS1 Global Product Classification (GPC), May 2026 release.",
+    nodes: [
+      {
+        code: "50000000",
+        officialLabel: "Food",
+        level: "segment",
+        parentCode: null,
+        hierarchyCodes: ["50000000"],
+        hierarchyLabels: ["Food"],
+        definition: null,
+        searchText: "50000000 food",
+      },
+      {
+        code: "10000266",
+        officialLabel: "Bread",
+        level: "brick",
+        parentCode: "50000000",
+        hierarchyCodes: ["50000000", "10000266"],
+        hierarchyLabels: ["Food", "Bread"],
+        definition: "Ready-to-eat; chilled!",
+        searchText: "10000266 bread ready to eat chilled food",
+      },
+    ],
+  });
+  const ecoicop = JSON.stringify({
+    system: "ECOICOP_V2",
+    version: "2",
+    sourceUrl: "https://publications.europa.eu/webapi/rdf/sparql#http://data.europa.eu/ed1/ecoicop2/ecoicop2",
+    generatedAt: "2026-08-19T00:00:00.000Z",
+    attribution: "European Union, Publications Office of the European Union, reused under the European Commission reuse policy.",
+    nodes: [
+      {
+        code: "01",
+        officialLabel: "Food",
+        level: "division",
+        parentCode: null,
+        hierarchyCodes: ["01"],
+        hierarchyLabels: ["Food"],
+        definition: null,
+        searchText: "01 food food",
+      },
+    ],
+  });
+  const nace = JSON.stringify({
+    system: "NACE_2_1",
+    version: "2.1",
+    sourceUrl: "https://publications.europa.eu/webapi/rdf/sparql#http://data.europa.eu/ux2/nace2.1/nace2.1",
+    generatedAt: "2026-08-19T00:00:00.000Z",
+    attribution: "European Union, Publications Office of the European Union, reused under the European Commission reuse policy.",
+    nodes: [
+      {
+        code: "A",
+        officialLabel: "Agriculture",
+        level: "section",
+        parentCode: null,
+        hierarchyCodes: ["A"],
+        hierarchyLabels: ["Agriculture"],
+        definition: null,
+        searchText: "a agriculture agriculture",
+      },
+    ],
+  });
+  const api = "sites/api.arolariu.ro/src/Invoices/Resources/Taxonomies";
+  const web = "sites/arolariu.ro/src/data/taxonomies";
+  return {
+    [`${api}/gpc-2026-05.min.json`]: gpc,
+    [`${web}/gpc-2026-05.min.json`]: gpc,
+    [`${api}/ecoicop-v2.min.json`]: ecoicop,
+    [`${web}/ecoicop-v2.min.json`]: ecoicop,
+    [`${api}/nace-2.1.min.json`]: nace,
+    [`${web}/nace-2.1.min.json`]: nace,
+    "sites/arolariu.ro/licenses.json": '{"production":[],"development":[],"peer":[]}\n',
+  };
+})();
+
+/**
+ * Reads every generated artifact as text, keyed by its repository-relative POSIX path.
+ *
+ * @param files - Filesystem the command wrote into.
+ * @param root - Repository root the keys are made relative to.
+ * @param paths - Absolute artifact paths reported by the command.
+ * @returns The artifact text keyed by repository-relative path, in reported order.
+ */
+async function readArtifactBytes(files: FileSystem, root: string, paths: readonly string[]): Promise<Record<string, string>> {
+  const entries = await Promise.all(
+    paths.map(async (path) => [relative(root, path).replaceAll("\\", "/"), await files.readText(path)] as const),
+  );
+  return Object.fromEntries(entries);
 }
 
 describe("Taxonomy classification generators", () => {
@@ -1046,6 +1143,38 @@ describe("Artifact orchestration and CLI contracts", () => {
       harness.expectMessage("warn", "[NACE] Source unavailable after retries; using validated cached artifact");
     });
 
+    it("characterizes the written artifact bytes online and preserves them offline when a validated cache exists", async () => {
+      // Arrange
+      const {files, cwd} = harness.createCommandWorkspace();
+      const factory = createTestRuntimeFactory({
+        files,
+        http: harness.http,
+        runner: new ArchiveExtractionRunner(files, harness.gpcDocument),
+        clock: harness.clock,
+        environment: harness.createEnvironment(cwd),
+        logger: harness.logger,
+      });
+      harness.stubUnifiedSources();
+
+      // Act — online
+      const online = await createGenerateArtifactsCommand(factory).invoke({verbose: false});
+      const onlinePaths = online.status === "completed" ? online.value.generatedFiles : [];
+      const onlineBytes = await readArtifactBytes(files, cwd, onlinePaths);
+
+      // Act — offline with the validated cache written by the online run
+      harness.stubUnavailableSources();
+      const offline = await createGenerateArtifactsCommand(factory).invoke({verbose: false});
+      const offlinePaths = offline.status === "completed" ? offline.value.generatedFiles : [];
+      const offlineBytes = await readArtifactBytes(files, cwd, offlinePaths);
+
+      // Assert
+      expect(online).toMatchObject({status: "completed", exitCode: 0, value: {summary: "Generated 7 artifact file(s)."}});
+      expect(onlineBytes).toEqual(EXPECTED_ARTIFACT_BYTES);
+      expect(Object.keys(onlineBytes)).toEqual(Object.keys(EXPECTED_ARTIFACT_BYTES));
+      expect(offline).toMatchObject({status: "completed", exitCode: 0, value: {summary: "Generated 7 artifact file(s)."}});
+      expect(offlineBytes).toEqual(EXPECTED_ARTIFACT_BYTES);
+    });
+
     it("fails the invocation when a taxonomy source is unavailable and no cache exists", async () => {
       const files = createMemoryFileSystem({
         [`${repositoryFixtureRoot}/package.json`]: JSON.stringify({name: "@arolariu/monorepo"}),
@@ -1066,6 +1195,8 @@ describe("Artifact orchestration and CLI contracts", () => {
       const execution = await command.invoke({verbose: false});
 
       expect(execution).toMatchObject({status: "failed", exitCode: 1, failure: {kind: "operational"}});
+      const taxonomyWritten = await Promise.all(getExpectedTaxonomyArtifactPaths(repositoryFixtureRoot).map((path) => files.exists(path)));
+      expect(taxonomyWritten).toEqual([false, false, false, false, false, false]);
     });
   });
 
@@ -1232,6 +1363,32 @@ describe("Artifact orchestration and CLI contracts", () => {
 
       expect(consoleSpies.every((spy) => spy.mock.calls.length === 0)).toBe(true);
       expect(sink.records.some((record) => record.text.includes("GraphQL generation completed"))).toBe(true);
+    });
+
+    it("characterizes the GraphQL summary line, its human completion, and the placeholder artifact", async () => {
+      // Arrange
+      const sink = new InMemoryLoggerSink();
+      const logger = new MonorepositoryConsoleLogger("generate::gql", {color: false, sink});
+      const files = createMemoryFileSystem();
+      const outputFile = join(repositoryFixtureRoot, "scripts", "__generated__", "gql", "README.placeholder.txt");
+      const {createGenerateGraphqlCommand} = await import("./generate.gql.ts");
+      const command = createGenerateGraphqlCommand(createTestRuntimeFactory({files, logger}));
+
+      // Act
+      const execution = await command.invoke({verbose: false}, {presentation: "human"});
+
+      // Assert
+      expect(execution).toEqual({
+        status: "completed",
+        value: {summary: "GraphQL generation completed (placeholder).", changedFiles: [outputFile]},
+        exitCode: 0,
+      });
+      // The business step and the human completion each render the summary once.
+      expect(sink.records.filter((record) => record.text.startsWith("[arolariu::")).map(({stream, text}) => ({stream, text}))).toEqual([
+        {stream: "stdout", text: "[arolariu::generate::gql] ✅ GraphQL generation completed (placeholder)."},
+        {stream: "stdout", text: "[arolariu::generate::gql] ✅ GraphQL generation completed (placeholder)."},
+      ]);
+      expect(await files.readText(outputFile)).toBe("// Generated at 2025-01-01T00:00:00.000Z\n// TODO: Integrate GraphQL Codegen here.\n");
     });
 
     it("routes i18n generator output through the supplied logger", async () => {

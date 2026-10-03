@@ -195,6 +195,56 @@ describe("generate composition", () => {
     expect(sink.records.some((record) => record.text.includes("/env"))).toBe(false);
   });
 
+  it("characterizes the exact no-task human tail: one warning, one tip, and no completion line", async () => {
+    // Arrange
+    const {dependencies} = createRecordingDependencies();
+    const {logger, sink} = makeLoggerFixture();
+    const command = createGenerateCommand(dependencies, createTestRuntimeFactory({logger}));
+
+    // Act
+    const execution = await command.invoke(
+      {verbose: false, env: false, i18n: false, gql: false, artifacts: false},
+      {presentation: "human"},
+    );
+
+    // Assert
+    expect(execution).toEqual({status: "completed", value: {selected: [], completed: []}, exitCode: 0});
+    expect(sink.records.slice(-3).map(({stream, text}) => ({stream, text}))).toEqual([
+      {stream: "stdout", text: ""},
+      {stream: "stderr", text: "[arolariu::test::generate] ⚠️ No generation tasks selected. Nothing to do."},
+      {stream: "stdout", text: "   Tip: Pass one or more tasks (e.g. npm run generate -- env i18n gql artifacts)."},
+    ]);
+  });
+
+  it("characterizes the exact success lines when every selected task completes", async () => {
+    // Arrange
+    const {dependencies} = createRecordingDependencies();
+    const {logger, sink} = makeLoggerFixture();
+    const command = createGenerateCommand(dependencies, createTestRuntimeFactory({logger}));
+
+    // Act
+    const execution = await command.invoke(
+      {verbose: false, env: true, i18n: true, gql: true, artifacts: true},
+      {presentation: "human"},
+    );
+
+    // Assert
+    expect(execution).toMatchObject({status: "completed", exitCode: 0});
+    expect(sink.records.slice(-11).map(({stream, text}) => ({stream, text}))).toEqual([
+      {stream: "stdout", text: "[arolariu::test::generate] ℹ️ Running environment configuration generator..."},
+      {stream: "stdout", text: "[arolariu::test::generate] ✅ env"},
+      {stream: "stdout", text: "[arolariu::test::generate] ℹ️ Running internationalization (i18n) generator..."},
+      {stream: "stdout", text: "[arolariu::test::generate] ✅ i18n"},
+      {stream: "stdout", text: "[arolariu::test::generate] ℹ️ Running GraphQL types generator..."},
+      {stream: "stdout", text: "[arolariu::test::generate] ✅ gql"},
+      {stream: "stdout", text: "[arolariu::test::generate] ℹ️ Running taxonomy and license artifact generator..."},
+      {stream: "stdout", text: "[arolariu::test::generate] ✅ Generated 7 artifact file(s)."},
+      {stream: "stdout", text: ""},
+      {stream: "stdout", text: "[arolariu::test::generate] ✅ All requested generation tasks completed."},
+      {stream: "stdout", text: "   Executed 4 task(s)."},
+    ]);
+  });
+
   it("propagates verbose into every child", async () => {
     const {calls, dependencies} = createRecordingDependencies();
     const command = createGenerateCommand(dependencies, createTestRuntimeFactory());

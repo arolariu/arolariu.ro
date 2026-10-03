@@ -371,6 +371,28 @@ class DocumentationFixtureRunner extends AbstractProcessRunner {
 // createDocsAssembleCommand — successful assembly
 // ============================================================================
 
+/**
+ * Fixture runner whose pydoc-markdown invocation succeeds but leaves an empty output directory,
+ * reproducing an extractor that ran cleanly yet produced 0 files.
+ */
+class EmptyPydocFixtureRunner extends DocumentationFixtureRunner {
+  readonly #emptyFiles: FileSystem;
+
+  public constructor(files: FileSystem) {
+    super(files);
+    this.#emptyFiles = files;
+  }
+
+  /** {@inheritDoc AbstractProcessRunner.execute} */
+  protected override async execute(request: Readonly<ProcessRequest>, options: Readonly<ProcessRunOptions>): Promise<ProcessOutcome> {
+    if (request.command !== "python") {
+      return super.execute(request, options);
+    }
+    await this.#emptyFiles.createDirectory(PYTHON_DIR, {recursive: true});
+    return succeeded();
+  }
+}
+
 describe("createDocsAssembleCommand", () => {
   it("assembles every required documentation tier using a fake runner and in-memory filesystem", async () => {
     const files = documentationFixtureFileSystem();
@@ -521,6 +543,62 @@ describe("createDocsAssembleCommand", () => {
 
     expect(execution).toMatchObject({status: "failed", exitCode: 1});
     expect(execution.status === "failed" ? execution.failure.message : "").toMatch(/typedoc website: expected directory not found/);
+    expect(await files.exists(GENERATED_ROOT)).toBe(false);
+  });
+
+  it("characterizes the ordered dotnet, typedoc, and pydoc-markdown process invocations", async () => {
+    // Arrange
+    const files = documentationFixtureFileSystem();
+    const runner = new DocumentationFixtureRunner(files);
+    const command = createDocsAssembleCommand(createTestRuntimeFactory({files, runner}));
+
+    // Act
+    const execution = await command.invoke({}, {presentation: "silent"});
+
+    // Assert
+    expect(execution).toMatchObject({status: "completed", exitCode: 0});
+    expect(runner.calls.map((call) => [call.request.command, ...call.request.args])).toEqual([
+      ["npx", "typedoc", "--options", "typedoc.components.json"],
+      ["python", "-m", "pydoc_markdown.main"],
+      ["npx", "typedoc", "--options", "typedoc.website.json"],
+      ["dotnet", "build", "src/Common/arolariu.Backend.Common.csproj", "-c", "Release"],
+      [
+        "dotnet",
+        "defaultdocumentation",
+        "--AssemblyFilePath",
+        join(FIXTURE_PATHS.apiRoot, "src", "Common", "bin", "Release", "net10.0", "arolariu.Backend.Common.dll"),
+        "--OutputDirectoryPath",
+        join(DOTNET_INTERNALS_DIR, "arolariu.Backend.Common"),
+        "--FileNameFactory",
+        "Name",
+        "--GeneratedPages",
+        "Namespaces",
+        "--IncludeUndocumentedItems",
+        "true",
+        "--GeneratedAccessModifiers",
+        "Public",
+        "Protected",
+        "Internal",
+        "Private",
+      ],
+    ]);
+  });
+
+  it("fails with exit code 1 and removes the generated tree when a tier extracts 0 files", async () => {
+    // Arrange
+    const files = documentationFixtureFileSystem();
+    const runner = new EmptyPydocFixtureRunner(files);
+    const command = createDocsAssembleCommand(createTestRuntimeFactory({files, runner}));
+
+    // Act
+    const execution = await command.invoke({}, {presentation: "silent"});
+
+    // Assert
+    expect(execution).toMatchObject({
+      status: "failed",
+      exitCode: 1,
+      failure: {kind: "operational", message: `pydoc-markdown: extracted 0 files into ${PYTHON_DIR}`},
+    });
     expect(await files.exists(GENERATED_ROOT)).toBe(false);
   });
 

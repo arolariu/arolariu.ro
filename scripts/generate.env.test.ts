@@ -4,12 +4,14 @@
  * @module scripts.generate.env.test
  */
 
+import {join} from "node:path";
+import {PassThrough} from "node:stream";
 import {afterEach, describe, expect, it, vi} from "vitest";
 
 import type {CommandInvoker} from "./common/commander.ts";
 import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "./common/logger.ts";
-import type {PromptProvider} from "./common/prompts.ts";
-import type {HttpClient, HttpResponse, RuntimeEnvironment} from "./common/runtime.ts";
+import {createTerminalPromptProvider, type PromptProvider} from "./common/prompts.ts";
+import type {HttpClient, HttpRequest, HttpResponse, RuntimeEnvironment} from "./common/runtime.ts";
 import {
   createHttpResponse,
   createMemoryFileSystem,
@@ -382,6 +384,245 @@ describe("generateEnvironmentCommand verbosity", () => {
 
     expect(execution).toMatchObject({status: "completed", exitCode: 0});
     expect(sink.records.some((record) => record.text.includes("SITE_ENV was evaluated without logging its value."))).toBe(true);
+  });
+});
+
+describe("generateEnvironmentCommand characterization", () => {
+  const EXP_URL = "http://exp/api/v1/build-time?for=website&label=DEVELOPMENT";
+  const SUBREPO_ENV = join(repositoryFixtureRoot, "sites", "arolariu.ro", ".env");
+  const expConfig: Readonly<Record<string, string>> = {
+    "Site:Environment": "DEVELOPMENT",
+    "Site:Name": "dev.arolariu.ro",
+    "Site:Url": "https://localhost:3000",
+    "Auth:Clerk:PublishableKey": "pk_test_exp",
+    "Auth:Clerk:SecretKey": "sk_test_exp",
+    "Site:UseCdn": "true",
+  };
+
+  /**
+   * Builds the expected generated `.env` payload for one exp-backed run.
+   *
+   * @param useCdn - Rendered `USE_CDN` value.
+   * @returns The exact file text the generator writes.
+   */
+  function expectedExpEnvironmentFile(useCdn: string): string {
+    return [
+      "# Generated environment configuration file",
+      "# Site Environment: development",
+      "# CI/CD: true",
+      "# Commit SHA: N/A",
+      "# Generated at: 2025-01-01T00:00:00.000Z",
+      "# !!!! DO NOT EDIT MANUALLY !!!",
+      "",
+      "",
+      "# Site Configuration Start",
+      "SITE_ENV=DEVELOPMENT",
+      "SITE_NAME=dev.arolariu.ro",
+      "SITE_URL=https://localhost:3000",
+      "# Site Configuration End",
+      "",
+      "# Accepted Authentication Configuration Start",
+      "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_exp",
+      "CLERK_SECRET_KEY=sk_test_exp",
+      "# Accepted Authentication Configuration End",
+      "",
+      "# Accepted Azure Runtime Identity Configuration Start",
+      "# Accepted Azure Runtime Identity Configuration End",
+      "",
+      "# Metadata Configuration Start",
+      "TIMESTAMP=2025-01-01T00:00:00.000Z",
+      "COMMIT_SHA=N/A",
+      `USE_CDN=${useCdn}`,
+      "# Metadata Configuration End",
+    ].join("\n");
+  }
+
+  /**
+   * Builds the non-interactive CI environment snapshot every characterization run observes.
+   *
+   * @param variables - Environment variables visible to the generator.
+   * @returns A deterministic environment snapshot.
+   */
+  function ciEnvironment(variables: Readonly<Record<string, string>>): RuntimeEnvironment {
+    return {
+      variables,
+      cwd: repositoryFixtureRoot,
+      executablePath: "/usr/bin/node",
+      platform: "linux",
+      architecture: "x64",
+      stdinIsTTY: false,
+      stdoutIsTTY: false,
+      isCI: true,
+    };
+  }
+
+  /**
+   * Builds an HTTP fake that records every request and replies with one scripted response.
+   *
+   * @param response - Response returned for every request.
+   * @returns The fake client and its recorded request log.
+   */
+  function recordingHttp(response: HttpResponse): Readonly<{http: HttpClient; requests: Readonly<HttpRequest>[]}> {
+    const requests: Readonly<HttpRequest>[] = [];
+    return {
+      requests,
+      http: {
+        request: async (request) => {
+          requests.push(request);
+          return response;
+        },
+      },
+    };
+  }
+
+  /**
+   * Returns every logger record whose text is a semantic `[arolariu::…]` line.
+   *
+   * @param sink - Sink that captured the run.
+   * @returns The semantic records as stream/text pairs, in emission order.
+   */
+  function semanticLines(sink: InMemoryLoggerSink): readonly Readonly<{stream: string; text: string}>[] {
+    return sink.records.filter((record) => record.text.startsWith("[arolariu::")).map(({stream, text}) => ({stream, text}));
+  }
+
+  it("writes the exact .env from a successful exp response and copies it to the website", async () => {
+    // Arrange
+    const files = createMemoryFileSystem({".env": ""});
+    const sink = new InMemoryLoggerSink();
+    const logger = new MonorepositoryConsoleLogger("generate::env", {color: false, sink});
+    const {http, requests} = recordingHttp(createHttpResponse(200, JSON.stringify({config: expConfig})));
+    const {createGenerateEnvironmentCommand} = await import("./generate.env.ts");
+    const command = createGenerateEnvironmentCommand(
+      createTestRuntimeFactory({files, logger, http, environment: ciEnvironment({INFRA: "azure"})}),
+    );
+
+    // Act
+    const execution = await command.invoke({verbose: false}, {presentation: "human"});
+
+    // Assert
+    expect(execution).toEqual({
+      status: "completed",
+      value: {summary: "Generated 6 environment variable(s).", changedFiles: [".env", SUBREPO_ENV]},
+      exitCode: 0,
+    });
+    expect(requests.map((request) => ({url: request.url.href, headers: request.headers, timeoutMs: request.timeoutMs}))).toEqual([
+      {url: EXP_URL, headers: {"X-Exp-Target": "website"}, timeoutMs: 30_000},
+    ]);
+    expect(await files.readText(".env")).toBe(expectedExpEnvironmentFile("true"));
+    expect(await files.readText(SUBREPO_ENV)).toBe(expectedExpEnvironmentFile("true"));
+    expect(semanticLines(sink).at(-1)).toEqual({stream: "stdout", text: "[arolariu::generate::env] ✅ Generated 6 environment variable(s)."});
+  });
+
+  it("warns about a key missing from the exp response and falls back to USE_CDN=false", async () => {
+    // Arrange
+    const files = createMemoryFileSystem({".env": ""});
+    const sink = new InMemoryLoggerSink();
+    const logger = new MonorepositoryConsoleLogger("generate::env", {color: false, sink});
+    const {"Site:UseCdn": _omitted, ...partialConfig} = expConfig;
+    const {http} = recordingHttp(createHttpResponse(200, JSON.stringify({config: partialConfig})));
+    const {createGenerateEnvironmentCommand} = await import("./generate.env.ts");
+    const command = createGenerateEnvironmentCommand(
+      createTestRuntimeFactory({files, logger, http, environment: ciEnvironment({INFRA: "azure"})}),
+    );
+
+    // Act
+    const execution = await command.invoke({verbose: false}, {presentation: "human"});
+
+    // Assert
+    expect(execution).toMatchObject({status: "completed", exitCode: 0, value: {summary: "Generated 5 environment variable(s)."}});
+    expect(semanticLines(sink)).toContainEqual({
+      stream: "stderr",
+      text: "[arolariu::generate:env] ⚠️ Key Site:UseCdn was not found in the exp build-time response.",
+    });
+    expect(await files.readText(".env")).toBe(expectedExpEnvironmentFile("false"));
+  });
+
+  it("fails with exit code 1 and writes nothing when exp returns 500", async () => {
+    // Arrange
+    const files = createMemoryFileSystem({".env": ""});
+    const sink = new InMemoryLoggerSink();
+    const logger = new MonorepositoryConsoleLogger("generate::env", {color: false, sink});
+    const {http} = recordingHttp(createHttpResponse(500, "boom"));
+    const {createGenerateEnvironmentCommand} = await import("./generate.env.ts");
+    const command = createGenerateEnvironmentCommand(
+      createTestRuntimeFactory({files, logger, http, environment: ciEnvironment({INFRA: "azure"})}),
+    );
+
+    // Act
+    const execution = await command.invoke({verbose: false}, {presentation: "human"});
+
+    // Assert
+    expect(execution).toMatchObject({
+      status: "failed",
+      exitCode: 1,
+      failure: {kind: "operational", message: "exp returned 500 for /api/v1/build-time?for=website", evidence: []},
+    });
+    expect(semanticLines(sink).slice(-2)).toEqual([
+      {stream: "stderr", text: `[arolariu::generate:env] ⛔ exp returned 500 for ${EXP_URL}.`},
+      {stream: "stderr", text: "[arolariu::generate::env] ⛔ exp returned 500 for /api/v1/build-time?for=website"},
+    ]);
+    expect(await files.readText(".env")).toBe("");
+    expect(await files.exists(SUBREPO_ENV)).toBe(false);
+  });
+
+  it("fails with exit code 1 on missing keys in a non-TTY terminal: confirm takes its default, then text input is refused", async () => {
+    // Arrange
+    const files = createMemoryFileSystem({".env": "SITE_ENV=DEVELOPMENT\n"});
+    const sink = new InMemoryLoggerSink();
+    const logger = new MonorepositoryConsoleLogger("generate::env", {color: false, sink});
+    const prompts = createTerminalPromptProvider({input: new PassThrough(), output: new PassThrough(), isTTY: false});
+    const {createGenerateEnvironmentCommand} = await import("./generate.env.ts");
+    const command = createGenerateEnvironmentCommand(createTestRuntimeFactory({files, logger, prompts}));
+
+    // Act
+    const execution = await command.invoke({verbose: false}, {presentation: "human"});
+
+    // Assert
+    expect(execution).toMatchObject({
+      status: "failed",
+      exitCode: 1,
+      failure: {
+        kind: "operational",
+        message: "Cannot request text input without an interactive terminal. Re-run setup in a TTY.",
+      },
+    });
+    expect(semanticLines(sink).slice(-3)).toEqual([
+      {stream: "stderr", text: "[arolariu::generate:env] ⚠️ Found 5 missing key(s) that need to be provided."},
+      {stream: "stdout", text: "[arolariu::generate:env] ℹ️ 🔑 [1/5] Requesting SITE_NAME."},
+      {
+        stream: "stderr",
+        text: "[arolariu::generate::env] ⛔ Cannot request text input without an interactive terminal. Re-run setup in a TTY.",
+      },
+    ]);
+    expect(await files.readText(".env")).toBe("SITE_ENV=DEVELOPMENT\n");
+  });
+
+  it("fails with exit code 1 and the Aborting message when the missing-key confirmation is declined", async () => {
+    // Arrange
+    const files = createMemoryFileSystem({".env": "SITE_ENV=DEVELOPMENT\n"});
+    const sink = new InMemoryLoggerSink();
+    const logger = new MonorepositoryConsoleLogger("generate::env", {color: false, sink});
+    const prompts: PromptProvider = {
+      ...createTerminalPromptProvider({input: new PassThrough(), output: new PassThrough(), isTTY: false}),
+      confirm: async () => false,
+    };
+    const {createGenerateEnvironmentCommand} = await import("./generate.env.ts");
+    const command = createGenerateEnvironmentCommand(createTestRuntimeFactory({files, logger, prompts}));
+
+    // Act
+    const execution = await command.invoke({verbose: false}, {presentation: "human"});
+
+    // Assert
+    expect(execution).toMatchObject({
+      status: "failed",
+      exitCode: 1,
+      failure: {kind: "operational", message: "Aborting: Missing environment variables were not provided."},
+    });
+    expect(semanticLines(sink).slice(-2)).toEqual([
+      {stream: "stderr", text: "[arolariu::generate:env] ⚠️ Missing 5 required environment variable(s):"},
+      {stream: "stderr", text: "[arolariu::generate::env] ⛔ Aborting: Missing environment variables were not provided."},
+    ]);
+    expect(await files.readText(".env")).toBe("SITE_ENV=DEVELOPMENT\n");
   });
 });
 
