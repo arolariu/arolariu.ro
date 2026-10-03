@@ -1,0 +1,13 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {"incremental": false, "types": ["node", "vitest/globals"]},
+  "include": ["./**/*.ts"],
+  "exclude": [
+    "./__generated__/**",
+    "./workers/**",
+    "./format.ts",
+    "./lint.ts",
+    "./common/output-policy.test.ts",
+    "./doctor.reporter.test.ts"
+  ]
+}
