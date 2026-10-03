@@ -8,9 +8,10 @@
  * applies (cancellation waits on a real timer) while no test reaches a real external boundary.
  */
 
-import {Effect, Exit, type Scope} from "effect";
+import {Cause, Effect, Exit, type Scope} from "effect";
 import {describe, expect, it} from "vitest";
 
+import {CommandCancellation} from "../common/runtime.ts";
 import {createTestRuntimeFactory} from "../common/runtime.testing.ts";
 import {legacyInvoker, runEffect, type LayerFactory} from "./bridge.ts";
 import type {PlatformServices} from "./layers.ts";
@@ -169,12 +170,105 @@ describe("legacyInvoker", () => {
     const observed = await invoker.invoke({}, {signal: controller.signal}).then((execution) => ({execution, events: [...events]}));
 
     // Assert
-    expect(observed.execution).toEqual({
+    expect(observed.execution).toMatchObject({
+      status: "cancelled",
+      exitCode: 130,
+      failure: {kind: "cancelled", evidence: []},
+    });
+    expect(observed.execution.status === "cancelled" ? observed.execution.failure.cause : undefined).toBeInstanceOf(CommandCancellation);
+    expect(observed.events).toEqual(["finalized"]);
+  });
+
+  it("legacyInvoker preserves a SIGTERM cancellation reason", async () => {
+    // Arrange
+    const reason = new CommandCancellation("Command terminated by SIGTERM.", 143);
+    const invoker = legacyInvoker(
+      "bridge",
+      () => Effect.never,
+      () => 0,
+      recordingFactory().makeLayer,
+    );
+    const controller = new AbortController();
+    setTimeout(() => {
+      controller.abort(reason);
+    }, 20);
+
+    // Act
+    const execution = await invoker.invoke({}, {signal: controller.signal});
+
+    // Assert
+    expect(execution).toEqual({
+      status: "cancelled",
+      exitCode: 143,
+      failure: {kind: "cancelled", message: "Command terminated by SIGTERM.", evidence: [], cause: reason},
+    });
+  });
+
+  it("legacyInvoker keeps a cancellation when a finalizer fails", async () => {
+    // Arrange
+    const program = (): Effect.Effect<never, never, PlatformServices | Scope.Scope> =>
+      Effect.gen(function* () {
+        yield* Effect.addFinalizer(() => Effect.die(new Error("cleanup broke")));
+        return yield* Effect.never;
+      });
+    const invoker = legacyInvoker("bridge", program, () => 0, recordingFactory().makeLayer);
+    const controller = new AbortController();
+    setTimeout(() => {
+      controller.abort(new CommandCancellation("Command interrupted by SIGINT.", 130));
+    }, 20);
+
+    // Act
+    const execution = await invoker.invoke({}, {signal: controller.signal});
+
+    // Assert
+    expect(execution).toMatchObject({
+      status: "cancelled",
+      exitCode: 130,
+      failure: {kind: "cancelled", message: "Command interrupted by SIGINT.", evidence: ["cleanup broke"]},
+    });
+  });
+
+  it("legacyInvoker keeps a cancellation when the interrupted program also failed", async () => {
+    // Arrange
+    const controller = new AbortController();
+    const reason = new CommandCancellation("Command terminated by SIGTERM.", 143);
+    const program = (): Effect.Effect<never, Error> =>
+      Effect.uninterruptible(
+        Effect.sync(() => {
+          controller.abort(reason);
+        }).pipe(Effect.andThen(Effect.failCause(Cause.combine(Cause.fail(new Error("step failed")), Cause.interrupt())))),
+      );
+    const invoker = legacyInvoker("bridge", program, () => 0, recordingFactory().makeLayer);
+
+    // Act
+    const execution = await invoker.invoke({}, {signal: controller.signal});
+
+    // Assert
+    expect(execution).toEqual({
+      status: "cancelled",
+      exitCode: 143,
+      failure: {kind: "cancelled", message: "Command terminated by SIGTERM.", evidence: ["step failed"], cause: reason},
+    });
+  });
+
+  it("legacyInvoker maps a self-interruption without an aborted signal to 130", async () => {
+    // Arrange
+    const invoker = legacyInvoker(
+      "bridge",
+      () => Effect.interrupt,
+      () => 0,
+      recordingFactory().makeLayer,
+    );
+
+    // Act
+    const execution = await invoker.invoke({});
+
+    // Assert
+    expect(execution).toEqual({
       status: "cancelled",
       exitCode: 130,
       failure: {kind: "cancelled", message: "Command cancelled.", evidence: []},
     });
-    expect(observed.events).toEqual(["finalized"]);
   });
 
   it("legacyInvoker defaults to the Node layer", async () => {
@@ -212,5 +306,7 @@ describe("legacyInvoker", () => {
 
     // Assert
     expect(execution.status).toBe("cancelled");
+    expect(execution.exitCode).toBe(130);
+    expect(execution.status === "cancelled" ? execution.failure.cause : undefined).toBeInstanceOf(CommandCancellation);
   });
 });

@@ -13,7 +13,7 @@
 import {Cause, Effect, Exit, Result, type Layer, type Scope} from "effect";
 
 import type {CommandExecution, CommandInvocationOptions, CommandInvoker, CommandPresentation} from "../common/commander.ts";
-import {linkAbortSignals} from "../common/runtime.ts";
+import {commandCancellationFromSignal, linkAbortSignals} from "../common/runtime.ts";
 import {Environment, EnvironmentLive} from "./Environment.ts";
 import {makeNodeLayer, type PlatformServices} from "./layers.ts";
 import {resolveColor, type OutputSettingsShape} from "./Output.ts";
@@ -106,17 +106,50 @@ function verboseOf(input: unknown): boolean {
 }
 
 /**
+ * Collects the messages of every typed failure and defect in a cause.
+ *
+ * @param cause - The failure cause.
+ * @returns One message per `Fail` or `Die` reason, in cause order; interruptions are skipped.
+ */
+function failureMessages(cause: Cause.Cause<unknown>): readonly string[] {
+  return cause.reasons.flatMap((reason) => {
+    if (Cause.isFailReason(reason)) {
+      return [messageOf(reason.error)];
+    }
+    return Cause.isDieReason(reason) ? [messageOf(reason.defect)] : [];
+  });
+}
+
+/**
  * Maps an Effect program exit to the legacy {@link CommandExecution} shape.
+ *
+ * @remarks
+ * An interrupted exit whose `signal` aborted is cancelled with the legacy
+ * `commandCancellationFromSignal` reason (so a `SIGTERM` cancellation keeps `143`), even when
+ * finalizers also failed; their messages become the evidence.
  *
  * @param exit - The program exit.
  * @param exitCodeOf - Business exit code of a successful output.
+ * @param signal - The linked invocation signal.
  * @returns The equivalent legacy execution.
  */
-function toExecution<TOutput, E>(exit: Exit.Exit<TOutput, E>, exitCodeOf: (output: Readonly<TOutput>) => 0 | 1): CommandExecution<TOutput> {
+function toExecution<TOutput, E>(
+  exit: Exit.Exit<TOutput, E>,
+  exitCodeOf: (output: Readonly<TOutput>) => 0 | 1,
+  signal: AbortSignal,
+): CommandExecution<TOutput> {
   if (Exit.isSuccess(exit)) {
     return {status: "completed", value: exit.value, exitCode: exitCodeOf(exit.value)};
   }
   const {cause} = exit;
+  if (signal.aborted && Cause.hasInterrupts(cause)) {
+    const cancellation = commandCancellationFromSignal(signal);
+    return {
+      status: "cancelled",
+      exitCode: cancellation.exitCode,
+      failure: {kind: "cancelled", message: cancellation.message, evidence: failureMessages(cause), cause: cancellation},
+    };
+  }
   if (Cause.hasInterruptsOnly(cause)) {
     return {status: "cancelled", exitCode: 130, failure: {kind: "cancelled", message: "Command cancelled.", evidence: []}};
   }
@@ -142,7 +175,9 @@ function toExecution<TOutput, E>(exit: Exit.Exit<TOutput, E>, exitCodeOf: (outpu
  * `invoke(input, options)` runs `program(input)` through {@link runEffect} with presentation
  * `options.presentation ?? "silent"`, `verbose` taken from `input.verbose === true`, and a signal
  * linked from the parent runtime signal and `options.signal`. Success maps to `completed` with
- * `exitCodeOf(value)`; interruption only to `cancelled` (`130`); a typed failure to an
+ * `exitCodeOf(value)`; an interruption after the linked signal aborted to `cancelled` with the
+ * signal's `CommandCancellation` (its exit code, message, and `cause`; any failure messages in the
+ * cause as evidence); any other interruption-only exit to `cancelled` (`130`); a typed failure to an
  * `operational` failure (`1`, with process evidence for a `ProcessError`); any other cause to an
  * `internal` failure (`1`).
  *
@@ -172,7 +207,7 @@ export function legacyInvoker<TInput, TOutput, E>(
             ...(makeLayer === undefined ? {} : {makeLayer}),
           },
         );
-        return toExecution(exit, exitCodeOf);
+        return toExecution(exit, exitCodeOf, link.signal);
       } finally {
         link.dispose();
       }
