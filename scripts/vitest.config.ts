@@ -68,6 +68,7 @@ export default defineConfig({
         "**/*.spec.{ts,tsx,js,jsx}",
         "scripts/common/runtime.testing.ts",
         "scripts/platform/testing.ts",
+        "scripts/platform/testing.fs.ts",
 
         // Configuration and setup files
         "**/*.config.{js,ts,mjs,mts}",

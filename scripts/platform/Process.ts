@@ -17,7 +17,7 @@ import {Clock, Context, Duration, Effect, Layer, Option, Predicate, Schema, Stre
 import {ChildProcess, ChildProcessSpawner} from "effect/process";
 
 import {Environment} from "./Environment.ts";
-import {OutputSettings, Presenter, type OutputStream} from "./Output.ts";
+import {OutputSettings, Presenter, type OutputSettingsShape, type OutputStream, type PresenterShape} from "./Output.ts";
 import {planSpawn} from "./windows.ts";
 
 /** Describes one executable and its argument vector. */
@@ -142,6 +142,68 @@ export function processErrorEvidence(error: ProcessError): readonly string[] {
   ];
 }
 
+/**
+ * Dies on a request no process runner may start: an empty command, or `input` with inherited output.
+ *
+ * @param request - The requested command.
+ * @param options - The invocation options.
+ * @returns An effect that succeeds when the request is valid and dies otherwise.
+ */
+export function validateProcessRequest(request: ProcessRequest, options: ProcessOptions): Effect.Effect<void> {
+  if (request.command.trim().length === 0) {
+    return Effect.die(new Error("Command cannot be empty"));
+  }
+  if (options.output === "inherit" && options.input !== undefined) {
+    return Effect.die(new Error("Cannot supply input when output is inherited"));
+  }
+  return Effect.void;
+}
+
+/**
+ * Logs `$ <command>` at debug level when `options.echo` (default `settings.verbose`) allows it.
+ *
+ * @param command - The formatted command, see {@link formatProcessRequest}.
+ * @param options - The invocation options.
+ * @param settings - The invocation output settings.
+ * @returns The echo effect.
+ */
+export function echoProcessCommand(command: string, options: ProcessOptions, settings: OutputSettingsShape): Effect.Effect<void> {
+  return (options.echo ?? settings.verbose) ? Effect.logDebug(`$ ${command}`) : Effect.void;
+}
+
+/**
+ * Forwards one chunk of child output to the presenter when the invocation uses `"tee"` output.
+ *
+ * @param presenter - The invocation presenter.
+ * @param options - The invocation options.
+ * @param stream - The stream the chunk was read from.
+ * @param text - The decoded chunk.
+ * @returns The tee effect; a no-op for other output modes and for empty chunks.
+ */
+export function teeProcessOutput(
+  presenter: PresenterShape,
+  options: ProcessOptions,
+  stream: OutputStream,
+  text: string,
+): Effect.Effect<void> {
+  return options.output === "tee" && text.length > 0 ? presenter.write(stream, text) : Effect.void;
+}
+
+/**
+ * Builds the failure of a run that exceeded its time limit.
+ *
+ * @param evidence - The command, captured stream tails, and elapsed duration.
+ * @param timeout - The time limit that elapsed.
+ * @returns The {@link ProcessTimedOut} failure.
+ */
+export function processTimedOut(
+  evidence: {readonly command: string; readonly stdout: string; readonly stderr: string; readonly durationMs: number},
+  timeout: Duration.Input,
+): ProcessTimedOut {
+  const timeoutMs = Duration.toMillis(timeout);
+  return new ProcessTimedOut({...evidence, timeoutMs, message: `${evidence.command} timed out after ${String(timeoutMs)} ms`});
+}
+
 const FORCE_KILL_AFTER: Duration.Input = "1 second";
 const SIGNAL_PATTERN = /receipt of signal: '([A-Z0-9]+)'/u;
 
@@ -230,18 +292,10 @@ export const ProcessLive: Layer.Layer<Process, never, ChildProcessSpawner.ChildP
         request: ProcessRequest,
         options: ProcessOptions = {},
       ): Effect.fn.Return<ProcessResult, ProcessError> {
-        if (request.command.trim().length === 0) {
-          return yield* Effect.die(new Error("Command cannot be empty"));
-        }
+        yield* validateProcessRequest(request, options);
         const output = options.output ?? "capture";
-        if (output === "inherit" && options.input !== undefined) {
-          return yield* Effect.die(new Error("Cannot supply input when output is inherited"));
-        }
-
         const command = formatProcessRequest(request);
-        if (options.echo ?? settings.verbose) {
-          yield* Effect.logDebug(`$ ${command}`);
-        }
+        yield* echoProcessCommand(command, options, settings);
 
         const variables = mergeVariables(environment.variables, options.env);
         const plan = planSpawn(request, {...environment, variables}, isFile);
@@ -300,7 +354,7 @@ export const ProcessLive: Layer.Layer<Process, never, ChildProcessSpawner.ChildP
                 return Effect.void;
               }
               captured[name] += text;
-              return output === "tee" ? presenter.write(name, text) : Effect.void;
+              return teeProcessOutput(presenter, options, name, text);
             });
           return Stream.runForEach(stream, (chunk) => append(decoder.decode(chunk, {stream: true}))).pipe(
             Effect.andThen(Effect.suspend(() => append(decoder.decode()))),
@@ -331,9 +385,7 @@ export const ProcessLive: Layer.Layer<Process, never, ChildProcessSpawner.ChildP
             const finished = yield* outcome;
             if (Option.isNone(finished)) {
               yield* Effect.ignore(handle.kill({killSignal: "SIGTERM", forceKillAfter: FORCE_KILL_AFTER}));
-              const timeoutMs = Duration.toMillis(timeout ?? 0);
-              const base = yield* failureBase;
-              return yield* new ProcessTimedOut({...base, timeoutMs, message: `${command} timed out after ${String(timeoutMs)} ms`});
+              return yield* processTimedOut(yield* failureBase, timeout ?? 0);
             }
 
             const completed = finished.value;
