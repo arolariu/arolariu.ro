@@ -137,10 +137,43 @@ describe("planSpawn", () => {
     const environment = windowsSnapshot({PATH: "C:\\n", PATHEXT: ".EXE;.CMD"});
 
     // Act
-    const plan = planSpawn({command: "C:\\tools\\x.cmd", args: ["a"]}, environment, () => true);
+    const plan = planSpawn({command: "C:\\tools\\x.exe", args: ["a"]}, environment, () => true);
 
     // Assert
-    expect(plan).toEqual({command: "C:\\tools\\x.cmd", args: ["a"], shell: false});
+    expect(plan).toEqual({command: "C:\\tools\\x.exe", args: ["a"], shell: false});
+  });
+
+  it("routes path-qualified cmd shims through the shell", () => {
+    // Arrange
+    const environment = windowsSnapshot({PATH: "C:\\n", PATHEXT: ".EXE;.CMD"});
+
+    // Act
+    const plan = planSpawn({command: "C:\\tools\\x.cmd", args: ["a b"]}, environment, () => false);
+
+    // Assert
+    expect(plan).toEqual({command: "C:\\tools\\x.cmd", args: [escapeCmdArgument("a b", true)], shell: true});
+  });
+
+  it("routes path-qualified batch files through the shell case-insensitively", () => {
+    // Arrange
+    const environment = windowsSnapshot({PATH: "C:\\n"});
+
+    // Act
+    const plan = planSpawn({command: "C:/my tools/x.BAT", args: []}, environment, () => false);
+
+    // Assert
+    expect(plan).toEqual({command: escapeCmdCommand("C:/my tools/x.BAT"), args: [], shell: true});
+  });
+
+  it("leaves path-qualified cmd shims untouched off Windows", () => {
+    // Arrange
+    const environment: EnvironmentSnapshot = {...snapshot, platform: "linux", variables: {}};
+
+    // Act
+    const plan = planSpawn({command: "/tools/x.cmd", args: ["a b"]}, environment, () => true);
+
+    // Assert
+    expect(plan).toEqual({command: "/tools/x.cmd", args: ["a b"], shell: false});
   });
 
   it("leaves forward-slash path-qualified commands untouched", () => {

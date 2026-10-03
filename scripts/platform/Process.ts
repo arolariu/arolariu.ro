@@ -245,6 +245,20 @@ export const ProcessLive: Layer.Layer<Process, never, ChildProcessSpawner.ChildP
 
         const variables = mergeVariables(environment.variables, options.env);
         const plan = planSpawn(request, {...environment, variables}, isFile);
+        // cmd.exe ends the command line at a line break, so the shim would silently run with truncated arguments.
+        if (plan.shell && request.args.some((argument) => /[\r\n]/u.test(argument))) {
+          const reason = `argument contains a line break, which cmd.exe cannot pass to ${request.command}`;
+          return yield* Effect.fail(
+            new ProcessSpawnFailed({
+              command,
+              stdout: "",
+              stderr: "",
+              durationMs: 0,
+              reason,
+              message: `${command} failed to start: ${reason}`,
+            }),
+          );
+        }
         const childStream = output === "inherit" ? "inherit" : "pipe";
         // Shell plans are joined into one pre-escaped command line; passing args with `shell: true` triggers Node DEP0190.
         const childCommand = ChildProcess.make(

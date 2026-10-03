@@ -5,10 +5,12 @@
  * @remarks
  * Effect's spawner hands commands straight to Node without `PATHEXT` resolution, so `npm` (really
  * `npm.cmd`) fails to spawn on Windows, and Node refuses to spawn `.cmd`/`.bat` files without a
- * shell. {@link planSpawn} resolves the command the way `cmd.exe` would and, for batch shims,
- * routes it through the shell with every token escaped by the cross-spawn algorithm
- * (`lib/util/escape.js`), so arguments reach the shim verbatim and metacharacters such as `&`
- * never start another command.
+ * shell. {@link planSpawn} resolves the command the way `cmd.exe` would and, for batch shims
+ * (resolved or path-qualified, as legacy Execa/cross-spawn did), routes it through the shell with
+ * every token quoted by the MSVCRT argv rules and `^`-escaped for `cmd.exe`, so arguments reach the
+ * shim verbatim and metacharacters such as `&` never start another command. The quoting
+ * intentionally differs from cross-spawn 7.0.6 `lib/util/escape.js`, whose lazy-lookahead regex
+ * drops quotes after two or more backslashes; it matches the older `(\\*)"` form instead.
  */
 
 import {win32} from "node:path";
@@ -46,9 +48,10 @@ export function escapeCmdCommand(command: string): string {
  * metacharacter with `^`.
  *
  * @remarks
- * Equivalent to cross-spawn `escapeArgument`, but scans backslash runs linearly instead of with a
- * regular expression, so every backslash in a run that precedes a quote (or the closing quote) is
- * doubled and the scan cannot backtrack.
+ * Follows the MSVCRT argv rules: every backslash in a run that precedes a quote (or the closing
+ * quote) is doubled, found by a linear scan that cannot backtrack. This intentionally differs from
+ * cross-spawn 7.0.6 `escapeArgument`, whose lazy-lookahead regex `(?=(\\+?)?)\1"` captures a
+ * single backslash and so drops quotes after two or more; it matches the older `(\\*)"` form.
  *
  * @param argument - The raw argument.
  * @param doubleEscape - Whether to escape metacharacters twice, which batch shims require because
@@ -141,15 +144,25 @@ function resolveWindowsCommand(
  * @param request - The command and arguments to run.
  * @param environment - The environment the child observes (its `variables` include overrides).
  * @param isFile - Whether a path is an existing file.
- * @returns The request unchanged with `shell: false` off Windows, for path-qualified or unresolved
- * commands, and for resolved files that are neither batch shims nor executables; the resolved
- * path with `shell: false` for `.exe`/`.com`; the escaped resolved path and escaped arguments with
- * `shell: true` for `.cmd`/`.bat`.
+ * @returns The request unchanged with `shell: false` off Windows, for unresolved commands, for
+ * path-qualified commands that are not batch files, and for resolved files that are neither batch
+ * shims nor executables; the resolved path with `shell: false` for `.exe`/`.com`; the escaped
+ * (resolved or path-qualified) command and escaped arguments with `shell: true` for `.cmd`/`.bat`.
  */
 export function planSpawn(request: ProcessRequest, environment: EnvironmentSnapshot, isFile: (path: string) => boolean): SpawnPlan {
   const unchanged: SpawnPlan = {command: request.command, args: request.args, shell: false};
-  if (environment.platform !== "win32" || /[\\/]/u.test(request.command)) {
+  if (environment.platform !== "win32") {
     return unchanged;
+  }
+
+  const shellPlan = (command: string): SpawnPlan => ({
+    command: escapeCmdCommand(command),
+    args: request.args.map((argument) => escapeCmdArgument(argument, true)),
+    shell: true,
+  });
+
+  if (/[\\/]/u.test(request.command)) {
+    return SHELL_EXTENSIONS.has(win32.extname(request.command).toLowerCase()) ? shellPlan(request.command) : unchanged;
   }
 
   const resolved = resolveWindowsCommand(request.command, environment.variables, isFile);
@@ -159,11 +172,7 @@ export function planSpawn(request: ProcessRequest, environment: EnvironmentSnaps
 
   const extension = win32.extname(resolved).toLowerCase();
   if (SHELL_EXTENSIONS.has(extension)) {
-    return {
-      command: escapeCmdCommand(resolved),
-      args: request.args.map((argument) => escapeCmdArgument(argument, true)),
-      shell: true,
-    };
+    return shellPlan(resolved);
   }
   if (DIRECT_EXTENSIONS.has(extension)) {
     return {command: resolved, args: request.args, shell: false};

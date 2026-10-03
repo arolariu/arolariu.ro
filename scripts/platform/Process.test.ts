@@ -486,6 +486,61 @@ describe("Process", () => {
     LIVE_TIMEOUT_MS,
   );
 
+  it.runIf(process.platform === "win32")(
+    "round-trips arguments through a path-qualified cmd shim",
+    async () => {
+      // Arrange
+      const args = ["a b", "safe&echo PWNED"];
+      const {layer} = harness();
+
+      // Act
+      const result = await runScoped(
+        Effect.flatMap(Process, (service) => service.run({command: resolve(FIXTURES, "echoargs.cmd"), args})),
+        layer,
+      );
+
+      // Assert
+      expect(result.stdout.trimEnd().split(/\r?\n/u)).toEqual([JSON.stringify(args)]);
+      expect(result.stdout).not.toMatch(/^PWNED/mu);
+      expect(result.stderr).toBe("");
+    },
+    LIVE_TIMEOUT_MS,
+  );
+
+  it.each(["first\nsecond", "first\rsecond"])(
+    "fails fast without spawning when a shell-routed argument contains a line break (%j)",
+    async (argument) => {
+      // Arrange
+      const command = resolve(FIXTURES, "echoargs.cmd");
+      const request: ProcessRequest = {command, args: ["ok", argument]};
+      let spawnCalls = 0;
+      const spawner = Layer.succeed(
+        ChildProcessSpawner.ChildProcessSpawner,
+        ChildProcessSpawner.make(() =>
+          Effect.sync(() => {
+            spawnCalls += 1;
+          }).pipe(Effect.andThen(Effect.die(new Error("spawn must not be reached")))),
+        ),
+      );
+      const {layer} = harness({snapshot: {...liveSnapshot(), platform: "win32"}, spawner});
+
+      // Act
+      const error = await failureOf(request, {}, layer);
+
+      // Assert
+      expect(spawnCalls).toBe(0);
+      expect(error).toBeInstanceOf(ProcessSpawnFailed);
+      expect(error).toMatchObject({
+        _tag: "ProcessSpawnFailed",
+        reason: `argument contains a line break, which cmd.exe cannot pass to ${command}`,
+        command: formatProcessRequest(request),
+        stdout: "",
+        stderr: "",
+      });
+    },
+    LIVE_TIMEOUT_MS,
+  );
+
   it("fails with ProcessSignalled when the child is terminated by a signal", async () => {
     // Arrange
     const spawner = Layer.succeed(
