@@ -8,12 +8,14 @@ import {tmpdir} from "node:os";
 import {resolve} from "node:path";
 import {fileURLToPath} from "node:url";
 
-import {Effect} from "effect";
+import {NodeServices} from "@effect/platform-node";
+import {Effect, Layer} from "effect";
 import {TestClock} from "effect/testing";
 import {describe, expect, it, vi} from "vitest";
 
-import {createNodeProcessRunner, snapshotNodeEnvironment} from "../common/runtime.node.ts";
-import {ProcessExited, type ProcessRequest} from "../platform/Process.ts";
+import {EnvironmentLive} from "../platform/Environment.ts";
+import {outputLayer, SinkLive} from "../platform/Output.ts";
+import {Process, ProcessExited, ProcessLive, type ProcessRequest, type ProcessResult} from "../platform/Process.ts";
 import {makeTestLayer, runScoped, scriptedOutcomes, type ScriptedOutcomeOptions, type ScriptedProcess} from "../platform/testing.ts";
 import {runWorkerProgram} from "../platform/worker.ts";
 import {AGGREGATE_TIMEOUT_MS, createAggregateProvider, type AggregateFacts, type AggregateWorkerDocument} from "./aggregate.ts";
@@ -814,16 +816,39 @@ describe("collectAggregateWorkerDocument component collection", () => {
 // Worker CLI argument validation — subprocess, no host collection
 // ============================================================================
 
+/** Live process services over real child processes, with silent output and the ambient environment. */
+const liveProcessLayer = ProcessLive.pipe(
+  Layer.provide(
+    Layer.mergeAll(
+      outputLayer({mode: "silent", verbose: false, color: false, context: "test"}).pipe(Layer.provide(SinkLive)),
+      EnvironmentLive,
+      NodeServices.layer,
+    ),
+  ),
+);
+
+/**
+ * Spawns the aggregate worker as a real Node child process and captures its output.
+ *
+ * @param args - Worker arguments after the script path.
+ * @returns The captured output; a nonzero exit rejects with the typed process failure.
+ */
+function runWorkerSubprocess(args: readonly string[]): Promise<ProcessResult> {
+  return runScoped(
+    Effect.gen(function* () {
+      const processes = yield* Process;
+      return yield* processes.run({command: process.execPath, args: [WORKER_PATH, ...args]}, {output: "capture"});
+    }),
+    liveProcessLayer,
+  );
+}
+
 describe("aggregate worker CLI argument validation", () => {
   it(
     "emits one normalized failure document and no stderr when the root argument is missing",
     async () => {
-      const result = await createNodeProcessRunner(snapshotNodeEnvironment()).run(
-        {command: process.execPath, args: [WORKER_PATH]},
-        {output: "capture"},
-      );
+      const result = await runWorkerSubprocess([]);
 
-      expect(result.kind).toBe("succeeded");
       expect(result.stderr.trim()).toBe("");
       const parsed = JSON.parse(result.stdout.trim()) as AggregateWorkerDocument;
       expect(parsed.schemaVersion).toBe(1);
@@ -838,12 +863,8 @@ describe("aggregate worker CLI argument validation", () => {
   it(
     "emits one normalized failure document and no stderr when extra arguments are supplied",
     async () => {
-      const result = await createNodeProcessRunner(snapshotNodeEnvironment()).run(
-        {command: process.execPath, args: [WORKER_PATH, "root-a", "root-b"]},
-        {output: "capture"},
-      );
+      const result = await runWorkerSubprocess(["root-a", "root-b"]);
 
-      expect(result.kind).toBe("succeeded");
       expect(result.stderr.trim()).toBe("");
       const parsed = JSON.parse(result.stdout.trim()) as AggregateWorkerDocument;
       expect(parsed.schemaVersion).toBe(1);

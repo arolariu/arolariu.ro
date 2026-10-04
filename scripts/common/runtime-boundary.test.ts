@@ -107,9 +107,17 @@ const legacyKernelModule = /^scripts\/common\/(?:runtime(?:\.node|\.testing)?|co
  * the legacy kernel ({@link legacyKernelModule}: `runtime`, `runtime.node`, `commander`, `runner`,
  * `logger`, `prompts`, and their siblings and barrel); they reach legacy callers only through
  * {@link platformBridge}. A clause-level `import type` stays allowed until cohort 7, because the
- * bridge's legacy views still return legacy types.
+ * bridge's legacy views still return legacy types. `scripts/inspection` is the shared
+ * read-only inspection layer of Doctor and Status rather than a CLI family, so it has no `cli.ts`.
  */
-const effectNativeFamilies: readonly string[] = ["scripts/commands/docs", "scripts/commands/generate", "scripts/commands/rates"];
+const effectNativeFamilies: readonly string[] = [
+  "scripts/commands/docs",
+  "scripts/commands/doctor",
+  "scripts/commands/generate",
+  "scripts/commands/rates",
+  "scripts/commands/status",
+  "scripts/inspection",
+];
 
 /**
  * The inspection worker entrypoints. Their parents spawn them as native Node child processes; each
@@ -148,10 +156,17 @@ const workerShellAdapter = "scripts/workers/shell.ts";
 const wholeModuleImportName = "*";
 
 /**
- * Module specifiers no Doctor production module may import, because each one would hand Doctor a
- * mutating, process-spawning, or otherwise non-opaque capability.
+ * Families held to the read-only capability profile: the repository inspection layer and the
+ * Doctor and Status commands built on it. Every production module under them, CLI adapters
+ * included, is scanned.
  */
-const doctorForbiddenModules: ReadonlySet<string> = new Set([
+const readOnlyFamilies: readonly string[] = ["scripts/commands/doctor", "scripts/commands/status", "scripts/inspection"];
+
+/**
+ * Module specifiers (rebased onto `scripts/`) no read-only family module may import, because each
+ * one would hand it a mutating, process-spawning, prompting, or otherwise non-opaque capability.
+ */
+const readOnlyForbiddenModules: ReadonlySet<string> = new Set([
   "execa",
   "node:child_process",
   "child_process",
@@ -168,12 +183,16 @@ const doctorForbiddenModules: ReadonlySet<string> = new Set([
 ]);
 
 /**
- * Imported names no Doctor production module may take, even from an otherwise approved module: the
- * mutating Effect `FileSystem` and the unrestricted Effect `HttpClient` widen the read-only profile.
+ * Imported names no read-only family module may take, even from an otherwise approved module (a
+ * whole-module import of one of these modules counts too): the mutating Effect `FileSystem`, the
+ * unrestricted Effect `HttpClient`, the atomic writer, the mutating legacy filesystem view, and the
+ * legacy mutating filesystem and process-runner ports.
  */
-const doctorForbiddenImportNames: ReadonlyMap<string, ReadonlySet<string>> = new Map([
+const readOnlyForbiddenImportNames: ReadonlyMap<string, ReadonlySet<string>> = new Map([
   ["./common/runtime.ts", new Set(["FileSystem"])],
   ["./common/runner.ts", new Set(["ProcessRunner"])],
+  ["./platform/Files.ts", new Set(["writeTextAtomic"])],
+  ["./platform/bridge.ts", new Set(["legacyFileSystem"])],
   ["effect", new Set(["FileSystem"])],
   ["effect/http", new Set(["HttpClient"])],
 ]);
@@ -916,9 +935,9 @@ function discoverDirectEntrypointModules(): readonly string[] {
   );
 }
 
-/** One Doctor module import that would widen Doctor beyond read-only, opaque capabilities. */
-interface DoctorCapabilityViolation {
-  /** Doctor module holding the import. */
+/** One read-only family import that would widen the family beyond read-only, opaque capabilities. */
+interface ReadOnlyCapabilityViolation {
+  /** Read-only family module holding the import. */
   readonly file: string;
   /** Module specifier that carries the forbidden capability. */
   readonly specifier: string;
@@ -928,13 +947,13 @@ interface DoctorCapabilityViolation {
 
 /**
  * Normalizes a relative import specifier to the `./`-prefixed form it would have from `scripts/`,
- * so the Doctor capability guard matches the same modules wherever a Doctor file is nested.
+ * so the read-only capability guard matches the same modules wherever a family file is nested.
  *
  * @param file - Repository-relative posix path of the importing file.
  * @param specifier - Import specifier as written in the source.
  * @returns The specifier rebased onto `scripts/`, or the original bare specifier.
  */
-function normalizeDoctorSpecifier(file: string, specifier: string): string {
+function normalizeScriptsSpecifier(file: string, specifier: string): string {
   if (!specifier.startsWith(".")) {
     return specifier;
   }
@@ -942,14 +961,21 @@ function normalizeDoctorSpecifier(file: string, specifier: string): string {
   return `./${posix.relative("scripts", posix.join(posix.dirname(file), specifier))}`;
 }
 
-function scanDoctorCapabilitySource(file: string, sourceText: string): readonly DoctorCapabilityViolation[] {
-  return collectModuleImports(sourceText).flatMap((moduleImport): readonly DoctorCapabilityViolation[] => {
-    const specifier = normalizeDoctorSpecifier(file, moduleImport.specifier);
-    if (doctorForbiddenModules.has(specifier)) {
+/**
+ * Lists the imports of one read-only family module that widen it beyond read-only capabilities.
+ *
+ * @param file - Repository-relative posix path of the module.
+ * @param sourceText - Source text to parse.
+ * @returns Every forbidden module import, or forbidden name taken from an approved module.
+ */
+function scanReadOnlyCapabilitySource(file: string, sourceText: string): readonly ReadOnlyCapabilityViolation[] {
+  return collectModuleImports(sourceText).flatMap((moduleImport): readonly ReadOnlyCapabilityViolation[] => {
+    const specifier = normalizeScriptsSpecifier(file, moduleImport.specifier);
+    if (readOnlyForbiddenModules.has(specifier)) {
       return [{file, specifier}];
     }
 
-    const forbiddenNames = doctorForbiddenImportNames.get(specifier);
+    const forbiddenNames = readOnlyForbiddenImportNames.get(specifier);
     if (forbiddenNames === undefined) {
       return [];
     }
@@ -961,15 +987,12 @@ function scanDoctorCapabilitySource(file: string, sourceText: string): readonly 
 }
 
 /**
- * Scans the Doctor and Status production surface (both share the read-only profile) for capabilities
- * wider than read-only and opaque probes.
+ * Lists every production module of the {@link readOnlyFamilies}.
  *
- * @returns Every forbidden Doctor or Status capability import.
+ * @returns Sorted repository-relative production module paths.
  */
-function scanDoctorCapabilities(): readonly DoctorCapabilityViolation[] {
-  return discoverProductionScripts()
-    .filter((file) => /^scripts\/commands\/(?:doctor|status)\/(?!cli\.ts$)[\w./-]*\.ts$/.test(file))
-    .flatMap((file) => scanDoctorCapabilitySource(file, readFileSync(file, "utf8")));
+function discoverReadOnlyFamilyModules(): readonly string[] {
+  return discoverProductionScripts().filter((file) => readOnlyFamilies.some((family) => file.startsWith(`${family}/`)));
 }
 
 /** One reference to an Effect runtime entry point. */
@@ -1448,40 +1471,55 @@ describe("runtime boundary policy", () => {
     ]);
   });
 
-  it("keeps doctor and status modules on read-only and opaque capabilities", () => {
-    expect(scanDoctorCapabilities()).toEqual([]);
+  it("read-only families never import mutating capabilities", () => {
+    const familyModules = discoverReadOnlyFamilyModules();
+    const violations = familyModules.flatMap((file) => scanReadOnlyCapabilitySource(file, readFileSync(file, "utf8")));
+
+    expect(familyModules).toEqual(
+      expect.arrayContaining([
+        "scripts/commands/doctor/cli.ts",
+        "scripts/commands/doctor/modules/react.ts",
+        "scripts/commands/status/index.ts",
+        "scripts/inspection/session.ts",
+        "scripts/inspection/workspace.worker.ts",
+      ]),
+    );
+    expect(violations).toEqual([]);
   });
 
-  it("rejects named and whole-module imports that widen Doctor capabilities", () => {
-    const source = [
-      'import type {FileSystem, Clock} from "../../common/runtime.ts";',
-      'import * as runtime from "../../common/runtime.ts";',
-      'import runner from "../../common/runner.ts";',
-      'export * from "../../common/runner.ts";',
-      'void import("../../common/runtime.ts");',
-    ].join("\n");
-
-    expect(scanDoctorCapabilitySource("scripts/commands/doctor/example.ts", source)).toEqual([
-      {file: "scripts/commands/doctor/example.ts", specifier: "./common/runtime.ts", name: "FileSystem"},
-      {file: "scripts/commands/doctor/example.ts", specifier: "./common/runtime.ts", name: "*"},
-      {file: "scripts/commands/doctor/example.ts", specifier: "./common/runner.ts", name: "*"},
-      {file: "scripts/commands/doctor/example.ts", specifier: "./common/runner.ts", name: "*"},
-      {file: "scripts/commands/doctor/example.ts", specifier: "./common/runtime.ts", name: "*"},
-    ]);
-  });
-
-  it("rejects Effect imports that widen Doctor beyond the read-only profile", () => {
+  it("detects every import form that widens a read-only family", () => {
     const source = [
       'import {Effect, FileSystem} from "effect";',
+      'import type {FileSystem as Files} from "effect";',
       'import * as FS from "effect/FileSystem";',
       'import {HttpClient, HttpClientError} from "effect/http";',
+      'export {HttpClient} from "effect/http";',
+      'import {Prompts} from "../../platform/Prompts.ts";',
+      'import {ReadOnlyFiles, writeTextAtomic} from "../../platform/Files.ts";',
+      'import {legacyFileSystem, legacyReadOnlyFiles} from "../../platform/bridge.ts";',
+      'import type {FileSystem as LegacyFiles, Clock} from "../../common/runtime.ts";',
+      'import runner from "../../common/runner.ts";',
+      'void import("../../platform/Files.ts");',
+      'import {spawn} from "node:child_process";',
       'import {Effect as Allowed} from "effect";',
     ].join("\n");
 
-    expect(scanDoctorCapabilitySource("scripts/commands/doctor/modules/example.ts", source)).toEqual([
-      {file: "scripts/commands/doctor/modules/example.ts", specifier: "effect", name: "FileSystem"},
-      {file: "scripts/commands/doctor/modules/example.ts", specifier: "effect/FileSystem"},
-      {file: "scripts/commands/doctor/modules/example.ts", specifier: "effect/http", name: "HttpClient"},
+    expect(scanReadOnlyCapabilitySource("scripts/commands/doctor/example.ts", source)).toEqual([
+      {file: "scripts/commands/doctor/example.ts", specifier: "effect", name: "FileSystem"},
+      {file: "scripts/commands/doctor/example.ts", specifier: "effect", name: "FileSystem"},
+      {file: "scripts/commands/doctor/example.ts", specifier: "effect/FileSystem"},
+      {file: "scripts/commands/doctor/example.ts", specifier: "effect/http", name: "HttpClient"},
+      {file: "scripts/commands/doctor/example.ts", specifier: "effect/http", name: "HttpClient"},
+      {file: "scripts/commands/doctor/example.ts", specifier: "./platform/Prompts.ts"},
+      {file: "scripts/commands/doctor/example.ts", specifier: "./platform/Files.ts", name: "writeTextAtomic"},
+      {file: "scripts/commands/doctor/example.ts", specifier: "./platform/bridge.ts", name: "legacyFileSystem"},
+      {file: "scripts/commands/doctor/example.ts", specifier: "./common/runtime.ts", name: "FileSystem"},
+      {file: "scripts/commands/doctor/example.ts", specifier: "./common/runner.ts", name: "*"},
+      {file: "scripts/commands/doctor/example.ts", specifier: "./platform/Files.ts", name: "*"},
+      {file: "scripts/commands/doctor/example.ts", specifier: "node:child_process"},
+    ]);
+    expect(scanReadOnlyCapabilitySource("scripts/inspection/example.ts", 'import {writeTextAtomic} from "../platform/Files.ts";')).toEqual([
+      {file: "scripts/inspection/example.ts", specifier: "./platform/Files.ts", name: "writeTextAtomic"},
     ]);
   });
 
@@ -1686,9 +1724,10 @@ describe("runtime boundary policy", () => {
     const familyModules = discoverModulesUnder(effectNativeFamilies);
     const offenders = familyModules.flatMap((file) => scanLegacyKernelValueImportSource(file, readFileSync(file, "utf8")));
 
-    for (const family of effectNativeFamilies) {
+    for (const family of effectNativeFamilies.filter((directory) => directory.startsWith(commandFamiliesDirectory))) {
       expect(familyModules).toContain(`${family}/cli.ts`);
     }
+    expect(familyModules).toContain("scripts/inspection/Inspection.ts");
     expect(offenders).toEqual([]);
   });
 });

@@ -38,7 +38,6 @@ import {join} from "node:path";
 
 import {Duration, Effect} from "effect";
 
-import {formatBytes} from "../../common/index.ts";
 import {resolveRepositoryPaths, type RepositoryPaths} from "../../common/repository-paths.ts";
 import {Inspection} from "../../inspection/Inspection.ts";
 import type {ProbeOutcome} from "../../inspection/probes.ts";
@@ -217,6 +216,21 @@ type UnknownRecord = Readonly<Record<string, unknown>>;
 
 function isRecord(value: unknown): value is UnknownRecord {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+/**
+ * Formats a byte count exactly like the legacy `scripts/common/index.ts` `formatBytes`, without
+ * loading that legacy-kernel barrel.
+ */
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) {
+    return `${bytes} B`;
+  } else if (bytes < 1024 * 1024) {
+    return `${(bytes / 1024).toFixed(2)} KB`;
+  } else if (bytes < 1024 * 1024 * 1024) {
+    return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+  }
+  return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
 }
 
 function isSuccessfulOutcome(outcome: Readonly<ProbeOutcome>): boolean {

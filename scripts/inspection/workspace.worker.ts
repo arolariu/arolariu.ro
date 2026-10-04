@@ -21,7 +21,6 @@ import {resolve} from "node:path";
 
 import {Effect, Schema} from "effect";
 
-import {CommandInputError} from "../common/commander.ts";
 import {Environment} from "../platform/Environment.ts";
 import {toJsonValue, type JsonValue} from "../platform/Output.ts";
 import {runWorker, type WorkerOptions} from "../platform/worker.ts";
@@ -37,6 +36,11 @@ export type WorkspaceWorkerDocument = JsonValue;
 
 /** The Nx workspace worker could not construct its document. */
 export class WorkspaceWorkerFailure extends Schema.TaggedError<WorkspaceWorkerFailure>()("WorkspaceWorkerFailure", {
+  message: Schema.String,
+}) {}
+
+/** The worker's argument vector is not exactly one non-blank repository root: a usage failure (exit `2`). */
+export class WorkspaceWorkerUsageError extends Schema.TaggedError<WorkspaceWorkerUsageError>()("WorkspaceWorkerUsageError", {
   message: Schema.String,
 }) {}
 
@@ -116,12 +120,12 @@ export function collectWorkspaceWorkerDocument(
  *
  * @param argv - Worker arguments after the executable and script path.
  * @returns The decoded worker input.
- * @throws {CommandInputError} When `argv` is not exactly one non-blank repository root.
+ * @throws {WorkspaceWorkerUsageError} When `argv` is not exactly one non-blank repository root.
  */
 export function decodeWorkerArgs(argv: readonly string[]): WorkspaceWorkerInput {
   const repositoryRoot = argv[0];
   if (argv.length !== 1 || repositoryRoot === undefined || repositoryRoot.trim() === "") {
-    throw new CommandInputError("Nx workspace worker requires exactly one repository root argument.");
+    throw new WorkspaceWorkerUsageError({message: "Nx workspace worker requires exactly one repository root argument."});
   }
   return {repositoryRoot};
 }

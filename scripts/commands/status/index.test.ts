@@ -462,6 +462,10 @@ describe("status — shared inspection session", () => {
     });
     const calls = harness.processCalls().map((call) => `${processKey(call.request)} @ ${call.options.cwd ?? ""}`);
     expect(new Set(calls).size).toBe(calls.length);
+    // The quick profile answers "aggregate" with its fixed stub: the isolated worker is never spawned.
+    expect(
+      harness.processCalls().filter((call) => [call.request.command, ...call.request.args].some((token) => token.includes("aggregate-worker"))),
+    ).toEqual([]);
     expect(probeKeys(harness)).toEqual(expect.arrayContaining([...JSON_PROBE_INVENTORY, "git --version", "npm config get cache"]));
     expect(document.workspaces).toBeNull();
     expect(document.health).toEqual({score: 6, grade: "F", summary: {passed: 1, warnings: 2, failed: 38, skipped: 18}});

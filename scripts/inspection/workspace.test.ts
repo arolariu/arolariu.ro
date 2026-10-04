@@ -13,10 +13,9 @@ import {NodeServices} from "@effect/platform-node";
 import {Deferred, Effect, Exit, Fiber, Layer} from "effect";
 import {describe, expect, it} from "vitest";
 
-import {CommandInputError} from "../common/commander.ts";
-import {nodeFileSystem, snapshotNodeEnvironment} from "../common/runtime.node.ts";
 import {resolveRepositoryPaths} from "../common/repository-paths.ts";
-import {layerEnvironment, type EnvironmentSnapshot} from "../platform/Environment.ts";
+import {legacyReadOnlyFiles} from "../platform/bridge.ts";
+import {Environment, EnvironmentLive} from "../platform/Environment.ts";
 import {GlobLive, ReadOnlyFilesLive, TemporaryDirectoriesLive} from "../platform/Files.ts";
 import {outputLayer, SinkLive} from "../platform/Output.ts";
 import {ProcessLive, type ProcessRequest} from "../platform/Process.ts";
@@ -26,7 +25,7 @@ import {runWorkerProgram} from "../platform/worker.ts";
 import type {ProbeOutcome} from "./probes.ts";
 import type {InspectionOutcome, InspectionProvider} from "./types.ts";
 import {createWorkspaceProvider, projectNxGraph, type WorkspaceFacts} from "./workspace.ts";
-import {collectWorkspaceWorkerDocument, decodeWorkerArgs, projectWorkerDocument, workspaceWorker, WorkspaceWorkerFailure} from "./workspace.worker.ts";
+import {collectWorkspaceWorkerDocument, decodeWorkerArgs, projectWorkerDocument, workspaceWorker, WorkspaceWorkerFailure, WorkspaceWorkerUsageError} from "./workspace.worker.ts";
 
 // ============================================================================
 // Fixtures
@@ -480,7 +479,7 @@ describe("workspace worker program", () => {
     ["more than one repository root argument", ["root-a", "root-b"]],
     ["a blank repository root argument", ["   "]],
   ])("rejects %s as invalid usage", (_label, argv) => {
-    expect(() => decodeWorkerArgs(argv)).toThrow(CommandInputError);
+    expect(() => decodeWorkerArgs(argv)).toThrow(WorkspaceWorkerUsageError);
   });
 
   it("decodes exactly one repository root argument", () => {
@@ -684,17 +683,20 @@ const LIVE_WORKSPACE_TIMEOUT_MS = 180_000;
  * same time). `NX_PLUGIN_NO_TIMEOUTS` lifts only that Nx-internal handshake timeout; the provider's
  * own `WORKER_TIMEOUT_MS` still bounds the invocation.
  */
-const liveWorkerEnvironment: EnvironmentSnapshot = {
-  ...snapshotNodeEnvironment(),
-  variables: {...process.env, NX_PLUGIN_NO_TIMEOUTS: "true"},
-};
+const liveWorkerEnvironment: Layer.Layer<Environment> = Layer.effect(
+  Environment,
+  Effect.gen(function* () {
+    const snapshot = yield* Environment;
+    return {...snapshot, variables: {...snapshot.variables, NX_PLUGIN_NO_TIMEOUTS: "true"}};
+  }),
+).pipe(Layer.provide(EnvironmentLive));
 
 /** Live process and temporary-directory services over the real child processes and filesystem. */
 const liveWorkerLayer = Layer.mergeAll(ProcessLive, TemporaryDirectoriesLive, ReadOnlyFilesLive).pipe(
   Layer.provideMerge(
     Layer.mergeAll(
       outputLayer({mode: "silent", verbose: false, color: false, context: "test"}).pipe(Layer.provide(SinkLive)),
-      layerEnvironment(liveWorkerEnvironment),
+      liveWorkerEnvironment,
       NodeServices.layer,
       GlobLive,
     ),
@@ -705,7 +707,13 @@ describe("createWorkspaceProvider live integration", () => {
   it(
     "reflects the current seven-project workspace graph and leaves top-level .nx files, .nx/workspace-data, and .arolariu unchanged",
     async () => {
-      const paths = await resolveRepositoryPaths(import.meta.url, nodeFileSystem);
+      const paths = await runScoped(
+        Effect.gen(function* () {
+          const files = yield* legacyReadOnlyFiles;
+          return yield* Effect.promise(() => resolveRepositoryPaths(import.meta.url, files));
+        }),
+        liveWorkerLayer,
+      );
 
       const nxTopLevelBefore = await snapshotPath(join(paths.root, ".nx"), {recursive: false});
       const workspaceDataBefore = await snapshotPath(join(paths.root, ".nx", "workspace-data"), {recursive: true});
