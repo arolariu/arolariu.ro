@@ -7,7 +7,7 @@
  * The read-only profile is enforced at three levels: the type level ({@link DoctorRequirements}
  * excludes the mutating `FileSystem`, the unrestricted `HttpClient`, and `Prompts`), the import
  * level (the "read-only families never import mutating capabilities" rule of
- * `scripts/common/runtime-boundary.test.ts`, which covers doctor, status, and inspection), and at
+ * `scripts/architecture.test.ts`, which covers doctor, status, and inspection), and at
  * runtime (bounded content snapshots of sentinel files detect mutation, not merely creation).
  */
 

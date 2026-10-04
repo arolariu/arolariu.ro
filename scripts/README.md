@@ -95,7 +95,7 @@ the legacy failure diagnostic did; in JSON mode it renders `{status: "failed", k
 
 `CliSubcommand` restricts handler requirements to the base services plus the `--json`/`--verbose` settings, so a family that forgets to
 provide a service fails to compile. Only `scripts/commands/**`, `cli.ts`, `platform/exit.ts`, and `platform/Prompts.ts` import
-`effect/cli` (enforced by [`runtime-boundary.test.ts`](./common/runtime-boundary.test.ts)).
+`effect/cli` (enforced by [`architecture.test.ts`](./architecture.test.ts)).
 
 ### Legacy command kernel (until cohort 7)
 
@@ -367,7 +367,7 @@ over a silent `makeNodeLayer`), exposes it as `runtime.inspection`, and register
 legacy conflict error thrown synchronously, `invalidate`/`updateInfrastructureEngine` applied before any later `inspect`, and an aborted
 scope signal rejecting with its `CommandCancellation`.
 
-[`runtime-boundary.test.ts`](./common/runtime-boundary.test.ts) sanctions `scripts/platform/**` — like `runtime.node.ts` — as an owner of
+[`architecture.test.ts`](./architecture.test.ts) sanctions `scripts/platform/**` — like `runtime.node.ts` — as an owner of
 ambient `process.*`, timer, and `node:*` access, and enforces the platform and CLI rules: `@effect/platform-node` is imported only inside
 `scripts/platform/` and the [`cli.ts`](./cli.ts) entrypoint; Effect runtimes (`Effect.run*`, `ManagedRuntime.make`, `NodeRuntime.runMain`)
 start only in `cli.ts`, `platform/worker.ts`, `bridge.ts`, `testing.ts`, and `Output.ts`'s synchronous logger sink; no platform module
@@ -393,7 +393,7 @@ submitted secret values remain forbidden there. The platform `Sink` in [`platfor
 counterpart of the logger sink and holds the same exemption.
 
 [`output-policy.test.ts`](./common/output-policy.test.ts)'s AST guards enforce these boundaries, including property, direct-function, and
-destructured aliases. [`runtime-boundary.test.ts`](./common/runtime-boundary.test.ts) enforces the wider runtime boundary — Execa and
+destructured aliases. [`architecture.test.ts`](./architecture.test.ts) enforces the wider runtime boundary — Execa and
 child-process imports, ambient filesystem/HTTP/timer/environment/OS-state access, direct process exit, manual direct-entry detection,
 explicit concurrency, read-only family capability width, the exact six format/lint exclusions, and the platform-layer rules above. The root ESLint
 configuration provides immediate feedback for direct output syntax. Direct console/process-stream output stays confined to the logger
@@ -448,7 +448,7 @@ so none of these modules value-imports the legacy kernel.
 ### Generate, rates, and docs test commands
 
 ```powershell
-npx vitest run --config scripts\vitest.config.ts --coverage.enabled=false scripts\commands\generate scripts\commands\rates scripts\commands\docs scripts\common\runtime-boundary.test.ts
+npx vitest run --config scripts\vitest.config.ts --coverage.enabled=false scripts\commands\generate scripts\commands\rates scripts\commands\docs scripts\architecture.test.ts
 npx eslint scripts\commands\generate scripts\commands\rates scripts\commands\docs
 ```
 
@@ -512,7 +512,7 @@ grandchild are gone within three seconds.
 ### Containers and E2E test commands
 
 ```powershell
-npx vitest run --config scripts\vitest.config.ts --coverage.enabled=false scripts\container-runtime scripts\commands\dev scripts\commands\containers scripts\commands\e2e scripts\platform\cancellation.integration.test.ts scripts\common\runtime-boundary.test.ts
+npx vitest run --config scripts\vitest.config.ts --coverage.enabled=false scripts\container-runtime scripts\commands\dev scripts\commands\containers scripts\commands\e2e scripts\platform\cancellation.integration.test.ts scripts\architecture.test.ts
 npx eslint scripts\container-runtime scripts\commands\dev scripts\commands\containers scripts\commands\e2e
 ```
 
@@ -667,7 +667,7 @@ adapter, the mutable `FileSystem`, the unrestricted `HttpClient`, or `Prompts`: 
 [`commands/doctor/readonly.test.ts`](./commands/doctor/readonly.test.ts) asserts that exclusion with `expectTypeOf` and snapshots `.nx` and
 `.arolariu` sentinel files to prove real quick and full-profile Doctor runs do not mutate them.
 
-At the import level, one rule of [`runtime-boundary.test.ts`](./common/runtime-boundary.test.ts) — **read-only families never import
+At the import level, one rule of [`architecture.test.ts`](./architecture.test.ts) — **read-only families never import
 mutating capabilities** — AST-scans every production module under `scripts/inspection/**` and `scripts/commands/{doctor,status}/**`,
 `cli.ts` adapters included. It rejects `FileSystem` from `effect` and any import of `effect/FileSystem`, `HttpClient` from `effect/http`,
 `Prompts` (`platform/Prompts.ts`), `writeTextAtomic` (`platform/Files.ts`), the legacy `FileSystem`/`ProcessRunner` ports, the Node runtime and Execa adapters, and every `node:fs`/`node:os`/`node:child_process`/`execa`
@@ -726,7 +726,7 @@ is a fixed `unavailable` stub and its worker never starts.
 Focused validation for doctor, its reporter, every specialist module, `commands/status/index.ts`, and the inspection layer:
 
 ```powershell
-npx vitest run --config scripts\vitest.config.ts --coverage.enabled=false scripts\commands\doctor scripts\commands\status scripts\inspection scripts\common\runtime-boundary.test.ts
+npx vitest run --config scripts\vitest.config.ts --coverage.enabled=false scripts\commands\doctor scripts\commands\status scripts\inspection scripts\architecture.test.ts
 npx eslint scripts\commands\doctor scripts\commands\status scripts\inspection scripts\common\taxonomy-artifacts.ts
 git --no-pager diff --check
 ```
@@ -736,7 +736,7 @@ git --no-pager diff --check
 Run the policy tests after changing script output or the runtime boundary:
 
 ```powershell
-npx vitest run --config scripts\vitest.config.ts --coverage.enabled=false scripts\common\output-policy.test.ts scripts\common\runtime-boundary.test.ts
+npx vitest run --config scripts\vitest.config.ts --coverage.enabled=false scripts\common\output-policy.test.ts scripts\architecture.test.ts
 ```
 
 Run the complete root-tooling suite through the scripts-scoped Vitest configuration:
