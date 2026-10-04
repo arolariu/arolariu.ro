@@ -71,14 +71,9 @@ const commandFamiliesDirectory = "scripts/commands/";
  */
 const effectCliConsumers: readonly string[] = [cliEntrypoint, "scripts/platform/exit.ts", "scripts/platform/Prompts.ts"];
 
-/**
- * Modules allowed to start an Effect runtime (Effect `run*`, `ManagedRuntime.make`, and `NodeRuntime.runMain`).
- * `scripts/commands/setup/legacy-phase.ts` runs its legacy Promise views with the phase's captured
- * context until Task 5.5 deletes it.
- */
+/** Modules allowed to start an Effect runtime (Effect `run*`, `ManagedRuntime.make`, and `NodeRuntime.runMain`). */
 const sanctionedEffectRunners: readonly string[] = [
   cliEntrypoint,
-  "scripts/commands/setup/legacy-phase.ts",
   "scripts/platform/Output.ts",
   "scripts/platform/bridge.ts",
   "scripts/platform/testing.ts",
@@ -120,6 +115,7 @@ const effectNativeFamilies: readonly string[] = [
   "scripts/commands/doctor",
   "scripts/commands/generate",
   "scripts/commands/rates",
+  "scripts/commands/setup",
   "scripts/commands/status",
   "scripts/inspection",
 ];

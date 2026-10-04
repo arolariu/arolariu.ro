@@ -8,8 +8,8 @@
  * `makeSetupCommand(runSetupWith(<phases>))`) on the in-memory harness: the filesystem is an
  * in-memory repository fixture, the shared inspection layer records every request and hands out a
  * deterministic session, prompts are scripted (or `PromptsLive` without a TTY), and phases are
- * stubs — Effect stubs, or legacy Promise stubs run through the `legacyPhase` adapter. No test in
- * this file reads the live checkout, spawns a real process, or mutates disk.
+ * Effect stubs or the production phases. No test in this file reads the live checkout, spawns a real
+ * process, or mutates disk.
  *
  * The R1 characterization pins compare a legacy-shaped view of each run so their expected values
  * stay byte-identical to the legacy command's: `execution` maps the CLI exit and the captured
@@ -17,7 +17,7 @@
  * `{stream, text, write}` (`text` without its line terminator; `write` when it had none).
  */
 
-import {resolve} from "node:path";
+import {basename, resolve} from "node:path";
 
 import {Cause, Deferred, Effect, Exit, Fiber, Layer, Result, Terminal} from "effect";
 import {describe, expect, it} from "vitest";
@@ -33,26 +33,29 @@ import type {
   RepositoryInspectionSession,
 } from "../../inspection/repository.ts";
 import type {InspectionOutcome} from "../../inspection/types.ts";
+import type {ProbeOutcome} from "../../inspection/probes.ts";
 import {exitCodeFor, ReportedFailure} from "../../platform/exit.ts";
+import type {ProcessRequest} from "../../platform/Process.ts";
 import {Prompts, PromptsLive, type PromptsShape} from "../../platform/Prompts.ts";
 import {
   makeTestLayer,
   repositoryFixtureRoot,
+  scriptedOutcomes,
   type ScriptedInspection,
   type ScriptedProcess,
   type TestHarness,
 } from "../../platform/testing.ts";
 import {makeSetupCommand} from "./cli.ts";
 import {runSetupWith, setupOutcome, setupPhases, type SetupResult} from "./index.ts";
-import {legacyPhase} from "./legacy-phase.ts";
 import {dotnetSetupPhase} from "./phases/dotnet.ts";
 import {infrastructureSetupPhase} from "./phases/infrastructure.ts";
 import {pythonSetupPhase} from "./phases/python.ts";
 import {reactSetupPhase} from "./phases/react.ts";
 import {svelteSetupPhase} from "./phases/svelte.ts";
 import {workspaceSetupPhases} from "./phases/workspace.ts";
+import {runPhaseCommand, submitSetupAction} from "./phase-support.ts";
 import type {
-  LegacySetupContext,
+  SetupAction,
   SetupContext,
   SetupInput,
   SetupPhaseDefinition,
@@ -187,13 +190,25 @@ function stubPhase(
   };
 }
 
-/** One legacy Promise stub phase, run through the `legacyPhase` adapter. */
-function legacyStubPhase(
-  id: string,
-  run: (context: LegacySetupContext) => Promise<SetupPhaseResult>,
-  config: Readonly<{dependsOn?: readonly string[]}> = {},
-): SetupPhaseDefinition {
-  return legacyPhase({id, title: id, required: true, dependsOn: config.dependsOn ?? [], run});
+/**
+ * One action that records its id in `executed` when `SetupActions` runs it.
+ *
+ * @param executed - Receives the id of every executed action.
+ * @param patch - The action id, scope, and summary.
+ * @returns The action.
+ */
+function recordingAction(executed: string[], patch: Readonly<Omit<SetupAction, "execute">>): SetupAction {
+  return {
+    ...patch,
+    execute: Effect.sync(() => {
+      executed.push(patch.id);
+    }),
+  };
+}
+
+/** The system-scoped install action the consent tests submit. */
+function installAction(executed: string[]): SetupAction {
+  return recordingAction(executed, {id: "infrastructure.install", scope: "system", summary: "Install the container engine."});
 }
 
 /** Fake phases mirroring the real onboarding graph, without any real phase behavior. */
@@ -525,14 +540,9 @@ describe("runSetup", () => {
     expect(run.exitCode).toBe(1);
   });
 
-  it("converts an ordinary thrown legacy exception into a failed result and continues with independent phases", async () => {
+  it("converts a phase defect into a failed result and continues with independent phases", async () => {
     const run = await invokeSetup(options(), {
-      phases: [
-        legacyStubPhase("dotnet", (): Promise<SetupPhaseResult> => {
-          throw new Error("unexpected dotnet failure");
-        }),
-        stubPhase("python"),
-      ],
+      phases: [stubPhase("dotnet", {run: () => Effect.die(new Error("unexpected dotnet failure"))}), stubPhase("python")],
     });
 
     const result = expectCompleted(run);
@@ -544,11 +554,11 @@ describe("runSetup", () => {
     expect(run.exitCode).toBe(1);
   });
 
-  it("cancels the command when a legacy phase aborts instead of degrading it to a failed phase", async () => {
+  it("cancels the command when a phase is interrupted instead of degrading it to a failed phase", async () => {
     const ran: string[] = [];
     const run = await invokeSetup(options(), {
       phases: [
-        legacyStubPhase("dotnet", () => Promise.reject(new DOMException("The command was interrupted", "AbortError"))),
+        stubPhase("dotnet", {run: () => Effect.interrupt}),
         stubPhase("python", {run: () => Effect.sync(() => (ran.push("python"), phaseResult("python", "succeeded")))}),
       ],
     });
@@ -558,7 +568,7 @@ describe("runSetup", () => {
     expect(rendered(run)).not.toContain("Setup summary");
   });
 
-  it("cancels the command when interrupted during a legacy phase that degraded its own cancellation", async () => {
+  it("cancels the command when interrupted during a phase command whose failures the phase classifies", async () => {
     const started = Deferred.makeUnsafe<void>();
     const ran: string[] = [];
     const outcomes: string[] = [];
@@ -566,18 +576,21 @@ describe("runSetup", () => {
       interruptWhen: started,
       processes: [{match: () => true, respond: () => Effect.andThen(Deferred.succeed(started, undefined), Effect.never)}],
       phases: [
-        // A phase whose runner returned a cancelled outcome reports an ordinary failed result instead of
-        // rethrowing; the interruption must still cancel setup.
-        legacyStubPhase("dotnet", async (context) => {
-          outcomes.push((await context.runtime.runner.run({command: "dotnet", args: ["restore"]})).kind);
-          return phaseResult("dotnet", "failed");
+        // `runPhaseCommand` turns every process failure into a value the phase reports as an ordinary
+        // failed result; an interruption is not a process failure, so it must still cancel setup.
+        stubPhase("dotnet", {
+          run: (context) =>
+            Effect.map(runPhaseCommand(context, {command: "dotnet", args: ["restore"]}), (outcome) => {
+              outcomes.push(outcome.kind);
+              return phaseResult("dotnet", "failed");
+            }),
         }),
         stubPhase("python", {run: () => Effect.sync(() => (ran.push("python"), phaseResult("python", "succeeded")))}),
       ],
     });
 
     expect(run.execution).toEqual({status: "cancelled", exitCode: 130});
-    expect(outcomes).toEqual(["cancelled"]);
+    expect(outcomes).toEqual([]);
     expect(ran).toEqual([]);
     expect(rendered(run)).not.toContain("Setup summary");
     expect(rendered(run)).not.toContain("Setup is ready");
@@ -589,14 +602,8 @@ describe("runSetup", () => {
     const run = await invokeSetup(options(), {
       prompts: {...prompts, confirm: () => Effect.fail(new Terminal.QuitError())},
       phases: [
-        legacyStubPhase("infrastructure", async (context) => {
-          await context.actions.run({
-            id: "infrastructure.install",
-            scope: "system",
-            summary: "Install the container engine.",
-            execute: async () => void executed.push("infrastructure.install"),
-          });
-          return phaseResult("infrastructure", "succeeded");
+        stubPhase("infrastructure", {
+          run: () => Effect.as(submitSetupAction(installAction(executed)), phaseResult("infrastructure", "succeeded")),
         }),
       ],
     });
@@ -611,14 +618,8 @@ describe("runSetup", () => {
     const run = await invokeSetup(options({yes: true}), {
       prompts,
       phases: [
-        legacyStubPhase("infrastructure", async (context) => {
-          await context.actions.run({
-            id: "infrastructure.install",
-            scope: "system",
-            summary: "Install the container engine.",
-            execute: async () => void executed.push("infrastructure.install"),
-          });
-          return phaseResult("infrastructure", "succeeded");
+        stubPhase("infrastructure", {
+          run: () => Effect.as(submitSetupAction(installAction(executed)), phaseResult("infrastructure", "succeeded")),
         }),
       ],
     });
@@ -632,14 +633,11 @@ describe("runSetup", () => {
     const executed: string[] = [];
     const run = await invokeSetup(options({dryRun: true, yes: true}), {
       phases: [
-        legacyStubPhase("infrastructure", async (context) => {
-          const disposition = await context.actions.run({
-            id: "infrastructure.install",
-            scope: "system",
-            summary: "Install the container engine.",
-            execute: async () => void executed.push("infrastructure.install"),
-          });
-          return phaseResult("infrastructure", disposition === "planned" ? "skipped" : "succeeded");
+        stubPhase("infrastructure", {
+          run: () =>
+            Effect.map(submitSetupAction(installAction(executed)), ({kind}) =>
+              phaseResult("infrastructure", kind === "planned" ? "skipped" : "succeeded"),
+            ),
         }),
       ],
     });
@@ -702,11 +700,8 @@ describe("runSetup", () => {
 });
 
 describe("setup phase command execution", () => {
-  function commandPhase(run: (context: LegacySetupContext) => Promise<unknown>): SetupPhaseDefinition {
-    return legacyStubPhase("dotnet", async (context) => {
-      await run(context);
-      return phaseResult("dotnet", "succeeded");
-    });
+  function commandPhase(run: (context: SetupContext) => ReturnType<typeof runPhaseCommand>): SetupPhaseDefinition {
+    return stubPhase("dotnet", {run: (context) => Effect.as(run(context), phaseResult("dotnet", "succeeded"))});
   }
 
   const succeededProcess: ScriptedProcess = {match: () => true, respond: {stdout: "", stderr: "", durationMs: 0}};
@@ -714,7 +709,7 @@ describe("setup phase command execution", () => {
   it("scopes every phase command to the repository root with the bounded default timeout", async () => {
     const run = await invokeSetup(options(), {
       processes: [succeededProcess],
-      phases: [commandPhase((context) => context.runtime.runner.run({command: "dotnet", args: ["--version"]}))],
+      phases: [commandPhase((context) => runPhaseCommand(context, {command: "dotnet", args: ["--version"]}))],
     });
 
     expect(run.harness.processCalls()).toEqual([
@@ -728,7 +723,7 @@ describe("setup phase command execution", () => {
   it("preserves an explicit caller timeout instead of the scoped default", async () => {
     const run = await invokeSetup(options(), {
       processes: [succeededProcess],
-      phases: [commandPhase((context) => context.runtime.runner.run({command: "dotnet", args: ["--version"]}, {timeoutMs: 5_000}))],
+      phases: [commandPhase((context) => runPhaseCommand(context, {command: "dotnet", args: ["--version"]}, {timeoutMs: 5_000}))],
     });
 
     expect(run.harness.processCalls()[0]?.options).toMatchObject({timeout: 5_000});
@@ -737,7 +732,7 @@ describe("setup phase command execution", () => {
   it("keeps the scoped default for a mutation command", async () => {
     const run = await invokeSetup(options(), {
       processes: [succeededProcess],
-      phases: [commandPhase((context) => context.runtime.runner.run({command: "npm", args: ["ci"]}, {output: "tee"}))],
+      phases: [commandPhase((context) => runPhaseCommand(context, {command: "npm", args: ["ci"]}, {output: "tee"}))],
     });
 
     expect(run.harness.processCalls()[0]?.options).toMatchObject({output: "tee", timeout: 120_000});
@@ -746,7 +741,7 @@ describe("setup phase command execution", () => {
   it("does not echo command evidence in normal mode", async () => {
     const run = await invokeSetup(options(), {
       processes: [succeededProcess],
-      phases: [commandPhase((context) => context.runtime.runner.run({command: "dotnet", args: ["--version"]}))],
+      phases: [commandPhase((context) => runPhaseCommand(context, {command: "dotnet", args: ["--version"]}))],
     });
 
     expect(run.harness.processCalls()[0]?.options.echo).toBe(false);
@@ -758,7 +753,8 @@ describe("setup phase command execution", () => {
       processes: [succeededProcess],
       phases: [
         commandPhase((context) =>
-          context.runtime.runner.run(
+          runPhaseCommand(
+            context,
             {command: "dotnet", args: ["user-secrets", "set"]},
             {input: "super-secret-stdin-payload", env: {SOME_TOKEN: "super-secret-env-value"}},
           ),
@@ -864,31 +860,6 @@ describe("setup presentation", () => {
   });
 });
 
-describe("setup generation composition", () => {
-  it("refuses generation from a legacy phase: only the native workspace phase composes it", async () => {
-    const run = await invokeSetup(options(), {
-      phases: [
-        legacyStubPhase("workspace.generators", async (context) => {
-          await context.runtime.invokeGenerate({verbose: false, env: true, i18n: true, gql: true, artifacts: true});
-          return phaseResult("workspace.generators", "succeeded");
-        }),
-      ],
-    });
-
-    expect(expectCompleted(run).phases).toEqual([
-      {
-        id: "workspace.generators",
-        status: "failed",
-        summary: "'workspace.generators' failed with an unexpected exception.",
-        evidence: ["legacy phases may not invoke generate after cohort 5 Task 5.3"],
-        nextActions: ["Resolve the reported 'workspace.generators' failure, then rerun setup."],
-        durationMs: 0,
-      },
-    ]);
-    expect(run.harness.processCalls()).toEqual([]);
-  });
-});
-
 describe("setup characterization (pre-Effect migration)", () => {
   function withRootPlaceholder(value: unknown): unknown {
     const escapedRoot = JSON.stringify(FIXTURE_PATHS.root).slice(1, -1);
@@ -900,28 +871,24 @@ describe("setup characterization (pre-Effect migration)", () => {
     return recordingPrompts(answer);
   }
 
-  /**
-   * One legacy phase, run through the `legacyPhase` adapter, that submits a repository, a user, and a
-   * system action, then reports their dispositions.
-   */
+  /** One phase that submits a repository, a user, and a system action, then reports their dispositions. */
   function threeScopeActionPhase(executed: string[]): SetupPhaseDefinition {
-    return legacyStubPhase("infrastructure", async (context) => {
-      const dispositions: string[] = [];
-      for (const scope of ["repository", "user", "system"] as const) {
-        const id = `infrastructure.${scope}-action`;
-        dispositions.push(
-          await context.actions.run({
-            id,
-            scope,
-            summary: `Apply the ${scope} change.`,
-            execute: async () => {
-              executed.push(id);
-            },
-          }),
-        );
-      }
-      const status: SetupStatus = dispositions.includes("declined") ? "failed" : dispositions.includes("planned") ? "skipped" : "succeeded";
-      return phaseResult("infrastructure", status, {summary: `Dispositions: ${dispositions.join(", ")}.`, durationMs: 5});
+    return stubPhase("infrastructure", {
+      run: () =>
+        Effect.gen(function* () {
+          const dispositions: string[] = [];
+          for (const scope of ["repository", "user", "system"] as const) {
+            const id = `infrastructure.${scope}-action`;
+            const outcome = yield* submitSetupAction(recordingAction(executed, {id, scope, summary: `Apply the ${scope} change.`}));
+            dispositions.push(outcome.kind);
+          }
+          const status: SetupStatus = dispositions.includes("declined")
+            ? "failed"
+            : dispositions.includes("planned")
+              ? "skipped"
+              : "succeeded";
+          return phaseResult("infrastructure", status, {summary: `Dispositions: ${dispositions.join(", ")}.`, durationMs: 5});
+        }),
     });
   }
 
@@ -1965,5 +1932,199 @@ describe("setup characterization (pre-Effect migration)", () => {
         } as Readonly<Record<string, unknown>>
       )[_name],
     );
+  });
+});
+
+describe("setup dry-run safety", () => {
+  /** Fixed executable path of the harness Node.js, so the recorded probe list is machine-independent. */
+  const FIXTURE_NODE = "/fixture/bin/node";
+
+  /**
+   * Whether a recorded command installs software or mutates the machine, the user profile, or the
+   * repository: an explicit denylist that backs the pinned read-only probe lists below.
+   *
+   * @param request - One recorded process request.
+   * @returns `true` for an installer or mutation command.
+   */
+  function isInstallerOrMutation({command, args}: ProcessRequest): boolean {
+    const name = basename(command.replaceAll("\\", "/"))
+      .toLowerCase()
+      .replace(/\.(?:exe|cmd)$/u, "");
+    const [first = "", second = ""] = args;
+    switch (name) {
+      case "sudo":
+        return args.length === 0 || isInstallerOrMutation({command: first, args: args.slice(1)});
+      case "podman":
+      case "docker":
+        return !(["--version", "version", "info", "ps", "inspect", "images"].includes(first) || (first === "machine" && second === "list"));
+      case "winget":
+      case "brew":
+      case "apt-get":
+      case "apt":
+      case "dnf":
+      case "yum":
+        return args.includes("install") || args.includes("upgrade");
+      case "dotnet":
+        return (
+          first === "workload"
+          || first === "restore"
+          || (first === "dev-certs" && args.includes("--trust"))
+          || (first === "user-secrets" && second === "set")
+          || (first === "tool" && ["restore", "install", "update"].includes(second))
+        );
+      case "npm":
+        return ["ci", "install", "i", "add", "update", "uninstall", "run", "exec"].includes(first);
+      case "npx":
+        return args.includes("install") && !args.includes("--dry-run");
+      case "pip":
+      case "pip3":
+        return first === "install";
+      case "mkcert":
+        return first !== "--version" && first !== "-CAROOT";
+      default:
+        return (
+          (args.includes("-m") && (args.includes("venv") || args.includes("pip"))) || (args.includes("pip") && args.includes("install"))
+        );
+    }
+  }
+
+  it.each<readonly [string, ProcessRequest]>([
+    ["winget install", {command: "winget", args: ["install", "--id", "Microsoft.DotNet.SDK.10"]}],
+    ["brew install", {command: "brew", args: ["install", "--cask", "dotnet-sdk"]}],
+    ["apt-get install", {command: "sudo", args: ["apt-get", "install", "-y", "dotnet-sdk-10.0"]}],
+    ["dnf install", {command: "dnf", args: ["install", "-y", "dotnet-sdk-10.0"]}],
+    ["dotnet workload", {command: "dotnet", args: ["workload", "restore"]}],
+    ["dotnet dev-certs https --trust", {command: "dotnet", args: ["dev-certs", "https", "--trust"]}],
+    ["dotnet user-secrets set", {command: "dotnet", args: ["user-secrets", "set", "Key", "Value"]}],
+    ["dotnet tool restore", {command: "dotnet", args: ["tool", "restore"]}],
+    ["npm ci", {command: "npm", args: ["ci", "--prefer-offline"]}],
+    ["npm install", {command: "npm.cmd", args: ["install"]}],
+    ["pip install", {command: "/repo/.venv/bin/python", args: ["-m", "pip", "install", "-r", "requirements-dev.txt"]}],
+    ["python -m venv", {command: "py", args: ["-3.12", "-m", "venv", ".venv"]}],
+    ["mkcert -install", {command: "mkcert", args: ["-install"]}],
+    ["npx playwright install", {command: "npx", args: ["playwright", "install", "chromium"]}],
+  ])("classifies %s as an installer or mutation command", (_label, request) => {
+    expect(isInstallerOrMutation(request)).toBe(true);
+    expect(isInstallerOrMutation({command: "winget", args: ["--version"]})).toBe(false);
+    expect(isInstallerOrMutation({command: "npx", args: ["playwright", "install", "--dry-run", "chromium"]})).toBe(false);
+  });
+
+  /** The Windows listening-port probe of the infrastructure inspection. */
+  const PORT_PROBE =
+    "powershell -NoProfile -NonInteractive -Command & { $ports = @($args[0] -split ','); $(foreach ($port in $ports) { Get-NetTCPConnection -State Listen -LocalPort ([int]$port) -ErrorAction SilentlyContinue | Select-Object LocalAddress, LocalPort, OwningProcess }) | ConvertTo-Json -Compress } 3000,3002,4173,5000,5002,6379,8081,8082,10000";
+
+  /** Every probe the scenario answers successfully; every other command fails to start. */
+  type ScenarioProbes = Readonly<Record<string, string>>;
+
+  const scenarios: readonly (readonly [
+    string,
+    Readonly<{probes: ScenarioProbes; commands: readonly string[]; plannedActions: readonly string[]}>,
+  ])[] = [
+    [
+      "every tool is missing",
+      {
+        probes: {},
+        commands: [
+          "git --version",
+          "node --version",
+          "npm --version",
+          `${FIXTURE_NODE} --version`,
+          "dotnet --version",
+          "winget --version",
+          `${FIXTURE_NODE} <root>/scripts/inspection/aggregate-worker.ts <root>`,
+          PORT_PROBE,
+          "podman --version",
+          "winget --version",
+          "mkcert --version",
+          "winget --version",
+        ],
+        plannedActions: ["infrastructure.engine.persist"],
+      },
+    ],
+    [
+      "the toolchains are missing behind an available package manager",
+      {
+        probes: {
+          "git --version": "git version 2.45.0\n",
+          "node --version": "v24.1.0\n",
+          [`${FIXTURE_NODE} --version`]: "v24.1.0\n",
+          "npm --version": "11.2.0\n",
+          "npm ls --all --json": JSON.stringify({name: "@arolariu/monorepo", version: "0.0.0", dependencies: {}}),
+          "winget --version": "v1.9.0\n",
+        },
+        commands: [
+          "git --version",
+          "node --version",
+          "npm --version",
+          `${FIXTURE_NODE} --version`,
+          "npm ls --all --json",
+          "dotnet --version",
+          "winget --version",
+          `${FIXTURE_NODE} <root>/scripts/inspection/aggregate-worker.ts <root>`,
+          PORT_PROBE,
+          "podman --version",
+          "winget --version",
+          "mkcert --version",
+          "winget --version",
+        ],
+        plannedActions: [
+          "workspace.github-scripts-dependencies.npm-ci",
+          "workspace.generators.generate",
+          "dotnet.install-sdk",
+          "dotnet.workload-restore",
+          "dotnet.solution-restore",
+          "dotnet.tool-restore",
+          "infrastructure.engine.persist",
+          "infrastructure.container.install",
+          "infrastructure.mkcert.install",
+          "infrastructure.mkcert.trust",
+          "infrastructure.certificates.generate",
+        ],
+      },
+    ],
+  ];
+
+  it.each(scenarios)("dry-run executes nothing and writes nothing when %s", async (_label, scenario) => {
+    // Arrange: a pinned Windows host with Podman selected, an interactive terminal whose prompt queue
+    // is empty (so any consent prompt dies), and every unscripted probe failing to start.
+    const harness = makeTestLayer({
+      files: setupFixtureFiles(),
+      environment: {
+        platform: "win32",
+        executablePath: FIXTURE_NODE,
+        stdinIsTTY: true,
+        variables: {AROLARIU_CONTAINER_ENGINE: "podman"},
+      },
+      processes: [
+        scriptedOutcomes((request): ProbeOutcome => {
+          const stdout = scenario.probes[[request.command, ...request.args].join(" ")];
+          return stdout === undefined
+            ? {kind: "spawn-failed", message: "not installed", stdout: "", stderr: "", durationMs: 0}
+            : {kind: "succeeded", exitCode: 0, stdout, stderr: "", durationMs: 0};
+        }),
+      ],
+      prompts: [],
+    });
+    const initialFiles = harness.files();
+
+    // Act
+    const exit = await Effect.runPromiseExit(runCli(["setup", "--dry-run", "--yes"]).pipe(Effect.provide(harness.layer)));
+
+    // Assert
+    const requests = harness.processCalls().map(({request}) => request);
+    const commands = requests.map(({command, args}) =>
+      [command, ...args].join(" ").split(repositoryFixtureRoot).join("<root>").replaceAll("\\", "/"),
+    );
+    const lines = harness.output().map(({text}) => text.replace(/\n$/u, ""));
+    const actionLines = lines.filter((line) => line.includes(" setup action '"));
+    expect(commands).toEqual(scenario.commands);
+    expect(requests.filter(isInstallerOrMutation)).toEqual([]);
+    expect(harness.files()).toEqual(initialFiles);
+    expect(actionLines.every((line) => line.startsWith("[arolariu::setup] ℹ️ Planned setup action '"))).toBe(true);
+    expect(actionLines.map((line) => /^\[arolariu::setup\] ℹ️ Planned setup action '([^']+)'/u.exec(line)?.[1])).toEqual(
+      scenario.plannedActions,
+    );
+    expect(lines.join("\n")).not.toContain("unscripted");
+    expect(exitCodeFor(exit, undefined)).toBe(1);
   });
 });
