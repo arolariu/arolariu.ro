@@ -25,6 +25,7 @@ import type {PythonFacts, PythonInterpreterFact} from "../../../inspection/pytho
 import type {LegacyRepositoryInspectionSession} from "../../../platform/bridge.ts";
 import type {InspectionOutcome} from "../../../inspection/types.ts";
 import {createPythonSetupPhase, pythonInVirtualEnvironment, pythonSetupPhase, selectPythonInstallationProposal} from "./python.ts";
+import {createSetupActionExecutor} from "../index.ts";
 import type {
   SetupAction,
   SetupActionDisposition,
@@ -1005,6 +1006,126 @@ describe("python characterization (pre-Effect migration)", () => {
           args: ["install", "--id", "Python.Python.3.12", "--exact", "--accept-package-agreements", "--accept-source-agreements"],
         },
       ],
+    });
+  });
+
+  /**
+   * Wraps the real legacy consent controller in `--dry-run` mode, so the pin observes exactly what the
+   * production executor plans, logs, and executes (nothing). Any prompt fails the test.
+   */
+  function legacyDryRunExecutor(options: SetupInput): Readonly<{
+    actions: SetupActionExecutor;
+    executed: string[];
+    lines: () => readonly string[];
+  }> {
+    const sink = new InMemoryLoggerSink();
+    const logger = new MonorepositoryConsoleLogger("setup", {color: false, verbose: false, sink});
+    const refuse = (): Promise<never> => Promise.reject(new Error("A dry run must never prompt."));
+    const prompts: SetupContext["prompts"] = {confirm: refuse, select: refuse, text: refuse, secret: refuse};
+    const executor = createSetupActionExecutor({options, prompts, logger});
+    const executed: string[] = [];
+    return {
+      executed,
+      lines: () => sink.records.map(({stream, text}) => `${stream}: ${text}`),
+      actions: {
+        run: (action) =>
+          executor.run({
+            ...action,
+            execute: async () => {
+              executed.push(action.id);
+              await action.execute();
+            },
+          }),
+      },
+    };
+  }
+
+  it("pins a mutation-free dry run when the interpreter is missing", async () => {
+    // Arrange
+    const options = setupOptions({dryRun: true});
+    const dryRun = legacyDryRunExecutor(options);
+    const harness = await createHarness({
+      options,
+      pythonOutcomes: [availableOutcome({interpreters: [], selected: undefined, virtualEnvironment: {exists: false, compatible: false}})],
+      responses: {[wingetVersionKey]: succeeded({stdout: "v1.11.0\n"})},
+    });
+
+    // Act
+    const result = await runPhase(harness, {actions: dryRun.actions});
+    const observed = withRootPlaceholder({
+      result,
+      actionLines: dryRun.lines(),
+      executed: dryRun.executed,
+      commands: harness.runner.calls.map(({request}) => request),
+      removedDirectories: harness.removedDirectories,
+      invalidations: harness.invalidate.mock.calls,
+    });
+
+    // Assert
+    expect(observed).toEqual({
+      result: {
+        id: "python",
+        status: "skipped",
+        summary: "Required Python interpreter installation and dependent virtual-environment preparation are planned by dry-run.",
+        evidence: ["No available interpreter satisfies >=3.12.0.", "Planned action: python.install-interpreter"],
+        nextActions: [],
+        durationMs: 1,
+      },
+      actionLines: [
+        "stdout: [arolariu::setup] ℹ️ Planned setup action 'python.install-interpreter' (system): Install the required Python 3.12 interpreter with Windows Package Manager.",
+      ],
+      executed: [],
+      commands: [{command: "winget", args: ["--version"]}],
+      removedDirectories: [],
+      invalidations: [],
+    });
+  });
+
+  it("pins a mutation-free dry run when an existing incompatible virtual environment would be removed and recreated", async () => {
+    // Arrange
+    const options = setupOptions({dryRun: true});
+    const dryRun = legacyDryRunExecutor(options);
+    const harness = await createHarness({
+      options,
+      pythonOutcomes: [availableOutcome({virtualEnvironment: {exists: true, compatible: false}})],
+    });
+
+    // Act
+    const result = await runPhase(harness, {actions: dryRun.actions});
+    const observed = withRootPlaceholder({
+      result,
+      actionLines: dryRun.lines(),
+      executed: dryRun.executed,
+      commands: harness.runner.calls.map(({request}) => request),
+      removedDirectories: harness.removedDirectories,
+      invalidations: harness.invalidate.mock.calls,
+    });
+
+    // Assert
+    expect(observed).toEqual({
+      result: {
+        id: "python",
+        status: "skipped",
+        summary: "Required Python preparation actions are planned by dry-run.",
+        evidence: [
+          "Selected interpreter 'py -3.12' (Python 3.12.4) satisfies >=3.12.0.",
+          "The isolated virtual environment is not a canonical, isolated Python installation.",
+          "Planned action: python.venv.create",
+          "Planned action: python.pip.upgrade",
+          "Planned action: python.dependencies.install",
+        ],
+        nextActions: [],
+        durationMs: 1,
+      },
+      actionLines: [
+        "stdout: [arolariu::setup] ℹ️ Planned setup action 'python.venv.create' (repository): Create the isolated exp.arolariu.ro Python virtual environment.",
+        "stdout: [arolariu::setup] ℹ️ Planned setup action 'python.pip.upgrade' (repository): Upgrade pip inside the isolated virtual environment.",
+        "stdout: [arolariu::setup] ℹ️ Planned setup action 'python.dependencies.install' (repository): Install pinned development requirements inside the isolated virtual environment.",
+      ],
+      executed: [],
+      commands: [],
+      removedDirectories: [],
+      invalidations: [],
     });
   });
 });

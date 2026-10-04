@@ -30,6 +30,7 @@ import type {GenerateResult, GenerateTaskName} from "../../generate/index.ts";
 import type {NpmTreeFacts} from "../../../inspection/packages.ts";
 import type {LegacyRepositoryInspectionSession} from "../../../platform/bridge.ts";
 import type {InspectionOutcome} from "../../../inspection/types.ts";
+import {createSetupActionExecutor} from "../index.ts";
 import type {
   SetupAction,
   SetupActionDisposition,
@@ -1060,6 +1061,142 @@ describe("workspace characterization (pre-Effect migration)", () => {
       },
       actionIds: ["workspace.github-scripts-dependencies.npm-ci"],
       commands: [{command: "npm", args: ["ci", "--prefer-offline", "--no-audit", "--no-fund"]}],
+    });
+  });
+
+  /**
+   * Wraps the real legacy consent controller in `--dry-run` mode, so the pin observes exactly what the
+   * production executor plans, logs, and executes (nothing). Any prompt fails the test.
+   */
+  function legacyDryRunExecutor(options: SetupInput): Readonly<{
+    actions: SetupActionExecutor;
+    executed: string[];
+    lines: () => readonly string[];
+  }> {
+    const sink = new InMemoryLoggerSink();
+    const logger = new MonorepositoryConsoleLogger("setup", {color: false, verbose: false, sink});
+    const refuse = (): Promise<never> => Promise.reject(new Error("A dry run must never prompt."));
+    const prompts: SetupContext["prompts"] = {confirm: refuse, select: refuse, text: refuse, secret: refuse};
+    const executor = createSetupActionExecutor({options, prompts, logger});
+    const executed: string[] = [];
+    return {
+      executed,
+      lines: () => sink.records.map(({stream, text}) => `${stream}: ${text}`),
+      actions: {
+        run: (action) =>
+          executor.run({
+            ...action,
+            execute: async () => {
+              executed.push(action.id);
+              await action.execute();
+            },
+          }),
+      },
+    };
+  }
+
+  /** Records every mutating filesystem call before delegating, so a dry run can be pinned as write-free. */
+  function recordingFileSystem(files: FileSystem, mutations: string[]): FileSystem {
+    const record =
+      <TArgs extends readonly unknown[], TResult>(name: string, operation: (...args: TArgs) => Promise<TResult>) =>
+      (...args: TArgs): Promise<TResult> => {
+        mutations.push(`${name}: ${String(args[0])}`);
+        return operation(...args);
+      };
+    return {
+      ...files,
+      createDirectory: record("createDirectory", files.createDirectory),
+      writeText: record("writeText", files.writeText),
+      writeBytes: record("writeBytes", files.writeBytes),
+      writeTextAtomic: record("writeTextAtomic", files.writeTextAtomic),
+      copy: record("copy", files.copy),
+      move: record("move", files.move),
+      remove: record("remove", files.remove),
+      createTemporaryDirectory: record("createTemporaryDirectory", files.createTemporaryDirectory),
+      setMode: record("setMode", files.setMode),
+    };
+  }
+
+  it("pins a mutation-free dry run of every workspace phase when restorations and generated artifacts are pending", async () => {
+    // Arrange
+    const options_ = options({dryRun: true});
+    const dryRun = legacyDryRunExecutor(options_);
+    const inspection = createInspectionHarness({"npm.root": () => npmTree("root", 42)});
+    const mutations: string[] = [];
+    const {context, runner, generate} = await createHarness({
+      options: options_,
+      inspection: inspection.session,
+      actions: dryRun.actions,
+      wrapFiles: (files) => recordingFileSystem(files, mutations),
+    });
+
+    // Act
+    const results: SetupPhaseResult[] = [];
+    for (const phase of workspaceSetupPhases) {
+      results.push(await runPhase(phase.id, context));
+    }
+    const observed = withRootPlaceholder({
+      results,
+      actionLines: dryRun.lines(),
+      executed: dryRun.executed,
+      commands: runner.calls.map(({request}) => request),
+      generations: generate.mock.calls,
+      fileMutations: mutations,
+      inspections: inspection.inspect.mock.calls,
+      invalidations: inspection.invalidate.mock.calls,
+    });
+
+    // Assert
+    expect(observed).toEqual({
+      results: [
+        {
+          id: "workspace.prerequisites",
+          status: "succeeded",
+          summary: "Repository identity, Git, Node.js, and npm prerequisites are valid.",
+          evidence: ["git version 2.50.0", "Node.js v24.5.0 satisfies >=24.0.0.", "npm 11.0.0 satisfies >=11.0.0."],
+          nextActions: [],
+          durationMs: 1,
+        },
+        {
+          id: "workspace.root-dependencies",
+          status: "succeeded",
+          summary: "Root workspace dependencies are valid.",
+          evidence: ["npm reported 42 installed package(s) with no dependency problems."],
+          nextActions: [],
+          durationMs: 1,
+        },
+        {
+          id: "workspace.github-scripts-dependencies",
+          status: "skipped",
+          summary: ".github scripts dependency restoration is planned by dry-run.",
+          evidence: ["Planned action: workspace.github-scripts-dependencies.npm-ci"],
+          nextActions: [],
+          durationMs: 1,
+        },
+        {
+          id: "workspace.generators",
+          status: "skipped",
+          summary: "Repository artifact generation is planned by dry-run.",
+          evidence: ["Planned action: workspace.generators.generate"],
+          nextActions: [],
+          durationMs: 1,
+        },
+      ],
+      actionLines: [
+        "stdout: [arolariu::setup] ℹ️ Planned setup action 'workspace.github-scripts-dependencies.npm-ci' (repository): Restore .github scripts dependencies from the lockfile.",
+        "stdout: [arolariu::setup] ℹ️ Planned setup action 'workspace.generators.generate' (repository): Generate taxonomy, GraphQL, and internationalization checkout artifacts.",
+      ],
+      executed: [],
+      commands: [
+        {command: "git", args: ["--version"]},
+        {command: "node", args: ["--version"]},
+        {command: "npm", args: ["--version"]},
+        {command: "/usr/bin/node", args: ["--version"]},
+      ],
+      generations: [],
+      fileMutations: [],
+      inspections: [["npm.root"]],
+      invalidations: [],
     });
   });
 });

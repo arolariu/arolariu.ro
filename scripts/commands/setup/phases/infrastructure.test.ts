@@ -35,6 +35,7 @@ import type {InfrastructureFacts, PortFact} from "../../../inspection/infrastruc
 import type {LegacyRepositoryInspectionSession} from "../../../platform/bridge.ts";
 import type {InspectionOutcome} from "../../../inspection/types.ts";
 import {createInfrastructureSetupPhase, infrastructureSetupPhase, selectContainerInstallationProposal} from "./infrastructure.ts";
+import {createSetupActionExecutor} from "../index.ts";
 import type {
   SetupAction,
   SetupActionDisposition,
@@ -1212,31 +1213,6 @@ describe("abort and failure", () => {
     expect(result.evidence.join("\n")).toContain("Certificate path is unreadable.");
   });
 
-  it("executes no mutation during dry-run", async () => {
-    const executed: string[] = [];
-    const actions: SetupActionExecutor = {
-      run: async (action) => {
-        executed.push(`planned:${action.id}`);
-        return "planned";
-      },
-    };
-    const harness = await createHarness({
-      options: setupOptions({dryRun: true}),
-      actions,
-      infrastructure: [
-        infrastructureAvailable({
-          certificateIssues: ["Missing selfhost certificate file: infra/Local/Management/certs/local-cert.pem"],
-        }),
-      ],
-      config: {status: "valid", config: {schemaVersion: 1, containerEngine: "rancher"}},
-    });
-
-    const result = await runPhase(harness);
-
-    expect(result.status).toBe("skipped");
-    expect(executed.every((e) => e.startsWith("planned:"))).toBe(true);
-  });
-
   it("gives port blockers precedence over planned persistence", async () => {
     const harness = await createHarness({
       options: setupOptions({engine: "podman", dryRun: true}),
@@ -1421,6 +1397,112 @@ describe("infrastructure characterization (pre-Effect migration)", () => {
         },
       ],
       writes: [],
+    });
+  });
+
+  /**
+   * Wraps the real legacy consent controller in `--dry-run` mode, so the pin observes exactly what the
+   * production executor plans, logs, and executes (nothing). Any prompt fails the test.
+   */
+  function legacyDryRunExecutor(options: SetupInput): Readonly<{
+    actions: SetupActionExecutor;
+    executed: string[];
+    lines: () => readonly string[];
+  }> {
+    const sink = new InMemoryLoggerSink();
+    const logger = new MonorepositoryConsoleLogger("setup", {color: false, verbose: false, sink});
+    const refuse = (): Promise<never> => Promise.reject(new Error("A dry run must never prompt."));
+    const prompts: SetupContext["prompts"] = {confirm: refuse, select: refuse, text: refuse, secret: refuse};
+    const executor = createSetupActionExecutor({options, prompts, logger});
+    const executed: string[] = [];
+    return {
+      executed,
+      lines: () => sink.records.map(({stream, text}) => `${stream}: ${text}`),
+      actions: {
+        run: (action) =>
+          executor.run({
+            ...action,
+            execute: async () => {
+              executed.push(action.id);
+              await action.execute();
+            },
+          }),
+      },
+    };
+  }
+
+  it("pins a mutation-free dry run when the engine changes and the container CLI and certificates are missing", async () => {
+    // Arrange
+    const options = setupOptions({engine: "podman", dryRun: true});
+    const dryRun = legacyDryRunExecutor(options);
+    const harness = await createHarness({
+      options,
+      actions: dryRun.actions,
+      config: persistedRancher,
+      responses: {[wingetVersionKey]: succeeded({stdout: "v1.10"})},
+      infrastructure: [
+        infrastructureAvailable({
+          selectedEngine: "podman",
+          cliAvailable: false,
+          certificateIssues: ["Missing selfhost certificate file: infra/Local/Management/certs/local-cert.pem"],
+        }),
+      ],
+    });
+
+    // Act
+    const result = await runPhase(harness);
+    const observed = withRootPlaceholder({
+      result,
+      actionLines: dryRun.lines(),
+      executed: dryRun.executed,
+      commands: harness.runner.calls.map(({request}) => request),
+      writes: harness.writes,
+      createdDirectories: harness.createdDirectories,
+      inspectionEvents: harness.inspection.events,
+    });
+
+    // Assert
+    expect(observed).toEqual({
+      result: {
+        id: "infrastructure",
+        status: "skipped",
+        summary: "Local infrastructure preparation is planned by dry-run.",
+        evidence: [
+          "Selected Podman Desktop from argument.",
+          "Planned action: infrastructure.engine.persist",
+          "Podman Desktop runtime postcondition failed: the podman CLI is not available.",
+          "Planned action: infrastructure.container.install",
+          "Port 3000 is available.",
+          "Port 3002 is available.",
+          "Port 4173 is available.",
+          "Port 5000 is available.",
+          "Port 5002 is available.",
+          "Port 6379 is available.",
+          "Port 8081 is available.",
+          "Port 8082 is available.",
+          "Port 10000 is available.",
+          "Optional selfhost certificate generation is required.",
+          "mkcert is available.",
+          "Planned action: infrastructure.mkcert.trust",
+          "Planned action: infrastructure.certificates.generate",
+        ],
+        nextActions: [],
+        durationMs: 1,
+      },
+      actionLines: [
+        "stdout: [arolariu::setup] ℹ️ Planned setup action 'infrastructure.engine.persist' (repository): Persist Podman Desktop as the non-secret local container engine selection.",
+        "stdout: [arolariu::setup] ℹ️ Planned setup action 'infrastructure.container.install' (system): Install Podman Desktop with Windows Package Manager.",
+        "stdout: [arolariu::setup] ℹ️ Planned setup action 'infrastructure.mkcert.trust' (system): Install the mkcert local certificate authority into the system trust stores.",
+        "stdout: [arolariu::setup] ℹ️ Planned setup action 'infrastructure.certificates.generate' (user): Generate the ignored localhost certificate and private key for selfhost.",
+      ],
+      executed: [],
+      commands: [
+        {command: "winget", args: ["--version"]},
+        {command: "mkcert", args: ["--version"]},
+      ],
+      writes: [],
+      createdDirectories: [],
+      inspectionEvents: ["updateInfrastructureEngine", "inspect:infrastructure"],
     });
   });
 });

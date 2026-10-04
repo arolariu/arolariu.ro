@@ -29,6 +29,7 @@ import {
   generateLocalDevelopmentPassword,
   selectDotnetInstallationProposal,
 } from "./dotnet.ts";
+import {createSetupActionExecutor} from "../index.ts";
 import type {
   SetupAction,
   SetupActionDisposition,
@@ -1610,6 +1611,154 @@ describe("dotnet characterization (pre-Effect migration)", () => {
           args: ["install", "--id", "Microsoft.DotNet.SDK.10", "--exact", "--accept-package-agreements", "--accept-source-agreements"],
         },
       ],
+    });
+  });
+
+  /**
+   * Wraps the real legacy consent controller in `--dry-run` mode, so the pin observes exactly what the
+   * production executor plans, logs, and executes (nothing). Any prompt fails the test.
+   */
+  function legacyDryRunExecutor(options: SetupInput): Readonly<{
+    actions: SetupActionExecutor;
+    executed: string[];
+    lines: () => readonly string[];
+  }> {
+    const sink = new InMemoryLoggerSink();
+    const logger = new MonorepositoryConsoleLogger("setup", {color: false, verbose: false, sink});
+    const refuse = (): Promise<never> => Promise.reject(new Error("A dry run must never prompt."));
+    const prompts: SetupContext["prompts"] = {confirm: refuse, select: refuse, text: refuse, secret: refuse};
+    const executor = createSetupActionExecutor({options, prompts, logger});
+    const executed: string[] = [];
+    return {
+      executed,
+      lines: () => sink.records.map(({stream, text}) => `${stream}: ${text}`),
+      actions: {
+        run: (action) =>
+          executor.run({
+            ...action,
+            execute: async () => {
+              executed.push(action.id);
+              await action.execute();
+            },
+          }),
+      },
+    };
+  }
+
+  it("pins a mutation-free dry run when the SDK, a user secret, and the HTTPS certificate are missing", async () => {
+    // Arrange
+    const options = setupOptions({dryRun: true});
+    const dryRun = legacyDryRunExecutor(options);
+    const harness = await createHarness({
+      options,
+      dotnetOutcomes: [
+        availableOutcome({
+          sdks: [],
+          selectedVersion: undefined,
+          certificate: {exists: false, trusted: false},
+          appHost: {projectExists: true, missingParameterKeys: [sqlSecretKey], userSecretKeys: []},
+        }),
+      ],
+      responses: {[wingetVersionKey]: succeeded({stdout: "v1.11.0\n"})},
+      randomBytes: () => {
+        throw new Error("A dry run must never generate a secret.");
+      },
+    });
+
+    // Act
+    const result = await runPhase(harness, {actions: dryRun.actions});
+    const observed = withRootPlaceholder({
+      result,
+      actionLines: dryRun.lines(),
+      executed: dryRun.executed,
+      commands: harness.runner.calls.map(({request}) => request),
+      invalidations: harness.invalidate.mock.calls,
+    });
+
+    // Assert
+    expect(observed).toEqual({
+      result: {
+        id: "dotnet",
+        status: "skipped",
+        summary: "Required .NET SDK installation and dependent restores are planned by dry-run.",
+        evidence: [
+          "The installed SDK listing contained no valid SDK versions.",
+          "dotnet reported no selected SDK version.",
+          "Planned action: dotnet.install-sdk",
+          "Planned action: dotnet.workload-restore",
+          "Planned action: dotnet.solution-restore",
+          "Planned action: dotnet.tool-restore",
+        ],
+        nextActions: [],
+        durationMs: 1,
+      },
+      actionLines: [
+        "stdout: [arolariu::setup] ℹ️ Planned setup action 'dotnet.install-sdk' (system): Install the required .NET 10 SDK with Windows Package Manager.",
+        "stdout: [arolariu::setup] ℹ️ Planned setup action 'dotnet.workload-restore' (system): Restore solution workloads required by the pinned SDK.",
+        "stdout: [arolariu::setup] ℹ️ Planned setup action 'dotnet.solution-restore' (repository): Restore solution NuGet dependencies.",
+        "stdout: [arolariu::setup] ℹ️ Planned setup action 'dotnet.tool-restore' (user): Restore manifest-pinned local .NET tools.",
+      ],
+      executed: [],
+      commands: [{command: "winget", args: ["--version"]}],
+      invalidations: [],
+    });
+  });
+
+  it("pins a mutation-free dry run when restores, a user secret, and the HTTPS certificate are pending on a ready SDK", async () => {
+    // Arrange
+    const options = setupOptions({dryRun: true});
+    const dryRun = legacyDryRunExecutor(options);
+    const harness = await createHarness({
+      options,
+      dotnetOutcomes: [
+        availableOutcome({
+          certificate: {exists: false, trusted: false},
+          appHost: {projectExists: true, missingParameterKeys: [sqlSecretKey], userSecretKeys: []},
+        }),
+      ],
+      randomBytes: () => {
+        throw new Error("A dry run must never generate a secret.");
+      },
+    });
+
+    // Act
+    const result = await runPhase(harness, {actions: dryRun.actions});
+    const observed = withRootPlaceholder({
+      result,
+      actionLines: dryRun.lines(),
+      executed: dryRun.executed,
+      commands: harness.runner.calls.map(({request}) => request),
+      invalidations: harness.invalidate.mock.calls,
+    });
+
+    // Assert
+    expect(observed).toEqual({
+      result: {
+        id: "dotnet",
+        status: "skipped",
+        summary: "Required .NET preparation actions are planned by dry-run.",
+        evidence: [
+          "A listed SDK and selected SDK satisfy >=10.0.0.",
+          "Planned action: dotnet.workload-restore",
+          "Planned action: dotnet.solution-restore",
+          "Planned action: dotnet.tool-restore",
+          "The AppHost project exists.",
+          "Planned action: dotnet.user-secrets.set",
+          "Planned action: dotnet.certificate.create",
+        ],
+        nextActions: [],
+        durationMs: 1,
+      },
+      actionLines: [
+        "stdout: [arolariu::setup] ℹ️ Planned setup action 'dotnet.workload-restore' (system): Restore solution workloads required by the pinned SDK.",
+        "stdout: [arolariu::setup] ℹ️ Planned setup action 'dotnet.solution-restore' (repository): Restore solution NuGet dependencies.",
+        "stdout: [arolariu::setup] ℹ️ Planned setup action 'dotnet.tool-restore' (user): Restore manifest-pinned local .NET tools.",
+        "stdout: [arolariu::setup] ℹ️ Planned setup action 'dotnet.user-secrets.set' (user): Set missing AppHost local-development parameters through JSON stdin.",
+        "stdout: [arolariu::setup] ℹ️ Planned setup action 'dotnet.certificate.create' (user): Create a local HTTPS development certificate.",
+      ],
+      executed: [],
+      commands: [],
+      invalidations: [],
     });
   });
 });
