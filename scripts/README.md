@@ -326,24 +326,19 @@ The bridge works in both directions. `runEffect(program, options)` lets a legacy
 program as a legacy `CommandInvoker`, so unmigrated callers compose it unchanged. The bridge is the only platform module that may import
 the legacy kernel, and cohort 7 deletes it.
 
-The container commands `dev aspire`, `containers build|run`, and `containers compose` are Effect-native (`runAspire`, `runImage`,
-`runCompose`): `prepareContainerEngine` resolves the engine and runs `runContainerPreflight` under the `<command>::preflight` log context,
-and the engine command runs through `Process` (AppHost with inherited output; build/run/Compose echoed as `$ <command>` with tee output).
-A non-zero exit of that child becomes `ReportedFailure{exitCode: 1, message: "<tool> exited with code <n>"}` after one `⛔` line, because
-the child already printed its own output (`reportChildExit` in `commands/containers/output.ts`). `--json` writes exactly one stdout
-document either way: the result on success, or `{status: "failed", kind: "operational", message, evidence}` (the process evidence) for a
-child exit. The image build calls `generateArtifacts`
-directly (silently) for the frontend and backend targets.
+The container commands `dev aspire`, `dev selfhost`, `containers build|run`, and `containers compose` are Effect-native (`runAspire`,
+`runSelfhost`, `runImage`, `runCompose`): `prepareContainerEngine` resolves the engine and runs `runContainerPreflight` under the
+`<command>::preflight` log context, and the engine commands run through `Process` (AppHost with inherited output; build/run/Compose and
+the selfhost stacks echoed as `$ <command>` with tee output). A non-zero exit of that child becomes
+`ReportedFailure{exitCode: 1, message: "<tool> exited with code <n>"}` after one `⛔` line, because the child already printed its own output
+(`reportChildExit` in `commands/containers/output.ts`). `--json` writes exactly one stdout document either way: the result on success, or
+`{status: "failed", kind: "operational", message, evidence}` (the process evidence) for a child exit. The image build (frontend and
+backend targets) and `dev selfhost start` call `generateArtifacts` directly (silently).
 
-While `dev selfhost` is still legacy, it calls the Effect container helpers (`resolveRuntimeContainerEngine`, `runContainerPreflight`,
-`removeSelfhostTraefikConfig`) and the `generateArtifactsCommand` shim through `runEffectOrThrow(program, runtime)` and `invoke()`.
-It runs the program over `legacyRuntimeLayer(runtime)` — the Node layer with that invocation's own runner, environment, filesystem
-reads/removal, and logger in place of the ambient ones — so the legacy test fakes and the R1 pins see the same calls and output. Log
-lines go to `runtime.logger` (a `context` annotation names a child logger, so `withLogContext("preflight")` renders
-`[arolariu::<command>::preflight]`), which applies the invocation's presentation. `runtime.signal` reaches the legacy runner on every
-process call, and a call it reports cancelled on the aborted signal interrupts the program, rethrown as the signal's
-`CommandCancellation`; any other failure rethrows `Cause.squash(exit.cause)`. Each call site carries a `// cohort 6 temporary` comment
-and Task 6.4 deletes them.
+`dev selfhost start` reads `MSSQL_SA_PASSWORD` as a `Redacted` value and unwraps it only for the `sqlcmd -P` argument; that run is echoed
+with `[REDACTED]` in its place, never echoes under `--verbose`, and a failure is rebuilt as a `ContainerRuntimeError` naming the step only.
+Cosmos provisioning (`ensureCosmos`) uses `HttpClient` with a bounded body read, and Azurite provisioning (`ensureAzurite`) goes through
+the `LocalBlobStorage` service, whose Azure Blob SDK layer (`LocalBlobStorageLive`) only the `dev selfhost` handler provides.
 
 Until cohort 7 converts the shared Promise helpers (`resolveRepositoryPaths`, `loadRepositoryRequirements`, `readToolingConfig`,
 `writeToolingConfig`), Effect code hands them legacy-shaped capabilities from the bridge: `legacyReadOnlyFiles` and `legacyFileSystem`

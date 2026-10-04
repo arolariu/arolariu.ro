@@ -1318,7 +1318,7 @@ describe("BackendLicenseGenerator", () => {
 
 describe("generateArtifacts", () => {
   effectTest(
-    "exports the generators, the effect, the legacy shim, and the canonical taxonomy artifact manifest",
+    "exports the generators, the effect, and the canonical taxonomy artifact manifest",
     () =>
       Effect.gen(function* () {
         // Act
@@ -1334,7 +1334,6 @@ describe("generateArtifacts", () => {
           "NaceTaxonomyClassificationGenerator",
           "TaxonomyClassificationGenerator",
           "generateArtifacts",
-          "generateArtifactsCommand",
           "getExpectedTaxonomyArtifactPaths",
           "taxonomyArtifactFileNames",
         ]);

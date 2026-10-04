@@ -1,45 +1,45 @@
 /**
- * @fileoverview effect/cli `dev` command group running the Effect Aspire program and the legacy selfhost command.
+ * @fileoverview effect/cli `dev` command group running the Effect Aspire and selfhost programs.
  * @module scripts/commands/dev/cli
  *
  * @remarks
  * `dev` has no handler of its own, so running it alone prints help. `dev aspire` decodes `--engine`
- * into a {@link ContainerEngineInput} and runs {@link runAspire}, rendering the result as the single
- * JSON document (`--json`) or the legacy success line; a non-zero AppHost exit becomes
- * `ReportedFailure{exitCode: 1}` because AppHost already printed its own output through inherited
- * stdio. `dev selfhost [start|stop|logs]` (default `start`) decodes the action and `--engine` into a
- * {@link SelfhostInput} and still runs the unmigrated command through `runLegacy` until Task 6.4.
+ * into a {@link ContainerEngineInput} and runs {@link runAspire}; `dev selfhost [start|stop|logs]`
+ * (default `start`) decodes the action and `--engine` into a {@link SelfhostInput} and runs
+ * {@link runSelfhost} with the {@link LocalBlobStorageLive} layer, which only this handler provides.
+ * Each renders its result as the single JSON document (`--json`) or the legacy success line; a
+ * non-zero exit of a child whose output the user already saw becomes `ReportedFailure{exitCode: 1}`
+ * through {@link reportChildExit}.
  */
 
-import {Effect} from "effect";
+import {Effect, type Layer} from "effect";
 import {Argument, Command} from "effect/cli";
 
 import type {CliSubcommand} from "../../cli.ts";
-import type {CommandInvoker} from "../../common/commander.ts";
 import {runAspire} from "../../container-runtime/aspire.ts";
-import {selfhostCommand} from "../../container-runtime/selfhost.ts";
+import {LocalBlobStorageLive, type LocalBlobStorage} from "../../container-runtime/selfhost.bootstrap.ts";
+import {runSelfhost} from "../../container-runtime/selfhost.ts";
 import type {ContainerEngineInput, SelfhostAction, SelfhostInput} from "../../container-runtime/types.ts";
 import {renderContainerCompletion, reportChildExit} from "../containers/output.ts";
 import {EngineFlag, engineInput, withCommandOutput} from "../flags.ts";
-import {runLegacy} from "../legacy.ts";
 
 /** Every action accepted by the `dev selfhost` `action` argument. */
 const selfhostActions = ["start", "stop", "logs"] as const satisfies readonly SelfhostAction[];
 
-/** Legacy invokers the `dev` subcommands run; tests pass recording invokers. */
-export interface DevInvokers {
-  /** Invoker of `dev selfhost`; defaults to the legacy selfhost command. */
-  readonly selfhost?: CommandInvoker<SelfhostInput, unknown>;
+/** Options of {@link makeDevCommand}. */
+export interface DevCommandOptions {
+  /** Blob storage layer `dev selfhost` provisions Azurite through; defaults to {@link LocalBlobStorageLive}. */
+  readonly localBlobStorage?: Layer.Layer<LocalBlobStorage>;
 }
 
 /**
  * Builds the `dev` command group.
  *
- * @param invokers - Optional legacy invoker overrides.
+ * @param options - Optional blob storage layer override; tests pass a recording layer.
  * @returns The `dev` group with its `aspire` and `selfhost` subcommands.
  */
-export function makeDevCommand(invokers: DevInvokers = {}): CliSubcommand {
-  const selfhostInvoker = invokers.selfhost ?? selfhostCommand;
+export function makeDevCommand(options: DevCommandOptions = {}): CliSubcommand {
+  const localBlobStorage = options.localBlobStorage ?? LocalBlobStorageLive;
   const aspire = Command.make("aspire", {engine: EngineFlag}, ({engine}) =>
     Effect.gen(function* () {
       const input: ContainerEngineInput = engineInput(engine);
@@ -56,7 +56,12 @@ export function makeDevCommand(invokers: DevInvokers = {}): CliSubcommand {
       ),
       engine: EngineFlag,
     },
-    ({action, engine}) => runLegacy("selfhost", selfhostInvoker, {action, ...engineInput(engine)}).pipe(withCommandOutput("selfhost")),
+    ({action, engine}) =>
+      Effect.gen(function* () {
+        const input: SelfhostInput = {action, ...engineInput(engine)};
+        const result = yield* runSelfhost(input);
+        yield* renderContainerCompletion(result, `Selfhost ${result.action} completed for engine '${result.engine}'.`);
+      }).pipe(Effect.catchTag("ProcessExited", reportChildExit), Effect.provide(localBlobStorage), withCommandOutput("selfhost")),
   ).pipe(Command.withDescription("Runs selfhost container orchestration for the selected local engine."));
   return Command.make("dev").pipe(Command.withDescription("Local development environments."), Command.withSubcommands([aspire, selfhost]));
 }

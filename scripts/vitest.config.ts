@@ -70,6 +70,7 @@ export default defineConfig({
         "scripts/platform/testing.ts",
         "scripts/platform/testing.fs.ts",
         "scripts/commands/setup/phase-testing.ts",
+        "scripts/container-runtime/selfhost.testing.ts",
 
         // Configuration and setup files
         "**/*.config.{js,ts,mjs,mts}",

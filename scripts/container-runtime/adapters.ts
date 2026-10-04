@@ -7,7 +7,7 @@ import {Effect} from "effect";
 
 import type {ProcessRequest} from "../common/runner.ts";
 import {Presenter} from "../platform/Output.ts";
-import {formatProcessRequest, Process, type ProcessError, type ProcessResult} from "../platform/Process.ts";
+import {formatProcessRequest, Process, type ProcessError, type ProcessOptions, type ProcessResult} from "../platform/Process.ts";
 import type {ContainerEngine} from "./types.ts";
 
 /** Command and arguments to execute for a selected container runtime. */
@@ -70,15 +70,17 @@ export function getContainerAdapter(engine: ContainerEngine): ContainerRuntimeAd
  * logging the same command a second time.
  *
  * @param command - The engine-owned command.
+ * @param options - Optional working directory and environment overrides of the child.
  * @returns The process result, failing with the typed {@link ProcessError} of the run.
  */
 export function runEchoedRuntimeCommand(
   command: Readonly<RuntimeCommand>,
+  options: Readonly<Pick<ProcessOptions, "cwd" | "env">> = {},
 ): Effect.Effect<ProcessResult, ProcessError, Presenter | Process> {
   return Effect.gen(function* () {
     const presenter = yield* Presenter;
     const runner = yield* Process;
     yield* presenter.line("stdout", `$ ${formatProcessRequest(command)}`);
-    return yield* runner.run(command, {output: "tee", echo: false});
+    return yield* runner.run(command, {...options, output: "tee", echo: false});
   });
 }

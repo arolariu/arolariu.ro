@@ -18,9 +18,7 @@ import {basename, dirname, join, resolve} from "node:path";
 import {DateTime, Duration, Effect, FileSystem, Option, type PlatformError} from "effect";
 import {HttpClient, HttpClientRequest, type HttpClientError} from "effect/http";
 
-import type {CommandInvoker} from "../../common/commander.ts";
 import {taxonomyArtifactFileNames, taxonomyArtifactOutputRoots} from "../../common/taxonomy-artifacts.ts";
-import {legacyInvoker} from "../../platform/bridge.ts";
 import {Environment} from "../../platform/Environment.ts";
 import {Glob, writeTextAtomic} from "../../platform/Files.ts";
 import {readBoundedBytes, type ResponseTooLarge} from "../../platform/Http.ts";
@@ -2041,15 +2039,3 @@ export const generateArtifacts: (
   yield* Effect.logDebug(`Output paths: ${generatedFiles.join(", ")}`);
   return {summary, generatedFiles};
 });
-
-/**
- * Legacy invoker over {@link generateArtifacts} for the unmigrated selfhost command.
- *
- * @remarks Deleted in cohort 6 (Task 6.4), when selfhost calls the Effect directly; the image
- * command already does (Task 6.3).
- */
-export const generateArtifactsCommand: CommandInvoker<GenerateArtifactsInput, ArtifactGenerationResult> = legacyInvoker(
-  "generate",
-  generateArtifacts,
-  () => 0,
-);
