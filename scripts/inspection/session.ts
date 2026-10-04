@@ -8,6 +8,26 @@ import {Clock, Context, Deferred, Effect, Exit, Scope} from "effect";
 import type {InspectionOutcome, InspectionProviders, InspectionRequirements, InspectionSession} from "./types.ts";
 
 /**
+ * Stamps an outcome with the elapsed `Clock.currentTimeMillis` of the effect producing it.
+ *
+ * @remarks
+ * Providers build every outcome with a placeholder `durationMs` and wrap their body in this
+ * function, so the duration always spans the whole observation, including its final projection.
+ * A non-finite or negative elapsed time is reported as `0`.
+ *
+ * @param body - The effect producing the outcome.
+ * @returns The same outcome with `durationMs` set to the elapsed time.
+ */
+export function timed<T, E, R>(body: Effect.Effect<InspectionOutcome<T>, E, R>): Effect.Effect<InspectionOutcome<T>, E, R> {
+  return Effect.gen(function* () {
+    const startedAt = yield* Clock.currentTimeMillis;
+    const outcome = yield* body;
+    const elapsed = (yield* Clock.currentTimeMillis) - startedAt;
+    return {...outcome, durationMs: Number.isFinite(elapsed) ? Math.max(0, elapsed) : 0};
+  });
+}
+
+/**
  * Creates a process-local {@link InspectionSession} that memoizes each provider's outcome by key.
  *
  * @remarks
@@ -41,12 +61,7 @@ export function createInspectionSession<TFacts extends object>(
     const cache = new Map<keyof TFacts, Deferred.Deferred<InspectionOutcome<unknown>>>();
 
     const measured = <Key extends keyof TFacts>(key: Key): Effect.Effect<InspectionOutcome<TFacts[Key]>> =>
-      Effect.gen(function* () {
-        const startedAt = yield* Clock.currentTimeMillis;
-        const outcome = yield* Effect.scoped(providers[key]);
-        const elapsed = (yield* Clock.currentTimeMillis) - startedAt;
-        return {...outcome, durationMs: Number.isFinite(elapsed) ? Math.max(0, elapsed) : 0};
-      }).pipe(Effect.provideContext(context));
+      timed(Effect.scoped(providers[key])).pipe(Effect.provideContext(context));
 
     const inspect = <Key extends keyof TFacts>(key: Key): Effect.Effect<InspectionOutcome<TFacts[Key]>> =>
       Effect.uninterruptibleMask((restore) =>

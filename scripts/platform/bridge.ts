@@ -12,19 +12,15 @@
  * `readToolingConfig`, `writeToolingConfig`) that cohort 7 converts: they hand those helpers
  * legacy-shaped capabilities backed by the Effect services, preserving the legacy error `code`s
  * the helpers branch on. {@link createLegacyInspectionRuntime} is the legacy Promise view of the
- * Effect `Inspection` service that the legacy command scopes expose as `runtime.inspection`, and
- * {@link legacyInspectionCapabilities} gives the Promise inspection providers (converted in Task
- * 4.3) legacy views over the Effect inspection services. The bridge exists only while both command
- * models coexist and is deleted in cohort 7.
+ * Effect `Inspection` service that the legacy command scopes expose as `runtime.inspection`. The
+ * bridge exists only while both command models coexist and is deleted in cohort 7.
  */
 
 import {join} from "node:path";
 
 import {
   Cause,
-  Clock,
   Context,
-  Duration,
   Effect,
   Exit,
   Fiber,
@@ -40,25 +36,15 @@ import {
 
 import type {CommandExecution, CommandInvocationOptions, CommandInvoker, CommandPresentation} from "../common/commander.ts";
 import {
-  RunnerError,
-  type ProcessOutcome,
-  type ProcessRequest as LegacyProcessRequest,
-  type ProcessRunner,
-  type ProcessRunOptions,
-  type SucceededProcessOutcome,
-} from "../common/runner.ts";
-import {
   commandCancellationFromSignal,
   DefaultTaskScheduler,
   FILE_SYSTEM_MAX_BYTES_EXCEEDED_CODE,
   FileSystemError,
   linkAbortSignals,
-  type Clock as LegacyClock,
   type DirectoryEntry,
   type FileMetadata,
   type FileSystem as LegacyFileSystem,
   type ReadOnlyFileSystem as LegacyReadOnlyFileSystem,
-  type RuntimeEnvironment,
   type TaskScheduler,
 } from "../common/runtime.ts";
 import type {ContainerEngine} from "../container-runtime/types.ts";
@@ -74,19 +60,10 @@ import {
 } from "../inspection/repository.ts";
 import type {InspectionOutcome} from "../inspection/types.ts";
 import {Environment, EnvironmentLive} from "./Environment.ts";
-import {MaxBytesExceeded, ReadOnlyFiles, TemporaryDirectories, writeTextAtomic, type Glob} from "./Files.ts";
+import {MaxBytesExceeded, ReadOnlyFiles, writeTextAtomic, type Glob} from "./Files.ts";
 import {makeNodeLayer, type PlatformServices} from "./layers.ts";
 import {resolveColor, type OutputSettingsShape} from "./Output.ts";
-import {
-  Process,
-  processErrorEvidence,
-  ProcessExited,
-  ProcessSignalled,
-  ProcessSpawnFailed,
-  ProcessTimedOut,
-  type ProcessError,
-  type ProcessOptions,
-} from "./Process.ts";
+import {processErrorEvidence, ProcessExited, ProcessSignalled, ProcessSpawnFailed, ProcessTimedOut, type ProcessError} from "./Process.ts";
 
 /** Builds the platform layer for one bridged invocation from its output settings. */
 export type LayerFactory = (settings: OutputSettingsShape) => Layer.Layer<PlatformServices>;
@@ -473,8 +450,8 @@ export const legacyReadOnlyFiles: Effect.Effect<LegacyReadOnlyFileSystem, never,
  * `ERR_FS_EISDIR` otherwise); `createTemporaryDirectory` creates a directory under the platform
  * temporary root whose `remove` deletes it recursively. Deleted in cohort 7.
  */
-export const legacyFileSystem: Effect.Effect<LegacyFileSystem, never, FileSystem.FileSystem | Path.Path | Glob | ReadOnlyFiles> = Effect.gen(
-  function* () {
+export const legacyFileSystem: Effect.Effect<LegacyFileSystem, never, FileSystem.FileSystem | Path.Path | Glob | ReadOnlyFiles> =
+  Effect.gen(function* () {
     const context = yield* Effect.context<FileSystem.FileSystem | Path.Path | Glob | ReadOnlyFiles>();
     const fs = yield* FileSystem.FileSystem;
     const run = legacyFileRunner(context);
@@ -540,8 +517,7 @@ export const legacyFileSystem: Effect.Effect<LegacyFileSystem, never, FileSystem
         ),
       setMode: (path, mode) => run("setMode", path, fs.chmod(path, mode)),
     };
-  },
-);
+  });
 
 /**
  * The shared legacy task scheduler handed to shared Promise helpers (for example
@@ -549,198 +525,6 @@ export const legacyFileSystem: Effect.Effect<LegacyFileSystem, never, FileSystem
  * Deleted in cohort 7.
  */
 export const legacyTaskScheduler: TaskScheduler = new DefaultTaskScheduler();
-
-/** Runs one effect as a promise; aborting `signal` interrupts it. */
-type LegacyEffectRunner<R> = <A, E>(effect: Effect.Effect<A, E, R>, signal?: AbortSignal) => Promise<Exit.Exit<A, E>>;
-
-/**
- * Maps a `Process.run` failure to the equivalent legacy failed `ProcessOutcome`.
- *
- * @param error - The process failure.
- * @returns The legacy outcome; a spawn failure keeps the failure `message` the legacy runner reported.
- */
-function toLegacyProcessOutcome(error: ProcessError): Exclude<ProcessOutcome, SucceededProcessOutcome> {
-  const output = {stdout: error.stdout, stderr: error.stderr, durationMs: error.durationMs};
-  switch (error._tag) {
-    case "ProcessExited":
-      return {kind: "exited", exitCode: error.exitCode, ...output};
-    case "ProcessSignalled":
-      return {kind: "signalled", signal: error.signal as NodeJS.Signals, ...output};
-    case "ProcessSpawnFailed":
-      return {kind: "spawn-failed", message: error.message, ...output};
-    case "ProcessTimedOut":
-      return {kind: "timed-out", ...output};
-  }
-}
-
-/**
- * Merges legacy runner options the way the legacy scoped runner does: per-call values win, and
- * environment overrides merge key by key.
- *
- * @param defaults - Scoped defaults.
- * @param overrides - Per-call options.
- * @returns The effective options.
- */
-function mergeLegacyRunOptions(defaults: Readonly<ProcessRunOptions>, overrides: Readonly<ProcessRunOptions>): ProcessRunOptions {
-  const env = defaults.env === undefined && overrides.env === undefined ? undefined : {...defaults.env, ...overrides.env};
-  return {...defaults, ...overrides, ...(env === undefined ? {} : {env})};
-}
-
-/**
- * Builds a legacy {@link ProcessRunner} view over the Effect {@link Process} service.
- *
- * @param process - The Effect process service.
- * @param run - Runs each call with the captured context.
- * @param baseSignal - Signal every call is additionally linked to.
- * @param defaults - Options applied under every call's own options.
- * @returns The legacy runner view.
- */
-function processRunnerView(
-  process: Process["Service"],
-  run: LegacyEffectRunner<never>,
-  baseSignal: AbortSignal,
-  defaults: Readonly<ProcessRunOptions>,
-): ProcessRunner {
-  const runProcess = async (request: Readonly<LegacyProcessRequest>, options: Readonly<ProcessRunOptions> = {}): Promise<ProcessOutcome> => {
-    const effective = mergeLegacyRunOptions(defaults, options);
-    const link = linkAbortSignals(baseSignal, effective.signal);
-    try {
-      const processOptions: ProcessOptions = {
-        ...(effective.cwd === undefined ? {} : {cwd: effective.cwd}),
-        ...(effective.env === undefined ? {} : {env: effective.env}),
-        ...(effective.output === undefined ? {} : {output: effective.output}),
-        ...(effective.input === undefined ? {} : {input: effective.input}),
-        ...(effective.timeoutMs === undefined ? {} : {timeout: Duration.millis(effective.timeoutMs)}),
-        echo: effective.logCommands === true,
-        failureOutput: "full",
-      };
-      const exit = await run(
-        process.run({command: request.command, args: request.args}, processOptions).pipe(
-          Effect.map((result): ProcessOutcome => ({kind: "succeeded", exitCode: 0, ...result})),
-          Effect.catch((error) => Effect.succeed<ProcessOutcome>(toLegacyProcessOutcome(error))),
-        ),
-        link.signal,
-      );
-      if (Exit.isSuccess(exit)) {
-        return exit.value;
-      }
-      if (Cause.hasInterruptsOnly(exit.cause)) {
-        return {kind: "cancelled", stdout: "", stderr: "", durationMs: 0};
-      }
-      throw Cause.squash(exit.cause);
-    } finally {
-      link.dispose();
-    }
-  };
-  return {
-    run: runProcess,
-    expectSuccess: async (request, options) => {
-      const outcome = await runProcess(request, options);
-      if (outcome.kind === "succeeded") {
-        return outcome;
-      }
-      throw new RunnerError(request, outcome);
-    },
-    scope: (scoped) => processRunnerView(process, run, baseSignal, mergeLegacyRunOptions(defaults, scoped)),
-  };
-}
-
-/**
- * Legacy capabilities of a Promise inspection provider, backed by the Effect inspection services.
- * Deleted in Task 4.3, once every provider is an Effect.
- */
-export interface LegacyInspectionCapabilities {
-  /** Legacy read-only filesystem view over `ReadOnlyFiles`. */
-  readonly files: LegacyReadOnlyFileSystem;
-  /** Legacy temporary-directory view over `TemporaryDirectories`. */
-  readonly temporaryDirectories: Pick<LegacyFileSystem, "createTemporaryDirectory">;
-  /** Legacy process runner view over `Process`. */
-  readonly runner: ProcessRunner;
-  /** Legacy clock view over the Effect `Clock`. */
-  readonly clock: LegacyClock;
-  /** The shared legacy task scheduler. */
-  readonly tasks: TaskScheduler;
-  /** The `Environment` snapshot. */
-  readonly environment: RuntimeEnvironment;
-  /** Aborted when the owning scope closes. */
-  readonly signal: AbortSignal;
-  /** Runs an effect that requires nothing; the promise rejects with the squashed failure. */
-  readonly runPromise: <A>(effect: Effect.Effect<A>) => Promise<A>;
-}
-
-/** Services {@link legacyInspectionCapabilities} reads. */
-type LegacyInspectionServices = ReadOnlyFiles | TemporaryDirectories | Process | Environment | Scope.Scope;
-
-/**
- * Legacy Promise capabilities for the Promise inspection providers, over the Effect inspection
- * services of the current context.
- *
- * @remarks
- * Captures the current context once. `signal` is aborted when the current scope closes, and every
- * process the `runner` view starts is linked to it, so closing the owning session scope stops the
- * providers' in-flight processes. The `runner` view maps a `Process.run` failure to the legacy
- * `ProcessOutcome` (`exited`, `signalled`, `spawn-failed` with the failure message, `timed-out`),
- * keeping the full captured output as the legacy runner did, and an interruption to `cancelled`.
- * Each temporary directory lives in a child of the current scope,
- * and its `remove` closes that child. The `clock` view reads the Effect `Clock`, so the test clock
- * applies. Deleted in Task 4.3.
- */
-export const legacyInspectionCapabilities: Effect.Effect<LegacyInspectionCapabilities, never, LegacyInspectionServices> = Effect.gen(
-  function* () {
-    const context = yield* Effect.context<LegacyInspectionServices>();
-    const scope = Context.get(context, Scope.Scope);
-    const controller = new AbortController();
-    yield* Effect.addFinalizer(() =>
-      Effect.sync(() => {
-        controller.abort();
-      }),
-    );
-    const runExit = Effect.runPromiseExitWith(context);
-    const run: LegacyEffectRunner<never> = (effect, signal = controller.signal) => runExit(effect, {signal});
-    const runPromise = async <A>(effect: Effect.Effect<A>): Promise<A> => {
-      const exit = await run(effect);
-      if (Exit.isSuccess(exit)) {
-        return exit.value;
-      }
-      throw Cause.squash(exit.cause);
-    };
-    const clock = yield* Clock.clockWith(Effect.succeed);
-    const temporaryDirectories = yield* TemporaryDirectories;
-    const fileRunner = legacyFileRunner(context);
-    return {
-      files: readOnlyView(yield* ReadOnlyFiles, fileRunner),
-      temporaryDirectories: {
-        createTemporaryDirectory: (prefix) =>
-          fileRunner(
-            "createTemporaryDirectory",
-            prefix,
-            Effect.gen(function* () {
-              const child = yield* Scope.fork(scope);
-              const path = yield* temporaryDirectories
-                .make(prefix)
-                .pipe(Scope.provide(child), Effect.onError(() => Scope.close(child, Exit.void)));
-              return {path, remove: () => runPromise(Scope.close(child, Exit.void))};
-            }),
-          ),
-      },
-      runner: processRunnerView(yield* Process, run, controller.signal, {}),
-      clock: {
-        monotonicNow: () => clock.currentTimeMillisUnsafe(),
-        isoTimestamp: () => new Date(clock.currentTimeMillisUnsafe()).toISOString(),
-        delay: async (milliseconds, signal) => {
-          const exit = await run(Effect.sleep(Duration.millis(milliseconds)), signal ?? controller.signal);
-          if (Exit.isFailure(exit)) {
-            throw signal?.aborted === true ? commandCancellationFromSignal(signal) : Cause.squash(exit.cause);
-          }
-        },
-      },
-      tasks: legacyTaskScheduler,
-      environment: yield* Environment,
-      signal: controller.signal,
-      runPromise,
-    };
-  },
-);
 
 /** Legacy Promise view of one repository inspection session. Deleted in cohort 7. */
 export interface LegacyRepositoryInspectionSession {
@@ -788,7 +572,10 @@ export function createLegacyInspectionRuntime(
 ): LegacyRepositoryInspectionRuntime & {readonly dispose: () => Promise<void>} {
   const {signal} = options;
   const runtime = ManagedRuntime.make(makeLayer({mode: "silent", verbose: false, color: false, context: "inspection"}));
-  const sessions = new Map<string, {readonly request: Readonly<RepositoryInspectionRequest>; readonly session: LegacyRepositoryInspectionSession}>();
+  const sessions = new Map<
+    string,
+    {readonly request: Readonly<RepositoryInspectionRequest>; readonly session: LegacyRepositoryInspectionSession}
+  >();
 
   const throwIfCancelled = (): void => {
     if (signal?.aborted === true) {

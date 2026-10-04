@@ -7,12 +7,14 @@
 import {mkdir, mkdtemp, rm, symlink, writeFile} from "node:fs/promises";
 import {tmpdir} from "node:os";
 import {dirname, join, resolve} from "node:path";
+
+import {Effect} from "effect";
+import {TestClock} from "effect/testing";
 import {afterEach, describe, expect, it, vi} from "vitest";
 
-import type {ProcessOutcome, ProcessOutput, ProcessRunner} from "../common/runner.ts";
-import {nodeFileSystem} from "../common/runtime.node.ts";
-import {asReadOnlyFileSystem, DefaultTaskScheduler, type Clock} from "../common/runtime.ts";
-import {createInspectionProbeRunner} from "./probes.ts";
+import {makeTestLayer, runScoped, scriptedOutcomes, type ProbeOutcomeResponder} from "../platform/testing.ts";
+import {inspectionProbeRunner, type ProbeOutcome} from "./probes.ts";
+import type {InspectionOutcome, InspectionProvider} from "./types.ts";
 import {
   INSPECTED_PACKAGE_NAMES,
   NPM_PROBLEM_FACT_LIMIT,
@@ -28,56 +30,49 @@ afterEach(async () => {
   await Promise.all(temporaryRoots.splice(0).map(async (root) => rm(root, {recursive: true, force: true})));
 });
 
-const testFiles = asReadOnlyFileSystem(nodeFileSystem);
-const testTasks = new DefaultTaskScheduler();
+/** Output fields every scripted probe outcome carries. */
+type ProbeOutput = Pick<ProbeOutcome, "stdout" | "stderr" | "durationMs">;
 
-function succeeded(patch: Partial<ProcessOutput> = {}): ProcessOutcome {
+function succeeded(patch: Partial<ProbeOutput> = {}): ProbeOutcome {
   return {kind: "succeeded", exitCode: 0, stdout: "", stderr: "", durationMs: 1, ...patch};
 }
 
-function exited(exitCode: number, patch: Partial<ProcessOutput> = {}): ProcessOutcome {
+function exited(exitCode: number, patch: Partial<ProbeOutput> = {}): ProbeOutcome {
   return {kind: "exited", exitCode, stdout: "", stderr: "", durationMs: 1, ...patch};
 }
 
-function spawnFailed(message: string, patch: Partial<ProcessOutput> = {}): ProcessOutcome {
+function spawnFailed(message: string, patch: Partial<ProbeOutput> = {}): ProbeOutcome {
   return {kind: "spawn-failed", message, stdout: "", stderr: "", durationMs: 1, ...patch};
 }
 
-function timedOut(patch: Partial<ProcessOutput> = {}): ProcessOutcome {
+function timedOut(patch: Partial<ProbeOutput> = {}): ProbeOutcome {
   return {kind: "timed-out", stdout: "", stderr: "", durationMs: 1, ...patch};
 }
 
-function signalled(signal: NodeJS.Signals, patch: Partial<ProcessOutput> = {}): ProcessOutcome {
+function signalled(signal: NodeJS.Signals, patch: Partial<ProbeOutput> = {}): ProbeOutcome {
   return {kind: "signalled", signal, stdout: "", stderr: "", durationMs: 1, ...patch};
 }
 
-function clock(): Clock {
-  let current = 100;
-  return {
-    monotonicNow: (): number => {
-      current += 5;
-      return current;
-    },
-    isoTimestamp: (): string => "2025-01-01T00:00:00.000Z",
-    delay: (): Promise<void> => Promise.resolve(),
-  };
+/**
+ * Runs a provider over the real filesystem (fixtures live in real temporary directories), the test
+ * clock, and the scripted processes.
+ *
+ * @param provider - The provider under test.
+ * @param respond - Answers every process request; unscripted by default.
+ * @returns The provider outcome.
+ */
+async function invokeProvider<T>(provider: InspectionProvider<T>, respond?: ProbeOutcomeResponder): Promise<InspectionOutcome<T>> {
+  const harness = makeTestLayer({fileSystem: "node", processes: respond === undefined ? [] : [scriptedOutcomes(respond)]});
+  return runScoped(provider, harness.layer);
 }
 
-function npmHarness(outcome: ProcessOutcome): Readonly<{
-  probes: ReturnType<typeof createInspectionProbeRunner>;
-  run: ReturnType<typeof vi.fn<ProcessRunner["run"]>>;
+function npmHarness(outcome: ProbeOutcome): Readonly<{
+  probes: typeof inspectionProbeRunner;
+  run: ReturnType<typeof vi.fn<ProbeOutcomeResponder>>;
+  invoke: <T>(provider: InspectionProvider<T>) => Promise<InspectionOutcome<T>>;
 }> {
-  const run = vi.fn<ProcessRunner["run"]>(async () => outcome);
-  const runner: ProcessRunner = {
-    run,
-    expectSuccess: () => {
-      throw new Error("Inspection probes never call expectSuccess.");
-    },
-    scope: () => {
-      throw new Error("Inspection probes never scope the shared runner.");
-    },
-  };
-  return {probes: createInspectionProbeRunner(runner), run};
+  const run = vi.fn<ProbeOutcomeResponder>(async () => outcome);
+  return {probes: inspectionProbeRunner, run, invoke: async (provider) => invokeProvider(provider, run)};
 }
 
 async function createTemporaryRoot(prefix: string): Promise<string> {
@@ -121,9 +116,9 @@ describe("createNpmTreeProvider", () => {
       }),
     );
     const root = resolve(tmpdir(), "npm-tree-large-fixture");
-    const provider = createNpmTreeProvider({scope: "root", root, probes: harness.probes, clock: clock()});
+    const provider = createNpmTreeProvider({scope: "root", root, probes: harness.probes});
 
-    const outcome = await provider();
+    const outcome = await harness.invoke(provider);
 
     expect(outcome.kind).toBe("available");
     if (outcome.kind !== "available") {
@@ -164,10 +159,9 @@ describe("createNpmTreeProvider", () => {
       scope: "github-scripts",
       root: resolve(tmpdir(), "github-scripts-fixture"),
       probes: harness.probes,
-      clock: clock(),
     });
 
-    await expect(provider()).resolves.toEqual({
+    await expect(harness.invoke(provider)).resolves.toEqual({
       kind: "available",
       value: {
         scope: "github-scripts",
@@ -176,7 +170,7 @@ describe("createNpmTreeProvider", () => {
         problemCount: 0,
         problems: [],
       },
-      durationMs: 5,
+      durationMs: 0,
     });
   });
 
@@ -186,48 +180,36 @@ describe("createNpmTreeProvider", () => {
       scope: "root",
       root: resolve(tmpdir(), "npm-provider-reuse-fixture"),
       probes: harness.probes,
-      clock: clock(),
     });
 
-    await expect(provider()).resolves.toMatchObject({kind: "available"});
-    await expect(provider()).resolves.toMatchObject({kind: "available"});
+    await expect(harness.invoke(provider)).resolves.toMatchObject({kind: "available"});
+    await expect(harness.invoke(provider)).resolves.toMatchObject({kind: "available"});
 
     expect(harness.run).toHaveBeenCalledTimes(2);
   });
 
-  it("measures duration only after npm JSON projection finishes", async () => {
-    const events: string[] = [];
-    let current = 100;
-    const outcomeFixture: ProcessOutcome = {
-      kind: "succeeded",
-      exitCode: 0,
-      get stdout(): string {
-        events.push("project");
-        return JSON.stringify({dependencies: {react: {version: "19.2.8"}}});
-      },
-      stderr: "",
-      durationMs: 1,
-    };
-    const harness = npmHarness(outcomeFixture);
+  it("measures duration across the npm probe and its JSON projection", async () => {
+    const harness = makeTestLayer({
+      fileSystem: "node",
+      processes: [
+        {
+          match: () => true,
+          respond: () =>
+            TestClock.adjust("5 millis").pipe(
+              Effect.as({stdout: JSON.stringify({dependencies: {react: {version: "19.2.8"}}}), stderr: "", durationMs: 5}),
+            ),
+        },
+      ],
+    });
     const provider = createNpmTreeProvider({
       scope: "root",
       root: resolve(tmpdir(), "npm-duration-fixture"),
-      probes: harness.probes,
-      clock: {
-        monotonicNow: (): number => {
-          events.push("clock");
-          current += 5;
-          return current;
-        },
-        isoTimestamp: (): string => "2025-01-01T00:00:00.000Z",
-        delay: (): Promise<void> => Promise.resolve(),
-      },
+      probes: inspectionProbeRunner,
     });
 
-    const outcome = await provider();
+    const outcome = await runScoped(provider, harness.layer);
 
-    expect(outcome).toMatchObject({kind: "available", durationMs: 5});
-    expect(events).toEqual(["clock", "project", "clock"]);
+    expect(outcome).toMatchObject({kind: "available", value: {packageCount: 1}, durationMs: 5});
   });
 
   it("keeps valid nonzero npm JSON as bounded dependency-problem facts", async () => {
@@ -250,10 +232,9 @@ describe("createNpmTreeProvider", () => {
       scope: "root",
       root: resolve(tmpdir(), "npm-nonzero-fixture"),
       probes: harness.probes,
-      clock: clock(),
     });
 
-    const outcome = await provider();
+    const outcome = await harness.invoke(provider);
 
     expect(outcome.kind).toBe("available");
     if (outcome.kind !== "available") {
@@ -281,10 +262,9 @@ describe("createNpmTreeProvider", () => {
       scope: "root",
       root: resolve(tmpdir(), "npm-error-fallback-fixture"),
       probes: harness.probes,
-      clock: clock(),
     });
 
-    const outcome = await provider();
+    const outcome = await harness.invoke(provider);
 
     expect(outcome).toMatchObject({
       kind: "available",
@@ -309,10 +289,9 @@ describe("createNpmTreeProvider", () => {
       scope: "root",
       root: resolve(tmpdir(), "npm-invalid-fixture"),
       probes: harness.probes,
-      clock: clock(),
     });
 
-    const outcome = await provider();
+    const outcome = await harness.invoke(provider);
 
     expect(outcome.kind).toBe("invalid");
     expect(JSON.stringify(outcome)).not.toContain("raw-output-marker");
@@ -328,10 +307,9 @@ describe("createNpmTreeProvider", () => {
       scope: "root",
       root: resolve(tmpdir(), "npm-unavailable-fixture"),
       probes: harness.probes,
-      clock: clock(),
     });
 
-    const outcome = await provider();
+    const outcome = await harness.invoke(provider);
 
     expect(outcome.kind).toBe("unavailable");
     expect(JSON.stringify(outcome)).not.toMatch(/raw-(?:spawn|timeout|signal)-marker/iu);
@@ -401,12 +379,9 @@ describe("createInstalledPackageProvider", () => {
     const provider = createInstalledPackageProvider({
       root,
       packageNames: ["react", "@arolariu/components"],
-      clock: clock(),
-      files: testFiles,
-      tasks: testTasks,
     });
 
-    await expect(provider()).resolves.toEqual({
+    await expect(invokeProvider(provider)).resolves.toEqual({
       kind: "available",
       value: {
         installed: {
@@ -415,7 +390,7 @@ describe("createInstalledPackageProvider", () => {
         },
         malformed: [],
       },
-      durationMs: 5,
+      durationMs: 0,
     });
   });
 
@@ -433,17 +408,14 @@ describe("createInstalledPackageProvider", () => {
     const provider = createInstalledPackageProvider({
       root,
       packageNames: ["linked-package"],
-      clock: clock(),
-      files: testFiles,
-      tasks: testTasks,
     });
 
-    const outcome = await provider();
+    const outcome = await invokeProvider(provider);
 
     expect(outcome).toEqual({
       kind: "available",
       value: {installed: {"linked-package": {version: "1.2.3"}}, malformed: []},
-      durationMs: 5,
+      durationMs: 0,
     });
     expect(JSON.stringify(outcome)).not.toContain(externalRoot);
   });
@@ -463,12 +435,9 @@ describe("createInstalledPackageProvider", () => {
     const provider = createInstalledPackageProvider({
       root,
       packageNames: ["react", "next"],
-      clock: clock(),
-      files: testFiles,
-      tasks: testTasks,
     });
 
-    const outcome = await provider();
+    const outcome = await invokeProvider(provider);
 
     expect(outcome.kind).toBe("invalid");
     if (outcome.kind !== "invalid") {
@@ -484,17 +453,14 @@ describe("createInstalledPackageProvider", () => {
     const provider = createInstalledPackageProvider({
       root: rawRoot,
       packageNames: ["../secret-package"],
-      clock: clock(),
-      files: testFiles,
-      tasks: testTasks,
     });
 
-    const outcome = await provider();
+    const outcome = await invokeProvider(provider);
 
     expect(outcome).toEqual({
       kind: "invalid",
       issues: ["Installed package inventory contains an invalid requested package name."],
-      durationMs: 5,
+      durationMs: 0,
     });
     expect(JSON.stringify(outcome)).not.toContain("secret-package");
   });
@@ -505,17 +471,14 @@ describe("createInstalledPackageProvider", () => {
     const provider = createInstalledPackageProvider({
       root,
       packageNames: ["react"],
-      clock: clock(),
-      files: testFiles,
-      tasks: testTasks,
     });
 
-    const outcome = await provider();
+    const outcome = await invokeProvider(provider);
 
     expect(outcome).toEqual({
       kind: "unavailable",
       reason: "One or more requested installed package manifests could not be inspected.",
-      durationMs: 5,
+      durationMs: 0,
     });
     expect(JSON.stringify(outcome)).not.toContain(root);
   });
@@ -525,15 +488,12 @@ describe("createInstalledPackageProvider", () => {
     const provider = createInstalledPackageProvider({
       root,
       packageNames: ["react"],
-      clock: clock(),
-      files: testFiles,
-      tasks: testTasks,
     });
 
-    await expect(provider()).resolves.toEqual({
+    await expect(invokeProvider(provider)).resolves.toEqual({
       kind: "available",
       value: {installed: {}, malformed: []},
-      durationMs: 5,
+      durationMs: 0,
     });
   });
 });

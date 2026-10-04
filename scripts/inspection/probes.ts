@@ -5,8 +5,8 @@
  * @remarks
  * {@link inspectionProbeRunner} runs a registered probe through the Effect `Process` service and
  * maps every process failure to {@link ProbeOutcome} data. {@link createInspectionProbeRunner} is
- * the temporary legacy Promise runner over the legacy `ProcessRunner`, kept only for the Promise
- * providers (converted in Task 4.3) and the legacy Doctor modules (converted in Task 4.4).
+ * the temporary legacy Promise runner over the legacy `ProcessRunner`, kept only for the legacy
+ * Doctor modules (converted in Task 4.4).
  */
 
 import {Duration, Effect} from "effect";
@@ -199,8 +199,8 @@ function outputOf(error: ProbeOutput): ProbeOutput {
  *
  * @remarks
  * Forces captured output, applies the bounded default timeout, and preserves `cwd`, `env`, and
- * `signal` unchanged. Deleted in Task 4.4, once the Promise providers (Task 4.3) and the legacy
- * Doctor modules (Task 4.4) run on {@link inspectionProbeRunner}.
+ * `signal` unchanged. Deleted in Task 4.4, once the legacy Doctor modules run on
+ * {@link inspectionProbeRunner}.
  *
  * @param runner - Shared process runner used to execute the resolved command.
  * @returns A legacy probe runner whose `run` resolves with the runner's typed `ProcessOutcome`.

@@ -10,11 +10,13 @@
 
 import {isAbsolute, join, relative, resolve, sep} from "node:path";
 
-import type {ProcessOutcome} from "../common/runner.ts";
-import type {LegacyInspectionProbeRunner as InspectionProbeRunner} from "./probes.ts";
-import {probes} from "./probes.ts";
-import type {LegacyInspectionProvider as InspectionProvider, LegacyInspectionProviderContext as InspectionProviderContext} from "./legacy-provider.ts";
-import type {InspectionOutcome} from "./types.ts";
+import {Effect, Result} from "effect";
+
+import type {ReadOnlyFiles} from "../platform/Files.ts";
+import {fileErrorCode, readText, realPath} from "./files.ts";
+import {probes, type InspectionProbeRunner, type ProbeOutcome} from "./probes.ts";
+import {timed} from "./session.ts";
+import type {InspectionProvider} from "./types.ts";
 
 /** Lock-domain identity for one full npm dependency-tree inspection. */
 export type NpmTreeScope = "root" | "github-scripts";
@@ -102,8 +104,7 @@ type PackageResolution =
 class NpmTreeProjectionError extends Error {}
 
 const PACKAGE_NAME_PATTERN = /^(?:@[A-Za-z0-9][A-Za-z0-9._-]*\/)?[A-Za-z0-9][A-Za-z0-9._-]*$/u;
-const PACKAGE_SPEC_PATTERN =
-  /(?:^|[\s:,])((?:@[A-Za-z0-9][A-Za-z0-9._-]*\/)?[A-Za-z0-9][A-Za-z0-9._-]*)@[^\s,]+/u;
+const PACKAGE_SPEC_PATTERN = /(?:^|[\s:,])((?:@[A-Za-z0-9][A-Za-z0-9._-]*\/)?[A-Za-z0-9][A-Za-z0-9._-]*)@[^\s,]+/u;
 const NPM_CODE_PATTERN = /^[A-Za-z][A-Za-z0-9_-]{0,63}$/u;
 const CONTROL_CHARACTER_PATTERN = /[\u0000-\u001f\u007f]/u;
 const MAX_PACKAGE_NAME_LENGTH = 214;
@@ -115,11 +116,6 @@ function isRecord(value: unknown): value is UnknownRecord {
 
 function compareText(left: string, right: string): number {
   return left < right ? -1 : left > right ? 1 : 0;
-}
-
-function elapsedMilliseconds(startedAt: number, now: () => number): number {
-  const elapsed = now() - startedAt;
-  return Number.isFinite(elapsed) ? Math.max(0, elapsed) : 0;
 }
 
 function isSafePackageName(value: string): boolean {
@@ -256,10 +252,6 @@ function projectNpmTree(document: unknown, scope: NpmTreeScope, exitCode: number
   };
 }
 
-function hasErrorCode(error: unknown, code: string): boolean {
-  return error instanceof Error && "code" in error && error.code === code;
-}
-
 function normalizeWorkspaceRoot(repositoryRoot: string, packageRoot: string): string | undefined {
   const relativeRoot = relative(repositoryRoot, packageRoot);
   if (relativeRoot === ".." || relativeRoot.startsWith(`..${sep}`) || isAbsolute(relativeRoot)) {
@@ -273,68 +265,71 @@ function normalizeWorkspaceRoot(repositoryRoot: string, packageRoot: string): st
   return normalized === "" ? "." : normalized;
 }
 
-async function resolveInstalledPackage(
-  files: InspectionProviderContext["files"],
+/**
+ * Resolves the installed manifest of one requested package.
+ *
+ * @param repositoryRoot - Resolved repository root.
+ * @param canonicalRepositoryRoot - Canonical repository root used for workspace-link detection.
+ * @param packageName - Requested, already validated package name.
+ * @returns The package resolution; every file failure is classified, never raised.
+ */
+function resolveInstalledPackage(
   repositoryRoot: string,
   canonicalRepositoryRoot: string,
   packageName: string,
-): Promise<PackageResolution> {
-  const packageRoot = join(repositoryRoot, "node_modules", ...packageName.split("/"));
-  let source: string;
-  try {
-    source = await files.readText(join(packageRoot, "package.json"));
-  } catch (error: unknown) {
-    return hasErrorCode(error, "ENOENT")
-      ? {kind: "missing", name: packageName}
-      : {kind: "unavailable", name: packageName};
-  }
+): Effect.Effect<PackageResolution, never, ReadOnlyFiles> {
+  return Effect.gen(function* () {
+    const packageRoot = join(repositoryRoot, "node_modules", ...packageName.split("/"));
+    const source = yield* Effect.result(readText(join(packageRoot, "package.json")));
+    if (Result.isFailure(source)) {
+      return fileErrorCode(source.failure) === "ENOENT" ? {kind: "missing", name: packageName} : {kind: "unavailable", name: packageName};
+    }
 
-  let manifest: unknown;
-  try {
-    manifest = JSON.parse(source);
-  } catch {
-    return {kind: "malformed", name: packageName};
-  }
+    let manifest: unknown;
+    try {
+      manifest = JSON.parse(source.success);
+    } catch {
+      return {kind: "malformed", name: packageName};
+    }
 
-  if (!isRecord(manifest) || manifest["name"] !== packageName) {
-    return {kind: "malformed", name: packageName};
-  }
+    if (!isRecord(manifest) || manifest["name"] !== packageName) {
+      return {kind: "malformed", name: packageName};
+    }
 
-  const version = manifest["version"];
-  if (
-    typeof version !== "string"
-    || version.trim() === ""
-    || version.length > MAX_PACKAGE_VERSION_LENGTH
-    || CONTROL_CHARACTER_PATTERN.test(version)
-  ) {
-    return {kind: "malformed", name: packageName};
-  }
+    const version = manifest["version"];
+    if (
+      typeof version !== "string"
+      || version.trim() === ""
+      || version.length > MAX_PACKAGE_VERSION_LENGTH
+      || CONTROL_CHARACTER_PATTERN.test(version)
+    ) {
+      return {kind: "malformed", name: packageName};
+    }
 
-  let canonicalPackageRoot: string;
-  try {
-    canonicalPackageRoot = await files.realPath(packageRoot);
-  } catch {
-    return {kind: "unavailable", name: packageName};
-  }
+    const canonicalPackageRoot = yield* Effect.result(realPath(packageRoot));
+    if (Result.isFailure(canonicalPackageRoot)) {
+      return {kind: "unavailable", name: packageName};
+    }
 
-  const workspaceRoot = normalizeWorkspaceRoot(canonicalRepositoryRoot, canonicalPackageRoot);
-  return {
-    kind: "installed",
-    name: packageName,
-    fact: {
-      version: version.trim(),
-      ...(workspaceRoot === undefined ? {} : {workspaceRoot}),
-    },
-  };
+    const workspaceRoot = normalizeWorkspaceRoot(canonicalRepositoryRoot, canonicalPackageRoot.success);
+    return {
+      kind: "installed",
+      name: packageName,
+      fact: {
+        version: version.trim(),
+        ...(workspaceRoot === undefined ? {} : {workspaceRoot}),
+      },
+    };
+  });
 }
 
 /**
- * Maps one probe {@link ProcessOutcome} onto the numeric exit code the npm tree projection expects.
+ * Maps one probe {@link ProbeOutcome} onto the numeric exit code the npm tree projection expects.
  *
  * @param outcome - Typed outcome of the npm dependency-tree probe.
  * @returns `0` for success, the reported exit code for a completed nonzero exit, `1` otherwise.
  */
-function completedExitCode(outcome: Readonly<ProcessOutcome>): number {
+function completedExitCode(outcome: Readonly<ProbeOutcome>): number {
   switch (outcome.kind) {
     case "succeeded":
       return 0;
@@ -343,18 +338,17 @@ function completedExitCode(outcome: Readonly<ProcessOutcome>): number {
     case "spawn-failed":
     case "timed-out":
     case "signalled":
-    case "cancelled":
       return 1;
   }
 }
 
 /**
- * Classifies one npm probe {@link ProcessOutcome} exhaustively into its bounded unavailable reason.
+ * Classifies one npm probe {@link ProbeOutcome} exhaustively into its bounded unavailable reason.
  *
  * @param outcome - Typed outcome of the npm dependency-tree probe.
  * @returns The bounded reason, or `undefined` when the probe produced parseable output.
  */
-function npmTransportReason(outcome: Readonly<ProcessOutcome>): string | undefined {
+function npmTransportReason(outcome: Readonly<ProbeOutcome>): string | undefined {
   switch (outcome.kind) {
     case "succeeded":
     case "exited":
@@ -364,7 +358,6 @@ function npmTransportReason(outcome: Readonly<ProcessOutcome>): string | undefin
     case "timed-out":
       return "npm dependency inspection timed out.";
     case "signalled":
-    case "cancelled":
       return "npm dependency inspection was interrupted.";
   }
 }
@@ -372,126 +365,125 @@ function npmTransportReason(outcome: Readonly<ProcessOutcome>): string | undefin
 /**
  * Creates a provider for one lock domain's full npm dependency tree.
  *
- * @param input - Scope, lock-domain root, opaque probe runner, and monotonic clock capability.
+ * @param input - Scope, lock-domain root, and opaque probe runner.
  * @returns A provider that emits bounded dependency-tree facts or an explicit unavailable/invalid outcome.
  */
-export function createNpmTreeProvider(input: Readonly<Pick<InspectionProviderContext, "clock"> & {
-  scope: NpmTreeScope;
-  root: string;
-  probes: InspectionProbeRunner;
-}>): InspectionProvider<NpmTreeFacts> {
-  const now = (): number => input.clock.monotonicNow();
-  return async (): Promise<InspectionOutcome<NpmTreeFacts>> => {
-    const startedAt = now();
-    const outcome = await input.probes.run(probes.workspace.npmTree(), {cwd: resolve(input.root)});
+export function createNpmTreeProvider(
+  input: Readonly<{
+    scope: NpmTreeScope;
+    root: string;
+    probes: InspectionProbeRunner;
+  }>,
+): InspectionProvider<NpmTreeFacts> {
+  return timed(
+    Effect.gen(function* () {
+      const outcome = yield* input.probes.run(probes.workspace.npmTree(), {cwd: resolve(input.root)});
 
-    const transportReason = npmTransportReason(outcome);
-    if (transportReason !== undefined) {
-      return {
-        kind: "unavailable",
-        reason: transportReason,
-        durationMs: elapsedMilliseconds(startedAt, now),
-      };
-    }
+      const transportReason = npmTransportReason(outcome);
+      if (transportReason !== undefined) {
+        return {
+          kind: "unavailable",
+          reason: transportReason,
+          durationMs: 0,
+        };
+      }
 
-    let document: unknown;
-    try {
-      document = JSON.parse(outcome.stdout.trim());
-    } catch {
-      return {
-        kind: "invalid",
-        issues: ["npm dependency inspection did not produce one valid JSON document."],
-        durationMs: elapsedMilliseconds(startedAt, now),
-      };
-    }
+      let document: unknown;
+      try {
+        document = JSON.parse(outcome.stdout.trim());
+      } catch {
+        return {
+          kind: "invalid",
+          issues: ["npm dependency inspection did not produce one valid JSON document."],
+          durationMs: 0,
+        };
+      }
 
-    try {
-      const value = projectNpmTree(document, input.scope, completedExitCode(outcome));
-      return {kind: "available", value, durationMs: elapsedMilliseconds(startedAt, now)};
-    } catch {
-      return {
-        kind: "invalid",
-        issues: ["npm dependency inspection produced malformed tree data."],
-        durationMs: elapsedMilliseconds(startedAt, now),
-      };
-    }
-  };
+      try {
+        const value = projectNpmTree(document, input.scope, completedExitCode(outcome));
+        return {kind: "available", value, durationMs: 0};
+      } catch {
+        return {
+          kind: "invalid",
+          issues: ["npm dependency inspection produced malformed tree data."],
+          durationMs: 0,
+        };
+      }
+    }),
+  );
 }
 
 /**
  * Creates a provider that reads only explicitly requested package manifests from root `node_modules`.
  *
- * @param input - Repository root, requested package names, and the read-only filesystem, clock, and
- * task-scheduler capabilities.
+ * @param input - Repository root and requested package names; manifests are read through
+ * `ReadOnlyFiles`.
  * @returns A provider for deterministic installed-package metadata.
  */
-export function createInstalledPackageProvider(input: Readonly<Pick<InspectionProviderContext, "files" | "clock" | "tasks"> & {
-  root: string;
-  packageNames: readonly string[];
-}>): InspectionProvider<PackageInventoryFacts> {
-  const now = (): number => input.clock.monotonicNow();
-  return async (): Promise<InspectionOutcome<PackageInventoryFacts>> => {
-    const startedAt = now();
-    const packageNames = [...new Set(input.packageNames)].sort(compareText);
-    if (packageNames.some((name) => !isSafePackageName(name))) {
+export function createInstalledPackageProvider(
+  input: Readonly<{
+    root: string;
+    packageNames: readonly string[];
+  }>,
+): InspectionProvider<PackageInventoryFacts> {
+  return timed(
+    Effect.gen(function* () {
+      const packageNames = [...new Set(input.packageNames)].sort(compareText);
+      if (packageNames.some((name) => !isSafePackageName(name))) {
+        return {
+          kind: "invalid",
+          issues: ["Installed package inventory contains an invalid requested package name."],
+          durationMs: 0,
+        };
+      }
+
+      const repositoryRoot = resolve(input.root);
+      const canonicalRepositoryRoot = yield* Effect.result(realPath(repositoryRoot));
+      if (Result.isFailure(canonicalRepositoryRoot)) {
+        return {
+          kind: "unavailable",
+          reason: "The repository root could not be inspected for installed package metadata.",
+          durationMs: 0,
+        };
+      }
+
+      const resolutions = yield* Effect.forEach(
+        packageNames,
+        (packageName) => resolveInstalledPackage(repositoryRoot, canonicalRepositoryRoot.success, packageName),
+        {concurrency: "unbounded"},
+      );
+      const unavailable = resolutions.filter((resolution) => resolution.kind === "unavailable");
+      if (unavailable.length > 0) {
+        return {
+          kind: "unavailable",
+          reason: "One or more requested installed package manifests could not be inspected.",
+          durationMs: 0,
+        };
+      }
+
+      const malformed = resolutions
+        .filter((resolution) => resolution.kind === "malformed")
+        .map(({name}) => name)
+        .sort(compareText);
+      if (malformed.length > 0) {
+        return {
+          kind: "invalid",
+          issues: malformed.map((name) => `Installed package metadata is malformed for '${name}'.`),
+          durationMs: 0,
+        };
+      }
+
+      const installed = Object.fromEntries(
+        resolutions
+          .filter((resolution): resolution is Extract<PackageResolution, {readonly kind: "installed"}> => resolution.kind === "installed")
+          .map(({name, fact}) => [name, fact] as const),
+      );
+
       return {
-        kind: "invalid",
-        issues: ["Installed package inventory contains an invalid requested package name."],
-        durationMs: elapsedMilliseconds(startedAt, now),
+        kind: "available",
+        value: {installed, malformed: []},
+        durationMs: 0,
       };
-    }
-
-    const repositoryRoot = resolve(input.root);
-    let canonicalRepositoryRoot: string;
-    try {
-      canonicalRepositoryRoot = await input.files.realPath(repositoryRoot);
-    } catch {
-      return {
-        kind: "unavailable",
-        reason: "The repository root could not be inspected for installed package metadata.",
-        durationMs: elapsedMilliseconds(startedAt, now),
-      };
-    }
-
-    const resolutions = await input.tasks.parallel(
-      packageNames.map(
-        (packageName) => async (): Promise<PackageResolution> =>
-          resolveInstalledPackage(input.files, repositoryRoot, canonicalRepositoryRoot, packageName),
-      ),
-    );
-    const unavailable = resolutions.filter((resolution) => resolution.kind === "unavailable");
-    if (unavailable.length > 0) {
-      return {
-        kind: "unavailable",
-        reason: "One or more requested installed package manifests could not be inspected.",
-        durationMs: elapsedMilliseconds(startedAt, now),
-      };
-    }
-
-    const malformed = resolutions
-      .filter((resolution) => resolution.kind === "malformed")
-      .map(({name}) => name)
-      .sort(compareText);
-    if (malformed.length > 0) {
-      return {
-        kind: "invalid",
-        issues: malformed.map((name) => `Installed package metadata is malformed for '${name}'.`),
-        durationMs: elapsedMilliseconds(startedAt, now),
-      };
-    }
-
-    const installed = Object.fromEntries(
-      resolutions
-        .filter((resolution): resolution is Extract<PackageResolution, {readonly kind: "installed"}> =>
-          resolution.kind === "installed",
-        )
-        .map(({name, fact}) => [name, fact] as const),
-    );
-
-    return {
-      kind: "available",
-      value: {installed, malformed: []},
-      durationMs: elapsedMilliseconds(startedAt, now),
-    };
-  };
+    }),
+  );
 }

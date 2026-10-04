@@ -5,20 +5,18 @@
  *
  * @remarks
  * These tests exercise wiring, not domain correctness: every individual provider already has its
- * own focused test suite. `./aggregate.ts` and `./packages.ts` are partially mocked so the exact
- * number of times their real provider is *invoked* (not merely constructed) is directly
- * observable, which is the only reliable black-box signal for "shared through the same session
- * cache" versus "invoked directly, bypassing memoization" — both `createAggregateProvider` and
- * `createInstalledPackageProvider` otherwise expose no other externally observable per-call
- * signal (the aggregate provider's own process calls are behind an isolated worker process
- * boundary, and the package provider never runs a process at all). Every session runs over the
- * in-memory harness: an empty filesystem and a scripted `Process`.
+ * own focused test suite. Sharing through the session cache is observed at the true external
+ * boundaries: the aggregate provider's runs are its `aggregate-worker.ts` process calls, and the
+ * installed-package provider's runs are its reads of the requested `node_modules` manifests,
+ * recorded by a `ReadOnlyFiles` wrapper over the harness. Every session runs over the in-memory
+ * harness: a filesystem holding one installed manifest and a scripted `Process`.
  */
 
-import {Deferred, Duration, Effect, Exit, Fiber, Scope} from "effect";
-import {beforeEach, describe, expect, it, vi} from "vitest";
+import {Deferred, Duration, Effect, Exit, Fiber, Layer, Scope} from "effect";
+import {describe, expect, it} from "vitest";
 
 import {createRepositoryPaths} from "../common/repository-paths.ts";
+import {ReadOnlyFiles} from "../platform/Files.ts";
 import {ProcessExited, ProcessTimedOut, type ProcessError, type ProcessResult} from "../platform/Process.ts";
 import {effectTest, makeTestLayer, repositoryFixtureRoot, type ScriptedProcess, type TestHarness} from "../platform/testing.ts";
 import {INSPECTED_PACKAGE_NAMES} from "./packages.ts";
@@ -30,47 +28,6 @@ import {
   type RepositoryInspectionKey,
   type RepositoryInspectionRequest,
 } from "./repository.ts";
-
-const packagesProviderState = vi.hoisted(() => ({
-  factoryCalls: 0,
-  invocationCalls: 0,
-  lastPackageNames: undefined as readonly string[] | undefined,
-}));
-
-const aggregateProviderState = vi.hoisted(() => ({
-  factoryCalls: 0,
-  invocationCalls: 0,
-}));
-vi.mock("./packages.ts", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("./packages.ts")>();
-  return {
-    ...actual,
-    createInstalledPackageProvider: (input: Parameters<typeof actual.createInstalledPackageProvider>[0]) => {
-      packagesProviderState.factoryCalls += 1;
-      packagesProviderState.lastPackageNames = input.packageNames;
-      const real = actual.createInstalledPackageProvider(input);
-      return async () => {
-        packagesProviderState.invocationCalls += 1;
-        return real();
-      };
-    },
-  };
-});
-
-vi.mock("./aggregate.ts", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("./aggregate.ts")>();
-  return {
-    ...actual,
-    createAggregateProvider: (input: Parameters<typeof actual.createAggregateProvider>[0]) => {
-      aggregateProviderState.factoryCalls += 1;
-      const real = actual.createAggregateProvider(input);
-      return async () => {
-        aggregateProviderState.invocationCalls += 1;
-        return real();
-      };
-    },
-  };
-});
 
 // ============================================================================
 // Fixtures
@@ -89,8 +46,15 @@ const completedFailure: ScriptedProcess["respond"] = new ProcessExited({
   exitCode: 1,
 });
 
+/** A harness plus the file reads its sessions performed. */
+interface RecordingHarness extends TestHarness {
+  /** Every `ReadOnlyFiles.readFileString` path, in order. */
+  readonly reads: () => readonly string[];
+}
+
 /**
- * Builds a harness whose `Process` answers every request with `respond`.
+ * Builds a harness whose `Process` answers every request with `respond` and whose `ReadOnlyFiles`
+ * records every text read.
  *
  * @param overrides - Platform and scripted response.
  * @returns The harness.
@@ -102,11 +66,57 @@ function harnessFor(
       respond: ScriptedProcess["respond"];
     }>
   > = {},
-): TestHarness {
-  return makeTestLayer({
+): RecordingHarness {
+  const harness = makeTestLayer({
     environment: {platform: overrides.platform ?? "linux", cwd: repositoryPaths.root, isCI: true},
+    files: {"node_modules/react/package.json": JSON.stringify({name: "react", version: "19.2.8"})},
     processes: [{match: () => true, respond: overrides.respond ?? completedFailure}],
   });
+  const reads: string[] = [];
+  const recording = Layer.effect(
+    ReadOnlyFiles,
+    Effect.map(ReadOnlyFiles, (files) =>
+      ReadOnlyFiles.of({
+        ...files,
+        readFileString: (path, encoding) => {
+          reads.push(path);
+          return files.readFileString(path, encoding);
+        },
+      }),
+    ),
+  );
+  return {...harness, layer: recording.pipe(Layer.provideMerge(harness.layer)), reads: () => [...reads]};
+}
+
+/**
+ * Counts the installed-package provider runs a harness observed: each run reads the requested
+ * `react` manifest exactly once.
+ *
+ * @param harness - The harness.
+ * @returns The number of package-inventory runs.
+ */
+function packageInventoryRuns(harness: RecordingHarness): number {
+  return harness.reads().filter((path) => normalizedPath(path).endsWith("/node_modules/react/package.json")).length;
+}
+
+/**
+ * Normalizes a path to `/` separators.
+ *
+ * @param path - The path.
+ * @returns The path with every `\\` replaced by `/`.
+ */
+function normalizedPath(path: string): string {
+  return path.replaceAll("\\", "/");
+}
+
+/**
+ * Counts the aggregate worker processes a harness started.
+ *
+ * @param harness - The harness.
+ * @returns The number of aggregate worker runs.
+ */
+function aggregateWorkerRuns(harness: TestHarness): number {
+  return harness.processCalls().filter((call) => isAggregateWorker(call.request.args)).length;
 }
 
 /**
@@ -129,21 +139,14 @@ function isAggregateWorker(args: readonly string[]): boolean {
   return args.some((arg) => arg.includes("aggregate-worker"));
 }
 
-beforeEach(() => {
-  packagesProviderState.factoryCalls = 0;
-  packagesProviderState.invocationCalls = 0;
-  packagesProviderState.lastPackageNames = undefined;
-  aggregateProviderState.factoryCalls = 0;
-  aggregateProviderState.invocationCalls = 0;
-});
-
 // ============================================================================
 // Tests
 // ============================================================================
 
 describe("createRepositoryInspectionSession aggregate wiring", () => {
+  const sharedHarness = harnessFor();
   effectTest(
-    "shares one aggregate provider invocation between concurrent inspections",
+    "shares one aggregate worker run between concurrent inspections",
     () =>
       Effect.gen(function* () {
         // Arrange
@@ -153,15 +156,14 @@ describe("createRepositoryInspectionSession aggregate wiring", () => {
         yield* Effect.all([session.inspect("aggregate"), session.inspect("aggregate")], {concurrency: 2});
 
         // Assert
-        expect(aggregateProviderState.factoryCalls).toBe(1);
-        expect(aggregateProviderState.invocationCalls).toBe(1);
+        expect(aggregateWorkerRuns(sharedHarness)).toBe(1);
       }),
-    harnessFor().layer,
+    sharedHarness.layer,
   );
 
   const quickHarness = harnessFor();
   effectTest(
-    "never constructs the real aggregate worker provider under the quick profile",
+    "never runs the aggregate worker under the quick profile",
     () =>
       Effect.gen(function* () {
         // Arrange
@@ -169,19 +171,20 @@ describe("createRepositoryInspectionSession aggregate wiring", () => {
 
         // Act
         const outcome = yield* session.inspect("aggregate");
+        yield* session.inspect("aggregate");
+        yield* session.inspect("infrastructure");
 
         // Assert
         expect(outcome.kind).toBe("unavailable");
         if (outcome.kind === "unavailable") {
           expect(outcome.reason).toMatch(/quick/iu);
         }
-        expect(aggregateProviderState.factoryCalls).toBe(0);
-        expect(aggregateProviderState.invocationCalls).toBe(0);
-        expect(quickHarness.processCalls().some((call) => isAggregateWorker(call.request.args))).toBe(false);
+        expect(aggregateWorkerRuns(quickHarness)).toBe(0);
       }),
     quickHarness.layer,
   );
 
+  const cachedHarness = harnessFor();
   effectTest(
     "reuses the already-cached aggregate outcome when infrastructure is inspected afterward",
     () =>
@@ -189,36 +192,44 @@ describe("createRepositoryInspectionSession aggregate wiring", () => {
         // Arrange
         const session = yield* createRepositoryInspectionSession(requestFor("full"));
         yield* session.inspect("aggregate");
-        expect(aggregateProviderState.invocationCalls).toBe(1);
+        expect(aggregateWorkerRuns(cachedHarness)).toBe(1);
 
         // Act
         yield* session.inspect("infrastructure");
 
         // Assert
-        expect(aggregateProviderState.invocationCalls).toBe(1);
+        expect(aggregateWorkerRuns(cachedHarness)).toBe(1);
       }),
-    harnessFor().layer,
+    cachedHarness.layer,
   );
 });
 
 describe("createRepositoryInspectionSession packages wiring", () => {
+  const inventoryHarness = harnessFor();
   effectTest(
-    "creates the packages provider exactly once with the exact INSPECTED_PACKAGE_NAMES inventory",
+    "reads exactly the INSPECTED_PACKAGE_NAMES manifests once",
     () =>
       Effect.gen(function* () {
         // Arrange
         const session = yield* createRepositoryInspectionSession(requestFor("full"));
 
         // Act
-        yield* session.inspect("packages");
+        const outcome = yield* session.inspect("packages");
 
         // Assert
-        expect(packagesProviderState.factoryCalls).toBe(1);
-        expect(packagesProviderState.lastPackageNames).toEqual(INSPECTED_PACKAGE_NAMES);
+        const manifests = inventoryHarness
+          .reads()
+          .map(normalizedPath)
+          .filter((path) => path.includes("/node_modules/"));
+        expect(manifests.toSorted()).toEqual(
+          INSPECTED_PACKAGE_NAMES.map((name) => `${normalizedPath(repositoryPaths.root)}/node_modules/${name}/package.json`).toSorted(),
+        );
+        expect(outcome).toMatchObject({kind: "available", value: {installed: {react: {version: "19.2.8"}}}});
       }),
-    harnessFor().layer,
+    inventoryHarness.layer,
   );
 
+  const sharedInventoryHarness = harnessFor();
   effectTest(
     "shares one memoized packages outcome across concurrent React and Svelte inspections",
     () =>
@@ -232,10 +243,9 @@ describe("createRepositoryInspectionSession packages wiring", () => {
         });
 
         // Assert
-        expect(packagesProviderState.factoryCalls).toBe(1);
-        expect(packagesProviderState.invocationCalls).toBe(1);
+        expect(packageInventoryRuns(sharedInventoryHarness)).toBe(1);
       }),
-    harnessFor().layer,
+    sharedInventoryHarness.layer,
   );
 });
 
@@ -259,6 +269,7 @@ describe("createRepositoryInspectionSession targeted invalidation", () => {
     harnessFor({platform: "aix" as NodeJS.Platform}).layer,
   );
 
+  const reactHarness = harnessFor();
   effectTest(
     "only refreshes React's package facts after both packages and its own key are invalidated",
     () =>
@@ -266,21 +277,22 @@ describe("createRepositoryInspectionSession targeted invalidation", () => {
         // Arrange
         const session = yield* createRepositoryInspectionSession(requestFor("full"));
         yield* session.inspect("react");
-        expect(packagesProviderState.invocationCalls).toBe(1);
+        expect(packageInventoryRuns(reactHarness)).toBe(1);
 
         // Act + Assert: invalidating "packages" alone does not retroactively refresh an already-cached "react".
         yield* session.invalidate("packages");
         yield* session.inspect("react");
-        expect(packagesProviderState.invocationCalls).toBe(1);
+        expect(packageInventoryRuns(reactHarness)).toBe(1);
 
         // Only invalidating both the dependency and the consumer's own key forces a fresh read.
         yield* session.invalidate("packages", "react");
         yield* session.inspect("react");
-        expect(packagesProviderState.invocationCalls).toBe(2);
+        expect(packageInventoryRuns(reactHarness)).toBe(2);
       }),
-    harnessFor().layer,
+    reactHarness.layer,
   );
 
+  const svelteHarness = harnessFor();
   effectTest(
     "only refreshes Svelte's package facts after both packages and its own key are invalidated",
     () =>
@@ -288,18 +300,18 @@ describe("createRepositoryInspectionSession targeted invalidation", () => {
         // Arrange
         const session = yield* createRepositoryInspectionSession(requestFor("full"));
         yield* session.inspect("svelte.cv");
-        expect(packagesProviderState.invocationCalls).toBe(1);
+        expect(packageInventoryRuns(svelteHarness)).toBe(1);
 
         // Act + Assert
         yield* session.invalidate("packages");
         yield* session.inspect("svelte.cv");
-        expect(packagesProviderState.invocationCalls).toBe(1);
+        expect(packageInventoryRuns(svelteHarness)).toBe(1);
 
         yield* session.invalidate("packages", "svelte.cv");
         yield* session.inspect("svelte.cv");
-        expect(packagesProviderState.invocationCalls).toBe(2);
+        expect(packageInventoryRuns(svelteHarness)).toBe(2);
       }),
-    harnessFor().layer,
+    svelteHarness.layer,
   );
 });
 

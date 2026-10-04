@@ -9,12 +9,13 @@ import {tmpdir} from "node:os";
 import {dirname, join, resolve} from "node:path";
 import {afterEach, describe, expect, it, vi} from "vitest";
 
-import type {ProcessEnvironment, ProcessOutcome, ProcessRequest, ProcessRunner} from "../common/runner.ts";
-import {nodeFileSystem} from "../common/runtime.node.ts";
-import {asReadOnlyFileSystem, DefaultTaskScheduler, type Clock, type RuntimeEnvironment} from "../common/runtime.ts";
 import {createRepositoryPaths, type RepositoryPaths} from "../common/repository-paths.ts";
-import {createDotnetProvider} from "./dotnet.ts";
-import {createInspectionProbeRunner} from "./probes.ts";
+import type {EnvironmentSnapshot} from "../platform/Environment.ts";
+import type {ProcessRequest} from "../platform/Process.ts";
+import {makeTestLayer, runScoped, scriptedOutcomes, type ProbeOutcomeResponder} from "../platform/testing.ts";
+import {createDotnetProvider, type DotnetFacts} from "./dotnet.ts";
+import {inspectionProbeRunner, type ProbeOutcome} from "./probes.ts";
+import type {InspectionOutcome} from "./types.ts";
 
 const fixtureRoots: string[] = [];
 const APPHOST_PROJECT = "tooling/AppHost/AppHost.csproj";
@@ -50,7 +51,7 @@ const DOTNET_ENVIRONMENT = {
   DOTNET_SKIP_WORKLOAD_INTEGRITY_CHECK: "true",
 } as const;
 
-/** Legacy-shaped fixture description translated into one typed {@link ProcessOutcome}. */
+/** Legacy-shaped fixture description translated into one typed {@link ProbeOutcome}. */
 interface ProcessOutcomeFixture {
   readonly code?: number;
   readonly stdout?: string;
@@ -62,13 +63,13 @@ interface ProcessOutcomeFixture {
 }
 
 /**
- * Builds one typed {@link ProcessOutcome} from a fixture description, so every suite keeps naming
+ * Builds one typed {@link ProbeOutcome} from a fixture description, so every suite keeps naming
  * the exact spawn/timeout/signal/exit classification it exercises.
  *
  * @param patch - Fixture description of the outcome under test.
  * @returns The equivalent typed process outcome.
  */
-function commandResult(patch: ProcessOutcomeFixture = {}): ProcessOutcome {
+function commandResult(patch: ProcessOutcomeFixture = {}): ProbeOutcome {
   const output = {stdout: patch.stdout ?? "", stderr: patch.stderr ?? "", durationMs: patch.durationMs ?? 1};
   if (patch.spawnError !== undefined) {
     return {kind: "spawn-failed", message: patch.spawnError, ...output};
@@ -83,25 +84,6 @@ function commandResult(patch: ProcessOutcomeFixture = {}): ProcessOutcome {
   return code === 0 ? {kind: "succeeded", exitCode: 0, ...output} : {kind: "exited", exitCode: code, ...output};
 }
 
-/** Wraps one recorded `run` implementation in the full {@link ProcessRunner} probe contract. */
-function asProcessRunner(run: ProcessRunner["run"]): ProcessRunner {
-  return {
-    run,
-    expectSuccess: () => {
-      throw new Error("Inspection probes never call expectSuccess.");
-    },
-    scope: () => {
-      throw new Error("Inspection probes never scope the shared runner.");
-    },
-  };
-}
-
-/** Read-only filesystem capability every fixture provider observes its temporary root through. */
-const testFiles = asReadOnlyFileSystem(nodeFileSystem);
-
-/** Deterministic task scheduler replacing the previous explicit `Promise.all` calls. */
-const testTasks = new DefaultTaskScheduler();
-
 /**
  * Builds one immutable environment snapshot for a fixture provider.
  *
@@ -109,7 +91,7 @@ const testTasks = new DefaultTaskScheduler();
  * @param variables - Environment variables the provider may forward to probes.
  * @returns The environment snapshot.
  */
-function environmentFor(platform: NodeJS.Platform, variables: ProcessEnvironment = {}): RuntimeEnvironment {
+function environmentFor(platform: NodeJS.Platform, variables: EnvironmentSnapshot["variables"] = {}): EnvironmentSnapshot {
   return {
     variables,
     cwd: "/repo",
@@ -124,18 +106,6 @@ function environmentFor(platform: NodeJS.Platform, variables: ProcessEnvironment
 
 function commandKey(command: Readonly<ProcessRequest>, cwd?: string): string {
   return `${cwd ?? ""}\u0000${command.command}\u0000${JSON.stringify(command.args)}`;
-}
-
-function clock(): Clock {
-  let current = 100;
-  return {
-    monotonicNow: (): number => {
-      current += 5;
-      return current;
-    },
-    isoTimestamp: (): string => "2025-01-01T00:00:00.000Z",
-    delay: (): Promise<void> => Promise.resolve(),
-  };
 }
 
 function dotnetInfoOutput(input: Readonly<{sdkVersion?: string; hostVersion?: string; architecture?: string; rid?: string}> = {}): string {
@@ -182,9 +152,9 @@ async function writeRestoreAssets(root: string, projectPath: string, contents = 
 interface DotnetFixture {
   readonly root: string;
   readonly paths: RepositoryPaths;
-  readonly run: ReturnType<typeof vi.fn<ProcessRunner["run"]>>;
-  readonly setResponse: (command: Readonly<ProcessRequest>, result: ProcessOutcome) => void;
-  readonly provider: ReturnType<typeof createDotnetProvider>;
+  readonly run: ReturnType<typeof vi.fn<ProbeOutcomeResponder>>;
+  readonly setResponse: (command: Readonly<ProcessRequest>, result: ProbeOutcome) => void;
+  readonly provider: () => Promise<InspectionOutcome<DotnetFacts>>;
 }
 
 async function createDotnetFixture(platform: NodeJS.Platform = "win32"): Promise<DotnetFixture> {
@@ -208,8 +178,8 @@ async function createDotnetFixture(platform: NodeJS.Platform = "win32"): Promise
     ),
   ]);
 
-  const responses = new Map<string, ProcessOutcome>();
-  const setResponse = (command: Readonly<ProcessRequest>, result: ProcessOutcome): void => {
+  const responses = new Map<string, ProbeOutcome>();
+  const setResponse = (command: Readonly<ProcessRequest>, result: ProbeOutcome): void => {
     responses.set(commandKey(command, root), result);
   };
 
@@ -242,19 +212,14 @@ async function createDotnetFixture(platform: NodeJS.Platform = "win32"): Promise
     }),
   );
 
-  const run = vi.fn<ProcessRunner["run"]>(
-    async (command, options): Promise<ProcessOutcome> =>
+  const run = vi.fn<ProbeOutcomeResponder>(
+    async (command, options): Promise<ProbeOutcome> =>
       responses.get(commandKey(command, options?.cwd))
       ?? commandResult({code: 127, spawnError: `unexpected-command-marker:${command.command}`}),
   );
-  const provider = createDotnetProvider({
-    paths,
-    probes: createInspectionProbeRunner(asProcessRunner(run)),
-    files: testFiles,
-    clock: clock(),
-    tasks: testTasks,
-    environment: environmentFor(platform),
-  });
+  const harness = makeTestLayer({fileSystem: "node", environment: environmentFor(platform), processes: [scriptedOutcomes(run)]});
+  const provider = async (): Promise<InspectionOutcome<DotnetFacts>> =>
+    runScoped(createDotnetProvider({paths, probes: inspectionProbeRunner}), harness.layer);
   return {root, paths, run, setResponse, provider};
 }
 
@@ -290,7 +255,7 @@ describe("createDotnetProvider", () => {
           userSecretKeys: ["Parameters:redis-password", "Unrelated:Marker"],
         },
       },
-      durationMs: 5,
+      durationMs: 0,
     });
     expect(JSON.stringify(outcome)).not.toMatch(/tracked-value-marker|secret-value-marker|other-value-marker|Program Files\\dotnet\\sdk/iu);
 
@@ -326,7 +291,7 @@ describe("createDotnetProvider", () => {
     expect(outcome).toEqual({
       kind: "unavailable",
       reason: "The dotnet executable is unavailable.",
-      durationMs: 5,
+      durationMs: 0,
     });
     expect(JSON.stringify(outcome)).not.toMatch(/raw-user|raw-spawn-marker/iu);
     expect(fixture.run).toHaveBeenCalledTimes(1);
@@ -341,7 +306,7 @@ describe("createDotnetProvider", () => {
     expect(outcome).toEqual({
       kind: "invalid",
       issues: ["dotnet --version returned malformed output."],
-      durationMs: 5,
+      durationMs: 0,
     });
     expect(JSON.stringify(outcome)).not.toContain("selected-version-raw-marker");
   });
@@ -361,7 +326,7 @@ describe("createDotnetProvider", () => {
 
     const outcome = await fixture.provider();
 
-    expect(outcome).toEqual({kind: "invalid", issues: [issue], durationMs: 5});
+    expect(outcome).toEqual({kind: "invalid", issues: [issue], durationMs: 0});
   });
 
   it.each([
@@ -377,7 +342,7 @@ describe("createDotnetProvider", () => {
 
     const outcome = await fixture.provider();
 
-    expect(outcome).toEqual({kind: "invalid", issues: [issue], durationMs: 5});
+    expect(outcome).toEqual({kind: "invalid", issues: [issue], durationMs: 0});
     expect(JSON.stringify(outcome)).not.toMatch(/raw-(?:sdk|workload|nuget|tool|secret)-marker|raw-secret-json-marker/iu);
   });
 
@@ -416,7 +381,7 @@ describe("createDotnetProvider", () => {
 
     const outcome = await fixture.provider();
 
-    expect(outcome).toEqual({kind: "invalid", issues: [issue], durationMs: 5});
+    expect(outcome).toEqual({kind: "invalid", issues: [issue], durationMs: 0});
     expect(JSON.stringify(outcome)).not.toMatch(marker);
   });
 
@@ -429,7 +394,7 @@ describe("createDotnetProvider", () => {
     expect(outcome).toEqual({
       kind: "unavailable",
       reason: "Required .NET host information could not be inspected.",
-      durationMs: 5,
+      durationMs: 0,
     });
     expect(JSON.stringify(outcome)).not.toMatch(/raw-user|raw-timeout-marker/iu);
   });
@@ -874,7 +839,7 @@ describe("createDotnetProvider", () => {
     expect(outcome).toEqual({
       kind: "invalid",
       issues: ["AppHost development configuration is malformed."],
-      durationMs: 5,
+      durationMs: 0,
     });
     expect(JSON.stringify(outcome)).not.toContain("apphost-raw-marker");
   });
@@ -891,7 +856,7 @@ describe("createDotnetProvider", () => {
     expect(outcome).toEqual({
       kind: "invalid",
       issues: ["AppHost development configuration is malformed."],
-      durationMs: 5,
+      durationMs: 0,
     });
   });
 

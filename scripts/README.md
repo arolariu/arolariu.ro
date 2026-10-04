@@ -285,8 +285,9 @@ family by family; until then it runs beside the legacy kernel. Every service key
   (`repositoryInspectionRequestKey`) for the invocation; a request whose key is used by a different request dies with the legacy
   conflict message. Sessions ([`inspection/session.ts`](./inspection/session.ts)) run each fact's provider once in the session scope,
   and [`inspection/probes.ts`](./inspection/probes.ts) `inspectionProbeRunner` reports every probe completion as `ProbeOutcome` data.
-  Until Task 4.3 converts the providers, [`inspection/legacy-provider.ts`](./inspection/legacy-provider.ts) lifts the Promise providers
-  into the Effect session.
+  Every provider is an Effect over `ReadOnlyFiles`, `TemporaryDirectories`, `Process`, and `Environment`
+  ([`inspection/files.ts`](./inspection/files.ts) keeps the `ENOENT`/`missing` observation vocabulary): its processes run as child
+  fibers and its temporary directories live in its own scope, so interrupting a session stops the processes before the directories go.
 - [`Prompts`](./platform/Prompts.ts) — `confirm`, `select`, `text`, and `secret` (returned as `Redacted<string>`) over effect/cli
   `Prompt`. Without an interactive stdin it never reads input: `confirm`/`select` return their default when one is given, and every
   other prompt fails with `PromptUnavailable` carrying the legacy `Cannot request <kind> without an interactive terminal…` message.
@@ -294,9 +295,14 @@ family by family; until then it runs beside the legacy kernel. Every service key
   (output services, `Process`, and `Inspection`).
 - [`testing.ts`](./platform/testing.ts) — `makeTestLayer` (in-memory files and temporary directories, scripted processes, HTTP, and
   prompts, recording sink, fixed environment, `TestClock`) with `output()`, `processCalls()`, `httpCalls()`, and `files()` accessors,
-  and `effectTest`. Scripted prompts follow the same TTY rule as `Prompts`; with `environment: {stdinIsTTY: true}` they consume
+  and `effectTest`. `fileSystem: "node"` serves files, glob, and temporary directories from the real filesystem instead (for fixtures
+  in a real temporary directory, such as symbolic links), and `scriptedOutcomes(respond)` answers every process request from a
+  `ProbeOutcome`-returning responder that sees `{cwd, env, timeoutMs, output}`. Scripted prompts follow the same TTY rule as `Prompts`; with `environment: {stdinIsTTY: true}` they consume
   `prompts` answers in order. With `inspection: {<key>: outcome}`, `Inspection` returns a scripted session that dies with
   `unscripted inspection: <key>` for any other key; otherwise `InspectionLive` runs over the harness services.
+- [`worker.ts`](./platform/worker.ts) — `runWorker` runs a child-process worker (`decode` → `program` → `encode`) with
+  `NodeRuntime.runMain` over the JSON-mode node layer, writes its single document through `Presenter.json`, and exits through
+  `exitCodeFor` (a decode throw is a usage failure, exit `2`, with nothing on stdout); `runWorkerProgram` is its testable core.
 - [`bridge.ts`](./platform/bridge.ts) — temporary interop with the legacy kernel (below).
 
 Write a platform test with one harness per test; unscripted processes, HTTP requests, prompts, and spawns die instead of reaching a real
@@ -335,13 +341,12 @@ The legacy commands still on the command runtime (Doctor and Status until Tasks 
 over a silent `makeNodeLayer`), exposes it as `runtime.inspection`, and registers its `dispose` in the scope's cleanup registry. Its
 `getRepositorySession` is synchronous and keeps the legacy semantics — one `LegacyRepositoryInspectionSession` per request key, the
 legacy conflict error thrown synchronously, `invalidate`/`updateInfrastructureEngine` applied before any later `inspect`, and an aborted
-scope signal rejecting with its `CommandCancellation`. `legacyInspectionCapabilities` gives the Promise providers their legacy
-filesystem, temporary-directory, process-runner, and clock views over the Effect inspection services.
+scope signal rejecting with its `CommandCancellation`.
 
 [`runtime-boundary.test.ts`](./common/runtime-boundary.test.ts) sanctions `scripts/platform/**` — like `runtime.node.ts` — as an owner of
 ambient `process.*`, timer, and `node:*` access, and enforces the platform and CLI rules: `@effect/platform-node` is imported only inside
 `scripts/platform/` and the [`cli.ts`](./cli.ts) entrypoint; Effect runtimes (`Effect.run*`, `ManagedRuntime.make`, `NodeRuntime.runMain`)
-start only in `cli.ts`, `bridge.ts`, `testing.ts`, and `Output.ts`'s synchronous logger sink; no platform module except `bridge.ts`
+start only in `cli.ts`, `platform/worker.ts`, `bridge.ts`, `testing.ts`, and `Output.ts`'s synchronous logger sink; no platform module except `bridge.ts`
 imports the legacy kernel; `effect/cli` is imported only under `scripts/commands/`, by `cli.ts`, by `platform/exit.ts`, and by
 `platform/Prompts.ts`; the effect-native families (`scripts/commands/{generate,rates,docs}/**`, tests included) never import a value from
 the legacy kernel (`common/{runtime,runtime.node,commander,runner,logger,prompts}.ts` or the `common/index.ts` barrel) — a clause-level

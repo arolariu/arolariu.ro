@@ -10,16 +10,19 @@
 
 import {dirname, isAbsolute, relative, resolve, sep} from "node:path";
 
-import {FILE_SYSTEM_MAX_BYTES_EXCEEDED_CODE} from "../common/runtime.ts";
-import type {ProcessEnvironment, ProcessOutcome} from "../common/runner.ts";
-import type {RepositoryPaths} from "../common/repository-paths.ts";
-import type {LegacyInspectionProbeRunner as InspectionProbeRunner} from "./probes.ts";
-import {probes} from "./probes.ts";
-import type {LegacyInspectionProvider as InspectionProvider, LegacyInspectionProviderContext as InspectionProviderContext} from "./legacy-provider.ts";
-import type {InspectionOutcome} from "./types.ts";
+import {Effect, Result, Schema, type PlatformError} from "effect";
 
-/** Read-only filesystem capability every Python inspection helper observes disk through. */
-type InspectionFiles = InspectionProviderContext["files"];
+import type {RepositoryPaths} from "../common/repository-paths.ts";
+import {Environment} from "../platform/Environment.ts";
+import type {ReadOnlyFiles} from "../platform/Files.ts";
+import type {Process} from "../platform/Process.ts";
+import {fileErrorCode, inspectPath, readBytes, realPath, type InspectionFileError} from "./files.ts";
+import {probes, type InspectionProbeRunner, type ProbeOutcome} from "./probes.ts";
+import {timed} from "./session.ts";
+import type {InspectionOutcome, InspectionProvider} from "./types.ts";
+
+/** Environment variables passed to every Python probe. */
+type ProbeEnvironment = Readonly<Record<string, string | undefined>>;
 
 /** One successfully observed Python interpreter candidate. */
 export interface PythonInterpreterFact {
@@ -135,30 +138,28 @@ type ConfigurationDocument =
   | {readonly kind: "unavailable"}
   | {readonly kind: "invalid"};
 
-class PythonInspectionFailure extends Error {
-  public readonly kind: "unavailable" | "invalid";
-  public readonly publicMessage: string;
+/** Internal failure carrying the bounded unavailable/invalid outcome of a Python inspection step. */
+class PythonInspectionFailure extends Schema.TaggedError<PythonInspectionFailure>()("PythonInspectionFailure", {
+  kind: Schema.Literals(["unavailable", "invalid"]),
+  message: Schema.String,
+}) {}
 
-  public constructor(kind: "unavailable" | "invalid", publicMessage: string) {
-    super(publicMessage);
-    this.name = "PythonInspectionFailure";
-    this.kind = kind;
-    this.publicMessage = publicMessage;
-  }
+/**
+ * Builds the failure of a malformed requirements tree.
+ *
+ * @returns The `invalid` failure.
+ */
+function requirementsTreeInvalid(): PythonInspectionFailure {
+  return new PythonInspectionFailure({kind: "invalid", message: "The Python requirements tree is malformed."});
 }
 
-class RequirementsTreeInvalidError extends Error {
-  public constructor() {
-    super("The Python requirements tree is malformed.");
-    this.name = "RequirementsTreeInvalidError";
-  }
-}
-
-class RequirementsTreeUnavailableError extends Error {
-  public constructor() {
-    super("The Python requirements tree could not be read.");
-    this.name = "RequirementsTreeUnavailableError";
-  }
+/**
+ * Builds the failure of an unreadable requirements tree.
+ *
+ * @returns The `unavailable` failure.
+ */
+function requirementsTreeUnavailable(): PythonInspectionFailure {
+  return new PythonInspectionFailure({kind: "unavailable", message: "The Python requirements tree could not be read."});
 }
 
 const SUPPORTED_PLATFORMS: ReadonlySet<NodeJS.Platform> = new Set(["win32", "darwin", "linux"]);
@@ -218,32 +219,23 @@ function isRecord(value: unknown): value is UnknownRecord {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function hasErrorCode(error: unknown, code: string): boolean {
-  return error instanceof Error && "code" in error && error.code === code;
-}
-
 function compareText(left: string, right: string): number {
   return left < right ? -1 : left > right ? 1 : 0;
 }
 
-function elapsedMilliseconds(startedAt: number, now: () => number): number {
-  const elapsed = now() - startedAt;
-  return Number.isFinite(elapsed) ? Math.max(0, elapsed) : 0;
+function unavailableOutcome(reason: string): InspectionOutcome<PythonFacts> {
+  return {kind: "unavailable", reason, durationMs: 0};
 }
 
-function unavailableOutcome(reason: string, startedAt: number, now: () => number): InspectionOutcome<PythonFacts> {
-  return {kind: "unavailable", reason, durationMs: elapsedMilliseconds(startedAt, now)};
+function invalidOutcome(issue: string): InspectionOutcome<PythonFacts> {
+  return {kind: "invalid", issues: [issue], durationMs: 0};
 }
 
-function invalidOutcome(issue: string, startedAt: number, now: () => number): InspectionOutcome<PythonFacts> {
-  return {kind: "invalid", issues: [issue], durationMs: elapsedMilliseconds(startedAt, now)};
-}
-
-function isSuccessfulCommand(outcome: Readonly<ProcessOutcome>): boolean {
+function isSuccessfulCommand(outcome: Readonly<ProbeOutcome>): boolean {
   return outcome.kind === "succeeded";
 }
 
-function hasTransportFailure(outcome: Readonly<ProcessOutcome>): boolean {
+function hasTransportFailure(outcome: Readonly<ProbeOutcome>): boolean {
   switch (outcome.kind) {
     case "succeeded":
     case "exited":
@@ -251,12 +243,11 @@ function hasTransportFailure(outcome: Readonly<ProcessOutcome>): boolean {
     case "spawn-failed":
     case "timed-out":
     case "signalled":
-    case "cancelled":
       return true;
   }
 }
 
-function completedExitCode(outcome: Readonly<ProcessOutcome>): number {
+function completedExitCode(outcome: Readonly<ProbeOutcome>): number {
   switch (outcome.kind) {
     case "succeeded":
       return 0;
@@ -265,12 +256,11 @@ function completedExitCode(outcome: Readonly<ProcessOutcome>): number {
     case "spawn-failed":
     case "timed-out":
     case "signalled":
-    case "cancelled":
       return 1;
   }
 }
 
-function isMissingExecutable(outcome: Readonly<ProcessOutcome>): boolean {
+function isMissingExecutable(outcome: Readonly<ProbeOutcome>): boolean {
   if (completedExitCode(outcome) === 127) {
     return true;
   }
@@ -391,7 +381,7 @@ function parsePythonCommandVersion(output: string): ParsedPythonVersion | undefi
   return version === undefined ? undefined : parsePythonVersionText(version);
 }
 
-function parsePythonVersionResult(outcome: Readonly<ProcessOutcome>): ParsedPythonVersion | undefined {
+function parsePythonVersionResult(outcome: Readonly<ProbeOutcome>): ParsedPythonVersion | undefined {
   return parsePythonCommandVersion(outcome.stdout) ?? parsePythonCommandVersion(outcome.stderr);
 }
 
@@ -507,7 +497,7 @@ function parsePipVersion(output: string): string | undefined {
   return version === undefined ? undefined : parsePep440Version(version)?.normalized;
 }
 
-function parsePipVersionResult(outcome: Readonly<ProcessOutcome>): string | undefined {
+function parsePipVersionResult(outcome: Readonly<ProbeOutcome>): string | undefined {
   return parsePipVersion(outcome.stdout) ?? parsePipVersion(outcome.stderr);
 }
 
@@ -564,7 +554,7 @@ function boundGeneratedFacts(values: readonly string[], omittedLabel: string): r
   return [...values.slice(0, retainedCount), `${String(values.length - retainedCount)} additional ${omittedLabel} were omitted.`];
 }
 
-function projectPipConflicts(outcome: Readonly<ProcessOutcome>): readonly string[] {
+function projectPipConflicts(outcome: Readonly<ProbeOutcome>): readonly string[] {
   if (isSuccessfulCommand(outcome)) {
     return [];
   }
@@ -599,26 +589,35 @@ function repositoryRelativePath(paths: RepositoryPaths, path: string): string | 
   return relativePath.split(sep).join("/");
 }
 
-async function canonicalExperimentalRoot(files: InspectionFiles, paths: RepositoryPaths): Promise<string> {
-  try {
-    const canonicalRoot = await files.realPath(paths.expRoot);
-    const metadata = await files.inspect(canonicalRoot);
+function canonicalExperimentalRoot(paths: RepositoryPaths): Effect.Effect<string, PythonInspectionFailure, ReadOnlyFiles> {
+  const rootFailure = (error: PlatformError.PlatformError): PythonInspectionFailure =>
+    fileErrorCode(error) === "ENOENT"
+      ? new PythonInspectionFailure({kind: "invalid", message: "The Python project root is missing."})
+      : new PythonInspectionFailure({kind: "unavailable", message: "The Python project root could not be inspected."});
+  return Effect.gen(function* () {
+    const canonicalRoot = yield* realPath(paths.expRoot).pipe(Effect.mapError(rootFailure));
+    const metadata = yield* inspectPath(canonicalRoot).pipe(Effect.mapError(rootFailure));
     if (metadata.kind === "missing") {
-      throw new PythonInspectionFailure("invalid", "The Python project root is missing.");
+      return yield* new PythonInspectionFailure({kind: "invalid", message: "The Python project root is missing."});
     }
     if (metadata.kind !== "directory") {
-      throw new PythonInspectionFailure("invalid", "The Python project root is not a directory.");
+      return yield* new PythonInspectionFailure({kind: "invalid", message: "The Python project root is not a directory."});
     }
     return canonicalRoot;
-  } catch (error: unknown) {
-    if (error instanceof PythonInspectionFailure) {
-      throw error;
-    }
-    throw new PythonInspectionFailure(
-      hasErrorCode(error, "ENOENT") ? "invalid" : "unavailable",
-      hasErrorCode(error, "ENOENT") ? "The Python project root is missing." : "The Python project root could not be inspected.",
-    );
+  });
+}
+
+/**
+ * Classifies a failed bounded text read.
+ *
+ * @param error - The file observation failure.
+ * @returns `invalid` for an oversized file, `missing` for `ENOENT`, otherwise `unavailable`.
+ */
+function failedTextObservation(error: InspectionFileError): ContainedTextObservation {
+  if (error._tag === "MaxBytesExceeded") {
+    return {kind: "invalid"};
   }
+  return fileErrorCode(error) === "ENOENT" ? {kind: "missing"} : {kind: "unavailable"};
 }
 
 /**
@@ -626,77 +625,81 @@ async function canonicalExperimentalRoot(files: InspectionFiles, paths: Reposito
  *
  * @remarks
  * The read is bounded by {@link MAX_TEXT_FILE_LENGTH} at the capability boundary, so an oversized
- * file is never fully buffered: {@link ReadOnlyFileSystem.readBytes} reads at most one byte past
- * the limit and reports {@link FILE_SYSTEM_MAX_BYTES_EXCEEDED_CODE}, which is classified as
- * `invalid` exactly as the previous handle-based read did. A non-regular file is `invalid`, a
- * missing path is `missing`, invalid UTF-8 (rejected by the fatal decoder) is `invalid`, and every
- * other filesystem failure is `unavailable`.
+ * file is never fully buffered: the bounded read observes at most one byte past the limit and
+ * fails with `MaxBytesExceeded`, which is classified as `invalid` exactly as the previous
+ * handle-based read did. A non-regular file is `invalid`, a missing path is `missing`, invalid
+ * UTF-8 (rejected by the fatal decoder) is `invalid`, and every other filesystem failure is
+ * `unavailable`.
  *
- * @param files - Read-only filesystem capability.
  * @param path - Already canonical, containment-validated path.
  * @returns The bounded contained-text observation.
  */
-async function readBoundedTextFile(files: InspectionFiles, path: string): Promise<ContainedTextObservation> {
-  let bytes: Uint8Array;
-  try {
-    const metadata = await files.inspect(path);
-    if (metadata.kind === "missing") {
+function readBoundedTextFile(path: string): Effect.Effect<ContainedTextObservation, never, ReadOnlyFiles> {
+  return Effect.gen(function* () {
+    const metadata = yield* Effect.result(inspectPath(path));
+    if (Result.isFailure(metadata)) {
+      return failedTextObservation(metadata.failure);
+    }
+    if (metadata.success.kind === "missing") {
       return {kind: "missing"};
     }
-    if (metadata.kind !== "file") {
+    if (metadata.success.kind !== "file") {
       return {kind: "invalid"};
     }
 
-    bytes = await files.readBytes(path, {maximumBytes: MAX_TEXT_FILE_LENGTH});
-  } catch (error: unknown) {
-    if (hasErrorCode(error, FILE_SYSTEM_MAX_BYTES_EXCEEDED_CODE)) {
+    const bytes = yield* Effect.result(readBytes(path, MAX_TEXT_FILE_LENGTH));
+    if (Result.isFailure(bytes)) {
+      return failedTextObservation(bytes.failure);
+    }
+
+    try {
+      return {kind: "available", contents: new TextDecoder("utf-8", {fatal: true}).decode(bytes.success)};
+    } catch {
       return {kind: "invalid"};
     }
-    return hasErrorCode(error, "ENOENT") ? {kind: "missing"} : {kind: "unavailable"};
-  }
-
-  try {
-    return {kind: "available", contents: new TextDecoder("utf-8", {fatal: true}).decode(bytes)};
-  } catch {
-    return {kind: "invalid"};
-  }
+  });
 }
 
-async function readContainedText(files: InspectionFiles, path: string, canonicalRoot: string): Promise<ContainedTextObservation> {
-  let canonicalPath: string;
-  try {
-    canonicalPath = await files.realPath(path);
-  } catch (error: unknown) {
-    return hasErrorCode(error, "ENOENT") ? {kind: "missing"} : {kind: "unavailable"};
-  }
-  if (!isPathWithin(canonicalRoot, canonicalPath)) {
-    return {kind: "invalid"};
-  }
-  return readBoundedTextFile(files, canonicalPath);
+function readContainedText(path: string, canonicalRoot: string): Effect.Effect<ContainedTextObservation, never, ReadOnlyFiles> {
+  return Effect.gen(function* () {
+    const canonicalPath = yield* Effect.result(realPath(path));
+    if (Result.isFailure(canonicalPath)) {
+      return fileErrorCode(canonicalPath.failure) === "ENOENT" ? {kind: "missing"} : {kind: "unavailable"};
+    }
+    if (!isPathWithin(canonicalRoot, canonicalPath.success)) {
+      return {kind: "invalid"};
+    }
+    return yield* readBoundedTextFile(canonicalPath.success);
+  });
 }
 
-async function readPythonMinimum(files: InspectionFiles, paths: RepositoryPaths, canonicalRoot: string): Promise<PythonMinimum> {
-  const observation = await readContainedText(files, paths.pythonProject, canonicalRoot);
-  if (observation.kind === "missing") {
-    throw new PythonInspectionFailure("invalid", "pyproject.toml is missing.");
-  }
-  if (observation.kind === "unavailable") {
-    throw new PythonInspectionFailure("unavailable", "pyproject.toml could not be read.");
-  }
-  if (observation.kind === "invalid") {
-    throw new PythonInspectionFailure("invalid", "pyproject.toml is not a valid contained project file.");
-  }
+function readPythonMinimum(
+  paths: RepositoryPaths,
+  canonicalRoot: string,
+): Effect.Effect<PythonMinimum, PythonInspectionFailure, ReadOnlyFiles> {
+  return Effect.gen(function* () {
+    const observation = yield* readContainedText(paths.pythonProject, canonicalRoot);
+    if (observation.kind === "missing") {
+      return yield* new PythonInspectionFailure({kind: "invalid", message: "pyproject.toml is missing."});
+    }
+    if (observation.kind === "unavailable") {
+      return yield* new PythonInspectionFailure({kind: "unavailable", message: "pyproject.toml could not be read."});
+    }
+    if (observation.kind === "invalid") {
+      return yield* new PythonInspectionFailure({kind: "invalid", message: "pyproject.toml is not a valid contained project file."});
+    }
 
-  const declarations = [...observation.contents.matchAll(/^\s*requires-python\s*=\s*"([^"]*)"\s*(?:#.*)?$/gmu)];
-  if (declarations.length !== 1) {
-    throw new PythonInspectionFailure("invalid", "pyproject.toml declares an unsupported Python requirement.");
-  }
-  const value = declarations[0]?.[1];
-  const match = value === undefined ? null : PYTHON_REQUIREMENT_PATTERN.exec(value);
-  if (match === null) {
-    throw new PythonInspectionFailure("invalid", "pyproject.toml declares an unsupported Python requirement.");
-  }
-  return {major: Number(match[1]), minor: Number(match[2]), patch: 0};
+    const declarations = [...observation.contents.matchAll(/^\s*requires-python\s*=\s*"([^"]*)"\s*(?:#.*)?$/gmu)];
+    if (declarations.length !== 1) {
+      return yield* new PythonInspectionFailure({kind: "invalid", message: "pyproject.toml declares an unsupported Python requirement."});
+    }
+    const value = declarations[0]?.[1];
+    const match = value === undefined ? null : PYTHON_REQUIREMENT_PATTERN.exec(value);
+    if (match === null) {
+      return yield* new PythonInspectionFailure({kind: "invalid", message: "pyproject.toml declares an unsupported Python requirement."});
+    }
+    return {major: Number(match[1]), minor: Number(match[2]), patch: 0};
+  });
 }
 
 function stripInlineComment(line: string): string {
@@ -966,7 +969,10 @@ function isSafeRequirementInclude(value: string): boolean {
   );
 }
 
-async function parseRequirementsTree(files: InspectionFiles, paths: RepositoryPaths, canonicalRoot: string): Promise<RequirementDetail> {
+function parseRequirementsTree(
+  paths: RepositoryPaths,
+  canonicalRoot: string,
+): Effect.Effect<RequirementDetail, PythonInspectionFailure, ReadOnlyFiles> {
   const declarations: Array<Readonly<{name: string; specifier: string; source: string}>> = [];
   const unverifiable: string[] = [];
   const seenNames = new Set<string>();
@@ -975,113 +981,114 @@ async function parseRequirementsTree(files: InspectionFiles, paths: RepositoryPa
   let fileCount = 0;
   let entryCount = 0;
 
-  const parseFile = async (logicalPath: string): Promise<void> => {
-    let canonicalPath: string;
-    try {
-      canonicalPath = await files.realPath(logicalPath);
-    } catch (error: unknown) {
-      if (hasErrorCode(error, "ENOENT")) {
-        if (logicalPath === paths.pythonRequirements) {
-          throw new PythonInspectionFailure("invalid", "The Python requirements entry file is missing.");
+  const parseFile = (logicalPath: string): Effect.Effect<void, PythonInspectionFailure, ReadOnlyFiles> =>
+    Effect.gen(function* () {
+      const resolvedPath = yield* Effect.result(realPath(logicalPath));
+      if (Result.isFailure(resolvedPath)) {
+        if (fileErrorCode(resolvedPath.failure) === "ENOENT") {
+          if (logicalPath === paths.pythonRequirements) {
+            return yield* new PythonInspectionFailure({kind: "invalid", message: "The Python requirements entry file is missing."});
+          }
+          return yield* requirementsTreeInvalid();
         }
-        throw new RequirementsTreeInvalidError();
+        return yield* requirementsTreeUnavailable();
       }
-      throw new RequirementsTreeUnavailableError();
-    }
-    if (!isPathWithin(canonicalRoot, canonicalPath)) {
-      throw new RequirementsTreeInvalidError();
-    }
-    if (visiting.has(canonicalPath) || visited.has(canonicalPath)) {
-      throw new RequirementsTreeInvalidError();
-    }
-    fileCount += 1;
-    if (fileCount > MAX_REQUIREMENT_FILES) {
-      throw new RequirementsTreeInvalidError();
-    }
-
-    const observation = await readBoundedTextFile(files, canonicalPath);
-    if (observation.kind === "invalid" || observation.kind === "missing") {
-      throw new RequirementsTreeInvalidError();
-    }
-    if (observation.kind === "unavailable") {
-      throw new RequirementsTreeUnavailableError();
-    }
-    const contents = observation.contents;
-
-    const source = repositoryRelativePath(paths, logicalPath);
-    if (source === undefined) {
-      throw new RequirementsTreeInvalidError();
-    }
-
-    visiting.add(canonicalPath);
-    const lines = contents.split(/\r?\n/u);
-    for (let index = 0; index < lines.length; index += 1) {
-      const rawLine = lines[index]!;
-      const withoutComment = rawLine.trimStart().startsWith("#") ? "" : stripInlineComment(rawLine);
-      if (withoutComment === "") {
-        continue;
+      const canonicalPath = resolvedPath.success;
+      if (!isPathWithin(canonicalRoot, canonicalPath)) {
+        return yield* requirementsTreeInvalid();
+      }
+      if (visiting.has(canonicalPath) || visited.has(canonicalPath)) {
+        return yield* requirementsTreeInvalid();
+      }
+      fileCount += 1;
+      if (fileCount > MAX_REQUIREMENT_FILES) {
+        return yield* requirementsTreeInvalid();
       }
 
-      const line = LINE_CONTINUATION_SUFFIX.test(withoutComment)
-        ? withoutComment.replace(LINE_CONTINUATION_SUFFIX, "").trim()
-        : withoutComment;
-      if (line === "") {
-        continue;
+      const observation = yield* readBoundedTextFile(canonicalPath);
+      if (observation.kind === "invalid" || observation.kind === "missing") {
+        return yield* requirementsTreeInvalid();
+      }
+      if (observation.kind === "unavailable") {
+        return yield* requirementsTreeUnavailable();
+      }
+      const contents = observation.contents;
+
+      const source = repositoryRelativePath(paths, logicalPath);
+      if (source === undefined) {
+        return yield* requirementsTreeInvalid();
       }
 
-      entryCount += 1;
-      if (entryCount > MAX_REQUIREMENT_ENTRIES) {
-        throw new RequirementsTreeInvalidError();
-      }
-
-      const includeMatch = REQUIREMENT_INCLUDE_DIRECTIVE.exec(line);
-      if (includeMatch !== null) {
-        const includeValue = includeMatch[1] === undefined ? undefined : parseIncludeValue(includeMatch[1]);
-        if (includeValue === undefined || !isSafeRequirementInclude(includeValue)) {
-          throw new RequirementsTreeInvalidError();
+      visiting.add(canonicalPath);
+      const lines = contents.split(/\r?\n/u);
+      for (let index = 0; index < lines.length; index += 1) {
+        const rawLine = lines[index]!;
+        const withoutComment = rawLine.trimStart().startsWith("#") ? "" : stripInlineComment(rawLine);
+        if (withoutComment === "") {
+          continue;
         }
-        const includedPath = resolve(dirname(logicalPath), includeValue);
-        if (!isPathWithin(paths.expRoot, includedPath)) {
-          throw new RequirementsTreeInvalidError();
+
+        const line = LINE_CONTINUATION_SUFFIX.test(withoutComment)
+          ? withoutComment.replace(LINE_CONTINUATION_SUFFIX, "").trim()
+          : withoutComment;
+        if (line === "") {
+          continue;
         }
-        await parseFile(includedPath);
-        continue;
-      }
-      if (REQUIREMENT_INCLUDE_PREFIX.test(line)) {
-        throw new RequirementsTreeInvalidError();
-      }
 
-      if (line.startsWith("-")) {
-        if (!isSupportedRequirementOption(line)) {
-          throw new RequirementsTreeInvalidError();
+        entryCount += 1;
+        if (entryCount > MAX_REQUIREMENT_ENTRIES) {
+          return yield* requirementsTreeInvalid();
         }
-        unverifiable.push(`${source}:${String(index + 1)} contains a pip option or directive that is not exactly comparable.`);
-        continue;
+
+        const includeMatch = REQUIREMENT_INCLUDE_DIRECTIVE.exec(line);
+        if (includeMatch !== null) {
+          const includeValue = includeMatch[1] === undefined ? undefined : parseIncludeValue(includeMatch[1]);
+          if (includeValue === undefined || !isSafeRequirementInclude(includeValue)) {
+            return yield* requirementsTreeInvalid();
+          }
+          const includedPath = resolve(dirname(logicalPath), includeValue);
+          if (!isPathWithin(paths.expRoot, includedPath)) {
+            return yield* requirementsTreeInvalid();
+          }
+          yield* parseFile(includedPath);
+          continue;
+        }
+        if (REQUIREMENT_INCLUDE_PREFIX.test(line)) {
+          return yield* requirementsTreeInvalid();
+        }
+
+        if (line.startsWith("-")) {
+          if (!isSupportedRequirementOption(line)) {
+            return yield* requirementsTreeInvalid();
+          }
+          unverifiable.push(`${source}:${String(index + 1)} contains a pip option or directive that is not exactly comparable.`);
+          continue;
+        }
+
+        const requirement = parseRequirementEntry(line);
+        if (requirement === undefined || seenNames.has(requirement.name)) {
+          return yield* requirementsTreeInvalid();
+        }
+        seenNames.add(requirement.name);
+        if (requirement.kind === "exact") {
+          declarations.push({name: requirement.name, specifier: requirement.specifier, source});
+        } else {
+          unverifiable.push(
+            `${source}:${String(index + 1)} declares '${requirement.name}' with a requirement that is not exactly comparable.`,
+          );
+        }
       }
 
-      const requirement = parseRequirementEntry(line);
-      if (requirement === undefined || seenNames.has(requirement.name)) {
-        throw new RequirementsTreeInvalidError();
-      }
-      seenNames.add(requirement.name);
-      if (requirement.kind === "exact") {
-        declarations.push({name: requirement.name, specifier: requirement.specifier, source});
-      } else {
-        unverifiable.push(
-          `${source}:${String(index + 1)} declares '${requirement.name}' with a requirement that is not exactly comparable.`,
-        );
-      }
-    }
+      visiting.delete(canonicalPath);
+      visited.add(canonicalPath);
+    });
 
-    visiting.delete(canonicalPath);
-    visited.add(canonicalPath);
-  };
-
-  await parseFile(paths.pythonRequirements);
-  return {
-    declared: declarations,
-    unverifiable: boundGeneratedFacts(unverifiable, "unverifiable requirement entries"),
-  };
+  return parseFile(paths.pythonRequirements).pipe(
+    Effect.map(() => ({
+      declared: declarations,
+      unverifiable: boundGeneratedFacts(unverifiable, "unverifiable requirement entries"),
+    })),
+  );
 }
 
 function compareRequirements(
@@ -1131,183 +1138,162 @@ function parseConfigurationObject(contents: string): readonly string[] | undefin
   return keys;
 }
 
-async function readConfigurationDocument(files: InspectionFiles, path: string, canonicalRoot: string): Promise<ConfigurationDocument> {
-  const observation = await readContainedText(files, path, canonicalRoot);
-  if (observation.kind !== "available") {
-    return observation;
-  }
-  const keys = parseConfigurationObject(observation.contents);
-  return keys === undefined ? {kind: "invalid"} : {kind: "available", keys};
+function readConfigurationDocument(path: string, canonicalRoot: string): Effect.Effect<ConfigurationDocument, never, ReadOnlyFiles> {
+  return Effect.map(readContainedText(path, canonicalRoot), (observation): ConfigurationDocument => {
+    if (observation.kind !== "available") {
+      return observation;
+    }
+    const keys = parseConfigurationObject(observation.contents);
+    return keys === undefined ? {kind: "invalid"} : {kind: "available", keys};
+  });
 }
 
-async function inspectConfiguration(
-  files: InspectionFiles,
-  tasks: InspectionProviderContext["tasks"],
-  paths: RepositoryPaths,
-  canonicalRoot: string,
-): Promise<readonly string[]> {
-  const documents = await tasks.parallel<ConfigurationDocument>([
-    () => readConfigurationDocument(files, resolve(paths.expRoot, "config.template.json"), canonicalRoot),
-    () => readConfigurationDocument(files, resolve(paths.expRoot, "config.docker.json"), canonicalRoot),
-    () => readConfigurationDocument(files, resolve(paths.expRoot, "config.aspire.json"), canonicalRoot),
-  ]);
-  // `tasks.parallel` returns a plain `readonly T[]`, so indexing under `noUncheckedIndexedAccess`
-  // widens each element; the explicit guard keeps every document exactly as narrow as before.
-  const template = documents[0];
-  const docker = documents[1];
-  const aspire = documents[2];
-  if (template === undefined || docker === undefined || aspire === undefined) {
-    throw new PythonInspectionFailure("unavailable", "Python configuration documents could not be inspected.");
-  }
+function inspectConfiguration(paths: RepositoryPaths, canonicalRoot: string): Effect.Effect<readonly string[], never, ReadOnlyFiles> {
+  return Effect.gen(function* () {
+    const [template, docker, aspire] = yield* Effect.all(
+      [
+        readConfigurationDocument(resolve(paths.expRoot, "config.template.json"), canonicalRoot),
+        readConfigurationDocument(resolve(paths.expRoot, "config.docker.json"), canonicalRoot),
+        readConfigurationDocument(resolve(paths.expRoot, "config.aspire.json"), canonicalRoot),
+      ],
+      {concurrency: "unbounded"},
+    );
 
-  const issues: string[] = [];
-  const appendDocumentIssue = (name: string, document: ConfigurationDocument, optional: boolean): void => {
-    if (document.kind === "missing") {
-      if (!optional) {
-        issues.push(`${name} is missing.`);
+    const issues: string[] = [];
+    const appendDocumentIssue = (name: string, document: ConfigurationDocument, optional: boolean): void => {
+      if (document.kind === "missing") {
+        if (!optional) {
+          issues.push(`${name} is missing.`);
+        }
+      } else if (document.kind === "unavailable") {
+        issues.push(`${name} could not be read.`);
+      } else if (document.kind === "invalid") {
+        issues.push(`${name} is not a valid JSON object.`);
       }
-    } else if (document.kind === "unavailable") {
-      issues.push(`${name} could not be read.`);
-    } else if (document.kind === "invalid") {
-      issues.push(`${name} is not a valid JSON object.`);
-    }
-  };
+    };
 
-  appendDocumentIssue("config.template.json", template, false);
-  appendDocumentIssue("config.docker.json", docker, false);
-  appendDocumentIssue("config.aspire.json", aspire, true);
+    appendDocumentIssue("config.template.json", template, false);
+    appendDocumentIssue("config.docker.json", docker, false);
+    appendDocumentIssue("config.aspire.json", aspire, true);
 
-  if (template.kind === "available" && docker.kind === "available") {
-    const dockerKeys = new Set(docker.keys);
-    for (const key of [...template.keys].sort(compareText)) {
-      if (!dockerKeys.has(key)) {
-        issues.push(`config.docker.json is missing required key '${key}'.`);
+    if (template.kind === "available" && docker.kind === "available") {
+      const dockerKeys = new Set(docker.keys);
+      for (const key of [...template.keys].sort(compareText)) {
+        if (!dockerKeys.has(key)) {
+          issues.push(`config.docker.json is missing required key '${key}'.`);
+        }
       }
     }
-  }
-  return boundGeneratedFacts(issues.sort(compareText), "configuration issues");
+    return boundGeneratedFacts(issues.sort(compareText), "configuration issues");
+  });
 }
 
-async function inspectInterpreters(
+function inspectInterpreters(
   input: Readonly<{
     paths: RepositoryPaths;
     probes: InspectionProbeRunner;
-    tasks: InspectionProviderContext["tasks"];
     platform: NodeJS.Platform;
-    environment: ProcessEnvironment;
+    environment: ProbeEnvironment;
   }>,
-): Promise<readonly Readonly<{fact: PythonInterpreterFact; version: ParsedPythonVersion}>[]> {
-  const candidates = pythonCandidates(input.platform);
-  const outcomes = await input.tasks.parallel<ProcessOutcome>(
-    candidates.map(
-      (candidate) => (): Promise<ProcessOutcome> =>
-        input.probes.run(probes.python.version(candidate.command, candidate.selector), {
-          cwd: input.paths.root,
-          env: input.environment,
-        }),
-    ),
-  );
+): Effect.Effect<readonly Readonly<{fact: PythonInterpreterFact; version: ParsedPythonVersion}>[], PythonInspectionFailure, Process> {
+  return Effect.gen(function* () {
+    const observations = yield* Effect.forEach(
+      pythonCandidates(input.platform),
+      (candidate) =>
+        Effect.map(
+          input.probes.run(probes.python.version(candidate.command, candidate.selector), {
+            cwd: input.paths.root,
+            env: input.environment,
+          }),
+          (result) => ({candidate, result}),
+        ),
+      {concurrency: "unbounded"},
+    );
 
-  const facts: Array<Readonly<{fact: PythonInterpreterFact; version: ParsedPythonVersion}>> = [];
-  for (const [index, candidate] of candidates.entries()) {
-    const result = outcomes[index];
-    if (result === undefined) {
-      throw new PythonInspectionFailure("unavailable", "Python interpreter candidates could not be inspected.");
-    }
-    if (result.kind === "timed-out" || result.kind === "signalled" || result.kind === "cancelled") {
-      throw new PythonInspectionFailure("unavailable", "Python interpreter candidates could not be inspected.");
-    }
-    if (result.kind === "spawn-failed") {
-      if (isMissingExecutable(result)) {
+    const facts: Array<Readonly<{fact: PythonInterpreterFact; version: ParsedPythonVersion}>> = [];
+    for (const {candidate, result} of observations) {
+      if (result.kind === "timed-out" || result.kind === "signalled") {
+        return yield* new PythonInspectionFailure({kind: "unavailable", message: "Python interpreter candidates could not be inspected."});
+      }
+      if (result.kind === "spawn-failed") {
+        if (isMissingExecutable(result)) {
+          continue;
+        }
+        return yield* new PythonInspectionFailure({kind: "unavailable", message: "A Python interpreter candidate could not be started."});
+      }
+      if (!isSuccessfulCommand(result)) {
         continue;
       }
-      throw new PythonInspectionFailure("unavailable", "A Python interpreter candidate could not be started.");
-    }
-    if (!isSuccessfulCommand(result)) {
-      continue;
-    }
 
-    const version = parsePythonVersionResult(result);
-    if (version === undefined) {
-      throw new PythonInspectionFailure("invalid", "A Python interpreter version probe returned malformed output.");
+      const version = parsePythonVersionResult(result);
+      if (version === undefined) {
+        return yield* new PythonInspectionFailure({
+          kind: "invalid",
+          message: "A Python interpreter version probe returned malformed output.",
+        });
+      }
+      facts.push({fact: candidateFact(candidate, version), version});
     }
-    facts.push({fact: candidateFact(candidate, version), version});
-  }
-  return facts;
+    return facts;
+  });
 }
 
-async function inspectVenvDirectory(files: InspectionFiles, paths: RepositoryPaths): Promise<boolean> {
-  try {
-    const metadata = await files.inspect(resolve(paths.expRoot, ".venv"));
-    if (metadata.kind === "missing") {
-      return false;
-    }
-    if (metadata.kind !== "directory") {
-      throw new PythonInspectionFailure("invalid", "The canonical Python virtual-environment path is not a directory.");
-    }
-    return true;
-  } catch (error: unknown) {
-    if (error instanceof PythonInspectionFailure) {
-      throw error;
-    }
-    if (hasErrorCode(error, "ENOENT")) {
-      return false;
-    }
-    throw new PythonInspectionFailure("unavailable", "The canonical Python virtual environment could not be inspected.");
-  }
+function inspectVenvDirectory(paths: RepositoryPaths): Effect.Effect<boolean, PythonInspectionFailure, ReadOnlyFiles> {
+  return inspectPath(resolve(paths.expRoot, ".venv")).pipe(
+    Effect.mapError(
+      () => new PythonInspectionFailure({kind: "unavailable", message: "The canonical Python virtual environment could not be inspected."}),
+    ),
+    Effect.flatMap((metadata) => {
+      if (metadata.kind === "missing") {
+        return Effect.succeed(false);
+      }
+      if (metadata.kind !== "directory") {
+        return Effect.fail(
+          new PythonInspectionFailure({kind: "invalid", message: "The canonical Python virtual-environment path is not a directory."}),
+        );
+      }
+      return Effect.succeed(true);
+    }),
+  );
 }
 
 /**
  * Creates one read-only provider for normalized Python, pip, requirement, and configuration facts.
  *
- * @param input - Canonical repository paths, opaque probe runner, and the read-only filesystem,
- * clock, task-scheduler, and environment capabilities.
+ * @param input - Canonical repository paths and the opaque probe runner; files are read through
+ * `ReadOnlyFiles` and the platform through `Environment`.
  * @returns An inspection provider with explicit unavailable/invalid outcomes at command, file, and parse boundaries.
  */
 export function createPythonProvider(
-  input: Readonly<Pick<InspectionProviderContext, "files" | "clock" | "tasks" | "environment"> & {
+  input: Readonly<{
     paths: RepositoryPaths;
     probes: InspectionProbeRunner;
   }>,
 ): InspectionProvider<PythonFacts> {
-  const now = (): number => input.clock.monotonicNow();
-  const platform = input.environment.platform;
-  const {files} = input;
-
-  return async (): Promise<InspectionOutcome<PythonFacts>> => {
-    const startedAt = now();
-    if (!SUPPORTED_PLATFORMS.has(platform)) {
-      return invalidOutcome("The requested Python inspection platform is unsupported.", startedAt, now);
-    }
-
-    try {
-      const canonicalRoot = await canonicalExperimentalRoot(files, input.paths);
-      const environment = pythonProbeEnvironment(platform);
-      const minimum = await readPythonMinimum(files, input.paths, canonicalRoot);
-      const requirementDetail = await parseRequirementsTree(files, input.paths, canonicalRoot);
-
-      let configurationIssues: readonly string[] | undefined;
-      let venvExists: boolean | undefined;
-
-      // Both observations start concurrently, exactly as the previous `Promise.all` did; each task
-      // assigns its own binding so the heterogeneous results keep their exact types.
-      await input.tasks.parallel<void>([
-        async () => {
-          configurationIssues = await inspectConfiguration(files, input.tasks, input.paths, canonicalRoot);
-        },
-        async () => {
-          venvExists = await inspectVenvDirectory(files, input.paths);
-        },
-      ]);
-
-      if (configurationIssues === undefined || venvExists === undefined) {
-        throw new PythonInspectionFailure("unavailable", "The Python inspection did not resolve every repository fact.");
+  return timed(
+    Effect.gen(function* () {
+      const {platform} = yield* Environment;
+      if (!SUPPORTED_PLATFORMS.has(platform)) {
+        return invalidOutcome("The requested Python inspection platform is unsupported.");
       }
 
-      const interpreterDetails = await inspectInterpreters({
+      const canonicalRoot = yield* canonicalExperimentalRoot(input.paths);
+      const environment = pythonProbeEnvironment(platform);
+      const minimum = yield* readPythonMinimum(input.paths, canonicalRoot);
+      const requirementDetail = yield* parseRequirementsTree(input.paths, canonicalRoot);
+
+      // Both observations start concurrently, exactly as the previous `Promise.all` did.
+      const {configurationIssues, venvExists} = yield* Effect.all(
+        {
+          configurationIssues: inspectConfiguration(input.paths, canonicalRoot),
+          venvExists: inspectVenvDirectory(input.paths),
+        },
+        {concurrency: "unbounded"},
+      );
+
+      const interpreterDetails = yield* inspectInterpreters({
         paths: input.paths,
         probes: input.probes,
-        tasks: input.tasks,
         platform,
         environment,
       });
@@ -1321,13 +1307,19 @@ export function createPythonProvider(
       if (venvExists) {
         const relativeInterpreter = platformVenvInterpreter(platform);
         const probeOptions = {cwd: input.paths.expRoot, env: environment};
-        const metadataResult = await input.probes.run(probes.python.metadata(relativeInterpreter), probeOptions);
+        const metadataResult = yield* input.probes.run(probes.python.metadata(relativeInterpreter), probeOptions);
         if (!isSuccessfulCommand(metadataResult)) {
-          throw new PythonInspectionFailure("unavailable", "The Python virtual environment could not be inspected.");
+          return yield* new PythonInspectionFailure({
+            kind: "unavailable",
+            message: "The Python virtual environment could not be inspected.",
+          });
         }
         const metadata = parsePythonMetadata(metadataResult.stdout);
         if (metadata === undefined) {
-          throw new PythonInspectionFailure("invalid", "The Python virtual environment returned malformed metadata.");
+          return yield* new PythonInspectionFailure({
+            kind: "invalid",
+            message: "The Python virtual environment returned malformed metadata.",
+          });
         }
 
         const expectedDirectory = platformVenvDirectory(input.paths.expRoot, platform);
@@ -1345,37 +1337,39 @@ export function createPythonProvider(
         };
 
         if (canonicalIdentity) {
-          const pipVersionResult = await input.probes.run(probes.python.pipVersion(relativeInterpreter), probeOptions);
+          const pipVersionResult = yield* input.probes.run(probes.python.pipVersion(relativeInterpreter), probeOptions);
           if (hasTransportFailure(pipVersionResult)) {
-            throw new PythonInspectionFailure("unavailable", "pip availability could not be inspected.");
+            return yield* new PythonInspectionFailure({kind: "unavailable", message: "pip availability could not be inspected."});
           }
           if (isSuccessfulCommand(pipVersionResult)) {
             const pipVersion = parsePipVersionResult(pipVersionResult);
             if (pipVersion === undefined) {
-              throw new PythonInspectionFailure("invalid", "pip --version returned malformed output.");
+              return yield* new PythonInspectionFailure({kind: "invalid", message: "pip --version returned malformed output."});
             }
 
-            const pipOutcomes = await input.tasks.parallel<ProcessOutcome>([
-              () => input.probes.run(probes.python.pipList(relativeInterpreter), probeOptions),
-              () => input.probes.run(probes.python.pipCheck(relativeInterpreter), probeOptions),
-            ]);
-            // `tasks.parallel` returns a plain `readonly T[]`, so indexing under
-            // `noUncheckedIndexedAccess` widens each element; the guard keeps both exactly as narrow.
-            const pipListResult = pipOutcomes[0];
-            const pipCheckResult = pipOutcomes[1];
-            if (pipListResult === undefined || pipCheckResult === undefined) {
-              throw new PythonInspectionFailure("unavailable", "Installed Python distributions could not be inspected.");
-            }
+            const [pipListResult, pipCheckResult] = yield* Effect.all(
+              [
+                input.probes.run(probes.python.pipList(relativeInterpreter), probeOptions),
+                input.probes.run(probes.python.pipCheck(relativeInterpreter), probeOptions),
+              ],
+              {concurrency: "unbounded"},
+            );
             if (!isSuccessfulCommand(pipListResult)) {
-              throw new PythonInspectionFailure("unavailable", "Installed Python distributions could not be inspected.");
+              return yield* new PythonInspectionFailure({
+                kind: "unavailable",
+                message: "Installed Python distributions could not be inspected.",
+              });
             }
             if (hasTransportFailure(pipCheckResult)) {
-              throw new PythonInspectionFailure("unavailable", "Python dependency conflicts could not be inspected.");
+              return yield* new PythonInspectionFailure({
+                kind: "unavailable",
+                message: "Python dependency conflicts could not be inspected.",
+              });
             }
 
             const installed = parseInstalledDistributions(pipListResult.stdout);
             if (installed === undefined) {
-              throw new PythonInspectionFailure("invalid", "pip list returned malformed package data.");
+              return yield* new PythonInspectionFailure({kind: "invalid", message: "pip list returned malformed package data."});
             }
             pip = {available: true, version: pipVersion, conflicts: projectPipConflicts(pipCheckResult)};
             mismatches = compareRequirements(requirementDetail.declared, installed);
@@ -1395,20 +1389,11 @@ export function createPythonProvider(
         },
         configurationIssues,
       };
-      return {kind: "available", value, durationMs: elapsedMilliseconds(startedAt, now)};
-    } catch (error: unknown) {
-      if (error instanceof RequirementsTreeInvalidError) {
-        return invalidOutcome(error.message, startedAt, now);
-      }
-      if (error instanceof RequirementsTreeUnavailableError) {
-        return unavailableOutcome(error.message, startedAt, now);
-      }
-      if (error instanceof PythonInspectionFailure) {
-        return error.kind === "invalid"
-          ? invalidOutcome(error.publicMessage, startedAt, now)
-          : unavailableOutcome(error.publicMessage, startedAt, now);
-      }
-      throw error;
-    }
-  };
+      return {kind: "available", value, durationMs: 0} satisfies InspectionOutcome<PythonFacts>;
+    }).pipe(
+      Effect.catchTag("PythonInspectionFailure", (failure) =>
+        Effect.succeed(failure.kind === "invalid" ? invalidOutcome(failure.message) : unavailableOutcome(failure.message)),
+      ),
+    ),
+  );
 }

@@ -4,8 +4,7 @@
  *
  * @remarks
  * Every import here is type-only. A provider is an Effect that requires only the read-only
- * {@link InspectionRequirements} services (plus a scope for its own resources); its legacy
- * `InspectionProviderContext` members are now those services.
+ * {@link InspectionRequirements} services (plus a scope for its own resources).
  */
 
 import type {Effect, Scope} from "effect";

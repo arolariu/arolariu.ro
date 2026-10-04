@@ -31,7 +31,9 @@ import {runWorkerProgram, type WorkerOptions} from "./worker.ts";
  * @param overrides - Members replacing the defaults.
  * @returns The worker definition.
  */
-function worker<A, E>(overrides: Partial<WorkerOptions<number, A, E>> & Pick<WorkerOptions<number, A, E>, "program">): WorkerOptions<number, A, E> {
+function worker<A, E>(
+  overrides: Partial<WorkerOptions<number, A, E>> & Pick<WorkerOptions<number, A, E>, "program">,
+): WorkerOptions<number, A, E> {
   return {name: "w", decode: () => 1, encode: (value) => ({value: String(value)}), ...overrides};
 }
 
@@ -189,7 +191,11 @@ describe("runWorker live round trip", () => {
       await Promise.all([
         writeFile(join(root, "nx.json"), "{}\n", "utf8"),
         writeFile(join(root, "package.json"), '{"name": "worker-fixture", "private": true}\n', "utf8"),
-        writeFile(join(root, "libs", "alpha", "project.json"), '{"name": "alpha", "targets": {"build": {"command": "echo build"}}}\n', "utf8"),
+        writeFile(
+          join(root, "libs", "alpha", "project.json"),
+          '{"name": "alpha", "targets": {"build": {"command": "echo build"}}}\n',
+          "utf8",
+        ),
       ]);
       const workerPath = join(repositoryFixtureRoot, "scripts", "inspection", "workspace.worker.ts");
 

@@ -15,26 +15,31 @@
  * unavailable with a fixed, redacted reason identifying the quick profile, so the `envinfo`/
  * `systeminformation` worker process is never spawned.
  *
- * Until Task 4.3 converts the provider modules, every other provider is a Promise provider lifted
- * through the temporary `./legacy-provider.ts` adapter over the bridge's legacy capability views.
- * Closing the session scope interrupts every in-flight provider and stops its processes.
+ * Every provider runs its processes as child fibers and owns its temporary directories in its own
+ * scope, so closing the session scope interrupts every in-flight provider, stops its processes, and
+ * only then removes the directories they used.
  */
 
 import {Effect, type Scope} from "effect";
 
 import type {RepositoryPaths} from "../common/repository-paths.ts";
 import type {ContainerEngine} from "../container-runtime/types.ts";
-import {legacyInspectionCapabilities} from "../platform/bridge.ts";
-import type {AggregateFacts} from "./aggregate.ts";
-import type {DotnetFacts} from "./dotnet.ts";
-import type {ReactFacts, SvelteFacts} from "./frontend.ts";
-import type {InfrastructureFacts} from "./infrastructure.ts";
-import {legacyAggregateProvider, legacyRepositoryProviders} from "./legacy-provider.ts";
-import type {NpmTreeFacts, PackageInventoryFacts} from "./packages.ts";
-import type {PythonFacts} from "./python.ts";
+import {createAggregateProvider, type AggregateFacts} from "./aggregate.ts";
+import {createDotnetProvider, type DotnetFacts} from "./dotnet.ts";
+import {createReactProvider, createSvelteProvider, type FrontendProviderInput, type ReactFacts, type SvelteFacts} from "./frontend.ts";
+import {createInfrastructureProvider, type InfrastructureFacts} from "./infrastructure.ts";
+import {
+  createInstalledPackageProvider,
+  createNpmTreeProvider,
+  INSPECTED_PACKAGE_NAMES,
+  type NpmTreeFacts,
+  type PackageInventoryFacts,
+} from "./packages.ts";
+import {inspectionProbeRunner} from "./probes.ts";
+import {createPythonProvider, type PythonFacts} from "./python.ts";
 import {createInspectionSession} from "./session.ts";
 import type {InspectionOutcome, InspectionProvider, InspectionProviders, InspectionRequirements, InspectionSession} from "./types.ts";
-import type {WorkspaceFacts} from "./workspace.ts";
+import {createWorkspaceProvider, type WorkspaceFacts} from "./workspace.ts";
 
 /** Selects how thoroughly {@link createRepositoryInspectionSession} inspects the repository. */
 export type InspectionProfile = "full" | "quick";
@@ -195,17 +200,33 @@ export function createRepositoryInspectionSession(
   request: Readonly<RepositoryInspectionRequest>,
 ): Effect.Effect<RepositoryInspectionSession, never, InspectionRequirements | Scope.Scope> {
   return Effect.gen(function* () {
-    const capabilities = yield* legacyInspectionCapabilities;
+    const {paths} = request;
     let currentEngine: ContainerEngine | undefined = request.requestedEngine;
 
     // Assigned below, before any provider can run: providers only run once a caller inspects the returned session.
     let session: RepositoryInspectionSession | undefined;
-    const inspect = <K extends RepositoryInspectionKey>(key: K): Promise<InspectionOutcome<RepositoryInspectionFacts[K]>> =>
-      capabilities.runPromise(Effect.suspend(() => (session as RepositoryInspectionSession).inspect(key)));
+    const inspect = <K extends RepositoryInspectionKey>(key: K): Effect.Effect<InspectionOutcome<RepositoryInspectionFacts[K]>> =>
+      Effect.suspend(() => (session as RepositoryInspectionSession).inspect(key));
 
+    const probes = inspectionProbeRunner;
+    const frontendInput: FrontendProviderInput = {paths, packages: inspect("packages"), probes};
     const providers: InspectionProviders<RepositoryInspectionFacts> = {
-      ...legacyRepositoryProviders({request, capabilities, inspect, resolveEngine: () => currentEngine}),
-      aggregate: request.profile === "quick" ? quickAggregateProvider : legacyAggregateProvider({request, capabilities}),
+      workspace: createWorkspaceProvider({root: paths.root}),
+      aggregate: request.profile === "quick" ? quickAggregateProvider : createAggregateProvider({root: paths.root}),
+      "npm.root": createNpmTreeProvider({scope: "root", root: paths.root, probes}),
+      "npm.github-scripts": createNpmTreeProvider({scope: "github-scripts", root: paths.githubScriptsRoot, probes}),
+      packages: createInstalledPackageProvider({root: paths.root, packageNames: INSPECTED_PACKAGE_NAMES}),
+      dotnet: createDotnetProvider({paths, probes}),
+      python: createPythonProvider({paths, probes}),
+      react: createReactProvider(frontendInput),
+      "svelte.cv": createSvelteProvider("cv", frontendInput),
+      "svelte.status": createSvelteProvider("status", frontendInput),
+      infrastructure: createInfrastructureProvider({
+        paths,
+        probes,
+        aggregate: inspect("aggregate"),
+        resolveEngine: () => currentEngine,
+      }),
     };
 
     const base = yield* createInspectionSession(providers);
