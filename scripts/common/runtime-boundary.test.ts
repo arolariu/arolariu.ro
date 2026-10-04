@@ -77,6 +77,7 @@ const sanctionedEffectRunners: readonly string[] = [
   "scripts/platform/Output.ts",
   "scripts/platform/bridge.ts",
   "scripts/platform/testing.ts",
+  "scripts/platform/worker.ts",
 ];
 
 /** Effect runtime entry points; each one starts executing a program outside the caller's fiber. */
