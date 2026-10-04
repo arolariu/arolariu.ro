@@ -1,15 +1,70 @@
 /**
  * @fileoverview Central diagnostic helpers for bounded evidence, error normalization, and diagnostic factories.
- * @module scripts/doctor.diagnostics
+ * @module scripts/commands/doctor/diagnostics
  *
  * @remarks
  * Reusable diagnostic mechanics consumed by the doctor reporter, orchestrator, and specialist
- * modules. Uses type-only imports from `doctor.types.ts` to avoid runtime cycles.
+ * modules. Uses type-only imports from `types.ts` to avoid runtime cycles. {@link monotonicNow} and
+ * {@link moduleRunContext} hand the pure row factories a synchronous monotonic time source read
+ * from the fiber's `Clock` (so every row keeps its legacy `durationMs` semantics) and the
+ * environment snapshot.
  */
 
 import {stripVTControlCharacters} from "node:util";
 
-import type {DiagnosticFix, DiagnosticModuleId, DiagnosticPotentialCause, DiagnosticResult, DiagnosticStatus} from "./types.ts";
+import {Clock, Effect} from "effect";
+
+import {Environment, type EnvironmentSnapshot} from "../../platform/Environment.ts";
+
+import type {
+  DiagnosticFix,
+  DiagnosticModuleId,
+  DiagnosticPotentialCause,
+  DiagnosticResult,
+  DiagnosticStatus,
+  DoctorContext,
+} from "./types.ts";
+
+// ============================================================================
+// Monotonic time
+// ============================================================================
+
+/**
+ * Captures the fiber's `Clock` as a synchronous monotonic time source in milliseconds.
+ *
+ * @remarks
+ * Reads `Clock.monotonicTimeNanosUnsafe`, so durations follow the `TestClock` under test and never
+ * move backward with wall-clock corrections.
+ */
+export const monotonicNow: Effect.Effect<() => number> = Clock.clockWith((clock) =>
+  Effect.succeed((): number => Number(clock.monotonicTimeNanosUnsafe()) / 1_000_000),
+);
+
+/**
+ * A {@link DoctorContext} plus the services one module run reads synchronously: the monotonic time
+ * source its pure row factories stamp `durationMs` with and the environment snapshot.
+ */
+export interface ModuleRunContext extends DoctorContext {
+  /** Monotonic time in milliseconds, read through the fiber's `Clock`. */
+  readonly monotonicNow: () => number;
+  /** The immutable environment snapshot of the run. */
+  readonly environment: EnvironmentSnapshot;
+}
+
+/**
+ * Extends a module context with the monotonic time source and environment snapshot its pure row
+ * factories read.
+ *
+ * @param context - The shared doctor context.
+ * @returns The context plus `monotonicNow` and `environment`.
+ */
+export function moduleRunContext(context: DoctorContext): Effect.Effect<ModuleRunContext, never, Environment> {
+  return Effect.gen(function* () {
+    const environment = yield* Environment;
+    const now = yield* monotonicNow;
+    return {...context, monotonicNow: now, environment};
+  });
+}
 
 // ============================================================================
 // Evidence bounding constants

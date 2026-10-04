@@ -1,10 +1,10 @@
 // @vitest-environment node
 /**
  * @fileoverview Contract tests for read-only .NET diagnostics sourced from shared DotnetFacts.
- * @module scripts.doctor.dotnet.test
+ * @module scripts/commands/doctor/modules/dotnet.test
  *
  * @remarks
- * `doctor.dotnet.ts` is sourced exclusively from `context.inspection.inspect("dotnet")`,
+ * `modules/dotnet.ts` is sourced exclusively from `context.inspection.inspect("dotnet")`,
  * `context.requirements` for version policy, and `context.network.get()` for NuGet reachability.
  * These tests never write a fixture file, spawn a command, or construct a `CommandSpec`: they
  * configure a fake inspection session that returns a deterministic `InspectionOutcome<DotnetFacts>`,
@@ -14,18 +14,20 @@
 
 import {readFileSync} from "node:fs";
 import {resolve} from "node:path";
+import {Clock, Effect, Layer} from "effect";
 import {afterEach, describe, expect, it, vi, type Mock} from "vitest";
 
-import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "../../../common/logger.ts";
 import {createRepositoryPaths} from "../../../common/repository-paths.ts";
 import type {RepositoryRequirements} from "../../../common/requirements.ts";
-import {asReadOnlyFileSystem, type Clock, type RuntimeEnvironment} from "../../../common/runtime.ts";
-import {createMemoryFileSystem} from "../../../common/runtime.testing.ts";
+import {Inspection} from "../../../inspection/Inspection.ts";
+import {inspectionProbeRunner} from "../../../inspection/probes.ts";
+import type {RepositoryInspectionSession} from "../../../inspection/repository.ts";
+import type {EnvironmentSnapshot} from "../../../platform/Environment.ts";
+import {makeTestLayer, runScoped, type TestHarness} from "../../../platform/testing.ts";
 import {dotnetDoctorModule} from "./dotnet.ts";
 import {createDoctorReport} from "../reporter.ts";
-import type {DiagnosticNetworkResult, DiagnosticResult, DoctorContext, DoctorInput} from "../types.ts";
+import {NetworkProbe, type DiagnosticNetworkResult, type DiagnosticResult, type DoctorContext, type DoctorInput} from "../types.ts";
 import type {DotnetFacts} from "../../../inspection/dotnet.ts";
-import type {LegacyRepositoryInspectionSession} from "../../../platform/bridge.ts";
 import type {InspectionOutcome} from "../../../inspection/types.ts";
 
 const DOTNET_IDS = [
@@ -55,18 +57,40 @@ function doctorOptions(patch: Partial<DoctorInput> = {}): DoctorInput {
   return {verbose: false, quick: false, ...patch};
 }
 
-/** Deterministic monotonic clock every fixture context observes. */
-function fixtureClock(): Clock {
-  let current = 0;
+/** A monotonic clock that advances 1 ms on every read, as the legacy fixture clock did; time never elapses on its own. */
+function countingClock(): Clock.Clock {
+  let current = 0n;
+  const tick = (): bigint => (current += 1_000_000n);
   return {
-    monotonicNow: (): number => ++current,
-    isoTimestamp: (): string => "2026-08-29T00:00:00.000Z",
-    delay: (): Promise<void> => Promise.resolve(),
+    currentTimeMillisUnsafe: () => 0,
+    currentTimeMillis: Effect.succeed(0),
+    currentTimeNanosUnsafe: () => 0n,
+    currentTimeNanos: Effect.succeed(0n),
+    monotonicTimeNanosUnsafe: tick,
+    monotonicTimeNanos: Effect.sync(tick),
+    sleep: () => Effect.never,
+  };
+}
+
+/**
+ * Wraps a session so every inspected key is recorded.
+ *
+ * @param session - The harness session.
+ * @param inspected - Receives every inspected key, in order.
+ * @returns The recording session.
+ */
+function recordingSession(session: RepositoryInspectionSession, inspected: string[]): RepositoryInspectionSession {
+  return {
+    ...session,
+    inspect: (key) => {
+      inspected.push(key);
+      return session.inspect(key);
+    },
   };
 }
 
 /** Immutable environment snapshot every fixture context observes. */
-function fixtureEnvironment(variables: Readonly<Record<string, string | undefined>> = {}): RuntimeEnvironment {
+function fixtureEnvironment(variables: Readonly<Record<string, string | undefined>> = {}): EnvironmentSnapshot {
   return {
     variables,
     cwd: "C:\\fixture\\arolariu.ro",
@@ -109,9 +133,14 @@ function resultById(results: readonly DiagnosticResult[], id: string): Diagnosti
 }
 
 interface DotnetFixture {
-  readonly context: DoctorContext;
-  readonly inspect: Mock<(key: string) => Promise<InspectionOutcome<unknown>>>;
-  readonly probeRun: Mock<(...args: readonly unknown[]) => Promise<never>>;
+  /** Runs the module once against the fixture. */
+  readonly run: () => Promise<readonly DiagnosticResult[]>;
+  /** Every inspected key, in order. */
+  readonly inspected: readonly string[];
+  /** The harness; its process calls must stay empty. */
+  readonly harness: TestHarness;
+  /** Records every network probe request. */
+  readonly networkGet: Mock<NetworkProbe["Service"]["get"]>;
 }
 
 function createDotnetFixture(
@@ -129,19 +158,9 @@ function createDotnetFixture(
     durationMs: 0,
   };
 
-  const inspect = vi.fn(async (key: string): Promise<InspectionOutcome<unknown>> => {
-    if (key !== "dotnet") {
-      throw new Error(`Unexpected inspection key requested: '${key}'.`);
-    }
-    return outcome;
-  });
-
-  const probeRun = vi.fn(async (): Promise<never> => {
-    throw new Error("doctor.dotnet.ts must never call context.probes.");
-  });
-
-  const networkGet = vi.fn(
-    async (): Promise<DiagnosticNetworkResult> =>
+  const harness = makeTestLayer({inspection: {dotnet: outcome}, environment: fixtureEnvironment(input.env ?? {})});
+  const networkGet = vi.fn<NetworkProbe["Service"]["get"]>(() =>
+    Effect.succeed<DiagnosticNetworkResult>(
       input.networkResult ?? {
         status: "reachable",
         statusCode: 200,
@@ -151,30 +170,32 @@ function createDotnetFixture(
           resources: [{"@id": "https://api.nuget.org/v3-flatcontainer/", "@type": "PackageBaseAddress/3.0.0"}],
         }),
       },
+    ),
   );
 
-  const sink = new InMemoryLoggerSink();
-  const context: DoctorContext = {
-    options: doctorOptions(input.options),
-    paths: createRepositoryPaths(process.cwd()),
-    requirements:
-      input.requirements === "invalid"
-        ? {status: "invalid", errors: [".nvmrc disagrees with package.json#engines.node"]}
-        : {status: "valid", requirements: input.requirements ?? validRequirements()},
-    network: {get: networkGet},
-    logger: new MonorepositoryConsoleLogger("doctor::dotnet", {color: false, sink}),
-    files: asReadOnlyFileSystem(createMemoryFileSystem()),
-    clock: fixtureClock(),
-    environment: fixtureEnvironment(input.env ?? {}),
-    probes: {run: probeRun as unknown as DoctorContext["probes"]["run"]},
-    inspection: {
-      inspect: inspect as unknown as LegacyRepositoryInspectionSession["inspect"],
-      invalidate: vi.fn(),
-      updateInfrastructureEngine: vi.fn(),
-    } as LegacyRepositoryInspectionSession,
-  };
+  const inspected: string[] = [];
+  const paths = createRepositoryPaths(process.cwd());
+  const layer = Layer.merge(harness.layer, Layer.succeed(NetworkProbe, NetworkProbe.of({get: networkGet})));
+  const run = (): Promise<readonly DiagnosticResult[]> =>
+    runScoped(
+      Effect.gen(function* () {
+        const session = yield* (yield* Inspection).session({profile: "full", paths});
+        const context: DoctorContext = {
+          options: doctorOptions(input.options),
+          paths,
+          requirements:
+            input.requirements === "invalid"
+              ? {status: "invalid", errors: [".nvmrc disagrees with package.json#engines.node"]}
+              : {status: "valid", requirements: input.requirements ?? validRequirements()},
+          inspection: recordingSession(session, inspected),
+          probes: inspectionProbeRunner,
+        };
+        return yield* Effect.provideService(dotnetDoctorModule.run(context), Clock.Clock, countingClock());
+      }),
+      layer,
+    );
 
-  return {context, inspect, probeRun};
+  return {run, inspected, harness, networkGet};
 }
 
 afterEach(() => {
@@ -220,30 +241,30 @@ describe("dotnetDoctorModule", () => {
   it("returns every stable dotnet check in order for a healthy baseline", async () => {
     const fixture = createDotnetFixture();
 
-    const results = await dotnetDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     expect(resultIds(results)).toEqual([...DOTNET_IDS]);
     for (const result of results) {
       expect(result.status, `${result.id} should pass`).toBe("pass");
       expect(result.module).toBe("dotnet");
     }
-    expect(fixture.inspect).toHaveBeenCalledExactlyOnceWith("dotnet");
+    expect(fixture.inspected).toEqual(["dotnet"]);
   });
 
   it("never calls context.probes in normal mode", async () => {
     const fixture = createDotnetFixture();
 
-    await dotnetDoctorModule.run(fixture.context);
+    await fixture.run();
 
-    expect(fixture.probeRun).not.toHaveBeenCalled();
+    expect(fixture.harness.processCalls()).toEqual([]);
   });
 
   it("never calls context.probes in quick mode", async () => {
     const fixture = createDotnetFixture({options: {quick: true}});
 
-    await dotnetDoctorModule.run(fixture.context);
+    await fixture.run();
 
-    expect(fixture.probeRun).not.toHaveBeenCalled();
+    expect(fixture.harness.processCalls()).toEqual([]);
   });
 
   // --- Executable ---
@@ -251,7 +272,7 @@ describe("dotnetDoctorModule", () => {
   it("passes dotnet.executable when the executable is available with resolved paths", async () => {
     const fixture = createDotnetFixture();
 
-    const results = await dotnetDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     const exec = resultById(results, "dotnet.executable");
     expect(exec.status).toBe("pass");
@@ -261,7 +282,7 @@ describe("dotnetDoctorModule", () => {
     const facts = healthyDotnetFacts({executable: {available: false, resolvedPaths: []}});
     const fixture = createDotnetFixture({outcome: {kind: "available", value: facts, durationMs: 0}});
 
-    const results = await dotnetDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     const exec = resultById(results, "dotnet.executable");
     expect(exec.status).toBe("fail");
@@ -274,7 +295,7 @@ describe("dotnetDoctorModule", () => {
     });
     const fixture = createDotnetFixture({outcome: {kind: "available", value: facts, durationMs: 0}});
 
-    const results = await dotnetDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     const exec = resultById(results, "dotnet.executable");
     expect(exec.evidence.join("\n")).toContain("2");
@@ -285,7 +306,7 @@ describe("dotnetDoctorModule", () => {
   it("passes sdk-inventory when a compatible SDK is installed", async () => {
     const fixture = createDotnetFixture();
 
-    const results = await dotnetDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     expect(resultById(results, "dotnet.sdk-inventory").status).toBe("pass");
   });
@@ -294,7 +315,7 @@ describe("dotnetDoctorModule", () => {
     const facts = healthyDotnetFacts({sdks: ["8.0.130", "9.0.317"]});
     const fixture = createDotnetFixture({outcome: {kind: "available", value: facts, durationMs: 0}});
 
-    const results = await dotnetDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     const sdk = resultById(results, "dotnet.sdk-inventory");
     expect(sdk.status).toBe("fail");
@@ -306,7 +327,7 @@ describe("dotnetDoctorModule", () => {
     const facts = healthyDotnetFacts({selectedVersion: "10.0.400-preview.0.26356.102", sdks: ["9.0.317", "10.0.400-preview.0.26356.102"]});
     const fixture = createDotnetFixture({outcome: {kind: "available", value: facts, durationMs: 0}});
 
-    const results = await dotnetDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     expect(resultById(results, "dotnet.sdk-inventory").status).toBe("pass");
   });
@@ -315,7 +336,7 @@ describe("dotnetDoctorModule", () => {
     const facts = healthyDotnetFacts({selectedVersion: "10.0.999", sdks: ["10.0.111"]});
     const fixture = createDotnetFixture({outcome: {kind: "available", value: facts, durationMs: 0}});
 
-    const results = await dotnetDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     const sdk = resultById(results, "dotnet.sdk-inventory");
     expect(sdk.status).toBe("warn");
@@ -325,7 +346,7 @@ describe("dotnetDoctorModule", () => {
   it("skips sdk-inventory when requirement sources are invalid", async () => {
     const fixture = createDotnetFixture({requirements: "invalid"});
 
-    const results = await dotnetDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     expect(resultById(results, "dotnet.sdk-inventory").status).toBe("skipped");
   });
@@ -335,7 +356,7 @@ describe("dotnetDoctorModule", () => {
   it("passes dotnet.host when host facts are present and architecture matches", async () => {
     const fixture = createDotnetFixture();
 
-    const results = await dotnetDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     expect(resultById(results, "dotnet.host").status).toBe("pass");
   });
@@ -344,7 +365,7 @@ describe("dotnetDoctorModule", () => {
     const {host: _host, ...noHost} = healthyDotnetFacts();
     const fixture = createDotnetFixture({outcome: {kind: "available", value: noHost as DotnetFacts, durationMs: 0}});
 
-    const results = await dotnetDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     expect(resultById(results, "dotnet.host").status).toBe("fail");
   });
@@ -353,7 +374,7 @@ describe("dotnetDoctorModule", () => {
     const facts = healthyDotnetFacts({host: {version: "10.0.11", architecture: "arm64", rid: "win-arm64"}});
     const fixture = createDotnetFixture({outcome: {kind: "available", value: facts, durationMs: 0}});
 
-    const results = await dotnetDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     const host = resultById(results, "dotnet.host");
     expect(host.status).toBe("fail");
@@ -365,7 +386,7 @@ describe("dotnetDoctorModule", () => {
   it("passes dotnet.workloads for an empty workload list", async () => {
     const fixture = createDotnetFixture();
 
-    const results = await dotnetDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     expect(resultById(results, "dotnet.workloads").status).toBe("pass");
   });
@@ -374,7 +395,7 @@ describe("dotnetDoctorModule", () => {
     const facts = healthyDotnetFacts({workloads: ["aspire", "wasm-tools"]});
     const fixture = createDotnetFixture({outcome: {kind: "available", value: facts, durationMs: 0}});
 
-    const results = await dotnetDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     const workloads = resultById(results, "dotnet.workloads");
     expect(workloads.status).toBe("pass");
@@ -386,7 +407,7 @@ describe("dotnetDoctorModule", () => {
   it("passes dotnet.nuget-state when cache path is present", async () => {
     const fixture = createDotnetFixture();
 
-    const results = await dotnetDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     expect(resultById(results, "dotnet.nuget-state").status).toBe("pass");
   });
@@ -395,7 +416,7 @@ describe("dotnetDoctorModule", () => {
     const {nugetCachePath: _nugetCachePath, ...noCacheFacts} = healthyDotnetFacts();
     const fixture = createDotnetFixture({outcome: {kind: "available", value: noCacheFacts as DotnetFacts, durationMs: 0}});
 
-    const results = await dotnetDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     expect(resultById(results, "dotnet.nuget-state").status).toBe("warn");
   });
@@ -405,7 +426,7 @@ describe("dotnetDoctorModule", () => {
   it("passes dotnet.solution when there are no issues", async () => {
     const fixture = createDotnetFixture();
 
-    const results = await dotnetDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     expect(resultById(results, "dotnet.solution").status).toBe("pass");
   });
@@ -414,7 +435,7 @@ describe("dotnetDoctorModule", () => {
     const facts = healthyDotnetFacts({solutionIssues: ["Missing solution project: sites/api.arolariu.ro/src/Common/Common.csproj"]});
     const fixture = createDotnetFixture({outcome: {kind: "available", value: facts, durationMs: 0}});
 
-    const results = await dotnetDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     const solution = resultById(results, "dotnet.solution");
     expect(solution.status).toBe("fail");
@@ -425,7 +446,7 @@ describe("dotnetDoctorModule", () => {
     const facts = healthyDotnetFacts({solutionRestoreIssues: ["Missing NuGet restore assets: tooling/AppHost/AppHost.csproj"]});
     const fixture = createDotnetFixture({outcome: {kind: "available", value: facts, durationMs: 0}});
 
-    const results = await dotnetDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     const solution = resultById(results, "dotnet.solution");
     expect(solution.status).toBe("warn");
@@ -437,7 +458,7 @@ describe("dotnetDoctorModule", () => {
     const facts = healthyDotnetFacts({solutionIssues: issues});
     const fixture = createDotnetFixture({outcome: {kind: "available", value: facts, durationMs: 0}});
 
-    const results = await dotnetDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     const solution = resultById(results, "dotnet.solution");
     expect(solution.status).toBe("fail");
@@ -450,7 +471,7 @@ describe("dotnetDoctorModule", () => {
   it("passes dotnet.local-tools when the required tool is installed", async () => {
     const fixture = createDotnetFixture();
 
-    const results = await dotnetDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     expect(resultById(results, "dotnet.local-tools").status).toBe("pass");
   });
@@ -459,7 +480,7 @@ describe("dotnetDoctorModule", () => {
     const facts = healthyDotnetFacts({localTools: [{name: "other-tool", version: "1.0.0"}]});
     const fixture = createDotnetFixture({outcome: {kind: "available", value: facts, durationMs: 0}});
 
-    const results = await dotnetDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     const tools = resultById(results, "dotnet.local-tools");
     expect(tools.status).toBe("warn");
@@ -470,7 +491,7 @@ describe("dotnetDoctorModule", () => {
     const facts = healthyDotnetFacts({localTools: []});
     const fixture = createDotnetFixture({outcome: {kind: "available", value: facts, durationMs: 0}});
 
-    const results = await dotnetDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     expect(resultById(results, "dotnet.local-tools").status).toBe("warn");
   });
@@ -480,7 +501,7 @@ describe("dotnetDoctorModule", () => {
   it("passes dotnet.https-certificate when certificate exists and is trusted", async () => {
     const fixture = createDotnetFixture();
 
-    const results = await dotnetDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     expect(resultById(results, "dotnet.https-certificate").status).toBe("pass");
   });
@@ -489,7 +510,7 @@ describe("dotnetDoctorModule", () => {
     const facts = healthyDotnetFacts({certificate: {exists: true, trusted: false}});
     const fixture = createDotnetFixture({outcome: {kind: "available", value: facts, durationMs: 0}});
 
-    const results = await dotnetDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     expect(resultById(results, "dotnet.https-certificate").status).toBe("warn");
   });
@@ -498,7 +519,7 @@ describe("dotnetDoctorModule", () => {
     const facts = healthyDotnetFacts({certificate: {exists: false, trusted: false}});
     const fixture = createDotnetFixture({outcome: {kind: "available", value: facts, durationMs: 0}});
 
-    const results = await dotnetDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     const cert = resultById(results, "dotnet.https-certificate");
     expect(cert.status).toBe("fail");
@@ -510,7 +531,7 @@ describe("dotnetDoctorModule", () => {
   it("passes dotnet.apphost when project exists and all parameters are configured", async () => {
     const fixture = createDotnetFixture();
 
-    const results = await dotnetDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     expect(resultById(results, "dotnet.apphost").status).toBe("pass");
   });
@@ -521,7 +542,7 @@ describe("dotnetDoctorModule", () => {
     });
     const fixture = createDotnetFixture({outcome: {kind: "available", value: facts, durationMs: 0}});
 
-    const results = await dotnetDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     expect(resultById(results, "dotnet.apphost").status).toBe("fail");
   });
@@ -532,7 +553,7 @@ describe("dotnetDoctorModule", () => {
     });
     const fixture = createDotnetFixture({outcome: {kind: "available", value: facts, durationMs: 0}});
 
-    const results = await dotnetDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     const appHost = resultById(results, "dotnet.apphost");
     expect(appHost.status).toBe("warn");
@@ -545,7 +566,7 @@ describe("dotnetDoctorModule", () => {
     });
     const fixture = createDotnetFixture({outcome: {kind: "available", value: facts, durationMs: 0}});
 
-    const results = await dotnetDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     const appHost = resultById(results, "dotnet.apphost");
     expect(appHost.status).toBe("pass");
@@ -557,16 +578,16 @@ describe("dotnetDoctorModule", () => {
   it("skips dotnet.nuget-feed in quick mode without probing the network", async () => {
     const fixture = createDotnetFixture({options: {quick: true}});
 
-    const results = await dotnetDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     expect(resultById(results, "dotnet.nuget-feed").status).toBe("skipped");
-    expect(fixture.context.network.get).not.toHaveBeenCalled();
+    expect(fixture.networkGet).not.toHaveBeenCalled();
   });
 
   it("passes dotnet.nuget-feed for a healthy NuGet service index", async () => {
     const fixture = createDotnetFixture();
 
-    const results = await dotnetDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     expect(resultById(results, "dotnet.nuget-feed").status).toBe("pass");
   });
@@ -574,7 +595,7 @@ describe("dotnetDoctorModule", () => {
   it("skips dotnet.nuget-feed when the network probe is unavailable", async () => {
     const fixture = createDotnetFixture({networkResult: {status: "unavailable", durationMs: 1, error: "offline"}});
 
-    const results = await dotnetDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     expect(resultById(results, "dotnet.nuget-feed").status).toBe("skipped");
   });
@@ -582,7 +603,7 @@ describe("dotnetDoctorModule", () => {
   it("warns dotnet.nuget-feed on a non-200 response", async () => {
     const fixture = createDotnetFixture({networkResult: {status: "reachable", statusCode: 503, durationMs: 2}});
 
-    const results = await dotnetDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     const feed = resultById(results, "dotnet.nuget-feed");
     expect(feed.status).toBe("warn");
@@ -594,7 +615,7 @@ describe("dotnetDoctorModule", () => {
       networkResult: {status: "reachable", statusCode: 200, durationMs: 2, body: "not-json"},
     });
 
-    const results = await dotnetDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     const feed = resultById(results, "dotnet.nuget-feed");
     expect(feed.status).toBe("warn");
@@ -607,7 +628,7 @@ describe("dotnetDoctorModule", () => {
       networkResult: {status: "reachable", statusCode: 200, durationMs: 2},
     });
 
-    const results = await dotnetDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     const feed = resultById(results, "dotnet.nuget-feed");
     expect(feed.status).toBe("warn");
@@ -618,7 +639,7 @@ describe("dotnetDoctorModule", () => {
       networkResult: {status: "reachable", statusCode: 200, durationMs: 2, body: JSON.stringify({version: "3.0.0"})},
     });
 
-    const results = await dotnetDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     expect(resultById(results, "dotnet.nuget-feed").status).toBe("warn");
   });
@@ -630,7 +651,7 @@ describe("dotnetDoctorModule", () => {
       outcome: {kind: "unavailable", reason: "The dotnet executable is unavailable.", durationMs: 0},
     });
 
-    const results = await dotnetDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     expect(resultIds(results)).toEqual([...DOTNET_IDS]);
     for (const result of results) {
@@ -647,7 +668,7 @@ describe("dotnetDoctorModule", () => {
     const issues = Array.from({length: 7}, (_, i) => `Dotnet inspection issue ${String(i)}.`);
     const fixture = createDotnetFixture({outcome: {kind: "invalid", issues, durationMs: 0}});
 
-    const results = await dotnetDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     for (const result of results) {
       if (result.id === "dotnet.nuget-feed") {
@@ -664,10 +685,10 @@ describe("dotnetDoctorModule", () => {
       outcome: {kind: "unavailable", reason: "The dotnet executable is unavailable.", durationMs: 0},
     });
 
-    const results = await dotnetDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     expect(resultById(results, "dotnet.nuget-feed").status).toBe("pass");
-    expect(fixture.context.network.get).toHaveBeenCalled();
+    expect(fixture.networkGet).toHaveBeenCalled();
   });
 
   it("skips sdk-inventory when facts are unavailable and requirements are invalid", async () => {
@@ -676,7 +697,7 @@ describe("dotnetDoctorModule", () => {
       outcome: {kind: "unavailable", reason: "test", durationMs: 0},
     });
 
-    const results = await dotnetDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     expect(resultById(results, "dotnet.sdk-inventory").status).toBe("skipped");
   });
@@ -687,20 +708,20 @@ describe("dotnetDoctorModule", () => {
       outcome: {kind: "unavailable", reason: "test", durationMs: 0},
     });
 
-    const results = await dotnetDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     expect(resultById(results, "dotnet.nuget-feed").status).toBe("skipped");
-    expect(fixture.context.network.get).not.toHaveBeenCalled();
+    expect(fixture.networkGet).not.toHaveBeenCalled();
   });
 
   // --- CI environment ---
 
   it("produces identical results with CI=true and CI=false", async () => {
     const factsCi = createDotnetFixture({env: {CI: "true"}});
-    const resultsCi = await dotnetDoctorModule.run(factsCi.context);
+    const resultsCi = await factsCi.run();
 
     const factsNoCi = createDotnetFixture({env: {CI: "false"}});
-    const resultsNoCi = await dotnetDoctorModule.run(factsNoCi.context);
+    const resultsNoCi = await factsNoCi.run();
 
     expect(resultIds(resultsCi)).toEqual(resultIds(resultsNoCi));
     for (const [index, result] of resultsCi.entries()) {

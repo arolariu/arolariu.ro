@@ -1,6 +1,6 @@
 /**
  * @fileoverview Read-only SvelteKit diagnostics for the standalone CV and status sites.
- * @module scripts.doctor.svelte
+ * @module scripts/commands/doctor/modules/svelte
  *
  * @remarks
  * Every diagnostic row in this module is derived exclusively from the shared `SvelteFacts`
@@ -11,9 +11,18 @@
  * no diagnostic ever fabricates a healthy value from missing facts.
  */
 
-import {boundEvidence, diagnosticResult, skippedDiagnostic, STANDARD_EVIDENCE_LIMIT} from "../diagnostics.ts";
+import {Effect} from "effect";
+
+import {
+  boundEvidence,
+  diagnosticResult,
+  skippedDiagnostic,
+  STANDARD_EVIDENCE_LIMIT,
+  moduleRunContext,
+  type ModuleRunContext,
+} from "../diagnostics.ts";
 import {satisfiesMinimum, type MinimumVersion} from "../../../common/requirements.ts";
-import type {DiagnosticFix, DiagnosticModule, DiagnosticPotentialCause, DiagnosticResult, DoctorContext} from "../types.ts";
+import type {DiagnosticFix, DiagnosticModule, DiagnosticPotentialCause, DiagnosticResult} from "../types.ts";
 import type {SvelteFacts, SvelteProjectId} from "../../../inspection/frontend.ts";
 import type {InspectionOutcome} from "../../../inspection/types.ts";
 
@@ -26,16 +35,13 @@ const SVELTE_PROJECT_PACKAGE_NAMES = {
   status: "@arolariu/status",
 } as const satisfies Readonly<Record<SvelteProjectId, string>>;
 
-function qualifyProjectDiagnosticNames(
-  projectId: SvelteProjectId,
-  results: readonly DiagnosticResult[],
-): readonly DiagnosticResult[] {
+function qualifyProjectDiagnosticNames(projectId: SvelteProjectId, results: readonly DiagnosticResult[]): readonly DiagnosticResult[] {
   const packageName = SVELTE_PROJECT_PACKAGE_NAMES[projectId];
   return results.map((result) => ({...result, name: `${packageName}: ${result.name}`}));
 }
 
 function diagnostic(
-  context: Readonly<DoctorContext>,
+  context: Readonly<ModuleRunContext>,
   startedAt: number,
   input: Omit<DiagnosticResult, "durationMs" | "module">,
 ): DiagnosticResult {
@@ -45,12 +51,12 @@ function diagnostic(
       ...input,
     },
     startedAt,
-    context.clock.monotonicNow,
+    context.monotonicNow,
   );
 }
 
 function issueDiagnostic(
-  context: Readonly<DoctorContext>,
+  context: Readonly<ModuleRunContext>,
   startedAt: number,
   input: Readonly<{
     id: string;
@@ -76,7 +82,7 @@ function issueDiagnostic(
 }
 
 function passDiagnostic(
-  context: Readonly<DoctorContext>,
+  context: Readonly<ModuleRunContext>,
   startedAt: number,
   id: string,
   name: string,
@@ -127,8 +133,8 @@ function skippedNodeEngineForInvalidRequirements(projectId: SvelteProjectId): Di
   });
 }
 
-function diagnosePackages(context: Readonly<DoctorContext>, projectId: SvelteProjectId, facts: Readonly<SvelteFacts>): DiagnosticResult {
-  const startedAt = context.clock.monotonicNow();
+function diagnosePackages(context: Readonly<ModuleRunContext>, projectId: SvelteProjectId, facts: Readonly<SvelteFacts>): DiagnosticResult {
+  const startedAt = context.monotonicNow();
   const id = `svelte.${projectId}.packages`;
   const issues = facts.packageIssues;
 
@@ -155,8 +161,12 @@ function diagnosePackages(context: Readonly<DoctorContext>, projectId: SveltePro
   });
 }
 
-function diagnoseNodeEngine(context: Readonly<DoctorContext>, projectId: SvelteProjectId, facts: Readonly<SvelteFacts>): DiagnosticResult {
-  const startedAt = context.clock.monotonicNow();
+function diagnoseNodeEngine(
+  context: Readonly<ModuleRunContext>,
+  projectId: SvelteProjectId,
+  facts: Readonly<SvelteFacts>,
+): DiagnosticResult {
+  const startedAt = context.monotonicNow();
   const id = `svelte.${projectId}.node-engine`;
 
   if (context.requirements.status === "invalid") {
@@ -216,8 +226,8 @@ function diagnoseNodeEngine(context: Readonly<DoctorContext>, projectId: SvelteP
   );
 }
 
-function diagnoseScripts(context: Readonly<DoctorContext>, projectId: SvelteProjectId, facts: Readonly<SvelteFacts>): DiagnosticResult {
-  const startedAt = context.clock.monotonicNow();
+function diagnoseScripts(context: Readonly<ModuleRunContext>, projectId: SvelteProjectId, facts: Readonly<SvelteFacts>): DiagnosticResult {
+  const startedAt = context.monotonicNow();
   const id = `svelte.${projectId}.scripts`;
   const issues = facts.scriptIssues;
 
@@ -249,11 +259,11 @@ function diagnoseScripts(context: Readonly<DoctorContext>, projectId: SvelteProj
 }
 
 function diagnoseGeneratedState(
-  context: Readonly<DoctorContext>,
+  context: Readonly<ModuleRunContext>,
   projectId: SvelteProjectId,
   facts: Readonly<SvelteFacts>,
 ): DiagnosticResult {
-  const startedAt = context.clock.monotonicNow();
+  const startedAt = context.monotonicNow();
   const id = `svelte.${projectId}.generated-state`;
 
   if (!facts.generatedConfigExists) {
@@ -273,8 +283,8 @@ function diagnoseGeneratedState(
   ]);
 }
 
-function diagnoseAdapter(context: Readonly<DoctorContext>, projectId: SvelteProjectId, facts: Readonly<SvelteFacts>): DiagnosticResult {
-  const startedAt = context.clock.monotonicNow();
+function diagnoseAdapter(context: Readonly<ModuleRunContext>, projectId: SvelteProjectId, facts: Readonly<SvelteFacts>): DiagnosticResult {
+  const startedAt = context.monotonicNow();
   const id = `svelte.${projectId}.adapter`;
   const issues = facts.adapterIssues;
 
@@ -329,11 +339,11 @@ function diagnoseAdapter(context: Readonly<DoctorContext>, projectId: SvelteProj
  * @returns The five `svelte.<project>.*` diagnostic rows, in required order.
  */
 function degradedResults(
-  context: Readonly<DoctorContext>,
+  context: Readonly<ModuleRunContext>,
   projectId: SvelteProjectId,
   issues: readonly string[],
 ): readonly DiagnosticResult[] {
-  const startedAt = context.clock.monotonicNow();
+  const startedAt = context.monotonicNow();
   const summary = "The shared Svelte inspection facts could not be produced.";
   const evidence = boundedIssues(issues);
   const diagnosis = buildIssueDiagnosis(issues);
@@ -372,11 +382,11 @@ function degradedResults(
  * @param outcome - The shared `SvelteFacts` inspection outcome for this project.
  * @returns The five stable diagnostic results for this project, in fixed order.
  */
-export async function inspectSvelteProject(
-  context: Readonly<DoctorContext>,
+export function inspectSvelteProject(
+  context: Readonly<ModuleRunContext>,
   projectId: SvelteProjectId,
   outcome: InspectionOutcome<SvelteFacts>,
-): Promise<readonly DiagnosticResult[]> {
+): readonly DiagnosticResult[] {
   if (outcome.kind === "unavailable") {
     return qualifyProjectDiagnosticNames(projectId, degradedResults(context, projectId, [outcome.reason]));
   }
@@ -399,12 +409,14 @@ export const svelteDoctorModule: DiagnosticModule = {
   id: "svelte",
   title: "Svelte",
   facts: ["svelte.cv", "svelte.status"],
-  async run(context): Promise<readonly DiagnosticResult[]> {
-    // Sequential by design, concurrent in effect: both project fact sets are declared above, so
-    // the command already started them together through the runtime task scheduler and each await
-    // below resolves the memoized promise of an inspection that is already in flight.
-    const cvOutcome = await context.inspection.inspect("svelte.cv");
-    const statusOutcome = await context.inspection.inspect("svelte.status");
-    return [...(await inspectSvelteProject(context, "cv", cvOutcome)), ...(await inspectSvelteProject(context, "status", statusOutcome))];
-  },
+  run: (doctorContext) =>
+    Effect.gen(function* () {
+      const context = yield* moduleRunContext(doctorContext);
+      // Sequential by design, concurrent in effect: both project fact sets are declared above, so
+      // the doctor run already started them together and each read below resolves the memoized
+      // outcome of an inspection that is already in flight.
+      const cvOutcome = yield* context.inspection.inspect("svelte.cv");
+      const statusOutcome = yield* context.inspection.inspect("svelte.status");
+      return [...inspectSvelteProject(context, "cv", cvOutcome), ...inspectSvelteProject(context, "status", statusOutcome)];
+    }),
 };

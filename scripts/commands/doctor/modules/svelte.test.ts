@@ -1,10 +1,10 @@
 // @vitest-environment node
 /**
  * @fileoverview Contract tests for read-only standalone SvelteKit diagnostics.
- * @module scripts.doctor.svelte.test
+ * @module scripts/commands/doctor/modules/svelte.test
  *
  * @remarks
- * `doctor.svelte.ts` is sourced exclusively from `context.inspection.inspect("svelte.cv")` and
+ * `modules/svelte.ts` is sourced exclusively from `context.inspection.inspect("svelte.cv")` and
  * `context.inspection.inspect("svelte.status")`. These tests never write a fixture file, spawn a
  * command, or construct a `CommandSpec`: they configure a fake inspection session that returns a
  * deterministic `InspectionOutcome<SvelteFacts>` per project, and assert on the produced
@@ -15,18 +15,21 @@
 import {readFile} from "node:fs/promises";
 import {dirname, resolve} from "node:path";
 import {fileURLToPath} from "node:url";
+import {Clock, Effect, Layer} from "effect";
 import {afterEach, describe, expect, it, vi} from "vitest";
 
-import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "../../../common/logger.ts";
 import {createRepositoryPaths} from "../../../common/repository-paths.ts";
 import type {RepositoryRequirements} from "../../../common/requirements.ts";
-import {asReadOnlyFileSystem, type Clock, type RuntimeEnvironment} from "../../../common/runtime.ts";
-import {createMemoryFileSystem} from "../../../common/runtime.testing.ts";
+import {Inspection} from "../../../inspection/Inspection.ts";
+import {inspectionProbeRunner} from "../../../inspection/probes.ts";
+import type {RepositoryInspectionSession} from "../../../inspection/repository.ts";
+import type {EnvironmentSnapshot} from "../../../platform/Environment.ts";
+import {makeTestLayer, runScoped, type TestHarness} from "../../../platform/testing.ts";
+import {NetworkProbe} from "../NetworkProbe.ts";
 import {createDoctorReport} from "../reporter.ts";
 import {svelteDoctorModule} from "./svelte.ts";
-import type {DiagnosticNetworkResult, DiagnosticResult, DoctorContext, DoctorInput} from "../types.ts";
+import type {DiagnosticResult, DoctorContext, DoctorInput} from "../types.ts";
 import type {SvelteFacts} from "../../../inspection/frontend.ts";
-import type {LegacyRepositoryInspectionSession} from "../../../platform/bridge.ts";
 import type {InspectionOutcome} from "../../../inspection/types.ts";
 
 const moduleDirectory = dirname(fileURLToPath(import.meta.url));
@@ -46,18 +49,46 @@ function doctorOptions(patch: Partial<DoctorInput> = {}): DoctorInput {
   return {verbose: false, quick: false, ...patch};
 }
 
-/** Deterministic monotonic clock every fixture context observes. */
-function fixtureClock(): Clock {
-  let current = 0;
+/** A network probe that dies on any request: these modules never reach the network. */
+const unscriptedNetwork = Layer.succeed(
+  NetworkProbe,
+  NetworkProbe.of({get: (url) => Effect.die(new Error(`unscripted network probe: ${url.href}`))}),
+);
+
+/** A monotonic clock that advances 1 ms on every read, as the legacy fixture clock did; time never elapses on its own. */
+function countingClock(): Clock.Clock {
+  let current = 0n;
+  const tick = (): bigint => (current += 1_000_000n);
   return {
-    monotonicNow: (): number => ++current,
-    isoTimestamp: (): string => "2026-08-29T00:00:00.000Z",
-    delay: (): Promise<void> => Promise.resolve(),
+    currentTimeMillisUnsafe: () => 0,
+    currentTimeMillis: Effect.succeed(0),
+    currentTimeNanosUnsafe: () => 0n,
+    currentTimeNanos: Effect.succeed(0n),
+    monotonicTimeNanosUnsafe: tick,
+    monotonicTimeNanos: Effect.sync(tick),
+    sleep: () => Effect.never,
+  };
+}
+
+/**
+ * Wraps a session so every inspected key is recorded.
+ *
+ * @param session - The harness session.
+ * @param inspected - Receives every inspected key, in order.
+ * @returns The recording session.
+ */
+function recordingSession(session: RepositoryInspectionSession, inspected: string[]): RepositoryInspectionSession {
+  return {
+    ...session,
+    inspect: (key) => {
+      inspected.push(key);
+      return session.inspect(key);
+    },
   };
 }
 
 /** Immutable environment snapshot every fixture context observes. */
-function fixtureEnvironment(variables: Readonly<Record<string, string | undefined>> = {}): RuntimeEnvironment {
+function fixtureEnvironment(variables: Readonly<Record<string, string | undefined>> = {}): EnvironmentSnapshot {
   return {
     variables,
     cwd: "C:\\fixture\\arolariu.ro",
@@ -104,9 +135,12 @@ function resultById(results: readonly DiagnosticResult[], id: string): Diagnosti
 }
 
 interface SvelteFixture {
-  readonly context: DoctorContext;
-  readonly inspect: ReturnType<typeof vi.fn<(key: string) => Promise<InspectionOutcome<unknown>>>>;
-  readonly probeRun: ReturnType<typeof vi.fn<(...args: readonly unknown[]) => Promise<never>>>;
+  /** Runs the module once against the fixture. */
+  readonly run: () => Promise<readonly DiagnosticResult[]>;
+  /** Every inspected key, in order. */
+  readonly inspected: readonly string[];
+  /** The harness; its process calls must stay empty. */
+  readonly harness: TestHarness;
 }
 
 function createSvelteFixture(
@@ -119,45 +153,31 @@ function createSvelteFixture(
 ): SvelteFixture {
   const cvOutcome = input.cvOutcome ?? availableOutcome(healthySvelteFacts("cv"));
   const statusOutcome = input.statusOutcome ?? availableOutcome(healthySvelteFacts("status"));
+  const harness = makeTestLayer({inspection: {"svelte.cv": cvOutcome, "svelte.status": statusOutcome}, environment: fixtureEnvironment()});
+  const requirements: DoctorContext["requirements"] =
+    input.requirementsValid === false
+      ? {status: "invalid", errors: [".nvmrc disagrees with package.json#engines.node"]}
+      : {status: "valid", requirements: validRequirements()};
+  const inspected: string[] = [];
+  const paths = createRepositoryPaths(fixtureRoot);
+  const options = doctorOptions(input.options);
+  const run = (): Promise<readonly DiagnosticResult[]> =>
+    runScoped(
+      Effect.gen(function* () {
+        const session = yield* (yield* Inspection).session({profile: "full", paths});
+        const context: DoctorContext = {
+          options,
+          paths,
+          requirements,
+          inspection: recordingSession(session, inspected),
+          probes: inspectionProbeRunner,
+        };
+        return yield* Effect.provideService(svelteDoctorModule.run(context), Clock.Clock, countingClock());
+      }),
+      Layer.merge(harness.layer, unscriptedNetwork),
+    );
 
-  const inspect = vi.fn(async (key: string): Promise<InspectionOutcome<unknown>> => {
-    if (key === "svelte.cv") {
-      return cvOutcome;
-    }
-    if (key === "svelte.status") {
-      return statusOutcome;
-    }
-    throw new Error(`Unexpected inspection key requested: '${key}'.`);
-  });
-
-  const probeRun = vi.fn(async (): Promise<never> => {
-    throw new Error("doctor.svelte.ts must never call context.probes.");
-  });
-
-  const sink = new InMemoryLoggerSink();
-  const context: DoctorContext = {
-    options: doctorOptions(input.options),
-    paths: createRepositoryPaths(fixtureRoot),
-    requirements:
-      input.requirementsValid === false
-        ? {status: "invalid", errors: [".nvmrc disagrees with package.json#engines.node"]}
-        : {status: "valid", requirements: validRequirements()},
-    network: {
-      get: vi.fn(async (): Promise<DiagnosticNetworkResult> => ({status: "reachable", statusCode: 200, durationMs: 1})),
-    },
-    logger: new MonorepositoryConsoleLogger("doctor::svelte", {color: false, sink}),
-    files: asReadOnlyFileSystem(createMemoryFileSystem()),
-    clock: fixtureClock(),
-    environment: fixtureEnvironment(),
-    probes: {run: probeRun as unknown as DoctorContext["probes"]["run"]},
-    inspection: {
-      inspect: inspect as unknown as LegacyRepositoryInspectionSession["inspect"],
-      invalidate: vi.fn(),
-      updateInfrastructureEngine: vi.fn(),
-    } as LegacyRepositoryInspectionSession,
-  };
-
-  return {context, inspect, probeRun};
+  return {run, inspected, harness};
 }
 
 afterEach(() => {
@@ -172,7 +192,7 @@ describe("svelteDoctorModule", () => {
   it("returns every stable svelte check in CV-then-status order for a healthy baseline", async () => {
     const fixture = createSvelteFixture();
 
-    const results = await svelteDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     expect(resultIds(results)).toEqual([
       "svelte.cv.packages",
@@ -189,15 +209,15 @@ describe("svelteDoctorModule", () => {
     for (const result of results) {
       expect(result.status, `${result.id} should pass`).toBe("pass");
     }
-    expect(fixture.inspect).toHaveBeenCalledWith("svelte.cv");
-    expect(fixture.inspect).toHaveBeenCalledWith("svelte.status");
-    expect(fixture.inspect).toHaveBeenCalledTimes(2);
+    expect(fixture.inspected).toContain("svelte.cv");
+    expect(fixture.inspected).toContain("svelte.status");
+    expect(fixture.inspected).toHaveLength(2);
   });
 
   it("uses package-qualified names to distinguish CV and status diagnostics", async () => {
     const fixture = createSvelteFixture();
 
-    const results = await svelteDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     expect(results.map(({name}) => name)).toEqual([
       "@arolariu/cv: SvelteKit ecosystem packages",
@@ -218,7 +238,7 @@ describe("svelteDoctorModule", () => {
       cvOutcome: {kind: "unavailable", reason: "The CV Svelte inspection worker crashed.", durationMs: 0},
     });
 
-    const results = await svelteDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     for (const id of [
       "svelte.cv.packages",
@@ -241,16 +261,14 @@ describe("svelteDoctorModule", () => {
     ]) {
       expect(resultById(results, id).status, `${id} should pass`).toBe("pass");
     }
-    expect(resultById(results, "svelte.cv.node-engine").name).toBe(
-      "@arolariu/cv: SvelteKit Node.js engine compatibility",
-    );
+    expect(resultById(results, "svelte.cv.node-engine").name).toBe("@arolariu/cv: SvelteKit Node.js engine compatibility");
   });
 
   it("produces degraded results when status inspection is invalid", async () => {
     const issues = Array.from({length: 7}, (_, index) => `Status Svelte inspection issue ${String(index)}.`);
     const fixture = createSvelteFixture({statusOutcome: {kind: "invalid", issues, durationMs: 0}});
 
-    const results = await svelteDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     for (const id of [
       "svelte.status.packages",
@@ -285,7 +303,7 @@ describe("svelteDoctorModule", () => {
     const cvFacts: SvelteFacts = {...healthySvelteFacts("cv"), packageIssues: ["svelte-adapter-azure-swa is not installed."]};
     const fixture = createSvelteFixture({cvOutcome: availableOutcome(cvFacts)});
 
-    const results = await svelteDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     const packages = resultById(results, "svelte.cv.packages");
     expect(packages.status).toBe("fail");
@@ -295,16 +313,12 @@ describe("svelteDoctorModule", () => {
   it("skips node-engine check when requirements are invalid", async () => {
     const fixture = createSvelteFixture({requirementsValid: false});
 
-    const results = await svelteDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     expect(resultById(results, "svelte.cv.node-engine").status).toBe("skipped");
     expect(resultById(results, "svelte.status.node-engine").status).toBe("skipped");
-    expect(resultById(results, "svelte.cv.node-engine").name).toBe(
-      "@arolariu/cv: SvelteKit Node.js engine compatibility",
-    );
-    expect(resultById(results, "svelte.status.node-engine").name).toBe(
-      "@arolariu/status: SvelteKit Node.js engine compatibility",
-    );
+    expect(resultById(results, "svelte.cv.node-engine").name).toBe("@arolariu/cv: SvelteKit Node.js engine compatibility");
+    expect(resultById(results, "svelte.status.node-engine").name).toBe("@arolariu/status: SvelteKit Node.js engine compatibility");
     // Independent checks still evaluate from the available facts.
     expect(resultById(results, "svelte.cv.packages").status).toBe("pass");
     expect(resultById(results, "svelte.status.scripts").status).toBe("pass");
@@ -315,7 +329,7 @@ describe("svelteDoctorModule", () => {
     const cvFacts: SvelteFacts = rest;
     const fixture = createSvelteFixture({cvOutcome: availableOutcome(cvFacts)});
 
-    const results = await svelteDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     const nodeEngine = resultById(results, "svelte.cv.node-engine");
     expect(nodeEngine.status).toBe("fail");
@@ -326,7 +340,7 @@ describe("svelteDoctorModule", () => {
     const statusFacts: SvelteFacts = {...healthySvelteFacts("status"), nodeEngine: ">=26"};
     const fixture = createSvelteFixture({statusOutcome: availableOutcome(statusFacts)});
 
-    const results = await svelteDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     const nodeEngine = resultById(results, "svelte.status.node-engine");
     expect(nodeEngine.status).toBe("fail");
@@ -337,7 +351,7 @@ describe("svelteDoctorModule", () => {
     const statusFacts: SvelteFacts = {...healthySvelteFacts("status"), scriptIssues: ["package.json is missing a 'check' script."]};
     const fixture = createSvelteFixture({statusOutcome: availableOutcome(statusFacts)});
 
-    const results = await svelteDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     const scripts = resultById(results, "svelte.status.scripts");
     expect(scripts.status).toBe("fail");
@@ -348,7 +362,7 @@ describe("svelteDoctorModule", () => {
     const cvFacts: SvelteFacts = {...healthySvelteFacts("cv"), generatedConfigExists: false};
     const fixture = createSvelteFixture({cvOutcome: availableOutcome(cvFacts)});
 
-    const results = await svelteDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     const generatedState = resultById(results, "svelte.cv.generated-state");
     expect(generatedState.status).toBe("fail");
@@ -362,7 +376,7 @@ describe("svelteDoctorModule", () => {
     };
     const fixture = createSvelteFixture({statusOutcome: availableOutcome(statusFacts)});
 
-    const results = await svelteDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     const adapter = resultById(results, "svelte.status.adapter");
     expect(adapter.status).toBe("fail");
@@ -374,7 +388,7 @@ describe("svelteDoctorModule", () => {
     const cvFacts: SvelteFacts = {...rest, adapterIssues: []};
     const fixture = createSvelteFixture({cvOutcome: availableOutcome(cvFacts)});
 
-    const results = await svelteDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     const adapter = resultById(results, "svelte.cv.adapter");
     expect(adapter.status).toBe("fail");
@@ -384,9 +398,9 @@ describe("svelteDoctorModule", () => {
   it("never invokes context.probes", async () => {
     const fixture = createSvelteFixture();
 
-    await svelteDoctorModule.run(fixture.context);
+    await fixture.run();
 
-    expect(fixture.probeRun).not.toHaveBeenCalled();
+    expect(fixture.harness.processCalls()).toEqual([]);
   });
 
   it("never imports CommandSpec", async () => {

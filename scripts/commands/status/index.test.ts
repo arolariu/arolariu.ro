@@ -40,11 +40,12 @@ import {
   type RepositoryInspectionRuntime,
 } from "../../common/runtime.ts";
 import type {DoctorInput, DoctorReport} from "../doctor/types.ts";
-import {createDoctorCommand} from "../doctor/index.ts";
+import {makeDoctorInvoker} from "../doctor/index.ts";
 import type {RepositoryInspectionFacts} from "../../inspection/repository.ts";
 import type {LegacyRepositoryInspectionSession} from "../../platform/bridge.ts";
 import type {InspectionOutcome} from "../../inspection/types.ts";
 import type {WorkspaceFacts} from "../../inspection/workspace.ts";
+import {makeTestLayer, scriptedOutcomes} from "../../platform/testing.ts";
 import {collectDisk, createStatusCommand, type StatusDocument} from "./index.ts";
 
 // ============================================================================
@@ -151,10 +152,7 @@ class TimelineProcessRunner extends ScriptedProcessRunner {
   }
 
   /** {@inheritDoc AbstractProcessRunner.execute} */
-  protected override async execute(
-    request: Readonly<ProcessRequest>,
-    options: Readonly<ProcessRunOptions>,
-  ): Promise<ProcessOutcome> {
+  protected override async execute(request: Readonly<ProcessRequest>, options: Readonly<ProcessRunOptions>): Promise<ProcessOutcome> {
     this.#events.push(`probe:start ${processKey(request)}`);
     try {
       return await super.execute(request, options);
@@ -253,7 +251,8 @@ type DoctorStub = CommandInvoker<DoctorInput, DoctorReport> & Readonly<{invoke: 
  */
 function createDoctorStub(implementation?: DoctorInvoke): DoctorStub {
   const invoke = vi.fn<DoctorInvoke>(
-    implementation ?? ((): Promise<CommandExecution<DoctorReport>> => Promise.resolve({status: "completed", value: doctorReport(), exitCode: 0})),
+    implementation
+      ?? ((): Promise<CommandExecution<DoctorReport>> => Promise.resolve({status: "completed", value: doctorReport(), exitCode: 0})),
   );
   return {invoke};
 }
@@ -1155,7 +1154,9 @@ describe("status command — document", () => {
 
     const document = await runJson(fixture);
 
-    expect(document["workspaces"]).toEqual([{name: "@arolariu/new-project", version: "1.2.3", type: "lib", tags: ["domain:web", "type:lib"]}]);
+    expect(document["workspaces"]).toEqual([
+      {name: "@arolariu/new-project", version: "1.2.3", type: "lib", tags: ["domain:web", "type:lib"]},
+    ]);
     expect(document["nxEdges"]).toEqual([{source: "new-project", target: "@arolariu/components"}]);
   });
 });
@@ -1274,7 +1275,7 @@ describe("status command — characterization", () => {
     };
     const countedUnavailable =
       (key: string) =>
-      <TValue,>(): Promise<InspectionOutcome<TValue>> => {
+      <TValue>(): Promise<InspectionOutcome<TValue>> => {
         executions[key] = (executions[key] ?? 0) + 1;
         return unavailableFact<TValue>();
       };
@@ -1296,16 +1297,33 @@ describe("status command — characterization", () => {
     };
     const createSession = vi.fn<(request: Readonly<RepositoryInspectionRequest>) => LegacyRepositoryInspectionSession>(() => session);
     const sink = new InMemoryLoggerSink();
-    const runner = new ScriptedProcessRunner(
-      withOverrides({"git --version": spawnFailed("git is not installed"), "npm config get cache": spawnFailed("npm is not installed")}),
-    );
+    const runner = new ScriptedProcessRunner(withOverrides({}));
     const factory = createTestRuntimeFactory({
       files: createRepositoryFixtureFileSystem(),
       inspection: createMemoizedInspectionRuntime(createSession),
       logger: new MonorepositoryConsoleLogger("status", {color: false, sink, verbose: false, mode: "json"}),
       runner,
     });
-    const command = createStatusCommand({runtimeFactory: factory, doctor: createDoctorCommand({runtimeFactory: factory})});
+    // The Effect doctor runs on its own harness (its probes are Effect processes there) and reads
+    // the status invocation's inspection sessions through the legacy invoker's parent bridge.
+    const doctorSpawnFailures: Readonly<Record<string, string>> = {
+      "git --version": "git is not installed",
+      "npm config get cache": "npm is not installed",
+    };
+    const doctorHarness = makeTestLayer({
+      files: {[join(FIXTURE_ROOT, "package.json")]: JSON.stringify({name: "@arolariu/monorepo"}, null, 2)},
+      processes: [
+        scriptedOutcomes((request) => {
+          const message = doctorSpawnFailures[[request.command, ...request.args].join(" ")];
+          if (message === undefined) {
+            throw new Error(`Unscripted doctor probe: ${request.command}`);
+          }
+          return {kind: "spawn-failed", message, stdout: "", stderr: "", durationMs: 1};
+        }),
+      ],
+      environment: {platform: "linux", architecture: "x64", executablePath: "/usr/bin/node", isCI: true},
+    });
+    const command = createStatusCommand({runtimeFactory: factory, doctor: makeDoctorInvoker(() => doctorHarness.layer)});
 
     // Act
     const execution = await command.invoke({json: true}, {presentation: "json"});
@@ -1339,9 +1357,13 @@ describe("status command — characterization", () => {
         diskProbeKey(DISK_NODE_MODULES_TARGET),
         diskProbeKey(DISK_NEXT_BUILD_TARGET),
         diskProbeKey(DISK_COMPONENTS_DIST_TARGET),
-        "git --version",
-        "npm config get cache",
       ].toSorted(),
     );
+    expect(
+      doctorHarness
+        .processCalls()
+        .map(({request}) => [request.command, ...request.args].join(" "))
+        .toSorted(),
+    ).toEqual(["git --version", "npm config get cache"].toSorted());
   });
 });

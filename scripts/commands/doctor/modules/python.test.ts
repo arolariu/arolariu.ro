@@ -1,10 +1,10 @@
 // @vitest-environment node
 /**
  * @fileoverview Contract tests for read-only Python diagnostics sourced from shared PythonFacts.
- * @module scripts.doctor.python.test
+ * @module scripts/commands/doctor/modules/python.test
  *
  * @remarks
- * `doctor.python.ts` is sourced exclusively from `context.inspection.inspect("python")`,
+ * `modules/python.ts` is sourced exclusively from `context.inspection.inspect("python")`,
  * `context.requirements` for version policy, and `context.network.get()` for PyPI reachability.
  * These tests never write a fixture file, spawn a command, or construct a `CommandSpec`: they
  * configure a fake inspection session that returns a deterministic `InspectionOutcome<PythonFacts>`,
@@ -14,18 +14,20 @@
 
 import {readFileSync} from "node:fs";
 import {resolve} from "node:path";
+import {Clock, Effect, Layer} from "effect";
 import {afterEach, describe, expect, it, vi, type Mock} from "vitest";
 
-import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "../../../common/logger.ts";
 import {createRepositoryPaths} from "../../../common/repository-paths.ts";
 import type {RepositoryRequirements} from "../../../common/requirements.ts";
-import {asReadOnlyFileSystem, type Clock, type RuntimeEnvironment} from "../../../common/runtime.ts";
-import {createMemoryFileSystem} from "../../../common/runtime.testing.ts";
+import {Inspection} from "../../../inspection/Inspection.ts";
+import {inspectionProbeRunner} from "../../../inspection/probes.ts";
+import type {RepositoryInspectionSession} from "../../../inspection/repository.ts";
+import type {EnvironmentSnapshot} from "../../../platform/Environment.ts";
+import {makeTestLayer, runScoped, type TestHarness} from "../../../platform/testing.ts";
 import {pythonDoctorModule} from "./python.ts";
 import {createDoctorReport} from "../reporter.ts";
-import type {DiagnosticNetworkResult, DiagnosticResult, DoctorContext, DoctorInput} from "../types.ts";
+import {NetworkProbe, type DiagnosticNetworkResult, type DiagnosticResult, type DoctorContext, type DoctorInput} from "../types.ts";
 import type {PythonFacts, PythonInterpreterFact} from "../../../inspection/python.ts";
-import type {LegacyRepositoryInspectionSession} from "../../../platform/bridge.ts";
 import type {InspectionOutcome} from "../../../inspection/types.ts";
 
 const PYTHON_IDS = [
@@ -52,18 +54,40 @@ function doctorOptions(patch: Partial<DoctorInput> = {}): DoctorInput {
   return {verbose: false, quick: false, ...patch};
 }
 
-/** Deterministic monotonic clock every fixture context observes. */
-function fixtureClock(): Clock {
-  let current = 0;
+/** A monotonic clock that advances 1 ms on every read, as the legacy fixture clock did; time never elapses on its own. */
+function countingClock(): Clock.Clock {
+  let current = 0n;
+  const tick = (): bigint => (current += 1_000_000n);
   return {
-    monotonicNow: (): number => ++current,
-    isoTimestamp: (): string => "2026-08-29T00:00:00.000Z",
-    delay: (): Promise<void> => Promise.resolve(),
+    currentTimeMillisUnsafe: () => 0,
+    currentTimeMillis: Effect.succeed(0),
+    currentTimeNanosUnsafe: () => 0n,
+    currentTimeNanos: Effect.succeed(0n),
+    monotonicTimeNanosUnsafe: tick,
+    monotonicTimeNanos: Effect.sync(tick),
+    sleep: () => Effect.never,
+  };
+}
+
+/**
+ * Wraps a session so every inspected key is recorded.
+ *
+ * @param session - The harness session.
+ * @param inspected - Receives every inspected key, in order.
+ * @returns The recording session.
+ */
+function recordingSession(session: RepositoryInspectionSession, inspected: string[]): RepositoryInspectionSession {
+  return {
+    ...session,
+    inspect: (key) => {
+      inspected.push(key);
+      return session.inspect(key);
+    },
   };
 }
 
 /** Immutable environment snapshot every fixture context observes. */
-function fixtureEnvironment(variables: Readonly<Record<string, string | undefined>> = {}): RuntimeEnvironment {
+function fixtureEnvironment(variables: Readonly<Record<string, string | undefined>> = {}): EnvironmentSnapshot {
   return {
     variables,
     cwd: "C:\\fixture\\arolariu.ro",
@@ -115,9 +139,14 @@ function resultById(results: readonly DiagnosticResult[], id: string): Diagnosti
 }
 
 interface PythonFixture {
-  readonly context: DoctorContext;
-  readonly inspect: Mock<(key: string) => Promise<InspectionOutcome<unknown>>>;
-  readonly probeRun: Mock<(...args: readonly unknown[]) => Promise<never>>;
+  /** Runs the module once against the fixture. */
+  readonly run: () => Promise<readonly DiagnosticResult[]>;
+  /** Every inspected key, in order. */
+  readonly inspected: readonly string[];
+  /** The harness; its process calls must stay empty. */
+  readonly harness: TestHarness;
+  /** Records every network probe request. */
+  readonly networkGet: Mock<NetworkProbe["Service"]["get"]>;
 }
 
 function createPythonFixture(
@@ -135,49 +164,41 @@ function createPythonFixture(
     durationMs: 0,
   };
 
-  const inspect = vi.fn(async (key: string): Promise<InspectionOutcome<unknown>> => {
-    if (key !== "python") {
-      throw new Error(`Unexpected inspection key requested: '${key}'.`);
-    }
-    return outcome;
-  });
-
-  const probeRun = vi.fn(async (): Promise<never> => {
-    throw new Error("doctor.python.ts must never call context.probes.");
-  });
-
-  const networkGet = vi.fn(
-    async (): Promise<DiagnosticNetworkResult> =>
+  const harness = makeTestLayer({inspection: {python: outcome}, environment: fixtureEnvironment(input.env ?? {})});
+  const networkGet = vi.fn<NetworkProbe["Service"]["get"]>(() =>
+    Effect.succeed<DiagnosticNetworkResult>(
       input.networkResult ?? {
         status: "reachable",
         statusCode: 200,
         durationMs: 3,
         body: JSON.stringify({info: {name: "pip"}}),
       },
+    ),
   );
 
-  const sink = new InMemoryLoggerSink();
-  const context: DoctorContext = {
-    options: doctorOptions(input.options),
-    paths: createRepositoryPaths(process.cwd()),
-    requirements:
-      input.requirements === "invalid"
-        ? {status: "invalid", errors: ["pyproject.toml uses unsupported syntax"]}
-        : {status: "valid", requirements: input.requirements ?? validRequirements()},
-    network: {get: networkGet},
-    logger: new MonorepositoryConsoleLogger("doctor::python", {color: false, sink}),
-    files: asReadOnlyFileSystem(createMemoryFileSystem()),
-    clock: fixtureClock(),
-    environment: fixtureEnvironment(input.env ?? {}),
-    probes: {run: probeRun as unknown as DoctorContext["probes"]["run"]},
-    inspection: {
-      inspect: inspect as unknown as LegacyRepositoryInspectionSession["inspect"],
-      invalidate: vi.fn(),
-      updateInfrastructureEngine: vi.fn(),
-    } as LegacyRepositoryInspectionSession,
-  };
+  const inspected: string[] = [];
+  const paths = createRepositoryPaths(process.cwd());
+  const layer = Layer.merge(harness.layer, Layer.succeed(NetworkProbe, NetworkProbe.of({get: networkGet})));
+  const run = (): Promise<readonly DiagnosticResult[]> =>
+    runScoped(
+      Effect.gen(function* () {
+        const session = yield* (yield* Inspection).session({profile: "full", paths});
+        const context: DoctorContext = {
+          options: doctorOptions(input.options),
+          paths,
+          requirements:
+            input.requirements === "invalid"
+              ? {status: "invalid", errors: ["pyproject.toml uses unsupported syntax"]}
+              : {status: "valid", requirements: input.requirements ?? validRequirements()},
+          inspection: recordingSession(session, inspected),
+          probes: inspectionProbeRunner,
+        };
+        return yield* Effect.provideService(pythonDoctorModule.run(context), Clock.Clock, countingClock());
+      }),
+      layer,
+    );
 
-  return {context, inspect, probeRun};
+  return {run, inspected, harness, networkGet};
 }
 
 afterEach(() => {
@@ -225,30 +246,30 @@ describe("pythonDoctorModule", () => {
   it("returns every stable python check in order for a healthy baseline", async () => {
     const fixture = createPythonFixture();
 
-    const results = await pythonDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     expect(resultIds(results)).toEqual([...PYTHON_IDS]);
     for (const result of results) {
       expect(result.status, `${result.id} should pass`).toBe("pass");
       expect(result.module).toBe("python");
     }
-    expect(fixture.inspect).toHaveBeenCalledExactlyOnceWith("python");
+    expect(fixture.inspected).toEqual(["python"]);
   });
 
   it("never calls context.probes in normal mode", async () => {
     const fixture = createPythonFixture();
 
-    await pythonDoctorModule.run(fixture.context);
+    await fixture.run();
 
-    expect(fixture.probeRun).not.toHaveBeenCalled();
+    expect(fixture.harness.processCalls()).toEqual([]);
   });
 
   it("never calls context.probes in quick mode", async () => {
     const fixture = createPythonFixture({options: {quick: true}});
 
-    await pythonDoctorModule.run(fixture.context);
+    await fixture.run();
 
-    expect(fixture.probeRun).not.toHaveBeenCalled();
+    expect(fixture.harness.processCalls()).toEqual([]);
   });
 
   // --- Runtime ---
@@ -256,7 +277,7 @@ describe("pythonDoctorModule", () => {
   it("passes python.runtime when a compatible interpreter is selected", async () => {
     const fixture = createPythonFixture();
 
-    const results = await pythonDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     const runtime = resultById(results, "python.runtime");
     expect(runtime.status).toBe("pass");
@@ -266,7 +287,7 @@ describe("pythonDoctorModule", () => {
   it("reports multiple interpreter candidates in evidence", async () => {
     const fixture = createPythonFixture();
 
-    const results = await pythonDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     const runtime = resultById(results, "python.runtime");
     expect(runtime.evidence.join("\n")).toContain("2");
@@ -276,7 +297,7 @@ describe("pythonDoctorModule", () => {
     const {selected: _selected, ...noSelectedFacts} = healthyPythonFacts();
     const fixture = createPythonFixture({outcome: {kind: "available", value: noSelectedFacts as PythonFacts, durationMs: 0}});
 
-    const results = await pythonDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     expect(resultById(results, "python.runtime").status).toBe("fail");
   });
@@ -285,7 +306,7 @@ describe("pythonDoctorModule", () => {
     const facts = healthyPythonFacts({interpreters: [], selected: selectedInterpreter()});
     const fixture = createPythonFixture({outcome: {kind: "available", value: facts, durationMs: 0}});
 
-    const results = await pythonDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     expect(resultById(results, "python.runtime").status).toBe("pass");
   });
@@ -295,7 +316,7 @@ describe("pythonDoctorModule", () => {
   it("passes python.virtual-environment when the venv exists and is compatible", async () => {
     const fixture = createPythonFixture();
 
-    const results = await pythonDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     expect(resultById(results, "python.virtual-environment").status).toBe("pass");
   });
@@ -304,7 +325,7 @@ describe("pythonDoctorModule", () => {
     const facts = healthyPythonFacts({virtualEnvironment: {exists: false, compatible: false}});
     const fixture = createPythonFixture({outcome: {kind: "available", value: facts, durationMs: 0}});
 
-    const results = await pythonDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     const venv = resultById(results, "python.virtual-environment");
     expect(venv.status).toBe("fail");
@@ -315,7 +336,7 @@ describe("pythonDoctorModule", () => {
     const facts = healthyPythonFacts({virtualEnvironment: {exists: true, compatible: false, version: "3.10.1"}});
     const fixture = createPythonFixture({outcome: {kind: "available", value: facts, durationMs: 0}});
 
-    const results = await pythonDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     const venv = resultById(results, "python.virtual-environment");
     expect(venv.status).toBe("fail");
@@ -328,7 +349,7 @@ describe("pythonDoctorModule", () => {
     });
     const fixture = createPythonFixture({outcome: {kind: "available", value: facts, durationMs: 0}});
 
-    const results = await pythonDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     const venv = resultById(results, "python.virtual-environment");
     expect(venv.evidence.join("\n")).not.toMatch(/[A-Z]:\\/u);
@@ -339,7 +360,7 @@ describe("pythonDoctorModule", () => {
   it("passes python.pip when pip is available", async () => {
     const fixture = createPythonFixture();
 
-    const results = await pythonDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     expect(resultById(results, "python.pip").status).toBe("pass");
   });
@@ -348,7 +369,7 @@ describe("pythonDoctorModule", () => {
     const facts = healthyPythonFacts({pip: {available: false, conflicts: []}});
     const fixture = createPythonFixture({outcome: {kind: "available", value: facts, durationMs: 0}});
 
-    const results = await pythonDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     expect(resultById(results, "python.pip").status).toBe("fail");
   });
@@ -357,7 +378,7 @@ describe("pythonDoctorModule", () => {
     const facts = healthyPythonFacts({virtualEnvironment: {exists: false, compatible: false}});
     const fixture = createPythonFixture({outcome: {kind: "available", value: facts, durationMs: 0}});
 
-    const results = await pythonDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     expect(resultById(results, "python.pip").status).toBe("skipped");
   });
@@ -367,7 +388,7 @@ describe("pythonDoctorModule", () => {
   it("passes python.requirements when all exact pins match", async () => {
     const fixture = createPythonFixture();
 
-    const results = await pythonDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     expect(resultById(results, "python.requirements").status).toBe("pass");
   });
@@ -382,7 +403,7 @@ describe("pythonDoctorModule", () => {
     });
     const fixture = createPythonFixture({outcome: {kind: "available", value: facts, durationMs: 0}});
 
-    const results = await pythonDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     const req = resultById(results, "python.requirements");
     expect(req.status).toBe("fail");
@@ -399,7 +420,7 @@ describe("pythonDoctorModule", () => {
     });
     const fixture = createPythonFixture({outcome: {kind: "available", value: facts, durationMs: 0}});
 
-    const results = await pythonDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     const req = resultById(results, "python.requirements");
     expect(req.status).toBe("warn");
@@ -412,7 +433,7 @@ describe("pythonDoctorModule", () => {
     });
     const fixture = createPythonFixture({outcome: {kind: "available", value: facts, durationMs: 0}});
 
-    const results = await pythonDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     expect(resultById(results, "python.requirements").status).toBe("pass");
   });
@@ -421,7 +442,7 @@ describe("pythonDoctorModule", () => {
     const facts = healthyPythonFacts({virtualEnvironment: {exists: false, compatible: false}});
     const fixture = createPythonFixture({outcome: {kind: "available", value: facts, durationMs: 0}});
 
-    const results = await pythonDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     expect(resultById(results, "python.requirements").status).toBe("skipped");
   });
@@ -431,7 +452,7 @@ describe("pythonDoctorModule", () => {
   it("passes python.conflicts when there are no conflicts", async () => {
     const fixture = createPythonFixture();
 
-    const results = await pythonDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     expect(resultById(results, "python.conflicts").status).toBe("pass");
   });
@@ -442,7 +463,7 @@ describe("pythonDoctorModule", () => {
     });
     const fixture = createPythonFixture({outcome: {kind: "available", value: facts, durationMs: 0}});
 
-    const results = await pythonDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     const conflicts = resultById(results, "python.conflicts");
     expect(conflicts.status).toBe("warn");
@@ -454,7 +475,7 @@ describe("pythonDoctorModule", () => {
     const facts = healthyPythonFacts({pip: {available: true, version: "24.0", conflicts: many}});
     const fixture = createPythonFixture({outcome: {kind: "available", value: facts, durationMs: 0}});
 
-    const results = await pythonDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     const conflicts = resultById(results, "python.conflicts");
     expect(conflicts.evidence.length).toBeLessThanOrEqual(6);
@@ -464,7 +485,7 @@ describe("pythonDoctorModule", () => {
     const facts = healthyPythonFacts({virtualEnvironment: {exists: false, compatible: false}});
     const fixture = createPythonFixture({outcome: {kind: "available", value: facts, durationMs: 0}});
 
-    const results = await pythonDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     expect(resultById(results, "python.conflicts").status).toBe("skipped");
   });
@@ -474,7 +495,7 @@ describe("pythonDoctorModule", () => {
   it("passes python.configuration when there are no issues", async () => {
     const fixture = createPythonFixture();
 
-    const results = await pythonDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     expect(resultById(results, "python.configuration").status).toBe("pass");
   });
@@ -483,7 +504,7 @@ describe("pythonDoctorModule", () => {
     const facts = healthyPythonFacts({configurationIssues: ["config.docker.json is missing required key 'Site:Name'."]});
     const fixture = createPythonFixture({outcome: {kind: "available", value: facts, durationMs: 0}});
 
-    const results = await pythonDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     const config = resultById(results, "python.configuration");
     expect(config.status).toBe("fail");
@@ -495,16 +516,16 @@ describe("pythonDoctorModule", () => {
   it("skips python.pypi in quick mode without probing the network", async () => {
     const fixture = createPythonFixture({options: {quick: true}});
 
-    const results = await pythonDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     expect(resultById(results, "python.pypi").status).toBe("skipped");
-    expect(fixture.context.network.get).not.toHaveBeenCalled();
+    expect(fixture.networkGet).not.toHaveBeenCalled();
   });
 
   it("passes python.pypi for a healthy PyPI response", async () => {
     const fixture = createPythonFixture();
 
-    const results = await pythonDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     expect(resultById(results, "python.pypi").status).toBe("pass");
   });
@@ -514,7 +535,7 @@ describe("pythonDoctorModule", () => {
       networkResult: {status: "unavailable", durationMs: 2, error: "getaddrinfo ENOTFOUND pypi.org"},
     });
 
-    const results = await pythonDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     expect(resultById(results, "python.pypi").status).toBe("skipped");
   });
@@ -524,7 +545,7 @@ describe("pythonDoctorModule", () => {
       networkResult: {status: "reachable", statusCode: 503, durationMs: 5, body: "Service Unavailable"},
     });
 
-    const results = await pythonDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     expect(resultById(results, "python.pypi").status).toBe("warn");
   });
@@ -534,7 +555,7 @@ describe("pythonDoctorModule", () => {
       networkResult: {status: "reachable", statusCode: 200, durationMs: 5, body: "not-json"},
     });
 
-    const results = await pythonDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     expect(resultById(results, "python.pypi").status).toBe("warn");
   });
@@ -546,7 +567,7 @@ describe("pythonDoctorModule", () => {
       outcome: {kind: "unavailable", reason: "The Python project root is missing.", durationMs: 0},
     });
 
-    const results = await pythonDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     expect(resultIds(results)).toEqual([...PYTHON_IDS]);
     for (const result of results) {
@@ -562,7 +583,7 @@ describe("pythonDoctorModule", () => {
     const issues = Array.from({length: 7}, (_, i) => `Python issue ${String(i)}.`);
     const fixture = createPythonFixture({outcome: {kind: "invalid", issues, durationMs: 0}});
 
-    const results = await pythonDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     for (const result of results) {
       if (result.id === "python.pypi") {
@@ -578,10 +599,10 @@ describe("pythonDoctorModule", () => {
       outcome: {kind: "unavailable", reason: "test", durationMs: 0},
     });
 
-    const results = await pythonDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     expect(resultById(results, "python.pypi").status).toBe("pass");
-    expect(fixture.context.network.get).toHaveBeenCalled();
+    expect(fixture.networkGet).toHaveBeenCalled();
   });
 
   it("skips PyPI in quick mode even when facts are unavailable", async () => {
@@ -590,20 +611,20 @@ describe("pythonDoctorModule", () => {
       outcome: {kind: "unavailable", reason: "test", durationMs: 0},
     });
 
-    const results = await pythonDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     expect(resultById(results, "python.pypi").status).toBe("skipped");
-    expect(fixture.context.network.get).not.toHaveBeenCalled();
+    expect(fixture.networkGet).not.toHaveBeenCalled();
   });
 
   // --- CI environment ---
 
   it("produces identical results with CI=true and CI=false", async () => {
     const factsCi = createPythonFixture({env: {CI: "true"}});
-    const resultsCi = await pythonDoctorModule.run(factsCi.context);
+    const resultsCi = await factsCi.run();
 
     const factsNoCi = createPythonFixture({env: {CI: "false"}});
-    const resultsNoCi = await pythonDoctorModule.run(factsNoCi.context);
+    const resultsNoCi = await factsNoCi.run();
 
     expect(resultIds(resultsCi)).toEqual(resultIds(resultsNoCi));
     for (const [index, result] of resultsCi.entries()) {

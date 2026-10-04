@@ -1,10 +1,16 @@
 // @vitest-environment node
 /**
  * @fileoverview Contract tests for central diagnostic helpers.
- * @module scripts.doctor.diagnostics.test
+ * @module scripts/commands/doctor/diagnostics.test
  */
 
+import {Effect} from "effect";
+import {TestClock} from "effect/testing";
 import {describe, expect, it} from "vitest";
+
+import {createRepositoryPaths} from "../../common/repository-paths.ts";
+import {inspectionProbeRunner} from "../../inspection/probes.ts";
+import {effectTest, makeTestLayer} from "../../platform/testing.ts";
 
 import {
   boundEvidence,
@@ -15,13 +21,15 @@ import {
   failDiagnostic,
   skippedDiagnostic as skipDiagnosticFactory,
   diagnosticResult,
+  moduleRunContext,
+  monotonicNow,
   STANDARD_EVIDENCE_LIMIT,
   VERBOSE_EVIDENCE_LIMIT,
   EVIDENCE_ENTRY_MAX_CHARS,
   COMMAND_EXCERPT_MAX_CHARS,
 } from "./diagnostics.ts";
 import {createDoctorReport} from "./reporter.ts";
-import type {DiagnosticResult} from "./types.ts";
+import type {DiagnosticResult, DoctorContext} from "./types.ts";
 
 // ============================================================================
 // Evidence bounding constants
@@ -337,4 +345,58 @@ describe("evidence bounding through createDoctorReport", () => {
     const report = createDoctorReport([check], "2026-01-01T00:00:00.000Z");
     expect(report.checks).toHaveLength(1);
   });
+});
+
+// ============================================================================
+// Module run context
+// ============================================================================
+
+describe("module run context", () => {
+  const harness = makeTestLayer({environment: {platform: "linux", architecture: "arm64"}});
+
+  effectTest(
+    "monotonicNow reads the fiber clock in milliseconds",
+    () =>
+      Effect.gen(function* () {
+        // Arrange
+        const now = yield* monotonicNow;
+        const startedAt = now();
+
+        // Act
+        yield* TestClock.adjust(250);
+
+        // Assert
+        expect(now() - startedAt).toBe(250);
+      }),
+    harness.layer,
+  );
+
+  effectTest(
+    "moduleRunContext extends the context with the clock and the environment snapshot",
+    () =>
+      Effect.gen(function* () {
+        // Arrange
+        const context: DoctorContext = {
+          options: {quick: true, verbose: false},
+          paths: createRepositoryPaths(process.cwd()),
+          requirements: {status: "invalid", errors: ["drift"]},
+          inspection: {
+            inspect: () => Effect.die(new Error("unused")),
+            invalidate: () => Effect.void,
+            updateInfrastructureEngine: () => Effect.void,
+          },
+          probes: inspectionProbeRunner,
+        };
+
+        // Act
+        const extended = yield* moduleRunContext(context);
+
+        // Assert
+        expect(extended.options).toBe(context.options);
+        expect(extended.inspection).toBe(context.inspection);
+        expect(extended.environment.architecture).toBe("arm64");
+        expect(typeof extended.monotonicNow()).toBe("number");
+      }),
+    harness.layer,
+  );
 });

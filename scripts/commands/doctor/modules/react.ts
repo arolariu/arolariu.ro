@@ -1,6 +1,6 @@
 /**
  * @fileoverview Read-only React, Next.js, i18n, taxonomy, license, Playwright, and framework-config diagnostics.
- * @module scripts.doctor.react
+ * @module scripts/commands/doctor/modules/react
  *
  * @remarks
  * Every diagnostic row in this module is derived exclusively from the shared
@@ -11,8 +11,17 @@
  * failure or skip; no diagnostic ever fabricates a healthy value from missing facts.
  */
 
-import {boundEvidence, diagnosticResult, skippedDiagnostic, STANDARD_EVIDENCE_LIMIT} from "../diagnostics.ts";
-import type {DiagnosticFix, DiagnosticModule, DiagnosticPotentialCause, DiagnosticResult, DoctorContext} from "../types.ts";
+import {Effect} from "effect";
+
+import {
+  boundEvidence,
+  diagnosticResult,
+  skippedDiagnostic,
+  STANDARD_EVIDENCE_LIMIT,
+  moduleRunContext,
+  type ModuleRunContext,
+} from "../diagnostics.ts";
+import type {DiagnosticFix, DiagnosticModule, DiagnosticPotentialCause, DiagnosticResult} from "../types.ts";
 import type {ReactFacts} from "../../../inspection/frontend.ts";
 import type {InstalledPackageFact, PackageInventoryFacts} from "../../../inspection/packages.ts";
 import type {InspectionOutcome} from "../../../inspection/types.ts";
@@ -33,7 +42,7 @@ const CHROMIUM_BROWSER_PATTERN = /chromium-\d/u;
 const REACT_INSPECTION_RESOLUTION_FIX = "Resolve the reported React inspection problem, then rerun doctor.";
 
 function diagnostic(
-  context: Readonly<DoctorContext>,
+  context: Readonly<ModuleRunContext>,
   startedAt: number,
   input: Omit<DiagnosticResult, "durationMs" | "module">,
 ): DiagnosticResult {
@@ -43,12 +52,12 @@ function diagnostic(
       ...input,
     },
     startedAt,
-    context.clock.monotonicNow,
+    context.monotonicNow,
   );
 }
 
 function issueDiagnostic(
-  context: Readonly<DoctorContext>,
+  context: Readonly<ModuleRunContext>,
   startedAt: number,
   input: Readonly<{
     id: string;
@@ -74,7 +83,7 @@ function issueDiagnostic(
 }
 
 function passDiagnostic(
-  context: Readonly<DoctorContext>,
+  context: Readonly<ModuleRunContext>,
   startedAt: number,
   id: string,
   name: string,
@@ -145,8 +154,8 @@ function skippedPlaywrightForMissingLockedVersion(): DiagnosticResult {
   });
 }
 
-function diagnosePackages(context: Readonly<DoctorContext>, facts: Readonly<ReactFacts>): DiagnosticResult {
-  const startedAt = context.clock.monotonicNow();
+function diagnosePackages(context: Readonly<ModuleRunContext>, facts: Readonly<ReactFacts>): DiagnosticResult {
+  const startedAt = context.monotonicNow();
   if (context.requirements.status === "invalid") {
     return skippedPackagesForInvalidRequirements();
   }
@@ -209,8 +218,8 @@ function diagnosePackages(context: Readonly<DoctorContext>, facts: Readonly<Reac
   });
 }
 
-function diagnoseWorkspaceLink(context: Readonly<DoctorContext>, facts: Readonly<ReactFacts>): DiagnosticResult {
-  const startedAt = context.clock.monotonicNow();
+function diagnoseWorkspaceLink(context: Readonly<ModuleRunContext>, facts: Readonly<ReactFacts>): DiagnosticResult {
+  const startedAt = context.monotonicNow();
   const issues = facts.workspaceLinkIssues;
 
   if (issues.length === 0) {
@@ -239,8 +248,8 @@ function diagnoseWorkspaceLink(context: Readonly<DoctorContext>, facts: Readonly
   });
 }
 
-function diagnoseEnvironment(context: Readonly<DoctorContext>, facts: Readonly<ReactFacts>): DiagnosticResult {
-  const startedAt = context.clock.monotonicNow();
+function diagnoseEnvironment(context: Readonly<ModuleRunContext>, facts: Readonly<ReactFacts>): DiagnosticResult {
+  const startedAt = context.monotonicNow();
   const environment = facts.environment;
 
   if (environment.syntaxErrors.length > 0) {
@@ -307,8 +316,8 @@ function diagnoseEnvironment(context: Readonly<DoctorContext>, facts: Readonly<R
   );
 }
 
-function diagnoseI18n(context: Readonly<DoctorContext>, facts: Readonly<ReactFacts>): DiagnosticResult {
-  const startedAt = context.clock.monotonicNow();
+function diagnoseI18n(context: Readonly<ModuleRunContext>, facts: Readonly<ReactFacts>): DiagnosticResult {
+  const startedAt = context.monotonicNow();
   const issues = facts.i18nIssues;
 
   if (issues.length === 0) {
@@ -334,8 +343,8 @@ function diagnoseI18n(context: Readonly<DoctorContext>, facts: Readonly<ReactFac
   });
 }
 
-function diagnoseTaxonomyAndLicenses(context: Readonly<DoctorContext>, facts: Readonly<ReactFacts>): DiagnosticResult {
-  const startedAt = context.clock.monotonicNow();
+function diagnoseTaxonomyAndLicenses(context: Readonly<ModuleRunContext>, facts: Readonly<ReactFacts>): DiagnosticResult {
+  const startedAt = context.monotonicNow();
   const issues = facts.artifactIssues;
 
   if (issues.length === 0) {
@@ -361,8 +370,8 @@ function diagnoseTaxonomyAndLicenses(context: Readonly<DoctorContext>, facts: Re
   });
 }
 
-function diagnosePlaywright(context: Readonly<DoctorContext>, facts: Readonly<ReactFacts>): DiagnosticResult {
-  const startedAt = context.clock.monotonicNow();
+function diagnosePlaywright(context: Readonly<ModuleRunContext>, facts: Readonly<ReactFacts>): DiagnosticResult {
+  const startedAt = context.monotonicNow();
   if (context.requirements.status === "invalid") {
     return skippedPlaywrightForInvalidRequirements();
   }
@@ -419,8 +428,8 @@ function diagnosePlaywright(context: Readonly<DoctorContext>, facts: Readonly<Re
   );
 }
 
-function diagnoseFrameworkConfig(context: Readonly<DoctorContext>, facts: Readonly<ReactFacts>): DiagnosticResult {
-  const startedAt = context.clock.monotonicNow();
+function diagnoseFrameworkConfig(context: Readonly<ModuleRunContext>, facts: Readonly<ReactFacts>): DiagnosticResult {
+  const startedAt = context.monotonicNow();
   const issues = facts.frameworkIssues;
 
   if (issues.length === 0) {
@@ -460,8 +469,8 @@ function diagnoseFrameworkConfig(context: Readonly<DoctorContext>, facts: Readon
  * @param evidence - Bounded, non-empty evidence describing the degraded outcome.
  * @returns The seven `react.*` diagnostic rows, in required order.
  */
-function degradedResults(context: Readonly<DoctorContext>, issues: readonly string[]): readonly DiagnosticResult[] {
-  const startedAt = context.clock.monotonicNow();
+function degradedResults(context: Readonly<ModuleRunContext>, issues: readonly string[]): readonly DiagnosticResult[] {
+  const startedAt = context.monotonicNow();
   const summary = "The shared React inspection facts could not be produced.";
   const evidence = boundedIssues(issues);
   const diagnosis = buildIssueDiagnosis(issues);
@@ -507,25 +516,27 @@ function degradedResults(context: Readonly<DoctorContext>, issues: readonly stri
 export const reactDoctorModule: DiagnosticModule = {
   id: "react",
   title: "React",
-  async run(context): Promise<readonly DiagnosticResult[]> {
-    const outcome: InspectionOutcome<ReactFacts> = await context.inspection.inspect("react");
+  run: (doctorContext) =>
+    Effect.gen(function* () {
+      const context = yield* moduleRunContext(doctorContext);
+      const outcome: InspectionOutcome<ReactFacts> = yield* context.inspection.inspect("react");
 
-    if (outcome.kind === "unavailable") {
-      return degradedResults(context, [outcome.reason]);
-    }
-    if (outcome.kind === "invalid") {
-      return degradedResults(context, outcome.issues);
-    }
+      if (outcome.kind === "unavailable") {
+        return degradedResults(context, [outcome.reason]);
+      }
+      if (outcome.kind === "invalid") {
+        return degradedResults(context, outcome.issues);
+      }
 
-    const facts = outcome.value;
-    return [
-      diagnosePackages(context, facts),
-      diagnoseWorkspaceLink(context, facts),
-      diagnoseEnvironment(context, facts),
-      diagnoseI18n(context, facts),
-      diagnoseTaxonomyAndLicenses(context, facts),
-      diagnosePlaywright(context, facts),
-      diagnoseFrameworkConfig(context, facts),
-    ];
-  },
+      const facts = outcome.value;
+      return [
+        diagnosePackages(context, facts),
+        diagnoseWorkspaceLink(context, facts),
+        diagnoseEnvironment(context, facts),
+        diagnoseI18n(context, facts),
+        diagnoseTaxonomyAndLicenses(context, facts),
+        diagnosePlaywright(context, facts),
+        diagnoseFrameworkConfig(context, facts),
+      ];
+    }),
 };

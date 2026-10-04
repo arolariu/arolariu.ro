@@ -1,17 +1,20 @@
 /**
  * @fileoverview Read-only Python diagnostics sourced exclusively from shared PythonFacts.
- * @module scripts.doctor.python
+ * @module scripts/commands/doctor/modules/python
  *
  * @remarks
  * Every diagnostic row in this module is derived exclusively from the shared `PythonFacts`
  * produced by `context.inspection.inspect("python")`, `context.requirements` for version policy,
- * and `context.network.get()` for PyPI reachability. This module never spawns a command, never
+ * and the bounded `NetworkProbe` service for PyPI reachability. This module never spawns a command, never
  * reads a file, and never uses an unrestricted runner or `context.probes`. When the shared inspection
  * outcome is `unavailable` or `invalid`, every fact-dependent row is an explicit failure; no
  * diagnostic ever fabricates a healthy value from missing facts.
  */
 
-import {boundEvidence, diagnosticResult, STANDARD_EVIDENCE_LIMIT} from "../diagnostics.ts";
+import {Effect} from "effect";
+
+import {boundEvidence, diagnosticResult, STANDARD_EVIDENCE_LIMIT, moduleRunContext, type ModuleRunContext} from "../diagnostics.ts";
+import {NetworkProbe} from "../NetworkProbe.ts";
 import {
   DIAGNOSTIC_DEFAULT_TIMEOUT_MS,
   skippedDiagnostic,
@@ -19,7 +22,6 @@ import {
   type DiagnosticModule,
   type DiagnosticPotentialCause,
   type DiagnosticResult,
-  type DoctorContext,
 } from "../types.ts";
 import type {PythonFacts} from "../../../inspection/python.ts";
 import type {InspectionOutcome} from "../../../inspection/types.ts";
@@ -36,15 +38,15 @@ function isRecord(value: unknown): value is UnknownRecord {
 }
 
 function diagnostic(
-  ctx: Readonly<DoctorContext>,
+  ctx: Readonly<ModuleRunContext>,
   startedAt: number,
   input: Omit<DiagnosticResult, "durationMs" | "module">,
 ): DiagnosticResult {
-  return diagnosticResult({module: "python", ...input}, startedAt, ctx.clock.monotonicNow);
+  return diagnosticResult({module: "python", ...input}, startedAt, ctx.monotonicNow);
 }
 
 function issueDiagnostic(
-  ctx: Readonly<DoctorContext>,
+  ctx: Readonly<ModuleRunContext>,
   startedAt: number,
   input: Readonly<{
     id: string;
@@ -70,7 +72,7 @@ function issueDiagnostic(
 }
 
 function passDiagnostic(
-  ctx: Readonly<DoctorContext>,
+  ctx: Readonly<ModuleRunContext>,
   startedAt: number,
   id: string,
   name: string,
@@ -100,8 +102,8 @@ function buildIssueDiagnosis(
 // Individual diagnostic functions
 // ============================================================================
 
-function diagnoseRuntime(ctx: Readonly<DoctorContext>, facts: Readonly<PythonFacts>): DiagnosticResult {
-  const startedAt = ctx.clock.monotonicNow();
+function diagnoseRuntime(ctx: Readonly<ModuleRunContext>, facts: Readonly<PythonFacts>): DiagnosticResult {
+  const startedAt = ctx.monotonicNow();
 
   if (facts.selected === undefined) {
     return issueDiagnostic(ctx, startedAt, {
@@ -127,8 +129,8 @@ function diagnoseRuntime(ctx: Readonly<DoctorContext>, facts: Readonly<PythonFac
   ]);
 }
 
-function diagnoseVirtualEnvironment(ctx: Readonly<DoctorContext>, facts: Readonly<PythonFacts>): DiagnosticResult {
-  const startedAt = ctx.clock.monotonicNow();
+function diagnoseVirtualEnvironment(ctx: Readonly<ModuleRunContext>, facts: Readonly<PythonFacts>): DiagnosticResult {
+  const startedAt = ctx.monotonicNow();
 
   if (!facts.virtualEnvironment.exists) {
     return issueDiagnostic(ctx, startedAt, {
@@ -175,7 +177,7 @@ function diagnoseVirtualEnvironment(ctx: Readonly<DoctorContext>, facts: Readonl
   );
 }
 
-function diagnosePip(ctx: Readonly<DoctorContext>, facts: Readonly<PythonFacts>, blocked: boolean): DiagnosticResult {
+function diagnosePip(ctx: Readonly<ModuleRunContext>, facts: Readonly<PythonFacts>, blocked: boolean): DiagnosticResult {
   if (blocked) {
     return skippedDiagnostic({
       id: "python.pip",
@@ -186,7 +188,7 @@ function diagnosePip(ctx: Readonly<DoctorContext>, facts: Readonly<PythonFacts>,
     });
   }
 
-  const startedAt = ctx.clock.monotonicNow();
+  const startedAt = ctx.monotonicNow();
   if (!facts.pip.available) {
     return issueDiagnostic(ctx, startedAt, {
       id: "python.pip",
@@ -209,7 +211,7 @@ function diagnosePip(ctx: Readonly<DoctorContext>, facts: Readonly<PythonFacts>,
   );
 }
 
-function diagnoseRequirements(ctx: Readonly<DoctorContext>, facts: Readonly<PythonFacts>, blocked: boolean): DiagnosticResult {
+function diagnoseRequirements(ctx: Readonly<ModuleRunContext>, facts: Readonly<PythonFacts>, blocked: boolean): DiagnosticResult {
   if (blocked) {
     return skippedDiagnostic({
       id: "python.requirements",
@@ -220,7 +222,7 @@ function diagnoseRequirements(ctx: Readonly<DoctorContext>, facts: Readonly<Pyth
     });
   }
 
-  const startedAt = ctx.clock.monotonicNow();
+  const startedAt = ctx.monotonicNow();
 
   if (facts.requirements.mismatches.length > 0) {
     const evidence = boundedIssues([...facts.requirements.mismatches, ...facts.requirements.unverifiable]);
@@ -266,7 +268,7 @@ function diagnoseRequirements(ctx: Readonly<DoctorContext>, facts: Readonly<Pyth
   );
 }
 
-function diagnoseConflicts(ctx: Readonly<DoctorContext>, facts: Readonly<PythonFacts>, blocked: boolean): DiagnosticResult {
+function diagnoseConflicts(ctx: Readonly<ModuleRunContext>, facts: Readonly<PythonFacts>, blocked: boolean): DiagnosticResult {
   if (blocked) {
     return skippedDiagnostic({
       id: "python.conflicts",
@@ -277,7 +279,7 @@ function diagnoseConflicts(ctx: Readonly<DoctorContext>, facts: Readonly<PythonF
     });
   }
 
-  const startedAt = ctx.clock.monotonicNow();
+  const startedAt = ctx.monotonicNow();
   if (facts.pip.conflicts.length > 0) {
     return issueDiagnostic(ctx, startedAt, {
       id: "python.conflicts",
@@ -295,8 +297,8 @@ function diagnoseConflicts(ctx: Readonly<DoctorContext>, facts: Readonly<PythonF
   ]);
 }
 
-function diagnoseConfiguration(ctx: Readonly<DoctorContext>, facts: Readonly<PythonFacts>): DiagnosticResult {
-  const startedAt = ctx.clock.monotonicNow();
+function diagnoseConfiguration(ctx: Readonly<ModuleRunContext>, facts: Readonly<PythonFacts>): DiagnosticResult {
+  const startedAt = ctx.monotonicNow();
   if (facts.configurationIssues.length > 0) {
     const evidence = boundedIssues(facts.configurationIssues);
     const diagnosis = buildIssueDiagnosis(facts.configurationIssues);
@@ -338,67 +340,69 @@ function isValidPyPiPackageIndex(body: string | undefined): boolean {
   return isRecord(info) && typeof info["name"] === "string" && info["name"].toLowerCase() === "pip";
 }
 
-async function diagnosePyPi(ctx: Readonly<DoctorContext>): Promise<DiagnosticResult> {
-  if (ctx.options.quick) {
-    return skippedDiagnostic({
-      id: "python.pypi",
-      module: "python",
-      name: "PyPI reachability",
-      summary: "PyPI reachability was skipped in quick mode.",
-      evidence: ["--quick intentionally skips network reachability probes."],
-    });
-  }
+function diagnosePyPi(ctx: Readonly<ModuleRunContext>): Effect.Effect<DiagnosticResult, never, NetworkProbe> {
+  return Effect.gen(function* () {
+    if (ctx.options.quick) {
+      return skippedDiagnostic({
+        id: "python.pypi",
+        module: "python",
+        name: "PyPI reachability",
+        summary: "PyPI reachability was skipped in quick mode.",
+        evidence: ["--quick intentionally skips network reachability probes."],
+      });
+    }
 
-  const startedAt = ctx.clock.monotonicNow();
-  const probe = await ctx.network.get(PYPI_PIP_INDEX_URL, DIAGNOSTIC_DEFAULT_TIMEOUT_MS);
-  if (probe.status !== "reachable") {
-    return skippedDiagnostic({
-      id: "python.pypi",
-      module: "python",
-      name: "PyPI reachability",
-      summary: "PyPI reachability could not be determined.",
-      evidence: [probe.error ?? `Network probe reported status '${probe.status}'.`],
-    });
-  }
+    const startedAt = ctx.monotonicNow();
+    const probe = yield* (yield* NetworkProbe).get(PYPI_PIP_INDEX_URL, DIAGNOSTIC_DEFAULT_TIMEOUT_MS);
+    if (probe.status !== "reachable") {
+      return skippedDiagnostic({
+        id: "python.pypi",
+        module: "python",
+        name: "PyPI reachability",
+        summary: "PyPI reachability could not be determined.",
+        evidence: [probe.error ?? `Network probe reported status '${probe.status}'.`],
+      });
+    }
 
-  if (probe.statusCode !== 200) {
-    return issueDiagnostic(ctx, startedAt, {
-      id: "python.pypi",
-      name: "PyPI reachability",
-      status: "warn",
-      summary: "PyPI returned an unexpected response.",
-      evidence: [`HTTP status: ${String(probe.statusCode)}`],
-      rootCause: "The public PyPI JSON API responded without a successful status.",
-      fixes: [{description: "Verify PyPI availability, then rerun doctor."}],
-    });
-  }
+    if (probe.statusCode !== 200) {
+      return issueDiagnostic(ctx, startedAt, {
+        id: "python.pypi",
+        name: "PyPI reachability",
+        status: "warn",
+        summary: "PyPI returned an unexpected response.",
+        evidence: [`HTTP status: ${String(probe.statusCode)}`],
+        rootCause: "The public PyPI JSON API responded without a successful status.",
+        fixes: [{description: "Verify PyPI availability, then rerun doctor."}],
+      });
+    }
 
-  if (!isValidPyPiPackageIndex(probe.body)) {
-    return issueDiagnostic(ctx, startedAt, {
-      id: "python.pypi",
-      name: "PyPI reachability",
-      status: "warn",
-      summary: "PyPI returned a malformed package index response.",
-      evidence: [
-        `HTTP status: ${String(probe.statusCode)}`,
-        probe.body === undefined || probe.body.trim() === "" ? "No response body was captured." : "Response body is malformed.",
-      ],
-      rootCause: "The PyPI JSON response did not contain the expected pip package info.",
-      fixes: [{description: "Verify PyPI availability, then rerun doctor."}],
-    });
-  }
+    if (!isValidPyPiPackageIndex(probe.body)) {
+      return issueDiagnostic(ctx, startedAt, {
+        id: "python.pypi",
+        name: "PyPI reachability",
+        status: "warn",
+        summary: "PyPI returned a malformed package index response.",
+        evidence: [
+          `HTTP status: ${String(probe.statusCode)}`,
+          probe.body === undefined || probe.body.trim() === "" ? "No response body was captured." : "Response body is malformed.",
+        ],
+        rootCause: "The PyPI JSON response did not contain the expected pip package info.",
+        fixes: [{description: "Verify PyPI availability, then rerun doctor."}],
+      });
+    }
 
-  return passDiagnostic(ctx, startedAt, "python.pypi", "PyPI reachability", "PyPI is reachable.", [
-    `HTTP status: ${String(probe.statusCode)}`,
-  ]);
+    return passDiagnostic(ctx, startedAt, "python.pypi", "PyPI reachability", "PyPI is reachable.", [
+      `HTTP status: ${String(probe.statusCode)}`,
+    ]);
+  });
 }
 
 // ============================================================================
 // Degraded outcome handling
 // ============================================================================
 
-function degradedResults(ctx: Readonly<DoctorContext>, issues: readonly string[]): readonly DiagnosticResult[] {
-  const startedAt = ctx.clock.monotonicNow();
+function degradedResults(ctx: Readonly<ModuleRunContext>, issues: readonly string[]): readonly DiagnosticResult[] {
+  const startedAt = ctx.monotonicNow();
   const summary = "The shared Python inspection facts could not be produced.";
   const evidence = boundedIssues(issues);
   const diagnosis = buildIssueDiagnosis(issues);
@@ -428,29 +432,31 @@ function degradedResults(ctx: Readonly<DoctorContext>, issues: readonly string[]
 export const pythonDoctorModule: DiagnosticModule = {
   id: "python",
   title: "Python",
-  async run(context): Promise<readonly DiagnosticResult[]> {
-    const outcome: InspectionOutcome<PythonFacts> = await context.inspection.inspect("python");
+  run: (doctorContext) =>
+    Effect.gen(function* () {
+      const context = yield* moduleRunContext(doctorContext);
+      const outcome: InspectionOutcome<PythonFacts> = yield* context.inspection.inspect("python");
 
-    let factResults: readonly DiagnosticResult[];
+      let factResults: readonly DiagnosticResult[];
 
-    if (outcome.kind === "unavailable") {
-      factResults = degradedResults(context, [outcome.reason]);
-    } else if (outcome.kind === "invalid") {
-      factResults = degradedResults(context, outcome.issues);
-    } else {
-      const facts = outcome.value;
-      const blocked = !facts.virtualEnvironment.exists || !facts.virtualEnvironment.compatible;
-      factResults = [
-        diagnoseRuntime(context, facts),
-        diagnoseVirtualEnvironment(context, facts),
-        diagnosePip(context, facts, blocked),
-        diagnoseRequirements(context, facts, blocked),
-        diagnoseConflicts(context, facts, blocked),
-        diagnoseConfiguration(context, facts),
-      ];
-    }
+      if (outcome.kind === "unavailable") {
+        factResults = degradedResults(context, [outcome.reason]);
+      } else if (outcome.kind === "invalid") {
+        factResults = degradedResults(context, outcome.issues);
+      } else {
+        const facts = outcome.value;
+        const blocked = !facts.virtualEnvironment.exists || !facts.virtualEnvironment.compatible;
+        factResults = [
+          diagnoseRuntime(context, facts),
+          diagnoseVirtualEnvironment(context, facts),
+          diagnosePip(context, facts, blocked),
+          diagnoseRequirements(context, facts, blocked),
+          diagnoseConflicts(context, facts, blocked),
+          diagnoseConfiguration(context, facts),
+        ];
+      }
 
-    const pypi = await diagnosePyPi(context);
-    return [...factResults, pypi];
-  },
+      const pypi = yield* diagnosePyPi(context);
+      return [...factResults, pypi];
+    }),
 };

@@ -4,14 +4,12 @@
  *
  * @remarks
  * {@link inspectionProbeRunner} runs a registered probe through the Effect `Process` service and
- * maps every process failure to {@link ProbeOutcome} data. {@link createInspectionProbeRunner} is
- * the temporary legacy Promise runner over the legacy `ProcessRunner`, kept only for the legacy
- * Doctor modules (converted in Task 4.4).
+ * maps every process failure to {@link ProbeOutcome} data.
  */
 
 import {Duration, Effect} from "effect";
 
-import type {ProcessEnvironment, ProcessOutcome, ProcessRequest, ProcessRunner} from "../common/runner.ts";
+import type {ProcessRequest} from "../common/runner.ts";
 import {Process} from "../platform/Process.ts";
 
 /** Exact allowlisted command specification backing one registered {@link InspectionProbe}. */
@@ -77,19 +75,6 @@ export interface InspectionProbeRunOptions {
 export interface InspectionProbeRunner {
   /** Runs one registered probe and reports every completion, including failures, as data. */
   readonly run: (probe: InspectionProbe, options?: InspectionProbeRunOptions) => Effect.Effect<ProbeOutcome, never, Process>;
-}
-
-/** Options accepted by {@link LegacyInspectionProbeRunner.run}. Deleted in Task 4.4. */
-export interface LegacyInspectionProbeRunOptions {
-  readonly cwd?: string;
-  readonly env?: ProcessEnvironment;
-  readonly timeoutMs?: number;
-  readonly signal?: AbortSignal;
-}
-
-/** Legacy Promise probe runner over the legacy `ProcessRunner`. Deleted in Task 4.4. */
-export interface LegacyInspectionProbeRunner {
-  readonly run: (probe: InspectionProbe, options?: Readonly<LegacyInspectionProbeRunOptions>) => Promise<ProcessOutcome>;
 }
 
 /** Default timeout applied to a probe run when the caller does not supply an override. */
@@ -191,34 +176,6 @@ export const inspectionProbeRunner: InspectionProbeRunner = {
  */
 function outputOf(error: ProbeOutput): ProbeOutput {
   return {stdout: error.stdout, stderr: error.stderr, durationMs: error.durationMs};
-}
-
-/**
- * Creates a legacy Promise runner that executes only previously registered {@link InspectionProbe}
- * handles through a legacy `ProcessRunner`.
- *
- * @remarks
- * Forces captured output, applies the bounded default timeout, and preserves `cwd`, `env`, and
- * `signal` unchanged. Deleted in Task 4.4, once the legacy Doctor modules run on
- * {@link inspectionProbeRunner}.
- *
- * @param runner - Shared process runner used to execute the resolved command.
- * @returns A legacy probe runner whose `run` resolves with the runner's typed `ProcessOutcome`.
- */
-export function createInspectionProbeRunner(runner: ProcessRunner): LegacyInspectionProbeRunner {
-  return {
-    run: async (probe, options = {}) => {
-      const command = registeredCommand(probe);
-      const timeoutMs = resolveProbeTimeoutMs(options.timeoutMs);
-      return runner.run(command, {
-        ...(options.cwd === undefined ? {} : {cwd: options.cwd}),
-        ...(options.env === undefined ? {} : {env: options.env}),
-        ...(options.signal === undefined ? {} : {signal: options.signal}),
-        timeoutMs,
-        output: "capture",
-      });
-    },
-  };
 }
 
 /** Matches C0/C1 control characters and DEL, rejected from every validated dynamic value. */

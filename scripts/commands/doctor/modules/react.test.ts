@@ -1,10 +1,10 @@
 // @vitest-environment node
 /**
  * @fileoverview Contract tests for read-only React and website diagnostics.
- * @module scripts.doctor.react.test
+ * @module scripts/commands/doctor/modules/react.test
  *
  * @remarks
- * `doctor.react.ts` is sourced exclusively from `context.inspection.inspect("react")`. These
+ * `modules/react.ts` is sourced exclusively from `context.inspection.inspect("react")`. These
  * tests never write a fixture file, spawn a command, or construct a `CommandSpec`: they configure
  * a fake inspection session that returns a deterministic `InspectionOutcome<ReactFacts>`, and
  * assert on the produced `DiagnosticResult` rows. `context.runner` and `context.probes` are wired
@@ -14,19 +14,22 @@
 import {readFile} from "node:fs/promises";
 import {dirname, resolve} from "node:path";
 import {fileURLToPath} from "node:url";
-import {afterEach, describe, expect, it, vi, type Mock} from "vitest";
+import {Clock, Effect, Layer} from "effect";
+import {afterEach, describe, expect, it, vi} from "vitest";
 
-import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "../../../common/logger.ts";
 import {createRepositoryPaths} from "../../../common/repository-paths.ts";
 import type {RepositoryRequirements} from "../../../common/requirements.ts";
-import {asReadOnlyFileSystem, type Clock, type RuntimeEnvironment} from "../../../common/runtime.ts";
-import {createMemoryFileSystem} from "../../../common/runtime.testing.ts";
+import {Inspection} from "../../../inspection/Inspection.ts";
+import {inspectionProbeRunner} from "../../../inspection/probes.ts";
+import type {RepositoryInspectionSession} from "../../../inspection/repository.ts";
+import type {EnvironmentSnapshot} from "../../../platform/Environment.ts";
+import {makeTestLayer, runScoped, type TestHarness} from "../../../platform/testing.ts";
 import {reactDoctorModule} from "./react.ts";
+import {NetworkProbe} from "../NetworkProbe.ts";
 import {createDoctorReport} from "../reporter.ts";
-import type {DiagnosticNetworkResult, DiagnosticResult, DoctorContext, DoctorInput} from "../types.ts";
+import type {DiagnosticResult, DoctorContext, DoctorInput} from "../types.ts";
 import type {EnvironmentFacts, ReactFacts} from "../../../inspection/frontend.ts";
 import type {InstalledPackageFact, PackageInventoryFacts} from "../../../inspection/packages.ts";
-import type {LegacyRepositoryInspectionSession} from "../../../platform/bridge.ts";
 import type {InspectionOutcome} from "../../../inspection/types.ts";
 
 const moduleDirectory = dirname(fileURLToPath(import.meta.url));
@@ -60,18 +63,46 @@ function doctorOptions(patch: Partial<DoctorInput> = {}): DoctorInput {
   return {verbose: false, quick: false, ...patch};
 }
 
-/** Deterministic monotonic clock every fixture context observes. */
-function fixtureClock(): Clock {
-  let current = 0;
+/** A network probe that dies on any request: these modules never reach the network. */
+const unscriptedNetwork = Layer.succeed(
+  NetworkProbe,
+  NetworkProbe.of({get: (url) => Effect.die(new Error(`unscripted network probe: ${url.href}`))}),
+);
+
+/** A monotonic clock that advances 1 ms on every read, as the legacy fixture clock did; time never elapses on its own. */
+function countingClock(): Clock.Clock {
+  let current = 0n;
+  const tick = (): bigint => (current += 1_000_000n);
   return {
-    monotonicNow: (): number => ++current,
-    isoTimestamp: (): string => "2026-08-29T00:00:00.000Z",
-    delay: (): Promise<void> => Promise.resolve(),
+    currentTimeMillisUnsafe: () => 0,
+    currentTimeMillis: Effect.succeed(0),
+    currentTimeNanosUnsafe: () => 0n,
+    currentTimeNanos: Effect.succeed(0n),
+    monotonicTimeNanosUnsafe: tick,
+    monotonicTimeNanos: Effect.sync(tick),
+    sleep: () => Effect.never,
+  };
+}
+
+/**
+ * Wraps a session so every inspected key is recorded.
+ *
+ * @param session - The harness session.
+ * @param inspected - Receives every inspected key, in order.
+ * @returns The recording session.
+ */
+function recordingSession(session: RepositoryInspectionSession, inspected: string[]): RepositoryInspectionSession {
+  return {
+    ...session,
+    inspect: (key) => {
+      inspected.push(key);
+      return session.inspect(key);
+    },
   };
 }
 
 /** Immutable environment snapshot every fixture context observes. */
-function fixtureEnvironment(variables: Readonly<Record<string, string | undefined>> = {}): RuntimeEnvironment {
+function fixtureEnvironment(variables: Readonly<Record<string, string | undefined>> = {}): EnvironmentSnapshot {
   return {
     variables,
     cwd: "C:\\fixture\\arolariu.ro",
@@ -138,9 +169,12 @@ function resultById(results: readonly DiagnosticResult[], id: string): Diagnosti
 }
 
 interface ReactFixture {
-  readonly context: DoctorContext;
-  readonly inspect: Mock<(key: string) => Promise<InspectionOutcome<unknown>>>;
-  readonly probeRun: Mock<(...args: readonly unknown[]) => Promise<never>>;
+  /** Runs the module once against the fixture. */
+  readonly run: () => Promise<readonly DiagnosticResult[]>;
+  /** Every inspected key, in order. */
+  readonly inspected: readonly string[];
+  /** The harness; its process calls must stay empty. */
+  readonly harness: TestHarness;
 }
 
 function createReactFixture(
@@ -151,42 +185,31 @@ function createReactFixture(
   }> = {},
 ): ReactFixture {
   const outcome: InspectionOutcome<ReactFacts> = input.outcome ?? {kind: "available", value: healthyReactFacts(), durationMs: 0};
+  const harness = makeTestLayer({inspection: {react: outcome}, environment: fixtureEnvironment()});
+  const requirements: DoctorContext["requirements"] =
+    input.requirements === "invalid"
+      ? {status: "invalid", errors: [".nvmrc disagrees with package.json#engines.node"]}
+      : {status: "valid", requirements: input.requirements ?? validRequirements()};
+  const inspected: string[] = [];
+  const paths = createRepositoryPaths(fixtureRoot);
+  const options = doctorOptions(input.options);
+  const run = (): Promise<readonly DiagnosticResult[]> =>
+    runScoped(
+      Effect.gen(function* () {
+        const session = yield* (yield* Inspection).session({profile: "full", paths});
+        const context: DoctorContext = {
+          options,
+          paths,
+          requirements,
+          inspection: recordingSession(session, inspected),
+          probes: inspectionProbeRunner,
+        };
+        return yield* Effect.provideService(reactDoctorModule.run(context), Clock.Clock, countingClock());
+      }),
+      Layer.merge(harness.layer, unscriptedNetwork),
+    );
 
-  const inspect = vi.fn(async (key: string): Promise<InspectionOutcome<unknown>> => {
-    if (key !== "react") {
-      throw new Error(`Unexpected inspection key requested: '${key}'.`);
-    }
-    return outcome;
-  });
-
-  const probeRun = vi.fn(async (): Promise<never> => {
-    throw new Error("doctor.react.ts must never call context.probes.");
-  });
-
-  const sink = new InMemoryLoggerSink();
-  const context: DoctorContext = {
-    options: doctorOptions(input.options),
-    paths: createRepositoryPaths(fixtureRoot),
-    requirements:
-      input.requirements === "invalid"
-        ? {status: "invalid", errors: [".nvmrc disagrees with package.json#engines.node"]}
-        : {status: "valid", requirements: input.requirements ?? validRequirements()},
-    network: {
-      get: vi.fn(async (): Promise<DiagnosticNetworkResult> => ({status: "reachable", statusCode: 200, durationMs: 1})),
-    },
-    logger: new MonorepositoryConsoleLogger("doctor::react", {color: false, sink}),
-    files: asReadOnlyFileSystem(createMemoryFileSystem()),
-    clock: fixtureClock(),
-    environment: fixtureEnvironment(),
-    probes: {run: probeRun as unknown as DoctorContext["probes"]["run"]},
-    inspection: {
-      inspect: inspect as unknown as LegacyRepositoryInspectionSession["inspect"],
-      invalidate: vi.fn(),
-      updateInfrastructureEngine: vi.fn(),
-    } as LegacyRepositoryInspectionSession,
-  };
-
-  return {context, inspect, probeRun};
+  return {run, inspected, harness};
 }
 
 afterEach(() => {
@@ -197,7 +220,7 @@ describe("reactDoctorModule", () => {
   it("returns every stable react check in order for a healthy baseline", async () => {
     const fixture = createReactFixture();
 
-    const results = await reactDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     expect(resultIds(results)).toEqual([
       "react.packages",
@@ -211,7 +234,7 @@ describe("reactDoctorModule", () => {
     for (const result of results) {
       expect(result.status, `${result.id} should pass`).toBe("pass");
     }
-    expect(fixture.inspect).toHaveBeenCalledExactlyOnceWith("react");
+    expect(fixture.inspected).toEqual(["react"]);
   });
 
   it("produces degraded results when react inspection is unavailable", async () => {
@@ -219,7 +242,7 @@ describe("reactDoctorModule", () => {
       outcome: {kind: "unavailable", reason: "The React inspection worker crashed.", durationMs: 0},
     });
 
-    const results = await reactDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     expect(resultIds(results)).toEqual([
       "react.packages",
@@ -240,7 +263,7 @@ describe("reactDoctorModule", () => {
     const issues = Array.from({length: 7}, (_, index) => `React inspection issue ${String(index)}.`);
     const fixture = createReactFixture({outcome: {kind: "invalid", issues, durationMs: 0}});
 
-    const results = await reactDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     for (const result of results) {
       expect(result.status).toBe("fail");
@@ -257,7 +280,7 @@ describe("reactDoctorModule", () => {
   it("skips package comparison when requirements are invalid", async () => {
     const fixture = createReactFixture({requirements: "invalid"});
 
-    const results = await reactDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     const packages = resultById(results, "react.packages");
     expect(packages.status).toBe("skipped");
@@ -273,7 +296,7 @@ describe("reactDoctorModule", () => {
     const facts = healthyReactFacts({packages: healthyPackageInventoryFacts({react: {version: "19.0.0"}})});
     const fixture = createReactFixture({outcome: {kind: "available", value: facts, durationMs: 0}});
 
-    const results = await reactDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     const packages = resultById(results, "react.packages");
     expect(packages.status).toBe("fail");
@@ -284,7 +307,7 @@ describe("reactDoctorModule", () => {
     const facts = healthyReactFacts({workspaceLinkIssues: ["sites/arolariu.ro/package.json does not declare @arolariu/components."]});
     const fixture = createReactFixture({outcome: {kind: "available", value: facts, durationMs: 0}});
 
-    const results = await reactDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     const workspaceLink = resultById(results, "react.workspace-link");
     expect(workspaceLink.status).toBe("fail");
@@ -297,7 +320,7 @@ describe("reactDoctorModule", () => {
     });
     const fixture = createReactFixture({outcome: {kind: "available", value: facts, durationMs: 0}});
 
-    const results = await reactDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     const environment = resultById(results, "react.environment");
     expect(environment.status).toBe("fail");
@@ -311,7 +334,7 @@ describe("reactDoctorModule", () => {
     });
     const fixture = createReactFixture({outcome: {kind: "available", value: facts, durationMs: 0}});
 
-    const results = await reactDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     const environment = resultById(results, "react.environment");
     expect(environment.status).toBe("fail");
@@ -328,7 +351,7 @@ describe("reactDoctorModule", () => {
     });
     const fixture = createReactFixture({outcome: {kind: "available", value: facts, durationMs: 0}});
 
-    const results = await reactDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     const environment = resultById(results, "react.environment");
     expect(environment.status).toBe("warn");
@@ -341,7 +364,7 @@ describe("reactDoctorModule", () => {
     });
     const fixture = createReactFixture({outcome: {kind: "available", value: facts, durationMs: 0}});
 
-    const results = await reactDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     const environment = resultById(results, "react.environment");
     expect(environment.status).toBe("fail");
@@ -354,7 +377,7 @@ describe("reactDoctorModule", () => {
     const facts = healthyReactFacts({i18nIssues: ["messages/fr.json key shape does not match messages/en.json."]});
     const fixture = createReactFixture({outcome: {kind: "available", value: facts, durationMs: 0}});
 
-    const results = await reactDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     const i18n = resultById(results, "react.i18n");
     expect(i18n.status).toBe("fail");
@@ -365,7 +388,7 @@ describe("reactDoctorModule", () => {
     const facts = healthyReactFacts({artifactIssues: ["licenses.json is missing a production entry for 'left-pad'."]});
     const fixture = createReactFixture({outcome: {kind: "available", value: facts, durationMs: 0}});
 
-    const results = await reactDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     const taxonomy = resultById(results, "react.taxonomy-and-licenses");
     expect(taxonomy.status).toBe("fail");
@@ -376,7 +399,7 @@ describe("reactDoctorModule", () => {
     const facts = healthyReactFacts({playwright: {version: "1.60.0", browsers: ["chromium-1223"]}});
     const fixture = createReactFixture({outcome: {kind: "available", value: facts, durationMs: 0}});
 
-    const results = await reactDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     const playwright = resultById(results, "react.playwright");
     expect(playwright.status).toBe("fail");
@@ -387,7 +410,7 @@ describe("reactDoctorModule", () => {
     const facts = healthyReactFacts({playwright: {version: "1.62.1", browsers: ["ffmpeg-1011"]}});
     const fixture = createReactFixture({outcome: {kind: "available", value: facts, durationMs: 0}});
 
-    const results = await reactDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     const playwright = resultById(results, "react.playwright");
     expect(playwright.status).toBe("fail");
@@ -397,7 +420,7 @@ describe("reactDoctorModule", () => {
   it("skips Playwright when no locked version exists", async () => {
     const fixture = createReactFixture({requirements: validRequirements({omitPackages: ["playwright"]})});
 
-    const results = await reactDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     const playwright = resultById(results, "react.playwright");
     expect(playwright.status).toBe("skipped");
@@ -410,7 +433,7 @@ describe("reactDoctorModule", () => {
     const facts = healthyReactFacts({frameworkIssues: ["next.config.ts does not wire next-intl message declaration generation."]});
     const fixture = createReactFixture({outcome: {kind: "available", value: facts, durationMs: 0}});
 
-    const results = await reactDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     const frameworkConfig = resultById(results, "react.framework-config");
     expect(frameworkConfig.status).toBe("fail");
@@ -420,9 +443,9 @@ describe("reactDoctorModule", () => {
   it("never invokes context.probes", async () => {
     const fixture = createReactFixture();
 
-    await reactDoctorModule.run(fixture.context);
+    await fixture.run();
 
-    expect(fixture.probeRun).not.toHaveBeenCalled();
+    expect(fixture.harness.processCalls()).toEqual([]);
   });
 
   it("never imports CommandSpec", async () => {

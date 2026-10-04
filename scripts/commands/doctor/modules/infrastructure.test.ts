@@ -1,24 +1,26 @@
 // @vitest-environment node
 /**
  * @fileoverview Contract tests for read-only infrastructure diagnostics sourced from shared facts.
- * @module scripts.doctor.infrastructure.test
+ * @module scripts/commands/doctor/modules/infrastructure.test
  */
 
 import {mkdir, mkdtemp, rm, writeFile} from "node:fs/promises";
 import {tmpdir} from "node:os";
 import {dirname, join, resolve} from "node:path";
+import {Clock, Effect, Layer} from "effect";
 import {afterEach, describe, expect, it, vi} from "vitest";
 
-import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "../../../common/logger.ts";
 import {createRepositoryPaths} from "../../../common/repository-paths.ts";
 import type {RepositoryRequirements} from "../../../common/requirements.ts";
-import {asReadOnlyFileSystem, type Clock, type RuntimeEnvironment} from "../../../common/runtime.ts";
-import {nodeFileSystem} from "../../../common/runtime.node.ts";
+import {Inspection} from "../../../inspection/Inspection.ts";
+import {inspectionProbeRunner} from "../../../inspection/probes.ts";
+import type {EnvironmentSnapshot} from "../../../platform/Environment.ts";
+import {makeTestLayer, runScoped} from "../../../platform/testing.ts";
 import {infrastructureDoctorModule} from "./infrastructure.ts";
+import {NetworkProbe} from "../NetworkProbe.ts";
 import {createDoctorReport} from "../reporter.ts";
-import {type DiagnosticNetworkResult, type DoctorContext, type DoctorInput} from "../types.ts";
+import type {DiagnosticResult, DoctorContext, DoctorInput} from "../types.ts";
 import type {InfrastructureFacts} from "../../../inspection/infrastructure.ts";
-import type {LegacyRepositoryInspectionSession} from "../../../platform/bridge.ts";
 import type {InspectionOutcome} from "../../../inspection/types.ts";
 
 const fixtureRoots: string[] = [];
@@ -58,13 +60,24 @@ function doctorOptions(patch: Partial<DoctorInput> = {}): DoctorInput {
   return {verbose: false, quick: false, ...patch};
 }
 
-/** Deterministic monotonic clock every fixture context observes. */
-function fixtureClock(): Clock {
-  let current = 0;
+/** A network probe that dies on any request: these modules never reach the network. */
+const unscriptedNetwork = Layer.succeed(
+  NetworkProbe,
+  NetworkProbe.of({get: (url) => Effect.die(new Error(`unscripted network probe: ${url.href}`))}),
+);
+
+/** A monotonic clock that advances 1 ms on every read, as the legacy fixture clock did; time never elapses on its own. */
+function countingClock(): Clock.Clock {
+  let current = 0n;
+  const tick = (): bigint => (current += 1_000_000n);
   return {
-    monotonicNow: (): number => ++current,
-    isoTimestamp: (): string => "2026-08-29T00:00:00.000Z",
-    delay: (): Promise<void> => Promise.resolve(),
+    currentTimeMillisUnsafe: () => 0,
+    currentTimeMillis: Effect.succeed(0),
+    currentTimeNanosUnsafe: () => 0n,
+    currentTimeNanos: Effect.succeed(0n),
+    monotonicTimeNanosUnsafe: tick,
+    monotonicTimeNanos: Effect.sync(tick),
+    sleep: () => Effect.never,
   };
 }
 
@@ -72,7 +85,7 @@ function fixtureClock(): Clock {
 function fixtureEnvironment(
   variables: Readonly<Record<string, string | undefined>> = {},
   platform: NodeJS.Platform = "win32",
-): RuntimeEnvironment {
+): EnvironmentSnapshot {
   return {
     variables,
     cwd: "C:\\fixture\\arolariu.ro",
@@ -108,7 +121,8 @@ function healthyFacts(patch: Partial<InfrastructureFacts> = {}): InfrastructureF
 
 interface InfrastructureFixture {
   readonly root: string;
-  readonly context: DoctorContext;
+  /** Runs the module once against the fixture's current infrastructure outcome. */
+  readonly run: () => Promise<readonly DiagnosticResult[]>;
   readonly setInfrastructureFacts: (facts: InfrastructureFacts) => void;
   readonly setInfrastructureUnavailable: (reason?: string) => void;
 }
@@ -145,40 +159,30 @@ async function createInfrastructureFixture(
       ? {kind: "available", value: input.initialFacts, durationMs: 0}
       : {kind: "unavailable", reason: "No facts configured.", durationMs: 0};
 
-  const inspection: LegacyRepositoryInspectionSession = {
-    inspect: async (key: string): Promise<InspectionOutcome<unknown>> => {
-      if (key === "infrastructure") {
-        return infraOutcome;
-      }
-      return {kind: "unavailable", reason: "Not needed.", durationMs: 0};
-    },
-    invalidate: (): void => {},
-    updateInfrastructureEngine: (): void => {},
-  } as unknown as LegacyRepositoryInspectionSession;
-
-  const sink = new InMemoryLoggerSink();
-  const context: DoctorContext = {
-    options: doctorOptions(input.options),
-    paths,
-    requirements: {status: "valid", requirements: validRequirements},
-    network: {
-      get: vi.fn(async (): Promise<DiagnosticNetworkResult> => ({status: "reachable", statusCode: 200, durationMs: 1})),
-    },
-    logger: new MonorepositoryConsoleLogger("doctor::infrastructure", {color: false, sink}),
-    files: asReadOnlyFileSystem(nodeFileSystem),
-    clock: fixtureClock(),
-    environment: fixtureEnvironment(input.env ?? {}, "linux"),
-    inspection,
-    probes: {
-      run: vi.fn(async () => {
-        throw new Error("probes should not be invoked in infrastructure fact tests.");
+  const options = doctorOptions(input.options);
+  const environment = fixtureEnvironment(input.env ?? {}, "linux");
+  const run = (): Promise<readonly DiagnosticResult[]> => {
+    // The real filesystem serves the temporary fixture; every process call is unscripted, so a probe would die.
+    const harness = makeTestLayer({fileSystem: "node", inspection: {infrastructure: infraOutcome}, environment});
+    return runScoped(
+      Effect.gen(function* () {
+        const session = yield* (yield* Inspection).session({profile: "full", paths});
+        const context: DoctorContext = {
+          options,
+          paths,
+          requirements: {status: "valid", requirements: validRequirements},
+          inspection: session,
+          probes: inspectionProbeRunner,
+        };
+        return yield* Effect.provideService(infrastructureDoctorModule.run(context), Clock.Clock, countingClock());
       }),
-    },
+      Layer.merge(harness.layer, unscriptedNetwork),
+    );
   };
 
   return {
     root,
-    context,
+    run,
     setInfrastructureFacts: (facts: InfrastructureFacts): void => {
       infraOutcome = {kind: "available", value: facts, durationMs: 0};
     },
@@ -200,7 +204,7 @@ describe("infrastructureDoctorModule – stable ID ordering", () => {
       initialFacts: healthyFacts({selectedEngine: "rancher"}),
     });
 
-    const results = await infrastructureDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     expect(results.map(({id}) => id)).toEqual(STABLE_INFRASTRUCTURE_IDS);
     expect(results.every(({module}) => module === "infrastructure")).toBe(true);
@@ -223,7 +227,7 @@ describe("infrastructureDoctorModule – stable ID ordering", () => {
       initialFacts: healthyFacts({selectedEngine: "podman"}),
     });
 
-    const results = await infrastructureDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     expect(results.map(({id}) => id)).toEqual(STABLE_INFRASTRUCTURE_IDS);
     expect(results.every((r) => r.status === "pass" || r.id === "infrastructure.socket-context")).toBe(true);
@@ -238,7 +242,7 @@ describe("infrastructureDoctorModule – selection", () => {
       initialFacts: healthyFacts({selectedEngine: "podman"}),
     });
 
-    const results = await infrastructureDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     const selection = results.find(({id}) => id === "infrastructure.selection");
     expect(selection?.status).toBe("pass");
@@ -259,7 +263,7 @@ describe("infrastructureDoctorModule – selection", () => {
       })(),
     });
 
-    const results = await infrastructureDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     expect(results.map(({id}) => id)).toEqual(STABLE_INFRASTRUCTURE_IDS);
     const selection = results.find(({id}) => id === "infrastructure.selection");
@@ -284,7 +288,7 @@ describe("infrastructureDoctorModule – selection", () => {
   it("fails selection with an invalid-configuration root cause for an unsupported engine value", async () => {
     const fixture = await createInfrastructureFixture({env: {AROLARIU_CONTAINER_ENGINE: "docker"}});
 
-    const results = await infrastructureDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     const selection = results.find(({id}) => id === "infrastructure.selection");
     expect(selection?.status).toBe("fail");
@@ -300,7 +304,7 @@ describe("infrastructureDoctorModule – selection", () => {
       initialFacts: healthyFacts({selectedEngine: "rancher"}),
     });
 
-    const results = await infrastructureDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     const selection = results.find(({id}) => id === "infrastructure.selection");
     expect(selection?.status).toBe("warn");
@@ -315,7 +319,7 @@ describe("infrastructureDoctorModule – CLI", () => {
       initialFacts: healthyFacts({cliAvailable: false}),
     });
 
-    const results = await infrastructureDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     expect(results.find(({id}) => id === "infrastructure.cli")?.status).toBe("fail");
     for (const id of [
@@ -339,7 +343,7 @@ describe("infrastructureDoctorModule – CLI", () => {
       initialFacts: healthyFacts({cliAvailable: false}),
     });
 
-    const results = await infrastructureDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     const cli = results.find(({id}) => id === "infrastructure.cli");
     expect(cli?.status).toBe("fail");
@@ -360,7 +364,7 @@ describe("infrastructureDoctorModule – backend and compose", () => {
       initialFacts: healthyFacts({backendAvailable: false}),
     });
 
-    const results = await infrastructureDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     const backend = results.find(({id}) => id === "infrastructure.backend");
     expect(backend?.status).toBe("fail");
@@ -375,7 +379,7 @@ describe("infrastructureDoctorModule – backend and compose", () => {
       initialFacts: healthyFacts({composeAvailable: false}),
     });
 
-    const results = await infrastructureDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     const compose = results.find(({id}) => id === "infrastructure.compose");
     expect(compose?.status).toBe("fail");
@@ -390,7 +394,7 @@ describe("infrastructureDoctorModule – Docker Desktop conflict", () => {
       initialFacts: healthyFacts({dockerConflict: true}),
     });
 
-    const results = await infrastructureDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     const conflict = results.find(({id}) => id === "infrastructure.docker-conflict");
     expect(conflict?.status).toBe("fail");
@@ -404,7 +408,7 @@ describe("infrastructureDoctorModule – Docker Desktop conflict", () => {
       initialFacts: healthyFacts({selectedEngine: "podman", dockerConflict: true}),
     });
 
-    const results = await infrastructureDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     const conflict = results.find(({id}) => id === "infrastructure.docker-conflict");
     expect(conflict?.status).toBe("fail");
@@ -417,9 +421,7 @@ describe("infrastructureDoctorModule – Docker Desktop conflict", () => {
       initialFacts: healthyFacts({dockerConflict: false}),
     });
 
-    expect((await infrastructureDoctorModule.run(fixture.context)).find(({id}) => id === "infrastructure.docker-conflict")?.status).toBe(
-      "pass",
-    );
+    expect((await fixture.run()).find(({id}) => id === "infrastructure.docker-conflict")?.status).toBe("pass");
   });
 });
 
@@ -430,9 +432,7 @@ describe("infrastructureDoctorModule – socket-context", () => {
       initialFacts: healthyFacts(),
     });
 
-    expect((await infrastructureDoctorModule.run(fixture.context)).find(({id}) => id === "infrastructure.socket-context")?.status).toBe(
-      "skipped",
-    );
+    expect((await fixture.run()).find(({id}) => id === "infrastructure.socket-context")?.status).toBe("skipped");
   });
 
   it("passes socket-context with non-empty evidence when triggered by a failed backend", async () => {
@@ -441,7 +441,7 @@ describe("infrastructureDoctorModule – socket-context", () => {
       initialFacts: healthyFacts({backendAvailable: false, socketContextIssues: []}),
     });
 
-    const results = await infrastructureDoctorModule.run(fixture.context);
+    const results = await fixture.run();
     const socketContext = results.find(({id}) => id === "infrastructure.socket-context");
     expect(socketContext?.status).toBe("pass");
     expect(socketContext?.evidence.length).toBeGreaterThan(0);
@@ -456,7 +456,7 @@ describe("infrastructureDoctorModule – socket-context", () => {
       }),
     });
 
-    const results = await infrastructureDoctorModule.run(fixture.context);
+    const results = await fixture.run();
     const socketContext = results.find(({id}) => id === "infrastructure.socket-context");
     expect(socketContext?.status).toBe("warn");
     expect(socketContext?.evidence.join("\n")).toContain("context or connection state");
@@ -469,7 +469,7 @@ describe("infrastructureDoctorModule – socket-context", () => {
       initialFacts: healthyFacts(),
     });
 
-    const results = await infrastructureDoctorModule.run(fixture.context);
+    const results = await fixture.run();
     const socketContext = results.find(({id}) => id === "infrastructure.socket-context");
     expect(socketContext?.status).toBe("pass");
     expect(socketContext?.evidence.length).toBeGreaterThan(0);
@@ -488,7 +488,7 @@ describe("infrastructureDoctorModule – ports", () => {
       }),
     });
 
-    expect((await infrastructureDoctorModule.run(fixture.context)).find(({id}) => id === "infrastructure.ports")?.status).toBe("pass");
+    expect((await fixture.run()).find(({id}) => id === "infrastructure.ports")?.status).toBe("pass");
   });
 
   it("warns ports when the known local stack occupies a port (via container published ports)", async () => {
@@ -500,7 +500,7 @@ describe("infrastructureDoctorModule – ports", () => {
       }),
     });
 
-    const results = await infrastructureDoctorModule.run(fixture.context);
+    const results = await fixture.run();
     const ports = results.find(({id}) => id === "infrastructure.ports");
     expect(ports?.status).toBe("warn");
     expect(ports?.rootCause).toMatch(/already running/u);
@@ -515,7 +515,7 @@ describe("infrastructureDoctorModule – ports", () => {
       }),
     });
 
-    expect((await infrastructureDoctorModule.run(fixture.context)).find(({id}) => id === "infrastructure.ports")?.status).toBe("warn");
+    expect((await fixture.run()).find(({id}) => id === "infrastructure.ports")?.status).toBe("warn");
   });
 
   it("fails ports when an unrelated process occupies a required port", async () => {
@@ -527,7 +527,7 @@ describe("infrastructureDoctorModule – ports", () => {
       }),
     });
 
-    const results = await infrastructureDoctorModule.run(fixture.context);
+    const results = await fixture.run();
     const ports = results.find(({id}) => id === "infrastructure.ports");
     expect(ports?.status).toBe("fail");
     expect(ports?.evidence.join("\n")).toContain("9001");
@@ -543,7 +543,7 @@ describe("infrastructureDoctorModule – ports", () => {
       }),
     });
 
-    const results = await infrastructureDoctorModule.run(fixture.context);
+    const results = await fixture.run();
     expect(results.find(({id}) => id === "infrastructure.ports")?.status).toBe("fail");
     expect(results.find(({id}) => id === "infrastructure.ports")?.evidence.join("\n")).toContain("7777");
   });
@@ -556,7 +556,7 @@ describe("infrastructureDoctorModule – ports", () => {
       }),
     });
 
-    const results = await infrastructureDoctorModule.run(fixture.context);
+    const results = await fixture.run();
     const ports = results.find(({id}) => id === "infrastructure.ports");
     expect(ports?.status).toBe("warn");
     expect(ports?.potentialCauses.length).toBeGreaterThan(0);
@@ -570,7 +570,7 @@ describe("infrastructureDoctorModule – certificates", () => {
       initialFacts: healthyFacts({certificateIssues: ["Missing selfhost certificate file: infra/Local/Management/certs/local-cert.pem"]}),
     });
 
-    const results = await infrastructureDoctorModule.run(fixture.context);
+    const results = await fixture.run();
     const cert = results.find(({id}) => id === "infrastructure.certificates");
     expect(cert?.status).toBe("warn");
     expect(cert?.evidence.join("\n")).toContain("local-cert.pem");
@@ -583,9 +583,7 @@ describe("infrastructureDoctorModule – certificates", () => {
       initialFacts: healthyFacts({certificateIssues: []}),
     });
 
-    expect((await infrastructureDoctorModule.run(fixture.context)).find(({id}) => id === "infrastructure.certificates")?.status).toBe(
-      "pass",
-    );
+    expect((await fixture.run()).find(({id}) => id === "infrastructure.certificates")?.status).toBe("pass");
   });
 });
 
@@ -596,7 +594,7 @@ describe("infrastructureDoctorModule – manifests", () => {
       initialFacts: healthyFacts({manifestIssues: ["Missing required manifest: tooling/AppHost/AppHost.csproj"]}),
     });
 
-    const results = await infrastructureDoctorModule.run(fixture.context);
+    const results = await fixture.run();
     const manifests = results.find(({id}) => id === "infrastructure.manifests");
     expect(manifests?.status).toBe("fail");
     expect(manifests?.evidence.join("\n")).toContain("AppHost.csproj");
@@ -608,7 +606,7 @@ describe("infrastructureDoctorModule – manifests", () => {
       initialFacts: healthyFacts({manifestIssues: []}),
     });
 
-    expect((await infrastructureDoctorModule.run(fixture.context)).find(({id}) => id === "infrastructure.manifests")?.status).toBe("pass");
+    expect((await fixture.run()).find(({id}) => id === "infrastructure.manifests")?.status).toBe("pass");
   });
 });
 
@@ -619,7 +617,7 @@ describe("infrastructureDoctorModule – containers", () => {
       initialFacts: healthyFacts({containers: []}),
     });
 
-    expect((await infrastructureDoctorModule.run(fixture.context)).find(({id}) => id === "infrastructure.containers")?.status).toBe("pass");
+    expect((await fixture.run()).find(({id}) => id === "infrastructure.containers")?.status).toBe("pass");
   });
 
   it("passes containers when all known containers are running", async () => {
@@ -633,7 +631,7 @@ describe("infrastructureDoctorModule – containers", () => {
       }),
     });
 
-    expect((await infrastructureDoctorModule.run(fixture.context)).find(({id}) => id === "infrastructure.containers")?.status).toBe("pass");
+    expect((await fixture.run()).find(({id}) => id === "infrastructure.containers")?.status).toBe("pass");
   });
 
   it("warns containers when a known container is stopped or stale", async () => {
@@ -644,7 +642,7 @@ describe("infrastructureDoctorModule – containers", () => {
       }),
     });
 
-    const results = await infrastructureDoctorModule.run(fixture.context);
+    const results = await fixture.run();
     const containers = results.find(({id}) => id === "infrastructure.containers");
     expect(containers?.status).toBe("warn");
     expect(containers?.evidence.join("\n")).toContain("mssql");
@@ -658,7 +656,7 @@ describe("infrastructureDoctorModule – containers", () => {
       }),
     });
 
-    const results = await infrastructureDoctorModule.run(fixture.context);
+    const results = await fixture.run();
     const containers = results.find(({id}) => id === "infrastructure.containers");
     expect(containers?.status).toBe("warn");
     expect(containers?.status).not.toBe("pass");
@@ -673,7 +671,7 @@ describe("infrastructureDoctorModule – containers", () => {
       }),
     });
 
-    expect((await infrastructureDoctorModule.run(fixture.context)).find(({id}) => id === "infrastructure.containers")?.status).toBe("pass");
+    expect((await fixture.run()).find(({id}) => id === "infrastructure.containers")?.status).toBe("pass");
   });
 });
 
@@ -682,7 +680,7 @@ describe("infrastructureDoctorModule – degraded facts", () => {
     const fixture = await createInfrastructureFixture({env: {AROLARIU_CONTAINER_ENGINE: "rancher"}});
     fixture.setInfrastructureUnavailable("Worker could not be reached.");
 
-    const results = await infrastructureDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     expect(results.map(({id}) => id)).toEqual(STABLE_INFRASTRUCTURE_IDS);
     for (const id of STABLE_INFRASTRUCTURE_IDS.slice(1)) {
@@ -699,8 +697,8 @@ describe("infrastructureDoctorModule – CI parity", () => {
     const fixtureCI = await createInfrastructureFixture({env: {AROLARIU_CONTAINER_ENGINE: "rancher", CI: "true"}, initialFacts});
     const fixtureNoCI = await createInfrastructureFixture({env: {AROLARIU_CONTAINER_ENGINE: "rancher"}, initialFacts});
 
-    const resultsCI = await infrastructureDoctorModule.run(fixtureCI.context);
-    const resultsNoCI = await infrastructureDoctorModule.run(fixtureNoCI.context);
+    const resultsCI = await fixtureCI.run();
+    const resultsNoCI = await fixtureNoCI.run();
 
     expect(resultsCI.map(({id}) => id)).toEqual(resultsNoCI.map(({id}) => id));
     expect(resultsCI.map(({status}) => status)).toEqual(resultsNoCI.map(({status}) => status));
@@ -720,7 +718,7 @@ describe("infrastructureDoctorModule – CI parity", () => {
 
     for (const facts of scenarios) {
       const fixture = await createInfrastructureFixture({env: {AROLARIU_CONTAINER_ENGINE: "rancher"}, initialFacts: facts});
-      const results = await infrastructureDoctorModule.run(fixture.context);
+      const results = await fixture.run();
       expect(() => createDoctorReport(results, new Date().toISOString())).not.toThrow();
     }
   });

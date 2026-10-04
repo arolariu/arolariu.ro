@@ -163,12 +163,18 @@ const doctorForbiddenModules: ReadonlySet<string> = new Set([
   "os",
   "./common/runtime.node.ts",
   "./common/runner.execa.ts",
+  "effect/FileSystem",
 ]);
 
-/** Imported names no Doctor production module may take, even from an otherwise approved module. */
+/**
+ * Imported names no Doctor production module may take, even from an otherwise approved module: the
+ * mutating Effect `FileSystem` and the unrestricted Effect `HttpClient` widen the read-only profile.
+ */
 const doctorForbiddenImportNames: ReadonlyMap<string, ReadonlySet<string>> = new Map([
   ["./common/runtime.ts", new Set(["FileSystem"])],
   ["./common/runner.ts", new Set(["ProcessRunner"])],
+  ["effect", new Set(["FileSystem"])],
+  ["effect/http", new Set(["HttpClient"])],
 ]);
 /**
  * Approved production adapter of RFC 0002 section 5.3. It owns ambient filesystem, fetch, timer,
@@ -1459,6 +1465,21 @@ describe("runtime boundary policy", () => {
       {file: "scripts/commands/doctor/example.ts", specifier: "./common/runner.ts", name: "*"},
       {file: "scripts/commands/doctor/example.ts", specifier: "./common/runner.ts", name: "*"},
       {file: "scripts/commands/doctor/example.ts", specifier: "./common/runtime.ts", name: "*"},
+    ]);
+  });
+
+  it("rejects Effect imports that widen Doctor beyond the read-only profile", () => {
+    const source = [
+      'import {Effect, FileSystem} from "effect";',
+      'import * as FS from "effect/FileSystem";',
+      'import {HttpClient, HttpClientError} from "effect/http";',
+      'import {Effect as Allowed} from "effect";',
+    ].join("\n");
+
+    expect(scanDoctorCapabilitySource("scripts/commands/doctor/modules/example.ts", source)).toEqual([
+      {file: "scripts/commands/doctor/modules/example.ts", specifier: "effect", name: "FileSystem"},
+      {file: "scripts/commands/doctor/modules/example.ts", specifier: "effect/FileSystem"},
+      {file: "scripts/commands/doctor/modules/example.ts", specifier: "effect/http", name: "HttpClient"},
     ]);
   });
 

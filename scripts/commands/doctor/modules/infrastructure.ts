@@ -1,12 +1,13 @@
 /**
  * @fileoverview Read-only local container runtime, port, certificate, and manifest diagnostics.
- * @module scripts.doctor.infrastructure
+ * @module scripts/commands/doctor/modules/infrastructure
  *
  * @remarks
  * Every diagnostic row in this module is derived from two shared inspection fact sets obtained
  * through `context.inspection.inspect("infrastructure")` and
  * `context.inspection.inspect("aggregate")`, plus a bounded tooling-configuration read issued
- * through the injected read-only filesystem (`context.files`) for the engine-selection
+ * through the read-only `ReadOnlyFiles` service (via the bridge's legacy read-only view the
+ * shared `readToolingConfig` helper takes) for the engine-selection
  * diagnostic. This module never spawns a command, never reads a port directly, never imports a
  * Node filesystem API, and never uses an unrestricted runner or `context.probes` for any
  * diagnostic purpose.
@@ -18,17 +19,20 @@
  * independently diagnosable.
  */
 
-import {readToolingConfig} from "../../../common/tooling-config.ts";
+import {Effect} from "effect";
+
+import {readToolingConfig, type ToolingConfigReadResult} from "../../../common/tooling-config.ts";
 import {resolveContainerEngine} from "../../../container-runtime/selection.ts";
 import {ContainerRuntimeError, type ContainerEngine} from "../../../container-runtime/types.ts";
-import {boundEvidence, diagnosticResult} from "../diagnostics.ts";
+import {legacyReadOnlyFiles} from "../../../platform/bridge.ts";
+import type {ReadOnlyFiles} from "../../../platform/Files.ts";
+import {boundEvidence, diagnosticResult, moduleRunContext, type ModuleRunContext} from "../diagnostics.ts";
 import {
   skippedDiagnostic,
   type DiagnosticFix,
   type DiagnosticModule,
   type DiagnosticPotentialCause,
   type DiagnosticResult,
-  type DoctorContext,
 } from "../types.ts";
 import type {InfrastructureFacts} from "../../../inspection/infrastructure.ts";
 import type {InspectionOutcome} from "../../../inspection/types.ts";
@@ -47,7 +51,7 @@ const SETUP_REMEDIATION_FIX: DiagnosticFix = {
 };
 
 function diagnostic(
-  context: Readonly<DoctorContext>,
+  context: Readonly<ModuleRunContext>,
   startedAt: number,
   input: Omit<DiagnosticResult, "durationMs" | "module">,
 ): DiagnosticResult {
@@ -57,12 +61,12 @@ function diagnostic(
       ...input,
     },
     startedAt,
-    context.clock.monotonicNow,
+    context.monotonicNow,
   );
 }
 
 function issueDiagnostic(
-  context: Readonly<DoctorContext>,
+  context: Readonly<ModuleRunContext>,
   startedAt: number,
   input: Readonly<{
     id: string;
@@ -88,7 +92,7 @@ function issueDiagnostic(
 }
 
 function passDiagnostic(
-  context: Readonly<DoctorContext>,
+  context: Readonly<ModuleRunContext>,
   startedAt: number,
   id: string,
   name: string,
@@ -134,9 +138,24 @@ interface SelectionOutcome {
   readonly selection: Readonly<{engine: ContainerEngine; source: "argument" | "environment" | "configuration"}> | null;
 }
 
-async function diagnoseSelection(context: Readonly<DoctorContext>): Promise<SelectionOutcome> {
-  const startedAt = context.clock.monotonicNow();
-  const configRead = await readToolingConfig(context.paths.toolingConfig, context.files);
+function diagnoseSelection(context: Readonly<ModuleRunContext>): Effect.Effect<SelectionOutcome, never, ReadOnlyFiles> {
+  return Effect.gen(function* () {
+    const startedAt = context.monotonicNow();
+    const files = yield* legacyReadOnlyFiles;
+    const configRead = yield* Effect.promise(() => readToolingConfig(context.paths.toolingConfig, files));
+    return resolveSelection(context, startedAt, configRead);
+  });
+}
+
+/**
+ * Resolves the container engine from the environment and the tooling configuration read.
+ *
+ * @param context - Shared module run context.
+ * @param startedAt - Monotonic start of the selection diagnostic.
+ * @param configRead - The local tooling configuration read.
+ * @returns The selection diagnostic and the resolved selection, or `null` when none resolved.
+ */
+function resolveSelection(context: Readonly<ModuleRunContext>, startedAt: number, configRead: ToolingConfigReadResult): SelectionOutcome {
   const configuredEngine = configRead.status === "valid" ? configRead.config.containerEngine : undefined;
 
   let selection: Readonly<{engine: ContainerEngine; source: "argument" | "environment" | "configuration"}>;
@@ -195,8 +214,8 @@ async function diagnoseSelection(context: Readonly<DoctorContext>): Promise<Sele
   };
 }
 
-function diagnoseCli(context: Readonly<DoctorContext>, facts: Readonly<InfrastructureFacts>, engine: ContainerEngine): DiagnosticResult {
-  const startedAt = context.clock.monotonicNow();
+function diagnoseCli(context: Readonly<ModuleRunContext>, facts: Readonly<InfrastructureFacts>, engine: ContainerEngine): DiagnosticResult {
+  const startedAt = context.monotonicNow();
   const cli = cliName(engine);
 
   if (!facts.cliAvailable) {
@@ -218,11 +237,11 @@ function diagnoseCli(context: Readonly<DoctorContext>, facts: Readonly<Infrastru
 }
 
 function diagnoseBackend(
-  context: Readonly<DoctorContext>,
+  context: Readonly<ModuleRunContext>,
   facts: Readonly<InfrastructureFacts>,
   engine: ContainerEngine,
 ): DiagnosticResult {
-  const startedAt = context.clock.monotonicNow();
+  const startedAt = context.monotonicNow();
   const label = engineLabel(engine);
 
   if (!facts.backendAvailable) {
@@ -244,11 +263,11 @@ function diagnoseBackend(
 }
 
 function diagnoseCompose(
-  context: Readonly<DoctorContext>,
+  context: Readonly<ModuleRunContext>,
   facts: Readonly<InfrastructureFacts>,
   engine: ContainerEngine,
 ): DiagnosticResult {
-  const startedAt = context.clock.monotonicNow();
+  const startedAt = context.monotonicNow();
   const label = engineLabel(engine);
 
   if (!facts.composeAvailable) {
@@ -277,11 +296,11 @@ function diagnoseCompose(
 }
 
 function diagnoseDockerConflict(
-  context: Readonly<DoctorContext>,
+  context: Readonly<ModuleRunContext>,
   facts: Readonly<InfrastructureFacts>,
   engine: ContainerEngine,
 ): DiagnosticResult {
-  const startedAt = context.clock.monotonicNow();
+  const startedAt = context.monotonicNow();
 
   if (facts.dockerConflict) {
     const summary =
@@ -317,7 +336,7 @@ function diagnoseDockerConflict(
 }
 
 function diagnoseSocketContext(
-  context: Readonly<DoctorContext>,
+  context: Readonly<ModuleRunContext>,
   facts: Readonly<InfrastructureFacts>,
   backendOk: boolean,
   composeOk: boolean,
@@ -332,7 +351,7 @@ function diagnoseSocketContext(
     );
   }
 
-  const startedAt = context.clock.monotonicNow();
+  const startedAt = context.monotonicNow();
 
   if (facts.socketContextIssues.length > 0) {
     return issueDiagnostic(context, startedAt, {
@@ -356,8 +375,8 @@ function diagnoseSocketContext(
   );
 }
 
-function diagnosePorts(context: Readonly<DoctorContext>, facts: Readonly<InfrastructureFacts>): DiagnosticResult {
-  const startedAt = context.clock.monotonicNow();
+function diagnosePorts(context: Readonly<ModuleRunContext>, facts: Readonly<InfrastructureFacts>): DiagnosticResult {
+  const startedAt = context.monotonicNow();
 
   const portsWithErrors = facts.ports.filter((p) => p.error !== undefined);
   if (portsWithErrors.length > 0) {
@@ -436,8 +455,8 @@ function diagnosePorts(context: Readonly<DoctorContext>, facts: Readonly<Infrast
   });
 }
 
-function diagnoseCertificates(context: Readonly<DoctorContext>, facts: Readonly<InfrastructureFacts>): DiagnosticResult {
-  const startedAt = context.clock.monotonicNow();
+function diagnoseCertificates(context: Readonly<ModuleRunContext>, facts: Readonly<InfrastructureFacts>): DiagnosticResult {
+  const startedAt = context.monotonicNow();
 
   if (facts.certificateIssues.length > 0) {
     return issueDiagnostic(context, startedAt, {
@@ -461,8 +480,8 @@ function diagnoseCertificates(context: Readonly<DoctorContext>, facts: Readonly<
   );
 }
 
-function diagnoseManifests(context: Readonly<DoctorContext>, facts: Readonly<InfrastructureFacts>): DiagnosticResult {
-  const startedAt = context.clock.monotonicNow();
+function diagnoseManifests(context: Readonly<ModuleRunContext>, facts: Readonly<InfrastructureFacts>): DiagnosticResult {
+  const startedAt = context.monotonicNow();
 
   if (facts.manifestIssues.length > 0) {
     return issueDiagnostic(context, startedAt, {
@@ -486,8 +505,8 @@ function diagnoseManifests(context: Readonly<DoctorContext>, facts: Readonly<Inf
   );
 }
 
-function diagnoseContainers(context: Readonly<DoctorContext>, facts: Readonly<InfrastructureFacts>): DiagnosticResult {
-  const startedAt = context.clock.monotonicNow();
+function diagnoseContainers(context: Readonly<ModuleRunContext>, facts: Readonly<InfrastructureFacts>): DiagnosticResult {
+  const startedAt = context.monotonicNow();
 
   if (facts.containers.length === 0) {
     return passDiagnostic(
@@ -558,8 +577,8 @@ function diagnoseContainers(context: Readonly<DoctorContext>, facts: Readonly<In
  * @param issues - Bounded issue strings describing why the facts could not be produced.
  * @returns Fail rows for all ten infrastructure diagnostics, starting at infrastructure.cli.
  */
-function degradedInfraResults(context: Readonly<DoctorContext>, issues: readonly string[]): readonly DiagnosticResult[] {
-  const startedAt = context.clock.monotonicNow();
+function degradedInfraResults(context: Readonly<ModuleRunContext>, issues: readonly string[]): readonly DiagnosticResult[] {
+  const startedAt = context.monotonicNow();
   const evidence = boundEvidence(issues, context.options.verbose);
   const summary = "The shared infrastructure inspection facts could not be produced.";
   const fix: DiagnosticFix = {description: "Resolve the reported infrastructure inspection problem, then rerun doctor."};
@@ -596,133 +615,135 @@ function degradedInfraResults(context: Readonly<DoctorContext>, issues: readonly
 export const infrastructureDoctorModule: DiagnosticModule = {
   id: "infrastructure",
   title: "Infrastructure",
-  async run(context): Promise<readonly DiagnosticResult[]> {
-    // Selection is config-driven (tooling config + env); it is not raw runtime observation.
-    const selectionOutcome = await diagnoseSelection(context);
-    const results: DiagnosticResult[] = [selectionOutcome.diagnostic];
+  run: (doctorContext) =>
+    Effect.gen(function* () {
+      const context = yield* moduleRunContext(doctorContext);
+      // Selection is config-driven (tooling config + env); it is not raw runtime observation.
+      const selectionOutcome = yield* diagnoseSelection(context);
+      const results: DiagnosticResult[] = [selectionOutcome.diagnostic];
 
-    if (selectionOutcome.selection === null) {
-      // Engine selection failed: skip engine-dependent checks; still inspect ports/certs/manifests.
-      results.push(
-        skipDiagnostic("infrastructure.cli", "Container CLI", "Container CLI check was skipped because engine selection failed.", [
-          selectionOutcome.diagnostic.summary,
-        ]),
-      );
-      results.push(...skipBackendDependentChecks("engine selection failed", [selectionOutcome.diagnostic.summary]));
-      // Even without an engine, the infrastructure provider can inspect ports, certs, and manifests.
-      const outcome = await context.inspection.inspect("infrastructure");
-      if (outcome.kind === "available") {
-        results.push(diagnosePorts(context, outcome.value));
-        results.push(diagnoseCertificates(context, outcome.value));
-        results.push(diagnoseManifests(context, outcome.value));
-      } else {
-        const issues = outcome.kind === "invalid" ? outcome.issues : [outcome.reason];
-        const evidence = boundEvidence(issues, context.options.verbose);
-        const fix: DiagnosticFix = {description: "Resolve the reported infrastructure inspection problem, then rerun doctor."};
-        const summary = "The shared infrastructure inspection facts could not be produced.";
-        const startedAt = context.clock.monotonicNow();
-        const [singleIssue] = issues;
-        const rootCause = issues.length === 1 && singleIssue !== undefined ? singleIssue : undefined;
-        const potentialCauses = issues.length !== 1 ? issues.slice(0, 5).map((c) => ({cause: c, confidence: "high" as const})) : [];
+      if (selectionOutcome.selection === null) {
+        // Engine selection failed: skip engine-dependent checks; still inspect ports/certs/manifests.
         results.push(
-          issueDiagnostic(context, startedAt, {
-            id: "infrastructure.ports",
-            name: "Required local ports",
-            status: "fail",
-            summary,
-            evidence,
-            ...(rootCause !== undefined ? {rootCause} : {}),
-            potentialCauses,
-            fixes: [fix],
-          }),
+          skipDiagnostic("infrastructure.cli", "Container CLI", "Container CLI check was skipped because engine selection failed.", [
+            selectionOutcome.diagnostic.summary,
+          ]),
         );
+        results.push(...skipBackendDependentChecks("engine selection failed", [selectionOutcome.diagnostic.summary]));
+        // Even without an engine, the infrastructure provider can inspect ports, certs, and manifests.
+        const outcome = yield* context.inspection.inspect("infrastructure");
+        if (outcome.kind === "available") {
+          results.push(diagnosePorts(context, outcome.value));
+          results.push(diagnoseCertificates(context, outcome.value));
+          results.push(diagnoseManifests(context, outcome.value));
+        } else {
+          const issues = outcome.kind === "invalid" ? outcome.issues : [outcome.reason];
+          const evidence = boundEvidence(issues, context.options.verbose);
+          const fix: DiagnosticFix = {description: "Resolve the reported infrastructure inspection problem, then rerun doctor."};
+          const summary = "The shared infrastructure inspection facts could not be produced.";
+          const startedAt = context.monotonicNow();
+          const [singleIssue] = issues;
+          const rootCause = issues.length === 1 && singleIssue !== undefined ? singleIssue : undefined;
+          const potentialCauses = issues.length !== 1 ? issues.slice(0, 5).map((c) => ({cause: c, confidence: "high" as const})) : [];
+          results.push(
+            issueDiagnostic(context, startedAt, {
+              id: "infrastructure.ports",
+              name: "Required local ports",
+              status: "fail",
+              summary,
+              evidence,
+              ...(rootCause !== undefined ? {rootCause} : {}),
+              potentialCauses,
+              fixes: [fix],
+            }),
+          );
+          results.push(
+            issueDiagnostic(context, startedAt, {
+              id: "infrastructure.certificates",
+              name: "Selfhost TLS certificates",
+              status: "fail",
+              summary,
+              evidence,
+              ...(rootCause !== undefined ? {rootCause} : {}),
+              potentialCauses,
+              fixes: [fix],
+            }),
+          );
+          results.push(
+            issueDiagnostic(context, startedAt, {
+              id: "infrastructure.manifests",
+              name: "Required runtime manifests",
+              status: "fail",
+              summary,
+              evidence,
+              ...(rootCause !== undefined ? {rootCause} : {}),
+              potentialCauses,
+              fixes: [fix],
+            }),
+          );
+        }
         results.push(
-          issueDiagnostic(context, startedAt, {
-            id: "infrastructure.certificates",
-            name: "Selfhost TLS certificates",
-            status: "fail",
-            summary,
-            evidence,
-            ...(rootCause !== undefined ? {rootCause} : {}),
-            potentialCauses,
-            fixes: [fix],
-          }),
+          skipDiagnostic(
+            "infrastructure.containers",
+            "Known local containers",
+            "Container inventory check was skipped because engine selection failed.",
+            [selectionOutcome.diagnostic.summary],
+          ),
         );
-        results.push(
-          issueDiagnostic(context, startedAt, {
-            id: "infrastructure.manifests",
-            name: "Required runtime manifests",
-            status: "fail",
-            summary,
-            evidence,
-            ...(rootCause !== undefined ? {rootCause} : {}),
-            potentialCauses,
-            fixes: [fix],
-          }),
-        );
+        return results;
       }
-      results.push(
-        skipDiagnostic(
-          "infrastructure.containers",
-          "Known local containers",
-          "Container inventory check was skipped because engine selection failed.",
-          [selectionOutcome.diagnostic.summary],
-        ),
-      );
-      return results;
-    }
 
-    const {engine} = selectionOutcome.selection;
+      const {engine} = selectionOutcome.selection;
 
-    // Inform the session of the resolved engine so the infrastructure provider observes the same
-    // engine the selection diagnostic resolved, then inspect the shared infrastructure facts.
-    context.inspection.updateInfrastructureEngine(engine);
-    context.inspection.invalidate("infrastructure");
-    const outcome: InspectionOutcome<InfrastructureFacts> = await context.inspection.inspect("infrastructure");
+      // Inform the session of the resolved engine so the infrastructure provider observes the same
+      // engine the selection diagnostic resolved, then inspect the shared infrastructure facts.
+      yield* context.inspection.updateInfrastructureEngine(engine);
+      yield* context.inspection.invalidate("infrastructure");
+      const outcome: InspectionOutcome<InfrastructureFacts> = yield* context.inspection.inspect("infrastructure");
 
-    if (outcome.kind !== "available") {
-      const issues = outcome.kind === "invalid" ? outcome.issues : [outcome.reason];
-      results.push(...degradedInfraResults(context, issues));
-      return results;
-    }
+      if (outcome.kind !== "available") {
+        const issues = outcome.kind === "invalid" ? outcome.issues : [outcome.reason];
+        results.push(...degradedInfraResults(context, issues));
+        return results;
+      }
 
-    const facts = outcome.value;
+      const facts = outcome.value;
 
-    // CLI
-    results.push(diagnoseCli(context, facts, engine));
-    if (!facts.cliAvailable) {
-      const reason = ["The container CLI is unavailable."];
-      results.push(...skipBackendDependentChecks("the container CLI is unavailable", reason));
+      // CLI
+      results.push(diagnoseCli(context, facts, engine));
+      if (!facts.cliAvailable) {
+        const reason = ["The container CLI is unavailable."];
+        results.push(...skipBackendDependentChecks("the container CLI is unavailable", reason));
+        results.push(diagnosePorts(context, facts));
+        results.push(diagnoseCertificates(context, facts));
+        results.push(diagnoseManifests(context, facts));
+        results.push(
+          skipDiagnostic(
+            "infrastructure.containers",
+            "Known local containers",
+            "Container inventory check was skipped because the container CLI is unavailable.",
+            reason,
+          ),
+        );
+        return results;
+      }
+
+      // Backend, Compose, Docker-conflict, Socket-context
+      results.push(diagnoseBackend(context, facts, engine));
+      results.push(diagnoseCompose(context, facts, engine));
+
+      const backendOk = facts.backendAvailable;
+      const composeOk = facts.composeAvailable;
+
+      results.push(diagnoseDockerConflict(context, facts, engine));
+      results.push(diagnoseSocketContext(context, facts, backendOk, composeOk));
+
+      // Engine-independent checks
       results.push(diagnosePorts(context, facts));
       results.push(diagnoseCertificates(context, facts));
       results.push(diagnoseManifests(context, facts));
-      results.push(
-        skipDiagnostic(
-          "infrastructure.containers",
-          "Known local containers",
-          "Container inventory check was skipped because the container CLI is unavailable.",
-          reason,
-        ),
-      );
+      results.push(diagnoseContainers(context, facts));
+
       return results;
-    }
-
-    // Backend, Compose, Docker-conflict, Socket-context
-    results.push(diagnoseBackend(context, facts, engine));
-    results.push(diagnoseCompose(context, facts, engine));
-
-    const backendOk = facts.backendAvailable;
-    const composeOk = facts.composeAvailable;
-
-    results.push(diagnoseDockerConflict(context, facts, engine));
-    results.push(diagnoseSocketContext(context, facts, backendOk, composeOk));
-
-    // Engine-independent checks
-    results.push(diagnosePorts(context, facts));
-    results.push(diagnoseCertificates(context, facts));
-    results.push(diagnoseManifests(context, facts));
-    results.push(diagnoseContainers(context, facts));
-
-    return results;
-  },
+    }),
 };

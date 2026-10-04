@@ -1,19 +1,17 @@
 /**
  * @fileoverview Stable scoring, schema validation, and rendering for doctor diagnostics.
- * @module scripts.doctor.reporter
+ * @module scripts/commands/doctor/reporter
+ *
+ * @remarks
+ * Scoring, summarizing, grading, and report construction are pure; {@link renderDoctorReport} is
+ * the only effect, writing the legacy human report through the `Presenter`.
  */
 
-import type {
-  DiagnosticFix,
-  DiagnosticModuleId,
-  DiagnosticPotentialCause,
-  DiagnosticResult,
-  DoctorInput,
-  DoctorReport,
-  DoctorSummary,
-} from "./types.ts";
+import {Effect} from "effect";
+
+import {Presenter} from "../../platform/Output.ts";
 import {boundEvidence} from "./diagnostics.ts";
-import type {MonorepositoryLogger} from "../../common/logger.ts";
+import type {DiagnosticFix, DiagnosticModuleId, DiagnosticPotentialCause, DiagnosticResult, DoctorReport, DoctorSummary} from "./types.ts";
 
 type UnknownRecord = Readonly<Record<string, unknown>>;
 
@@ -559,71 +557,103 @@ function validateDoctorReport(value: Readonly<DoctorReport>): DoctorReport {
   };
 }
 
+/** One rendered report line and the presenter operation that writes it. */
+type RenderedLine = Readonly<{kind: "banner" | "line" | "section"; text: string}>;
+
 /**
- * Renders one doctor report as human output.
+ * Renders one doctor report as human output through the {@link Presenter}.
  *
  * @remarks
- * Score and grade are always rendered. Doctor has no machine JSON output
- * after Task 22; status retains its own `--json` output.
+ * The text is the legacy doctor report: the banner, the summary, the score box, then one section
+ * per module in fixed order. Every row shows its status icon, name, and summary; warn and fail rows
+ * (and every row with `verbose`) add their evidence, diagnosis, and suggested fixes. Score and grade
+ * are always rendered. Presenter lines are human-mode only, so JSON and silent runs render nothing.
  *
  * @param report - Validated doctor report to render.
- * @param options - CLI rendering options.
- * @param logger - Repository logger abstraction.
+ * @param options - Rendering options; `verbose` renders all evidence in full.
+ * @returns An effect writing the report.
  */
-export function renderDoctorReport(report: Readonly<DoctorReport>, options: Readonly<DoctorInput>, logger: MonorepositoryLogger): void {
-  logger.banner(["🩺 arolariu.ro Workspace Doctor"], "green");
-  logger.line(renderSummary(report.summary));
+export function renderDoctorReport(
+  report: Readonly<DoctorReport>,
+  options: Readonly<{verbose: boolean}>,
+): Effect.Effect<void, never, Presenter> {
+  return Effect.gen(function* () {
+    const presenter = yield* Presenter;
+    const lines: RenderedLine[] = [];
+    const line = (text = ""): void => {
+      lines.push({kind: "line", text});
+    };
 
-  logger.line();
-  logger.line("╭─────────────────────────────────────────╮");
-  logger.line(`│  🏥 Health Score: ${String(report.score)}/100  Grade: ${report.grade}  │`);
-  logger.line("╰─────────────────────────────────────────╯");
+    lines.push({kind: "banner", text: "🩺 arolariu.ro Workspace Doctor"});
+    line(renderSummary(report.summary));
 
-  for (const moduleId of moduleOrder) {
-    const groupedChecks = report.checks.filter((check) => check.module === moduleId);
-    if (groupedChecks.length === 0) {
-      continue;
-    }
+    line();
+    line("╭─────────────────────────────────────────╮");
+    line(`│  🏥 Health Score: ${String(report.score)}/100  Grade: ${report.grade}  │`);
+    line("╰─────────────────────────────────────────╯");
 
-    logger.section(moduleLabels[moduleId]);
-    for (const check of groupedChecks) {
-      logger.line(`${renderStatusIcon(check.status)} ${check.name} — ${check.summary}`);
-
-      const shouldRenderEvidence = options.verbose || check.status === "warn" || check.status === "fail";
-      if (shouldRenderEvidence && check.evidence.length > 0) {
-        logger.line("    Evidence:");
-        const visibleEvidence = options.verbose ? check.evidence : check.evidence.slice(0, MAX_STANDARD_EVIDENCE_ENTRIES);
-        for (const evidence of visibleEvidence) {
-          logger.line(`      - ${options.verbose ? evidence : compactHumanEvidence(evidence)}`);
-        }
-        const omittedEvidenceCount = check.evidence.length - visibleEvidence.length;
-        if (omittedEvidenceCount > 0) {
-          logger.line(
-            `      - ${String(omittedEvidenceCount)} additional evidence entries omitted; rerun with --verbose for full evidence.`,
-          );
-        }
+    for (const moduleId of moduleOrder) {
+      const groupedChecks = report.checks.filter((check) => check.module === moduleId);
+      if (groupedChecks.length === 0) {
+        continue;
       }
 
-      if (check.status === "warn" || check.status === "fail") {
-        if (check.rootCause !== undefined) {
-          logger.line(`    Root cause: ${check.rootCause}`);
-        } else if (check.potentialCauses.length > 0) {
-          logger.line("    Potential causes:");
-          for (const potentialCause of sortPotentialCauses(check.potentialCauses)) {
-            logger.line(`      - [${potentialCause.confidence}] ${potentialCause.cause}`);
+      lines.push({kind: "section", text: moduleLabels[moduleId]});
+      for (const check of groupedChecks) {
+        line(`${renderStatusIcon(check.status)} ${check.name} — ${check.summary}`);
+
+        const shouldRenderEvidence = options.verbose || check.status === "warn" || check.status === "fail";
+        if (shouldRenderEvidence && check.evidence.length > 0) {
+          line("    Evidence:");
+          const visibleEvidence = options.verbose ? check.evidence : check.evidence.slice(0, MAX_STANDARD_EVIDENCE_ENTRIES);
+          for (const evidence of visibleEvidence) {
+            line(`      - ${options.verbose ? evidence : compactHumanEvidence(evidence)}`);
+          }
+          const omittedEvidenceCount = check.evidence.length - visibleEvidence.length;
+          if (omittedEvidenceCount > 0) {
+            line(`      - ${String(omittedEvidenceCount)} additional evidence entries omitted; rerun with --verbose for full evidence.`);
           }
         }
 
-        if (check.fixes.length > 0) {
-          logger.line("    Suggested fixes:");
-          check.fixes.forEach((fix, index) => {
-            logger.line(`      ${String(index + 1)}. ${fix.description}`);
-            if (fix.command !== undefined) {
-              logger.command(fix.command);
+        if (check.status === "warn" || check.status === "fail") {
+          if (check.rootCause !== undefined) {
+            line(`    Root cause: ${check.rootCause}`);
+          } else if (check.potentialCauses.length > 0) {
+            line("    Potential causes:");
+            for (const potentialCause of sortPotentialCauses(check.potentialCauses)) {
+              line(`      - [${potentialCause.confidence}] ${potentialCause.cause}`);
             }
-          });
+          }
+
+          if (check.fixes.length > 0) {
+            line("    Suggested fixes:");
+            check.fixes.forEach((fix, index) => {
+              line(`      ${String(index + 1)}. ${fix.description}`);
+              if (fix.command !== undefined) {
+                line(`$ ${fix.command}`);
+              }
+            });
+          }
         }
       }
     }
-  }
+
+    yield* Effect.forEach(
+      lines,
+      ({kind, text}) => {
+        switch (kind) {
+          case "banner": {
+            return presenter.banner(text);
+          }
+          case "section": {
+            return presenter.section(text);
+          }
+          case "line": {
+            return presenter.line("stdout", text);
+          }
+        }
+      },
+      {discard: true},
+    );
+  });
 }

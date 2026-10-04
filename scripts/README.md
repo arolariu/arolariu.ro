@@ -138,7 +138,7 @@ Business code never reads `process.argv` and never writes `process.exitCode`. Se
 Each command module exports a `create<Name>Command(...)` factory and one production singleton built from it:
 
 ```typescript
-export const doctorCommand: MonorepoCommand<DoctorInput, DoctorReport> = createDoctorCommand();
+export const statusCommand: MonorepoCommand<StatusInput, StatusDocument> = createStatusCommand();
 ```
 
 The factory is the deterministic test seam. It accepts either a `CommandRuntimeFactory` directly or a small `dependencies` object
@@ -213,7 +213,8 @@ adapter that implements them; it is the only production module allowed to import
 `fetch`/`setInterval`, to read `process.env`/`process.cwd()`, to register SIGINT/SIGTERM, or to assign `process.exitCode`.
 
 Narrow a capability before handing it to a consumer that must not widen it: `asReadOnlyFileSystem()` and `asGetOnlyHttpClient()` produce
-the read-only profiles doctor modules receive, and `inspection/probes.ts` produces the opaque, allowlisted probe runner.
+the legacy read-only profiles. The Effect-native doctor instead declares its read-only profile as a requirement type (see
+[Read-only command policy](#read-only-command-policy)), and `inspection/probes.ts` produces the opaque, allowlisted probe runner.
 
 A **root scope** snapshots the environment once and owns its logger and prompts; `invoke()` never asks it to register process signals.
 A **child scope** created by `invoke({parent})` reuses the parent's immutable environment, prompts, and inspection registry, and receives
@@ -337,7 +338,7 @@ const files = yield* legacyReadOnlyFiles;
 const paths = yield* Effect.promise(() => resolveRepositoryPaths(import.meta.url, files));
 ```
 
-The legacy commands still on the command runtime (Doctor and Status until Tasks 4.4/4.5, Setup until cohort 5) reach the Effect
+The legacy commands still on the command runtime (Status until Task 4.5, Setup until cohort 5) reach the Effect
 `Inspection` service through `createLegacyInspectionRuntime`: `createNodeRuntimeScope` builds one per root scope (one `ManagedRuntime`
 over a silent `makeNodeLayer`), exposes it as `runtime.inspection`, and registers its `dispose` in the scope's cleanup registry. Its
 `getRepositorySession` is synchronous and keeps the legacy semantics — one `LegacyRepositoryInspectionSession` per request key, the
@@ -372,8 +373,9 @@ configuration provides immediate feedback for direct output syntax. Direct conso
 sinks, while injected `output.write(...)` prompt presentation stays confined to the prompt adapter. No exemption includes a script entry
 point.
 
-Every production script under root `scripts/**` — including [`setup.ts`](./setup.ts), [`commands/doctor/index.ts`](./commands/doctor/index.ts), and
-[`commands/status/index.ts`](./commands/status/index.ts) — routes its presentation and semantic output through `MonorepositoryConsoleLogger`. There are no remaining
+Every legacy production script under root `scripts/**` — including [`setup.ts`](./setup.ts) and
+[`commands/status/index.ts`](./commands/status/index.ts) — routes its presentation and semantic output through `MonorepositoryConsoleLogger`; the
+Effect-native families (generate, rates, docs, and doctor) route it through the platform `Presenter` and logger. There are no remaining
 transitional setup/doctor/status exceptions.
 
 ## Generate, rates, and docs (Effect-native)
@@ -493,11 +495,15 @@ and specialist modules, and `commands/status/index.ts` also have a narrower focu
 
 ## Doctor diagnostics (`npm run doctor`)
 
-`npm run doctor` runs `arolariu doctor` (`--quick`, plus the global `--json`, `--verbose`, and `--help` flags); [`commands/doctor/index.ts`](./commands/doctor/index.ts)
-owns the command. It resolves canonical repository paths and manifest-derived requirements through injected runtime
-capabilities, obtains one shared repository inspection session, then runs every bounded-context module concurrently through the runtime
-task scheduler, flattening their results back into a fixed rendering order. Every specialist module receives only read-only capabilities
-(read-only filesystem, `GET`-only bounded network probe, clock, immutable environment, shared inspection session, and opaque probes).
+`npm run doctor` runs `arolariu doctor` (`--quick`, plus the global `--json`, `--verbose`, and `--help` flags). Doctor is Effect-native:
+[`commands/doctor/index.ts`](./commands/doctor/index.ts) owns `runDoctor`, and [`commands/doctor/cli.ts`](./commands/doctor/cli.ts) renders its
+completion. `runDoctor` resolves canonical repository paths and manifest-derived requirements through the bridge's legacy read-only views,
+obtains one shared repository inspection session from the `Inspection` service, then runs every bounded-context module concurrently
+(`Effect.forEach(..., {concurrency: "unbounded"})`), flattening their results back into a fixed rendering order. Every specialist module
+requires only the read-only `DoctorRequirements` profile (`ReadOnlyFiles`, the `GET`-only bounded `NetworkProbe`, `Process` reached through
+opaque probes, `Environment`, and `Presenter`) and receives a plain-data `DoctorContext` (input, paths, requirements, the shared inspection
+session, and the opaque probe runner). In `--json` mode the report is the single JSON document; a report with any failed check exits `1`
+(`ReportedFailure{exitCode: 1}`) after it is rendered.
 Doctor is strictly read-only at the repository
 and local-tooling boundary: it never mutates repository files, `.nx`, or `.arolariu`, and never installs/upgrades, restores, generates,
 starts/stops a service, builds, type-checks, or tests. Approved metadata/status probes may update external package-manager caches or
@@ -507,9 +513,11 @@ container-engine client/cache state outside that boundary.
 
 | Module | Owns |
 |--------|------|
-| [`commands/doctor/index.ts`](./commands/doctor/index.ts) | Command definition (presentation), module orchestration/ordering, and the exit-code rollup; [`commands/doctor/cli.ts`](./commands/doctor/cli.ts) parses its flags |
-| [`commands/doctor/types.ts`](./commands/doctor/types.ts) | Shared `DiagnosticResult`/`DoctorContext`/`DoctorInput` contracts and diagnostic-result helpers |
-| [`commands/doctor/reporter.ts`](./commands/doctor/reporter.ts) | Stable per-check score weights, schema-v1 validation (`createDoctorReport`), and human rendering |
+| [`commands/doctor/index.ts`](./commands/doctor/index.ts) | `runDoctor`: module orchestration/ordering, fact prewarming, and module-defect normalization; the temporary `doctorCommand` legacy invoker for status (deleted in Task 4.5) |
+| [`commands/doctor/cli.ts`](./commands/doctor/cli.ts) | Flag parsing, the live `NetworkProbe` layer, JSON/human completion, and the exit-code rollup |
+| [`commands/doctor/types.ts`](./commands/doctor/types.ts) | Shared `DiagnosticResult`/`DoctorContext`/`DoctorInput`/`DoctorRequirements` contracts and diagnostic-result helpers |
+| [`commands/doctor/NetworkProbe.ts`](./commands/doctor/NetworkProbe.ts) | The bounded, `GET`-only `NetworkProbe` service (10 MiB body bound, one deadline for request and body) |
+| [`commands/doctor/reporter.ts`](./commands/doctor/reporter.ts) | Stable per-check score weights, schema-v1 validation (`createDoctorReport`), and human rendering through `Presenter` |
 | [`commands/doctor/modules/workspace.ts`](./commands/doctor/modules/workspace.ts) | Repository root, git, Node/npm runtime, dependency trees, Nx workspace graph (read from repository metadata, see below), config files, generated artifacts, host capacity, npm audit/outdated |
 | [`commands/doctor/modules/dotnet.ts`](./commands/doctor/modules/dotnet.ts) | .NET SDK/host/workloads, NuGet state, solution, local tools, HTTPS certificate trust, AppHost configuration and required local parameters, NuGet feed reachability |
 | [`commands/doctor/modules/react.ts`](./commands/doctor/modules/react.ts) | Website packages, workspace link, environment, i18n, taxonomy/licenses, Playwright, framework config |
@@ -519,10 +527,10 @@ container-engine client/cache state outside that boundary.
 
 Modules are invoked independently and concurrently, but `commands/doctor/index.ts` always flattens their results back into the module-map order above
 regardless of which module settles first. A module that reads more than one inspection fact declares those facts (`DiagnosticModule.facts`)
-so `commands/doctor/index.ts` starts them together through the runtime task scheduler before the first module runs; the module then awaits each memoized
-outcome sequentially without ever owning a concurrency primitive of its own. An unhandled module exception never produces a passing or
-skipped result — it becomes exactly one failed `<module>.module-error` row so the report degrades to one row instead of losing the whole
-run.
+so `commands/doctor/index.ts` starts them together (child fibers started immediately, plus `aggregate` in full mode) before the first module
+runs; the module then reads each memoized outcome sequentially without ever owning a concurrency primitive of its own. A module defect never
+produces a passing or skipped result — it becomes exactly one failed `<module>.module-error` row so the report degrades to one row instead of
+losing the whole run.
 
 ### Stable result contract
 
@@ -537,12 +545,13 @@ earns full weight, a warn half, a fail none, and a `skipped` check contributes t
 
 Every diagnostic command runs through the shared inspection probe runner backed by the allowlisted read-only command set in
 [`inspection/probes.ts`](./inspection/probes.ts). Specialist modules never take a `ProcessRunner`, the Node runtime adapter, the Execa
-adapter, or the mutable `FileSystem` capability: `DoctorContext` carries only a read-only filesystem, a `GET`-only bounded HTTP probe,
-the clock, the immutable environment snapshot, the shared inspection session, and the opaque probe runner.
-[`runtime-boundary.test.ts`](./common/runtime-boundary.test.ts)'s source-level AST guard rejects mutation-capable or unrestricted
-filesystem imports, child-process imports, widened runtime imports, and direct adapter imports across the Doctor production surface.
-[`commands/doctor/readonly.test.ts`](./commands/doctor/readonly.test.ts) independently snapshots `.nx` and `.arolariu` sentinel files to prove real quick
-and full-profile Doctor runs do not mutate them.
+adapter, the mutable `FileSystem`, the unrestricted `HttpClient`, or `Prompts`: `DoctorRequirements` excludes them at compile time.
+[`commands/doctor/readonly.test.ts`](./commands/doctor/readonly.test.ts) asserts that exclusion with `expectTypeOf`, AST-scans every Doctor
+production module (except `cli.ts`, which provides the live layers) for `FileSystem` imports from `effect`/`effect/FileSystem` and `HttpClient`
+imports from `effect/http`, and snapshots `.nx` and `.arolariu` sentinel files to prove real quick and full-profile Doctor runs do not mutate
+them. [`runtime-boundary.test.ts`](./common/runtime-boundary.test.ts)'s source-level AST guard rejects the same Effect imports plus
+mutation-capable or unrestricted filesystem imports, child-process imports, widened runtime imports, and direct adapter imports across the
+Doctor production surface.
 
 No Nx child command is dispatched by doctor or status, and none is allowlisted. Nx always opens (and rewrites) its native workspace
 database when it constructs a project graph. `workspace.nx-projects`, `workspace.nx-graph`, and status's `nxEdges` are instead derived
@@ -552,7 +561,8 @@ from the shared inspection session's workspace facts, which use an isolated Nx D
 ### Status integration
 
 [`commands/status/index.ts`](./commands/status/index.ts) composes doctor as a typed child command (`doctorCommand.invoke(…, {parent: context, presentation: "silent"})`)
-rather than a subprocess, and the child reuses status's own inspection session. Health is the one status section that is **not**
+rather than a subprocess. Until status migrates (Task 4.5), `doctorCommand` is a legacy invoker over `runDoctor` that reads the parent
+invocation's inspection sessions, so the child still reuses status's own inspection session. Health is the one status section that is **not**
 degradation-tolerant: both doctor completion exit codes (`0` and `1`) are ordinary health data, while a `failed`, `cancelled`, or `help`
 child outcome is owned by status and becomes a status command failure or cancellation. No dashboard or JSON document is rendered in that
 case, so status never reports a fabricated "unavailable" health section for a broken doctor. The five collector sections
@@ -563,8 +573,8 @@ case, so status never reports a fabricated "unavailable" health section for a br
 Focused validation for doctor, its reporter, every specialist module, and `commands/status/index.ts`:
 
 ```powershell
-npx vitest run --config scripts\vitest.config.ts --coverage.enabled=false scripts\common\logger.test.ts scripts\common\runner.test.ts scripts\common\output-policy.test.ts scripts\commands\doctor\index.test.ts scripts\commands\doctor\reporter.test.ts scripts\commands\doctor\readonly.test.ts scripts\commands\doctor\modules\workspace.test.ts scripts\commands\doctor\modules\dotnet.test.ts scripts\commands\doctor\modules\react.test.ts scripts\commands\doctor\modules\svelte.test.ts scripts\commands\doctor\modules\python.test.ts scripts\commands\doctor\modules\infrastructure.test.ts scripts\commands\doctor\diagnostics.test.ts scripts\commands\status\index.test.ts scripts\setup.test.ts
-npx eslint scripts\commands\doctor\index.ts scripts\commands\doctor\types.ts scripts\commands\doctor\reporter.ts scripts\commands\doctor\modules\workspace.ts scripts\commands\doctor\modules\dotnet.ts scripts\commands\doctor\modules\react.ts scripts\commands\doctor\modules\svelte.ts scripts\commands\doctor\modules\python.ts scripts\commands\doctor\modules\infrastructure.ts scripts\commands\status\index.ts scripts\common\taxonomy-artifacts.ts
+npx vitest run --config scripts\vitest.config.ts --coverage.enabled=false scripts\commands\doctor scripts\commands\status scripts\common\runtime-boundary.test.ts
+npx eslint scripts\commands\doctor scripts\commands\status\index.ts scripts\common\taxonomy-artifacts.ts
 git --no-pager diff --check
 ```
 

@@ -1,18 +1,21 @@
 /**
  * @fileoverview Read-only .NET diagnostics sourced exclusively from shared DotnetFacts.
- * @module scripts.doctor.dotnet
+ * @module scripts/commands/doctor/modules/dotnet
  *
  * @remarks
  * Every diagnostic row in this module is derived exclusively from the shared `DotnetFacts`
  * produced by `context.inspection.inspect("dotnet")`, `context.requirements` for version policy,
- * and `context.network.get()` for NuGet feed reachability. This module never spawns a command,
+ * and the bounded `NetworkProbe` service for NuGet feed reachability. This module never spawns a command,
  * never reads a file, and never uses an unrestricted runner or `context.probes`. When the shared
  * inspection outcome is `unavailable` or `invalid`, every fact-dependent row is an explicit
  * failure; no diagnostic ever fabricates a healthy value from missing facts.
  */
 
+import {Effect} from "effect";
+
 import {satisfiesMinimum, type MinimumVersion} from "../../../common/requirements.ts";
-import {boundEvidence, diagnosticResult, STANDARD_EVIDENCE_LIMIT} from "../diagnostics.ts";
+import {boundEvidence, diagnosticResult, STANDARD_EVIDENCE_LIMIT, moduleRunContext, type ModuleRunContext} from "../diagnostics.ts";
+import {NetworkProbe} from "../NetworkProbe.ts";
 import {
   DIAGNOSTIC_DEFAULT_TIMEOUT_MS,
   skippedDiagnostic,
@@ -20,7 +23,6 @@ import {
   type DiagnosticModule,
   type DiagnosticPotentialCause,
   type DiagnosticResult,
-  type DoctorContext,
 } from "../types.ts";
 import type {DotnetFacts} from "../../../inspection/dotnet.ts";
 import type {InspectionOutcome} from "../../../inspection/types.ts";
@@ -43,15 +45,15 @@ function isRecord(value: unknown): value is UnknownRecord {
 }
 
 function diagnostic(
-  ctx: Readonly<DoctorContext>,
+  ctx: Readonly<ModuleRunContext>,
   startedAt: number,
   input: Omit<DiagnosticResult, "durationMs" | "module">,
 ): DiagnosticResult {
-  return diagnosticResult({module: "dotnet", ...input}, startedAt, ctx.clock.monotonicNow);
+  return diagnosticResult({module: "dotnet", ...input}, startedAt, ctx.monotonicNow);
 }
 
 function issueDiagnostic(
-  ctx: Readonly<DoctorContext>,
+  ctx: Readonly<ModuleRunContext>,
   startedAt: number,
   input: Readonly<{
     id: string;
@@ -77,7 +79,7 @@ function issueDiagnostic(
 }
 
 function passDiagnostic(
-  ctx: Readonly<DoctorContext>,
+  ctx: Readonly<ModuleRunContext>,
   startedAt: number,
   id: string,
   name: string,
@@ -119,8 +121,8 @@ function parseSdkMajorMinor(version: string): MinimumVersion | null {
 // Individual diagnostic functions
 // ============================================================================
 
-function diagnoseExecutable(ctx: Readonly<DoctorContext>, facts: Readonly<DotnetFacts>): DiagnosticResult {
-  const startedAt = ctx.clock.monotonicNow();
+function diagnoseExecutable(ctx: Readonly<ModuleRunContext>, facts: Readonly<DotnetFacts>): DiagnosticResult {
+  const startedAt = ctx.monotonicNow();
   if (!facts.executable.available) {
     return issueDiagnostic(ctx, startedAt, {
       id: "dotnet.executable",
@@ -149,7 +151,7 @@ function diagnoseExecutable(ctx: Readonly<DoctorContext>, facts: Readonly<Dotnet
   );
 }
 
-function diagnoseSdkInventory(ctx: Readonly<DoctorContext>, facts: Readonly<DotnetFacts>): DiagnosticResult {
+function diagnoseSdkInventory(ctx: Readonly<ModuleRunContext>, facts: Readonly<DotnetFacts>): DiagnosticResult {
   if (ctx.requirements.status === "invalid") {
     return skippedDiagnostic({
       id: "dotnet.sdk-inventory",
@@ -160,7 +162,7 @@ function diagnoseSdkInventory(ctx: Readonly<DoctorContext>, facts: Readonly<Dotn
     });
   }
 
-  const startedAt = ctx.clock.monotonicNow();
+  const startedAt = ctx.monotonicNow();
   const required = ctx.requirements.requirements.dotnet;
   const compatible = facts.sdks.filter((sdk) => {
     const parsed = parseSdkMajorMinor(sdk);
@@ -202,8 +204,8 @@ function diagnoseSdkInventory(ctx: Readonly<DoctorContext>, facts: Readonly<Dotn
   );
 }
 
-function diagnoseHost(ctx: Readonly<DoctorContext>, facts: Readonly<DotnetFacts>): DiagnosticResult {
-  const startedAt = ctx.clock.monotonicNow();
+function diagnoseHost(ctx: Readonly<ModuleRunContext>, facts: Readonly<DotnetFacts>): DiagnosticResult {
+  const startedAt = ctx.monotonicNow();
   if (facts.host === undefined) {
     return issueDiagnostic(ctx, startedAt, {
       id: "dotnet.host",
@@ -236,8 +238,8 @@ function diagnoseHost(ctx: Readonly<DoctorContext>, facts: Readonly<DotnetFacts>
   ]);
 }
 
-function diagnoseWorkloads(ctx: Readonly<DoctorContext>, facts: Readonly<DotnetFacts>): DiagnosticResult {
-  const startedAt = ctx.clock.monotonicNow();
+function diagnoseWorkloads(ctx: Readonly<ModuleRunContext>, facts: Readonly<DotnetFacts>): DiagnosticResult {
+  const startedAt = ctx.monotonicNow();
   return passDiagnostic(
     ctx,
     startedAt,
@@ -248,8 +250,8 @@ function diagnoseWorkloads(ctx: Readonly<DoctorContext>, facts: Readonly<DotnetF
   );
 }
 
-function diagnoseNugetState(ctx: Readonly<DoctorContext>, facts: Readonly<DotnetFacts>): DiagnosticResult {
-  const startedAt = ctx.clock.monotonicNow();
+function diagnoseNugetState(ctx: Readonly<ModuleRunContext>, facts: Readonly<DotnetFacts>): DiagnosticResult {
+  const startedAt = ctx.monotonicNow();
   if (facts.nugetCachePath === undefined) {
     return issueDiagnostic(ctx, startedAt, {
       id: "dotnet.nuget-state",
@@ -267,8 +269,8 @@ function diagnoseNugetState(ctx: Readonly<DoctorContext>, facts: Readonly<Dotnet
   ]);
 }
 
-function diagnoseSolution(ctx: Readonly<DoctorContext>, facts: Readonly<DotnetFacts>): DiagnosticResult {
-  const startedAt = ctx.clock.monotonicNow();
+function diagnoseSolution(ctx: Readonly<ModuleRunContext>, facts: Readonly<DotnetFacts>): DiagnosticResult {
+  const startedAt = ctx.monotonicNow();
   if (facts.solutionIssues.length > 0) {
     const evidence = boundedIssues(facts.solutionIssues);
     const diagnosis = buildIssueDiagnosis(facts.solutionIssues);
@@ -306,8 +308,8 @@ function diagnoseSolution(ctx: Readonly<DoctorContext>, facts: Readonly<DotnetFa
   );
 }
 
-function diagnoseLocalTools(ctx: Readonly<DoctorContext>, facts: Readonly<DotnetFacts>): DiagnosticResult {
-  const startedAt = ctx.clock.monotonicNow();
+function diagnoseLocalTools(ctx: Readonly<ModuleRunContext>, facts: Readonly<DotnetFacts>): DiagnosticResult {
+  const startedAt = ctx.monotonicNow();
   const installedNames = new Set(facts.localTools.map((t) => t.name.toLowerCase()));
 
   if (!installedNames.has(REQUIRED_LOCAL_TOOL.toLowerCase())) {
@@ -332,8 +334,8 @@ function diagnoseLocalTools(ctx: Readonly<DoctorContext>, facts: Readonly<Dotnet
   );
 }
 
-function diagnoseHttpsCertificate(ctx: Readonly<DoctorContext>, facts: Readonly<DotnetFacts>): DiagnosticResult {
-  const startedAt = ctx.clock.monotonicNow();
+function diagnoseHttpsCertificate(ctx: Readonly<ModuleRunContext>, facts: Readonly<DotnetFacts>): DiagnosticResult {
+  const startedAt = ctx.monotonicNow();
   if (!facts.certificate.exists) {
     return issueDiagnostic(ctx, startedAt, {
       id: "dotnet.https-certificate",
@@ -368,8 +370,8 @@ function diagnoseHttpsCertificate(ctx: Readonly<DoctorContext>, facts: Readonly<
   );
 }
 
-function diagnoseAppHost(ctx: Readonly<DoctorContext>, facts: Readonly<DotnetFacts>): DiagnosticResult {
-  const startedAt = ctx.clock.monotonicNow();
+function diagnoseAppHost(ctx: Readonly<ModuleRunContext>, facts: Readonly<DotnetFacts>): DiagnosticResult {
+  const startedAt = ctx.monotonicNow();
   if (!facts.appHost.projectExists) {
     return issueDiagnostic(ctx, startedAt, {
       id: "dotnet.apphost",
@@ -421,67 +423,69 @@ function isValidNugetServiceIndex(body: string | undefined): boolean {
   return Array.isArray(parsed["resources"]);
 }
 
-async function diagnoseNugetFeed(ctx: Readonly<DoctorContext>): Promise<DiagnosticResult> {
-  if (ctx.options.quick) {
-    return skippedDiagnostic({
-      id: "dotnet.nuget-feed",
-      module: "dotnet",
-      name: "NuGet feed reachability",
-      summary: "NuGet feed reachability was skipped in quick mode.",
-      evidence: ["--quick intentionally skips network reachability probes."],
-    });
-  }
+function diagnoseNugetFeed(ctx: Readonly<ModuleRunContext>): Effect.Effect<DiagnosticResult, never, NetworkProbe> {
+  return Effect.gen(function* () {
+    if (ctx.options.quick) {
+      return skippedDiagnostic({
+        id: "dotnet.nuget-feed",
+        module: "dotnet",
+        name: "NuGet feed reachability",
+        summary: "NuGet feed reachability was skipped in quick mode.",
+        evidence: ["--quick intentionally skips network reachability probes."],
+      });
+    }
 
-  const startedAt = ctx.clock.monotonicNow();
-  const probe = await ctx.network.get(NUGET_FEED_URL, DIAGNOSTIC_DEFAULT_TIMEOUT_MS);
-  if (probe.status !== "reachable") {
-    return skippedDiagnostic({
-      id: "dotnet.nuget-feed",
-      module: "dotnet",
-      name: "NuGet feed reachability",
-      summary: "NuGet feed reachability could not be determined.",
-      evidence: [probe.error ?? `Network probe reported status '${probe.status}'.`],
-    });
-  }
+    const startedAt = ctx.monotonicNow();
+    const probe = yield* (yield* NetworkProbe).get(NUGET_FEED_URL, DIAGNOSTIC_DEFAULT_TIMEOUT_MS);
+    if (probe.status !== "reachable") {
+      return skippedDiagnostic({
+        id: "dotnet.nuget-feed",
+        module: "dotnet",
+        name: "NuGet feed reachability",
+        summary: "NuGet feed reachability could not be determined.",
+        evidence: [probe.error ?? `Network probe reported status '${probe.status}'.`],
+      });
+    }
 
-  if (probe.statusCode !== 200) {
-    return issueDiagnostic(ctx, startedAt, {
-      id: "dotnet.nuget-feed",
-      name: "NuGet feed reachability",
-      status: "warn",
-      summary: "The NuGet feed returned an unexpected response.",
-      evidence: [`HTTP status: ${String(probe.statusCode)}`],
-      rootCause: "The public NuGet v3 feed responded without a successful status.",
-      fixes: [{description: "Verify NuGet feed availability and configured sources, then rerun doctor."}],
-    });
-  }
+    if (probe.statusCode !== 200) {
+      return issueDiagnostic(ctx, startedAt, {
+        id: "dotnet.nuget-feed",
+        name: "NuGet feed reachability",
+        status: "warn",
+        summary: "The NuGet feed returned an unexpected response.",
+        evidence: [`HTTP status: ${String(probe.statusCode)}`],
+        rootCause: "The public NuGet v3 feed responded without a successful status.",
+        fixes: [{description: "Verify NuGet feed availability and configured sources, then rerun doctor."}],
+      });
+    }
 
-  if (!isValidNugetServiceIndex(probe.body)) {
-    return issueDiagnostic(ctx, startedAt, {
-      id: "dotnet.nuget-feed",
-      name: "NuGet feed reachability",
-      status: "warn",
-      summary: "The NuGet feed returned a malformed service index.",
-      evidence: [
-        `HTTP status: ${String(probe.statusCode)}`,
-        probe.body === undefined || probe.body.trim() === "" ? "No response body was captured." : "Response body is malformed.",
-      ],
-      rootCause: "The NuGet v3 service index response did not contain a JSON object with a resources array.",
-      fixes: [{description: "Verify NuGet feed availability and configured sources, then rerun doctor."}],
-    });
-  }
+    if (!isValidNugetServiceIndex(probe.body)) {
+      return issueDiagnostic(ctx, startedAt, {
+        id: "dotnet.nuget-feed",
+        name: "NuGet feed reachability",
+        status: "warn",
+        summary: "The NuGet feed returned a malformed service index.",
+        evidence: [
+          `HTTP status: ${String(probe.statusCode)}`,
+          probe.body === undefined || probe.body.trim() === "" ? "No response body was captured." : "Response body is malformed.",
+        ],
+        rootCause: "The NuGet v3 service index response did not contain a JSON object with a resources array.",
+        fixes: [{description: "Verify NuGet feed availability and configured sources, then rerun doctor."}],
+      });
+    }
 
-  return passDiagnostic(ctx, startedAt, "dotnet.nuget-feed", "NuGet feed reachability", "The public NuGet feed is reachable.", [
-    `HTTP status: ${String(probe.statusCode)}`,
-  ]);
+    return passDiagnostic(ctx, startedAt, "dotnet.nuget-feed", "NuGet feed reachability", "The public NuGet feed is reachable.", [
+      `HTTP status: ${String(probe.statusCode)}`,
+    ]);
+  });
 }
 
 // ============================================================================
 // Degraded outcome handling
 // ============================================================================
 
-function degradedResults(ctx: Readonly<DoctorContext>, issues: readonly string[]): readonly DiagnosticResult[] {
-  const startedAt = ctx.clock.monotonicNow();
+function degradedResults(ctx: Readonly<ModuleRunContext>, issues: readonly string[]): readonly DiagnosticResult[] {
+  const startedAt = ctx.monotonicNow();
   const summary = "The shared .NET inspection facts could not be produced.";
   const evidence = boundedIssues(issues);
   const diagnosis = buildIssueDiagnosis(issues);
@@ -525,31 +529,33 @@ function degradedResults(ctx: Readonly<DoctorContext>, issues: readonly string[]
 export const dotnetDoctorModule: DiagnosticModule = {
   id: "dotnet",
   title: ".NET",
-  async run(context): Promise<readonly DiagnosticResult[]> {
-    const outcome: InspectionOutcome<DotnetFacts> = await context.inspection.inspect("dotnet");
+  run: (doctorContext) =>
+    Effect.gen(function* () {
+      const context = yield* moduleRunContext(doctorContext);
+      const outcome: InspectionOutcome<DotnetFacts> = yield* context.inspection.inspect("dotnet");
 
-    let factResults: readonly DiagnosticResult[];
+      let factResults: readonly DiagnosticResult[];
 
-    if (outcome.kind === "unavailable") {
-      factResults = degradedResults(context, [outcome.reason]);
-    } else if (outcome.kind === "invalid") {
-      factResults = degradedResults(context, outcome.issues);
-    } else {
-      const facts = outcome.value;
-      factResults = [
-        diagnoseExecutable(context, facts),
-        diagnoseSdkInventory(context, facts),
-        diagnoseHost(context, facts),
-        diagnoseWorkloads(context, facts),
-        diagnoseNugetState(context, facts),
-        diagnoseSolution(context, facts),
-        diagnoseLocalTools(context, facts),
-        diagnoseHttpsCertificate(context, facts),
-        diagnoseAppHost(context, facts),
-      ];
-    }
+      if (outcome.kind === "unavailable") {
+        factResults = degradedResults(context, [outcome.reason]);
+      } else if (outcome.kind === "invalid") {
+        factResults = degradedResults(context, outcome.issues);
+      } else {
+        const facts = outcome.value;
+        factResults = [
+          diagnoseExecutable(context, facts),
+          diagnoseSdkInventory(context, facts),
+          diagnoseHost(context, facts),
+          diagnoseWorkloads(context, facts),
+          diagnoseNugetState(context, facts),
+          diagnoseSolution(context, facts),
+          diagnoseLocalTools(context, facts),
+          diagnoseHttpsCertificate(context, facts),
+          diagnoseAppHost(context, facts),
+        ];
+      }
 
-    const nugetFeed = await diagnoseNugetFeed(context);
-    return [...factResults, nugetFeed];
-  },
+      const nugetFeed = yield* diagnoseNugetFeed(context);
+      return [...factResults, nugetFeed];
+    }),
 };

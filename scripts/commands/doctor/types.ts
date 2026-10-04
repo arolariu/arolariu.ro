@@ -1,15 +1,28 @@
 /**
  * @fileoverview Shared contracts and types for modular doctor diagnostics.
- * @module scripts/doctor.types
+ * @module scripts/commands/doctor/types
+ *
+ * @remarks
+ * {@link DoctorRequirements} is the compile-time read-only capability profile of every doctor
+ * module: the read-only filesystem view, the bounded `GET`-only {@link NetworkProbe}, the process
+ * service (reached only through opaque allowlisted inspection probes), the environment snapshot, and
+ * the presenter. It deliberately excludes the mutating `FileSystem`, the unrestricted `HttpClient`,
+ * and `Prompts`.
  */
 
-import type {MonorepositoryLogger} from "../../common/logger.ts";
+import type {Effect} from "effect";
+
 import type {RepositoryPaths} from "../../common/repository-paths.ts";
 import type {RequirementLoadResult} from "../../common/requirements.ts";
-import type {Clock, ReadOnlyFileSystem, RuntimeEnvironment} from "../../common/runtime.ts";
-import type {LegacyInspectionProbeRunner} from "../../inspection/probes.ts";
-import type {RepositoryInspectionKey} from "../../inspection/repository.ts";
-import type {LegacyRepositoryInspectionSession} from "../../platform/bridge.ts";
+import type {InspectionProbeRunner} from "../../inspection/probes.ts";
+import type {RepositoryInspectionKey, RepositoryInspectionSession} from "../../inspection/repository.ts";
+import type {Environment} from "../../platform/Environment.ts";
+import type {ReadOnlyFiles} from "../../platform/Files.ts";
+import type {Presenter} from "../../platform/Output.ts";
+import type {Process} from "../../platform/Process.ts";
+import type {NetworkProbe} from "./NetworkProbe.ts";
+
+export {NetworkProbe} from "./NetworkProbe.ts";
 
 /** One bounded timeout applied to network probes that do not supply one explicitly. */
 export const DIAGNOSTIC_DEFAULT_TIMEOUT_MS = 15_000;
@@ -81,18 +94,17 @@ export interface DiagnosticNetworkResult {
   readonly body?: string;
 }
 
-/** Read-only HTTP probe contract for doctor modules. */
-export interface DiagnosticNetworkProbe {
-  readonly get: (url: URL, timeoutMs: number) => Promise<DiagnosticNetworkResult>;
-}
+/** Every service a doctor module (and the doctor run) may require: a read-only capability profile. */
+export type DoctorRequirements = ReadOnlyFiles | NetworkProbe | Process | Environment | Presenter;
 
 /**
  * Shared module execution context for one doctor run.
  *
  * @remarks
- * Every member is a narrow, read-only capability: a specialist module can read the repository,
- * probe an allowlisted command, issue a bounded `GET`, and observe time and the environment, but
- * it can never mutate disk state, spawn an arbitrary command, or reach an ambient Node global.
+ * Every member is plain data or a read-only handle: a specialist module reads the repository through
+ * `ReadOnlyFiles`, probes allowlisted commands through {@link DoctorContext.probes}, issues a bounded
+ * `GET` through {@link NetworkProbe}, and observes the environment through `Environment`; it can never
+ * mutate disk state, spawn an arbitrary command, or reach an ambient Node global.
  */
 export interface DoctorContext {
   /** Typed input for this run. */
@@ -101,20 +113,10 @@ export interface DoctorContext {
   readonly paths: RepositoryPaths;
   /** Manifest-derived repository requirements, including an invalid/drift result. */
   readonly requirements: RequirementLoadResult;
-  /** Bounded, `GET`-only network reachability probe. */
-  readonly network: DiagnosticNetworkProbe;
-  /** Structured, redaction-aware logger for this run. */
-  readonly logger: MonorepositoryLogger;
-  /** Read-only filesystem view; no module can mutate repository state. */
-  readonly files: ReadOnlyFileSystem;
-  /** Monotonic and wall-clock time source. */
-  readonly clock: Clock;
-  /** Immutable snapshot of the ambient environment. */
-  readonly environment: RuntimeEnvironment;
   /** Shared repository inspection session for this run. */
-  readonly inspection: LegacyRepositoryInspectionSession;
+  readonly inspection: RepositoryInspectionSession;
   /** Opaque inspection probe runner for allowlisted read-only command probes. */
-  readonly probes: LegacyInspectionProbeRunner;
+  readonly probes: InspectionProbeRunner;
 }
 
 /** One stable doctor module implementation. */
@@ -122,22 +124,19 @@ export interface DiagnosticModule {
   readonly id: DiagnosticModuleId;
   readonly title: string;
   /**
-   * Inspection facts this module always requests, declared so the command can start them
-   * concurrently through the runtime task scheduler before any module runs.
+   * Inspection facts this module always requests, declared so the doctor run can start them
+   * concurrently before any module runs.
    *
    * @remarks
-   * A module that consumes more than one fact would otherwise have to await them one at a time —
-   * a specialist module owns no scheduler and must never reach for an ad-hoc `Promise` combinator
-   * — which would serialize independent inspections that previously ran concurrently. Declaring
-   * them here keeps the concurrency decision in the command that owns cancellation and ordering,
-   * while the module still reads each memoized outcome with an ordinary sequential `await`. A
-   * module that consumes at most one fact declares nothing: its single inspection already starts
+   * A module that consumes more than one fact reads each memoized outcome sequentially; declaring
+   * the facts here lets the run start them together, so independent inspections stay concurrent.
+   * A module that consumes at most one fact declares nothing: its single inspection already starts
    * as soon as the module runs, concurrently with every sibling module.
    */
   readonly facts?: readonly RepositoryInspectionKey[];
-  readonly run: (context: Readonly<DoctorContext>) => Promise<readonly DiagnosticResult[]>;
+  readonly run: (context: DoctorContext) => Effect.Effect<readonly DiagnosticResult[], never, DoctorRequirements>;
 }
 
-// Re-export diagnostic helpers from doctor.diagnostics.ts to avoid broad import churn
+// Re-export diagnostic helpers from diagnostics.ts to avoid broad import churn
 // in specialist modules that still import from this file.
 export {diagnosticResult, skippedDiagnostic} from "./diagnostics.ts";

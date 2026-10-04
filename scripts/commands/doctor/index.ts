@@ -1,70 +1,57 @@
 /**
- * @fileoverview Modular workspace health diagnostics command for the arolariu.ro monorepo.
- * @module scripts/doctor
+ * @fileoverview Modular workspace health diagnostics for the arolariu.ro monorepo, as an Effect program.
+ * @module scripts/commands/doctor/index
  *
  * @remarks
- * Doctor is a read-only command: it resolves canonical repository paths and manifest
- * requirements through injected runtime capabilities, obtains exactly one shared repository
- * inspection session from the runtime-owned inspection registry, and then runs every
+ * Doctor is read-only by construction: {@link runDoctor} requires only the
+ * {@link DoctorRequirements} capability profile plus the shared `Inspection` service. It resolves
+ * canonical repository paths and manifest requirements through the bridge's legacy read-only views,
+ * obtains exactly one shared repository inspection session (`quick` or `full` profile), starts every
+ * fact the modules declare (plus `aggregate` in full mode) in the background, and runs every
  * bounded-context module — `workspace`, `dotnet`, `react`, `svelte`, `python`, and
- * `infrastructure` — concurrently through {@link CommandRuntime.tasks}. The facts a module
- * declares through {@link DiagnosticModule.facts} are started together through the same scheduler
- * before the first module runs, so a module that reads several independent inspections still
- * observes them concurrently while awaiting each memoized outcome sequentially. Module results are
- * flattened back into the fixed {@link doctorModules} order regardless of which module finishes
- * first, an unhandled module exception is normalized into a single failed `<module>.module-error`
- * row without stopping its siblings, and the collected checks are validated and scored by
- * {@link createDoctorReport}.
+ * `infrastructure` — concurrently. Results are flattened back into the fixed {@link doctorModules}
+ * order regardless of which module finishes first; a module defect becomes a single failed
+ * `<module>.module-error` row without stopping its siblings, and the collected checks are validated
+ * and scored by {@link createDoctorReport}.
  *
- * Specialist modules never receive a mutable filesystem, an unrestricted process runner, or an
- * ambient Node global: they observe a {@link ReadOnlyFileSystem}, a `GET`-only bounded network
- * probe, the runtime clock, an immutable environment snapshot, the shared inspection session, and
- * opaque allowlisted probes. The command never mutates the repository, never inherits child
- * process output, and never writes directly to the console: every human line is produced by the
- * runtime logger or {@link renderDoctorReport}. It completes with exit `0` when the report has no
- * failed checks and `1` otherwise.
+ * {@link makeDoctorInvoker} / {@link doctorCommand} are the temporary legacy invoker the
+ * unmigrated `status` command composes; they are deleted in Task 4.5.
  *
  * @example
  * ```bash
  * node scripts/cli.ts doctor
  * node scripts/cli.ts doctor --verbose
  * node scripts/cli.ts doctor --quick
- * node scripts/cli.ts doctor --help
+ * node scripts/cli.ts doctor --json
  * ```
  */
 
-import {MonorepoCommand, toJsonValue, type CommandContext, type CommandRuntimeFactory} from "../../common/commander.ts";
-import {loadRepositoryRequirements} from "../../common/requirements.ts";
+import {DateTime, Effect, Layer} from "effect";
+
+import type {CommandInvoker} from "../../common/commander.ts";
 import {resolveRepositoryPaths} from "../../common/repository-paths.ts";
+import {loadRepositoryRequirements} from "../../common/requirements.ts";
+import {Inspection} from "../../inspection/Inspection.ts";
+import {inspectionProbeRunner} from "../../inspection/probes.ts";
+import type {RepositoryInspectionKey, RepositoryInspectionSession} from "../../inspection/repository.ts";
 import {
-  asGetOnlyHttpClient,
-  asReadOnlyFileSystem,
-  HttpError,
-  type Clock,
-  type CommandRuntime,
-  type GetOnlyHttpClient,
-  type RepositoryInspectionRequest,
-} from "../../common/runtime.ts";
-import {normalizeErrorForReport, diagnosticResult} from "./diagnostics.ts";
-import {renderDoctorReport, createDoctorReport} from "./reporter.ts";
-import {createInspectionProbeRunner, type LegacyInspectionProbeRunner} from "../../inspection/probes.ts";
-import type {RepositoryInspectionKey} from "../../inspection/repository.ts";
-import type {LegacyRepositoryInspectionSession} from "../../platform/bridge.ts";
+  legacyInvoker,
+  legacyReadOnlyFiles,
+  legacyTaskScheduler,
+  type LayerFactory,
+  type LegacyRepositoryInspectionRuntime,
+} from "../../platform/bridge.ts";
+import {makeNodeLayer, type PlatformServices} from "../../platform/layers.ts";
+import {diagnosticResult, monotonicNow, normalizeErrorForReport} from "./diagnostics.ts";
 import {dotnetDoctorModule} from "./modules/dotnet.ts";
 import {infrastructureDoctorModule} from "./modules/infrastructure.ts";
 import {pythonDoctorModule} from "./modules/python.ts";
 import {reactDoctorModule} from "./modules/react.ts";
 import {svelteDoctorModule} from "./modules/svelte.ts";
 import {workspaceDoctorModule} from "./modules/workspace.ts";
-import type {
-  DiagnosticModule,
-  DiagnosticNetworkProbe,
-  DiagnosticNetworkResult,
-  DiagnosticResult,
-  DoctorContext,
-  DoctorInput,
-  DoctorReport,
-} from "./types.ts";
+import {NetworkProbeLive} from "./NetworkProbe.ts";
+import {createDoctorReport} from "./reporter.ts";
+import type {DiagnosticModule, DiagnosticResult, DoctorContext, DoctorInput, DoctorReport, DoctorRequirements} from "./types.ts";
 
 export type {DoctorInput} from "./types.ts";
 
@@ -78,299 +65,186 @@ export const doctorModules: readonly DiagnosticModule[] = [
   infrastructureDoctorModule,
 ];
 
-/** Construction seams {@link createDoctorCommand} accepts. */
-export interface DoctorCommandDependencies {
-  /** Runtime factory used for every scope; tests inject a fake instead of the Node adapter. */
-  readonly runtimeFactory?: CommandRuntimeFactory;
-  /** Ordered modules to execute; defaults to {@link doctorModules}. */
-  readonly modules?: readonly DiagnosticModule[];
-}
-
-function errorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
-}
-
-function isTimeoutFailure(error: unknown): boolean {
-  return error instanceof DOMException && error.name === "TimeoutError";
-}
-
-function isUnreachableFailure(error: unknown): boolean {
-  return error instanceof TypeError;
-}
-
 /**
- * Classifies one bounded network probe failure.
+ * Builds the single failed `<module>.module-error` row a module defect is normalized into.
  *
  * @remarks
- * A request cancelled by its own deadline surfaces as a `DOMException` named `TimeoutError`, and
- * a request that never reaches a server (DNS failure, refused connection, TLS failure) surfaces
- * as a `TypeError`. Both are classified as `unavailable` — a network condition the caller can
- * recover from — while every other failure is classified as `error` so it is never mistaken for
- * an ordinary connectivity gap. The {@link GetOnlyHttpClient} normalizes both into a bounded
- * {@link HttpError} that preserves the original failure as its `cause`, so the same
- * classification is applied to the wrapped cause as to a directly thrown platform error.
+ * The defect is normalized through {@link normalizeErrorForReport} before it becomes evidence: an
+ * empty, whitespace-only, or ANSI-bearing message would otherwise be rejected by the reporter's
+ * semantic validation and abort the entire report (siblings included).
  *
- * @param error - The error thrown by the `GET`-only HTTP capability.
- * @param timeoutMs - The bounded timeout applied to the request.
- * @returns The classified status and human-readable error detail.
+ * @param module - The module that died.
+ * @param defect - The defect value.
+ * @param startedAt - Monotonic start of the module run.
+ * @param now - Monotonic time source.
+ * @returns One failed row scored as a complete module loss.
  */
-function classifyNetworkFailure(error: unknown, timeoutMs: number): Pick<DiagnosticNetworkResult, "status" | "error"> {
-  const cause: unknown = error instanceof HttpError ? error.cause : undefined;
-
-  if (isTimeoutFailure(error) || isTimeoutFailure(cause)) {
-    return {status: "unavailable", error: `Network probe timed out after ${String(timeoutMs)}ms.`};
-  }
-
-  if (isUnreachableFailure(error) || isUnreachableFailure(cause)) {
-    return {status: "unavailable", error: `Network probe could not reach the target: ${errorMessage(error)}`};
-  }
-
-  return {status: "error", error: `Network probe failed unexpectedly: ${errorMessage(error)}`};
-}
-
-/**
- * Creates the bounded read-only network reachability probe doctor modules observe.
- *
- * @remarks
- * Every request is a `GET` bounded by the caller's timeout, never carries a body, and captures
- * the response text only for a reachable response so callers can validate its shape. This probe
- * never throws: every outcome — reachable, unavailable, or an unexpected error — is returned as a
- * classified {@link DiagnosticNetworkResult}.
- *
- * @param http - `GET`-only HTTP capability owned by the invocation.
- * @param clock - Time source used to capture probe duration.
- * @param signal - Optional invocation cancellation signal linked into every request.
- * @returns A bounded, read-only network probe.
- */
-export function createBoundedNetworkProbe(
-  http: Readonly<GetOnlyHttpClient>,
-  clock: Readonly<Clock>,
-  signal?: AbortSignal,
-): DiagnosticNetworkProbe {
-  return {
-    async get(url: URL, timeoutMs: number): Promise<DiagnosticNetworkResult> {
-      const startedAt = clock.monotonicNow();
-      try {
-        const response = await http.get({url, timeoutMs, ...(signal === undefined ? {} : {signal})});
-        return {
-          status: "reachable",
-          statusCode: response.status,
-          durationMs: Math.max(0, clock.monotonicNow() - startedAt),
-          body: response.text,
-        };
-      } catch (error: unknown) {
-        return {
-          ...classifyNetworkFailure(error, timeoutMs),
-          durationMs: Math.max(0, clock.monotonicNow() - startedAt),
-        };
-      }
+function moduleErrorRow(module: Readonly<DiagnosticModule>, defect: unknown, startedAt: number, now: () => number): DiagnosticResult {
+  const evidence = normalizeErrorForReport(defect, `The ${module.title} diagnostic module threw an error without a usable message.`);
+  return diagnosticResult(
+    {
+      id: `${module.id}.module-error`,
+      module: module.id,
+      name: `${module.title} module error`,
+      status: "fail",
+      summary: `The ${module.title} diagnostic module failed unexpectedly and could not complete its checks.`,
+      evidence: [evidence],
+      rootCause: `An unhandled exception was thrown while running the ${module.title} diagnostic module.`,
+      potentialCauses: [],
+      fixes: [{description: `Investigate the ${module.title} module failure captured in evidence, then rerun doctor.`}],
     },
-  };
+    startedAt,
+    now,
+  );
 }
 
 /**
- * Wraps the opaque probe runner so every module probe is linked to invocation cancellation
- * without a specialist module ever handling a signal itself.
- *
- * @param runtime - The invocation's runtime capabilities.
- * @returns A probe runner whose runs abort with the invocation.
- */
-function createCancellableProbeRunner(runtime: Readonly<CommandRuntime>): LegacyInspectionProbeRunner {
-  const probes = createInspectionProbeRunner(runtime.runner);
-  return {
-    run: (probe, options = {}) => probes.run(probe, {signal: runtime.signal, ...options}),
-  };
-}
-
-/**
- * Runs one doctor module and normalizes an unhandled exception.
- *
- * @remarks
- * A module exception never becomes a passing or skipped result: it is replaced with exactly one
- * failed `<module>.module-error` row. The thrown value is normalized through
- * {@link normalizeErrorForReport} before it becomes evidence — an empty, whitespace-only, or
- * ANSI-bearing message would otherwise be rejected by the doctor reporter's semantic validation
- * and abort the entire report (siblings included) instead of degrading to one failed row, so a
- * crashed module is scored as a complete module loss rather than silently shrinking the report.
+ * Runs one doctor module and normalizes a defect into one failed row.
  *
  * @param module - The diagnostic module to execute.
  * @param context - The shared read-only diagnostic context.
- * @returns The module's own results, or one normalized failure row.
+ * @returns The module's own results, or one `<module>.module-error` row; interruption propagates.
  */
-async function runDoctorModule(module: Readonly<DiagnosticModule>, context: Readonly<DoctorContext>): Promise<readonly DiagnosticResult[]> {
-  const startedAt = context.clock.monotonicNow();
-  try {
-    return await module.run(context);
-  } catch (error: unknown) {
-    const evidence = normalizeErrorForReport(error, `The ${module.title} diagnostic module threw an error without a usable message.`);
-    return [
-      diagnosticResult(
-        {
-          id: `${module.id}.module-error`,
-          module: module.id,
-          name: `${module.title} module error`,
-          status: "fail",
-          summary: `The ${module.title} diagnostic module failed unexpectedly and could not complete its checks.`,
-          evidence: [evidence],
-          rootCause: `An unhandled exception was thrown while running the ${module.title} diagnostic module.`,
-          potentialCauses: [],
-          fixes: [{description: `Investigate the ${module.title} module failure captured in evidence, then rerun doctor.`}],
-        },
-        startedAt,
-        context.clock.monotonicNow,
-      ),
-    ];
-  }
+function runDoctorModule(
+  module: Readonly<DiagnosticModule>,
+  context: DoctorContext,
+): Effect.Effect<readonly DiagnosticResult[], never, DoctorRequirements> {
+  return Effect.gen(function* () {
+    const now = yield* monotonicNow;
+    const startedAt = now();
+    return yield* module
+      .run(context)
+      .pipe(Effect.catchDefect((defect) => Effect.succeed([moduleErrorRow(module, defect, startedAt, now)])));
+  });
 }
 
 /**
- * Identity registry of the exact typed input that produced each report.
+ * Starts the given facts in the background without awaiting them.
  *
  * @remarks
- * Module-private on purpose: it lets the deferred human completion render with the same
- * `--verbose` decision the run used, without widening the published `DoctorReport` contract with
- * presentation state or re-reading argv after parsing.
+ * Each fact starts immediately in a child fiber of the doctor run, so independent inspections a
+ * module reads sequentially are already in flight before the first module runs. The outcome (or defect) is ignored here: the module that
+ * consumes the fact reads the identical memoized outcome and classifies it.
+ *
+ * @param inspection - The shared repository inspection session of the run.
+ * @param facts - Facts to start; duplicates are collapsed.
+ * @returns An effect that forks one fiber per distinct fact.
  */
-const reportInputs = new WeakMap<DoctorReport, DoctorInput>();
-
-/** Optional seams the shared doctor business function accepts. */
-interface DoctorExecutionSeams {
-  /** Ordered modules to execute; defaults to {@link doctorModules}. */
-  readonly modules?: readonly DiagnosticModule[];
+function prewarmInspections(inspection: RepositoryInspectionSession, facts: readonly RepositoryInspectionKey[]): Effect.Effect<void> {
+  return Effect.forEach([...new Set(facts)], (fact) => Effect.forkChild(Effect.exit(inspection.inspect(fact)), {startImmediately: true}), {
+    discard: true,
+  });
 }
 
 /**
- * Starts every declared inspection concurrently without awaiting the result.
+ * Runs the given modules against one shared read-only context and returns the validated report.
  *
  * @remarks
- * Doctor modules own no task scheduler and must never reach for a raw `Promise` combinator, so
- * the command starts the facts they declared through {@link CommandRuntime.tasks} before the
- * first module runs. Each module then reads the memoized promise of an inspection that is already
- * in flight with an ordinary sequential `await`, which keeps independent inspections concurrent
- * exactly as they were before doctor became a command.
+ * Exported for tests that inject modules; production code calls {@link runDoctor}.
  *
- * The prewarm is deliberately not awaited: awaiting it would delay every module until the slowest
- * declared fact settled. Its rejection is claimed here (for example when the invocation is
- * cancelled) so it can never surface as an unhandled rejection, and claiming it never hides a
- * failure — the scheduler starts each inspection through the same session, so the module that
- * actually consumes the fact still awaits and classifies the identical memoized outcome.
- *
- * @param inspection - The shared repository inspection session for this run.
- * @param runtime - The invocation's runtime capabilities.
- * @param facts - Inspection keys to start concurrently; duplicates are collapsed.
+ * @param modules - Ordered modules to execute.
+ * @returns The doctor program over `modules`.
  */
-function prewarmInspections(
-  inspection: LegacyRepositoryInspectionSession,
-  runtime: Readonly<CommandRuntime>,
-  facts: readonly RepositoryInspectionKey[],
-): void {
-  const distinctFacts = [...new Set(facts)];
-  if (distinctFacts.length === 0) {
-    return;
-  }
+export function runDoctorWith(
+  modules: readonly DiagnosticModule[],
+): (input: Readonly<DoctorInput>) => Effect.Effect<DoctorReport, never, DoctorRequirements | Inspection> {
+  return Effect.fn("doctor.run")(function* (input: Readonly<DoctorInput>) {
+    const files = yield* legacyReadOnlyFiles;
+    const paths = yield* Effect.promise(() => resolveRepositoryPaths(import.meta.url, files));
+    const requirements = yield* Effect.promise(() => loadRepositoryRequirements(paths, {files, tasks: legacyTaskScheduler}));
+    const inspection = yield* (yield* Inspection).session({profile: input.quick ? "quick" : "full", paths});
 
-  void runtime.tasks
-    .parallel(
-      distinctFacts.map((fact) => async () => inspection.inspect(fact)),
-      runtime.signal,
-    )
-    .catch(() => undefined);
+    // Full mode only: the aggregate worker starts once here, so its memoized result is ready by the
+    // time the workspace and infrastructure modules consume it. Quick mode never starts it.
+    yield* prewarmInspections(inspection, [
+      ...(input.quick ? [] : ["aggregate" as const]),
+      ...modules.flatMap((module) => module.facts ?? []),
+    ]);
+
+    const context: DoctorContext = {options: input, paths, requirements, inspection, probes: inspectionProbeRunner};
+    const results = yield* Effect.forEach(modules, (module) => runDoctorModule(module, context), {concurrency: "unbounded"});
+    const timestamp = DateTime.formatIso(yield* DateTime.now);
+    return yield* Effect.sync(() => createDoctorReport(results.flat(), timestamp, {verbose: input.verbose}));
+  });
 }
 
 /**
- * Runs every doctor module against one shared read-only diagnostic context and returns the
- * validated, scored report.
+ * Runs every doctor module and returns the validated, scored report.
  *
- * @remarks
- * This is the single doctor business function the command definition calls, so no second
- * orchestration path exists. Modules always receive the full typed input and are responsible for
- * emitting their own explicit skipped diagnostics. Modules run concurrently through
- * {@link CommandRuntime.tasks}, which preserves the declared module order in the flattened result
- * regardless of which module settles first and cancels with the invocation. Duplicate or
- * malformed diagnostic ids are rejected by {@link createDoctorReport}, the sole authority for
- * report schema and semantic validation.
- *
- * @param context - The invocation context owning every capability this run may use.
  * @param input - Typed doctor input.
- * @param seams - Optional module replacement.
- * @returns The validated, scored doctor report.
+ * @returns The report; a duplicate or unknown diagnostic id is a defect.
  */
-async function executeDoctor(
-  context: Readonly<CommandContext>,
-  input: Readonly<DoctorInput>,
-  seams: Readonly<DoctorExecutionSeams> = {},
-): Promise<DoctorReport> {
-  const {runtime} = context;
-  const files = asReadOnlyFileSystem(runtime.files);
-  const modules = seams.modules ?? doctorModules;
+export const runDoctor: (input: Readonly<DoctorInput>) => Effect.Effect<DoctorReport, never, DoctorRequirements | Inspection> =
+  runDoctorWith(doctorModules);
 
-  const paths = await resolveRepositoryPaths(import.meta.url, files);
-  const requirements = await loadRepositoryRequirements(paths, {files, tasks: runtime.tasks});
-
-  const request: RepositoryInspectionRequest = {profile: input.quick ? "quick" : "full", paths};
-  const inspection = runtime.inspection.getRepositorySession(request);
-
-  if (!input.quick) {
-    // Prewarm aggregate collection in full mode only: starting the isolated worker once here means
-    // its memoized result is ready by the time the infrastructure module consumes it, without
-    // blocking module startup. Quick mode never starts the worker.
-    prewarmInspections(inspection, runtime, ["aggregate"]);
-  }
-
-  prewarmInspections(
-    inspection,
-    runtime,
-    modules.flatMap((module) => module.facts ?? []),
-  );
-
-  const doctorContext: DoctorContext = {
-    options: input,
-    paths,
-    requirements,
-    network: createBoundedNetworkProbe(asGetOnlyHttpClient(runtime.http), runtime.clock, runtime.signal),
-    logger: runtime.logger,
-    files,
-    clock: runtime.clock,
-    environment: runtime.environment,
-    inspection,
-    probes: createCancellableProbeRunner(runtime),
-  };
-
-  const settledResults = await runtime.tasks.parallel(
-    modules.map((module) => () => runDoctorModule(module, doctorContext)),
-    runtime.signal,
-  );
-
-  const report = createDoctorReport(settledResults.flat(), runtime.clock.isoTimestamp(), {verbose: input.verbose});
-  reportInputs.set(report, input);
-  return report;
+/**
+ * Whether a report contains a failed diagnostic: the business-negative doctor result.
+ *
+ * @param report - The doctor report.
+ * @returns `true` when any check failed.
+ */
+export function hasFailedDiagnostics(report: Readonly<DoctorReport>): boolean {
+  return report.checks.some((check) => check.status === "fail");
 }
 
 /**
- * Creates the doctor command.
+ * Builds an `Inspection` layer over a parent legacy invocation's inspection runtime.
  *
- * @param dependencies - Optional runtime factory and module list; tests inject deterministic
- * fakes instead of replacing command business code.
- * @returns The typed `doctor` command object.
+ * @param runtime - The parent's legacy inspection runtime.
+ * @returns A layer whose sessions delegate to the parent's sessions.
  */
-export function createDoctorCommand(dependencies: Readonly<DoctorCommandDependencies> = {}): MonorepoCommand<DoctorInput, DoctorReport> {
-  const {modules} = dependencies;
-
-  return new MonorepoCommand<DoctorInput, DoctorReport>(
-    {
-      metadata: {name: "doctor"},
-      execute: (context, input) => executeDoctor(context, input, modules === undefined ? {} : {modules}),
-      completion: (report) => ({
-        exitCode: report.summary.failed > 0 ? 1 : 0,
-        human: (logger) => {
-          renderDoctorReport(report, reportInputs.get(report) ?? {quick: false, verbose: false}, logger);
-        },
-        json: toJsonValue(report),
-      }),
-    },
-    dependencies.runtimeFactory,
+function parentInspectionLayer(runtime: LegacyRepositoryInspectionRuntime): Layer.Layer<Inspection> {
+  return Layer.succeed(
+    Inspection,
+    Inspection.of({
+      session: (request) =>
+        Effect.sync((): RepositoryInspectionSession => {
+          const session = runtime.getRepositorySession(request);
+          return {
+            inspect: (key) => Effect.promise(() => session.inspect(key)),
+            invalidate: (...keys) =>
+              Effect.sync(() => {
+                session.invalidate(...keys);
+              }),
+            updateInfrastructureEngine: (engine) =>
+              Effect.sync(() => {
+                session.updateInfrastructureEngine(engine);
+              }),
+          };
+        }),
+    }),
   );
 }
 
-/** Production singleton used by the aggregate CLI. */
-export const doctorCommand: MonorepoCommand<DoctorInput, DoctorReport> = createDoctorCommand();
+/**
+ * Builds the legacy invoker over {@link runDoctor} for the unmigrated `status` command.
+ *
+ * @remarks
+ * Completes with exit `1` when the report has a failed diagnostic, otherwise `0`. When invoked with
+ * a parent invocation, doctor reads the parent's inspection sessions, so a composing `status` run
+ * shares one session with doctor exactly as the legacy child command did. Deleted in Task 4.5.
+ *
+ * @param makeLayer - Builds the platform layer of each invocation; defaults to the Node layer.
+ * @returns The doctor invoker.
+ */
+export function makeDoctorInvoker(makeLayer: LayerFactory = makeNodeLayer): CommandInvoker<DoctorInput, DoctorReport> {
+  const program = (input: Readonly<DoctorInput>): Effect.Effect<DoctorReport, never, PlatformServices> =>
+    Effect.provide(runDoctor(input), NetworkProbeLive);
+  return {
+    invoke: (input, options = {}) => {
+      const parentInspection = options.parent?.runtime.inspection;
+      const layerFor: LayerFactory =
+        parentInspection === undefined
+          ? makeLayer
+          : (settings) => Layer.merge(makeLayer(settings), parentInspectionLayer(parentInspection));
+      return legacyInvoker("doctor", program, (report) => (hasFailedDiagnostics(report) ? 1 : 0), layerFor).invoke(input, options);
+    },
+  };
+}
+
+/**
+ * Legacy invoker over {@link runDoctor} for the unmigrated `status` command.
+ *
+ * @remarks Deleted in Task 4.5.
+ */
+export const doctorCommand: CommandInvoker<DoctorInput, DoctorReport> = makeDoctorInvoker();

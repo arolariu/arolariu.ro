@@ -1,14 +1,14 @@
 // @vitest-environment node
 /**
  * @fileoverview Contract tests for read-only workspace diagnostics.
- * @module scripts.doctor.workspace.test
+ * @module scripts/commands/doctor/modules/workspace.test
  *
  * @remarks
  * These tests are built exclusively around inspection outcomes and opaque probe ids: no test
  * asserts a raw `CommandSpec`, and no test relies on a real Nx worker or real npm/git process.
- * `context.inspection.inspect` and `context.probes.run` are configured fakes keyed by fact key and
- * probe id respectively; `context.runner` is never touched by `doctor.workspace.ts` and is wired to
- * throw if it ever is. Only genuine filesystem-backed checks (repository root identity, required
+ * Inspection outcomes are scripted per fact key through the harness, and every probe runs through
+ * the real opaque probe runner over scripted harness processes keyed by probe id (an unexpected
+ * probe dies). Only genuine filesystem-backed checks (repository root identity, required
  * configuration files, and mirrored taxonomy artifacts) use a real temporary directory.
  */
 
@@ -16,20 +16,23 @@ import {mkdir, mkdtemp, readFile, rm, utimes, writeFile} from "node:fs/promises"
 import {tmpdir} from "node:os";
 import {basename, dirname, join, resolve} from "node:path";
 import {fileURLToPath} from "node:url";
-import {afterEach, describe, expect, it, vi, type Mock} from "vitest";
+import {Clock, Effect, Layer, PlatformError} from "effect";
+import {afterEach, describe, expect, it} from "vitest";
 
-import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "../../../common/logger.ts";
-import type {ProcessOutcome} from "../../../common/runner.ts";
 import {createRepositoryPaths} from "../../../common/repository-paths.ts";
 import type {RepositoryRequirements} from "../../../common/requirements.ts";
-import {asReadOnlyFileSystem, FileSystemError, type Clock, type ReadOnlyFileSystem, type RuntimeEnvironment} from "../../../common/runtime.ts";
-import {nodeFileSystem} from "../../../common/runtime.node.ts";
 import {getExpectedTaxonomyArtifactPaths} from "../../../common/taxonomy-artifacts.ts";
+import {Inspection} from "../../../inspection/Inspection.ts";
+import {inspectionProbeRunner, type ProbeOutcome} from "../../../inspection/probes.ts";
+import type {RepositoryInspectionSession} from "../../../inspection/repository.ts";
+import type {EnvironmentSnapshot} from "../../../platform/Environment.ts";
+import {ReadOnlyFiles} from "../../../platform/Files.ts";
+import type {ProcessRequest} from "../../../platform/Process.ts";
+import {makeTestLayer, runScoped, scriptedOutcomes, type ScriptedInspection, type TestHarness} from "../../../platform/testing.ts";
+import {NetworkProbe} from "../NetworkProbe.ts";
 import {createDoctorReport} from "../reporter.ts";
 import {workspaceDoctorModule} from "./workspace.ts";
-import type {DiagnosticNetworkResult, DiagnosticResult, DoctorContext, DoctorInput} from "../types.ts";
-import type {InspectionProbe, LegacyInspectionProbeRunner} from "../../../inspection/probes.ts";
-import type {LegacyRepositoryInspectionSession} from "../../../platform/bridge.ts";
+import type {DiagnosticResult, DoctorContext, DoctorInput} from "../types.ts";
 import type {InspectionOutcome} from "../../../inspection/types.ts";
 import type {NpmTreeFacts, NpmProblemFact} from "../../../inspection/packages.ts";
 import type {WorkspaceFacts} from "../../../inspection/workspace.ts";
@@ -46,31 +49,31 @@ const validRequirements: RepositoryRequirements = {
   packages: new Map(),
 };
 
-/** Legacy-shaped fixture description translated into one typed {@link ProcessOutcome}. */
+/** Legacy-shaped fixture description translated into one typed {@link ProbeOutcome}. */
 interface ProcessOutcomeFixture {
   readonly code?: number;
   readonly stdout?: string;
   readonly stderr?: string;
   readonly durationMs?: number;
   readonly timedOut?: boolean;
-  readonly signal?: NodeJS.Signals;
+  readonly signal?: string;
   readonly spawnError?: string;
 }
 
 /**
- * Builds one typed {@link ProcessOutcome} from a fixture description, so every probe case keeps
+ * Builds one typed {@link ProbeOutcome} from a fixture description, so every probe case keeps
  * naming the exact spawn/timeout/signal/exit classification it exercises.
  *
  * @param patch - Fixture description of the probe outcome under test.
- * @returns The equivalent typed process outcome.
+ * @returns The equivalent typed probe outcome.
  */
-function commandResult(patch: ProcessOutcomeFixture = {}): ProcessOutcome {
+function commandResult(patch: ProcessOutcomeFixture = {}): ProbeOutcome {
   const output = {stdout: patch.stdout ?? "", stderr: patch.stderr ?? "", durationMs: patch.durationMs ?? 4};
   if (patch.spawnError !== undefined) {
     return {kind: "spawn-failed", message: patch.spawnError, ...output};
   }
   if (patch.timedOut === true) {
-    return {kind: "timed-out", ...(patch.signal === undefined ? {} : {signal: patch.signal}), ...output};
+    return {kind: "timed-out", ...output};
   }
   if (patch.signal !== undefined) {
     return {kind: "signalled", signal: patch.signal, ...output};
@@ -83,21 +86,79 @@ function doctorOptions(patch: Partial<DoctorInput> = {}): DoctorInput {
   return {verbose: false, quick: false, ...patch};
 }
 
-/** Deterministic monotonic clock every fixture context observes. */
-function fixtureClock(): Clock {
-  let current = 0;
+/** A network probe that dies on any request: these modules never reach the network. */
+const unscriptedNetwork = Layer.succeed(
+  NetworkProbe,
+  NetworkProbe.of({get: (url) => Effect.die(new Error(`unscripted network probe: ${url.href}`))}),
+);
+
+/** A monotonic clock that advances 1 ms on every read, as the legacy fixture clock did; time never elapses on its own. */
+function countingClock(): Clock.Clock {
+  let current = 0n;
+  const tick = (): bigint => (current += 1_000_000n);
   return {
-    monotonicNow: (): number => ++current,
-    isoTimestamp: (): string => "2026-08-29T00:00:00.000Z",
-    delay: (): Promise<void> => Promise.resolve(),
+    currentTimeMillisUnsafe: () => 0,
+    currentTimeMillis: Effect.succeed(0),
+    currentTimeNanosUnsafe: () => 0n,
+    currentTimeNanos: Effect.succeed(0n),
+    monotonicTimeNanosUnsafe: tick,
+    monotonicTimeNanos: Effect.sync(tick),
+    sleep: () => Effect.never,
   };
+}
+
+/** Opaque probe id of every fixed workspace probe command. */
+const PROBE_IDS_BY_COMMAND: ReadonlyMap<string, string> = new Map([
+  ["git --version", "workspace.git.version"],
+  ["git status --short --branch", "workspace.git.status"],
+  ["git log --oneline -1 HEAD", "workspace.git.last-commit"],
+  ["node --version", "workspace.node.version"],
+  ["npm --version", "workspace.npm.version"],
+  ["npm config get cache", "workspace.npm.cache"],
+  ["npm audit --json", "workspace.npm.audit"],
+  ["npm outdated --json", "workspace.npm.outdated"],
+  ["npm ls --all --json", "workspace.npm.tree"],
+]);
+
+/**
+ * Maps one process request back to the opaque probe id that issued it.
+ *
+ * @param request - The process request.
+ * @returns The probe id; executable-resolution probes are `workspace.executable-resolution:<name>`.
+ */
+function probeIdOf(request: ProcessRequest): string {
+  const commandLine = [request.command, ...request.args].join(" ");
+  if (request.command === "where.exe" || request.command === "which") {
+    return `workspace.executable-resolution:${request.args.join(" ")}`;
+  }
+  return PROBE_IDS_BY_COMMAND.get(commandLine) ?? commandLine;
+}
+
+/**
+ * Builds a Node-shaped filesystem access failure.
+ *
+ * @param code - The Node error code; `EACCES` maps to `PermissionDenied`, `ENOENT` to `NotFound`,
+ * and every other code (for example `EPERM`) to `Unknown`, as the Node filesystem does.
+ * @param description - The failure description.
+ * @returns The platform failure.
+ */
+function accessFailure(code: string, description: string): PlatformError.PlatformError {
+  const tags: Readonly<Record<string, PlatformError.SystemErrorTag>> = {EACCES: "PermissionDenied", ENOENT: "NotFound"};
+  return PlatformError.systemError({
+    _tag: tags[code] ?? "Unknown",
+    module: "FileSystem",
+    method: "access",
+    pathOrDescriptor: "cache",
+    description,
+    cause: Object.assign(new Error(description), {code}),
+  });
 }
 
 /** Immutable environment snapshot every fixture context observes. */
 function fixtureEnvironment(
   variables: Readonly<Record<string, string | undefined>> = {},
   platform: NodeJS.Platform = "win32",
-): RuntimeEnvironment {
+): EnvironmentSnapshot {
   return {
     variables,
     cwd: "C:\\fixture\\arolariu.ro",
@@ -175,20 +236,6 @@ function stripComments(source: string): string {
   return source.replace(/\/\*[\s\S]*?\*\//gu, "").replace(/\/\/[^\n]*/gu, "");
 }
 
-/**
- * Wraps the real read-only filesystem so only `assertAccessible` fails, keeping every other
- * fixture read (repository identity, configuration files, taxonomy artifacts) intact.
- *
- * @param failure - The code-preserving failure `assertAccessible` rejects with.
- * @returns A read-only filesystem whose access assertion always fails.
- */
-function readOnlyFilesWithAccessFailure(failure: FileSystemError): ReadOnlyFileSystem {
-  return {
-    ...asReadOnlyFileSystem(nodeFileSystem),
-    assertAccessible: (): Promise<void> => Promise.reject(failure),
-  };
-}
-
 function resultIds(results: readonly DiagnosticResult[]): readonly string[] {
   return results.map((result) => result.id);
 }
@@ -218,20 +265,23 @@ const REQUIRED_CONFIG_PATHS = [
 interface WorkspaceFixture {
   readonly root: string;
   readonly cacheRoot: string;
-  readonly context: DoctorContext;
-  readonly probeRun: Mock<(probe: InspectionProbe, options?: unknown) => Promise<ProcessOutcome>>;
-  readonly inspect: Mock<(key: string) => Promise<InspectionOutcome<unknown>>>;
+  /** Runs the module once against the fixture. */
+  readonly run: () => Promise<readonly DiagnosticResult[]>;
+  /** Every inspected key, in order. */
+  readonly inspected: readonly string[];
+  /** Every requested probe id, in order. */
+  readonly requestedProbeIds: () => readonly string[];
 }
 
 async function createWorkspaceFixture(
   input: Readonly<{
     options?: Partial<DoctorInput>;
     requirementsValid?: boolean;
-    probeOverrides?: ReadonlyMap<string, ProcessOutcome>;
+    probeOverrides?: ReadonlyMap<string, ProbeOutcome>;
     inspectionOverrides?: ReadonlyMap<string, InspectionOutcome<unknown>>;
     omitConfigPaths?: readonly string[];
     taxonomyContentOverrides?: ReadonlyMap<string, string>;
-    files?: ReadOnlyFileSystem;
+    accessFailure?: PlatformError.PlatformError;
   }> = {},
 ): Promise<WorkspaceFixture> {
   const root = await mkdtemp(join(tmpdir(), "arolariu-doctor-workspace-"));
@@ -257,7 +307,7 @@ async function createWorkspaceFixture(
     await utimes(artifactPath, generatedAt, generatedAt);
   }
 
-  const probeResponses = new Map<string, ProcessOutcome>([
+  const probeResponses = new Map<string, ProbeOutcome>([
     ["workspace.git.version", commandResult({stdout: "git version 2.50.1\n"})],
     ["workspace.git.status", commandResult({stdout: "## preview...origin/preview\n M docs/example.md\n"})],
     ["workspace.git.last-commit", commandResult({stdout: "abc1234 example\n"})],
@@ -282,46 +332,48 @@ async function createWorkspaceFixture(
     ...(input.inspectionOverrides ?? []),
   ]);
 
-  const probeRun = vi.fn(async (probe: InspectionProbe): Promise<ProcessOutcome> => {
-    const response = probeResponses.get(probe.id);
-    if (response === undefined) {
-      throw new Error(`Unexpected inspection probe requested: '${probe.id}'.`);
-    }
-    return response;
-  });
-
-  const inspect = vi.fn(async (key: string): Promise<InspectionOutcome<unknown>> => {
-    const outcome = inspectionOutcomes.get(key);
-    if (outcome === undefined) {
-      throw new Error(`Unexpected inspection key requested: '${key}'.`);
-    }
-    return outcome;
-  });
-
-  const sink = new InMemoryLoggerSink();
-  const context: DoctorContext = {
-    options: doctorOptions(input.options),
-    paths,
-    requirements:
-      input.requirementsValid === false
-        ? {status: "invalid", errors: [".nvmrc disagrees with package.json#engines.node"]}
-        : {status: "valid", requirements: validRequirements},
-    network: {
-      get: vi.fn(async (): Promise<DiagnosticNetworkResult> => ({status: "reachable", statusCode: 200, durationMs: 1})),
-    },
-    logger: new MonorepositoryConsoleLogger("doctor::workspace", {color: false, sink}),
-    files: input.files ?? asReadOnlyFileSystem(nodeFileSystem),
-    clock: fixtureClock(),
+  const harness: TestHarness = makeTestLayer({
+    fileSystem: "node",
+    inspection: Object.fromEntries(inspectionOutcomes) as ScriptedInspection,
+    processes: [
+      scriptedOutcomes((request) => {
+        const response = probeResponses.get(probeIdOf(request));
+        if (response === undefined) {
+          throw new Error(`Unexpected inspection probe requested: '${probeIdOf(request)}'.`);
+        }
+        return response;
+      }),
+    ],
     environment: fixtureEnvironment({PATH: resolve(root, "bin")}),
-    probes: {run: probeRun as unknown as LegacyInspectionProbeRunner["run"]},
-    inspection: {
-      inspect: inspect as unknown as LegacyRepositoryInspectionSession["inspect"],
-      invalidate: vi.fn(),
-      updateInfrastructureEngine: vi.fn(),
-    } as LegacyRepositoryInspectionSession,
-  };
+  });
+  const inspected: string[] = [];
+  const options = doctorOptions(input.options);
+  const requirements: DoctorContext["requirements"] =
+    input.requirementsValid === false
+      ? {status: "invalid", errors: [".nvmrc disagrees with package.json#engines.node"]}
+      : {status: "valid", requirements: validRequirements};
+  const {accessFailure: failure} = input;
+  const run = (): Promise<readonly DiagnosticResult[]> =>
+    runScoped(
+      Effect.gen(function* () {
+        const session = yield* (yield* Inspection).session({profile: "full", paths});
+        const recording: RepositoryInspectionSession = {
+          ...session,
+          inspect: (key) => {
+            inspected.push(key);
+            return session.inspect(key);
+          },
+        };
+        const context: DoctorContext = {options, paths, requirements, inspection: recording, probes: inspectionProbeRunner};
+        const program = Effect.provideService(workspaceDoctorModule.run(context), Clock.Clock, countingClock());
+        return yield* failure === undefined
+          ? program
+          : Effect.updateService(program, ReadOnlyFiles, (files) => ({...files, access: () => Effect.fail(failure)}));
+      }),
+      Layer.merge(harness.layer, unscriptedNetwork),
+    );
 
-  return {root, cacheRoot, context, probeRun, inspect};
+  return {root, cacheRoot, run, inspected, requestedProbeIds: () => harness.processCalls().map(({request}) => probeIdOf(request))};
 }
 
 afterEach(async () => {
@@ -332,7 +384,7 @@ describe("workspaceDoctorModule", () => {
   it("returns every stable workspace check in order for a healthy local baseline", async () => {
     const fixture = await createWorkspaceFixture();
 
-    const results = await workspaceDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     expect(resultIds(results)).toEqual([
       "workspace.repository-root",
@@ -359,7 +411,7 @@ describe("workspaceDoctorModule", () => {
   it("reports requirement-source drift while still probing independent workspace checks", async () => {
     const fixture = await createWorkspaceFixture({requirementsValid: false});
 
-    const results = await workspaceDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     expect(resultById(results, "workspace.node-sources").status).toBe("fail");
     expect(resultById(results, "workspace.node-runtime").status).toBe("skipped");
@@ -374,9 +426,9 @@ describe("workspaceDoctorModule", () => {
   it("uses only opaque probe ids and never requests workspace.npm.tree", async () => {
     const fixture = await createWorkspaceFixture();
 
-    await workspaceDoctorModule.run(fixture.context);
+    await fixture.run();
 
-    const requestedIds = fixture.probeRun.mock.calls.map(([probe]) => probe.id);
+    const requestedIds = fixture.requestedProbeIds();
     expect(requestedIds.length).toBeGreaterThan(0);
     for (const id of requestedIds) {
       expect(id.startsWith("workspace.")).toBe(true);
@@ -392,7 +444,7 @@ describe("workspaceDoctorModule", () => {
       ]),
     });
 
-    const results = await workspaceDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     const git = resultById(results, "workspace.git");
     expect(git.status).toBe("fail");
@@ -412,7 +464,7 @@ describe("workspaceDoctorModule", () => {
       probeOverrides: new Map([["workspace.git.version", commandResult({stdout: "  \n"})]]),
     });
 
-    const results = await workspaceDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     const git = resultById(results, "workspace.git");
     expect(git.status).toBe("fail");
@@ -423,13 +475,13 @@ describe("workspaceDoctorModule", () => {
 
   it("keeps a silent failing git state probe as one reportable failure instead of an empty-evidence row", async () => {
     const fixture = await createWorkspaceFixture({
-      probeOverrides: new Map<string, ProcessOutcome>([
+      probeOverrides: new Map<string, ProbeOutcome>([
         ["workspace.git.status", {kind: "exited", exitCode: 0, stdout: "", stderr: "", durationMs: 4}],
         ["workspace.git.last-commit", {kind: "exited", exitCode: 0, stdout: "", stderr: "", durationMs: 4}],
       ]),
     });
 
-    const results = await workspaceDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     const git = resultById(results, "workspace.git");
     expect(git.status).toBe("fail");
@@ -443,7 +495,7 @@ describe("workspaceDoctorModule", () => {
       inspectionOverrides: new Map([["workspace", {kind: "unavailable", reason: "Nx workspace worker timed out.", durationMs: 0}]]),
     });
 
-    const results = await workspaceDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     const projects = resultById(results, "workspace.nx-projects");
     const graph = resultById(results, "workspace.nx-graph");
@@ -460,7 +512,7 @@ describe("workspaceDoctorModule", () => {
       ]),
     });
 
-    const results = await workspaceDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     expect(resultById(results, "workspace.nx-projects").status).toBe("fail");
     expect(resultById(results, "workspace.nx-projects").evidence).toContain("Nx workspace project 'x' has a missing 'data.root'.");
@@ -477,7 +529,7 @@ describe("workspaceDoctorModule", () => {
       inspectionOverrides: new Map([["npm.root", {kind: "available", value: facts, durationMs: 0}]]),
     });
 
-    const results = await workspaceDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     const root = resultById(results, "workspace.root-dependencies");
     expect(root.status).toBe("fail");
@@ -510,7 +562,7 @@ describe("workspaceDoctorModule", () => {
       inspectionOverrides: new Map([["npm.root", {kind: "available", value: facts, durationMs: 0}]]),
     });
 
-    const results = await workspaceDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     const root = resultById(results, "workspace.root-dependencies");
     expect(root.evidence[0]).toBe("25 dependency problems reported.");
@@ -524,7 +576,7 @@ describe("workspaceDoctorModule", () => {
       ]),
     });
 
-    const results = await workspaceDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     const githubScripts = resultById(results, "workspace.github-scripts-dependencies");
     expect(githubScripts.status).toBe("fail");
@@ -535,21 +587,21 @@ describe("workspaceDoctorModule", () => {
   it("skips host-capacity in quick mode without requesting aggregate", async () => {
     const fixture = await createWorkspaceFixture({options: {quick: true}});
 
-    const results = await workspaceDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     expect(resultById(results, "workspace.host-capacity").status).toBe("skipped");
-    const inspectedKeys = fixture.inspect.mock.calls.map(([key]) => key);
+    const inspectedKeys = fixture.inspected;
     expect(inspectedKeys).not.toContain("aggregate");
   });
 
   it("skips audit and outdated in quick mode", async () => {
     const fixture = await createWorkspaceFixture({options: {quick: true}});
 
-    const results = await workspaceDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     expect(resultById(results, "workspace.npm-audit").status).toBe("skipped");
     expect(resultById(results, "workspace.npm-outdated").status).toBe("skipped");
-    const requestedIds = fixture.probeRun.mock.calls.map(([probe]) => probe.id);
+    const requestedIds = fixture.requestedProbeIds();
     expect(requestedIds).not.toContain("workspace.npm.audit");
     expect(requestedIds).not.toContain("workspace.npm.outdated");
   });
@@ -589,7 +641,7 @@ describe("workspaceDoctorModule", () => {
         ],
       ]),
     });
-    const lowDiskResults = await workspaceDoctorModule.run(criticallyLow.context);
+    const lowDiskResults = await criticallyLow.run();
     expect(resultById(lowDiskResults, "workspace.host-capacity").status).toBe("fail");
 
     const recommendedFacts = healthyAggregateFacts();
@@ -626,7 +678,7 @@ describe("workspaceDoctorModule", () => {
         ],
       ]),
     });
-    const warnResults = await workspaceDoctorModule.run(belowRecommended.context);
+    const warnResults = await belowRecommended.run();
     expect(resultById(warnResults, "workspace.host-capacity").status).toBe("warn");
   });
 
@@ -646,7 +698,7 @@ describe("workspaceDoctorModule", () => {
         ],
       ]),
     });
-    const unavailableResults = await workspaceDoctorModule.run(unavailableHost.context);
+    const unavailableResults = await unavailableHost.run();
     const unavailableResult = resultById(unavailableResults, "workspace.host-capacity");
     expect(unavailableResult.status).toBe("warn");
     expect(unavailableResult.evidence).toContain("The host inspection worker crashed.");
@@ -666,7 +718,7 @@ describe("workspaceDoctorModule", () => {
         ],
       ]),
     });
-    const invalidResults = await workspaceDoctorModule.run(invalidHost.context);
+    const invalidResults = await invalidHost.run();
     const invalidResult = resultById(invalidResults, "workspace.host-capacity");
     expect(invalidResult.status).toBe("warn");
     expect(invalidResult.evidence).toContain("The aggregate host facts are malformed.");
@@ -676,7 +728,7 @@ describe("workspaceDoctorModule", () => {
     const malformed = await createWorkspaceFixture({
       probeOverrides: new Map([["workspace.npm.audit", commandResult({stdout: "{not-json"})]]),
     });
-    const malformedResults = await workspaceDoctorModule.run(malformed.context);
+    const malformedResults = await malformed.run();
     const malformedAudit = resultById(malformedResults, "workspace.npm-audit");
     expect(malformedAudit.status).toBe("warn");
     expect(malformedAudit.summary).toContain("unrecognized response");
@@ -689,7 +741,7 @@ describe("workspaceDoctorModule", () => {
     const large = await createWorkspaceFixture({
       probeOverrides: new Map([["workspace.npm.audit", commandResult({stdout: paddedStdout})]]),
     });
-    const largeResults = await workspaceDoctorModule.run(large.context);
+    const largeResults = await large.run();
     const largeAudit = resultById(largeResults, "workspace.npm-audit");
     expect(largeAudit.status).toBe("fail");
     expect(largeAudit.evidence.some((entry) => entry.includes("(truncated)"))).toBe(true);
@@ -703,7 +755,7 @@ describe("workspaceDoctorModule", () => {
       probeOverrides: new Map([["workspace.npm.outdated", commandResult({stdout: JSON.stringify(outdated)})]]),
     });
 
-    const results = await workspaceDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     const outdatedResult = resultById(results, "workspace.npm-outdated");
     expect(outdatedResult.status).toBe("warn");
@@ -727,7 +779,7 @@ describe("workspaceDoctorModule", () => {
       inspectionOverrides: new Map([["workspace", {kind: "available", value: facts, durationMs: 0}]]),
     });
 
-    const results = await workspaceDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     const graph = resultById(results, "workspace.nx-graph");
     expect(graph.status).toBe("fail");
@@ -738,7 +790,7 @@ describe("workspaceDoctorModule", () => {
   it("reports missing config files without running any commands", async () => {
     const fixture = await createWorkspaceFixture({omitConfigPaths: ["arolariu.slnx"]});
 
-    const results = await workspaceDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     const configFiles = resultById(results, "workspace.config-files");
     expect(configFiles.status).toBe("fail");
@@ -753,24 +805,20 @@ describe("workspaceDoctorModule", () => {
     }
     await writeFixtureFile(mismatchedPath, taxonomyArtifactContents(mismatchedPath, "2026-08-30T00:00:00.000Z"));
 
-    const results = await workspaceDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     const artifacts = resultById(results, "workspace.generated-artifacts");
     expect(artifacts.status).toBe("fail");
     expect(artifacts.evidence).toContain("Mirrored taxonomy bytes differ: nace-2.1.min.json");
   });
 
-  it("same shared session and probe runner identity reaches the module", async () => {
+  it("reads facts through the shared session and probes through the opaque probe runner", async () => {
     const fixture = await createWorkspaceFixture();
-    const inspectFn = fixture.context.inspection.inspect;
-    const probeRunFn = fixture.context.probes.run;
 
-    await workspaceDoctorModule.run(fixture.context);
+    await fixture.run();
 
-    expect(fixture.context.inspection.inspect).toBe(inspectFn);
-    expect(fixture.context.probes.run).toBe(probeRunFn);
-    expect(fixture.inspect.mock.calls.length).toBeGreaterThan(0);
-    expect(fixture.probeRun.mock.calls.length).toBeGreaterThan(0);
+    expect(fixture.inspected.length).toBeGreaterThan(0);
+    expect(fixture.requestedProbeIds().length).toBeGreaterThan(0);
   });
 
   it.each([
@@ -778,10 +826,10 @@ describe("workspaceDoctorModule", () => {
     ["EPERM", "The current user does not have read/write access to the configured npm cache."],
   ])("classifies a %s npm cache access failure as a permission root cause", async (code, rootCause) => {
     const fixture = await createWorkspaceFixture({
-      files: readOnlyFilesWithAccessFailure(new FileSystemError("assertAccessible", "cache", "Failed to access the npm cache.", {code})),
+      accessFailure: accessFailure(code, "Failed to access the npm cache."),
     });
 
-    const results = await workspaceDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     const cache = resultById(results, "workspace.npm-cache");
     expect(cache.status).toBe("fail");
@@ -792,10 +840,10 @@ describe("workspaceDoctorModule", () => {
 
   it("classifies a non-permission npm cache access failure as potential causes", async () => {
     const fixture = await createWorkspaceFixture({
-      files: readOnlyFilesWithAccessFailure(new FileSystemError("assertAccessible", "cache", "npm cache is missing.", {code: "ENOENT"})),
+      accessFailure: accessFailure("ENOENT", "npm cache is missing."),
     });
 
-    const results = await workspaceDoctorModule.run(fixture.context);
+    const results = await fixture.run();
 
     const cache = resultById(results, "workspace.npm-cache");
     expect(cache.status).toBe("fail");

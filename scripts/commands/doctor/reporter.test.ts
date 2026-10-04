@@ -1,6 +1,12 @@
+// @vitest-environment node
+/**
+ * @fileoverview Tests for doctor report scoring, validation, and rendering.
+ * @module scripts/commands/doctor/reporter.test
+ */
+
 import {describe, expect, it} from "vitest";
 
-import {InMemoryLoggerSink, MonorepositoryConsoleLogger, type MonorepositoryLogger} from "../../common/logger.ts";
+import {makeTestLayer, runScoped} from "../../platform/testing.ts";
 import type {DiagnosticResult, DoctorReport, DoctorInput} from "./types.ts";
 import {
   computeHealthScore,
@@ -89,7 +95,7 @@ function createDiagnostic(
     status?: DiagnosticResult["status"];
     summary?: string;
     evidence?: readonly string[];
-    rootCause?: string;
+    rootCause?: string | undefined;
     potentialCauses?: DiagnosticResult["potentialCauses"];
     fixes?: DiagnosticResult["fixes"];
     durationMs?: number;
@@ -102,25 +108,27 @@ function createDiagnostic(
     status: overrides.status ?? "pass",
     summary: overrides.summary ?? `${overrides.name} summary.`,
     evidence: overrides.evidence ?? [],
-    rootCause: overrides.rootCause,
+    ...(overrides.rootCause === undefined ? {} : {rootCause: overrides.rootCause}),
     potentialCauses: overrides.potentialCauses ?? [],
     fixes: overrides.fixes ?? [],
     durationMs: overrides.durationMs ?? 5,
   };
 }
 
-function createLogger(options: Readonly<{json?: boolean; color?: boolean}> = {}): Readonly<{
-  sink: InMemoryLoggerSink;
-  logger: MonorepositoryLogger;
-}> {
-  const sink = new InMemoryLoggerSink();
-  const logger = new MonorepositoryConsoleLogger("doctor", {
-    mode: options.json === true ? "human" : "human",
-    color: options.color ?? false,
-    sink,
-  });
-
-  return {sink, logger};
+/**
+ * Renders a report on a fresh in-memory harness.
+ *
+ * @param report - The report to render.
+ * @param options - Rendering options.
+ * @returns Every rendered record, concatenated.
+ */
+async function render(report: DoctorReport, options: Readonly<{verbose: boolean}>): Promise<string> {
+  const harness = makeTestLayer();
+  await runScoped(renderDoctorReport(report, options), harness.layer);
+  return harness
+    .output()
+    .map((record) => record.text)
+    .join("");
 }
 
 function createOptions(overrides: Readonly<Partial<DoctorInput>> = {}): DoctorInput {
@@ -190,7 +198,7 @@ function createValidReport(): DoctorReport {
 function createWarnDiagnostic(
   overrides: Readonly<{
     evidence?: readonly string[];
-    rootCause?: string;
+    rootCause?: string | undefined;
     potentialCauses?: DiagnosticResult["potentialCauses"];
     fixes?: DiagnosticResult["fixes"];
   }> = {},
@@ -212,7 +220,7 @@ function createWarnDiagnostic(
 function createFailDiagnostic(
   overrides: Readonly<{
     evidence?: readonly string[];
-    rootCause?: string;
+    rootCause?: string | undefined;
     potentialCauses?: DiagnosticResult["potentialCauses"];
     fixes?: DiagnosticResult["fixes"];
   }> = {},
@@ -312,10 +320,10 @@ function weightOf(id: string): number {
 describe("doctor reporter scoring", () => {
   it("defines explicit stable weights for every Task 3-8 diagnostic id", () => {
     expect(Object.keys(diagnosticWeights).toSorted()).toEqual([...stableDiagnosticIds].toSorted());
-    expect(diagnosticWeights["workspace.node-runtime"]).toBeGreaterThan(diagnosticWeights["workspace.npm-outdated"]);
-    expect(diagnosticWeights["dotnet.executable"]).toBeGreaterThan(diagnosticWeights["dotnet.nuget-feed"]);
-    expect(diagnosticWeights["python.runtime"]).toBeGreaterThan(diagnosticWeights["python.pypi"]);
-    expect(diagnosticWeights["infrastructure.selection"]).toBeGreaterThan(diagnosticWeights["infrastructure.containers"]);
+    expect(diagnosticWeights["workspace.node-runtime"]).toBeGreaterThan(weightOf("workspace.npm-outdated"));
+    expect(diagnosticWeights["dotnet.executable"]).toBeGreaterThan(weightOf("dotnet.nuget-feed"));
+    expect(diagnosticWeights["python.runtime"]).toBeGreaterThan(weightOf("python.pypi"));
+    expect(diagnosticWeights["infrastructure.selection"]).toBeGreaterThan(weightOf("infrastructure.containers"));
   });
 
   it("summarizes diagnostic statuses", () => {
@@ -390,7 +398,7 @@ describe("doctor reporter scoring", () => {
 });
 
 describe("doctor report rendering", () => {
-  it("renders human output in module order with concise passing rows and expanded warn/fail detail", () => {
+  it("renders human output in module order with concise passing rows and expanded warn/fail detail", async () => {
     const report = createDoctorReport(
       [
         createDiagnostic({
@@ -460,11 +468,7 @@ describe("doctor report rendering", () => {
       ],
       "2026-08-30T01:23:45.000Z",
     );
-    const {sink, logger} = createLogger();
-
-    renderDoctorReport(report, createOptions(), logger);
-
-    const rendered = sink.records.map((record) => record.text).join("\n");
+    const rendered = await render(report, createOptions());
 
     expect(rendered).toContain("Repository root");
     expect(rendered).not.toContain("PASS EVIDENCE OMITTED");
@@ -490,7 +494,7 @@ describe("doctor report rendering", () => {
     }
   });
 
-  it("renders passing evidence only when verbose output is enabled", () => {
+  it("renders passing evidence only when verbose output is enabled", async () => {
     const report = createDoctorReport(
       [
         createDiagnostic({
@@ -504,14 +508,10 @@ describe("doctor report rendering", () => {
       ],
       "2026-08-30T01:23:45.000Z",
     );
-    const {sink, logger} = createLogger();
-
-    renderDoctorReport(report, createOptions({verbose: true}), logger);
-
-    expect(sink.records.map((record) => record.text).join("\n")).toContain("PASS EVIDENCE INCLUDED");
+    expect(await render(report, createOptions({verbose: true}))).toContain("PASS EVIDENCE INCLUDED");
   });
 
-  it("truncates oversized evidence entries in the report pipeline", () => {
+  it("truncates oversized evidence entries in the report pipeline", async () => {
     const oversizedEvidence = [
       "stdout: {",
       ...Array.from({length: 100}, (_, index) => `  \"package-${String(index)}\": {\"version\":\"1.0.0\"},`),
@@ -543,17 +543,13 @@ describe("doctor report rendering", () => {
     expect(reactCheck!.evidence.some((e) => e.includes("react@18 does not match react@19."))).toBe(true);
 
     // Render still works for both modes.
-    const standard = createLogger();
-    const verbose = createLogger();
-    renderDoctorReport(report, createOptions(), standard.logger);
-    renderDoctorReport(report, createOptions({verbose: true}), verbose.logger);
-    const standardOutput = standard.sink.records.map((record) => record.text).join("\n");
-    const verboseOutput = verbose.sink.records.map((record) => record.text).join("\n");
+    const standardOutput = await render(report, createOptions());
+    const verboseOutput = await render(report, createOptions({verbose: true}));
     expect(standardOutput).toContain("react@18 does not match react@19.");
     expect(verboseOutput).toContain("react@18 does not match react@19.");
   });
 
-  it("bounds the number of human evidence entries unless verbose output is enabled", () => {
+  it("bounds the number of human evidence entries unless verbose output is enabled", async () => {
     // Normal-mode report bounds evidence to 5 entries.
     const normalReport = createDoctorReport(
       [
@@ -588,14 +584,8 @@ describe("doctor report rendering", () => {
       "2026-08-30T01:23:45.000Z",
       {verbose: true},
     );
-    const standard = createLogger();
-    const verbose = createLogger();
-
-    renderDoctorReport(normalReport, createOptions(), standard.logger);
-    renderDoctorReport(verboseReport, createOptions({verbose: true}), verbose.logger);
-
-    const standardOutput = standard.sink.records.map((record) => record.text).join("\n");
-    const verboseOutput = verbose.sink.records.map((record) => record.text).join("\n");
+    const standardOutput = await render(normalReport, createOptions());
+    const verboseOutput = await render(verboseReport, createOptions({verbose: true}));
     // Normal mode: report pipeline bounded to 5, last item is the omission summary.
     expect(standardOutput).toContain("npm problem 4");
     expect(standardOutput).not.toContain("npm problem 5");
@@ -605,12 +595,8 @@ describe("doctor report rendering", () => {
     expect(verboseOutput).not.toContain("additional evidence entries omitted");
   });
 
-  it("always renders the score box", () => {
+  it("always renders the score box", async () => {
     const report = createValidReport();
-    const {sink, logger} = createLogger();
-
-    renderDoctorReport(report, createOptions(), logger);
-
-    expect(sink.records.map((record) => record.text).join("\n")).toContain("Health Score");
+    expect(await render(report, createOptions())).toContain("Health Score");
   });
 });
