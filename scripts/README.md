@@ -306,6 +306,18 @@ The bridge works in both directions. `runEffect(program, options)` lets a legacy
 program as a legacy `CommandInvoker`, so unmigrated callers compose it unchanged. The bridge is the only platform module that may import
 the legacy kernel, and cohort 7 deletes it.
 
+Until cohort 7 converts the shared Promise helpers (`resolveRepositoryPaths`, `loadRepositoryRequirements`, `readToolingConfig`,
+`writeToolingConfig`), Effect code hands them legacy-shaped capabilities from the bridge: `legacyReadOnlyFiles` and `legacyFileSystem`
+are Promise views over `ReadOnlyFiles` and `FileSystem`/`Path`/`Glob` that capture the current context, and `legacyTaskScheduler` is a
+shared `DefaultTaskScheduler`, so a family never value-imports `common/runtime.ts`. The views reject with a legacy `FileSystemError`
+whose `code` is the underlying Node code, or the mapped platform reason (`NotFound` → `ENOENT`, …) when there is none
+(`toLegacyFileSystemError`), so helpers that branch on `ENOENT` keep working on the in-memory harness:
+
+```ts
+const files = yield* legacyReadOnlyFiles;
+const paths = yield* Effect.promise(() => resolveRepositoryPaths(import.meta.url, files));
+```
+
 [`runtime-boundary.test.ts`](./common/runtime-boundary.test.ts) sanctions `scripts/platform/**` — like `runtime.node.ts` — as an owner of
 ambient `process.*`, timer, and `node:*` access, and enforces the platform and CLI rules: `@effect/platform-node` is imported only inside
 `scripts/platform/` and the [`cli.ts`](./cli.ts) entrypoint; Effect runtimes (`Effect.run*`, `ManagedRuntime.make`, `NodeRuntime.runMain`)

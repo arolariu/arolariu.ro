@@ -6,15 +6,34 @@
  * {@link runEffect} lets a legacy Promise command run an Effect program with the platform layer;
  * {@link legacyInvoker} lets a migrated Effect program pose as a legacy `CommandInvoker`, so an
  * unmigrated caller composes it unchanged. Cancellation flows from `AbortSignal`s into fiber
- * interruption, and every scope finalizer completes before the returned promise settles. The bridge
- * exists only while both command models coexist and is deleted in cohort 7.
+ * interruption, and every scope finalizer completes before the returned promise settles.
+ * {@link legacyReadOnlyFiles}, {@link legacyFileSystem}, and {@link legacyTaskScheduler} go the
+ * other way for the shared Promise helpers (`resolveRepositoryPaths`, `loadRepositoryRequirements`,
+ * `readToolingConfig`, `writeToolingConfig`) that cohort 7 converts: they hand those helpers
+ * legacy-shaped capabilities backed by the Effect services, preserving the legacy error `code`s
+ * the helpers branch on. The bridge exists only while both command models coexist and is deleted
+ * in cohort 7.
  */
 
-import {Cause, Effect, Exit, Result, type Layer, type Scope} from "effect";
+import {join} from "node:path";
+
+import {Cause, Effect, Exit, FileSystem, Option, PlatformError, Result, type Context, type Layer, type Path, type Scope} from "effect";
 
 import type {CommandExecution, CommandInvocationOptions, CommandInvoker, CommandPresentation} from "../common/commander.ts";
-import {commandCancellationFromSignal, linkAbortSignals} from "../common/runtime.ts";
+import {
+  commandCancellationFromSignal,
+  DefaultTaskScheduler,
+  FILE_SYSTEM_MAX_BYTES_EXCEEDED_CODE,
+  FileSystemError,
+  linkAbortSignals,
+  type DirectoryEntry,
+  type FileMetadata,
+  type FileSystem as LegacyFileSystem,
+  type ReadOnlyFileSystem as LegacyReadOnlyFileSystem,
+  type TaskScheduler,
+} from "../common/runtime.ts";
 import {Environment, EnvironmentLive} from "./Environment.ts";
+import {MaxBytesExceeded, ReadOnlyFiles, writeTextAtomic, type Glob} from "./Files.ts";
 import {makeNodeLayer, type PlatformServices} from "./layers.ts";
 import {resolveColor, type OutputSettingsShape} from "./Output.ts";
 import {processErrorEvidence, ProcessExited, ProcessSignalled, ProcessSpawnFailed, ProcessTimedOut, type ProcessError} from "./Process.ts";
@@ -214,3 +233,269 @@ export function legacyInvoker<TInput, TOutput, E>(
     },
   };
 }
+
+/** Legacy error code of each platform failure reason, used when the failure carries no Node `code`. */
+const LEGACY_ERROR_CODES: Readonly<Record<string, string>> = {
+  NotFound: "ENOENT",
+  PermissionDenied: "EACCES",
+  AlreadyExists: "EEXIST",
+  BadResource: "EBADF",
+  Busy: "EBUSY",
+  InvalidData: "EINVAL",
+  TimedOut: "ETIMEDOUT",
+  UnexpectedEof: "EOF",
+  Unknown: "EUNKNOWN",
+  BadArgument: "EINVAL",
+};
+
+/**
+ * Reads the Node error `code` of a failure cause, when it carries one.
+ *
+ * @param cause - The underlying failure.
+ * @returns The string `code`, or `undefined`.
+ */
+function nodeErrorCode(cause: unknown): string | undefined {
+  if (typeof cause !== "object" || cause === null || !("code" in cause)) {
+    return undefined;
+  }
+  return typeof cause.code === "string" ? cause.code : undefined;
+}
+
+/**
+ * Converts an Effect filesystem failure into the legacy code-preserving {@link FileSystemError}.
+ *
+ * @remarks
+ * The code is the underlying Node `code` when the platform failure's cause carries one (the live
+ * Node filesystem always does). Otherwise the reason maps to a legacy code: `NotFound` → `ENOENT`,
+ * `PermissionDenied` → `EACCES`, `AlreadyExists` → `EEXIST`, `BadResource` → `EBADF`, `Busy` →
+ * `EBUSY`, `InvalidData` and `BadArgument` → `EINVAL`, `TimedOut` → `ETIMEDOUT`, `UnexpectedEof` →
+ * `EOF`, and every other reason → `EUNKNOWN`. {@link MaxBytesExceeded} maps to
+ * {@link FILE_SYSTEM_MAX_BYTES_EXCEEDED_CODE} with its own message, as the legacy bounded read does.
+ *
+ * @param error - The Effect failure.
+ * @param path - The path the failing operation targeted.
+ * @param operation - The legacy operation name; defaults to the platform method (or `readBytes`).
+ * @returns The equivalent legacy error, with `error` as its `cause`.
+ */
+export function toLegacyFileSystemError(
+  error: PlatformError.PlatformError | MaxBytesExceeded,
+  path: string,
+  operation?: string,
+): FileSystemError {
+  if (error._tag === "MaxBytesExceeded") {
+    return new FileSystemError(operation ?? "readBytes", path, error.message, {code: FILE_SYSTEM_MAX_BYTES_EXCEEDED_CODE, cause: error});
+  }
+  const failedOperation = operation ?? error.reason.method;
+  const code = nodeErrorCode(error.reason.cause) ?? LEGACY_ERROR_CODES[error.reason._tag] ?? "EUNKNOWN";
+  return new FileSystemError(failedOperation, path, `Failed to ${failedOperation} '${path}': ${error.message}`, {code, cause: error});
+}
+
+/** Runs one filesystem effect as a legacy promise that rejects with a {@link FileSystemError}. */
+type LegacyFileRunner<R> = <A>(
+  operation: string,
+  path: string,
+  effect: Effect.Effect<A, PlatformError.PlatformError | MaxBytesExceeded, R>,
+) => Promise<A>;
+
+/**
+ * Builds a {@link LegacyFileRunner} over a captured context.
+ *
+ * @param context - The services every call runs with.
+ * @returns The runner.
+ */
+function legacyFileRunner<R>(context: Context.Context<R>): LegacyFileRunner<R> {
+  const run = Effect.runPromiseWith(context);
+  return (operation, path, effect) => run(Effect.mapError(effect, (error) => toLegacyFileSystemError(error, path, operation)));
+}
+
+/**
+ * Classifies a stat result as a legacy entry kind.
+ *
+ * @param info - The stat result.
+ * @returns `file`, `directory`, or `other`.
+ */
+function legacyKind(info: FileSystem.File.Info): DirectoryEntry["kind"] {
+  if (info.type === "File") {
+    return "file";
+  }
+  return info.type === "Directory" ? "directory" : "other";
+}
+
+/**
+ * Builds the legacy read-only view over the Effect {@link ReadOnlyFiles} service.
+ *
+ * @param files - The Effect read-only service.
+ * @param run - Runs each call with the captured context.
+ * @returns The legacy view.
+ */
+function readOnlyView<R>(files: ReadOnlyFiles["Service"], run: LegacyFileRunner<R>): LegacyReadOnlyFileSystem {
+  return {
+    readText: (path) => run("readText", path, files.readFileString(path)),
+    readBytes: (path, options = {}) => {
+      const {maximumBytes} = options;
+      if (maximumBytes === undefined) {
+        return run("readBytes", path, files.readFile(path));
+      }
+      if (!Number.isSafeInteger(maximumBytes) || maximumBytes < 0) {
+        return Promise.reject(new RangeError("maximumBytes must be a non-negative safe integer."));
+      }
+      return run("readBytes", path, files.readBytesBounded(path, maximumBytes));
+    },
+    exists: (path) => run("exists", path, files.exists(path)),
+    assertAccessible: (path, access = {}) => {
+      if (access.execute === true) {
+        // The Effect FileSystem cannot check execute permission; fail loudly instead of guessing.
+        return Promise.reject(
+          new FileSystemError("assertAccessible", path, `Failed to assertAccessible '${path}': execute access cannot be checked.`, {
+            code: "ENOTSUP",
+          }),
+        );
+      }
+      return run("assertAccessible", path, files.access(path, {readable: access.read, writable: access.write}));
+    },
+    realPath: (path) => run("realPath", path, files.realPath(path)),
+    inspect: (path) =>
+      run(
+        "inspect",
+        path,
+        files.stat(path).pipe(
+          Effect.map((info): FileMetadata => {
+            const modifiedAt = Option.getOrUndefined(info.mtime);
+            return {
+              kind: legacyKind(info),
+              size: Number(info.size),
+              mode: info.mode,
+              ...(modifiedAt === undefined ? {} : {modifiedAt}),
+            };
+          }),
+          Effect.catchIf(
+            (error) => error.reason._tag === "NotFound",
+            () => Effect.succeed<FileMetadata>({kind: "missing", size: 0}),
+          ),
+        ),
+      ),
+    readDirectory: (path) =>
+      run(
+        "readDirectory",
+        path,
+        Effect.flatMap(files.readDirectory(path), (names) =>
+          Effect.forEach(
+            names,
+            (name) =>
+              files.stat(join(path, name)).pipe(
+                Effect.map((info): DirectoryEntry => ({name, kind: legacyKind(info)})),
+                // A dangling link has no stat target; the legacy Dirent reports it as neither file nor directory.
+                Effect.orElseSucceed((): DirectoryEntry => ({name, kind: "other"})),
+              ),
+            {concurrency: "unbounded"},
+          ),
+        ),
+      ),
+    glob: (patterns, options = {}) => run("glob", options.cwd ?? ".", files.glob(patterns, options)),
+  };
+}
+
+/**
+ * Legacy read-only filesystem view over the Effect {@link ReadOnlyFiles} service.
+ *
+ * @remarks
+ * Captures the current context and runs each call with `Effect.runPromiseWith(context)`, so a
+ * shared Promise helper (for example `resolveRepositoryPaths`) reads through the same in-memory or
+ * Node service as the calling Effect program. Failures reject with a {@link FileSystemError} whose
+ * `code` follows {@link toLegacyFileSystemError}; an invalid `maximumBytes` rejects with a
+ * `RangeError` and an `execute` access check with code `ENOTSUP`, because the Effect `FileSystem`
+ * cannot check execute permission. Deleted in cohort 7.
+ */
+export const legacyReadOnlyFiles: Effect.Effect<LegacyReadOnlyFileSystem, never, ReadOnlyFiles> = Effect.gen(function* () {
+  const context = yield* Effect.context<ReadOnlyFiles>();
+  const files = yield* ReadOnlyFiles;
+  return readOnlyView(files, legacyFileRunner(context));
+});
+
+/**
+ * Legacy mutating filesystem view over the Effect `FileSystem`, `Path`, `Glob`, and
+ * {@link ReadOnlyFiles} services.
+ *
+ * @remarks
+ * Extends {@link legacyReadOnlyFiles} with the mutating members, run the same way:
+ * `writeTextAtomic` is the platform {@link writeTextAtomic}; `copy` keeps the legacy defaults
+ * (`force: true`, and a directory source requires `recursive: true`, failing with
+ * `ERR_FS_EISDIR` otherwise); `createTemporaryDirectory` creates a directory under the platform
+ * temporary root whose `remove` deletes it recursively. Deleted in cohort 7.
+ */
+export const legacyFileSystem: Effect.Effect<LegacyFileSystem, never, FileSystem.FileSystem | Path.Path | Glob | ReadOnlyFiles> = Effect.gen(
+  function* () {
+    const context = yield* Effect.context<FileSystem.FileSystem | Path.Path | Glob | ReadOnlyFiles>();
+    const fs = yield* FileSystem.FileSystem;
+    const run = legacyFileRunner(context);
+    return {
+      ...readOnlyView(yield* ReadOnlyFiles, run),
+      createDirectory: (path, options = {}) =>
+        run(
+          "createDirectory",
+          path,
+          fs.makeDirectory(path, {recursive: options.recursive ?? false, ...(options.mode === undefined ? {} : {mode: options.mode})}),
+        ),
+      writeText: (path, contents, options = {}) =>
+        run(
+          "writeText",
+          path,
+          fs.writeFileString(path, contents, {
+            flag: options.exclusive === true ? "wx" : "w",
+            ...(options.mode === undefined ? {} : {mode: options.mode}),
+          }),
+        ),
+      writeBytes: (path, contents, options = {}) =>
+        run(
+          "writeBytes",
+          path,
+          fs.writeFile(path, contents, {
+            flag: options.exclusive === true ? "wx" : "w",
+            ...(options.mode === undefined ? {} : {mode: options.mode}),
+          }),
+        ),
+      writeTextAtomic: (path, contents, options = {}) => run("writeTextAtomic", path, writeTextAtomic(path, contents, options)),
+      copy: (source, destination, options = {}) =>
+        run(
+          "copy",
+          source,
+          Effect.gen(function* () {
+            if (options.recursive !== true && (yield* fs.stat(source)).type === "Directory") {
+              const cause = Object.assign(new Error("Recursive option is required to copy a directory"), {code: "ERR_FS_EISDIR"});
+              return yield* Effect.fail(
+                PlatformError.systemError({
+                  _tag: "BadResource",
+                  module: "FileSystem",
+                  method: "copy",
+                  pathOrDescriptor: source,
+                  description: cause.message,
+                  cause,
+                }),
+              );
+            }
+            yield* fs.copy(source, destination, {overwrite: options.force ?? true});
+          }),
+        ),
+      move: (source, destination) => run("move", source, fs.rename(source, destination)),
+      remove: (path, options = {}) =>
+        run("remove", path, fs.remove(path, {recursive: options.recursive ?? false, force: options.force ?? false})),
+      createTemporaryDirectory: (prefix) =>
+        run(
+          "createTemporaryDirectory",
+          prefix,
+          Effect.map(fs.makeTempDirectory({prefix}), (path) => ({
+            path,
+            remove: () => run("createTemporaryDirectory.remove", path, fs.remove(path, {recursive: true, force: true})),
+          })),
+        ),
+      setMode: (path, mode) => run("setMode", path, fs.chmod(path, mode)),
+    };
+  },
+);
+
+/**
+ * The shared legacy task scheduler handed to shared Promise helpers (for example
+ * `loadRepositoryRequirements`), so migrated families never value-import the legacy kernel.
+ * Deleted in cohort 7.
+ */
+export const legacyTaskScheduler: TaskScheduler = new DefaultTaskScheduler();
