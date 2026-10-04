@@ -143,9 +143,11 @@ function isUnreported(cause: Cause.Cause<unknown>): boolean {
  * Renders a failure that no command reported.
  *
  * @remarks
- * Human mode writes `[arolariu::cli] ⛔ <message>` to stderr. JSON mode writes one stdout document
- * `{status: "failed", kind, message, evidence}`, where `kind` is `internal` for a defect and
- * `evidence` holds the process diagnostics of a `ProcessError`.
+ * Human mode writes `[arolariu::cli] ⛔ <message>` to stderr, followed for a `ProcessError` by its
+ * bounded `stdout: …` and `stderr: …` evidence, one stderr line each, like the legacy failure
+ * diagnostic. JSON mode writes one stdout document `{status: "failed", kind, message, evidence}`,
+ * where `kind` is `internal` for a defect and `evidence` holds the process diagnostics of a
+ * `ProcessError`.
  *
  * @param cause - The failure cause; its first typed failure, else its squashed defect, is rendered.
  * @param json - Whether the invocation requested `--json`.
@@ -157,11 +159,15 @@ export function renderUnreportedFailure(cause: Cause.Cause<unknown>, json: boole
     const failure = Cause.findError(cause);
     const error = Result.isSuccess(failure) ? failure.success : Cause.squash(cause);
     const message = messageOf(error);
+    const evidence = isProcessError(error) ? processErrorEvidence(error) : [];
     if (!json) {
       yield* sink.write({stream: "stderr", text: `[arolariu::cli] ⛔ ${message}\n`});
+      // The first evidence line repeats the message just written.
+      for (const line of evidence.slice(1)) {
+        yield* sink.write({stream: "stderr", text: `${line.trimEnd()}\n`});
+      }
       return;
     }
-    const evidence = isProcessError(error) ? processErrorEvidence(error) : [];
     const document = {status: "failed", kind: Result.isSuccess(failure) ? "operational" : "internal", message, evidence};
     yield* sink.write({stream: "stdout", text: `${JSON.stringify(document, null, 2)}\n`});
   });

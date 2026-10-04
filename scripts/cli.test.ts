@@ -23,6 +23,16 @@ import {makeTestLayer} from "./platform/testing.ts";
 
 const reportDocument = {status: "failed", checks: 3};
 
+/** A process failure whose stderr tells the user how to recover. */
+const toolRestoreFailure = new ProcessExited({
+  command: "dotnet tool run dotnet-ef",
+  stdout: "",
+  stderr: "Run dotnet tool restore\n",
+  durationMs: 1,
+  message: "dotnet tool run dotnet-ef exited with code 1",
+  exitCode: 1,
+});
+
 /** A service no root provides; registering a command that needs it must not compile. */
 class Extra extends Context.Service<Extra, {readonly value: number}>()("arolariu/scripts/test/Extra") {}
 
@@ -37,6 +47,7 @@ const testRoot = makeRootCommand([
   ),
   Command.make("boom", {}, () => Effect.fail(new Error("kaboom"))),
   Command.make("die", {}, () => Effect.die("bug")),
+  Command.make("proc", {}, () => Effect.fail(toolRestoreFailure)),
 ]);
 
 /** The outcome of one harnessed CLI run. */
@@ -267,6 +278,41 @@ describe("runCli", () => {
     expect(result.stderrRecords).toEqual([]);
   });
 
+  it("prints process evidence after an unreported process failure in human mode", async () => {
+    // Arrange
+    const argv = ["proc"];
+
+    // Act
+    const result = await run(argv);
+
+    // Assert
+    expect(result.code).toBe(1);
+    expect(result.stdoutRecords).toEqual([]);
+    expect(result.stderrRecords).toEqual([
+      {stream: "stderr", text: "[arolariu::cli] ⛔ dotnet tool run dotnet-ef exited with code 1\n"},
+      {stream: "stderr", text: "stderr: Run dotnet tool restore\n"},
+    ]);
+  });
+
+  it("keeps process evidence inside the JSON document of an unreported process failure", async () => {
+    // Arrange
+    const argv = ["proc", "--json"];
+
+    // Act
+    const result = await run(argv);
+
+    // Assert
+    expect(result.code).toBe(1);
+    expect(result.stdoutRecords).toHaveLength(1);
+    expect(JSON.parse(result.stdout)).toEqual({
+      status: "failed",
+      kind: "operational",
+      message: "dotnet tool run dotnet-ef exited with code 1",
+      evidence: ["dotnet tool run dotnet-ef exited with code 1", "stderr: Run dotnet tool restore\n"],
+    });
+    expect(result.stderrRecords).toEqual([]);
+  });
+
   it("marks defects as internal", async () => {
     // Arrange
     const argv = ["die", "--json"];
@@ -395,5 +441,28 @@ describe("renderUnreportedFailure", () => {
 
     // Assert
     expect(sink.records()).toEqual([{stream: "stderr", text: "[arolariu::cli] ⛔ 42\n"}]);
+  });
+
+  it("prints each non-empty process stream once after the message in human mode", async () => {
+    // Arrange
+    const sink = memorySink();
+    const error = new ProcessExited({
+      command: "git status",
+      stdout: "out",
+      stderr: "err",
+      durationMs: 1,
+      message: "git exited 1",
+      exitCode: 1,
+    });
+
+    // Act
+    await Effect.runPromise(renderUnreportedFailure(Cause.fail(error), false).pipe(Effect.provide(sink.layer)));
+
+    // Assert
+    expect(sink.records()).toEqual([
+      {stream: "stderr", text: "[arolariu::cli] ⛔ git exited 1\n"},
+      {stream: "stderr", text: "stdout: out\n"},
+      {stream: "stderr", text: "stderr: err\n"},
+    ]);
   });
 });
