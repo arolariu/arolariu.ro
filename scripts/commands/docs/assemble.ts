@@ -25,8 +25,7 @@ import {dirname, join, resolve} from "node:path";
 
 import {Effect, Exit, FileSystem, type Path, type PlatformError} from "effect";
 
-import {resolveRepositoryPaths} from "../../common/repository-paths.ts";
-import {legacyReadOnlyFiles} from "../../platform/bridge.ts";
+import {resolveRepositoryPaths, type RepositoryRootNotFound} from "../../common/repository-paths.ts";
 import type {Environment} from "../../platform/Environment.ts";
 import type {Glob, ReadOnlyFiles} from "../../platform/Files.ts";
 import type {Presenter} from "../../platform/Output.ts";
@@ -45,7 +44,12 @@ export type DocsAssembleRequirements =
   | Presenter;
 
 /** Every typed failure of the documentation assembly. */
-export type DocsAssembleError = DocumentationOutputMissing | DotnetBuildRootUnresolved | ProcessError | PlatformError.PlatformError;
+export type DocsAssembleError =
+  | DocumentationOutputMissing
+  | DotnetBuildRootUnresolved
+  | ProcessError
+  | PlatformError.PlatformError
+  | RepositoryRootNotFound;
 
 /**
  * .NET target framework shared across every project under
@@ -541,8 +545,8 @@ export interface DocumentationAssemblyResult {
  * pages, and mirror prose.
  *
  * @remarks
- * The repository paths are resolved by the shared `resolveRepositoryPaths` helper through the
- * bridge's {@link legacyReadOnlyFiles} view. The three extractor groups (TypeDoc, pydoc-markdown,
+ * The repository paths are resolved by the shared `resolveRepositoryPaths` helper through
+ * `ReadOnlyFiles`. The three extractor groups (TypeDoc, pydoc-markdown,
  * DefaultDocumentation) run with `Effect.all(..., {concurrency: "unbounded"})`; the first failure
  * interrupts the siblings (terminating their child processes) before the failure propagates, so no
  * straggling extractor writes into `_generated` after the cleanup. The `_generated` staging tree
@@ -551,8 +555,7 @@ export interface DocumentationAssemblyResult {
  */
 export const assembleDocumentation: Effect.Effect<DocumentationAssemblyResult, DocsAssembleError, DocsAssembleRequirements> = Effect.gen(
   function* () {
-    const files = yield* legacyReadOnlyFiles;
-    const paths = yield* Effect.promise(() => resolveRepositoryPaths(import.meta.url, files));
+    const paths = yield* resolveRepositoryPaths(import.meta.url);
     const fs = yield* FileSystem.FileSystem;
 
     const generatedRoot = join(paths.docsRoot, "_generated");

@@ -5,7 +5,7 @@
  * @remarks
  * Doctor is read-only by construction: {@link runDoctor} requires only the
  * {@link DoctorRequirements} capability profile plus the shared `Inspection` service. It resolves
- * canonical repository paths and manifest requirements through the bridge's legacy read-only views,
+ * canonical repository paths and manifest requirements through `ReadOnlyFiles`,
  * obtains exactly one shared repository inspection session (`quick` or `full` profile), starts every
  * fact the modules declare (plus `aggregate` in full mode) in the background, and runs every
  * bounded-context module — `workspace`, `dotnet`, `react`, `svelte`, `python`, and
@@ -28,12 +28,11 @@
 
 import {DateTime, Effect} from "effect";
 
-import {resolveRepositoryPaths} from "../../common/repository-paths.ts";
+import {resolveRepositoryPaths, type RepositoryRootNotFound} from "../../common/repository-paths.ts";
 import {loadRepositoryRequirements} from "../../common/requirements.ts";
 import {Inspection} from "../../inspection/Inspection.ts";
 import {inspectionProbeRunner} from "../../inspection/probes.ts";
 import type {RepositoryInspectionKey, RepositoryInspectionSession} from "../../inspection/repository.ts";
-import {legacyReadOnlyFiles, legacyTaskScheduler} from "../../platform/bridge.ts";
 import {diagnosticResult, monotonicNow, normalizeErrorForReport} from "./diagnostics.ts";
 import {dotnetDoctorModule} from "./modules/dotnet.ts";
 import {infrastructureDoctorModule} from "./modules/infrastructure.ts";
@@ -138,11 +137,10 @@ function prewarmInspections(inspection: RepositoryInspectionSession, facts: read
  */
 export function runDoctorWith(
   modules: readonly DiagnosticModule[],
-): (input: Readonly<DoctorInput>) => Effect.Effect<DoctorReport, never, DoctorRequirements | Inspection> {
+): (input: Readonly<DoctorInput>) => Effect.Effect<DoctorReport, RepositoryRootNotFound, DoctorRequirements | Inspection> {
   return Effect.fn("doctor.run")(function* (input: Readonly<DoctorInput>) {
-    const files = yield* legacyReadOnlyFiles;
-    const paths = yield* Effect.promise(() => resolveRepositoryPaths(import.meta.url, files));
-    const requirements = yield* Effect.promise(() => loadRepositoryRequirements(paths, {files, tasks: legacyTaskScheduler}));
+    const paths = yield* resolveRepositoryPaths(import.meta.url);
+    const requirements = yield* loadRepositoryRequirements(paths);
     const inspection = yield* (yield* Inspection).session({profile: input.quick ? "quick" : "full", paths});
 
     // Full mode only: the aggregate worker starts once here, so its memoized result is ready by the
@@ -163,10 +161,12 @@ export function runDoctorWith(
  * Runs every doctor module and returns the validated, scored report.
  *
  * @param input - Typed doctor input.
- * @returns The report; a duplicate or unknown diagnostic id is a defect.
+ * @returns The report; fails with `RepositoryRootNotFound` when no repository root is found, and a
+ * duplicate or unknown diagnostic id is a defect.
  */
-export const runDoctor: (input: Readonly<DoctorInput>) => Effect.Effect<DoctorReport, never, DoctorRequirements | Inspection> =
-  runDoctorWith(doctorModules);
+export const runDoctor: (
+  input: Readonly<DoctorInput>,
+) => Effect.Effect<DoctorReport, RepositoryRootNotFound, DoctorRequirements | Inspection> = runDoctorWith(doctorModules);
 
 /**
  * Whether a report contains a failed diagnostic: the business-negative doctor result.

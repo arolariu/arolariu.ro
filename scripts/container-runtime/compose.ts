@@ -11,6 +11,7 @@
 
 import {Effect} from "effect";
 
+import type {RepositoryRootNotFound} from "../common/repository-paths.ts";
 import type {PlatformServices} from "../platform/layers.ts";
 import type {ProcessError} from "../platform/Process.ts";
 import {runEchoedRuntimeCommand, type ContainerRuntimeAdapter, type RuntimeCommand} from "./adapters.ts";
@@ -46,14 +47,14 @@ export function buildComposeCommand(adapter: ContainerRuntimeAdapter, options: C
  *
  * @param input - Typed command input.
  * @returns The engine, file, and pass-through arguments Compose ran with, failing with
- * {@link ContainerRuntimeError} when the engine cannot be resolved or preflight fails, and with a
- * {@link ProcessError} when Compose fails.
+ * {@link ContainerRuntimeError} when the engine cannot be resolved or preflight fails, with
+ * `RepositoryRootNotFound` outside a repository, and with a {@link ProcessError} when Compose fails.
  */
 export const runCompose: (
   input: Readonly<ComposeInput>,
-) => Effect.Effect<ComposeResult, ContainerRuntimeError | ProcessError, PlatformServices> = Effect.fn("containers.compose")(function* (
-  input: Readonly<ComposeInput>,
-) {
+) => Effect.Effect<ComposeResult, ContainerRuntimeError | RepositoryRootNotFound | ProcessError, PlatformServices> = Effect.fn(
+  "containers.compose",
+)(function* (input: Readonly<ComposeInput>) {
   const adapter = yield* prepareContainerEngine(input, "compose");
   yield* runEchoedRuntimeCommand(buildComposeCommand(adapter, {file: input.file, args: input.passthrough}));
   return {engine: adapter.engine, file: input.file, passthrough: input.passthrough};

@@ -11,6 +11,7 @@
 
 import {Effect} from "effect";
 
+import type {RepositoryRootNotFound} from "../common/repository-paths.ts";
 import {Environment} from "../platform/Environment.ts";
 import type {PlatformServices} from "../platform/layers.ts";
 import {Process, type ProcessError} from "../platform/Process.ts";
@@ -55,13 +56,14 @@ export function buildAspireCommand(
  *
  * @param input - Typed command input.
  * @returns The engine Aspire AppHost ran with, failing with {@link ContainerRuntimeError} when the
- * engine cannot be resolved or preflight fails, and with a {@link ProcessError} when AppHost fails.
+ * engine cannot be resolved or preflight fails, with `RepositoryRootNotFound` outside a repository,
+ * and with a {@link ProcessError} when AppHost fails.
  */
 export const runAspire: (
   input: Readonly<ContainerEngineInput>,
-) => Effect.Effect<AspireResult, ContainerRuntimeError | ProcessError, PlatformServices> = Effect.fn("containers.aspire")(function* (
-  input: Readonly<ContainerEngineInput>,
-) {
+) => Effect.Effect<AspireResult, ContainerRuntimeError | RepositoryRootNotFound | ProcessError, PlatformServices> = Effect.fn(
+  "containers.aspire",
+)(function* (input: Readonly<ContainerEngineInput>) {
   const adapter = yield* prepareContainerEngine(input, "aspire");
   const environment = yield* Environment;
   const command = buildAspireCommand(adapter, environment.variables);

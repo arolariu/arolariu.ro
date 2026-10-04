@@ -3,19 +3,18 @@
  * @module scripts/common/repository-paths.test
  */
 
-import {mkdir, mkdtemp, rm, writeFile} from "node:fs/promises";
-import {tmpdir} from "node:os";
-import {dirname, join, resolve} from "node:path";
+import {join, resolve} from "node:path";
 import {pathToFileURL} from "node:url";
-import {afterEach, describe, expect, it} from "vitest";
+
+import {Effect} from "effect";
+import {describe, expect, it} from "vitest";
+
+import {effectTest, makeTestLayer, repositoryFixtureRoot} from "../platform/testing.ts";
 import {createRepositoryPaths, resolveRepositoryPaths} from "./repository-paths.ts";
-import {nodeFileSystem} from "./runtime.node.ts";
 
-const temporaryRoots: string[] = [];
-
-afterEach(async () => {
-  await Promise.all(temporaryRoots.splice(0).map((root) => rm(root, {recursive: true, force: true})));
-});
+const REPOSITORY_IDENTITY = JSON.stringify({name: "@arolariu/monorepo"});
+const nestedModuleDirectory = join(repositoryFixtureRoot, "scripts", "nested");
+const nestedModuleUrl = pathToFileURL(join(nestedModuleDirectory, "module.ts")).href;
 
 describe("createRepositoryPaths", () => {
   it("builds canonical paths from the repository root", () => {
@@ -48,30 +47,52 @@ describe("createRepositoryPaths", () => {
 });
 
 describe("resolveRepositoryPaths", () => {
-  it("discovers a verified repository root from a nested module URL", async () => {
-    const root = await mkdtemp(join(tmpdir(), "arolariu-repository-paths-test-"));
-    temporaryRoots.push(root);
-    const nestedModule = join(root, "scripts", "nested", "module.ts");
+  effectTest(
+    "discovers a verified repository root from a nested module URL",
+    () =>
+      Effect.gen(function* () {
+        // Act
+        const paths = yield* resolveRepositoryPaths(nestedModuleUrl);
 
-    await mkdir(dirname(nestedModule), {recursive: true});
-    await writeFile(join(root, "package.json"), JSON.stringify({name: "@arolariu/monorepo"}), "utf8");
-    await writeFile(nestedModule, "", "utf8");
+        // Assert
+        expect(paths).toEqual(createRepositoryPaths(repositoryFixtureRoot));
+      }),
+    makeTestLayer({files: {"package.json": REPOSITORY_IDENTITY, "scripts/nested/module.ts": ""}}).layer,
+  );
 
-    const paths = await resolveRepositoryPaths(pathToFileURL(nestedModule).href, nodeFileSystem);
+  effectTest(
+    "does not mistake a nearer package for the repository root",
+    () =>
+      Effect.gen(function* () {
+        // Act
+        const paths = yield* resolveRepositoryPaths(nestedModuleUrl);
 
-    expect(paths).toEqual(createRepositoryPaths(root));
-  });
+        // Assert
+        expect(paths).toMatchObject({root: repositoryFixtureRoot});
+      }),
+    makeTestLayer({
+      files: {
+        "package.json": REPOSITORY_IDENTITY,
+        "scripts/package.json": JSON.stringify({name: "@example/not-the-repository"}),
+        "scripts/nested/module.ts": "",
+      },
+    }).layer,
+  );
 
-  it("does not mistake a nearer package for the repository root", async () => {
-    const root = await mkdtemp(join(tmpdir(), "arolariu-repository-paths-test-"));
-    temporaryRoots.push(root);
-    const nestedModule = join(root, "scripts", "nested", "module.ts");
+  effectTest(
+    "fails with RepositoryRootNotFound outside a repository",
+    () =>
+      Effect.gen(function* () {
+        // Act
+        const error = yield* Effect.flip(resolveRepositoryPaths(nestedModuleUrl));
 
-    await mkdir(dirname(nestedModule), {recursive: true});
-    await writeFile(join(root, "package.json"), JSON.stringify({name: "@arolariu/monorepo"}), "utf8");
-    await writeFile(join(root, "scripts", "package.json"), JSON.stringify({name: "@example/not-the-repository"}), "utf8");
-    await writeFile(nestedModule, "", "utf8");
-
-    await expect(resolveRepositoryPaths(pathToFileURL(nestedModule).href, nodeFileSystem)).resolves.toMatchObject({root});
-  });
+        // Assert
+        expect(error).toMatchObject({
+          _tag: "RepositoryRootNotFound",
+          message: "Unable to locate repository root for @arolariu/monorepo",
+          from: nestedModuleDirectory,
+        });
+      }),
+    makeTestLayer({files: {"scripts/package.json": "{not json", "scripts/nested/module.ts": ""}}).layer,
+  );
 });

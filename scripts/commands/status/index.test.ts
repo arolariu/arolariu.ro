@@ -251,7 +251,7 @@ function statusHarness(options: Readonly<StatusHarnessOptions> = {}): TestHarnes
  * @param harness - The harness.
  * @returns The program value.
  */
-function runStatus<A>(program: Effect.Effect<A, never, StatusRequirements>, harness: TestHarness): Promise<A> {
+function runStatus<A, E>(program: Effect.Effect<A, E, StatusRequirements>, harness: TestHarness): Promise<A> {
   return runScoped(program.pipe(Effect.provide(NetworkProbeLive)), harness.layer);
 }
 
@@ -346,6 +346,28 @@ describe("status — doctor composition", () => {
     const stdout = harness.output().filter((record) => record.stream === "stdout");
     expect(stdout).toHaveLength(1);
     expect(JSON.parse(stdout[0]?.text ?? "")).toMatchObject({status: "failed", kind: "internal"});
+  });
+
+  it("fails the status command with a typed RepositoryRootNotFound and exit 1 outside a repository", async () => {
+    // Arrange
+    const harness = makeTestLayer({inspection: {}, mode: "json"});
+    const recording = recordingDoctor();
+
+    // Act
+    const code = await runStatusCli(["status", "--json"], harness, recording.doctor);
+
+    // Assert
+    expect(code).toBe(1);
+    const stdout = harness.output().filter((record) => record.stream === "stdout");
+    expect(stdout).toHaveLength(1);
+    expect(JSON.parse(stdout[0]?.text ?? "")).toEqual({
+      status: "failed",
+      kind: "operational",
+      message: "Unable to locate repository root for @arolariu/monorepo",
+      evidence: [],
+    });
+    expect(recording.inputs).toEqual([]);
+    expect(harness.processCalls()).toEqual([]);
   });
 
   it("starts doctor concurrently with the degradation-tolerant collectors instead of after them", async () => {

@@ -23,6 +23,7 @@ import {Duration, Effect, FileSystem, Redacted, type PlatformError} from "effect
 import {generateArtifacts} from "../commands/generate/artifacts.ts";
 import type {ArtifactGenerationFailed, TaxonomySourceUnavailable} from "../commands/generate/errors.ts";
 import {silently} from "../commands/generate/index.ts";
+import type {RepositoryRootNotFound} from "../common/repository-paths.ts";
 import {Environment} from "../platform/Environment.ts";
 import type {PlatformServices} from "../platform/layers.ts";
 import {Presenter} from "../platform/Output.ts";
@@ -311,7 +312,8 @@ function bootstrapSelfhost(
  *
  * @param input - Typed command input.
  * @returns The action, engine, and ordered stacks this invocation operated on, failing with
- * {@link ContainerRuntimeError} (engine, preflight, SQL password, or bootstrap), a {@link ProcessError}
+ * {@link ContainerRuntimeError} (engine, preflight, SQL password, or bootstrap), `RepositoryRootNotFound`
+ * (outside a repository), a {@link ProcessError}
  * (a stack or bootstrap command), a platform error (certificate or Traefik file), or an artifact
  * generation failure.
  */
@@ -319,7 +321,12 @@ export const runSelfhost: (
   input: Readonly<SelfhostInput>,
 ) => Effect.Effect<
   SelfhostResult,
-  ContainerRuntimeError | ProcessError | PlatformError.PlatformError | TaxonomySourceUnavailable | ArtifactGenerationFailed,
+  | ContainerRuntimeError
+  | RepositoryRootNotFound
+  | ProcessError
+  | PlatformError.PlatformError
+  | TaxonomySourceUnavailable
+  | ArtifactGenerationFailed,
   PlatformServices | LocalBlobStorage
 > = Effect.fn("containers.selfhost")(function* (input: Readonly<SelfhostInput>) {
   const adapter = yield* prepareContainerEngine(input, "selfhost");

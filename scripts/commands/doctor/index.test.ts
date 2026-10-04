@@ -18,6 +18,7 @@ import {Cause, Duration, Effect, Exit, Layer} from "effect";
 import {TestClock} from "effect/testing";
 import {describe, expect, it} from "vitest";
 
+import type {RepositoryRootNotFound} from "../../common/repository-paths.ts";
 import {Inspection} from "../../inspection/Inspection.ts";
 import type {RepositoryInspectionKey, RepositoryInspectionRequest, RepositoryInspectionSession} from "../../inspection/repository.ts";
 import type {InspectionOutcome} from "../../inspection/types.ts";
@@ -265,6 +266,24 @@ describe("doctorModules", () => {
 });
 
 describe("runDoctor", () => {
+  it("fails with RepositoryRootNotFound before any module runs outside a repository", async () => {
+    // Arrange
+    const {modules, contexts} = createFakeModules();
+    const harness = makeTestLayer({inspection: ALL_UNAVAILABLE, mode: "silent", context: "doctor", clock: "live"});
+
+    // Act
+    const exit = await runExit(runDoctorWith(modules)(doctorInput()), NetworkProbeLive.pipe(Layer.provideMerge(harness.layer)));
+
+    // Assert
+    expect(Exit.isFailure(exit) ? Cause.squash(exit.cause) : undefined).toMatchObject({
+      _tag: "RepositoryRootNotFound",
+      message: "Unable to locate repository root for @arolariu/monorepo",
+    });
+    for (const moduleId of expectedModuleOrder) {
+      expect(contexts[moduleId]).toEqual([]);
+    }
+  });
+
   it.each([
     ["default", doctorInput()],
     ["quick", doctorInput({quick: true})],
@@ -651,7 +670,7 @@ describe("doctor characterization (legacy baseline for the effect migration)", (
   async function runCompletion(
     mode: OutputMode,
     failing: boolean,
-  ): Promise<Readonly<{exit: Exit.Exit<DoctorReport, ReportedFailure>; output: readonly SinkRecord[]}>> {
+  ): Promise<Readonly<{exit: Exit.Exit<DoctorReport, ReportedFailure | RepositoryRootNotFound>; output: readonly SinkRecord[]}>> {
     const {modules} = createFakeModules(failing ? {python: () => Effect.succeed([failCheck("python.runtime", "python")])} : {});
     const {harness, layer} = doctorLayer({mode});
     const input = doctorInput();

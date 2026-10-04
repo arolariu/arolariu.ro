@@ -194,14 +194,13 @@ const readOnlyForbiddenModules: ReadonlySet<string> = new Set([
 /**
  * Imported names no read-only family module may take, even from an otherwise approved module (a
  * whole-module import of one of these modules counts too): the mutating Effect `FileSystem`, the
- * unrestricted Effect `HttpClient`, the atomic writer, the mutating legacy filesystem view, and the
- * legacy mutating filesystem and process-runner ports.
+ * unrestricted Effect `HttpClient`, the atomic writer, and the legacy mutating filesystem and
+ * process-runner ports.
  */
 const readOnlyForbiddenImportNames: ReadonlyMap<string, ReadonlySet<string>> = new Map([
   ["./common/runtime.ts", new Set(["FileSystem"])],
   ["./common/runner.ts", new Set(["ProcessRunner"])],
   ["./platform/Files.ts", new Set(["writeTextAtomic"])],
-  ["./platform/bridge.ts", new Set(["legacyFileSystem"])],
   ["effect", new Set(["FileSystem"])],
   ["effect/http", new Set(["HttpClient"])],
 ]);
@@ -1535,7 +1534,6 @@ describe("runtime boundary policy", () => {
       'export {HttpClient} from "effect/http";',
       'import {Prompts} from "../../platform/Prompts.ts";',
       'import {ReadOnlyFiles, writeTextAtomic} from "../../platform/Files.ts";',
-      'import {legacyFileSystem, legacyReadOnlyFiles} from "../../platform/bridge.ts";',
       'import type {FileSystem as LegacyFiles, Clock} from "../../common/runtime.ts";',
       'import runner from "../../common/runner.ts";',
       'void import("../../platform/Files.ts");',
@@ -1551,7 +1549,6 @@ describe("runtime boundary policy", () => {
       {file: "scripts/commands/doctor/example.ts", specifier: "effect/http", name: "HttpClient"},
       {file: "scripts/commands/doctor/example.ts", specifier: "./platform/Prompts.ts"},
       {file: "scripts/commands/doctor/example.ts", specifier: "./platform/Files.ts", name: "writeTextAtomic"},
-      {file: "scripts/commands/doctor/example.ts", specifier: "./platform/bridge.ts", name: "legacyFileSystem"},
       {file: "scripts/commands/doctor/example.ts", specifier: "./common/runtime.ts", name: "FileSystem"},
       {file: "scripts/commands/doctor/example.ts", specifier: "./common/runner.ts", name: "*"},
       {file: "scripts/commands/doctor/example.ts", specifier: "./platform/Files.ts", name: "*"},

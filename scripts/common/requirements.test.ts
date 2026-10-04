@@ -3,13 +3,14 @@
  * @module scripts/common/requirements.test
  */
 
-import {mkdir, mkdtemp, rm, writeFile} from "node:fs/promises";
-import {tmpdir} from "node:os";
-import {dirname, join} from "node:path";
-import {afterEach, beforeEach, describe, expect, it} from "vitest";
-import {createRepositoryPaths, type RepositoryPaths} from "./repository-paths.ts";
-import {loadRepositoryRequirements, parseVersion, satisfiesMinimum} from "./requirements.ts";
-import {nodeFileSystem, nodeTaskScheduler} from "./runtime.node.ts";
+import {join} from "node:path";
+
+import {Effect} from "effect";
+import {describe, expect, it} from "vitest";
+
+import {effectTest, makeTestLayer, repositoryFixtureRoot} from "../platform/testing.ts";
+import {createRepositoryPaths} from "./repository-paths.ts";
+import {loadRepositoryRequirements, parseVersion, satisfiesMinimum, type RequirementLoadResult} from "./requirements.ts";
 
 interface PackageJsonFixture {
   readonly name?: string;
@@ -32,27 +33,22 @@ interface PackageLockFixture {
   }>;
 }
 
-let fixtureRoot: string;
-let paths: RepositoryPaths;
+const paths = createRepositoryPaths(repositoryFixtureRoot);
+const DOTNET_PROPS = join("sites", "api.arolariu.ro", "Directory.Build.props");
+const PYPROJECT = join("sites", "exp.arolariu.ro", "pyproject.toml");
 
-async function writeFixture(relativePath: string, contents: string): Promise<void> {
-  const destination = join(fixtureRoot, relativePath);
-  await mkdir(dirname(destination), {recursive: true});
-  await writeFile(destination, contents, "utf8");
-}
-
-async function writePackageJson(overrides: Readonly<PackageJsonFixture> = {}): Promise<void> {
-  const packageJson: PackageJsonFixture = {
+function packageJson(overrides: Readonly<PackageJsonFixture> = {}): string {
+  const manifest: PackageJsonFixture = {
     name: "@arolariu/monorepo",
     engines: {node: ">=24", npm: ">=11"},
     devDependencies: {next: "16.3.0", react: "19.2.8"},
     ...overrides,
   };
-  await writeFixture("package.json", JSON.stringify(packageJson));
+  return JSON.stringify(manifest);
 }
 
-async function writePackageLock(devDependencies: Readonly<Record<string, string>> = {next: "16.3.0", react: "19.2.8"}): Promise<void> {
-  const packageLock: PackageLockFixture = {
+function packageLock(devDependencies: Readonly<Record<string, string>> = {next: "16.3.0", react: "19.2.8"}): string {
+  const lock: PackageLockFixture = {
     name: "@arolariu/monorepo",
     version: "0.0.0",
     lockfileVersion: 3,
@@ -64,37 +60,51 @@ async function writePackageLock(devDependencies: Readonly<Record<string, string>
       },
     },
   };
-  await writeFixture("package-lock.json", JSON.stringify(packageLock));
+  return JSON.stringify(lock);
 }
 
-async function writeValidFixture(): Promise<void> {
-  await Promise.all([
-    writeFixture(".nvmrc", "24\n"),
-    writeFixture(".node-version", "24\n"),
-    writePackageJson(),
-    writePackageLock(),
-    writeFixture(
-      join("sites", "api.arolariu.ro", "Directory.Build.props"),
-      "<Project><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup></Project>",
-    ),
-    writeFixture(join("sites", "exp.arolariu.ro", "pyproject.toml"), '[project]\nrequires-python = ">=3.12"\n'),
-  ]);
+/**
+ * Builds the in-memory requirement sources: a valid fixture with `overrides` applied.
+ *
+ * @param overrides - Relative paths whose contents replace the valid fixture.
+ * @returns The seeded files.
+ */
+function fixture(overrides: Readonly<Record<string, string>> = {}): Readonly<Record<string, string>> {
+  return {
+    ".nvmrc": "24\n",
+    ".node-version": "24\n",
+    "package.json": packageJson(),
+    "package-lock.json": packageLock(),
+    [DOTNET_PROPS]: "<Project><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup></Project>",
+    [PYPROJECT]: '[project]\nrequires-python = ">=3.12"\n',
+    ...overrides,
+  };
 }
 
-beforeEach(async () => {
-  fixtureRoot = await mkdtemp(join(tmpdir(), "arolariu-requirements-test-"));
-  paths = createRepositoryPaths(fixtureRoot);
-  await writeValidFixture();
-});
+/**
+ * Registers one case that loads the requirements from a seeded fixture.
+ *
+ * @param name - The test name.
+ * @param files - The seeded requirement sources.
+ * @param assert - Assertions over the load result.
+ */
+function requirementsTest(name: string, files: Readonly<Record<string, string>>, assert: (result: RequirementLoadResult) => void): void {
+  effectTest(
+    name,
+    () =>
+      Effect.gen(function* () {
+        // Act
+        const result = yield* loadRepositoryRequirements(paths);
 
-afterEach(async () => {
-  await rm(fixtureRoot, {recursive: true, force: true});
-});
+        // Assert
+        assert(result);
+      }),
+    makeTestLayer({files}).layer,
+  );
+}
 
 describe("loadRepositoryRequirements", () => {
-  it("loads matching runtime requirements and exact locked package versions", async () => {
-    const result = await loadRepositoryRequirements(paths, {files: nodeFileSystem, tasks: nodeTaskScheduler});
-
+  requirementsTest("loads matching runtime requirements and exact locked package versions", fixture(), (result) => {
     expect(result.status).toBe("valid");
     if (result.status === "valid") {
       expect(result.requirements).toMatchObject({
@@ -110,85 +120,87 @@ describe("loadRepositoryRequirements", () => {
     }
   });
 
-  it("rejects contradictory Node requirement sources", async () => {
-    await writeFixture(".node-version", "22\n");
-
-    const result = await loadRepositoryRequirements(paths, {files: nodeFileSystem, tasks: nodeTaskScheduler});
-
+  requirementsTest("rejects contradictory Node requirement sources", fixture({".node-version": "22\n"}), (result) => {
     expect(result).toEqual({
       status: "invalid",
       errors: expect.arrayContaining([expect.stringContaining(".node-version")]),
     });
   });
 
-  it("rejects unsupported Node engine syntax instead of guessing", async () => {
-    await writePackageJson({engines: {node: "^24", npm: ">=11"}});
+  requirementsTest(
+    "rejects unsupported Node engine syntax instead of guessing",
+    fixture({"package.json": packageJson({engines: {node: "^24", npm: ">=11"}})}),
+    (result) => {
+      expect(result).toEqual({
+        status: "invalid",
+        errors: expect.arrayContaining([expect.stringContaining("engines.node")]),
+      });
+    },
+  );
 
-    const result = await loadRepositoryRequirements(paths, {files: nodeFileSystem, tasks: nodeTaskScheduler});
+  requirementsTest(
+    "rejects an unsupported target framework",
+    fixture({[DOTNET_PROPS]: "<Project><PropertyGroup><TargetFramework>net10</TargetFramework></PropertyGroup></Project>"}),
+    (result) => {
+      expect(result).toEqual({
+        status: "invalid",
+        errors: expect.arrayContaining([expect.stringContaining("TargetFramework")]),
+      });
+    },
+  );
 
+  requirementsTest(
+    "rejects unsupported Python requirement syntax",
+    fixture({[PYPROJECT]: '[project]\nrequires-python = "^3.12"\n'}),
+    (result) => {
+      expect(result).toEqual({
+        status: "invalid",
+        errors: expect.arrayContaining([expect.stringContaining("requires-python")]),
+      });
+    },
+  );
+
+  requirementsTest(
+    "rejects package versions that disagree with the root lock entry",
+    fixture({"package-lock.json": packageLock({next: "16.2.0", react: "19.2.8"})}),
+    (result) => {
+      expect(result).toEqual({
+        status: "invalid",
+        errors: expect.arrayContaining([expect.stringContaining("next")]),
+      });
+    },
+  );
+
+  requirementsTest(
+    "rejects non-exact package versions",
+    fixture({
+      "package.json": packageJson({devDependencies: {next: "^16.3.0", react: "19.2.8"}}),
+      "package-lock.json": packageLock({next: "^16.3.0", react: "19.2.8"}),
+    }),
+    (result) => {
+      expect(result).toEqual({
+        status: "invalid",
+        errors: expect.arrayContaining([expect.stringContaining("exact version")]),
+      });
+    },
+  );
+
+  requirementsTest(
+    "reports malformed JSON and missing requirement fields",
+    fixture({"package.json": "{", [PYPROJECT]: "[project]\n"}),
+    (result) => {
+      expect(result).toEqual({
+        status: "invalid",
+        errors: expect.arrayContaining([expect.stringContaining("package.json"), expect.stringContaining("requires-python")]),
+      });
+    },
+  );
+
+  const withoutNvmrc = Object.fromEntries(Object.entries(fixture()).filter(([path]) => path !== ".nvmrc"));
+  requirementsTest("reports an unreadable requirement source with its path", withoutNvmrc, (result) => {
     expect(result).toEqual({
       status: "invalid",
-      errors: expect.arrayContaining([expect.stringContaining("engines.node")]),
-    });
-  });
-
-  it("rejects an unsupported target framework", async () => {
-    await writeFixture(
-      join("sites", "api.arolariu.ro", "Directory.Build.props"),
-      "<Project><PropertyGroup><TargetFramework>net10</TargetFramework></PropertyGroup></Project>",
-    );
-
-    const result = await loadRepositoryRequirements(paths, {files: nodeFileSystem, tasks: nodeTaskScheduler});
-
-    expect(result).toEqual({
-      status: "invalid",
-      errors: expect.arrayContaining([expect.stringContaining("TargetFramework")]),
-    });
-  });
-
-  it("rejects unsupported Python requirement syntax", async () => {
-    await writeFixture(join("sites", "exp.arolariu.ro", "pyproject.toml"), '[project]\nrequires-python = "^3.12"\n');
-
-    const result = await loadRepositoryRequirements(paths, {files: nodeFileSystem, tasks: nodeTaskScheduler});
-
-    expect(result).toEqual({
-      status: "invalid",
-      errors: expect.arrayContaining([expect.stringContaining("requires-python")]),
-    });
-  });
-
-  it("rejects package versions that disagree with the root lock entry", async () => {
-    await writePackageLock({next: "16.2.0", react: "19.2.8"});
-
-    const result = await loadRepositoryRequirements(paths, {files: nodeFileSystem, tasks: nodeTaskScheduler});
-
-    expect(result).toEqual({
-      status: "invalid",
-      errors: expect.arrayContaining([expect.stringContaining("next")]),
-    });
-  });
-
-  it("rejects non-exact package versions", async () => {
-    await writePackageJson({devDependencies: {next: "^16.3.0", react: "19.2.8"}});
-    await writePackageLock({next: "^16.3.0", react: "19.2.8"});
-
-    const result = await loadRepositoryRequirements(paths, {files: nodeFileSystem, tasks: nodeTaskScheduler});
-
-    expect(result).toEqual({
-      status: "invalid",
-      errors: expect.arrayContaining([expect.stringContaining("exact version")]),
-    });
-  });
-
-  it("reports malformed JSON and missing requirement fields", async () => {
-    await writeFixture("package.json", "{");
-    await writeFixture(join("sites", "exp.arolariu.ro", "pyproject.toml"), "[project]\n");
-
-    const result = await loadRepositoryRequirements(paths, {files: nodeFileSystem, tasks: nodeTaskScheduler});
-
-    expect(result).toEqual({
-      status: "invalid",
-      errors: expect.arrayContaining([expect.stringContaining("package.json"), expect.stringContaining("requires-python")]),
+      errors: expect.arrayContaining([expect.stringMatching(/^Unable to read .*\.nvmrc: Failed to readText '.*\.nvmrc': /u)]),
     });
   });
 });

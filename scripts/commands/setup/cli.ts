@@ -15,6 +15,7 @@ import {Effect} from "effect";
 import {Command, Flag} from "effect/cli";
 
 import type {CliSubcommand} from "../../cli.ts";
+import type {RepositoryRootNotFound} from "../../common/repository-paths.ts";
 import {ReportedFailure} from "../../platform/exit.ts";
 import {Presenter, toJsonValue} from "../../platform/Output.ts";
 import {EngineFlag, engineInput, VerboseFlag, withCommandOutput} from "../flags.ts";
@@ -23,7 +24,7 @@ import {formatSetupDuration} from "./runner.ts";
 import type {SetupInput} from "./types.ts";
 
 /** The setup program the subcommand runs for one decoded input. */
-export type SetupProgram = (input: SetupInput) => Effect.Effect<SetupResult, never, SetupRunRequirements>;
+export type SetupProgram = (input: SetupInput) => Effect.Effect<SetupResult, RepositoryRootNotFound, SetupRunRequirements>;
 
 /**
  * Renders the completion of one setup run.

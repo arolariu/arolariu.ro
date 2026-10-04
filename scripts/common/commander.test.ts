@@ -4,7 +4,6 @@
  * @module scripts/common/commander.test
  */
 
-import {pathToFileURL} from "node:url";
 import {describe, expect, it} from "vitest";
 
 import {
@@ -16,7 +15,6 @@ import {
   type CommandRuntimeFactory,
 } from "./commander.ts";
 import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "./logger.ts";
-import {resolveRepositoryPaths} from "./repository-paths.ts";
 import {RunnerError} from "./runner.ts";
 import {
   CommandCancellation,
@@ -585,14 +583,14 @@ describe("command lifecycle scope failures", () => {
 });
 
 describe("runtime test fakes", () => {
-  it("resolves repository paths from the seeded fixture filesystem without real I/O", async () => {
+  it("seeds the repository identity in the fixture filesystem without real I/O", async () => {
     const files = createRepositoryFixtureFileSystem({
       [`${repositoryFixtureRoot}/scripts/common/sample.json`]: "{}",
     });
 
-    const paths = await resolveRepositoryPaths(pathToFileURL(`${repositoryFixtureRoot}/scripts/common/sample.ts`).href, files);
+    const identity: unknown = JSON.parse(await files.readText(`${repositoryFixtureRoot}/package.json`));
 
-    expect(paths.root).toBe(repositoryFixtureRoot);
+    expect(identity).toEqual({name: "@arolariu/monorepo"});
     await expect(files.readText(`${repositoryFixtureRoot}/scripts/common/sample.json`)).resolves.toBe("{}");
   });
 

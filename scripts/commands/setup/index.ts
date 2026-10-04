@@ -27,9 +27,8 @@
 import {Effect} from "effect";
 
 import {loadRepositoryRequirements} from "../../common/requirements.ts";
-import {resolveRepositoryPaths} from "../../common/repository-paths.ts";
+import {resolveRepositoryPaths, type RepositoryRootNotFound} from "../../common/repository-paths.ts";
 import {Inspection} from "../../inspection/Inspection.ts";
-import {legacyReadOnlyFiles, legacyTaskScheduler} from "../../platform/bridge.ts";
 import type {PlatformServices} from "../../platform/layers.ts";
 import {Presenter} from "../../platform/Output.ts";
 import type {Prompts} from "../../platform/Prompts.ts";
@@ -96,8 +95,8 @@ export function setupOutcome(result: SetupResult): SetupOutcome | undefined {
  * Builds the setup program over an explicit phase list.
  *
  * @remarks
- * Renders the setup banner, resolves canonical paths and manifest requirements through the bridge's
- * legacy views, then requests exactly one full inspection session (with `requestedEngine` only when
+ * Renders the setup banner, resolves canonical paths and manifest requirements through
+ * `ReadOnlyFiles` (failing with `RepositoryRootNotFound` outside a repository), then requests exactly one full inspection session (with `requestedEngine` only when
  * an engine was selected), shared by reference across every phase, and runs the phases with
  * `setupActionsLayer(input)`. Invalid repository requirements are a defect carrying every
  * requirement error, raised before any inspection session exists.
@@ -107,8 +106,8 @@ export function setupOutcome(result: SetupResult): SetupOutcome | undefined {
  */
 export function runSetupWith(
   phases: readonly SetupPhaseDefinition[],
-): (input: SetupInput) => Effect.Effect<SetupResult, never, SetupRunRequirements> {
-  return Effect.fn("setup.run")(function* (input: SetupInput): Effect.fn.Return<SetupResult, never, SetupRunRequirements> {
+): (input: SetupInput) => Effect.Effect<SetupResult, RepositoryRootNotFound, SetupRunRequirements> {
+  return Effect.fn("setup.run")(function* (input: SetupInput): Effect.fn.Return<SetupResult, RepositoryRootNotFound, SetupRunRequirements> {
     const presenter = yield* Presenter;
     yield* presenter.banner("arolariu.ro repository setup", [
       input.dryRun
@@ -116,9 +115,8 @@ export function runSetupWith(
         : "Preparing every required workspace, toolchain, and local dependency.",
     ]);
 
-    const files = yield* legacyReadOnlyFiles;
-    const paths = yield* Effect.promise(() => resolveRepositoryPaths(import.meta.url, files));
-    const requirementLoad = yield* Effect.promise(() => loadRepositoryRequirements(paths, {files, tasks: legacyTaskScheduler}));
+    const paths = yield* resolveRepositoryPaths(import.meta.url);
+    const requirementLoad = yield* loadRepositoryRequirements(paths);
     if (requirementLoad.status === "invalid") {
       return yield* Effect.die(new Error(`Repository requirements are invalid:\n${requirementLoad.errors.join("\n")}`));
     }
@@ -142,4 +140,5 @@ export function runSetupWith(
 }
 
 /** Runs every production setup phase ({@link setupPhases}) for one input. */
-export const runSetup: (input: SetupInput) => Effect.Effect<SetupResult, never, SetupRunRequirements> = runSetupWith(setupPhases);
+export const runSetup: (input: SetupInput) => Effect.Effect<SetupResult, RepositoryRootNotFound, SetupRunRequirements> =
+  runSetupWith(setupPhases);

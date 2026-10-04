@@ -5,7 +5,7 @@
  * @remarks
  * Status is read-only by construction: {@link collectStatus} requires only the
  * {@link StatusRequirements} profile (Doctor's read-only profile plus the shared `Inspection`
- * service). It resolves canonical repository paths through the bridge's legacy read-only view,
+ * service). It resolves canonical repository paths through `ReadOnlyFiles`,
  * obtains exactly one quick repository inspection session, and then collects five
  * degradation-tolerant sections (workspaces, the Nx dependency graph derived from tracked workspace
  * metadata, git state, npm audit/outdated, and disk usage) concurrently. A malformed or unavailable
@@ -38,11 +38,10 @@ import {join} from "node:path";
 
 import {Duration, Effect} from "effect";
 
-import {resolveRepositoryPaths, type RepositoryPaths} from "../../common/repository-paths.ts";
+import {resolveRepositoryPaths, type RepositoryPaths, type RepositoryRootNotFound} from "../../common/repository-paths.ts";
 import {Inspection} from "../../inspection/Inspection.ts";
 import type {ProbeOutcome} from "../../inspection/probes.ts";
 import type {RepositoryInspectionSession} from "../../inspection/repository.ts";
-import {legacyReadOnlyFiles} from "../../platform/bridge.ts";
 import {Environment} from "../../platform/Environment.ts";
 import {ReadOnlyFiles} from "../../platform/Files.ts";
 import {Presenter} from "../../platform/Output.ts";
@@ -124,7 +123,9 @@ export interface StatusDashboard {
 export type StatusRequirements = DoctorRequirements | Inspection;
 
 /** The doctor program Status composes as its health source; production uses {@link runDoctor}. */
-export type StatusDoctor = (input: Readonly<DoctorInput>) => Effect.Effect<DoctorReport, never, DoctorRequirements | Inspection>;
+export type StatusDoctor = (
+  input: Readonly<DoctorInput>,
+) => Effect.Effect<DoctorReport, RepositoryRootNotFound, DoctorRequirements | Inspection>;
 
 /** Repository context every status collector observes. */
 interface StatusContext {
@@ -719,17 +720,20 @@ function toHealthInfo(report: Readonly<DoctorReport>): HealthInfo {
  * one unbounded batch, so nothing is serialized behind a sibling; doctor requests the identical
  * `{profile: "quick", paths}` session from the same service and therefore shares every memoized
  * provider outcome. A collector defect degrades exactly one section to `null` (or the version to
- * `"?"`) while its siblings keep their data. A doctor defect fails the whole program, which
- * interrupts the remaining siblings.
+ * `"?"`) while its siblings keep their data. A doctor defect or failure fails the whole program,
+ * which interrupts the remaining siblings; outside a repository the program fails with
+ * `RepositoryRootNotFound` before any collector starts.
  *
  * @param doctor - The composed doctor program.
  * @param includeNodeMajor - Whether to probe the running Node version (human dashboard only).
  * @returns The document and the Node version label (`"?"` when not probed).
  */
-function collectSections(doctor: StatusDoctor, includeNodeMajor: boolean): Effect.Effect<StatusDashboard, never, StatusRequirements> {
+function collectSections(
+  doctor: StatusDoctor,
+  includeNodeMajor: boolean,
+): Effect.Effect<StatusDashboard, RepositoryRootNotFound, StatusRequirements> {
   return Effect.gen(function* () {
-    const files = yield* legacyReadOnlyFiles;
-    const paths = yield* Effect.promise(() => resolveRepositoryPaths(import.meta.url, files));
+    const paths = yield* resolveRepositoryPaths(import.meta.url);
     const inspection = yield* (yield* Inspection).session({profile: "quick", paths});
     const context: StatusContext = {paths, inspection};
 
@@ -759,7 +763,7 @@ function collectSections(doctor: StatusDoctor, includeNodeMajor: boolean): Effec
  * @param doctor - The composed doctor program.
  * @returns The status program; it never probes the Node version.
  */
-export function collectStatusWith(doctor: StatusDoctor): Effect.Effect<StatusDocument, never, StatusRequirements> {
+export function collectStatusWith(doctor: StatusDoctor): Effect.Effect<StatusDocument, RepositoryRootNotFound, StatusRequirements> {
   return Effect.map(collectSections(doctor, false), (dashboard) => dashboard.document).pipe(Effect.withSpan("status.collect"));
 }
 
@@ -769,12 +773,14 @@ export function collectStatusWith(doctor: StatusDoctor): Effect.Effect<StatusDoc
  * @param doctor - The composed doctor program; defaults to {@link runDoctor}.
  * @returns The dashboard program; the version probe runs concurrently with every collector.
  */
-export function collectStatusDashboardWith(doctor: StatusDoctor = runDoctor): Effect.Effect<StatusDashboard, never, StatusRequirements> {
+export function collectStatusDashboardWith(
+  doctor: StatusDoctor = runDoctor,
+): Effect.Effect<StatusDashboard, RepositoryRootNotFound, StatusRequirements> {
   return collectSections(doctor, true).pipe(Effect.withSpan("status.collectDashboard"));
 }
 
 /** Collects the six-section status document, composing {@link runDoctor} over the shared inspection session. */
-export const collectStatus: Effect.Effect<StatusDocument, never, StatusRequirements> = collectStatusWith(runDoctor);
+export const collectStatus: Effect.Effect<StatusDocument, RepositoryRootNotFound, StatusRequirements> = collectStatusWith(runDoctor);
 
 // ============================================================================
 // Rendering

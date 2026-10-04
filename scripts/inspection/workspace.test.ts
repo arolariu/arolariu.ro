@@ -14,7 +14,6 @@ import {Deferred, Effect, Exit, Fiber, Layer} from "effect";
 import {describe, expect, it} from "vitest";
 
 import {resolveRepositoryPaths} from "../common/repository-paths.ts";
-import {legacyReadOnlyFiles} from "../platform/bridge.ts";
 import {Environment, EnvironmentLive} from "../platform/Environment.ts";
 import {GlobLive, ReadOnlyFilesLive, TemporaryDirectoriesLive} from "../platform/Files.ts";
 import {outputLayer, SinkLive} from "../platform/Output.ts";
@@ -707,13 +706,7 @@ describe("createWorkspaceProvider live integration", () => {
   it(
     "reflects the current seven-project workspace graph and leaves top-level .nx files, .nx/workspace-data, and .arolariu unchanged",
     async () => {
-      const paths = await runScoped(
-        Effect.gen(function* () {
-          const files = yield* legacyReadOnlyFiles;
-          return yield* Effect.promise(() => resolveRepositoryPaths(import.meta.url, files));
-        }),
-        liveWorkerLayer,
-      );
+      const paths = await runScoped(resolveRepositoryPaths(import.meta.url), liveWorkerLayer);
 
       const nxTopLevelBefore = await snapshotPath(join(paths.root, ".nx"), {recursive: false});
       const workspaceDataBefore = await snapshotPath(join(paths.root, ".nx", "workspace-data"), {recursive: true});

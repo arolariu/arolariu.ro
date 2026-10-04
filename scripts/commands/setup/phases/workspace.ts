@@ -17,7 +17,6 @@ import {Clock, Effect, type Terminal} from "effect";
 import {loadRepositoryRequirements, parseVersion, satisfiesMinimum, type MinimumVersion} from "../../../common/requirements.ts";
 import {getExpectedTaxonomyArtifactPaths} from "../../../common/taxonomy-artifacts.ts";
 import type {NpmTreeFacts} from "../../../inspection/packages.ts";
-import {legacyReadOnlyFiles, legacyTaskScheduler} from "../../../platform/bridge.ts";
 import {Environment} from "../../../platform/Environment.ts";
 import {ReadOnlyFiles} from "../../../platform/Files.ts";
 import type {ProcessRequest} from "../../../platform/Process.ts";
@@ -202,8 +201,7 @@ const runPrerequisites = Effect.fn("setup.workspace.prerequisites")(function* (
     });
   }
 
-  const files = yield* legacyReadOnlyFiles;
-  const liveRequirements = yield* Effect.promise(() => loadRepositoryRequirements(context.paths, {files, tasks: legacyTaskScheduler}));
+  const liveRequirements = yield* loadRepositoryRequirements(context.paths);
   if (liveRequirements.status === "invalid") {
     return yield* phaseResult(startedAt, {
       id,

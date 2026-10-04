@@ -15,6 +15,7 @@ import {Effect} from "effect";
 import {generateArtifacts} from "../commands/generate/artifacts.ts";
 import type {ArtifactGenerationFailed, TaxonomySourceUnavailable} from "../commands/generate/errors.ts";
 import {silently} from "../commands/generate/index.ts";
+import type {RepositoryRootNotFound} from "../common/repository-paths.ts";
 import type {PlatformServices} from "../platform/layers.ts";
 import type {ProcessError} from "../platform/Process.ts";
 import {runEchoedRuntimeCommand, type ContainerRuntimeAdapter, type RuntimeCommand} from "./adapters.ts";
@@ -97,14 +98,14 @@ export function buildImageRunCommand(adapter: ContainerRuntimeAdapter, options: 
  * @param input - Typed command input.
  * @returns The engine, action, and target this invocation ran with, failing with
  * {@link ContainerRuntimeError} when the engine cannot be resolved or preflight fails, with
- * {@link TaxonomySourceUnavailable} or {@link ArtifactGenerationFailed} when the artifact
+ * `RepositoryRootNotFound` outside a repository, with {@link TaxonomySourceUnavailable} or {@link ArtifactGenerationFailed} when the artifact
  * prerequisite fails, and with a {@link ProcessError} when the engine command fails.
  */
 export const runImage: (
   input: Readonly<ImageInput>,
 ) => Effect.Effect<
   ImageResult,
-  ContainerRuntimeError | ProcessError | TaxonomySourceUnavailable | ArtifactGenerationFailed,
+  ContainerRuntimeError | RepositoryRootNotFound | ProcessError | TaxonomySourceUnavailable | ArtifactGenerationFailed,
   PlatformServices
 > = Effect.fn("containers.image")(function* (input: Readonly<ImageInput>) {
   const adapter = yield* prepareContainerEngine(input, "image");

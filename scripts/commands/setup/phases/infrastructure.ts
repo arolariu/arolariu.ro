@@ -18,8 +18,8 @@
  *
  * The engine is selected from the `--engine` option, `AROLARIU_CONTAINER_ENGINE`, or the persisted
  * non-secret tooling configuration; only when none is set and stdin is interactive does the phase
- * ask through `Prompts.select`. The tooling configuration is read and written through the bridge's
- * legacy filesystem view, and the write happens only inside the consent-gated persistence action,
+ * ask through `Prompts.select`. The tooling configuration is read through `ReadOnlyFiles` and written
+ * atomically through `writeTextAtomic`, and the write happens only inside the consent-gated persistence action,
  * after the prompt resolved, so a dry run never writes and an interruption at the prompt leaves the
  * file untouched. Commands run through `Process` with the setup command defaults and never observe
  * `MSSQL_SA_PASSWORD`; the platform and the environment come from `Environment`.
@@ -36,7 +36,6 @@ import type {ContainerEngine, ContainerEngineSelection, EngineSelectionSource} f
 import type {InfrastructureFacts} from "../../../inspection/infrastructure.ts";
 import type {RepositoryInspectionKey} from "../../../inspection/repository.ts";
 import type {InspectionOutcome} from "../../../inspection/types.ts";
-import {legacyFileSystem} from "../../../platform/bridge.ts";
 import {Environment, type EnvironmentSnapshot} from "../../../platform/Environment.ts";
 import type {ProcessError, ProcessRequest} from "../../../platform/Process.ts";
 import {Prompts} from "../../../platform/Prompts.ts";
@@ -415,8 +414,8 @@ function selectEngine(
 }
 
 /**
- * Persists the selected engine: re-reads the latest tooling configuration and writes the merged
- * document through the bridge's legacy filesystem view.
+ * Persists the selected engine: re-reads the latest tooling configuration and atomically writes the
+ * merged document.
  *
  * @remarks
  * Runs only inside the consent-gated persistence action. The read-modify-write is uninterruptible,
@@ -428,20 +427,20 @@ function selectEngine(
  */
 function persistEngine(context: SetupContext, engine: ContainerEngine): InfrastructureStep<void> {
   return Effect.gen(function* () {
-    const files = yield* legacyFileSystem;
-    const latest = yield* Effect.promise(() => readToolingConfig(context.paths.toolingConfig, files));
+    const path = context.paths.toolingConfig;
+    const latest = yield* readToolingConfig(path);
     if (latest.status === "invalid") {
       return yield* new SetupActionFailed({actionId: ENGINE_PERSIST_ACTION, message: latest.error});
     }
-    yield* Effect.tryPromise({
-      try: () =>
-        writeToolingConfig(
-          context.paths.toolingConfig,
-          mergeToolingConfig(latest.status === "valid" ? latest.config : undefined, {containerEngine: engine}),
-          files,
-        ),
-      catch: (error) => new SetupActionFailed({actionId: ENGINE_PERSIST_ACTION, message: errorMessage(error)}),
-    });
+    yield* writeToolingConfig(
+      path,
+      mergeToolingConfig(latest.status === "valid" ? latest.config : undefined, {containerEngine: engine}),
+    ).pipe(
+      Effect.mapError(
+        (error) =>
+          new SetupActionFailed({actionId: ENGINE_PERSIST_ACTION, message: `Failed to writeTextAtomic '${path}': ${error.message}`}),
+      ),
+    );
   }).pipe(Effect.uninterruptible);
 }
 
@@ -905,9 +904,8 @@ function prepareInfrastructure(context: SetupContext): InfrastructureStep<Omit<S
   return Effect.gen(function* () {
     const evidence: string[] = [];
     const {platform} = yield* Environment;
-    const files = yield* legacyFileSystem;
 
-    const configRead = yield* Effect.promise(() => readToolingConfig(context.paths.toolingConfig, files));
+    const configRead = yield* readToolingConfig(context.paths.toolingConfig);
     if (configRead.status === "invalid") {
       return {
         id: "infrastructure",

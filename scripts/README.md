@@ -348,16 +348,16 @@ with `[REDACTED]` in its place, never echoes under `--verbose`, and a failure is
 Cosmos provisioning (`ensureCosmos`) uses `HttpClient` with a bounded body read, and Azurite provisioning (`ensureAzurite`) goes through
 the `LocalBlobStorage` service, whose Azure Blob SDK layer (`LocalBlobStorageLive`) only the `dev selfhost` handler provides.
 
-Until cohort 7 converts the shared Promise helpers (`resolveRepositoryPaths`, `loadRepositoryRequirements`, `readToolingConfig`,
-`writeToolingConfig`), Effect code hands them legacy-shaped capabilities from the bridge: `legacyReadOnlyFiles` and `legacyFileSystem`
-are Promise views over `ReadOnlyFiles` and `FileSystem`/`Path`/`Glob` that capture the current context, and `legacyTaskScheduler` is a
-shared `DefaultTaskScheduler`, so a family never value-imports `common/runtime.ts`. The views reject with a legacy `FileSystemError`
-whose `code` is the underlying Node code, or the mapped platform reason (`NotFound` → `ENOENT`, …) when there is none
-(`toLegacyFileSystemError`), so helpers that branch on `ENOENT` keep working on the in-memory harness:
+The shared repository helpers are Effects over the platform services. `resolveRepositoryPaths(import.meta.url)` (`common/repository-paths.ts`)
+walks up from the module through `ReadOnlyFiles` and fails with the typed `RepositoryRootNotFound` (rendered by `cli.ts`, exit `1`) when
+no ancestor `package.json` names `@arolariu/monorepo`. `loadRepositoryRequirements(paths)` (`common/requirements.ts`) reads every
+manifest source concurrently through `ReadOnlyFiles` and never fails: read and validation problems become an `invalid` result.
+`readToolingConfig(path)` (`common/tooling-config.ts`) needs only `ReadOnlyFiles` and maps a missing file to `{status: "missing"}`;
+`writeToolingConfig(path, config)` writes through `writeTextAtomic` and so requires `FileSystem` and `Path`:
 
 ```ts
-const files = yield* legacyReadOnlyFiles;
-const paths = yield* Effect.promise(() => resolveRepositoryPaths(import.meta.url, files));
+const paths = yield* resolveRepositoryPaths(import.meta.url);
+const requirements = yield* loadRepositoryRequirements(paths);
 ```
 
 The legacy commands still on the command runtime reach the Effect
@@ -411,8 +411,8 @@ The `generate`, `rates`, and `docs` families run as native Effect programs on th
 through `Presenter`. With `--json`, the family's typed result is the single stdout document; a business-negative run (a stopped `generate`,
 or `rates update` with failed years) still writes that document before exiting `1`, while a typed failure is rendered by `cli.ts` as
 `{status: "failed", …}`. Typed failures are `Schema.TaggedError` classes in each family's `errors.ts`; process failures stay
-`ProcessError`. Where a shared Promise helper needs a legacy capability (docs passes `legacyReadOnlyFiles` to `resolveRepositoryPaths`),
-the family takes it from the bridge, so none of these modules value-imports the legacy kernel.
+`ProcessError`. The shared repository helpers (for example `resolveRepositoryPaths`, which docs uses) are Effects over `ReadOnlyFiles`,
+so none of these modules value-imports the legacy kernel.
 
 ### Module map
 
@@ -615,7 +615,7 @@ and specialist modules, and `commands/status/index.ts` also have a narrower focu
 
 `npm run doctor` runs `arolariu doctor` (`--quick`, plus the global `--json`, `--verbose`, and `--help` flags). Doctor is Effect-native:
 [`commands/doctor/index.ts`](./commands/doctor/index.ts) owns `runDoctor`, and [`commands/doctor/cli.ts`](./commands/doctor/cli.ts) renders its
-completion. `runDoctor` resolves canonical repository paths and manifest-derived requirements through the bridge's legacy read-only views,
+completion. `runDoctor` resolves canonical repository paths and manifest-derived requirements through `ReadOnlyFiles`,
 obtains one shared repository inspection session from the `Inspection` service, then runs every bounded-context module concurrently
 (`Effect.forEach(..., {concurrency: "unbounded"})`), flattening their results back into a fixed rendering order. Every specialist module
 requires only the read-only `DoctorRequirements` profile (`ReadOnlyFiles`, the `GET`-only bounded `NetworkProbe`, `Process` reached through
@@ -670,12 +670,12 @@ adapter, the mutable `FileSystem`, the unrestricted `HttpClient`, or `Prompts`: 
 At the import level, one rule of [`runtime-boundary.test.ts`](./common/runtime-boundary.test.ts) — **read-only families never import
 mutating capabilities** — AST-scans every production module under `scripts/inspection/**` and `scripts/commands/{doctor,status}/**`,
 `cli.ts` adapters included. It rejects `FileSystem` from `effect` and any import of `effect/FileSystem`, `HttpClient` from `effect/http`,
-`Prompts` (`platform/Prompts.ts`), `writeTextAtomic` (`platform/Files.ts`), the bridge's mutating `legacyFileSystem` view, the legacy
-`FileSystem`/`ProcessRunner` ports, the Node runtime and Execa adapters, and every `node:fs`/`node:os`/`node:child_process`/`execa`
+`Prompts` (`platform/Prompts.ts`), `writeTextAtomic` (`platform/Files.ts`), the legacy `FileSystem`/`ProcessRunner` ports, the Node runtime and Execa adapters, and every `node:fs`/`node:os`/`node:child_process`/`execa`
 import, whether named, aliased, type-only, whole-module, re-exported, or dynamic. The same file keeps these trees free of runtime imports
 of the legacy kernel (the effect-native family rule). Read-only families may still use `ReadOnlyFiles`, `GetOnlyHttp` (through
 `NetworkProbe`), `Process` (through the opaque probe runner and the isolated inspection workers), `TemporaryDirectories` (scope-owned
-directories outside the repository), and the bridge's `legacyReadOnlyFiles` view.
+directories outside the repository), and the shared `resolveRepositoryPaths`, `loadRepositoryRequirements`, and `readToolingConfig`
+helpers, which require only `ReadOnlyFiles`.
 
 No Nx child command is dispatched by doctor or status, and none is allowlisted. Nx always opens (and rewrites) its native workspace
 database when it constructs a project graph. `workspace.nx-projects`, `workspace.nx-graph`, and status's `nxEdges` are instead derived

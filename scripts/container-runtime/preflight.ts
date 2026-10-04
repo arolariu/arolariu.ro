@@ -12,8 +12,7 @@
 
 import {Effect} from "effect";
 
-import {resolveRepositoryPaths} from "../common/repository-paths.ts";
-import {legacyReadOnlyFiles} from "../platform/bridge.ts";
+import {resolveRepositoryPaths, type RepositoryRootNotFound} from "../common/repository-paths.ts";
 import type {Environment} from "../platform/Environment.ts";
 import type {ReadOnlyFiles} from "../platform/Files.ts";
 import {withLogContext} from "../platform/Output.ts";
@@ -262,21 +261,20 @@ export const runContainerPreflight: (engine: ContainerEngine) => Effect.Effect<C
  *
  * @param input - The command input; its optional `engine` overrides the environment and configuration.
  * @param command - The command name used in the preflight log context.
- * @returns The selected engine's runtime adapter.
+ * @returns The selected engine's runtime adapter; fails with `RepositoryRootNotFound` outside a
+ * repository.
  */
 export const prepareContainerEngine: (
   input: Readonly<ContainerEngineInput>,
   command: string,
-) => Effect.Effect<ContainerRuntimeAdapter, ContainerRuntimeError, Process | ReadOnlyFiles | Environment> = Effect.fn(
-  "containers.prepareContainerEngine",
-)(function* (input: Readonly<ContainerEngineInput>, command: string) {
-  const files = yield* legacyReadOnlyFiles;
-  const paths = yield* Effect.promise(() => resolveRepositoryPaths(import.meta.url, files));
-  const selection = yield* resolveRuntimeContainerEngine({
-    // The CLI only accepts rancher/podman, but resolveRuntimeContainerEngine still validates every
-    // source (including the docker-deprecation message) before it is treated as a real engine.
-    ...(input.engine === undefined ? {} : {requestedEngine: input.engine}),
-    toolingConfigPath: paths.toolingConfig,
+) => Effect.Effect<ContainerRuntimeAdapter, ContainerRuntimeError | RepositoryRootNotFound, Process | ReadOnlyFiles | Environment> =
+  Effect.fn("containers.prepareContainerEngine")(function* (input: Readonly<ContainerEngineInput>, command: string) {
+    const paths = yield* resolveRepositoryPaths(import.meta.url);
+    const selection = yield* resolveRuntimeContainerEngine({
+      // The CLI only accepts rancher/podman, but resolveRuntimeContainerEngine still validates every
+      // source (including the docker-deprecation message) before it is treated as a real engine.
+      ...(input.engine === undefined ? {} : {requestedEngine: input.engine}),
+      toolingConfigPath: paths.toolingConfig,
+    });
+    return yield* runContainerPreflight(selection.engine).pipe(withLogContext(`${command}::preflight`));
   });
-  return yield* runContainerPreflight(selection.engine).pipe(withLogContext(`${command}::preflight`));
-});

@@ -13,7 +13,6 @@
 import {Effect} from "effect";
 
 import {readToolingConfig} from "../common/tooling-config.ts";
-import {legacyReadOnlyFiles} from "../platform/bridge.ts";
 import {Environment} from "../platform/Environment.ts";
 import type {ReadOnlyFiles} from "../platform/Files.ts";
 import {ContainerRuntimeError, type ContainerEngine, type ContainerEngineSelection, type SelectionInputs} from "./types.ts";
@@ -146,8 +145,7 @@ export const resolveRuntimeContainerEngine: (
     return yield* selectionStep((): ContainerEngineSelection => ({engine: normalizeEngine(environmentValue), source: "environment"}));
   }
 
-  const files = yield* legacyReadOnlyFiles;
-  const localConfig = yield* Effect.promise(() => readToolingConfig(input.toolingConfigPath, files));
+  const localConfig = yield* readToolingConfig(input.toolingConfigPath);
   if (localConfig.status === "invalid") {
     return yield* new ContainerRuntimeError({message: localConfig.error});
   }

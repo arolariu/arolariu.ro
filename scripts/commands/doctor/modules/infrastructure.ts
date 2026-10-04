@@ -6,9 +6,8 @@
  * Every diagnostic row in this module is derived from two shared inspection fact sets obtained
  * through `context.inspection.inspect("infrastructure")` and
  * `context.inspection.inspect("aggregate")`, plus a bounded tooling-configuration read issued
- * through the read-only `ReadOnlyFiles` service (via the bridge's legacy read-only view the
- * shared `readToolingConfig` helper takes) for the engine-selection
- * diagnostic. This module never spawns a command, never reads a port directly, never imports a
+ * through the read-only `ReadOnlyFiles` service (by the shared `readToolingConfig` helper) for the
+ * engine-selection diagnostic. This module never spawns a command, never reads a port directly, never imports a
  * Node filesystem API, and never uses an unrestricted runner or `context.probes` for any
  * diagnostic purpose.
  *
@@ -24,7 +23,6 @@ import {Effect} from "effect";
 import {readToolingConfig, type ToolingConfigReadResult} from "../../../common/tooling-config.ts";
 import {resolveContainerEngine} from "../../../container-runtime/selection.ts";
 import {ContainerRuntimeError, type ContainerEngine} from "../../../container-runtime/types.ts";
-import {legacyReadOnlyFiles} from "../../../platform/bridge.ts";
 import type {ReadOnlyFiles} from "../../../platform/Files.ts";
 import {boundEvidence, diagnosticResult, moduleRunContext, type ModuleRunContext} from "../diagnostics.ts";
 import {
@@ -141,8 +139,7 @@ interface SelectionOutcome {
 function diagnoseSelection(context: Readonly<ModuleRunContext>): Effect.Effect<SelectionOutcome, never, ReadOnlyFiles> {
   return Effect.gen(function* () {
     const startedAt = context.monotonicNow();
-    const files = yield* legacyReadOnlyFiles;
-    const configRead = yield* Effect.promise(() => readToolingConfig(context.paths.toolingConfig, files));
+    const configRead = yield* readToolingConfig(context.paths.toolingConfig);
     return resolveSelection(context, startedAt, configRead);
   });
 }

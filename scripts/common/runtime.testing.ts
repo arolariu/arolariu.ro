@@ -5,8 +5,8 @@
  * @remarks
  * Nothing here imports a Node adapter or touches ambient process, filesystem, or network state.
  * The only Node modules used are `node:path` and `node:url`, and only to derive
- * {@link repositoryFixtureRoot} from this module's own location so command definitions that call
- * `resolveRepositoryPaths(import.meta.url, files)` stay testable without real I/O. Every fake is
+ * {@link repositoryFixtureRoot} from this module's own location so command definitions that
+ * discover the repository root from `import.meta.url` stay testable without real I/O. Every fake is
  * deterministic: fixed timestamps, fixed environment, counter-based temporary directories, and
  * intervals that never fire on their own.
  */
@@ -472,7 +472,7 @@ export function createMemoryFileSystem(initialFiles: Readonly<Record<string, str
 
 /**
  * Creates an in-memory filesystem that already identifies {@link repositoryFixtureRoot} as the
- * monorepository root, so `resolveRepositoryPaths(import.meta.url, files)` resolves without real
+ * monorepository root, so repository-root discovery from `import.meta.url` resolves without real
  * I/O.
  *
  * @param initialFiles - Files overlaid on top of the seeded repository identity.

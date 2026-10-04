@@ -4,8 +4,11 @@
  */
 
 import {resolve} from "node:path";
+
+import {Effect} from "effect";
+
+import {ReadOnlyFiles} from "../platform/Files.ts";
 import type {RepositoryPaths} from "./repository-paths.ts";
-import type {ReadOnlyFileSystem, TaskScheduler} from "./runtime.ts";
 
 const EXACT_PACKAGE_VERSION =
   /^(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/;
@@ -43,14 +46,25 @@ function isRecord(value: unknown): value is UnknownRecord {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-async function readRequiredFile(path: string, files: ReadOnlyFileSystem, errors: string[]): Promise<string | null> {
-  try {
-    return await files.readText(path);
-  } catch (error: unknown) {
-    const detail = error instanceof Error ? error.message : String(error);
-    errors.push(`Unable to read ${path}: ${detail}`);
-    return null;
-  }
+/**
+ * Reads one requirement source, recording a read failure instead of failing.
+ *
+ * @param path - Source file to read.
+ * @param errors - Collected validation errors; a read failure appends one entry.
+ * @returns The file contents, or `null` when the read failed.
+ */
+function readRequiredFile(path: string, errors: string[]): Effect.Effect<string | null, never, ReadOnlyFiles> {
+  return Effect.gen(function* () {
+    const files = yield* ReadOnlyFiles;
+    return yield* files.readFileString(path).pipe(
+      Effect.catch((error) =>
+        Effect.sync(() => {
+          errors.push(`Unable to read ${path}: Failed to readText '${path}': ${error.message}`);
+          return null;
+        }),
+      ),
+    );
+  });
 }
 
 function parseJsonObject(contents: string, path: string, errors: string[]): UnknownRecord | null {
@@ -222,34 +236,58 @@ function loadPackageRequirements(
 /**
  * Loads repository requirements from their machine-readable sources.
  *
+ * @remarks
+ * Every source is read concurrently through {@link ReadOnlyFiles}; a read failure becomes a
+ * validation error, never a failure of the effect.
+ *
  * @param paths - Verified canonical repository paths.
- * @param dependencies - Filesystem capability used to read manifest sources, and the task
- * scheduler used to read every source concurrently.
  * @returns Either all normalized requirements or every detected validation error.
  */
-export async function loadRepositoryRequirements(
-  paths: RepositoryPaths,
-  dependencies: Readonly<{files: ReadOnlyFileSystem; tasks: TaskScheduler}>,
-): Promise<RequirementLoadResult> {
-  const errors: string[] = [];
-  const {files, tasks} = dependencies;
-  const requiredFileResults = await tasks.parallel([
-    () => readRequiredFile(resolve(paths.root, ".nvmrc"), files, errors),
-    () => readRequiredFile(resolve(paths.root, ".node-version"), files, errors),
-    () => readRequiredFile(paths.packageJson, files, errors),
-    () => readRequiredFile(paths.packageLock, files, errors),
-    () => readRequiredFile(paths.dotnetBuildProps, files, errors),
-    () => readRequiredFile(paths.pythonProject, files, errors),
-  ]);
-  // `tasks.parallel` returns a plain `readonly T[]` (not a tuple), so destructuring under
-  // `noUncheckedIndexedAccess` would widen each element to `string | null | undefined`; indexing
-  // with an explicit `?? null` fold keeps every call below exactly as strict as before.
-  const nvmrc = requiredFileResults[0] ?? null;
-  const nodeVersionFile = requiredFileResults[1] ?? null;
-  const packageJsonContents = requiredFileResults[2] ?? null;
-  const packageLockContents = requiredFileResults[3] ?? null;
-  const dotnetContents = requiredFileResults[4] ?? null;
-  const pythonContents = requiredFileResults[5] ?? null;
+export function loadRepositoryRequirements(paths: RepositoryPaths): Effect.Effect<RequirementLoadResult, never, ReadOnlyFiles> {
+  return Effect.gen(function* () {
+    const errors: string[] = [];
+    const [nvmrc, nodeVersionFile, packageJsonContents, packageLockContents, dotnetContents, pythonContents] = yield* Effect.all(
+      [
+        readRequiredFile(resolve(paths.root, ".nvmrc"), errors),
+        readRequiredFile(resolve(paths.root, ".node-version"), errors),
+        readRequiredFile(paths.packageJson, errors),
+        readRequiredFile(paths.packageLock, errors),
+        readRequiredFile(paths.dotnetBuildProps, errors),
+        readRequiredFile(paths.pythonProject, errors),
+      ],
+      {concurrency: "unbounded"},
+    );
+    return validateRequirements(paths, errors, {
+      nvmrc,
+      nodeVersionFile,
+      packageJsonContents,
+      packageLockContents,
+      dotnetContents,
+      pythonContents,
+    });
+  });
+}
+
+/** Raw contents of every requirement source; `null` when its read failed. */
+interface RequirementSources {
+  readonly nvmrc: string | null;
+  readonly nodeVersionFile: string | null;
+  readonly packageJsonContents: string | null;
+  readonly packageLockContents: string | null;
+  readonly dotnetContents: string | null;
+  readonly pythonContents: string | null;
+}
+
+/**
+ * Parses and cross-checks the raw requirement sources.
+ *
+ * @param paths - Verified canonical repository paths.
+ * @param errors - Errors collected so far; validation appends to it.
+ * @param sources - Raw source contents.
+ * @returns Either all normalized requirements or every detected validation error.
+ */
+function validateRequirements(paths: RepositoryPaths, errors: string[], sources: RequirementSources): RequirementLoadResult {
+  const {nvmrc, nodeVersionFile, packageJsonContents, packageLockContents, dotnetContents, pythonContents} = sources;
 
   const packageJson = packageJsonContents === null ? null : parseJsonObject(packageJsonContents, paths.packageJson, errors);
   const packageLock = packageLockContents === null ? null : parseJsonObject(packageLockContents, paths.packageLock, errors);
