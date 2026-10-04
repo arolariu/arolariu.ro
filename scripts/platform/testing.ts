@@ -7,13 +7,16 @@
  * not available. These helpers fill that gap: {@link runScoped} runs an effect inside a fresh scope
  * with a test layer provided and surfaces typed failures as the original error value, and
  * {@link effectTest} registers a Vitest case whose body is an effect. {@link makeTestLayer} builds
- * the in-memory counterpart of `makeNodeLayer`: a map-backed filesystem and glob (`./testing.fs.ts`),
- * scripted processes and HTTP responses, a recording sink, a fixed environment, and the test clock.
+ * the in-memory counterpart of `makeNodeLayer`: a map-backed filesystem, glob, and temporary
+ * directories (`./testing.fs.ts`, under `<cwd>/.tmp/<prefix><n>`), scripted processes and HTTP
+ * responses, a recording sink, a fixed environment, and the test clock.
  * The scripted `Process` reproduces `ProcessLive`'s request invariants, command echo, output tee, and
  * timeout around each scripted response. The harness also sets `ProcessLayerFactory` to that
- * scripted layer, so `commandLayer` rebuilds it over each CLI invocation's own output settings.
+ * scripted layer, so `commandLayer` rebuilds it over each CLI invocation's own output settings, and
+ * `InspectionLayerFactory` to its `Inspection` layer: scripted sessions when `inspection` is set,
+ * otherwise `InspectionLive` over the harness services.
  * Scripted prompts mirror `PromptsLive`'s TTY guard, and `httpCalls` records every HTTP request.
- * Unscripted processes, HTTP requests, prompts, child-process spawns,
+ * Unscripted processes, HTTP requests, prompts, inspection keys, child-process spawns,
  * terminal reads, and unimplemented `FileSystem` members die, so a test never reaches a real external
  * boundary or a silent no-op by accident.
  */
@@ -29,7 +32,10 @@ import {TestClock} from "effect/testing";
 import {it} from "vitest";
 
 import {layerEnvironment, type EnvironmentSnapshot} from "./Environment.ts";
-import {GetOnlyHttpLive, Glob, ReadOnlyFilesLive} from "./Files.ts";
+import {Inspection, InspectionLayerFactory, InspectionLive, type InspectionLayer} from "../inspection/Inspection.ts";
+import type {RepositoryInspectionFacts, RepositoryInspectionKey, RepositoryInspectionSession} from "../inspection/repository.ts";
+import type {InspectionOutcome} from "../inspection/types.ts";
+import {GetOnlyHttpLive, Glob, ReadOnlyFilesLive, TemporaryDirectoriesLive} from "./Files.ts";
 import type {PlatformServices} from "./layers.ts";
 import {memorySink, OutputSettings, outputLayer, Presenter, Sink, type OutputMode, type SinkRecord} from "./Output.ts";
 import {
@@ -182,6 +188,36 @@ export interface TestLayerOptions {
    * for `confirm`, a choice value for `select`, and a string for `text` and `secret`.
    */
   readonly prompts?: readonly (boolean | string)[];
+  /**
+   * Scripted inspection outcomes. When set, every `Inspection.session` returns one scripted session
+   * that answers each key with its outcome and dies with `unscripted inspection: <key>` for any
+   * other key; otherwise `InspectionLive` runs over the harness services.
+   */
+  readonly inspection?: ScriptedInspection;
+}
+
+/** Scripted outcome per repository inspection key. */
+export type ScriptedInspection = Partial<{
+  readonly [K in RepositoryInspectionKey]: InspectionOutcome<RepositoryInspectionFacts[K]>;
+}>;
+
+/**
+ * Builds the scripted {@link Inspection} layer of a harness.
+ *
+ * @param outcomes - Scripted outcome per key.
+ * @returns A layer whose sessions answer from `outcomes`; `invalidate` and
+ * `updateInfrastructureEngine` are no-ops.
+ */
+function scriptedInspection(outcomes: ScriptedInspection): InspectionLayer {
+  const session: RepositoryInspectionSession = {
+    inspect: <K extends RepositoryInspectionKey>(key: K) => {
+      const outcome = outcomes[key] as InspectionOutcome<RepositoryInspectionFacts[K]> | undefined;
+      return outcome === undefined ? Effect.die(new Error(`unscripted inspection: ${key}`)) : Effect.succeed(outcome);
+    },
+    invalidate: () => Effect.void,
+    updateInfrastructureEngine: () => Effect.void,
+  };
+  return Layer.succeed(Inspection, Inspection.of({session: () => Effect.succeed(session)}));
 }
 
 /** An in-memory platform layer and accessors over what the code under test did with it. */
@@ -316,7 +352,7 @@ export function makeTestLayer(options: TestLayerOptions = {}): TestHarness<Platf
 
   const promptsLayer = Layer.succeed(Prompts, scriptedPrompts(snapshot.stdinIsTTY, options.prompts ?? []));
 
-  const base = Layer.mergeAll(ReadOnlyFilesLive, GetOnlyHttpLive, promptsLayer).pipe(
+  const base = Layer.mergeAll(ReadOnlyFilesLive, GetOnlyHttpLive, promptsLayer, TemporaryDirectoriesLive).pipe(
     Layer.provideMerge(
       Layer.mergeAll(
         layerEnvironment(snapshot),
@@ -331,9 +367,17 @@ export function makeTestLayer(options: TestLayerOptions = {}): TestHarness<Platf
     ),
   );
   const settings = {mode: options.mode ?? "human", verbose: options.verbose ?? false, color: false, context: options.context ?? "test"};
-  // The harness Process serves direct effect tests; the factory reference makes `commandLayer` rebuild
-  // the same scripted process over each CLI invocation's own output settings and presenter.
-  const platform = Layer.merge(processLayer, Layer.succeed(ProcessLayerFactory, processLayer)).pipe(
+  const inspectionLayer = options.inspection === undefined ? InspectionLive : scriptedInspection(options.inspection);
+  // The harness Process and Inspection serve direct effect tests; the factory references make `commandLayer`
+  // rebuild the same scripted process (and inspection) over each CLI invocation's own output settings and presenter.
+  const platform = inspectionLayer.pipe(
+    Layer.provideMerge(
+      Layer.mergeAll(
+        processLayer,
+        Layer.succeed(ProcessLayerFactory, processLayer),
+        Layer.succeed(InspectionLayerFactory, inspectionLayer),
+      ),
+    ),
     Layer.provideMerge(outputLayer(settings)),
     Layer.provideMerge(base),
   );

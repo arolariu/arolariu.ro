@@ -19,7 +19,7 @@ import type {ProcessRequest, ProcessRunner} from "./common/runner.ts";
 import type {Clock, FileSystem, HttpClient, RuntimeEnvironment, TaskScheduler} from "./common/runtime.ts";
 import type {ContainerEngine} from "./container-runtime/types.ts";
 import type {GenerateInput, GenerateResult} from "./commands/generate/index.ts";
-import type {RepositoryInspectionSession} from "./inspection/repository.ts";
+import type {LegacyRepositoryInspectionSession} from "./platform/bridge.ts";
 
 /** Terminal status reported by one setup phase. */
 export type SetupStatus = "succeeded" | "failed" | "skipped" | "degraded";
@@ -144,7 +144,7 @@ export interface SetupContext {
   /** Manifest-derived repository requirements. */
   readonly requirements: RepositoryRequirements;
   /** One full repository inspection session shared by every setup phase. */
-  readonly inspection: RepositoryInspectionSession;
+  readonly inspection: LegacyRepositoryInspectionSession;
   /** Invocation-scoped capabilities every migrated phase reads. */
   readonly runtime: SetupPhaseRuntime;
   /** Injected prompt provider. */

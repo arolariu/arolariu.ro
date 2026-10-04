@@ -28,8 +28,8 @@ import {getExpectedTaxonomyArtifactPaths} from "../../../common/taxonomy-artifac
 import {createDoctorReport} from "../reporter.ts";
 import {workspaceDoctorModule} from "./workspace.ts";
 import type {DiagnosticNetworkResult, DiagnosticResult, DoctorContext, DoctorInput} from "../types.ts";
-import type {InspectionProbe, InspectionProbeRunner} from "../../../inspection/probes.ts";
-import type {RepositoryInspectionSession} from "../../../inspection/repository.ts";
+import type {InspectionProbe, LegacyInspectionProbeRunner} from "../../../inspection/probes.ts";
+import type {LegacyRepositoryInspectionSession} from "../../../platform/bridge.ts";
 import type {InspectionOutcome} from "../../../inspection/types.ts";
 import type {NpmTreeFacts, NpmProblemFact} from "../../../inspection/packages.ts";
 import type {WorkspaceFacts} from "../../../inspection/workspace.ts";
@@ -313,12 +313,12 @@ async function createWorkspaceFixture(
     files: input.files ?? asReadOnlyFileSystem(nodeFileSystem),
     clock: fixtureClock(),
     environment: fixtureEnvironment({PATH: resolve(root, "bin")}),
-    probes: {run: probeRun as unknown as InspectionProbeRunner["run"]},
+    probes: {run: probeRun as unknown as LegacyInspectionProbeRunner["run"]},
     inspection: {
-      inspect: inspect as unknown as RepositoryInspectionSession["inspect"],
+      inspect: inspect as unknown as LegacyRepositoryInspectionSession["inspect"],
       invalidate: vi.fn(),
       updateInfrastructureEngine: vi.fn(),
-    } as RepositoryInspectionSession,
+    } as LegacyRepositoryInspectionSession,
   };
 
   return {root, cacheRoot, context, probeRun, inspect};

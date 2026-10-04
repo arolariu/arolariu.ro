@@ -1,41 +1,18 @@
 /**
- * @fileoverview Public outcome and provider contracts for process-local inspection sessions.
+ * @fileoverview Public outcome, provider, and session contracts for process-local inspection sessions.
  * @module scripts/inspection/types
  *
  * @remarks
- * Every import here is type-only, so this module never pulls the runtime kernel (or, transitively,
- * the Node adapter) into an inspection provider's module graph at run time.
+ * Every import here is type-only. A provider is an Effect that requires only the read-only
+ * {@link InspectionRequirements} services (plus a scope for its own resources); its legacy
+ * `InspectionProviderContext` members are now those services.
  */
 
-import type {ProcessRunner} from "../common/runner.ts";
-import type {Clock, FileSystem, ReadOnlyFileSystem, RuntimeEnvironment, TaskScheduler} from "../common/runtime.ts";
+import type {Effect, Scope} from "effect";
 
-/**
- * The exact capability surface an inspection provider is allowed to observe.
- *
- * @remarks
- * Providers never read ambient state: they receive this context (or a narrower `Pick` of it) from
- * the composed repository session, which itself receives the capabilities from one
- * {@link CommandRuntime}. The ordinary filesystem is deliberately read-only; the single writable
- * capability is {@link InspectionProviderContext.temporaryDirectories}, which can only create a
- * caller-owned temporary directory outside the repository.
- */
-export interface InspectionProviderContext {
-  /** Read-only filesystem every provider observes repository state through. */
-  readonly files: ReadOnlyFileSystem;
-  /** The single writable capability: creation of one caller-owned temporary directory. */
-  readonly temporaryDirectories: Pick<FileSystem, "createTemporaryDirectory">;
-  /** Engine-neutral child-process runner used by probe- and worker-driven providers. */
-  readonly runner: ProcessRunner;
-  /** Monotonic and wall-clock time source used for every `durationMs` measurement. */
-  readonly clock: Clock;
-  /** Deterministic task orchestration used instead of raw `Promise` combinators. */
-  readonly tasks: TaskScheduler;
-  /** Immutable environment snapshot providers read variables, platform, and paths from. */
-  readonly environment: RuntimeEnvironment;
-  /** Cancellation signal of the owning command invocation. */
-  readonly signal: AbortSignal;
-}
+import type {Environment} from "../platform/Environment.ts";
+import type {ReadOnlyFiles, TemporaryDirectories} from "../platform/Files.ts";
+import type {Process} from "../platform/Process.ts";
 
 /**
  * Result of one inspection attempt for a single fact of type `T`.
@@ -46,16 +23,22 @@ export interface InspectionProviderContext {
  * - `"invalid"`: the fact was observed but failed validation; `issues` lists each failure.
  *
  * Every variant carries `durationMs`, the wall-clock time the inspection took to produce this
- * outcome. A rejected provider (a thrown or asynchronously rejected error) is never represented
- * as an `InspectionOutcome`; it is an exceptional condition surfaced as a rejected promise instead.
+ * outcome. A provider defect is never represented as an `InspectionOutcome`; it is an exceptional
+ * condition surfaced as a defect instead.
  */
 export type InspectionOutcome<T> =
   | {readonly kind: "available"; readonly value: T; readonly durationMs: number}
   | {readonly kind: "unavailable"; readonly reason: string; readonly durationMs: number}
   | {readonly kind: "invalid"; readonly issues: readonly string[]; readonly durationMs: number};
 
-/** Produces one {@link InspectionOutcome} for a single fact. Rejection/throw is exceptional, not a `kind`. */
-export type InspectionProvider<T> = () => Promise<InspectionOutcome<T>>;
+/**
+ * The exact service surface an inspection provider may observe: the read-only filesystem, the
+ * single writable temporary-directory capability, child processes, and the environment snapshot.
+ */
+export type InspectionRequirements = ReadOnlyFiles | TemporaryDirectories | Process | Environment;
+
+/** Produces one {@link InspectionOutcome} for a single fact. A defect is exceptional, not a `kind`. */
+export type InspectionProvider<T> = Effect.Effect<InspectionOutcome<T>, never, InspectionRequirements | Scope.Scope>;
 
 /** One {@link InspectionProvider} per key of a fixed fact shape `TFacts`. */
 export type InspectionProviders<TFacts extends object> = {
@@ -65,20 +48,20 @@ export type InspectionProviders<TFacts extends object> = {
 /** A process-local, memoized inspection session over one fixed {@link InspectionProviders} map. */
 export interface InspectionSession<TFacts extends object> {
   /**
-   * Resolves the memoized {@link InspectionOutcome} for `key`, invoking the underlying provider
+   * Resolves the memoized {@link InspectionOutcome} for `key`, running the underlying provider
    * only when no cached or in-flight result exists for that key.
    *
    * @param key - Fact key to inspect.
-   * @returns A promise for the memoized outcome; rejects (and evicts its own cache entry) if the
-   * underlying provider rejects or throws synchronously.
+   * @returns The memoized outcome; dies (and evicts its own cache entry) when the provider dies.
    */
-  readonly inspect: <Key extends keyof TFacts>(key: Key) => Promise<InspectionOutcome<TFacts[Key]>>;
+  readonly inspect: <Key extends keyof TFacts>(key: Key) => Effect.Effect<InspectionOutcome<TFacts[Key]>>;
 
   /**
    * Removes any cached or in-flight result for exactly the supplied keys, forcing the next
-   * {@link InspectionSession.inspect} call for each to invoke its provider again.
+   * {@link InspectionSession.inspect} call for each to run its provider again. An in-flight
+   * provider still delivers its result to the callers already waiting for it.
    *
    * @param keys - Fact keys to forget. Keys not supplied are left untouched.
    */
-  readonly invalidate: (...keys: readonly (keyof TFacts)[]) => void;
+  readonly invalidate: (...keys: readonly (keyof TFacts)[]) => Effect.Effect<void>;
 }

@@ -21,7 +21,8 @@ import {resolve} from "node:path";
 import type {ProcessOutcome} from "../common/runner.ts";
 import type {HostContainerFacts, HostCpuFacts, HostFacts, HostFilesystemFact, HostLoadFacts, HostMemoryFacts, HostNetworkFacts, HostOsFacts, HostPortOwnerFact, HostProcessFacts} from "./host.ts";
 import type {PackageFact, ToolFact, ToolingFacts} from "./tooling.ts";
-import type {InspectionOutcome, InspectionProvider, InspectionProviderContext} from "./types.ts";
+import type {LegacyInspectionProvider as InspectionProvider, LegacyInspectionProviderContext as InspectionProviderContext} from "./legacy-provider.ts";
+import type {InspectionOutcome} from "./types.ts";
 
 /** Deterministic aggregate facts: the tooling and host component outcomes, preserved independently. */
 export interface AggregateFacts {

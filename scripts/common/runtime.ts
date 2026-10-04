@@ -15,10 +15,8 @@
 
 import type {MonorepositoryLogger} from "./logger.ts";
 import type {PromptProvider} from "./prompts.ts";
-import type {RepositoryPaths} from "./repository-paths.ts";
 import type {ProcessRunner} from "./runner.ts";
-import type {ContainerEngine} from "../container-runtime/types.ts";
-import type {RepositoryInspectionSession} from "../inspection/repository.ts";
+import type {LegacyRepositoryInspectionRuntime} from "../platform/bridge.ts";
 
 /** Immutable snapshot of the ambient environment a command observes. */
 export interface RuntimeEnvironment {
@@ -251,24 +249,14 @@ export interface GetOnlyHttpClient {
   readonly get: (request: Readonly<Omit<HttpRequest, "method" | "body">>) => Promise<HttpResponse>;
 }
 
-/** Selects how thoroughly a repository inspection session inspects the repository. */
-export interface RepositoryInspectionRequest {
-  /** Inspection thoroughness profile. */
-  readonly profile: "full" | "quick";
-  /** Canonical repository paths the session inspects. */
-  readonly paths: RepositoryPaths;
-  /** Container engine the session's infrastructure facts should initially observe. */
-  readonly requestedEngine?: ContainerEngine;
-}
+/** Re-exported for the legacy commands; defined by `scripts/inspection/repository.ts`. Deleted in cohort 7. */
+export type {RepositoryInspectionRequest} from "../inspection/repository.ts";
 
-/** Shares one memoized {@link RepositoryInspectionSession} across every command that requests it. */
-export interface RepositoryInspectionRuntime {
-  /**
-   * Returns the shared session for `request`, creating it on first use. A later call with an
-   * equivalent request returns the exact same session instance instead of creating a new one.
-   */
-  readonly getRepositorySession: (request: Readonly<RepositoryInspectionRequest>) => RepositoryInspectionSession;
-}
+/**
+ * Shares one memoized repository inspection session across every command that requests it: the
+ * bridge's legacy view of the Effect `Inspection` service. Deleted in cohort 7.
+ */
+export type RepositoryInspectionRuntime = LegacyRepositoryInspectionRuntime;
 
 /** Every capability one command needs, assembled by the Node adapter and injected at the entrypoint. */
 export interface CommandRuntime {
@@ -905,44 +893,4 @@ export class MemoizedInspectionRuntime<TRequest extends object, TSession> {
     this.#sessions.set(key, {request, session});
     return session;
   }
-}
-
-/**
- * Derives the stable memoization key {@link createRepositoryInspectionRuntime} uses: the
- * repository root, the inspection profile, and the requested container engine. Two requests with
- * matching keys but different {@link RepositoryPaths} content still count as a conflict.
- *
- * @param request - Repository inspection request to key.
- * @returns A stable string key for `request`.
- */
-export function repositoryInspectionRequestKey(request: Readonly<RepositoryInspectionRequest>): string {
-  return canonicalJson({
-    root: request.paths.root,
-    profile: request.profile,
-    requestedEngine: request.requestedEngine,
-  });
-}
-
-/**
- * Builds the shared, memoized {@link RepositoryInspectionRuntime} a {@link CommandRuntime} exposes,
- * so every command that requests a session for the same root, profile, and requested engine
- * observes the exact same {@link RepositoryInspectionSession} instance.
- *
- * @param createSession - Builds a new session for a request that has not been seen before; the
- * Node adapter supplies this from `createRepositoryInspectionSession` bound to its own command
- * runner, environment, platform, and clock.
- * @returns A repository inspection runtime backed by one {@link MemoizedInspectionRuntime}.
- */
-export function createRepositoryInspectionRuntime(
-  createSession: (request: Readonly<RepositoryInspectionRequest>) => RepositoryInspectionSession,
-): RepositoryInspectionRuntime {
-  const memoized = new MemoizedInspectionRuntime<RepositoryInspectionRequest, RepositoryInspectionSession>(
-    createSession,
-    repositoryInspectionRequestKey,
-  );
-
-  return {
-    getRepositorySession: (request: Readonly<RepositoryInspectionRequest>): RepositoryInspectionSession =>
-      memoized.getRepositorySession(request),
-  };
 }

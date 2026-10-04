@@ -4,8 +4,9 @@
  *
  * @remarks
  * {@link NodeBaseLayer} wires every invocation-independent service to its Node adapter.
- * {@link commandLayer} adds the services that depend on the global output flags, so the CLI builds
- * it once per invocation after parsing them; {@link makeNodeLayer} composes both. Tests use
+ * {@link commandLayer} adds the services that depend on the global output flags (and the
+ * `Inspection` service, whose sessions run that invocation's processes), so the CLI builds it once
+ * per invocation after parsing them; {@link makeNodeLayer} composes both. Tests use
  * `makeTestLayer` from `./testing.ts`, which provides the same {@link PlatformServices} in memory.
  */
 
@@ -14,8 +15,18 @@ import {Effect, Layer, type FileSystem, type Path, type Terminal} from "effect";
 import type {HttpClient} from "effect/http";
 import type {ChildProcessSpawner} from "effect/process";
 
+import {InspectionLayerFactory, type Inspection} from "../inspection/Inspection.ts";
 import {EnvironmentLive, type Environment} from "./Environment.ts";
-import {GetOnlyHttpLive, GlobLive, ReadOnlyFilesLive, type GetOnlyHttp, type Glob, type ReadOnlyFiles} from "./Files.ts";
+import {
+  GetOnlyHttpLive,
+  GlobLive,
+  ReadOnlyFilesLive,
+  TemporaryDirectoriesLive,
+  type GetOnlyHttp,
+  type Glob,
+  type ReadOnlyFiles,
+  type TemporaryDirectories,
+} from "./Files.ts";
 import {outputLayer, SinkLive, type OutputSettings, type OutputSettingsShape, type Presenter, type Sink} from "./Output.ts";
 import {ProcessLayerFactory, type Process} from "./Process.ts";
 import {PromptsLive, type Prompts} from "./Prompts.ts";
@@ -31,32 +42,46 @@ export type BaseServices =
   | Glob
   | ReadOnlyFiles
   | GetOnlyHttp
+  | TemporaryDirectories
   | Prompts
   | Sink;
 
+/** Services {@link commandLayer} builds for one invocation. */
+export type CommandServices = OutputSettings | Presenter | Process | Inspection;
+
 /** Every service a scripts command may require. */
-export type PlatformServices = BaseServices | OutputSettings | Presenter | Process;
+export type PlatformServices = BaseServices | CommandServices;
 
 /** Node adapters for every {@link BaseServices} member; output goes to the process streams. */
-export const NodeBaseLayer: Layer.Layer<BaseServices> = Layer.mergeAll(ReadOnlyFilesLive, GetOnlyHttpLive, PromptsLive).pipe(
-  Layer.provideMerge(Layer.mergeAll(NodeServices.layer, NodeHttpClient.layerUndici, GlobLive, EnvironmentLive, SinkLive)),
-);
+export const NodeBaseLayer: Layer.Layer<BaseServices> = Layer.mergeAll(
+  ReadOnlyFilesLive,
+  GetOnlyHttpLive,
+  PromptsLive,
+  TemporaryDirectoriesLive,
+).pipe(Layer.provideMerge(Layer.mergeAll(NodeServices.layer, NodeHttpClient.layerUndici, GlobLive, EnvironmentLive, SinkLive)));
 
 /**
  * Builds the per-invocation layer that depends on the global output flags.
  *
  * @param settings - The invocation output settings.
  * @returns The `outputLayer` for `settings` merged with the `Process` layer read from
- * {@link ProcessLayerFactory} (`ProcessLive` unless overridden), which it also feeds.
+ * {@link ProcessLayerFactory} (`ProcessLive` unless overridden), which it also feeds, and the
+ * `Inspection` layer read from `InspectionLayerFactory` (`InspectionLive` unless overridden) over
+ * that `Process`.
  */
-export function commandLayer(settings: OutputSettingsShape): Layer.Layer<OutputSettings | Presenter | Process, never, BaseServices> {
-  // `fresh` keeps the layer memo map from reusing a Process built over another invocation's settings.
+export function commandLayer(settings: OutputSettingsShape): Layer.Layer<CommandServices, never, BaseServices> {
+  // `fresh` keeps the layer memo map from reusing a Process (or the sessions of an Inspection) built for another invocation.
   const processLayer = Layer.unwrap(
     Effect.gen(function* () {
       return Layer.fresh(yield* ProcessLayerFactory);
     }),
   );
-  return processLayer.pipe(Layer.provideMerge(outputLayer(settings)));
+  const inspectionLayer = Layer.unwrap(
+    Effect.gen(function* () {
+      return Layer.fresh(yield* InspectionLayerFactory);
+    }),
+  );
+  return inspectionLayer.pipe(Layer.provideMerge(processLayer), Layer.provideMerge(outputLayer(settings)));
 }
 
 /**

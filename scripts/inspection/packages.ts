@@ -11,9 +11,10 @@
 import {isAbsolute, join, relative, resolve, sep} from "node:path";
 
 import type {ProcessOutcome} from "../common/runner.ts";
-import type {InspectionProbeRunner} from "./probes.ts";
+import type {LegacyInspectionProbeRunner as InspectionProbeRunner} from "./probes.ts";
 import {probes} from "./probes.ts";
-import type {InspectionOutcome, InspectionProvider, InspectionProviderContext} from "./types.ts";
+import type {LegacyInspectionProvider as InspectionProvider, LegacyInspectionProviderContext as InspectionProviderContext} from "./legacy-provider.ts";
+import type {InspectionOutcome} from "./types.ts";
 
 /** Lock-domain identity for one full npm dependency-tree inspection. */
 export type NpmTreeScope = "root" | "github-scripts";

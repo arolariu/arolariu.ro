@@ -18,7 +18,7 @@ import {infrastructureDoctorModule} from "./infrastructure.ts";
 import {createDoctorReport} from "../reporter.ts";
 import {type DiagnosticNetworkResult, type DoctorContext, type DoctorInput} from "../types.ts";
 import type {InfrastructureFacts} from "../../../inspection/infrastructure.ts";
-import type {RepositoryInspectionSession} from "../../../inspection/repository.ts";
+import type {LegacyRepositoryInspectionSession} from "../../../platform/bridge.ts";
 import type {InspectionOutcome} from "../../../inspection/types.ts";
 
 const fixtureRoots: string[] = [];
@@ -145,7 +145,7 @@ async function createInfrastructureFixture(
       ? {kind: "available", value: input.initialFacts, durationMs: 0}
       : {kind: "unavailable", reason: "No facts configured.", durationMs: 0};
 
-  const inspection: RepositoryInspectionSession = {
+  const inspection: LegacyRepositoryInspectionSession = {
     inspect: async (key: string): Promise<InspectionOutcome<unknown>> => {
       if (key === "infrastructure") {
         return infraOutcome;
@@ -154,7 +154,7 @@ async function createInfrastructureFixture(
     },
     invalidate: (): void => {},
     updateInfrastructureEngine: (): void => {},
-  } as unknown as RepositoryInspectionSession;
+  } as unknown as LegacyRepositoryInspectionSession;
 
   const sink = new InMemoryLoggerSink();
   const context: DoctorContext = {

@@ -40,9 +40,7 @@ import {createTerminalPromptProvider} from "./prompts.ts";
 import {ExecaProcessRunner} from "./runner.execa.ts";
 import type {ProcessRunner} from "./runner.ts";
 import {
-  asReadOnlyFileSystem,
   CommandCancellation,
-  createRepositoryInspectionRuntime,
   FILE_SYSTEM_MAX_BYTES_EXCEEDED_CODE,
   FileSystemError,
   HttpError,
@@ -57,14 +55,12 @@ import {
   type HttpClient,
   type HttpRequest,
   type HttpResponse,
-  type RepositoryInspectionRequest,
   type RepositoryInspectionRuntime,
   type RuntimeEnvironment,
   type TaskScheduler,
   type TemporaryDirectory,
 } from "./runtime.ts";
 import {DefaultTaskScheduler} from "./runtime.ts";
-import {createRepositoryInspectionSession, type RepositoryInspectionSession} from "../inspection/repository.ts";
 
 /** Maximum number of response bytes buffered when a request omits `maximumResponseBytes`. */
 const DEFAULT_MAX_RESPONSE_BYTES = 10 * 1024 * 1024;
@@ -665,45 +661,27 @@ export const nodeLoggerRuntimeHost: LoggerRuntimeHost = {
 };
 
 /**
- * Builds the shared, memoized repository inspection capability every command scope exposes.
+ * Builds the shared, memoized repository inspection capability of a root scope.
  *
  * @remarks
- * The registry is lazy: no session — and therefore no probe, worker, or filesystem read — is
- * created until a command actually requests one, and every later request for the same repository
- * root, profile, and requested engine returns the exact same session instance. A request that maps
- * to an already-used key but is not structurally equivalent to the request that created that
- * session fails explicitly instead of silently returning a session built for different inputs.
- * Child scopes reuse their parent's registry, so one command tree shares one inspection session.
+ * Backed by the bridge's legacy view of the Effect `Inspection` service, which is loaded on first
+ * use so the format/lint closure that imports this module never loads the Effect runtime. The view
+ * is lazy: no session — and therefore no probe, worker, or filesystem read — runs until a command
+ * inspects one, and every later request for the same repository root, profile, and requested
+ * engine returns the exact same session instance. A request that maps to an already-used key but is
+ * not structurally equivalent to the request that created that session fails explicitly. Once
+ * `signal` aborts, inspections reject with its `CommandCancellation`; the runtime is disposed by
+ * the scope's cleanup registry, which interrupts every in-flight provider.
  *
- * @param capabilities - The scope's runner, filesystem, clock, task scheduler, environment, and
- * cancellation signal, injected verbatim into every created session.
+ * @param signal - The scope's cancellation signal.
+ * @param cleanup - The scope's cleanup registry.
  * @returns The memoized repository inspection runtime.
  */
-function createNodeInspectionRuntime(
-  capabilities: Readonly<{
-    runner: ProcessRunner;
-    files: FileSystem;
-    clock: Clock;
-    tasks: TaskScheduler;
-    environment: RuntimeEnvironment;
-    signal: AbortSignal;
-  }>,
-): RepositoryInspectionRuntime {
-  const {runner, files, clock, tasks, environment, signal} = capabilities;
-  return createRepositoryInspectionRuntime((request: Readonly<RepositoryInspectionRequest>): RepositoryInspectionSession =>
-    createRepositoryInspectionSession({
-      ...request,
-      runner,
-      files: asReadOnlyFileSystem(files),
-      temporaryDirectories: {
-        createTemporaryDirectory: (prefix: string): Promise<TemporaryDirectory> => files.createTemporaryDirectory(prefix),
-      },
-      clock,
-      tasks,
-      environment,
-      signal,
-    }),
-  );
+async function createNodeInspectionRuntime(signal: AbortSignal, cleanup: LifoCleanupRegistry): Promise<RepositoryInspectionRuntime> {
+  const {createLegacyInspectionRuntime} = await import("../platform/bridge.ts");
+  const inspection = createLegacyInspectionRuntime(undefined, {signal});
+  cleanup.register("inspection runtime", () => inspection.dispose());
+  return inspection;
 }
 
 /** Describes one Node-backed runtime scope the command host asks this adapter to assemble. */
@@ -738,7 +716,7 @@ export interface NodeRuntimeScopeOptions {
  * @param options - Scope name, verbosity, presentation, signal ownership, and optional parent.
  * @returns The assembled runtime scope.
  */
-export function createNodeRuntimeScope(options: Readonly<NodeRuntimeScopeOptions>): Promise<CommandRuntime> {
+export async function createNodeRuntimeScope(options: Readonly<NodeRuntimeScopeOptions>): Promise<CommandRuntime> {
   const {parent} = options;
   const environment = parent?.runtime.environment ?? snapshotNodeEnvironment();
   const controller = new AbortController();
@@ -789,7 +767,10 @@ export function createNodeRuntimeScope(options: Readonly<NodeRuntimeScopeOptions
 
   const runner = createNodeProcessRunner(environment);
 
-  return Promise.resolve({
+  const inspection =
+    options.inspection ?? parent?.runtime.inspection ?? (await createNodeInspectionRuntime(controller.signal, cleanup));
+
+  return {
     logger,
     prompts: parent?.runtime.prompts ?? createTerminalPromptProvider(),
     runner,
@@ -797,21 +778,11 @@ export function createNodeRuntimeScope(options: Readonly<NodeRuntimeScopeOptions
     files: nodeFileSystem,
     clock: nodeClock,
     tasks: nodeTaskScheduler,
-    inspection:
-      options.inspection
-      ?? parent?.runtime.inspection
-      ?? createNodeInspectionRuntime({
-        runner,
-        files: nodeFileSystem,
-        clock: nodeClock,
-        tasks: nodeTaskScheduler,
-        environment,
-        signal: controller.signal,
-      }),
+    inspection,
     environment,
     signal: controller.signal,
     cleanup,
-  });
+  };
 }
 
 /**

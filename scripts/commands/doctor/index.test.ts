@@ -45,7 +45,8 @@ import {
 import {computeHealthScore, diagnosticWeights} from "./reporter.ts";
 import {createBoundedNetworkProbe, createDoctorCommand, doctorModules} from "./index.ts";
 import type {DiagnosticModule, DiagnosticModuleId, DiagnosticResult, DoctorContext, DoctorInput, DoctorReport} from "./types.ts";
-import type {RepositoryInspectionKey, RepositoryInspectionSession} from "../../inspection/repository.ts";
+import type {RepositoryInspectionKey} from "../../inspection/repository.ts";
+import type {LegacyRepositoryInspectionSession} from "../../platform/bridge.ts";
 import type {InspectionOutcome} from "../../inspection/types.ts";
 
 const expectedModuleOrder: readonly DiagnosticModuleId[] = ["workspace", "dotnet", "react", "svelte", "python", "infrastructure"];
@@ -135,31 +136,31 @@ function createFakeModules(
 }
 
 /** Deterministic inspection session that reports every fact as unavailable. */
-function createFixtureSession(inspect?: (key: string) => Promise<InspectionOutcome<unknown>>): RepositoryInspectionSession {
+function createFixtureSession(inspect?: (key: string) => Promise<InspectionOutcome<unknown>>): LegacyRepositoryInspectionSession {
   const inspectImplementation =
     inspect ?? (async (): Promise<InspectionOutcome<unknown>> => ({kind: "unavailable", reason: "Doctor test session.", durationMs: 0}));
 
   return {
-    inspect: inspectImplementation as unknown as RepositoryInspectionSession["inspect"],
+    inspect: inspectImplementation as unknown as LegacyRepositoryInspectionSession["inspect"],
     invalidate: (): void => undefined,
     updateInfrastructureEngine: (): void => undefined,
-  } as RepositoryInspectionSession;
+  } as LegacyRepositoryInspectionSession;
 }
 
 interface DoctorFixtureInspection {
   readonly inspection: RepositoryInspectionRuntime;
   readonly requests: readonly Readonly<RepositoryInspectionRequest>[];
-  readonly sessions: readonly RepositoryInspectionSession[];
+  readonly sessions: readonly LegacyRepositoryInspectionSession[];
 }
 
 /** Records every session request while returning the exact same session instance every time. */
-function createFixtureInspection(session: RepositoryInspectionSession = createFixtureSession()): DoctorFixtureInspection {
+function createFixtureInspection(session: LegacyRepositoryInspectionSession = createFixtureSession()): DoctorFixtureInspection {
   const requests: Readonly<RepositoryInspectionRequest>[] = [];
-  const sessions: RepositoryInspectionSession[] = [];
+  const sessions: LegacyRepositoryInspectionSession[] = [];
 
   return {
     inspection: {
-      getRepositorySession: (request: Readonly<RepositoryInspectionRequest>): RepositoryInspectionSession => {
+      getRepositorySession: (request: Readonly<RepositoryInspectionRequest>): LegacyRepositoryInspectionSession => {
         requests.push(request);
         sessions.push(session);
         return session;
@@ -168,7 +169,7 @@ function createFixtureInspection(session: RepositoryInspectionSession = createFi
     get requests(): readonly Readonly<RepositoryInspectionRequest>[] {
       return requests;
     },
-    get sessions(): readonly RepositoryInspectionSession[] {
+    get sessions(): readonly LegacyRepositoryInspectionSession[] {
       return sessions;
     },
   };
@@ -197,7 +198,7 @@ function createDoctorFixture(
   input: Readonly<{
     overrides?: Partial<Record<DiagnosticModuleId, DiagnosticModule["run"]>>;
     facts?: Partial<Record<DiagnosticModuleId, readonly RepositoryInspectionKey[]>>;
-    session?: RepositoryInspectionSession;
+    session?: LegacyRepositoryInspectionSession;
   }> = {},
 ): DoctorFixture {
   const {modules, calls} = createFakeModules(input.overrides ?? {}, input.facts ?? {});

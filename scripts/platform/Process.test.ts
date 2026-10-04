@@ -173,6 +173,23 @@ describe("Process", () => {
   );
 
   it(
+    "keeps the full captured output of a failure when failureOutput is full",
+    async () => {
+      // Arrange
+      const request = node("process.stdout.write('o'.repeat(5000)); process.stderr.write('e'.repeat(3000)); process.exit(1)");
+
+      // Act
+      const error = await failureOf(request, {failureOutput: "full"});
+
+      // Assert
+      expect(error).toBeInstanceOf(ProcessExited);
+      expect(error.stdout).toHaveLength(5000);
+      expect(error.stderr).toHaveLength(3000);
+    },
+    LIVE_TIMEOUT_MS,
+  );
+
+  it(
     "fails with ProcessSpawnFailed for a missing command",
     async () => {
       // Arrange

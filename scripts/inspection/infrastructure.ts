@@ -21,9 +21,10 @@ import {requiredLocalPorts} from "../container-runtime/preflight.ts";
 import type {ContainerEngine} from "../container-runtime/types.ts";
 import type {AggregateFacts} from "./aggregate.ts";
 import type {HostPortOwnerFact} from "./host.ts";
-import type {InspectionProbeRunner} from "./probes.ts";
+import type {LegacyInspectionProbeRunner as InspectionProbeRunner} from "./probes.ts";
 import {probes} from "./probes.ts";
-import type {InspectionOutcome, InspectionProvider, InspectionProviderContext} from "./types.ts";
+import type {LegacyInspectionProvider as InspectionProvider, LegacyInspectionProviderContext as InspectionProviderContext} from "./legacy-provider.ts";
+import type {InspectionOutcome} from "./types.ts";
 
 /** Read-only filesystem capability every infrastructure inspection helper observes disk through. */
 type InspectionFiles = InspectionProviderContext["files"];

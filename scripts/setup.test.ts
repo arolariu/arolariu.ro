@@ -27,15 +27,15 @@ import {
   type RepositoryInspectionRuntime,
 } from "./common/runtime.ts";
 import type {GenerateInput, GenerateResult} from "./commands/generate/index.ts";
-import type {RepositoryInspectionSession} from "./inspection/repository.ts";
+import type {LegacyRepositoryInspectionSession} from "./platform/bridge.ts";
 import {createSetupActionExecutor, createSetupCommand, setupPhases, type SetupResult} from "./setup.ts";
 import type {SetupAction, SetupContext, SetupInput, SetupPhaseDefinition, SetupPhaseResult, SetupStatus} from "./setup.types.ts";
 
 /** Canonical paths of the in-memory repository fixture every orchestrator test resolves. */
 const FIXTURE_PATHS: RepositoryPaths = createRepositoryPaths(repositoryFixtureRoot);
 
-/** A typed fake {@link RepositoryInspectionSession} that never resolves a real repository fact. */
-function createFakeInspectionSession(): RepositoryInspectionSession {
+/** A typed fake {@link LegacyRepositoryInspectionSession} that never resolves a real repository fact. */
+function createFakeInspectionSession(): LegacyRepositoryInspectionSession {
   return {
     inspect: async () => ({kind: "unavailable", reason: "Not exercised by this test.", durationMs: 0}),
     invalidate: () => {},
@@ -76,16 +76,16 @@ interface SetupFixtureInspection {
   /** Every request the command asked the registry for, in call order. */
   readonly requests: readonly Readonly<RepositoryInspectionRequest>[];
   /** Every session the registry handed out, in call order. */
-  readonly sessions: readonly RepositoryInspectionSession[];
+  readonly sessions: readonly LegacyRepositoryInspectionSession[];
 }
 
-function setupFixtureInspection(session: RepositoryInspectionSession = createFakeInspectionSession()): SetupFixtureInspection {
+function setupFixtureInspection(session: LegacyRepositoryInspectionSession = createFakeInspectionSession()): SetupFixtureInspection {
   const requests: Readonly<RepositoryInspectionRequest>[] = [];
-  const sessions: RepositoryInspectionSession[] = [];
+  const sessions: LegacyRepositoryInspectionSession[] = [];
 
   return {
     inspection: {
-      getRepositorySession: (request: Readonly<RepositoryInspectionRequest>): RepositoryInspectionSession => {
+      getRepositorySession: (request: Readonly<RepositoryInspectionRequest>): LegacyRepositoryInspectionSession => {
         requests.push(request);
         sessions.push(session);
         return session;
@@ -94,7 +94,7 @@ function setupFixtureInspection(session: RepositoryInspectionSession = createFak
     get requests(): readonly Readonly<RepositoryInspectionRequest>[] {
       return requests;
     },
-    get sessions(): readonly RepositoryInspectionSession[] {
+    get sessions(): readonly LegacyRepositoryInspectionSession[] {
       return sessions;
     },
   };
@@ -334,7 +334,7 @@ interface SetupFixtureInput {
   /** Logger every rendered line is captured through. */
   readonly logger?: MonorepositoryLogger;
   /** Inspection session the shared registry hands out. */
-  readonly session?: RepositoryInspectionSession;
+  readonly session?: LegacyRepositoryInspectionSession;
   /** Composed generation command. */
   readonly generate?: CommandInvoker<GenerateInput, GenerateResult>;
 }

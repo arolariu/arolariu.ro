@@ -4,49 +4,37 @@
  *
  * @remarks
  * This module performs pure composition: it never implements domain inspection logic itself.
- * One {@link InspectionProbeRunner} is created from the caller's {@link ProcessRunner} and shared
- * by every probe-driven provider; one shared installed-package provider is registered under the
- * `"packages"` key for the exact {@link INSPECTED_PACKAGE_NAMES} inventory; and the React, both
- * Svelte, and infrastructure providers receive lazy closures that call back into the composed
- * session (`session.inspect("packages")`, `session.inspect("aggregate")`) instead of ever
- * constructing their own provider or bypassing the session's memoization. The session binding is
- * declared before those closures are built and assigned only once every provider is registered, so
- * a closure can safely capture it: none of the closures can execute until a caller receives the
- * returned session and calls `inspect`, by which point the binding is always assigned.
- *
- * Every provider receives narrow capability picks rather than ambient state: an ordinary provider
- * only ever sees the read-only filesystem, and only the isolated Nx workspace provider receives the
- * narrow temporary-directory capability it needs for its disposable Nx state root. The shared
- * process runner is scoped to the owning invocation's cancellation signal, and every provider is
- * registered behind the same signal, so cancellation reaches probes and isolated workers instead
- * of being degraded into an `"unavailable"` fact.
+ * {@link createRepositoryInspectionSession} builds one provider per {@link RepositoryInspectionFacts}
+ * key over the current {@link InspectionRequirements} services and registers them on one
+ * {@link createInspectionSession} session. The React, both Svelte, and infrastructure providers
+ * resolve their dependency (`"packages"`, `"aggregate"`) through that same session instead of ever
+ * constructing their own provider or bypassing its memoization.
  *
  * Under the `"quick"` profile, `"aggregate"` never constructs the isolated aggregate worker
  * provider at all: it is wired to a bounded provider that immediately reports the fact as
  * unavailable with a fixed, redacted reason identifying the quick profile, so the `envinfo`/
  * `systeminformation` worker process is never spawned.
+ *
+ * Until Task 4.3 converts the provider modules, every other provider is a Promise provider lifted
+ * through the temporary `./legacy-provider.ts` adapter over the bridge's legacy capability views.
+ * Closing the session scope interrupts every in-flight provider and stops its processes.
  */
 
-import type {ProcessRunner} from "../common/runner.ts";
-import type {Clock, FileSystem, ReadOnlyFileSystem, RepositoryInspectionRequest, RuntimeEnvironment, TaskScheduler} from "../common/runtime.ts";
-import {commandCancellationFromSignal} from "../common/runtime.ts";
+import {Effect, type Scope} from "effect";
+
+import type {RepositoryPaths} from "../common/repository-paths.ts";
 import type {ContainerEngine} from "../container-runtime/types.ts";
-import {createAggregateProvider, type AggregateFacts} from "./aggregate.ts";
-import {createDotnetProvider, type DotnetFacts} from "./dotnet.ts";
-import {createReactProvider, createSvelteProvider, type FrontendProviderInput, type ReactFacts, type SvelteFacts} from "./frontend.ts";
-import {createInfrastructureProvider, type InfrastructureFacts} from "./infrastructure.ts";
-import {
-  createInstalledPackageProvider,
-  createNpmTreeProvider,
-  INSPECTED_PACKAGE_NAMES,
-  type NpmTreeFacts,
-  type PackageInventoryFacts,
-} from "./packages.ts";
-import {createInspectionProbeRunner} from "./probes.ts";
-import {createPythonProvider, type PythonFacts} from "./python.ts";
+import {legacyInspectionCapabilities} from "../platform/bridge.ts";
+import type {AggregateFacts} from "./aggregate.ts";
+import type {DotnetFacts} from "./dotnet.ts";
+import type {ReactFacts, SvelteFacts} from "./frontend.ts";
+import type {InfrastructureFacts} from "./infrastructure.ts";
+import {legacyAggregateProvider, legacyRepositoryProviders} from "./legacy-provider.ts";
+import type {NpmTreeFacts, PackageInventoryFacts} from "./packages.ts";
+import type {PythonFacts} from "./python.ts";
 import {createInspectionSession} from "./session.ts";
-import type {InspectionOutcome, InspectionProvider, InspectionProviders, InspectionSession} from "./types.ts";
-import {createWorkspaceProvider, type WorkspaceFacts} from "./workspace.ts";
+import type {InspectionOutcome, InspectionProvider, InspectionProviders, InspectionRequirements, InspectionSession} from "./types.ts";
+import type {WorkspaceFacts} from "./workspace.ts";
 
 /** Selects how thoroughly {@link createRepositoryInspectionSession} inspects the repository. */
 export type InspectionProfile = "full" | "quick";
@@ -72,218 +60,162 @@ export type RepositoryInspectionKey = keyof RepositoryInspectionFacts;
 /** A memoized inspection session composed over every {@link RepositoryInspectionFacts} key. */
 export interface RepositoryInspectionSession extends InspectionSession<RepositoryInspectionFacts> {
   /**
-   * Updates the container engine that the `"infrastructure"` provider observes on its next
-   * invocation, without creating a second session or duplicating the provider.
+   * Updates the container engine that the `"infrastructure"` provider observes on its next run,
+   * without creating a second session or duplicating the provider.
    *
    * @remarks
-   * This setter does **not** invalidate any fact key by itself: the caller must follow it with
-   * an explicit {@link InspectionSession.invalidate | invalidate("infrastructure")} call (and
-   * optionally `"aggregate"`) when the new engine should be observed by a subsequent
-   * {@link InspectionSession.inspect | inspect("infrastructure")} call. Separating the update
-   * from invalidation lets callers batch an engine change with other state transitions before
-   * invalidating once.
+   * This does **not** invalidate any fact key by itself: the caller must follow it with an
+   * explicit {@link InspectionSession.invalidate | invalidate("infrastructure")} (and optionally
+   * `"aggregate"`) when the new engine should be observed by a later
+   * {@link InspectionSession.inspect | inspect("infrastructure")}. Separating the update from
+   * invalidation lets callers batch an engine change with other state transitions.
    *
    * @param engine - The newly selected container engine.
    */
-  readonly updateInfrastructureEngine: (engine: ContainerEngine) => void;
+  readonly updateInfrastructureEngine: (engine: ContainerEngine) => Effect.Effect<void>;
+}
+
+/** Selects how thoroughly a repository inspection session inspects the repository. */
+export interface RepositoryInspectionRequest {
+  /** Inspection thoroughness profile. */
+  readonly profile: InspectionProfile;
+  /** Canonical repository paths the session inspects. */
+  readonly paths: RepositoryPaths;
+  /** Container engine the session's infrastructure facts should initially observe. */
+  readonly requestedEngine?: ContainerEngine;
+}
+
+function isPlainRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function canonicalize(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value.map(canonicalize);
+  }
+  if (isPlainRecord(value)) {
+    const sorted: Record<string, unknown> = {};
+    for (const key of Object.keys(value).toSorted()) {
+      const entryValue = value[key];
+      if (entryValue !== undefined) {
+        sorted[key] = canonicalize(entryValue);
+      }
+    }
+    return sorted;
+  }
+  return value;
+}
+
+/**
+ * Serializes a plain data value into a stable string: object keys are sorted, and `undefined`
+ * values are dropped, so two structurally equivalent values always produce the same string
+ * regardless of property insertion order.
+ *
+ * @param value - Plain data value to serialize.
+ * @returns A canonical JSON string.
+ */
+function canonicalJson(value: unknown): string {
+  return JSON.stringify(canonicalize(value));
+}
+
+/**
+ * Derives the stable memoization key of a repository inspection request: the repository root,
+ * the inspection profile, and the requested container engine. Two requests with matching keys but
+ * different {@link RepositoryPaths} content still count as a conflict.
+ *
+ * @param request - Repository inspection request to key.
+ * @returns A stable string key for `request`.
+ */
+export function repositoryInspectionRequestKey(request: Readonly<RepositoryInspectionRequest>): string {
+  return canonicalJson({
+    root: request.paths.root,
+    profile: request.profile,
+    requestedEngine: request.requestedEngine,
+  });
+}
+
+/**
+ * Checks whether two requests are structurally equivalent (canonical JSON equality).
+ *
+ * @param left - First request.
+ * @param right - Second request.
+ * @returns `true` when both requests serialize to the same canonical JSON.
+ */
+export function equivalentRepositoryInspectionRequests(
+  left: Readonly<RepositoryInspectionRequest>,
+  right: Readonly<RepositoryInspectionRequest>,
+): boolean {
+  return canonicalJson(left) === canonicalJson(right);
+}
+
+/**
+ * Builds the legacy error message for a request whose key is already used by a different request.
+ *
+ * @param key - The shared {@link repositoryInspectionRequestKey}.
+ * @returns The conflicting-request message.
+ */
+export function repositoryInspectionConflictMessage(key: string): string {
+  return `Inspection request for key "${key}" conflicts with an already-created session.`;
 }
 
 /** Fixed, redacted reason reported for `"aggregate"` under the quick inspection profile. */
 const QUICK_PROFILE_AGGREGATE_REASON = "Aggregate inspection is skipped under the quick inspection profile.";
 
 /**
- * Measures elapsed wall-clock time as a non-negative, finite duration.
- *
- * @param startedAt - Value from `now()` captured before the inspection began.
- * @param now - Monotonic time source.
- * @returns A non-negative, finite duration in milliseconds.
- */
-function elapsedMilliseconds(startedAt: number, now: () => number): number {
-  const elapsed = now() - startedAt;
-  return Number.isFinite(elapsed) ? Math.max(0, elapsed) : 0;
-}
-
-/** Every capability {@link createRepositoryInspectionSession} needs, plus the caller's request. */
-export interface RepositoryInspectionSessionOptions extends RepositoryInspectionRequest {
-  /** Engine-neutral child-process runner shared by every probe- and worker-driven provider. */
-  readonly runner: ProcessRunner;
-  /** Read-only filesystem every ordinary provider observes repository state through. */
-  readonly files: ReadOnlyFileSystem;
-  /** The single writable capability: creation of one caller-owned temporary directory. */
-  readonly temporaryDirectories: Pick<FileSystem, "createTemporaryDirectory">;
-  /** Monotonic and wall-clock time source used for every `durationMs` measurement. */
-  readonly clock: Clock;
-  /** Deterministic task orchestration used instead of raw `Promise` combinators. */
-  readonly tasks: TaskScheduler;
-  /** Immutable environment snapshot providers read variables, platform, and paths from. */
-  readonly environment: RuntimeEnvironment;
-  /** Cancellation signal of the owning command invocation. */
-  readonly signal: AbortSignal;
-}
-
-/**
- * Creates the bounded `"aggregate"` provider used under the quick inspection profile.
+ * The bounded `"aggregate"` provider used under the quick inspection profile.
  *
  * @remarks
- * This provider never references {@link createAggregateProvider}, so the isolated aggregate
- * worker process (`aggregate-worker.ts`, which imports the broad `envinfo`/`systeminformation`
- * collectors) can never be spawned while a quick-profile session is in use, even if `"aggregate"`
- * is inspected repeatedly or concurrently.
- *
- * @param now - Monotonic time source used to measure `durationMs`.
- * @returns A provider that always resolves to a fixed `"unavailable"` outcome.
+ * It never references the aggregate worker provider, so the isolated aggregate worker process
+ * (`aggregate-worker.ts`, which imports the broad `envinfo`/`systeminformation` collectors) can
+ * never be spawned while a quick-profile session is in use, even if `"aggregate"` is inspected
+ * repeatedly or concurrently. The session stamps its `durationMs`.
  */
-function createQuickAggregateProvider(now: () => number): InspectionProvider<AggregateFacts> {
-  return async (): Promise<InspectionOutcome<AggregateFacts>> => {
-    const startedAt = now();
-    return {
-      kind: "unavailable",
-      reason: QUICK_PROFILE_AGGREGATE_REASON,
-      durationMs: elapsedMilliseconds(startedAt, now),
-    };
-  };
-}
-
-/**
- * Rejects an inspection whose owning command invocation was cancelled.
- *
- * @remarks
- * Cancellation is not an inspection fact: RFC 0002 section 7.3 lets only explicit business policy
- * degrade a failure, and section 9.5 requires a cancelled invocation to stay a command-execution
- * failure. Reporting a cancelled probe or worker as an `"unavailable"` fact would hide an
- * interrupted run inside an otherwise successful report, so the invocation's typed
- * {@link CommandCancellation} is raised instead and the command lifecycle classifies it once.
- *
- * @param signal - Cancellation signal of the owning command invocation.
- * @throws {CommandCancellation} When `signal` is already aborted.
- */
-function throwIfCancelled(signal: AbortSignal): void {
-  if (signal.aborted) {
-    throw commandCancellationFromSignal(signal);
-  }
-}
+const quickAggregateProvider: InspectionProvider<AggregateFacts> = Effect.succeed({
+  kind: "unavailable",
+  reason: QUICK_PROFILE_AGGREGATE_REASON,
+  durationMs: 0,
+});
 
 /**
  * Composes every repository inspection provider into one shared, memoized
  * {@link RepositoryInspectionSession}.
  *
  * @remarks
- * Construction is deterministic and free of module-level state: every provider is built fresh
- * from `input` and registered on a session created only for this call. React, both Svelte
- * projects, and infrastructure never receive their dependency (the shared package inventory or
- * the aggregate facts) directly; they receive a lazy closure over `session.inspect(...)` so every
- * dependent fact is resolved and memoized through the same typed cache as a direct caller would
- * observe, and a targeted {@link InspectionSession.invalidate} call only ever forces the exact
- * keys it names to be recomputed.
+ * Construction is deterministic and free of module-level state: every provider is built fresh for
+ * this call over the current services. React, both Svelte projects, and infrastructure resolve
+ * their dependency through the composed session, so every dependent fact is memoized by the same
+ * cache a direct caller observes, and a targeted {@link InspectionSession.invalidate} only ever
+ * forces the exact keys it names to be recomputed. The infrastructure provider reads the current
+ * engine (initially `request.requestedEngine`) on each run.
  *
- * Every provider is registered behind the invocation's cancellation signal, and the shared runner
- * is scoped to that same signal, so a cancelled invocation aborts in-flight probes and workers
- * instead of waiting out their bounded timeouts, and no provider can report a cancelled run as a
- * degraded fact. Wrapping each provider (rather than the session) keeps the memoized promise
- * identity and the reject-evicts-its-own-entry semantics of {@link createInspectionSession}
- * unchanged.
- *
- * @param options - Inspection profile, canonical repository paths, optional requested container
- * engine, and the runner, read-only filesystem, temporary-directory, clock, task-scheduler,
- * environment, and cancellation capabilities every provider observes.
- * @returns A session exposing memoized `inspect` and key-scoped `invalidate` across every
- * {@link RepositoryInspectionFacts} key.
+ * @param request - Inspection profile, canonical repository paths, and optional requested engine.
+ * @returns A session over every {@link RepositoryInspectionFacts} key, living in the current scope.
  */
 export function createRepositoryInspectionSession(
-  options: Readonly<RepositoryInspectionSessionOptions>,
-): RepositoryInspectionSession {
-  const {files, temporaryDirectories, clock, tasks, environment, signal} = options;
-  const now = (): number => clock.monotonicNow();
-  const runner = options.runner.scope({signal});
-  const probes = createInspectionProbeRunner(runner);
+  request: Readonly<RepositoryInspectionRequest>,
+): Effect.Effect<RepositoryInspectionSession, never, InspectionRequirements | Scope.Scope> {
+  return Effect.gen(function* () {
+    const capabilities = yield* legacyInspectionCapabilities;
+    let currentEngine: ContainerEngine | undefined = request.requestedEngine;
 
-  const cancellable = <T>(provider: InspectionProvider<T>): InspectionProvider<T> =>
-    async (): Promise<InspectionOutcome<T>> => {
-      throwIfCancelled(signal);
-      const outcome = await provider();
-      throwIfCancelled(signal);
-      return outcome;
+    // Assigned below, before any provider can run: providers only run once a caller inspects the returned session.
+    let session: RepositoryInspectionSession | undefined;
+    const inspect = <K extends RepositoryInspectionKey>(key: K): Promise<InspectionOutcome<RepositoryInspectionFacts[K]>> =>
+      capabilities.runPromise(Effect.suspend(() => (session as RepositoryInspectionSession).inspect(key)));
+
+    const providers: InspectionProviders<RepositoryInspectionFacts> = {
+      ...legacyRepositoryProviders({request, capabilities, inspect, resolveEngine: () => currentEngine}),
+      aggregate: request.profile === "quick" ? quickAggregateProvider : legacyAggregateProvider({request, capabilities}),
     };
 
-  // Mutable engine variable: starts with the CLI-level requested engine and can be updated
-  // later by `updateInfrastructureEngine` (from environment, persisted config, or interactive
-  // prompt). The infrastructure provider reads this lazily through `resolveEngine` each time it
-  // runs, so an invalidate-then-inspect cycle always observes the current selection.
-  let currentEngine: ContainerEngine | undefined = options.requestedEngine;
-
-  // Declared before assignment so the lazy `packages`/`aggregate` closures below can capture this
-  // exact binding. Neither closure can run before a caller receives the session below and calls
-  // `inspect`, so the binding is always assigned by the time either closure executes.
-  let session: RepositoryInspectionSession;
-
-  const frontendInput: FrontendProviderInput = {
-    paths: options.paths,
-    packages: (): Promise<InspectionOutcome<PackageInventoryFacts>> => session.inspect("packages"),
-    probes,
-    files,
-    clock,
-    tasks,
-  };
-
-  const providers: InspectionProviders<RepositoryInspectionFacts> = {
-    workspace: cancellable(
-      createWorkspaceProvider({
-        root: options.paths.root,
-        runner,
-        clock,
-        environment,
-        temporaryDirectories,
-      }),
-    ),
-    aggregate: cancellable(
-      options.profile === "quick"
-        ? createQuickAggregateProvider(now)
-        : createAggregateProvider({root: options.paths.root, runner, clock, environment}),
-    ),
-    "npm.root": cancellable(createNpmTreeProvider({scope: "root", root: options.paths.root, probes, clock})),
-    "npm.github-scripts": cancellable(
-      createNpmTreeProvider({
-        scope: "github-scripts",
-        root: options.paths.githubScriptsRoot,
-        probes,
-        clock,
-      }),
-    ),
-    packages: cancellable(
-      createInstalledPackageProvider({
-        root: options.paths.root,
-        packageNames: INSPECTED_PACKAGE_NAMES,
-        files,
-        clock,
-        tasks,
-      }),
-    ),
-    dotnet: cancellable(createDotnetProvider({paths: options.paths, probes, files, clock, tasks, environment})),
-    python: cancellable(createPythonProvider({paths: options.paths, probes, files, clock, tasks, environment})),
-    react: cancellable(createReactProvider(frontendInput)),
-    "svelte.cv": cancellable(createSvelteProvider("cv", frontendInput)),
-    "svelte.status": cancellable(createSvelteProvider("status", frontendInput)),
-    infrastructure: cancellable(
-      createInfrastructureProvider({
-        paths: options.paths,
-        probes,
-        aggregate: (): Promise<InspectionOutcome<AggregateFacts>> => session.inspect("aggregate"),
-        resolveEngine: (): ContainerEngine | undefined => currentEngine,
-        files,
-        clock,
-        tasks,
-        environment,
-      }),
-    ),
-  };
-
-  const baseSession = createInspectionSession<RepositoryInspectionFacts>(providers);
-  session = {
-    inspect: baseSession.inspect,
-    invalidate: baseSession.invalidate,
-    updateInfrastructureEngine: (engine: ContainerEngine): void => {
-      currentEngine = engine;
-    },
-  };
-  return session;
+    const base = yield* createInspectionSession(providers);
+    session = {
+      ...base,
+      updateInfrastructureEngine: (engine) =>
+        Effect.sync(() => {
+          currentEngine = engine;
+        }),
+    };
+    return session;
+  });
 }

@@ -14,7 +14,8 @@
 
 import {isAbsolute, join, relative, resolve, sep} from "node:path";
 import type {ProcessOutcome} from "../common/runner.ts";
-import type {InspectionOutcome, InspectionProvider, InspectionProviderContext} from "./types.ts";
+import type {LegacyInspectionProvider as InspectionProvider, LegacyInspectionProviderContext as InspectionProviderContext} from "./legacy-provider.ts";
+import type {InspectionOutcome} from "./types.ts";
 
 /** One repository project discovered in the Nx workspace graph. */
 export interface WorkspaceProjectFact {

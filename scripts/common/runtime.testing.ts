@@ -31,12 +31,12 @@ import {
 } from "./runner.ts";
 import {
   commandCancellationFromSignal,
-  createRepositoryInspectionRuntime,
   DefaultTaskScheduler,
   FILE_SYSTEM_MAX_BYTES_EXCEEDED_CODE,
   FileSystemError,
   LifoCleanupRegistry,
   linkAbortSignals,
+  MemoizedInspectionRuntime,
   type Clock,
   type CommandRuntime,
   type DirectoryEntry,
@@ -44,10 +44,13 @@ import {
   type FileSystem,
   type HttpClient,
   type HttpResponse,
+  type RepositoryInspectionRequest,
+  type RepositoryInspectionRuntime,
   type RuntimeEnvironment,
   type TemporaryDirectory,
 } from "./runtime.ts";
-import type {RepositoryInspectionSession} from "../inspection/repository.ts";
+import type {LegacyRepositoryInspectionSession} from "../platform/bridge.ts";
+import {repositoryInspectionRequestKey} from "../inspection/repository.ts";
 import type {InspectionOutcome} from "../inspection/types.ts";
 
 /** Repository root every fixture filesystem is anchored to. */
@@ -511,12 +514,72 @@ export function createHttpResponse(
  *
  * @returns A session stub safe to share across commands that never inspect the repository.
  */
-export function createRepositoryInspectionSessionStub(): RepositoryInspectionSession {
+export function createRepositoryInspectionSessionStub(): LegacyRepositoryInspectionSession {
   return {
     inspect: <TValue,>(): Promise<InspectionOutcome<TValue>> =>
       Promise.resolve({kind: "unavailable", reason: "Inspection is stubbed in tests.", durationMs: 0}),
     invalidate: (): void => undefined,
     updateInfrastructureEngine: (): void => undefined,
+  };
+}
+
+/**
+ * Builds a legacy inspection runtime that shares one session per request key, exactly as the
+ * production legacy view does (keyed by `repositoryInspectionRequestKey`, failing on a conflicting
+ * request for a used key).
+ *
+ * @param createSession - Builds the session for a request that has not been seen before.
+ * @returns The memoized legacy inspection runtime.
+ */
+export function createMemoizedInspectionRuntime(
+  createSession: (request: Readonly<RepositoryInspectionRequest>) => LegacyRepositoryInspectionSession,
+): RepositoryInspectionRuntime {
+  const memoized = new MemoizedInspectionRuntime<RepositoryInspectionRequest, LegacyRepositoryInspectionSession>(
+    createSession,
+    repositoryInspectionRequestKey,
+  );
+  return {
+    getRepositorySession: (request) => memoized.getRepositorySession(request),
+  };
+}
+
+/**
+ * Creates a legacy Promise inspection session that memoizes each provider's outcome by key, with
+ * the legacy semantics: concurrent callers share one in-flight promise, a rejection evicts only its
+ * own entry, and `invalidate` forgets exactly the supplied keys.
+ *
+ * @param providers - One Promise provider per fact key.
+ * @returns The memoized session.
+ */
+export function createLegacyInspectionSession<TFacts extends object>(providers: {
+  readonly [Key in keyof TFacts]: () => Promise<InspectionOutcome<TFacts[Key]>>;
+}): {
+  readonly inspect: <Key extends keyof TFacts>(key: Key) => Promise<InspectionOutcome<TFacts[Key]>>;
+  readonly invalidate: (...keys: readonly (keyof TFacts)[]) => void;
+} {
+  const cache = new Map<keyof TFacts, Promise<InspectionOutcome<unknown>>>();
+  const inspect = <Key extends keyof TFacts>(key: Key): Promise<InspectionOutcome<TFacts[Key]>> => {
+    const cached = cache.get(key);
+    if (cached !== undefined) {
+      return cached as Promise<InspectionOutcome<TFacts[Key]>>;
+    }
+    const provider = providers[key];
+    const pending: Promise<InspectionOutcome<unknown>> = (async () => provider())().catch((error: unknown) => {
+      if (cache.get(key) === pending) {
+        cache.delete(key);
+      }
+      throw error;
+    });
+    cache.set(key, pending);
+    return pending as Promise<InspectionOutcome<TFacts[Key]>>;
+  };
+  return {
+    inspect,
+    invalidate: (...keys) => {
+      for (const key of keys) {
+        cache.delete(key);
+      }
+    },
   };
 }
 
@@ -623,7 +686,7 @@ export function createTestRuntimeFactory(overrides: Readonly<Partial<CommandRunt
   const environment = overrides.environment ?? testRuntimeEnvironment;
   const files = overrides.files ?? createRepositoryFixtureFileSystem();
   const inspection =
-    overrides.inspection ?? createRepositoryInspectionRuntime(() => createRepositoryInspectionSessionStub());
+    overrides.inspection ?? createMemoizedInspectionRuntime(() => createRepositoryInspectionSessionStub());
 
   const createScope = (
     options: Readonly<RuntimeCreationOptions>,

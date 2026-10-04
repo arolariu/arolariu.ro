@@ -22,7 +22,7 @@ import {AbstractProcessRunner, type ProcessOutcome, type ProcessRequest, type Pr
 import {createMemoryFileSystem, createTestRuntimeFactory} from "./common/runtime.testing.ts";
 import type {Clock, RuntimeEnvironment} from "./common/runtime.ts";
 import type {PythonFacts, PythonInterpreterFact} from "./inspection/python.ts";
-import type {RepositoryInspectionSession} from "./inspection/repository.ts";
+import type {LegacyRepositoryInspectionSession} from "./platform/bridge.ts";
 import type {InspectionOutcome} from "./inspection/types.ts";
 import {createPythonSetupPhase, pythonInVirtualEnvironment, pythonSetupPhase, selectPythonInstallationProposal} from "./setup.python.ts";
 import type {
@@ -143,9 +143,9 @@ function invalidOutcome(
   return {kind: "invalid", issues, durationMs: 1};
 }
 
-/** A controllable fake {@link RepositoryInspectionSession} that only ever resolves the `"python"` key. */
+/** A controllable fake {@link LegacyRepositoryInspectionSession} that only ever resolves the `"python"` key. */
 function createPythonInspectionHarness(outcomes: readonly InspectionOutcome<PythonFacts>[] = [availableOutcome()]): Readonly<{
-  session: RepositoryInspectionSession;
+  session: LegacyRepositoryInspectionSession;
   inspect: ReturnType<typeof vi.fn>;
   invalidate: ReturnType<typeof vi.fn>;
 }> {
@@ -160,7 +160,7 @@ function createPythonInspectionHarness(outcomes: readonly InspectionOutcome<Pyth
   });
   const invalidate = vi.fn();
   return {
-    session: {inspect, invalidate, updateInfrastructureEngine: vi.fn()} as unknown as RepositoryInspectionSession,
+    session: {inspect, invalidate, updateInfrastructureEngine: vi.fn()} as unknown as LegacyRepositoryInspectionSession,
     inspect,
     invalidate,
   };

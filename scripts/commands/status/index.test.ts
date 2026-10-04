@@ -24,6 +24,8 @@ import {createRepositoryPaths} from "../../common/repository-paths.ts";
 import {AbstractProcessRunner, type ProcessOutcome, type ProcessRequest, type ProcessRunOptions} from "../../common/runner.ts";
 import {createNodeProcessRunner, snapshotNodeEnvironment} from "../../common/runtime.node.ts";
 import {
+  createLegacyInspectionSession,
+  createMemoizedInspectionRuntime,
   createRepositoryFixtureFileSystem,
   createRepositoryInspectionSessionStub,
   createTestRuntimeFactory,
@@ -32,7 +34,6 @@ import {
 import {
   CommandCancellation,
   commandCancellationFromSignal,
-  createRepositoryInspectionRuntime,
   DefaultTaskScheduler,
   MemoizedInspectionRuntime,
   type RepositoryInspectionRequest,
@@ -40,8 +41,8 @@ import {
 } from "../../common/runtime.ts";
 import type {DoctorInput, DoctorReport} from "../doctor/types.ts";
 import {createDoctorCommand} from "../doctor/index.ts";
-import type {RepositoryInspectionFacts, RepositoryInspectionSession} from "../../inspection/repository.ts";
-import {createInspectionSession} from "../../inspection/session.ts";
+import type {RepositoryInspectionFacts} from "../../inspection/repository.ts";
+import type {LegacyRepositoryInspectionSession} from "../../platform/bridge.ts";
 import type {InspectionOutcome} from "../../inspection/types.ts";
 import type {WorkspaceFacts} from "../../inspection/workspace.ts";
 import {collectDisk, createStatusCommand, type StatusDocument} from "./index.ts";
@@ -208,8 +209,8 @@ function unavailableFact<TValue>(): Promise<InspectionOutcome<TValue>> {
  * @param workspace - Provider for the workspace fact under test.
  * @returns A repository inspection session usable by every status collector.
  */
-function createFixtureSession(workspace: () => Promise<InspectionOutcome<WorkspaceFacts>>): RepositoryInspectionSession {
-  const session = createInspectionSession<RepositoryInspectionFacts>({
+function createFixtureSession(workspace: () => Promise<InspectionOutcome<WorkspaceFacts>>): LegacyRepositoryInspectionSession {
+  const session = createLegacyInspectionSession<RepositoryInspectionFacts>({
     workspace,
     aggregate: unavailableFact,
     "npm.root": unavailableFact,
@@ -349,7 +350,7 @@ interface StatusFixture {
   readonly runner: ScriptedProcessRunner;
   readonly doctor: DoctorStub;
   readonly inspection: RepositoryInspectionRuntime;
-  readonly createSession: Mock<(request: Readonly<RepositoryInspectionRequest>) => RepositoryInspectionSession>;
+  readonly createSession: Mock<(request: Readonly<RepositoryInspectionRequest>) => LegacyRepositoryInspectionSession>;
 }
 
 /**
@@ -370,8 +371,8 @@ function createStatusFixture(options: Readonly<StatusFixtureOptions> = {}): Stat
   });
   const runner = options.runner ?? new ScriptedProcessRunner(options.responses ?? baseResponses());
   const session = createFixtureSession(options.workspace ?? availableWorkspace());
-  const createSession = vi.fn<(request: Readonly<RepositoryInspectionRequest>) => RepositoryInspectionSession>(() => session);
-  const inspection = createRepositoryInspectionRuntime(createSession);
+  const createSession = vi.fn<(request: Readonly<RepositoryInspectionRequest>) => LegacyRepositoryInspectionSession>(() => session);
+  const inspection = createMemoizedInspectionRuntime(createSession);
   const doctor = options.doctor ?? createDoctorStub();
   const command = createStatusCommand({
     runtimeFactory: createTestRuntimeFactory({
@@ -430,7 +431,7 @@ describe("status command — doctor composition", () => {
       paths: createRepositoryPaths(repositoryFixtureRoot),
     };
     const createSession = vi.fn(() => createRepositoryInspectionSessionStub());
-    const inspection = new MemoizedInspectionRuntime<RepositoryInspectionRequest, RepositoryInspectionSession>(
+    const inspection = new MemoizedInspectionRuntime<RepositoryInspectionRequest, LegacyRepositoryInspectionSession>(
       createSession,
       ({paths, profile, requestedEngine}) => `${paths.root}:${profile}:${requestedEngine ?? "auto"}`,
     );
@@ -482,7 +483,7 @@ describe("status command — doctor composition", () => {
   });
 
   it("obtains its own quick collector session before invoking doctor and shares exactly one session", async () => {
-    const observed: RepositoryInspectionSession[] = [];
+    const observed: LegacyRepositoryInspectionSession[] = [];
     const doctor = createDoctorStub(async (_input, options) => {
       const parent = options?.parent;
       if (parent !== undefined) {
@@ -610,7 +611,7 @@ describe("status command — composed child cancellation", () => {
     const sink = new InMemoryLoggerSink();
     const factory = createTestRuntimeFactory({
       files: createRepositoryFixtureFileSystem(),
-      inspection: createRepositoryInspectionRuntime(() => createFixtureSession(availableWorkspace())),
+      inspection: createMemoizedInspectionRuntime(() => createFixtureSession(availableWorkspace())),
       logger: new MonorepositoryConsoleLogger("status", {color: false, sink, verbose: false, mode: "human"}),
       runner: new ScriptedProcessRunner(baseResponses()),
     });
@@ -1277,8 +1278,8 @@ describe("status command — characterization", () => {
         executions[key] = (executions[key] ?? 0) + 1;
         return unavailableFact<TValue>();
       };
-    const session: RepositoryInspectionSession = {
-      ...createInspectionSession<RepositoryInspectionFacts>({
+    const session: LegacyRepositoryInspectionSession = {
+      ...createLegacyInspectionSession<RepositoryInspectionFacts>({
         workspace: countedWorkspace,
         aggregate: countedUnavailable("aggregate"),
         "npm.root": countedUnavailable("npm.root"),
@@ -1293,14 +1294,14 @@ describe("status command — characterization", () => {
       }),
       updateInfrastructureEngine: (): void => undefined,
     };
-    const createSession = vi.fn<(request: Readonly<RepositoryInspectionRequest>) => RepositoryInspectionSession>(() => session);
+    const createSession = vi.fn<(request: Readonly<RepositoryInspectionRequest>) => LegacyRepositoryInspectionSession>(() => session);
     const sink = new InMemoryLoggerSink();
     const runner = new ScriptedProcessRunner(
       withOverrides({"git --version": spawnFailed("git is not installed"), "npm config get cache": spawnFailed("npm is not installed")}),
     );
     const factory = createTestRuntimeFactory({
       files: createRepositoryFixtureFileSystem(),
-      inspection: createRepositoryInspectionRuntime(createSession),
+      inspection: createMemoizedInspectionRuntime(createSession),
       logger: new MonorepositoryConsoleLogger("status", {color: false, sink, verbose: false, mode: "json"}),
       runner,
     });

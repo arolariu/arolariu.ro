@@ -6,7 +6,7 @@
  * @remarks
  * All readiness observations are consumed from shared {@link InfrastructureFacts} via
  * `context.inspection.inspect("infrastructure")`. Tests inject a controllable fake
- * {@link RepositoryInspectionSession} that resolves the `"infrastructure"` key through
+ * {@link LegacyRepositoryInspectionSession} that resolves the `"infrastructure"` key through
  * a call-ordered sequence, tracks invalidation events, and records
  * `updateInfrastructureEngine` calls.
  *
@@ -32,7 +32,7 @@ import type {ToolingConfigV1} from "./common/tooling-config.ts";
 import {requiredLocalPorts} from "./container-runtime/preflight.ts";
 import type {ContainerEngine} from "./container-runtime/types.ts";
 import type {InfrastructureFacts, PortFact} from "./inspection/infrastructure.ts";
-import type {RepositoryInspectionSession} from "./inspection/repository.ts";
+import type {LegacyRepositoryInspectionSession} from "./platform/bridge.ts";
 import type {InspectionOutcome} from "./inspection/types.ts";
 import {createInfrastructureSetupPhase, infrastructureSetupPhase, selectContainerInstallationProposal} from "./setup.infrastructure.ts";
 import type {SetupAction, SetupActionDisposition, SetupActionExecutor, SetupContext, SetupInput, SetupPhaseRuntime} from "./setup.types.ts";
@@ -188,7 +188,7 @@ function createActions(dispositions: Readonly<Record<string, SetupActionDisposit
 // ---------------------------------------------------------------------------
 
 interface InspectionHarness {
-  readonly session: RepositoryInspectionSession;
+  readonly session: LegacyRepositoryInspectionSession;
   readonly inspect: ReturnType<typeof vi.fn>;
   readonly invalidate: ReturnType<typeof vi.fn>;
   readonly updateInfrastructureEngine: ReturnType<typeof vi.fn>;
@@ -222,7 +222,7 @@ function createInspectionHarness(
     events.push("updateInfrastructureEngine");
   });
   return {
-    session: {inspect, invalidate, updateInfrastructureEngine} as unknown as RepositoryInspectionSession,
+    session: {inspect, invalidate, updateInfrastructureEngine} as unknown as LegacyRepositoryInspectionSession,
     inspect,
     invalidate,
     updateInfrastructureEngine,

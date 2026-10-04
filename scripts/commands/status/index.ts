@@ -61,7 +61,7 @@ import {
 } from "../../common/runtime.ts";
 import {doctorCommand} from "../doctor/index.ts";
 import type {DoctorInput, DoctorReport, DoctorSummary} from "../doctor/types.ts";
-import type {RepositoryInspectionSession} from "../../inspection/repository.ts";
+import type {LegacyRepositoryInspectionSession} from "../../platform/bridge.ts";
 
 // ============================================================================
 // Types
@@ -135,7 +135,7 @@ interface StatusSources {
   /** Deterministic task orchestration used instead of raw `Promise` combinators. */
   readonly tasks: TaskScheduler;
   /** The single shared repository inspection session for this invocation. */
-  readonly inspection: RepositoryInspectionSession;
+  readonly inspection: LegacyRepositoryInspectionSession;
   /** Canonical repository paths resolved once for this invocation. */
   readonly paths: RepositoryPaths;
   /** Absolute path to the executable running this command, used by the disk probe. */

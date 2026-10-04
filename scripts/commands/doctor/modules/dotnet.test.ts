@@ -25,7 +25,7 @@ import {dotnetDoctorModule} from "./dotnet.ts";
 import {createDoctorReport} from "../reporter.ts";
 import type {DiagnosticNetworkResult, DiagnosticResult, DoctorContext, DoctorInput} from "../types.ts";
 import type {DotnetFacts} from "../../../inspection/dotnet.ts";
-import type {RepositoryInspectionSession} from "../../../inspection/repository.ts";
+import type {LegacyRepositoryInspectionSession} from "../../../platform/bridge.ts";
 import type {InspectionOutcome} from "../../../inspection/types.ts";
 
 const DOTNET_IDS = [
@@ -168,10 +168,10 @@ function createDotnetFixture(
     environment: fixtureEnvironment(input.env ?? {}),
     probes: {run: probeRun as unknown as DoctorContext["probes"]["run"]},
     inspection: {
-      inspect: inspect as unknown as RepositoryInspectionSession["inspect"],
+      inspect: inspect as unknown as LegacyRepositoryInspectionSession["inspect"],
       invalidate: vi.fn(),
       updateInfrastructureEngine: vi.fn(),
-    } as RepositoryInspectionSession,
+    } as LegacyRepositoryInspectionSession,
   };
 
   return {context, inspect, probeRun};

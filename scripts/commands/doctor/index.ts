@@ -47,8 +47,9 @@ import {
 } from "../../common/runtime.ts";
 import {normalizeErrorForReport, diagnosticResult} from "./diagnostics.ts";
 import {renderDoctorReport, createDoctorReport} from "./reporter.ts";
-import {createInspectionProbeRunner, type InspectionProbeRunner} from "../../inspection/probes.ts";
-import type {RepositoryInspectionKey, RepositoryInspectionSession} from "../../inspection/repository.ts";
+import {createInspectionProbeRunner, type LegacyInspectionProbeRunner} from "../../inspection/probes.ts";
+import type {RepositoryInspectionKey} from "../../inspection/repository.ts";
+import type {LegacyRepositoryInspectionSession} from "../../platform/bridge.ts";
 import {dotnetDoctorModule} from "./modules/dotnet.ts";
 import {infrastructureDoctorModule} from "./modules/infrastructure.ts";
 import {pythonDoctorModule} from "./modules/python.ts";
@@ -174,7 +175,7 @@ export function createBoundedNetworkProbe(
  * @param runtime - The invocation's runtime capabilities.
  * @returns A probe runner whose runs abort with the invocation.
  */
-function createCancellableProbeRunner(runtime: Readonly<CommandRuntime>): InspectionProbeRunner {
+function createCancellableProbeRunner(runtime: Readonly<CommandRuntime>): LegacyInspectionProbeRunner {
   const probes = createInspectionProbeRunner(runtime.runner);
   return {
     run: (probe, options = {}) => probes.run(probe, {signal: runtime.signal, ...options}),
@@ -259,7 +260,7 @@ interface DoctorExecutionSeams {
  * @param facts - Inspection keys to start concurrently; duplicates are collapsed.
  */
 function prewarmInspections(
-  inspection: RepositoryInspectionSession,
+  inspection: LegacyRepositoryInspectionSession,
   runtime: Readonly<CommandRuntime>,
   facts: readonly RepositoryInspectionKey[],
 ): void {

@@ -5,13 +5,12 @@
  */
 
 import {describe, expect, it, vi} from "vitest";
-import {createRepositoryPaths, type RepositoryPaths} from "./repository-paths.ts";
+import {createRepositoryPaths} from "./repository-paths.ts";
 import {
   asGetOnlyHttpClient,
   asReadOnlyFileSystem,
   CommandCancellation,
   commandCancellationFromSignal,
-  createRepositoryInspectionRuntime,
   DefaultTaskScheduler,
   FILE_SYSTEM_MAX_BYTES_EXCEEDED_CODE,
   FileSystemError,
@@ -19,13 +18,11 @@ import {
   LifoCleanupRegistry,
   linkAbortSignals,
   MemoizedInspectionRuntime,
-  repositoryInspectionRequestKey,
   type FileSystem,
   type HttpClient,
   type HttpResponse,
   type RepositoryInspectionRequest,
 } from "./runtime.ts";
-import type {RepositoryInspectionSession} from "../inspection/repository.ts";
 import type {CommandContext} from "./commander.ts";
 import {createTestRuntimeFactory} from "./runtime.testing.ts";
 
@@ -58,10 +55,6 @@ async function flushMicrotasks(): Promise<void> {
     // eslint-disable-next-line no-await-in-loop
     await Promise.resolve();
   }
-}
-
-function createTestRepositoryPaths(overrides: Readonly<Partial<RepositoryPaths>> = {}): RepositoryPaths {
-  return {...createRepositoryPaths("C:/repo"), ...overrides};
 }
 
 function createFakeFileSystem(): FileSystem {
@@ -438,48 +431,6 @@ describe("MemoizedInspectionRuntime", () => {
     runtime.getRepositorySession({profile: "quick", extra: "first"});
 
     expect(() => runtime.getRepositorySession({profile: "quick", extra: "second"})).toThrow();
-  });
-});
-
-describe("createRepositoryInspectionRuntime", () => {
-  it("shares one session per root/profile/engine and rejects a conflicting paths object", () => {
-    let createCount = 0;
-    const runtime = createRepositoryInspectionRuntime((request: Readonly<RepositoryInspectionRequest>) => {
-      createCount += 1;
-      return {profile: request.profile} as unknown as RepositoryInspectionSession;
-    });
-
-    const paths = createTestRepositoryPaths();
-    const request: RepositoryInspectionRequest = {profile: "quick", paths, requestedEngine: "rancher"};
-
-    const first = runtime.getRepositorySession(request);
-    const second = runtime.getRepositorySession({profile: "quick", paths, requestedEngine: "rancher"});
-
-    expect(second).toBe(first);
-    expect(createCount).toBe(1);
-
-    const conflicting: RepositoryInspectionRequest = {
-      profile: "quick",
-      paths: createTestRepositoryPaths({websiteEnvironment: "C:/other/.env"}),
-      requestedEngine: "rancher",
-    };
-
-    expect(() => runtime.getRepositorySession(conflicting)).toThrow();
-  });
-
-  it("derives an identical key for structurally equal requests regardless of object identity", () => {
-    const requestA: RepositoryInspectionRequest = {
-      profile: "full",
-      paths: createTestRepositoryPaths(),
-      requestedEngine: "podman",
-    };
-    const requestB: RepositoryInspectionRequest = {
-      profile: "full",
-      paths: createTestRepositoryPaths(),
-      requestedEngine: "podman",
-    };
-
-    expect(repositoryInspectionRequestKey(requestA)).toBe(repositoryInspectionRequestKey(requestB));
   });
 });
 

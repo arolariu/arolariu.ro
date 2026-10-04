@@ -1,9 +1,18 @@
 /**
  * @fileoverview Opaque, allowlisted registry of read-only observational command probes.
  * @module scripts/inspection/probes
+ *
+ * @remarks
+ * {@link inspectionProbeRunner} runs a registered probe through the Effect `Process` service and
+ * maps every process failure to {@link ProbeOutcome} data. {@link createInspectionProbeRunner} is
+ * the temporary legacy Promise runner over the legacy `ProcessRunner`, kept only for the Promise
+ * providers (converted in Task 4.3) and the legacy Doctor modules (converted in Task 4.4).
  */
 
+import {Duration, Effect} from "effect";
+
 import type {ProcessEnvironment, ProcessOutcome, ProcessRequest, ProcessRunner} from "../common/runner.ts";
+import {Process} from "../platform/Process.ts";
 
 /** Exact allowlisted command specification backing one registered {@link InspectionProbe}. */
 type ProbeCommand = ProcessRequest;
@@ -30,17 +39,57 @@ export interface InspectionProbe {
   readonly [inspectionProbeBrand]: true;
 }
 
-/** Options accepted by {@link InspectionProbeRunner.run}. No stdin, logger, or output-mode escape hatch is exposed. */
+/** Captured output and duration every {@link ProbeOutcome} carries. */
+interface ProbeOutput {
+  /** Captured standard output. */
+  readonly stdout: string;
+  /** Captured standard error. */
+  readonly stderr: string;
+  /** Elapsed wall-clock duration in milliseconds. */
+  readonly durationMs: number;
+}
+
+/**
+ * Complete outcome of one probe run, as data.
+ *
+ * @remarks
+ * The legacy `ProcessOutcome` members minus `cancelled`: an interrupted probe is an interruption
+ * of the calling fiber, never an outcome.
+ */
+export type ProbeOutcome =
+  | (ProbeOutput & {readonly kind: "succeeded"; readonly exitCode: 0})
+  | (ProbeOutput & {readonly kind: "exited"; readonly exitCode: number})
+  | (ProbeOutput & {readonly kind: "signalled"; readonly signal: string})
+  | (ProbeOutput & {readonly kind: "spawn-failed"; readonly message: string})
+  | (ProbeOutput & {readonly kind: "timed-out"});
+
+/** Options accepted by {@link InspectionProbeRunner.run}. No stdin, echo, or output-mode escape hatch is exposed. */
 export interface InspectionProbeRunOptions {
+  /** Working directory of the probe; defaults to `Environment.cwd`. */
+  readonly cwd?: string;
+  /** Variables merged over the environment snapshot; an `undefined` value unsets the variable. */
+  readonly env?: Readonly<Record<string, string | undefined>>;
+  /** Time limit in milliseconds; defaults to 15 000. */
+  readonly timeoutMs?: number;
+}
+
+/** Executes registered {@link InspectionProbe} handles through the `Process` service. */
+export interface InspectionProbeRunner {
+  /** Runs one registered probe and reports every completion, including failures, as data. */
+  readonly run: (probe: InspectionProbe, options?: InspectionProbeRunOptions) => Effect.Effect<ProbeOutcome, never, Process>;
+}
+
+/** Options accepted by {@link LegacyInspectionProbeRunner.run}. Deleted in Task 4.4. */
+export interface LegacyInspectionProbeRunOptions {
   readonly cwd?: string;
   readonly env?: ProcessEnvironment;
   readonly timeoutMs?: number;
   readonly signal?: AbortSignal;
 }
 
-/** Executes registered {@link InspectionProbe} handles through the shared process runner. */
-export interface InspectionProbeRunner {
-  readonly run: (probe: InspectionProbe, options?: Readonly<InspectionProbeRunOptions>) => Promise<ProcessOutcome>;
+/** Legacy Promise probe runner over the legacy `ProcessRunner`. Deleted in Task 4.4. */
+export interface LegacyInspectionProbeRunner {
+  readonly run: (probe: InspectionProbe, options?: Readonly<LegacyInspectionProbeRunOptions>) => Promise<ProcessOutcome>;
 }
 
 /** Default timeout applied to a probe run when the caller does not supply an override. */
@@ -80,24 +129,86 @@ function resolveProbeTimeoutMs(timeoutMs: number | undefined): number {
 }
 
 /**
- * Creates a runner that executes only previously registered {@link InspectionProbe} handles.
+ * Resolves the registered command of a probe.
  *
- * The returned runner forces captured output, applies a bounded default timeout, and preserves
- * `cwd`, `env`, and `signal` unchanged. It exposes no stdin, logger, or output-mode option, and
- * always resolves the shared runner with `output: "capture"`.
+ * @param probe - The probe handle.
+ * @returns The registered command.
+ * @throws Error when `probe` was not created by a {@link probes} factory.
+ */
+function registeredCommand(probe: InspectionProbe): Readonly<ProbeCommand> {
+  const command = probeCommands.get(probe);
+  if (command === undefined) {
+    throw new Error(`Unregistered inspection probe: '${probe.id}'.`);
+  }
+  return command;
+}
+
+/**
+ * Runs registered {@link InspectionProbe} handles through the `Process` service.
+ *
+ * @remarks
+ * Forces captured output (kept in full on a failure, as the legacy outcome did, because some
+ * probes such as `npm ls --json` report data with a non-zero exit), applies the bounded default
+ * timeout (15 000 ms) unless the caller supplies a positive finite override, and passes `cwd` and
+ * `env` through unchanged. An
+ * unregistered probe or an invalid timeout is a defect. `ProcessExited` maps to `exited`,
+ * `ProcessSignalled` to `signalled`, `ProcessSpawnFailed` to `spawn-failed` (with `message` set
+ * to the failure `reason`), and `ProcessTimedOut` to `timed-out`.
+ */
+export const inspectionProbeRunner: InspectionProbeRunner = {
+  run: (probe, options = {}) =>
+    Effect.gen(function* () {
+      const {command, timeoutMs} = yield* Effect.try({
+        try: () => ({command: registeredCommand(probe), timeoutMs: resolveProbeTimeoutMs(options.timeoutMs)}),
+        catch: (error) => error,
+      }).pipe(Effect.orDie);
+      const process = yield* Process;
+      return yield* process
+        .run(command, {
+          ...(options.cwd === undefined ? {} : {cwd: options.cwd}),
+          ...(options.env === undefined ? {} : {env: options.env}),
+          output: "capture",
+          timeout: Duration.millis(timeoutMs),
+          failureOutput: "full",
+        })
+        .pipe(
+          Effect.map((result): ProbeOutcome => ({kind: "succeeded", exitCode: 0, ...result})),
+          Effect.catchTags({
+            ProcessExited: (error) => Effect.succeed<ProbeOutcome>({kind: "exited", exitCode: error.exitCode, ...outputOf(error)}),
+            ProcessSignalled: (error) => Effect.succeed<ProbeOutcome>({kind: "signalled", signal: error.signal, ...outputOf(error)}),
+            ProcessSpawnFailed: (error) => Effect.succeed<ProbeOutcome>({kind: "spawn-failed", message: error.reason, ...outputOf(error)}),
+            ProcessTimedOut: (error) => Effect.succeed<ProbeOutcome>({kind: "timed-out", ...outputOf(error)}),
+          }),
+        );
+    }),
+};
+
+/**
+ * Copies the captured output of a process failure.
+ *
+ * @param error - The process failure.
+ * @returns Its `stdout`, `stderr`, and `durationMs`.
+ */
+function outputOf(error: ProbeOutput): ProbeOutput {
+  return {stdout: error.stdout, stderr: error.stderr, durationMs: error.durationMs};
+}
+
+/**
+ * Creates a legacy Promise runner that executes only previously registered {@link InspectionProbe}
+ * handles through a legacy `ProcessRunner`.
+ *
+ * @remarks
+ * Forces captured output, applies the bounded default timeout, and preserves `cwd`, `env`, and
+ * `signal` unchanged. Deleted in Task 4.4, once the Promise providers (Task 4.3) and the legacy
+ * Doctor modules (Task 4.4) run on {@link inspectionProbeRunner}.
  *
  * @param runner - Shared process runner used to execute the resolved command.
- * @returns An inspection probe runner backed by the shared process runner, whose `run` resolves
- * with the runner's own typed {@link ProcessOutcome} unchanged.
+ * @returns A legacy probe runner whose `run` resolves with the runner's typed `ProcessOutcome`.
  */
-export function createInspectionProbeRunner(runner: ProcessRunner): InspectionProbeRunner {
+export function createInspectionProbeRunner(runner: ProcessRunner): LegacyInspectionProbeRunner {
   return {
     run: async (probe, options = {}) => {
-      const command = probeCommands.get(probe);
-      if (command === undefined) {
-        throw new Error(`Unregistered inspection probe: '${probe.id}'.`);
-      }
-
+      const command = registeredCommand(probe);
       const timeoutMs = resolveProbeTimeoutMs(options.timeoutMs);
       return runner.run(command, {
         ...(options.cwd === undefined ? {} : {cwd: options.cwd}),

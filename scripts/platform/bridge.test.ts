@@ -10,14 +10,19 @@
 
 import {join} from "node:path";
 
-import {Cause, Effect, Exit, PlatformError, type Scope} from "effect";
+import {Cause, Deferred, Duration, Effect, Exit, Fiber, PlatformError, Scope} from "effect";
+import {TestClock} from "effect/testing";
 import {describe, expect, it} from "vitest";
 
-import {resolveRepositoryPaths} from "../common/repository-paths.ts";
+import {createRepositoryPaths, resolveRepositoryPaths} from "../common/repository-paths.ts";
+import {RunnerError} from "../common/runner.ts";
 import {CommandCancellation, FILE_SYSTEM_MAX_BYTES_EXCEEDED_CODE, FileSystemError} from "../common/runtime.ts";
 import {createTestRuntimeFactory} from "../common/runtime.testing.ts";
+import type {RepositoryInspectionFacts, RepositoryInspectionRequest} from "../inspection/repository.ts";
 import {
+  createLegacyInspectionRuntime,
   legacyFileSystem,
+  legacyInspectionCapabilities,
   legacyInvoker,
   legacyReadOnlyFiles,
   legacyTaskScheduler,
@@ -28,7 +33,7 @@ import {
 import {MaxBytesExceeded} from "./Files.ts";
 import type {PlatformServices} from "./layers.ts";
 import {OutputSettings, type OutputSettingsShape, type SinkRecord} from "./Output.ts";
-import {ProcessExited} from "./Process.ts";
+import {ProcessExited, ProcessSignalled, ProcessSpawnFailed, ProcessTimedOut} from "./Process.ts";
 import {effectTest, makeTestLayer, repositoryFixtureRoot, type TestHarness} from "./testing.ts";
 
 /** A layer factory over a live-clock harness, plus accessors over the last harness it built. */
@@ -552,5 +557,331 @@ describe("toLegacyFileSystemError", () => {
     // Assert
     expect(argument).toMatchObject({code: "EINVAL", operation: "open"});
     expect(bound).toMatchObject({code: FILE_SYSTEM_MAX_BYTES_EXCEEDED_CODE, operation: "readBytes", message: "too large"});
+  });
+});
+
+describe("legacy inspection capabilities", () => {
+  const failure = {command: "tool", stdout: "out", stderr: "err", durationMs: 4, message: "tool failed"} as const;
+  const runnerHarness = makeTestLayer({
+    processes: [
+      {match: (request) => request.args[0] === "ok", respond: {stdout: "fine", stderr: "", durationMs: 2}},
+      {match: (request) => request.args[0] === "exit", respond: new ProcessExited({...failure, exitCode: 3})},
+      {match: (request) => request.args[0] === "signal", respond: new ProcessSignalled({...failure, signal: "SIGTERM"})},
+      {match: (request) => request.args[0] === "spawn", respond: new ProcessSpawnFailed({...failure, reason: "ENOENT"})},
+      {match: (request) => request.args[0] === "timeout", respond: new ProcessTimedOut({...failure, timeoutMs: 5})},
+      {match: (request) => request.args[0] === "boom", respond: () => Effect.die(new Error("boom"))},
+    ],
+  });
+
+  effectTest(
+    "maps every Process outcome to the legacy ProcessOutcome",
+    () =>
+      Effect.gen(function* () {
+        // Arrange
+        const {runner} = yield* legacyInspectionCapabilities;
+        const run = (argument: string) => Effect.promise(() => runner.run({command: "tool", args: [argument]}));
+
+        // Act
+        const outcomes = yield* Effect.forEach(["ok", "exit", "signal", "spawn", "timeout"], run);
+        const defect = yield* Effect.promise(() =>
+          runner.run({command: "tool", args: ["boom"]}).then(
+            () => undefined,
+            (error: unknown) => error,
+          ),
+        );
+
+        // Assert
+        const output = {stdout: "out", stderr: "err", durationMs: 4};
+        expect(outcomes).toEqual([
+          {kind: "succeeded", exitCode: 0, stdout: "fine", stderr: "", durationMs: 2},
+          {kind: "exited", exitCode: 3, ...output},
+          {kind: "signalled", signal: "SIGTERM", ...output},
+          {kind: "spawn-failed", message: "tool failed", ...output},
+          {kind: "timed-out", ...output},
+        ]);
+        expect(defect).toBeInstanceOf(Error);
+      }),
+    runnerHarness.layer,
+  );
+
+  const optionsHarness = makeTestLayer({processes: [{match: () => true, respond: {stdout: "", stderr: "", durationMs: 1}}]});
+  effectTest(
+    "forwards scoped and per-call options to Process.run",
+    () =>
+      Effect.gen(function* () {
+        // Arrange
+        const {runner} = yield* legacyInspectionCapabilities;
+        const scoped = runner.scope({cwd: "C:\\repo", env: {SCOPED: "1"}, timeoutMs: 100});
+
+        // Act
+        yield* Effect.promise(() =>
+          scoped.run({command: "tool", args: ["ok"]}, {env: {CALL: "2"}, output: "capture", input: "stdin", logCommands: true}),
+        );
+        yield* Effect.promise(() => runner.run({command: "tool", args: ["plain"]}));
+
+        // Assert
+        const [first, second] = optionsHarness.processCalls();
+        expect(first?.options).toMatchObject({
+          cwd: "C:\\repo",
+          env: {SCOPED: "1", CALL: "2"},
+          output: "capture",
+          input: "stdin",
+          echo: true,
+        });
+        expect(first?.options.timeout === undefined ? undefined : Duration.toMillis(first.options.timeout)).toBe(100);
+        expect(second?.options).toEqual({echo: false, failureOutput: "full"});
+      }),
+    optionsHarness.layer,
+  );
+
+  const expectHarness = makeTestLayer({
+    processes: [
+      {match: (request) => request.args[0] === "ok", respond: {stdout: "", stderr: "", durationMs: 1}},
+      {match: () => true, respond: new ProcessExited({...failure, exitCode: 1})},
+    ],
+  });
+  effectTest(
+    "expectSuccess resolves a success and throws a RunnerError otherwise",
+    () =>
+      Effect.gen(function* () {
+        // Arrange
+        const {runner} = yield* legacyInspectionCapabilities;
+
+        // Act
+        const succeeded = yield* Effect.promise(() => runner.expectSuccess({command: "tool", args: ["ok"]}));
+        const failed = yield* Effect.promise(() =>
+          runner.expectSuccess({command: "tool", args: ["bad"]}).then(
+            () => undefined,
+            (error: unknown) => error,
+          ),
+        );
+
+        // Assert
+        expect(succeeded.kind).toBe("succeeded");
+        expect(failed).toBeInstanceOf(RunnerError);
+      }),
+    expectHarness.layer,
+  );
+
+  const started = Deferred.makeUnsafe<void>();
+  const hangingHarness = makeTestLayer({
+    processes: [{match: () => true, respond: () => Deferred.succeed(started, undefined).pipe(Effect.andThen(Effect.never))}],
+  });
+  effectTest(
+    "reports a process interrupted by its scope as cancelled and aborts the signal",
+    () =>
+      Effect.gen(function* () {
+        // Arrange
+        const scope = yield* Scope.make();
+        const capabilities = yield* legacyInspectionCapabilities.pipe(Scope.provide(scope));
+        const pending = capabilities.runner.run({command: "tool", args: ["hang"]});
+        yield* Deferred.await(started);
+
+        // Act
+        yield* Scope.close(scope, Exit.void);
+        const outcome = yield* Effect.promise(() => pending);
+
+        // Assert
+        expect(capabilities.signal.aborted).toBe(true);
+        expect(outcome).toEqual({kind: "cancelled", stdout: "", stderr: "", durationMs: 0});
+      }),
+    hangingHarness.layer,
+  );
+
+  const filesHarness = makeTestLayer({files: {"seed.txt": "seeded"}, environment: {platform: "linux"}});
+  effectTest(
+    "exposes read-only files, temporary directories, the clock, the environment, and runPromise",
+    () =>
+      Effect.gen(function* () {
+        // Arrange
+        const capabilities = yield* legacyInspectionCapabilities;
+
+        // Act
+        const text = yield* Effect.promise(() => capabilities.files.readText("seed.txt"));
+        const directory = yield* Effect.promise(() => capabilities.temporaryDirectories.createTemporaryDirectory("arolariu-nx-"));
+        const existed = yield* Effect.promise(() => capabilities.files.exists(directory.path));
+        yield* Effect.promise(() => directory.remove());
+        const exists = yield* Effect.promise(() => capabilities.files.exists(directory.path));
+        const answer = yield* Effect.promise(() => capabilities.runPromise(Effect.succeed(42)));
+        const rejected = yield* Effect.promise(() =>
+          capabilities.runPromise(Effect.die(new Error("nope"))).then(
+            () => undefined,
+            (error: unknown) => error,
+          ),
+        );
+        const delayed = Effect.promise(() => capabilities.clock.delay(100));
+        const delay = yield* Effect.forkChild(delayed);
+        yield* TestClock.adjust("100 millis");
+        yield* Fiber.join(delay);
+
+        // Assert
+        expect(text).toBe("seeded");
+        expect(existed).toBe(true);
+        expect(exists).toBe(false);
+        expect(answer).toBe(42);
+        expect(rejected).toBeInstanceOf(Error);
+        expect(capabilities.clock.monotonicNow()).toBe(100);
+        expect(capabilities.clock.isoTimestamp()).toBe("1970-01-01T00:00:00.100Z");
+        expect(capabilities.environment.platform).toBe("linux");
+        expect(capabilities.tasks).toBe(legacyTaskScheduler);
+      }),
+    filesHarness.layer,
+  );
+
+  effectTest(
+    "rejects a delay aborted by its own signal with the signal's cancellation",
+    () =>
+      Effect.gen(function* () {
+        // Arrange
+        const capabilities = yield* legacyInspectionCapabilities;
+        const controller = new AbortController();
+        const delayed = capabilities.clock.delay(1_000, controller.signal).then(
+          () => undefined,
+          (error: unknown) => error,
+        );
+
+        // Act
+        controller.abort(new CommandCancellation("Command terminated by SIGTERM.", 143));
+        const error = yield* Effect.promise(() => delayed);
+
+        // Assert
+        expect(error).toBeInstanceOf(CommandCancellation);
+        expect(error).toMatchObject({exitCode: 143});
+      }),
+    makeTestLayer().layer,
+  );
+});
+
+describe("createLegacyInspectionRuntime", () => {
+  const paths = createRepositoryPaths(repositoryFixtureRoot);
+  const request: RepositoryInspectionRequest = {profile: "quick", paths};
+
+  it("legacy inspection adapter resolves facts through the effect session", async () => {
+    // Arrange
+    const dotnet = {kind: "available", value: {} as RepositoryInspectionFacts["dotnet"], durationMs: 1} as const;
+    const adapter = createLegacyInspectionRuntime(() => makeTestLayer({inspection: {dotnet}}).layer);
+
+    try {
+      // Act
+      const outcome = await adapter.getRepositorySession(request).inspect("dotnet");
+
+      // Assert
+      expect(outcome).toEqual(dotnet);
+    } finally {
+      await adapter.dispose();
+    }
+  });
+
+  it("memoizes sessions by key and throws the legacy conflict synchronously", async () => {
+    // Arrange
+    const adapter = createLegacyInspectionRuntime(() => makeTestLayer().layer);
+
+    try {
+      // Act
+      const first = adapter.getRepositorySession(request);
+      const second = adapter.getRepositorySession({profile: "quick", paths: createRepositoryPaths(repositoryFixtureRoot)});
+
+      // Assert
+      expect(second).toBe(first);
+      expect(adapter.getRepositorySession({...request, requestedEngine: "podman"})).not.toBe(first);
+      expect(() =>
+        adapter.getRepositorySession({...request, paths: {...paths, websiteEnvironment: `${paths.websiteEnvironment}.other`}}),
+      ).toThrow(/conflicts with an already-created session/u);
+    } finally {
+      await adapter.dispose();
+    }
+  });
+
+  it("applies invalidate and engine updates before a later inspect", async () => {
+    // Arrange
+    const adapter = createLegacyInspectionRuntime(
+      () =>
+        makeTestLayer({
+          environment: {platform: "aix" as NodeJS.Platform},
+          processes: [
+            {
+              match: () => true,
+              respond: new ProcessExited({command: "probe", stdout: "", stderr: "", durationMs: 1, message: "absent", exitCode: 1}),
+            },
+          ],
+        }).layer,
+    );
+
+    try {
+      const session = adapter.getRepositorySession(request);
+      const first = await session.inspect("infrastructure");
+
+      // Act
+      session.updateInfrastructureEngine("podman");
+      session.invalidate("infrastructure");
+      const second = await session.inspect("infrastructure");
+      const third = await session.inspect("infrastructure");
+
+      // Assert
+      expect(first.kind === "available" ? first.value.selectedEngine : "unexpected").toBeUndefined();
+      expect(second.kind === "available" ? second.value.selectedEngine : undefined).toBe("podman");
+      expect(third).toBe(second);
+    } finally {
+      await adapter.dispose();
+    }
+  });
+
+  it("rejects inspections with the signal's cancellation once it aborts", async () => {
+    // Arrange
+    const controller = new AbortController();
+    const adapter = createLegacyInspectionRuntime(() => makeTestLayer({inspection: {}}).layer, {signal: controller.signal});
+
+    try {
+      const session = adapter.getRepositorySession(request);
+
+      // Act
+      controller.abort(new CommandCancellation("Command terminated by SIGTERM.", 143));
+      const rejected = session.inspect("dotnet");
+
+      // Assert
+      await expect(rejected).rejects.toBeInstanceOf(CommandCancellation);
+      await expect(rejected).rejects.toMatchObject({exitCode: 143});
+    } finally {
+      await adapter.dispose();
+    }
+  });
+
+  it("rejects an in-flight inspection with the signal's cancellation", async () => {
+    // Arrange
+    const controller = new AbortController();
+    const adapter = createLegacyInspectionRuntime(
+      () => makeTestLayer({clock: "live", processes: [{match: () => true, respond: () => Effect.never}]}).layer,
+      {signal: controller.signal},
+    );
+
+    try {
+      const pending = adapter.getRepositorySession(request).inspect("npm.root");
+      await new Promise((resolve) => {
+        setTimeout(resolve, 50);
+      });
+
+      // Act
+      controller.abort(new CommandCancellation("Command interrupted by SIGINT.", 130));
+
+      // Assert
+      await expect(pending).rejects.toMatchObject({exitCode: 130});
+    } finally {
+      await adapter.dispose();
+    }
+  });
+
+  it("surfaces an inspection defect as a rejection", async () => {
+    // Arrange
+    const adapter = createLegacyInspectionRuntime(() => makeTestLayer({inspection: {}}).layer);
+
+    try {
+      // Act
+      const rejected = adapter.getRepositorySession(request).inspect("python");
+
+      // Assert
+      await expect(rejected).rejects.toThrow("unscripted inspection: python");
+    } finally {
+      await adapter.dispose();
+    }
   });
 });

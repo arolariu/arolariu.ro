@@ -28,7 +28,7 @@ import {FileSystemError, type Clock, type FileSystem} from "./common/runtime.ts"
 import {getExpectedTaxonomyArtifactPaths} from "./common/taxonomy-artifacts.ts";
 import type {GenerateResult, GenerateTaskName} from "./commands/generate/index.ts";
 import type {NpmTreeFacts} from "./inspection/packages.ts";
-import type {RepositoryInspectionSession} from "./inspection/repository.ts";
+import type {LegacyRepositoryInspectionSession} from "./platform/bridge.ts";
 import type {InspectionOutcome} from "./inspection/types.ts";
 import type {
   SetupAction,
@@ -152,13 +152,13 @@ function generatedArtifactFiles(paths: readonly string[] = expectedGeneratedArti
 /** Session-inspected npm tree keys consumed by workspace setup phases. */
 type NpmInspectionKey = "npm.root" | "npm.github-scripts";
 
-/** A typed fake {@link RepositoryInspectionSession} that never resolves a real repository fact by default. */
+/** A typed fake {@link LegacyRepositoryInspectionSession} that never resolves a real repository fact by default. */
 function createInspectionHarness(
   overrides: Readonly<
     Partial<Record<NpmInspectionKey, () => InspectionOutcome<NpmTreeFacts> | Promise<InspectionOutcome<NpmTreeFacts>>>>
   > = {},
 ): Readonly<{
-  session: RepositoryInspectionSession;
+  session: LegacyRepositoryInspectionSession;
   inspect: ReturnType<typeof vi.fn>;
   invalidate: ReturnType<typeof vi.fn>;
 }> {
@@ -168,7 +168,7 @@ function createInspectionHarness(
   });
   const invalidate = vi.fn();
   return {
-    session: {inspect, invalidate, updateInfrastructureEngine: vi.fn()} as unknown as RepositoryInspectionSession,
+    session: {inspect, invalidate, updateInfrastructureEngine: vi.fn()} as unknown as LegacyRepositoryInspectionSession,
     inspect,
     invalidate,
   };
@@ -232,7 +232,7 @@ interface WorkspaceHarnessInput {
   /** Manifest-derived requirements shared by the phase. */
   readonly requirements?: RepositoryRequirements;
   /** Repository inspection session the phase consumes facts through. */
-  readonly inspection?: RepositoryInspectionSession;
+  readonly inspection?: LegacyRepositoryInspectionSession;
   /** Files seeded into (or overlaid on) the in-memory repository fixture. */
   readonly files?: Readonly<Record<string, string>>;
   /** Replaces the assembled filesystem capability, for I/O failure simulation. */

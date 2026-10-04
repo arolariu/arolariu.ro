@@ -21,7 +21,7 @@ import {AbstractProcessRunner, type ProcessOutcome, type ProcessRequest, type Pr
 import {createMemoryFileSystem, createTestRuntimeFactory} from "./common/runtime.testing.ts";
 import type {Clock, RuntimeEnvironment} from "./common/runtime.ts";
 import type {DotnetFacts} from "./inspection/dotnet.ts";
-import type {RepositoryInspectionSession} from "./inspection/repository.ts";
+import type {LegacyRepositoryInspectionSession} from "./platform/bridge.ts";
 import type {InspectionOutcome} from "./inspection/types.ts";
 import {
   createDotnetSetupPhase,
@@ -197,9 +197,9 @@ function dotnetOutcomeSequence(
   return [initial, initial, initial, initial, ...after];
 }
 
-/** A controllable fake {@link RepositoryInspectionSession} that only ever resolves the `"dotnet"` key. */
+/** A controllable fake {@link LegacyRepositoryInspectionSession} that only ever resolves the `"dotnet"` key. */
 function createDotnetInspectionHarness(outcomes: readonly InspectionOutcome<DotnetFacts>[] = [availableOutcome()]): Readonly<{
-  session: RepositoryInspectionSession;
+  session: LegacyRepositoryInspectionSession;
   inspect: ReturnType<typeof vi.fn>;
   invalidate: ReturnType<typeof vi.fn>;
 }> {
@@ -214,7 +214,7 @@ function createDotnetInspectionHarness(outcomes: readonly InspectionOutcome<Dotn
   });
   const invalidate = vi.fn();
   return {
-    session: {inspect, invalidate, updateInfrastructureEngine: vi.fn()} as unknown as RepositoryInspectionSession,
+    session: {inspect, invalidate, updateInfrastructureEngine: vi.fn()} as unknown as LegacyRepositoryInspectionSession,
     inspect,
     invalidate,
   };

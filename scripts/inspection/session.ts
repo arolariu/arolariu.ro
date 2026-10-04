@@ -3,57 +3,84 @@
  * @module scripts/inspection/session
  */
 
-import type {InspectionOutcome, InspectionProviders, InspectionSession} from "./types.ts";
+import {Clock, Context, Deferred, Effect, Exit, Scope} from "effect";
+
+import type {InspectionOutcome, InspectionProviders, InspectionRequirements, InspectionSession} from "./types.ts";
 
 /**
  * Creates a process-local {@link InspectionSession} that memoizes each provider's outcome by key.
  *
- * Memoization is backed by one heterogeneous `Map<keyof TFacts, Promise<InspectionOutcome<unknown>>>`:
- * a single `Map` cannot carry a distinct value type per key, so each entry's payload type is erased to
- * `InspectionOutcome<unknown>`. The two narrow `as` casts below restore the exact `InspectionOutcome<TFacts[Key]>`
- * for the key being read or written; this is safe only because `inspect` is the sole writer and the sole
- * reader of a given key's entry, and every write for `key` is produced by `providers[key]`.
+ * @remarks
+ * The current context (the {@link InspectionRequirements} services and the session scope) is
+ * captured once, so the returned `inspect` and `invalidate` require nothing.
  *
- * The promise for an in-flight or already-settled provider call is cached before that call completes, so
- * concurrent and later callers for the same key observe and share the exact same promise. A provider
- * rejection (including a synchronous throw, which the `async` wrapper below converts into a rejection) is
- * never cached as a resolved outcome: the rejecting entry evicts itself from the map so a later `inspect`
- * call retries, but only if the map still holds that exact promise for the key -- if `invalidate` already
- * removed it and a new call already cached a replacement promise for the same key, the stale rejection
- * leaves that replacement untouched.
+ * Memoization is backed by one heterogeneous `Map<keyof TFacts, Deferred<InspectionOutcome<unknown>>>`:
+ * a single `Map` cannot carry a distinct value type per key, so each entry's payload type is erased
+ * to `InspectionOutcome<unknown>`, and one narrow cast restores `InspectionOutcome<TFacts[Key]>` for
+ * the key being read. That is safe only because `inspect` is the sole writer of a key's entry, and
+ * every write for `key` is completed by `providers[key]`.
+ *
+ * The first `inspect(key)` registers its `Deferred` and forks the provider into the session scope in
+ * one uninterruptible step, so concurrent callers await the same `Deferred` and the provider runs
+ * once; interrupting a waiter never interrupts the shared provider, which is interrupted only when
+ * the session scope closes. Each provider run gets its own scope, and its `durationMs` is the
+ * elapsed `Clock.currentTimeMillis` of that run. A provider defect (or interruption) is delivered to
+ * every waiter and evicts its own entry, so a later `inspect` retries; `invalidate` removes the
+ * entries for its keys, and an in-flight run still completes its `Deferred` for the callers
+ * already waiting but is never re-cached.
  *
  * @param providers - Fixed map of one {@link InspectionProvider} per fact key.
  * @returns A session exposing memoized `inspect` and key-scoped `invalidate`.
  */
 export function createInspectionSession<TFacts extends object>(
   providers: InspectionProviders<TFacts>,
-): InspectionSession<TFacts> {
-  const cache = new Map<keyof TFacts, Promise<InspectionOutcome<unknown>>>();
+): Effect.Effect<InspectionSession<TFacts>, never, InspectionRequirements | Scope.Scope> {
+  return Effect.gen(function* () {
+    const context = yield* Effect.context<InspectionRequirements | Scope.Scope>();
+    const scope = Context.get(context, Scope.Scope);
+    const cache = new Map<keyof TFacts, Deferred.Deferred<InspectionOutcome<unknown>>>();
 
-  function inspect<Key extends keyof TFacts>(key: Key): Promise<InspectionOutcome<TFacts[Key]>> {
-    const cachedForKey = cache.get(key);
-    if (cachedForKey !== undefined) {
-      return cachedForKey as Promise<InspectionOutcome<TFacts[Key]>>;
-    }
+    const measured = <Key extends keyof TFacts>(key: Key): Effect.Effect<InspectionOutcome<TFacts[Key]>> =>
+      Effect.gen(function* () {
+        const startedAt = yield* Clock.currentTimeMillis;
+        const outcome = yield* Effect.scoped(providers[key]);
+        const elapsed = (yield* Clock.currentTimeMillis) - startedAt;
+        return {...outcome, durationMs: Number.isFinite(elapsed) ? Math.max(0, elapsed) : 0};
+      }).pipe(Effect.provideContext(context));
 
-    const provider = providers[key];
-    let pendingForKey: Promise<InspectionOutcome<unknown>>;
-    pendingForKey = (async () => provider())().catch((error: unknown) => {
-      if (cache.get(key) === pendingForKey) {
-        cache.delete(key);
-      }
-      throw error;
-    });
+    const inspect = <Key extends keyof TFacts>(key: Key): Effect.Effect<InspectionOutcome<TFacts[Key]>> =>
+      Effect.uninterruptibleMask((restore) =>
+        Effect.suspend(() => {
+          const cached = cache.get(key);
+          if (cached !== undefined) {
+            return restore(Deferred.await(cached) as Effect.Effect<InspectionOutcome<TFacts[Key]>>);
+          }
 
-    cache.set(key, pendingForKey);
-    return pendingForKey as Promise<InspectionOutcome<TFacts[Key]>>;
-  }
+          const deferred = Deferred.makeUnsafe<InspectionOutcome<unknown>>();
+          cache.set(key, deferred);
+          const run = Effect.interruptible(measured(key)).pipe(
+            Effect.onExit((exit) =>
+              Effect.suspend(() => {
+                if (Exit.isFailure(exit) && cache.get(key) === deferred) {
+                  cache.delete(key);
+                }
+                return Deferred.done(deferred, exit);
+              }),
+            ),
+          );
+          return Effect.forkIn(run, scope).pipe(
+            Effect.andThen(restore(Deferred.await(deferred) as Effect.Effect<InspectionOutcome<TFacts[Key]>>)),
+          );
+        }),
+      );
 
-  function invalidate(...keys: readonly (keyof TFacts)[]): void {
-    for (const key of keys) {
-      cache.delete(key);
-    }
-  }
+    const invalidate = (...keys: readonly (keyof TFacts)[]): Effect.Effect<void> =>
+      Effect.sync(() => {
+        for (const key of keys) {
+          cache.delete(key);
+        }
+      });
 
-  return {inspect, invalidate};
+    return {inspect, invalidate};
+  });
 }

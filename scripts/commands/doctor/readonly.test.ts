@@ -17,7 +17,7 @@ import {describe, expect, it} from "vitest";
 import {nodeFileSystem} from "../../common/runtime.node.ts";
 import {createTestRuntimeFactory} from "../../common/runtime.testing.ts";
 import {createDoctorCommand} from "./index.ts";
-import type {RepositoryInspectionSession} from "../../inspection/repository.ts";
+import type {LegacyRepositoryInspectionSession} from "../../platform/bridge.ts";
 import type {InspectionOutcome} from "../../inspection/types.ts";
 
 // ===== Bounded filesystem snapshot =====
@@ -58,7 +58,7 @@ function snapshotSentinelFiles(root: string): ReadonlyMap<string, FileSnapshot> 
 // ===== Test fixtures =====
 
 /** Fake session that reports every fact as unavailable, so no worker or probe ever runs. */
-function createFakeInspectionSession(): RepositoryInspectionSession {
+function createFakeInspectionSession(): LegacyRepositoryInspectionSession {
   return {
     inspect: async (): Promise<InspectionOutcome<unknown>> => ({
       kind: "unavailable" as const,
@@ -67,7 +67,7 @@ function createFakeInspectionSession(): RepositoryInspectionSession {
     }),
     invalidate: (): void => {},
     updateInfrastructureEngine: (): void => {},
-  } as unknown as RepositoryInspectionSession;
+  } as unknown as LegacyRepositoryInspectionSession;
 }
 
 // ===== Runtime immutability tests =====
@@ -145,7 +145,7 @@ describe("doctor runtime immutability", () => {
     const command = createDoctorCommand({
       runtimeFactory: createTestRuntimeFactory({
         files: nodeFileSystem,
-        inspection: {getRepositorySession: (): RepositoryInspectionSession => existingSession},
+        inspection: {getRepositorySession: (): LegacyRepositoryInspectionSession => existingSession},
       }),
     });
 

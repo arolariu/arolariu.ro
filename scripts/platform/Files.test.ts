@@ -8,7 +8,7 @@ import {Effect, FileSystem, Layer, Path} from "effect";
 import {HttpClient, HttpClientResponse} from "effect/http";
 import {describe, expect} from "vitest";
 
-import {GetOnlyHttp, GetOnlyHttpLive, Glob, GlobLive, MaxBytesExceeded, ReadOnlyFiles, ReadOnlyFilesLive, readBytesBounded, writeTextAtomic} from "./Files.ts";
+import {GetOnlyHttp, GetOnlyHttpLive, Glob, GlobLive, MaxBytesExceeded, ReadOnlyFiles, ReadOnlyFilesLive, readBytesBounded, TemporaryDirectories, TemporaryDirectoriesLive, writeTextAtomic} from "./Files.ts";
 import {effectTest} from "./testing.ts";
 
 const liveLayer = ReadOnlyFilesLive.pipe(Layer.provideMerge(Layer.merge(NodeServices.layer, GlobLive)));
@@ -264,5 +264,33 @@ describe("GetOnlyHttp", () => {
       }).pipe(Effect.provide(layer));
     },
     Layer.empty,
+  );
+});
+
+describe("TemporaryDirectories", () => {
+  effectTest(
+    "TemporaryDirectories removes the directory when the scope closes",
+    () =>
+      Effect.gen(function* () {
+        // Arrange
+        const fs = yield* FileSystem.FileSystem;
+        const path = yield* Path.Path;
+        const temporaryDirectories = yield* TemporaryDirectories;
+
+        // Act
+        const created = yield* Effect.scoped(
+          Effect.gen(function* () {
+            const directory = yield* temporaryDirectories.make("arolariu-test-");
+            yield* fs.writeFileString(path.join(directory, "nested.txt"), "content");
+            expect(yield* fs.exists(directory)).toBe(true);
+            return directory;
+          }),
+        );
+
+        // Assert
+        expect(path.basename(created).startsWith("arolariu-test-")).toBe(true);
+        expect(yield* fs.exists(created)).toBe(false);
+      }),
+    TemporaryDirectoriesLive.pipe(Layer.provideMerge(NodeServices.layer)),
   );
 });

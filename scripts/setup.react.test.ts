@@ -24,7 +24,7 @@ import {createMemoryFileSystem, createTestRuntimeFactory} from "./common/runtime
 import {CommandCancellation, type Clock, type FileSystem, type RuntimeEnvironment} from "./common/runtime.ts";
 import type {EnvironmentFacts, ReactFacts} from "./inspection/frontend.ts";
 import type {InstalledPackageFact, PackageInventoryFacts} from "./inspection/packages.ts";
-import type {RepositoryInspectionSession} from "./inspection/repository.ts";
+import type {LegacyRepositoryInspectionSession} from "./platform/bridge.ts";
 import type {InspectionOutcome} from "./inspection/types.ts";
 import {createReactSetupPhase, reactSetupPhase} from "./setup.react.ts";
 import type {
@@ -221,7 +221,7 @@ function invalid<T>(
 }
 
 interface InspectionHarness {
-  readonly session: RepositoryInspectionSession;
+  readonly session: LegacyRepositoryInspectionSession;
   readonly inspect: ReturnType<typeof vi.fn>;
   readonly invalidate: ReturnType<typeof vi.fn>;
   readonly events: string[];
@@ -254,7 +254,7 @@ function createInspectionHarness(
     events.push(`invalidate:${keys.join("+")}`);
   });
   return {
-    session: {inspect, invalidate, updateInfrastructureEngine: vi.fn()} as unknown as RepositoryInspectionSession,
+    session: {inspect, invalidate, updateInfrastructureEngine: vi.fn()} as unknown as LegacyRepositoryInspectionSession,
     inspect,
     invalidate,
     events,

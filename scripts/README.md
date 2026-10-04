@@ -276,17 +276,27 @@ family by family; until then it runs beside the legacy kernel. Every service key
   (`[arolariu::<context>]` lines, human/JSON/silent), and `Presenter` (`success`, `fatal`, `line`, `write`, `section`, `banner`, `table`,
   `progress`, `json`).
 - [`Process`](./platform/Process.ts) — child processes over `ChildProcessSpawner` with capture/tee/inherit output, stdin, timeout, command
-  echo, bounded evidence, and typed `ProcessExited`/`ProcessSignalled`/`ProcessSpawnFailed`/`ProcessTimedOut` failures;
+  echo, bounded evidence (`failureOutput: "full"` keeps a failure's whole captured output for callers that parse it, such as
+  `npm ls --json`), and typed `ProcessExited`/`ProcessSignalled`/`ProcessSpawnFailed`/`ProcessTimedOut` failures;
   [`windows.ts`](./platform/windows.ts) resolves and escapes `.cmd` shims.
-- [`Files.ts`](./platform/Files.ts) — `Glob`, read-only `ReadOnlyFiles`, `GetOnlyHttp`, `writeTextAtomic`, and `readBytesBounded`.
+- [`Files.ts`](./platform/Files.ts) — `Glob`, read-only `ReadOnlyFiles`, `GetOnlyHttp`, `TemporaryDirectories` (a scope-owned
+  temporary directory, removed when the scope closes), `writeTextAtomic`, and `readBytesBounded`.
+- [`Inspection`](./inspection/Inspection.ts) — shares one memoized repository inspection session per request
+  (`repositoryInspectionRequestKey`) for the invocation; a request whose key is used by a different request dies with the legacy
+  conflict message. Sessions ([`inspection/session.ts`](./inspection/session.ts)) run each fact's provider once in the session scope,
+  and [`inspection/probes.ts`](./inspection/probes.ts) `inspectionProbeRunner` reports every probe completion as `ProbeOutcome` data.
+  Until Task 4.3 converts the providers, [`inspection/legacy-provider.ts`](./inspection/legacy-provider.ts) lifts the Promise providers
+  into the Effect session.
 - [`Prompts`](./platform/Prompts.ts) — `confirm`, `select`, `text`, and `secret` (returned as `Redacted<string>`) over effect/cli
   `Prompt`. Without an interactive stdin it never reads input: `confirm`/`select` return their default when one is given, and every
   other prompt fails with `PromptUnavailable` carrying the legacy `Cannot request <kind> without an interactive terminal…` message.
-- [`layers.ts`](./platform/layers.ts) — `makeNodeLayer` (production), built from `NodeBaseLayer` and the per-invocation `commandLayer`.
-- [`testing.ts`](./platform/testing.ts) — `makeTestLayer` (in-memory files, scripted processes, HTTP, and prompts, recording sink,
-  fixed environment, `TestClock`) with `output()`, `processCalls()`, `httpCalls()`, and `files()` accessors, and `effectTest`.
-  Scripted prompts follow the same TTY rule as `Prompts`; with `environment: {stdinIsTTY: true}` they consume `prompts` answers in
-  order.
+- [`layers.ts`](./platform/layers.ts) — `makeNodeLayer` (production), built from `NodeBaseLayer` and the per-invocation `commandLayer`
+  (output services, `Process`, and `Inspection`).
+- [`testing.ts`](./platform/testing.ts) — `makeTestLayer` (in-memory files and temporary directories, scripted processes, HTTP, and
+  prompts, recording sink, fixed environment, `TestClock`) with `output()`, `processCalls()`, `httpCalls()`, and `files()` accessors,
+  and `effectTest`. Scripted prompts follow the same TTY rule as `Prompts`; with `environment: {stdinIsTTY: true}` they consume
+  `prompts` answers in order. With `inspection: {<key>: outcome}`, `Inspection` returns a scripted session that dies with
+  `unscripted inspection: <key>` for any other key; otherwise `InspectionLive` runs over the harness services.
 - [`bridge.ts`](./platform/bridge.ts) — temporary interop with the legacy kernel (below).
 
 Write a platform test with one harness per test; unscripted processes, HTTP requests, prompts, and spawns die instead of reaching a real
@@ -319,6 +329,14 @@ whose `code` is the underlying Node code, or the mapped platform reason (`NotFou
 const files = yield* legacyReadOnlyFiles;
 const paths = yield* Effect.promise(() => resolveRepositoryPaths(import.meta.url, files));
 ```
+
+The legacy commands still on the command runtime (Doctor and Status until Tasks 4.4/4.5, Setup until cohort 5) reach the Effect
+`Inspection` service through `createLegacyInspectionRuntime`: `createNodeRuntimeScope` builds one per root scope (one `ManagedRuntime`
+over a silent `makeNodeLayer`), exposes it as `runtime.inspection`, and registers its `dispose` in the scope's cleanup registry. Its
+`getRepositorySession` is synchronous and keeps the legacy semantics — one `LegacyRepositoryInspectionSession` per request key, the
+legacy conflict error thrown synchronously, `invalidate`/`updateInfrastructureEngine` applied before any later `inspect`, and an aborted
+scope signal rejecting with its `CommandCancellation`. `legacyInspectionCapabilities` gives the Promise providers their legacy
+filesystem, temporary-directory, process-runner, and clock views over the Effect inspection services.
 
 [`runtime-boundary.test.ts`](./common/runtime-boundary.test.ts) sanctions `scripts/platform/**` — like `runtime.node.ts` — as an owner of
 ambient `process.*`, timer, and `node:*` access, and enforces the platform and CLI rules: `@effect/platform-node` is imported only inside

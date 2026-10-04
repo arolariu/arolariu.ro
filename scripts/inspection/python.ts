@@ -13,9 +13,10 @@ import {dirname, isAbsolute, relative, resolve, sep} from "node:path";
 import {FILE_SYSTEM_MAX_BYTES_EXCEEDED_CODE} from "../common/runtime.ts";
 import type {ProcessEnvironment, ProcessOutcome} from "../common/runner.ts";
 import type {RepositoryPaths} from "../common/repository-paths.ts";
-import type {InspectionProbeRunner} from "./probes.ts";
+import type {LegacyInspectionProbeRunner as InspectionProbeRunner} from "./probes.ts";
 import {probes} from "./probes.ts";
-import type {InspectionOutcome, InspectionProvider, InspectionProviderContext} from "./types.ts";
+import type {LegacyInspectionProvider as InspectionProvider, LegacyInspectionProviderContext as InspectionProviderContext} from "./legacy-provider.ts";
+import type {InspectionOutcome} from "./types.ts";
 
 /** Read-only filesystem capability every Python inspection helper observes disk through. */
 type InspectionFiles = InspectionProviderContext["files"];

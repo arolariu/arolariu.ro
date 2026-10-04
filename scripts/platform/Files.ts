@@ -11,12 +11,14 @@
  * {@link GlobLive} ports `NodeFileSystem.glob`. {@link ReadOnlyFiles} and {@link GetOnlyHttp} are
  * narrowed views whose shapes carry no mutating member, so a read-only command profile (Doctor,
  * Status, Inspection) cannot write files or issue non-GET requests at compile time.
+ * {@link TemporaryDirectories} is the single writable capability such a profile receives: a
+ * scope-owned temporary directory outside the repository.
  */
 
 import {glob as nodeGlob} from "node:fs/promises";
 import {resolve} from "node:path";
 
-import {Context, Effect, FileSystem, Layer, Path, PlatformError, Schema, type Cause, type Duration} from "effect";
+import {Context, Effect, FileSystem, Layer, Path, PlatformError, Schema, type Cause, type Duration, type Scope} from "effect";
 import {HttpClient, type HttpClientError, type HttpClientResponse} from "effect/http";
 
 /** A bounded read observed more bytes than its caller allowed. */
@@ -231,6 +233,31 @@ export const ReadOnlyFilesLive: Layer.Layer<ReadOnlyFiles, never, FileSystem.Fil
       readBytesBounded: (path: string, maximumBytes: number) =>
         readBytesBounded(path, maximumBytes).pipe(Effect.provideService(FileSystem.FileSystem, fs)),
     });
+  }),
+);
+
+/**
+ * Service tag for caller-owned temporary directories, the single writable capability of a
+ * read-only profile (Inspection).
+ *
+ * @remarks
+ * `make(prefix)` creates a fresh directory whose name starts with `prefix` under the platform
+ * temporary root and removes it, recursively, when the surrounding scope closes.
+ */
+export class TemporaryDirectories extends Context.Service<
+  TemporaryDirectories,
+  {
+    /** Creates a temporary directory that lives until the surrounding scope closes. */
+    readonly make: (prefix: string) => Effect.Effect<string, PlatformError.PlatformError, Scope.Scope>;
+  }
+>()("arolariu/scripts/TemporaryDirectories") {}
+
+/** Live {@link TemporaryDirectories} layer over `FileSystem.makeTempDirectoryScoped`. */
+export const TemporaryDirectoriesLive: Layer.Layer<TemporaryDirectories, never, FileSystem.FileSystem> = Layer.effect(
+  TemporaryDirectories,
+  Effect.gen(function* () {
+    const fs = yield* FileSystem.FileSystem;
+    return TemporaryDirectories.of({make: (prefix) => fs.makeTempDirectoryScoped({prefix})});
   }),
 );
 

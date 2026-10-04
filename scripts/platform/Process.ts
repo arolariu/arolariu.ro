@@ -45,6 +45,12 @@ export interface ProcessOptions {
   readonly timeout?: Duration.Input;
   /** Whether to log `$ <command>` at debug level; defaults to `OutputSettings.verbose`. */
   readonly echo?: boolean;
+  /**
+   * Captured output a failure carries: the last {@link MAX_EVIDENCE_CHARACTERS} of each stream
+   * (`"tail"`, the default) or all of it (`"full"`, for callers that parse the output of a
+   * non-zero exit, such as `npm ls --json`).
+   */
+  readonly failureOutput?: "tail" | "full";
 }
 
 /** Output of a process that exited with code `0`. */
@@ -333,10 +339,11 @@ export const ProcessLive: Layer.Layer<Process, never, ChildProcessSpawner.ChildP
 
         const startedAt = yield* Clock.currentTimeMillis;
         const captured: Record<OutputStream, string> = {stdout: "", stderr: ""};
+        const failureText = options.failureOutput === "full" ? (text: string): string => text : evidenceTail;
         const failureBase = Effect.map(Clock.currentTimeMillis, (now) => ({
           command,
-          stdout: evidenceTail(captured.stdout),
-          stderr: evidenceTail(captured.stderr),
+          stdout: failureText(captured.stdout),
+          stderr: failureText(captured.stderr),
           durationMs: now - startedAt,
         }));
         const spawnFailed = (error: PlatformError.PlatformError): Effect.Effect<never, ProcessSpawnFailed> =>
