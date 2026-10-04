@@ -382,7 +382,6 @@ describe("setupPhases", () => {
   });
 
   it("runs the native phases directly and every legacy phase through the adapter with its id, title, requirement flag, and dependencies", () => {
-    const legacyPhases = [dotnetSetupPhase, reactSetupPhase, svelteSetupPhase, pythonSetupPhase, infrastructureSetupPhase];
     type PhaseMetadata = Pick<SetupPhaseDefinition, "id" | "title" | "required" | "dependsOn">;
     const metadata = (phase: PhaseMetadata): PhaseMetadata => ({
       id: phase.id,
@@ -390,9 +389,18 @@ describe("setupPhases", () => {
       required: phase.required,
       dependsOn: phase.dependsOn,
     });
+    const nativePhases: readonly SetupPhaseDefinition[] = [...workspaceSetupPhases, dotnetSetupPhase];
+    const declaredPhases: readonly PhaseMetadata[] = [
+      ...workspaceSetupPhases,
+      dotnetSetupPhase,
+      reactSetupPhase,
+      svelteSetupPhase,
+      pythonSetupPhase,
+      infrastructureSetupPhase,
+    ];
 
-    expect(setupPhases.slice(0, workspaceSetupPhases.length)).toEqual(workspaceSetupPhases);
-    expect(setupPhases.slice(workspaceSetupPhases.length).map(metadata)).toEqual(legacyPhases.map(metadata));
+    expect(setupPhases.map(metadata)).toEqual(declaredPhases.map(metadata));
+    expect(setupPhases.filter((phase) => nativePhases.includes(phase))).toEqual(nativePhases);
   });
 });
 
@@ -1241,8 +1249,8 @@ describe("setup characterization (pre-Effect migration)", () => {
         ),
     };
 
-    // Act: the production `PromptsLive` over a non-interactive stdin, and the real phase through `legacyPhase`.
-    const run = await invokeSetup(options(), {livePrompts: true, session, phases: [legacyPhase(dotnetSetupPhase)]});
+    // Act: the production `PromptsLive` over a non-interactive stdin, and the real Effect phase.
+    const run = await invokeSetup(options(), {livePrompts: true, session, phases: [dotnetSetupPhase]});
     const observed = withRootPlaceholder({
       execution: run.execution,
       commands: run.harness.processCalls().map(({request}) => request),

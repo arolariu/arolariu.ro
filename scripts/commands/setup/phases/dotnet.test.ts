@@ -1,48 +1,49 @@
 // @vitest-environment node
 /**
  * @fileoverview Contract tests for the independent .NET setup phase.
- * @module scripts.setup.dotnet.test
+ * @module scripts/commands/setup/phases/dotnet.test
  *
  * @remarks
- * Every test drives the real phase against an injected {@link LegacySetupPhaseRuntime}: a recording
- * process runner replaying typed {@link ProcessOutcome} fixtures, a deterministic clock, and an
- * immutable environment snapshot that supplies the host platform. No test in this file reads the
- * live checkout, spawns a process, or observes ambient Node state.
+ * Every test runs the real Effect phase on the in-memory `makeTestLayer` harness: request-keyed
+ * scripted commands replaying legacy-shaped outcomes, a recording `dotnet` inspection session that
+ * replays an outcome sequence, a recording (or the production dry-run) `SetupActions`, and an
+ * environment snapshot that supplies the host platform. Phases run under a counting clock (see
+ * `runPhase`), so each reports the deterministic duration of its legacy test clock. No test in this
+ * file reads the live checkout, spawns a process, or observes ambient Node state.
  */
 
 import {resolve} from "node:path";
-import {Effect, Layer} from "effect";
+
+import {Effect, Exit, Layer, Redacted} from "effect";
 import {describe, expect, it, vi} from "vitest";
 
-import type {CommandContext} from "../../../common/commander.ts";
-import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "../../../common/logger.ts";
 import {createRepositoryPaths} from "../../../common/repository-paths.ts";
 import type {MinimumVersion, RepositoryRequirements} from "../../../common/requirements.ts";
-import {AbstractProcessRunner, type ProcessOutcome, type ProcessRequest, type ProcessRunOptions} from "../../../common/runner.ts";
-import {createMemoryFileSystem, createTestRuntimeFactory} from "../../../common/runtime.testing.ts";
-import type {Clock, RuntimeEnvironment} from "../../../common/runtime.ts";
 import type {DotnetFacts} from "../../../inspection/dotnet.ts";
-import type {LegacyRepositoryInspectionSession} from "../../../platform/bridge.ts";
-import {Prompts} from "../../../platform/Prompts.ts";
-import {makeTestLayer} from "../../../platform/testing.ts";
 import type {InspectionOutcome} from "../../../inspection/types.ts";
+import type {Presenter} from "../../../platform/Output.ts";
+import type {ProcessRequest} from "../../../platform/Process.ts";
+import {makeTestLayer, type RecordedProcessCall, type TestHarness} from "../../../platform/testing.ts";
+import {SetupActions} from "../actions.ts";
 import {
-  createDotnetSetupPhase,
-  dotnetSetupPhase,
-  generateLocalDevelopmentPassword,
-  selectDotnetInstallationProposal,
-} from "./dotnet.ts";
-import {setupActionsLayer} from "../actions.ts";
-import {legacySetupActionExecutor} from "../legacy-phase.ts";
+  productionActions,
+  recordingActions,
+  recordingInspection,
+  runPhase as runPhaseWith,
+  runPhaseExit,
+  scriptedCommands,
+  type ScriptedCommandOutcome,
+} from "../phase-testing.ts";
 import type {
-  LegacySetupAction,
+  SetupAction,
   SetupActionDisposition,
-  LegacySetupActionExecutor,
-  LegacySetupContext,
+  SetupContext,
   SetupInput,
+  SetupPhaseDefinition,
   SetupPhaseResult,
-  LegacySetupPhaseRuntime,
+  SetupRequirements,
 } from "../types.ts";
+import {createDotnetSetupPhase, dotnetSetupPhase, generateLocalDevelopmentPassword, selectDotnetInstallationProposal} from "./dotnet.ts";
 
 const requiredDotnet: MinimumVersion = {major: 10, minor: 0, patch: 0};
 const paths = createRepositoryPaths(resolve("C:\\fixture\\arolariu.ro"));
@@ -50,37 +51,37 @@ const appHostProject = resolve(paths.root, "tooling", "AppHost", "AppHost.csproj
 const sqlSecretKey = "Parameters:sql-password";
 const redisSecretKey = "Parameters:redis-password";
 /**
- * Pre-migration ceiling for every long-running .NET install, restore, and trust mutation.
+ * Ceiling for every long-running .NET install, restore, and trust mutation.
  *
  * @remarks
- * The invocation-scoped runner defaults to 120s, which is bounded for probes but far too short for
- * an SDK install or a full solution restore. Every mutation that previously inherited the legacy
- * `tee`/`inherit` mutation default must therefore request this timeout explicitly now that the
- * phase no longer flows through the deprecated setup runner bridge.
+ * Setup commands default to 120s, which is bounded for probes but far too short for an SDK install
+ * or a full solution restore, so every such mutation requests this timeout explicitly.
  */
 const LEGACY_MUTATION_TIMEOUT_MS = 1_200_000;
+/** The setup command default timeout every probe and captured command runs with. */
+const PHASE_COMMAND_TIMEOUT_MS = 120_000;
 
 function expectedPasswordForRepeatedByte(byte: number): string {
   return `Aa1!${Buffer.alloc(24, byte).toString("base64url")}`;
 }
 
-function succeeded(patch: Readonly<{stdout?: string; stderr?: string}> = {}): ProcessOutcome {
+function succeeded(patch: Readonly<{stdout?: string; stderr?: string}> = {}): ScriptedCommandOutcome {
   return {kind: "succeeded", exitCode: 0, stdout: patch.stdout ?? "", stderr: patch.stderr ?? "", durationMs: 1};
 }
 
-function exited(exitCode: number, patch: Readonly<{stdout?: string; stderr?: string}> = {}): ProcessOutcome {
+function exited(exitCode: number, patch: Readonly<{stdout?: string; stderr?: string}> = {}): ScriptedCommandOutcome {
   return {kind: "exited", exitCode, stdout: patch.stdout ?? "", stderr: patch.stderr ?? "", durationMs: 1};
 }
 
-function timedOut(): ProcessOutcome {
+function timedOut(): ScriptedCommandOutcome {
   return {kind: "timed-out", stdout: "", stderr: "", durationMs: 1};
 }
 
-function signalled(signal: NodeJS.Signals): ProcessOutcome {
+function signalled(signal: NodeJS.Signals): ScriptedCommandOutcome {
   return {kind: "signalled", signal, stdout: "", stderr: "", durationMs: 1};
 }
 
-function spawnFailed(message: string): ProcessOutcome {
+function spawnFailed(message: string): ScriptedCommandOutcome {
   return {kind: "spawn-failed", message, stdout: "", stderr: "", durationMs: 1};
 }
 
@@ -89,40 +90,33 @@ function commandKey(request: Readonly<ProcessRequest>): string {
 }
 
 /** One recorded child invocation. */
-type RecordedCall = Readonly<{request: ProcessRequest; options: ProcessRunOptions}>;
+type RecordedCall = RecordedProcessCall;
 
-/** Records every invocation while replaying request-keyed typed outcomes. */
-class FakeProcessRunner extends AbstractProcessRunner {
-  readonly #responses: Readonly<Record<string, ProcessOutcome | readonly ProcessOutcome[]>>;
-  readonly #offsets = new Map<string, number>();
-  readonly #calls: RecordedCall[] = [];
-
-  public constructor(responses: Readonly<Record<string, ProcessOutcome | readonly ProcessOutcome[]>> = {}) {
-    super();
-    this.#responses = responses;
-  }
-
-  /** Every recorded invocation, in call order. */
-  public get calls(): readonly RecordedCall[] {
-    return this.#calls;
-  }
-
-  /** {@inheritDoc AbstractProcessRunner.execute} */
-  protected override execute(request: Readonly<ProcessRequest>, options: Readonly<ProcessRunOptions>): Promise<ProcessOutcome> {
-    this.#calls.push({request, options});
+/**
+ * Replays request-keyed scripted outcomes; an unscripted request succeeds, and a sequence replays
+ * in order and then repeats its last outcome.
+ *
+ * @param responses - Outcome, or outcome sequence, per command key.
+ * @returns The responder.
+ */
+function keyedResponder(
+  responses: Readonly<Record<string, ScriptedCommandOutcome | readonly ScriptedCommandOutcome[]>>,
+): (request: ProcessRequest) => ScriptedCommandOutcome {
+  const offsets = new Map<string, number>();
+  return (request) => {
     const key = commandKey(request);
-    const configured = this.#responses[key];
+    const configured = responses[key];
     if (configured === undefined) {
-      return Promise.resolve(succeeded());
+      return succeeded();
     }
     if (!Array.isArray(configured)) {
-      return Promise.resolve(configured as ProcessOutcome);
+      return configured as ScriptedCommandOutcome;
     }
-    const sequence = configured as readonly ProcessOutcome[];
-    const offset = this.#offsets.get(key) ?? 0;
-    this.#offsets.set(key, offset + 1);
-    return Promise.resolve(sequence[offset] ?? sequence.at(-1) ?? succeeded());
-  }
+    const sequence = configured as readonly ScriptedCommandOutcome[];
+    const offset = offsets.get(key) ?? 0;
+    offsets.set(key, offset + 1);
+    return sequence[offset] ?? sequence.at(-1) ?? succeeded();
+  };
 }
 
 function requirements(): RepositoryRequirements {
@@ -202,186 +196,123 @@ function dotnetOutcomeSequence(
   return [initial, initial, initial, initial, ...after];
 }
 
-/** A controllable fake {@link LegacyRepositoryInspectionSession} that only ever resolves the `"dotnet"` key. */
-function createDotnetInspectionHarness(outcomes: readonly InspectionOutcome<DotnetFacts>[] = [availableOutcome()]): Readonly<{
-  session: LegacyRepositoryInspectionSession;
-  inspect: ReturnType<typeof vi.fn>;
-  invalidate: ReturnType<typeof vi.fn>;
-}> {
-  let callIndex = 0;
-  const inspect = vi.fn(async (key: "dotnet") => {
-    if (key !== "dotnet") {
-      return {kind: "unavailable" as const, reason: "Not exercised by this test.", durationMs: 0};
-    }
-    const outcome = outcomes[Math.min(callIndex, outcomes.length - 1)]!;
-    callIndex += 1;
-    return outcome;
-  });
-  const invalidate = vi.fn();
-  return {
-    session: {inspect, invalidate, updateInfrastructureEngine: vi.fn()} as unknown as LegacyRepositoryInspectionSession,
-    inspect,
-    invalidate,
-  };
-}
-
-function createActions(dispositions: Readonly<Record<string, SetupActionDisposition>> = {}): Readonly<{
-  actions: LegacySetupActionExecutor;
-  actionIds: string[];
-  actionRecords: LegacySetupAction[];
-}> {
-  const actionIds: string[] = [];
-  const actionRecords: LegacySetupAction[] = [];
-  const actions: LegacySetupActionExecutor = {
-    run: async (action) => {
-      actionIds.push(action.id);
-      actionRecords.push(action);
-      const disposition = dispositions[action.id] ?? "executed";
-      if (disposition === "executed") {
-        await action.execute();
-      }
-      return disposition;
-    },
-  };
-  return {actions, actionIds, actionRecords};
-}
-
 /**
- * The exact context view the migrated .NET phase reads.
+ * A `SetupActions` that delegates to a recording one, except that it interrupts when `interruptAt`
+ * is submitted.
  *
- * @remarks
- * The deprecated {@link LegacySetupContext.runner} and {@link LegacySetupContext.now} members are deliberately
- * absent: a migrated phase must read its capabilities from {@link LegacySetupContext.runtime} only, so
- * any relapse becomes a type error instead of a silently passing test.
+ * @param interruptAt - The action whose submission interrupts.
+ * @param delegate - The recording actions every other submission reaches.
+ * @returns The layer.
  */
-type MigratedSetupContext = Omit<LegacySetupContext, "runner" | "now"> & Readonly<{runtime: LegacySetupPhaseRuntime}>;
-
-function environmentSnapshot(platform: NodeJS.Platform): RuntimeEnvironment {
-  return {
-    variables: Object.freeze({}),
-    cwd: paths.root,
-    executablePath: "C:\\Program Files\\nodejs\\node.exe",
-    platform,
-    architecture: "x64",
-    stdinIsTTY: false,
-    stdoutIsTTY: false,
-    isCI: true,
-  };
+function interruptingActions(interruptAt: string, delegate: Layer.Layer<SetupActions>): Layer.Layer<SetupActions> {
+  return Layer.effect(
+    SetupActions,
+    Effect.map(Effect.service(SetupActions), (actions) =>
+      SetupActions.of({run: (action) => (action.id === interruptAt ? Effect.interrupt : actions.run(action))}),
+    ),
+  ).pipe(Layer.provide(delegate));
 }
 
 interface DotnetHarness {
   /** The phase under test. */
-  readonly phase: ReturnType<typeof createDotnetSetupPhase>;
-  /** The migrated setup context handed to the phase. */
-  readonly context: MigratedSetupContext;
-  /** Recording process runner observed by the phase. */
-  readonly runner: FakeProcessRunner;
+  readonly phase: SetupPhaseDefinition;
+  /** The setup context handed to the phase. */
+  readonly context: SetupContext;
+  /** The in-memory platform harness. */
+  readonly platform: TestHarness;
+  /** Every recorded process call, in order. */
+  readonly runner: {readonly calls: readonly RecordedCall[]};
   /** Action identifiers in evaluation order. */
   readonly actionIds: string[];
   /** Complete action records in evaluation order. */
-  readonly actionRecords: LegacySetupAction[];
-  /** Rendered logger output. */
-  readonly sink: InMemoryLoggerSink;
-  /** Every value the phase asked the logger to redact. */
-  readonly redactions: string[];
+  readonly actionRecords: readonly SetupAction[];
   /** Inspection session probe. */
   readonly inspect: ReturnType<typeof vi.fn>;
   /** Inspection invalidation probe. */
   readonly invalidate: ReturnType<typeof vi.fn>;
+  /** Every service the phase runs with. */
+  readonly layer: Layer.Layer<SetupRequirements>;
 }
 
 async function createHarness(
   input: Readonly<{
-    responses?: Readonly<Record<string, ProcessOutcome | readonly ProcessOutcome[]>>;
+    responses?: Readonly<Record<string, ScriptedCommandOutcome | readonly ScriptedCommandOutcome[]>>;
     dispositions?: Readonly<Record<string, SetupActionDisposition>>;
     options?: SetupInput;
     platform?: NodeJS.Platform;
     randomBytes?: (size: number) => Uint8Array;
     dotnetOutcomes?: readonly InspectionOutcome<DotnetFacts>[];
+    /** Replaces the recording consent policy. */
+    actions?: (recording: Layer.Layer<SetupActions>) => Layer.Layer<SetupActions, never, Presenter>;
   }> = {},
 ): Promise<DotnetHarness> {
-  const runner = new FakeProcessRunner(input.responses);
-  const {actions, actionIds, actionRecords} = createActions(input.dispositions);
-  const {session, inspect, invalidate} = createDotnetInspectionHarness(input.dotnetOutcomes);
-  const sink = new InMemoryLoggerSink();
-  const redactions: string[] = [];
-  const logger = new MonorepositoryConsoleLogger("setup::dotnet", {color: false, sink});
-  const originalRedact = logger.redact.bind(logger);
-  logger.redact = (value: string): void => {
-    redactions.push(value);
-    originalRedact(value);
-  };
-
-  let elapsed = 0;
-  const clock: Clock = {
-    monotonicNow: (): number => elapsed++,
-    isoTimestamp: (): string => "2026-09-01T00:00:00.000Z",
-    delay: (): Promise<void> => Promise.resolve(),
-  };
-
-  const factory = createTestRuntimeFactory({
-    files: createMemoryFileSystem({}),
-    runner,
-    clock,
-    logger,
-    environment: environmentSnapshot(input.platform ?? "win32"),
+  const options = input.options ?? setupOptions();
+  const platform = makeTestLayer({
+    processes: [scriptedCommands(keyedResponder(input.responses ?? {}))],
+    environment: {
+      cwd: paths.root,
+      executablePath: "C:\\Program Files\\nodejs\\node.exe",
+      platform: input.platform ?? "win32",
+      architecture: "x64",
+      stdinIsTTY: false,
+      stdoutIsTTY: false,
+      isCI: true,
+    },
+    context: "setup::dotnet",
+    verbose: options.verbose,
   });
-  const commandRuntime = await factory.createRoot({presentation: "silent", registerProcessSignals: false});
-  const command: CommandContext = {runtime: commandRuntime, presentation: "silent"};
 
-  const runtime: LegacySetupPhaseRuntime = {
-    command,
-    runner: commandRuntime.runner,
-    files: commandRuntime.files,
-    http: commandRuntime.http,
-    clock: commandRuntime.clock,
-    tasks: commandRuntime.tasks,
-    environment: commandRuntime.environment,
-    invokeGenerate: vi.fn<LegacySetupPhaseRuntime["invokeGenerate"]>(() =>
-      Promise.reject(new Error("The .NET setup phase must never invoke generation.")),
-    ),
-  };
+  const outcomes = input.dotnetOutcomes ?? [availableOutcome()];
+  let callIndex = 0;
+  const inspection = recordingInspection({
+    dotnet: () => {
+      const outcome = outcomes[Math.min(callIndex, outcomes.length - 1)]!;
+      callIndex += 1;
+      return outcome;
+    },
+  });
 
-  const context: MigratedSetupContext = {
-    options: input.options ?? setupOptions(),
+  const recording = recordingActions(false, input.dispositions);
+  const actions = input.actions === undefined ? recording.layer : input.actions(recording.layer);
+  const layer = actions.pipe(Layer.provideMerge(platform.layer));
+
+  const context: SetupContext = {
+    options,
     paths,
     requirements: requirements(),
-    inspection: session,
-    runtime,
-    prompts: {
-      confirm: async () => true,
-      select: async <TValue extends string>(
-        _message: string,
-        choices: readonly Readonly<{value: TValue; label: string}>[],
-      ): Promise<TValue> => {
-        const selected = choices[0]?.value;
-        if (selected === undefined) {
-          throw new Error("A test choice is required.");
-        }
-        return selected;
-      },
-      text: async () => "",
-      secret: async () => "",
-    },
-    actions,
-    logger,
+    inspection: inspection.session,
   };
 
   const phase = createDotnetSetupPhase({
     randomBytes: input.randomBytes ?? ((size) => new Uint8Array(size).fill(7)),
   });
-  return {phase, context, runner, actionIds, actionRecords, sink, redactions, inspect, invalidate};
+  return {
+    phase,
+    context,
+    platform,
+    runner: {
+      get calls(): readonly RecordedCall[] {
+        return platform.processCalls();
+      },
+    },
+    actionIds: recording.actionIds,
+    get actionRecords(): readonly SetupAction[] {
+      return recording.run.mock.calls.map(([action]) => action);
+    },
+    inspect: inspection.inspect,
+    invalidate: inspection.invalidate,
+    layer,
+  };
 }
 
 /**
- * Runs the phase against the migrated context view, optionally replacing one dependency.
+ * Runs the phase against its harness.
  *
  * @param harness - Assembled test harness.
- * @param patch - Context members replaced for this run.
  * @returns The completed phase result.
  */
-function runPhase(harness: DotnetHarness, patch: Partial<MigratedSetupContext> = {}): Promise<SetupPhaseResult> {
-  return harness.phase.run({...harness.context, ...patch} as LegacySetupContext);
+function runPhase(harness: DotnetHarness): Promise<SetupPhaseResult> {
+  return runPhaseWith(harness.phase, harness.context, harness.layer);
 }
 
 function callFor(harness: DotnetHarness, key: string): RecordedCall | undefined {
@@ -454,12 +385,21 @@ describe("generateLocalDevelopmentPassword", () => {
     const bytes = Uint8Array.from({length: 24}, (_, index) => index + 240);
     const source = vi.fn<(size: number) => Uint8Array>().mockReturnValue(bytes);
 
-    const password = generateLocalDevelopmentPassword(source);
+    const password = Redacted.value(generateLocalDevelopmentPassword(source));
 
     expect(source).toHaveBeenCalledExactlyOnceWith(24);
     expect(password).toBe(`Aa1!${Buffer.from(bytes).toString("base64url")}`);
     expect(password).toMatch(/^Aa1![A-Za-z0-9_-]{32}$/);
     expect(password).not.toMatch(/[+/=]/);
+  });
+
+  it("keeps the generated password redacted until it is explicitly unwrapped", () => {
+    const generated = generateLocalDevelopmentPassword(() => new Uint8Array(24).fill(6));
+
+    expect(Redacted.isRedacted(generated)).toBe(true);
+    expect(String(generated)).not.toContain(expectedPasswordForRepeatedByte(6));
+    expect(JSON.stringify(generated)).not.toContain(expectedPasswordForRepeatedByte(6));
+    expect(Redacted.value(generated)).toBe(expectedPasswordForRepeatedByte(6));
   });
 
   it("rejects a random source that returns the wrong byte count", () => {
@@ -677,16 +617,14 @@ describe("restore ordering and failures", () => {
       {id: "dotnet.solution-restore", scope: "repository"},
       {id: "dotnet.tool-restore", scope: "user"},
     ]);
-    const restoreCalls = harness.runner.calls.filter(
-      ({request}) => request.command === "dotnet" && request.args.includes("restore"),
-    );
+    const restoreCalls = harness.runner.calls.filter(({request}) => request.command === "dotnet" && request.args.includes("restore"));
     expect(restoreCalls.map(({request}) => request.args)).toEqual([
       ["workload", "restore", paths.solution],
       ["restore", paths.solution],
       ["tool", "restore"],
     ]);
     for (const {options} of restoreCalls) {
-      expect(options).toMatchObject({cwd: paths.root, output: "tee", logger: harness.context.logger});
+      expect(options).toMatchObject({cwd: paths.root, output: "tee"});
     }
     expect(harness.invalidate).toHaveBeenCalledTimes(3);
     expect(harness.inspect).toHaveBeenCalledTimes(4);
@@ -741,7 +679,7 @@ describe("long-running mutation timeouts", () => {
     const harness = await createHarness();
 
     await expect(runPhase(harness)).resolves.toMatchObject({status: "succeeded"});
-    expect(callFor(harness, key)?.options.timeoutMs).toBe(LEGACY_MUTATION_TIMEOUT_MS);
+    expect(callFor(harness, key)?.options.timeout).toBe(LEGACY_MUTATION_TIMEOUT_MS);
   });
 
   it("requests the legacy mutation ceiling for the SDK installation", async () => {
@@ -751,7 +689,7 @@ describe("long-running mutation timeouts", () => {
     });
 
     await expect(runPhase(harness)).resolves.toMatchObject({status: "succeeded"});
-    expect(callFor(harness, wingetInstallKey)?.options.timeoutMs).toBe(LEGACY_MUTATION_TIMEOUT_MS);
+    expect(callFor(harness, wingetInstallKey)?.options.timeout).toBe(LEGACY_MUTATION_TIMEOUT_MS);
   });
 
   it("requests the legacy mutation ceiling for certificate trust", async () => {
@@ -760,7 +698,7 @@ describe("long-running mutation timeouts", () => {
     });
 
     await expect(runPhase(harness)).resolves.toMatchObject({status: "succeeded"});
-    expect(callFor(harness, certificateTrustKey)?.options.timeoutMs).toBe(LEGACY_MUTATION_TIMEOUT_MS);
+    expect(callFor(harness, certificateTrustKey)?.options.timeout).toBe(LEGACY_MUTATION_TIMEOUT_MS);
   });
 
   it("leaves every probe and captured command on the invocation-scoped default timeout", async () => {
@@ -788,7 +726,7 @@ describe("long-running mutation timeouts", () => {
     await expect(runPhase(harness)).resolves.toMatchObject({status: "succeeded"});
     for (const key of [wingetVersionKey, userSecretsSetKey, certificateCreateKey]) {
       expect(callFor(harness, key)).toBeDefined();
-      expect(callFor(harness, key)?.options.timeoutMs).toBeUndefined();
+      expect(callFor(harness, key)?.options.timeout).toBe(PHASE_COMMAND_TIMEOUT_MS);
     }
   });
 });
@@ -850,14 +788,39 @@ describe("AppHost project and user secrets", () => {
     const secretValues = Object.values(JSON.parse(String(setCall?.options.input)) as Readonly<Record<string, string>>);
     const retained = JSON.stringify({
       args: harness.runner.calls.map(({request}) => request.args),
-      logs: harness.sink.records,
+      logs: harness.platform.output(),
       result,
       actions: harness.actionRecords.map(({id, scope, summary}) => ({id, scope, summary})),
     });
     for (const secret of secretValues) {
-      expect(harness.redactions).toContain(secret);
       expect(retained).not.toContain(secret);
     }
+  });
+
+  it("never logs generated passwords, even with --verbose", async () => {
+    const missing = availableOutcome({
+      appHost: {projectExists: true, missingParameterKeys: [sqlSecretKey, redisSecretKey], userSecretKeys: []},
+    });
+    const resolved = availableOutcome({
+      appHost: {projectExists: true, missingParameterKeys: [], userSecretKeys: [sqlSecretKey, redisSecretKey]},
+    });
+    const harness = await createHarness({
+      options: setupOptions({verbose: true}),
+      randomBytes: (size) => new Uint8Array(size).fill(8),
+      dotnetOutcomes: dotnetOutcomeSequence(missing, resolved),
+    });
+
+    const result = await runPhase(harness);
+
+    expect(result.status).toBe("succeeded");
+    const generated = expectedPasswordForRepeatedByte(8);
+    expect(JSON.parse(String(callFor(harness, userSecretsSetKey)?.options.input))).toEqual({
+      [sqlSecretKey]: generated,
+      [redisSecretKey]: generated,
+    });
+    const records = harness.platform.output();
+    expect(records.some(({text}) => text.includes("$ dotnet user-secrets set --project"))).toBe(true);
+    expect(records.filter(({text}) => text.includes(generated))).toEqual([]);
   });
 
   it("sets only the independently missing secret key named by facts", async () => {
@@ -1138,19 +1101,13 @@ describe("dry-run and safety contracts", () => {
     expect(harness.inspect).toHaveBeenCalledTimes(1);
   });
 
-  it("rethrows AbortError interruption", async () => {
-    const interruption = new DOMException("interrupted", "AbortError");
-    const actions: LegacySetupActionExecutor = {run: async () => Promise.reject(interruption)};
-    const harness = await createHarness();
+  it("propagates an interruption", async () => {
+    const harness = await createHarness({actions: (recording) => interruptingActions("dotnet.workload-restore", recording)});
 
-    await expect(runPhase(harness, {actions})).rejects.toBe(interruption);
-  });
+    const exit = await runPhaseExit(harness.phase, harness.context, harness.layer);
 
-  it("requires an invocation-scoped runtime instead of falling back to ambient capabilities", async () => {
-    const harness = await createHarness();
-    const {runtime: _runtime, ...withoutRuntime} = harness.context;
-
-    await expect(harness.phase.run(withoutRuntime as LegacySetupContext)).rejects.toThrow(/setup phase runtime/i);
+    expect(Exit.hasInterrupts(exit)).toBe(true);
+    expect(harness.runner.calls).toEqual([]);
   });
 
   it("never invokes build, test, service, update, or remote-installer commands", async () => {
@@ -1252,19 +1209,12 @@ describe("dotnet cache freshness around mutations", () => {
     expect(harness.actionIds).toEqual(["dotnet.workload-restore"]);
   });
 
-  it("propagates a later AbortError after an earlier mutation already executed and invalidated", async () => {
-    const interruption = new DOMException("interrupted", "AbortError");
-    const harness = await createHarness();
-    const actions: LegacySetupActionExecutor = {
-      run: async (action) => {
-        if (action.id === "dotnet.tool-restore") {
-          throw interruption;
-        }
-        return harness.context.actions.run(action);
-      },
-    };
+  it("propagates a later interruption after an earlier mutation already executed and invalidated", async () => {
+    const harness = await createHarness({actions: (recording) => interruptingActions("dotnet.tool-restore", recording)});
 
-    await expect(runPhase(harness, {actions})).rejects.toBe(interruption);
+    const exit = await runPhaseExit(harness.phase, harness.context, harness.layer);
+
+    expect(Exit.hasInterrupts(exit)).toBe(true);
     expect(harness.actionIds).toEqual(["dotnet.workload-restore", "dotnet.solution-restore"]);
     expect(harness.invalidate).toHaveBeenCalledTimes(2);
   });
@@ -1618,46 +1568,20 @@ describe("dotnet characterization (pre-Effect migration)", () => {
     });
   });
 
-  /**
-   * Runs the Effect kernel's consent policy (`setupActionsLayer`) in `--dry-run` mode behind its
-   * legacy executor view, so the pin observes exactly what the production kernel plans, logs, and
-   * executes (nothing) for this legacy phase. Any prompt fails the test.
-   */
-  async function legacyDryRunExecutor(options: SetupInput): Promise<
-    Readonly<{
-      actions: LegacySetupActionExecutor;
-      executed: string[];
-      lines: () => readonly string[];
-    }>
-  > {
-    const harness = makeTestLayer({context: "setup"});
-    const refuse = (): Effect.Effect<never> => Effect.die(new Error("A dry run must never prompt."));
-    const prompts = Prompts.of({confirm: refuse, select: refuse, text: refuse, secret: refuse});
-    const layer = setupActionsLayer(options).pipe(Layer.provideMerge(Layer.merge(harness.layer, Layer.succeed(Prompts, prompts))));
-    const executor = await Effect.runPromise(legacySetupActionExecutor().pipe(Effect.provide(layer)));
-    const executed: string[] = [];
-    return {
-      executed,
-      lines: () => harness.output().map(({stream, text}) => `${stream}: ${text.replace(/\n$/u, "")}`),
-      actions: {
-        run: (action) =>
-          executor.run({
-            ...action,
-            execute: async () => {
-              executed.push(action.id);
-              await action.execute();
-            },
-          }),
-      },
-    };
+  /** Lines the production consent policy rendered (`[arolariu::setup] …`), as `<stream>: <text>`. */
+  function actionLines(harness: DotnetHarness): readonly string[] {
+    return harness.platform
+      .output()
+      .map(({stream, text}) => `${stream}: ${text.replace(/\n$/u, "")}`)
+      .filter((line) => line.includes("[arolariu::setup] "));
   }
-
   it("pins a mutation-free dry run when the SDK, a user secret, and the HTTPS certificate are missing", async () => {
     // Arrange
     const options = setupOptions({dryRun: true});
-    const dryRun = await legacyDryRunExecutor(options);
+    const dryRun = productionActions(options);
     const harness = await createHarness({
       options,
+      actions: () => dryRun.layer,
       dotnetOutcomes: [
         availableOutcome({
           sdks: [],
@@ -1673,10 +1597,10 @@ describe("dotnet characterization (pre-Effect migration)", () => {
     });
 
     // Act
-    const result = await runPhase(harness, {actions: dryRun.actions});
+    const result = await runPhase(harness);
     const observed = withRootPlaceholder({
       result,
-      actionLines: dryRun.lines(),
+      actionLines: actionLines(harness),
       executed: dryRun.executed,
       commands: harness.runner.calls.map(({request}) => request),
       invalidations: harness.invalidate.mock.calls,
@@ -1714,9 +1638,10 @@ describe("dotnet characterization (pre-Effect migration)", () => {
   it("pins a mutation-free dry run when restores, a user secret, and the HTTPS certificate are pending on a ready SDK", async () => {
     // Arrange
     const options = setupOptions({dryRun: true});
-    const dryRun = await legacyDryRunExecutor(options);
+    const dryRun = productionActions(options);
     const harness = await createHarness({
       options,
+      actions: () => dryRun.layer,
       dotnetOutcomes: [
         availableOutcome({
           certificate: {exists: false, trusted: false},
@@ -1729,10 +1654,10 @@ describe("dotnet characterization (pre-Effect migration)", () => {
     });
 
     // Act
-    const result = await runPhase(harness, {actions: dryRun.actions});
+    const result = await runPhase(harness);
     const observed = withRootPlaceholder({
       result,
-      actionLines: dryRun.lines(),
+      actionLines: actionLines(harness),
       executed: dryRun.executed,
       commands: harness.runner.calls.map(({request}) => request),
       invalidations: harness.invalidate.mock.calls,
