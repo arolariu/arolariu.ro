@@ -1,28 +1,31 @@
 /**
- * @fileoverview E2E runner command for OpenAPI/Postman collections via Newman.
- * @module scripts/test-e2e
+ * @fileoverview E2E runner for OpenAPI/Postman collections via Newman.
+ * @module scripts/commands/e2e
  *
  * @remarks
- * Runs Postman collections (one per target) through Newman. Auth tokens are injected exclusively
- * via a Newman `--env-var authToken=...` argument; tracked collection and environment files are
- * never mutated. Every filesystem, process, and cancellation concern flows through the injected
- * {@link CommandContext.runtime} instead of `node:fs`, a bespoke command runner, or ambient
- * `process` state, so the whole pipeline is exercised deterministically by the declarative
- * command runtime's test fakes.
+ * {@link runE2e} runs Postman collections (one per target) through Newman. The auth token is read
+ * as a `Redacted` value and unwrapped only for the Newman `--env-var authToken=...` argument
+ * (Newman offers no environment channel); tracked collection and environment files are never
+ * mutated. Because that argument carries the token, the Newman run never echoes its command line,
+ * captures its output and writes it only after redaction, and rebuilds every `ProcessError` as a
+ * {@link NewmanFailed} from redacted output alone, never from the error message or command.
  *
  * Each target registers its own report-cleanup work (assertion-summary generation, then JSON,
- * JUnit, and summary sanitization, in that order) with `runtime.cleanup` immediately before its
- * Newman invocation. Cleanup always attempts every registered step, even after an earlier step
- * failed, and a Newman failure keeps its own `RunnerError` as the primary failure: a later
- * sanitization failure is appended as cleanup evidence, never replacing it. When Newman succeeds
- * but a report step fails, the command itself is reported as failed.
+ * JUnit, and summary sanitization, in that order) immediately before its Newman run. One
+ * `Effect.ensuring` finalizer runs every registered cleanup, last registered first, after the last
+ * target settles: on success, failure, or interruption. Cleanup always attempts every step, even
+ * after an earlier step failed. A Newman failure stays the primary failure, with any cleanup
+ * failure appended to its evidence; when Newman succeeded, a cleanup failure becomes the failure.
  */
 
-import {join, resolve} from "node:path";
-import {CommandInputError, MonorepoCommand, type CommandContext, type CommandRuntimeFactory} from "../../common/commander.ts";
-import type {MonorepositoryLogger} from "../../common/logger.ts";
-import {RunnerError} from "../../common/runner.ts";
-import {commandCancellationFromSignal, type FileSystem} from "../../common/runtime.ts";
+import {Effect, FileSystem, Path, Redacted, type PlatformError} from "effect";
+
+import {Environment} from "../../platform/Environment.ts";
+import {writeTextAtomic} from "../../platform/Files.ts";
+import type {PlatformServices} from "../../platform/layers.ts";
+import {Presenter, withLogContext} from "../../platform/Output.ts";
+import {MAX_EVIDENCE_CHARACTERS, Process, type ProcessError} from "../../platform/Process.ts";
+import {NewmanFailed, NewmanReportFailed} from "./errors.ts";
 
 /** Every target the `test:e2e` command accepts, including the `all` alias. */
 export type E2ETarget = "all" | "backend" | "frontend" | "cv";
@@ -86,23 +89,10 @@ const BEARER_JWT_DETECTION_PATTERN = /Bearer\s+eyJ[A-Za-z0-9_-]*\.[A-Za-z0-9_-]+
 /** Preserved target execution order for the `all` alias. */
 const EXECUTION_ORDER: readonly RunnableE2ETarget[] = ["frontend", "backend", "cv"];
 
-/**
- * Validates a target value supplied through `invoke()`.
- *
- * @remarks
- * This is the command's only target validation point, so CLI-decoded and programmatic input share
- * one source of truth.
- *
- * @param target - Candidate target value.
- * @returns The validated target.
- * @throws {CommandInputError} When `target` is not `all`, `backend`, `frontend`, or `cv`.
- */
-function requireValidTarget(target: string): E2ETarget {
-  if (target === "all" || target === "backend" || target === "frontend" || target === "cv") {
-    return target;
-  }
-
-  throw new CommandInputError(`Invalid target "${target}". Valid targets: all, backend, frontend, cv.`);
+/** Receives the warnings of {@link readPositiveIntegerEnv} and {@link readBooleanEnv}. */
+interface E2EWarningSink {
+  /** Records one warning message. */
+  readonly warn: (message: string) => void;
 }
 
 const targetConfigurationMap: Record<RunnableE2ETarget, TargetConfiguration> = {
@@ -143,14 +133,14 @@ function resolveEnvironmentProfile(env: Readonly<Record<string, string | undefin
  *
  * @param key - Environment variable key.
  * @param fallback - Fallback number if variable is missing/invalid.
- * @param logger - Logger for diagnostic output.
+ * @param logger - Receives the warning about an invalid value.
  * @param env - Environment map to read from.
  * @returns Parsed positive integer.
  */
 function readPositiveIntegerEnv(
   key: string,
   fallback: number,
-  logger: MonorepositoryLogger,
+  logger: E2EWarningSink,
   env: Readonly<Record<string, string | undefined>>,
 ): number {
   const rawValue = env[key];
@@ -172,14 +162,14 @@ function readPositiveIntegerEnv(
  *
  * @param key - Environment variable key.
  * @param fallback - Fallback value.
- * @param logger - Logger for diagnostic output.
+ * @param logger - Receives the warning about an invalid value.
  * @param env - Environment map to read from.
  * @returns Parsed boolean value.
  */
 function readBooleanEnv(
   key: string,
   fallback: boolean,
-  logger: MonorepositoryLogger,
+  logger: E2EWarningSink,
   env: Readonly<Record<string, string | undefined>>,
 ): boolean {
   const rawValue = env[key];
@@ -282,18 +272,46 @@ export function sanitizeJsonValue(
   return value;
 }
 
+/** One target's report-cleanup work, registered immediately before its Newman run. */
+interface TargetReportCleanup {
+  /** The target whose reports are cleaned. */
+  readonly target: RunnableE2ETarget;
+  /** The directory Newman exports the target's reports to. */
+  readonly reportDir: string;
+  /** The token Newman received, redacted from every report; `undefined` when none was passed. */
+  readonly runtimeAuthToken: Redacted.Redacted<string> | undefined;
+  /** The configured token, redacted from every cleanup diagnostic; `undefined` when none is set. */
+  readonly outputToken: Redacted.Redacted<string> | undefined;
+}
+
+/** One target's report-cleanup failure, already redacted. */
+interface CleanupFailure {
+  readonly target: RunnableE2ETarget;
+  readonly message: string;
+}
+
 /**
- * Best-effort removal used to make an artifact safe after it could not be sanitized in place.
+ * Redacts the configured auth token and JWT-shaped values from text that may be written as output.
  *
- * @param files - Injected filesystem capability.
- * @param path - Path of the artifact to remove.
+ * @param text - Text derived from Newman output or a report diagnostic.
+ * @param token - The configured auth token, when one is set.
+ * @returns The redacted text.
  */
-async function safeRemoveArtifact(files: FileSystem, path: string): Promise<void> {
-  try {
-    await files.remove(path, {force: true});
-  } catch {
-    // Best-effort: a failed safety removal does not further block report cleanup.
-  }
+function redactOutput(text: string, token: Redacted.Redacted<string> | undefined): string {
+  return redactSensitiveString(text, null, {redactionCount: 0}, token === undefined ? undefined : Redacted.value(token));
+}
+
+/**
+ * Removes an artifact that could not be sanitized in place.
+ *
+ * @param path - Path of the artifact to remove.
+ * @returns An effect that never fails: a failed safety removal does not further block report cleanup.
+ */
+function safeRemoveArtifact(path: string): Effect.Effect<void, never, FileSystem.FileSystem> {
+  return Effect.gen(function* () {
+    const fs = yield* FileSystem.FileSystem;
+    yield* Effect.ignore(fs.remove(path, {force: true}));
+  });
 }
 
 /**
@@ -301,55 +319,64 @@ async function safeRemoveArtifact(files: FileSystem, path: string): Promise<void
  * reporter output.
  *
  * @remarks
- * Missing JSON reporter output is a no-op: Newman may not have produced it (for example, a
- * spawn failure). Reads the JSON report before {@link sanitizeNewmanJsonReport} runs so the
- * summary reflects genuine assertion detail.
+ * Missing JSON reporter output is a no-op with a warning: Newman may not have produced it (for
+ * example, a spawn failure). Reads the JSON report before {@link sanitizeNewmanJsonReport} runs so
+ * the summary reflects genuine assertion detail.
  *
- * @param files - Injected filesystem capability.
  * @param target - Target identifier used in report filenames.
  * @param reportDir - Report directory path.
- * @param logger - Logger used for diagnostic output.
- * @throws When the JSON report exists but cannot be parsed.
+ * @returns An effect writing `newman-<target>-summary.md`, failing with {@link NewmanReportFailed}
+ * when the JSON report exists but cannot be read or parsed.
  */
-export async function writeAssertionSummary(
-  files: FileSystem,
+export function writeAssertionSummary(
   target: string,
   reportDir: string,
-  logger: MonorepositoryLogger,
-): Promise<void> {
-  const jsonPath = join(reportDir, `newman-${target}.json`);
-  if (!(await files.exists(jsonPath))) {
-    logger.warn(`JSON report not found, cannot create summary: ${jsonPath}`);
-    return;
-  }
+): Effect.Effect<void, PlatformError.PlatformError | NewmanReportFailed, FileSystem.FileSystem | Path.Path | Presenter> {
+  return Effect.gen(function* () {
+    const fs = yield* FileSystem.FileSystem;
+    const paths = yield* Path.Path;
+    const presenter = yield* Presenter;
+    const jsonPath = paths.join(reportDir, `newman-${target}.json`);
+    if (!(yield* fs.exists(jsonPath))) {
+      yield* Effect.logWarning(`JSON report not found, cannot create summary: ${jsonPath}`);
+      return;
+    }
 
-  let data: NewmanReport;
-  try {
-    data = JSON.parse(await files.readText(jsonPath)) as NewmanReport;
-  } catch (error: unknown) {
-    throw new Error(`Failed to read Newman JSON report while generating assertion summary: ${jsonPath} (${describeError(error)})`);
-  }
+    const unreadable = (detail: string): NewmanReportFailed =>
+      new NewmanReportFailed({
+        path: jsonPath,
+        message: `Failed to read Newman JSON report while generating assertion summary: ${jsonPath} (${detail})`,
+      });
+    const parsed = yield* fs.readFileString(jsonPath).pipe(
+      Effect.flatMap((text) => Effect.try({try: (): unknown => JSON.parse(text), catch: (error) => error})),
+      Effect.mapError((error) => unreadable(describeError(error))),
+    );
+    if (typeof parsed !== "object" || parsed === null) {
+      return yield* unreadable("the report is not a JSON object");
+    }
+    const data = parsed as NewmanReport;
 
-  const failures = (data.run?.failures ?? []).map((failure) => ({
-    assertion: failure.assertion ?? "Unknown assertion",
-    error: typeof failure.error === "string" ? failure.error : (failure.error?.message ?? "Unknown error"),
-    item: failure.source?.name ?? failure.parent?.name ?? failure.cursor?.scriptId ?? "Unknown",
-  }));
+    const failures = (data.run?.failures ?? []).map((failure) => ({
+      assertion: failure.assertion ?? "Unknown assertion",
+      error: typeof failure.error === "string" ? failure.error : (failure.error?.message ?? "Unknown error"),
+      item: failure.source?.name ?? failure.parent?.name ?? failure.cursor?.scriptId ?? "Unknown",
+    }));
 
-  let markdown = `### Failed Assertions (${target})\n`;
-  if (failures.length === 0) {
-    markdown += "No failed assertions.\n";
-    logger.success(`No failed assertions for ${target}.`);
-  } else {
-    failures.forEach((failure, index) => {
-      markdown += `${String(index + 1)}. AssertionError  ${failure.assertion}\n   ${failure.error}\n   in "${failure.item}"\n\n`;
-    });
-    logger.warn(`${String(failures.length)} failed assertion(s) for ${target}.`);
-  }
+    let markdown = `### Failed Assertions (${target})\n`;
+    if (failures.length === 0) {
+      markdown += "No failed assertions.\n";
+      yield* presenter.success(`No failed assertions for ${target}.`);
+    } else {
+      failures.forEach((failure, index) => {
+        markdown += `${String(index + 1)}. AssertionError  ${failure.assertion}\n   ${failure.error}\n   in "${failure.item}"\n\n`;
+      });
+      yield* Effect.logWarning(`${String(failures.length)} failed assertion(s) for ${target}.`);
+    }
 
-  const summaryPath = join(reportDir, `newman-${target}-summary.md`);
-  await files.writeText(summaryPath, markdown.trim() + "\n");
-  logger.info(`Summary written to: ${summaryPath}`);
+    const summaryPath = paths.join(reportDir, `newman-${target}-summary.md`);
+    yield* writeTextAtomic(summaryPath, markdown.trim() + "\n");
+    yield* Effect.logInfo(`Summary written to: ${summaryPath}`);
+  });
 }
 
 /**
@@ -357,51 +384,65 @@ export async function writeAssertionSummary(
  *
  * @remarks
  * A missing report is a no-op. A read/parse failure removes the artifact (there is nothing safe
- * left to keep) and throws. When the sanitized document would still contain a JWT-shaped pattern,
+ * left to keep) and fails. When the sanitized document would still contain a JWT-shaped pattern,
  * removing the artifact is successful sanitization, not a failure.
  *
- * @param files - Injected filesystem capability.
  * @param jsonPath - Path to the Newman JSON report.
- * @param logger - Logger used for diagnostic output.
  * @param runtimeAuthToken - Optional runtime auth token to redact from every string leaf.
- * @throws When the existing report cannot be parsed or the sanitized document cannot be written.
+ * @returns An effect rewriting the report, failing with {@link NewmanReportFailed} when the
+ * existing report cannot be parsed or the sanitized document cannot be written.
  */
-export async function sanitizeNewmanJsonReport(
-  files: FileSystem,
+export function sanitizeNewmanJsonReport(
   jsonPath: string,
-  logger: MonorepositoryLogger,
   runtimeAuthToken?: string,
-): Promise<void> {
-  if (!(await files.exists(jsonPath))) {
-    return;
-  }
+): Effect.Effect<void, PlatformError.PlatformError | NewmanReportFailed, FileSystem.FileSystem | Path.Path> {
+  return Effect.gen(function* () {
+    const fs = yield* FileSystem.FileSystem;
+    if (!(yield* fs.exists(jsonPath))) {
+      return;
+    }
 
-  let parsedReport: unknown;
-  try {
-    parsedReport = JSON.parse(await files.readText(jsonPath));
-  } catch (error: unknown) {
-    await safeRemoveArtifact(files, jsonPath);
-    throw new Error(`Failed to parse Newman JSON report, removed it: ${jsonPath} (${describeError(error)})`);
-  }
+    const parsedReport = yield* fs.readFileString(jsonPath).pipe(
+      Effect.flatMap((text) => Effect.try({try: (): unknown => JSON.parse(text), catch: (error) => error})),
+      Effect.catch((error) =>
+        Effect.andThen(
+          safeRemoveArtifact(jsonPath),
+          Effect.fail(
+            new NewmanReportFailed({
+              path: jsonPath,
+              message: `Failed to parse Newman JSON report, removed it: ${jsonPath} (${describeError(error)})`,
+            }),
+          ),
+        ),
+      ),
+    );
 
-  const accumulator: SanitizeAccumulator = {redactionCount: 0};
-  const sanitizedReport = sanitizeJsonValue(parsedReport, accumulator, null, runtimeAuthToken);
-  const serializedReport = JSON.stringify(sanitizedReport, null, 2);
+    const accumulator: SanitizeAccumulator = {redactionCount: 0};
+    const sanitizedReport = sanitizeJsonValue(parsedReport, accumulator, null, runtimeAuthToken);
+    const serializedReport = JSON.stringify(sanitizedReport, null, 2);
 
-  if (BEARER_JWT_DETECTION_PATTERN.test(serializedReport) || JWT_DETECTION_PATTERN.test(serializedReport)) {
-    await files.remove(jsonPath, {force: true});
-    logger.warn(`Removed unsanitized Newman JSON report due to remaining JWT patterns: ${jsonPath}`);
-    return;
-  }
+    if (BEARER_JWT_DETECTION_PATTERN.test(serializedReport) || JWT_DETECTION_PATTERN.test(serializedReport)) {
+      yield* fs.remove(jsonPath, {force: true});
+      yield* Effect.logWarning(`Removed unsanitized Newman JSON report due to remaining JWT patterns: ${jsonPath}`);
+      return;
+    }
 
-  try {
-    await files.writeText(jsonPath, serializedReport);
-  } catch (error: unknown) {
-    await safeRemoveArtifact(files, jsonPath);
-    throw new Error(`Failed to write sanitized Newman JSON report, removed it: ${jsonPath} (${describeError(error)})`);
-  }
+    yield* writeTextAtomic(jsonPath, serializedReport).pipe(
+      Effect.catch((error) =>
+        Effect.andThen(
+          safeRemoveArtifact(jsonPath),
+          Effect.fail(
+            new NewmanReportFailed({
+              path: jsonPath,
+              message: `Failed to write sanitized Newman JSON report, removed it: ${jsonPath} (${error.message})`,
+            }),
+          ),
+        ),
+      ),
+    );
 
-  logger.info(`Sanitized Newman JSON report (${String(accumulator.redactionCount)} redaction(s)): ${jsonPath}`);
+    yield* Effect.logInfo(`Sanitized Newman JSON report (${String(accumulator.redactionCount)} redaction(s)): ${jsonPath}`);
+  });
 }
 
 /**
@@ -409,126 +450,195 @@ export async function sanitizeNewmanJsonReport(
  * exact runtime auth token.
  *
  * @remarks
- * A missing report is a no-op. A read/write failure removes the artifact and throws. When the
+ * A missing report is a no-op. A read/write failure removes the artifact and fails. When the
  * sanitized content would still contain a JWT-shaped pattern, removing the artifact is successful
  * sanitization, not a failure.
  *
- * @param files - Injected filesystem capability.
  * @param filePath - Path to the text report.
- * @param logger - Logger used for diagnostic output.
  * @param runtimeAuthToken - Optional runtime auth token to redact by exact match.
- * @throws When the existing report cannot be read or the sanitized content cannot be written.
+ * @returns An effect rewriting the report, failing with {@link NewmanReportFailed} when the
+ * existing report cannot be read or the sanitized content cannot be written.
  */
-export async function sanitizeNewmanTextReport(
-  files: FileSystem,
+export function sanitizeNewmanTextReport(
   filePath: string,
-  logger: MonorepositoryLogger,
   runtimeAuthToken?: string,
-): Promise<void> {
-  if (!(await files.exists(filePath))) {
-    return;
+): Effect.Effect<void, PlatformError.PlatformError | NewmanReportFailed, FileSystem.FileSystem | Path.Path> {
+  return Effect.gen(function* () {
+    const fs = yield* FileSystem.FileSystem;
+    if (!(yield* fs.exists(filePath))) {
+      return;
+    }
+
+    let content = yield* fs
+      .readFileString(filePath)
+      .pipe(
+        Effect.catch((error) =>
+          Effect.andThen(
+            safeRemoveArtifact(filePath),
+            Effect.fail(
+              new NewmanReportFailed({path: filePath, message: `Failed to read text report, removed it: ${filePath} (${error.message})`}),
+            ),
+          ),
+        ),
+      );
+
+    let redactionCount = 0;
+
+    if (runtimeAuthToken !== undefined && runtimeAuthToken.length > 0 && content.includes(runtimeAuthToken)) {
+      content = content.replaceAll(runtimeAuthToken, "[REDACTED]");
+      redactionCount++;
+    }
+
+    const bearerRedacted = content.replace(BEARER_JWT_REPLACEMENT_PATTERN, "******");
+    if (bearerRedacted !== content) {
+      content = bearerRedacted;
+      redactionCount++;
+    }
+
+    const jwtRedacted = content.replace(JWT_REPLACEMENT_PATTERN, "[REDACTED_JWT]");
+    if (jwtRedacted !== content) {
+      content = jwtRedacted;
+      redactionCount++;
+    }
+
+    if (JWT_DETECTION_PATTERN.test(content) || BEARER_JWT_DETECTION_PATTERN.test(content)) {
+      yield* fs.remove(filePath, {force: true});
+      yield* Effect.logWarning(`Removed unsanitized text report due to remaining JWT patterns: ${filePath}`);
+      return;
+    }
+
+    yield* writeTextAtomic(filePath, content).pipe(
+      Effect.catch((error) =>
+        Effect.andThen(
+          safeRemoveArtifact(filePath),
+          Effect.fail(
+            new NewmanReportFailed({
+              path: filePath,
+              message: `Failed to write sanitized text report, removed it: ${filePath} (${error.message})`,
+            }),
+          ),
+        ),
+      ),
+    );
+
+    if (redactionCount > 0) {
+      yield* Effect.logInfo(`Sanitized text report (${String(redactionCount)} redaction pass(es)): ${filePath}`);
+    }
+  });
+}
+
+/**
+ * Runs every report-cleanup step of one target in the required order, attempting every step even
+ * after an earlier one fails.
+ *
+ * @remarks
+ * Order: assertion-summary generation, JSON sanitization, JUnit sanitization, summary
+ * sanitization. Every failing step contributes its own line to one redacted aggregate failure.
+ *
+ * @param cleanup - The registered cleanup of one target.
+ * @returns An effect that never fails, yielding the aggregate failure, or `undefined` when every step succeeded.
+ */
+function performReportCleanup(
+  cleanup: TargetReportCleanup,
+): Effect.Effect<CleanupFailure | undefined, never, FileSystem.FileSystem | Path.Path | Presenter> {
+  return Effect.gen(function* () {
+    const paths = yield* Path.Path;
+    const {target, reportDir} = cleanup;
+    const token = cleanup.runtimeAuthToken === undefined ? undefined : Redacted.value(cleanup.runtimeAuthToken);
+    const failures: string[] = [];
+    const attempt = <R>(
+      label: string,
+      step: Effect.Effect<void, PlatformError.PlatformError | NewmanReportFailed, R>,
+    ): Effect.Effect<void, never, R> =>
+      step.pipe(
+        Effect.catch((error) =>
+          Effect.sync(() => {
+            failures.push(`${label}: ${error.message}`);
+          }),
+        ),
+      );
+
+    yield* attempt("assertion summary", writeAssertionSummary(target, reportDir));
+    yield* attempt("JSON report sanitization", sanitizeNewmanJsonReport(paths.join(reportDir, `newman-${target}.json`), token));
+    yield* attempt("JUnit report sanitization", sanitizeNewmanTextReport(paths.join(reportDir, `newman-${target}.xml`), token));
+    yield* attempt("summary sanitization", sanitizeNewmanTextReport(paths.join(reportDir, `newman-${target}-summary.md`), token));
+
+    if (failures.length === 0) {
+      return undefined;
+    }
+    return {target, message: redactOutput(`Report cleanup failed for ${target}:\n${failures.join("\n")}`, cleanup.outputToken)};
+  }).pipe(withLogContext(`test:e2e::${cleanup.target}`));
+}
+
+/**
+ * Builds the bounded, redacted evidence line of one captured Newman stream.
+ *
+ * @param stream - The stream name.
+ * @param text - The captured stream.
+ * @param token - The configured auth token, when one is set.
+ * @returns `[]` for an empty stream, else `"<stream>: <last MAX_EVIDENCE_CHARACTERS of the redacted text>"`.
+ */
+function streamEvidence(stream: "stdout" | "stderr", text: string, token: Redacted.Redacted<string> | undefined): readonly string[] {
+  if (text.length === 0) {
+    return [];
   }
+  // Redact before bounding, so the bound can never cut the token into an unredactable fragment.
+  const redacted = redactOutput(text, token);
+  return [`${stream}: ${redacted.length > MAX_EVIDENCE_CHARACTERS ? redacted.slice(-MAX_EVIDENCE_CHARACTERS) : redacted}`];
+}
 
-  let content: string;
-  try {
-    content = await files.readText(filePath);
-  } catch (error: unknown) {
-    await safeRemoveArtifact(files, filePath);
-    throw new Error(`Failed to read text report, removed it: ${filePath} (${describeError(error)})`);
-  }
-
-  let redactionCount = 0;
-
-  if (runtimeAuthToken !== undefined && runtimeAuthToken.length > 0 && content.includes(runtimeAuthToken)) {
-    content = content.replaceAll(runtimeAuthToken, "[REDACTED]");
-    redactionCount++;
-  }
-
-  const bearerRedacted = content.replace(BEARER_JWT_REPLACEMENT_PATTERN, "******");
-  if (bearerRedacted !== content) {
-    content = bearerRedacted;
-    redactionCount++;
-  }
-
-  const jwtRedacted = content.replace(JWT_REPLACEMENT_PATTERN, "[REDACTED_JWT]");
-  if (jwtRedacted !== content) {
-    content = jwtRedacted;
-    redactionCount++;
-  }
-
-  if (JWT_DETECTION_PATTERN.test(content) || BEARER_JWT_DETECTION_PATTERN.test(content)) {
-    await files.remove(filePath, {force: true});
-    logger.warn(`Removed unsanitized text report due to remaining JWT patterns: ${filePath}`);
-    return;
-  }
-
-  try {
-    await files.writeText(filePath, content);
-  } catch (error: unknown) {
-    await safeRemoveArtifact(files, filePath);
-    throw new Error(`Failed to write sanitized text report, removed it: ${filePath} (${describeError(error)})`);
-  }
-
-  if (redactionCount > 0) {
-    logger.info(`Sanitized text report (${String(redactionCount)} redaction pass(es)): ${filePath}`);
+/**
+ * Rebuilds a failed Newman run as a {@link NewmanFailed} without its message or command line.
+ *
+ * @remarks
+ * The `ProcessError` message and `command` contain the Newman arguments, including
+ * `--env-var authToken=<token>`, so neither is read. The message names only the target and the
+ * outcome; the evidence holds the redacted, bounded captured output.
+ *
+ * @param target - The target Newman ran for.
+ * @param error - The Newman process failure.
+ * @param token - The configured auth token, when one is set.
+ * @returns The redacted failure.
+ */
+function newmanFailure(target: RunnableE2ETarget, error: ProcessError, token: Redacted.Redacted<string> | undefined): NewmanFailed {
+  const evidence = [...streamEvidence("stdout", error.stdout, token), ...streamEvidence("stderr", error.stderr, token)];
+  switch (error._tag) {
+    case "ProcessExited":
+      return new NewmanFailed({
+        message: `Newman exited with code ${String(error.exitCode)} for ${target}.`,
+        target,
+        exitCode: error.exitCode,
+        evidence,
+      });
+    case "ProcessSignalled":
+      return new NewmanFailed({message: `Newman was terminated by ${redactOutput(error.signal, token)} for ${target}.`, target, evidence});
+    case "ProcessSpawnFailed":
+      return new NewmanFailed({message: `Newman failed to start for ${target}: ${redactOutput(error.reason, token)}`, target, evidence});
+    case "ProcessTimedOut":
+      return new NewmanFailed({message: `Newman timed out after ${String(error.timeoutMs)} ms for ${target}.`, target, evidence});
   }
 }
 
 /**
- * Runs every target report-cleanup step in the required order, attempting every step even after
- * an earlier one fails.
+ * Writes the captured Newman output after redaction (human mode only).
  *
- * @remarks
- * Order: assertion-summary generation, JSON sanitization, JUnit sanitization, summary
- * sanitization. Every failing step contributes its own message; if any step failed, the aggregate
- * is thrown once every step has been attempted.
- *
- * @param files - Injected filesystem capability.
- * @param target - Target identifier used in report filenames.
- * @param reportDir - Report directory path.
- * @param logger - Logger used for diagnostic output.
- * @param runtimeAuthToken - Optional runtime auth token to redact by exact match.
- * @throws When one or more report-cleanup steps failed.
+ * @param output - The captured streams.
+ * @param token - The configured auth token, when one is set.
+ * @returns An effect writing each non-empty stream to its own stream.
  */
-async function performReportCleanup(
-  files: FileSystem,
-  target: RunnableE2ETarget,
-  reportDir: string,
-  logger: MonorepositoryLogger,
-  runtimeAuthToken: string | undefined,
-): Promise<void> {
-  const jsonPath = join(reportDir, `newman-${target}.json`);
-  const junitPath = join(reportDir, `newman-${target}.xml`);
-  const summaryPath = join(reportDir, `newman-${target}-summary.md`);
-  const failures: string[] = [];
-
-  try {
-    await writeAssertionSummary(files, target, reportDir, logger);
-  } catch (error: unknown) {
-    failures.push(`assertion summary: ${describeError(error)}`);
-  }
-
-  try {
-    await sanitizeNewmanJsonReport(files, jsonPath, logger, runtimeAuthToken);
-  } catch (error: unknown) {
-    failures.push(`JSON report sanitization: ${describeError(error)}`);
-  }
-
-  try {
-    await sanitizeNewmanTextReport(files, junitPath, logger, runtimeAuthToken);
-  } catch (error: unknown) {
-    failures.push(`JUnit report sanitization: ${describeError(error)}`);
-  }
-
-  try {
-    await sanitizeNewmanTextReport(files, summaryPath, logger, runtimeAuthToken);
-  } catch (error: unknown) {
-    failures.push(`summary sanitization: ${describeError(error)}`);
-  }
-
-  if (failures.length > 0) {
-    throw new Error(`Report cleanup failed for ${target}:\n${failures.join("\n")}`);
-  }
+function writeNewmanOutput(
+  output: {readonly stdout: string; readonly stderr: string},
+  token: Redacted.Redacted<string> | undefined,
+): Effect.Effect<void, never, Presenter> {
+  return Effect.gen(function* () {
+    const presenter = yield* Presenter;
+    if (output.stdout.length > 0) {
+      yield* presenter.write("stdout", redactOutput(output.stdout, token));
+    }
+    if (output.stderr.length > 0) {
+      yield* presenter.write("stderr", redactOutput(output.stderr, token));
+    }
+  });
 }
 
 /**
@@ -537,171 +647,198 @@ async function performReportCleanup(
  *
  * @remarks
  * Token behavior is target-specific: `backend` requires a token, `frontend` accepts one
- * optionally, and `cv` never transports one. Whenever a token is present it is registered with
- * the logger for redaction before any command is constructed or logged. Report-cleanup work is
- * registered with `runtime.cleanup` immediately before the Newman invocation, so it always runs
- * during this invocation's cleanup drain regardless of how the Newman run itself concludes.
+ * optionally, and `cv` never transports one. The token stays `Redacted` until the Newman argument
+ * is built. The report cleanup is registered immediately before the Newman run, so the caller's
+ * finalizer runs it however the run concludes. Newman runs with captured output and no command
+ * echo; its output is written after redaction, and a failure becomes {@link newmanFailure}.
  *
- * @param context - Command context providing filesystem, process runner, cleanup, and cancellation.
  * @param target - The target to run Newman tests for.
- * @param cwd - Working directory used to resolve collection, environment, and report paths.
- * @throws When the collection or environment file is missing, a required auth token is absent, or
- * Newman does not succeed.
+ * @param cleanups - The registry the target's report cleanup is appended to.
+ * @returns An effect that succeeds once Newman exited with code `0`.
  */
-async function runNewmanForTarget(context: Readonly<CommandContext>, target: RunnableE2ETarget, cwd: string): Promise<void> {
-  const {files, runner, signal, cleanup, environment} = context.runtime;
-  const env = environment.variables;
-  const logger = context.runtime.logger.child(target);
-  const config = targetConfigurationMap[target];
+function runNewmanForTarget(
+  target: RunnableE2ETarget,
+  cleanups: TargetReportCleanup[],
+): Effect.Effect<void, NewmanFailed | PlatformError.PlatformError, Environment | FileSystem.FileSystem | Path.Path | Presenter | Process> {
+  return Effect.gen(function* () {
+    const environment = yield* Environment;
+    const fs = yield* FileSystem.FileSystem;
+    const paths = yield* Path.Path;
+    const presenter = yield* Presenter;
+    const processes = yield* Process;
+    const env = environment.variables;
+    const cwd = environment.cwd;
+    const config = targetConfigurationMap[target];
 
-  const collectionPath = resolve(cwd, config.directory, "postman-collection.json");
-  const profile = resolveEnvironmentProfile(env);
-  const environmentPath = resolve(cwd, config.directory, `postman-environment.${profile}.json`);
+    const collectionPath = paths.resolve(cwd, config.directory, "postman-collection.json");
+    const profile = resolveEnvironmentProfile(env);
+    const environmentPath = paths.resolve(cwd, config.directory, `postman-environment.${profile}.json`);
 
-  if (!(await files.exists(collectionPath))) {
-    throw new Error(`Collection file not found: ${collectionPath}`);
-  }
-  if (!(await files.exists(environmentPath))) {
-    throw new Error(`Environment file not found: ${environmentPath}`);
-  }
-
-  const authToken = (env["E2E_TEST_AUTH_TOKEN"] ?? "").trim();
-  if (config.authPolicy === "required" && authToken.length === 0) {
-    throw new Error(`E2E_TEST_AUTH_TOKEN environment variable is required for ${target}.`);
-  }
-  if (config.authPolicy === "optional" && authToken.length === 0) {
-    logger.warn(`E2E_TEST_AUTH_TOKEN is not set. Continuing ${target} run without auth token injection.`);
-  }
-  if (config.authPolicy === "ignored" && authToken.length > 0) {
-    logger.info(`${target} does not require auth token; skipping auth injection.`);
-  }
-
-  const shouldPassAuthToken = config.authPolicy !== "ignored" && authToken.length > 0;
-
-  // Register the token for redaction before any command construction, diagnostics, or cleanup
-  // evidence retains it.
-  if (authToken.length > 0) {
-    logger.redact(authToken);
-  }
-
-  logger.section(`E2E Testing: ${target}`, "🧪");
-  logger.line(`Collection: ${collectionPath}`);
-  logger.line(`Environment: ${environmentPath} (${profile})`);
-
-  const rawReportDir = env["NEWMAN_REPORT_DIR"] === undefined || env["NEWMAN_REPORT_DIR"] === "" ? "e2e-logs" : env["NEWMAN_REPORT_DIR"];
-  const reportDir = resolve(cwd, rawReportDir);
-  try {
-    await files.createDirectory(reportDir, {recursive: true});
-  } catch (error: unknown) {
-    logger.warn(`Failed to create report directory: ${reportDir} (${describeError(error)})`);
-  }
-
-  const jsonPath = join(reportDir, `newman-${target}.json`);
-  const junitPath = join(reportDir, `newman-${target}.xml`);
-  const collectionTimeout = readPositiveIntegerEnv("NEWMAN_TIMEOUT", 600_000, logger, env);
-  const requestTimeout = readPositiveIntegerEnv("NEWMAN_TIMEOUT_REQUEST", 30_000, logger, env);
-  const scriptTimeout = readPositiveIntegerEnv("NEWMAN_TIMEOUT_SCRIPT", 10_000, logger, env);
-  const strictMode = readBooleanEnv("NEWMAN_STRICT_MODE", false, logger, env);
-
-  logger.line(`JSON report: ${jsonPath}`);
-  logger.line(`JUnit report: ${junitPath}`);
-  logger.line(`Timeout: ${String(collectionTimeout)}ms (request: ${String(requestTimeout)}ms, script: ${String(scriptTimeout)}ms)`);
-  logger.line(`Strict mode (--bail): ${String(strictMode)}`);
-
-  // Registered before the Newman launch so cleanup always runs the report work for this target,
-  // regardless of how the Newman invocation below concludes.
-  cleanup.register(`e2e report cleanup (${target})`, () =>
-    performReportCleanup(files, target, reportDir, logger, shouldPassAuthToken ? authToken : undefined),
-  );
-
-  const args = [
-    "newman",
-    "run",
-    collectionPath,
-    "--environment",
-    environmentPath,
-    ...(shouldPassAuthToken ? ["--env-var", `authToken=${authToken}`] : []),
-    "--reporters",
-    "cli,json,junit",
-    "--reporter-json-export",
-    jsonPath,
-    "--reporter-junit-export",
-    junitPath,
-    "--timeout",
-    String(collectionTimeout),
-    "--timeout-request",
-    String(requestTimeout),
-    "--timeout-script",
-    String(scriptTimeout),
-    ...(strictMode ? ["--bail"] : []),
-  ];
-
-  try {
-    await runner.expectSuccess({command: "npx", args}, {cwd, output: "inherit", signal, logger});
-  } catch (error: unknown) {
-    if (error instanceof RunnerError && error.outcome.kind === "cancelled" && signal.aborted) {
-      throw commandCancellationFromSignal(signal);
+    if (!(yield* fs.exists(collectionPath))) {
+      return yield* new NewmanFailed({message: `Collection file not found: ${collectionPath}`, target, evidence: []});
+    }
+    if (!(yield* fs.exists(environmentPath))) {
+      return yield* new NewmanFailed({message: `Environment file not found: ${environmentPath}`, target, evidence: []});
     }
 
-    throw error;
+    const authToken = Redacted.make((env["E2E_TEST_AUTH_TOKEN"] ?? "").trim());
+    const hasAuthToken = Redacted.value(authToken).length > 0;
+    if (config.authPolicy === "required" && !hasAuthToken) {
+      return yield* new NewmanFailed({
+        message: `E2E_TEST_AUTH_TOKEN environment variable is required for ${target}.`,
+        target,
+        evidence: [],
+      });
+    }
+    if (config.authPolicy === "optional" && !hasAuthToken) {
+      yield* Effect.logWarning(`E2E_TEST_AUTH_TOKEN is not set. Continuing ${target} run without auth token injection.`);
+    }
+    if (config.authPolicy === "ignored" && hasAuthToken) {
+      yield* Effect.logInfo(`${target} does not require auth token; skipping auth injection.`);
+    }
+
+    const shouldPassAuthToken = config.authPolicy !== "ignored" && hasAuthToken;
+    const outputToken = hasAuthToken ? authToken : undefined;
+
+    yield* presenter.section(`E2E Testing: ${target}`, "🧪");
+    yield* presenter.line("stdout", `Collection: ${collectionPath}`);
+    yield* presenter.line("stdout", `Environment: ${environmentPath} (${profile})`);
+
+    const rawReportDir = env["NEWMAN_REPORT_DIR"] === undefined || env["NEWMAN_REPORT_DIR"] === "" ? "e2e-logs" : env["NEWMAN_REPORT_DIR"];
+    const reportDir = paths.resolve(cwd, rawReportDir);
+    yield* fs
+      .makeDirectory(reportDir, {recursive: true})
+      .pipe(Effect.catch((error) => Effect.logWarning(`Failed to create report directory: ${reportDir} (${error.message})`)));
+
+    const jsonPath = paths.join(reportDir, `newman-${target}.json`);
+    const junitPath = paths.join(reportDir, `newman-${target}.xml`);
+    const warnings: string[] = [];
+    const warningSink: E2EWarningSink = {warn: (message) => warnings.push(message)};
+    const collectionTimeout = readPositiveIntegerEnv("NEWMAN_TIMEOUT", 600_000, warningSink, env);
+    const requestTimeout = readPositiveIntegerEnv("NEWMAN_TIMEOUT_REQUEST", 30_000, warningSink, env);
+    const scriptTimeout = readPositiveIntegerEnv("NEWMAN_TIMEOUT_SCRIPT", 10_000, warningSink, env);
+    const strictMode = readBooleanEnv("NEWMAN_STRICT_MODE", false, warningSink, env);
+    yield* Effect.forEach(warnings, (warning) => Effect.logWarning(warning), {discard: true});
+
+    yield* presenter.line("stdout", `JSON report: ${jsonPath}`);
+    yield* presenter.line("stdout", `JUnit report: ${junitPath}`);
+    yield* presenter.line(
+      "stdout",
+      `Timeout: ${String(collectionTimeout)}ms (request: ${String(requestTimeout)}ms, script: ${String(scriptTimeout)}ms)`,
+    );
+    yield* presenter.line("stdout", `Strict mode (--bail): ${String(strictMode)}`);
+
+    // Registered before the Newman launch so the report work runs however the launch below concludes.
+    cleanups.push({target, reportDir, runtimeAuthToken: shouldPassAuthToken ? authToken : undefined, outputToken});
+
+    const args = [
+      "newman",
+      "run",
+      collectionPath,
+      "--environment",
+      environmentPath,
+      ...(shouldPassAuthToken ? ["--env-var", `authToken=${Redacted.value(authToken)}`] : []),
+      "--reporters",
+      "cli,json,junit",
+      "--reporter-json-export",
+      jsonPath,
+      "--reporter-junit-export",
+      junitPath,
+      "--timeout",
+      String(collectionTimeout),
+      "--timeout-request",
+      String(requestTimeout),
+      "--timeout-script",
+      String(scriptTimeout),
+      ...(strictMode ? ["--bail"] : []),
+    ];
+
+    // The arguments carry the token: never echo them, and rebuild every failure from redacted output only.
+    const result = yield* processes
+      .run({command: "npx", args}, {cwd, output: "capture", echo: false, failureOutput: "full"})
+      .pipe(
+        Effect.catch((error) =>
+          Effect.andThen(writeNewmanOutput(error, outputToken), Effect.fail(newmanFailure(target, error, outputToken))),
+        ),
+      );
+    yield* writeNewmanOutput(result, outputToken);
+
+    yield* presenter.success(`Completed Newman tests for: ${target}`);
+  }).pipe(withLogContext(`test:e2e::${target}`));
+}
+
+/**
+ * Appends report-cleanup failures to a Newman failure, which stays primary.
+ *
+ * @param error - The primary Newman failure.
+ * @param failures - The redacted report-cleanup failures.
+ * @returns `error` itself when nothing failed, else a copy with every cleanup failure appended to `evidence`.
+ */
+function withCleanupEvidence(error: NewmanFailed, failures: readonly CleanupFailure[]): NewmanFailed {
+  if (failures.length === 0) {
+    return error;
   }
-
-  logger.success(`Completed Newman tests for: ${target}`);
+  return new NewmanFailed({
+    message: error.message,
+    target: error.target,
+    ...(error.exitCode === undefined ? {} : {exitCode: error.exitCode}),
+    evidence: [...error.evidence, ...failures.map((failure) => failure.message)],
+  });
 }
 
 /**
- * Runs the E2E command's business logic: expands `all` into {@link EXECUTION_ORDER}, then runs
- * every target sequentially so an earlier target's report cleanup is registered, and a later
- * target's failure never starts a target that has not been reached yet.
+ * Runs the E2E business logic: expands `all` into {@link EXECUTION_ORDER}, then runs every target
+ * sequentially, so a later target's failure never starts a target that has not been reached yet.
  *
- * @param context - Command context providing every runtime capability.
+ * @remarks
+ * Every target registers its report cleanup before its Newman run; one `Effect.ensuring`
+ * finalizer runs the registered cleanups, last registered first, once the targets settle,
+ * including on interruption. A {@link NewmanFailed} keeps its place as the failure with the
+ * cleanup failures appended to its evidence; after a successful run, the first cleanup failure
+ * becomes the failure (the others are its evidence).
+ *
  * @param input - Typed command input.
- * @returns The expanded target list and every target that completed before this invocation ended.
- * @throws {CommandInputError} When `input.target` is invalid.
- * @throws When any target's Newman run does not succeed.
+ * @returns The expanded target list and every target that completed.
  */
-async function executeE2e(context: Readonly<CommandContext>, input: Readonly<E2EInput>): Promise<E2EResult> {
-  const {tasks, signal, environment, logger} = context.runtime;
-  const validatedTarget = requireValidTarget(input.target);
-  const targets: readonly RunnableE2ETarget[] = validatedTarget === "all" ? [...EXECUTION_ORDER] : [validatedTarget];
-  const completed: RunnableE2ETarget[] = [];
+export const runE2e: (input: E2EInput) => Effect.Effect<E2EResult, NewmanFailed | PlatformError.PlatformError, PlatformServices> =
+  Effect.fn("e2e.run")(function* (input: E2EInput) {
+    const presenter = yield* Presenter;
+    const targets: readonly RunnableE2ETarget[] = input.target === "all" ? [...EXECUTION_ORDER] : [input.target];
+    const completed: RunnableE2ETarget[] = [];
+    const cleanups: TargetReportCleanup[] = [];
+    const cleanupFailures: CleanupFailure[] = [];
 
-  logger.section("arolariu.ro E2E Test Runner", "🎯");
+    yield* presenter.section("arolariu.ro E2E Test Runner", "🎯");
 
-  await tasks.sequential(
-    targets.map((target) => async () => {
-      await runNewmanForTarget(context, target, environment.cwd);
-      completed.push(target);
-    }),
-    signal,
-  );
+    const cleanUp = Effect.suspend(() =>
+      Effect.forEach(
+        cleanups.toReversed(),
+        (cleanup) =>
+          Effect.map(performReportCleanup(cleanup), (failure) => {
+            if (failure !== undefined) {
+              cleanupFailures.push(failure);
+            }
+          }),
+        {discard: true},
+      ),
+    );
 
-  return {targets, completed};
-}
+    yield* Effect.forEach(
+      targets,
+      (target) =>
+        Effect.map(runNewmanForTarget(target, cleanups), () => {
+          completed.push(target);
+        }),
+      {discard: true},
+    ).pipe(
+      Effect.ensuring(cleanUp),
+      Effect.catchTag("NewmanFailed", (error) => Effect.fail(withCleanupEvidence(error, cleanupFailures))),
+    );
 
-/**
- * Creates the E2E command.
- *
- * @param runtimeFactory - Optional runtime factory; tests inject a fake instead of the Node adapter.
- * @returns The typed `test:e2e` command object.
- */
-export function createE2eCommand(runtimeFactory?: CommandRuntimeFactory): MonorepoCommand<E2EInput, E2EResult> {
-  return new MonorepoCommand<E2EInput, E2EResult>(
-    {
-      metadata: {name: "test:e2e"},
-      execute: (context, input) => executeE2e(context, input),
-      completion: (result) => ({
-        exitCode: 0,
-        human: (logger) => {
-          logger.success(
-            `Completed ${String(result.completed.length)} of ${String(result.targets.length)} E2E target(s): ${result.completed.join(", ")}.`,
-          );
-        },
-      }),
-    },
-    runtimeFactory,
-  );
-}
+    const [first, ...rest] = cleanupFailures;
+    if (first !== undefined) {
+      return yield* new NewmanFailed({message: first.message, target: first.target, evidence: rest.map((failure) => failure.message)});
+    }
 
-/** Production singleton used by `npm run test:e2e`. */
-export const e2eCommand: MonorepoCommand<E2EInput, E2EResult> = createE2eCommand();
+    return {targets, completed: [...completed]};
+  });

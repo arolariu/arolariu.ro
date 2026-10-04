@@ -4,60 +4,145 @@
  * @module scripts/commands/e2e/cli.test
  *
  * @remarks
- * Each case runs a real `runCli` invocation on the in-memory harness. The recording invoker is a
- * plain object implementing `CommandInvoker`, the legacy composition boundary; no module is mocked.
+ * Each case runs a real `runCli` invocation on the in-memory harness with Newman scripted as the
+ * `npx` process; no module is mocked.
  */
 
-import {join} from "node:path";
+import {dirname, join} from "node:path";
 
-import {Effect} from "effect";
+import {Effect, FileSystem, Option} from "effect";
 import {describe, expect, it} from "vitest";
 
 import {makeRootCommand, runCli} from "../../cli.ts";
-import type {CommandInvoker, CommandRuntimeFactory} from "../../common/commander.ts";
-import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "../../common/logger.ts";
-import type {ProcessOutcome} from "../../common/runner.ts";
-import {
-  createMemoryFileSystem,
-  createProcessRunner,
-  createTestRuntimeFactory,
-  repositoryFixtureRoot,
-} from "../../common/runtime.testing.ts";
-import type {CommandRuntime} from "../../common/runtime.ts";
 import {exitCodeFor, type CommandExitCode} from "../../platform/exit.ts";
-import {makeTestLayer} from "../../platform/testing.ts";
-import {createE2eCommand, type E2EInput} from "./index.ts";
+import type {SinkRecord} from "../../platform/Output.ts";
+import type {ProcessRequest} from "../../platform/Process.ts";
+import {normalizeFixturePath} from "../../platform/testing.fs.ts";
+import {makeTestLayer, processOutcomeEffect, repositoryFixtureRoot, runScoped, type TestHarness} from "../../platform/testing.ts";
+import type {ProbeOutcome} from "../../inspection/probes.ts";
 import {makeE2eCommand} from "./cli.ts";
 
+/** Deliberately non-JWT-shaped fake secret; it must never reach any rendered output. */
+const FAKE_TOKEN = "e2e-cli-secret-value";
+
+/** Every target's site directory. */
+const SITES = ["sites/api.arolariu.ro", "sites/arolariu.ro", "sites/cv.arolariu.ro"] as const;
+
 /**
- * Runs `test` against `argv` with an invoker that records every input it receives.
+ * Reads the value that follows a flag in a Newman argument vector.
+ *
+ * @param request - The Newman request.
+ * @param flag - The flag.
+ * @returns The value.
+ */
+function argumentAfter(request: ProcessRequest, flag: string): string {
+  const value = request.args[request.args.indexOf(flag) + 1];
+  if (value === undefined) {
+    throw new Error(`missing ${flag}`);
+  }
+  return value;
+}
+
+/**
+ * Builds a harness whose Newman writes token-bearing reports and output, then settles with `outcome`.
+ *
+ * @param outcome - The Newman outcome.
+ * @param malformed - Whether the JSON report is malformed (unparseable) instead.
+ * @returns The harness.
+ */
+function e2eHarness(outcome: ProbeOutcome, malformed = false): TestHarness {
+  const files: Record<string, string> = {};
+  for (const site of SITES) {
+    files[join(repositoryFixtureRoot, site, "postman-collection.json")] = "{}";
+    files[join(repositoryFixtureRoot, site, "postman-environment.production.json")] = "{}";
+  }
+  return makeTestLayer({
+    environment: {variables: {E2E_TEST_AUTH_TOKEN: FAKE_TOKEN}},
+    files,
+    processes: [
+      {
+        match: (request) => request.command === "npx",
+        respond: (request) =>
+          Effect.gen(function* () {
+            const token = request.args.find((arg) => arg.startsWith("authToken="))?.slice("authToken=".length) ?? "none";
+            const fs = yield* Effect.serviceOption(FileSystem.FileSystem);
+            if (Option.isNone(fs)) {
+              return yield* Effect.die(new Error("scripted Newman has no filesystem"));
+            }
+            const jsonPath = argumentAfter(request, "--reporter-json-export");
+            yield* Effect.orDie(fs.value.makeDirectory(dirname(jsonPath), {recursive: true}));
+            yield* Effect.orDie(
+              fs.value.writeFileString(
+                jsonPath,
+                malformed
+                  ? `{"authToken": "${token}", oops`
+                  : JSON.stringify({
+                      run: {failures: [{assertion: `Token ${token}`, error: `rejected ${token}`}]},
+                      environment: {authToken: token},
+                    }),
+              ),
+            );
+            yield* Effect.orDie(fs.value.writeFileString(argumentAfter(request, "--reporter-junit-export"), `<x>authToken=${token}</x>`));
+            return yield* processOutcomeEffect(request, outcome);
+          }),
+      },
+    ],
+  });
+}
+
+/**
+ * Runs the root command with the `test` group against `argv`.
  *
  * @param argv - Arguments after the program name.
- * @returns The exit code and the recorded inputs.
+ * @param outcome - The Newman outcome.
+ * @param malformed - Whether Newman writes a malformed JSON report.
+ * @returns The exit code, the harness, and the output records without their trailing newline.
  */
-async function run(argv: readonly string[]): Promise<{code: CommandExitCode; inputs: readonly Readonly<E2EInput>[]}> {
-  const inputs: Readonly<E2EInput>[] = [];
-  const invoker: CommandInvoker<E2EInput, null> = {
-    invoke: async (input) => {
-      inputs.push(input);
-      return {status: "completed", value: null, exitCode: 0};
-    },
+async function run(
+  argv: readonly string[],
+  outcome: ProbeOutcome = {kind: "succeeded", exitCode: 0, stdout: "", stderr: "", durationMs: 0},
+  malformed = false,
+): Promise<{code: CommandExitCode; harness: TestHarness; output: readonly SinkRecord[]}> {
+  const harness = e2eHarness(outcome, malformed);
+  const exit = await runScoped(Effect.exit(runCli(argv, makeRootCommand([makeE2eCommand()]))), harness.layer);
+  const portable = (text: string): string => text.replaceAll(repositoryFixtureRoot, "<root>").replaceAll("\\", "/");
+  return {
+    code: exitCodeFor(exit, undefined),
+    harness,
+    output: harness.output().map((record) => ({stream: record.stream, text: portable(record.text.replace(/\n$/u, ""))})),
   };
-  const harness = makeTestLayer();
-  const exit = await Effect.runPromiseExit(runCli(argv, makeRootCommand([makeE2eCommand(invoker)])).pipe(Effect.provide(harness.layer)));
-  return {code: exitCodeFor(exit, undefined), inputs};
+}
+
+/**
+ * Every report the harness filesystem holds, keyed by file name.
+ *
+ * @param harness - The harness.
+ * @returns The report contents.
+ */
+function reports(harness: TestHarness): Readonly<Record<string, string>> {
+  const directory = `${normalizeFixturePath(join(repositoryFixtureRoot, "e2e-logs"))}/`;
+  const found: Record<string, string> = {};
+  for (const [path, value] of harness.files()) {
+    if (path.startsWith(directory)) {
+      found[path.slice(directory.length)] = typeof value === "string" ? value : new TextDecoder().decode(value);
+    }
+  }
+  return found;
 }
 
 describe("test e2e command", () => {
   it("maps the target", async () => {
     // Arrange
-    const argv = ["test", "e2e", "backend"];
+    const argv = ["test", "e2e", "cv"];
 
     // Act
     const result = await run(argv);
 
     // Assert
-    expect(result).toEqual({code: 0, inputs: [{target: "backend"}]});
+    expect(result.code).toBe(0);
+    expect(result.harness.processCalls().map((call) => call.request.args[2])).toEqual([
+      join(repositoryFixtureRoot, "sites/cv.arolariu.ro", "postman-collection.json"),
+    ]);
   });
 
   it("rejects an unknown target", async () => {
@@ -68,7 +153,8 @@ describe("test e2e command", () => {
     const result = await run(argv);
 
     // Assert
-    expect(result).toEqual({code: 2, inputs: []});
+    expect(result.code).toBe(2);
+    expect(result.harness.processCalls()).toEqual([]);
   });
 
   it("requires a target", async () => {
@@ -79,201 +165,145 @@ describe("test e2e command", () => {
     const result = await run(argv);
 
     // Assert
-    expect(result).toEqual({code: 2, inputs: []});
+    expect(result.code).toBe(2);
+    expect(result.harness.processCalls()).toEqual([]);
   });
 });
 
-/** Deliberately non-JWT-shaped fake secret; it must never reach any rendered output. */
-const FAKE_TOKEN = "e2e-cli-secret-value";
+const HEADER: readonly SinkRecord[] = [
+  {stream: "stdout", text: ""},
+  {stream: "stdout", text: "🎯 arolariu.ro E2E Test Runner"},
+  {stream: "stdout", text: ""},
+  {stream: "stdout", text: ""},
+  {stream: "stdout", text: "🧪 E2E Testing: backend"},
+  {stream: "stdout", text: ""},
+  {stream: "stdout", text: "Collection: <root>/sites/api.arolariu.ro/postman-collection.json"},
+  {stream: "stdout", text: "Environment: <root>/sites/api.arolariu.ro/postman-environment.production.json (production)"},
+  {stream: "stdout", text: "JSON report: <root>/e2e-logs/newman-backend.json"},
+  {stream: "stdout", text: "JUnit report: <root>/e2e-logs/newman-backend.xml"},
+  {stream: "stdout", text: "Timeout: 600000ms (request: 30000ms, script: 10000ms)"},
+  {stream: "stdout", text: "Strict mode (--bail): false"},
+];
 
-/**
- * Creates a legacy runtime factory whose logger honors the invocation presentation, like the Node
- * factory `runLegacy` reaches in production.
- *
- * @param sink - Sink receiving every legacy logger record.
- * @param overrides - Legacy runtime capabilities.
- * @returns The runtime factory.
- */
-function presentationRuntimeFactory(sink: InMemoryLoggerSink, overrides: Readonly<Partial<CommandRuntime>>): CommandRuntimeFactory {
-  return {
-    createRoot: (options) =>
-      createTestRuntimeFactory({
-        ...overrides,
-        logger: new MonorepositoryConsoleLogger("test:e2e", {mode: options.presentation, color: false, sink}),
-      }).createRoot(options),
-    createChild: (parent, options) => createTestRuntimeFactory(overrides).createChild(parent, options),
-  };
-}
+const CLEANUP: readonly SinkRecord[] = [
+  {stream: "stderr", text: "[arolariu::test:e2e::backend] ⚠️ 1 failed assertion(s) for backend."},
+  {stream: "stdout", text: "[arolariu::test:e2e::backend] ℹ️ Summary written to: <root>/e2e-logs/newman-backend-summary.md"},
+  {
+    stream: "stdout",
+    text: "[arolariu::test:e2e::backend] ℹ️ Sanitized Newman JSON report (3 redaction(s)): <root>/e2e-logs/newman-backend.json",
+  },
+  {
+    stream: "stdout",
+    text: "[arolariu::test:e2e::backend] ℹ️ Sanitized text report (1 redaction pass(es)): <root>/e2e-logs/newman-backend.xml",
+  },
+  {
+    stream: "stdout",
+    text: "[arolariu::test:e2e::backend] ℹ️ Sanitized text report (1 redaction pass(es)): <root>/e2e-logs/newman-backend-summary.md",
+  },
+];
 
-/**
- * Runs `test e2e backend` end to end through `runLegacy` and the real legacy E2E command, with
- * Newman replaced by one scripted outcome.
- *
- * @param argv - Arguments after the program name.
- * @param outcome - Scripted Newman outcome.
- * @returns The exit code, the effect-side sink records, and the legacy logger records.
- */
-async function runLegacyE2e(
-  argv: readonly string[],
-  outcome: ProcessOutcome,
-): Promise<{code: CommandExitCode; cliOutput: readonly unknown[]; legacyOutput: readonly unknown[]}> {
-  const directory = join(repositoryFixtureRoot, "sites", "api.arolariu.ro");
-  const files = createMemoryFileSystem({
-    [join(directory, "postman-collection.json")]: "{}",
-    [join(directory, "postman-environment.production.json")]: "{}",
-  });
-  const sink = new InMemoryLoggerSink();
-  const legacy = createE2eCommand(
-    presentationRuntimeFactory(sink, {
-      files,
-      runner: createProcessRunner([outcome]),
-      environment: {
-        variables: {E2E_TEST_AUTH_TOKEN: FAKE_TOKEN},
-        cwd: repositoryFixtureRoot,
-        executablePath: "/usr/bin/node",
-        platform: "linux",
-        architecture: "x64",
-        stdinIsTTY: false,
-        stdoutIsTTY: false,
-        isCI: true,
-      },
-    }),
-  );
-  const harness = makeTestLayer();
-  const exit = await Effect.runPromiseExit(runCli(argv, makeRootCommand([makeE2eCommand(legacy)])).pipe(Effect.provide(harness.layer)));
-  const portable = (text: string): string => text.replaceAll(repositoryFixtureRoot, "<root>").replaceAll("\\", "/");
-  return {
-    code: exitCodeFor(exit, undefined),
-    cliOutput: harness.output().map((record) => ({...record, text: portable(record.text)})),
-    legacyOutput: sink.records.map((record) => ({...record, text: portable(record.text)})),
-  };
-}
+/** A failing Newman run whose captured output carries the token. */
+const FAILING_NEWMAN: ProbeOutcome = {
+  kind: "exited",
+  exitCode: 1,
+  stdout: `→ GET /invoices?token=${FAKE_TOKEN}\n`,
+  stderr: `AssertionError: rejected ${FAKE_TOKEN}\n`,
+  durationMs: 0,
+};
 
-describe("test e2e characterization through runLegacy (pre-Effect migration)", () => {
-  it("prints the legacy human failure and exits 1 when Newman fails, without the token", async () => {
-    const result = await runLegacyE2e(["test", "e2e", "backend"], {kind: "exited", exitCode: 1, stdout: "", stderr: "", durationMs: 0});
+/** The single failure document of {@link FAILING_NEWMAN} under `--json`. */
+const FAILURE_DOCUMENT = JSON.stringify(
+  {
+    status: "failed",
+    kind: "operational",
+    message: "Newman exited with code 1 for backend.",
+    evidence: ["stdout: → GET /invoices?token=[REDACTED]\n", "stderr: AssertionError: rejected [REDACTED]\n"],
+  },
+  null,
+  2,
+);
 
-    expect(result).toEqual({
-      code: 1,
-      cliOutput: [],
-      legacyOutput: [
-        {
-          stream: "stdout",
-          text: "",
-          write: false,
-        },
-        {
-          stream: "stdout",
-          text: "🎯 arolariu.ro E2E Test Runner",
-          write: false,
-        },
-        {
-          stream: "stdout",
-          text: "",
-          write: false,
-        },
-        {
-          stream: "stdout",
-          text: "",
-          write: false,
-        },
-        {
-          stream: "stdout",
-          text: "🧪 E2E Testing: backend",
-          write: false,
-        },
-        {
-          stream: "stdout",
-          text: "",
-          write: false,
-        },
-        {
-          stream: "stdout",
-          text: "Collection: <root>/sites/api.arolariu.ro/postman-collection.json",
-          write: false,
-        },
-        {
-          stream: "stdout",
-          text: "Environment: <root>/sites/api.arolariu.ro/postman-environment.production.json (production)",
-          write: false,
-        },
-        {
-          stream: "stdout",
-          text: "JSON report: <root>/e2e-logs/newman-backend.json",
-          write: false,
-        },
-        {
-          stream: "stdout",
-          text: "JUnit report: <root>/e2e-logs/newman-backend.xml",
-          write: false,
-        },
-        {
-          stream: "stdout",
-          text: "Timeout: 600000ms (request: 30000ms, script: 10000ms)",
-          write: false,
-        },
-        {
-          stream: "stdout",
-          text: "Strict mode (--bail): false",
-          write: false,
-        },
-        {
-          stream: "stderr",
-          text: "[arolariu::test:e2e::backend] ⚠️ JSON report not found, cannot create summary: <root>/e2e-logs/newman-backend.json",
-          write: false,
-        },
-        {
-          stream: "stderr",
-          text: "[arolariu::test:e2e] ⛔ Process exited with code 1: npx newman run <root>/sites/api.arolariu.ro/postman-collection.json --environment <root>/sites/api.arolariu.ro/postman-environment.production.json --env-var authToken=[REDACTED] --reporters cli,json,junit --reporter-json-export <root>/e2e-logs/newman-backend.json --reporter-junit-export <root>/e2e-logs/newman-backend.xml --timeout 600000 --timeout-request 30000 --timeout-script 10000\ncommand: npx newman run <root>/sites/api.arolariu.ro/postman-collection.json --environment <root>/sites/api.arolariu.ro/postman-environment.production.json --env-var authToken=[REDACTED] --reporters cli,json,junit --reporter-json-export <root>/e2e-logs/newman-backend.json --reporter-junit-export <root>/e2e-logs/newman-backend.xml --timeout 600000 --timeout-request 30000 --timeout-script 10000\noutcome: exited",
-          write: false,
-        },
-      ],
-    });
-    expect(JSON.stringify(result).includes(FAKE_TOKEN)).toBe(false);
+describe("test e2e through runCli (Effect; intentional changes from the runLegacy pins)", () => {
+  it("prints the redacted Newman output and one failure line without the command line, and exits 1", async () => {
+    const result = await run(["test", "e2e", "backend"], FAILING_NEWMAN);
+
+    expect(result).toMatchObject({code: 1});
+    expect(result.output).toEqual([
+      ...HEADER,
+      {stream: "stdout", text: "→ GET /invoices?token=[REDACTED]"},
+      {stream: "stderr", text: "AssertionError: rejected [REDACTED]"},
+      ...CLEANUP,
+      {stream: "stderr", text: "[arolariu::test:e2e] ⛔ Newman exited with code 1 for backend."},
+    ]);
   });
 
-  it("prints only the plain legacy diagnostic and exits 1 under --json when Newman fails, without the token", async () => {
-    const result = await runLegacyE2e(["test", "e2e", "backend", "--json"], {
-      kind: "exited",
-      exitCode: 1,
-      stdout: "",
-      stderr: "",
-      durationMs: 0,
-    });
+  it("prints exactly one failure document (plus the plain stderr diagnostic) and exits 1 under --json when Newman fails", async () => {
+    const result = await run(["test", "e2e", "backend", "--json"], FAILING_NEWMAN);
 
-    expect(result).toEqual({
-      code: 1,
-      cliOutput: [],
-      legacyOutput: [
-        {
-          stream: "stderr",
-          text: "Process exited with code 1: npx newman run <root>/sites/api.arolariu.ro/postman-collection.json --environment <root>/sites/api.arolariu.ro/postman-environment.production.json --env-var authToken=[REDACTED] --reporters cli,json,junit --reporter-json-export <root>/e2e-logs/newman-backend.json --reporter-junit-export <root>/e2e-logs/newman-backend.xml --timeout 600000 --timeout-request 30000 --timeout-script 10000\ncommand: npx newman run <root>/sites/api.arolariu.ro/postman-collection.json --environment <root>/sites/api.arolariu.ro/postman-environment.production.json --env-var authToken=[REDACTED] --reporters cli,json,junit --reporter-json-export <root>/e2e-logs/newman-backend.json --reporter-junit-export <root>/e2e-logs/newman-backend.xml --timeout 600000 --timeout-request 30000 --timeout-script 10000\noutcome: exited",
-          write: false,
-        },
-      ],
-    });
-    expect(JSON.stringify(result).includes(FAKE_TOKEN)).toBe(false);
+    expect(result.code).toBe(1);
+    expect(result.harness.output()).toEqual([
+      {stream: "stdout", text: `${FAILURE_DOCUMENT}\n`},
+      {stream: "stderr", text: "Newman exited with code 1 for backend.\n"},
+    ]);
   });
 
-  it("exits 1 under --json even when Newman passes, because legacy has no JSON document", async () => {
-    const result = await runLegacyE2e(["test", "e2e", "backend", "--json"], {
-      kind: "succeeded",
-      exitCode: 0,
-      stdout: "",
-      stderr: "",
-      durationMs: 0,
-    });
+  it("prints exactly one result document and exits 0 under --json when Newman passes", async () => {
+    const result = await run(["test", "e2e", "backend", "--json"]);
 
-    expect(result).toEqual({
-      code: 1,
-      cliOutput: [],
-      legacyOutput: [
-        {
-          stream: "stderr",
-          text: 'Command "test:e2e" selected JSON presentation without a JSON document.',
-          write: false,
-        },
-      ],
-    });
+    expect(result.code).toBe(0);
+    expect(result.output).toEqual([{stream: "stdout", text: JSON.stringify({targets: ["backend"], completed: ["backend"]}, null, 2)}]);
+  });
+
+  it.each([
+    ["human", [] as readonly string[]],
+    ["--verbose", ["--verbose"]],
+    ["--json", ["--json"]],
+    ["--json --verbose", ["--json", "--verbose"]],
+  ] as const)("never writes the auth token when Newman fails (%s)", async (_label, flags) => {
+    const result = await run(["test", "e2e", "backend", ...flags], FAILING_NEWMAN);
+
+    expect(result.code).toBe(1);
+    expect(result.harness.processCalls()[0]?.request.args).toContain(`authToken=${FAKE_TOKEN}`);
+    expect(result.harness.output().filter((record) => record.text.includes(FAKE_TOKEN))).toEqual([]);
+    const written = reports(result.harness);
+    expect(Object.keys(written).sort()).toEqual(["newman-backend-summary.md", "newman-backend.json", "newman-backend.xml"]);
+    for (const content of Object.values(written)) {
+      expect(content).not.toContain(FAKE_TOKEN);
+    }
+    const stdout = result.harness.output().filter((record) => record.stream === "stdout");
+    if ((flags as readonly string[]).includes("--json")) {
+      expect(stdout.map((record) => record.text)).toEqual([`${FAILURE_DOCUMENT}\n`]);
+    } else {
+      expect(result.output.at(-1)).toEqual({stream: "stderr", text: "[arolariu::test:e2e] ⛔ Newman exited with code 1 for backend."});
+    }
+  });
+
+  it.each([
+    ["human", [] as readonly string[]],
+    ["--json", ["--json"]],
+  ] as const)("appends a redacted report-cleanup failure to the Newman failure (%s)", async (label, flags) => {
+    const result = await run(["test", "e2e", "backend", ...flags], FAILING_NEWMAN, true);
+
+    expect(result.code).toBe(1);
+    expect(result.harness.output().filter((record) => record.text.includes(FAKE_TOKEN))).toEqual([]);
+    const cleanupLine = (text: string): boolean => text.startsWith("Report cleanup failed for backend:\nassertion summary: ");
+    if (label === "human") {
+      const fatal = result.output.findIndex((record) => record.text === "[arolariu::test:e2e] ⛔ Newman exited with code 1 for backend.");
+      expect(fatal).toBeGreaterThan(0);
+      expect(result.output.slice(fatal + 1).map((record) => record.stream)).toEqual(["stderr"]);
+      expect(cleanupLine(result.output[fatal + 1]?.text ?? "")).toBe(true);
+      expect(result.output[fatal + 1]?.text).toContain("JSON report sanitization: Failed to parse Newman JSON report, removed it: ");
+    } else {
+      const stdout = result.harness.output().filter((record) => record.stream === "stdout");
+      expect(stdout).toHaveLength(1);
+      const document = JSON.parse(stdout[0]?.text ?? "") as {readonly message: string; readonly evidence: readonly string[]};
+      expect(document.message).toBe("Newman exited with code 1 for backend.");
+      expect(document.evidence.slice(0, 2)).toEqual([
+        "stdout: → GET /invoices?token=[REDACTED]\n",
+        "stderr: AssertionError: rejected [REDACTED]\n",
+      ]);
+      expect(document.evidence).toHaveLength(3);
+      expect(cleanupLine(document.evidence[2] ?? "")).toBe(true);
+    }
   });
 });

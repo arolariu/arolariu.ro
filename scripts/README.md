@@ -138,14 +138,14 @@ Business code never reads `process.argv` and never writes `process.exitCode`. Se
 Each command module exports a `create<Name>Command(...)` factory and one production singleton built from it:
 
 ```typescript
-export const e2eCommand: MonorepoCommand<E2EInput, E2EResult> = createE2eCommand();
+export const exampleCommand: MonorepoCommand<ExampleInput, ExampleResult> = createExampleCommand();
 ```
 
 The factory is the deterministic test seam. It accepts either a `CommandRuntimeFactory` directly or a small `dependencies` object
 carrying one, so a test replaces the whole capability kernel instead of mocking repository modules:
 
 ```typescript
-const command = createE2eCommand(createTestRuntimeFactory({runner, files}));
+const command = createExampleCommand(createTestRuntimeFactory({runner, files}));
 ```
 
 [`common/runtime.testing.ts`](./common/runtime.testing.ts) owns those typed fakes — a scripted process runner, in-memory logger sink,
@@ -334,6 +334,14 @@ the selfhost stacks echoed as `$ <command>` with tee output). A non-zero exit of
 (`reportChildExit` in `commands/containers/output.ts`). `--json` writes exactly one stdout document either way: the result on success, or
 `{status: "failed", kind: "operational", message, evidence}` (the process evidence) for a child exit. The image build (frontend and
 backend targets) and `dev selfhost start` call `generateArtifacts` directly (silently).
+
+`test e2e <all|backend|frontend|cv>` is Effect-native (`runE2e` in `commands/e2e/index.ts`). `E2E_TEST_AUTH_TOKEN` is read as a
+`Redacted` value and unwrapped only for Newman's `--env-var authToken=…` argument (Newman has no environment channel), so the
+Newman run never echoes its command line, captures its output and writes it only after redacting the token and JWT patterns, and
+rebuilds every `ProcessError` as a `NewmanFailed` from that redacted output alone, never from the error message or command line. Each
+target's report cleanup (assertion summary, then JSON, JUnit, and summary sanitization) runs in one `Effect.ensuring` finalizer, last
+target first, on success, failure, or interruption; a Newman failure stays primary with cleanup failures appended to its evidence.
+`--json` writes one stdout document: the `{targets, completed}` result, or `{status: "failed", kind: "operational", message, evidence}`.
 
 `dev selfhost start` reads `MSSQL_SA_PASSWORD` as a `Redacted` value and unwraps it only for the `sqlcmd -P` argument; that run is echoed
 with `[REDACTED]` in its place, never echoes under `--verbose`, and a failure is rebuilt as a `ContainerRuntimeError` naming the step only.
