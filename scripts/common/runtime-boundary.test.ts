@@ -107,16 +107,24 @@ const legacyKernelModule = /^scripts\/common\/(?:runtime(?:\.node|\.testing)?|co
  * the legacy kernel ({@link legacyKernelModule}: `runtime`, `runtime.node`, `commander`, `runner`,
  * `logger`, `prompts`, and their siblings and barrel); they reach legacy callers only through
  * {@link platformBridge}. A clause-level `import type` stays allowed until cohort 7, because the
- * bridge's legacy views still return legacy types. `scripts/inspection` is the shared
- * read-only inspection layer of Doctor and Status rather than a CLI family, so it has no `cli.ts`.
+ * bridge's legacy views still return legacy types. `scripts/inspection` (the shared read-only
+ * inspection layer of Doctor and Status) and `scripts/container-runtime` (the container programs
+ * behind `dev`, `containers`, and Setup/Doctor engine selection) are not CLI families, so they have
+ * no `cli.ts`. The test-support module `scripts/container-runtime/selfhost.testing.ts` lives beside
+ * the programs it drives and imports `scripts/platform/testing.ts`; that is tolerated because the
+ * rule targets only the legacy kernel.
  */
 const effectNativeFamilies: readonly string[] = [
+  "scripts/commands/containers",
+  "scripts/commands/dev",
   "scripts/commands/docs",
   "scripts/commands/doctor",
+  "scripts/commands/e2e",
   "scripts/commands/generate",
   "scripts/commands/rates",
   "scripts/commands/setup",
   "scripts/commands/status",
+  "scripts/container-runtime",
   "scripts/inspection",
 ];
 
@@ -244,8 +252,38 @@ function isConfigurationFile(file: string): boolean {
   return /\.config\.(?:cjs|js|mjs|ts)$/.test(file);
 }
 
+/**
+ * Process fixtures of the platform tests. They are started as real child processes, so one may be a
+ * direct entrypoint that runs `NodeRuntime.runMain` (`cancellable-cli.ts`); every production scan,
+ * including the direct-entrypoint and sanctioned-runner rules, skips them.
+ */
+const platformFixturesDirectory = "scripts/platform/__fixtures__/";
+
 function isTestFixture(file: string): boolean {
-  return file.includes("/__fixtures__/");
+  return file.startsWith(platformFixturesDirectory);
+}
+
+/** Matches a call-site wrapper or comment marker a cohort left behind for its own removal. */
+const temporaryCohortMarker = /cohort \d+ temporary/iu;
+
+/** Matches the Effect-to-Promise wrapper deleted in cohort 6. */
+const removedRunEffectWrapper = /\brunEffectOrThrow\b/u;
+
+/** This policy file, which spells the removed wrapper name in {@link removedRunEffectWrapper}. */
+const runtimeBoundaryPolicyFile = "scripts/common/runtime-boundary.test.ts";
+
+/**
+ * Lists every source or documentation file under `scripts/`, tests included.
+ *
+ * @returns Sorted repository-relative paths of `.ts`, `.js`, `.mjs`, `.cjs`, and `.md` files outside
+ * `node_modules` and `__generated__`.
+ */
+function discoverScriptsTextFiles(): readonly string[] {
+  return readdirSync("scripts", {recursive: true, withFileTypes: true})
+    .filter((entry) => entry.isFile() && /\.(?:[cm]?js|ts|md)$/u.test(entry.name))
+    .map((entry) => normalizeFilePath(join(entry.parentPath, entry.name)))
+    .filter((file) => !/\/(?:node_modules|__generated__)\//u.test(file))
+    .toSorted();
 }
 
 /** Whether a module may touch ambient process, timer, filesystem, network, and OS state. */
@@ -1729,6 +1767,33 @@ describe("runtime boundary policy", () => {
       expect(familyModules).toContain(`${family}/cli.ts`);
     }
     expect(familyModules).toContain("scripts/inspection/Inspection.ts");
+    expect(familyModules).toContain("scripts/container-runtime/selfhost.ts");
+    expect(familyModules).toContain("scripts/container-runtime/selfhost.testing.ts");
     expect(offenders).toEqual([]);
+  });
+
+  it("exempts only the platform test fixtures, including the runMain fixture, from the production scans", () => {
+    const fixture = `${platformFixturesDirectory}cancellable-cli.ts`;
+    const fixtureSource = readFileSync(fixture, "utf8");
+
+    expect(isTestFixture(fixture)).toBe(true);
+    expect(isTestFixture("scripts/commands/dev/__fixtures__/entry.ts")).toBe(false);
+    expect(isTestFixture("scripts/__fixtures__/entry.ts")).toBe(false);
+    expect(analyzeCommandEntrypoint(fixtureSource).usesImportMetaMain).toBe(true);
+    expect(scanEffectRunnerSource(fixture, fixtureSource)).toContainEqual(expect.objectContaining({api: "NodeRuntime.runMain"}));
+    expect(discoverProductionScripts()).not.toContain(fixture);
+  });
+
+  it("leaves no temporary cohort wrappers", () => {
+    const files = discoverScriptsTextFiles();
+    const markers = files.filter((file) => temporaryCohortMarker.test(readFileSync(file, "utf8")));
+    const wrapperReferences = files
+      .filter((file) => file !== runtimeBoundaryPolicyFile)
+      .filter((file) => removedRunEffectWrapper.test(readFileSync(file, "utf8")));
+
+    expect(files).toContain(runtimeBoundaryPolicyFile);
+    expect(temporaryCohortMarker.test(["// Cohort", "6", "temporary: remove with the family"].join(" "))).toBe(true);
+    expect(markers).toEqual([]);
+    expect(wrapperReferences).toEqual([]);
   });
 });

@@ -16,12 +16,12 @@ import {Effect} from "effect";
 import {Argument, Command, Flag} from "effect/cli";
 
 import type {CliSubcommand} from "../../cli.ts";
-import {CommandInputError} from "../../common/commander.ts";
 import {COMPOSE_USAGE_MESSAGE, runCompose} from "../../container-runtime/compose.ts";
 import {runImage} from "../../container-runtime/image.ts";
 import type {ComposeInput, ImageAction, ImageTarget} from "../../container-runtime/types.ts";
+import {ReportedFailure} from "../../platform/exit.ts";
+import {Presenter} from "../../platform/Output.ts";
 import {EngineFlag, engineInput, withCommandOutput} from "../flags.ts";
-import {decodeInput} from "../legacy.ts";
 import {renderContainerCompletion, reportChildExit} from "./output.ts";
 
 /** Every image target accepted by `--target`. */
@@ -69,12 +69,11 @@ export function makeContainersCommand(): CliSubcommand {
     },
     ({file, engine, passthrough}) =>
       Effect.gen(function* () {
-        const input = yield* decodeInput((): ComposeInput => {
-          if (passthrough.length === 0) {
-            throw new CommandInputError(COMPOSE_USAGE_MESSAGE);
-          }
-          return {file, passthrough, ...engineInput(engine)};
-        });
+        if (passthrough.length === 0) {
+          yield* (yield* Presenter).fatal(COMPOSE_USAGE_MESSAGE);
+          return yield* new ReportedFailure({exitCode: 2, message: COMPOSE_USAGE_MESSAGE});
+        }
+        const input: ComposeInput = {file, passthrough, ...engineInput(engine)};
         const result = yield* runCompose(input);
         yield* renderContainerCompletion(result, `Compose completed for '${result.file}' with engine '${result.engine}'.`);
       }).pipe(Effect.catchTag("ProcessExited", reportChildExit), withCommandOutput("compose")),

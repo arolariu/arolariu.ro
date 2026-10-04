@@ -372,13 +372,16 @@ ambient `process.*`, timer, and `node:*` access, and enforces the platform and C
 `scripts/platform/` and the [`cli.ts`](./cli.ts) entrypoint; Effect runtimes (`Effect.run*`, `ManagedRuntime.make`, `NodeRuntime.runMain`)
 start only in `cli.ts`, `platform/worker.ts`, `bridge.ts`, `testing.ts`, and `Output.ts`'s synchronous logger sink; no platform module
 except `bridge.ts` imports the legacy kernel; `effect/cli` is imported only under `scripts/commands/`, by `cli.ts`, by `platform/exit.ts`, and by
-`platform/Prompts.ts`; the effect-native families (`scripts/commands/{generate,rates,docs,doctor,status,setup}/**` and `scripts/inspection/**`,
-tests included) never import a value from
+`platform/Prompts.ts`; the effect-native families (`scripts/commands/{generate,rates,docs,doctor,status,setup,dev,containers,e2e}/**`,
+`scripts/container-runtime/**`, and `scripts/inspection/**`, tests included) never import a value from
 the legacy kernel (`common/{runtime,runtime.node,commander,runner,logger,prompts}.ts` or the `common/index.ts` barrel) — a clause-level
 `import type` stays allowed until cohort 7; the read-only families (`scripts/inspection/**` and `scripts/commands/{doctor,status}/**`)
 never import a mutating capability (see [Read-only command policy](#read-only-command-policy)); and the only modules with an `import.meta.main` block are `cli.ts`, `format.ts`, `lint.ts`, and the two
 inspection workers. Inside that block, `cli.ts` may read `process.argv` and no other ambient state (the exemption does not apply
-elsewhere in the file), and each inspection worker's block consists of exactly one `runWorker(...)` call.
+elsewhere in the file), and each inspection worker's block consists of exactly one `runWorker(...)` call. The process fixtures under
+`scripts/platform/__fixtures__/` (and only those) are exempt from these production scans, so `cancellable-cli.ts` may start itself with
+`NodeRuntime.runMain`. No temporary cohort call-site marker and no reference to the deleted cohort-6 Effect-to-Promise wrapper may
+remain under `scripts/`.
 
 ## Output-policy exemptions
 
@@ -398,8 +401,8 @@ sinks, while injected `output.write(...)` prompt presentation stays confined to 
 point.
 
 Every legacy production script under root `scripts/**` routes its presentation and semantic output through `MonorepositoryConsoleLogger`;
-the Effect-native families (generate, rates, docs, doctor, status, and setup) route it through the platform `Presenter` and
-logger. There are no remaining transitional setup/doctor/status exceptions.
+the Effect-native families (generate, rates, docs, doctor, status, setup, dev, containers, and test e2e) route it through the platform
+`Presenter` and logger. There are no remaining transitional setup/doctor/status exceptions.
 
 ## Generate, rates, and docs (Effect-native)
 
@@ -447,6 +450,70 @@ the family takes it from the bridge, so none of these modules value-imports the 
 ```powershell
 npx vitest run --config scripts\vitest.config.ts --coverage.enabled=false scripts\commands\generate scripts\commands\rates scripts\commands\docs scripts\common\runtime-boundary.test.ts
 npx eslint scripts\commands\generate scripts\commands\rates scripts\commands\docs
+```
+
+## Containers (Effect-native)
+
+`dev aspire`, `dev selfhost`, and `containers build|run|compose` run as native Effect programs from
+[`container-runtime`](./container-runtime) on the [platform layer](#platform-layer-effect). Each program resolves the container engine
+(`--engine`, then `AROLARIU_CONTAINER_ENGINE`, then the persisted `.arolariu/tooling.local.json` selection), runs the shared preflight
+probes, and drives the engine CLI, Compose provider, or AppHost through the `Process` service, so every test scripts the processes
+instead of spawning Docker, Podman, or AppHost. Domain failures are `ContainerRuntimeError`; process failures stay `ProcessError`.
+Cancellation is fiber interruption: `runMain` interrupts the command, the `Process` scope finalizer kills the child process tree, and the
+CLI exits `130` (`143` after `SIGTERM`).
+[`platform/cancellation.integration.test.ts`](./platform/cancellation.integration.test.ts) proves this end to end with
+[`platform/__fixtures__/cancellable-cli.ts`](./platform/__fixtures__/cancellable-cli.ts): SIGTERM/SIGINT on POSIX, and a self-interrupt
+of the main fiber on Windows, where Node cannot deliver a catchable signal to another process; in both cases the inherited child and
+grandchild are gone within three seconds.
+
+| Module | Responsibility |
+|--------|----------------|
+| [`commands/dev/cli.ts`](./commands/dev/cli.ts) | `dev aspire [--engine]` and `dev selfhost [start\|stop\|logs] [--engine]`; provides `LocalBlobStorageLive` to selfhost only |
+| [`commands/containers/cli.ts`](./commands/containers/cli.ts) | `containers build\|run --target` and `containers compose --file -- <args…>`; Compose without passthrough arguments is a usage failure (exit `2`) |
+| [`commands/containers/output.ts`](./commands/containers/output.ts) | `renderContainerCompletion` (the JSON document or the success line) and `reportChildExit` (a non-zero engine or AppHost exit) |
+| [`container-runtime/selection.ts`](./container-runtime/selection.ts) | Pure `resolveContainerEngine` (also used by Setup and Doctor) and its Effect counterpart for the commands |
+| [`container-runtime/preflight.ts`](./container-runtime/preflight.ts) | Engine CLI and Compose provider probes plus Docker Desktop backend rejection; a failing probe is a `ContainerRuntimeError` with the legacy text |
+| [`container-runtime/aspire.ts`](./container-runtime/aspire.ts) | AppHost startup with inherited output |
+| [`container-runtime/compose.ts`](./container-runtime/compose.ts), [`image.ts`](./container-runtime/image.ts) | Compose passthrough and image build/run with tee output; frontend/backend images generate the taxonomy artifacts silently first |
+| [`container-runtime/selfhost.ts`](./container-runtime/selfhost.ts) | Selfhost start/stop/logs over the `infra/Local` stacks, artifacts, certificates, the Traefik config, and the storage bootstrap |
+| [`container-runtime/selfhost.bootstrap.ts`](./container-runtime/selfhost.bootstrap.ts) | Cosmos provisioning through `HttpClient` (bounded bodies) and Azurite through the `LocalBlobStorage` service, the only Blob SDK owner |
+
+- **JSON.** With `--json`, every invocation writes exactly one stdout document, failures included: the typed result (`{engine}`,
+  `{engine, file, passthrough}`, `{engine, action, target}`, or `{action, engine, stacks}`) on success; on a non-zero engine or AppHost
+  exit, `reportChildExit` writes `{status: "failed", kind: "operational", message, evidence}` and exits `1`; any other typed failure is
+  rendered by `cli.ts` in the same shape.
+- **Child output.** AppHost runs with inherited output; Compose, image, and selfhost commands use tee output, so the user sees the child's
+  diagnostics live. A non-zero exit therefore renders one `<tool> exited with code <n>` line instead of repeating the output as evidence.
+- **SQL password.** Selfhost start reads `MSSQL_SA_PASSWORD` from the invocation environment as a `Redacted` value (missing or blank is a
+  `ContainerRuntimeError` that tells you to set it in the shell only) and unwraps it only for the `sqlcmd -P` argument. The echoed
+  `$ …` line shows `[REDACTED]` in its place, the run never echoes under `--verbose`, and a `sqlcmd` failure is rebuilt as a step-only
+  message that carries neither the command line nor the argument vector.
+- **Persistent state.** Started stacks and the generated Traefik file are requested state: a failed or interrupted start leaves what it
+  started running, and only `dev selfhost stop` removes the Traefik file.
+
+## E2E (Effect-native)
+
+`test e2e <all|backend|frontend|cv>` ([`commands/e2e/cli.ts`](./commands/e2e/cli.ts)) runs [`commands/e2e/index.ts`](./commands/e2e/index.ts)
+`runE2e`, one Newman run per target. Typed failures are `NewmanFailed` and `NewmanReportFailed`
+([`commands/e2e/errors.ts`](./commands/e2e/errors.ts)).
+
+- **Auth token.** `E2E_TEST_AUTH_TOKEN` is read as a `Redacted` value and unwrapped only for Newman's `--env-var authToken=…` argument,
+  because Newman has no environment channel. Tracked collection and environment files are never mutated.
+- **Captured, redacted output.** Because its command line carries the token, the Newman run never echoes its command, captures its output,
+  and writes it only after redaction (the runtime token, bearer values, and JWTs). There is no live Newman progress: each target's output
+  appears when that run settles. Every `ProcessError` is rebuilt as a `NewmanFailed` from the redacted output alone, never from the error
+  message or command.
+- **Report cleanup.** Each target registers its report cleanup (assertion summary, then JSON, JUnit, and summary sanitization) before its
+  run; one `Effect.ensuring` finalizer runs every registered cleanup, last registered first, on success, failure, or interruption, and
+  attempts every step even after one fails. A Newman failure stays primary, with any cleanup failure appended to its evidence.
+- **JSON.** With `--json`, the single document is `{targets, completed}` on success, or `{status: "failed", kind: "operational", message,
+  evidence}` (redacted evidence) on a Newman failure, which exits `1`.
+
+### Containers and E2E test commands
+
+```powershell
+npx vitest run --config scripts\vitest.config.ts --coverage.enabled=false scripts\container-runtime scripts\commands\dev scripts\commands\containers scripts\commands\e2e scripts\platform\cancellation.integration.test.ts scripts\common\runtime-boundary.test.ts
+npx eslint scripts\container-runtime scripts\commands\dev scripts\commands\containers scripts\commands\e2e
 ```
 
 ## Setup orchestrator (`npm run setup`)
