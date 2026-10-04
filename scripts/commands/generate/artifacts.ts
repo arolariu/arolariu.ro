@@ -15,14 +15,15 @@
 
 import {basename, dirname, join, resolve} from "node:path";
 
-import {DateTime, Duration, Effect, FileSystem, Option, Stream, type PlatformError} from "effect";
-import {HttpClient, HttpClientRequest, type HttpClientError, type HttpClientResponse} from "effect/http";
+import {DateTime, Duration, Effect, FileSystem, Option, type PlatformError} from "effect";
+import {HttpClient, HttpClientRequest, type HttpClientError} from "effect/http";
 
 import type {CommandInvoker} from "../../common/commander.ts";
 import {taxonomyArtifactFileNames, taxonomyArtifactOutputRoots} from "../../common/taxonomy-artifacts.ts";
 import {legacyInvoker} from "../../platform/bridge.ts";
 import {Environment} from "../../platform/Environment.ts";
 import {Glob, writeTextAtomic} from "../../platform/Files.ts";
+import {readBoundedBytes, type ResponseTooLarge} from "../../platform/Http.ts";
 import {Presenter} from "../../platform/Output.ts";
 import {Process, type ProcessError, type ProcessRequest} from "../../platform/Process.ts";
 import type {NodePackageDependencyType, NodePackageInformation, TaxonomyArtifact, TaxonomyArtifactNode} from "../../types";
@@ -164,36 +165,13 @@ function transportMessage(error: HttpClientError.HttpClientError): string {
 }
 
 /**
- * Reads a response body, failing as soon as it exceeds {@link TAXONOMY_SOURCE_MAX_RESPONSE_BYTES}.
+ * Describes a bounded body read failure as a transient source failure message.
  *
- * @param response - The response whose body is read.
- * @returns The complete body, or a transient failure message.
+ * @param error - The oversized-body or client failure.
+ * @returns The limit message or the transport description.
  */
-function readBoundedBody(response: HttpClientResponse.HttpClientResponse): Effect.Effect<Uint8Array, string> {
-  return Effect.suspend(() => {
-    const chunks: Uint8Array[] = [];
-    let total = 0;
-    return response.stream.pipe(
-      Stream.runForEach((chunk) => {
-        total += chunk.byteLength;
-        if (total > TAXONOMY_SOURCE_MAX_RESPONSE_BYTES) {
-          return Effect.fail(`Response exceeded the ${String(TAXONOMY_SOURCE_MAX_RESPONSE_BYTES)} byte limit.`);
-        }
-        chunks.push(chunk);
-        return Effect.void;
-      }),
-      Effect.mapError((error) => (typeof error === "string" ? error : transportMessage(error))),
-      Effect.map(() => {
-        const merged = new Uint8Array(total);
-        let offset = 0;
-        for (const chunk of chunks) {
-          merged.set(chunk, offset);
-          offset += chunk.byteLength;
-        }
-        return merged;
-      }),
-    );
-  });
+function bodyReadMessage(error: ResponseTooLarge | HttpClientError.HttpClientError): string {
+  return error._tag === "ResponseTooLarge" ? error.message : transportMessage(error);
 }
 
 /**
@@ -478,7 +456,7 @@ export abstract class TaxonomyClassificationGenerator {
       const client = yield* HttpClient.HttpClient;
       const exchange = Effect.gen(function* () {
         const response = yield* Effect.mapError(client.execute(HttpClientRequest.get(url.href, {headers})), transportMessage);
-        const bytes = yield* readBoundedBody(response);
+        const bytes = yield* Effect.mapError(readBoundedBytes(response, TAXONOMY_SOURCE_MAX_RESPONSE_BYTES), bodyReadMessage);
         return {status: response.status, bytes};
       }).pipe(
         // Keep the legacy request headers exactly: no trace propagation headers to external sources.

@@ -131,6 +131,17 @@ describe("rates command", () => {
     );
   });
 
+  it("fails with exit 1 when a Frankfurter body exceeds the 10 MiB response limit", async () => {
+    // Act
+    const result = await run(["rates", "update", "--year", "2024"], {
+      http: [{match: () => true, respond: {status: 200, body: "x".repeat(10 * 1024 * 1024 + 1)}}],
+    });
+
+    // Assert
+    expect(result.code).toBe(1);
+    expect(result.stderr).toContain("[arolariu::rates::2024] ⛔ Failed for 2024: Response exceeded the 10485760 byte limit.\n");
+  });
+
   it("writes the result as the single JSON document in --json mode", async () => {
     // Act
     const result = await run(["rates", "update", "--year", "2024", "--json"]);

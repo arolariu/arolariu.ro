@@ -541,6 +541,20 @@ describe("updateExchangeRates edge cases", () => {
     );
   }
 
+  ratesTest(
+    "fails on the response limit before the status check when a body exceeds 10 MiB",
+    "2025-06-01T00:00:00.000Z",
+    {http: answerAll("x".repeat(10 * 1024 * 1024 + 1), 502)},
+    () =>
+      Effect.gen(function* () {
+        const error = yield* Effect.flip(fetchYearlyRates(2024, 2025, "2025-06-01"));
+
+        expect(error).toEqual(new ExchangeRateApiFailed({message: "Response exceeded the 10485760 byte limit.", status: 502}));
+        const result = yield* updateExchangeRates({fromYear: 2024, toYear: 2024});
+        expect(result.failedYears).toEqual([{year: 2024, message: "Response exceeded the 10485760 byte limit."}]);
+      }),
+  );
+
   ratesTest("skips trading days without a RON rate", "2024-06-01T00:00:00.000Z", {}, () =>
     Effect.gen(function* () {
       const ratesJson = JSON.stringify({base: "EUR", rates: {"2023-01-02": {USD: 1.1}, "2023-01-03": {RON: 5, USD: 1.25}}});

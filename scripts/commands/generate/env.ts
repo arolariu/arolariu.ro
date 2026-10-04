@@ -20,6 +20,7 @@ import {APP_CONFIGURATION_MAPPING, AZURE_RUNTIME_IDENTITY_KEYS, isSecretKey} fro
 import type {AppConfigurationEnvironmentKey, GeneratedEnvironmentKey} from "../../azure/index.ts";
 import {Environment} from "../../platform/Environment.ts";
 import {writeTextAtomic, type Glob} from "../../platform/Files.ts";
+import {readBoundedText} from "../../platform/Http.ts";
 import {debugLogsEnabled, Presenter, withLogContext} from "../../platform/Output.ts";
 import type {Process} from "../../platform/Process.ts";
 import {Prompts, type PromptUnavailable} from "../../platform/Prompts.ts";
@@ -237,8 +238,9 @@ function acquireBearerToken(isCI: boolean): Effect.Effect<Redacted.Redacted<stri
  *
  * @remarks
  * Calls `GET /api/v1/build-time?for=website&label=<label>` and maps exp config keys to environment
- * variable names through {@link APP_CONFIGURATION_MAPPING}. A transport failure, a non-2xx status,
- * an unparseable body, or a missing `config` object fails with {@link ExpConfigurationUnavailable};
+ * variable names through {@link APP_CONFIGURATION_MAPPING}. A transport failure, a timeout (30
+ * seconds covering the request and the body read), a body over 10 MiB, a non-2xx status, an
+ * unparseable body, or a missing `config` object fails with {@link ExpConfigurationUnavailable};
  * a key missing from `config` is only a warning.
  *
  * @returns The mapped configuration.
@@ -268,15 +270,16 @@ const fetchConfigurationFromExp: Effect.Effect<EnvironmentValues, ExpConfigurati
     const request = HttpClientRequest.get(url, {headers: {"X-Exp-Target": "website"}});
     const unavailable = (error: {readonly message: string}): ExpConfigurationUnavailable =>
       new ExpConfigurationUnavailable({message: `exp request to ${url} failed: ${error.message}`});
-    const response = yield* client
-      .execute(token === undefined ? request : HttpClientRequest.bearerToken(request, token))
+    // One timeout covers the request and the bounded body read, like the legacy client's single deadline.
+    const {response, body} = yield* Effect.gen(function* () {
+      const sent = yield* client.execute(token === undefined ? request : HttpClientRequest.bearerToken(request, token));
+      return {response: sent, body: yield* readBoundedText(sent)};
+    }).pipe(
       // Keep the legacy request headers exactly: no trace propagation headers to the exp service.
-      .pipe(
-        Effect.provideService(HttpClient.TracerPropagationEnabled, false),
-        Effect.timeout(EXP_REQUEST_TIMEOUT),
-        Effect.mapError(unavailable),
-      );
-    const body = yield* Effect.mapError(response.text, unavailable);
+      Effect.provideService(HttpClient.TracerPropagationEnabled, false),
+      Effect.timeout(EXP_REQUEST_TIMEOUT),
+      Effect.mapError(unavailable),
+    );
 
     if (response.status < 200 || response.status >= 300) {
       yield* Effect.logError(`exp returned ${response.status} for ${url}.`);

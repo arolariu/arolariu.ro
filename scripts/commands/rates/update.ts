@@ -30,6 +30,7 @@ import {HttpClient, HttpClientRequest, type HttpClientError} from "effect/http";
 import {Environment} from "../../platform/Environment.ts";
 import {ReportedFailure} from "../../platform/exit.ts";
 import {writeTextAtomic} from "../../platform/Files.ts";
+import {readBoundedText} from "../../platform/Http.ts";
 import {Presenter, withLogContext} from "../../platform/Output.ts";
 import {ExchangeRateApiFailed, ExchangeRateInputInvalid} from "./errors.ts";
 
@@ -481,8 +482,9 @@ function computeYearlyAverages(year: number, dailyRates: FrankfurterResponse["ra
  * @remarks
  * Frankfurter doesn't support RON as a base currency directly, so this fetches EUR-based rates
  * (including RON and every target currency) and computes cross-rates through
- * {@link computeYearlyAverages}. The current year ends at `today`. The body is read before the
- * status is checked, as the legacy client did.
+ * {@link computeYearlyAverages}. The current year ends at `today`. The body is read (bounded to
+ * 10 MiB through `readBoundedText`, like the legacy client) before the status is checked, as the
+ * legacy client did.
  *
  * @param year - Year to fetch.
  * @param currentYear - Current year observed from the `Clock`.
@@ -508,7 +510,12 @@ export const fetchYearlyRates: (
     const response = yield* client
       .execute(HttpClientRequest.get(url))
       .pipe(Effect.provideService(HttpClient.TracerPropagationEnabled, false));
-    const body = yield* response.text;
+    // Bounded like the legacy client (10 MiB); an oversized body fails before the status check, as before.
+    const body = yield* readBoundedText(response).pipe(
+      Effect.catchTag("ResponseTooLarge", (error) =>
+        Effect.fail(new ExchangeRateApiFailed({message: error.message, status: response.status})),
+      ),
+    );
     if (response.status < 200 || response.status >= 300) {
       return yield* new ExchangeRateApiFailed({message: `Frankfurter API error: ${response.status}`, status: response.status});
     }

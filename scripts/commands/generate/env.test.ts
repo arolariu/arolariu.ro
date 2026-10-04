@@ -10,7 +10,8 @@
 
 import {join} from "node:path";
 
-import {Effect, FileSystem, type PlatformError} from "effect";
+import {Effect, Fiber, FileSystem, type PlatformError} from "effect";
+import {HttpClient, HttpClientResponse} from "effect/http";
 import {TestClock} from "effect/testing";
 import {afterEach, describe, expect, it, vi} from "vitest";
 
@@ -533,6 +534,61 @@ describe("generateEnvironment characterization", () => {
 
           // Assert
           expect(error).toEqual(new ExpConfigurationUnavailable({message: "exp build-time response missing 'config' object", status: 200}));
+          expect(yield* readText(".env")).toBe("");
+        }),
+      harness.layer,
+    );
+  }
+
+  {
+    const harness = expHarness({status: 200, body: "x".repeat(10 * 1024 * 1024 + 1)});
+    effectTest(
+      "fails when the exp response body exceeds the 10 MiB response limit",
+      () =>
+        Effect.gen(function* () {
+          // Act
+          const error = yield* Effect.flip(generateEnvironment);
+
+          // Assert
+          expect(error).toEqual(
+            new ExpConfigurationUnavailable({message: `exp request to ${EXP_URL} failed: Response exceeded the 10485760 byte limit.`}),
+          );
+          expect(yield* readText(".env")).toBe("");
+        }),
+      harness.layer,
+    );
+  }
+
+  {
+    const harness = expHarness({status: 200, body: "unused"});
+    effectTest(
+      "times out when the exp response body stalls after the headers arrive",
+      () =>
+        Effect.gen(function* () {
+          // Arrange: headers arrive at once, the body never completes.
+          let bodyCancelled = false;
+          const stalledBody = new ReadableStream<Uint8Array>({
+            start(controller) {
+              controller.enqueue(new TextEncoder().encode('{"config":'));
+            },
+            cancel() {
+              bodyCancelled = true;
+            },
+          });
+          const client = HttpClient.make((request) =>
+            Effect.succeed(HttpClientResponse.fromWeb(request, new Response(stalledBody, {status: 200}))),
+          );
+
+          // Act
+          const fiber = yield* Effect.forkChild(Effect.flip(Effect.provideService(generateEnvironment, HttpClient.HttpClient, client)));
+          yield* Effect.promise(() => new Promise<void>((resolve) => setTimeout(resolve, 0)));
+          yield* TestClock.adjust("30 seconds");
+          const error = yield* Fiber.join(fiber);
+
+          // Assert
+          expect(error).toBeInstanceOf(ExpConfigurationUnavailable);
+          expect(error.message.startsWith(`exp request to ${EXP_URL} failed: `)).toBe(true);
+          expect(bodyCancelled).toBe(true);
           expect(yield* readText(".env")).toBe("");
         }),
       harness.layer,
