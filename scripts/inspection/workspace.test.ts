@@ -5,11 +5,12 @@
  */
 
 import {createHash} from "node:crypto";
+import {existsSync} from "node:fs";
 import {lstat, mkdir, readdir, rm, symlink, writeFile} from "node:fs/promises";
 import {tmpdir} from "node:os";
 import {join, resolve, sep} from "node:path";
 import {NodeServices} from "@effect/platform-node";
-import {Effect, Exit, Layer} from "effect";
+import {Deferred, Effect, Exit, Fiber, Layer} from "effect";
 import {describe, expect, it} from "vitest";
 
 import {CommandInputError} from "../common/commander.ts";
@@ -299,6 +300,39 @@ describe("createWorkspaceProvider command construction", () => {
     expect(String(capturedTempRoot).startsWith(resolve(tmpdir()))).toBe(true);
 
     await expect(lstat(String(capturedTempRoot))).rejects.toMatchObject({code: "ENOENT"});
+  });
+
+  it("removes the temporary root only after an interrupted worker process stops", async () => {
+    const repositoryRoot = resolve(tmpdir(), "arolariu-workspace-provider-fixture-interrupted");
+    const started = Deferred.makeUnsafe<string>();
+    let existedWhenWorkerStopped: boolean | undefined;
+    const runner: ScriptedProcess = {
+      match: () => true,
+      respond: (_request, options) => {
+        const tempRoot = resolve(String(options.env?.["NX_WORKSPACE_DATA_DIRECTORY"]), "..");
+        return Deferred.succeed(started, tempRoot).pipe(
+          Effect.andThen(Effect.never),
+          Effect.onInterrupt(() =>
+            Effect.sync(() => {
+              existedWhenWorkerStopped = existsSync(tempRoot);
+            }),
+          ),
+        );
+      },
+    };
+
+    const tempRoot = await runScoped(
+      Effect.gen(function* () {
+        const provider = yield* Effect.forkChild(Effect.scoped(createWorkspaceProvider({root: repositoryRoot})));
+        const root = yield* Deferred.await(started);
+        yield* Fiber.interrupt(provider);
+        return root;
+      }),
+      makeTestLayer({fileSystem: "node", processes: [runner]}).layer,
+    );
+
+    expect(existedWhenWorkerStopped).toBe(true);
+    expect(existsSync(tempRoot)).toBe(false);
   });
 
   it("cleans up the temporary root even when the worker command fails", async () => {
