@@ -350,9 +350,11 @@ ambient `process.*`, timer, and `node:*` access, and enforces the platform and C
 `scripts/platform/` and the [`cli.ts`](./cli.ts) entrypoint; Effect runtimes (`Effect.run*`, `ManagedRuntime.make`, `NodeRuntime.runMain`)
 start only in `cli.ts`, `platform/worker.ts`, `bridge.ts`, `testing.ts`, and `Output.ts`'s synchronous logger sink; no platform module except `bridge.ts`
 imports the legacy kernel; `effect/cli` is imported only under `scripts/commands/`, by `cli.ts`, by `platform/exit.ts`, and by
-`platform/Prompts.ts`; the effect-native families (`scripts/commands/{generate,rates,docs}/**`, tests included) never import a value from
+`platform/Prompts.ts`; the effect-native families (`scripts/commands/{generate,rates,docs,doctor,status}/**` and `scripts/inspection/**`,
+tests included) never import a value from
 the legacy kernel (`common/{runtime,runtime.node,commander,runner,logger,prompts}.ts` or the `common/index.ts` barrel) — a clause-level
-`import type` stays allowed until cohort 7; and the only modules with an `import.meta.main` block are `cli.ts`, `format.ts`, `lint.ts`, and the two
+`import type` stays allowed until cohort 7; the read-only families (`scripts/inspection/**` and `scripts/commands/{doctor,status}/**`)
+never import a mutating capability (see [Read-only command policy](#read-only-command-policy)); and the only modules with an `import.meta.main` block are `cli.ts`, `format.ts`, `lint.ts`, and the two
 inspection workers. Inside that block, `cli.ts` may read `process.argv` and no other ambient state (the exemption does not apply
 elsewhere in the file), and each inspection worker's block consists of exactly one `runWorker(...)` call.
 
@@ -368,7 +370,7 @@ counterpart of the logger sink and holds the same exemption.
 [`output-policy.test.ts`](./common/output-policy.test.ts)'s AST guards enforce these boundaries, including property, direct-function, and
 destructured aliases. [`runtime-boundary.test.ts`](./common/runtime-boundary.test.ts) enforces the wider runtime boundary — Execa and
 child-process imports, ambient filesystem/HTTP/timer/environment/OS-state access, direct process exit, manual direct-entry detection,
-explicit concurrency, doctor capability width, the exact six format/lint exclusions, and the platform-layer rules above. The root ESLint
+explicit concurrency, read-only family capability width, the exact six format/lint exclusions, and the platform-layer rules above. The root ESLint
 configuration provides immediate feedback for direct output syntax. Direct console/process-stream output stays confined to the logger
 sinks, while injected `output.write(...)` prompt presentation stays confined to the prompt adapter. No exemption includes a script entry
 point.
@@ -545,13 +547,19 @@ earns full weight, a warn half, a fail none, and a `skipped` check contributes t
 
 Every diagnostic command runs through the shared inspection probe runner backed by the allowlisted read-only command set in
 [`inspection/probes.ts`](./inspection/probes.ts). Specialist modules never take a `ProcessRunner`, the Node runtime adapter, the Execa
-adapter, the mutable `FileSystem`, the unrestricted `HttpClient`, or `Prompts`: `DoctorRequirements` excludes them at compile time.
-[`commands/doctor/readonly.test.ts`](./commands/doctor/readonly.test.ts) asserts that exclusion with `expectTypeOf`, AST-scans every Doctor
-production module (except `cli.ts`, which provides the live layers) for `FileSystem` imports from `effect`/`effect/FileSystem` and `HttpClient`
-imports from `effect/http`, and snapshots `.nx` and `.arolariu` sentinel files to prove real quick and full-profile Doctor runs do not mutate
-them. [`runtime-boundary.test.ts`](./common/runtime-boundary.test.ts)'s source-level AST guard rejects the same Effect imports plus
-mutation-capable or unrestricted filesystem imports, child-process imports, widened runtime imports, `Prompts`, and direct adapter imports
-across the Doctor and Status production surfaces (every module except each family's `cli.ts`).
+adapter, the mutable `FileSystem`, the unrestricted `HttpClient`, or `Prompts`: `DoctorRequirements` excludes them at compile time, and
+[`commands/doctor/readonly.test.ts`](./commands/doctor/readonly.test.ts) asserts that exclusion with `expectTypeOf` and snapshots `.nx` and
+`.arolariu` sentinel files to prove real quick and full-profile Doctor runs do not mutate them.
+
+At the import level, one rule of [`runtime-boundary.test.ts`](./common/runtime-boundary.test.ts) — **read-only families never import
+mutating capabilities** — AST-scans every production module under `scripts/inspection/**` and `scripts/commands/{doctor,status}/**`,
+`cli.ts` adapters included. It rejects `FileSystem` from `effect` and any import of `effect/FileSystem`, `HttpClient` from `effect/http`,
+`Prompts` (`platform/Prompts.ts`), `writeTextAtomic` (`platform/Files.ts`), the bridge's mutating `legacyFileSystem` view, the legacy
+`FileSystem`/`ProcessRunner` ports, the Node runtime and Execa adapters, and every `node:fs`/`node:os`/`node:child_process`/`execa`
+import, whether named, aliased, type-only, whole-module, re-exported, or dynamic. The same file keeps these trees free of runtime imports
+of the legacy kernel (the effect-native family rule). Read-only families may still use `ReadOnlyFiles`, `GetOnlyHttp` (through
+`NetworkProbe`), `Process` (through the opaque probe runner and the isolated inspection workers), `TemporaryDirectories` (scope-owned
+directories outside the repository), and the bridge's `legacyReadOnlyFiles` view.
 
 No Nx child command is dispatched by doctor or status, and none is allowlisted. Nx always opens (and rewrites) its native workspace
 database when it constructs a project graph. `workspace.nx-projects`, `workspace.nx-graph`, and status's `nxEdges` are instead derived
@@ -570,15 +578,40 @@ always exits `0` on completion), while a doctor defect fails the status run, so 
 section for a broken doctor. The five collector sections (`workspaces`, `nxEdges`, `git`, `security`, `disk`) remain individually
 degradation-tolerant: an unavailable result or a collector defect maps that section to `null`. [`commands/status/cli.ts`](./commands/status/cli.ts)
 has no input: with the global `--json` it writes the document as the single JSON document; otherwise it renders the dashboard, whose header
-alone adds the `<node> --version` probe.
+alone adds the `<node> --version` probe. Because the shared session uses the quick profile, its `aggregate` fact is the fixed
+quick-profile stub and the `envinfo`/`systeminformation` aggregate worker is never spawned during `status` (the provider-count test
+asserts no process call references `aggregate-worker`). Status formats disk sizes with its own copy of the legacy `formatBytes`
+rendering, so it does not load the `common/index.ts` barrel.
+
+### Repository inspection (Effect-native)
+
+Doctor and Status read repository facts through the [`Inspection`](./inspection/Inspection.ts) service rather than probing on their own.
+`InspectionLive` keeps one layer-scoped session per request key (`repositoryInspectionRequestKey`: repository root, profile, and requested
+container engine), so every
+program in an invocation that asks for the same request shares one session, and a conflicting request for the same key dies with the legacy
+conflict message. [`inspection/repository.ts`](./inspection/repository.ts) composes one provider per fact (`workspace`, `aggregate`,
+`npm.root`, `npm.github-scripts`, `packages`, `dotnet`, `python`, `react`, `svelte.cv`, `svelte.status`, `infrastructure`) onto a
+[`session`](./inspection/session.ts) that runs each provider at most once, memoizes its `InspectionOutcome`
+(`available`/`unavailable`/`invalid`), and traces each run as one `inspection.<key>` span. Dependent providers (React, both Svelte
+providers, infrastructure) resolve `packages`/`aggregate` through the same session instead of building their own.
+
+Every provider is an Effect over the read-only `InspectionRequirements` (`ReadOnlyFiles`, `TemporaryDirectories`, `Process`,
+`Environment`) plus its own scope. Process failures become `ProbeOutcome`/`InspectionOutcome` data, never exceptions; processes run as
+child fibers, and temporary directories live in the provider scope, so closing the session interrupts in-flight providers and stops their
+processes before the directories are removed. Two facts run in isolated Node child processes started with `runWorker`
+([`platform/worker.ts`](./platform/worker.ts)): [`inspection/workspace.worker.ts`](./inspection/workspace.worker.ts) builds the Nx project
+graph with Nx state redirected to a disposable temporary directory (a malformed argument list is a usage failure, exit `2`), and
+[`inspection/aggregate-worker.ts`](./inspection/aggregate-worker.ts) is the only module that loads `envinfo`/`systeminformation`. Each parent
+provider validates the worker's single untrusted JSON document and reconstructs bounded facts from it. Under the `quick` profile, `aggregate`
+is a fixed `unavailable` stub and its worker never starts.
 
 ### Doctor test commands
 
-Focused validation for doctor, its reporter, every specialist module, and `commands/status/index.ts`:
+Focused validation for doctor, its reporter, every specialist module, `commands/status/index.ts`, and the inspection layer:
 
 ```powershell
-npx vitest run --config scripts\vitest.config.ts --coverage.enabled=false scripts\commands\doctor scripts\commands\status scripts\common\runtime-boundary.test.ts
-npx eslint scripts\commands\doctor scripts\commands\status scripts\common\taxonomy-artifacts.ts
+npx vitest run --config scripts\vitest.config.ts --coverage.enabled=false scripts\commands\doctor scripts\commands\status scripts\inspection scripts\common\runtime-boundary.test.ts
+npx eslint scripts\commands\doctor scripts\commands\status scripts\inspection scripts\common\taxonomy-artifacts.ts
 git --no-pager diff --check
 ```
 
