@@ -13,23 +13,23 @@
 import {resolve} from "node:path";
 import {describe, expect, it, vi} from "vitest";
 
-import type {CommandContext, CommandExecution} from "./common/commander.ts";
-import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "./common/logger.ts";
-import {createRepositoryPaths, type RepositoryPaths} from "./common/repository-paths.ts";
-import type {RepositoryRequirements} from "./common/requirements.ts";
+import type {CommandContext, CommandExecution} from "../../../common/commander.ts";
+import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "../../../common/logger.ts";
+import {createRepositoryPaths, type RepositoryPaths} from "../../../common/repository-paths.ts";
+import type {RepositoryRequirements} from "../../../common/requirements.ts";
 import {
   AbstractProcessRunner,
   type ProcessOutcome,
   type ProcessRequest,
   type ProcessRunOptions,
-} from "./common/runner.ts";
-import {createMemoryFileSystem, createTestRuntimeFactory} from "./common/runtime.testing.ts";
-import {FileSystemError, type Clock, type FileSystem} from "./common/runtime.ts";
-import {getExpectedTaxonomyArtifactPaths} from "./common/taxonomy-artifacts.ts";
-import type {GenerateResult, GenerateTaskName} from "./commands/generate/index.ts";
-import type {NpmTreeFacts} from "./inspection/packages.ts";
-import type {LegacyRepositoryInspectionSession} from "./platform/bridge.ts";
-import type {InspectionOutcome} from "./inspection/types.ts";
+} from "../../../common/runner.ts";
+import {createMemoryFileSystem, createTestRuntimeFactory} from "../../../common/runtime.testing.ts";
+import {FileSystemError, type Clock, type FileSystem} from "../../../common/runtime.ts";
+import {getExpectedTaxonomyArtifactPaths} from "../../../common/taxonomy-artifacts.ts";
+import type {GenerateResult, GenerateTaskName} from "../../generate/index.ts";
+import type {NpmTreeFacts} from "../../../inspection/packages.ts";
+import type {LegacyRepositoryInspectionSession} from "../../../platform/bridge.ts";
+import type {InspectionOutcome} from "../../../inspection/types.ts";
 import type {
   SetupAction,
   SetupActionDisposition,
@@ -39,8 +39,8 @@ import type {
   SetupPhaseDefinition,
   SetupPhaseResult,
   SetupPhaseRuntime,
-} from "./setup.types.ts";
-import {workspaceSetupPhases} from "./setup.workspace.ts";
+} from "../types.ts";
+import {workspaceSetupPhases} from "./workspace.ts";
 
 /** Fixture repository root; only the in-memory filesystem ever observes it. */
 const FIXTURE_ROOT = resolve("/fixture/arolariu.ro");

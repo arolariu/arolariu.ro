@@ -12,8 +12,8 @@ import {Command, Flag} from "effect/cli";
 
 import type {CliSubcommand} from "../../cli.ts";
 import type {CommandInvoker} from "../../common/commander.ts";
-import {setupCommand} from "../../setup.ts";
-import type {SetupInput} from "../../setup.types.ts";
+import {setupCommand} from "./index.ts";
+import type {SetupInput} from "./types.ts";
 import {EngineFlag, engineInput, VerboseFlag, withCommandOutput} from "../flags.ts";
 import {runLegacy} from "../legacy.ts";
 

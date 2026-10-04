@@ -31,11 +31,11 @@ import {
   type ProcessOutcome,
   type ProcessRequest,
   type SucceededProcessOutcome,
-} from "./common/runner.ts";
-import {CommandCancellation} from "./common/runtime.ts";
-import type {MinimumVersion} from "./common/requirements.ts";
-import type {PythonFacts} from "./inspection/python.ts";
-import type {InspectionOutcome} from "./inspection/types.ts";
+} from "../../../common/runner.ts";
+import {CommandCancellation} from "../../../common/runtime.ts";
+import type {MinimumVersion} from "../../../common/requirements.ts";
+import type {PythonFacts} from "../../../inspection/python.ts";
+import type {InspectionOutcome} from "../../../inspection/types.ts";
 import {
   requireSetupPhaseRuntime,
   type InstallationProposal,
@@ -44,7 +44,7 @@ import {
   type SetupPhaseDefinition,
   type SetupPhaseResult,
   type SetupPhaseRuntime,
-} from "./setup.types.ts";
+} from "../types.ts";
 
 /**
  * Bounded ceiling for every long-running Python interpreter installation and pip mutation.

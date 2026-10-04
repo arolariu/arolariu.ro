@@ -13,18 +13,18 @@
 import {resolve} from "node:path";
 import {afterEach, describe, expect, it, vi} from "vitest";
 
-import type {CommandContext} from "./common/commander.ts";
-import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "./common/logger.ts";
-import {createRepositoryPaths} from "./common/repository-paths.ts";
-import type {PackageRequirement, RepositoryRequirements} from "./common/requirements.ts";
-import {AbstractProcessRunner, type ProcessOutcome, type ProcessRequest, type ProcessRunOptions} from "./common/runner.ts";
-import {createMemoryFileSystem, createTestRuntimeFactory} from "./common/runtime.testing.ts";
-import {CommandCancellation, type Clock, type RuntimeEnvironment} from "./common/runtime.ts";
-import type {SvelteFacts, SvelteProjectId} from "./inspection/frontend.ts";
-import type {InstalledPackageFact, PackageInventoryFacts} from "./inspection/packages.ts";
-import type {LegacyRepositoryInspectionSession} from "./platform/bridge.ts";
-import type {InspectionOutcome} from "./inspection/types.ts";
-import {createSvelteSetupPhase, svelteSetupPhase} from "./setup.svelte.ts";
+import type {CommandContext} from "../../../common/commander.ts";
+import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "../../../common/logger.ts";
+import {createRepositoryPaths} from "../../../common/repository-paths.ts";
+import type {PackageRequirement, RepositoryRequirements} from "../../../common/requirements.ts";
+import {AbstractProcessRunner, type ProcessOutcome, type ProcessRequest, type ProcessRunOptions} from "../../../common/runner.ts";
+import {createMemoryFileSystem, createTestRuntimeFactory} from "../../../common/runtime.testing.ts";
+import {CommandCancellation, type Clock, type RuntimeEnvironment} from "../../../common/runtime.ts";
+import type {SvelteFacts, SvelteProjectId} from "../../../inspection/frontend.ts";
+import type {InstalledPackageFact, PackageInventoryFacts} from "../../../inspection/packages.ts";
+import type {LegacyRepositoryInspectionSession} from "../../../platform/bridge.ts";
+import type {InspectionOutcome} from "../../../inspection/types.ts";
+import {createSvelteSetupPhase, svelteSetupPhase} from "./svelte.ts";
 import type {
   SetupAction,
   SetupActionDisposition,
@@ -33,7 +33,7 @@ import type {
   SetupOptions,
   SetupPhaseResult,
   SetupPhaseRuntime,
-} from "./setup.types.ts";
+} from "../types.ts";
 
 const paths = createRepositoryPaths(resolve("C:\\fixture\\arolariu.ro"));
 const requiredPackages = [
@@ -453,7 +453,7 @@ describe("Svelte setup public contract", () => {
   });
 
   it("no longer publishes a setup-owned workspace inspection surface", async () => {
-    const module = await import("./setup.svelte.ts");
+    const module = await import("./svelte.ts");
 
     expect(module).toMatchObject({
       createSvelteSetupPhase: expect.any(Function),

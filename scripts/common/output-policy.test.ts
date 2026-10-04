@@ -358,7 +358,7 @@ describe("direct output policy", () => {
     const ignores = readConfigStringArrayProperty("eslint.config.ts", "toolingOutputConfig", "ignores");
 
     expect(ignores).toEqual(expect.arrayContaining([...transitionalEntrypoints]));
-    expect(ignores).not.toContain("scripts/setup.ts");
+    expect(ignores).not.toContain("scripts/commands/setup/index.ts");
   });
 
   it("keeps process restrictions when the prompt ESLint policy is applied later", () => {

@@ -13,22 +13,22 @@
 import {resolve} from "node:path";
 import {describe, expect, it, vi} from "vitest";
 
-import type {CommandContext} from "./common/commander.ts";
-import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "./common/logger.ts";
-import {createRepositoryPaths} from "./common/repository-paths.ts";
-import type {MinimumVersion, RepositoryRequirements} from "./common/requirements.ts";
-import {AbstractProcessRunner, type ProcessOutcome, type ProcessRequest, type ProcessRunOptions} from "./common/runner.ts";
-import {createMemoryFileSystem, createTestRuntimeFactory} from "./common/runtime.testing.ts";
-import type {Clock, RuntimeEnvironment} from "./common/runtime.ts";
-import type {DotnetFacts} from "./inspection/dotnet.ts";
-import type {LegacyRepositoryInspectionSession} from "./platform/bridge.ts";
-import type {InspectionOutcome} from "./inspection/types.ts";
+import type {CommandContext} from "../../../common/commander.ts";
+import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "../../../common/logger.ts";
+import {createRepositoryPaths} from "../../../common/repository-paths.ts";
+import type {MinimumVersion, RepositoryRequirements} from "../../../common/requirements.ts";
+import {AbstractProcessRunner, type ProcessOutcome, type ProcessRequest, type ProcessRunOptions} from "../../../common/runner.ts";
+import {createMemoryFileSystem, createTestRuntimeFactory} from "../../../common/runtime.testing.ts";
+import type {Clock, RuntimeEnvironment} from "../../../common/runtime.ts";
+import type {DotnetFacts} from "../../../inspection/dotnet.ts";
+import type {LegacyRepositoryInspectionSession} from "../../../platform/bridge.ts";
+import type {InspectionOutcome} from "../../../inspection/types.ts";
 import {
   createDotnetSetupPhase,
   dotnetSetupPhase,
   generateLocalDevelopmentPassword,
   selectDotnetInstallationProposal,
-} from "./setup.dotnet.ts";
+} from "./dotnet.ts";
 import type {
   SetupAction,
   SetupActionDisposition,
@@ -37,7 +37,7 @@ import type {
   SetupInput,
   SetupPhaseResult,
   SetupPhaseRuntime,
-} from "./setup.types.ts";
+} from "../types.ts";
 
 const requiredDotnet: MinimumVersion = {major: 10, minor: 0, patch: 0};
 const paths = createRepositoryPaths(resolve("C:\\fixture\\arolariu.ro"));

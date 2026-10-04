@@ -168,7 +168,7 @@ function isAcceptablePortProbeResult(platform: NodeJS.Platform, outcome: Readonl
 
 /**
  * Strips known secret environment values before any diagnostic command inherits the caller's
- * environment, matching `setup.infrastructure.ts`'s established credential isolation.
+ * environment, matching `commands/setup/phases/infrastructure.ts`'s established credential isolation.
  *
  * @param environment - Caller-supplied environment snapshot.
  * @returns A copy with the local SQL password variable removed.

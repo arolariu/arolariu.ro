@@ -11,20 +11,20 @@
 
 import {resolve} from "node:path";
 
-import type {CommandExecution} from "./common/commander.ts";
-import {loadRepositoryRequirements, parseVersion, satisfiesMinimum, type MinimumVersion} from "./common/requirements.ts";
-import type {ProcessOutcome, ProcessRequest, SucceededProcessOutcome} from "./common/runner.ts";
-import {CommandCancellation, type FileSystem} from "./common/runtime.ts";
-import {getExpectedTaxonomyArtifactPaths} from "./common/taxonomy-artifacts.ts";
-import type {GenerateResult} from "./commands/generate/index.ts";
-import type {NpmTreeFacts} from "./inspection/packages.ts";
+import type {CommandExecution} from "../../../common/commander.ts";
+import {loadRepositoryRequirements, parseVersion, satisfiesMinimum, type MinimumVersion} from "../../../common/requirements.ts";
+import type {ProcessOutcome, ProcessRequest, SucceededProcessOutcome} from "../../../common/runner.ts";
+import {CommandCancellation, type FileSystem} from "../../../common/runtime.ts";
+import {getExpectedTaxonomyArtifactPaths} from "../../../common/taxonomy-artifacts.ts";
+import type {GenerateResult} from "../../generate/index.ts";
+import type {NpmTreeFacts} from "../../../inspection/packages.ts";
 import {
   requireSetupPhaseRuntime,
   type SetupContext,
   type SetupPhaseDefinition,
   type SetupPhaseResult,
   type SetupPhaseRuntime,
-} from "./setup.types.ts";
+} from "../types.ts";
 
 const REPOSITORY_PACKAGE_NAME = "@arolariu/monorepo";
 /** Exact contributor remediation for a missing, unavailable, invalid, or broken root npm tree. */

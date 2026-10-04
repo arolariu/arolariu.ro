@@ -10,16 +10,16 @@
  * `runner`/`now` bridge remains.
  */
 
-import type {CommandContext, CommandExecution} from "./common/commander.ts";
-import type {MonorepositoryLogger} from "./common/logger.ts";
-import type {PromptProvider} from "./common/prompts.ts";
-import type {RepositoryPaths} from "./common/repository-paths.ts";
-import type {RepositoryRequirements} from "./common/requirements.ts";
-import type {ProcessRequest, ProcessRunner} from "./common/runner.ts";
-import type {Clock, FileSystem, HttpClient, RuntimeEnvironment, TaskScheduler} from "./common/runtime.ts";
-import type {ContainerEngine} from "./container-runtime/types.ts";
-import type {GenerateInput, GenerateResult} from "./commands/generate/index.ts";
-import type {LegacyRepositoryInspectionSession} from "./platform/bridge.ts";
+import type {CommandContext, CommandExecution} from "../../common/commander.ts";
+import type {MonorepositoryLogger} from "../../common/logger.ts";
+import type {PromptProvider} from "../../common/prompts.ts";
+import type {RepositoryPaths} from "../../common/repository-paths.ts";
+import type {RepositoryRequirements} from "../../common/requirements.ts";
+import type {ProcessRequest, ProcessRunner} from "../../common/runner.ts";
+import type {Clock, FileSystem, HttpClient, RuntimeEnvironment, TaskScheduler} from "../../common/runtime.ts";
+import type {ContainerEngine} from "../../container-runtime/types.ts";
+import type {GenerateInput, GenerateResult} from "../generate/index.ts";
+import type {LegacyRepositoryInspectionSession} from "../../platform/bridge.ts";
 
 /** Terminal status reported by one setup phase. */
 export type SetupStatus = "succeeded" | "failed" | "skipped" | "degraded";

@@ -15,7 +15,7 @@ import {makeRootCommand, runCli} from "../../cli.ts";
 import type {CommandInvoker} from "../../common/commander.ts";
 import {exitCodeFor, type CommandExitCode} from "../../platform/exit.ts";
 import {makeTestLayer} from "../../platform/testing.ts";
-import type {SetupInput} from "../../setup.types.ts";
+import type {SetupInput} from "./types.ts";
 import {makeSetupCommand} from "./cli.ts";
 
 /**

@@ -27,17 +27,17 @@
 import {randomBytes as nodeRandomBytes} from "node:crypto";
 import {resolve} from "node:path";
 
-import {satisfiesMinimum, type MinimumVersion} from "./common/requirements.ts";
+import {satisfiesMinimum, type MinimumVersion} from "../../../common/requirements.ts";
 import {
   processFailureEvidence,
   RunnerError,
   type ProcessOutcome,
   type ProcessRequest,
   type SucceededProcessOutcome,
-} from "./common/runner.ts";
-import {CommandCancellation} from "./common/runtime.ts";
-import type {DotnetFacts} from "./inspection/dotnet.ts";
-import type {InspectionOutcome} from "./inspection/types.ts";
+} from "../../../common/runner.ts";
+import {CommandCancellation} from "../../../common/runtime.ts";
+import type {DotnetFacts} from "../../../inspection/dotnet.ts";
+import type {InspectionOutcome} from "../../../inspection/types.ts";
 import {
   requireSetupPhaseRuntime,
   type InstallationProposal,
@@ -46,7 +46,7 @@ import {
   type SetupPhaseDefinition,
   type SetupPhaseResult,
   type SetupPhaseRuntime,
-} from "./setup.types.ts";
+} from "../types.ts";
 
 type RandomByteSource = (size: number) => Uint8Array;
 

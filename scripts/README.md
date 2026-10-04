@@ -375,7 +375,7 @@ configuration provides immediate feedback for direct output syntax. Direct conso
 sinks, while injected `output.write(...)` prompt presentation stays confined to the prompt adapter. No exemption includes a script entry
 point.
 
-Every legacy production script under root `scripts/**` — including [`setup.ts`](./setup.ts) — routes its presentation and semantic
+Every legacy production script under root `scripts/**` — including [`commands/setup/index.ts`](./commands/setup/index.ts) — routes its presentation and semantic
 output through `MonorepositoryConsoleLogger`; the Effect-native families (generate, rates, docs, doctor, and status) route it through the
 platform `Presenter` and logger. There are no remaining
 transitional setup/doctor/status exceptions.
@@ -430,7 +430,7 @@ npx eslint scripts\commands\generate scripts\commands\rates scripts\commands\doc
 
 ## Setup orchestrator (`npm run setup`)
 
-`npm run setup` runs `arolariu setup` (`--dry-run`, `--yes`, `--engine rancher|podman`, plus the global flags); [`setup.ts`](./setup.ts)
+`npm run setup` runs `arolariu setup` (`--dry-run`, `--yes`, `--engine rancher|podman`, plus the global flags); [`commands/setup/index.ts`](./commands/setup/index.ts)
 owns the command. It
 resolves canonical paths through [`common/repository-paths.ts`](./common/repository-paths.ts), loads manifest-derived runtime and package
 requirements through [`common/requirements.ts`](./common/requirements.ts), and reads/writes the non-secret persisted selection at
@@ -441,14 +441,14 @@ toolchains, and generates checkout artifacts; it never builds, type-checks, test
 
 | Module | Owns |
 |--------|------|
-| [`setup.ts`](./setup.ts) | Input decoding, phase ordering, dependency gating, and the exit-code/readiness rollup; [`commands/setup/cli.ts`](./commands/setup/cli.ts) parses its flags |
-| [`setup.types.ts`](./setup.types.ts) | Shared `SetupContext`, `SetupPhaseDefinition`, `SetupAction`, and status/scope contracts |
-| [`setup.workspace.ts`](./setup.workspace.ts) | Prerequisite validation, root and `.github/scripts` npm restore, and generated taxonomy/GraphQL/i18n artifacts |
-| [`setup.dotnet.ts`](./setup.dotnet.ts) | .NET SDK install, workload/solution/tool restore, AppHost user secrets, and the local HTTPS dev certificate |
-| [`setup.react.ts`](./setup.react.ts) | Website package validation, additive website `.env` defaults, and Playwright Chromium |
-| [`setup.svelte.ts`](./setup.svelte.ts) | CV and status SvelteKit generated `.svelte-kit` state |
-| [`setup.python.ts`](./setup.python.ts) | Isolated `exp` Python virtual environment, pinned dependency install, and its requirements fingerprint |
-| [`setup.infrastructure.ts`](./setup.infrastructure.ts) | Container engine selection/persistence/install, mkcert, selfhost certificates, required ports, and required runtime files |
+| [`commands/setup/index.ts`](./commands/setup/index.ts) | Input decoding, phase ordering, dependency gating, and the exit-code/readiness rollup; [`commands/setup/cli.ts`](./commands/setup/cli.ts) parses its flags |
+| [`commands/setup/types.ts`](./commands/setup/types.ts) | Shared `SetupContext`, `SetupPhaseDefinition`, `SetupAction`, and status/scope contracts |
+| [`commands/setup/phases/workspace.ts`](./commands/setup/phases/workspace.ts) | Prerequisite validation, root and `.github/scripts` npm restore, and generated taxonomy/GraphQL/i18n artifacts |
+| [`commands/setup/phases/dotnet.ts`](./commands/setup/phases/dotnet.ts) | .NET SDK install, workload/solution/tool restore, AppHost user secrets, and the local HTTPS dev certificate |
+| [`commands/setup/phases/react.ts`](./commands/setup/phases/react.ts) | Website package validation, additive website `.env` defaults, and Playwright Chromium |
+| [`commands/setup/phases/svelte.ts`](./commands/setup/phases/svelte.ts) | CV and status SvelteKit generated `.svelte-kit` state |
+| [`commands/setup/phases/python.ts`](./commands/setup/phases/python.ts) | Isolated `exp` Python virtual environment, pinned dependency install, and its requirements fingerprint |
+| [`commands/setup/phases/infrastructure.ts`](./commands/setup/phases/infrastructure.ts) | Container engine selection/persistence/install, mkcert, selfhost certificates, required ports, and required runtime files |
 
 ### Phase dependency table
 
@@ -469,7 +469,7 @@ dependent phase and names the blocking dependency.
 
 ### Mutation scopes and consent
 
-Every mutation runs through the `SetupActionExecutor` created in [`setup.ts`](./setup.ts), which is the sole place that decides whether an
+Every mutation runs through the `SetupActionExecutor` created in [`commands/setup/index.ts`](./commands/setup/index.ts), which is the sole place that decides whether an
 action is `executed`, `planned` (always the outcome under `--dry-run`), or `declined`.
 
 | Scope | Consent behavior | Representative actions |
@@ -486,8 +486,8 @@ action is `executed`, `planned` (always the outcome under `--dry-run`), or `decl
 Focused validation for setup and its direct shared dependencies:
 
 ```powershell
-npx vitest run --config scripts\vitest.config.ts --coverage.enabled=false scripts\common\repository-paths.test.ts scripts\common\requirements.test.ts scripts\common\tooling-config.test.ts scripts\common\prompts.test.ts scripts\setup.test.ts scripts\setup.workspace.test.ts scripts\setup.dotnet.test.ts scripts\setup.react.test.ts scripts\setup.svelte.test.ts scripts\setup.python.test.ts scripts\setup.infrastructure.test.ts scripts\commands\generate\env.test.ts scripts\container-runtime\selection.test.ts scripts\common\output-policy.test.ts
-npx eslint scripts\setup.ts scripts\setup.types.ts scripts\setup.*.ts scripts\common\repository-paths.ts scripts\common\requirements.ts scripts\common\tooling-config.ts scripts\common\prompts.ts scripts\commands\generate\env.ts scripts\container-runtime
+npx vitest run --config scripts\vitest.config.ts --coverage.enabled=false scripts\common\repository-paths.test.ts scripts\common\requirements.test.ts scripts\common\tooling-config.test.ts scripts\common\prompts.test.ts scripts\commands\setup\index.test.ts scripts\commands\setup\phases\workspace.test.ts scripts\commands\setup\phases\dotnet.test.ts scripts\commands\setup\phases\react.test.ts scripts\commands\setup\phases\svelte.test.ts scripts\commands\setup\phases\python.test.ts scripts\commands\setup\phases\infrastructure.test.ts scripts\commands\generate\env.test.ts scripts\container-runtime\selection.test.ts scripts\common\output-policy.test.ts
+npx eslint scripts\commands\setup scripts\common\repository-paths.ts scripts\common\requirements.ts scripts\common\tooling-config.ts scripts\common\prompts.ts scripts\commands\generate\env.ts scripts\container-runtime
 git --no-pager diff --check
 ```
 

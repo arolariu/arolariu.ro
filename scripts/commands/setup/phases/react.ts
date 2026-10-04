@@ -29,12 +29,12 @@
  * because the secret-bearing additive `.env` policy is business logic, not a runtime capability.
  */
 
-import type {ProcessOutcome, ProcessRequest, SucceededProcessOutcome} from "./common/runner.ts";
-import {CommandCancellation, type FileSystem} from "./common/runtime.ts";
-import {appendMissingEnvironmentValues, parseEnvironmentFile} from "./commands/generate/env.ts";
-import type {ReactFacts} from "./inspection/frontend.ts";
-import type {PackageInventoryFacts} from "./inspection/packages.ts";
-import type {InspectionOutcome} from "./inspection/types.ts";
+import type {ProcessOutcome, ProcessRequest, SucceededProcessOutcome} from "../../../common/runner.ts";
+import {CommandCancellation, type FileSystem} from "../../../common/runtime.ts";
+import {appendMissingEnvironmentValues, parseEnvironmentFile} from "../../generate/env.ts";
+import type {ReactFacts} from "../../../inspection/frontend.ts";
+import type {PackageInventoryFacts} from "../../../inspection/packages.ts";
+import type {InspectionOutcome} from "../../../inspection/types.ts";
 import {
   requireSetupPhaseRuntime,
   type SetupActionDisposition,
@@ -43,7 +43,7 @@ import {
   type SetupPhaseDefinition,
   type SetupPhaseResult,
   type SetupPhaseRuntime,
-} from "./setup.types.ts";
+} from "../types.ts";
 
 type ClerkMode = "test" | "live";
 

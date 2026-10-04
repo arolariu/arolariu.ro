@@ -24,15 +24,15 @@
 
 import {dirname, resolve} from "node:path";
 
-import {processFailureEvidence, type ProcessOutcome, type ProcessRunner, type SucceededProcessOutcome} from "./common/runner.ts";
-import {CommandCancellation} from "./common/runtime.ts";
-import {mergeToolingConfig, readToolingConfig, writeToolingConfig} from "./common/tooling-config.ts";
-import {getContainerAdapter, type ContainerRuntimeAdapter} from "./container-runtime/adapters.ts";
-import {resolveContainerEngine} from "./container-runtime/selection.ts";
-import type {ContainerEngine, EngineSelectionSource} from "./container-runtime/types.ts";
-import type {InfrastructureFacts} from "./inspection/infrastructure.ts";
-import type {RepositoryInspectionKey} from "./inspection/repository.ts";
-import type {InspectionOutcome} from "./inspection/types.ts";
+import {processFailureEvidence, type ProcessOutcome, type ProcessRunner, type SucceededProcessOutcome} from "../../../common/runner.ts";
+import {CommandCancellation} from "../../../common/runtime.ts";
+import {mergeToolingConfig, readToolingConfig, writeToolingConfig} from "../../../common/tooling-config.ts";
+import {getContainerAdapter, type ContainerRuntimeAdapter} from "../../../container-runtime/adapters.ts";
+import {resolveContainerEngine} from "../../../container-runtime/selection.ts";
+import type {ContainerEngine, EngineSelectionSource} from "../../../container-runtime/types.ts";
+import type {InfrastructureFacts} from "../../../inspection/infrastructure.ts";
+import type {RepositoryInspectionKey} from "../../../inspection/repository.ts";
+import type {InspectionOutcome} from "../../../inspection/types.ts";
 import {
   requireSetupPhaseRuntime,
   type InstallationProposal,
@@ -41,7 +41,7 @@ import {
   type SetupPhaseDefinition,
   type SetupPhaseResult,
   type SetupPhaseRuntime,
-} from "./setup.types.ts";
+} from "../types.ts";
 
 const ENGINE_PERSIST_ACTION = "infrastructure.engine.persist";
 const CONTAINER_INSTALL_ACTION = "infrastructure.container.install";

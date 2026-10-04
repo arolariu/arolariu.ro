@@ -14,24 +14,24 @@ import {resolve} from "node:path";
 import {PassThrough} from "node:stream";
 import {describe, expect, it, vi} from "vitest";
 
-import type {CommandExecution, CommandInvoker, CommandRuntimeFactory} from "./common/commander.ts";
-import {InMemoryLoggerSink, MonorepositoryConsoleLogger, type MonorepositoryLogger} from "./common/logger.ts";
-import {createTerminalPromptProvider, type PromptProvider} from "./common/prompts.ts";
-import {createRepositoryPaths, type RepositoryPaths} from "./common/repository-paths.ts";
-import type {ProcessRequest, ProcessRunOptions, ProcessRunner} from "./common/runner.ts";
-import {createMemoryFileSystem, createProcessRunner, createTestRuntimeFactory, repositoryFixtureRoot} from "./common/runtime.testing.ts";
+import type {CommandExecution, CommandInvoker, CommandRuntimeFactory} from "../../common/commander.ts";
+import {InMemoryLoggerSink, MonorepositoryConsoleLogger, type MonorepositoryLogger} from "../../common/logger.ts";
+import {createTerminalPromptProvider, type PromptProvider} from "../../common/prompts.ts";
+import {createRepositoryPaths, type RepositoryPaths} from "../../common/repository-paths.ts";
+import type {ProcessRequest, ProcessRunOptions, ProcessRunner} from "../../common/runner.ts";
+import {createMemoryFileSystem, createProcessRunner, createTestRuntimeFactory, repositoryFixtureRoot} from "../../common/runtime.testing.ts";
 import {
   CommandCancellation,
   type FileSystem,
   type RepositoryInspectionRequest,
   type RepositoryInspectionRuntime,
-} from "./common/runtime.ts";
-import type {GenerateInput, GenerateResult} from "./commands/generate/index.ts";
-import type {DotnetFacts} from "./inspection/dotnet.ts";
-import type {LegacyRepositoryInspectionSession} from "./platform/bridge.ts";
-import {dotnetSetupPhase} from "./setup.dotnet.ts";
-import {createSetupActionExecutor, createSetupCommand, setupPhases, type SetupResult} from "./setup.ts";
-import type {SetupAction, SetupContext, SetupInput, SetupPhaseDefinition, SetupPhaseResult, SetupStatus} from "./setup.types.ts";
+} from "../../common/runtime.ts";
+import type {GenerateInput, GenerateResult} from "../generate/index.ts";
+import type {DotnetFacts} from "../../inspection/dotnet.ts";
+import type {LegacyRepositoryInspectionSession} from "../../platform/bridge.ts";
+import {dotnetSetupPhase} from "./phases/dotnet.ts";
+import {createSetupActionExecutor, createSetupCommand, setupPhases, type SetupResult} from "./index.ts";
+import type {SetupAction, SetupContext, SetupInput, SetupPhaseDefinition, SetupPhaseResult, SetupStatus} from "./types.ts";
 
 /** Canonical paths of the in-memory repository fixture every orchestrator test resolves. */
 const FIXTURE_PATHS: RepositoryPaths = createRepositoryPaths(repositoryFixtureRoot);

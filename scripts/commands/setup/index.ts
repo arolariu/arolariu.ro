@@ -30,18 +30,18 @@ import {
   type CommandExecution,
   type CommandInvoker,
   type CommandRuntimeFactory,
-} from "./common/commander.ts";
-import type {MonorepositoryLogger} from "./common/logger.ts";
-import type {PromptProvider} from "./common/prompts.ts";
-import {loadRepositoryRequirements} from "./common/requirements.ts";
-import {resolveRepositoryPaths} from "./common/repository-paths.ts";
-import {CommandCancellation, commandCancellationFromSignal, type RepositoryInspectionRequest} from "./common/runtime.ts";
-import {generateCommand, type GenerateInput, type GenerateResult} from "./commands/generate/index.ts";
-import {dotnetSetupPhase} from "./setup.dotnet.ts";
-import {infrastructureSetupPhase} from "./setup.infrastructure.ts";
-import {pythonSetupPhase} from "./setup.python.ts";
-import {reactSetupPhase} from "./setup.react.ts";
-import {svelteSetupPhase} from "./setup.svelte.ts";
+} from "../../common/commander.ts";
+import type {MonorepositoryLogger} from "../../common/logger.ts";
+import type {PromptProvider} from "../../common/prompts.ts";
+import {loadRepositoryRequirements} from "../../common/requirements.ts";
+import {resolveRepositoryPaths} from "../../common/repository-paths.ts";
+import {CommandCancellation, commandCancellationFromSignal, type RepositoryInspectionRequest} from "../../common/runtime.ts";
+import {generateCommand, type GenerateInput, type GenerateResult} from "../generate/index.ts";
+import {dotnetSetupPhase} from "./phases/dotnet.ts";
+import {infrastructureSetupPhase} from "./phases/infrastructure.ts";
+import {pythonSetupPhase} from "./phases/python.ts";
+import {reactSetupPhase} from "./phases/react.ts";
+import {svelteSetupPhase} from "./phases/svelte.ts";
 import {
   type SetupActionExecutor,
   type SetupContext,
@@ -49,10 +49,10 @@ import {
   type SetupPhaseDefinition,
   type SetupPhaseResult,
   type SetupPhaseRuntime,
-} from "./setup.types.ts";
-import {workspaceSetupPhases} from "./setup.workspace.ts";
+} from "./types.ts";
+import {workspaceSetupPhases} from "./phases/workspace.ts";
 
-export type {SetupInput} from "./setup.types.ts";
+export type {SetupInput} from "./types.ts";
 
 /** Bounded default timeout applied to every phase command that does not request its own. */
 const PHASE_COMMAND_TIMEOUT_MS = 120_000;

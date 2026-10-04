@@ -21,20 +21,20 @@
 import {dirname, resolve} from "node:path";
 import {describe, expect, it, vi} from "vitest";
 
-import type {CommandContext} from "./common/commander.ts";
-import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "./common/logger.ts";
-import {createRepositoryPaths} from "./common/repository-paths.ts";
-import type {RepositoryRequirements} from "./common/requirements.ts";
-import {AbstractProcessRunner, type ProcessOutcome, type ProcessRequest, type ProcessRunOptions} from "./common/runner.ts";
-import {createMemoryFileSystem, createTestRuntimeFactory} from "./common/runtime.testing.ts";
-import type {Clock, FileSystem, RuntimeEnvironment} from "./common/runtime.ts";
-import type {ToolingConfigV1} from "./common/tooling-config.ts";
-import {requiredLocalPorts} from "./container-runtime/preflight.ts";
-import type {ContainerEngine} from "./container-runtime/types.ts";
-import type {InfrastructureFacts, PortFact} from "./inspection/infrastructure.ts";
-import type {LegacyRepositoryInspectionSession} from "./platform/bridge.ts";
-import type {InspectionOutcome} from "./inspection/types.ts";
-import {createInfrastructureSetupPhase, infrastructureSetupPhase, selectContainerInstallationProposal} from "./setup.infrastructure.ts";
+import type {CommandContext} from "../../../common/commander.ts";
+import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "../../../common/logger.ts";
+import {createRepositoryPaths} from "../../../common/repository-paths.ts";
+import type {RepositoryRequirements} from "../../../common/requirements.ts";
+import {AbstractProcessRunner, type ProcessOutcome, type ProcessRequest, type ProcessRunOptions} from "../../../common/runner.ts";
+import {createMemoryFileSystem, createTestRuntimeFactory} from "../../../common/runtime.testing.ts";
+import type {Clock, FileSystem, RuntimeEnvironment} from "../../../common/runtime.ts";
+import type {ToolingConfigV1} from "../../../common/tooling-config.ts";
+import {requiredLocalPorts} from "../../../container-runtime/preflight.ts";
+import type {ContainerEngine} from "../../../container-runtime/types.ts";
+import type {InfrastructureFacts, PortFact} from "../../../inspection/infrastructure.ts";
+import type {LegacyRepositoryInspectionSession} from "../../../platform/bridge.ts";
+import type {InspectionOutcome} from "../../../inspection/types.ts";
+import {createInfrastructureSetupPhase, infrastructureSetupPhase, selectContainerInstallationProposal} from "./infrastructure.ts";
 import type {
   SetupAction,
   SetupActionDisposition,
@@ -43,7 +43,7 @@ import type {
   SetupInput,
   SetupPhaseResult,
   SetupPhaseRuntime,
-} from "./setup.types.ts";
+} from "../types.ts";
 
 // ---------------------------------------------------------------------------
 // Fact fixtures
@@ -55,11 +55,11 @@ const certificatePath = resolve(ROOT, "infra", "Local", "Management", "certs", "
 const certificateKeyPath = resolve(ROOT, "infra", "Local", "Management", "certs", "local-key.pem");
 
 /**
- * Mirrors `setup.ts`'s `PHASE_COMMAND_TIMEOUT_MS`: the invocation-scoped runner default every
+ * Mirrors `commands/setup/index.ts`'s `PHASE_COMMAND_TIMEOUT_MS`: the invocation-scoped runner default every
  * migrated phase's `runtime.runner` already carries before the phase ever sees it. Scoping the
  * harness's runner with this same default (rather than leaving it unscoped) lets these tests
  * observe the exact merged options a `--version` probe exposes versus the long mutation ceiling
- * `setup.infrastructure.ts` requests explicitly, instead of the unscoped `undefined` a harness
+ * `phases/infrastructure.ts` requests explicitly, instead of the unscoped `undefined` a harness
  * that skipped this default would produce.
  */
 const PHASE_PROBE_TIMEOUT_MS = 120_000;

@@ -15,18 +15,18 @@
 import {resolve} from "node:path";
 import {afterEach, describe, expect, it, vi} from "vitest";
 
-import type {CommandContext} from "./common/commander.ts";
-import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "./common/logger.ts";
-import {createRepositoryPaths} from "./common/repository-paths.ts";
-import type {PackageRequirement, RepositoryRequirements} from "./common/requirements.ts";
-import {AbstractProcessRunner, type ProcessOutcome, type ProcessRequest, type ProcessRunOptions} from "./common/runner.ts";
-import {createMemoryFileSystem, createTestRuntimeFactory} from "./common/runtime.testing.ts";
-import {CommandCancellation, type Clock, type FileSystem, type RuntimeEnvironment} from "./common/runtime.ts";
-import type {EnvironmentFacts, ReactFacts} from "./inspection/frontend.ts";
-import type {InstalledPackageFact, PackageInventoryFacts} from "./inspection/packages.ts";
-import type {LegacyRepositoryInspectionSession} from "./platform/bridge.ts";
-import type {InspectionOutcome} from "./inspection/types.ts";
-import {createReactSetupPhase, reactSetupPhase} from "./setup.react.ts";
+import type {CommandContext} from "../../../common/commander.ts";
+import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "../../../common/logger.ts";
+import {createRepositoryPaths} from "../../../common/repository-paths.ts";
+import type {PackageRequirement, RepositoryRequirements} from "../../../common/requirements.ts";
+import {AbstractProcessRunner, type ProcessOutcome, type ProcessRequest, type ProcessRunOptions} from "../../../common/runner.ts";
+import {createMemoryFileSystem, createTestRuntimeFactory} from "../../../common/runtime.testing.ts";
+import {CommandCancellation, type Clock, type FileSystem, type RuntimeEnvironment} from "../../../common/runtime.ts";
+import type {EnvironmentFacts, ReactFacts} from "../../../inspection/frontend.ts";
+import type {InstalledPackageFact, PackageInventoryFacts} from "../../../inspection/packages.ts";
+import type {LegacyRepositoryInspectionSession} from "../../../platform/bridge.ts";
+import type {InspectionOutcome} from "../../../inspection/types.ts";
+import {createReactSetupPhase, reactSetupPhase} from "./react.ts";
 import type {
   SetupAction,
   SetupActionDisposition,
@@ -35,7 +35,7 @@ import type {
   SetupOptions,
   SetupPhaseResult,
   SetupPhaseRuntime,
-} from "./setup.types.ts";
+} from "../types.ts";
 
 const paths = createRepositoryPaths(resolve("C:\\fixture\\arolariu.ro"));
 const lockedPackageVersions = new Map<string, string>([
@@ -654,7 +654,7 @@ describe("React setup public contract", () => {
       throw new Error("Azure identity loaded eagerly");
     });
 
-    await expect(import("./setup.react.ts")).resolves.toMatchObject({
+    await expect(import("./react.ts")).resolves.toMatchObject({
       createReactSetupPhase: expect.any(Function),
       prepareWebsiteEnvironment: expect.any(Function),
       reactSetupPhase: expect.any(Object),

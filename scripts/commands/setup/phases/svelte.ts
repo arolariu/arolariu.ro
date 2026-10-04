@@ -26,19 +26,19 @@
  * filesystem access of its own, and measures no time itself.
  */
 
-import {parseVersion, satisfiesMinimum, type MinimumVersion} from "./common/requirements.ts";
-import type {ProcessOutcome, ProcessRequest, SucceededProcessOutcome} from "./common/runner.ts";
-import {CommandCancellation} from "./common/runtime.ts";
-import type {SvelteFacts, SvelteProjectId} from "./inspection/frontend.ts";
-import {SVELTE_INSPECTED_PACKAGE_NAMES, type PackageInventoryFacts} from "./inspection/packages.ts";
-import type {InspectionOutcome} from "./inspection/types.ts";
+import {parseVersion, satisfiesMinimum, type MinimumVersion} from "../../../common/requirements.ts";
+import type {ProcessOutcome, ProcessRequest, SucceededProcessOutcome} from "../../../common/runner.ts";
+import {CommandCancellation} from "../../../common/runtime.ts";
+import type {SvelteFacts, SvelteProjectId} from "../../../inspection/frontend.ts";
+import {SVELTE_INSPECTED_PACKAGE_NAMES, type PackageInventoryFacts} from "../../../inspection/packages.ts";
+import type {InspectionOutcome} from "../../../inspection/types.ts";
 import {
   requireSetupPhaseRuntime,
   type SetupContext,
   type SetupPhaseDefinition,
   type SetupPhaseResult,
   type SetupPhaseRuntime,
-} from "./setup.types.ts";
+} from "../types.ts";
 
 /** Result of evaluating the `svelte.prepare` mutation and its immediate cache refresh. */
 type SveltePrepareOutcome =
