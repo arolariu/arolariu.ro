@@ -1,6 +1,6 @@
 /**
  * @fileoverview React workspace, website environment, and Playwright setup phase.
- * @module scripts.setup.react
+ * @module scripts/commands/setup/phases/react
  *
  * @remarks
  * Every read-only React observation (installed package inventory, the `@arolariu/components`
@@ -15,34 +15,40 @@
  * write, and the Linux Playwright host-library probe and installation.
  *
  * Every attempted fact-changing mutation runs through {@link runReactMutation}, which invalidates
- * exactly `"react"` in a `finally` block around the mutation so a failed or interrupted attempt can
- * never leave the shared session cache stale, and then re-inspects `"react"` immediately after an
+ * exactly `"react"` in a finalizer around the mutation so a failed or interrupted attempt can never
+ * leave the shared session cache stale, and then re-inspects `"react"` immediately after an
  * `"executed"` disposition. Planned and declined actions never invalidate anything, and a
  * successful command is never treated as proof: each mutation asserts its own postcondition
  * against the refreshed facts. The Linux system-dependency action is deliberately excluded because
  * the shared fact contract does not model host libraries.
  *
- * The phase reads every capability from the invocation-scoped {@link LegacySetupPhaseRuntime}: the
- * process runner, the atomic filesystem, the clock, and the immutable environment snapshot that
- * supplies both the host platform and the non-interactive decision. It owns no ambient Node state
- * and no injected host boundary of its own; {@link prepareWebsiteEnvironment} stays exported
- * because the secret-bearing additive `.env` policy is business logic, not a runtime capability.
+ * The phase runs its commands through `Process` with the setup command defaults, reads and writes
+ * the website environment through `ReadOnlyFiles` and `writeTextAtomic`, prompts through `Prompts`,
+ * and reads the host platform and the non-interactive decision from `Environment`. Every observed
+ * or entered Clerk credential is held `Redacted` and unwrapped only to decide its mode, to write it,
+ * or to sanitize failure evidence. {@link prepareWebsiteEnvironment} stays exported because the
+ * secret-bearing additive `.env` policy is business logic, not a runtime capability.
  */
 
-import type {ProcessOutcome, ProcessRequest, SucceededProcessOutcome} from "../../../common/runner.ts";
-import {CommandCancellation, type FileSystem} from "../../../common/runtime.ts";
-import {appendMissingEnvironmentValues, parseEnvironmentFile} from "../../generate/env.ts";
+import {Clock, Effect, FileSystem, PlatformError, Redacted, Terminal} from "effect";
+
 import type {ReactFacts} from "../../../inspection/frontend.ts";
 import type {PackageInventoryFacts} from "../../../inspection/packages.ts";
 import type {InspectionOutcome} from "../../../inspection/types.ts";
-import {
-  requireLegacySetupPhaseRuntime,
-  type SetupActionDisposition,
-  type SetupActionScope,
-  type LegacySetupContext,
-  type LegacySetupPhaseDefinition,
-  type SetupPhaseResult,
-  type LegacySetupPhaseRuntime,
+import {Environment} from "../../../platform/Environment.ts";
+import {ReadOnlyFiles, writeTextAtomic} from "../../../platform/Files.ts";
+import type {ProcessRequest} from "../../../platform/Process.ts";
+import {Prompts} from "../../../platform/Prompts.ts";
+import {appendMissingEnvironmentValues, parseEnvironmentFile} from "../../generate/env.ts";
+import {SetupActionFailed, SetupPhaseFailed} from "../errors.ts";
+import {commandFailureEvidence, phaseResult, runPhaseCommand, submitSetupAction, type PhaseCommandOutcome} from "../phase-support.ts";
+import type {
+  SetupActionDisposition,
+  SetupActionScope,
+  SetupContext,
+  SetupPhaseDefinition,
+  SetupPhaseResult,
+  SetupRequirements,
 } from "../types.ts";
 
 type ClerkMode = "test" | "live";
@@ -72,6 +78,12 @@ type ReactMutationOutcome =
 
 /** One completed setup step: either a terminal phase result, or refreshed `react` facts to continue with. */
 type ReactStepOutcome = Readonly<{result: SetupPhaseResult}> | Readonly<{facts: ReactFacts}>;
+
+/** Every failure a React phase step reports as evidence of one failed phase result. */
+type ReactStepError = SetupActionFailed | SetupPhaseFailed | PlatformError.PlatformError;
+
+/** A step of the phase. */
+type ReactStep<A> = Effect.Effect<A, ReactStepError, SetupRequirements>;
 
 interface PackagePolicy {
   readonly lockedVersions: ReadonlyMap<string, string>;
@@ -107,10 +119,9 @@ const ENVIRONMENT_FILE_MODE = 0o600;
  * Bounded ceiling for the long-running Playwright installation mutations this phase owns.
  *
  * @remarks
- * The invocation-scoped runner defaults to a probe-sized timeout, which is correct for the
+ * Setup commands default to a probe-sized timeout, which is correct for the
  * `install-deps --dry-run` probe but would truncate a browser or host-library download. Both
- * installs therefore request this ceiling explicitly, preserving the pre-migration `tee` mutation
- * timeout the deprecated setup runner bridge used to supply implicitly.
+ * installs therefore request this ceiling explicitly.
  */
 const LONG_RUNNING_MUTATION_TIMEOUT_MS = 1_200_000;
 const BROWSER_INSTALL_COMMAND: ProcessRequest = {
@@ -126,90 +137,30 @@ const SYSTEM_DEPENDENCIES_INSTALL: ProcessRequest = {
   args: ["--no-install", "playwright", "install-deps", "chromium"],
 };
 
-function isSuccessfulOutcome(outcome: Readonly<ProcessOutcome>): outcome is SucceededProcessOutcome {
-  return outcome.kind === "succeeded";
-}
-
 /**
  * Reports whether the child actually ran to completion and produced its own exit code.
  *
- * @param outcome - Completed process outcome.
+ * @param outcome - Completed command outcome.
  * @returns Whether the outcome carries a child-reported exit code rather than a transport failure.
  */
-function transportCompleted(outcome: Readonly<ProcessOutcome>): boolean {
-  return outcome.kind === "succeeded" || outcome.kind === "exited";
-}
-
-function isInterrupted(error: unknown): boolean {
-  return error instanceof CommandCancellation || (error instanceof Error && error.name === "AbortError");
-}
-
-function hasErrorCode(error: unknown, code: string): boolean {
-  return error instanceof Error && "code" in error && error.code === code;
+function transportCompleted(outcome: Readonly<PhaseCommandOutcome>): boolean {
+  return outcome.kind === "succeeded" || outcome.error._tag === "ProcessExited";
 }
 
 /**
- * Renders one failed process outcome as concise, secret-free setup evidence.
+ * Replaces every known credential in a diagnostic text with `[REDACTED]`.
  *
- * @param outcome - Completed process outcome.
- * @returns Evidence lines naming the transport failure and any captured output.
+ * @param value - The diagnostic text.
+ * @param secrets - The observed or entered credentials.
+ * @returns The sanitized text.
  */
-function commandFailureEvidence(outcome: Readonly<ProcessOutcome>): readonly string[] {
-  const evidence: string[] = [];
-  switch (outcome.kind) {
-    case "succeeded":
-      break;
-    case "exited":
-      evidence.push(`Command exited with code ${String(outcome.exitCode)}.`);
-      break;
-    case "signalled":
-      evidence.push(`Command stopped with signal ${outcome.signal}.`);
-      break;
-    case "spawn-failed":
-      evidence.push(`Unable to start command: ${outcome.message}`);
-      break;
-    case "timed-out":
-      evidence.push("Command timed out.");
-      if (outcome.signal !== undefined) {
-        evidence.push(`Command stopped with signal ${outcome.signal}.`);
-      }
-      break;
-    case "cancelled":
-      evidence.push("Command was cancelled.");
-      break;
-  }
-
-  if (outcome.stdout.trim() !== "") {
-    evidence.push(`stdout: ${outcome.stdout.trim()}`);
-  }
-  if (outcome.stderr.trim() !== "") {
-    evidence.push(`stderr: ${outcome.stderr.trim()}`);
-  }
-
-  return evidence;
-}
-
-function sanitize(value: string, secrets: readonly string[]): string {
+function sanitize(value: string, secrets: readonly Redacted.Redacted<string>[]): string {
   let sanitized = value;
-  for (const secret of [...secrets].filter((candidate) => candidate !== "").toSorted((left, right) => right.length - left.length)) {
+  const rawSecrets = secrets.map((secret) => Redacted.value(secret)).filter((candidate) => candidate !== "");
+  for (const secret of rawSecrets.toSorted((left, right) => right.length - left.length)) {
     sanitized = sanitized.replaceAll(secret, "[REDACTED]");
   }
   return sanitized;
-}
-
-function errorMessage(error: unknown, secrets: readonly string[]): string {
-  return sanitize(error instanceof Error ? error.message : String(error), secrets);
-}
-
-function duration(startedAt: number, runtime: LegacySetupPhaseRuntime): number {
-  return Math.max(0, runtime.clock.monotonicNow() - startedAt);
-}
-
-function phaseResult(runtime: LegacySetupPhaseRuntime, startedAt: number, input: Omit<SetupPhaseResult, "durationMs">): SetupPhaseResult {
-  return {
-    ...input,
-    durationMs: duration(startedAt, runtime),
-  };
 }
 
 function failedResult(
@@ -247,42 +198,47 @@ function outcomeEvidence(outcome: Readonly<InspectionOutcome<unknown>>): readonl
  * Runs one policy-controlled `react` mutation with cache-freshness guarantees.
  *
  * @remarks
- * The shared `"react"` fact is invalidated exactly once inside a `finally` block whenever the
- * mutation was actually attempted, so a thrown, failed, or interrupted attempt can never leave a
- * partially mutated repository described by stale cached facts. A `"planned"` or `"declined"`
- * action never attempts the mutation and therefore never invalidates anything. After an
- * `"executed"` disposition the already-invalidated key is inspected exactly once, before any later
- * action can execute or be declined.
+ * The shared `"react"` fact is invalidated exactly once in a finalizer whenever the mutation was
+ * actually attempted, so a failed or interrupted attempt can never leave a partially mutated
+ * repository described by stale cached facts. A `"planned"` or `"declined"` action never attempts
+ * the mutation and therefore never invalidates anything. After an `"executed"` disposition the
+ * already-invalidated key is inspected exactly once, before any later action can execute or be
+ * declined.
  *
- * @param context - Shared setup dependencies, including the repository inspection session.
+ * @param context - The setup context, including the repository inspection session.
  * @param action - Action identity, scope, summary, and the mutation to attempt.
- * @returns The action disposition, plus the refreshed outcome when the mutation executed.
- * @throws Whatever the mutation or the action executor throws, including `AbortError`.
+ * @returns The action disposition, plus the refreshed outcome when the mutation executed; fails
+ * with {@link SetupActionFailed} when the action failed. An interruption propagates.
  */
-async function runReactMutation(
-  context: LegacySetupContext,
-  action: Readonly<{id: string; scope: SetupActionScope; summary: string; mutate: () => Promise<void>}>,
-): Promise<ReactMutationOutcome> {
-  let attempted = false;
-  try {
-    const disposition = await context.actions.run({
+function runReactMutation(
+  context: SetupContext,
+  action: Readonly<{
+    id: string;
+    scope: SetupActionScope;
+    summary: string;
+    mutate: Effect.Effect<void, SetupActionFailed | PlatformError.PlatformError, SetupRequirements>;
+  }>,
+): ReactStep<ReactMutationOutcome> {
+  return Effect.gen(function* () {
+    let attempted = false;
+    const submitted = yield* submitSetupAction({
       id: action.id,
       scope: action.scope,
       summary: action.summary,
-      execute: async () => {
+      execute: Effect.suspend(() => {
         attempted = true;
-        await action.mutate();
-      },
-    });
-    if (disposition !== "executed") {
-      return disposition === "planned" ? {disposition: "planned"} : {disposition: "declined"};
+        return action.mutate;
+      }),
+    }).pipe(Effect.ensuring(Effect.suspend(() => (attempted ? context.inspection.invalidate("react") : Effect.void))));
+
+    if (submitted.kind === "failed") {
+      return yield* new SetupActionFailed({actionId: action.id, message: submitted.message});
     }
-  } finally {
-    if (attempted) {
-      context.inspection.invalidate("react");
+    if (submitted.kind === "planned" || submitted.kind === "declined") {
+      return {disposition: submitted.kind};
     }
-  }
-  return {disposition: "executed", outcome: await context.inspection.inspect("react")};
+    return {disposition: "executed", outcome: yield* context.inspection.inspect("react")};
+  });
 }
 
 /**
@@ -292,7 +248,7 @@ async function runReactMutation(
  * @returns The locked version policy, including the single locked Playwright version.
  * @throws When a required root requirement is absent, blank, or internally inconsistent.
  */
-function lockedPackagePolicy(context: LegacySetupContext): PackagePolicy {
+function lockedPackagePolicy(context: SetupContext): PackagePolicy {
   const lockedVersions = new Map<string, string>();
   for (const name of LOCKED_PACKAGES) {
     const requirement = context.requirements.packages.get(name);
@@ -389,23 +345,41 @@ function clerkMode(key: (typeof CLERK_KEYS)[number], value: string | undefined):
   return null;
 }
 
-function registerSensitiveValue(context: LegacySetupContext, knownSecrets: string[], value: string): void {
-  if (value === "") {
-    return;
-  }
-  knownSecrets.push(value);
-  context.logger.redact(value);
+/**
+ * Reads the website environment file, treating an absent file as empty.
+ *
+ * @param path - The website environment path.
+ * @returns The file contents; fails with the platform error of any other read failure.
+ */
+function readEnvironment(path: string): Effect.Effect<string, PlatformError.PlatformError, ReadOnlyFiles> {
+  return Effect.gen(function* () {
+    const files = yield* ReadOnlyFiles;
+    return yield* files.readFileString(path).pipe(
+      Effect.catchIf(
+        (error) => error.reason._tag === "NotFound",
+        () => Effect.succeed(""),
+      ),
+    );
+  });
 }
 
-async function readEnvironment(path: string, files: FileSystem): Promise<string> {
-  try {
-    return await files.readText(path);
-  } catch (error: unknown) {
-    if (hasErrorCode(error, "ENOENT")) {
-      return "";
-    }
-    throw new Error(`Unable to read website environment file '${path}': ${error instanceof Error ? error.message : String(error)}`);
-  }
+/**
+ * Asks for one Clerk credential: the publishable key as text, the secret key as a secret.
+ *
+ * @param key - The credential key, used as the prompt message.
+ * @returns The trimmed answer, redacted; a terminal quit interrupts setup, and an unavailable prompt
+ * fails the phase.
+ */
+function promptCredential(key: (typeof CLERK_KEYS)[number]): Effect.Effect<Redacted.Redacted<string>, SetupPhaseFailed, Prompts> {
+  return Effect.gen(function* () {
+    const prompts = yield* Prompts;
+    const answer = key === "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY" ? Redacted.make(yield* prompts.text(key)) : yield* prompts.secret(key);
+    return Redacted.make(Redacted.value(answer).trim());
+  }).pipe(
+    Effect.catch((error) =>
+      Terminal.isQuitError(error) ? Effect.interrupt : Effect.fail(new SetupPhaseFailed({phaseId: "react", message: error.message})),
+    ),
+  );
 }
 
 /**
@@ -415,127 +389,139 @@ async function readEnvironment(path: string, files: FileSystem): Promise<string>
  * The shared `"react"` environment fact deliberately never exposes configured values, so this
  * mutation policy is the one place setup reads them: Clerk mode compatibility cannot be decided
  * from key names alone. Existing content is preserved byte-for-byte, only absent setup-owned keys
- * are appended, and every observed or entered credential is registered for redaction before it can
- * reach retained output.
+ * are appended, and every observed or entered credential is recorded (redacted) in `knownSecrets`
+ * so failure evidence can be sanitized.
  *
- * Interactivity is decided from the immutable {@link LegacySetupPhaseRuntime.environment} snapshot,
- * using the same standard-input terminal signal the injected prompt provider itself requires, so
- * a non-interactive invocation degrades instead of rejecting inside a prompt.
+ * Interactivity is decided from the `Environment` snapshot, using the same standard-input terminal
+ * signal the prompt service itself requires, so a non-interactive invocation degrades instead of
+ * failing inside a prompt.
  *
- * @param context - Active setup context.
- * @param runtime - Invocation-scoped filesystem, environment, and clock capabilities.
- * @param knownSecrets - Mutable accumulator of values that must never reach evidence.
+ * @param context - The setup context.
+ * @param knownSecrets - Mutable accumulator of credentials that must never reach evidence.
  * @returns Preserved, written, and degraded credential state plus the mutation disposition.
  */
-async function prepareEnvironment(
-  context: LegacySetupContext,
-  runtime: LegacySetupPhaseRuntime,
-  knownSecrets: string[],
-): Promise<EnvironmentPreparationOutcome> {
-  const original = await readEnvironment(context.paths.websiteEnvironment, runtime.files);
-  const existing = parseEnvironmentFile(original);
-  const additions = new Map<string, string>();
-  const prompted = new Map<(typeof CLERK_KEYS)[number], string>();
+function prepareEnvironment(context: SetupContext, knownSecrets: Redacted.Redacted<string>[]): ReactStep<EnvironmentPreparationOutcome> {
+  return Effect.gen(function* () {
+    const environment = yield* Environment;
+    const original = yield* readEnvironment(context.paths.websiteEnvironment);
+    const existing = parseEnvironmentFile(original);
+    const additions = new Map<string, Redacted.Redacted<string>>();
+    const prompted = new Map<(typeof CLERK_KEYS)[number], Redacted.Redacted<string>>();
 
-  for (const [key, value] of LOCAL_DEFAULTS) {
-    if (!existing.has(key)) {
-      additions.set(key, value);
-    }
-  }
-
-  for (const key of CLERK_KEYS) {
-    const current = existing.get(key)?.trim();
-    if (current !== undefined && current !== "") {
-      registerSensitiveValue(context, knownSecrets, current);
-    }
-    if (existing.has(key) || context.options.dryRun || !runtime.environment.stdinIsTTY) {
-      continue;
+    for (const [key, value] of LOCAL_DEFAULTS) {
+      if (!existing.has(key)) {
+        additions.set(key, Redacted.make(value));
+      }
     }
 
-    const answer = (
-      key === "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY" ? await context.prompts.text(key) : await context.prompts.secret(key)
-    ).trim();
-    registerSensitiveValue(context, knownSecrets, answer);
-    if (answer !== "") {
-      prompted.set(key, answer);
-    }
-  }
+    for (const key of CLERK_KEYS) {
+      const current = existing.get(key)?.trim();
+      if (current !== undefined && current !== "") {
+        knownSecrets.push(Redacted.make(current));
+      }
+      if (existing.has(key) || context.options.dryRun || !environment.stdinIsTTY) {
+        continue;
+      }
 
-  const candidateValues = new Map<(typeof CLERK_KEYS)[number], string>();
-  for (const key of CLERK_KEYS) {
-    const existingValue = existing.get(key);
-    if (existingValue !== undefined) {
-      candidateValues.set(key, existingValue);
-      continue;
+      const answer = yield* promptCredential(key);
+      if (Redacted.value(answer) !== "") {
+        knownSecrets.push(answer);
+        prompted.set(key, answer);
+      }
     }
-    const promptedValue = prompted.get(key);
-    if (promptedValue !== undefined) {
-      candidateValues.set(key, promptedValue);
+
+    const candidateValues = new Map<(typeof CLERK_KEYS)[number], string>();
+    for (const key of CLERK_KEYS) {
+      const existingValue = existing.get(key);
+      if (existingValue !== undefined) {
+        candidateValues.set(key, existingValue);
+        continue;
+      }
+      const promptedValue = prompted.get(key);
+      if (promptedValue !== undefined) {
+        candidateValues.set(key, Redacted.value(promptedValue));
+      }
     }
-  }
 
-  const publishableMode = clerkMode("NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY", candidateValues.get("NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY"));
-  const secretMode = clerkMode("CLERK_SECRET_KEY", candidateValues.get("CLERK_SECRET_KEY"));
-  const modesMismatch = publishableMode !== null && secretMode !== null && publishableMode !== secretMode;
-  const missingExternalKeys = CLERK_KEYS.filter((key) => {
-    const mode = clerkMode(key, candidateValues.get(key));
-    return mode === null || modesMismatch;
-  });
-
-  for (const key of CLERK_KEYS) {
-    const value = prompted.get(key);
-    if (value !== undefined && clerkMode(key, value) !== null && !modesMismatch) {
-      additions.set(key, value);
-    }
-  }
-
-  const nextContent = appendMissingEnvironmentValues(original, additions);
-  let actionDisposition: SetupActionDisposition | undefined;
-  let refreshed: InspectionOutcome<ReactFacts> | undefined;
-  if (nextContent !== original) {
-    const mutation = await runReactMutation(context, {
-      id: ENVIRONMENT_WRITE_ACTION,
-      scope: "repository",
-      summary: "Append missing setup-owned website environment keys.",
-      mutate: async () => {
-        await runtime.files.writeTextAtomic(context.paths.websiteEnvironment, nextContent, {mode: ENVIRONMENT_FILE_MODE});
-        if (runtime.environment.platform !== "win32") {
-          await runtime.files.setMode(context.paths.websiteEnvironment, ENVIRONMENT_FILE_MODE);
-        }
-      },
+    const publishableMode = clerkMode("NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY", candidateValues.get("NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY"));
+    const secretMode = clerkMode("CLERK_SECRET_KEY", candidateValues.get("CLERK_SECRET_KEY"));
+    const modesMismatch = publishableMode !== null && secretMode !== null && publishableMode !== secretMode;
+    const missingExternalKeys = CLERK_KEYS.filter((key) => {
+      const mode = clerkMode(key, candidateValues.get(key));
+      return mode === null || modesMismatch;
     });
-    if (mutation.disposition === "declined") {
-      throw new Error(`Required action '${ENVIRONMENT_WRITE_ACTION}' was declined.`);
-    }
-    actionDisposition = mutation.disposition;
-    if (mutation.disposition === "executed") {
-      refreshed = mutation.outcome;
-    }
-  }
 
-  return {
-    status: missingExternalKeys.length === 0 ? "complete" : "degraded",
-    preservedKeys: SETUP_OWNED_KEYS.filter((key) => existing.has(key)),
-    writtenKeys: SETUP_OWNED_KEYS.filter((key) => additions.has(key)),
-    missingExternalKeys,
-    ...(actionDisposition === undefined ? {} : {actionDisposition}),
-    ...(refreshed === undefined ? {} : {refreshed}),
-  };
+    for (const key of CLERK_KEYS) {
+      const value = prompted.get(key);
+      if (value !== undefined && clerkMode(key, Redacted.value(value)) !== null && !modesMismatch) {
+        additions.set(key, value);
+      }
+    }
+
+    // The raw credential values are needed only to build the content the write action stores.
+    const nextContent = appendMissingEnvironmentValues(
+      original,
+      new Map([...additions].map(([key, value]) => [key, Redacted.value(value)])),
+    );
+    let actionDisposition: SetupActionDisposition | undefined;
+    let refreshed: InspectionOutcome<ReactFacts> | undefined;
+    if (nextContent !== original) {
+      const mutation = yield* runReactMutation(context, {
+        id: ENVIRONMENT_WRITE_ACTION,
+        scope: "repository",
+        summary: "Append missing setup-owned website environment keys.",
+        mutate: Effect.gen(function* () {
+          yield* writeTextAtomic(context.paths.websiteEnvironment, nextContent, {mode: ENVIRONMENT_FILE_MODE});
+          if (environment.platform !== "win32") {
+            const files = yield* FileSystem.FileSystem;
+            yield* files.chmod(context.paths.websiteEnvironment, ENVIRONMENT_FILE_MODE);
+          }
+        }),
+      });
+      if (mutation.disposition === "declined") {
+        return yield* new SetupActionFailed({
+          actionId: ENVIRONMENT_WRITE_ACTION,
+          message: `Required action '${ENVIRONMENT_WRITE_ACTION}' was declined.`,
+        });
+      }
+      actionDisposition = mutation.disposition;
+      if (mutation.disposition === "executed") {
+        refreshed = mutation.outcome;
+      }
+    }
+
+    return {
+      status: missingExternalKeys.length === 0 ? "complete" : "degraded",
+      preservedKeys: SETUP_OWNED_KEYS.filter((key) => existing.has(key)),
+      writtenKeys: SETUP_OWNED_KEYS.filter((key) => additions.has(key)),
+      missingExternalKeys,
+      ...(actionDisposition === undefined ? {} : {actionDisposition}),
+      ...(refreshed === undefined ? {} : {refreshed}),
+    };
+  });
 }
 
 /**
- * Additively prepares the website environment over the invocation-scoped capabilities.
+ * Additively prepares the website environment.
  *
  * @remarks
- * The secret-bearing `.env` policy stays business logic here; every boundary it needs — the atomic
- * filesystem, the host platform, and the terminal snapshot — comes from the setup phase runtime.
+ * The secret-bearing `.env` policy stays business logic here; every boundary it needs — the
+ * filesystem and atomic write, the prompts, the host platform and terminal snapshot, and the
+ * consent-gated write action — comes from the invocation services.
  *
- * @param context - Active setup context.
- * @returns Preserved, written, and degraded credential state.
- * @throws When the context carries no invocation-scoped setup phase runtime.
+ * @param context - The setup context.
+ * @returns Preserved, written, and degraded credential state; fails with the platform error of an
+ * unreadable environment file, or when the required write failed or was declined.
  */
-export function prepareWebsiteEnvironment(context: LegacySetupContext): Promise<EnvironmentPreparationResult> {
-  return prepareEnvironment(context, requireLegacySetupPhaseRuntime(context), []);
+export function prepareWebsiteEnvironment(
+  context: SetupContext,
+): Effect.Effect<EnvironmentPreparationResult, ReactStepError, SetupRequirements> {
+  return Effect.map(prepareEnvironment(context, []), ({status, preservedKeys, writtenKeys, missingExternalKeys}) => ({
+    status,
+    preservedKeys,
+    writtenKeys,
+    missingExternalKeys,
+  }));
 }
 
 /**
@@ -546,147 +532,161 @@ export function prepareWebsiteEnvironment(context: LegacySetupContext): Promise<
  * only the installed browser inventory, never host system libraries. This action therefore never
  * invalidates the shared `"react"` fact: it cannot change any observation that fact carries.
  *
- * @param context - Active setup context.
- * @param runtime - Invocation-scoped capabilities the probe and installation run through.
+ * @param context - The setup context.
  * @param evidence - Mutable accumulator of human-readable phase evidence.
  * @param plannedActions - Mutable accumulator of dry-run-planned action identifiers.
- * @throws When the probe is inconclusive, the required action is declined, or the install fails.
+ * @returns The step; fails when the probe is inconclusive, the required action is declined, or the
+ * install fails.
  */
-async function ensureLinuxDependencies(
-  context: LegacySetupContext,
-  runtime: LegacySetupPhaseRuntime,
-  evidence: string[],
-  plannedActions: string[],
-): Promise<void> {
-  const initialProbe = await runtime.runner.run(SYSTEM_DEPENDENCIES_PROBE, {cwd: context.paths.root});
-  if (!transportCompleted(initialProbe)) {
-    throw new Error(["Playwright Linux dependency probe was inconclusive.", ...commandFailureEvidence(initialProbe)].join("\n"));
-  }
-  if (isSuccessfulOutcome(initialProbe)) {
-    evidence.push("Playwright Chromium Linux system dependencies are ready.");
-    return;
-  }
-
-  const disposition = await context.actions.run({
-    id: SYSTEM_DEPENDENCIES_ACTION,
-    scope: "system",
-    summary: "Install Playwright Chromium Linux system dependencies.",
-    execute: async () => {
-      const installation = await runtime.runner.run(SYSTEM_DEPENDENCIES_INSTALL, {
-        cwd: context.paths.root,
-        output: "tee",
-        logger: context.logger,
-        timeoutMs: LONG_RUNNING_MUTATION_TIMEOUT_MS,
+function ensureLinuxDependencies(context: SetupContext, evidence: string[], plannedActions: string[]): ReactStep<void> {
+  return Effect.gen(function* () {
+    const initialProbe = yield* runPhaseCommand(context, SYSTEM_DEPENDENCIES_PROBE, {cwd: context.paths.root});
+    if (!transportCompleted(initialProbe)) {
+      return yield* new SetupActionFailed({
+        actionId: SYSTEM_DEPENDENCIES_ACTION,
+        message: ["Playwright Linux dependency probe was inconclusive.", ...commandFailureEvidence(initialProbe)].join("\n"),
       });
-      if (!isSuccessfulOutcome(installation)) {
-        throw new Error(["Playwright Linux dependency installation failed.", ...commandFailureEvidence(installation)].join("\n"));
-      }
-    },
-  });
-  if (disposition === "declined") {
-    throw new Error(`Required action '${SYSTEM_DEPENDENCIES_ACTION}' was declined after the dependency probe failed.`);
-  }
-  if (disposition === "planned") {
-    plannedActions.push(SYSTEM_DEPENDENCIES_ACTION);
-    evidence.push(`Planned action: ${SYSTEM_DEPENDENCIES_ACTION}`);
-    return;
-  }
+    }
+    if (initialProbe.kind === "succeeded") {
+      evidence.push("Playwright Chromium Linux system dependencies are ready.");
+      return;
+    }
 
-  const verifiedProbe = await runtime.runner.run(SYSTEM_DEPENDENCIES_PROBE, {cwd: context.paths.root});
-  if (!isSuccessfulOutcome(verifiedProbe)) {
-    throw new Error(
-      ["Playwright Linux dependencies remain unavailable after installation.", ...commandFailureEvidence(verifiedProbe)].join("\n"),
-    );
-  }
-  evidence.push(`Executed and verified action: ${SYSTEM_DEPENDENCIES_ACTION}`);
+    const submitted = yield* submitSetupAction({
+      id: SYSTEM_DEPENDENCIES_ACTION,
+      scope: "system",
+      summary: "Install Playwright Chromium Linux system dependencies.",
+      execute: Effect.gen(function* () {
+        const installation = yield* runPhaseCommand(context, SYSTEM_DEPENDENCIES_INSTALL, {
+          cwd: context.paths.root,
+          output: "tee",
+          timeoutMs: LONG_RUNNING_MUTATION_TIMEOUT_MS,
+        });
+        if (installation.kind !== "succeeded") {
+          return yield* new SetupActionFailed({
+            actionId: SYSTEM_DEPENDENCIES_ACTION,
+            message: ["Playwright Linux dependency installation failed.", ...commandFailureEvidence(installation)].join("\n"),
+          });
+        }
+      }),
+    });
+    if (submitted.kind === "failed") {
+      return yield* new SetupActionFailed({actionId: SYSTEM_DEPENDENCIES_ACTION, message: submitted.message});
+    }
+    if (submitted.kind === "declined") {
+      return yield* new SetupActionFailed({
+        actionId: SYSTEM_DEPENDENCIES_ACTION,
+        message: `Required action '${SYSTEM_DEPENDENCIES_ACTION}' was declined after the dependency probe failed.`,
+      });
+    }
+    if (submitted.kind === "planned") {
+      plannedActions.push(SYSTEM_DEPENDENCIES_ACTION);
+      evidence.push(`Planned action: ${SYSTEM_DEPENDENCIES_ACTION}`);
+      return;
+    }
+
+    const verifiedProbe = yield* runPhaseCommand(context, SYSTEM_DEPENDENCIES_PROBE, {cwd: context.paths.root});
+    if (verifiedProbe.kind !== "succeeded") {
+      return yield* new SetupActionFailed({
+        actionId: SYSTEM_DEPENDENCIES_ACTION,
+        message: ["Playwright Linux dependencies remain unavailable after installation.", ...commandFailureEvidence(verifiedProbe)].join(
+          "\n",
+        ),
+      });
+    }
+    evidence.push(`Executed and verified action: ${SYSTEM_DEPENDENCIES_ACTION}`);
+  });
 }
 
 /**
  * Ensures the locked Playwright Chromium browser is installed, verified from refreshed facts.
  *
- * @param context - Active setup context.
- * @param runtime - Invocation-scoped capabilities, including the host-platform snapshot.
+ * @param context - The setup context.
  * @param lockedVersion - Manifest-derived locked Playwright version.
  * @param facts - The newest verified `react` facts.
  * @param evidence - Mutable accumulator of human-readable phase evidence.
  * @param plannedActions - Mutable accumulator of dry-run-planned action identifiers.
  * @returns Either a terminal phase result, or the facts to continue with.
  */
-async function preparePlaywright(
-  context: LegacySetupContext,
-  runtime: LegacySetupPhaseRuntime,
+function preparePlaywright(
+  context: SetupContext,
   lockedVersion: string,
   facts: Readonly<ReactFacts>,
   evidence: string[],
   plannedActions: string[],
-): Promise<ReactStepOutcome> {
-  const readinessIssues = playwrightReadinessIssues(facts, lockedVersion);
+): ReactStep<ReactStepOutcome> {
+  return Effect.gen(function* () {
+    const readinessIssues = playwrightReadinessIssues(facts, lockedVersion);
 
-  if (runtime.environment.platform === "linux") {
-    await ensureLinuxDependencies(context, runtime, evidence, plannedActions);
-  }
+    const {platform} = yield* Environment;
+    if (platform === "linux") {
+      yield* ensureLinuxDependencies(context, evidence, plannedActions);
+    }
 
-  if (readinessIssues.length === 0) {
-    evidence.push(`Playwright Chromium is installed for locked version ${lockedVersion}.`);
-    return {facts};
-  }
-  evidence.push(...readinessIssues);
+    if (readinessIssues.length === 0) {
+      evidence.push(`Playwright Chromium is installed for locked version ${lockedVersion}.`);
+      return {facts};
+    }
+    evidence.push(...readinessIssues);
 
-  const mutation = await runReactMutation(context, {
-    id: BROWSER_INSTALL_ACTION,
-    scope: "repository",
-    summary: "Install the locked Playwright Chromium browser.",
-    mutate: async () => {
-      const installation = await runtime.runner.run(BROWSER_INSTALL_COMMAND, {
-        cwd: context.paths.root,
-        output: "tee",
-        logger: context.logger,
-        timeoutMs: LONG_RUNNING_MUTATION_TIMEOUT_MS,
-      });
-      if (!isSuccessfulOutcome(installation)) {
-        throw new Error(["Playwright Chromium installation failed.", ...commandFailureEvidence(installation)].join("\n"));
-      }
-    },
+    const mutation = yield* runReactMutation(context, {
+      id: BROWSER_INSTALL_ACTION,
+      scope: "repository",
+      summary: "Install the locked Playwright Chromium browser.",
+      mutate: Effect.gen(function* () {
+        const installation = yield* runPhaseCommand(context, BROWSER_INSTALL_COMMAND, {
+          cwd: context.paths.root,
+          output: "tee",
+          timeoutMs: LONG_RUNNING_MUTATION_TIMEOUT_MS,
+        });
+        if (installation.kind !== "succeeded") {
+          return yield* new SetupActionFailed({
+            actionId: BROWSER_INSTALL_ACTION,
+            message: ["Playwright Chromium installation failed.", ...commandFailureEvidence(installation)].join("\n"),
+          });
+        }
+      }),
+    });
+    if (mutation.disposition === "declined") {
+      return {
+        result: failedResult(
+          "Required Playwright Chromium installation was declined.",
+          [...evidence, `Declined action: ${BROWSER_INSTALL_ACTION}`],
+          [`Allow required action '${BROWSER_INSTALL_ACTION}', then rerun setup.`],
+        ),
+      };
+    }
+    if (mutation.disposition === "planned") {
+      plannedActions.push(BROWSER_INSTALL_ACTION);
+      evidence.push(`Planned action: ${BROWSER_INSTALL_ACTION}`);
+      return {facts};
+    }
+
+    // A successful installation command is never sufficient proof of readiness: Chromium is only
+    // ready once refreshed, invalidated facts report the locked version and a Chromium entry.
+    const refreshed = mutation.outcome;
+    if (refreshed.kind !== "available") {
+      return {
+        result: failedResult(
+          "The Playwright browser inventory could not be verified after installation.",
+          [...evidence, `Failed postcondition for action: ${BROWSER_INSTALL_ACTION}`, ...outcomeEvidence(refreshed)],
+          [`Resolve and rerun required action '${BROWSER_INSTALL_ACTION}'.`],
+        ),
+      };
+    }
+    const remainingIssues = playwrightReadinessIssues(refreshed.value, lockedVersion);
+    if (remainingIssues.length > 0) {
+      return {
+        result: failedResult(
+          "The locked Playwright Chromium browser remains unavailable after installation.",
+          [...evidence, `Failed postcondition for action: ${BROWSER_INSTALL_ACTION}`, ...remainingIssues],
+          [`Resolve and rerun required action '${BROWSER_INSTALL_ACTION}'.`],
+        ),
+      };
+    }
+    evidence.push(`Executed and verified action: ${BROWSER_INSTALL_ACTION}`);
+    return {facts: refreshed.value};
   });
-  if (mutation.disposition === "declined") {
-    return {
-      result: failedResult(
-        "Required Playwright Chromium installation was declined.",
-        [...evidence, `Declined action: ${BROWSER_INSTALL_ACTION}`],
-        [`Allow required action '${BROWSER_INSTALL_ACTION}', then rerun setup.`],
-      ),
-    };
-  }
-  if (mutation.disposition === "planned") {
-    plannedActions.push(BROWSER_INSTALL_ACTION);
-    evidence.push(`Planned action: ${BROWSER_INSTALL_ACTION}`);
-    return {facts};
-  }
-
-  // A successful installation command is never sufficient proof of readiness: Chromium is only
-  // ready once refreshed, invalidated facts report the locked version and a Chromium entry.
-  const refreshed = mutation.outcome;
-  if (refreshed.kind !== "available") {
-    return {
-      result: failedResult(
-        "The Playwright browser inventory could not be verified after installation.",
-        [...evidence, `Failed postcondition for action: ${BROWSER_INSTALL_ACTION}`, ...outcomeEvidence(refreshed)],
-        [`Resolve and rerun required action '${BROWSER_INSTALL_ACTION}'.`],
-      ),
-    };
-  }
-  const remainingIssues = playwrightReadinessIssues(refreshed.value, lockedVersion);
-  if (remainingIssues.length > 0) {
-    return {
-      result: failedResult(
-        "The locked Playwright Chromium browser remains unavailable after installation.",
-        [...evidence, `Failed postcondition for action: ${BROWSER_INSTALL_ACTION}`, ...remainingIssues],
-        [`Resolve and rerun required action '${BROWSER_INSTALL_ACTION}'.`],
-      ),
-    };
-  }
-  evidence.push(`Executed and verified action: ${BROWSER_INSTALL_ACTION}`);
-  return {facts: refreshed.value};
 }
 
 /**
@@ -698,51 +698,57 @@ async function preparePlaywright(
  * `workspace.root-dependencies` action is what creates the missing state, and no repository
  * mutation happens on this path. An `"invalid"` React fact is a defect, never a deferral.
  *
- * @param context - Active setup context.
- * @param runtime - Invocation-scoped filesystem, environment, and clock capabilities.
- * @param knownSecrets - Mutable accumulator of values that must never reach evidence.
+ * @param context - The setup context.
+ * @param knownSecrets - Mutable accumulator of credentials that must never reach evidence.
  * @param evidence - Mutable accumulator of human-readable phase evidence.
  * @returns The deferred, dry-run-only phase result.
  */
-async function planFreshCheckoutDryRun(
-  context: LegacySetupContext,
-  runtime: LegacySetupPhaseRuntime,
-  knownSecrets: string[],
+function planFreshCheckoutDryRun(
+  context: SetupContext,
+  knownSecrets: Redacted.Redacted<string>[],
   evidence: string[],
-): Promise<SetupPhaseResult> {
-  const environment = await prepareEnvironment(context, runtime, knownSecrets);
-  const browser = await runReactMutation(context, {
-    id: BROWSER_INSTALL_ACTION,
-    scope: "repository",
-    summary: "Install the locked Playwright Chromium browser after root dependencies are restored.",
-    mutate: async () => {
-      throw new Error("A fresh-checkout dry-run must not execute deferred Playwright installation.");
-    },
-  });
-  if (browser.disposition === "declined") {
-    throw new Error(`Required action '${BROWSER_INSTALL_ACTION}' was declined.`);
-  }
+): ReactStep<SetupPhaseResult> {
+  return Effect.gen(function* () {
+    const environment = yield* prepareEnvironment(context, knownSecrets);
+    const browser = yield* runReactMutation(context, {
+      id: BROWSER_INSTALL_ACTION,
+      scope: "repository",
+      summary: "Install the locked Playwright Chromium browser after root dependencies are restored.",
+      mutate: Effect.fail(
+        new SetupActionFailed({
+          actionId: BROWSER_INSTALL_ACTION,
+          message: "A fresh-checkout dry-run must not execute deferred Playwright installation.",
+        }),
+      ),
+    });
+    if (browser.disposition === "declined") {
+      return yield* new SetupActionFailed({
+        actionId: BROWSER_INSTALL_ACTION,
+        message: `Required action '${BROWSER_INSTALL_ACTION}' was declined.`,
+      });
+    }
 
-  evidence.push(
-    `Deferred every shared React package, workspace link, generated artifact, and Playwright postcondition to the planned ${ROOT_DEPENDENCIES_ACTION} action.`,
-  );
-  if (environment.actionDisposition === "planned") {
-    evidence.push(`Planned action: ${ENVIRONMENT_WRITE_ACTION}`);
-  }
-  if (browser.disposition === "planned") {
-    evidence.push(`Planned action: ${BROWSER_INSTALL_ACTION}`);
-  }
-  if (environment.missingExternalKeys.length > 0) {
-    evidence.push(`Missing or invalid external keys: ${environment.missingExternalKeys.join(", ")}.`);
-  }
-  return {
-    id: "react",
-    status: "skipped",
-    summary: "React package and Playwright postconditions are deferred by fresh-checkout dry-run.",
-    evidence,
-    nextActions: [],
-    durationMs: 0,
-  };
+    evidence.push(
+      `Deferred every shared React package, workspace link, generated artifact, and Playwright postcondition to the planned ${ROOT_DEPENDENCIES_ACTION} action.`,
+    );
+    if (environment.actionDisposition === "planned") {
+      evidence.push(`Planned action: ${ENVIRONMENT_WRITE_ACTION}`);
+    }
+    if (browser.disposition === "planned") {
+      evidence.push(`Planned action: ${BROWSER_INSTALL_ACTION}`);
+    }
+    if (environment.missingExternalKeys.length > 0) {
+      evidence.push(`Missing or invalid external keys: ${environment.missingExternalKeys.join(", ")}.`);
+    }
+    return {
+      id: "react",
+      status: "skipped",
+      summary: "React package and Playwright postconditions are deferred by fresh-checkout dry-run.",
+      evidence,
+      nextActions: [],
+      durationMs: 0,
+    };
+  });
 }
 
 /**
@@ -789,61 +795,58 @@ function verifyEnvironmentWrite(environment: EnvironmentPreparationOutcome, evid
   return {facts: refreshed.value};
 }
 
-async function runReactSetup(context: LegacySetupContext): Promise<SetupPhaseResult> {
-  const runtime = requireLegacySetupPhaseRuntime(context);
-  const startedAt = runtime.clock.monotonicNow();
-  const evidence: string[] = [];
-  const knownSecrets: string[] = [];
-  const plannedActions: string[] = [];
+/**
+ * Prepares the React workspace up to the phase result, without its duration.
+ *
+ * @param context - The setup context.
+ * @param knownSecrets - Mutable accumulator of credentials that must never reach evidence.
+ * @param evidence - Mutable accumulator of human-readable phase evidence.
+ * @returns The phase result (its duration is replaced); fails with the failure a step reported.
+ */
+function prepareReact(
+  context: SetupContext,
+  knownSecrets: Redacted.Redacted<string>[],
+  evidence: string[],
+): ReactStep<Omit<SetupPhaseResult, "durationMs">> {
+  return Effect.gen(function* () {
+    const plannedActions: string[] = [];
+    const policy = yield* Effect.try({
+      try: () => lockedPackagePolicy(context),
+      catch: (error) => new SetupPhaseFailed({phaseId: "react", message: error instanceof Error ? error.message : String(error)}),
+    });
 
-  try {
-    const policy = lockedPackagePolicy(context);
-
-    const packagesOutcome = await context.inspection.inspect("packages");
+    const packagesOutcome = yield* context.inspection.inspect("packages");
     if (packagesOutcome.kind !== "available") {
-      return phaseResult(
-        runtime,
-        startedAt,
-        failedResult("The shared installed-package inventory could not be inspected.", [...evidence, ...outcomeEvidence(packagesOutcome)]),
-      );
+      return failedResult("The shared installed-package inventory could not be inspected.", [
+        ...evidence,
+        ...outcomeEvidence(packagesOutcome),
+      ]);
     }
     const comparison = comparePackageInventory(policy, packagesOutcome.value);
     const freshCheckout = context.options.dryRun && comparison.absent.length === requiredPackageCount(policy);
 
-    const reactOutcome = await context.inspection.inspect("react");
+    const reactOutcome = yield* context.inspection.inspect("react");
     if (reactOutcome.kind !== "available") {
       if (freshCheckout && reactOutcome.kind === "unavailable") {
-        return phaseResult(runtime, startedAt, await planFreshCheckoutDryRun(context, runtime, knownSecrets, evidence));
+        return yield* planFreshCheckoutDryRun(context, knownSecrets, evidence);
       }
-      return phaseResult(
-        runtime,
-        startedAt,
-        failedResult("The shared React workspace facts could not be inspected.", [...evidence, ...outcomeEvidence(reactOutcome)]),
-      );
+      return failedResult("The shared React workspace facts could not be inspected.", [...evidence, ...outcomeEvidence(reactOutcome)]);
     }
     let facts = reactOutcome.value;
 
     if (comparison.defects.length > 0) {
-      return phaseResult(
-        runtime,
-        startedAt,
-        failedResult("The installed React workspace packages do not satisfy their locked requirements.", [
-          ...evidence,
-          ...comparison.defects,
-        ]),
-      );
+      return failedResult("The installed React workspace packages do not satisfy their locked requirements.", [
+        ...evidence,
+        ...comparison.defects,
+      ]);
     }
     const deferredPackages = comparison.absent.length > 0;
     if (deferredPackages) {
       if (!context.options.dryRun) {
-        return phaseResult(
-          runtime,
-          startedAt,
-          failedResult(
-            "Required React workspace packages are not installed.",
-            [...evidence, `Absent required package(s): ${comparison.absent.join(", ")}.`],
-            [`Complete ${ROOT_DEPENDENCIES_ACTION}, then rerun setup.`],
-          ),
+        return failedResult(
+          "Required React workspace packages are not installed.",
+          [...evidence, `Absent required package(s): ${comparison.absent.join(", ")}.`],
+          [`Complete ${ROOT_DEPENDENCIES_ACTION}, then rerun setup.`],
         );
       }
       evidence.push(
@@ -851,11 +854,7 @@ async function runReactSetup(context: LegacySetupContext): Promise<SetupPhaseRes
       );
     } else {
       if (facts.workspaceLinkIssues.length > 0) {
-        return phaseResult(
-          runtime,
-          startedAt,
-          failedResult("The website does not consume the linked component workspace.", [...evidence, ...facts.workspaceLinkIssues]),
-        );
+        return failedResult("The website does not consume the linked component workspace.", [...evidence, ...facts.workspaceLinkIssues]);
       }
       evidence.push(
         `Verified ${requiredPackageCount(policy)} locked React workspace package(s) and the ${WORKSPACE_LINKED_PACKAGE} workspace link from shared facts.`,
@@ -864,34 +863,22 @@ async function runReactSetup(context: LegacySetupContext): Promise<SetupPhaseRes
 
     const contractIssues = [...facts.i18nIssues, ...facts.frameworkIssues];
     if (contractIssues.length > 0) {
-      return phaseResult(
-        runtime,
-        startedAt,
-        failedResult("The website i18n or framework configuration contracts are invalid.", [...evidence, ...contractIssues]),
-      );
+      return failedResult("The website i18n or framework configuration contracts are invalid.", [...evidence, ...contractIssues]);
     }
     evidence.push("Verified the website message dictionary and framework configuration contracts.");
 
     const absentArtifacts = facts.artifactIssues.filter(isAbsentArtifactIssue);
     const invalidArtifacts = facts.artifactIssues.filter((issue) => !isAbsentArtifactIssue(issue));
     if (invalidArtifacts.length > 0) {
-      return phaseResult(
-        runtime,
-        startedAt,
-        failedResult("The generated website artifacts are invalid.", [...evidence, ...invalidArtifacts]),
-      );
+      return failedResult("The generated website artifacts are invalid.", [...evidence, ...invalidArtifacts]);
     }
     const deferredArtifacts = absentArtifacts.length > 0;
     if (deferredArtifacts) {
       if (!context.options.dryRun) {
-        return phaseResult(
-          runtime,
-          startedAt,
-          failedResult(
-            "The generated website artifacts are incomplete.",
-            [...evidence, ...absentArtifacts],
-            [`Complete ${GENERATORS_ACTION}, then rerun setup.`],
-          ),
+        return failedResult(
+          "The generated website artifacts are incomplete.",
+          [...evidence, ...absentArtifacts],
+          [`Complete ${GENERATORS_ACTION}, then rerun setup.`],
         );
       }
       evidence.push(
@@ -902,14 +889,10 @@ async function runReactSetup(context: LegacySetupContext): Promise<SetupPhaseRes
     }
 
     if (facts.environment.syntaxErrors.length > 0) {
-      return phaseResult(
-        runtime,
-        startedAt,
-        failedResult("The website environment file has syntax errors.", [...evidence, ...facts.environment.syntaxErrors]),
-      );
+      return failedResult("The website environment file has syntax errors.", [...evidence, ...facts.environment.syntaxErrors]);
     }
 
-    const environment = await prepareEnvironment(context, runtime, knownSecrets);
+    const environment = yield* prepareEnvironment(context, knownSecrets);
     evidence.push(
       `Preserved setup-owned environment keys: ${environment.preservedKeys.join(", ") || "none"}.`,
       `${environment.actionDisposition === "planned" ? "Planned" : "Wrote"} setup-owned environment keys: ${
@@ -922,7 +905,7 @@ async function runReactSetup(context: LegacySetupContext): Promise<SetupPhaseRes
     const environmentVerification = verifyEnvironmentWrite(environment, evidence);
     if (environmentVerification !== null) {
       if ("result" in environmentVerification) {
-        return phaseResult(runtime, startedAt, environmentVerification.result);
+        return environmentVerification.result;
       }
       facts = environmentVerification.facts;
     }
@@ -930,64 +913,92 @@ async function runReactSetup(context: LegacySetupContext): Promise<SetupPhaseRes
       evidence.push(`Missing or invalid external keys: ${environment.missingExternalKeys.join(", ")}.`);
     }
 
-    const playwright = await preparePlaywright(context, runtime, policy.playwrightVersion, facts, evidence, plannedActions);
+    const playwright = yield* preparePlaywright(context, policy.playwrightVersion, facts, evidence, plannedActions);
     if ("result" in playwright) {
-      return phaseResult(runtime, startedAt, playwright.result);
+      return playwright.result;
     }
 
     if (plannedActions.length > 0 || environment.actionDisposition === "planned" || deferredArtifacts || deferredPackages) {
-      return phaseResult(runtime, startedAt, {
+      return {
         id: "react",
         status: "skipped",
         summary: "React workspace preparation actions and postconditions are planned by dry-run.",
         evidence,
         nextActions: [],
-      });
+      };
     }
 
     if (environment.status === "degraded") {
-      return phaseResult(runtime, startedAt, {
+      return {
         id: "react",
         status: "degraded",
         summary: "React tooling is ready, but Clerk credentials are incomplete or invalid outside keyless local development.",
         evidence,
         nextActions: ["Provide a valid mode-compatible Clerk credential pair for CI, production, or authenticated local development."],
-      });
+      };
     }
 
-    return phaseResult(runtime, startedAt, {
+    return {
       id: "react",
       status: "succeeded",
       summary: "React packages, generated artifacts, website environment, and Playwright Chromium are ready.",
       evidence,
       nextActions: [],
-    });
-  } catch (error: unknown) {
-    if (isInterrupted(error)) {
-      throw error;
-    }
-    return phaseResult(runtime, startedAt, {
-      id: "react",
-      status: "failed",
-      summary: "The required React workspace preparation phase failed.",
-      evidence: [...evidence, errorMessage(error, knownSecrets)],
-      nextActions: [REACT_NEXT_ACTION],
-    });
-  }
+    };
+  });
 }
 
 /**
- * Creates the React setup phase over the invocation-scoped setup phase runtime.
+ * Renders a step failure as evidence: an unreadable website environment file names the file.
+ *
+ * @param context - The setup context.
+ * @param error - The step failure.
+ * @returns The unsanitized failure message.
+ */
+function failureMessage(context: SetupContext, error: ReactStepError): string {
+  return error._tag === "PlatformError"
+    ? `Unable to read website environment file '${context.paths.websiteEnvironment}': ${error.message}`
+    : error.message;
+}
+
+/**
+ * Runs the React phase: a failed step becomes one failed result whose evidence never contains an
+ * observed or entered credential; an interruption propagates.
+ *
+ * @param context - The setup context.
+ * @returns The phase result.
+ */
+function runReactSetup(context: SetupContext): Effect.Effect<SetupPhaseResult, never, SetupRequirements> {
+  return Effect.gen(function* () {
+    const startedAt = yield* Clock.currentTimeMillis;
+    const evidence: string[] = [];
+    const knownSecrets: Redacted.Redacted<string>[] = [];
+    const outcome = yield* Effect.result(prepareReact(context, knownSecrets, evidence));
+    if (outcome._tag === "Success") {
+      const {durationMs: _durationMs, ...result} = outcome.success as SetupPhaseResult;
+      return yield* phaseResult(startedAt, result);
+    }
+    return yield* phaseResult(startedAt, {
+      id: "react",
+      status: "failed",
+      summary: "The required React workspace preparation phase failed.",
+      evidence: [...evidence, sanitize(failureMessage(context, outcome.failure), knownSecrets)],
+      nextActions: [REACT_NEXT_ACTION],
+    });
+  }).pipe(Effect.withSpan("setup.react"));
+}
+
+/**
+ * Creates the React setup phase.
  *
  * @remarks
- * The phase no longer accepts host or filesystem boundaries: the platform, the terminal snapshot,
- * the atomic filesystem, the process runner, and the clock all come from
- * {@link LegacySetupPhaseRuntime}, so a test replaces capabilities on the runtime rather than on this
- * factory.
+ * The phase accepts no host or filesystem boundary: the platform, the terminal snapshot, the
+ * filesystem, prompts, processes, and the clock all come from the invocation services, so a test
+ * replaces them through its layer rather than on this factory.
  *
  * @returns The required React setup phase definition.
  */
-export function createReactSetupPhase(): LegacySetupPhaseDefinition {
+export function createReactSetupPhase(): SetupPhaseDefinition {
   return {
     id: "react",
     title: "React workspace",
@@ -998,4 +1009,4 @@ export function createReactSetupPhase(): LegacySetupPhaseDefinition {
 }
 
 /** Required phase that prepares React workspaces, website environment, and Playwright. */
-export const reactSetupPhase: LegacySetupPhaseDefinition = createReactSetupPhase();
+export const reactSetupPhase: SetupPhaseDefinition = createReactSetupPhase();

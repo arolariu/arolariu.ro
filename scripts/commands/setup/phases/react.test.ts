@@ -1,41 +1,53 @@
 // @vitest-environment node
 /**
  * @fileoverview Contract tests for React, website environment, and Playwright setup.
- * @module scripts.setup.react.test
+ * @module scripts/commands/setup/phases/react.test
  *
  * @remarks
- * Every test drives the real phase against an injected {@link LegacySetupPhaseRuntime}: an in-memory
- * {@link FileSystem} that records atomic writes and mode changes, a recording process runner
- * replaying typed {@link ProcessOutcome} fixtures, a deterministic clock, and an immutable
- * environment snapshot supplying the host platform and the terminal signal. No test in this file
- * reads the live checkout, spawns a process, mocks a repository module, or observes ambient Node
- * state.
+ * Every test runs the real Effect phase on the in-memory `makeTestLayer` harness: a filesystem
+ * that records atomic writes and mode changes, request-keyed scripted commands replaying
+ * legacy-shaped outcomes, a recording inspection session that replays per-key outcome sequences
+ * and records every inspection event in order, scripted prompts, a recording `SetupActions`, and
+ * an environment snapshot supplying the host platform and the terminal signal. Phases run under a
+ * counting clock (see `runPhase`), so each reports the deterministic duration of its legacy test
+ * clock. No test in this file reads the live checkout, spawns a process, mocks a repository
+ * module, or observes ambient Node state.
  */
 
-import {resolve} from "node:path";
+import {join, resolve} from "node:path";
+
+import {Effect, Exit, FileSystem, Layer, PlatformError, Redacted, Terminal} from "effect";
 import {afterEach, describe, expect, it, vi} from "vitest";
 
-import type {CommandContext} from "../../../common/commander.ts";
-import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "../../../common/logger.ts";
 import {createRepositoryPaths} from "../../../common/repository-paths.ts";
 import type {PackageRequirement, RepositoryRequirements} from "../../../common/requirements.ts";
-import {AbstractProcessRunner, type ProcessOutcome, type ProcessRequest, type ProcessRunOptions} from "../../../common/runner.ts";
-import {createMemoryFileSystem, createTestRuntimeFactory} from "../../../common/runtime.testing.ts";
-import {CommandCancellation, type Clock, type FileSystem, type RuntimeEnvironment} from "../../../common/runtime.ts";
 import type {EnvironmentFacts, ReactFacts} from "../../../inspection/frontend.ts";
 import type {InstalledPackageFact, PackageInventoryFacts} from "../../../inspection/packages.ts";
-import type {LegacyRepositoryInspectionSession} from "../../../platform/bridge.ts";
+import type {RepositoryInspectionKey, RepositoryInspectionSession} from "../../../inspection/repository.ts";
 import type {InspectionOutcome} from "../../../inspection/types.ts";
-import {createReactSetupPhase, reactSetupPhase} from "./react.ts";
+import type {ProcessRequest} from "../../../platform/Process.ts";
+import {Prompts} from "../../../platform/Prompts.ts";
+import {makeTestLayer, type RecordedProcessCall, type TestHarness} from "../../../platform/testing.ts";
+import type {SetupActions} from "../actions.ts";
+import {
+  interruptingActions,
+  keyedResponder,
+  recordingActions,
+  runPhase as runPhaseWith,
+  runPhaseExit,
+  scriptedCommands,
+  type ScriptedCommandOutcome,
+} from "../phase-testing.ts";
 import type {
-  LegacySetupAction,
+  SetupAction,
   SetupActionDisposition,
-  LegacySetupActionExecutor,
-  LegacySetupContext,
-  SetupOptions,
+  SetupContext,
+  SetupInput,
+  SetupPhaseDefinition,
   SetupPhaseResult,
-  LegacySetupPhaseRuntime,
+  SetupRequirements,
 } from "../types.ts";
+import {createReactSetupPhase, reactSetupPhase} from "./react.ts";
 
 const paths = createRepositoryPaths(resolve("C:\\fixture\\arolariu.ro"));
 const lockedPackageVersions = new Map<string, string>([
@@ -55,12 +67,13 @@ const lockedPlaywrightVersion = "1.62.1";
  * Pre-migration ceiling for every long-running Playwright installation.
  *
  * @remarks
- * The invocation-scoped runner defaults to 120s, which is bounded for the `install-deps --dry-run`
- * probe but far too short for a browser or host-library download. Every mutation that previously
- * inherited the legacy `tee` mutation default must therefore request this timeout explicitly now
- * that the phase no longer flows through the deprecated setup runner bridge.
+ * Setup commands default to 120s, which is bounded for the `install-deps --dry-run` probe but far
+ * too short for a browser or host-library download, so every such mutation requests this timeout
+ * explicitly.
  */
 const LEGACY_MUTATION_TIMEOUT_MS = 1_200_000;
+/** The setup command default timeout every probe runs with. */
+const PHASE_COMMAND_TIMEOUT_MS = 120_000;
 const browserInstallCommand: ProcessRequest = {
   command: "npx",
   args: ["--no-install", "playwright", "install", "chromium"],
@@ -91,20 +104,20 @@ const completeEnvironment = [
   "",
 ].join("\n");
 
-function succeeded(patch: Readonly<{stdout?: string; stderr?: string}> = {}): ProcessOutcome {
+function succeeded(patch: Readonly<{stdout?: string; stderr?: string}> = {}): ScriptedCommandOutcome {
   return {kind: "succeeded", exitCode: 0, stdout: patch.stdout ?? "", stderr: patch.stderr ?? "", durationMs: 1};
 }
 
-function exited(exitCode: number, patch: Readonly<{stdout?: string; stderr?: string}> = {}): ProcessOutcome {
+function exited(exitCode: number, patch: Readonly<{stdout?: string; stderr?: string}> = {}): ScriptedCommandOutcome {
   return {kind: "exited", exitCode, stdout: patch.stdout ?? "", stderr: patch.stderr ?? "", durationMs: 1};
 }
 
-function timedOut(): ProcessOutcome {
+function timedOut(): ScriptedCommandOutcome {
   return {kind: "timed-out", stdout: "", stderr: "", durationMs: 1};
 }
 
-function cancelledOutcome(): ProcessOutcome {
-  return {kind: "cancelled", stdout: "", stderr: "", durationMs: 1};
+function cancelledOutcome(): ScriptedCommandOutcome {
+  return {kind: "cancelled"};
 }
 
 function commandKey(command: Readonly<ProcessRequest>): string {
@@ -133,7 +146,7 @@ function requirements(input: Readonly<{patch?: ReadonlyMap<string, string>; omit
   };
 }
 
-function options(patch: Partial<SetupOptions> = {}): SetupOptions {
+function options(patch: Partial<SetupInput> = {}): SetupInput {
   return {
     verbose: false,
     dryRun: false,
@@ -221,7 +234,7 @@ function invalid<T>(
 }
 
 interface InspectionHarness {
-  readonly session: LegacyRepositoryInspectionSession;
+  readonly session: RepositoryInspectionSession;
   readonly inspect: ReturnType<typeof vi.fn>;
   readonly invalidate: ReturnType<typeof vi.fn>;
   readonly events: string[];
@@ -240,28 +253,31 @@ function createInspectionHarness(
   };
   const offsets = new Map<string, number>();
   const events: string[] = [];
-  const inspect = vi.fn(async (key: string) => {
+  const inspect = vi.fn((key: string): InspectionOutcome<unknown> => {
     events.push(`inspect:${key}`);
     const sequence = sequences[key];
     if (sequence === undefined || sequence.length === 0) {
-      return {kind: "unavailable" as const, reason: "Not exercised by this test.", durationMs: 0};
+      return {kind: "unavailable", reason: "Not exercised by this test.", durationMs: 0};
     }
     const offset = offsets.get(key) ?? 0;
     offsets.set(key, offset + 1);
     return sequence[Math.min(offset, sequence.length - 1)]!;
   });
-  const invalidate = vi.fn((...keys: readonly string[]) => {
+  const invalidate = vi.fn((...keys: string[]) => {
     events.push(`invalidate:${keys.join("+")}`);
   });
-  return {
-    session: {inspect, invalidate, updateInfrastructureEngine: vi.fn()} as unknown as LegacyRepositoryInspectionSession,
-    inspect,
-    invalidate,
-    events,
+  const session: RepositoryInspectionSession = {
+    inspect: <K extends RepositoryInspectionKey>(key: K) => Effect.sync(() => inspect(key) as never),
+    invalidate: (...keys) =>
+      Effect.sync(() => {
+        invalidate(...keys.map(String));
+      }),
+    updateInfrastructureEngine: () => Effect.void,
   };
+  return {session, inspect, invalidate, events};
 }
 
-/** One atomic write the phase performed through the injected filesystem capability. */
+/** One atomic write the phase performed through the platform `writeTextAtomic`. */
 interface RecordedWrite {
   readonly path: string;
   readonly contents: string;
@@ -269,317 +285,245 @@ interface RecordedWrite {
 }
 
 /**
- * An in-memory {@link FileSystem} plus the host snapshot the phase now reads from its runtime.
+ * The seeded website environment, the host snapshot, and every filesystem mutation the phase made.
  *
  * @remarks
- * The phase no longer accepts injected host boundaries, so one fixture carries both the recording
- * filesystem and the platform/terminal facts the {@link LegacySetupPhaseRuntime} environment reports.
+ * One fixture carries both the recording filesystem state and the platform/terminal facts the
+ * harness `Environment` reports.
  */
 interface ReactFixture {
-  /** The capability handed to the phase runtime. */
-  readonly files: FileSystem;
-  /** Host platform the runtime environment snapshot reports. */
+  /** Seeded files. */
+  readonly files: Readonly<Record<string, string>>;
+  /** Host platform the environment snapshot reports. */
   readonly platform: NodeJS.Platform;
-  /** Whether the runtime environment snapshot reports an interactive terminal. */
+  /** Whether the environment snapshot reports an interactive terminal. */
   readonly interactive: boolean;
-  /** Every {@link FileSystem.writeTextAtomic} call, in call order. */
+  /** When set, the atomic write's temporary file fails with this description. */
+  readonly failAtomicWrite?: string;
+  /** Every atomic write (temporary file then rename), in call order. */
   readonly writes: RecordedWrite[];
   /** Every non-atomic write path, which the environment mutation must never produce. */
   readonly nonAtomicWrites: string[];
-  /** Every {@link FileSystem.setMode} call, in call order. */
+  /** Every `chmod` call, in call order. */
   readonly modes: Array<Readonly<{path: string; mode: number}>>;
   /** Reads the current stored content of a path, or `undefined` when it does not exist. */
   readonly read: (path: string) => Promise<string | undefined>;
+  /** Binds {@link ReactFixture.read} to the harness filesystem store. */
+  readonly bind: (harness: TestHarness) => void;
 }
 
 /**
  * Creates the recording filesystem fixture the React phase writes the website environment through.
  *
- * @param input - Optional seeded `.env` content (`null` seeds no file at all) and host snapshot.
- * @returns A deterministic filesystem capability plus its recorded mutations.
+ * @param input - Optional seeded `.env` content (`null` seeds no file at all), host snapshot, and
+ * atomic-write failure.
+ * @returns The fixture.
  */
 function createReactFixture(
-  input: Readonly<{environment?: string | null; platform?: NodeJS.Platform; interactive?: boolean}> = {},
+  input: Readonly<{environment?: string | null; platform?: NodeJS.Platform; interactive?: boolean; failAtomicWrite?: string}> = {},
 ): ReactFixture {
-  const memory = createMemoryFileSystem(
-    input.environment === null ? {} : {[paths.websiteEnvironment]: input.environment ?? completeEnvironment},
-  );
-  const writes: RecordedWrite[] = [];
-  const nonAtomicWrites: string[] = [];
-  const modes: Array<Readonly<{path: string; mode: number}>> = [];
-
-  const files: FileSystem = {
-    ...memory,
-    writeText: async (path, contents, options) => {
-      nonAtomicWrites.push(path);
-      await memory.writeText(path, contents, options);
-    },
-    writeBytes: async (path, contents, options) => {
-      nonAtomicWrites.push(path);
-      await memory.writeBytes(path, contents, options);
-    },
-    writeTextAtomic: async (path, contents, options) => {
-      writes.push({path, contents, mode: options?.mode});
-      await memory.writeTextAtomic(path, contents, options);
-    },
-    setMode: async (path, mode) => {
-      modes.push({path, mode});
-      await memory.setMode(path, mode);
-    },
-  };
-
+  let store: TestHarness | undefined;
   return {
-    files,
+    files: input.environment === null ? {} : {[paths.websiteEnvironment]: input.environment ?? completeEnvironment},
     platform: input.platform ?? "win32",
     interactive: input.interactive ?? false,
-    writes,
-    nonAtomicWrites,
-    modes,
+    ...(input.failAtomicWrite === undefined ? {} : {failAtomicWrite: input.failAtomicWrite}),
+    writes: [],
+    nonAtomicWrites: [],
+    modes: [],
     read: async (path: string): Promise<string | undefined> => {
-      try {
-        return await memory.readText(path);
-      } catch {
-        return undefined;
-      }
+      const value = store?.files().get(path.replaceAll("\\", "/"));
+      return value === undefined ? undefined : String(value);
+    },
+    bind: (harness) => {
+      store = harness;
     },
   };
+}
+
+/** Matches the temporary sibling `writeTextAtomic` writes before renaming it over its destination. */
+const ATOMIC_TEMPORARY_FILE = /^(.*)[\\/]\.(.+)\.[0-9a-f]{16}\.tmp$/u;
+
+/**
+ * Re-provides the harness filesystem, recording atomic and non-atomic writes and mode changes.
+ *
+ * @param fixture - Receives every recorded mutation.
+ * @returns The layer.
+ */
+function recordingEnvironmentFiles(fixture: ReactFixture): Layer.Layer<FileSystem.FileSystem, never, FileSystem.FileSystem> {
+  return Layer.effect(
+    FileSystem.FileSystem,
+    Effect.map(Effect.service(FileSystem.FileSystem), (files) =>
+      FileSystem.FileSystem.of({
+        ...files,
+        writeFileString: (path, data, options) => {
+          const temporary = ATOMIC_TEMPORARY_FILE.exec(path);
+          if (temporary === null) {
+            fixture.nonAtomicWrites.push(path);
+          } else {
+            if (fixture.failAtomicWrite !== undefined) {
+              return Effect.fail(
+                PlatformError.systemError({
+                  _tag: "PermissionDenied",
+                  module: "FileSystem",
+                  method: "writeFileString",
+                  pathOrDescriptor: path,
+                  description: fixture.failAtomicWrite,
+                }),
+              );
+            }
+            fixture.writes.push({path: join(temporary[1] ?? "", temporary[2] ?? ""), contents: data, mode: options?.mode});
+          }
+          return files.writeFileString(path, data, options);
+        },
+        writeFile: (path, data, options) => {
+          fixture.nonAtomicWrites.push(path);
+          return files.writeFile(path, data, options);
+        },
+        chmod: (path, mode) =>
+          Effect.sync(() => {
+            fixture.modes.push({path, mode});
+          }),
+      }),
+    ),
+  );
 }
 
 /** One recorded child invocation. */
-type RecordedCall = Readonly<{request: ProcessRequest; options: ProcessRunOptions}>;
+type RecordedCall = RecordedProcessCall;
 
-/** A scripted outcome, or a value the runner rejects with instead of completing. */
-type ScriptedOutcome = ProcessOutcome | Error;
-
-/** Records every invocation while replaying request-keyed typed outcomes. */
-class FakeProcessRunner extends AbstractProcessRunner {
-  readonly #responses: Readonly<Record<string, ScriptedOutcome | readonly ScriptedOutcome[]>>;
-  readonly #offsets = new Map<string, number>();
-  readonly #calls: RecordedCall[] = [];
-
-  public constructor(responses: Readonly<Record<string, ScriptedOutcome | readonly ScriptedOutcome[]>> = {}) {
-    super();
-    this.#responses = responses;
-  }
-
-  /** Every recorded invocation, in call order. */
-  public get calls(): readonly RecordedCall[] {
-    return this.#calls;
-  }
-
-  /** {@inheritDoc AbstractProcessRunner.execute} */
-  protected override execute(request: Readonly<ProcessRequest>, options: Readonly<ProcessRunOptions>): Promise<ProcessOutcome> {
-    this.#calls.push({request, options});
-    const key = commandKey(request);
-    const configured = this.#responses[key];
-    if (configured === undefined) {
-      return Promise.resolve(succeeded());
-    }
-    if (!Array.isArray(configured)) {
-      return settle(configured as ScriptedOutcome);
-    }
-    const sequence = configured as readonly ScriptedOutcome[];
-    const offset = this.#offsets.get(key) ?? 0;
-    this.#offsets.set(key, offset + 1);
-    return settle(sequence[offset] ?? sequence.at(-1) ?? succeeded());
-  }
-}
-
-function settle(outcome: ScriptedOutcome): Promise<ProcessOutcome> {
-  return outcome instanceof Error ? Promise.reject(outcome) : Promise.resolve(outcome);
-}
-
-function createActions(dispositions: Readonly<Record<string, SetupActionDisposition>> = {}): Readonly<{
-  actions: LegacySetupActionExecutor;
-  actionIds: string[];
-  actionRecords: LegacySetupAction[];
-}> {
-  const actionIds: string[] = [];
-  const actionRecords: LegacySetupAction[] = [];
-  const actions: LegacySetupActionExecutor = {
-    run: async (action) => {
-      actionIds.push(action.id);
-      actionRecords.push(action);
-      const disposition = dispositions[action.id] ?? "executed";
-      if (disposition === "executed") {
-        await action.execute();
-      }
-      return disposition;
-    },
-  };
-  return {actions, actionIds, actionRecords};
-}
-
-/**
- * The exact context view the migrated React phase reads.
- *
- * @remarks
- * The deprecated {@link LegacySetupContext.runner} and {@link LegacySetupContext.now} members are deliberately
- * absent: a migrated phase must read its capabilities from {@link LegacySetupContext.runtime} only, so
- * any relapse becomes a type error instead of a silently passing test.
- */
-type MigratedSetupContext = Omit<LegacySetupContext, "runner" | "now"> & Readonly<{runtime: LegacySetupPhaseRuntime}>;
-
-function environmentSnapshot(platform: NodeJS.Platform, stdinIsTTY: boolean): RuntimeEnvironment {
-  return {
-    variables: Object.freeze({}),
-    cwd: paths.root,
-    executablePath: "C:\\Program Files\\nodejs\\node.exe",
-    platform,
-    architecture: "x64",
-    stdinIsTTY,
-    stdoutIsTTY: stdinIsTTY,
-    isCI: !stdinIsTTY,
-  };
-}
-
-/** Everything one React phase test needs to drive and observe the migrated phase. */
+/** Everything one React phase test needs to drive and observe the phase. */
 interface ReactHarness {
   /** The phase under test. */
-  readonly phase: ReturnType<typeof createReactSetupPhase>;
-  /** The migrated setup context handed to the phase. */
-  readonly context: MigratedSetupContext;
-  /** The recording filesystem the phase writes the website environment through. */
+  readonly phase: SetupPhaseDefinition;
+  /** The setup context handed to the phase. */
+  readonly context: SetupContext;
+  /** The recording filesystem fixture the phase writes the website environment through. */
   readonly fixture: ReactFixture;
-  /** Recording process runner observed by the phase. */
-  readonly runner: FakeProcessRunner;
+  /** The in-memory platform harness. */
+  readonly platform: TestHarness;
+  /** Every recorded process call, in order. */
+  readonly runner: {readonly calls: readonly RecordedCall[]};
   /** Action identifiers in evaluation order. */
   readonly actionIds: string[];
   /** Complete action records in evaluation order. */
-  readonly actionRecords: LegacySetupAction[];
+  readonly actionRecords: readonly SetupAction[];
   /** Text prompt probe. */
-  readonly text: ReturnType<typeof vi.fn<LegacySetupContext["prompts"]["text"]>>;
+  readonly text: ReturnType<typeof vi.fn<(message: string) => void>>;
   /** Secret prompt probe. */
-  readonly secret: ReturnType<typeof vi.fn<LegacySetupContext["prompts"]["secret"]>>;
-  /** Rendered logger output. */
-  readonly sink: InMemoryLoggerSink;
-  /** Every value the phase asked the logger to redact. */
-  readonly redactions: string[];
+  readonly secret: ReturnType<typeof vi.fn<(message: string) => void>>;
   /** Inspection session probe. */
   readonly inspect: ReturnType<typeof vi.fn>;
   /** Inspection invalidation probe. */
   readonly invalidate: ReturnType<typeof vi.fn>;
   /** Ordered inspection events. */
   readonly events: string[];
+  /** Every service the phase runs with. */
+  readonly layer: Layer.Layer<SetupRequirements>;
 }
 
 async function createHarness(
   input: Readonly<{
     fixture?: ReactFixture;
-    responses?: Readonly<Record<string, ScriptedOutcome | readonly ScriptedOutcome[]>>;
+    responses?: Readonly<Record<string, ScriptedCommandOutcome | readonly ScriptedCommandOutcome[]>>;
     dispositions?: Readonly<Record<string, SetupActionDisposition>>;
-    setupOptions?: SetupOptions;
+    setupOptions?: SetupInput;
     requirementsOverride?: RepositoryRequirements;
     packages?: readonly InspectionOutcome<PackageInventoryFacts>[];
     react?: readonly InspectionOutcome<ReactFacts>[];
     textAnswers?: readonly string[];
     secretAnswers?: readonly string[];
-    actionsOverride?: LegacySetupActionExecutor;
+    /** Replaces the recording consent policy. */
+    actions?: (recording: Layer.Layer<SetupActions>) => Layer.Layer<SetupActions>;
     platform?: NodeJS.Platform;
     interactive?: boolean;
   }> = {},
 ): Promise<ReactHarness> {
   const fixture = input.fixture ?? createReactFixture();
-  const runner = new FakeProcessRunner(input.responses);
-  const createdActions = createActions(input.dispositions);
+  const interactive = input.interactive ?? fixture.interactive;
+  const platform = makeTestLayer({
+    files: fixture.files,
+    processes: [scriptedCommands(keyedResponder(input.responses ?? {}))],
+    environment: {
+      cwd: paths.root,
+      executablePath: "C:\\Program Files\\nodejs\\node.exe",
+      platform: input.platform ?? fixture.platform,
+      architecture: "x64",
+      stdinIsTTY: interactive,
+      stdoutIsTTY: interactive,
+      isCI: !interactive,
+    },
+    context: "setup::react",
+  });
+  fixture.bind(platform);
+
   const textAnswers = [...(input.textAnswers ?? [])];
   const secretAnswers = [...(input.secretAnswers ?? [])];
-  const text = vi.fn<LegacySetupContext["prompts"]["text"]>(async () => textAnswers.shift() ?? "");
-  const secret = vi.fn<LegacySetupContext["prompts"]["secret"]>(async () => secretAnswers.shift() ?? "");
-  const sink = new InMemoryLoggerSink();
-  const logger = new MonorepositoryConsoleLogger("setup::react", {color: false, sink});
-  const redactions: string[] = [];
-  const originalRedact = logger.redact.bind(logger);
-  logger.redact = (value: string): void => {
-    redactions.push(value);
-    originalRedact(value);
-  };
+  const text = vi.fn<(message: string) => void>();
+  const secret = vi.fn<(message: string) => void>();
+  const refuse = (): Effect.Effect<never> => Effect.die(new Error("The React phase never asks for a confirmation or a choice."));
+  const prompts = Prompts.of({
+    confirm: refuse,
+    select: refuse,
+    text: (message) =>
+      Effect.sync(() => {
+        text(message);
+        return textAnswers.shift() ?? "";
+      }),
+    secret: (message) =>
+      Effect.sync(() => {
+        secret(message);
+        return Redacted.make(secretAnswers.shift() ?? "");
+      }),
+  });
+
+  const recording = recordingActions(false, input.dispositions);
+  const actions = input.actions === undefined ? recording.layer : input.actions(recording.layer);
   const inspection = createInspectionHarness({
     ...(input.packages === undefined ? {} : {packages: input.packages}),
     ...(input.react === undefined ? {} : {react: input.react}),
   });
 
-  let elapsed = 0;
-  const clock: Clock = {
-    monotonicNow: (): number => elapsed++,
-    isoTimestamp: (): string => "2026-09-01T00:00:00.000Z",
-    delay: (): Promise<void> => Promise.resolve(),
-  };
-
-  const factory = createTestRuntimeFactory({
-    files: fixture.files,
-    runner,
-    clock,
-    logger,
-    environment: environmentSnapshot(input.platform ?? fixture.platform, input.interactive ?? fixture.interactive),
-  });
-  const commandRuntime = await factory.createRoot({presentation: "silent", registerProcessSignals: false});
-  const command: CommandContext = {runtime: commandRuntime, presentation: "silent"};
-
-  const runtime: LegacySetupPhaseRuntime = {
-    command,
-    runner: commandRuntime.runner,
-    files: commandRuntime.files,
-    http: commandRuntime.http,
-    clock: commandRuntime.clock,
-    tasks: commandRuntime.tasks,
-    environment: commandRuntime.environment,
-    invokeGenerate: vi.fn<LegacySetupPhaseRuntime["invokeGenerate"]>(() =>
-      Promise.reject(new Error("The React setup phase must never invoke generation.")),
-    ),
-  };
-
-  const context: MigratedSetupContext = {
+  const context: SetupContext = {
     options: input.setupOptions ?? options(),
     paths,
     requirements: input.requirementsOverride ?? requirements(),
     inspection: inspection.session,
-    runtime,
-    prompts: {
-      confirm: async () => true,
-      select: async <TValue extends string>(
-        _message: string,
-        choices: readonly Readonly<{value: TValue; label: string}>[],
-      ): Promise<TValue> => {
-        const selected = choices[0]?.value;
-        if (selected === undefined) {
-          throw new Error("A test choice is required.");
-        }
-        return selected;
-      },
-      text,
-      secret,
-    },
-    actions: input.actionsOverride ?? createdActions.actions,
-    logger,
   };
 
   return {
     phase: createReactSetupPhase(),
     context,
     fixture,
-    runner,
-    actionIds: createdActions.actionIds,
-    actionRecords: createdActions.actionRecords,
+    platform,
+    runner: {
+      get calls(): readonly RecordedCall[] {
+        return platform.processCalls();
+      },
+    },
+    actionIds: recording.actionIds,
+    get actionRecords(): readonly SetupAction[] {
+      return recording.run.mock.calls.map(([action]) => action);
+    },
     text,
     secret,
-    sink,
-    redactions,
     inspect: inspection.inspect,
     invalidate: inspection.invalidate,
     events: inspection.events,
+    layer: Layer.mergeAll(actions, Layer.succeed(Prompts, prompts), recordingEnvironmentFiles(fixture)).pipe(
+      Layer.provideMerge(platform.layer),
+    ),
   };
 }
 
 /**
- * Runs the phase against the migrated context view, optionally replacing one dependency.
+ * Runs the phase against its harness.
  *
  * @param harness - Assembled test harness.
- * @param patch - Context members replaced for this run.
  * @returns The completed phase result.
  */
-function runPhase(harness: ReactHarness, patch: Partial<MigratedSetupContext> = {}): Promise<SetupPhaseResult> {
-  return harness.phase.run({...harness.context, ...patch} as LegacySetupContext);
+function runPhase(harness: ReactHarness): Promise<SetupPhaseResult> {
+  return runPhaseWith(harness.phase, harness.context, harness.layer);
 }
 
 function callsFor(harness: ReactHarness, command: Readonly<ProcessRequest>): readonly RecordedCall[] {
@@ -613,17 +557,9 @@ describe("website environment atomic write boundary", () => {
 
   it("leaves an existing environment file byte-for-byte untouched when the atomic write fails", async () => {
     const original = "CLERK_SECRET_KEY=sk_test_original\n";
-    const fixture = createReactFixture({environment: original});
-    const failure = Object.assign(new Error("EPERM: simulated atomic write failure"), {code: "EPERM"});
-    const failing: ReactFixture = {
-      ...fixture,
-      files: {
-        ...fixture.files,
-        writeTextAtomic: () => Promise.reject(failure),
-      },
-    };
+    const fixture = createReactFixture({environment: original, failAtomicWrite: "EPERM: simulated atomic write failure"});
     const harness = await createHarness({
-      fixture: failing,
+      fixture,
       react: [reactAvailable({environment: environmentFacts({presentKeys: ["CLERK_SECRET_KEY"]})})],
     });
 
@@ -631,8 +567,7 @@ describe("website environment atomic write boundary", () => {
 
     expect(result.status).toBe("failed");
     expect(result.evidence.join("\n")).toContain("simulated atomic write failure");
-    expect(harness.redactions).toContain("sk_test_original");
-    expect(JSON.stringify({records: harness.sink.records, result})).not.toContain("sk_test_original");
+    expect(JSON.stringify({records: harness.platform.output(), result})).not.toContain("sk_test_original");
     await expect(fixture.read(paths.websiteEnvironment)).resolves.toBe(original);
     expect(fixture.nonAtomicWrites).toEqual([]);
     expect(harness.invalidate).toHaveBeenCalledExactlyOnceWith("react");
@@ -659,13 +594,6 @@ describe("React setup public contract", () => {
       prepareWebsiteEnvironment: expect.any(Function),
       reactSetupPhase: expect.any(Object),
     });
-  });
-
-  it("requires an invocation-scoped runtime instead of falling back to ambient capabilities", async () => {
-    const harness = await createHarness();
-    const {runtime: _runtime, ...withoutRuntime} = harness.context;
-
-    await expect(harness.phase.run(withoutRuntime as LegacySetupContext)).rejects.toThrow(/setup phase runtime/i);
   });
 });
 
@@ -1076,7 +1004,6 @@ describe("website environment preparation", () => {
     expect(result.status).toBe("degraded");
     expect(harness.text).not.toHaveBeenCalled();
     expect(harness.secret).toHaveBeenCalledExactlyOnceWith("CLERK_SECRET_KEY");
-    expect(harness.redactions).toContain(entered);
     expect(fixture.writes).toHaveLength(0);
     expect(result.evidence.join("\n")).not.toContain(entered);
   });
@@ -1114,7 +1041,7 @@ describe("website environment preparation", () => {
     expect(fixture.writes[0]?.contents).not.toMatch(/NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=|CLERK_SECRET_KEY=/);
   });
 
-  it("registers every nonempty entered credential before retained output can expose it", async () => {
+  it("never exposes an entered credential through output, evidence, or action metadata", async () => {
     const fixture = createReactFixture({environment: null, interactive: true});
     const publishable = "pk_test_redacted-publishable";
     const secret = "sk_test_redacted-secret";
@@ -1127,12 +1054,11 @@ describe("website environment preparation", () => {
 
     const result = await runPhase(harness);
     const retained = JSON.stringify({
-      records: harness.sink.records,
+      records: harness.platform.output(),
       result,
       actions: harness.actionRecords.map(({id, scope, summary}) => ({id, scope, summary})),
     });
 
-    expect(harness.redactions).toEqual(expect.arrayContaining([publishable, secret]));
     expect(retained).not.toContain(publishable);
     expect(retained).not.toContain(secret);
   });
@@ -1185,6 +1111,23 @@ describe("website environment preparation", () => {
     expect(harness.invalidate).not.toHaveBeenCalled();
   });
 
+  it("never prompts during a dry run, even on an interactive terminal", async () => {
+    const fixture = createReactFixture({environment: null, interactive: true});
+    const harness = await createHarness({
+      fixture,
+      setupOptions: options({dryRun: true}),
+      dispositions: {"react.environment.write": "planned"},
+      react: [reactAvailable({environment: environmentFacts({presentKeys: []})})],
+    });
+
+    const result = await runPhase(harness);
+
+    expect(result.status).toBe("skipped");
+    expect(harness.text).not.toHaveBeenCalled();
+    expect(harness.secret).not.toHaveBeenCalled();
+    expect(fixture.writes).toEqual([]);
+  });
+
   it("fails when the required environment write is declined", async () => {
     const fixture = createReactFixture({environment: null});
     const harness = await createHarness({fixture, dispositions: {"react.environment.write": "declined"}});
@@ -1220,8 +1163,7 @@ describe("Playwright Chromium preparation", () => {
     expect(callFor(harness, browserInstallCommand)?.options).toMatchObject({
       cwd: paths.root,
       output: "tee",
-      logger: harness.context.logger,
-      timeoutMs: LEGACY_MUTATION_TIMEOUT_MS,
+      timeout: LEGACY_MUTATION_TIMEOUT_MS,
     });
     expect(harness.events).toEqual(["inspect:packages", "inspect:react", "invalidate:react", "inspect:react"]);
   });
@@ -1237,10 +1179,10 @@ describe("Playwright Chromium preparation", () => {
 
     await expect(runPhase(harness)).resolves.toMatchObject({status: "succeeded"});
 
-    expect(callFor(harness, dependencyInstallCommand)?.options.timeoutMs).toBe(LEGACY_MUTATION_TIMEOUT_MS);
-    expect(callFor(harness, browserInstallCommand)?.options.timeoutMs).toBe(LEGACY_MUTATION_TIMEOUT_MS);
+    expect(callFor(harness, dependencyInstallCommand)?.options.timeout).toBe(LEGACY_MUTATION_TIMEOUT_MS);
+    expect(callFor(harness, browserInstallCommand)?.options.timeout).toBe(LEGACY_MUTATION_TIMEOUT_MS);
     for (const probe of callsFor(harness, dependencyProbeCommand)) {
-      expect(probe.options.timeoutMs).toBeUndefined();
+      expect(probe.options.timeout).toBe(PHASE_COMMAND_TIMEOUT_MS);
     }
   });
 
@@ -1282,6 +1224,21 @@ describe("Playwright Chromium preparation", () => {
 
     expect(result.status).toBe("failed");
     expect(result.evidence.join("\n")).toContain("react.playwright.chromium.install");
+  });
+
+  it("redacts every observed Clerk credential from failure evidence", async () => {
+    const harness = await createHarness({
+      react: [reactAvailable({playwright: playwrightFacts({browsers: []})})],
+      responses: {[commandKey(browserInstallCommand)]: exited(1, {stderr: "echoed sk_test_existing and pk_test_existing"})},
+    });
+
+    const result = await runPhase(harness);
+
+    expect(result.status).toBe("failed");
+    expect(result.evidence.at(-1)).toBe(
+      "Playwright Chromium installation failed.\nCommand exited with code 1.\nstderr: echoed [REDACTED] and [REDACTED]",
+    );
+    expect(JSON.stringify(result)).not.toMatch(/[ps]k_test_existing/u);
   });
 
   it("invalidates the react fact even when the attempted install command fails", async () => {
@@ -1333,7 +1290,7 @@ describe("Playwright Chromium preparation", () => {
     expect(result.status).toBe("succeeded");
     expect(harness.runner.calls).toHaveLength(1);
     expect(callFor(harness, dependencyProbeCommand)?.options).toMatchObject({cwd: paths.root});
-    expect(callFor(harness, dependencyProbeCommand)?.options.timeoutMs).toBeUndefined();
+    expect(callFor(harness, dependencyProbeCommand)?.options.timeout).toBe(PHASE_COMMAND_TIMEOUT_MS);
     expect(harness.actionIds).toEqual([]);
   });
 
@@ -1358,8 +1315,7 @@ describe("Playwright Chromium preparation", () => {
     expect(callFor(harness, dependencyInstallCommand)?.options).toMatchObject({
       cwd: paths.root,
       output: "tee",
-      logger: harness.context.logger,
-      timeoutMs: LEGACY_MUTATION_TIMEOUT_MS,
+      timeout: LEGACY_MUTATION_TIMEOUT_MS,
     });
     expect(callsFor(harness, dependencyProbeCommand)).toHaveLength(2);
     expect(harness.invalidate).toHaveBeenCalledExactlyOnceWith("react");
@@ -1391,17 +1347,15 @@ describe("Playwright Chromium preparation", () => {
     expect(result.status).toBe("failed");
   });
 
-  it("treats a typed cancelled Linux dependency probe as inconclusive without attempting the install action", async () => {
+  it("propagates an interrupted Linux dependency probe without attempting the install action", async () => {
     const harness = await createHarness({
       fixture: createReactFixture({platform: "linux"}),
       responses: {[commandKey(dependencyProbeCommand)]: cancelledOutcome()},
     });
 
-    const result = await runPhase(harness);
+    const exit = await runPhaseExit(harness.phase, harness.context, harness.layer);
 
-    expect(result.status).toBe("failed");
-    expect(result.evidence.join("\n")).toContain("Playwright Linux dependency probe was inconclusive.");
-    expect(result.evidence.join("\n")).toContain("Command was cancelled.");
+    expect(Exit.hasInterrupts(exit)).toBe(true);
     expect(harness.actionIds).not.toContain("react.playwright.system-dependencies.install");
     expect(harness.actionIds).toEqual([]);
     expect(callsFor(harness, dependencyInstallCommand)).toHaveLength(0);
@@ -1410,37 +1364,49 @@ describe("Playwright Chromium preparation", () => {
 });
 
 describe("dry-run, interruption, and command safety", () => {
-  it("rethrows AbortError instead of converting interruption to a failure", async () => {
-    const interruption = Object.assign(new Error("interrupted"), {name: "AbortError"});
+  it("propagates an interruption at the consent gate instead of converting it to a failure", async () => {
     const harness = await createHarness({
       fixture: createReactFixture({environment: null}),
-      actionsOverride: {run: async () => Promise.reject(interruption)},
+      actions: (recording) => interruptingActions("react.environment.write", recording),
     });
 
-    await expect(runPhase(harness)).rejects.toBe(interruption);
+    const exit = await runPhaseExit(harness.phase, harness.context, harness.layer);
+
+    expect(Exit.hasInterrupts(exit)).toBe(true);
     expect(harness.invalidate).not.toHaveBeenCalled();
+    expect(harness.fixture.writes).toEqual([]);
   });
 
   it("invalidates the react fact when an attempted mutation is interrupted", async () => {
-    const interruption = Object.assign(new Error("interrupted"), {name: "AbortError"});
     const harness = await createHarness({
       react: [reactAvailable({playwright: playwrightFacts({browsers: []})})],
-      responses: {[commandKey(browserInstallCommand)]: interruption},
+      responses: {[commandKey(browserInstallCommand)]: cancelledOutcome()},
     });
 
-    await expect(runPhase(harness)).rejects.toBe(interruption);
+    const exit = await runPhaseExit(harness.phase, harness.context, harness.layer);
+
+    expect(Exit.hasInterrupts(exit)).toBe(true);
     expect(harness.invalidate).toHaveBeenCalledExactlyOnceWith("react");
   });
 
-  it("propagates runtime cancellation instead of degrading it into a phase failure", async () => {
-    const cancellation = new CommandCancellation("Setup was cancelled.", 130);
-    const harness = await createHarness({
-      react: [reactAvailable({playwright: playwrightFacts({browsers: []})})],
-      responses: {[commandKey(browserInstallCommand)]: cancellation},
-    });
+  it("interrupts setup when a credential prompt is quit at the terminal", async () => {
+    const fixture = createReactFixture({environment: null, interactive: true});
+    const harness = await createHarness({fixture, react: [reactAvailable({environment: environmentFacts({presentKeys: []})})]});
+    const quitting = Layer.succeed(
+      Prompts,
+      Prompts.of({
+        confirm: () => Effect.die(new Error("unexpected confirmation")),
+        select: () => Effect.die(new Error("unexpected choice")),
+        text: () => Effect.fail(new Terminal.QuitError()),
+        secret: () => Effect.fail(new Terminal.QuitError()),
+      }),
+    );
 
-    await expect(runPhase(harness)).rejects.toBe(cancellation);
-    expect(harness.invalidate).toHaveBeenCalledExactlyOnceWith("react");
+    const exit = await runPhaseExit(harness.phase, harness.context, Layer.merge(harness.layer, quitting));
+
+    expect(Exit.hasInterrupts(exit)).toBe(true);
+    expect(fixture.writes).toEqual([]);
+    expect(harness.actionIds).toEqual([]);
   });
 
   it("uses explicit cwd and argument arrays without builds, tests, services, or package restoration", async () => {

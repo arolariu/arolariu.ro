@@ -14,3 +14,9 @@ export class SetupActionFailed extends Schema.TaggedError<SetupActionFailed>()("
   message: Schema.String,
   actionId: Schema.String,
 }) {}
+
+/** A setup phase precondition failed for a reason that is neither an action, a process, nor a filesystem failure. */
+export class SetupPhaseFailed extends Schema.TaggedError<SetupPhaseFailed>()("SetupPhaseFailed", {
+  message: Schema.String,
+  phaseId: Schema.String,
+}) {}

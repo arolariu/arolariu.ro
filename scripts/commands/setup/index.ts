@@ -67,7 +67,7 @@ export type SetupRunRequirements = PlatformServices | Prompts | Inspection;
 export const setupPhases: readonly SetupPhaseDefinition[] = [
   ...workspaceSetupPhases,
   dotnetSetupPhase,
-  legacyPhase(reactSetupPhase),
+  reactSetupPhase,
   svelteSetupPhase,
   pythonSetupPhase,
   legacyPhase(infrastructureSetupPhase),
