@@ -2043,9 +2043,10 @@ export const generateArtifacts: (
 });
 
 /**
- * Legacy invoker over {@link generateArtifacts} for the unmigrated image and selfhost commands.
+ * Legacy invoker over {@link generateArtifacts} for the unmigrated selfhost command.
  *
- * @remarks Deleted in cohort 6 (Task 6.3), when those commands call the Effect directly.
+ * @remarks Deleted in cohort 6 (Task 6.4), when selfhost calls the Effect directly; the image
+ * command already does (Task 6.3).
  */
 export const generateArtifactsCommand: CommandInvoker<GenerateArtifactsInput, ArtifactGenerationResult> = legacyInvoker(
   "generate",

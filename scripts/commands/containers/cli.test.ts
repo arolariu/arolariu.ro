@@ -4,57 +4,48 @@
  * @module scripts/commands/containers/cli.test
  *
  * @remarks
- * Each case runs a real `runCli` invocation on the in-memory harness. The recording invokers are
- * plain objects implementing `CommandInvoker`, the legacy composition boundary; no module is mocked.
+ * Each case runs a real `runCli` invocation on the in-memory harness: the repository
+ * `package.json` is seeded, every preflight probe and engine command is scripted, and the recorded
+ * process calls show what the decoded flags reached. No module is mocked.
  */
 
 import {Effect} from "effect";
 import {describe, expect, it} from "vitest";
 
 import {makeRootCommand, runCli} from "../../cli.ts";
-import type {CommandInvoker} from "../../common/commander.ts";
-import type {ComposeInput, ImageInput} from "../../container-runtime/types.ts";
+import {ProcessExited} from "../../platform/Process.ts";
 import {exitCodeFor, type CommandExitCode} from "../../platform/exit.ts";
 import type {SinkRecord} from "../../platform/Output.ts";
-import {makeTestLayer} from "../../platform/testing.ts";
-import {makeContainersCommand} from "./cli.ts";
+import {makeTestLayer, type RecordedProcessCall} from "../../platform/testing.ts";
+import {makeContainersCommand, reportChildExit} from "./cli.ts";
 
-/** Outcome of one `containers` invocation and the inputs each recording invoker received. */
+/** Outcome of one `containers` invocation. */
 interface ContainersRun {
   readonly code: CommandExitCode;
-  readonly image: readonly Readonly<ImageInput>[];
-  readonly compose: readonly Readonly<ComposeInput>[];
+  readonly calls: readonly RecordedProcessCall[];
   readonly output: readonly SinkRecord[];
 }
 
 /**
- * Builds an invoker that records every input it receives and completes with exit `0`.
- *
- * @param inputs - The list the inputs are appended to.
- * @returns The recording invoker.
- */
-function recording<TInput>(inputs: Readonly<TInput>[]): CommandInvoker<TInput, null> {
-  return {
-    invoke: async (input) => {
-      inputs.push(input);
-      return {status: "completed", value: null, exitCode: 0};
-    },
-  };
-}
-
-/**
- * Runs `containers` against `argv` with recording invokers.
+ * Runs `containers` against `argv`; every process succeeds with no output.
  *
  * @param argv - Arguments after the program name.
- * @returns The exit code, the recorded inputs, and every sink record.
+ * @param variables - Environment variables of the harness.
+ * @returns The exit code, every recorded process call, and every sink record.
  */
-async function run(argv: readonly string[]): Promise<ContainersRun> {
-  const image: Readonly<ImageInput>[] = [];
-  const compose: Readonly<ComposeInput>[] = [];
-  const command = makeContainersCommand({image: recording(image), compose: recording(compose)});
-  const harness = makeTestLayer();
-  const exit = await Effect.runPromiseExit(runCli(argv, makeRootCommand([command])).pipe(Effect.provide(harness.layer)));
-  return {code: exitCodeFor(exit, undefined), image, compose, output: harness.output()};
+async function run(argv: readonly string[], variables: Readonly<Record<string, string>> = {}): Promise<ContainersRun> {
+  const harness = makeTestLayer({
+    files: {"package.json": JSON.stringify({name: "@arolariu/monorepo"})},
+    environment: {variables},
+    processes: [{match: () => true, respond: {stdout: "", stderr: "", durationMs: 0}}],
+  });
+  const exit = await Effect.runPromiseExit(runCli(argv, makeRootCommand([makeContainersCommand()])).pipe(Effect.provide(harness.layer)));
+  return {code: exitCodeFor(exit, undefined), calls: harness.processCalls(), output: harness.output()};
+}
+
+/** The request of the last recorded call: the engine command a successful run ends with. */
+function lastRequest(result: ContainersRun): unknown {
+  return result.calls.at(-1)?.request;
 }
 
 describe("containers command", () => {
@@ -67,7 +58,7 @@ describe("containers command", () => {
 
     // Assert
     expect(result.code).toBe(2);
-    expect(result.image).toEqual([]);
+    expect(result.calls).toEqual([]);
   });
 
   it("maps build target", async () => {
@@ -75,12 +66,26 @@ describe("containers command", () => {
     const argv = ["containers", "build", "--target", "cv"];
 
     // Act
-    const result = await run(argv);
+    const result = await run(argv, {AROLARIU_CONTAINER_ENGINE: "rancher"});
 
     // Assert
     expect(result.code).toBe(0);
-    expect(result.image).toEqual([{action: "build", target: "cv"}]);
-    expect(result.image[0]).not.toHaveProperty("engine");
+    expect(lastRequest(result)).toEqual({
+      command: "docker",
+      args: ["build", "-f", "infra/containers/Dockerfile.cv", "-t", "arolariu-cv", "--build-arg", "VERSION=local", "."],
+    });
+  });
+
+  it("omits the engine when absent, so the environment selects it", async () => {
+    // Arrange
+    const argv = ["containers", "run", "--target", "exp"];
+
+    // Act
+    const result = await run(argv, {AROLARIU_CONTAINER_ENGINE: "podman"});
+
+    // Assert
+    expect(result.code).toBe(0);
+    expect(result.calls[0]?.request).toEqual({command: "podman", args: ["--version"]});
   });
 
   it("maps run target and engine", async () => {
@@ -88,12 +93,11 @@ describe("containers command", () => {
     const argv = ["containers", "run", "--target", "exp", "--engine", "podman"];
 
     // Act
-    const result = await run(argv);
+    const result = await run(argv, {AROLARIU_CONTAINER_ENGINE: "rancher"});
 
     // Assert
     expect(result.code).toBe(0);
-    expect(result.image).toEqual([{action: "run", target: "exp", engine: "podman"}]);
-    expect(result.compose).toEqual([]);
+    expect(lastRequest(result)).toEqual({command: "podman", args: ["run", "--rm", "-p", "5002:80", "-e", "INFRA=local", "arolariu-exp"]});
   });
 
   it("rejects an unknown image target", async () => {
@@ -105,19 +109,19 @@ describe("containers command", () => {
 
     // Assert
     expect(result.code).toBe(2);
-    expect(result.image).toEqual([]);
+    expect(result.calls).toEqual([]);
   });
 
   it("forwards compose passthrough arguments verbatim", async () => {
     // Arrange
-    const argv = ["containers", "compose", "--file", "x.yml", "--", "up", "-d", "--build"];
+    const argv = ["containers", "compose", "--file", "x.yml", "--engine", "rancher", "--", "up", "-d", "--build"];
 
     // Act
     const result = await run(argv);
 
     // Assert
     expect(result.code).toBe(0);
-    expect(result.compose).toEqual([{file: "x.yml", passthrough: ["up", "-d", "--build"]}]);
+    expect(lastRequest(result)).toEqual({command: "docker", args: ["compose", "-f", "x.yml", "up", "-d", "--build"]});
   });
 
   it("requires a compose file", async () => {
@@ -129,7 +133,7 @@ describe("containers command", () => {
 
     // Assert
     expect(result.code).toBe(2);
-    expect(result.compose).toEqual([]);
+    expect(result.calls).toEqual([]);
   });
 
   it("rejects compose without passthrough arguments", async () => {
@@ -141,7 +145,47 @@ describe("containers command", () => {
 
     // Assert
     expect(result.code).toBe(2);
-    expect(result.compose).toEqual([]);
+    expect(result.calls).toEqual([]);
     expect(result.output).toEqual([{stream: "stderr", text: "[arolariu::compose] ⛔ Use --file <compose-file> -- <compose arguments>\n"}]);
+  });
+
+  it("reports a missing engine selection through the root renderer", async () => {
+    // Arrange
+    const argv = ["containers", "compose", "--file", "x.yml", "--", "config"];
+
+    // Act
+    const result = await run(argv);
+
+    // Assert
+    expect(result.code).toBe(1);
+    expect(result.calls).toEqual([]);
+    expect(result.output).toHaveLength(1);
+    expect(result.output[0]?.text).toMatch(/^\[arolariu::cli\] ⛔ /u);
+  });
+});
+
+describe("reportChildExit", () => {
+  it.each([
+    ["docker compose -f x.yml up", "docker"],
+    ['"C:\\Program Files\\Docker\\docker.exe" build .', "C:\\Program Files\\Docker\\docker.exe"],
+    ["dotnet", "dotnet"],
+  ])("names the executable of %s", async (command, executable) => {
+    // Arrange
+    const harness = makeTestLayer({context: "image"});
+    const error = new ProcessExited({
+      command,
+      stdout: "out",
+      stderr: "err",
+      durationMs: 0,
+      exitCode: 4,
+      message: `${command} exited with code 4`,
+    });
+
+    // Act
+    const failure = await Effect.runPromise(Effect.flip(reportChildExit(error)).pipe(Effect.provide(harness.layer)));
+
+    // Assert
+    expect(failure).toMatchObject({_tag: "ReportedFailure", exitCode: 1, message: `${executable} exited with code 4`});
+    expect(harness.output()).toEqual([{stream: "stderr", text: `[arolariu::image] ⛔ ${executable} exited with code 4\n`}]);
   });
 });

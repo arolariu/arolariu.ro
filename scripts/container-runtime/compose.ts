@@ -1,26 +1,21 @@
 /**
- * @fileoverview Engine-aware Compose helper command for local spin-ups.
+ * @fileoverview Engine-aware Compose helper program for local spin-ups.
  * @module scripts/container-runtime/compose
  *
  * @remarks
- * Every ambient effect this command used to reach for directly (the child process, the
- * repository filesystem, and the process environment) now arrives through the injected
- * {@link CommandContext.runtime} instead of Node globals, so the command is fully exercised by
- * the declarative command runtime's test fakes and never spawns Docker or Podman in a test.
+ * {@link runCompose} resolves the container engine, runs the shared preflight, and invokes the
+ * engine's Compose provider through the Effect `Process` service with tee output, so tests script
+ * every process instead of spawning Docker or Podman. Cancellation is fiber interruption, which
+ * terminates the Compose process tree.
  */
 
 import {Effect} from "effect";
 
-import {MonorepoCommand, type CommandContext, type CommandRuntimeFactory} from "../common/commander.ts";
-import {resolveRepositoryPaths} from "../common/repository-paths.ts";
-import {RunnerError} from "../common/runner.ts";
-import {commandCancellationFromSignal} from "../common/runtime.ts";
-import {runEffectOrThrow} from "../platform/bridge.ts";
-import {withLogContext} from "../platform/Output.ts";
-import type {ContainerRuntimeAdapter, RuntimeCommand} from "./adapters.ts";
-import {runContainerPreflight} from "./preflight.ts";
-import {resolveRuntimeContainerEngine} from "./selection.ts";
-import type {ComposeInput, ComposeResult} from "./types.ts";
+import type {PlatformServices} from "../platform/layers.ts";
+import type {ProcessError} from "../platform/Process.ts";
+import {runEchoedRuntimeCommand, type ContainerRuntimeAdapter, type RuntimeCommand} from "./adapters.ts";
+import {prepareContainerEngine} from "./preflight.ts";
+import type {ComposeInput, ComposeResult, ContainerRuntimeError} from "./types.ts";
 
 /** Options for invoking an arbitrary Compose file through the selected engine. */
 export interface ComposeOptions {
@@ -45,64 +40,21 @@ export function buildComposeCommand(adapter: ContainerRuntimeAdapter, options: C
 /**
  * Runs an arbitrary Compose file through the resolved local container engine.
  *
- * @param context - Command context whose runtime owns every ambient capability.
- * @param input - Typed command input.
- * @returns The engine, file, and pass-through arguments Compose ran with.
- * @throws When the engine cannot be resolved, preflight fails, or Compose exits with a nonzero
- * code.
- */
-async function executeCompose(context: Readonly<CommandContext>, input: Readonly<ComposeInput>): Promise<ComposeResult> {
-  const {runtime} = context;
-  const paths = await resolveRepositoryPaths(import.meta.url, runtime.files);
-  // cohort 6 temporary: Task 6.3 runs selection and preflight directly in the Effect-native command.
-  const adapter = await runEffectOrThrow(
-    resolveRuntimeContainerEngine({
-      // The declarative command host only decodes untyped CLI strings; resolveRuntimeContainerEngine
-      // validates the value (including the docker-deprecation message) before it is ever treated
-      // as a real ContainerEngine.
-      ...(input.engine === undefined ? {} : {requestedEngine: input.engine}),
-      toolingConfigPath: paths.toolingConfig,
-    }).pipe(Effect.flatMap((selection) => runContainerPreflight(selection.engine).pipe(withLogContext("preflight")))),
-    runtime,
-  );
-
-  const command = buildComposeCommand(adapter, {file: input.file, args: input.passthrough});
-  try {
-    await runtime.runner.expectSuccess(command, {
-      output: "tee",
-      logCommands: true,
-      logger: runtime.logger,
-      signal: runtime.signal,
-    });
-  } catch (error) {
-    if (error instanceof RunnerError && error.outcome.kind === "cancelled" && runtime.signal.aborted) {
-      throw commandCancellationFromSignal(runtime.signal);
-    }
-    throw error;
-  }
-
-  return {engine: adapter.engine, file: input.file, passthrough: input.passthrough};
-}
-
-/**
- * Creates the Compose helper command.
+ * @remarks
+ * Preflight runs first; Compose then runs as exactly `compose -f <file> ...passthrough` through the
+ * engine adapter, echoed as `$ <command>` and with tee output.
  *
- * @param runtimeFactory - Optional runtime factory; tests inject a fake instead of the Node adapter.
- * @returns The typed `containers:compose` command object.
+ * @param input - Typed command input.
+ * @returns The engine, file, and pass-through arguments Compose ran with, failing with
+ * {@link ContainerRuntimeError} when the engine cannot be resolved or preflight fails, and with a
+ * {@link ProcessError} when Compose fails.
  */
-export function createComposeCommand(runtimeFactory?: CommandRuntimeFactory): MonorepoCommand<ComposeInput, ComposeResult> {
-  return new MonorepoCommand<ComposeInput, ComposeResult>(
-    {
-      metadata: {name: "compose"},
-      execute: executeCompose,
-      completion: (result) => ({
-        exitCode: 0,
-        human: (logger) => logger.success(`Compose completed for '${result.file}' with engine '${result.engine}'.`),
-      }),
-    },
-    runtimeFactory,
-  );
-}
-
-/** Production singleton used by `npm run containers:compose`. */
-export const composeCommand: MonorepoCommand<ComposeInput, ComposeResult> = createComposeCommand();
+export const runCompose: (
+  input: Readonly<ComposeInput>,
+) => Effect.Effect<ComposeResult, ContainerRuntimeError | ProcessError, PlatformServices> = Effect.fn("containers.compose")(function* (
+  input: Readonly<ComposeInput>,
+) {
+  const adapter = yield* prepareContainerEngine(input, "compose");
+  yield* runEchoedRuntimeCommand(buildComposeCommand(adapter, {file: input.file, args: input.passthrough}));
+  return {engine: adapter.engine, file: input.file, passthrough: input.passthrough};
+});

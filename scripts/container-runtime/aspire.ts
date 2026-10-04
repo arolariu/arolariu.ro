@@ -1,27 +1,22 @@
 /**
- * @fileoverview Engine-aware Aspire AppHost startup command.
+ * @fileoverview Engine-aware Aspire AppHost startup program.
  * @module scripts/container-runtime/aspire
  *
  * @remarks
- * Every ambient effect this command used to reach for directly (the child process, the
- * repository filesystem, and the process environment) now arrives through the injected
- * {@link CommandContext.runtime} instead of Node globals, so the command is fully exercised by
- * the declarative command runtime's test fakes and never spawns Docker, Podman, or AppHost in a
- * test.
+ * {@link runAspire} resolves the container engine, runs the shared preflight, and starts the
+ * AppHost through the Effect `Process` service with inherited output, so tests script every
+ * process instead of spawning Docker, Podman, or AppHost. Cancellation is fiber interruption,
+ * which terminates the AppHost process tree.
  */
 
 import {Effect} from "effect";
 
-import {MonorepoCommand, type CommandContext, type CommandRuntimeFactory} from "../common/commander.ts";
-import {resolveRepositoryPaths} from "../common/repository-paths.ts";
-import {RunnerError} from "../common/runner.ts";
-import {commandCancellationFromSignal} from "../common/runtime.ts";
-import {runEffectOrThrow} from "../platform/bridge.ts";
-import {withLogContext} from "../platform/Output.ts";
+import {Environment} from "../platform/Environment.ts";
+import type {PlatformServices} from "../platform/layers.ts";
+import {Process, type ProcessError} from "../platform/Process.ts";
 import type {ContainerRuntimeAdapter} from "./adapters.ts";
-import {runContainerPreflight} from "./preflight.ts";
-import {resolveRuntimeContainerEngine} from "./selection.ts";
-import type {AspireResult, ContainerEngineInput} from "./types.ts";
+import {prepareContainerEngine} from "./preflight.ts";
+import type {AspireResult, ContainerEngineInput, ContainerRuntimeError} from "./types.ts";
 
 /** Aspire AppHost command with runtime-specific environment. */
 export interface AspireCommand {
@@ -54,62 +49,23 @@ export function buildAspireCommand(
 /**
  * Starts Aspire AppHost with the resolved local container engine.
  *
- * @param context - Command context whose runtime owns every ambient capability.
- * @param input - Typed command input.
- * @returns The engine Aspire AppHost ran with.
- * @throws When the engine cannot be resolved, preflight fails, or Aspire AppHost exits with a
- * nonzero code.
- */
-async function executeAspire(context: Readonly<CommandContext>, input: Readonly<ContainerEngineInput>): Promise<AspireResult> {
-  const {runtime} = context;
-  const paths = await resolveRepositoryPaths(import.meta.url, runtime.files);
-  // cohort 6 temporary: Task 6.3 runs selection and preflight directly in the Effect-native command.
-  const adapter = await runEffectOrThrow(
-    resolveRuntimeContainerEngine({
-      // The declarative command host only decodes untyped CLI strings; resolveRuntimeContainerEngine
-      // validates the value (including the docker-deprecation message) before it is ever treated
-      // as a real ContainerEngine.
-      ...(input.engine === undefined ? {} : {requestedEngine: input.engine}),
-      toolingConfigPath: paths.toolingConfig,
-    }).pipe(Effect.flatMap((selection) => runContainerPreflight(selection.engine).pipe(withLogContext("preflight")))),
-    runtime,
-  );
-
-  const command = buildAspireCommand(adapter, runtime.environment.variables);
-  try {
-    await runtime.runner.expectSuccess(
-      {command: command.command, args: command.args},
-      {env: command.env, output: "inherit", signal: runtime.signal},
-    );
-  } catch (error) {
-    if (error instanceof RunnerError && error.outcome.kind === "cancelled" && runtime.signal.aborted) {
-      throw commandCancellationFromSignal(runtime.signal);
-    }
-    throw error;
-  }
-
-  return {engine: adapter.engine};
-}
-
-/**
- * Creates the Aspire AppHost startup command.
+ * @remarks
+ * Preflight runs first; AppHost then runs with inherited output and the `Environment` variables
+ * merged under `DOTNET_ASPIRE_CONTAINER_RUNTIME`.
  *
- * @param runtimeFactory - Optional runtime factory; tests inject a fake instead of the Node adapter.
- * @returns The typed `dev`/`aspire` command object.
+ * @param input - Typed command input.
+ * @returns The engine Aspire AppHost ran with, failing with {@link ContainerRuntimeError} when the
+ * engine cannot be resolved or preflight fails, and with a {@link ProcessError} when AppHost fails.
  */
-export function createAspireCommand(runtimeFactory?: CommandRuntimeFactory): MonorepoCommand<ContainerEngineInput, AspireResult> {
-  return new MonorepoCommand<ContainerEngineInput, AspireResult>(
-    {
-      metadata: {name: "aspire"},
-      execute: executeAspire,
-      completion: (result) => ({
-        exitCode: 0,
-        human: (logger) => logger.success(`Aspire AppHost exited successfully for engine '${result.engine}'.`),
-      }),
-    },
-    runtimeFactory,
-  );
-}
-
-/** Production singleton used by `npm run dev`. */
-export const aspireCommand: MonorepoCommand<ContainerEngineInput, AspireResult> = createAspireCommand();
+export const runAspire: (
+  input: Readonly<ContainerEngineInput>,
+) => Effect.Effect<AspireResult, ContainerRuntimeError | ProcessError, PlatformServices> = Effect.fn("containers.aspire")(function* (
+  input: Readonly<ContainerEngineInput>,
+) {
+  const adapter = yield* prepareContainerEngine(input, "aspire");
+  const environment = yield* Environment;
+  const command = buildAspireCommand(adapter, environment.variables);
+  const runner = yield* Process;
+  yield* runner.run({command: command.command, args: command.args}, {env: command.env, output: "inherit"});
+  return {engine: adapter.engine};
+});

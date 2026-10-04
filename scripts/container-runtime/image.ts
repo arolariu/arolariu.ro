@@ -1,32 +1,25 @@
 /**
- * @fileoverview Engine-aware local image build/run command.
+ * @fileoverview Engine-aware local image build/run program.
  * @module scripts/container-runtime/image
  *
  * @remarks
- * Every ambient effect this command used to reach for directly (the child process, the
- * repository filesystem, and the process environment) now arrives through the injected
- * {@link CommandContext.runtime} instead of Node globals, so the command is fully exercised by
- * the declarative command runtime's test fakes and never spawns Docker or Podman in a test. The
- * frontend/backend taxonomy artifact prerequisite runs as a nested, in-process invocation of
- * `generateArtifactsCommand` (through `{parent: context, presentation: "silent"}`) instead of a
- * spawned Node subprocess, so it inherits this invocation's cancellation, redactions, and
- * cleanup ownership.
+ * {@link runImage} resolves the container engine, runs the shared preflight, and builds or runs
+ * the image through the Effect `Process` service with tee output, so tests script every process
+ * instead of spawning Docker or Podman. The frontend/backend taxonomy artifact prerequisite runs
+ * {@link generateArtifacts} directly and silently (as the legacy nested `presentation: "silent"`
+ * invocation did), after preflight and before the build. Cancellation is fiber interruption.
  */
 
 import {Effect} from "effect";
 
-import {MonorepoCommand, type CommandContext, type CommandInvoker, type CommandRuntimeFactory} from "../common/commander.ts";
-import type {MonorepositoryLogger} from "../common/logger.ts";
-import {resolveRepositoryPaths} from "../common/repository-paths.ts";
-import {RunnerError, type ProcessRunner} from "../common/runner.ts";
-import {CommandCancellation, commandCancellationFromSignal} from "../common/runtime.ts";
-import {generateArtifactsCommand, type ArtifactGenerationResult, type GenerateArtifactsInput} from "../commands/generate/artifacts.ts";
-import {runEffectOrThrow} from "../platform/bridge.ts";
-import {withLogContext} from "../platform/Output.ts";
-import type {ContainerRuntimeAdapter, RuntimeCommand} from "./adapters.ts";
-import {runContainerPreflight} from "./preflight.ts";
-import {resolveRuntimeContainerEngine} from "./selection.ts";
-import type {ImageInput, ImageResult, ImageTarget} from "./types.ts";
+import {generateArtifacts} from "../commands/generate/artifacts.ts";
+import type {ArtifactGenerationFailed, TaxonomySourceUnavailable} from "../commands/generate/errors.ts";
+import {silently} from "../commands/generate/index.ts";
+import type {PlatformServices} from "../platform/layers.ts";
+import type {ProcessError} from "../platform/Process.ts";
+import {runEchoedRuntimeCommand, type ContainerRuntimeAdapter, type RuntimeCommand} from "./adapters.ts";
+import {prepareContainerEngine} from "./preflight.ts";
+import type {ContainerRuntimeError, ImageInput, ImageResult, ImageTarget} from "./types.ts";
 
 /** Options for building a local image with the selected engine. */
 export interface ImageBuildOptions {
@@ -41,14 +34,6 @@ export interface ImageRunOptions {
   readonly tag: string;
   readonly ports: readonly string[];
   readonly environment: Readonly<Record<string, string>>;
-}
-
-/** Optional collaborators {@link createImageCommand} composes. */
-export interface ImageCommandDependencies {
-  /** Optional runtime factory; tests inject a fake instead of the Node adapter. */
-  readonly runtimeFactory?: CommandRuntimeFactory;
-  /** Taxonomy and license artifact generator invoked as the frontend/backend build prerequisite. */
-  readonly artifacts?: CommandInvoker<GenerateArtifactsInput, ArtifactGenerationResult>;
 }
 
 const dockerfilesByTarget: Readonly<Record<ImageTarget, string>> = {
@@ -66,12 +51,12 @@ const portsByTarget: Readonly<Record<ImageTarget, readonly string[]>> = {
 };
 
 /**
- * Determines whether an image consumes generated taxonomy artifacts.
+ * Determines whether an image build consumes generated taxonomy artifacts.
  *
  * @param target - Image target.
  * @returns `true` for frontend and backend images.
  */
-function requiresTaxonomyArtifacts(target: ImageTarget): boolean {
+export function shouldGenerateTaxonomyArtifacts(target: ImageTarget): boolean {
   return target === "frontend" || target === "backend";
 }
 
@@ -101,139 +86,46 @@ export function buildImageRunCommand(adapter: ContainerRuntimeAdapter, options: 
 }
 
 /**
- * Runs the taxonomy and license artifact generator as a nested, silent invocation.
- *
- * @param artifacts - Taxonomy and license artifact generator command.
- * @param context - Command context whose runtime scope owns the nested invocation.
- * @throws {CommandCancellation} When the nested invocation was cancelled.
- * @throws When the nested invocation failed or unexpectedly returned help.
- */
-async function runArtifactPrerequisite(
-  artifacts: CommandInvoker<GenerateArtifactsInput, ArtifactGenerationResult>,
-  context: Readonly<CommandContext>,
-): Promise<void> {
-  const execution = await artifacts.invoke({verbose: false}, {parent: context, presentation: "silent"});
-
-  switch (execution.status) {
-    case "completed":
-      return;
-    case "cancelled":
-      throw new CommandCancellation(execution.failure.message, execution.exitCode);
-    case "failed":
-      throw new Error(execution.failure.message, {cause: execution.failure.cause});
-    case "help":
-      throw new Error("Artifact generation returned help during a nested invocation.");
-  }
-}
-
-/**
- * Runs the resolved engine-owned image build/run command, translating a cancelled runner outcome
- * on the invocation's own aborted signal into the invocation's typed cancellation reason instead
- * of an operational failure.
+ * Builds or runs a local image with the resolved local container engine.
  *
  * @remarks
- * A cancelled invocation's exact SIGINT/SIGTERM exit code (`130`/`143`) is owned by its own
- * {@link CommandCancellation} reason; letting `expectSuccess`'s `RunnerError` for a cancelled
- * outcome escape unclassified would misreport an interrupted invocation as an operational failure
- * and the shared command lifecycle would classify it as exit code `1`. A `{kind:"cancelled"}`
- * outcome observed while `signal` is not the invocation's own aborted signal is not this
- * invocation's cancellation and stays an operational failure.
+ * Preflight runs first. A frontend or backend build then generates the taxonomy and license
+ * artifacts with {@link generateArtifacts} (silently, `{verbose: false}`); a failed generation
+ * stops before the engine CLI runs. The build or run command is echoed as `$ <command>` and runs
+ * with tee output.
  *
- * @param runner - Process runner used to run `command`.
- * @param command - Engine-owned build or run command to execute.
- * @param logger - Logger used for tee output and command echo.
- * @param signal - The owning invocation's cancellation signal.
- * @throws {CommandCancellation} When `command` is cancelled on `signal`.
- * @throws {RunnerError} When `command` fails for any other reason.
- */
-async function runImageBusinessCommand(
-  runner: ProcessRunner,
-  command: Readonly<RuntimeCommand>,
-  logger: MonorepositoryLogger,
-  signal: AbortSignal,
-): Promise<void> {
-  try {
-    await runner.expectSuccess(command, {output: "tee", logCommands: true, logger, signal});
-  } catch (error) {
-    if (error instanceof RunnerError && error.outcome.kind === "cancelled" && signal.aborted) {
-      throw commandCancellationFromSignal(signal);
-    }
-    throw error;
-  }
-}
-
-/**
- * Builds and runs the local image build/run business logic.
- *
- * @param artifacts - Taxonomy and license artifact generator command.
- * @param context - Command context whose runtime owns every ambient capability.
  * @param input - Typed command input.
- * @returns The engine, action, and target this invocation ran with.
- * @throws When the engine cannot be resolved, preflight fails, the artifact prerequisite fails,
- * or the runtime command exits with a nonzero code.
+ * @returns The engine, action, and target this invocation ran with, failing with
+ * {@link ContainerRuntimeError} when the engine cannot be resolved or preflight fails, with
+ * {@link TaxonomySourceUnavailable} or {@link ArtifactGenerationFailed} when the artifact
+ * prerequisite fails, and with a {@link ProcessError} when the engine command fails.
  */
-async function executeImage(
-  artifacts: CommandInvoker<GenerateArtifactsInput, ArtifactGenerationResult>,
-  context: Readonly<CommandContext>,
+export const runImage: (
   input: Readonly<ImageInput>,
-): Promise<ImageResult> {
-  const {runtime} = context;
-  const paths = await resolveRepositoryPaths(import.meta.url, runtime.files);
-  // cohort 6 temporary: Task 6.3 runs selection and preflight directly in the Effect-native command.
-  const adapter = await runEffectOrThrow(
-    resolveRuntimeContainerEngine({
-      // The declarative command host only decodes untyped CLI strings; resolveRuntimeContainerEngine
-      // validates the value (including the docker-deprecation message) before it is ever treated
-      // as a real ContainerEngine.
-      ...(input.engine === undefined ? {} : {requestedEngine: input.engine}),
-      toolingConfigPath: paths.toolingConfig,
-    }).pipe(Effect.flatMap((selection) => runContainerPreflight(selection.engine).pipe(withLogContext("preflight")))),
-    runtime,
-  );
-
+) => Effect.Effect<
+  ImageResult,
+  ContainerRuntimeError | ProcessError | TaxonomySourceUnavailable | ArtifactGenerationFailed,
+  PlatformServices
+> = Effect.fn("containers.image")(function* (input: Readonly<ImageInput>) {
+  const adapter = yield* prepareContainerEngine(input, "image");
   const tag = `arolariu-${input.target}`;
 
   if (input.action === "build") {
-    if (requiresTaxonomyArtifacts(input.target)) {
-      await runArtifactPrerequisite(artifacts, context);
+    if (shouldGenerateTaxonomyArtifacts(input.target)) {
+      yield* silently(generateArtifacts({verbose: false}));
     }
 
-    const command = buildImageBuildCommand(adapter, {
-      dockerfile: dockerfilesByTarget[input.target],
-      tag,
-      context: ".",
-      buildArgs: {VERSION: "local"},
-    });
-    await runImageBusinessCommand(runtime.runner, command, runtime.logger, runtime.signal);
+    yield* runEchoedRuntimeCommand(
+      buildImageBuildCommand(adapter, {
+        dockerfile: dockerfilesByTarget[input.target],
+        tag,
+        context: ".",
+        buildArgs: {VERSION: "local"},
+      }),
+    );
     return {engine: adapter.engine, action: "build", target: input.target};
   }
 
-  const command = buildImageRunCommand(adapter, {tag, ports: portsByTarget[input.target], environment: {INFRA: "local"}});
-  await runImageBusinessCommand(runtime.runner, command, runtime.logger, runtime.signal);
+  yield* runEchoedRuntimeCommand(buildImageRunCommand(adapter, {tag, ports: portsByTarget[input.target], environment: {INFRA: "local"}}));
   return {engine: adapter.engine, action: "run", target: input.target};
-}
-
-/**
- * Creates the local image build/run command.
- *
- * @param dependencies - Optional runtime factory and artifact generator collaborators.
- * @returns The typed `containers:build`/`containers:run` command object.
- */
-export function createImageCommand(dependencies: Readonly<ImageCommandDependencies> = {}): MonorepoCommand<ImageInput, ImageResult> {
-  const artifacts = dependencies.artifacts ?? generateArtifactsCommand;
-
-  return new MonorepoCommand<ImageInput, ImageResult>(
-    {
-      metadata: {name: "image"},
-      execute: (context, input) => executeImage(artifacts, context, input),
-      completion: (result) => ({
-        exitCode: 0,
-        human: (logger) => logger.success(`Image ${result.action} completed for target '${result.target}' with engine '${result.engine}'.`),
-      }),
-    },
-    dependencies.runtimeFactory,
-  );
-}
-
-/** Production singleton used by `npm run containers:build`/`npm run containers:run`. */
-export const imageCommand: MonorepoCommand<ImageInput, ImageResult> = createImageCommand();
+});

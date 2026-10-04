@@ -326,15 +326,22 @@ The bridge works in both directions. `runEffect(program, options)` lets a legacy
 program as a legacy `CommandInvoker`, so unmigrated callers compose it unchanged. The bridge is the only platform module that may import
 the legacy kernel, and cohort 7 deletes it.
 
-While the container commands (`aspire`, `compose`, `image`, `selfhost`) are still legacy, they call the Effect container helpers
-(`resolveRuntimeContainerEngine`, `runContainerPreflight`, `removeSelfhostTraefikConfig`) through `runEffectOrThrow(program, runtime)`.
+The container commands `dev aspire`, `containers build|run`, and `containers compose` are Effect-native (`runAspire`, `runImage`,
+`runCompose`): `prepareContainerEngine` resolves the engine and runs `runContainerPreflight` under the `<command>::preflight` log context,
+and the engine command runs through `Process` (AppHost with inherited output; build/run/Compose echoed as `$ <command>` with tee output).
+A non-zero exit of that child becomes `ReportedFailure{exitCode: 1, message: "<tool> exited with code <n>"}` after one `⛔` line, because
+the child already printed its own output; `--json` writes the result as the single document. The image build calls `generateArtifacts`
+directly (silently) for the frontend and backend targets.
+
+While `dev selfhost` is still legacy, it calls the Effect container helpers (`resolveRuntimeContainerEngine`, `runContainerPreflight`,
+`removeSelfhostTraefikConfig`) and the `generateArtifactsCommand` shim through `runEffectOrThrow(program, runtime)` and `invoke()`.
 It runs the program over `legacyRuntimeLayer(runtime)` — the Node layer with that invocation's own runner, environment, filesystem
 reads/removal, and logger in place of the ambient ones — so the legacy test fakes and the R1 pins see the same calls and output. Log
 lines go to `runtime.logger` (a `context` annotation names a child logger, so `withLogContext("preflight")` renders
 `[arolariu::<command>::preflight]`), which applies the invocation's presentation. `runtime.signal` reaches the legacy runner on every
 process call, and a call it reports cancelled on the aborted signal interrupts the program, rethrown as the signal's
 `CommandCancellation`; any other failure rethrows `Cause.squash(exit.cause)`. Each call site carries a `// cohort 6 temporary` comment
-and Tasks 6.3 and 6.4 delete them.
+and Task 6.4 deletes them.
 
 Until cohort 7 converts the shared Promise helpers (`resolveRepositoryPaths`, `loadRepositoryRequirements`, `readToolingConfig`,
 `writeToolingConfig`), Effect code hands them legacy-shaped capabilities from the bridge: `legacyReadOnlyFiles` and `legacyFileSystem`

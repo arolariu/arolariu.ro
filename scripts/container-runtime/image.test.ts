@@ -1,49 +1,214 @@
+// @vitest-environment node
 /**
- * @fileoverview Tests for the declarative local image build/run command.
+ * @fileoverview Tests for the Effect local image build/run program.
  * @module scripts/container-runtime/image.test
+ *
+ * @remarks
+ * Every case runs on `makeTestLayer`: an in-memory filesystem seeded with the workspace manifests,
+ * scripted preflight and engine processes, scripted taxonomy HTTP responses with a scripted
+ * `unzip` that materializes the GS1 archive entry, and a recording sink. The frontend/backend
+ * builds run the real `generateArtifacts`, so the `unzip` call and the taxonomy HTTP requests are
+ * the evidence that artifact generation ran after preflight and before the build. The
+ * characterization cases drive the real `containers build` CLI path (`runCli`); no module is mocked.
  */
 
-import {describe, expect, it, vi, type Mock} from "vitest";
-import type {CommandExecution, CommandInvoker, CommandPresentation, CommandRuntimeFactory} from "../common/commander.ts";
-import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "../common/logger.ts";
-import type {ProcessOutcome, ProcessRequest, ProcessRunOptions} from "../common/runner.ts";
-import {createProcessRunner, createTestRuntimeFactory, repositoryFixtureRoot} from "../common/runtime.testing.ts";
-import {CommandCancellation, type CommandRuntime, type RuntimeEnvironment} from "../common/runtime.ts";
-import type {ArtifactGenerationResult, GenerateArtifactsInput} from "../commands/generate/artifacts.ts";
-import {getContainerAdapter} from "./adapters.ts";
-import {buildImageBuildCommand, buildImageRunCommand, createImageCommand} from "./image.ts";
+import {join} from "node:path";
 
-function succeeded(stdout = ""): ProcessOutcome {
+import {Duration, Effect, Exit, Fiber, FileSystem} from "effect";
+import type {HttpClientRequest} from "effect/http";
+import {TestClock} from "effect/testing";
+import {describe, expect, it} from "vitest";
+
+import {makeRootCommand, runCli} from "../cli.ts";
+import {makeContainersCommand} from "../commands/containers/cli.ts";
+import {getExpectedTaxonomyArtifactPaths} from "../commands/generate/artifacts.ts";
+import type {ProbeOutcome} from "../inspection/probes.ts";
+import {exitCodeFor} from "../platform/exit.ts";
+import {
+  effectTest,
+  makeTestLayer,
+  repositoryFixtureRoot,
+  scriptedOutcomes,
+  type ScriptedHttp,
+  type ScriptedProcess,
+  type TestHarness,
+} from "../platform/testing.ts";
+import {getContainerAdapter} from "./adapters.ts";
+import {buildImageBuildCommand, buildImageRunCommand, runImage, shouldGenerateTaxonomyArtifacts} from "./image.ts";
+
+/** Workspace manifests the engine selection and the artifact generation read. */
+const WORKSPACE_FILES: Readonly<Record<string, string>> = {
+  "package.json": JSON.stringify({name: "@arolariu/monorepo"}),
+  "sites/arolariu.ro/package.json": JSON.stringify({}),
+};
+
+/** Pinned GS1 archive URL. */
+const GPC_URL = "https://ref.gs1.org/standards/gpc/2026-05/";
+
+/** Exact archive entry the GPC generator extracts. */
+const GPC_ENTRY = "GPC as of May 2026 (2026-05-20) EN.json";
+
+/** Valid English GPC source document. */
+const GPC_DOCUMENT = {
+  LanguageCode: "EN",
+  DateUtc: "2026-05-01",
+  Schema: [
+    {
+      Level: 1,
+      Code: 50000000,
+      Title: "Food",
+      Definition: null,
+      DefinitionExcludes: null,
+      Active: true,
+      Childs: [{Level: 4, Code: 10000266, Title: "Bread", Definition: null, DefinitionExcludes: null, Active: true, Childs: []}],
+    },
+  ],
+} as const;
+
+/**
+ * Builds a SPARQL JSON response body.
+ *
+ * @param bindings - Raw SPARQL bindings.
+ * @returns The response status and body.
+ */
+function sparql(bindings: readonly unknown[]): ScriptedHttp["respond"] {
+  return {status: 200, body: JSON.stringify({results: {bindings}})};
+}
+
+/**
+ * Reads the SPARQL query text of a request.
+ *
+ * @param request - The HTTP request.
+ * @returns The `query` URL parameter, or `""`.
+ */
+function sparqlQuery(request: HttpClientRequest.HttpClientRequest): string {
+  return new URL(request.url).searchParams.get("query") ?? "";
+}
+
+/** Successful GPC, ECOICOP, and NACE responses. */
+const TAXONOMY_SOURCES: readonly ScriptedHttp[] = [
+  {match: (request) => request.url === GPC_URL, respond: {status: 200, body: "zip-archive"}},
+  {
+    match: (request) => sparqlQuery(request).includes("ecoicop2"),
+    respond: sparql([{concept: {value: "eco:01"}, notation: {value: "01"}, label: {value: "01 Food"}}]),
+  },
+  {
+    match: (request) => sparqlQuery(request).includes("nace2.1"),
+    respond: sparql([{concept: {value: "nace:A"}, notation: {value: "A"}, label: {value: "A Agriculture"}}]),
+  },
+];
+
+/** Every taxonomy source answers 503. */
+const UNAVAILABLE_SOURCES: readonly ScriptedHttp[] = [{match: () => true, respond: {status: 503, body: "Unavailable"}}];
+
+function succeeded(stdout = ""): ProbeOutcome {
   return {kind: "succeeded", exitCode: 0, stdout, stderr: "", durationMs: 0};
 }
 
-function exited(code: number): ProcessOutcome {
+function exited(code: number): ProbeOutcome {
   return {kind: "exited", exitCode: code, stdout: "", stderr: "", durationMs: 0};
 }
 
 /** One `succeeded` outcome per Podman preflight probe: tool, Docker Desktop rejection, backend x2, compose, existing containers. */
-const podmanPreflightOutcomes: readonly ProcessOutcome[] = [succeeded(), succeeded(), succeeded(), succeeded(), succeeded(), succeeded()];
+const podmanPreflightOutcomes: readonly ProbeOutcome[] = [succeeded(), succeeded(), succeeded(), succeeded(), succeeded(), succeeded()];
 
-function artifactResult(overrides: Partial<ArtifactGenerationResult> = {}): ArtifactGenerationResult {
-  return {summary: "Generated 5 artifact file(s).", generatedFiles: [], ...overrides};
+/** Harness filesystem the scripted `unzip` writes into; bound when a run starts. */
+interface ExtractionState {
+  fs?: FileSystem.FileSystem;
 }
 
-type ArtifactsInvoke = CommandInvoker<GenerateArtifactsInput, ArtifactGenerationResult>["invoke"];
-type ArtifactsStub = CommandInvoker<GenerateArtifactsInput, ArtifactGenerationResult> & Readonly<{invoke: Mock<ArtifactsInvoke>}>;
+/**
+ * Scripts `unzip`: writes the GPC entry into the requested directory.
+ *
+ * @param state - The bound harness filesystem.
+ * @returns The scripted process.
+ */
+function archiveExtraction(state: ExtractionState): ScriptedProcess {
+  return {
+    match: (request) => request.command === "unzip",
+    respond: (request) => {
+      const outputDirectory = request.args[request.args.indexOf("-d") + 1];
+      const fs = state.fs;
+      if (outputDirectory === undefined || fs === undefined) {
+        return Effect.die(new Error("The archive extraction fixture is not bound."));
+      }
+      return Effect.orDie(fs.writeFileString(join(outputDirectory, GPC_ENTRY), JSON.stringify(GPC_DOCUMENT))).pipe(
+        Effect.as({stdout: "", stderr: "", durationMs: 0}),
+      );
+    },
+  };
+}
+
+/** One image harness plus the extraction state it scripts. */
+interface ImageFixture {
+  readonly harness: TestHarness;
+  readonly extraction: ExtractionState;
+}
 
 /**
- * Creates a typed artifacts stub recording every composed invocation.
+ * Builds a harness for one image run.
  *
- * @param implementation - Behavior the stub replays; defaults to a completed, successful result.
- * @returns A recording {@link CommandInvoker}.
+ * @param outcomes - Scripted preflight and engine outcomes in call order (`unzip` is answered separately).
+ * @param http - Scripted taxonomy HTTP responses; defaults to the successful sources.
+ * @returns The harness and its extraction state.
  */
-function createArtifactsStub(implementation?: ArtifactsInvoke): ArtifactsStub {
-  const invoke = vi.fn<ArtifactsInvoke>(
-    implementation
-      ?? ((): Promise<CommandExecution<ArtifactGenerationResult>> =>
-        Promise.resolve({status: "completed", value: artifactResult(), exitCode: 0})),
-  );
-  return {invoke};
+function imageFixture(outcomes: readonly ProbeOutcome[] = [], http: readonly ScriptedHttp[] = TAXONOMY_SOURCES): ImageFixture {
+  const extraction: ExtractionState = {};
+  const queue = [...outcomes];
+  const harness = makeTestLayer({
+    context: "image",
+    environment: {platform: "linux"},
+    files: WORKSPACE_FILES,
+    http,
+    processes: [archiveExtraction(extraction), scriptedOutcomes(() => queue.shift() ?? succeeded())],
+  });
+  return {harness, extraction};
+}
+
+/**
+ * Binds the scripted extraction to the harness filesystem, then runs the effect.
+ *
+ * @param extraction - The extraction state.
+ * @param effect - The effect to run.
+ * @returns The effect with the extraction bound.
+ */
+function bound<A, E, R>(extraction: ExtractionState, effect: Effect.Effect<A, E, R>): Effect.Effect<A, E, R | FileSystem.FileSystem> {
+  return Effect.gen(function* () {
+    extraction.fs = yield* FileSystem.FileSystem;
+    return yield* effect;
+  });
+}
+
+/**
+ * Runs an effect while advancing the test clock until it completes, so retry backoff elapses.
+ *
+ * @param effect - The effect to run.
+ * @returns The effect, completed under an advancing test clock.
+ */
+function advancingClock<A, E, R>(effect: Effect.Effect<A, E, R>): Effect.Effect<A, E, R | TestClock.TestClock> {
+  return Effect.gen(function* () {
+    const fiber = yield* Effect.forkChild(effect);
+    while (fiber.pollUnsafe() === undefined) {
+      yield* TestClock.adjust(Duration.millis(500));
+      // Lets promise-based response body reads settle between clock steps.
+      yield* Effect.promise(() => new Promise<void>((settle) => setTimeout(settle, 0)));
+    }
+    return yield* Fiber.join(fiber);
+  });
+}
+
+/** Projects every recorded process call into plain values, naming the temporary extraction paths. */
+function projectCalls(harness: TestHarness): readonly unknown[] {
+  return harness.processCalls().map(({request, options}) => ({
+    command: request.command,
+    args: request.command === "unzip" ? ["-qq", "<archive>", "-d", "<directory>"] : [...request.args],
+    options,
+  }));
+}
+
+/** Projects every rendered record, without its trailing newline. */
+function projectOutput(harness: TestHarness): readonly unknown[] {
+  return harness.output().map((record) => ({stream: record.stream, text: record.text.replace(/\n$/u, "")}));
 }
 
 describe("buildImageBuildCommand", () => {
@@ -77,315 +242,277 @@ describe("buildImageRunCommand", () => {
   });
 });
 
-describe("createImageCommand", () => {
+describe("shouldGenerateTaxonomyArtifacts", () => {
   it.each([
     ["frontend", true],
     ["backend", true],
     ["cv", false],
     ["exp", false],
-  ] as const)("gates the artifact prerequisite for %s builds", async (target, shouldGenerate) => {
-    const runner = createProcessRunner([...podmanPreflightOutcomes, succeeded()]);
-    const artifacts = createArtifactsStub();
-    const command = createImageCommand({runtimeFactory: createTestRuntimeFactory({runner}), artifacts});
-
-    const execution = await command.invoke({action: "build", target, engine: "podman"});
-
-    expect(execution).toMatchObject({status: "completed", exitCode: 0, value: {action: "build", target, engine: "podman"}});
-    expect(artifacts.invoke).toHaveBeenCalledTimes(shouldGenerate ? 1 : 0);
-    if (shouldGenerate) {
-      expect(artifacts.invoke).toHaveBeenCalledWith({verbose: false}, expect.objectContaining({presentation: "silent"}));
-    }
-  });
-
-  it("never invokes the artifact prerequisite for run actions", async () => {
-    const runner = createProcessRunner([...podmanPreflightOutcomes, succeeded()]);
-    const artifacts = createArtifactsStub();
-    const command = createImageCommand({runtimeFactory: createTestRuntimeFactory({runner}), artifacts});
-
-    const execution = await command.invoke({action: "run", target: "frontend", engine: "podman"});
-
-    expect(execution).toMatchObject({status: "completed", exitCode: 0});
-    expect(artifacts.invoke).not.toHaveBeenCalled();
-  });
-
-  it("builds the exact engine-owned build command with tee output", async () => {
-    const runner = createProcessRunner([...podmanPreflightOutcomes, succeeded()]);
-    const artifacts = createArtifactsStub();
-    const command = createImageCommand({runtimeFactory: createTestRuntimeFactory({runner}), artifacts});
-
-    await command.invoke({action: "build", target: "backend", engine: "podman"});
-
-    expect(runner.calls.at(-1)).toMatchObject({
-      request: {
-        command: "podman",
-        args: ["build", "-f", "infra/containers/Dockerfile.backend", "-t", "arolariu-backend", "--build-arg", "VERSION=local", "."],
-      },
-      options: {output: "tee", logCommands: true},
-    });
-  });
-
-  it("runs the exact engine-owned run command with tee output", async () => {
-    const runner = createProcessRunner([...podmanPreflightOutcomes, succeeded()]);
-    const artifacts = createArtifactsStub();
-    const command = createImageCommand({runtimeFactory: createTestRuntimeFactory({runner}), artifacts});
-
-    await command.invoke({action: "run", target: "exp", engine: "podman"});
-
-    expect(runner.calls.at(-1)).toMatchObject({
-      request: {command: "podman", args: ["run", "--rm", "-p", "5002:80", "-e", "INFRA=local", "arolariu-exp"]},
-      options: {output: "tee", logCommands: true},
-    });
-  });
-
-  it("surfaces a nonzero build exit as a failed execution", async () => {
-    const runner = createProcessRunner([...podmanPreflightOutcomes, exited(1)]);
-    const artifacts = createArtifactsStub();
-    const command = createImageCommand({runtimeFactory: createTestRuntimeFactory({runner}), artifacts});
-
-    const execution = await command.invoke({action: "build", target: "cv", engine: "podman"});
-
-    expect(execution).toMatchObject({status: "failed", exitCode: 1, failure: {kind: "operational"}});
-  });
-
-  it("stops before building when the artifact prerequisite fails", async () => {
-    const runner = createProcessRunner([...podmanPreflightOutcomes, succeeded()]);
-    const artifacts = createArtifactsStub(() =>
-      Promise.resolve({
-        status: "failed",
-        failure: {kind: "operational", message: "taxonomy source unavailable", evidence: []},
-        exitCode: 1,
-      }),
-    );
-    const command = createImageCommand({runtimeFactory: createTestRuntimeFactory({runner}), artifacts});
-
-    const execution = await command.invoke({action: "build", target: "frontend", engine: "podman"});
-
-    expect(execution).toMatchObject({status: "failed", exitCode: 1});
-    expect(execution.status === "failed" ? execution.failure.message : "").toContain("taxonomy source unavailable");
-    expect(runner.calls).toHaveLength(podmanPreflightOutcomes.length);
-  });
-
-  it("propagates a cancelled artifact prerequisite as a cancelled execution", async () => {
-    const runner = createProcessRunner([...podmanPreflightOutcomes, succeeded()]);
-    const cause = new CommandCancellation("Invocation was cancelled.", 130);
-    const artifacts = createArtifactsStub(() =>
-      Promise.resolve({status: "cancelled", failure: {kind: "cancelled", message: cause.message, evidence: [], cause}, exitCode: 130}),
-    );
-    const command = createImageCommand({runtimeFactory: createTestRuntimeFactory({runner}), artifacts});
-
-    const execution = await command.invoke({action: "build", target: "backend", engine: "podman"});
-
-    expect(execution).toMatchObject({status: "cancelled", exitCode: 130});
-    expect(runner.calls).toHaveLength(podmanPreflightOutcomes.length);
-  });
-
-  it("preserves the invocation's cancellation reason when the run command itself is cancelled on an aborted invocation", async () => {
-    const controller = new AbortController();
-    controller.abort(new CommandCancellation("Terminated by test signal.", 143));
-    const runner = createProcessRunner([...podmanPreflightOutcomes, {kind: "cancelled", stdout: "", stderr: "", durationMs: 0}]);
-    const artifacts = createArtifactsStub();
-    const command = createImageCommand({runtimeFactory: createTestRuntimeFactory({runner}), artifacts});
-
-    const execution = await command.invoke({action: "run", target: "exp", engine: "podman"}, {signal: controller.signal});
-
-    expect(execution).toMatchObject({
-      status: "cancelled",
-      exitCode: 143,
-      failure: {kind: "cancelled", message: "Terminated by test signal."},
-    });
-    expect(runner.calls).toHaveLength(podmanPreflightOutcomes.length + 1);
-  });
-
-  describe("human invocation", () => {
-    it("builds a target end to end after the artifact prerequisite", async () => {
-      const runner = createProcessRunner([...podmanPreflightOutcomes, succeeded()]);
-      const artifacts = createArtifactsStub();
-      const command = createImageCommand({runtimeFactory: createTestRuntimeFactory({runner}), artifacts});
-
-      const execution = await command.invoke({action: "build", target: "backend", engine: "podman"}, {presentation: "human"});
-
-      expect(execution).toMatchObject({status: "completed", exitCode: 0});
-      expect(artifacts.invoke).toHaveBeenCalledTimes(1);
-    });
+  ] as const)("gates the artifact prerequisite for %s", (target, expected) => {
+    expect(shouldGenerateTaxonomyArtifacts(target)).toBe(expected);
   });
 });
 
-// ============================================================================
-// Characterization (pre-Effect migration)
-// ============================================================================
+describe("runImage", () => {
+  for (const [target, shouldGenerate] of [
+    ["frontend", true],
+    ["backend", true],
+    ["cv", false],
+    ["exp", false],
+  ] as const) {
+    const {harness, extraction} = imageFixture();
+    effectTest(
+      `gates the artifact prerequisite for ${target} builds`,
+      () =>
+        bound(
+          extraction,
+          Effect.gen(function* () {
+            // Act
+            const result = yield* runImage({action: "build", target, engine: "podman"});
 
-/** Replaces the machine-dependent fixture root and normalizes path separators. */
-function withPortablePaths(text: string): string {
-  return text.replaceAll(repositoryFixtureRoot, "<root>").replaceAll("\\", "/");
-}
-
-/** Projects run options into plain values, naming the signal and logger instead of embedding them. */
-function projectOptions(options: Readonly<ProcessRunOptions>): Readonly<Record<string, unknown>> {
-  return Object.fromEntries(
-    Object.entries(options).map(([key, value]) => [key, key === "signal" ? "<signal>" : key === "logger" ? "<logger>" : value]),
-  );
-}
-
-/** Projects recorded runner calls into plain request and option values. */
-function projectCalls(calls: readonly Readonly<{request: ProcessRequest; options: ProcessRunOptions}>[]): readonly unknown[] {
-  return calls.map(({request, options}) => ({command: request.command, args: [...request.args], options: projectOptions(options)}));
-}
-
-/** Projects one execution into a plain value, naming the failure cause by its class. */
-function projectExecution(execution: Readonly<CommandExecution<unknown>>): unknown {
-  if (execution.status === "completed" || execution.status === "help") {
-    return {...execution};
+            // Assert
+            expect(result).toEqual({engine: "podman", action: "build", target});
+            expect(harness.processCalls().some((call) => call.request.command === "unzip")).toBe(shouldGenerate);
+            expect(harness.httpCalls().length > 0).toBe(shouldGenerate);
+            expect(harness.processCalls().at(-1)?.request.args.slice(0, 3)).toEqual([
+              "build",
+              "-f",
+              `infra/containers/Dockerfile.${target}`,
+            ]);
+          }),
+        ),
+      harness.layer,
+    );
   }
-  const {cause, ...failure} = execution.failure;
-  return {
-    ...execution,
-    failure: {
-      ...failure,
-      message: withPortablePaths(failure.message),
-      evidence: failure.evidence.map(withPortablePaths),
-      cause: cause instanceof Error ? cause.constructor.name : String(cause),
-    },
-  };
-}
 
-/** Projects every rendered logger record with portable paths. */
-function projectOutput(sink: InMemoryLoggerSink): readonly unknown[] {
-  return sink.records.map((record) => ({...record, text: withPortablePaths(record.text)}));
-}
+  {
+    const {harness, extraction} = imageFixture([...podmanPreflightOutcomes, succeeded("built\n")]);
+    effectTest(
+      "generates the artifacts silently after preflight and before the build",
+      () =>
+        bound(
+          extraction,
+          Effect.gen(function* () {
+            // Act
+            yield* runImage({action: "build", target: "backend", engine: "podman"});
+
+            // Assert
+            const commands = harness.processCalls().map((call) => `${call.request.command} ${call.request.args[0] ?? ""}`);
+            expect(commands).toEqual([
+              "podman --version",
+              "docker version",
+              "podman --version",
+              "podman compose",
+              "podman compose",
+              "podman ps",
+              "unzip -qq",
+              "podman build",
+            ]);
+            const fs = yield* FileSystem.FileSystem;
+            const written = yield* Effect.forEach(getExpectedTaxonomyArtifactPaths(repositoryFixtureRoot), (path) => fs.exists(path));
+            expect(written.every(Boolean)).toBe(true);
+            expect(projectOutput(harness)).toEqual([
+              {
+                stream: "stdout",
+                text: "$ podman build -f infra/containers/Dockerfile.backend -t arolariu-backend --build-arg VERSION=local .",
+              },
+              {stream: "stdout", text: "built"},
+            ]);
+          }),
+        ),
+      harness.layer,
+    );
+  }
+
+  {
+    const {harness, extraction} = imageFixture();
+    effectTest(
+      "never generates artifacts for run actions",
+      () =>
+        bound(
+          extraction,
+          Effect.gen(function* () {
+            // Act
+            const result = yield* runImage({action: "run", target: "frontend", engine: "podman"});
+
+            // Assert
+            expect(result).toEqual({engine: "podman", action: "run", target: "frontend"});
+            expect(harness.httpCalls()).toHaveLength(0);
+            expect(harness.processCalls().map((call) => call.request.command)).not.toContain("unzip");
+          }),
+        ),
+      harness.layer,
+    );
+  }
+
+  {
+    const {harness, extraction} = imageFixture();
+    effectTest(
+      "runs the exact engine-owned run command with tee output",
+      () =>
+        bound(
+          extraction,
+          Effect.gen(function* () {
+            // Act
+            yield* runImage({action: "run", target: "exp", engine: "podman"});
+
+            // Assert
+            expect(harness.processCalls().at(-1)).toEqual({
+              request: {command: "podman", args: ["run", "--rm", "-p", "5002:80", "-e", "INFRA=local", "arolariu-exp"]},
+              options: {output: "tee", echo: false},
+            });
+          }),
+        ),
+      harness.layer,
+    );
+  }
+
+  {
+    const {harness, extraction} = imageFixture([...podmanPreflightOutcomes, exited(1)]);
+    effectTest(
+      "fails with ProcessExited when the build exits with a nonzero code",
+      () =>
+        bound(
+          extraction,
+          Effect.gen(function* () {
+            // Act
+            const error = yield* Effect.flip(runImage({action: "build", target: "cv", engine: "podman"}));
+
+            // Assert
+            expect(error._tag).toBe("ProcessExited");
+          }),
+        ),
+      harness.layer,
+    );
+  }
+
+  {
+    const {harness, extraction} = imageFixture([], UNAVAILABLE_SOURCES);
+    effectTest(
+      "does not build when artifact generation fails",
+      () =>
+        bound(
+          extraction,
+          Effect.gen(function* () {
+            // Act
+            const error = yield* Effect.flip(advancingClock(runImage({action: "build", target: "frontend", engine: "podman"})));
+
+            // Assert
+            expect(error._tag).toBe("TaxonomySourceUnavailable");
+            const engineCalls = harness
+              .processCalls()
+              .filter((call) => call.request.command === "podman" && call.request.args[0] === "build");
+            expect(engineCalls).toEqual([]);
+            expect(harness.processCalls().map((call) => call.request.command)).toEqual([
+              "podman",
+              "docker",
+              "podman",
+              "podman",
+              "podman",
+              "podman",
+            ]);
+            expect(harness.httpCalls().length).toBeGreaterThan(0);
+          }),
+        ),
+      harness.layer,
+    );
+  }
+
+  {
+    const extraction: ExtractionState = {};
+    const preflight = [...podmanPreflightOutcomes];
+    const harness = makeTestLayer({
+      files: WORKSPACE_FILES,
+      processes: [
+        {match: (request) => request.args[0] === "run", respond: () => Effect.never},
+        archiveExtraction(extraction),
+        scriptedOutcomes(() => preflight.shift() ?? succeeded()),
+      ],
+    });
+    effectTest(
+      "interrupts the run command itself when the invocation is interrupted",
+      () =>
+        Effect.gen(function* () {
+          // Arrange
+          const fiber = yield* Effect.forkChild(runImage({action: "run", target: "exp", engine: "podman"}));
+          while (harness.processCalls().length < podmanPreflightOutcomes.length + 1) {
+            yield* Effect.yieldNow;
+          }
+
+          // Act
+          const exit = yield* Fiber.interrupt(fiber).pipe(Effect.andThen(Fiber.await(fiber)));
+
+          // Assert
+          expect(Exit.hasInterrupts(exit)).toBe(true);
+          expect(harness.processCalls()).toHaveLength(podmanPreflightOutcomes.length + 1);
+        }),
+      harness.layer,
+    );
+  }
+});
+
+// ============================================================================
+// Characterization (R1 pins, now through the Effect `containers build` CLI path)
+// ============================================================================
 
 /**
- * Creates a runtime factory whose logger honors the invocation presentation, like the Node factory.
- *
- * @param name - Command name used as the logger context, as the Node factory does.
- * @param sink - Sink receiving every rendered record.
- * @param overrides - Runtime capabilities.
- * @returns The runtime factory.
- */
-function presentationRuntimeFactory(
-  name: string,
-  sink: InMemoryLoggerSink,
-  overrides: Readonly<Partial<CommandRuntime>>,
-): CommandRuntimeFactory {
-  return {
-    createRoot: (options) =>
-      createTestRuntimeFactory({
-        ...overrides,
-        logger: new MonorepositoryConsoleLogger(name, {mode: options.presentation, color: false, sink}),
-      }).createRoot(options),
-    createChild: (parent, options) => createTestRuntimeFactory(overrides).createChild(parent, options),
-  };
-}
-
-/** Builds a deterministic environment snapshot anchored to the fixture repository root. */
-function characterizationEnvironment(variables: Readonly<Record<string, string>>): RuntimeEnvironment {
-  return {
-    variables,
-    cwd: repositoryFixtureRoot,
-    executablePath: "/usr/bin/node",
-    platform: "linux",
-    architecture: "x64",
-    stdinIsTTY: false,
-    stdoutIsTTY: false,
-    isCI: true,
-  };
-}
-/**
- * Runs the legacy image build once, recording when the artifact
- * prerequisite ran relative to the runner calls.
+ * Runs `containers build` once through the real CLI path.
  *
  * @param engine - Requested engine.
  * @param target - Image target.
  * @param outcomes - Scripted preflight and build outcomes.
- * @param presentation - Legacy presentation; defaults to human.
- * @returns The projected execution, artifact invocations, runner calls, and rendered output.
+ * @param json - Whether to pass `--json`.
+ * @returns The exit code, projected process calls, HTTP request count, and rendered output.
  */
 async function characterizeImageBuild(
   engine: "rancher" | "podman",
   target: "frontend" | "cv",
-  outcomes: readonly ProcessOutcome[],
-  presentation: CommandPresentation = "human",
+  outcomes: readonly ProbeOutcome[],
+  json = false,
 ): Promise<unknown> {
-  const runner = createProcessRunner(outcomes);
-  const sink = new InMemoryLoggerSink();
-  const artifactInvocations: unknown[] = [];
-  const artifacts = createArtifactsStub((input, options) => {
-    artifactInvocations.push({input, presentation: options?.presentation, runnerCallsBefore: runner.calls.length});
-    return Promise.resolve({status: "completed", value: artifactResult(), exitCode: 0});
-  });
-  const command = createImageCommand({
-    runtimeFactory: presentationRuntimeFactory("image", sink, {runner, environment: characterizationEnvironment({})}),
-    artifacts,
-  });
+  const {harness, extraction} = imageFixture(outcomes);
+  const argv = ["containers", "build", "--target", target, "--engine", engine, ...(json ? ["--json"] : [])];
 
-  const execution = await command.invoke({action: "build", target, engine}, {presentation});
+  const exit = await Effect.runPromiseExit(
+    bound(extraction, runCli(argv, makeRootCommand([makeContainersCommand()]))).pipe(Effect.provide(harness.layer)),
+  );
 
-  return {execution: projectExecution(execution), artifactInvocations, calls: projectCalls(runner.calls), output: projectOutput(sink)};
+  return {
+    exitCode: exitCodeFor(exit, undefined),
+    taxonomyRequests: harness.httpCalls().length,
+    calls: projectCalls(harness),
+    output: projectOutput(harness),
+  };
 }
 
-describe("containers build characterization (pre-Effect migration)", () => {
+/** Recorded options of the full-output preflight probes. */
+const PROBE = {failureOutput: "full"} as const;
+
+/** Recorded options of the echoed, tee'd engine command. */
+const TEE = {output: "tee", echo: false} as const;
+
+/** The artifact generation's archive extraction, recorded between preflight and the build. */
+const EXTRACTION = {command: "unzip", args: ["-qq", "<archive>", "-d", "<directory>"], options: {output: "capture"}};
+
+describe("containers build characterization", () => {
   it("--target cv (rancher): no artifact generation, then the exact build args", async () => {
     expect(await characterizeImageBuild("rancher", "cv", [])).toEqual({
-      execution: {
-        status: "completed",
-        value: {
-          engine: "rancher",
-          action: "build",
-          target: "cv",
-        },
-        exitCode: 0,
-      },
-      artifactInvocations: [],
+      exitCode: 0,
+      taxonomyRequests: 0,
       calls: [
-        {
-          command: "docker",
-          args: ["--version"],
-          options: {
-            signal: "<signal>",
-          },
-        },
-        {
-          command: "docker",
-          args: ["version"],
-          options: {
-            signal: "<signal>",
-          },
-        },
-        {
-          command: "docker",
-          args: ["compose", "version"],
-          options: {
-            signal: "<signal>",
-          },
-        },
-        {
-          command: "docker",
-          args: ["ps", "-a", "--format", "{{.Names}}"],
-          options: {
-            signal: "<signal>",
-          },
-        },
+        {command: "docker", args: ["--version"], options: PROBE},
+        {command: "docker", args: ["version"], options: PROBE},
+        {command: "docker", args: ["compose", "version"], options: PROBE},
+        {command: "docker", args: ["ps", "-a", "--format", "{{.Names}}"], options: {}},
         {
           command: "docker",
           args: ["build", "-f", "infra/containers/Dockerfile.cv", "-t", "arolariu-cv", "--build-arg", "VERSION=local", "."],
-          options: {
-            output: "tee",
-            logCommands: true,
-            logger: "<logger>",
-            signal: "<signal>",
-          },
+          options: TEE,
         },
       ],
       output: [
-        {
-          stream: "stdout",
-          text: "$ docker build -f infra/containers/Dockerfile.cv -t arolariu-cv --build-arg VERSION=local .",
-          write: false,
-        },
-        {
-          stream: "stdout",
-          text: "[arolariu::image] ✅ Image build completed for target 'cv' with engine 'rancher'.",
-          write: false,
-        },
+        {stream: "stdout", text: "$ docker build -f infra/containers/Dockerfile.cv -t arolariu-cv --build-arg VERSION=local ."},
+        {stream: "stdout", text: "[arolariu::image] ✅ Image build completed for target 'cv' with engine 'rancher'."},
       ],
     });
   });
@@ -402,159 +529,66 @@ describe("containers build characterization (pre-Effect migration)", () => {
         succeeded(),
       ]),
     ).toEqual({
-      execution: {
-        status: "completed",
-        value: {
-          engine: "podman",
-          action: "build",
-          target: "frontend",
-        },
-        exitCode: 0,
-      },
-      artifactInvocations: [
-        {
-          input: {
-            verbose: false,
-          },
-          presentation: "silent",
-          runnerCallsBefore: 6,
-        },
-      ],
+      exitCode: 0,
+      taxonomyRequests: 3,
       calls: [
-        {
-          command: "podman",
-          args: ["--version"],
-          options: {
-            signal: "<signal>",
-          },
-        },
-        {
-          command: "docker",
-          args: ["version"],
-          options: {
-            signal: "<signal>",
-          },
-        },
-        {
-          command: "podman",
-          args: ["--version"],
-          options: {
-            signal: "<signal>",
-          },
-        },
-        {
-          command: "podman",
-          args: ["compose", "version"],
-          options: {
-            signal: "<signal>",
-          },
-        },
-        {
-          command: "podman",
-          args: ["compose", "version"],
-          options: {
-            signal: "<signal>",
-          },
-        },
-        {
-          command: "podman",
-          args: ["ps", "-a", "--format", "{{.Names}}"],
-          options: {
-            signal: "<signal>",
-          },
-        },
+        {command: "podman", args: ["--version"], options: PROBE},
+        {command: "docker", args: ["version"], options: PROBE},
+        {command: "podman", args: ["--version"], options: PROBE},
+        {command: "podman", args: ["compose", "version"], options: PROBE},
+        {command: "podman", args: ["compose", "version"], options: PROBE},
+        {command: "podman", args: ["ps", "-a", "--format", "{{.Names}}"], options: {}},
+        EXTRACTION,
         {
           command: "podman",
           args: ["build", "-f", "infra/containers/Dockerfile.frontend", "-t", "arolariu-frontend", "--build-arg", "VERSION=local", "."],
-          options: {
-            output: "tee",
-            logCommands: true,
-            logger: "<logger>",
-            signal: "<signal>",
-          },
+          options: TEE,
         },
       ],
       output: [
         {
           stream: "stdout",
           text: "$ podman build -f infra/containers/Dockerfile.frontend -t arolariu-frontend --build-arg VERSION=local .",
-          write: false,
         },
-        {
-          stream: "stdout",
-          text: "[arolariu::image] ✅ Image build completed for target 'frontend' with engine 'podman'.",
-          write: false,
-        },
+        {stream: "stdout", text: "[arolariu::image] ✅ Image build completed for target 'frontend' with engine 'podman'."},
       ],
     });
   });
-  it("--target frontend (json): artifacts and the build still run, then legacy fails with exit 1 because it has no JSON document", async () => {
-    expect(await characterizeImageBuild("rancher", "frontend", [], "json")).toEqual({
-      execution: {
-        status: "failed",
-        exitCode: 1,
-        failure: {
-          kind: "internal",
-          message: 'Command "image" selected JSON presentation without a JSON document.',
-          evidence: [],
-          cause: "undefined",
-        },
-      },
-      artifactInvocations: [
-        {
-          input: {
-            verbose: false,
-          },
-          presentation: "silent",
-          runnerCallsBefore: 4,
-        },
-      ],
+
+  // Intentional change (cohort 6 ledger): legacy generated the artifacts and built the image, then
+  // failed with exit 1 ("selected JSON presentation without a JSON document"); the Effect command
+  // writes the result as the single JSON document and exits per the business result.
+  it("--target frontend (json): artifacts and the build run, then the result is the single JSON document and the exit code is 0", async () => {
+    expect(await characterizeImageBuild("rancher", "frontend", [], true)).toEqual({
+      exitCode: 0,
+      taxonomyRequests: 3,
       calls: [
-        {
-          command: "docker",
-          args: ["--version"],
-          options: {
-            signal: "<signal>",
-          },
-        },
-        {
-          command: "docker",
-          args: ["version"],
-          options: {
-            signal: "<signal>",
-          },
-        },
-        {
-          command: "docker",
-          args: ["compose", "version"],
-          options: {
-            signal: "<signal>",
-          },
-        },
-        {
-          command: "docker",
-          args: ["ps", "-a", "--format", "{{.Names}}"],
-          options: {
-            signal: "<signal>",
-          },
-        },
+        {command: "docker", args: ["--version"], options: PROBE},
+        {command: "docker", args: ["version"], options: PROBE},
+        {command: "docker", args: ["compose", "version"], options: PROBE},
+        {command: "docker", args: ["ps", "-a", "--format", "{{.Names}}"], options: {}},
+        EXTRACTION,
         {
           command: "docker",
           args: ["build", "-f", "infra/containers/Dockerfile.frontend", "-t", "arolariu-frontend", "--build-arg", "VERSION=local", "."],
-          options: {
-            output: "tee",
-            logCommands: true,
-            logger: "<logger>",
-            signal: "<signal>",
-          },
+          options: TEE,
         },
       ],
       output: [
         {
-          stream: "stderr",
-          text: 'Command "image" selected JSON presentation without a JSON document.',
-          write: false,
+          stream: "stdout",
+          text: JSON.stringify({engine: "rancher", action: "build", target: "frontend"}, null, 2),
         },
+      ],
+    });
+  });
+
+  it("build exit: one diagnostic without evidence, exit 1", async () => {
+    expect(await characterizeImageBuild("rancher", "cv", [succeeded(), succeeded(), succeeded(), succeeded(), exited(1)])).toMatchObject({
+      exitCode: 1,
+      output: [
+        {stream: "stdout", text: "$ docker build -f infra/containers/Dockerfile.cv -t arolariu-cv --build-arg VERSION=local ."},
+        {stream: "stderr", text: "[arolariu::image] ⛔ docker exited with code 1"},
       ],
     });
   });

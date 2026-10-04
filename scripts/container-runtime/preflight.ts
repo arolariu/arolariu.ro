@@ -12,9 +12,15 @@
 
 import {Effect} from "effect";
 
+import {resolveRepositoryPaths} from "../common/repository-paths.ts";
+import {legacyReadOnlyFiles} from "../platform/bridge.ts";
+import type {Environment} from "../platform/Environment.ts";
+import type {ReadOnlyFiles} from "../platform/Files.ts";
+import {withLogContext} from "../platform/Output.ts";
 import {Process, type ProcessError, type ProcessOptions, type ProcessResult} from "../platform/Process.ts";
 import {getContainerAdapter, type ContainerRuntimeAdapter} from "./adapters.ts";
-import {ContainerRuntimeError, type ContainerEngine} from "./types.ts";
+import {resolveRuntimeContainerEngine} from "./selection.ts";
+import {ContainerRuntimeError, type ContainerEngine, type ContainerEngineInput} from "./types.ts";
 
 /** Fixed ports used by local Aspire and selfhost resources. */
 export const requiredLocalPorts = [3000, 3002, 4173, 5000, 5002, 6379, 8081, 8082, 10000] as const;
@@ -244,3 +250,33 @@ export const runContainerPreflight: (engine: ContainerEngine) => Effect.Effect<C
     yield* warnOnExistingLocalContainers(adapter);
     return adapter;
   });
+
+/**
+ * Resolves the engine of one container command and runs its preflight.
+ *
+ * @remarks
+ * Discovers the repository root through `ReadOnlyFiles` (for the persisted tooling configuration
+ * path), resolves the engine with {@link resolveRuntimeContainerEngine}, and runs
+ * {@link runContainerPreflight} under the `<command>::preflight` log context, so the
+ * existing-container warning keeps the legacy `[arolariu::<command>::preflight]` prefix.
+ *
+ * @param input - The command input; its optional `engine` overrides the environment and configuration.
+ * @param command - The command name used in the preflight log context.
+ * @returns The selected engine's runtime adapter.
+ */
+export const prepareContainerEngine: (
+  input: Readonly<ContainerEngineInput>,
+  command: string,
+) => Effect.Effect<ContainerRuntimeAdapter, ContainerRuntimeError, Process | ReadOnlyFiles | Environment> = Effect.fn(
+  "containers.prepareContainerEngine",
+)(function* (input: Readonly<ContainerEngineInput>, command: string) {
+  const files = yield* legacyReadOnlyFiles;
+  const paths = yield* Effect.promise(() => resolveRepositoryPaths(import.meta.url, files));
+  const selection = yield* resolveRuntimeContainerEngine({
+    // The CLI only accepts rancher/podman, but resolveRuntimeContainerEngine still validates every
+    // source (including the docker-deprecation message) before it is treated as a real engine.
+    ...(input.engine === undefined ? {} : {requestedEngine: input.engine}),
+    toolingConfigPath: paths.toolingConfig,
+  });
+  return yield* runContainerPreflight(selection.engine).pipe(withLogContext(`${command}::preflight`));
+});

@@ -1,66 +1,129 @@
+// @vitest-environment node
 /**
- * @fileoverview Tests for the declarative Aspire AppHost startup command.
+ * @fileoverview Tests for the Effect Aspire AppHost startup program.
  * @module scripts/container-runtime/aspire.test
+ *
+ * @remarks
+ * Every case runs on `makeTestLayer`: an in-memory filesystem seeded with the repository
+ * `package.json`, scripted preflight and AppHost processes, and a recording sink. The
+ * characterization cases drive the real `dev aspire` CLI path (`runCli`), so they pin the exit
+ * code, the rendered lines, the JSON document, and every process call; no module is mocked.
  */
 
+import {Effect, Exit, Fiber} from "effect";
 import {describe, expect, it} from "vitest";
-import type {CommandExecution, CommandPresentation, CommandRuntimeFactory} from "../common/commander.ts";
-import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "../common/logger.ts";
-import type {ProcessOutcome, ProcessRequest, ProcessRunOptions} from "../common/runner.ts";
-import {
-  createProcessRunner,
-  createRepositoryFixtureFileSystem,
-  createTestRuntimeFactory,
-  repositoryFixtureRoot,
-} from "../common/runtime.testing.ts";
-import {CommandCancellation, type CommandRuntime, type RuntimeEnvironment} from "../common/runtime.ts";
-import {getContainerAdapter} from "./adapters.ts";
-import {buildAspireCommand, createAspireCommand} from "./aspire.ts";
 
-function succeeded(stdout = ""): ProcessOutcome {
+import {makeRootCommand, runCli} from "../cli.ts";
+import {makeDevCommand} from "../commands/dev/cli.ts";
+import type {ProbeOutcome} from "../inspection/probes.ts";
+import {exitCodeFor} from "../platform/exit.ts";
+import {effectTest, makeTestLayer, scriptedOutcomes, type ScriptedProcess, type TestHarness} from "../platform/testing.ts";
+import {getContainerAdapter} from "./adapters.ts";
+import {buildAspireCommand, runAspire} from "./aspire.ts";
+
+/** Repository identity the engine selection discovers the root from. */
+const WORKSPACE_FILES: Readonly<Record<string, string>> = {"package.json": JSON.stringify({name: "@arolariu/monorepo"})};
+
+function succeeded(stdout = ""): ProbeOutcome {
   return {kind: "succeeded", exitCode: 0, stdout, stderr: "", durationMs: 0};
 }
 
-function exited(code: number): ProcessOutcome {
-  return {kind: "exited", exitCode: code, stdout: "", stderr: "", durationMs: 0};
+function exited(code: number, stdout = "", stderr = ""): ProbeOutcome {
+  return {kind: "exited", exitCode: code, stdout, stderr, durationMs: 0};
+}
+
+/**
+ * Scripts every process call with the next queued outcome; an exhausted queue succeeds with no output.
+ *
+ * @param outcomes - Outcomes in call order.
+ * @returns The catch-all script.
+ */
+function queued(outcomes: readonly ProbeOutcome[]): ScriptedProcess {
+  const queue = [...outcomes];
+  return scriptedOutcomes(() => queue.shift() ?? succeeded());
 }
 
 /** One `succeeded` outcome per Rancher preflight probe: tool, backend, compose, existing containers. */
-const rancherPreflightOutcomes: readonly ProcessOutcome[] = [succeeded(), succeeded(), succeeded(), succeeded()];
+const rancherPreflightOutcomes: readonly ProbeOutcome[] = [succeeded(), succeeded(), succeeded(), succeeded()];
+
+/**
+ * Builds a harness for one Aspire run.
+ *
+ * @param outcomes - Scripted process outcomes in call order.
+ * @param options - Extra seeded files and environment variables.
+ * @returns The harness.
+ */
+function aspireHarness(
+  outcomes: readonly ProbeOutcome[],
+  options: {readonly files?: Readonly<Record<string, string>>; readonly variables?: Readonly<Record<string, string>>} = {},
+): TestHarness {
+  return makeTestLayer({
+    context: "aspire",
+    files: {...WORKSPACE_FILES, ...options.files},
+    environment: {variables: options.variables ?? {}},
+    processes: [queued(outcomes)],
+  });
+}
+
+/** Projects every recorded process call into plain values. */
+function projectCalls(harness: TestHarness): readonly unknown[] {
+  return harness.processCalls().map(({request, options}) => ({command: request.command, args: [...request.args], options}));
+}
+
+/** Projects every rendered record, without its trailing newline. */
+function projectOutput(harness: TestHarness): readonly unknown[] {
+  return harness.output().map((record) => ({stream: record.stream, text: record.text.replace(/\n$/u, "")}));
+}
 
 describe("buildAspireCommand", () => {
-  it("sets the Rancher Aspire runtime over the supplied base environment", () => {
-    const command = buildAspireCommand(getContainerAdapter("rancher"), {EXISTING: "value"});
+  effectTest(
+    "sets the Rancher Aspire runtime over the supplied base environment",
+    () =>
+      Effect.sync(() => {
+        const command = buildAspireCommand(getContainerAdapter("rancher"), {EXISTING: "value"});
 
-    expect(command.command).toBe("dotnet");
-    expect(command.args).toEqual(["run", "--project", "tooling/AppHost"]);
-    expect(command.env).toEqual({EXISTING: "value", DOTNET_ASPIRE_CONTAINER_RUNTIME: "docker"});
-  });
+        expect(command.command).toBe("dotnet");
+        expect(command.args).toEqual(["run", "--project", "tooling/AppHost"]);
+        expect(command.env).toEqual({EXISTING: "value", DOTNET_ASPIRE_CONTAINER_RUNTIME: "docker"});
+      }),
+    makeTestLayer().layer,
+  );
 
-  it("sets the Podman Aspire runtime", () => {
-    const command = buildAspireCommand(getContainerAdapter("podman"), {});
+  effectTest(
+    "sets the Podman Aspire runtime",
+    () =>
+      Effect.sync(() => {
+        const command = buildAspireCommand(getContainerAdapter("podman"), {});
 
-    expect(command.env["DOTNET_ASPIRE_CONTAINER_RUNTIME"]).toBe("podman");
-  });
+        expect(command.env["DOTNET_ASPIRE_CONTAINER_RUNTIME"]).toBe("podman");
+      }),
+    makeTestLayer().layer,
+  );
 });
 
-describe("createAspireCommand", () => {
-  it("resolves the requested engine, runs preflight, and starts AppHost with inherited output", async () => {
-    const runner = createProcessRunner([...rancherPreflightOutcomes, succeeded()]);
-    const command = createAspireCommand(createTestRuntimeFactory({runner}));
+describe("runAspire", () => {
+  {
+    const harness = aspireHarness([...rancherPreflightOutcomes, succeeded()], {variables: {HOME: "/home/fixture"}});
+    effectTest(
+      "resolves the requested engine, runs preflight, and starts AppHost with inherited output",
+      () =>
+        Effect.gen(function* () {
+          // Act
+          const result = yield* runAspire({engine: "rancher"});
 
-    const execution = await command.invoke({engine: "rancher"});
+          // Assert
+          expect(result).toEqual({engine: "rancher"});
+          expect(harness.processCalls().at(-1)).toEqual({
+            request: {command: "dotnet", args: ["run", "--project", "tooling/AppHost"]},
+            options: {env: {HOME: "/home/fixture", DOTNET_ASPIRE_CONTAINER_RUNTIME: "docker"}, output: "inherit"},
+          });
+        }),
+      harness.layer,
+    );
+  }
 
-    expect(execution).toMatchObject({status: "completed", exitCode: 0, value: {engine: "rancher"}});
-    expect(runner.calls.at(-1)).toMatchObject({
-      request: {command: "dotnet", args: ["run", "--project", "tooling/AppHost"]},
-      options: {output: "inherit"},
-    });
-    expect(runner.calls.at(-1)?.options.env?.["DOTNET_ASPIRE_CONTAINER_RUNTIME"]).toBe("docker");
-  });
-
-  it("runs Podman preflight before starting AppHost", async () => {
-    const runner = createProcessRunner([
+  {
+    const harness = aspireHarness([
       succeeded(), // podman --version (assertToolAvailable)
       succeeded(), // docker version (assertNoDockerDesktopBackend)
       succeeded(), // podman --version (assertPodmanBackend)
@@ -69,202 +132,154 @@ describe("createAspireCommand", () => {
       succeeded(), // podman ps -a (warnOnExistingLocalContainers)
       succeeded(), // dotnet run
     ]);
-    const command = createAspireCommand(createTestRuntimeFactory({runner}));
+    effectTest(
+      "runs Podman preflight before starting AppHost",
+      () =>
+        Effect.gen(function* () {
+          // Act
+          const result = yield* runAspire({engine: "podman"});
 
-    const execution = await command.invoke({engine: "podman"});
+          // Assert
+          expect(result).toEqual({engine: "podman"});
+          expect(harness.processCalls().map((call) => call.request.command)).toEqual([
+            "podman",
+            "docker",
+            "podman",
+            "podman",
+            "podman",
+            "podman",
+            "dotnet",
+          ]);
+          expect(harness.processCalls().at(-1)?.options.env?.["DOTNET_ASPIRE_CONTAINER_RUNTIME"]).toBe("podman");
+        }),
+      harness.layer,
+    );
+  }
 
-    expect(execution).toMatchObject({status: "completed", exitCode: 0, value: {engine: "podman"}});
-    expect(runner.calls.map((call) => call.request.command)).toEqual([
-      "podman",
-      "docker",
-      "podman",
-      "podman",
-      "podman",
-      "podman",
-      "dotnet",
-    ]);
-    expect(runner.calls.at(-1)?.options.env?.["DOTNET_ASPIRE_CONTAINER_RUNTIME"]).toBe("podman");
-  });
+  {
+    const harness = aspireHarness([...rancherPreflightOutcomes, exited(1)]);
+    effectTest(
+      "fails with ProcessExited when AppHost exits with a nonzero code",
+      () =>
+        Effect.gen(function* () {
+          // Act
+          const error = yield* Effect.flip(runAspire({engine: "rancher"}));
 
-  it("surfaces a nonzero AppHost exit as a failed execution", async () => {
-    const runner = createProcessRunner([...rancherPreflightOutcomes, exited(1)]);
-    const command = createAspireCommand(createTestRuntimeFactory({runner}));
+          // Assert
+          expect(error._tag).toBe("ProcessExited");
+          expect(error._tag === "ProcessExited" ? error.exitCode : undefined).toBe(1);
+        }),
+      harness.layer,
+    );
+  }
 
-    const execution = await command.invoke({engine: "rancher"});
+  {
+    const harness = aspireHarness([succeeded("docker version 27.0"), succeeded("Docker Desktop 4.40.0")]);
+    effectTest(
+      "rejects Docker Desktop before starting AppHost",
+      () =>
+        Effect.gen(function* () {
+          // Act
+          const error = yield* Effect.flip(runAspire({engine: "rancher"}));
 
-    expect(execution).toMatchObject({status: "failed", exitCode: 1, failure: {kind: "operational"}});
-  });
+          // Assert
+          expect(error._tag).toBe("ContainerRuntimeError");
+          expect(error.message).toContain("Docker Desktop appears to be active");
+          expect(harness.processCalls()).toHaveLength(2);
+        }),
+      harness.layer,
+    );
+  }
 
-  it("rejects Docker Desktop before starting AppHost", async () => {
-    const runner = createProcessRunner([succeeded("docker version 27.0"), succeeded("Docker Desktop 4.40.0")]);
-    const command = createAspireCommand(createTestRuntimeFactory({runner}));
-
-    const execution = await command.invoke({engine: "rancher"});
-
-    expect(execution).toMatchObject({status: "failed", exitCode: 1});
-    expect(execution.status === "failed" ? execution.failure.message : "").toContain("Docker Desktop appears to be active");
-  });
-
-  it("stops before starting AppHost when preflight itself is cancelled on an aborted invocation", async () => {
-    const controller = new AbortController();
-    controller.abort(new CommandCancellation("Terminated by test signal.", 130));
-    const runner = createProcessRunner([{kind: "cancelled", stdout: "", stderr: "", durationMs: 0}]);
-    const command = createAspireCommand(createTestRuntimeFactory({runner}));
-
-    const execution = await command.invoke({engine: "rancher"}, {signal: controller.signal});
-
-    expect(execution).toMatchObject({
-      status: "cancelled",
-      exitCode: 130,
-      failure: {kind: "cancelled", message: "Terminated by test signal."},
+  {
+    const harness = aspireHarness([...rancherPreflightOutcomes, succeeded()], {
+      files: {".arolariu/tooling.local.json": JSON.stringify({schemaVersion: 1, containerEngine: "rancher"})},
     });
-    expect(runner.calls).toHaveLength(1);
-  });
+    effectTest(
+      "resolves the persisted engine through the repository configuration when no engine is requested",
+      () =>
+        Effect.gen(function* () {
+          // Act
+          const result = yield* runAspire({});
 
-  it("resolves the persisted engine through the invocation filesystem when no engine is requested", async () => {
-    // Arrange
-    const runner = createProcessRunner([...rancherPreflightOutcomes, succeeded()]);
-    const files = createRepositoryFixtureFileSystem({
-      [`${repositoryFixtureRoot}/.arolariu/tooling.local.json`]: JSON.stringify({schemaVersion: 1, containerEngine: "rancher"}),
+          // Assert
+          expect(result).toEqual({engine: "rancher"});
+          expect(harness.processCalls()[0]?.request).toEqual({command: "docker", args: ["--version"]});
+        }),
+      harness.layer,
+    );
+  }
+
+  {
+    const harness = aspireHarness([]);
+    effectTest(
+      "rejects the deprecated docker engine value before any process runs",
+      () =>
+        Effect.gen(function* () {
+          // Act
+          const error = yield* Effect.flip(runAspire({engine: "docker" as never}));
+
+          // Assert
+          expect(error._tag).toBe("ContainerRuntimeError");
+          expect(error.message).toBe("Docker Desktop is deprecated for this repository. Select --engine rancher or --engine podman.");
+          expect(harness.processCalls()).toHaveLength(0);
+        }),
+      harness.layer,
+    );
+  }
+
+  {
+    const harness = makeTestLayer({
+      files: WORKSPACE_FILES,
+      processes: [{match: () => true, respond: () => Effect.never}],
     });
-    const command = createAspireCommand(createTestRuntimeFactory({runner, files}));
+    effectTest(
+      "stops before starting AppHost when preflight is interrupted",
+      () =>
+        Effect.gen(function* () {
+          // Arrange
+          const fiber = yield* Effect.forkChild(runAspire({engine: "rancher"}));
+          while (harness.processCalls().length === 0) {
+            yield* Effect.yieldNow;
+          }
 
-    // Act
-    const execution = await command.invoke({});
+          // Act
+          const exit = yield* Fiber.interrupt(fiber).pipe(Effect.andThen(Fiber.await(fiber)));
 
-    // Assert
-    expect(execution).toMatchObject({status: "completed", exitCode: 0, value: {engine: "rancher"}});
-    expect(runner.calls[0]?.request).toEqual({command: "docker", args: ["--version"]});
-  });
-
-  it("rejects the deprecated docker engine value as a usage failure", async () => {
-    const runner = createProcessRunner();
-    const command = createAspireCommand(createTestRuntimeFactory({runner}));
-
-    const execution = await command.invoke({engine: "docker" as never});
-
-    expect(execution).toMatchObject({status: "failed", exitCode: 1});
-    expect(execution.status === "failed" ? execution.failure.message : "").toContain("Docker Desktop is deprecated");
-    expect(runner.calls).toHaveLength(0);
-  });
-
-  describe("human invocation", () => {
-    it("starts AppHost with an explicit engine", async () => {
-      const runner = createProcessRunner([...rancherPreflightOutcomes, succeeded()]);
-      const command = createAspireCommand(createTestRuntimeFactory({runner}));
-
-      const execution = await command.invoke({engine: "rancher"}, {presentation: "human"});
-
-      expect(execution).toMatchObject({status: "completed", exitCode: 0});
-      expect(runner.calls.at(-1)?.request).toEqual({command: "dotnet", args: ["run", "--project", "tooling/AppHost"]});
-    });
-  });
+          // Assert
+          expect(Exit.hasInterrupts(exit)).toBe(true);
+          expect(harness.processCalls()).toHaveLength(1);
+        }),
+      harness.layer,
+    );
+  }
 });
 
 // ============================================================================
-// Characterization (pre-Effect migration)
+// Characterization (R1 pins, now through the Effect `dev aspire` CLI path)
 // ============================================================================
 
-/** Replaces the machine-dependent fixture root and normalizes path separators. */
-function withPortablePaths(text: string): string {
-  return text.replaceAll(repositoryFixtureRoot, "<root>").replaceAll("\\", "/");
-}
-
-/** Projects run options into plain values, naming the signal and logger instead of embedding them. */
-function projectOptions(options: Readonly<ProcessRunOptions>): Readonly<Record<string, unknown>> {
-  return Object.fromEntries(
-    Object.entries(options).map(([key, value]) => [key, key === "signal" ? "<signal>" : key === "logger" ? "<logger>" : value]),
-  );
-}
-
-/** Projects recorded runner calls into plain request and option values. */
-function projectCalls(calls: readonly Readonly<{request: ProcessRequest; options: ProcessRunOptions}>[]): readonly unknown[] {
-  return calls.map(({request, options}) => ({command: request.command, args: [...request.args], options: projectOptions(options)}));
-}
-
-/** Projects one execution into a plain value, naming the failure cause by its class. */
-function projectExecution(execution: Readonly<CommandExecution<unknown>>): unknown {
-  if (execution.status === "completed" || execution.status === "help") {
-    return {...execution};
-  }
-  const {cause, ...failure} = execution.failure;
-  return {
-    ...execution,
-    failure: {
-      ...failure,
-      message: withPortablePaths(failure.message),
-      evidence: failure.evidence.map(withPortablePaths),
-      cause: cause instanceof Error ? cause.constructor.name : String(cause),
-    },
-  };
-}
-
-/** Projects every rendered logger record with portable paths. */
-function projectOutput(sink: InMemoryLoggerSink): readonly unknown[] {
-  return sink.records.map((record) => ({...record, text: withPortablePaths(record.text)}));
-}
-
 /**
- * Creates a runtime factory whose logger honors the invocation presentation, like the Node factory.
- *
- * @param name - Command name used as the logger context, as the Node factory does.
- * @param sink - Sink receiving every rendered record.
- * @param overrides - Runtime capabilities.
- * @returns The runtime factory.
- */
-function presentationRuntimeFactory(
-  name: string,
-  sink: InMemoryLoggerSink,
-  overrides: Readonly<Partial<CommandRuntime>>,
-): CommandRuntimeFactory {
-  return {
-    createRoot: (options) =>
-      createTestRuntimeFactory({
-        ...overrides,
-        logger: new MonorepositoryConsoleLogger(name, {mode: options.presentation, color: false, sink}),
-      }).createRoot(options),
-    createChild: (parent, options) => createTestRuntimeFactory(overrides).createChild(parent, options),
-  };
-}
-
-/** Builds a deterministic environment snapshot anchored to the fixture repository root. */
-function characterizationEnvironment(variables: Readonly<Record<string, string>>): RuntimeEnvironment {
-  return {
-    variables,
-    cwd: repositoryFixtureRoot,
-    executablePath: "/usr/bin/node",
-    platform: "linux",
-    architecture: "x64",
-    stdinIsTTY: false,
-    stdoutIsTTY: false,
-    isCI: true,
-  };
-}
-/**
- * Runs the legacy Aspire command once.
+ * Runs `dev aspire` once through the real CLI path.
  *
  * @param engine - Requested engine.
  * @param outcomes - Scripted preflight and AppHost outcomes.
- * @param presentation - Legacy presentation; defaults to human.
- * @returns The projected execution, runner calls, and rendered output.
+ * @param json - Whether to pass `--json`.
+ * @returns The exit code, projected process calls, and rendered output.
  */
-async function characterizeAspire(
-  engine: "rancher" | "podman",
-  outcomes: readonly ProcessOutcome[],
-  presentation: CommandPresentation = "human",
-): Promise<unknown> {
-  const runner = createProcessRunner(outcomes);
-  const sink = new InMemoryLoggerSink();
-  const command = createAspireCommand(
-    presentationRuntimeFactory("aspire", sink, {runner, environment: characterizationEnvironment({HOME: "/home/fixture"})}),
-  );
+async function characterizeAspire(engine: "rancher" | "podman", outcomes: readonly ProbeOutcome[], json = false): Promise<unknown> {
+  const harness = aspireHarness(outcomes, {variables: {HOME: "/home/fixture"}});
+  const argv = ["dev", "aspire", "--engine", engine, ...(json ? ["--json"] : [])];
 
-  const execution = await command.invoke({engine}, {presentation});
+  const exit = await Effect.runPromiseExit(runCli(argv, makeRootCommand([makeDevCommand()])).pipe(Effect.provide(harness.layer)));
 
-  return {execution: projectExecution(execution), calls: projectCalls(runner.calls), output: projectOutput(sink)};
+  return {exitCode: exitCodeFor(exit, undefined), calls: projectCalls(harness), output: projectOutput(harness)};
 }
 
-describe("dev aspire characterization (pre-Effect migration)", () => {
+/** Recorded options of the full-output preflight probes. */
+const PROBE = {failureOutput: "full"} as const;
+
+describe("dev aspire characterization", () => {
   it("rancher: preflight calls in order, then AppHost with the merged environment and inherited output", async () => {
     const result = await characterizeAspire("rancher", [
       succeeded("Docker version 27.3.1"),
@@ -275,52 +290,21 @@ describe("dev aspire characterization (pre-Effect migration)", () => {
     ]);
 
     expect(result).toEqual({
-      execution: {
-        status: "completed",
-        value: {
-          engine: "rancher",
-        },
-        exitCode: 0,
-      },
+      exitCode: 0,
       calls: [
-        {
-          command: "docker",
-          args: ["--version"],
-          options: {
-            signal: "<signal>",
-          },
-        },
-        {
-          command: "docker",
-          args: ["version"],
-          options: {
-            signal: "<signal>",
-          },
-        },
-        {
-          command: "docker",
-          args: ["compose", "version"],
-          options: {
-            signal: "<signal>",
-          },
-        },
-        {
-          command: "docker",
-          args: ["ps", "-a", "--format", "{{.Names}}"],
-          options: {
-            signal: "<signal>",
-          },
-        },
+        {command: "docker", args: ["--version"], options: PROBE},
+        {command: "docker", args: ["version"], options: PROBE},
+        {command: "docker", args: ["compose", "version"], options: PROBE},
+        {command: "docker", args: ["ps", "-a", "--format", "{{.Names}}"], options: {}},
         {
           command: "dotnet",
           args: ["run", "--project", "tooling/AppHost"],
           options: {
-            output: "inherit",
-            signal: "<signal>",
             env: {
               HOME: "/home/fixture",
               DOTNET_ASPIRE_CONTAINER_RUNTIME: "docker",
             },
+            output: "inherit",
           },
         },
       ],
@@ -328,12 +312,10 @@ describe("dev aspire characterization (pre-Effect migration)", () => {
         {
           stream: "stderr",
           text: "[arolariu::aspire::preflight] ⚠️ Existing local containers detected for Rancher Desktop: traefik, redis",
-          write: false,
         },
         {
           stream: "stdout",
           text: "[arolariu::aspire] ✅ Aspire AppHost exited successfully for engine 'rancher'.",
-          write: false,
         },
       ],
     });
@@ -351,66 +333,23 @@ describe("dev aspire characterization (pre-Effect migration)", () => {
     ]);
 
     expect(result).toEqual({
-      execution: {
-        status: "completed",
-        value: {
-          engine: "podman",
-        },
-        exitCode: 0,
-      },
+      exitCode: 0,
       calls: [
-        {
-          command: "podman",
-          args: ["--version"],
-          options: {
-            signal: "<signal>",
-          },
-        },
-        {
-          command: "docker",
-          args: ["version"],
-          options: {
-            signal: "<signal>",
-          },
-        },
-        {
-          command: "podman",
-          args: ["--version"],
-          options: {
-            signal: "<signal>",
-          },
-        },
-        {
-          command: "podman",
-          args: ["compose", "version"],
-          options: {
-            signal: "<signal>",
-          },
-        },
-        {
-          command: "podman",
-          args: ["compose", "version"],
-          options: {
-            signal: "<signal>",
-          },
-        },
-        {
-          command: "podman",
-          args: ["ps", "-a", "--format", "{{.Names}}"],
-          options: {
-            signal: "<signal>",
-          },
-        },
+        {command: "podman", args: ["--version"], options: PROBE},
+        {command: "docker", args: ["version"], options: PROBE},
+        {command: "podman", args: ["--version"], options: PROBE},
+        {command: "podman", args: ["compose", "version"], options: PROBE},
+        {command: "podman", args: ["compose", "version"], options: PROBE},
+        {command: "podman", args: ["ps", "-a", "--format", "{{.Names}}"], options: {}},
         {
           command: "dotnet",
           args: ["run", "--project", "tooling/AppHost"],
           options: {
-            output: "inherit",
-            signal: "<signal>",
             env: {
               HOME: "/home/fixture",
               DOTNET_ASPIRE_CONTAINER_RUNTIME: "podman",
             },
+            output: "inherit",
           },
         },
       ],
@@ -418,12 +357,15 @@ describe("dev aspire characterization (pre-Effect migration)", () => {
         {
           stream: "stdout",
           text: "[arolariu::aspire] ✅ Aspire AppHost exited successfully for engine 'podman'.",
-          write: false,
         },
       ],
     });
   });
-  it("rancher (json): AppHost still runs, then legacy fails with exit 1 because it has no JSON document", async () => {
+
+  // Intentional change (cohort 6 ledger): legacy ran AppHost and then failed with exit 1
+  // ("selected JSON presentation without a JSON document"); the Effect command writes the result
+  // as the single JSON document and exits per the business result.
+  it("rancher (json): AppHost runs, then the result is the single JSON document and the exit code is 0", async () => {
     const result = await characterizeAspire(
       "rancher",
       [
@@ -433,67 +375,51 @@ describe("dev aspire characterization (pre-Effect migration)", () => {
         succeeded(""),
         succeeded(),
       ],
-      "json",
+      true,
     );
 
     expect(result).toEqual({
-      execution: {
-        status: "failed",
-        exitCode: 1,
-        failure: {
-          kind: "internal",
-          message: 'Command "aspire" selected JSON presentation without a JSON document.',
-          evidence: [],
-          cause: "undefined",
-        },
-      },
+      exitCode: 0,
       calls: [
-        {
-          command: "docker",
-          args: ["--version"],
-          options: {
-            signal: "<signal>",
-          },
-        },
-        {
-          command: "docker",
-          args: ["version"],
-          options: {
-            signal: "<signal>",
-          },
-        },
-        {
-          command: "docker",
-          args: ["compose", "version"],
-          options: {
-            signal: "<signal>",
-          },
-        },
-        {
-          command: "docker",
-          args: ["ps", "-a", "--format", "{{.Names}}"],
-          options: {
-            signal: "<signal>",
-          },
-        },
+        {command: "docker", args: ["--version"], options: PROBE},
+        {command: "docker", args: ["version"], options: PROBE},
+        {command: "docker", args: ["compose", "version"], options: PROBE},
+        {command: "docker", args: ["ps", "-a", "--format", "{{.Names}}"], options: {}},
         {
           command: "dotnet",
           args: ["run", "--project", "tooling/AppHost"],
           options: {
-            output: "inherit",
-            signal: "<signal>",
             env: {
               HOME: "/home/fixture",
               DOTNET_ASPIRE_CONTAINER_RUNTIME: "docker",
             },
+            output: "inherit",
           },
         },
       ],
+      output: [{stream: "stdout", text: '{\n  "engine": "rancher"\n}'}],
+    });
+  });
+
+  it("AppHost exit: one diagnostic without repeating the child output, exit 1", async () => {
+    const result = await characterizeAspire("rancher", [...rancherPreflightOutcomes, exited(3, "apphost stdout", "apphost stderr")]);
+
+    expect(result).toMatchObject({
+      exitCode: 1,
+      output: [{stream: "stderr", text: "[arolariu::aspire] ⛔ dotnet exited with code 3"}],
+    });
+  });
+
+  it("preflight failure: rendered by the root renderer, exit 1, AppHost never starts", async () => {
+    const result = await characterizeAspire("rancher", [exited(127, "", "docker: not found")]);
+
+    expect(result).toEqual({
+      exitCode: 1,
+      calls: [{command: "docker", args: ["--version"], options: PROBE}],
       output: [
         {
           stream: "stderr",
-          text: 'Command "aspire" selected JSON presentation without a JSON document.',
-          write: false,
+          text: "[arolariu::cli] ⛔ Required tool 'docker' is not available. Output: docker: not found",
         },
       ],
     });

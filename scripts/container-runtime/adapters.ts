@@ -3,7 +3,11 @@
  * @module scripts/container-runtime/adapters
  */
 
+import {Effect} from "effect";
+
 import type {ProcessRequest} from "../common/runner.ts";
+import {Presenter} from "../platform/Output.ts";
+import {formatProcessRequest, Process, type ProcessError, type ProcessResult} from "../platform/Process.ts";
 import type {ContainerEngine} from "./types.ts";
 
 /** Command and arguments to execute for a selected container runtime. */
@@ -55,4 +59,26 @@ const podmanAdapter: ContainerRuntimeAdapter = {
  */
 export function getContainerAdapter(engine: ContainerEngine): ContainerRuntimeAdapter {
   return engine === "rancher" ? rancherAdapter : podmanAdapter;
+}
+
+/**
+ * Echoes an engine-owned command as `$ <command>` and runs it with tee output.
+ *
+ * @remarks
+ * Reproduces the legacy `{output: "tee", logCommands: true}` invocation: the echo is a plain
+ * human-mode stdout line (suppressed in JSON mode), and `echo: false` keeps `--verbose` from
+ * logging the same command a second time.
+ *
+ * @param command - The engine-owned command.
+ * @returns The process result, failing with the typed {@link ProcessError} of the run.
+ */
+export function runEchoedRuntimeCommand(
+  command: Readonly<RuntimeCommand>,
+): Effect.Effect<ProcessResult, ProcessError, Presenter | Process> {
+  return Effect.gen(function* () {
+    const presenter = yield* Presenter;
+    const runner = yield* Process;
+    yield* presenter.line("stdout", `$ ${formatProcessRequest(command)}`);
+    return yield* runner.run(command, {output: "tee", echo: false});
+  });
 }
