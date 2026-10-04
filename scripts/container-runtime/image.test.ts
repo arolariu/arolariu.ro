@@ -4,7 +4,7 @@
  */
 
 import {describe, expect, it, vi, type Mock} from "vitest";
-import type {CommandExecution, CommandInvoker, CommandRuntimeFactory} from "../common/commander.ts";
+import type {CommandExecution, CommandInvoker, CommandPresentation, CommandRuntimeFactory} from "../common/commander.ts";
 import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "../common/logger.ts";
 import type {ProcessOutcome, ProcessRequest, ProcessRunOptions} from "../common/runner.ts";
 import {createProcessRunner, createTestRuntimeFactory, repositoryFixtureRoot} from "../common/runtime.testing.ts";
@@ -290,18 +290,20 @@ function characterizationEnvironment(variables: Readonly<Record<string, string>>
   };
 }
 /**
- * Runs the legacy image build once in human presentation, recording when the artifact
+ * Runs the legacy image build once, recording when the artifact
  * prerequisite ran relative to the runner calls.
  *
  * @param engine - Requested engine.
  * @param target - Image target.
  * @param outcomes - Scripted preflight and build outcomes.
+ * @param presentation - Legacy presentation; defaults to human.
  * @returns The projected execution, artifact invocations, runner calls, and rendered output.
  */
 async function characterizeImageBuild(
   engine: "rancher" | "podman",
   target: "frontend" | "cv",
   outcomes: readonly ProcessOutcome[],
+  presentation: CommandPresentation = "human",
 ): Promise<unknown> {
   const runner = createProcessRunner(outcomes);
   const sink = new InMemoryLoggerSink();
@@ -315,7 +317,7 @@ async function characterizeImageBuild(
     artifacts,
   });
 
-  const execution = await command.invoke({action: "build", target, engine}, {presentation: "human"});
+  const execution = await command.invoke({action: "build", target, engine}, {presentation});
 
   return {execution: projectExecution(execution), artifactInvocations, calls: projectCalls(runner.calls), output: projectOutput(sink)};
 }
@@ -481,6 +483,76 @@ describe("containers build characterization (pre-Effect migration)", () => {
         {
           stream: "stdout",
           text: "[arolariu::image] ✅ Image build completed for target 'frontend' with engine 'podman'.",
+          write: false,
+        },
+      ],
+    });
+  });
+  it("--target frontend (json): artifacts and the build still run, then legacy fails with exit 1 because it has no JSON document", async () => {
+    expect(await characterizeImageBuild("rancher", "frontend", [], "json")).toEqual({
+      execution: {
+        status: "failed",
+        exitCode: 1,
+        failure: {
+          kind: "internal",
+          message: 'Command "image" selected JSON presentation without a JSON document.',
+          evidence: [],
+          cause: "undefined",
+        },
+      },
+      artifactInvocations: [
+        {
+          input: {
+            verbose: false,
+          },
+          presentation: "silent",
+          runnerCallsBefore: 4,
+        },
+      ],
+      calls: [
+        {
+          command: "docker",
+          args: ["--version"],
+          options: {
+            signal: "<signal>",
+          },
+        },
+        {
+          command: "docker",
+          args: ["version"],
+          options: {
+            signal: "<signal>",
+          },
+        },
+        {
+          command: "docker",
+          args: ["compose", "version"],
+          options: {
+            signal: "<signal>",
+          },
+        },
+        {
+          command: "docker",
+          args: ["ps", "-a", "--format", "{{.Names}}"],
+          options: {
+            signal: "<signal>",
+          },
+        },
+        {
+          command: "docker",
+          args: ["build", "-f", "infra/containers/Dockerfile.frontend", "-t", "arolariu-frontend", "--build-arg", "VERSION=local", "."],
+          options: {
+            output: "tee",
+            logCommands: true,
+            logger: "<logger>",
+            signal: "<signal>",
+          },
+        },
+      ],
+      output: [
+        {
+          stream: "stderr",
+          text: 'Command "image" selected JSON presentation without a JSON document.',
           write: false,
         },
       ],

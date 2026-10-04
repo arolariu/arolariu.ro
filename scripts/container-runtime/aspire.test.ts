@@ -4,7 +4,7 @@
  */
 
 import {describe, expect, it} from "vitest";
-import type {CommandExecution, CommandRuntimeFactory} from "../common/commander.ts";
+import type {CommandExecution, CommandPresentation, CommandRuntimeFactory} from "../common/commander.ts";
 import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "../common/logger.ts";
 import type {ProcessOutcome, ProcessRequest, ProcessRunOptions} from "../common/runner.ts";
 import {createProcessRunner, createTestRuntimeFactory, repositoryFixtureRoot} from "../common/runtime.testing.ts";
@@ -220,20 +220,25 @@ function characterizationEnvironment(variables: Readonly<Record<string, string>>
   };
 }
 /**
- * Runs the legacy Aspire command once in human presentation.
+ * Runs the legacy Aspire command once.
  *
  * @param engine - Requested engine.
  * @param outcomes - Scripted preflight and AppHost outcomes.
+ * @param presentation - Legacy presentation; defaults to human.
  * @returns The projected execution, runner calls, and rendered output.
  */
-async function characterizeAspire(engine: "rancher" | "podman", outcomes: readonly ProcessOutcome[]): Promise<unknown> {
+async function characterizeAspire(
+  engine: "rancher" | "podman",
+  outcomes: readonly ProcessOutcome[],
+  presentation: CommandPresentation = "human",
+): Promise<unknown> {
   const runner = createProcessRunner(outcomes);
   const sink = new InMemoryLoggerSink();
   const command = createAspireCommand(
     presentationRuntimeFactory("aspire", sink, {runner, environment: characterizationEnvironment({HOME: "/home/fixture"})}),
   );
 
-  const execution = await command.invoke({engine}, {presentation: "human"});
+  const execution = await command.invoke({engine}, {presentation});
 
   return {execution: projectExecution(execution), calls: projectCalls(runner.calls), output: projectOutput(sink)};
 }
@@ -392,6 +397,81 @@ describe("dev aspire characterization (pre-Effect migration)", () => {
         {
           stream: "stdout",
           text: "[arolariu::aspire] ✅ Aspire AppHost exited successfully for engine 'podman'.",
+          write: false,
+        },
+      ],
+    });
+  });
+  it("rancher (json): AppHost still runs, then legacy fails with exit 1 because it has no JSON document", async () => {
+    const result = await characterizeAspire(
+      "rancher",
+      [
+        succeeded("Docker version 27.3.1"),
+        succeeded("Server: Moby Engine"),
+        succeeded("Docker Compose version v2.29.7"),
+        succeeded(""),
+        succeeded(),
+      ],
+      "json",
+    );
+
+    expect(result).toEqual({
+      execution: {
+        status: "failed",
+        exitCode: 1,
+        failure: {
+          kind: "internal",
+          message: 'Command "aspire" selected JSON presentation without a JSON document.',
+          evidence: [],
+          cause: "undefined",
+        },
+      },
+      calls: [
+        {
+          command: "docker",
+          args: ["--version"],
+          options: {
+            signal: "<signal>",
+          },
+        },
+        {
+          command: "docker",
+          args: ["version"],
+          options: {
+            signal: "<signal>",
+          },
+        },
+        {
+          command: "docker",
+          args: ["compose", "version"],
+          options: {
+            signal: "<signal>",
+          },
+        },
+        {
+          command: "docker",
+          args: ["ps", "-a", "--format", "{{.Names}}"],
+          options: {
+            signal: "<signal>",
+          },
+        },
+        {
+          command: "dotnet",
+          args: ["run", "--project", "tooling/AppHost"],
+          options: {
+            output: "inherit",
+            signal: "<signal>",
+            env: {
+              HOME: "/home/fixture",
+              DOTNET_ASPIRE_CONTAINER_RUNTIME: "docker",
+            },
+          },
+        },
+      ],
+      output: [
+        {
+          stream: "stderr",
+          text: 'Command "aspire" selected JSON presentation without a JSON document.',
           write: false,
         },
       ],

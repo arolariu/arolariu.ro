@@ -6,7 +6,7 @@
 import {readFile} from "node:fs/promises";
 import {dirname} from "node:path";
 import {describe, expect, it, vi, type Mock} from "vitest";
-import type {CommandExecution, CommandInvoker, CommandRuntimeFactory} from "../common/commander.ts";
+import type {CommandExecution, CommandInvoker, CommandPresentation, CommandRuntimeFactory} from "../common/commander.ts";
 import {InMemoryLoggerSink, MonorepositoryConsoleLogger, type MonorepositoryLogger} from "../common/logger.ts";
 import {
   AbstractProcessRunner,
@@ -783,13 +783,14 @@ interface SelfhostCharacterizationOptions {
   readonly variables?: Readonly<Record<string, string>>;
   readonly seededFiles?: Readonly<Record<string, string>>;
   readonly respond?: (request: Readonly<HttpRequest>) => HttpResponse;
+  readonly presentation?: CommandPresentation;
 }
 
 /**
- * Runs the legacy selfhost command once with Rancher in human presentation, recording every
+ * Runs the legacy selfhost command once with Rancher (human presentation by default), recording every
  * process, delay, file mutation, HTTP request, blob step, and artifact invocation in order.
  *
- * @param options - Action, environment, seeded files, and Cosmos responder.
+ * @param options - Action, environment, seeded files, Cosmos responder, and presentation.
  * @returns The projected execution, the ordered timeline, rendered output, cleanup labels, the
  * Traefik file bytes, and where the SQL password appeared in process arguments.
  */
@@ -829,7 +830,7 @@ async function characterizeSelfhost(options: Readonly<SelfhostCharacterizationOp
     artifacts,
   });
 
-  const execution = await command.invoke({action: options.action, engine: "rancher"}, {presentation: "human"});
+  const execution = await command.invoke({action: options.action, engine: "rancher"}, {presentation: options.presentation ?? "human"});
 
   const rendered = {execution: projectExecution(execution), output: projectOutput(sink)};
   expect(JSON.stringify(rendered).includes(sqlPassword)).toBe(false);
@@ -1571,6 +1572,231 @@ describe("dev selfhost characterization (pre-Effect migration)", () => {
       cleanupLabels: [],
       traefik: null,
       passwordArgs: [],
+    });
+  });
+  it("start (json): every stack starts and bootstrap runs, then legacy fails with exit 1 because it has no JSON document", async () => {
+    expect(await characterizeSelfhost({action: "start", presentation: "json"})).toEqual({
+      execution: {
+        status: "failed",
+        exitCode: 1,
+        failure: {
+          kind: "internal",
+          message: 'Command "selfhost" selected JSON presentation without a JSON document.',
+          evidence: [],
+          cause: "undefined",
+        },
+      },
+      output: [
+        {
+          stream: "stderr",
+          text: 'Command "selfhost" selected JSON presentation without a JSON document.',
+          write: false,
+        },
+      ],
+      timeline: [
+        {
+          process: "docker",
+          args: ["--version"],
+          options: {
+            signal: "<signal>",
+          },
+        },
+        {
+          process: "docker",
+          args: ["version"],
+          options: {
+            signal: "<signal>",
+          },
+        },
+        {
+          process: "docker",
+          args: ["compose", "version"],
+          options: {
+            signal: "<signal>",
+          },
+        },
+        {
+          process: "docker",
+          args: ["ps", "-a", "--format", "{{.Names}}"],
+          options: {
+            signal: "<signal>",
+          },
+        },
+        {
+          artifacts: {
+            verbose: false,
+          },
+          presentation: "silent",
+        },
+        {
+          fs: "createDirectory",
+          path: "<traefik-dir>",
+          options: {
+            recursive: true,
+          },
+        },
+        {
+          fs: "writeText",
+          path: "<traefik-config>",
+          length: 1310,
+        },
+        {
+          process: "docker",
+          args: ["compose", "-f", "Management/docker-compose.yml", "up", "-d"],
+          options: {
+            cwd: "infra/Local",
+            output: "tee",
+            logCommands: true,
+            logger: "<logger>",
+            signal: "<signal>",
+          },
+        },
+        {
+          delay: 3000,
+        },
+        {
+          process: "docker",
+          args: ["compose", "-f", "Storage/docker-compose.yml", "--profile", "selfhost", "up", "-d"],
+          options: {
+            cwd: "infra/Local",
+            output: "tee",
+            logCommands: true,
+            logger: "<logger>",
+            signal: "<signal>",
+          },
+        },
+        {
+          delay: 10000,
+        },
+        {
+          process: "docker",
+          args: [
+            "exec",
+            "mssql",
+            "/opt/mssql-tools/bin/sqlcmd",
+            "-C",
+            "-S",
+            "localhost",
+            "-U",
+            "sa",
+            "-P",
+            "<sql-password>",
+            "-d",
+            "master",
+            "-i",
+            "/usr/sql/sqlSchema.sql",
+            "-No",
+          ],
+          options: {
+            cwd: "infra/Local",
+            output: "tee",
+            logCommands: true,
+            logger: "<logger>",
+            signal: "<signal>",
+          },
+        },
+        {
+          http: "POST",
+          url: "http://localhost:8081/dbs",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: '{"id":"primary"}',
+          maximumResponseBytes: 65536,
+          signal: "<signal>",
+        },
+        {
+          http: "POST",
+          url: "http://localhost:8081/dbs/primary/colls",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: '{"id":"invoices","partitionKey":{"paths":["/UserIdentifier"],"kind":"Hash"}}',
+          maximumResponseBytes: 65536,
+          signal: "<signal>",
+        },
+        {
+          http: "POST",
+          url: "http://localhost:8081/dbs/primary/colls",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: '{"id":"merchants","partitionKey":{"paths":["/ParentCompanyId"],"kind":"Hash"}}',
+          maximumResponseBytes: 65536,
+          signal: "<signal>",
+        },
+        {
+          blob: "connect",
+          connectionString: "UseDevelopmentStorage=true",
+        },
+        {
+          blob: "ensureContainer",
+          name: "invoices",
+        },
+        {
+          blob: "applyCorsPolicy",
+        },
+        {
+          process: "dotnet",
+          args: ["run", "--project", "../../tooling/LocalDevelopment.Bootstrap", "--", "--ensure-storage-only"],
+          options: {
+            cwd: "infra/Local",
+            output: "tee",
+            logCommands: true,
+            logger: "<logger>",
+            signal: "<signal>",
+            env: {
+              DOTNET_ENVIRONMENT: "Development",
+              INFRA: "local",
+              ConnectionStrings__blobs: "UseDevelopmentStorage=true",
+              ConnectionStrings__queues: "UseDevelopmentStorage=true",
+            },
+          },
+        },
+        {
+          delay: 3000,
+        },
+        {
+          process: "docker",
+          args: ["compose", "-f", "Backend/docker-compose.yml", "up", "-d"],
+          options: {
+            cwd: "infra/Local",
+            output: "tee",
+            logCommands: true,
+            logger: "<logger>",
+            signal: "<signal>",
+          },
+        },
+        {
+          delay: 3000,
+        },
+        {
+          process: "docker",
+          args: ["compose", "-f", "Frontend/docker-compose.yml", "up", "-d"],
+          options: {
+            cwd: "infra/Local",
+            output: "tee",
+            logCommands: true,
+            logger: "<logger>",
+            signal: "<signal>",
+          },
+        },
+        {
+          delay: 3000,
+        },
+      ],
+      cleanupLabels: [],
+      traefik:
+        "http:\n  routers:\n    traefik-localhost:\n      rule: Host(`traefik.localhost`)\n      entryPoints:\n        - websecure\n      tls: {}\n      service: api@internal\n    website-localhost:\n      rule: Host(`website.localhost`)\n      entryPoints:\n        - websecure\n      tls: {}\n      service: website\n    api-localhost:\n      rule: Host(`api.localhost`)\n      entryPoints:\n        - websecure\n      tls: {}\n      service: api\n    health-localhost:\n      rule: Host(`health.localhost`)\n      entryPoints:\n        - websecure\n      tls: {}\n      service: healthchecks\n    cosmosdb-localhost:\n      rule: Host(`cosmosdb.localhost`)\n      entryPoints:\n        - websecure\n      tls: {}\n      service: cosmosdb\n    azurite-blob-localhost:\n      rule: Host(`azurite-blob.localhost`)\n      entryPoints:\n        - websecure\n      tls: {}\n      service: azurite-blob\n  services:\n    website:\n      loadBalancer:\n        servers:\n          - url: http://website:3000\n    api:\n      loadBalancer:\n        servers:\n          - url: http://api:8080\n    healthchecks:\n      loadBalancer:\n        servers:\n          - url: http://healthchecks:8000\n    cosmosdb:\n      loadBalancer:\n        servers:\n          - url: http://cosmosdb:8081\n    azurite-blob:\n      loadBalancer:\n        servers:\n          - url: http://azurite:10000\n",
+      passwordArgs: [
+        {
+          call: 6,
+          index: 9,
+          command: "docker",
+          flag: "-P",
+          exact: true,
+        },
+      ],
     });
   });
 });

@@ -1233,7 +1233,7 @@ describe("e2e characterization (pre-Effect migration)", () => {
         },
       },
     ]);
-    expect(result.tokenArgs).toEqual([["authToken=e2e-test-secret-value"]]);
+    expect(result.tokenArgs).toEqual([[`authToken=${FAKE_TOKEN}`]]);
     expect(result.output).toEqual([
       {
         stream: "stdout",
@@ -1802,7 +1802,7 @@ describe("e2e characterization (pre-Effect migration)", () => {
         },
       },
     ]);
-    expect(result.tokenArgs).toEqual([["authToken=e2e-test-secret-value"], ["authToken=e2e-test-secret-value"], []]);
+    expect(result.tokenArgs).toEqual([[`authToken=${FAKE_TOKEN}`], [`authToken=${FAKE_TOKEN}`], []]);
     expect(result.output).toEqual([
       {
         stream: "stdout",
