@@ -39,6 +39,7 @@ import {
   type RepositoryInspectionRuntime,
 } from "./common/runtime.ts";
 import type {DoctorInput, DoctorReport} from "./doctor.types.ts";
+import {createDoctorCommand} from "./doctor.ts";
 import type {RepositoryInspectionFacts, RepositoryInspectionSession} from "./inspection/repository.ts";
 import {createInspectionSession} from "./inspection/session.ts";
 import type {InspectionOutcome} from "./inspection/types.ts";
@@ -1187,5 +1188,159 @@ describe("status command — human dashboard", () => {
 
     expect(execution.exitCode).toBe(0);
     expect(renderedText(fixture.sink)).toMatch(/unavailable/);
+  });
+});
+
+// ============================================================================
+// Characterization (legacy baseline for the effect migration)
+// ============================================================================
+
+describe("status command — characterization", () => {
+  const EXPECTED_DOCUMENT: StatusDocument = {
+    workspaces: [
+      {name: "@arolariu/components", version: "—", type: "unknown", tags: []},
+      {name: "@arolariu/website", version: "—", type: "unknown", tags: []},
+    ],
+    nxEdges: [{source: "@arolariu/website", target: "@arolariu/components"}],
+    git: {branch: "main", sha: "abc1234", lastCommitTime: "2 hours ago", lastCommitMsg: "chore: something", dirtyFiles: 0},
+    security: {critical: 0, high: 0, moderate: 0, low: 0, majorOutdated: 0, minorOutdated: 0, patchOutdated: 0},
+    disk: {nodeModules: 1024, nextBuild: 2048, componentsDist: 512},
+    health: {score: 92, grade: "A", summary: {passed: 3, warnings: 1, failed: 0, skipped: 2}},
+  };
+
+  const EXPECTED_DASHBOARD_LINES: readonly string[] = [
+    "🏠 arolariu.ro monorepo status",
+    "Branch: main  │  Node: 26.x  │  Health: 92 (A)",
+    "Health summary: 3 passed, 1 warning, 0 failures, 2 skipped",
+    "",
+    "📦 Workspaces",
+    "",
+    "Package     Version  Type     Tags",
+    "----------  -------  -------  ----",
+    "components  —        unknown  ",
+    "website     —        unknown  ",
+    "",
+    "🔗 Dependency Graph",
+    "",
+    "components ← website",
+    "",
+    "📋 Git",
+    "",
+    "Branch: main @ abc1234",
+    'Last: 2 hours ago — "chore: something"',
+    "Working tree: clean",
+    "",
+    "🔒 Security & Dependencies",
+    "",
+    "Audit:    0 critical, 0 high, 0 moderate",
+    "Outdated: 0 major, 0 minor, 0 patch",
+    "",
+    "💾 Disk Usage",
+    "",
+    "node_modules: 1.00 KB  │  .next: 2.00 KB  │  dist: 512 B",
+  ];
+
+  it("characterizes the exact full JSON document and exit code", async () => {
+    // Arrange
+    const fixture = createStatusFixture({mode: "json"});
+
+    // Act
+    const execution = await fixture.command.invoke({json: true}, {presentation: "json"});
+
+    // Assert
+    expect(execution).toEqual({status: "completed", value: EXPECTED_DOCUMENT, exitCode: 0});
+    expect(fixture.sink.records).toEqual([{stream: "stdout", text: JSON.stringify(EXPECTED_DOCUMENT, null, 2), write: false}]);
+  });
+
+  it("characterizes the exact human dashboard text and exit code", async () => {
+    // Arrange
+    const fixture = createStatusFixture();
+
+    // Act
+    const execution = await fixture.command.invoke({json: false}, {presentation: "human"});
+
+    // Assert
+    expect(execution).toEqual({status: "completed", value: EXPECTED_DOCUMENT, exitCode: 0});
+    expect(fixture.sink.records).toEqual(EXPECTED_DASHBOARD_LINES.map((text) => ({stream: "stdout", text, write: false})));
+  });
+
+  it("executes nine inspection providers exactly once over one shared session when composing the real quick doctor", async () => {
+    // Arrange
+    const executions: Record<string, number> = {};
+    const countedWorkspace = (): Promise<InspectionOutcome<WorkspaceFacts>> => {
+      executions["workspace"] = (executions["workspace"] ?? 0) + 1;
+      return availableWorkspace()();
+    };
+    const countedUnavailable =
+      (key: string) =>
+      <TValue,>(): Promise<InspectionOutcome<TValue>> => {
+        executions[key] = (executions[key] ?? 0) + 1;
+        return unavailableFact<TValue>();
+      };
+    const session: RepositoryInspectionSession = {
+      ...createInspectionSession<RepositoryInspectionFacts>({
+        workspace: countedWorkspace,
+        aggregate: countedUnavailable("aggregate"),
+        "npm.root": countedUnavailable("npm.root"),
+        "npm.github-scripts": countedUnavailable("npm.github-scripts"),
+        packages: countedUnavailable("packages"),
+        dotnet: countedUnavailable("dotnet"),
+        python: countedUnavailable("python"),
+        react: countedUnavailable("react"),
+        "svelte.cv": countedUnavailable("svelte.cv"),
+        "svelte.status": countedUnavailable("svelte.status"),
+        infrastructure: countedUnavailable("infrastructure"),
+      }),
+      updateInfrastructureEngine: (): void => undefined,
+    };
+    const createSession = vi.fn<(request: Readonly<RepositoryInspectionRequest>) => RepositoryInspectionSession>(() => session);
+    const sink = new InMemoryLoggerSink();
+    const runner = new ScriptedProcessRunner(
+      withOverrides({"git --version": spawnFailed("git is not installed"), "npm config get cache": spawnFailed("npm is not installed")}),
+    );
+    const factory = createTestRuntimeFactory({
+      files: createRepositoryFixtureFileSystem(),
+      inspection: createRepositoryInspectionRuntime(createSession),
+      logger: new MonorepositoryConsoleLogger("status", {color: false, sink, verbose: false, mode: "json"}),
+      runner,
+    });
+    const command = createStatusCommand({runtimeFactory: factory, doctor: createDoctorCommand({runtimeFactory: factory})});
+
+    // Act
+    const execution = await command.invoke({json: true}, {presentation: "json"});
+
+    // Assert
+    expect(execution.status).toBe("completed");
+    expect(execution.exitCode).toBe(0);
+    expect(createSession).toHaveBeenCalledTimes(1);
+    expect(createSession).toHaveBeenCalledWith({profile: "quick", paths: FIXTURE_PATHS});
+    expect(executions).toEqual({
+      workspace: 1,
+      "npm.root": 1,
+      "npm.github-scripts": 1,
+      dotnet: 1,
+      python: 1,
+      react: 1,
+      "svelte.cv": 1,
+      "svelte.status": 1,
+      infrastructure: 1,
+    });
+    expect(jsonDocument(sink)["health"]).toEqual({score: 8, grade: "F", summary: {passed: 3, warnings: 0, failed: 38, skipped: 18}});
+    expect(runner.calls.map((call) => processKey(call.request)).toSorted()).toEqual(
+      [
+        GIT_BRANCH_KEY,
+        GIT_SHA_KEY,
+        GIT_LOG_TIME_KEY,
+        GIT_LOG_MSG_KEY,
+        GIT_STATUS_KEY,
+        NPM_AUDIT_KEY,
+        NPM_OUTDATED_KEY,
+        diskProbeKey(DISK_NODE_MODULES_TARGET),
+        diskProbeKey(DISK_NEXT_BUILD_TARGET),
+        diskProbeKey(DISK_COMPONENTS_DIST_TARGET),
+        "git --version",
+        "npm config get cache",
+      ].toSorted(),
+    );
   });
 });

@@ -10,7 +10,7 @@
  * probe, or reaches a real network.
  */
 
-import {afterEach, describe, expect, it, vi, type Mock} from "vitest";
+import {afterEach, beforeEach, describe, expect, it, vi, type Mock} from "vitest";
 
 const {renderDoctorReportMock} = vi.hoisted(() => ({
   renderDoctorReportMock: vi.fn(),
@@ -26,6 +26,7 @@ vi.mock("./doctor.reporter.ts", async (importOriginal) => {
 });
 
 import type {CommandExecution, CommandRuntimeFactory} from "./common/commander.ts";
+import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "./common/logger.ts";
 import {
   createHttpResponse,
   createRepositoryFixtureFileSystem,
@@ -36,6 +37,8 @@ import {
   HttpError,
   type Clock,
   type GetOnlyHttpClient,
+  type HttpClient,
+  type HttpRequest,
   type RepositoryInspectionRequest,
   type RepositoryInspectionRuntime,
 } from "./common/runtime.ts";
@@ -733,6 +736,431 @@ describe("doctorCommand.invoke", () => {
   });
 });
 
+
+describe("doctor characterization (legacy baseline for the effect migration)", () => {
+  type SinkRecord = Readonly<{stream: "stdout" | "stderr"; text: string; write: boolean}>;
+
+  // `mockReset` clears the hoisted reporter spy's delegation before each test, so restore the real
+  // renderer: these tests pin the exact human output, not a call count.
+  beforeEach(async () => {
+    const actual = await vi.importActual<typeof import("./doctor.reporter.ts")>("./doctor.reporter.ts");
+    renderDoctorReportMock.mockImplementation(actual.renderDoctorReport);
+  });
+
+  function stdoutLines(lines: readonly string[]): readonly SinkRecord[] {
+    return lines.map((text) => ({stream: "stdout", text, write: false}));
+  }
+
+  /** The exact six rows the healthy fake-module fixture reports, in module order. */
+  const HEALTHY_ROWS: readonly DiagnosticResult[] = [
+    {
+      id: "workspace.repository-root",
+      module: "workspace",
+      name: "workspace.repository-root",
+      status: "pass",
+      summary: "workspace.repository-root is healthy.",
+      evidence: [],
+      potentialCauses: [],
+      fixes: [],
+      durationMs: 1,
+    },
+    {
+      id: "dotnet.executable",
+      module: "dotnet",
+      name: "dotnet.executable",
+      status: "pass",
+      summary: "dotnet.executable is healthy.",
+      evidence: [],
+      potentialCauses: [],
+      fixes: [],
+      durationMs: 1,
+    },
+    {
+      id: "react.packages",
+      module: "react",
+      name: "react.packages",
+      status: "pass",
+      summary: "react.packages is healthy.",
+      evidence: [],
+      potentialCauses: [],
+      fixes: [],
+      durationMs: 1,
+    },
+    {
+      id: "svelte.cv.packages",
+      module: "svelte",
+      name: "svelte.cv.packages",
+      status: "pass",
+      summary: "svelte.cv.packages is healthy.",
+      evidence: [],
+      potentialCauses: [],
+      fixes: [],
+      durationMs: 1,
+    },
+    {
+      id: "python.runtime",
+      module: "python",
+      name: "python.runtime",
+      status: "pass",
+      summary: "python.runtime is healthy.",
+      evidence: [],
+      potentialCauses: [],
+      fixes: [],
+      durationMs: 1,
+    },
+    {
+      id: "infrastructure.selection",
+      module: "infrastructure",
+      name: "infrastructure.selection",
+      status: "pass",
+      summary: "infrastructure.selection is healthy.",
+      evidence: [],
+      potentialCauses: [],
+      fixes: [],
+      durationMs: 1,
+    },
+  ];
+
+  const FAILING_PYTHON_ROW: DiagnosticResult = {
+    id: "python.runtime",
+    module: "python",
+    name: "python.runtime",
+    status: "fail",
+    summary: "python.runtime failed.",
+    evidence: ["python.runtime evidence"],
+    rootCause: "python.runtime root cause",
+    potentialCauses: [],
+    fixes: [{description: "Fix python.runtime."}],
+    durationMs: 1,
+  };
+
+  const HEALTHY_REPORT: DoctorReport = {
+    score: 100,
+    grade: "A+",
+    summary: {passed: 6, warnings: 0, failed: 0, skipped: 0},
+    checks: HEALTHY_ROWS,
+    timestamp: "2025-01-01T00:00:00.000Z",
+  };
+
+  const FAILING_REPORT: DoctorReport = {
+    score: 82,
+    grade: "B",
+    summary: {passed: 5, warnings: 0, failed: 1, skipped: 0},
+    checks: HEALTHY_ROWS.map((row) => (row.id === "python.runtime" ? FAILING_PYTHON_ROW : row)),
+    timestamp: "2025-01-01T00:00:00.000Z",
+  };
+
+  const HEALTHY_HUMAN_LINES: readonly string[] = [
+    "🩺 arolariu.ro Workspace Doctor",
+    "Summary: 6 passed, 0 warnings, 0 failures, 0 skipped",
+    "",
+    "╭─────────────────────────────────────────╮",
+    "│  🏥 Health Score: 100/100  Grade: A+  │",
+    "╰─────────────────────────────────────────╯",
+    "",
+    "Workspace",
+    "",
+    "✅ workspace.repository-root — workspace.repository-root is healthy.",
+    "",
+    ".NET",
+    "",
+    "✅ dotnet.executable — dotnet.executable is healthy.",
+    "",
+    "React",
+    "",
+    "✅ react.packages — react.packages is healthy.",
+    "",
+    "Svelte",
+    "",
+    "✅ svelte.cv.packages — svelte.cv.packages is healthy.",
+    "",
+    "Python",
+    "",
+    "✅ python.runtime — python.runtime is healthy.",
+    "",
+    "Infrastructure",
+    "",
+    "✅ infrastructure.selection — infrastructure.selection is healthy.",
+  ];
+
+  const FAILING_HUMAN_LINES: readonly string[] = [
+    "🩺 arolariu.ro Workspace Doctor",
+    "Summary: 5 passed, 0 warnings, 1 failure, 0 skipped",
+    "",
+    "╭─────────────────────────────────────────╮",
+    "│  🏥 Health Score: 82/100  Grade: B  │",
+    "╰─────────────────────────────────────────╯",
+    "",
+    "Workspace",
+    "",
+    "✅ workspace.repository-root — workspace.repository-root is healthy.",
+    "",
+    ".NET",
+    "",
+    "✅ dotnet.executable — dotnet.executable is healthy.",
+    "",
+    "React",
+    "",
+    "✅ react.packages — react.packages is healthy.",
+    "",
+    "Svelte",
+    "",
+    "✅ svelte.cv.packages — svelte.cv.packages is healthy.",
+    "",
+    "Python",
+    "",
+    "⛔ python.runtime — python.runtime failed.",
+    "    Evidence:",
+    "      - python.runtime evidence",
+    "    Root cause: python.runtime root cause",
+    "    Suggested fixes:",
+    "      1. Fix python.runtime.",
+    "",
+    "Infrastructure",
+    "",
+    "✅ infrastructure.selection — infrastructure.selection is healthy.",
+  ];
+
+  /**
+   * Builds a doctor command over the healthy fake modules (optionally failing python) whose
+   * logger writes into an in-memory sink in the requested presentation mode.
+   */
+  function createRecordingDoctor(
+    mode: "human" | "json",
+    failing: boolean,
+  ): Readonly<{command: ReturnType<typeof createDoctorCommand>; sink: InMemoryLoggerSink}> {
+    const sink = new InMemoryLoggerSink();
+    const logger = new MonorepositoryConsoleLogger("doctor", {color: false, sink, verbose: false, mode});
+    const {modules} = createFakeModules(failing ? {python: async () => [failCheck("python.runtime", "python")]} : {});
+    const command = createDoctorCommand({
+      runtimeFactory: createTestRuntimeFactory({files: createRepositoryFixtureFileSystem(), inspection: createFixtureInspection().inspection, logger}),
+      modules,
+    });
+    return {command, sink};
+  }
+
+  it.each([
+    ["healthy", false, HEALTHY_REPORT, HEALTHY_HUMAN_LINES, 0],
+    ["failing", true, FAILING_REPORT, FAILING_HUMAN_LINES, 1],
+  ] as const)("characterizes the exact %s human report, score, grade, and exit code", async (_label, failing, report, lines, exitCode) => {
+    // Arrange
+    const {command, sink} = createRecordingDoctor("human", failing);
+
+    // Act
+    const execution = await command.invoke(doctorInput(), {presentation: "human"});
+
+    // Assert
+    expect(execution).toEqual({status: "completed", value: report, exitCode});
+    expect(sink.records).toEqual(stdoutLines(lines));
+  });
+
+  it.each([
+    ["healthy", false, HEALTHY_REPORT, 0],
+    ["failing", true, FAILING_REPORT, 1],
+  ] as const)("characterizes the exact %s --json document and exit code", async (_label, failing, report, exitCode) => {
+    // Arrange
+    const {command, sink} = createRecordingDoctor("json", failing);
+
+    // Act
+    const execution = await command.invoke(doctorInput(), {presentation: "json"});
+
+    // Assert
+    expect(execution).toEqual({status: "completed", value: report, exitCode});
+    expect(sink.records).toEqual([{stream: "stdout", text: JSON.stringify(report, null, 2), write: false}]);
+  });
+
+  describe("quick mode over the real modules with every inspection fact unavailable", () => {
+    /** Exact `id:status` rows each real module reports for the all-unavailable fixture. */
+    const QUICK_ROWS_BY_MODULE: Readonly<Record<DiagnosticModuleId, readonly string[]>> = {
+      workspace: [
+        "workspace.repository-root:pass",
+        "workspace.git:fail",
+        "workspace.node-sources:fail",
+        "workspace.node-runtime:skipped",
+        "workspace.npm-runtime:skipped",
+        "workspace.root-dependencies:fail",
+        "workspace.github-scripts-dependencies:fail",
+        "workspace.npm-cache:fail",
+        "workspace.nx-projects:fail",
+        "workspace.nx-graph:fail",
+        "workspace.config-files:fail",
+        "workspace.generated-artifacts:fail",
+        "workspace.host-capacity:skipped",
+        "workspace.npm-audit:skipped",
+        "workspace.npm-outdated:skipped",
+      ],
+      dotnet: [
+        "dotnet.executable:fail",
+        "dotnet.sdk-inventory:skipped",
+        "dotnet.host:fail",
+        "dotnet.workloads:fail",
+        "dotnet.nuget-state:fail",
+        "dotnet.solution:fail",
+        "dotnet.local-tools:fail",
+        "dotnet.https-certificate:fail",
+        "dotnet.apphost:fail",
+        "dotnet.nuget-feed:skipped",
+      ],
+      react: [
+        "react.packages:skipped",
+        "react.workspace-link:fail",
+        "react.environment:fail",
+        "react.i18n:fail",
+        "react.taxonomy-and-licenses:fail",
+        "react.playwright:skipped",
+        "react.framework-config:fail",
+      ],
+      svelte: [
+        "svelte.cv.packages:fail",
+        "svelte.cv.node-engine:skipped",
+        "svelte.cv.scripts:fail",
+        "svelte.cv.generated-state:fail",
+        "svelte.cv.adapter:fail",
+        "svelte.status.packages:fail",
+        "svelte.status.node-engine:skipped",
+        "svelte.status.scripts:fail",
+        "svelte.status.generated-state:fail",
+        "svelte.status.adapter:fail",
+      ],
+      python: [
+        "python.runtime:fail",
+        "python.virtual-environment:fail",
+        "python.pip:fail",
+        "python.requirements:fail",
+        "python.conflicts:fail",
+        "python.configuration:fail",
+        "python.pypi:skipped",
+      ],
+      infrastructure: [
+        "infrastructure.selection:fail",
+        "infrastructure.cli:skipped",
+        "infrastructure.backend:skipped",
+        "infrastructure.compose:skipped",
+        "infrastructure.docker-conflict:skipped",
+        "infrastructure.socket-context:skipped",
+        "infrastructure.ports:fail",
+        "infrastructure.certificates:fail",
+        "infrastructure.manifests:fail",
+        "infrastructure.containers:skipped",
+      ],
+    };
+
+    /** Every rendered skipped row, in report order; the network rows are NuGet and PyPI. */
+    const QUICK_SKIPPED_LINES: readonly string[] = [
+      "⏭️ Node.js runtime — Runtime comparison was skipped because requirement sources are invalid.",
+      "⏭️ npm runtime — Runtime comparison was skipped because requirement sources are invalid.",
+      "⏭️ Host capacity — Host capacity inspection was skipped in quick mode.",
+      "⏭️ npm audit — Remote npm audit was skipped in quick mode.",
+      "⏭️ Outdated npm packages — Remote package freshness was skipped in quick mode.",
+      "⏭️ Installed SDK inventory — SDK comparison was skipped because requirement sources are invalid.",
+      "⏭️ NuGet feed reachability — NuGet feed reachability was skipped in quick mode.",
+      "⏭️ React ecosystem packages — Package comparison was skipped because requirement sources are invalid.",
+      "⏭️ Playwright browser inventory — Playwright inventory comparison was skipped because requirement sources are invalid.",
+      "⏭️ @arolariu/cv: SvelteKit Node.js engine compatibility — Node engine compatibility was skipped because root requirement sources are invalid.",
+      "⏭️ @arolariu/status: SvelteKit Node.js engine compatibility — Node engine compatibility was skipped because root requirement sources are invalid.",
+      "⏭️ PyPI reachability — PyPI reachability was skipped in quick mode.",
+      "⏭️ Container CLI — Container CLI check was skipped because engine selection failed.",
+      "⏭️ Container backend — Backend check was skipped because engine selection failed.",
+      "⏭️ Compose provider — Compose check was skipped because engine selection failed.",
+      "⏭️ Docker Desktop conflict — Docker Desktop conflict check was skipped because engine selection failed.",
+      "⏭️ Socket and context state — Socket/context check was skipped because engine selection failed.",
+      "⏭️ Known local containers — Container inventory check was skipped because engine selection failed.",
+    ];
+
+    function createRealModuleDoctor(): Readonly<{
+      command: ReturnType<typeof createDoctorCommand>;
+      sink: InMemoryLoggerSink;
+      requests: readonly string[];
+    }> {
+      const requests: string[] = [];
+      const http: HttpClient = {
+        request: async (request: Readonly<HttpRequest>) => {
+          requests.push(`${request.method ?? "GET"} ${request.url.href}`);
+          return createHttpResponse(200, "");
+        },
+      };
+      const sink = new InMemoryLoggerSink();
+      const logger = new MonorepositoryConsoleLogger("doctor", {color: false, sink, verbose: false, mode: "human"});
+      const command = createDoctorCommand({
+        runtimeFactory: createTestRuntimeFactory({files: createRepositoryFixtureFileSystem(), logger, http}),
+      });
+      return {command, sink, requests};
+    }
+
+    it("renders the network rows skipped, issues zero http calls, and pins every per-module result and the final score", async () => {
+      // Arrange
+      const {command, sink, requests} = createRealModuleDoctor();
+
+      // Act
+      const execution = await command.invoke(doctorInput({quick: true}), {presentation: "human"});
+
+      // Assert
+      const report = expectCompleted(execution);
+      expect(execution.exitCode).toBe(1);
+      expect(requests).toEqual([]);
+      expect({score: report.score, grade: report.grade, summary: report.summary, timestamp: report.timestamp}).toEqual({
+        score: 3,
+        grade: "F",
+        summary: {passed: 1, warnings: 0, failed: 40, skipped: 18},
+        timestamp: "2025-01-01T00:00:00.000Z",
+      });
+      for (const moduleId of expectedModuleOrder) {
+        expect(report.checks.filter((check) => check.module === moduleId).map((check) => `${check.id}:${check.status}`)).toEqual(
+          QUICK_ROWS_BY_MODULE[moduleId],
+        );
+      }
+      expect(report.checks.filter((check) => check.id === "dotnet.nuget-feed" || check.id === "python.pypi")).toEqual([
+        {
+          id: "dotnet.nuget-feed",
+          module: "dotnet",
+          name: "NuGet feed reachability",
+          status: "skipped",
+          summary: "NuGet feed reachability was skipped in quick mode.",
+          evidence: ["--quick intentionally skips network reachability probes."],
+          potentialCauses: [],
+          fixes: [],
+          durationMs: 0,
+        },
+        {
+          id: "python.pypi",
+          module: "python",
+          name: "PyPI reachability",
+          status: "skipped",
+          summary: "PyPI reachability was skipped in quick mode.",
+          evidence: ["--quick intentionally skips network reachability probes."],
+          potentialCauses: [],
+          fixes: [],
+          durationMs: 0,
+        },
+      ]);
+      expect(sink.records.slice(0, 6)).toEqual(
+        stdoutLines([
+          "🩺 arolariu.ro Workspace Doctor",
+          "Summary: 1 passed, 0 warnings, 40 failures, 18 skipped",
+          "",
+          "╭─────────────────────────────────────────╮",
+          "│  🏥 Health Score: 3/100  Grade: F  │",
+          "╰─────────────────────────────────────────╯",
+        ]),
+      );
+      expect(sink.records.filter((record) => record.text.startsWith("⏭️"))).toEqual(stdoutLines(QUICK_SKIPPED_LINES));
+      expect(sink.records.every((record) => record.stream === "stdout" && !record.write)).toBe(true);
+    });
+
+    it("issues exactly the NuGet and PyPI GET probes in full mode", async () => {
+      // Arrange
+      const {command, requests} = createRealModuleDoctor();
+
+      // Act
+      const execution = await command.invoke(doctorInput(), {presentation: "silent"});
+
+      // Assert
+      expectCompleted(execution);
+      // Modules run concurrently, so only the set of probes is pinned, not their interleaving.
+      expect(requests.toSorted()).toEqual(["GET https://api.nuget.org/v3/index.json", "GET https://pypi.org/pypi/pip/json"]);
+    });
+  });
+});
 
 describe("module-error weighting", () => {
   const workspaceOrdinaryIds = Object.keys(diagnosticWeights).filter(
