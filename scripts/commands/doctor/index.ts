@@ -14,8 +14,8 @@
  * `<module>.module-error` row without stopping its siblings, and the collected checks are validated
  * and scored by {@link createDoctorReport}.
  *
- * {@link makeDoctorInvoker} / {@link doctorCommand} are the temporary legacy invoker the
- * unmigrated `status` command composes; they are deleted in Task 4.5.
+ * `status` composes {@link runDoctor} directly as a plain effect over the same `Inspection`
+ * service, so both programs of one invocation share every memoized inspection session.
  *
  * @example
  * ```bash
@@ -26,22 +26,14 @@
  * ```
  */
 
-import {DateTime, Effect, Layer} from "effect";
+import {DateTime, Effect} from "effect";
 
-import type {CommandInvoker} from "../../common/commander.ts";
 import {resolveRepositoryPaths} from "../../common/repository-paths.ts";
 import {loadRepositoryRequirements} from "../../common/requirements.ts";
 import {Inspection} from "../../inspection/Inspection.ts";
 import {inspectionProbeRunner} from "../../inspection/probes.ts";
 import type {RepositoryInspectionKey, RepositoryInspectionSession} from "../../inspection/repository.ts";
-import {
-  legacyInvoker,
-  legacyReadOnlyFiles,
-  legacyTaskScheduler,
-  type LayerFactory,
-  type LegacyRepositoryInspectionRuntime,
-} from "../../platform/bridge.ts";
-import {makeNodeLayer, type PlatformServices} from "../../platform/layers.ts";
+import {legacyReadOnlyFiles, legacyTaskScheduler} from "../../platform/bridge.ts";
 import {diagnosticResult, monotonicNow, normalizeErrorForReport} from "./diagnostics.ts";
 import {dotnetDoctorModule} from "./modules/dotnet.ts";
 import {infrastructureDoctorModule} from "./modules/infrastructure.ts";
@@ -49,7 +41,6 @@ import {pythonDoctorModule} from "./modules/python.ts";
 import {reactDoctorModule} from "./modules/react.ts";
 import {svelteDoctorModule} from "./modules/svelte.ts";
 import {workspaceDoctorModule} from "./modules/workspace.ts";
-import {NetworkProbeLive} from "./NetworkProbe.ts";
 import {createDoctorReport} from "./reporter.ts";
 import type {DiagnosticModule, DiagnosticResult, DoctorContext, DoctorInput, DoctorReport, DoctorRequirements} from "./types.ts";
 
@@ -186,65 +177,3 @@ export const runDoctor: (input: Readonly<DoctorInput>) => Effect.Effect<DoctorRe
 export function hasFailedDiagnostics(report: Readonly<DoctorReport>): boolean {
   return report.checks.some((check) => check.status === "fail");
 }
-
-/**
- * Builds an `Inspection` layer over a parent legacy invocation's inspection runtime.
- *
- * @param runtime - The parent's legacy inspection runtime.
- * @returns A layer whose sessions delegate to the parent's sessions.
- */
-function parentInspectionLayer(runtime: LegacyRepositoryInspectionRuntime): Layer.Layer<Inspection> {
-  return Layer.succeed(
-    Inspection,
-    Inspection.of({
-      session: (request) =>
-        Effect.sync((): RepositoryInspectionSession => {
-          const session = runtime.getRepositorySession(request);
-          return {
-            inspect: (key) => Effect.promise(() => session.inspect(key)),
-            invalidate: (...keys) =>
-              Effect.sync(() => {
-                session.invalidate(...keys);
-              }),
-            updateInfrastructureEngine: (engine) =>
-              Effect.sync(() => {
-                session.updateInfrastructureEngine(engine);
-              }),
-          };
-        }),
-    }),
-  );
-}
-
-/**
- * Builds the legacy invoker over {@link runDoctor} for the unmigrated `status` command.
- *
- * @remarks
- * Completes with exit `1` when the report has a failed diagnostic, otherwise `0`. When invoked with
- * a parent invocation, doctor reads the parent's inspection sessions, so a composing `status` run
- * shares one session with doctor exactly as the legacy child command did. Deleted in Task 4.5.
- *
- * @param makeLayer - Builds the platform layer of each invocation; defaults to the Node layer.
- * @returns The doctor invoker.
- */
-export function makeDoctorInvoker(makeLayer: LayerFactory = makeNodeLayer): CommandInvoker<DoctorInput, DoctorReport> {
-  const program = (input: Readonly<DoctorInput>): Effect.Effect<DoctorReport, never, PlatformServices> =>
-    Effect.provide(runDoctor(input), NetworkProbeLive);
-  return {
-    invoke: (input, options = {}) => {
-      const parentInspection = options.parent?.runtime.inspection;
-      const layerFor: LayerFactory =
-        parentInspection === undefined
-          ? makeLayer
-          : (settings) => Layer.merge(makeLayer(settings), parentInspectionLayer(parentInspection));
-      return legacyInvoker("doctor", program, (report) => (hasFailedDiagnostics(report) ? 1 : 0), layerFor).invoke(input, options);
-    },
-  };
-}
-
-/**
- * Legacy invoker over {@link runDoctor} for the unmigrated `status` command.
- *
- * @remarks Deleted in Task 4.5.
- */
-export const doctorCommand: CommandInvoker<DoctorInput, DoctorReport> = makeDoctorInvoker();

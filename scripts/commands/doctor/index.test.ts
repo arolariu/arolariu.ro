@@ -18,15 +18,9 @@ import {Cause, Duration, Effect, Exit, Layer} from "effect";
 import {TestClock} from "effect/testing";
 import {describe, expect, it} from "vitest";
 
-import {
-  createMemoizedInspectionRuntime,
-  createRepositoryInspectionSessionStub,
-  createTestRuntimeFactory,
-} from "../../common/runtime.testing.ts";
 import {Inspection} from "../../inspection/Inspection.ts";
 import type {RepositoryInspectionKey, RepositoryInspectionRequest, RepositoryInspectionSession} from "../../inspection/repository.ts";
 import type {InspectionOutcome} from "../../inspection/types.ts";
-import type {LegacyRepositoryInspectionSession} from "../../platform/bridge.ts";
 import {ReportedFailure} from "../../platform/exit.ts";
 import type {PlatformServices} from "../../platform/layers.ts";
 import type {OutputMode, SinkRecord} from "../../platform/Output.ts";
@@ -40,7 +34,7 @@ import {
   type TestHarness,
 } from "../../platform/testing.ts";
 import {renderDoctorCompletion} from "./cli.ts";
-import {doctorModules, hasFailedDiagnostics, makeDoctorInvoker, runDoctor, runDoctorWith} from "./index.ts";
+import {doctorModules, hasFailedDiagnostics, runDoctor, runDoctorWith} from "./index.ts";
 import {NetworkProbeLive} from "./NetworkProbe.ts";
 import {computeHealthScore, diagnosticWeights} from "./reporter.ts";
 import type {
@@ -877,67 +871,6 @@ describe("doctor characterization (legacy baseline for the effect migration)", (
           .toSorted(),
       ).toEqual(["GET https://api.nuget.org/v3/index.json", "GET https://pypi.org/pypi/pip/json"]);
     });
-  });
-});
-
-describe("makeDoctorInvoker (legacy shim for status, deleted in Task 4.5)", () => {
-  it("completes with the report and exit 1 when a diagnostic failed", async () => {
-    // Arrange
-    const {harness} = doctorLayer();
-    const invoker = makeDoctorInvoker(() => harness.layer);
-
-    // Act
-    const execution = await invoker.invoke(doctorInput({quick: true}));
-
-    // Assert
-    expect(execution.status).toBe("completed");
-    expect(execution.exitCode).toBe(1);
-    if (execution.status === "completed") {
-      expect(execution.value.summary).toEqual({passed: 1, warnings: 0, failed: 40, skipped: 18});
-    }
-  });
-
-  it("reads, invalidates, and retargets the parent invocation's inspection sessions", async () => {
-    // Arrange
-    const requests: RepositoryInspectionRequest[] = [];
-    const calls: string[] = [];
-    const stub = createRepositoryInspectionSessionStub();
-    const session: LegacyRepositoryInspectionSession = {
-      inspect: (key) => {
-        calls.push(`inspect:${key}`);
-        return stub.inspect(key);
-      },
-      invalidate: (...keys) => {
-        calls.push(`invalidate:${keys.join(",")}`);
-      },
-      updateInfrastructureEngine: (engine) => {
-        calls.push(`engine:${engine}`);
-      },
-    };
-    const factory = createTestRuntimeFactory({
-      inspection: createMemoizedInspectionRuntime((request) => {
-        requests.push(request);
-        return session;
-      }),
-    });
-    const runtime = await factory.createRoot({presentation: "silent", registerProcessSignals: false});
-    const {harness} = doctorLayer({variables: {AROLARIU_CONTAINER_ENGINE: "rancher"}});
-    const invoker = makeDoctorInvoker(() => harness.layer);
-
-    // Act
-    const execution = await invoker.invoke(doctorInput({quick: true}), {parent: {runtime, presentation: "silent"}});
-
-    // Assert
-    expect(execution.status).toBe("completed");
-    expect(requests.map(({profile}) => profile)).toEqual(["quick"]);
-    expect([...new Set(calls.filter((call) => call.startsWith("inspect:")))].toSorted()).toEqual(
-      ["dotnet", "infrastructure", "npm.github-scripts", "npm.root", "python", "react", "svelte.cv", "svelte.status", "workspace"]
-        .map((key) => `inspect:${key}`)
-        .toSorted(),
-    );
-    const retarget = calls.indexOf("engine:rancher");
-    expect(retarget).toBeGreaterThanOrEqual(0);
-    expect(calls[retarget + 1]).toBe("invalidate:infrastructure");
   });
 });
 

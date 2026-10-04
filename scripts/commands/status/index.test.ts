@@ -1,14 +1,15 @@
 // @vitest-environment node
 /**
- * @fileoverview Contract tests for the monorepo status command.
- * @module scripts.status.test
+ * @fileoverview Contract tests for the Effect status program.
+ * @module scripts/commands/status/index.test
  *
  * @remarks
- * Every orchestrator test drives `statusCommand.invoke()` through an injected test runtime
- * factory whose filesystem is the in-memory repository fixture, whose inspection registry is the
- * real memoized runtime, and whose process runner replays keyed outcomes. No test in this file
- * reads the live checkout or spawns a real child process, except the bounded disk-probe
- * integration tests, which do so deliberately.
+ * Every test runs the status program on the in-memory harness: the repository identity is a seeded
+ * `package.json`, every process answers from keyed probe outcomes (an unscripted request dies), and
+ * inspection is scripted — or, for the shared-session proof, the real `InspectionLive` over scripted
+ * processes. Health comes from a fake doctor program passed to `collectStatusWith` /
+ * `makeStatusCommand`, except where the real `runDoctor` is composed. No repository module is
+ * mocked. Only the bounded disk-probe integration tests spawn real child processes.
  */
 
 import {readFileSync} from "node:fs";
@@ -16,37 +17,32 @@ import {mkdir, mkdtemp, rm, symlink, writeFile} from "node:fs/promises";
 import {tmpdir} from "node:os";
 import {join} from "node:path";
 import {fileURLToPath} from "node:url";
-import {afterEach, describe, expect, it, vi, type Mock} from "vitest";
 
-import {MonorepoCommand, type CommandExecution, type CommandInvoker, type CommandRuntimeFactory} from "../../common/commander.ts";
-import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "../../common/logger.ts";
+import {Cause, Deferred, Duration, Effect, Exit, Fiber, Tracer} from "effect";
+import {afterEach, describe, expect, it} from "vitest";
+
+import {makeRootCommand, runCli} from "../../cli.ts";
 import {createRepositoryPaths} from "../../common/repository-paths.ts";
-import {AbstractProcessRunner, type ProcessOutcome, type ProcessRequest, type ProcessRunOptions} from "../../common/runner.ts";
-import {createNodeProcessRunner, snapshotNodeEnvironment} from "../../common/runtime.node.ts";
-import {
-  createLegacyInspectionSession,
-  createMemoizedInspectionRuntime,
-  createRepositoryFixtureFileSystem,
-  createRepositoryInspectionSessionStub,
-  createTestRuntimeFactory,
-  repositoryFixtureRoot,
-} from "../../common/runtime.testing.ts";
-import {
-  CommandCancellation,
-  commandCancellationFromSignal,
-  DefaultTaskScheduler,
-  MemoizedInspectionRuntime,
-  type RepositoryInspectionRequest,
-  type RepositoryInspectionRuntime,
-} from "../../common/runtime.ts";
-import type {DoctorInput, DoctorReport} from "../doctor/types.ts";
-import {makeDoctorInvoker} from "../doctor/index.ts";
-import type {RepositoryInspectionFacts} from "../../inspection/repository.ts";
-import type {LegacyRepositoryInspectionSession} from "../../platform/bridge.ts";
+import type {ProbeOutcome} from "../../inspection/probes.ts";
 import type {InspectionOutcome} from "../../inspection/types.ts";
 import type {WorkspaceFacts} from "../../inspection/workspace.ts";
-import {makeTestLayer, scriptedOutcomes} from "../../platform/testing.ts";
-import {collectDisk, createStatusCommand, type StatusDocument} from "./index.ts";
+import {exitCodeFor, type CommandExitCode} from "../../platform/exit.ts";
+import {makeNodeLayer} from "../../platform/layers.ts";
+import type {SinkRecord} from "../../platform/Output.ts";
+import type {ProcessRequest} from "../../platform/Process.ts";
+import {makeTestLayer, repositoryFixtureRoot, runScoped, scriptedOutcomes, type TestHarness} from "../../platform/testing.ts";
+import {NetworkProbeLive} from "../doctor/NetworkProbe.ts";
+import type {DoctorInput, DoctorReport} from "../doctor/types.ts";
+import {makeStatusCommand} from "./cli.ts";
+import {
+  collectDisk,
+  collectStatus,
+  collectStatusWith,
+  renderDashboard,
+  type StatusDocument,
+  type StatusDoctor,
+  type StatusRequirements,
+} from "./index.ts";
 
 // ============================================================================
 // Fixtures
@@ -62,7 +58,7 @@ const GIT_LOG_MSG_KEY = "git log -1 --format=%s";
 const GIT_STATUS_KEY = "git status --porcelain";
 const NPM_AUDIT_KEY = "npm audit --json";
 const NPM_OUTDATED_KEY = "npm outdated --json";
-/** The test runtime environment reports `/usr/bin/node` as the running executable. */
+/** The harness environment reports `/usr/bin/node` as the running executable. */
 const NODE_VERSION_KEY = "/usr/bin/node --version";
 
 const DISK_NODE_MODULES_TARGET = join(FIXTURE_ROOT, "node_modules");
@@ -70,6 +66,11 @@ const DISK_NEXT_BUILD_TARGET = join(FIXTURE_ROOT, "sites", "arolariu.ro", ".next
 const DISK_COMPONENTS_DIST_TARGET = join(FIXTURE_ROOT, "packages", "components", "dist");
 
 const CLEAN_AUDIT_STDOUT = JSON.stringify({metadata: {vulnerabilities: {critical: 0, high: 0, moderate: 0, low: 0}}});
+
+/** The in-memory repository identity `resolveRepositoryPaths` resolves the fixture root from. */
+const IDENTITY_FILES: Readonly<Record<string, string>> = {
+  [join(FIXTURE_ROOT, "package.json")]: JSON.stringify({name: "@arolariu/monorepo"}, null, 2),
+};
 
 /**
  * The disk-size probe is `<node> --eval <script> <targetPath>`. The generated script text is an
@@ -89,81 +90,28 @@ function processKey(request: Readonly<ProcessRequest>): string {
   return [request.command, ...request.args].join(" ");
 }
 
-function succeeded(stdout: string): ProcessOutcome {
+function succeeded(stdout: string): ProbeOutcome {
   return {kind: "succeeded", exitCode: 0, stdout, stderr: "", durationMs: 1};
 }
 
-function exited(exitCode: number, stdout = "", stderr = ""): ProcessOutcome {
+function exited(exitCode: number, stdout = "", stderr = ""): ProbeOutcome {
   return {kind: "exited", exitCode, stdout, stderr, durationMs: 1};
 }
 
-function timedOut(): ProcessOutcome {
+function timedOut(): ProbeOutcome {
   return {kind: "timed-out", stdout: "", stderr: "", durationMs: 1};
 }
 
-function spawnFailed(message: string): ProcessOutcome {
+function spawnFailed(message: string): ProbeOutcome {
   return {kind: "spawn-failed", message, stdout: "", stderr: "", durationMs: 1};
 }
 
-function signalled(): ProcessOutcome {
+function signalled(): ProbeOutcome {
   return {kind: "signalled", signal: "SIGTERM", stdout: "", stderr: "", durationMs: 1};
 }
 
-interface RecordedProcessCall {
-  readonly request: Readonly<ProcessRequest>;
-  readonly options: Readonly<ProcessRunOptions>;
-}
-
-/** Records every process invocation and replays one keyed outcome per command. */
-class ScriptedProcessRunner extends AbstractProcessRunner {
-  readonly #outcomes: ReadonlyMap<string, ProcessOutcome>;
-  readonly #calls: RecordedProcessCall[] = [];
-
-  public constructor(outcomes: ReadonlyMap<string, ProcessOutcome>) {
-    super();
-    this.#outcomes = outcomes;
-  }
-
-  /** Every recorded invocation, in call order. */
-  public get calls(): readonly RecordedProcessCall[] {
-    return this.#calls;
-  }
-
-  /** {@inheritDoc AbstractProcessRunner.execute} */
-  protected override execute(request: Readonly<ProcessRequest>, options: Readonly<ProcessRunOptions>): Promise<ProcessOutcome> {
-    this.#calls.push({request, options});
-    const outcome = this.#outcomes.get(processKey(request));
-    return outcome === undefined
-      ? Promise.reject(new Error(`Unexpected command in status test: ${processKey(request)}`))
-      : Promise.resolve(outcome);
-  }
-}
-
-/**
- * Records ordered start and settle events for every probe so collector/doctor concurrency can be
- * asserted without wall-clock timing.
- */
-class TimelineProcessRunner extends ScriptedProcessRunner {
-  readonly #events: string[];
-
-  public constructor(outcomes: ReadonlyMap<string, ProcessOutcome>, events: string[]) {
-    super(outcomes);
-    this.#events = events;
-  }
-
-  /** {@inheritDoc AbstractProcessRunner.execute} */
-  protected override async execute(request: Readonly<ProcessRequest>, options: Readonly<ProcessRunOptions>): Promise<ProcessOutcome> {
-    this.#events.push(`probe:start ${processKey(request)}`);
-    try {
-      return await super.execute(request, options);
-    } finally {
-      this.#events.push(`probe:end ${processKey(request)}`);
-    }
-  }
-}
-
-function baseResponses(): Map<string, ProcessOutcome> {
-  return new Map<string, ProcessOutcome>([
+function baseResponses(): Map<string, ProbeOutcome> {
+  return new Map<string, ProbeOutcome>([
     [GIT_BRANCH_KEY, succeeded("main\n")],
     [GIT_SHA_KEY, succeeded("abc1234\n")],
     [GIT_LOG_TIME_KEY, succeeded("2 hours ago\n")],
@@ -180,13 +128,27 @@ function baseResponses(): Map<string, ProcessOutcome> {
   ]);
 }
 
-function withOverrides(overrides: Readonly<Record<string, ProcessOutcome>>): Map<string, ProcessOutcome> {
+function withOverrides(overrides: Readonly<Record<string, ProbeOutcome>>): Map<string, ProbeOutcome> {
   const responses = baseResponses();
   for (const [key, value] of Object.entries(overrides)) {
     responses.set(key, value);
   }
   return responses;
 }
+
+/** The ten status probes of a JSON run, sorted. */
+const JSON_PROBE_INVENTORY: readonly string[] = [
+  GIT_BRANCH_KEY,
+  GIT_SHA_KEY,
+  GIT_LOG_TIME_KEY,
+  GIT_LOG_MSG_KEY,
+  GIT_STATUS_KEY,
+  NPM_AUDIT_KEY,
+  NPM_OUTDATED_KEY,
+  diskProbeKey(DISK_NODE_MODULES_TARGET),
+  diskProbeKey(DISK_NEXT_BUILD_TARGET),
+  diskProbeKey(DISK_COMPONENTS_DIST_TARGET),
+].toSorted();
 
 const HEALTHY_WORKSPACE_FACTS: WorkspaceFacts = {
   projects: [
@@ -197,37 +159,15 @@ const HEALTHY_WORKSPACE_FACTS: WorkspaceFacts = {
   cycles: [],
 };
 
-function unavailableFact<TValue>(): Promise<InspectionOutcome<TValue>> {
-  return Promise.resolve({kind: "unavailable", reason: "Not provided by the status fixture.", durationMs: 0});
+function availableWorkspace(facts: WorkspaceFacts = HEALTHY_WORKSPACE_FACTS): InspectionOutcome<WorkspaceFacts> {
+  return {kind: "available", value: facts, durationMs: 1};
 }
 
-/**
- * Builds a real memoized inspection session whose only populated fact is `workspace`.
- *
- * @param workspace - Provider for the workspace fact under test.
- * @returns A repository inspection session usable by every status collector.
- */
-function createFixtureSession(workspace: () => Promise<InspectionOutcome<WorkspaceFacts>>): LegacyRepositoryInspectionSession {
-  const session = createLegacyInspectionSession<RepositoryInspectionFacts>({
-    workspace,
-    aggregate: unavailableFact,
-    "npm.root": unavailableFact,
-    "npm.github-scripts": unavailableFact,
-    packages: unavailableFact,
-    dotnet: unavailableFact,
-    python: unavailableFact,
-    react: unavailableFact,
-    "svelte.cv": unavailableFact,
-    "svelte.status": unavailableFact,
-    infrastructure: unavailableFact,
-  });
-
-  return {...session, updateInfrastructureEngine: (): void => undefined};
-}
-
-function availableWorkspace(facts: WorkspaceFacts = HEALTHY_WORKSPACE_FACTS): () => Promise<InspectionOutcome<WorkspaceFacts>> {
-  return () => Promise.resolve({kind: "available", value: facts, durationMs: 1});
-}
+const UNAVAILABLE_WORKSPACE: InspectionOutcome<WorkspaceFacts> = {
+  kind: "unavailable",
+  reason: "Not provided by the status fixture.",
+  durationMs: 0,
+};
 
 function doctorReport(overrides: Partial<DoctorReport> = {}): DoctorReport {
   return {
@@ -240,410 +180,298 @@ function doctorReport(overrides: Partial<DoctorReport> = {}): DoctorReport {
   };
 }
 
-type DoctorInvoke = CommandInvoker<DoctorInput, DoctorReport>["invoke"];
-type DoctorStub = CommandInvoker<DoctorInput, DoctorReport> & Readonly<{invoke: Mock<DoctorInvoke>}>;
-
-/**
- * Creates a typed doctor stub recording every composed invocation.
- *
- * @param implementation - Behavior the stub replays; defaults to a healthy completed report.
- * @returns A recording {@link CommandInvoker}.
- */
-function createDoctorStub(implementation?: DoctorInvoke): DoctorStub {
-  const invoke = vi.fn<DoctorInvoke>(
-    implementation
-      ?? ((): Promise<CommandExecution<DoctorReport>> => Promise.resolve({status: "completed", value: doctorReport(), exitCode: 0})),
-  );
-  return {invoke};
-}
-
-/** Opens once, letting a test await a specific point inside a composed child invocation. */
-interface Gate {
-  readonly opened: Promise<void>;
-  readonly open: () => void;
-}
-
-function createGate(): Gate {
-  let open = (): void => undefined;
-  const opened = new Promise<void>((resolve) => {
-    open = resolve;
-  });
-  return {opened, open};
+/** A fake doctor program and every input it was composed with. */
+interface RecordingDoctor {
+  readonly doctor: StatusDoctor;
+  readonly inputs: readonly DoctorInput[];
 }
 
 /**
- * Resolves on the next macrotask, so a cleanup callback provably outlives every pending
- * microtask without depending on wall-clock timing.
+ * Builds a fake doctor program that records its inputs and then runs `effect`.
  *
- * @returns A promise settled after the current microtask queue drains.
+ * @param effect - The doctor result; defaults to a healthy 92/A report.
+ * @returns The fake doctor and its recorded inputs.
  */
-function nextMacrotask(): Promise<void> {
-  return new Promise<void>((resolve) => {
-    setImmediate(resolve);
-  });
+function recordingDoctor(effect: Effect.Effect<DoctorReport> = Effect.succeed(doctorReport())): RecordingDoctor {
+  const inputs: DoctorInput[] = [];
+  return {
+    inputs,
+    doctor: (input) =>
+      Effect.suspend(() => {
+        inputs.push(input);
+        return effect;
+      }),
+  };
 }
 
-/**
- * A child execution that never settles on its own and rejects with the exact cancellation its
- * own invocation signal carries.
- *
- * @param signal - The child invocation's cancellation signal.
- * @returns A promise that rejects only once `signal` aborts.
- */
-function rejectOnAbort(signal: AbortSignal): Promise<never> {
-  return new Promise<never>((_resolve, reject) => {
-    signal.addEventListener(
-      "abort",
-      () => {
-        reject(commandCancellationFromSignal(signal));
-      },
-      {once: true},
-    );
-  });
-}
-
-/**
- * Builds a real {@link MonorepoCommand} doctor child whose execution stays pending until its own
- * scope aborts and whose cleanup callback only completes on a later macrotask.
- *
- * @param factory - Runtime factory shared with status, so the child receives a real nested scope.
- * @param events - Ordered event log the cleanup callback appends to when it finishes draining.
- * @returns The composed child command and a gate opened once its execution has started.
- */
-function createPendingDoctorChild(
-  factory: CommandRuntimeFactory,
-  events: string[],
-): Readonly<{doctor: CommandInvoker<DoctorInput, DoctorReport>; started: Promise<void>}> {
-  const gate = createGate();
-  const doctor = new MonorepoCommand<DoctorInput, DoctorReport>(
-    {
-      metadata: {name: "doctor"},
-      execute: (context) => {
-        context.runtime.cleanup.register("doctor child probe", async () => {
-          await nextMacrotask();
-          events.push("doctor:cleanup-drained");
-        });
-        gate.open();
-        return rejectOnAbort(context.runtime.signal);
-      },
-      completion: () => ({exitCode: 0}),
-    },
-    factory,
-  );
-
-  return {doctor, started: gate.opened};
-}
-
-interface StatusFixtureOptions {
-  readonly responses?: ReadonlyMap<string, ProcessOutcome>;
-  readonly runner?: ScriptedProcessRunner;
-  readonly workspace?: () => Promise<InspectionOutcome<WorkspaceFacts>>;
-  readonly doctor?: DoctorStub;
-  readonly mode?: "human" | "json";
+/** Configures {@link statusHarness}. */
+interface StatusHarnessOptions {
+  /** Keyed probe outcomes; an unscripted probe dies. */
+  readonly responses?: ReadonlyMap<string, ProbeOutcome>;
+  /** Called before each probe answers; it may wait. */
+  readonly onProbe?: (key: string) => void | Promise<void>;
+  /** The scripted workspace fact; `"unscripted"` makes `inspect("workspace")` die. */
+  readonly workspace?: InspectionOutcome<WorkspaceFacts> | "unscripted";
+  /** Extra in-memory files. */
   readonly files?: Readonly<Record<string, string>>;
 }
 
-interface StatusFixture {
-  readonly command: ReturnType<typeof createStatusCommand>;
-  readonly sink: InMemoryLoggerSink;
-  readonly runner: ScriptedProcessRunner;
-  readonly doctor: DoctorStub;
-  readonly inspection: RepositoryInspectionRuntime;
-  readonly createSession: Mock<(request: Readonly<RepositoryInspectionRequest>) => LegacyRepositoryInspectionSession>;
+/**
+ * Builds the harness of one status run: the repository identity, keyed probe outcomes, and a
+ * scripted workspace fact (every other fact dies, which the fake doctor never reads).
+ *
+ * @param options - Probe outcomes, probe hook, workspace fact, and extra files.
+ * @returns The harness.
+ */
+function statusHarness(options: Readonly<StatusHarnessOptions> = {}): TestHarness {
+  const responses = options.responses ?? baseResponses();
+  return makeTestLayer({
+    files: {...IDENTITY_FILES, ...options.files},
+    processes: [
+      scriptedOutcomes(async (request) => {
+        const key = processKey(request);
+        await options.onProbe?.(key);
+        const outcome = responses.get(key);
+        if (outcome === undefined) {
+          throw new Error(`Unexpected command in status test: ${key}`);
+        }
+        return outcome;
+      }),
+    ],
+    inspection: options.workspace === "unscripted" ? {} : {workspace: options.workspace ?? availableWorkspace()},
+    environment: {executablePath: "/usr/bin/node"},
+    mode: "json",
+  });
 }
 
 /**
- * Assembles a status command wired to the in-memory repository fixture, a scripted process
- * runner, the real memoized inspection registry, and a recording doctor stub.
+ * Runs a status program on a harness with the live network probe.
  *
- * @param options - Optional process outcomes, a pre-built recording runner, workspace facts,
- * doctor stub, logger mode, and extra fixture files.
- * @returns The command plus every recorded seam.
+ * @param program - The status program.
+ * @param harness - The harness.
+ * @returns The program value.
  */
-function createStatusFixture(options: Readonly<StatusFixtureOptions> = {}): StatusFixture {
-  const sink = new InMemoryLoggerSink();
-  const logger = new MonorepositoryConsoleLogger("status", {
-    color: false,
-    sink,
-    verbose: false,
-    mode: options.mode ?? "human",
-  });
-  const runner = options.runner ?? new ScriptedProcessRunner(options.responses ?? baseResponses());
-  const session = createFixtureSession(options.workspace ?? availableWorkspace());
-  const createSession = vi.fn<(request: Readonly<RepositoryInspectionRequest>) => LegacyRepositoryInspectionSession>(() => session);
-  const inspection = createMemoizedInspectionRuntime(createSession);
-  const doctor = options.doctor ?? createDoctorStub();
-  const command = createStatusCommand({
-    runtimeFactory: createTestRuntimeFactory({
-      files: createRepositoryFixtureFileSystem(options.files ?? {}),
-      inspection,
-      logger,
-      runner,
-    }),
-    doctor,
-  });
-
-  return {command, sink, runner, doctor, inspection, createSession};
+function runStatus<A>(program: Effect.Effect<A, never, StatusRequirements>, harness: TestHarness): Promise<A> {
+  return runScoped(program.pipe(Effect.provide(NetworkProbeLive)), harness.layer);
 }
 
-function jsonDocument(sink: InMemoryLoggerSink): Record<string, unknown> {
-  const stdout = sink.records.filter((record) => record.stream === "stdout");
-  expect(stdout).toHaveLength(1);
-  const [record] = stdout;
-  expect(record?.text).not.toMatch(/\u001B/);
-  return JSON.parse(record?.text ?? "") as Record<string, unknown>;
+/**
+ * Collects the status document over a fake doctor.
+ *
+ * @param harness - The harness.
+ * @param doctor - The fake doctor; defaults to a healthy 92/A report.
+ * @returns The document.
+ */
+function collect(harness: TestHarness, doctor: StatusDoctor = recordingDoctor().doctor): Promise<StatusDocument> {
+  return runStatus(collectStatusWith(doctor), harness);
 }
 
-function renderedText(sink: InMemoryLoggerSink): string {
-  return sink.records.map((record) => record.text).join("\n");
+/**
+ * Runs `status` through the real CLI.
+ *
+ * @param argv - Arguments after the program name.
+ * @param harness - The harness.
+ * @param doctor - The fake doctor; defaults to a healthy 92/A report.
+ * @returns The exit code.
+ */
+async function runStatusCli(
+  argv: readonly string[],
+  harness: TestHarness,
+  doctor: StatusDoctor = recordingDoctor().doctor,
+): Promise<CommandExitCode> {
+  const exit = await Effect.runPromiseExit(runCli(argv, makeRootCommand([makeStatusCommand(doctor)])).pipe(Effect.provide(harness.layer)));
+  return exitCodeFor(exit, undefined);
 }
 
-async function runJson(fixture: StatusFixture): Promise<Record<string, unknown>> {
-  const execution = await fixture.command.invoke({json: true}, {presentation: "json"});
-  expect(execution.status).toBe("completed");
-  expect(execution.exitCode).toBe(0);
-  return jsonDocument(fixture.sink);
+function renderedText(output: readonly SinkRecord[]): string {
+  return output.map((record) => record.text).join("");
+}
+
+function probeKeys(harness: TestHarness): readonly string[] {
+  return harness
+    .processCalls()
+    .map((call) => processKey(call.request))
+    .toSorted();
 }
 
 // ============================================================================
-// Presentation
+// Doctor composition
 // ============================================================================
 
-describe("status command — presentation", () => {
-  it("emits the machine-readable document for JSON presentation", async () => {
-    const fixture = createStatusFixture({mode: "json"});
+describe("status — doctor composition", () => {
+  it("composes doctor exactly once with quick, non-verbose input", async () => {
+    // Arrange
+    const recording = recordingDoctor();
 
-    const document = await runJson(fixture);
+    // Act
+    await collect(statusHarness(), recording.doctor);
 
-    expect(Object.keys(document).toSorted()).toEqual(["disk", "git", "health", "nxEdges", "security", "workspaces"].toSorted());
-  });
-});
-
-// ============================================================================
-// Typed doctor composition
-// ============================================================================
-
-describe("status command — doctor composition", () => {
-  it("reuses the parent inspection session and consumes a completed Doctor report with exit one", async () => {
-    const request: RepositoryInspectionRequest = {
-      profile: "quick",
-      paths: createRepositoryPaths(repositoryFixtureRoot),
-    };
-    const createSession = vi.fn(() => createRepositoryInspectionSessionStub());
-    const inspection = new MemoizedInspectionRuntime<RepositoryInspectionRequest, LegacyRepositoryInspectionSession>(
-      createSession,
-      ({paths, profile, requestedEngine}) => `${paths.root}:${profile}:${requestedEngine ?? "auto"}`,
-    );
-    const doctor: CommandInvoker<DoctorInput, DoctorReport> = {
-      invoke: async (_input, options) => {
-        options?.parent?.runtime.inspection.getRepositorySession(request);
-        return {
-          status: "completed",
-          value: {
-            score: 75,
-            grade: "C",
-            summary: {passed: 3, warnings: 1, failed: 1, skipped: 0},
-            checks: [],
-            timestamp: "2025-06-01T00:00:00.000Z",
-          },
-          exitCode: 1,
-        };
-      },
-    };
-    const command = createStatusCommand({
-      runtimeFactory: createTestRuntimeFactory({
-        files: createRepositoryFixtureFileSystem(),
-        inspection,
-        runner: new ScriptedProcessRunner(baseResponses()),
-      }),
-      doctor,
-    });
-
-    const execution = await command.invoke({json: true}, {presentation: "silent"});
-
-    expect(execution).toMatchObject({
-      status: "completed",
-      exitCode: 0,
-      value: {health: expect.objectContaining({score: expect.any(Number)})},
-    });
-    expect(createSession).toHaveBeenCalledOnce();
+    // Assert
+    expect(recording.inputs).toEqual([{quick: true, verbose: false}]);
   });
 
-  it("invokes doctor once with quick input, silent presentation, and the status invocation as parent", async () => {
-    const fixture = createStatusFixture({mode: "json"});
+  it("maps the doctor report to the health section, including a failing report", async () => {
+    // Arrange
+    const report = doctorReport({score: 64, grade: "D", summary: {passed: 2, warnings: 3, failed: 4, skipped: 5}});
 
-    await fixture.command.invoke({json: true}, {presentation: "json"});
+    // Act
+    const document = await collect(statusHarness(), recordingDoctor(Effect.succeed(report)).doctor);
 
-    expect(fixture.doctor.invoke).toHaveBeenCalledTimes(1);
-    const call = fixture.doctor.invoke.mock.calls[0];
-    expect(call?.[0]).toEqual({quick: true, verbose: false});
-    expect(call?.[1]?.presentation).toBe("silent");
-    expect(call?.[1]?.parent?.runtime.inspection).toBe(fixture.inspection);
+    // Assert
+    expect(document.health).toEqual({score: 64, grade: "D", summary: {passed: 2, warnings: 3, failed: 4, skipped: 5}});
   });
 
-  it("obtains its own quick collector session before invoking doctor and shares exactly one session", async () => {
-    const observed: LegacyRepositoryInspectionSession[] = [];
-    const doctor = createDoctorStub(async (_input, options) => {
-      const parent = options?.parent;
-      if (parent !== undefined) {
-        observed.push(parent.runtime.inspection.getRepositorySession({profile: "quick", paths: FIXTURE_PATHS}));
-      }
-      return {status: "completed", value: doctorReport(), exitCode: 0};
-    });
-    const fixture = createStatusFixture({doctor, mode: "json"});
+  it("fails instead of degrading health to null when doctor dies", async () => {
+    // Arrange
+    const doctor = recordingDoctor(Effect.die(new Error("doctor exploded"))).doctor;
 
-    await fixture.command.invoke({json: true}, {presentation: "json"});
+    // Act
+    const exit = await runStatus(Effect.exit(collectStatusWith(doctor)), statusHarness());
 
-    expect(fixture.createSession).toHaveBeenCalledTimes(1);
-    expect(fixture.createSession).toHaveBeenCalledWith(expect.objectContaining({profile: "quick"}));
-    expect(observed).toHaveLength(1);
+    // Assert
+    expect(Exit.isFailure(exit) && Cause.hasDies(exit.cause)).toBe(true);
+    expect(Exit.isFailure(exit) ? String(Cause.squash(exit.cause)) : "").toMatch(/doctor exploded/u);
   });
 
-  it("renders the completed doctor report as the health section", async () => {
-    const doctor = createDoctorStub(() =>
-      Promise.resolve({
-        status: "completed",
-        value: doctorReport({score: 64, grade: "D", summary: {passed: 2, warnings: 3, failed: 4, skipped: 5}}),
-        exitCode: 1,
-      }),
-    );
-    const fixture = createStatusFixture({doctor, mode: "json"});
+  it("fails the status command with exit 1 and writes no status document when doctor dies", async () => {
+    // Arrange
+    const harness = statusHarness();
+    const doctor = recordingDoctor(Effect.die(new Error("doctor exploded"))).doctor;
 
-    const document = await runJson(fixture);
+    // Act
+    const code = await runStatusCli(["status", "--json"], harness, doctor);
 
-    expect(document["health"]).toEqual({score: 64, grade: "D", summary: {passed: 2, warnings: 3, failed: 4, skipped: 5}});
-  });
-
-  it("fails with exit 1 and renders no success document when doctor fails", async () => {
-    const doctor = createDoctorStub(() =>
-      Promise.resolve({
-        status: "failed",
-        failure: {kind: "operational", message: "doctor exploded", evidence: [], cause: new Error("doctor exploded")},
-        exitCode: 1,
-      }),
-    );
-    const fixture = createStatusFixture({doctor, mode: "json"});
-
-    const execution = await fixture.command.invoke({json: true}, {presentation: "json"});
-
-    expect(execution.status).toBe("failed");
-    expect(execution.exitCode).toBe(1);
-    if (execution.status === "failed") {
-      expect(execution.failure.message).toMatch(/doctor exploded/);
-    }
-    expect(fixture.sink.records.filter((record) => record.stream === "stdout")).toHaveLength(0);
-  });
-
-  it.each([130, 143] as const)("propagates a cancelled doctor execution with its exact %i exit code", async (exitCode) => {
-    const doctor = createDoctorStub(() =>
-      Promise.resolve({
-        status: "cancelled",
-        failure: {kind: "cancelled", message: "doctor cancelled", evidence: []},
-        exitCode,
-      }),
-    );
-    const fixture = createStatusFixture({doctor, mode: "json"});
-
-    const execution = await fixture.command.invoke({json: true}, {presentation: "json"});
-
-    expect(execution.status).toBe("cancelled");
-    expect(execution.exitCode).toBe(exitCode);
-    expect(fixture.sink.records.filter((record) => record.stream === "stdout")).toHaveLength(0);
-  });
-
-  it("treats a doctor help outcome as an internal operational failure", async () => {
-    const doctor = createDoctorStub(() => Promise.resolve({status: "help", exitCode: 0}));
-    const fixture = createStatusFixture({doctor, mode: "json"});
-
-    const execution = await fixture.command.invoke({json: true}, {presentation: "json"});
-
-    expect(execution.status).toBe("failed");
-    expect(execution.exitCode).toBe(1);
-    if (execution.status === "failed") {
-      expect(execution.failure.message).toMatch(/help/i);
-    }
-    expect(fixture.sink.records.filter((record) => record.stream === "stdout")).toHaveLength(0);
+    // Assert
+    expect(code).toBe(1);
+    const stdout = harness.output().filter((record) => record.stream === "stdout");
+    expect(stdout).toHaveLength(1);
+    expect(JSON.parse(stdout[0]?.text ?? "")).toMatchObject({status: "failed", kind: "internal"});
   });
 
   it("starts doctor concurrently with the degradation-tolerant collectors instead of after them", async () => {
+    // Arrange
     const events: string[] = [];
-    const runner = new TimelineProcessRunner(baseResponses(), events);
-    const doctor = createDoctorStub(() => {
-      events.push("doctor:start");
-      return Promise.resolve({status: "completed", value: doctorReport(), exitCode: 0});
+    let openGate = (): void => undefined;
+    const doctorStarted = new Promise<void>((resolve) => {
+      openGate = resolve;
     });
-    const fixture = createStatusFixture({runner, doctor});
+    const harness = statusHarness({
+      onProbe: async (key) => {
+        events.push(`probe:start ${key}`);
+        // Every probe waits for doctor: a serialized doctor would never start, and the run would hang.
+        await doctorStarted;
+        events.push(`probe:end ${key}`);
+      },
+    });
+    const doctor = recordingDoctor(
+      Effect.sync(() => {
+        events.push("doctor:start");
+        openGate();
+        return doctorReport();
+      }),
+    ).doctor;
 
-    const execution = await fixture.command.invoke({json: false}, {presentation: "human"});
+    // Act
+    await collect(harness, doctor);
 
-    expect(execution.status).toBe("completed");
+    // Assert
     const doctorStart = events.indexOf("doctor:start");
     const firstProbeSettled = events.findIndex((event) => event.startsWith("probe:end"));
     expect(doctorStart).toBeGreaterThanOrEqual(0);
-    expect(firstProbeSettled).toBeGreaterThanOrEqual(0);
-    expect(doctorStart).toBeLessThan(firstProbeSettled);
+    expect(firstProbeSettled).toBeGreaterThan(doctorStart);
   });
 
-  it("fails instead of degrading health to null when the composed doctor invoker rejects", async () => {
-    const doctor = createDoctorStub(() => Promise.reject(new Error("doctor invoker exploded")));
-    const fixture = createStatusFixture({doctor, mode: "json"});
+  it("interrupts the pending doctor, and finishes its finalizers, when status is interrupted", async () => {
+    // Arrange
+    const events: string[] = [];
+    const program = Effect.gen(function* () {
+      const started = yield* Deferred.make<void>();
+      const doctor: StatusDoctor = () =>
+        Deferred.succeed(started, undefined).pipe(
+          Effect.andThen(Effect.never),
+          Effect.onInterrupt(() =>
+            Effect.sync(() => {
+              events.push("doctor:interrupted");
+            }),
+          ),
+        );
+      const fiber = yield* Effect.forkChild(collectStatusWith(doctor), {startImmediately: true});
+      yield* Deferred.await(started);
 
-    const execution = await fixture.command.invoke({json: true}, {presentation: "json"});
+      // Act
+      yield* Fiber.interrupt(fiber);
+      events.push("status:interrupted");
+      return yield* Effect.exit(Fiber.join(fiber));
+    });
 
-    expect(execution.status).toBe("failed");
-    expect(execution.exitCode).toBe(1);
-    if (execution.status === "failed") {
-      expect(execution.failure.message).toMatch(/doctor invoker exploded/);
-    }
-    expect(fixture.sink.records.filter((record) => record.stream === "stdout")).toHaveLength(0);
+    const exit = await runStatus(program, statusHarness());
+
+    // Assert
+    expect(Exit.isFailure(exit) && Cause.hasInterruptsOnly(exit.cause)).toBe(true);
+    expect(events).toEqual(["doctor:interrupted", "status:interrupted"]);
   });
 });
 
 // ============================================================================
-// Composed child cancellation
+// Shared inspection session (real InspectionLive)
 // ============================================================================
 
-describe("status command — composed child cancellation", () => {
-  it("returns the exact signal cancellation only after the composed doctor child drained its own cleanup", async () => {
-    const events: string[] = [];
-    const controller = new AbortController();
-    const sink = new InMemoryLoggerSink();
-    const factory = createTestRuntimeFactory({
-      files: createRepositoryFixtureFileSystem(),
-      inspection: createMemoizedInspectionRuntime(() => createFixtureSession(availableWorkspace())),
-      logger: new MonorepositoryConsoleLogger("status", {color: false, sink, verbose: false, mode: "human"}),
-      runner: new ScriptedProcessRunner(baseResponses()),
+describe("status — shared inspection session", () => {
+  it("shares one inspection session with doctor: each provider runs once under the real quick doctor", async () => {
+    // Arrange
+    const providerRuns: Record<string, number> = {};
+    const tracer = Tracer.make({
+      span: (options) => {
+        if (options.name.startsWith("inspection.")) {
+          const key = options.name.slice("inspection.".length);
+          providerRuns[key] = (providerRuns[key] ?? 0) + 1;
+        }
+        return new Tracer.NativeSpan(options);
+      },
     });
-    const {doctor, started} = createPendingDoctorChild(factory, events);
-    const command = createStatusCommand({runtimeFactory: factory, doctor});
-
-    const pending = command.invoke({json: false}, {presentation: "human", signal: controller.signal});
-    void pending.then(() => {
-      events.push("status:settled");
+    const responses = baseResponses();
+    const harness = makeTestLayer({
+      files: IDENTITY_FILES,
+      // Status probes answer from the base responses; every provider and doctor probe fails to spawn.
+      processes: [
+        scriptedOutcomes((request) => {
+          const key = processKey(request);
+          return responses.get(key) ?? spawnFailed(`${request.command} is not installed`);
+        }),
+      ],
+      environment: {platform: "linux", architecture: "x64", executablePath: "/usr/bin/node", isCI: true},
     });
-    await started;
-    controller.abort(new CommandCancellation("Command terminated by SIGTERM.", 143));
-    const execution = await pending;
+    const program = Effect.scoped(collectStatus).pipe(Effect.provide(NetworkProbeLive), Effect.provide(harness.layer));
 
-    expect(execution.status).toBe("cancelled");
-    expect(execution.exitCode).toBe(143);
-    expect(events).toEqual(["doctor:cleanup-drained", "status:settled"]);
-    expect(sink.records.filter((record) => record.stream === "stdout")).toHaveLength(0);
-  });
+    // Act
+    const document = await Effect.runPromise(program.pipe(Effect.withTracer(tracer)));
 
-  it("cancels instead of completing when the invocation was aborted and the composed child ignored it", async () => {
-    const controller = new AbortController();
-    const doctor = createDoctorStub(() => {
-      controller.abort(new CommandCancellation("Command interrupted by SIGINT.", 130));
-      return Promise.resolve({status: "completed", value: doctorReport(), exitCode: 0});
+    // Assert
+    expect(providerRuns).toEqual({
+      workspace: 1,
+      aggregate: 1,
+      "npm.root": 1,
+      "npm.github-scripts": 1,
+      packages: 1,
+      dotnet: 1,
+      python: 1,
+      react: 1,
+      "svelte.cv": 1,
+      "svelte.status": 1,
+      infrastructure: 1,
     });
-    const fixture = createStatusFixture({doctor, mode: "json"});
-
-    const execution = await fixture.command.invoke({json: true}, {presentation: "json", signal: controller.signal});
-
-    expect(execution.status).toBe("cancelled");
-    expect(execution.exitCode).toBe(130);
-    expect(fixture.sink.records.filter((record) => record.stream === "stdout")).toHaveLength(0);
+    const calls = harness.processCalls().map((call) => `${processKey(call.request)} @ ${call.options.cwd ?? ""}`);
+    expect(new Set(calls).size).toBe(calls.length);
+    expect(probeKeys(harness)).toEqual(expect.arrayContaining([...JSON_PROBE_INVENTORY, "git --version", "npm config get cache"]));
+    expect(document.workspaces).toBeNull();
+    expect(document.health).toEqual({score: 6, grade: "F", summary: {passed: 1, warnings: 2, failed: 38, skipped: 18}});
+    expect(document.git).toEqual({
+      branch: "main",
+      sha: "abc1234",
+      lastCommitTime: "2 hours ago",
+      lastCommitMsg: "chore: something",
+      dirtyFiles: 0,
+    });
   });
 });
 
@@ -651,74 +479,75 @@ describe("status command — composed child cancellation", () => {
 // Command specs
 // ============================================================================
 
-describe("status command — process requests", () => {
+describe("status — process requests", () => {
   it("issues every external probe as an explicit request with the expected cwd and timeout", async () => {
-    const fixture = createStatusFixture({mode: "json"});
+    // Arrange
+    const harness = statusHarness();
 
-    await fixture.command.invoke({json: true}, {presentation: "json"});
+    // Act
+    await collect(harness);
 
-    const byKey = new Map(fixture.runner.calls.map((call) => [processKey(call.request), call] as const));
+    // Assert
+    const byKey = new Map(harness.processCalls().map((call) => [processKey(call.request), call] as const));
     for (const key of [GIT_BRANCH_KEY, GIT_SHA_KEY, GIT_LOG_TIME_KEY, GIT_LOG_MSG_KEY, GIT_STATUS_KEY]) {
       const call = byKey.get(key);
       expect(call, key).toBeDefined();
       expect(call?.options.cwd).toBe(FIXTURE_ROOT);
-      expect(call?.options.timeoutMs).toBe(30_000);
+      expect(Duration.toMillis(call?.options.timeout ?? 0)).toBe(30_000);
     }
 
     for (const key of [NPM_AUDIT_KEY, NPM_OUTDATED_KEY]) {
       const call = byKey.get(key);
       expect(call, key).toBeDefined();
       expect(call?.options.cwd).toBe(FIXTURE_ROOT);
-      expect(call?.options.timeoutMs).toBe(60_000);
+      expect(Duration.toMillis(call?.options.timeout ?? 0)).toBe(60_000);
+      expect(call?.options.failureOutput).toBe("full");
     }
   });
 
   it("dispatches no Nx or doctor child process: the exact inventory contains only git, npm, and disk probes", async () => {
-    const fixture = createStatusFixture({mode: "json"});
+    // Arrange
+    const harness = statusHarness();
 
-    await fixture.command.invoke({json: true}, {presentation: "json"});
+    // Act
+    await collect(harness);
 
-    expect(fixture.runner.calls.map((call) => processKey(call.request)).toSorted()).toEqual(
-      [
-        GIT_BRANCH_KEY,
-        GIT_SHA_KEY,
-        GIT_LOG_TIME_KEY,
-        GIT_LOG_MSG_KEY,
-        GIT_STATUS_KEY,
-        NPM_AUDIT_KEY,
-        NPM_OUTDATED_KEY,
-        diskProbeKey(DISK_NODE_MODULES_TARGET),
-        diskProbeKey(DISK_NEXT_BUILD_TARGET),
-        diskProbeKey(DISK_COMPONENTS_DIST_TARGET),
-      ].toSorted(),
-    );
-    expect(fixture.runner.calls.some((call) => call.request.command === "npx" || call.request.args.includes("nx"))).toBe(false);
+    // Assert
+    expect(probeKeys(harness)).toEqual(JSON_PROBE_INVENTORY);
+    expect(harness.processCalls().some((call) => call.request.command === "npx" || call.request.args.includes("nx"))).toBe(false);
   });
 
-  it("links every probe to the invocation cancellation signal and never passes a shell string", async () => {
-    const fixture = createStatusFixture({mode: "json"});
+  it("never passes a shell string", async () => {
+    // Arrange
+    const harness = statusHarness();
 
-    await fixture.command.invoke({json: true}, {presentation: "json"});
+    // Act
+    await collect(harness);
 
-    for (const call of fixture.runner.calls) {
+    // Assert
+    for (const call of harness.processCalls()) {
       expect(typeof call.request.command).toBe("string");
       expect(Array.isArray(call.request.args)).toBe(true);
-      expect(call.options.signal).toBeInstanceOf(AbortSignal);
+      expect(call.request.command).not.toMatch(/\s/u);
     }
   });
 
   it("issues each disk probe through the runtime executable with the target as its own argument", async () => {
-    const fixture = createStatusFixture({mode: "json"});
+    // Arrange
+    const harness = statusHarness();
 
-    await fixture.command.invoke({json: true}, {presentation: "json"});
+    // Act
+    await collect(harness);
 
-    const probes = fixture.runner.calls.filter((call) => call.request.args[0] === "--eval");
+    // Assert
+    const probes = harness.processCalls().filter((call) => call.request.args[0] === "--eval");
     expect(probes).toHaveLength(3);
     for (const probe of probes) {
+      expect(probe.request.command).toBe("/usr/bin/node");
       expect(probe.request.args).toHaveLength(3);
       expect(typeof probe.request.args[1]).toBe("string");
       expect([DISK_NODE_MODULES_TARGET, DISK_NEXT_BUILD_TARGET, DISK_COMPONENTS_DIST_TARGET]).toContain(probe.request.args[2]);
-      expect(probe.options.timeoutMs).toBe(60_000);
+      expect(Duration.toMillis(probe.options.timeout ?? 0)).toBe(60_000);
     }
   });
 });
@@ -727,59 +556,54 @@ describe("status command — process requests", () => {
 // Node runtime label
 // ============================================================================
 
-describe("status command — Node runtime label", () => {
+describe("status — Node runtime label", () => {
   it("renders the major version the runtime executable reports", async () => {
-    const fixture = createStatusFixture({responses: withOverrides({[NODE_VERSION_KEY]: succeeded("v42.1.0\n")})});
+    // Arrange
+    const harness = statusHarness({responses: withOverrides({[NODE_VERSION_KEY]: succeeded("v42.1.0\n")})});
 
-    const execution = await fixture.command.invoke({json: false}, {presentation: "human"});
+    // Act
+    const code = await runStatusCli(["status"], harness);
 
-    expect(execution.exitCode).toBe(0);
-    expect(renderedText(fixture.sink)).toMatch(/Node: 42\.x/);
+    // Assert
+    expect(code).toBe(0);
+    expect(renderedText(harness.output())).toMatch(/Node: 42\.x/u);
   });
 
-  it("issues the version probe through the runtime executable with cwd, a bounded timeout, and the invocation signal", async () => {
-    const fixture = createStatusFixture();
+  it("issues the version probe through the runtime executable with cwd and a bounded timeout", async () => {
+    // Arrange
+    const harness = statusHarness();
 
-    await fixture.command.invoke({json: false}, {presentation: "human"});
+    // Act
+    await runStatusCli(["status"], harness);
 
-    const call = fixture.runner.calls.find((entry) => entry.request.args[0] === "--version");
-    expect(call).toBeDefined();
-    expect(call?.request.command).toBe("/usr/bin/node");
-    expect(call?.request.args).toEqual(["--version"]);
+    // Assert
+    const call = harness.processCalls().find((entry) => entry.request.args[0] === "--version");
+    expect(call?.request).toEqual({command: "/usr/bin/node", args: ["--version"]});
     expect(call?.options.cwd).toBe(FIXTURE_ROOT);
-    expect(call?.options.timeoutMs).toBe(10_000);
-    expect(call?.options.signal).toBeInstanceOf(AbortSignal);
+    expect(Duration.toMillis(call?.options.timeout ?? 0)).toBe(10_000);
   });
 
   it("adds exactly one version probe to the human dashboard process inventory", async () => {
-    const fixture = createStatusFixture();
+    // Arrange
+    const harness = statusHarness();
 
-    await fixture.command.invoke({json: false}, {presentation: "human"});
+    // Act
+    await runStatusCli(["status"], harness);
 
-    expect(fixture.runner.calls.map((call) => processKey(call.request)).toSorted()).toEqual(
-      [
-        GIT_BRANCH_KEY,
-        GIT_SHA_KEY,
-        GIT_LOG_TIME_KEY,
-        GIT_LOG_MSG_KEY,
-        GIT_STATUS_KEY,
-        NPM_AUDIT_KEY,
-        NPM_OUTDATED_KEY,
-        NODE_VERSION_KEY,
-        diskProbeKey(DISK_NODE_MODULES_TARGET),
-        diskProbeKey(DISK_NEXT_BUILD_TARGET),
-        diskProbeKey(DISK_COMPONENTS_DIST_TARGET),
-      ].toSorted(),
-    );
+    // Assert
+    expect(probeKeys(harness)).toEqual([...JSON_PROBE_INVENTORY, NODE_VERSION_KEY].toSorted());
   });
 
   it("never probes the runtime version for machine-readable output", async () => {
-    const fixture = createStatusFixture({mode: "json"});
+    // Arrange
+    const harness = statusHarness();
 
-    const document = await runJson(fixture);
+    // Act
+    const code = await runStatusCli(["status", "--json"], harness);
 
-    expect(fixture.runner.calls.some((call) => call.request.args[0] === "--version")).toBe(false);
-    expect(Object.keys(document).toSorted()).toEqual(["disk", "git", "health", "nxEdges", "security", "workspaces"].toSorted());
+    // Assert
+    expect(code).toBe(0);
+    expect(probeKeys(harness)).toEqual(JSON_PROBE_INVENTORY);
   });
 
   it.each([
@@ -789,28 +613,33 @@ describe("status command — Node runtime label", () => {
     ["a nonzero exit", exited(1, "v26.3.1")],
     ["malformed output", succeeded("not-a-version")],
   ])("falls back to an unknown label instead of failing on %s", async (_label, outcome) => {
-    const fixture = createStatusFixture({responses: withOverrides({[NODE_VERSION_KEY]: outcome})});
+    // Arrange
+    const harness = statusHarness({responses: withOverrides({[NODE_VERSION_KEY]: outcome})});
 
-    const execution = await fixture.command.invoke({json: false}, {presentation: "human"});
+    // Act
+    const code = await runStatusCli(["status"], harness);
 
-    expect(execution.status).toBe("completed");
-    expect(execution.exitCode).toBe(0);
-    const text = renderedText(fixture.sink);
-    expect(text).toMatch(/Node: \?\.x/);
-    expect(text).toMatch(/Health: 92 \(A\)/);
+    // Assert
+    expect(code).toBe(0);
+    const text = renderedText(harness.output());
+    expect(text).toMatch(/Node: \?\.x/u);
+    expect(text).toMatch(/Health: 92 \(A\)/u);
   });
 
-  it("falls back to an unknown label when the version probe rejects, without degrading a sibling section", async () => {
+  it("falls back to an unknown label when the version probe dies, without degrading a sibling section", async () => {
+    // Arrange
     const responses = baseResponses();
     responses.delete(NODE_VERSION_KEY);
-    const fixture = createStatusFixture({responses});
+    const harness = statusHarness({responses});
 
-    const execution = await fixture.command.invoke({json: false}, {presentation: "human"});
+    // Act
+    const code = await runStatusCli(["status"], harness);
 
-    expect(execution.exitCode).toBe(0);
-    const text = renderedText(fixture.sink);
-    expect(text).toMatch(/Node: \?\.x/);
-    expect(text).toMatch(/main/);
+    // Assert
+    expect(code).toBe(0);
+    const text = renderedText(harness.output());
+    expect(text).toMatch(/Node: \?\.x/u);
+    expect(text).toMatch(/Branch: main @ abc1234/u);
   });
 });
 
@@ -822,26 +651,26 @@ describe("source-derived Nx graph collection", () => {
   const sourceText = readFileSync(fileURLToPath(new URL("./index.ts", import.meta.url)), "utf8");
 
   it("never writes or unlinks a temporary graph file and never dispatches Nx in production source", () => {
-    expect(sourceText).not.toMatch(/unlinkSync/);
-    expect(sourceText).not.toMatch(/writeFileSync/);
-    expect(sourceText).not.toMatch(/--file=/);
-    expect(sourceText).not.toMatch(/nx-graph-status-tmp/);
-    expect(sourceText).not.toMatch(/"npx"/);
+    expect(sourceText).not.toMatch(/unlinkSync/u);
+    expect(sourceText).not.toMatch(/writeFileSync/u);
+    expect(sourceText).not.toMatch(/--file=/u);
+    expect(sourceText).not.toMatch(/nx-graph-status-tmp/u);
+    expect(sourceText).not.toMatch(/"npx"/u);
   });
 
-  it("composes doctor through the typed command object rather than the deleted runDoctor adapter", () => {
-    expect(sourceText).not.toMatch(/runDoctor/);
-    expect(sourceText).toMatch(/doctorCommand/);
+  it("composes runDoctor directly rather than through a legacy command invoker", () => {
+    expect(sourceText).toMatch(/runDoctor/u);
+    expect(sourceText).not.toMatch(/doctorCommand|makeDoctorInvoker|\.invoke\(/u);
   });
 
   it("reads no ambient Node runtime version in production source", () => {
-    expect(sourceText).not.toMatch(/process\.versions/);
-    expect(sourceText).not.toMatch(/process\.version\b/);
+    expect(sourceText).not.toMatch(/process\.versions/u);
+    expect(sourceText).not.toMatch(/process\.version\b/u);
   });
 
   it("emits one deterministically ordered nxEdges entry per logical dependency", async () => {
-    const fixture = createStatusFixture({
-      mode: "json",
+    // Arrange
+    const harness = statusHarness({
       workspace: availableWorkspace({
         projects: [],
         dependencies: [
@@ -854,9 +683,11 @@ describe("source-derived Nx graph collection", () => {
       }),
     });
 
-    const document = await runJson(fixture);
+    // Act
+    const document = await collect(harness);
 
-    expect(document["nxEdges"]).toEqual([
+    // Assert
+    expect(document.nxEdges).toEqual([
       {source: "@scope/a", target: "@scope/b"},
       {source: "@scope/a", target: "@scope/c"},
       {source: "@scope/z", target: "@scope/a"},
@@ -878,48 +709,37 @@ describe("collectDisk", () => {
     }
   });
 
-  function realDiskSources(root: string) {
-    const environment = snapshotNodeEnvironment();
-    return {
-      runner: createNodeProcessRunner(environment),
-      tasks: new DefaultTaskScheduler(),
-      paths: createRepositoryPaths(root),
-      executablePath: environment.executablePath,
-      signal: new AbortController().signal,
-    };
+  function scriptedDisk(outcome: ProbeOutcome): Promise<unknown> {
+    const harness = statusHarness({
+      responses: new Map<string, ProbeOutcome>([
+        [diskProbeKey(DISK_NODE_MODULES_TARGET), outcome],
+        [diskProbeKey(DISK_NEXT_BUILD_TARGET), outcome],
+        [diskProbeKey(DISK_COMPONENTS_DIST_TARGET), outcome],
+      ]),
+    });
+    return runScoped(collectDisk(FIXTURE_PATHS), harness.layer);
   }
 
-  function scriptedDiskSources(outcome: ProcessOutcome) {
-    return {
-      runner: new ScriptedProcessRunner(
-        new Map<string, ProcessOutcome>([
-          [diskProbeKey(DISK_NODE_MODULES_TARGET), outcome],
-          [diskProbeKey(DISK_NEXT_BUILD_TARGET), outcome],
-          [diskProbeKey(DISK_COMPONENTS_DIST_TARGET), outcome],
-        ]),
-      ),
-      tasks: new DefaultTaskScheduler(),
-      paths: FIXTURE_PATHS,
-      executablePath: "/usr/bin/node",
-      signal: new AbortController().signal,
-    };
+  function realDisk(root: string): Promise<unknown> {
+    const layer = makeNodeLayer({mode: "silent", verbose: false, color: false, context: "test"});
+    return Effect.runPromise(collectDisk(createRepositoryPaths(root)).pipe(Effect.provide(layer)));
   }
 
   it("reaches disk: null when a probe command exits non-zero", async () => {
-    await expect(collectDisk(scriptedDiskSources(exited(1, "", "boom")))).resolves.toBeNull();
+    await expect(scriptedDisk(exited(1, "", "boom"))).resolves.toBeNull();
   });
 
   it("reaches disk: null on a probe timeout, spawn failure, or signal termination", async () => {
-    await expect(collectDisk(scriptedDiskSources(timedOut()))).resolves.toBeNull();
-    await expect(collectDisk(scriptedDiskSources(spawnFailed("ENOENT")))).resolves.toBeNull();
-    await expect(collectDisk(scriptedDiskSources(signalled()))).resolves.toBeNull();
+    await expect(scriptedDisk(timedOut())).resolves.toBeNull();
+    await expect(scriptedDisk(spawnFailed("ENOENT"))).resolves.toBeNull();
+    await expect(scriptedDisk(signalled())).resolves.toBeNull();
   });
 
   it.each(["", "12.5", "-5", "not-a-number"])("reaches disk: null for malformed probe output '%s'", async (stdout) => {
-    await expect(collectDisk(scriptedDiskSources(succeeded(stdout)))).resolves.toBeNull();
+    await expect(scriptedDisk(succeeded(stdout))).resolves.toBeNull();
   });
 
-  it("sums nested files through the real runner and probe, and reports zero for a genuinely absent directory", async () => {
+  it("sums nested files through the real process and probe, and reports zero for a genuinely absent directory", async () => {
     const root = await mkdtemp(join(tmpdir(), "arolariu-status-disk-"));
     fixtureRoots.push(root);
 
@@ -930,7 +750,7 @@ describe("collectDisk", () => {
     await writeFile(join(root, "packages", "components", "dist", "bundle.js"), "abcdefghij"); // 10 bytes
     // sites/arolariu.ro/.next is intentionally left absent.
 
-    const disk = await collectDisk(realDiskSources(root));
+    const disk = await realDisk(root);
 
     expect(disk).toEqual({nodeModules: 15, nextBuild: 0, componentsDist: 10});
   }, 20_000);
@@ -952,7 +772,7 @@ describe("collectDisk", () => {
       // logic (nested summation without the symlink) instead of the symlink-skip behavior.
     }
 
-    const disk = await collectDisk(realDiskSources(root));
+    const disk = await realDisk(root);
 
     expect(disk).toEqual({nodeModules: 5, nextBuild: 0, componentsDist: 0});
   }, 20_000);
@@ -962,69 +782,85 @@ describe("collectDisk", () => {
 // Collector independence
 // ============================================================================
 
-describe("status command — collector independence", () => {
+describe("status — collector independence", () => {
+  it("maps an unavailable collector to null: a git spawn failure makes only git null", async () => {
+    // Arrange
+    const harness = statusHarness({responses: withOverrides({[GIT_BRANCH_KEY]: spawnFailed("git is not installed")})});
+
+    // Act
+    const document = await collect(harness);
+
+    // Assert
+    expect(document.git).toBeNull();
+    expect(document.workspaces).not.toBeNull();
+    expect(document.nxEdges).not.toBeNull();
+    expect(document.security).not.toBeNull();
+    expect(document.disk).not.toBeNull();
+    expect(document.health).not.toBeNull();
+  });
+
   it("renders git as unavailable when one underlying git command fails, while siblings still render", async () => {
-    const fixture = createStatusFixture({mode: "json", responses: withOverrides({[GIT_BRANCH_KEY]: exited(1)})});
+    // Arrange
+    const harness = statusHarness({responses: withOverrides({[GIT_BRANCH_KEY]: exited(1)})});
 
-    const document = await runJson(fixture);
+    // Act
+    const document = await collect(harness);
 
-    expect(document["git"]).toBeNull();
-    expect(document["workspaces"]).not.toBeNull();
-    expect(document["health"]).not.toBeNull();
-    expect(document["nxEdges"]).not.toBeNull();
-    expect(document["security"]).not.toBeNull();
-    expect(document["disk"]).not.toBeNull();
+    // Assert
+    expect(document.git).toBeNull();
+    expect(document.workspaces).not.toBeNull();
+    expect(document.health).not.toBeNull();
+    expect(document.nxEdges).not.toBeNull();
+    expect(document.security).not.toBeNull();
+    expect(document.disk).not.toBeNull();
   });
 
   it("renders workspaces and nxEdges as unavailable when workspace inspection is unavailable", async () => {
-    const fixture = createStatusFixture({mode: "json", workspace: unavailableFact});
+    // Arrange
+    const harness = statusHarness({workspace: UNAVAILABLE_WORKSPACE});
 
-    const document = await runJson(fixture);
+    // Act
+    const document = await collect(harness);
 
-    expect(document["workspaces"]).toBeNull();
-    expect(document["nxEdges"]).toBeNull();
-    expect(document["nxEdges"]).not.toEqual([]);
-    expect(document["git"]).not.toBeNull();
+    // Assert
+    expect(document.workspaces).toBeNull();
+    expect(document.nxEdges).toBeNull();
+    expect(document.nxEdges).not.toEqual([]);
+    expect(document.git).not.toBeNull();
   });
 
-  it("degrades a rejected collector to null without invalidating its siblings", async () => {
-    const fixture = createStatusFixture({
-      mode: "json",
-      workspace: () => Promise.reject(new Error("inspection boom")),
-    });
+  it("degrades a dying collector to null without invalidating its siblings", async () => {
+    // Arrange
+    const harness = statusHarness({workspace: "unscripted"});
 
-    const document = await runJson(fixture);
+    // Act
+    const document = await collect(harness);
 
-    expect(document["workspaces"]).toBeNull();
-    expect(document["nxEdges"]).toBeNull();
-    expect(document["git"]).not.toBeNull();
-    expect(document["security"]).not.toBeNull();
-    expect(document["disk"]).not.toBeNull();
-    expect(document["health"]).not.toBeNull();
+    // Assert
+    expect(document.workspaces).toBeNull();
+    expect(document.nxEdges).toBeNull();
+    expect(document.git).not.toBeNull();
+    expect(document.security).not.toBeNull();
+    expect(document.disk).not.toBeNull();
+    expect(document.health).not.toBeNull();
   });
 
   it("renders security as unavailable (not zero counts) when npm audit JSON is malformed", async () => {
-    const fixture = createStatusFixture({mode: "json", responses: withOverrides({[NPM_AUDIT_KEY]: exited(1, "not json at all")})});
+    const document = await collect(statusHarness({responses: withOverrides({[NPM_AUDIT_KEY]: exited(1, "not json at all")})}));
 
-    const document = await runJson(fixture);
-
-    expect(document["security"]).toBeNull();
+    expect(document.security).toBeNull();
   });
 
   it("renders security as unavailable — not a fabricated zero-outdated success — when npm outdated stdout is empty", async () => {
-    const fixture = createStatusFixture({mode: "json", responses: withOverrides({[NPM_OUTDATED_KEY]: succeeded("")})});
+    const document = await collect(statusHarness({responses: withOverrides({[NPM_OUTDATED_KEY]: succeeded("")})}));
 
-    const document = await runJson(fixture);
-
-    expect(document["security"]).toBeNull();
+    expect(document.security).toBeNull();
   });
 
   it("retains a genuinely empty npm outdated JSON object ({}) as zero-outdated success data", async () => {
-    const fixture = createStatusFixture({mode: "json", responses: withOverrides({[NPM_OUTDATED_KEY]: succeeded("{}")})});
+    const document = await collect(statusHarness({responses: withOverrides({[NPM_OUTDATED_KEY]: succeeded("{}")})}));
 
-    const document = await runJson(fixture);
-
-    expect(document["security"]).toEqual({
+    expect(document.security).toEqual({
       critical: 0,
       high: 0,
       moderate: 0,
@@ -1036,24 +872,20 @@ describe("status command — collector independence", () => {
   });
 
   it("renders security as unavailable when npm outdated JSON is malformed", async () => {
-    const fixture = createStatusFixture({mode: "json", responses: withOverrides({[NPM_OUTDATED_KEY]: succeeded("not json")})});
+    const document = await collect(statusHarness({responses: withOverrides({[NPM_OUTDATED_KEY]: succeeded("not json")})}));
 
-    const document = await runJson(fixture);
-
-    expect(document["security"]).toBeNull();
+    expect(document.security).toBeNull();
   });
 
   it("renders security as unavailable on an npm transport failure", async () => {
-    const fixture = createStatusFixture({mode: "json", responses: withOverrides({[NPM_AUDIT_KEY]: timedOut()})});
+    const document = await collect(statusHarness({responses: withOverrides({[NPM_AUDIT_KEY]: timedOut()})}));
 
-    const document = await runJson(fixture);
-
-    expect(document["security"]).toBeNull();
+    expect(document.security).toBeNull();
   });
 
   it("retains nonzero npm audit/outdated JSON output as valid security data", async () => {
-    const fixture = createStatusFixture({
-      mode: "json",
+    // Arrange
+    const harness = statusHarness({
       responses: withOverrides({
         [NPM_AUDIT_KEY]: exited(1, JSON.stringify({metadata: {vulnerabilities: {critical: 1, high: 2, moderate: 0, low: 0}}})),
         [NPM_OUTDATED_KEY]: exited(
@@ -1067,9 +899,11 @@ describe("status command — collector independence", () => {
       }),
     });
 
-    const document = await runJson(fixture);
+    // Act
+    const document = await collect(harness);
 
-    expect(document["security"]).toEqual({
+    // Assert
+    expect(document.security).toEqual({
       critical: 1,
       high: 2,
       moderate: 0,
@@ -1080,27 +914,73 @@ describe("status command — collector independence", () => {
     });
   });
 
-  it("renders disk as unavailable when a directory-size probe fails", async () => {
-    const fixture = createStatusFixture({
-      mode: "json",
-      responses: withOverrides({[diskProbeKey(DISK_NODE_MODULES_TARGET)]: exited(1)}),
+  it.each([
+    ["a non-object audit payload", NPM_AUDIT_KEY, "[]"],
+    ["audit metadata that is not an object", NPM_AUDIT_KEY, JSON.stringify({metadata: 1})],
+    ["audit vulnerabilities that are not an object", NPM_AUDIT_KEY, JSON.stringify({metadata: {vulnerabilities: null}})],
+    ["a negative severity count", NPM_AUDIT_KEY, JSON.stringify({metadata: {vulnerabilities: {high: -1}}})],
+    ["a non-object outdated payload", NPM_OUTDATED_KEY, "[]"],
+  ])("renders security as unavailable for %s", async (_label, key, stdout) => {
+    const document = await collect(statusHarness({responses: withOverrides({[key]: succeeded(stdout)})}));
+
+    expect(document.security).toBeNull();
+  });
+
+  it("counts missing severities as zero and skips malformed outdated entries", async () => {
+    // Arrange
+    const harness = statusHarness({
+      responses: withOverrides({
+        [NPM_AUDIT_KEY]: succeeded(JSON.stringify({metadata: {vulnerabilities: {low: 4}}})),
+        [NPM_OUTDATED_KEY]: succeeded(
+          JSON.stringify({
+            broken: "x",
+            partial: {current: "1.0.0"},
+            major: {current: "1.0.0", latest: "2.0.0"},
+            patch: {current: "1.0.0", latest: "1.0.1"},
+          }),
+        ),
+      }),
     });
 
-    const document = await runJson(fixture);
+    // Act
+    const document = await collect(harness);
 
-    expect(document["disk"]).toBeNull();
-    expect(document["git"]).not.toBeNull();
+    // Assert
+    expect(document.security).toEqual({
+      critical: 0,
+      high: 0,
+      moderate: 0,
+      low: 4,
+      majorOutdated: 1,
+      minorOutdated: 0,
+      patchOutdated: 1,
+    });
+  });
+
+  it("truncates a last commit message longer than sixty characters", async () => {
+    // Arrange
+    const harness = statusHarness({responses: withOverrides({[GIT_LOG_MSG_KEY]: succeeded(`${"x".repeat(70)}\n`)})});
+
+    // Act
+    const document = await collect(harness);
+
+    // Assert
+    expect(document.git?.lastCommitMsg).toBe(`${"x".repeat(57)}...`);
+  });
+
+  it("renders disk as unavailable when a directory-size probe fails", async () => {
+    const document = await collect(statusHarness({responses: withOverrides({[diskProbeKey(DISK_NODE_MODULES_TARGET)]: exited(1)})}));
+
+    expect(document.disk).toBeNull();
+    expect(document.git).not.toBeNull();
   });
 
   it("renders disk as unavailable when a directory-size probe emits malformed output", async () => {
-    const fixture = createStatusFixture({
-      mode: "json",
-      responses: withOverrides({[diskProbeKey(DISK_NEXT_BUILD_TARGET)]: succeeded("not-a-number")}),
-    });
+    const document = await collect(
+      statusHarness({responses: withOverrides({[diskProbeKey(DISK_NEXT_BUILD_TARGET)]: succeeded("not-a-number")})}),
+    );
 
-    const document = await runJson(fixture);
-
-    expect(document["disk"]).toBeNull();
+    expect(document.disk).toBeNull();
   });
 });
 
@@ -1108,26 +988,29 @@ describe("status command — collector independence", () => {
 // Document shape
 // ============================================================================
 
-describe("status command — document", () => {
+describe("status — document", () => {
   it("emits exactly one ANSI-free JSON document with the six preserved top-level keys", async () => {
-    const fixture = createStatusFixture({mode: "json"});
+    // Arrange
+    const harness = statusHarness();
 
-    const document = await runJson(fixture);
+    // Act
+    const code = await runStatusCli(["status", "--json"], harness);
 
-    expect(Object.keys(document).toSorted()).toEqual(["disk", "git", "health", "nxEdges", "security", "workspaces"].toSorted());
+    // Assert
+    expect(code).toBe(0);
+    const stdout = harness.output().filter((record) => record.stream === "stdout");
+    expect(stdout).toHaveLength(1);
+    expect(stdout[0]?.text).not.toMatch(/\u001B/u);
+    const document = JSON.parse(stdout[0]?.text ?? "") as Record<string, unknown>;
+    expect(Object.keys(document)).toEqual(["workspaces", "nxEdges", "git", "security", "disk", "health"]);
     expect(document["health"]).toEqual({score: 92, grade: "A", summary: {passed: 3, warnings: 1, failed: 0, skipped: 2}});
   });
 
-  it("returns the typed document as the completed command value", async () => {
-    const fixture = createStatusFixture();
+  it("returns the typed document as the program value", async () => {
+    // Act
+    const document = await collect(statusHarness());
 
-    const execution = await fixture.command.invoke({json: false}, {presentation: "silent"});
-
-    expect(execution.status).toBe("completed");
-    if (execution.status !== "completed") {
-      throw new Error("Status unexpectedly did not complete.");
-    }
-    const document: StatusDocument = execution.value;
+    // Assert
     expect(document.git).toEqual({
       branch: "main",
       sha: "abc1234",
@@ -1139,25 +1022,28 @@ describe("status command — document", () => {
   });
 
   it("derives workspace metadata from the inspection session and repository manifests", async () => {
-    const fixture = createStatusFixture({
-      mode: "json",
+    // Arrange
+    const harness = statusHarness({
       workspace: availableWorkspace({
         projects: [{name: "new-project", root: "sites/new-project", targets: ["build"]}],
         dependencies: [{source: "new-project", target: "@arolariu/components"}],
         cycles: [],
       }),
       files: {
-        [`${FIXTURE_ROOT}/sites/new-project/package.json`]: JSON.stringify({name: "@arolariu/new-project", version: "1.2.3"}),
-        [`${FIXTURE_ROOT}/sites/new-project/project.json`]: JSON.stringify({projectType: "library", tags: ["domain:web", "type:lib"]}),
+        [join(FIXTURE_ROOT, "sites", "new-project", "package.json")]: JSON.stringify({name: "@arolariu/new-project", version: "1.2.3"}),
+        [join(FIXTURE_ROOT, "sites", "new-project", "project.json")]: JSON.stringify({
+          projectType: "library",
+          tags: ["domain:web", "type:lib"],
+        }),
       },
     });
 
-    const document = await runJson(fixture);
+    // Act
+    const document = await collect(harness);
 
-    expect(document["workspaces"]).toEqual([
-      {name: "@arolariu/new-project", version: "1.2.3", type: "lib", tags: ["domain:web", "type:lib"]},
-    ]);
-    expect(document["nxEdges"]).toEqual([{source: "new-project", target: "@arolariu/components"}]);
+    // Assert
+    expect(document.workspaces).toEqual([{name: "@arolariu/new-project", version: "1.2.3", type: "lib", tags: ["domain:web", "type:lib"]}]);
+    expect(document.nxEdges).toEqual([{source: "new-project", target: "@arolariu/components"}]);
   });
 });
 
@@ -1165,31 +1051,111 @@ describe("status command — document", () => {
 // Human dashboard
 // ============================================================================
 
-describe("status command — human dashboard", () => {
-  it("renders workspace, git, security, disk, and health content only through the logger", async () => {
-    const fixture = createStatusFixture();
+describe("status — human dashboard", () => {
+  it("renders workspace, git, security, disk, and health content only through the presenter", async () => {
+    // Arrange
+    const harness = statusHarness();
 
-    const execution = await fixture.command.invoke({json: false}, {presentation: "human"});
+    // Act
+    const code = await runStatusCli(["status"], harness);
 
-    expect(execution.status).toBe("completed");
-    expect(execution.exitCode).toBe(0);
-    const text = renderedText(fixture.sink);
-    expect(text).toMatch(/Workspaces/);
-    expect(text).toMatch(/main/);
-    expect(text).toMatch(/Health/);
-    expect(text).toMatch(/Git/);
-    expect(text).toMatch(/Security/);
-    expect(text).toMatch(/Disk/);
-    expect(text).toMatch(/passed/);
+    // Assert
+    expect(code).toBe(0);
+    const text = renderedText(harness.output());
+    expect(text).toMatch(/Workspaces/u);
+    expect(text).toMatch(/main/u);
+    expect(text).toMatch(/Health/u);
+    expect(text).toMatch(/Git/u);
+    expect(text).toMatch(/Security/u);
+    expect(text).toMatch(/Disk/u);
+    expect(text).toMatch(/passed/u);
   });
 
-  it("renders unavailable sections without crashing or fabricating success values", async () => {
-    const fixture = createStatusFixture({responses: withOverrides({[GIT_BRANCH_KEY]: exited(1)})});
+  it("renders unavailable sections and isolated projects without crashing or fabricating success values", async () => {
+    // Arrange
+    const harness = statusHarness({
+      responses: withOverrides({[GIT_BRANCH_KEY]: exited(1), [NPM_AUDIT_KEY]: timedOut(), [diskProbeKey(DISK_NEXT_BUILD_TARGET)]: exited(1)}),
+      workspace: availableWorkspace({...HEALTHY_WORKSPACE_FACTS, projects: [...HEALTHY_WORKSPACE_FACTS.projects, {name: "lonely", root: "lonely", targets: []}]}),
+    });
 
-    const execution = await fixture.command.invoke({json: false}, {presentation: "human"});
+    // Act
+    const code = await runStatusCli(["status"], harness);
 
-    expect(execution.exitCode).toBe(0);
-    expect(renderedText(fixture.sink)).toMatch(/unavailable/);
+    // Assert
+    expect(code).toBe(0);
+    const lines = renderedText(harness.output()).split("\n");
+    expect(lines).toContain("Branch: unavailable  │  Node: 26.x  │  Health: 92 (A)");
+    expect(lines).toContain("lonely (isolated)");
+    expect(lines.filter((line) => line === "unavailable")).toHaveLength(3);
+  });
+
+  it("renders an empty dependency graph and a dirty working tree", async () => {
+    // Arrange
+    const harness = statusHarness({
+      responses: withOverrides({[GIT_STATUS_KEY]: succeeded(" M a.ts\n?? b.ts\n")}),
+      workspace: availableWorkspace({...HEALTHY_WORKSPACE_FACTS, dependencies: []}),
+    });
+
+    // Act
+    await runStatusCli(["status"], harness);
+
+    // Assert
+    const lines = renderedText(harness.output()).split("\n");
+    expect(lines).toContain("No inter-project dependencies found");
+    expect(lines).toContain("Working tree: 2 files modified");
+  });
+
+  it("renders an unavailable health label and graph without workspaces when given such a document", async () => {
+    // Arrange
+    const harness = makeTestLayer({mode: "human"});
+    const document: StatusDocument = {
+      workspaces: null,
+      nxEdges: [{source: "@arolariu/website", target: "@arolariu/components"}],
+      git: null,
+      security: null,
+      disk: null,
+      health: null,
+    };
+
+    // Act
+    await runScoped(renderDashboard(document, "?"), harness.layer);
+
+    // Assert
+    const lines = renderedText(harness.output()).split("\n");
+    expect(lines[1]).toBe("Branch: unavailable  │  Node: ?.x  │  Health: unavailable");
+    expect(lines.some((line) => line.startsWith("Health summary"))).toBe(false);
+    expect(lines).toContain("components ← website");
+    expect(lines.some((line) => line.endsWith("(isolated)"))).toBe(false);
+  });
+
+  it("groups inbound dependencies per target and renders singular counts", async () => {
+    // Arrange
+    const harness = statusHarness({
+      responses: withOverrides({[GIT_STATUS_KEY]: succeeded(" M a.ts\n")}),
+      workspace: availableWorkspace({
+        projects: [{name: "@arolariu/api", root: "sites/api.arolariu.ro", targets: []}],
+        dependencies: [
+          {source: "@arolariu/website", target: "@arolariu/components"},
+          {source: "@arolariu/cv", target: "@arolariu/components"},
+        ],
+        cycles: [],
+      }),
+      files: {
+        [join(FIXTURE_ROOT, "sites", "api.arolariu.ro", "project.json")]: JSON.stringify({name: "@arolariu/api", projectType: "application", tags: ["domain:backend", "type:app"]}),
+      },
+    });
+    const report = doctorReport({summary: {passed: 1, warnings: 2, failed: 1, skipped: 0}});
+
+    // Act
+    await runStatusCli(["status"], harness, recordingDoctor(Effect.succeed(report)).doctor);
+
+    // Assert
+    const lines = renderedText(harness.output()).split("\n");
+    expect(lines).toContain("Health summary: 1 passed, 2 warnings, 1 failure, 0 skipped");
+    expect(lines).toContain("components ← cv, website");
+    expect(lines.some((line) => /^api\s+—\s+app\s+backend$/u.test(line))).toBe(true);
+    expect(lines).toContain("api (isolated)");
+    expect(lines).toContain("Working tree: 1 file modified");
   });
 });
 
@@ -1197,7 +1163,7 @@ describe("status command — human dashboard", () => {
 // Characterization (legacy baseline for the effect migration)
 // ============================================================================
 
-describe("status command — characterization", () => {
+describe("status — characterization", () => {
   const EXPECTED_DOCUMENT: StatusDocument = {
     workspaces: [
       {name: "@arolariu/components", version: "—", type: "unknown", tags: []},
@@ -1242,128 +1208,43 @@ describe("status command — characterization", () => {
     "node_modules: 1.00 KB  │  .next: 2.00 KB  │  dist: 512 B",
   ];
 
-  it("characterizes the exact full JSON document and exit code", async () => {
+  it("characterizes the exact document value", async () => {
+    await expect(collect(statusHarness())).resolves.toEqual(EXPECTED_DOCUMENT);
+  });
+
+  it("emits one JSON document: the exact R1 document on stdout, exit 0", async () => {
     // Arrange
-    const fixture = createStatusFixture({mode: "json"});
+    const harness = statusHarness();
 
     // Act
-    const execution = await fixture.command.invoke({json: true}, {presentation: "json"});
+    const code = await runStatusCli(["status", "--json"], harness);
 
     // Assert
-    expect(execution).toEqual({status: "completed", value: EXPECTED_DOCUMENT, exitCode: 0});
-    expect(fixture.sink.records).toEqual([{stream: "stdout", text: JSON.stringify(EXPECTED_DOCUMENT, null, 2), write: false}]);
+    expect(code).toBe(0);
+    expect(harness.output()).toEqual([{stream: "stdout", text: `${JSON.stringify(EXPECTED_DOCUMENT, null, 2)}\n`}]);
   });
 
   it("characterizes the exact human dashboard text and exit code", async () => {
     // Arrange
-    const fixture = createStatusFixture();
+    const harness = statusHarness();
 
     // Act
-    const execution = await fixture.command.invoke({json: false}, {presentation: "human"});
+    const code = await runStatusCli(["status"], harness);
 
     // Assert
-    expect(execution).toEqual({status: "completed", value: EXPECTED_DOCUMENT, exitCode: 0});
-    expect(fixture.sink.records).toEqual(EXPECTED_DASHBOARD_LINES.map((text) => ({stream: "stdout", text, write: false})));
+    expect(code).toBe(0);
+    expect(harness.output()).toEqual(EXPECTED_DASHBOARD_LINES.map((text) => ({stream: "stdout", text: `${text}\n`})));
   });
 
-  it("executes nine inspection providers exactly once over one shared session when composing the real quick doctor", async () => {
+  it("keeps exit 0 when doctor reports failing checks: health is data", async () => {
     // Arrange
-    const executions: Record<string, number> = {};
-    const countedWorkspace = (): Promise<InspectionOutcome<WorkspaceFacts>> => {
-      executions["workspace"] = (executions["workspace"] ?? 0) + 1;
-      return availableWorkspace()();
-    };
-    const countedUnavailable =
-      (key: string) =>
-      <TValue>(): Promise<InspectionOutcome<TValue>> => {
-        executions[key] = (executions[key] ?? 0) + 1;
-        return unavailableFact<TValue>();
-      };
-    const session: LegacyRepositoryInspectionSession = {
-      ...createLegacyInspectionSession<RepositoryInspectionFacts>({
-        workspace: countedWorkspace,
-        aggregate: countedUnavailable("aggregate"),
-        "npm.root": countedUnavailable("npm.root"),
-        "npm.github-scripts": countedUnavailable("npm.github-scripts"),
-        packages: countedUnavailable("packages"),
-        dotnet: countedUnavailable("dotnet"),
-        python: countedUnavailable("python"),
-        react: countedUnavailable("react"),
-        "svelte.cv": countedUnavailable("svelte.cv"),
-        "svelte.status": countedUnavailable("svelte.status"),
-        infrastructure: countedUnavailable("infrastructure"),
-      }),
-      updateInfrastructureEngine: (): void => undefined,
-    };
-    const createSession = vi.fn<(request: Readonly<RepositoryInspectionRequest>) => LegacyRepositoryInspectionSession>(() => session);
-    const sink = new InMemoryLoggerSink();
-    const runner = new ScriptedProcessRunner(withOverrides({}));
-    const factory = createTestRuntimeFactory({
-      files: createRepositoryFixtureFileSystem(),
-      inspection: createMemoizedInspectionRuntime(createSession),
-      logger: new MonorepositoryConsoleLogger("status", {color: false, sink, verbose: false, mode: "json"}),
-      runner,
-    });
-    // The Effect doctor runs on its own harness (its probes are Effect processes there) and reads
-    // the status invocation's inspection sessions through the legacy invoker's parent bridge.
-    const doctorSpawnFailures: Readonly<Record<string, string>> = {
-      "git --version": "git is not installed",
-      "npm config get cache": "npm is not installed",
-    };
-    const doctorHarness = makeTestLayer({
-      files: {[join(FIXTURE_ROOT, "package.json")]: JSON.stringify({name: "@arolariu/monorepo"}, null, 2)},
-      processes: [
-        scriptedOutcomes((request) => {
-          const message = doctorSpawnFailures[[request.command, ...request.args].join(" ")];
-          if (message === undefined) {
-            throw new Error(`Unscripted doctor probe: ${request.command}`);
-          }
-          return {kind: "spawn-failed", message, stdout: "", stderr: "", durationMs: 1};
-        }),
-      ],
-      environment: {platform: "linux", architecture: "x64", executablePath: "/usr/bin/node", isCI: true},
-    });
-    const command = createStatusCommand({runtimeFactory: factory, doctor: makeDoctorInvoker(() => doctorHarness.layer)});
+    const harness = statusHarness();
+    const failing = doctorReport({score: 8, grade: "F", summary: {passed: 3, warnings: 0, failed: 38, skipped: 18}});
 
     // Act
-    const execution = await command.invoke({json: true}, {presentation: "json"});
+    const code = await runStatusCli(["status", "--json"], harness, recordingDoctor(Effect.succeed(failing)).doctor);
 
     // Assert
-    expect(execution.status).toBe("completed");
-    expect(execution.exitCode).toBe(0);
-    expect(createSession).toHaveBeenCalledTimes(1);
-    expect(createSession).toHaveBeenCalledWith({profile: "quick", paths: FIXTURE_PATHS});
-    expect(executions).toEqual({
-      workspace: 1,
-      "npm.root": 1,
-      "npm.github-scripts": 1,
-      dotnet: 1,
-      python: 1,
-      react: 1,
-      "svelte.cv": 1,
-      "svelte.status": 1,
-      infrastructure: 1,
-    });
-    expect(jsonDocument(sink)["health"]).toEqual({score: 8, grade: "F", summary: {passed: 3, warnings: 0, failed: 38, skipped: 18}});
-    expect(runner.calls.map((call) => processKey(call.request)).toSorted()).toEqual(
-      [
-        GIT_BRANCH_KEY,
-        GIT_SHA_KEY,
-        GIT_LOG_TIME_KEY,
-        GIT_LOG_MSG_KEY,
-        GIT_STATUS_KEY,
-        NPM_AUDIT_KEY,
-        NPM_OUTDATED_KEY,
-        diskProbeKey(DISK_NODE_MODULES_TARGET),
-        diskProbeKey(DISK_NEXT_BUILD_TARGET),
-        diskProbeKey(DISK_COMPONENTS_DIST_TARGET),
-      ].toSorted(),
-    );
-    expect(
-      doctorHarness
-        .processCalls()
-        .map(({request}) => [request.command, ...request.args].join(" "))
-        .toSorted(),
-    ).toEqual(["git --version", "npm config get cache"].toSorted());
+    expect(code).toBe(0);
   });
 });

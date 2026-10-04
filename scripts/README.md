@@ -138,14 +138,14 @@ Business code never reads `process.argv` and never writes `process.exitCode`. Se
 Each command module exports a `create<Name>Command(...)` factory and one production singleton built from it:
 
 ```typescript
-export const statusCommand: MonorepoCommand<StatusInput, StatusDocument> = createStatusCommand();
+export const setupCommand: MonorepoCommand<SetupInput, SetupResult> = createSetupCommand();
 ```
 
 The factory is the deterministic test seam. It accepts either a `CommandRuntimeFactory` directly or a small `dependencies` object
 carrying one, so a test replaces the whole capability kernel instead of mocking repository modules:
 
 ```typescript
-const command = createStatusCommand({runtimeFactory: createTestRuntimeFactory({runner, files}), doctor: fakeDoctor});
+const command = createSetupCommand({runtimeFactory: createTestRuntimeFactory({runner, files})});
 ```
 
 [`common/runtime.testing.ts`](./common/runtime.testing.ts) owns those typed fakes — a scripted process runner, in-memory logger sink,
@@ -162,8 +162,8 @@ start a process. Each worker's `import.meta.main` block only calls `runWorker(<w
 ([`platform/worker.ts`](./platform/worker.ts)), which decodes its argv with the worker's `decodeWorkerArgs`, writes the single JSON
 document, and maps the exit code. No script calls `process.exit()`.
 
-`invoke()` is also how commands compose. `commands/status/index.ts` runs doctor as a typed child (`doctorCommand.invoke({quick: true, verbose: false},
-{parent: context, presentation: "silent"})`) rather than spawning a sibling process or parsing JSON.
+`invoke()` is also how legacy commands compose a typed child (`child.invoke(input, {parent: context, presentation: "silent"})`) rather
+than spawning a sibling process or parsing JSON. Effect-native families compose plain effects instead: `status` runs `runDoctor` directly.
 
 #### Invocation outcomes
 
@@ -338,7 +338,7 @@ const files = yield* legacyReadOnlyFiles;
 const paths = yield* Effect.promise(() => resolveRepositoryPaths(import.meta.url, files));
 ```
 
-The legacy commands still on the command runtime (Status until Task 4.5, Setup until cohort 5) reach the Effect
+The legacy commands still on the command runtime (Setup until cohort 5) reach the Effect
 `Inspection` service through `createLegacyInspectionRuntime`: `createNodeRuntimeScope` builds one per root scope (one `ManagedRuntime`
 over a silent `makeNodeLayer`), exposes it as `runtime.inspection`, and registers its `dispose` in the scope's cleanup registry. Its
 `getRepositorySession` is synchronous and keeps the legacy semantics — one `LegacyRepositoryInspectionSession` per request key, the
@@ -373,9 +373,9 @@ configuration provides immediate feedback for direct output syntax. Direct conso
 sinks, while injected `output.write(...)` prompt presentation stays confined to the prompt adapter. No exemption includes a script entry
 point.
 
-Every legacy production script under root `scripts/**` — including [`setup.ts`](./setup.ts) and
-[`commands/status/index.ts`](./commands/status/index.ts) — routes its presentation and semantic output through `MonorepositoryConsoleLogger`; the
-Effect-native families (generate, rates, docs, and doctor) route it through the platform `Presenter` and logger. There are no remaining
+Every legacy production script under root `scripts/**` — including [`setup.ts`](./setup.ts) — routes its presentation and semantic
+output through `MonorepositoryConsoleLogger`; the Effect-native families (generate, rates, docs, doctor, and status) route it through the
+platform `Presenter` and logger. There are no remaining
 transitional setup/doctor/status exceptions.
 
 ## Generate, rates, and docs (Effect-native)
@@ -513,7 +513,7 @@ container-engine client/cache state outside that boundary.
 
 | Module | Owns |
 |--------|------|
-| [`commands/doctor/index.ts`](./commands/doctor/index.ts) | `runDoctor`: module orchestration/ordering, fact prewarming, and module-defect normalization; the temporary `doctorCommand` legacy invoker for status (deleted in Task 4.5) |
+| [`commands/doctor/index.ts`](./commands/doctor/index.ts) | `runDoctor`: module orchestration/ordering, fact prewarming, and module-defect normalization |
 | [`commands/doctor/cli.ts`](./commands/doctor/cli.ts) | Flag parsing, the live `NetworkProbe` layer, JSON/human completion, and the exit-code rollup |
 | [`commands/doctor/types.ts`](./commands/doctor/types.ts) | Shared `DiagnosticResult`/`DoctorContext`/`DoctorInput`/`DoctorRequirements` contracts and diagnostic-result helpers |
 | [`commands/doctor/NetworkProbe.ts`](./commands/doctor/NetworkProbe.ts) | The bounded, `GET`-only `NetworkProbe` service (10 MiB body bound, one deadline for request and body) |
@@ -550,8 +550,8 @@ adapter, the mutable `FileSystem`, the unrestricted `HttpClient`, or `Prompts`: 
 production module (except `cli.ts`, which provides the live layers) for `FileSystem` imports from `effect`/`effect/FileSystem` and `HttpClient`
 imports from `effect/http`, and snapshots `.nx` and `.arolariu` sentinel files to prove real quick and full-profile Doctor runs do not mutate
 them. [`runtime-boundary.test.ts`](./common/runtime-boundary.test.ts)'s source-level AST guard rejects the same Effect imports plus
-mutation-capable or unrestricted filesystem imports, child-process imports, widened runtime imports, and direct adapter imports across the
-Doctor production surface.
+mutation-capable or unrestricted filesystem imports, child-process imports, widened runtime imports, `Prompts`, and direct adapter imports
+across the Doctor and Status production surfaces (every module except each family's `cli.ts`).
 
 No Nx child command is dispatched by doctor or status, and none is allowlisted. Nx always opens (and rewrites) its native workspace
 database when it constructs a project graph. `workspace.nx-projects`, `workspace.nx-graph`, and status's `nxEdges` are instead derived
@@ -560,13 +560,17 @@ from the shared inspection session's workspace facts, which use an isolated Nx D
 
 ### Status integration
 
-[`commands/status/index.ts`](./commands/status/index.ts) composes doctor as a typed child command (`doctorCommand.invoke(…, {parent: context, presentation: "silent"})`)
-rather than a subprocess. Until status migrates (Task 4.5), `doctorCommand` is a legacy invoker over `runDoctor` that reads the parent
-invocation's inspection sessions, so the child still reuses status's own inspection session. Health is the one status section that is **not**
-degradation-tolerant: both doctor completion exit codes (`0` and `1`) are ordinary health data, while a `failed`, `cancelled`, or `help`
-child outcome is owned by status and becomes a status command failure or cancellation. No dashboard or JSON document is rendered in that
-case, so status never reports a fabricated "unavailable" health section for a broken doctor. The five collector sections
-(`workspaces`, `nxEdges`, `git`, `security`, `disk`) remain individually degradation-tolerant and may still be `null`.
+Status is Effect-native too. [`commands/status/index.ts`](./commands/status/index.ts) `collectStatus` requires only
+`StatusRequirements = DoctorRequirements | Inspection` (the same read-only profile) and composes `runDoctor({quick: true, verbose: false})`
+as a plain effect in the same concurrent batch as its collectors (`Effect.all(…, {concurrency: "unbounded"})`), never as a subprocess or
+a legacy child command. Both programs request the identical quick session from the invocation's `Inspection` service, so every inspection
+provider runs at most once per `status` run (each provider run is traced as one `inspection.<key>` span, which the status tests count).
+Health is the one status section that is **not** degradation-tolerant: passing and failing doctor reports are ordinary health data (status
+always exits `0` on completion), while a doctor defect fails the status run, so status never reports a fabricated "unavailable" health
+section for a broken doctor. The five collector sections (`workspaces`, `nxEdges`, `git`, `security`, `disk`) remain individually
+degradation-tolerant: an unavailable result or a collector defect maps that section to `null`. [`commands/status/cli.ts`](./commands/status/cli.ts)
+has no input: with the global `--json` it writes the document as the single JSON document; otherwise it renders the dashboard, whose header
+alone adds the `<node> --version` probe.
 
 ### Doctor test commands
 
@@ -574,7 +578,7 @@ Focused validation for doctor, its reporter, every specialist module, and `comma
 
 ```powershell
 npx vitest run --config scripts\vitest.config.ts --coverage.enabled=false scripts\commands\doctor scripts\commands\status scripts\common\runtime-boundary.test.ts
-npx eslint scripts\commands\doctor scripts\commands\status\index.ts scripts\common\taxonomy-artifacts.ts
+npx eslint scripts\commands\doctor scripts\commands\status scripts\common\taxonomy-artifacts.ts
 git --no-pager diff --check
 ```
 

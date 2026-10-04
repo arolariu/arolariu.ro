@@ -43,7 +43,7 @@ export function timed<T, E, R>(body: Effect.Effect<InspectionOutcome<T>, E, R>):
  * The first `inspect(key)` registers its `Deferred` and forks the provider into the session scope in
  * one uninterruptible step, so concurrent callers await the same `Deferred` and the provider runs
  * once; interrupting a waiter never interrupts the shared provider, which is interrupted only when
- * the session scope closes. Each provider run gets its own scope, and its `durationMs` is the
+ * the session scope closes. Each provider run gets its own scope and an `inspection.<key>` span, and its `durationMs` is the
  * elapsed `Clock.currentTimeMillis` of that run. A provider defect (or interruption) is delivered to
  * every waiter and evicts its own entry, so a later `inspect` retries; `invalidate` removes the
  * entries for its keys, and an in-flight run still completes its `Deferred` for the callers
@@ -61,7 +61,7 @@ export function createInspectionSession<TFacts extends object>(
     const cache = new Map<keyof TFacts, Deferred.Deferred<InspectionOutcome<unknown>>>();
 
     const measured = <Key extends keyof TFacts>(key: Key): Effect.Effect<InspectionOutcome<TFacts[Key]>> =>
-      timed(Effect.scoped(providers[key])).pipe(Effect.provideContext(context));
+      timed(Effect.scoped(providers[key])).pipe(Effect.withSpan(`inspection.${String(key)}`), Effect.provideContext(context));
 
     const inspect = <Key extends keyof TFacts>(key: Key): Effect.Effect<InspectionOutcome<TFacts[Key]>> =>
       Effect.uninterruptibleMask((restore) =>

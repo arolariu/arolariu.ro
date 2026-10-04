@@ -4,7 +4,7 @@
  * @module scripts/inspection/session.test
  */
 
-import {Deferred, Duration, Effect, Exit, Fiber, Scope} from "effect";
+import {Deferred, Duration, Effect, Exit, Fiber, Scope, Tracer} from "effect";
 import {TestClock} from "effect/testing";
 import {describe, expect, it} from "vitest";
 
@@ -42,6 +42,30 @@ function countingProvider(value: number, delayMs = 0): {readonly provider: Inspe
 }
 
 describe("createInspectionSession", () => {
+  effectTest(
+    "traces each provider run as one inspection.<key> span",
+    () =>
+      Effect.gen(function* () {
+        // Arrange
+        const spans: string[] = [];
+        const tracer = Tracer.make({
+          span: (options) => {
+            spans.push(options.name);
+            return new Tracer.NativeSpan(options);
+          },
+        });
+        const session = yield* createInspectionSession<TestFacts>({a: countingProvider(1).provider, b: unusedProvider});
+
+        // Act
+        yield* Effect.all([session.inspect("a"), session.inspect("a"), session.inspect("b")], {concurrency: "unbounded"}).pipe(
+          Effect.withTracer(tracer),
+        );
+
+        // Assert
+        expect(spans.filter((name) => name.startsWith("inspection.")).toSorted()).toEqual(["inspection.a", "inspection.b"]);
+      }),
+    makeTestLayer().layer,
+  );
   effectTest(
     "runs a provider once for concurrent inspections",
     () =>

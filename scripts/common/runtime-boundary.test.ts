@@ -164,6 +164,7 @@ const doctorForbiddenModules: ReadonlySet<string> = new Set([
   "./common/runtime.node.ts",
   "./common/runner.execa.ts",
   "effect/FileSystem",
+  "./platform/Prompts.ts",
 ]);
 
 /**
@@ -960,13 +961,14 @@ function scanDoctorCapabilitySource(file: string, sourceText: string): readonly 
 }
 
 /**
- * Scans the Doctor production surface for capabilities wider than read-only and opaque probes.
+ * Scans the Doctor and Status production surface (both share the read-only profile) for capabilities
+ * wider than read-only and opaque probes.
  *
- * @returns Every forbidden Doctor capability import.
+ * @returns Every forbidden Doctor or Status capability import.
  */
 function scanDoctorCapabilities(): readonly DoctorCapabilityViolation[] {
   return discoverProductionScripts()
-    .filter((file) => /^scripts\/commands\/doctor\/(?!cli\.ts$)[\w./-]*\.ts$/.test(file))
+    .filter((file) => /^scripts\/commands\/(?:doctor|status)\/(?!cli\.ts$)[\w./-]*\.ts$/.test(file))
     .flatMap((file) => scanDoctorCapabilitySource(file, readFileSync(file, "utf8")));
 }
 
@@ -1446,7 +1448,7 @@ describe("runtime boundary policy", () => {
     ]);
   });
 
-  it("keeps doctor modules on read-only and opaque capabilities", () => {
+  it("keeps doctor and status modules on read-only and opaque capabilities", () => {
     expect(scanDoctorCapabilities()).toEqual([]);
   });
 
