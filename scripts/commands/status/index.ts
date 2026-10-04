@@ -46,11 +46,11 @@ import {
   type CommandExecution,
   type CommandInvoker,
   type CommandRuntimeFactory,
-} from "./common/commander.ts";
-import {formatBytes} from "./common/index.ts";
-import type {LogSegment, MonorepositoryLogger} from "./common/logger.ts";
-import {resolveRepositoryPaths, type RepositoryPaths} from "./common/repository-paths.ts";
-import type {ProcessOutcome, ProcessRequest, ProcessRunner} from "./common/runner.ts";
+} from "../../common/commander.ts";
+import {formatBytes} from "../../common/index.ts";
+import type {LogSegment, MonorepositoryLogger} from "../../common/logger.ts";
+import {resolveRepositoryPaths, type RepositoryPaths} from "../../common/repository-paths.ts";
+import type {ProcessOutcome, ProcessRequest, ProcessRunner} from "../../common/runner.ts";
 import {
   asReadOnlyFileSystem,
   CommandCancellation,
@@ -58,10 +58,10 @@ import {
   type ReadOnlyFileSystem,
   type RepositoryInspectionRequest,
   type TaskScheduler,
-} from "./common/runtime.ts";
-import {doctorCommand} from "./doctor.ts";
-import type {DoctorInput, DoctorReport, DoctorSummary} from "./doctor.types.ts";
-import type {RepositoryInspectionSession} from "./inspection/repository.ts";
+} from "../../common/runtime.ts";
+import {doctorCommand} from "../doctor/index.ts";
+import type {DoctorInput, DoctorReport, DoctorSummary} from "../doctor/types.ts";
+import type {RepositoryInspectionSession} from "../../inspection/repository.ts";
 
 // ============================================================================
 // Types

@@ -11,11 +11,11 @@
  * no diagnostic ever fabricates a healthy value from missing facts.
  */
 
-import {boundEvidence, diagnosticResult, skippedDiagnostic, STANDARD_EVIDENCE_LIMIT} from "./doctor.diagnostics.ts";
-import {satisfiesMinimum, type MinimumVersion} from "./common/requirements.ts";
-import type {DiagnosticFix, DiagnosticModule, DiagnosticPotentialCause, DiagnosticResult, DoctorContext} from "./doctor.types.ts";
-import type {SvelteFacts, SvelteProjectId} from "./inspection/frontend.ts";
-import type {InspectionOutcome} from "./inspection/types.ts";
+import {boundEvidence, diagnosticResult, skippedDiagnostic, STANDARD_EVIDENCE_LIMIT} from "../diagnostics.ts";
+import {satisfiesMinimum, type MinimumVersion} from "../../../common/requirements.ts";
+import type {DiagnosticFix, DiagnosticModule, DiagnosticPotentialCause, DiagnosticResult, DoctorContext} from "../types.ts";
+import type {SvelteFacts, SvelteProjectId} from "../../../inspection/frontend.ts";
+import type {InspectionOutcome} from "../../../inspection/types.ts";
 
 const SITE_ENGINE_PATTERN = /^>=(0|[1-9]\d*)(?:\.(0|[1-9]\d*))?$/u;
 

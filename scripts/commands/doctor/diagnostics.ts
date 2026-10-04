@@ -9,7 +9,7 @@
 
 import {stripVTControlCharacters} from "node:util";
 
-import type {DiagnosticFix, DiagnosticModuleId, DiagnosticPotentialCause, DiagnosticResult, DiagnosticStatus} from "./doctor.types.ts";
+import type {DiagnosticFix, DiagnosticModuleId, DiagnosticPotentialCause, DiagnosticResult, DiagnosticStatus} from "./types.ts";
 
 // ============================================================================
 // Evidence bounding constants

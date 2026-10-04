@@ -3,12 +3,12 @@
  * @module scripts/doctor.types
  */
 
-import type {MonorepositoryLogger} from "./common/logger.ts";
-import type {RepositoryPaths} from "./common/repository-paths.ts";
-import type {RequirementLoadResult} from "./common/requirements.ts";
-import type {Clock, ReadOnlyFileSystem, RuntimeEnvironment} from "./common/runtime.ts";
-import type {InspectionProbeRunner} from "./inspection/probes.ts";
-import type {RepositoryInspectionKey, RepositoryInspectionSession} from "./inspection/repository.ts";
+import type {MonorepositoryLogger} from "../../common/logger.ts";
+import type {RepositoryPaths} from "../../common/repository-paths.ts";
+import type {RequirementLoadResult} from "../../common/requirements.ts";
+import type {Clock, ReadOnlyFileSystem, RuntimeEnvironment} from "../../common/runtime.ts";
+import type {InspectionProbeRunner} from "../../inspection/probes.ts";
+import type {RepositoryInspectionKey, RepositoryInspectionSession} from "../../inspection/repository.ts";
 
 /** One bounded timeout applied to network probes that do not supply one explicitly. */
 export const DIAGNOSTIC_DEFAULT_TIMEOUT_MS = 15_000;
@@ -139,4 +139,4 @@ export interface DiagnosticModule {
 
 // Re-export diagnostic helpers from doctor.diagnostics.ts to avoid broad import churn
 // in specialist modules that still import from this file.
-export {diagnosticResult, skippedDiagnostic} from "./doctor.diagnostics.ts";
+export {diagnosticResult, skippedDiagnostic} from "./diagnostics.ts";

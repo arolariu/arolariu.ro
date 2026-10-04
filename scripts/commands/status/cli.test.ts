@@ -15,7 +15,7 @@ import {makeRootCommand, runCli} from "../../cli.ts";
 import type {CommandInvoker, CommandPresentation} from "../../common/commander.ts";
 import {exitCodeFor, type CommandExitCode} from "../../platform/exit.ts";
 import {makeTestLayer} from "../../platform/testing.ts";
-import type {StatusInput} from "../../status.ts";
+import type {StatusInput} from "./index.ts";
 import {makeStatusCommand} from "./cli.ts";
 
 /** One recorded legacy invocation. */

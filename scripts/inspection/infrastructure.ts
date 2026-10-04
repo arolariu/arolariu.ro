@@ -92,7 +92,7 @@ class InfrastructureInspectionFailure extends Error {
   }
 }
 
-/** Approved repository container names; matches `doctor.infrastructure.ts`'s known-container list. */
+/** Approved repository container names; matches `commands/doctor/modules/infrastructure.ts`'s known-container list. */
 const KNOWN_LOCAL_CONTAINER_NAMES: ReadonlySet<string> = new Set([
   "traefik",
   "mssql",

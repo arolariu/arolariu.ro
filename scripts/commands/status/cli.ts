@@ -12,7 +12,7 @@ import {Command} from "effect/cli";
 
 import type {CliSubcommand} from "../../cli.ts";
 import type {CommandInvoker} from "../../common/commander.ts";
-import {statusCommand, type StatusInput} from "../../status.ts";
+import {statusCommand, type StatusInput} from "./index.ts";
 import {JsonFlag, withCommandOutput} from "../flags.ts";
 import {runLegacy} from "../legacy.ts";
 

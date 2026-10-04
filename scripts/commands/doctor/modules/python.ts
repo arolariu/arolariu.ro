@@ -11,7 +11,7 @@
  * diagnostic ever fabricates a healthy value from missing facts.
  */
 
-import {boundEvidence, diagnosticResult, STANDARD_EVIDENCE_LIMIT} from "./doctor.diagnostics.ts";
+import {boundEvidence, diagnosticResult, STANDARD_EVIDENCE_LIMIT} from "../diagnostics.ts";
 import {
   DIAGNOSTIC_DEFAULT_TIMEOUT_MS,
   skippedDiagnostic,
@@ -20,9 +20,9 @@ import {
   type DiagnosticPotentialCause,
   type DiagnosticResult,
   type DoctorContext,
-} from "./doctor.types.ts";
-import type {PythonFacts} from "./inspection/python.ts";
-import type {InspectionOutcome} from "./inspection/types.ts";
+} from "../types.ts";
+import type {PythonFacts} from "../../../inspection/python.ts";
+import type {InspectionOutcome} from "../../../inspection/types.ts";
 
 const PYPI_PIP_INDEX_URL = new URL("https://pypi.org/pypi/pip/json");
 const SETUP_COMMAND_HINT = "npm run setup";

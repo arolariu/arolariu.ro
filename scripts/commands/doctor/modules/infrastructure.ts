@@ -18,10 +18,10 @@
  * independently diagnosable.
  */
 
-import {readToolingConfig} from "./common/tooling-config.ts";
-import {resolveContainerEngine} from "./container-runtime/selection.ts";
-import {ContainerRuntimeError, type ContainerEngine} from "./container-runtime/types.ts";
-import {boundEvidence, diagnosticResult} from "./doctor.diagnostics.ts";
+import {readToolingConfig} from "../../../common/tooling-config.ts";
+import {resolveContainerEngine} from "../../../container-runtime/selection.ts";
+import {ContainerRuntimeError, type ContainerEngine} from "../../../container-runtime/types.ts";
+import {boundEvidence, diagnosticResult} from "../diagnostics.ts";
 import {
   skippedDiagnostic,
   type DiagnosticFix,
@@ -29,9 +29,9 @@ import {
   type DiagnosticPotentialCause,
   type DiagnosticResult,
   type DoctorContext,
-} from "./doctor.types.ts";
-import type {InfrastructureFacts} from "./inspection/infrastructure.ts";
-import type {InspectionOutcome} from "./inspection/types.ts";
+} from "../types.ts";
+import type {InfrastructureFacts} from "../../../inspection/infrastructure.ts";
+import type {InspectionOutcome} from "../../../inspection/types.ts";
 
 function engineLabel(engine: ContainerEngine): string {
   return engine === "rancher" ? "Rancher Desktop" : "Podman Desktop";

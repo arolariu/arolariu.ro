@@ -18,22 +18,22 @@ import {basename, dirname, join, resolve} from "node:path";
 import {fileURLToPath} from "node:url";
 import {afterEach, describe, expect, it, vi, type Mock} from "vitest";
 
-import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "./common/logger.ts";
-import type {ProcessOutcome} from "./common/runner.ts";
-import {createRepositoryPaths} from "./common/repository-paths.ts";
-import type {RepositoryRequirements} from "./common/requirements.ts";
-import {asReadOnlyFileSystem, FileSystemError, type Clock, type ReadOnlyFileSystem, type RuntimeEnvironment} from "./common/runtime.ts";
-import {nodeFileSystem} from "./common/runtime.node.ts";
-import {getExpectedTaxonomyArtifactPaths} from "./common/taxonomy-artifacts.ts";
-import {createDoctorReport} from "./doctor.reporter.ts";
-import {workspaceDoctorModule} from "./doctor.workspace.ts";
-import type {DiagnosticNetworkResult, DiagnosticResult, DoctorContext, DoctorInput} from "./doctor.types.ts";
-import type {InspectionProbe, InspectionProbeRunner} from "./inspection/probes.ts";
-import type {RepositoryInspectionSession} from "./inspection/repository.ts";
-import type {InspectionOutcome} from "./inspection/types.ts";
-import type {NpmTreeFacts, NpmProblemFact} from "./inspection/packages.ts";
-import type {WorkspaceFacts} from "./inspection/workspace.ts";
-import type {AggregateFacts} from "./inspection/aggregate.ts";
+import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "../../../common/logger.ts";
+import type {ProcessOutcome} from "../../../common/runner.ts";
+import {createRepositoryPaths} from "../../../common/repository-paths.ts";
+import type {RepositoryRequirements} from "../../../common/requirements.ts";
+import {asReadOnlyFileSystem, FileSystemError, type Clock, type ReadOnlyFileSystem, type RuntimeEnvironment} from "../../../common/runtime.ts";
+import {nodeFileSystem} from "../../../common/runtime.node.ts";
+import {getExpectedTaxonomyArtifactPaths} from "../../../common/taxonomy-artifacts.ts";
+import {createDoctorReport} from "../reporter.ts";
+import {workspaceDoctorModule} from "./workspace.ts";
+import type {DiagnosticNetworkResult, DiagnosticResult, DoctorContext, DoctorInput} from "../types.ts";
+import type {InspectionProbe, InspectionProbeRunner} from "../../../inspection/probes.ts";
+import type {RepositoryInspectionSession} from "../../../inspection/repository.ts";
+import type {InspectionOutcome} from "../../../inspection/types.ts";
+import type {NpmTreeFacts, NpmProblemFact} from "../../../inspection/packages.ts";
+import type {WorkspaceFacts} from "../../../inspection/workspace.ts";
+import type {AggregateFacts} from "../../../inspection/aggregate.ts";
 
 const fixtureRoots: string[] = [];
 const moduleDirectory = dirname(fileURLToPath(import.meta.url));
@@ -807,7 +807,7 @@ describe("workspaceDoctorModule", () => {
   });
 
   it("never imports CommandSpec or calls context.runner", async () => {
-    const source = await readFile(resolve(moduleDirectory, "doctor.workspace.ts"), "utf8");
+    const source = await readFile(resolve(moduleDirectory, "workspace.ts"), "utf8");
     const code = stripComments(source);
 
     expect(code).not.toContain("context.runner");

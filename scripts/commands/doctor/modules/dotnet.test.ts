@@ -16,17 +16,17 @@ import {readFileSync} from "node:fs";
 import {resolve} from "node:path";
 import {afterEach, describe, expect, it, vi, type Mock} from "vitest";
 
-import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "./common/logger.ts";
-import {createRepositoryPaths} from "./common/repository-paths.ts";
-import type {RepositoryRequirements} from "./common/requirements.ts";
-import {asReadOnlyFileSystem, type Clock, type RuntimeEnvironment} from "./common/runtime.ts";
-import {createMemoryFileSystem} from "./common/runtime.testing.ts";
-import {dotnetDoctorModule} from "./doctor.dotnet.ts";
-import {createDoctorReport} from "./doctor.reporter.ts";
-import type {DiagnosticNetworkResult, DiagnosticResult, DoctorContext, DoctorInput} from "./doctor.types.ts";
-import type {DotnetFacts} from "./inspection/dotnet.ts";
-import type {RepositoryInspectionSession} from "./inspection/repository.ts";
-import type {InspectionOutcome} from "./inspection/types.ts";
+import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "../../../common/logger.ts";
+import {createRepositoryPaths} from "../../../common/repository-paths.ts";
+import type {RepositoryRequirements} from "../../../common/requirements.ts";
+import {asReadOnlyFileSystem, type Clock, type RuntimeEnvironment} from "../../../common/runtime.ts";
+import {createMemoryFileSystem} from "../../../common/runtime.testing.ts";
+import {dotnetDoctorModule} from "./dotnet.ts";
+import {createDoctorReport} from "../reporter.ts";
+import type {DiagnosticNetworkResult, DiagnosticResult, DoctorContext, DoctorInput} from "../types.ts";
+import type {DotnetFacts} from "../../../inspection/dotnet.ts";
+import type {RepositoryInspectionSession} from "../../../inspection/repository.ts";
+import type {InspectionOutcome} from "../../../inspection/types.ts";
 
 const DOTNET_IDS = [
   "dotnet.executable",
@@ -187,7 +187,7 @@ function stripComments(source: string): string {
 }
 
 describe("source guards", () => {
-  const source = stripComments(readFileSync(resolve(process.cwd(), "scripts", "doctor.dotnet.ts"), "utf8"));
+  const source = stripComments(readFileSync(resolve(process.cwd(), "scripts", "commands", "doctor", "modules", "dotnet.ts"), "utf8"));
 
   it("never touches context.runner", () => {
     expect(source).not.toMatch(/context\.runner/u);

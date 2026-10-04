@@ -11,9 +11,9 @@ import type {
   DoctorInput,
   DoctorReport,
   DoctorSummary,
-} from "./doctor.types.ts";
-import {boundEvidence} from "./doctor.diagnostics.ts";
-import type {MonorepositoryLogger} from "./common/logger.ts";
+} from "./types.ts";
+import {boundEvidence} from "./diagnostics.ts";
+import type {MonorepositoryLogger} from "../../common/logger.ts";
 
 type UnknownRecord = Readonly<Record<string, unknown>>;
 

@@ -1,7 +1,7 @@
 import {describe, expect, it} from "vitest";
 
-import {InMemoryLoggerSink, MonorepositoryConsoleLogger, type MonorepositoryLogger} from "./common/logger.ts";
-import type {DiagnosticResult, DoctorReport, DoctorInput} from "./doctor.types.ts";
+import {InMemoryLoggerSink, MonorepositoryConsoleLogger, type MonorepositoryLogger} from "../../common/logger.ts";
+import type {DiagnosticResult, DoctorReport, DoctorInput} from "./types.ts";
 import {
   computeHealthScore,
   createDoctorReport,
@@ -9,7 +9,7 @@ import {
   gradeFromScore,
   renderDoctorReport,
   summarizeDiagnostics,
-} from "./doctor.reporter.ts";
+} from "./reporter.ts";
 
 const stableDiagnosticIds = [
   "workspace.repository-root",

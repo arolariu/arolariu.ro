@@ -9,17 +9,17 @@ import {tmpdir} from "node:os";
 import {dirname, join, resolve} from "node:path";
 import {afterEach, describe, expect, it, vi} from "vitest";
 
-import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "./common/logger.ts";
-import {createRepositoryPaths} from "./common/repository-paths.ts";
-import type {RepositoryRequirements} from "./common/requirements.ts";
-import {asReadOnlyFileSystem, type Clock, type RuntimeEnvironment} from "./common/runtime.ts";
-import {nodeFileSystem} from "./common/runtime.node.ts";
-import {infrastructureDoctorModule} from "./doctor.infrastructure.ts";
-import {createDoctorReport} from "./doctor.reporter.ts";
-import {type DiagnosticNetworkResult, type DoctorContext, type DoctorInput} from "./doctor.types.ts";
-import type {InfrastructureFacts} from "./inspection/infrastructure.ts";
-import type {RepositoryInspectionSession} from "./inspection/repository.ts";
-import type {InspectionOutcome} from "./inspection/types.ts";
+import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "../../../common/logger.ts";
+import {createRepositoryPaths} from "../../../common/repository-paths.ts";
+import type {RepositoryRequirements} from "../../../common/requirements.ts";
+import {asReadOnlyFileSystem, type Clock, type RuntimeEnvironment} from "../../../common/runtime.ts";
+import {nodeFileSystem} from "../../../common/runtime.node.ts";
+import {infrastructureDoctorModule} from "./infrastructure.ts";
+import {createDoctorReport} from "../reporter.ts";
+import {type DiagnosticNetworkResult, type DoctorContext, type DoctorInput} from "../types.ts";
+import type {InfrastructureFacts} from "../../../inspection/infrastructure.ts";
+import type {RepositoryInspectionSession} from "../../../inspection/repository.ts";
+import type {InspectionOutcome} from "../../../inspection/types.ts";
 
 const fixtureRoots: string[] = [];
 

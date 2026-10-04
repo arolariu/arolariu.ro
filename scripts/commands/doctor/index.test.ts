@@ -16,8 +16,8 @@ const {renderDoctorReportMock} = vi.hoisted(() => ({
   renderDoctorReportMock: vi.fn(),
 }));
 
-vi.mock("./doctor.reporter.ts", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("./doctor.reporter.ts")>();
+vi.mock("./reporter.ts", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("./reporter.ts")>();
   renderDoctorReportMock.mockImplementation(actual.renderDoctorReport);
   return {
     ...actual,
@@ -25,14 +25,14 @@ vi.mock("./doctor.reporter.ts", async (importOriginal) => {
   };
 });
 
-import type {CommandExecution, CommandRuntimeFactory} from "./common/commander.ts";
-import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "./common/logger.ts";
+import type {CommandExecution, CommandRuntimeFactory} from "../../common/commander.ts";
+import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "../../common/logger.ts";
 import {
   createHttpResponse,
   createRepositoryFixtureFileSystem,
   createTestRuntimeFactory,
   repositoryFixtureRoot,
-} from "./common/runtime.testing.ts";
+} from "../../common/runtime.testing.ts";
 import {
   HttpError,
   type Clock,
@@ -41,12 +41,12 @@ import {
   type HttpRequest,
   type RepositoryInspectionRequest,
   type RepositoryInspectionRuntime,
-} from "./common/runtime.ts";
-import {computeHealthScore, diagnosticWeights} from "./doctor.reporter.ts";
-import {createBoundedNetworkProbe, createDoctorCommand, doctorModules} from "./doctor.ts";
-import type {DiagnosticModule, DiagnosticModuleId, DiagnosticResult, DoctorContext, DoctorInput, DoctorReport} from "./doctor.types.ts";
-import type {RepositoryInspectionKey, RepositoryInspectionSession} from "./inspection/repository.ts";
-import type {InspectionOutcome} from "./inspection/types.ts";
+} from "../../common/runtime.ts";
+import {computeHealthScore, diagnosticWeights} from "./reporter.ts";
+import {createBoundedNetworkProbe, createDoctorCommand, doctorModules} from "./index.ts";
+import type {DiagnosticModule, DiagnosticModuleId, DiagnosticResult, DoctorContext, DoctorInput, DoctorReport} from "./types.ts";
+import type {RepositoryInspectionKey, RepositoryInspectionSession} from "../../inspection/repository.ts";
+import type {InspectionOutcome} from "../../inspection/types.ts";
 
 const expectedModuleOrder: readonly DiagnosticModuleId[] = ["workspace", "dotnet", "react", "svelte", "python", "infrastructure"];
 
@@ -743,7 +743,7 @@ describe("doctor characterization (legacy baseline for the effect migration)", (
   // `mockReset` clears the hoisted reporter spy's delegation before each test, so restore the real
   // renderer: these tests pin the exact human output, not a call count.
   beforeEach(async () => {
-    const actual = await vi.importActual<typeof import("./doctor.reporter.ts")>("./doctor.reporter.ts");
+    const actual = await vi.importActual<typeof import("./reporter.ts")>("./reporter.ts");
     renderDoctorReportMock.mockImplementation(actual.renderDoctorReport);
   });
 

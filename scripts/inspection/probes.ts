@@ -313,8 +313,8 @@ function validateTcpPorts(ports: readonly number[]): readonly number[] {
 /**
  * Python interpreter metadata probe script.
  *
- * Duplicated verbatim from `doctor.types.ts`'s `PYTHON_INTERPRETER_METADATA_SNIPPET` (itself
- * duplicated again in `doctor.python.ts`). This inspection registry intentionally does not import
+ * Duplicated verbatim from `commands/doctor/types.ts`'s `PYTHON_INTERPRETER_METADATA_SNIPPET` (itself
+ * duplicated again in `commands/doctor/modules/python.ts`). This inspection registry intentionally does not import
  * from doctor-policy modules, matching that established repository precedent of verbatim script
  * duplication rather than a cross-module import.
  */
@@ -324,7 +324,7 @@ const PYTHON_METADATA_PROBE_SCRIPT =
 /**
  * Windows read-only port-owner probe script.
  *
- * Duplicated verbatim from the private script embedded in `doctor.types.ts`'s port-owner probe
+ * Duplicated verbatim from the private script embedded in `commands/doctor/types.ts`'s port-owner probe
  * builder, for the same reason as {@link PYTHON_METADATA_PROBE_SCRIPT}.
  */
 const WINDOWS_PORT_OWNER_PROBE_SCRIPT = [

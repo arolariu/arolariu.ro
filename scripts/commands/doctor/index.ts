@@ -33,9 +33,9 @@
  * ```
  */
 
-import {MonorepoCommand, toJsonValue, type CommandContext, type CommandRuntimeFactory} from "./common/commander.ts";
-import {loadRepositoryRequirements} from "./common/requirements.ts";
-import {resolveRepositoryPaths} from "./common/repository-paths.ts";
+import {MonorepoCommand, toJsonValue, type CommandContext, type CommandRuntimeFactory} from "../../common/commander.ts";
+import {loadRepositoryRequirements} from "../../common/requirements.ts";
+import {resolveRepositoryPaths} from "../../common/repository-paths.ts";
 import {
   asGetOnlyHttpClient,
   asReadOnlyFileSystem,
@@ -44,17 +44,17 @@ import {
   type CommandRuntime,
   type GetOnlyHttpClient,
   type RepositoryInspectionRequest,
-} from "./common/runtime.ts";
-import {normalizeErrorForReport, diagnosticResult} from "./doctor.diagnostics.ts";
-import {renderDoctorReport, createDoctorReport} from "./doctor.reporter.ts";
-import {createInspectionProbeRunner, type InspectionProbeRunner} from "./inspection/probes.ts";
-import type {RepositoryInspectionKey, RepositoryInspectionSession} from "./inspection/repository.ts";
-import {dotnetDoctorModule} from "./doctor.dotnet.ts";
-import {infrastructureDoctorModule} from "./doctor.infrastructure.ts";
-import {pythonDoctorModule} from "./doctor.python.ts";
-import {reactDoctorModule} from "./doctor.react.ts";
-import {svelteDoctorModule} from "./doctor.svelte.ts";
-import {workspaceDoctorModule} from "./doctor.workspace.ts";
+} from "../../common/runtime.ts";
+import {normalizeErrorForReport, diagnosticResult} from "./diagnostics.ts";
+import {renderDoctorReport, createDoctorReport} from "./reporter.ts";
+import {createInspectionProbeRunner, type InspectionProbeRunner} from "../../inspection/probes.ts";
+import type {RepositoryInspectionKey, RepositoryInspectionSession} from "../../inspection/repository.ts";
+import {dotnetDoctorModule} from "./modules/dotnet.ts";
+import {infrastructureDoctorModule} from "./modules/infrastructure.ts";
+import {pythonDoctorModule} from "./modules/python.ts";
+import {reactDoctorModule} from "./modules/react.ts";
+import {svelteDoctorModule} from "./modules/svelte.ts";
+import {workspaceDoctorModule} from "./modules/workspace.ts";
 import type {
   DiagnosticModule,
   DiagnosticNetworkProbe,
@@ -63,9 +63,9 @@ import type {
   DoctorContext,
   DoctorInput,
   DoctorReport,
-} from "./doctor.types.ts";
+} from "./types.ts";
 
-export type {DoctorInput} from "./doctor.types.ts";
+export type {DoctorInput} from "./types.ts";
 
 /** Every doctor diagnostic module in the exact order the command executes and reports them. */
 export const doctorModules: readonly DiagnosticModule[] = [

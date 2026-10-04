@@ -8,6 +8,6 @@
     "./format.ts",
     "./lint.ts",
     "./common/output-policy.test.ts",
-    "./doctor.reporter.test.ts"
+    "./commands/doctor/reporter.test.ts"
   ]
 }

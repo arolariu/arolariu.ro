@@ -11,8 +11,8 @@
  * failure; no diagnostic ever fabricates a healthy value from missing facts.
  */
 
-import {satisfiesMinimum, type MinimumVersion} from "./common/requirements.ts";
-import {boundEvidence, diagnosticResult, STANDARD_EVIDENCE_LIMIT} from "./doctor.diagnostics.ts";
+import {satisfiesMinimum, type MinimumVersion} from "../../../common/requirements.ts";
+import {boundEvidence, diagnosticResult, STANDARD_EVIDENCE_LIMIT} from "../diagnostics.ts";
 import {
   DIAGNOSTIC_DEFAULT_TIMEOUT_MS,
   skippedDiagnostic,
@@ -21,9 +21,9 @@ import {
   type DiagnosticPotentialCause,
   type DiagnosticResult,
   type DoctorContext,
-} from "./doctor.types.ts";
-import type {DotnetFacts} from "./inspection/dotnet.ts";
-import type {InspectionOutcome} from "./inspection/types.ts";
+} from "../types.ts";
+import type {DotnetFacts} from "../../../inspection/dotnet.ts";
+import type {InspectionOutcome} from "../../../inspection/types.ts";
 
 const NUGET_FEED_URL = new URL("https://api.nuget.org/v3/index.json");
 const REQUIRED_LOCAL_TOOL = "defaultdocumentation.console";

@@ -914,20 +914,37 @@ interface DoctorCapabilityViolation {
   readonly name?: string;
 }
 
+/**
+ * Normalizes a relative import specifier to the `./`-prefixed form it would have from `scripts/`,
+ * so the Doctor capability guard matches the same modules wherever a Doctor file is nested.
+ *
+ * @param file - Repository-relative posix path of the importing file.
+ * @param specifier - Import specifier as written in the source.
+ * @returns The specifier rebased onto `scripts/`, or the original bare specifier.
+ */
+function normalizeDoctorSpecifier(file: string, specifier: string): string {
+  if (!specifier.startsWith(".")) {
+    return specifier;
+  }
+
+  return `./${posix.relative("scripts", posix.join(posix.dirname(file), specifier))}`;
+}
+
 function scanDoctorCapabilitySource(file: string, sourceText: string): readonly DoctorCapabilityViolation[] {
   return collectModuleImports(sourceText).flatMap((moduleImport): readonly DoctorCapabilityViolation[] => {
-    if (doctorForbiddenModules.has(moduleImport.specifier)) {
-      return [{file, specifier: moduleImport.specifier}];
+    const specifier = normalizeDoctorSpecifier(file, moduleImport.specifier);
+    if (doctorForbiddenModules.has(specifier)) {
+      return [{file, specifier}];
     }
 
-    const forbiddenNames = doctorForbiddenImportNames.get(moduleImport.specifier);
+    const forbiddenNames = doctorForbiddenImportNames.get(specifier);
     if (forbiddenNames === undefined) {
       return [];
     }
 
     return moduleImport.names
       .filter((name) => name === wholeModuleImportName || forbiddenNames.has(name))
-      .map((name) => ({file, specifier: moduleImport.specifier, name}));
+      .map((name) => ({file, specifier, name}));
   });
 }
 
@@ -938,7 +955,7 @@ function scanDoctorCapabilitySource(file: string, sourceText: string): readonly 
  */
 function scanDoctorCapabilities(): readonly DoctorCapabilityViolation[] {
   return discoverProductionScripts()
-    .filter((file) => /^scripts\/doctor[.\w-]*\.ts$/.test(file))
+    .filter((file) => /^scripts\/commands\/doctor\/(?!cli\.ts$)[\w./-]*\.ts$/.test(file))
     .flatMap((file) => scanDoctorCapabilitySource(file, readFileSync(file, "utf8")));
 }
 
@@ -1410,19 +1427,19 @@ describe("runtime boundary policy", () => {
 
   it("rejects named and whole-module imports that widen Doctor capabilities", () => {
     const source = [
-      'import type {FileSystem, Clock} from "./common/runtime.ts";',
-      'import * as runtime from "./common/runtime.ts";',
-      'import runner from "./common/runner.ts";',
-      'export * from "./common/runner.ts";',
-      'void import("./common/runtime.ts");',
+      'import type {FileSystem, Clock} from "../../common/runtime.ts";',
+      'import * as runtime from "../../common/runtime.ts";',
+      'import runner from "../../common/runner.ts";',
+      'export * from "../../common/runner.ts";',
+      'void import("../../common/runtime.ts");',
     ].join("\n");
 
-    expect(scanDoctorCapabilitySource("scripts/doctor.example.ts", source)).toEqual([
-      {file: "scripts/doctor.example.ts", specifier: "./common/runtime.ts", name: "FileSystem"},
-      {file: "scripts/doctor.example.ts", specifier: "./common/runtime.ts", name: "*"},
-      {file: "scripts/doctor.example.ts", specifier: "./common/runner.ts", name: "*"},
-      {file: "scripts/doctor.example.ts", specifier: "./common/runner.ts", name: "*"},
-      {file: "scripts/doctor.example.ts", specifier: "./common/runtime.ts", name: "*"},
+    expect(scanDoctorCapabilitySource("scripts/commands/doctor/example.ts", source)).toEqual([
+      {file: "scripts/commands/doctor/example.ts", specifier: "./common/runtime.ts", name: "FileSystem"},
+      {file: "scripts/commands/doctor/example.ts", specifier: "./common/runtime.ts", name: "*"},
+      {file: "scripts/commands/doctor/example.ts", specifier: "./common/runner.ts", name: "*"},
+      {file: "scripts/commands/doctor/example.ts", specifier: "./common/runner.ts", name: "*"},
+      {file: "scripts/commands/doctor/example.ts", specifier: "./common/runtime.ts", name: "*"},
     ]);
   });
 

@@ -14,11 +14,11 @@ import {spawn} from "node:child_process";
 import {resolve} from "node:path";
 import {fileURLToPath} from "node:url";
 import {describe, expect, it} from "vitest";
-import {nodeFileSystem} from "./common/runtime.node.ts";
-import {createTestRuntimeFactory} from "./common/runtime.testing.ts";
-import {createDoctorCommand} from "./doctor.ts";
-import type {RepositoryInspectionSession} from "./inspection/repository.ts";
-import type {InspectionOutcome} from "./inspection/types.ts";
+import {nodeFileSystem} from "../../common/runtime.node.ts";
+import {createTestRuntimeFactory} from "../../common/runtime.testing.ts";
+import {createDoctorCommand} from "./index.ts";
+import type {RepositoryInspectionSession} from "../../inspection/repository.ts";
+import type {InspectionOutcome} from "../../inspection/types.ts";
 
 // ===== Bounded filesystem snapshot =====
 
@@ -82,7 +82,7 @@ describe("doctor runtime immutability", () => {
     const arolaruExistedBefore = existsSync(arolaruPath);
     const snapshotBefore = snapshotSentinelFiles(root);
 
-    const entrypoint = fileURLToPath(new URL("./cli.ts", import.meta.url));
+    const entrypoint = fileURLToPath(new URL("../../cli.ts", import.meta.url));
     const {exitCode, signal, stdout, stderr} = await new Promise<{
       exitCode: number | null;
       signal: NodeJS.Signals | null;

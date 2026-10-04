@@ -12,8 +12,8 @@ import {Command, Flag} from "effect/cli";
 
 import type {CliSubcommand} from "../../cli.ts";
 import type {CommandInvoker} from "../../common/commander.ts";
-import {doctorCommand} from "../../doctor.ts";
-import type {DoctorInput} from "../../doctor.types.ts";
+import {doctorCommand} from "./index.ts";
+import type {DoctorInput} from "./types.ts";
 import {VerboseFlag, withCommandOutput} from "../flags.ts";
 import {runLegacy} from "../legacy.ts";
 

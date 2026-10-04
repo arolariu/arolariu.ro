@@ -19,9 +19,9 @@ import {
   VERBOSE_EVIDENCE_LIMIT,
   EVIDENCE_ENTRY_MAX_CHARS,
   COMMAND_EXCERPT_MAX_CHARS,
-} from "./doctor.diagnostics.ts";
-import {createDoctorReport} from "./doctor.reporter.ts";
-import type {DiagnosticResult} from "./doctor.types.ts";
+} from "./diagnostics.ts";
+import {createDoctorReport} from "./reporter.ts";
+import type {DiagnosticResult} from "./types.ts";
 
 // ============================================================================
 // Evidence bounding constants

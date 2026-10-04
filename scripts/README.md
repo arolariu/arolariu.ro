@@ -161,7 +161,7 @@ Only [`cli.ts`](./cli.ts), [`format.ts`](./format.ts), [`lint.ts`](./lint.ts), a
 start a process. Each worker decodes its argv with `decodeWorkerArgs`, calls `invoke(..., {presentation: "json"})` inside an
 `import.meta.main` block, and assigns the returned exit code. No script calls `process.exit()`.
 
-`invoke()` is also how commands compose. `status.ts` runs doctor as a typed child (`doctorCommand.invoke({quick: true, verbose: false},
+`invoke()` is also how commands compose. `commands/status/index.ts` runs doctor as a typed child (`doctorCommand.invoke({quick: true, verbose: false},
 {parent: context, presentation: "silent"})`) rather than spawning a sibling process or parsing JSON.
 
 #### Invocation outcomes
@@ -348,8 +348,8 @@ configuration provides immediate feedback for direct output syntax. Direct conso
 sinks, while injected `output.write(...)` prompt presentation stays confined to the prompt adapter. No exemption includes a script entry
 point.
 
-Every production script under root `scripts/**` — including [`setup.ts`](./setup.ts), [`doctor.ts`](./doctor.ts), and
-[`status.ts`](./status.ts) — routes its presentation and semantic output through `MonorepositoryConsoleLogger`. There are no remaining
+Every production script under root `scripts/**` — including [`setup.ts`](./setup.ts), [`commands/doctor/index.ts`](./commands/doctor/index.ts), and
+[`commands/status/index.ts`](./commands/status/index.ts) — routes its presentation and semantic output through `MonorepositoryConsoleLogger`. There are no remaining
 transitional setup/doctor/status exceptions.
 
 ## Generate, rates, and docs (Effect-native)
@@ -465,11 +465,11 @@ git --no-pager diff --check
 
 The full root-tooling suite in [Targeted validation](#targeted-validation) below includes these setup and shared-dependency test files
 too; it exercises every common, setup, doctor, inspection, container-runtime, and worker test file under `scripts/`. Doctor, its reporter
-and specialist modules, and `status.ts` also have a narrower focused command in [Doctor test commands](#doctor-test-commands).
+and specialist modules, and `commands/status/index.ts` also have a narrower focused command in [Doctor test commands](#doctor-test-commands).
 
 ## Doctor diagnostics (`npm run doctor`)
 
-`npm run doctor` runs `arolariu doctor` (`--quick`, plus the global `--json`, `--verbose`, and `--help` flags); [`doctor.ts`](./doctor.ts)
+`npm run doctor` runs `arolariu doctor` (`--quick`, plus the global `--json`, `--verbose`, and `--help` flags); [`commands/doctor/index.ts`](./commands/doctor/index.ts)
 owns the command. It resolves canonical repository paths and manifest-derived requirements through injected runtime
 capabilities, obtains one shared repository inspection session, then runs every bounded-context module concurrently through the runtime
 task scheduler, flattening their results back into a fixed rendering order. Every specialist module receives only read-only capabilities
@@ -483,19 +483,19 @@ container-engine client/cache state outside that boundary.
 
 | Module | Owns |
 |--------|------|
-| [`doctor.ts`](./doctor.ts) | Command definition (presentation), module orchestration/ordering, and the exit-code rollup; [`commands/doctor/cli.ts`](./commands/doctor/cli.ts) parses its flags |
-| [`doctor.types.ts`](./doctor.types.ts) | Shared `DiagnosticResult`/`DoctorContext`/`DoctorInput` contracts and diagnostic-result helpers |
-| [`doctor.reporter.ts`](./doctor.reporter.ts) | Stable per-check score weights, schema-v1 validation (`createDoctorReport`), and human rendering |
-| [`doctor.workspace.ts`](./doctor.workspace.ts) | Repository root, git, Node/npm runtime, dependency trees, Nx workspace graph (read from repository metadata, see below), config files, generated artifacts, host capacity, npm audit/outdated |
-| [`doctor.dotnet.ts`](./doctor.dotnet.ts) | .NET SDK/host/workloads, NuGet state, solution, local tools, HTTPS certificate trust, AppHost configuration and required local parameters, NuGet feed reachability |
-| [`doctor.react.ts`](./doctor.react.ts) | Website packages, workspace link, environment, i18n, taxonomy/licenses, Playwright, framework config |
-| [`doctor.svelte.ts`](./doctor.svelte.ts) | CV and status SvelteKit packages, Node engine, scripts, generated `.svelte-kit` state, adapter |
-| [`doctor.python.ts`](./doctor.python.ts) | `exp` runtime, virtual environment, pip, requirements, dependency conflicts, PyPI reachability |
-| [`doctor.infrastructure.ts`](./doctor.infrastructure.ts) | Container engine selection, CLI/backend/Compose/socket checks, ports, certificates, manifests, known containers |
+| [`commands/doctor/index.ts`](./commands/doctor/index.ts) | Command definition (presentation), module orchestration/ordering, and the exit-code rollup; [`commands/doctor/cli.ts`](./commands/doctor/cli.ts) parses its flags |
+| [`commands/doctor/types.ts`](./commands/doctor/types.ts) | Shared `DiagnosticResult`/`DoctorContext`/`DoctorInput` contracts and diagnostic-result helpers |
+| [`commands/doctor/reporter.ts`](./commands/doctor/reporter.ts) | Stable per-check score weights, schema-v1 validation (`createDoctorReport`), and human rendering |
+| [`commands/doctor/modules/workspace.ts`](./commands/doctor/modules/workspace.ts) | Repository root, git, Node/npm runtime, dependency trees, Nx workspace graph (read from repository metadata, see below), config files, generated artifacts, host capacity, npm audit/outdated |
+| [`commands/doctor/modules/dotnet.ts`](./commands/doctor/modules/dotnet.ts) | .NET SDK/host/workloads, NuGet state, solution, local tools, HTTPS certificate trust, AppHost configuration and required local parameters, NuGet feed reachability |
+| [`commands/doctor/modules/react.ts`](./commands/doctor/modules/react.ts) | Website packages, workspace link, environment, i18n, taxonomy/licenses, Playwright, framework config |
+| [`commands/doctor/modules/svelte.ts`](./commands/doctor/modules/svelte.ts) | CV and status SvelteKit packages, Node engine, scripts, generated `.svelte-kit` state, adapter |
+| [`commands/doctor/modules/python.ts`](./commands/doctor/modules/python.ts) | `exp` runtime, virtual environment, pip, requirements, dependency conflicts, PyPI reachability |
+| [`commands/doctor/modules/infrastructure.ts`](./commands/doctor/modules/infrastructure.ts) | Container engine selection, CLI/backend/Compose/socket checks, ports, certificates, manifests, known containers |
 
-Modules are invoked independently and concurrently, but `doctor.ts` always flattens their results back into the module-map order above
+Modules are invoked independently and concurrently, but `commands/doctor/index.ts` always flattens their results back into the module-map order above
 regardless of which module settles first. A module that reads more than one inspection fact declares those facts (`DiagnosticModule.facts`)
-so `doctor.ts` starts them together through the runtime task scheduler before the first module runs; the module then awaits each memoized
+so `commands/doctor/index.ts` starts them together through the runtime task scheduler before the first module runs; the module then awaits each memoized
 outcome sequentially without ever owning a concurrency primitive of its own. An unhandled module exception never produces a passing or
 skipped result — it becomes exactly one failed `<module>.module-error` row so the report degrades to one row instead of losing the whole
 run.
@@ -504,7 +504,7 @@ run.
 
 Every check is one `DiagnosticResult`: a stable `id` (module-prefixed, e.g. `workspace.git`), its owning `module`, `name`, `status`
 (`pass`/`warn`/`fail`/`skipped`), `summary`, `evidence`, `durationMs`, `fixes`, and exactly one diagnosis form for a `warn`/`fail` row —
-either `rootCause` or ranked `potentialCauses` (`high`/`medium`/`low`), never both. [`doctor.reporter.ts`](./doctor.reporter.ts) rejects an
+either `rootCause` or ranked `potentialCauses` (`high`/`medium`/`low`), never both. [`commands/doctor/reporter.ts`](./commands/doctor/reporter.ts) rejects an
 unknown or duplicate `id`, a `warn`/`fail` row missing evidence/fixes/diagnosis, and an ANSI-bearing or empty report string. The completed
 `DoctorReportV1` (`schemaVersion: 1`, `score`, `grade`, `summary`, `checks`, `timestamp`) is scored with a stable per-`id` weight: a pass
 earns full weight, a warn half, a fail none, and a `skipped` check contributes to neither the earned total nor the denominator.
@@ -517,7 +517,7 @@ adapter, or the mutable `FileSystem` capability: `DoctorContext` carries only a 
 the clock, the immutable environment snapshot, the shared inspection session, and the opaque probe runner.
 [`runtime-boundary.test.ts`](./common/runtime-boundary.test.ts)'s source-level AST guard rejects mutation-capable or unrestricted
 filesystem imports, child-process imports, widened runtime imports, and direct adapter imports across the Doctor production surface.
-[`doctor.readonly.test.ts`](./doctor.readonly.test.ts) independently snapshots `.nx` and `.arolariu` sentinel files to prove real quick
+[`commands/doctor/readonly.test.ts`](./commands/doctor/readonly.test.ts) independently snapshots `.nx` and `.arolariu` sentinel files to prove real quick
 and full-profile Doctor runs do not mutate them.
 
 No Nx child command is dispatched by doctor or status, and none is allowlisted. Nx always opens (and rewrites) its native workspace
@@ -527,7 +527,7 @@ from the shared inspection session's workspace facts, which use an isolated Nx D
 
 ### Status integration
 
-[`status.ts`](./status.ts) composes doctor as a typed child command (`doctorCommand.invoke(…, {parent: context, presentation: "silent"})`)
+[`commands/status/index.ts`](./commands/status/index.ts) composes doctor as a typed child command (`doctorCommand.invoke(…, {parent: context, presentation: "silent"})`)
 rather than a subprocess, and the child reuses status's own inspection session. Health is the one status section that is **not**
 degradation-tolerant: both doctor completion exit codes (`0` and `1`) are ordinary health data, while a `failed`, `cancelled`, or `help`
 child outcome is owned by status and becomes a status command failure or cancellation. No dashboard or JSON document is rendered in that
@@ -536,11 +536,11 @@ case, so status never reports a fabricated "unavailable" health section for a br
 
 ### Doctor test commands
 
-Focused validation for doctor, its reporter, every specialist module, and `status.ts`:
+Focused validation for doctor, its reporter, every specialist module, and `commands/status/index.ts`:
 
 ```powershell
-npx vitest run --config scripts\vitest.config.ts --coverage.enabled=false scripts\common\logger.test.ts scripts\common\runner.test.ts scripts\common\output-policy.test.ts scripts\doctor.test.ts scripts\doctor.reporter.test.ts scripts\doctor.readonly.test.ts scripts\doctor.workspace.test.ts scripts\doctor.dotnet.test.ts scripts\doctor.react.test.ts scripts\doctor.svelte.test.ts scripts\doctor.python.test.ts scripts\doctor.infrastructure.test.ts scripts\doctor.diagnostics.test.ts scripts\status.test.ts scripts\setup.test.ts
-npx eslint scripts\doctor.ts scripts\doctor.types.ts scripts\doctor.reporter.ts scripts\doctor.workspace.ts scripts\doctor.dotnet.ts scripts\doctor.react.ts scripts\doctor.svelte.ts scripts\doctor.python.ts scripts\doctor.infrastructure.ts scripts\status.ts scripts\common\taxonomy-artifacts.ts
+npx vitest run --config scripts\vitest.config.ts --coverage.enabled=false scripts\common\logger.test.ts scripts\common\runner.test.ts scripts\common\output-policy.test.ts scripts\commands\doctor\index.test.ts scripts\commands\doctor\reporter.test.ts scripts\commands\doctor\readonly.test.ts scripts\commands\doctor\modules\workspace.test.ts scripts\commands\doctor\modules\dotnet.test.ts scripts\commands\doctor\modules\react.test.ts scripts\commands\doctor\modules\svelte.test.ts scripts\commands\doctor\modules\python.test.ts scripts\commands\doctor\modules\infrastructure.test.ts scripts\commands\doctor\diagnostics.test.ts scripts\commands\status\index.test.ts scripts\setup.test.ts
+npx eslint scripts\commands\doctor\index.ts scripts\commands\doctor\types.ts scripts\commands\doctor\reporter.ts scripts\commands\doctor\modules\workspace.ts scripts\commands\doctor\modules\dotnet.ts scripts\commands\doctor\modules\react.ts scripts\commands\doctor\modules\svelte.ts scripts\commands\doctor\modules\python.ts scripts\commands\doctor\modules\infrastructure.ts scripts\commands\status\index.ts scripts\common\taxonomy-artifacts.ts
 git --no-pager diff --check
 ```
 

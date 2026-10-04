@@ -18,9 +18,9 @@
 
 import {basename, join, resolve} from "node:path";
 
-import type {ProcessOutcome} from "./common/runner.ts";
-import {parseVersion, satisfiesMinimum, type MinimumVersion} from "./common/requirements.ts";
-import {getExpectedTaxonomyArtifactPaths} from "./common/taxonomy-artifacts.ts";
+import type {ProcessOutcome} from "../../../common/runner.ts";
+import {parseVersion, satisfiesMinimum, type MinimumVersion} from "../../../common/requirements.ts";
+import {getExpectedTaxonomyArtifactPaths} from "../../../common/taxonomy-artifacts.ts";
 import {
   boundCommandExcerpt,
   boundEvidence,
@@ -28,13 +28,13 @@ import {
   normalizeErrorForReport,
   skippedDiagnostic,
   STANDARD_EVIDENCE_LIMIT,
-} from "./doctor.diagnostics.ts";
-import type {DiagnosticFix, DiagnosticModule, DiagnosticPotentialCause, DiagnosticResult, DoctorContext} from "./doctor.types.ts";
-import type {AggregateFacts} from "./inspection/aggregate.ts";
-import type {NpmTreeFacts, NpmProblemFact} from "./inspection/packages.ts";
-import {probes} from "./inspection/probes.ts";
-import type {InspectionOutcome} from "./inspection/types.ts";
-import type {WorkspaceFacts} from "./inspection/workspace.ts";
+} from "../diagnostics.ts";
+import type {DiagnosticFix, DiagnosticModule, DiagnosticPotentialCause, DiagnosticResult, DoctorContext} from "../types.ts";
+import type {AggregateFacts} from "../../../inspection/aggregate.ts";
+import type {NpmTreeFacts, NpmProblemFact} from "../../../inspection/packages.ts";
+import {probes} from "../../../inspection/probes.ts";
+import type {InspectionOutcome} from "../../../inspection/types.ts";
+import type {WorkspaceFacts} from "../../../inspection/workspace.ts";
 
 const REPOSITORY_PACKAGE_NAME = "@arolariu/monorepo";
 const WEBSITE_PROJECT = "@arolariu/website";

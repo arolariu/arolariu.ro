@@ -18,17 +18,17 @@ import {join} from "node:path";
 import {fileURLToPath} from "node:url";
 import {afterEach, describe, expect, it, vi, type Mock} from "vitest";
 
-import {MonorepoCommand, type CommandExecution, type CommandInvoker, type CommandRuntimeFactory} from "./common/commander.ts";
-import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "./common/logger.ts";
-import {createRepositoryPaths} from "./common/repository-paths.ts";
-import {AbstractProcessRunner, type ProcessOutcome, type ProcessRequest, type ProcessRunOptions} from "./common/runner.ts";
-import {createNodeProcessRunner, snapshotNodeEnvironment} from "./common/runtime.node.ts";
+import {MonorepoCommand, type CommandExecution, type CommandInvoker, type CommandRuntimeFactory} from "../../common/commander.ts";
+import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "../../common/logger.ts";
+import {createRepositoryPaths} from "../../common/repository-paths.ts";
+import {AbstractProcessRunner, type ProcessOutcome, type ProcessRequest, type ProcessRunOptions} from "../../common/runner.ts";
+import {createNodeProcessRunner, snapshotNodeEnvironment} from "../../common/runtime.node.ts";
 import {
   createRepositoryFixtureFileSystem,
   createRepositoryInspectionSessionStub,
   createTestRuntimeFactory,
   repositoryFixtureRoot,
-} from "./common/runtime.testing.ts";
+} from "../../common/runtime.testing.ts";
 import {
   CommandCancellation,
   commandCancellationFromSignal,
@@ -37,14 +37,14 @@ import {
   MemoizedInspectionRuntime,
   type RepositoryInspectionRequest,
   type RepositoryInspectionRuntime,
-} from "./common/runtime.ts";
-import type {DoctorInput, DoctorReport} from "./doctor.types.ts";
-import {createDoctorCommand} from "./doctor.ts";
-import type {RepositoryInspectionFacts, RepositoryInspectionSession} from "./inspection/repository.ts";
-import {createInspectionSession} from "./inspection/session.ts";
-import type {InspectionOutcome} from "./inspection/types.ts";
-import type {WorkspaceFacts} from "./inspection/workspace.ts";
-import {collectDisk, createStatusCommand, type StatusDocument} from "./status.ts";
+} from "../../common/runtime.ts";
+import type {DoctorInput, DoctorReport} from "../doctor/types.ts";
+import {createDoctorCommand} from "../doctor/index.ts";
+import type {RepositoryInspectionFacts, RepositoryInspectionSession} from "../../inspection/repository.ts";
+import {createInspectionSession} from "../../inspection/session.ts";
+import type {InspectionOutcome} from "../../inspection/types.ts";
+import type {WorkspaceFacts} from "../../inspection/workspace.ts";
+import {collectDisk, createStatusCommand, type StatusDocument} from "./index.ts";
 
 // ============================================================================
 // Fixtures
@@ -819,7 +819,7 @@ describe("status command — Node runtime label", () => {
 // ============================================================================
 
 describe("source-derived Nx graph collection", () => {
-  const sourceText = readFileSync(fileURLToPath(new URL("./status.ts", import.meta.url)), "utf8");
+  const sourceText = readFileSync(fileURLToPath(new URL("./index.ts", import.meta.url)), "utf8");
 
   it("never writes or unlinks a temporary graph file and never dispatches Nx in production source", () => {
     expect(sourceText).not.toMatch(/unlinkSync/);

@@ -16,18 +16,18 @@ import {dirname, resolve} from "node:path";
 import {fileURLToPath} from "node:url";
 import {afterEach, describe, expect, it, vi, type Mock} from "vitest";
 
-import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "./common/logger.ts";
-import {createRepositoryPaths} from "./common/repository-paths.ts";
-import type {RepositoryRequirements} from "./common/requirements.ts";
-import {asReadOnlyFileSystem, type Clock, type RuntimeEnvironment} from "./common/runtime.ts";
-import {createMemoryFileSystem} from "./common/runtime.testing.ts";
-import {reactDoctorModule} from "./doctor.react.ts";
-import {createDoctorReport} from "./doctor.reporter.ts";
-import type {DiagnosticNetworkResult, DiagnosticResult, DoctorContext, DoctorInput} from "./doctor.types.ts";
-import type {EnvironmentFacts, ReactFacts} from "./inspection/frontend.ts";
-import type {InstalledPackageFact, PackageInventoryFacts} from "./inspection/packages.ts";
-import type {RepositoryInspectionSession} from "./inspection/repository.ts";
-import type {InspectionOutcome} from "./inspection/types.ts";
+import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "../../../common/logger.ts";
+import {createRepositoryPaths} from "../../../common/repository-paths.ts";
+import type {RepositoryRequirements} from "../../../common/requirements.ts";
+import {asReadOnlyFileSystem, type Clock, type RuntimeEnvironment} from "../../../common/runtime.ts";
+import {createMemoryFileSystem} from "../../../common/runtime.testing.ts";
+import {reactDoctorModule} from "./react.ts";
+import {createDoctorReport} from "../reporter.ts";
+import type {DiagnosticNetworkResult, DiagnosticResult, DoctorContext, DoctorInput} from "../types.ts";
+import type {EnvironmentFacts, ReactFacts} from "../../../inspection/frontend.ts";
+import type {InstalledPackageFact, PackageInventoryFacts} from "../../../inspection/packages.ts";
+import type {RepositoryInspectionSession} from "../../../inspection/repository.ts";
+import type {InspectionOutcome} from "../../../inspection/types.ts";
 
 const moduleDirectory = dirname(fileURLToPath(import.meta.url));
 const fixtureRoot = resolve(moduleDirectory, "__fixtures__", "doctor-react");
@@ -426,7 +426,7 @@ describe("reactDoctorModule", () => {
   });
 
   it("never imports CommandSpec", async () => {
-    const source = await readFile(resolve(moduleDirectory, "doctor.react.ts"), "utf8");
+    const source = await readFile(resolve(moduleDirectory, "react.ts"), "utf8");
     const code = stripComments(source);
 
     expect(code).not.toContain("context.runner");

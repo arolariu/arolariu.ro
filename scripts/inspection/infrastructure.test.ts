@@ -25,7 +25,7 @@ const fixtureRoots: string[] = [];
 
 /**
  * Duplicated verbatim from `probes.ts`'s private port-owner probe scripts (itself duplicated from
- * `doctor.types.ts`), matching the repository's established precedent of verbatim script
+ * `commands/doctor/types.ts`), matching the repository's established precedent of verbatim script
  * duplication for exact per-platform command matching in tests.
  */
 const WINDOWS_PORT_OWNER_PROBE_SCRIPT = [
