@@ -3,6 +3,8 @@
  * @module scripts/container-runtime/types
  */
 
+import {Schema} from "effect";
+
 /** Supported local container engines for this repository. */
 export type ContainerEngine = "rancher" | "podman";
 
@@ -22,13 +24,17 @@ export interface SelectionInputs {
   readonly configuredEngine?: string;
 }
 
-/** Error raised when local container runtime configuration is invalid. */
-export class ContainerRuntimeError extends Error {
-  public constructor(message: string) {
-    super(message);
-    this.name = "ContainerRuntimeError";
-  }
-}
+/**
+ * Typed failure raised when the local container runtime configuration or backend is invalid.
+ *
+ * @remarks
+ * A `Schema.TaggedError`, so Effect programs fail with it directly (`yield* new
+ * ContainerRuntimeError({message})`); it is still an `Error` named `ContainerRuntimeError`, so the
+ * legacy command lifecycle classifies it as an operational failure.
+ */
+export class ContainerRuntimeError extends Schema.TaggedError<ContainerRuntimeError>()("ContainerRuntimeError", {
+  message: Schema.String,
+}) {}
 
 /** Shared shape of every declarative container command's typed input: an optional engine override. */
 export interface ContainerEngineInput {

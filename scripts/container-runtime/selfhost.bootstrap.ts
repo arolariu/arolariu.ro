@@ -137,7 +137,7 @@ function toBootstrapFailure(error: unknown, signal: AbortSignal, context: string
   }
 
   const detail = boundedDiagnostic(error instanceof Error ? error.message : String(error), maximumBootstrapDiagnosticLength);
-  return new ContainerRuntimeError(`${context} Original error: ${detail}`);
+  return new ContainerRuntimeError({message: `${context} Original error: ${detail}`});
 }
 
 /**
@@ -161,9 +161,9 @@ async function postCosmosResource(http: HttpClient, url: URL, body: unknown, sig
 
   // HTTP 409 is the emulator's "already provisioned" answer, which keeps this bootstrap idempotent.
   if (!response.ok && response.status !== 409) {
-    throw new ContainerRuntimeError(
-      `Cosmos bootstrap failed for ${url.href}: HTTP ${String(response.status)} ${boundedDiagnostic(response.text, maximumResponseDiagnosticLength)}`,
-    );
+    throw new ContainerRuntimeError({
+      message: `Cosmos bootstrap failed for ${url.href}: HTTP ${String(response.status)} ${boundedDiagnostic(response.text, maximumResponseDiagnosticLength)}`,
+    });
   }
 }
 

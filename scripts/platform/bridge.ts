@@ -12,7 +12,10 @@
  * `readToolingConfig`, `writeToolingConfig`) that cohort 7 converts: they hand those helpers
  * legacy-shaped capabilities backed by the Effect services, preserving the legacy error `code`s
  * the helpers branch on. {@link createLegacyInspectionRuntime} is the legacy Promise view of the
- * Effect `Inspection` service that the legacy command scopes expose as `runtime.inspection`. The
+ * Effect `Inspection` service that the legacy command scopes expose as `runtime.inspection`.
+ * {@link runEffectOrThrow} runs an Effect program for a still-legacy container command over that
+ * invocation's own runner, filesystem, environment, and logger ({@link legacyRuntimeLayer}); it is
+ * deleted in cohort 6 once those commands are Effect-native. The
  * bridge exists only while both command models coexist and is deleted in cohort 7.
  */
 
@@ -21,26 +24,33 @@ import {join} from "node:path";
 import {
   Cause,
   Context,
+  Duration,
   Effect,
   Exit,
   Fiber,
   FileSystem,
+  Formatter,
+  Layer,
+  Logger,
   ManagedRuntime,
   Option,
   PlatformError,
+  References,
   Result,
   Scope,
-  type Layer,
   type Path,
 } from "effect";
 
 import type {CommandExecution, CommandInvocationOptions, CommandInvoker, CommandPresentation} from "../common/commander.ts";
+import type {MonorepositoryLogger} from "../common/logger.ts";
+import type {ProcessOutcome as LegacyProcessOutcome, ProcessRunOptions as LegacyProcessRunOptions} from "../common/runner.ts";
 import {
   commandCancellationFromSignal,
   DefaultTaskScheduler,
   FILE_SYSTEM_MAX_BYTES_EXCEEDED_CODE,
   FileSystemError,
   linkAbortSignals,
+  type CommandRuntime,
   type DirectoryEntry,
   type FileMetadata,
   type FileSystem as LegacyFileSystem,
@@ -59,11 +69,25 @@ import {
   type RepositoryInspectionSession,
 } from "../inspection/repository.ts";
 import type {InspectionOutcome} from "../inspection/types.ts";
-import {Environment, EnvironmentLive} from "./Environment.ts";
-import {MaxBytesExceeded, ReadOnlyFiles, writeTextAtomic, type Glob} from "./Files.ts";
-import {makeNodeLayer, type PlatformServices} from "./layers.ts";
-import {resolveColor, type OutputSettingsShape} from "./Output.ts";
-import {processErrorEvidence, ProcessExited, ProcessSignalled, ProcessSpawnFailed, ProcessTimedOut, type ProcessError} from "./Process.ts";
+import {Environment, EnvironmentLive, layerEnvironment} from "./Environment.ts";
+import {MaxBytesExceeded, ReadOnlyFiles, ReadOnlyFilesLive, writeTextAtomic, type Glob} from "./Files.ts";
+import {commandLayer, makeNodeLayer, NodeBaseLayer, type PlatformServices} from "./layers.ts";
+import {resolveColor, Sink, StdoutIsTTY, type OutputSettingsShape} from "./Output.ts";
+import {
+  formatProcessRequest,
+  MAX_EVIDENCE_CHARACTERS,
+  Process,
+  processErrorEvidence,
+  ProcessExited,
+  ProcessLayerFactory,
+  ProcessSignalled,
+  ProcessSpawnFailed,
+  ProcessTimedOut,
+  type ProcessError,
+  type ProcessOptions,
+  type ProcessRequest,
+  type ProcessResult,
+} from "./Process.ts";
 
 /** Builds the platform layer for one bridged invocation from its output settings. */
 export type LayerFactory = (settings: OutputSettingsShape) => Layer.Layer<PlatformServices>;
@@ -643,4 +667,296 @@ export function createLegacyInspectionRuntime(
     },
     dispose: () => runtime.dispose(),
   };
+}
+
+/** Platform failure reason of each legacy filesystem error code; every other code maps to `Unknown`. */
+const PLATFORM_REASONS: Readonly<Record<string, PlatformError.SystemErrorTag>> = {
+  ENOENT: "NotFound",
+  EACCES: "PermissionDenied",
+  EPERM: "PermissionDenied",
+  EEXIST: "AlreadyExists",
+  EBADF: "BadResource",
+  EBUSY: "Busy",
+  EINVAL: "InvalidData",
+  ETIMEDOUT: "TimedOut",
+  EOF: "UnexpectedEof",
+};
+
+/**
+ * Converts a legacy filesystem rejection into a platform failure.
+ *
+ * @remarks
+ * The reason follows the legacy error `code` ({@link PLATFORM_REASONS}); the legacy error stays the
+ * cause, so {@link toLegacyFileSystemError} recovers the same `code` on the way back.
+ *
+ * @param error - The legacy rejection.
+ * @param method - The platform method that failed.
+ * @param path - The path the operation targeted.
+ * @returns The equivalent platform failure.
+ */
+function fromLegacyFileSystemError(error: unknown, method: string, path: string): PlatformError.PlatformError {
+  const code = nodeErrorCode(error);
+  return PlatformError.systemError({
+    _tag: (code === undefined ? undefined : PLATFORM_REASONS[code]) ?? "Unknown",
+    module: "FileSystem",
+    method,
+    pathOrDescriptor: path,
+    description: messageOf(error),
+    cause: error,
+  });
+}
+
+/**
+ * Builds the Effect `FileSystem` a legacy-runtime program reads and removes files through.
+ *
+ * @remarks
+ * Only `exists`, `readFile`, `readFileString`, and `remove` delegate to the legacy filesystem (the
+ * members the container selection and Traefik removal use); every other member behaves as
+ * `FileSystem.makeNoop`. `remove` forwards only the options that were set. Deleted with
+ * {@link runEffectOrThrow}.
+ *
+ * @param files - The legacy invocation filesystem.
+ * @returns The delegating filesystem.
+ */
+function legacyBackedFileSystem(files: LegacyFileSystem): FileSystem.FileSystem {
+  const attempt = <A>(method: string, path: string, run: () => Promise<A>): Effect.Effect<A, PlatformError.PlatformError> =>
+    Effect.tryPromise({try: run, catch: (error) => fromLegacyFileSystemError(error, method, path)});
+  return FileSystem.makeNoop({
+    exists: (path) => attempt("exists", path, () => files.exists(path)),
+    readFile: (path) => attempt("readFile", path, () => files.readBytes(path)),
+    readFileString: (path) => attempt("readFileString", path, () => files.readText(path)),
+    remove: (path, options) =>
+      attempt("remove", path, () =>
+        files.remove(
+          path,
+          options === undefined
+            ? undefined
+            : {
+                ...(options.recursive === undefined ? {} : {recursive: options.recursive}),
+                ...(options.force === undefined ? {} : {force: options.force}),
+              },
+        ),
+      ),
+  });
+}
+
+/**
+ * Maps `Process` options onto the legacy runner options of one legacy-runtime invocation.
+ *
+ * @remarks
+ * The invocation signal is always set; `cwd`, `env`, `output`, `input`, and `timeout` (as
+ * `timeoutMs`) are copied only when supplied, so a bare probe runs with exactly `{signal}`. `tee`
+ * output and `echo: true` hand the runner the invocation logger, and `echo: true` turns on its
+ * command echo.
+ *
+ * @param runtime - The legacy invocation runtime.
+ * @param options - The `Process.run` options.
+ * @returns The legacy runner options.
+ */
+function legacyRunOptions(runtime: CommandRuntime, options: ProcessOptions): LegacyProcessRunOptions {
+  return {
+    signal: runtime.signal,
+    ...(options.cwd === undefined ? {} : {cwd: options.cwd}),
+    ...(options.env === undefined ? {} : {env: options.env}),
+    ...(options.output === undefined ? {} : {output: options.output}),
+    ...(options.input === undefined ? {} : {input: options.input}),
+    ...(options.timeout === undefined ? {} : {timeoutMs: Duration.toMillis(options.timeout)}),
+    ...(options.output === "tee" || options.echo === true ? {logger: runtime.logger} : {}),
+    ...(options.echo === true ? {logCommands: true} : {}),
+  };
+}
+
+/**
+ * Converts a legacy process outcome into the `Process.run` result or failure it stands for.
+ *
+ * @remarks
+ * Mirrors the harness `processOutcomeEffect`: a spawn failure's legacy `message` becomes the
+ * failure `reason`. Captured output is kept whole for `failureOutput: "full"` and otherwise trimmed
+ * to the last {@link MAX_EVIDENCE_CHARACTERS} characters, as `ProcessLive` does. A `cancelled`
+ * outcome interrupts when the invocation signal is aborted (the invocation's own cancellation) and
+ * otherwise fails as a {@link ProcessSignalled} (`SIGTERM` unless the outcome names a signal).
+ *
+ * @param request - The answered request.
+ * @param outcome - The legacy outcome.
+ * @param options - The `Process.run` options.
+ * @param signal - The invocation signal.
+ * @returns The equivalent process effect.
+ */
+function fromLegacyOutcome(
+  request: ProcessRequest,
+  outcome: LegacyProcessOutcome,
+  options: ProcessOptions,
+  signal: AbortSignal,
+): Effect.Effect<ProcessResult, ProcessError> {
+  if (outcome.kind === "succeeded") {
+    return Effect.succeed({stdout: outcome.stdout, stderr: outcome.stderr, durationMs: outcome.durationMs});
+  }
+  if (outcome.kind === "cancelled" && signal.aborted) {
+    return Effect.interrupt;
+  }
+  const command = formatProcessRequest(request);
+  const evidence = (text: string): string =>
+    options.failureOutput === "full" || text.length <= MAX_EVIDENCE_CHARACTERS ? text : text.slice(-MAX_EVIDENCE_CHARACTERS);
+  const base = {command, stdout: evidence(outcome.stdout), stderr: evidence(outcome.stderr), durationMs: outcome.durationMs};
+  switch (outcome.kind) {
+    case "exited":
+      return Effect.fail(
+        new ProcessExited({...base, exitCode: outcome.exitCode, message: `${command} exited with code ${String(outcome.exitCode)}`}),
+      );
+    case "signalled":
+      return Effect.fail(
+        new ProcessSignalled({...base, signal: outcome.signal, message: `${command} was terminated by ${outcome.signal}`}),
+      );
+    case "spawn-failed":
+      return Effect.fail(
+        new ProcessSpawnFailed({...base, reason: outcome.message, message: `${command} failed to start: ${outcome.message}`}),
+      );
+    case "timed-out": {
+      const timeoutMs = options.timeout === undefined ? 0 : Duration.toMillis(options.timeout);
+      return Effect.fail(new ProcessTimedOut({...base, timeoutMs, message: `${command} timed out after ${String(timeoutMs)} ms`}));
+    }
+    case "cancelled": {
+      const terminatedBy = outcome.signal ?? "SIGTERM";
+      return Effect.fail(new ProcessSignalled({...base, signal: terminatedBy, message: `${command} was cancelled`}));
+    }
+  }
+}
+
+/**
+ * Builds the `Process` layer that runs every request through a legacy runtime's runner.
+ *
+ * @param runtime - The legacy invocation runtime.
+ * @returns A layer whose `run` calls `runtime.runner.run` with {@link legacyRunOptions} and maps the
+ * outcome with {@link fromLegacyOutcome}.
+ */
+function legacyProcessLayer(runtime: CommandRuntime): Layer.Layer<Process> {
+  return Layer.succeed(
+    Process,
+    Process.of({
+      run: (request, options = {}) =>
+        Effect.flatMap(
+          Effect.promise(() => runtime.runner.run(request, legacyRunOptions(runtime, options))),
+          (outcome) => fromLegacyOutcome(request, outcome, options, runtime.signal),
+        ),
+    }),
+  );
+}
+
+/**
+ * Builds the Effect logger that forwards every log line to a legacy invocation logger.
+ *
+ * @remarks
+ * The message is rendered like the platform logger (parts joined by spaces, a non-empty cause
+ * appended with `Cause.pretty`). A string `context` log annotation (`withLogContext`) selects the
+ * legacy child logger `logger.child(context)`, so `[arolariu::<command>::<context>]` keeps its legacy
+ * prefix; without one the line goes to `logger` itself. `Trace`/`Debug` map to `debug`, `Warn` to
+ * `warn`, `Error`/`Fatal` to `error`, and every other level to `info`; the legacy logger applies the
+ * invocation's presentation and verbosity.
+ *
+ * @param logger - The legacy invocation logger.
+ * @returns The forwarding logger.
+ */
+function legacyLogger(logger: MonorepositoryLogger): Logger.Logger<unknown, void> {
+  return Logger.make<unknown, void>((options) => {
+    const parts: readonly unknown[] = Array.isArray(options.message) ? options.message : [options.message];
+    let message = parts.map((part) => (typeof part === "string" ? part : Formatter.format(part))).join(" ");
+    if (options.cause.reasons.length > 0) {
+      message += `\n${Cause.pretty(options.cause)}`;
+    }
+    const context = options.fiber.getRef(References.CurrentLogAnnotations)["context"];
+    const target = typeof context === "string" ? logger.child(context) : logger;
+    switch (options.logLevel) {
+      case "Trace":
+      case "Debug":
+        target.debug(message);
+        return;
+      case "Warn":
+        target.warn(message);
+        return;
+      case "Error":
+      case "Fatal":
+        target.error(message);
+        return;
+      default:
+        target.info(message);
+    }
+  });
+}
+
+/**
+ * Builds the platform layer of a program run on behalf of a legacy command invocation.
+ *
+ * @remarks
+ * The Node layer with the invocation's own capabilities in place of the ambient ones: `Process` runs
+ * through `runtime.runner` ({@link legacyProcessLayer}), `Environment` is `runtime.environment`,
+ * `FileSystem` and `ReadOnlyFiles` read (and remove) through `runtime.files`
+ * ({@link legacyBackedFileSystem}), every log line goes to `runtime.logger` ({@link legacyLogger},
+ * minimum level `Debug`), and the `Sink` writes presenter output through `runtime.logger.write`. So
+ * the program observes the same fakes as the legacy command under test, and every byte it renders
+ * honors the invocation's legacy presentation. Deleted with {@link runEffectOrThrow}.
+ *
+ * @param runtime - The legacy invocation runtime.
+ * @returns The layer factory.
+ */
+function legacyRuntimeLayer(runtime: CommandRuntime): LayerFactory {
+  return (settings) => {
+    // `fresh`: NodeBaseLayer builds the same ReadOnlyFilesLive over the Node filesystem, and the layer memo map would reuse it.
+    const overrides = Layer.fresh(ReadOnlyFilesLive).pipe(
+      Layer.provideMerge(
+        Layer.mergeAll(
+          Layer.succeed(FileSystem.FileSystem, legacyBackedFileSystem(runtime.files)),
+          layerEnvironment(runtime.environment),
+          Layer.succeed(Sink, {write: (record) => Effect.sync(() => runtime.logger.write(record.text, record.stream))}),
+          Layer.succeed(StdoutIsTTY, false),
+          Layer.succeed(ProcessLayerFactory, legacyProcessLayer(runtime)),
+        ),
+      ),
+    );
+    const platform = commandLayer(settings).pipe(Layer.provideMerge(overrides), Layer.provideMerge(NodeBaseLayer));
+    return Layer.mergeAll(Logger.layer([legacyLogger(runtime.logger)]), Layer.succeed(References.MinimumLogLevel, "Debug")).pipe(
+      Layer.provideMerge(platform),
+    );
+  };
+}
+
+/**
+ * Runs an Effect program from a legacy command and returns its value, throwing on failure.
+ *
+ * @remarks
+ * Temporary helper for the legacy container commands (`aspire`, `compose`, `image`, `selfhost`)
+ * while they call the converted container helpers; each call site carries a `// cohort 6 temporary`
+ * comment, and Tasks 6.3 and 6.4 delete them. The program runs through {@link runEffect} with
+ * context `"containers"` and the {@link legacyRuntimeLayer} of `runtime`.
+ * That layer renders every log line and presenter write through `runtime.logger`, which already
+ * carries the invocation's presentation and verbosity, so the Effect side runs in `"human"` mode
+ * with `verbose: false` and never filters output on its own. `runtime.signal` is deliberately not
+ * turned into fiber interruption: the legacy runner already observes it on every process call, and a
+ * call it reports `cancelled` on the aborted signal interrupts the program there, exactly where the
+ * legacy command stopped (a pre-aborted signal still lets the legacy fakes answer earlier calls).
+ * An interruption after `runtime.signal` aborted throws the signal's `CommandCancellation` (keeping
+ * `130`/`143`); any other failure throws `Cause.squash(exit.cause)`, so a typed failure rejects with
+ * the original error value.
+ *
+ * @param program - The program to run; it may require any platform service and a scope.
+ * @param runtime - The legacy invocation runtime.
+ * @returns The program value.
+ * @throws The invocation's `CommandCancellation` or the squashed failure cause.
+ */
+export async function runEffectOrThrow<A, E>(
+  program: Effect.Effect<A, E, PlatformServices | Scope.Scope>,
+  runtime: CommandRuntime,
+): Promise<A> {
+  const exit = await runEffect(program, {
+    presentation: "human",
+    verbose: false,
+    context: "containers",
+    makeLayer: legacyRuntimeLayer(runtime),
+  });
+  if (Exit.isSuccess(exit)) {
+    return exit.value;
+  }
+  if (runtime.signal.aborted && Cause.hasInterrupts(exit.cause)) {
+    throw commandCancellationFromSignal(runtime.signal);
+  }
+  throw Cause.squash(exit.cause);
 }

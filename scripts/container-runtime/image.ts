@@ -13,13 +13,17 @@
  * cleanup ownership.
  */
 
+import {Effect} from "effect";
+
 import {MonorepoCommand, type CommandContext, type CommandInvoker, type CommandRuntimeFactory} from "../common/commander.ts";
 import type {MonorepositoryLogger} from "../common/logger.ts";
 import {resolveRepositoryPaths} from "../common/repository-paths.ts";
 import {RunnerError, type ProcessRunner} from "../common/runner.ts";
 import {CommandCancellation, commandCancellationFromSignal} from "../common/runtime.ts";
 import {generateArtifactsCommand, type ArtifactGenerationResult, type GenerateArtifactsInput} from "../commands/generate/artifacts.ts";
-import {getContainerAdapter, type ContainerRuntimeAdapter, type RuntimeCommand} from "./adapters.ts";
+import {runEffectOrThrow} from "../platform/bridge.ts";
+import {withLogContext} from "../platform/Output.ts";
+import type {ContainerRuntimeAdapter, RuntimeCommand} from "./adapters.ts";
 import {runContainerPreflight} from "./preflight.ts";
 import {resolveRuntimeContainerEngine} from "./selection.ts";
 import type {ImageInput, ImageResult, ImageTarget} from "./types.ts";
@@ -175,25 +179,17 @@ async function executeImage(
 ): Promise<ImageResult> {
   const {runtime} = context;
   const paths = await resolveRepositoryPaths(import.meta.url, runtime.files);
-  const selection = await resolveRuntimeContainerEngine(
-    {
+  // cohort 6 temporary: Task 6.3 runs selection and preflight directly in the Effect-native command.
+  const adapter = await runEffectOrThrow(
+    resolveRuntimeContainerEngine({
       // The declarative command host only decodes untyped CLI strings; resolveRuntimeContainerEngine
       // validates the value (including the docker-deprecation message) before it is ever treated
       // as a real ContainerEngine.
       ...(input.engine === undefined ? {} : {requestedEngine: input.engine}),
-      env: runtime.environment.variables,
       toolingConfigPath: paths.toolingConfig,
-    },
-    runtime.files,
+    }).pipe(Effect.flatMap((selection) => runContainerPreflight(selection.engine).pipe(withLogContext("preflight")))),
+    runtime,
   );
-  const adapter = getContainerAdapter(selection.engine);
-
-  await runContainerPreflight(adapter, {
-    runner: runtime.runner,
-    logger: runtime.logger.child("preflight"),
-    environment: runtime.environment,
-    signal: runtime.signal,
-  });
 
   const tag = `arolariu-${input.target}`;
 

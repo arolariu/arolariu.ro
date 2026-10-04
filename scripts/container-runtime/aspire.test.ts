@@ -7,7 +7,12 @@ import {describe, expect, it} from "vitest";
 import type {CommandExecution, CommandPresentation, CommandRuntimeFactory} from "../common/commander.ts";
 import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "../common/logger.ts";
 import type {ProcessOutcome, ProcessRequest, ProcessRunOptions} from "../common/runner.ts";
-import {createProcessRunner, createTestRuntimeFactory, repositoryFixtureRoot} from "../common/runtime.testing.ts";
+import {
+  createProcessRunner,
+  createRepositoryFixtureFileSystem,
+  createTestRuntimeFactory,
+  repositoryFixtureRoot,
+} from "../common/runtime.testing.ts";
 import {CommandCancellation, type CommandRuntime, type RuntimeEnvironment} from "../common/runtime.ts";
 import {getContainerAdapter} from "./adapters.ts";
 import {buildAspireCommand, createAspireCommand} from "./aspire.ts";
@@ -114,6 +119,22 @@ describe("createAspireCommand", () => {
       failure: {kind: "cancelled", message: "Terminated by test signal."},
     });
     expect(runner.calls).toHaveLength(1);
+  });
+
+  it("resolves the persisted engine through the invocation filesystem when no engine is requested", async () => {
+    // Arrange
+    const runner = createProcessRunner([...rancherPreflightOutcomes, succeeded()]);
+    const files = createRepositoryFixtureFileSystem({
+      [`${repositoryFixtureRoot}/.arolariu/tooling.local.json`]: JSON.stringify({schemaVersion: 1, containerEngine: "rancher"}),
+    });
+    const command = createAspireCommand(createTestRuntimeFactory({runner, files}));
+
+    // Act
+    const execution = await command.invoke({});
+
+    // Assert
+    expect(execution).toMatchObject({status: "completed", exitCode: 0, value: {engine: "rancher"}});
+    expect(runner.calls[0]?.request).toEqual({command: "docker", args: ["--version"]});
   });
 
   it("rejects the deprecated docker engine value as a usage failure", async () => {

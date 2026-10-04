@@ -17,23 +17,23 @@
  * started running, and the generated Traefik file is removed only by the explicit `stop` action.
  */
 
+import {dirname} from "node:path";
+
+import {Effect} from "effect";
+
 import {MonorepoCommand, type CommandContext, type CommandInvoker, type CommandRuntimeFactory} from "../common/commander.ts";
 import {resolveRepositoryPaths} from "../common/repository-paths.ts";
 import {RunnerError, type ProcessEnvironment} from "../common/runner.ts";
 import {CommandCancellation, commandCancellationFromSignal, type CommandRuntime} from "../common/runtime.ts";
 import {generateArtifactsCommand, type ArtifactGenerationResult, type GenerateArtifactsInput} from "../commands/generate/artifacts.ts";
-import {getContainerAdapter, type ContainerRuntimeAdapter, type RuntimeCommand} from "./adapters.ts";
+import {runEffectOrThrow} from "../platform/bridge.ts";
+import {withLogContext} from "../platform/Output.ts";
+import type {ContainerRuntimeAdapter, RuntimeCommand} from "./adapters.ts";
 import {runContainerPreflight} from "./preflight.ts";
 import {azuriteDevelopmentConnectionString, createLocalStorageBootstrap, type LocalStorageBootstrap} from "./selfhost.bootstrap.ts";
 import {resolveRuntimeContainerEngine} from "./selection.ts";
-import {buildSelfhostTraefikConfig, removeSelfhostTraefikConfig, writeSelfhostTraefikConfig} from "./traefik.ts";
-import {
-  ContainerRuntimeError,
-  type SelfhostAction,
-  type SelfhostInput,
-  type SelfhostResult,
-  type SelfhostStack,
-} from "./types.ts";
+import {buildSelfhostTraefikConfig, removeSelfhostTraefikConfig, selfhostTraefikConfigPath} from "./traefik.ts";
+import {ContainerRuntimeError, type SelfhostAction, type SelfhostInput, type SelfhostResult, type SelfhostStack} from "./types.ts";
 
 /** Time to wait for storage containers to accept bootstrap calls after compose start. */
 const storageReadyDelayMs = 10_000;
@@ -148,9 +148,10 @@ export function buildLocalStorageBootstrapCommand(): RuntimeCommand {
 export function getRequiredSqlPassword(variables: Readonly<Record<string, string | undefined>>): string {
   const sqlPassword = variables["MSSQL_SA_PASSWORD"];
   if (sqlPassword === undefined || sqlPassword.trim() === "") {
-    throw new ContainerRuntimeError(
-      "MSSQL_SA_PASSWORD environment variable is required for selfhost SQL bootstrap. Set it in your shell/session environment only; do not commit it to .env files, launch profiles, or source control.",
-    );
+    throw new ContainerRuntimeError({
+      message:
+        "MSSQL_SA_PASSWORD environment variable is required for selfhost SQL bootstrap. Set it in your shell/session environment only; do not commit it to .env files, launch profiles, or source control.",
+    });
   }
 
   return sqlPassword;
@@ -241,7 +242,11 @@ async function prepareSelfhostStart(runtime: CommandRuntime): Promise<string> {
   runtime.logger.redact(sqlPassword);
 
   await ensureHttpsCertificates(runtime);
-  await writeSelfhostTraefikConfig(runtime.files, buildSelfhostTraefikConfig());
+  // cohort 6 temporary: the R1-pinned start timeline records exactly `createDirectory` + `writeText`
+  // through the invocation filesystem, which the Effect `writeSelfhostTraefikConfig` (an atomic
+  // write through a sibling file) cannot reproduce; Task 6.4 switches to it with the Effect-native command.
+  await runtime.files.createDirectory(dirname(selfhostTraefikConfigPath), {recursive: true});
+  await runtime.files.writeText(selfhostTraefikConfigPath, buildSelfhostTraefikConfig());
 
   return sqlPassword;
 }
@@ -332,25 +337,17 @@ async function executeSelfhost(
 ): Promise<SelfhostResult> {
   const {runtime} = context;
   const paths = await resolveRepositoryPaths(import.meta.url, runtime.files);
-  const selection = await resolveRuntimeContainerEngine(
-    {
+  // cohort 6 temporary: Task 6.4 runs selection and preflight directly in the Effect-native command.
+  const adapter = await runEffectOrThrow(
+    resolveRuntimeContainerEngine({
       // The declarative command host only decodes untyped CLI strings; resolveRuntimeContainerEngine
       // validates the value (including the docker-deprecation message) before it is ever treated
       // as a real ContainerEngine.
       ...(input.engine === undefined ? {} : {requestedEngine: input.engine}),
-      env: runtime.environment.variables,
       toolingConfigPath: paths.toolingConfig,
-    },
-    runtime.files,
+    }).pipe(Effect.flatMap((selection) => runContainerPreflight(selection.engine).pipe(withLogContext("preflight")))),
+    runtime,
   );
-  const adapter = getContainerAdapter(selection.engine);
-
-  await runContainerPreflight(adapter, {
-    runner: runtime.runner,
-    logger: runtime.logger.child("preflight"),
-    environment: runtime.environment,
-    signal: runtime.signal,
-  });
 
   if (shouldGenerateTaxonomyArtifacts(input.action)) {
     await runArtifactPrerequisite(dependencies.artifacts, context);
@@ -382,7 +379,8 @@ async function executeSelfhost(
   }
 
   if (input.action === "stop") {
-    await removeSelfhostTraefikConfig(runtime.files);
+    // cohort 6 temporary: Task 6.4 removes the config inside the Effect-native command.
+    await runEffectOrThrow(removeSelfhostTraefikConfig(), runtime);
   }
 
   return {action: input.action, engine: adapter.engine, stacks: stacksByAction[input.action]};

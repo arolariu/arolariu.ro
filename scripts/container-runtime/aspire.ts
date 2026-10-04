@@ -10,11 +10,15 @@
  * test.
  */
 
+import {Effect} from "effect";
+
 import {MonorepoCommand, type CommandContext, type CommandRuntimeFactory} from "../common/commander.ts";
 import {resolveRepositoryPaths} from "../common/repository-paths.ts";
 import {RunnerError} from "../common/runner.ts";
 import {commandCancellationFromSignal} from "../common/runtime.ts";
-import {getContainerAdapter, type ContainerRuntimeAdapter} from "./adapters.ts";
+import {runEffectOrThrow} from "../platform/bridge.ts";
+import {withLogContext} from "../platform/Output.ts";
+import type {ContainerRuntimeAdapter} from "./adapters.ts";
 import {runContainerPreflight} from "./preflight.ts";
 import {resolveRuntimeContainerEngine} from "./selection.ts";
 import type {AspireResult, ContainerEngineInput} from "./types.ts";
@@ -59,25 +63,17 @@ export function buildAspireCommand(
 async function executeAspire(context: Readonly<CommandContext>, input: Readonly<ContainerEngineInput>): Promise<AspireResult> {
   const {runtime} = context;
   const paths = await resolveRepositoryPaths(import.meta.url, runtime.files);
-  const selection = await resolveRuntimeContainerEngine(
-    {
+  // cohort 6 temporary: Task 6.3 runs selection and preflight directly in the Effect-native command.
+  const adapter = await runEffectOrThrow(
+    resolveRuntimeContainerEngine({
       // The declarative command host only decodes untyped CLI strings; resolveRuntimeContainerEngine
       // validates the value (including the docker-deprecation message) before it is ever treated
       // as a real ContainerEngine.
       ...(input.engine === undefined ? {} : {requestedEngine: input.engine}),
-      env: runtime.environment.variables,
       toolingConfigPath: paths.toolingConfig,
-    },
-    runtime.files,
+    }).pipe(Effect.flatMap((selection) => runContainerPreflight(selection.engine).pipe(withLogContext("preflight")))),
+    runtime,
   );
-  const adapter = getContainerAdapter(selection.engine);
-
-  await runContainerPreflight(adapter, {
-    runner: runtime.runner,
-    logger: runtime.logger.child("preflight"),
-    environment: runtime.environment,
-    signal: runtime.signal,
-  });
 
   const command = buildAspireCommand(adapter, runtime.environment.variables);
   try {

@@ -4,14 +4,16 @@
  *
  * @remarks
  * {@link buildSelfhostTraefikConfig} stays a pure builder with no capability of its own; the two
- * file operations take the invocation's {@link FileSystem} instead of reaching for Node's
- * filesystem module, so selfhost's Traefik lifecycle is exercised entirely through runtime fakes.
- * The generated file is requested persistent state: the selfhost start action writes it and only
- * the explicit stop action removes it, never invocation cleanup.
+ * file operations are Effects over the platform `FileSystem`, so selfhost's Traefik lifecycle is
+ * exercised entirely through the in-memory test layer. The generated file is requested persistent
+ * state: the selfhost start action writes it and only the explicit stop action removes it.
  */
 
-import {dirname, resolve} from "node:path";
-import type {FileSystem} from "../common/runtime.ts";
+import {resolve} from "node:path";
+
+import {Effect, FileSystem, type Path, type PlatformError} from "effect";
+
+import {writeTextAtomic} from "../platform/Files.ts";
 
 const selfhostRoutes = [
   {name: "website-localhost", host: "website.localhost", service: "website", url: "http://website:3000"},
@@ -67,19 +69,36 @@ ${services}
 /**
  * Writes the generated selfhost Traefik file-provider config.
  *
- * @param files - Filesystem capability owned by the invocation.
+ * @remarks
+ * Writes through `writeTextAtomic`, which creates missing parent directories and replaces an
+ * existing config without readers ever observing a partial file.
+ *
  * @param config - Exact YAML content to persist, normally from {@link buildSelfhostTraefikConfig}.
+ * @param path - Destination path; defaults to {@link selfhostTraefikConfigPath}.
+ * @returns An effect that completes once `path` holds `config`.
  */
-export async function writeSelfhostTraefikConfig(files: FileSystem, config: string): Promise<void> {
-  await files.createDirectory(dirname(selfhostTraefikConfigPath), {recursive: true});
-  await files.writeText(selfhostTraefikConfigPath, config);
+export function writeSelfhostTraefikConfig(
+  config: string,
+  path: string = selfhostTraefikConfigPath,
+): Effect.Effect<void, PlatformError.PlatformError, FileSystem.FileSystem | Path.Path> {
+  return writeTextAtomic(path, config);
 }
 
 /**
  * Removes the generated selfhost Traefik file-provider config.
  *
- * @param files - Filesystem capability owned by the invocation.
+ * @remarks
+ * Removes with `force`, so a config that was never written (or is already gone) is a success, as in
+ * the legacy command.
+ *
+ * @param path - Config path; defaults to {@link selfhostTraefikConfigPath}.
+ * @returns An effect that completes once `path` no longer exists.
  */
-export async function removeSelfhostTraefikConfig(files: FileSystem): Promise<void> {
-  await files.remove(selfhostTraefikConfigPath, {force: true});
+export function removeSelfhostTraefikConfig(
+  path: string = selfhostTraefikConfigPath,
+): Effect.Effect<void, PlatformError.PlatformError, FileSystem.FileSystem> {
+  return Effect.gen(function* () {
+    const fs = yield* FileSystem.FileSystem;
+    yield* fs.remove(path, {force: true});
+  });
 }

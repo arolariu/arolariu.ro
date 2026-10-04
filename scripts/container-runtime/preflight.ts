@@ -3,22 +3,27 @@
  * @module scripts/container-runtime/preflight
  *
  * @remarks
- * The context-based {@link runContainerPreflight} implementation is the only preflight path: it
- * depends solely on the typed {@link ProcessRunner} boundary, never on Node's child-process
- * module directly, and every declarative container command (Aspire, Compose, Image, Selfhost)
- * calls it with its own invocation capabilities. The deprecated `runSharedPreflight()`,
- * `describeCommandFailure()`, `runArtifactGeneration()`, and `exitWithError()` (the last defined
- * in `types.ts`) compatibility surfaces were removed once Selfhost migrated in Task 21.
+ * Every probe runs through the Effect `Process` service, so tests script it instead of spawning
+ * Docker or Podman. A failing probe becomes a typed {@link ContainerRuntimeError} whose message is
+ * the legacy text, with the failure detail rebuilt from the {@link ProcessError} fields exactly as
+ * the legacy `describeOutcomeFailure` built it from a process outcome. Cancellation is fiber
+ * interruption: an interrupted probe stops the preflight without any further probe.
  */
 
-import {MonorepositoryConsoleLogger, type MonorepositoryLogger} from "../common/logger.ts";
-import {processFailureEvidence, type ProcessOutcome, type ProcessRunner} from "../common/runner.ts";
-import {commandCancellationFromSignal, type RuntimeEnvironment} from "../common/runtime.ts";
-import type {ContainerRuntimeAdapter} from "./adapters.ts";
-import {ContainerRuntimeError} from "./types.ts";
+import {Effect} from "effect";
+
+import {Process, type ProcessError, type ProcessOptions, type ProcessResult} from "../platform/Process.ts";
+import {getContainerAdapter, type ContainerRuntimeAdapter} from "./adapters.ts";
+import {ContainerRuntimeError, type ContainerEngine} from "./types.ts";
 
 /** Fixed ports used by local Aspire and selfhost resources. */
 export const requiredLocalPorts = [3000, 3002, 4173, 5000, 5002, 6379, 8081, 8082, 10000] as const;
+
+/** Longest failure detail embedded in a preflight message, as the legacy process diagnostics bounded it. */
+const MAX_FAILURE_DETAIL_LENGTH = 2_000;
+
+/** Probe options: a failure keeps its whole output, so the detail is the legacy leading excerpt rather than a tail. */
+const probeOptions: ProcessOptions = {failureOutput: "full"};
 
 /**
  * Combines stdout and stderr for backend/provider banner detection.
@@ -27,231 +32,215 @@ export const requiredLocalPorts = [3000, 3002, 4173, 5000, 5002, 6379, 8081, 808
  * Some container CLI banners (for example Podman's external compose
  * provider notice, or a Docker Desktop version banner) are written to
  * stderr rather than stdout. Detection heuristics must inspect both
- * streams; this is unrelated to {@link describeOutcomeFailure}'s
+ * streams; this is unrelated to {@link describeProcessFailure}'s
  * stderr-first precedence, which is used only for diagnostic failure text.
  *
- * @param outcome - Process outcome to inspect.
+ * @param result - Process output to inspect.
  * @returns Lowercased stdout and stderr joined for substring detection.
  */
-function combinedOutputForBannerDetection(outcome: Readonly<Pick<ProcessOutcome, "stdout" | "stderr">>): string {
-  return `${outcome.stdout}\n${outcome.stderr}`.toLowerCase();
+function combinedOutputForBannerDetection(result: Readonly<Pick<ProcessResult, "stdout" | "stderr">>): string {
+  return `${result.stdout}\n${result.stderr}`.toLowerCase();
 }
 
 /**
- * Builds a diagnostic failure detail from a typed process outcome.
- *
- * @param outcome - Failed or interrupted process outcome.
- * @returns The most relevant available diagnostic text, falling back to a kind-specific summary.
- */
-function describeOutcomeFailure(outcome: Readonly<Exclude<ProcessOutcome, {readonly kind: "succeeded"}>>): string {
-  const evidence = processFailureEvidence(outcome);
-  if (evidence !== "") return evidence;
-
-  switch (outcome.kind) {
-    case "exited":
-      return `exit code ${outcome.exitCode}`;
-    case "signalled":
-      return `terminated by ${outcome.signal}`;
-    case "spawn-failed":
-      return outcome.message;
-    case "timed-out":
-      return outcome.signal === undefined ? "timed out" : `timed out with ${outcome.signal}`;
-    case "cancelled":
-      return outcome.signal === undefined ? "cancelled" : `cancelled by ${outcome.signal}`;
-  }
-}
-
-/**
- * Translates a preflight probe's cancelled outcome into the invocation's own typed cancellation
- * reason instead of an operational {@link ContainerRuntimeError}.
+ * Builds the diagnostic failure detail of a failed probe, exactly like the legacy outcome-based helper.
  *
  * @remarks
- * A cancelled invocation's exact SIGINT/SIGTERM exit code (`130`/`143`) is owned by its own
- * {@link CommandCancellation} reason; letting a cancelled preflight probe fall through to a
- * generic tool-unavailable message would misreport an interrupted invocation as an operational
- * failure and the shared command lifecycle would classify it as exit code `1`. A
- * `{kind:"cancelled"}` outcome observed while `signal` is not the invocation's own aborted signal
- * is not this invocation's cancellation and stays an operational failure.
+ * The detail is the first {@link MAX_FAILURE_DETAIL_LENGTH} characters of stderr, else stdout, else
+ * (for a spawn failure) the spawn reason; when all are empty it falls back to a kind-specific
+ * summary: `exit code <n>`, `terminated by <signal>`, or `timed out`.
  *
- * @param outcome - Preflight probe outcome to inspect.
- * @param signal - The owning invocation's cancellation signal, supplied only when the probe runs
- * through {@link runContainerPreflight}.
- * @throws {CommandCancellation} When `outcome` is cancelled and `signal` is aborted.
+ * @param error - The probe failure.
+ * @returns The most relevant available diagnostic text.
  */
-function throwIfPreflightCancelled(outcome: Readonly<ProcessOutcome>, signal?: AbortSignal): void {
-  if (outcome.kind === "cancelled" && signal?.aborted === true) {
-    throw commandCancellationFromSignal(signal);
+function describeProcessFailure(error: ProcessError): string {
+  const evidence =
+    error.stderr.length > 0
+      ? error.stderr
+      : error.stdout.length > 0
+        ? error.stdout
+        : error._tag === "ProcessSpawnFailed"
+          ? error.reason
+          : "";
+  if (evidence !== "") {
+    return evidence.slice(0, MAX_FAILURE_DETAIL_LENGTH);
   }
+
+  switch (error._tag) {
+    case "ProcessExited":
+      return `exit code ${String(error.exitCode)}`;
+    case "ProcessSignalled":
+      return `terminated by ${error.signal}`;
+    case "ProcessSpawnFailed":
+      return error.reason;
+    case "ProcessTimedOut":
+      return "timed out";
+  }
+}
+
+/**
+ * Builds the typed failure of a probe whose message ends with the probe's failure detail.
+ *
+ * @param prefix - Legacy message text before `Output: `.
+ * @returns A mapper from the probe failure to {@link ContainerRuntimeError}.
+ */
+function probeFailure(prefix: string): (error: ProcessError) => ContainerRuntimeError {
+  return (error) => new ContainerRuntimeError({message: `${prefix} Output: ${describeProcessFailure(error)}`});
 }
 
 /**
  * Verifies a required CLI tool is available.
  *
- * @param tool - CLI tool name to probe.
- * @param runner - Process runner used for probing.
- * @param signal - The owning invocation's cancellation signal, when probing through
- * {@link runContainerPreflight}.
- * @throws {ContainerRuntimeError} When the tool cannot be executed.
+ * @param tool - CLI tool name to probe with `--version`.
+ * @returns An effect failing with {@link ContainerRuntimeError} when the tool cannot be executed.
  */
-export async function assertToolAvailable(tool: string, runner: ProcessRunner, signal?: AbortSignal): Promise<void> {
-  const outcome = await runner.run({command: tool, args: ["--version"]});
-  throwIfPreflightCancelled(outcome, signal);
-  if (outcome.kind !== "succeeded") {
-    throw new ContainerRuntimeError(`Required tool '${tool}' is not available. Output: ${describeOutcomeFailure(outcome)}`);
-  }
-}
+export const assertToolAvailable: (tool: string) => Effect.Effect<void, ContainerRuntimeError, Process> = Effect.fn(
+  "containers.assertToolAvailable",
+)(function* (tool: string) {
+  const runner = yield* Process;
+  yield* runner
+    .run({command: tool, args: ["--version"]}, probeOptions)
+    .pipe(Effect.mapError(probeFailure(`Required tool '${tool}' is not available.`)));
+});
 
 /**
  * Rejects Docker Desktop when it appears as the active Docker-compatible backend.
  *
  * @remarks
  * The probe itself is advisory: a failed `docker version` cannot confirm a Docker Desktop banner,
- * so it is not an error. A cancelled probe on the invocation's own aborted signal is different
- * and now surfaces the invocation's cancellation immediately, instead of letting the next
- * signal-aware probe report it one probe later.
+ * so it is not an error. An interrupted probe still interrupts the preflight.
  *
- * @param runner - Process runner used for probing.
- * @param signal - The owning invocation's cancellation signal, when probing through
- * {@link runContainerPreflight}.
- * @throws {ContainerRuntimeError} When Docker Desktop is detected.
+ * @returns An effect failing with {@link ContainerRuntimeError} when Docker Desktop is detected.
  */
-export async function assertNoDockerDesktopBackend(runner: ProcessRunner, signal?: AbortSignal): Promise<void> {
-  const outcome = await runner.run({command: "docker", args: ["version"]});
-  throwIfPreflightCancelled(outcome, signal);
+export const assertNoDockerDesktopBackend: () => Effect.Effect<void, ContainerRuntimeError, Process> = Effect.fn(
+  "containers.assertNoDockerDesktopBackend",
+)(function* () {
+  const runner = yield* Process;
+  const result = yield* runner.run({command: "docker", args: ["version"]}, probeOptions).pipe(
+    Effect.map((output): ProcessResult | undefined => output),
+    Effect.catch(() => Effect.succeed(undefined)),
+  );
 
-  if (outcome.kind === "succeeded" && combinedOutputForBannerDetection(outcome).includes("docker desktop")) {
-    throw new ContainerRuntimeError(
-      "Docker Desktop is the active backend. Stop Docker Desktop and select Rancher Desktop or Podman Desktop.",
-    );
+  if (result !== undefined && combinedOutputForBannerDetection(result).includes("docker desktop")) {
+    return yield* new ContainerRuntimeError({
+      message: "Docker Desktop is the active backend. Stop Docker Desktop and select Rancher Desktop or Podman Desktop.",
+    });
   }
-}
+});
 
 /**
  * Verifies Rancher Desktop owns the Docker-compatible CLI path.
  *
- * @param runner - Process runner used for probing.
- * @param signal - The owning invocation's cancellation signal, when probing through
- * {@link runContainerPreflight}.
- * @throws {ContainerRuntimeError} When the backend is unavailable or Docker Desktop is active.
+ * @returns An effect failing with {@link ContainerRuntimeError} when the backend is unavailable or
+ * Docker Desktop is active.
  */
-export async function assertRancherBackend(runner: ProcessRunner, signal?: AbortSignal): Promise<void> {
-  const outcome = await runner.run({command: "docker", args: ["version"]});
-  throwIfPreflightCancelled(outcome, signal);
+export const assertRancherBackend: () => Effect.Effect<void, ContainerRuntimeError, Process> = Effect.fn("containers.assertRancherBackend")(
+  function* () {
+    const runner = yield* Process;
+    const result = yield* runner
+      .run({command: "docker", args: ["version"]}, probeOptions)
+      .pipe(Effect.mapError(probeFailure("Rancher Desktop Docker-compatible CLI is not available.")));
 
-  if (outcome.kind !== "succeeded") {
-    throw new ContainerRuntimeError(`Rancher Desktop Docker-compatible CLI is not available. Output: ${describeOutcomeFailure(outcome)}`);
-  }
-
-  if (combinedOutputForBannerDetection(outcome).includes("docker desktop")) {
-    throw new ContainerRuntimeError(
-      "Rancher engine selected but Docker Desktop appears to be active. Start Rancher Desktop in Moby/dockerd mode and stop Docker Desktop.",
-    );
-  }
-}
+    if (combinedOutputForBannerDetection(result).includes("docker desktop")) {
+      return yield* new ContainerRuntimeError({
+        message:
+          "Rancher engine selected but Docker Desktop appears to be active. Start Rancher Desktop in Moby/dockerd mode and stop Docker Desktop.",
+      });
+    }
+  },
+);
 
 /**
  * Verifies Podman and its Compose provider are available.
  *
- * @param runner - Process runner used for probing.
- * @param signal - The owning invocation's cancellation signal, when probing through
- * {@link runContainerPreflight}.
- * @throws {ContainerRuntimeError} When Podman or Compose support is unavailable.
+ * @returns An effect failing with {@link ContainerRuntimeError} when Podman or Compose support is
+ * unavailable, or when Compose is delegated to a Docker Desktop provider.
  */
-export async function assertPodmanBackend(runner: ProcessRunner, signal?: AbortSignal): Promise<void> {
-  const podman = await runner.run({command: "podman", args: ["--version"]});
-  throwIfPreflightCancelled(podman, signal);
-  if (podman.kind !== "succeeded") {
-    throw new ContainerRuntimeError(`Podman is not available. Output: ${describeOutcomeFailure(podman)}`);
-  }
+export const assertPodmanBackend: () => Effect.Effect<void, ContainerRuntimeError, Process> = Effect.fn("containers.assertPodmanBackend")(
+  function* () {
+    const runner = yield* Process;
+    yield* runner
+      .run({command: "podman", args: ["--version"]}, probeOptions)
+      .pipe(Effect.mapError(probeFailure("Podman is not available.")));
 
-  const compose = await runner.run({command: "podman", args: ["compose", "version"]});
-  throwIfPreflightCancelled(compose, signal);
-  if (compose.kind !== "succeeded") {
-    throw new ContainerRuntimeError(
-      `Podman Compose provider is not available. Configure Podman Desktop Compose support. Output: ${describeOutcomeFailure(compose)}`,
-    );
-  }
+    const compose = yield* runner
+      .run({command: "podman", args: ["compose", "version"]}, probeOptions)
+      .pipe(Effect.mapError(probeFailure("Podman Compose provider is not available. Configure Podman Desktop Compose support.")));
 
-  const composeOutput = combinedOutputForBannerDetection(compose);
-  const usesPodmanCompose = composeOutput.includes("podman-compose");
-  const dockerComposeIndicators = ["\\docker\\", "/docker/", "/docker.app/", "docker desktop", "docker-compose.exe", "docker-compose"];
-  if (!usesPodmanCompose && dockerComposeIndicators.some((indicator) => composeOutput.includes(indicator))) {
-    throw new ContainerRuntimeError(
-      "Podman Compose is currently delegated to a Docker Desktop compose provider. Install podman-compose and set PODMAN_COMPOSE_PROVIDER to the podman-compose executable.",
-    );
-  }
-}
+    const composeOutput = combinedOutputForBannerDetection(compose);
+    const usesPodmanCompose = composeOutput.includes("podman-compose");
+    const dockerComposeIndicators = ["\\docker\\", "/docker/", "/docker.app/", "docker desktop", "docker-compose.exe", "docker-compose"];
+    if (!usesPodmanCompose && dockerComposeIndicators.some((indicator) => composeOutput.includes(indicator))) {
+      return yield* new ContainerRuntimeError({
+        message:
+          "Podman Compose is currently delegated to a Docker Desktop compose provider. Install podman-compose and set PODMAN_COMPOSE_PROVIDER to the podman-compose executable.",
+      });
+    }
+  },
+);
 
 /**
  * Warns when known local containers already exist for the selected engine.
  *
+ * @remarks
+ * The listing is advisory: a failed listing logs nothing. The warning is an `Effect.logWarning`
+ * with the legacy text, rendered with the caller's log context.
+ *
  * @param adapter - Selected runtime adapter.
- * @param runner - Process runner used for probing.
- * @param logger - Logger used for warning output.
+ * @returns An effect that never fails.
  */
-export async function warnOnExistingLocalContainers(
-  adapter: ContainerRuntimeAdapter,
-  runner: ProcessRunner,
-  logger: MonorepositoryLogger = new MonorepositoryConsoleLogger("container::preflight"),
-): Promise<void> {
+export const warnOnExistingLocalContainers: (adapter: ContainerRuntimeAdapter) => Effect.Effect<void, never, Process> = Effect.fn(
+  "containers.warnOnExistingLocalContainers",
+)(function* (adapter: ContainerRuntimeAdapter) {
   const names = ["traefik", "mssql", "cosmosdb", "azurite", "redis", "exp-arolariu-ro", "api-arolariu-ro", "website-arolariu-ro"];
-  const outcome = await runner.run({command: adapter.primaryCli, args: ["ps", "-a", "--format", "{{.Names}}"]});
+  const runner = yield* Process;
+  const listing = yield* runner.run({command: adapter.primaryCli, args: ["ps", "-a", "--format", "{{.Names}}"]}).pipe(
+    Effect.map((output): string | undefined => output.stdout),
+    Effect.catch(() => Effect.succeed(undefined)),
+  );
 
-  if (outcome.kind !== "succeeded") return;
+  if (listing === undefined) return;
 
-  const active = outcome.stdout
+  const active = listing
     .split(/\r?\n/)
     .map((line) => line.trim())
     .filter((line) => line.length > 0);
   const collisions = names.filter((name) => active.includes(name));
 
   if (collisions.length > 0) {
-    logger.warn(`Existing local containers detected for ${adapter.displayName}: ${collisions.join(", ")}`);
+    yield* Effect.logWarning(`Existing local containers detected for ${adapter.displayName}: ${collisions.join(", ")}`);
   }
-}
-
-/** Capabilities {@link runContainerPreflight} depends on for one preflight run. */
-export interface ContainerPreflightContext {
-  /** Process runner used for every preflight probe. */
-  readonly runner: ProcessRunner;
-  /** Logger used for warning and diagnostic output. */
-  readonly logger: MonorepositoryLogger;
-  /** Immutable snapshot of the ambient environment. */
-  readonly environment: RuntimeEnvironment;
-  /** Cancellation signal threaded into every preflight probe. */
-  readonly signal: AbortSignal;
-}
+});
 
 /**
  * Runs common preflight checks for engine-aware local runtime commands.
  *
  * @remarks
- * This is the only preflight path: every declarative container command calls it with its own
- * invocation runner, logger, environment snapshot, and cancellation signal.
+ * Probes, in order: the engine CLI `--version`; for Rancher the Docker-compatible backend, for
+ * Podman the advisory Docker Desktop probe and then the Podman backend; the engine's
+ * `compose version`; and finally the existing-container listing, which only warns.
  *
- * @param adapter - Selected runtime adapter.
- * @param context - Capabilities this preflight run depends on.
- * @throws {ContainerRuntimeError} When required runtime capabilities are missing.
+ * @param engine - Selected container engine.
+ * @returns The engine's runtime adapter, failing with {@link ContainerRuntimeError} when a required
+ * runtime capability is missing.
  */
-export async function runContainerPreflight(adapter: ContainerRuntimeAdapter, context: Readonly<ContainerPreflightContext>): Promise<void> {
-  const runner = context.runner.scope({signal: context.signal});
+export const runContainerPreflight: (engine: ContainerEngine) => Effect.Effect<ContainerRuntimeAdapter, ContainerRuntimeError, Process> =
+  Effect.fn("containers.runContainerPreflight")(function* (engine: ContainerEngine) {
+    const adapter = getContainerAdapter(engine);
+    yield* assertToolAvailable(adapter.primaryCli);
 
-  await assertToolAvailable(adapter.primaryCli, runner, context.signal);
+    if (adapter.engine === "rancher") {
+      yield* assertRancherBackend();
+    } else {
+      yield* assertNoDockerDesktopBackend();
+      yield* assertPodmanBackend();
+    }
 
-  if (adapter.engine === "rancher") {
-    await assertRancherBackend(runner, context.signal);
-  } else {
-    await assertNoDockerDesktopBackend(runner, context.signal);
-    await assertPodmanBackend(runner, context.signal);
-  }
+    const runner = yield* Process;
+    yield* runner
+      .run(adapter.compose(["version"]), probeOptions)
+      .pipe(Effect.mapError(probeFailure(`${adapter.displayName} Compose provider is not available.`)));
 
-  const composeOutcome = await runner.run(adapter.compose(["version"]));
-  throwIfPreflightCancelled(composeOutcome, context.signal);
-  if (composeOutcome.kind !== "succeeded") {
-    throw new ContainerRuntimeError(
-      `${adapter.displayName} Compose provider is not available. Output: ${describeOutcomeFailure(composeOutcome)}`,
-    );
-  }
-
-  await warnOnExistingLocalContainers(adapter, runner, context.logger);
-}
+    yield* warnOnExistingLocalContainers(adapter);
+    return adapter;
+  });
