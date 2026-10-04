@@ -4,7 +4,7 @@
  * @module scripts.setup.python.test
  *
  * @remarks
- * Every test drives the real phase against an injected {@link SetupPhaseRuntime}: a recording
+ * Every test drives the real phase against an injected {@link LegacySetupPhaseRuntime}: a recording
  * process runner replaying typed {@link ProcessOutcome} fixtures, a deterministic clock, an
  * in-memory recursive-removal filesystem, and an immutable environment snapshot that supplies the
  * host platform. No test in this file reads the live checkout, spawns a process, or observes
@@ -12,6 +12,7 @@
  */
 
 import {resolve} from "node:path";
+import {Effect, Layer} from "effect";
 import {describe, expect, it, vi} from "vitest";
 
 import type {CommandContext} from "../../../common/commander.ts";
@@ -23,17 +24,20 @@ import {createMemoryFileSystem, createTestRuntimeFactory} from "../../../common/
 import type {Clock, RuntimeEnvironment} from "../../../common/runtime.ts";
 import type {PythonFacts, PythonInterpreterFact} from "../../../inspection/python.ts";
 import type {LegacyRepositoryInspectionSession} from "../../../platform/bridge.ts";
+import {Prompts} from "../../../platform/Prompts.ts";
+import {makeTestLayer} from "../../../platform/testing.ts";
 import type {InspectionOutcome} from "../../../inspection/types.ts";
 import {createPythonSetupPhase, pythonInVirtualEnvironment, pythonSetupPhase, selectPythonInstallationProposal} from "./python.ts";
-import {createSetupActionExecutor} from "../index.ts";
+import {setupActionsLayer} from "../actions.ts";
+import {legacySetupActionExecutor} from "../legacy-phase.ts";
 import type {
-  SetupAction,
+  LegacySetupAction,
   SetupActionDisposition,
-  SetupActionExecutor,
-  SetupContext,
+  LegacySetupActionExecutor,
+  LegacySetupContext,
   SetupInput,
   SetupPhaseResult,
-  SetupPhaseRuntime,
+  LegacySetupPhaseRuntime,
 } from "../types.ts";
 
 const requiredPython: MinimumVersion = {major: 3, minor: 12, patch: 0};
@@ -168,13 +172,13 @@ function createPythonInspectionHarness(outcomes: readonly InspectionOutcome<Pyth
 }
 
 function createActions(dispositions: Readonly<Record<string, SetupActionDisposition>> = {}): Readonly<{
-  actions: SetupActionExecutor;
+  actions: LegacySetupActionExecutor;
   actionIds: string[];
-  actionRecords: SetupAction[];
+  actionRecords: LegacySetupAction[];
 }> {
   const actionIds: string[] = [];
-  const actionRecords: SetupAction[] = [];
-  const actions: SetupActionExecutor = {
+  const actionRecords: LegacySetupAction[] = [];
+  const actions: LegacySetupActionExecutor = {
     run: async (action) => {
       actionIds.push(action.id);
       actionRecords.push(action);
@@ -192,11 +196,11 @@ function createActions(dispositions: Readonly<Record<string, SetupActionDisposit
  * The exact context view the migrated Python phase reads.
  *
  * @remarks
- * The deprecated {@link SetupContext.runner} and {@link SetupContext.now} members are deliberately
- * absent: a migrated phase must read its capabilities from {@link SetupContext.runtime} only, so
+ * The deprecated {@link LegacySetupContext.runner} and {@link LegacySetupContext.now} members are deliberately
+ * absent: a migrated phase must read its capabilities from {@link LegacySetupContext.runtime} only, so
  * any relapse becomes a type error instead of a silently passing test.
  */
-type MigratedSetupContext = Omit<SetupContext, "runner" | "now"> & Readonly<{runtime: SetupPhaseRuntime}>;
+type MigratedSetupContext = Omit<LegacySetupContext, "runner" | "now"> & Readonly<{runtime: LegacySetupPhaseRuntime}>;
 
 function environmentSnapshot(platform: NodeJS.Platform): RuntimeEnvironment {
   return {
@@ -221,7 +225,7 @@ interface PythonHarness {
   /** Action identifiers in evaluation order. */
   readonly actionIds: string[];
   /** Complete action records in evaluation order. */
-  readonly actionRecords: SetupAction[];
+  readonly actionRecords: LegacySetupAction[];
   /** Every directory path passed to the recursive-removal filesystem. */
   readonly removedDirectories: readonly string[];
   /** Inspection session probe. */
@@ -268,7 +272,7 @@ async function createHarness(
   const commandRuntime = await factory.createRoot({presentation: "silent", registerProcessSignals: false});
   const command: CommandContext = {runtime: commandRuntime, presentation: "silent"};
 
-  const runtime: SetupPhaseRuntime = {
+  const runtime: LegacySetupPhaseRuntime = {
     command,
     runner: commandRuntime.runner,
     files: commandRuntime.files,
@@ -276,7 +280,7 @@ async function createHarness(
     clock: commandRuntime.clock,
     tasks: commandRuntime.tasks,
     environment: commandRuntime.environment,
-    invokeGenerate: vi.fn<SetupPhaseRuntime["invokeGenerate"]>(() =>
+    invokeGenerate: vi.fn<LegacySetupPhaseRuntime["invokeGenerate"]>(() =>
       Promise.reject(new Error("The Python setup phase must never invoke generation.")),
     ),
   };
@@ -318,7 +322,7 @@ async function createHarness(
  * @returns The completed phase result.
  */
 function runPhase(harness: PythonHarness, patch: Partial<MigratedSetupContext> = {}): Promise<SetupPhaseResult> {
-  return harness.phase.run({...harness.context, ...patch} as SetupContext);
+  return harness.phase.run({...harness.context, ...patch} as LegacySetupContext);
 }
 
 function callFor(harness: PythonHarness, key: string): RecordedCall | undefined {
@@ -334,7 +338,7 @@ describe("python setup public contract", () => {
     const harness = await createHarness();
     const {runtime: _runtime, ...withoutRuntime} = harness.context;
 
-    await expect(harness.phase.run(withoutRuntime as SetupContext)).rejects.toThrow(/setup phase runtime/i);
+    await expect(harness.phase.run(withoutRuntime as LegacySetupContext)).rejects.toThrow(/setup phase runtime/i);
   });
 });
 
@@ -820,7 +824,7 @@ describe("python cache freshness around mutations", () => {
   it("propagates a later AbortError after an earlier mutation already executed and invalidated", async () => {
     const interruption = new DOMException("interrupted", "AbortError");
     const harness = await createHarness();
-    const actions: SetupActionExecutor = {
+    const actions: LegacySetupActionExecutor = {
       run: async (action) => {
         if (action.id === "python.dependencies.install") {
           throw interruption;
@@ -837,7 +841,7 @@ describe("python cache freshness around mutations", () => {
   it("rethrows interruption instead of reporting a failed result", async () => {
     const abortError = Object.assign(new Error("aborted"), {name: "AbortError"});
     const harness = await createHarness();
-    const actions: SetupActionExecutor = {run: async () => Promise.reject(abortError)};
+    const actions: LegacySetupActionExecutor = {run: async () => Promise.reject(abortError)};
 
     await expect(runPhase(harness, {actions})).rejects.toBe(abortError);
   });
@@ -1010,23 +1014,26 @@ describe("python characterization (pre-Effect migration)", () => {
   });
 
   /**
-   * Wraps the real legacy consent controller in `--dry-run` mode, so the pin observes exactly what the
-   * production executor plans, logs, and executes (nothing). Any prompt fails the test.
+   * Runs the Effect kernel's consent policy (`setupActionsLayer`) in `--dry-run` mode behind its
+   * legacy executor view, so the pin observes exactly what the production kernel plans, logs, and
+   * executes (nothing) for this legacy phase. Any prompt fails the test.
    */
-  function legacyDryRunExecutor(options: SetupInput): Readonly<{
-    actions: SetupActionExecutor;
-    executed: string[];
-    lines: () => readonly string[];
-  }> {
-    const sink = new InMemoryLoggerSink();
-    const logger = new MonorepositoryConsoleLogger("setup", {color: false, verbose: false, sink});
-    const refuse = (): Promise<never> => Promise.reject(new Error("A dry run must never prompt."));
-    const prompts: SetupContext["prompts"] = {confirm: refuse, select: refuse, text: refuse, secret: refuse};
-    const executor = createSetupActionExecutor({options, prompts, logger});
+  async function legacyDryRunExecutor(options: SetupInput): Promise<
+    Readonly<{
+      actions: LegacySetupActionExecutor;
+      executed: string[];
+      lines: () => readonly string[];
+    }>
+  > {
+    const harness = makeTestLayer({context: "setup"});
+    const refuse = (): Effect.Effect<never> => Effect.die(new Error("A dry run must never prompt."));
+    const prompts = Prompts.of({confirm: refuse, select: refuse, text: refuse, secret: refuse});
+    const layer = setupActionsLayer(options).pipe(Layer.provideMerge(Layer.merge(harness.layer, Layer.succeed(Prompts, prompts))));
+    const executor = await Effect.runPromise(legacySetupActionExecutor().pipe(Effect.provide(layer)));
     const executed: string[] = [];
     return {
       executed,
-      lines: () => sink.records.map(({stream, text}) => `${stream}: ${text}`),
+      lines: () => harness.output().map(({stream, text}) => `${stream}: ${text.replace(/\n$/u, "")}`),
       actions: {
         run: (action) =>
           executor.run({
@@ -1043,7 +1050,7 @@ describe("python characterization (pre-Effect migration)", () => {
   it("pins a mutation-free dry run when the interpreter is missing", async () => {
     // Arrange
     const options = setupOptions({dryRun: true});
-    const dryRun = legacyDryRunExecutor(options);
+    const dryRun = await legacyDryRunExecutor(options);
     const harness = await createHarness({
       options,
       pythonOutcomes: [availableOutcome({interpreters: [], selected: undefined, virtualEnvironment: {exists: false, compatible: false}})],
@@ -1084,7 +1091,7 @@ describe("python characterization (pre-Effect migration)", () => {
   it("pins a mutation-free dry run when an existing incompatible virtual environment would be removed and recreated", async () => {
     // Arrange
     const options = setupOptions({dryRun: true});
-    const dryRun = legacyDryRunExecutor(options);
+    const dryRun = await legacyDryRunExecutor(options);
     const harness = await createHarness({
       options,
       pythonOutcomes: [availableOutcome({virtualEnvironment: {exists: true, compatible: false}})],

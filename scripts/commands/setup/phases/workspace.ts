@@ -4,7 +4,7 @@
  *
  * @remarks
  * Every phase in this module reads its capabilities from the invocation-scoped
- * {@link SetupPhaseRuntime}: the filesystem, the phase-scoped process runner, the clock, the task
+ * {@link LegacySetupPhaseRuntime}: the filesystem, the phase-scoped process runner, the clock, the task
  * scheduler, the environment snapshot, and the typed nested generation invocation. No phase here
  * touches an ambient Node global, spawns a sibling script, or measures time itself.
  */
@@ -19,11 +19,11 @@ import {getExpectedTaxonomyArtifactPaths} from "../../../common/taxonomy-artifac
 import type {GenerateResult} from "../../generate/index.ts";
 import type {NpmTreeFacts} from "../../../inspection/packages.ts";
 import {
-  requireSetupPhaseRuntime,
-  type SetupContext,
-  type SetupPhaseDefinition,
+  requireLegacySetupPhaseRuntime,
+  type LegacySetupContext,
+  type LegacySetupPhaseDefinition,
   type SetupPhaseResult,
-  type SetupPhaseRuntime,
+  type LegacySetupPhaseRuntime,
 } from "../types.ts";
 
 const REPOSITORY_PACKAGE_NAME = "@arolariu/monorepo";
@@ -103,7 +103,7 @@ function commandFailureEvidence(outcome: Readonly<ProcessOutcome>): readonly str
   return evidence;
 }
 
-function result(runtime: SetupPhaseRuntime, startedAt: number, input: Omit<SetupPhaseResult, "durationMs">): SetupPhaseResult {
+function result(runtime: LegacySetupPhaseRuntime, startedAt: number, input: Omit<SetupPhaseResult, "durationMs">): SetupPhaseResult {
   return {
     ...input,
     durationMs: Math.max(0, runtime.clock.monotonicNow() - startedAt),
@@ -201,8 +201,8 @@ function inspectRuntimeVersion(
   };
 }
 
-async function runPrerequisites(context: SetupContext): Promise<SetupPhaseResult> {
-  const runtime = requireSetupPhaseRuntime(context);
+async function runPrerequisites(context: LegacySetupContext): Promise<SetupPhaseResult> {
+  const runtime = requireLegacySetupPhaseRuntime(context);
   const startedAt = runtime.clock.monotonicNow();
   const id = "workspace.prerequisites";
   const repositoryIdentity = await readRepositoryIdentity(context.paths.packageJson, runtime.files);
@@ -360,8 +360,8 @@ function npmProblemEvidence(facts: Readonly<NpmTreeFacts>): readonly string[] {
  * @param context - Shared setup dependencies, including the repository inspection session.
  * @returns The completed phase result.
  */
-async function runRootDependencies(context: SetupContext): Promise<SetupPhaseResult> {
-  const runtime = requireSetupPhaseRuntime(context);
+async function runRootDependencies(context: LegacySetupContext): Promise<SetupPhaseResult> {
+  const runtime = requireLegacySetupPhaseRuntime(context);
   const startedAt = runtime.clock.monotonicNow();
   const id = "workspace.root-dependencies";
   const outcome = await context.inspection.inspect("npm.root");
@@ -417,8 +417,8 @@ async function runRootDependencies(context: SetupContext): Promise<SetupPhaseRes
  * @returns The completed phase result.
  * @throws When the invocation was interrupted while the restoration ran.
  */
-async function runGithubScriptsDependencies(context: SetupContext): Promise<SetupPhaseResult> {
-  const runtime = requireSetupPhaseRuntime(context);
+async function runGithubScriptsDependencies(context: LegacySetupContext): Promise<SetupPhaseResult> {
+  const runtime = requireLegacySetupPhaseRuntime(context);
   const startedAt = runtime.clock.monotonicNow();
   const id = "workspace.github-scripts-dependencies";
   const actionId = `${id}.npm-ci`;
@@ -576,8 +576,8 @@ function describeStoppedGeneration(execution: Extract<CommandExecution<GenerateR
  * @returns The completed phase result.
  * @throws {CommandCancellation} When the nested generation invocation was cancelled.
  */
-async function runGenerators(context: SetupContext): Promise<SetupPhaseResult> {
-  const runtime = requireSetupPhaseRuntime(context);
+async function runGenerators(context: LegacySetupContext): Promise<SetupPhaseResult> {
+  const runtime = requireLegacySetupPhaseRuntime(context);
   const startedAt = runtime.clock.monotonicNow();
   const id = "workspace.generators";
   const generatorActionId = "workspace.generators.generate";
@@ -716,7 +716,7 @@ async function runGenerators(context: SetupContext): Promise<SetupPhaseResult> {
 }
 
 /** Required workspace setup phases and their dependency graph. */
-export const workspaceSetupPhases: readonly SetupPhaseDefinition[] = [
+export const workspaceSetupPhases: readonly LegacySetupPhaseDefinition[] = [
   {
     id: "workspace.prerequisites",
     title: "Validate workspace prerequisites",

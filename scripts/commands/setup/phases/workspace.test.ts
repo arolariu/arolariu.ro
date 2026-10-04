@@ -4,13 +4,14 @@
  * @module scripts.setup.workspace.test
  *
  * @remarks
- * Every phase test drives the real phase against an injected {@link SetupPhaseRuntime}: an
+ * Every phase test drives the real phase against an injected {@link LegacySetupPhaseRuntime}: an
  * in-memory filesystem, a recording process runner, a deterministic clock and task scheduler, and
  * a fake generation invoker. No test in this file reads the live checkout, spawns a process, or
  * mutates disk state.
  */
 
 import {resolve} from "node:path";
+import {Effect, Layer} from "effect";
 import {describe, expect, it, vi} from "vitest";
 
 import type {CommandContext, CommandExecution} from "../../../common/commander.ts";
@@ -29,17 +30,20 @@ import {getExpectedTaxonomyArtifactPaths} from "../../../common/taxonomy-artifac
 import type {GenerateResult, GenerateTaskName} from "../../generate/index.ts";
 import type {NpmTreeFacts} from "../../../inspection/packages.ts";
 import type {LegacyRepositoryInspectionSession} from "../../../platform/bridge.ts";
+import {Prompts} from "../../../platform/Prompts.ts";
+import {makeTestLayer} from "../../../platform/testing.ts";
 import type {InspectionOutcome} from "../../../inspection/types.ts";
-import {createSetupActionExecutor} from "../index.ts";
+import {setupActionsLayer} from "../actions.ts";
+import {legacySetupActionExecutor} from "../legacy-phase.ts";
 import type {
-  SetupAction,
+  LegacySetupAction,
   SetupActionDisposition,
-  SetupActionExecutor,
-  SetupContext,
+  LegacySetupActionExecutor,
+  LegacySetupContext,
   SetupInput,
-  SetupPhaseDefinition,
+  LegacySetupPhaseDefinition,
   SetupPhaseResult,
-  SetupPhaseRuntime,
+  LegacySetupPhaseRuntime,
 } from "../types.ts";
 import {workspaceSetupPhases} from "./workspace.ts";
 
@@ -175,7 +179,7 @@ function createInspectionHarness(
   };
 }
 
-function findPhase(id: string): SetupPhaseDefinition {
+function findPhase(id: string): LegacySetupPhaseDefinition {
   const phase = workspaceSetupPhases.find((candidate) => candidate.id === id);
   if (phase === undefined) {
     throw new Error(`Missing workspace phase '${id}'.`);
@@ -187,12 +191,12 @@ function createActions(
   dryRun: boolean,
   dispositions: Readonly<Record<string, SetupActionDisposition>> = {},
 ): Readonly<{
-  actions: SetupActionExecutor;
-  run: ReturnType<typeof vi.fn<SetupActionExecutor["run"]>>;
+  actions: LegacySetupActionExecutor;
+  run: ReturnType<typeof vi.fn<LegacySetupActionExecutor["run"]>>;
   actionIds: string[];
 }> {
   const actionIds: string[] = [];
-  const run = vi.fn<SetupActionExecutor["run"]>(async (action: Readonly<SetupAction>): Promise<SetupActionDisposition> => {
+  const run = vi.fn<LegacySetupActionExecutor["run"]>(async (action: Readonly<LegacySetupAction>): Promise<SetupActionDisposition> => {
     actionIds.push(action.id);
     const disposition = dispositions[action.id] ?? (dryRun ? "planned" : "executed");
     if (disposition === "executed") {
@@ -243,7 +247,7 @@ interface WorkspaceHarnessInput {
   /** Typed generation outcome the composed generation command returns. */
   readonly generation?: CommandExecution<GenerateResult> | (() => Promise<CommandExecution<GenerateResult>>);
   /** Mutation controller; defaults to one derived from `options.dryRun`. */
-  readonly actions?: SetupActionExecutor;
+  readonly actions?: LegacySetupActionExecutor;
 }
 
 interface WorkspaceHarness {
@@ -254,7 +258,7 @@ interface WorkspaceHarness {
   /** In-memory filesystem observed by the phase. */
   readonly files: FileSystem;
   /** Recorded generation invocations. */
-  readonly generate: ReturnType<typeof vi.fn<SetupPhaseRuntime["invokeGenerate"]>>;
+  readonly generate: ReturnType<typeof vi.fn<LegacySetupPhaseRuntime["invokeGenerate"]>>;
   /** Rendered logger output. */
   readonly sink: InMemoryLoggerSink;
 }
@@ -263,11 +267,11 @@ interface WorkspaceHarness {
  * The exact context view a migrated workspace phase reads.
  *
  * @remarks
- * The deprecated {@link SetupContext.runner} and {@link SetupContext.now} members are deliberately
- * absent: a migrated phase must read its capabilities from {@link SetupContext.runtime} only, and
+ * The deprecated {@link LegacySetupContext.runner} and {@link LegacySetupContext.now} members are deliberately
+ * absent: a migrated phase must read its capabilities from {@link LegacySetupContext.runtime} only, and
  * omitting them here makes any relapse a type error rather than a silently passing test.
  */
-type MigratedSetupContext = Omit<SetupContext, "runner" | "now"> & Readonly<{runtime: SetupPhaseRuntime}>;
+type MigratedSetupContext = Omit<LegacySetupContext, "runner" | "now"> & Readonly<{runtime: LegacySetupPhaseRuntime}>;
 
 /**
  * Runs one migrated workspace phase against a context without the deprecated transitional members.
@@ -277,7 +281,7 @@ type MigratedSetupContext = Omit<SetupContext, "runner" | "now"> & Readonly<{run
  * @returns The completed phase result.
  */
 function runPhase(id: string, context: MigratedSetupContext): Promise<SetupPhaseResult> {
-  return findPhase(id).run(context as SetupContext);
+  return findPhase(id).run(context as LegacySetupContext);
 }
 
 /**
@@ -300,7 +304,7 @@ async function createHarness(input: Readonly<WorkspaceHarnessInput> = {}): Promi
   };
 
   const generation = input.generation ?? completedGeneration();
-  const generate = vi.fn<SetupPhaseRuntime["invokeGenerate"]>(async () =>
+  const generate = vi.fn<LegacySetupPhaseRuntime["invokeGenerate"]>(async () =>
     typeof generation === "function" ? generation() : generation,
   );
 
@@ -310,7 +314,7 @@ async function createHarness(input: Readonly<WorkspaceHarnessInput> = {}): Promi
   const commandRuntime = await factory.createRoot({presentation: "silent", registerProcessSignals: false});
   const command: CommandContext = {runtime: commandRuntime, presentation: "silent"};
 
-  const runtime: SetupPhaseRuntime = {
+  const runtime: LegacySetupPhaseRuntime = {
     command,
     runner: commandRuntime.runner,
     files: commandRuntime.files,
@@ -920,7 +924,7 @@ describe("workspace phase runtime contract", () => {
     const {context} = await createHarness();
     const {runtime: _runtime, ...withoutRuntime} = context;
 
-    await expect(findPhase("workspace.root-dependencies").run(withoutRuntime as SetupContext)).rejects.toThrow(/runtime/i);
+    await expect(findPhase("workspace.root-dependencies").run(withoutRuntime as LegacySetupContext)).rejects.toThrow(/runtime/i);
   });
 });
 
@@ -1065,23 +1069,26 @@ describe("workspace characterization (pre-Effect migration)", () => {
   });
 
   /**
-   * Wraps the real legacy consent controller in `--dry-run` mode, so the pin observes exactly what the
-   * production executor plans, logs, and executes (nothing). Any prompt fails the test.
+   * Runs the Effect kernel's consent policy (`setupActionsLayer`) in `--dry-run` mode behind its
+   * legacy executor view, so the pin observes exactly what the production kernel plans, logs, and
+   * executes (nothing) for this legacy phase. Any prompt fails the test.
    */
-  function legacyDryRunExecutor(options: SetupInput): Readonly<{
-    actions: SetupActionExecutor;
-    executed: string[];
-    lines: () => readonly string[];
-  }> {
-    const sink = new InMemoryLoggerSink();
-    const logger = new MonorepositoryConsoleLogger("setup", {color: false, verbose: false, sink});
-    const refuse = (): Promise<never> => Promise.reject(new Error("A dry run must never prompt."));
-    const prompts: SetupContext["prompts"] = {confirm: refuse, select: refuse, text: refuse, secret: refuse};
-    const executor = createSetupActionExecutor({options, prompts, logger});
+  async function legacyDryRunExecutor(options: SetupInput): Promise<
+    Readonly<{
+      actions: LegacySetupActionExecutor;
+      executed: string[];
+      lines: () => readonly string[];
+    }>
+  > {
+    const harness = makeTestLayer({context: "setup"});
+    const refuse = (): Effect.Effect<never> => Effect.die(new Error("A dry run must never prompt."));
+    const prompts = Prompts.of({confirm: refuse, select: refuse, text: refuse, secret: refuse});
+    const layer = setupActionsLayer(options).pipe(Layer.provideMerge(Layer.merge(harness.layer, Layer.succeed(Prompts, prompts))));
+    const executor = await Effect.runPromise(legacySetupActionExecutor().pipe(Effect.provide(layer)));
     const executed: string[] = [];
     return {
       executed,
-      lines: () => sink.records.map(({stream, text}) => `${stream}: ${text}`),
+      lines: () => harness.output().map(({stream, text}) => `${stream}: ${text.replace(/\n$/u, "")}`),
       actions: {
         run: (action) =>
           executor.run({
@@ -1120,7 +1127,7 @@ describe("workspace characterization (pre-Effect migration)", () => {
   it("pins a mutation-free dry run of every workspace phase when restorations and generated artifacts are pending", async () => {
     // Arrange
     const options_ = options({dryRun: true});
-    const dryRun = legacyDryRunExecutor(options_);
+    const dryRun = await legacyDryRunExecutor(options_);
     const inspection = createInspectionHarness({"npm.root": () => npmTree("root", 42)});
     const mutations: string[] = [];
     const {context, runner, generate} = await createHarness({

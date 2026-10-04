@@ -22,7 +22,7 @@
  * against the refreshed facts. The Linux system-dependency action is deliberately excluded because
  * the shared fact contract does not model host libraries.
  *
- * The phase reads every capability from the invocation-scoped {@link SetupPhaseRuntime}: the
+ * The phase reads every capability from the invocation-scoped {@link LegacySetupPhaseRuntime}: the
  * process runner, the atomic filesystem, the clock, and the immutable environment snapshot that
  * supplies both the host platform and the non-interactive decision. It owns no ambient Node state
  * and no injected host boundary of its own; {@link prepareWebsiteEnvironment} stays exported
@@ -36,13 +36,13 @@ import type {ReactFacts} from "../../../inspection/frontend.ts";
 import type {PackageInventoryFacts} from "../../../inspection/packages.ts";
 import type {InspectionOutcome} from "../../../inspection/types.ts";
 import {
-  requireSetupPhaseRuntime,
+  requireLegacySetupPhaseRuntime,
   type SetupActionDisposition,
   type SetupActionScope,
-  type SetupContext,
-  type SetupPhaseDefinition,
+  type LegacySetupContext,
+  type LegacySetupPhaseDefinition,
   type SetupPhaseResult,
-  type SetupPhaseRuntime,
+  type LegacySetupPhaseRuntime,
 } from "../types.ts";
 
 type ClerkMode = "test" | "live";
@@ -201,11 +201,11 @@ function errorMessage(error: unknown, secrets: readonly string[]): string {
   return sanitize(error instanceof Error ? error.message : String(error), secrets);
 }
 
-function duration(startedAt: number, runtime: SetupPhaseRuntime): number {
+function duration(startedAt: number, runtime: LegacySetupPhaseRuntime): number {
   return Math.max(0, runtime.clock.monotonicNow() - startedAt);
 }
 
-function phaseResult(runtime: SetupPhaseRuntime, startedAt: number, input: Omit<SetupPhaseResult, "durationMs">): SetupPhaseResult {
+function phaseResult(runtime: LegacySetupPhaseRuntime, startedAt: number, input: Omit<SetupPhaseResult, "durationMs">): SetupPhaseResult {
   return {
     ...input,
     durationMs: duration(startedAt, runtime),
@@ -260,7 +260,7 @@ function outcomeEvidence(outcome: Readonly<InspectionOutcome<unknown>>): readonl
  * @throws Whatever the mutation or the action executor throws, including `AbortError`.
  */
 async function runReactMutation(
-  context: SetupContext,
+  context: LegacySetupContext,
   action: Readonly<{id: string; scope: SetupActionScope; summary: string; mutate: () => Promise<void>}>,
 ): Promise<ReactMutationOutcome> {
   let attempted = false;
@@ -292,7 +292,7 @@ async function runReactMutation(
  * @returns The locked version policy, including the single locked Playwright version.
  * @throws When a required root requirement is absent, blank, or internally inconsistent.
  */
-function lockedPackagePolicy(context: SetupContext): PackagePolicy {
+function lockedPackagePolicy(context: LegacySetupContext): PackagePolicy {
   const lockedVersions = new Map<string, string>();
   for (const name of LOCKED_PACKAGES) {
     const requirement = context.requirements.packages.get(name);
@@ -389,7 +389,7 @@ function clerkMode(key: (typeof CLERK_KEYS)[number], value: string | undefined):
   return null;
 }
 
-function registerSensitiveValue(context: SetupContext, knownSecrets: string[], value: string): void {
+function registerSensitiveValue(context: LegacySetupContext, knownSecrets: string[], value: string): void {
   if (value === "") {
     return;
   }
@@ -418,7 +418,7 @@ async function readEnvironment(path: string, files: FileSystem): Promise<string>
  * are appended, and every observed or entered credential is registered for redaction before it can
  * reach retained output.
  *
- * Interactivity is decided from the immutable {@link SetupPhaseRuntime.environment} snapshot,
+ * Interactivity is decided from the immutable {@link LegacySetupPhaseRuntime.environment} snapshot,
  * using the same standard-input terminal signal the injected prompt provider itself requires, so
  * a non-interactive invocation degrades instead of rejecting inside a prompt.
  *
@@ -428,8 +428,8 @@ async function readEnvironment(path: string, files: FileSystem): Promise<string>
  * @returns Preserved, written, and degraded credential state plus the mutation disposition.
  */
 async function prepareEnvironment(
-  context: SetupContext,
-  runtime: SetupPhaseRuntime,
+  context: LegacySetupContext,
+  runtime: LegacySetupPhaseRuntime,
   knownSecrets: string[],
 ): Promise<EnvironmentPreparationOutcome> {
   const original = await readEnvironment(context.paths.websiteEnvironment, runtime.files);
@@ -534,8 +534,8 @@ async function prepareEnvironment(
  * @returns Preserved, written, and degraded credential state.
  * @throws When the context carries no invocation-scoped setup phase runtime.
  */
-export function prepareWebsiteEnvironment(context: SetupContext): Promise<EnvironmentPreparationResult> {
-  return prepareEnvironment(context, requireSetupPhaseRuntime(context), []);
+export function prepareWebsiteEnvironment(context: LegacySetupContext): Promise<EnvironmentPreparationResult> {
+  return prepareEnvironment(context, requireLegacySetupPhaseRuntime(context), []);
 }
 
 /**
@@ -553,8 +553,8 @@ export function prepareWebsiteEnvironment(context: SetupContext): Promise<Enviro
  * @throws When the probe is inconclusive, the required action is declined, or the install fails.
  */
 async function ensureLinuxDependencies(
-  context: SetupContext,
-  runtime: SetupPhaseRuntime,
+  context: LegacySetupContext,
+  runtime: LegacySetupPhaseRuntime,
   evidence: string[],
   plannedActions: string[],
 ): Promise<void> {
@@ -613,8 +613,8 @@ async function ensureLinuxDependencies(
  * @returns Either a terminal phase result, or the facts to continue with.
  */
 async function preparePlaywright(
-  context: SetupContext,
-  runtime: SetupPhaseRuntime,
+  context: LegacySetupContext,
+  runtime: LegacySetupPhaseRuntime,
   lockedVersion: string,
   facts: Readonly<ReactFacts>,
   evidence: string[],
@@ -705,8 +705,8 @@ async function preparePlaywright(
  * @returns The deferred, dry-run-only phase result.
  */
 async function planFreshCheckoutDryRun(
-  context: SetupContext,
-  runtime: SetupPhaseRuntime,
+  context: LegacySetupContext,
+  runtime: LegacySetupPhaseRuntime,
   knownSecrets: string[],
   evidence: string[],
 ): Promise<SetupPhaseResult> {
@@ -789,8 +789,8 @@ function verifyEnvironmentWrite(environment: EnvironmentPreparationOutcome, evid
   return {facts: refreshed.value};
 }
 
-async function runReactSetup(context: SetupContext): Promise<SetupPhaseResult> {
-  const runtime = requireSetupPhaseRuntime(context);
+async function runReactSetup(context: LegacySetupContext): Promise<SetupPhaseResult> {
+  const runtime = requireLegacySetupPhaseRuntime(context);
   const startedAt = runtime.clock.monotonicNow();
   const evidence: string[] = [];
   const knownSecrets: string[] = [];
@@ -982,12 +982,12 @@ async function runReactSetup(context: SetupContext): Promise<SetupPhaseResult> {
  * @remarks
  * The phase no longer accepts host or filesystem boundaries: the platform, the terminal snapshot,
  * the atomic filesystem, the process runner, and the clock all come from
- * {@link SetupPhaseRuntime}, so a test replaces capabilities on the runtime rather than on this
+ * {@link LegacySetupPhaseRuntime}, so a test replaces capabilities on the runtime rather than on this
  * factory.
  *
  * @returns The required React setup phase definition.
  */
-export function createReactSetupPhase(): SetupPhaseDefinition {
+export function createReactSetupPhase(): LegacySetupPhaseDefinition {
   return {
     id: "react",
     title: "React workspace",
@@ -998,4 +998,4 @@ export function createReactSetupPhase(): SetupPhaseDefinition {
 }
 
 /** Required phase that prepares React workspaces, website environment, and Playwright. */
-export const reactSetupPhase: SetupPhaseDefinition = createReactSetupPhase();
+export const reactSetupPhase: LegacySetupPhaseDefinition = createReactSetupPhase();

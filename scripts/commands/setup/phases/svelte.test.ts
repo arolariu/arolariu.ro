@@ -4,7 +4,7 @@
  * @module scripts.setup.svelte.test
  *
  * @remarks
- * Every test drives the real phase against an injected {@link SetupPhaseRuntime}: a recording
+ * Every test drives the real phase against an injected {@link LegacySetupPhaseRuntime}: a recording
  * process runner replaying typed {@link ProcessOutcome} fixtures, a deterministic clock, and an
  * immutable environment snapshot. No test in this file reads the live checkout, spawns a process,
  * mocks a repository module, or observes ambient Node state.
@@ -26,13 +26,13 @@ import type {LegacyRepositoryInspectionSession} from "../../../platform/bridge.t
 import type {InspectionOutcome} from "../../../inspection/types.ts";
 import {createSvelteSetupPhase, svelteSetupPhase} from "./svelte.ts";
 import type {
-  SetupAction,
+  LegacySetupAction,
   SetupActionDisposition,
-  SetupActionExecutor,
-  SetupContext,
+  LegacySetupActionExecutor,
+  LegacySetupContext,
   SetupOptions,
   SetupPhaseResult,
-  SetupPhaseRuntime,
+  LegacySetupPhaseRuntime,
 } from "../types.ts";
 
 const paths = createRepositoryPaths(resolve("C:\\fixture\\arolariu.ro"));
@@ -267,13 +267,13 @@ function settle(outcome: ScriptedOutcome): Promise<ProcessOutcome> {
 }
 
 function createActions(dispositions: Readonly<Record<string, SetupActionDisposition>> = {}): Readonly<{
-  actions: SetupActionExecutor;
+  actions: LegacySetupActionExecutor;
   actionIds: string[];
-  actionRecords: SetupAction[];
+  actionRecords: LegacySetupAction[];
 }> {
   const actionIds: string[] = [];
-  const actionRecords: SetupAction[] = [];
-  const actions: SetupActionExecutor = {
+  const actionRecords: LegacySetupAction[] = [];
+  const actions: LegacySetupActionExecutor = {
     run: async (action) => {
       actionIds.push(action.id);
       actionRecords.push(action);
@@ -291,11 +291,11 @@ function createActions(dispositions: Readonly<Record<string, SetupActionDisposit
  * The exact context view the migrated Svelte phase reads.
  *
  * @remarks
- * The deprecated {@link SetupContext.runner} and {@link SetupContext.now} members are deliberately
- * absent: a migrated phase must read its capabilities from {@link SetupContext.runtime} only, so
+ * The deprecated {@link LegacySetupContext.runner} and {@link LegacySetupContext.now} members are deliberately
+ * absent: a migrated phase must read its capabilities from {@link LegacySetupContext.runtime} only, so
  * any relapse becomes a type error instead of a silently passing test.
  */
-type MigratedSetupContext = Omit<SetupContext, "runner" | "now"> & Readonly<{runtime: SetupPhaseRuntime}>;
+type MigratedSetupContext = Omit<LegacySetupContext, "runner" | "now"> & Readonly<{runtime: LegacySetupPhaseRuntime}>;
 
 function environmentSnapshot(): RuntimeEnvironment {
   return {
@@ -321,7 +321,7 @@ interface SvelteHarness {
   /** Action identifiers in evaluation order. */
   readonly actionIds: string[];
   /** Complete action records in evaluation order. */
-  readonly actionRecords: SetupAction[];
+  readonly actionRecords: LegacySetupAction[];
   /** Rendered logger output. */
   readonly sink: InMemoryLoggerSink;
   /** Inspection session probe. */
@@ -341,7 +341,7 @@ async function createHarness(
     packages?: readonly InspectionOutcome<PackageInventoryFacts>[];
     cv?: readonly InspectionOutcome<SvelteFacts>[];
     status?: readonly InspectionOutcome<SvelteFacts>[];
-    actionsOverride?: SetupActionExecutor;
+    actionsOverride?: LegacySetupActionExecutor;
   }> = {},
 ): Promise<SvelteHarness> {
   const runner = new FakeProcessRunner(input.responses);
@@ -371,7 +371,7 @@ async function createHarness(
   const commandRuntime = await factory.createRoot({presentation: "silent", registerProcessSignals: false});
   const command: CommandContext = {runtime: commandRuntime, presentation: "silent"};
 
-  const runtime: SetupPhaseRuntime = {
+  const runtime: LegacySetupPhaseRuntime = {
     command,
     runner: commandRuntime.runner,
     files: commandRuntime.files,
@@ -379,7 +379,7 @@ async function createHarness(
     clock: commandRuntime.clock,
     tasks: commandRuntime.tasks,
     environment: commandRuntime.environment,
-    invokeGenerate: vi.fn<SetupPhaseRuntime["invokeGenerate"]>(() =>
+    invokeGenerate: vi.fn<LegacySetupPhaseRuntime["invokeGenerate"]>(() =>
       Promise.reject(new Error("The Svelte setup phase must never invoke generation.")),
     ),
   };
@@ -430,7 +430,7 @@ async function createHarness(
  * @returns The completed phase result.
  */
 function runPhase(harness: SvelteHarness, patch: Partial<MigratedSetupContext> = {}): Promise<SetupPhaseResult> {
-  return harness.phase.run({...harness.context, ...patch} as SetupContext);
+  return harness.phase.run({...harness.context, ...patch} as LegacySetupContext);
 }
 
 function callFor(harness: SvelteHarness, command: Readonly<ProcessRequest>): RecordedCall | undefined {
@@ -813,7 +813,7 @@ describe("interruption and command safety", () => {
     const harness = await createHarness();
     const {runtime: _runtime, ...withoutRuntime} = harness.context;
 
-    await expect(harness.phase.run(withoutRuntime as SetupContext)).rejects.toThrow(/setup phase runtime/i);
+    await expect(harness.phase.run(withoutRuntime as LegacySetupContext)).rejects.toThrow(/setup phase runtime/i);
   });
 
   it("uses explicit cwd and argument arrays without builds, tests, services, or package restoration", async () => {

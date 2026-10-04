@@ -1,59 +1,80 @@
 // @vitest-environment node
 /**
- * @fileoverview Contract tests for the setup command object and its mutation control.
- * @module scripts.setup.test
+ * @fileoverview Contract tests for the Effect setup orchestrator and its CLI completion.
+ * @module scripts/commands/setup/index.test
  *
  * @remarks
- * Every orchestrator test drives `setupCommand.invoke()` through an injected test runtime
- * factory whose filesystem is an in-memory repository fixture, whose inspection registry hands out
- * a deterministic session, and whose phases are fakes. No test in this file reads the live
- * checkout, spawns a real process, or mutates disk.
+ * Every orchestrator test runs a real `setup` CLI invocation (`runCli` with
+ * `makeSetupCommand(runSetupWith(<phases>))`) on the in-memory harness: the filesystem is an
+ * in-memory repository fixture, the shared inspection layer records every request and hands out a
+ * deterministic session, prompts are scripted (or `PromptsLive` without a TTY), and phases are
+ * stubs — Effect stubs, or legacy Promise stubs run through the `legacyPhase` adapter. No test in
+ * this file reads the live checkout, spawns a real process, or mutates disk.
+ *
+ * The R1 characterization pins compare a legacy-shaped view of each run so their expected values
+ * stay byte-identical to the legacy command's: `execution` maps the CLI exit and the captured
+ * result back to `{status, value, exitCode}`, and `records` maps each sink record to
+ * `{stream, text, write}` (`text` without its line terminator; `write` when it had none).
  */
 
 import {resolve} from "node:path";
-import {PassThrough} from "node:stream";
-import {describe, expect, it, vi} from "vitest";
 
-import type {CommandExecution, CommandInvoker, CommandRuntimeFactory} from "../../common/commander.ts";
-import {InMemoryLoggerSink, MonorepositoryConsoleLogger, type MonorepositoryLogger} from "../../common/logger.ts";
-import {createTerminalPromptProvider, type PromptProvider} from "../../common/prompts.ts";
+import {Cause, Deferred, Effect, Exit, Fiber, Layer, Result, Terminal} from "effect";
+import {describe, expect, it} from "vitest";
+
+import {makeRootCommand, runCli} from "../../cli.ts";
+import type {CommandInvoker} from "../../common/commander.ts";
 import {createRepositoryPaths, type RepositoryPaths} from "../../common/repository-paths.ts";
-import type {ProcessRequest, ProcessRunOptions, ProcessRunner} from "../../common/runner.ts";
-import {createMemoryFileSystem, createProcessRunner, createTestRuntimeFactory, repositoryFixtureRoot} from "../../common/runtime.testing.ts";
-import {
-  CommandCancellation,
-  type FileSystem,
-  type RepositoryInspectionRequest,
-  type RepositoryInspectionRuntime,
-} from "../../common/runtime.ts";
-import type {GenerateInput, GenerateResult} from "../generate/index.ts";
 import type {DotnetFacts} from "../../inspection/dotnet.ts";
-import type {LegacyRepositoryInspectionSession} from "../../platform/bridge.ts";
+import {Inspection, InspectionLayerFactory} from "../../inspection/Inspection.ts";
+import type {
+  RepositoryInspectionFacts,
+  RepositoryInspectionKey,
+  RepositoryInspectionRequest,
+  RepositoryInspectionSession,
+} from "../../inspection/repository.ts";
+import type {InspectionOutcome} from "../../inspection/types.ts";
+import {exitCodeFor, ReportedFailure} from "../../platform/exit.ts";
+import {Prompts, PromptsLive, type PromptsShape} from "../../platform/Prompts.ts";
+import {
+  makeTestLayer,
+  repositoryFixtureRoot,
+  type ScriptedInspection,
+  type ScriptedProcess,
+  type TestHarness,
+} from "../../platform/testing.ts";
+import type {GenerateInput, GenerateResult} from "../generate/index.ts";
+import {makeSetupCommand} from "./cli.ts";
+import {runSetupWith, setupOutcome, setupPhases, type SetupResult} from "./index.ts";
+import {legacyPhase} from "./legacy-phase.ts";
 import {dotnetSetupPhase} from "./phases/dotnet.ts";
-import {createSetupActionExecutor, createSetupCommand, setupPhases, type SetupResult} from "./index.ts";
-import type {SetupAction, SetupContext, SetupInput, SetupPhaseDefinition, SetupPhaseResult, SetupStatus} from "./types.ts";
+import {infrastructureSetupPhase} from "./phases/infrastructure.ts";
+import {pythonSetupPhase} from "./phases/python.ts";
+import {reactSetupPhase} from "./phases/react.ts";
+import {svelteSetupPhase} from "./phases/svelte.ts";
+import {workspaceSetupPhases} from "./phases/workspace.ts";
+import type {
+  LegacySetupContext,
+  SetupContext,
+  SetupInput,
+  SetupPhaseDefinition,
+  SetupPhaseResult,
+  SetupRequirements,
+  SetupStatus,
+} from "./types.ts";
 
 /** Canonical paths of the in-memory repository fixture every orchestrator test resolves. */
 const FIXTURE_PATHS: RepositoryPaths = createRepositoryPaths(repositoryFixtureRoot);
 
-/** A typed fake {@link LegacyRepositoryInspectionSession} that never resolves a real repository fact. */
-function createFakeInspectionSession(): LegacyRepositoryInspectionSession {
-  return {
-    inspect: async () => ({kind: "unavailable", reason: "Not exercised by this test.", durationMs: 0}),
-    invalidate: () => {},
-    updateInfrastructureEngine: () => {},
-  };
-}
-
 /**
- * Builds the in-memory repository fixture the setup command resolves its paths and manifest
- * requirements from, so no orchestrator test reads the live checkout.
+ * The in-memory repository fixture the setup program resolves its paths and manifest requirements
+ * from, so no orchestrator test reads the live checkout.
  *
- * @param patch - Files overlaid on (or removed from) the seeded manifest sources.
- * @returns A deterministic filesystem capability anchored to the fixture repository root.
+ * @param patch - Files overlaid on the seeded manifest sources.
+ * @returns The fixture files.
  */
-function setupFixtureFileSystem(patch: Readonly<Record<string, string>> = {}): FileSystem {
-  return createMemoryFileSystem({
+function setupFixtureFiles(patch: Readonly<Record<string, string>> = {}): Readonly<Record<string, string>> {
+  return {
     [FIXTURE_PATHS.packageJson]: JSON.stringify({
       name: "@arolariu/monorepo",
       engines: {node: ">=24", npm: ">=11"},
@@ -68,75 +89,66 @@ function setupFixtureFileSystem(patch: Readonly<Record<string, string>> = {}): F
     [FIXTURE_PATHS.dotnetBuildProps]: "<Project><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup></Project>",
     [FIXTURE_PATHS.pythonProject]: '[project]\nrequires-python = ">=3.12"\n',
     ...patch,
-  });
+  };
 }
 
-/** Records every session request while returning the exact same session instance every time. */
-interface SetupFixtureInspection {
-  /** The registry injected into the test runtime. */
-  readonly inspection: RepositoryInspectionRuntime;
-  /** Every request the command asked the registry for, in call order. */
-  readonly requests: readonly Readonly<RepositoryInspectionRequest>[];
-  /** Every session the registry handed out, in call order. */
-  readonly sessions: readonly LegacyRepositoryInspectionSession[];
-}
-
-function setupFixtureInspection(session: LegacyRepositoryInspectionSession = createFakeInspectionSession()): SetupFixtureInspection {
-  const requests: Readonly<RepositoryInspectionRequest>[] = [];
-  const sessions: LegacyRepositoryInspectionSession[] = [];
-
+/** A deterministic Effect inspection session that never resolves a real repository fact. */
+function createFakeInspectionSession(): RepositoryInspectionSession {
   return {
-    inspection: {
-      getRepositorySession: (request: Readonly<RepositoryInspectionRequest>): LegacyRepositoryInspectionSession => {
-        requests.push(request);
-        sessions.push(session);
-        return session;
-      },
-    },
-    get requests(): readonly Readonly<RepositoryInspectionRequest>[] {
-      return requests;
-    },
-    get sessions(): readonly LegacyRepositoryInspectionSession[] {
-      return sessions;
-    },
+    inspect: () => Effect.succeed({kind: "unavailable", reason: "Not exercised by this test.", durationMs: 0}),
+    invalidate: () => Effect.void,
+    updateInfrastructureEngine: () => Effect.void,
   };
 }
 
-function createLogger(verbose?: boolean): Readonly<{
-  logger: MonorepositoryConsoleLogger;
-  sink: InMemoryLoggerSink;
-}> {
-  const sink = new InMemoryLoggerSink();
-  const logger = new MonorepositoryConsoleLogger("setup", {
-    color: false,
-    sink,
-    ...(verbose === undefined ? {} : {verbose}),
-  });
-  return {logger, sink};
+/** An inspection layer that records every session request and returns the exact same session every time. */
+interface SetupFixtureInspection {
+  /** The layer the CLI invocation builds its `Inspection` service from. */
+  readonly layer: Layer.Layer<Inspection>;
+  /** Every request the setup program asked for, in call order. */
+  readonly requests: readonly RepositoryInspectionRequest[];
 }
 
-function createPrompts(confirmResult: boolean = true): Readonly<{
-  prompts: PromptProvider;
-  confirm: ReturnType<typeof vi.fn<(message: string, defaultValue?: boolean) => Promise<boolean>>>;
-}> {
-  const confirm = vi.fn<(message: string, defaultValue?: boolean) => Promise<boolean>>().mockResolvedValue(confirmResult);
-  const prompts: PromptProvider = {
-    confirm,
-    select: async <TValue extends string>(
-      _message: string,
-      choices: readonly Readonly<{value: TValue; label: string}>[],
-      defaultValue?: TValue,
-    ): Promise<TValue> => {
-      const selected = defaultValue ?? choices[0]?.value;
-      if (selected === undefined) {
-        throw new Error("Test prompt requires a choice");
-      }
-      return selected;
-    },
-    text: async () => "",
-    secret: async () => "",
+function setupFixtureInspection(session: RepositoryInspectionSession): SetupFixtureInspection {
+  const requests: RepositoryInspectionRequest[] = [];
+  return {
+    layer: Layer.succeed(
+      Inspection,
+      Inspection.of({
+        session: (request) =>
+          Effect.sync(() => {
+            requests.push(request);
+            return session;
+          }),
+      }),
+    ),
+    requests,
   };
-  return {prompts, confirm};
+}
+
+/** One recorded confirmation request. */
+interface RecordedConfirmation {
+  readonly message: string;
+  readonly defaultValue: boolean | undefined;
+}
+
+/** Scripted prompts that answer every confirmation with `answer` and record each request. */
+function recordingPrompts(answer: boolean): Readonly<{prompts: PromptsShape; confirmations: readonly RecordedConfirmation[]}> {
+  const confirmations: RecordedConfirmation[] = [];
+  const unexpected = (): Effect.Effect<never> => Effect.die(new Error("Only confirmations are scripted."));
+  return {
+    prompts: Prompts.of({
+      confirm: (message, defaultValue) =>
+        Effect.sync(() => {
+          confirmations.push({message, defaultValue});
+          return answer;
+        }),
+      select: unexpected,
+      text: unexpected,
+      secret: unexpected,
+    }),
+    confirmations,
+  };
 }
 
 function options(patch: Partial<SetupInput> = {}): SetupInput {
@@ -147,137 +159,6 @@ function options(patch: Partial<SetupInput> = {}): SetupInput {
     ...patch,
   };
 }
-
-function action(scope: SetupAction["scope"], execute = vi.fn<() => Promise<void>>().mockResolvedValue(undefined)): SetupAction {
-  return {
-    id: `${scope}.action`,
-    scope,
-    summary: `Run ${scope} action`,
-    execute,
-  };
-}
-
-describe("createSetupActionExecutor", () => {
-  it.each(["repository", "user", "system"] as const)("plans a %s mutation during dry-run", async (scope) => {
-    const execute = vi.fn<() => Promise<void>>().mockResolvedValue(undefined);
-    const {prompts, confirm} = createPrompts();
-    const {logger, sink} = createLogger();
-    const controller = createSetupActionExecutor({
-      options: options({dryRun: true}),
-      prompts,
-      logger,
-    });
-
-    await expect(controller.run(action(scope, execute))).resolves.toBe("planned");
-    expect(execute).not.toHaveBeenCalled();
-    expect(confirm).not.toHaveBeenCalled();
-    expect(sink.records.map((record) => record.text).join("\n")).toContain(`${scope}.action`);
-  });
-
-  it("asks before a system mutation but not a repository mutation", async () => {
-    const {prompts, confirm} = createPrompts(false);
-    const {logger, sink} = createLogger();
-    const systemAction = action("system");
-    const repositoryAction = action("repository");
-    const userAction = action("user");
-    const controller = createSetupActionExecutor({
-      options: options(),
-      prompts,
-      logger,
-    });
-
-    await expect(controller.run(systemAction)).resolves.toBe("declined");
-    await expect(controller.run(repositoryAction)).resolves.toBe("executed");
-    await expect(controller.run(userAction)).resolves.toBe("executed");
-    expect(confirm).toHaveBeenCalledOnce();
-    expect(systemAction.execute).not.toHaveBeenCalled();
-    expect(repositoryAction.execute).toHaveBeenCalledOnce();
-    expect(userAction.execute).toHaveBeenCalledOnce();
-    expect(sink.records.map((record) => record.text).join("\n")).toMatch(/Declined setup action.*system\.action/s);
-    expect(sink.records.map((record) => record.text).join("\n")).toMatch(/Executed setup action.*repository\.action/s);
-    expect(sink.records.map((record) => record.text).join("\n")).toMatch(/Executed setup action.*user\.action/s);
-  });
-
-  it("executes a confirmed system mutation", async () => {
-    const {prompts, confirm} = createPrompts(true);
-    const {logger} = createLogger();
-    const systemAction = action("system");
-    const controller = createSetupActionExecutor({
-      options: options(),
-      prompts,
-      logger,
-    });
-
-    await expect(controller.run(systemAction)).resolves.toBe("executed");
-    expect(confirm).toHaveBeenCalledOnce();
-    expect(systemAction.execute).toHaveBeenCalledOnce();
-  });
-
-  it.each(["repository", "user", "system"] as const)("executes a %s mutation without prompting under --yes", async (scope) => {
-    const {prompts, confirm} = createPrompts(false);
-    const {logger} = createLogger();
-    const setupAction = action(scope);
-    const controller = createSetupActionExecutor({
-      options: options({yes: true}),
-      prompts,
-      logger,
-    });
-
-    await expect(controller.run(setupAction)).resolves.toBe("executed");
-    expect(setupAction.execute).toHaveBeenCalledOnce();
-    expect(confirm).not.toHaveBeenCalled();
-  });
-
-  it("declines a system mutation without blocking on non-interactive stdin", async () => {
-    const input = new PassThrough();
-    const output = new PassThrough();
-    const {logger} = createLogger();
-    const prompts = createTerminalPromptProvider({
-      input,
-      output,
-      isTTY: false,
-    });
-    const setupAction = action("system");
-    const controller = createSetupActionExecutor({
-      options: options(),
-      prompts,
-      logger,
-    });
-
-    await expect(controller.run(setupAction)).resolves.toBe("declined");
-    expect(setupAction.execute).not.toHaveBeenCalled();
-  });
-
-  it("preserves action failures without logging their potentially secret details", async () => {
-    const secret = "do-not-log-this-secret";
-    const failure = new Error(secret);
-    const execute = vi.fn<() => Promise<void>>().mockRejectedValue(failure);
-    const {prompts} = createPrompts();
-    const {logger, sink} = createLogger();
-    const controller = createSetupActionExecutor({
-      options: options(),
-      prompts,
-      logger,
-    });
-
-    await expect(controller.run(action("repository", execute))).rejects.toBe(failure);
-    expect(sink.records.every((record) => !record.text.includes(secret))).toBe(true);
-  });
-
-  it("preserves command interruption", async () => {
-    const interruption = new DOMException("The command was interrupted", "AbortError");
-    const execute = vi.fn<() => Promise<void>>().mockRejectedValue(interruption);
-    const {prompts} = createPrompts();
-    const {logger} = createLogger();
-    const controller = createSetupActionExecutor({
-      options: options(),
-      prompts,
-      logger,
-    });
-
-    await expect(controller.run(action("user", execute))).rejects.toBe(interruption);
-  });
-});
 
 function phaseResult(id: string, status: SetupStatus, patch: Partial<SetupPhaseResult> = {}): SetupPhaseResult {
   return {
@@ -290,12 +171,13 @@ function phaseResult(id: string, status: SetupStatus, patch: Partial<SetupPhaseR
   };
 }
 
+/** One Effect stub phase. */
 function stubPhase(
   id: string,
   config: Readonly<{
     dependsOn?: readonly string[];
     required?: boolean;
-    run?: (context: SetupContext) => Promise<SetupPhaseResult>;
+    run?: (context: SetupContext) => Effect.Effect<SetupPhaseResult, never, SetupRequirements>;
   }> = {},
 ): SetupPhaseDefinition {
   return {
@@ -303,8 +185,20 @@ function stubPhase(
     title: id,
     required: config.required ?? true,
     dependsOn: config.dependsOn ?? [],
-    run: config.run ?? ((): Promise<SetupPhaseResult> => Promise.resolve(phaseResult(id, "succeeded"))),
+    run: config.run ?? ((): Effect.Effect<SetupPhaseResult> => Effect.succeed(phaseResult(id, "succeeded"))),
   };
+}
+
+/** One legacy Promise stub phase, run through the `legacyPhase` adapter. */
+function legacyStubPhase(
+  id: string,
+  run: (context: LegacySetupContext) => Promise<SetupPhaseResult>,
+  config: Readonly<{dependsOn?: readonly string[]; generate?: CommandInvoker<GenerateInput, GenerateResult>}> = {},
+): SetupPhaseDefinition {
+  return legacyPhase(
+    {id, title: id, required: true, dependsOn: config.dependsOn ?? [], run},
+    config.generate === undefined ? {} : {generate: config.generate},
+  );
 }
 
 /** Fake phases mirroring the real onboarding graph, without any real phase behavior. */
@@ -320,69 +214,161 @@ const setupFixturePhases: readonly SetupPhaseDefinition[] = [
   stubPhase("infrastructure"),
 ];
 
-/** Recording process runner used to assert phase-scoped command options. */
-type RecordingRunner = ProcessRunner & Readonly<{calls: readonly Readonly<{request: ProcessRequest; options: ProcessRunOptions}>[]}>;
-
 /** Every seam one orchestrator test may replace. */
 interface SetupFixtureInput {
-  /** Fake phases to execute; defaults to {@link setupFixturePhases}. */
+  /** Phases to execute; defaults to {@link setupFixturePhases}. */
   readonly phases?: readonly SetupPhaseDefinition[];
-  /** Filesystem capability; defaults to the in-memory repository fixture. */
-  readonly files?: FileSystem;
-  /** Prompt provider observed by the action executor. */
-  readonly prompts?: PromptProvider;
-  /** Process runner every phase command is recorded by. */
-  readonly runner?: RecordingRunner;
-  /** Logger every rendered line is captured through. */
-  readonly logger?: MonorepositoryLogger;
-  /** Inspection session the shared registry hands out. */
-  readonly session?: LegacyRepositoryInspectionSession;
-  /** Composed generation command. */
-  readonly generate?: CommandInvoker<GenerateInput, GenerateResult>;
+  /** Files overlaid on the in-memory repository fixture. */
+  readonly files?: Readonly<Record<string, string>>;
+  /** Prompts replacing the harness prompts. */
+  readonly prompts?: PromptsShape;
+  /** Uses the production `PromptsLive` over the harness (non-TTY) instead of scripted prompts. */
+  readonly livePrompts?: boolean;
+  /** Scripted process responses. */
+  readonly processes?: readonly ScriptedProcess[];
+  /** Inspection session the shared inspection layer hands out. */
+  readonly session?: RepositoryInspectionSession;
+  /** Extra global flags, for example `--json`. */
+  readonly flags?: readonly string[];
+  /** Interrupts the invocation once this deferred completes. */
+  readonly interruptWhen?: Deferred.Deferred<void>;
 }
 
-interface SetupFixture {
-  /** The command under test. */
-  readonly command: ReturnType<typeof createSetupCommand>;
-  /** Recorded inspection registry requests and sessions. */
-  readonly inspection: SetupFixtureInspection;
-  /** Recorded process invocations. */
-  readonly runner: RecordingRunner;
+/** The legacy-shaped view of one sink record. */
+interface LegacyRecord {
+  readonly stream: "stdout" | "stderr";
+  readonly text: string;
+  readonly write: boolean;
+}
+
+/** Everything one orchestrator test observes. */
+interface SetupRun {
+  /** The run mapped to the legacy `{status, value, exitCode}` execution shape. */
+  readonly execution: unknown;
+  /** The CLI exit code. */
+  readonly exitCode: number;
+  /** Every sink record in the legacy `{stream, text, write}` shape. */
+  readonly records: readonly LegacyRecord[];
+  /** Every inspection session request. */
+  readonly inspection: readonly RepositoryInspectionRequest[];
+  /** The harness, for process calls and raw output. */
+  readonly harness: TestHarness;
 }
 
 /**
- * Assembles a setup command wired to fake phases, the in-memory repository fixture, and a
- * deterministic inspection registry.
+ * Builds the CLI arguments of one setup input.
  *
- * @param input - Optional seam replacements for this test.
- * @returns The command plus its recorded inspection and process seams.
+ * @param input - The setup input.
+ * @param flags - Extra global flags.
+ * @returns The arguments after the program name.
  */
-function createSetupFixture(input: Readonly<SetupFixtureInput> = {}): SetupFixture {
-  const inspection = setupFixtureInspection(input.session ?? createFakeInspectionSession());
-  const runner = input.runner ?? createProcessRunner();
-  const runtimeFactory: CommandRuntimeFactory = createTestRuntimeFactory({
-    files: input.files ?? setupFixtureFileSystem(),
-    inspection: inspection.inspection,
-    runner,
-    ...(input.prompts === undefined ? {} : {prompts: input.prompts}),
-    ...(input.logger === undefined ? {} : {logger: input.logger}),
-  });
-
-  const command = createSetupCommand({
-    runtimeFactory,
-    phases: input.phases ?? setupFixturePhases,
-    ...(input.generate === undefined ? {} : {generate: input.generate}),
-  });
-
-  return {command, inspection, runner};
+function setupArgv(input: SetupInput, flags: readonly string[]): readonly string[] {
+  return [
+    "setup",
+    ...(input.dryRun ? ["--dry-run"] : []),
+    ...(input.yes ? ["--yes"] : []),
+    ...(input.verbose ? ["--verbose"] : []),
+    ...(input.engine === undefined ? [] : ["--engine", input.engine]),
+    ...flags,
+  ];
 }
 
-function expectCompleted(execution: CommandExecution<SetupResult>): SetupResult {
+/**
+ * Maps a CLI exit and the captured result to the legacy `CommandExecution` shape.
+ *
+ * @remarks
+ * A run that produced its result and then succeeded or failed with the rendered
+ * `ReportedFailure` is `completed`; an interruption-only exit is `cancelled`; anything else is
+ * `failed` with the first typed failure's (or the defect's) message.
+ *
+ * @param exit - The CLI exit.
+ * @param value - The captured setup result, if the program produced one.
+ * @returns The legacy-shaped execution.
+ */
+function executionOf(exit: Exit.Exit<void, unknown>, value: SetupResult | undefined): unknown {
+  const exitCode = exitCodeFor(exit, undefined);
+  if (Exit.isSuccess(exit)) {
+    return {status: "completed", value, exitCode};
+  }
+  if (Cause.hasInterruptsOnly(exit.cause)) {
+    return {status: "cancelled", exitCode};
+  }
+  const failure = Cause.findError(exit.cause);
+  const error: unknown = Result.isSuccess(failure) ? failure.success : Cause.squash(exit.cause);
+  if (value !== undefined && error instanceof ReportedFailure) {
+    return {status: "completed", value, exitCode};
+  }
+  return {status: "failed", exitCode, message: error instanceof Error ? error.message : String(error)};
+}
+
+/**
+ * Runs one `setup` CLI invocation over the in-memory harness.
+ *
+ * @param input - The setup input, encoded as CLI flags.
+ * @param fixture - Optional seam replacements for this test.
+ * @returns The observed run.
+ */
+async function invokeSetup(input: SetupInput, fixture: Readonly<SetupFixtureInput> = {}): Promise<SetupRun> {
+  const harness = makeTestLayer({
+    files: setupFixtureFiles(fixture.files),
+    ...(fixture.processes === undefined ? {} : {processes: fixture.processes}),
+  });
+  const inspection = setupFixtureInspection(fixture.session ?? createFakeInspectionSession());
+  let captured: SetupResult | undefined;
+  const program = (setupInput: SetupInput): ReturnType<ReturnType<typeof runSetupWith>> =>
+    runSetupWith(fixture.phases ?? setupFixturePhases)(setupInput).pipe(
+      Effect.tap((result) =>
+        Effect.sync(() => {
+          captured = result;
+        }),
+      ),
+    );
+
+  const invocation = runCli(setupArgv(input, fixture.flags ?? []), makeRootCommand([makeSetupCommand(program)])).pipe(
+    Effect.provideService(InspectionLayerFactory, inspection.layer),
+  );
+  const prompted =
+    fixture.prompts !== undefined
+      ? invocation.pipe(Effect.provideService(Prompts, fixture.prompts))
+      : fixture.livePrompts === true
+        ? invocation.pipe(Effect.provide(PromptsLive))
+        : invocation;
+  const runnable = prompted.pipe(Effect.provide(harness.layer));
+
+  let exit: Exit.Exit<void, unknown>;
+  if (fixture.interruptWhen === undefined) {
+    exit = await Effect.runPromiseExit(runnable);
+  } else {
+    const fiber = Effect.runFork(runnable);
+    await Effect.runPromise(Deferred.await(fixture.interruptWhen));
+    await Effect.runPromise(Fiber.interrupt(fiber));
+    exit = await Effect.runPromise(Fiber.await(fiber));
+  }
+
+  return {
+    execution: executionOf(exit, captured),
+    exitCode: exitCodeFor(exit, undefined),
+    records: harness.output().map(({stream, text}) => ({
+      stream,
+      text: text.endsWith("\n") ? text.slice(0, -1) : text,
+      write: !text.endsWith("\n"),
+    })),
+    inspection: inspection.requests,
+    harness,
+  };
+}
+
+function expectCompleted(run: SetupRun): SetupResult {
+  const execution = run.execution as {status: string; value?: SetupResult};
   expect(execution.status).toBe("completed");
-  if (execution.status !== "completed") {
+  if (execution.value === undefined) {
     throw new Error("Setup did not complete.");
   }
   return execution.value;
+}
+
+function rendered(run: SetupRun): string {
+  return run.records.map((record) => record.text).join("\n");
 }
 
 describe("setupPhases", () => {
@@ -399,17 +385,28 @@ describe("setupPhases", () => {
       "infrastructure",
     ]);
   });
+
+  it("runs every legacy phase through the adapter with its id, title, requirement flag, and dependencies", () => {
+    const legacyPhases = [
+      ...workspaceSetupPhases,
+      dotnetSetupPhase,
+      reactSetupPhase,
+      svelteSetupPhase,
+      pythonSetupPhase,
+      infrastructureSetupPhase,
+    ];
+
+    expect(setupPhases.map(({id, title, required, dependsOn}) => ({id, title, required, dependsOn}))).toEqual(
+      legacyPhases.map(({id, title, required, dependsOn}) => ({id, title, required, dependsOn})),
+    );
+  });
 });
 
-describe("setupCommand", () => {
+describe("runSetup", () => {
   it("runs every declared phase in dependency order without touching the live checkout", async () => {
-    const {command} = createSetupFixture();
+    const run = await invokeSetup({verbose: false, dryRun: true, yes: false});
 
-    const execution = await command.invoke({verbose: false, dryRun: true, yes: false});
-
-    expect(execution.status).toBe("completed");
-    if (execution.status !== "completed") throw new Error("Setup did not complete.");
-    expect(execution.value.phases.map(({id}) => id)).toEqual([
+    expect(expectCompleted(run).phases.map(({id}) => id)).toEqual([
       "workspace.prerequisites",
       "workspace.root-dependencies",
       "workspace.github-scripts-dependencies",
@@ -420,64 +417,60 @@ describe("setupCommand", () => {
       "python",
       "infrastructure",
     ]);
-    expect(execution.exitCode).toBe(0);
+    expect(run.exitCode).toBe(0);
+    expect(run.harness.files().size).toBe(Object.keys(setupFixtureFiles()).length);
   });
 
   it("succeeds when every phase reports success", async () => {
-    const {command} = createSetupFixture({phases: [stubPhase("a"), stubPhase("b", {dependsOn: ["a"]})]});
+    const run = await invokeSetup(options(), {phases: [stubPhase("a"), stubPhase("b", {dependsOn: ["a"]})]});
 
-    const execution = await command.invoke(options());
-
-    const result = expectCompleted(execution);
-    expect(result.phases.map((phase) => phase.status)).toEqual(["succeeded", "succeeded"]);
-    expect(execution.exitCode).toBe(0);
+    expect(expectCompleted(run).phases.map((phase) => phase.status)).toEqual(["succeeded", "succeeded"]);
+    expect(run.exitCode).toBe(0);
   });
 
   it("traverses a dry-run planned dependency to run downstream generators", async () => {
-    const generatorsRun = vi.fn<() => Promise<SetupPhaseResult>>(() => Promise.resolve(phaseResult("workspace.generators", "succeeded")));
-    const {command} = createSetupFixture({
+    const ran: string[] = [];
+    const run = await invokeSetup(options({dryRun: true}), {
       phases: [
         stubPhase("workspace.root-dependencies", {
-          run: () => Promise.resolve(phaseResult("workspace.root-dependencies", "skipped", {summary: "Planned npm restoration."})),
+          run: () => Effect.succeed(phaseResult("workspace.root-dependencies", "skipped", {summary: "Planned npm restoration."})),
         }),
-        stubPhase("workspace.generators", {dependsOn: ["workspace.root-dependencies"], run: generatorsRun}),
+        stubPhase("workspace.generators", {
+          dependsOn: ["workspace.root-dependencies"],
+          run: () =>
+            Effect.sync(() => {
+              ran.push("workspace.generators");
+              return phaseResult("workspace.generators", "succeeded");
+            }),
+        }),
       ],
     });
 
-    const execution = await command.invoke(options({dryRun: true}));
-
-    const result = expectCompleted(execution);
-    expect(generatorsRun).toHaveBeenCalledOnce();
-    expect(result.phases.find(({id}) => id === "workspace.generators")).toMatchObject({status: "succeeded"});
-    expect(execution.exitCode).toBe(0);
+    expect(ran).toEqual(["workspace.generators"]);
+    expect(expectCompleted(run).phases.find(({id}) => id === "workspace.generators")).toMatchObject({status: "succeeded"});
+    expect(run.exitCode).toBe(0);
   });
 
   it("keeps python and infrastructure independent from a failed dotnet phase", async () => {
-    const pythonRun = vi.fn<() => Promise<SetupPhaseResult>>(() => Promise.resolve(phaseResult("python", "succeeded")));
-    const infrastructureRun = vi.fn<() => Promise<SetupPhaseResult>>(() => Promise.resolve(phaseResult("infrastructure", "succeeded")));
-    const {command} = createSetupFixture({
+    const run = await invokeSetup(options(), {
       phases: [
-        stubPhase("dotnet", {run: () => Promise.resolve(phaseResult("dotnet", "failed", {summary: "The .NET toolchain failed."}))}),
-        stubPhase("python", {run: pythonRun}),
-        stubPhase("infrastructure", {run: infrastructureRun}),
+        stubPhase("dotnet", {run: () => Effect.succeed(phaseResult("dotnet", "failed", {summary: "The .NET toolchain failed."}))}),
+        stubPhase("python"),
+        stubPhase("infrastructure"),
       ],
     });
 
-    const execution = await command.invoke(options());
-
-    const result = expectCompleted(execution);
-    expect(pythonRun).toHaveBeenCalledOnce();
-    expect(infrastructureRun).toHaveBeenCalledOnce();
+    const result = expectCompleted(run);
     expect(result.phases.find(({id}) => id === "python")).toMatchObject({status: "succeeded"});
     expect(result.phases.find(({id}) => id === "infrastructure")).toMatchObject({status: "succeeded"});
-    expect(execution.exitCode).toBe(1);
+    expect(run.exitCode).toBe(1);
   });
 
   it("skips generators, react, and svelte when the workspace root dependency fails", async () => {
-    const {command} = createSetupFixture({
+    const run = await invokeSetup(options(), {
       phases: [
         stubPhase("workspace.root-dependencies", {
-          run: () => Promise.resolve(phaseResult("workspace.root-dependencies", "failed", {summary: "npm ci failed."})),
+          run: () => Effect.succeed(phaseResult("workspace.root-dependencies", "failed", {summary: "npm ci failed."})),
         }),
         stubPhase("workspace.generators", {dependsOn: ["workspace.root-dependencies"]}),
         stubPhase("react", {dependsOn: ["workspace.root-dependencies", "workspace.generators"]}),
@@ -485,8 +478,7 @@ describe("setupCommand", () => {
       ],
     });
 
-    const {phases} = expectCompleted(await command.invoke(options()));
-
+    const {phases} = expectCompleted(run);
     for (const id of ["workspace.generators", "react", "svelte"]) {
       expect(phases.find((phase) => phase.id === id)).toMatchObject({
         status: "skipped",
@@ -496,418 +488,316 @@ describe("setupCommand", () => {
   });
 
   it("does not skip react or svelte when only the .github scripts dependency fails", async () => {
-    const reactRun = vi.fn<() => Promise<SetupPhaseResult>>(() => Promise.resolve(phaseResult("react", "succeeded")));
-    const svelteRun = vi.fn<() => Promise<SetupPhaseResult>>(() => Promise.resolve(phaseResult("svelte", "succeeded")));
-    const {command} = createSetupFixture({
+    const run = await invokeSetup(options(), {
       phases: [
         stubPhase("workspace.root-dependencies"),
         stubPhase("workspace.github-scripts-dependencies", {
           run: () =>
-            Promise.resolve(phaseResult("workspace.github-scripts-dependencies", "failed", {summary: ".github scripts npm ci failed."})),
+            Effect.succeed(phaseResult("workspace.github-scripts-dependencies", "failed", {summary: ".github scripts npm ci failed."})),
         }),
-        stubPhase("react", {dependsOn: ["workspace.root-dependencies"], run: reactRun}),
-        stubPhase("svelte", {dependsOn: ["workspace.root-dependencies"], run: svelteRun}),
+        stubPhase("react", {dependsOn: ["workspace.root-dependencies"]}),
+        stubPhase("svelte", {dependsOn: ["workspace.root-dependencies"]}),
       ],
     });
 
-    const {phases} = expectCompleted(await command.invoke(options()));
-
-    expect(reactRun).toHaveBeenCalledOnce();
-    expect(svelteRun).toHaveBeenCalledOnce();
+    const {phases} = expectCompleted(run);
     expect(phases.find(({id}) => id === "react")).toMatchObject({status: "succeeded"});
     expect(phases.find(({id}) => id === "svelte")).toMatchObject({status: "succeeded"});
   });
 
   it("completes with exit code 0 for a degraded capability", async () => {
-    const {command} = createSetupFixture({
+    const run = await invokeSetup(options(), {
       phases: [
-        stubPhase("react", {
-          run: () => Promise.resolve(phaseResult("react", "degraded", {summary: "Clerk credentials are unavailable."})),
-        }),
+        stubPhase("react", {run: () => Effect.succeed(phaseResult("react", "degraded", {summary: "Clerk credentials are unavailable."}))}),
       ],
     });
 
-    const execution = await command.invoke(options());
-
-    expect(expectCompleted(execution).phases[0]).toMatchObject({status: "degraded"});
-    expect(execution.exitCode).toBe(0);
+    expect(expectCompleted(run).phases[0]).toMatchObject({status: "degraded"});
+    expect(run.exitCode).toBe(0);
   });
 
   it("completes with exit code 1 for a required failure", async () => {
-    const {command} = createSetupFixture({
-      phases: [stubPhase("dotnet", {run: () => Promise.resolve(phaseResult("dotnet", "failed"))})],
-    });
+    const run = await invokeSetup(options(), {phases: [stubPhase("dotnet", {run: () => Effect.succeed(phaseResult("dotnet", "failed"))})]});
 
-    expect((await command.invoke(options())).exitCode).toBe(1);
+    expect(run.exitCode).toBe(1);
   });
 
   it("blocks a phase whose dependency was never defined", async () => {
-    const {command} = createSetupFixture({phases: [stubPhase("react", {dependsOn: ["workspace.root-dependencies"]})]});
+    const run = await invokeSetup(options(), {phases: [stubPhase("react", {dependsOn: ["workspace.root-dependencies"]})]});
 
-    const {phases} = expectCompleted(await command.invoke(options()));
-
-    expect(phases[0]).toMatchObject({
+    expect(expectCompleted(run).phases[0]).toMatchObject({
       status: "skipped",
       summary: expect.stringContaining("workspace.root-dependencies"),
     });
+    expect(run.exitCode).toBe(1);
   });
 
-  it("converts an ordinary thrown exception into a failed result and continues with independent phases", async () => {
-    const pythonRun = vi.fn<() => Promise<SetupPhaseResult>>(() => Promise.resolve(phaseResult("python", "succeeded")));
-    const {command} = createSetupFixture({
+  it("converts an ordinary thrown legacy exception into a failed result and continues with independent phases", async () => {
+    const run = await invokeSetup(options(), {
       phases: [
-        stubPhase("dotnet", {
-          run: (): Promise<SetupPhaseResult> => {
-            throw new Error("unexpected dotnet failure");
-          },
+        legacyStubPhase("dotnet", (): Promise<SetupPhaseResult> => {
+          throw new Error("unexpected dotnet failure");
         }),
-        stubPhase("python", {run: pythonRun}),
+        stubPhase("python"),
       ],
     });
 
-    const execution = await command.invoke(options());
-
-    const result = expectCompleted(execution);
-    expect(pythonRun).toHaveBeenCalledOnce();
+    const result = expectCompleted(run);
+    expect(result.phases.find(({id}) => id === "python")).toMatchObject({status: "succeeded"});
     expect(result.phases.find(({id}) => id === "dotnet")).toMatchObject({
       status: "failed",
       evidence: expect.arrayContaining([expect.stringContaining("unexpected dotnet failure")]),
     });
-    expect(execution.exitCode).toBe(1);
+    expect(run.exitCode).toBe(1);
   });
 
-  it("cancels the command when a phase aborts instead of degrading it to a failed phase", async () => {
-    const interruption = new DOMException("The command was interrupted", "AbortError");
-    const pythonRun = vi.fn<() => Promise<SetupPhaseResult>>(() => Promise.resolve(phaseResult("python", "succeeded")));
-    const {command} = createSetupFixture({
-      phases: [stubPhase("dotnet", {run: () => Promise.reject(interruption)}), stubPhase("python", {run: pythonRun})],
-    });
-
-    const execution = await command.invoke(options());
-
-    expect(execution.status).toBe("cancelled");
-    expect(execution.exitCode).toBe(130);
-    expect(pythonRun).not.toHaveBeenCalled();
-  });
-
-  it("cancels the command when the invocation aborts during a phase that degraded its own cancellation", async () => {
-    const controller = new AbortController();
-    const {logger, sink} = createLogger();
-    const pythonRun = vi.fn<() => Promise<SetupPhaseResult>>(() => Promise.resolve(phaseResult("python", "succeeded")));
-    const {command} = createSetupFixture({
-      logger,
+  it("cancels the command when a legacy phase aborts instead of degrading it to a failed phase", async () => {
+    const ran: string[] = [];
+    const run = await invokeSetup(options(), {
       phases: [
-        stubPhase("dotnet", {
-          // A phase whose runner returned a typed cancelled outcome may report an ordinary failed
-          // result instead of rethrowing; the orchestrator must still observe the aborted signal.
-          run: () => {
-            controller.abort(new CommandCancellation("The command was interrupted.", 130));
-            return Promise.resolve(phaseResult("dotnet", "failed"));
-          },
-        }),
-        stubPhase("python", {run: pythonRun}),
+        legacyStubPhase("dotnet", () => Promise.reject(new DOMException("The command was interrupted", "AbortError"))),
+        stubPhase("python", {run: () => Effect.sync(() => (ran.push("python"), phaseResult("python", "succeeded")))}),
       ],
     });
 
-    const execution = await command.invoke(options(), {signal: controller.signal, presentation: "human"});
-
-    expect(execution.status).toBe("cancelled");
-    expect(execution.exitCode).toBe(130);
-    expect(pythonRun).not.toHaveBeenCalled();
-    const rendered = sink.records.map((record) => record.text).join("\n");
-    expect(rendered).not.toContain("Setup summary");
-    expect(rendered).not.toContain("Setup is ready");
+    expect(run.execution).toEqual({status: "cancelled", exitCode: 130});
+    expect(ran).toEqual([]);
+    expect(rendered(run)).not.toContain("Setup summary");
   });
 
-  it("cancels before running any phase when the invocation signal is already aborted", async () => {
-    const controller = new AbortController();
-    controller.abort(new CommandCancellation("The command was terminated.", 143));
-    const dotnetRun = vi.fn<() => Promise<SetupPhaseResult>>(() => Promise.resolve(phaseResult("dotnet", "succeeded")));
-    const {command} = createSetupFixture({phases: [stubPhase("dotnet", {run: dotnetRun})]});
-
-    const execution = await command.invoke(options(), {signal: controller.signal});
-
-    expect(execution.status).toBe("cancelled");
-    expect(execution.exitCode).toBe(143);
-    expect(dotnetRun).not.toHaveBeenCalled();
-  });
-
-  it("cancels the command when a setup prompt is interrupted", async () => {
-    const interruption = new DOMException("The prompt was interrupted", "AbortError");
-    const {prompts} = createPrompts();
-    const interruptedPrompts: PromptProvider = {
-      ...prompts,
-      confirm: () => Promise.reject(interruption),
-    };
-    const {command} = createSetupFixture({
-      prompts: interruptedPrompts,
+  it("cancels the command when interrupted during a legacy phase that degraded its own cancellation", async () => {
+    const started = Deferred.makeUnsafe<void>();
+    const ran: string[] = [];
+    const outcomes: string[] = [];
+    const run = await invokeSetup(options(), {
+      interruptWhen: started,
+      processes: [{match: () => true, respond: () => Effect.andThen(Deferred.succeed(started, undefined), Effect.never)}],
       phases: [
-        stubPhase("infrastructure", {
-          run: async (context) => {
-            await context.actions.run({
-              id: "infrastructure.install",
-              scope: "system",
-              summary: "Install the container engine.",
-              execute: async () => undefined,
-            });
-            return phaseResult("infrastructure", "succeeded");
-          },
+        // A phase whose runner returned a cancelled outcome reports an ordinary failed result instead of
+        // rethrowing; the interruption must still cancel setup.
+        legacyStubPhase("dotnet", async (context) => {
+          outcomes.push((await context.runtime.runner.run({command: "dotnet", args: ["restore"]})).kind);
+          return phaseResult("dotnet", "failed");
+        }),
+        stubPhase("python", {run: () => Effect.sync(() => (ran.push("python"), phaseResult("python", "succeeded")))}),
+      ],
+    });
+
+    expect(run.execution).toEqual({status: "cancelled", exitCode: 130});
+    expect(outcomes).toEqual(["cancelled"]);
+    expect(ran).toEqual([]);
+    expect(rendered(run)).not.toContain("Setup summary");
+    expect(rendered(run)).not.toContain("Setup is ready");
+  });
+
+  it("cancels the command when a setup prompt is quit", async () => {
+    const executed: string[] = [];
+    const {prompts} = recordingPrompts(true);
+    const run = await invokeSetup(options(), {
+      prompts: {...prompts, confirm: () => Effect.fail(new Terminal.QuitError())},
+      phases: [
+        legacyStubPhase("infrastructure", async (context) => {
+          await context.actions.run({
+            id: "infrastructure.install",
+            scope: "system",
+            summary: "Install the container engine.",
+            execute: async () => void executed.push("infrastructure.install"),
+          });
+          return phaseResult("infrastructure", "succeeded");
         }),
       ],
     });
 
-    const execution = await command.invoke(options());
-
-    expect(execution.status).toBe("cancelled");
-    expect(execution.exitCode).toBe(130);
+    expect(run.execution).toEqual({status: "cancelled", exitCode: 130});
+    expect(executed).toEqual([]);
   });
 
   it("executes a system-scoped phase action without prompting under --yes", async () => {
-    const {prompts, confirm} = createPrompts(false);
-    const execute = vi.fn<() => Promise<void>>().mockResolvedValue(undefined);
-    const {command} = createSetupFixture({
+    const executed: string[] = [];
+    const {prompts, confirmations} = recordingPrompts(false);
+    const run = await invokeSetup(options({yes: true}), {
       prompts,
       phases: [
-        stubPhase("infrastructure", {
-          run: async (context) => {
-            await context.actions.run({
-              id: "infrastructure.install",
-              scope: "system",
-              summary: "Install the container engine.",
-              execute,
-            });
-            return phaseResult("infrastructure", "succeeded");
-          },
+        legacyStubPhase("infrastructure", async (context) => {
+          await context.actions.run({
+            id: "infrastructure.install",
+            scope: "system",
+            summary: "Install the container engine.",
+            execute: async () => void executed.push("infrastructure.install"),
+          });
+          return phaseResult("infrastructure", "succeeded");
         }),
       ],
     });
 
-    const execution = await command.invoke(options({yes: true}));
-
-    expect(expectCompleted(execution).phases[0]).toMatchObject({status: "succeeded"});
-    expect(execute).toHaveBeenCalledOnce();
-    expect(confirm).not.toHaveBeenCalled();
+    expect(expectCompleted(run).phases[0]).toMatchObject({status: "succeeded"});
+    expect(executed).toEqual(["infrastructure.install"]);
+    expect(confirmations).toEqual([]);
   });
 
-  it("plans a phase action without executing it during a dry run", async () => {
-    const execute = vi.fn<() => Promise<void>>().mockResolvedValue(undefined);
-    const {command} = createSetupFixture({
+  it("plans a phase action without executing it during a dry run, even under --yes", async () => {
+    const executed: string[] = [];
+    const run = await invokeSetup(options({dryRun: true, yes: true}), {
       phases: [
-        stubPhase("infrastructure", {
-          run: async (context) => {
-            const disposition = await context.actions.run({
-              id: "infrastructure.install",
-              scope: "system",
-              summary: "Install the container engine.",
-              execute,
-            });
-            return phaseResult("infrastructure", disposition === "planned" ? "skipped" : "succeeded");
-          },
+        legacyStubPhase("infrastructure", async (context) => {
+          const disposition = await context.actions.run({
+            id: "infrastructure.install",
+            scope: "system",
+            summary: "Install the container engine.",
+            execute: async () => void executed.push("infrastructure.install"),
+          });
+          return phaseResult("infrastructure", disposition === "planned" ? "skipped" : "succeeded");
         }),
       ],
     });
 
-    const execution = await command.invoke(options({dryRun: true}));
-
-    expect(expectCompleted(execution).phases[0]).toMatchObject({status: "skipped"});
-    expect(execute).not.toHaveBeenCalled();
+    expect(expectCompleted(run).phases[0]).toMatchObject({status: "skipped"});
+    expect(executed).toEqual([]);
+    expect(run.exitCode).toBe(0);
   });
 
   it("constructs one full inspection session shared by every setup phase", async () => {
-    const receivedContexts: SetupContext[] = [];
+    const received: RepositoryInspectionSession[] = [];
     const session = createFakeInspectionSession();
-    const {command, inspection} = createSetupFixture({
-      session,
-      phases: [
-        stubPhase("a", {
-          run: async (context) => {
-            receivedContexts.push(context);
-            return phaseResult("a", "succeeded");
-          },
-        }),
-        stubPhase("b", {
-          dependsOn: ["a"],
-          run: async (context) => {
-            receivedContexts.push(context);
-            return phaseResult("b", "succeeded");
-          },
-        }),
-      ],
-    });
+    const recordingPhase = (id: string, dependsOn: readonly string[] = []): SetupPhaseDefinition =>
+      stubPhase(id, {
+        dependsOn,
+        run: (context) =>
+          Effect.sync(() => {
+            received.push(context.inspection);
+            return phaseResult(id, "succeeded");
+          }),
+      });
+    const run = await invokeSetup(options(), {session, phases: [recordingPhase("a"), recordingPhase("b", ["a"])]});
 
-    await command.invoke(options());
-
-    expect(inspection.requests).toHaveLength(1);
-    expect(inspection.requests[0]).toMatchObject({profile: "full", paths: FIXTURE_PATHS});
-    expect(receivedContexts).toHaveLength(2);
-    expect(receivedContexts.every((context) => context.inspection === session)).toBe(true);
+    expect(run.inspection).toEqual([{profile: "full", paths: FIXTURE_PATHS}]);
+    expect(received).toHaveLength(2);
+    expect(received.every((inspection) => inspection === session)).toBe(true);
   });
 
   it("omits requestedEngine from the inspection request when no engine option is set", async () => {
-    const {command, inspection} = createSetupFixture({phases: [stubPhase("a")]});
+    const run = await invokeSetup(options(), {phases: [stubPhase("a")]});
 
-    await command.invoke(options());
-
-    const request = inspection.requests[0];
+    const request = run.inspection[0];
     if (request === undefined) {
-      throw new Error("The inspection registry was never asked for a session.");
+      throw new Error("The inspection layer was never asked for a session.");
     }
     expect(Object.hasOwn(request, "requestedEngine")).toBe(false);
   });
 
   it("passes the requested engine through to the inspection request", async () => {
-    const {command, inspection} = createSetupFixture({phases: [stubPhase("a")]});
+    const run = await invokeSetup(options({engine: "podman"}), {phases: [stubPhase("a")]});
 
-    await command.invoke(options({engine: "podman"}));
-
-    expect(inspection.requests[0]).toMatchObject({requestedEngine: "podman"});
+    expect(run.inspection).toEqual([{profile: "full", paths: FIXTURE_PATHS, requestedEngine: "podman"}]);
   });
 
   it("fails without constructing an inspection session when repository requirements are invalid", async () => {
-    const {command, inspection} = createSetupFixture({
-      phases: [stubPhase("a")],
-      files: setupFixtureFileSystem({[resolve(FIXTURE_PATHS.root, ".nvmrc")]: "22\n"}),
+    const ran: string[] = [];
+    const run = await invokeSetup(options(), {
+      phases: [stubPhase("a", {run: () => Effect.sync(() => (ran.push("a"), phaseResult("a", "succeeded")))})],
+      files: {[resolve(FIXTURE_PATHS.root, ".nvmrc")]: "22\n"},
     });
 
-    const execution = await command.invoke(options());
-
-    expect(execution.status).toBe("failed");
-    expect(execution.exitCode).toBe(1);
-    if (execution.status !== "failed") throw new Error("Setup did not fail.");
-    expect(execution.failure.message).toMatch(/invalid/i);
-    expect(inspection.requests).toHaveLength(0);
+    expect(run.execution).toMatchObject({
+      status: "failed",
+      exitCode: 1,
+      message: expect.stringMatching(/^Repository requirements are invalid:/u),
+    });
+    expect(run.inspection).toHaveLength(0);
+    expect(ran).toEqual([]);
   });
 });
 
 describe("setup phase command execution", () => {
-  function commandPhase(run: (context: SetupContext) => Promise<unknown>): SetupPhaseDefinition {
-    return stubPhase("dotnet", {
-      run: async (context) => {
-        await run(context);
-        return phaseResult("dotnet", "succeeded");
-      },
+  function commandPhase(run: (context: LegacySetupContext) => Promise<unknown>): SetupPhaseDefinition {
+    return legacyStubPhase("dotnet", async (context) => {
+      await run(context);
+      return phaseResult("dotnet", "succeeded");
     });
   }
 
-  function recordedOptions(runner: RecordingRunner): ProcessRunOptions {
-    const call = runner.calls[0];
-    if (call === undefined) {
-      throw new Error("No process invocation was recorded.");
-    }
-    return call.options;
-  }
+  const succeededProcess: ScriptedProcess = {match: () => true, respond: {stdout: "", stderr: "", durationMs: 0}};
 
   it("scopes every phase command to the repository root with the bounded default timeout", async () => {
-    const runner = createProcessRunner();
-    const {command} = createSetupFixture({
-      runner,
-      phases: [commandPhase((context) => context.runtime?.runner.run({command: "dotnet", args: ["--version"]}) ?? Promise.resolve())],
+    const run = await invokeSetup(options(), {
+      processes: [succeededProcess],
+      phases: [commandPhase((context) => context.runtime.runner.run({command: "dotnet", args: ["--version"]}))],
     });
 
-    await command.invoke(options());
-
-    expect(runner.calls.map(({request}) => request)).toEqual([{command: "dotnet", args: ["--version"]}]);
-    expect(recordedOptions(runner)).toMatchObject({cwd: FIXTURE_PATHS.root, timeoutMs: 120_000});
-    expect(recordedOptions(runner).signal).toBeDefined();
+    expect(run.harness.processCalls()).toEqual([
+      {
+        request: {command: "dotnet", args: ["--version"]},
+        options: {cwd: FIXTURE_PATHS.root, timeout: 120_000, echo: false, failureOutput: "full"},
+      },
+    ]);
   });
 
   it("preserves an explicit caller timeout instead of the scoped default", async () => {
-    const runner = createProcessRunner();
-    const {command} = createSetupFixture({
-      runner,
-      phases: [
-        commandPhase(
-          (context) => context.runtime?.runner.run({command: "dotnet", args: ["--version"]}, {timeoutMs: 5_000}) ?? Promise.resolve(),
-        ),
-      ],
+    const run = await invokeSetup(options(), {
+      processes: [succeededProcess],
+      phases: [commandPhase((context) => context.runtime.runner.run({command: "dotnet", args: ["--version"]}, {timeoutMs: 5_000}))],
     });
 
-    await command.invoke(options());
-
-    expect(recordedOptions(runner)).toMatchObject({timeoutMs: 5_000});
+    expect(run.harness.processCalls()[0]?.options).toMatchObject({timeout: 5_000});
   });
 
-  it("keeps the scoped default for a mutation command instead of the pre-migration bridge policy", async () => {
-    const runner = createProcessRunner();
-    const {command} = createSetupFixture({
-      runner,
-      phases: [
-        commandPhase((context) => context.runtime?.runner.run({command: "npm", args: ["ci"]}, {output: "tee"}) ?? Promise.resolve()),
-      ],
+  it("keeps the scoped default for a mutation command", async () => {
+    const run = await invokeSetup(options(), {
+      processes: [succeededProcess],
+      phases: [commandPhase((context) => context.runtime.runner.run({command: "npm", args: ["ci"]}, {output: "tee"}))],
     });
 
-    await command.invoke(options());
-
-    expect(recordedOptions(runner)).toMatchObject({output: "tee", timeoutMs: 120_000});
+    expect(run.harness.processCalls()[0]?.options).toMatchObject({output: "tee", timeout: 120_000});
   });
 
   it("does not echo command evidence in normal mode", async () => {
-    const {logger, sink} = createLogger(false);
-    const runner = createProcessRunner();
-    const {command} = createSetupFixture({
-      logger,
-      runner,
-      phases: [commandPhase((context) => context.runtime?.runner.run({command: "dotnet", args: ["--version"]}) ?? Promise.resolve())],
+    const run = await invokeSetup(options(), {
+      processes: [succeededProcess],
+      phases: [commandPhase((context) => context.runtime.runner.run({command: "dotnet", args: ["--version"]}))],
     });
 
-    await command.invoke(options(), {presentation: "human"});
-
-    expect(recordedOptions(runner).logCommands).toBe(false);
-    expect(sink.records.some((record) => record.text.includes("dotnet --version"))).toBe(false);
+    expect(run.harness.processCalls()[0]?.options.echo).toBe(false);
+    expect(rendered(run)).not.toContain("dotnet --version");
   });
 
   it("echoes formatted command evidence in verbose mode without stdin or environment values", async () => {
-    const {logger, sink} = createLogger(true);
-    const runner = createProcessRunner();
-    const {command} = createSetupFixture({
-      logger,
-      runner,
+    const run = await invokeSetup(options({verbose: true}), {
+      processes: [succeededProcess],
       phases: [
         commandPhase((context) =>
-          context.runtime === undefined
-            ? Promise.resolve()
-            : context.runtime.runner.run(
-                {command: "dotnet", args: ["user-secrets", "set"]},
-                {input: "super-secret-stdin-payload", env: {SOME_TOKEN: "super-secret-env-value"}},
-              ),
+          context.runtime.runner.run(
+            {command: "dotnet", args: ["user-secrets", "set"]},
+            {input: "super-secret-stdin-payload", env: {SOME_TOKEN: "super-secret-env-value"}},
+          ),
         ),
       ],
     });
 
-    await command.invoke(options({verbose: true}), {presentation: "human"});
-
-    const rendered = sink.records.map((record) => record.text).join("\n");
-    expect(rendered).toContain("$ dotnet user-secrets set");
-    expect(rendered).not.toContain("super-secret-stdin-payload");
-    expect(rendered).not.toContain("super-secret-env-value");
+    expect(rendered(run)).toContain("[arolariu::setup::dotnet] 🐛 $ dotnet user-secrets set");
+    expect(rendered(run)).not.toContain("super-secret-stdin-payload");
+    expect(rendered(run)).not.toContain("super-secret-env-value");
   });
 });
 
 describe("setup presentation", () => {
   it("renders the exact duration and summary for a completed phase", async () => {
-    const {logger, sink} = createLogger();
-    const {command} = createSetupFixture({
-      logger,
+    const run = await invokeSetup(options(), {
       phases: [
         stubPhase("dotnet", {
-          run: () => Promise.resolve(phaseResult("dotnet", "succeeded", {summary: "The .NET SDK is ready.", durationMs: 42})),
+          run: () => Effect.succeed(phaseResult("dotnet", "succeeded", {summary: "The .NET SDK is ready.", durationMs: 42})),
         }),
       ],
     });
 
-    await command.invoke(options(), {presentation: "human"});
-
-    expect(sink.records.map((record) => record.text).join("\n")).toContain("The .NET SDK is ready. (42ms)");
+    expect(rendered(run)).toContain("The .NET SDK is ready. (42ms)");
   });
 
   it("renders the summary table, degraded capabilities, and next actions", async () => {
-    const {logger, sink} = createLogger();
-    const {command} = createSetupFixture({
-      logger,
+    const run = await invokeSetup(options(), {
       phases: [
         stubPhase("react", {
           run: () =>
-            Promise.resolve(
+            Effect.succeed(
               phaseResult("react", "degraded", {
                 summary: "Clerk credentials are unavailable.",
                 nextActions: ["Provide Clerk credentials, then rerun setup."],
@@ -917,89 +807,95 @@ describe("setup presentation", () => {
       ],
     });
 
-    await command.invoke(options(), {presentation: "human"});
-
-    const rendered = sink.records.map((record) => record.text).join("\n");
-    expect(rendered).toContain("Setup summary");
-    expect(rendered).toContain("Degraded capabilities");
-    expect(rendered).toContain("Provide Clerk credentials, then rerun setup.");
-    expect(rendered).toContain("Setup is ready with degraded capabilities.");
+    expect(rendered(run)).toContain("Setup summary");
+    expect(rendered(run)).toContain("Degraded capabilities");
+    expect(rendered(run)).toContain("Provide Clerk credentials, then rerun setup.");
+    expect(rendered(run)).toContain("Setup is ready with degraded capabilities.");
   });
 
   it("emits verbose dependency-block reasoning naming the unmet dependency and its status", async () => {
-    const {logger, sink} = createLogger(true);
-    const {command} = createSetupFixture({
-      logger,
+    const run = await invokeSetup(options({verbose: true}), {
       phases: [
         stubPhase("workspace.root-dependencies", {
-          run: () => Promise.resolve(phaseResult("workspace.root-dependencies", "failed", {summary: "npm ci failed."})),
+          run: () => Effect.succeed(phaseResult("workspace.root-dependencies", "failed", {summary: "npm ci failed."})),
         }),
         stubPhase("workspace.generators", {dependsOn: ["workspace.root-dependencies"]}),
       ],
     });
 
-    await command.invoke(options({verbose: true}), {presentation: "human"});
-
-    const rendered = sink.records.map((record) => record.text).join("\n");
-    expect(rendered).toContain("🐛");
-    expect(rendered).toMatch(/\[arolariu::setup::workspace\.generators]/);
-    expect(rendered).toContain("workspace.root-dependencies");
-    expect(rendered).toMatch(/status 'failed'/);
+    expect(rendered(run)).toContain(
+      "[arolariu::setup::workspace.generators] 🐛 Dependency check for 'workspace.generators': Dependency 'workspace.root-dependencies' has status 'failed', not 'succeeded' or 'degraded'.",
+    );
   });
 
   it("does not emit debug-level dependency-block reasoning in normal mode", async () => {
-    const {logger, sink} = createLogger(false);
-    const {command} = createSetupFixture({
-      logger,
+    const run = await invokeSetup(options(), {
       phases: [
         stubPhase("workspace.root-dependencies", {
-          run: () => Promise.resolve(phaseResult("workspace.root-dependencies", "failed", {summary: "npm ci failed."})),
+          run: () => Effect.succeed(phaseResult("workspace.root-dependencies", "failed", {summary: "npm ci failed."})),
         }),
         stubPhase("workspace.generators", {dependsOn: ["workspace.root-dependencies"]}),
       ],
     });
 
-    await command.invoke(options(), {presentation: "human"});
-
-    expect(sink.records.map((record) => record.text).join("\n")).not.toContain("🐛");
+    expect(rendered(run)).not.toContain("🐛");
   });
 
-  it("defers the summary to completion, so a silent nested invocation never renders it", async () => {
-    const {logger, sink} = createLogger();
-    const {command} = createSetupFixture({logger, phases: [stubPhase("dotnet")]});
+  it("leaves the summary to the CLI completion, so the setup program alone never renders it", async () => {
+    const harness = makeTestLayer({files: setupFixtureFiles(), context: "setup"});
+    const inspection = setupFixtureInspection(createFakeInspectionSession());
 
-    await command.invoke(options());
+    const result = await Effect.runPromise(
+      runSetupWith([stubPhase("dotnet")])(options()).pipe(Effect.provide(Layer.merge(harness.layer, inspection.layer))),
+    );
 
-    expect(sink.records.map((record) => record.text).join("\n")).not.toContain("Setup summary");
+    expect(setupOutcome(result)).toBe("ready");
+    expect(
+      harness
+        .output()
+        .map(({text}) => text)
+        .join(""),
+    ).not.toContain("Setup summary");
+  });
+
+  it("writes the result as the single JSON document under --json", async () => {
+    const run = await invokeSetup(options(), {
+      flags: ["--json"],
+      phases: [stubPhase("dotnet", {run: () => Effect.succeed(phaseResult("dotnet", "failed"))})],
+    });
+
+    expect(run.exitCode).toBe(1);
+    expect(run.harness.output()).toEqual([
+      {stream: "stdout", text: `${JSON.stringify({phases: [phaseResult("dotnet", "failed")]}, null, 2)}\n`},
+    ]);
   });
 });
 
 describe("setup generation composition", () => {
-  it("hands migrated phases a generation invoker scoped to this invocation", async () => {
-    const invoke = vi.fn<CommandInvoker<GenerateInput, GenerateResult>["invoke"]>(async () => ({
-      status: "completed",
-      value: {selected: ["env"], completed: ["env"]},
-      exitCode: 0,
-    }));
-    const {command} = createSetupFixture({
-      generate: {invoke},
+  it("hands legacy phases a silent generation invocation linked to the phase signal", async () => {
+    const invocations: unknown[] = [];
+    const generate: CommandInvoker<GenerateInput, GenerateResult> = {
+      invoke: async (input, invocationOptions) => {
+        invocations.push({input, presentation: invocationOptions?.presentation, signal: invocationOptions?.signal instanceof AbortSignal});
+        return {status: "completed", value: {selected: ["env"], completed: ["env"]}, exitCode: 0};
+      },
+    };
+    await invokeSetup(options(), {
       phases: [
-        stubPhase("workspace.generators", {
-          run: async (context) => {
-            await context.runtime?.invokeGenerate({verbose: false, env: true, i18n: true, gql: true, artifacts: true});
+        legacyStubPhase(
+          "workspace.generators",
+          async (context) => {
+            await context.runtime.invokeGenerate({verbose: false, env: true, i18n: true, gql: true, artifacts: true});
             return phaseResult("workspace.generators", "succeeded");
           },
-        }),
+          {generate},
+        ),
       ],
     });
 
-    await command.invoke(options());
-
-    expect(invoke).toHaveBeenCalledTimes(1);
-    const [generateInput, invocationOptions] = invoke.mock.calls[0] ?? [];
-    expect(generateInput).toEqual({verbose: false, env: true, i18n: true, gql: true, artifacts: true});
-    expect(invocationOptions?.presentation).toBe("silent");
-    expect(invocationOptions?.parent).toBeDefined();
+    expect(invocations).toEqual([
+      {input: {verbose: false, env: true, i18n: true, gql: true, artifacts: true}, presentation: "silent", signal: true},
+    ]);
   });
 });
 
@@ -1009,62 +905,43 @@ describe("setup characterization (pre-Effect migration)", () => {
     return JSON.parse(JSON.stringify(value).split(escapedRoot).join("<root>"));
   }
 
-  /** A scripted prompt provider recording every confirmation request and answering `answer`. */
-  function scriptedPrompts(answer: boolean): Readonly<{
-    prompts: PromptProvider;
-    confirmations: readonly Readonly<{message: string; defaultValue: boolean | undefined}>[];
-  }> {
-    const confirmations: Readonly<{message: string; defaultValue: boolean | undefined}>[] = [];
-    const {prompts} = createPrompts(answer);
-    return {
-      prompts: {
-        ...prompts,
-        confirm: async (message, defaultValue) => {
-          confirmations.push({message, defaultValue});
-          return answer;
-        },
-      },
-      confirmations,
-    };
+  /** A scripted prompt service recording every confirmation request and answering `answer`. */
+  function scriptedPrompts(answer: boolean): Readonly<{prompts: PromptsShape; confirmations: readonly RecordedConfirmation[]}> {
+    return recordingPrompts(answer);
   }
 
-  /** One phase that submits a repository, a user, and a system action, then reports their dispositions. */
+  /**
+   * One legacy phase, run through the `legacyPhase` adapter, that submits a repository, a user, and a
+   * system action, then reports their dispositions.
+   */
   function threeScopeActionPhase(executed: string[]): SetupPhaseDefinition {
-    return stubPhase("infrastructure", {
-      run: async (context) => {
-        const dispositions: string[] = [];
-        for (const scope of ["repository", "user", "system"] as const) {
-          const id = `infrastructure.${scope}-action`;
-          dispositions.push(
-            await context.actions.run({
-              id,
-              scope,
-              summary: `Apply the ${scope} change.`,
-              execute: async () => {
-                executed.push(id);
-              },
-            }),
-          );
-        }
-        const status: SetupStatus = dispositions.includes("declined")
-          ? "failed"
-          : dispositions.includes("planned")
-            ? "skipped"
-            : "succeeded";
-        return phaseResult("infrastructure", status, {summary: `Dispositions: ${dispositions.join(", ")}.`, durationMs: 5});
-      },
+    return legacyStubPhase("infrastructure", async (context) => {
+      const dispositions: string[] = [];
+      for (const scope of ["repository", "user", "system"] as const) {
+        const id = `infrastructure.${scope}-action`;
+        dispositions.push(
+          await context.actions.run({
+            id,
+            scope,
+            summary: `Apply the ${scope} change.`,
+            execute: async () => {
+              executed.push(id);
+            },
+          }),
+        );
+      }
+      const status: SetupStatus = dispositions.includes("declined") ? "failed" : dispositions.includes("planned") ? "skipped" : "succeeded";
+      return phaseResult("infrastructure", status, {summary: `Dispositions: ${dispositions.join(", ")}.`, durationMs: 5});
     });
   }
 
   async function invokeThreeScopePhase(
     input: SetupInput,
-    prompts: PromptProvider,
-  ): Promise<Readonly<{execution: CommandExecution<SetupResult>; executed: readonly string[]; records: readonly unknown[]}>> {
+    prompts: PromptsShape,
+  ): Promise<Readonly<{execution: unknown; executed: readonly string[]; records: readonly LegacyRecord[]}>> {
     const executed: string[] = [];
-    const {logger, sink} = createLogger(false);
-    const {command} = createSetupFixture({logger, prompts, phases: [threeScopeActionPhase(executed)]});
-    const execution = await command.invoke(input, {presentation: "human"});
-    return {execution, executed, records: sink.records};
+    const run = await invokeSetup(input, {prompts, phases: [threeScopeActionPhase(executed)]});
+    return {execution: run.execution, executed, records: run.records};
   }
 
   it("pins the exact planned action lines, records, and exit code during --dry-run", async () => {
@@ -1317,14 +1194,23 @@ describe("setup characterization (pre-Effect migration)", () => {
 
   it("pins the non-TTY terminal confirmation contract: a defaulted confirm resolves the default, an undefaulted confirm rejects", async () => {
     // Arrange
-    const output = new PassThrough();
-    const prompts = createTerminalPromptProvider({input: new PassThrough(), output, isTTY: false});
+    const harness = makeTestLayer();
+    const prompts = PromptsLive.pipe(Layer.provide(harness.layer));
 
     // Act
-    const defaulted = await prompts.confirm("Allow system setup action?", false);
-    const undefaulted = await prompts.confirm("Allow system setup action?").then(
-      (value) => ({kind: "resolved", value}),
-      (error: unknown) => ({kind: "rejected", message: error instanceof Error ? error.message : String(error)}),
+    const [defaulted, undefaulted] = await Effect.runPromise(
+      Effect.gen(function* () {
+        const service = yield* Prompts;
+        return [
+          yield* service.confirm("Allow system setup action?", false),
+          yield* service.confirm("Allow system setup action?").pipe(
+            Effect.match({
+              onSuccess: (value) => ({kind: "resolved", value}),
+              onFailure: (error) => ({kind: "rejected", message: error.message}),
+            }),
+          ),
+        ] as const;
+      }).pipe(Effect.provide(prompts)),
     );
 
     // Assert
@@ -1333,13 +1219,11 @@ describe("setup characterization (pre-Effect migration)", () => {
       kind: "rejected",
       message: "Cannot request confirmation without an interactive terminal. Re-run setup in a TTY.",
     });
-    expect(output.read()).toBeNull();
+    expect(harness.output()).toEqual([]);
   });
 
   it("pins the exact non-TTY outcome of the real .NET phase's system action without --yes", async () => {
     // Arrange
-    const output = new PassThrough();
-    const prompts = createTerminalPromptProvider({input: new PassThrough(), output, isTTY: false});
     const facts: DotnetFacts = {
       executable: {available: true, resolvedPaths: ["/usr/bin/dotnet"]},
       sdks: ["10.0.100"],
@@ -1353,25 +1237,25 @@ describe("setup characterization (pre-Effect migration)", () => {
       certificate: {exists: true, trusted: true},
       appHost: {projectExists: true, missingParameterKeys: [], userSecretKeys: []},
     };
-    const session = {
-      inspect: async (key: string) =>
-        key === "dotnet"
-          ? {kind: "available", value: facts, durationMs: 1}
-          : {kind: "unavailable", reason: "Not exercised by this test.", durationMs: 0},
-      invalidate: () => undefined,
-      updateInfrastructureEngine: () => undefined,
-    } as unknown as LegacyRepositoryInspectionSession;
-    const runner = createProcessRunner();
-    const {logger, sink} = createLogger(false);
-    const {command} = createSetupFixture({logger, prompts, runner, session, phases: [dotnetSetupPhase]});
+    const outcomes: ScriptedInspection = {dotnet: {kind: "available", value: facts, durationMs: 1}};
+    const session: RepositoryInspectionSession = {
+      ...createFakeInspectionSession(),
+      inspect: <K extends RepositoryInspectionKey>(key: K) =>
+        Effect.succeed(
+          (outcomes[key] as InspectionOutcome<RepositoryInspectionFacts[K]> | undefined) ?? {
+            kind: "unavailable",
+            reason: "Not exercised by this test.",
+            durationMs: 0,
+          },
+        ),
+    };
 
-    // Act
-    const execution = await command.invoke(options(), {presentation: "human"});
+    // Act: the production `PromptsLive` over a non-interactive stdin, and the real phase through `legacyPhase`.
+    const run = await invokeSetup(options(), {livePrompts: true, session, phases: [legacyPhase(dotnetSetupPhase)]});
     const observed = withRootPlaceholder({
-      execution,
-      commands: runner.calls.map(({request}) => request),
-      records: sink.records,
-      promptOutput: output.read(),
+      execution: run.execution,
+      commands: run.harness.processCalls().map(({request}) => request),
+      records: run.records,
     });
 
     // Assert
@@ -1419,7 +1303,6 @@ describe("setup characterization (pre-Effect migration)", () => {
         {stream: "stdout", text: "1. Allow required action 'dotnet.workload-restore', then rerun setup.", write: false},
         {stream: "stdout", text: "Setup failed. Resolve the reported failures, then rerun setup.", write: false},
       ],
-      promptOutput: null,
     });
   });
 
@@ -1430,17 +1313,18 @@ describe("setup characterization (pre-Effect migration)", () => {
   function realGraphWith(failing: string, ran: string[]): readonly SetupPhaseDefinition[] {
     return setupPhases.map((phase) => ({
       ...phase,
-      run: async (): Promise<SetupPhaseResult> => {
-        ran.push(phase.id);
-        return phase.id === failing
-          ? phaseResult(phase.id, "failed", {
-              summary: `${phase.title} failed.`,
-              evidence: [`${phase.id} evidence.`],
-              nextActions: [`Repair ${phase.id}.`],
-              durationMs: 3,
-            })
-          : phaseResult(phase.id, "succeeded", {summary: `${phase.title} is ready.`, durationMs: 2});
-      },
+      run: (): Effect.Effect<SetupPhaseResult> =>
+        Effect.sync(() => {
+          ran.push(phase.id);
+          return phase.id === failing
+            ? phaseResult(phase.id, "failed", {
+                summary: `${phase.title} failed.`,
+                evidence: [`${phase.id} evidence.`],
+                nextActions: [`Repair ${phase.id}.`],
+                durationMs: 3,
+              })
+            : phaseResult(phase.id, "succeeded", {summary: `${phase.title} is ready.`, durationMs: 2});
+        }),
     }));
   }
 
@@ -1449,12 +1333,10 @@ describe("setup characterization (pre-Effect migration)", () => {
     async (failing) => {
       // Arrange
       const ran: string[] = [];
-      const {logger, sink} = createLogger(true);
-      const {command} = createSetupFixture({logger, phases: realGraphWith(failing, ran)});
 
       // Act
-      const execution = await command.invoke(options({verbose: true}), {presentation: "human"});
-      const observed = withRootPlaceholder({execution, ran, records: sink.records});
+      const run = await invokeSetup(options({verbose: true}), {phases: realGraphWith(failing, ran)});
+      const observed = withRootPlaceholder({execution: run.execution, ran, records: run.records});
 
       // Assert
       expect(observed).toEqual(
@@ -1968,32 +1850,28 @@ describe("setup characterization (pre-Effect migration)", () => {
     ["degraded", "degraded"],
   ] as const)("pins the exact %s summary table, banner, and exit code", async (_name, reactStatus) => {
     // Arrange
-    const {logger, sink} = createLogger(false);
-    const {command} = createSetupFixture({
-      logger,
-      phases: [
-        stubPhase("dotnet", {
-          run: () =>
-            Promise.resolve(
-              phaseResult("dotnet", "succeeded", {summary: "The .NET SDK is ready.", evidence: ["SDK 10.0.100."], durationMs: 42}),
-            ),
-        }),
-        stubPhase("react", {
-          run: () =>
-            Promise.resolve(
-              phaseResult("react", reactStatus, {
-                summary: reactStatus === "degraded" ? "Clerk credentials are unavailable." : "The website is ready.",
-                nextActions: reactStatus === "degraded" ? ["Provide Clerk credentials, then rerun setup."] : [],
-                durationMs: 7,
-              }),
-            ),
-        }),
-      ],
-    });
+    const phases = [
+      stubPhase("dotnet", {
+        run: () =>
+          Effect.succeed(
+            phaseResult("dotnet", "succeeded", {summary: "The .NET SDK is ready.", evidence: ["SDK 10.0.100."], durationMs: 42}),
+          ),
+      }),
+      stubPhase("react", {
+        run: () =>
+          Effect.succeed(
+            phaseResult("react", reactStatus, {
+              summary: reactStatus === "degraded" ? "Clerk credentials are unavailable." : "The website is ready.",
+              nextActions: reactStatus === "degraded" ? ["Provide Clerk credentials, then rerun setup."] : [],
+              durationMs: 7,
+            }),
+          ),
+      }),
+    ];
 
     // Act
-    const execution = await command.invoke(options(), {presentation: "human"});
-    const observed = withRootPlaceholder({execution, records: sink.records});
+    const run = await invokeSetup(options(), {phases});
+    const observed = withRootPlaceholder({execution: run.execution, records: run.records});
 
     // Assert
     expect(observed).toEqual(

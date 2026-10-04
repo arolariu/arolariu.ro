@@ -20,7 +20,7 @@
  * environment is never recreated, but pip is always upgraded and `requirements-dev.txt` is always
  * (re)installed, each verified from refreshed facts.
  *
- * The phase reads every capability from the invocation-scoped {@link SetupPhaseRuntime}: the
+ * The phase reads every capability from the invocation-scoped {@link LegacySetupPhaseRuntime}: the
  * process runner, the clock, the task scheduler, the recursive-removal filesystem, and the
  * host-platform snapshot. It owns no ambient Node state and no test-only constructor dependency.
  */
@@ -37,13 +37,13 @@ import type {MinimumVersion} from "../../../common/requirements.ts";
 import type {PythonFacts} from "../../../inspection/python.ts";
 import type {InspectionOutcome} from "../../../inspection/types.ts";
 import {
-  requireSetupPhaseRuntime,
+  requireLegacySetupPhaseRuntime,
   type InstallationProposal,
   type SetupActionScope,
-  type SetupContext,
-  type SetupPhaseDefinition,
+  type LegacySetupContext,
+  type LegacySetupPhaseDefinition,
   type SetupPhaseResult,
-  type SetupPhaseRuntime,
+  type LegacySetupPhaseRuntime,
 } from "../types.ts";
 
 /**
@@ -85,11 +85,11 @@ function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
-function duration(startedAt: number, runtime: SetupPhaseRuntime): number {
+function duration(startedAt: number, runtime: LegacySetupPhaseRuntime): number {
   return Math.max(0, runtime.clock.monotonicNow() - startedAt);
 }
 
-function phaseResult(runtime: SetupPhaseRuntime, startedAt: number, input: Omit<SetupPhaseResult, "durationMs">): SetupPhaseResult {
+function phaseResult(runtime: LegacySetupPhaseRuntime, startedAt: number, input: Omit<SetupPhaseResult, "durationMs">): SetupPhaseResult {
   return {
     ...input,
     durationMs: duration(startedAt, runtime),
@@ -109,7 +109,7 @@ function normalizedVersion(version: MinimumVersion): string {
  */
 function commandFailureEvidence(
   outcome: Readonly<Exclude<ProcessOutcome, SucceededProcessOutcome>>,
-  context: SetupContext,
+  context: LegacySetupContext,
 ): readonly string[] {
   const evidence = processFailureEvidence(outcome, context.logger);
   return [
@@ -201,7 +201,7 @@ function venvReadinessEvidence(venv: Readonly<PythonFacts["virtualEnvironment"]>
  * @throws Whatever the mutation or the action executor throws, including `AbortError`.
  */
 async function runPythonMutation(
-  context: SetupContext,
+  context: LegacySetupContext,
   action: Readonly<{id: string; scope: SetupActionScope; summary: string; mutate: () => Promise<void>}>,
 ): Promise<PythonMutationOutcome> {
   let attempted = false;
@@ -249,8 +249,8 @@ function hasAptCandidate(result: Readonly<ProcessOutcome>): boolean {
 }
 
 async function discoverPythonPackageManagers(
-  context: SetupContext,
-  runtime: SetupPhaseRuntime,
+  context: LegacySetupContext,
+  runtime: LegacySetupPhaseRuntime,
   platform: NodeJS.Platform,
 ): Promise<ReadonlySet<string>> {
   const managers = new Set<string>();
@@ -359,8 +359,8 @@ export function selectPythonInstallationProposal(
  * @returns Either a terminal phase result, or the facts to continue with.
  */
 async function ensureInterpreter(
-  context: SetupContext,
-  runtime: SetupPhaseRuntime,
+  context: LegacySetupContext,
+  runtime: LegacySetupPhaseRuntime,
   facts: Readonly<PythonFacts>,
   evidence: string[],
 ): Promise<PythonStepOutcome> {
@@ -477,8 +477,8 @@ async function ensureInterpreter(
  * @returns Either a terminal phase result, or the facts to continue with.
  */
 async function ensureVirtualEnvironment(
-  context: SetupContext,
-  runtime: SetupPhaseRuntime,
+  context: LegacySetupContext,
+  runtime: LegacySetupPhaseRuntime,
   facts: Readonly<PythonFacts>,
   evidence: string[],
   plannedActions: string[],
@@ -552,7 +552,7 @@ interface PipStepDefinition {
   readonly verify: (facts: Readonly<PythonFacts>) => readonly string[];
 }
 
-function pipStepDefinitions(context: SetupContext, venvSpec: Readonly<ProcessRequest>): readonly PipStepDefinition[] {
+function pipStepDefinitions(context: LegacySetupContext, venvSpec: Readonly<ProcessRequest>): readonly PipStepDefinition[] {
   return [
     {
       id: PIP_UPGRADE_ACTION,
@@ -596,8 +596,8 @@ function pipStepDefinitions(context: SetupContext, venvSpec: Readonly<ProcessReq
  * @returns Either a terminal phase result, or the facts to continue with.
  */
 async function ensurePipDependencies(
-  context: SetupContext,
-  runtime: SetupPhaseRuntime,
+  context: LegacySetupContext,
+  runtime: LegacySetupPhaseRuntime,
   venvSpec: Readonly<ProcessRequest>,
   facts: PythonFacts,
   evidence: string[],
@@ -662,8 +662,8 @@ async function ensurePipDependencies(
   return {facts};
 }
 
-async function runPythonSetup(context: SetupContext): Promise<SetupPhaseResult> {
-  const runtime = requireSetupPhaseRuntime(context);
+async function runPythonSetup(context: LegacySetupContext): Promise<SetupPhaseResult> {
+  const runtime = requireLegacySetupPhaseRuntime(context);
   const startedAt = runtime.clock.monotonicNow();
   const evidence: string[] = [];
   const plannedActions: string[] = [];
@@ -737,12 +737,12 @@ async function runPythonSetup(context: SetupContext): Promise<SetupPhaseResult> 
  *
  * @remarks
  * The phase no longer accepts a host or filesystem-removal boundary: the platform, the process
- * runner, the recursive-removal filesystem, and the clock all come from {@link SetupPhaseRuntime},
+ * runner, the recursive-removal filesystem, and the clock all come from {@link LegacySetupPhaseRuntime},
  * so a test replaces capabilities on the runtime rather than on this factory.
  *
  * @returns The independent Python setup phase definition.
  */
-export function createPythonSetupPhase(): SetupPhaseDefinition {
+export function createPythonSetupPhase(): LegacySetupPhaseDefinition {
   return {
     id: "python",
     title: "Python toolchain",
@@ -753,4 +753,4 @@ export function createPythonSetupPhase(): SetupPhaseDefinition {
 }
 
 /** Independent required phase that prepares the isolated exp.arolariu.ro Python toolchain. */
-export const pythonSetupPhase: SetupPhaseDefinition = createPythonSetupPhase();
+export const pythonSetupPhase: LegacySetupPhaseDefinition = createPythonSetupPhase();

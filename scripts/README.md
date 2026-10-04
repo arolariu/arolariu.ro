@@ -138,14 +138,14 @@ Business code never reads `process.argv` and never writes `process.exitCode`. Se
 Each command module exports a `create<Name>Command(...)` factory and one production singleton built from it:
 
 ```typescript
-export const setupCommand: MonorepoCommand<SetupInput, SetupResult> = createSetupCommand();
+export const e2eCommand: MonorepoCommand<E2EInput, E2EResult> = createE2eCommand();
 ```
 
 The factory is the deterministic test seam. It accepts either a `CommandRuntimeFactory` directly or a small `dependencies` object
 carrying one, so a test replaces the whole capability kernel instead of mocking repository modules:
 
 ```typescript
-const command = createSetupCommand({runtimeFactory: createTestRuntimeFactory({runner, files})});
+const command = createE2eCommand(createTestRuntimeFactory({runner, files}));
 ```
 
 [`common/runtime.testing.ts`](./common/runtime.testing.ts) owns those typed fakes — a scripted process runner, in-memory logger sink,
@@ -338,7 +338,7 @@ const files = yield* legacyReadOnlyFiles;
 const paths = yield* Effect.promise(() => resolveRepositoryPaths(import.meta.url, files));
 ```
 
-The legacy commands still on the command runtime (Setup until cohort 5) reach the Effect
+The legacy commands still on the command runtime reach the Effect
 `Inspection` service through `createLegacyInspectionRuntime`: `createNodeRuntimeScope` builds one per root scope (one `ManagedRuntime`
 over a silent `makeNodeLayer`), exposes it as `runtime.inspection`, and registers its `dispose` in the scope's cleanup registry. Its
 `getRepositorySession` is synchronous and keeps the legacy semantics — one `LegacyRepositoryInspectionSession` per request key, the
@@ -348,7 +348,8 @@ scope signal rejecting with its `CommandCancellation`.
 [`runtime-boundary.test.ts`](./common/runtime-boundary.test.ts) sanctions `scripts/platform/**` — like `runtime.node.ts` — as an owner of
 ambient `process.*`, timer, and `node:*` access, and enforces the platform and CLI rules: `@effect/platform-node` is imported only inside
 `scripts/platform/` and the [`cli.ts`](./cli.ts) entrypoint; Effect runtimes (`Effect.run*`, `ManagedRuntime.make`, `NodeRuntime.runMain`)
-start only in `cli.ts`, `platform/worker.ts`, `bridge.ts`, `testing.ts`, and `Output.ts`'s synchronous logger sink; no platform module except `bridge.ts`
+start only in `cli.ts`, `platform/worker.ts`, `bridge.ts`, `testing.ts`, `Output.ts`'s synchronous logger sink, and (until Task 5.5) setup's
+temporary [`commands/setup/legacy-phase.ts`](./commands/setup/legacy-phase.ts) adapter; no platform module except `bridge.ts`
 imports the legacy kernel; `effect/cli` is imported only under `scripts/commands/`, by `cli.ts`, by `platform/exit.ts`, and by
 `platform/Prompts.ts`; the effect-native families (`scripts/commands/{generate,rates,docs,doctor,status}/**` and `scripts/inspection/**`,
 tests included) never import a value from
@@ -375,9 +376,9 @@ configuration provides immediate feedback for direct output syntax. Direct conso
 sinks, while injected `output.write(...)` prompt presentation stays confined to the prompt adapter. No exemption includes a script entry
 point.
 
-Every legacy production script under root `scripts/**` — including [`commands/setup/index.ts`](./commands/setup/index.ts) — routes its presentation and semantic
-output through `MonorepositoryConsoleLogger`; the Effect-native families (generate, rates, docs, doctor, and status) route it through the
-platform `Presenter` and logger. There are no remaining
+Every legacy production script under root `scripts/**` routes its presentation and semantic output through `MonorepositoryConsoleLogger`;
+the Effect-native families (generate, rates, docs, doctor, and status) and the setup kernel route it through the platform `Presenter` and
+logger. Setup's legacy Promise phases keep their own `MonorepositoryConsoleLogger("setup")` until Task 5.5 converts them. There are no remaining
 transitional setup/doctor/status exceptions.
 
 ## Generate, rates, and docs (Effect-native)
@@ -430,19 +431,25 @@ npx eslint scripts\commands\generate scripts\commands\rates scripts\commands\doc
 
 ## Setup orchestrator (`npm run setup`)
 
-`npm run setup` runs `arolariu setup` (`--dry-run`, `--yes`, `--engine rancher|podman`, plus the global flags); [`commands/setup/index.ts`](./commands/setup/index.ts)
-owns the command. It
-resolves canonical paths through [`common/repository-paths.ts`](./common/repository-paths.ts), loads manifest-derived runtime and package
+`npm run setup` runs `arolariu setup` (`--dry-run`, `--yes`, `--engine rancher|podman`, plus the global flags). Setup runs on an Effect
+kernel: [`commands/setup/index.ts`](./commands/setup/index.ts) `runSetup` resolves canonical paths through [`common/repository-paths.ts`](./common/repository-paths.ts), loads manifest-derived runtime and package
 requirements through [`common/requirements.ts`](./common/requirements.ts), and reads/writes the non-secret persisted selection at
 `.arolariu/tooling.local.json` through [`common/tooling-config.ts`](./common/tooling-config.ts). Setup restores dependencies, prepares
-toolchains, and generates checkout artifacts; it never builds, type-checks, tests, or starts/stops a service.
+toolchains, and generates checkout artifacts; it never builds, type-checks, tests, or starts/stops a service. Its phases are still legacy
+Promise phases, run through the temporary [`legacyPhase`](./commands/setup/legacy-phase.ts) adapter (deleted in Task 5.5), which hands
+each one Promise views over the invocation's Effect services. A required phase that failed (or was skipped by a blocking dependency,
+or outside a dry run) makes the command exit `1` after the summary table; with `--json`, the `{phases}` result is the single document.
 
 ### Module map
 
 | Module | Owns |
 |--------|------|
-| [`commands/setup/index.ts`](./commands/setup/index.ts) | Input decoding, phase ordering, dependency gating, and the exit-code/readiness rollup; [`commands/setup/cli.ts`](./commands/setup/cli.ts) parses its flags |
-| [`commands/setup/types.ts`](./commands/setup/types.ts) | Shared `SetupContext`, `SetupPhaseDefinition`, `SetupAction`, and status/scope contracts |
+| [`commands/setup/index.ts`](./commands/setup/index.ts) | `runSetup`: phase ordering, paths, requirements, the shared inspection session, and the readiness rollup |
+| [`commands/setup/cli.ts`](./commands/setup/cli.ts) | Flag decoding and the completion: summary table, degraded capabilities, next actions, banner, and exit code |
+| [`commands/setup/runner.ts`](./commands/setup/runner.ts) | `runSetupPhases`: sequential, dependency-gated phase execution and per-phase rendering |
+| [`commands/setup/actions.ts`](./commands/setup/actions.ts) | `SetupActions`: the consent-gated runner of every setup mutation |
+| [`commands/setup/legacy-phase.ts`](./commands/setup/legacy-phase.ts) | Temporary `legacyPhase` adapter running the legacy Promise phases under the kernel (deleted in Task 5.5) |
+| [`commands/setup/types.ts`](./commands/setup/types.ts) | `SetupContext`, `SetupPhaseDefinition`, `SetupAction`, the status/scope contracts, and the temporary `Legacy*` phase contracts |
 | [`commands/setup/phases/workspace.ts`](./commands/setup/phases/workspace.ts) | Prerequisite validation, root and `.github/scripts` npm restore, and generated taxonomy/GraphQL/i18n artifacts |
 | [`commands/setup/phases/dotnet.ts`](./commands/setup/phases/dotnet.ts) | .NET SDK install, workload/solution/tool restore, AppHost user secrets, and the local HTTPS dev certificate |
 | [`commands/setup/phases/react.ts`](./commands/setup/phases/react.ts) | Website package validation, additive website `.env` defaults, and Playwright Chromium |
@@ -469,14 +476,15 @@ dependent phase and names the blocking dependency.
 
 ### Mutation scopes and consent
 
-Every mutation runs through the `SetupActionExecutor` created in [`commands/setup/index.ts`](./commands/setup/index.ts), which is the sole place that decides whether an
-action is `executed`, `planned` (always the outcome under `--dry-run`), or `declined`.
+Every mutation runs through the `SetupActions` service of [`commands/setup/actions.ts`](./commands/setup/actions.ts) (legacy phases reach it through
+the adapter's executor view), which is the sole place that decides whether an action is `executed`, `planned` (always the outcome under
+`--dry-run`, which wins over `--yes`), or `declined`.
 
 | Scope | Consent behavior | Representative actions |
 |-------|-------------------|-------------------------|
 | `repository` | Never prompts (still only planned under `--dry-run`) | Root/`.github/scripts` `npm ci`, dependency fingerprint writes, checkout-artifact generation, additive website `.env` writes, Playwright Chromium install, Python venv creation/pip install/fingerprint write, SvelteKit generated-state preparation, container engine persistence to `.arolariu/tooling.local.json` |
 | `user` | Never prompts (still only planned under `--dry-run`) | .NET local tool restore, AppHost local-development user-secret generation, HTTPS dev certificate creation, selfhost certificate generation |
-| `system` | Requires an interactive confirm unless `--yes` | .NET SDK install, .NET workload restore, HTTPS certificate trust, Playwright system dependency install, container engine install, mkcert install/trust |
+| `system` | Requires an interactive confirm unless `--yes`; without a TTY it is declined | .NET SDK install, .NET workload restore, HTTPS certificate trust, Playwright system dependency install, container engine install, mkcert install/trust |
 
 `--yes` approves only `system`-scoped actions; it never selects a container engine, invents prompted text, or supplies a secret. Under
 `--dry-run`, no phase mutates the repository, the invoking user's profile, or the host — every action reports `planned` instead.
@@ -486,7 +494,7 @@ action is `executed`, `planned` (always the outcome under `--dry-run`), or `decl
 Focused validation for setup and its direct shared dependencies:
 
 ```powershell
-npx vitest run --config scripts\vitest.config.ts --coverage.enabled=false scripts\common\repository-paths.test.ts scripts\common\requirements.test.ts scripts\common\tooling-config.test.ts scripts\common\prompts.test.ts scripts\commands\setup\index.test.ts scripts\commands\setup\phases\workspace.test.ts scripts\commands\setup\phases\dotnet.test.ts scripts\commands\setup\phases\react.test.ts scripts\commands\setup\phases\svelte.test.ts scripts\commands\setup\phases\python.test.ts scripts\commands\setup\phases\infrastructure.test.ts scripts\commands\generate\env.test.ts scripts\container-runtime\selection.test.ts scripts\common\output-policy.test.ts
+npx vitest run --config scripts\vitest.config.ts --coverage.enabled=false scripts\common\repository-paths.test.ts scripts\common\requirements.test.ts scripts\common\tooling-config.test.ts scripts\common\prompts.test.ts scripts\commands\setup\index.test.ts scripts\commands\setup\cli.test.ts scripts\commands\setup\actions.test.ts scripts\commands\setup\runner.test.ts scripts\commands\setup\legacy-phase.test.ts scripts\commands\setup\phases\workspace.test.ts scripts\commands\setup\phases\dotnet.test.ts scripts\commands\setup\phases\react.test.ts scripts\commands\setup\phases\svelte.test.ts scripts\commands\setup\phases\python.test.ts scripts\commands\setup\phases\infrastructure.test.ts scripts\commands\generate\env.test.ts scripts\container-runtime\selection.test.ts scripts\common\output-policy.test.ts
 npx eslint scripts\commands\setup scripts\common\repository-paths.ts scripts\common\requirements.ts scripts\common\tooling-config.ts scripts\common\prompts.ts scripts\commands\generate\env.ts scripts\container-runtime
 git --no-pager diff --check
 ```

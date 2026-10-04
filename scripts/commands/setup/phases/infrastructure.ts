@@ -16,7 +16,7 @@
  * facts. Planned and declined actions never set the attempted flag and therefore never invalidate.
  * After an executed disposition the already-invalidated key is re-inspected exactly once.
  *
- * The phase reads every capability from the invocation-scoped {@link SetupPhaseRuntime}: the
+ * The phase reads every capability from the invocation-scoped {@link LegacySetupPhaseRuntime}: the
  * process runner, the recursive-removal filesystem, the clock, and the host environment snapshot.
  * It owns no ambient Node state and no test-only constructor dependency; `createInfrastructureSetupPhase`
  * accepts no arguments.
@@ -34,13 +34,13 @@ import type {InfrastructureFacts} from "../../../inspection/infrastructure.ts";
 import type {RepositoryInspectionKey} from "../../../inspection/repository.ts";
 import type {InspectionOutcome} from "../../../inspection/types.ts";
 import {
-  requireSetupPhaseRuntime,
+  requireLegacySetupPhaseRuntime,
   type InstallationProposal,
   type SetupActionScope,
-  type SetupContext,
-  type SetupPhaseDefinition,
+  type LegacySetupContext,
+  type LegacySetupPhaseDefinition,
   type SetupPhaseResult,
-  type SetupPhaseRuntime,
+  type LegacySetupPhaseRuntime,
 } from "../types.ts";
 
 const ENGINE_PERSIST_ACTION = "infrastructure.engine.persist";
@@ -105,11 +105,11 @@ function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
-function duration(startedAt: number, runtime: SetupPhaseRuntime): number {
+function duration(startedAt: number, runtime: LegacySetupPhaseRuntime): number {
   return Math.max(0, runtime.clock.monotonicNow() - startedAt);
 }
 
-function phaseResult(runtime: SetupPhaseRuntime, startedAt: number, input: Omit<SetupPhaseResult, "durationMs">): SetupPhaseResult {
+function phaseResult(runtime: LegacySetupPhaseRuntime, startedAt: number, input: Omit<SetupPhaseResult, "durationMs">): SetupPhaseResult {
   return {
     ...input,
     durationMs: duration(startedAt, runtime),
@@ -125,7 +125,7 @@ function phaseResult(runtime: SetupPhaseRuntime, startedAt: number, input: Omit<
  */
 function commandFailureEvidence(
   outcome: Readonly<Exclude<ProcessOutcome, SucceededProcessOutcome>>,
-  context: SetupContext,
+  context: LegacySetupContext,
 ): readonly string[] {
   const evidence = processFailureEvidence(outcome, context.logger);
   return [
@@ -166,7 +166,7 @@ type InfrastructureMutationOutcome =
  * @returns The disposition, plus refreshed infrastructure outcome when executed.
  */
 async function runInfrastructureMutation(
-  context: SetupContext,
+  context: LegacySetupContext,
   action: Readonly<{id: string; scope: SetupActionScope; summary: string; mutate: () => Promise<void>}>,
   invalidationKeys: readonly RepositoryInspectionKey[],
 ): Promise<InfrastructureMutationOutcome> {
@@ -303,8 +303,8 @@ interface SelectedEngine {
 }
 
 async function selectEngine(
-  context: SetupContext,
-  runtime: SetupPhaseRuntime,
+  context: LegacySetupContext,
+  runtime: LegacySetupPhaseRuntime,
   configuredEngine: string | undefined,
 ): Promise<SelectedEngine> {
   try {
@@ -343,7 +343,7 @@ async function selectEngine(
 
 async function runRequiredCommand(
   runner: ProcessRunner,
-  context: SetupContext,
+  context: LegacySetupContext,
   root: string,
   command: InstallationProposal["command"],
   failureSummary: string,
@@ -436,7 +436,7 @@ interface RuntimeOutcome {
 }
 
 async function prepareRuntime(
-  context: SetupContext,
+  context: LegacySetupContext,
   runner: ProcessRunner,
   root: string,
   platform: NodeJS.Platform,
@@ -602,8 +602,8 @@ function degradedCertificateOutcome(evidence: readonly string[], nextActions: re
 }
 
 async function prepareCertificates(
-  context: SetupContext,
-  runtime: SetupPhaseRuntime,
+  context: LegacySetupContext,
+  runtime: LegacySetupPhaseRuntime,
   runner: ProcessRunner,
   facts: InfrastructureFacts,
 ): Promise<CertificateOutcome> {
@@ -750,8 +750,8 @@ async function prepareCertificates(
 // Phase
 // ---------------------------------------------------------------------------
 
-async function runInfrastructureSetup(context: SetupContext): Promise<SetupPhaseResult> {
-  const runtime = requireSetupPhaseRuntime(context);
+async function runInfrastructureSetup(context: LegacySetupContext): Promise<SetupPhaseResult> {
+  const runtime = requireLegacySetupPhaseRuntime(context);
   const startedAt = runtime.clock.monotonicNow();
   const evidence: string[] = [];
   const runner = createCredentialIsolatedRunner(runtime.runner);
@@ -921,12 +921,12 @@ async function runInfrastructureSetup(context: SetupContext): Promise<SetupPhase
  * @remarks
  * The phase no longer accepts a test-only platform, environment, filesystem, or tooling-config
  * override: the platform, the process runner, the filesystem, and the environment all come from
- * {@link SetupPhaseRuntime}, so a test replaces capabilities on the runtime rather than on this
+ * {@link LegacySetupPhaseRuntime}, so a test replaces capabilities on the runtime rather than on this
  * factory.
  *
  * @returns The infrastructure setup phase definition.
  */
-export function createInfrastructureSetupPhase(): SetupPhaseDefinition {
+export function createInfrastructureSetupPhase(): LegacySetupPhaseDefinition {
   return {
     id: "infrastructure",
     title: "Local infrastructure",
@@ -937,4 +937,4 @@ export function createInfrastructureSetupPhase(): SetupPhaseDefinition {
 }
 
 /** Default production infrastructure setup phase. */
-export const infrastructureSetupPhase: SetupPhaseDefinition = createInfrastructureSetupPhase();
+export const infrastructureSetupPhase: LegacySetupPhaseDefinition = createInfrastructureSetupPhase();

@@ -18,7 +18,7 @@
  * disposition alone is never treated as proof of readiness: each mutation asserts its own
  * action-specific postcondition against the refreshed facts.
  *
- * The phase reads every capability from the invocation-scoped {@link SetupPhaseRuntime}: the
+ * The phase reads every capability from the invocation-scoped {@link LegacySetupPhaseRuntime}: the
  * process runner, the clock, the task scheduler, and the host-platform snapshot. The only injected
  * dependency it still owns is the cryptographic byte source behind the generated local-development
  * passwords, which is security-sensitive business input rather than an ambient runtime capability.
@@ -39,13 +39,13 @@ import {CommandCancellation} from "../../../common/runtime.ts";
 import type {DotnetFacts} from "../../../inspection/dotnet.ts";
 import type {InspectionOutcome} from "../../../inspection/types.ts";
 import {
-  requireSetupPhaseRuntime,
+  requireLegacySetupPhaseRuntime,
   type InstallationProposal,
   type SetupActionScope,
-  type SetupContext,
-  type SetupPhaseDefinition,
+  type LegacySetupContext,
+  type LegacySetupPhaseDefinition,
   type SetupPhaseResult,
-  type SetupPhaseRuntime,
+  type LegacySetupPhaseRuntime,
 } from "../types.ts";
 
 type RandomByteSource = (size: number) => Uint8Array;
@@ -117,12 +117,12 @@ function isInterrupted(error: unknown): boolean {
   return error instanceof CommandCancellation || (error instanceof Error && error.name === "AbortError");
 }
 
-function duration(startedAt: number, runtime: SetupPhaseRuntime): number {
+function duration(startedAt: number, runtime: LegacySetupPhaseRuntime): number {
   return Math.max(0, runtime.clock.monotonicNow() - startedAt);
 }
 
 function phaseResult(
-  runtime: SetupPhaseRuntime,
+  runtime: LegacySetupPhaseRuntime,
   startedAt: number,
   input: Omit<SetupPhaseResult, "durationMs">,
 ): SetupPhaseResult {
@@ -161,7 +161,7 @@ function mutationFailure(summary: string, error: unknown, secrets: readonly stri
  * @param context - Setup context owning the redacting logger.
  * @returns Bounded, non-secret evidence lines.
  */
-function secretCommandFailureEvidence(error: unknown, context: SetupContext): readonly string[] {
+function secretCommandFailureEvidence(error: unknown, context: LegacySetupContext): readonly string[] {
   if (!(error instanceof RunnerError)) {
     // A non-transport failure (runner validation, for example) carries no child output at all, so
     // its own message is the only diagnostic available; the caller still sanitizes it.
@@ -286,7 +286,7 @@ function unavailableOrInvalidEvidence(outcome: Readonly<InspectionOutcome<Dotnet
  * @throws Whatever the mutation or the action executor throws, including `AbortError`.
  */
 async function runDotnetMutation(
-  context: SetupContext,
+  context: LegacySetupContext,
   action: Readonly<{id: string; scope: SetupActionScope; summary: string; mutate: () => Promise<void>}>,
 ): Promise<DotnetMutationOutcome> {
   let attempted = false;
@@ -378,8 +378,8 @@ export function generateLocalDevelopmentPassword(randomBytes: RandomByteSource =
 }
 
 async function discoverPackageManagers(
-  context: SetupContext,
-  runtime: SetupPhaseRuntime,
+  context: LegacySetupContext,
+  runtime: LegacySetupPhaseRuntime,
   platform: NodeJS.Platform,
 ): Promise<ReadonlySet<string>> {
   const managers = new Set<string>();
@@ -422,7 +422,7 @@ async function discoverPackageManagers(
   return managers;
 }
 
-function restores(context: SetupContext): readonly RestoreDefinition[] {
+function restores(context: LegacySetupContext): readonly RestoreDefinition[] {
   return [
     {
       id: "dotnet.workload-restore",
@@ -488,8 +488,8 @@ function restores(context: SetupContext): readonly RestoreDefinition[] {
  * @returns Either a terminal failed/declined phase result, or the facts to continue with.
  */
 async function runRestoreActions(
-  context: SetupContext,
-  runtime: SetupPhaseRuntime,
+  context: LegacySetupContext,
+  runtime: LegacySetupPhaseRuntime,
   initialFacts: DotnetFacts | undefined,
   plannedActions: string[],
   evidence: string[],
@@ -612,8 +612,8 @@ function userSecretKeysNeedingProvisioning(facts: Readonly<DotnetFacts>): readon
  * @throws When the post-write postcondition is not satisfied by refreshed facts.
  */
 async function ensureUserSecrets(
-  context: SetupContext,
-  runtime: SetupPhaseRuntime,
+  context: LegacySetupContext,
+  runtime: LegacySetupPhaseRuntime,
   facts: Readonly<DotnetFacts>,
   dependencies: DotnetSetupDependencies,
   plannedActions: string[],
@@ -701,8 +701,8 @@ async function ensureUserSecrets(
  * @returns A terminal phase result, or `null` to continue with overall phase success.
  */
 async function ensureCertificate(
-  context: SetupContext,
-  runtime: SetupPhaseRuntime,
+  context: LegacySetupContext,
+  runtime: LegacySetupPhaseRuntime,
   facts: Readonly<DotnetFacts>,
   plannedActions: string[],
   evidence: string[],
@@ -853,8 +853,8 @@ async function ensureCertificate(
  * that also plans dependent restores), or the facts to continue with.
  */
 async function ensureDotnetSdk(
-  context: SetupContext,
-  runtime: SetupPhaseRuntime,
+  context: LegacySetupContext,
+  runtime: LegacySetupPhaseRuntime,
   initial: InitialDotnetState,
   plannedActions: string[],
   evidence: string[],
@@ -971,8 +971,8 @@ async function ensureDotnetSdk(
   return {facts: refreshed.value};
 }
 
-async function runDotnetSetup(context: SetupContext, dependencies: DotnetSetupDependencies): Promise<SetupPhaseResult> {
-  const runtime = requireSetupPhaseRuntime(context);
+async function runDotnetSetup(context: LegacySetupContext, dependencies: DotnetSetupDependencies): Promise<SetupPhaseResult> {
+  const runtime = requireLegacySetupPhaseRuntime(context);
   const startedAt = runtime.clock.monotonicNow();
   const evidence: string[] = [];
   const plannedActions: string[] = [];
@@ -1092,7 +1092,7 @@ async function runDotnetSetup(context: SetupContext, dependencies: DotnetSetupDe
  * @param dependencies - Optional production-boundary replacements for tests.
  * @returns The independent .NET setup phase definition.
  */
-export function createDotnetSetupPhase(dependencies: Partial<DotnetSetupDependencies> = {}): SetupPhaseDefinition {
+export function createDotnetSetupPhase(dependencies: Partial<DotnetSetupDependencies> = {}): LegacySetupPhaseDefinition {
   const resolvedDependencies: DotnetSetupDependencies = {
     randomBytes: dependencies.randomBytes ?? nodeRandomBytes,
   };
@@ -1106,4 +1106,4 @@ export function createDotnetSetupPhase(dependencies: Partial<DotnetSetupDependen
 }
 
 /** Independent required phase that prepares the repository .NET toolchain. */
-export const dotnetSetupPhase: SetupPhaseDefinition = createDotnetSetupPhase();
+export const dotnetSetupPhase: LegacySetupPhaseDefinition = createDotnetSetupPhase();

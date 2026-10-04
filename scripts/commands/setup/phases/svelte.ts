@@ -22,7 +22,7 @@
  * fabricate facts, and a successful command is never treated as proof of readiness.
  *
  * Every capability the phase observes — the process runner and the clock — comes from the
- * invocation-scoped {@link SetupPhaseRuntime}. This phase reads no ambient Node state, owns no
+ * invocation-scoped {@link LegacySetupPhaseRuntime}. This phase reads no ambient Node state, owns no
  * filesystem access of its own, and measures no time itself.
  */
 
@@ -33,11 +33,11 @@ import type {SvelteFacts, SvelteProjectId} from "../../../inspection/frontend.ts
 import {SVELTE_INSPECTED_PACKAGE_NAMES, type PackageInventoryFacts} from "../../../inspection/packages.ts";
 import type {InspectionOutcome} from "../../../inspection/types.ts";
 import {
-  requireSetupPhaseRuntime,
-  type SetupContext,
-  type SetupPhaseDefinition,
+  requireLegacySetupPhaseRuntime,
+  type LegacySetupContext,
+  type LegacySetupPhaseDefinition,
   type SetupPhaseResult,
-  type SetupPhaseRuntime,
+  type LegacySetupPhaseRuntime,
 } from "../types.ts";
 
 /** Result of evaluating the `svelte.prepare` mutation and its immediate cache refresh. */
@@ -128,7 +128,7 @@ function normalizedVersion(version: MinimumVersion): string {
   return `${version.major}.${version.minor}.${version.patch}`;
 }
 
-function phaseResult(runtime: SetupPhaseRuntime, startedAt: number, input: Omit<SetupPhaseResult, "durationMs">): SetupPhaseResult {
+function phaseResult(runtime: LegacySetupPhaseRuntime, startedAt: number, input: Omit<SetupPhaseResult, "durationMs">): SetupPhaseResult {
   return {
     ...input,
     durationMs: Math.max(0, runtime.clock.monotonicNow() - startedAt),
@@ -178,7 +178,9 @@ function isAbsentInstallationIssue(issue: string): boolean {
  * @param context - Active setup context carrying the manifest-derived requirements.
  * @returns Locked versions and every unusable root requirement.
  */
-function lockedPackageVersions(context: SetupContext): Readonly<{versions: ReadonlyMap<string, string>; problems: readonly string[]}> {
+function lockedPackageVersions(
+  context: LegacySetupContext,
+): Readonly<{versions: ReadonlyMap<string, string>; problems: readonly string[]}> {
   const versions = new Map<string, string>();
   const problems: string[] = [];
   for (const packageName of SVELTE_INSPECTED_PACKAGE_NAMES) {
@@ -246,7 +248,7 @@ function projectProblems(facts: Readonly<SvelteFacts>, rootNode: MinimumVersion,
  * @param context - Active setup context, including the repository inspection session.
  * @returns One inspection outcome per project.
  */
-async function inspectProjects(context: SetupContext): Promise<ProjectOutcomes> {
+async function inspectProjects(context: LegacySetupContext): Promise<ProjectOutcomes> {
   const cv = await context.inspection.inspect(PROJECT_KEYS.cv);
   const status = await context.inspection.inspect(PROJECT_KEYS.status);
   return {cv, status};
@@ -280,7 +282,7 @@ function resolvedProjectFacts(outcomes: ProjectOutcomes): ProjectFacts | null {
  * @returns The action disposition, plus both refreshed outcomes when the mutation executed.
  * @throws Whatever the mutation or the action executor throws, including `AbortError`.
  */
-async function runSveltePrepare(context: SetupContext, runtime: SetupPhaseRuntime): Promise<SveltePrepareOutcome> {
+async function runSveltePrepare(context: LegacySetupContext, runtime: LegacySetupPhaseRuntime): Promise<SveltePrepareOutcome> {
   let attempted = false;
   try {
     const disposition = await context.actions.run({
@@ -323,8 +325,8 @@ async function runSveltePrepare(context: SetupContext, runtime: SetupPhaseRuntim
  * @returns Either a terminal phase result, or `null` when preparation is unnecessary or planned.
  */
 async function ensureGeneratedConfiguration(
-  context: SetupContext,
-  runtime: SetupPhaseRuntime,
+  context: LegacySetupContext,
+  runtime: LegacySetupPhaseRuntime,
   facts: ProjectFacts,
   rootNode: MinimumVersion,
   deferAbsentInstallations: boolean,
@@ -383,8 +385,8 @@ async function ensureGeneratedConfiguration(
   return {planned: false};
 }
 
-async function runSvelteSetup(context: SetupContext): Promise<SetupPhaseResult> {
-  const runtime = requireSetupPhaseRuntime(context);
+async function runSvelteSetup(context: LegacySetupContext): Promise<SetupPhaseResult> {
+  const runtime = requireLegacySetupPhaseRuntime(context);
   const startedAt = runtime.clock.monotonicNow();
   const evidence: string[] = [];
 
@@ -521,7 +523,7 @@ async function runSvelteSetup(context: SetupContext): Promise<SetupPhaseResult> 
  *
  * @returns The required Svelte setup phase definition.
  */
-export function createSvelteSetupPhase(): SetupPhaseDefinition {
+export function createSvelteSetupPhase(): LegacySetupPhaseDefinition {
   return {
     id: "svelte",
     title: "Svelte workspaces",
@@ -532,4 +534,4 @@ export function createSvelteSetupPhase(): SetupPhaseDefinition {
 }
 
 /** Required phase that validates and prepares both SvelteKit workspaces. */
-export const svelteSetupPhase: SetupPhaseDefinition = createSvelteSetupPhase();
+export const svelteSetupPhase: LegacySetupPhaseDefinition = createSvelteSetupPhase();

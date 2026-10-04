@@ -4,7 +4,7 @@
  * @module scripts.setup.react.test
  *
  * @remarks
- * Every test drives the real phase against an injected {@link SetupPhaseRuntime}: an in-memory
+ * Every test drives the real phase against an injected {@link LegacySetupPhaseRuntime}: an in-memory
  * {@link FileSystem} that records atomic writes and mode changes, a recording process runner
  * replaying typed {@link ProcessOutcome} fixtures, a deterministic clock, and an immutable
  * environment snapshot supplying the host platform and the terminal signal. No test in this file
@@ -28,13 +28,13 @@ import type {LegacyRepositoryInspectionSession} from "../../../platform/bridge.t
 import type {InspectionOutcome} from "../../../inspection/types.ts";
 import {createReactSetupPhase, reactSetupPhase} from "./react.ts";
 import type {
-  SetupAction,
+  LegacySetupAction,
   SetupActionDisposition,
-  SetupActionExecutor,
-  SetupContext,
+  LegacySetupActionExecutor,
+  LegacySetupContext,
   SetupOptions,
   SetupPhaseResult,
-  SetupPhaseRuntime,
+  LegacySetupPhaseRuntime,
 } from "../types.ts";
 
 const paths = createRepositoryPaths(resolve("C:\\fixture\\arolariu.ro"));
@@ -273,7 +273,7 @@ interface RecordedWrite {
  *
  * @remarks
  * The phase no longer accepts injected host boundaries, so one fixture carries both the recording
- * filesystem and the platform/terminal facts the {@link SetupPhaseRuntime} environment reports.
+ * filesystem and the platform/terminal facts the {@link LegacySetupPhaseRuntime} environment reports.
  */
 interface ReactFixture {
   /** The capability handed to the phase runtime. */
@@ -390,13 +390,13 @@ function settle(outcome: ScriptedOutcome): Promise<ProcessOutcome> {
 }
 
 function createActions(dispositions: Readonly<Record<string, SetupActionDisposition>> = {}): Readonly<{
-  actions: SetupActionExecutor;
+  actions: LegacySetupActionExecutor;
   actionIds: string[];
-  actionRecords: SetupAction[];
+  actionRecords: LegacySetupAction[];
 }> {
   const actionIds: string[] = [];
-  const actionRecords: SetupAction[] = [];
-  const actions: SetupActionExecutor = {
+  const actionRecords: LegacySetupAction[] = [];
+  const actions: LegacySetupActionExecutor = {
     run: async (action) => {
       actionIds.push(action.id);
       actionRecords.push(action);
@@ -414,11 +414,11 @@ function createActions(dispositions: Readonly<Record<string, SetupActionDisposit
  * The exact context view the migrated React phase reads.
  *
  * @remarks
- * The deprecated {@link SetupContext.runner} and {@link SetupContext.now} members are deliberately
- * absent: a migrated phase must read its capabilities from {@link SetupContext.runtime} only, so
+ * The deprecated {@link LegacySetupContext.runner} and {@link LegacySetupContext.now} members are deliberately
+ * absent: a migrated phase must read its capabilities from {@link LegacySetupContext.runtime} only, so
  * any relapse becomes a type error instead of a silently passing test.
  */
-type MigratedSetupContext = Omit<SetupContext, "runner" | "now"> & Readonly<{runtime: SetupPhaseRuntime}>;
+type MigratedSetupContext = Omit<LegacySetupContext, "runner" | "now"> & Readonly<{runtime: LegacySetupPhaseRuntime}>;
 
 function environmentSnapshot(platform: NodeJS.Platform, stdinIsTTY: boolean): RuntimeEnvironment {
   return {
@@ -446,11 +446,11 @@ interface ReactHarness {
   /** Action identifiers in evaluation order. */
   readonly actionIds: string[];
   /** Complete action records in evaluation order. */
-  readonly actionRecords: SetupAction[];
+  readonly actionRecords: LegacySetupAction[];
   /** Text prompt probe. */
-  readonly text: ReturnType<typeof vi.fn<SetupContext["prompts"]["text"]>>;
+  readonly text: ReturnType<typeof vi.fn<LegacySetupContext["prompts"]["text"]>>;
   /** Secret prompt probe. */
-  readonly secret: ReturnType<typeof vi.fn<SetupContext["prompts"]["secret"]>>;
+  readonly secret: ReturnType<typeof vi.fn<LegacySetupContext["prompts"]["secret"]>>;
   /** Rendered logger output. */
   readonly sink: InMemoryLoggerSink;
   /** Every value the phase asked the logger to redact. */
@@ -474,7 +474,7 @@ async function createHarness(
     react?: readonly InspectionOutcome<ReactFacts>[];
     textAnswers?: readonly string[];
     secretAnswers?: readonly string[];
-    actionsOverride?: SetupActionExecutor;
+    actionsOverride?: LegacySetupActionExecutor;
     platform?: NodeJS.Platform;
     interactive?: boolean;
   }> = {},
@@ -484,8 +484,8 @@ async function createHarness(
   const createdActions = createActions(input.dispositions);
   const textAnswers = [...(input.textAnswers ?? [])];
   const secretAnswers = [...(input.secretAnswers ?? [])];
-  const text = vi.fn<SetupContext["prompts"]["text"]>(async () => textAnswers.shift() ?? "");
-  const secret = vi.fn<SetupContext["prompts"]["secret"]>(async () => secretAnswers.shift() ?? "");
+  const text = vi.fn<LegacySetupContext["prompts"]["text"]>(async () => textAnswers.shift() ?? "");
+  const secret = vi.fn<LegacySetupContext["prompts"]["secret"]>(async () => secretAnswers.shift() ?? "");
   const sink = new InMemoryLoggerSink();
   const logger = new MonorepositoryConsoleLogger("setup::react", {color: false, sink});
   const redactions: string[] = [];
@@ -516,7 +516,7 @@ async function createHarness(
   const commandRuntime = await factory.createRoot({presentation: "silent", registerProcessSignals: false});
   const command: CommandContext = {runtime: commandRuntime, presentation: "silent"};
 
-  const runtime: SetupPhaseRuntime = {
+  const runtime: LegacySetupPhaseRuntime = {
     command,
     runner: commandRuntime.runner,
     files: commandRuntime.files,
@@ -524,7 +524,7 @@ async function createHarness(
     clock: commandRuntime.clock,
     tasks: commandRuntime.tasks,
     environment: commandRuntime.environment,
-    invokeGenerate: vi.fn<SetupPhaseRuntime["invokeGenerate"]>(() =>
+    invokeGenerate: vi.fn<LegacySetupPhaseRuntime["invokeGenerate"]>(() =>
       Promise.reject(new Error("The React setup phase must never invoke generation.")),
     ),
   };
@@ -579,7 +579,7 @@ async function createHarness(
  * @returns The completed phase result.
  */
 function runPhase(harness: ReactHarness, patch: Partial<MigratedSetupContext> = {}): Promise<SetupPhaseResult> {
-  return harness.phase.run({...harness.context, ...patch} as SetupContext);
+  return harness.phase.run({...harness.context, ...patch} as LegacySetupContext);
 }
 
 function callsFor(harness: ReactHarness, command: Readonly<ProcessRequest>): readonly RecordedCall[] {
@@ -665,7 +665,7 @@ describe("React setup public contract", () => {
     const harness = await createHarness();
     const {runtime: _runtime, ...withoutRuntime} = harness.context;
 
-    await expect(harness.phase.run(withoutRuntime as SetupContext)).rejects.toThrow(/setup phase runtime/i);
+    await expect(harness.phase.run(withoutRuntime as LegacySetupContext)).rejects.toThrow(/setup phase runtime/i);
   });
 });
 
