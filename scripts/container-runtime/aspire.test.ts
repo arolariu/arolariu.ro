@@ -4,9 +4,11 @@
  */
 
 import {describe, expect, it} from "vitest";
-import type {ProcessOutcome} from "../common/runner.ts";
-import {createProcessRunner, createTestRuntimeFactory} from "../common/runtime.testing.ts";
-import {CommandCancellation} from "../common/runtime.ts";
+import type {CommandExecution, CommandRuntimeFactory} from "../common/commander.ts";
+import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "../common/logger.ts";
+import type {ProcessOutcome, ProcessRequest, ProcessRunOptions} from "../common/runner.ts";
+import {createProcessRunner, createTestRuntimeFactory, repositoryFixtureRoot} from "../common/runtime.testing.ts";
+import {CommandCancellation, type CommandRuntime, type RuntimeEnvironment} from "../common/runtime.ts";
 import {getContainerAdapter} from "./adapters.ts";
 import {buildAspireCommand, createAspireCommand} from "./aspire.ts";
 
@@ -134,6 +136,265 @@ describe("createAspireCommand", () => {
 
       expect(execution).toMatchObject({status: "completed", exitCode: 0});
       expect(runner.calls.at(-1)?.request).toEqual({command: "dotnet", args: ["run", "--project", "tooling/AppHost"]});
+    });
+  });
+});
+
+// ============================================================================
+// Characterization (pre-Effect migration)
+// ============================================================================
+
+/** Replaces the machine-dependent fixture root and normalizes path separators. */
+function withPortablePaths(text: string): string {
+  return text.replaceAll(repositoryFixtureRoot, "<root>").replaceAll("\\", "/");
+}
+
+/** Projects run options into plain values, naming the signal and logger instead of embedding them. */
+function projectOptions(options: Readonly<ProcessRunOptions>): Readonly<Record<string, unknown>> {
+  return Object.fromEntries(
+    Object.entries(options).map(([key, value]) => [key, key === "signal" ? "<signal>" : key === "logger" ? "<logger>" : value]),
+  );
+}
+
+/** Projects recorded runner calls into plain request and option values. */
+function projectCalls(calls: readonly Readonly<{request: ProcessRequest; options: ProcessRunOptions}>[]): readonly unknown[] {
+  return calls.map(({request, options}) => ({command: request.command, args: [...request.args], options: projectOptions(options)}));
+}
+
+/** Projects one execution into a plain value, naming the failure cause by its class. */
+function projectExecution(execution: Readonly<CommandExecution<unknown>>): unknown {
+  if (execution.status === "completed" || execution.status === "help") {
+    return {...execution};
+  }
+  const {cause, ...failure} = execution.failure;
+  return {
+    ...execution,
+    failure: {
+      ...failure,
+      message: withPortablePaths(failure.message),
+      evidence: failure.evidence.map(withPortablePaths),
+      cause: cause instanceof Error ? cause.constructor.name : String(cause),
+    },
+  };
+}
+
+/** Projects every rendered logger record with portable paths. */
+function projectOutput(sink: InMemoryLoggerSink): readonly unknown[] {
+  return sink.records.map((record) => ({...record, text: withPortablePaths(record.text)}));
+}
+
+/**
+ * Creates a runtime factory whose logger honors the invocation presentation, like the Node factory.
+ *
+ * @param name - Command name used as the logger context, as the Node factory does.
+ * @param sink - Sink receiving every rendered record.
+ * @param overrides - Runtime capabilities.
+ * @returns The runtime factory.
+ */
+function presentationRuntimeFactory(
+  name: string,
+  sink: InMemoryLoggerSink,
+  overrides: Readonly<Partial<CommandRuntime>>,
+): CommandRuntimeFactory {
+  return {
+    createRoot: (options) =>
+      createTestRuntimeFactory({
+        ...overrides,
+        logger: new MonorepositoryConsoleLogger(name, {mode: options.presentation, color: false, sink}),
+      }).createRoot(options),
+    createChild: (parent, options) => createTestRuntimeFactory(overrides).createChild(parent, options),
+  };
+}
+
+/** Builds a deterministic environment snapshot anchored to the fixture repository root. */
+function characterizationEnvironment(variables: Readonly<Record<string, string>>): RuntimeEnvironment {
+  return {
+    variables,
+    cwd: repositoryFixtureRoot,
+    executablePath: "/usr/bin/node",
+    platform: "linux",
+    architecture: "x64",
+    stdinIsTTY: false,
+    stdoutIsTTY: false,
+    isCI: true,
+  };
+}
+/**
+ * Runs the legacy Aspire command once in human presentation.
+ *
+ * @param engine - Requested engine.
+ * @param outcomes - Scripted preflight and AppHost outcomes.
+ * @returns The projected execution, runner calls, and rendered output.
+ */
+async function characterizeAspire(engine: "rancher" | "podman", outcomes: readonly ProcessOutcome[]): Promise<unknown> {
+  const runner = createProcessRunner(outcomes);
+  const sink = new InMemoryLoggerSink();
+  const command = createAspireCommand(
+    presentationRuntimeFactory("aspire", sink, {runner, environment: characterizationEnvironment({HOME: "/home/fixture"})}),
+  );
+
+  const execution = await command.invoke({engine}, {presentation: "human"});
+
+  return {execution: projectExecution(execution), calls: projectCalls(runner.calls), output: projectOutput(sink)};
+}
+
+describe("dev aspire characterization (pre-Effect migration)", () => {
+  it("rancher: preflight calls in order, then AppHost with the merged environment and inherited output", async () => {
+    const result = await characterizeAspire("rancher", [
+      succeeded("Docker version 27.3.1"),
+      succeeded("Server: Moby Engine"),
+      succeeded("Docker Compose version v2.29.7"),
+      succeeded("traefik\nredis\nunrelated\n"),
+      succeeded(),
+    ]);
+
+    expect(result).toEqual({
+      execution: {
+        status: "completed",
+        value: {
+          engine: "rancher",
+        },
+        exitCode: 0,
+      },
+      calls: [
+        {
+          command: "docker",
+          args: ["--version"],
+          options: {
+            signal: "<signal>",
+          },
+        },
+        {
+          command: "docker",
+          args: ["version"],
+          options: {
+            signal: "<signal>",
+          },
+        },
+        {
+          command: "docker",
+          args: ["compose", "version"],
+          options: {
+            signal: "<signal>",
+          },
+        },
+        {
+          command: "docker",
+          args: ["ps", "-a", "--format", "{{.Names}}"],
+          options: {
+            signal: "<signal>",
+          },
+        },
+        {
+          command: "dotnet",
+          args: ["run", "--project", "tooling/AppHost"],
+          options: {
+            output: "inherit",
+            signal: "<signal>",
+            env: {
+              HOME: "/home/fixture",
+              DOTNET_ASPIRE_CONTAINER_RUNTIME: "docker",
+            },
+          },
+        },
+      ],
+      output: [
+        {
+          stream: "stderr",
+          text: "[arolariu::aspire::preflight] ⚠️ Existing local containers detected for Rancher Desktop: traefik, redis",
+          write: false,
+        },
+        {
+          stream: "stdout",
+          text: "[arolariu::aspire] ✅ Aspire AppHost exited successfully for engine 'rancher'.",
+          write: false,
+        },
+      ],
+    });
+  });
+
+  it("podman: preflight calls in order, then AppHost with the podman runtime and inherited output", async () => {
+    const result = await characterizeAspire("podman", [
+      succeeded("podman version 5.2.0"),
+      exited(1),
+      succeeded("podman version 5.2.0"),
+      succeeded("podman-compose version 1.5.0"),
+      succeeded("podman-compose version 1.5.0"),
+      succeeded(""),
+      succeeded(),
+    ]);
+
+    expect(result).toEqual({
+      execution: {
+        status: "completed",
+        value: {
+          engine: "podman",
+        },
+        exitCode: 0,
+      },
+      calls: [
+        {
+          command: "podman",
+          args: ["--version"],
+          options: {
+            signal: "<signal>",
+          },
+        },
+        {
+          command: "docker",
+          args: ["version"],
+          options: {
+            signal: "<signal>",
+          },
+        },
+        {
+          command: "podman",
+          args: ["--version"],
+          options: {
+            signal: "<signal>",
+          },
+        },
+        {
+          command: "podman",
+          args: ["compose", "version"],
+          options: {
+            signal: "<signal>",
+          },
+        },
+        {
+          command: "podman",
+          args: ["compose", "version"],
+          options: {
+            signal: "<signal>",
+          },
+        },
+        {
+          command: "podman",
+          args: ["ps", "-a", "--format", "{{.Names}}"],
+          options: {
+            signal: "<signal>",
+          },
+        },
+        {
+          command: "dotnet",
+          args: ["run", "--project", "tooling/AppHost"],
+          options: {
+            output: "inherit",
+            signal: "<signal>",
+            env: {
+              HOME: "/home/fixture",
+              DOTNET_ASPIRE_CONTAINER_RUNTIME: "podman",
+            },
+          },
+        },
+      ],
+      output: [
+        {
+          stream: "stdout",
+          text: "[arolariu::aspire] ✅ Aspire AppHost exited successfully for engine 'podman'.",
+          write: false,
+        },
+      ],
     });
   });
 });

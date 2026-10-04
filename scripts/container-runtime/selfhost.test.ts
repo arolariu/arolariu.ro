@@ -4,11 +4,19 @@
  */
 
 import {readFile} from "node:fs/promises";
+import {dirname} from "node:path";
 import {describe, expect, it, vi, type Mock} from "vitest";
 import type {CommandExecution, CommandInvoker, CommandRuntimeFactory} from "../common/commander.ts";
 import {InMemoryLoggerSink, MonorepositoryConsoleLogger, type MonorepositoryLogger} from "../common/logger.ts";
-import type {ProcessOutcome, ProcessRequest, ProcessRunOptions, ProcessRunner} from "../common/runner.ts";
 import {
+  AbstractProcessRunner,
+  type ProcessOutcome,
+  type ProcessRequest,
+  type ProcessRunOptions,
+  type ProcessRunner,
+} from "../common/runner.ts";
+import {
+  createHttpResponse,
   createProcessRunner,
   createRepositoryFixtureFileSystem,
   createTestRuntimeFactory,
@@ -20,12 +28,16 @@ import {
   type CleanupFailure,
   type CleanupRegistry,
   type Clock,
+  type CommandRuntime,
   type FileSystem,
+  type HttpClient,
+  type HttpRequest,
+  type HttpResponse,
   type RuntimeEnvironment,
 } from "../common/runtime.ts";
 import type {ArtifactGenerationResult, GenerateArtifactsInput} from "../commands/generate/artifacts.ts";
 import {getContainerAdapter} from "./adapters.ts";
-import type {LocalStorageBootstrap} from "./selfhost.bootstrap.ts";
+import {createLocalStorageBootstrap, type LocalBlobStorageFactory, type LocalStorageBootstrap} from "./selfhost.bootstrap.ts";
 import {
   buildLocalStorageBootstrapCommand,
   buildSelfhostPlan,
@@ -596,5 +608,969 @@ describe("createSelfhostCommand engine selection", () => {
     expect(execution).toMatchObject({status: "failed", exitCode: 1});
     expect(execution.status === "failed" ? execution.failure.message : "").toContain("Docker Desktop is deprecated");
     expect(harness.runner.calls).toHaveLength(0);
+  });
+});
+
+// ============================================================================
+// Characterization (pre-Effect migration)
+// ============================================================================
+
+/** Replaces the machine-dependent fixture root and normalizes path separators. */
+function withPortablePaths(text: string): string {
+  return text.replaceAll(repositoryFixtureRoot, "<root>").replaceAll("\\", "/");
+}
+
+/** Projects run options into plain values, naming the signal and logger instead of embedding them. */
+function projectOptions(options: Readonly<ProcessRunOptions>): Readonly<Record<string, unknown>> {
+  return Object.fromEntries(
+    Object.entries(options).map(([key, value]) => [key, key === "signal" ? "<signal>" : key === "logger" ? "<logger>" : value]),
+  );
+}
+
+/** Projects one execution into a plain value, naming the failure cause by its class. */
+function projectExecution(execution: Readonly<CommandExecution<unknown>>): unknown {
+  if (execution.status === "completed" || execution.status === "help") {
+    return {...execution};
+  }
+  const {cause, ...failure} = execution.failure;
+  return {
+    ...execution,
+    failure: {
+      ...failure,
+      message: withPortablePaths(failure.message),
+      evidence: failure.evidence.map(withPortablePaths),
+      cause: cause instanceof Error ? cause.constructor.name : String(cause),
+    },
+  };
+}
+
+/** Projects every rendered logger record with portable paths. */
+function projectOutput(sink: InMemoryLoggerSink): readonly unknown[] {
+  return sink.records.map((record) => ({...record, text: withPortablePaths(record.text)}));
+}
+
+/**
+ * Creates a runtime factory whose logger honors the invocation presentation, like the Node factory.
+ *
+ * @param name - Command name used as the logger context, as the Node factory does.
+ * @param sink - Sink receiving every rendered record.
+ * @param overrides - Runtime capabilities.
+ * @returns The runtime factory.
+ */
+function presentationRuntimeFactory(
+  name: string,
+  sink: InMemoryLoggerSink,
+  overrides: Readonly<Partial<CommandRuntime>>,
+): CommandRuntimeFactory {
+  return {
+    createRoot: (options) =>
+      createTestRuntimeFactory({
+        ...overrides,
+        logger: new MonorepositoryConsoleLogger(name, {mode: options.presentation, color: false, sink}),
+      }).createRoot(options),
+    createChild: (parent, options) => createTestRuntimeFactory(overrides).createChild(parent, options),
+  };
+}
+
+/** Builds a deterministic environment snapshot anchored to the fixture repository root. */
+function characterizationEnvironment(variables: Readonly<Record<string, string>>): RuntimeEnvironment {
+  return {
+    variables,
+    cwd: repositoryFixtureRoot,
+    executablePath: "/usr/bin/node",
+    platform: "linux",
+    architecture: "x64",
+    stdinIsTTY: false,
+    stdoutIsTTY: false,
+    isCI: true,
+  };
+}
+/** One ordered side effect observed while a characterized selfhost invocation ran. */
+type TimelineEvent = Readonly<Record<string, unknown>>;
+
+/** Replaces the generated Traefik paths, then the fixture root, with portable placeholders. */
+function withPortableSelfhostPaths(text: string): string {
+  return withPortablePaths(
+    text.replaceAll(selfhostTraefikConfigPath, "<traefik-config>").replaceAll(dirname(selfhostTraefikConfigPath), "<traefik-dir>"),
+  );
+}
+
+/** Process runner that appends every request to the shared timeline with the SQL password replaced. */
+class TimelineRunner extends AbstractProcessRunner {
+  readonly #timeline: TimelineEvent[];
+  readonly #outcomes: ProcessOutcome[];
+  readonly #requests: ProcessRequest[] = [];
+
+  public constructor(timeline: TimelineEvent[], outcomes: readonly ProcessOutcome[]) {
+    super();
+    this.#timeline = timeline;
+    this.#outcomes = [...outcomes];
+  }
+
+  /** Every raw request, in call order. */
+  public get requests(): readonly ProcessRequest[] {
+    return this.#requests;
+  }
+
+  /** {@inheritDoc AbstractProcessRunner.execute} */
+  protected override execute(request: Readonly<ProcessRequest>, options: Readonly<ProcessRunOptions>): Promise<ProcessOutcome> {
+    this.#requests.push(request);
+    this.#timeline.push({
+      process: request.command,
+      args: request.args.map((arg) => arg.replaceAll(sqlPassword, "<sql-password>")),
+      options: projectOptions(options),
+    });
+    return Promise.resolve(this.#outcomes.shift() ?? succeeded());
+  }
+}
+
+/** Wraps a filesystem so every mutation is appended to the timeline. */
+function timelineFiles(timeline: TimelineEvent[], files: FileSystem): FileSystem {
+  return {
+    ...files,
+    createDirectory: (path, options) => {
+      timeline.push({fs: "createDirectory", path: withPortableSelfhostPaths(path), options});
+      return files.createDirectory(path, options);
+    },
+    writeText: (path, contents, options) => {
+      timeline.push({fs: "writeText", path: withPortableSelfhostPaths(path), length: contents.length});
+      return files.writeText(path, contents, options);
+    },
+    remove: (path, options) => {
+      timeline.push({fs: "remove", path: withPortableSelfhostPaths(path), options});
+      return files.remove(path, options);
+    },
+  };
+}
+
+/** HTTP client appending every request to the timeline and answering through `respond`. */
+function timelineHttp(timeline: TimelineEvent[], respond: (request: Readonly<HttpRequest>) => HttpResponse): HttpClient {
+  return {
+    request: (request) => {
+      timeline.push({
+        http: request.method,
+        url: request.url.href,
+        headers: request.headers,
+        body: request.body,
+        maximumResponseBytes: request.maximumResponseBytes,
+        signal: request.signal === undefined ? undefined : "<signal>",
+      });
+      return Promise.resolve(respond(request));
+    },
+  };
+}
+
+/** Blob-storage factory appending every provisioning step to the timeline. */
+function timelineBlobStorage(timeline: TimelineEvent[]): LocalBlobStorageFactory {
+  return (connectionString) => {
+    timeline.push({blob: "connect", connectionString});
+    return {
+      ensureContainer: (name) => {
+        timeline.push({blob: "ensureContainer", name});
+        return Promise.resolve();
+      },
+      applyCorsPolicy: () => {
+        timeline.push({blob: "applyCorsPolicy"});
+        return Promise.resolve();
+      },
+    };
+  };
+}
+
+/** Options of one characterized selfhost invocation. */
+interface SelfhostCharacterizationOptions {
+  readonly action: SelfhostAction;
+  readonly variables?: Readonly<Record<string, string>>;
+  readonly seededFiles?: Readonly<Record<string, string>>;
+  readonly respond?: (request: Readonly<HttpRequest>) => HttpResponse;
+}
+
+/**
+ * Runs the legacy selfhost command once with Rancher in human presentation, recording every
+ * process, delay, file mutation, HTTP request, blob step, and artifact invocation in order.
+ *
+ * @param options - Action, environment, seeded files, and Cosmos responder.
+ * @returns The projected execution, the ordered timeline, rendered output, cleanup labels, the
+ * Traefik file bytes, and where the SQL password appeared in process arguments.
+ */
+async function characterizeSelfhost(options: Readonly<SelfhostCharacterizationOptions>): Promise<Readonly<Record<string, unknown>>> {
+  const timeline: TimelineEvent[] = [];
+  const runner = new TimelineRunner(timeline, []);
+  const files = createRepositoryFixtureFileSystem({
+    [certFixturePath]: "local-cert",
+    [keyFixturePath]: "local-key",
+    ...options.seededFiles,
+  });
+  const sink = new InMemoryLoggerSink();
+  const cleanup = createRecordingCleanupRegistry();
+  const clock: Clock = {
+    monotonicNow: (): number => 0,
+    isoTimestamp: (): string => "2025-01-01T00:00:00.000Z",
+    delay: (milliseconds: number): Promise<void> => {
+      timeline.push({delay: milliseconds});
+      return Promise.resolve();
+    },
+  };
+  const http = timelineHttp(timeline, options.respond ?? (() => createHttpResponse(201, "{}")));
+  const artifacts = createArtifactsStub((input, invocation) => {
+    timeline.push({artifacts: input, presentation: invocation?.presentation});
+    return Promise.resolve({status: "completed", value: {summary: "Generated 5 artifact file(s).", generatedFiles: []}, exitCode: 0});
+  });
+  const command = createSelfhostCommand({
+    runtimeFactory: presentationRuntimeFactory("selfhost", sink, {
+      runner,
+      clock,
+      cleanup,
+      http,
+      files: timelineFiles(timeline, files),
+      environment: characterizationEnvironment(options.variables ?? {MSSQL_SA_PASSWORD: sqlPassword}),
+    }),
+    bootstrap: createLocalStorageBootstrap({http, createBlobStorage: timelineBlobStorage(timeline)}),
+    artifacts,
+  });
+
+  const execution = await command.invoke({action: options.action, engine: "rancher"}, {presentation: "human"});
+
+  const rendered = {execution: projectExecution(execution), output: projectOutput(sink)};
+  expect(JSON.stringify(rendered).includes(sqlPassword)).toBe(false);
+  return {
+    ...rendered,
+    timeline,
+    cleanupLabels: cleanup.labels,
+    traefik: (await files.exists(selfhostTraefikConfigPath)) ? await files.readText(selfhostTraefikConfigPath) : null,
+    passwordArgs: runner.requests.flatMap((request, call) =>
+      request.args.flatMap((arg, index) =>
+        arg.includes(sqlPassword)
+          ? [{call, index, command: request.command, flag: request.args[index - 1], exact: arg === sqlPassword}]
+          : [],
+      ),
+    ),
+  };
+}
+
+describe("dev selfhost characterization (pre-Effect migration)", () => {
+  it("start: preflight, artifacts, certificates, Traefik file, ordered stacks, bootstrap, and success line", async () => {
+    expect(await characterizeSelfhost({action: "start"})).toEqual({
+      execution: {
+        status: "completed",
+        value: {
+          action: "start",
+          engine: "rancher",
+          stacks: ["management", "storage", "profile", "backend", "frontend"],
+        },
+        exitCode: 0,
+      },
+      output: [
+        {
+          stream: "stdout",
+          text: "$ docker compose -f Management/docker-compose.yml up -d",
+          write: false,
+        },
+        {
+          stream: "stdout",
+          text: "$ docker compose -f Storage/docker-compose.yml --profile selfhost up -d",
+          write: false,
+        },
+        {
+          stream: "stdout",
+          text: "$ docker exec mssql /opt/mssql-tools/bin/sqlcmd -C -S localhost -U sa -P [REDACTED] -d master -i /usr/sql/sqlSchema.sql -No",
+          write: false,
+        },
+        {
+          stream: "stdout",
+          text: "$ dotnet run --project ../../tooling/LocalDevelopment.Bootstrap -- --ensure-storage-only",
+          write: false,
+        },
+        {
+          stream: "stdout",
+          text: "$ docker compose -f Backend/docker-compose.yml up -d",
+          write: false,
+        },
+        {
+          stream: "stdout",
+          text: "$ docker compose -f Frontend/docker-compose.yml up -d",
+          write: false,
+        },
+        {
+          stream: "stdout",
+          text: "[arolariu::selfhost] ✅ Selfhost start completed for engine 'rancher'.",
+          write: false,
+        },
+      ],
+      timeline: [
+        {
+          process: "docker",
+          args: ["--version"],
+          options: {
+            signal: "<signal>",
+          },
+        },
+        {
+          process: "docker",
+          args: ["version"],
+          options: {
+            signal: "<signal>",
+          },
+        },
+        {
+          process: "docker",
+          args: ["compose", "version"],
+          options: {
+            signal: "<signal>",
+          },
+        },
+        {
+          process: "docker",
+          args: ["ps", "-a", "--format", "{{.Names}}"],
+          options: {
+            signal: "<signal>",
+          },
+        },
+        {
+          artifacts: {
+            verbose: false,
+          },
+          presentation: "silent",
+        },
+        {
+          fs: "createDirectory",
+          path: "<traefik-dir>",
+          options: {
+            recursive: true,
+          },
+        },
+        {
+          fs: "writeText",
+          path: "<traefik-config>",
+          length: 1310,
+        },
+        {
+          process: "docker",
+          args: ["compose", "-f", "Management/docker-compose.yml", "up", "-d"],
+          options: {
+            cwd: "infra/Local",
+            output: "tee",
+            logCommands: true,
+            logger: "<logger>",
+            signal: "<signal>",
+          },
+        },
+        {
+          delay: 3000,
+        },
+        {
+          process: "docker",
+          args: ["compose", "-f", "Storage/docker-compose.yml", "--profile", "selfhost", "up", "-d"],
+          options: {
+            cwd: "infra/Local",
+            output: "tee",
+            logCommands: true,
+            logger: "<logger>",
+            signal: "<signal>",
+          },
+        },
+        {
+          delay: 10000,
+        },
+        {
+          process: "docker",
+          args: [
+            "exec",
+            "mssql",
+            "/opt/mssql-tools/bin/sqlcmd",
+            "-C",
+            "-S",
+            "localhost",
+            "-U",
+            "sa",
+            "-P",
+            "<sql-password>",
+            "-d",
+            "master",
+            "-i",
+            "/usr/sql/sqlSchema.sql",
+            "-No",
+          ],
+          options: {
+            cwd: "infra/Local",
+            output: "tee",
+            logCommands: true,
+            logger: "<logger>",
+            signal: "<signal>",
+          },
+        },
+        {
+          http: "POST",
+          url: "http://localhost:8081/dbs",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: '{"id":"primary"}',
+          maximumResponseBytes: 65536,
+          signal: "<signal>",
+        },
+        {
+          http: "POST",
+          url: "http://localhost:8081/dbs/primary/colls",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: '{"id":"invoices","partitionKey":{"paths":["/UserIdentifier"],"kind":"Hash"}}',
+          maximumResponseBytes: 65536,
+          signal: "<signal>",
+        },
+        {
+          http: "POST",
+          url: "http://localhost:8081/dbs/primary/colls",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: '{"id":"merchants","partitionKey":{"paths":["/ParentCompanyId"],"kind":"Hash"}}',
+          maximumResponseBytes: 65536,
+          signal: "<signal>",
+        },
+        {
+          blob: "connect",
+          connectionString: "UseDevelopmentStorage=true",
+        },
+        {
+          blob: "ensureContainer",
+          name: "invoices",
+        },
+        {
+          blob: "applyCorsPolicy",
+        },
+        {
+          process: "dotnet",
+          args: ["run", "--project", "../../tooling/LocalDevelopment.Bootstrap", "--", "--ensure-storage-only"],
+          options: {
+            cwd: "infra/Local",
+            output: "tee",
+            logCommands: true,
+            logger: "<logger>",
+            signal: "<signal>",
+            env: {
+              DOTNET_ENVIRONMENT: "Development",
+              INFRA: "local",
+              ConnectionStrings__blobs: "UseDevelopmentStorage=true",
+              ConnectionStrings__queues: "UseDevelopmentStorage=true",
+            },
+          },
+        },
+        {
+          delay: 3000,
+        },
+        {
+          process: "docker",
+          args: ["compose", "-f", "Backend/docker-compose.yml", "up", "-d"],
+          options: {
+            cwd: "infra/Local",
+            output: "tee",
+            logCommands: true,
+            logger: "<logger>",
+            signal: "<signal>",
+          },
+        },
+        {
+          delay: 3000,
+        },
+        {
+          process: "docker",
+          args: ["compose", "-f", "Frontend/docker-compose.yml", "up", "-d"],
+          options: {
+            cwd: "infra/Local",
+            output: "tee",
+            logCommands: true,
+            logger: "<logger>",
+            signal: "<signal>",
+          },
+        },
+        {
+          delay: 3000,
+        },
+      ],
+      cleanupLabels: [],
+      traefik:
+        "http:\n  routers:\n    traefik-localhost:\n      rule: Host(`traefik.localhost`)\n      entryPoints:\n        - websecure\n      tls: {}\n      service: api@internal\n    website-localhost:\n      rule: Host(`website.localhost`)\n      entryPoints:\n        - websecure\n      tls: {}\n      service: website\n    api-localhost:\n      rule: Host(`api.localhost`)\n      entryPoints:\n        - websecure\n      tls: {}\n      service: api\n    health-localhost:\n      rule: Host(`health.localhost`)\n      entryPoints:\n        - websecure\n      tls: {}\n      service: healthchecks\n    cosmosdb-localhost:\n      rule: Host(`cosmosdb.localhost`)\n      entryPoints:\n        - websecure\n      tls: {}\n      service: cosmosdb\n    azurite-blob-localhost:\n      rule: Host(`azurite-blob.localhost`)\n      entryPoints:\n        - websecure\n      tls: {}\n      service: azurite-blob\n  services:\n    website:\n      loadBalancer:\n        servers:\n          - url: http://website:3000\n    api:\n      loadBalancer:\n        servers:\n          - url: http://api:8080\n    healthchecks:\n      loadBalancer:\n        servers:\n          - url: http://healthchecks:8000\n    cosmosdb:\n      loadBalancer:\n        servers:\n          - url: http://cosmosdb:8081\n    azurite-blob:\n      loadBalancer:\n        servers:\n          - url: http://azurite:10000\n",
+      passwordArgs: [
+        {
+          call: 6,
+          index: 9,
+          command: "docker",
+          flag: "-P",
+          exact: true,
+        },
+      ],
+    });
+  });
+
+  it("start with a failing Cosmos bootstrap: exit 1, the message, and no compensating cleanup", async () => {
+    expect(
+      await characterizeSelfhost({
+        action: "start",
+        respond: (request) =>
+          request.url.pathname === "/dbs" ? createHttpResponse(503, "emulator starting") : createHttpResponse(201, "{}"),
+      }),
+    ).toEqual({
+      execution: {
+        status: "failed",
+        exitCode: 1,
+        failure: {
+          kind: "operational",
+          message:
+            "Cosmos bootstrap failed. Ensure the cosmosdb container is running and reachable at http://localhost:8081. Original error: Cosmos bootstrap failed for http://localhost:8081/dbs: HTTP 503 emulator starting",
+          evidence: [],
+          cause: "ContainerRuntimeError",
+        },
+      },
+      output: [
+        {
+          stream: "stdout",
+          text: "$ docker compose -f Management/docker-compose.yml up -d",
+          write: false,
+        },
+        {
+          stream: "stdout",
+          text: "$ docker compose -f Storage/docker-compose.yml --profile selfhost up -d",
+          write: false,
+        },
+        {
+          stream: "stdout",
+          text: "$ docker exec mssql /opt/mssql-tools/bin/sqlcmd -C -S localhost -U sa -P [REDACTED] -d master -i /usr/sql/sqlSchema.sql -No",
+          write: false,
+        },
+        {
+          stream: "stderr",
+          text: "[arolariu::selfhost] ⛔ Cosmos bootstrap failed. Ensure the cosmosdb container is running and reachable at http://localhost:8081. Original error: Cosmos bootstrap failed for http://localhost:8081/dbs: HTTP 503 emulator starting",
+          write: false,
+        },
+      ],
+      timeline: [
+        {
+          process: "docker",
+          args: ["--version"],
+          options: {
+            signal: "<signal>",
+          },
+        },
+        {
+          process: "docker",
+          args: ["version"],
+          options: {
+            signal: "<signal>",
+          },
+        },
+        {
+          process: "docker",
+          args: ["compose", "version"],
+          options: {
+            signal: "<signal>",
+          },
+        },
+        {
+          process: "docker",
+          args: ["ps", "-a", "--format", "{{.Names}}"],
+          options: {
+            signal: "<signal>",
+          },
+        },
+        {
+          artifacts: {
+            verbose: false,
+          },
+          presentation: "silent",
+        },
+        {
+          fs: "createDirectory",
+          path: "<traefik-dir>",
+          options: {
+            recursive: true,
+          },
+        },
+        {
+          fs: "writeText",
+          path: "<traefik-config>",
+          length: 1310,
+        },
+        {
+          process: "docker",
+          args: ["compose", "-f", "Management/docker-compose.yml", "up", "-d"],
+          options: {
+            cwd: "infra/Local",
+            output: "tee",
+            logCommands: true,
+            logger: "<logger>",
+            signal: "<signal>",
+          },
+        },
+        {
+          delay: 3000,
+        },
+        {
+          process: "docker",
+          args: ["compose", "-f", "Storage/docker-compose.yml", "--profile", "selfhost", "up", "-d"],
+          options: {
+            cwd: "infra/Local",
+            output: "tee",
+            logCommands: true,
+            logger: "<logger>",
+            signal: "<signal>",
+          },
+        },
+        {
+          delay: 10000,
+        },
+        {
+          process: "docker",
+          args: [
+            "exec",
+            "mssql",
+            "/opt/mssql-tools/bin/sqlcmd",
+            "-C",
+            "-S",
+            "localhost",
+            "-U",
+            "sa",
+            "-P",
+            "<sql-password>",
+            "-d",
+            "master",
+            "-i",
+            "/usr/sql/sqlSchema.sql",
+            "-No",
+          ],
+          options: {
+            cwd: "infra/Local",
+            output: "tee",
+            logCommands: true,
+            logger: "<logger>",
+            signal: "<signal>",
+          },
+        },
+        {
+          http: "POST",
+          url: "http://localhost:8081/dbs",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: '{"id":"primary"}',
+          maximumResponseBytes: 65536,
+          signal: "<signal>",
+        },
+      ],
+      cleanupLabels: [],
+      traefik:
+        "http:\n  routers:\n    traefik-localhost:\n      rule: Host(`traefik.localhost`)\n      entryPoints:\n        - websecure\n      tls: {}\n      service: api@internal\n    website-localhost:\n      rule: Host(`website.localhost`)\n      entryPoints:\n        - websecure\n      tls: {}\n      service: website\n    api-localhost:\n      rule: Host(`api.localhost`)\n      entryPoints:\n        - websecure\n      tls: {}\n      service: api\n    health-localhost:\n      rule: Host(`health.localhost`)\n      entryPoints:\n        - websecure\n      tls: {}\n      service: healthchecks\n    cosmosdb-localhost:\n      rule: Host(`cosmosdb.localhost`)\n      entryPoints:\n        - websecure\n      tls: {}\n      service: cosmosdb\n    azurite-blob-localhost:\n      rule: Host(`azurite-blob.localhost`)\n      entryPoints:\n        - websecure\n      tls: {}\n      service: azurite-blob\n  services:\n    website:\n      loadBalancer:\n        servers:\n          - url: http://website:3000\n    api:\n      loadBalancer:\n        servers:\n          - url: http://api:8080\n    healthchecks:\n      loadBalancer:\n        servers:\n          - url: http://healthchecks:8000\n    cosmosdb:\n      loadBalancer:\n        servers:\n          - url: http://cosmosdb:8081\n    azurite-blob:\n      loadBalancer:\n        servers:\n          - url: http://azurite:10000\n",
+      passwordArgs: [
+        {
+          call: 6,
+          index: 9,
+          command: "docker",
+          flag: "-P",
+          exact: true,
+        },
+      ],
+    });
+  });
+
+  it("start without MSSQL_SA_PASSWORD: exit 1 before any stack command", async () => {
+    expect(await characterizeSelfhost({action: "start", variables: {}})).toEqual({
+      execution: {
+        status: "failed",
+        exitCode: 1,
+        failure: {
+          kind: "operational",
+          message:
+            "MSSQL_SA_PASSWORD environment variable is required for selfhost SQL bootstrap. Set it in your shell/session environment only; do not commit it to .env files, launch profiles, or source control.",
+          evidence: [],
+          cause: "ContainerRuntimeError",
+        },
+      },
+      output: [
+        {
+          stream: "stderr",
+          text: "[arolariu::selfhost] ⛔ MSSQL_SA_PASSWORD environment variable is required for selfhost SQL bootstrap. Set it in your shell/session environment only; do not commit it to .env files, launch profiles, or source control.",
+          write: false,
+        },
+      ],
+      timeline: [
+        {
+          process: "docker",
+          args: ["--version"],
+          options: {
+            signal: "<signal>",
+          },
+        },
+        {
+          process: "docker",
+          args: ["version"],
+          options: {
+            signal: "<signal>",
+          },
+        },
+        {
+          process: "docker",
+          args: ["compose", "version"],
+          options: {
+            signal: "<signal>",
+          },
+        },
+        {
+          process: "docker",
+          args: ["ps", "-a", "--format", "{{.Names}}"],
+          options: {
+            signal: "<signal>",
+          },
+        },
+        {
+          artifacts: {
+            verbose: false,
+          },
+          presentation: "silent",
+        },
+      ],
+      cleanupLabels: [],
+      traefik: null,
+      passwordArgs: [],
+    });
+  });
+
+  it("stop: reverse-order compose down, then the Traefik file removal", async () => {
+    expect(await characterizeSelfhost({action: "stop", seededFiles: {[selfhostTraefikConfigPath]: "generated traefik config"}})).toEqual({
+      execution: {
+        status: "completed",
+        value: {
+          action: "stop",
+          engine: "rancher",
+          stacks: ["frontend", "backend", "storage", "management"],
+        },
+        exitCode: 0,
+      },
+      output: [
+        {
+          stream: "stdout",
+          text: "$ docker compose -f Frontend/docker-compose.yml down",
+          write: false,
+        },
+        {
+          stream: "stdout",
+          text: "$ docker compose -f Backend/docker-compose.yml down",
+          write: false,
+        },
+        {
+          stream: "stdout",
+          text: "$ docker compose -f Storage/docker-compose.yml down",
+          write: false,
+        },
+        {
+          stream: "stdout",
+          text: "$ docker compose -f Management/docker-compose.yml down",
+          write: false,
+        },
+        {
+          stream: "stdout",
+          text: "[arolariu::selfhost] ✅ Selfhost stop completed for engine 'rancher'.",
+          write: false,
+        },
+      ],
+      timeline: [
+        {
+          process: "docker",
+          args: ["--version"],
+          options: {
+            signal: "<signal>",
+          },
+        },
+        {
+          process: "docker",
+          args: ["version"],
+          options: {
+            signal: "<signal>",
+          },
+        },
+        {
+          process: "docker",
+          args: ["compose", "version"],
+          options: {
+            signal: "<signal>",
+          },
+        },
+        {
+          process: "docker",
+          args: ["ps", "-a", "--format", "{{.Names}}"],
+          options: {
+            signal: "<signal>",
+          },
+        },
+        {
+          process: "docker",
+          args: ["compose", "-f", "Frontend/docker-compose.yml", "down"],
+          options: {
+            cwd: "infra/Local",
+            output: "tee",
+            logCommands: true,
+            logger: "<logger>",
+            signal: "<signal>",
+          },
+        },
+        {
+          delay: 3000,
+        },
+        {
+          process: "docker",
+          args: ["compose", "-f", "Backend/docker-compose.yml", "down"],
+          options: {
+            cwd: "infra/Local",
+            output: "tee",
+            logCommands: true,
+            logger: "<logger>",
+            signal: "<signal>",
+          },
+        },
+        {
+          delay: 3000,
+        },
+        {
+          process: "docker",
+          args: ["compose", "-f", "Storage/docker-compose.yml", "down"],
+          options: {
+            cwd: "infra/Local",
+            output: "tee",
+            logCommands: true,
+            logger: "<logger>",
+            signal: "<signal>",
+          },
+        },
+        {
+          delay: 3000,
+        },
+        {
+          process: "docker",
+          args: ["compose", "-f", "Management/docker-compose.yml", "down"],
+          options: {
+            cwd: "infra/Local",
+            output: "tee",
+            logCommands: true,
+            logger: "<logger>",
+            signal: "<signal>",
+          },
+        },
+        {
+          delay: 3000,
+        },
+        {
+          fs: "remove",
+          path: "<traefik-config>",
+          options: {
+            force: true,
+          },
+        },
+      ],
+      cleanupLabels: [],
+      traefik: null,
+      passwordArgs: [],
+    });
+  });
+
+  it("logs: engine-owned logs commands without delays, artifacts, or Traefik changes", async () => {
+    expect(await characterizeSelfhost({action: "logs"})).toEqual({
+      execution: {
+        status: "completed",
+        value: {
+          action: "logs",
+          engine: "rancher",
+          stacks: ["profile", "backend", "frontend"],
+        },
+        exitCode: 0,
+      },
+      output: [
+        {
+          stream: "stdout",
+          text: "$ docker logs --tail 100 exp-arolariu-ro",
+          write: false,
+        },
+        {
+          stream: "stdout",
+          text: "$ docker logs --tail 100 api-arolariu-ro",
+          write: false,
+        },
+        {
+          stream: "stdout",
+          text: "$ docker logs --tail 100 website-arolariu-ro",
+          write: false,
+        },
+        {
+          stream: "stdout",
+          text: "[arolariu::selfhost] ✅ Selfhost logs completed for engine 'rancher'.",
+          write: false,
+        },
+      ],
+      timeline: [
+        {
+          process: "docker",
+          args: ["--version"],
+          options: {
+            signal: "<signal>",
+          },
+        },
+        {
+          process: "docker",
+          args: ["version"],
+          options: {
+            signal: "<signal>",
+          },
+        },
+        {
+          process: "docker",
+          args: ["compose", "version"],
+          options: {
+            signal: "<signal>",
+          },
+        },
+        {
+          process: "docker",
+          args: ["ps", "-a", "--format", "{{.Names}}"],
+          options: {
+            signal: "<signal>",
+          },
+        },
+        {
+          process: "docker",
+          args: ["logs", "--tail", "100", "exp-arolariu-ro"],
+          options: {
+            cwd: "infra/Local",
+            output: "tee",
+            logCommands: true,
+            logger: "<logger>",
+            signal: "<signal>",
+          },
+        },
+        {
+          process: "docker",
+          args: ["logs", "--tail", "100", "api-arolariu-ro"],
+          options: {
+            cwd: "infra/Local",
+            output: "tee",
+            logCommands: true,
+            logger: "<logger>",
+            signal: "<signal>",
+          },
+        },
+        {
+          process: "docker",
+          args: ["logs", "--tail", "100", "website-arolariu-ro"],
+          options: {
+            cwd: "infra/Local",
+            output: "tee",
+            logCommands: true,
+            logger: "<logger>",
+            signal: "<signal>",
+          },
+        },
+      ],
+      cleanupLabels: [],
+      traefik: null,
+      passwordArgs: [],
+    });
   });
 });

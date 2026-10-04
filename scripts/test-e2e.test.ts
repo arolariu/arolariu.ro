@@ -15,10 +15,11 @@
 import {dirname, join} from "node:path";
 import {describe, expect, it} from "vitest";
 
+import type {CommandExecution, CommandPresentation, CommandRuntimeFactory} from "./common/commander.ts";
 import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "./common/logger.ts";
 import {AbstractProcessRunner, RunnerError, type ProcessOutcome, type ProcessRequest, type ProcessRunOptions} from "./common/runner.ts";
 import {createMemoryFileSystem, createTestRuntimeFactory, repositoryFixtureRoot} from "./common/runtime.testing.ts";
-import {CommandCancellation, type FileSystem, type RuntimeEnvironment} from "./common/runtime.ts";
+import {CommandCancellation, type CommandRuntime, type FileSystem, type RuntimeEnvironment} from "./common/runtime.ts";
 import {
   createE2eCommand,
   redactSensitiveString,
@@ -26,6 +27,7 @@ import {
   sanitizeNewmanJsonReport,
   sanitizeNewmanTextReport,
   writeAssertionSummary,
+  type E2ETarget,
 } from "./test-e2e.ts";
 
 /** Deliberately non-JWT-shaped fake secret used for exact-match and `--env-var` transport proofs. */
@@ -972,5 +974,1089 @@ describe("sanitizeJsonValue and redactSensitiveString", () => {
     const accumulator = {redactionCount: 0};
     const sanitized = sanitizeJsonValue([{token: "secret"}, {safe: "ok"}], accumulator);
     expect(sanitized).toEqual([{token: "[REDACTED]"}, {safe: "ok"}]);
+  });
+});
+
+// ============================================================================
+// E2E characterization (pre-Effect migration)
+// ============================================================================
+
+/** One Newman behavior the characterization runner replays for every invocation. */
+interface NewmanScript {
+  /** Outcome the simulated Newman process reports. */
+  readonly outcome: ProcessOutcome;
+  /** Failed assertions written to the JSON report; `undefined` writes no report at all. */
+  readonly failures?: readonly unknown[];
+}
+
+/** Every report file name a target can leave behind. */
+const REPORT_FILES = (target: string): readonly string[] => [
+  `newman-${target}.json`,
+  `newman-${target}.xml`,
+  `newman-${target}-summary.md`,
+];
+
+/**
+ * Builds a token-bearing Newman JSON report with a bearer JWT header, a JWT in a non-sensitive
+ * field, the raw token in an opaque body, and the token under a sensitive environment key.
+ *
+ * @param token - Runtime auth token Newman would have seen.
+ * @param failures - Failed assertions recorded by the run.
+ * @returns The exact report text Newman would export.
+ */
+function characterizationJsonReport(token: string, failures: readonly unknown[]): string {
+  const jwt = generateSyntheticJwt();
+  return JSON.stringify(
+    {
+      run: {
+        stats: {requests: {total: 1, failed: 0}, assertions: {total: 2, failed: failures.length}},
+        executions: [
+          {
+            item: {name: "GET /rest/v1/invoices"},
+            request: {url: "https://api.arolariu.ro/rest/v1/invoices", headers: [{key: "Authorization", value: `Bearer ${jwt}`}]},
+            response: {code: 200, body: `{"echo":"${token}"}`},
+            console: [`decoded ${jwt}`],
+          },
+        ],
+        failures,
+      },
+      environment: {
+        values: [
+          {key: "authToken", value: token, type: "secret"},
+          {key: "baseUrl", value: "https://api.arolariu.ro", type: "default"},
+        ],
+      },
+    },
+    null,
+    2,
+  );
+}
+
+/**
+ * Builds a token-bearing Newman JUnit report.
+ *
+ * @param token - Runtime auth token Newman would have seen.
+ * @param failureCount - Number of failed test cases.
+ * @returns The exact JUnit XML Newman would export.
+ */
+function characterizationJunitReport(token: string, failureCount: number): string {
+  return [
+    '<?xml version="1.0" encoding="UTF-8"?>',
+    `<testsuites name="newman" tests="2" failures="${String(failureCount)}">`,
+    '  <testsuite name="Invoices" tests="2">',
+    '    <testcase name="GET /rest/v1/invoices" classname="Invoices">',
+    `      <system-out>Authorization: Bearer ${generateSyntheticJwt()}</system-out>`,
+    `      <system-out>authToken=${token}</system-out>`,
+    "    </testcase>",
+    "  </testsuite>",
+    "</testsuites>",
+  ].join("\n");
+}
+
+/**
+ * Records every Newman invocation and writes the scripted reporter artifacts Newman would export.
+ * The reports carry the token only when Newman received one through `--env-var authToken=…`.
+ */
+class ScriptedNewmanRunner extends AbstractProcessRunner {
+  readonly #files: FileSystem;
+  readonly #script: NewmanScript;
+  readonly #calls: RecordedCall[] = [];
+
+  public constructor(files: FileSystem, script: NewmanScript) {
+    super();
+    this.#files = files;
+    this.#script = script;
+  }
+
+  /** Every recorded invocation, in call order. */
+  public get calls(): readonly RecordedCall[] {
+    return this.#calls;
+  }
+
+  /** {@inheritDoc AbstractProcessRunner.execute} */
+  protected override async execute(request: Readonly<ProcessRequest>, options: Readonly<ProcessRunOptions>): Promise<ProcessOutcome> {
+    this.#calls.push({request, options});
+    const failures = this.#script.failures;
+    if (failures !== undefined) {
+      const token = request.args.find((arg) => arg.startsWith("authToken="))?.slice("authToken=".length) ?? "no-token-received";
+      const jsonPath = request.args[request.args.indexOf("--reporter-json-export") + 1]!;
+      const junitPath = request.args[request.args.indexOf("--reporter-junit-export") + 1]!;
+      await this.#files.writeText(jsonPath, characterizationJsonReport(token, failures));
+      await this.#files.writeText(junitPath, characterizationJunitReport(token, failures.length));
+    }
+    return this.#script.outcome;
+  }
+}
+
+/** Replaces the machine-dependent fixture root and normalizes path separators. */
+function withPortablePaths(text: string): string {
+  return text.replaceAll(repositoryFixtureRoot, "<root>").replaceAll("\\", "/");
+}
+
+/** Projects one execution into a plain value, naming the failure cause by its class. */
+function projectE2eExecution(execution: Readonly<CommandExecution<unknown>>): unknown {
+  if (execution.status === "completed" || execution.status === "help") {
+    return {...execution};
+  }
+  const {cause, ...failure} = execution.failure;
+  return {
+    ...execution,
+    failure: {
+      ...failure,
+      message: withPortablePaths(failure.message),
+      evidence: failure.evidence.map(withPortablePaths),
+      cause: cause instanceof Error ? cause.constructor.name : String(cause),
+    },
+  };
+}
+
+/** Creates a runtime factory whose logger honors the invocation presentation, like the Node factory. */
+function presentationRuntimeFactory(sink: InMemoryLoggerSink, overrides: Readonly<Partial<CommandRuntime>>): CommandRuntimeFactory {
+  return {
+    createRoot: (options) =>
+      createTestRuntimeFactory({
+        ...overrides,
+        logger: new MonorepositoryConsoleLogger("test:e2e", {mode: options.presentation, color: false, sink}),
+      }).createRoot(options),
+    createChild: (parent, options) => createTestRuntimeFactory(overrides).createChild(parent, options),
+  };
+}
+
+/** Everything one characterized E2E invocation produced. */
+interface E2eCharacterization {
+  readonly execution: unknown;
+  readonly calls: readonly unknown[];
+  readonly tokenArgs: readonly (readonly string[])[];
+  readonly output: readonly unknown[];
+  readonly reports: Readonly<Record<string, string | null>>;
+}
+
+/**
+ * Runs the legacy E2E command once against the scripted Newman runner.
+ *
+ * @param target - Requested target.
+ * @param presentation - Legacy presentation.
+ * @param script - Newman behavior.
+ * @returns The projected execution, Newman calls, token-bearing args, rendered output, and report bytes.
+ */
+async function characterizeE2e(target: E2ETarget, presentation: CommandPresentation, script: NewmanScript): Promise<E2eCharacterization> {
+  const files = fixtureFiles();
+  const sink = new InMemoryLoggerSink();
+  const runner = new ScriptedNewmanRunner(files, script);
+  const environment = testEnvironment({E2E_TEST_AUTH_TOKEN: FAKE_TOKEN});
+  const command = createE2eCommand(presentationRuntimeFactory(sink, {files, runner, environment}));
+
+  const execution = await command.invoke({target}, {presentation});
+
+  const reportDir = join(repositoryFixtureRoot, "e2e-logs");
+  const reports: Record<string, string | null> = {};
+  for (const name of (target === "all" ? ["frontend", "backend", "cv"] : [target]).flatMap(REPORT_FILES)) {
+    const path = join(reportDir, name);
+    // eslint-disable-next-line no-await-in-loop -- deterministic in-memory reads in a fixed order
+    reports[name] = (await files.exists(path)) ? await files.readText(path) : null;
+  }
+
+  return {
+    execution: projectE2eExecution(execution),
+    calls: runner.calls.map(({request, options}) => ({
+      command: request.command,
+      args: request.args.map((arg) => withPortablePaths(arg).replaceAll(FAKE_TOKEN, "<token>")),
+      options: {
+        ...options,
+        cwd: options.cwd === undefined ? undefined : withPortablePaths(options.cwd),
+        signal: options.signal instanceof AbortSignal ? "<signal>" : options.signal,
+        logger: options.logger === undefined ? undefined : "<logger>",
+      },
+    })),
+    tokenArgs: runner.calls.map(({request}) => request.args.filter((arg) => arg.includes(FAKE_TOKEN))),
+    output: sink.records.map((record) => ({...record, text: withPortablePaths(record.text)})),
+    reports,
+  };
+}
+
+/** Asserts the raw token never reaches rendered output or the returned execution. */
+function expectTokenNeverRendered(result: Readonly<E2eCharacterization>): void {
+  expect(JSON.stringify(result.output).includes(FAKE_TOKEN)).toBe(false);
+  expect(JSON.stringify(result.execution).includes(FAKE_TOKEN)).toBe(false);
+}
+
+const ASSERTION_FAILURES: readonly unknown[] = [
+  {
+    assertion: "Status code is 200",
+    error: {message: `expected 401 to equal 200 for ${FAKE_TOKEN}`},
+    source: {name: "GET /rest/v1/invoices"},
+  },
+  {assertion: "Body has id", error: "expected body to have property 'id'", parent: {name: "Invoices"}},
+];
+
+describe("e2e characterization (pre-Effect migration)", () => {
+  it("backend pass (human): Newman args, sanitized reports, summary, output, exit 0", async () => {
+    const result = await characterizeE2e("backend", "human", {outcome: succeeded(), failures: []});
+
+    expect(result.execution).toEqual({
+      status: "completed",
+      value: {
+        targets: ["backend"],
+        completed: ["backend"],
+      },
+      exitCode: 0,
+    });
+    expect(result.calls).toEqual([
+      {
+        command: "npx",
+        args: [
+          "newman",
+          "run",
+          "<root>/sites/api.arolariu.ro/postman-collection.json",
+          "--environment",
+          "<root>/sites/api.arolariu.ro/postman-environment.production.json",
+          "--env-var",
+          "authToken=<token>",
+          "--reporters",
+          "cli,json,junit",
+          "--reporter-json-export",
+          "<root>/e2e-logs/newman-backend.json",
+          "--reporter-junit-export",
+          "<root>/e2e-logs/newman-backend.xml",
+          "--timeout",
+          "600000",
+          "--timeout-request",
+          "30000",
+          "--timeout-script",
+          "10000",
+        ],
+        options: {
+          cwd: "<root>",
+          output: "inherit",
+          signal: "<signal>",
+          logger: "<logger>",
+        },
+      },
+    ]);
+    expect(result.tokenArgs).toEqual([["authToken=e2e-test-secret-value"]]);
+    expect(result.output).toEqual([
+      {
+        stream: "stdout",
+        text: "",
+        write: false,
+      },
+      {
+        stream: "stdout",
+        text: "🎯 arolariu.ro E2E Test Runner",
+        write: false,
+      },
+      {
+        stream: "stdout",
+        text: "",
+        write: false,
+      },
+      {
+        stream: "stdout",
+        text: "",
+        write: false,
+      },
+      {
+        stream: "stdout",
+        text: "🧪 E2E Testing: backend",
+        write: false,
+      },
+      {
+        stream: "stdout",
+        text: "",
+        write: false,
+      },
+      {
+        stream: "stdout",
+        text: "Collection: <root>/sites/api.arolariu.ro/postman-collection.json",
+        write: false,
+      },
+      {
+        stream: "stdout",
+        text: "Environment: <root>/sites/api.arolariu.ro/postman-environment.production.json (production)",
+        write: false,
+      },
+      {
+        stream: "stdout",
+        text: "JSON report: <root>/e2e-logs/newman-backend.json",
+        write: false,
+      },
+      {
+        stream: "stdout",
+        text: "JUnit report: <root>/e2e-logs/newman-backend.xml",
+        write: false,
+      },
+      {
+        stream: "stdout",
+        text: "Timeout: 600000ms (request: 30000ms, script: 10000ms)",
+        write: false,
+      },
+      {
+        stream: "stdout",
+        text: "Strict mode (--bail): false",
+        write: false,
+      },
+      {
+        stream: "stdout",
+        text: "[arolariu::test:e2e::backend] ✅ Completed Newman tests for: backend",
+        write: false,
+      },
+      {
+        stream: "stdout",
+        text: "[arolariu::test:e2e::backend] ✅ No failed assertions for backend.",
+        write: false,
+      },
+      {
+        stream: "stdout",
+        text: "[arolariu::test:e2e::backend] ℹ️ Summary written to: <root>/e2e-logs/newman-backend-summary.md",
+        write: false,
+      },
+      {
+        stream: "stdout",
+        text: "[arolariu::test:e2e::backend] ℹ️ Sanitized Newman JSON report (4 redaction(s)): <root>/e2e-logs/newman-backend.json",
+        write: false,
+      },
+      {
+        stream: "stdout",
+        text: "[arolariu::test:e2e::backend] ℹ️ Sanitized text report (2 redaction pass(es)): <root>/e2e-logs/newman-backend.xml",
+        write: false,
+      },
+      {
+        stream: "stdout",
+        text: "[arolariu::test:e2e] ✅ Completed 1 of 1 E2E target(s): backend.",
+        write: false,
+      },
+    ]);
+    expect(result.reports).toEqual({
+      "newman-backend.json":
+        '{\n  "run": {\n    "stats": {\n      "requests": {\n        "total": 1,\n        "failed": 0\n      },\n      "assertions": {\n        "total": 2,\n        "failed": 0\n      }\n    },\n    "executions": [\n      {\n        "item": {\n          "name": "GET /rest/v1/invoices"\n        },\n        "request": {\n          "url": "https://api.arolariu.ro/rest/v1/invoices",\n          "headers": [\n            {\n              "key": "Authorization",\n              "value": "******"\n            }\n          ]\n        },\n        "response": {\n          "code": 200,\n          "body": "{\\"echo\\":\\"[REDACTED]\\"}"\n        },\n        "console": [\n          "decoded [REDACTED_JWT]"\n        ]\n      }\n    ],\n    "failures": []\n  },\n  "environment": {\n    "values": [\n      {\n        "key": "authToken",\n        "value": "[REDACTED]",\n        "type": "secret"\n      },\n      {\n        "key": "baseUrl",\n        "value": "https://api.arolariu.ro",\n        "type": "default"\n      }\n    ]\n  }\n}',
+      "newman-backend.xml":
+        '<?xml version="1.0" encoding="UTF-8"?>\n<testsuites name="newman" tests="2" failures="0">\n  <testsuite name="Invoices" tests="2">\n    <testcase name="GET /rest/v1/invoices" classname="Invoices">\n      <system-out>Authorization: ******</system-out>\n      <system-out>authToken=[REDACTED]</system-out>\n    </testcase>\n  </testsuite>\n</testsuites>',
+      "newman-backend-summary.md": "### Failed Assertions (backend)\nNo failed assertions.\n",
+    });
+    expectTokenNeverRendered(result);
+  });
+
+  it("backend pass (json): legacy has no JSON document, so it fails with exit 1 after a clean run", async () => {
+    const result = await characterizeE2e("backend", "json", {outcome: succeeded(), failures: []});
+
+    expect(result.execution).toEqual({
+      status: "failed",
+      exitCode: 1,
+      failure: {
+        kind: "internal",
+        message: 'Command "test:e2e" selected JSON presentation without a JSON document.',
+        evidence: [],
+        cause: "undefined",
+      },
+    });
+    expect(result.output).toEqual([
+      {
+        stream: "stderr",
+        text: 'Command "test:e2e" selected JSON presentation without a JSON document.',
+        write: false,
+      },
+    ]);
+    expect(result.reports).toEqual({
+      "newman-backend.json":
+        '{\n  "run": {\n    "stats": {\n      "requests": {\n        "total": 1,\n        "failed": 0\n      },\n      "assertions": {\n        "total": 2,\n        "failed": 0\n      }\n    },\n    "executions": [\n      {\n        "item": {\n          "name": "GET /rest/v1/invoices"\n        },\n        "request": {\n          "url": "https://api.arolariu.ro/rest/v1/invoices",\n          "headers": [\n            {\n              "key": "Authorization",\n              "value": "******"\n            }\n          ]\n        },\n        "response": {\n          "code": 200,\n          "body": "{\\"echo\\":\\"[REDACTED]\\"}"\n        },\n        "console": [\n          "decoded [REDACTED_JWT]"\n        ]\n      }\n    ],\n    "failures": []\n  },\n  "environment": {\n    "values": [\n      {\n        "key": "authToken",\n        "value": "[REDACTED]",\n        "type": "secret"\n      },\n      {\n        "key": "baseUrl",\n        "value": "https://api.arolariu.ro",\n        "type": "default"\n      }\n    ]\n  }\n}',
+      "newman-backend.xml":
+        '<?xml version="1.0" encoding="UTF-8"?>\n<testsuites name="newman" tests="2" failures="0">\n  <testsuite name="Invoices" tests="2">\n    <testcase name="GET /rest/v1/invoices" classname="Invoices">\n      <system-out>Authorization: ******</system-out>\n      <system-out>authToken=[REDACTED]</system-out>\n    </testcase>\n  </testsuite>\n</testsuites>',
+      "newman-backend-summary.md": "### Failed Assertions (backend)\nNo failed assertions.\n",
+    });
+    expectTokenNeverRendered(result);
+  });
+
+  it("backend assertion failure (human): exit 1, failure output, sanitized reports, summary", async () => {
+    const result = await characterizeE2e("backend", "human", {outcome: exited(1), failures: ASSERTION_FAILURES});
+
+    expect(result.execution).toEqual({
+      status: "failed",
+      exitCode: 1,
+      failure: {
+        kind: "operational",
+        message:
+          "Process exited with code 1: npx newman run <root>/sites/api.arolariu.ro/postman-collection.json --environment <root>/sites/api.arolariu.ro/postman-environment.production.json --env-var authToken=[REDACTED] --reporters cli,json,junit --reporter-json-export <root>/e2e-logs/newman-backend.json --reporter-junit-export <root>/e2e-logs/newman-backend.xml --timeout 600000 --timeout-request 30000 --timeout-script 10000",
+        evidence: [
+          "command: npx newman run <root>/sites/api.arolariu.ro/postman-collection.json --environment <root>/sites/api.arolariu.ro/postman-environment.production.json --env-var authToken=[REDACTED] --reporters cli,json,junit --reporter-json-export <root>/e2e-logs/newman-backend.json --reporter-junit-export <root>/e2e-logs/newman-backend.xml --timeout 600000 --timeout-request 30000 --timeout-script 10000",
+          "outcome: exited",
+        ],
+        cause: "RunnerError",
+      },
+    });
+    expect(result.calls).toEqual([
+      {
+        command: "npx",
+        args: [
+          "newman",
+          "run",
+          "<root>/sites/api.arolariu.ro/postman-collection.json",
+          "--environment",
+          "<root>/sites/api.arolariu.ro/postman-environment.production.json",
+          "--env-var",
+          "authToken=<token>",
+          "--reporters",
+          "cli,json,junit",
+          "--reporter-json-export",
+          "<root>/e2e-logs/newman-backend.json",
+          "--reporter-junit-export",
+          "<root>/e2e-logs/newman-backend.xml",
+          "--timeout",
+          "600000",
+          "--timeout-request",
+          "30000",
+          "--timeout-script",
+          "10000",
+        ],
+        options: {
+          cwd: "<root>",
+          output: "inherit",
+          signal: "<signal>",
+          logger: "<logger>",
+        },
+      },
+    ]);
+    expect(result.output).toEqual([
+      {
+        stream: "stdout",
+        text: "",
+        write: false,
+      },
+      {
+        stream: "stdout",
+        text: "🎯 arolariu.ro E2E Test Runner",
+        write: false,
+      },
+      {
+        stream: "stdout",
+        text: "",
+        write: false,
+      },
+      {
+        stream: "stdout",
+        text: "",
+        write: false,
+      },
+      {
+        stream: "stdout",
+        text: "🧪 E2E Testing: backend",
+        write: false,
+      },
+      {
+        stream: "stdout",
+        text: "",
+        write: false,
+      },
+      {
+        stream: "stdout",
+        text: "Collection: <root>/sites/api.arolariu.ro/postman-collection.json",
+        write: false,
+      },
+      {
+        stream: "stdout",
+        text: "Environment: <root>/sites/api.arolariu.ro/postman-environment.production.json (production)",
+        write: false,
+      },
+      {
+        stream: "stdout",
+        text: "JSON report: <root>/e2e-logs/newman-backend.json",
+        write: false,
+      },
+      {
+        stream: "stdout",
+        text: "JUnit report: <root>/e2e-logs/newman-backend.xml",
+        write: false,
+      },
+      {
+        stream: "stdout",
+        text: "Timeout: 600000ms (request: 30000ms, script: 10000ms)",
+        write: false,
+      },
+      {
+        stream: "stdout",
+        text: "Strict mode (--bail): false",
+        write: false,
+      },
+      {
+        stream: "stderr",
+        text: "[arolariu::test:e2e::backend] ⚠️ 2 failed assertion(s) for backend.",
+        write: false,
+      },
+      {
+        stream: "stdout",
+        text: "[arolariu::test:e2e::backend] ℹ️ Summary written to: <root>/e2e-logs/newman-backend-summary.md",
+        write: false,
+      },
+      {
+        stream: "stdout",
+        text: "[arolariu::test:e2e::backend] ℹ️ Sanitized Newman JSON report (5 redaction(s)): <root>/e2e-logs/newman-backend.json",
+        write: false,
+      },
+      {
+        stream: "stdout",
+        text: "[arolariu::test:e2e::backend] ℹ️ Sanitized text report (2 redaction pass(es)): <root>/e2e-logs/newman-backend.xml",
+        write: false,
+      },
+      {
+        stream: "stdout",
+        text: "[arolariu::test:e2e::backend] ℹ️ Sanitized text report (1 redaction pass(es)): <root>/e2e-logs/newman-backend-summary.md",
+        write: false,
+      },
+      {
+        stream: "stderr",
+        text: "[arolariu::test:e2e] ⛔ Process exited with code 1: npx newman run <root>/sites/api.arolariu.ro/postman-collection.json --environment <root>/sites/api.arolariu.ro/postman-environment.production.json --env-var authToken=[REDACTED] --reporters cli,json,junit --reporter-json-export <root>/e2e-logs/newman-backend.json --reporter-junit-export <root>/e2e-logs/newman-backend.xml --timeout 600000 --timeout-request 30000 --timeout-script 10000\ncommand: npx newman run <root>/sites/api.arolariu.ro/postman-collection.json --environment <root>/sites/api.arolariu.ro/postman-environment.production.json --env-var authToken=[REDACTED] --reporters cli,json,junit --reporter-json-export <root>/e2e-logs/newman-backend.json --reporter-junit-export <root>/e2e-logs/newman-backend.xml --timeout 600000 --timeout-request 30000 --timeout-script 10000\noutcome: exited",
+        write: false,
+      },
+    ]);
+    expect(result.reports).toEqual({
+      "newman-backend.json":
+        '{\n  "run": {\n    "stats": {\n      "requests": {\n        "total": 1,\n        "failed": 0\n      },\n      "assertions": {\n        "total": 2,\n        "failed": 2\n      }\n    },\n    "executions": [\n      {\n        "item": {\n          "name": "GET /rest/v1/invoices"\n        },\n        "request": {\n          "url": "https://api.arolariu.ro/rest/v1/invoices",\n          "headers": [\n            {\n              "key": "Authorization",\n              "value": "******"\n            }\n          ]\n        },\n        "response": {\n          "code": 200,\n          "body": "{\\"echo\\":\\"[REDACTED]\\"}"\n        },\n        "console": [\n          "decoded [REDACTED_JWT]"\n        ]\n      }\n    ],\n    "failures": [\n      {\n        "assertion": "Status code is 200",\n        "error": {\n          "message": "expected 401 to equal 200 for [REDACTED]"\n        },\n        "source": {\n          "name": "GET /rest/v1/invoices"\n        }\n      },\n      {\n        "assertion": "Body has id",\n        "error": "expected body to have property \'id\'",\n        "parent": {\n          "name": "Invoices"\n        }\n      }\n    ]\n  },\n  "environment": {\n    "values": [\n      {\n        "key": "authToken",\n        "value": "[REDACTED]",\n        "type": "secret"\n      },\n      {\n        "key": "baseUrl",\n        "value": "https://api.arolariu.ro",\n        "type": "default"\n      }\n    ]\n  }\n}',
+      "newman-backend.xml":
+        '<?xml version="1.0" encoding="UTF-8"?>\n<testsuites name="newman" tests="2" failures="2">\n  <testsuite name="Invoices" tests="2">\n    <testcase name="GET /rest/v1/invoices" classname="Invoices">\n      <system-out>Authorization: ******</system-out>\n      <system-out>authToken=[REDACTED]</system-out>\n    </testcase>\n  </testsuite>\n</testsuites>',
+      "newman-backend-summary.md":
+        '### Failed Assertions (backend)\n1. AssertionError  Status code is 200\n   expected 401 to equal 200 for [REDACTED]\n   in "GET /rest/v1/invoices"\n\n2. AssertionError  Body has id\n   expected body to have property \'id\'\n   in "Invoices"\n',
+    });
+    expectTokenNeverRendered(result);
+  });
+
+  it("backend assertion failure (json): exit 1 and only the plain fatal diagnostic", async () => {
+    const result = await characterizeE2e("backend", "json", {outcome: exited(1), failures: ASSERTION_FAILURES});
+
+    expect(result.execution).toEqual({
+      status: "failed",
+      exitCode: 1,
+      failure: {
+        kind: "operational",
+        message:
+          "Process exited with code 1: npx newman run <root>/sites/api.arolariu.ro/postman-collection.json --environment <root>/sites/api.arolariu.ro/postman-environment.production.json --env-var authToken=[REDACTED] --reporters cli,json,junit --reporter-json-export <root>/e2e-logs/newman-backend.json --reporter-junit-export <root>/e2e-logs/newman-backend.xml --timeout 600000 --timeout-request 30000 --timeout-script 10000",
+        evidence: [
+          "command: npx newman run <root>/sites/api.arolariu.ro/postman-collection.json --environment <root>/sites/api.arolariu.ro/postman-environment.production.json --env-var authToken=[REDACTED] --reporters cli,json,junit --reporter-json-export <root>/e2e-logs/newman-backend.json --reporter-junit-export <root>/e2e-logs/newman-backend.xml --timeout 600000 --timeout-request 30000 --timeout-script 10000",
+          "outcome: exited",
+        ],
+        cause: "RunnerError",
+      },
+    });
+    expect(result.output).toEqual([
+      {
+        stream: "stderr",
+        text: "Process exited with code 1: npx newman run <root>/sites/api.arolariu.ro/postman-collection.json --environment <root>/sites/api.arolariu.ro/postman-environment.production.json --env-var authToken=[REDACTED] --reporters cli,json,junit --reporter-json-export <root>/e2e-logs/newman-backend.json --reporter-junit-export <root>/e2e-logs/newman-backend.xml --timeout 600000 --timeout-request 30000 --timeout-script 10000\ncommand: npx newman run <root>/sites/api.arolariu.ro/postman-collection.json --environment <root>/sites/api.arolariu.ro/postman-environment.production.json --env-var authToken=[REDACTED] --reporters cli,json,junit --reporter-json-export <root>/e2e-logs/newman-backend.json --reporter-junit-export <root>/e2e-logs/newman-backend.xml --timeout 600000 --timeout-request 30000 --timeout-script 10000\noutcome: exited",
+        write: false,
+      },
+    ]);
+    expectTokenNeverRendered(result);
+  });
+
+  it("backend spawn failure (human): exit 1, no reports, failure output", async () => {
+    const result = await characterizeE2e("backend", "human", {outcome: spawnFailed("spawn npx ENOENT")});
+
+    expect(result.execution).toEqual({
+      status: "failed",
+      exitCode: 1,
+      failure: {
+        kind: "operational",
+        message:
+          "Process failed to start: npx newman run <root>/sites/api.arolariu.ro/postman-collection.json --environment <root>/sites/api.arolariu.ro/postman-environment.production.json --env-var authToken=[REDACTED] --reporters cli,json,junit --reporter-json-export <root>/e2e-logs/newman-backend.json --reporter-junit-export <root>/e2e-logs/newman-backend.xml --timeout 600000 --timeout-request 30000 --timeout-script 10000\nspawn npx ENOENT",
+        evidence: [
+          "command: npx newman run <root>/sites/api.arolariu.ro/postman-collection.json --environment <root>/sites/api.arolariu.ro/postman-environment.production.json --env-var authToken=[REDACTED] --reporters cli,json,junit --reporter-json-export <root>/e2e-logs/newman-backend.json --reporter-junit-export <root>/e2e-logs/newman-backend.xml --timeout 600000 --timeout-request 30000 --timeout-script 10000",
+          "outcome: spawn-failed",
+        ],
+        cause: "RunnerError",
+      },
+    });
+    expect(result.calls).toEqual([
+      {
+        command: "npx",
+        args: [
+          "newman",
+          "run",
+          "<root>/sites/api.arolariu.ro/postman-collection.json",
+          "--environment",
+          "<root>/sites/api.arolariu.ro/postman-environment.production.json",
+          "--env-var",
+          "authToken=<token>",
+          "--reporters",
+          "cli,json,junit",
+          "--reporter-json-export",
+          "<root>/e2e-logs/newman-backend.json",
+          "--reporter-junit-export",
+          "<root>/e2e-logs/newman-backend.xml",
+          "--timeout",
+          "600000",
+          "--timeout-request",
+          "30000",
+          "--timeout-script",
+          "10000",
+        ],
+        options: {
+          cwd: "<root>",
+          output: "inherit",
+          signal: "<signal>",
+          logger: "<logger>",
+        },
+      },
+    ]);
+    expect(result.output).toEqual([
+      {
+        stream: "stdout",
+        text: "",
+        write: false,
+      },
+      {
+        stream: "stdout",
+        text: "🎯 arolariu.ro E2E Test Runner",
+        write: false,
+      },
+      {
+        stream: "stdout",
+        text: "",
+        write: false,
+      },
+      {
+        stream: "stdout",
+        text: "",
+        write: false,
+      },
+      {
+        stream: "stdout",
+        text: "🧪 E2E Testing: backend",
+        write: false,
+      },
+      {
+        stream: "stdout",
+        text: "",
+        write: false,
+      },
+      {
+        stream: "stdout",
+        text: "Collection: <root>/sites/api.arolariu.ro/postman-collection.json",
+        write: false,
+      },
+      {
+        stream: "stdout",
+        text: "Environment: <root>/sites/api.arolariu.ro/postman-environment.production.json (production)",
+        write: false,
+      },
+      {
+        stream: "stdout",
+        text: "JSON report: <root>/e2e-logs/newman-backend.json",
+        write: false,
+      },
+      {
+        stream: "stdout",
+        text: "JUnit report: <root>/e2e-logs/newman-backend.xml",
+        write: false,
+      },
+      {
+        stream: "stdout",
+        text: "Timeout: 600000ms (request: 30000ms, script: 10000ms)",
+        write: false,
+      },
+      {
+        stream: "stdout",
+        text: "Strict mode (--bail): false",
+        write: false,
+      },
+      {
+        stream: "stderr",
+        text: "[arolariu::test:e2e::backend] ⚠️ JSON report not found, cannot create summary: <root>/e2e-logs/newman-backend.json",
+        write: false,
+      },
+      {
+        stream: "stderr",
+        text: "[arolariu::test:e2e] ⛔ Process failed to start: npx newman run <root>/sites/api.arolariu.ro/postman-collection.json --environment <root>/sites/api.arolariu.ro/postman-environment.production.json --env-var authToken=[REDACTED] --reporters cli,json,junit --reporter-json-export <root>/e2e-logs/newman-backend.json --reporter-junit-export <root>/e2e-logs/newman-backend.xml --timeout 600000 --timeout-request 30000 --timeout-script 10000\nspawn npx ENOENT\ncommand: npx newman run <root>/sites/api.arolariu.ro/postman-collection.json --environment <root>/sites/api.arolariu.ro/postman-environment.production.json --env-var authToken=[REDACTED] --reporters cli,json,junit --reporter-json-export <root>/e2e-logs/newman-backend.json --reporter-junit-export <root>/e2e-logs/newman-backend.xml --timeout 600000 --timeout-request 30000 --timeout-script 10000\noutcome: spawn-failed",
+        write: false,
+      },
+    ]);
+    expect(result.reports).toEqual({
+      "newman-backend.json": null,
+      "newman-backend.xml": null,
+      "newman-backend-summary.md": null,
+    });
+    expectTokenNeverRendered(result);
+  });
+
+  it("backend spawn failure (json): exit 1 and only the plain fatal diagnostic", async () => {
+    const result = await characterizeE2e("backend", "json", {outcome: spawnFailed("spawn npx ENOENT")});
+
+    expect(result.execution).toEqual({
+      status: "failed",
+      exitCode: 1,
+      failure: {
+        kind: "operational",
+        message:
+          "Process failed to start: npx newman run <root>/sites/api.arolariu.ro/postman-collection.json --environment <root>/sites/api.arolariu.ro/postman-environment.production.json --env-var authToken=[REDACTED] --reporters cli,json,junit --reporter-json-export <root>/e2e-logs/newman-backend.json --reporter-junit-export <root>/e2e-logs/newman-backend.xml --timeout 600000 --timeout-request 30000 --timeout-script 10000\nspawn npx ENOENT",
+        evidence: [
+          "command: npx newman run <root>/sites/api.arolariu.ro/postman-collection.json --environment <root>/sites/api.arolariu.ro/postman-environment.production.json --env-var authToken=[REDACTED] --reporters cli,json,junit --reporter-json-export <root>/e2e-logs/newman-backend.json --reporter-junit-export <root>/e2e-logs/newman-backend.xml --timeout 600000 --timeout-request 30000 --timeout-script 10000",
+          "outcome: spawn-failed",
+        ],
+        cause: "RunnerError",
+      },
+    });
+    expect(result.output).toEqual([
+      {
+        stream: "stderr",
+        text: "Process failed to start: npx newman run <root>/sites/api.arolariu.ro/postman-collection.json --environment <root>/sites/api.arolariu.ro/postman-environment.production.json --env-var authToken=[REDACTED] --reporters cli,json,junit --reporter-json-export <root>/e2e-logs/newman-backend.json --reporter-junit-export <root>/e2e-logs/newman-backend.xml --timeout 600000 --timeout-request 30000 --timeout-script 10000\nspawn npx ENOENT\ncommand: npx newman run <root>/sites/api.arolariu.ro/postman-collection.json --environment <root>/sites/api.arolariu.ro/postman-environment.production.json --env-var authToken=[REDACTED] --reporters cli,json,junit --reporter-json-export <root>/e2e-logs/newman-backend.json --reporter-junit-export <root>/e2e-logs/newman-backend.xml --timeout 600000 --timeout-request 30000 --timeout-script 10000\noutcome: spawn-failed",
+        write: false,
+      },
+    ]);
+    expectTokenNeverRendered(result);
+  });
+
+  it("all (human): runs frontend, backend, cv sequentially with per-target token policy", async () => {
+    const result = await characterizeE2e("all", "human", {outcome: succeeded(), failures: []});
+
+    expect(result.execution).toEqual({
+      status: "completed",
+      value: {
+        targets: ["frontend", "backend", "cv"],
+        completed: ["frontend", "backend", "cv"],
+      },
+      exitCode: 0,
+    });
+    expect(result.calls).toEqual([
+      {
+        command: "npx",
+        args: [
+          "newman",
+          "run",
+          "<root>/sites/arolariu.ro/postman-collection.json",
+          "--environment",
+          "<root>/sites/arolariu.ro/postman-environment.production.json",
+          "--env-var",
+          "authToken=<token>",
+          "--reporters",
+          "cli,json,junit",
+          "--reporter-json-export",
+          "<root>/e2e-logs/newman-frontend.json",
+          "--reporter-junit-export",
+          "<root>/e2e-logs/newman-frontend.xml",
+          "--timeout",
+          "600000",
+          "--timeout-request",
+          "30000",
+          "--timeout-script",
+          "10000",
+        ],
+        options: {
+          cwd: "<root>",
+          output: "inherit",
+          signal: "<signal>",
+          logger: "<logger>",
+        },
+      },
+      {
+        command: "npx",
+        args: [
+          "newman",
+          "run",
+          "<root>/sites/api.arolariu.ro/postman-collection.json",
+          "--environment",
+          "<root>/sites/api.arolariu.ro/postman-environment.production.json",
+          "--env-var",
+          "authToken=<token>",
+          "--reporters",
+          "cli,json,junit",
+          "--reporter-json-export",
+          "<root>/e2e-logs/newman-backend.json",
+          "--reporter-junit-export",
+          "<root>/e2e-logs/newman-backend.xml",
+          "--timeout",
+          "600000",
+          "--timeout-request",
+          "30000",
+          "--timeout-script",
+          "10000",
+        ],
+        options: {
+          cwd: "<root>",
+          output: "inherit",
+          signal: "<signal>",
+          logger: "<logger>",
+        },
+      },
+      {
+        command: "npx",
+        args: [
+          "newman",
+          "run",
+          "<root>/sites/cv.arolariu.ro/postman-collection.json",
+          "--environment",
+          "<root>/sites/cv.arolariu.ro/postman-environment.production.json",
+          "--reporters",
+          "cli,json,junit",
+          "--reporter-json-export",
+          "<root>/e2e-logs/newman-cv.json",
+          "--reporter-junit-export",
+          "<root>/e2e-logs/newman-cv.xml",
+          "--timeout",
+          "600000",
+          "--timeout-request",
+          "30000",
+          "--timeout-script",
+          "10000",
+        ],
+        options: {
+          cwd: "<root>",
+          output: "inherit",
+          signal: "<signal>",
+          logger: "<logger>",
+        },
+      },
+    ]);
+    expect(result.tokenArgs).toEqual([["authToken=e2e-test-secret-value"], ["authToken=e2e-test-secret-value"], []]);
+    expect(result.output).toEqual([
+      {
+        stream: "stdout",
+        text: "",
+        write: false,
+      },
+      {
+        stream: "stdout",
+        text: "🎯 arolariu.ro E2E Test Runner",
+        write: false,
+      },
+      {
+        stream: "stdout",
+        text: "",
+        write: false,
+      },
+      {
+        stream: "stdout",
+        text: "",
+        write: false,
+      },
+      {
+        stream: "stdout",
+        text: "🧪 E2E Testing: frontend",
+        write: false,
+      },
+      {
+        stream: "stdout",
+        text: "",
+        write: false,
+      },
+      {
+        stream: "stdout",
+        text: "Collection: <root>/sites/arolariu.ro/postman-collection.json",
+        write: false,
+      },
+      {
+        stream: "stdout",
+        text: "Environment: <root>/sites/arolariu.ro/postman-environment.production.json (production)",
+        write: false,
+      },
+      {
+        stream: "stdout",
+        text: "JSON report: <root>/e2e-logs/newman-frontend.json",
+        write: false,
+      },
+      {
+        stream: "stdout",
+        text: "JUnit report: <root>/e2e-logs/newman-frontend.xml",
+        write: false,
+      },
+      {
+        stream: "stdout",
+        text: "Timeout: 600000ms (request: 30000ms, script: 10000ms)",
+        write: false,
+      },
+      {
+        stream: "stdout",
+        text: "Strict mode (--bail): false",
+        write: false,
+      },
+      {
+        stream: "stdout",
+        text: "[arolariu::test:e2e::frontend] ✅ Completed Newman tests for: frontend",
+        write: false,
+      },
+      {
+        stream: "stdout",
+        text: "",
+        write: false,
+      },
+      {
+        stream: "stdout",
+        text: "🧪 E2E Testing: backend",
+        write: false,
+      },
+      {
+        stream: "stdout",
+        text: "",
+        write: false,
+      },
+      {
+        stream: "stdout",
+        text: "Collection: <root>/sites/api.arolariu.ro/postman-collection.json",
+        write: false,
+      },
+      {
+        stream: "stdout",
+        text: "Environment: <root>/sites/api.arolariu.ro/postman-environment.production.json (production)",
+        write: false,
+      },
+      {
+        stream: "stdout",
+        text: "JSON report: <root>/e2e-logs/newman-backend.json",
+        write: false,
+      },
+      {
+        stream: "stdout",
+        text: "JUnit report: <root>/e2e-logs/newman-backend.xml",
+        write: false,
+      },
+      {
+        stream: "stdout",
+        text: "Timeout: 600000ms (request: 30000ms, script: 10000ms)",
+        write: false,
+      },
+      {
+        stream: "stdout",
+        text: "Strict mode (--bail): false",
+        write: false,
+      },
+      {
+        stream: "stdout",
+        text: "[arolariu::test:e2e::backend] ✅ Completed Newman tests for: backend",
+        write: false,
+      },
+      {
+        stream: "stdout",
+        text: "[arolariu::test:e2e::cv] ℹ️ cv does not require auth token; skipping auth injection.",
+        write: false,
+      },
+      {
+        stream: "stdout",
+        text: "",
+        write: false,
+      },
+      {
+        stream: "stdout",
+        text: "🧪 E2E Testing: cv",
+        write: false,
+      },
+      {
+        stream: "stdout",
+        text: "",
+        write: false,
+      },
+      {
+        stream: "stdout",
+        text: "Collection: <root>/sites/cv.arolariu.ro/postman-collection.json",
+        write: false,
+      },
+      {
+        stream: "stdout",
+        text: "Environment: <root>/sites/cv.arolariu.ro/postman-environment.production.json (production)",
+        write: false,
+      },
+      {
+        stream: "stdout",
+        text: "JSON report: <root>/e2e-logs/newman-cv.json",
+        write: false,
+      },
+      {
+        stream: "stdout",
+        text: "JUnit report: <root>/e2e-logs/newman-cv.xml",
+        write: false,
+      },
+      {
+        stream: "stdout",
+        text: "Timeout: 600000ms (request: 30000ms, script: 10000ms)",
+        write: false,
+      },
+      {
+        stream: "stdout",
+        text: "Strict mode (--bail): false",
+        write: false,
+      },
+      {
+        stream: "stdout",
+        text: "[arolariu::test:e2e::cv] ✅ Completed Newman tests for: cv",
+        write: false,
+      },
+      {
+        stream: "stdout",
+        text: "[arolariu::test:e2e::cv] ✅ No failed assertions for cv.",
+        write: false,
+      },
+      {
+        stream: "stdout",
+        text: "[arolariu::test:e2e::cv] ℹ️ Summary written to: <root>/e2e-logs/newman-cv-summary.md",
+        write: false,
+      },
+      {
+        stream: "stdout",
+        text: "[arolariu::test:e2e::cv] ℹ️ Sanitized Newman JSON report (2 redaction(s)): <root>/e2e-logs/newman-cv.json",
+        write: false,
+      },
+      {
+        stream: "stdout",
+        text: "[arolariu::test:e2e::cv] ℹ️ Sanitized text report (1 redaction pass(es)): <root>/e2e-logs/newman-cv.xml",
+        write: false,
+      },
+      {
+        stream: "stdout",
+        text: "[arolariu::test:e2e::backend] ✅ No failed assertions for backend.",
+        write: false,
+      },
+      {
+        stream: "stdout",
+        text: "[arolariu::test:e2e::backend] ℹ️ Summary written to: <root>/e2e-logs/newman-backend-summary.md",
+        write: false,
+      },
+      {
+        stream: "stdout",
+        text: "[arolariu::test:e2e::backend] ℹ️ Sanitized Newman JSON report (4 redaction(s)): <root>/e2e-logs/newman-backend.json",
+        write: false,
+      },
+      {
+        stream: "stdout",
+        text: "[arolariu::test:e2e::backend] ℹ️ Sanitized text report (2 redaction pass(es)): <root>/e2e-logs/newman-backend.xml",
+        write: false,
+      },
+      {
+        stream: "stdout",
+        text: "[arolariu::test:e2e::frontend] ✅ No failed assertions for frontend.",
+        write: false,
+      },
+      {
+        stream: "stdout",
+        text: "[arolariu::test:e2e::frontend] ℹ️ Summary written to: <root>/e2e-logs/newman-frontend-summary.md",
+        write: false,
+      },
+      {
+        stream: "stdout",
+        text: "[arolariu::test:e2e::frontend] ℹ️ Sanitized Newman JSON report (4 redaction(s)): <root>/e2e-logs/newman-frontend.json",
+        write: false,
+      },
+      {
+        stream: "stdout",
+        text: "[arolariu::test:e2e::frontend] ℹ️ Sanitized text report (2 redaction pass(es)): <root>/e2e-logs/newman-frontend.xml",
+        write: false,
+      },
+      {
+        stream: "stdout",
+        text: "[arolariu::test:e2e] ✅ Completed 3 of 3 E2E target(s): frontend, backend, cv.",
+        write: false,
+      },
+    ]);
+    expect(result.reports).toEqual({
+      "newman-frontend.json":
+        '{\n  "run": {\n    "stats": {\n      "requests": {\n        "total": 1,\n        "failed": 0\n      },\n      "assertions": {\n        "total": 2,\n        "failed": 0\n      }\n    },\n    "executions": [\n      {\n        "item": {\n          "name": "GET /rest/v1/invoices"\n        },\n        "request": {\n          "url": "https://api.arolariu.ro/rest/v1/invoices",\n          "headers": [\n            {\n              "key": "Authorization",\n              "value": "******"\n            }\n          ]\n        },\n        "response": {\n          "code": 200,\n          "body": "{\\"echo\\":\\"[REDACTED]\\"}"\n        },\n        "console": [\n          "decoded [REDACTED_JWT]"\n        ]\n      }\n    ],\n    "failures": []\n  },\n  "environment": {\n    "values": [\n      {\n        "key": "authToken",\n        "value": "[REDACTED]",\n        "type": "secret"\n      },\n      {\n        "key": "baseUrl",\n        "value": "https://api.arolariu.ro",\n        "type": "default"\n      }\n    ]\n  }\n}',
+      "newman-frontend.xml":
+        '<?xml version="1.0" encoding="UTF-8"?>\n<testsuites name="newman" tests="2" failures="0">\n  <testsuite name="Invoices" tests="2">\n    <testcase name="GET /rest/v1/invoices" classname="Invoices">\n      <system-out>Authorization: ******</system-out>\n      <system-out>authToken=[REDACTED]</system-out>\n    </testcase>\n  </testsuite>\n</testsuites>',
+      "newman-frontend-summary.md": "### Failed Assertions (frontend)\nNo failed assertions.\n",
+      "newman-backend.json":
+        '{\n  "run": {\n    "stats": {\n      "requests": {\n        "total": 1,\n        "failed": 0\n      },\n      "assertions": {\n        "total": 2,\n        "failed": 0\n      }\n    },\n    "executions": [\n      {\n        "item": {\n          "name": "GET /rest/v1/invoices"\n        },\n        "request": {\n          "url": "https://api.arolariu.ro/rest/v1/invoices",\n          "headers": [\n            {\n              "key": "Authorization",\n              "value": "******"\n            }\n          ]\n        },\n        "response": {\n          "code": 200,\n          "body": "{\\"echo\\":\\"[REDACTED]\\"}"\n        },\n        "console": [\n          "decoded [REDACTED_JWT]"\n        ]\n      }\n    ],\n    "failures": []\n  },\n  "environment": {\n    "values": [\n      {\n        "key": "authToken",\n        "value": "[REDACTED]",\n        "type": "secret"\n      },\n      {\n        "key": "baseUrl",\n        "value": "https://api.arolariu.ro",\n        "type": "default"\n      }\n    ]\n  }\n}',
+      "newman-backend.xml":
+        '<?xml version="1.0" encoding="UTF-8"?>\n<testsuites name="newman" tests="2" failures="0">\n  <testsuite name="Invoices" tests="2">\n    <testcase name="GET /rest/v1/invoices" classname="Invoices">\n      <system-out>Authorization: ******</system-out>\n      <system-out>authToken=[REDACTED]</system-out>\n    </testcase>\n  </testsuite>\n</testsuites>',
+      "newman-backend-summary.md": "### Failed Assertions (backend)\nNo failed assertions.\n",
+      "newman-cv.json":
+        '{\n  "run": {\n    "stats": {\n      "requests": {\n        "total": 1,\n        "failed": 0\n      },\n      "assertions": {\n        "total": 2,\n        "failed": 0\n      }\n    },\n    "executions": [\n      {\n        "item": {\n          "name": "GET /rest/v1/invoices"\n        },\n        "request": {\n          "url": "https://api.arolariu.ro/rest/v1/invoices",\n          "headers": [\n            {\n              "key": "Authorization",\n              "value": "******"\n            }\n          ]\n        },\n        "response": {\n          "code": 200,\n          "body": "{\\"echo\\":\\"no-token-received\\"}"\n        },\n        "console": [\n          "decoded [REDACTED_JWT]"\n        ]\n      }\n    ],\n    "failures": []\n  },\n  "environment": {\n    "values": [\n      {\n        "key": "authToken",\n        "value": "no-token-received",\n        "type": "secret"\n      },\n      {\n        "key": "baseUrl",\n        "value": "https://api.arolariu.ro",\n        "type": "default"\n      }\n    ]\n  }\n}',
+      "newman-cv.xml":
+        '<?xml version="1.0" encoding="UTF-8"?>\n<testsuites name="newman" tests="2" failures="0">\n  <testsuite name="Invoices" tests="2">\n    <testcase name="GET /rest/v1/invoices" classname="Invoices">\n      <system-out>Authorization: ******</system-out>\n      <system-out>authToken=no-token-received</system-out>\n    </testcase>\n  </testsuite>\n</testsuites>',
+      "newman-cv-summary.md": "### Failed Assertions (cv)\nNo failed assertions.\n",
+    });
+    expectTokenNeverRendered(result);
   });
 });
