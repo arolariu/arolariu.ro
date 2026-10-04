@@ -10,11 +10,11 @@
  *
  * {@link runSetup} resolves the repository paths and manifest requirements, obtains the single
  * full inspection session every phase shares, and runs the phases through `runSetupPhases` with the
- * consent-gated `SetupActions` of this invocation. The phases not yet converted to Effect are run
- * through the temporary `legacyPhase` adapter until Task 5.5. Phases run sequentially so prompts,
- * package managers, and local configuration writes cannot race; dependency handling, not
- * concurrency, isolates failures. A phase defect becomes one failed phase result and setup continues
- * with independent phases, while an interruption cancels the whole invocation.
+ * consent-gated `SetupActions` of this invocation. Every phase is a native Effect phase. Phases
+ * run sequentially so prompts, package managers, and local configuration writes cannot race;
+ * dependency handling, not concurrency, isolates failures. A phase defect becomes one failed phase
+ * result and setup continues with independent phases, while an interruption cancels the whole
+ * invocation.
  *
  * @example
  * ```bash
@@ -34,7 +34,6 @@ import type {PlatformServices} from "../../platform/layers.ts";
 import {Presenter} from "../../platform/Output.ts";
 import type {Prompts} from "../../platform/Prompts.ts";
 import {setupActionsLayer} from "./actions.ts";
-import {legacyPhase} from "./legacy-phase.ts";
 import {dotnetSetupPhase} from "./phases/dotnet.ts";
 import {infrastructureSetupPhase} from "./phases/infrastructure.ts";
 import {pythonSetupPhase} from "./phases/python.ts";
@@ -70,7 +69,7 @@ export const setupPhases: readonly SetupPhaseDefinition[] = [
   reactSetupPhase,
   svelteSetupPhase,
   pythonSetupPhase,
-  legacyPhase(infrastructureSetupPhase),
+  infrastructureSetupPhase,
 ];
 
 /**

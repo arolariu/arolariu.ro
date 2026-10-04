@@ -1,54 +1,64 @@
 // @vitest-environment node
 /**
  * @fileoverview Contract tests for local infrastructure preparation.
- * @module scripts.setup.infrastructure.test
+ * @module scripts/commands/setup/phases/infrastructure.test
  *
  * @remarks
  * All readiness observations are consumed from shared {@link InfrastructureFacts} via
- * `context.inspection.inspect("infrastructure")`. Tests inject a controllable fake
- * {@link LegacyRepositoryInspectionSession} that resolves the `"infrastructure"` key through
- * a call-ordered sequence, tracks invalidation events, and records
- * `updateInfrastructureEngine` calls.
+ * `context.inspection.inspect("infrastructure")`. Tests inject a controllable recording
+ * {@link RepositoryInspectionSession} that resolves the `"infrastructure"` key through a
+ * call-ordered sequence, tracks invalidation events, and records `updateInfrastructureEngine`
+ * calls.
  *
- * Every test drives the real phase against an injected {@link LegacySetupPhaseRuntime}: a recording
- * process runner replaying typed {@link ProcessOutcome} fixtures, an in-memory filesystem seeded
- * with the non-secret local tooling configuration, a deterministic clock, and an immutable
- * environment snapshot that supplies the host platform, environment variables, and interactive
- * terminal state. No test in this file reads the live checkout, spawns a real process, or mutates
- * disk.
+ * Every test runs the real Effect phase on the in-memory `makeTestLayer` harness: request-keyed
+ * scripted commands replaying legacy-shaped outcomes, an in-memory filesystem seeded with the
+ * non-secret local tooling configuration and observed by a recording filesystem, a recording (or
+ * the production dry-run) `SetupActions`, a spying `Prompts`, and an environment snapshot that
+ * supplies the host platform, environment variables, and interactive terminal state. Phases run
+ * under a counting clock (see `runPhase`), so each reports the deterministic duration of its
+ * legacy test clock. No test in this file reads the live checkout, spawns a real process, or
+ * mutates disk.
  */
 
 import {dirname, resolve} from "node:path";
-import {Effect, Layer} from "effect";
+
+import {Deferred, Effect, Exit, Fiber, FileSystem, Layer, PlatformError, Terminal} from "effect";
 import {describe, expect, it, vi} from "vitest";
 
-import type {CommandContext} from "../../../common/commander.ts";
-import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "../../../common/logger.ts";
 import {createRepositoryPaths} from "../../../common/repository-paths.ts";
 import type {RepositoryRequirements} from "../../../common/requirements.ts";
-import {AbstractProcessRunner, type ProcessOutcome, type ProcessRequest, type ProcessRunOptions} from "../../../common/runner.ts";
-import {createMemoryFileSystem, createTestRuntimeFactory} from "../../../common/runtime.testing.ts";
-import type {Clock, FileSystem, RuntimeEnvironment} from "../../../common/runtime.ts";
 import type {ToolingConfigV1} from "../../../common/tooling-config.ts";
 import {requiredLocalPorts} from "../../../container-runtime/preflight.ts";
 import type {ContainerEngine} from "../../../container-runtime/types.ts";
 import type {InfrastructureFacts, PortFact} from "../../../inspection/infrastructure.ts";
-import type {LegacyRepositoryInspectionSession} from "../../../platform/bridge.ts";
-import {Prompts} from "../../../platform/Prompts.ts";
-import {makeTestLayer} from "../../../platform/testing.ts";
+import type {RepositoryInspectionFacts, RepositoryInspectionKey, RepositoryInspectionSession} from "../../../inspection/repository.ts";
 import type {InspectionOutcome} from "../../../inspection/types.ts";
-import {createInfrastructureSetupPhase, infrastructureSetupPhase, selectContainerInstallationProposal} from "./infrastructure.ts";
-import {setupActionsLayer} from "../actions.ts";
-import {legacySetupActionExecutor} from "../legacy-phase.ts";
+import type {Presenter} from "../../../platform/Output.ts";
+import type {ProcessRequest} from "../../../platform/Process.ts";
+import {Prompts, promptUnavailable, type PromptChoice, type PromptUnavailable} from "../../../platform/Prompts.ts";
+import {makeTestLayer, runScoped, type RecordedProcessCall, type TestHarness} from "../../../platform/testing.ts";
+import {SetupActions} from "../actions.ts";
+import {
+  interruptingActions,
+  keyedResponder,
+  productionActions,
+  recordingActions,
+  runPhase as runPhaseWith,
+  runPhaseExit,
+  scriptedCommands,
+  setupActionLines,
+  type ScriptedCommandOutcome,
+} from "../phase-testing.ts";
 import type {
-  LegacySetupAction,
+  SetupAction,
   SetupActionDisposition,
-  LegacySetupActionExecutor,
-  LegacySetupContext,
+  SetupContext,
   SetupInput,
+  SetupPhaseDefinition,
   SetupPhaseResult,
-  LegacySetupPhaseRuntime,
+  SetupRequirements,
 } from "../types.ts";
+import {createInfrastructureSetupPhase, infrastructureSetupPhase, selectContainerInstallationProposal} from "./infrastructure.ts";
 
 // ---------------------------------------------------------------------------
 // Fact fixtures
@@ -59,15 +69,11 @@ const paths = createRepositoryPaths(ROOT);
 const certificatePath = resolve(ROOT, "infra", "Local", "Management", "certs", "local-cert.pem");
 const certificateKeyPath = resolve(ROOT, "infra", "Local", "Management", "certs", "local-key.pem");
 
-/**
- * Mirrors `commands/setup/legacy-phase.ts`'s `PHASE_COMMAND_TIMEOUT_MS`: the invocation-scoped runner default every
- * migrated phase's `runtime.runner` already carries before the phase ever sees it. Scoping the
- * harness's runner with this same default (rather than leaving it unscoped) lets these tests
- * observe the exact merged options a `--version` probe exposes versus the long mutation ceiling
- * `phases/infrastructure.ts` requests explicitly, instead of the unscoped `undefined` a harness
- * that skipped this default would produce.
- */
+/** The setup command default timeout every `--version` probe runs with. */
 const PHASE_PROBE_TIMEOUT_MS = 120_000;
+
+/** The explicit ceiling every long-running infrastructure mutation requests. */
+const LONG_MUTATION_TIMEOUT_MS = 1_200_000;
 
 function allPortsAvailable(): readonly PortFact[] {
   return requiredLocalPorts.map((port) => ({port, available: true}));
@@ -98,61 +104,33 @@ function unavailableInfra(reason = "Test unavailable."): InspectionOutcome<Infra
 }
 
 // ---------------------------------------------------------------------------
-// Process outcome fixtures and fake runner
+// Process outcome fixtures
 // ---------------------------------------------------------------------------
 
-function succeeded(patch: Readonly<{stdout?: string; stderr?: string}> = {}): ProcessOutcome {
+function succeeded(patch: Readonly<{stdout?: string; stderr?: string}> = {}): ScriptedCommandOutcome {
   return {kind: "succeeded", exitCode: 0, stdout: patch.stdout ?? "", stderr: patch.stderr ?? "", durationMs: 1};
 }
 
-function exited(exitCode: number, patch: Readonly<{stdout?: string; stderr?: string}> = {}): ProcessOutcome {
+function exited(exitCode: number, patch: Readonly<{stdout?: string; stderr?: string}> = {}): ScriptedCommandOutcome {
   return {kind: "exited", exitCode, stdout: patch.stdout ?? "", stderr: patch.stderr ?? "", durationMs: 1};
 }
 
-function spawnFailed(message: string): ProcessOutcome {
+function spawnFailed(message: string): ScriptedCommandOutcome {
   return {kind: "spawn-failed", message, stdout: "", stderr: "", durationMs: 1};
 }
 
+/** Response key of one command (see `keyedResponder`). */
 function commandKey(command: Readonly<ProcessRequest>): string {
+  return [command.command, ...command.args].join("\u0000");
+}
+
+/** Human-readable command line of one request. */
+function commandLine(command: Readonly<ProcessRequest>): string {
   return [command.command, ...command.args].join(" ");
 }
 
 /** One recorded child invocation. */
-type RecordedCall = Readonly<{request: ProcessRequest; options: ProcessRunOptions}>;
-
-/** Records every invocation while replaying request-keyed typed outcomes. */
-class FakeProcessRunner extends AbstractProcessRunner {
-  readonly #responses: Readonly<Record<string, ProcessOutcome | readonly ProcessOutcome[]>>;
-  readonly #offsets = new Map<string, number>();
-  readonly #calls: RecordedCall[] = [];
-
-  public constructor(responses: Readonly<Record<string, ProcessOutcome | readonly ProcessOutcome[]>> = {}) {
-    super();
-    this.#responses = responses;
-  }
-
-  /** Every recorded invocation, in call order. */
-  public get calls(): readonly RecordedCall[] {
-    return this.#calls;
-  }
-
-  /** {@inheritDoc AbstractProcessRunner.execute} */
-  protected override execute(request: Readonly<ProcessRequest>, options: Readonly<ProcessRunOptions>): Promise<ProcessOutcome> {
-    this.#calls.push({request, options});
-    const key = commandKey(request);
-    const configured = this.#responses[key];
-    if (configured === undefined) {
-      return Promise.resolve(succeeded());
-    }
-    if (!Array.isArray(configured)) {
-      return Promise.resolve(configured as ProcessOutcome);
-    }
-    const sequence = configured as readonly ProcessOutcome[];
-    const offset = this.#offsets.get(key) ?? 0;
-    this.#offsets.set(key, offset + 1);
-    return Promise.resolve(sequence[offset] ?? sequence.at(-1) ?? succeeded());
-  }
-}
+type RecordedCall = RecordedProcessCall;
 
 function requirements(): RepositoryRequirements {
   return {
@@ -176,35 +154,15 @@ function setupOptions(patch: SetupInputPatch = {}): SetupInput {
   };
 }
 
-function createActions(dispositions: Readonly<Record<string, SetupActionDisposition>> = {}): Readonly<{
-  actions: LegacySetupActionExecutor;
-  records: LegacySetupAction[];
-}> {
-  const records: LegacySetupAction[] = [];
-  return {
-    records,
-    actions: {
-      run: async (action) => {
-        records.push(action);
-        const disposition = dispositions[action.id] ?? "executed";
-        if (disposition === "executed") {
-          await action.execute();
-        }
-        return disposition;
-      },
-    },
-  };
-}
-
 // ---------------------------------------------------------------------------
 // Inspection harness
 // ---------------------------------------------------------------------------
 
 interface InspectionHarness {
-  readonly session: LegacyRepositoryInspectionSession;
-  readonly inspect: ReturnType<typeof vi.fn>;
-  readonly invalidate: ReturnType<typeof vi.fn>;
-  readonly updateInfrastructureEngine: ReturnType<typeof vi.fn>;
+  readonly session: RepositoryInspectionSession;
+  readonly inspect: ReturnType<typeof vi.fn<(key: RepositoryInspectionKey) => void>>;
+  readonly invalidate: ReturnType<typeof vi.fn<(...keys: RepositoryInspectionKey[]) => void>>;
+  readonly updateInfrastructureEngine: ReturnType<typeof vi.fn<(engine: ContainerEngine) => void>>;
   readonly events: string[];
 }
 
@@ -218,29 +176,37 @@ function createInspectionHarness(
   };
   const offsets = new Map<string, number>();
   const events: string[] = [];
-  const inspect = vi.fn(async (key: string) => {
+  const inspect = vi.fn<(key: RepositoryInspectionKey) => void>((key) => {
     events.push(`inspect:${key}`);
-    const sequence = sequences[key];
-    if (sequence === undefined || sequence.length === 0) {
-      return {kind: "unavailable" as const, reason: "Not exercised by this test.", durationMs: 0};
-    }
-    const offset = offsets.get(key) ?? 0;
-    offsets.set(key, offset + 1);
-    return sequence[Math.min(offset, sequence.length - 1)]!;
   });
-  const invalidate = vi.fn((...keys: readonly string[]) => {
+  const invalidate = vi.fn<(...keys: RepositoryInspectionKey[]) => void>((...keys) => {
     events.push(`invalidate:${keys.join("+")}`);
   });
-  const updateInfrastructureEngine = vi.fn((_engine: ContainerEngine) => {
+  const updateInfrastructureEngine = vi.fn<(engine: ContainerEngine) => void>(() => {
     events.push("updateInfrastructureEngine");
   });
-  return {
-    session: {inspect, invalidate, updateInfrastructureEngine} as unknown as LegacyRepositoryInspectionSession,
-    inspect,
-    invalidate,
-    updateInfrastructureEngine,
-    events,
+  const session: RepositoryInspectionSession = {
+    inspect: <K extends RepositoryInspectionKey>(key: K) =>
+      Effect.sync((): InspectionOutcome<RepositoryInspectionFacts[K]> => {
+        inspect(key);
+        const sequence = sequences[key];
+        if (sequence === undefined || sequence.length === 0) {
+          return {kind: "unavailable", reason: "Not exercised by this test.", durationMs: 0};
+        }
+        const offset = offsets.get(key) ?? 0;
+        offsets.set(key, offset + 1);
+        return sequence[Math.min(offset, sequence.length - 1)] as InspectionOutcome<RepositoryInspectionFacts[K]>;
+      }),
+    invalidate: (...keys) =>
+      Effect.sync(() => {
+        invalidate(...keys);
+      }),
+    updateInfrastructureEngine: (engine) =>
+      Effect.sync(() => {
+        updateInfrastructureEngine(engine);
+      }),
   };
+  return {session, inspect, invalidate, updateInfrastructureEngine, events};
 }
 
 // ---------------------------------------------------------------------------
@@ -248,69 +214,96 @@ function createInspectionHarness(
 // ---------------------------------------------------------------------------
 
 type ToolingConfigSeed =
-  Readonly<{status: "missing"}> | Readonly<{status: "valid"; config: ToolingConfigV1}> | Readonly<{status: "invalid"}>;
+  | Readonly<{status: "missing"}>
+  | Readonly<{status: "valid"; config: ToolingConfigV1}>
+  | Readonly<{status: "invalid"}>
+  | Readonly<{status: "raw"; contents: string}>;
 
 /** Seeds the in-memory filesystem's non-secret local tooling configuration file. */
 function seedToolingConfig(seed: ToolingConfigSeed): Readonly<Record<string, string>> {
-  if (seed.status === "missing") {
-    return {};
+  switch (seed.status) {
+    case "missing":
+      return {};
+    case "invalid":
+      // A secret-shaped key is rejected by `parseToolingConfig` regardless of where it is nested,
+      // producing a real `"invalid"` read result without hand-crafting one.
+      return {[paths.toolingConfig]: JSON.stringify({schemaVersion: 1, token: "leaked"})};
+    case "valid":
+      return {[paths.toolingConfig]: JSON.stringify(seed.config)};
+    case "raw":
+      return {[paths.toolingConfig]: seed.contents};
   }
-  if (seed.status === "invalid") {
-    // A secret-shaped key is rejected by `parseToolingConfig` regardless of where it is nested,
-    // producing a real `"invalid"` read result without hand-crafting one.
-    return {[paths.toolingConfig]: JSON.stringify({schemaVersion: 1, token: "leaked"})};
-  }
-  return {[paths.toolingConfig]: JSON.stringify(seed.config)};
 }
 
-/** Tracks every write and directory creation the phase requests against the fixture filesystem. */
-interface TrackedFileSystem {
-  readonly files: FileSystem;
-  readonly writes: readonly Readonly<{path: string; config: ToolingConfigV1}>[];
-  readonly createdDirectories: readonly string[];
+/** Every completed atomic write (`rename` onto its destination) and every directory creation. */
+interface FileTracker {
+  readonly writes: Readonly<{path: string; config: ToolingConfigV1}>[];
+  readonly createdDirectories: string[];
+  /** Called once per completed write, so its call order can be compared with other recorders. */
+  readonly writeCompleted: ReturnType<typeof vi.fn<(path: string) => void>>;
 }
 
-function createTrackedFileSystem(seed: ToolingConfigSeed): TrackedFileSystem {
-  const memory = createMemoryFileSystem(seedToolingConfig(seed));
-  const writes: Readonly<{path: string; config: ToolingConfigV1}>[] = [];
-  const createdDirectories: string[] = [];
-  const files: FileSystem = {
-    ...memory,
-    createDirectory: async (path, options) => {
-      createdDirectories.push(path);
-      await memory.createDirectory(path, options);
-    },
-    writeTextAtomic: async (path, contents, options) => {
-      writes.push({path, config: JSON.parse(contents) as ToolingConfigV1});
-      await memory.writeTextAtomic(path, contents, options);
-    },
-  };
-  return {files, writes, createdDirectories};
+/** Holds every atomic write before its rename until `release` completes; `started` completes first. */
+interface WriteGate {
+  readonly started: Deferred.Deferred<void>;
+  readonly release: Deferred.Deferred<void>;
+}
+
+/**
+ * Observes the harness filesystem: every directory creation, and every atomic write once its
+ * temporary file was renamed onto its destination (with the parsed destination contents).
+ * `failWritesTo` fails the rename onto that destination with a permission error; `gate` holds
+ * every rename until it is released.
+ */
+function trackingFileSystem(
+  tracker: FileTracker,
+  failWritesTo: string | undefined,
+  gate: WriteGate | undefined,
+): Layer.Layer<FileSystem.FileSystem, never, FileSystem.FileSystem> {
+  const hold = gate === undefined ? Effect.void : Effect.andThen(Deferred.succeed(gate.started, undefined), Deferred.await(gate.release));
+  return Layer.effect(
+    FileSystem.FileSystem,
+    Effect.map(Effect.service(FileSystem.FileSystem), (files) =>
+      FileSystem.FileSystem.of({
+        ...files,
+        makeDirectory: (path, options) =>
+          Effect.suspend(() => {
+            tracker.createdDirectories.push(path);
+            return files.makeDirectory(path, options);
+          }),
+        rename: (from, to) =>
+          to === failWritesTo
+            ? Effect.fail(
+                PlatformError.systemError({
+                  _tag: "PermissionDenied",
+                  module: "FileSystem",
+                  method: "rename",
+                  pathOrDescriptor: to,
+                  description: "write denied",
+                }),
+              )
+            : hold.pipe(
+                Effect.andThen(files.rename(from, to)),
+                Effect.andThen(files.readFileString(to)),
+                Effect.map((contents) => {
+                  tracker.writes.push({path: to, config: JSON.parse(contents) as ToolingConfigV1});
+                  tracker.writeCompleted(to);
+                }),
+              ),
+      }),
+    ),
+  );
 }
 
 // ---------------------------------------------------------------------------
 // Harness
 // ---------------------------------------------------------------------------
 
-/** The exact context view the migrated infrastructure phase reads. */
-type MigratedSetupContext = Omit<LegacySetupContext, "runner" | "now"> & Readonly<{runtime: LegacySetupPhaseRuntime}>;
-
-function environmentSnapshot(
-  platform: NodeJS.Platform,
-  variables: Readonly<Record<string, string | undefined>>,
-  stdinIsTTY: boolean,
-): RuntimeEnvironment {
-  return {
-    variables,
-    cwd: paths.root,
-    executablePath: "C:\\Program Files\\nodejs\\node.exe",
-    platform,
-    architecture: "x64",
-    stdinIsTTY,
-    stdoutIsTTY: false,
-    isCI: true,
-  };
-}
+/** A scripted engine prompt: answers `Prompts.select`. */
+type ScriptedSelect = <T extends string>(
+  message: string,
+  choices: readonly PromptChoice<T>[],
+) => Effect.Effect<T, PromptUnavailable | Terminal.QuitError>;
 
 interface HarnessInput {
   readonly options?: SetupInput;
@@ -318,94 +311,129 @@ interface HarnessInput {
   readonly stdinIsTTY?: boolean;
   readonly platform?: NodeJS.Platform;
   readonly config?: ToolingConfigSeed;
-  readonly responses?: Readonly<Record<string, ProcessOutcome | readonly ProcessOutcome[]>>;
+  readonly responses?: Readonly<Record<string, ScriptedCommandOutcome | readonly ScriptedCommandOutcome[]>>;
   readonly dispositions?: Readonly<Record<string, SetupActionDisposition>>;
-  readonly actions?: LegacySetupActionExecutor;
-  readonly select?: LegacySetupContext["prompts"]["select"];
+  /** Replaces the recording consent policy. */
+  readonly actions?: (recording: Layer.Layer<SetupActions>) => Layer.Layer<SetupActions, never, Presenter>;
+  /** Answers the engine prompt instead of the harness's scripted prompts. */
+  readonly select?: ScriptedSelect;
+  /** Scripted harness prompt answers (used when `select` is not given). */
+  readonly prompts?: readonly string[];
+  /** Fails the atomic write onto the tooling configuration. */
+  readonly failToolingConfigWrite?: boolean;
+  /** Holds every atomic write before its rename. */
+  readonly writeGate?: WriteGate;
   readonly infrastructure?: readonly InspectionOutcome<InfrastructureFacts>[];
 }
 
 interface Harness {
-  readonly phase: ReturnType<typeof createInfrastructureSetupPhase>;
-  readonly context: MigratedSetupContext;
-  readonly runner: FakeProcessRunner;
-  readonly select: ReturnType<typeof vi.fn>;
-  readonly actionRecords: LegacySetupAction[];
-  readonly writes: TrackedFileSystem["writes"];
-  readonly createdDirectories: TrackedFileSystem["createdDirectories"];
+  readonly phase: SetupPhaseDefinition;
+  readonly context: SetupContext;
+  readonly platform: TestHarness;
+  readonly runner: {readonly calls: readonly RecordedCall[]};
+  readonly select: ReturnType<typeof vi.fn<(message: string, choices: readonly PromptChoice<string>[]) => void>>;
+  readonly actionIds: string[];
+  readonly actionRecords: readonly SetupAction[];
+  readonly writes: FileTracker["writes"];
+  readonly writeCompleted: FileTracker["writeCompleted"];
+  readonly createdDirectories: FileTracker["createdDirectories"];
   readonly inspection: InspectionHarness;
+  readonly layer: Layer.Layer<SetupRequirements>;
 }
 
-async function createHarness(input: HarnessInput = {}): Promise<Harness> {
-  const runner = new FakeProcessRunner(input.responses);
-  const selected =
-    input.select
-    ?? (async <TValue extends string>(_message: string, choices: readonly Readonly<{value: TValue; label: string}>[]): Promise<TValue> => {
-      const choice = choices[0]?.value;
-      if (choice === undefined) {
-        throw new Error("Expected an interactive choice.");
-      }
-      return choice;
-    });
-  const select = vi.fn<LegacySetupContext["prompts"]["select"]>(selected);
-  const {actions: builtActions, records: actionRecords} = createActions(input.dispositions);
+function createHarness(input: HarnessInput = {}): Harness {
+  const options = input.options ?? setupOptions();
+  const stdinIsTTY = input.stdinIsTTY ?? true;
+  const platform = makeTestLayer({
+    files: seedToolingConfig(input.config ?? {status: "missing"}),
+    processes: [scriptedCommands(keyedResponder(input.responses ?? {}))],
+    environment: {
+      variables: input.environmentVariables ?? {},
+      cwd: paths.root,
+      executablePath: "C:\\Program Files\\nodejs\\node.exe",
+      platform: input.platform ?? "win32",
+      architecture: "x64",
+      stdinIsTTY,
+      stdoutIsTTY: false,
+      isCI: true,
+    },
+    prompts: input.prompts ?? [],
+    context: "setup::infrastructure",
+    verbose: options.verbose,
+  });
+
+  const select = vi.fn<(message: string, choices: readonly PromptChoice<string>[]) => void>();
+  const prompts = Layer.effect(
+    Prompts,
+    Effect.map(Effect.service(Prompts), (scripted) =>
+      Prompts.of({
+        ...scripted,
+        select: <T extends string>(message: string, choices: readonly PromptChoice<T>[], defaultValue?: T) =>
+          Effect.suspend(() => {
+            select(message, choices);
+            return input.select === undefined ? scripted.select(message, choices, defaultValue) : input.select(message, choices);
+          }),
+      }),
+    ),
+  );
+
+  const tracker: FileTracker = {writes: [], createdDirectories: [], writeCompleted: vi.fn<(path: string) => void>()};
+  const files = trackingFileSystem(tracker, input.failToolingConfigWrite === true ? paths.toolingConfig : undefined, input.writeGate);
+
+  const recording = recordingActions(false, input.dispositions);
+  const actions = input.actions === undefined ? recording.layer : input.actions(recording.layer);
   const inspection = createInspectionHarness({
     ...(input.infrastructure === undefined ? {} : {infrastructure: input.infrastructure}),
   });
-  const {files, writes, createdDirectories} = createTrackedFileSystem(input.config ?? {status: "missing"});
 
-  let elapsed = 0;
-  const clock: Clock = {
-    monotonicNow: (): number => elapsed++,
-    isoTimestamp: (): string => "2026-09-01T00:00:00.000Z",
-    delay: (): Promise<void> => Promise.resolve(),
-  };
-
-  const environment = environmentSnapshot(input.platform ?? "win32", input.environmentVariables ?? {}, input.stdinIsTTY ?? true);
-
-  const factory = createTestRuntimeFactory({files, runner, clock, environment});
-  const commandRuntime = await factory.createRoot({presentation: "silent", registerProcessSignals: false});
-  const command: CommandContext = {runtime: commandRuntime, presentation: "silent"};
-
-  const runtime: LegacySetupPhaseRuntime = {
-    command,
-    runner: commandRuntime.runner.scope({timeoutMs: PHASE_PROBE_TIMEOUT_MS}),
-    files: commandRuntime.files,
-    http: commandRuntime.http,
-    clock: commandRuntime.clock,
-    tasks: commandRuntime.tasks,
-    environment: commandRuntime.environment,
-    invokeGenerate: vi.fn<LegacySetupPhaseRuntime["invokeGenerate"]>(() =>
-      Promise.reject(new Error("The infrastructure setup phase must never invoke generation.")),
-    ),
-  };
-
-  const context: MigratedSetupContext = {
-    options: input.options ?? setupOptions(),
+  const context: SetupContext = {
+    options,
     paths,
     requirements: requirements(),
     inspection: inspection.session,
-    runtime,
-    prompts: {
-      confirm: async () => true,
-      select: select as LegacySetupContext["prompts"]["select"],
-      text: async () => "",
-      secret: async () => "",
-    },
-    actions: input.actions ?? builtActions,
-    logger: new MonorepositoryConsoleLogger("setup::infrastructure", {
-      color: false,
-      sink: new InMemoryLoggerSink(),
-    }),
   };
 
-  const phase = createInfrastructureSetupPhase();
-
-  return {phase, context, runner, select, actionRecords, writes, createdDirectories, inspection};
+  return {
+    phase: createInfrastructureSetupPhase(),
+    context,
+    platform,
+    runner: {
+      get calls(): readonly RecordedCall[] {
+        return platform.processCalls();
+      },
+    },
+    select,
+    actionIds: recording.actionIds,
+    get actionRecords(): readonly SetupAction[] {
+      return recording.run.mock.calls.map(([action]) => action);
+    },
+    writes: tracker.writes,
+    writeCompleted: tracker.writeCompleted,
+    createdDirectories: tracker.createdDirectories,
+    inspection,
+    layer: Layer.mergeAll(actions, prompts, files).pipe(Layer.provideMerge(platform.layer)),
+  };
 }
 
-function runPhase(harness: Harness) {
-  return harness.phase.run(harness.context as LegacySetupContext);
+/**
+ * Runs the phase against its harness.
+ *
+ * @param harness - Assembled test harness.
+ * @returns The completed phase result.
+ */
+function runPhase(harness: Harness): Promise<SetupPhaseResult> {
+  return runPhaseWith(harness.phase, harness.context, harness.layer);
+}
+
+/**
+ * Reads the tooling configuration bytes in the harness filesystem.
+ *
+ * @param harness - The harness.
+ * @returns The file contents, or `undefined` when the file is absent.
+ */
+function toolingConfigContents(harness: Harness): string | undefined {
+  const entry = [...harness.platform.files()].find(([path]) => path.endsWith("/.arolariu/tooling.local.json"));
+  return entry === undefined ? undefined : String(entry[1]);
 }
 
 // ============================================================================
@@ -450,7 +478,7 @@ describe("selectContainerInstallationProposal", () => {
 
 describe("engine selection and persistence", () => {
   it("prefers the CLI option and persists only the schema and container engine", async () => {
-    const harness = await createHarness({
+    const harness = createHarness({
       options: setupOptions({engine: "podman"}),
       environmentVariables: {AROLARIU_CONTAINER_ENGINE: "rancher"},
       config: {status: "valid", config: {schemaVersion: 1, containerEngine: "rancher"}},
@@ -464,7 +492,7 @@ describe("engine selection and persistence", () => {
   });
 
   it("prefers the environment over persisted configuration", async () => {
-    const harness = await createHarness({
+    const harness = createHarness({
       options: setupOptions({engine: undefined}),
       environmentVariables: {AROLARIU_CONTAINER_ENGINE: "podman"},
       config: {status: "valid", config: {schemaVersion: 1, containerEngine: "rancher"}},
@@ -477,7 +505,7 @@ describe("engine selection and persistence", () => {
   });
 
   it("uses the persisted selection without scheduling a redundant write", async () => {
-    const harness = await createHarness({
+    const harness = createHarness({
       options: setupOptions({engine: undefined}),
       config: {status: "valid", config: {schemaVersion: 1, containerEngine: "podman"}},
       infrastructure: [infrastructureAvailable({selectedEngine: "podman"})],
@@ -487,12 +515,12 @@ describe("engine selection and persistence", () => {
 
     expect(result.status).toBe("succeeded");
     expect(result.evidence).toContain("Selected Podman Desktop from configuration.");
-    expect(harness.actionRecords.map(({id}) => id)).not.toContain("infrastructure.engine.persist");
+    expect(harness.actionIds).not.toContain("infrastructure.engine.persist");
     expect(harness.writes).toHaveLength(0);
   });
 
   it("calls updateInfrastructureEngine with the selected engine", async () => {
-    const harness = await createHarness({
+    const harness = createHarness({
       options: setupOptions({engine: "podman"}),
       infrastructure: [infrastructureAvailable({selectedEngine: "podman"})],
     });
@@ -503,20 +531,22 @@ describe("engine selection and persistence", () => {
   });
 
   it("prompts with explicit runtime requirements only when interactive selection is required", async () => {
-    const harness = await createHarness({
+    const harness = createHarness({
       options: setupOptions({engine: undefined, yes: true}),
       stdinIsTTY: true,
-      select: async <TValue extends string>(_message: string, choices: readonly Readonly<{value: TValue; label: string}>[]) => {
-        expect(choices).toEqual([
-          {value: "rancher", label: "Rancher Desktop (Moby/dockerd; Docker Desktop must be stopped)"},
-          {value: "podman", label: "Podman Desktop (podman compose provider required)"},
-        ]);
-        const podman = choices.find(({value}) => value === "podman");
-        if (podman === undefined) {
-          throw new Error("Expected the Podman choice.");
-        }
-        return podman.value;
-      },
+      select: <T extends string>(message: string, choices: readonly PromptChoice<T>[]) =>
+        Effect.sync(() => {
+          expect(message).toBe("Select the local container engine:");
+          expect(choices).toEqual([
+            {value: "rancher", label: "Rancher Desktop (Moby/dockerd; Docker Desktop must be stopped)"},
+            {value: "podman", label: "Podman Desktop (podman compose provider required)"},
+          ]);
+          const podman = choices.find(({value}) => value === "podman");
+          if (podman === undefined) {
+            throw new Error("Expected the Podman choice.");
+          }
+          return podman.value;
+        }),
       infrastructure: [infrastructureAvailable({selectedEngine: "podman"})],
     });
 
@@ -526,8 +556,69 @@ describe("engine selection and persistence", () => {
     expect(harness.select).toHaveBeenCalledTimes(1);
   });
 
+  it("persists the selected engine", async () => {
+    // Arrange
+    const harness = createHarness({
+      options: setupOptions({engine: undefined}),
+      stdinIsTTY: true,
+      prompts: ["podman"],
+      infrastructure: [infrastructureAvailable({selectedEngine: "podman"})],
+    });
+
+    // Act
+    const result = await runPhase(harness);
+
+    // Assert
+    expect(result.status).toBe("succeeded");
+    expect(result.evidence).toEqual(
+      expect.arrayContaining(["Selected Podman Desktop interactively.", "Executed action: infrastructure.engine.persist"]),
+    );
+    expect(toolingConfigContents(harness)).toBe('{\n  "schemaVersion": 1,\n  "containerEngine": "podman"\n}\n');
+    expect([...harness.platform.files().keys()]).toHaveLength(1);
+    expect(harness.inspection.events).toEqual([
+      "updateInfrastructureEngine",
+      "invalidate:infrastructure",
+      "inspect:infrastructure",
+      "inspect:infrastructure",
+    ]);
+  });
+
+  it.each([
+    ["absent", undefined],
+    ["present without an engine", '{"schemaVersion":1}'],
+  ] as const)("leaves tooling config untouched when interrupted at the engine prompt (%s)", async (_label, original) => {
+    // Arrange
+    const prompted = Deferred.makeUnsafe<void>();
+    const harness = createHarness({
+      options: setupOptions({engine: undefined}),
+      stdinIsTTY: true,
+      config: original === undefined ? {status: "missing"} : {status: "raw", contents: original},
+      select: () => Effect.andThen(Deferred.succeed(prompted, undefined), Effect.never),
+    });
+
+    // Act
+    const exit = await runScoped(
+      Effect.gen(function* () {
+        const fiber = yield* Effect.forkChild(harness.phase.run(harness.context));
+        yield* Deferred.await(prompted);
+        yield* Fiber.interrupt(fiber);
+        return yield* Fiber.await(fiber);
+      }),
+      harness.layer,
+    );
+
+    // Assert
+    expect(Exit.hasInterrupts(exit)).toBe(true);
+    expect(harness.select).toHaveBeenCalledTimes(1);
+    expect(toolingConfigContents(harness)).toBe(original);
+    expect(harness.writes).toEqual([]);
+    expect(harness.createdDirectories).toEqual([]);
+    expect(harness.actionIds).toEqual([]);
+    expect(harness.inspection.events).toEqual([]);
+  });
+
   it.each([false, true])("does not invent a noninteractive selection when --yes is %s", async (yes) => {
-    const harness = await createHarness({
+    const harness = createHarness({
       options: setupOptions({engine: undefined, yes}),
       stdinIsTTY: false,
     });
@@ -539,8 +630,27 @@ describe("engine selection and persistence", () => {
     expect(harness.select).not.toHaveBeenCalled();
   });
 
+  it("reports an unavailable engine prompt as a failed selection without writing", async () => {
+    const harness = createHarness({
+      options: setupOptions({engine: undefined}),
+      stdinIsTTY: true,
+      select: () => Effect.fail(promptUnavailable("select")),
+    });
+
+    const result = await runPhase(harness);
+
+    expect(result).toMatchObject({
+      status: "failed",
+      summary: "A supported local container engine was not selected.",
+      evidence: ["Cannot request a selection without an interactive terminal. Re-run setup in a TTY."],
+      nextActions: ["npm run setup -- --engine rancher|podman"],
+    });
+    expect(harness.writes).toEqual([]);
+    expect(harness.actionIds).toEqual([]);
+  });
+
   it.each(["docker", "docker-desktop", "colima"])("blocks unsupported environment selection %s without prompting", async (value) => {
-    const harness = await createHarness({
+    const harness = createHarness({
       options: setupOptions({engine: undefined}),
       environmentVariables: {AROLARIU_CONTAINER_ENGINE: value},
     });
@@ -549,10 +659,11 @@ describe("engine selection and persistence", () => {
 
     expect(result.status).toBe("failed");
     expect(result.evidence.join("\n")).toMatch(value === "colima" ? /Unsupported container engine/u : /Docker Desktop is deprecated/u);
+    expect(harness.select).not.toHaveBeenCalled();
   });
 
   it("blocks invalid configuration without prompting or overwriting it", async () => {
-    const harness = await createHarness({
+    const harness = createHarness({
       options: setupOptions({engine: undefined}),
       config: {status: "invalid"},
     });
@@ -562,10 +673,11 @@ describe("engine selection and persistence", () => {
     expect(result).toMatchObject({status: "failed", summary: expect.stringContaining("tooling configuration is invalid")});
     expect(harness.writes).toHaveLength(0);
     expect(harness.actionRecords).toHaveLength(0);
+    expect(harness.select).not.toHaveBeenCalled();
   });
 
   it("plans changed selection persistence without writing during dry-run", async () => {
-    const harness = await createHarness({
+    const harness = createHarness({
       options: setupOptions({engine: "podman", dryRun: true}),
       config: {status: "valid", config: {schemaVersion: 1, containerEngine: "rancher"}},
       dispositions: {"infrastructure.engine.persist": "planned"},
@@ -580,7 +692,7 @@ describe("engine selection and persistence", () => {
   });
 
   it("invalidates infrastructure after executed engine persistence", async () => {
-    const harness = await createHarness({
+    const harness = createHarness({
       options: setupOptions({engine: "podman"}),
       config: {status: "valid", config: {schemaVersion: 1, containerEngine: "rancher"}},
       infrastructure: [infrastructureAvailable({selectedEngine: "podman"})],
@@ -592,7 +704,7 @@ describe("engine selection and persistence", () => {
   });
 
   it("does not invalidate for planned engine persistence", async () => {
-    const harness = await createHarness({
+    const harness = createHarness({
       options: setupOptions({engine: "podman", dryRun: true}),
       config: {status: "valid", config: {schemaVersion: 1, containerEngine: "rancher"}},
       dispositions: {"infrastructure.engine.persist": "planned"},
@@ -607,7 +719,7 @@ describe("engine selection and persistence", () => {
 
 describe("runtime readiness from shared facts", () => {
   it("reports Docker Desktop conflict without proposing installation", async () => {
-    const harness = await createHarness({
+    const harness = createHarness({
       infrastructure: [infrastructureAvailable({dockerConflict: true})],
       config: {status: "valid", config: {schemaVersion: 1, containerEngine: "rancher"}},
     });
@@ -616,11 +728,11 @@ describe("runtime readiness from shared facts", () => {
 
     expect(result.status).toBe("failed");
     expect(result.evidence.join("\n")).toContain("Docker Desktop appears to be active");
-    expect(harness.actionRecords.map(({id}) => id)).not.toContain("infrastructure.container.install");
+    expect(harness.actionIds).not.toContain("infrastructure.container.install");
   });
 
   it("reports manual backend start when CLI is available but backend is not", async () => {
-    const harness = await createHarness({
+    const harness = createHarness({
       infrastructure: [infrastructureAvailable({backendAvailable: false})],
       config: {status: "valid", config: {schemaVersion: 1, containerEngine: "rancher"}},
     });
@@ -632,7 +744,7 @@ describe("runtime readiness from shared facts", () => {
   });
 
   it("proposes installation when CLI is not available", async () => {
-    const harness = await createHarness({
+    const harness = createHarness({
       responses: {[commandKey({command: "winget", args: ["--version"]})]: succeeded({stdout: "v1.10"})},
       infrastructure: [
         infrastructureAvailable({cliAvailable: false}),
@@ -645,11 +757,11 @@ describe("runtime readiness from shared facts", () => {
     const result = await runPhase(harness);
 
     expect(result.status).toBe("skipped");
-    expect(harness.actionRecords.map(({id}) => id)).toContain("infrastructure.container.install");
+    expect(harness.actionIds).toContain("infrastructure.container.install");
   });
 
   it("proposes installation when compose is not available", async () => {
-    const harness = await createHarness({
+    const harness = createHarness({
       responses: {[commandKey({command: "winget", args: ["--version"]})]: succeeded({stdout: "v1.10"})},
       infrastructure: [
         infrastructureAvailable({composeAvailable: false}),
@@ -662,11 +774,11 @@ describe("runtime readiness from shared facts", () => {
     const result = await runPhase(harness);
 
     expect(result.status).toBe("skipped");
-    expect(harness.actionRecords.map(({id}) => id)).toContain("infrastructure.container.install");
+    expect(harness.actionIds).toContain("infrastructure.container.install");
   });
 
   it("invalidates infrastructure and aggregate after container installation", async () => {
-    const harness = await createHarness({
+    const harness = createHarness({
       responses: {[commandKey({command: "winget", args: ["--version"]})]: succeeded({stdout: "v1.10"})},
       infrastructure: [
         infrastructureAvailable({cliAvailable: false}),
@@ -681,7 +793,7 @@ describe("runtime readiness from shared facts", () => {
   });
 
   it("fails when refreshed facts are unavailable after successful installation command", async () => {
-    const harness = await createHarness({
+    const harness = createHarness({
       responses: {[commandKey({command: "winget", args: ["--version"]})]: succeeded({stdout: "v1.10"})},
       infrastructure: [
         infrastructureAvailable({cliAvailable: false}),
@@ -697,7 +809,7 @@ describe("runtime readiness from shared facts", () => {
   });
 
   it("fails when refreshed facts still show runtime not ready", async () => {
-    const harness = await createHarness({
+    const harness = createHarness({
       responses: {[commandKey({command: "winget", args: ["--version"]})]: succeeded({stdout: "v1.10"})},
       infrastructure: [
         infrastructureAvailable({cliAvailable: false}),
@@ -713,7 +825,7 @@ describe("runtime readiness from shared facts", () => {
   });
 
   it("does not invalidate for declined container installation", async () => {
-    const harness = await createHarness({
+    const harness = createHarness({
       responses: {[commandKey({command: "winget", args: ["--version"]})]: succeeded({stdout: "v1.10"})},
       infrastructure: [infrastructureAvailable({cliAvailable: false})],
       dispositions: {"infrastructure.container.install": "declined"},
@@ -728,7 +840,7 @@ describe("runtime readiness from shared facts", () => {
 
 describe("port readiness from shared facts", () => {
   it("reports all required ports available from shared facts", async () => {
-    const harness = await createHarness({
+    const harness = createHarness({
       config: {status: "valid", config: {schemaVersion: 1, containerEngine: "rancher"}},
     });
 
@@ -740,7 +852,7 @@ describe("port readiness from shared facts", () => {
   });
 
   it("blocks an unrelated port occupant", async () => {
-    const harness = await createHarness({
+    const harness = createHarness({
       infrastructure: [
         infrastructureAvailable({
           ports: requiredLocalPorts.map((port) =>
@@ -758,7 +870,7 @@ describe("port readiness from shared facts", () => {
   });
 
   it("accepts a repository-owned port occupant as degraded", async () => {
-    const harness = await createHarness({
+    const harness = createHarness({
       infrastructure: [
         infrastructureAvailable({
           ports: requiredLocalPorts.map((port) =>
@@ -779,7 +891,7 @@ describe("port readiness from shared facts", () => {
   });
 
   it("blocks a port with inspection error", async () => {
-    const harness = await createHarness({
+    const harness = createHarness({
       infrastructure: [
         infrastructureAvailable({
           ports: requiredLocalPorts.map((port) =>
@@ -797,7 +909,7 @@ describe("port readiness from shared facts", () => {
   });
 
   it("reports unknown port ownership as blocked", async () => {
-    const harness = await createHarness({
+    const harness = createHarness({
       infrastructure: [
         infrastructureAvailable({
           ports: requiredLocalPorts.map((port) => (port === 6379 ? {port, available: false} : {port, available: true})),
@@ -815,7 +927,7 @@ describe("port readiness from shared facts", () => {
 
 describe("manifest readiness from shared facts", () => {
   it("blocks when manifest issues are present", async () => {
-    const harness = await createHarness({
+    const harness = createHarness({
       infrastructure: [
         infrastructureAvailable({
           manifestIssues: ["Missing required manifest: tooling/AppHost/AppHost.csproj"],
@@ -834,7 +946,7 @@ describe("manifest readiness from shared facts", () => {
 
 describe("certificate readiness from shared facts", () => {
   it("treats no certificate issues as idempotently satisfied", async () => {
-    const harness = await createHarness({
+    const harness = createHarness({
       infrastructure: [infrastructureAvailable({certificateIssues: []})],
       config: {status: "valid", config: {schemaVersion: 1, containerEngine: "rancher"}},
     });
@@ -843,11 +955,11 @@ describe("certificate readiness from shared facts", () => {
 
     expect(result.status).toBe("succeeded");
     expect(result.evidence).toContain("Optional selfhost certificate and key are present.");
-    expect(harness.actionRecords.map(({id}) => id)).not.toContain("infrastructure.certificates.generate");
+    expect(harness.actionIds).not.toContain("infrastructure.certificates.generate");
   });
 
   it("degrades for invalid certificate path kinds without attempting repair", async () => {
-    const harness = await createHarness({
+    const harness = createHarness({
       infrastructure: [
         infrastructureAvailable({
           certificateIssues: ["Selfhost certificate path is not a file: infra/Local/Management/certs/local-cert.pem (directory)."],
@@ -864,7 +976,7 @@ describe("certificate readiness from shared facts", () => {
   });
 
   it("attempts mkcert chain when certificates are missing", async () => {
-    const harness = await createHarness({
+    const harness = createHarness({
       infrastructure: [
         infrastructureAvailable({
           certificateIssues: [
@@ -882,12 +994,12 @@ describe("certificate readiness from shared facts", () => {
     const result = await runPhase(harness);
 
     expect(result.status).toBe("succeeded");
-    expect(harness.actionRecords.map(({id}) => id)).toEqual(["infrastructure.mkcert.trust", "infrastructure.certificates.generate"]);
+    expect(harness.actionIds).toEqual(["infrastructure.mkcert.trust", "infrastructure.certificates.generate"]);
     expect(result.evidence).toContain("Optional selfhost certificate generation postcondition is satisfied.");
   });
 
   it("installs mkcert when unavailable and certificates are missing", async () => {
-    const harness = await createHarness({
+    const harness = createHarness({
       responses: {
         [commandKey({command: "mkcert", args: ["--version"]})]: spawnFailed("ENOENT"),
         [commandKey({command: "winget", args: ["--version"]})]: succeeded({stdout: "v1.10"}),
@@ -904,11 +1016,11 @@ describe("certificate readiness from shared facts", () => {
     });
 
     await runPhase(harness);
-    expect(harness.actionRecords.map(({id}) => id)).toContain("infrastructure.mkcert.install");
+    expect(harness.actionIds).toContain("infrastructure.mkcert.install");
   });
 
   it("verifies certificate postcondition from refreshed facts after generation", async () => {
-    const harness = await createHarness({
+    const harness = createHarness({
       infrastructure: [
         infrastructureAvailable({
           certificateIssues: ["Missing selfhost certificate file: infra/Local/Management/certs/local-cert.pem"],
@@ -926,7 +1038,7 @@ describe("certificate readiness from shared facts", () => {
   });
 
   it("invalidates infrastructure after certificate generation even on failure", async () => {
-    const harness = await createHarness({
+    const harness = createHarness({
       responses: {
         [commandKey({
           command: "mkcert",
@@ -946,12 +1058,13 @@ describe("certificate readiness from shared facts", () => {
 
     expect(result.status).toBe("degraded");
     expect(result.evidence.join("\n")).toContain("generation denied");
-    // Invalidation still happened in finally
+    // Invalidation still happened in the finalizer
     expect(harness.inspection.events.filter((e) => e === "invalidate:infrastructure").length).toBeGreaterThanOrEqual(1);
+    expect(harness.inspection.events.slice(-2)).toEqual(["inspect:infrastructure", "invalidate:infrastructure"]);
   });
 
   it("plans the complete mkcert dependency chain during dry-run", async () => {
-    const harness = await createHarness({
+    const harness = createHarness({
       options: setupOptions({dryRun: true}),
       responses: {
         [commandKey({command: "mkcert", args: ["--version"]})]: spawnFailed("ENOENT"),
@@ -973,7 +1086,7 @@ describe("certificate readiness from shared facts", () => {
     const result = await runPhase(harness);
 
     expect(result.status).toBe("skipped");
-    expect(harness.actionRecords.map(({id}) => id)).toEqual([
+    expect(harness.actionIds).toEqual([
       "infrastructure.mkcert.install",
       "infrastructure.mkcert.trust",
       "infrastructure.certificates.generate",
@@ -983,7 +1096,7 @@ describe("certificate readiness from shared facts", () => {
   });
 
   it("creates the certificate directory and uses exact paths for mkcert generate", async () => {
-    const harness = await createHarness({
+    const harness = createHarness({
       infrastructure: [
         infrastructureAvailable({
           certificateIssues: ["Missing selfhost certificate file: infra/Local/Management/certs/local-cert.pem"],
@@ -997,7 +1110,7 @@ describe("certificate readiness from shared facts", () => {
     await runPhase(harness);
 
     expect(harness.createdDirectories).toEqual([dirname(certificatePath)]);
-    expect(harness.runner.calls.map(({request}) => commandKey(request))).toContain(
+    expect(harness.runner.calls.map(({request}) => commandLine(request))).toContain(
       `mkcert -key-file ${certificateKeyPath} -cert-file ${certificatePath} localhost *.localhost`,
     );
   });
@@ -1016,7 +1129,7 @@ describe("credential isolation", () => {
         },
       },
     );
-    const harness = await createHarness({
+    const harness = createHarness({
       options: setupOptions({engine: undefined}),
       environmentVariables,
       config: {status: "missing"},
@@ -1030,7 +1143,7 @@ describe("credential isolation", () => {
   });
 
   it("removes MSSQL_SA_PASSWORD from every phase child environment", async () => {
-    const harness = await createHarness({
+    const harness = createHarness({
       environmentVariables: {MSSQL_SA_PASSWORD: "phase-parent-sentinel"},
       infrastructure: [
         infrastructureAvailable({
@@ -1054,7 +1167,7 @@ describe("credential isolation", () => {
 
 describe("long mutation timeout ceiling", () => {
   it("requests the long mutation timeout for container runtime installation and keeps the probe-scoped default for the package-manager version probe", async () => {
-    const harness = await createHarness({
+    const harness = createHarness({
       responses: {[commandKey({command: "winget", args: ["--version"]})]: succeeded({stdout: "v1.10"})},
       infrastructure: [
         infrastructureAvailable({cliAvailable: false}),
@@ -1066,17 +1179,17 @@ describe("long mutation timeout ceiling", () => {
     const result = await runPhase(harness);
 
     expect(result.status).toBe("succeeded");
-    const probe = harness.runner.calls.find(({request}) => commandKey(request) === "winget --version");
+    const probe = harness.runner.calls.find(({request}) => commandLine(request) === "winget --version");
     const install = harness.runner.calls.find(
       ({request}) =>
-        commandKey(request) === "winget install --id SUSE.RancherDesktop --exact --accept-package-agreements --accept-source-agreements",
+        commandLine(request) === "winget install --id SUSE.RancherDesktop --exact --accept-package-agreements --accept-source-agreements",
     );
-    expect(probe?.options).toMatchObject({timeoutMs: PHASE_PROBE_TIMEOUT_MS});
-    expect(install?.options).toMatchObject({output: "inherit", timeoutMs: 1_200_000});
+    expect(probe?.options).toMatchObject({timeout: PHASE_PROBE_TIMEOUT_MS});
+    expect(install?.options).toMatchObject({output: "inherit", timeout: LONG_MUTATION_TIMEOUT_MS});
   });
 
   it("requests the long mutation timeout for mkcert installation and keeps the probe-scoped default for the mkcert and package-manager version probes", async () => {
-    const harness = await createHarness({
+    const harness = createHarness({
       responses: {
         [commandKey({command: "mkcert", args: ["--version"]})]: spawnFailed("ENOENT"),
         [commandKey({command: "winget", args: ["--version"]})]: succeeded({stdout: "v1.10"}),
@@ -1094,23 +1207,23 @@ describe("long mutation timeout ceiling", () => {
 
     await runPhase(harness);
 
-    expect(harness.actionRecords.map(({id}) => id)).toContain("infrastructure.mkcert.install");
-    const mkcertProbes = harness.runner.calls.filter(({request}) => commandKey(request) === "mkcert --version");
-    const wingetProbe = harness.runner.calls.find(({request}) => commandKey(request) === "winget --version");
+    expect(harness.actionIds).toContain("infrastructure.mkcert.install");
+    const mkcertProbes = harness.runner.calls.filter(({request}) => commandLine(request) === "mkcert --version");
+    const wingetProbe = harness.runner.calls.find(({request}) => commandLine(request) === "winget --version");
     const install = harness.runner.calls.find(
       ({request}) =>
-        commandKey(request) === "winget install --id FiloSottile.mkcert --exact --accept-package-agreements --accept-source-agreements",
+        commandLine(request) === "winget install --id FiloSottile.mkcert --exact --accept-package-agreements --accept-source-agreements",
     );
     expect(mkcertProbes.length).toBeGreaterThan(0);
     for (const probe of mkcertProbes) {
-      expect(probe.options).toMatchObject({timeoutMs: PHASE_PROBE_TIMEOUT_MS});
+      expect(probe.options).toMatchObject({timeout: PHASE_PROBE_TIMEOUT_MS});
     }
-    expect(wingetProbe?.options).toMatchObject({timeoutMs: PHASE_PROBE_TIMEOUT_MS});
-    expect(install?.options).toMatchObject({output: "inherit", timeoutMs: 1_200_000});
+    expect(wingetProbe?.options).toMatchObject({timeout: PHASE_PROBE_TIMEOUT_MS});
+    expect(install?.options).toMatchObject({output: "inherit", timeout: LONG_MUTATION_TIMEOUT_MS});
   });
 
   it("requests the long mutation timeout for mkcert trust and certificate generation and keeps the probe-scoped default for the mkcert version probe", async () => {
-    const harness = await createHarness({
+    const harness = createHarness({
       infrastructure: [
         infrastructureAvailable({
           certificateIssues: ["Missing selfhost certificate file: infra/Local/Management/certs/local-cert.pem"],
@@ -1124,88 +1237,141 @@ describe("long mutation timeout ceiling", () => {
     const result = await runPhase(harness);
 
     expect(result.status).toBe("succeeded");
-    const mkcertProbe = harness.runner.calls.find(({request}) => commandKey(request) === "mkcert --version");
-    const trust = harness.runner.calls.find(({request}) => commandKey(request) === "mkcert -install");
+    const mkcertProbe = harness.runner.calls.find(({request}) => commandLine(request) === "mkcert --version");
+    const trust = harness.runner.calls.find(({request}) => commandLine(request) === "mkcert -install");
     const generate = harness.runner.calls.find(
-      ({request}) => commandKey(request) === `mkcert -key-file ${certificateKeyPath} -cert-file ${certificatePath} localhost *.localhost`,
+      ({request}) => commandLine(request) === `mkcert -key-file ${certificateKeyPath} -cert-file ${certificatePath} localhost *.localhost`,
     );
-    expect(mkcertProbe?.options).toMatchObject({timeoutMs: PHASE_PROBE_TIMEOUT_MS});
-    expect(trust?.options).toMatchObject({output: "inherit", timeoutMs: 1_200_000});
-    expect(generate?.options).toMatchObject({output: "inherit", timeoutMs: 1_200_000});
+    expect(mkcertProbe?.options).toMatchObject({timeout: PHASE_PROBE_TIMEOUT_MS});
+    expect(trust?.options).toMatchObject({output: "inherit", timeout: LONG_MUTATION_TIMEOUT_MS});
+    expect(generate?.options).toMatchObject({output: "inherit", timeout: LONG_MUTATION_TIMEOUT_MS});
   });
 });
 
-describe("abort and failure", () => {
-  it.each(["prompt", "action"] as const)("rethrows AbortError from the %s boundary", async (boundary) => {
-    const interruption = Object.assign(new Error(`interrupted ${boundary}`), {name: "AbortError"});
-    const actions: LegacySetupActionExecutor = {
-      run: async () => {
-        throw interruption;
-      },
-    };
-    const harness = await createHarness({
-      options: setupOptions({engine: boundary === "prompt" ? undefined : "podman"}),
-      ...(boundary === "action"
-        ? {config: {status: "valid" as const, config: {schemaVersion: 1, containerEngine: "rancher" as const}}}
-        : {}),
-      ...(boundary === "prompt" ? {select: async () => Promise.reject(interruption)} : {}),
-      ...(boundary === "action" ? {actions} : {}),
+describe("interruption and failure", () => {
+  it("interrupts setup when the engine prompt is quit at the terminal", async () => {
+    const harness = createHarness({
+      options: setupOptions({engine: undefined}),
+      select: () => Effect.fail(new Terminal.QuitError()),
     });
 
-    await expect(runPhase(harness)).rejects.toBe(interruption);
+    const exit = await runPhaseExit(harness.phase, harness.context, harness.layer);
+
+    expect(Exit.hasInterrupts(exit)).toBe(true);
+    expect(harness.writes).toEqual([]);
+    expect(harness.actionIds).toEqual([]);
   });
 
-  it("rethrows AbortError raised while persisting the tooling configuration", async () => {
-    // `readToolingConfig` intentionally converts every read failure (including an interruption)
-    // into an explicit `"invalid"` status instead of rethrowing, exactly as it did before this
-    // phase migrated; that conversion is covered by the "blocks invalid configuration" test
-    // above. A write interruption during persistence is not converted and must still escape.
-    const interruption = Object.assign(new Error("interrupted persist write"), {name: "AbortError"});
-    const harness = await createHarness({
+  it("propagates an interruption at the persistence consent gate without writing or invalidating", async () => {
+    const harness = createHarness({
       options: setupOptions({engine: "podman"}),
       config: {status: "valid", config: {schemaVersion: 1, containerEngine: "rancher"}},
+      actions: (recording) => interruptingActions("infrastructure.engine.persist", recording),
     });
-    const failingFiles: FileSystem = {
-      ...harness.context.runtime.files,
-      writeTextAtomic: async (path: string) => {
-        if (path === paths.toolingConfig) {
-          throw interruption;
-        }
-        return harness.context.runtime.files.writeTextAtomic(path, "", {});
-      },
-    };
-    const failingContext: MigratedSetupContext = {
-      ...harness.context,
-      runtime: {...harness.context.runtime, files: failingFiles},
-    };
 
-    await expect(harness.phase.run(failingContext as LegacySetupContext)).rejects.toBe(interruption);
+    const exit = await runPhaseExit(harness.phase, harness.context, harness.layer);
+
+    expect(Exit.hasInterrupts(exit)).toBe(true);
+    expect(harness.writes).toEqual([]);
+    expect(harness.inspection.invalidate).not.toHaveBeenCalled();
+    expect(toolingConfigContents(harness)).toBe(JSON.stringify({schemaVersion: 1, containerEngine: "rancher"}));
   });
 
-  it("invalidates before propagating AbortError during an attempted mutation", async () => {
-    const interruption = Object.assign(new Error("interrupted mutation"), {name: "AbortError"});
-    const actionRecords: LegacySetupAction[] = [];
-    const actions: LegacySetupActionExecutor = {
-      run: async (action) => {
-        actionRecords.push(action);
-        // Execute the callback to set attempted = true, then throw
-        await action.execute();
-        throw interruption;
-      },
-    };
-    const harness = await createHarness({
+  it("fails the phase and invalidates when persisting the tooling configuration fails", async () => {
+    const original = JSON.stringify({schemaVersion: 1, containerEngine: "rancher"});
+    const harness = createHarness({
       options: setupOptions({engine: "podman"}),
-      config: {status: "valid", config: {schemaVersion: 1, containerEngine: "rancher"}},
-      actions,
+      config: {status: "raw", contents: original},
+      failToolingConfigWrite: true,
     });
 
-    await expect(runPhase(harness)).rejects.toBe(interruption);
-    // Engine persist action was attempted, so infrastructure should have been invalidated in finally
-    expect(harness.inspection.invalidate).toHaveBeenCalledWith("infrastructure");
+    const result = await runPhase(harness);
+
+    expect(result).toMatchObject({
+      status: "failed",
+      summary: "Local infrastructure preparation failed.",
+      nextActions: ["Resolve the reported infrastructure preparation failure, then rerun setup."],
+    });
+    expect(result.evidence).toHaveLength(1);
+    expect(result.evidence[0]).toContain(`Failed to writeTextAtomic '${paths.toolingConfig}'`);
+    expect(harness.inspection.invalidate).toHaveBeenCalledExactlyOnceWith("infrastructure");
+    expect(toolingConfigContents(harness)).toBe(original);
+    expect([...harness.platform.files().keys()]).toHaveLength(1);
+  });
+
+  it("invalidates before propagating an interruption that follows an attempted mutation", async () => {
+    const harness = createHarness({
+      options: setupOptions({engine: "podman"}),
+      config: {status: "valid", config: {schemaVersion: 1, containerEngine: "rancher"}},
+      actions: () => Layer.succeed(SetupActions, SetupActions.of({run: (action) => Effect.andThen(action.execute, Effect.interrupt)})),
+    });
+
+    const exit = await runPhaseExit(harness.phase, harness.context, harness.layer);
+
+    expect(Exit.hasInterrupts(exit)).toBe(true);
+    // Engine persist action was attempted, so infrastructure was invalidated in the finalizer
+    expect(harness.inspection.invalidate).toHaveBeenCalledExactlyOnceWith("infrastructure");
+    expect(harness.writes).toEqual([{path: paths.toolingConfig, config: {schemaVersion: 1, containerEngine: "podman"}}]);
+  });
+
+  it("completes an in-flight tooling configuration write before an interruption invalidates", async () => {
+    // Arrange
+    const gate: WriteGate = {started: Deferred.makeUnsafe<void>(), release: Deferred.makeUnsafe<void>()};
+    const harness = createHarness({
+      options: setupOptions({engine: "podman"}),
+      config: {status: "valid", config: {schemaVersion: 1, containerEngine: "rancher"}},
+      writeGate: gate,
+    });
+
+    // Act
+    const exit = await runScoped(
+      Effect.gen(function* () {
+        const fiber = yield* Effect.forkChild(harness.phase.run(harness.context));
+        yield* Deferred.await(gate.started);
+        const interruption = yield* Effect.forkChild(Fiber.interrupt(fiber));
+        // Give an interruptible write the chance to be abandoned before the gate opens.
+        yield* Effect.promise(() => new Promise<void>((settle) => setTimeout(settle, 20)));
+        yield* Deferred.succeed(gate.release, undefined);
+        yield* Fiber.await(interruption);
+        return yield* Fiber.await(fiber);
+      }),
+      harness.layer,
+    );
+
+    // Assert
+    expect(Exit.hasInterrupts(exit)).toBe(true);
+    expect(harness.writes).toEqual([{path: paths.toolingConfig, config: {schemaVersion: 1, containerEngine: "podman"}}]);
+    expect(harness.inspection.invalidate).toHaveBeenCalledExactlyOnceWith("infrastructure");
+    expect(harness.writeCompleted.mock.invocationCallOrder[0]).toBeLessThan(harness.inspection.invalidate.mock.invocationCallOrder[0]!);
+    expect(harness.inspection.inspect).not.toHaveBeenCalled();
+  });
+
+  it("invalidates infrastructure and aggregate when an interruption stops the container installation", async () => {
+    const harness = createHarness({
+      responses: {
+        [commandKey({command: "winget", args: ["--version"]})]: succeeded({stdout: "v1.10"}),
+        [commandKey({
+          command: "winget",
+          args: ["install", "--id", "SUSE.RancherDesktop", "--exact", "--accept-package-agreements", "--accept-source-agreements"],
+        })]: {kind: "cancelled"},
+      },
+      infrastructure: [infrastructureAvailable({cliAvailable: false})],
+      config: {status: "valid", config: {schemaVersion: 1, containerEngine: "rancher"}},
+    });
+
+    const exit = await runPhaseExit(harness.phase, harness.context, harness.layer);
+
+    expect(Exit.hasInterrupts(exit)).toBe(true);
+    expect(harness.inspection.invalidate).toHaveBeenCalledExactlyOnceWith("infrastructure", "aggregate");
+    expect(harness.inspection.events).toEqual([
+      "updateInfrastructureEngine",
+      "inspect:infrastructure",
+      "invalidate:infrastructure+aggregate",
+    ]);
   });
 
   it("fails when shared infrastructure inspection returns unavailable", async () => {
-    const harness = await createHarness({
+    const harness = createHarness({
       infrastructure: [unavailableInfra("Certificate path is unreadable.")],
       config: {status: "valid", config: {schemaVersion: 1, containerEngine: "rancher"}},
     });
@@ -1218,7 +1384,7 @@ describe("abort and failure", () => {
   });
 
   it("gives port blockers precedence over planned persistence", async () => {
-    const harness = await createHarness({
+    const harness = createHarness({
       options: setupOptions({engine: "podman", dryRun: true}),
       dispositions: {"infrastructure.engine.persist": "planned"},
       infrastructure: [
@@ -1238,7 +1404,7 @@ describe("abort and failure", () => {
   });
 
   it("inspection event order: updateEngine, inspect, invalidate cycle", async () => {
-    const harness = await createHarness({
+    const harness = createHarness({
       options: setupOptions({engine: "podman"}),
       config: {status: "valid", config: {schemaVersion: 1, containerEngine: "rancher"}},
       infrastructure: [
@@ -1254,13 +1420,6 @@ describe("abort and failure", () => {
     expect(harness.inspection.events[0]).toBe("updateInfrastructureEngine");
     expect(harness.inspection.events).toContain("invalidate:infrastructure");
     expect(harness.inspection.events).toContain("inspect:infrastructure");
-  });
-
-  it("throws when the phase runs without an invocation-scoped setup phase runtime", async () => {
-    const harness = await createHarness();
-    const {runtime: _runtime, ...withoutRuntime} = harness.context;
-
-    await expect(harness.phase.run(withoutRuntime as LegacySetupContext)).rejects.toThrow(/setup phase runtime/i);
   });
 });
 
@@ -1280,7 +1439,7 @@ describe("infrastructure characterization (pre-Effect migration)", () => {
   function observe(harness: Harness, result: SetupPhaseResult): unknown {
     return withRootPlaceholder({
       result,
-      actionIds: harness.actionRecords.map(({id}) => id),
+      actionIds: harness.actionIds,
       commands: harness.runner.calls.map(({request}) => request),
       writes: harness.writes,
     });
@@ -1288,7 +1447,7 @@ describe("infrastructure characterization (pre-Effect migration)", () => {
 
   it("pins the exact result when the runtime, ports, manifests, and certificates are already ready", async () => {
     // Arrange
-    const harness = await createHarness({config: persistedRancher});
+    const harness = createHarness({config: persistedRancher});
 
     // Act
     const observed = observe(harness, await runPhase(harness));
@@ -1325,7 +1484,7 @@ describe("infrastructure characterization (pre-Effect migration)", () => {
 
   it("pins the exact result when the container CLI is missing and the winget installation proposal succeeds", async () => {
     // Arrange
-    const harness = await createHarness({
+    const harness = createHarness({
       config: persistedRancher,
       responses: {[wingetVersionKey]: succeeded({stdout: "v1.10"})},
       infrastructure: [infrastructureAvailable({cliAvailable: false}), infrastructureAvailable()],
@@ -1373,7 +1532,7 @@ describe("infrastructure characterization (pre-Effect migration)", () => {
 
   it("pins the exact result when the winget installation proposal fails", async () => {
     // Arrange
-    const harness = await createHarness({
+    const harness = createHarness({
       config: persistedRancher,
       responses: {[wingetVersionKey]: succeeded({stdout: "v1.10"}), [rancherInstallKey]: exited(1, {stderr: "winget installer failed"})},
       infrastructure: [infrastructureAvailable({cliAvailable: false})],
@@ -1404,47 +1563,13 @@ describe("infrastructure characterization (pre-Effect migration)", () => {
     });
   });
 
-  /**
-   * Runs the Effect kernel's consent policy (`setupActionsLayer`) in `--dry-run` mode behind its
-   * legacy executor view, so the pin observes exactly what the production kernel plans, logs, and
-   * executes (nothing) for this legacy phase. Any prompt fails the test.
-   */
-  async function legacyDryRunExecutor(options: SetupInput): Promise<
-    Readonly<{
-      actions: LegacySetupActionExecutor;
-      executed: string[];
-      lines: () => readonly string[];
-    }>
-  > {
-    const harness = makeTestLayer({context: "setup"});
-    const refuse = (): Effect.Effect<never> => Effect.die(new Error("A dry run must never prompt."));
-    const prompts = Prompts.of({confirm: refuse, select: refuse, text: refuse, secret: refuse});
-    const layer = setupActionsLayer(options).pipe(Layer.provideMerge(Layer.merge(harness.layer, Layer.succeed(Prompts, prompts))));
-    const executor = await Effect.runPromise(legacySetupActionExecutor().pipe(Effect.provide(layer)));
-    const executed: string[] = [];
-    return {
-      executed,
-      lines: () => harness.output().map(({stream, text}) => `${stream}: ${text.replace(/\n$/u, "")}`),
-      actions: {
-        run: (action) =>
-          executor.run({
-            ...action,
-            execute: async () => {
-              executed.push(action.id);
-              await action.execute();
-            },
-          }),
-      },
-    };
-  }
-
   it("pins a mutation-free dry run when the engine changes and the container CLI and certificates are missing", async () => {
     // Arrange
     const options = setupOptions({engine: "podman", dryRun: true});
-    const dryRun = await legacyDryRunExecutor(options);
-    const harness = await createHarness({
+    const dryRun = productionActions(options);
+    const harness = createHarness({
       options,
-      actions: dryRun.actions,
+      actions: () => dryRun.layer,
       config: persistedRancher,
       responses: {[wingetVersionKey]: succeeded({stdout: "v1.10"})},
       infrastructure: [
@@ -1460,7 +1585,7 @@ describe("infrastructure characterization (pre-Effect migration)", () => {
     const result = await runPhase(harness);
     const observed = withRootPlaceholder({
       result,
-      actionLines: dryRun.lines(),
+      actionLines: setupActionLines(harness.platform.output()),
       executed: dryRun.executed,
       commands: harness.runner.calls.map(({request}) => request),
       writes: harness.writes,

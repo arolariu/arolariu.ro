@@ -6,8 +6,8 @@
  * The Effect kernel runs {@link SetupPhaseDefinition}s: each phase reads the shared
  * {@link SetupContext} and every capability from the {@link SetupRequirements} services, and submits
  * each mutation as a {@link SetupAction} through the consent-gated `SetupActions` service. The
- * `Legacy*` contracts are the Promise phase model the unmigrated phases still implement; the
- * temporary `legacyPhase` adapter (`./legacy-phase.ts`) runs them under the Effect kernel. They are
+ * `Legacy*` contracts are the Promise phase model the temporary `legacyPhase` adapter
+ * (`./legacy-phase.ts`) still accepts; no production phase implements them any more. They are
  * deleted in Task 5.5.
  */
 

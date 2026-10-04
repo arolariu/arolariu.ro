@@ -1,6 +1,6 @@
 /**
  * @fileoverview Local container runtime and infrastructure preparation.
- * @module scripts.setup.infrastructure
+ * @module scripts/commands/setup/phases/infrastructure
  *
  * @remarks
  * All readiness observations (runtime CLI/backend/compose availability, Docker Desktop conflict,
@@ -8,39 +8,47 @@
  * presence, and container inventory) are consumed from shared {@link InfrastructureFacts} through
  * `context.inspection.inspect("infrastructure")`. This module owns only mutation policy: engine
  * selection/persistence, package-manager discovery, container installation proposals, mkcert
- * install/trust/generation, credential isolation, consent, dry-run, and abort propagation.
+ * install/trust/generation, credential isolation, consent, and dry-run.
  *
- * Every attempted mutation uses finally-safe exact invalidation: the attempted flag is set inside
- * the action execute callback, and invalidation runs in `finally` so a thrown, failed, or
+ * Every attempted mutation runs through {@link runInfrastructureMutation}, which invalidates its
+ * exact fact keys in a finalizer whenever the mutation was actually attempted, so a failed or
  * interrupted mutation can never leave a partially mutated repository described by stale cached
- * facts. Planned and declined actions never set the attempted flag and therefore never invalidate.
+ * facts. Planned and declined actions never attempt the mutation and therefore never invalidate.
  * After an executed disposition the already-invalidated key is re-inspected exactly once.
  *
- * The phase reads every capability from the invocation-scoped {@link LegacySetupPhaseRuntime}: the
- * process runner, the recursive-removal filesystem, the clock, and the host environment snapshot.
- * It owns no ambient Node state and no test-only constructor dependency; `createInfrastructureSetupPhase`
- * accepts no arguments.
+ * The engine is selected from the `--engine` option, `AROLARIU_CONTAINER_ENGINE`, or the persisted
+ * non-secret tooling configuration; only when none is set and stdin is interactive does the phase
+ * ask through `Prompts.select`. The tooling configuration is read and written through the bridge's
+ * legacy filesystem view, and the write happens only inside the consent-gated persistence action,
+ * after the prompt resolved, so a dry run never writes and an interruption at the prompt leaves the
+ * file untouched. Commands run through `Process` with the setup command defaults and never observe
+ * `MSSQL_SA_PASSWORD`; the platform and the environment come from `Environment`.
  */
 
 import {dirname, resolve} from "node:path";
 
-import {processFailureEvidence, type ProcessOutcome, type ProcessRunner, type SucceededProcessOutcome} from "../../../common/runner.ts";
-import {CommandCancellation} from "../../../common/runtime.ts";
+import {Clock, Effect, FileSystem, Terminal} from "effect";
+
 import {mergeToolingConfig, readToolingConfig, writeToolingConfig} from "../../../common/tooling-config.ts";
 import {getContainerAdapter, type ContainerRuntimeAdapter} from "../../../container-runtime/adapters.ts";
 import {resolveContainerEngine} from "../../../container-runtime/selection.ts";
-import type {ContainerEngine, EngineSelectionSource} from "../../../container-runtime/types.ts";
+import type {ContainerEngine, ContainerEngineSelection, EngineSelectionSource} from "../../../container-runtime/types.ts";
 import type {InfrastructureFacts} from "../../../inspection/infrastructure.ts";
 import type {RepositoryInspectionKey} from "../../../inspection/repository.ts";
 import type {InspectionOutcome} from "../../../inspection/types.ts";
-import {
-  requireLegacySetupPhaseRuntime,
-  type InstallationProposal,
-  type SetupActionScope,
-  type LegacySetupContext,
-  type LegacySetupPhaseDefinition,
-  type SetupPhaseResult,
-  type LegacySetupPhaseRuntime,
+import {legacyFileSystem} from "../../../platform/bridge.ts";
+import {Environment, type EnvironmentSnapshot} from "../../../platform/Environment.ts";
+import type {ProcessError, ProcessRequest} from "../../../platform/Process.ts";
+import {Prompts} from "../../../platform/Prompts.ts";
+import {SetupActionFailed} from "../errors.ts";
+import {phaseResult, processFailureOutput, runPhaseCommand, submitSetupAction, type PhaseCommandOutcome} from "../phase-support.ts";
+import type {
+  InstallationProposal,
+  SetupActionScope,
+  SetupContext,
+  SetupPhaseDefinition,
+  SetupPhaseResult,
+  SetupRequirements,
 } from "../types.ts";
 
 const ENGINE_PERSIST_ACTION = "infrastructure.engine.persist";
@@ -58,88 +66,91 @@ const SQL_PASSWORD_ENVIRONMENT_KEY = "MSSQL_SA_PASSWORD";
  * certificate-generation mutation.
  *
  * @remarks
- * The invocation-scoped runner defaults to a probe-sized timeout, which is correct for a
- * `--version` probe but would truncate a container-desktop or mkcert install. Each such mutation
- * therefore requests this ceiling explicitly, preserving the pre-migration mutation timeout the
- * deprecated setup runner bridge used to supply implicitly for `tee`/`inherit` output. Probes keep
- * the runner's own bounded default instead.
+ * Setup commands default to a probe-sized timeout, which is correct for a `--version` probe but
+ * would truncate a container-desktop or mkcert install. Each such mutation therefore requests this
+ * ceiling explicitly. Probes keep the bounded default instead.
  */
 const LONG_RUNNING_MUTATION_TIMEOUT_MS = 1_200_000;
 
-// ---------------------------------------------------------------------------
-// Credential isolation
-// ---------------------------------------------------------------------------
-
 /**
- * Scopes the invocation-scoped runner so every command this phase runs never observes
- * `MSSQL_SA_PASSWORD`.
- *
- * @remarks
- * The scope default explicitly maps the credential key to `undefined`; the scoped runner's
- * environment merge (defaults, then any per-call override) drops keys with an `undefined` value
- * before spawning, so the credential is absent from the child's environment regardless of what
- * `runtime.environment.variables` carries, without ever mutating that immutable snapshot. Any
- * other per-command `env` override a caller supplies is preserved because it is merged on top of
- * this scope's defaults, not replaced by them.
- *
- * @param runner - The invocation-scoped process runner every setup command already flows through.
- * @returns A credential-isolated process runner scoped to this phase.
+ * Environment override every command of this phase runs with: an `undefined` value unsets the
+ * variable, so no child ever observes `MSSQL_SA_PASSWORD`, whatever the invocation environment
+ * carries, without mutating the immutable `Environment` snapshot.
  */
-function createCredentialIsolatedRunner(runner: ProcessRunner): ProcessRunner {
-  return runner.scope({env: {[SQL_PASSWORD_ENVIRONMENT_KEY]: undefined}});
-}
+const CREDENTIAL_ISOLATION: Readonly<Record<string, string | undefined>> = {[SQL_PASSWORD_ENVIRONMENT_KEY]: undefined};
+
+/** A step of the phase: fails with {@link SetupActionFailed} for a failed mutation. */
+type InfrastructureStep<A> = Effect.Effect<A, SetupActionFailed, SetupRequirements>;
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
-function isSuccessfulOutcome(outcome: Readonly<ProcessOutcome>): outcome is SucceededProcessOutcome {
-  return outcome.kind === "succeeded";
-}
-
-function isInterrupted(error: unknown): boolean {
-  return error instanceof CommandCancellation || (error instanceof Error && error.name === "AbortError");
-}
-
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
-function duration(startedAt: number, runtime: LegacySetupPhaseRuntime): number {
-  return Math.max(0, runtime.clock.monotonicNow() - startedAt);
-}
-
-function phaseResult(runtime: LegacySetupPhaseRuntime, startedAt: number, input: Omit<SetupPhaseResult, "durationMs">): SetupPhaseResult {
-  return {
-    ...input,
-    durationMs: duration(startedAt, runtime),
-  };
+function deduplicate(values: readonly string[]): readonly string[] {
+  return [...new Set(values)];
 }
 
 /**
- * Converts one failed/interrupted process outcome into bounded, non-secret evidence.
+ * Converts one failed process into bounded, non-secret evidence.
  *
- * @param outcome - A non-`"succeeded"` {@link ProcessOutcome}.
- * @param context - Shared setup dependencies, whose logger sanitizes the rendered evidence.
- * @returns Bounded, sanitized evidence lines describing the failure.
+ * @param error - The process failure.
+ * @returns The failure kind line, then the bounded child output.
  */
-function commandFailureEvidence(
-  outcome: Readonly<Exclude<ProcessOutcome, SucceededProcessOutcome>>,
-  context: LegacySetupContext,
-): readonly string[] {
-  const evidence = processFailureEvidence(outcome, context.logger);
+function commandFailureEvidence(error: ProcessError): readonly string[] {
+  const evidence = processFailureOutput(error);
   return [
-    ...(outcome.kind === "exited" ? [`Command exited with code ${outcome.exitCode}.`] : []),
-    ...(outcome.kind === "timed-out" ? ["Command timed out."] : []),
-    ...(outcome.kind === "signalled" ? [`Command stopped with signal ${outcome.signal}.`] : []),
-    ...(outcome.kind === "cancelled" ? ["Command was cancelled."] : []),
-    ...(outcome.kind === "spawn-failed" ? [`Unable to start command: ${outcome.message}`] : []),
+    ...(error._tag === "ProcessExited" ? [`Command exited with code ${String(error.exitCode)}.`] : []),
+    ...(error._tag === "ProcessTimedOut" ? ["Command timed out."] : []),
+    ...(error._tag === "ProcessSignalled" ? [`Command stopped with signal ${error.signal}.`] : []),
+    ...(error._tag === "ProcessSpawnFailed" ? [`Unable to start command: ${error.message}`] : []),
     ...(evidence === "" ? [] : [evidence]),
   ];
 }
 
-function deduplicate(values: readonly string[]): readonly string[] {
-  return [...new Set(values)];
+/**
+ * Runs one credential-isolated command of this phase with the setup command defaults.
+ *
+ * @param context - The setup context.
+ * @param request - The command.
+ * @param options - `output` and `timeoutMs` overrides of a long-running mutation.
+ * @returns The command outcome; an interruption propagates.
+ */
+function runInfrastructureCommand(
+  context: SetupContext,
+  request: ProcessRequest,
+  options: Readonly<{output?: "inherit"; timeoutMs?: number}> = {},
+): Effect.Effect<PhaseCommandOutcome, never, SetupRequirements> {
+  return runPhaseCommand(context, request, {cwd: context.paths.root, env: CREDENTIAL_ISOLATION, ...options});
+}
+
+/**
+ * Runs one required mutation command and fails the submitting action when it does not succeed.
+ *
+ * @param context - The setup context.
+ * @param actionId - The submitting action.
+ * @param command - The command.
+ * @param failureSummary - Non-secret summary naming the mutation that failed (without its period).
+ * @returns The command effect; an interruption propagates.
+ */
+function runRequiredCommand(
+  context: SetupContext,
+  actionId: string,
+  command: ProcessRequest,
+  failureSummary: string,
+): InfrastructureStep<void> {
+  return Effect.flatMap(
+    runInfrastructureCommand(context, command, {output: "inherit", timeoutMs: LONG_RUNNING_MUTATION_TIMEOUT_MS}),
+    (outcome) =>
+      outcome.kind === "succeeded"
+        ? Effect.void
+        : Effect.fail(
+            new SetupActionFailed({actionId, message: [`${failureSummary}.`, ...commandFailureEvidence(outcome.error)].join("\n")}),
+          ),
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -152,44 +163,45 @@ type InfrastructureMutationOutcome =
   | Readonly<{disposition: "executed"; outcome: InspectionOutcome<InfrastructureFacts>}>;
 
 /**
- * Runs one policy-controlled infrastructure mutation with finally-safe exact invalidation.
+ * Runs one policy-controlled infrastructure mutation with finalizer-safe exact invalidation.
  *
  * @remarks
- * The attempted flag is set inside the execute callback. Invalidation runs in `finally` so even a
- * thrown, failed, or interrupted mutation cannot leave stale cached facts. Planned and declined
- * actions never set the flag and never invalidate. After an executed disposition the
- * already-invalidated keys are re-inspected.
+ * The attempted flag is set when `SetupActions` starts the mutation. The invalidation runs in a
+ * finalizer, so even a failed or interrupted mutation cannot leave stale cached facts. Planned and
+ * declined actions never set the flag and never invalidate. After an executed disposition the
+ * `"infrastructure"` fact is re-inspected.
  *
  * @param context - Shared setup context carrying the inspection session.
  * @param action - Action identity, scope, summary, and the mutation to attempt.
  * @param invalidationKeys - Exact fact keys to invalidate after an attempted mutation.
- * @returns The disposition, plus refreshed infrastructure outcome when executed.
+ * @returns The disposition, plus the refreshed infrastructure outcome when executed; fails with
+ * {@link SetupActionFailed} when the action failed. An interruption propagates.
  */
-async function runInfrastructureMutation(
-  context: LegacySetupContext,
-  action: Readonly<{id: string; scope: SetupActionScope; summary: string; mutate: () => Promise<void>}>,
+function runInfrastructureMutation(
+  context: SetupContext,
+  action: Readonly<{id: string; scope: SetupActionScope; summary: string; mutate: InfrastructureStep<void>}>,
   invalidationKeys: readonly RepositoryInspectionKey[],
-): Promise<InfrastructureMutationOutcome> {
-  let attempted = false;
-  try {
-    const disposition = await context.actions.run({
+): InfrastructureStep<InfrastructureMutationOutcome> {
+  return Effect.gen(function* () {
+    let attempted = false;
+    const submitted = yield* submitSetupAction({
       id: action.id,
       scope: action.scope,
       summary: action.summary,
-      execute: async () => {
+      execute: Effect.suspend(() => {
         attempted = true;
-        await action.mutate();
-      },
-    });
-    if (disposition !== "executed") {
-      return disposition === "planned" ? {disposition: "planned"} : {disposition: "declined"};
+        return action.mutate;
+      }),
+    }).pipe(Effect.ensuring(Effect.suspend(() => (attempted ? context.inspection.invalidate(...invalidationKeys) : Effect.void))));
+
+    if (submitted.kind === "failed") {
+      return yield* new SetupActionFailed({actionId: action.id, message: submitted.message});
     }
-  } finally {
-    if (attempted) {
-      context.inspection.invalidate(...invalidationKeys);
+    if (submitted.kind === "planned" || submitted.kind === "declined") {
+      return {disposition: submitted.kind};
     }
-  }
-  return {disposition: "executed", outcome: await context.inspection.inspect("infrastructure")};
+    return {disposition: "executed", outcome: yield* context.inspection.inspect("infrastructure")};
+  });
 }
 
 /**
@@ -281,16 +293,28 @@ function selectMkcertInstallationProposal(
 // Package manager discovery
 // ---------------------------------------------------------------------------
 
-async function discoverPackageManagers(runner: ProcessRunner, root: string, platform: NodeJS.Platform): Promise<ReadonlySet<string>> {
-  const managers = platform === "win32" ? ["winget"] : platform === "darwin" ? ["brew"] : platform === "linux" ? ["apt-get", "dnf"] : [];
-  const available = new Set<string>();
-  for (const manager of managers) {
-    const outcome = await runner.run({command: manager, args: ["--version"]}, {cwd: root});
-    if (isSuccessfulOutcome(outcome)) {
-      available.add(manager);
+/**
+ * Discovers the package managers of the host platform with sequential `--version` probes.
+ *
+ * @param context - The setup context.
+ * @param platform - The host platform.
+ * @returns The available package managers.
+ */
+function discoverPackageManagers(
+  context: SetupContext,
+  platform: NodeJS.Platform,
+): Effect.Effect<ReadonlySet<string>, never, SetupRequirements> {
+  return Effect.gen(function* () {
+    const managers = platform === "win32" ? ["winget"] : platform === "darwin" ? ["brew"] : platform === "linux" ? ["apt-get", "dnf"] : [];
+    const available = new Set<string>();
+    for (const manager of managers) {
+      const outcome = yield* runInfrastructureCommand(context, {command: manager, args: ["--version"]});
+      if (outcome.kind === "succeeded") {
+        available.add(manager);
+      }
     }
-  }
-  return available;
+    return available;
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -302,60 +326,123 @@ interface SelectedEngine {
   readonly source: EngineSelectionSource | "interactive";
 }
 
-async function selectEngine(
-  context: LegacySetupContext,
-  runtime: LegacySetupPhaseRuntime,
-  configuredEngine: string | undefined,
-): Promise<SelectedEngine> {
+/** The engine selection, or the message of why no supported engine was selected. */
+type EngineSelectionOutcome = Readonly<{kind: "selected"; selection: SelectedEngine}> | Readonly<{kind: "failed"; message: string}>;
+
+/** The legacy engine prompt message. */
+const ENGINE_PROMPT_MESSAGE = "Select the local container engine:";
+
+/** The legacy engine prompt choices, in order. */
+const ENGINE_PROMPT_CHOICES = [
+  {
+    value: "rancher",
+    label: "Rancher Desktop (Moby/dockerd; Docker Desktop must be stopped)",
+  },
+  {
+    value: "podman",
+    label: "Podman Desktop (podman compose provider required)",
+  },
+] as const satisfies readonly {readonly value: ContainerEngine; readonly label: string}[];
+
+/**
+ * Resolves the configured engine: the `--engine` option, then `AROLARIU_CONTAINER_ENGINE`, then the
+ * persisted configuration.
+ *
+ * @param context - The setup context.
+ * @param environment - The invocation environment.
+ * @param configuredEngine - The persisted engine, when one is configured.
+ * @returns The resolved selection, or the selection error.
+ */
+function resolveConfiguredEngine(
+  context: SetupContext,
+  environment: EnvironmentSnapshot,
+  configuredEngine: ContainerEngine | undefined,
+): Readonly<{kind: "resolved"; selection: ContainerEngineSelection}> | Readonly<{kind: "unresolved"; error: unknown}> {
   try {
-    return resolveContainerEngine({
-      argv: context.options.engine === undefined ? [] : ["--engine", context.options.engine],
-      env: runtime.environment.variables,
-      ...(configuredEngine === undefined ? {} : {configuredEngine}),
-    });
+    return {
+      kind: "resolved",
+      selection: resolveContainerEngine({
+        argv: context.options.engine === undefined ? [] : ["--engine", context.options.engine],
+        env: environment.variables,
+        ...(configuredEngine === undefined ? {} : {configuredEngine}),
+      }),
+    };
   } catch (error) {
-    const configuredEngineVariable = runtime.environment.variables["AROLARIU_CONTAINER_ENGINE"];
+    return {kind: "unresolved", error};
+  }
+}
+
+/**
+ * Selects the container engine, prompting only when nothing configures one and stdin is interactive.
+ *
+ * @remarks
+ * Without any configured selection on an interactive terminal the phase asks through
+ * `Prompts.select`. A `PromptUnavailable` becomes a `failed` outcome with its message; a terminal
+ * quit interrupts the setup run. Any other selection error is a `failed` outcome too.
+ *
+ * @param context - The setup context.
+ * @param configuredEngine - The persisted engine, when one is configured.
+ * @returns The selection outcome; an interruption propagates.
+ */
+function selectEngine(
+  context: SetupContext,
+  configuredEngine: ContainerEngine | undefined,
+): Effect.Effect<EngineSelectionOutcome, never, SetupRequirements> {
+  return Effect.gen(function* () {
+    const environment = yield* Environment;
+    const resolved = resolveConfiguredEngine(context, environment, configuredEngine);
+    if (resolved.kind === "resolved") {
+      return {kind: "selected", selection: resolved.selection};
+    }
+
+    const configuredEngineVariable = environment.variables["AROLARIU_CONTAINER_ENGINE"];
     const noConfiguredSelection =
       context.options.engine === undefined
       && (configuredEngineVariable === undefined || configuredEngineVariable.trim() === "")
       && configuredEngine === undefined;
-    if (!noConfiguredSelection || !runtime.environment.stdinIsTTY) {
-      throw error;
+    if (!noConfiguredSelection || !environment.stdinIsTTY) {
+      return {kind: "failed", message: errorMessage(resolved.error)};
     }
 
-    const engine = await context.prompts.select<ContainerEngine>("Select the local container engine:", [
-      {
-        value: "rancher",
-        label: "Rancher Desktop (Moby/dockerd; Docker Desktop must be stopped)",
-      },
-      {
-        value: "podman",
-        label: "Podman Desktop (podman compose provider required)",
-      },
-    ]);
-    return {engine, source: "interactive"};
-  }
+    const prompts = yield* Prompts;
+    return yield* prompts.select<ContainerEngine>(ENGINE_PROMPT_MESSAGE, ENGINE_PROMPT_CHOICES).pipe(
+      Effect.map((engine): EngineSelectionOutcome => ({kind: "selected", selection: {engine, source: "interactive"}})),
+      Effect.catch((error) =>
+        Terminal.isQuitError(error) ? Effect.interrupt : Effect.succeed<EngineSelectionOutcome>({kind: "failed", message: error.message}),
+      ),
+    );
+  });
 }
 
-// ---------------------------------------------------------------------------
-// Shared command helpers
-// ---------------------------------------------------------------------------
-
-async function runRequiredCommand(
-  runner: ProcessRunner,
-  context: LegacySetupContext,
-  root: string,
-  command: InstallationProposal["command"],
-  failureSummary: string,
-): Promise<void> {
-  const outcome = await runner.run(command, {
-    cwd: root,
-    output: "inherit",
-    timeoutMs: LONG_RUNNING_MUTATION_TIMEOUT_MS,
-  });
-  if (!isSuccessfulOutcome(outcome)) {
-    throw new Error([`${failureSummary}.`, ...commandFailureEvidence(outcome, context)].join("\n"));
-  }
+/**
+ * Persists the selected engine: re-reads the latest tooling configuration and writes the merged
+ * document through the bridge's legacy filesystem view.
+ *
+ * @remarks
+ * Runs only inside the consent-gated persistence action. The read-modify-write is uninterruptible,
+ * so an interruption waits for the atomic write to settle before the invalidation finalizer runs.
+ *
+ * @param context - The setup context.
+ * @param engine - The selected engine.
+ * @returns The write; fails with {@link SetupActionFailed} for an invalid configuration or a failed write.
+ */
+function persistEngine(context: SetupContext, engine: ContainerEngine): InfrastructureStep<void> {
+  return Effect.gen(function* () {
+    const files = yield* legacyFileSystem;
+    const latest = yield* Effect.promise(() => readToolingConfig(context.paths.toolingConfig, files));
+    if (latest.status === "invalid") {
+      return yield* new SetupActionFailed({actionId: ENGINE_PERSIST_ACTION, message: latest.error});
+    }
+    yield* Effect.tryPromise({
+      try: () =>
+        writeToolingConfig(
+          context.paths.toolingConfig,
+          mergeToolingConfig(latest.status === "valid" ? latest.config : undefined, {containerEngine: engine}),
+          files,
+        ),
+      catch: (error) => new SetupActionFailed({actionId: ENGINE_PERSIST_ACTION, message: errorMessage(error)}),
+    });
+  }).pipe(Effect.uninterruptible);
 }
 
 // ---------------------------------------------------------------------------
@@ -435,101 +522,101 @@ interface RuntimeOutcome {
   readonly nextActions: readonly string[];
 }
 
-async function prepareRuntime(
-  context: LegacySetupContext,
-  runner: ProcessRunner,
-  root: string,
+function prepareRuntime(
+  context: SetupContext,
   platform: NodeJS.Platform,
   adapter: ContainerRuntimeAdapter,
   facts: InfrastructureFacts,
-): Promise<RuntimeOutcome> {
-  const readiness = evaluateRuntimeReadiness(adapter, facts);
+): InfrastructureStep<RuntimeOutcome> {
+  return Effect.gen(function* () {
+    const readiness = evaluateRuntimeReadiness(adapter, facts);
 
-  if (readiness.ready) {
-    return {blocked: false, planned: false, evidence: readiness.evidence, nextActions: []};
-  }
+    if (readiness.ready) {
+      return {blocked: false, planned: false, evidence: readiness.evidence, nextActions: []};
+    }
 
-  if (!readiness.installable) {
-    return {
-      blocked: true,
-      planned: false,
-      evidence: readiness.evidence,
-      nextActions: [
-        readiness.manualStart ? runtimeManualAction(adapter) : "Resolve the reported container runtime conflict, then rerun setup.",
-      ],
-    };
-  }
+    if (!readiness.installable) {
+      return {
+        blocked: true,
+        planned: false,
+        evidence: readiness.evidence,
+        nextActions: [
+          readiness.manualStart ? runtimeManualAction(adapter) : "Resolve the reported container runtime conflict, then rerun setup.",
+        ],
+      };
+    }
 
-  const packageManagers = await discoverPackageManagers(runner, root, platform);
-  const proposal = selectContainerInstallationProposal({
-    engine: adapter.engine,
-    platform,
-    availablePackageManagers: packageManagers,
-  });
-  if (proposal === null) {
-    return {
-      blocked: true,
-      planned: false,
-      evidence: readiness.evidence,
-      nextActions: [manualInstallAction(adapter.engine)],
-    };
-  }
+    const packageManagers = yield* discoverPackageManagers(context, platform);
+    const proposal = selectContainerInstallationProposal({
+      engine: adapter.engine,
+      platform,
+      availablePackageManagers: packageManagers,
+    });
+    if (proposal === null) {
+      return {
+        blocked: true,
+        planned: false,
+        evidence: readiness.evidence,
+        nextActions: [manualInstallAction(adapter.engine)],
+      };
+    }
 
-  const mutation = await runInfrastructureMutation(
-    context,
-    {
-      id: CONTAINER_INSTALL_ACTION,
-      scope: "system",
-      summary: proposal.explanation,
-      mutate: () => runRequiredCommand(runner, context, root, proposal.command, "Container runtime installation failed"),
-    },
-    ["infrastructure", "aggregate"],
-  );
+    const mutation = yield* runInfrastructureMutation(
+      context,
+      {
+        id: CONTAINER_INSTALL_ACTION,
+        scope: "system",
+        summary: proposal.explanation,
+        mutate: runRequiredCommand(context, CONTAINER_INSTALL_ACTION, proposal.command, "Container runtime installation failed"),
+      },
+      ["infrastructure", "aggregate"],
+    );
 
-  if (mutation.disposition === "declined") {
-    return {
-      blocked: true,
-      planned: false,
-      evidence: [...readiness.evidence, `Declined action: ${CONTAINER_INSTALL_ACTION}`],
-      nextActions: [manualInstallAction(adapter.engine)],
-    };
-  }
-  if (mutation.disposition === "planned") {
+    if (mutation.disposition === "declined") {
+      return {
+        blocked: true,
+        planned: false,
+        evidence: [...readiness.evidence, `Declined action: ${CONTAINER_INSTALL_ACTION}`],
+        nextActions: [manualInstallAction(adapter.engine)],
+      };
+    }
+    if (mutation.disposition === "planned") {
+      return {
+        blocked: false,
+        planned: true,
+        evidence: [...readiness.evidence, `Planned action: ${CONTAINER_INSTALL_ACTION}`],
+        nextActions: [],
+      };
+    }
+
+    const refreshed = mutation.outcome;
+    if (refreshed.kind !== "available") {
+      return {
+        blocked: true,
+        planned: false,
+        evidence: [
+          `Executed action: ${CONTAINER_INSTALL_ACTION}`,
+          `${adapter.displayName} runtime postcondition still failed: refreshed infrastructure facts are unavailable.`,
+        ],
+        nextActions: [runtimeManualAction(adapter)],
+      };
+    }
+    const postReadiness = evaluateRuntimeReadiness(adapter, refreshed.value);
+    if (!postReadiness.ready) {
+      return {
+        blocked: true,
+        planned: false,
+        evidence: [`Executed action: ${CONTAINER_INSTALL_ACTION}`, ...postReadiness.evidence],
+        nextActions: [postReadiness.manualStart ? runtimeManualAction(adapter) : manualInstallAction(adapter.engine)],
+      };
+    }
     return {
       blocked: false,
-      planned: true,
-      evidence: [...readiness.evidence, `Planned action: ${CONTAINER_INSTALL_ACTION}`],
-      nextActions: [],
-    };
-  }
-
-  const refreshed = mutation.outcome;
-  if (refreshed.kind !== "available") {
-    return {
-      blocked: true,
-      planned: false,
-      evidence: [
-        `Executed action: ${CONTAINER_INSTALL_ACTION}`,
-        `${adapter.displayName} runtime postcondition still failed: refreshed infrastructure facts are unavailable.`,
-      ],
-      nextActions: [runtimeManualAction(adapter)],
-    };
-  }
-  const postReadiness = evaluateRuntimeReadiness(adapter, refreshed.value);
-  if (!postReadiness.ready) {
-    return {
-      blocked: true,
       planned: false,
       evidence: [`Executed action: ${CONTAINER_INSTALL_ACTION}`, ...postReadiness.evidence],
-      nextActions: [postReadiness.manualStart ? runtimeManualAction(adapter) : manualInstallAction(adapter.engine)],
+      nextActions: [],
     };
-  }
-  return {
-    blocked: false,
-    planned: false,
-    evidence: [`Executed action: ${CONTAINER_INSTALL_ACTION}`, ...postReadiness.evidence],
-    nextActions: [],
-  };
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -601,35 +688,62 @@ function degradedCertificateOutcome(evidence: readonly string[], nextActions: re
   return {planned: false, degraded: true, evidence, nextActions};
 }
 
-async function prepareCertificates(
-  context: LegacySetupContext,
-  runtime: LegacySetupPhaseRuntime,
-  runner: ProcessRunner,
-  facts: InfrastructureFacts,
-): Promise<CertificateOutcome> {
-  if (facts.certificateIssues.length === 0) {
-    return {planned: false, degraded: false, evidence: ["Optional selfhost certificate and key are present."], nextActions: []};
-  }
-
-  const invalidKindIssues = facts.certificateIssues.filter((issue) => issue.includes("not a file"));
-  if (invalidKindIssues.length > 0) {
-    return degradedCertificateOutcome(
-      [`Optional selfhost certificate paths have invalid kinds: ${invalidKindIssues.join(", ")}`],
-      ["Replace or remove the invalid optional certificate paths, then rerun setup."],
+/**
+ * Creates the certificate directory and generates the localhost certificate and key with mkcert.
+ *
+ * @param context - The setup context.
+ * @param certificatePath - The certificate file.
+ * @param keyPath - The private key file.
+ * @returns The mutation; fails with {@link SetupActionFailed} when either step fails.
+ */
+function generateCertificates(context: SetupContext, certificatePath: string, keyPath: string): InfrastructureStep<void> {
+  return Effect.gen(function* () {
+    const fs = yield* FileSystem.FileSystem;
+    const directory = dirname(certificatePath);
+    yield* fs.makeDirectory(directory, {recursive: true}).pipe(
+      Effect.mapError(
+        (error) =>
+          new SetupActionFailed({
+            actionId: CERTIFICATE_GENERATE_ACTION,
+            message: `Failed to createDirectory '${directory}': ${error.message}`,
+          }),
+      ),
     );
-  }
+    yield* runRequiredCommand(
+      context,
+      CERTIFICATE_GENERATE_ACTION,
+      {command: "mkcert", args: ["-key-file", keyPath, "-cert-file", certificatePath, "localhost", "*.localhost"]},
+      "Selfhost certificate generation failed",
+    );
+  });
+}
 
-  const root = context.paths.root;
-  const platform = runtime.environment.platform;
-  const certificatePath = resolve(root, "infra", "Local", "Management", "certs", "local-cert.pem");
-  const keyPath = resolve(root, "infra", "Local", "Management", "certs", "local-key.pem");
-  const evidence: string[] = ["Optional selfhost certificate generation is required."];
-  let planned = false;
+/**
+ * Prepares the optional selfhost certificates: installs and trusts mkcert, then generates them.
+ *
+ * @param context - The setup context.
+ * @param platform - The host platform.
+ * @param evidence - Mutable accumulator of this step's evidence.
+ * @returns The certificate outcome, before any failure is converted; fails with
+ * {@link SetupActionFailed} when an action failed.
+ */
+function prepareCertificateChain(
+  context: SetupContext,
+  platform: NodeJS.Platform,
+  evidence: string[],
+): InfrastructureStep<CertificateOutcome> {
+  return Effect.gen(function* () {
+    const root = context.paths.root;
+    const certificatePath = resolve(root, "infra", "Local", "Management", "certs", "local-cert.pem");
+    const keyPath = resolve(root, "infra", "Local", "Management", "certs", "local-key.pem");
+    const mkcertVersion: ProcessRequest = {command: "mkcert", args: ["--version"]};
+    let planned = false;
 
-  try {
-    let mkcertProbe = await runner.run({command: "mkcert", args: ["--version"]}, {cwd: root});
-    if (!isSuccessfulOutcome(mkcertProbe)) {
-      const managers = await discoverPackageManagers(runner, root, platform);
+    let mkcertProbe = yield* runInfrastructureCommand(context, mkcertVersion);
+    if (mkcertProbe.kind === "succeeded") {
+      evidence.push("mkcert is available.");
+    } else {
+      const managers = yield* discoverPackageManagers(context, platform);
       const proposal = selectMkcertInstallationProposal(platform, managers);
       if (proposal === null) {
         return degradedCertificateOutcome(
@@ -637,13 +751,13 @@ async function prepareCertificates(
           [MKCERT_MANUAL_ACTION],
         );
       }
-      const installMutation = await runInfrastructureMutation(
+      const installMutation = yield* runInfrastructureMutation(
         context,
         {
           id: MKCERT_INSTALL_ACTION,
           scope: "system",
           summary: proposal.explanation,
-          mutate: () => runRequiredCommand(runner, context, root, proposal.command, "mkcert installation failed"),
+          mutate: runRequiredCommand(context, MKCERT_INSTALL_ACTION, proposal.command, "mkcert installation failed"),
         },
         ["infrastructure"],
       );
@@ -658,23 +772,25 @@ async function prepareCertificates(
         evidence.push(`Planned action: ${MKCERT_INSTALL_ACTION}`);
       } else {
         evidence.push(`Executed action: ${MKCERT_INSTALL_ACTION}`);
-        mkcertProbe = await runner.run({command: "mkcert", args: ["--version"]}, {cwd: root});
-        if (!isSuccessfulOutcome(mkcertProbe)) {
+        mkcertProbe = yield* runInfrastructureCommand(context, mkcertVersion);
+        if (mkcertProbe.kind !== "succeeded") {
           return degradedCertificateOutcome([...evidence, "mkcert remains unavailable after installation."], [MKCERT_MANUAL_ACTION]);
         }
       }
-    } else {
-      evidence.push("mkcert is available.");
     }
 
-    const trustMutation = await runInfrastructureMutation(
+    const trustMutation = yield* runInfrastructureMutation(
       context,
       {
         id: MKCERT_TRUST_ACTION,
         scope: "system",
         summary: "Install the mkcert local certificate authority into the system trust stores.",
-        mutate: () =>
-          runRequiredCommand(runner, context, root, {command: "mkcert", args: ["-install"]}, "mkcert trust installation failed"),
+        mutate: runRequiredCommand(
+          context,
+          MKCERT_TRUST_ACTION,
+          {command: "mkcert", args: ["-install"]},
+          "mkcert trust installation failed",
+        ),
       },
       ["infrastructure"],
     );
@@ -691,25 +807,13 @@ async function prepareCertificates(
       evidence.push(`Executed action: ${MKCERT_TRUST_ACTION}`);
     }
 
-    const generateMutation = await runInfrastructureMutation(
+    const generateMutation = yield* runInfrastructureMutation(
       context,
       {
         id: CERTIFICATE_GENERATE_ACTION,
         scope: "user",
         summary: "Generate the ignored localhost certificate and private key for selfhost.",
-        mutate: async () => {
-          await runtime.files.createDirectory(dirname(certificatePath), {recursive: true});
-          await runRequiredCommand(
-            runner,
-            context,
-            root,
-            {
-              command: "mkcert",
-              args: ["-key-file", keyPath, "-cert-file", certificatePath, "localhost", "*.localhost"],
-            },
-            "Selfhost certificate generation failed",
-          );
-        },
+        mutate: generateCertificates(context, certificatePath, keyPath),
       },
       ["infrastructure"],
     );
@@ -735,55 +839,97 @@ async function prepareCertificates(
     }
 
     return {planned, degraded: false, evidence, nextActions: []};
-  } catch (error) {
-    if (isInterrupted(error)) {
-      throw error;
-    }
-    return degradedCertificateOutcome(
-      [...evidence, `Optional selfhost certificate preparation failed: ${errorMessage(error)}`],
-      ["Resolve the reported certificate preparation failure, then rerun setup."],
+  });
+}
+
+/**
+ * Prepares the optional selfhost certificates from shared facts.
+ *
+ * @remarks
+ * A failed certificate action degrades the phase instead of failing it, because the certificates
+ * are optional; an interruption propagates.
+ *
+ * @param context - The setup context.
+ * @param platform - The host platform.
+ * @param facts - The infrastructure facts.
+ * @returns The certificate outcome.
+ */
+function prepareCertificates(
+  context: SetupContext,
+  platform: NodeJS.Platform,
+  facts: InfrastructureFacts,
+): Effect.Effect<CertificateOutcome, never, SetupRequirements> {
+  if (facts.certificateIssues.length === 0) {
+    return Effect.succeed({
+      planned: false,
+      degraded: false,
+      evidence: ["Optional selfhost certificate and key are present."],
+      nextActions: [],
+    });
+  }
+
+  const invalidKindIssues = facts.certificateIssues.filter((issue) => issue.includes("not a file"));
+  if (invalidKindIssues.length > 0) {
+    return Effect.succeed(
+      degradedCertificateOutcome(
+        [`Optional selfhost certificate paths have invalid kinds: ${invalidKindIssues.join(", ")}`],
+        ["Replace or remove the invalid optional certificate paths, then rerun setup."],
+      ),
     );
   }
+
+  const evidence: string[] = ["Optional selfhost certificate generation is required."];
+  return prepareCertificateChain(context, platform, evidence).pipe(
+    Effect.catch((error) =>
+      Effect.succeed(
+        degradedCertificateOutcome(
+          [...evidence, `Optional selfhost certificate preparation failed: ${error.message}`],
+          ["Resolve the reported certificate preparation failure, then rerun setup."],
+        ),
+      ),
+    ),
+  );
 }
 
 // ---------------------------------------------------------------------------
 // Phase
 // ---------------------------------------------------------------------------
 
-async function runInfrastructureSetup(context: LegacySetupContext): Promise<SetupPhaseResult> {
-  const runtime = requireLegacySetupPhaseRuntime(context);
-  const startedAt = runtime.clock.monotonicNow();
-  const evidence: string[] = [];
-  const runner = createCredentialIsolatedRunner(runtime.runner);
+/**
+ * Prepares the local infrastructure up to its result, without its duration.
+ *
+ * @param context - The setup context.
+ * @returns The phase result; fails with {@link SetupActionFailed} when a required action failed.
+ */
+function prepareInfrastructure(context: SetupContext): InfrastructureStep<Omit<SetupPhaseResult, "durationMs">> {
+  return Effect.gen(function* () {
+    const evidence: string[] = [];
+    const {platform} = yield* Environment;
+    const files = yield* legacyFileSystem;
 
-  try {
-    const configRead = await readToolingConfig(context.paths.toolingConfig, runtime.files);
+    const configRead = yield* Effect.promise(() => readToolingConfig(context.paths.toolingConfig, files));
     if (configRead.status === "invalid") {
-      return phaseResult(runtime, startedAt, {
+      return {
         id: "infrastructure",
         status: "failed",
         summary: "The local tooling configuration is invalid; infrastructure was not changed.",
         evidence: [configRead.error],
         nextActions: ["Correct or remove the invalid non-secret local tooling configuration, then rerun setup."],
-      });
+      };
     }
 
     const currentConfig = configRead.status === "valid" ? configRead.config : undefined;
-    let selection: SelectedEngine;
-    try {
-      selection = await selectEngine(context, runtime, currentConfig?.containerEngine);
-    } catch (error) {
-      if (isInterrupted(error)) {
-        throw error;
-      }
-      return phaseResult(runtime, startedAt, {
+    const selected = yield* selectEngine(context, currentConfig?.containerEngine);
+    if (selected.kind === "failed") {
+      return {
         id: "infrastructure",
         status: "failed",
         summary: "A supported local container engine was not selected.",
-        evidence: [errorMessage(error)],
+        evidence: [selected.message],
         nextActions: [SELECT_ENGINE_ACTION],
-      });
+      };
     }
+    const {selection} = selected;
 
     const adapter = getContainerAdapter(selection.engine);
     evidence.push(
@@ -794,40 +940,30 @@ async function runInfrastructureSetup(context: LegacySetupContext): Promise<Setu
 
     // Make the selected engine visible to the shared inspection session so a subsequent
     // invalidate + inspect cycle observes the correct container runtime.
-    context.inspection.updateInfrastructureEngine(selection.engine);
+    yield* context.inspection.updateInfrastructureEngine(selection.engine);
 
     let planned = false;
-    if (currentConfig?.containerEngine !== selection.engine) {
-      const persistMutation = await runInfrastructureMutation(
+    if (currentConfig?.containerEngine === selection.engine) {
+      evidence.push("The persisted container engine selection is already current.");
+    } else {
+      const persistMutation = yield* runInfrastructureMutation(
         context,
         {
           id: ENGINE_PERSIST_ACTION,
           scope: "repository",
           summary: `Persist ${adapter.displayName} as the non-secret local container engine selection.`,
-          mutate: async () => {
-            const latest = await readToolingConfig(context.paths.toolingConfig, runtime.files);
-            if (latest.status === "invalid") {
-              throw new Error(latest.error);
-            }
-            await writeToolingConfig(
-              context.paths.toolingConfig,
-              mergeToolingConfig(latest.status === "valid" ? latest.config : undefined, {
-                containerEngine: selection.engine,
-              }),
-              runtime.files,
-            );
-          },
+          mutate: persistEngine(context, selection.engine),
         },
         ["infrastructure"],
       );
       if (persistMutation.disposition === "declined") {
-        return phaseResult(runtime, startedAt, {
+        return {
           id: "infrastructure",
           status: "failed",
           summary: "Persisting the required container engine selection was declined.",
           evidence: [...evidence, `Declined action: ${ENGINE_PERSIST_ACTION}`],
           nextActions: [`Allow required action '${ENGINE_PERSIST_ACTION}', then rerun setup.`],
-        });
+        };
       }
       if (persistMutation.disposition === "planned") {
         planned = true;
@@ -835,23 +971,21 @@ async function runInfrastructureSetup(context: LegacySetupContext): Promise<Setu
       } else {
         evidence.push(`Executed action: ${ENGINE_PERSIST_ACTION}`);
       }
-    } else {
-      evidence.push("The persisted container engine selection is already current.");
     }
 
-    const infraOutcome = await context.inspection.inspect("infrastructure");
+    const infraOutcome = yield* context.inspection.inspect("infrastructure");
     if (infraOutcome.kind !== "available") {
-      return phaseResult(runtime, startedAt, {
+      return {
         id: "infrastructure",
         status: "failed",
         summary: "Shared infrastructure inspection failed.",
         evidence: [...evidence, infraOutcome.kind === "unavailable" ? infraOutcome.reason : infraOutcome.issues.join("; ")],
         nextActions: ["Resolve the reported infrastructure inspection failure, then rerun setup."],
-      });
+      };
     }
     let facts = infraOutcome.value;
 
-    const runtimeOutcome = await prepareRuntime(context, runner, context.paths.root, runtime.environment.platform, adapter, facts);
+    const runtimeOutcome = yield* prepareRuntime(context, platform, adapter, facts);
     evidence.push(...runtimeOutcome.evidence);
     planned ||= runtimeOutcome.planned;
 
@@ -859,7 +993,7 @@ async function runInfrastructureSetup(context: LegacySetupContext): Promise<Setu
     // re-inspected inside prepareRuntime. Re-inspect here so the rest of the phase uses the
     // refreshed ports, certificates, and manifests.
     if (!runtimeOutcome.blocked && !runtimeOutcome.planned && runtimeOutcome.evidence.some((line) => line.startsWith("Executed action:"))) {
-      const refreshed = await context.inspection.inspect("infrastructure");
+      const refreshed = yield* context.inspection.inspect("infrastructure");
       if (refreshed.kind === "available") {
         facts = refreshed.value;
       }
@@ -868,15 +1002,10 @@ async function runInfrastructureSetup(context: LegacySetupContext): Promise<Setu
     const ports = evaluatePortReadiness(facts, adapter);
     evidence.push(...ports.evidence);
 
-    const manifestEvidence: string[] = [];
-    let manifestBlocked = false;
-    if (facts.manifestIssues.length > 0) {
-      manifestBlocked = true;
-      manifestEvidence.push(...facts.manifestIssues);
-    }
-    evidence.push(...manifestEvidence);
+    const manifestBlocked = facts.manifestIssues.length > 0;
+    evidence.push(...facts.manifestIssues);
 
-    const certificates = await prepareCertificates(context, runtime, runner, facts);
+    const certificates = yield* prepareCertificates(context, platform, facts);
     evidence.push(...certificates.evidence);
     planned ||= certificates.planned;
     const degraded = ports.degraded || certificates.degraded;
@@ -888,7 +1017,7 @@ async function runInfrastructureSetup(context: LegacySetupContext): Promise<Setu
       ...certificates.nextActions,
     ]);
 
-    return phaseResult(runtime, startedAt, {
+    return {
       id: "infrastructure",
       status: blocked ? "failed" : planned ? "skipped" : degraded ? "degraded" : "succeeded",
       summary: blocked
@@ -900,33 +1029,45 @@ async function runInfrastructureSetup(context: LegacySetupContext): Promise<Setu
             : "Local infrastructure is ready.",
       evidence,
       nextActions,
-    });
-  } catch (error) {
-    if (isInterrupted(error)) {
-      throw error;
-    }
-    return phaseResult(runtime, startedAt, {
-      id: "infrastructure",
-      status: "failed",
-      summary: "Local infrastructure preparation failed.",
-      evidence: [errorMessage(error)],
-      nextActions: ["Resolve the reported infrastructure preparation failure, then rerun setup."],
-    });
-  }
+    };
+  });
 }
 
 /**
- * Creates the infrastructure setup phase over the invocation-scoped setup phase runtime.
+ * Runs the infrastructure phase: a failed required action becomes one failed result carrying the
+ * reported failure; an interruption propagates.
+ *
+ * @param context - The setup context.
+ * @returns The phase result.
+ */
+function runInfrastructureSetup(context: SetupContext): Effect.Effect<SetupPhaseResult, never, SetupRequirements> {
+  return Effect.gen(function* () {
+    const startedAt = yield* Clock.currentTimeMillis;
+    const outcome = yield* Effect.result(prepareInfrastructure(context));
+    if (outcome._tag === "Success") {
+      return yield* phaseResult(startedAt, outcome.success);
+    }
+    return yield* phaseResult(startedAt, {
+      id: "infrastructure",
+      status: "failed",
+      summary: "Local infrastructure preparation failed.",
+      evidence: [outcome.failure.message],
+      nextActions: ["Resolve the reported infrastructure preparation failure, then rerun setup."],
+    });
+  }).pipe(Effect.withSpan("setup.infrastructure"));
+}
+
+/**
+ * Creates the infrastructure setup phase.
  *
  * @remarks
- * The phase no longer accepts a test-only platform, environment, filesystem, or tooling-config
- * override: the platform, the process runner, the filesystem, and the environment all come from
- * {@link LegacySetupPhaseRuntime}, so a test replaces capabilities on the runtime rather than on this
- * factory.
+ * The phase accepts no host, filesystem, or prompt boundary: the platform, the environment, the
+ * processes, the prompts, the filesystem, and the clock all come from the invocation services, so a
+ * test replaces them through its layer rather than on this factory.
  *
  * @returns The infrastructure setup phase definition.
  */
-export function createInfrastructureSetupPhase(): LegacySetupPhaseDefinition {
+export function createInfrastructureSetupPhase(): SetupPhaseDefinition {
   return {
     id: "infrastructure",
     title: "Local infrastructure",
@@ -937,4 +1078,4 @@ export function createInfrastructureSetupPhase(): LegacySetupPhaseDefinition {
 }
 
 /** Default production infrastructure setup phase. */
-export const infrastructureSetupPhase: LegacySetupPhaseDefinition = createInfrastructureSetupPhase();
+export const infrastructureSetupPhase: SetupPhaseDefinition = createInfrastructureSetupPhase();

@@ -381,22 +381,8 @@ describe("setupPhases", () => {
     ]);
   });
 
-  it("runs the native phases directly and every legacy phase through the adapter with its id, title, requirement flag, and dependencies", () => {
-    type PhaseMetadata = Pick<SetupPhaseDefinition, "id" | "title" | "required" | "dependsOn">;
-    const metadata = (phase: PhaseMetadata): PhaseMetadata => ({
-      id: phase.id,
-      title: phase.title,
-      required: phase.required,
-      dependsOn: phase.dependsOn,
-    });
+  it("runs every phase natively with its id, title, requirement flag, and dependencies", () => {
     const nativePhases: readonly SetupPhaseDefinition[] = [
-      ...workspaceSetupPhases,
-      dotnetSetupPhase,
-      reactSetupPhase,
-      svelteSetupPhase,
-      pythonSetupPhase,
-    ];
-    const declaredPhases: readonly PhaseMetadata[] = [
       ...workspaceSetupPhases,
       dotnetSetupPhase,
       reactSetupPhase,
@@ -405,8 +391,7 @@ describe("setupPhases", () => {
       infrastructureSetupPhase,
     ];
 
-    expect(setupPhases.map(metadata)).toEqual(declaredPhases.map(metadata));
-    expect(setupPhases.filter((phase) => nativePhases.includes(phase))).toEqual(nativePhases);
+    expect(setupPhases).toEqual(nativePhases);
   });
 });
 

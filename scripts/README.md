@@ -435,9 +435,9 @@ npx eslint scripts\commands\generate scripts\commands\rates scripts\commands\doc
 kernel: [`commands/setup/index.ts`](./commands/setup/index.ts) `runSetup` resolves canonical paths through [`common/repository-paths.ts`](./common/repository-paths.ts), loads manifest-derived runtime and package
 requirements through [`common/requirements.ts`](./common/requirements.ts), and reads/writes the non-secret persisted selection at
 `.arolariu/tooling.local.json` through [`common/tooling-config.ts`](./common/tooling-config.ts). Setup restores dependencies, prepares
-toolchains, and generates checkout artifacts; it never builds, type-checks, tests, or starts/stops a service. The native Effect phases
-(workspace, .NET, React, Svelte, Python) run directly; the remaining legacy Promise phase (infrastructure) runs through the temporary [`legacyPhase`](./commands/setup/legacy-phase.ts)
-adapter (deleted in Task 5.5), which hands it Promise views over the invocation's Effect services. A required phase that failed (or was skipped by a blocking dependency,
+toolchains, and generates checkout artifacts; it never builds, type-checks, tests, or starts/stops a service. Every phase (workspace,
+.NET, React, Svelte, Python, infrastructure) is a native Effect phase; the temporary [`legacyPhase`](./commands/setup/legacy-phase.ts)
+adapter no longer wraps any production phase and is deleted in Task 5.5. A required phase that failed (or was skipped by a blocking dependency,
 or outside a dry run) makes the command exit `1` after the summary table; with `--json`, the `{phases}` result is the single document.
 
 ### Module map
@@ -450,7 +450,7 @@ or outside a dry run) makes the command exit `1` after the summary table; with `
 | [`commands/setup/actions.ts`](./commands/setup/actions.ts) | `SetupActions`: the consent-gated runner of every setup mutation |
 | [`commands/setup/phase-support.ts`](./commands/setup/phase-support.ts) | Native phase building blocks: `runPhaseCommand` (setup command defaults), `submitSetupAction`, and `phaseResult` |
 | [`commands/setup/phase-testing.ts`](./commands/setup/phase-testing.ts) | Test support for the native phase tests: scripted commands, recording inspection/actions, and the counting clock |
-| [`commands/setup/legacy-phase.ts`](./commands/setup/legacy-phase.ts) | Temporary `legacyPhase` adapter running the legacy Promise phases under the kernel (deleted in Task 5.5) |
+| [`commands/setup/legacy-phase.ts`](./commands/setup/legacy-phase.ts) | Temporary `legacyPhase` adapter for legacy Promise phases; no production phase uses it any more (deleted in Task 5.5) |
 | [`commands/setup/types.ts`](./commands/setup/types.ts) | `SetupContext`, `SetupPhaseDefinition`, `SetupAction`, the status/scope contracts, and the temporary `Legacy*` phase contracts |
 | [`commands/setup/phases/workspace.ts`](./commands/setup/phases/workspace.ts) | Prerequisite validation, root and `.github/scripts` npm restore, and generated taxonomy/GraphQL/i18n artifacts |
 | [`commands/setup/phases/dotnet.ts`](./commands/setup/phases/dotnet.ts) | .NET SDK install, workload/solution/tool restore, AppHost user secrets, and the local HTTPS dev certificate |
