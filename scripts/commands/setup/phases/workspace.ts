@@ -24,7 +24,7 @@ import type {ProcessRequest} from "../../../platform/Process.ts";
 import type {GenerateRequirements} from "../../generate/env.ts";
 import {runGenerate, silently, type GenerateInput, type GenerateResult} from "../../generate/index.ts";
 import {SetupActionFailed} from "../errors.ts";
-import {phaseResult, runPhaseCommand, submitSetupAction, type PhaseCommandOutcome} from "../phase-support.ts";
+import {commandFailureEvidence, phaseResult, runPhaseCommand, submitSetupAction, type PhaseCommandOutcome} from "../phase-support.ts";
 import type {SetupContext, SetupPhaseDefinition, SetupPhaseResult, SetupRequirements} from "../types.ts";
 
 const REPOSITORY_PACKAGE_NAME = "@arolariu/monorepo";
@@ -60,42 +60,6 @@ function isRecord(value: unknown): value is UnknownRecord {
 
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
-}
-
-/**
- * Renders one failed command outcome as concise, secret-free setup evidence.
- *
- * @param outcome - Completed command outcome.
- * @returns Evidence lines naming the transport failure and any captured output.
- */
-function commandFailureEvidence(outcome: Readonly<PhaseCommandOutcome>): readonly string[] {
-  const evidence: string[] = [];
-  if (outcome.kind === "failed") {
-    const {error} = outcome;
-    switch (error._tag) {
-      case "ProcessExited":
-        evidence.push(`Command exited with code ${String(error.exitCode)}.`);
-        break;
-      case "ProcessSignalled":
-        evidence.push(`Command stopped with signal ${error.signal}.`);
-        break;
-      case "ProcessSpawnFailed":
-        evidence.push(`Unable to start command: ${error.message}`);
-        break;
-      case "ProcessTimedOut":
-        evidence.push("Command timed out.");
-        break;
-    }
-  }
-
-  if (outcome.stdout.trim() !== "") {
-    evidence.push(`stdout: ${outcome.stdout.trim()}`);
-  }
-  if (outcome.stderr.trim() !== "") {
-    evidence.push(`stderr: ${outcome.stderr.trim()}`);
-  }
-
-  return evidence;
 }
 
 function normalizedVersion(version: MinimumVersion): string {

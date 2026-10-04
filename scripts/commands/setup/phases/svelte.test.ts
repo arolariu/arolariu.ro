@@ -1,39 +1,50 @@
 // @vitest-environment node
 /**
  * @fileoverview Contract tests for Svelte workspace setup.
- * @module scripts.setup.svelte.test
+ * @module scripts/commands/setup/phases/svelte.test
  *
  * @remarks
- * Every test drives the real phase against an injected {@link LegacySetupPhaseRuntime}: a recording
- * process runner replaying typed {@link ProcessOutcome} fixtures, a deterministic clock, and an
- * immutable environment snapshot. No test in this file reads the live checkout, spawns a process,
- * mocks a repository module, or observes ambient Node state.
+ * Every test runs the real Effect phase on the in-memory `makeTestLayer` harness: request-keyed
+ * scripted commands replaying legacy-shaped outcomes, a recording inspection session that replays
+ * per-key outcome sequences and records every inspection event in order, and a recording
+ * `SetupActions`. Phases run under a counting clock (see `runPhase`), so each reports the
+ * deterministic duration of its legacy test clock. No test in this file reads the live checkout,
+ * spawns a process, mocks a repository module, or observes ambient Node state.
  */
 
 import {resolve} from "node:path";
+
+import {Effect, Exit, Layer} from "effect";
 import {afterEach, describe, expect, it, vi} from "vitest";
 
-import type {CommandContext} from "../../../common/commander.ts";
-import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "../../../common/logger.ts";
 import {createRepositoryPaths} from "../../../common/repository-paths.ts";
 import type {PackageRequirement, RepositoryRequirements} from "../../../common/requirements.ts";
-import {AbstractProcessRunner, type ProcessOutcome, type ProcessRequest, type ProcessRunOptions} from "../../../common/runner.ts";
-import {createMemoryFileSystem, createTestRuntimeFactory} from "../../../common/runtime.testing.ts";
-import {CommandCancellation, type Clock, type RuntimeEnvironment} from "../../../common/runtime.ts";
 import type {SvelteFacts, SvelteProjectId} from "../../../inspection/frontend.ts";
 import type {InstalledPackageFact, PackageInventoryFacts} from "../../../inspection/packages.ts";
-import type {LegacyRepositoryInspectionSession} from "../../../platform/bridge.ts";
+import type {RepositoryInspectionKey, RepositoryInspectionSession} from "../../../inspection/repository.ts";
 import type {InspectionOutcome} from "../../../inspection/types.ts";
-import {createSvelteSetupPhase, svelteSetupPhase} from "./svelte.ts";
+import type {ProcessRequest} from "../../../platform/Process.ts";
+import {makeTestLayer, type RecordedProcessCall} from "../../../platform/testing.ts";
+import type {SetupActions} from "../actions.ts";
+import {
+  interruptingActions,
+  keyedResponder,
+  recordingActions,
+  runPhase as runPhaseWith,
+  runPhaseExit,
+  scriptedCommands,
+  type ScriptedCommandOutcome,
+} from "../phase-testing.ts";
 import type {
-  LegacySetupAction,
+  SetupAction,
   SetupActionDisposition,
-  LegacySetupActionExecutor,
-  LegacySetupContext,
-  SetupOptions,
+  SetupContext,
+  SetupInput,
+  SetupPhaseDefinition,
   SetupPhaseResult,
-  LegacySetupPhaseRuntime,
+  SetupRequirements,
 } from "../types.ts";
+import {createSvelteSetupPhase, svelteSetupPhase} from "./svelte.ts";
 
 const paths = createRepositoryPaths(resolve("C:\\fixture\\arolariu.ro"));
 const requiredPackages = [
@@ -59,9 +70,8 @@ const nodeEngines: Readonly<Record<SvelteProjectId, string>> = {cv: ">=22", stat
  * Pre-migration ceiling for the long-running two-workspace `svelte-kit sync` mutation.
  *
  * @remarks
- * The invocation-scoped runner defaults to 120s, which would truncate a real preparation run. The
- * mutation that previously inherited the legacy `tee` mutation default must therefore request this
- * timeout explicitly now that the phase no longer flows through the deprecated setup runner bridge.
+ * Setup commands default to 120s, which would truncate a real preparation run, so the mutation requests
+ * this timeout explicitly.
  */
 const LEGACY_MUTATION_TIMEOUT_MS = 1_200_000;
 const prepareCommand: ProcessRequest = {
@@ -73,16 +83,12 @@ const packageInventoryCommand: ProcessRequest = {
   args: ["ls", "--json", "--depth=0"],
 };
 
-function succeeded(patch: Readonly<{stdout?: string; stderr?: string}> = {}): ProcessOutcome {
-  return {kind: "succeeded", exitCode: 0, stdout: patch.stdout ?? "", stderr: patch.stderr ?? "", durationMs: 1};
-}
-
-function exited(exitCode: number, patch: Readonly<{stdout?: string; stderr?: string}> = {}): ProcessOutcome {
+function exited(exitCode: number, patch: Readonly<{stdout?: string; stderr?: string}> = {}): ScriptedCommandOutcome {
   return {kind: "exited", exitCode, stdout: patch.stdout ?? "", stderr: patch.stderr ?? "", durationMs: 1};
 }
 
-function cancelledOutcome(): ProcessOutcome {
-  return {kind: "cancelled", stdout: "", stderr: "", durationMs: 1};
+function cancelledOutcome(): ScriptedCommandOutcome {
+  return {kind: "cancelled"};
 }
 
 function commandKey(command: Readonly<ProcessRequest>): string {
@@ -116,7 +122,7 @@ function requirements(
   };
 }
 
-function options(patch: Partial<SetupOptions> = {}): SetupOptions {
+function options(patch: Partial<SetupInput> = {}): SetupInput {
   return {
     verbose: false,
     dryRun: false,
@@ -180,7 +186,7 @@ function invalid<T>(issues: readonly string[] = ["Installed package metadata is 
 }
 
 interface InspectionHarness {
-  readonly session: LegacyRepositoryInspectionSession;
+  readonly session: RepositoryInspectionSession;
   readonly inspect: ReturnType<typeof vi.fn>;
   readonly invalidate: ReturnType<typeof vi.fn>;
   readonly events: string[];
@@ -201,236 +207,123 @@ function createInspectionHarness(
   };
   const offsets = new Map<string, number>();
   const events: string[] = [];
-  const inspect = vi.fn(async (key: string) => {
+  const inspect = vi.fn((key: string): InspectionOutcome<unknown> => {
     events.push(`inspect:${key}`);
     const sequence = sequences[key];
     if (sequence === undefined || sequence.length === 0) {
-      return {kind: "unavailable" as const, reason: "Not exercised by this test.", durationMs: 0};
+      return {kind: "unavailable", reason: "Not exercised by this test.", durationMs: 0};
     }
     const offset = offsets.get(key) ?? 0;
     offsets.set(key, offset + 1);
     return sequence[Math.min(offset, sequence.length - 1)]!;
   });
-  const invalidate = vi.fn((...keys: readonly string[]) => {
+  const invalidate = vi.fn((...keys: string[]) => {
     events.push(`invalidate:${keys.join("+")}`);
   });
-  return {
-    session: {inspect, invalidate, updateInfrastructureEngine: vi.fn()} as unknown as LegacyRepositoryInspectionSession,
-    inspect,
-    invalidate,
-    events,
+  const session: RepositoryInspectionSession = {
+    inspect: <K extends RepositoryInspectionKey>(key: K) => Effect.sync(() => inspect(key) as never),
+    invalidate: (...keys) =>
+      Effect.sync(() => {
+        invalidate(...keys.map(String));
+      }),
+    updateInfrastructureEngine: () => Effect.void,
   };
+  return {session, inspect, invalidate, events};
 }
 
 /** One recorded child invocation. */
-type RecordedCall = Readonly<{request: ProcessRequest; options: ProcessRunOptions}>;
+type RecordedCall = RecordedProcessCall;
 
-/** A scripted outcome, or a value the runner rejects with instead of completing. */
-type ScriptedOutcome = ProcessOutcome | Error;
-
-/** Records every invocation while replaying request-keyed typed outcomes. */
-class FakeProcessRunner extends AbstractProcessRunner {
-  readonly #responses: Readonly<Record<string, ScriptedOutcome | readonly ScriptedOutcome[]>>;
-  readonly #offsets = new Map<string, number>();
-  readonly #calls: RecordedCall[] = [];
-
-  public constructor(responses: Readonly<Record<string, ScriptedOutcome | readonly ScriptedOutcome[]>> = {}) {
-    super();
-    this.#responses = responses;
-  }
-
-  /** Every recorded invocation, in call order. */
-  public get calls(): readonly RecordedCall[] {
-    return this.#calls;
-  }
-
-  /** {@inheritDoc AbstractProcessRunner.execute} */
-  protected override execute(request: Readonly<ProcessRequest>, options: Readonly<ProcessRunOptions>): Promise<ProcessOutcome> {
-    this.#calls.push({request, options});
-    const key = commandKey(request);
-    const configured = this.#responses[key];
-    if (configured === undefined) {
-      return Promise.resolve(succeeded());
-    }
-    if (!Array.isArray(configured)) {
-      return settle(configured as ScriptedOutcome);
-    }
-    const sequence = configured as readonly ScriptedOutcome[];
-    const offset = this.#offsets.get(key) ?? 0;
-    this.#offsets.set(key, offset + 1);
-    return settle(sequence[offset] ?? sequence.at(-1) ?? succeeded());
-  }
-}
-
-function settle(outcome: ScriptedOutcome): Promise<ProcessOutcome> {
-  return outcome instanceof Error ? Promise.reject(outcome) : Promise.resolve(outcome);
-}
-
-function createActions(dispositions: Readonly<Record<string, SetupActionDisposition>> = {}): Readonly<{
-  actions: LegacySetupActionExecutor;
-  actionIds: string[];
-  actionRecords: LegacySetupAction[];
-}> {
-  const actionIds: string[] = [];
-  const actionRecords: LegacySetupAction[] = [];
-  const actions: LegacySetupActionExecutor = {
-    run: async (action) => {
-      actionIds.push(action.id);
-      actionRecords.push(action);
-      const disposition = dispositions[action.id] ?? "executed";
-      if (disposition === "executed") {
-        await action.execute();
-      }
-      return disposition;
-    },
-  };
-  return {actions, actionIds, actionRecords};
-}
-
-/**
- * The exact context view the migrated Svelte phase reads.
- *
- * @remarks
- * The deprecated {@link LegacySetupContext.runner} and {@link LegacySetupContext.now} members are deliberately
- * absent: a migrated phase must read its capabilities from {@link LegacySetupContext.runtime} only, so
- * any relapse becomes a type error instead of a silently passing test.
- */
-type MigratedSetupContext = Omit<LegacySetupContext, "runner" | "now"> & Readonly<{runtime: LegacySetupPhaseRuntime}>;
-
-function environmentSnapshot(): RuntimeEnvironment {
-  return {
-    variables: Object.freeze({}),
-    cwd: paths.root,
-    executablePath: "C:\\Program Files\\nodejs\\node.exe",
-    platform: "win32",
-    architecture: "x64",
-    stdinIsTTY: false,
-    stdoutIsTTY: false,
-    isCI: true,
-  };
-}
-
-/** Everything one Svelte phase test needs to drive and observe the migrated phase. */
+/** Everything one Svelte phase test needs to drive and observe the phase. */
 interface SvelteHarness {
   /** The phase under test. */
-  readonly phase: ReturnType<typeof createSvelteSetupPhase>;
-  /** The migrated setup context handed to the phase. */
-  readonly context: MigratedSetupContext;
-  /** Recording process runner observed by the phase. */
-  readonly runner: FakeProcessRunner;
+  readonly phase: SetupPhaseDefinition;
+  /** The setup context handed to the phase. */
+  readonly context: SetupContext;
+  /** Every recorded process call, in order. */
+  readonly runner: {readonly calls: readonly RecordedCall[]};
   /** Action identifiers in evaluation order. */
   readonly actionIds: string[];
   /** Complete action records in evaluation order. */
-  readonly actionRecords: LegacySetupAction[];
-  /** Rendered logger output. */
-  readonly sink: InMemoryLoggerSink;
+  readonly actionRecords: readonly SetupAction[];
   /** Inspection session probe. */
   readonly inspect: ReturnType<typeof vi.fn>;
   /** Inspection invalidation probe. */
   readonly invalidate: ReturnType<typeof vi.fn>;
   /** Ordered inspection events. */
   readonly events: string[];
+  /** Every service the phase runs with. */
+  readonly layer: Layer.Layer<SetupRequirements>;
 }
 
 async function createHarness(
   input: Readonly<{
-    responses?: Readonly<Record<string, ScriptedOutcome | readonly ScriptedOutcome[]>>;
+    responses?: Readonly<Record<string, ScriptedCommandOutcome | readonly ScriptedCommandOutcome[]>>;
     dispositions?: Readonly<Record<string, SetupActionDisposition>>;
-    setupOptions?: SetupOptions;
+    setupOptions?: SetupInput;
     repositoryRequirements?: RepositoryRequirements;
     packages?: readonly InspectionOutcome<PackageInventoryFacts>[];
     cv?: readonly InspectionOutcome<SvelteFacts>[];
     status?: readonly InspectionOutcome<SvelteFacts>[];
-    actionsOverride?: LegacySetupActionExecutor;
+    /** Replaces the recording consent policy. */
+    actions?: (recording: Layer.Layer<SetupActions>) => Layer.Layer<SetupActions>;
   }> = {},
 ): Promise<SvelteHarness> {
-  const runner = new FakeProcessRunner(input.responses);
-  const createdActions = createActions(input.dispositions);
-  const sink = new InMemoryLoggerSink();
-  const logger = new MonorepositoryConsoleLogger("setup::svelte", {color: false, sink});
+  const platform = makeTestLayer({
+    processes: [scriptedCommands(keyedResponder(input.responses ?? {}))],
+    environment: {
+      cwd: paths.root,
+      executablePath: "C:\\Program Files\\nodejs\\node.exe",
+      platform: "win32",
+      architecture: "x64",
+      stdinIsTTY: false,
+      stdoutIsTTY: false,
+      isCI: true,
+    },
+    context: "setup::svelte",
+  });
+  const recording = recordingActions(false, input.dispositions);
+  const actions = input.actions === undefined ? recording.layer : input.actions(recording.layer);
   const inspection = createInspectionHarness({
     ...(input.packages === undefined ? {} : {packages: input.packages}),
     ...(input.cv === undefined ? {} : {cv: input.cv}),
     ...(input.status === undefined ? {} : {status: input.status}),
   });
 
-  let elapsed = 0;
-  const clock: Clock = {
-    monotonicNow: (): number => elapsed++,
-    isoTimestamp: (): string => "2026-09-01T00:00:00.000Z",
-    delay: (): Promise<void> => Promise.resolve(),
-  };
-
-  const factory = createTestRuntimeFactory({
-    files: createMemoryFileSystem({}),
-    runner,
-    clock,
-    logger,
-    environment: environmentSnapshot(),
-  });
-  const commandRuntime = await factory.createRoot({presentation: "silent", registerProcessSignals: false});
-  const command: CommandContext = {runtime: commandRuntime, presentation: "silent"};
-
-  const runtime: LegacySetupPhaseRuntime = {
-    command,
-    runner: commandRuntime.runner,
-    files: commandRuntime.files,
-    http: commandRuntime.http,
-    clock: commandRuntime.clock,
-    tasks: commandRuntime.tasks,
-    environment: commandRuntime.environment,
-    invokeGenerate: vi.fn<LegacySetupPhaseRuntime["invokeGenerate"]>(() =>
-      Promise.reject(new Error("The Svelte setup phase must never invoke generation.")),
-    ),
-  };
-
-  const context: MigratedSetupContext = {
+  const context: SetupContext = {
     options: input.setupOptions ?? options(),
     paths,
     requirements: input.repositoryRequirements ?? requirements(),
     inspection: inspection.session,
-    runtime,
-    prompts: {
-      confirm: async () => true,
-      select: async <TValue extends string>(
-        _message: string,
-        choices: readonly Readonly<{value: TValue; label: string}>[],
-      ): Promise<TValue> => {
-        const selected = choices[0]?.value;
-        if (selected === undefined) {
-          throw new Error("A test choice is required.");
-        }
-        return selected;
-      },
-      text: async () => "",
-      secret: async () => "",
-    },
-    actions: input.actionsOverride ?? createdActions.actions,
-    logger,
   };
 
   return {
     phase: createSvelteSetupPhase(),
     context,
-    runner,
-    actionIds: createdActions.actionIds,
-    actionRecords: createdActions.actionRecords,
-    sink,
+    runner: {
+      get calls(): readonly RecordedCall[] {
+        return platform.processCalls();
+      },
+    },
+    actionIds: recording.actionIds,
+    get actionRecords(): readonly SetupAction[] {
+      return recording.run.mock.calls.map(([action]) => action);
+    },
     inspect: inspection.inspect,
     invalidate: inspection.invalidate,
     events: inspection.events,
+    layer: actions.pipe(Layer.provideMerge(platform.layer)),
   };
 }
 
 /**
- * Runs the phase against the migrated context view, optionally replacing one dependency.
+ * Runs the phase against its harness.
  *
  * @param harness - Assembled test harness.
- * @param patch - Context members replaced for this run.
  * @returns The completed phase result.
  */
-function runPhase(harness: SvelteHarness, patch: Partial<MigratedSetupContext> = {}): Promise<SetupPhaseResult> {
-  return harness.phase.run({...harness.context, ...patch} as LegacySetupContext);
+function runPhase(harness: SvelteHarness): Promise<SetupPhaseResult> {
+  return runPhaseWith(harness.phase, harness.context, harness.layer);
 }
 
 function callFor(harness: SvelteHarness, command: Readonly<ProcessRequest>): RecordedCall | undefined {
@@ -644,7 +537,6 @@ describe("generated SvelteKit configuration", () => {
     expect(callFor(harness, prepareCommand)?.options).toMatchObject({
       cwd: paths.root,
       output: "tee",
-      logger: harness.context.logger,
     });
   });
 
@@ -655,7 +547,7 @@ describe("generated SvelteKit configuration", () => {
 
     await expect(runPhase(harness)).resolves.toMatchObject({status: "succeeded"});
 
-    expect(callFor(harness, prepareCommand)?.options.timeoutMs).toBe(LEGACY_MUTATION_TIMEOUT_MS);
+    expect(callFor(harness, prepareCommand)?.options.timeout).toBe(LEGACY_MUTATION_TIMEOUT_MS);
   });
 
   it("invalidates both Svelte facts and re-inspects them immediately after an executed preparation", async () => {
@@ -730,19 +622,23 @@ describe("generated SvelteKit configuration", () => {
     expect(harness.invalidate).toHaveBeenCalledExactlyOnceWith("svelte.cv", "svelte.status");
   });
 
-  it("does not report success and invalidates only svelte.cv and svelte.status when a typed cancelled outcome is returned", async () => {
+  it("does not report success and invalidates only svelte.cv and svelte.status when the preparation is interrupted", async () => {
     const harness = await createHarness({
       cv: [svelteAvailable("cv", {generatedConfigExists: false})],
       responses: {[commandKey(prepareCommand)]: cancelledOutcome()},
     });
 
-    const result = await runPhase(harness);
+    const exit = await runPhaseExit(harness.phase, harness.context, harness.layer);
 
-    expect(result.status).not.toBe("succeeded");
-    expect(result.status).toBe("failed");
-    expect(result.evidence.join("\n")).toContain("Command was cancelled.");
+    expect(Exit.hasInterrupts(exit)).toBe(true);
     expect(harness.invalidate).toHaveBeenCalledExactlyOnceWith("svelte.cv", "svelte.status");
     expect(harness.invalidate).not.toHaveBeenCalledWith("packages");
+    expect(harness.events).toEqual([
+      "inspect:packages",
+      "inspect:svelte.cv",
+      "inspect:svelte.status",
+      "invalidate:svelte.cv+svelte.status",
+    ]);
   });
 
   it("fails without invalidating when the required preparation is declined", async () => {
@@ -776,44 +672,17 @@ describe("generated SvelteKit configuration", () => {
 });
 
 describe("interruption and command safety", () => {
-  it("rethrows AbortError instead of converting interruption to a failure", async () => {
-    const interruption = Object.assign(new Error("interrupted"), {name: "AbortError"});
+  it("propagates an interruption at the consent gate instead of converting it to a failure", async () => {
     const harness = await createHarness({
       cv: [svelteAvailable("cv", {generatedConfigExists: false})],
-      actionsOverride: {run: async () => Promise.reject(interruption)},
+      actions: (recording) => interruptingActions("svelte.prepare", recording),
     });
 
-    await expect(runPhase(harness)).rejects.toBe(interruption);
+    const exit = await runPhaseExit(harness.phase, harness.context, harness.layer);
+
+    expect(Exit.hasInterrupts(exit)).toBe(true);
     expect(harness.invalidate).not.toHaveBeenCalled();
-  });
-
-  it("invalidates both Svelte facts when an attempted preparation is interrupted", async () => {
-    const interruption = Object.assign(new Error("interrupted"), {name: "AbortError"});
-    const harness = await createHarness({
-      cv: [svelteAvailable("cv", {generatedConfigExists: false})],
-      responses: {[commandKey(prepareCommand)]: interruption},
-    });
-
-    await expect(runPhase(harness)).rejects.toBe(interruption);
-    expect(harness.invalidate).toHaveBeenCalledExactlyOnceWith("svelte.cv", "svelte.status");
-  });
-
-  it("propagates runtime cancellation instead of degrading it into a phase failure", async () => {
-    const cancellation = new CommandCancellation("Setup was cancelled.", 130);
-    const harness = await createHarness({
-      cv: [svelteAvailable("cv", {generatedConfigExists: false})],
-      responses: {[commandKey(prepareCommand)]: cancellation},
-    });
-
-    await expect(runPhase(harness)).rejects.toBe(cancellation);
-    expect(harness.invalidate).toHaveBeenCalledExactlyOnceWith("svelte.cv", "svelte.status");
-  });
-
-  it("requires an invocation-scoped runtime instead of falling back to ambient capabilities", async () => {
-    const harness = await createHarness();
-    const {runtime: _runtime, ...withoutRuntime} = harness.context;
-
-    await expect(harness.phase.run(withoutRuntime as LegacySetupContext)).rejects.toThrow(/setup phase runtime/i);
+    expect(harness.runner.calls).toEqual([]);
   });
 
   it("uses explicit cwd and argument arrays without builds, tests, services, or package restoration", async () => {

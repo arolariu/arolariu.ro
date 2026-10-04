@@ -135,3 +135,39 @@ export function processFailureOutput(error: ProcessError, options: {readonly std
           : "";
   return candidate.slice(0, MAX_FAILURE_OUTPUT_LENGTH);
 }
+
+/**
+ * Renders one failed command outcome as concise, secret-free setup evidence.
+ *
+ * @param outcome - Completed command outcome.
+ * @returns Evidence lines naming the transport failure and any captured output.
+ */
+export function commandFailureEvidence(outcome: Readonly<PhaseCommandOutcome>): readonly string[] {
+  const evidence: string[] = [];
+  if (outcome.kind === "failed") {
+    const {error} = outcome;
+    switch (error._tag) {
+      case "ProcessExited":
+        evidence.push(`Command exited with code ${String(error.exitCode)}.`);
+        break;
+      case "ProcessSignalled":
+        evidence.push(`Command stopped with signal ${error.signal}.`);
+        break;
+      case "ProcessSpawnFailed":
+        evidence.push(`Unable to start command: ${error.message}`);
+        break;
+      case "ProcessTimedOut":
+        evidence.push("Command timed out.");
+        break;
+    }
+  }
+
+  if (outcome.stdout.trim() !== "") {
+    evidence.push(`stdout: ${outcome.stdout.trim()}`);
+  }
+  if (outcome.stderr.trim() !== "") {
+    evidence.push(`stderr: ${outcome.stderr.trim()}`);
+  }
+
+  return evidence;
+}

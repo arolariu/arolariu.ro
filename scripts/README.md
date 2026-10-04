@@ -436,7 +436,7 @@ kernel: [`commands/setup/index.ts`](./commands/setup/index.ts) `runSetup` resolv
 requirements through [`common/requirements.ts`](./common/requirements.ts), and reads/writes the non-secret persisted selection at
 `.arolariu/tooling.local.json` through [`common/tooling-config.ts`](./common/tooling-config.ts). Setup restores dependencies, prepares
 toolchains, and generates checkout artifacts; it never builds, type-checks, tests, or starts/stops a service. The native Effect phases
-(workspace, .NET, Python) run directly; the remaining legacy Promise phases run through the temporary [`legacyPhase`](./commands/setup/legacy-phase.ts)
+(workspace, .NET, Svelte, Python) run directly; the remaining legacy Promise phases run through the temporary [`legacyPhase`](./commands/setup/legacy-phase.ts)
 adapter (deleted in Task 5.5), which hands each one Promise views over the invocation's Effect services. A required phase that failed (or was skipped by a blocking dependency,
 or outside a dry run) makes the command exit `1` after the summary table; with `--json`, the `{phases}` result is the single document.
 
