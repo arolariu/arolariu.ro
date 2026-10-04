@@ -1,72 +1,111 @@
 // @vitest-environment node
 /**
  * @fileoverview Tests for the documentation frontmatter normalizer.
- * @module scripts/docs-assemble.normalize.test
+ * @module scripts/commands/docs/normalize.test
  *
  * @remarks
- * Every scenario runs {@link normalizeDirectory} against a deterministic in-memory filesystem
- * fixture instead of real disk state, so this suite never touches `node:fs`.
+ * Every scenario runs {@link normalizeDirectory} on the in-memory harness filesystem instead of
+ * real disk state, so this suite never touches `node:fs`.
  */
 
-import {describe, it, expect} from "vitest";
 import {join} from "node:path";
-import {createMemoryFileSystem} from "../../common/runtime.testing.ts";
+
+import {Effect, FileSystem} from "effect";
+import {describe, expect, it} from "vitest";
+
+import {effectTest, makeTestLayer} from "../../platform/testing.ts";
 import {normalizeDirectory, serializeFrontmatter} from "./normalize.ts";
 
 const ROOT = "/norm";
 
+/**
+ * Reads one harness file as text.
+ *
+ * @param path - File path.
+ * @returns The file contents.
+ */
+function read(path: string): Effect.Effect<string, unknown, FileSystem.FileSystem> {
+  return Effect.gen(function* () {
+    const fs = yield* FileSystem.FileSystem;
+    return yield* fs.readFileString(path);
+  });
+}
+
 describe("normalizeDirectory", () => {
-  it("inserts title from first H1 when frontmatter is absent", async () => {
-    const files = createMemoryFileSystem({[`${ROOT}/alpha.md`]: "# Alpha Module\n\nBody.\n"});
-    await normalizeDirectory(files, ROOT);
-    const out = await files.readText(`${ROOT}/alpha.md`);
-    expect(out).toMatch(/^---\ntitle: Alpha Module\n/);
-    expect(out).toMatch(/sidebar_position: 1\n/);
-    expect(out).not.toMatch(/slug: /);
-    expect(out).toContain("# Alpha Module");
-  });
+  effectTest(
+    "inserts title from first H1 when frontmatter is absent",
+    () =>
+      Effect.gen(function* () {
+        yield* normalizeDirectory(ROOT);
+        const out = yield* read(`${ROOT}/alpha.md`);
+        expect(out).toMatch(/^---\ntitle: Alpha Module\n/);
+        expect(out).toMatch(/sidebar_position: 1\n/);
+        expect(out).not.toMatch(/slug: /);
+        expect(out).toContain("# Alpha Module");
+      }),
+    makeTestLayer({files: {[`${ROOT}/alpha.md`]: "# Alpha Module\n\nBody.\n"}}).layer,
+  );
 
-  it("preserves existing frontmatter keys and only fills missing ones", async () => {
-    const files = createMemoryFileSystem({
-      [`${ROOT}/beta.md`]: "---\ntitle: Custom Title\nslug: /preserved\n---\n# Beta\n\nBody.\n",
-    });
-    await normalizeDirectory(files, ROOT);
-    const out = await files.readText(`${ROOT}/beta.md`);
-    expect(out).toMatch(/title: Custom Title/);
-    expect(out).toMatch(/slug: \/preserved/);
-    expect(out).toMatch(/sidebar_position: /);
-  });
+  effectTest(
+    "preserves existing frontmatter keys and only fills missing ones",
+    () =>
+      Effect.gen(function* () {
+        yield* normalizeDirectory(ROOT);
+        const out = yield* read(`${ROOT}/beta.md`);
+        expect(out).toMatch(/title: Custom Title/);
+        expect(out).toMatch(/slug: \/preserved/);
+        expect(out).toMatch(/sidebar_position: /);
+      }),
+    makeTestLayer({files: {[`${ROOT}/beta.md`]: "---\ntitle: Custom Title\nslug: /preserved\n---\n# Beta\n\nBody.\n"}}).layer,
+  );
 
-  it("skips paths listed in skipPaths", async () => {
-    const files = createMemoryFileSystem({[`${ROOT}/skipme/x.md`]: "# X\n"});
-    await normalizeDirectory(files, ROOT, {skipPaths: [join(ROOT, "skipme")]});
-    const out = await files.readText(`${ROOT}/skipme/x.md`);
-    expect(out).toBe("# X\n");
-  });
+  effectTest(
+    "skips paths listed in skipPaths",
+    () =>
+      Effect.gen(function* () {
+        yield* normalizeDirectory(ROOT, {skipPaths: [join(ROOT, "skipme")]});
+        const out = yield* read(`${ROOT}/skipme/x.md`);
+        expect(out).toBe("# X\n");
+      }),
+    makeTestLayer({files: {[`${ROOT}/skipme/x.md`]: "# X\n"}}).layer,
+  );
 
-  it("forces position 0 for index/README files", async () => {
-    const files = createMemoryFileSystem({
-      [`${ROOT}/zzz.md`]: "# ZZZ\n",
-      [`${ROOT}/index.md`]: "# Overview\n",
-    });
-    await normalizeDirectory(files, ROOT);
-    const zzz = await files.readText(`${ROOT}/zzz.md`);
-    const idx = await files.readText(`${ROOT}/index.md`);
-    expect(idx).toMatch(/sidebar_position: 0/);
-    expect(zzz).toMatch(/sidebar_position: 1/);
-  });
+  effectTest(
+    "forces position 0 for index/README files and walks nested directories",
+    () =>
+      Effect.gen(function* () {
+        yield* normalizeDirectory(ROOT);
+        const zzz = yield* read(`${ROOT}/zzz.md`);
+        const idx = yield* read(`${ROOT}/index.md`);
+        const nested = yield* read(`${ROOT}/nested/README.md`);
+        const text = yield* read(`${ROOT}/notes.txt`);
+        expect(idx).toMatch(/sidebar_position: 0/);
+        expect(zzz).toMatch(/sidebar_position: 1/);
+        expect(nested).toMatch(/sidebar_position: 0/);
+        expect(text).toBe("# not markdown\n");
+      }),
+    makeTestLayer({
+      files: {
+        [`${ROOT}/zzz.md`]: "# ZZZ\n",
+        [`${ROOT}/index.md`]: "# Overview\n",
+        [`${ROOT}/nested/README.md`]: "# Nested\n",
+        [`${ROOT}/notes.txt`]: "# not markdown\n",
+      },
+    }).layer,
+  );
 
-  it("quotes titles containing YAML-reserved characters (@, :, #)", async () => {
-    const files = createMemoryFileSystem({
-      [`${ROOT}/scoped.md`]: "# @arolariu/components\n",
-      [`${ROOT}/colon.md`]: "# Name: With Colon\n",
-    });
-    await normalizeDirectory(files, ROOT);
-    const scoped = await files.readText(`${ROOT}/scoped.md`);
-    const colon = await files.readText(`${ROOT}/colon.md`);
-    expect(scoped).toMatch(/title: "@arolariu\/components"/);
-    expect(colon).toMatch(/title: "Name: With Colon"/);
-  });
+  effectTest(
+    "quotes titles containing YAML-reserved characters (@, :, #)",
+    () =>
+      Effect.gen(function* () {
+        yield* normalizeDirectory(ROOT);
+        const scoped = yield* read(`${ROOT}/scoped.md`);
+        const colon = yield* read(`${ROOT}/colon.md`);
+        expect(scoped).toMatch(/title: "@arolariu\/components"/);
+        expect(colon).toMatch(/title: "Name: With Colon"/);
+      }),
+    makeTestLayer({files: {[`${ROOT}/scoped.md`]: "# @arolariu/components\n", [`${ROOT}/colon.md`]: "# Name: With Colon\n"}}).layer,
+  );
 });
 
 describe("serializeFrontmatter", () => {

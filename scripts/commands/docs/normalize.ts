@@ -21,14 +21,12 @@
  * from the filesystem path plus each plugin's `routeBasePath`, so setting
  * an explicit `slug` would double-prefix the route.
  *
- * Every filesystem access flows through the injected {@link FileSystem} capability instead of
- * `node:fs`, so this module can be exercised with the declarative command runtime's deterministic
- * in-memory fixtures. Frontmatter parsing and serialization stay business-pure functions over
- * plain strings.
+ * Every filesystem access goes through the Effect `FileSystem` and `Path` services, so this module
+ * runs unchanged against the in-memory test harness. Frontmatter parsing and serialization stay
+ * business-pure functions over plain strings.
  */
 
-import {join} from "node:path";
-import type {FileSystem} from "../../common/runtime.ts";
+import {Effect, FileSystem, Path, type PlatformError} from "effect";
 
 /**
  * Optional knobs for {@link normalizeDirectory}.
@@ -136,51 +134,94 @@ function extractH1(body: string): string | undefined {
   return match?.[1];
 }
 
+/** One immediate entry of a directory, classified like the legacy `DirectoryEntry`. */
+export interface DocumentationEntry {
+  /** Entry name, relative to the directory that was read. */
+  readonly name: string;
+  /** Whether the entry is a file, a directory, or something else. */
+  readonly kind: "file" | "directory" | "other";
+}
+
+/**
+ * Lists the immediate entries of one directory with their kinds.
+ *
+ * @param directory - Absolute path of the directory to read.
+ * @returns The entries in the order the filesystem lists them; a dangling link is `other`.
+ */
+export const readDirectoryEntries: (
+  directory: string,
+) => Effect.Effect<readonly DocumentationEntry[], PlatformError.PlatformError, FileSystem.FileSystem | Path.Path> = Effect.fn(
+  "docs.readDirectoryEntries",
+)(function* (directory: string) {
+  const fs = yield* FileSystem.FileSystem;
+  const path = yield* Path.Path;
+  const names = yield* fs.readDirectory(directory);
+  return yield* Effect.forEach(
+    names,
+    (name) =>
+      fs.stat(path.join(directory, name)).pipe(
+        Effect.map((info): DocumentationEntry => ({name, kind: info.type === "File" ? "file" : info.type === "Directory" ? "directory" : "other"})),
+        Effect.orElseSucceed((): DocumentationEntry => ({name, kind: "other"})),
+      ),
+    {concurrency: "unbounded"},
+  );
+});
+
 /**
  * Normalize a single markdown file in place — fill missing `title`
  * (from the first H1) and missing `sidebar_position` (from the caller's
  * deterministic order).
  *
- * @param files - Injected filesystem capability used to read and rewrite the file.
  * @param filePath - Absolute path to the file being rewritten.
  * @param position - Sidebar position to assign when the file has none.
+ * @returns An effect that rewrites the file.
  */
-async function normalizeFile(files: FileSystem, filePath: string, position: number): Promise<void> {
-  const source = await files.readText(filePath);
-  const {frontmatter, body} = parseFrontmatter(source);
-  if (!("title" in frontmatter)) {
-    const heading = extractH1(body);
-    if (heading) frontmatter["title"] = heading;
-  }
-  if (!("sidebar_position" in frontmatter)) frontmatter["sidebar_position"] = position;
-  await files.writeText(filePath, serializeFrontmatter(frontmatter, body));
+function normalizeFile(filePath: string, position: number): Effect.Effect<void, PlatformError.PlatformError, FileSystem.FileSystem> {
+  return Effect.gen(function* () {
+    const fs = yield* FileSystem.FileSystem;
+    const source = yield* fs.readFileString(filePath);
+    const {frontmatter, body} = parseFrontmatter(source);
+    if (!("title" in frontmatter)) {
+      const heading = extractH1(body);
+      if (heading) frontmatter["title"] = heading;
+    }
+    if (!("sidebar_position" in frontmatter)) frontmatter["sidebar_position"] = position;
+    yield* fs.writeFileString(filePath, serializeFrontmatter(frontmatter, body));
+  });
 }
 
 /**
  * Recursively walk a directory and normalize every markdown file it
  * contains. See the module-level docs for the full contract.
  *
- * @param files - Injected filesystem capability used for every directory listing, read, and
- * rewrite performed by the walk.
- * @param dir - Absolute path to the root of the walk.
+ * @param root - Absolute path to the root of the walk.
  * @param options - Optional per-run configuration. Currently only
  *   `skipPaths` is supported.
+ * @returns An effect that rewrites every markdown file under `root`.
  */
-export async function normalizeDirectory(files: FileSystem, dir: string, options: NormalizeOptions = {}): Promise<void> {
+export const normalizeDirectory: (
+  root: string,
+  options?: NormalizeOptions,
+) => Effect.Effect<void, PlatformError.PlatformError, FileSystem.FileSystem | Path.Path> = Effect.fn("docs.normalizeDirectory")(function* (
+  root: string,
+  options: NormalizeOptions = {},
+) {
+  const path = yield* Path.Path;
   const skip = new Set(options.skipPaths ?? []);
-  const walk = async (current: string): Promise<void> => {
-    const entries = (await files.readDirectory(current)).toSorted((left, right) => left.name.localeCompare(right.name));
-    let position = 1;
-    for (const entry of entries) {
-      const full = join(current, entry.name);
-      if (skip.has(full)) continue;
-      if (entry.kind === "directory") {
-        await walk(full);
-      } else if (entry.kind === "file" && /\.mdx?$/i.test(entry.name)) {
-        const isIndex = /^(index|readme)\.mdx?$/i.test(entry.name);
-        await normalizeFile(files, full, isIndex ? 0 : position++);
+  const walk = (current: string): Effect.Effect<void, PlatformError.PlatformError, FileSystem.FileSystem | Path.Path> =>
+    Effect.gen(function* () {
+      const entries = (yield* readDirectoryEntries(current)).toSorted((left, right) => left.name.localeCompare(right.name));
+      let position = 1;
+      for (const entry of entries) {
+        const full = path.join(current, entry.name);
+        if (skip.has(full)) continue;
+        if (entry.kind === "directory") {
+          yield* walk(full);
+        } else if (entry.kind === "file" && /\.mdx?$/i.test(entry.name)) {
+          const isIndex = /^(index|readme)\.mdx?$/i.test(entry.name);
+          yield* normalizeFile(full, isIndex ? 0 : position++);
+        }
       }
-    }
-  };
-  await walk(dir);
-}
+    });
+  yield* walk(root);
+});
