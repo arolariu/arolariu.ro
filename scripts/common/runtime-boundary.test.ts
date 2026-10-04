@@ -66,9 +66,10 @@ const commandFamiliesDirectory = "scripts/commands/";
 
 /**
  * Production modules outside {@link commandFamiliesDirectory} that may import `effect/cli`: the
- * root entrypoint and the exit-code mapping, which classifies `CliError` usage failures as exit `2`.
+ * root entrypoint, the exit-code mapping, which classifies `CliError` usage failures as exit `2`,
+ * and the `Prompts` platform service, which runs effect/cli `Prompt`s.
  */
-const effectCliConsumers: readonly string[] = [cliEntrypoint, "scripts/platform/exit.ts"];
+const effectCliConsumers: readonly string[] = [cliEntrypoint, "scripts/platform/exit.ts", "scripts/platform/Prompts.ts"];
 
 /** Modules allowed to start an Effect runtime (Effect `run*`, `ManagedRuntime.make`, and `NodeRuntime.runMain`). */
 const sanctionedEffectRunners: readonly string[] = [

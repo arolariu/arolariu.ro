@@ -470,3 +470,14 @@ export function outputLayer(settings: OutputSettingsShape): Layer.Layer<OutputSe
 export function withLogContext(context: string): <A, E, R>(self: Effect.Effect<A, E, R>) => Effect.Effect<A, E, R> {
   return <A, E, R>(self: Effect.Effect<A, E, R>): Effect.Effect<A, E, R> => Effect.annotateLogs(self, "context", context);
 }
+
+/**
+ * Whether the current minimum log level emits debug messages, that is, whether the invocation is verbose.
+ *
+ * @remarks
+ * {@link outputLayer} lowers the level to `Debug` for `--verbose`; a program may lower it further
+ * for a scope with `Effect.provideService(References.MinimumLogLevel, "Debug")`.
+ */
+export const debugLogsEnabled: Effect.Effect<boolean> = Effect.map(References.MinimumLogLevel, (level) =>
+  ["All", "Trace", "Debug"].includes(level),
+);

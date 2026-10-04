@@ -176,6 +176,23 @@ describe("makeTestLayer", () => {
     await expect(failure).rejects.toThrow("unscripted http: POST https://example.test/other");
   });
 
+  it("makeTestLayer records every HTTP request in order, including unscripted ones", async () => {
+    // Arrange
+    const harness = makeTestLayer({http: [{match: (request) => request.method === "GET", respond: {status: 200, body: "ok"}}]});
+    const program = Effect.flatMap(HttpClient.HttpClient, (client) =>
+      Effect.andThen(client.get("https://example.test/a", {headers: {"x-probe": "1"}}), Effect.exit(client.post("https://example.test/b"))),
+    );
+
+    // Act
+    await runScoped(program, harness.layer);
+
+    // Assert
+    expect(harness.httpCalls().map((request) => [request.method, request.url, request.headers["x-probe"]])).toEqual([
+      ["GET", "https://example.test/a", "1"],
+      ["POST", "https://example.test/b", undefined],
+    ]);
+  });
+
   it("makeTestLayer filesystem appends, lists directories, and reports missing paths", async () => {
     // Arrange
     const harness = makeTestLayer({files: {"logs/run.log": "a", "logs/old/x.log": "x"}});

@@ -9,11 +9,12 @@
  * replaced, because the terminal is the true external boundary.
  */
 
-import {Cause, Effect, Layer, type Scope} from "effect";
+import {Cause, Effect, Layer, References, type Scope} from "effect";
 import {describe, expect, it, vi} from "vitest";
 
 import type {EnvironmentSnapshot} from "./Environment.ts";
 import {
+  debugLogsEnabled,
   memorySink,
   outputLayer,
   Presenter,
@@ -90,6 +91,21 @@ describe("Output logger", () => {
     // Assert
     expect(records).toHaveLength(1);
     expect(records[0]?.text.startsWith("[arolariu::doctor] ")).toBe(true);
+  });
+
+  it("reports whether debug logs are enabled from the verbose setting and scoped overrides", async () => {
+    // Arrange
+    const sink = memorySink();
+    const layer = (verbose: boolean): Layer.Layer<Presenter> =>
+      outputLayer({mode: "human", verbose, color: false, context: "test"}).pipe(Layer.provide(sink.layer));
+
+    // Act
+    const quiet = await runScoped(debugLogsEnabled, layer(false));
+    const verbose = await runScoped(debugLogsEnabled, layer(true));
+    const overridden = await runScoped(Effect.provideService(debugLogsEnabled, References.MinimumLogLevel, "Debug"), layer(false));
+
+    // Assert
+    expect([quiet, verbose, overridden]).toEqual([false, true, true]);
   });
 
   it("routes warnings and errors to stderr", async () => {

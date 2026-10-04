@@ -18,6 +18,7 @@ import {EnvironmentLive, type Environment} from "./Environment.ts";
 import {GetOnlyHttpLive, GlobLive, ReadOnlyFilesLive, type GetOnlyHttp, type Glob, type ReadOnlyFiles} from "./Files.ts";
 import {outputLayer, SinkLive, type OutputSettings, type OutputSettingsShape, type Presenter, type Sink} from "./Output.ts";
 import {ProcessLayerFactory, type Process} from "./Process.ts";
+import {PromptsLive, type Prompts} from "./Prompts.ts";
 
 /** Services that do not depend on the invocation output settings. */
 export type BaseServices =
@@ -30,13 +31,14 @@ export type BaseServices =
   | Glob
   | ReadOnlyFiles
   | GetOnlyHttp
+  | Prompts
   | Sink;
 
 /** Every service a scripts command may require. */
 export type PlatformServices = BaseServices | OutputSettings | Presenter | Process;
 
 /** Node adapters for every {@link BaseServices} member; output goes to the process streams. */
-export const NodeBaseLayer: Layer.Layer<BaseServices> = Layer.mergeAll(ReadOnlyFilesLive, GetOnlyHttpLive).pipe(
+export const NodeBaseLayer: Layer.Layer<BaseServices> = Layer.mergeAll(ReadOnlyFilesLive, GetOnlyHttpLive, PromptsLive).pipe(
   Layer.provideMerge(Layer.mergeAll(NodeServices.layer, NodeHttpClient.layerUndici, GlobLive, EnvironmentLive, SinkLive)),
 );
 

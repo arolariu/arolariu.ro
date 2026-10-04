@@ -12,7 +12,8 @@
  * The scripted `Process` reproduces `ProcessLive`'s request invariants, command echo, output tee, and
  * timeout around each scripted response. The harness also sets `ProcessLayerFactory` to that
  * scripted layer, so `commandLayer` rebuilds it over each CLI invocation's own output settings.
- * Unscripted processes, HTTP requests, child-process spawns,
+ * Scripted prompts mirror `PromptsLive`'s TTY guard, and `httpCalls` records every HTTP request.
+ * Unscripted processes, HTTP requests, prompts, child-process spawns,
  * terminal reads, and unimplemented `FileSystem` members die, so a test never reaches a real external
  * boundary or a silent no-op by accident.
  */
@@ -21,7 +22,7 @@ import {dirname, resolve} from "node:path";
 import {fileURLToPath} from "node:url";
 
 import {NodePath} from "@effect/platform-node";
-import {Cause, Clock, Effect, Exit, FileSystem, Layer, Option, Terminal, type Scope} from "effect";
+import {Cause, Clock, Effect, Exit, FileSystem, Layer, Option, Redacted, Terminal, type Scope} from "effect";
 import {HttpClient, HttpClientResponse, type HttpClientRequest} from "effect/http";
 import {ChildProcessSpawner} from "effect/process";
 import {TestClock} from "effect/testing";
@@ -45,6 +46,56 @@ import {
   type ProcessResult,
 } from "./Process.ts";
 import {memoryFileSystem, memoryGlob, type FixtureStore} from "./testing.fs.ts";
+import {promptUnavailable, Prompts, requireChoices, type PromptKind, type PromptsShape, type PromptUnavailable} from "./Prompts.ts";
+
+/**
+ * Builds the scripted {@link Prompts} of a harness.
+ *
+ * @remarks
+ * Mirrors `PromptsLive`: without a TTY, a `confirm` or `select` with a default returns it and any
+ * other prompt fails with the legacy {@link promptUnavailable} message. With a TTY, each prompt
+ * consumes the next scripted answer; an exhausted queue, a wrong answer type, or a `select` answer
+ * that is not one of its choices dies.
+ *
+ * @param stdinIsTTY - The harness environment TTY flag.
+ * @param answers - Scripted answers, consumed in order.
+ * @returns The scripted prompt operations.
+ */
+function scriptedPrompts(stdinIsTTY: boolean, answers: readonly (boolean | string)[]): PromptsShape {
+  const queue = [...answers];
+  const next = <T>(
+    kind: PromptKind,
+    message: string,
+    defaultValue: T | undefined,
+    accept: (answer: boolean | string) => T | undefined,
+    expected: string,
+  ): Effect.Effect<T, PromptUnavailable> =>
+    Effect.suspend(() => {
+      if (!stdinIsTTY) {
+        return defaultValue === undefined ? Effect.fail(promptUnavailable(kind)) : Effect.succeed(defaultValue);
+      }
+      if (queue.length === 0) {
+        return Effect.die(new Error(`unscripted prompt: ${message}`));
+      }
+      const answer = queue.shift() as boolean | string;
+      const accepted = accept(answer);
+      return accepted === undefined
+        ? Effect.die(new Error(`scripted prompt answer for ${message} is not ${expected}`))
+        : Effect.succeed(accepted);
+    });
+  const text = (answer: boolean | string): string | undefined => (typeof answer === "string" ? answer : undefined);
+  return Prompts.of({
+    confirm: (message, defaultValue) =>
+      next("confirm", message, defaultValue, (answer) => (typeof answer === "boolean" ? answer : undefined), "a boolean"),
+    select: (message, choices, defaultValue) =>
+      Effect.andThen(
+        requireChoices(choices),
+        next("select", message, defaultValue, (answer) => choices.find((choice) => choice.value === answer)?.value, "one of its choices"),
+      ),
+    text: (message) => next("text", message, undefined, text, "a string"),
+    secret: (message) => Effect.map(next("secret", message, undefined, text, "a string"), (value) => Redacted.make(value)),
+  });
+}
 
 /**
  * Runs an effect inside a fresh scope with the given layer provided.
@@ -126,6 +177,11 @@ export interface TestLayerOptions {
   readonly context?: string;
   /** `"test"` (default) provides `TestClock`; `"live"` keeps real time. */
   readonly clock?: "test" | "live";
+  /**
+   * Scripted prompt answers consumed in order when `environment.stdinIsTTY` is `true`: a boolean
+   * for `confirm`, a choice value for `select`, and a string for `text` and `secret`.
+   */
+  readonly prompts?: readonly (boolean | string)[];
 }
 
 /** An in-memory platform layer and accessors over what the code under test did with it. */
@@ -136,6 +192,8 @@ export interface TestHarness<Provided = PlatformServices | TestClock.TestClock> 
   readonly output: () => readonly SinkRecord[];
   /** Every `Process.run` call, in order. */
   readonly processCalls: () => readonly RecordedProcessCall[];
+  /** Every HTTP request sent through the harness `HttpClient`, scripted or not, in order. */
+  readonly httpCalls: () => readonly HttpClientRequest.HttpClientRequest[];
   /** Every file in the in-memory filesystem, keyed by canonical absolute `/` path. */
   readonly files: () => ReadonlyMap<string, string | Uint8Array>;
 }
@@ -219,9 +277,11 @@ export function makeTestLayer(options: TestLayerOptions = {}): TestHarness<Platf
     }),
   );
 
+  const httpCalls: HttpClientRequest.HttpClientRequest[] = [];
   const httpLayer = Layer.succeed(
     HttpClient.HttpClient,
     HttpClient.make((request, url) => {
+      httpCalls.push(request);
       const respond = options.http?.find((script) => script.match(request))?.respond;
       if (respond === undefined) {
         return Effect.die(new Error(`unscripted http: ${request.method} ${url.href}`));
@@ -254,7 +314,9 @@ export function makeTestLayer(options: TestLayerOptions = {}): TestHarness<Platf
     ),
   ).pipe(Layer.provide(sink.layer));
 
-  const base = Layer.mergeAll(ReadOnlyFilesLive, GetOnlyHttpLive).pipe(
+  const promptsLayer = Layer.succeed(Prompts, scriptedPrompts(snapshot.stdinIsTTY, options.prompts ?? []));
+
+  const base = Layer.mergeAll(ReadOnlyFilesLive, GetOnlyHttpLive, promptsLayer).pipe(
     Layer.provideMerge(
       Layer.mergeAll(
         layerEnvironment(snapshot),
@@ -280,6 +342,7 @@ export function makeTestLayer(options: TestLayerOptions = {}): TestHarness<Platf
     layer: options.clock === "live" ? platform : Layer.merge(platform, TestClock.layer()),
     output: sink.records,
     processCalls: () => [...calls],
+    httpCalls: () => [...httpCalls],
     files: () => new Map(store.files),
   };
 }

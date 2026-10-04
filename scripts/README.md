@@ -91,8 +91,8 @@ Global flags are accepted before or after the subcommand.
 3. Register the factory in the `rootCommand` list of [`cli.ts`](./cli.ts) and add the npm alias to the root `package.json`.
 
 `CliSubcommand` restricts handler requirements to the base services plus the `--json`/`--verbose` settings, so a family that forgets to
-provide a service fails to compile. Only `scripts/commands/**`, `cli.ts`, and `platform/exit.ts` import `effect/cli` (enforced by
-[`runtime-boundary.test.ts`](./common/runtime-boundary.test.ts)).
+provide a service fails to compile. Only `scripts/commands/**`, `cli.ts`, `platform/exit.ts`, and `platform/Prompts.ts` import
+`effect/cli` (enforced by [`runtime-boundary.test.ts`](./common/runtime-boundary.test.ts)).
 
 ### Legacy command kernel (until cohort 7)
 
@@ -276,12 +276,18 @@ family by family; until then it runs beside the legacy kernel. Every service key
   echo, bounded evidence, and typed `ProcessExited`/`ProcessSignalled`/`ProcessSpawnFailed`/`ProcessTimedOut` failures;
   [`windows.ts`](./platform/windows.ts) resolves and escapes `.cmd` shims.
 - [`Files.ts`](./platform/Files.ts) — `Glob`, read-only `ReadOnlyFiles`, `GetOnlyHttp`, `writeTextAtomic`, and `readBytesBounded`.
+- [`Prompts`](./platform/Prompts.ts) — `confirm`, `select`, `text`, and `secret` (returned as `Redacted<string>`) over effect/cli
+  `Prompt`. Without an interactive stdin it never reads input: `confirm`/`select` return their default when one is given, and every
+  other prompt fails with `PromptUnavailable` carrying the legacy `Cannot request <kind> without an interactive terminal…` message.
 - [`layers.ts`](./platform/layers.ts) — `makeNodeLayer` (production), built from `NodeBaseLayer` and the per-invocation `commandLayer`.
-- [`testing.ts`](./platform/testing.ts) — `makeTestLayer` (in-memory files, scripted processes and HTTP, recording sink, fixed environment,
-  `TestClock`) and `effectTest`.
+- [`testing.ts`](./platform/testing.ts) — `makeTestLayer` (in-memory files, scripted processes, HTTP, and prompts, recording sink,
+  fixed environment, `TestClock`) with `output()`, `processCalls()`, `httpCalls()`, and `files()` accessors, and `effectTest`.
+  Scripted prompts follow the same TTY rule as `Prompts`; with `environment: {stdinIsTTY: true}` they consume `prompts` answers in
+  order.
 - [`bridge.ts`](./platform/bridge.ts) — temporary interop with the legacy kernel (below).
 
-Write a platform test with one harness per test; unscripted processes, HTTP requests, and spawns die instead of reaching a real boundary:
+Write a platform test with one harness per test; unscripted processes, HTTP requests, prompts, and spawns die instead of reaching a real
+boundary:
 
 ```ts
 const harness = makeTestLayer({
@@ -303,10 +309,10 @@ the legacy kernel, and cohort 7 deletes it.
 ambient `process.*`, timer, and `node:*` access, and enforces the platform and CLI rules: `@effect/platform-node` is imported only inside
 `scripts/platform/` and the [`cli.ts`](./cli.ts) entrypoint; Effect runtimes (`Effect.run*`, `ManagedRuntime.make`, `NodeRuntime.runMain`)
 start only in `cli.ts`, `bridge.ts`, `testing.ts`, and `Output.ts`'s synchronous logger sink; no platform module except `bridge.ts`
-imports the legacy kernel; `effect/cli` is imported only under `scripts/commands/`, by `cli.ts`, and by `platform/exit.ts`; and the only
-modules with an `import.meta.main` block are `cli.ts`, `format.ts`, `lint.ts`, and the two inspection workers. Inside that block, `cli.ts`
-may read `process.argv` and no other ambient state, and each inspection worker may read `process.argv` and assign `process.exitCode`;
-neither exemption applies elsewhere in those files.
+imports the legacy kernel; `effect/cli` is imported only under `scripts/commands/`, by `cli.ts`, by `platform/exit.ts`, and by
+`platform/Prompts.ts`; and the only modules with an `import.meta.main` block are `cli.ts`, `format.ts`, `lint.ts`, and the two
+inspection workers. Inside that block, `cli.ts` may read `process.argv` and no other ambient state, and each inspection worker may
+read `process.argv` and assign `process.exitCode`; neither exemption applies elsewhere in those files.
 
 ## Output-policy exemptions
 
