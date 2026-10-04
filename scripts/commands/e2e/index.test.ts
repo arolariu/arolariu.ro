@@ -15,11 +15,11 @@
 import {dirname, join} from "node:path";
 import {describe, expect, it} from "vitest";
 
-import type {CommandExecution, CommandPresentation, CommandRuntimeFactory} from "./common/commander.ts";
-import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "./common/logger.ts";
-import {AbstractProcessRunner, RunnerError, type ProcessOutcome, type ProcessRequest, type ProcessRunOptions} from "./common/runner.ts";
-import {createMemoryFileSystem, createTestRuntimeFactory, repositoryFixtureRoot} from "./common/runtime.testing.ts";
-import {CommandCancellation, type CommandRuntime, type FileSystem, type RuntimeEnvironment} from "./common/runtime.ts";
+import type {CommandExecution, CommandPresentation, CommandRuntimeFactory} from "../../common/commander.ts";
+import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "../../common/logger.ts";
+import {AbstractProcessRunner, RunnerError, type ProcessOutcome, type ProcessRequest, type ProcessRunOptions} from "../../common/runner.ts";
+import {createMemoryFileSystem, createTestRuntimeFactory, repositoryFixtureRoot} from "../../common/runtime.testing.ts";
+import {CommandCancellation, type CommandRuntime, type FileSystem, type RuntimeEnvironment} from "../../common/runtime.ts";
 import {
   createE2eCommand,
   redactSensitiveString,
@@ -28,7 +28,7 @@ import {
   sanitizeNewmanTextReport,
   writeAssertionSummary,
   type E2ETarget,
-} from "./test-e2e.ts";
+} from "./index.ts";
 
 /** Deliberately non-JWT-shaped fake secret used for exact-match and `--env-var` transport proofs. */
 const FAKE_TOKEN = "e2e-test-secret-value";

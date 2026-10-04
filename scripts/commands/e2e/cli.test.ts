@@ -26,7 +26,7 @@ import {
 import type {CommandRuntime} from "../../common/runtime.ts";
 import {exitCodeFor, type CommandExitCode} from "../../platform/exit.ts";
 import {makeTestLayer} from "../../platform/testing.ts";
-import {createE2eCommand, type E2EInput} from "../../test-e2e.ts";
+import {createE2eCommand, type E2EInput} from "./index.ts";
 import {makeE2eCommand} from "./cli.ts";
 
 /**

@@ -19,10 +19,10 @@
  */
 
 import {join, resolve} from "node:path";
-import {CommandInputError, MonorepoCommand, type CommandContext, type CommandRuntimeFactory} from "./common/commander.ts";
-import type {MonorepositoryLogger} from "./common/logger.ts";
-import {RunnerError} from "./common/runner.ts";
-import {commandCancellationFromSignal, type FileSystem} from "./common/runtime.ts";
+import {CommandInputError, MonorepoCommand, type CommandContext, type CommandRuntimeFactory} from "../../common/commander.ts";
+import type {MonorepositoryLogger} from "../../common/logger.ts";
+import {RunnerError} from "../../common/runner.ts";
+import {commandCancellationFromSignal, type FileSystem} from "../../common/runtime.ts";
 
 /** Every target the `test:e2e` command accepts, including the `all` alias. */
 export type E2ETarget = "all" | "backend" | "frontend" | "cv";

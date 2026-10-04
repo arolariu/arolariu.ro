@@ -12,7 +12,7 @@ import {Argument, Command} from "effect/cli";
 
 import type {CliSubcommand} from "../../cli.ts";
 import type {CommandInvoker} from "../../common/commander.ts";
-import {e2eCommand, type E2EInput, type E2ETarget} from "../../test-e2e.ts";
+import {e2eCommand, type E2EInput, type E2ETarget} from "./index.ts";
 import {withCommandOutput} from "../flags.ts";
 import {runLegacy} from "../legacy.ts";
 
