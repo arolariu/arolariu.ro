@@ -14,15 +14,11 @@ import {Effect, FileSystem, type PlatformError} from "effect";
 import {TestClock} from "effect/testing";
 import {afterEach, describe, expect, it, vi} from "vitest";
 
-import type {CommandInvoker} from "../../common/commander.ts";
-import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "../../common/logger.ts";
-import {createTestRuntimeFactory} from "../../common/runtime.testing.ts";
-import {legacyInvoker} from "../../platform/bridge.ts";
 import {PromptUnavailable} from "../../platform/Prompts.ts";
 import {effectTest, makeTestLayer, repositoryFixtureRoot, type TestHarness} from "../../platform/testing.ts";
-import {generateEnvironment, type GenerateEnvironmentError, type GenerateLeafInput, type GenerateLeafResult} from "./env.ts";
+import {generateEnvironment} from "./env.ts";
 import {ExpConfigurationUnavailable, MissingEnvironmentValues} from "./errors.ts";
-import {createGenerateCommand} from "./index.ts";
+import {runGenerate} from "./index.ts";
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -211,44 +207,36 @@ describe("generateEnvironment", () => {
     );
   }
 
-  it("stops aggregate generation and propagates a real environment generator failure", async () => {
-    // Arrange
+  {
     const harness = makeTestLayer({
       files: {".env": ""},
       environment: {variables: {INFRA: "azure"}, isCI: true},
       http: [{match: () => true, respond: {status: 503, body: "unavailable"}}],
     });
-    const sink = new InMemoryLoggerSink();
-    const logger = new MonorepositoryConsoleLogger("generate", {color: false, sink});
-    const gqlInvoke = vi.fn<CommandInvoker<GenerateLeafInput, GenerateLeafResult>["invoke"]>();
-    const unusedLeaf: CommandInvoker<GenerateLeafInput, GenerateLeafResult> = {invoke: gqlInvoke};
-    const command = createGenerateCommand(
-      {
-        // The real environment generator, bridged like the production shim over a failing exp endpoint.
-        env: legacyInvoker<GenerateLeafInput, GenerateLeafResult, GenerateEnvironmentError>(
-          "generate:env",
-          () => generateEnvironment,
-          () => 0,
-          () => harness.layer,
-        ),
-        i18n: unusedLeaf,
-        gql: unusedLeaf,
-        artifacts: {invoke: vi.fn()},
-      },
-      createTestRuntimeFactory({logger}),
+    effectTest(
+      "stops aggregate generation and propagates a real environment generator failure",
+      () =>
+        Effect.gen(function* () {
+          // Act
+          const result = yield* runGenerate({verbose: false, env: true, i18n: false, gql: true, artifacts: false});
+
+          // Assert
+          expect(result).toEqual({selected: ["env", "gql"], completed: [], failed: "env"});
+          const retained = harness
+            .output()
+            .map((record) => record.text)
+            .join("");
+          expect(retained).toContain("exp returned 503");
+          expect(retained).not.toContain("Running GraphQL types generator");
+          expect(
+            harness
+              .files()
+              .has(join(repositoryFixtureRoot, "scripts", "__generated__", "gql", "README.placeholder.txt").replaceAll("\\", "/")),
+          ).toBe(false);
+        }),
+      harness.layer,
     );
-
-    // Act
-    const execution = await command.invoke({verbose: false, env: true, i18n: false, gql: true, artifacts: false}, {presentation: "human"});
-
-    // Assert
-    expect(execution).toMatchObject({status: "completed", exitCode: 1, value: {completed: [], failed: "env"}});
-    expect(gqlInvoke).not.toHaveBeenCalled();
-    const retained = sink.records.map((record) => record.text).join("\n");
-    expect(retained).toContain("exp returned 503");
-    expect(retained).not.toContain("Running GraphQL types generator");
-    expect(retained).not.toContain("All requested generation tasks completed");
-  });
+  }
 
   {
     const publishable = "pk_test_generator-publishable";

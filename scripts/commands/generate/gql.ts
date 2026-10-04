@@ -10,12 +10,10 @@
 
 import {DateTime, Effect, FileSystem, Path, type PlatformError} from "effect";
 
-import type {CommandInvoker} from "../../common/commander.ts";
-import {legacyInvoker} from "../../platform/bridge.ts";
 import {Environment} from "../../platform/Environment.ts";
 import {writeTextAtomic} from "../../platform/Files.ts";
 import {debugLogsEnabled, Presenter} from "../../platform/Output.ts";
-import type {GenerateLeafInput, GenerateLeafResult, GenerateRequirements} from "./env.ts";
+import type {GenerateLeafResult, GenerateRequirements} from "./env.ts";
 
 /** Completion summary of the placeholder generator. */
 const SUMMARY = "GraphQL generation completed (placeholder).";
@@ -56,18 +54,3 @@ export const generateGraphql: Effect.Effect<GenerateLeafResult, PlatformError.Pl
     return {summary: SUMMARY, changedFiles: [outputFile]};
   },
 ).pipe(Effect.withSpan("generate.gql"));
-
-/**
- * Temporary legacy invoker over {@link generateGraphql} for the unmigrated orchestrator.
- *
- * @remarks Deleted in cohort 3 Task 3.3, when the orchestrator calls the Effect directly.
- */
-export const generateGraphqlCommand: CommandInvoker<GenerateLeafInput, GenerateLeafResult> = legacyInvoker<
-  GenerateLeafInput,
-  GenerateLeafResult,
-  PlatformError.PlatformError
->(
-  "generate:gql",
-  () => generateGraphql,
-  () => 0,
-);

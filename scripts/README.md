@@ -37,7 +37,7 @@ path, for example `"doctor": "node scripts/cli.ts doctor"` and `"generate:artifa
 arolariu setup [--dry-run] [--yes] [--engine <rancher|podman>]
 arolariu doctor [--quick]
 arolariu status
-arolariu generate [env] [i18n] [gql] [artifacts]       variadic task names; none selected warns that nothing is selected (exit 0)
+arolariu generate [env] [i18n] [gql] [artifacts]       variadic task names; none selected warns that nothing is selected (exit 0); the first failing task stops the run (exit 1)
 arolariu docs assemble
 arolariu rates update [--year <y>] [--from <y>] [--to <y>]
 arolariu dev aspire [--engine <rancher|podman>]
@@ -87,7 +87,8 @@ Global flags are accepted before or after the subcommand.
    [`commands/rates/cli.ts`](./commands/rates/cli.ts)). Build it with `Command.make`, declare its flags and arguments with `Flag`/`Argument`,
    and wrap the handler program in `withCommandOutput("<context>")` from [`commands/flags.ts`](./commands/flags.ts), which provides the
    per-invocation `OutputSettings`, `Presenter`, and `Process` from `--json`, `--verbose`, and the environment.
-2. Give the factory a typed seam (for example the legacy invoker) so its colocated `cli.test.ts` can run the command without a real boundary.
+2. Give the factory a typed seam (for example the legacy invoker) so its colocated `cli.test.ts` can run the command without a real boundary;
+   a family migrated to Effect needs no seam: its `cli.test.ts` runs `runCli` on `makeTestLayer` (see [`commands/generate/cli.test.ts`](./commands/generate/cli.test.ts)).
 3. Register the factory in the `rootCommand` list of [`cli.ts`](./cli.ts) and add the npm alias to the root `package.json`.
 
 `CliSubcommand` restricts handler requirements to the base services plus the `--json`/`--verbose` settings, so a family that forgets to

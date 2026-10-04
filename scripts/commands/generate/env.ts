@@ -18,20 +18,12 @@ import {HttpClient, HttpClientRequest} from "effect/http";
 
 import {APP_CONFIGURATION_MAPPING, AZURE_RUNTIME_IDENTITY_KEYS, isSecretKey} from "../../azure/index.ts";
 import type {AppConfigurationEnvironmentKey, GeneratedEnvironmentKey} from "../../azure/index.ts";
-import type {CommandInvoker} from "../../common/commander.ts";
-import {legacyInvoker} from "../../platform/bridge.ts";
 import {Environment} from "../../platform/Environment.ts";
 import {writeTextAtomic, type Glob} from "../../platform/Files.ts";
 import {debugLogsEnabled, Presenter, withLogContext} from "../../platform/Output.ts";
 import type {Process} from "../../platform/Process.ts";
 import {Prompts, type PromptUnavailable} from "../../platform/Prompts.ts";
 import {ExpConfigurationUnavailable, MissingEnvironmentValues} from "./errors.ts";
-
-/** Typed input of the legacy leaf invokers; removed with the shims in cohort 3 Task 3.3. */
-export interface GenerateLeafInput {
-  /** Enables diagnostic output. */
-  readonly verbose: boolean;
-}
 
 /** Typed business result produced by every `generate` leaf generator. */
 export interface GenerateLeafResult {
@@ -614,18 +606,3 @@ export const generateEnvironment: Effect.Effect<GenerateLeafResult, GenerateEnvi
     return yield* effectiveVerbose ? Effect.provideService(body, References.MinimumLogLevel, "Debug") : body;
   },
 ).pipe(Effect.withSpan("generate.env"));
-
-/**
- * Temporary legacy invoker over {@link generateEnvironment} for the unmigrated orchestrator.
- *
- * @remarks Deleted in cohort 3 Task 3.3, when the orchestrator calls the Effect directly.
- */
-export const generateEnvironmentCommand: CommandInvoker<GenerateLeafInput, GenerateLeafResult> = legacyInvoker<
-  GenerateLeafInput,
-  GenerateLeafResult,
-  GenerateEnvironmentError
->(
-  LOG_CONTEXT,
-  () => generateEnvironment,
-  () => 0,
-);

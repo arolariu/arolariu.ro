@@ -23,12 +23,10 @@
 
 import {Effect, FileSystem, Path, type PlatformError} from "effect";
 
-import type {CommandInvoker} from "../../common/commander.ts";
-import {legacyInvoker} from "../../platform/bridge.ts";
 import {Environment} from "../../platform/Environment.ts";
 import {writeTextAtomic} from "../../platform/Files.ts";
 import {debugLogsEnabled, Presenter} from "../../platform/Output.ts";
-import type {GenerateLeafInput, GenerateLeafResult, GenerateRequirements} from "./env.ts";
+import type {GenerateLeafResult, GenerateRequirements} from "./env.ts";
 import {TranslationSyncFailed} from "./errors.ts";
 
 /**
@@ -502,7 +500,7 @@ const SUPPORTED_LOCALES = ["ro", "fr"] as const;
  * adds each missing key as an empty string.
  *
  * @remarks
- * A nonempty `changedFiles` is the legacy negative result: the caller maps it to exit code `1`.
+ * A nonempty `changedFiles` is the legacy negative result: the orchestrator stops generation on it.
  */
 export const generateI18n: Effect.Effect<GenerateLeafResult, GenerateI18nError, GenerateRequirements> = Effect.gen(function* () {
   const environment = yield* Environment;
@@ -553,20 +551,3 @@ export const generateI18n: Effect.Effect<GenerateLeafResult, GenerateI18nError, 
     changedFiles,
   };
 }).pipe(Effect.withSpan("generate.i18n"));
-
-/**
- * Temporary legacy invoker over {@link generateI18n} for the unmigrated orchestrator.
- *
- * @remarks
- * Keeps the legacy exit contract: `1` when missing keys changed a locale file, otherwise `0`.
- * Deleted in cohort 3 Task 3.3, when the orchestrator calls the Effect directly.
- */
-export const generateI18nCommand: CommandInvoker<GenerateLeafInput, GenerateLeafResult> = legacyInvoker<
-  GenerateLeafInput,
-  GenerateLeafResult,
-  GenerateI18nError
->(
-  "generate:i18n",
-  () => generateI18n,
-  (result) => (result.changedFiles.length > 0 ? 1 : 0),
-);

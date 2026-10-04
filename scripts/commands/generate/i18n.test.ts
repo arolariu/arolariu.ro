@@ -7,7 +7,7 @@
  * The pre-migration leaf returned `totalMissingKeys` and the legacy aggregate stopped generation
  * whenever that count was nonzero. The Effect generator keeps that meaning through
  * `changedFiles`: empty when every locale already matched English, nonempty when missing keys
- * changed one or more locale files (the legacy invoker shim maps it to exit `1`).
+ * changed one or more locale files (the orchestrator stops generation on it, exit `1`).
  */
 
 import {join} from "node:path";
