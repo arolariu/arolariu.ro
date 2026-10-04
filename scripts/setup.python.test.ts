@@ -878,3 +878,133 @@ describe("dry-run and safety contracts", () => {
     }
   });
 });
+
+describe("python characterization (pre-Effect migration)", () => {
+  const wingetVersionKey = commandKey({command: "winget", args: ["--version"]});
+  const installKey = commandKey(
+    selectPythonInstallationProposal({platform: "win32", availablePackageManagers: new Set(["winget"]), required: requiredPython})!.command,
+  );
+
+  function withRootPlaceholder(value: unknown): unknown {
+    const escapedRoot = JSON.stringify(paths.root).slice(1, -1);
+    return JSON.parse(JSON.stringify(value).split(escapedRoot).join("<root>"));
+  }
+
+  function observe(harness: PythonHarness, result: SetupPhaseResult): unknown {
+    return withRootPlaceholder({
+      result,
+      actionIds: harness.actionIds,
+      commands: harness.runner.calls.map(({request}) => request),
+    });
+  }
+
+  it("pins the exact result when the interpreter, venv, and pip are already present", async () => {
+    // Arrange
+    const harness = await createHarness();
+
+    // Act
+    const observed = observe(harness, await runPhase(harness));
+
+    // Assert
+    expect(observed).toEqual({
+      result: {
+        id: "python",
+        status: "succeeded",
+        summary: "The Python interpreter, isolated virtual environment, and pinned requirements are ready.",
+        evidence: [
+          "Selected interpreter 'py -3.12' (Python 3.12.4) satisfies >=3.12.0.",
+          "The isolated virtual environment satisfies >=3.12.0.",
+          "Executed and verified action: python.pip.upgrade",
+          "Executed and verified action: python.dependencies.install",
+        ],
+        nextActions: [],
+        durationMs: 1,
+      },
+      actionIds: ["python.pip.upgrade", "python.dependencies.install"],
+      commands: [
+        {command: "<root>\\sites\\exp.arolariu.ro\\.venv\\Scripts\\python.exe", args: ["-m", "pip", "install", "--upgrade", "pip"]},
+        {
+          command: "<root>\\sites\\exp.arolariu.ro\\.venv\\Scripts\\python.exe",
+          args: ["-m", "pip", "install", "-r", "<root>\\sites\\exp.arolariu.ro\\requirements-dev.txt"],
+        },
+      ],
+    });
+  });
+
+  it("pins the exact result when the interpreter is missing and the winget installation proposal succeeds", async () => {
+    // Arrange
+    const harness = await createHarness({
+      pythonOutcomes: [availableOutcome({interpreters: [], selected: undefined}), availableOutcome()],
+      responses: {[wingetVersionKey]: succeeded({stdout: "v1.11.0\n"}), [installKey]: succeeded()},
+    });
+
+    // Act
+    const observed = observe(harness, await runPhase(harness));
+
+    // Assert
+    expect(observed).toEqual({
+      result: {
+        id: "python",
+        status: "succeeded",
+        summary: "The Python interpreter, isolated virtual environment, and pinned requirements are ready.",
+        evidence: [
+          "No available interpreter satisfies >=3.12.0.",
+          "Selected interpreter 'py -3.12' (Python 3.12.4) satisfies >=3.12.0.",
+          "Executed and verified action: python.install-interpreter",
+          "The isolated virtual environment satisfies >=3.12.0.",
+          "Executed and verified action: python.pip.upgrade",
+          "Executed and verified action: python.dependencies.install",
+        ],
+        nextActions: [],
+        durationMs: 1,
+      },
+      actionIds: ["python.install-interpreter", "python.pip.upgrade", "python.dependencies.install"],
+      commands: [
+        {command: "winget", args: ["--version"]},
+        {
+          command: "winget",
+          args: ["install", "--id", "Python.Python.3.12", "--exact", "--accept-package-agreements", "--accept-source-agreements"],
+        },
+        {command: "<root>\\sites\\exp.arolariu.ro\\.venv\\Scripts\\python.exe", args: ["-m", "pip", "install", "--upgrade", "pip"]},
+        {
+          command: "<root>\\sites\\exp.arolariu.ro\\.venv\\Scripts\\python.exe",
+          args: ["-m", "pip", "install", "-r", "<root>\\sites\\exp.arolariu.ro\\requirements-dev.txt"],
+        },
+      ],
+    });
+  });
+
+  it("pins the exact result when the winget installation proposal fails", async () => {
+    // Arrange
+    const harness = await createHarness({
+      pythonOutcomes: [availableOutcome({interpreters: [], selected: undefined})],
+      responses: {[wingetVersionKey]: succeeded({stdout: "v1.11.0\n"}), [installKey]: exited(1, {stderr: "winget installer failed"})},
+    });
+
+    // Act
+    const observed = observe(harness, await runPhase(harness));
+
+    // Assert
+    expect(observed).toEqual({
+      result: {
+        id: "python",
+        status: "failed",
+        summary: "The required Python preparation phase failed.",
+        evidence: [
+          "No available interpreter satisfies >=3.12.0.",
+          "The supported Python interpreter installation command failed.\nCommand exited with code 1.\nwinget installer failed",
+        ],
+        nextActions: ["Resolve the reported Python preparation failure, then rerun setup."],
+        durationMs: 1,
+      },
+      actionIds: ["python.install-interpreter"],
+      commands: [
+        {command: "winget", args: ["--version"]},
+        {
+          command: "winget",
+          args: ["install", "--id", "Python.Python.3.12", "--exact", "--accept-package-agreements", "--accept-source-agreements"],
+        },
+      ],
+    });
+  });
+});

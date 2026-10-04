@@ -922,3 +922,144 @@ describe("workspace phase runtime contract", () => {
     await expect(findPhase("workspace.root-dependencies").run(withoutRuntime as SetupContext)).rejects.toThrow(/runtime/i);
   });
 });
+
+describe("workspace characterization (pre-Effect migration)", () => {
+  function withRootPlaceholder(value: unknown): unknown {
+    const escapedRoot = JSON.stringify(FIXTURE_ROOT).slice(1, -1);
+    return JSON.parse(JSON.stringify(value).split(escapedRoot).join("<root>"));
+  }
+
+  function npmTree(scope: NpmTreeFacts["scope"], packageCount: number): InspectionOutcome<NpmTreeFacts> {
+    return {kind: "available", value: {scope, valid: true, packageCount, problemCount: 0, problems: []}, durationMs: 1};
+  }
+
+  it("pins the exact result of every workspace phase when every tool, tree, and artifact is already present", async () => {
+    // Arrange
+    const inspection = createInspectionHarness({
+      "npm.root": () => npmTree("root", 42),
+      "npm.github-scripts": () => npmTree("github-scripts", 7),
+    });
+    const {actions, actionIds} = createActions(false);
+    const {context, runner} = await createHarness({inspection: inspection.session, actions, files: generatedArtifactFiles()});
+
+    // Act
+    const results: SetupPhaseResult[] = [];
+    for (const phase of workspaceSetupPhases) {
+      results.push(await runPhase(phase.id, context));
+    }
+    const observed = withRootPlaceholder({results, actionIds, commands: runner.calls.map(({request}) => request)});
+
+    // Assert
+    expect(observed).toEqual({
+      results: [
+        {
+          id: "workspace.prerequisites",
+          status: "succeeded",
+          summary: "Repository identity, Git, Node.js, and npm prerequisites are valid.",
+          evidence: ["git version 2.50.0", "Node.js v24.5.0 satisfies >=24.0.0.", "npm 11.0.0 satisfies >=11.0.0."],
+          nextActions: [],
+          durationMs: 1,
+        },
+        {
+          id: "workspace.root-dependencies",
+          status: "succeeded",
+          summary: "Root workspace dependencies are valid.",
+          evidence: ["npm reported 42 installed package(s) with no dependency problems."],
+          nextActions: [],
+          durationMs: 1,
+        },
+        {
+          id: "workspace.github-scripts-dependencies",
+          status: "succeeded",
+          summary: ".github scripts dependencies were restored and verified.",
+          evidence: [
+            "Executed action: workspace.github-scripts-dependencies.npm-ci",
+            "npm reported 7 installed package(s) with no dependency problems.",
+          ],
+          nextActions: [],
+          durationMs: 1,
+        },
+        {
+          id: "workspace.generators",
+          status: "succeeded",
+          summary: "Nx metadata and required generated checkout artifacts are valid.",
+          evidence: ["Nx reported 1 project(s).", "Executed action: workspace.generators.generate", "Verified 7 generated artifact(s)."],
+          nextActions: [],
+          durationMs: 1,
+        },
+      ],
+      actionIds: ["workspace.github-scripts-dependencies.npm-ci", "workspace.generators.generate"],
+      commands: [
+        {command: "git", args: ["--version"]},
+        {command: "node", args: ["--version"]},
+        {command: "npm", args: ["--version"]},
+        {command: "/usr/bin/node", args: ["--version"]},
+        {command: "npm", args: ["ci", "--prefer-offline", "--no-audit", "--no-fund"]},
+        {command: "npx", args: ["--no-install", "nx", "show", "projects", "--json"]},
+      ],
+    });
+  });
+
+  it("pins the exact prerequisites result when Git is missing", async () => {
+    // Arrange
+    const {context, runner} = await createHarness({
+      respond: (request) => (request.command === "git" ? spawnFailed("git not found") : defaultOutcome(request)),
+    });
+
+    // Act
+    const result = await runPhase("workspace.prerequisites", context);
+    const observed = withRootPlaceholder({result, commands: runner.calls.map(({request}) => request)});
+
+    // Assert
+    expect(observed).toEqual({
+      result: {
+        id: "workspace.prerequisites",
+        status: "failed",
+        summary: "Workspace prerequisites are not satisfied.",
+        evidence: [
+          "Git version probe failed.",
+          "Unable to start command: git not found",
+          "Node.js v24.5.0 satisfies >=24.0.0.",
+          "npm 11.0.0 satisfies >=11.0.0.",
+        ],
+        nextActions: ["Install Git manually and ensure it is available on PATH, then rerun setup."],
+        durationMs: 1,
+      },
+      commands: [
+        {command: "git", args: ["--version"]},
+        {command: "node", args: ["--version"]},
+        {command: "npm", args: ["--version"]},
+        {command: "/usr/bin/node", args: ["--version"]},
+      ],
+    });
+  });
+
+  it("pins the exact .github scripts result when the npm ci restoration fails", async () => {
+    // Arrange
+    const inspection = createInspectionHarness();
+    const {actions, actionIds} = createActions(false);
+    const {context, runner} = await createHarness({
+      inspection: inspection.session,
+      actions,
+      respond: (request) => (request.args[0] === "ci" ? exited(1, {stderr: "restore failed"}) : defaultOutcome(request)),
+    });
+
+    // Act
+    const result = await runPhase("workspace.github-scripts-dependencies", context);
+    const observed = withRootPlaceholder({result, actionIds, commands: runner.calls.map(({request}) => request)});
+
+    // Assert
+    expect(observed).toEqual({
+      result: {
+        id: "workspace.github-scripts-dependencies",
+        status: "failed",
+        summary: ".github scripts dependency setup failed.",
+        evidence: ["npm ci failed in <root>\\.github\\scripts.\nCommand exited with code 1.\nstderr: restore failed"],
+        nextActions: ["Resolve the reported .github scripts dependency error, then rerun setup."],
+        durationMs: 1,
+      },
+      actionIds: ["workspace.github-scripts-dependencies.npm-ci"],
+      commands: [{command: "npm", args: ["ci", "--prefer-offline", "--no-audit", "--no-fund"]}],
+    });
+  });
+});

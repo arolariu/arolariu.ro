@@ -27,7 +27,9 @@ import {
   type RepositoryInspectionRuntime,
 } from "./common/runtime.ts";
 import type {GenerateInput, GenerateResult} from "./commands/generate/index.ts";
+import type {DotnetFacts} from "./inspection/dotnet.ts";
 import type {LegacyRepositoryInspectionSession} from "./platform/bridge.ts";
+import {dotnetSetupPhase} from "./setup.dotnet.ts";
 import {createSetupActionExecutor, createSetupCommand, setupPhases, type SetupResult} from "./setup.ts";
 import type {SetupAction, SetupContext, SetupInput, SetupPhaseDefinition, SetupPhaseResult, SetupStatus} from "./setup.types.ts";
 
@@ -998,5 +1000,1102 @@ describe("setup generation composition", () => {
     expect(generateInput).toEqual({verbose: false, env: true, i18n: true, gql: true, artifacts: true});
     expect(invocationOptions?.presentation).toBe("silent");
     expect(invocationOptions?.parent).toBeDefined();
+  });
+});
+
+describe("setup characterization (pre-Effect migration)", () => {
+  function withRootPlaceholder(value: unknown): unknown {
+    const escapedRoot = JSON.stringify(FIXTURE_PATHS.root).slice(1, -1);
+    return JSON.parse(JSON.stringify(value).split(escapedRoot).join("<root>"));
+  }
+
+  /** A scripted prompt provider recording every confirmation request and answering `answer`. */
+  function scriptedPrompts(answer: boolean): Readonly<{
+    prompts: PromptProvider;
+    confirmations: readonly Readonly<{message: string; defaultValue: boolean | undefined}>[];
+  }> {
+    const confirmations: Readonly<{message: string; defaultValue: boolean | undefined}>[] = [];
+    const {prompts} = createPrompts(answer);
+    return {
+      prompts: {
+        ...prompts,
+        confirm: async (message, defaultValue) => {
+          confirmations.push({message, defaultValue});
+          return answer;
+        },
+      },
+      confirmations,
+    };
+  }
+
+  /** One phase that submits a repository, a user, and a system action, then reports their dispositions. */
+  function threeScopeActionPhase(executed: string[]): SetupPhaseDefinition {
+    return stubPhase("infrastructure", {
+      run: async (context) => {
+        const dispositions: string[] = [];
+        for (const scope of ["repository", "user", "system"] as const) {
+          const id = `infrastructure.${scope}-action`;
+          dispositions.push(
+            await context.actions.run({
+              id,
+              scope,
+              summary: `Apply the ${scope} change.`,
+              execute: async () => {
+                executed.push(id);
+              },
+            }),
+          );
+        }
+        const status: SetupStatus = dispositions.includes("declined")
+          ? "failed"
+          : dispositions.includes("planned")
+            ? "skipped"
+            : "succeeded";
+        return phaseResult("infrastructure", status, {summary: `Dispositions: ${dispositions.join(", ")}.`, durationMs: 5});
+      },
+    });
+  }
+
+  async function invokeThreeScopePhase(
+    input: SetupInput,
+    prompts: PromptProvider,
+  ): Promise<Readonly<{execution: CommandExecution<SetupResult>; executed: readonly string[]; records: readonly unknown[]}>> {
+    const executed: string[] = [];
+    const {logger, sink} = createLogger(false);
+    const {command} = createSetupFixture({logger, prompts, phases: [threeScopeActionPhase(executed)]});
+    const execution = await command.invoke(input, {presentation: "human"});
+    return {execution, executed, records: sink.records};
+  }
+
+  it("pins the exact planned action lines, records, and exit code during --dry-run", async () => {
+    // Arrange
+    const {prompts, confirmations} = scriptedPrompts(true);
+
+    // Act
+    const run = await invokeThreeScopePhase(options({dryRun: true}), prompts);
+    const observed = withRootPlaceholder({...run, confirmations});
+
+    // Assert
+    expect(observed).toEqual({
+      execution: {
+        status: "completed",
+        value: {
+          phases: [
+            {
+              id: "infrastructure",
+              status: "skipped",
+              summary: "Dispositions: planned, planned, planned.",
+              evidence: [],
+              nextActions: [],
+              durationMs: 5,
+            },
+          ],
+        },
+        exitCode: 0,
+      },
+      executed: [],
+      records: [
+        {stream: "stdout", text: "arolariu.ro repository setup", write: false},
+        {stream: "stdout", text: "Dry run: planning every phase without mutating the repository.", write: false},
+        {stream: "stdout", text: "", write: false},
+        {stream: "stdout", text: "infrastructure", write: false},
+        {stream: "stdout", text: "", write: false},
+        {
+          stream: "stdout",
+          text: "[arolariu::setup] ℹ️ Planned setup action 'infrastructure.repository-action' (repository): Apply the repository change.",
+          write: false,
+        },
+        {
+          stream: "stdout",
+          text: "[arolariu::setup] ℹ️ Planned setup action 'infrastructure.user-action' (user): Apply the user change.",
+          write: false,
+        },
+        {
+          stream: "stdout",
+          text: "[arolariu::setup] ℹ️ Planned setup action 'infrastructure.system-action' (system): Apply the system change.",
+          write: false,
+        },
+        {stream: "stderr", text: "[arolariu::setup::infrastructure] ⚠️ Dispositions: planned, planned, planned. (5ms)", write: false},
+        {stream: "stdout", text: "", write: false},
+        {stream: "stdout", text: "Setup summary", write: false},
+        {stream: "stdout", text: "", write: false},
+        {stream: "stdout", text: "Phase           Status   Duration  Summary", write: false},
+        {stream: "stdout", text: "--------------  -------  --------  ----------------------------------------", write: false},
+        {stream: "stdout", text: "infrastructure  skipped  5ms       Dispositions: planned, planned, planned.", write: false},
+        {stream: "stdout", text: "Setup is ready.", write: false},
+      ],
+      confirmations: [],
+    });
+  });
+
+  it("pins the exact consent prompt, declined system action, and executed actions when consent is refused", async () => {
+    // Arrange
+    const {prompts, confirmations} = scriptedPrompts(false);
+
+    // Act
+    const run = await invokeThreeScopePhase(options(), prompts);
+    const observed = withRootPlaceholder({...run, confirmations});
+
+    // Assert
+    expect(observed).toEqual({
+      execution: {
+        status: "completed",
+        value: {
+          phases: [
+            {
+              id: "infrastructure",
+              status: "failed",
+              summary: "Dispositions: executed, executed, declined.",
+              evidence: [],
+              nextActions: [],
+              durationMs: 5,
+            },
+          ],
+        },
+        exitCode: 1,
+      },
+      executed: ["infrastructure.repository-action", "infrastructure.user-action"],
+      records: [
+        {stream: "stdout", text: "arolariu.ro repository setup", write: false},
+        {stream: "stdout", text: "Preparing every required workspace, toolchain, and local dependency.", write: false},
+        {stream: "stdout", text: "", write: false},
+        {stream: "stdout", text: "infrastructure", write: false},
+        {stream: "stdout", text: "", write: false},
+        {
+          stream: "stdout",
+          text: "[arolariu::setup] ✅ Executed setup action 'infrastructure.repository-action' (repository): Apply the repository change.",
+          write: false,
+        },
+        {
+          stream: "stdout",
+          text: "[arolariu::setup] ✅ Executed setup action 'infrastructure.user-action' (user): Apply the user change.",
+          write: false,
+        },
+        {
+          stream: "stderr",
+          text: "[arolariu::setup] ⚠️ Declined setup action 'infrastructure.system-action' (system): Apply the system change.",
+          write: false,
+        },
+        {stream: "stderr", text: "[arolariu::setup::infrastructure] ⛔ Dispositions: executed, executed, declined. (5ms)", write: false},
+        {stream: "stdout", text: "", write: false},
+        {stream: "stdout", text: "Setup summary", write: false},
+        {stream: "stdout", text: "", write: false},
+        {stream: "stdout", text: "Phase           Status  Duration  Summary", write: false},
+        {stream: "stdout", text: "--------------  ------  --------  -------------------------------------------", write: false},
+        {stream: "stdout", text: "infrastructure  failed  5ms       Dispositions: executed, executed, declined.", write: false},
+        {stream: "stdout", text: "Setup failed. Resolve the reported failures, then rerun setup.", write: false},
+      ],
+      confirmations: [
+        {message: "Allow system setup action 'infrastructure.system-action' (system): Apply the system change.?", defaultValue: false},
+      ],
+    });
+  });
+
+  it("pins the exact consent prompt and executed action lines when consent is granted", async () => {
+    // Arrange
+    const {prompts, confirmations} = scriptedPrompts(true);
+
+    // Act
+    const run = await invokeThreeScopePhase(options(), prompts);
+    const observed = withRootPlaceholder({...run, confirmations});
+
+    // Assert
+    expect(observed).toEqual({
+      execution: {
+        status: "completed",
+        value: {
+          phases: [
+            {
+              id: "infrastructure",
+              status: "succeeded",
+              summary: "Dispositions: executed, executed, executed.",
+              evidence: [],
+              nextActions: [],
+              durationMs: 5,
+            },
+          ],
+        },
+        exitCode: 0,
+      },
+      executed: ["infrastructure.repository-action", "infrastructure.user-action", "infrastructure.system-action"],
+      records: [
+        {stream: "stdout", text: "arolariu.ro repository setup", write: false},
+        {stream: "stdout", text: "Preparing every required workspace, toolchain, and local dependency.", write: false},
+        {stream: "stdout", text: "", write: false},
+        {stream: "stdout", text: "infrastructure", write: false},
+        {stream: "stdout", text: "", write: false},
+        {
+          stream: "stdout",
+          text: "[arolariu::setup] ✅ Executed setup action 'infrastructure.repository-action' (repository): Apply the repository change.",
+          write: false,
+        },
+        {
+          stream: "stdout",
+          text: "[arolariu::setup] ✅ Executed setup action 'infrastructure.user-action' (user): Apply the user change.",
+          write: false,
+        },
+        {
+          stream: "stdout",
+          text: "[arolariu::setup] ✅ Executed setup action 'infrastructure.system-action' (system): Apply the system change.",
+          write: false,
+        },
+        {stream: "stdout", text: "[arolariu::setup::infrastructure] ✅ Dispositions: executed, executed, executed. (5ms)", write: false},
+        {stream: "stdout", text: "", write: false},
+        {stream: "stdout", text: "Setup summary", write: false},
+        {stream: "stdout", text: "", write: false},
+        {stream: "stdout", text: "Phase           Status     Duration  Summary", write: false},
+        {stream: "stdout", text: "--------------  ---------  --------  -------------------------------------------", write: false},
+        {stream: "stdout", text: "infrastructure  succeeded  5ms       Dispositions: executed, executed, executed.", write: false},
+        {stream: "stdout", text: "Setup is ready.", write: false},
+      ],
+      confirmations: [
+        {message: "Allow system setup action 'infrastructure.system-action' (system): Apply the system change.?", defaultValue: false},
+      ],
+    });
+  });
+
+  it("pins the exact executed action lines without any prompt under --yes", async () => {
+    // Arrange
+    const {prompts, confirmations} = scriptedPrompts(false);
+
+    // Act
+    const run = await invokeThreeScopePhase(options({yes: true}), prompts);
+    const observed = withRootPlaceholder({...run, confirmations});
+
+    // Assert
+    expect(observed).toEqual({
+      execution: {
+        status: "completed",
+        value: {
+          phases: [
+            {
+              id: "infrastructure",
+              status: "succeeded",
+              summary: "Dispositions: executed, executed, executed.",
+              evidence: [],
+              nextActions: [],
+              durationMs: 5,
+            },
+          ],
+        },
+        exitCode: 0,
+      },
+      executed: ["infrastructure.repository-action", "infrastructure.user-action", "infrastructure.system-action"],
+      records: [
+        {stream: "stdout", text: "arolariu.ro repository setup", write: false},
+        {stream: "stdout", text: "Preparing every required workspace, toolchain, and local dependency.", write: false},
+        {stream: "stdout", text: "", write: false},
+        {stream: "stdout", text: "infrastructure", write: false},
+        {stream: "stdout", text: "", write: false},
+        {
+          stream: "stdout",
+          text: "[arolariu::setup] ✅ Executed setup action 'infrastructure.repository-action' (repository): Apply the repository change.",
+          write: false,
+        },
+        {
+          stream: "stdout",
+          text: "[arolariu::setup] ✅ Executed setup action 'infrastructure.user-action' (user): Apply the user change.",
+          write: false,
+        },
+        {
+          stream: "stdout",
+          text: "[arolariu::setup] ✅ Executed setup action 'infrastructure.system-action' (system): Apply the system change.",
+          write: false,
+        },
+        {stream: "stdout", text: "[arolariu::setup::infrastructure] ✅ Dispositions: executed, executed, executed. (5ms)", write: false},
+        {stream: "stdout", text: "", write: false},
+        {stream: "stdout", text: "Setup summary", write: false},
+        {stream: "stdout", text: "", write: false},
+        {stream: "stdout", text: "Phase           Status     Duration  Summary", write: false},
+        {stream: "stdout", text: "--------------  ---------  --------  -------------------------------------------", write: false},
+        {stream: "stdout", text: "infrastructure  succeeded  5ms       Dispositions: executed, executed, executed.", write: false},
+        {stream: "stdout", text: "Setup is ready.", write: false},
+      ],
+      confirmations: [],
+    });
+  });
+
+  it("pins the non-TTY terminal confirmation contract: a defaulted confirm resolves the default, an undefaulted confirm rejects", async () => {
+    // Arrange
+    const output = new PassThrough();
+    const prompts = createTerminalPromptProvider({input: new PassThrough(), output, isTTY: false});
+
+    // Act
+    const defaulted = await prompts.confirm("Allow system setup action?", false);
+    const undefaulted = await prompts.confirm("Allow system setup action?").then(
+      (value) => ({kind: "resolved", value}),
+      (error: unknown) => ({kind: "rejected", message: error instanceof Error ? error.message : String(error)}),
+    );
+
+    // Assert
+    expect(defaulted).toBe(false);
+    expect(undefaulted).toEqual({
+      kind: "rejected",
+      message: "Cannot request confirmation without an interactive terminal. Re-run setup in a TTY.",
+    });
+    expect(output.read()).toBeNull();
+  });
+
+  it("pins the exact non-TTY outcome of the real .NET phase's system action without --yes", async () => {
+    // Arrange
+    const output = new PassThrough();
+    const prompts = createTerminalPromptProvider({input: new PassThrough(), output, isTTY: false});
+    const facts: DotnetFacts = {
+      executable: {available: true, resolvedPaths: ["/usr/bin/dotnet"]},
+      sdks: ["10.0.100"],
+      selectedVersion: "10.0.100",
+      host: {version: "10.0.0", architecture: "x64", rid: "linux-x64"},
+      workloads: [],
+      nugetCachePath: "/home/fixture/.nuget/packages",
+      solutionIssues: [],
+      solutionRestoreIssues: [],
+      localTools: [{name: "defaultdocumentation.console", version: "1.2.4"}],
+      certificate: {exists: true, trusted: true},
+      appHost: {projectExists: true, missingParameterKeys: [], userSecretKeys: []},
+    };
+    const session = {
+      inspect: async (key: string) =>
+        key === "dotnet"
+          ? {kind: "available", value: facts, durationMs: 1}
+          : {kind: "unavailable", reason: "Not exercised by this test.", durationMs: 0},
+      invalidate: () => undefined,
+      updateInfrastructureEngine: () => undefined,
+    } as unknown as LegacyRepositoryInspectionSession;
+    const runner = createProcessRunner();
+    const {logger, sink} = createLogger(false);
+    const {command} = createSetupFixture({logger, prompts, runner, session, phases: [dotnetSetupPhase]});
+
+    // Act
+    const execution = await command.invoke(options(), {presentation: "human"});
+    const observed = withRootPlaceholder({
+      execution,
+      commands: runner.calls.map(({request}) => request),
+      records: sink.records,
+      promptOutput: output.read(),
+    });
+
+    // Assert
+    expect(observed).toEqual({
+      execution: {
+        status: "completed",
+        value: {
+          phases: [
+            {
+              id: "dotnet",
+              status: "failed",
+              summary: "A required .NET restore action was declined.",
+              evidence: ["A listed SDK and selected SDK satisfy >=10.0.0.", "Declined action: dotnet.workload-restore"],
+              nextActions: ["Allow required action 'dotnet.workload-restore', then rerun setup."],
+              durationMs: 0,
+            },
+          ],
+        },
+        exitCode: 1,
+      },
+      commands: [],
+      records: [
+        {stream: "stdout", text: "arolariu.ro repository setup", write: false},
+        {stream: "stdout", text: "Preparing every required workspace, toolchain, and local dependency.", write: false},
+        {stream: "stdout", text: "", write: false},
+        {stream: "stdout", text: ".NET toolchain", write: false},
+        {stream: "stdout", text: "", write: false},
+        {
+          stream: "stderr",
+          text: "[arolariu::setup] ⚠️ Declined setup action 'dotnet.workload-restore' (system): Restore solution workloads required by the pinned SDK.",
+          write: false,
+        },
+        {stream: "stderr", text: "[arolariu::setup::dotnet] ⛔ A required .NET restore action was declined. (0ms)", write: false},
+        {stream: "stdout", text: "  - A listed SDK and selected SDK satisfy >=10.0.0.", write: false},
+        {stream: "stdout", text: "  - Declined action: dotnet.workload-restore", write: false},
+        {stream: "stdout", text: "", write: false},
+        {stream: "stdout", text: "Setup summary", write: false},
+        {stream: "stdout", text: "", write: false},
+        {stream: "stdout", text: "Phase   Status  Duration  Summary", write: false},
+        {stream: "stdout", text: "------  ------  --------  --------------------------------------------", write: false},
+        {stream: "stdout", text: "dotnet  failed  0ms       A required .NET restore action was declined.", write: false},
+        {stream: "stdout", text: "", write: false},
+        {stream: "stdout", text: "Next actions", write: false},
+        {stream: "stdout", text: "", write: false},
+        {stream: "stdout", text: "1. Allow required action 'dotnet.workload-restore', then rerun setup.", write: false},
+        {stream: "stdout", text: "Setup failed. Resolve the reported failures, then rerun setup.", write: false},
+      ],
+      promptOutput: null,
+    });
+  });
+
+  /**
+   * Re-uses the real setup phase graph (ids, titles, requirement flags, and dependencies) with
+   * scripted phase bodies, so dependency skipping is pinned against the production graph.
+   */
+  function realGraphWith(failing: string, ran: string[]): readonly SetupPhaseDefinition[] {
+    return setupPhases.map((phase) => ({
+      ...phase,
+      run: async (): Promise<SetupPhaseResult> => {
+        ran.push(phase.id);
+        return phase.id === failing
+          ? phaseResult(phase.id, "failed", {
+              summary: `${phase.title} failed.`,
+              evidence: [`${phase.id} evidence.`],
+              nextActions: [`Repair ${phase.id}.`],
+              durationMs: 3,
+            })
+          : phaseResult(phase.id, "succeeded", {summary: `${phase.title} is ready.`, durationMs: 2});
+      },
+    }));
+  }
+
+  it.each(["workspace.prerequisites", "workspace.root-dependencies"])(
+    "pins dependency skipping, independent phases, the summary, and the exit code when %s fails",
+    async (failing) => {
+      // Arrange
+      const ran: string[] = [];
+      const {logger, sink} = createLogger(true);
+      const {command} = createSetupFixture({logger, phases: realGraphWith(failing, ran)});
+
+      // Act
+      const execution = await command.invoke(options({verbose: true}), {presentation: "human"});
+      const observed = withRootPlaceholder({execution, ran, records: sink.records});
+
+      // Assert
+      expect(observed).toEqual(
+        (
+          {
+            "workspace.prerequisites": {
+              execution: {
+                status: "completed",
+                value: {
+                  phases: [
+                    {
+                      id: "workspace.prerequisites",
+                      status: "failed",
+                      summary: "Validate workspace prerequisites failed.",
+                      evidence: ["workspace.prerequisites evidence."],
+                      nextActions: ["Repair workspace.prerequisites."],
+                      durationMs: 3,
+                    },
+                    {
+                      id: "workspace.root-dependencies",
+                      status: "skipped",
+                      summary:
+                        "Skipped 'Validate root workspace dependencies' because dependency 'workspace.prerequisites' did not succeed.",
+                      evidence: ["Dependency 'workspace.prerequisites' has status 'failed', not 'succeeded' or 'degraded'."],
+                      nextActions: ["Resolve 'workspace.prerequisites', then rerun setup."],
+                      durationMs: 0,
+                    },
+                    {
+                      id: "workspace.github-scripts-dependencies",
+                      status: "skipped",
+                      summary:
+                        "Skipped 'Restore GitHub scripts dependencies' because dependency 'workspace.prerequisites' did not succeed.",
+                      evidence: ["Dependency 'workspace.prerequisites' has status 'failed', not 'succeeded' or 'degraded'."],
+                      nextActions: ["Resolve 'workspace.prerequisites', then rerun setup."],
+                      durationMs: 0,
+                    },
+                    {
+                      id: "workspace.generators",
+                      status: "skipped",
+                      summary: "Skipped 'Generate checkout artifacts' because dependency 'workspace.root-dependencies' did not succeed.",
+                      evidence: ["Dependency 'workspace.root-dependencies' has status 'skipped', not 'succeeded' or 'degraded'."],
+                      nextActions: ["Resolve 'workspace.root-dependencies', then rerun setup."],
+                      durationMs: 0,
+                    },
+                    {id: "dotnet", status: "succeeded", summary: ".NET toolchain is ready.", evidence: [], nextActions: [], durationMs: 2},
+                    {
+                      id: "react",
+                      status: "skipped",
+                      summary: "Skipped 'React workspace' because dependency 'workspace.root-dependencies' did not succeed.",
+                      evidence: ["Dependency 'workspace.root-dependencies' has status 'skipped', not 'succeeded' or 'degraded'."],
+                      nextActions: ["Resolve 'workspace.root-dependencies', then rerun setup."],
+                      durationMs: 0,
+                    },
+                    {
+                      id: "svelte",
+                      status: "skipped",
+                      summary: "Skipped 'Svelte workspaces' because dependency 'workspace.root-dependencies' did not succeed.",
+                      evidence: ["Dependency 'workspace.root-dependencies' has status 'skipped', not 'succeeded' or 'degraded'."],
+                      nextActions: ["Resolve 'workspace.root-dependencies', then rerun setup."],
+                      durationMs: 0,
+                    },
+                    {
+                      id: "python",
+                      status: "succeeded",
+                      summary: "Python toolchain is ready.",
+                      evidence: [],
+                      nextActions: [],
+                      durationMs: 2,
+                    },
+                    {
+                      id: "infrastructure",
+                      status: "succeeded",
+                      summary: "Local infrastructure is ready.",
+                      evidence: [],
+                      nextActions: [],
+                      durationMs: 2,
+                    },
+                  ],
+                },
+                exitCode: 1,
+              },
+              ran: ["workspace.prerequisites", "dotnet", "python", "infrastructure"],
+              records: [
+                {stream: "stdout", text: "arolariu.ro repository setup", write: false},
+                {stream: "stdout", text: "Preparing every required workspace, toolchain, and local dependency.", write: false},
+                {stream: "stdout", text: "", write: false},
+                {stream: "stdout", text: "Validate workspace prerequisites", write: false},
+                {stream: "stdout", text: "", write: false},
+                {
+                  stream: "stderr",
+                  text: "[arolariu::setup::workspace.prerequisites] ⛔ Validate workspace prerequisites failed. (3ms)",
+                  write: false,
+                },
+                {stream: "stdout", text: "  - workspace.prerequisites evidence.", write: false},
+                {stream: "stdout", text: "", write: false},
+                {stream: "stdout", text: "Validate root workspace dependencies", write: false},
+                {stream: "stdout", text: "", write: false},
+                {
+                  stream: "stdout",
+                  text: "[arolariu::setup::workspace.root-dependencies] 🐛 Dependency check for 'Validate root workspace dependencies': Dependency 'workspace.prerequisites' has status 'failed', not 'succeeded' or 'degraded'.",
+                  write: false,
+                },
+                {
+                  stream: "stderr",
+                  text: "[arolariu::setup::workspace.root-dependencies] ⚠️ Skipped 'Validate root workspace dependencies' because dependency 'workspace.prerequisites' did not succeed. (0ms)",
+                  write: false,
+                },
+                {
+                  stream: "stdout",
+                  text: "  - Dependency 'workspace.prerequisites' has status 'failed', not 'succeeded' or 'degraded'.",
+                  write: false,
+                },
+                {stream: "stdout", text: "", write: false},
+                {stream: "stdout", text: "Restore GitHub scripts dependencies", write: false},
+                {stream: "stdout", text: "", write: false},
+                {
+                  stream: "stdout",
+                  text: "[arolariu::setup::workspace.github-scripts-dependencies] 🐛 Dependency check for 'Restore GitHub scripts dependencies': Dependency 'workspace.prerequisites' has status 'failed', not 'succeeded' or 'degraded'.",
+                  write: false,
+                },
+                {
+                  stream: "stderr",
+                  text: "[arolariu::setup::workspace.github-scripts-dependencies] ⚠️ Skipped 'Restore GitHub scripts dependencies' because dependency 'workspace.prerequisites' did not succeed. (0ms)",
+                  write: false,
+                },
+                {
+                  stream: "stdout",
+                  text: "  - Dependency 'workspace.prerequisites' has status 'failed', not 'succeeded' or 'degraded'.",
+                  write: false,
+                },
+                {stream: "stdout", text: "", write: false},
+                {stream: "stdout", text: "Generate checkout artifacts", write: false},
+                {stream: "stdout", text: "", write: false},
+                {
+                  stream: "stdout",
+                  text: "[arolariu::setup::workspace.generators] 🐛 Dependency check for 'Generate checkout artifacts': Dependency 'workspace.root-dependencies' has status 'skipped', not 'succeeded' or 'degraded'.",
+                  write: false,
+                },
+                {
+                  stream: "stderr",
+                  text: "[arolariu::setup::workspace.generators] ⚠️ Skipped 'Generate checkout artifacts' because dependency 'workspace.root-dependencies' did not succeed. (0ms)",
+                  write: false,
+                },
+                {
+                  stream: "stdout",
+                  text: "  - Dependency 'workspace.root-dependencies' has status 'skipped', not 'succeeded' or 'degraded'.",
+                  write: false,
+                },
+                {stream: "stdout", text: "", write: false},
+                {stream: "stdout", text: ".NET toolchain", write: false},
+                {stream: "stdout", text: "", write: false},
+                {stream: "stdout", text: "[arolariu::setup::dotnet] ✅ .NET toolchain is ready. (2ms)", write: false},
+                {stream: "stdout", text: "", write: false},
+                {stream: "stdout", text: "React workspace", write: false},
+                {stream: "stdout", text: "", write: false},
+                {
+                  stream: "stdout",
+                  text: "[arolariu::setup::react] 🐛 Dependency check for 'React workspace': Dependency 'workspace.root-dependencies' has status 'skipped', not 'succeeded' or 'degraded'.",
+                  write: false,
+                },
+                {
+                  stream: "stderr",
+                  text: "[arolariu::setup::react] ⚠️ Skipped 'React workspace' because dependency 'workspace.root-dependencies' did not succeed. (0ms)",
+                  write: false,
+                },
+                {
+                  stream: "stdout",
+                  text: "  - Dependency 'workspace.root-dependencies' has status 'skipped', not 'succeeded' or 'degraded'.",
+                  write: false,
+                },
+                {stream: "stdout", text: "", write: false},
+                {stream: "stdout", text: "Svelte workspaces", write: false},
+                {stream: "stdout", text: "", write: false},
+                {
+                  stream: "stdout",
+                  text: "[arolariu::setup::svelte] 🐛 Dependency check for 'Svelte workspaces': Dependency 'workspace.root-dependencies' has status 'skipped', not 'succeeded' or 'degraded'.",
+                  write: false,
+                },
+                {
+                  stream: "stderr",
+                  text: "[arolariu::setup::svelte] ⚠️ Skipped 'Svelte workspaces' because dependency 'workspace.root-dependencies' did not succeed. (0ms)",
+                  write: false,
+                },
+                {
+                  stream: "stdout",
+                  text: "  - Dependency 'workspace.root-dependencies' has status 'skipped', not 'succeeded' or 'degraded'.",
+                  write: false,
+                },
+                {stream: "stdout", text: "", write: false},
+                {stream: "stdout", text: "Python toolchain", write: false},
+                {stream: "stdout", text: "", write: false},
+                {stream: "stdout", text: "[arolariu::setup::python] ✅ Python toolchain is ready. (2ms)", write: false},
+                {stream: "stdout", text: "", write: false},
+                {stream: "stdout", text: "Local infrastructure", write: false},
+                {stream: "stdout", text: "", write: false},
+                {stream: "stdout", text: "[arolariu::setup::infrastructure] ✅ Local infrastructure is ready. (2ms)", write: false},
+                {stream: "stdout", text: "", write: false},
+                {stream: "stdout", text: "Setup summary", write: false},
+                {stream: "stdout", text: "", write: false},
+                {stream: "stdout", text: "Phase                                  Status     Duration  Summary", write: false},
+                {
+                  stream: "stdout",
+                  text: "-------------------------------------  ---------  --------  ------------------------------------------------------------------------------------------------------------",
+                  write: false,
+                },
+                {
+                  stream: "stdout",
+                  text: "workspace.prerequisites                failed     3ms       Validate workspace prerequisites failed.",
+                  write: false,
+                },
+                {
+                  stream: "stdout",
+                  text: "workspace.root-dependencies            skipped    0ms       Skipped 'Validate root workspace dependencies' because dependency 'workspace.prerequisites' did not succeed.",
+                  write: false,
+                },
+                {
+                  stream: "stdout",
+                  text: "workspace.github-scripts-dependencies  skipped    0ms       Skipped 'Restore GitHub scripts dependencies' because dependency 'workspace.prerequisites' did not succeed.",
+                  write: false,
+                },
+                {
+                  stream: "stdout",
+                  text: "workspace.generators                   skipped    0ms       Skipped 'Generate checkout artifacts' because dependency 'workspace.root-dependencies' did not succeed.",
+                  write: false,
+                },
+                {
+                  stream: "stdout",
+                  text: "dotnet                                 succeeded  2ms       .NET toolchain is ready.",
+                  write: false,
+                },
+                {
+                  stream: "stdout",
+                  text: "react                                  skipped    0ms       Skipped 'React workspace' because dependency 'workspace.root-dependencies' did not succeed.",
+                  write: false,
+                },
+                {
+                  stream: "stdout",
+                  text: "svelte                                 skipped    0ms       Skipped 'Svelte workspaces' because dependency 'workspace.root-dependencies' did not succeed.",
+                  write: false,
+                },
+                {
+                  stream: "stdout",
+                  text: "python                                 succeeded  2ms       Python toolchain is ready.",
+                  write: false,
+                },
+                {
+                  stream: "stdout",
+                  text: "infrastructure                         succeeded  2ms       Local infrastructure is ready.",
+                  write: false,
+                },
+                {stream: "stdout", text: "", write: false},
+                {stream: "stdout", text: "Next actions", write: false},
+                {stream: "stdout", text: "", write: false},
+                {stream: "stdout", text: "1. Repair workspace.prerequisites.", write: false},
+                {stream: "stdout", text: "2. Resolve 'workspace.prerequisites', then rerun setup.", write: false},
+                {stream: "stdout", text: "3. Resolve 'workspace.prerequisites', then rerun setup.", write: false},
+                {stream: "stdout", text: "4. Resolve 'workspace.root-dependencies', then rerun setup.", write: false},
+                {stream: "stdout", text: "5. Resolve 'workspace.root-dependencies', then rerun setup.", write: false},
+                {stream: "stdout", text: "6. Resolve 'workspace.root-dependencies', then rerun setup.", write: false},
+                {stream: "stdout", text: "Setup failed. Resolve the reported failures, then rerun setup.", write: false},
+              ],
+            },
+            "workspace.root-dependencies": {
+              execution: {
+                status: "completed",
+                value: {
+                  phases: [
+                    {
+                      id: "workspace.prerequisites",
+                      status: "succeeded",
+                      summary: "Validate workspace prerequisites is ready.",
+                      evidence: [],
+                      nextActions: [],
+                      durationMs: 2,
+                    },
+                    {
+                      id: "workspace.root-dependencies",
+                      status: "failed",
+                      summary: "Validate root workspace dependencies failed.",
+                      evidence: ["workspace.root-dependencies evidence."],
+                      nextActions: ["Repair workspace.root-dependencies."],
+                      durationMs: 3,
+                    },
+                    {
+                      id: "workspace.github-scripts-dependencies",
+                      status: "succeeded",
+                      summary: "Restore GitHub scripts dependencies is ready.",
+                      evidence: [],
+                      nextActions: [],
+                      durationMs: 2,
+                    },
+                    {
+                      id: "workspace.generators",
+                      status: "skipped",
+                      summary: "Skipped 'Generate checkout artifacts' because dependency 'workspace.root-dependencies' did not succeed.",
+                      evidence: ["Dependency 'workspace.root-dependencies' has status 'failed', not 'succeeded' or 'degraded'."],
+                      nextActions: ["Resolve 'workspace.root-dependencies', then rerun setup."],
+                      durationMs: 0,
+                    },
+                    {id: "dotnet", status: "succeeded", summary: ".NET toolchain is ready.", evidence: [], nextActions: [], durationMs: 2},
+                    {
+                      id: "react",
+                      status: "skipped",
+                      summary: "Skipped 'React workspace' because dependency 'workspace.root-dependencies' did not succeed.",
+                      evidence: ["Dependency 'workspace.root-dependencies' has status 'failed', not 'succeeded' or 'degraded'."],
+                      nextActions: ["Resolve 'workspace.root-dependencies', then rerun setup."],
+                      durationMs: 0,
+                    },
+                    {
+                      id: "svelte",
+                      status: "skipped",
+                      summary: "Skipped 'Svelte workspaces' because dependency 'workspace.root-dependencies' did not succeed.",
+                      evidence: ["Dependency 'workspace.root-dependencies' has status 'failed', not 'succeeded' or 'degraded'."],
+                      nextActions: ["Resolve 'workspace.root-dependencies', then rerun setup."],
+                      durationMs: 0,
+                    },
+                    {
+                      id: "python",
+                      status: "succeeded",
+                      summary: "Python toolchain is ready.",
+                      evidence: [],
+                      nextActions: [],
+                      durationMs: 2,
+                    },
+                    {
+                      id: "infrastructure",
+                      status: "succeeded",
+                      summary: "Local infrastructure is ready.",
+                      evidence: [],
+                      nextActions: [],
+                      durationMs: 2,
+                    },
+                  ],
+                },
+                exitCode: 1,
+              },
+              ran: [
+                "workspace.prerequisites",
+                "workspace.root-dependencies",
+                "workspace.github-scripts-dependencies",
+                "dotnet",
+                "python",
+                "infrastructure",
+              ],
+              records: [
+                {stream: "stdout", text: "arolariu.ro repository setup", write: false},
+                {stream: "stdout", text: "Preparing every required workspace, toolchain, and local dependency.", write: false},
+                {stream: "stdout", text: "", write: false},
+                {stream: "stdout", text: "Validate workspace prerequisites", write: false},
+                {stream: "stdout", text: "", write: false},
+                {
+                  stream: "stdout",
+                  text: "[arolariu::setup::workspace.prerequisites] ✅ Validate workspace prerequisites is ready. (2ms)",
+                  write: false,
+                },
+                {stream: "stdout", text: "", write: false},
+                {stream: "stdout", text: "Validate root workspace dependencies", write: false},
+                {stream: "stdout", text: "", write: false},
+                {
+                  stream: "stderr",
+                  text: "[arolariu::setup::workspace.root-dependencies] ⛔ Validate root workspace dependencies failed. (3ms)",
+                  write: false,
+                },
+                {stream: "stdout", text: "  - workspace.root-dependencies evidence.", write: false},
+                {stream: "stdout", text: "", write: false},
+                {stream: "stdout", text: "Restore GitHub scripts dependencies", write: false},
+                {stream: "stdout", text: "", write: false},
+                {
+                  stream: "stdout",
+                  text: "[arolariu::setup::workspace.github-scripts-dependencies] ✅ Restore GitHub scripts dependencies is ready. (2ms)",
+                  write: false,
+                },
+                {stream: "stdout", text: "", write: false},
+                {stream: "stdout", text: "Generate checkout artifacts", write: false},
+                {stream: "stdout", text: "", write: false},
+                {
+                  stream: "stdout",
+                  text: "[arolariu::setup::workspace.generators] 🐛 Dependency check for 'Generate checkout artifacts': Dependency 'workspace.root-dependencies' has status 'failed', not 'succeeded' or 'degraded'.",
+                  write: false,
+                },
+                {
+                  stream: "stderr",
+                  text: "[arolariu::setup::workspace.generators] ⚠️ Skipped 'Generate checkout artifacts' because dependency 'workspace.root-dependencies' did not succeed. (0ms)",
+                  write: false,
+                },
+                {
+                  stream: "stdout",
+                  text: "  - Dependency 'workspace.root-dependencies' has status 'failed', not 'succeeded' or 'degraded'.",
+                  write: false,
+                },
+                {stream: "stdout", text: "", write: false},
+                {stream: "stdout", text: ".NET toolchain", write: false},
+                {stream: "stdout", text: "", write: false},
+                {stream: "stdout", text: "[arolariu::setup::dotnet] ✅ .NET toolchain is ready. (2ms)", write: false},
+                {stream: "stdout", text: "", write: false},
+                {stream: "stdout", text: "React workspace", write: false},
+                {stream: "stdout", text: "", write: false},
+                {
+                  stream: "stdout",
+                  text: "[arolariu::setup::react] 🐛 Dependency check for 'React workspace': Dependency 'workspace.root-dependencies' has status 'failed', not 'succeeded' or 'degraded'.",
+                  write: false,
+                },
+                {
+                  stream: "stderr",
+                  text: "[arolariu::setup::react] ⚠️ Skipped 'React workspace' because dependency 'workspace.root-dependencies' did not succeed. (0ms)",
+                  write: false,
+                },
+                {
+                  stream: "stdout",
+                  text: "  - Dependency 'workspace.root-dependencies' has status 'failed', not 'succeeded' or 'degraded'.",
+                  write: false,
+                },
+                {stream: "stdout", text: "", write: false},
+                {stream: "stdout", text: "Svelte workspaces", write: false},
+                {stream: "stdout", text: "", write: false},
+                {
+                  stream: "stdout",
+                  text: "[arolariu::setup::svelte] 🐛 Dependency check for 'Svelte workspaces': Dependency 'workspace.root-dependencies' has status 'failed', not 'succeeded' or 'degraded'.",
+                  write: false,
+                },
+                {
+                  stream: "stderr",
+                  text: "[arolariu::setup::svelte] ⚠️ Skipped 'Svelte workspaces' because dependency 'workspace.root-dependencies' did not succeed. (0ms)",
+                  write: false,
+                },
+                {
+                  stream: "stdout",
+                  text: "  - Dependency 'workspace.root-dependencies' has status 'failed', not 'succeeded' or 'degraded'.",
+                  write: false,
+                },
+                {stream: "stdout", text: "", write: false},
+                {stream: "stdout", text: "Python toolchain", write: false},
+                {stream: "stdout", text: "", write: false},
+                {stream: "stdout", text: "[arolariu::setup::python] ✅ Python toolchain is ready. (2ms)", write: false},
+                {stream: "stdout", text: "", write: false},
+                {stream: "stdout", text: "Local infrastructure", write: false},
+                {stream: "stdout", text: "", write: false},
+                {stream: "stdout", text: "[arolariu::setup::infrastructure] ✅ Local infrastructure is ready. (2ms)", write: false},
+                {stream: "stdout", text: "", write: false},
+                {stream: "stdout", text: "Setup summary", write: false},
+                {stream: "stdout", text: "", write: false},
+                {stream: "stdout", text: "Phase                                  Status     Duration  Summary", write: false},
+                {
+                  stream: "stdout",
+                  text: "-------------------------------------  ---------  --------  -------------------------------------------------------------------------------------------------------",
+                  write: false,
+                },
+                {
+                  stream: "stdout",
+                  text: "workspace.prerequisites                succeeded  2ms       Validate workspace prerequisites is ready.",
+                  write: false,
+                },
+                {
+                  stream: "stdout",
+                  text: "workspace.root-dependencies            failed     3ms       Validate root workspace dependencies failed.",
+                  write: false,
+                },
+                {
+                  stream: "stdout",
+                  text: "workspace.github-scripts-dependencies  succeeded  2ms       Restore GitHub scripts dependencies is ready.",
+                  write: false,
+                },
+                {
+                  stream: "stdout",
+                  text: "workspace.generators                   skipped    0ms       Skipped 'Generate checkout artifacts' because dependency 'workspace.root-dependencies' did not succeed.",
+                  write: false,
+                },
+                {
+                  stream: "stdout",
+                  text: "dotnet                                 succeeded  2ms       .NET toolchain is ready.",
+                  write: false,
+                },
+                {
+                  stream: "stdout",
+                  text: "react                                  skipped    0ms       Skipped 'React workspace' because dependency 'workspace.root-dependencies' did not succeed.",
+                  write: false,
+                },
+                {
+                  stream: "stdout",
+                  text: "svelte                                 skipped    0ms       Skipped 'Svelte workspaces' because dependency 'workspace.root-dependencies' did not succeed.",
+                  write: false,
+                },
+                {
+                  stream: "stdout",
+                  text: "python                                 succeeded  2ms       Python toolchain is ready.",
+                  write: false,
+                },
+                {
+                  stream: "stdout",
+                  text: "infrastructure                         succeeded  2ms       Local infrastructure is ready.",
+                  write: false,
+                },
+                {stream: "stdout", text: "", write: false},
+                {stream: "stdout", text: "Next actions", write: false},
+                {stream: "stdout", text: "", write: false},
+                {stream: "stdout", text: "1. Repair workspace.root-dependencies.", write: false},
+                {stream: "stdout", text: "2. Resolve 'workspace.root-dependencies', then rerun setup.", write: false},
+                {stream: "stdout", text: "3. Resolve 'workspace.root-dependencies', then rerun setup.", write: false},
+                {stream: "stdout", text: "4. Resolve 'workspace.root-dependencies', then rerun setup.", write: false},
+                {stream: "stdout", text: "Setup failed. Resolve the reported failures, then rerun setup.", write: false},
+              ],
+            },
+          } as Readonly<Record<string, unknown>>
+        )[failing],
+      );
+    },
+  );
+
+  it.each([
+    ["ready", "succeeded"],
+    ["degraded", "degraded"],
+  ] as const)("pins the exact %s summary table, banner, and exit code", async (_name, reactStatus) => {
+    // Arrange
+    const {logger, sink} = createLogger(false);
+    const {command} = createSetupFixture({
+      logger,
+      phases: [
+        stubPhase("dotnet", {
+          run: () =>
+            Promise.resolve(
+              phaseResult("dotnet", "succeeded", {summary: "The .NET SDK is ready.", evidence: ["SDK 10.0.100."], durationMs: 42}),
+            ),
+        }),
+        stubPhase("react", {
+          run: () =>
+            Promise.resolve(
+              phaseResult("react", reactStatus, {
+                summary: reactStatus === "degraded" ? "Clerk credentials are unavailable." : "The website is ready.",
+                nextActions: reactStatus === "degraded" ? ["Provide Clerk credentials, then rerun setup."] : [],
+                durationMs: 7,
+              }),
+            ),
+        }),
+      ],
+    });
+
+    // Act
+    const execution = await command.invoke(options(), {presentation: "human"});
+    const observed = withRootPlaceholder({execution, records: sink.records});
+
+    // Assert
+    expect(observed).toEqual(
+      (
+        {
+          ready: {
+            execution: {
+              status: "completed",
+              value: {
+                phases: [
+                  {
+                    id: "dotnet",
+                    status: "succeeded",
+                    summary: "The .NET SDK is ready.",
+                    evidence: ["SDK 10.0.100."],
+                    nextActions: [],
+                    durationMs: 42,
+                  },
+                  {id: "react", status: "succeeded", summary: "The website is ready.", evidence: [], nextActions: [], durationMs: 7},
+                ],
+              },
+              exitCode: 0,
+            },
+            records: [
+              {stream: "stdout", text: "arolariu.ro repository setup", write: false},
+              {stream: "stdout", text: "Preparing every required workspace, toolchain, and local dependency.", write: false},
+              {stream: "stdout", text: "", write: false},
+              {stream: "stdout", text: "dotnet", write: false},
+              {stream: "stdout", text: "", write: false},
+              {stream: "stdout", text: "[arolariu::setup::dotnet] ✅ The .NET SDK is ready. (42ms)", write: false},
+              {stream: "stdout", text: "  - SDK 10.0.100.", write: false},
+              {stream: "stdout", text: "", write: false},
+              {stream: "stdout", text: "react", write: false},
+              {stream: "stdout", text: "", write: false},
+              {stream: "stdout", text: "[arolariu::setup::react] ✅ The website is ready. (7ms)", write: false},
+              {stream: "stdout", text: "", write: false},
+              {stream: "stdout", text: "Setup summary", write: false},
+              {stream: "stdout", text: "", write: false},
+              {stream: "stdout", text: "Phase   Status     Duration  Summary", write: false},
+              {stream: "stdout", text: "------  ---------  --------  ----------------------", write: false},
+              {stream: "stdout", text: "dotnet  succeeded  42ms      The .NET SDK is ready.", write: false},
+              {stream: "stdout", text: "react   succeeded  7ms       The website is ready.", write: false},
+              {stream: "stdout", text: "Setup is ready.", write: false},
+            ],
+          },
+          degraded: {
+            execution: {
+              status: "completed",
+              value: {
+                phases: [
+                  {
+                    id: "dotnet",
+                    status: "succeeded",
+                    summary: "The .NET SDK is ready.",
+                    evidence: ["SDK 10.0.100."],
+                    nextActions: [],
+                    durationMs: 42,
+                  },
+                  {
+                    id: "react",
+                    status: "degraded",
+                    summary: "Clerk credentials are unavailable.",
+                    evidence: [],
+                    nextActions: ["Provide Clerk credentials, then rerun setup."],
+                    durationMs: 7,
+                  },
+                ],
+              },
+              exitCode: 0,
+            },
+            records: [
+              {stream: "stdout", text: "arolariu.ro repository setup", write: false},
+              {stream: "stdout", text: "Preparing every required workspace, toolchain, and local dependency.", write: false},
+              {stream: "stdout", text: "", write: false},
+              {stream: "stdout", text: "dotnet", write: false},
+              {stream: "stdout", text: "", write: false},
+              {stream: "stdout", text: "[arolariu::setup::dotnet] ✅ The .NET SDK is ready. (42ms)", write: false},
+              {stream: "stdout", text: "  - SDK 10.0.100.", write: false},
+              {stream: "stdout", text: "", write: false},
+              {stream: "stdout", text: "react", write: false},
+              {stream: "stdout", text: "", write: false},
+              {stream: "stderr", text: "[arolariu::setup::react] ⚠️ Clerk credentials are unavailable. (7ms)", write: false},
+              {stream: "stdout", text: "", write: false},
+              {stream: "stdout", text: "Setup summary", write: false},
+              {stream: "stdout", text: "", write: false},
+              {stream: "stdout", text: "Phase   Status     Duration  Summary", write: false},
+              {stream: "stdout", text: "------  ---------  --------  ----------------------------------", write: false},
+              {stream: "stdout", text: "dotnet  succeeded  42ms      The .NET SDK is ready.", write: false},
+              {stream: "stdout", text: "react   degraded   7ms       Clerk credentials are unavailable.", write: false},
+              {stream: "stdout", text: "", write: false},
+              {stream: "stdout", text: "Degraded capabilities", write: false},
+              {stream: "stdout", text: "", write: false},
+              {stream: "stderr", text: "[arolariu::setup] ⚠️ Clerk credentials are unavailable.", write: false},
+              {stream: "stdout", text: "", write: false},
+              {stream: "stdout", text: "Next actions", write: false},
+              {stream: "stdout", text: "", write: false},
+              {stream: "stdout", text: "1. Provide Clerk credentials, then rerun setup.", write: false},
+              {stream: "stdout", text: "Setup is ready with degraded capabilities.", write: false},
+            ],
+          },
+        } as Readonly<Record<string, unknown>>
+      )[_name],
+    );
   });
 });

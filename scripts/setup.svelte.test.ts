@@ -841,3 +841,101 @@ describe("interruption and command safety", () => {
     }
   });
 });
+
+describe("svelte characterization (pre-Effect migration)", () => {
+  function withRootPlaceholder(value: unknown): unknown {
+    const escapedRoot = JSON.stringify(paths.root).slice(1, -1);
+    return JSON.parse(JSON.stringify(value).split(escapedRoot).join("<root>"));
+  }
+
+  function observe(harness: SvelteHarness, result: SetupPhaseResult): unknown {
+    return withRootPlaceholder({
+      result,
+      actionIds: harness.actionIds,
+      commands: harness.runner.calls.map(({request}) => request),
+    });
+  }
+
+  it("pins the exact result when every package and both generated configs are already present", async () => {
+    // Arrange
+    const harness = await createHarness();
+
+    // Act
+    const observed = observe(harness, await runPhase(harness));
+
+    // Assert
+    expect(observed).toEqual({
+      result: {
+        id: "svelte",
+        status: "succeeded",
+        summary: "Both Svelte workspaces have valid package contracts and generated configuration.",
+        evidence: [
+          "Verified 7 locked Svelte package(s) from shared facts.",
+          "cv: package, script, adapter, and Node engine contracts are valid.",
+          "status: package, script, adapter, and Node engine contracts are valid.",
+        ],
+        nextActions: [],
+        durationMs: 1,
+      },
+      actionIds: [],
+      commands: [],
+    });
+  });
+
+  it("pins the exact result when the cv generated config is missing and preparation succeeds", async () => {
+    // Arrange
+    const harness = await createHarness({cv: [svelteAvailable("cv", {generatedConfigExists: false}), svelteAvailable("cv")]});
+
+    // Act
+    const observed = observe(harness, await runPhase(harness));
+
+    // Assert
+    expect(observed).toEqual({
+      result: {
+        id: "svelte",
+        status: "succeeded",
+        summary: "Both Svelte workspaces have valid package contracts and generated configuration.",
+        evidence: [
+          "Verified 7 locked Svelte package(s) from shared facts.",
+          "cv: package, script, adapter, and Node engine contracts are valid.",
+          "status: package, script, adapter, and Node engine contracts are valid.",
+          "Executed and verified action: svelte.prepare",
+        ],
+        nextActions: [],
+        durationMs: 1,
+      },
+      actionIds: ["svelte.prepare"],
+      commands: [{command: "npm", args: ["run", "prepare", "--workspace=sites/cv.arolariu.ro", "--workspace=sites/status.arolariu.ro"]}],
+    });
+  });
+
+  it("pins the exact result when the preparation command fails", async () => {
+    // Arrange
+    const harness = await createHarness({
+      cv: [svelteAvailable("cv", {generatedConfigExists: false})],
+      responses: {[commandKey(prepareCommand)]: exited(1, {stderr: "sync failed"})},
+    });
+
+    // Act
+    const observed = observe(harness, await runPhase(harness));
+
+    // Assert
+    expect(observed).toEqual({
+      result: {
+        id: "svelte",
+        status: "failed",
+        summary: "The required Svelte workspace preparation phase failed.",
+        evidence: [
+          "Verified 7 locked Svelte package(s) from shared facts.",
+          "cv: package, script, adapter, and Node engine contracts are valid.",
+          "status: package, script, adapter, and Node engine contracts are valid.",
+          "svelte.prepare command failed.\nCommand exited with code 1.\nstderr: sync failed",
+        ],
+        nextActions: ["Resolve the reported Svelte setup failure, then rerun setup."],
+        durationMs: 1,
+      },
+      actionIds: ["svelte.prepare"],
+      commands: [{command: "npm", args: ["run", "prepare", "--workspace=sites/cv.arolariu.ro", "--workspace=sites/status.arolariu.ro"]}],
+    });
+  });
+});

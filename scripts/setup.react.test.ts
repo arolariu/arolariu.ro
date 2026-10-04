@@ -1476,3 +1476,112 @@ describe("dry-run, interruption, and command safety", () => {
     }
   });
 });
+
+describe("react characterization (pre-Effect migration)", () => {
+  function withRootPlaceholder(value: unknown): unknown {
+    const escapedRoot = JSON.stringify(paths.root).slice(1, -1);
+    return JSON.parse(JSON.stringify(value).split(escapedRoot).join("<root>"));
+  }
+
+  function observe(harness: ReactHarness, result: SetupPhaseResult): unknown {
+    return withRootPlaceholder({
+      result,
+      actionIds: harness.actionIds,
+      commands: harness.runner.calls.map(({request}) => request),
+    });
+  }
+
+  it("pins the exact result when every package, artifact, environment key, and Chromium is already present", async () => {
+    // Arrange
+    const harness = await createHarness();
+
+    // Act
+    const observed = observe(harness, await runPhase(harness));
+
+    // Assert
+    expect(observed).toEqual({
+      result: {
+        id: "react",
+        status: "succeeded",
+        summary: "React packages, generated artifacts, website environment, and Playwright Chromium are ready.",
+        evidence: [
+          "Verified 8 locked React workspace package(s) and the @arolariu/components workspace link from shared facts.",
+          "Verified the website message dictionary and framework configuration contracts.",
+          "Verified every generated website taxonomy, license, and locale artifact.",
+          "Preserved setup-owned environment keys: SITE_ENV, SITE_NAME, SITE_URL, USE_CDN, NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY, CLERK_SECRET_KEY.",
+          "Wrote setup-owned environment keys: none.",
+          "Playwright Chromium is installed for locked version 1.62.1.",
+        ],
+        nextActions: [],
+        durationMs: 1,
+      },
+      actionIds: [],
+      commands: [],
+    });
+  });
+
+  it("pins the exact result when locked Chromium is missing and its installation succeeds", async () => {
+    // Arrange
+    const harness = await createHarness({
+      react: [reactAvailable({playwright: playwrightFacts({browsers: []})}), reactAvailable()],
+    });
+
+    // Act
+    const observed = observe(harness, await runPhase(harness));
+
+    // Assert
+    expect(observed).toEqual({
+      result: {
+        id: "react",
+        status: "succeeded",
+        summary: "React packages, generated artifacts, website environment, and Playwright Chromium are ready.",
+        evidence: [
+          "Verified 8 locked React workspace package(s) and the @arolariu/components workspace link from shared facts.",
+          "Verified the website message dictionary and framework configuration contracts.",
+          "Verified every generated website taxonomy, license, and locale artifact.",
+          "Preserved setup-owned environment keys: SITE_ENV, SITE_NAME, SITE_URL, USE_CDN, NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY, CLERK_SECRET_KEY.",
+          "Wrote setup-owned environment keys: none.",
+          "The installed Playwright browser inventory has no Chromium browser entry.",
+          "Executed and verified action: react.playwright.chromium.install",
+        ],
+        nextActions: [],
+        durationMs: 1,
+      },
+      actionIds: ["react.playwright.chromium.install"],
+      commands: [{command: "npx", args: ["--no-install", "playwright", "install", "chromium"]}],
+    });
+  });
+
+  it("pins the exact result when the Chromium installation fails", async () => {
+    // Arrange
+    const harness = await createHarness({
+      react: [reactAvailable({playwright: playwrightFacts({browsers: []})})],
+      responses: {[commandKey(browserInstallCommand)]: exited(1, {stderr: "download failed"})},
+    });
+
+    // Act
+    const observed = observe(harness, await runPhase(harness));
+
+    // Assert
+    expect(observed).toEqual({
+      result: {
+        id: "react",
+        status: "failed",
+        summary: "The required React workspace preparation phase failed.",
+        evidence: [
+          "Verified 8 locked React workspace package(s) and the @arolariu/components workspace link from shared facts.",
+          "Verified the website message dictionary and framework configuration contracts.",
+          "Verified every generated website taxonomy, license, and locale artifact.",
+          "Preserved setup-owned environment keys: SITE_ENV, SITE_NAME, SITE_URL, USE_CDN, NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY, CLERK_SECRET_KEY.",
+          "Wrote setup-owned environment keys: none.",
+          "The installed Playwright browser inventory has no Chromium browser entry.",
+          "Playwright Chromium installation failed.\nCommand exited with code 1.\nstderr: download failed",
+        ],
+        nextActions: ["Resolve the reported React setup failure, then rerun setup."],
+        durationMs: 1,
+      },
+      actionIds: ["react.playwright.chromium.install"],
+      commands: [{command: "npx", args: ["--no-install", "playwright", "install", "chromium"]}],
+    });
+  });
+});

@@ -35,7 +35,15 @@ import type {InfrastructureFacts, PortFact} from "./inspection/infrastructure.ts
 import type {LegacyRepositoryInspectionSession} from "./platform/bridge.ts";
 import type {InspectionOutcome} from "./inspection/types.ts";
 import {createInfrastructureSetupPhase, infrastructureSetupPhase, selectContainerInstallationProposal} from "./setup.infrastructure.ts";
-import type {SetupAction, SetupActionDisposition, SetupActionExecutor, SetupContext, SetupInput, SetupPhaseRuntime} from "./setup.types.ts";
+import type {
+  SetupAction,
+  SetupActionDisposition,
+  SetupActionExecutor,
+  SetupContext,
+  SetupInput,
+  SetupPhaseResult,
+  SetupPhaseRuntime,
+} from "./setup.types.ts";
 
 // ---------------------------------------------------------------------------
 // Fact fixtures
@@ -1273,5 +1281,146 @@ describe("abort and failure", () => {
     const {runtime: _runtime, ...withoutRuntime} = harness.context;
 
     await expect(harness.phase.run(withoutRuntime as SetupContext)).rejects.toThrow(/setup phase runtime/i);
+  });
+});
+
+describe("infrastructure characterization (pre-Effect migration)", () => {
+  const wingetVersionKey = commandKey({command: "winget", args: ["--version"]});
+  const rancherInstallKey = commandKey({
+    command: "winget",
+    args: ["install", "--id", "SUSE.RancherDesktop", "--exact", "--accept-package-agreements", "--accept-source-agreements"],
+  });
+  const persistedRancher: ToolingConfigSeed = {status: "valid", config: {schemaVersion: 1, containerEngine: "rancher"}};
+
+  function withRootPlaceholder(value: unknown): unknown {
+    const escapedRoot = JSON.stringify(paths.root).slice(1, -1);
+    return JSON.parse(JSON.stringify(value).split(escapedRoot).join("<root>"));
+  }
+
+  function observe(harness: Harness, result: SetupPhaseResult): unknown {
+    return withRootPlaceholder({
+      result,
+      actionIds: harness.actionRecords.map(({id}) => id),
+      commands: harness.runner.calls.map(({request}) => request),
+      writes: harness.writes,
+    });
+  }
+
+  it("pins the exact result when the runtime, ports, manifests, and certificates are already ready", async () => {
+    // Arrange
+    const harness = await createHarness({config: persistedRancher});
+
+    // Act
+    const observed = observe(harness, await runPhase(harness));
+
+    // Assert
+    expect(observed).toEqual({
+      result: {
+        id: "infrastructure",
+        status: "succeeded",
+        summary: "Local infrastructure is ready.",
+        evidence: [
+          "Selected Rancher Desktop from argument.",
+          "The persisted container engine selection is already current.",
+          "Rancher Desktop runtime postcondition is satisfied.",
+          "Port 3000 is available.",
+          "Port 3002 is available.",
+          "Port 4173 is available.",
+          "Port 5000 is available.",
+          "Port 5002 is available.",
+          "Port 6379 is available.",
+          "Port 8081 is available.",
+          "Port 8082 is available.",
+          "Port 10000 is available.",
+          "Optional selfhost certificate and key are present.",
+        ],
+        nextActions: [],
+        durationMs: 1,
+      },
+      actionIds: [],
+      commands: [],
+      writes: [],
+    });
+  });
+
+  it("pins the exact result when the container CLI is missing and the winget installation proposal succeeds", async () => {
+    // Arrange
+    const harness = await createHarness({
+      config: persistedRancher,
+      responses: {[wingetVersionKey]: succeeded({stdout: "v1.10"})},
+      infrastructure: [infrastructureAvailable({cliAvailable: false}), infrastructureAvailable()],
+    });
+
+    // Act
+    const observed = observe(harness, await runPhase(harness));
+
+    // Assert
+    expect(observed).toEqual({
+      result: {
+        id: "infrastructure",
+        status: "succeeded",
+        summary: "Local infrastructure is ready.",
+        evidence: [
+          "Selected Rancher Desktop from argument.",
+          "The persisted container engine selection is already current.",
+          "Executed action: infrastructure.container.install",
+          "Rancher Desktop runtime postcondition is satisfied.",
+          "Port 3000 is available.",
+          "Port 3002 is available.",
+          "Port 4173 is available.",
+          "Port 5000 is available.",
+          "Port 5002 is available.",
+          "Port 6379 is available.",
+          "Port 8081 is available.",
+          "Port 8082 is available.",
+          "Port 10000 is available.",
+          "Optional selfhost certificate and key are present.",
+        ],
+        nextActions: [],
+        durationMs: 1,
+      },
+      actionIds: ["infrastructure.container.install"],
+      commands: [
+        {command: "winget", args: ["--version"]},
+        {
+          command: "winget",
+          args: ["install", "--id", "SUSE.RancherDesktop", "--exact", "--accept-package-agreements", "--accept-source-agreements"],
+        },
+      ],
+      writes: [],
+    });
+  });
+
+  it("pins the exact result when the winget installation proposal fails", async () => {
+    // Arrange
+    const harness = await createHarness({
+      config: persistedRancher,
+      responses: {[wingetVersionKey]: succeeded({stdout: "v1.10"}), [rancherInstallKey]: exited(1, {stderr: "winget installer failed"})},
+      infrastructure: [infrastructureAvailable({cliAvailable: false})],
+    });
+
+    // Act
+    const observed = observe(harness, await runPhase(harness));
+
+    // Assert
+    expect(observed).toEqual({
+      result: {
+        id: "infrastructure",
+        status: "failed",
+        summary: "Local infrastructure preparation failed.",
+        evidence: ["Container runtime installation failed.\nCommand exited with code 1.\nwinget installer failed"],
+        nextActions: ["Resolve the reported infrastructure preparation failure, then rerun setup."],
+        durationMs: 1,
+      },
+      actionIds: ["infrastructure.container.install"],
+      commands: [
+        {command: "winget", args: ["--version"]},
+        {
+          command: "winget",
+          args: ["install", "--id", "SUSE.RancherDesktop", "--exact", "--accept-package-agreements", "--accept-source-agreements"],
+        },
+      ],
+      writes: [],
+    });
   });
 });

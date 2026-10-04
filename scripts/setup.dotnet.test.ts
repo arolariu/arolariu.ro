@@ -1470,3 +1470,146 @@ describe("user-secret provisioning policy", () => {
     expect(result.evidence.join("\n")).not.toContain(generated);
   });
 });
+
+describe("dotnet characterization (pre-Effect migration)", () => {
+  function withRootPlaceholder(value: unknown): unknown {
+    const escapedRoot = JSON.stringify(paths.root).slice(1, -1);
+    return JSON.parse(JSON.stringify(value).split(escapedRoot).join("<root>"));
+  }
+
+  function observe(harness: DotnetHarness, result: SetupPhaseResult): unknown {
+    return withRootPlaceholder({
+      result,
+      actionIds: harness.actionIds,
+      commands: harness.runner.calls.map(({request}) => request),
+    });
+  }
+
+  it("pins the exact result when every .NET tool and fact is already present", async () => {
+    // Arrange
+    const harness = await createHarness();
+
+    // Act
+    const observed = observe(harness, await runPhase(harness));
+
+    // Assert
+    expect(observed).toEqual({
+      result: {
+        id: "dotnet",
+        status: "succeeded",
+        summary: "The .NET SDK, restores, AppHost parameters, and HTTPS certificate are ready.",
+        evidence: [
+          "A listed SDK and selected SDK satisfy >=10.0.0.",
+          "Executed and verified action: dotnet.workload-restore",
+          "No installed workload was observed before the workload restore, and refreshed facts remain readable.",
+          "Executed and verified action: dotnet.solution-restore",
+          "Every managed solution project reports generated NuGet restore assets.",
+          "Executed and verified action: dotnet.tool-restore",
+          "The manifest-pinned local tool 'defaultdocumentation.console' is installed.",
+          "The AppHost project exists.",
+          "Required AppHost user-secret keys are present.",
+          "A valid HTTPS development certificate exists.",
+          "The HTTPS development certificate is trusted.",
+        ],
+        nextActions: [],
+        durationMs: 1,
+      },
+      actionIds: ["dotnet.workload-restore", "dotnet.solution-restore", "dotnet.tool-restore"],
+      commands: [
+        {command: "dotnet", args: ["workload", "restore", "<root>\\arolariu.slnx"]},
+        {command: "dotnet", args: ["restore", "<root>\\arolariu.slnx"]},
+        {command: "dotnet", args: ["tool", "restore"]},
+      ],
+    });
+  });
+
+  it("pins the exact result when the SDK is missing and the winget installation proposal succeeds", async () => {
+    // Arrange
+    const harness = await createHarness({
+      dotnetOutcomes: [availableOutcome({sdks: [], selectedVersion: undefined}), availableOutcome()],
+      responses: {
+        [wingetVersionKey]: succeeded({stdout: "v1.11.0\n"}),
+        [wingetInstallKey]: succeeded(),
+      },
+    });
+
+    // Act
+    const observed = observe(harness, await runPhase(harness));
+
+    // Assert
+    expect(observed).toEqual({
+      result: {
+        id: "dotnet",
+        status: "succeeded",
+        summary: "The .NET SDK, restores, AppHost parameters, and HTTPS certificate are ready.",
+        evidence: [
+          "The installed SDK listing contained no valid SDK versions.",
+          "dotnet reported no selected SDK version.",
+          "A listed SDK and selected SDK satisfy >=10.0.0.",
+          "Executed and verified action: dotnet.install-sdk",
+          "Executed and verified action: dotnet.workload-restore",
+          "No installed workload was observed before the workload restore, and refreshed facts remain readable.",
+          "Executed and verified action: dotnet.solution-restore",
+          "Every managed solution project reports generated NuGet restore assets.",
+          "Executed and verified action: dotnet.tool-restore",
+          "The manifest-pinned local tool 'defaultdocumentation.console' is installed.",
+          "The AppHost project exists.",
+          "Required AppHost user-secret keys are present.",
+          "A valid HTTPS development certificate exists.",
+          "The HTTPS development certificate is trusted.",
+        ],
+        nextActions: [],
+        durationMs: 1,
+      },
+      actionIds: ["dotnet.install-sdk", "dotnet.workload-restore", "dotnet.solution-restore", "dotnet.tool-restore"],
+      commands: [
+        {command: "winget", args: ["--version"]},
+        {
+          command: "winget",
+          args: ["install", "--id", "Microsoft.DotNet.SDK.10", "--exact", "--accept-package-agreements", "--accept-source-agreements"],
+        },
+        {command: "dotnet", args: ["workload", "restore", "<root>\\arolariu.slnx"]},
+        {command: "dotnet", args: ["restore", "<root>\\arolariu.slnx"]},
+        {command: "dotnet", args: ["tool", "restore"]},
+      ],
+    });
+  });
+
+  it("pins the exact result when the winget installation proposal fails", async () => {
+    // Arrange
+    const harness = await createHarness({
+      dotnetOutcomes: [availableOutcome({sdks: [], selectedVersion: undefined})],
+      responses: {
+        [wingetVersionKey]: succeeded({stdout: "v1.11.0\n"}),
+        [wingetInstallKey]: exited(1, {stderr: "winget installer failed"}),
+      },
+    });
+
+    // Act
+    const observed = observe(harness, await runPhase(harness));
+
+    // Assert
+    expect(observed).toEqual({
+      result: {
+        id: "dotnet",
+        status: "failed",
+        summary: "The required .NET preparation phase failed.",
+        evidence: [
+          "The installed SDK listing contained no valid SDK versions.",
+          "dotnet reported no selected SDK version.",
+          "The supported .NET SDK installation command failed.\nProcess exited with code 1: winget install --id Microsoft.DotNet.SDK.10 --exact --accept-package-agreements --accept-source-agreements\nwinget installer failed",
+        ],
+        nextActions: ["Resolve the reported .NET preparation failure, then rerun setup."],
+        durationMs: 1,
+      },
+      actionIds: ["dotnet.install-sdk"],
+      commands: [
+        {command: "winget", args: ["--version"]},
+        {
+          command: "winget",
+          args: ["install", "--id", "Microsoft.DotNet.SDK.10", "--exact", "--accept-package-agreements", "--accept-source-agreements"],
+        },
+      ],
+    });
+  });
+});
