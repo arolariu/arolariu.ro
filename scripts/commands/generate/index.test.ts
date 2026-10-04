@@ -28,7 +28,7 @@ import {
 } from "../../platform/testing.ts";
 import {renderGenerateCompletion} from "./cli.ts";
 import type {GenerateRequirements} from "./env.ts";
-import {generateCommand, makeGenerateInvoker, runGenerate, type GenerateInput} from "./index.ts";
+import {runGenerate, type GenerateInput} from "./index.ts";
 
 /** Fixed clock time of every generated timestamp. */
 const FIXED_NOW = Date.parse("2026-08-19T00:00:00.000Z");
@@ -423,61 +423,5 @@ describe("runGenerate", () => {
       expect(harness.processCalls()).toEqual([]);
       expect(harness.httpCalls()).toEqual([]);
     }),
-  );
-});
-
-describe("generate shims", () => {
-  {
-    const binding: Binding = {};
-    const harness = generateHarness(binding, {mode: "silent"});
-    effectTest(
-      "generate shims stay invocable by legacy callers",
-      () =>
-        Effect.gen(function* () {
-          // Arrange
-          const invoker = makeGenerateInvoker(() => harness.layer);
-
-          // Act
-          const execution = yield* Effect.promise(() =>
-            invoker.invoke({verbose: false, env: false, i18n: false, gql: true, artifacts: false}, {presentation: "silent"}),
-          );
-
-          // Assert
-          expect(execution).toEqual({status: "completed", value: {selected: ["gql"], completed: ["gql"]}, exitCode: 0});
-          expect(harness.output()).toEqual([]);
-        }),
-      makeTestLayer().layer,
-    );
-  }
-
-  {
-    const harness = generateHarness({}, {mode: "silent", files: {...UNSYNCHRONIZED_LOCALES}});
-    effectTest(
-      "maps a stopped run to the legacy exit code 1",
-      () =>
-        Effect.gen(function* () {
-          // Act
-          const execution = yield* Effect.promise(() =>
-            makeGenerateInvoker(() => harness.layer).invoke(select(["i18n"]), {presentation: "silent"}),
-          );
-
-          // Assert
-          expect(execution).toEqual({status: "completed", value: {selected: ["i18n"], completed: [], failed: "i18n"}, exitCode: 1});
-        }),
-      makeTestLayer().layer,
-    );
-  }
-
-  effectTest(
-    "exposes the production generate shim",
-    () =>
-      Effect.gen(function* () {
-        // Act
-        const execution = yield* Effect.promise(() => generateCommand.invoke(select([]), {presentation: "silent"}));
-
-        // Assert
-        expect(execution).toEqual({status: "completed", value: {selected: [], completed: []}, exitCode: 0});
-      }),
-    makeTestLayer().layer,
   );
 });

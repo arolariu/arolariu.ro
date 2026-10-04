@@ -13,7 +13,6 @@
 import {Deferred, Effect, Exit, Fiber, Layer, Redacted, Terminal} from "effect";
 import {describe, expect} from "vitest";
 
-import type {CommandInvoker} from "../../common/commander.ts";
 import {createRepositoryPaths} from "../../common/repository-paths.ts";
 import type {ProcessOutcome} from "../../common/runner.ts";
 import {CommandCancellation, HttpError, type HttpResponse} from "../../common/runtime.ts";
@@ -29,7 +28,6 @@ import {
   type ScriptedProcess,
   type TestHarness,
 } from "../../platform/testing.ts";
-import type {GenerateInput, GenerateResult} from "../generate/index.ts";
 import {setupActionsLayer, type SetupActions} from "./actions.ts";
 import {legacyClock, legacyPhase, PHASE_COMMAND_TIMEOUT_MS} from "./legacy-phase.ts";
 import {runSetupPhases} from "./runner.ts";
@@ -516,34 +514,29 @@ describe("legacyPhase", () => {
 
   {
     const {layer} = adapterHarness();
-    const invocations: unknown[] = [];
-    const generate: CommandInvoker<GenerateInput, GenerateResult> = {
-      invoke: async (input, options) => {
-        invocations.push({input, presentation: options?.presentation, signal: options?.signal instanceof AbortSignal});
-        return {status: "completed", value: {selected: ["env"], completed: ["env"]}, exitCode: 0};
-      },
-    };
     const observed: unknown[] = [];
     effectTest(
-      "hands the phase the environment snapshot, the setup logger, and a silent nested generation",
+      "hands the phase the environment snapshot, the setup logger, and a generation seam that refuses to run",
       () =>
         Effect.gen(function* () {
           // Arrange
-          const phase = legacyPhase(
-            {
-              id: "legacy",
-              title: "Legacy",
-              required: true,
-              dependsOn: [],
-              run: async ({runtime, logger}) => {
-                observed.push(runtime.environment.stdinIsTTY, runtime.environment.cwd === repositoryFixtureRoot, logger.sanitize("plain"));
-                observed.push(await runtime.invokeGenerate({verbose: false, env: true, i18n: false, gql: false, artifacts: false}));
-                observed.push(await runtime.files.exists(paths.packageJson), runtime.clock.isoTimestamp());
-                return succeeded();
-              },
+          const phase = legacyPhase({
+            id: "legacy",
+            title: "Legacy",
+            required: true,
+            dependsOn: [],
+            run: async ({runtime, logger}) => {
+              observed.push(runtime.environment.stdinIsTTY, runtime.environment.cwd === repositoryFixtureRoot, logger.sanitize("plain"));
+              try {
+                await runtime.invokeGenerate({verbose: false, env: true, i18n: false, gql: false, artifacts: false});
+                observed.push("generated");
+              } catch (error: unknown) {
+                observed.push(error instanceof Error ? error.message : String(error));
+              }
+              observed.push(await runtime.files.exists(paths.packageJson), runtime.clock.isoTimestamp());
+              return succeeded();
             },
-            {generate},
-          );
+          });
 
           // Act
           yield* phase.run(setupContext());
@@ -553,12 +546,9 @@ describe("legacyPhase", () => {
             false,
             true,
             "plain",
-            {status: "completed", value: {selected: ["env"], completed: ["env"]}, exitCode: 0},
+            "legacy phases may not invoke generate after cohort 5 Task 5.3",
             false,
             "1970-01-01T00:00:00.000Z",
-          ]);
-          expect(invocations).toEqual([
-            {input: {verbose: false, env: true, i18n: false, gql: false, artifacts: false}, presentation: "silent", signal: true},
           ]);
         }),
       layer,

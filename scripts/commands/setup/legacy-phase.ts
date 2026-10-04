@@ -22,7 +22,6 @@
 import {Cause, Clock, Effect, Exit, Redacted, Result, Terminal, type Context} from "effect";
 import {HttpClient, HttpClientRequest} from "effect/http";
 
-import type {CommandInvoker} from "../../common/commander.ts";
 import {MonorepositoryConsoleLogger} from "../../common/logger.ts";
 import type {PromptProvider} from "../../common/prompts.ts";
 import {
@@ -49,9 +48,9 @@ import {Environment} from "../../platform/Environment.ts";
 import {OutputSettings} from "../../platform/Output.ts";
 import {Process, type ProcessError, type ProcessOptions, type ProcessResult} from "../../platform/Process.ts";
 import {Prompts, PromptUnavailable} from "../../platform/Prompts.ts";
-import {generateCommand, type GenerateInput, type GenerateResult} from "../generate/index.ts";
 import {SetupActions} from "./actions.ts";
 import {SetupActionFailed} from "./errors.ts";
+import {PHASE_COMMAND_TIMEOUT_MS} from "./phase-support.ts";
 import type {
   LegacySetupActionExecutor,
   LegacySetupContext,
@@ -61,8 +60,10 @@ import type {
   SetupRequirements,
 } from "./types.ts";
 
-/** Bounded default timeout applied to every legacy phase command that does not request its own. */
-export const PHASE_COMMAND_TIMEOUT_MS = 120_000;
+export {PHASE_COMMAND_TIMEOUT_MS} from "./phase-support.ts";
+
+/** Message of the error a legacy phase's `invokeGenerate` throws: no remaining legacy phase may compose generation. */
+export const LEGACY_GENERATE_UNAVAILABLE = "legacy phases may not invoke generate after cohort 5 Task 5.3";
 
 /** Methods the legacy HTTP client retries, because repeating them is safe. */
 const IDEMPOTENT_HTTP_METHODS: ReadonlySet<string> = new Set(["GET", "PUT", "DELETE"]);
@@ -493,12 +494,6 @@ export function legacyInspectionSession(
   });
 }
 
-/** Seams {@link legacyPhase} accepts. */
-export interface LegacyPhaseOptions {
-  /** Composed generation command `invokeGenerate` calls; defaults to the cohort 3 `generateCommand` shim. */
-  readonly generate?: CommandInvoker<GenerateInput, GenerateResult>;
-}
-
 /**
  * Runs a legacy Promise setup phase as an Effect setup phase.
  *
@@ -506,18 +501,18 @@ export interface LegacyPhaseOptions {
  * The phase receives a {@link LegacySetupContext} built from the invocation services: the views of
  * this module (all linked to one phase `AbortSignal`), a process runner scoped to the repository
  * root with the bounded {@link PHASE_COMMAND_TIMEOUT_MS} default and command echo under `--verbose`,
- * the bridge's `legacyFileSystem` and `legacyTaskScheduler`, the `Environment` snapshot, a
- * `MonorepositoryConsoleLogger("setup")` in the invocation's output mode and verbosity, and
- * `invokeGenerate` over the generation shim. Interrupting the phase aborts its signal and waits for
- * the legacy promise to settle. A rejection that is an interruption (`CommandCancellation`,
- * `AbortError`, or a terminal quit at a prompt) interrupts the run; any other rejection is a defect.
+ * the bridge's `legacyFileSystem` and `legacyTaskScheduler`, the `Environment` snapshot, and a
+ * `MonorepositoryConsoleLogger("setup")` in the invocation's output mode and verbosity. Its
+ * `invokeGenerate` throws {@link LEGACY_GENERATE_UNAVAILABLE}: the workspace phase composes
+ * generation natively, and no remaining legacy phase may. Interrupting the phase aborts its signal
+ * and waits for the legacy promise to settle. A rejection that is an interruption
+ * (`CommandCancellation`, `AbortError`, or a terminal quit at a prompt) interrupts the run; any
+ * other rejection is a defect.
  *
  * @param definition - The legacy phase.
- * @param options - Optional generation seam.
  * @returns The equivalent Effect phase, with the same id, title, requirement flag, and dependencies.
  */
-export function legacyPhase(definition: LegacySetupPhaseDefinition, options: LegacyPhaseOptions = {}): SetupPhaseDefinition {
-  const generate = options.generate ?? generateCommand;
+export function legacyPhase(definition: LegacySetupPhaseDefinition): SetupPhaseDefinition {
   return {
     id: definition.id,
     title: definition.title,
@@ -546,7 +541,9 @@ export function legacyPhase(definition: LegacySetupPhaseDefinition, options: Leg
             clock: yield* legacyClock,
             tasks: legacyTaskScheduler,
             environment,
-            invokeGenerate: (input) => generate.invoke(input, {presentation: "silent", signal}),
+            invokeGenerate: () => {
+              throw new Error(LEGACY_GENERATE_UNAVAILABLE);
+            },
           },
           prompts: yield* legacyPromptProvider(signal),
           actions: yield* legacySetupActionExecutor(signal),

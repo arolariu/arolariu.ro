@@ -10,7 +10,7 @@
  *
  * {@link runSetup} resolves the repository paths and manifest requirements, obtains the single
  * full inspection session every phase shares, and runs the phases through `runSetupPhases` with the
- * consent-gated `SetupActions` of this invocation. The phases are still legacy Promise phases, run
+ * consent-gated `SetupActions` of this invocation. The phases not yet converted to Effect are run
  * through the temporary `legacyPhase` adapter until Task 5.5. Phases run sequentially so prompts,
  * package managers, and local configuration writes cannot race; dependency handling, not
  * concurrency, isolates failures. A phase defect becomes one failed phase result and setup continues
@@ -66,12 +66,12 @@ export type SetupRunRequirements = PlatformServices | Prompts | Inspection;
  */
 export const setupPhases: readonly SetupPhaseDefinition[] = [
   ...workspaceSetupPhases,
-  dotnetSetupPhase,
-  reactSetupPhase,
-  svelteSetupPhase,
-  pythonSetupPhase,
-  infrastructureSetupPhase,
-].map((phase) => legacyPhase(phase));
+  legacyPhase(dotnetSetupPhase),
+  legacyPhase(reactSetupPhase),
+  legacyPhase(svelteSetupPhase),
+  legacyPhase(pythonSetupPhase),
+  legacyPhase(infrastructureSetupPhase),
+];
 
 /**
  * Readiness of each completed run, resolved while the phase definitions are still in scope.

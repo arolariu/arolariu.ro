@@ -178,8 +178,7 @@ export interface LegacySetupActionExecutor {
  * @remarks
  * The bundle is assembled once per phase run. Its {@link LegacySetupPhaseRuntime.runner} is
  * already scoped to the repository root, the phase cancellation signal, and the bounded default
- * timeout, and {@link LegacySetupPhaseRuntime.invokeGenerate} is a typed nested invocation of the
- * generation command — never a spawned sibling script. Deleted in Task 5.5.
+ * timeout. Deleted in Task 5.5.
  */
 export interface LegacySetupPhaseRuntime {
   /** The owning legacy command invocation context; absent when the Effect kernel runs the phase. */
@@ -196,7 +195,7 @@ export interface LegacySetupPhaseRuntime {
   readonly tasks: TaskScheduler;
   /** Immutable snapshot of the ambient environment. */
   readonly environment: RuntimeEnvironment;
-  /** Runs the generation command as a nested invocation of this setup invocation. */
+  /** Formerly the nested generation invocation; under the Effect kernel it throws, because no legacy phase may compose generation. */
   readonly invokeGenerate: (input: Readonly<GenerateInput>) => Promise<CommandExecution<GenerateResult>>;
 }
 

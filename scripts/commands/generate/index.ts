@@ -13,8 +13,6 @@
 
 import {Effect, Layer, Terminal} from "effect";
 
-import type {CommandInvoker} from "../../common/commander.ts";
-import {legacyInvoker, type LayerFactory} from "../../platform/bridge.ts";
 import {Environment} from "../../platform/Environment.ts";
 import {debugLogsEnabled, outputLayer, Presenter, Sink, type OutputSettings} from "../../platform/Output.ts";
 import {generateArtifacts, type ArtifactGenerationError} from "./artifacts.ts";
@@ -125,12 +123,16 @@ export function generateTaskDisplayName(name: GenerateTaskName): string {
 const discardingSink = Layer.succeed(Sink, {write: () => Effect.void});
 
 /**
- * Runs a leaf generator with silent output: no presenter line and no log line reaches the user.
+ * Runs a generation program with silent output: no presenter line and no log line reaches the user.
  *
- * @param effect - The leaf program.
+ * @remarks
+ * Used for every leaf generator and by setup, which composes {@link runGenerate} as a silent nested
+ * run, as the legacy `presentation: "silent"` invocation did.
+ *
+ * @param effect - The program.
  * @returns The program with a silent `Presenter`, `OutputSettings`, and logger, at the current verbosity.
  */
-function silently<A, E, R>(effect: Effect.Effect<A, E, R>): Effect.Effect<A, E, Exclude<R, Presenter | OutputSettings>> {
+export function silently<A, E, R>(effect: Effect.Effect<A, E, R>): Effect.Effect<A, E, Exclude<R, Presenter | OutputSettings>> {
   return Effect.flatMap(debugLogsEnabled, (verbose) =>
     Effect.provide(effect, outputLayer({mode: "silent", verbose, color: false, context: "generate"}).pipe(Layer.provide(discardingSink))),
   );
@@ -255,20 +257,3 @@ export const runGenerate: (input: Readonly<GenerateInput>) => Effect.Effect<Gene
 
     return failed === undefined ? {selected, completed} : {selected, completed, failed};
   });
-
-/**
- * Builds a legacy invoker over {@link runGenerate}.
- *
- * @param makeLayer - Builds the platform layer of each invocation; defaults to the Node layer.
- * @returns An invoker completing with exit `1` when a task failed, otherwise `0`.
- */
-export function makeGenerateInvoker(makeLayer?: LayerFactory): CommandInvoker<GenerateInput, GenerateResult> {
-  return legacyInvoker("generate", runGenerate, (result) => (result.failed === undefined ? 0 : 1), makeLayer);
-}
-
-/**
- * Legacy invoker over {@link runGenerate} for the unmigrated setup command.
- *
- * @remarks Deleted in cohort 5 (Task 5.3).
- */
-export const generateCommand: CommandInvoker<GenerateInput, GenerateResult> = makeGenerateInvoker();

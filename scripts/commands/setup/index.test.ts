@@ -23,7 +23,6 @@ import {Cause, Deferred, Effect, Exit, Fiber, Layer, Result, Terminal} from "eff
 import {describe, expect, it} from "vitest";
 
 import {makeRootCommand, runCli} from "../../cli.ts";
-import type {CommandInvoker} from "../../common/commander.ts";
 import {createRepositoryPaths, type RepositoryPaths} from "../../common/repository-paths.ts";
 import type {DotnetFacts} from "../../inspection/dotnet.ts";
 import {Inspection, InspectionLayerFactory} from "../../inspection/Inspection.ts";
@@ -43,7 +42,6 @@ import {
   type ScriptedProcess,
   type TestHarness,
 } from "../../platform/testing.ts";
-import type {GenerateInput, GenerateResult} from "../generate/index.ts";
 import {makeSetupCommand} from "./cli.ts";
 import {runSetupWith, setupOutcome, setupPhases, type SetupResult} from "./index.ts";
 import {legacyPhase} from "./legacy-phase.ts";
@@ -193,12 +191,9 @@ function stubPhase(
 function legacyStubPhase(
   id: string,
   run: (context: LegacySetupContext) => Promise<SetupPhaseResult>,
-  config: Readonly<{dependsOn?: readonly string[]; generate?: CommandInvoker<GenerateInput, GenerateResult>}> = {},
+  config: Readonly<{dependsOn?: readonly string[]}> = {},
 ): SetupPhaseDefinition {
-  return legacyPhase(
-    {id, title: id, required: true, dependsOn: config.dependsOn ?? [], run},
-    config.generate === undefined ? {} : {generate: config.generate},
-  );
+  return legacyPhase({id, title: id, required: true, dependsOn: config.dependsOn ?? [], run});
 }
 
 /** Fake phases mirroring the real onboarding graph, without any real phase behavior. */
@@ -386,19 +381,18 @@ describe("setupPhases", () => {
     ]);
   });
 
-  it("runs every legacy phase through the adapter with its id, title, requirement flag, and dependencies", () => {
-    const legacyPhases = [
-      ...workspaceSetupPhases,
-      dotnetSetupPhase,
-      reactSetupPhase,
-      svelteSetupPhase,
-      pythonSetupPhase,
-      infrastructureSetupPhase,
-    ];
+  it("runs the native phases directly and every legacy phase through the adapter with its id, title, requirement flag, and dependencies", () => {
+    const legacyPhases = [dotnetSetupPhase, reactSetupPhase, svelteSetupPhase, pythonSetupPhase, infrastructureSetupPhase];
+    type PhaseMetadata = Pick<SetupPhaseDefinition, "id" | "title" | "required" | "dependsOn">;
+    const metadata = (phase: PhaseMetadata): PhaseMetadata => ({
+      id: phase.id,
+      title: phase.title,
+      required: phase.required,
+      dependsOn: phase.dependsOn,
+    });
 
-    expect(setupPhases.map(({id, title, required, dependsOn}) => ({id, title, required, dependsOn}))).toEqual(
-      legacyPhases.map(({id, title, required, dependsOn}) => ({id, title, required, dependsOn})),
-    );
+    expect(setupPhases.slice(0, workspaceSetupPhases.length)).toEqual(workspaceSetupPhases);
+    expect(setupPhases.slice(workspaceSetupPhases.length).map(metadata)).toEqual(legacyPhases.map(metadata));
   });
 });
 
@@ -872,30 +866,27 @@ describe("setup presentation", () => {
 });
 
 describe("setup generation composition", () => {
-  it("hands legacy phases a silent generation invocation linked to the phase signal", async () => {
-    const invocations: unknown[] = [];
-    const generate: CommandInvoker<GenerateInput, GenerateResult> = {
-      invoke: async (input, invocationOptions) => {
-        invocations.push({input, presentation: invocationOptions?.presentation, signal: invocationOptions?.signal instanceof AbortSignal});
-        return {status: "completed", value: {selected: ["env"], completed: ["env"]}, exitCode: 0};
-      },
-    };
-    await invokeSetup(options(), {
+  it("refuses generation from a legacy phase: only the native workspace phase composes it", async () => {
+    const run = await invokeSetup(options(), {
       phases: [
-        legacyStubPhase(
-          "workspace.generators",
-          async (context) => {
-            await context.runtime.invokeGenerate({verbose: false, env: true, i18n: true, gql: true, artifacts: true});
-            return phaseResult("workspace.generators", "succeeded");
-          },
-          {generate},
-        ),
+        legacyStubPhase("workspace.generators", async (context) => {
+          await context.runtime.invokeGenerate({verbose: false, env: true, i18n: true, gql: true, artifacts: true});
+          return phaseResult("workspace.generators", "succeeded");
+        }),
       ],
     });
 
-    expect(invocations).toEqual([
-      {input: {verbose: false, env: true, i18n: true, gql: true, artifacts: true}, presentation: "silent", signal: true},
+    expect(expectCompleted(run).phases).toEqual([
+      {
+        id: "workspace.generators",
+        status: "failed",
+        summary: "'workspace.generators' failed with an unexpected exception.",
+        evidence: ["legacy phases may not invoke generate after cohort 5 Task 5.3"],
+        nextActions: ["Resolve the reported 'workspace.generators' failure, then rerun setup."],
+        durationMs: 0,
+      },
     ]);
+    expect(run.harness.processCalls()).toEqual([]);
   });
 });
 

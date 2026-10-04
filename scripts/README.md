@@ -435,9 +435,9 @@ npx eslint scripts\commands\generate scripts\commands\rates scripts\commands\doc
 kernel: [`commands/setup/index.ts`](./commands/setup/index.ts) `runSetup` resolves canonical paths through [`common/repository-paths.ts`](./common/repository-paths.ts), loads manifest-derived runtime and package
 requirements through [`common/requirements.ts`](./common/requirements.ts), and reads/writes the non-secret persisted selection at
 `.arolariu/tooling.local.json` through [`common/tooling-config.ts`](./common/tooling-config.ts). Setup restores dependencies, prepares
-toolchains, and generates checkout artifacts; it never builds, type-checks, tests, or starts/stops a service. Its phases are still legacy
-Promise phases, run through the temporary [`legacyPhase`](./commands/setup/legacy-phase.ts) adapter (deleted in Task 5.5), which hands
-each one Promise views over the invocation's Effect services. A required phase that failed (or was skipped by a blocking dependency,
+toolchains, and generates checkout artifacts; it never builds, type-checks, tests, or starts/stops a service. The native Effect phases
+(workspace) run directly; the remaining legacy Promise phases run through the temporary [`legacyPhase`](./commands/setup/legacy-phase.ts)
+adapter (deleted in Task 5.5), which hands each one Promise views over the invocation's Effect services. A required phase that failed (or was skipped by a blocking dependency,
 or outside a dry run) makes the command exit `1` after the summary table; with `--json`, the `{phases}` result is the single document.
 
 ### Module map
@@ -448,6 +448,8 @@ or outside a dry run) makes the command exit `1` after the summary table; with `
 | [`commands/setup/cli.ts`](./commands/setup/cli.ts) | Flag decoding and the completion: summary table, degraded capabilities, next actions, banner, and exit code |
 | [`commands/setup/runner.ts`](./commands/setup/runner.ts) | `runSetupPhases`: sequential, dependency-gated phase execution and per-phase rendering |
 | [`commands/setup/actions.ts`](./commands/setup/actions.ts) | `SetupActions`: the consent-gated runner of every setup mutation |
+| [`commands/setup/phase-support.ts`](./commands/setup/phase-support.ts) | Native phase building blocks: `runPhaseCommand` (setup command defaults), `submitSetupAction`, and `phaseResult` |
+| [`commands/setup/phase-testing.ts`](./commands/setup/phase-testing.ts) | Test support for the native phase tests: scripted commands, recording inspection/actions, and the counting clock |
 | [`commands/setup/legacy-phase.ts`](./commands/setup/legacy-phase.ts) | Temporary `legacyPhase` adapter running the legacy Promise phases under the kernel (deleted in Task 5.5) |
 | [`commands/setup/types.ts`](./commands/setup/types.ts) | `SetupContext`, `SetupPhaseDefinition`, `SetupAction`, the status/scope contracts, and the temporary `Legacy*` phase contracts |
 | [`commands/setup/phases/workspace.ts`](./commands/setup/phases/workspace.ts) | Prerequisite validation, root and `.github/scripts` npm restore, and generated taxonomy/GraphQL/i18n artifacts |
