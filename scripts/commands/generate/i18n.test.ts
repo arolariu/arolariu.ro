@@ -1,92 +1,218 @@
 // @vitest-environment node
 /**
- * @fileoverview i18n leaf command exit-code contract tests.
- * @module scripts.generate.i18n.test
+ * @fileoverview i18n generator tests: locale synchronization, exit contract, and failures.
+ * @module scripts/commands/generate/i18n.test
  *
  * @remarks
- * The pre-migration `main()` leaf returned `totalMissingKeys` and the legacy aggregate stopped
- * generation whenever that count was nonzero. The migrated `generate:i18n` command must preserve
- * that success/failure meaning under the normative `CommandExitCode` contract: `0` when every
- * locale already matched English, `1` when missing keys caused this invocation to change one or
- * more locale files.
+ * The pre-migration leaf returned `totalMissingKeys` and the legacy aggregate stopped generation
+ * whenever that count was nonzero. The Effect generator keeps that meaning through
+ * `changedFiles`: empty when every locale already matched English, nonempty when missing keys
+ * changed one or more locale files (the legacy invoker shim maps it to exit `1`).
  */
 
-import {describe, expect, it} from "vitest";
+import {join} from "node:path";
 
-import {createMemoryFileSystem, createTestRuntimeFactory, repositoryFixtureRoot} from "../../common/runtime.testing.ts";
+import {Effect, FileSystem} from "effect";
+import {describe, expect, it, vi} from "vitest";
 
-describe("generateI18nCommand", () => {
-  it("resolves as completed with exitCode: 1 when missing keys change one or more locale files", async () => {
-    const files = createMemoryFileSystem({
-      [`${repositoryFixtureRoot}/sites/arolariu.ro/messages/en.json`]: JSON.stringify({greeting: "Hello", farewell: "Goodbye"}),
-      [`${repositoryFixtureRoot}/sites/arolariu.ro/messages/ro.json`]: JSON.stringify({greeting: "Salut"}),
-      [`${repositoryFixtureRoot}/sites/arolariu.ro/messages/fr.json`]: JSON.stringify({greeting: "Bonjour"}),
-    });
+import {effectTest, makeTestLayer, repositoryFixtureRoot, runScoped, type TestHarness} from "../../platform/testing.ts";
+import {TranslationSyncFailed} from "./errors.ts";
+import {generateI18n} from "./i18n.ts";
 
-    const {createGenerateI18nCommand} = await import("./i18n.ts");
-    const command = createGenerateI18nCommand(createTestRuntimeFactory({files}));
+const messages = join(repositoryFixtureRoot, "sites", "arolariu.ro", "messages");
 
-    const execution = await command.invoke({verbose: false}, {presentation: "silent"});
-
-    expect(execution).toMatchObject({status: "completed", exitCode: 1});
-    if (execution.status === "completed") {
-      expect(execution.value.changedFiles).toHaveLength(2);
-      expect(execution.value.changedFiles).toEqual(
-        expect.arrayContaining([
-          expect.stringContaining("ro.json"),
-          expect.stringContaining("fr.json"),
-        ]),
-      );
-    }
-
-    const roContent = JSON.parse(await files.readText(`${repositoryFixtureRoot}/sites/arolariu.ro/messages/ro.json`)) as Record<
-      string,
-      unknown
-    >;
-    expect(roContent).toHaveProperty("farewell");
+/**
+ * Builds a harness seeded with the three locale files.
+ *
+ * @param locales - The `en`, `ro`, and `fr` file texts.
+ * @param verbose - Whether debug logs are emitted.
+ * @returns The harness.
+ */
+function localeHarness(locales: Readonly<{en: string; ro: string; fr: string}>, verbose = false): TestHarness {
+  return makeTestLayer({
+    files: {[join(messages, "en.json")]: locales.en, [join(messages, "ro.json")]: locales.ro, [join(messages, "fr.json")]: locales.fr},
+    context: "generate::i18n",
+    verbose,
   });
+}
 
-  it("characterizes the exact locale file diffs for one missing key", async () => {
-    // Arrange
-    const messages = `${repositoryFixtureRoot}/sites/arolariu.ro/messages`;
-    const enText = JSON.stringify({greeting: "Hello", farewell: "Goodbye"});
-    const files = createMemoryFileSystem({
-      [`${messages}/en.json`]: enText,
-      [`${messages}/ro.json`]: JSON.stringify({greeting: "Salut"}),
-      [`${messages}/fr.json`]: JSON.stringify({greeting: "Bonjour"}),
+/**
+ * Reads one locale file from the harness.
+ *
+ * @param locale - The locale code.
+ * @returns The file text.
+ */
+function readLocale(locale: string): Effect.Effect<string, unknown, FileSystem.FileSystem> {
+  return Effect.flatMap(FileSystem.FileSystem, (fs) => fs.readFileString(join(messages, `${locale}.json`)));
+}
+
+describe("generateI18n", () => {
+  {
+    const harness = localeHarness({
+      en: JSON.stringify({greeting: "Hello", farewell: "Goodbye"}),
+      ro: JSON.stringify({greeting: "Salut"}),
+      fr: JSON.stringify({greeting: "Bonjour"}),
     });
-    const {createGenerateI18nCommand} = await import("./i18n.ts");
-    const command = createGenerateI18nCommand(createTestRuntimeFactory({files}));
+    effectTest(
+      "reports the changed locale files when missing keys were added",
+      () =>
+        Effect.gen(function* () {
+          // Act
+          const result = yield* generateI18n;
+
+          // Assert
+          expect(result.changedFiles).toEqual([join(messages, "ro.json"), join(messages, "fr.json")]);
+          expect(JSON.parse(yield* readLocale("ro"))).toHaveProperty("farewell");
+        }),
+      harness.layer,
+    );
+  }
+
+  {
+    const enText = JSON.stringify({greeting: "Hello", farewell: "Goodbye"});
+    const harness = localeHarness({en: enText, ro: JSON.stringify({greeting: "Salut"}), fr: JSON.stringify({greeting: "Bonjour"})});
+    effectTest(
+      "characterizes the exact locale file diffs for one missing key",
+      () =>
+        Effect.gen(function* () {
+          // Act
+          const result = yield* generateI18n;
+
+          // Assert
+          expect(result.summary).toBe("i18n synchronization completed with 2 missing key(s) added.");
+          expect(yield* readLocale("en")).toBe(enText);
+          expect(yield* readLocale("ro")).toBe('{\n  "greeting": "Salut",\n  "farewell": ""\n}');
+          expect(yield* readLocale("fr")).toBe('{\n  "greeting": "Bonjour",\n  "farewell": ""\n}');
+          expect(harness.output()).toContainEqual({stream: "stdout", text: "   RO: 1 keys added\n"});
+          expect(harness.output()).toContainEqual({stream: "stdout", text: "   Total missing keys added: 2\n"});
+        }),
+      harness.layer,
+    );
+  }
+
+  {
+    const harness = localeHarness(
+      {
+        en: JSON.stringify({nav: {home: "Home", about: "About"}}),
+        ro: JSON.stringify({nav: {home: "Acasă"}}),
+        fr: JSON.stringify({nav: {home: "Accueil", about: "À propos"}}),
+      },
+      true,
+    );
+    effectTest(
+      "adds a missing nested key and logs its segments when verbose",
+      () =>
+        Effect.gen(function* () {
+          // Act
+          const result = yield* generateI18n;
+
+          // Assert
+          expect(result.summary).toBe("i18n synchronization completed with 1 missing key(s) added.");
+          expect(yield* readLocale("ro")).toBe('{\n  "nav": {\n    "home": "Acasă",\n    "about": ""\n  }\n}');
+          expect(harness.output()).toContainEqual({
+            stream: "stdout",
+            text: "[arolariu::generate::i18n] 🐛 [writeTranslationKeysFile] Adding key segment: nav\n",
+          });
+        }),
+      harness.layer,
+    );
+  }
+
+  {
+    const harness = localeHarness({
+      en: JSON.stringify({greeting: "Hello"}),
+      ro: JSON.stringify({greeting: "Salut"}),
+      fr: JSON.stringify({greeting: "Bonjour"}),
+    });
+    effectTest(
+      "changes no file when every locale already matches English",
+      () =>
+        Effect.gen(function* () {
+          // Act
+          const result = yield* generateI18n;
+
+          // Assert
+          expect(result).toEqual({summary: "i18n synchronization completed with 0 missing key(s) added.", changedFiles: []});
+        }),
+      harness.layer,
+    );
+  }
+
+  {
+    const harness = localeHarness({
+      en: JSON.stringify({greeting: "Hello"}),
+      ro: JSON.stringify({greeting: "Salut", extra: "Extra"}),
+      fr: JSON.stringify({greeting: "Bonjour"}),
+    });
+    effectTest(
+      "fails with TranslationSyncFailed when a locale has keys English lacks",
+      () =>
+        Effect.gen(function* () {
+          // Act
+          const error = yield* Effect.flip(generateI18n);
+
+          // Assert
+          expect(error).toEqual(
+            new TranslationSyncFailed({
+              message:
+                "[arolariu.ro::compareMessageKeysNaive] Current translation file has extra keys that are not present in the base translation file!",
+              locale: "ro",
+            }),
+          );
+        }),
+      harness.layer,
+    );
+  }
+
+  {
+    const harness = localeHarness({en: JSON.stringify({greeting: "Hello"}), ro: "{not json", fr: JSON.stringify({greeting: "Bonjour"})});
+    effectTest(
+      "fails with TranslationSyncFailed and logs the path when a locale file is not JSON",
+      () =>
+        Effect.gen(function* () {
+          // Act
+          const error = yield* Effect.flip(generateI18n);
+
+          // Assert
+          expect(error).toMatchObject({_tag: "TranslationSyncFailed", locale: "ro"});
+          expect(harness.output()).toContainEqual({
+            stream: "stderr",
+            text: `[arolariu::generate::i18n] ⛔ [loadTranslationFile] Error encountered when loading translation file with path: ${join(messages, "ro.json")}\n`,
+          });
+        }),
+      harness.layer,
+    );
+  }
+
+  {
+    const harness = makeTestLayer({files: {}});
+    effectTest(
+      "fails with the filesystem error when the English source is missing",
+      () =>
+        Effect.gen(function* () {
+          // Act
+          const error = yield* Effect.flip(generateI18n);
+
+          // Assert
+          expect(error).toMatchObject({_tag: "PlatformError"});
+        }),
+      harness.layer,
+    );
+  }
+
+  it("routes generator output through the platform sink, never the console", async () => {
+    // Arrange
+    const consoleSpies = ["debug", "info", "warn", "error", "log"].map((level) =>
+      vi.spyOn(console, level as "debug").mockImplementation(() => undefined),
+    );
+    const harness = localeHarness({en: '{"greeting":"Hello"}', ro: '{"greeting":"Hello"}', fr: '{"greeting":"Hello"}'});
 
     // Act
-    const execution = await command.invoke({verbose: false}, {presentation: "silent"});
+    await runScoped(generateI18n, harness.layer);
 
     // Assert
-    expect(execution).toMatchObject({
-      status: "completed",
-      exitCode: 1,
-      value: {summary: "i18n synchronization completed with 2 missing key(s) added."},
-    });
-    expect(await files.readText(`${messages}/en.json`)).toBe(enText);
-    expect(await files.readText(`${messages}/ro.json`)).toBe('{\n  "greeting": "Salut",\n  "farewell": ""\n}');
-    expect(await files.readText(`${messages}/fr.json`)).toBe('{\n  "greeting": "Bonjour",\n  "farewell": ""\n}');
-  });
-
-  it("resolves as completed with exitCode: 0 when every locale already matches English", async () => {
-    const files = createMemoryFileSystem({
-      [`${repositoryFixtureRoot}/sites/arolariu.ro/messages/en.json`]: JSON.stringify({greeting: "Hello"}),
-      [`${repositoryFixtureRoot}/sites/arolariu.ro/messages/ro.json`]: JSON.stringify({greeting: "Salut"}),
-      [`${repositoryFixtureRoot}/sites/arolariu.ro/messages/fr.json`]: JSON.stringify({greeting: "Bonjour"}),
-    });
-
-    const {createGenerateI18nCommand} = await import("./i18n.ts");
-    const command = createGenerateI18nCommand(createTestRuntimeFactory({files}));
-
-    const execution = await command.invoke({verbose: false}, {presentation: "silent"});
-
-    expect(execution).toMatchObject({status: "completed", exitCode: 0});
-    if (execution.status === "completed") {
-      expect(execution.value.changedFiles).toHaveLength(0);
-    }
+    expect(consoleSpies.every((spy) => spy.mock.calls.length === 0)).toBe(true);
+    expect(harness.output().some((record) => record.text.includes("i18n synchronization completed"))).toBe(true);
+    vi.restoreAllMocks();
   });
 });

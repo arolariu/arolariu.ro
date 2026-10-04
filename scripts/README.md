@@ -113,13 +113,13 @@ A command is a `CommandDefinition<TInput, TOutput>` handed to `MonorepoCommand`.
 | `completion(output, context)` | Maps completed business output to `{exitCode, human?, json?}` |
 
 ```typescript
-export function createGenerateGraphqlCommand(
+export function createExampleCommand(
   runtimeFactory?: CommandRuntimeFactory,
-): MonorepoCommand<GenerateLeafInput, GenerateLeafResult> {
-  return new MonorepoCommand<GenerateLeafInput, GenerateLeafResult>(
+): MonorepoCommand<ExampleInput, ExampleResult> {
+  return new MonorepoCommand<ExampleInput, ExampleResult>(
     {
-      metadata: {name: "generate:gql"},
-      execute: generateGraphql,
+      metadata: {name: "example"},
+      execute: runExample,
       completion: (result) => ({exitCode: 0, human: (logger) => logger.success(result.summary)}),
     },
     runtimeFactory,

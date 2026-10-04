@@ -23,7 +23,6 @@ import {
 } from "./artifacts.ts";
 import type {CommandExecution, CommandInvoker} from "../../common/commander.ts";
 import {InMemoryLoggerSink, MonorepositoryConsoleLogger, type MonorepositoryLogger} from "../../common/logger.ts";
-import type {PromptProvider} from "../../common/prompts.ts";
 import {
   AbstractProcessRunner,
   type ProcessOutcome,
@@ -1237,80 +1236,6 @@ describe("Artifact orchestration and CLI contracts", () => {
   });
 
   describe("generation logger injection", () => {
-    it("enables key-only environment diagnostics when VERBOSE=true", async () => {
-      const sink = new InMemoryLoggerSink();
-      const logger = new MonorepositoryConsoleLogger("generate::env", {color: false, sink});
-      const files = createMemoryFileSystem({
-        ".env": [
-          "SITE_ENV=DEVELOPMENT",
-          "SITE_NAME=Test",
-          "SITE_URL=https://example.test",
-          "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test",
-          "CLERK_SECRET_KEY=sk_test",
-          "USE_CDN=false",
-        ].join("\n"),
-      });
-      const environment: RuntimeEnvironment = {
-        variables: {INFRA: "local", VERBOSE: "true", SITE_ENV: "VALUE_THAT_MUST_NOT_BE_LOGGED"},
-        cwd: repositoryFixtureRoot,
-        executablePath: "/usr/bin/node",
-        platform: "linux",
-        architecture: "x64",
-        stdinIsTTY: false,
-        stdoutIsTTY: false,
-        isCI: true,
-      };
-
-      const {createGenerateEnvironmentCommand} = await import("./env.ts");
-      const command = createGenerateEnvironmentCommand(createTestRuntimeFactory({files, logger, environment}));
-
-      // "human" presentation matches this test's own logger fixture (constructed in human mode)
-      // so the effective-verbosity scope generateEnvironment forks (which shares this
-      // invocation's presentation) actually renders through the shared sink.
-      await expect(command.invoke({verbose: false}, {presentation: "human"})).resolves.toMatchObject({
-        status: "completed",
-        exitCode: 0,
-      });
-
-      const debugOutput = sink.records.map((record) => record.text).join("\n");
-      expect(debugOutput).toContain("SITE_ENV");
-      expect(debugOutput).not.toContain("VALUE_THAT_MUST_NOT_BE_LOGGED");
-    });
-
-    it("uses the injected environment PromptProvider without reading real input", async () => {
-      const files = createMemoryFileSystem({".env": ""});
-      const confirm = vi.fn().mockResolvedValue(true);
-      const text = vi.fn().mockResolvedValue("value");
-      const secret = vi.fn().mockResolvedValue("value");
-      const prompts: PromptProvider = {
-        confirm,
-        select: async <TValue extends string>(
-          _message: string,
-          choices: readonly Readonly<{value: TValue; label: string}>[],
-        ): Promise<TValue> => {
-          const selected = choices[0]?.value;
-          if (selected === undefined) {
-            throw new Error("A test choice is required.");
-          }
-          return selected;
-        },
-        text,
-        secret,
-      };
-
-      const {createGenerateEnvironmentCommand} = await import("./env.ts");
-      const command = createGenerateEnvironmentCommand(createTestRuntimeFactory({files, prompts}));
-
-      await expect(command.invoke({verbose: false}, {presentation: "silent"})).resolves.toMatchObject({
-        status: "completed",
-        exitCode: 0,
-      });
-
-      expect(confirm).toHaveBeenCalledOnce();
-      expect(text).toHaveBeenCalled();
-      expect(secret).toHaveBeenCalled();
-    });
-
     it("routes no-task orchestration output through the supplied logger", async () => {
       const consoleSpies = ["debug", "info", "warn", "error", "log"].map((level) =>
         vi.spyOn(console, level as "debug").mockImplementation(() => undefined),
@@ -1343,115 +1268,6 @@ describe("Artifact orchestration and CLI contracts", () => {
 
       expect(consoleSpies.every((spy) => spy.mock.calls.length === 0)).toBe(true);
       expect(sink.records.some((record) => record.text.includes("No generation tasks selected"))).toBe(true);
-    });
-
-    it("routes GraphQL generator output through the supplied logger", async () => {
-      const consoleSpies = ["debug", "info", "warn", "error", "log"].map((level) =>
-        vi.spyOn(console, level as "debug").mockImplementation(() => undefined),
-      );
-      const sink = new InMemoryLoggerSink();
-      const logger = new MonorepositoryConsoleLogger("generate::gql", {color: false, sink});
-      const files = createMemoryFileSystem();
-
-      const {createGenerateGraphqlCommand} = await import("./gql.ts");
-      const command = createGenerateGraphqlCommand(createTestRuntimeFactory({files, logger}));
-
-      await expect(command.invoke({verbose: false}, {presentation: "silent"})).resolves.toMatchObject({
-        status: "completed",
-        exitCode: 0,
-      });
-
-      expect(consoleSpies.every((spy) => spy.mock.calls.length === 0)).toBe(true);
-      expect(sink.records.some((record) => record.text.includes("GraphQL generation completed"))).toBe(true);
-    });
-
-    it("characterizes the GraphQL summary line, its human completion, and the placeholder artifact", async () => {
-      // Arrange
-      const sink = new InMemoryLoggerSink();
-      const logger = new MonorepositoryConsoleLogger("generate::gql", {color: false, sink});
-      const files = createMemoryFileSystem();
-      const outputFile = join(repositoryFixtureRoot, "scripts", "__generated__", "gql", "README.placeholder.txt");
-      const {createGenerateGraphqlCommand} = await import("./gql.ts");
-      const command = createGenerateGraphqlCommand(createTestRuntimeFactory({files, logger}));
-
-      // Act
-      const execution = await command.invoke({verbose: false}, {presentation: "human"});
-
-      // Assert
-      expect(execution).toEqual({
-        status: "completed",
-        value: {summary: "GraphQL generation completed (placeholder).", changedFiles: [outputFile]},
-        exitCode: 0,
-      });
-      // The business step and the human completion each render the summary once.
-      expect(sink.records.filter((record) => record.text.startsWith("[arolariu::")).map(({stream, text}) => ({stream, text}))).toEqual([
-        {stream: "stdout", text: "[arolariu::generate::gql] ✅ GraphQL generation completed (placeholder)."},
-        {stream: "stdout", text: "[arolariu::generate::gql] ✅ GraphQL generation completed (placeholder)."},
-      ]);
-      expect(await files.readText(outputFile)).toBe("// Generated at 2025-01-01T00:00:00.000Z\n// TODO: Integrate GraphQL Codegen here.\n");
-    });
-
-    it("routes i18n generator output through the supplied logger", async () => {
-      const consoleSpies = ["debug", "info", "warn", "error", "log"].map((level) =>
-        vi.spyOn(console, level as "debug").mockImplementation(() => undefined),
-      );
-      const sink = new InMemoryLoggerSink();
-      const logger = new MonorepositoryConsoleLogger("generate::i18n", {color: false, sink});
-      const files = createMemoryFileSystem({
-        [`${repositoryFixtureRoot}/sites/arolariu.ro/messages/en.json`]: '{"greeting":"Hello"}',
-        [`${repositoryFixtureRoot}/sites/arolariu.ro/messages/ro.json`]: '{"greeting":"Hello"}',
-        [`${repositoryFixtureRoot}/sites/arolariu.ro/messages/fr.json`]: '{"greeting":"Hello"}',
-      });
-
-      const {createGenerateI18nCommand} = await import("./i18n.ts");
-      const command = createGenerateI18nCommand(createTestRuntimeFactory({files, logger}));
-
-      await expect(command.invoke({verbose: false}, {presentation: "silent"})).resolves.toMatchObject({
-        status: "completed",
-        exitCode: 0,
-      });
-
-      expect(consoleSpies.every((spy) => spy.mock.calls.length === 0)).toBe(true);
-      expect(sink.records.some((record) => record.text.includes("i18n synchronization completed"))).toBe(true);
-    });
-
-    it("loads Azure identity lazily and never logs environment secret values", async () => {
-      const secretValue = "test-secret-value-that-must-not-be-logged";
-      const consoleSpies = ["debug", "info", "warn", "error", "log"].map((level) =>
-        vi.spyOn(console, level as "debug").mockImplementation(() => undefined),
-      );
-      const sink = new InMemoryLoggerSink();
-      const logger = new MonorepositoryConsoleLogger("generate::env", {color: false, sink});
-      vi.doMock("@azure/identity", () => {
-        throw new Error("Azure identity loaded eagerly");
-      });
-      const files = createMemoryFileSystem({
-        ".env": [
-          "SITE_ENV=DEVELOPMENT",
-          "SITE_NAME=Test",
-          "SITE_URL=https://example.test",
-          "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test",
-          `CLERK_SECRET_KEY=${secretValue}`,
-          "USE_CDN=false",
-        ].join("\n"),
-      });
-
-      try {
-        const {createGenerateEnvironmentCommand} = await import("./env.ts");
-        const command = createGenerateEnvironmentCommand(createTestRuntimeFactory({files, logger}));
-        // "human" presentation matches this test's own logger fixture so the effective-verbosity
-        // scope generateEnvironment forks still renders its completion output through the sink.
-        await expect(command.invoke({verbose: false}, {presentation: "human"})).resolves.toMatchObject({
-          status: "completed",
-          exitCode: 0,
-        });
-      } finally {
-        vi.doUnmock("@azure/identity");
-      }
-
-      expect(consoleSpies.every((spy) => spy.mock.calls.length === 0)).toBe(true);
-      expect(sink.records.some((record) => record.text.includes("File content generated successfully"))).toBe(true);
-      expect(sink.records.every((record) => !record.text.includes(secretValue))).toBe(true);
     });
   });
 });

@@ -1,48 +1,65 @@
 /**
- * @fileoverview Environment generator command object.
- * @module scripts/generate.env
+ * @fileoverview Environment generator: writes the website `.env` as an Effect program.
+ * @module scripts/commands/generate/env
  *
  * @remarks
- * This script generates a `.env` file for website container builds.
+ * Generates a `.env` file for website container builds. With `INFRA=azure` it fetches the
+ * build-time configuration from the exp service (`/api/v1/build-time?for=website`); otherwise it
+ * parses the existing `.env` and prompts the developer for every missing required key.
  *
- * Depending on runtime detection, it either:
- * - fetches build-time configuration from the exp service
- *   (`/api/v1/build-time?for=website`), or
- * - prompts the developer for missing values based on required keys.
- *
- * Every ambient effect (filesystem, HTTP, prompts, environment variables, and the wall clock)
- * is routed through the injected {@link CommandContext.runtime} instead of touching Node globals
- * directly, so the command is fully exercised by the declarative command runtime's test fakes.
+ * Every ambient effect goes through a platform service: `Environment`, `FileSystem`, `HttpClient`,
+ * `Prompts`, `Presenter`, the Effect logger, and the Effect clock. Secret values (the exp bearer
+ * token and every `isSecretKey` value) are `Redacted` from the point they are read and unwrapped
+ * only for the HTTP header and the file content.
  */
 
-import path from "node:path";
-import {APP_CONFIGURATION_MAPPING, AZURE_RUNTIME_IDENTITY_KEYS, isSecretKey} from "../../azure/index.ts";
-import type {AppConfigurationEnvironmentKey, GeneratedEnvironmentConfiguration, GeneratedEnvironmentKey} from "../../azure/index.ts";
-import {MonorepoCommand, type CommandContext, type CommandRuntimeFactory} from "../../common/commander.ts";
-import type {MonorepositoryLogger} from "../../common/logger.ts";
+import {DateTime, Effect, FileSystem, Path, Redacted, References, type PlatformError, type Terminal} from "effect";
+import {HttpClient, HttpClientRequest} from "effect/http";
 
-/** Typed input accepted by every migrated `generate` leaf command. */
+import {APP_CONFIGURATION_MAPPING, AZURE_RUNTIME_IDENTITY_KEYS, isSecretKey} from "../../azure/index.ts";
+import type {AppConfigurationEnvironmentKey, GeneratedEnvironmentKey} from "../../azure/index.ts";
+import type {CommandInvoker} from "../../common/commander.ts";
+import {legacyInvoker} from "../../platform/bridge.ts";
+import {Environment} from "../../platform/Environment.ts";
+import {writeTextAtomic, type Glob} from "../../platform/Files.ts";
+import {debugLogsEnabled, Presenter, withLogContext} from "../../platform/Output.ts";
+import type {Process} from "../../platform/Process.ts";
+import {Prompts, type PromptUnavailable} from "../../platform/Prompts.ts";
+import {ExpConfigurationUnavailable, MissingEnvironmentValues} from "./errors.ts";
+
+/** Typed input of the legacy leaf invokers; removed with the shims in cohort 3 Task 3.3. */
 export interface GenerateLeafInput {
   /** Enables diagnostic output. */
   readonly verbose: boolean;
 }
 
-/** Typed business result produced by every migrated `generate` leaf command. */
+/** Typed business result produced by every `generate` leaf generator. */
 export interface GenerateLeafResult {
-  /** Human-readable completion summary rendered by the command's human presentation. */
+  /** Human-readable completion summary. */
   readonly summary: string;
-  /** Paths of every file this command created or modified. */
+  /** Paths of every file this generator created or modified. */
   readonly changedFiles: readonly string[];
 }
 
-/** Logical command name shared by this command's metadata and its effective-verbosity logger fork. */
-const COMMAND_NAME = "generate:env";
+/** Services the `generate` leaf generators may require. */
+export type GenerateRequirements =
+  FileSystem.FileSystem | Path.Path | HttpClient.HttpClient | Process | Presenter | Prompts | Environment | Glob;
+
+/** Every failure {@link generateEnvironment} may report. */
+export type GenerateEnvironmentError =
+  ExpConfigurationUnavailable | MissingEnvironmentValues | PromptUnavailable | Terminal.QuitError | PlatformError.PlatformError;
+
+/** Log prefix context of every environment generator line, kept from the legacy logger fork. */
+const LOG_CONTEXT = "generate:env";
 
 /** exp service URL — same deterministic logic as the runtime consumers. EXP_PROXY_URL overrides for bare-metal dev. */
 const AZURE_EXP_URL = "https://exp.arolariu.ro";
 
 /** Azure AD token scope for authenticating to the exp service. */
 const EXP_TOKEN_SCOPE = "api://950ac239-5c2c-4759-bd83-911e68f6a8c9/.default";
+
+/** Upper bound of the exp build-time request. */
+const EXP_REQUEST_TIMEOUT = "30 seconds";
 
 const SETUP_SECTION_START = "# arolariu.ro setup-managed values";
 const SETUP_SECTION_END = "# End arolariu.ro setup-managed values";
@@ -52,8 +69,45 @@ const REEMITTABLE_ENVIRONMENT_KEYS: ReadonlySet<string> = new Set([
   ...AZURE_RUNTIME_IDENTITY_KEYS,
 ]);
 
-function isReemittableEnvironmentKey(key: string): boolean {
+function isReemittableEnvironmentKey(key: string): key is GeneratedEnvironmentKey {
   return REEMITTABLE_ENVIRONMENT_KEYS.has(key);
+}
+
+/** One configuration value; secret values stay redacted until the file content is rendered. */
+type EnvironmentValue = string | Redacted.Redacted<string>;
+
+/** Fetched, parsed, or prompted configuration keyed by generated environment variable name. */
+type EnvironmentValues = Partial<Record<GeneratedEnvironmentKey, EnvironmentValue>>;
+
+/**
+ * Wraps a value read for `key` in `Redacted` when the key is secret.
+ *
+ * @param key - The environment variable name.
+ * @param value - The raw value.
+ * @returns The value, redacted when `isSecretKey(key)`.
+ */
+function readValue(key: string, value: string): EnvironmentValue {
+  return isSecretKey(key) ? Redacted.make(value) : value;
+}
+
+/**
+ * Unwraps a configuration value for the generated file content.
+ *
+ * @param value - A plain or redacted value.
+ * @returns The raw value.
+ */
+function reveal(value: EnvironmentValue): string {
+  return typeof value === "string" ? value : Redacted.value(value);
+}
+
+/**
+ * Renders the text of a value composed of styled segments, as the legacy `logger.line` did.
+ *
+ * @param texts - The segment texts.
+ * @returns An effect writing one stdout line.
+ */
+function line(...texts: readonly string[]): Effect.Effect<void, never, Presenter> {
+  return Effect.flatMap(Presenter, (presenter) => presenter.line("stdout", texts.join("")));
 }
 
 /**
@@ -65,8 +119,8 @@ function isReemittableEnvironmentKey(key: string): boolean {
 export function parseEnvironmentFile(content: string): ReadonlyMap<string, string> {
   const values = new Map<string, string>();
 
-  for (const line of content.split(/\r\n|\n|\r/u)) {
-    const trimmed = line.trim();
+  for (const rawLine of content.split(/\r\n|\n|\r/u)) {
+    const trimmed = rawLine.trim();
     if (trimmed === "" || trimmed.startsWith("#")) {
       continue;
     }
@@ -123,259 +177,6 @@ export function appendMissingEnvironmentValues(original: string, additions: Read
 }
 
 /**
- * Fetches build-time configuration from the exp service.
- *
- * @remarks
- * Calls `GET /api/v1/build-time?for=website` to get the full build-time config
- * document, then maps exp config keys to environment variable names using
- * {@link APP_CONFIGURATION_MAPPING}.
- *
- * @param context - Command context whose runtime owns environment, HTTP, and logging.
- * @param verbose - Enables verbose logging.
- * @returns A promise that resolves to the typed configuration object.
- */
-async function fetchConfigurationFromExp(
-  context: Readonly<CommandContext>,
-  verbose: boolean,
-): Promise<GeneratedEnvironmentConfiguration> {
-  const {logger, environment, http, signal} = context.runtime;
-  const expBaseUrl =
-    environment.variables["EXP_PROXY_URL"]?.trim() || (environment.variables["AZURE_CLIENT_ID"] ? AZURE_EXP_URL : "http://exp");
-  const useAzureAuth = expBaseUrl === AZURE_EXP_URL;
-  const configLabel: string = (environment.variables["SITE_ENV"] ?? "").toUpperCase() === "PRODUCTION" ? "PRODUCTION" : "DEVELOPMENT";
-
-  if (verbose) {
-    logger.debug(`Exp service URL: ${expBaseUrl}`);
-  }
-
-  const headers: Record<string, string> = {"X-Exp-Target": "website"};
-
-  // Acquire a bearer token only when targeting the Azure-hosted exp service.
-  if (useAzureAuth) {
-    try {
-      const {AzureCliCredential, DefaultAzureCredential} = await import("@azure/identity");
-      // In CI (GitHub Actions), azure/login sets up AzureCliCredential via OIDC.
-      // DefaultAzureCredential with AZURE_CLIENT_ID tries ManagedIdentity first,
-      // which doesn't exist in CI. Use AzureCliCredential directly in CI.
-      const credential = environment.isCI ? new AzureCliCredential() : new DefaultAzureCredential();
-      logger.info(`Acquiring token for scope ${EXP_TOKEN_SCOPE} via ${environment.isCI ? "AzureCliCredential" : "DefaultAzureCredential"}.`);
-      const token = await credential.getToken(EXP_TOKEN_SCOPE);
-      if (token?.token) {
-        logger.redact(token.token);
-        headers["Authorization"] = `Bearer ${token.token}`;
-        logger.success("Bearer token acquired successfully.");
-      } else {
-        logger.warn("Token acquisition returned an empty token.");
-      }
-    } catch (error: unknown) {
-      logger.warn(`Failed to acquire bearer token: ${error instanceof Error ? error.message : String(error)}`);
-    }
-  } else {
-    logger.info("No AZURE_CLIENT_ID; skipping bearer token acquisition.");
-  }
-
-  const url = `${expBaseUrl}/api/v1/build-time?for=website&label=${configLabel}`;
-  logger.info(`Fetching ${url}.`);
-
-  const response = await http.request({
-    url: new URL(url),
-    headers,
-    timeoutMs: 30_000,
-    signal,
-  });
-
-  if (!response.ok) {
-    logger.error(`exp returned ${response.status} for ${url}.`);
-    if (response.text !== "" && verbose) {
-      logger.debug(`exp response included a non-empty error body (${response.text.length} characters).`);
-    }
-    throw new Error(`exp returned ${response.status} for /api/v1/build-time?for=website`);
-  }
-
-  const payload = JSON.parse(response.text) as {config?: Record<string, string>};
-  if (!payload?.config || typeof payload.config !== "object") {
-    throw new Error("exp build-time response missing 'config' object");
-  }
-
-  if (verbose) {
-    logger.debug(`Received ${Object.keys(payload.config).length} config keys from exp.`);
-  }
-
-  // Map exp config keys to environment variable names.
-  const config: GeneratedEnvironmentConfiguration = {};
-  for (const [expKey, envVar] of Object.entries(APP_CONFIGURATION_MAPPING)) {
-    const value = payload.config[expKey];
-    if (value !== undefined && value !== null) {
-      config[envVar] = value;
-      logger.info(`Mapped ${expKey} to ${envVar}.`);
-    } else {
-      logger.warn(`Key ${expKey} was not found in the exp build-time response.`);
-    }
-  }
-
-  logger.success(`Fetched ${Object.keys(config).length} configuration values from exp.`);
-  return config;
-}
-
-/**
- * Parses an existing `.env` file and extracts key/value pairs.
- *
- * @remarks
- * This is a best-effort parser intended for local developer convenience.
- *
- * @param context - Command context whose runtime owns the filesystem and logging.
- * @param envPath - Path to the `.env` file (defaults to `.env`).
- * @param verbose - Enables verbose error logging.
- * @returns The parsed configuration as a partial typed object.
- */
-async function fetchConfigurationFromLocalEnvFile(
-  context: Readonly<CommandContext>,
-  envPath: string,
-  verbose: boolean,
-): Promise<GeneratedEnvironmentConfiguration> {
-  const {logger, files, environment} = context.runtime;
-  const config: GeneratedEnvironmentConfiguration = {};
-
-  if (!(await files.exists(envPath))) {
-    logger.info("No existing .env file found in the supplied path.");
-    logger.info(`Supplied path (raw): ${envPath}`);
-    logger.info(`Supplied path (built): ${path.resolve(environment.cwd, envPath)}`);
-    return config;
-  }
-
-  logger.info(`Path found: ${path.resolve(environment.cwd, envPath)}`);
-  logger.info("Parsing existing .env file.");
-
-  try {
-    const content = await files.readText(envPath);
-    for (const [key, value] of parseEnvironmentFile(content)) {
-      if (isReemittableEnvironmentKey(key)) {
-        config[key as GeneratedEnvironmentKey] = value;
-      }
-    }
-
-    logger.success(`Parsed ${Object.keys(config).length} existing environment variables.`);
-  } catch (error: unknown) {
-    logger.warn("Encountered an error while parsing the .env file.");
-    if (verbose) {
-      logger.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
-    }
-  }
-
-  return config;
-}
-
-/**
- * Prompts the user for missing environment variable values.
- *
- * @remarks
- * This function interactively requests input for keys that are required but
- * not present in the existing configuration.
- *
- * Secret keys are treated specially (they are not echoed back plainly).
- *
- * @param context - Command context whose runtime owns prompts and logging.
- * @param missingKeys - Keys representing missing environment variables.
- * @param verbose - Enables verbose logging.
- * @returns A partial configuration object containing newly provided values.
- */
-async function promptForMissingKeys(
-  context: Readonly<CommandContext>,
-  missingKeys: readonly AppConfigurationEnvironmentKey[],
-  verbose: boolean,
-): Promise<GeneratedEnvironmentConfiguration> {
-  const {logger, prompts} = context.runtime;
-  logger.section("Prompting for missing environment variables", "🔍");
-
-  if (missingKeys.length === 0) {
-    logger.success("All required keys are present.");
-    return {};
-  }
-
-  logger.warn(`Found ${missingKeys.length} missing key(s) that need to be provided.`);
-
-  const config: GeneratedEnvironmentConfiguration = {};
-  let count = 1;
-
-  for (const key of missingKeys) {
-    const isSecret = isSecretKey(key);
-    const prefix = isSecret ? "🔐" : "🔑";
-    const secretHint = isSecret ? " (hidden)" : "";
-    logger.info(`${prefix} [${count}/${missingKeys.length}] Requesting ${key}${secretHint}.`);
-
-    const value = (isSecret ? await prompts.secret(key) : await prompts.text(key)).trim();
-    if (isSecret && value !== "") {
-      logger.redact(value);
-    }
-
-    if (value) {
-      config[key] = value;
-    } else {
-      logger.warn(`Empty value provided for ${key}. Please ensure this is intentional.`);
-    }
-    count++;
-  }
-
-  if (verbose) {
-    logger.debug(`Collected ${Object.keys(config).length} prompted environment value(s).`);
-  }
-  logger.success("All missing keys have been provided.");
-  return config;
-}
-
-/**
- * Ensures all required environment variables are present for local usage.
- *
- * @remarks
- * The function first parses any existing `.env` file and then prompts for
- * missing required keys.
- *
- * @param context - Command context whose runtime owns the filesystem, prompts, and logging.
- * @param verbose - Enables verbose logging.
- * @returns The completed typed configuration.
- */
-async function ensureLocalEnvIsComplete(
-  context: Readonly<CommandContext>,
-  verbose: boolean,
-): Promise<GeneratedEnvironmentConfiguration> {
-  const {logger, prompts} = context.runtime;
-  logger.section("Ensuring local environment configuration is complete", "🔧");
-  const configurationKeys = Object.values(APP_CONFIGURATION_MAPPING);
-
-  // Parse existing .env if it exists, first (redundant in cloud / ci);
-  const existingConfig = await fetchConfigurationFromLocalEnvFile(context, ".env", verbose);
-  const existingConfigKeys = Object.keys(existingConfig);
-  if (verbose) {
-    logger.debug(`Existing configuration keys: ${JSON.stringify(existingConfigKeys, null, 2)}`);
-  }
-
-  // Find missing keys from REQUIRED array
-  const missingKeys = configurationKeys.filter((key) => !existingConfigKeys.includes(key));
-  if (missingKeys.length === 0) {
-    logger.success("All required environment variables are present.");
-    return existingConfig;
-  }
-
-  logger.warn(`Missing ${missingKeys.length} required environment variable(s):`);
-  for (const missingKey of missingKeys) {
-    logger.line([{text: `      • ${missingKey}`, styles: ["gray"]}]);
-  }
-
-  const shouldPrompt = await prompts.confirm("Do you want to provide the missing values now?", true);
-  if (!shouldPrompt) {
-    throw new Error("Aborting: Missing environment variables were not provided.");
-  }
-
-  // Prompt user for missing keys
-  const newValues = await promptForMissingKeys(context, missingKeys, verbose);
-  // Merge and return complete config
-  logger.success("Configuration merged successfully.");
-
-  const completedConfig: GeneratedEnvironmentConfiguration = {...existingConfig, ...newValues};
-  return completedConfig;
-}
-
-/**
  * Helper function to determine if a value needs to be quoted in .env format.
  * Values containing special characters must be quoted to prevent:
  * - Shell expansion (backticks, dollar signs)
@@ -393,283 +194,438 @@ export function quoteIfNeeded(value: string): string {
     return '""';
   }
 
-  // List of characters that require quoting:
-  // - Whitespace: space, tab, newline, carriage return
-  // - Shell expansion: backtick (`), dollar sign ($)
-  // - Comments: hash (#)
-  // - Delimiters: equals (=), semicolon (;)
-  // - Shell metacharacters: pipe (|), ampersand (&), asterisk (*), question mark (?), less than (<), greater than (>)
-  // - Quotes: single quote ('), double quote (")
-  // - Backslash (\)
+  // Whitespace, shell expansion (` $), comments (#), delimiters (= ;), shell metacharacters
+  // (| & * ? < >), quotes, and backslashes all require quoting.
   const needsQuoting = /[\s`$#=;|&*?<>'"\\]/.test(value);
 
   if (!needsQuoting) {
     return value;
   }
 
-  // Escape backslashes first (must be done before escaping quotes)
+  // Escape backslashes first (must be done before escaping quotes), then quotes and control characters.
   let escaped = value.replace(/\\/g, "\\\\");
-  // Then escape double quotes
   escaped = escaped.replace(/"/g, '\\"');
-  // Escape newlines as literal \n
   escaped = escaped.replace(/\n/g, "\\n");
-  // Escape carriage returns as literal \r
   escaped = escaped.replace(/\r/g, "\\r");
-  // Escape tabs as literal \t
   escaped = escaped.replace(/\t/g, "\\t");
 
   return `"${escaped}"`;
 }
 
 /**
- * Adds a named configuration section to the `.env` output lines.
- *
- * @param lines - Mutable array of output lines.
- * @param sectionName - Human-friendly section name.
- * @param emoji - Emoji used in console output.
- * @param keys - Keys to include in this section.
- * @param config - Completed configuration object.
- * @param logger - Logger used for section progress output.
- * @returns Nothing.
- */
-function addConfigSection(
-  lines: string[],
-  sectionName: string,
-  emoji: string,
-  keys: readonly string[],
-  config: GeneratedEnvironmentConfiguration,
-  logger: MonorepositoryLogger,
-): void {
-  logger.info(`${emoji} Adding ${sectionName} Configuration.`);
-  lines.push("", `# ${sectionName} Configuration Start`);
-
-  for (const key of keys) {
-    const value = config[key as GeneratedEnvironmentKey];
-    if (value !== undefined && value !== null) {
-      lines.push(`${key}=${quoteIfNeeded(value)}`);
-    }
-  }
-
-  lines.push(`# ${sectionName} Configuration End`);
-}
-
-/**
- * Generates the `.env` file content from a configuration object.
- *
- * @param context - Command context whose runtime owns environment and clock capabilities.
- * @param config - Completed configuration object.
- * @returns A newline-separated `.env` payload.
- */
-function generateEnvFileContent(context: Readonly<CommandContext>, config: GeneratedEnvironmentConfiguration): string {
-  const {logger, environment, clock} = context.runtime;
-  logger.section("Generating .env file content", "📝");
-
-  const timestamp = clock.isoTimestamp();
-  const commitSha = environment.variables["COMMIT_SHA"] ?? environment.variables["GITHUB_SHA"] ?? "N/A";
-
-  const lines = [
-    "# Generated environment configuration file",
-    `# Site Environment: ${environment.variables["NODE_ENV"] || "development"}`,
-    `# CI/CD: ${environment.isCI ? "true" : "false"}`,
-    `# Commit SHA: ${commitSha}`,
-    `# Generated at: ${timestamp}`,
-    "# !!!! DO NOT EDIT MANUALLY !!!",
-    "",
-  ];
-
-  // Site config
-  addConfigSection(lines, "Site", "📦", ["SITE_ENV", "SITE_NAME", "SITE_URL"], config, logger);
-
-  // Accepted auth config
-  addConfigSection(lines, "Accepted Authentication", "🔐", ["NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY", "CLERK_SECRET_KEY"], config, logger);
-
-  // Accepted Azure runtime identity config (preserved if present)
-  addConfigSection(lines, "Accepted Azure Runtime Identity", "☁️", AZURE_RUNTIME_IDENTITY_KEYS, config, logger);
-
-  // Metadata config
-  logger.info("📊 Adding Metadata Configuration.");
-  const useCdn = config["USE_CDN"] ?? "false";
-
-  lines.push(
-    "",
-    "# Metadata Configuration Start",
-    `TIMESTAMP=${quoteIfNeeded(timestamp)}`,
-    `COMMIT_SHA=${quoteIfNeeded(commitSha)}`,
-    `USE_CDN=${quoteIfNeeded(useCdn)}`,
-    "# Metadata Configuration End",
-  );
-
-  logger.success("File content generated successfully.");
-
-  return lines.join("\n");
-}
-
-/**
- * Copies the generated `.env` file into configured sub-repositories.
- *
- * @param context - Command context whose runtime owns the filesystem, environment, and logging.
- * @param sourcePath - Source `.env` path.
- * @param targetPaths - Relative target paths to copy to.
- * @param verbose - Enables verbose error logging.
- * @returns Absolute destination paths that were successfully written.
- */
-async function copyEnvFileToSubRepos(
-  context: Readonly<CommandContext>,
-  sourcePath: string,
-  targetPaths: readonly string[],
-  verbose: boolean,
-): Promise<readonly string[]> {
-  const {logger, files, environment} = context.runtime;
-  logger.section("Copying .env file to sub-repositories", "📂");
-  const copiedFiles: string[] = [];
-
-  for (const targetPath of targetPaths) {
-    logger.info(`Raw target path: ${targetPath}`);
-    const builtTargetPath = path.resolve(environment.cwd, `.${targetPath}`);
-    logger.info(`Built target path: ${builtTargetPath}`);
-    try {
-      // eslint-disable-next-line no-await-in-loop
-      await files.copy(sourcePath, builtTargetPath);
-      copiedFiles.push(builtTargetPath);
-    } catch (error: unknown) {
-      logger.error(`Error copying to ${builtTargetPath}.`);
-      if (verbose) {
-        logger.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
-      }
-    }
-  }
-
-  return copiedFiles;
-}
-
-/**
- * Resolves the effective verbosity from the CLI flag and the `VERBOSE` environment variable.
+ * Acquires an exp bearer token through `@azure/identity`, loaded lazily.
  *
  * @remarks
- * Verbosity is resolved per invocation instead of through a module-level constant so
- * callers and tests observe the environment as it is at call time.
+ * In CI (GitHub Actions) `azure/login` sets up `AzureCliCredential` through OIDC; elsewhere
+ * `DefaultAzureCredential` is used. A failure or an empty token is a warning, not a failure: the
+ * request is then sent without an `Authorization` header, as before.
  *
- * @param flag - Verbosity requested through the CLI flag.
- * @param variables - Environment variables snapshot used to resolve `VERBOSE`.
- * @returns True when either the flag or the environment enables verbose logging.
+ * @param isCI - Whether the command runs in CI.
+ * @returns The redacted token, or `undefined` when none was acquired.
  */
-function resolveVerbose(flag: boolean, variables: Readonly<Record<string, string | undefined>>): boolean {
-  return flag || variables["VERBOSE"] === "true";
-}
-
-/**
- * Runs the environment generator's business logic.
- *
- * @param context - Command context whose runtime owns every ambient capability.
- * @param input - Typed command input.
- * @returns The completion summary and every file this invocation created or modified.
- */
-async function generateEnvironment(
-  context: Readonly<CommandContext>,
-  input: Readonly<GenerateLeafInput>,
-): Promise<GenerateLeafResult> {
-  const {environment} = context.runtime;
-  const effectiveVerbose = resolveVerbose(input.verbose, environment.variables);
-
-  // `commander.ts` derives the invocation logger's own verbosity from the typed CLI flag alone
-  // (see `readVerboseFlag`), so `VERBOSE=true` alone would otherwise leave every `logger.debug()`
-  // call below silently suppressed. Forking a scope keyed to the effective verbosity preserves
-  // the documented environment override while still sharing this invocation's sink, redactions,
-  // and presentation mode.
-  const scopedContext: Readonly<CommandContext> = {
-    ...context,
-    runtime: {
-      ...context.runtime,
-      logger: context.runtime.logger.fork(COMMAND_NAME, {mode: context.presentation, verbose: effectiveVerbose}),
-    },
-  };
-  const {runtime} = scopedContext;
-  const {logger} = runtime;
-  const isAzure = environment.variables["INFRA"] === "azure";
-  const isProduction = environment.variables["PRODUCTION"] === "true";
-
-  logger.line([{text: "🔧 Configuration:", styles: ["cyan"]}]);
-  logger.line();
-  logger.line([
-    {text: "   Infrastructure: ", styles: ["gray"]},
-    {text: isAzure ? "Azure" : "Local", styles: [isAzure ? "blue" : "yellow"]},
-  ]);
-  logger.line([
-    {text: "   Environment: ", styles: ["gray"]},
-    {text: isProduction ? "production" : "development", styles: [isProduction ? "red" : "green"]},
-  ]);
-  logger.line([
-    {text: "   Verbose: ", styles: ["gray"]},
-    {text: effectiveVerbose ? "✅ Enabled" : "❌ Disabled", styles: [effectiveVerbose ? "green" : "gray"]},
-  ]);
-  logger.line([
-    {text: "   Agent: ", styles: ["gray"]},
-    {text: environment.isCI ? "CI/CD" : "Local", styles: [environment.isCI ? "cyan" : "yellow"]},
-  ]);
-  logger.line([
-    {text: "   Working Directory: ", styles: ["gray"]},
-    {text: environment.cwd, styles: ["dim"]},
-  ]);
-  logger.line([
-    {text: "   Output File: ", styles: ["gray"]},
-    {text: ".env", styles: ["cyan"]},
-  ]);
-  logger.line();
-  if (effectiveVerbose) {
-    logger.debug("SITE_ENV was evaluated without logging its value.");
-  }
-
-  const config = isAzure
-    ? await fetchConfigurationFromExp(scopedContext, effectiveVerbose)
-    : await ensureLocalEnvIsComplete(scopedContext, effectiveVerbose);
-
-  for (const [key, value] of Object.entries(config)) {
-    if (isSecretKey(key) && typeof value === "string") {
-      logger.redact(value);
+function acquireBearerToken(isCI: boolean): Effect.Effect<Redacted.Redacted<string> | undefined, never, Presenter> {
+  const describe = (error: unknown): string => (error instanceof Error ? error.message : String(error));
+  return Effect.gen(function* () {
+    const identity = yield* Effect.tryPromise({try: () => import("@azure/identity"), catch: describe});
+    const credential = isCI ? new identity.AzureCliCredential() : new identity.DefaultAzureCredential();
+    yield* Effect.logInfo(`Acquiring token for scope ${EXP_TOKEN_SCOPE} via ${isCI ? "AzureCliCredential" : "DefaultAzureCredential"}.`);
+    const token = yield* Effect.tryPromise({try: () => credential.getToken(EXP_TOKEN_SCOPE), catch: describe});
+    if (!token?.token) {
+      yield* Effect.logWarning("Token acquisition returned an empty token.");
+      return undefined;
     }
-  }
-  const content = generateEnvFileContent(scopedContext, config);
-
-  logger.info("Writing .env file.");
-  await runtime.files.writeText(".env", content, {mode: 0o600});
-
-  logger.success(`Generated ${Object.keys(config).length} environment variables.`);
-  logger.line([
-    {text: "   File: ", styles: ["green"]},
-    {text: path.resolve(environment.cwd, ".env"), styles: ["cyan"]},
-  ]);
-  logger.line();
-
-  // Copy to sub-repositories if needed
-  const copiedFiles = await copyEnvFileToSubRepos(scopedContext, ".env", ["/sites/arolariu.ro/.env"], effectiveVerbose);
-
-  return {
-    summary: `Generated ${Object.keys(config).length} environment variable(s).`,
-    changedFiles: [".env", ...copiedFiles],
-  };
+    const redacted = Redacted.make(token.token);
+    yield* (yield* Presenter).success("Bearer token acquired successfully.");
+    return redacted;
+  }).pipe(Effect.catch((message) => Effect.as(Effect.logWarning(`Failed to acquire bearer token: ${message}`), undefined)));
 }
 
 /**
- * Creates the environment generator command.
+ * Fetches build-time configuration from the exp service.
  *
- * @param runtimeFactory - Optional runtime factory; tests inject a fake instead of the Node adapter.
- * @returns The typed `generate:env` command object.
+ * @remarks
+ * Calls `GET /api/v1/build-time?for=website&label=<label>` and maps exp config keys to environment
+ * variable names through {@link APP_CONFIGURATION_MAPPING}. A transport failure, a non-2xx status,
+ * an unparseable body, or a missing `config` object fails with {@link ExpConfigurationUnavailable};
+ * a key missing from `config` is only a warning.
+ *
+ * @returns The mapped configuration.
  */
-export function createGenerateEnvironmentCommand(
-  runtimeFactory?: CommandRuntimeFactory,
-): MonorepoCommand<GenerateLeafInput, GenerateLeafResult> {
-  return new MonorepoCommand<GenerateLeafInput, GenerateLeafResult>(
-    {
-      metadata: {name: COMMAND_NAME},
-      execute: generateEnvironment,
-      completion: (result) => ({
-        exitCode: 0,
-        human: (logger) => logger.success(result.summary),
-      }),
-    },
-    runtimeFactory,
-  );
+const fetchConfigurationFromExp: Effect.Effect<EnvironmentValues, ExpConfigurationUnavailable, GenerateRequirements> = Effect.gen(
+  function* () {
+    const environment = yield* Environment;
+    const presenter = yield* Presenter;
+    const client = yield* HttpClient.HttpClient;
+    const expBaseUrl =
+      environment.variables["EXP_PROXY_URL"]?.trim() || (environment.variables["AZURE_CLIENT_ID"] ? AZURE_EXP_URL : "http://exp");
+    const configLabel = (environment.variables["SITE_ENV"] ?? "").toUpperCase() === "PRODUCTION" ? "PRODUCTION" : "DEVELOPMENT";
+
+    yield* Effect.logDebug(`Exp service URL: ${expBaseUrl}`);
+
+    // Acquire a bearer token only when targeting the Azure-hosted exp service.
+    let token: Redacted.Redacted<string> | undefined;
+    if (expBaseUrl === AZURE_EXP_URL) {
+      token = yield* acquireBearerToken(environment.isCI);
+    } else {
+      yield* Effect.logInfo("No AZURE_CLIENT_ID; skipping bearer token acquisition.");
+    }
+
+    const url = `${expBaseUrl}/api/v1/build-time?for=website&label=${configLabel}`;
+    yield* Effect.logInfo(`Fetching ${url}.`);
+
+    const request = HttpClientRequest.get(url, {headers: {"X-Exp-Target": "website"}});
+    const unavailable = (error: {readonly message: string}): ExpConfigurationUnavailable =>
+      new ExpConfigurationUnavailable({message: `exp request to ${url} failed: ${error.message}`});
+    const response = yield* client
+      .execute(token === undefined ? request : HttpClientRequest.bearerToken(request, token))
+      // Keep the legacy request headers exactly: no trace propagation headers to the exp service.
+      .pipe(
+        Effect.provideService(HttpClient.TracerPropagationEnabled, false),
+        Effect.timeout(EXP_REQUEST_TIMEOUT),
+        Effect.mapError(unavailable),
+      );
+    const body = yield* Effect.mapError(response.text, unavailable);
+
+    if (response.status < 200 || response.status >= 300) {
+      yield* Effect.logError(`exp returned ${response.status} for ${url}.`);
+      if (body !== "") {
+        yield* Effect.logDebug(`exp response included a non-empty error body (${body.length} characters).`);
+      }
+      return yield* new ExpConfigurationUnavailable({
+        message: `exp returned ${response.status} for /api/v1/build-time?for=website`,
+        status: response.status,
+      });
+    }
+
+    const payload = yield* Effect.try({
+      try: (): unknown => JSON.parse(body),
+      catch: (error) =>
+        new ExpConfigurationUnavailable({message: error instanceof Error ? error.message : String(error), status: response.status}),
+    });
+    const config = typeof payload === "object" && payload !== null && "config" in payload ? payload.config : undefined;
+    if (typeof config !== "object" || config === null) {
+      return yield* new ExpConfigurationUnavailable({message: "exp build-time response missing 'config' object", status: response.status});
+    }
+    const received = config as Readonly<Record<string, unknown>>;
+
+    yield* Effect.logDebug(`Received ${Object.keys(received).length} config keys from exp.`);
+
+    const values: EnvironmentValues = {};
+    for (const [expKey, envVar] of Object.entries(APP_CONFIGURATION_MAPPING)) {
+      const value = received[expKey];
+      if (value !== undefined && value !== null) {
+        values[envVar] = readValue(envVar, String(value));
+        yield* Effect.logInfo(`Mapped ${expKey} to ${envVar}.`);
+      } else {
+        yield* Effect.logWarning(`Key ${expKey} was not found in the exp build-time response.`);
+      }
+    }
+
+    yield* presenter.success(`Fetched ${Object.keys(values).length} configuration values from exp.`);
+    return values;
+  },
+);
+
+/**
+ * Parses an existing `.env` file and keeps only the re-emittable keys.
+ *
+ * @remarks
+ * Best-effort: a missing file yields no values, and a read failure is only a warning.
+ *
+ * @param envPath - Path to the `.env` file, relative to the environment working directory.
+ * @returns The parsed values.
+ */
+function fetchConfigurationFromLocalEnvFile(envPath: string): Effect.Effect<EnvironmentValues, never, GenerateRequirements> {
+  return Effect.gen(function* () {
+    const environment = yield* Environment;
+    const presenter = yield* Presenter;
+    const fs = yield* FileSystem.FileSystem;
+    const path = yield* Path.Path;
+    const resolved = path.resolve(environment.cwd, envPath);
+    const values: EnvironmentValues = {};
+
+    if (!(yield* Effect.orElseSucceed(fs.exists(resolved), () => false))) {
+      yield* Effect.logInfo("No existing .env file found in the supplied path.");
+      yield* Effect.logInfo(`Supplied path (raw): ${envPath}`);
+      yield* Effect.logInfo(`Supplied path (built): ${resolved}`);
+      return values;
+    }
+
+    yield* Effect.logInfo(`Path found: ${resolved}`);
+    yield* Effect.logInfo("Parsing existing .env file.");
+
+    const content = yield* Effect.result(fs.readFileString(resolved));
+    if (content._tag === "Failure") {
+      yield* Effect.logWarning("Encountered an error while parsing the .env file.");
+      if (yield* debugLogsEnabled) {
+        yield* Effect.logError(`Error: ${content.failure.message}`);
+      }
+      return values;
+    }
+    for (const [key, value] of parseEnvironmentFile(content.success)) {
+      if (isReemittableEnvironmentKey(key)) {
+        values[key] = readValue(key, value);
+      }
+    }
+
+    yield* presenter.success(`Parsed ${Object.keys(values).length} existing environment variables.`);
+    return values;
+  });
 }
 
-/** Production singleton used by the aggregate CLI. */
-export const generateEnvironmentCommand: MonorepoCommand<GenerateLeafInput, GenerateLeafResult> = createGenerateEnvironmentCommand();
+/**
+ * Prompts for the value of every missing key; secret keys use a non-echoing secret prompt.
+ *
+ * @param missingKeys - The required keys absent from the existing configuration.
+ * @returns The nonempty prompted values.
+ */
+function promptForMissingKeys(
+  missingKeys: readonly AppConfigurationEnvironmentKey[],
+): Effect.Effect<EnvironmentValues, PromptUnavailable | Terminal.QuitError, GenerateRequirements> {
+  return Effect.gen(function* () {
+    const presenter = yield* Presenter;
+    const prompts = yield* Prompts;
+    yield* presenter.section("Prompting for missing environment variables", "🔍");
+
+    if (missingKeys.length === 0) {
+      yield* presenter.success("All required keys are present.");
+      return {};
+    }
+
+    yield* Effect.logWarning(`Found ${missingKeys.length} missing key(s) that need to be provided.`);
+
+    const values: EnvironmentValues = {};
+    let count = 1;
+    for (const key of missingKeys) {
+      const isSecret = isSecretKey(key);
+      const prefix = isSecret ? "🔐" : "🔑";
+      const secretHint = isSecret ? " (hidden)" : "";
+      yield* Effect.logInfo(`${prefix} [${count}/${missingKeys.length}] Requesting ${key}${secretHint}.`);
+
+      const value: EnvironmentValue = isSecret
+        ? Redacted.make(Redacted.value(yield* prompts.secret(key)).trim())
+        : (yield* prompts.text(key)).trim();
+      if (reveal(value) === "") {
+        yield* Effect.logWarning(`Empty value provided for ${key}. Please ensure this is intentional.`);
+      } else {
+        values[key] = value;
+      }
+      count++;
+    }
+
+    yield* Effect.logDebug(`Collected ${Object.keys(values).length} prompted environment value(s).`);
+    yield* presenter.success("All missing keys have been provided.");
+    return values;
+  });
+}
+
+/**
+ * Ensures every required environment variable is present for local usage.
+ *
+ * @remarks
+ * Parses the existing `.env`, then asks whether to provide the missing required keys. Without a
+ * TTY the confirmation takes its default (`true`) and the first prompt fails with
+ * `PromptUnavailable`; a declined confirmation fails with {@link MissingEnvironmentValues}.
+ *
+ * @returns The completed configuration.
+ */
+const ensureLocalEnvIsComplete: Effect.Effect<
+  EnvironmentValues,
+  MissingEnvironmentValues | PromptUnavailable | Terminal.QuitError,
+  GenerateRequirements
+> = Effect.gen(function* () {
+  const presenter = yield* Presenter;
+  const prompts = yield* Prompts;
+  yield* presenter.section("Ensuring local environment configuration is complete", "🔧");
+
+  const existing = yield* fetchConfigurationFromLocalEnvFile(".env");
+  const existingKeys = Object.keys(existing);
+  yield* Effect.logDebug(`Existing configuration keys: ${JSON.stringify(existingKeys, null, 2)}`);
+
+  const missingKeys = Object.values(APP_CONFIGURATION_MAPPING).filter((key) => !existingKeys.includes(key));
+  if (missingKeys.length === 0) {
+    yield* presenter.success("All required environment variables are present.");
+    return existing;
+  }
+
+  yield* Effect.logWarning(`Missing ${missingKeys.length} required environment variable(s):`);
+  for (const missingKey of missingKeys) {
+    yield* line(`      • ${missingKey}`);
+  }
+
+  if (!(yield* prompts.confirm("Do you want to provide the missing values now?", true))) {
+    return yield* new MissingEnvironmentValues({message: "Aborting: Missing environment variables were not provided.", keys: missingKeys});
+  }
+
+  const prompted = yield* promptForMissingKeys(missingKeys);
+  yield* presenter.success("Configuration merged successfully.");
+  return {...existing, ...prompted};
+});
+
+/**
+ * Renders one named configuration section of the `.env` output.
+ *
+ * @param sectionName - Human-friendly section name.
+ * @param keys - Keys to include in this section, in order.
+ * @param config - Completed configuration.
+ * @returns The section lines, preceded by a blank line.
+ */
+function configSectionLines(sectionName: string, keys: readonly string[], config: EnvironmentValues): readonly string[] {
+  const assignments = keys.flatMap((key) => {
+    const value = config[key as GeneratedEnvironmentKey];
+    return value === undefined ? [] : [`${key}=${quoteIfNeeded(reveal(value))}`];
+  });
+  return ["", `# ${sectionName} Configuration Start`, ...assignments, `# ${sectionName} Configuration End`];
+}
+
+/**
+ * Generates the `.env` file content from a configuration; the only place secret values are unwrapped.
+ *
+ * @param config - Completed configuration.
+ * @returns A newline-separated `.env` payload.
+ */
+function generateEnvFileContent(config: EnvironmentValues): Effect.Effect<string, never, Environment | Presenter> {
+  return Effect.gen(function* () {
+    const environment = yield* Environment;
+    const presenter = yield* Presenter;
+    yield* presenter.section("Generating .env file content", "📝");
+
+    const timestamp = DateTime.formatIso(yield* DateTime.now);
+    const commitSha = environment.variables["COMMIT_SHA"] ?? environment.variables["GITHUB_SHA"] ?? "N/A";
+    const lines: string[] = [
+      "# Generated environment configuration file",
+      `# Site Environment: ${environment.variables["NODE_ENV"] || "development"}`,
+      `# CI/CD: ${environment.isCI ? "true" : "false"}`,
+      `# Commit SHA: ${commitSha}`,
+      `# Generated at: ${timestamp}`,
+      "# !!!! DO NOT EDIT MANUALLY !!!",
+      "",
+    ];
+
+    const sections: readonly (readonly [string, string, readonly string[]])[] = [
+      ["Site", "📦", ["SITE_ENV", "SITE_NAME", "SITE_URL"]],
+      ["Accepted Authentication", "🔐", ["NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY", "CLERK_SECRET_KEY"]],
+      ["Accepted Azure Runtime Identity", "☁️", AZURE_RUNTIME_IDENTITY_KEYS],
+    ];
+    for (const [sectionName, emoji, keys] of sections) {
+      yield* Effect.logInfo(`${emoji} Adding ${sectionName} Configuration.`);
+      lines.push(...configSectionLines(sectionName, keys, config));
+    }
+
+    yield* Effect.logInfo("📊 Adding Metadata Configuration.");
+    const useCdn = config["USE_CDN"] === undefined ? "false" : reveal(config["USE_CDN"]);
+    lines.push(
+      "",
+      "# Metadata Configuration Start",
+      `TIMESTAMP=${quoteIfNeeded(timestamp)}`,
+      `COMMIT_SHA=${quoteIfNeeded(commitSha)}`,
+      `USE_CDN=${quoteIfNeeded(useCdn)}`,
+      "# Metadata Configuration End",
+    );
+
+    yield* presenter.success("File content generated successfully.");
+    return lines.join("\n");
+  });
+}
+
+/**
+ * Copies the generated `.env` file into the configured sub-repositories.
+ *
+ * @param sourcePath - Absolute source `.env` path.
+ * @param targetPaths - Repository-relative target paths (each starting with `/`).
+ * @returns Absolute destination paths that were successfully written; a failed copy is logged and skipped.
+ */
+function copyEnvFileToSubRepos(
+  sourcePath: string,
+  targetPaths: readonly string[],
+): Effect.Effect<readonly string[], never, GenerateRequirements> {
+  return Effect.gen(function* () {
+    const environment = yield* Environment;
+    const presenter = yield* Presenter;
+    const fs = yield* FileSystem.FileSystem;
+    const path = yield* Path.Path;
+    yield* presenter.section("Copying .env file to sub-repositories", "📂");
+
+    const copied: string[] = [];
+    for (const targetPath of targetPaths) {
+      yield* Effect.logInfo(`Raw target path: ${targetPath}`);
+      const builtTargetPath = path.resolve(environment.cwd, `.${targetPath}`);
+      yield* Effect.logInfo(`Built target path: ${builtTargetPath}`);
+      const outcome = yield* Effect.result(fs.copy(sourcePath, builtTargetPath, {overwrite: true}));
+      if (outcome._tag === "Success") {
+        copied.push(builtTargetPath);
+      } else {
+        yield* Effect.logError(`Error copying to ${builtTargetPath}.`);
+        if (yield* debugLogsEnabled) {
+          yield* Effect.logError(`Error: ${outcome.failure.message}`);
+        }
+      }
+    }
+    return copied;
+  });
+}
+
+/**
+ * Generates the website `.env` and copies it to `sites/arolariu.ro/.env`.
+ *
+ * @remarks
+ * Effective verbosity is `--verbose` or `VERBOSE=true`; the latter lowers the minimum log level to
+ * `Debug` for this program only. Every line uses the `generate:env` log context.
+ */
+export const generateEnvironment: Effect.Effect<GenerateLeafResult, GenerateEnvironmentError, GenerateRequirements> = Effect.gen(
+  function* () {
+    const environment = yield* Environment;
+    const presenter = yield* Presenter;
+    const path = yield* Path.Path;
+    const effectiveVerbose = (yield* debugLogsEnabled) || environment.variables["VERBOSE"] === "true";
+    const isAzure = environment.variables["INFRA"] === "azure";
+    const isProduction = environment.variables["PRODUCTION"] === "true";
+
+    const body = Effect.gen(function* () {
+      yield* line("🔧 Configuration:");
+      yield* line();
+      yield* line("   Infrastructure: ", isAzure ? "Azure" : "Local");
+      yield* line("   Environment: ", isProduction ? "production" : "development");
+      yield* line("   Verbose: ", effectiveVerbose ? "✅ Enabled" : "❌ Disabled");
+      yield* line("   Agent: ", environment.isCI ? "CI/CD" : "Local");
+      yield* line("   Working Directory: ", environment.cwd);
+      yield* line("   Output File: ", ".env");
+      yield* line();
+      yield* Effect.logDebug("SITE_ENV was evaluated without logging its value.");
+
+      const config = isAzure ? yield* fetchConfigurationFromExp : yield* ensureLocalEnvIsComplete;
+      const content = yield* generateEnvFileContent(config);
+
+      const envFile = path.resolve(environment.cwd, ".env");
+      yield* Effect.logInfo("Writing .env file.");
+      yield* writeTextAtomic(envFile, content, {mode: 0o600});
+
+      yield* presenter.success(`Generated ${Object.keys(config).length} environment variables.`);
+      yield* line("   File: ", envFile);
+      yield* line();
+
+      const copied = yield* copyEnvFileToSubRepos(envFile, ["/sites/arolariu.ro/.env"]);
+      return {
+        summary: `Generated ${Object.keys(config).length} environment variable(s).`,
+        changedFiles: [".env", ...copied],
+      };
+    }).pipe(withLogContext(LOG_CONTEXT));
+
+    return yield* effectiveVerbose ? Effect.provideService(body, References.MinimumLogLevel, "Debug") : body;
+  },
+).pipe(Effect.withSpan("generate.env"));
+
+/**
+ * Temporary legacy invoker over {@link generateEnvironment} for the unmigrated orchestrator.
+ *
+ * @remarks Deleted in cohort 3 Task 3.3, when the orchestrator calls the Effect directly.
+ */
+export const generateEnvironmentCommand: CommandInvoker<GenerateLeafInput, GenerateLeafResult> = legacyInvoker<
+  GenerateLeafInput,
+  GenerateLeafResult,
+  GenerateEnvironmentError
+>(
+  LOG_CONTEXT,
+  () => generateEnvironment,
+  () => 0,
+);

@@ -1,11 +1,11 @@
 /**
- * @fileoverview i18n asset generator command for the monorepo.
- * @module scripts/generate.i18n
+ * @fileoverview i18n asset generator: synchronizes locale files with English as an Effect program.
+ * @module scripts/commands/generate/i18n
  *
  * @remarks
- * Validates and synchronizes translation files for all supported locales against
- * the English source of truth. The command ensures all locales (Romanian and French)
- * have complete translation coverage by:
+ * Validates and synchronizes translation files for all supported locales against the English
+ * source of truth. The generator ensures all locales (Romanian and French) have complete
+ * translation coverage by:
  * 1. Loading the English translations as the source of truth
  * 2. Validating each target locale against English keys
  * 3. Adding missing keys with empty strings for translators to fill
@@ -16,28 +16,20 @@
  * - ro.json (Romanian)
  * - fr.json (French)
  *
- * This command is used by `npm run generate` as part of the build toolchain. Every ambient
- * effect (filesystem and environment) is routed through the injected
- * {@link CommandContext.runtime} instead of touching Node globals directly.
+ * Every ambient effect goes through the `FileSystem`, `Path`, `Environment`, and `Presenter`
+ * services and the Effect logger. A locale file that cannot be parsed, or that has keys English
+ * lacks, fails with {@link TranslationSyncFailed}.
  */
 
-import path from "node:path";
-import {MonorepoCommand, type CommandContext, type CommandRuntimeFactory} from "../../common/commander.ts";
-import type {MonorepositoryLogger} from "../../common/logger.ts";
+import {Effect, FileSystem, Path, type PlatformError} from "effect";
 
-/** Typed input accepted by every migrated `generate` leaf command. */
-export interface GenerateLeafInput {
-  /** Enables diagnostic output. */
-  readonly verbose: boolean;
-}
-
-/** Typed business result produced by every migrated `generate` leaf command. */
-export interface GenerateLeafResult {
-  /** Human-readable completion summary rendered by the command's human presentation. */
-  readonly summary: string;
-  /** Paths of every file this command created or modified. */
-  readonly changedFiles: readonly string[];
-}
+import type {CommandInvoker} from "../../common/commander.ts";
+import {legacyInvoker} from "../../platform/bridge.ts";
+import {Environment} from "../../platform/Environment.ts";
+import {writeTextAtomic} from "../../platform/Files.ts";
+import {debugLogsEnabled, Presenter} from "../../platform/Output.ts";
+import type {GenerateLeafInput, GenerateLeafResult, GenerateRequirements} from "./env.ts";
+import {TranslationSyncFailed} from "./errors.ts";
 
 /**
  * Represents either a plain string message or a message formatted with `MessageFormat`.
@@ -53,37 +45,69 @@ type MessageFormat = {
   [key: string]: Message;
 };
 
+/** Every failure {@link generateI18n} may report. */
+export type GenerateI18nError = TranslationSyncFailed | PlatformError.PlatformError;
+
 /**
- * This function loads into memory a translation file.
- * The translation file should be a JSON file.
+ * Describes an unknown thrown value.
  *
- * This JSON file respects the {@link MessageFormat} structure.
- * @param context - Command context whose runtime owns the filesystem and logging.
- * @param filePath - The path to the translation file.
- * @param verbose - Enables verbose logging.
- * @returns The translation file as a `MessageFormat` object.
+ * @param error - The thrown value.
+ * @returns Its message.
  */
-async function loadTranslationFile(context: Readonly<CommandContext>, filePath: string, verbose: boolean): Promise<MessageFormat> {
-  const {logger, files} = context.runtime;
-  try {
-    const translationFile = await files.readText(filePath);
-    if (verbose) {
-      logger.debug(`[loadTranslationFile] Loaded translation file: ${filePath}`);
-    }
-    const convertedJsonFileToMessageFormat = JSON.parse(translationFile) as MessageFormat;
-    if (verbose) {
-      logger.debug("[loadTranslationFile] Converted translation file to MessageFormat object.");
-    }
-    return convertedJsonFileToMessageFormat;
-  } catch (error: unknown) {
-    logger.error(`[loadTranslationFile] Error encountered when loading translation file with path: ${filePath}`);
-    logger.error(`[loadTranslationFile] Error details: ${error instanceof Error ? error.message : String(error)}`);
-    throw error;
-  }
+function describe(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
 }
 
 /**
- * This function will try to lookup in the given MessageFormat object, a translation key.
+ * Parses a translation file as a {@link MessageFormat}.
+ *
+ * @param text - The file text.
+ * @param locale - The locale the file belongs to.
+ * @returns The parsed messages, or {@link TranslationSyncFailed} for invalid JSON.
+ */
+function parseMessages(text: string, locale: string): Effect.Effect<MessageFormat, TranslationSyncFailed> {
+  return Effect.try({
+    try: () => JSON.parse(text) as MessageFormat,
+    catch: (error) => new TranslationSyncFailed({message: describe(error), locale}),
+  });
+}
+
+/**
+ * Loads a translation file into memory as a {@link MessageFormat}.
+ *
+ * @param filePath - The path to the translation file.
+ * @param locale - The locale the file belongs to.
+ * @param verbose - Enables verbose logging.
+ * @returns The translation file contents.
+ */
+function loadTranslationFile(
+  filePath: string,
+  locale: string,
+  verbose: boolean,
+): Effect.Effect<MessageFormat, GenerateI18nError, FileSystem.FileSystem> {
+  return Effect.gen(function* () {
+    const fs = yield* FileSystem.FileSystem;
+    const translationFile = yield* fs.readFileString(filePath);
+    if (verbose) {
+      yield* Effect.logDebug(`[loadTranslationFile] Loaded translation file: ${filePath}`);
+    }
+    const messages = yield* parseMessages(translationFile, locale);
+    if (verbose) {
+      yield* Effect.logDebug("[loadTranslationFile] Converted translation file to MessageFormat object.");
+    }
+    return messages;
+  }).pipe(
+    Effect.tapError((error) =>
+      Effect.andThen(
+        Effect.logError(`[loadTranslationFile] Error encountered when loading translation file with path: ${filePath}`),
+        Effect.logError(`[loadTranslationFile] Error details: ${error.message}`),
+      ),
+    ),
+  );
+}
+
+/**
+ * Looks up a translation key in the given MessageFormat object.
  *
  * The translation key is a string that can contain dots (.) to indicate nested keys.
  *
@@ -98,7 +122,6 @@ async function loadTranslationFile(context: Readonly<CommandContext>, filePath: 
  * @param messages The translation messages object.
  * @param keyNamespace The translation key to lookup.
  * @param verbose Whether to emit lookup diagnostics.
- * @param logger Logger used for lookup diagnostics.
  *
  * @example
  * extractMessageValue(messages, "pages.domains.services.title")
@@ -107,307 +130,319 @@ async function loadTranslationFile(context: Readonly<CommandContext>, filePath: 
  * @remarks The function will treat non-existent values as an empty string.
  * @returns The value of the translation key.
  */
-function extractMessageValue(messages: MessageFormat, keyNamespace: string, verbose: boolean, logger: MonorepositoryLogger): Message {
-  if (verbose) {
-    logger.debug(`[extractMessageValue] Extracting message value for key: ${keyNamespace}`);
-  }
-  // We can potentially have nested keys, so we need to split the key by dots (.)
-  const keys = keyNamespace.split(".");
-  let message: Message = "";
-  let messagesPointer: MessageFormat = new Object(messages) as MessageFormat;
+function extractMessageValue(messages: MessageFormat, keyNamespace: string, verbose: boolean): Effect.Effect<Message> {
+  return Effect.gen(function* () {
+    if (verbose) {
+      yield* Effect.logDebug(`[extractMessageValue] Extracting message value for key: ${keyNamespace}`);
+    }
+    // We can potentially have nested keys, so we need to split the key by dots (.)
+    const keys = keyNamespace.split(".");
+    let message: Message = "";
+    let messagesPointer: MessageFormat = new Object(messages) as MessageFormat;
 
-  for (const key of keys) {
-    if (!messagesPointer) break;
+    for (const key of keys) {
+      if (!messagesPointer) break;
 
-    if (messagesPointer[key] && keys.at(-1) === key) {
-      message = messagesPointer[key]; // Set the message to the value of the key.
-      break; // Break the loop.
+      if (messagesPointer[key] && keys.at(-1) === key) {
+        message = messagesPointer[key]; // Set the message to the value of the key.
+        break; // Break the loop.
+      }
+
+      // Move the pointer to the next level.
+      messagesPointer = messagesPointer[key] as MessageFormat;
     }
 
-    // Move the pointer to the next level.
-    messagesPointer = messagesPointer[key] as MessageFormat;
-  }
-
-  return message;
+    return message;
+  });
 }
 
 /**
- * This function will compare the keys from two translation files.
+ * Compares the keys from two translation files.
  * This is a naive implementation that will only compare the length of the keys.
  *
  * CASE 1:
  * IF the length of the keys are the same
- * AND every key from the base translation file is present in the right translation file
  * THEN the function will return true, meaning that the translation files have equal keys.
  *
  * CASE 2:
  * IF the length of the keys are different,
- * THEN the function will return false, meaning that the translation files have different keys.
+ * THEN the function will return false, meaning that the translation files have different keys,
+ * unless the current file has keys the base file lacks, which fails with {@link TranslationSyncFailed}.
  * @param baseTranslationKeys The base translation file keys.
  * @param currentTranslationsKeys The current translation file keys.
  * @param verbose Whether to emit detailed comparison diagnostics.
- * @param logger Logger used for comparison output.
+ * @param locale The locale being compared, reported by a failure.
  * @returns The comparison result: true if equal, false if different.
  */
 function compareMessageKeysNaive(
   baseTranslationKeys: MessageFormat,
   currentTranslationsKeys: MessageFormat,
   verbose: boolean,
-  logger: MonorepositoryLogger,
-): boolean {
-  logger.info("[compareMessageKeysNaive] Comparing translation keys.");
-  const baseKeys = extractMessageKeys(baseTranslationKeys, verbose, logger);
-  const currentKeys = extractMessageKeys(currentTranslationsKeys, verbose, logger);
+  locale: string,
+): Effect.Effect<boolean, TranslationSyncFailed, Presenter> {
+  return Effect.gen(function* () {
+    yield* Effect.logInfo("[compareMessageKeysNaive] Comparing translation keys.");
+    const baseKeys = yield* extractMessageKeys(baseTranslationKeys, verbose);
+    const currentKeys = yield* extractMessageKeys(currentTranslationsKeys, verbose);
 
-  logger.info(`[compareMessageKeysNaive] Extracted ${baseKeys.length} keys from the base translation file (en.json).`);
-  logger.info(`[compareMessageKeysNaive] Extracted ${currentKeys.length} keys from the current translation file.`);
+    yield* Effect.logInfo(`[compareMessageKeysNaive] Extracted ${baseKeys.length} keys from the base translation file (en.json).`);
+    yield* Effect.logInfo(`[compareMessageKeysNaive] Extracted ${currentKeys.length} keys from the current translation file.`);
 
-  if (baseKeys.length === currentKeys.length) {
-    logger.success("[compareMessageKeysNaive] Translation files have equal keys.");
-    return true;
-  }
-
-  // Safety check.
-  const missingKeysFromBase = currentKeys.filter((key) => !baseKeys.includes(key));
-  logger.info(`[compareMessageKeysNaive] Found ${missingKeysFromBase.length} missing keys from the base translation file.`);
-  if (missingKeysFromBase.length > 0) {
-    if (verbose) {
-      logger.error("The base translation file should be the source of truth for keys. Found extra keys in the current translation file.");
+    if (baseKeys.length === currentKeys.length) {
+      yield* (yield* Presenter).success("[compareMessageKeysNaive] Translation files have equal keys.");
+      return true;
     }
-    throw new Error(
-      `[arolariu.ro::compareMessageKeysNaive] Current translation file has extra keys that are not present in the base translation file!`,
-    );
-  }
 
-  const missingKeys = baseKeys.filter((key) => !currentKeys.includes(key));
-  logger.info("[compareMessageKeysNaive] KEY - BASE VALUE - CURRENT VALUE");
-
-  let duplicateValuesCount = 0;
-  for (const key of currentKeys) {
-    const baseValue = extractMessageValue(baseTranslationKeys, key, verbose, logger);
-    const currentValue = extractMessageValue(currentTranslationsKeys, key, verbose, logger);
-    if (areMessageValuesEqual(baseValue, currentValue, verbose, logger)) {
-      logger.warn(`[compareMessageKeysNaive] ${key} - ${JSON.stringify(baseValue)} - ${JSON.stringify(currentValue)}`);
-      duplicateValuesCount++;
+    // Safety check.
+    const missingKeysFromBase = currentKeys.filter((key) => !baseKeys.includes(key));
+    yield* Effect.logInfo(`[compareMessageKeysNaive] Found ${missingKeysFromBase.length} missing keys from the base translation file.`);
+    if (missingKeysFromBase.length > 0) {
+      if (verbose) {
+        yield* Effect.logError(
+          "The base translation file should be the source of truth for keys. Found extra keys in the current translation file.",
+        );
+      }
+      return yield* new TranslationSyncFailed({
+        message:
+          "[arolariu.ro::compareMessageKeysNaive] Current translation file has extra keys that are not present in the base translation file!",
+        locale,
+      });
     }
-  }
 
-  for (const key of missingKeys) {
-    const baseValue = JSON.stringify(extractMessageValue(baseTranslationKeys, key, verbose, logger));
-    const currentValue = JSON.stringify(extractMessageValue(currentTranslationsKeys, key, verbose, logger));
-    logger.error(`[compareMessageKeysNaive] ${key} - ${baseValue} - ${currentValue}`);
-  }
+    const missingKeys = baseKeys.filter((key) => !currentKeys.includes(key));
+    yield* Effect.logInfo("[compareMessageKeysNaive] KEY - BASE VALUE - CURRENT VALUE");
 
-  logger.warn(`[compareMessageKeysNaive] Found ${duplicateValuesCount} keys with same value between translation files.`);
-  logger.error(`[compareMessageKeysNaive] Found ${missingKeys.length} missing keys from the current translation file.`);
-  logger.info("[compareMessageKeysNaive] Finished comparing translation keys.");
-  return false;
+    let duplicateValuesCount = 0;
+    for (const key of currentKeys) {
+      const baseValue = yield* extractMessageValue(baseTranslationKeys, key, verbose);
+      const currentValue = yield* extractMessageValue(currentTranslationsKeys, key, verbose);
+      if (yield* areMessageValuesEqual(baseValue, currentValue, verbose, locale)) {
+        yield* Effect.logWarning(`[compareMessageKeysNaive] ${key} - ${JSON.stringify(baseValue)} - ${JSON.stringify(currentValue)}`);
+        duplicateValuesCount++;
+      }
+    }
+
+    for (const key of missingKeys) {
+      const baseValue = JSON.stringify(yield* extractMessageValue(baseTranslationKeys, key, verbose));
+      const currentValue = JSON.stringify(yield* extractMessageValue(currentTranslationsKeys, key, verbose));
+      yield* Effect.logError(`[compareMessageKeysNaive] ${key} - ${baseValue} - ${currentValue}`);
+    }
+
+    yield* Effect.logWarning(`[compareMessageKeysNaive] Found ${duplicateValuesCount} keys with same value between translation files.`);
+    yield* Effect.logError(`[compareMessageKeysNaive] Found ${missingKeys.length} missing keys from the current translation file.`);
+    yield* Effect.logInfo("[compareMessageKeysNaive] Finished comparing translation keys.");
+    return false;
+  });
 }
 
 /**
- * This function will compare the values of two translation messages.
+ * Compares the values of two translation messages.
  *
  * @param baseTranslationMessage The base message object.
  * @param currentTranslationMessage The current message object.
  * @param verbose Whether to emit detailed comparison diagnostics.
- * @param logger Logger used for comparison output.
+ * @param locale The locale being compared, reported by a failure.
  * @returns The comparison result: true if the values are equal, false if some values are distinct.
  */
 function areMessageValuesEqual(
   baseTranslationMessage: Message,
   currentTranslationMessage: Message,
   verbose: boolean,
-  logger: MonorepositoryLogger,
-): boolean {
-  if (verbose) {
-    logger.debug("[areMessageValuesEqual] Comparing translation message values.");
-  }
+  locale: string,
+): Effect.Effect<boolean, TranslationSyncFailed, Presenter> {
+  return Effect.gen(function* () {
+    if (verbose) {
+      yield* Effect.logDebug("[areMessageValuesEqual] Comparing translation message values.");
+    }
 
-  const typeofBase = typeof baseTranslationMessage;
-  const typeofCurrent = typeof currentTranslationMessage;
-  if (verbose) {
-    logger.debug(`[areMessageValuesEqual] Base message type: ${typeofBase}`);
-    logger.debug(`[areMessageValuesEqual] Current message type: ${typeofCurrent}`);
-  }
+    const typeofBase = typeof baseTranslationMessage;
+    const typeofCurrent = typeof currentTranslationMessage;
+    if (verbose) {
+      yield* Effect.logDebug(`[areMessageValuesEqual] Base message type: ${typeofBase}`);
+      yield* Effect.logDebug(`[areMessageValuesEqual] Current message type: ${typeofCurrent}`);
+    }
 
-  const isSameType = typeofBase === typeofCurrent;
-  if (!isSameType) {
-    logger.info("[areMessageValuesEqual] Messages have different types, cannot be equal.");
-    return false;
-  }
+    if (typeofBase !== typeofCurrent) {
+      yield* Effect.logInfo("[areMessageValuesEqual] Messages have different types, cannot be equal.");
+      return false;
+    }
 
-  const isStringType = typeofBase === "string";
-  if (isStringType) {
-    const baseMessage = baseTranslationMessage as string;
-    const currentMessage = currentTranslationMessage as string;
-    return baseMessage.trim() === currentMessage.trim();
-  } else {
-    const baseMessageFormat = baseTranslationMessage as MessageFormat;
+    if (typeof baseTranslationMessage === "string") {
+      return baseTranslationMessage.trim() === (currentTranslationMessage as string).trim();
+    }
+
+    const baseMessageFormat = baseTranslationMessage;
     const currentMessageFormat = currentTranslationMessage as MessageFormat;
 
-    if (compareMessageKeysNaive(baseMessageFormat, currentMessageFormat, verbose, logger) === false) {
-      logger.info("[areMessageValuesEqual] MessageFormat objects have different keys, cannot be equal.");
+    if (!(yield* compareMessageKeysNaive(baseMessageFormat, currentMessageFormat, verbose, locale))) {
+      yield* Effect.logInfo("[areMessageValuesEqual] MessageFormat objects have different keys, cannot be equal.");
       return false;
     }
 
     // Iterate through every key-value pair in the base MessageFormat object
     // If any of the sub-messages are different, return false.
-    const baseMessageKeys = extractMessageKeys(baseMessageFormat, verbose, logger);
+    const baseMessageKeys = yield* extractMessageKeys(baseMessageFormat, verbose);
     let equalValuesCount = 0;
     for (const key of baseMessageKeys) {
       if (verbose) {
-        logger.debug(`[areMessageValuesEqual] Comparing sub-message for key: ${key}.`);
+        yield* Effect.logDebug(`[areMessageValuesEqual] Comparing sub-message for key: ${key}.`);
       }
-      const baseSubMessage = extractMessageValue(baseMessageFormat, key, verbose, logger);
-      const currSubMessage = extractMessageValue(currentMessageFormat, key, verbose, logger);
-      const areEqual = areMessageValuesEqual(baseSubMessage, currSubMessage, verbose, logger);
-      if (areEqual === false && verbose) {
-        logger.debug(`[areMessageValuesEqual] Sub-messages for key: ${key} are different.`);
+      const baseSubMessage = yield* extractMessageValue(baseMessageFormat, key, verbose);
+      const currSubMessage = yield* extractMessageValue(currentMessageFormat, key, verbose);
+      const areEqual = yield* areMessageValuesEqual(baseSubMessage, currSubMessage, verbose, locale);
+      if (!areEqual && verbose) {
+        yield* Effect.logDebug(`[areMessageValuesEqual] Sub-messages for key: ${key} are different.`);
       }
       equalValuesCount += areEqual ? 1 : 0;
     }
 
-    logger.info("[areMessageValuesEqual] Finished comparing MessageFormat objects.");
-    logger.warn(
+    yield* Effect.logInfo("[areMessageValuesEqual] Finished comparing MessageFormat objects.");
+    yield* Effect.logWarning(
       `[areMessageValuesEqual] Found ${equalValuesCount} equal sub-message values out of ${baseMessageKeys.length} total sub-messages.`,
     );
     return equalValuesCount === baseMessageKeys.length;
-  }
+  });
 }
 
 /**
- * This function will extract all keys from a MessageFormat object.
+ * Extracts all keys from a MessageFormat object.
  * The keys are extracted recursively, so if the value of a key is another MessageFormat object, the function will extract the keys from that object as well.
  *
  * Whenever a key is a string, the function will add it to the keys array.
  * Whenever a key is a MessageFormat object, the function will recursively call itself with the value of the key, and append a dot (.) to the key - e.g. "pages.domains.services."
  * @param messages The translation tree whose compound leaf keys are extracted.
  * @param verbose Whether to emit recursive extraction diagnostics.
- * @param logger Logger used for extraction diagnostics.
  * @returns Compound translation keys in traversal order.
  */
-function extractMessageKeys(messages: MessageFormat, verbose: boolean, logger: MonorepositoryLogger): string[] {
-  const keys: string[] = [];
+function extractMessageKeys(messages: MessageFormat, verbose: boolean): Effect.Effect<string[]> {
+  return Effect.gen(function* () {
+    const keys: string[] = [];
 
-  if (verbose) {
-    logger.debug(`[extractMessageKeys] MessageFormat object: ${JSON.stringify(messages)}`);
-  }
-
-  for (const key in messages) {
     if (verbose) {
-      logger.debug(`[extractMessageKeys] Extracting key: ${key} from message.`);
+      yield* Effect.logDebug(`[extractMessageKeys] MessageFormat object: ${JSON.stringify(messages)}`);
     }
-    if (typeof messages[key] === "string") {
-      keys.push(key);
-    } else {
-      if (verbose) {
-        logger.debug(`[extractMessageKeys] Key ${key} is a MessageFormat object. Extracting subkeys.`);
-      }
-      const subKeys = extractMessageKeys(messages[key] as MessageFormat, verbose, logger);
-      subKeys.forEach((subKey) => keys.push(`${key}.${subKey}`));
-    }
-  }
 
-  if (verbose) {
-    logger.debug(`[extractMessageKeys] Extracted keys from translation file: ${keys.length}`);
-  }
-  return keys;
+    for (const key in messages) {
+      if (verbose) {
+        yield* Effect.logDebug(`[extractMessageKeys] Extracting key: ${key} from message.`);
+      }
+      if (typeof messages[key] === "string") {
+        keys.push(key);
+      } else {
+        if (verbose) {
+          yield* Effect.logDebug(`[extractMessageKeys] Key ${key} is a MessageFormat object. Extracting subkeys.`);
+        }
+        const subKeys = yield* extractMessageKeys(messages[key] as MessageFormat, verbose);
+        subKeys.forEach((subKey) => keys.push(`${key}.${subKey}`));
+      }
+    }
+
+    if (verbose) {
+      yield* Effect.logDebug(`[extractMessageKeys] Extracted keys from translation file: ${keys.length}`);
+    }
+    return keys;
+  });
 }
 
 /**
- * This function will find the keys that are missing from the translated keys.
+ * Finds the keys that are missing from the translated keys.
  * The function will compare the keys from the English translation with the keys from the translated file.
  * @param englishKeys The array of keys from the English translation.
  * @param translatedKeys The array of keys from the translated file.
  * @param verbose Whether to emit per-key diagnostics.
- * @param logger Logger used for missing-key output.
  * @returns An array of keys that are missing from the translated file.
  */
-function findMissingKeys(englishKeys: string[], translatedKeys: string[], verbose: boolean, logger: MonorepositoryLogger): string[] {
-  const missingKeys: string[] = [];
+function findMissingKeys(englishKeys: string[], translatedKeys: string[], verbose: boolean): Effect.Effect<string[]> {
+  return Effect.gen(function* () {
+    const missingKeys: string[] = [];
 
-  for (const englishKey of englishKeys) {
-    if (verbose) {
-      logger.debug(`[findMissingKeys] Checking key: ${englishKey}.`);
+    for (const englishKey of englishKeys) {
+      if (verbose) {
+        yield* Effect.logDebug(`[findMissingKeys] Checking key: ${englishKey}.`);
+      }
+      if (!translatedKeys.includes(englishKey)) {
+        missingKeys.push(englishKey);
+      }
     }
-    if (!translatedKeys.includes(englishKey)) {
-      missingKeys.push(englishKey);
+
+    if (missingKeys.length !== 0) {
+      yield* Effect.logInfo(`[findMissingKeys] Number of found missing keys: ${missingKeys.length}`);
+      yield* Effect.logInfo(`[findMissingKeys] Missing keys: ${JSON.stringify(missingKeys)}`);
     }
-  }
 
-  if (missingKeys.length !== 0) {
-    logger.info(`[findMissingKeys] Number of found missing keys: ${missingKeys.length}`);
-    logger.info(`[findMissingKeys] Missing keys: ${JSON.stringify(missingKeys)}`);
-  }
-
-  return missingKeys;
+    return missingKeys;
+  });
 }
 
 /**
- * This function will write the missing translation keys to a file.
- * A missing translation key can be either a string or a MessageFormat object.
- * The function will write the missing keys to a JSON file.
+ * Adds one missing compound key, as an empty leaf string, to a translation tree.
  *
  * @param existing The mutable translation tree receiving the new key.
  * @param compoundKey The dot-delimited missing key to add.
  * @param verbose Whether to emit segment diagnostics.
- * @param logger Logger used for segment diagnostics.
+ * @returns An effect that mutates `existing`.
  */
-function addMissingKey(existing: MessageFormat, compoundKey: string, verbose: boolean, logger: MonorepositoryLogger): void {
-  let cursor: MessageFormat = existing;
-  const parts = compoundKey.split(".");
-  for (const [idx, part] of parts.entries()) {
-    if (part === undefined) continue;
-    const isLeaf = idx === parts.length - 1;
-    if (isLeaf) {
-      (cursor as Record<string, Message>)[part] = "";
-      return;
+function addMissingKey(existing: MessageFormat, compoundKey: string, verbose: boolean): Effect.Effect<void> {
+  return Effect.gen(function* () {
+    let cursor: MessageFormat = existing;
+    const parts = compoundKey.split(".");
+    for (const [idx, part] of parts.entries()) {
+      const isLeaf = idx === parts.length - 1;
+      if (isLeaf) {
+        (cursor as Record<string, Message>)[part] = "";
+        return;
+      }
+      if (!(part in cursor)) (cursor as Record<string, MessageFormat>)[part] = {} as MessageFormat;
+      if (verbose) {
+        yield* Effect.logDebug(`[writeTranslationKeysFile] Adding key segment: ${part}`);
+      }
+      cursor = cursor[part] as MessageFormat;
     }
-    if (!(part in cursor)) (cursor as Record<string, MessageFormat>)[part] = {} as MessageFormat;
-    if (verbose) {
-      logger.debug(`[writeTranslationKeysFile] Adding key segment: ${part}`);
-    }
-    cursor = cursor[part] as MessageFormat;
-  }
+  });
 }
 
 /**
  * Writes missing translation keys to a locale file.
  *
- * @param context The command context whose runtime owns the filesystem and logging.
  * @param filePath The locale file to update.
  * @param translationKeys The compound missing keys to add.
  * @param verbose Whether to emit key-segment diagnostics.
+ * @param locale The locale the file belongs to.
+ * @returns An effect that completes once the file holds every key.
  */
-async function writeTranslationKeysFile(
-  context: Readonly<CommandContext>,
+function writeTranslationKeysFile(
   filePath: string,
   translationKeys: readonly string[],
   verbose: boolean,
-): Promise<void> {
-  const {logger, files} = context.runtime;
-  try {
+  locale: string,
+): Effect.Effect<void, GenerateI18nError, FileSystem.FileSystem | Path.Path> {
+  return Effect.gen(function* () {
+    const fs = yield* FileSystem.FileSystem;
     let existingMessages: MessageFormat = {};
 
-    if (await files.exists(filePath)) {
-      logger.info(`[writeTranslationKeysFile] Translations file already exists: ${filePath}`);
-      const existingFile = await files.readText(filePath);
-      existingMessages = JSON.parse(existingFile);
+    if (yield* fs.exists(filePath)) {
+      yield* Effect.logInfo(`[writeTranslationKeysFile] Translations file already exists: ${filePath}`);
+      existingMessages = yield* parseMessages(yield* fs.readFileString(filePath), locale);
     } else {
-      logger.warn(`[writeTranslationKeysFile] File does not exist: ${filePath}`);
-      await files.writeText(filePath, "{}");
-      logger.warn(`[writeTranslationKeysFile] Created file: ${filePath}`);
+      yield* Effect.logWarning(`[writeTranslationKeysFile] File does not exist: ${filePath}`);
+      yield* writeTextAtomic(filePath, "{}");
+      yield* Effect.logWarning(`[writeTranslationKeysFile] Created file: ${filePath}`);
     }
 
-    for (const key of translationKeys) addMissingKey(existingMessages, key, verbose, logger);
-    await files.writeText(filePath, JSON.stringify(existingMessages, null, 2));
+    for (const key of translationKeys) {
+      yield* addMissingKey(existingMessages, key, verbose);
+    }
+    yield* writeTextAtomic(filePath, JSON.stringify(existingMessages, null, 2));
 
-    logger.info(`[writeTranslationKeysFile] Wrote missing keys to file: ${filePath}`);
-  } catch (error: unknown) {
-    logger.error(`[writeTranslationKeysFile] Error writing missing keys to file: ${filePath}`);
-    logger.error(`[writeTranslationKeysFile] Error details: ${error instanceof Error ? error.message : String(error)}`);
-    throw error;
-  }
+    yield* Effect.logInfo(`[writeTranslationKeysFile] Wrote missing keys to file: ${filePath}`);
+  }).pipe(
+    Effect.tapError((error) =>
+      Effect.andThen(
+        Effect.logError(`[writeTranslationKeysFile] Error writing missing keys to file: ${filePath}`),
+        Effect.logError(`[writeTranslationKeysFile] Error details: ${error.message}`),
+      ),
+    ),
+  );
 }
 
 /** Outcome of validating one target locale against the English source of truth. */
@@ -420,7 +455,6 @@ interface LocaleValidationResult {
 
 /**
  * Validates and synchronizes a single target locale against the English source.
- * @param context The command context whose runtime owns the filesystem and logging.
  * @param enTranslations The English translations (source of truth).
  * @param enKeys The extracted English translation keys.
  * @param targetLocale The target locale code (e.g., "ro", "fr").
@@ -428,147 +462,111 @@ interface LocaleValidationResult {
  * @param verbose Whether to enable verbose logging.
  * @returns The target locale file path and the number of missing keys that were added.
  */
-async function validateLocale(
-  context: Readonly<CommandContext>,
+function validateLocale(
   enTranslations: MessageFormat,
   enKeys: string[],
   targetLocale: string,
   translationsPath: string,
   verbose: boolean,
-): Promise<LocaleValidationResult> {
-  const {logger} = context.runtime;
-  const targetFile = path.resolve(translationsPath, `${targetLocale}.json`);
-  logger.section(`Validating ${targetLocale.toUpperCase()} translations`, "📋");
+): Effect.Effect<LocaleValidationResult, GenerateI18nError, GenerateRequirements> {
+  return Effect.gen(function* () {
+    const presenter = yield* Presenter;
+    const path = yield* Path.Path;
+    const targetFile = path.resolve(translationsPath, `${targetLocale}.json`);
+    yield* presenter.section(`Validating ${targetLocale.toUpperCase()} translations`, "📋");
 
-  const targetTranslations = await loadTranslationFile(context, targetFile, verbose);
-  const targetKeys = extractMessageKeys(targetTranslations, verbose, logger);
+    const targetTranslations = yield* loadTranslationFile(targetFile, targetLocale, verbose);
+    const targetKeys = yield* extractMessageKeys(targetTranslations, verbose);
 
-  logger.info(`[generateTranslations] Finding missing keys for ${targetLocale}.`);
-  const missingKeys = findMissingKeys(enKeys, targetKeys, verbose, logger);
+    yield* Effect.logInfo(`[generateTranslations] Finding missing keys for ${targetLocale}.`);
+    const missingKeys = yield* findMissingKeys(enKeys, targetKeys, verbose);
 
-  if (missingKeys.length > 0) {
-    logger.warn(`[generateTranslations] Writing ${missingKeys.length} missing keys to ${targetLocale}.json.`);
-    await writeTranslationKeysFile(context, targetFile, missingKeys, verbose);
-  } else {
-    logger.success(`[generateTranslations] No missing keys detected for ${targetLocale}.`);
-  }
+    if (missingKeys.length > 0) {
+      yield* Effect.logWarning(`[generateTranslations] Writing ${missingKeys.length} missing keys to ${targetLocale}.json.`);
+      yield* writeTranslationKeysFile(targetFile, missingKeys, verbose, targetLocale);
+    } else {
+      yield* presenter.success(`[generateTranslations] No missing keys detected for ${targetLocale}.`);
+    }
 
-  areMessageValuesEqual(enTranslations, targetTranslations, verbose, logger);
+    yield* areMessageValuesEqual(enTranslations, targetTranslations, verbose, targetLocale);
 
-  return {missingKeyCount: missingKeys.length, targetFile};
+    return {missingKeyCount: missingKeys.length, targetFile};
+  });
 }
 
+/** Locales validated against English, in order. */
+const SUPPORTED_LOCALES = ["ro", "fr"] as const;
+
 /**
- * Runs the i18n generator's business logic.
- * Validates all supported locales (Romanian and French) against the English source of truth.
- * @param context The command context whose runtime owns every ambient capability.
- * @param input Typed command input.
- * @returns The completion summary and every locale file this invocation modified.
+ * Validates every supported locale (Romanian and French) against the English source of truth and
+ * adds each missing key as an empty string.
+ *
+ * @remarks
+ * A nonempty `changedFiles` is the legacy negative result: the caller maps it to exit code `1`.
  */
-async function generateI18n(
-  context: Readonly<CommandContext>,
-  input: Readonly<GenerateLeafInput>,
-): Promise<GenerateLeafResult> {
-  const {logger, environment} = context.runtime;
-  const {verbose} = input;
+export const generateI18n: Effect.Effect<GenerateLeafResult, GenerateI18nError, GenerateRequirements> = Effect.gen(function* () {
+  const environment = yield* Environment;
+  const presenter = yield* Presenter;
+  const path = yield* Path.Path;
+  const verbose = yield* debugLogsEnabled;
 
-  logger.line([{text: "🔧 Configuration:", styles: ["cyan"]}]);
-  logger.line();
-  logger.line([
-    {text: "   Verbose: ", styles: ["gray"]},
-    {text: verbose ? "✅ Enabled" : "❌ Disabled", styles: [verbose ? "green" : "red"]},
-  ]);
-  logger.line([
-    {text: "   Working Directory: ", styles: ["gray"]},
-    {text: environment.cwd, styles: ["dim"]},
-  ]);
-  logger.line();
+  yield* presenter.line("stdout", "🔧 Configuration:");
+  yield* presenter.line("stdout", "");
+  yield* presenter.line("stdout", `   Verbose: ${verbose ? "✅ Enabled" : "❌ Disabled"}`);
+  yield* presenter.line("stdout", `   Working Directory: ${environment.cwd}`);
+  yield* presenter.line("stdout", "");
 
-  logger.info("[generateTranslations] Generating translations.");
-  const TRANSLATIONS_PATH = environment.cwd.concat("/sites/arolariu.ro/messages").replaceAll("\\", "/");
-  logger.info(`[generateTranslations] Base translation path set as:\n\t >> ${TRANSLATIONS_PATH}`);
+  yield* Effect.logInfo("[generateTranslations] Generating translations.");
+  const translationsPath = environment.cwd.concat("/sites/arolariu.ro/messages").replaceAll("\\", "/");
+  yield* Effect.logInfo(`[generateTranslations] Base translation path set as:\n\t >> ${translationsPath}`);
 
-  // Supported locales to validate against English (source of truth)
-  const SUPPORTED_LOCALES = ["ro", "fr"] as const;
+  const enTranslationsFile = path.resolve(translationsPath, "en.json");
 
-  const EN_TRANSLATIONS_FILE = path.resolve(TRANSLATIONS_PATH, "en.json");
+  yield* Effect.logInfo("[generateTranslations] Loading English translations (source of truth).");
+  const enTranslations = yield* loadTranslationFile(enTranslationsFile, "en", verbose);
 
-  logger.info("[generateTranslations] Loading English translations (source of truth).");
-  const enTranslations = await loadTranslationFile(context, EN_TRANSLATIONS_FILE, verbose);
+  yield* Effect.logInfo("[generateTranslations] Extracting English translation keys.");
+  const enKeys = yield* extractMessageKeys(enTranslations, verbose);
+  yield* presenter.line("stdout", `   Total English keys: ${enKeys.length}`);
 
-  logger.info("[generateTranslations] Extracting English translation keys.");
-  const enKeys = extractMessageKeys(enTranslations, verbose, logger);
-  logger.line([
-    {text: "   Total English keys: ", styles: ["gray"]},
-    {text: String(enKeys.length), styles: ["green"]},
-  ]);
+  // Sequential: each locale's diagnostics stay grouped under its own section.
+  const results = yield* Effect.forEach(
+    SUPPORTED_LOCALES,
+    (locale) => validateLocale(enTranslations, enKeys, locale, translationsPath, verbose),
+    {concurrency: 1},
+  );
+  const totalMissingKeys = results.reduce((total, result) => total + result.missingKeyCount, 0);
+  const changedFiles = results.filter((result) => result.missingKeyCount > 0).map((result) => result.targetFile);
 
-  // Validate each supported locale against English
-  let totalMissingKeys = 0;
-  const localeResults: Record<string, number> = {};
-  const changedFiles: string[] = [];
-
-  for (const locale of SUPPORTED_LOCALES) {
-    // eslint-disable-next-line no-await-in-loop
-    const result = await validateLocale(context, enTranslations, enKeys, locale, TRANSLATIONS_PATH, verbose);
-    localeResults[locale] = result.missingKeyCount;
-    totalMissingKeys += result.missingKeyCount;
-    if (result.missingKeyCount > 0) {
-      changedFiles.push(result.targetFile);
-    }
+  yield* presenter.line("stdout", "");
+  yield* presenter.success("i18n synchronization completed.");
+  yield* presenter.line("stdout", "📊 Summary:");
+  yield* presenter.line("stdout", `   English keys (source): ${enKeys.length}`);
+  for (const [index, locale] of SUPPORTED_LOCALES.entries()) {
+    const count = results[index]?.missingKeyCount ?? 0;
+    yield* presenter.line("stdout", `   ${locale.toUpperCase()}: ${count === 0 ? "✓ complete" : `${count} keys added`}`);
   }
-
-  logger.line();
-  logger.success("i18n synchronization completed.");
-  logger.line([{text: "📊 Summary:", styles: ["cyan"]}]);
-  logger.line([
-    {text: "   English keys (source): ", styles: ["gray"]},
-    {text: String(enKeys.length), styles: ["green"]},
-  ]);
-  for (const locale of SUPPORTED_LOCALES) {
-    const count = localeResults[locale] ?? 0;
-    logger.line([
-      {text: `   ${locale.toUpperCase()}: `, styles: ["gray"]},
-      {text: count === 0 ? "✓ complete" : `${count} keys added`, styles: [count === 0 ? "green" : "yellow"]},
-    ]);
-  }
-  logger.line([
-    {text: "   Total missing keys added: ", styles: ["gray"]},
-    {text: String(totalMissingKeys), styles: ["green"]},
-  ]);
+  yield* presenter.line("stdout", `   Total missing keys added: ${totalMissingKeys}`);
 
   return {
     summary: `i18n synchronization completed with ${String(totalMissingKeys)} missing key(s) added.`,
     changedFiles,
   };
-}
+}).pipe(Effect.withSpan("generate.i18n"));
 
 /**
- * Creates the i18n generator command.
+ * Temporary legacy invoker over {@link generateI18n} for the unmigrated orchestrator.
  *
- * @param runtimeFactory - Optional runtime factory; tests inject a fake instead of the Node adapter.
- * @returns The typed `generate:i18n` command object.
+ * @remarks
+ * Keeps the legacy exit contract: `1` when missing keys changed a locale file, otherwise `0`.
+ * Deleted in cohort 3 Task 3.3, when the orchestrator calls the Effect directly.
  */
-export function createGenerateI18nCommand(
-  runtimeFactory?: CommandRuntimeFactory,
-): MonorepoCommand<GenerateLeafInput, GenerateLeafResult> {
-  return new MonorepoCommand<GenerateLeafInput, GenerateLeafResult>(
-    {
-      metadata: {name: "generate:i18n"},
-      execute: generateI18n,
-      completion: (result) => ({
-        // Mirrors the pre-migration leaf's `totalMissingKeys` exit contract under the normative
-        // `CommandExitCode` shape: `0` when every locale already matched English, `1` when
-        // missing keys caused this invocation to change one or more locale files. The aggregate
-        // (`generate.ts`) stops before later leaves whenever this is nonzero.
-        exitCode: result.changedFiles.length > 0 ? 1 : 0,
-        human: (logger) => logger.success(result.summary),
-      }),
-    },
-    runtimeFactory,
-  );
-}
-
-/** Production singleton used by the aggregate CLI. */
-export const generateI18nCommand: MonorepoCommand<GenerateLeafInput, GenerateLeafResult> = createGenerateI18nCommand();
-
+export const generateI18nCommand: CommandInvoker<GenerateLeafInput, GenerateLeafResult> = legacyInvoker<
+  GenerateLeafInput,
+  GenerateLeafResult,
+  GenerateI18nError
+>(
+  "generate:i18n",
+  () => generateI18n,
+  (result) => (result.changedFiles.length > 0 ? 1 : 0),
+);

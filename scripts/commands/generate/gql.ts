@@ -1,107 +1,73 @@
 /**
- * @fileoverview GraphQL types generation command (placeholder implementation).
- * @module scripts/generate.gql
+ * @fileoverview GraphQL types generator (placeholder implementation) as an Effect program.
+ * @module scripts/commands/generate/gql
  *
  * @remarks
  * Current behavior is intentionally minimal: it writes a placeholder artifact to
- * `scripts/__generated__/gql` so the pipeline has a stable output location.
- *
- * Future work would likely include schema introspection + codegen.
- *
- * Every ambient effect (filesystem and the wall clock) is routed through the injected
- * {@link CommandContext.runtime} instead of touching Node globals directly.
+ * `scripts/__generated__/gql` so the pipeline has a stable output location. Future work would
+ * likely include schema introspection and codegen.
  */
 
-import path from "node:path";
-import {MonorepoCommand, type CommandContext, type CommandRuntimeFactory} from "../../common/commander.ts";
+import {DateTime, Effect, FileSystem, Path, type PlatformError} from "effect";
 
-/** Typed input accepted by every migrated `generate` leaf command. */
-export interface GenerateLeafInput {
-  /** Enables diagnostic output. */
-  readonly verbose: boolean;
-}
+import type {CommandInvoker} from "../../common/commander.ts";
+import {legacyInvoker} from "../../platform/bridge.ts";
+import {Environment} from "../../platform/Environment.ts";
+import {writeTextAtomic} from "../../platform/Files.ts";
+import {debugLogsEnabled, Presenter} from "../../platform/Output.ts";
+import type {GenerateLeafInput, GenerateLeafResult, GenerateRequirements} from "./env.ts";
 
-/** Typed business result produced by every migrated `generate` leaf command. */
-export interface GenerateLeafResult {
-  /** Human-readable completion summary rendered by the command's human presentation. */
-  readonly summary: string;
-  /** Paths of every file this command created or modified. */
-  readonly changedFiles: readonly string[];
-}
+/** Completion summary of the placeholder generator. */
+const SUMMARY = "GraphQL generation completed (placeholder).";
 
 /**
- * GraphQL Types generator business logic (placeholder).
+ * Writes the GraphQL placeholder artifact.
  *
  * @remarks
- * Placeholder implementation that can be extended to:
- *  1. Fetch remote schema (introspection)
- *  2. Generate TypeScript types via codegen
- *  3. Output artifacts into a designated cache folder
- *
- * @param context - Command context whose runtime owns the filesystem, clock, and logging.
- * @param input - Typed command input.
- * @returns The completion summary and every file this invocation created or modified.
+ * Placeholder implementation that can be extended to fetch a remote schema (introspection),
+ * generate TypeScript types via codegen, and output artifacts into a designated cache folder.
  */
-async function generateGraphql(
-  context: Readonly<CommandContext>,
-  input: Readonly<GenerateLeafInput>,
-): Promise<GenerateLeafResult> {
-  const {logger, environment, files, clock} = context.runtime;
-  const {verbose} = input;
+export const generateGraphql: Effect.Effect<GenerateLeafResult, PlatformError.PlatformError, GenerateRequirements> = Effect.gen(
+  function* () {
+    const environment = yield* Environment;
+    const presenter = yield* Presenter;
+    const fs = yield* FileSystem.FileSystem;
+    const path = yield* Path.Path;
+    const verbose = yield* debugLogsEnabled;
 
-  logger.line([{text: "🔧 Configuration:", styles: ["cyan"]}]);
-  logger.line();
-  logger.line([
-    {text: "   Verbose: ", styles: ["gray"]},
-    {text: verbose ? "✅ Enabled" : "❌ Disabled", styles: [verbose ? "green" : "red"]},
-  ]);
-  logger.line([
-    {text: "   Working Directory: ", styles: ["gray"]},
-    {text: environment.cwd, styles: ["dim"]},
-  ]);
-  logger.line();
+    yield* presenter.line("stdout", "🔧 Configuration:");
+    yield* presenter.line("stdout", "");
+    yield* presenter.line("stdout", `   Verbose: ${verbose ? "✅ Enabled" : "❌ Disabled"}`);
+    yield* presenter.line("stdout", `   Working Directory: ${environment.cwd}`);
+    yield* presenter.line("stdout", "");
 
-  // Placeholder logic – ensure folder exists.
-  const outDir = path.resolve(environment.cwd, "scripts", "__generated__", "gql");
-  await files.createDirectory(outDir, {recursive: true});
-  if (verbose) {
-    logger.debug(`Ensured output directory: ${outDir}`);
-  }
+    // Placeholder logic – ensure folder exists.
+    const outDir = path.resolve(environment.cwd, "scripts", "__generated__", "gql");
+    yield* fs.makeDirectory(outDir, {recursive: true});
+    yield* Effect.logDebug(`Ensured output directory: ${outDir}`);
 
-  // In the future replace with actual schema + codegen steps.
-  const placeholder = `// Generated at ${clock.isoTimestamp()}\n// TODO: Integrate GraphQL Codegen here.\n`;
-  const outputFile = path.join(outDir, "README.placeholder.txt");
-  await files.writeText(outputFile, placeholder);
-  if (verbose) {
-    logger.debug("Wrote placeholder artifact.");
-  }
+    // In the future replace with actual schema + codegen steps.
+    const placeholder = `// Generated at ${DateTime.formatIso(yield* DateTime.now)}\n// TODO: Integrate GraphQL Codegen here.\n`;
+    const outputFile = path.join(outDir, "README.placeholder.txt");
+    yield* writeTextAtomic(outputFile, placeholder);
+    yield* Effect.logDebug("Wrote placeholder artifact.");
 
-  logger.success("GraphQL generation completed (placeholder).");
-  return {summary: "GraphQL generation completed (placeholder).", changedFiles: [outputFile]};
-}
+    yield* presenter.success(SUMMARY);
+    return {summary: SUMMARY, changedFiles: [outputFile]};
+  },
+).pipe(Effect.withSpan("generate.gql"));
 
 /**
- * Creates the GraphQL generator command.
+ * Temporary legacy invoker over {@link generateGraphql} for the unmigrated orchestrator.
  *
- * @param runtimeFactory - Optional runtime factory; tests inject a fake instead of the Node adapter.
- * @returns The typed `generate:gql` command object.
+ * @remarks Deleted in cohort 3 Task 3.3, when the orchestrator calls the Effect directly.
  */
-export function createGenerateGraphqlCommand(
-  runtimeFactory?: CommandRuntimeFactory,
-): MonorepoCommand<GenerateLeafInput, GenerateLeafResult> {
-  return new MonorepoCommand<GenerateLeafInput, GenerateLeafResult>(
-    {
-      metadata: {name: "generate:gql"},
-      execute: generateGraphql,
-      completion: (result) => ({
-        exitCode: 0,
-        human: (logger) => logger.success(result.summary),
-      }),
-    },
-    runtimeFactory,
-  );
-}
-
-/** Production singleton used by the aggregate CLI. */
-export const generateGraphqlCommand: MonorepoCommand<GenerateLeafInput, GenerateLeafResult> = createGenerateGraphqlCommand();
-
+export const generateGraphqlCommand: CommandInvoker<GenerateLeafInput, GenerateLeafResult> = legacyInvoker<
+  GenerateLeafInput,
+  GenerateLeafResult,
+  PlatformError.PlatformError
+>(
+  "generate:gql",
+  () => generateGraphql,
+  () => 0,
+);

@@ -1,24 +1,28 @@
 // @vitest-environment node
 /**
- * @fileoverview Pure environment helper and prompt compatibility tests.
- * @module scripts.generate.env.test
+ * @fileoverview Environment generator tests: pure helpers, prompts, exp fetch, and characterization.
+ * @module scripts/commands/generate/env.test
+ *
+ * @remarks
+ * The Effect generator runs against `makeTestLayer`: in-memory files, scripted exp HTTP responses,
+ * scripted prompts, and the test clock. Only `@azure/identity` (the Azure SDK boundary) is mocked.
  */
 
 import {join} from "node:path";
-import {PassThrough} from "node:stream";
+
+import {Effect, FileSystem, type PlatformError} from "effect";
+import {TestClock} from "effect/testing";
 import {afterEach, describe, expect, it, vi} from "vitest";
 
 import type {CommandInvoker} from "../../common/commander.ts";
 import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "../../common/logger.ts";
-import {createTerminalPromptProvider, type PromptProvider} from "../../common/prompts.ts";
-import type {HttpClient, HttpRequest, HttpResponse, RuntimeEnvironment} from "../../common/runtime.ts";
-import {
-  createHttpResponse,
-  createMemoryFileSystem,
-  createTestRuntimeFactory,
-  repositoryFixtureRoot,
-} from "../../common/runtime.testing.ts";
-import type {GenerateLeafInput, GenerateLeafResult} from "./env.ts";
+import {createTestRuntimeFactory} from "../../common/runtime.testing.ts";
+import {legacyInvoker} from "../../platform/bridge.ts";
+import {PromptUnavailable} from "../../platform/Prompts.ts";
+import {effectTest, makeTestLayer, repositoryFixtureRoot, type TestHarness} from "../../platform/testing.ts";
+import {generateEnvironment, type GenerateEnvironmentError, type GenerateLeafInput, type GenerateLeafResult} from "./env.ts";
+import {ExpConfigurationUnavailable, MissingEnvironmentValues} from "./errors.ts";
+import {createGenerateCommand} from "./index.ts";
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -27,6 +31,28 @@ afterEach(() => {
   vi.doUnmock("@azure/identity");
 });
 
+/**
+ * Reads a harness file as text.
+ *
+ * @param path - Absolute path, or a path relative to the harness working directory.
+ * @returns The file text.
+ */
+function readText(path: string): Effect.Effect<string, PlatformError.PlatformError, FileSystem.FileSystem> {
+  return Effect.flatMap(FileSystem.FileSystem, (fs) => fs.readFileString(path));
+}
+
+/**
+ * Returns every semantic `[arolariu::…]` record without its trailing newline.
+ *
+ * @param harness - The harness that captured the run.
+ * @returns The semantic records as stream/text pairs, in emission order.
+ */
+function semanticLines(harness: TestHarness): readonly Readonly<{stream: string; text: string}>[] {
+  return harness
+    .output()
+    .filter((record) => record.text.startsWith("[arolariu::"))
+    .map(({stream, text}) => ({stream, text: text.replace(/\n$/u, "")}));
+}
 describe("parseEnvironmentFile", () => {
   it("ignores non-assignments, splits on the first equals sign, unwraps matching quotes, and lets the last assignment win", async () => {
     const {parseEnvironmentFile} = await import("./env.ts");
@@ -143,79 +169,68 @@ describe("appendMissingEnvironmentValues", () => {
   });
 });
 
-describe("generateEnvironmentCommand", () => {
-  it("preserves every supported Azure runtime identity value during local regeneration", async () => {
-    const files = createMemoryFileSystem({
-      ".env": [
-        "SITE_ENV=DEVELOPMENT",
-        "SITE_NAME=dev.arolariu.ro",
-        "SITE_URL=https://localhost:3000",
-        "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_existing",
-        "CLERK_SECRET_KEY=sk_test_existing",
-        "USE_CDN=false",
-        "AZURE_CLIENT_ID=existing-client",
-        "AZURE_TENANT_ID=existing-tenant",
-        "AZURE_SUBSCRIPTION_ID=existing-subscription",
-        "UNSUPPORTED_LOCAL_VALUE=must-not-be-reemitted",
-      ].join("\n"),
-    });
-    const confirm = vi.fn<PromptProvider["confirm"]>().mockResolvedValue(false);
-    const prompts: PromptProvider = {
-      confirm,
-      select: async <TValue extends string>(
-        _message: string,
-        choices: readonly Readonly<{value: TValue; label: string}>[],
-      ): Promise<TValue> => {
-        const selected = choices[0]?.value;
-        if (selected === undefined) {
-          throw new Error("A test choice is required.");
-        }
-        return selected;
+describe("generateEnvironment", () => {
+  const completeEnvContent = [
+    "SITE_ENV=DEVELOPMENT",
+    "SITE_NAME=dev.arolariu.ro",
+    "SITE_URL=https://localhost:3000",
+    "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_existing",
+    "CLERK_SECRET_KEY=sk_test_existing",
+    "USE_CDN=false",
+  ].join("\n");
+
+  {
+    // An empty prompt queue in a TTY dies on any prompt, so completing proves no prompt ran.
+    const harness = makeTestLayer({
+      environment: {stdinIsTTY: true},
+      files: {
+        ".env": [
+          completeEnvContent,
+          "AZURE_CLIENT_ID=existing-client",
+          "AZURE_TENANT_ID=existing-tenant",
+          "AZURE_SUBSCRIPTION_ID=existing-subscription",
+          "UNSUPPORTED_LOCAL_VALUE=must-not-be-reemitted",
+        ].join("\n"),
       },
-      text: vi.fn<PromptProvider["text"]>().mockResolvedValue(""),
-      secret: vi.fn<PromptProvider["secret"]>().mockResolvedValue(""),
-    };
+    });
+    effectTest(
+      "preserves every supported Azure runtime identity value during local regeneration without prompting",
+      () =>
+        Effect.gen(function* () {
+          // Act
+          yield* generateEnvironment;
 
-    const {createGenerateEnvironmentCommand} = await import("./env.ts");
-    const command = createGenerateEnvironmentCommand(createTestRuntimeFactory({files, prompts}));
-
-    const execution = await command.invoke({verbose: false}, {presentation: "silent"});
-
-    expect(execution).toMatchObject({status: "completed", exitCode: 0});
-    expect(confirm).not.toHaveBeenCalled();
-    const generatedText = await files.readText(".env");
-    expect(generatedText).toContain("AZURE_CLIENT_ID=existing-client");
-    expect(generatedText).toContain("AZURE_TENANT_ID=existing-tenant");
-    expect(generatedText).toContain("AZURE_SUBSCRIPTION_ID=existing-subscription");
-    expect(generatedText).not.toContain("UNSUPPORTED_LOCAL_VALUE");
-  });
+          // Assert
+          const generatedText = yield* readText(".env");
+          expect(generatedText).toContain("AZURE_CLIENT_ID=existing-client");
+          expect(generatedText).toContain("AZURE_TENANT_ID=existing-tenant");
+          expect(generatedText).toContain("AZURE_SUBSCRIPTION_ID=existing-subscription");
+          expect(generatedText).not.toContain("UNSUPPORTED_LOCAL_VALUE");
+        }),
+      harness.layer,
+    );
+  }
 
   it("stops aggregate generation and propagates a real environment generator failure", async () => {
-    const files = createMemoryFileSystem({".env": ""});
-    const environment: RuntimeEnvironment = {
-      variables: {INFRA: "azure"},
-      cwd: repositoryFixtureRoot,
-      executablePath: "/usr/bin/node",
-      platform: "linux",
-      architecture: "x64",
-      stdinIsTTY: false,
-      stdoutIsTTY: false,
-      isCI: true,
-    };
-    const http: HttpClient = {
-      request: async (): Promise<HttpResponse> => createHttpResponse(503, "unavailable"),
-    };
+    // Arrange
+    const harness = makeTestLayer({
+      files: {".env": ""},
+      environment: {variables: {INFRA: "azure"}, isCI: true},
+      http: [{match: () => true, respond: {status: 503, body: "unavailable"}}],
+    });
     const sink = new InMemoryLoggerSink();
     const logger = new MonorepositoryConsoleLogger("generate", {color: false, sink});
-
-    const {createGenerateEnvironmentCommand} = await import("./env.ts");
-    const {createGenerateCommand} = await import("./index.ts");
     const gqlInvoke = vi.fn<CommandInvoker<GenerateLeafInput, GenerateLeafResult>["invoke"]>();
     const unusedLeaf: CommandInvoker<GenerateLeafInput, GenerateLeafResult> = {invoke: gqlInvoke};
     const command = createGenerateCommand(
       {
-        // The real environment generator, wired to a failing exp endpoint, is the child under test.
-        env: createGenerateEnvironmentCommand(createTestRuntimeFactory({files, environment, http})),
+        // The real environment generator, bridged like the production shim over a failing exp endpoint.
+        env: legacyInvoker<GenerateLeafInput, GenerateLeafResult, GenerateEnvironmentError>(
+          "generate:env",
+          () => generateEnvironment,
+          () => 0,
+          () => harness.layer,
+        ),
         i18n: unusedLeaf,
         gql: unusedLeaf,
         artifacts: {invoke: vi.fn()},
@@ -223,73 +238,55 @@ describe("generateEnvironmentCommand", () => {
       createTestRuntimeFactory({logger}),
     );
 
-    const execution = await command.invoke(
-      {verbose: false, env: true, i18n: false, gql: true, artifacts: false},
-      {presentation: "human"},
-    );
+    // Act
+    const execution = await command.invoke({verbose: false, env: true, i18n: false, gql: true, artifacts: false}, {presentation: "human"});
 
+    // Assert
     expect(execution).toMatchObject({status: "completed", exitCode: 1, value: {completed: [], failed: "env"}});
     expect(gqlInvoke).not.toHaveBeenCalled();
-
     const retained = sink.records.map((record) => record.text).join("\n");
     expect(retained).toContain("exp returned 503");
     expect(retained).not.toContain("Running GraphQL types generator");
     expect(retained).not.toContain("All requested generation tasks completed");
   });
 
-  it("uses the injected prompt provider, redacts entered secrets, and never writes directly to console", async () => {
-    const files = createMemoryFileSystem({".env": ""});
-    const consoleSpies = ["debug", "info", "warn", "error", "log"].map((level) =>
-      vi.spyOn(console, level as "debug").mockImplementation(() => undefined),
-    );
+  {
     const publishable = "pk_test_generator-publishable";
     const secretValue = "sk_test_generator-secret";
-    const text = vi.fn<PromptProvider["text"]>(async () => "local-value");
-    const secretPrompt = vi.fn<PromptProvider["secret"]>(async (message) =>
-      message.includes("NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY") ? publishable : secretValue,
+    const harness = makeTestLayer({
+      environment: {stdinIsTTY: true},
+      files: {".env": ""},
+      // confirm, SITE_ENV, SITE_NAME, SITE_URL (text), the two Clerk keys (secret), USE_CDN (text).
+      prompts: [true, "DEVELOPMENT", "local-value", "https://localhost:3000", publishable, secretValue, "false"],
+      verbose: true,
+    });
+    effectTest(
+      "uses the Prompts service, never writes to the console, and keeps prompted secrets out of the output",
+      () =>
+        Effect.gen(function* () {
+          // Arrange
+          const consoleSpies = ["debug", "info", "warn", "error", "log"].map((level) =>
+            vi.spyOn(console, level as "debug").mockImplementation(() => undefined),
+          );
+
+          // Act
+          const result = yield* generateEnvironment;
+
+          // Assert
+          expect(result.summary).toBe("Generated 6 environment variable(s).");
+          expect(consoleSpies.every((spy) => spy.mock.calls.length === 0)).toBe(true);
+          const output = JSON.stringify(harness.output());
+          expect(output).toContain("🔐 [4/6] Requesting NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY (hidden).");
+          expect(output).toContain("🔐 [5/6] Requesting CLERK_SECRET_KEY (hidden).");
+          expect(output).not.toContain(publishable);
+          expect(output).not.toContain(secretValue);
+          const written = yield* readText(".env");
+          expect(written).toContain(`NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${publishable}`);
+          expect(written).toContain(`CLERK_SECRET_KEY=${secretValue}`);
+        }),
+      harness.layer,
     );
-    const confirm = vi.fn<PromptProvider["confirm"]>().mockResolvedValue(true);
-    const prompts: PromptProvider = {
-      confirm,
-      select: async <TValue extends string>(
-        _message: string,
-        choices: readonly Readonly<{value: TValue; label: string}>[],
-      ): Promise<TValue> => {
-        const selected = choices[0]?.value;
-        if (selected === undefined) {
-          throw new Error("A test choice is required.");
-        }
-        return selected;
-      },
-      text,
-      secret: secretPrompt,
-    };
-    const sink = new InMemoryLoggerSink();
-    const logger = new MonorepositoryConsoleLogger("generate::env", {color: false, sink});
-    // Spies on the shared prototype method (not an instance monkeypatch) because the effective-
-    // verbosity fix in `generateEnvironment` forks its own logger scope, so redaction happens on
-    // a distinct forked instance that still shares this logger's `#state` redaction set.
-    const redactSpy = vi.spyOn(MonorepositoryConsoleLogger.prototype, "redact");
-
-    const {createGenerateEnvironmentCommand} = await import("./env.ts");
-    const command = createGenerateEnvironmentCommand(createTestRuntimeFactory({files, prompts, logger}));
-
-    const execution = await command.invoke({verbose: false}, {presentation: "silent"});
-
-    expect(execution).toMatchObject({status: "completed", exitCode: 0});
-    expect(confirm).toHaveBeenCalledOnce();
-    expect(text).toHaveBeenCalled();
-    expect(secretPrompt.mock.calls.map(([message]) => message)).toEqual(["NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY", "CLERK_SECRET_KEY"]);
-    const redactions = redactSpy.mock.calls.map(([value]) => value);
-    expect(redactions).toContain(publishable);
-    expect(redactions).toContain(secretValue);
-    expect(consoleSpies.every((spy) => spy.mock.calls.length === 0)).toBe(true);
-    const retained = JSON.stringify({records: sink.records});
-    expect(retained).not.toContain(publishable);
-    expect(retained).not.toContain(secretValue);
-    const written = await files.readText(".env");
-    expect(written).toContain(secretValue);
-  });
+  }
 
   it("does not load Azure identity merely by importing the module", async () => {
     vi.resetModules();
@@ -301,95 +298,99 @@ describe("generateEnvironmentCommand", () => {
       appendMissingEnvironmentValues: expect.any(Function),
       parseEnvironmentFile: expect.any(Function),
       quoteIfNeeded: expect.any(Function),
-      createGenerateEnvironmentCommand: expect.any(Function),
+      generateEnvironment: expect.any(Object),
     });
   });
+
+  {
+    const secretValue = "test-secret-value-that-must-not-be-logged";
+    const harness = makeTestLayer({
+      files: {".env": completeEnvContent.replace("sk_test_existing", secretValue)},
+      environment: {variables: {INFRA: "local", VERBOSE: "true", SITE_ENV: "VALUE_THAT_MUST_NOT_BE_LOGGED"}},
+    });
+    effectTest(
+      "loads Azure identity lazily and logs key names, never environment or secret values, under VERBOSE=true",
+      () =>
+        Effect.gen(function* () {
+          // Arrange
+          vi.doMock("@azure/identity", () => {
+            throw new Error("Azure identity loaded eagerly");
+          });
+
+          // Act
+          yield* generateEnvironment;
+
+          // Assert
+          const output = harness.output().map((record) => record.text);
+          expect(output.some((text) => text.includes("File content generated successfully"))).toBe(true);
+          expect(output.join("")).toContain("SITE_ENV");
+          expect(output.join("")).not.toContain("VALUE_THAT_MUST_NOT_BE_LOGGED");
+          expect(output.join("")).not.toContain(secretValue);
+        }),
+      harness.layer,
+    );
+  }
 
   describe("effective verbosity (VERBOSE environment override)", () => {
-    const completeEnvContent = [
-      "SITE_ENV=DEVELOPMENT",
-      "SITE_NAME=dev.arolariu.ro",
-      "SITE_URL=https://localhost:3000",
-      "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_existing",
-      "CLERK_SECRET_KEY=sk_test_existing",
-      "USE_CDN=false",
-    ].join("\n");
+    const debugLine = "[arolariu::generate:env] 🐛 SITE_ENV was evaluated without logging its value.\n";
 
-    function buildTestEnvironment(variables: Readonly<Record<string, string | undefined>>): RuntimeEnvironment {
-      return {
-        variables,
-        cwd: repositoryFixtureRoot,
-        executablePath: "/usr/bin/node",
-        platform: "linux",
-        architecture: "x64",
-        stdinIsTTY: false,
-        stdoutIsTTY: false,
-        isCI: true,
-      };
+    {
+      const harness = makeTestLayer({files: {".env": completeEnvContent}, environment: {variables: {VERBOSE: "true"}, isCI: true}});
+      effectTest(
+        "emits a real debug record from VERBOSE=true even without the --verbose flag",
+        () =>
+          Effect.gen(function* () {
+            // Act
+            yield* generateEnvironment;
+
+            // Assert
+            expect(harness.output()).toContainEqual({stream: "stdout", text: debugLine});
+            expect(harness.output()).toContainEqual({stream: "stdout", text: "   Verbose: ✅ Enabled\n"});
+          }),
+        harness.layer,
+      );
     }
 
-    it("emits a real debug record from VERBOSE=true even without the --verbose CLI flag", async () => {
-      const files = createMemoryFileSystem({".env": completeEnvContent});
-      const sink = new InMemoryLoggerSink();
-      // `verbose: false` mirrors production: `commander.ts` derives the invocation logger's own
-      // verbosity from the CLI flag alone (see `readVerboseFlag`), never from `VERBOSE`.
-      const logger = new MonorepositoryConsoleLogger("generate::env", {color: false, verbose: false, sink});
-      const environment = buildTestEnvironment({VERBOSE: "true"});
+    {
+      const harness = makeTestLayer({files: {".env": completeEnvContent}, environment: {variables: {}, isCI: true}});
+      effectTest(
+        "suppresses debug diagnostics when both the flag and VERBOSE are false",
+        () =>
+          Effect.gen(function* () {
+            // Act
+            yield* generateEnvironment;
 
-      const {createGenerateEnvironmentCommand} = await import("./env.ts");
-      const command = createGenerateEnvironmentCommand(createTestRuntimeFactory({files, logger, environment}));
+            // Assert
+            expect(harness.output()).not.toContainEqual({stream: "stdout", text: debugLine});
+            expect(harness.output()).toContainEqual({stream: "stdout", text: "   Verbose: ❌ Disabled\n"});
+          }),
+        harness.layer,
+      );
+    }
 
-      // `presentation: "human"` matches how the aggregate (`generate.ts`) invokes every leaf.
-      const execution = await command.invoke({verbose: false}, {presentation: "human"});
+    {
+      const harness = makeTestLayer({files: {".env": completeEnvContent}, verbose: true});
+      effectTest(
+        "emits verbose diagnostics for a verbose invocation",
+        () =>
+          Effect.gen(function* () {
+            // Act
+            yield* generateEnvironment;
 
-      expect(execution).toMatchObject({status: "completed", exitCode: 0});
-      expect(sink.records.some((record) => record.text.includes("SITE_ENV was evaluated without logging its value."))).toBe(true);
-    });
-
-    it("suppresses debug diagnostics when both the CLI flag and VERBOSE are false", async () => {
-      const files = createMemoryFileSystem({".env": completeEnvContent});
-      const sink = new InMemoryLoggerSink();
-      const logger = new MonorepositoryConsoleLogger("generate::env", {color: false, verbose: false, sink});
-      const environment = buildTestEnvironment({});
-
-      const {createGenerateEnvironmentCommand} = await import("./env.ts");
-      const command = createGenerateEnvironmentCommand(createTestRuntimeFactory({files, logger, environment}));
-
-      const execution = await command.invoke({verbose: false}, {presentation: "human"});
-
-      expect(execution).toMatchObject({status: "completed", exitCode: 0});
-      expect(sink.records.some((record) => record.text.includes("SITE_ENV was evaluated without logging its value."))).toBe(false);
-    });
+            // Assert
+            expect(harness.output()).toContainEqual({stream: "stdout", text: debugLine});
+          }),
+        harness.layer,
+      );
+    }
   });
 });
 
-describe("generateEnvironmentCommand verbosity", () => {
-  const completeEnvContent = [
-    "SITE_ENV=DEVELOPMENT",
-    "SITE_NAME=dev.arolariu.ro",
-    "SITE_URL=https://localhost:3000",
-    "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_existing",
-    "CLERK_SECRET_KEY=sk_test_existing",
-    "USE_CDN=false",
-  ].join("\n");
-
-  it("emits verbose diagnostics for a verbose invocation", async () => {
-    const files = createMemoryFileSystem({".env": completeEnvContent});
-    const sink = new InMemoryLoggerSink();
-    const logger = new MonorepositoryConsoleLogger("generate::env", {color: false, sink});
-    const {createGenerateEnvironmentCommand} = await import("./env.ts");
-    const command = createGenerateEnvironmentCommand(createTestRuntimeFactory({files, logger}));
-
-    const execution = await command.invoke({verbose: true}, {presentation: "human"});
-
-    expect(execution).toMatchObject({status: "completed", exitCode: 0});
-    expect(sink.records.some((record) => record.text.includes("SITE_ENV was evaluated without logging its value."))).toBe(true);
-  });
-});
-
-describe("generateEnvironmentCommand characterization", () => {
+describe("generateEnvironment characterization", () => {
   const EXP_URL = "http://exp/api/v1/build-time?for=website&label=DEVELOPMENT";
+  const AZURE_EXP_URL = "https://exp.arolariu.ro/api/v1/build-time?for=website&label=DEVELOPMENT";
   const SUBREPO_ENV = join(repositoryFixtureRoot, "sites", "arolariu.ro", ".env");
+  const FIXED_NOW = Date.parse("2025-01-01T00:00:00.000Z");
   const expConfig: Readonly<Record<string, string>> = {
     "Site:Environment": "DEVELOPMENT",
     "Site:Name": "dev.arolariu.ro",
@@ -438,192 +439,237 @@ describe("generateEnvironmentCommand characterization", () => {
   }
 
   /**
-   * Builds the non-interactive CI environment snapshot every characterization run observes.
+   * Builds an exp-backed harness for the non-interactive CI environment.
    *
-   * @param variables - Environment variables visible to the generator.
-   * @returns A deterministic environment snapshot.
+   * @param response - The scripted exp response.
+   * @param options - Extra variables and the verbose setting.
+   * @returns The harness.
    */
-  function ciEnvironment(variables: Readonly<Record<string, string>>): RuntimeEnvironment {
-    return {
-      variables,
-      cwd: repositoryFixtureRoot,
-      executablePath: "/usr/bin/node",
-      platform: "linux",
-      architecture: "x64",
-      stdinIsTTY: false,
-      stdoutIsTTY: false,
-      isCI: true,
-    };
-  }
-
-  /**
-   * Builds an HTTP fake that records every request and replies with one scripted response.
-   *
-   * @param response - Response returned for every request.
-   * @returns The fake client and its recorded request log.
-   */
-  function recordingHttp(response: HttpResponse): Readonly<{http: HttpClient; requests: Readonly<HttpRequest>[]}> {
-    const requests: Readonly<HttpRequest>[] = [];
-    return {
-      requests,
-      http: {
-        request: async (request) => {
-          requests.push(request);
-          return response;
-        },
-      },
-    };
-  }
-
-  /**
-   * Returns every logger record whose text is a semantic `[arolariu::…]` line.
-   *
-   * @param sink - Sink that captured the run.
-   * @returns The semantic records as stream/text pairs, in emission order.
-   */
-  function semanticLines(sink: InMemoryLoggerSink): readonly Readonly<{stream: string; text: string}>[] {
-    return sink.records.filter((record) => record.text.startsWith("[arolariu::")).map(({stream, text}) => ({stream, text}));
-  }
-
-  it("writes the exact .env from a successful exp response and copies it to the website", async () => {
-    // Arrange
-    const files = createMemoryFileSystem({".env": ""});
-    const sink = new InMemoryLoggerSink();
-    const logger = new MonorepositoryConsoleLogger("generate::env", {color: false, sink});
-    const {http, requests} = recordingHttp(createHttpResponse(200, JSON.stringify({config: expConfig})));
-    const {createGenerateEnvironmentCommand} = await import("./env.ts");
-    const command = createGenerateEnvironmentCommand(
-      createTestRuntimeFactory({files, logger, http, environment: ciEnvironment({INFRA: "azure"})}),
-    );
-
-    // Act
-    const execution = await command.invoke({verbose: false}, {presentation: "human"});
-
-    // Assert
-    expect(execution).toEqual({
-      status: "completed",
-      value: {summary: "Generated 6 environment variable(s).", changedFiles: [".env", SUBREPO_ENV]},
-      exitCode: 0,
+  function expHarness(
+    response: {readonly status: number; readonly body: string},
+    options: {readonly variables?: Readonly<Record<string, string>>; readonly verbose?: boolean} = {},
+  ): TestHarness {
+    return makeTestLayer({
+      files: {".env": ""},
+      environment: {variables: {INFRA: "azure", ...options.variables}, isCI: true},
+      http: [{match: (request) => request.url.includes("/api/v1/build-time?for=website"), respond: response}],
+      verbose: options.verbose ?? false,
     });
-    expect(requests.map((request) => ({url: request.url.href, headers: request.headers, timeoutMs: request.timeoutMs}))).toEqual([
-      {url: EXP_URL, headers: {"X-Exp-Target": "website"}, timeoutMs: 30_000},
-    ]);
-    expect(await files.readText(".env")).toBe(expectedExpEnvironmentFile("true"));
-    expect(await files.readText(SUBREPO_ENV)).toBe(expectedExpEnvironmentFile("true"));
-    expect(semanticLines(sink).at(-1)).toEqual({stream: "stdout", text: "[arolariu::generate::env] ✅ Generated 6 environment variable(s)."});
-  });
+  }
 
-  it("warns about a key missing from the exp response and falls back to USE_CDN=false", async () => {
-    // Arrange
-    const files = createMemoryFileSystem({".env": ""});
-    const sink = new InMemoryLoggerSink();
-    const logger = new MonorepositoryConsoleLogger("generate::env", {color: false, sink});
+  {
+    const harness = expHarness({status: 200, body: JSON.stringify({config: expConfig})});
+    effectTest(
+      "writes the exact .env from a successful exp response and copies it to the website",
+      () =>
+        Effect.gen(function* () {
+          // Arrange
+          yield* TestClock.setTime(FIXED_NOW);
+
+          // Act
+          const result = yield* generateEnvironment;
+
+          // Assert
+          expect(result).toEqual({summary: "Generated 6 environment variable(s).", changedFiles: [".env", SUBREPO_ENV]});
+          expect(harness.httpCalls().map((request) => ({method: request.method, url: request.url, headers: request.headers}))).toEqual([
+            {method: "GET", url: EXP_URL, headers: {"x-exp-target": "website"}},
+          ]);
+          expect(yield* readText(".env")).toBe(expectedExpEnvironmentFile("true"));
+          expect(yield* readText(SUBREPO_ENV)).toBe(expectedExpEnvironmentFile("true"));
+          expect(semanticLines(harness)).toContainEqual({
+            stream: "stdout",
+            text: "[arolariu::generate:env] ✅ Generated 6 environment variables.",
+          });
+        }),
+      harness.layer,
+    );
+  }
+
+  {
     const {"Site:UseCdn": _omitted, ...partialConfig} = expConfig;
-    const {http} = recordingHttp(createHttpResponse(200, JSON.stringify({config: partialConfig})));
-    const {createGenerateEnvironmentCommand} = await import("./env.ts");
-    const command = createGenerateEnvironmentCommand(
-      createTestRuntimeFactory({files, logger, http, environment: ciEnvironment({INFRA: "azure"})}),
+    const harness = expHarness({status: 200, body: JSON.stringify({config: partialConfig})});
+    effectTest(
+      "warns about a key missing from the exp response and falls back to USE_CDN=false",
+      () =>
+        Effect.gen(function* () {
+          // Arrange
+          yield* TestClock.setTime(FIXED_NOW);
+
+          // Act
+          const result = yield* generateEnvironment;
+
+          // Assert
+          expect(result.summary).toBe("Generated 5 environment variable(s).");
+          expect(semanticLines(harness)).toContainEqual({
+            stream: "stderr",
+            text: "[arolariu::generate:env] ⚠️ Key Site:UseCdn was not found in the exp build-time response.",
+          });
+          expect(yield* readText(".env")).toBe(expectedExpEnvironmentFile("false"));
+        }),
+      harness.layer,
     );
+  }
 
-    // Act
-    const execution = await command.invoke({verbose: false}, {presentation: "human"});
+  {
+    const harness = expHarness({status: 500, body: "boom"});
+    effectTest(
+      "fails when exp returns 500 and writes nothing",
+      () =>
+        Effect.gen(function* () {
+          // Act
+          const error = yield* Effect.flip(generateEnvironment);
 
-    // Assert
-    expect(execution).toMatchObject({status: "completed", exitCode: 0, value: {summary: "Generated 5 environment variable(s)."}});
-    expect(semanticLines(sink)).toContainEqual({
-      stream: "stderr",
-      text: "[arolariu::generate:env] ⚠️ Key Site:UseCdn was not found in the exp build-time response.",
-    });
-    expect(await files.readText(".env")).toBe(expectedExpEnvironmentFile("false"));
-  });
-
-  it("fails with exit code 1 and writes nothing when exp returns 500", async () => {
-    // Arrange
-    const files = createMemoryFileSystem({".env": ""});
-    const sink = new InMemoryLoggerSink();
-    const logger = new MonorepositoryConsoleLogger("generate::env", {color: false, sink});
-    const {http} = recordingHttp(createHttpResponse(500, "boom"));
-    const {createGenerateEnvironmentCommand} = await import("./env.ts");
-    const command = createGenerateEnvironmentCommand(
-      createTestRuntimeFactory({files, logger, http, environment: ciEnvironment({INFRA: "azure"})}),
+          // Assert
+          expect(error).toEqual(
+            new ExpConfigurationUnavailable({message: "exp returned 500 for /api/v1/build-time?for=website", status: 500}),
+          );
+          expect(semanticLines(harness).at(-1)).toEqual({
+            stream: "stderr",
+            text: `[arolariu::generate:env] ⛔ exp returned 500 for ${EXP_URL}.`,
+          });
+          expect(yield* readText(".env")).toBe("");
+          expect(harness.files().has(SUBREPO_ENV.replaceAll("\\", "/"))).toBe(false);
+        }),
+      harness.layer,
     );
+  }
 
-    // Act
-    const execution = await command.invoke({verbose: false}, {presentation: "human"});
+  {
+    const harness = expHarness({status: 200, body: JSON.stringify({unrelated: true})});
+    effectTest(
+      "fails when the exp response has no config object",
+      () =>
+        Effect.gen(function* () {
+          // Act
+          const error = yield* Effect.flip(generateEnvironment);
 
-    // Assert
-    expect(execution).toMatchObject({
-      status: "failed",
-      exitCode: 1,
-      failure: {kind: "operational", message: "exp returned 500 for /api/v1/build-time?for=website", evidence: []},
-    });
-    expect(semanticLines(sink).slice(-2)).toEqual([
-      {stream: "stderr", text: `[arolariu::generate:env] ⛔ exp returned 500 for ${EXP_URL}.`},
-      {stream: "stderr", text: "[arolariu::generate::env] ⛔ exp returned 500 for /api/v1/build-time?for=website"},
-    ]);
-    expect(await files.readText(".env")).toBe("");
-    expect(await files.exists(SUBREPO_ENV)).toBe(false);
-  });
+          // Assert
+          expect(error).toEqual(new ExpConfigurationUnavailable({message: "exp build-time response missing 'config' object", status: 200}));
+          expect(yield* readText(".env")).toBe("");
+        }),
+      harness.layer,
+    );
+  }
 
-  it("fails with exit code 1 on missing keys in a non-TTY terminal: confirm takes its default, then text input is refused", async () => {
-    // Arrange
-    const files = createMemoryFileSystem({".env": "SITE_ENV=DEVELOPMENT\n"});
-    const sink = new InMemoryLoggerSink();
-    const logger = new MonorepositoryConsoleLogger("generate::env", {color: false, sink});
-    const prompts = createTerminalPromptProvider({input: new PassThrough(), output: new PassThrough(), isTTY: false});
-    const {createGenerateEnvironmentCommand} = await import("./env.ts");
-    const command = createGenerateEnvironmentCommand(createTestRuntimeFactory({files, logger, prompts}));
+  {
+    const harness = makeTestLayer({files: {".env": "SITE_ENV=DEVELOPMENT\n"}});
+    effectTest(
+      "fails fast without a TTY when keys are missing: confirm takes its default, then text input is refused",
+      () =>
+        Effect.gen(function* () {
+          // Act
+          const error = yield* Effect.flip(generateEnvironment);
 
-    // Act
-    const execution = await command.invoke({verbose: false}, {presentation: "human"});
+          // Assert
+          expect(error).toEqual(
+            new PromptUnavailable({
+              kind: "text",
+              message: "Cannot request text input without an interactive terminal. Re-run setup in a TTY.",
+            }),
+          );
+          expect(semanticLines(harness).slice(-2)).toEqual([
+            {stream: "stderr", text: "[arolariu::generate:env] ⚠️ Found 5 missing key(s) that need to be provided."},
+            {stream: "stdout", text: "[arolariu::generate:env] ℹ️ 🔑 [1/5] Requesting SITE_NAME."},
+          ]);
+          expect(yield* readText(".env")).toBe("SITE_ENV=DEVELOPMENT\n");
+        }),
+      harness.layer,
+    );
+  }
 
-    // Assert
-    expect(execution).toMatchObject({
-      status: "failed",
-      exitCode: 1,
-      failure: {
-        kind: "operational",
-        message: "Cannot request text input without an interactive terminal. Re-run setup in a TTY.",
-      },
-    });
-    expect(semanticLines(sink).slice(-3)).toEqual([
-      {stream: "stderr", text: "[arolariu::generate:env] ⚠️ Found 5 missing key(s) that need to be provided."},
-      {stream: "stdout", text: "[arolariu::generate:env] ℹ️ 🔑 [1/5] Requesting SITE_NAME."},
-      {
-        stream: "stderr",
-        text: "[arolariu::generate::env] ⛔ Cannot request text input without an interactive terminal. Re-run setup in a TTY.",
-      },
-    ]);
-    expect(await files.readText(".env")).toBe("SITE_ENV=DEVELOPMENT\n");
-  });
+  {
+    const harness = makeTestLayer({files: {".env": "SITE_ENV=DEVELOPMENT\n"}, environment: {stdinIsTTY: true}, prompts: [false]});
+    effectTest(
+      "fails with MissingEnvironmentValues when the missing-key confirmation is declined",
+      () =>
+        Effect.gen(function* () {
+          // Act
+          const error = yield* Effect.flip(generateEnvironment);
 
-  it("fails with exit code 1 and the Aborting message when the missing-key confirmation is declined", async () => {
-    // Arrange
-    const files = createMemoryFileSystem({".env": "SITE_ENV=DEVELOPMENT\n"});
-    const sink = new InMemoryLoggerSink();
-    const logger = new MonorepositoryConsoleLogger("generate::env", {color: false, sink});
-    const prompts: PromptProvider = {
-      ...createTerminalPromptProvider({input: new PassThrough(), output: new PassThrough(), isTTY: false}),
-      confirm: async () => false,
-    };
-    const {createGenerateEnvironmentCommand} = await import("./env.ts");
-    const command = createGenerateEnvironmentCommand(createTestRuntimeFactory({files, logger, prompts}));
+          // Assert
+          expect(error).toEqual(
+            new MissingEnvironmentValues({
+              message: "Aborting: Missing environment variables were not provided.",
+              keys: ["SITE_NAME", "SITE_URL", "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY", "CLERK_SECRET_KEY", "USE_CDN"],
+            }),
+          );
+          expect(semanticLines(harness).at(-1)).toEqual({
+            stream: "stderr",
+            text: "[arolariu::generate:env] ⚠️ Missing 5 required environment variable(s):",
+          });
+          expect(yield* readText(".env")).toBe("SITE_ENV=DEVELOPMENT\n");
+        }),
+      harness.layer,
+    );
+  }
 
-    // Act
-    const execution = await command.invoke({verbose: false}, {presentation: "human"});
+  {
+    const harness = expHarness(
+      {status: 200, body: JSON.stringify({config: expConfig})},
+      {variables: {AZURE_CLIENT_ID: "client"}, verbose: true},
+    );
+    effectTest(
+      "never logs the exp token and sends it only as the bearer header",
+      () =>
+        Effect.gen(function* () {
+          // Arrange
+          const getToken = vi.fn(async () => ({token: "tok-123", expiresOnTimestamp: 0}));
+          vi.doMock("@azure/identity", () => ({
+            AzureCliCredential: class {
+              public getToken = getToken;
+            },
+            DefaultAzureCredential: class {
+              public getToken = getToken;
+            },
+          }));
 
-    // Assert
-    expect(execution).toMatchObject({
-      status: "failed",
-      exitCode: 1,
-      failure: {kind: "operational", message: "Aborting: Missing environment variables were not provided."},
-    });
-    expect(semanticLines(sink).slice(-2)).toEqual([
-      {stream: "stderr", text: "[arolariu::generate:env] ⚠️ Missing 5 required environment variable(s):"},
-      {stream: "stderr", text: "[arolariu::generate::env] ⛔ Aborting: Missing environment variables were not provided."},
-    ]);
-    expect(await files.readText(".env")).toBe("SITE_ENV=DEVELOPMENT\n");
-  });
+          // Act
+          yield* generateEnvironment;
+
+          // Assert
+          expect(getToken).toHaveBeenCalledWith("api://950ac239-5c2c-4759-bd83-911e68f6a8c9/.default");
+          expect(harness.httpCalls().map((request) => [request.url, request.headers["authorization"]])).toEqual([
+            [AZURE_EXP_URL, "Bearer tok-123"],
+          ]);
+          expect(semanticLines(harness)).toContainEqual({
+            stream: "stdout",
+            text: "[arolariu::generate:env] ✅ Bearer token acquired successfully.",
+          });
+          expect(harness.output().some((record) => record.text.includes("tok-123"))).toBe(false);
+        }),
+      harness.layer,
+    );
+  }
+
+  {
+    const harness = expHarness({status: 200, body: JSON.stringify({config: expConfig})}, {variables: {AZURE_CLIENT_ID: "client"}});
+    effectTest(
+      "warns and sends no bearer header when token acquisition fails",
+      () =>
+        Effect.gen(function* () {
+          // Arrange
+          vi.doMock("@azure/identity", () => ({
+            AzureCliCredential: class {
+              public getToken = async (): Promise<never> => {
+                throw new Error("no az login");
+              };
+            },
+            DefaultAzureCredential: class {},
+          }));
+
+          // Act
+          yield* generateEnvironment;
+
+          // Assert
+          expect(semanticLines(harness)).toContainEqual({
+            stream: "stderr",
+            text: "[arolariu::generate:env] ⚠️ Failed to acquire bearer token: no az login",
+          });
+          expect(harness.httpCalls().map((request) => request.headers["authorization"])).toEqual([undefined]);
+        }),
+      harness.layer,
+    );
+  }
 });
 
 describe("parseEnvironmentFile - semantic characterization", () => {
