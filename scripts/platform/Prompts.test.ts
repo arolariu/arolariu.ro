@@ -4,37 +4,24 @@
  * @module scripts/platform/Prompts.test
  *
  * @remarks
- * The non-TTY messages are compared against the live legacy `createTerminalPromptProvider`
- * (`scripts/common/prompts.ts`) so the two implementations cannot drift. The interactive paths run
- * `PromptsLive` over a scripted `Terminal` whose input queue replays key presses.
+ * The non-TTY messages are pinned to the exact text the retired legacy terminal prompt provider
+ * rejected with. The interactive paths run `PromptsLive` over a scripted `Terminal` whose input
+ * queue replays key presses.
  */
-
-import {PassThrough} from "node:stream";
 
 import {Cause, Effect, Exit, Layer, Option, Queue, Redacted, Terminal} from "effect";
 import {describe, expect, it} from "vitest";
 
-import {createTerminalPromptProvider} from "../common/prompts.ts";
 import {Prompts, PromptsLive, PromptUnavailable, type PromptKind, type PromptsShape} from "./Prompts.ts";
 import {makeTestLayer, runScoped} from "./testing.ts";
 
-/**
- * Reads the message a non-TTY legacy prompt rejects with.
- *
- * @param ask - Invokes one legacy prompt operation.
- * @returns The legacy rejection message.
- */
-async function legacyNonInteractiveMessage(
-  ask: (provider: ReturnType<typeof createTerminalPromptProvider>) => Promise<unknown>,
-): Promise<string> {
-  const provider = createTerminalPromptProvider({input: new PassThrough(), output: new PassThrough(), isTTY: false});
-  try {
-    await ask(provider);
-  } catch (error: unknown) {
-    return error instanceof Error ? error.message : String(error);
-  }
-  throw new Error("The legacy prompt did not reject.");
-}
+/** Exact non-TTY rejection messages of the retired legacy terminal prompt provider. */
+const legacyNonInteractiveMessages: Readonly<Record<PromptKind, string>> = {
+  confirm: "Cannot request confirmation without an interactive terminal. Re-run setup in a TTY.",
+  select: "Cannot request a selection without an interactive terminal. Re-run setup in a TTY.",
+  text: "Cannot request text input without an interactive terminal. Re-run setup in a TTY.",
+  secret: "Cannot request a secret without an interactive terminal. Re-run setup in a TTY.",
+};
 
 /**
  * Builds a terminal that replays the given key presses and then ends its input.
@@ -94,7 +81,7 @@ describe("PromptsLive", () => {
   it("fails with PromptUnavailable when stdin is not a TTY", async () => {
     // Arrange
     const layer = PromptsLive.pipe(Layer.provide(makeTestLayer().layer));
-    const legacy = await legacyNonInteractiveMessage((provider) => provider.confirm("x"));
+    const legacy = legacyNonInteractiveMessages.confirm;
 
     // Act
     const exit = await exitOf((prompts) => prompts.confirm("x"), layer);
@@ -104,22 +91,17 @@ describe("PromptsLive", () => {
     expect(legacy).toBe("Cannot request confirmation without an interactive terminal. Re-run setup in a TTY.");
   });
 
-  type LegacyProvider = ReturnType<typeof createTerminalPromptProvider>;
   type Ask = (prompts: PromptsShape) => Effect.Effect<unknown, PromptUnavailable | Terminal.QuitError>;
-  const nonInteractiveCases: readonly (readonly [PromptKind, Ask, (provider: LegacyProvider) => Promise<unknown>])[] = [
-    [
-      "select",
-      (prompts) => prompts.select("x", [{value: "a", label: "A"}]),
-      (provider) => provider.select("x", [{value: "a", label: "A"}]),
-    ],
-    ["text", (prompts) => prompts.text("x"), (provider) => provider.text("x")],
-    ["secret", (prompts) => prompts.secret("x"), (provider) => provider.secret("x")],
+  const nonInteractiveCases: readonly (readonly [PromptKind, Ask])[] = [
+    ["select", (prompts) => prompts.select("x", [{value: "a", label: "A"}])],
+    ["text", (prompts) => prompts.text("x")],
+    ["secret", (prompts) => prompts.secret("x")],
   ];
 
-  it.each(nonInteractiveCases)("fails %s with the legacy non-interactive message without a TTY", async (kind, ask, legacyAsk) => {
+  it.each(nonInteractiveCases)("fails %s with the legacy non-interactive message without a TTY", async (kind, ask) => {
     // Arrange
     const layer = PromptsLive.pipe(Layer.provide(makeTestLayer().layer));
-    const legacy = await legacyNonInteractiveMessage(legacyAsk);
+    const legacy = legacyNonInteractiveMessages[kind];
 
     // Act
     const exit = await exitOf(ask, layer);
@@ -245,7 +227,7 @@ describe("harness Prompts", () => {
   it("harness fails like the live service without a TTY", async () => {
     // Arrange
     const harness = makeTestLayer();
-    const legacy = await legacyNonInteractiveMessage((provider) => provider.text("x"));
+    const legacy = legacyNonInteractiveMessages.text;
 
     // Act
     const exit = await exitOf((prompts) => prompts.text("x"), harness.layer);

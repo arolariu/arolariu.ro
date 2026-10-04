@@ -4,8 +4,8 @@
  * @module scripts/inspection/Inspection
  *
  * @remarks
- * Effect counterpart of the legacy `RepositoryInspectionRuntime`
- * (`scripts/common/runtime.ts` `MemoizedInspectionRuntime`). {@link InspectionLive} keeps a
+ * Effect counterpart of the retired legacy `RepositoryInspectionRuntime`
+ * (`MemoizedInspectionRuntime`). {@link InspectionLive} keeps a
  * layer-scoped map from {@link repositoryInspectionRequestKey} to session, so every session lives
  * (and its in-flight providers are interrupted) with the layer. {@link InspectionLayerFactory} is the
  * layer `commandLayer` builds each invocation's `Inspection` from; the test harness points it at a

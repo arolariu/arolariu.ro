@@ -11,7 +11,7 @@ import {describe, expect, it} from "vitest";
 
 const productionScriptExtensions = new Set([".ts", ".js", ".mjs", ".cjs"]);
 const transitionalEntrypoints = new Set<string>();
-const interactiveTerminalAdapters = new Set(["scripts/common/prompts.ts"]);
+const interactiveTerminalAdapters = new Set<string>();
 const outputAdapters = new Set(["scripts/common/logger.ts", "scripts/platform/Output.ts"]);
 
 type AccessPath = readonly string[];
@@ -134,7 +134,7 @@ function readRestrictedSyntaxMessages(fileName: string, variableName: string): r
         (property): property is ts.PropertyAssignment =>
           ts.isPropertyAssignment(property) && ts.isIdentifier(property.name) && property.name.text === "rules",
       )?.initializer;
-      if (!ts.isObjectLiteralExpression(rules)) {
+      if (rules === undefined || !ts.isObjectLiteralExpression(rules)) {
         continue;
       }
 
@@ -142,7 +142,7 @@ function readRestrictedSyntaxMessages(fileName: string, variableName: string): r
         (property): property is ts.PropertyAssignment =>
           ts.isPropertyAssignment(property) && ts.isStringLiteral(property.name) && property.name.text === "no-restricted-syntax",
       )?.initializer;
-      if (!ts.isArrayLiteralExpression(restriction)) {
+      if (restriction === undefined || !ts.isArrayLiteralExpression(restriction)) {
         continue;
       }
 
@@ -155,7 +155,7 @@ function readRestrictedSyntaxMessages(fileName: string, variableName: string): r
           (property): property is ts.PropertyAssignment =>
             ts.isPropertyAssignment(property) && ts.isIdentifier(property.name) && property.name.text === "message",
         )?.initializer;
-        return ts.isStringLiteral(message) ? [message.text] : [];
+        return message !== undefined && ts.isStringLiteral(message) ? [message.text] : [];
       });
     }
   }
@@ -368,9 +368,12 @@ describe("direct output policy", () => {
 
     expect(outputMessages).toHaveLength(1);
     expect(promptMessages).toEqual(
-      expect.arrayContaining([...outputMessages, "Interactive terminal output is owned exclusively by scripts/common/prompts.ts."]),
+      expect.arrayContaining([
+        ...outputMessages,
+        "Interactive terminal output is owned exclusively by the Effect Prompts service (scripts/platform/Prompts.ts).",
+      ]),
     );
-    expect(promptIgnores).toContain("scripts/common/prompts.ts");
+    expect(promptIgnores.filter((fileName) => !fileName.includes("*") && !existsSync(fileName))).toEqual([]);
   });
 
   it("inspects executable calls without matching comments or strings", () => {

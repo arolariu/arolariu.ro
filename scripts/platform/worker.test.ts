@@ -18,7 +18,6 @@ import {join} from "node:path";
 import {Cause, Effect, Exit} from "effect";
 import {afterEach, describe, expect, it} from "vitest";
 
-import {CommandInputError} from "../common/commander.ts";
 import {ReportedFailure} from "./exit.ts";
 import {makeNodeLayer} from "./layers.ts";
 import {Process} from "./Process.ts";
@@ -88,7 +87,7 @@ describe("runWorkerProgram", () => {
           runWorkerProgram(
             worker({
               decode: () => {
-                throw new CommandInputError("bad");
+                throw new Error("bad");
               },
               program: () =>
                 Effect.sync(() => {

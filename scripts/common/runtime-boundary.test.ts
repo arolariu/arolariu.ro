@@ -43,7 +43,6 @@ const runtimeBoundaryExclusions = new Set([
 const productionScriptExtensions = new Set([".ts", ".js", ".mjs", ".cjs"]);
 const directOutputAdapters = new Set([
   "scripts/common/logger.ts",
-  "scripts/common/prompts.ts",
   "scripts/platform/Output.ts",
 ]);
 
@@ -75,7 +74,6 @@ const effectCliConsumers: readonly string[] = [cliEntrypoint, "scripts/platform/
 const sanctionedEffectRunners: readonly string[] = [
   cliEntrypoint,
   "scripts/platform/Output.ts",
-  "scripts/platform/bridge.ts",
   "scripts/platform/testing.ts",
   "scripts/platform/worker.ts",
 ];
@@ -96,23 +94,18 @@ const effectRunnerNames: ReadonlySet<string> = new Set([
   "runSyncWith",
 ]);
 
-/** The legacy-kernel bridge; the only platform module that may depend on the legacy kernel. */
-const platformBridge = "scripts/platform/bridge.ts";
-
-/** Legacy command-kernel modules (and the barrel re-exporting them) the platform layer must not import. */
-const legacyKernelModule = /^scripts\/common\/(?:runtime(?:\.node|\.testing)?|commander|runner[\w.-]*|logger|prompts|index)\.ts$/;
+/** Legacy modules kept only for the frozen format/lint closure, plus the barrel re-exporting them. */
+const legacyKernelModule = /^scripts\/common\/(?:runtime\.node|runner[\w.-]*|logger|index)\.ts$/;
 
 /**
  * Command families migrated to native Effect. Their modules and tests may not import a value from
- * the legacy kernel ({@link legacyKernelModule}: `runtime`, `runtime.node`, `commander`, `runner`,
- * `logger`, `prompts`, and their siblings and barrel); they reach legacy callers only through
- * {@link platformBridge}. A clause-level `import type` stays allowed until cohort 7, because the
- * bridge's legacy views still return legacy types. `scripts/inspection` (the shared read-only
- * inspection layer of Doctor and Status) and `scripts/container-runtime` (the container programs
- * behind `dev`, `containers`, and Setup/Doctor engine selection) are not CLI families, so they have
- * no `cli.ts`. The test-support module `scripts/container-runtime/selfhost.testing.ts` lives beside
- * the programs it drives and imports `scripts/platform/testing.ts`; that is tolerated because the
- * rule targets only the legacy kernel.
+ * the legacy modules ({@link legacyKernelModule}: `runtime.node`, `runner`, `logger`, and their
+ * siblings and barrel); a clause-level `import type` stays tolerated. `scripts/inspection` (the
+ * shared read-only inspection layer of Doctor and Status) and `scripts/container-runtime` (the
+ * container programs behind `dev`, `containers`, and Setup/Doctor engine selection) are not CLI
+ * families, so they have no `cli.ts`. The test-support module
+ * `scripts/container-runtime/selfhost.testing.ts` lives beside the programs it drives and imports
+ * `scripts/platform/testing.ts`; that is tolerated because the rule targets only the legacy kernel.
  */
 const effectNativeFamilies: readonly string[] = [
   "scripts/commands/containers",
@@ -198,7 +191,6 @@ const readOnlyForbiddenModules: ReadonlySet<string> = new Set([
  * process-runner ports.
  */
 const readOnlyForbiddenImportNames: ReadonlyMap<string, ReadonlySet<string>> = new Map([
-  ["./common/runtime.ts", new Set(["FileSystem"])],
   ["./common/runner.ts", new Set(["ProcessRunner"])],
   ["./platform/Files.ts", new Set(["writeTextAtomic"])],
   ["effect", new Set(["FileSystem"])],
@@ -328,9 +320,7 @@ function discoverProductionScripts(directory: string = "scripts"): readonly stri
 }
 
 function discoverRuntimeBoundaryProductionScripts(): readonly string[] {
-  return discoverProductionScripts().filter(
-    (file) => file !== "scripts/common/runtime.testing.ts" && !runtimeBoundaryExclusions.has(file),
-  );
+  return discoverProductionScripts().filter((file) => !runtimeBoundaryExclusions.has(file));
 }
 
 function isPropertyNameLike(
@@ -1311,9 +1301,9 @@ describe("runtime boundary policy", () => {
     ].join("\n");
 
     expect(scanRuntimeBoundarySource("scripts/common/runtime.node.ts", source)).toEqual([]);
-    expect(scanRuntimeBoundarySource("scripts/common/commander.ts", source)).toEqual([
-      {file: "scripts/common/commander.ts", line: 1, rule: "direct-exit"},
-      {file: "scripts/common/commander.ts", line: 3, rule: "direct-exit"},
+    expect(scanRuntimeBoundarySource("scripts/commands/example.ts", source)).toEqual([
+      {file: "scripts/commands/example.ts", line: 1, rule: "direct-exit"},
+      {file: "scripts/commands/example.ts", line: 3, rule: "direct-exit"},
     ]);
   });
 
@@ -1534,7 +1524,6 @@ describe("runtime boundary policy", () => {
       'export {HttpClient} from "effect/http";',
       'import {Prompts} from "../../platform/Prompts.ts";',
       'import {ReadOnlyFiles, writeTextAtomic} from "../../platform/Files.ts";',
-      'import type {FileSystem as LegacyFiles, Clock} from "../../common/runtime.ts";',
       'import runner from "../../common/runner.ts";',
       'void import("../../platform/Files.ts");',
       'import {spawn} from "node:child_process";',
@@ -1549,7 +1538,6 @@ describe("runtime boundary policy", () => {
       {file: "scripts/commands/doctor/example.ts", specifier: "effect/http", name: "HttpClient"},
       {file: "scripts/commands/doctor/example.ts", specifier: "./platform/Prompts.ts"},
       {file: "scripts/commands/doctor/example.ts", specifier: "./platform/Files.ts", name: "writeTextAtomic"},
-      {file: "scripts/commands/doctor/example.ts", specifier: "./common/runtime.ts", name: "FileSystem"},
       {file: "scripts/commands/doctor/example.ts", specifier: "./common/runner.ts", name: "*"},
       {file: "scripts/commands/doctor/example.ts", specifier: "./platform/Files.ts", name: "*"},
       {file: "scripts/commands/doctor/example.ts", specifier: "node:child_process"},
@@ -1726,33 +1714,31 @@ describe("runtime boundary policy", () => {
 
   it("keeps the platform layer free of legacy kernel imports", () => {
     const platformModules = discoverProductionScripts().filter((file) => file.startsWith(platformLayerDirectory));
-    const offenders = platformModules
-      .filter((file) => file !== platformBridge)
-      .flatMap((file) => scanLegacyKernelImportSource(file, readFileSync(file, "utf8")));
+    const offenders = platformModules.flatMap((file) => scanLegacyKernelImportSource(file, readFileSync(file, "utf8")));
 
-    expect(platformModules).toContain(platformBridge);
+    expect(platformModules).toContain("scripts/platform/layers.ts");
     expect(offenders).toEqual([]);
   });
 
   it("flags runtime imports of the legacy kernel and allows clause-level type imports", () => {
     const source = [
-      'import type {CommandInvoker} from "../../common/commander.ts";',
-      'export type {CommandRuntime} from "../../common/runtime.ts";',
+      'import type {LoggerRuntimeHost} from "../../common/logger.ts";',
+      'export type {ProcessRunner} from "../../common/runner.ts";',
       'import {type MonorepositoryLogger} from "../../common/logger.ts";',
-      'import "../../common/prompts.ts";',
+      'import "../../common/index.ts";',
       'import * as runner from "../../common/runner.ts";',
       'export {nodeProcessRunner} from "../../common/runtime.node.ts";',
-      'const lazy = await import("../../common/runtime.ts");',
+      'const lazy = await import("../../common/runner.execa.ts");',
       'type Lazy = typeof import("../../common/index.ts");',
       'import {resolveRepositoryPaths} from "../../common/repository-paths.ts";',
     ].join("\n");
 
     expect(scanLegacyKernelValueImportSource("scripts/commands/generate/example.ts", source)).toEqual([
       {file: "scripts/commands/generate/example.ts", target: "scripts/common/logger.ts"},
-      {file: "scripts/commands/generate/example.ts", target: "scripts/common/prompts.ts"},
+      {file: "scripts/commands/generate/example.ts", target: "scripts/common/index.ts"},
       {file: "scripts/commands/generate/example.ts", target: "scripts/common/runner.ts"},
       {file: "scripts/commands/generate/example.ts", target: "scripts/common/runtime.node.ts"},
-      {file: "scripts/commands/generate/example.ts", target: "scripts/common/runtime.ts"},
+      {file: "scripts/commands/generate/example.ts", target: "scripts/common/runner.execa.ts"},
     ]);
   });
 

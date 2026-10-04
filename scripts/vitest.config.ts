@@ -66,7 +66,6 @@ export default defineConfig({
         // Test support and test files
         "**/*.test.{ts,tsx,js,jsx}",
         "**/*.spec.{ts,tsx,js,jsx}",
-        "scripts/common/runtime.testing.ts",
         "scripts/platform/testing.ts",
         "scripts/platform/testing.fs.ts",
         "scripts/commands/setup/phase-testing.ts",

@@ -4,7 +4,7 @@
  * @module scripts/platform/Environment
  *
  * @remarks
- * Effect counterpart of the legacy `RuntimeEnvironment` contract (`scripts/common/runtime.ts`).
+ * Effect counterpart of the retired legacy `RuntimeEnvironment` contract.
  * {@link EnvironmentLive} is the single place that reads `process` for this snapshot; tests supply
  * a fixed snapshot through {@link layerEnvironment} instead.
  */

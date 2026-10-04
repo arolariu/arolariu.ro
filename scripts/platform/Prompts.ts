@@ -3,7 +3,7 @@
  * @module scripts/platform/Prompts
  *
  * @remarks
- * Effect counterpart of the legacy `PromptProvider` (`scripts/common/prompts.ts`). Without an
+ * Effect counterpart of the retired legacy `PromptProvider`. Without an
  * interactive stdin, `confirm` and `select` return their default when one is given and every other
  * prompt fails with {@link PromptUnavailable}, whose message is identical to the legacy
  * non-interactive error. The check happens before any effect/cli `Prompt` runs, because those

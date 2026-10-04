@@ -4,9 +4,9 @@
  * @module scripts/platform/Files
  *
  * @remarks
- * Effect counterpart of the legacy filesystem and HTTP capabilities (`scripts/common/runtime.ts`,
- * `scripts/common/runtime.node.ts`). {@link readBytesBounded} and {@link writeTextAtomic} port the
- * legacy `NodeFileSystem.readBytes` (bounded branch) and `writeTextAtomic` contracts on top of the
+ * Effect counterpart of the retired legacy filesystem and HTTP capabilities.
+ * {@link readBytesBounded} and {@link writeTextAtomic} port the legacy `NodeFileSystem.readBytes`
+ * (bounded branch) and `writeTextAtomic` contracts on top of the
  * Effect `FileSystem`. {@link Glob} fills a gap in Effect, which has no glob primitive, and
  * {@link GlobLive} ports `NodeFileSystem.glob`. {@link ReadOnlyFiles} and {@link GetOnlyHttp} are
  * narrowed views whose shapes carry no mutating member, so a read-only command profile (Doctor,
