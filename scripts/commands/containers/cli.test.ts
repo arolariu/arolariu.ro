@@ -13,11 +13,10 @@ import {Effect} from "effect";
 import {describe, expect, it} from "vitest";
 
 import {makeRootCommand, runCli} from "../../cli.ts";
-import {ProcessExited} from "../../platform/Process.ts";
 import {exitCodeFor, type CommandExitCode} from "../../platform/exit.ts";
 import type {SinkRecord} from "../../platform/Output.ts";
 import {makeTestLayer, type RecordedProcessCall} from "../../platform/testing.ts";
-import {makeContainersCommand, reportChildExit} from "./cli.ts";
+import {makeContainersCommand} from "./cli.ts";
 
 /** Outcome of one `containers` invocation. */
 interface ContainersRun {
@@ -161,31 +160,5 @@ describe("containers command", () => {
     expect(result.calls).toEqual([]);
     expect(result.output).toHaveLength(1);
     expect(result.output[0]?.text).toMatch(/^\[arolariu::cli\] ⛔ /u);
-  });
-});
-
-describe("reportChildExit", () => {
-  it.each([
-    ["docker compose -f x.yml up", "docker"],
-    ['"C:\\Program Files\\Docker\\docker.exe" build .', "C:\\Program Files\\Docker\\docker.exe"],
-    ["dotnet", "dotnet"],
-  ])("names the executable of %s", async (command, executable) => {
-    // Arrange
-    const harness = makeTestLayer({context: "image"});
-    const error = new ProcessExited({
-      command,
-      stdout: "out",
-      stderr: "err",
-      durationMs: 0,
-      exitCode: 4,
-      message: `${command} exited with code 4`,
-    });
-
-    // Act
-    const failure = await Effect.runPromise(Effect.flip(reportChildExit(error)).pipe(Effect.provide(harness.layer)));
-
-    // Assert
-    expect(failure).toMatchObject({_tag: "ReportedFailure", exitCode: 1, message: `${executable} exited with code 4`});
-    expect(harness.output()).toEqual([{stream: "stderr", text: `[arolariu::image] ⛔ ${executable} exited with code 4\n`}]);
   });
 });

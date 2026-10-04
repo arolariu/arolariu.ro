@@ -410,6 +410,30 @@ describe("dev aspire characterization", () => {
     });
   });
 
+  it("AppHost exit (json): exactly one stdout failure document with the evidence, exit 1", async () => {
+    const result = await characterizeAspire("rancher", [...rancherPreflightOutcomes, exited(3, "apphost stdout", "apphost stderr")], true);
+
+    expect(result).toMatchObject({
+      exitCode: 1,
+      output: [
+        {
+          stream: "stdout",
+          text: JSON.stringify(
+            {
+              status: "failed",
+              kind: "operational",
+              message: "dotnet exited with code 3",
+              evidence: ["dotnet run --project tooling/AppHost exited with code 3", "stdout: apphost stdout", "stderr: apphost stderr"],
+            },
+            null,
+            2,
+          ),
+        },
+        {stream: "stderr", text: "dotnet exited with code 3"},
+      ],
+    });
+  });
+
   it("preflight failure: rendered by the root renderer, exit 1, AppHost never starts", async () => {
     const result = await characterizeAspire("rancher", [exited(127, "", "docker: not found")]);
 

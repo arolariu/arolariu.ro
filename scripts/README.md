@@ -330,7 +330,9 @@ The container commands `dev aspire`, `containers build|run`, and `containers com
 `runCompose`): `prepareContainerEngine` resolves the engine and runs `runContainerPreflight` under the `<command>::preflight` log context,
 and the engine command runs through `Process` (AppHost with inherited output; build/run/Compose echoed as `$ <command>` with tee output).
 A non-zero exit of that child becomes `ReportedFailure{exitCode: 1, message: "<tool> exited with code <n>"}` after one `⛔` line, because
-the child already printed its own output; `--json` writes the result as the single document. The image build calls `generateArtifacts`
+the child already printed its own output (`reportChildExit` in `commands/containers/output.ts`). `--json` writes exactly one stdout
+document either way: the result on success, or `{status: "failed", kind: "operational", message, evidence}` (the process evidence) for a
+child exit. The image build calls `generateArtifacts`
 directly (silently) for the frontend and backend targets.
 
 While `dev selfhost` is still legacy, it calls the Effect container helpers (`resolveRuntimeContainerEngine`, `runContainerPreflight`,

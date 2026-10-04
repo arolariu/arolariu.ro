@@ -306,4 +306,33 @@ describe("containers compose characterization", () => {
       ],
     });
   });
+
+  it("Compose exit (json): exactly one stdout failure document with the evidence, exit 1", async () => {
+    const result = await characterizeCompose("rancher", true, [
+      ...rancherPreflightOutcomes,
+      exited(2, "", "service 'x' failed to build\n"),
+    ]);
+
+    expect(result).toMatchObject({exitCode: 1});
+    const output = (result as {readonly output: readonly {readonly stream: string; readonly text: string}[]}).output;
+    expect(output.filter((record) => record.stream === "stdout")).toEqual([
+      {
+        stream: "stdout",
+        text: JSON.stringify(
+          {
+            status: "failed",
+            kind: "operational",
+            message: "docker exited with code 2",
+            evidence: [
+              "docker compose -f infra/Local/Storage/docker-compose.yml --profile selfhost up -d --remove-orphans exited with code 2",
+              "stderr: service 'x' failed to build\n",
+            ],
+          },
+          null,
+          2,
+        ),
+      },
+    ]);
+    expect(output.filter((record) => record.stream === "stderr")).toEqual([{stream: "stderr", text: "docker exited with code 2"}]);
+  });
 });

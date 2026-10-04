@@ -19,7 +19,7 @@ import type {CommandInvoker} from "../../common/commander.ts";
 import {runAspire} from "../../container-runtime/aspire.ts";
 import {selfhostCommand} from "../../container-runtime/selfhost.ts";
 import type {ContainerEngineInput, SelfhostAction, SelfhostInput} from "../../container-runtime/types.ts";
-import {renderContainerCompletion, reportChildExit} from "../containers/cli.ts";
+import {renderContainerCompletion, reportChildExit} from "../containers/output.ts";
 import {EngineFlag, engineInput, withCommandOutput} from "../flags.ts";
 import {runLegacy} from "../legacy.ts";
 
