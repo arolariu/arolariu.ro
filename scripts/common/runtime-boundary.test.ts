@@ -102,6 +102,15 @@ const platformBridge = "scripts/platform/bridge.ts";
 const legacyKernelModule = /^scripts\/common\/(?:runtime(?:\.node|\.testing)?|commander|runner[\w.-]*|logger|prompts|index)\.ts$/;
 
 /**
+ * Command families migrated to native Effect. Their modules and tests may not import a value from
+ * the legacy kernel ({@link legacyKernelModule}: `runtime`, `runtime.node`, `commander`, `runner`,
+ * `logger`, `prompts`, and their siblings and barrel); they reach legacy callers only through
+ * {@link platformBridge}. A clause-level `import type` stays allowed until cohort 7, because the
+ * bridge's legacy views still return legacy types.
+ */
+const effectNativeFamilies: readonly string[] = ["scripts/commands/docs", "scripts/commands/generate", "scripts/commands/rates"];
+
+/**
  * The legacy inspection worker entrypoints. Their parents spawn them as native Node child processes,
  * so each one reads its own `process.argv` and assigns its own `process.exitCode`, only inside its
  * `import.meta.main` block, until cohort 4 replaces them.
@@ -1102,6 +1111,69 @@ function scanLegacyKernelImportSource(file: string, sourceText: string): readonl
 }
 
 /**
+ * Lists every module, test included, under the given directories.
+ *
+ * @param directories - Repository-relative directories to walk.
+ * @returns Sorted repository-relative `.ts` module paths.
+ */
+function discoverModulesUnder(directories: readonly string[]): readonly string[] {
+  return directories
+    .flatMap((directory) =>
+      readdirSync(directory, {recursive: true, withFileTypes: true})
+        .filter((entry) => entry.isFile() && entry.name.endsWith(".ts"))
+        .map((entry) => normalizeFilePath(join(entry.parentPath, entry.name))),
+    )
+    .toSorted();
+}
+
+/**
+ * Lists the legacy-kernel modules one module loads at runtime.
+ *
+ * @remarks
+ * Only a clause-level `import type` / `export type` is erased. An import whose every specifier is
+ * an inline `type` still loads the module under type stripping, so it counts as a value import, as
+ * do side-effect, namespace, re-export, and literal dynamic imports.
+ *
+ * @param file - Repository-relative importing module path.
+ * @param sourceText - Source text to parse.
+ * @returns Every runtime import of a legacy-kernel module, as `{file, target}` pairs.
+ */
+function scanLegacyKernelValueImportSource(file: string, sourceText: string): readonly {file: string; target: string}[] {
+  const source = ts.createSourceFile(file, sourceText, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
+  const specifiers: string[] = [];
+
+  function visit(node: ts.Node): void {
+    if (ts.isImportDeclaration(node) && ts.isStringLiteral(node.moduleSpecifier) && node.importClause?.isTypeOnly !== true) {
+      specifiers.push(node.moduleSpecifier.text);
+    }
+
+    if (
+      ts.isExportDeclaration(node)
+      && !node.isTypeOnly
+      && node.moduleSpecifier !== undefined
+      && ts.isStringLiteral(node.moduleSpecifier)
+    ) {
+      specifiers.push(node.moduleSpecifier.text);
+    }
+
+    if (ts.isCallExpression(node) && isDynamicImport(node)) {
+      const specifier = node.arguments[0];
+      if (specifier !== undefined && (ts.isStringLiteral(specifier) || ts.isNoSubstitutionTemplateLiteral(specifier))) {
+        specifiers.push(specifier.text);
+      }
+    }
+
+    ts.forEachChild(node, visit);
+  }
+
+  visit(source);
+  return specifiers.flatMap((specifier) => {
+    const target = resolveRelativeSpecifier(file, specifier);
+    return target !== undefined && legacyKernelModule.test(target) ? [{file, target}] : [];
+  });
+}
+
+/**
  * Lists the `effect/cli` module imports of one production module.
  *
  * @param file - Repository-relative module path reported with each import.
@@ -1526,6 +1598,38 @@ describe("runtime boundary policy", () => {
       .flatMap((file) => scanLegacyKernelImportSource(file, readFileSync(file, "utf8")));
 
     expect(platformModules).toContain(platformBridge);
+    expect(offenders).toEqual([]);
+  });
+
+  it("flags runtime imports of the legacy kernel and allows clause-level type imports", () => {
+    const source = [
+      'import type {CommandInvoker} from "../../common/commander.ts";',
+      'export type {CommandRuntime} from "../../common/runtime.ts";',
+      'import {type MonorepositoryLogger} from "../../common/logger.ts";',
+      'import "../../common/prompts.ts";',
+      'import * as runner from "../../common/runner.ts";',
+      'export {nodeProcessRunner} from "../../common/runtime.node.ts";',
+      'const lazy = await import("../../common/runtime.ts");',
+      'type Lazy = typeof import("../../common/index.ts");',
+      'import {resolveRepositoryPaths} from "../../common/repository-paths.ts";',
+    ].join("\n");
+
+    expect(scanLegacyKernelValueImportSource("scripts/commands/generate/example.ts", source)).toEqual([
+      {file: "scripts/commands/generate/example.ts", target: "scripts/common/logger.ts"},
+      {file: "scripts/commands/generate/example.ts", target: "scripts/common/prompts.ts"},
+      {file: "scripts/commands/generate/example.ts", target: "scripts/common/runner.ts"},
+      {file: "scripts/commands/generate/example.ts", target: "scripts/common/runtime.node.ts"},
+      {file: "scripts/commands/generate/example.ts", target: "scripts/common/runtime.ts"},
+    ]);
+  });
+
+  it("effect-native families never import the legacy kernel", () => {
+    const familyModules = discoverModulesUnder(effectNativeFamilies);
+    const offenders = familyModules.flatMap((file) => scanLegacyKernelValueImportSource(file, readFileSync(file, "utf8")));
+
+    for (const family of effectNativeFamilies) {
+      expect(familyModules).toContain(`${family}/cli.ts`);
+    }
     expect(offenders).toEqual([]);
   });
 });

@@ -78,8 +78,10 @@ Global flags are accepted before or after the subcommand.
 | `130` | Interruption after `SIGINT`, interruption with no recorded signal, or a terminal quit |
 | `143` | Interruption after `SIGTERM` |
 
-`cli.ts` renders any failure that no command reported as `[arolariu::cli] ⛔ <message>` on stderr, or in JSON mode as
-`{status: "failed", kind, message, evidence}` on stdout. No script calls `process.exit()`.
+`cli.ts` renders any failure that no command reported as `[arolariu::cli] ⛔ <message>` on stderr, followed for a process failure
+(`ProcessExited`/`ProcessSignalled`/`ProcessSpawnFailed`/`ProcessTimedOut`) by its bounded `stdout: …` and `stderr: …` evidence lines, as
+the legacy failure diagnostic did; in JSON mode it renders `{status: "failed", kind, message, evidence}` on stdout. No script calls
+`process.exit()`.
 
 ### Adding a subcommand
 
@@ -323,7 +325,9 @@ ambient `process.*`, timer, and `node:*` access, and enforces the platform and C
 `scripts/platform/` and the [`cli.ts`](./cli.ts) entrypoint; Effect runtimes (`Effect.run*`, `ManagedRuntime.make`, `NodeRuntime.runMain`)
 start only in `cli.ts`, `bridge.ts`, `testing.ts`, and `Output.ts`'s synchronous logger sink; no platform module except `bridge.ts`
 imports the legacy kernel; `effect/cli` is imported only under `scripts/commands/`, by `cli.ts`, by `platform/exit.ts`, and by
-`platform/Prompts.ts`; and the only modules with an `import.meta.main` block are `cli.ts`, `format.ts`, `lint.ts`, and the two
+`platform/Prompts.ts`; the effect-native families (`scripts/commands/{generate,rates,docs}/**`, tests included) never import a value from
+the legacy kernel (`common/{runtime,runtime.node,commander,runner,logger,prompts}.ts` or the `common/index.ts` barrel) — a clause-level
+`import type` stays allowed until cohort 7; and the only modules with an `import.meta.main` block are `cli.ts`, `format.ts`, `lint.ts`, and the two
 inspection workers. Inside that block, `cli.ts` may read `process.argv` and no other ambient state, and each inspection worker may
 read `process.argv` and assign `process.exitCode`; neither exemption applies elsewhere in those files.
 
@@ -347,6 +351,54 @@ point.
 Every production script under root `scripts/**` — including [`setup.ts`](./setup.ts), [`doctor.ts`](./doctor.ts), and
 [`status.ts`](./status.ts) — routes its presentation and semantic output through `MonorepositoryConsoleLogger`. There are no remaining
 transitional setup/doctor/status exceptions.
+
+## Generate, rates, and docs (Effect-native)
+
+The `generate`, `rates`, and `docs` families run as native Effect programs on the [platform layer](#platform-layer-effect). Each
+`commands/<family>/cli.ts` decodes its flags, runs the family program inside `withCommandOutput("<context>")`, and renders the completion
+through `Presenter`. With `--json`, the family's typed result is the single stdout document; a business-negative run (a stopped `generate`,
+or `rates update` with failed years) still writes that document before exiting `1`, while a typed failure is rendered by `cli.ts` as
+`{status: "failed", …}`. Typed failures are `Schema.TaggedError` classes in each family's `errors.ts`; process failures stay
+`ProcessError`. Where a shared Promise helper needs a legacy capability (docs passes `legacyReadOnlyFiles` to `resolveRepositoryPaths`),
+the family takes it from the bridge, so none of these modules value-imports the legacy kernel.
+
+### Module map
+
+| Module | Responsibility |
+|--------|----------------|
+| [`commands/generate/cli.ts`](./commands/generate/cli.ts) | `generate [env] [i18n] [gql] [artifacts]`; renders the stop line or the success lines |
+| [`commands/generate/index.ts`](./commands/generate/index.ts) | `runGenerate` orchestrator: runs the selected leaves silently, one at a time, in the fixed order `env`, `i18n`, `gql`, `artifacts` |
+| [`commands/generate/env.ts`](./commands/generate/env.ts) | Website `.env`: exp build-time configuration with `INFRA=azure`, otherwise prompts for each missing required key; secrets stay `Redacted` |
+| [`commands/generate/i18n.ts`](./commands/generate/i18n.ts) | Synchronizes `ro`/`fr` locale files with the English source, adding missing keys as empty strings |
+| [`commands/generate/gql.ts`](./commands/generate/gql.ts) | Writes the GraphQL placeholder artifact under `scripts/__generated__/gql` |
+| [`commands/generate/artifacts.ts`](./commands/generate/artifacts.ts) | Taxonomy and license artifacts from pinned sources, with bounded retries and a validated cached-mirror fallback |
+| [`commands/rates/cli.ts`](./commands/rates/cli.ts) | `rates update [--year <y>] [--from <y>] [--to <y>]`; invalid years are usage failures (exit `2`) |
+| [`commands/rates/update.ts`](./commands/rates/update.ts) | `updateExchangeRates`: yearly Frankfurter averages merged into `sites/arolariu.ro/public/data/exchange-rates.csv` |
+| [`commands/docs/cli.ts`](./commands/docs/cli.ts) | `docs assemble`; renders the extractor and tier summary |
+| [`commands/docs/assemble.ts`](./commands/docs/assemble.ts) | `assembleDocumentation`: concurrent TypeDoc, pydoc-markdown, and DefaultDocumentation runs, tier validation, landing pages, prose mirroring |
+| [`commands/docs/normalize.ts`](./commands/docs/normalize.ts) | Fills missing Docusaurus frontmatter (`title`, `sidebar_position`) without overwriting existing keys |
+
+### Behavior
+
+- **`npm run generate -- <tasks…>`** (aliases `generate:env`, `generate:i18n`, `generate:gql`, `generate:artifacts`) logs
+  `Running <label>...` and each leaf summary. The first typed failure, or an i18n run that changed locale files, stops the run with
+  `Generation stopped at the <task> task.` (exit `1`); otherwise it prints `All requested generation tasks completed.` and the executed
+  count. Without a task it warns `No generation tasks selected. Nothing to do.`, prints the tip
+  `Tip: Pass one or more tasks (e.g. npm run generate -- env i18n gql artifacts).`, and exits `0`. The JSON document is
+  `{selected, completed, failed?}`. A terminal quit at an env prompt exits `130`.
+- **`npm run rates:update`** (`-- --year 2025`, or `-- --from 2020 --to 2025`) fetches each year from Frankfurter (2018 to the current
+  year by default) with a polite delay between requests and prints `Updated <n> of <m> year(s).`. When any year fails it warns with every
+  failed year and message and exits `1`. The JSON document is `{years, updatedYears, failedYears: [{year, message}]}`.
+- **`npm run docs:assemble`** cleans `sites/docs.arolariu.ro/_generated/`, runs the three extractor families concurrently, and prints
+  `Assembled documentation from <n> extractor(s) across <m> tier(s).`. When the pipeline fails or is interrupted it removes the partial
+  `_generated` tree again. The JSON document is `{generatedTiers, extractorCount}`.
+
+### Generate, rates, and docs test commands
+
+```powershell
+npx vitest run --config scripts\vitest.config.ts --coverage.enabled=false scripts\commands\generate scripts\commands\rates scripts\commands\docs scripts\common\runtime-boundary.test.ts
+npx eslint scripts\commands\generate scripts\commands\rates scripts\commands\docs
+```
 
 ## Setup orchestrator (`npm run setup`)
 
