@@ -13,12 +13,11 @@ import {TestClock} from "effect/testing";
 import {describe, expect, it, vi} from "vitest";
 
 import {createNodeProcessRunner, snapshotNodeEnvironment} from "../common/runtime.node.ts";
-import {DefaultTaskScheduler, type Clock} from "../common/runtime.ts";
-import {createTestRuntimeFactory} from "../common/runtime.testing.ts";
 import {ProcessExited, type ProcessRequest} from "../platform/Process.ts";
 import {makeTestLayer, runScoped, scriptedOutcomes, type ScriptedOutcomeOptions, type ScriptedProcess} from "../platform/testing.ts";
+import {runWorkerProgram} from "../platform/worker.ts";
 import {AGGREGATE_TIMEOUT_MS, createAggregateProvider, type AggregateFacts, type AggregateWorkerDocument} from "./aggregate.ts";
-import {aggregateWorkerCommand, createAggregateWorkerCommand, decodeWorkerArgs} from "./aggregate-worker.ts";
+import {aggregateWorker, decodeWorkerArgs, runAggregateWorker} from "./aggregate-worker.ts";
 import type {HostFacts} from "./host.ts";
 import type {ProbeOutcome} from "./probes.ts";
 import type {ToolingFacts} from "./tooling.ts";
@@ -52,13 +51,6 @@ function spawnFailed(message: string, patch: Partial<ProbeOutput> = {}): ProbeOu
 function timedOut(patch: Partial<ProbeOutput> = {}): ProbeOutcome {
   return {kind: "timed-out", stdout: "", stderr: "", durationMs: 1, ...patch};
 }
-
-/** Fixed clock returning a constant instant, so every measured duration is exactly zero. */
-const fixedClock: Clock = {
-  monotonicNow: (): number => 0,
-  isoTimestamp: (): string => "2025-01-01T00:00:00.000Z",
-  delay: (): Promise<void> => Promise.resolve(),
-};
 
 interface CapturedRun {
   readonly command: Readonly<ProcessRequest>;
@@ -526,8 +518,15 @@ async function loadWorkerWithMocks(mocks: {
 
 const WORKER_ROOT = resolve(tmpdir(), "arolariu-aggregate-worker-root");
 
-/** Deterministic timing and concurrency the in-process worker collection observes. */
-const workerCapabilities = {clock: fixedClock, tasks: new DefaultTaskScheduler()} as const;
+/**
+ * Runs the in-process worker collection over the test clock, so every nested duration is zero.
+ *
+ * @param worker - The worker module loaded with mocked packages.
+ * @returns The collected document.
+ */
+async function collectDocument(worker: typeof import("./aggregate-worker.ts")): Promise<AggregateWorkerDocument> {
+  return runScoped(worker.collectAggregateWorkerDocument(WORKER_ROOT), makeTestLayer().layer);
+}
 
 describe("collectAggregateWorkerDocument component collection", () => {
   it("collects available tooling and host facts through the mocked packages", async () => {
@@ -536,7 +535,7 @@ describe("collectAggregateWorkerDocument component collection", () => {
       systeminformation: systeminformationMockModule(),
     });
 
-    const document = await worker.collectAggregateWorkerDocument(WORKER_ROOT, workerCapabilities);
+    const document = await collectDocument(worker);
 
     expect(document.schemaVersion).toBe(1);
     expect(document.tooling.kind).toBe("available");
@@ -552,7 +551,7 @@ describe("collectAggregateWorkerDocument component collection", () => {
       systeminformation: systeminformationMockModule(),
     });
 
-    const document = await worker.collectAggregateWorkerDocument(WORKER_ROOT, workerCapabilities);
+    const document = await collectDocument(worker);
 
     expect(document.tooling.kind).toBe("invalid");
     if (document.tooling.kind === "invalid") {
@@ -570,7 +569,7 @@ describe("collectAggregateWorkerDocument component collection", () => {
       systeminformation: systeminformationMockModule(),
     });
 
-    const document = await worker.collectAggregateWorkerDocument(WORKER_ROOT, workerCapabilities);
+    const document = await collectDocument(worker);
 
     expect(document.tooling.kind).toBe("unavailable");
     if (document.tooling.kind === "unavailable") {
@@ -586,7 +585,7 @@ describe("collectAggregateWorkerDocument component collection", () => {
       systeminformation: systeminformationMockModule({getAllData: async (): Promise<unknown> => ({injectedHostSecret: "host-secret-do-not-leak"})}),
     });
 
-    const document = await worker.collectAggregateWorkerDocument(WORKER_ROOT, workerCapabilities);
+    const document = await collectDocument(worker);
 
     expect(document.host.kind).toBe("invalid");
     if (document.host.kind === "invalid") {
@@ -606,7 +605,7 @@ describe("collectAggregateWorkerDocument component collection", () => {
       }),
     });
 
-    const document = await worker.collectAggregateWorkerDocument(WORKER_ROOT, workerCapabilities);
+    const document = await collectDocument(worker);
 
     expect(document.host.kind).toBe("unavailable");
     if (document.host.kind === "unavailable") {
@@ -624,7 +623,7 @@ describe("collectAggregateWorkerDocument component collection", () => {
       }),
     });
 
-    const document = await worker.collectAggregateWorkerDocument(WORKER_ROOT, workerCapabilities);
+    const document = await collectDocument(worker);
 
     expect(document.host.kind).toBe("available");
     if (document.host.kind === "available") {
@@ -641,7 +640,7 @@ describe("collectAggregateWorkerDocument component collection", () => {
       systeminformation: systeminformationMockModule({dockerInfo: reject, dockerContainers: reject, dockerImages: reject}),
     });
 
-    const document = await worker.collectAggregateWorkerDocument(WORKER_ROOT, workerCapabilities);
+    const document = await collectDocument(worker);
 
     expect(document.host.kind).toBe("available");
     if (document.host.kind === "available") {
@@ -666,7 +665,7 @@ describe("collectAggregateWorkerDocument component collection", () => {
       }),
     });
 
-    const document = await worker.collectAggregateWorkerDocument(WORKER_ROOT, workerCapabilities);
+    const document = await collectDocument(worker);
 
     expect(document.host.kind).toBe("available");
     if (document.host.kind === "available") {
@@ -735,7 +734,7 @@ describe("collectAggregateWorkerDocument component collection", () => {
       systeminformation: systeminformationMockModule(overrides),
     });
 
-    const document = await worker.collectAggregateWorkerDocument(WORKER_ROOT, workerCapabilities);
+    const document = await collectDocument(worker);
 
     expect(document.host.kind).toBe("invalid");
     if (document.host.kind === "invalid") {
@@ -758,7 +757,7 @@ describe("collectAggregateWorkerDocument component collection", () => {
       systeminformation: systeminformationMockModule({dockerInfo: async (): Promise<unknown> => permuted}),
     });
 
-    const document = await worker.collectAggregateWorkerDocument(WORKER_ROOT, workerCapabilities);
+    const document = await collectDocument(worker);
 
     expect(document.host.kind).toBe("available");
     if (document.host.kind === "available") {
@@ -777,7 +776,7 @@ describe("collectAggregateWorkerDocument component collection", () => {
       systeminformation: systeminformationMockModule({dockerInfo: reject, dockerContainers: reject, dockerImages: reject}),
     });
 
-    const document = await worker.collectAggregateWorkerDocument(WORKER_ROOT, workerCapabilities);
+    const document = await collectDocument(worker);
 
     expect(document.host.kind).toBe("available");
     if (document.host.kind === "available") {
@@ -801,7 +800,7 @@ describe("collectAggregateWorkerDocument component collection", () => {
       }),
     });
 
-    const document = await worker.collectAggregateWorkerDocument(WORKER_ROOT, workerCapabilities);
+    const document = await collectDocument(worker);
 
     const serialized = JSON.stringify(document);
     expect(serialized).not.toContain("do-not-leak-marker");
@@ -861,40 +860,55 @@ describe("aggregate worker CLI argument validation", () => {
 // Worker command object — in-process, no host collection
 // ============================================================================
 
-describe("createAggregateWorkerCommand", () => {
-  it("normalizes zero roots into the bounded schema-v1 unavailable document with a completed exit code", async () => {
-    const command = createAggregateWorkerCommand(createTestRuntimeFactory());
+describe("aggregate worker program", () => {
+  it("normalizes zero roots into the bounded schema-v1 unavailable document as the single JSON document", async () => {
+    const harness = makeTestLayer({mode: "json"});
 
-    const execution = await command.invoke(decodeWorkerArgs([]), {presentation: "json"});
+    await runScoped(runWorkerProgram(aggregateWorker, []), harness.layer);
 
-    expect(execution.status).toBe("completed");
-    expect(execution.exitCode).toBe(0);
-    if (execution.status === "completed") {
-      expect(execution.value.schemaVersion).toBe(1);
-      expect(execution.value.tooling).toEqual({kind: "unavailable", reason: expect.stringContaining("invalid arguments"), durationMs: 0});
-      expect(execution.value.host).toEqual({kind: "unavailable", reason: expect.stringContaining("invalid arguments"), durationMs: 0});
-    }
+    const records = harness.output();
+    expect(records).toHaveLength(1);
+    expect(records[0]?.stream).toBe("stdout");
+    const document = JSON.parse(records[0]?.text ?? "") as AggregateWorkerDocument;
+    expect(document.schemaVersion).toBe(1);
+    expect(document.tooling).toEqual({kind: "unavailable", reason: expect.stringContaining("invalid arguments"), durationMs: 0});
+    expect(document.host).toEqual({kind: "unavailable", reason: expect.stringContaining("invalid arguments"), durationMs: 0});
   });
 
   it("normalizes several roots without emitting a usage diagnostic", async () => {
-    const command = createAggregateWorkerCommand(createTestRuntimeFactory());
+    const harness = makeTestLayer({mode: "json"});
 
-    const execution = await command.invoke(decodeWorkerArgs(["root-a", "root-b"]), {presentation: "json"});
+    await runScoped(runWorkerProgram(aggregateWorker, ["root-a", "root-b"]), harness.layer);
 
-    expect(execution.status).toBe("completed");
-    expect(execution.exitCode).toBe(0);
+    expect(harness.output().map((record) => record.stream)).toEqual(["stdout"]);
   });
 
   it("normalizes one blank root without invoking any package collection", async () => {
-    const command = createAggregateWorkerCommand(createTestRuntimeFactory());
+    const document = await runScoped(runAggregateWorker({repositoryRoots: ["   "]}), makeTestLayer().layer);
 
-    const execution = await command.invoke({repositoryRoots: ["   "]});
+    expect(document.tooling.kind).toBe("unavailable");
+    expect(document.host.kind).toBe("unavailable");
+  });
 
-    expect(execution.status).toBe("completed");
-    if (execution.status === "completed") {
-      expect(execution.value.tooling.kind).toBe("unavailable");
-      expect(execution.value.host.kind).toBe("unavailable");
-    }
+  it("normalizes a collection defect into the bounded failure document", async () => {
+    const hostile = new Error("rejected");
+    Object.defineProperty(hostile, "name", {
+      get(): string {
+        throw new Error("hostile error name");
+      },
+    });
+    const worker = await loadWorkerWithMocks({
+      envinfo: envinfoMockModule(async () => Promise.reject(hostile)),
+      systeminformation: systeminformationMockModule(),
+    });
+
+    const document = await runScoped(worker.runAggregateWorker({repositoryRoots: [WORKER_ROOT]}), makeTestLayer().layer);
+
+    expect(document).toEqual({
+      schemaVersion: 1,
+      tooling: {kind: "unavailable", reason: "The aggregate inspection worker failed to collect an aggregate report.", durationMs: 0},
+      host: {kind: "unavailable", reason: "The aggregate inspection worker failed to collect an aggregate report.", durationMs: 0},
+    });
   });
 
   it("decodes worker argv into the repository root list without rejecting any shape", () => {
@@ -902,9 +916,13 @@ describe("createAggregateWorkerCommand", () => {
     expect(decodeWorkerArgs(["root-a", "--flag"])).toEqual({repositoryRoots: ["root-a", "--flag"]});
   });
 
-  it("exports one production singleton command for direct entry", () => {
-    expect(typeof aggregateWorkerCommand.invoke).toBe("function");
-    expect(aggregateWorkerCommand).not.toBe(createAggregateWorkerCommand());
+  it("names the worker and encodes its document as JSON", () => {
+    expect(aggregateWorker.name).toBe("inspection-aggregate-worker");
+    expect(aggregateWorker.encode({schemaVersion: 1, tooling: {kind: "unavailable", reason: "r", durationMs: 0}, host: {kind: "unavailable", reason: "r", durationMs: 0}})).toEqual({
+      schemaVersion: 1,
+      tooling: {kind: "unavailable", reason: "r", durationMs: 0},
+      host: {kind: "unavailable", reason: "r", durationMs: 0},
+    });
   });
 });
 

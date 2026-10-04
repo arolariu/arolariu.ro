@@ -9,23 +9,23 @@ import {lstat, mkdir, readdir, rm, symlink, writeFile} from "node:fs/promises";
 import {tmpdir} from "node:os";
 import {join, resolve, sep} from "node:path";
 import {NodeServices} from "@effect/platform-node";
-import {Layer} from "effect";
+import {Effect, Exit, Layer} from "effect";
 import {describe, expect, it} from "vitest";
 
 import {CommandInputError} from "../common/commander.ts";
 import {nodeFileSystem, snapshotNodeEnvironment} from "../common/runtime.node.ts";
-import type {RuntimeEnvironment} from "../common/runtime.ts";
-import {createTestRuntimeFactory} from "../common/runtime.testing.ts";
 import {resolveRepositoryPaths} from "../common/repository-paths.ts";
 import {layerEnvironment, type EnvironmentSnapshot} from "../platform/Environment.ts";
 import {GlobLive, ReadOnlyFilesLive, TemporaryDirectoriesLive} from "../platform/Files.ts";
 import {outputLayer, SinkLive} from "../platform/Output.ts";
 import {ProcessLive, type ProcessRequest} from "../platform/Process.ts";
+import {ReportedFailure} from "../platform/exit.ts";
 import {makeTestLayer, runScoped, scriptedOutcomes, type ScriptedOutcomeOptions, type ScriptedProcess} from "../platform/testing.ts";
+import {runWorkerProgram} from "../platform/worker.ts";
 import type {ProbeOutcome} from "./probes.ts";
 import type {InspectionOutcome, InspectionProvider} from "./types.ts";
 import {createWorkspaceProvider, projectNxGraph, type WorkspaceFacts} from "./workspace.ts";
-import {createWorkspaceWorkerCommand, decodeWorkerArgs, projectWorkerDocument, workspaceWorkerCommand} from "./workspace.worker.ts";
+import {collectWorkspaceWorkerDocument, decodeWorkerArgs, projectWorkerDocument, workspaceWorker, WorkspaceWorkerFailure} from "./workspace.worker.ts";
 
 // ============================================================================
 // Fixtures
@@ -440,7 +440,7 @@ describe("workspace worker document projection", () => {
   });
 });
 
-describe("createWorkspaceWorkerCommand", () => {
+describe("workspace worker program", () => {
   it.each<readonly [string, readonly string[]]>([
     ["a missing repository root argument", []],
     ["more than one repository root argument", ["root-a", "root-b"]],
@@ -454,35 +454,45 @@ describe("createWorkspaceWorkerCommand", () => {
   });
 
   it("fails without importing Nx when NX_WORKSPACE_ROOT_PATH is missing", async () => {
-    const command = createWorkspaceWorkerCommand(createTestRuntimeFactory());
+    const failure = await runScoped(Effect.flip(collectWorkspaceWorkerDocument({repositoryRoot: REPOSITORY_ROOT})), makeTestLayer().layer);
 
-    const execution = await command.invoke({repositoryRoot: REPOSITORY_ROOT});
-
-    expect(execution.status).toBe("failed");
-    if (execution.status === "failed") {
-      expect(execution.failure.message).toMatch(/NX_WORKSPACE_ROOT_PATH/u);
-    }
+    expect(failure).toBeInstanceOf(WorkspaceWorkerFailure);
+    expect(failure.message).toMatch(/NX_WORKSPACE_ROOT_PATH/u);
   });
 
   it("fails without importing Nx when NX_WORKSPACE_ROOT_PATH does not match the decoded root", async () => {
-    const environment: RuntimeEnvironment = {
-      ...snapshotNodeEnvironment(),
-      variables: {NX_WORKSPACE_ROOT_PATH: resolve(REPOSITORY_ROOT, "elsewhere")},
-    };
-    const command = createWorkspaceWorkerCommand(createTestRuntimeFactory({environment}));
+    const harness = makeTestLayer({environment: {variables: {NX_WORKSPACE_ROOT_PATH: resolve(REPOSITORY_ROOT, "elsewhere")}}});
 
-    const execution = await command.invoke({repositoryRoot: REPOSITORY_ROOT});
+    const failure = await runScoped(Effect.flip(collectWorkspaceWorkerDocument({repositoryRoot: REPOSITORY_ROOT})), harness.layer);
 
-    expect(execution.status).toBe("failed");
-    if (execution.status === "failed") {
-      expect(execution.failure.message).toMatch(/does not match NX_WORKSPACE_ROOT_PATH/u);
-    }
+    expect(failure.message).toMatch(/does not match NX_WORKSPACE_ROOT_PATH/u);
   });
 
-  it("exports one production singleton command for direct entry", () => {
-    expect(workspaceWorkerCommand).toBeInstanceOf(Object);
-    expect(typeof workspaceWorkerCommand.invoke).toBe("function");
-    expect(workspaceWorkerCommand).not.toBe(createWorkspaceWorkerCommand());
+  it("renders a worker failure on stderr only, with nothing on stdout", async () => {
+    const harness = makeTestLayer({mode: "json"});
+
+    const exit = await runScoped(Effect.exit(runWorkerProgram(workspaceWorker, [REPOSITORY_ROOT])), harness.layer);
+
+    expect(exit._tag).toBe("Failure");
+    expect(harness.output()).toEqual([
+      {stream: "stderr", text: "Nx workspace worker requires a non-empty NX_WORKSPACE_ROOT_PATH environment value.\n"},
+    ]);
+  });
+
+  it("reports a malformed argument list as a usage failure", async () => {
+    const harness = makeTestLayer({mode: "json"});
+
+    const exit = await runScoped(Effect.exit(runWorkerProgram(workspaceWorker, [])), harness.layer);
+
+    expect(exit).toEqual(
+      Exit.fail(new ReportedFailure({exitCode: 2, message: "Nx workspace worker requires exactly one repository root argument."})),
+    );
+    expect(harness.output().filter((record) => record.stream === "stdout")).toEqual([]);
+  });
+
+  it("names the worker and emits the projected document unchanged", () => {
+    expect(workspaceWorker.name).toBe("inspection-workspace-worker");
+    expect(workspaceWorker.encode({nodes: {}})).toEqual({nodes: {}});
   });
 });
 

@@ -112,9 +112,10 @@ const legacyKernelModule = /^scripts\/common\/(?:runtime(?:\.node|\.testing)?|co
 const effectNativeFamilies: readonly string[] = ["scripts/commands/docs", "scripts/commands/generate", "scripts/commands/rates"];
 
 /**
- * The legacy inspection worker entrypoints. Their parents spawn them as native Node child processes,
- * so each one reads its own `process.argv` and assigns its own `process.exitCode`, only inside its
- * `import.meta.main` block, until cohort 4 replaces them.
+ * The inspection worker entrypoints. Their parents spawn them as native Node child processes; each
+ * one starts only through `runWorker(...)` (`scripts/platform/worker.ts`) inside its
+ * `import.meta.main` block, so the platform layer — not the worker — reads `process.argv` and maps
+ * the exit code.
  */
 const workerEntrypoints: readonly string[] = [
   "scripts/inspection/aggregate-worker.ts",
@@ -231,15 +232,10 @@ function ownsAmbientRuntime(file: string): boolean {
  * @param file - Repository-relative module path.
  * @param path - Resolved access path.
  * @param inEntryBlock - Whether the access sits inside an `if (import.meta.main)` block.
- * @returns `true` only for `process.argv` inside the `import.meta.main` block of
- * {@link cliEntrypoint} or a {@link workerEntrypoints} module.
+ * @returns `true` only for `process.argv` inside the `import.meta.main` block of {@link cliEntrypoint}.
  */
 function isCliEntrypointArgv(file: string, path: AccessPath, inEntryBlock: boolean): boolean {
-  return (
-    inEntryBlock
-    && (file === cliEntrypoint || workerEntrypoints.includes(file))
-    && startsWithPath(path, ["process", "argv"])
-  );
+  return inEntryBlock && file === cliEntrypoint && startsWithPath(path, ["process", "argv"]);
 }
 
 function discoverProductionScripts(directory: string = "scripts"): readonly string[] {
@@ -708,7 +704,6 @@ function scanRuntimeBoundarySource(
         && startsWithPath(leftPath, ["process", "exitCode"])
         && assignmentOperators.has(node.operatorToken.kind)
         && normalizedFile !== runtimeNodeAdapter
-        && !(entryBlockDepth > 0 && workerEntrypoints.includes(normalizedFile))
       ) {
         add(node, "direct-exit");
       }
@@ -837,8 +832,8 @@ function collectModuleImports(sourceText: string): readonly ModuleImport[] {
 
 /** Structural facts a direct entrypoint must satisfy. */
 interface CommandEntrypointShape {
-  /** Whether the module exports a `MonorepoCommand`-typed singleton. */
-  readonly exportsCommandSingleton: boolean;
+  /** Whether every `import.meta.main` block of the module consists of exactly one `runWorker(...)` call. */
+  readonly startsThroughRunWorker: boolean;
   /** Whether the module guards its process start with `import.meta.main`. */
   readonly usesImportMetaMain: boolean;
 }
@@ -854,44 +849,53 @@ function isImportMetaMain(node: ts.Node): boolean {
 }
 
 /**
- * Describes how one production module exposes and starts its command.
+ * Checks whether a statement is exactly one `runWorker(...)` call, optionally wrapped in a block.
+ *
+ * @param statement - The `import.meta.main` branch.
+ * @returns Whether the branch only calls `runWorker`.
+ */
+function isRunWorkerStart(statement: ts.Statement): boolean {
+  const statements = ts.isBlock(statement) ? statement.statements : [statement];
+  const [only] = statements;
+  return (
+    statements.length === 1
+    && only !== undefined
+    && ts.isExpressionStatement(only)
+    && ts.isCallExpression(only.expression)
+    && ts.isIdentifier(only.expression.expression)
+    && only.expression.expression.text === "runWorker"
+  );
+}
+
+/**
+ * Describes how one production module starts itself.
  *
  * @param sourceText - Source text to parse.
- * @returns Whether the module exports a command singleton and starts itself under `import.meta.main`.
+ * @returns Whether the module starts itself under `import.meta.main`, and whether every such block
+ * only calls `runWorker`.
  */
 function analyzeCommandEntrypoint(sourceText: string): CommandEntrypointShape {
   const source = ts.createSourceFile("entrypoint.ts", sourceText, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
-  let exportsCommandSingleton = false;
   let usesImportMetaMain = false;
-
-  for (const statement of source.statements) {
-    if (!ts.isVariableStatement(statement)) {
-      continue;
-    }
-
-    const isExported = statement.modifiers?.some((modifier) => modifier.kind === ts.SyntaxKind.ExportKeyword) === true;
-    if (!isExported) {
-      continue;
-    }
-
-    for (const declaration of statement.declarationList.declarations) {
-      const {type} = declaration;
-      if (type !== undefined && ts.isTypeReferenceNode(type) && ts.isIdentifier(type.typeName) && type.typeName.text === "MonorepoCommand") {
-        exportsCommandSingleton = true;
-      }
-    }
-  }
+  let entryBlocks = 0;
+  let runWorkerBlocks = 0;
 
   function visit(node: ts.Node): void {
     if (isImportMetaMain(node)) {
       usesImportMetaMain = true;
+    }
+    if (ts.isIfStatement(node) && isImportMetaMain(node.expression)) {
+      entryBlocks += 1;
+      if (node.elseStatement === undefined && isRunWorkerStart(node.thenStatement)) {
+        runWorkerBlocks += 1;
+      }
     }
 
     ts.forEachChild(node, visit);
   }
 
   visit(source);
-  return {exportsCommandSingleton, usesImportMetaMain};
+  return {startsThroughRunWorker: entryBlocks > 0 && entryBlocks === runWorkerBlocks, usesImportMetaMain};
 }
 
 /**
@@ -1387,12 +1391,24 @@ describe("runtime boundary policy", () => {
 
     const violations = workerEntrypoints
       .map((file) => ({file, ...analyzeCommandEntrypoint(readFileSync(file, "utf8"))}))
-      .filter((entrypoint) => !entrypoint.exportsCommandSingleton);
+      .filter((entrypoint) => !entrypoint.startsThroughRunWorker);
 
     expect(violations).toEqual([]);
   });
 
-  it("sanctions process.argv and the final exit code only inside the inspection workers' import.meta.main block", () => {
+  it("recognizes only a lone runWorker call as a worker entry block", () => {
+    expect(analyzeCommandEntrypoint("if (import.meta.main) {\n  runWorker(worker);\n}")).toEqual({
+      startsThroughRunWorker: true,
+      usesImportMetaMain: true,
+    });
+    expect(analyzeCommandEntrypoint("if (import.meta.main) runWorker(worker);").startsThroughRunWorker).toBe(true);
+    expect(analyzeCommandEntrypoint("if (import.meta.main) {\n  runWorker(worker);\n  start();\n}").startsThroughRunWorker).toBe(false);
+    expect(analyzeCommandEntrypoint("if (import.meta.main) {\n  await worker.invoke();\n}").startsThroughRunWorker).toBe(false);
+    expect(analyzeCommandEntrypoint("if (import.meta.main) runWorker(worker); else start();").startsThroughRunWorker).toBe(false);
+    expect(analyzeCommandEntrypoint("export const x = 1;")).toEqual({startsThroughRunWorker: false, usesImportMetaMain: false});
+  });
+
+  it("sanctions neither process.argv nor the exit code in the inspection workers, even inside import.meta.main", () => {
     const source = [
       "const args = process.argv.slice(2);",
       "process.exitCode = 1;",
@@ -1408,6 +1424,8 @@ describe("runtime boundary policy", () => {
       expect(scanRuntimeBoundarySource(worker, source)).toEqual([
         {file: worker, line: 1, rule: "ambient-os-state"},
         {file: worker, line: 2, rule: "direct-exit"},
+        {file: worker, line: 4, rule: "ambient-os-state"},
+        {file: worker, line: 5, rule: "direct-exit"},
         {file: worker, line: 6, rule: "ambient-environment"},
         {file: worker, line: 7, rule: "direct-exit"},
       ]);

@@ -158,8 +158,9 @@ defaults to `"silent"` presentation; `options.presentation` selects `"human"` or
 
 Only [`cli.ts`](./cli.ts), [`format.ts`](./format.ts), [`lint.ts`](./lint.ts), and the two inspection workers
 ([`inspection/aggregate-worker.ts`](./inspection/aggregate-worker.ts) and [`inspection/workspace.worker.ts`](./inspection/workspace.worker.ts))
-start a process. Each worker decodes its argv with `decodeWorkerArgs`, calls `invoke(..., {presentation: "json"})` inside an
-`import.meta.main` block, and assigns the returned exit code. No script calls `process.exit()`.
+start a process. Each worker's `import.meta.main` block only calls `runWorker(<worker definition>)`
+([`platform/worker.ts`](./platform/worker.ts)), which decodes its argv with the worker's `decodeWorkerArgs`, writes the single JSON
+document, and maps the exit code. No script calls `process.exit()`.
 
 `invoke()` is also how commands compose. `commands/status/index.ts` runs doctor as a typed child (`doctorCommand.invoke({quick: true, verbose: false},
 {parent: context, presentation: "silent"})`) rather than spawning a sibling process or parsing JSON.
@@ -351,8 +352,8 @@ imports the legacy kernel; `effect/cli` is imported only under `scripts/commands
 `platform/Prompts.ts`; the effect-native families (`scripts/commands/{generate,rates,docs}/**`, tests included) never import a value from
 the legacy kernel (`common/{runtime,runtime.node,commander,runner,logger,prompts}.ts` or the `common/index.ts` barrel) — a clause-level
 `import type` stays allowed until cohort 7; and the only modules with an `import.meta.main` block are `cli.ts`, `format.ts`, `lint.ts`, and the two
-inspection workers. Inside that block, `cli.ts` may read `process.argv` and no other ambient state, and each inspection worker may
-read `process.argv` and assign `process.exitCode`; neither exemption applies elsewhere in those files.
+inspection workers. Inside that block, `cli.ts` may read `process.argv` and no other ambient state (the exemption does not apply
+elsewhere in the file), and each inspection worker's block consists of exactly one `runWorker(...)` call.
 
 ## Output-policy exemptions
 
