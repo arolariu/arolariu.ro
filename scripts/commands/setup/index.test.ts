@@ -389,7 +389,7 @@ describe("setupPhases", () => {
       required: phase.required,
       dependsOn: phase.dependsOn,
     });
-    const nativePhases: readonly SetupPhaseDefinition[] = [...workspaceSetupPhases, dotnetSetupPhase];
+    const nativePhases: readonly SetupPhaseDefinition[] = [...workspaceSetupPhases, dotnetSetupPhase, pythonSetupPhase];
     const declaredPhases: readonly PhaseMetadata[] = [
       ...workspaceSetupPhases,
       dotnetSetupPhase,

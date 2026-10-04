@@ -36,7 +36,7 @@ import type {InspectionOutcome} from "../../../inspection/types.ts";
 import {Environment} from "../../../platform/Environment.ts";
 import {formatProcessRequest, type ProcessError, type ProcessRequest} from "../../../platform/Process.ts";
 import {SetupActionFailed} from "../errors.ts";
-import {phaseResult, runPhaseCommand, submitSetupAction, type PhaseCommandOptions} from "../phase-support.ts";
+import {phaseResult, processFailureOutput, runPhaseCommand, submitSetupAction, type PhaseCommandOptions} from "../phase-support.ts";
 import type {
   InstallationProposal,
   SetupActionScope,
@@ -99,8 +99,6 @@ const USER_SECRETS_ACTION = "dotnet.user-secrets.set";
 const CERTIFICATE_CREATE_ACTION = "dotnet.certificate.create";
 const CERTIFICATE_TRUST_ACTION = "dotnet.certificate.trust";
 const LEADING_VERSION_PATTERN = /^(\d+)\.(\d+)\.(\d+)/u;
-/** Bounded length of the child output a failed mutation reports. */
-const MAX_FAILURE_EVIDENCE_LENGTH = 2_000;
 /**
  * Bounded ceiling for every long-running .NET installation, restore, and trust mutation.
  *
@@ -128,25 +126,6 @@ function describeProcessFailure(error: ProcessError): string {
     case "ProcessTimedOut":
       return "Process timed out";
   }
-}
-
-/**
- * Selects the bounded child output reported for a failed process: standard error, else standard
- * output, else the start failure's message.
- *
- * @param error - The process failure.
- * @returns The bounded evidence, possibly empty.
- */
-function processFailureOutput(error: ProcessError): string {
-  const candidate =
-    error.stderr.length > 0
-      ? error.stderr
-      : error.stdout.length > 0
-        ? error.stdout
-        : error._tag === "ProcessSpawnFailed"
-          ? error.message
-          : "";
-  return candidate.slice(0, MAX_FAILURE_EVIDENCE_LENGTH);
 }
 
 /**
@@ -199,7 +178,7 @@ function runMutationCommand(
  * @returns Bounded evidence lines; the caller still sanitizes them.
  */
 function secretCommandFailureEvidence(error: ProcessError): readonly string[] {
-  const evidence = processFailureOutput({...error, stdout: ""} as ProcessError);
+  const evidence = processFailureOutput(error, {stdout: false});
   return [
     ...(error._tag === "ProcessExited" ? [`Command exited with code ${String(error.exitCode)}.`] : []),
     ...(error._tag === "ProcessTimedOut" ? ["Command timed out."] : []),

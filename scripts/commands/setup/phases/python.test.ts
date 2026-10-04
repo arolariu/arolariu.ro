@@ -1,44 +1,54 @@
 // @vitest-environment node
 /**
  * @fileoverview Contract tests for the independent Python setup phase.
- * @module scripts.setup.python.test
+ * @module scripts/commands/setup/phases/python.test
  *
  * @remarks
- * Every test drives the real phase against an injected {@link LegacySetupPhaseRuntime}: a recording
- * process runner replaying typed {@link ProcessOutcome} fixtures, a deterministic clock, an
- * in-memory recursive-removal filesystem, and an immutable environment snapshot that supplies the
- * host platform. No test in this file reads the live checkout, spawns a process, or observes
- * ambient Node state.
+ * Every test runs the real Effect phase on the in-memory `makeTestLayer` harness: request-keyed
+ * scripted commands replaying legacy-shaped outcomes, a recording `python` inspection session that
+ * replays an outcome sequence, a recording (or the production dry-run) `SetupActions`, a recording
+ * filesystem that observes every recursive removal, and an environment snapshot that supplies the
+ * host platform. Phases run under a counting clock (see `runPhase`), so each reports the
+ * deterministic duration of its legacy test clock. No test in this file reads the live checkout,
+ * spawns a process, or observes ambient Node state.
  */
 
 import {resolve} from "node:path";
-import {Effect, Layer} from "effect";
+
+import {Exit, Layer} from "effect";
 import {describe, expect, it, vi} from "vitest";
 
-import type {CommandContext} from "../../../common/commander.ts";
-import {InMemoryLoggerSink, MonorepositoryConsoleLogger} from "../../../common/logger.ts";
 import {createRepositoryPaths} from "../../../common/repository-paths.ts";
 import type {MinimumVersion, RepositoryRequirements} from "../../../common/requirements.ts";
-import {AbstractProcessRunner, type ProcessOutcome, type ProcessRequest, type ProcessRunOptions} from "../../../common/runner.ts";
-import {createMemoryFileSystem, createTestRuntimeFactory} from "../../../common/runtime.testing.ts";
-import type {Clock, RuntimeEnvironment} from "../../../common/runtime.ts";
 import type {PythonFacts, PythonInterpreterFact} from "../../../inspection/python.ts";
-import type {LegacyRepositoryInspectionSession} from "../../../platform/bridge.ts";
-import {Prompts} from "../../../platform/Prompts.ts";
-import {makeTestLayer} from "../../../platform/testing.ts";
 import type {InspectionOutcome} from "../../../inspection/types.ts";
-import {createPythonSetupPhase, pythonInVirtualEnvironment, pythonSetupPhase, selectPythonInstallationProposal} from "./python.ts";
-import {setupActionsLayer} from "../actions.ts";
-import {legacySetupActionExecutor} from "../legacy-phase.ts";
+import type {Presenter} from "../../../platform/Output.ts";
+import type {ProcessRequest} from "../../../platform/Process.ts";
+import {makeTestLayer, type RecordedProcessCall, type TestHarness} from "../../../platform/testing.ts";
+import type {SetupActions} from "../actions.ts";
+import {
+  interruptingActions,
+  keyedResponder,
+  productionActions,
+  recordingActions,
+  recordingFileSystem,
+  recordingInspection,
+  runPhase as runPhaseWith,
+  runPhaseExit,
+  scriptedCommands,
+  setupActionLines,
+  type ScriptedCommandOutcome,
+} from "../phase-testing.ts";
 import type {
-  LegacySetupAction,
+  SetupAction,
   SetupActionDisposition,
-  LegacySetupActionExecutor,
-  LegacySetupContext,
+  SetupContext,
   SetupInput,
+  SetupPhaseDefinition,
   SetupPhaseResult,
-  LegacySetupPhaseRuntime,
+  SetupRequirements,
 } from "../types.ts";
+import {createPythonSetupPhase, pythonInVirtualEnvironment, pythonSetupPhase, selectPythonInstallationProposal} from "./python.ts";
 
 const requiredPython: MinimumVersion = {major: 3, minor: 12, patch: 0};
 const paths = createRepositoryPaths(resolve("C:\\fixture\\arolariu.ro"));
@@ -46,11 +56,11 @@ const defaultInterpreter: PythonInterpreterFact = {command: "py", prefixArgs: ["
 const venvSpecWin32 = pythonInVirtualEnvironment(paths.expRoot, "win32");
 const venvDirectoryWin32 = `${paths.expRoot}\\.venv`;
 
-function succeeded(patch: Readonly<{stdout?: string; stderr?: string}> = {}): ProcessOutcome {
+function succeeded(patch: Readonly<{stdout?: string; stderr?: string}> = {}): ScriptedCommandOutcome {
   return {kind: "succeeded", exitCode: 0, stdout: patch.stdout ?? "", stderr: patch.stderr ?? "", durationMs: 1};
 }
 
-function exited(exitCode: number, patch: Readonly<{stdout?: string; stderr?: string}> = {}): ProcessOutcome {
+function exited(exitCode: number, patch: Readonly<{stdout?: string; stderr?: string}> = {}): ScriptedCommandOutcome {
   return {kind: "exited", exitCode, stdout: patch.stdout ?? "", stderr: patch.stderr ?? "", durationMs: 1};
 }
 
@@ -59,41 +69,7 @@ function commandKey(request: Readonly<ProcessRequest>): string {
 }
 
 /** One recorded child invocation. */
-type RecordedCall = Readonly<{request: ProcessRequest; options: ProcessRunOptions}>;
-
-/** Records every invocation while replaying request-keyed typed outcomes. */
-class FakeProcessRunner extends AbstractProcessRunner {
-  readonly #responses: Readonly<Record<string, ProcessOutcome | readonly ProcessOutcome[]>>;
-  readonly #offsets = new Map<string, number>();
-  readonly #calls: RecordedCall[] = [];
-
-  public constructor(responses: Readonly<Record<string, ProcessOutcome | readonly ProcessOutcome[]>> = {}) {
-    super();
-    this.#responses = responses;
-  }
-
-  /** Every recorded invocation, in call order. */
-  public get calls(): readonly RecordedCall[] {
-    return this.#calls;
-  }
-
-  /** {@inheritDoc AbstractProcessRunner.execute} */
-  protected override execute(request: Readonly<ProcessRequest>, options: Readonly<ProcessRunOptions>): Promise<ProcessOutcome> {
-    this.#calls.push({request, options});
-    const key = commandKey(request);
-    const configured = this.#responses[key];
-    if (configured === undefined) {
-      return Promise.resolve(succeeded());
-    }
-    if (!Array.isArray(configured)) {
-      return Promise.resolve(configured as ProcessOutcome);
-    }
-    const sequence = configured as readonly ProcessOutcome[];
-    const offset = this.#offsets.get(key) ?? 0;
-    this.#offsets.set(key, offset + 1);
-    return Promise.resolve(sequence[offset] ?? sequence.at(-1) ?? succeeded());
-  }
-}
+type RecordedCall = RecordedProcessCall;
 
 function requirements(): RepositoryRequirements {
   return {
@@ -148,181 +124,108 @@ function invalidOutcome(
   return {kind: "invalid", issues, durationMs: 1};
 }
 
-/** A controllable fake {@link LegacyRepositoryInspectionSession} that only ever resolves the `"python"` key. */
-function createPythonInspectionHarness(outcomes: readonly InspectionOutcome<PythonFacts>[] = [availableOutcome()]): Readonly<{
-  session: LegacyRepositoryInspectionSession;
-  inspect: ReturnType<typeof vi.fn>;
-  invalidate: ReturnType<typeof vi.fn>;
-}> {
-  let callIndex = 0;
-  const inspect = vi.fn(async (key: "python") => {
-    if (key !== "python") {
-      return {kind: "unavailable" as const, reason: "Not exercised by this test.", durationMs: 0};
-    }
-    const outcome = outcomes[Math.min(callIndex, outcomes.length - 1)]!;
-    callIndex += 1;
-    return outcome;
-  });
-  const invalidate = vi.fn();
-  return {
-    session: {inspect, invalidate, updateInfrastructureEngine: vi.fn()} as unknown as LegacyRepositoryInspectionSession,
-    inspect,
-    invalidate,
-  };
-}
-
-function createActions(dispositions: Readonly<Record<string, SetupActionDisposition>> = {}): Readonly<{
-  actions: LegacySetupActionExecutor;
-  actionIds: string[];
-  actionRecords: LegacySetupAction[];
-}> {
-  const actionIds: string[] = [];
-  const actionRecords: LegacySetupAction[] = [];
-  const actions: LegacySetupActionExecutor = {
-    run: async (action) => {
-      actionIds.push(action.id);
-      actionRecords.push(action);
-      const disposition = dispositions[action.id] ?? "executed";
-      if (disposition === "executed") {
-        await action.execute();
-      }
-      return disposition;
-    },
-  };
-  return {actions, actionIds, actionRecords};
-}
-
-/**
- * The exact context view the migrated Python phase reads.
- *
- * @remarks
- * The deprecated {@link LegacySetupContext.runner} and {@link LegacySetupContext.now} members are deliberately
- * absent: a migrated phase must read its capabilities from {@link LegacySetupContext.runtime} only, so
- * any relapse becomes a type error instead of a silently passing test.
- */
-type MigratedSetupContext = Omit<LegacySetupContext, "runner" | "now"> & Readonly<{runtime: LegacySetupPhaseRuntime}>;
-
-function environmentSnapshot(platform: NodeJS.Platform): RuntimeEnvironment {
-  return {
-    variables: Object.freeze({}),
-    cwd: paths.root,
-    executablePath: "C:\\Program Files\\nodejs\\node.exe",
-    platform,
-    architecture: "x64",
-    stdinIsTTY: false,
-    stdoutIsTTY: false,
-    isCI: true,
-  };
-}
-
 interface PythonHarness {
   /** The phase under test. */
-  readonly phase: ReturnType<typeof createPythonSetupPhase>;
-  /** The migrated setup context handed to the phase. */
-  readonly context: MigratedSetupContext;
-  /** Recording process runner observed by the phase. */
-  readonly runner: FakeProcessRunner;
+  readonly phase: SetupPhaseDefinition;
+  /** The setup context handed to the phase. */
+  readonly context: SetupContext;
+  /** The in-memory platform harness. */
+  readonly platform: TestHarness;
+  /** Every recorded process call, in order. */
+  readonly runner: {readonly calls: readonly RecordedCall[]};
   /** Action identifiers in evaluation order. */
   readonly actionIds: string[];
   /** Complete action records in evaluation order. */
-  readonly actionRecords: LegacySetupAction[];
-  /** Every directory path passed to the recursive-removal filesystem. */
+  readonly actionRecords: readonly SetupAction[];
+  /** Every directory path recursively removed through the filesystem. */
   readonly removedDirectories: readonly string[];
   /** Inspection session probe. */
   readonly inspect: ReturnType<typeof vi.fn>;
   /** Inspection invalidation probe. */
   readonly invalidate: ReturnType<typeof vi.fn>;
+  /** Every service the phase runs with. */
+  readonly layer: Layer.Layer<SetupRequirements>;
 }
 
 async function createHarness(
   input: Readonly<{
-    responses?: Readonly<Record<string, ProcessOutcome | readonly ProcessOutcome[]>>;
+    responses?: Readonly<Record<string, ScriptedCommandOutcome | readonly ScriptedCommandOutcome[]>>;
     dispositions?: Readonly<Record<string, SetupActionDisposition>>;
     options?: SetupInput;
     platform?: NodeJS.Platform;
     pythonOutcomes?: readonly InspectionOutcome<PythonFacts>[];
+    /** Replaces the recording consent policy. */
+    actions?: (recording: Layer.Layer<SetupActions>) => Layer.Layer<SetupActions, never, Presenter>;
   }> = {},
 ): Promise<PythonHarness> {
-  const runner = new FakeProcessRunner(input.responses);
-  const {actions, actionIds, actionRecords} = createActions(input.dispositions);
-  const {session, inspect, invalidate} = createPythonInspectionHarness(input.pythonOutcomes);
-  const sink = new InMemoryLoggerSink();
-  const logger = new MonorepositoryConsoleLogger("setup::python", {color: false, sink});
-
-  let elapsed = 0;
-  const clock: Clock = {
-    monotonicNow: (): number => elapsed++,
-    isoTimestamp: (): string => "2026-09-01T00:00:00.000Z",
-    delay: (): Promise<void> => Promise.resolve(),
-  };
-
-  const files = createMemoryFileSystem({});
-  const removedDirectories: string[] = [];
-  vi.spyOn(files, "remove").mockImplementation(async (path: string) => {
-    removedDirectories.push(path);
+  const options = input.options ?? setupOptions();
+  const platform = makeTestLayer({
+    processes: [scriptedCommands(keyedResponder(input.responses ?? {}))],
+    environment: {
+      cwd: paths.root,
+      executablePath: "C:\\Program Files\\nodejs\\node.exe",
+      platform: input.platform ?? "win32",
+      architecture: "x64",
+      stdinIsTTY: false,
+      stdoutIsTTY: false,
+      isCI: true,
+    },
+    context: "setup::python",
+    verbose: options.verbose,
   });
 
-  const factory = createTestRuntimeFactory({
-    files,
-    runner,
-    clock,
-    logger,
-    environment: environmentSnapshot(input.platform ?? "win32"),
+  const outcomes = input.pythonOutcomes ?? [availableOutcome()];
+  let callIndex = 0;
+  const inspection = recordingInspection({
+    python: () => {
+      const outcome = outcomes[Math.min(callIndex, outcomes.length - 1)]!;
+      callIndex += 1;
+      return outcome;
+    },
   });
-  const commandRuntime = await factory.createRoot({presentation: "silent", registerProcessSignals: false});
-  const command: CommandContext = {runtime: commandRuntime, presentation: "silent"};
 
-  const runtime: LegacySetupPhaseRuntime = {
-    command,
-    runner: commandRuntime.runner,
-    files: commandRuntime.files,
-    http: commandRuntime.http,
-    clock: commandRuntime.clock,
-    tasks: commandRuntime.tasks,
-    environment: commandRuntime.environment,
-    invokeGenerate: vi.fn<LegacySetupPhaseRuntime["invokeGenerate"]>(() =>
-      Promise.reject(new Error("The Python setup phase must never invoke generation.")),
-    ),
-  };
+  const mutations: string[] = [];
+  const recording = recordingActions(false, input.dispositions);
+  const actions = input.actions === undefined ? recording.layer : input.actions(recording.layer);
+  const layer = Layer.merge(actions, recordingFileSystem(mutations)).pipe(Layer.provideMerge(platform.layer));
 
-  const context: MigratedSetupContext = {
-    options: input.options ?? setupOptions(),
+  const context: SetupContext = {
+    options,
     paths,
     requirements: requirements(),
-    inspection: session,
-    runtime,
-    prompts: {
-      confirm: async () => true,
-      select: async <TValue extends string>(
-        _message: string,
-        choices: readonly Readonly<{value: TValue; label: string}>[],
-      ): Promise<TValue> => {
-        const selected = choices[0]?.value;
-        if (selected === undefined) {
-          throw new Error("A test choice is required.");
-        }
-        return selected;
-      },
-      text: async () => "",
-      secret: async () => "",
-    },
-    actions,
-    logger,
+    inspection: inspection.session,
   };
 
-  const phase = createPythonSetupPhase();
-  return {phase, context, runner, actionIds, actionRecords, removedDirectories, inspect, invalidate};
+  return {
+    phase: createPythonSetupPhase(),
+    context,
+    platform,
+    runner: {
+      get calls(): readonly RecordedCall[] {
+        return platform.processCalls();
+      },
+    },
+    actionIds: recording.actionIds,
+    get actionRecords(): readonly SetupAction[] {
+      return recording.run.mock.calls.map(([action]) => action);
+    },
+    get removedDirectories(): readonly string[] {
+      return mutations.filter((mutation) => mutation.startsWith("remove: ")).map((mutation) => mutation.slice("remove: ".length));
+    },
+    inspect: inspection.inspect,
+    invalidate: inspection.invalidate,
+    layer,
+  };
 }
 
 /**
- * Runs the phase against the migrated context view, optionally replacing one context member.
+ * Runs the phase against its harness.
  *
  * @param harness - Assembled test harness.
- * @param patch - Context members replaced for this run.
  * @returns The completed phase result.
  */
-function runPhase(harness: PythonHarness, patch: Partial<MigratedSetupContext> = {}): Promise<SetupPhaseResult> {
-  return harness.phase.run({...harness.context, ...patch} as LegacySetupContext);
+function runPhase(harness: PythonHarness): Promise<SetupPhaseResult> {
+  return runPhaseWith(harness.phase, harness.context, harness.layer);
 }
 
 function callFor(harness: PythonHarness, key: string): RecordedCall | undefined {
@@ -332,13 +235,6 @@ function callFor(harness: PythonHarness, key: string): RecordedCall | undefined 
 describe("python setup public contract", () => {
   it("publishes an independent required phase", () => {
     expect(pythonSetupPhase).toMatchObject({id: "python", required: true, dependsOn: []});
-  });
-
-  it("requires an invocation-scoped runtime instead of falling back to ambient capabilities", async () => {
-    const harness = await createHarness();
-    const {runtime: _runtime, ...withoutRuntime} = harness.context;
-
-    await expect(harness.phase.run(withoutRuntime as LegacySetupContext)).rejects.toThrow(/setup phase runtime/i);
   });
 });
 
@@ -541,7 +437,7 @@ describe("python interpreter fact readiness", () => {
     expect(callFor(harness, brewInstallKey)?.options).toMatchObject({
       cwd: paths.root,
       output: "inherit",
-      timeoutMs: 1_200_000,
+      timeout: 1_200_000,
     });
   });
 });
@@ -680,8 +576,8 @@ describe("pip upgrade and dependency installation", () => {
     const result = await runPhase(harness);
 
     expect(result.status).toBe("succeeded");
-    expect(callFor(harness, upgradeKey)?.options).toMatchObject({cwd: paths.expRoot, output: "tee", timeoutMs: 1_200_000});
-    expect(callFor(harness, installKey)?.options).toMatchObject({cwd: paths.expRoot, output: "tee", timeoutMs: 1_200_000});
+    expect(callFor(harness, upgradeKey)?.options).toMatchObject({cwd: paths.expRoot, output: "tee", timeout: 1_200_000});
+    expect(callFor(harness, installKey)?.options).toMatchObject({cwd: paths.expRoot, output: "tee", timeout: 1_200_000});
   });
 
   it("fails without installing requirements when the pip upgrade command fails", async () => {
@@ -821,29 +717,37 @@ describe("python cache freshness around mutations", () => {
     expect(harness.inspect).toHaveBeenCalledTimes(4);
   });
 
-  it("propagates a later AbortError after an earlier mutation already executed and invalidated", async () => {
-    const interruption = new DOMException("interrupted", "AbortError");
-    const harness = await createHarness();
-    const actions: LegacySetupActionExecutor = {
-      run: async (action) => {
-        if (action.id === "python.dependencies.install") {
-          throw interruption;
-        }
-        return harness.context.actions.run(action);
-      },
-    };
+  it("propagates a later interruption after an earlier mutation already executed and invalidated", async () => {
+    const harness = await createHarness({actions: (recording) => interruptingActions("python.dependencies.install", recording)});
 
-    await expect(runPhase(harness, {actions})).rejects.toBe(interruption);
+    const exit = await runPhaseExit(harness.phase, harness.context, harness.layer);
+
+    expect(Exit.hasInterrupts(exit)).toBe(true);
     expect(harness.actionIds).toEqual(["python.pip.upgrade"]);
     expect(harness.invalidate).toHaveBeenCalledTimes(1);
   });
 
-  it("rethrows interruption instead of reporting a failed result", async () => {
-    const abortError = Object.assign(new Error("aborted"), {name: "AbortError"});
-    const harness = await createHarness();
-    const actions: LegacySetupActionExecutor = {run: async () => Promise.reject(abortError)};
+  it("propagates an interruption instead of reporting a failed result", async () => {
+    const harness = await createHarness({actions: (recording) => interruptingActions("python.pip.upgrade", recording)});
 
-    await expect(runPhase(harness, {actions})).rejects.toBe(abortError);
+    const exit = await runPhaseExit(harness.phase, harness.context, harness.layer);
+
+    expect(Exit.hasInterrupts(exit)).toBe(true);
+    expect(harness.runner.calls).toEqual([]);
+  });
+
+  it("invalidates python when an interruption stops an attempted mutation", async () => {
+    const upgradeKey = commandKey({
+      command: venvSpecWin32.command,
+      args: [...venvSpecWin32.args, "-m", "pip", "install", "--upgrade", "pip"],
+    });
+    const harness = await createHarness({responses: {[upgradeKey]: {kind: "cancelled"}}});
+
+    const exit = await runPhaseExit(harness.phase, harness.context, harness.layer);
+
+    expect(Exit.hasInterrupts(exit)).toBe(true);
+    expect(harness.invalidate).toHaveBeenCalledExactlyOnceWith("python");
+    expect(harness.inspect).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -1013,55 +917,22 @@ describe("python characterization (pre-Effect migration)", () => {
     });
   });
 
-  /**
-   * Runs the Effect kernel's consent policy (`setupActionsLayer`) in `--dry-run` mode behind its
-   * legacy executor view, so the pin observes exactly what the production kernel plans, logs, and
-   * executes (nothing) for this legacy phase. Any prompt fails the test.
-   */
-  async function legacyDryRunExecutor(options: SetupInput): Promise<
-    Readonly<{
-      actions: LegacySetupActionExecutor;
-      executed: string[];
-      lines: () => readonly string[];
-    }>
-  > {
-    const harness = makeTestLayer({context: "setup"});
-    const refuse = (): Effect.Effect<never> => Effect.die(new Error("A dry run must never prompt."));
-    const prompts = Prompts.of({confirm: refuse, select: refuse, text: refuse, secret: refuse});
-    const layer = setupActionsLayer(options).pipe(Layer.provideMerge(Layer.merge(harness.layer, Layer.succeed(Prompts, prompts))));
-    const executor = await Effect.runPromise(legacySetupActionExecutor().pipe(Effect.provide(layer)));
-    const executed: string[] = [];
-    return {
-      executed,
-      lines: () => harness.output().map(({stream, text}) => `${stream}: ${text.replace(/\n$/u, "")}`),
-      actions: {
-        run: (action) =>
-          executor.run({
-            ...action,
-            execute: async () => {
-              executed.push(action.id);
-              await action.execute();
-            },
-          }),
-      },
-    };
-  }
-
   it("pins a mutation-free dry run when the interpreter is missing", async () => {
     // Arrange
     const options = setupOptions({dryRun: true});
-    const dryRun = await legacyDryRunExecutor(options);
+    const dryRun = productionActions(options);
     const harness = await createHarness({
       options,
+      actions: () => dryRun.layer,
       pythonOutcomes: [availableOutcome({interpreters: [], selected: undefined, virtualEnvironment: {exists: false, compatible: false}})],
       responses: {[wingetVersionKey]: succeeded({stdout: "v1.11.0\n"})},
     });
 
     // Act
-    const result = await runPhase(harness, {actions: dryRun.actions});
+    const result = await runPhase(harness);
     const observed = withRootPlaceholder({
       result,
-      actionLines: dryRun.lines(),
+      actionLines: setupActionLines(harness.platform.output()),
       executed: dryRun.executed,
       commands: harness.runner.calls.map(({request}) => request),
       removedDirectories: harness.removedDirectories,
@@ -1091,17 +962,18 @@ describe("python characterization (pre-Effect migration)", () => {
   it("pins a mutation-free dry run when an existing incompatible virtual environment would be removed and recreated", async () => {
     // Arrange
     const options = setupOptions({dryRun: true});
-    const dryRun = await legacyDryRunExecutor(options);
+    const dryRun = productionActions(options);
     const harness = await createHarness({
       options,
+      actions: () => dryRun.layer,
       pythonOutcomes: [availableOutcome({virtualEnvironment: {exists: true, compatible: false}})],
     });
 
     // Act
-    const result = await runPhase(harness, {actions: dryRun.actions});
+    const result = await runPhase(harness);
     const observed = withRootPlaceholder({
       result,
-      actionLines: dryRun.lines(),
+      actionLines: setupActionLines(harness.platform.output()),
       executed: dryRun.executed,
       commands: harness.runner.calls.map(({request}) => request),
       removedDirectories: harness.removedDirectories,

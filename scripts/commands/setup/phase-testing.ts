@@ -359,3 +359,58 @@ export async function runPhase(
   }
   throw Cause.squash(exit.cause);
 }
+
+/**
+ * Builds a responder that replays request-keyed outcomes: an unscripted request succeeds, and a
+ * sequence replays in order and then repeats its last outcome.
+ *
+ * @param responses - Outcome, or outcome sequence, per command key (`command` and `args` joined by NUL).
+ * @returns The responder.
+ */
+export function keyedResponder(
+  responses: Readonly<Record<string, ScriptedCommandOutcome | readonly ScriptedCommandOutcome[]>>,
+): (request: ProcessRequest) => ScriptedCommandOutcome {
+  const succeeded: ScriptedCommandOutcome = {kind: "succeeded", exitCode: 0, stdout: "", stderr: "", durationMs: 1};
+  const offsets = new Map<string, number>();
+  return (request) => {
+    const key = [request.command, ...request.args].join("\u0000");
+    const configured = responses[key];
+    if (configured === undefined) {
+      return succeeded;
+    }
+    if (!Array.isArray(configured)) {
+      return configured as ScriptedCommandOutcome;
+    }
+    const sequence = configured as readonly ScriptedCommandOutcome[];
+    const offset = offsets.get(key) ?? 0;
+    offsets.set(key, offset + 1);
+    return sequence[offset] ?? sequence.at(-1) ?? succeeded;
+  };
+}
+
+/**
+ * A `SetupActions` that delegates to another one, except that it interrupts when `interruptAt` is
+ * submitted.
+ *
+ * @param interruptAt - The action whose submission interrupts.
+ * @param delegate - The actions every other submission reaches.
+ * @returns The layer.
+ */
+export function interruptingActions(interruptAt: string, delegate: Layer.Layer<SetupActions>): Layer.Layer<SetupActions> {
+  return Layer.effect(
+    SetupActions,
+    Effect.map(Effect.service(SetupActions), (actions) =>
+      SetupActions.of({run: (action) => (action.id === interruptAt ? Effect.interrupt : actions.run(action))}),
+    ),
+  ).pipe(Layer.provide(delegate));
+}
+
+/**
+ * Reads the action lines (`[arolariu::setup] …`) the consent policy rendered, as `<stream>: <text>`.
+ *
+ * @param records - The harness sink records.
+ * @returns The action lines, in order, without their line terminators.
+ */
+export function setupActionLines(records: readonly {readonly stream: string; readonly text: string}[]): readonly string[] {
+  return records.map(({stream, text}) => `${stream}: ${text.replace(/\n$/u, "")}`).filter((line) => line.includes("[arolariu::setup] "));
+}

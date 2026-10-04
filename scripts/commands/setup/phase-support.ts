@@ -20,6 +20,9 @@ import type {SetupAction, SetupActionDisposition, SetupContext, SetupPhaseResult
 /** Bounded default timeout applied to every setup phase command that does not request its own. */
 export const PHASE_COMMAND_TIMEOUT_MS = 120_000;
 
+/** Bounded length of the child output a failed setup command reports. */
+const MAX_FAILURE_OUTPUT_LENGTH = 2_000;
+
 /** Per-command overrides of the setup command defaults. */
 export interface PhaseCommandOptions {
   /** Working directory; defaults to the repository root. */
@@ -110,4 +113,25 @@ export function submitSetupAction(action: SetupAction): Effect.Effect<SubmittedA
  */
 export function phaseResult(startedAt: number, input: Omit<SetupPhaseResult, "durationMs">): Effect.Effect<SetupPhaseResult> {
   return Effect.map(Clock.currentTimeMillis, (now) => ({...input, durationMs: Math.max(0, now - startedAt)}));
+}
+
+/**
+ * Selects the bounded child output reported for a failed process, as the legacy runner's failure
+ * evidence did: standard error, else standard output, else the start failure's message.
+ *
+ * @param error - The process failure.
+ * @param options - `stdout: false` never reports standard output (for a command whose stdout may
+ * echo a secret payload).
+ * @returns At most 2 000 characters, possibly empty.
+ */
+export function processFailureOutput(error: ProcessError, options: {readonly stdout?: boolean} = {}): string {
+  const candidate =
+    error.stderr.length > 0
+      ? error.stderr
+      : options.stdout !== false && error.stdout.length > 0
+        ? error.stdout
+        : error._tag === "ProcessSpawnFailed"
+          ? error.message
+          : "";
+  return candidate.slice(0, MAX_FAILURE_OUTPUT_LENGTH);
 }

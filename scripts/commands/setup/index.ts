@@ -69,7 +69,7 @@ export const setupPhases: readonly SetupPhaseDefinition[] = [
   dotnetSetupPhase,
   legacyPhase(reactSetupPhase),
   legacyPhase(svelteSetupPhase),
-  legacyPhase(pythonSetupPhase),
+  pythonSetupPhase,
   legacyPhase(infrastructureSetupPhase),
 ];
 

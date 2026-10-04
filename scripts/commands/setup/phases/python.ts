@@ -1,6 +1,6 @@
 /**
  * @fileoverview Independent isolated Python interpreter and virtual-environment setup phase.
- * @module scripts.setup.python
+ * @module scripts/commands/setup/phases/python
  *
  * @remarks
  * Every read-only Python observation (fixed-candidate interpreter availability, the selected
@@ -11,8 +11,8 @@
  * repository-local tooling configuration.
  *
  * Every attempted mutation runs through {@link runPythonMutation}, which invalidates exactly
- * `"python"` in a `finally` block around the child command so a failed or interrupted attempt can
- * never leave the shared session cache stale, and then re-inspects `"python"` immediately after an
+ * `"python"` in a finalizer around the child command so a failed or interrupted attempt can never
+ * leave the shared session cache stale, and then re-inspects `"python"` immediately after an
  * `"executed"` disposition, before any later action can execute or be declined. Planned and
  * declined actions never invalidate anything. A successful mutation command or an `"executed"`
  * disposition alone is never treated as proof of readiness: each mutation asserts its own
@@ -20,41 +20,37 @@
  * environment is never recreated, but pip is always upgraded and `requirements-dev.txt` is always
  * (re)installed, each verified from refreshed facts.
  *
- * The phase reads every capability from the invocation-scoped {@link LegacySetupPhaseRuntime}: the
- * process runner, the clock, the task scheduler, the recursive-removal filesystem, and the
- * host-platform snapshot. It owns no ambient Node state and no test-only constructor dependency.
+ * The phase runs its commands through `Process` with the setup command defaults, removes an
+ * incompatible virtual environment through `FileSystem`, and reads the host platform from
+ * `Environment`. It owns no ambient Node state and no test-only constructor dependency.
  */
 
-import {
-  formatProcessRequest,
-  processFailureEvidence,
-  type ProcessOutcome,
-  type ProcessRequest,
-  type SucceededProcessOutcome,
-} from "../../../common/runner.ts";
-import {CommandCancellation} from "../../../common/runtime.ts";
+import {Clock, Effect, FileSystem} from "effect";
+
 import type {MinimumVersion} from "../../../common/requirements.ts";
 import type {PythonFacts} from "../../../inspection/python.ts";
 import type {InspectionOutcome} from "../../../inspection/types.ts";
-import {
-  requireLegacySetupPhaseRuntime,
-  type InstallationProposal,
-  type SetupActionScope,
-  type LegacySetupContext,
-  type LegacySetupPhaseDefinition,
-  type SetupPhaseResult,
-  type LegacySetupPhaseRuntime,
+import {Environment} from "../../../platform/Environment.ts";
+import {formatProcessRequest, type ProcessError, type ProcessRequest} from "../../../platform/Process.ts";
+import {SetupActionFailed} from "../errors.ts";
+import {phaseResult, processFailureOutput, runPhaseCommand, submitSetupAction, type PhaseCommandOutcome} from "../phase-support.ts";
+import type {
+  InstallationProposal,
+  SetupActionScope,
+  SetupContext,
+  SetupPhaseDefinition,
+  SetupPhaseResult,
+  SetupRequirements,
 } from "../types.ts";
 
 /**
  * Bounded ceiling for every long-running Python interpreter installation and pip mutation.
  *
  * @remarks
- * The invocation-scoped runner defaults to a probe-sized timeout, which is correct for a
- * `--version` probe but would truncate an interpreter install or a full requirements install. Each
- * such mutation therefore requests this ceiling explicitly, preserving the pre-migration mutation
- * timeout the deprecated setup runner bridge used to supply implicitly for `tee`/`inherit` output.
- * Capture-only virtual-environment creation keeps the runner's own bounded default instead.
+ * Setup commands default to a probe-sized timeout, which is correct for a `--version` probe but
+ * would truncate an interpreter install or a full requirements install. Each such mutation
+ * therefore requests this ceiling explicitly. Capture-only virtual-environment creation keeps the
+ * bounded default instead.
  */
 const LONG_RUNNING_MUTATION_TIMEOUT_MS = 1_200_000;
 
@@ -67,59 +63,58 @@ type PythonMutationOutcome =
   | Readonly<{disposition: "declined"}>
   | Readonly<{disposition: "executed"; outcome: InspectionOutcome<PythonFacts>}>;
 
+/** A step of the phase: fails with {@link SetupActionFailed} for a failed required mutation. */
+type PythonStep<A> = Effect.Effect<A, SetupActionFailed, SetupRequirements>;
+
 const PYTHON_INSTALL_ACTION = "python.install-interpreter";
 const VENV_CREATE_ACTION = "python.venv.create";
 const PIP_UPGRADE_ACTION = "python.pip.upgrade";
 const DEPENDENCIES_INSTALL_ACTION = "python.dependencies.install";
 const PYTHON_MANUAL_INSTALL = "Install a compatible Python interpreter from https://www.python.org/downloads/, then rerun setup.";
 
-function isSuccessfulOutcome(outcome: Readonly<ProcessOutcome>): outcome is SucceededProcessOutcome {
-  return outcome.kind === "succeeded";
-}
-
-function isInterrupted(error: unknown): boolean {
-  return error instanceof CommandCancellation || (error instanceof Error && error.name === "AbortError");
-}
-
-function errorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
-}
-
-function duration(startedAt: number, runtime: LegacySetupPhaseRuntime): number {
-  return Math.max(0, runtime.clock.monotonicNow() - startedAt);
-}
-
-function phaseResult(runtime: LegacySetupPhaseRuntime, startedAt: number, input: Omit<SetupPhaseResult, "durationMs">): SetupPhaseResult {
-  return {
-    ...input,
-    durationMs: duration(startedAt, runtime),
-  };
-}
-
 function normalizedVersion(version: MinimumVersion): string {
   return `${version.major}.${version.minor}.${version.patch}`;
 }
 
 /**
- * Converts one failed/interrupted process outcome into bounded, non-secret evidence.
+ * Converts one failed process into bounded, non-secret evidence.
  *
- * @param outcome - A non-`"succeeded"` {@link ProcessOutcome}.
- * @param context - Shared setup dependencies, whose logger sanitizes the rendered evidence.
- * @returns Bounded, sanitized evidence lines describing the failure.
+ * @param error - The process failure.
+ * @returns Bounded evidence lines describing the failure.
  */
-function commandFailureEvidence(
-  outcome: Readonly<Exclude<ProcessOutcome, SucceededProcessOutcome>>,
-  context: LegacySetupContext,
-): readonly string[] {
-  const evidence = processFailureEvidence(outcome, context.logger);
+function commandFailureEvidence(error: ProcessError): readonly string[] {
+  const evidence = processFailureOutput(error);
   return [
-    ...(outcome.kind === "exited" ? [`Command exited with code ${outcome.exitCode}.`] : []),
-    ...(outcome.kind === "timed-out" ? ["Command timed out."] : []),
-    ...(outcome.kind === "signalled" ? [`Command stopped with signal ${outcome.signal}.`] : []),
-    ...(outcome.kind === "cancelled" ? ["Command was cancelled."] : []),
-    ...(outcome.kind === "spawn-failed" ? [`Unable to start command: ${outcome.message}`] : []),
+    ...(error._tag === "ProcessExited" ? [`Command exited with code ${String(error.exitCode)}.`] : []),
+    ...(error._tag === "ProcessTimedOut" ? ["Command timed out."] : []),
+    ...(error._tag === "ProcessSignalled" ? [`Command stopped with signal ${error.signal}.`] : []),
+    ...(error._tag === "ProcessSpawnFailed" ? [`Unable to start command: ${error.message}`] : []),
     ...(evidence === "" ? [] : [evidence]),
   ];
+}
+
+/**
+ * Runs one mutation command and fails the submitting action when it does not succeed.
+ *
+ * @param context - The setup context.
+ * @param actionId - The submitting action.
+ * @param summary - Non-secret summary naming the mutation that failed.
+ * @param request - The command.
+ * @param options - Per-command overrides.
+ * @returns The command effect; an interruption propagates.
+ */
+function runMutationCommand(
+  context: SetupContext,
+  actionId: string,
+  summary: string,
+  request: ProcessRequest,
+  options: Parameters<typeof runPhaseCommand>[2],
+): PythonStep<void> {
+  return Effect.flatMap(runPhaseCommand(context, request, options), (outcome: PhaseCommandOutcome) =>
+    outcome.kind === "succeeded"
+      ? Effect.void
+      : Effect.fail(new SetupActionFailed({actionId, message: [summary, ...commandFailureEvidence(outcome.error)].join("\n")})),
+  );
 }
 
 function declinedResult(actionId: string, evidence: readonly string[]): SetupPhaseResult {
@@ -188,42 +183,42 @@ function venvReadinessEvidence(venv: Readonly<PythonFacts["virtualEnvironment"]>
 /**
  * Runs one policy-controlled `python` mutation with cache-freshness guarantees.
  *
- * The shared `"python"` fact is invalidated exactly once inside a `finally` block whenever the
- * child mutation was actually attempted, so a thrown, timed-out, or interrupted attempt can never
- * leave a partially mutated machine described by stale cached facts. A `"planned"` or `"declined"`
- * action never attempts the mutation and therefore never invalidates anything. After an
- * `"executed"` disposition the already-invalidated key is inspected exactly once, before any later
- * action can execute or be declined.
+ * The shared `"python"` fact is invalidated exactly once in a finalizer whenever the child
+ * mutation was actually attempted, so a failed, timed-out, or interrupted attempt can never leave a
+ * partially mutated machine described by stale cached facts. A `"planned"` or `"declined"` action
+ * never attempts the mutation and therefore never invalidates anything. After an `"executed"`
+ * disposition the already-invalidated key is inspected exactly once, before any later action can
+ * execute or be declined.
  *
- * @param context - Shared setup dependencies, including the repository inspection session.
+ * @param context - The setup context, including the repository inspection session.
  * @param action - Action identity, scope, summary, and the mutation to attempt.
- * @returns The action disposition, plus the refreshed outcome when the mutation executed.
- * @throws Whatever the mutation or the action executor throws, including `AbortError`.
+ * @returns The action disposition, plus the refreshed outcome when the mutation executed; fails
+ * with {@link SetupActionFailed} when the action failed. An interruption propagates.
  */
-async function runPythonMutation(
-  context: LegacySetupContext,
-  action: Readonly<{id: string; scope: SetupActionScope; summary: string; mutate: () => Promise<void>}>,
-): Promise<PythonMutationOutcome> {
-  let attempted = false;
-  try {
-    const disposition = await context.actions.run({
+function runPythonMutation(
+  context: SetupContext,
+  action: Readonly<{id: string; scope: SetupActionScope; summary: string; mutate: PythonStep<void>}>,
+): PythonStep<PythonMutationOutcome> {
+  return Effect.gen(function* () {
+    let attempted = false;
+    const submitted = yield* submitSetupAction({
       id: action.id,
       scope: action.scope,
       summary: action.summary,
-      execute: async () => {
+      execute: Effect.suspend(() => {
         attempted = true;
-        await action.mutate();
-      },
-    });
-    if (disposition !== "executed") {
-      return disposition === "planned" ? {disposition: "planned"} : {disposition: "declined"};
+        return action.mutate;
+      }),
+    }).pipe(Effect.ensuring(Effect.suspend(() => (attempted ? context.inspection.invalidate("python") : Effect.void))));
+
+    if (submitted.kind === "failed") {
+      return yield* new SetupActionFailed({actionId: action.id, message: submitted.message});
     }
-  } finally {
-    if (attempted) {
-      context.inspection.invalidate("python");
+    if (submitted.kind === "planned" || submitted.kind === "declined") {
+      return {disposition: submitted.kind};
     }
-  }
-  return {disposition: "executed", outcome: await context.inspection.inspect("python")};
+    return {disposition: "executed", outcome: yield* context.inspection.inspect("python")};
+  });
 }
 
 function virtualEnvironmentDirectory(expRoot: string, platform: NodeJS.Platform): string {
@@ -244,57 +239,63 @@ export function pythonInVirtualEnvironment(expRoot: string, platform: NodeJS.Pla
     : {command: `${venvDirectory}/bin/python`, args: []};
 }
 
-function hasAptCandidate(result: Readonly<ProcessOutcome>): boolean {
-  return isSuccessfulOutcome(result) && /^\s*Candidate:\s*(?!\(none\)\s*$)\S+/imu.test(result.stdout);
+function hasAptCandidate(result: Readonly<PhaseCommandOutcome>): boolean {
+  return result.kind === "succeeded" && /^\s*Candidate:\s*(?!\(none\)\s*$)\S+/imu.test(result.stdout);
 }
 
-async function discoverPythonPackageManagers(
-  context: LegacySetupContext,
-  runtime: LegacySetupPhaseRuntime,
-  platform: NodeJS.Platform,
-): Promise<ReadonlySet<string>> {
-  const managers = new Set<string>();
+/**
+ * Discovers the qualified package managers of the host platform with read-only probes.
+ *
+ * @param context - The setup context.
+ * @param platform - The host platform.
+ * @returns The qualified package-manager markers.
+ */
+function discoverPythonPackageManagers(context: SetupContext, platform: NodeJS.Platform): PythonStep<ReadonlySet<string>> {
+  return Effect.gen(function* () {
+    const managers = new Set<string>();
+    const probe = (request: ProcessRequest): Effect.Effect<PhaseCommandOutcome, never, SetupRequirements> =>
+      runPhaseCommand(context, request, {cwd: context.paths.root});
 
-  if (platform === "win32") {
-    const winget = await runtime.runner.run({command: "winget", args: ["--version"]}, {cwd: context.paths.root});
-    if (isSuccessfulOutcome(winget)) {
-      managers.add("winget");
+    if (platform === "win32") {
+      const winget = yield* probe({command: "winget", args: ["--version"]});
+      if (winget.kind === "succeeded") {
+        managers.add("winget");
+      }
+      return managers;
+    }
+
+    if (platform === "darwin") {
+      const brew = yield* probe({command: "brew", args: ["--version"]});
+      if (brew.kind === "succeeded") {
+        managers.add("brew");
+      }
+      return managers;
+    }
+
+    if (platform !== "linux") {
+      return managers;
+    }
+
+    const [apt, dnf] = yield* Effect.all([probe({command: "apt-get", args: ["--version"]}), probe({command: "dnf", args: ["--version"]})], {
+      concurrency: "unbounded",
+    });
+    if (apt.kind === "succeeded") {
+      const [pythonPolicy, venvPolicy] = yield* Effect.all(
+        [probe({command: "apt-cache", args: ["policy", "python3.12"]}), probe({command: "apt-cache", args: ["policy", "python3.12-venv"]})],
+        {concurrency: "unbounded"},
+      );
+      if (hasAptCandidate(pythonPolicy) && hasAptCandidate(venvPolicy)) {
+        managers.add("apt-get");
+      }
+    }
+    if (dnf.kind === "succeeded") {
+      const info = yield* probe({command: "dnf", args: ["info", "python3.12"]});
+      if (info.kind === "succeeded") {
+        managers.add("dnf");
+      }
     }
     return managers;
-  }
-
-  if (platform === "darwin") {
-    const brew = await runtime.runner.run({command: "brew", args: ["--version"]}, {cwd: context.paths.root});
-    if (isSuccessfulOutcome(brew)) {
-      managers.add("brew");
-    }
-    return managers;
-  }
-
-  if (platform !== "linux") {
-    return managers;
-  }
-
-  const [apt, dnf] = await runtime.tasks.parallel([
-    () => runtime.runner.run({command: "apt-get", args: ["--version"]}, {cwd: context.paths.root}),
-    () => runtime.runner.run({command: "dnf", args: ["--version"]}, {cwd: context.paths.root}),
-  ]);
-  if (apt !== undefined && isSuccessfulOutcome(apt)) {
-    const [pythonPolicy, venvPolicy] = await runtime.tasks.parallel([
-      () => runtime.runner.run({command: "apt-cache", args: ["policy", "python3.12"]}, {cwd: context.paths.root}),
-      () => runtime.runner.run({command: "apt-cache", args: ["policy", "python3.12-venv"]}, {cwd: context.paths.root}),
-    ]);
-    if (pythonPolicy !== undefined && venvPolicy !== undefined && hasAptCandidate(pythonPolicy) && hasAptCandidate(venvPolicy)) {
-      managers.add("apt-get");
-    }
-  }
-  if (dnf !== undefined && isSuccessfulOutcome(dnf)) {
-    const info = await runtime.runner.run({command: "dnf", args: ["info", "python3.12"]}, {cwd: context.paths.root});
-    if (isSuccessfulOutcome(info)) {
-      managers.add("dnf");
-    }
-  }
-  return managers;
+  });
 }
 
 /**
@@ -352,115 +353,110 @@ export function selectPythonInstallationProposal(
  * Ensures a compatible Python interpreter is selected, consuming shared `python` facts for every
  * readiness observation and installing only through the reviewed proposal contract.
  *
- * @param context - Shared setup dependencies, including the repository inspection session.
- * @param runtime - Invocation-scoped capabilities, including the host-platform snapshot.
+ * @param context - The setup context, including the repository inspection session.
  * @param facts - The `python` facts observed before this step.
  * @param evidence - Mutable accumulator of human-readable phase evidence.
  * @returns Either a terminal phase result, or the facts to continue with.
  */
-async function ensureInterpreter(
-  context: LegacySetupContext,
-  runtime: LegacySetupPhaseRuntime,
-  facts: Readonly<PythonFacts>,
-  evidence: string[],
-): Promise<PythonStepOutcome> {
-  if (facts.selected !== undefined) {
-    return {facts};
-  }
+function ensureInterpreter(context: SetupContext, facts: Readonly<PythonFacts>, evidence: string[]): PythonStep<PythonStepOutcome> {
+  return Effect.gen(function* () {
+    if (facts.selected !== undefined) {
+      return {facts};
+    }
 
-  const {platform} = runtime.environment;
-  const packageManagers = await discoverPythonPackageManagers(context, runtime, platform);
-  const proposal = selectPythonInstallationProposal({
-    platform,
-    availablePackageManagers: packageManagers,
-    required: context.requirements.python,
+    const {platform} = yield* Environment;
+    const packageManagers = yield* discoverPythonPackageManagers(context, platform);
+    const proposal = selectPythonInstallationProposal({
+      platform,
+      availablePackageManagers: packageManagers,
+      required: context.requirements.python,
+    });
+    if (proposal === null) {
+      return {
+        result: {
+          id: "python",
+          status: "failed",
+          summary: "A compatible Python interpreter is unavailable and no supported installer was discovered.",
+          evidence,
+          nextActions: [PYTHON_MANUAL_INSTALL],
+          durationMs: 0,
+        },
+      };
+    }
+
+    const mutation = yield* runPythonMutation(context, {
+      id: PYTHON_INSTALL_ACTION,
+      scope: "system",
+      summary: proposal.explanation,
+      mutate: runMutationCommand(
+        context,
+        PYTHON_INSTALL_ACTION,
+        "The supported Python interpreter installation command failed.",
+        proposal.command,
+        {
+          cwd: context.paths.root,
+          output: "inherit",
+          timeoutMs: LONG_RUNNING_MUTATION_TIMEOUT_MS,
+        },
+      ),
+    });
+
+    if (mutation.disposition === "declined") {
+      return {
+        result: {
+          id: "python",
+          status: "failed",
+          summary: "Required Python interpreter installation was declined.",
+          evidence: [...evidence, `Declined action: ${PYTHON_INSTALL_ACTION}`],
+          nextActions: [PYTHON_MANUAL_INSTALL],
+          durationMs: 0,
+        },
+      };
+    }
+    if (mutation.disposition === "planned") {
+      return {
+        result: {
+          id: "python",
+          status: "skipped",
+          summary: "Required Python interpreter installation and dependent virtual-environment preparation are planned by dry-run.",
+          evidence: [...evidence, `Planned action: ${PYTHON_INSTALL_ACTION}`],
+          nextActions: [],
+          durationMs: 0,
+        },
+      };
+    }
+
+    // The install command exiting successfully is never sufficient proof of readiness: the
+    // interpreter requirement is only satisfied once refreshed, invalidated facts select one.
+    const refreshed = mutation.outcome;
+    if (refreshed.kind !== "available") {
+      return {
+        result: {
+          id: "python",
+          status: "failed",
+          summary: "The Python interpreter could not be verified after installation.",
+          evidence: [...evidence, ...unavailableOrInvalidEvidence(refreshed)],
+          nextActions: [PYTHON_MANUAL_INSTALL],
+          durationMs: 0,
+        },
+      };
+    }
+    evidence.push(...selectedInterpreterEvidence(refreshed.value, context.requirements.python));
+    if (refreshed.value.selected === undefined) {
+      return {
+        result: {
+          id: "python",
+          status: "failed",
+          summary: "A compatible Python interpreter remains unavailable after installation.",
+          evidence,
+          nextActions: [PYTHON_MANUAL_INSTALL],
+          durationMs: 0,
+        },
+      };
+    }
+    evidence.push(`Executed and verified action: ${PYTHON_INSTALL_ACTION}`);
+    return {facts: refreshed.value};
   });
-  if (proposal === null) {
-    return {
-      result: {
-        id: "python",
-        status: "failed",
-        summary: "A compatible Python interpreter is unavailable and no supported installer was discovered.",
-        evidence,
-        nextActions: [PYTHON_MANUAL_INSTALL],
-        durationMs: 0,
-      },
-    };
-  }
-
-  const mutation = await runPythonMutation(context, {
-    id: PYTHON_INSTALL_ACTION,
-    scope: "system",
-    summary: proposal.explanation,
-    mutate: async () => {
-      const installResult = await runtime.runner.run(proposal.command, {
-        cwd: context.paths.root,
-        output: "inherit",
-        timeoutMs: LONG_RUNNING_MUTATION_TIMEOUT_MS,
-      });
-      if (!isSuccessfulOutcome(installResult)) {
-        throw new Error(
-          ["The supported Python interpreter installation command failed.", ...commandFailureEvidence(installResult, context)].join("\n"),
-        );
-      }
-    },
-  });
-
-  if (mutation.disposition === "declined") {
-    return {
-      result: {
-        id: "python",
-        status: "failed",
-        summary: "Required Python interpreter installation was declined.",
-        evidence: [...evidence, `Declined action: ${PYTHON_INSTALL_ACTION}`],
-        nextActions: [PYTHON_MANUAL_INSTALL],
-        durationMs: 0,
-      },
-    };
-  }
-  if (mutation.disposition === "planned") {
-    return {
-      result: {
-        id: "python",
-        status: "skipped",
-        summary: "Required Python interpreter installation and dependent virtual-environment preparation are planned by dry-run.",
-        evidence: [...evidence, `Planned action: ${PYTHON_INSTALL_ACTION}`],
-        nextActions: [],
-        durationMs: 0,
-      },
-    };
-  }
-
-  // The install command exiting successfully is never sufficient proof of readiness: the
-  // interpreter requirement is only satisfied once refreshed, invalidated facts select one.
-  const refreshed = mutation.outcome;
-  if (refreshed.kind !== "available") {
-    return {
-      result: {
-        id: "python",
-        status: "failed",
-        summary: "The Python interpreter could not be verified after installation.",
-        evidence: [...evidence, ...unavailableOrInvalidEvidence(refreshed)],
-        nextActions: [PYTHON_MANUAL_INSTALL],
-        durationMs: 0,
-      },
-    };
-  }
-  evidence.push(...selectedInterpreterEvidence(refreshed.value, context.requirements.python));
-  if (refreshed.value.selected === undefined) {
-    return {
-      result: {
-        id: "python",
-        status: "failed",
-        summary: "A compatible Python interpreter remains unavailable after installation.",
-        evidence,
-        nextActions: [PYTHON_MANUAL_INSTALL],
-        durationMs: 0,
-      },
-    };
-  }
-  evidence.push(`Executed and verified action: ${PYTHON_INSTALL_ACTION}`);
-  return {facts: refreshed.value};
 }
 
 /**
@@ -468,79 +464,90 @@ async function ensureInterpreter(
  * `PythonFacts.virtualEnvironment` and recreating it only inside the consented
  * `python.venv.create` action when it exists but is incompatible.
  *
- * @param context - Shared setup dependencies, including the repository inspection session.
- * @param runtime - Invocation-scoped capabilities, including the host platform and the recursive
- * removal filesystem.
+ * @param context - The setup context, including the repository inspection session.
  * @param facts - The `python` facts observed before this step (a selected interpreter is required).
  * @param evidence - Mutable accumulator of human-readable phase evidence.
  * @param plannedActions - Mutable accumulator of dry-run-planned action identifiers.
  * @returns Either a terminal phase result, or the facts to continue with.
  */
-async function ensureVirtualEnvironment(
-  context: LegacySetupContext,
-  runtime: LegacySetupPhaseRuntime,
+function ensureVirtualEnvironment(
+  context: SetupContext,
   facts: Readonly<PythonFacts>,
   evidence: string[],
   plannedActions: string[],
-): Promise<PythonStepOutcome> {
-  const required = context.requirements.python;
-  evidence.push(...venvReadinessEvidence(facts.virtualEnvironment, required));
-  if (facts.virtualEnvironment.compatible) {
-    return {facts};
-  }
+): PythonStep<PythonStepOutcome> {
+  return Effect.gen(function* () {
+    const required = context.requirements.python;
+    evidence.push(...venvReadinessEvidence(facts.virtualEnvironment, required));
+    if (facts.virtualEnvironment.compatible) {
+      return {facts};
+    }
 
-  const interpreter = facts.selected;
-  if (interpreter === undefined) {
-    throw new Error("A selected Python interpreter is required before the virtual environment can be created.");
-  }
+    const interpreter = facts.selected;
+    if (interpreter === undefined) {
+      return yield* new SetupActionFailed({
+        actionId: VENV_CREATE_ACTION,
+        message: "A selected Python interpreter is required before the virtual environment can be created.",
+      });
+    }
 
-  const venvDirectory = virtualEnvironmentDirectory(context.paths.expRoot, runtime.environment.platform);
-  const existedBeforeCreation = facts.virtualEnvironment.exists;
+    const {platform} = yield* Environment;
+    const venvDirectory = virtualEnvironmentDirectory(context.paths.expRoot, platform);
+    const existedBeforeCreation = facts.virtualEnvironment.exists;
 
-  const mutation = await runPythonMutation(context, {
-    id: VENV_CREATE_ACTION,
-    scope: "repository",
-    summary: "Create the isolated exp.arolariu.ro Python virtual environment.",
-    mutate: async () => {
-      if (existedBeforeCreation) {
-        await runtime.files.remove(venvDirectory, {recursive: true, force: true});
-      }
-      const createResult = await runtime.runner.run(
-        {command: interpreter.command, args: [...interpreter.prefixArgs, "-m", "venv", venvDirectory]},
-        {cwd: context.paths.root},
-      );
-      if (!isSuccessfulOutcome(createResult)) {
-        throw new Error(["Python virtual environment creation failed.", ...commandFailureEvidence(createResult, context)].join("\n"));
-      }
-    },
+    const mutation = yield* runPythonMutation(context, {
+      id: VENV_CREATE_ACTION,
+      scope: "repository",
+      summary: "Create the isolated exp.arolariu.ro Python virtual environment.",
+      mutate: Effect.gen(function* () {
+        if (existedBeforeCreation) {
+          const files = yield* FileSystem.FileSystem;
+          yield* files
+            .remove(venvDirectory, {recursive: true, force: true})
+            .pipe(
+              Effect.mapError(
+                (error) =>
+                  new SetupActionFailed({actionId: VENV_CREATE_ACTION, message: `Failed to remove '${venvDirectory}': ${error.message}`}),
+              ),
+            );
+        }
+        yield* runMutationCommand(
+          context,
+          VENV_CREATE_ACTION,
+          "Python virtual environment creation failed.",
+          {command: interpreter.command, args: [...interpreter.prefixArgs, "-m", "venv", venvDirectory]},
+          {cwd: context.paths.root},
+        );
+      }),
+    });
+
+    if (mutation.disposition === "declined") {
+      return {result: declinedResult(VENV_CREATE_ACTION, evidence)};
+    }
+    if (mutation.disposition === "planned") {
+      plannedActions.push(VENV_CREATE_ACTION);
+      evidence.push(`Planned action: ${VENV_CREATE_ACTION}`);
+      return {facts};
+    }
+
+    // A successful `venv` creation command is never sufficient proof of readiness: the environment
+    // is only ready once refreshed, invalidated facts confirm a selected, compatible canonical venv.
+    const refreshed = mutation.outcome;
+    if (refreshed.kind !== "available" || refreshed.value.selected === undefined || !refreshed.value.virtualEnvironment.compatible) {
+      return {
+        result: {
+          id: "python",
+          status: "failed",
+          summary: "The Python virtual environment remains incompatible after creation.",
+          evidence: [...evidence, `Failed postcondition for action: ${VENV_CREATE_ACTION}`, ...unavailableOrInvalidEvidence(refreshed)],
+          nextActions: [`Resolve and rerun required action '${VENV_CREATE_ACTION}'.`],
+          durationMs: 0,
+        },
+      };
+    }
+    evidence.push(`Executed and verified action: ${VENV_CREATE_ACTION}`);
+    return {facts: refreshed.value};
   });
-
-  if (mutation.disposition === "declined") {
-    return {result: declinedResult(VENV_CREATE_ACTION, evidence)};
-  }
-  if (mutation.disposition === "planned") {
-    plannedActions.push(VENV_CREATE_ACTION);
-    evidence.push(`Planned action: ${VENV_CREATE_ACTION}`);
-    return {facts};
-  }
-
-  // A successful `venv` creation command is never sufficient proof of readiness: the environment
-  // is only ready once refreshed, invalidated facts confirm a selected, compatible canonical venv.
-  const refreshed = mutation.outcome;
-  if (refreshed.kind !== "available" || refreshed.value.selected === undefined || !refreshed.value.virtualEnvironment.compatible) {
-    return {
-      result: {
-        id: "python",
-        status: "failed",
-        summary: "The Python virtual environment remains incompatible after creation.",
-        evidence: [...evidence, `Failed postcondition for action: ${VENV_CREATE_ACTION}`, ...unavailableOrInvalidEvidence(refreshed)],
-        nextActions: [`Resolve and rerun required action '${VENV_CREATE_ACTION}'.`],
-        durationMs: 0,
-      },
-    };
-  }
-  evidence.push(`Executed and verified action: ${VENV_CREATE_ACTION}`);
-  return {facts: refreshed.value};
 }
 
 interface PipStepDefinition {
@@ -552,7 +559,7 @@ interface PipStepDefinition {
   readonly verify: (facts: Readonly<PythonFacts>) => readonly string[];
 }
 
-function pipStepDefinitions(context: LegacySetupContext, venvSpec: Readonly<ProcessRequest>): readonly PipStepDefinition[] {
+function pipStepDefinitions(context: SetupContext, venvSpec: Readonly<ProcessRequest>): readonly PipStepDefinition[] {
   return [
     {
       id: PIP_UPGRADE_ACTION,
@@ -587,162 +594,176 @@ function pipStepDefinitions(context: LegacySetupContext, venvSpec: Readonly<Proc
  * `python` facts. Every real setup run reaches both steps, even when the canonical virtual
  * environment was already compatible: a successful command is never treated as proof of readiness.
  *
- * @param context - Shared setup dependencies, including the repository inspection session.
- * @param runtime - Invocation-scoped capabilities the pip commands run through.
+ * @param context - The setup context, including the repository inspection session.
  * @param venvSpec - The venv-owned Python interpreter process request.
- * @param facts - The `python` facts observed before this step.
+ * @param initialFacts - The `python` facts observed before this step.
  * @param evidence - Mutable accumulator of human-readable phase evidence.
  * @param plannedActions - Mutable accumulator of dry-run-planned action identifiers.
  * @returns Either a terminal phase result, or the facts to continue with.
  */
-async function ensurePipDependencies(
-  context: LegacySetupContext,
-  runtime: LegacySetupPhaseRuntime,
+function ensurePipDependencies(
+  context: SetupContext,
   venvSpec: Readonly<ProcessRequest>,
-  facts: PythonFacts,
+  initialFacts: PythonFacts,
   evidence: string[],
   plannedActions: string[],
-): Promise<PythonStepOutcome> {
-  for (const step of pipStepDefinitions(context, venvSpec)) {
-    const mutation = await runPythonMutation(context, {
-      id: step.id,
-      scope: "repository",
-      summary: step.summary,
-      mutate: async () => {
-        const result = await runtime.runner.run(step.command, {
+): PythonStep<PythonStepOutcome> {
+  return Effect.gen(function* () {
+    let facts = initialFacts;
+    for (const step of pipStepDefinitions(context, venvSpec)) {
+      const mutation = yield* runPythonMutation(context, {
+        id: step.id,
+        scope: "repository",
+        summary: step.summary,
+        mutate: runMutationCommand(context, step.id, step.failureSummary, step.command, {
           cwd: context.paths.expRoot,
           output: "tee",
-          logger: context.logger,
           timeoutMs: LONG_RUNNING_MUTATION_TIMEOUT_MS,
-        });
-        if (!isSuccessfulOutcome(result)) {
-          throw new Error([step.failureSummary, ...commandFailureEvidence(result, context)].join("\n"));
-        }
-      },
-    });
+        }),
+      });
 
-    if (mutation.disposition === "declined") {
-      return {result: declinedResult(step.id, evidence)};
-    }
-    if (mutation.disposition === "planned") {
-      plannedActions.push(step.id);
-      evidence.push(`Planned action: ${step.id}`);
-      continue;
-    }
+      if (mutation.disposition === "declined") {
+        return {result: declinedResult(step.id, evidence)};
+      }
+      if (mutation.disposition === "planned") {
+        plannedActions.push(step.id);
+        evidence.push(`Planned action: ${step.id}`);
+        continue;
+      }
 
-    const refreshed = mutation.outcome;
-    if (refreshed.kind !== "available") {
-      return {
-        result: {
-          id: "python",
-          status: "failed",
-          summary: `The Python setup action '${step.id}' could not be verified.`,
-          evidence: [...evidence, `Failed postcondition for action: ${step.id}`, ...unavailableOrInvalidEvidence(refreshed)],
-          nextActions: ["Resolve the reported Python preparation failure, then rerun setup."],
-          durationMs: 0,
-        },
-      };
+      const refreshed = mutation.outcome;
+      if (refreshed.kind !== "available") {
+        return {
+          result: {
+            id: "python",
+            status: "failed",
+            summary: `The Python setup action '${step.id}' could not be verified.`,
+            evidence: [...evidence, `Failed postcondition for action: ${step.id}`, ...unavailableOrInvalidEvidence(refreshed)],
+            nextActions: ["Resolve the reported Python preparation failure, then rerun setup."],
+            durationMs: 0,
+          },
+        };
+      }
+      const failures = step.verify(refreshed.value);
+      if (failures.length > 0) {
+        return {
+          result: {
+            id: "python",
+            status: "failed",
+            summary: `The Python setup action '${step.id}' did not satisfy its postcondition.`,
+            evidence: [...evidence, `Failed postcondition for action: ${step.id}`, ...failures],
+            nextActions: [`Resolve and rerun required action '${step.id}'.`],
+            durationMs: 0,
+          },
+        };
+      }
+      facts = refreshed.value;
+      evidence.push(`Executed and verified action: ${step.id}`);
     }
-    const failures = step.verify(refreshed.value);
-    if (failures.length > 0) {
-      return {
-        result: {
-          id: "python",
-          status: "failed",
-          summary: `The Python setup action '${step.id}' did not satisfy its postcondition.`,
-          evidence: [...evidence, `Failed postcondition for action: ${step.id}`, ...failures],
-          nextActions: [`Resolve and rerun required action '${step.id}'.`],
-          durationMs: 0,
-        },
-      };
-    }
-    facts = refreshed.value;
-    evidence.push(`Executed and verified action: ${step.id}`);
-  }
-  return {facts};
+    return {facts};
+  });
 }
 
-async function runPythonSetup(context: LegacySetupContext): Promise<SetupPhaseResult> {
-  const runtime = requireLegacySetupPhaseRuntime(context);
-  const startedAt = runtime.clock.monotonicNow();
-  const evidence: string[] = [];
-  const plannedActions: string[] = [];
-
-  try {
-    const initialOutcome = await context.inspection.inspect("python");
+/**
+ * Prepares the Python toolchain up to its result, without its duration.
+ *
+ * @param context - The setup context.
+ * @param evidence - Mutable accumulator of human-readable phase evidence.
+ * @returns The phase result (its duration is replaced); fails when a required mutation failed.
+ */
+function preparePython(context: SetupContext, evidence: string[]): PythonStep<Omit<SetupPhaseResult, "durationMs">> {
+  return Effect.gen(function* () {
+    const plannedActions: string[] = [];
+    const initialOutcome = yield* context.inspection.inspect("python");
     if (initialOutcome.kind !== "available") {
-      return phaseResult(runtime, startedAt, {
+      return {
         id: "python",
         status: "failed",
         summary: "The Python environment could not be inspected.",
         evidence: [...evidence, ...unavailableOrInvalidEvidence(initialOutcome)],
         nextActions: [PYTHON_MANUAL_INSTALL],
-      });
+      };
     }
 
     let facts = initialOutcome.value;
     evidence.push(...selectedInterpreterEvidence(facts, context.requirements.python));
 
-    const interpreterOutcome = await ensureInterpreter(context, runtime, facts, evidence);
+    const interpreterOutcome = yield* ensureInterpreter(context, facts, evidence);
     if ("result" in interpreterOutcome) {
-      return phaseResult(runtime, startedAt, interpreterOutcome.result);
+      return interpreterOutcome.result;
     }
     facts = interpreterOutcome.facts;
 
-    const venvOutcome = await ensureVirtualEnvironment(context, runtime, facts, evidence, plannedActions);
+    const venvOutcome = yield* ensureVirtualEnvironment(context, facts, evidence, plannedActions);
     if ("result" in venvOutcome) {
-      return phaseResult(runtime, startedAt, venvOutcome.result);
+      return venvOutcome.result;
     }
     facts = venvOutcome.facts;
 
-    const venvSpec = pythonInVirtualEnvironment(context.paths.expRoot, runtime.environment.platform);
-    const pipOutcome = await ensurePipDependencies(context, runtime, venvSpec, facts, evidence, plannedActions);
+    const {platform} = yield* Environment;
+    const venvSpec = pythonInVirtualEnvironment(context.paths.expRoot, platform);
+    const pipOutcome = yield* ensurePipDependencies(context, venvSpec, facts, evidence, plannedActions);
     if ("result" in pipOutcome) {
-      return phaseResult(runtime, startedAt, pipOutcome.result);
+      return pipOutcome.result;
     }
 
     if (plannedActions.length > 0) {
-      return phaseResult(runtime, startedAt, {
+      return {
         id: "python",
         status: "skipped",
         summary: "Required Python preparation actions are planned by dry-run.",
         evidence,
         nextActions: [],
-      });
+      };
     }
 
-    return phaseResult(runtime, startedAt, {
+    return {
       id: "python",
       status: "succeeded",
       summary: "The Python interpreter, isolated virtual environment, and pinned requirements are ready.",
       evidence,
       nextActions: [],
-    });
-  } catch (error: unknown) {
-    if (isInterrupted(error)) {
-      throw error;
-    }
-    return phaseResult(runtime, startedAt, {
-      id: "python",
-      status: "failed",
-      summary: "The required Python preparation phase failed.",
-      evidence: [...evidence, errorMessage(error)],
-      nextActions: ["Resolve the reported Python preparation failure, then rerun setup."],
-    });
-  }
+    };
+  });
 }
 
 /**
- * Creates the Python setup phase over the invocation-scoped setup phase runtime.
+ * Runs the Python phase: a failed required mutation becomes one failed result naming the reported
+ * failure; an interruption propagates.
+ *
+ * @param context - The setup context.
+ * @returns The phase result.
+ */
+function runPythonSetup(context: SetupContext): Effect.Effect<SetupPhaseResult, never, SetupRequirements> {
+  return Effect.gen(function* () {
+    const startedAt = yield* Clock.currentTimeMillis;
+    const evidence: string[] = [];
+    const outcome = yield* Effect.result(preparePython(context, evidence));
+    if (outcome._tag === "Success") {
+      const {durationMs: _durationMs, ...result} = outcome.success as SetupPhaseResult;
+      return yield* phaseResult(startedAt, result);
+    }
+    return yield* phaseResult(startedAt, {
+      id: "python",
+      status: "failed",
+      summary: "The required Python preparation phase failed.",
+      evidence: [...evidence, outcome.failure.message],
+      nextActions: ["Resolve the reported Python preparation failure, then rerun setup."],
+    });
+  }).pipe(Effect.withSpan("setup.python"));
+}
+
+/**
+ * Creates the Python setup phase.
  *
  * @remarks
- * The phase no longer accepts a host or filesystem-removal boundary: the platform, the process
- * runner, the recursive-removal filesystem, and the clock all come from {@link LegacySetupPhaseRuntime},
- * so a test replaces capabilities on the runtime rather than on this factory.
+ * The phase accepts no host or filesystem boundary: the platform, processes, the recursive-removal
+ * filesystem, and the clock all come from the invocation services, so a test replaces them through
+ * its layer rather than on this factory.
  *
  * @returns The independent Python setup phase definition.
  */
-export function createPythonSetupPhase(): LegacySetupPhaseDefinition {
+export function createPythonSetupPhase(): SetupPhaseDefinition {
   return {
     id: "python",
     title: "Python toolchain",
@@ -753,4 +774,4 @@ export function createPythonSetupPhase(): LegacySetupPhaseDefinition {
 }
 
 /** Independent required phase that prepares the isolated exp.arolariu.ro Python toolchain. */
-export const pythonSetupPhase: LegacySetupPhaseDefinition = createPythonSetupPhase();
+export const pythonSetupPhase: SetupPhaseDefinition = createPythonSetupPhase();
