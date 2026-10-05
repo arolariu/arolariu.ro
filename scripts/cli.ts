@@ -38,7 +38,7 @@ import {
   ProcessTimedOut,
   type ProcessError,
 } from "./platform/Process.ts";
-import {recordTerminationSignals} from "./platform/signals.ts";
+import {recordTerminationSignals, TerminationSignals} from "./platform/signals.ts";
 
 /** Tooling version reported by `--version`, read from the root package manifest. */
 const version: string = packageJson.version;
@@ -307,11 +307,14 @@ export function runCli(argv: readonly string[], root: RootCommand = rootCommand)
 
 if (import.meta.main) {
   const recorder = recordTerminationSignals();
-  NodeRuntime.runMain(runCli(process.argv.slice(2)).pipe(Effect.provide(NodeBaseLayer)), {
-    disableErrorReporting: true,
-    teardown: (exit, onExit) => {
-      recorder.dispose();
-      onExit(exitCodeFor(exit, recorder.last()));
+  NodeRuntime.runMain(
+    runCli(process.argv.slice(2)).pipe(Effect.provide(NodeBaseLayer), Effect.provideService(TerminationSignals, recorder)),
+    {
+      disableErrorReporting: true,
+      teardown: (exit, onExit) => {
+        recorder.dispose();
+        onExit(exitCodeFor(exit, recorder.last()));
+      },
     },
-  });
+  );
 }

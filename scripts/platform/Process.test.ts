@@ -10,17 +10,20 @@
  * a terminating signal. Every potentially hanging case carries an explicit timeout.
  */
 
-import {resolve} from "node:path";
+import {mkdtemp, readFile, rm} from "node:fs/promises";
+import {tmpdir} from "node:os";
+import {join, resolve} from "node:path";
 
 import {NodeServices} from "@effect/platform-node";
-import {Deferred, Effect, Fiber, Layer, PlatformError, Sink as EffectSink, Stream} from "effect";
-import {ChildProcessSpawner} from "effect/process";
+import {Deferred, Effect, Fiber, Layer, PlatformError, Schedule, Sink as EffectSink, Stream} from "effect";
+import {ChildProcess, ChildProcessSpawner} from "effect/process";
 import {afterEach, describe, expect, it} from "vitest";
 
 import {layerEnvironment, type EnvironmentSnapshot} from "./Environment.ts";
 import {memorySink, outputLayer, Sink, type SinkRecord} from "./Output.ts";
 import {
   formatProcessRequest,
+  INTERRUPT_GRACE_PERIOD,
   MAX_EVIDENCE_CHARACTERS,
   Process,
   ProcessExited,
@@ -30,8 +33,10 @@ import {
   ProcessSpawnFailed,
   ProcessTimedOut,
   type ProcessError,
+  type ProcessOptions,
   type ProcessRequest,
 } from "./Process.ts";
+import {TerminationSignals, type TerminationSignalsShape} from "./signals.ts";
 import {runScoped} from "./testing.ts";
 
 const FIXTURES = resolve(import.meta.dirname, "__fixtures__");
@@ -101,6 +106,19 @@ const isAlive = (pid: number): boolean => {
     return false;
   }
 };
+
+/**
+ * Waits up to three seconds for every process to exit.
+ *
+ * @param pids - The processes to watch.
+ * @returns A promise that settles once they exited or the deadline passed.
+ */
+async function waitUntilDead(pids: readonly number[]): Promise<void> {
+  const deadline = Date.now() + 3000;
+  while (pids.some(isAlive) && Date.now() < deadline) {
+    await new Promise((resolveDelay) => setTimeout(resolveDelay, 100));
+  }
+}
 
 describe("Process", () => {
   const spawnedPids: number[] = [];
@@ -430,7 +448,44 @@ describe("Process", () => {
   );
 
   it(
-    "kills the process on interruption",
+    "kills the whole captured process tree on interruption",
+    async () => {
+      // Arrange
+      const directory = await mkdtemp(join(tmpdir(), "arolariu-process-tree-"));
+      const pidFile = join(directory, "pids.txt");
+      const {layer} = harness();
+      const readPids = Effect.promise(() => readFile(pidFile, "utf8").catch(() => "")).pipe(
+        Effect.flatMap((text) => {
+          const match = /PARENT=(\d+)\r?\nGRANDCHILD=(\d+)\r?\n/u.exec(text);
+          return match === null
+            ? Effect.fail("pending" as const)
+            : Effect.succeed({parent: Number(match[1]), grandchild: Number(match[2])});
+        }),
+      );
+
+      // Act
+      const pids = await runScoped(
+        Effect.gen(function* () {
+          const service = yield* Process;
+          const fiber = yield* Effect.forkChild(service.run({command: process.execPath, args: [resolve(FIXTURES, "parent.js"), pidFile]}));
+          const spawned = yield* readPids.pipe(Effect.retry(Schedule.spaced("50 millis")), Effect.timeout("10 seconds"));
+          spawnedPids.push(spawned.parent, spawned.grandchild);
+          yield* Fiber.interrupt(fiber);
+          return spawned;
+        }),
+        layer,
+      ).finally(() => rm(directory, {recursive: true, force: true}));
+      await waitUntilDead([pids.parent, pids.grandchild]);
+
+      // Assert
+      expect(isAlive(pids.parent)).toBe(false);
+      expect(isAlive(pids.grandchild)).toBe(false);
+    },
+    LIVE_TIMEOUT_MS,
+  );
+
+  it(
+    "kills a terminal-attached child at once on a programmatic interruption",
     async () => {
       // Arrange
       const ready = Deferred.makeUnsafe<{readonly parent: number; readonly grandchild: number}>();
@@ -459,14 +514,14 @@ describe("Process", () => {
         }),
         layer,
       );
-      const deadline = Date.now() + 3000;
-      while ((isAlive(pids.parent) || isAlive(pids.grandchild)) && Date.now() < deadline) {
-        await new Promise((resolveDelay) => setTimeout(resolveDelay, 100));
-      }
+      await waitUntilDead(process.platform === "win32" ? [pids.parent, pids.grandchild] : [pids.parent]);
 
       // Assert
       expect(isAlive(pids.parent)).toBe(false);
-      expect(isAlive(pids.grandchild)).toBe(false);
+      // Off Windows a terminal-attached child shares this process group, so only `taskkill /T` reaches its descendants.
+      if (process.platform === "win32") {
+        expect(isAlive(pids.grandchild)).toBe(false);
+      }
     },
     LIVE_TIMEOUT_MS,
   );
@@ -628,6 +683,208 @@ describe("Process", () => {
 
     // Assert
     await expect(run).rejects.toThrow("Command cannot be empty");
+  });
+});
+
+/** A scripted child that never exits on its own unless the test or a kill ends it. */
+interface FakeChild {
+  /** Spawner layer handing out the child and recording every spawned command. */
+  readonly spawner: Layer.Layer<ChildProcessSpawner.ChildProcessSpawner>;
+  /** Completes once the child was spawned. */
+  readonly spawned: Deferred.Deferred<void>;
+  /** The `detached` option of every spawned command. */
+  readonly detached: () => readonly (boolean | undefined)[];
+  /** Every `kill` request, in order. */
+  readonly kills: () => readonly ChildProcess.KillOptions[];
+  /** Ends the child with an exit code. */
+  readonly exit: (code: number) => Effect.Effect<void>;
+}
+
+/**
+ * Builds a {@link FakeChild}; its `kill` ends it with code `137`.
+ *
+ * @returns The fake child.
+ */
+function fakeChild(): FakeChild {
+  const spawned = Deferred.makeUnsafe<void>();
+  const exitCode = Deferred.makeUnsafe<number>();
+  let running = true;
+  const detached: (boolean | undefined)[] = [];
+  const kills: ChildProcess.KillOptions[] = [];
+  const exit = (code: number): Effect.Effect<void> =>
+    Effect.suspend(() => {
+      running = false;
+      return Deferred.succeed(exitCode, code);
+    }).pipe(Effect.asVoid);
+  const handle = ChildProcessSpawner.makeHandle({
+    pid: ChildProcessSpawner.ProcessId(-1),
+    exitCode: Effect.map(Deferred.await(exitCode), (code) => ChildProcessSpawner.ExitCode(code)),
+    isRunning: Effect.sync(() => running),
+    kill: (options) =>
+      Effect.suspend(() => {
+        kills.push(options ?? {});
+        return exit(137);
+      }),
+    stdin: EffectSink.drain,
+    stdout: Stream.empty,
+    stderr: Stream.empty,
+    all: Stream.empty,
+    getInputFd: () => EffectSink.drain,
+    getOutputFd: () => Stream.empty,
+    unref: Effect.succeed(Effect.void),
+  });
+  const spawner = Layer.succeed(
+    ChildProcessSpawner.ChildProcessSpawner,
+    ChildProcessSpawner.make((command) =>
+      Effect.suspend(() => {
+        detached.push(command._tag === "StandardCommand" ? command.options.detached : undefined);
+        return Deferred.succeed(spawned, undefined);
+      }).pipe(Effect.as(handle)),
+    ),
+  );
+  return {spawner, spawned, detached: () => [...detached], kills: () => [...kills], exit};
+}
+
+/**
+ * Recorded termination signals a test can advance.
+ *
+ * @param initial - The signals received before the run is interrupted.
+ * @returns The view and a function recording one more signal.
+ */
+function signalsOf(initial: readonly ("SIGINT" | "SIGTERM")[]): {
+  readonly signals: TerminationSignalsShape;
+  readonly receive: (signal: "SIGINT" | "SIGTERM") => void;
+} {
+  const received = [...initial];
+  return {
+    signals: {last: () => received.at(-1), count: () => received.length},
+    receive: (signal) => {
+      received.push(signal);
+    },
+  };
+}
+
+/**
+ * Starts a run against a fake child, interrupts it once spawned, and waits for its finalizers.
+ *
+ * @param child - The fake child.
+ * @param signals - The recorded termination signals.
+ * @param options - Process options.
+ * @param whileInterrupting - An effect forked just before the interruption (for example a child exit).
+ * @returns The milliseconds the interruption took.
+ */
+async function interruptRun(
+  child: FakeChild,
+  signals: TerminationSignalsShape,
+  options: ProcessOptions,
+  whileInterrupting: Effect.Effect<void> = Effect.void,
+): Promise<number> {
+  return runScoped(
+    Effect.gen(function* () {
+      const service = yield* Process;
+      const fiber = yield* Effect.forkChild(service.run(node("0"), options).pipe(Effect.provideService(TerminationSignals, signals)));
+      yield* Deferred.await(child.spawned);
+      yield* Effect.forkChild(whileInterrupting);
+      const startedAt = Date.now();
+      yield* Fiber.interrupt(fiber);
+      return Date.now() - startedAt;
+    }),
+    harness({spawner: child.spawner}).layer,
+  );
+}
+
+describe("Process terminal attachment and interrupt grace", () => {
+  it.each([
+    ["capture", undefined],
+    ["tee", false],
+    ["inherit", false],
+  ] as const)("spawns %s children with detached %j", async (output, expected) => {
+    // Arrange
+    const child = fakeChild();
+
+    // Act
+    await interruptRun(child, signalsOf([]).signals, {output});
+
+    // Assert
+    expect(child.detached()).toEqual([expected]);
+  });
+
+  it("defaults the interrupt grace period to 15 seconds", () => {
+    expect(INTERRUPT_GRACE_PERIOD).toBe("15 seconds");
+  });
+
+  it.each(["tee", "inherit"] as const)("lets a %s child finish its own Ctrl+C shutdown without a kill", async (output) => {
+    // Arrange
+    const child = fakeChild();
+
+    // Act
+    const elapsed = await interruptRun(
+      child,
+      signalsOf(["SIGINT"]).signals,
+      {output, interruptGracePeriod: "10 seconds"},
+      Effect.sleep("200 millis").pipe(Effect.andThen(child.exit(130))),
+    );
+
+    // Assert
+    expect(child.kills()).toEqual([]);
+    expect(elapsed).toBeGreaterThanOrEqual(150);
+    expect(elapsed).toBeLessThan(5_000);
+  });
+
+  it("terminates a terminal-attached child that outlives the grace period after Ctrl+C", async () => {
+    // Arrange
+    const child = fakeChild();
+
+    // Act
+    const elapsed = await interruptRun(child, signalsOf(["SIGINT"]).signals, {output: "inherit", interruptGracePeriod: "300 millis"});
+
+    // Assert
+    expect(child.kills()).toEqual([{killSignal: "SIGTERM", forceKillAfter: "1 second"}]);
+    expect(elapsed).toBeGreaterThanOrEqual(250);
+  });
+
+  it("ends the grace period at a second Ctrl+C", async () => {
+    // Arrange
+    const child = fakeChild();
+    const {signals, receive} = signalsOf(["SIGINT"]);
+
+    // Act
+    const elapsed = await interruptRun(
+      child,
+      signals,
+      {output: "inherit", interruptGracePeriod: "60 seconds"},
+      Effect.sleep("200 millis").pipe(Effect.andThen(Effect.sync(() => receive("SIGINT")))),
+    );
+
+    // Assert
+    expect(child.kills()).toEqual([{killSignal: "SIGTERM", forceKillAfter: "1 second"}]);
+    expect(elapsed).toBeLessThan(5_000);
+  });
+
+  it("forwards SIGTERM to a terminal-attached child and force-kills it after the grace period", async () => {
+    // Arrange
+    const child = fakeChild();
+
+    // Act
+    await interruptRun(child, signalsOf(["SIGTERM"]).signals, {output: "tee", interruptGracePeriod: "2 seconds"});
+
+    // Assert
+    expect(child.kills()).toEqual([{killSignal: "SIGTERM", forceKillAfter: "2 seconds"}]);
+  });
+
+  it.each([
+    ["a programmatic interruption of an attached child", [], "inherit"],
+    ["a Ctrl+C of a captured child", ["SIGINT"], "capture"],
+  ] as const)("leaves %s to the spawner's immediate tree kill", async (_label, received, output) => {
+    // Arrange
+    const child = fakeChild();
+
+    // Act
+    const elapsed = await interruptRun(child, signalsOf(received).signals, {output, interruptGracePeriod: "60 seconds"});
+
+    // Assert
+    expect(child.kills()).toEqual([]);
+    expect(elapsed).toBeLessThan(5_000);
   });
 });
 

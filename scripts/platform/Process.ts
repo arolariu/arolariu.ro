@@ -7,17 +7,20 @@
  * `scripts/common/runner.execa.ts`). {@link ProcessLive} spawns through the Effect
  * `ChildProcessSpawner`, resolves Windows `.cmd`/`.bat` shims with {@link planSpawn}, and maps every
  * non-success outcome to one of the {@link ProcessError} tagged errors. Interruption closes the
- * spawn scope, which terminates the whole process tree (`taskkill /T /F` on Windows, the process
- * group elsewhere).
+ * spawn scope, which terminates the process tree (`taskkill /T /F` on Windows; on POSIX the
+ * process group of a captured child, and the direct child of a terminal-attached one). After a
+ * Ctrl+C, a terminal-attached (`tee`/`inherit`) child first gets {@link INTERRUPT_GRACE_PERIOD} to
+ * finish its own shutdown.
  */
 
 import {statSync} from "node:fs";
 
-import {Clock, Context, Duration, Effect, Layer, Option, Predicate, Schema, Stream, type PlatformError} from "effect";
+import {Clock, Context, Duration, Effect, Exit, Layer, Option, Predicate, Schema, Stream, type PlatformError} from "effect";
 import {ChildProcess, ChildProcessSpawner} from "effect/process";
 
 import {Environment} from "./Environment.ts";
 import {OutputSettings, Presenter, type OutputSettingsShape, type OutputStream, type PresenterShape} from "./Output.ts";
+import {TerminationSignals, type TerminationSignalsShape} from "./signals.ts";
 import {planSpawn} from "./windows.ts";
 
 /** Describes one executable and its argument vector. */
@@ -51,6 +54,11 @@ export interface ProcessOptions {
    * non-zero exit, such as `npm ls --json`).
    */
   readonly failureOutput?: "tail" | "full";
+  /**
+   * How long a terminal-attached (`"tee"` or `"inherit"`) child may take to exit on its own after
+   * a Ctrl+C before it is force-killed; defaults to {@link INTERRUPT_GRACE_PERIOD}.
+   */
+  readonly interruptGracePeriod?: Duration.Input;
 }
 
 /** Output of a process that exited with code `0`. */
@@ -210,7 +218,20 @@ export function processTimedOut(
   return new ProcessTimedOut({...evidence, timeoutMs, message: `${evidence.command} timed out after ${String(timeoutMs)} ms`});
 }
 
+/**
+ * Default time a terminal-attached child gets to finish its own Ctrl+C shutdown before the forced
+ * kill, see {@link ProcessOptions.interruptGracePeriod}.
+ *
+ * @remarks
+ * The legacy runner force-killed only the direct child after 1 second and never its descendants,
+ * so tools such as the Aspire AppHost, DCP, and `docker compose up` always finished their own
+ * Ctrl+C shutdown. The tree kill replaced that, so this bound keeps that shutdown possible while
+ * still guaranteeing an exit; a second Ctrl+C ends the wait at once.
+ */
+export const INTERRUPT_GRACE_PERIOD: Duration.Input = "15 seconds";
+
 const FORCE_KILL_AFTER: Duration.Input = "1 second";
+const GRACE_POLL_INTERVAL: Duration.Input = "100 millis";
 const SIGNAL_PATTERN = /receipt of signal: '([A-Z0-9]+)'/u;
 
 /**
@@ -284,6 +305,49 @@ function reasonOf(error: PlatformError.PlatformError): string {
 
 type Completion = {readonly kind: "exited"; readonly exitCode: number} | {readonly kind: "signalled"; readonly signal: string};
 
+/**
+ * Lets an interrupted terminal-attached child shut down before the spawner's forced tree kill.
+ *
+ * @remarks
+ * Runs as a scope finalizer, before the spawner's release. Nothing happens for a programmatic
+ * interruption (no recorded signal), so the release kills the tree at once. After a Ctrl+C
+ * (`SIGINT`) the child, which shares the terminal (POSIX foreground process group) or the console
+ * (Windows), received it too: the child gets `grace` to exit, a further signal ends the wait
+ * early, and a still-running child is then terminated (`SIGTERM`, `SIGKILL` 1 s later; the tree on
+ * Windows). A `SIGTERM` reached only this process, so it is forwarded, followed by `SIGKILL` once
+ * `grace` elapses.
+ *
+ * @param handle - The running child.
+ * @param signals - The recorded termination signals.
+ * @param grace - The shutdown window.
+ * @returns The finalizer effect; it never fails.
+ */
+function shutdownAttachedChild(
+  handle: ChildProcessSpawner.ChildProcessHandle,
+  signals: TerminationSignalsShape,
+  grace: Duration.Input,
+): Effect.Effect<void> {
+  const running = handle.isRunning.pipe(Effect.catch(() => Effect.succeed(false)));
+  return Effect.gen(function* () {
+    const signal = signals.last();
+    if (signal === undefined || !(yield* running)) {
+      return;
+    }
+    if (signal === "SIGTERM") {
+      yield* Effect.ignore(handle.kill({killSignal: "SIGTERM", forceKillAfter: grace}));
+      return;
+    }
+    const deadline = (yield* Clock.currentTimeMillis) + Duration.toMillis(grace);
+    // Finalizers are uninterruptible, so the wait polls instead of racing the exit against a timer.
+    while ((yield* running) && signals.count() < 2 && (yield* Clock.currentTimeMillis) < deadline) {
+      yield* Effect.sleep(GRACE_POLL_INTERVAL);
+    }
+    if (yield* running) {
+      yield* Effect.ignore(handle.kill({killSignal: "SIGTERM", forceKillAfter: FORCE_KILL_AFTER}));
+    }
+  });
+}
+
 /** Live {@link Process} layer over the Effect child-process spawner. */
 export const ProcessLive: Layer.Layer<Process, never, ChildProcessSpawner.ChildProcessSpawner | Presenter | OutputSettings | Environment> =
   Layer.effect(
@@ -299,6 +363,7 @@ export const ProcessLive: Layer.Layer<Process, never, ChildProcessSpawner.ChildP
         options: ProcessOptions = {},
       ): Effect.fn.Return<ProcessResult, ProcessError> {
         yield* validateProcessRequest(request, options);
+        const signals = yield* TerminationSignals;
         const output = options.output ?? "capture";
         const command = formatProcessRequest(request);
         yield* echoProcessCommand(command, options, settings);
@@ -320,6 +385,10 @@ export const ProcessLive: Layer.Layer<Process, never, ChildProcessSpawner.ChildP
           );
         }
         const childStream = output === "inherit" ? "inherit" : "pipe";
+        // Off Windows the spawner defaults to `detached: true` (`setsid`), which keeps the process
+        // group kill working but takes the child off the terminal: no Ctrl+C, no SIGHUP, and no
+        // `/dev/tty` for `sudo`. Only captured children, which never talk to the terminal, keep it.
+        const attached = output !== "capture";
         // Shell plans are joined into one pre-escaped command line; passing args with `shell: true` triggers Node DEP0190.
         const childCommand = ChildProcess.make(
           plan.shell ? [plan.command, ...plan.args].join(" ") : plan.command,
@@ -329,6 +398,7 @@ export const ProcessLive: Layer.Layer<Process, never, ChildProcessSpawner.ChildP
             env: variables,
             extendEnv: false,
             shell: plan.shell,
+            ...(attached ? {detached: false} : {}),
             killSignal: "SIGTERM",
             forceKillAfter: FORCE_KILL_AFTER,
             stdin: output === "inherit" ? "inherit" : options.input === undefined ? "ignore" : "pipe",
@@ -370,7 +440,19 @@ export const ProcessLive: Layer.Layer<Process, never, ChildProcessSpawner.ChildP
 
         return yield* Effect.scoped(
           Effect.gen(function* () {
-            const handle = yield* spawner.spawn(childCommand);
+            // Registered after the spawn, so it runs before the spawner's release kills the tree; the
+            // pair is uninterruptible, so an interruption cannot slip in between.
+            const handle = yield* Effect.uninterruptible(
+              Effect.tap(spawner.spawn(childCommand), (spawned) =>
+                attached
+                  ? Effect.addFinalizer((exit) =>
+                      Exit.hasInterrupts(exit)
+                        ? shutdownAttachedChild(spawned, signals, options.interruptGracePeriod ?? INTERRUPT_GRACE_PERIOD)
+                        : Effect.void,
+                    )
+                  : Effect.void,
+              ),
+            );
             const completion = handle.exitCode.pipe(
               Effect.map((exitCode): Completion => ({kind: "exited", exitCode})),
               Effect.catch((error) => {

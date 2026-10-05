@@ -24,7 +24,7 @@ import {exitCodeFor} from "../exit.ts";
 import {NodeBaseLayer} from "../layers.ts";
 import {Presenter} from "../Output.ts";
 import {Process} from "../Process.ts";
-import {recordTerminationSignals} from "../signals.ts";
+import {recordTerminationSignals, TerminationSignals} from "../signals.ts";
 
 /** The `parent.js` fixture that spawns the long-lived grandchild. */
 const parentFixture = fileURLToPath(new URL("parent.js", import.meta.url));
@@ -57,11 +57,17 @@ function makeHoldCommand(): CliSubcommand {
 
 if (import.meta.main) {
   const recorder = recordTerminationSignals();
-  NodeRuntime.runMain(runCli(process.argv.slice(2), makeRootCommand([makeHoldCommand()])).pipe(Effect.provide(NodeBaseLayer)), {
-    disableErrorReporting: true,
-    teardown: (exit, onExit) => {
-      recorder.dispose();
-      onExit(exitCodeFor(exit, recorder.last()));
+  NodeRuntime.runMain(
+    runCli(process.argv.slice(2), makeRootCommand([makeHoldCommand()])).pipe(
+      Effect.provide(NodeBaseLayer),
+      Effect.provideService(TerminationSignals, recorder),
+    ),
+    {
+      disableErrorReporting: true,
+      teardown: (exit, onExit) => {
+        recorder.dispose();
+        onExit(exitCodeFor(exit, recorder.last()));
+      },
     },
-  });
+  );
 }

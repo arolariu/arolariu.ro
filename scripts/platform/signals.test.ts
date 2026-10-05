@@ -8,9 +8,10 @@
  * that the recorder keeps the latest one and that `dispose` removes exactly its own listeners.
  */
 
+import {Effect} from "effect";
 import {afterEach, describe, expect, it} from "vitest";
 
-import {recordTerminationSignals, type SignalRecorder} from "./signals.ts";
+import {recordTerminationSignals, TerminationSignals, type SignalRecorder} from "./signals.ts";
 
 describe("recordTerminationSignals", () => {
   let recorder: SignalRecorder | undefined;
@@ -30,6 +31,33 @@ describe("recordTerminationSignals", () => {
 
     // Assert
     expect(recorder.last()).toBe("SIGTERM");
+  });
+
+  it("counts every received signal", () => {
+    // Arrange
+    recorder = recordTerminationSignals();
+    const before = recorder.count();
+
+    // Act
+    process.emit("SIGINT");
+    process.emit("SIGINT");
+
+    // Assert
+    expect(before).toBe(0);
+    expect(recorder.count()).toBe(2);
+  });
+
+  it("reports no signal through the default TerminationSignals reference", () => {
+    // Act
+    const signals = Effect.runSync(
+      Effect.gen(function* () {
+        return yield* TerminationSignals;
+      }),
+    );
+
+    // Assert
+    expect(signals.last()).toBeUndefined();
+    expect(signals.count()).toBe(0);
   });
 
   it("dispose removes its listeners", () => {
