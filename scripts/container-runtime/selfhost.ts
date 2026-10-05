@@ -49,8 +49,8 @@ const keyFilePath = "Management/certs/local-key.pem";
 /** Environment variable holding the local SQL Server `sa` password. */
 const sqlPasswordVariable = "MSSQL_SA_PASSWORD";
 
-/** Display placeholder for the SQL password in the echoed `sqlcmd` command line. */
-const sqlPasswordPlaceholder = "[REDACTED]";
+/** Variable `sqlcmd` reads the password from when `-P` is absent; only its name reaches an argument vector. */
+const sqlcmdPasswordVariable = "SQLCMDPASSWORD";
 
 /** Local stacks each selfhost action operates on, in execution order. */
 const stacksByAction: Readonly<Record<SelfhostAction, readonly SelfhostStack[]>> = {
@@ -202,35 +202,28 @@ function ensureHttpsCertificates(): Effect.Effect<
 }
 
 /**
- * Builds the `sqlcmd` schema bootstrap command for one password argument.
+ * Builds the `sqlcmd` schema bootstrap command.
+ *
+ * @remarks
+ * It carries no secret: `exec -e SQLCMDPASSWORD` names the variable only, so the engine client
+ * copies the value from its own environment into the container, where `sqlcmd` reads it.
  *
  * @param adapter - Selected runtime adapter.
- * @param password - The raw password, or the display placeholder for the echoed line.
- * @returns The engine-owned `exec mssql sqlcmd …` command.
+ * @returns The engine-owned `exec -e SQLCMDPASSWORD mssql sqlcmd …` command.
  */
-function sqlSchemaCommand(adapter: ContainerRuntimeAdapter, password: string): RuntimeCommand {
-  return adapter.exec("mssql", [
-    "/opt/mssql-tools/bin/sqlcmd",
-    "-C",
-    "-S",
-    "localhost",
-    "-U",
-    "sa",
-    "-P",
-    password,
-    "-d",
-    "master",
-    "-i",
-    "/usr/sql/sqlSchema.sql",
-    "-No",
-  ]);
+function sqlSchemaCommand(adapter: ContainerRuntimeAdapter): RuntimeCommand {
+  return adapter.exec(
+    "mssql",
+    ["/opt/mssql-tools/bin/sqlcmd", "-C", "-S", "localhost", "-U", "sa", "-d", "master", "-i", "/usr/sql/sqlSchema.sql", "-No"],
+    [sqlcmdPasswordVariable],
+  );
 }
 
 /**
  * Describes a failed `sqlcmd` run without its command line.
  *
  * @param adapter - Selected runtime adapter.
- * @param error - The process failure; its `message` and `command` embed the password argument and
+ * @param error - The process failure; its `message`, `command`, and captured output are never read, so
  * are never read.
  * @returns The step-only failure message.
  */
@@ -252,10 +245,11 @@ function sqlSchemaFailureMessage(adapter: ContainerRuntimeAdapter, error: Proces
  * Applies the SQL Server schema through `sqlcmd` inside the `mssql` container.
  *
  * @remarks
- * The password is the `sqlcmd -P` argument (the legacy position) and is unwrapped only for this
- * call. The echoed `$ …` line shows `[REDACTED]` in its place, the run never echoes under
- * `--verbose`, and a failure is rebuilt as a {@link ContainerRuntimeError} naming the step only, so
- * neither the rendered output nor a failure document carries the argument vector.
+ * The password is unwrapped only into the `SQLCMDPASSWORD` variable of the spawned engine client
+ * (spec §7: secrets travel through `env`, not arguments), so it never appears in an argument
+ * vector, the host process list, the echoed `$ …` line, or a `--verbose` echo (the run sets
+ * `echo: false`). A failure is rebuilt as a {@link ContainerRuntimeError} naming the step only, so
+ * neither the rendered output nor a failure document carries process evidence.
  *
  * @param adapter - Selected runtime adapter.
  * @param sqlPassword - The local SQL Server password.
@@ -268,9 +262,15 @@ function runSqlSchemaBootstrap(
   return Effect.gen(function* () {
     const presenter = yield* Presenter;
     const runner = yield* Process;
-    yield* presenter.line("stdout", `$ ${formatProcessRequest(sqlSchemaCommand(adapter, sqlPasswordPlaceholder))}`);
+    const command = sqlSchemaCommand(adapter);
+    yield* presenter.line("stdout", `$ ${formatProcessRequest(command)}`);
     yield* runner
-      .run(sqlSchemaCommand(adapter, Redacted.value(sqlPassword)), {cwd: selfhostWorkingDirectory, output: "tee", echo: false})
+      .run(command, {
+        cwd: selfhostWorkingDirectory,
+        env: {[sqlcmdPasswordVariable]: Redacted.value(sqlPassword)},
+        output: "tee",
+        echo: false,
+      })
       .pipe(Effect.mapError((error) => new ContainerRuntimeError({message: sqlSchemaFailureMessage(adapter, error)})));
   });
 }

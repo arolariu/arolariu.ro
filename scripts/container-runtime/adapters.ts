@@ -21,10 +21,24 @@ export interface ContainerRuntimeAdapter {
   /** Runtime selector passed to Aspire/DCP; Rancher Moby is represented as docker. */
   readonly aspireRuntime: string;
   readonly compose: (args: readonly string[]) => RuntimeCommand;
-  readonly exec: (containerName: string, args: readonly string[]) => RuntimeCommand;
+  /**
+   * Builds `<cli> exec [-e NAME]… <container> <args>`; each `environment` entry is a variable name
+   * only, so the engine client copies its value from its own environment instead of its argv.
+   */
+  readonly exec: (containerName: string, args: readonly string[], environment?: readonly string[]) => RuntimeCommand;
   readonly logs: (containerName: string, args?: readonly string[]) => RuntimeCommand;
   readonly build: (args: readonly string[]) => RuntimeCommand;
   readonly run: (args: readonly string[]) => RuntimeCommand;
+}
+
+/**
+ * Turns variable names into `-e NAME` pairs for `exec`.
+ *
+ * @param names - The variable names.
+ * @returns The flag pairs, in order.
+ */
+function environmentFlags(names: readonly string[]): string[] {
+  return names.flatMap((name) => ["-e", name]);
 }
 
 const rancherAdapter: ContainerRuntimeAdapter = {
@@ -33,7 +47,10 @@ const rancherAdapter: ContainerRuntimeAdapter = {
   primaryCli: "docker",
   aspireRuntime: "docker",
   compose: (args) => ({command: "docker", args: ["compose", ...args]}),
-  exec: (containerName, args) => ({command: "docker", args: ["exec", containerName, ...args]}),
+  exec: (containerName, args, environment = []) => ({
+    command: "docker",
+    args: ["exec", ...environmentFlags(environment), containerName, ...args],
+  }),
   logs: (containerName, args = []) => ({command: "docker", args: ["logs", ...args, containerName]}),
   build: (args) => ({command: "docker", args: ["build", ...args]}),
   run: (args) => ({command: "docker", args: ["run", ...args]}),
@@ -45,7 +62,10 @@ const podmanAdapter: ContainerRuntimeAdapter = {
   primaryCli: "podman",
   aspireRuntime: "podman",
   compose: (args) => ({command: "podman", args: ["compose", ...args]}),
-  exec: (containerName, args) => ({command: "podman", args: ["exec", containerName, ...args]}),
+  exec: (containerName, args, environment = []) => ({
+    command: "podman",
+    args: ["exec", ...environmentFlags(environment), containerName, ...args],
+  }),
   logs: (containerName, args = []) => ({command: "podman", args: ["logs", ...args, containerName]}),
   build: (args) => ({command: "podman", args: ["build", ...args]}),
   run: (args) => ({command: "podman", args: ["run", ...args]}),

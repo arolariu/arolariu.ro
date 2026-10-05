@@ -4,9 +4,10 @@
  *
  * @remarks
  * Builds one `makeTestLayer` harness for a selfhost run and records every side effect of that run,
- * in order, on one timeline: each process call (the SQL password replaced by `<sql-password>`), the
- * Traefik and certificate filesystem mutations, each Cosmos request, each blob step, and each
- * completed `Effect.sleep` (as `{delay: <ms>}`). The taxonomy artifact generation runs for real over
+ * in order, on one timeline: each process call (the SQL password replaced by `<sql-password>` in its
+ * arguments and environment), the Traefik and certificate filesystem mutations, each Cosmos
+ * request, each blob step, and each completed `Effect.sleep` (as `{delay: <ms>}`). The taxonomy
+ * artifact generation runs for real over
  * scripted GS1/ECOICOP/NACE responses and a scripted `unzip`; its HTTP requests stay on the harness
  * client (`harness.httpCalls()`), while Cosmos requests are answered by the fixture. The Azure Blob SDK
  * is replaced by a recording `LocalBlobStorage` layer. Nothing reaches a real external boundary.
@@ -21,6 +22,7 @@ import {TestClock} from "effect/testing";
 import {makeRootCommand, runCli} from "../cli.ts";
 import {makeDevCommand} from "../commands/dev/cli.ts";
 import type {ProbeOutcome} from "../inspection/probes.ts";
+import type {ProcessOptions} from "../platform/Process.ts";
 import {makeTestLayer, processOutcomeEffect, runScoped, type ScriptedHttp, type TestHarness} from "../platform/testing.ts";
 import {LocalBlobStorage, localCosmosEndpoint} from "./selfhost.bootstrap.ts";
 import {selfhostTraefikConfigPath} from "./traefik.ts";
@@ -259,6 +261,15 @@ export function selfhostFixture(options: SelfhostFixtureOptions = {}): SelfhostF
   const secret = variables["MSSQL_SA_PASSWORD"];
   const projectArg = (arg: string): string =>
     secret === undefined || secret.trim() === "" ? arg : arg.replaceAll(secret, "<sql-password>");
+  const projectOptions = (runOptions: ProcessOptions | undefined): ProcessOptions | undefined =>
+    runOptions?.env === undefined
+      ? runOptions
+      : {
+          ...runOptions,
+          env: Object.fromEntries(
+            Object.entries(runOptions.env).map(([key, value]) => [key, value === undefined ? value : projectArg(value)]),
+          ),
+        };
   let boundFileSystem: FileSystem.FileSystem | undefined;
 
   const harness = makeTestLayer({
@@ -284,7 +295,7 @@ export function selfhostFixture(options: SelfhostFixtureOptions = {}): SelfhostF
       {
         match: () => true,
         respond: (request, runOptions) => {
-          record({process: request.command, args: request.args.map(projectArg), options: runOptions});
+          record({process: request.command, args: request.args.map(projectArg), options: projectOptions(runOptions)});
           const answer = options.process?.(request.command, request.args) ?? {
             kind: "succeeded",
             exitCode: 0,

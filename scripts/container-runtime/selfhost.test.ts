@@ -227,7 +227,7 @@ describe("runSelfhost start", () => {
       expect(businessCalls(fixture)).toEqual([
         "podman compose -f Management/docker-compose.yml up -d",
         "podman compose -f Storage/docker-compose.yml --profile selfhost up -d",
-        `podman exec mssql /opt/mssql-tools/bin/sqlcmd -C -S localhost -U sa -P ${SELFHOST_SQL_PASSWORD} -d master -i /usr/sql/sqlSchema.sql -No`,
+        "podman exec -e SQLCMDPASSWORD mssql /opt/mssql-tools/bin/sqlcmd -C -S localhost -U sa -d master -i /usr/sql/sqlSchema.sql -No",
         "dotnet run --project ../../tooling/LocalDevelopment.Bootstrap -- --ensure-storage-only",
         "podman compose -f Backend/docker-compose.yml up -d",
         "podman compose -f Frontend/docker-compose.yml up -d",
@@ -516,7 +516,7 @@ describe("runSelfhost HTTPS certificates", () => {
           "mkcert --version",
           "podman compose -f Management/docker-compose.yml up -d",
           "podman compose -f Storage/docker-compose.yml --profile selfhost up -d",
-          `podman exec mssql /opt/mssql-tools/bin/sqlcmd -C -S localhost -U sa -P ${SELFHOST_SQL_PASSWORD} -d master -i /usr/sql/sqlSchema.sql -No`,
+          "podman exec -e SQLCMDPASSWORD mssql /opt/mssql-tools/bin/sqlcmd -C -S localhost -U sa -d master -i /usr/sql/sqlSchema.sql -No",
           "dotnet run --project ../../tooling/LocalDevelopment.Bootstrap -- --ensure-storage-only",
           "podman compose -f Backend/docker-compose.yml up -d",
           "podman compose -f Frontend/docker-compose.yml up -d",
@@ -682,11 +682,13 @@ const TRAEFIK_WRITE = [
   {fs: "rename", from: "<traefik-tmp>", to: "<traefik-config>"},
 ] as const;
 
-/** The SQL schema bootstrap with the password replaced. */
+/** The SQL schema bootstrap: the password travels only in the engine client's `SQLCMDPASSWORD` (projected). */
 const SQLCMD = {
   process: "docker",
   args: [
     "exec",
+    "-e",
+    "SQLCMDPASSWORD",
     "mssql",
     "/opt/mssql-tools/bin/sqlcmd",
     "-C",
@@ -694,15 +696,13 @@ const SQLCMD = {
     "localhost",
     "-U",
     "sa",
-    "-P",
-    "<sql-password>",
     "-d",
     "master",
     "-i",
     "/usr/sql/sqlSchema.sql",
     "-No",
   ],
-  options: TEE,
+  options: {cwd: "infra/Local", env: {SQLCMDPASSWORD: "<sql-password>"}, output: "tee", echo: false},
 } as const;
 
 /** The three Cosmos provisioning requests. */
@@ -765,12 +765,12 @@ const START_TIMELINE = [
 const TRAEFIK_CONFIG =
   "http:\n  routers:\n    traefik-localhost:\n      rule: Host(`traefik.localhost`)\n      entryPoints:\n        - websecure\n      tls: {}\n      service: api@internal\n    website-localhost:\n      rule: Host(`website.localhost`)\n      entryPoints:\n        - websecure\n      tls: {}\n      service: website\n    api-localhost:\n      rule: Host(`api.localhost`)\n      entryPoints:\n        - websecure\n      tls: {}\n      service: api\n    health-localhost:\n      rule: Host(`health.localhost`)\n      entryPoints:\n        - websecure\n      tls: {}\n      service: healthchecks\n    cosmosdb-localhost:\n      rule: Host(`cosmosdb.localhost`)\n      entryPoints:\n        - websecure\n      tls: {}\n      service: cosmosdb\n    azurite-blob-localhost:\n      rule: Host(`azurite-blob.localhost`)\n      entryPoints:\n        - websecure\n      tls: {}\n      service: azurite-blob\n  services:\n    website:\n      loadBalancer:\n        servers:\n          - url: http://website:3000\n    api:\n      loadBalancer:\n        servers:\n          - url: http://api:8080\n    healthchecks:\n      loadBalancer:\n        servers:\n          - url: http://healthchecks:8000\n    cosmosdb:\n      loadBalancer:\n        servers:\n          - url: http://cosmosdb:8081\n    azurite-blob:\n      loadBalancer:\n        servers:\n          - url: http://azurite:10000\n";
 
-/** The single `-P` position of the SQL password (engine calls only, the artifact `unzip` excluded). */
-const PASSWORD_ARGS = [{call: 6, index: 9, command: "docker", flag: "-P", exact: true}];
+/** The SQL password never reaches an argument vector. */
+const PASSWORD_ARGS: readonly unknown[] = [];
 
 /** The echo line of the SQL schema bootstrap. */
 const SQLCMD_ECHO =
-  "$ docker exec mssql /opt/mssql-tools/bin/sqlcmd -C -S localhost -U sa -P [REDACTED] -d master -i /usr/sql/sqlSchema.sql -No";
+  "$ docker exec -e SQLCMDPASSWORD mssql /opt/mssql-tools/bin/sqlcmd -C -S localhost -U sa -d master -i /usr/sql/sqlSchema.sql -No";
 
 describe("dev selfhost characterization", () => {
   it("start: preflight, artifacts, certificates, Traefik file, ordered stacks, bootstrap, and success line", async () => {

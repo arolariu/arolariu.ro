@@ -5,11 +5,12 @@
  *
  * @remarks
  * The scripts tooling has no output masking: a secret stays `Redacted` until the call that needs it
- * and must never be rendered. `MSSQL_SA_PASSWORD` is needed only as the `sqlcmd -P` argument (the
- * legacy position), so these cases pin that it reaches that one argument and nothing else: no
- * rendered line (human, `--verbose`, or `--json`, on success or on a failed `sqlcmd`), no failure
- * document, and no child environment. Every case runs the real `dev selfhost start` CLI path on the
- * `selfhostFixture` harness.
+ * and must never be rendered. `MSSQL_SA_PASSWORD` is needed only by `sqlcmd`, which reads it from
+ * `SQLCMDPASSWORD` (spec §7: secrets travel through `env`, not arguments), so these cases pin that
+ * it reaches exactly that variable of the one `exec` client and nothing else: no argument vector,
+ * no other child environment, no rendered line (human, `--verbose`, or `--json`, on success or on a
+ * failed `sqlcmd`), and no failure document. Every case runs the real `dev selfhost start` CLI path
+ * on the `selfhostFixture` harness.
  */
 
 import {describe, expect, it} from "vitest";
@@ -31,9 +32,10 @@ function failingSqlFixture(): SelfhostFixture {
  * Collects every place the password reached: process arguments and child environments.
  *
  * @param fixture - The fixture after the run.
- * @returns The argument positions and whether any child environment contained it.
+ * @returns The argument positions and `<command> <first argument> <variable>` for every child
+ * environment variable holding it.
  */
-function passwordReach(fixture: SelfhostFixture): {readonly args: readonly string[]; readonly env: boolean} {
+function passwordReach(fixture: SelfhostFixture): {readonly args: readonly string[]; readonly env: readonly string[]} {
   const calls = fixture.harness.processCalls();
   return {
     args: calls.flatMap((call) =>
@@ -43,7 +45,13 @@ function passwordReach(fixture: SelfhostFixture): {readonly args: readonly strin
           : [],
       ),
     ),
-    env: calls.some((call) => JSON.stringify(call.options.env ?? {}).includes(SELFHOST_SQL_PASSWORD)),
+    env: calls.flatMap((call) =>
+      Object.entries(call.options.env ?? {}).flatMap(([name, value]) =>
+        value?.includes(SELFHOST_SQL_PASSWORD) === true
+          ? [`${call.request.command} ${call.request.args[0] ?? ""} ${name}${value === SELFHOST_SQL_PASSWORD ? "" : " <partial>"}`]
+          : [],
+      ),
+    ),
   };
 }
 
@@ -57,12 +65,13 @@ describe("selfhost SQL password exposure", () => {
 
     // Assert
     expect(exitCodeFor(exit, undefined)).toBe(0);
+    expect(passwordReach(fixture)).toEqual({args: [], env: ["podman exec SQLCMDPASSWORD"]});
     expect(fixture.harness.output().length).toBeGreaterThan(0);
     expect(JSON.stringify(fixture.harness.output())).not.toContain(SELFHOST_SQL_PASSWORD);
   });
 
   it.each([[[]], [["--verbose"]], [["--json"]], [["--json", "--verbose"]]] as const)(
-    "passes the sql password only as the sqlcmd -P argument and never in output (failed sqlcmd, flags %j)",
+    "passes the sql password only as the exec client SQLCMDPASSWORD and never in output (failed sqlcmd, flags %j)",
     async (flags) => {
       // Arrange
       const fixture = failingSqlFixture();
@@ -72,7 +81,7 @@ describe("selfhost SQL password exposure", () => {
 
       // Assert
       expect(exitCodeFor(exit, undefined)).toBe(1);
-      expect(passwordReach(fixture)).toEqual({args: ["-P <exact>"], env: false});
+      expect(passwordReach(fixture)).toEqual({args: [], env: ["podman exec SQLCMDPASSWORD"]});
       const output = fixture.harness.output();
       expect(JSON.stringify(output)).not.toContain(SELFHOST_SQL_PASSWORD);
       const message = "SQL Server schema bootstrap failed: podman exec mssql sqlcmd exited with code 1.";
