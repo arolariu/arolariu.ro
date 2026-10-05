@@ -1968,14 +1968,14 @@ describe("setup dry-run safety", () => {
         return (
           first === "workload"
           || first === "restore"
-          || (first === "dev-certs" && args.includes("--trust"))
+          || (first === "dev-certs" && !args.includes("--check"))
           || (first === "user-secrets" && second === "set")
           || (first === "tool" && ["restore", "install", "update"].includes(second))
         );
       case "npm":
         return ["ci", "install", "i", "add", "update", "uninstall", "run", "exec"].includes(first);
       case "npx":
-        return args.includes("install") && !args.includes("--dry-run");
+        return (args.includes("install") || args.includes("install-deps")) && !args.includes("--dry-run");
       case "pip":
       case "pip3":
         return first === "install";
@@ -1995,6 +1995,7 @@ describe("setup dry-run safety", () => {
     ["dnf install", {command: "dnf", args: ["install", "-y", "dotnet-sdk-10.0"]}],
     ["dotnet workload", {command: "dotnet", args: ["workload", "restore"]}],
     ["dotnet dev-certs https --trust", {command: "dotnet", args: ["dev-certs", "https", "--trust"]}],
+    ["dotnet dev-certs https", {command: "dotnet", args: ["dev-certs", "https"]}],
     ["dotnet user-secrets set", {command: "dotnet", args: ["user-secrets", "set", "Key", "Value"]}],
     ["dotnet tool restore", {command: "dotnet", args: ["tool", "restore"]}],
     ["npm ci", {command: "npm", args: ["ci", "--prefer-offline"]}],
@@ -2003,10 +2004,22 @@ describe("setup dry-run safety", () => {
     ["python -m venv", {command: "py", args: ["-3.12", "-m", "venv", ".venv"]}],
     ["mkcert -install", {command: "mkcert", args: ["-install"]}],
     ["npx playwright install", {command: "npx", args: ["playwright", "install", "chromium"]}],
+    ["npx playwright install-deps", {command: "npx", args: ["--no-install", "playwright", "install-deps", "chromium"]}],
   ])("classifies %s as an installer or mutation command", (_label, request) => {
     expect(isInstallerOrMutation(request)).toBe(true);
     expect(isInstallerOrMutation({command: "winget", args: ["--version"]})).toBe(false);
     expect(isInstallerOrMutation({command: "npx", args: ["playwright", "install", "--dry-run", "chromium"]})).toBe(false);
+  });
+
+  it.each<readonly [string, ProcessRequest]>([
+    [
+      "npx playwright install-deps --dry-run",
+      {command: "npx", args: ["--no-install", "playwright", "install-deps", "--dry-run", "chromium"]},
+    ],
+    ["dotnet dev-certs https --check", {command: "dotnet", args: ["dev-certs", "https", "--check"]}],
+    ["dotnet dev-certs https --check --trust", {command: "dotnet", args: ["dev-certs", "https", "--check", "--trust"]}],
+  ])("classifies the read-only probe %s as safe", (_label, request) => {
+    expect(isInstallerOrMutation(request)).toBe(false);
   });
 
   /** The Windows listening-port probe of the infrastructure inspection. */

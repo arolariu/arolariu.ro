@@ -32,6 +32,7 @@ import type {SetupActions} from "../actions.ts";
 import {
   interruptingActions,
   keyedResponder,
+  productionActions,
   recordingActions,
   runPhase as runPhaseWith,
   runPhaseExit,
@@ -1319,6 +1320,27 @@ describe("Playwright Chromium preparation", () => {
     });
     expect(callsFor(harness, dependencyProbeCommand)).toHaveLength(2);
     expect(harness.invalidate).toHaveBeenCalledExactlyOnceWith("react");
+  });
+
+  it("plans the Linux dependency install during dry-run without running anything but the probe", async () => {
+    // Arrange
+    const setupOptions = options({dryRun: true});
+    const dryRun = productionActions(setupOptions);
+    const harness = await createHarness({
+      fixture: createReactFixture({platform: "linux"}),
+      setupOptions,
+      actions: () => dryRun.layer,
+      responses: {[commandKey(dependencyProbeCommand)]: exited(1, {stderr: "missing packages"})},
+    });
+
+    // Act
+    const result = await runPhase(harness);
+
+    // Assert
+    expect(result.evidence).toContain("Planned action: react.playwright.system-dependencies.install");
+    expect(dryRun.executed).toEqual([]);
+    expect(harness.runner.calls.map(({request}) => request)).toEqual([dependencyProbeCommand]);
+    expect(harness.invalidate).not.toHaveBeenCalled();
   });
 
   it("treats a declined proven-required Linux dependency action as blocking", async () => {
