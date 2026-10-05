@@ -311,12 +311,22 @@ extend them:
   from the built-in `-h` (`--help`) and `-v` (`--version`); verbose output is `--verbose`.
 - **Exit codes are uniform.** `0` success, `1` a completed-but-negative result or an operational
   failure, `2` invalid usage, `130` SIGINT or a quit at an interactive prompt, `143` SIGTERM.
-- **`--json` writes exactly one document.** Every command, including a usage error or a failure,
-  writes one JSON document to stdout; help and error text go to stderr. Without `--json`, a
-  failure prints one `⛔` line plus the failing process's bounded `stdout:`/`stderr:` evidence.
-- **Ctrl+C is graceful.** A command interrupts its in-flight work and child processes, runs its
-  cleanup finalizers, and exits `130` (`143` for SIGTERM) instead of leaving partial state behind
-  or reporting the cancelled work as failed.
+- **`--json` writes one document per completed command.** A command run, a usage error, or a
+  failure writes one JSON document to stdout; help and error text go to stderr. No document is
+  written for `--help`/`--version`/`--completions`, an interrupted run, or `format`/`lint`
+  (their child renders everything). A child with inherited output shares stdout (the AppHost of
+  `dev aspire`, some `setup` installs), and an interactive prompt draws on the terminal, so
+  machine-readable `setup` runs need `--yes` or `--dry-run`. `scripts/README.md` lists the
+  exact rules. Without `--json`, a failure prints one `⛔` line plus the failing process's
+  bounded `stdout:`/`stderr:` evidence.
+- **`--log-level` filters log lines.** `--log-level none|error|warn|info|debug|…` sets the
+  minimum level of the `[arolariu::…]` log lines (default `info`; `none` also hides warnings);
+  `--verbose` lowers it to at least `debug`.
+- **Ctrl+C is graceful.** A command interrupts its in-flight work, runs its cleanup finalizers,
+  and exits `130` (`143` for SIGTERM) instead of reporting the cancelled work as failed. A child
+  that shares your terminal (the Aspire AppHost, `docker compose up`, `format`, `lint`, a `sudo`
+  install) receives the same Ctrl+C and gets up to 15 seconds to finish its own shutdown before
+  it is force-killed; press Ctrl+C again to stop waiting. Background probes are killed at once.
 - **Commands compose in-process.** `npm run status` runs doctor as an in-process Effect program
   rather than spawning a second Node process, so both share one repository inspection session.
 - **`npm run format` and `npm run lint` are deliberately different.** `scripts/cli.ts` routes

@@ -322,9 +322,9 @@ npm after `--`: `npm run doctor -- --quick --json`. Slash aliases (`/h`, `/v`,
 
 | Flag | Meaning |
 | --- | --- |
-| `--json` | Exactly one JSON document on stdout per invocation (section 7.6) |
-| `--verbose` | Also emit debug diagnostics; no short form, because `-v` is `--version` |
-| `--log-level <level>` | `effect/cli` minimum log level |
+| `--json` | One JSON document on stdout per completed command run or usage failure, with the exceptions in section 7.6 |
+| `--verbose` | Also emit debug diagnostics (the log level becomes at least `debug`); no short form, because `-v` is `--version` |
+| `--log-level <level>` | `effect/cli` minimum log level of the `[arolariu::...]` log lines; default `info`, `none` hides warnings too |
 | `--help`, `-h` | Print help for the selected command and exit `0` |
 | `--version`, `-v` | Print the root `package.json` version |
 | `--completions <bash\|zsh\|fish\|sh>` | Print a shell completion script; PowerShell is not supported |
@@ -412,7 +412,7 @@ Every repository service is a `Context.Service` keyed
 | `platform/Prompts.ts` | `Prompts`: `confirm`, `select`, `text`, and `secret` (`Redacted<string>`) over `effect/cli` `Prompt`; without an interactive stdin, `confirm`/`select` return their default and every other prompt fails with `PromptUnavailable` |
 | `inspection/Inspection.ts` | `Inspection`: one memoized repository inspection session per request key |
 | `platform/worker.ts` | `runWorker` / `runWorkerProgram` for the inspection worker child processes |
-| `platform/signals.ts` | `recordTerminationSignals`: remembers whether `SIGINT` or `SIGTERM` arrived |
+| `platform/signals.ts` | `recordTerminationSignals`: remembers which of `SIGINT`/`SIGTERM` arrived and how many; `TerminationSignals` exposes them to `Process` |
 | `platform/exit.ts` | `ReportedFailure`, `reportUsageFailure`, and `exitCodeFor`, the single exit-code mapping |
 | `platform/layers.ts` | `NodeBaseLayer`, `commandLayer`, `makeNodeLayer` |
 | `platform/testing.ts`, `platform/testing.fs.ts` | `makeTestLayer`, `effectTest`, `runScoped`, and the in-memory filesystem and glob |
@@ -540,8 +540,20 @@ masked (section 12.3).
 
 ### 6.4 Process Trees and Windows
 
-Interruption closes the spawn scope, which terminates the whole process tree:
-`taskkill /T /F` on Windows and the process group elsewhere. `platform/windows.ts`
+Interruption closes the spawn scope, which terminates the child. A captured
+child never talks to the terminal: it runs in its own process group off
+Windows, and its whole tree is killed at once (`SIGTERM`, then `SIGKILL` after
+1 s; `taskkill /T /F` on Windows). A terminal-attached child (`tee` or
+`inherit` output) stays in the terminal's foreground process group, so `sudo`
+can prompt and the terminal's Ctrl+C and hang-up reach it; on Windows it
+shares the console. After a Ctrl+C it gets `INTERRUPT_GRACE_PERIOD` (15 s) to
+finish its own shutdown, which keeps the Aspire AppHost, DCP, and
+`docker compose up` shutdown graceful; a second Ctrl+C ends the wait. A child
+still running is then terminated: the direct child on POSIX (its descendants
+received the terminal's Ctrl+C themselves), the tree on Windows. A `SIGTERM`
+sent to the CLI alone is forwarded to the direct child, followed by `SIGKILL`
+after the grace period. A programmatic interruption (no signal) terminates the
+child at once. `platform/windows.ts`
 resolves `.cmd`/`.bat` shims and escapes their arguments, and keeps an
 unresolved command distinguishable from a resolved shim.
 
@@ -599,10 +611,12 @@ explicit business policy may degrade:
 ### 7.4 Cancellation
 
 `NodeRuntime.runMain` interrupts the main fiber on `SIGINT` and `SIGTERM`;
-`platform/signals.ts` only records which signal arrived so `exitCodeFor` can
-choose `130` or `143`. Interruption propagates to every child fiber, stops
-in-flight HTTP requests, delays, and prompts, and closes process scopes, which
-kills child process trees (section 6.4).
+`platform/signals.ts` only records which signals arrived, so `exitCodeFor` can
+choose `130` or `143` and `Process` can tell a Ctrl+C from a programmatic
+interruption (the `TerminationSignals` reference). Interruption propagates to
+every child fiber, stops in-flight HTTP requests, delays, and prompts, and
+closes process scopes, which stop child processes after the Ctrl+C grace
+period of a terminal-attached child (section 6.4).
 
 A cancelled command interrupts. It does not produce failed rows, failed
 phases, or a fabricated partial document: a Doctor module or Setup phase
@@ -628,15 +642,30 @@ closes, after the processes using them have stopped.
 
 - **Human mode** writes `[arolariu::cli] ⛔ <message>` to stderr, followed for a
   `ProcessError` by its bounded `stdout: ...` and `stderr: ...` evidence lines.
-- **JSON mode** writes exactly one JSON document on stdout per invocation,
+- **JSON mode** (`--json` in any spelling `effect/cli` accepts before `--`;
+  a `--json` after `--` is a passthrough argument) writes one JSON document on
+  stdout for every completed command run and every usage failure,
   `JSON.stringify(value, null, 2)` plus a trailing newline: the command's
   typed result on success or business-negative completion,
   `{status: "failed", kind: "usage", message, evidence}` for a usage failure,
   or `{status: "failed", kind, message, evidence}` (`kind` is `operational`
   for a typed failure and `internal` for a defect) for any other failure.
-  `effect/cli` help and error text goes to stderr, so stdout holds only the
-  document. Container and E2E commands that report a child failure themselves
-  write the same failed-document shape.
+  `effect/cli` help and error text goes to stderr. Container and E2E commands
+  that report a child failure themselves write the same failed-document
+  shape.
+
+The guarantee covers what the CLI writes; these cases write no document or
+share stdout with other output:
+
+- `--help`, `--version`, `--completions`, `--wizard`, and a bare command group
+  write no document;
+- an interrupted run (exit `130`/`143`) writes no document;
+- `format` and `lint` run the frozen closure with inherited output and write no
+  document;
+- a child with inherited output (the `dev aspire` AppHost, `setup` actions
+  that inherit output) writes to the same stdout;
+- an interactive prompt (`setup` without `--yes` or `--dry-run` on a
+  terminal) draws on the terminal.
 
 ### 7.7 Error Detail
 
@@ -685,11 +714,14 @@ Secrets are handled by type (section 12.3), not by output filtering.
 - Newman runs in capture mode and its output is re-emitted only after
   redaction (section 12.3), so `test e2e` shows no live Newman progress; each
   target's output appears when its run settles.
-- `--json` always produces exactly one document, including usage and failure
-  documents (section 7.6).
+- `--json` produces one document for every completed command run, including
+  usage and failure documents, with the exceptions listed in section 7.6.
 - A cancelled command interrupts instead of producing failed rows
   (section 7.4).
 - A terminal quit exits `130`.
+- Terminal-attached children are terminated after a bounded Ctrl+C grace
+  period (section 6.4); the legacy runner killed only the direct child and
+  left its descendants running.
 
 ---
 
@@ -832,7 +864,9 @@ review, and adapter ownership and rollback.
 
 - command and arguments remain separate, and no shell string is accepted;
 - stdin and environment values are never included in diagnostics or echoes;
-- an interrupted run terminates the child's whole process tree;
+- an interrupted run terminates the child: a captured child with its whole
+  process tree at once, a terminal-attached child after its Ctrl+C grace
+  period (section 6.4);
 - secrets go to child processes through `env` wherever the tool allows it.
 
 ### 12.2 Capability Profiles
@@ -854,10 +888,12 @@ diagnostics for secret literals (accepted risk, section 19).
 
 Command-specific mitigations:
 
-- `dev selfhost start` reads `MSSQL_SA_PASSWORD` as `Redacted`, unwraps it only
-  for the `sqlcmd -P` argument, echoes that run with `[REDACTED]` in its place,
-  never echoes it under `--verbose`, and rebuilds a failure as a step-only
-  `ContainerRuntimeError`;
+- `dev selfhost start` reads `MSSQL_SA_PASSWORD` as `Redacted` and unwraps it
+  only into the `SQLCMDPASSWORD` environment variable of the
+  `docker`/`podman exec -e SQLCMDPASSWORD` client, which copies the named
+  variable into the container for `sqlcmd`, so it never reaches an argument
+  vector; the run never echoes under `--verbose`, and a failure is rebuilt as
+  a step-only `ContainerRuntimeError`;
 - `test e2e` reads `E2E_TEST_AUTH_TOKEN` as `Redacted` and unwraps it only for
   Newman's `--env-var authToken=...` argument, because Newman has no
   environment channel. The Newman run never echoes its command, captures its
@@ -936,10 +972,14 @@ the worker runner, and the harness itself.
 
 `platform/cancellation.integration.test.ts` starts
 `platform/__fixtures__/cancellable-cli.ts`, which runs an inherited child and
-grandchild under `NodeRuntime.runMain`, and proves that both are gone within
-three seconds and that the exit code is `130` or `143`: through `SIGINT` and
-`SIGTERM` on POSIX, and through a self-interrupt of the main fiber on Windows,
-where Node cannot deliver a catchable signal to another process.
+grandchild under `NodeRuntime.runMain`. On POSIX the fixture leads its own
+process group: a `SIGINT` to that group (a terminal Ctrl+C) must let the child
+and grandchild exit on their own long before the grace period ends, with exit
+`130`, and a `SIGTERM` to the CLI alone must reach the child, with exit `143`.
+On Windows, where Node cannot deliver a catchable signal to another process, a
+self-interrupt of the main fiber must kill the tree through `taskkill /T /F`,
+with exit `130`. Each case checks that the processes it stops are gone within
+three seconds.
 
 ### 14.5 Coverage
 
@@ -1067,8 +1107,8 @@ Revision 3 is complete when:
    typed failures;
 6. Doctor, Status, and inspection compile against the read-only profile;
 7. Setup retains consent, dry-run, invalidation, and postcondition behavior;
-8. Status retains nullable collector sections, and `--json` writes exactly one
-   document for every command;
+8. Status retains nullable collector sections, and `--json` writes one
+   document for every completed command run (exceptions in section 7.6);
 9. generator, documentation, E2E, exchange-rate, and container business
    contracts remain covered;
 10. secrets are `Redacted` from the point they are read;
@@ -1087,7 +1127,8 @@ Revision 3 is complete when:
 | --- | --- |
 | No output masking. Secrets can appear in child-process output or a command echo (selfhost SQL password, `generate env` values, setup user secrets, the E2E token in CI logs). | Accepted. Mitigations only: `Redacted<string>` keeps our own logs clean, secrets travel through `env` where the tool allows, and selfhost and E2E apply the targeted measures of section 12.3. |
 | No CI job runs the scripts Vitest suite, so CI does not validate this architecture. | Accepted. Every change to `scripts/` records the local suite, type-check, and lint results. Adding a job is a separate workflow change. |
-| The POSIX signal and process-tree legs of the cancellation test are not exercised on the Windows development host. | Accepted. The test runs them on POSIX; Windows uses the self-interrupt path. |
+| The POSIX signal and process-tree legs of the cancellation test are not exercised on the Windows development host. | Accepted. The test runs them on POSIX (verified in a `node:24` Linux container); Windows uses the self-interrupt path. |
+| On POSIX, a `SIGTERM` sent to the CLI alone, or a programmatic interruption, reaches only the direct child of a terminal-attached (`tee`/`inherit`) child, because that child must stay in the terminal's process group to prompt and to receive Ctrl+C. | Accepted. A terminal Ctrl+C or hang-up reaches the whole foreground group; signal the process group to stop every descendant. Captured children keep the process-group tree kill. |
 | Newman has no live progress, because its output is captured and re-emitted after redaction. | Accepted in exchange for keeping the E2E token out of the output. |
 | Startup time increased: `doctor --quick` +14.7% at the root-CLI cohort and a further +9.3% at the inspection cohort, `status` +3.9% at each, `--help` about +1.6 s. | Accepted (section 13). |
 | The 90% global branch-coverage threshold of the scripts suite already failed before revision 3 and still fails (about 85%), so the suite exits `1` on coverage alone. | Accepted as pre-existing; thresholds are unchanged. |

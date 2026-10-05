@@ -45,9 +45,9 @@ Global flags are accepted before or after the subcommand.
 
 | Flag | Meaning |
 |------|---------|
-| `--json` | Writes exactly one JSON document to stdout per invocation, usage and failure documents included; human output is suppressed and effect/cli help/error text goes to stderr |
-| `--verbose` | Also emits debug diagnostics. It has no short form: `-v` is `--version` |
-| `--log-level <level>` | effect/cli's minimum Effect log level (`all`, `trace`, `debug`, `info`, `warn`, `error`, `fatal`, `none`) |
+| `--json` | Writes one JSON document to stdout for each command run and usage failure (see [Failures and JSON output](#failures-and-json-output) for the exceptions); human output is suppressed and effect/cli help/error text goes to stderr |
+| `--verbose` | Also emits debug diagnostics (the log level becomes at least `debug`). It has no short form: `-v` is `--version` |
+| `--log-level <level>` | effect/cli's minimum Effect log level (`all`, `trace`, `debug`, `info`, `warn`, `error`, `fatal`, `none`); default `info`. It filters the `[arolariu::…]` log lines (`none` also hides warnings and errors) but not presenter output such as tables, success lines, or the `--json` document |
 | `--help`, `-h` | Prints effect/cli help for the selected command and exits `0` |
 | `--version`, `-v` | Prints the root `package.json` version |
 | `--completions <bash\|zsh\|fish\|sh>` | Prints an effect/cli shell completion script; PowerShell is not supported |
@@ -76,16 +76,39 @@ and a pure interruption are not rendered again):
 
 - **Human mode** writes `[arolariu::cli] ⛔ <message>` on stderr, followed for a process failure
   (`ProcessExited`/`ProcessSignalled`/`ProcessSpawnFailed`/`ProcessTimedOut`) by its bounded `stdout: …` and `stderr: …` evidence lines.
-- **JSON mode** writes exactly one document on stdout (`JSON.stringify(value, null, 2)` plus a newline): the command's typed result on
+- **JSON mode** (`--json`, `--json=true`, or any other spelling effect/cli accepts before `--`; a `--json` after `--` is a passthrough
+  argument) writes one document on stdout (`JSON.stringify(value, null, 2)` plus a newline): the command's typed result on
   success or business-negative completion; `{status: "failed", kind: "usage", message, evidence}` for a usage failure; otherwise
   `{status: "failed", kind, message, evidence}`, where `kind` is `operational` for a typed failure and `internal` for a defect.
+
+The one-document guarantee covers what the CLI itself writes. These cases write no document, or share stdout with other output:
+
+- `--help`, `--version`, `--completions`, `--wizard`, and a bare command group print their text (to stderr under `--json`) and write no
+  document.
+- An interrupted run (Ctrl+C or `SIGTERM`, exit `130`/`143`) writes no document.
+- `format` and `lint` run the frozen Piscina closure with inherited output: the child renders everything and no document is written.
+- A child run with inherited output writes straight to the same stdout: `dev aspire` (the AppHost output precedes the document) and the
+  `setup` actions that inherit output (package-manager installs, `dotnet workload restore`, `dotnet dev-certs https --trust`, …).
+- An interactive prompt (for example `setup` without `--yes` or `--dry-run` on a terminal) draws on the terminal. Use `--yes`,
+  `--dry-run`, or a non-interactive stdin for machine-readable `setup` runs.
 
 ### Cancellation and cleanup
 
 `NodeRuntime.runMain` interrupts the main fiber on `SIGINT` and `SIGTERM`; [`platform/signals.ts`](./platform/signals.ts) only records
-which one arrived so the exit is `130` or `143`. Interruption reaches every child fiber, stops in-flight HTTP requests, delays, and
-prompts, and closes each `Process` scope, which kills the child's whole process tree. A cancelled command interrupts: it never turns the
-cancellation into failed rows, failed phases, or a partial document.
+which signals arrived, so the exit is `130` or `143` and `Process` can tell a Ctrl+C from a programmatic interruption. Interruption
+reaches every child fiber, stops in-flight HTTP requests, delays, and prompts, and closes each `Process` scope:
+
+- A captured child (the default `capture` output) never talks to the terminal. It runs in its own process group on POSIX and is killed
+  at once with its whole process tree (`SIGTERM`, then `SIGKILL` after 1 s; `taskkill /T /F` on Windows).
+- A terminal-attached child (`tee` or `inherit` output, such as the Aspire AppHost, `docker compose up`, `format`, or a `sudo` install)
+  stays in the terminal's foreground process group on POSIX, so it can prompt (`sudo`) and it receives the terminal's Ctrl+C and hang-up
+  itself; on Windows it shares the console. After a Ctrl+C it gets `INTERRUPT_GRACE_PERIOD` (15 s, or the `interruptGracePeriod`
+  option) to finish its own shutdown; a second Ctrl+C ends the wait. A child still running then is terminated: `SIGTERM` and `SIGKILL`
+  1 s later to the direct child on POSIX (its descendants already got the terminal's Ctrl+C), `taskkill /T /F` on Windows. A `SIGTERM`
+  sent to the CLI alone is forwarded to the direct child, followed by `SIGKILL` once the grace period elapses; signal the whole process
+  group to stop its descendants too. A programmatic interruption (no signal) kills it at once.
+
+A cancelled command interrupts: it never turns the cancellation into failed rows, failed phases, or a partial document.
 
 Register cleanup in the command scope with `Effect.acquireRelease`, `Effect.addFinalizer`, or `Effect.ensuring`. Finalizers run in LIFO
 order on success, failure, and interruption; a finalizer failure joins the `Cause` beside the primary failure and never replaces it.
@@ -133,13 +156,17 @@ document, and maps the exit code.
   flags, taken once when the layer is built.
 - [`exit.ts`](./platform/exit.ts) — `ReportedFailure`, `reportUsageFailure`, and `exitCodeFor`, the single exit-code mapping (`0`, `1`,
   `2`, `130`, `143`).
-- [`signals.ts`](./platform/signals.ts) — records whether `SIGINT` or `SIGTERM` ended the run, so interruption maps to `130` or `143`.
+- [`signals.ts`](./platform/signals.ts) — records which of `SIGINT`/`SIGTERM` arrived (and how many), so interruption maps to
+  `130` or `143`; `cli.ts` provides the recorder as the `TerminationSignals` reference that `Process` reads for the Ctrl+C grace
+  period.
 - [`Output.ts`](./platform/Output.ts) — `Sink` (the only direct stream writer), `OutputSettings`, the Effect logger
   (`[arolariu::<context>]` lines, human/JSON/silent), and `Presenter` (`success`, `fatal`, `line`, `write`, `section`, `banner`, `table`,
   `progress`, `json`; a second `json` write fails with `JsonDocumentAlreadyWritten`).
 - [`Process`](./platform/Process.ts) — child processes over `ChildProcessSpawner` with capture/tee/inherit output, stdin, timeout, command
   echo, bounded evidence (`failureOutput: "full"` keeps a failure's whole captured output for callers that parse it, such as
-  `npm ls --json`), and typed `ProcessExited`/`ProcessSignalled`/`ProcessSpawnFailed`/`ProcessTimedOut` failures;
+  `npm ls --json`), the Ctrl+C grace period of terminal-attached children (`interruptGracePeriod`, see
+  [Cancellation and cleanup](#cancellation-and-cleanup)), and typed
+  `ProcessExited`/`ProcessSignalled`/`ProcessSpawnFailed`/`ProcessTimedOut` failures;
   [`windows.ts`](./platform/windows.ts) resolves and escapes `.cmd` shims.
 - [`Files.ts`](./platform/Files.ts) — `Glob`, read-only `ReadOnlyFiles`, `GetOnlyHttp`, `TemporaryDirectories` (a scope-owned
   temporary directory, removed when the scope closes), `writeTextAtomic`, and `readBytesBounded`.
@@ -312,12 +339,15 @@ the shared preflight probes under the `<command>::preflight` log context (`prepa
 Compose provider, or AppHost through the `Process` service, so every test scripts the processes instead of spawning Docker, Podman, or
 AppHost. The image build (frontend and backend targets) and `dev selfhost start` run `generateArtifacts` silently first. Domain failures
 are `ContainerRuntimeError`; process failures stay `ProcessError`.
-Cancellation is fiber interruption: `runMain` interrupts the command, the `Process` scope finalizer kills the child process tree, and the
-CLI exits `130` (`143` after `SIGTERM`).
+Cancellation is fiber interruption: `runMain` interrupts the command, the `Process` scope finalizer stops the child (after the Ctrl+C
+grace period for the attached AppHost, Compose, image, and selfhost children, see [Cancellation and cleanup](#cancellation-and-cleanup)),
+and the CLI exits `130` (`143` after `SIGTERM`).
 [`platform/cancellation.integration.test.ts`](./platform/cancellation.integration.test.ts) proves this end to end with
-[`platform/__fixtures__/cancellable-cli.ts`](./platform/__fixtures__/cancellable-cli.ts): SIGTERM/SIGINT on POSIX, and a self-interrupt
-of the main fiber on Windows, where Node cannot deliver a catchable signal to another process; in both cases the inherited child and
-grandchild are gone within three seconds.
+[`platform/__fixtures__/cancellable-cli.ts`](./platform/__fixtures__/cancellable-cli.ts), whose inherited child spawns a grandchild. On
+POSIX a SIGINT to the fixture's process group (a terminal Ctrl+C) lets the child and grandchild exit on their own long before the grace
+period ends (exit `130`), and a SIGTERM to the CLI alone is forwarded to the child (exit `143`). On Windows, where Node cannot deliver a
+catchable signal to another process, a self-interrupt of the main fiber takes the immediate `taskkill /T /F` path (exit `130`). In each
+case the processes it stops are gone within three seconds.
 
 | Module | Responsibility |
 |--------|----------------|
@@ -331,17 +361,19 @@ grandchild are gone within three seconds.
 | [`container-runtime/selfhost.ts`](./container-runtime/selfhost.ts) | Selfhost start/stop/logs over the `infra/Local` stacks, artifacts, certificates, the Traefik config, and the storage bootstrap |
 | [`container-runtime/selfhost.bootstrap.ts`](./container-runtime/selfhost.bootstrap.ts) | Cosmos provisioning through `HttpClient` (bounded bodies) and Azurite through the `LocalBlobStorage` service, the only Blob SDK owner |
 
-- **JSON.** With `--json`, every invocation writes exactly one stdout document, failures included: the typed result (`{engine}`,
+- **JSON.** With `--json`, every completed invocation writes one stdout document, failures included: the typed result (`{engine}`,
   `{engine, file, passthrough}`, `{engine, action, target}`, or `{action, engine, stacks}`) on success; on a non-zero engine or AppHost
   exit, `reportChildExit` writes `{status: "failed", kind: "operational", message, evidence}` and exits `1`; any other typed failure is
-  rendered by `cli.ts` in the same shape.
+  rendered by `cli.ts` in the same shape. `dev aspire` runs the AppHost with inherited output, so its output shares stdout and precedes
+  the document; an interrupted run writes none.
 - **Child output.** AppHost runs with inherited output; Compose, image, and selfhost commands use tee output (each command echoed as
   `$ <command>`), so the user sees the child's diagnostics live. A non-zero exit therefore renders one `<tool> exited with code <n>` line
   (`reportChildExit`, then `ReportedFailure{exitCode: 1}`) instead of repeating the output as evidence.
 - **SQL password.** Selfhost start reads `MSSQL_SA_PASSWORD` from the invocation environment as a `Redacted` value (missing or blank is a
-  `ContainerRuntimeError` that tells you to set it in the shell only) and unwraps it only for the `sqlcmd -P` argument. The echoed
-  `$ …` line shows `[REDACTED]` in its place, the run never echoes under `--verbose`, and a `sqlcmd` failure is rebuilt as a step-only
-  message that carries neither the command line nor the argument vector.
+  `ContainerRuntimeError` that tells you to set it in the shell only) and unwraps it only into the `SQLCMDPASSWORD` environment variable
+  of the `docker`/`podman exec -e SQLCMDPASSWORD mssql …` client: the engine copies the named variable into the container, where
+  `sqlcmd` reads it, so the password never appears in an argument vector or the host process list. The run never echoes under
+  `--verbose`, and a `sqlcmd` failure is rebuilt as a step-only message that carries no process evidence.
 - **Persistent state.** Started stacks and the generated Traefik file are requested state: a failed or interrupted start leaves what it
   started running, and only `dev selfhost stop` removes the Traefik file.
 
@@ -511,7 +543,8 @@ Every check is one `DiagnosticResult`: a stable `id` (module-prefixed, e.g. `wor
 (`pass`/`warn`/`fail`/`skipped`), `summary`, `evidence`, `durationMs`, `fixes`, and exactly one diagnosis form for a `warn`/`fail` row —
 either `rootCause` or ranked `potentialCauses` (`high`/`medium`/`low`), never both. [`commands/doctor/reporter.ts`](./commands/doctor/reporter.ts) rejects an
 unknown or duplicate `id`, a `warn`/`fail` row missing evidence/fixes/diagnosis, and an ANSI-bearing or empty report string. The completed
-`DoctorReportV1` (`schemaVersion: 1`, `score`, `grade`, `summary`, `checks`, `timestamp`) is scored with a stable per-`id` weight: a pass
+`DoctorReport` (`score`, `grade`, `summary` with `passed`/`warnings`/`failed`/`skipped` counts, `checks`, `timestamp`; the `--json`
+document has exactly these keys and no schema version) is scored with a stable per-`id` weight: a pass
 earns full weight, a warn half, a fail none, and a `skipped` check contributes to neither the earned total nor the denominator.
 
 ### Read-only command policy
