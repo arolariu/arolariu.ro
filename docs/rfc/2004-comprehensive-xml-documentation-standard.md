@@ -1103,7 +1103,7 @@ public static class Validator
 **How it Works**:
 
 - `Directory.Build.props` emits XML documentation beside compiled assemblies.
-- `scripts/docs-assemble.ts` discovers and builds the API project graph.
+- `scripts/commands/docs/assemble.ts` discovers and builds the API project graph.
 - The repository-local `DefaultDocumentation.Console` tool converts each
   assembly's XML documentation into Markdown under the generated .NET tier.
 - Docusaurus publishes that generated tier with the rest of the documentation
@@ -1112,7 +1112,7 @@ public static class Validator
 **Current ownership**:
 
 - `.config/dotnet-tools.json` pins the local documentation tool.
-- `scripts/docs-assemble.ts` owns project discovery, build roots, invocation
+- `scripts/commands/docs/assemble.ts` (with `normalize.ts`) owns project discovery, build roots, invocation
   arguments, normalization, landing pages, and output validation.
 - `sites/docs.arolariu.ro/project.json` makes assembly a dependency of docs
   build and development.
