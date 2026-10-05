@@ -306,20 +306,26 @@ the `npm run` aliases in the root `package.json` call it. Practical consequences
 extend them:
 
 - **Help always wins.** `npm run <script> -- --help` (or `node scripts/cli.ts <command> --help`)
-  prints usage and exits `0` without doing any work. Flags use the `--name` form only; `-v` is
-  `--version`, and verbose output is `--verbose`.
+  prints usage and exits `0` without doing any work; a command group without a subcommand
+  (`node scripts/cli.ts docs`) prints its help the same way. Flags use the `--name` form apart
+  from the built-in `-h` (`--help`) and `-v` (`--version`); verbose output is `--verbose`.
 - **Exit codes are uniform.** `0` success, `1` a completed-but-negative result or an operational
-  failure, `2` invalid usage, `130` SIGINT, `143` SIGTERM.
-- **Ctrl+C is graceful.** A command cancels its in-flight work, drains its cleanup registry, and
-  exits `130` instead of leaving partial state behind.
-- **Commands compose in-process.** `npm run status` runs doctor as a typed child call rather than
-  spawning a second Node process, so both share one repository inspection session.
+  failure, `2` invalid usage, `130` SIGINT or a quit at an interactive prompt, `143` SIGTERM.
+- **`--json` writes exactly one document.** Every command, including a usage error or a failure,
+  writes one JSON document to stdout; help and error text go to stderr. Without `--json`, a
+  failure prints one `⛔` line plus the failing process's bounded `stdout:`/`stderr:` evidence.
+- **Ctrl+C is graceful.** A command interrupts its in-flight work and child processes, runs its
+  cleanup finalizers, and exits `130` (`143` for SIGTERM) instead of leaving partial state behind
+  or reporting the cancelled work as failed.
+- **Commands compose in-process.** `npm run status` runs doctor as an in-process Effect program
+  rather than spawning a second Node process, so both share one repository inspection session.
 - **`npm run format` and `npm run lint` are deliberately different.** `scripts/cli.ts` routes
-  them, but they keep their own Piscina worker pools outside the shared command runtime.
+  them by spawning `scripts/format.ts`/`scripts/lint.ts`, which keep their own Piscina worker
+  pools outside the Effect command platform.
 
 See [scripts/README.md](scripts/README.md) for the authoring contract and
 [docs/rfc/0002-lean-monorepo-tooling-architecture.md](docs/rfc/0002-lean-monorepo-tooling-architecture.md)
-for the accepted architecture record.
+for the accepted architecture record (revision 3, Effect Command Platform).
 
 ---
 
