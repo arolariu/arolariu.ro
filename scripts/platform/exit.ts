@@ -7,10 +7,14 @@
  * `--help`); `1` business-negative result, typed failure, or defect; `2` CLI usage error or
  * {@link ReportedFailure} with `exitCode: 2`; `130` interruption after `SIGINT`, interruption with
  * no recorded signal, or a terminal quit; `143` interruption after `SIGTERM`.
+ * {@link reportUsageFailure} renders a usage failure that a command detects after parsing, so it
+ * reaches exit `2` with the same `--json` document as a parser usage failure.
  */
 
-import {Cause, Exit, Result, Schema, Terminal} from "effect";
+import {Cause, Effect, Exit, Result, Schema, Terminal} from "effect";
 import {CliError} from "effect/cli";
+
+import {Presenter} from "./Output.ts";
 
 /** Process exit codes a command can finish with. */
 export type CommandExitCode = 0 | 1 | 2 | 130 | 143;
@@ -32,6 +36,27 @@ export class ReportedFailure extends Schema.TaggedError<ReportedFailure>()("Repo
  */
 function isReportedFailure(error: unknown): error is ReportedFailure {
   return error instanceof ReportedFailure;
+}
+
+/**
+ * Reports input that the parser accepted but the command rejects as a usage failure.
+ *
+ * @remarks
+ * In `--json` mode it writes the single stdout document `{status: "failed", kind: "usage", message,
+ * evidence: []}` (the shape the CLI renders for a parser usage failure) and the message on stderr;
+ * in human mode it writes one `[arolariu::<context>] ⛔ <message>` line. It then fails with
+ * `ReportedFailure{exitCode: 2}`, so the CLI renders nothing more.
+ *
+ * @param message - The usage diagnostic.
+ * @returns An effect rendering the diagnostic and failing with the reported failure.
+ */
+export function reportUsageFailure(message: string): Effect.Effect<never, ReportedFailure, Presenter> {
+  return Effect.gen(function* () {
+    const presenter = yield* Presenter;
+    yield* Effect.orDie(presenter.json({status: "failed", kind: "usage", message, evidence: []}));
+    yield* presenter.fatal(message);
+    return yield* new ReportedFailure({exitCode: 2, message});
+  });
 }
 
 /**

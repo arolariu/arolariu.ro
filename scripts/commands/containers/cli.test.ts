@@ -148,6 +148,23 @@ describe("containers command", () => {
     expect(result.output).toEqual([{stream: "stderr", text: "[arolariu::compose] ⛔ Use --file <compose-file> -- <compose arguments>\n"}]);
   });
 
+  it("writes compose without passthrough arguments as the single usage failure document in --json mode", async () => {
+    // Arrange
+    const argv = ["containers", "compose", "--file", "x.yml", "--engine", "rancher", "--json"];
+
+    // Act
+    const result = await run(argv);
+
+    // Assert
+    const message = "Use --file <compose-file> -- <compose arguments>";
+    expect(result.code).toBe(2);
+    expect(result.calls).toEqual([]);
+    expect(result.output).toEqual([
+      {stream: "stdout", text: `${JSON.stringify({status: "failed", kind: "usage", message, evidence: []}, null, 2)}\n`},
+      {stream: "stderr", text: `${message}\n`},
+    ]);
+  });
+
   it("reports a missing engine selection through the root renderer", async () => {
     // Arrange
     const argv = ["containers", "compose", "--file", "x.yml", "--", "config"];

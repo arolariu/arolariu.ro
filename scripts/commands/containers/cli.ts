@@ -7,7 +7,8 @@
  * `containers run` decode the required `--target` and `--engine` into an {@link ImageInput} and run
  * {@link runImage}; `containers compose` decodes the required `--file`, `--engine`, and every
  * argument after `--` into a {@link ComposeInput} and runs {@link runCompose}. Compose without
- * passthrough arguments keeps the legacy usage failure (exit `2`). A completion renders the result
+ * passthrough arguments keeps the legacy usage failure (exit `2`), rendered by `reportUsageFailure`
+ * (in `--json` mode, as the single usage failure document). A completion renders the result
  * as the single JSON document (`--json`) or the legacy success line; a non-zero engine CLI exit
  * becomes `ReportedFailure{exitCode: 1}` (see `reportChildExit` in `./output.ts`).
  */
@@ -19,8 +20,7 @@ import type {CliSubcommand} from "../../cli.ts";
 import {COMPOSE_USAGE_MESSAGE, runCompose} from "../../container-runtime/compose.ts";
 import {runImage} from "../../container-runtime/image.ts";
 import type {ComposeInput, ImageAction, ImageTarget} from "../../container-runtime/types.ts";
-import {ReportedFailure} from "../../platform/exit.ts";
-import {Presenter} from "../../platform/Output.ts";
+import {reportUsageFailure} from "../../platform/exit.ts";
 import {EngineFlag, engineInput, withCommandOutput} from "../flags.ts";
 import {renderContainerCompletion, reportChildExit} from "./output.ts";
 
@@ -70,8 +70,7 @@ export function makeContainersCommand(): CliSubcommand {
     ({file, engine, passthrough}) =>
       Effect.gen(function* () {
         if (passthrough.length === 0) {
-          yield* (yield* Presenter).fatal(COMPOSE_USAGE_MESSAGE);
-          return yield* new ReportedFailure({exitCode: 2, message: COMPOSE_USAGE_MESSAGE});
+          return yield* reportUsageFailure(COMPOSE_USAGE_MESSAGE);
         }
         const input: ComposeInput = {file, passthrough, ...engineInput(engine)};
         const result = yield* runCompose(input);

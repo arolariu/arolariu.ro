@@ -28,7 +28,7 @@ import {DateTime, Duration, Effect, FileSystem, Path, References, type PlatformE
 import {HttpClient, HttpClientRequest, type HttpClientError} from "effect/http";
 
 import {Environment} from "../../platform/Environment.ts";
-import {ReportedFailure} from "../../platform/exit.ts";
+import {reportUsageFailure, type ReportedFailure} from "../../platform/exit.ts";
 import {writeTextAtomic} from "../../platform/Files.ts";
 import {readBoundedText} from "../../platform/Http.ts";
 import {Presenter, withLogContext} from "../../platform/Output.ts";
@@ -358,9 +358,9 @@ function resolveYearRange(input: Readonly<ExchangeRateInput>, currentYear: numbe
  * Runs a pure exchange-rate input step and turns its input failure into a usage failure.
  *
  * @param evaluate - The pure step; it may throw {@link ExchangeRateInputInvalid}.
- * @returns The step's value. An {@link ExchangeRateInputInvalid} is rendered through
- * `Presenter.fatal` and fails with `ReportedFailure({exitCode: 2, message})`; any other throw is a
- * defect.
+ * @returns The step's value. An {@link ExchangeRateInputInvalid} is rendered and fails with
+ * `ReportedFailure({exitCode: 2, message})` through `reportUsageFailure` (in `--json` mode, as the
+ * single usage failure document); any other throw is a defect.
  */
 export function exchangeRateUsage<T>(evaluate: () => T): Effect.Effect<T, ReportedFailure, Presenter> {
   return Effect.suspend(() => {
@@ -370,10 +370,7 @@ export function exchangeRateUsage<T>(evaluate: () => T): Effect.Effect<T, Report
       if (!(error instanceof ExchangeRateInputInvalid)) {
         return Effect.die(error);
       }
-      return Effect.gen(function* () {
-        yield* (yield* Presenter).fatal(error.message);
-        return yield* new ReportedFailure({exitCode: 2, message: error.message});
-      });
+      return reportUsageFailure(error.message);
     }
   });
 }
@@ -637,7 +634,7 @@ function withYearLogContext(year: number): <A, E, R>(self: Effect.Effect<A, E, R
  * @param input - Decoded or programmatic year range, passed by reference so a parser-defaulted
  * upper bound is still recognized; both bounds are validated here.
  * @returns The years attempted, the years successfully updated, and any per-year failures. An
- * invalid range is rendered through `Presenter.fatal` and fails with
+ * invalid range is rendered through `reportUsageFailure` and fails with
  * `ReportedFailure({exitCode: 2})` before any request; a CSV read or write failure fails with the
  * `PlatformError`.
  */

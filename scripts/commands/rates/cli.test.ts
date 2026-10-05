@@ -152,4 +152,18 @@ describe("rates command", () => {
       {stream: "stdout", text: `${JSON.stringify({years: [2024], updatedYears: [2024], failedYears: []}, null, 2)}\n`},
     ]);
   });
+
+  it("writes an invalid year range as the single usage failure document in --json mode", async () => {
+    // Act
+    const result = await run(["rates", "update", "--year", "1900", "--json"]);
+
+    // Assert
+    const message = "--year must be >= 2018 (earliest supported), got: 1900";
+    expect(result.code).toBe(2);
+    expect(result.years).toEqual([]);
+    expect(result.output).toEqual([
+      {stream: "stdout", text: `${JSON.stringify({status: "failed", kind: "usage", message, evidence: []}, null, 2)}\n`},
+      {stream: "stderr", text: `${message}\n`},
+    ]);
+  });
 });

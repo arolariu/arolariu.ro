@@ -7,6 +7,7 @@
  * Each case feeds {@link exitCodeFor} one exit shape (success, reported failure, CLI parse error,
  * terminal quit, typed failure, defect, or interruption with and without a termination signal)
  * and pins the resulting process exit code. CLI exits come from a real `Command.runWith` run.
+ * {@link reportUsageFailure} is pinned in human and JSON mode on the in-memory harness.
  */
 
 import {NodeServices} from "@effect/platform-node";
@@ -14,7 +15,8 @@ import {Cause, Effect, Exit, Terminal} from "effect";
 import {Command} from "effect/cli";
 import {describe, expect, it} from "vitest";
 
-import {exitCodeFor, ReportedFailure} from "./exit.ts";
+import {exitCodeFor, ReportedFailure, reportUsageFailure} from "./exit.ts";
+import {makeTestLayer} from "./testing.ts";
 
 /**
  * Runs a bare CLI command against the given argv and returns its exit.
@@ -158,5 +160,37 @@ describe("exitCodeFor", () => {
 
     // Assert
     expect(code).toBe(143);
+  });
+});
+
+describe("reportUsageFailure", () => {
+  it("writes the usage failure document and the message on stderr in --json mode", async () => {
+    // Arrange
+    const harness = makeTestLayer({mode: "json", context: "rates"});
+
+    // Act
+    const exit = await Effect.runPromiseExit(reportUsageFailure("--year must be >= 2018").pipe(Effect.provide(harness.layer)));
+
+    // Assert
+    expect(exitCodeFor(exit, undefined)).toBe(2);
+    expect(harness.output()).toEqual([
+      {
+        stream: "stdout",
+        text: `${JSON.stringify({status: "failed", kind: "usage", message: "--year must be >= 2018", evidence: []}, null, 2)}\n`,
+      },
+      {stream: "stderr", text: "--year must be >= 2018\n"},
+    ]);
+  });
+
+  it("writes one fatal line and no document in human mode", async () => {
+    // Arrange
+    const harness = makeTestLayer({context: "rates"});
+
+    // Act
+    const exit = await Effect.runPromiseExit(reportUsageFailure("--year must be >= 2018").pipe(Effect.provide(harness.layer)));
+
+    // Assert
+    expect(Exit.isFailure(exit) && Cause.squash(exit.cause)).toEqual(new ReportedFailure({exitCode: 2, message: "--year must be >= 2018"}));
+    expect(harness.output()).toEqual([{stream: "stderr", text: "[arolariu::rates] ⛔ --year must be >= 2018\n"}]);
   });
 });
