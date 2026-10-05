@@ -22,6 +22,43 @@ export const JsonFlag: GlobalFlag.Setting<"json", boolean> = GlobalFlag.Setting(
   flag: Flag.Boolean("json").pipe(Flag.withDefault(false), Flag.withDescription("Emit one machine-readable JSON document.")),
 });
 
+/** Values effect/cli accepts as `true` for a boolean flag (`--json=yes`, `--json on`, …). */
+const TRUE_LITERALS: ReadonlySet<string> = new Set(["true", "yes", "on", "1", "y"]);
+/** Values effect/cli accepts as `false` for a boolean flag. */
+const FALSE_LITERALS: ReadonlySet<string> = new Set(["false", "no", "off", "0", "n"]);
+
+/**
+ * Decides from raw arguments whether an invocation requested {@link JsonFlag}, the way effect/cli parses it.
+ *
+ * @remarks
+ * The CLI entry needs the mode to render failures that happen before or outside a command handler
+ * (usage errors included), so it cannot read the parsed setting. Mirrors the effect/cli 4.0.0
+ * lexer and boolean-flag parser: scanning stops at `--` (every later token is a passthrough
+ * operand); `--json` means `true` unless the next token is a boolean literal, which it then
+ * consumes (`--json false`); `--json=<literal>` sets the literal; `--no-json` means `false`; the
+ * first occurrence wins; and an invalid inline value (`--json=maybe`, a usage error) counts as not requested.
+ *
+ * @param argv - Arguments after the program name.
+ * @returns Whether the invocation runs in JSON mode.
+ */
+export function requestsJsonOutput(argv: readonly string[]): boolean {
+  for (const [index, argument] of argv.entries()) {
+    if (argument === "--") {
+      return false;
+    }
+    if (argument === "--no-json") {
+      return false;
+    }
+    if (argument === "--json") {
+      return !FALSE_LITERALS.has(argv[index + 1] ?? "");
+    }
+    if (argument.startsWith("--json=")) {
+      return TRUE_LITERALS.has(argument.slice("--json=".length));
+    }
+  }
+  return false;
+}
+
 /** `--verbose`: also emit debug diagnostics. */
 export const VerboseFlag: GlobalFlag.Setting<"verbose", boolean> = GlobalFlag.Setting("verbose")({
   flag: Flag.Boolean("verbose").pipe(Flag.withDefault(false), Flag.withDescription("Show diagnostic output.")),

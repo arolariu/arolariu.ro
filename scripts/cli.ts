@@ -21,7 +21,7 @@ import {makeDevCommand} from "./commands/dev/cli.ts";
 import {makeDocsCommand} from "./commands/docs/cli.ts";
 import {makeDoctorCommand} from "./commands/doctor/cli.ts";
 import {makeE2eCommand} from "./commands/e2e/cli.ts";
-import {JsonFlag, VerboseFlag} from "./commands/flags.ts";
+import {JsonFlag, requestsJsonOutput, VerboseFlag} from "./commands/flags.ts";
 import {makeGenerateCommand} from "./commands/generate/cli.ts";
 import {makeQualityCommands} from "./commands/quality/cli.ts";
 import {makeRatesCommand} from "./commands/rates/cli.ts";
@@ -284,7 +284,7 @@ function invocationStdio(argv: readonly string[]): Stdio.Stdio {
  *
  * @remarks
  * A failure that is not a `ReportedFailure`, `CliError`, `QuitError`, or interruption is rendered
- * through {@link renderUnreportedFailure} (JSON mode when `argv` contains `--json`). In JSON mode,
+ * through {@link renderUnreportedFailure} (JSON mode when {@link requestsJsonOutput} finds `--json`). In JSON mode,
  * effect/cli's help and error text goes to stderr and a CLI usage failure becomes the single stdout
  * document `{status: "failed", kind: "usage", message, evidence}`. Every failure is re-raised
  * unchanged, so `exitCodeFor` still sees it.
@@ -294,7 +294,7 @@ function invocationStdio(argv: readonly string[]): Stdio.Stdio {
  * @returns The command program.
  */
 export function runCli(argv: readonly string[], root: RootCommand = rootCommand): Effect.Effect<void, unknown, BaseServices> {
-  const json = argv.includes("--json");
+  const json = requestsJsonOutput(argv);
   return Effect.gen(function* () {
     const sink = yield* Sink;
     yield* Command.runWith(root, {version})(argv).pipe(

@@ -10,7 +10,7 @@
  */
 
 import {Cause, Console, Context, Effect, Stdio, Stream} from "effect";
-import {Command} from "effect/cli";
+import {Argument, Command} from "effect/cli";
 import {describe, expect, it} from "vitest";
 
 import packageJson from "../package.json" with {type: "json"};
@@ -48,6 +48,14 @@ const testRoot = makeRootCommand([
   Command.make("boom", {}, () => Effect.fail(new Error("kaboom"))),
   Command.make("die", {}, () => Effect.die("bug")),
   Command.make("proc", {}, () => Effect.fail(toolRestoreFailure)),
+  Command.make("forward", {passthrough: Argument.String("passthrough").pipe(Argument.variadic())}, () => Effect.fail(new Error("kaboom"))),
+  Command.make("logs", {}, () =>
+    Effect.gen(function* () {
+      yield* Effect.logDebug("diagnostic detail");
+      yield* Effect.logInfo("progress note");
+      yield* Effect.logWarning("careful");
+    }).pipe(withCommandOutput("logs")),
+  ),
 ]);
 
 /** The outcome of one harnessed CLI run. */
@@ -278,6 +286,35 @@ describe("runCli", () => {
     expect(result.stderrRecords).toEqual([]);
   });
 
+  it.each([
+    ["--json=true", ["--json=true", "boom"]],
+    ["--json yes", ["boom", "--json", "yes"]],
+    ["--json before the passthrough separator", ["forward", "--json", "--", "config"]],
+  ] as const)("renders an unreported failure as one JSON document for %s", async (_label, argv) => {
+    // Act
+    const result = await run(argv);
+
+    // Assert
+    expect(result.code).toBe(1);
+    expect(result.stdoutRecords).toHaveLength(1);
+    expect(JSON.parse(result.stdout)).toEqual({status: "failed", kind: "operational", message: "kaboom", evidence: []});
+    expect(result.stderrRecords).toEqual([]);
+  });
+
+  it.each([
+    ["--json=false", ["boom", "--json=false"]],
+    ["--no-json", ["--no-json", "boom"]],
+    ["--json only after the passthrough separator", ["forward", "--", "config", "--json"]],
+  ] as const)("renders an unreported failure in human mode for %s", async (_label, argv) => {
+    // Act
+    const result = await run(argv);
+
+    // Assert
+    expect(result.code).toBe(1);
+    expect(result.stdoutRecords).toEqual([]);
+    expect(result.stderrRecords).toEqual([{stream: "stderr", text: "[arolariu::cli] ⛔ kaboom\n"}]);
+  });
+
   it("prints process evidence after an unreported process failure in human mode", async () => {
     // Arrange
     const argv = ["proc"];
@@ -323,6 +360,27 @@ describe("runCli", () => {
     // Assert
     expect(result.code).toBe(1);
     expect(JSON.parse(result.stdout)).toEqual({status: "failed", kind: "internal", message: "bug", evidence: []});
+  });
+
+  it.each([
+    ["the default", [], ["ℹ️ progress note", "⚠️ careful"]],
+    ["--log-level none", ["--log-level", "none"], []],
+    ["--log-level error", ["--log-level", "error"], []],
+    ["--log-level warn", ["--log-level=warn"], ["⚠️ careful"]],
+    ["--log-level debug", ["--log-level", "debug"], ["🐛 diagnostic detail", "ℹ️ progress note", "⚠️ careful"]],
+    ["--verbose", ["--verbose"], ["🐛 diagnostic detail", "ℹ️ progress note", "⚠️ careful"]],
+    ["--verbose over --log-level warn", ["--verbose", "--log-level", "warn"], ["🐛 diagnostic detail", "ℹ️ progress note", "⚠️ careful"]],
+  ] as const)("filters log lines by %s", async (_label, flags, expected) => {
+    // Arrange
+    const argv = ["logs", ...flags];
+
+    // Act
+    const result = await run(argv);
+
+    // Assert
+    expect(result.code).toBe(0);
+    const lines = [...result.stdoutRecords, ...result.stderrRecords].map((record) => record.text.trimEnd());
+    expect(lines.toSorted()).toEqual(expected.map((text) => `[arolariu::logs] ${text}`).toSorted());
   });
 
   it("lists every command family in the default root's help", async () => {

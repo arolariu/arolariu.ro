@@ -12,7 +12,7 @@
 
 import {styleText} from "node:util";
 
-import {Cause, Context, Effect, Exit, Formatter, Layer, Logger, References, Schema, type LogLevel, type Scope} from "effect";
+import {Cause, Context, Effect, Exit, Formatter, Layer, Logger, LogLevel, References, Schema, type Scope} from "effect";
 
 import type {EnvironmentSnapshot} from "./Environment.ts";
 
@@ -442,20 +442,21 @@ function makeOutput(
  *
  * @param settings - The invocation output settings.
  * @returns A layer providing {@link OutputSettings} and {@link Presenter}, replacing the default
- * Effect loggers with the arolariu logger, and setting the minimum log level to `Debug` when
- * `settings.verbose`, otherwise `Info`.
+ * Effect loggers with the arolariu logger, and keeping the incoming minimum log level (`Info`
+ * unless effect/cli's `--log-level` set it), lowered to at least `Debug` when `settings.verbose`.
  */
 export function outputLayer(settings: OutputSettingsShape): Layer.Layer<OutputSettings | Presenter, never, Sink> {
   return Layer.unwrap(
     Effect.gen(function* () {
       const sink = yield* Sink;
       const tty = yield* StdoutIsTTY;
+      const incoming = yield* References.MinimumLogLevel;
       const {presenter, logger} = makeOutput(settings, sink, tty);
       return Layer.mergeAll(
         Layer.succeed(OutputSettings, settings),
         Layer.succeed(Presenter, presenter),
         Logger.layer([logger]),
-        Layer.succeed(References.MinimumLogLevel, settings.verbose ? "Debug" : "Info"),
+        Layer.succeed(References.MinimumLogLevel, settings.verbose && LogLevel.isGreaterThan(incoming, "Debug") ? "Debug" : incoming),
       );
     }),
   );

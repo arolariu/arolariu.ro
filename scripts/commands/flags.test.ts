@@ -9,16 +9,17 @@
  */
 
 import {Effect, Option} from "effect";
-import {Command} from "effect/cli";
+import {Argument, Command} from "effect/cli";
 import {describe, expect, it} from "vitest";
 
 import {makeRootCommand, runCli} from "../cli.ts";
 import {exitCodeFor, type CommandExitCode} from "../platform/exit.ts";
 import type {SinkRecord} from "../platform/Output.ts";
 import {makeTestLayer} from "../platform/testing.ts";
-import {EngineFlag, engineInput, withCommandOutput} from "./flags.ts";
+import {EngineFlag, engineInput, JsonFlag, requestsJsonOutput, withCommandOutput} from "./flags.ts";
 
 const engines: (readonly unknown[])[] = [];
+const parsedJson: boolean[] = [];
 
 const testRoot = makeRootCommand([
   Command.make("t", {}, () => Effect.logInfo("x").pipe(withCommandOutput("t"))),
@@ -26,6 +27,11 @@ const testRoot = makeRootCommand([
   Command.make("e", {engine: EngineFlag}, ({engine}) =>
     Effect.sync(() => {
       engines.push([Option.getOrUndefined(engine), engineInput(engine)]);
+    }),
+  ),
+  Command.make("j", {rest: Argument.String("rest").pipe(Argument.variadic())}, () =>
+    Effect.gen(function* () {
+      parsedJson.push(yield* JsonFlag);
     }),
   ),
 ]);
@@ -41,6 +47,52 @@ async function run(argv: readonly string[]): Promise<{readonly code: CommandExit
   const exit = await Effect.runPromiseExit(runCli(argv, testRoot).pipe(Effect.provide(harness.layer)));
   return {code: exitCodeFor(exit, undefined), output: harness.output()};
 }
+
+describe("requestsJsonOutput", () => {
+  it.each([
+    [[], false],
+    [["--json"], true],
+    [["--json=true"], true],
+    [["--json=yes"], true],
+    [["--json=1"], true],
+    [["--json=false"], false],
+    [["--json=off"], false],
+    [["--json", "true"], true],
+    [["--json", "false"], false],
+    [["--json", "n"], false],
+    [["--no-json"], false],
+    [["--json", "--no-json"], true],
+    [["--no-json", "--json"], false],
+    [["--json=false", "--json"], false],
+    [["value", "--json"], true],
+    [["--json", "--", "x"], true],
+    [["--", "--json"], false],
+    [["value", "--", "--json=true"], false],
+  ] as const)("matches the effect/cli parse of j %j", async (flags, expected) => {
+    // Arrange
+    const argv = ["j", ...flags];
+    parsedJson.length = 0;
+
+    // Act
+    const detected = requestsJsonOutput(argv);
+    const result = await run(argv);
+
+    // Assert
+    expect(result.code).toBe(0);
+    expect(parsedJson).toEqual([expected]);
+    expect(detected).toBe(expected);
+  });
+
+  it("treats an invalid inline value, which effect/cli rejects, as not requested", async () => {
+    // Act
+    const detected = requestsJsonOutput(["j", "--json=maybe"]);
+    const result = await run(["j", "--json=maybe"]);
+
+    // Assert
+    expect(detected).toBe(false);
+    expect(result.code).toBe(2);
+  });
+});
 
 describe("withCommandOutput", () => {
   it("renders human output without --json", async () => {
