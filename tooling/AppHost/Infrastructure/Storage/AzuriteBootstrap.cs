@@ -49,16 +49,6 @@ internal static class AzuriteBootstrap
 
   private const int MaxAttempts = 6;
 
-  // Shared bootstrap state surfaced to the dashboard via a custom health check
-  // attached to the storage resource. The check is **healthy by default** and only
-  // flips to unhealthy on actual bootstrap failure — otherwise we'd deadlock,
-  // because Aspire only fires ResourceReadyEvent once every attached health check
-  // is Healthy, but the bootstrap handler that would mark this check Healthy only
-  // runs *on* ResourceReadyEvent. Optimistic default breaks the cycle; the brief
-  // window between "container reachable" and "CORS applied" is harmless because
-  // bootstrap completes within seconds and the dashboard turns red on real failure.
-  private static volatile string? _bootstrapError;
-  private static int _bootstrapStarted; // 0 = not started, 1 = started (Interlocked guard)
   private const string HealthCheckName = "azurite-bootstrap";
 
   /// <summary>
@@ -97,33 +87,21 @@ internal static class AzuriteBootstrap
     ArgumentNullException.ThrowIfNull(queueNames);
 
     string connectionString = CreateConnectionString(blobPort, queuePort);
+    var state = new BootstrapState();
 
+    // Initially healthy: making this pending would block the readiness event that starts provisioning.
     builder.Services.AddHealthChecks().AddCheck(HealthCheckName, () =>
-        _bootstrapError is null
+        state.Error is not Exception error
             ? HealthCheckResult.Healthy()
-            : HealthCheckResult.Unhealthy(_bootstrapError));
+            : HealthCheckResult.Unhealthy("Azurite provisioning failed.", error));
     storage.WithHealthCheck(HealthCheckName);
 
-    builder.Eventing.Subscribe<ResourceReadyEvent>(async (evt, ct) =>
-    {
-      // ResourceReadyEvent fires on the inner Azurite *container* resource that
-      // RunAsEmulator spawns (named "storage-<random>"), not on the parent
-      // AzureStorageResource. Walk the parent chain so we match either.
-      if (!IsResourceOrAncestor(evt.Resource, storage.Resource))
-        return;
-
-      // Guard against multiple ready events (one per endpoint, restarts, etc.).
-      if (Interlocked.CompareExchange(ref _bootstrapStarted, 1, 0) != 0)
-        return;
-
-      var logger = evt.Services.GetService<ILoggerFactory>()
-              ?.CreateLogger("AzuriteBootstrap");
-
-      var blobServiceClient = new BlobServiceClient(connectionString);
-      var queueServiceClient = new QueueServiceClient(connectionString);
-
-      try
+    builder.Eventing.Subscribe<ResourceReadyEvent>(
+      CreateReadyHandler(storage.Resource, state, async (services, ct) =>
       {
+        ILogger logger = services.GetRequiredService<ILoggerFactory>().CreateLogger("AzuriteBootstrap");
+        var blobServiceClient = new BlobServiceClient(connectionString);
+        var queueServiceClient = new QueueServiceClient(connectionString);
         await ApplyCorsWithRetryAsync(blobServiceClient, logger, ct).ConfigureAwait(false);
         await EnsureContainersWithRetryAsync(
           blobServiceClient,
@@ -135,26 +113,87 @@ internal static class AzuriteBootstrap
           queueNames,
           logger,
           ct).ConfigureAwait(false);
-        _bootstrapError = null;
-        logger?.LogInformation(
+        logger.LogInformation(
           "Azurite bootstrap completed (CORS + blob container + queue creation).");
+      }));
+
+    return builder;
+  }
+
+  internal sealed class BootstrapState
+  {
+    private int started;
+    private Exception? error;
+    internal Exception? Error => Volatile.Read(ref error);
+
+    internal async Task RunOnceAsync(Func<CancellationToken, Task> provision, CancellationToken cancellationToken)
+    {
+      ArgumentNullException.ThrowIfNull(provision);
+      cancellationToken.ThrowIfCancellationRequested();
+      if (Interlocked.CompareExchange(ref started, 1, 0) != 0) { return; }
+      try
+      {
+        await provision(cancellationToken).ConfigureAwait(false);
+        Volatile.Write(ref error, null);
       }
       catch (OperationCanceledException)
       {
-        // Shutdown — leave health check unhealthy; nothing actionable.
-        Interlocked.Exchange(ref _bootstrapStarted, 0);
+        Interlocked.Exchange(ref started, 0);
+        throw;
       }
-      catch (Exception ex)
+      catch (Exception exception)
       {
-        _bootstrapError = ex.Message;
-        Interlocked.Exchange(ref _bootstrapStarted, 0); // allow retry on next ready
-        logger?.LogWarning(
-                ex,
-                "Azurite bootstrap exhausted retries — storage resource will report unhealthy in the dashboard.");
+        Volatile.Write(ref error, exception);
+        Interlocked.Exchange(ref started, 0);
+        throw;
       }
-    });
+    }
+  }
 
-    return builder;
+  internal static Func<ResourceReadyEvent, CancellationToken, Task> CreateReadyHandler(
+    IResource target, BootstrapState state, Func<IServiceProvider, CancellationToken, Task> provision)
+  {
+    ArgumentNullException.ThrowIfNull(target);
+    ArgumentNullException.ThrowIfNull(state);
+    ArgumentNullException.ThrowIfNull(provision);
+    return async (evt, token) =>
+    {
+      if (!IsResourceOrAncestor(evt.Resource, target)) { return; }
+      try
+      {
+        await state.RunOnceAsync(ct => provision(evt.Services, ct), token).ConfigureAwait(false);
+      }
+      catch (OperationCanceledException) { throw; }
+      catch (Exception exception)
+      {
+        evt.Services.GetRequiredService<ILoggerFactory>().CreateLogger("AzuriteBootstrap")
+          .LogWarning(exception, "Azurite bootstrap exhausted retries; storage reports unhealthy.");
+      }
+    };
+  }
+
+  internal static async Task RetryAsync(
+    string operationName, Func<CancellationToken, Task> operation, ILogger? logger,
+    Func<TimeSpan, CancellationToken, Task> delay, CancellationToken cancellationToken)
+  {
+    ArgumentException.ThrowIfNullOrWhiteSpace(operationName);
+    ArgumentNullException.ThrowIfNull(operation);
+    ArgumentNullException.ThrowIfNull(delay);
+    for (int attempt = 1; ; attempt++)
+    {
+      cancellationToken.ThrowIfCancellationRequested();
+      try
+      {
+        await operation(cancellationToken).ConfigureAwait(false);
+        return;
+      }
+      catch (Exception exception) when (exception is not OperationCanceledException && attempt < MaxAttempts)
+      {
+        logger?.LogDebug(exception, "Azurite {Operation} attempt {Attempt} failed; retrying in {Delay}s.",
+          operationName, attempt, attempt);
+        await delay(TimeSpan.FromSeconds(attempt), cancellationToken).ConfigureAwait(false);
+      }
+    }
   }
 
   /// <summary>
@@ -188,14 +227,11 @@ internal static class AzuriteBootstrap
     return false;
   }
 
-  private static async Task ApplyCorsWithRetryAsync(
+  private static Task ApplyCorsWithRetryAsync(
       BlobServiceClient client, ILogger? logger, CancellationToken ct)
-  {
-    for (int attempt = 1; attempt <= MaxAttempts; attempt++)
+    => RetryAsync("CORS", async token =>
     {
-      try
-      {
-        var props = (await client.GetPropertiesAsync(ct).ConfigureAwait(false)).Value;
+        var props = (await client.GetPropertiesAsync(token).ConfigureAwait(false)).Value;
         props.Cors.Clear();
         props.Cors.Add(new BlobCorsRule
         {
@@ -205,24 +241,10 @@ internal static class AzuriteBootstrap
           ExposedHeaders = "*",
           MaxAgeInSeconds = 3600,
         });
-        await client.SetPropertiesAsync(props, ct).ConfigureAwait(false);
+        await client.SetPropertiesAsync(props, token).ConfigureAwait(false);
         logger?.LogInformation(
-            "Azurite CORS rules applied (allow-all) on attempt {Attempt}.", attempt);
-        return;
-      }
-      catch (Exception ex) when (attempt < MaxAttempts)
-      {
-        logger?.LogDebug(
-            "Azurite CORS attempt {Attempt} failed: {Message}; retrying in {DelaySec}s.",
-            attempt, ex.Message, attempt);
-        await Task.Delay(TimeSpan.FromSeconds(attempt), ct).ConfigureAwait(false);
-      }
-    }
-    // Final attempt (no catch) — let the exception propagate so the bootstrap
-    // handler marks the health check unhealthy with the real error.
-    throw new InvalidOperationException(
-        $"Azurite CORS bootstrap failed after {MaxAttempts} attempts.");
-  }
+            "Azurite CORS rules applied (allow-all).");
+    }, logger, Task.Delay, ct);
 
   private static async Task EnsureContainersWithRetryAsync(
       BlobServiceClient client,
@@ -232,16 +254,14 @@ internal static class AzuriteBootstrap
   {
     if (containerNames.Count == 0) return;
 
-    for (int attempt = 1; attempt <= MaxAttempts; attempt++)
+    await RetryAsync("blob container creation", async token =>
     {
-      try
-      {
         foreach (var name in containerNames)
         {
           var container = client.GetBlobContainerClient(name);
           var created = await container.CreateIfNotExistsAsync(
               publicAccessType: PublicAccessType.Blob,
-              cancellationToken: ct).ConfigureAwait(false);
+              cancellationToken: token).ConfigureAwait(false);
 
           if (created?.Value is null)
           {
@@ -252,7 +272,7 @@ internal static class AzuriteBootstrap
             // bootstrap may have left it at PublicAccessType.None.
             await container.SetAccessPolicyAsync(
                 PublicAccessType.Blob,
-                cancellationToken: ct).ConfigureAwait(false);
+                cancellationToken: token).ConfigureAwait(false);
             logger?.LogInformation(
                 "Azurite container '{Name}' already exists; upgraded public access to Blob.", name);
           }
@@ -262,18 +282,7 @@ internal static class AzuriteBootstrap
                 "Azurite container '{Name}' created with public-blob access.", name);
           }
         }
-        return;
-      }
-      catch (Exception ex) when (attempt < MaxAttempts)
-      {
-        logger?.LogDebug(
-            "Azurite container creation attempt {Attempt} failed: {Message}; retrying in {DelaySec}s.",
-            attempt, ex.Message, attempt);
-        await Task.Delay(TimeSpan.FromSeconds(attempt), ct).ConfigureAwait(false);
-      }
-    }
-    throw new InvalidOperationException(
-        $"Azurite container bootstrap failed after {MaxAttempts} attempts.");
+    }, logger, Task.Delay, ct).ConfigureAwait(false);
   }
 
   private static async Task EnsureQueuesWithRetryAsync(
@@ -287,37 +296,19 @@ internal static class AzuriteBootstrap
       return;
     }
 
-    for (int attempt = 1; attempt <= MaxAttempts; attempt++)
+    await RetryAsync("queue creation", async token =>
     {
-      try
-      {
         foreach (string queueName in queueNames)
         {
           await client
             .GetQueueClient(queueName)
-            .CreateIfNotExistsAsync(cancellationToken: cancellationToken)
+            .CreateIfNotExistsAsync(cancellationToken: token)
             .ConfigureAwait(false);
           logger?.LogInformation(
             "Azurite queue '{Name}' is ready.",
             queueName);
         }
 
-        return;
-      }
-      catch (Exception exception) when (attempt < MaxAttempts)
-      {
-        logger?.LogDebug(
-          "Azurite queue creation attempt {Attempt} failed: {Message}; retrying in {DelaySec}s.",
-          attempt,
-          exception.Message,
-          attempt);
-        await Task
-          .Delay(TimeSpan.FromSeconds(attempt), cancellationToken)
-          .ConfigureAwait(false);
-      }
-    }
-
-    throw new InvalidOperationException(
-      $"Azurite queue bootstrap failed after {MaxAttempts} attempts.");
+    }, logger, Task.Delay, cancellationToken).ConfigureAwait(false);
   }
 }
