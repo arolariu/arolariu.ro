@@ -25,6 +25,7 @@ import type {EnvironmentFacts, ReactFacts} from "../../../inspection/frontend.ts
 import type {InstalledPackageFact, PackageInventoryFacts} from "../../../inspection/packages.ts";
 import type {RepositoryInspectionKey, RepositoryInspectionSession} from "../../../inspection/repository.ts";
 import type {InspectionOutcome} from "../../../inspection/types.ts";
+import type {Presenter} from "../../../platform/Output.ts";
 import type {ProcessRequest} from "../../../platform/Process.ts";
 import {Prompts} from "../../../platform/Prompts.ts";
 import {makeTestLayer, type RecordedProcessCall, type TestHarness} from "../../../platform/testing.ts";
@@ -435,7 +436,7 @@ async function createHarness(
     textAnswers?: readonly string[];
     secretAnswers?: readonly string[];
     /** Replaces the recording consent policy. */
-    actions?: (recording: Layer.Layer<SetupActions>) => Layer.Layer<SetupActions>;
+    actions?: (recording: Layer.Layer<SetupActions>) => Layer.Layer<SetupActions, never, Presenter>;
     platform?: NodeJS.Platform;
     interactive?: boolean;
   }> = {},
