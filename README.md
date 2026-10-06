@@ -456,7 +456,7 @@ Each resource has a health check; check the dashboard's **Health** column for th
 | exp | `http://localhost:5002/api/ready` | FastAPI ready + config bootstrap done |
 | SQL Server | TDS handshake | Aspire's built-in `WaitFor` gate (`sql-ready`) |
 
-The API explicitly **waits on** SQL, Cosmos, Azurite, and exp before going live. If exp is yellow (Starting), the API stays Starting too — that's expected on cold boot for ~5-10 s while `ExpConfigGenerator` writes the bootstrap config. If exp stays Starting longer, check `tooling/AppHost/Aspire/ExpConfigGenerator.cs` logs in the dashboard.
+The API explicitly **waits on** SQL, Cosmos, Azurite, and exp before going live. If exp is yellow (Starting), the API stays Starting too — that's expected on cold boot for ~5-10 s while `ExpConfigGenerator` writes the bootstrap config. If exp stays Starting longer, check `tooling/AppHost/Applications/Exp/ExpConfigGenerator.cs` logs in the dashboard.
 
 </details>
 
@@ -589,7 +589,9 @@ arolariu.ro/
 ├── 📜 scripts/                     # Build & utility scripts
 ├── 🛠️  tooling/                    # Dev tooling
 │   ├── AppHost/                    #    .NET Aspire local orchestrator
-│   └── AppHost.Tests/              #    MSTest tests for AppHost helpers
+│   ├── LocalDevelopment.Bootstrap/  #    Local scenario provisioning
+│   ├── LocalDevelopment.Identity/   #    Local persona tokens
+│   └── tests/LocalDevelopment.Tests/ #   MSTest coverage for local development
 ├── 📖 docs/                        # Architecture documentation & RFCs
 │   └── rfc/                        #    Architecture Decision Records
 │

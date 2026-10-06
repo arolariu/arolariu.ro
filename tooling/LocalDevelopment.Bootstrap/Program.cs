@@ -1,5 +1,10 @@
 namespace LocalDevelopment.Bootstrap;
 
+using LocalDevelopment.Bootstrap.Configuration;
+using LocalDevelopment.Bootstrap.Safety;
+using LocalDevelopment.Bootstrap.Scenarios.Invoices;
+using LocalDevelopment.Bootstrap.Scenarios.Invoices.Storage;
+
 using Azure.Storage.Blobs;
 using Azure.Storage.Queues;
 

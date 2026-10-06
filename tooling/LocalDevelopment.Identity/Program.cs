@@ -1,5 +1,8 @@
 namespace LocalDevelopment.Identity;
 
+using LocalDevelopment.Identity.Configuration;
+using LocalDevelopment.Identity.Personas;
+
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;

@@ -1,5 +1,7 @@
 using AppHost;
-using AppHost.Aspire;
+using AppHost.Applications.Exp;
+using AppHost.Infrastructure.Storage;
+using AppHost.LocalDevelopment;
 using Aspire.Hosting;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.DependencyInjection;
@@ -156,7 +158,7 @@ var storageQueues = storage.AddQueues("queues");
 // from uploadScan.ts doesn't 404 with ContainerNotFound. The analysis queue is
 // created before the hosted worker starts polling. In production these are
 // provisioned by Bicep; this brings the local emulator to the same starting state.
-// See Aspire/AzuriteBootstrap.cs for the retry / event-subscription details.
+// See Infrastructure/Storage/AzuriteBootstrap.cs for the retry / event-subscription details.
 builder.AddAzuriteBootstrap(
     storage,
     blobPort: Constants.AzuriteBlobPort,
