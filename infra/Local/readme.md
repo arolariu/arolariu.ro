@@ -28,6 +28,36 @@ declares and orchestrates everything natively:
 
 In Aspire mode, the `infra/Local/{Storage,Backend,Frontend}/docker-compose.yml` files are NOT used — Aspire spawns its own containers directly.
 
+#### Tooling structure and extension points
+
+`tooling\AppHost\Program.cs` is the composition root. Capability slices keep
+resource definitions beside their supporting behavior: `Infrastructure\Sql`
+owns connection settings/readiness, `Infrastructure\Storage` owns Azurite
+provisioning, and `Applications\Exp` owns the exp resource/configuration overlay.
+`LocalDevelopment` wires the bootstrap and persona helpers. `RepositoryLayout`
+anchors project/config paths to the AppHost directory, independent of shell cwd.
+
+Extend an existing slice or add a focused native builder extension for a new
+capability, then wire its references/waits explicitly and add graph tests.
+Use Aspire's resource builders and typed handle bundles, not a parallel registry
+or generic repository framework. Shared `tooling\Directory.Build.props` contains
+only common build defaults; project-specific settings remain in each project.
+
+Bootstrap keeps invoice-scenario materialization and storage adapters together;
+Identity keeps persona lookup/token creation together. All three executable
+paths and launch commands are unchanged. The shared MSTest project is:
+
+```powershell
+dotnet test tooling\tests\LocalDevelopment.Tests\LocalDevelopment.Tests.csproj
+```
+
+The exp overlay is written through an atomic replacement: generation failures
+leave the previous target intact and never overwrite the developer-owned source.
+Bootstrap forwards graceful-shutdown cancellation and checks it between reset
+phases. Cancellation stops subsequent work; already completed resets are **not**
+rolled back. Forced process termination cannot guarantee cooperative cleanup.
+The scenario-reset and certificate-trust checkpoints above still apply.
+
 ### Mode 2: Selfhost (advanced — `npm run dev:selfhost -- --engine <rancher|podman>`)
 
 Everything containerized via the selected Rancher Desktop or Podman Desktop Compose provider, including apps. Used for:

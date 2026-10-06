@@ -10,9 +10,16 @@ using Microsoft.Extensions.DependencyInjection;
 
 internal static class Program
 {
+  /// <summary>Runs the loopback-only local persona service.</summary>
   public static void Main(string[] args)
   {
     WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
+    BuildApplication(builder).Run();
+  }
+
+  internal static WebApplication BuildApplication(WebApplicationBuilder builder)
+  {
+    ArgumentNullException.ThrowIfNull(builder);
     string configPath = builder.Configuration["LOCAL_CONFIG_PATH"]
       ?? throw new InvalidOperationException("LOCAL_CONFIG_PATH is required.");
     string swaggerOrigin = builder.Configuration["LOCAL_SWAGGER_ORIGIN"]
@@ -24,7 +31,7 @@ internal static class Program
     string? configuredUrls =
       builder.Configuration[WebHostDefaults.ServerUrlsKey]
       ?? builder.Configuration["ASPNETCORE_URLS"];
-    RequireLoopbackBinding(configuredUrls);
+    LocalIdentityOptions.RequireLoopbackBinding(configuredUrls);
 
     builder.Services.AddCors(cors =>
       cors.AddDefaultPolicy(policy =>
@@ -70,26 +77,6 @@ internal static class Program
         });
       });
 
-    app.Run();
-  }
-
-  internal static void RequireLoopbackBinding(string? urls)
-  {
-    if (string.IsNullOrWhiteSpace(urls))
-    {
-      throw new InvalidOperationException(
-        "Local development identity service requires an explicit loopback binding.");
-    }
-
-    foreach (string value in urls.Split(';', StringSplitOptions.RemoveEmptyEntries))
-    {
-      if (!Uri.TryCreate(value, UriKind.Absolute, out Uri? uri)
-          || uri is null
-          || !uri.IsLoopback)
-      {
-        throw new InvalidOperationException(
-          "Local development identity service must bind to loopback.");
-      }
-    }
+    return app;
   }
 }

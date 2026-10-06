@@ -385,6 +385,13 @@ VS Code F5 includes `🚀 [Podman] Full stack (Aspire)` and `🚀 [Rancher] Full
 
 Rancher Desktop is selected through its Moby/Docker-compatible backend; Aspire/DCP sees this as `docker`, not as a separate `rancher-desktop` runtime.
 
+The host uses capability-first slices under `Infrastructure`, `Applications`,
+and `LocalDevelopment`; `RepositoryLayout` provides project-rooted paths.
+Bootstrap's invoice scenario and Identity's persona capability remain separate
+executables. Shared coverage lives in `tooling/tests/LocalDevelopment.Tests/`.
+See the [local tooling extension guide](infra/Local/readme.md#tooling-structure-and-extension-points)
+for ownership, native resource contracts, and verification commands.
+
 | Resource | URL | Notes |
 |----------|-----|-------|
 | Aspire dashboard | `https://localhost:17080` | OTel traces · metrics · logs · resource graph |
@@ -463,7 +470,7 @@ The API explicitly **waits on** SQL, Cosmos, Azurite, and exp before going live.
 <details>
 <summary><b>🚪 DCP port collision (e.g. "address already in use")</b></summary>
 
-Aspire's **Distributed Container Proxy (DCP)** allocates dynamic ports for proxied resources. When a fixed host port is required (e.g. the docs site on `:3100`), the resource must opt out via `isProxied: false` in `tooling/AppHost/Program.cs`. If you add a new resource and it can't bind, either:
+Aspire's **Distributed Container Proxy (DCP)** allocates dynamic ports for proxied resources. When a fixed host port is required (e.g. the docs site on `:3100`), its owning resource slice must opt out via `isProxied: false`. Application declarations live in `tooling/AppHost/Applications/`; infrastructure bindings live in `tooling/AppHost/Infrastructure/`. If you add a new resource and it can't bind, either:
 
 - Let Aspire pick a port (read it from the dashboard), or
 - Set `isProxied: false` on the endpoint and pin the host port explicitly.

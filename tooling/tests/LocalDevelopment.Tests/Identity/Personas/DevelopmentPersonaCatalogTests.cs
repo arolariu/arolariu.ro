@@ -1,6 +1,7 @@
 namespace LocalDevelopment.Tests.Identity.Personas;
 
 using global::LocalDevelopment.Identity.Personas;
+using global::LocalDevelopment.Bootstrap.Scenarios.Invoices;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -10,6 +11,21 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 [TestClass]
 public sealed class DevelopmentPersonaCatalogTests
 {
+  /// <summary>Verifies runtime identity and seeded ownership contracts agree.</summary>
+  [TestMethod]
+  public void All_SeedFixture_PreservesKeysSubjectsAndIdentifiers()
+  {
+    SeedScenarioManifest manifest = SeedData.LoadManifest(
+      Path.Combine(AppContext.BaseDirectory, "SeedData", "scenario.v1.json"));
+    Assert.AreEqual(manifest.Personas.Count, DevelopmentPersonaCatalog.All.Count);
+    foreach (DevelopmentPersona persona in DevelopmentPersonaCatalog.All)
+    {
+      SeedPersonaDefinition definition = manifest.Personas.Single(candidate => candidate.Key == persona.Key);
+      Assert.AreEqual(definition.Subject, persona.Subject);
+      Assert.AreEqual(definition.UserIdentifier, persona.UserIdentifier);
+    }
+  }
+
   /// <summary>
   /// Verifies all approved persona identifiers remain stable.
   /// </summary>

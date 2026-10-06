@@ -11,6 +11,25 @@ internal sealed record LocalIdentityOptions(
   string Secret,
   string SwaggerOrigin)
 {
+  internal static void RequireLoopbackBinding(string? urls)
+  {
+    if (string.IsNullOrWhiteSpace(urls))
+    {
+      throw new InvalidOperationException(
+        "Local development identity service requires an explicit loopback binding.");
+    }
+    foreach (string value in urls.Split(';', StringSplitOptions.RemoveEmptyEntries))
+    {
+      if (!Uri.TryCreate(value, UriKind.Absolute, out Uri? uri)
+          || uri is null
+          || !uri.IsLoopback)
+      {
+        throw new InvalidOperationException(
+          "Local development identity service must bind to loopback.");
+      }
+    }
+  }
+
   internal static LocalIdentityOptions Load(
     string configPath,
     string swaggerOrigin)

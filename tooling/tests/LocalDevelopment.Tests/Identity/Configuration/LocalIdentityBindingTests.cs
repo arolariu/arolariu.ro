@@ -1,6 +1,7 @@
 namespace LocalDevelopment.Tests.Identity.Configuration;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using global::LocalDevelopment.Identity.Configuration;
 
 /// <summary>
 /// Verifies the local identity service rejects unsafe binding configuration.
@@ -14,7 +15,7 @@ public sealed class LocalIdentityBindingTests
   [TestMethod]
   public void RequireLoopbackBinding_LoopbackUrls_ReturnsNormally()
   {
-    global::LocalDevelopment.Identity.Program.RequireLoopbackBinding(
+    LocalIdentityOptions.RequireLoopbackBinding(
       "http://localhost:5011;https://127.0.0.1:5012");
   }
 
@@ -25,7 +26,7 @@ public sealed class LocalIdentityBindingTests
   public void RequireLoopbackBinding_MissingUrls_ThrowsInvalidOperationException()
   {
     Assert.ThrowsExactly<InvalidOperationException>(
-      () => global::LocalDevelopment.Identity.Program.RequireLoopbackBinding(null));
+      () => LocalIdentityOptions.RequireLoopbackBinding(null));
   }
 
   /// <summary>
@@ -38,6 +39,6 @@ public sealed class LocalIdentityBindingTests
     string urls)
   {
     Assert.ThrowsExactly<InvalidOperationException>(
-      () => global::LocalDevelopment.Identity.Program.RequireLoopbackBinding(urls));
+      () => LocalIdentityOptions.RequireLoopbackBinding(urls));
   }
 }

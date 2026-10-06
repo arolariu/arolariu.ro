@@ -44,6 +44,7 @@ public sealed class DevelopmentTokenFactoryTests
       DevelopmentPersonaCatalog.Alice.UserIdentifier.ToString(),
       principal.FindFirst("userIdentifier")?.Value);
     Assert.AreEqual("user", principal.FindFirst("role")?.Value);
+    Assert.AreEqual("alice@arolariu.ro", principal.FindFirst(JwtRegisteredClaimNames.Sub)?.Value);
   }
 
   /// <summary>
@@ -61,6 +62,10 @@ public sealed class DevelopmentTokenFactoryTests
       .ReadJwtToken(token);
 
     Assert.AreEqual(Anchor.AddHours(8).UtcDateTime, parsed.ValidTo);
+    Assert.AreEqual(Anchor.UtcDateTime, parsed.ValidFrom);
+    Assert.AreEqual(Options.Issuer, parsed.Issuer);
+    CollectionAssert.AreEqual(new[] { Options.Audience }, parsed.Audiences.ToArray());
+    Assert.AreEqual("HS256", parsed.Header.Alg);
   }
 
   /// <summary>
