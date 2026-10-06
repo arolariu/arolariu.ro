@@ -13,19 +13,25 @@ internal sealed record BootstrapOptions(
   string ManifestPath)
 {
   internal static BootstrapOptions FromEnvironment() =>
-    new(
-      Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT")
-        ?? Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")
+    FromEnvironment(Environment.GetEnvironmentVariable);
+
+  internal static BootstrapOptions FromEnvironment(Func<string, string?> readVariable)
+  {
+    ArgumentNullException.ThrowIfNull(readVariable);
+    return new(
+      readVariable("DOTNET_ENVIRONMENT")
+        ?? readVariable("ASPNETCORE_ENVIRONMENT")
         ?? string.Empty,
-      Environment.GetEnvironmentVariable("INFRA") ?? string.Empty,
-      Environment.GetEnvironmentVariable("AZURE_CLIENT_ID"),
-      Environment.GetEnvironmentVariable("ConnectionStrings__primary"),
-      Environment.GetEnvironmentVariable("ConnectionStrings__blobs")
+      readVariable("INFRA") ?? string.Empty,
+      readVariable("AZURE_CLIENT_ID"),
+      readVariable("ConnectionStrings__primary"),
+      readVariable("ConnectionStrings__blobs")
         ?? throw new InvalidOperationException(
           "ConnectionStrings__blobs is required."),
-      Environment.GetEnvironmentVariable("ConnectionStrings__queues")
+      readVariable("ConnectionStrings__queues")
         ?? throw new InvalidOperationException(
           "ConnectionStrings__queues is required."),
-      Environment.GetEnvironmentVariable("SEED_MANIFEST_PATH")
+      readVariable("SEED_MANIFEST_PATH")
         ?? Path.Combine(AppContext.BaseDirectory, "SeedData", "scenario.v1.json"));
+  }
 }

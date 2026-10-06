@@ -11,6 +11,77 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 [TestClass]
 public sealed class LocalScenarioBootstrapTests
 {
+  /// <summary>Verifies cancellation between phases cannot start further destructive work.</summary>
+  [TestMethod]
+  public async Task RunAsync_CancelledAfterCosmosClear_DoesNotResetStorageOrWrite()
+  {
+    using var source = new CancellationTokenSource();
+    var operations = new List<string>();
+    var bootstrap = new LocalScenarioBootstrap(
+      new RecordingCosmosResetter(operations, afterClear: source.Cancel),
+      new RecordingAzuriteResetter(operations), TimeProvider.System);
+
+    await Assert.ThrowsExactlyAsync<OperationCanceledException>(() =>
+      bootstrap.RunAsync(ScenarioPath, source.Token));
+    CollectionAssert.AreEqual(new[] { "cosmos-clear" }, operations);
+  }
+
+  /// <summary>Verifies cancellation after storage reset prevents Cosmos seed writes.</summary>
+  [TestMethod]
+  public async Task RunAsync_CancelledAfterStorageReset_DoesNotWrite()
+  {
+    using var source = new CancellationTokenSource();
+    var operations = new List<string>();
+    var bootstrap = new LocalScenarioBootstrap(
+      new RecordingCosmosResetter(operations),
+      new RecordingAzuriteResetter(operations, source.Cancel), TimeProvider.System);
+    await Assert.ThrowsExactlyAsync<OperationCanceledException>(() => bootstrap.RunAsync(ScenarioPath, source.Token));
+    CollectionAssert.AreEqual(new[] { "cosmos-clear", "storage-reset" }, operations);
+  }
+
+  /// <summary>Verifies pre-cancellation performs no reset phase.</summary>
+  [TestMethod]
+  public async Task RunAsync_PreCancelled_PerformsNoOperations()
+  {
+    var operations = new List<string>();
+    var bootstrap = new LocalScenarioBootstrap(
+      new RecordingCosmosResetter(operations), new RecordingAzuriteResetter(operations), TimeProvider.System);
+    await Assert.ThrowsExactlyAsync<OperationCanceledException>(() =>
+      bootstrap.RunAsync(ScenarioPath, new CancellationToken(true)));
+    Assert.HasCount(0, operations);
+  }
+
+  /// <summary>Verifies invalid input is rejected before destructive operations.</summary>
+  [TestMethod]
+  public async Task RunAsync_InvalidManifest_PerformsNoOperations()
+  {
+    var operations = new List<string>();
+    string path = Path.GetTempFileName();
+    File.WriteAllText(path, """{"Version":""}""");
+    try
+    {
+      var bootstrap = new LocalScenarioBootstrap(
+        new RecordingCosmosResetter(operations), new RecordingAzuriteResetter(operations), TimeProvider.System);
+      await Assert.ThrowsExactlyAsync<InvalidDataException>(() => bootstrap.RunAsync(path, CancellationToken.None));
+      Assert.HasCount(0, operations);
+    }
+    finally { File.Delete(path); }
+  }
+
+  /// <summary>Verifies all external phase boundaries receive the same caller token.</summary>
+  [TestMethod]
+  public async Task RunAsync_ValidScenario_ForwardsCallerToken()
+  {
+    using var source = new CancellationTokenSource();
+    var operations = new List<string>();
+    var tokens = new List<CancellationToken>();
+    var bootstrap = new LocalScenarioBootstrap(
+      new RecordingCosmosResetter(operations, tokens: tokens),
+      new RecordingAzuriteResetter(operations, tokens: tokens), TimeProvider.System);
+    await bootstrap.RunAsync(ScenarioPath, source.Token);
+    CollectionAssert.AreEqual(new[] { source.Token, source.Token, source.Token }, tokens);
+  }
+
   private static readonly string ScenarioPath =
     Path.Combine(AppContext.BaseDirectory, "SeedData", "scenario.v1.json");
 
@@ -62,11 +133,15 @@ public sealed class LocalScenarioBootstrapTests
 
   private sealed class RecordingCosmosResetter(
     List<string> operations,
-    Exception? clearException = null) : ILocalCosmosResetter
+    Exception? clearException = null,
+    Action? afterClear = null,
+    List<CancellationToken>? tokens = null) : ILocalCosmosResetter
   {
     public Task ClearAsync(CancellationToken cancellationToken)
     {
       operations.Add("cosmos-clear");
+      tokens?.Add(cancellationToken);
+      afterClear?.Invoke();
       return clearException is null
         ? Task.CompletedTask
         : Task.FromException(clearException);
@@ -77,18 +152,23 @@ public sealed class LocalScenarioBootstrapTests
       CancellationToken cancellationToken)
     {
       operations.Add("cosmos-write");
+      tokens?.Add(cancellationToken);
       return Task.CompletedTask;
     }
   }
 
   private sealed class RecordingAzuriteResetter(
-    List<string> operations) : ILocalAzuriteResetter
+    List<string> operations,
+    Action? afterReset = null,
+    List<CancellationToken>? tokens = null) : ILocalAzuriteResetter
   {
     public Task ResetAsync(
       MaterializedSeedScenario scenario,
       CancellationToken cancellationToken)
     {
       operations.Add("storage-reset");
+      tokens?.Add(cancellationToken);
+      afterReset?.Invoke();
       return Task.CompletedTask;
     }
   }
