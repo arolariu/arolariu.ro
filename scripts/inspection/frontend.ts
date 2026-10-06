@@ -13,16 +13,17 @@
 
 import {basename, relative, resolve} from "node:path";
 
-import type {ProcessOutcome} from "../common/runner.ts";
+import {Effect, Result, Schema} from "effect";
+
 import type {RepositoryPaths} from "../common/repository-paths.ts";
 import {getExpectedTaxonomyArtifactPaths} from "../common/taxonomy-artifacts.ts";
+import type {ReadOnlyFiles} from "../platform/Files.ts";
+import type {Process} from "../platform/Process.ts";
+import {fileErrorCode, inspectPath, readText} from "./files.ts";
 import {SVELTE_INSPECTED_PACKAGE_NAMES, type PackageInventoryFacts} from "./packages.ts";
-import type {InspectionProbeRunner} from "./probes.ts";
-import {probes} from "./probes.ts";
-import type {InspectionOutcome, InspectionProvider, InspectionProviderContext} from "./types.ts";
-
-/** Read-only filesystem capability every frontend inspection helper observes disk through. */
-type InspectionFiles = InspectionProviderContext["files"];
+import {probes, type InspectionProbeRunner, type ProbeOutcome} from "./probes.ts";
+import {timed} from "./session.ts";
+import type {InspectionOutcome, InspectionProvider} from "./types.ts";
 
 type UnknownRecord = Readonly<Record<string, unknown>>;
 
@@ -78,11 +79,11 @@ export interface SvelteFacts {
 }
 
 /** Shared injectable boundaries consumed by both the React and Svelte providers. */
-export interface FrontendProviderInput extends Pick<InspectionProviderContext, "files" | "clock" | "tasks"> {
+export interface FrontendProviderInput {
   /** Canonical repository paths. */
   readonly paths: RepositoryPaths;
   /** Resolves the one shared installed-package inventory for this session. */
-  readonly packages: () => Promise<InspectionOutcome<PackageInventoryFacts>>;
+  readonly packages: Effect.Effect<InspectionOutcome<PackageInventoryFacts>>;
   /** Opaque probe runner used only for the allowlisted Playwright browser inventory probe. */
   readonly probes: InspectionProbeRunner;
 }
@@ -102,17 +103,23 @@ interface AdapterImport {
   readonly specifier: string;
 }
 
-/** Internal marker distinguishing an unavailable/invalid inspection failure from an unexpected error. */
-class FrontendInspectionFailure extends Error {
-  public readonly kind: "unavailable" | "invalid";
-  public readonly publicMessage: string;
+/** Internal failure carrying the bounded unavailable/invalid outcome of a frontend inspection step. */
+class FrontendInspectionFailure extends Schema.TaggedError<FrontendInspectionFailure>()("FrontendInspectionFailure", {
+  kind: Schema.Literals(["unavailable", "invalid"]),
+  message: Schema.String,
+}) {}
 
-  public constructor(kind: "unavailable" | "invalid", publicMessage: string) {
-    super(publicMessage);
-    this.name = "FrontendInspectionFailure";
-    this.kind = kind;
-    this.publicMessage = publicMessage;
-  }
+/**
+ * Converts a frontend inspection failure into its bounded outcome.
+ *
+ * @param failure - The failure.
+ * @returns An `invalid` outcome with the failure message as its only issue, or an `unavailable`
+ * outcome with the failure message as its reason.
+ */
+function failureOutcome<T>(failure: FrontendInspectionFailure): InspectionOutcome<T> {
+  return failure.kind === "invalid"
+    ? {kind: "invalid", issues: [failure.message], durationMs: 0}
+    : {kind: "unavailable", reason: failure.message, durationMs: 0};
 }
 
 const WORKSPACE_LINKED_PACKAGE = "@arolariu/components";
@@ -130,20 +137,11 @@ function isRecord(value: unknown): value is UnknownRecord {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function hasErrorCode(error: unknown, code: string): boolean {
-  return error instanceof Error && "code" in error && error.code === code;
-}
-
-function elapsedMilliseconds(startedAt: number, now: () => number): number {
-  const elapsed = now() - startedAt;
-  return Number.isFinite(elapsed) ? Math.max(0, elapsed) : 0;
-}
-
-function isSuccessfulCommand(outcome: Readonly<ProcessOutcome>): boolean {
+function isSuccessfulCommand(outcome: Readonly<ProbeOutcome>): boolean {
   return outcome.kind === "succeeded";
 }
 
-function hasTransportFailure(outcome: Readonly<ProcessOutcome>): boolean {
+function hasTransportFailure(outcome: Readonly<ProbeOutcome>): boolean {
   switch (outcome.kind) {
     case "succeeded":
     case "exited":
@@ -151,42 +149,41 @@ function hasTransportFailure(outcome: Readonly<ProcessOutcome>): boolean {
     case "spawn-failed":
     case "timed-out":
     case "signalled":
-    case "cancelled":
       return true;
   }
 }
 
-async function readJsonRecord(files: InspectionFiles, path: string): Promise<JsonReadOutcome> {
-  let contents: string;
-  try {
-    contents = await files.readText(path);
-  } catch (error: unknown) {
-    return hasErrorCode(error, "ENOENT") ? {kind: "missing"} : {kind: "error"};
-  }
-  try {
-    const parsed: unknown = JSON.parse(contents);
-    return isRecord(parsed) ? {kind: "ok", value: parsed} : {kind: "error"};
-  } catch {
-    return {kind: "error"};
-  }
+function readJsonRecord(path: string): Effect.Effect<JsonReadOutcome, never, ReadOnlyFiles> {
+  return Effect.gen(function* () {
+    const contents = yield* Effect.result(readText(path));
+    if (Result.isFailure(contents)) {
+      return fileErrorCode(contents.failure) === "ENOENT" ? {kind: "missing"} : {kind: "error"};
+    }
+    try {
+      const parsed: unknown = JSON.parse(contents.success);
+      return isRecord(parsed) ? {kind: "ok", value: parsed} : {kind: "error"};
+    } catch {
+      return {kind: "error"};
+    }
+  });
 }
 
-async function readFirstExistingTextFile(
-  files: InspectionFiles,
+function readFirstExistingTextFile(
   candidates: readonly Readonly<{name: string; path: string}>[],
-): Promise<TextReadOutcome> {
-  for (const candidate of candidates) {
-    try {
-      const contents = await files.readText(candidate.path);
-      return {kind: "ok", name: candidate.name, contents};
-    } catch (error: unknown) {
-      if (hasErrorCode(error, "ENOENT")) {
+): Effect.Effect<TextReadOutcome, never, ReadOnlyFiles> {
+  return Effect.gen(function* () {
+    for (const candidate of candidates) {
+      const contents = yield* Effect.result(readText(candidate.path));
+      if (Result.isSuccess(contents)) {
+        return {kind: "ok", name: candidate.name, contents: contents.success};
+      }
+      if (fileErrorCode(contents.failure) === "ENOENT") {
         continue;
       }
       return {kind: "error"};
     }
-  }
-  return {kind: "missing"};
+    return {kind: "missing"};
+  });
 }
 
 /**
@@ -244,15 +241,14 @@ export function inspectEnvironmentContent(content: string): EnvironmentFacts {
   };
 }
 
-async function readEnvironmentContent(files: InspectionFiles, path: string): Promise<string> {
-  try {
-    return await files.readText(path);
-  } catch (error: unknown) {
-    if (hasErrorCode(error, "ENOENT")) {
-      return "";
-    }
-    throw new FrontendInspectionFailure("unavailable", "The website environment file could not be read.");
-  }
+function readEnvironmentContent(path: string): Effect.Effect<string, FrontendInspectionFailure, ReadOnlyFiles> {
+  return readText(path).pipe(
+    Effect.catch((error) =>
+      fileErrorCode(error) === "ENOENT"
+        ? Effect.succeed("")
+        : Effect.fail(new FrontendInspectionFailure({kind: "unavailable", message: "The website environment file could not be read."})),
+    ),
+  );
 }
 
 function getDependsOn(targets: UnknownRecord, targetName: string): readonly string[] {
@@ -264,40 +260,45 @@ function getDependsOn(targets: UnknownRecord, targetName: string): readonly stri
   return Array.isArray(dependsOn) ? dependsOn.filter((entry): entry is string => typeof entry === "string") : [];
 }
 
-async function inspectWorkspaceLink(files: InspectionFiles, paths: RepositoryPaths, packages: PackageInventoryFacts): Promise<readonly string[]> {
-  const issues: string[] = [];
+function inspectWorkspaceLink(
+  paths: RepositoryPaths,
+  packages: PackageInventoryFacts,
+): Effect.Effect<readonly string[], never, ReadOnlyFiles> {
+  return Effect.gen(function* () {
+    const issues: string[] = [];
 
-  const packageJsonOutcome = await readJsonRecord(files, resolve(paths.websiteRoot, "package.json"));
-  if (packageJsonOutcome.kind !== "ok") {
-    issues.push("sites/arolariu.ro/package.json could not be read or parsed.");
-  } else {
-    const dependencies = isRecord(packageJsonOutcome.value["dependencies"]) ? packageJsonOutcome.value["dependencies"] : {};
-    if (!Object.hasOwn(dependencies, WORKSPACE_LINKED_PACKAGE)) {
-      issues.push("sites/arolariu.ro/package.json does not declare a dependency on @arolariu/components.");
+    const packageJsonOutcome = yield* readJsonRecord(resolve(paths.websiteRoot, "package.json"));
+    if (packageJsonOutcome.kind !== "ok") {
+      issues.push("sites/arolariu.ro/package.json could not be read or parsed.");
+    } else {
+      const dependencies = isRecord(packageJsonOutcome.value["dependencies"]) ? packageJsonOutcome.value["dependencies"] : {};
+      if (!Object.hasOwn(dependencies, WORKSPACE_LINKED_PACKAGE)) {
+        issues.push("sites/arolariu.ro/package.json does not declare a dependency on @arolariu/components.");
+      }
     }
-  }
 
-  const projectJsonOutcome = await readJsonRecord(files, resolve(paths.websiteRoot, "project.json"));
-  if (projectJsonOutcome.kind !== "ok") {
-    issues.push("sites/arolariu.ro/project.json could not be read or parsed.");
-  } else {
-    const targets = isRecord(projectJsonOutcome.value["targets"]) ? projectJsonOutcome.value["targets"] : {};
-    if (!getDependsOn(targets, "build").includes("components:build")) {
-      issues.push("sites/arolariu.ro/project.json build target does not depend on components:build.");
+    const projectJsonOutcome = yield* readJsonRecord(resolve(paths.websiteRoot, "project.json"));
+    if (projectJsonOutcome.kind !== "ok") {
+      issues.push("sites/arolariu.ro/project.json could not be read or parsed.");
+    } else {
+      const targets = isRecord(projectJsonOutcome.value["targets"]) ? projectJsonOutcome.value["targets"] : {};
+      if (!getDependsOn(targets, "build").includes("components:build")) {
+        issues.push("sites/arolariu.ro/project.json build target does not depend on components:build.");
+      }
+      if (!getDependsOn(targets, "dev").includes("components:build")) {
+        issues.push("sites/arolariu.ro/project.json dev target does not depend on components:build.");
+      }
     }
-    if (!getDependsOn(targets, "dev").includes("components:build")) {
-      issues.push("sites/arolariu.ro/project.json dev target does not depend on components:build.");
+
+    const installedComponents = packages.installed[WORKSPACE_LINKED_PACKAGE];
+    if (installedComponents === undefined) {
+      issues.push("@arolariu/components is not installed.");
+    } else if (installedComponents.workspaceRoot === undefined) {
+      issues.push("@arolariu/components is not linked to the local workspace package.");
     }
-  }
 
-  const installedComponents = packages.installed[WORKSPACE_LINKED_PACKAGE];
-  if (installedComponents === undefined) {
-    issues.push("@arolariu/components is not installed.");
-  } else if (installedComponents.workspaceRoot === undefined) {
-    issues.push("@arolariu/components is not linked to the local workspace package.");
-  }
-
-  return issues;
+    return issues;
+  });
 }
 
 function extractMessageKeySet(value: UnknownRecord, prefix = ""): Set<string> {
@@ -333,54 +334,58 @@ function extractDeclaredMessagesObject(source: string): UnknownRecord | null {
   }
 }
 
-async function inspectI18n(files: InspectionFiles, paths: RepositoryPaths): Promise<readonly string[]> {
-  const messagesRoot = resolve(paths.websiteRoot, "messages");
-  const localePaths = {
-    en: resolve(messagesRoot, "en.json"),
-    ro: resolve(messagesRoot, "ro.json"),
-    fr: resolve(messagesRoot, "fr.json"),
-  } as const;
+function inspectI18n(paths: RepositoryPaths): Effect.Effect<readonly string[], never, ReadOnlyFiles> {
+  return Effect.gen(function* () {
+    const messagesRoot = resolve(paths.websiteRoot, "messages");
+    const localePaths = {
+      en: resolve(messagesRoot, "en.json"),
+      ro: resolve(messagesRoot, "ro.json"),
+      fr: resolve(messagesRoot, "fr.json"),
+    } as const;
 
-  const parsedLocales = new Map<string, UnknownRecord>();
-  const issues: string[] = [];
+    const parsedLocales = new Map<string, UnknownRecord>();
+    const issues: string[] = [];
 
-  for (const [locale, path] of Object.entries(localePaths)) {
-    const outcome = await readJsonRecord(files, path);
-    if (outcome.kind === "ok") {
-      parsedLocales.set(locale, outcome.value);
-    } else if (outcome.kind === "missing") {
-      issues.push(`${locale}.json was not found.`);
-    } else {
-      issues.push(`Unable to read or parse ${locale}.json.`);
-    }
-  }
-
-  if (issues.length === 0) {
-    const enMessages = parsedLocales.get("en")!;
-    const enKeys = extractMessageKeySet(enMessages);
-    for (const locale of ["ro", "fr"] as const) {
-      const localeMessages = parsedLocales.get(locale)!;
-      const localeKeys = extractMessageKeySet(localeMessages);
-      const missing = [...enKeys].filter((key) => !localeKeys.has(key));
-      const extra = [...localeKeys].filter((key) => !enKeys.has(key));
-      if (missing.length > 0) {
-        issues.push(`${locale}.json is missing ${String(missing.length)} key(s) present in en.json, e.g. '${missing[0]}'.`);
-      }
-      if (extra.length > 0) {
-        issues.push(`${locale}.json declares ${String(extra.length)} key(s) not present in en.json, e.g. '${extra[0]}'.`);
+    for (const [locale, path] of Object.entries(localePaths)) {
+      const outcome = yield* readJsonRecord(path);
+      if (outcome.kind === "ok") {
+        parsedLocales.set(locale, outcome.value);
+      } else if (outcome.kind === "missing") {
+        issues.push(`${locale}.json was not found.`);
+      } else {
+        issues.push(`Unable to read or parse ${locale}.json.`);
       }
     }
-  }
 
-  if (issues.length > 0) {
-    return issues;
-  }
+    if (issues.length === 0) {
+      const enMessages = parsedLocales.get("en")!;
+      const enKeys = extractMessageKeySet(enMessages);
+      for (const locale of ["ro", "fr"] as const) {
+        const localeMessages = parsedLocales.get(locale)!;
+        const localeKeys = extractMessageKeySet(localeMessages);
+        const missing = [...enKeys].filter((key) => !localeKeys.has(key));
+        const extra = [...localeKeys].filter((key) => !enKeys.has(key));
+        if (missing.length > 0) {
+          issues.push(`${locale}.json is missing ${String(missing.length)} key(s) present in en.json, e.g. '${missing[0]}'.`);
+        }
+        if (extra.length > 0) {
+          issues.push(`${locale}.json declares ${String(extra.length)} key(s) not present in en.json, e.g. '${extra[0]}'.`);
+        }
+      }
+    }
 
-  const enKeys = extractMessageKeySet(parsedLocales.get("en")!);
-  const declarationPath = resolve(messagesRoot, "en.d.json.ts");
-  try {
-    const declarationSource = await files.readText(declarationPath);
-    const declaredObject = extractDeclaredMessagesObject(declarationSource);
+    if (issues.length > 0) {
+      return issues;
+    }
+
+    const enKeys = extractMessageKeySet(parsedLocales.get("en")!);
+    const declarationPath = resolve(messagesRoot, "en.d.json.ts");
+    const declarationSource = yield* Effect.result(readText(declarationPath));
+    if (Result.isFailure(declarationSource)) {
+      issues.push("messages/en.d.json.ts was not found.");
+      return issues;
+    }
+    const declaredObject = extractDeclaredMessagesObject(declarationSource.success);
     if (declaredObject === null) {
       issues.push("messages/en.d.json.ts could not be parsed as a generated declaration object.");
     } else {
@@ -391,11 +396,9 @@ async function inspectI18n(files: InspectionFiles, paths: RepositoryPaths): Prom
         issues.push("messages/en.d.json.ts key shape does not match messages/en.json.");
       }
     }
-  } catch {
-    issues.push("messages/en.d.json.ts was not found.");
-  }
 
-  return issues;
+    return issues;
+  });
 }
 
 function isValidTaxonomyMetadata(value: UnknownRecord): boolean {
@@ -426,46 +429,49 @@ function isValidLicenseEntry(entry: unknown): boolean {
   );
 }
 
-async function inspectArtifacts(files: InspectionFiles, paths: RepositoryPaths): Promise<readonly string[]> {
-  const issues: string[] = [];
-  const websiteTaxonomyDirectory = resolve(paths.websiteRoot, "src", "data", "taxonomies");
-  const taxonomyPaths = getExpectedTaxonomyArtifactPaths(paths.root).filter((path) => resolve(path, "..") === websiteTaxonomyDirectory);
+function inspectArtifacts(paths: RepositoryPaths): Effect.Effect<readonly string[], never, ReadOnlyFiles> {
+  return Effect.gen(function* () {
+    const issues: string[] = [];
+    const websiteTaxonomyDirectory = resolve(paths.websiteRoot, "src", "data", "taxonomies");
+    const taxonomyPaths = getExpectedTaxonomyArtifactPaths(paths.root).filter((path) => resolve(path, "..") === websiteTaxonomyDirectory);
 
-  for (const path of taxonomyPaths) {
-    const name = basename(path);
-    const outcome = await readJsonRecord(files, path);
-    if (outcome.kind === "missing") {
-      issues.push(`${name} is missing.`);
-    } else if (outcome.kind === "error") {
-      issues.push(`${name} could not be read or parsed.`);
-    } else if (!isValidTaxonomyMetadata(outcome.value)) {
-      issues.push(`${name} has missing or invalid required taxonomy metadata.`);
+    for (const path of taxonomyPaths) {
+      const name = basename(path);
+      const outcome = yield* readJsonRecord(path);
+      if (outcome.kind === "missing") {
+        issues.push(`${name} is missing.`);
+      } else if (outcome.kind === "error") {
+        issues.push(`${name} could not be read or parsed.`);
+      } else if (!isValidTaxonomyMetadata(outcome.value)) {
+        issues.push(`${name} has missing or invalid required taxonomy metadata.`);
+      }
     }
-  }
 
-  for (const fileName of ["en.json", "ro.json", "fr.json"] as const) {
-    try {
-      await files.readText(resolve(paths.websiteRoot, "messages", fileName));
-    } catch (error: unknown) {
-      issues.push(hasErrorCode(error, "ENOENT") ? `messages/${fileName} is missing.` : `messages/${fileName} could not be read.`);
+    for (const fileName of ["en.json", "ro.json", "fr.json"] as const) {
+      const message = yield* Effect.result(readText(resolve(paths.websiteRoot, "messages", fileName)));
+      if (Result.isFailure(message)) {
+        issues.push(
+          fileErrorCode(message.failure) === "ENOENT" ? `messages/${fileName} is missing.` : `messages/${fileName} could not be read.`,
+        );
+      }
     }
-  }
 
-  const licensesOutcome = await readJsonRecord(files, resolve(paths.websiteRoot, "licenses.json"));
-  if (licensesOutcome.kind === "missing") {
-    issues.push("licenses.json is missing.");
-  } else if (licensesOutcome.kind === "error") {
-    issues.push("licenses.json could not be read or parsed.");
-  } else {
-    const productionEntries = licensesOutcome.value["production"];
-    if (!Array.isArray(productionEntries) || productionEntries.length === 0) {
-      issues.push("licenses.json production entries are missing or empty.");
-    } else if (!productionEntries.every(isValidLicenseEntry)) {
-      issues.push("licenses.json contains malformed license entries.");
+    const licensesOutcome = yield* readJsonRecord(resolve(paths.websiteRoot, "licenses.json"));
+    if (licensesOutcome.kind === "missing") {
+      issues.push("licenses.json is missing.");
+    } else if (licensesOutcome.kind === "error") {
+      issues.push("licenses.json could not be read or parsed.");
+    } else {
+      const productionEntries = licensesOutcome.value["production"];
+      if (!Array.isArray(productionEntries) || productionEntries.length === 0) {
+        issues.push("licenses.json production entries are missing or empty.");
+      } else if (!productionEntries.every(isValidLicenseEntry)) {
+        issues.push("licenses.json contains malformed license entries.");
+      }
     }
-  }
 
-  return issues;
+    return issues;
+  });
 }
 
 function parsePlaywrightInstallList(stdout: string): readonly PlaywrightVersionInventory[] {
@@ -490,125 +496,106 @@ function parsePlaywrightInstallList(stdout: string): readonly PlaywrightVersionI
   return inventories;
 }
 
-async function inspectPlaywright(
+function inspectPlaywright(
   probeRunner: InspectionProbeRunner,
   root: string,
   installedVersion: string | undefined,
-): Promise<Readonly<{version?: string; browsers: readonly string[]}>> {
-  const result = await probeRunner.run(probes.frontend.playwrightInventory(), {cwd: root});
-  if (hasTransportFailure(result)) {
-    throw new FrontendInspectionFailure("unavailable", "The Playwright browser inventory could not be read.");
-  }
-  if (!isSuccessfulCommand(result) && result.stdout.trim() === "") {
-    throw new FrontendInspectionFailure("unavailable", "The Playwright browser inventory could not be read.");
-  }
+): Effect.Effect<Readonly<{version?: string; browsers: readonly string[]}>, FrontendInspectionFailure, Process> {
+  return Effect.gen(function* () {
+    const result = yield* probeRunner.run(probes.frontend.playwrightInventory(), {cwd: root});
+    if (hasTransportFailure(result)) {
+      return yield* new FrontendInspectionFailure({kind: "unavailable", message: "The Playwright browser inventory could not be read."});
+    }
+    if (!isSuccessfulCommand(result) && result.stdout.trim() === "") {
+      return yield* new FrontendInspectionFailure({kind: "unavailable", message: "The Playwright browser inventory could not be read."});
+    }
 
-  const inventories = parsePlaywrightInstallList(result.stdout);
-  if (inventories.length === 0) {
-    return {browsers: []};
-  }
-  if (inventories.length === 1) {
-    const [only] = inventories;
-    return {version: only!.version, browsers: only!.browsers};
-  }
+    const inventories = parsePlaywrightInstallList(result.stdout);
+    if (inventories.length === 0) {
+      return {browsers: []};
+    }
+    if (inventories.length === 1) {
+      const [only] = inventories;
+      return {version: only!.version, browsers: only!.browsers};
+    }
 
-  const matching = installedVersion === undefined ? undefined : inventories.find((entry) => entry.version === installedVersion);
-  if (matching === undefined) {
-    throw new FrontendInspectionFailure("invalid", "The Playwright browser inventory reported multiple ambiguous versions.");
-  }
-  return {version: matching.version, browsers: matching.browsers};
+    const matching = installedVersion === undefined ? undefined : inventories.find((entry) => entry.version === installedVersion);
+    if (matching === undefined) {
+      return yield* new FrontendInspectionFailure({
+        kind: "invalid",
+        message: "The Playwright browser inventory reported multiple ambiguous versions.",
+      });
+    }
+    return {version: matching.version, browsers: matching.browsers};
+  });
 }
 
-async function inspectFrameworkConfig(files: InspectionFiles, paths: RepositoryPaths): Promise<readonly string[]> {
-  const issues: string[] = [];
+function inspectFrameworkConfig(paths: RepositoryPaths): Effect.Effect<readonly string[], never, ReadOnlyFiles> {
+  return Effect.gen(function* () {
+    const issues: string[] = [];
 
-  try {
-    const source = await files.readText(resolve(paths.websiteRoot, "next.config.ts"));
-    if (!/createNextIntlPlugin\s*\(/u.test(source)) {
-      issues.push("next.config.ts does not call createNextIntlPlugin.");
-    } else if (!/createMessagesDeclaration:\s*["']\.\/messages\/en\.json["']/u.test(source)) {
-      issues.push("next.config.ts does not declare createMessagesDeclaration for ./messages/en.json.");
-    } else if (!/export default/u.test(source)) {
-      issues.push("next.config.ts does not export a default configuration.");
+    const nextConfig = yield* Effect.result(readText(resolve(paths.websiteRoot, "next.config.ts")));
+    if (Result.isSuccess(nextConfig)) {
+      const source = nextConfig.success;
+      if (!/createNextIntlPlugin\s*\(/u.test(source)) {
+        issues.push("next.config.ts does not call createNextIntlPlugin.");
+      } else if (!/createMessagesDeclaration:\s*["']\.\/messages\/en\.json["']/u.test(source)) {
+        issues.push("next.config.ts does not declare createMessagesDeclaration for ./messages/en.json.");
+      } else if (!/export default/u.test(source)) {
+        issues.push("next.config.ts does not export a default configuration.");
+      }
+    } else {
+      issues.push("next.config.ts could not be read.");
     }
-  } catch {
-    issues.push("next.config.ts could not be read.");
-  }
 
-  try {
-    const source = await files.readText(resolve(paths.docsRoot, "docusaurus.config.ts"));
-    if (!/@docusaurus\/preset-classic/u.test(source)) {
-      issues.push("docusaurus.config.ts does not reference @docusaurus/preset-classic.");
-    } else if (!/export default/u.test(source)) {
-      issues.push("docusaurus.config.ts does not export a default configuration.");
+    const docusaurusConfig = yield* Effect.result(readText(resolve(paths.docsRoot, "docusaurus.config.ts")));
+    if (Result.isSuccess(docusaurusConfig)) {
+      const source = docusaurusConfig.success;
+      if (!/@docusaurus\/preset-classic/u.test(source)) {
+        issues.push("docusaurus.config.ts does not reference @docusaurus/preset-classic.");
+      } else if (!/export default/u.test(source)) {
+        issues.push("docusaurus.config.ts does not export a default configuration.");
+      }
+    } else {
+      issues.push("docusaurus.config.ts could not be read.");
     }
-  } catch {
-    issues.push("docusaurus.config.ts could not be read.");
-  }
 
-  return issues;
+    return issues;
+  });
 }
 
 /**
  * Creates one read-only provider for shared React and website inspection facts.
  *
- * @param input - Canonical repository paths, shared package inventory, opaque probe runner, and the
- * read-only filesystem, clock, and task-scheduler capabilities.
+ * @param input - Canonical repository paths, shared package inventory, and opaque probe runner;
+ * repository files are read through `ReadOnlyFiles`.
  * @returns An inspection provider with explicit unavailable/invalid outcomes at package, environment, and probe boundaries.
  */
 export function createReactProvider(input: FrontendProviderInput): InspectionProvider<ReactFacts> {
-  const now = (): number => input.clock.monotonicNow();
-  const {files} = input;
-
-  return async (): Promise<InspectionOutcome<ReactFacts>> => {
-    const startedAt = now();
-    try {
-      const packagesOutcome = await input.packages();
+  return timed(
+    Effect.gen(function* () {
+      const packagesOutcome = yield* input.packages;
       if (packagesOutcome.kind === "unavailable") {
-        return {kind: "unavailable", reason: packagesOutcome.reason, durationMs: elapsedMilliseconds(startedAt, now)};
+        return {kind: "unavailable", reason: packagesOutcome.reason, durationMs: 0} satisfies InspectionOutcome<ReactFacts>;
       }
       if (packagesOutcome.kind === "invalid") {
-        return {kind: "invalid", issues: packagesOutcome.issues, durationMs: elapsedMilliseconds(startedAt, now)};
+        return {kind: "invalid", issues: packagesOutcome.issues, durationMs: 0} satisfies InspectionOutcome<ReactFacts>;
       }
       const packages = packagesOutcome.value;
 
-      let workspaceLinkIssues: readonly string[] | undefined;
-      let envContent: string | undefined;
-      let i18nIssues: readonly string[] | undefined;
-      let artifactIssues: readonly string[] | undefined;
-      let frameworkIssues: readonly string[] | undefined;
+      // Every repository read below starts concurrently, exactly as the previous `Promise.all` did.
+      const {workspaceLinkIssues, envContent, i18nIssues, artifactIssues, frameworkIssues} = yield* Effect.all(
+        {
+          workspaceLinkIssues: inspectWorkspaceLink(input.paths, packages),
+          envContent: readEnvironmentContent(input.paths.websiteEnvironment),
+          i18nIssues: inspectI18n(input.paths),
+          artifactIssues: inspectArtifacts(input.paths),
+          frameworkIssues: inspectFrameworkConfig(input.paths),
+        },
+        {concurrency: "unbounded"},
+      );
 
-      // Every repository read below starts concurrently, exactly as the previous `Promise.all` did;
-      // each task assigns its own binding so the heterogeneous results keep their exact types.
-      await input.tasks.parallel<void>([
-        async () => {
-          workspaceLinkIssues = await inspectWorkspaceLink(files, input.paths, packages);
-        },
-        async () => {
-          envContent = await readEnvironmentContent(files, input.paths.websiteEnvironment);
-        },
-        async () => {
-          i18nIssues = await inspectI18n(files, input.paths);
-        },
-        async () => {
-          artifactIssues = await inspectArtifacts(files, input.paths);
-        },
-        async () => {
-          frameworkIssues = await inspectFrameworkConfig(files, input.paths);
-        },
-      ]);
-
-      if (
-        workspaceLinkIssues === undefined
-        || envContent === undefined
-        || i18nIssues === undefined
-        || artifactIssues === undefined
-        || frameworkIssues === undefined
-      ) {
-        throw new FrontendInspectionFailure("unavailable", "The React inspection did not resolve every repository fact.");
-      }
-
-      const playwright = await inspectPlaywright(input.probes, input.paths.root, packages.installed["playwright"]?.version);
+      const playwright = yield* inspectPlaywright(input.probes, input.paths.root, packages.installed["playwright"]?.version);
 
       const value: ReactFacts = {
         packages,
@@ -619,16 +606,9 @@ export function createReactProvider(input: FrontendProviderInput): InspectionPro
         playwright,
         frameworkIssues,
       };
-      return {kind: "available", value, durationMs: elapsedMilliseconds(startedAt, now)};
-    } catch (error: unknown) {
-      if (error instanceof FrontendInspectionFailure) {
-        return error.kind === "invalid"
-          ? {kind: "invalid", issues: [error.publicMessage], durationMs: elapsedMilliseconds(startedAt, now)}
-          : {kind: "unavailable", reason: error.publicMessage, durationMs: elapsedMilliseconds(startedAt, now)};
-      }
-      throw error;
-    }
-  };
+      return {kind: "available", value, durationMs: 0} satisfies InspectionOutcome<ReactFacts>;
+    }).pipe(Effect.catchTag("FrontendInspectionFailure", (failure) => Effect.succeed(failureOutcome<ReactFacts>(failure)))),
+  );
 }
 
 function expandScriptIntent(scripts: UnknownRecord, name: string, depth = 0, visited: Set<string> = new Set()): string {
@@ -670,118 +650,114 @@ function extractAdapterImport(source: string): AdapterImport | null {
   return {identifier, specifier};
 }
 
-async function inspectSvelteScripts(
-  files: InspectionFiles,
+function inspectSvelteScripts(
   root: string,
   siteRelativeRoot: string,
   packageJsonOutcome: JsonReadOutcome,
-): Promise<readonly string[]> {
-  const issues: string[] = [];
+): Effect.Effect<readonly string[], never, ReadOnlyFiles> {
+  return Effect.gen(function* () {
+    const issues: string[] = [];
 
-  if (packageJsonOutcome.kind !== "ok") {
-    issues.push("package.json could not be read or parsed.");
-  } else {
-    const scripts = packageJsonOutcome.value["scripts"];
-    if (!isRecord(scripts)) {
-      issues.push("package.json#scripts must be an object.");
+    if (packageJsonOutcome.kind !== "ok") {
+      issues.push("package.json could not be read or parsed.");
     } else {
-      for (const scriptName of REQUIRED_SCRIPTS) {
-        if (typeof scripts[scriptName] !== "string") {
-          issues.push(`package.json#scripts.${scriptName} is missing or not a string.`);
+      const scripts = packageJsonOutcome.value["scripts"];
+      if (!isRecord(scripts)) {
+        issues.push("package.json#scripts must be an object.");
+      } else {
+        for (const scriptName of REQUIRED_SCRIPTS) {
+          if (typeof scripts[scriptName] !== "string") {
+            issues.push(`package.json#scripts.${scriptName} is missing or not a string.`);
+          }
         }
-      }
-      if (typeof scripts["prepare"] === "string" && !/svelte-kit sync/u.test(expandScriptIntent(scripts, "prepare"))) {
-        issues.push("package.json#scripts.prepare does not run svelte-kit sync.");
-      }
-      if (typeof scripts["check"] === "string") {
-        const expandedCheck = expandScriptIntent(scripts, "check");
-        if (!/svelte-kit sync/u.test(expandedCheck)) {
-          issues.push("package.json#scripts.check does not run svelte-kit sync.");
+        if (typeof scripts["prepare"] === "string" && !/svelte-kit sync/u.test(expandScriptIntent(scripts, "prepare"))) {
+          issues.push("package.json#scripts.prepare does not run svelte-kit sync.");
         }
-        if (!/svelte-check/u.test(expandedCheck)) {
-          issues.push("package.json#scripts.check does not run svelte-check.");
+        if (typeof scripts["check"] === "string") {
+          const expandedCheck = expandScriptIntent(scripts, "check");
+          if (!/svelte-kit sync/u.test(expandedCheck)) {
+            issues.push("package.json#scripts.check does not run svelte-kit sync.");
+          }
+          if (!/svelte-check/u.test(expandedCheck)) {
+            issues.push("package.json#scripts.check does not run svelte-check.");
+          }
         }
-      }
-      if (typeof scripts["test"] === "string" && !/vitest/u.test(expandScriptIntent(scripts, "test"))) {
-        issues.push("package.json#scripts.test does not resolve to a vitest invocation.");
-      }
-      if (typeof scripts["build"] === "string" && !/vite build/u.test(expandScriptIntent(scripts, "build"))) {
-        issues.push("package.json#scripts.build does not run vite build.");
-      }
-    }
-  }
-
-  const projectJsonOutcome = await readJsonRecord(files, resolve(root, "project.json"));
-  if (projectJsonOutcome.kind !== "ok") {
-    issues.push("project.json could not be read or parsed.");
-  } else {
-    const targets = projectJsonOutcome.value["targets"];
-    if (!isRecord(targets)) {
-      issues.push("project.json#targets must be an object.");
-    } else {
-      for (const targetName of REQUIRED_SCRIPTS) {
-        const options = getTargetOptions(targets, targetName);
-        if (options === null) {
-          issues.push(`project.json#targets.${targetName} is missing or malformed.`);
-          continue;
+        if (typeof scripts["test"] === "string" && !/vitest/u.test(expandScriptIntent(scripts, "test"))) {
+          issues.push("package.json#scripts.test does not resolve to a vitest invocation.");
         }
-        if (options["command"] !== `npm run ${targetName}`) {
-          issues.push(`project.json#targets.${targetName}.options.command must be 'npm run ${targetName}'.`);
-        }
-        if (options["cwd"] !== siteRelativeRoot) {
-          issues.push(`project.json#targets.${targetName}.options.cwd must be '${siteRelativeRoot}'.`);
+        if (typeof scripts["build"] === "string" && !/vite build/u.test(expandScriptIntent(scripts, "build"))) {
+          issues.push("package.json#scripts.build does not run vite build.");
         }
       }
     }
-  }
 
-  const viteConfigOutcome = await readFirstExistingTextFile(files, VITE_CONFIG_FILE_NAMES.map((name) => ({name, path: resolve(root, name)})));
-  if (viteConfigOutcome.kind === "missing") {
-    issues.push("vite.config was not found.");
-  } else if (viteConfigOutcome.kind === "error") {
-    issues.push("vite.config could not be read.");
-  } else if (!/sveltekit\s*\(/u.test(viteConfigOutcome.contents) || !/defineConfig/u.test(viteConfigOutcome.contents)) {
-    issues.push(`${viteConfigOutcome.name} does not wire the SvelteKit Vite plugin (sveltekit()) within defineConfig.`);
-  }
+    const projectJsonOutcome = yield* readJsonRecord(resolve(root, "project.json"));
+    if (projectJsonOutcome.kind !== "ok") {
+      issues.push("project.json could not be read or parsed.");
+    } else {
+      const targets = projectJsonOutcome.value["targets"];
+      if (!isRecord(targets)) {
+        issues.push("project.json#targets must be an object.");
+      } else {
+        for (const targetName of REQUIRED_SCRIPTS) {
+          const options = getTargetOptions(targets, targetName);
+          if (options === null) {
+            issues.push(`project.json#targets.${targetName} is missing or malformed.`);
+            continue;
+          }
+          if (options["command"] !== `npm run ${targetName}`) {
+            issues.push(`project.json#targets.${targetName}.options.command must be 'npm run ${targetName}'.`);
+          }
+          if (options["cwd"] !== siteRelativeRoot) {
+            issues.push(`project.json#targets.${targetName}.options.cwd must be '${siteRelativeRoot}'.`);
+          }
+        }
+      }
+    }
 
-  return issues;
+    const viteConfigOutcome = yield* readFirstExistingTextFile(VITE_CONFIG_FILE_NAMES.map((name) => ({name, path: resolve(root, name)})));
+    if (viteConfigOutcome.kind === "missing") {
+      issues.push("vite.config was not found.");
+    } else if (viteConfigOutcome.kind === "error") {
+      issues.push("vite.config could not be read.");
+    } else if (!/sveltekit\s*\(/u.test(viteConfigOutcome.contents) || !/defineConfig/u.test(viteConfigOutcome.contents)) {
+      issues.push(`${viteConfigOutcome.name} does not wire the SvelteKit Vite plugin (sveltekit()) within defineConfig.`);
+    }
+
+    return issues;
+  });
 }
 
-async function inspectGeneratedConfigExists(files: InspectionFiles, root: string): Promise<boolean> {
-  try {
-    const info = await files.inspect(resolve(root, ".svelte-kit", "tsconfig.json"));
-    return info.kind === "file";
-  } catch {
-    return false;
-  }
+function inspectGeneratedConfigExists(root: string): Effect.Effect<boolean, never, ReadOnlyFiles> {
+  return inspectPath(resolve(root, ".svelte-kit", "tsconfig.json")).pipe(
+    Effect.map((info) => info.kind === "file"),
+    Effect.orElseSucceed(() => false),
+  );
 }
 
 /**
  * Creates one read-only provider for shared SvelteKit inspection facts for one standalone project.
  *
  * @param id - Standalone project identity (`"cv"` or `"status"`).
- * @param input - Canonical repository paths, shared package inventory, opaque probe runner, and the
- * read-only filesystem, clock, and task-scheduler capabilities.
+ * @param input - Canonical repository paths, shared package inventory, and opaque probe runner;
+ * repository files are read through `ReadOnlyFiles`.
  * @returns An inspection provider with explicit unavailable/invalid outcomes at the package-inventory boundary.
  */
 export function createSvelteProvider(id: SvelteProjectId, input: FrontendProviderInput): InspectionProvider<SvelteFacts> {
   const root = id === "cv" ? input.paths.cvRoot : input.paths.statusRoot;
-  const now = (): number => input.clock.monotonicNow();
-  const {files} = input;
 
-  return async (): Promise<InspectionOutcome<SvelteFacts>> => {
-    const startedAt = now();
-    try {
-      const packagesOutcome = await input.packages();
+  return timed(
+    Effect.gen(function* () {
+      const packagesOutcome = yield* input.packages;
       if (packagesOutcome.kind === "unavailable") {
-        return {kind: "unavailable", reason: packagesOutcome.reason, durationMs: elapsedMilliseconds(startedAt, now)};
+        return {kind: "unavailable", reason: packagesOutcome.reason, durationMs: 0} satisfies InspectionOutcome<SvelteFacts>;
       }
       if (packagesOutcome.kind === "invalid") {
-        return {kind: "invalid", issues: packagesOutcome.issues, durationMs: elapsedMilliseconds(startedAt, now)};
+        return {kind: "invalid", issues: packagesOutcome.issues, durationMs: 0} satisfies InspectionOutcome<SvelteFacts>;
       }
       const packages = packagesOutcome.value;
 
-      const packageJsonOutcome = await readJsonRecord(files, resolve(root, "package.json"));
+      const packageJsonOutcome = yield* readJsonRecord(resolve(root, "package.json"));
       const packageIssues: string[] = [];
       let nodeEngine: string | undefined;
 
@@ -797,8 +773,7 @@ export function createSvelteProvider(id: SvelteProjectId, input: FrontendProvide
         }
       }
 
-      const svelteConfigOutcome = await readFirstExistingTextFile(
-        files,
+      const svelteConfigOutcome = yield* readFirstExistingTextFile(
         SVELTE_CONFIG_FILE_NAMES.map((name) => ({name, path: resolve(root, name)})),
       );
       const adapterIssues: string[] = [];
@@ -844,23 +819,14 @@ export function createSvelteProvider(id: SvelteProjectId, input: FrontendProvide
       }
 
       const siteRelativeRoot = relative(input.paths.root, root).replaceAll("\\", "/");
-      let scriptIssues: readonly string[] | undefined;
-      let generatedConfigExists: boolean | undefined;
-
-      // Both observations start concurrently, exactly as the previous `Promise.all` did; each task
-      // assigns its own binding so the heterogeneous results keep their exact types.
-      await input.tasks.parallel<void>([
-        async () => {
-          scriptIssues = await inspectSvelteScripts(files, root, siteRelativeRoot, packageJsonOutcome);
+      // Both observations start concurrently, exactly as the previous `Promise.all` did.
+      const {scriptIssues, generatedConfigExists} = yield* Effect.all(
+        {
+          scriptIssues: inspectSvelteScripts(root, siteRelativeRoot, packageJsonOutcome),
+          generatedConfigExists: inspectGeneratedConfigExists(root),
         },
-        async () => {
-          generatedConfigExists = await inspectGeneratedConfigExists(files, root);
-        },
-      ]);
-
-      if (scriptIssues === undefined || generatedConfigExists === undefined) {
-        throw new FrontendInspectionFailure("unavailable", "The Svelte inspection did not resolve every repository fact.");
-      }
+        {concurrency: "unbounded"},
+      );
 
       const value: SvelteFacts = {
         id,
@@ -871,14 +837,7 @@ export function createSvelteProvider(id: SvelteProjectId, input: FrontendProvide
         ...(adapterSpecifier === undefined ? {} : {adapterSpecifier}),
         adapterIssues,
       };
-      return {kind: "available", value, durationMs: elapsedMilliseconds(startedAt, now)};
-    } catch (error: unknown) {
-      if (error instanceof FrontendInspectionFailure) {
-        return error.kind === "invalid"
-          ? {kind: "invalid", issues: [error.publicMessage], durationMs: elapsedMilliseconds(startedAt, now)}
-          : {kind: "unavailable", reason: error.publicMessage, durationMs: elapsedMilliseconds(startedAt, now)};
-      }
-      throw error;
-    }
-  };
+      return {kind: "available", value, durationMs: 0} satisfies InspectionOutcome<SvelteFacts>;
+    }),
+  );
 }

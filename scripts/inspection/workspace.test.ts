@@ -5,18 +5,26 @@
  */
 
 import {createHash} from "node:crypto";
+import {existsSync} from "node:fs";
 import {lstat, mkdir, readdir, rm, symlink, writeFile} from "node:fs/promises";
 import {tmpdir} from "node:os";
 import {join, resolve, sep} from "node:path";
-import {describe, expect, it, vi} from "vitest";
+import {NodeServices} from "@effect/platform-node";
+import {Deferred, Effect, Exit, Fiber, Layer} from "effect";
+import {describe, expect, it} from "vitest";
 
-import type {ProcessEnvironment, ProcessOutcome, ProcessOutput, ProcessRequest, ProcessRunner} from "../common/runner.ts";
-import {createNodeProcessRunner, nodeClock, nodeFileSystem, snapshotNodeEnvironment} from "../common/runtime.node.ts";
-import type {Clock, FileSystem, RuntimeEnvironment} from "../common/runtime.ts";
-import {createTestRuntimeFactory} from "../common/runtime.testing.ts";
 import {resolveRepositoryPaths} from "../common/repository-paths.ts";
+import {Environment, EnvironmentLive} from "../platform/Environment.ts";
+import {GlobLive, ReadOnlyFilesLive, TemporaryDirectoriesLive} from "../platform/Files.ts";
+import {outputLayer, SinkLive} from "../platform/Output.ts";
+import {ProcessLive, type ProcessRequest} from "../platform/Process.ts";
+import {ReportedFailure} from "../platform/exit.ts";
+import {makeTestLayer, runScoped, scriptedOutcomes, type ScriptedOutcomeOptions, type ScriptedProcess} from "../platform/testing.ts";
+import {runWorkerProgram} from "../platform/worker.ts";
+import type {ProbeOutcome} from "./probes.ts";
+import type {InspectionOutcome, InspectionProvider} from "./types.ts";
 import {createWorkspaceProvider, projectNxGraph, type WorkspaceFacts} from "./workspace.ts";
-import {createWorkspaceWorkerCommand, projectWorkerDocument, workspaceWorkerCommand} from "./workspace.worker.ts";
+import {collectWorkspaceWorkerDocument, decodeWorkerArgs, projectWorkerDocument, workspaceWorker, WorkspaceWorkerFailure, WorkspaceWorkerUsageError} from "./workspace.worker.ts";
 
 // ============================================================================
 // Fixtures
@@ -199,36 +207,24 @@ describe("projectNxGraph", () => {
 // createWorkspaceProvider — command construction
 // ============================================================================
 
-function succeeded(patch: Partial<ProcessOutput> = {}): ProcessOutcome {
+/** Output fields every scripted worker outcome carries. */
+type ProbeOutput = Pick<ProbeOutcome, "stdout" | "stderr" | "durationMs">;
+
+function succeeded(patch: Partial<ProbeOutput> = {}): ProbeOutcome {
   return {kind: "succeeded", exitCode: 0, stdout: "", stderr: "", durationMs: 1, ...patch};
 }
 
-function exited(exitCode: number, patch: Partial<ProcessOutput> = {}): ProcessOutcome {
+function exited(exitCode: number, patch: Partial<ProbeOutput> = {}): ProbeOutcome {
   return {kind: "exited", exitCode, stdout: "", stderr: "", durationMs: 1, ...patch};
 }
 
-function spawnFailed(message: string, patch: Partial<ProcessOutput> = {}): ProcessOutcome {
+function spawnFailed(message: string, patch: Partial<ProbeOutput> = {}): ProbeOutcome {
   return {kind: "spawn-failed", message, stdout: "", stderr: "", durationMs: 1, ...patch};
 }
 
-function timedOut(patch: Partial<ProcessOutput> = {}): ProcessOutcome {
+function timedOut(patch: Partial<ProbeOutput> = {}): ProbeOutcome {
   return {kind: "timed-out", stdout: "", stderr: "", durationMs: 1, ...patch};
 }
-
-/** Fixed clock returning a constant instant, so every measured duration is exactly zero. */
-const fixedClock: Clock = {
-  monotonicNow: (): number => 5,
-  isoTimestamp: (): string => "2025-01-01T00:00:00.000Z",
-  delay: (): Promise<void> => Promise.resolve(),
-};
-
-/** Immutable environment whose executable path the provider must use for the worker request. */
-const workerEnvironment: RuntimeEnvironment = snapshotNodeEnvironment();
-
-/** Narrow temporary-directory capability, the provider's only writable filesystem access. */
-const temporaryDirectories: Pick<FileSystem, "createTemporaryDirectory"> = {
-  createTemporaryDirectory: (prefix) => nodeFileSystem.createTemporaryDirectory(prefix),
-};
 
 function successStdout(): string {
   return JSON.stringify(validRawGraph());
@@ -236,34 +232,32 @@ function successStdout(): string {
 
 interface CapturedRun {
   readonly command: Readonly<ProcessRequest>;
-  readonly options: Readonly<{
-    cwd?: string;
-    env?: ProcessEnvironment;
-    output?: string;
-    timeoutMs?: number;
-  }>;
+  readonly options: ScriptedOutcomeOptions;
 }
 
-function createFakeRunner(respond: (call: CapturedRun) => ProcessOutcome): {
-  runner: ProcessRunner;
+function createFakeRunner(respond: (call: CapturedRun) => ProbeOutcome): {
+  runner: ScriptedProcess;
   calls: CapturedRun[];
 } {
   const calls: CapturedRun[] = [];
-  const run = vi.fn(async (command: Readonly<ProcessRequest>, options: Readonly<CapturedRun["options"]> = {}) => {
+  const runner = scriptedOutcomes((command, options) => {
     const call: CapturedRun = {command, options};
     calls.push(call);
     return respond(call);
   });
-  const runner: ProcessRunner = {
-    run,
-    expectSuccess: () => {
-      throw new Error("The workspace provider never calls expectSuccess.");
-    },
-    scope: () => {
-      throw new Error("The workspace provider never scopes the shared runner.");
-    },
-  };
   return {runner, calls};
+}
+
+/**
+ * Runs a provider over the real filesystem (its temporary root lives in the OS temporary
+ * directory), the test clock, and one scripted worker process.
+ *
+ * @param provider - The provider under test.
+ * @param runner - The scripted worker process.
+ * @returns The provider outcome, after the provider scope (and its temporary root) closed.
+ */
+async function invokeProvider<T>(provider: InspectionProvider<T>, runner: ScriptedProcess): Promise<InspectionOutcome<T>> {
+  return runScoped(provider, makeTestLayer({fileSystem: "node", processes: [runner]}).layer);
 }
 
 describe("createWorkspaceProvider command construction", () => {
@@ -278,8 +272,7 @@ describe("createWorkspaceProvider command construction", () => {
       return succeeded({stdout: successStdout()});
     });
 
-    const provider = createWorkspaceProvider({root: repositoryRoot, runner, clock: fixedClock, environment: workerEnvironment, temporaryDirectories});
-    const outcome = await provider();
+    const outcome = await invokeProvider(createWorkspaceProvider({root: repositoryRoot}), runner);
 
     expect(outcome.kind).toBe("available");
     expect(calls).toHaveLength(1);
@@ -307,6 +300,39 @@ describe("createWorkspaceProvider command construction", () => {
     await expect(lstat(String(capturedTempRoot))).rejects.toMatchObject({code: "ENOENT"});
   });
 
+  it("removes the temporary root only after an interrupted worker process stops", async () => {
+    const repositoryRoot = resolve(tmpdir(), "arolariu-workspace-provider-fixture-interrupted");
+    const started = Deferred.makeUnsafe<string>();
+    let existedWhenWorkerStopped: boolean | undefined;
+    const runner: ScriptedProcess = {
+      match: () => true,
+      respond: (_request, options) => {
+        const tempRoot = resolve(String(options.env?.["NX_WORKSPACE_DATA_DIRECTORY"]), "..");
+        return Deferred.succeed(started, tempRoot).pipe(
+          Effect.andThen(Effect.never),
+          Effect.onInterrupt(() =>
+            Effect.sync(() => {
+              existedWhenWorkerStopped = existsSync(tempRoot);
+            }),
+          ),
+        );
+      },
+    };
+
+    const tempRoot = await runScoped(
+      Effect.gen(function* () {
+        const provider = yield* Effect.forkChild(Effect.scoped(createWorkspaceProvider({root: repositoryRoot})));
+        const root = yield* Deferred.await(started);
+        yield* Fiber.interrupt(provider);
+        return root;
+      }),
+      makeTestLayer({fileSystem: "node", processes: [runner]}).layer,
+    );
+
+    expect(existedWhenWorkerStopped).toBe(true);
+    expect(existsSync(tempRoot)).toBe(false);
+  });
+
   it("cleans up the temporary root even when the worker command fails", async () => {
     const repositoryRoot = resolve(tmpdir(), "arolariu-workspace-provider-fixture-failure");
     let capturedTempRoot: string | undefined;
@@ -317,8 +343,7 @@ describe("createWorkspaceProvider command construction", () => {
       return exited(1, {stderr: "boom"});
     });
 
-    const provider = createWorkspaceProvider({root: repositoryRoot, runner, clock: fixedClock, environment: workerEnvironment, temporaryDirectories});
-    const outcome = await provider();
+    const outcome = await invokeProvider(createWorkspaceProvider({root: repositoryRoot}), runner);
 
     expect(outcome.kind).toBe("unavailable");
     expect(capturedTempRoot).toBeDefined();
@@ -335,7 +360,7 @@ describe("createWorkspaceProvider outcome mapping", () => {
 
   it("maps a spawn failure to 'unavailable' without raw output", async () => {
     const {runner} = createFakeRunner(() => spawnFailed("spawn ENOENT super-secret-raw-marker"));
-    const outcome = await createWorkspaceProvider({root: repositoryRoot, runner, clock: fixedClock, environment: workerEnvironment, temporaryDirectories})();
+    const outcome = await invokeProvider(createWorkspaceProvider({root: repositoryRoot}), runner);
 
     expect(outcome.kind).toBe("unavailable");
     if (outcome.kind === "unavailable") {
@@ -348,7 +373,7 @@ describe("createWorkspaceProvider outcome mapping", () => {
     const {runner} = createFakeRunner(() =>
       exited(1, {stdout: "raw-stdout-secret-marker", stderr: "raw-stderr-secret-marker"}),
     );
-    const outcome = await createWorkspaceProvider({root: repositoryRoot, runner, clock: fixedClock, environment: workerEnvironment, temporaryDirectories})();
+    const outcome = await invokeProvider(createWorkspaceProvider({root: repositoryRoot}), runner);
 
     expect(outcome.kind).toBe("unavailable");
     if (outcome.kind === "unavailable") {
@@ -361,7 +386,7 @@ describe("createWorkspaceProvider outcome mapping", () => {
     const {runner} = createFakeRunner(() =>
       timedOut({stdout: "raw-stdout-secret-marker", stderr: "raw-stderr-secret-marker"}),
     );
-    const outcome = await createWorkspaceProvider({root: repositoryRoot, runner, clock: fixedClock, environment: workerEnvironment, temporaryDirectories})();
+    const outcome = await invokeProvider(createWorkspaceProvider({root: repositoryRoot}), runner);
 
     expect(outcome.kind).toBe("unavailable");
     if (outcome.kind === "unavailable") {
@@ -373,7 +398,7 @@ describe("createWorkspaceProvider outcome mapping", () => {
 
   it("maps malformed JSON on a zero exit to 'invalid' without raw output", async () => {
     const {runner} = createFakeRunner(() => succeeded({stdout: "not-json-secret-marker{{{"}));
-    const outcome = await createWorkspaceProvider({root: repositoryRoot, runner, clock: fixedClock, environment: workerEnvironment, temporaryDirectories})();
+    const outcome = await invokeProvider(createWorkspaceProvider({root: repositoryRoot}), runner);
 
     expect(outcome.kind).toBe("invalid");
     if (outcome.kind === "invalid") {
@@ -384,7 +409,7 @@ describe("createWorkspaceProvider outcome mapping", () => {
   it("maps an invalid graph projection on a zero exit to 'invalid' with a concise issue", async () => {
     const malformedGraph = {nodes: {a: {name: "mismatched-name", data: {root: "libs/a"}}}, dependencies: {}};
     const {runner} = createFakeRunner(() => succeeded({stdout: JSON.stringify(malformedGraph)}));
-    const outcome = await createWorkspaceProvider({root: repositoryRoot, runner, clock: fixedClock, environment: workerEnvironment, temporaryDirectories})();
+    const outcome = await invokeProvider(createWorkspaceProvider({root: repositoryRoot}), runner);
 
     expect(outcome.kind).toBe("invalid");
     if (outcome.kind === "invalid") {
@@ -394,7 +419,7 @@ describe("createWorkspaceProvider outcome mapping", () => {
 
   it("maps a valid zero-exit document to 'available' with projected facts", async () => {
     const {runner} = createFakeRunner(() => succeeded({stdout: successStdout()}));
-    const outcome = await createWorkspaceProvider({root: repositoryRoot, runner, clock: fixedClock, environment: workerEnvironment, temporaryDirectories})();
+    const outcome = await invokeProvider(createWorkspaceProvider({root: repositoryRoot}), runner);
 
     expect(outcome.kind).toBe("available");
     if (outcome.kind === "available") {
@@ -447,55 +472,59 @@ describe("workspace worker document projection", () => {
   });
 });
 
-describe("createWorkspaceWorkerCommand", () => {
-  it("rejects a missing repository root argument as invalid usage", async () => {
-    const command = createWorkspaceWorkerCommand(createTestRuntimeFactory());
-
-    const execution = await command.run([]);
-
-    expect(execution.status).toBe("failed");
-    expect(execution.exitCode).toBe(2);
+describe("workspace worker program", () => {
+  it.each<readonly [string, readonly string[]]>([
+    ["a missing repository root argument", []],
+    ["more than one repository root argument", ["root-a", "root-b"]],
+    ["a blank repository root argument", ["   "]],
+  ])("rejects %s as invalid usage", (_label, argv) => {
+    expect(() => decodeWorkerArgs(argv)).toThrow(WorkspaceWorkerUsageError);
   });
 
-  it("rejects more than one repository root argument as invalid usage", async () => {
-    const command = createWorkspaceWorkerCommand(createTestRuntimeFactory());
-
-    const execution = await command.run(["root-a", "root-b"]);
-
-    expect(execution.status).toBe("failed");
-    expect(execution.exitCode).toBe(2);
+  it("decodes exactly one repository root argument", () => {
+    expect(decodeWorkerArgs([REPOSITORY_ROOT])).toEqual({repositoryRoot: REPOSITORY_ROOT});
   });
 
   it("fails without importing Nx when NX_WORKSPACE_ROOT_PATH is missing", async () => {
-    const command = createWorkspaceWorkerCommand(createTestRuntimeFactory());
+    const failure = await runScoped(Effect.flip(collectWorkspaceWorkerDocument({repositoryRoot: REPOSITORY_ROOT})), makeTestLayer().layer);
 
-    const execution = await command.invoke({repositoryRoot: REPOSITORY_ROOT});
-
-    expect(execution.status).toBe("failed");
-    if (execution.status === "failed") {
-      expect(execution.failure.message).toMatch(/NX_WORKSPACE_ROOT_PATH/u);
-    }
+    expect(failure).toBeInstanceOf(WorkspaceWorkerFailure);
+    expect(failure.message).toMatch(/NX_WORKSPACE_ROOT_PATH/u);
   });
 
   it("fails without importing Nx when NX_WORKSPACE_ROOT_PATH does not match the decoded root", async () => {
-    const environment: RuntimeEnvironment = {
-      ...snapshotNodeEnvironment(),
-      variables: {NX_WORKSPACE_ROOT_PATH: resolve(REPOSITORY_ROOT, "elsewhere")},
-    };
-    const command = createWorkspaceWorkerCommand(createTestRuntimeFactory({environment}));
+    const harness = makeTestLayer({environment: {variables: {NX_WORKSPACE_ROOT_PATH: resolve(REPOSITORY_ROOT, "elsewhere")}}});
 
-    const execution = await command.invoke({repositoryRoot: REPOSITORY_ROOT});
+    const failure = await runScoped(Effect.flip(collectWorkspaceWorkerDocument({repositoryRoot: REPOSITORY_ROOT})), harness.layer);
 
-    expect(execution.status).toBe("failed");
-    if (execution.status === "failed") {
-      expect(execution.failure.message).toMatch(/does not match NX_WORKSPACE_ROOT_PATH/u);
-    }
+    expect(failure.message).toMatch(/does not match NX_WORKSPACE_ROOT_PATH/u);
   });
 
-  it("exports one production singleton command for direct entry", () => {
-    expect(workspaceWorkerCommand).toBeInstanceOf(Object);
-    expect(typeof workspaceWorkerCommand.runIfMain).toBe("function");
-    expect(workspaceWorkerCommand).not.toBe(createWorkspaceWorkerCommand());
+  it("renders a worker failure on stderr only, with nothing on stdout", async () => {
+    const harness = makeTestLayer({mode: "json"});
+
+    const exit = await runScoped(Effect.exit(runWorkerProgram(workspaceWorker, [REPOSITORY_ROOT])), harness.layer);
+
+    expect(exit._tag).toBe("Failure");
+    expect(harness.output()).toEqual([
+      {stream: "stderr", text: "Nx workspace worker requires a non-empty NX_WORKSPACE_ROOT_PATH environment value.\n"},
+    ]);
+  });
+
+  it("reports a malformed argument list as a usage failure", async () => {
+    const harness = makeTestLayer({mode: "json"});
+
+    const exit = await runScoped(Effect.exit(runWorkerProgram(workspaceWorker, [])), harness.layer);
+
+    expect(exit).toEqual(
+      Exit.fail(new ReportedFailure({exitCode: 2, message: "Nx workspace worker requires exactly one repository root argument."})),
+    );
+    expect(harness.output().filter((record) => record.stream === "stdout")).toEqual([]);
+  });
+
+  it("names the worker and emits the projected document unchanged", () => {
+    expect(workspaceWorker.name).toBe("inspection-workspace-worker");
+    expect(workspaceWorker.encode({nodes: {}})).toEqual({nodes: {}});
   });
 });
 
@@ -644,23 +673,46 @@ describe("live snapshot helper", () => {
  */
 const LIVE_WORKSPACE_TIMEOUT_MS = 180_000;
 
+/**
+ * Environment for the live Nx provider case.
+ *
+ * @remarks
+ * Under full-suite parallel load the worker's Nx host can miss the 10-second plugin-worker load
+ * handshake (another suite file spawns `cli.ts doctor --quick`, which builds its own Nx graph at the
+ * same time). `NX_PLUGIN_NO_TIMEOUTS` lifts only that Nx-internal handshake timeout; the provider's
+ * own `WORKER_TIMEOUT_MS` still bounds the invocation.
+ */
+const liveWorkerEnvironment: Layer.Layer<Environment> = Layer.effect(
+  Environment,
+  Effect.gen(function* () {
+    const snapshot = yield* Environment;
+    return {...snapshot, variables: {...snapshot.variables, NX_PLUGIN_NO_TIMEOUTS: "true"}};
+  }),
+).pipe(Layer.provide(EnvironmentLive));
+
+/** Live process and temporary-directory services over the real child processes and filesystem. */
+const liveWorkerLayer = Layer.mergeAll(ProcessLive, TemporaryDirectoriesLive, ReadOnlyFilesLive).pipe(
+  Layer.provideMerge(
+    Layer.mergeAll(
+      outputLayer({mode: "silent", verbose: false, color: false, context: "test"}).pipe(Layer.provide(SinkLive)),
+      liveWorkerEnvironment,
+      NodeServices.layer,
+      GlobLive,
+    ),
+  ),
+);
+
 describe("createWorkspaceProvider live integration", () => {
   it(
     "reflects the current seven-project workspace graph and leaves top-level .nx files, .nx/workspace-data, and .arolariu unchanged",
     async () => {
-      const paths = await resolveRepositoryPaths(import.meta.url, nodeFileSystem);
+      const paths = await runScoped(resolveRepositoryPaths(import.meta.url), liveWorkerLayer);
 
       const nxTopLevelBefore = await snapshotPath(join(paths.root, ".nx"), {recursive: false});
       const workspaceDataBefore = await snapshotPath(join(paths.root, ".nx", "workspace-data"), {recursive: true});
       const arolariuBefore = await snapshotPath(join(paths.root, ".arolariu"), {recursive: true});
 
-      const outcome = await createWorkspaceProvider({
-        root: paths.root,
-        runner: createNodeProcessRunner(workerEnvironment),
-        clock: nodeClock,
-        environment: workerEnvironment,
-        temporaryDirectories,
-      })();
+      const outcome = await runScoped(createWorkspaceProvider({root: paths.root}), liveWorkerLayer);
 
       // The provider bounds its own Nx worker invocation and reports a typed `unavailable`/
       // `invalid` outcome instead of throwing. Asserting on the kind alone would hide that reason

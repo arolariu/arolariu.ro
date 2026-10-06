@@ -47,6 +47,16 @@ describe("getContainerAdapter", () => {
     expect(getContainerAdapter("podman").aspireRuntime).toBe("podman");
   });
 
+  it.each([
+    ["rancher", "docker"],
+    ["podman", "podman"],
+  ] as const)("passes exec environment variables by name only before the %s container", (engine, cli) => {
+    expect(getContainerAdapter(engine).exec("mssql", ["sqlcmd", "-U", "sa"], ["SQLCMDPASSWORD", "OTHER"])).toEqual({
+      command: cli,
+      args: ["exec", "-e", "SQLCMDPASSWORD", "-e", "OTHER", "mssql", "sqlcmd", "-U", "sa"],
+    });
+  });
+
   it("maps image and log commands through the selected engine", () => {
     expect(getContainerAdapter("rancher").logs("api", ["--tail", "5"])).toEqual({
       command: "docker",

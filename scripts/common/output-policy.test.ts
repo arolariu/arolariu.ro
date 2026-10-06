@@ -11,7 +11,8 @@ import {describe, expect, it} from "vitest";
 
 const productionScriptExtensions = new Set([".ts", ".js", ".mjs", ".cjs"]);
 const transitionalEntrypoints = new Set<string>();
-const interactiveTerminalAdapters = new Set(["scripts/common/prompts.ts"]);
+const interactiveTerminalAdapters = new Set<string>();
+const outputAdapters = new Set(["scripts/common/logger.ts", "scripts/platform/Output.ts"]);
 
 type AccessPath = readonly string[];
 type AliasScope = Map<string, AccessPath | null>;
@@ -32,7 +33,7 @@ function discoverProductionScripts(directory: string = "scripts"): readonly stri
     if (
       productionScriptExtensions.has(extension)
       && !/\.(?:spec|test)\.(?:cjs|js|mjs|ts)$/.test(normalizedPath)
-      && normalizedPath !== "scripts/common/logger.ts"
+      && !outputAdapters.has(normalizedPath)
     ) {
       files.push(normalizedPath);
     }
@@ -133,7 +134,7 @@ function readRestrictedSyntaxMessages(fileName: string, variableName: string): r
         (property): property is ts.PropertyAssignment =>
           ts.isPropertyAssignment(property) && ts.isIdentifier(property.name) && property.name.text === "rules",
       )?.initializer;
-      if (!ts.isObjectLiteralExpression(rules)) {
+      if (rules === undefined || !ts.isObjectLiteralExpression(rules)) {
         continue;
       }
 
@@ -141,7 +142,7 @@ function readRestrictedSyntaxMessages(fileName: string, variableName: string): r
         (property): property is ts.PropertyAssignment =>
           ts.isPropertyAssignment(property) && ts.isStringLiteral(property.name) && property.name.text === "no-restricted-syntax",
       )?.initializer;
-      if (!ts.isArrayLiteralExpression(restriction)) {
+      if (restriction === undefined || !ts.isArrayLiteralExpression(restriction)) {
         continue;
       }
 
@@ -154,7 +155,7 @@ function readRestrictedSyntaxMessages(fileName: string, variableName: string): r
           (property): property is ts.PropertyAssignment =>
             ts.isPropertyAssignment(property) && ts.isIdentifier(property.name) && property.name.text === "message",
         )?.initializer;
-        return ts.isStringLiteral(message) ? [message.text] : [];
+        return message !== undefined && ts.isStringLiteral(message) ? [message.text] : [];
       });
     }
   }
@@ -357,7 +358,7 @@ describe("direct output policy", () => {
     const ignores = readConfigStringArrayProperty("eslint.config.ts", "toolingOutputConfig", "ignores");
 
     expect(ignores).toEqual(expect.arrayContaining([...transitionalEntrypoints]));
-    expect(ignores).not.toContain("scripts/setup.ts");
+    expect(ignores).not.toContain("scripts/commands/setup/index.ts");
   });
 
   it("keeps process restrictions when the prompt ESLint policy is applied later", () => {
@@ -367,9 +368,12 @@ describe("direct output policy", () => {
 
     expect(outputMessages).toHaveLength(1);
     expect(promptMessages).toEqual(
-      expect.arrayContaining([...outputMessages, "Interactive terminal output is owned exclusively by scripts/common/prompts.ts."]),
+      expect.arrayContaining([
+        ...outputMessages,
+        "Interactive terminal output is owned exclusively by the Effect Prompts service (scripts/platform/Prompts.ts).",
+      ]),
     );
-    expect(promptIgnores).toContain("scripts/common/prompts.ts");
+    expect(promptIgnores.filter((fileName) => !fileName.includes("*") && !existsSync(fileName))).toEqual([]);
   });
 
   it("inspects executable calls without matching comments or strings", () => {

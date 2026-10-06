@@ -114,7 +114,7 @@ jobs:
           dotnet: 'true'
           install-dotnet-deps: 'true'
           run-generate: 'true'
-          generate-args: '/a'
+          generate-args: 'artifacts'
 
       - name: 🧪 Running unit tests...
         working-directory: .
@@ -193,7 +193,7 @@ jobs:
           node: 'true'
           install-node-deps: 'true'
           run-generate: 'true'
-          generate-args: '/a'
+          generate-args: 'artifacts'
 
       - name: 🔒 Performing auth against Azure Public Cloud...
         uses: Azure/login@v3

@@ -7,10 +7,10 @@
  * @remarks
  * This module never imports `envinfo` or `systeminformation`; the worker (`./aggregate-worker.ts`)
  * is the only production boundary that touches those packages. The parent spawns the worker through
- * the injected {@link ProcessRunner}, applies a bounded timeout, and treats the worker's stdout as one
- * untrusted JSON document. That document is never cast or returned directly: every outcome and fact
+ * the `Process` service, applies a bounded timeout, and treats the worker's stdout as one untrusted
+ * JSON document. That document is never cast or returned directly: every outcome and fact
  * is runtime-validated and reconstructed into a fresh, exact copy so an accidental worker-only raw
- * field cannot cross the parent boundary. Spawn/timeout/signal/cancellation/nonzero failures and
+ * field cannot cross the parent boundary. Spawn/timeout/signal/nonzero failures and
  * malformed documents map to bounded `unavailable`/`invalid` outcomes that never carry stdout,
  * stderr, spawn-error, or source detail. A valid schema-v1 document always yields an outer
  * `available` outcome, preserving each component's usable result even when the other nested outcome
@@ -18,10 +18,26 @@
  */
 
 import {resolve} from "node:path";
-import type {ProcessOutcome} from "../common/runner.ts";
-import type {HostContainerFacts, HostCpuFacts, HostFacts, HostFilesystemFact, HostLoadFacts, HostMemoryFacts, HostNetworkFacts, HostOsFacts, HostPortOwnerFact, HostProcessFacts} from "./host.ts";
+
+import {Duration, Effect} from "effect";
+
+import {Environment} from "../platform/Environment.ts";
+import {Process, type ProcessError} from "../platform/Process.ts";
+import type {
+  HostContainerFacts,
+  HostCpuFacts,
+  HostFacts,
+  HostFilesystemFact,
+  HostLoadFacts,
+  HostMemoryFacts,
+  HostNetworkFacts,
+  HostOsFacts,
+  HostPortOwnerFact,
+  HostProcessFacts,
+} from "./host.ts";
 import type {PackageFact, ToolFact, ToolingFacts} from "./tooling.ts";
-import type {InspectionOutcome, InspectionProvider, InspectionProviderContext} from "./types.ts";
+import {timed} from "./session.ts";
+import type {InspectionOutcome, InspectionProvider} from "./types.ts";
 
 /** Deterministic aggregate facts: the tooling and host component outcomes, preserved independently. */
 export interface AggregateFacts {
@@ -39,8 +55,8 @@ export interface AggregateWorkerDocument {
 /** Bounded parent timeout applied to the aggregate worker invocation. */
 export const AGGREGATE_TIMEOUT_MS = 60_000;
 
-/** Dependencies required to create the isolated aggregate inspection provider. */
-interface AggregateProviderInput extends Pick<InspectionProviderContext, "runner" | "clock" | "environment"> {
+/** Inputs of the isolated aggregate inspection provider. */
+interface AggregateProviderInput {
   /** Repository root to inspect. */
   readonly root: string;
 }
@@ -55,27 +71,24 @@ const WORKER_TIMEOUT_REASON = "The aggregate inspection worker timed out.";
 const WORKER_EXIT_REASON = "The aggregate inspection worker exited unsuccessfully.";
 
 /**
- * Classifies one worker {@link ProcessOutcome} exhaustively into its bounded unavailable reason.
+ * Classifies one worker failure exhaustively into its bounded unavailable reason.
  *
  * @remarks
- * A signalled or cancelled child never produced a document either, so both are reported with the
- * same bounded exit evidence the legacy nonzero-exit branch used. No stdout, stderr, spawn message,
- * signal name, or exit code is ever echoed.
+ * A signalled child never produced a document either, so it is reported with the same bounded exit
+ * evidence as a nonzero exit. No stdout, stderr, spawn message, signal name, or exit code is ever
+ * echoed.
  *
- * @param outcome - Typed outcome of the isolated worker invocation.
- * @returns The bounded reason, or `undefined` when the worker completed successfully.
+ * @param error - Typed failure of the isolated worker invocation.
+ * @returns The bounded reason.
  */
-function workerFailureReason(outcome: Readonly<ProcessOutcome>): string | undefined {
-  switch (outcome.kind) {
-    case "succeeded":
-      return undefined;
-    case "spawn-failed":
+function workerFailureReason(error: ProcessError): string {
+  switch (error._tag) {
+    case "ProcessSpawnFailed":
       return WORKER_SPAWN_REASON;
-    case "timed-out":
+    case "ProcessTimedOut":
       return WORKER_TIMEOUT_REASON;
-    case "exited":
-    case "signalled":
-    case "cancelled":
+    case "ProcessExited":
+    case "ProcessSignalled":
       return WORKER_EXIT_REASON;
   }
 }
@@ -389,48 +402,59 @@ function reconstructAggregateFacts(value: unknown): AggregateFacts {
  * Creates the isolated aggregate inspection provider.
  *
  * @remarks
- * Each invocation resolves the repository root, runs `aggregate-worker.ts` as a native Node child
- * process with captured output and a {@link AGGREGATE_TIMEOUT_MS} timeout, and maps the typed
- * {@link ProcessOutcome} exhaustively: a spawn failure, timeout, signal, cancellation, or nonzero
+ * Each run resolves the repository root and runs `aggregate-worker.ts` as a native Node child
+ * process (`Environment.executablePath`) with captured output and a {@link AGGREGATE_TIMEOUT_MS}
+ * timeout. Every `Process` failure maps exhaustively: a spawn failure, timeout, signal, or nonzero
  * exit becomes a bounded outer `unavailable` outcome with no stdout/stderr/spawn-error detail;
  * empty, malformed, multiple-document, wrong-schema, or malformed nested outcome/fact output
  * becomes outer `invalid`; and a validated schema-v1 document becomes outer `available` whose value
- * preserves both reconstructed component outcomes even when one is `unavailable` or `invalid`.
+ * preserves both reconstructed component outcomes even when one is `unavailable` or `invalid`. The
+ * worker process runs as a child of the provider, so interrupting the provider stops it.
  *
- * @param input - Repository root plus the runner, clock, and environment capabilities.
+ * @param input - Repository root.
  * @returns An {@link InspectionProvider} for {@link AggregateFacts}.
  */
 export function createAggregateProvider(input: Readonly<AggregateProviderInput>): InspectionProvider<AggregateFacts> {
-  return async (): Promise<InspectionOutcome<AggregateFacts>> => {
-    const startedAt = input.clock.monotonicNow();
-    const resolvedRoot = resolve(input.root);
-    const resolvedWorkerPath = resolve(resolvedRoot, "scripts", "inspection", "aggregate-worker.ts");
+  return timed(
+    Effect.gen(function* () {
+      const environment = yield* Environment;
+      const process = yield* Process;
+      const resolvedRoot = resolve(input.root);
+      const resolvedWorkerPath = resolve(resolvedRoot, "scripts", "inspection", "aggregate-worker.ts");
 
-    const outcome = await input.runner.run(
-      {command: input.environment.executablePath, args: [resolvedWorkerPath, resolvedRoot]},
-      {cwd: resolvedRoot, output: "capture", timeoutMs: AGGREGATE_TIMEOUT_MS},
-    );
+      const result = yield* Effect.result(
+        process.run(
+          {command: environment.executablePath, args: [resolvedWorkerPath, resolvedRoot]},
+          {cwd: resolvedRoot, output: "capture", timeout: Duration.millis(AGGREGATE_TIMEOUT_MS)},
+        ),
+      );
+      if (result._tag === "Failure") {
+        return {
+          kind: "unavailable",
+          reason: workerFailureReason(result.failure),
+          durationMs: 0,
+        } satisfies InspectionOutcome<AggregateFacts>;
+      }
 
-    const durationMs = Math.max(0, input.clock.monotonicNow() - startedAt);
+      let parsedDocument: unknown;
+      try {
+        parsedDocument = JSON.parse(result.success.stdout.trim());
+      } catch {
+        return {
+          kind: "invalid",
+          issues: ["The aggregate worker did not emit a single valid JSON document."],
+          durationMs: 0,
+        } satisfies InspectionOutcome<AggregateFacts>;
+      }
 
-    const transportReason = workerFailureReason(outcome);
-    if (transportReason !== undefined) {
-      return {kind: "unavailable", reason: transportReason, durationMs};
-    }
-
-    let parsedDocument: unknown;
-    try {
-      parsedDocument = JSON.parse(outcome.stdout.trim());
-    } catch {
-      return {kind: "invalid", issues: ["The aggregate worker did not emit a single valid JSON document."], durationMs};
-    }
-
-    try {
-      const facts = reconstructAggregateFacts(parsedDocument);
-      return {kind: "available", value: facts, durationMs};
-    } catch (error: unknown) {
-      const message = error instanceof AggregateDocumentError ? error.message : "The aggregate worker document did not match the expected schema.";
-      return {kind: "invalid", issues: [message], durationMs};
-    }
-  };
+      try {
+        const facts = reconstructAggregateFacts(parsedDocument);
+        return {kind: "available", value: facts, durationMs: 0} satisfies InspectionOutcome<AggregateFacts>;
+      } catch (error: unknown) {
+        const message =
+          error instanceof AggregateDocumentError ? error.message : "The aggregate worker document did not match the expected schema.";
+        return {kind: "invalid", issues: [message], durationMs: 0} satisfies InspectionOutcome<AggregateFacts>;
+      }
+    }),
+  );
 }

@@ -9,22 +9,21 @@
  * its own working directory, never touches repository `.nx` state, and emits exactly one JSON
  * document on stdout and no other stdout output.
  *
- * The worker accepts only one fixed typed input (the repository root Commander decodes from its
- * single positional argument) and selects JSON presentation unconditionally: it exposes no
- * user-selected command, field list, or output mode. Its parent (`./workspace.ts`) classifies any
- * nonzero exit as an `unavailable` workspace outcome.
+ * The worker accepts only one fixed typed input (the repository root {@link decodeWorkerArgs} decodes
+ * from its single positional argument) and runs through `runWorker`, which selects JSON
+ * presentation unconditionally: it exposes no user-selected command, field list, or output mode. A
+ * malformed argument list is a usage failure (exit `2`); a missing or mismatched
+ * `NX_WORKSPACE_ROOT_PATH` or a failed graph construction exits `1` with its message on stderr.
+ * Its parent (`./workspace.ts`) classifies any nonzero exit as an `unavailable` workspace outcome.
  */
 
 import {resolve} from "node:path";
 
-import {
-  CommandInputError,
-  MonorepoCommand,
-  toJsonValue,
-  type CommandContext,
-  type CommandRuntimeFactory,
-  type JsonValue,
-} from "../common/commander.ts";
+import {Effect, Schema} from "effect";
+
+import {Environment} from "../platform/Environment.ts";
+import {toJsonValue, type JsonValue} from "../platform/Output.ts";
+import {runWorker, type WorkerOptions} from "../platform/worker.ts";
 
 /** The single fixed input the Nx workspace worker accepts. */
 export interface WorkspaceWorkerInput {
@@ -34,6 +33,16 @@ export interface WorkspaceWorkerInput {
 
 /** The single JSON document the Nx workspace worker emits on stdout. */
 export type WorkspaceWorkerDocument = JsonValue;
+
+/** The Nx workspace worker could not construct its document. */
+export class WorkspaceWorkerFailure extends Schema.TaggedError<WorkspaceWorkerFailure>()("WorkspaceWorkerFailure", {
+  message: Schema.String,
+}) {}
+
+/** The worker's argument vector is not exactly one non-blank repository root: a usage failure (exit `2`). */
+export class WorkspaceWorkerUsageError extends Schema.TaggedError<WorkspaceWorkerUsageError>()("WorkspaceWorkerUsageError", {
+  message: Schema.String,
+}) {}
 
 /**
  * Serializes the untrusted third-party Nx project graph exactly the way the previous
@@ -68,68 +77,67 @@ export function projectWorkerDocument(graph: unknown): WorkspaceWorkerDocument {
  * Validates the decoded repository root against `NX_WORKSPACE_ROOT_PATH` and constructs the
  * isolated Nx project graph.
  *
- * @param context - Owning command context supplying the immutable environment snapshot.
  * @param input - Decoded worker input.
- * @returns The validated single JSON document to emit.
- * @throws {Error} When `NX_WORKSPACE_ROOT_PATH` is missing, empty, or does not resolve to the same
- * path as the supplied repository root.
+ * @returns The validated single JSON document to emit; fails with {@link WorkspaceWorkerFailure}
+ * when `NX_WORKSPACE_ROOT_PATH` is missing, empty, or does not resolve to the same path as the
+ * supplied repository root (before `@nx/devkit` is imported), or when the graph cannot be
+ * constructed or projected.
  */
-async function collectWorkspaceWorkerDocument(
-  context: Readonly<CommandContext>,
+export function collectWorkspaceWorkerDocument(
   input: Readonly<WorkspaceWorkerInput>,
-): Promise<WorkspaceWorkerDocument> {
-  const workspaceRootEnvironmentValue = context.runtime.environment.variables["NX_WORKSPACE_ROOT_PATH"];
-  if (typeof workspaceRootEnvironmentValue !== "string" || workspaceRootEnvironmentValue.trim() === "") {
-    throw new Error("Nx workspace worker requires a non-empty NX_WORKSPACE_ROOT_PATH environment value.");
-  }
+): Effect.Effect<WorkspaceWorkerDocument, WorkspaceWorkerFailure, Environment> {
+  return Effect.gen(function* () {
+    const environment = yield* Environment;
+    const workspaceRootEnvironmentValue = environment.variables["NX_WORKSPACE_ROOT_PATH"];
+    if (typeof workspaceRootEnvironmentValue !== "string" || workspaceRootEnvironmentValue.trim() === "") {
+      return yield* new WorkspaceWorkerFailure({
+        message: "Nx workspace worker requires a non-empty NX_WORKSPACE_ROOT_PATH environment value.",
+      });
+    }
 
-  const resolvedArgumentRoot = resolve(input.repositoryRoot);
-  const resolvedEnvironmentRoot = resolve(workspaceRootEnvironmentValue);
-  if (resolvedArgumentRoot !== resolvedEnvironmentRoot) {
-    throw new Error("Nx workspace worker repository root argument does not match NX_WORKSPACE_ROOT_PATH.");
-  }
+    const resolvedArgumentRoot = resolve(input.repositoryRoot);
+    const resolvedEnvironmentRoot = resolve(workspaceRootEnvironmentValue);
+    if (resolvedArgumentRoot !== resolvedEnvironmentRoot) {
+      return yield* new WorkspaceWorkerFailure({
+        message: "Nx workspace worker repository root argument does not match NX_WORKSPACE_ROOT_PATH.",
+      });
+    }
 
-  const {createProjectGraphAsync} = await import("@nx/devkit");
-  const graph: unknown = await createProjectGraphAsync();
-  return projectWorkerDocument(graph);
+    return yield* Effect.tryPromise({
+      try: async () => {
+        const {createProjectGraphAsync} = await import("@nx/devkit");
+        const graph: unknown = await createProjectGraphAsync();
+        return projectWorkerDocument(graph);
+      },
+      catch: (error) =>
+        new WorkspaceWorkerFailure({message: error instanceof Error ? error.message : "Nx workspace graph construction failed."}),
+    });
+  });
 }
 
 /**
- * Creates the isolated Nx workspace worker command.
+ * Decodes the worker's argv into its single fixed input.
  *
- * @param runtimeFactory - Optional runtime factory; tests inject a fake instead of the Node adapter.
- * @returns The typed `inspection-workspace-worker` command object.
+ * @param argv - Worker arguments after the executable and script path.
+ * @returns The decoded worker input.
+ * @throws {WorkspaceWorkerUsageError} When `argv` is not exactly one non-blank repository root.
  */
-export function createWorkspaceWorkerCommand(
-  runtimeFactory?: CommandRuntimeFactory,
-): MonorepoCommand<WorkspaceWorkerInput, WorkspaceWorkerDocument> {
-  return new MonorepoCommand<WorkspaceWorkerInput, WorkspaceWorkerDocument>(
-    {
-      metadata: {
-        name: "inspection-workspace-worker",
-        description: "Emits the isolated Nx project graph for one repository root as a single JSON document.",
-        usage: "<repositoryRoot>",
-      },
-      configure: (program) => {
-        program.argument("[repositoryRoot]", "Absolute repository root whose Nx project graph is constructed.");
-      },
-      decode: (program) => {
-        const repositoryRoot = program.args[0];
-        if (program.args.length !== 1 || repositoryRoot === undefined || repositoryRoot.trim() === "") {
-          throw new CommandInputError("Nx workspace worker requires exactly one repository root argument.");
-        }
-        return {repositoryRoot};
-      },
-      presentation: () => "json",
-      execute: collectWorkspaceWorkerDocument,
-      completion: (document) => ({exitCode: 0, json: document}),
-    },
-    runtimeFactory,
-  );
+export function decodeWorkerArgs(argv: readonly string[]): WorkspaceWorkerInput {
+  const repositoryRoot = argv[0];
+  if (argv.length !== 1 || repositoryRoot === undefined || repositoryRoot.trim() === "") {
+    throw new WorkspaceWorkerUsageError({message: "Nx workspace worker requires exactly one repository root argument."});
+  }
+  return {repositoryRoot};
 }
 
-/** Production singleton used by this module's direct entrypoint. */
-export const workspaceWorkerCommand: MonorepoCommand<WorkspaceWorkerInput, WorkspaceWorkerDocument> =
-  createWorkspaceWorkerCommand();
+/** The `inspection-workspace-worker` definition its `import.meta.main` block runs with `runWorker`. */
+export const workspaceWorker: WorkerOptions<WorkspaceWorkerInput, WorkspaceWorkerDocument, WorkspaceWorkerFailure> = {
+  name: "inspection-workspace-worker",
+  decode: decodeWorkerArgs,
+  program: collectWorkspaceWorkerDocument,
+  encode: (document) => document,
+};
 
-await workspaceWorkerCommand.runIfMain(import.meta.url);
+if (import.meta.main) {
+  runWorker(workspaceWorker);
+}

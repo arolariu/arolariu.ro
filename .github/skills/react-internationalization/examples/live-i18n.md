@@ -7,7 +7,7 @@ These pointers are dynamic; inspect current source before changing a schema.
 - `sites/arolariu.ro/src/i18n/request.ts`
 - `sites/arolariu.ro/next.config.ts`
 - `sites/arolariu.ro/messages/en.d.json.ts`
-- `scripts/generate.i18n.ts`
+- `scripts/commands/generate/i18n.ts`
 
 The request config currently recognizes `en`, `ro`, and `fr`, defaults a
 missing cookie to `en`, and throws for an unsupported value. The next-intl

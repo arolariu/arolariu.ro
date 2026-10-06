@@ -1,46 +1,43 @@
+// @vitest-environment node
 /**
- * @fileoverview Tests for the declarative engine-aware selfhost orchestration command.
+ * @fileoverview Tests for the Effect engine-aware selfhost orchestration program.
  * @module scripts/container-runtime/selfhost.test
+ *
+ * @remarks
+ * Every case runs on the `selfhostFixture` harness (`./selfhost.testing.ts`): scripted preflight,
+ * stack, and bootstrap processes, the real artifact generation over scripted taxonomy sources, scripted
+ * Cosmos answers, a recording `LocalBlobStorage` layer, and an advancing test clock whose completed
+ * sleeps are recorded. The characterization cases drive the real `dev selfhost` CLI path (`runCli`);
+ * no module is mocked.
  */
 
 import {readFile} from "node:fs/promises";
-import {describe, expect, it, vi, type Mock} from "vitest";
-import type {CommandExecution, CommandInvoker, CommandRuntimeFactory} from "../common/commander.ts";
-import {InMemoryLoggerSink, MonorepositoryConsoleLogger, type MonorepositoryLogger} from "../common/logger.ts";
-import type {ProcessOutcome, ProcessRequest, ProcessRunOptions, ProcessRunner} from "../common/runner.ts";
-import {
-  createProcessRunner,
-  createRepositoryFixtureFileSystem,
-  createTestProcessHost,
-  createTestRuntimeFactory,
-  repositoryFixtureRoot,
-} from "../common/runtime.testing.ts";
-import {
-  CommandCancellation,
-  LifoCleanupRegistry,
-  type CleanupFailure,
-  type CleanupRegistry,
-  type Clock,
-  type FileSystem,
-  type RuntimeEnvironment,
-} from "../common/runtime.ts";
-import type {ArtifactGenerationResult, GenerateArtifactsInput} from "../generate.artifacts.ts";
+
+import {Duration, Effect, Exit, Fiber, Redacted} from "effect";
+import {TestClock} from "effect/testing";
+import {describe, expect, it} from "vitest";
+
+import type {ProbeOutcome} from "../inspection/probes.ts";
+import {exitCodeFor} from "../platform/exit.ts";
+import type {PlatformServices} from "../platform/layers.ts";
+import {effectTest, makeTestLayer} from "../platform/testing.ts";
 import {getContainerAdapter} from "./adapters.ts";
-import type {LocalStorageBootstrap} from "./selfhost.bootstrap.ts";
+import {cosmosBootstrapMaximumResponseBytes, type LocalBlobStorage} from "./selfhost.bootstrap.ts";
+import {
+  advancingClock,
+  SELFHOST_SQL_PASSWORD,
+  selfhostFixture,
+  type SelfhostFixture,
+  type SelfhostFixtureOptions,
+} from "./selfhost.testing.ts";
 import {
   buildLocalStorageBootstrapCommand,
   buildSelfhostPlan,
-  createSelfhostCommand,
   getRequiredSqlPassword,
-  selfhostCommand,
+  runSelfhost,
   shouldGenerateTaxonomyArtifacts,
 } from "./selfhost.ts";
-import {selfhostTraefikConfigPath} from "./traefik.ts";
 import type {SelfhostAction} from "./types.ts";
-
-const sqlPassword = "local-strong-password";
-const certFixturePath = "infra/Local/Management/certs/local-cert.pem";
-const keyFixturePath = "infra/Local/Management/certs/local-key.pem";
 
 const launcherCases = [
   {path: "../../infra/Local/selfhost-start.bat", action: "start", forwarding: "%*", shell: "batch"},
@@ -49,211 +46,68 @@ const launcherCases = [
   {path: "../../infra/Local/selfhost-stop.sh", action: "stop", forwarding: '"$@"', shell: "bash"},
 ] as const;
 
-function succeeded(stdout = ""): ProcessOutcome {
-  return {kind: "succeeded", exitCode: 0, stdout, stderr: "", durationMs: 0};
-}
+/** Number of Podman preflight probes: tool, Docker Desktop rejection, backend x2, compose, existing containers. */
+const podmanPreflightProbeCount = 6;
 
-function exited(code: number, stderr = ""): ProcessOutcome {
+function exited(code: number, stderr = ""): ProbeOutcome {
   return {kind: "exited", exitCode: code, stdout: "", stderr, durationMs: 0};
 }
 
-function cancelled(): ProcessOutcome {
-  return {kind: "cancelled", stdout: "", stderr: "", durationMs: 0};
-}
-
-function succeededTimes(count: number): readonly ProcessOutcome[] {
-  return Array.from({length: count}, () => succeeded());
-}
-
-/** One `succeeded` outcome per Podman preflight probe: tool, Docker Desktop rejection, backend x2, compose, existing containers. */
-const podmanPreflightProbeCount = 6;
-
-function environmentWith(variables: Readonly<Record<string, string | undefined>>): RuntimeEnvironment {
-  return {
-    variables,
-    cwd: repositoryFixtureRoot,
-    executablePath: "/usr/bin/node",
-    platform: "linux",
-    architecture: "x64",
-    stdinIsTTY: false,
-    stdoutIsTTY: false,
-    isCI: true,
-  };
-}
-
-type RecordingClock = Clock & Readonly<{delays: readonly number[]}>;
-
-function createRecordingClock(): RecordingClock {
-  const delays: number[] = [];
-
-  return {
-    monotonicNow: (): number => 0,
-    isoTimestamp: (): string => "2025-01-01T00:00:00.000Z",
-    delay: (milliseconds: number, signal?: AbortSignal): Promise<void> => {
-      delays.push(milliseconds);
-      return signal?.aborted === true ? Promise.reject(new CommandCancellation("Cancelled while waiting.", 130)) : Promise.resolve();
-    },
-    delays,
-  };
-}
-
-interface BootstrapCall {
-  readonly name: "ensureCosmos" | "ensureAzurite";
-  readonly runnerCalls: number;
-  readonly signal: AbortSignal;
-}
-
-interface RecordingBootstrap {
-  readonly bootstrap: LocalStorageBootstrap;
-  readonly calls: readonly BootstrapCall[];
+/**
+ * Formats every engine, mkcert, and dotnet process call of a fixture (the artifact `unzip` excluded).
+ *
+ * @param fixture - The selfhost fixture.
+ * @returns `command args…` per call, in order.
+ */
+function formatCalls(fixture: SelfhostFixture): readonly string[] {
+  return fixture.harness
+    .processCalls()
+    .filter((call) => call.request.command !== "unzip")
+    .map((call) => [call.request.command, ...call.request.args].join(" "));
 }
 
 /**
- * Creates a local storage bootstrap fake that records call order relative to the process runner.
+ * Formats the process calls after the Podman preflight.
  *
- * @param runner - Runner whose recorded call count is captured with each bootstrap call.
- * @param behavior - Optional failure behavior layered over the recording fake.
- * @returns A recording bootstrap that never reaches Cosmos or Azurite.
+ * @param fixture - The selfhost fixture.
+ * @returns `command args…` per business call, in order.
  */
-function createRecordingBootstrap(
-  runner: Readonly<{calls: readonly unknown[]}>,
-  behavior: Readonly<Partial<LocalStorageBootstrap>> = {},
-): RecordingBootstrap {
-  const calls: BootstrapCall[] = [];
-
-  return {
-    calls,
-    bootstrap: {
-      ensureCosmos: async (signal: AbortSignal): Promise<void> => {
-        calls.push({name: "ensureCosmos", runnerCalls: runner.calls.length, signal});
-        await behavior.ensureCosmos?.(signal);
-      },
-      ensureAzurite: async (signal: AbortSignal): Promise<void> => {
-        calls.push({name: "ensureAzurite", runnerCalls: runner.calls.length, signal});
-        await behavior.ensureAzurite?.(signal);
-      },
-    },
-  };
-}
-
-type ArtifactsInvoke = CommandInvoker<GenerateArtifactsInput, ArtifactGenerationResult>["invoke"];
-type ArtifactsStub = CommandInvoker<GenerateArtifactsInput, ArtifactGenerationResult> & Readonly<{invoke: Mock<ArtifactsInvoke>}>;
-
-/**
- * Creates a typed artifacts stub recording every composed invocation.
- *
- * @param implementation - Behavior the stub replays; defaults to a completed, successful result.
- * @returns A recording {@link CommandInvoker}.
- */
-function createArtifactsStub(implementation?: ArtifactsInvoke): ArtifactsStub {
-  const invoke = vi.fn<ArtifactsInvoke>(
-    implementation
-      ?? ((): Promise<CommandExecution<ArtifactGenerationResult>> =>
-        Promise.resolve({
-          status: "completed",
-          value: {summary: "Generated 5 artifact file(s).", generatedFiles: []},
-          exitCode: 0,
-        })),
-  );
-  return {invoke};
-}
-
-type RecordingCleanupRegistry = CleanupRegistry & Readonly<{labels: readonly string[]}>;
-
-/**
- * Creates a cleanup registry that records every registered label.
- *
- * @param onDrain - Optional additional failures appended to the drained result.
- * @returns A LIFO cleanup registry exposing its registration labels.
- */
-function createRecordingCleanupRegistry(onDrain?: readonly CleanupFailure[]): RecordingCleanupRegistry {
-  const inner = new LifoCleanupRegistry();
-  const labels: string[] = [];
-
-  return {
-    labels,
-    register: (label: string, cleanup: () => void | Promise<void>): (() => void) => {
-      labels.push(label);
-      return inner.register(label, cleanup);
-    },
-    drain: async (): Promise<readonly CleanupFailure[]> => [...(await inner.drain()), ...(onDrain ?? [])],
-  };
-}
-
-type RecordedRunner = ProcessRunner & Readonly<{calls: readonly Readonly<{request: ProcessRequest; options: ProcessRunOptions}>[]}>;
-
-interface HarnessOptions {
-  readonly outcomes?: readonly ProcessOutcome[];
-  readonly variables?: Readonly<Record<string, string | undefined>>;
-  readonly files?: FileSystem;
-  readonly cleanup?: CleanupRegistry;
-  readonly bootstrapBehavior?: Readonly<Partial<LocalStorageBootstrap>>;
-  readonly artifacts?: ArtifactsStub;
-}
-
-interface SelfhostHarness {
-  readonly command: ReturnType<typeof createSelfhostCommand>;
-  readonly runner: RecordedRunner;
-  readonly clock: RecordingClock;
-  readonly files: FileSystem;
-  readonly logger: MonorepositoryLogger;
-  readonly sink: InMemoryLoggerSink;
-  readonly bootstrap: RecordingBootstrap;
-  readonly artifacts: ArtifactsStub;
-  readonly runtimeFactory: CommandRuntimeFactory;
+function businessCalls(fixture: SelfhostFixture): readonly string[] {
+  return formatCalls(fixture).slice(podmanPreflightProbeCount);
 }
 
 /**
- * Builds a fully faked selfhost command harness with no real infrastructure access.
+ * Reads the recorded sleeps of a fixture.
  *
- * @param options - Optional scripted outcomes, environment, filesystem, and cleanup overrides.
- * @returns The command under test and every recording fake it was built with.
+ * @param fixture - The selfhost fixture.
+ * @returns Every completed sleep in milliseconds, in order.
  */
-function createHarness(options: Readonly<HarnessOptions> = {}): SelfhostHarness {
-  const runner = createProcessRunner(options.outcomes ?? []);
-  const clock = createRecordingClock();
-  const files = options.files ?? createRepositoryFixtureFileSystem({[certFixturePath]: "local-cert", [keyFixturePath]: "local-key"});
-  const sink = new InMemoryLoggerSink();
-  const logger = new MonorepositoryConsoleLogger("test", {color: false, sink});
-  const bootstrap = createRecordingBootstrap(runner, options.bootstrapBehavior ?? {});
-  const artifacts = options.artifacts ?? createArtifactsStub();
-  const environment = environmentWith(options.variables ?? {MSSQL_SA_PASSWORD: sqlPassword});
-  const runtimeFactory = createTestRuntimeFactory({
-    runner,
-    clock,
-    files,
-    logger,
-    environment,
-    ...(options.cleanup === undefined ? {} : {cleanup: options.cleanup}),
-  });
-
-  return {
-    command: createSelfhostCommand({runtimeFactory, bootstrap: bootstrap.bootstrap, artifacts}),
-    runner,
-    clock,
-    files,
-    logger,
-    sink,
-    bootstrap,
-    artifacts,
-    runtimeFactory,
-  };
+function delays(fixture: SelfhostFixture): readonly unknown[] {
+  return fixture.timeline().flatMap((event) => ("delay" in event ? [event["delay"]] : []));
 }
 
-function formatCalls(runner: RecordedRunner): readonly string[] {
-  return runner.calls.map((call) => [call.request.command, ...call.request.args].join(" "));
-}
-
-function businessCalls(runner: RecordedRunner): readonly string[] {
-  return formatCalls(runner).slice(podmanPreflightProbeCount);
+/**
+ * Registers a case that runs `runSelfhost(input)` (or a custom body) on a fresh fixture.
+ *
+ * @param name - The test name.
+ * @param options - Fixture options.
+ * @param body - Builds the effect from the fixture; it runs instrumented under an advancing clock.
+ */
+function selfhostTest(
+  name: string,
+  options: SelfhostFixtureOptions,
+  body: (fixture: SelfhostFixture) => Effect.Effect<void, unknown, PlatformServices | LocalBlobStorage | TestClock.TestClock>,
+): void {
+  const fixture = selfhostFixture(options);
+  effectTest(name, () => advancingClock(fixture.instrument(body(fixture))), fixture.harness.layer);
 }
 
 describe("supported selfhost launchers", () => {
   it.each(launcherCases)(
-    "routes $path through the TypeScript entrypoint with argument and exit-code propagation",
+    "routes $path through the effect cli entrypoint with argument and exit-code propagation",
     async ({path, action, forwarding, shell}) => {
       const source = await readFile(new URL(path, import.meta.url), "utf8");
-      const command = `node scripts/container-runtime/selfhost.ts ${action} ${forwarding}`;
+      const command = `node scripts/cli.ts dev selfhost ${action} ${forwarding}`;
 
       expect(source).not.toContain("scripts/dev-selfhost.mjs");
       expect(source).toContain(command);
@@ -261,7 +115,7 @@ describe("supported selfhost launchers", () => {
       if (shell === "batch") {
         expect(source).toContain('pushd "%~dp0..\\.."');
         expect(source).toMatch(
-          /node scripts\/container-runtime\/selfhost\.ts (?:start|stop) %\*\r?\nset "EXIT_CODE=%ERRORLEVEL%"\r?\npopd\r?\nexit \/b %EXIT_CODE%/,
+          /node scripts\/cli\.ts dev selfhost (?:start|stop) %\*\r?\nset "EXIT_CODE=%ERRORLEVEL%"\r?\npopd\r?\nexit \/b %EXIT_CODE%/,
         );
       } else {
         expect(source).toContain("set -euo pipefail");
@@ -328,378 +182,756 @@ describe("shouldGenerateTaxonomyArtifacts", () => {
 });
 
 describe("getRequiredSqlPassword", () => {
-  it("reads the SQL password from the supplied environment snapshot", () => {
-    expect(getRequiredSqlPassword({MSSQL_SA_PASSWORD: sqlPassword})).toBe(sqlPassword);
-  });
+  effectTest(
+    "reads the SQL password from the environment as a redacted value",
+    () =>
+      Effect.gen(function* () {
+        // Act
+        const password = yield* getRequiredSqlPassword;
 
-  it.each([undefined, "", "   "])("rejects a missing or blank SQL password (%s)", (value) => {
-    expect(() => getRequiredSqlPassword({MSSQL_SA_PASSWORD: value})).toThrow("MSSQL_SA_PASSWORD environment variable is required");
-  });
-});
-
-describe("createSelfhostCommand start", () => {
-  it("runs preflight, then the exact engine-owned stack commands in management, storage, backend, frontend order", async () => {
-    const harness = createHarness();
-
-    const execution = await harness.command.invoke({action: "start", engine: "podman"});
-
-    expect(execution).toMatchObject({
-      status: "completed",
-      exitCode: 0,
-      value: {action: "start", engine: "podman", stacks: ["management", "storage", "profile", "backend", "frontend"]},
-    });
-    expect(businessCalls(harness.runner)).toEqual([
-      "podman compose -f Management/docker-compose.yml up -d",
-      "podman compose -f Storage/docker-compose.yml --profile selfhost up -d",
-      `podman exec mssql /opt/mssql-tools/bin/sqlcmd -C -S localhost -U sa -P ${sqlPassword} -d master -i /usr/sql/sqlSchema.sql -No`,
-      "dotnet run --project ../../tooling/LocalDevelopment.Bootstrap -- --ensure-storage-only",
-      "podman compose -f Backend/docker-compose.yml up -d",
-      "podman compose -f Frontend/docker-compose.yml up -d",
-    ]);
-    expect(harness.runner.calls.at(-1)?.options).toMatchObject({cwd: "infra/Local", output: "tee", logCommands: true});
-  });
-
-  it("waits 10 seconds for storage readiness and 3 seconds between stack operations", async () => {
-    const harness = createHarness();
-
-    await harness.command.invoke({action: "start", engine: "podman"});
-
-    expect(harness.clock.delays).toEqual([3_000, 10_000, 3_000, 3_000, 3_000]);
-  });
-
-  it("bootstraps SQL, Cosmos, Azurite, and local storage in order after the storage wait", async () => {
-    const harness = createHarness();
-
-    await harness.command.invoke({action: "start", engine: "podman"});
-
-    expect(harness.bootstrap.calls.map((call) => [call.name, call.runnerCalls])).toEqual([
-      ["ensureCosmos", podmanPreflightProbeCount + 3],
-      ["ensureAzurite", podmanPreflightProbeCount + 3],
-    ]);
-    expect(harness.runner.calls[podmanPreflightProbeCount + 3]?.options.env).toEqual({
-      DOTNET_ENVIRONMENT: "Development",
-      INFRA: "local",
-      ConnectionStrings__blobs: "UseDevelopmentStorage=true",
-      ConnectionStrings__queues: "UseDevelopmentStorage=true",
-    });
-  });
-
-  it("generates taxonomy artifacts exactly once, before any stack command", async () => {
-    const harness = createHarness();
-
-    await harness.command.invoke({action: "start", engine: "podman"});
-
-    expect(harness.artifacts.invoke).toHaveBeenCalledTimes(1);
-    expect(harness.artifacts.invoke).toHaveBeenCalledWith({verbose: false}, expect.objectContaining({presentation: "silent"}));
-  });
-
-  it("stops before any stack command when the artifact prerequisite fails", async () => {
-    const artifacts = createArtifactsStub(() =>
-      Promise.resolve({
-        status: "failed",
-        failure: {kind: "operational", message: "taxonomy source unavailable", evidence: []},
-        exitCode: 1,
+        // Assert
+        expect(Redacted.value(password)).toBe(SELFHOST_SQL_PASSWORD);
+        expect(String(password)).not.toContain(SELFHOST_SQL_PASSWORD);
       }),
+    makeTestLayer({environment: {variables: {MSSQL_SA_PASSWORD: SELFHOST_SQL_PASSWORD}}}).layer,
+  );
+
+  for (const value of [undefined, "", "   "]) {
+    effectTest(
+      `rejects a missing or blank SQL password (${JSON.stringify(value)})`,
+      () =>
+        Effect.gen(function* () {
+          // Act
+          const error = yield* Effect.flip(getRequiredSqlPassword);
+
+          // Assert
+          expect(error).toMatchObject({
+            _tag: "ContainerRuntimeError",
+            message:
+              "MSSQL_SA_PASSWORD environment variable is required for selfhost SQL bootstrap. Set it in your shell/session environment only; do not commit it to .env files, launch profiles, or source control.",
+          });
+        }),
+      makeTestLayer({environment: {variables: value === undefined ? {} : {MSSQL_SA_PASSWORD: value}}}).layer,
     );
-    const harness = createHarness({artifacts});
-
-    const execution = await harness.command.invoke({action: "start", engine: "podman"});
-
-    expect(execution).toMatchObject({status: "failed", exitCode: 1});
-    expect(execution.status === "failed" ? execution.failure.message : "").toContain("taxonomy source unavailable");
-    expect(harness.runner.calls).toHaveLength(podmanPreflightProbeCount);
-  });
-
-  it("requires the SQL password before starting any stack", async () => {
-    const harness = createHarness({variables: {}});
-
-    const execution = await harness.command.invoke({action: "start", engine: "podman"});
-
-    expect(execution).toMatchObject({status: "failed", exitCode: 1});
-    expect(execution.status === "failed" ? execution.failure.message : "").toContain("MSSQL_SA_PASSWORD environment variable is required");
-    expect(harness.runner.calls).toHaveLength(podmanPreflightProbeCount);
-    expect(harness.bootstrap.calls).toEqual([]);
-  });
-
-  it("writes the generated Traefik config and keeps it as requested persistent state", async () => {
-    const harness = createHarness();
-
-    await harness.command.invoke({action: "start", engine: "podman"});
-
-    await expect(harness.files.readText(selfhostTraefikConfigPath)).resolves.toContain("website-localhost");
-  });
-
-  it("keeps started stacks and the generated Traefik config when a later stack fails", async () => {
-    const harness = createHarness({
-      outcomes: [...succeededTimes(podmanPreflightProbeCount + 5), exited(1, "frontend stack refused to start")],
-    });
-
-    const execution = await harness.command.invoke({action: "start", engine: "podman"});
-
-    expect(execution).toMatchObject({status: "failed", exitCode: 1, failure: {kind: "operational"}});
-    await expect(harness.files.exists(selfhostTraefikConfigPath)).resolves.toBe(true);
-    expect(businessCalls(harness.runner).some((call) => call.includes("down"))).toBe(false);
-    expect(harness.runner.calls).toHaveLength(podmanPreflightProbeCount + 6);
-  });
-
-  it("registers no invocation cleanup for started stacks or the generated Traefik config", async () => {
-    const cleanup = createRecordingCleanupRegistry();
-    const harness = createHarness({cleanup});
-
-    await harness.command.invoke({action: "start", engine: "podman"});
-
-    // Started stacks and the generated Traefik file are requested persistent state, and this
-    // invocation creates no transient resource of its own, so nothing is registered at all.
-    expect(cleanup.labels).toEqual([]);
-  });
-
-  it("preserves the initiating failure and appends cleanup evidence when transient cleanup fails", async () => {
-    const cleanup = createRecordingCleanupRegistry([
-      {label: "transient bootstrap listener", message: "listener teardown failed", cause: new Error("listener teardown failed")},
-    ]);
-    const harness = createHarness({
-      cleanup,
-      outcomes: [...succeededTimes(podmanPreflightProbeCount + 5), exited(1, "frontend stack refused to start")],
-    });
-
-    const execution = await harness.command.invoke({action: "start", engine: "podman"});
-
-    expect(execution.status).toBe("failed");
-    const failure = execution.status === "failed" ? execution.failure : undefined;
-    expect(failure?.kind).toBe("operational");
-    expect(failure?.evidence.at(-1)).toBe("transient bootstrap listener: listener teardown failed");
-  });
-
-  it("preserves the invocation's cancellation reason when a stack command is cancelled on an aborted invocation", async () => {
-    const controller = new AbortController();
-    controller.abort(new CommandCancellation("Terminated by test signal.", 143));
-    const harness = createHarness({outcomes: [...succeededTimes(podmanPreflightProbeCount), cancelled()]});
-
-    const execution = await harness.command.invoke({action: "start", engine: "podman"}, {signal: controller.signal});
-
-    expect(execution).toMatchObject({
-      status: "cancelled",
-      exitCode: 143,
-      failure: {kind: "cancelled", message: "Terminated by test signal."},
-    });
-  });
+  }
 });
 
-describe("createSelfhostCommand HTTPS certificates", () => {
-  it("generates trusted localhost certificates through mkcert when they are missing", async () => {
-    const harness = createHarness({files: createRepositoryFixtureFileSystem()});
+describe("runSelfhost start", () => {
+  selfhostTest("runs preflight, then the exact engine-owned stack and bootstrap commands in order", {}, (fixture) =>
+    Effect.gen(function* () {
+      // Act
+      const result = yield* runSelfhost({action: "start", engine: "podman"});
 
-    await harness.command.invoke({action: "start", engine: "podman"});
+      // Assert
+      expect(result).toEqual({action: "start", engine: "podman", stacks: ["management", "storage", "profile", "backend", "frontend"]});
+      expect(businessCalls(fixture)).toEqual([
+        "podman compose -f Management/docker-compose.yml up -d",
+        "podman compose -f Storage/docker-compose.yml --profile selfhost up -d",
+        "podman exec -e SQLCMDPASSWORD mssql /opt/mssql-tools/bin/sqlcmd -C -S localhost -U sa -d master -i /usr/sql/sqlSchema.sql -No",
+        "dotnet run --project ../../tooling/LocalDevelopment.Bootstrap -- --ensure-storage-only",
+        "podman compose -f Backend/docker-compose.yml up -d",
+        "podman compose -f Frontend/docker-compose.yml up -d",
+      ]);
+      expect(fixture.harness.processCalls().at(-1)?.options).toEqual({cwd: "infra/Local", output: "tee", echo: false});
+    }),
+  );
 
-    expect(businessCalls(harness.runner).slice(0, 3)).toEqual([
-      "mkcert --version",
-      "mkcert -install",
-      "mkcert -key-file Management/certs/local-key.pem -cert-file Management/certs/local-cert.pem localhost *.localhost",
-    ]);
-    expect(harness.runner.calls[podmanPreflightProbeCount]?.options.cwd).toBeUndefined();
-    expect(harness.runner.calls[podmanPreflightProbeCount + 1]?.options.cwd).toBe("infra/Local");
-  });
+  selfhostTest("waits 10 seconds for storage readiness and 3 seconds after each stack operation", {}, (fixture) =>
+    Effect.gen(function* () {
+      // Act
+      yield* runSelfhost({action: "start", engine: "podman"});
 
-  it("warns and continues with Traefik defaults when mkcert is unavailable", async () => {
-    const harness = createHarness({
-      files: createRepositoryFixtureFileSystem(),
-      outcomes: [...succeededTimes(podmanPreflightProbeCount), exited(1, "mkcert: command not found")],
-    });
+      // Assert
+      expect(delays(fixture)).toEqual([3_000, 10_000, 3_000, 3_000, 3_000]);
+    }),
+  );
 
-    const execution = await harness.command.invoke({action: "start", engine: "podman"});
+  selfhostTest("bootstraps SQL, Cosmos, Azurite, and local storage in order after the storage wait", {}, (fixture) =>
+    Effect.gen(function* () {
+      // Act
+      yield* runSelfhost({action: "start", engine: "podman"});
 
-    expect(execution).toMatchObject({status: "completed", exitCode: 0});
-    expect(businessCalls(harness.runner)).toEqual([
-      "mkcert --version",
-      "podman compose -f Management/docker-compose.yml up -d",
-      "podman compose -f Storage/docker-compose.yml --profile selfhost up -d",
-      `podman exec mssql /opt/mssql-tools/bin/sqlcmd -C -S localhost -U sa -P ${sqlPassword} -d master -i /usr/sql/sqlSchema.sql -No`,
-      "dotnet run --project ../../tooling/LocalDevelopment.Bootstrap -- --ensure-storage-only",
-      "podman compose -f Backend/docker-compose.yml up -d",
-      "podman compose -f Frontend/docker-compose.yml up -d",
-    ]);
-    expect(harness.sink.records.some((record) => record.text.includes("mkcert is not available"))).toBe(true);
-  });
+      // Assert
+      const steps = fixture
+        .timeline()
+        .map((event) => event["process"] ?? event["http"] ?? event["blob"] ?? ("delay" in event ? "delay" : event["fs"]));
+      const storage = steps.indexOf("delay", steps.indexOf("delay") + 1);
+      expect(steps.slice(storage, storage + 9)).toEqual([
+        "delay",
+        "podman",
+        "POST",
+        "POST",
+        "POST",
+        "connect",
+        "ensureContainer",
+        "applyCorsPolicy",
+        "dotnet",
+      ]);
+      expect(fixture.harness.processCalls().find((call) => call.request.command === "dotnet")?.options.env).toEqual({
+        DOTNET_ENVIRONMENT: "Development",
+        INFRA: "local",
+        ConnectionStrings__blobs: "UseDevelopmentStorage=true",
+        ConnectionStrings__queues: "UseDevelopmentStorage=true",
+      });
+    }),
+  );
+
+  selfhostTest("generates taxonomy artifacts silently, once, after preflight and before any stack command", {}, (fixture) =>
+    Effect.gen(function* () {
+      // Act
+      yield* runSelfhost({action: "start", engine: "podman"});
+
+      // Assert
+      const commands = fixture.harness.processCalls().map((call) => call.request.command);
+      expect(commands.filter((command) => command === "unzip")).toHaveLength(1);
+      expect(commands.indexOf("unzip")).toBe(podmanPreflightProbeCount);
+      expect(fixture.harness.httpCalls()).toHaveLength(3);
+      expect(fixture.harness.output().some((record) => record.text.includes("artifact"))).toBe(false);
+    }),
+  );
+
+  selfhostTest("stops before any stack command when the artifact prerequisite fails", {taxonomy: "unavailable"}, (fixture) =>
+    Effect.gen(function* () {
+      // Act
+      const error = yield* Effect.flip(runSelfhost({action: "start", engine: "podman"}));
+
+      // Assert
+      expect(error._tag).toBe("TaxonomySourceUnavailable");
+      expect(formatCalls(fixture)).toHaveLength(podmanPreflightProbeCount);
+      expect(fixture.traefik()).toBeNull();
+    }),
+  );
+
+  selfhostTest("requires the SQL password before starting any stack", {variables: {}}, (fixture) =>
+    Effect.gen(function* () {
+      // Act
+      const error = yield* Effect.flip(runSelfhost({action: "start", engine: "podman"}));
+
+      // Assert
+      expect(error).toMatchObject({_tag: "ContainerRuntimeError"});
+      expect(error.message).toContain("MSSQL_SA_PASSWORD environment variable is required");
+      expect(formatCalls(fixture)).toHaveLength(podmanPreflightProbeCount);
+      expect(fixture.cosmosCalls()).toEqual([]);
+      expect(fixture.traefik()).toBeNull();
+    }),
+  );
+
+  selfhostTest("writes the generated Traefik config and keeps it as requested persistent state", {}, (fixture) =>
+    Effect.gen(function* () {
+      // Act
+      yield* runSelfhost({action: "start", engine: "podman"});
+
+      // Assert
+      expect(fixture.traefik()).toContain("website-localhost");
+    }),
+  );
+
+  selfhostTest(
+    "keeps started stacks and the generated Traefik config when a later stack fails",
+    {
+      process: (_command, args) =>
+        args.includes("Frontend/docker-compose.yml") ? exited(1, "frontend stack refused to start") : succeededAnswer(),
+    },
+    (fixture) =>
+      Effect.gen(function* () {
+        // Act
+        const error = yield* Effect.flip(runSelfhost({action: "start", engine: "podman"}));
+
+        // Assert
+        expect(error._tag).toBe("ProcessExited");
+        expect(fixture.traefik()).not.toBeNull();
+        expect(businessCalls(fixture).some((call) => call.includes("down"))).toBe(false);
+        expect(businessCalls(fixture)).toHaveLength(6);
+      }),
+  );
+
+  selfhostTest(
+    "fails with a step-only message when the SQL schema bootstrap fails",
+    {process: (_command, args) => (args.includes("/opt/mssql-tools/bin/sqlcmd") ? exited(1) : succeededAnswer())},
+    (fixture) =>
+      Effect.gen(function* () {
+        // Act
+        const error = yield* Effect.flip(runSelfhost({action: "start", engine: "podman"}));
+
+        // Assert
+        expect(error).toMatchObject({
+          _tag: "ContainerRuntimeError",
+          message: "SQL Server schema bootstrap failed: podman exec mssql sqlcmd exited with code 1.",
+        });
+        expect(fixture.cosmosCalls()).toEqual([]);
+      }),
+  );
+
+  for (const [answer, expected] of [
+    [{kind: "signalled", signal: "SIGKILL", stdout: "", stderr: "", durationMs: 0}, "was terminated by SIGKILL."],
+    [{kind: "spawn-failed", message: "spawn podman ENOENT", stdout: "", stderr: "", durationMs: 0}, "failed to start."],
+    [{kind: "timed-out", stdout: "", stderr: "", durationMs: 0}, "timed out."],
+  ] as const satisfies readonly (readonly [ProbeOutcome, string])[]) {
+    selfhostTest(
+      `describes a ${answer.kind} SQL schema bootstrap without its command line`,
+      {process: (_command, args) => (args.includes("/opt/mssql-tools/bin/sqlcmd") ? answer : succeededAnswer())},
+      () =>
+        Effect.gen(function* () {
+          // Act
+          const error = yield* Effect.flip(runSelfhost({action: "start", engine: "podman"}));
+
+          // Assert
+          expect(error.message).toBe(`SQL Server schema bootstrap failed: podman exec mssql sqlcmd ${expected}`);
+        }),
+    );
+  }
+
+  selfhostTest(
+    "bounds the cosmos bootstrap response",
+    {cosmos: () => ({status: 201, body: "x".repeat(cosmosBootstrapMaximumResponseBytes + 1)})},
+    (fixture) =>
+      Effect.gen(function* () {
+        // Act
+        const error = yield* Effect.flip(runSelfhost({action: "start", engine: "podman"}));
+
+        // Assert
+        expect(error).toMatchObject({
+          _tag: "ContainerRuntimeError",
+          message:
+            "Cosmos bootstrap failed. Ensure the cosmosdb container is running and reachable at http://localhost:8081. Original error: Response exceeded the 65536 byte limit.",
+        });
+        expect(fixture.cosmosCalls()).toEqual(["/dbs"]);
+      }),
+  );
+
+  {
+    const fixture = selfhostFixture({cosmos: () => "never"});
+    effectTest(
+      "stops the bootstrap immediately and keeps the Traefik config when interrupted",
+      () =>
+        Effect.gen(function* () {
+          // Arrange
+          const fiber = yield* forkStartUntil(fixture, () => fixture.cosmosCalls().length > 0);
+          yield* TestClock.adjust(Duration.seconds(6));
+
+          // Act
+          const exit = yield* Fiber.interrupt(fiber).pipe(Effect.andThen(Fiber.await(fiber)));
+          yield* TestClock.adjust(Duration.seconds(30));
+
+          // Assert
+          expect(Exit.hasInterrupts(exit)).toBe(true);
+          expect(fixture.cosmosCalls()).toEqual(["/dbs"]);
+          expect(fixture.timeline().some((event) => "blob" in event)).toBe(false);
+          expect(formatCalls(fixture).some((call) => call.startsWith("dotnet"))).toBe(false);
+          // Requested persistent state, as in the legacy command: no compensating cleanup.
+          expect(fixture.traefik()).not.toBeNull();
+        }),
+      fixture.harness.layer,
+    );
+  }
+
+  {
+    const fixture = selfhostFixture();
+    effectTest(
+      "stops during the storage readiness wait when interrupted",
+      () =>
+        Effect.gen(function* () {
+          // Arrange
+          const fiber = yield* forkStartUntil(fixture, () =>
+            formatCalls(fixture).some((call) => call.includes("Storage/docker-compose.yml")),
+          );
+          yield* TestClock.adjust(Duration.seconds(5));
+
+          // Act
+          const exit = yield* Fiber.interrupt(fiber).pipe(Effect.andThen(Fiber.await(fiber)));
+          yield* TestClock.adjust(Duration.seconds(30));
+
+          // Assert
+          expect(Exit.hasInterrupts(exit)).toBe(true);
+          expect(businessCalls(fixture)).toEqual([
+            "podman compose -f Management/docker-compose.yml up -d",
+            "podman compose -f Storage/docker-compose.yml --profile selfhost up -d",
+          ]);
+          expect(fixture.cosmosCalls()).toEqual([]);
+          expect(delays(fixture)).toEqual([3_000]);
+        }),
+      fixture.harness.layer,
+    );
+  }
 });
 
-describe("createSelfhostCommand stop", () => {
-  it("stops stacks in reverse order, removes the generated Traefik config, and skips artifacts and bootstrap", async () => {
-    const files = createRepositoryFixtureFileSystem({[certFixturePath]: "local-cert", [keyFixturePath]: "local-key"});
-    await createHarness({files}).command.invoke({action: "start", engine: "podman"});
-    await expect(files.exists(selfhostTraefikConfigPath)).resolves.toBe(true);
-    const started = createHarness({files});
+/**
+ * Forks an instrumented `runSelfhost({action: "start"})` and advances the test clock until `ready`.
+ *
+ * @param fixture - The selfhost fixture.
+ * @param ready - Decides when the run reached the step under test.
+ * @returns The running fiber.
+ */
+function forkStartUntil(
+  fixture: SelfhostFixture,
+  ready: () => boolean,
+): Effect.Effect<Fiber.Fiber<unknown, unknown>, never, PlatformServices | TestClock.TestClock> {
+  return Effect.gen(function* () {
+    const fiber = yield* Effect.forkChild(fixture.instrument(runSelfhost({action: "start", engine: "podman"})));
+    while (!ready()) {
+      yield* TestClock.adjust(Duration.millis(500));
+      yield* Effect.promise(() => new Promise<void>((settle) => setTimeout(settle, 0)));
+    }
+    return fiber;
+  });
+}
 
-    const execution = await started.command.invoke({action: "stop", engine: "podman"});
+describe("runSelfhost HTTPS certificates", () => {
+  selfhostTest("generates trusted localhost certificates through mkcert when they are missing", {files: {}}, (fixture) =>
+    Effect.gen(function* () {
+      // Act
+      yield* runSelfhost({action: "start", engine: "podman"});
 
-    expect(execution).toMatchObject({
-      status: "completed",
+      // Assert
+      expect(businessCalls(fixture).slice(0, 3)).toEqual([
+        "mkcert --version",
+        "mkcert -install",
+        "mkcert -key-file Management/certs/local-key.pem -cert-file Management/certs/local-cert.pem localhost *.localhost",
+      ]);
+      const calls = fixture.harness.processCalls().filter((call) => call.request.command === "mkcert");
+      expect(calls.map((call) => call.options)).toEqual([
+        {},
+        {cwd: "infra/Local", output: "tee", echo: false},
+        {cwd: "infra/Local", output: "tee", echo: false},
+      ]);
+      expect(fixture.timeline().filter((event) => event["fs"] === "makeDirectory")[0]).toEqual({
+        fs: "makeDirectory",
+        path: "infra/Local/Management/certs",
+        options: {recursive: true},
+      });
+    }),
+  );
+
+  selfhostTest(
+    "warns and continues with Traefik defaults when mkcert is unavailable",
+    {files: {}, process: (command) => (command === "mkcert" ? exited(1, "mkcert: command not found") : succeededAnswer())},
+    (fixture) =>
+      Effect.gen(function* () {
+        // Act
+        const result = yield* runSelfhost({action: "start", engine: "podman"});
+
+        // Assert
+        expect(result.action).toBe("start");
+        expect(businessCalls(fixture)).toEqual([
+          "mkcert --version",
+          "podman compose -f Management/docker-compose.yml up -d",
+          "podman compose -f Storage/docker-compose.yml --profile selfhost up -d",
+          "podman exec -e SQLCMDPASSWORD mssql /opt/mssql-tools/bin/sqlcmd -C -S localhost -U sa -d master -i /usr/sql/sqlSchema.sql -No",
+          "dotnet run --project ../../tooling/LocalDevelopment.Bootstrap -- --ensure-storage-only",
+          "podman compose -f Backend/docker-compose.yml up -d",
+          "podman compose -f Frontend/docker-compose.yml up -d",
+        ]);
+        expect(fixture.harness.output().some((record) => record.text.includes("mkcert is not available"))).toBe(true);
+      }),
+  );
+});
+
+describe("runSelfhost stop", () => {
+  selfhostTest(
+    "stops stacks in reverse order, removes the generated Traefik config, and skips artifacts and bootstrap",
+    {variables: {}, files: {"infra/Local/Management/traefik/dynamic/selfhost-services.yml": "generated"}},
+    (fixture) =>
+      Effect.gen(function* () {
+        // Act
+        const result = yield* runSelfhost({action: "stop", engine: "podman"});
+
+        // Assert
+        expect(result).toEqual({action: "stop", engine: "podman", stacks: ["frontend", "backend", "storage", "management"]});
+        expect(businessCalls(fixture)).toEqual([
+          "podman compose -f Frontend/docker-compose.yml down",
+          "podman compose -f Backend/docker-compose.yml down",
+          "podman compose -f Storage/docker-compose.yml down",
+          "podman compose -f Management/docker-compose.yml down",
+        ]);
+        expect(delays(fixture)).toEqual([3_000, 3_000, 3_000, 3_000]);
+        expect(fixture.harness.httpCalls()).toEqual([]);
+        expect(fixture.cosmosCalls()).toEqual([]);
+        expect(fixture.traefik()).toBeNull();
+      }),
+  );
+});
+
+describe("runSelfhost logs", () => {
+  selfhostTest("tails the exact logs targets without waits, artifacts, bootstrap, or Traefik changes", {}, (fixture) =>
+    Effect.gen(function* () {
+      // Act
+      const result = yield* runSelfhost({action: "logs", engine: "podman"});
+
+      // Assert
+      expect(result).toEqual({action: "logs", engine: "podman", stacks: ["profile", "backend", "frontend"]});
+      expect(businessCalls(fixture)).toEqual([
+        "podman logs --tail 100 exp-arolariu-ro",
+        "podman logs --tail 100 api-arolariu-ro",
+        "podman logs --tail 100 website-arolariu-ro",
+      ]);
+      expect(delays(fixture)).toEqual([]);
+      expect(fixture.harness.httpCalls()).toEqual([]);
+      expect(fixture.traefik()).toBeNull();
+    }),
+  );
+});
+
+describe("runSelfhost engine selection", () => {
+  selfhostTest(
+    "resolves the engine from the environment when no override is supplied",
+    {variables: {AROLARIU_CONTAINER_ENGINE: "rancher"}},
+    (fixture) =>
+      Effect.gen(function* () {
+        // Act
+        const result = yield* runSelfhost({action: "logs"});
+
+        // Assert
+        expect(result.engine).toBe("rancher");
+        expect(formatCalls(fixture).at(-1)).toBe("docker logs --tail 100 website-arolariu-ro");
+      }),
+  );
+
+  selfhostTest("rejects the deprecated docker engine value without running anything", {}, (fixture) =>
+    Effect.gen(function* () {
+      // Act
+      const error = yield* Effect.flip(runSelfhost({action: "logs", engine: "docker" as never}));
+
+      // Assert
+      expect(error.message).toContain("Docker Desktop is deprecated");
+      expect(fixture.harness.processCalls()).toHaveLength(0);
+    }),
+  );
+});
+
+/**
+ * A successful process answer with empty output.
+ *
+ * @returns The outcome.
+ */
+function succeededAnswer(): ProbeOutcome {
+  return {kind: "succeeded", exitCode: 0, stdout: "", stderr: "", durationMs: 0};
+}
+
+// ============================================================================
+// Characterization (R1 pins, now through the Effect `dev selfhost` CLI path)
+// ============================================================================
+
+/**
+ * Runs `dev selfhost <action> --engine rancher` once through the real CLI path.
+ *
+ * @param action - Selfhost action.
+ * @param options - Fixture options.
+ * @param flags - Extra global flags (`--json`, `--verbose`).
+ * @returns The exit code, rendered output, ordered timeline, taxonomy request count, Traefik bytes,
+ * and where the SQL password appeared in process arguments.
+ */
+async function characterizeSelfhost(
+  action: SelfhostAction,
+  options: SelfhostFixtureOptions = {},
+  flags: readonly string[] = [],
+): Promise<Readonly<Record<string, unknown>>> {
+  const fixture = selfhostFixture(options);
+
+  const exit = await fixture.runCli(["dev", "selfhost", action, "--engine", "rancher", ...flags]);
+
+  const output = fixture.harness.output().map((record) => ({stream: record.stream, text: record.text.replace(/\n$/u, "")}));
+  expect(JSON.stringify(output).includes(SELFHOST_SQL_PASSWORD)).toBe(false);
+  return {
+    exitCode: exitCodeFor(exit, undefined),
+    output,
+    timeline: fixture.timeline(),
+    taxonomyRequests: fixture.harness.httpCalls().length,
+    traefik: fixture.traefik(),
+    passwordArgs: fixture.harness
+      .processCalls()
+      .filter((call) => call.request.command !== "unzip")
+      .flatMap((call, index) =>
+        call.request.args.flatMap((arg, position) =>
+          arg.includes(SELFHOST_SQL_PASSWORD)
+            ? [
+                {
+                  call: index,
+                  index: position,
+                  command: call.request.command,
+                  flag: call.request.args[position - 1],
+                  exact: arg === SELFHOST_SQL_PASSWORD,
+                },
+              ]
+            : [],
+        ),
+      ),
+  };
+}
+
+/** Recorded options of the full-output preflight probes. */
+const PROBE = {failureOutput: "full"} as const;
+
+/** Recorded options of every echoed, tee'd selfhost command. */
+const TEE = {cwd: "infra/Local", output: "tee", echo: false} as const;
+
+/** The Rancher preflight probes. */
+const RANCHER_PREFLIGHT = [
+  {process: "docker", args: ["--version"], options: PROBE},
+  {process: "docker", args: ["version"], options: PROBE},
+  {process: "docker", args: ["compose", "version"], options: PROBE},
+  {process: "docker", args: ["ps", "-a", "--format", "{{.Names}}"], options: {}},
+] as const;
+
+/** The artifact generation's archive extraction (the legacy nested artifacts invocation). */
+const ARTIFACTS = {process: "unzip", args: ["-qq", "<archive>", "-d", "<directory>"], options: {output: "capture"}} as const;
+
+/** The atomic Traefik write (the legacy `createDirectory` + `writeText`). */
+const TRAEFIK_WRITE = [
+  {fs: "makeDirectory", path: "<traefik-dir>", options: {recursive: true}},
+  {fs: "writeFileString", path: "<traefik-tmp>", length: 1310},
+  {fs: "rename", from: "<traefik-tmp>", to: "<traefik-config>"},
+] as const;
+
+/** The SQL schema bootstrap: the password travels only in the engine client's `SQLCMDPASSWORD` (projected). */
+const SQLCMD = {
+  process: "docker",
+  args: [
+    "exec",
+    "-e",
+    "SQLCMDPASSWORD",
+    "mssql",
+    "/opt/mssql-tools/bin/sqlcmd",
+    "-C",
+    "-S",
+    "localhost",
+    "-U",
+    "sa",
+    "-d",
+    "master",
+    "-i",
+    "/usr/sql/sqlSchema.sql",
+    "-No",
+  ],
+  options: {cwd: "infra/Local", env: {SQLCMDPASSWORD: "<sql-password>"}, output: "tee", echo: false},
+} as const;
+
+/** The three Cosmos provisioning requests. */
+const COSMOS = [
+  {
+    http: "POST",
+    url: "http://localhost:8081/dbs",
+    headers: {"Content-Type": "application/json"},
+    body: '{"id":"primary"}',
+  },
+  {
+    http: "POST",
+    url: "http://localhost:8081/dbs/primary/colls",
+    headers: {"Content-Type": "application/json"},
+    body: '{"id":"invoices","partitionKey":{"paths":["/UserIdentifier"],"kind":"Hash"}}',
+  },
+  {
+    http: "POST",
+    url: "http://localhost:8081/dbs/primary/colls",
+    headers: {"Content-Type": "application/json"},
+    body: '{"id":"merchants","partitionKey":{"paths":["/ParentCompanyId"],"kind":"Hash"}}',
+  },
+] as const;
+
+/** The successful start timeline from preflight to the last stack pause. */
+const START_TIMELINE = [
+  ...RANCHER_PREFLIGHT,
+  ARTIFACTS,
+  ...TRAEFIK_WRITE,
+  {process: "docker", args: ["compose", "-f", "Management/docker-compose.yml", "up", "-d"], options: TEE},
+  {delay: 3000},
+  {process: "docker", args: ["compose", "-f", "Storage/docker-compose.yml", "--profile", "selfhost", "up", "-d"], options: TEE},
+  {delay: 10000},
+  SQLCMD,
+  ...COSMOS,
+  {blob: "connect", connectionString: "UseDevelopmentStorage=true"},
+  {blob: "ensureContainer", name: "invoices"},
+  {blob: "applyCorsPolicy"},
+  {
+    process: "dotnet",
+    args: ["run", "--project", "../../tooling/LocalDevelopment.Bootstrap", "--", "--ensure-storage-only"],
+    options: {
+      ...TEE,
+      env: {
+        DOTNET_ENVIRONMENT: "Development",
+        INFRA: "local",
+        ConnectionStrings__blobs: "UseDevelopmentStorage=true",
+        ConnectionStrings__queues: "UseDevelopmentStorage=true",
+      },
+    },
+  },
+  {delay: 3000},
+  {process: "docker", args: ["compose", "-f", "Backend/docker-compose.yml", "up", "-d"], options: TEE},
+  {delay: 3000},
+  {process: "docker", args: ["compose", "-f", "Frontend/docker-compose.yml", "up", "-d"], options: TEE},
+  {delay: 3000},
+];
+
+/** The generated Traefik file bytes. */
+const TRAEFIK_CONFIG =
+  "http:\n  routers:\n    traefik-localhost:\n      rule: Host(`traefik.localhost`)\n      entryPoints:\n        - websecure\n      tls: {}\n      service: api@internal\n    website-localhost:\n      rule: Host(`website.localhost`)\n      entryPoints:\n        - websecure\n      tls: {}\n      service: website\n    api-localhost:\n      rule: Host(`api.localhost`)\n      entryPoints:\n        - websecure\n      tls: {}\n      service: api\n    health-localhost:\n      rule: Host(`health.localhost`)\n      entryPoints:\n        - websecure\n      tls: {}\n      service: healthchecks\n    cosmosdb-localhost:\n      rule: Host(`cosmosdb.localhost`)\n      entryPoints:\n        - websecure\n      tls: {}\n      service: cosmosdb\n    azurite-blob-localhost:\n      rule: Host(`azurite-blob.localhost`)\n      entryPoints:\n        - websecure\n      tls: {}\n      service: azurite-blob\n  services:\n    website:\n      loadBalancer:\n        servers:\n          - url: http://website:3000\n    api:\n      loadBalancer:\n        servers:\n          - url: http://api:8080\n    healthchecks:\n      loadBalancer:\n        servers:\n          - url: http://healthchecks:8000\n    cosmosdb:\n      loadBalancer:\n        servers:\n          - url: http://cosmosdb:8081\n    azurite-blob:\n      loadBalancer:\n        servers:\n          - url: http://azurite:10000\n";
+
+/** The SQL password never reaches an argument vector. */
+const PASSWORD_ARGS: readonly unknown[] = [];
+
+/** The echo line of the SQL schema bootstrap. */
+const SQLCMD_ECHO =
+  "$ docker exec -e SQLCMDPASSWORD mssql /opt/mssql-tools/bin/sqlcmd -C -S localhost -U sa -d master -i /usr/sql/sqlSchema.sql -No";
+
+describe("dev selfhost characterization", () => {
+  it("start: preflight, artifacts, certificates, Traefik file, ordered stacks, bootstrap, and success line", async () => {
+    expect(await characterizeSelfhost("start")).toEqual({
       exitCode: 0,
-      value: {action: "stop", engine: "podman", stacks: ["frontend", "backend", "storage", "management"]},
+      output: [
+        {stream: "stdout", text: "$ docker compose -f Management/docker-compose.yml up -d"},
+        {stream: "stdout", text: "$ docker compose -f Storage/docker-compose.yml --profile selfhost up -d"},
+        {stream: "stdout", text: SQLCMD_ECHO},
+        {stream: "stdout", text: "$ dotnet run --project ../../tooling/LocalDevelopment.Bootstrap -- --ensure-storage-only"},
+        {stream: "stdout", text: "$ docker compose -f Backend/docker-compose.yml up -d"},
+        {stream: "stdout", text: "$ docker compose -f Frontend/docker-compose.yml up -d"},
+        {stream: "stdout", text: "[arolariu::selfhost] ✅ Selfhost start completed for engine 'rancher'."},
+      ],
+      timeline: START_TIMELINE,
+      taxonomyRequests: 3,
+      traefik: TRAEFIK_CONFIG,
+      passwordArgs: PASSWORD_ARGS,
     });
-    expect(businessCalls(started.runner)).toEqual([
-      "podman compose -f Frontend/docker-compose.yml down",
-      "podman compose -f Backend/docker-compose.yml down",
-      "podman compose -f Storage/docker-compose.yml down",
-      "podman compose -f Management/docker-compose.yml down",
-    ]);
-    expect(started.clock.delays).toEqual([3_000, 3_000, 3_000, 3_000]);
-    expect(started.artifacts.invoke).not.toHaveBeenCalled();
-    expect(started.bootstrap.calls).toEqual([]);
-    await expect(started.files.exists(selfhostTraefikConfigPath)).resolves.toBe(false);
   });
 
-  it("does not require the SQL password", async () => {
-    const harness = createHarness({variables: {}});
-
-    const execution = await harness.command.invoke({action: "stop", engine: "podman"});
-
-    expect(execution).toMatchObject({status: "completed", exitCode: 0});
+  // Intentional change (cohort 6 ruling): an unreported typed failure renders through the root
+  // renderer as `[arolariu::cli] ⛔ …` (legacy: `[arolariu::selfhost] ⛔ …`); the message is unchanged.
+  it("start with a failing Cosmos bootstrap: exit 1, the message, and no compensating cleanup", async () => {
+    expect(
+      await characterizeSelfhost("start", {
+        cosmos: (path) => (path === "/dbs" ? {status: 503, body: "emulator starting"} : {status: 201, body: "{}"}),
+      }),
+    ).toEqual({
+      exitCode: 1,
+      output: [
+        {stream: "stdout", text: "$ docker compose -f Management/docker-compose.yml up -d"},
+        {stream: "stdout", text: "$ docker compose -f Storage/docker-compose.yml --profile selfhost up -d"},
+        {stream: "stdout", text: SQLCMD_ECHO},
+        {
+          stream: "stderr",
+          text: "[arolariu::cli] ⛔ Cosmos bootstrap failed. Ensure the cosmosdb container is running and reachable at http://localhost:8081. Original error: Cosmos bootstrap failed for http://localhost:8081/dbs: HTTP 503 emulator starting",
+        },
+      ],
+      timeline: [
+        ...RANCHER_PREFLIGHT,
+        ARTIFACTS,
+        ...TRAEFIK_WRITE,
+        {process: "docker", args: ["compose", "-f", "Management/docker-compose.yml", "up", "-d"], options: TEE},
+        {delay: 3000},
+        {process: "docker", args: ["compose", "-f", "Storage/docker-compose.yml", "--profile", "selfhost", "up", "-d"], options: TEE},
+        {delay: 10000},
+        SQLCMD,
+        COSMOS[0],
+      ],
+      taxonomyRequests: 3,
+      traefik: TRAEFIK_CONFIG,
+      passwordArgs: PASSWORD_ARGS,
+    });
   });
-});
 
-describe("createSelfhostCommand logs", () => {
-  it("tails the exact logs targets without waits, artifacts, bootstrap, or Traefik changes", async () => {
-    const harness = createHarness();
+  it("start without MSSQL_SA_PASSWORD: exit 1 before any stack command", async () => {
+    expect(await characterizeSelfhost("start", {variables: {}})).toEqual({
+      exitCode: 1,
+      output: [
+        {
+          stream: "stderr",
+          text: "[arolariu::cli] ⛔ MSSQL_SA_PASSWORD environment variable is required for selfhost SQL bootstrap. Set it in your shell/session environment only; do not commit it to .env files, launch profiles, or source control.",
+        },
+      ],
+      timeline: [...RANCHER_PREFLIGHT, ARTIFACTS],
+      taxonomyRequests: 3,
+      traefik: null,
+      passwordArgs: [],
+    });
+  });
 
-    const execution = await harness.command.invoke({action: "logs", engine: "podman"});
-
-    expect(execution).toMatchObject({
-      status: "completed",
+  it("stop: reverse-order compose down, then the Traefik file removal", async () => {
+    expect(
+      await characterizeSelfhost("stop", {
+        files: {"infra/Local/Management/traefik/dynamic/selfhost-services.yml": "generated traefik config"},
+      }),
+    ).toEqual({
       exitCode: 0,
-      value: {action: "logs", engine: "podman", stacks: ["profile", "backend", "frontend"]},
+      output: [
+        {stream: "stdout", text: "$ docker compose -f Frontend/docker-compose.yml down"},
+        {stream: "stdout", text: "$ docker compose -f Backend/docker-compose.yml down"},
+        {stream: "stdout", text: "$ docker compose -f Storage/docker-compose.yml down"},
+        {stream: "stdout", text: "$ docker compose -f Management/docker-compose.yml down"},
+        {stream: "stdout", text: "[arolariu::selfhost] ✅ Selfhost stop completed for engine 'rancher'."},
+      ],
+      timeline: [
+        ...RANCHER_PREFLIGHT,
+        {process: "docker", args: ["compose", "-f", "Frontend/docker-compose.yml", "down"], options: TEE},
+        {delay: 3000},
+        {process: "docker", args: ["compose", "-f", "Backend/docker-compose.yml", "down"], options: TEE},
+        {delay: 3000},
+        {process: "docker", args: ["compose", "-f", "Storage/docker-compose.yml", "down"], options: TEE},
+        {delay: 3000},
+        {process: "docker", args: ["compose", "-f", "Management/docker-compose.yml", "down"], options: TEE},
+        {delay: 3000},
+        {fs: "remove", path: "<traefik-config>", options: {force: true}},
+      ],
+      taxonomyRequests: 0,
+      traefik: null,
+      passwordArgs: [],
     });
-    expect(businessCalls(harness.runner)).toEqual([
-      "podman logs --tail 100 exp-arolariu-ro",
-      "podman logs --tail 100 api-arolariu-ro",
-      "podman logs --tail 100 website-arolariu-ro",
-    ]);
-    expect(harness.clock.delays).toEqual([]);
-    expect(harness.artifacts.invoke).not.toHaveBeenCalled();
-    expect(harness.bootstrap.calls).toEqual([]);
-    await expect(harness.files.exists(selfhostTraefikConfigPath)).resolves.toBe(false);
-  });
-});
-
-describe("createSelfhostCommand engine selection", () => {
-  it("resolves the engine from the invocation environment snapshot when no override is supplied", async () => {
-    const harness = createHarness({variables: {MSSQL_SA_PASSWORD: sqlPassword, AROLARIU_CONTAINER_ENGINE: "rancher"}});
-
-    const execution = await harness.command.invoke({action: "logs"});
-
-    expect(execution).toMatchObject({status: "completed", value: {engine: "rancher"}});
-    expect(formatCalls(harness.runner).at(-1)).toBe("docker logs --tail 100 website-arolariu-ro");
   });
 
-  it("rejects the deprecated docker engine value without running anything", async () => {
-    const harness = createHarness();
-
-    const execution = await harness.command.invoke({action: "logs", engine: "docker" as never});
-
-    expect(execution).toMatchObject({status: "failed", exitCode: 1});
-    expect(execution.status === "failed" ? execution.failure.message : "").toContain("Docker Desktop is deprecated");
-    expect(harness.runner.calls).toHaveLength(0);
-  });
-});
-
-describe("createSelfhostCommand parser lifecycle", () => {
-  it("defaults the action argument to start", async () => {
-    const harness = createHarness();
-
-    const execution = await harness.command.run(["--engine", "podman"]);
-
-    expect(execution).toMatchObject({status: "completed", exitCode: 0, value: {action: "start"}});
-  });
-
-  it("decodes an explicit action and engine", async () => {
-    const harness = createHarness();
-
-    const execution = await harness.command.run(["logs", "--engine", "podman"]);
-
-    expect(execution).toMatchObject({status: "completed", exitCode: 0, value: {action: "logs", engine: "podman"}});
-  });
-
-  it("normalizes engine casing and surrounding whitespace exactly like engine selection", async () => {
-    const harness = createHarness();
-
-    const execution = await harness.command.run(["logs", "--engine", " PODMAN "]);
-
-    expect(execution).toMatchObject({status: "completed", exitCode: 0, value: {engine: "podman"}});
-  });
-
-  it("rejects an unknown action as a usage failure", async () => {
-    const harness = createHarness();
-
-    const execution = await harness.command.run(["restart"]);
-
-    expect(execution).toMatchObject({status: "failed", exitCode: 2});
-    expect(execution.status === "failed" ? execution.failure.message : "").toBe("Use start, stop, or logs as the first argument.");
-    expect(harness.runner.calls).toHaveLength(0);
-  });
-
-  it("rejects the deprecated docker engine argument as a usage failure", async () => {
-    const harness = createHarness();
-
-    const execution = await harness.command.run(["start", "--engine", "docker"]);
-
-    expect(execution).toMatchObject({status: "failed", exitCode: 2});
-    expect(execution.status === "failed" ? execution.failure.message : "").toContain("Docker Desktop is deprecated");
-    expect(harness.runner.calls).toHaveLength(0);
-  });
-
-  it("rejects an unsupported engine argument as a usage failure", async () => {
-    const harness = createHarness();
-
-    const execution = await harness.command.run(["start", "--engine", "colima"]);
-
-    expect(execution).toMatchObject({status: "failed", exitCode: 2});
-    expect(execution.status === "failed" ? execution.failure.message : "").toContain("Unsupported container engine 'colima'");
-  });
-
-  it("rejects an unknown option as a usage failure instead of throwing", async () => {
-    const harness = createHarness();
-
-    const execution = await harness.command.run(["--bogus"]);
-
-    expect(execution).toMatchObject({status: "failed", exitCode: 2});
-    expect(harness.runner.calls).toHaveLength(0);
-  });
-
-  it("rejects a missing --engine value as a usage failure", async () => {
-    const harness = createHarness();
-
-    const execution = await harness.command.run(["start", "--engine"]);
-
-    expect(execution).toMatchObject({status: "failed", exitCode: 2});
-    expect(harness.runner.calls).toHaveLength(0);
-  });
-});
-
-describe("createSelfhostCommand entrypoint wiring", () => {
-  it("assigns an exit code through runIfMain() only when the module is the direct entrypoint", async () => {
-    const nonEntryHost = createTestProcessHost(["logs", "--engine", "podman"]);
-    const nonEntry = createHarness();
-    const nonEntryCommand = createSelfhostCommand({
-      runtimeFactory: {...nonEntry.runtimeFactory, processHost: {...nonEntryHost, isDirectEntry: (): boolean => false}},
-      bootstrap: nonEntry.bootstrap.bootstrap,
-      artifacts: nonEntry.artifacts,
+  it("logs: engine-owned logs commands without delays, artifacts, or Traefik changes", async () => {
+    expect(await characterizeSelfhost("logs")).toEqual({
+      exitCode: 0,
+      output: [
+        {stream: "stdout", text: "$ docker logs --tail 100 exp-arolariu-ro"},
+        {stream: "stdout", text: "$ docker logs --tail 100 api-arolariu-ro"},
+        {stream: "stdout", text: "$ docker logs --tail 100 website-arolariu-ro"},
+        {stream: "stdout", text: "[arolariu::selfhost] ✅ Selfhost logs completed for engine 'rancher'."},
+      ],
+      timeline: [
+        ...RANCHER_PREFLIGHT,
+        {process: "docker", args: ["logs", "--tail", "100", "exp-arolariu-ro"], options: TEE},
+        {process: "docker", args: ["logs", "--tail", "100", "api-arolariu-ro"], options: TEE},
+        {process: "docker", args: ["logs", "--tail", "100", "website-arolariu-ro"], options: TEE},
+      ],
+      taxonomyRequests: 0,
+      traefik: null,
+      passwordArgs: [],
     });
-
-    await nonEntryCommand.runIfMain("file:///repo/scripts/container-runtime/selfhost.ts");
-    expect(nonEntryHost.assignedExitCodes).toEqual([]);
-
-    const entryHost = createTestProcessHost(["logs", "--engine", "podman"]);
-    const entry = createHarness();
-    const entryCommand = createSelfhostCommand({
-      runtimeFactory: {...entry.runtimeFactory, processHost: entryHost},
-      bootstrap: entry.bootstrap.bootstrap,
-      artifacts: entry.artifacts,
-    });
-
-    await entryCommand.runIfMain("file:///repo/scripts/container-runtime/selfhost.ts");
-    expect(entryHost.assignedExitCodes).toEqual([0]);
   });
 
-  it.each(["--help", "-h", "/h"])("renders help for '%s' through the production singleton without running anything", async (flag) => {
-    await expect(selfhostCommand.run([flag])).resolves.toEqual({status: "help", exitCode: 0});
+  // Intentional change (cohort 6 ledger): legacy started and bootstrapped every stack, then failed
+  // with exit 1 ("selected JSON presentation without a JSON document"); the Effect command writes the
+  // result as the single JSON document and exits 0.
+  it("start (json): every stack starts and bootstrap runs, then the result is the single JSON document and the exit code is 0", async () => {
+    expect(await characterizeSelfhost("start", {}, ["--json"])).toEqual({
+      exitCode: 0,
+      output: [
+        {
+          stream: "stdout",
+          text: JSON.stringify(
+            {action: "start", engine: "rancher", stacks: ["management", "storage", "profile", "backend", "frontend"]},
+            null,
+            2,
+          ),
+        },
+      ],
+      timeline: START_TIMELINE,
+      taxonomyRequests: 3,
+      traefik: TRAEFIK_CONFIG,
+      passwordArgs: PASSWORD_ARGS,
+    });
+  });
+
+  it("stack exit: one diagnostic without evidence, exit 1", async () => {
+    expect(
+      await characterizeSelfhost("logs", {
+        process: (_command, args) => (args.includes("api-arolariu-ro") ? exited(4, "no such container") : succeededAnswer()),
+      }),
+    ).toMatchObject({
+      exitCode: 1,
+      output: [
+        {stream: "stdout", text: "$ docker logs --tail 100 exp-arolariu-ro"},
+        {stream: "stdout", text: "$ docker logs --tail 100 api-arolariu-ro"},
+        {stream: "stderr", text: "no such container"},
+        {stream: "stderr", text: "[arolariu::selfhost] ⛔ docker exited with code 4"},
+      ],
+    });
   });
 });

@@ -7,12 +7,13 @@
 import {mkdir, mkdtemp, rm, writeFile} from "node:fs/promises";
 import {tmpdir} from "node:os";
 import {join, resolve} from "node:path";
+import {Effect} from "effect";
+import {TestClock} from "effect/testing";
 import {afterEach, describe, expect, it, vi} from "vitest";
 
-import type {ProcessOutcome, ProcessRequest, ProcessRunner} from "../common/runner.ts";
-import {nodeFileSystem} from "../common/runtime.node.ts";
-import {asReadOnlyFileSystem, DefaultTaskScheduler, type Clock} from "../common/runtime.ts";
 import {createRepositoryPaths, type RepositoryPaths} from "../common/repository-paths.ts";
+import type {ProcessRequest} from "../platform/Process.ts";
+import {makeTestLayer, runScoped, scriptedOutcomes, type ProbeOutcomeResponder} from "../platform/testing.ts";
 import {
   createReactProvider,
   createSvelteProvider,
@@ -22,8 +23,8 @@ import {
   type SvelteProjectId,
 } from "./frontend.ts";
 import {REACT_INSPECTED_PACKAGE_NAMES, SVELTE_INSPECTED_PACKAGE_NAMES, type PackageInventoryFacts} from "./packages.ts";
-import {createInspectionProbeRunner} from "./probes.ts";
-import type {InspectionOutcome} from "./types.ts";
+import {inspectionProbeRunner, type ProbeOutcome} from "./probes.ts";
+import type {InspectionOutcome, InspectionProvider} from "./types.ts";
 
 const fixtureRoots: string[] = [];
 
@@ -48,19 +49,7 @@ const SVELTE_PACKAGE_VERSIONS: ReadonlyMap<string, string> = new Map([
   ["typescript", "6.0.3"],
 ]);
 
-function clock(): Clock {
-  let current = 100;
-  return {
-    monotonicNow: (): number => {
-      current += 5;
-      return current;
-    },
-    isoTimestamp: (): string => "2025-01-01T00:00:00.000Z",
-    delay: (): Promise<void> => Promise.resolve(),
-  };
-}
-
-/** Legacy-shaped fixture description translated into one typed {@link ProcessOutcome}. */
+/** Legacy-shaped fixture description translated into one typed {@link ProbeOutcome}. */
 interface ProcessOutcomeFixture {
   readonly code?: number;
   readonly stdout?: string;
@@ -72,13 +61,13 @@ interface ProcessOutcomeFixture {
 }
 
 /**
- * Builds one typed {@link ProcessOutcome} from a fixture description, so every suite keeps naming
+ * Builds one typed {@link ProbeOutcome} from a fixture description, so every suite keeps naming
  * the exact spawn/timeout/signal/exit classification it exercises.
  *
  * @param patch - Fixture description of the outcome under test.
  * @returns The equivalent typed process outcome.
  */
-function commandResult(patch: ProcessOutcomeFixture = {}): ProcessOutcome {
+function commandResult(patch: ProcessOutcomeFixture = {}): ProbeOutcome {
   const output = {stdout: patch.stdout ?? "", stderr: patch.stderr ?? "", durationMs: patch.durationMs ?? 1};
   if (patch.spawnError !== undefined) {
     return {kind: "spawn-failed", message: patch.spawnError, ...output};
@@ -92,25 +81,6 @@ function commandResult(patch: ProcessOutcomeFixture = {}): ProcessOutcome {
   const code = patch.code ?? 0;
   return code === 0 ? {kind: "succeeded", exitCode: 0, ...output} : {kind: "exited", exitCode: code, ...output};
 }
-
-/** Wraps one recorded `run` implementation in the full {@link ProcessRunner} probe contract. */
-function asProcessRunner(run: ProcessRunner["run"]): ProcessRunner {
-  return {
-    run,
-    expectSuccess: () => {
-      throw new Error("Inspection probes never call expectSuccess.");
-    },
-    scope: () => {
-      throw new Error("Inspection probes never scope the shared runner.");
-    },
-  };
-}
-
-/** Read-only filesystem capability every fixture provider observes its temporary root through. */
-const testFiles = asReadOnlyFileSystem(nodeFileSystem);
-
-/** Deterministic task scheduler replacing the previous explicit `Promise.all` calls. */
-const testTasks = new DefaultTaskScheduler();
 
 function commandKey(command: Readonly<ProcessRequest>, cwd?: string): string {
   return `${cwd ?? ""}\u0000${command.command}\u0000${JSON.stringify(command.args)}`;
@@ -275,16 +245,18 @@ function playwrightInventoryOutput(version: string, includeChromium = true): str
 interface FrontendFixture {
   readonly root: string;
   readonly paths: RepositoryPaths;
-  readonly run: ReturnType<typeof vi.fn<ProcessRunner["run"]>>;
-  readonly setResponse: (command: Readonly<ProcessRequest>, result: ProcessOutcome, cwd?: string) => void;
+  readonly run: ReturnType<typeof vi.fn<ProbeOutcomeResponder>>;
+  readonly setResponse: (command: Readonly<ProcessRequest>, result: ProbeOutcome, cwd?: string) => void;
   readonly input: FrontendProviderInput;
   readonly packages: ReturnType<typeof vi.fn<() => Promise<InspectionOutcome<PackageInventoryFacts>>>>;
+  /** Runs a provider over the fixture's real filesystem, the test clock, and the scripted processes. */
+  readonly invoke: <T>(provider: InspectionProvider<T>) => Promise<InspectionOutcome<T>>;
 }
 
 async function createFrontendFixture(
   input: Readonly<{
     packagesOutcome?: InspectionOutcome<PackageInventoryFacts>;
-    playwrightOutcome?: ProcessOutcome;
+    playwrightOutcome?: ProbeOutcome;
     skipWebsiteEnv?: boolean;
     websiteEnvContents?: string;
     nextConfigContents?: string | null;
@@ -414,8 +386,8 @@ async function createFrontendFixture(
 
   await Promise.all(writes);
 
-  const responses = new Map<string, ProcessOutcome>();
-  const setResponse = (command: Readonly<ProcessRequest>, result: ProcessOutcome, cwd: string = paths.root): void => {
+  const responses = new Map<string, ProbeOutcome>();
+  const setResponse = (command: Readonly<ProcessRequest>, result: ProbeOutcome, cwd: string = paths.root): void => {
     responses.set(commandKey(command, cwd), result);
   };
   setResponse(
@@ -423,8 +395,8 @@ async function createFrontendFixture(
     input.playwrightOutcome ?? commandResult({stdout: playwrightInventoryOutput("1.62.1")}),
   );
 
-  const run = vi.fn<ProcessRunner["run"]>(
-    async (command, options): Promise<ProcessOutcome> =>
+  const run = vi.fn<ProbeOutcomeResponder>(
+    async (command, options): Promise<ProbeOutcome> =>
       responses.get(commandKey(command, options?.cwd))
       ?? commandResult({code: 127, spawnError: `unexpected-native-command-marker:${command.command}`}),
   );
@@ -435,14 +407,12 @@ async function createFrontendFixture(
 
   const providerInput: FrontendProviderInput = {
     paths,
-    packages,
-    probes: createInspectionProbeRunner(asProcessRunner(run)),
-    files: testFiles,
-    clock: clock(),
-    tasks: testTasks,
+    packages: Effect.promise(async () => packages()),
+    probes: inspectionProbeRunner,
   };
+  const harness = makeTestLayer({fileSystem: "node", processes: [scriptedOutcomes(run)]});
 
-  return {root, paths, run, setResponse, input: providerInput, packages};
+  return {root, paths, run, setResponse, input: providerInput, packages, invoke: async (provider) => runScoped(provider, harness.layer)};
 }
 
 afterEach(async () => {
@@ -452,7 +422,7 @@ afterEach(async () => {
 describe("package-name coverage", () => {
   it("only references package names within REACT_INSPECTED_PACKAGE_NAMES for React facts", async () => {
     const fixture = await createFrontendFixture();
-    const outcome = await createReactProvider(fixture.input)();
+    const outcome = await fixture.invoke(createReactProvider(fixture.input));
     expect(outcome.kind).toBe("available");
     // The only package names dereferenced from the shared inventory by the React provider are
     // the workspace-linked components package and the Playwright package used to select the
@@ -462,7 +432,7 @@ describe("package-name coverage", () => {
 
   it("only references package names within SVELTE_INSPECTED_PACKAGE_NAMES for Svelte facts", async () => {
     const fixture = await createFrontendFixture();
-    const outcome = await createSvelteProvider("cv", fixture.input)();
+    const outcome = await fixture.invoke(createSvelteProvider("cv", fixture.input));
     expect(outcome.kind).toBe("available");
     expect(SVELTE_INSPECTED_PACKAGE_NAMES.length).toBeGreaterThan(0);
     for (const name of SVELTE_INSPECTED_PACKAGE_NAMES) {
@@ -475,7 +445,7 @@ describe("createReactProvider", () => {
   it("projects healthy React facts with zero issues", async () => {
     const fixture = await createFrontendFixture();
 
-    const outcome = await createReactProvider(fixture.input)();
+    const outcome = await fixture.invoke(createReactProvider(fixture.input));
 
     expect(outcome.kind).toBe("available");
     const value = (outcome as Extract<typeof outcome, {kind: "available"}>).value as ReactFacts;
@@ -497,7 +467,7 @@ describe("createReactProvider", () => {
   it("propagates an unavailable package inventory outcome", async () => {
     const fixture = await createFrontendFixture({packagesOutcome: {kind: "unavailable", reason: "packages unavailable", durationMs: 1}});
 
-    const outcome = await createReactProvider(fixture.input)();
+    const outcome = await fixture.invoke(createReactProvider(fixture.input));
 
     expect(outcome).toEqual({kind: "unavailable", reason: "packages unavailable", durationMs: expect.any(Number)});
   });
@@ -507,7 +477,7 @@ describe("createReactProvider", () => {
       packagesOutcome: {kind: "invalid", issues: ["bad package metadata"], durationMs: 1},
     });
 
-    const outcome = await createReactProvider(fixture.input)();
+    const outcome = await fixture.invoke(createReactProvider(fixture.input));
 
     expect(outcome).toEqual({kind: "invalid", issues: ["bad package metadata"], durationMs: expect.any(Number)});
   });
@@ -526,7 +496,7 @@ describe("createReactProvider", () => {
       },
     });
 
-    const outcome = await createReactProvider(fixture.input)();
+    const outcome = await fixture.invoke(createReactProvider(fixture.input));
 
     expect(outcome.kind).toBe("available");
     const facts = (outcome as Extract<typeof outcome, {kind: "available"}>).value as ReactFacts;
@@ -542,7 +512,7 @@ describe("createReactProvider", () => {
       },
     });
 
-    const outcome = await createReactProvider(fixture.input)();
+    const outcome = await fixture.invoke(createReactProvider(fixture.input));
 
     expect(outcome.kind).toBe("available");
     const facts = (outcome as Extract<typeof outcome, {kind: "available"}>).value as ReactFacts;
@@ -554,7 +524,7 @@ describe("createReactProvider", () => {
       websitePackageJsonContents: JSON.stringify({name: "@arolariu/website", dependencies: {}}),
     });
 
-    const outcome = await createReactProvider(fixture.input)();
+    const outcome = await fixture.invoke(createReactProvider(fixture.input));
 
     expect(outcome.kind).toBe("available");
     const facts = (outcome as Extract<typeof outcome, {kind: "available"}>).value as ReactFacts;
@@ -569,7 +539,7 @@ describe("createReactProvider", () => {
       }),
     });
 
-    const outcome = await createReactProvider(fixture.input)();
+    const outcome = await fixture.invoke(createReactProvider(fixture.input));
 
     expect(outcome.kind).toBe("available");
     const facts = (outcome as Extract<typeof outcome, {kind: "available"}>).value as ReactFacts;
@@ -579,7 +549,7 @@ describe("createReactProvider", () => {
   it("treats an absent website .env file as every key missing without a syntax error", async () => {
     const fixture = await createFrontendFixture({skipWebsiteEnv: true});
 
-    const outcome = await createReactProvider(fixture.input)();
+    const outcome = await fixture.invoke(createReactProvider(fixture.input));
 
     expect(outcome.kind).toBe("available");
     const facts = (outcome as Extract<typeof outcome, {kind: "available"}>).value as ReactFacts;
@@ -594,7 +564,7 @@ describe("createReactProvider", () => {
   it("reports a syntax error for a website .env line without an assignment", async () => {
     const fixture = await createFrontendFixture({websiteEnvContents: ["SITE_ENV=DEVELOPMENT", "this is not valid"].join("\n")});
 
-    const outcome = await createReactProvider(fixture.input)();
+    const outcome = await fixture.invoke(createReactProvider(fixture.input));
 
     expect(outcome.kind).toBe("available");
     const facts = (outcome as Extract<typeof outcome, {kind: "available"}>).value as ReactFacts;
@@ -606,7 +576,7 @@ describe("createReactProvider", () => {
       websiteEnvContents: ["SITE_ENV=DEVELOPMENT", "SITE_ENV=PRODUCTION"].join("\n"),
     });
 
-    const outcome = await createReactProvider(fixture.input)();
+    const outcome = await fixture.invoke(createReactProvider(fixture.input));
 
     expect(outcome.kind).toBe("available");
     const facts = (outcome as Extract<typeof outcome, {kind: "available"}>).value as ReactFacts;
@@ -616,7 +586,7 @@ describe("createReactProvider", () => {
   it("reports an i18n issue when a locale dictionary key shape diverges", async () => {
     const fixture = await createFrontendFixture({messagesRo: JSON.stringify({greeting: "salut"})});
 
-    const outcome = await createReactProvider(fixture.input)();
+    const outcome = await fixture.invoke(createReactProvider(fixture.input));
 
     expect(outcome.kind).toBe("available");
     const facts = (outcome as Extract<typeof outcome, {kind: "available"}>).value as ReactFacts;
@@ -626,7 +596,7 @@ describe("createReactProvider", () => {
   it("reports an i18n issue when the generated declaration is missing", async () => {
     const fixture = await createFrontendFixture({messagesDeclaration: null});
 
-    const outcome = await createReactProvider(fixture.input)();
+    const outcome = await fixture.invoke(createReactProvider(fixture.input));
 
     expect(outcome.kind).toBe("available");
     const facts = (outcome as Extract<typeof outcome, {kind: "available"}>).value as ReactFacts;
@@ -636,7 +606,7 @@ describe("createReactProvider", () => {
   it("reports an artifact issue when a website taxonomy artifact is missing", async () => {
     const fixture = await createFrontendFixture({skipTaxonomyArtifact: true});
 
-    const outcome = await createReactProvider(fixture.input)();
+    const outcome = await fixture.invoke(createReactProvider(fixture.input));
 
     expect(outcome.kind).toBe("available");
     const facts = (outcome as Extract<typeof outcome, {kind: "available"}>).value as ReactFacts;
@@ -646,7 +616,7 @@ describe("createReactProvider", () => {
   it("reports an artifact issue when licenses.json is malformed", async () => {
     const fixture = await createFrontendFixture({licensesContents: JSON.stringify({production: [{name: ""}]})});
 
-    const outcome = await createReactProvider(fixture.input)();
+    const outcome = await fixture.invoke(createReactProvider(fixture.input));
 
     expect(outcome.kind).toBe("available");
     const facts = (outcome as Extract<typeof outcome, {kind: "available"}>).value as ReactFacts;
@@ -658,7 +628,7 @@ describe("createReactProvider", () => {
       playwrightOutcome: commandResult({code: 127, spawnError: "missing-playwright-marker"}),
     });
 
-    const outcome = await createReactProvider(fixture.input)();
+    const outcome = await fixture.invoke(createReactProvider(fixture.input));
 
     expect(outcome.kind).toBe("unavailable");
     expect(JSON.stringify(outcome)).not.toMatch(/missing-playwright-marker/u);
@@ -667,7 +637,7 @@ describe("createReactProvider", () => {
   it("reports a framework issue when next.config.ts does not wire next-intl", async () => {
     const fixture = await createFrontendFixture({nextConfigContents: "export default {};\n"});
 
-    const outcome = await createReactProvider(fixture.input)();
+    const outcome = await fixture.invoke(createReactProvider(fixture.input));
 
     expect(outcome.kind).toBe("available");
     const facts = (outcome as Extract<typeof outcome, {kind: "available"}>).value as ReactFacts;
@@ -677,19 +647,21 @@ describe("createReactProvider", () => {
   it("reports a framework issue when docusaurus.config.ts does not reference the classic preset", async () => {
     const fixture = await createFrontendFixture({docusaurusConfigContents: "export default {};\n"});
 
-    const outcome = await createReactProvider(fixture.input)();
+    const outcome = await fixture.invoke(createReactProvider(fixture.input));
 
     expect(outcome.kind).toBe("available");
     const facts = (outcome as Extract<typeof outcome, {kind: "available"}>).value as ReactFacts;
     expect(facts.frameworkIssues).toContain("docusaurus.config.ts does not reference @docusaurus/preset-classic.");
   });
 
-  it("measures duration only after all inspection completes", async () => {
+  it("measures duration across the whole inspection", async () => {
     const fixture = await createFrontendFixture();
+    const delayedPackages = TestClock.adjust("5 millis").pipe(Effect.andThen(fixture.input.packages));
 
-    const outcome = await createReactProvider(fixture.input)();
+    const outcome = await fixture.invoke(createReactProvider({...fixture.input, packages: delayedPackages}));
 
-    expect(outcome.durationMs).toBeGreaterThan(0);
+    expect(outcome.kind).toBe("available");
+    expect(outcome.durationMs).toBe(5);
   });
 });
 
@@ -697,7 +669,7 @@ describe("createSvelteProvider", () => {
   it("projects healthy cv Svelte facts with zero issues", async () => {
     const fixture = await createFrontendFixture();
 
-    const outcome = await createSvelteProvider("cv", fixture.input)();
+    const outcome = await fixture.invoke(createSvelteProvider("cv", fixture.input));
 
     expect(outcome.kind).toBe("available");
     const facts = (outcome as Extract<typeof outcome, {kind: "available"}>).value as SvelteFacts;
@@ -713,7 +685,7 @@ describe("createSvelteProvider", () => {
   it("projects healthy status Svelte facts with the status identity", async () => {
     const fixture = await createFrontendFixture();
 
-    const outcome = await createSvelteProvider("status", fixture.input)();
+    const outcome = await fixture.invoke(createSvelteProvider("status", fixture.input));
 
     expect(outcome.kind).toBe("available");
     const facts = (outcome as Extract<typeof outcome, {kind: "available"}>).value as SvelteFacts;
@@ -724,7 +696,7 @@ describe("createSvelteProvider", () => {
   it("propagates an unavailable package inventory outcome", async () => {
     const fixture = await createFrontendFixture({packagesOutcome: {kind: "unavailable", reason: "packages unavailable", durationMs: 1}});
 
-    const outcome = await createSvelteProvider("cv", fixture.input)();
+    const outcome = await fixture.invoke(createSvelteProvider("cv", fixture.input));
 
     expect(outcome).toEqual({kind: "unavailable", reason: "packages unavailable", durationMs: expect.any(Number)});
   });
@@ -734,7 +706,7 @@ describe("createSvelteProvider", () => {
       packagesOutcome: {kind: "invalid", issues: ["bad package metadata"], durationMs: 1},
     });
 
-    const outcome = await createSvelteProvider("cv", fixture.input)();
+    const outcome = await fixture.invoke(createSvelteProvider("cv", fixture.input));
 
     expect(outcome).toEqual({kind: "invalid", issues: ["bad package metadata"], durationMs: expect.any(Number)});
   });
@@ -742,7 +714,7 @@ describe("createSvelteProvider", () => {
   it("reports a package issue when package.json cannot be read", async () => {
     const fixture = await createFrontendFixture({cv: {packageJsonContents: null}});
 
-    const outcome = await createSvelteProvider("cv", fixture.input)();
+    const outcome = await fixture.invoke(createSvelteProvider("cv", fixture.input));
 
     expect(outcome.kind).toBe("available");
     const facts = (outcome as Extract<typeof outcome, {kind: "available"}>).value as SvelteFacts;
@@ -764,7 +736,7 @@ describe("createSvelteProvider", () => {
       },
     });
 
-    const outcome = await createSvelteProvider("cv", fixture.input)();
+    const outcome = await fixture.invoke(createSvelteProvider("cv", fixture.input));
 
     expect(outcome.kind).toBe("available");
     const facts = (outcome as Extract<typeof outcome, {kind: "available"}>).value as SvelteFacts;
@@ -776,7 +748,7 @@ describe("createSvelteProvider", () => {
       cv: {packageJsonContents: sveltePackageJsonSource("@arolariu/cv", "not-a-range")},
     });
 
-    const outcome = await createSvelteProvider("cv", fixture.input)();
+    const outcome = await fixture.invoke(createSvelteProvider("cv", fixture.input));
 
     expect(outcome.kind).toBe("available");
     const facts = (outcome as Extract<typeof outcome, {kind: "available"}>).value as SvelteFacts;
@@ -804,7 +776,7 @@ describe("createSvelteProvider", () => {
       },
     });
 
-    const outcome = await createSvelteProvider("cv", fixture.input)();
+    const outcome = await fixture.invoke(createSvelteProvider("cv", fixture.input));
 
     expect(outcome.kind).toBe("available");
     const facts = (outcome as Extract<typeof outcome, {kind: "available"}>).value as SvelteFacts;
@@ -816,7 +788,7 @@ describe("createSvelteProvider", () => {
       cv: {projectJsonContents: svelteProjectJsonSource("@arolariu/cv", "sites/wrong-root")},
     });
 
-    const outcome = await createSvelteProvider("cv", fixture.input)();
+    const outcome = await fixture.invoke(createSvelteProvider("cv", fixture.input));
 
     expect(outcome.kind).toBe("available");
     const facts = (outcome as Extract<typeof outcome, {kind: "available"}>).value as SvelteFacts;
@@ -826,7 +798,7 @@ describe("createSvelteProvider", () => {
   it("reports a script issue when vite.config does not wire the SvelteKit plugin", async () => {
     const fixture = await createFrontendFixture({cv: {viteConfigContents: "export default {};\n"}});
 
-    const outcome = await createSvelteProvider("cv", fixture.input)();
+    const outcome = await fixture.invoke(createSvelteProvider("cv", fixture.input));
 
     expect(outcome.kind).toBe("available");
     const facts = (outcome as Extract<typeof outcome, {kind: "available"}>).value as SvelteFacts;
@@ -836,7 +808,7 @@ describe("createSvelteProvider", () => {
   it("reports generatedConfigExists as false when .svelte-kit/tsconfig.json is absent", async () => {
     const fixture = await createFrontendFixture({cv: {skipGeneratedConfig: true}});
 
-    const outcome = await createSvelteProvider("cv", fixture.input)();
+    const outcome = await fixture.invoke(createSvelteProvider("cv", fixture.input));
 
     expect(outcome.kind).toBe("available");
     const facts = (outcome as Extract<typeof outcome, {kind: "available"}>).value as SvelteFacts;
@@ -846,7 +818,7 @@ describe("createSvelteProvider", () => {
   it("reports an adapter issue when svelte.config does not configure a recognizable adapter", async () => {
     const fixture = await createFrontendFixture({cv: {svelteConfigContents: "export default {kit: {}};\n"}});
 
-    const outcome = await createSvelteProvider("cv", fixture.input)();
+    const outcome = await fixture.invoke(createSvelteProvider("cv", fixture.input));
 
     expect(outcome.kind).toBe("available");
     const facts = (outcome as Extract<typeof outcome, {kind: "available"}>).value as SvelteFacts;
@@ -878,7 +850,7 @@ describe("createSvelteProvider", () => {
       },
     });
 
-    const outcome = await createSvelteProvider("cv", fixture.input)();
+    const outcome = await fixture.invoke(createSvelteProvider("cv", fixture.input));
 
     expect(outcome.kind).toBe("available");
     const facts = (outcome as Extract<typeof outcome, {kind: "available"}>).value as SvelteFacts;
@@ -899,7 +871,7 @@ describe("createSvelteProvider", () => {
       },
     });
 
-    const outcome = await createSvelteProvider("cv", fixture.input)();
+    const outcome = await fixture.invoke(createSvelteProvider("cv", fixture.input));
 
     expect(outcome.kind).toBe("available");
     const facts = (outcome as Extract<typeof outcome, {kind: "available"}>).value as SvelteFacts;
@@ -908,11 +880,13 @@ describe("createSvelteProvider", () => {
     expect(facts.packageIssues).toEqual([]);
   });
 
-  it("measures duration only after all inspection completes", async () => {
+  it("measures duration across the whole inspection", async () => {
     const fixture = await createFrontendFixture();
+    const delayedPackages = TestClock.adjust("5 millis").pipe(Effect.andThen(fixture.input.packages));
 
-    const outcome = await createSvelteProvider("status", fixture.input)();
+    const outcome = await fixture.invoke(createSvelteProvider("status", {...fixture.input, packages: delayedPackages}));
 
-    expect(outcome.durationMs).toBeGreaterThan(0);
+    expect(outcome.kind).toBe("available");
+    expect(outcome.durationMs).toBe(5);
   });
 });

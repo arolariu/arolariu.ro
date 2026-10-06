@@ -3,8 +3,10 @@
  * @module scripts/common/tooling-config
  */
 
+import {Effect, type FileSystem, type Path, type PlatformError} from "effect";
+
 import type {ContainerEngine} from "../container-runtime/types.ts";
-import type {FileSystem, ReadOnlyFileSystem} from "./runtime.ts";
+import {ReadOnlyFiles, writeTextAtomic} from "../platform/Files.ts";
 
 const supportedContainerEngines: ReadonlySet<string> = new Set(["rancher", "podman"]);
 const secretKeyFragments = ["token", "secret", "password", "connectionstring"] as const;
@@ -66,8 +68,23 @@ function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
-function hasErrorCode(error: unknown, code: string): boolean {
-  return error instanceof Error && "code" in error && error.code === code;
+/**
+ * Parses the configuration document text into a read result.
+ *
+ * @param path - Configuration path, quoted in the invalid message.
+ * @param contents - Raw document text.
+ * @returns The valid configuration, or the invalid result for malformed JSON or schema.
+ */
+function parseToolingConfigDocument(path: string, contents: string): ToolingConfigReadResult {
+  try {
+    const value: unknown = JSON.parse(contents);
+    return {status: "valid", config: parseToolingConfig(value)};
+  } catch (error) {
+    return {
+      status: "invalid",
+      error: `Invalid local tooling configuration '${path}': ${errorMessage(error)}`,
+    };
+  }
 }
 
 /**
@@ -104,32 +121,26 @@ export function parseToolingConfig(value: unknown): ToolingConfigV1 {
  * Reads and validates optional repository-local tooling configuration.
  *
  * @param path - Absolute or repository-relative configuration path.
- * @param files - Read-only filesystem capability used to read the configuration file.
- * @returns Missing, valid, or explicit invalid status.
+ * @returns Missing (the file does not exist), valid, or explicit invalid status, read through
+ * {@link ReadOnlyFiles}; never fails.
  */
-export async function readToolingConfig(path: string, files: ReadOnlyFileSystem): Promise<ToolingConfigReadResult> {
-  let contents: string;
-  try {
-    contents = await files.readText(path);
-  } catch (error) {
-    if (hasErrorCode(error, "ENOENT")) {
-      return {status: "missing"};
-    }
-    return {
-      status: "invalid",
-      error: `Unable to read local tooling configuration '${path}': ${errorMessage(error)}`,
-    };
-  }
-
-  try {
-    const value: unknown = JSON.parse(contents);
-    return {status: "valid", config: parseToolingConfig(value)};
-  } catch (error) {
-    return {
-      status: "invalid",
-      error: `Invalid local tooling configuration '${path}': ${errorMessage(error)}`,
-    };
-  }
+export function readToolingConfig(path: string): Effect.Effect<ToolingConfigReadResult, never, ReadOnlyFiles> {
+  return Effect.gen(function* () {
+    const files = yield* ReadOnlyFiles;
+    return yield* files.readFileString(path).pipe(
+      Effect.map((contents) => parseToolingConfigDocument(path, contents)),
+      Effect.catch((error) =>
+        Effect.succeed<ToolingConfigReadResult>(
+          error.reason._tag === "NotFound"
+            ? {status: "missing"}
+            : {
+                status: "invalid",
+                error: `Unable to read local tooling configuration '${path}': Failed to readText '${path}': ${error.message}`,
+              },
+        ),
+      ),
+    );
+  });
 }
 
 /**
@@ -137,13 +148,18 @@ export async function readToolingConfig(path: string, files: ReadOnlyFileSystem)
  *
  * @param path - Destination configuration path.
  * @param config - Version 1 configuration to persist.
- * @param files - Filesystem capability used to perform the atomic write.
+ * @returns An effect completing once `path` holds the serialized configuration, written by
+ * `writeTextAtomic` with mode `0o600` and parent-directory mode `0o700`.
  */
-export async function writeToolingConfig(path: string, config: Readonly<ToolingConfigV1>, files: FileSystem): Promise<void> {
-  const parsed = parseToolingConfig(config);
-  const document = `${JSON.stringify(parsed, null, 2)}\n`;
-
-  await files.writeTextAtomic(path, document, {mode: 0o600, directoryMode: 0o700});
+export function writeToolingConfig(
+  path: string,
+  config: Readonly<ToolingConfigV1>,
+): Effect.Effect<void, PlatformError.PlatformError, FileSystem.FileSystem | Path.Path> {
+  return Effect.suspend(() => {
+    const parsed = parseToolingConfig(config);
+    const document = `${JSON.stringify(parsed, null, 2)}\n`;
+    return writeTextAtomic(path, document, {mode: 0o600, directoryMode: 0o700});
+  });
 }
 
 /**

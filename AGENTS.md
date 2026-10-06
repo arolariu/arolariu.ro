@@ -81,6 +81,7 @@ npm run lint
 npm run format
 npm run generate
 npm run generate:i18n
+npm run rates:update
 
 # Direct backend commands
 dotnet build sites/api.arolariu.ro/src/Core

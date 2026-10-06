@@ -7,11 +7,14 @@
 import {mkdir, mkdtemp, readFile, readdir, rm, stat, writeFile} from "node:fs/promises";
 import {tmpdir} from "node:os";
 import {dirname, join} from "node:path";
+import {Effect} from "effect";
 import {afterEach, beforeEach, describe, expect, it} from "vitest";
-import {nodeFileSystem} from "./runtime.node.ts";
+
+import {effectTest, makeTestLayer, repositoryFixtureRoot} from "../platform/testing.ts";
 import {mergeToolingConfig, parseToolingConfig, readToolingConfig, writeToolingConfig} from "./tooling-config.ts";
 
 const temporaryRoots: string[] = [];
+const nodeLayer = makeTestLayer({fileSystem: "node"}).layer;
 let configPath: string;
 
 beforeEach(async () => {
@@ -24,33 +27,124 @@ afterEach(async () => {
   await Promise.all(temporaryRoots.splice(0).map((root) => rm(root, {recursive: true, force: true})));
 });
 
+/**
+ * Writes the configuration fixture to the real temporary configuration path.
+ *
+ * @param contents - File contents.
+ * @returns An effect completing once the file exists.
+ */
+function seedConfig(contents: string): Effect.Effect<void> {
+  return Effect.promise(async () => {
+    await mkdir(dirname(configPath), {recursive: true});
+    await writeFile(configPath, contents, "utf8");
+  });
+}
+
 describe("readToolingConfig", () => {
-  it("reports a missing file", async () => {
-    await expect(readToolingConfig(configPath, nodeFileSystem)).resolves.toEqual({status: "missing"});
-  });
+  effectTest(
+    "reports a missing file",
+    () =>
+      Effect.gen(function* () {
+        // Act
+        const result = yield* readToolingConfig(configPath);
 
-  it("reads a valid version 1 document", async () => {
-    await mkdir(dirname(configPath), {recursive: true});
-    await writeFile(configPath, JSON.stringify({schemaVersion: 1, containerEngine: "podman"}), "utf8");
+        // Assert
+        expect(result).toEqual({status: "missing"});
+      }),
+    nodeLayer,
+  );
 
-    await expect(readToolingConfig(configPath, nodeFileSystem)).resolves.toEqual({
-      status: "valid",
-      config: {schemaVersion: 1, containerEngine: "podman"},
-    });
-  });
+  effectTest(
+    "reports a missing tooling config as missing",
+    () =>
+      Effect.gen(function* () {
+        // Act
+        const result = yield* readToolingConfig(join(repositoryFixtureRoot, ".arolariu", "tooling.local.json"));
 
-  it("reports invalid JSON explicitly", async () => {
-    await mkdir(dirname(configPath), {recursive: true});
-    await writeFile(configPath, "{not json", "utf8");
+        // Assert
+        expect(result).toEqual({status: "missing"});
+      }),
+    makeTestLayer().layer,
+  );
 
-    const result = await readToolingConfig(configPath, nodeFileSystem);
+  effectTest(
+    "reads a valid version 1 document",
+    () =>
+      Effect.gen(function* () {
+        // Arrange
+        yield* seedConfig(JSON.stringify({schemaVersion: 1, containerEngine: "podman"}));
 
-    expect(result.status).toBe("invalid");
-    if (result.status === "invalid") {
-      expect(result.error).toContain("Invalid local tooling configuration");
-      expect(result.error).toContain(configPath);
-    }
-  });
+        // Act
+        const result = yield* readToolingConfig(configPath);
+
+        // Assert
+        expect(result).toEqual({
+          status: "valid",
+          config: {schemaVersion: 1, containerEngine: "podman"},
+        });
+      }),
+    nodeLayer,
+  );
+
+  effectTest(
+    "reports invalid JSON explicitly",
+    () =>
+      Effect.gen(function* () {
+        // Arrange
+        yield* seedConfig("{not json");
+
+        // Act
+        const result = yield* readToolingConfig(configPath);
+
+        // Assert
+        expect(result.status).toBe("invalid");
+        if (result.status === "invalid") {
+          expect(result.error).toContain("Invalid local tooling configuration");
+          expect(result.error).toContain(configPath);
+        }
+      }),
+    nodeLayer,
+  );
+
+  effectTest(
+    "reports an unsupported schema with the legacy message",
+    () =>
+      Effect.gen(function* () {
+        // Arrange
+        yield* seedConfig(JSON.stringify({schemaVersion: 2}));
+
+        // Act
+        const result = yield* readToolingConfig(configPath);
+
+        // Assert
+        expect(result).toEqual({
+          status: "invalid",
+          error: `Invalid local tooling configuration '${configPath}': Unsupported tooling configuration schema version '2'. Expected version 1.`,
+        });
+      }),
+    nodeLayer,
+  );
+
+  effectTest(
+    "reports an unreadable configuration explicitly",
+    () =>
+      Effect.gen(function* () {
+        // Arrange
+        yield* Effect.promise(() => mkdir(configPath, {recursive: true}));
+
+        // Act
+        const result = yield* readToolingConfig(configPath);
+
+        // Assert
+        expect(result.status).toBe("invalid");
+        if (result.status === "invalid") {
+          expect(result.error).toContain(
+            `Unable to read local tooling configuration '${configPath}': Failed to readText '${configPath}': `,
+          );
+        }
+      }),
+    nodeLayer,
+  );
 });
 
 describe("parseToolingConfig", () => {
@@ -118,67 +212,78 @@ describe("parseToolingConfig", () => {
 });
 
 describe("writeToolingConfig", () => {
-  it("writes through a temporary sibling and atomically renames it", async () => {
-    await writeToolingConfig(
-      configPath,
-      {
-        schemaVersion: 1,
-        containerEngine: "rancher",
-      },
-      nodeFileSystem,
-    );
+  effectTest(
+    "writes through a temporary sibling and atomically renames it",
+    () =>
+      Effect.gen(function* () {
+        // Act
+        yield* writeToolingConfig(configPath, {schemaVersion: 1, containerEngine: "rancher"});
 
-    await expect(readFile(configPath, "utf8")).resolves.toContain('"schemaVersion": 1');
-    await expect(readdir(dirname(configPath))).resolves.toEqual(["tooling.local.json"]);
-  });
+        // Assert
+        const contents = yield* Effect.promise(() => readFile(configPath, "utf8"));
+        expect(contents).toBe('{\n  "schemaVersion": 1,\n  "containerEngine": "rancher"\n}\n');
+        expect(yield* Effect.promise(() => readdir(dirname(configPath)))).toEqual(["tooling.local.json"]);
+      }),
+    nodeLayer,
+  );
 
-  it("writes permission-conscious files where POSIX modes are supported", async () => {
-    await writeToolingConfig(
-      configPath,
-      {
-        schemaVersion: 1,
-        containerEngine: "podman",
-      },
-      nodeFileSystem,
-    );
+  effectTest(
+    "writes permission-conscious files where POSIX modes are supported",
+    () =>
+      Effect.gen(function* () {
+        // Act
+        yield* writeToolingConfig(configPath, {schemaVersion: 1, containerEngine: "podman"});
 
-    if (process.platform !== "win32") {
-      const metadata = await stat(configPath);
-      expect(metadata.mode & 0o777).toBe(0o600);
-    }
-  });
+        // Assert
+        if (process.platform !== "win32") {
+          const metadata = yield* Effect.promise(() => stat(configPath));
+          expect(metadata.mode & 0o777).toBe(0o600);
+        }
+      }),
+    nodeLayer,
+  );
 
-  it("serializes only known schema properties", async () => {
-    const untrusted: unknown = {
-      schemaVersion: 1,
-      containerEngine: "rancher",
-      unexpected: "discard me",
-    };
-
-    const parsed = parseToolingConfig(untrusted);
-    await writeToolingConfig(configPath, parsed, nodeFileSystem);
-
-    await expect(readFile(configPath, "utf8")).resolves.not.toContain("unexpected");
-  });
-
-  it("removes only its temporary sibling after rename failure", async () => {
-    await mkdir(configPath, {recursive: true});
-    await writeFile(join(configPath, "preserved.txt"), "keep", "utf8");
-
-    await expect(
-      writeToolingConfig(
-        configPath,
-        {
+  effectTest(
+    "serializes only known schema properties",
+    () =>
+      Effect.gen(function* () {
+        // Arrange
+        const untrusted: unknown = {
           schemaVersion: 1,
           containerEngine: "rancher",
-        },
-        nodeFileSystem,
-      ),
-    ).rejects.toThrow();
+          unexpected: "discard me",
+        };
+        const parsed = parseToolingConfig(untrusted);
 
-    await expect(readdir(dirname(configPath))).resolves.toEqual(["tooling.local.json"]);
-    await expect(readFile(join(configPath, "preserved.txt"), "utf8")).resolves.toBe("keep");
-  });
+        // Act
+        yield* writeToolingConfig(configPath, parsed);
+
+        // Assert
+        expect(yield* Effect.promise(() => readFile(configPath, "utf8"))).not.toContain("unexpected");
+      }),
+    nodeLayer,
+  );
+
+  effectTest(
+    "removes only its temporary sibling after rename failure",
+    () =>
+      Effect.gen(function* () {
+        // Arrange
+        yield* Effect.promise(async () => {
+          await mkdir(configPath, {recursive: true});
+          await writeFile(join(configPath, "preserved.txt"), "keep", "utf8");
+        });
+
+        // Act
+        const error = yield* Effect.flip(writeToolingConfig(configPath, {schemaVersion: 1, containerEngine: "rancher"}));
+
+        // Assert
+        expect(error._tag).toBe("PlatformError");
+        expect(yield* Effect.promise(() => readdir(dirname(configPath)))).toEqual(["tooling.local.json"]);
+        expect(yield* Effect.promise(() => readFile(join(configPath, "preserved.txt"), "utf8"))).toBe("keep");
+      }),
+    nodeLayer,
+  );
 });
 
 describe("mergeToolingConfig", () => {

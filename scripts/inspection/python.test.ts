@@ -7,21 +7,24 @@
 import {mkdir, mkdtemp, rm, truncate, writeFile} from "node:fs/promises";
 import {tmpdir} from "node:os";
 import {dirname, join, resolve} from "node:path";
+import {Effect} from "effect";
+import {TestClock} from "effect/testing";
 import {afterEach, describe, expect, it, vi} from "vitest";
 
-import type {ProcessEnvironment, ProcessOutcome, ProcessRequest, ProcessRunner} from "../common/runner.ts";
-import {nodeFileSystem} from "../common/runtime.node.ts";
-import {asReadOnlyFileSystem, DefaultTaskScheduler, type Clock, type RuntimeEnvironment} from "../common/runtime.ts";
 import {createRepositoryPaths, type RepositoryPaths} from "../common/repository-paths.ts";
-import {createInspectionProbeRunner} from "./probes.ts";
-import {createPythonProvider} from "./python.ts";
+import type {EnvironmentSnapshot} from "../platform/Environment.ts";
+import type {ProcessRequest} from "../platform/Process.ts";
+import {makeTestLayer, runScoped, scriptedOutcomes, type ProbeOutcomeResponder, type ScriptedProcess} from "../platform/testing.ts";
+import {inspectionProbeRunner, type ProbeOutcome} from "./probes.ts";
+import {createPythonProvider, type PythonFacts} from "./python.ts";
+import type {InspectionOutcome} from "./types.ts";
 
 const fixtureRoots: string[] = [];
 
 const PYTHON_METADATA_PROBE_SCRIPT =
   "import json, platform, site, sys; print(json.dumps({'executable': sys.executable, 'version': platform.python_version(), 'prefix': sys.prefix, 'basePrefix': getattr(sys, 'base_prefix', sys.prefix), 'sitePackages': site.getsitepackages()}, separators=(',', ':')))";
 
-/** Legacy-shaped fixture description translated into one typed {@link ProcessOutcome}. */
+/** Legacy-shaped fixture description translated into one typed {@link ProbeOutcome}. */
 interface ProcessOutcomeFixture {
   readonly code?: number;
   readonly stdout?: string;
@@ -33,13 +36,13 @@ interface ProcessOutcomeFixture {
 }
 
 /**
- * Builds one typed {@link ProcessOutcome} from a fixture description, so every suite keeps naming
+ * Builds one typed {@link ProbeOutcome} from a fixture description, so every suite keeps naming
  * the exact spawn/timeout/signal/exit classification it exercises.
  *
  * @param patch - Fixture description of the outcome under test.
  * @returns The equivalent typed process outcome.
  */
-function commandResult(patch: ProcessOutcomeFixture = {}): ProcessOutcome {
+function commandResult(patch: ProcessOutcomeFixture = {}): ProbeOutcome {
   const output = {stdout: patch.stdout ?? "", stderr: patch.stderr ?? "", durationMs: patch.durationMs ?? 1};
   if (patch.spawnError !== undefined) {
     return {kind: "spawn-failed", message: patch.spawnError, ...output};
@@ -54,25 +57,6 @@ function commandResult(patch: ProcessOutcomeFixture = {}): ProcessOutcome {
   return code === 0 ? {kind: "succeeded", exitCode: 0, ...output} : {kind: "exited", exitCode: code, ...output};
 }
 
-/** Wraps one recorded `run` implementation in the full {@link ProcessRunner} probe contract. */
-function asProcessRunner(run: ProcessRunner["run"]): ProcessRunner {
-  return {
-    run,
-    expectSuccess: () => {
-      throw new Error("Inspection probes never call expectSuccess.");
-    },
-    scope: () => {
-      throw new Error("Inspection probes never scope the shared runner.");
-    },
-  };
-}
-
-/** Read-only filesystem capability every fixture provider observes its temporary root through. */
-const testFiles = asReadOnlyFileSystem(nodeFileSystem);
-
-/** Deterministic task scheduler replacing the previous explicit `Promise.all` calls. */
-const testTasks = new DefaultTaskScheduler();
-
 /**
  * Builds one immutable environment snapshot for a fixture provider.
  *
@@ -80,7 +64,7 @@ const testTasks = new DefaultTaskScheduler();
  * @param variables - Environment variables the provider may forward to probes.
  * @returns The environment snapshot.
  */
-function environmentFor(platform: NodeJS.Platform, variables: ProcessEnvironment = {}): RuntimeEnvironment {
+function environmentFor(platform: NodeJS.Platform, variables: EnvironmentSnapshot["variables"] = {}): EnvironmentSnapshot {
   return {
     variables,
     cwd: "/repo",
@@ -95,18 +79,6 @@ function environmentFor(platform: NodeJS.Platform, variables: ProcessEnvironment
 
 function commandKey(command: Readonly<ProcessRequest>, cwd?: string): string {
   return `${cwd ?? ""}\u0000${command.command}\u0000${JSON.stringify(command.args)}`;
-}
-
-function clock(): Clock {
-  let current = 100;
-  return {
-    monotonicNow: (): number => {
-      current += 5;
-      return current;
-    },
-    isoTimestamp: (): string => "2025-01-01T00:00:00.000Z",
-    delay: (): Promise<void> => Promise.resolve(),
-  };
 }
 
 function expectedProbeEnvironment(platform: NodeJS.Platform): Readonly<NodeJS.ProcessEnv> {
@@ -206,9 +178,9 @@ interface PythonFixture {
   readonly root: string;
   readonly paths: RepositoryPaths;
   readonly platform: NodeJS.Platform;
-  readonly run: ReturnType<typeof vi.fn<ProcessRunner["run"]>>;
-  readonly setResponse: (command: Readonly<ProcessRequest>, result: ProcessOutcome, cwd?: string) => void;
-  readonly provider: ReturnType<typeof createPythonProvider>;
+  readonly run: ReturnType<typeof vi.fn<ProbeOutcomeResponder>>;
+  readonly setResponse: (command: Readonly<ProcessRequest>, result: ProbeOutcome, cwd?: string) => void;
+  readonly provider: () => Promise<InspectionOutcome<PythonFacts>>;
   readonly venvDirectory: string;
   readonly venvInterpreter: string;
 }
@@ -223,7 +195,8 @@ async function createPythonFixture(
     templateConfig?: string | null;
     dockerConfig?: string | null;
     aspireConfig?: string | null;
-    clock?: Clock;
+    /** Scripts consulted before the fixture's own responses. */
+    processes?: readonly ScriptedProcess[];
   }> = {},
 ): Promise<PythonFixture> {
   const root = await mkdtemp(join(tmpdir(), "arolariu-inspection-python-"));
@@ -289,8 +262,8 @@ async function createPythonFixture(
     ...(input.createVenv === false ? [] : [writeFixtureFile(actualVenvInterpreter, "placeholder")]),
   ]);
 
-  const responses = new Map<string, ProcessOutcome>();
-  const setResponse = (command: Readonly<ProcessRequest>, result: ProcessOutcome, cwd: string = paths.root): void => {
+  const responses = new Map<string, ProbeOutcome>();
+  const setResponse = (command: Readonly<ProcessRequest>, result: ProbeOutcome, cwd: string = paths.root): void => {
     responses.set(commandKey(command, cwd), result);
   };
 
@@ -335,19 +308,18 @@ async function createPythonFixture(
     );
   }
 
-  const run = vi.fn<ProcessRunner["run"]>(
-    async (command, options): Promise<ProcessOutcome> =>
+  const run = vi.fn<ProbeOutcomeResponder>(
+    async (command, options): Promise<ProbeOutcome> =>
       responses.get(commandKey(command, options?.cwd))
       ?? commandResult({code: 127, spawnError: `spawn ENOENT unexpected-native-command-marker:${command.command}`}),
   );
-  const provider = createPythonProvider({
-    paths,
-    probes: createInspectionProbeRunner(asProcessRunner(run)),
-    files: testFiles,
-    clock: input.clock ?? clock(),
-    tasks: testTasks,
+  const harness = makeTestLayer({
+    fileSystem: "node",
     environment: environmentFor(platform),
+    processes: [...(input.processes ?? []), scriptedOutcomes(run)],
   });
+  const provider = async (): Promise<InspectionOutcome<PythonFacts>> =>
+    runScoped(createPythonProvider({paths, probes: inspectionProbeRunner}), harness.layer);
   return {root, paths, platform, run, setResponse, provider, venvDirectory, venvInterpreter};
 }
 
@@ -386,7 +358,7 @@ describe("createPythonProvider", () => {
         },
         configurationIssues: [],
       },
-      durationMs: 5,
+      durationMs: 0,
     });
     expect(JSON.stringify(outcome)).not.toMatch(
       /raw-|secret-value-marker|site-value-marker|docker-only-value-marker|candidate-two-native-marker|candidate-three-native-marker|unrelated-secret-marker/iu,
@@ -506,7 +478,7 @@ describe("createPythonProvider", () => {
     await expect(fixture.provider()).resolves.toEqual({
       kind: "invalid",
       issues: ["The requested Python inspection platform is unsupported."],
-      durationMs: 5,
+      durationMs: 0,
     });
     expect(fixture.run).not.toHaveBeenCalled();
   });
@@ -520,7 +492,7 @@ describe("createPythonProvider", () => {
     expect(outcome).toEqual({
       kind: "invalid",
       issues: ["A Python interpreter version probe returned malformed output."],
-      durationMs: 5,
+      durationMs: 0,
     });
     expect(JSON.stringify(outcome)).not.toContain("raw-malformed-version-marker");
   });
@@ -537,7 +509,7 @@ describe("createPythonProvider", () => {
     expect(outcome).toEqual({
       kind: "unavailable",
       reason: "Python interpreter candidates could not be inspected.",
-      durationMs: 5,
+      durationMs: 0,
     });
     expect(JSON.stringify(outcome)).not.toContain("raw-candidate-timeout-marker");
   });
@@ -626,7 +598,7 @@ describe("createPythonProvider", () => {
     expect(outcome).toEqual({
       kind: "invalid",
       issues: ["The Python virtual environment returned malformed metadata."],
-      durationMs: 5,
+      durationMs: 0,
     });
     expect(JSON.stringify(outcome)).not.toContain("raw-venv-metadata-marker");
   });
@@ -644,7 +616,7 @@ describe("createPythonProvider", () => {
     expect(outcome).toEqual({
       kind: "unavailable",
       reason: "The Python virtual environment could not be inspected.",
-      durationMs: 5,
+      durationMs: 0,
     });
     expect(JSON.stringify(outcome)).not.toMatch(/native-venv-spawn-marker|raw-venv-stderr-marker/iu);
   });
@@ -683,7 +655,7 @@ describe("createPythonProvider", () => {
     expect(outcome).toEqual({
       kind: "invalid",
       issues: ["pip --version returned malformed output."],
-      durationMs: 5,
+      durationMs: 0,
     });
     expect(JSON.stringify(outcome)).not.toMatch(/1notapepversion|secret-user-marker/iu);
   });
@@ -711,7 +683,7 @@ describe("createPythonProvider", () => {
     expect(outcome).toEqual({
       kind: "invalid",
       issues: ["pip list returned malformed package data."],
-      durationMs: 5,
+      durationMs: 0,
     });
     expect(JSON.stringify(outcome)).not.toContain("raw-package-secret-marker");
   });
@@ -732,7 +704,7 @@ describe("createPythonProvider", () => {
     await expect(fixture.provider()).resolves.toEqual({
       kind: "invalid",
       issues: ["pip list returned malformed package data."],
-      durationMs: 5,
+      durationMs: 0,
     });
   });
 
@@ -745,7 +717,7 @@ describe("createPythonProvider", () => {
     expect(outcome).toEqual({
       kind: "unavailable",
       reason: "Installed Python distributions could not be inspected.",
-      durationMs: 5,
+      durationMs: 0,
     });
     expect(JSON.stringify(outcome)).not.toContain("raw-pip-list-stderr-marker");
   });
@@ -891,7 +863,7 @@ describe("createPythonProvider", () => {
     await expect(fixture.provider()).resolves.toEqual({
       kind: "invalid",
       issues: ["pip list returned malformed package data."],
-      durationMs: 5,
+      durationMs: 0,
     });
   });
 
@@ -904,7 +876,7 @@ describe("createPythonProvider", () => {
     await expect(fixture.provider()).resolves.toEqual({
       kind: "invalid",
       issues: ["The Python requirements tree is malformed."],
-      durationMs: 5,
+      durationMs: 0,
     });
   });
 
@@ -970,7 +942,7 @@ describe("createPythonProvider", () => {
     expect(outcome).toEqual({
       kind: "invalid",
       issues: ["The Python requirements tree is malformed."],
-      durationMs: 5,
+      durationMs: 0,
     });
     expect(JSON.stringify(outcome)).not.toContain("unterminated-raw-secret-marker");
   });
@@ -981,7 +953,7 @@ describe("createPythonProvider", () => {
     await expect(fixture.provider()).resolves.toEqual({
       kind: "invalid",
       issues: ["The Python requirements tree is malformed."],
-      durationMs: 5,
+      durationMs: 0,
     });
   });
 
@@ -994,7 +966,7 @@ describe("createPythonProvider", () => {
     await expect(fixture.provider()).resolves.toEqual({
       kind: "invalid",
       issues: ["The Python requirements tree is malformed."],
-      durationMs: 5,
+      durationMs: 0,
     });
   });
 
@@ -1007,7 +979,7 @@ describe("createPythonProvider", () => {
     await expect(fixture.provider()).resolves.toEqual({
       kind: "invalid",
       issues: ["The Python requirements tree is malformed."],
-      durationMs: 5,
+      durationMs: 0,
     });
   });
 
@@ -1022,7 +994,7 @@ describe("createPythonProvider", () => {
     expect(outcome).toEqual({
       kind: "invalid",
       issues: ["The Python requirements tree is malformed."],
-      durationMs: 5,
+      durationMs: 0,
     });
     expect(JSON.stringify(outcome)).not.toContain("raw-option-secret-marker");
   });
@@ -1036,7 +1008,7 @@ describe("createPythonProvider", () => {
     expect(outcome).toEqual({
       kind: "invalid",
       issues: ["The Python requirements tree is malformed."],
-      durationMs: 5,
+      durationMs: 0,
     });
     expect(JSON.stringify(outcome)).not.toMatch(/outside-requirements|outside-secret-marker/iu);
   });
@@ -1070,7 +1042,7 @@ describe("createPythonProvider", () => {
     await expect(fixture.provider()).resolves.toEqual({
       kind: "invalid",
       issues: ["The Python requirements tree is malformed."],
-      durationMs: 5,
+      durationMs: 0,
     });
   });
 
@@ -1080,7 +1052,7 @@ describe("createPythonProvider", () => {
     await expect(fixture.provider()).resolves.toEqual({
       kind: "invalid",
       issues: ["The Python requirements tree is malformed."],
-      durationMs: 5,
+      durationMs: 0,
     });
   });
 
@@ -1160,7 +1132,7 @@ describe("createPythonProvider", () => {
     expect(outcome).toEqual({
       kind: "invalid",
       issues: ["pyproject.toml declares an unsupported Python requirement."],
-      durationMs: 5,
+      durationMs: 0,
     });
     expect(JSON.stringify(outcome)).not.toContain("raw-project-secret-marker");
   });
@@ -1171,7 +1143,7 @@ describe("createPythonProvider", () => {
     await expect(fixture.provider()).resolves.toEqual({
       kind: "invalid",
       issues: ["The Python requirements entry file is missing."],
-      durationMs: 5,
+      durationMs: 0,
     });
     expect(fixture.run).not.toHaveBeenCalled();
   });
@@ -1183,7 +1155,7 @@ describe("createPythonProvider", () => {
     await expect(fixture.provider()).resolves.toEqual({
       kind: "invalid",
       issues: ["The Python requirements tree is malformed."],
-      durationMs: 5,
+      durationMs: 0,
     });
     expect(fixture.run).not.toHaveBeenCalled();
   });
@@ -1195,7 +1167,7 @@ describe("createPythonProvider", () => {
     await expect(fixture.provider()).resolves.toEqual({
       kind: "invalid",
       issues: ["The canonical Python virtual-environment path is not a directory."],
-      durationMs: 5,
+      durationMs: 0,
     });
   });
 
@@ -1208,25 +1180,19 @@ describe("createPythonProvider", () => {
     expect(fixture.run).toHaveBeenCalledTimes(6);
   });
 
-  it("measures duration after all fact projection completes", async () => {
-    const events: string[] = [];
-    let current = 100;
+  it("measures duration across every observation", async () => {
     const fixture = await createPythonFixture({
       createVenv: false,
-      clock: {
-        monotonicNow: (): number => {
-          events.push("clock");
-          current += 5;
-          return current;
+      processes: [
+        {
+          match: (request) => request.command === "py",
+          respond: () => TestClock.adjust("5 millis").pipe(Effect.as({stdout: "Python 3.12.6\n", stderr: "", durationMs: 5})),
         },
-        isoTimestamp: (): string => "2025-01-01T00:00:00.000Z",
-        delay: (): Promise<void> => Promise.resolve(),
-      },
+      ],
     });
 
     const outcome = await fixture.provider();
 
     expect(outcome).toMatchObject({kind: "available", durationMs: 5});
-    expect(events).toEqual(["clock", "clock"]);
   });
 });

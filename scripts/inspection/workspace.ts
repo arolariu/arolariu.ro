@@ -13,8 +13,14 @@
  */
 
 import {isAbsolute, join, relative, resolve, sep} from "node:path";
-import type {ProcessOutcome} from "../common/runner.ts";
-import type {InspectionOutcome, InspectionProvider, InspectionProviderContext} from "./types.ts";
+
+import {Duration, Effect} from "effect";
+
+import {Environment} from "../platform/Environment.ts";
+import {TemporaryDirectories} from "../platform/Files.ts";
+import {Process, type ProcessError} from "../platform/Process.ts";
+import {timed} from "./session.ts";
+import type {InspectionOutcome, InspectionProvider} from "./types.ts";
 
 /** One repository project discovered in the Nx workspace graph. */
 export interface WorkspaceProjectFact {
@@ -102,7 +108,10 @@ function canonicalizeCycle(cycle: readonly string[]): readonly string[] {
  * @param sortedAdjacency - Each project's sorted, de-duplicated dependency targets.
  * @returns Deterministic, rotation-de-duplicated directed cycles, sorted for stable output.
  */
-function findCycles(sortedProjectNames: readonly string[], sortedAdjacency: ReadonlyMap<string, readonly string[]>): readonly (readonly string[])[] {
+function findCycles(
+  sortedProjectNames: readonly string[],
+  sortedAdjacency: ReadonlyMap<string, readonly string[]>,
+): readonly (readonly string[])[] {
   const state = new Map<string, "visiting" | "visited">();
   const stack: string[] = [];
   const seenCanonicalCycles = new Set<string>();
@@ -244,7 +253,9 @@ export function projectNxGraph(value: unknown, repositoryRoot: string): Workspac
         throw new WorkspaceGraphProjectionError(`Nx workspace dependency record for '${source}' has a missing 'source' or 'target'.`);
       }
       if (edgeSource !== source) {
-        throw new WorkspaceGraphProjectionError(`Nx workspace dependency record for '${source}' declares an inconsistent source ('${edgeSource}').`);
+        throw new WorkspaceGraphProjectionError(
+          `Nx workspace dependency record for '${source}' declares an inconsistent source ('${edgeSource}').`,
+        );
       }
       if (!projectNames.has(edgeTarget)) {
         continue;
@@ -273,13 +284,15 @@ export function projectNxGraph(value: unknown, repositoryRoot: string): Workspac
   return {
     projects: sortedProjects,
     dependencies: sortedEdges,
-    cycles: findCycles(sortedProjects.map(({name}) => name), adjacency),
+    cycles: findCycles(
+      sortedProjects.map(({name}) => name),
+      adjacency,
+    ),
   };
 }
 
-/** Dependencies required to create the isolated Nx workspace provider. */
-interface WorkspaceProviderInput
-  extends Pick<InspectionProviderContext, "runner" | "clock" | "environment" | "temporaryDirectories"> {
+/** Inputs of the isolated Nx workspace provider. */
+interface WorkspaceProviderInput {
   /** Repository root to inspect. */
   readonly root: string;
 }
@@ -288,27 +301,24 @@ interface WorkspaceProviderInput
 const WORKER_TIMEOUT_MS = 120_000;
 
 /**
- * Maps one worker {@link ProcessOutcome} exhaustively onto its bounded unavailable reason.
+ * Maps one worker failure exhaustively onto its bounded unavailable reason.
  *
  * @remarks
- * A signalled or cancelled child reports the same "exited with code 1" evidence the legacy
- * `CommandResult` mapping produced, so no caller observes a new reason string.
+ * A signalled child reports the same "exited with code 1" evidence the legacy `CommandResult`
+ * mapping produced, so no caller observes a new reason string.
  *
- * @param outcome - Typed outcome of the isolated worker invocation.
- * @returns The bounded reason, or `undefined` when the worker completed successfully.
+ * @param error - Typed failure of the isolated worker invocation.
+ * @returns The bounded reason.
  */
-function workerFailureReason(outcome: Readonly<ProcessOutcome>): string | undefined {
-  switch (outcome.kind) {
-    case "succeeded":
-      return undefined;
-    case "spawn-failed":
-      return `Nx workspace worker failed to start: ${outcome.message}`;
-    case "timed-out":
+function workerFailureReason(error: ProcessError): string {
+  switch (error._tag) {
+    case "ProcessSpawnFailed":
+      return `Nx workspace worker failed to start: ${error.reason}`;
+    case "ProcessTimedOut":
       return "Nx workspace worker timed out.";
-    case "exited":
-      return `Nx workspace worker exited with code ${String(outcome.exitCode)}.`;
-    case "signalled":
-    case "cancelled":
+    case "ProcessExited":
+      return `Nx workspace worker exited with code ${String(error.exitCode)}.`;
+    case "ProcessSignalled":
       return "Nx workspace worker exited with code 1.";
   }
 }
@@ -317,69 +327,72 @@ function workerFailureReason(outcome: Readonly<ProcessOutcome>): string | undefi
  * Creates the isolated Nx workspace inspection provider.
  *
  * @remarks
- * Each invocation creates a unique temporary root outside the repository through the narrow
- * temporary-directory capability (the provider's ordinary filesystem stays read-only), spawns
- * `workspace.worker.ts` as a native Node child process with Nx's daemon, dotenv loading, workspace
- * database, and task cache all redirected away from repository state, projects its single JSON
- * document through {@link projectNxGraph}, and removes exactly that temporary root in every case —
- * a successful projection, a command failure, or a malformed/invalid document. Only worker
- * spawn/nonzero/timeout failures and malformed/invalid worker output are represented as
- * `"unavailable"`/`"invalid"` outcomes; an unexpected filesystem failure (for example a temporary
- * directory creation/removal failure) rejects the returned promise instead of being hidden in a
+ * Each run creates a unique temporary root outside the repository through `TemporaryDirectories`
+ * (the provider's ordinary filesystem stays read-only), spawns `workspace.worker.ts` as a native
+ * Node child process (`Environment.executablePath`) with Nx's daemon, dotenv loading, workspace
+ * database, and task cache all redirected away from repository state, and projects its single JSON
+ * document through {@link projectNxGraph}. The temporary root belongs to the provider's scope, so it
+ * is removed only after the worker process has stopped — after a successful projection, a command
+ * failure, a malformed/invalid document, or an interruption. Only worker spawn/nonzero/timeout
+ * failures and malformed/invalid worker output are represented as `"unavailable"`/`"invalid"`
+ * outcomes; a temporary-directory creation failure is a defect instead of being hidden in a
  * success-shaped result.
  *
- * @param input - Repository root plus the runner, clock, environment, and temporary-directory
- * capabilities.
+ * @param input - Repository root.
  * @returns An {@link InspectionProvider} for {@link WorkspaceFacts}.
  */
 export function createWorkspaceProvider(input: Readonly<WorkspaceProviderInput>): InspectionProvider<WorkspaceFacts> {
-  return async (): Promise<InspectionOutcome<WorkspaceFacts>> => {
-    const startedAt = input.clock.monotonicNow();
-    const resolvedRoot = resolve(input.root);
-    const temporaryDirectory = await input.temporaryDirectories.createTemporaryDirectory("arolariu-nx-");
-    const tempRoot = temporaryDirectory.path;
+  return timed(
+    Effect.gen(function* () {
+      const environment = yield* Environment;
+      const process = yield* Process;
+      const resolvedRoot = resolve(input.root);
+      const tempRoot = yield* Effect.orDie(Effect.flatMap(TemporaryDirectories, (directories) => directories.make("arolariu-nx-")));
 
-    try {
       const workerPath = resolve(resolvedRoot, "scripts", "inspection", "workspace.worker.ts");
-      const outcome = await input.runner.run(
-        {command: input.environment.executablePath, args: [workerPath, resolvedRoot]},
-        {
-          cwd: resolvedRoot,
-          output: "capture",
-          timeoutMs: WORKER_TIMEOUT_MS,
-          env: {
-            NX_DAEMON: "false",
-            NX_LOAD_DOT_ENV_FILES: "false",
-            NX_WORKSPACE_ROOT_PATH: resolvedRoot,
-            NX_WORKSPACE_DATA_DIRECTORY: join(tempRoot, "workspace-data"),
-            NX_CACHE_DIRECTORY: join(tempRoot, "cache"),
+      const result = yield* Effect.result(
+        process.run(
+          {command: environment.executablePath, args: [workerPath, resolvedRoot]},
+          {
+            cwd: resolvedRoot,
+            output: "capture",
+            timeout: Duration.millis(WORKER_TIMEOUT_MS),
+            env: {
+              NX_DAEMON: "false",
+              NX_LOAD_DOT_ENV_FILES: "false",
+              NX_WORKSPACE_ROOT_PATH: resolvedRoot,
+              NX_WORKSPACE_DATA_DIRECTORY: join(tempRoot, "workspace-data"),
+              NX_CACHE_DIRECTORY: join(tempRoot, "cache"),
+            },
           },
-        },
+        ),
       );
-
-      const durationMs = Math.max(0, input.clock.monotonicNow() - startedAt);
-
-      const failureReason = workerFailureReason(outcome);
-      if (failureReason !== undefined) {
-        return {kind: "unavailable", reason: failureReason, durationMs};
+      if (result._tag === "Failure") {
+        return {
+          kind: "unavailable",
+          reason: workerFailureReason(result.failure),
+          durationMs: 0,
+        } satisfies InspectionOutcome<WorkspaceFacts>;
       }
 
       let parsedDocument: unknown;
       try {
-        parsedDocument = JSON.parse(outcome.stdout.trim());
+        parsedDocument = JSON.parse(result.success.stdout.trim());
       } catch {
-        return {kind: "invalid", issues: ["Nx workspace worker did not emit a single valid JSON document."], durationMs};
+        return {
+          kind: "invalid",
+          issues: ["Nx workspace worker did not emit a single valid JSON document."],
+          durationMs: 0,
+        } satisfies InspectionOutcome<WorkspaceFacts>;
       }
 
       try {
         const facts = projectNxGraph(parsedDocument, resolvedRoot);
-        return {kind: "available", value: facts, durationMs};
+        return {kind: "available", value: facts, durationMs: 0} satisfies InspectionOutcome<WorkspaceFacts>;
       } catch (error: unknown) {
         const message = error instanceof Error ? error.message : "Nx workspace graph projection failed.";
-        return {kind: "invalid", issues: [message], durationMs};
+        return {kind: "invalid", issues: [message], durationMs: 0} satisfies InspectionOutcome<WorkspaceFacts>;
       }
-    } finally {
-      await temporaryDirectory.remove();
-    }
-  };
+    }),
+  );
 }

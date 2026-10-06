@@ -841,7 +841,7 @@ const statusEslintConfig: Config = defineConfig({
 const toolingOutputConfig: Config = defineConfig({
   name: "[@arolariu/tooling-output]",
   files: ["scripts/**/*.{ts,js,mjs,cjs}"],
-  ignores: ["scripts/**/*.test.ts", "scripts/common/logger.ts"],
+  ignores: ["scripts/**/*.test.ts", "scripts/common/logger.ts", "scripts/platform/Output.ts"],
   languageOptions: {
     parser: tseslint.parser,
     ecmaVersion: "latest",
@@ -864,7 +864,7 @@ const toolingOutputConfig: Config = defineConfig({
 const toolingPromptOutputConfig: Config = defineConfig({
   name: "[@arolariu/tooling-prompt-output]",
   files: ["scripts/**/*.{ts,js,mjs,cjs}"],
-  ignores: ["scripts/**/*.test.ts", "scripts/common/logger.ts", "scripts/common/prompts.ts"],
+  ignores: ["scripts/**/*.test.ts", "scripts/common/logger.ts", "scripts/platform/Output.ts"],
   languageOptions: {
     parser: tseslint.parser,
     ecmaVersion: "latest",
@@ -882,7 +882,7 @@ const toolingPromptOutputConfig: Config = defineConfig({
       {
         selector:
           "CallExpression[callee.type='MemberExpression'][callee.property.name='write'][callee.object.type='MemberExpression'][callee.object.property.name='output']",
-        message: "Interactive terminal output is owned exclusively by scripts/common/prompts.ts.",
+        message: "Interactive terminal output is owned exclusively by the Effect Prompts service (scripts/platform/Prompts.ts).",
       },
     ],
   },

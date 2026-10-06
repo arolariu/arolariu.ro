@@ -1,0 +1,1696 @@
+// @vitest-environment node
+/**
+ * @fileoverview Contract tests for the independent .NET setup phase.
+ * @module scripts/commands/setup/phases/dotnet.test
+ *
+ * @remarks
+ * Every test runs the real Effect phase on the in-memory `makeTestLayer` harness: request-keyed
+ * scripted commands replaying legacy-shaped outcomes, a recording `dotnet` inspection session that
+ * replays an outcome sequence, a recording (or the production dry-run) `SetupActions`, and an
+ * environment snapshot that supplies the host platform. Phases run under a counting clock (see
+ * `runPhase`), so each reports the deterministic duration of its legacy test clock. No test in this
+ * file reads the live checkout, spawns a process, or observes ambient Node state.
+ */
+
+import {resolve} from "node:path";
+
+import {Effect, Exit, Layer, Redacted} from "effect";
+import {describe, expect, it, vi} from "vitest";
+
+import {createRepositoryPaths} from "../../../common/repository-paths.ts";
+import type {MinimumVersion, RepositoryRequirements} from "../../../common/requirements.ts";
+import type {DotnetFacts} from "../../../inspection/dotnet.ts";
+import type {InspectionOutcome} from "../../../inspection/types.ts";
+import type {Presenter} from "../../../platform/Output.ts";
+import type {ProcessRequest} from "../../../platform/Process.ts";
+import {makeTestLayer, type RecordedProcessCall, type TestHarness} from "../../../platform/testing.ts";
+import {SetupActions} from "../actions.ts";
+import {
+  productionActions,
+  recordingActions,
+  recordingInspection,
+  runPhase as runPhaseWith,
+  runPhaseExit,
+  scriptedCommands,
+  type ScriptedCommandOutcome,
+} from "../phase-testing.ts";
+import type {
+  SetupAction,
+  SetupActionDisposition,
+  SetupContext,
+  SetupInput,
+  SetupPhaseDefinition,
+  SetupPhaseResult,
+  SetupRequirements,
+} from "../types.ts";
+import {createDotnetSetupPhase, dotnetSetupPhase, generateLocalDevelopmentPassword, selectDotnetInstallationProposal} from "./dotnet.ts";
+
+const requiredDotnet: MinimumVersion = {major: 10, minor: 0, patch: 0};
+const paths = createRepositoryPaths(resolve("C:\\fixture\\arolariu.ro"));
+const appHostProject = resolve(paths.root, "tooling", "AppHost", "AppHost.csproj");
+const sqlSecretKey = "Parameters:sql-password";
+const redisSecretKey = "Parameters:redis-password";
+/**
+ * Ceiling for every long-running .NET install, restore, and trust mutation.
+ *
+ * @remarks
+ * Setup commands default to 120s, which is bounded for probes but far too short for an SDK install
+ * or a full solution restore, so every such mutation requests this timeout explicitly.
+ */
+const LEGACY_MUTATION_TIMEOUT_MS = 1_200_000;
+/** The setup command default timeout every probe and captured command runs with. */
+const PHASE_COMMAND_TIMEOUT_MS = 120_000;
+
+function expectedPasswordForRepeatedByte(byte: number): string {
+  return `Aa1!${Buffer.alloc(24, byte).toString("base64url")}`;
+}
+
+function succeeded(patch: Readonly<{stdout?: string; stderr?: string}> = {}): ScriptedCommandOutcome {
+  return {kind: "succeeded", exitCode: 0, stdout: patch.stdout ?? "", stderr: patch.stderr ?? "", durationMs: 1};
+}
+
+function exited(exitCode: number, patch: Readonly<{stdout?: string; stderr?: string}> = {}): ScriptedCommandOutcome {
+  return {kind: "exited", exitCode, stdout: patch.stdout ?? "", stderr: patch.stderr ?? "", durationMs: 1};
+}
+
+function timedOut(): ScriptedCommandOutcome {
+  return {kind: "timed-out", stdout: "", stderr: "", durationMs: 1};
+}
+
+function signalled(signal: NodeJS.Signals): ScriptedCommandOutcome {
+  return {kind: "signalled", signal, stdout: "", stderr: "", durationMs: 1};
+}
+
+function spawnFailed(message: string): ScriptedCommandOutcome {
+  return {kind: "spawn-failed", message, stdout: "", stderr: "", durationMs: 1};
+}
+
+function commandKey(request: Readonly<ProcessRequest>): string {
+  return [request.command, ...request.args].join("\u0000");
+}
+
+/** One recorded child invocation. */
+type RecordedCall = RecordedProcessCall;
+
+/**
+ * Replays request-keyed scripted outcomes; an unscripted request succeeds, and a sequence replays
+ * in order and then repeats its last outcome.
+ *
+ * @param responses - Outcome, or outcome sequence, per command key.
+ * @returns The responder.
+ */
+function keyedResponder(
+  responses: Readonly<Record<string, ScriptedCommandOutcome | readonly ScriptedCommandOutcome[]>>,
+): (request: ProcessRequest) => ScriptedCommandOutcome {
+  const offsets = new Map<string, number>();
+  return (request) => {
+    const key = commandKey(request);
+    const configured = responses[key];
+    if (configured === undefined) {
+      return succeeded();
+    }
+    if (!Array.isArray(configured)) {
+      return configured as ScriptedCommandOutcome;
+    }
+    const sequence = configured as readonly ScriptedCommandOutcome[];
+    const offset = offsets.get(key) ?? 0;
+    offsets.set(key, offset + 1);
+    return sequence[offset] ?? sequence.at(-1) ?? succeeded();
+  };
+}
+
+function requirements(): RepositoryRequirements {
+  return {
+    node: {major: 24, minor: 0, patch: 0},
+    npm: {major: 11, minor: 0, patch: 0},
+    dotnet: requiredDotnet,
+    python: {major: 3, minor: 12, patch: 0},
+    packages: new Map(),
+  };
+}
+
+function setupOptions(patch: Partial<SetupInput> = {}): SetupInput {
+  return {
+    verbose: false,
+    dryRun: false,
+    yes: false,
+    ...patch,
+  };
+}
+
+/** A {@link DotnetFacts} patch that may explicitly clear an optional field to `undefined`. */
+type DotnetFactsPatch = Partial<Omit<DotnetFacts, "selectedVersion" | "host">> & {
+  selectedVersion?: string | undefined;
+  host?: DotnetFacts["host"] | undefined;
+};
+
+/** Builds one complete, compatible-by-default {@link DotnetFacts} value for tests to patch. */
+function dotnetFacts(patch: DotnetFactsPatch = {}): DotnetFacts {
+  const {selectedVersion, host, ...rest} = patch;
+  // `"key" in patch` distinguishes an absent field (use the default) from an explicit `undefined`
+  // (clear the optional field), which a destructuring default alone cannot tell apart.
+  const includeSelectedVersion = !("selectedVersion" in patch) || selectedVersion !== undefined;
+  const includeHost = !("host" in patch) || host !== undefined;
+  return {
+    executable: {available: true, resolvedPaths: ["C:\\Program Files\\dotnet\\dotnet.exe"]},
+    sdks: ["10.0.100"],
+    workloads: [],
+    nugetCachePath: "C:\\fixture\\nuget\\packages",
+    solutionIssues: [],
+    solutionRestoreIssues: [],
+    localTools: [{name: "defaultdocumentation.console", version: "1.2.4"}],
+    certificate: {exists: true, trusted: true},
+    appHost: {
+      projectExists: true,
+      missingParameterKeys: [],
+      userSecretKeys: [sqlSecretKey, redisSecretKey],
+    },
+    ...rest,
+    ...(includeSelectedVersion ? {selectedVersion: selectedVersion ?? "10.0.100"} : {}),
+    ...(includeHost ? {host: host ?? {version: "10.0.0", architecture: "x64", rid: "win-x64"}} : {}),
+  };
+}
+
+function availableOutcome(patch: DotnetFactsPatch = {}): InspectionOutcome<DotnetFacts> {
+  return {kind: "available", value: dotnetFacts(patch), durationMs: 1};
+}
+
+function unavailableOutcome(reason = "The dotnet executable is unavailable."): InspectionOutcome<DotnetFacts> {
+  return {kind: "unavailable", reason, durationMs: 1};
+}
+
+function invalidOutcome(issues: readonly string[] = ["dotnet --version returned malformed output."]): InspectionOutcome<DotnetFacts> {
+  return {kind: "invalid", issues, durationMs: 1};
+}
+
+/**
+ * Builds a `dotnet` inspection outcome sequence for tests. Every executed mutation invalidates and
+ * re-inspects `dotnet` immediately, and the three restore actions execute by default, so `initial`
+ * is repeated for the initial fetch plus those three restore refreshes before any further supplied
+ * outcomes model the mutation actually under test (a secret write or certificate operation).
+ */
+function dotnetOutcomeSequence(
+  initial: InspectionOutcome<DotnetFacts>,
+  ...after: readonly InspectionOutcome<DotnetFacts>[]
+): readonly InspectionOutcome<DotnetFacts>[] {
+  return [initial, initial, initial, initial, ...after];
+}
+
+/**
+ * A `SetupActions` that delegates to a recording one, except that it interrupts when `interruptAt`
+ * is submitted.
+ *
+ * @param interruptAt - The action whose submission interrupts.
+ * @param delegate - The recording actions every other submission reaches.
+ * @returns The layer.
+ */
+function interruptingActions(interruptAt: string, delegate: Layer.Layer<SetupActions>): Layer.Layer<SetupActions> {
+  return Layer.effect(
+    SetupActions,
+    Effect.map(Effect.service(SetupActions), (actions) =>
+      SetupActions.of({run: (action) => (action.id === interruptAt ? Effect.interrupt : actions.run(action))}),
+    ),
+  ).pipe(Layer.provide(delegate));
+}
+
+interface DotnetHarness {
+  /** The phase under test. */
+  readonly phase: SetupPhaseDefinition;
+  /** The setup context handed to the phase. */
+  readonly context: SetupContext;
+  /** The in-memory platform harness. */
+  readonly platform: TestHarness;
+  /** Every recorded process call, in order. */
+  readonly runner: {readonly calls: readonly RecordedCall[]};
+  /** Action identifiers in evaluation order. */
+  readonly actionIds: string[];
+  /** Complete action records in evaluation order. */
+  readonly actionRecords: readonly SetupAction[];
+  /** Inspection session probe. */
+  readonly inspect: ReturnType<typeof vi.fn>;
+  /** Inspection invalidation probe. */
+  readonly invalidate: ReturnType<typeof vi.fn>;
+  /** Every service the phase runs with. */
+  readonly layer: Layer.Layer<SetupRequirements>;
+}
+
+async function createHarness(
+  input: Readonly<{
+    responses?: Readonly<Record<string, ScriptedCommandOutcome | readonly ScriptedCommandOutcome[]>>;
+    dispositions?: Readonly<Record<string, SetupActionDisposition>>;
+    options?: SetupInput;
+    platform?: NodeJS.Platform;
+    randomBytes?: (size: number) => Uint8Array;
+    dotnetOutcomes?: readonly InspectionOutcome<DotnetFacts>[];
+    /** Replaces the recording consent policy. */
+    actions?: (recording: Layer.Layer<SetupActions>) => Layer.Layer<SetupActions, never, Presenter>;
+  }> = {},
+): Promise<DotnetHarness> {
+  const options = input.options ?? setupOptions();
+  const platform = makeTestLayer({
+    processes: [scriptedCommands(keyedResponder(input.responses ?? {}))],
+    environment: {
+      cwd: paths.root,
+      executablePath: "C:\\Program Files\\nodejs\\node.exe",
+      platform: input.platform ?? "win32",
+      architecture: "x64",
+      stdinIsTTY: false,
+      stdoutIsTTY: false,
+      isCI: true,
+    },
+    context: "setup::dotnet",
+    verbose: options.verbose,
+  });
+
+  const outcomes = input.dotnetOutcomes ?? [availableOutcome()];
+  let callIndex = 0;
+  const inspection = recordingInspection({
+    dotnet: () => {
+      const outcome = outcomes[Math.min(callIndex, outcomes.length - 1)]!;
+      callIndex += 1;
+      return outcome;
+    },
+  });
+
+  const recording = recordingActions(false, input.dispositions);
+  const actions = input.actions === undefined ? recording.layer : input.actions(recording.layer);
+  const layer = actions.pipe(Layer.provideMerge(platform.layer));
+
+  const context: SetupContext = {
+    options,
+    paths,
+    requirements: requirements(),
+    inspection: inspection.session,
+  };
+
+  const phase = createDotnetSetupPhase({
+    randomBytes: input.randomBytes ?? ((size) => new Uint8Array(size).fill(7)),
+  });
+  return {
+    phase,
+    context,
+    platform,
+    runner: {
+      get calls(): readonly RecordedCall[] {
+        return platform.processCalls();
+      },
+    },
+    actionIds: recording.actionIds,
+    get actionRecords(): readonly SetupAction[] {
+      return recording.run.mock.calls.map(([action]) => action);
+    },
+    inspect: inspection.inspect,
+    invalidate: inspection.invalidate,
+    layer,
+  };
+}
+
+/**
+ * Runs the phase against its harness.
+ *
+ * @param harness - Assembled test harness.
+ * @returns The completed phase result.
+ */
+function runPhase(harness: DotnetHarness): Promise<SetupPhaseResult> {
+  return runPhaseWith(harness.phase, harness.context, harness.layer);
+}
+
+function callFor(harness: DotnetHarness, key: string): RecordedCall | undefined {
+  return harness.runner.calls.find(({request}) => commandKey(request) === key);
+}
+
+function ranCommand(harness: DotnetHarness, key: string): boolean {
+  return callFor(harness, key) !== undefined;
+}
+
+const workloadRestoreKey = commandKey({command: "dotnet", args: ["workload", "restore", paths.solution]});
+const solutionRestoreKey = commandKey({command: "dotnet", args: ["restore", paths.solution]});
+const toolRestoreKey = commandKey({command: "dotnet", args: ["tool", "restore"]});
+const userSecretsSetKey = commandKey({command: "dotnet", args: ["user-secrets", "set", "--project", appHostProject]});
+const certificateCreateKey = commandKey({command: "dotnet", args: ["dev-certs", "https"]});
+const certificateTrustKey = commandKey({command: "dotnet", args: ["dev-certs", "https", "--trust"]});
+const wingetVersionKey = commandKey({command: "winget", args: ["--version"]});
+const wingetInstallKey = commandKey(
+  selectDotnetInstallationProposal({platform: "win32", availablePackageManagers: new Set(["winget"]), required: requiredDotnet})!.command,
+);
+
+describe("dotnet setup public contract", () => {
+  it("publishes an independent required phase", () => {
+    expect(dotnetSetupPhase).toMatchObject({
+      id: "dotnet",
+      required: true,
+      dependsOn: [],
+    });
+  });
+
+  it.each([
+    [
+      "Windows winget",
+      {platform: "win32" as const, availablePackageManagers: new Set(["winget"]), required: requiredDotnet},
+      {
+        command: "winget",
+        args: ["install", "--id", "Microsoft.DotNet.SDK.10", "--exact", "--accept-package-agreements", "--accept-source-agreements"],
+      },
+    ],
+    [
+      "macOS Homebrew",
+      {platform: "darwin" as const, availablePackageManagers: new Set(["brew"]), required: requiredDotnet},
+      {command: "brew", args: ["install", "--cask", "dotnet-sdk"]},
+    ],
+    [
+      "Linux apt",
+      {platform: "linux" as const, availablePackageManagers: new Set(["apt-get", "dnf"]), required: requiredDotnet},
+      {command: "sudo", args: ["apt-get", "install", "-y", "dotnet-sdk-10.0"]},
+    ],
+    [
+      "Linux dnf",
+      {platform: "linux" as const, availablePackageManagers: new Set(["dnf"]), required: requiredDotnet},
+      {command: "sudo", args: ["dnf", "install", "-y", "dotnet-sdk-10.0"]},
+    ],
+  ])("selects the supported $0 proposal", (_name, input, command) => {
+    expect(selectDotnetInstallationProposal(input)?.command).toEqual(command);
+  });
+
+  it.each([
+    ["missing manager", {platform: "linux" as const, availablePackageManagers: new Set<string>(), required: requiredDotnet}],
+    ["apt without a candidate", {platform: "linux" as const, availablePackageManagers: new Set(["apt-cache"]), required: requiredDotnet}],
+    ["unsupported platform", {platform: "freebsd" as const, availablePackageManagers: new Set(["winget"]), required: requiredDotnet}],
+  ])("does not invent an installation path for $0", (_name, input) => {
+    expect(selectDotnetInstallationProposal(input)).toBeNull();
+  });
+});
+
+describe("generateLocalDevelopmentPassword", () => {
+  it("requests exactly 24 bytes and emits an unpadded base64url password", () => {
+    const bytes = Uint8Array.from({length: 24}, (_, index) => index + 240);
+    const source = vi.fn<(size: number) => Uint8Array>().mockReturnValue(bytes);
+
+    const password = Redacted.value(generateLocalDevelopmentPassword(source));
+
+    expect(source).toHaveBeenCalledExactlyOnceWith(24);
+    expect(password).toBe(`Aa1!${Buffer.from(bytes).toString("base64url")}`);
+    expect(password).toMatch(/^Aa1![A-Za-z0-9_-]{32}$/);
+    expect(password).not.toMatch(/[+/=]/);
+  });
+
+  it("keeps the generated password redacted until it is explicitly unwrapped", () => {
+    const generated = generateLocalDevelopmentPassword(() => new Uint8Array(24).fill(6));
+
+    expect(Redacted.isRedacted(generated)).toBe(true);
+    expect(String(generated)).not.toContain(expectedPasswordForRepeatedByte(6));
+    expect(JSON.stringify(generated)).not.toContain(expectedPasswordForRepeatedByte(6));
+    expect(Redacted.value(generated)).toBe(expectedPasswordForRepeatedByte(6));
+  });
+
+  it("rejects a random source that returns the wrong byte count", () => {
+    expect(() => generateLocalDevelopmentPassword(() => new Uint8Array(23))).toThrow(/exactly 24/i);
+  });
+});
+
+describe("dotnet fact readiness", () => {
+  it("accepts compatible facts without an SDK inspection round trip beyond the initial fetch", async () => {
+    const harness = await createHarness();
+
+    const result = await runPhase(harness);
+
+    expect(result.status).toBe("succeeded");
+    expect(harness.actionIds).not.toContain("dotnet.install-sdk");
+    expect(harness.inspect).toHaveBeenCalledWith("dotnet");
+  });
+
+  it("fails explicitly with bounded evidence when dotnet is unavailable and unrecoverable", async () => {
+    const harness = await createHarness({
+      dotnetOutcomes: [unavailableOutcome("The dotnet executable is unavailable.")],
+      responses: {[wingetVersionKey]: exited(1, {stderr: "winget missing"})},
+    });
+
+    const result = await runPhase(harness);
+
+    expect(result.status).toBe("failed");
+    expect(result.evidence).toContain("The dotnet executable is unavailable.");
+    expect(result.evidence.join("\n")).not.toContain("winget missing");
+    expect(result.nextActions.join("\n")).toContain("https://dotnet.microsoft.com/download");
+    expect(harness.actionIds).toEqual([]);
+    expect(harness.invalidate).not.toHaveBeenCalled();
+  });
+
+  it("fails explicitly with bounded evidence when the initial dotnet fact is invalid", async () => {
+    const harness = await createHarness({dotnetOutcomes: [invalidOutcome(["dotnet --version returned malformed output."])]});
+
+    const result = await runPhase(harness);
+
+    expect(result.status).toBe("failed");
+    expect(result.evidence).toContain("dotnet --version returned malformed output.");
+    expect(harness.runner.calls).toEqual([]);
+  });
+
+  it.each([
+    ["only older installed and selected SDKs", {sdks: ["9.0.400"], selectedVersion: "9.0.400"}],
+    ["no selected SDK", {selectedVersion: undefined}],
+    ["a selected-SDK mismatch", {sdks: ["10.0.100"], selectedVersion: "9.0.400"}],
+  ])("requires installation for %s", async (_name, patch) => {
+    const harness = await createHarness({
+      dotnetOutcomes: [availableOutcome(patch)],
+      responses: {[wingetVersionKey]: succeeded({stdout: "v1.11.0\n"})},
+      dispositions: {"dotnet.install-sdk": "declined"},
+    });
+
+    const result = await runPhase(harness);
+
+    expect(result.status).toBe("failed");
+    expect(result.evidence.join("\n")).toContain("dotnet.install-sdk");
+  });
+
+  it("fails with official guidance when no supported installer is discoverable, without probing anything", async () => {
+    const harness = await createHarness({
+      platform: "freebsd",
+      dotnetOutcomes: [availableOutcome({sdks: [], selectedVersion: undefined})],
+    });
+
+    const result = await runPhase(harness);
+
+    expect(result.status).toBe("failed");
+    expect(result.nextActions.join("\n")).toContain("https://dotnet.microsoft.com/download");
+    expect(harness.runner.calls).toEqual([]);
+  });
+
+  it("does not treat a successful install command as proof of readiness when refreshed facts remain incompatible", async () => {
+    const harness = await createHarness({
+      dotnetOutcomes: [availableOutcome({sdks: [], selectedVersion: undefined}), availableOutcome({sdks: [], selectedVersion: undefined})],
+      responses: {
+        [wingetVersionKey]: succeeded({stdout: "v1.11.0\n"}),
+        [wingetInstallKey]: succeeded(),
+      },
+    });
+
+    const result = await runPhase(harness);
+
+    expect(result.status).toBe("failed");
+    expect(result.summary).toMatch(/remains incompatible/i);
+    expect(harness.actionIds).toEqual(["dotnet.install-sdk"]);
+    expect(harness.invalidate).toHaveBeenCalledExactlyOnceWith("dotnet");
+    expect(harness.inspect).toHaveBeenCalledTimes(2);
+  });
+
+  it("installs, invalidates exactly dotnet, and verifies compatibility from refreshed facts", async () => {
+    const harness = await createHarness({
+      dotnetOutcomes: [availableOutcome({sdks: [], selectedVersion: undefined}), availableOutcome()],
+      responses: {
+        [wingetVersionKey]: succeeded({stdout: "v1.11.0\n"}),
+        [wingetInstallKey]: succeeded(),
+      },
+    });
+
+    const result = await runPhase(harness);
+
+    expect(result.status).toBe("succeeded");
+    expect(harness.actionIds[0]).toBe("dotnet.install-sdk");
+    expect(harness.invalidate).toHaveBeenCalledWith("dotnet");
+    expect(result.evidence.join("\n")).toContain("Executed and verified action: dotnet.install-sdk");
+  });
+
+  it("discovers an apt candidate and prefers the exact apt installation over dnf", async () => {
+    const aptVersionKey = commandKey({command: "apt-get", args: ["--version"]});
+    const dnfVersionKey = commandKey({command: "dnf", args: ["--version"]});
+    const aptPolicyKey = commandKey({command: "apt-cache", args: ["policy", "dotnet-sdk-10.0"]});
+    const aptInstallKey = commandKey({command: "sudo", args: ["apt-get", "install", "-y", "dotnet-sdk-10.0"]});
+    const dnfInstallKey = commandKey({command: "sudo", args: ["dnf", "install", "-y", "dotnet-sdk-10.0"]});
+    const harness = await createHarness({
+      platform: "linux",
+      dotnetOutcomes: [availableOutcome({sdks: [], selectedVersion: undefined}), availableOutcome()],
+      responses: {
+        [aptVersionKey]: succeeded({stdout: "apt 2.9.0\n"}),
+        [dnfVersionKey]: succeeded({stdout: "4.21.1\n"}),
+        [aptPolicyKey]: succeeded({
+          stdout: "dotnet-sdk-10.0:\n  Installed: (none)\n  Candidate: 10.0.100-1\n  Version table:\n",
+        }),
+        [aptInstallKey]: succeeded(),
+      },
+    });
+
+    const result = await runPhase(harness);
+
+    expect(result.status).toBe("succeeded");
+    expect(harness.actionRecords.find(({id}) => id === "dotnet.install-sdk")?.scope).toBe("system");
+    expect(callFor(harness, aptInstallKey)?.options).toMatchObject({
+      cwd: paths.root,
+      output: "inherit",
+    });
+    expect(ranCommand(harness, dnfInstallKey)).toBe(false);
+  });
+
+  it("falls back to the exact dnf installation when apt reports no candidate", async () => {
+    const aptVersionKey = commandKey({command: "apt-get", args: ["--version"]});
+    const dnfVersionKey = commandKey({command: "dnf", args: ["--version"]});
+    const aptPolicyKey = commandKey({command: "apt-cache", args: ["policy", "dotnet-sdk-10.0"]});
+    const aptInstallKey = commandKey({command: "sudo", args: ["apt-get", "install", "-y", "dotnet-sdk-10.0"]});
+    const dnfInstallKey = commandKey({command: "sudo", args: ["dnf", "install", "-y", "dotnet-sdk-10.0"]});
+    const harness = await createHarness({
+      platform: "linux",
+      dotnetOutcomes: [availableOutcome({sdks: [], selectedVersion: undefined}), availableOutcome()],
+      responses: {
+        [aptVersionKey]: succeeded({stdout: "apt 2.9.0\n"}),
+        [dnfVersionKey]: succeeded({stdout: "4.21.1\n"}),
+        [aptPolicyKey]: succeeded({
+          stdout: "dotnet-sdk-10.0:\n  Installed: (none)\n  Candidate: (none)\n  Version table:\n",
+        }),
+        [dnfInstallKey]: succeeded(),
+      },
+    });
+
+    const result = await runPhase(harness);
+
+    expect(result.status).toBe("succeeded");
+    expect(ranCommand(harness, aptInstallKey)).toBe(false);
+    expect(callFor(harness, dnfInstallKey)?.options).toMatchObject({
+      cwd: paths.root,
+      output: "inherit",
+    });
+  });
+
+  it("discovers Homebrew and executes the exact macOS installation proposal", async () => {
+    const brewVersionKey = commandKey({command: "brew", args: ["--version"]});
+    const brewInstallKey = commandKey({command: "brew", args: ["install", "--cask", "dotnet-sdk"]});
+    const harness = await createHarness({
+      platform: "darwin",
+      dotnetOutcomes: [availableOutcome({sdks: [], selectedVersion: undefined}), availableOutcome()],
+      responses: {
+        [brewVersionKey]: succeeded({stdout: "Homebrew 4.6.0\n"}),
+        [brewInstallKey]: succeeded(),
+      },
+    });
+
+    const result = await runPhase(harness);
+
+    expect(result.status).toBe("succeeded");
+    expect(callFor(harness, brewInstallKey)?.options).toMatchObject({
+      cwd: paths.root,
+      output: "inherit",
+    });
+  });
+});
+
+describe("repository solution integrity", () => {
+  it("fails immediately on non-empty solution issues without attempting any mutation", async () => {
+    const harness = await createHarness({
+      dotnetOutcomes: [availableOutcome({solutionIssues: ["Missing solution project: src/Broken.csproj"]})],
+    });
+
+    const result = await runPhase(harness);
+
+    expect(result.status).toBe("failed");
+    expect(result.evidence).toContain("Missing solution project: src/Broken.csproj");
+    expect(harness.runner.calls).toEqual([]);
+    expect(harness.invalidate).not.toHaveBeenCalled();
+  });
+});
+
+describe("restore ordering and failures", () => {
+  it("runs the exact restore commands in order, invalidating and verifying after each one", async () => {
+    const harness = await createHarness();
+
+    const result = await runPhase(harness);
+
+    expect(result.status).toBe("succeeded");
+    expect(harness.actionRecords.slice(0, 3).map(({id, scope}) => ({id, scope}))).toEqual([
+      {id: "dotnet.workload-restore", scope: "system"},
+      {id: "dotnet.solution-restore", scope: "repository"},
+      {id: "dotnet.tool-restore", scope: "user"},
+    ]);
+    const restoreCalls = harness.runner.calls.filter(({request}) => request.command === "dotnet" && request.args.includes("restore"));
+    expect(restoreCalls.map(({request}) => request.args)).toEqual([
+      ["workload", "restore", paths.solution],
+      ["restore", paths.solution],
+      ["tool", "restore"],
+    ]);
+    for (const {options} of restoreCalls) {
+      expect(options).toMatchObject({cwd: paths.root, output: "tee"});
+    }
+    expect(harness.invalidate).toHaveBeenCalledTimes(3);
+    expect(harness.inspect).toHaveBeenCalledTimes(4);
+  });
+
+  it.each([
+    ["nonzero", exited(7, {stdout: "restore output", stderr: "restore error"}), "restore error"],
+    ["timeout", timedOut(), "timed out"],
+    ["signal", signalled("SIGTERM"), "SIGTERM"],
+    ["spawn error", spawnFailed("EACCES"), "EACCES"],
+  ])("retains explicit safe restore evidence for %s and invalidates the attempted mutation", async (_name, failure, expected) => {
+    const harness = await createHarness({responses: {[workloadRestoreKey]: failure}});
+
+    const result = await runPhase(harness);
+
+    expect(result.status).toBe("failed");
+    expect(result.evidence.join("\n")).toContain("dotnet.workload-restore");
+    expect(result.evidence.join("\n")).toContain(expected);
+    expect(harness.invalidate).toHaveBeenCalledExactlyOnceWith("dotnet");
+  });
+
+  it("fails when the refreshed solution issues are non-empty after an otherwise successful restore", async () => {
+    const harness = await createHarness({
+      dotnetOutcomes: [availableOutcome(), availableOutcome({solutionIssues: ["Missing solution project: X"]})],
+    });
+
+    const result = await runPhase(harness);
+
+    expect(result.status).toBe("failed");
+    expect(result.evidence).toContain("Missing solution project: X");
+    expect(harness.invalidate).toHaveBeenCalledExactlyOnceWith("dotnet");
+  });
+
+  it("fails when refreshed facts are unavailable after an otherwise successful restore", async () => {
+    const harness = await createHarness({
+      dotnetOutcomes: [availableOutcome(), unavailableOutcome("The dotnet executable is unavailable.")],
+    });
+
+    const result = await runPhase(harness);
+
+    expect(result.status).toBe("failed");
+    expect(result.evidence).toContain("The dotnet executable is unavailable.");
+  });
+});
+
+describe("long-running mutation timeouts", () => {
+  it.each([
+    ["workload restore", workloadRestoreKey],
+    ["solution restore", solutionRestoreKey],
+    ["tool restore", toolRestoreKey],
+  ])("requests the legacy mutation ceiling for the %s", async (_name, key) => {
+    const harness = await createHarness();
+
+    await expect(runPhase(harness)).resolves.toMatchObject({status: "succeeded"});
+    expect(callFor(harness, key)?.options.timeout).toBe(LEGACY_MUTATION_TIMEOUT_MS);
+  });
+
+  it("requests the legacy mutation ceiling for the SDK installation", async () => {
+    const harness = await createHarness({
+      dotnetOutcomes: [availableOutcome({sdks: [], selectedVersion: undefined}), availableOutcome()],
+      responses: {[wingetVersionKey]: succeeded({stdout: "v1.11.0\n"})},
+    });
+
+    await expect(runPhase(harness)).resolves.toMatchObject({status: "succeeded"});
+    expect(callFor(harness, wingetInstallKey)?.options.timeout).toBe(LEGACY_MUTATION_TIMEOUT_MS);
+  });
+
+  it("requests the legacy mutation ceiling for certificate trust", async () => {
+    const harness = await createHarness({
+      dotnetOutcomes: dotnetOutcomeSequence(availableOutcome({certificate: {exists: true, trusted: false}}), availableOutcome()),
+    });
+
+    await expect(runPhase(harness)).resolves.toMatchObject({status: "succeeded"});
+    expect(callFor(harness, certificateTrustKey)?.options.timeout).toBe(LEGACY_MUTATION_TIMEOUT_MS);
+  });
+
+  it("leaves every probe and captured command on the invocation-scoped default timeout", async () => {
+    const missingSecrets = availableOutcome({
+      appHost: {projectExists: true, missingParameterKeys: [sqlSecretKey], userSecretKeys: []},
+      certificate: {exists: false, trusted: false},
+    });
+    const secretsProvisioned = availableOutcome({
+      appHost: {projectExists: true, missingParameterKeys: [], userSecretKeys: [sqlSecretKey, redisSecretKey]},
+      certificate: {exists: false, trusted: false},
+    });
+    const harness = await createHarness({
+      dotnetOutcomes: [
+        availableOutcome({sdks: [], selectedVersion: undefined}),
+        missingSecrets,
+        missingSecrets,
+        missingSecrets,
+        missingSecrets,
+        secretsProvisioned,
+        availableOutcome(),
+      ],
+      responses: {[wingetVersionKey]: succeeded({stdout: "v1.11.0\n"})},
+    });
+
+    await expect(runPhase(harness)).resolves.toMatchObject({status: "succeeded"});
+    for (const key of [wingetVersionKey, userSecretsSetKey, certificateCreateKey]) {
+      expect(callFor(harness, key)).toBeDefined();
+      expect(callFor(harness, key)?.options.timeout).toBe(PHASE_COMMAND_TIMEOUT_MS);
+    }
+  });
+});
+
+describe("AppHost project and user secrets", () => {
+  it("fails when the AppHost project does not exist, without attempting user-secret commands", async () => {
+    const harness = await createHarness({
+      dotnetOutcomes: [availableOutcome({appHost: {projectExists: false, missingParameterKeys: [], userSecretKeys: []}})],
+    });
+
+    const result = await runPhase(harness);
+
+    expect(result.status).toBe("failed");
+    expect(harness.runner.calls.some(({request}) => request.args[0] === "user-secrets")).toBe(false);
+  });
+
+  it("succeeds without a user-secrets action when no required key is missing", async () => {
+    const harness = await createHarness();
+
+    const result = await runPhase(harness);
+
+    expect(result.status).toBe("succeeded");
+    expect(harness.actionIds).not.toContain("dotnet.user-secrets.set");
+    expect(harness.runner.calls.some(({request}) => request.args[0] === "user-secrets")).toBe(false);
+  });
+
+  it("generates each missing key independently inside one action and sends values only through stdin", async () => {
+    const random = vi
+      .fn<(size: number) => Uint8Array>()
+      .mockReturnValueOnce(new Uint8Array(24).fill(1))
+      .mockReturnValueOnce(new Uint8Array(24).fill(2));
+    const sqlPassword = expectedPasswordForRepeatedByte(1);
+    const redisPassword = expectedPasswordForRepeatedByte(2);
+    const missing = availableOutcome({
+      appHost: {projectExists: true, missingParameterKeys: [sqlSecretKey, redisSecretKey], userSecretKeys: []},
+    });
+    const resolved = availableOutcome({
+      appHost: {projectExists: true, missingParameterKeys: [], userSecretKeys: [sqlSecretKey, redisSecretKey]},
+    });
+    const harness = await createHarness({
+      randomBytes: random,
+      dotnetOutcomes: dotnetOutcomeSequence(missing, resolved),
+      responses: {[userSecretsSetKey]: succeeded()},
+    });
+
+    const result = await runPhase(harness);
+
+    expect(result.status).toBe("succeeded");
+    expect(random).toHaveBeenNthCalledWith(1, 24);
+    expect(random).toHaveBeenNthCalledWith(2, 24);
+    expect(harness.actionRecords.find(({id}) => id === "dotnet.user-secrets.set")?.scope).toBe("user");
+    const setCall = callFor(harness, userSecretsSetKey);
+    expect(setCall?.request.args).toEqual(["user-secrets", "set", "--project", appHostProject]);
+    expect(sqlPassword).not.toBe(redisPassword);
+    expect(JSON.parse(String(setCall?.options.input))).toEqual({
+      [sqlSecretKey]: sqlPassword,
+      [redisSecretKey]: redisPassword,
+    });
+    const secretValues = Object.values(JSON.parse(String(setCall?.options.input)) as Readonly<Record<string, string>>);
+    const retained = JSON.stringify({
+      args: harness.runner.calls.map(({request}) => request.args),
+      logs: harness.platform.output(),
+      result,
+      actions: harness.actionRecords.map(({id, scope, summary}) => ({id, scope, summary})),
+    });
+    for (const secret of secretValues) {
+      expect(retained).not.toContain(secret);
+    }
+  });
+
+  it("never logs generated passwords, even with --verbose", async () => {
+    const missing = availableOutcome({
+      appHost: {projectExists: true, missingParameterKeys: [sqlSecretKey, redisSecretKey], userSecretKeys: []},
+    });
+    const resolved = availableOutcome({
+      appHost: {projectExists: true, missingParameterKeys: [], userSecretKeys: [sqlSecretKey, redisSecretKey]},
+    });
+    const harness = await createHarness({
+      options: setupOptions({verbose: true}),
+      randomBytes: (size) => new Uint8Array(size).fill(8),
+      dotnetOutcomes: dotnetOutcomeSequence(missing, resolved),
+    });
+
+    const result = await runPhase(harness);
+
+    expect(result.status).toBe("succeeded");
+    const generated = expectedPasswordForRepeatedByte(8);
+    expect(JSON.parse(String(callFor(harness, userSecretsSetKey)?.options.input))).toEqual({
+      [sqlSecretKey]: generated,
+      [redisSecretKey]: generated,
+    });
+    const records = harness.platform.output();
+    expect(records.some(({text}) => text.includes("$ dotnet user-secrets set --project"))).toBe(true);
+    expect(records.filter(({text}) => text.includes(generated))).toEqual([]);
+  });
+
+  it("sets only the independently missing secret key named by facts", async () => {
+    const random = vi.fn<(size: number) => Uint8Array>().mockReturnValue(new Uint8Array(24).fill(3));
+    const missing = availableOutcome({
+      appHost: {projectExists: true, missingParameterKeys: [redisSecretKey], userSecretKeys: [sqlSecretKey]},
+    });
+    const resolved = availableOutcome({
+      appHost: {projectExists: true, missingParameterKeys: [], userSecretKeys: [sqlSecretKey, redisSecretKey]},
+    });
+    const harness = await createHarness({randomBytes: random, dotnetOutcomes: dotnetOutcomeSequence(missing, resolved)});
+
+    await expect(runPhase(harness)).resolves.toMatchObject({status: "succeeded"});
+    expect(random).toHaveBeenCalledOnce();
+    const setCall = callFor(harness, userSecretsSetKey);
+    expect(Object.keys(JSON.parse(String(setCall?.options.input)) as object)).toEqual([redisSecretKey]);
+  });
+
+  it("fails post-set verification when refreshed facts still report a missing key, without leaking the generated value", async () => {
+    const generated = expectedPasswordForRepeatedByte(4);
+    const missing = availableOutcome({appHost: {projectExists: true, missingParameterKeys: [sqlSecretKey], userSecretKeys: []}});
+    const harness = await createHarness({
+      randomBytes: () => new Uint8Array(24).fill(4),
+      dotnetOutcomes: dotnetOutcomeSequence(missing, missing),
+    });
+
+    const result = await runPhase(harness);
+
+    expect(result.status).toBe("failed");
+    expect(result.evidence.join("\n")).not.toContain(generated);
+    expect(result.evidence.join("\n")).toMatch(/postcondition/i);
+  });
+
+  it("fails when the set command itself fails, sanitizing known generated values from child errors", async () => {
+    const generated = expectedPasswordForRepeatedByte(4);
+    const missing = availableOutcome({appHost: {projectExists: true, missingParameterKeys: [sqlSecretKey], userSecretKeys: []}});
+    const harness = await createHarness({
+      randomBytes: () => new Uint8Array(24).fill(4),
+      dotnetOutcomes: [missing, missing],
+      responses: {
+        [userSecretsSetKey]: exited(1, {stderr: `tool echoed ${generated}`}),
+      },
+    });
+
+    const result = await runPhase(harness);
+
+    expect(result.status).toBe("failed");
+    expect(result.evidence.join("\n")).not.toContain(generated);
+  });
+
+  it("never renders child stdout for the secret write, even when the child echoes it back", async () => {
+    const generated = expectedPasswordForRepeatedByte(5);
+    const missing = availableOutcome({appHost: {projectExists: true, missingParameterKeys: [sqlSecretKey], userSecretKeys: []}});
+    const harness = await createHarness({
+      randomBytes: () => new Uint8Array(24).fill(5),
+      dotnetOutcomes: [missing, missing],
+      responses: {
+        [userSecretsSetKey]: exited(1, {stdout: `echoed payload ${generated}`}),
+      },
+    });
+
+    const result = await runPhase(harness);
+
+    expect(result.status).toBe("failed");
+    expect(result.evidence.join("\n")).not.toContain(generated);
+    expect(result.evidence.join("\n")).not.toContain("echoed payload");
+    expect(result.evidence.join("\n")).toContain("user-secret");
+  });
+
+  it("plans a missing-secret action in dry-run without generating or setting", async () => {
+    const random = vi.fn<(size: number) => Uint8Array>();
+    const missing = availableOutcome({
+      appHost: {projectExists: true, missingParameterKeys: [sqlSecretKey, redisSecretKey], userSecretKeys: []},
+    });
+    const harness = await createHarness({
+      options: setupOptions({dryRun: true}),
+      randomBytes: random,
+      dotnetOutcomes: [missing],
+      dispositions: {
+        "dotnet.workload-restore": "planned",
+        "dotnet.solution-restore": "planned",
+        "dotnet.tool-restore": "planned",
+        "dotnet.user-secrets.set": "planned",
+      },
+    });
+
+    const result = await runPhase(harness);
+
+    expect(result.status).toBe("skipped");
+    expect(random).not.toHaveBeenCalled();
+    expect(harness.actionIds).toEqual(
+      expect.arrayContaining(["dotnet.workload-restore", "dotnet.solution-restore", "dotnet.tool-restore", "dotnet.user-secrets.set"]),
+    );
+    expect(ranCommand(harness, userSecretsSetKey)).toBe(false);
+    expect(harness.invalidate).not.toHaveBeenCalled();
+  });
+});
+
+describe("HTTPS development certificate", () => {
+  it("accepts an already-trusted certificate without any mutation", async () => {
+    const harness = await createHarness();
+
+    const result = await runPhase(harness);
+
+    expect(result.status).toBe("succeeded");
+    expect(result.evidence.join("\n")).toMatch(/certificate is trusted/i);
+    expect(harness.actionIds).not.toContain("dotnet.certificate.trust");
+    expect(harness.actionIds).not.toContain("dotnet.certificate.create");
+  });
+
+  it("creates an absent certificate and verifies existence from refreshed facts before checking trust", async () => {
+    const harness = await createHarness({
+      dotnetOutcomes: dotnetOutcomeSequence(availableOutcome({certificate: {exists: false, trusted: false}}), availableOutcome()),
+      responses: {[certificateCreateKey]: succeeded()},
+    });
+
+    const result = await runPhase(harness);
+
+    expect(result.status).toBe("succeeded");
+    expect(harness.actionRecords.find(({id}) => id === "dotnet.certificate.create")?.scope).toBe("user");
+    expect(ranCommand(harness, certificateCreateKey)).toBe(true);
+  });
+
+  it("fails when certificate creation cannot establish the required existence postcondition", async () => {
+    const before = availableOutcome({certificate: {exists: false, trusted: false}});
+    const harness = await createHarness({dotnetOutcomes: dotnetOutcomeSequence(before, before)});
+
+    const result = await runPhase(harness);
+
+    expect(result.status).toBe("failed");
+    expect(result.nextActions.join("\n")).toMatch(/certificate/i);
+  });
+
+  it("declines certificate creation and fails as required", async () => {
+    const before = availableOutcome({certificate: {exists: false, trusted: false}});
+    const harness = await createHarness({
+      dotnetOutcomes: [before],
+      dispositions: {"dotnet.certificate.create": "declined"},
+    });
+
+    const result = await runPhase(harness);
+
+    expect(result.status).toBe("failed");
+    expect(result.evidence.join("\n")).toContain("dotnet.certificate.create");
+  });
+
+  it("plans certificate creation in dry-run without running dependent trust mutations", async () => {
+    const before = availableOutcome({certificate: {exists: false, trusted: false}});
+    const harness = await createHarness({
+      options: setupOptions({dryRun: true}),
+      dotnetOutcomes: [before],
+      dispositions: {
+        "dotnet.workload-restore": "planned",
+        "dotnet.solution-restore": "planned",
+        "dotnet.tool-restore": "planned",
+        "dotnet.certificate.create": "planned",
+      },
+    });
+
+    const result = await runPhase(harness);
+
+    expect(result.status).toBe("skipped");
+    expect(harness.actionIds).toContain("dotnet.certificate.create");
+    expect(harness.actionIds).not.toContain("dotnet.certificate.trust");
+    expect(ranCommand(harness, certificateTrustKey)).toBe(false);
+    expect(harness.invalidate).not.toHaveBeenCalled();
+  });
+
+  it("trusts an untrusted certificate and requires the refreshed trust postcondition", async () => {
+    const harness = await createHarness({
+      dotnetOutcomes: dotnetOutcomeSequence(availableOutcome({certificate: {exists: true, trusted: false}}), availableOutcome()),
+      responses: {[certificateTrustKey]: succeeded()},
+    });
+
+    const result = await runPhase(harness);
+
+    expect(result.status).toBe("succeeded");
+    expect(harness.actionRecords.find(({id}) => id === "dotnet.certificate.trust")?.scope).toBe("system");
+    expect(callFor(harness, certificateTrustKey)?.options).toMatchObject({cwd: paths.root, output: "inherit"});
+  });
+
+  it.each(["declined", "planned"] as const)("reports %s trust without fabricating trusted success", async (disposition) => {
+    const before = availableOutcome({certificate: {exists: true, trusted: false}});
+    const harness = await createHarness({
+      dotnetOutcomes: [before],
+      dispositions: {"dotnet.certificate.trust": disposition},
+      ...(disposition === "planned"
+        ? {
+            options: setupOptions({dryRun: true}),
+            dispositions: {
+              "dotnet.workload-restore": "planned" as const,
+              "dotnet.solution-restore": "planned" as const,
+              "dotnet.tool-restore": "planned" as const,
+              "dotnet.certificate.trust": "planned" as const,
+            },
+          }
+        : {}),
+    });
+
+    const result = await runPhase(harness);
+
+    expect(result.status).toBe(disposition === "planned" ? "skipped" : "degraded");
+    expect(result.evidence.join("\n")).toContain("dotnet.certificate.trust");
+    expect(result.summary).not.toMatch(/trusted successfully/i);
+  });
+
+  it("degrades when trust execution fails and names remediation", async () => {
+    const harness = await createHarness({
+      dotnetOutcomes: [availableOutcome({certificate: {exists: true, trusted: false}})],
+      responses: {[certificateTrustKey]: exited(1, {stderr: "trust denied"})},
+    });
+
+    const result = await runPhase(harness);
+
+    expect(result.status).toBe("degraded");
+    expect(result.evidence.join("\n")).toContain("dotnet.certificate.trust");
+    expect(result.evidence.join("\n")).toContain("trust denied");
+    expect(result.nextActions.join("\n")).toMatch(/trust/i);
+  });
+
+  it("degrades when the refreshed trust postcondition remains false after a successful trust command", async () => {
+    const before = availableOutcome({certificate: {exists: true, trusted: false}});
+    const harness = await createHarness({dotnetOutcomes: dotnetOutcomeSequence(before, before)});
+
+    const result = await runPhase(harness);
+
+    expect(result.status).toBe("degraded");
+    expect(result.evidence.join("\n")).toContain("dotnet.certificate.trust");
+  });
+});
+
+describe("dry-run and safety contracts", () => {
+  it("accumulates safely knowable planned actions without running mutations or postconditions", async () => {
+    const harness = await createHarness({
+      options: setupOptions({dryRun: true}),
+      dotnetOutcomes: [availableOutcome({certificate: {exists: true, trusted: false}})],
+      dispositions: {
+        "dotnet.workload-restore": "planned",
+        "dotnet.solution-restore": "planned",
+        "dotnet.tool-restore": "planned",
+        "dotnet.certificate.trust": "planned",
+      },
+    });
+
+    const result = await runPhase(harness);
+
+    expect(result.status).toBe("skipped");
+    expect(result.evidence).toEqual(expect.arrayContaining(harness.actionIds.map((actionId) => expect.stringContaining(actionId))));
+    expect(harness.actionIds).toEqual([
+      "dotnet.workload-restore",
+      "dotnet.solution-restore",
+      "dotnet.tool-restore",
+      "dotnet.certificate.trust",
+    ]);
+    expect(harness.invalidate).not.toHaveBeenCalled();
+    expect(harness.inspect).toHaveBeenCalledTimes(1);
+  });
+
+  it("plans SDK installation and all safely knowable restore actions without post-install probes", async () => {
+    const harness = await createHarness({
+      options: setupOptions({dryRun: true}),
+      dotnetOutcomes: [availableOutcome({sdks: [], selectedVersion: undefined})],
+      responses: {[wingetVersionKey]: succeeded({stdout: "v1.11.0"})},
+      dispositions: {
+        "dotnet.install-sdk": "planned",
+        "dotnet.workload-restore": "planned",
+        "dotnet.solution-restore": "planned",
+        "dotnet.tool-restore": "planned",
+      },
+    });
+
+    const result = await runPhase(harness);
+
+    expect(result.status).toBe("skipped");
+    expect(harness.actionIds).toEqual(["dotnet.install-sdk", "dotnet.workload-restore", "dotnet.solution-restore", "dotnet.tool-restore"]);
+    expect(harness.runner.calls.some(({request}) => request.args[0] === "workload")).toBe(false);
+    expect(harness.invalidate).not.toHaveBeenCalled();
+    expect(harness.inspect).toHaveBeenCalledTimes(1);
+  });
+
+  it("propagates an interruption", async () => {
+    const harness = await createHarness({actions: (recording) => interruptingActions("dotnet.workload-restore", recording)});
+
+    const exit = await runPhaseExit(harness.phase, harness.context, harness.layer);
+
+    expect(Exit.hasInterrupts(exit)).toBe(true);
+    expect(harness.runner.calls).toEqual([]);
+  });
+
+  it("never invokes build, test, service, update, or remote-installer commands", async () => {
+    const harness = await createHarness();
+
+    await expect(runPhase(harness)).resolves.toMatchObject({status: "succeeded"});
+
+    const commands = harness.runner.calls.map(({request}) => [request.command, ...request.args].join(" "));
+    expect(commands.join("\n")).not.toMatch(/\bdotnet (?:build|test|run|watch|workload update|tool update)\b/i);
+    expect(commands.join("\n")).not.toMatch(/\bcurl\b|Invoke-WebRequest|dotnet-install\.(?:ps1|sh)/i);
+    expect(commands.join("\n")).not.toMatch(/--list-sdks|--check-trust-machine-readable|user-secrets list/i);
+  });
+});
+
+describe("initially unavailable dotnet installation", () => {
+  it("discovers an installer, installs, and completes when dotnet is initially unavailable", async () => {
+    const harness = await createHarness({
+      dotnetOutcomes: [unavailableOutcome("The dotnet executable is unavailable."), availableOutcome()],
+      responses: {[wingetVersionKey]: succeeded({stdout: "v1.11.0\n"}), [wingetInstallKey]: succeeded()},
+    });
+
+    const result = await runPhase(harness);
+
+    expect(result.status).toBe("succeeded");
+    expect(harness.actionIds).toEqual(["dotnet.install-sdk", "dotnet.workload-restore", "dotnet.solution-restore", "dotnet.tool-restore"]);
+    expect(result.evidence).toContain("The dotnet executable is unavailable.");
+    expect(result.evidence.join("\n")).toContain("Executed and verified action: dotnet.install-sdk");
+  });
+
+  it("plans installation and dependent restores in dry-run when dotnet is initially unavailable", async () => {
+    const harness = await createHarness({
+      options: setupOptions({dryRun: true}),
+      dotnetOutcomes: [unavailableOutcome()],
+      responses: {[wingetVersionKey]: succeeded({stdout: "v1.11.0\n"})},
+      dispositions: {
+        "dotnet.install-sdk": "planned",
+        "dotnet.workload-restore": "planned",
+        "dotnet.solution-restore": "planned",
+        "dotnet.tool-restore": "planned",
+      },
+    });
+
+    const result = await runPhase(harness);
+
+    expect(result.status).toBe("skipped");
+    expect(harness.actionIds).toEqual(["dotnet.install-sdk", "dotnet.workload-restore", "dotnet.solution-restore", "dotnet.tool-restore"]);
+    expect(harness.invalidate).not.toHaveBeenCalled();
+    expect(harness.inspect).toHaveBeenCalledTimes(1);
+  });
+
+  it("fails with official guidance when dotnet is unavailable and no installer is discoverable", async () => {
+    const harness = await createHarness({platform: "freebsd", dotnetOutcomes: [unavailableOutcome()]});
+
+    const result = await runPhase(harness);
+
+    expect(result.status).toBe("failed");
+    expect(result.nextActions.join("\n")).toContain("https://dotnet.microsoft.com/download");
+    expect(harness.runner.calls).toEqual([]);
+    expect(harness.invalidate).not.toHaveBeenCalled();
+  });
+
+  it("keeps an initially invalid dotnet fact an explicit bounded failure without probing installers", async () => {
+    const harness = await createHarness({dotnetOutcomes: [invalidOutcome(["dotnet --version returned malformed output."])]});
+
+    const result = await runPhase(harness);
+
+    expect(result.status).toBe("failed");
+    expect(result.evidence).toContain("dotnet --version returned malformed output.");
+    expect(harness.runner.calls).toEqual([]);
+    expect(harness.actionIds).toEqual([]);
+  });
+});
+
+describe("dotnet cache freshness around mutations", () => {
+  const plannedRestores = {
+    "dotnet.workload-restore": "planned" as const,
+    "dotnet.solution-restore": "planned" as const,
+    "dotnet.tool-restore": "planned" as const,
+  };
+
+  it("invalidates and re-inspects dotnet after each executed restore", async () => {
+    const harness = await createHarness();
+
+    const result = await runPhase(harness);
+
+    expect(result.status).toBe("succeeded");
+    expect(harness.invalidate).toHaveBeenCalledTimes(3);
+    expect(harness.invalidate.mock.calls).toEqual([["dotnet"], ["dotnet"], ["dotnet"]]);
+    expect(harness.inspect).toHaveBeenCalledTimes(4);
+  });
+
+  it("invalidates dotnet when an attempted restore mutation fails", async () => {
+    const harness = await createHarness({responses: {[workloadRestoreKey]: exited(7, {stderr: "restore error"})}});
+
+    const result = await runPhase(harness);
+
+    expect(result.status).toBe("failed");
+    expect(harness.invalidate).toHaveBeenCalledExactlyOnceWith("dotnet");
+    expect(harness.actionIds).toEqual(["dotnet.workload-restore"]);
+  });
+
+  it("propagates a later interruption after an earlier mutation already executed and invalidated", async () => {
+    const harness = await createHarness({actions: (recording) => interruptingActions("dotnet.tool-restore", recording)});
+
+    const exit = await runPhaseExit(harness.phase, harness.context, harness.layer);
+
+    expect(Exit.hasInterrupts(exit)).toBe(true);
+    expect(harness.actionIds).toEqual(["dotnet.workload-restore", "dotnet.solution-restore"]);
+    expect(harness.invalidate).toHaveBeenCalledTimes(2);
+  });
+
+  it.each([
+    ["dotnet.workload-restore", ["dotnet.workload-restore"]],
+    ["dotnet.solution-restore", ["dotnet.workload-restore", "dotnet.solution-restore"]],
+    ["dotnet.tool-restore", ["dotnet.workload-restore", "dotnet.solution-restore", "dotnet.tool-restore"]],
+  ])("declines %s without invalidating facts or running a later action", async (declined, expectedActionIds) => {
+    const harness = await createHarness({
+      dispositions: {...plannedRestores, [declined]: "declined"},
+    });
+
+    const result = await runPhase(harness);
+
+    expect(result.status).toBe("failed");
+    expect(result.evidence.join("\n")).toContain(`Declined action: ${declined}`);
+    expect(harness.actionIds).toEqual(expectedActionIds);
+    expect(harness.invalidate).not.toHaveBeenCalled();
+  });
+
+  it("declines a restore after an earlier executed restore and invalidates exactly once", async () => {
+    const harness = await createHarness({dispositions: {"dotnet.solution-restore": "declined"}});
+
+    const result = await runPhase(harness);
+
+    expect(result.status).toBe("failed");
+    expect(harness.actionIds).toEqual(["dotnet.workload-restore", "dotnet.solution-restore"]);
+    expect(harness.invalidate).toHaveBeenCalledExactlyOnceWith("dotnet");
+    expect(harness.inspect).toHaveBeenCalledTimes(2);
+  });
+
+  it("declines the user-secret write without invalidating facts or reaching certificate actions", async () => {
+    const missing = availableOutcome({
+      appHost: {projectExists: true, missingParameterKeys: [sqlSecretKey], userSecretKeys: []},
+      certificate: {exists: false, trusted: false},
+    });
+    const harness = await createHarness({
+      dotnetOutcomes: [missing],
+      dispositions: {...plannedRestores, "dotnet.user-secrets.set": "declined"},
+    });
+
+    const result = await runPhase(harness);
+
+    expect(result.status).toBe("failed");
+    expect(harness.actionIds).toEqual([
+      "dotnet.workload-restore",
+      "dotnet.solution-restore",
+      "dotnet.tool-restore",
+      "dotnet.user-secrets.set",
+    ]);
+    expect(harness.invalidate).not.toHaveBeenCalled();
+  });
+
+  it("invalidates and re-inspects exactly once for an executed user-secret write", async () => {
+    const missing = availableOutcome({appHost: {projectExists: true, missingParameterKeys: [sqlSecretKey], userSecretKeys: []}});
+    const resolved = availableOutcome({
+      appHost: {projectExists: true, missingParameterKeys: [], userSecretKeys: [sqlSecretKey, redisSecretKey]},
+    });
+    const harness = await createHarness({dotnetOutcomes: [missing, resolved], dispositions: plannedRestores});
+
+    const result = await runPhase(harness);
+
+    expect(result.status).toBe("skipped");
+    expect(harness.invalidate).toHaveBeenCalledExactlyOnceWith("dotnet");
+    expect(harness.inspect).toHaveBeenCalledTimes(2);
+  });
+
+  it("invalidates and re-inspects exactly once per executed certificate mutation", async () => {
+    const absent = availableOutcome({certificate: {exists: false, trusted: false}});
+    const untrusted = availableOutcome({certificate: {exists: true, trusted: false}});
+    const harness = await createHarness({dotnetOutcomes: [absent, untrusted, availableOutcome()], dispositions: plannedRestores});
+
+    const result = await runPhase(harness);
+
+    expect(result.status).toBe("skipped");
+    expect(harness.actionIds).toEqual([
+      "dotnet.workload-restore",
+      "dotnet.solution-restore",
+      "dotnet.tool-restore",
+      "dotnet.certificate.create",
+      "dotnet.certificate.trust",
+    ]);
+    expect(harness.invalidate).toHaveBeenCalledTimes(2);
+    expect(harness.inspect).toHaveBeenCalledTimes(3);
+  });
+
+  it("reports bounded refresh evidence when the trust postcondition cannot be verified", async () => {
+    const untrusted = availableOutcome({certificate: {exists: true, trusted: false}});
+    const harness = await createHarness({
+      dotnetOutcomes: [untrusted, untrusted, untrusted, untrusted, unavailableOutcome("The dotnet executable is unavailable.")],
+    });
+
+    const result = await runPhase(harness);
+
+    expect(result.status).toBe("degraded");
+    expect(result.evidence.join("\n")).toContain("dotnet.certificate.trust");
+    expect(result.evidence).toContain("The dotnet executable is unavailable.");
+  });
+});
+
+describe("restore postconditions", () => {
+  it("fails when the workload restore drops a previously observed workload", async () => {
+    const harness = await createHarness({
+      dotnetOutcomes: [availableOutcome({workloads: ["aspire", "wasm-tools"]}), availableOutcome({workloads: ["aspire"]})],
+    });
+
+    const result = await runPhase(harness);
+
+    expect(result.status).toBe("failed");
+    expect(result.evidence.join("\n")).toContain("wasm-tools");
+    expect(harness.actionIds).toEqual(["dotnet.workload-restore"]);
+  });
+
+  it("fails when the solution restore leaves generated NuGet restore issues", async () => {
+    const restoreIssue = "Missing NuGet restore assets: tooling/AppHost/AppHost.csproj";
+    const harness = await createHarness({
+      dotnetOutcomes: [availableOutcome(), availableOutcome(), availableOutcome({solutionRestoreIssues: [restoreIssue]})],
+    });
+
+    const result = await runPhase(harness);
+
+    expect(result.status).toBe("failed");
+    expect(result.evidence).toContain(restoreIssue);
+    expect(harness.actionIds).toEqual(["dotnet.workload-restore", "dotnet.solution-restore"]);
+  });
+
+  it("fails when the tool restore does not install the manifest-pinned repository tool", async () => {
+    const harness = await createHarness({
+      dotnetOutcomes: [availableOutcome(), availableOutcome(), availableOutcome(), availableOutcome({localTools: []})],
+    });
+
+    const result = await runPhase(harness);
+
+    expect(result.status).toBe("failed");
+    expect(result.evidence.join("\n")).toContain("defaultdocumentation.console");
+    expect(result.evidence.join("\n")).not.toContain("1.2.4");
+    expect(harness.actionIds).toEqual(["dotnet.workload-restore", "dotnet.solution-restore", "dotnet.tool-restore"]);
+  });
+
+  it("does not claim static solution structure proves every restore", async () => {
+    const harness = await createHarness();
+
+    const result = await runPhase(harness);
+
+    expect(result.status).toBe("succeeded");
+    expect(result.evidence.join("\n")).not.toMatch(/remains structurally valid after restore/i);
+    expect(result.evidence.join("\n")).toContain("Executed and verified action: dotnet.workload-restore");
+    expect(result.evidence.join("\n")).toContain("Executed and verified action: dotnet.solution-restore");
+    expect(result.evidence.join("\n")).toContain("Executed and verified action: dotnet.tool-restore");
+  });
+});
+
+describe("user-secret provisioning policy", () => {
+  const plannedRestores = {
+    "dotnet.workload-restore": "planned" as const,
+    "dotnet.solution-restore": "planned" as const,
+    "dotnet.tool-restore": "planned" as const,
+  };
+
+  it("provisions per-machine user secrets when tracked configuration alone satisfies precedence", async () => {
+    const trackedOnly = availableOutcome({appHost: {projectExists: true, missingParameterKeys: [], userSecretKeys: []}});
+    const provisioned = availableOutcome({
+      appHost: {projectExists: true, missingParameterKeys: [], userSecretKeys: [sqlSecretKey, redisSecretKey]},
+    });
+    const harness = await createHarness({dotnetOutcomes: [trackedOnly, provisioned], dispositions: plannedRestores});
+
+    const result = await runPhase(harness);
+
+    expect(result.status).toBe("skipped");
+    expect(harness.actionIds).toContain("dotnet.user-secrets.set");
+    const setCall = callFor(harness, userSecretsSetKey);
+    expect(Object.keys(JSON.parse(String(setCall?.options.input)) as object)).toEqual([sqlSecretKey, redisSecretKey]);
+    expect(setCall?.options.output).toBeUndefined();
+  });
+
+  it("provisions a required key whose user secret exists but remains blank", async () => {
+    const blankRedis = availableOutcome({
+      appHost: {projectExists: true, missingParameterKeys: [redisSecretKey], userSecretKeys: [sqlSecretKey, redisSecretKey]},
+    });
+    const provisioned = availableOutcome({
+      appHost: {projectExists: true, missingParameterKeys: [], userSecretKeys: [sqlSecretKey, redisSecretKey]},
+    });
+    const harness = await createHarness({dotnetOutcomes: [blankRedis, provisioned], dispositions: plannedRestores});
+
+    const result = await runPhase(harness);
+
+    expect(result.status).toBe("skipped");
+    const setCall = callFor(harness, userSecretsSetKey);
+    expect(Object.keys(JSON.parse(String(setCall?.options.input)) as object)).toEqual([redisSecretKey]);
+  });
+
+  it("fails the user-secret postcondition when refreshed precedence succeeds without the written key", async () => {
+    const generated = expectedPasswordForRepeatedByte(9);
+    const trackedOnly = availableOutcome({appHost: {projectExists: true, missingParameterKeys: [], userSecretKeys: []}});
+    const partial = availableOutcome({appHost: {projectExists: true, missingParameterKeys: [], userSecretKeys: [sqlSecretKey]}});
+    const harness = await createHarness({
+      randomBytes: () => new Uint8Array(24).fill(9),
+      dotnetOutcomes: [trackedOnly, partial],
+      dispositions: plannedRestores,
+    });
+
+    const result = await runPhase(harness);
+
+    expect(result.status).toBe("failed");
+    expect(result.evidence.join("\n")).toMatch(/postcondition/i);
+    expect(result.evidence.join("\n")).toContain(redisSecretKey);
+    expect(result.evidence.join("\n")).not.toContain(generated);
+  });
+});
+
+describe("dotnet characterization (pre-Effect migration)", () => {
+  function withRootPlaceholder(value: unknown): unknown {
+    const escapedRoot = JSON.stringify(paths.root).slice(1, -1);
+    return JSON.parse(JSON.stringify(value).split(escapedRoot).join("<root>"));
+  }
+
+  function observe(harness: DotnetHarness, result: SetupPhaseResult): unknown {
+    return withRootPlaceholder({
+      result,
+      actionIds: harness.actionIds,
+      commands: harness.runner.calls.map(({request}) => request),
+    });
+  }
+
+  it("pins the exact result when every .NET tool and fact is already present", async () => {
+    // Arrange
+    const harness = await createHarness();
+
+    // Act
+    const observed = observe(harness, await runPhase(harness));
+
+    // Assert
+    expect(observed).toEqual({
+      result: {
+        id: "dotnet",
+        status: "succeeded",
+        summary: "The .NET SDK, restores, AppHost parameters, and HTTPS certificate are ready.",
+        evidence: [
+          "A listed SDK and selected SDK satisfy >=10.0.0.",
+          "Executed and verified action: dotnet.workload-restore",
+          "No installed workload was observed before the workload restore, and refreshed facts remain readable.",
+          "Executed and verified action: dotnet.solution-restore",
+          "Every managed solution project reports generated NuGet restore assets.",
+          "Executed and verified action: dotnet.tool-restore",
+          "The manifest-pinned local tool 'defaultdocumentation.console' is installed.",
+          "The AppHost project exists.",
+          "Required AppHost user-secret keys are present.",
+          "A valid HTTPS development certificate exists.",
+          "The HTTPS development certificate is trusted.",
+        ],
+        nextActions: [],
+        durationMs: 1,
+      },
+      actionIds: ["dotnet.workload-restore", "dotnet.solution-restore", "dotnet.tool-restore"],
+      commands: [
+        {command: "dotnet", args: ["workload", "restore", "<root>\\arolariu.slnx"]},
+        {command: "dotnet", args: ["restore", "<root>\\arolariu.slnx"]},
+        {command: "dotnet", args: ["tool", "restore"]},
+      ],
+    });
+  });
+
+  it("pins the exact result when the SDK is missing and the winget installation proposal succeeds", async () => {
+    // Arrange
+    const harness = await createHarness({
+      dotnetOutcomes: [availableOutcome({sdks: [], selectedVersion: undefined}), availableOutcome()],
+      responses: {
+        [wingetVersionKey]: succeeded({stdout: "v1.11.0\n"}),
+        [wingetInstallKey]: succeeded(),
+      },
+    });
+
+    // Act
+    const observed = observe(harness, await runPhase(harness));
+
+    // Assert
+    expect(observed).toEqual({
+      result: {
+        id: "dotnet",
+        status: "succeeded",
+        summary: "The .NET SDK, restores, AppHost parameters, and HTTPS certificate are ready.",
+        evidence: [
+          "The installed SDK listing contained no valid SDK versions.",
+          "dotnet reported no selected SDK version.",
+          "A listed SDK and selected SDK satisfy >=10.0.0.",
+          "Executed and verified action: dotnet.install-sdk",
+          "Executed and verified action: dotnet.workload-restore",
+          "No installed workload was observed before the workload restore, and refreshed facts remain readable.",
+          "Executed and verified action: dotnet.solution-restore",
+          "Every managed solution project reports generated NuGet restore assets.",
+          "Executed and verified action: dotnet.tool-restore",
+          "The manifest-pinned local tool 'defaultdocumentation.console' is installed.",
+          "The AppHost project exists.",
+          "Required AppHost user-secret keys are present.",
+          "A valid HTTPS development certificate exists.",
+          "The HTTPS development certificate is trusted.",
+        ],
+        nextActions: [],
+        durationMs: 1,
+      },
+      actionIds: ["dotnet.install-sdk", "dotnet.workload-restore", "dotnet.solution-restore", "dotnet.tool-restore"],
+      commands: [
+        {command: "winget", args: ["--version"]},
+        {
+          command: "winget",
+          args: ["install", "--id", "Microsoft.DotNet.SDK.10", "--exact", "--accept-package-agreements", "--accept-source-agreements"],
+        },
+        {command: "dotnet", args: ["workload", "restore", "<root>\\arolariu.slnx"]},
+        {command: "dotnet", args: ["restore", "<root>\\arolariu.slnx"]},
+        {command: "dotnet", args: ["tool", "restore"]},
+      ],
+    });
+  });
+
+  it("pins the exact result when the winget installation proposal fails", async () => {
+    // Arrange
+    const harness = await createHarness({
+      dotnetOutcomes: [availableOutcome({sdks: [], selectedVersion: undefined})],
+      responses: {
+        [wingetVersionKey]: succeeded({stdout: "v1.11.0\n"}),
+        [wingetInstallKey]: exited(1, {stderr: "winget installer failed"}),
+      },
+    });
+
+    // Act
+    const observed = observe(harness, await runPhase(harness));
+
+    // Assert
+    expect(observed).toEqual({
+      result: {
+        id: "dotnet",
+        status: "failed",
+        summary: "The required .NET preparation phase failed.",
+        evidence: [
+          "The installed SDK listing contained no valid SDK versions.",
+          "dotnet reported no selected SDK version.",
+          "The supported .NET SDK installation command failed.\nProcess exited with code 1: winget install --id Microsoft.DotNet.SDK.10 --exact --accept-package-agreements --accept-source-agreements\nwinget installer failed",
+        ],
+        nextActions: ["Resolve the reported .NET preparation failure, then rerun setup."],
+        durationMs: 1,
+      },
+      actionIds: ["dotnet.install-sdk"],
+      commands: [
+        {command: "winget", args: ["--version"]},
+        {
+          command: "winget",
+          args: ["install", "--id", "Microsoft.DotNet.SDK.10", "--exact", "--accept-package-agreements", "--accept-source-agreements"],
+        },
+      ],
+    });
+  });
+
+  /** Lines the production consent policy rendered (`[arolariu::setup] …`), as `<stream>: <text>`. */
+  function actionLines(harness: DotnetHarness): readonly string[] {
+    return harness.platform
+      .output()
+      .map(({stream, text}) => `${stream}: ${text.replace(/\n$/u, "")}`)
+      .filter((line) => line.includes("[arolariu::setup] "));
+  }
+  it("pins a mutation-free dry run when the SDK, a user secret, and the HTTPS certificate are missing", async () => {
+    // Arrange
+    const options = setupOptions({dryRun: true});
+    const dryRun = productionActions(options);
+    const harness = await createHarness({
+      options,
+      actions: () => dryRun.layer,
+      dotnetOutcomes: [
+        availableOutcome({
+          sdks: [],
+          selectedVersion: undefined,
+          certificate: {exists: false, trusted: false},
+          appHost: {projectExists: true, missingParameterKeys: [sqlSecretKey], userSecretKeys: []},
+        }),
+      ],
+      responses: {[wingetVersionKey]: succeeded({stdout: "v1.11.0\n"})},
+      randomBytes: () => {
+        throw new Error("A dry run must never generate a secret.");
+      },
+    });
+
+    // Act
+    const result = await runPhase(harness);
+    const observed = withRootPlaceholder({
+      result,
+      actionLines: actionLines(harness),
+      executed: dryRun.executed,
+      commands: harness.runner.calls.map(({request}) => request),
+      invalidations: harness.invalidate.mock.calls,
+    });
+
+    // Assert
+    expect(observed).toEqual({
+      result: {
+        id: "dotnet",
+        status: "skipped",
+        summary: "Required .NET SDK installation and dependent restores are planned by dry-run.",
+        evidence: [
+          "The installed SDK listing contained no valid SDK versions.",
+          "dotnet reported no selected SDK version.",
+          "Planned action: dotnet.install-sdk",
+          "Planned action: dotnet.workload-restore",
+          "Planned action: dotnet.solution-restore",
+          "Planned action: dotnet.tool-restore",
+        ],
+        nextActions: [],
+        durationMs: 1,
+      },
+      actionLines: [
+        "stdout: [arolariu::setup] ℹ️ Planned setup action 'dotnet.install-sdk' (system): Install the required .NET 10 SDK with Windows Package Manager.",
+        "stdout: [arolariu::setup] ℹ️ Planned setup action 'dotnet.workload-restore' (system): Restore solution workloads required by the pinned SDK.",
+        "stdout: [arolariu::setup] ℹ️ Planned setup action 'dotnet.solution-restore' (repository): Restore solution NuGet dependencies.",
+        "stdout: [arolariu::setup] ℹ️ Planned setup action 'dotnet.tool-restore' (user): Restore manifest-pinned local .NET tools.",
+      ],
+      executed: [],
+      commands: [{command: "winget", args: ["--version"]}],
+      invalidations: [],
+    });
+  });
+
+  it("pins a mutation-free dry run when restores, a user secret, and the HTTPS certificate are pending on a ready SDK", async () => {
+    // Arrange
+    const options = setupOptions({dryRun: true});
+    const dryRun = productionActions(options);
+    const harness = await createHarness({
+      options,
+      actions: () => dryRun.layer,
+      dotnetOutcomes: [
+        availableOutcome({
+          certificate: {exists: false, trusted: false},
+          appHost: {projectExists: true, missingParameterKeys: [sqlSecretKey], userSecretKeys: []},
+        }),
+      ],
+      randomBytes: () => {
+        throw new Error("A dry run must never generate a secret.");
+      },
+    });
+
+    // Act
+    const result = await runPhase(harness);
+    const observed = withRootPlaceholder({
+      result,
+      actionLines: actionLines(harness),
+      executed: dryRun.executed,
+      commands: harness.runner.calls.map(({request}) => request),
+      invalidations: harness.invalidate.mock.calls,
+    });
+
+    // Assert
+    expect(observed).toEqual({
+      result: {
+        id: "dotnet",
+        status: "skipped",
+        summary: "Required .NET preparation actions are planned by dry-run.",
+        evidence: [
+          "A listed SDK and selected SDK satisfy >=10.0.0.",
+          "Planned action: dotnet.workload-restore",
+          "Planned action: dotnet.solution-restore",
+          "Planned action: dotnet.tool-restore",
+          "The AppHost project exists.",
+          "Planned action: dotnet.user-secrets.set",
+          "Planned action: dotnet.certificate.create",
+        ],
+        nextActions: [],
+        durationMs: 1,
+      },
+      actionLines: [
+        "stdout: [arolariu::setup] ℹ️ Planned setup action 'dotnet.workload-restore' (system): Restore solution workloads required by the pinned SDK.",
+        "stdout: [arolariu::setup] ℹ️ Planned setup action 'dotnet.solution-restore' (repository): Restore solution NuGet dependencies.",
+        "stdout: [arolariu::setup] ℹ️ Planned setup action 'dotnet.tool-restore' (user): Restore manifest-pinned local .NET tools.",
+        "stdout: [arolariu::setup] ℹ️ Planned setup action 'dotnet.user-secrets.set' (user): Set missing AppHost local-development parameters through JSON stdin.",
+        "stdout: [arolariu::setup] ℹ️ Planned setup action 'dotnet.certificate.create' (user): Create a local HTTPS development certificate.",
+      ],
+      executed: [],
+      commands: [],
+      invalidations: [],
+    });
+  });
+});

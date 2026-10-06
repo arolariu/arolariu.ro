@@ -108,9 +108,9 @@ inputs:
     default: "false"
 
   generate-args:
-    description: "Flags passed to `npm run generate`."
+    description: "Generator names passed to `npm run generate` (env, artifacts, gql, i18n)."
     required: false
-    default: "/e /a /g /i"
+    default: "env artifacts gql i18n"
 
   run-build-components:
     description: "Whether to build the @arolariu/components package."

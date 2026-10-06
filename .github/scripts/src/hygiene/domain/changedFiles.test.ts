@@ -109,8 +109,8 @@ describe("file filters", () => {
   });
 
   it("keeps ESLint scoped when Prettier configuration changes", () => {
-    expect(filesForEslint(known([".prettierrc", ".prettierignore", "scripts/generate.artifacts.ts"]))).toEqual([
-      "scripts/generate.artifacts.ts",
+    expect(filesForEslint(known([".prettierrc", ".prettierignore", "scripts/commands/generate/artifacts.ts"]))).toEqual([
+      "scripts/commands/generate/artifacts.ts",
     ]);
   });
 

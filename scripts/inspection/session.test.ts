@@ -4,164 +4,268 @@
  * @module scripts/inspection/session.test
  */
 
-import {describe, expect, it, vi} from "vitest";
+import {Deferred, Duration, Effect, Exit, Fiber, Scope, Tracer} from "effect";
+import {TestClock} from "effect/testing";
+import {describe, expect, it} from "vitest";
 
+import {effectTest, makeTestLayer} from "../platform/testing.ts";
 import {createInspectionSession} from "./session.ts";
 import type {InspectionOutcome, InspectionProvider} from "./types.ts";
 
 /** Fixed two-key fact shape shared by every test in this file. */
 interface TestFacts {
-  readonly numberFact: number;
-  readonly stringFact: string;
+  readonly a: number;
+  readonly b: string;
 }
 
 /** Builds an `"available"` outcome literal with a defaulted, irrelevant duration. */
-function availableOutcome<T>(value: T, durationMs = 1): InspectionOutcome<T> {
+function availableOutcome<T>(value: T, durationMs = 0): InspectionOutcome<T> {
   return {kind: "available", value, durationMs};
 }
 
-/** A provider stub whose settlement the test controls independently of when it is invoked. */
-interface Deferred<T> {
-  readonly promise: Promise<T>;
-  readonly resolve: (value: T) => void;
-  readonly reject: (reason: unknown) => void;
-}
+/** A provider for the key a test does not exercise. */
+const unusedProvider: InspectionProvider<string> = Effect.succeed(availableOutcome("unused"));
 
-function createDeferred<T>(): Deferred<T> {
-  let resolve: (value: T) => void;
-  let reject: (reason: unknown) => void;
-  const promise = new Promise<T>((res, rej) => {
-    resolve = res;
-    reject = rej;
-  });
-  // Assigned synchronously by the executor above before this function returns.
-  return {promise, resolve: (value) => resolve(value), reject: (reason) => reject(reason)};
-}
-
-/** A never-invoked-in-assertions filler provider for the fact key a test does not exercise. */
-function unusedStringProvider(): InspectionProvider<string> {
-  return vi.fn(async () => availableOutcome("unused"));
+/** A provider that counts its runs and answers `value` after `delayMs` of (test) clock time. */
+function countingProvider(value: number, delayMs = 0): {readonly provider: InspectionProvider<number>; readonly runs: () => number} {
+  let runs = 0;
+  return {
+    provider: Effect.gen(function* () {
+      runs += 1;
+      if (delayMs > 0) {
+        yield* Effect.sleep(Duration.millis(delayMs));
+      }
+      return availableOutcome(value);
+    }),
+    runs: () => runs,
+  };
 }
 
 describe("createInspectionSession", () => {
-  it("shares one in-flight provider call between concurrent callers", async () => {
-    const deferred = createDeferred<InspectionOutcome<number>>();
-    const numberFact = vi.fn<InspectionProvider<number>>(() => deferred.promise);
-    const session = createInspectionSession<TestFacts>({numberFact, stringFact: unusedStringProvider()});
+  effectTest(
+    "traces each provider run as one inspection.<key> span",
+    () =>
+      Effect.gen(function* () {
+        // Arrange
+        const spans: string[] = [];
+        const tracer = Tracer.make({
+          span: (options) => {
+            spans.push(options.name);
+            return new Tracer.NativeSpan(options);
+          },
+        });
+        const session = yield* createInspectionSession<TestFacts>({a: countingProvider(1).provider, b: unusedProvider});
 
-    const first = session.inspect("numberFact");
-    const second = session.inspect("numberFact");
+        // Act
+        yield* Effect.all([session.inspect("a"), session.inspect("a"), session.inspect("b")], {concurrency: "unbounded"}).pipe(
+          Effect.withTracer(tracer),
+        );
 
-    expect(numberFact).toHaveBeenCalledTimes(1);
+        // Assert
+        expect(spans.filter((name) => name.startsWith("inspection.")).toSorted()).toEqual(["inspection.a", "inspection.b"]);
+      }),
+    makeTestLayer().layer,
+  );
+  effectTest(
+    "runs a provider once for concurrent inspections",
+    () =>
+      Effect.gen(function* () {
+        // Arrange
+        const counted = countingProvider(42, 10);
+        const session = yield* createInspectionSession<TestFacts>({a: counted.provider, b: unusedProvider});
 
-    deferred.resolve(availableOutcome(42));
+        // Act
+        const fiber = yield* Effect.forkChild(Effect.all([session.inspect("a"), session.inspect("a")], {concurrency: 2}));
+        yield* TestClock.adjust("10 millis");
+        const [first, second] = yield* Fiber.join(fiber);
 
-    await expect(first).resolves.toEqual(availableOutcome(42));
-    await expect(second).resolves.toEqual(availableOutcome(42));
-    expect(numberFact).toHaveBeenCalledTimes(1);
-  });
+        // Assert
+        expect(counted.runs()).toBe(1);
+        expect(first).toEqual(availableOutcome(42, 10));
+        expect(second).toBe(first);
+      }),
+    makeTestLayer().layer,
+  );
 
-  it("reuses a resolved outcome until invalidation", async () => {
-    const numberFact = vi.fn<InspectionProvider<number>>(async () => availableOutcome(7));
-    const session = createInspectionSession<TestFacts>({numberFact, stringFact: unusedStringProvider()});
+  effectTest(
+    "re-runs a provider after invalidate",
+    () =>
+      Effect.gen(function* () {
+        // Arrange
+        const counted = countingProvider(7);
+        const session = yield* createInspectionSession<TestFacts>({a: counted.provider, b: unusedProvider});
 
-    await expect(session.inspect("numberFact")).resolves.toEqual(availableOutcome(7));
-    await expect(session.inspect("numberFact")).resolves.toEqual(availableOutcome(7));
+        // Act
+        yield* session.inspect("a");
+        yield* session.inspect("a");
+        yield* session.invalidate("a");
+        yield* session.inspect("a");
 
-    expect(numberFact).toHaveBeenCalledTimes(1);
-  });
+        // Assert
+        expect(counted.runs()).toBe(2);
+      }),
+    makeTestLayer().layer,
+  );
 
-  it("caches different keys independently", async () => {
-    const numberFact = vi.fn<InspectionProvider<number>>(async () => availableOutcome(1));
-    const stringFact = vi.fn<InspectionProvider<string>>(async () => availableOutcome("one"));
-    const session = createInspectionSession<TestFacts>({numberFact, stringFact});
+  effectTest(
+    "measures duration with the clock",
+    () =>
+      Effect.gen(function* () {
+        // Arrange
+        const counted = countingProvider(1, 250);
+        const session = yield* createInspectionSession<TestFacts>({a: counted.provider, b: unusedProvider});
 
-    await expect(session.inspect("numberFact")).resolves.toEqual(availableOutcome(1));
-    await expect(session.inspect("stringFact")).resolves.toEqual(availableOutcome("one"));
+        // Act
+        const fiber = yield* Effect.forkChild(session.inspect("a"));
+        yield* TestClock.adjust("250 millis");
+        const outcome = yield* Fiber.join(fiber);
 
-    expect(numberFact).toHaveBeenCalledTimes(1);
-    expect(stringFact).toHaveBeenCalledTimes(1);
-  });
+        // Assert
+        expect(outcome.durationMs).toBe(250);
+      }),
+    makeTestLayer().layer,
+  );
 
-  it("invalidating one key does not evict another cached key", async () => {
-    const numberFact = vi.fn<InspectionProvider<number>>(async () => availableOutcome(1));
-    const stringFact = vi.fn<InspectionProvider<string>>(async () => availableOutcome("one"));
-    const session = createInspectionSession<TestFacts>({numberFact, stringFact});
+  effectTest(
+    "caches different keys independently and invalidates only the named key",
+    () =>
+      Effect.gen(function* () {
+        // Arrange
+        const a = countingProvider(1);
+        let bRuns = 0;
+        const b: InspectionProvider<string> = Effect.sync(() => {
+          bRuns += 1;
+          return availableOutcome("one");
+        });
+        const session = yield* createInspectionSession<TestFacts>({a: a.provider, b});
 
-    await session.inspect("numberFact");
-    await session.inspect("stringFact");
+        // Act
+        yield* session.inspect("a");
+        yield* session.inspect("b");
+        yield* session.invalidate("a");
+        yield* session.inspect("a");
+        const cachedB = yield* session.inspect("b");
 
-    session.invalidate("numberFact");
+        // Assert
+        expect(a.runs()).toBe(2);
+        expect(bRuns).toBe(1);
+        expect(cachedB).toEqual(availableOutcome("one"));
+      }),
+    makeTestLayer().layer,
+  );
 
-    await session.inspect("numberFact");
-    await session.inspect("stringFact");
+  effectTest(
+    "evicts a provider defect so a later inspection retries",
+    () =>
+      Effect.gen(function* () {
+        // Arrange
+        let runs = 0;
+        const flaky: InspectionProvider<number> = Effect.suspend(() => {
+          runs += 1;
+          return runs === 1 ? Effect.die(new Error("transient failure")) : Effect.succeed(availableOutcome(9));
+        });
+        const session = yield* createInspectionSession<TestFacts>({a: flaky, b: unusedProvider});
 
-    expect(numberFact).toHaveBeenCalledTimes(2);
-    expect(stringFact).toHaveBeenCalledTimes(1);
-  });
+        // Act
+        const failed = yield* Effect.exit(session.inspect("a"));
+        const retried = yield* session.inspect("a");
 
-  it("evicts a rejected provider promise so a later inspection retries", async () => {
-    const failure = new Error("transient failure");
-    const numberFact = vi
-      .fn<InspectionProvider<number>>()
-      .mockRejectedValueOnce(failure)
-      .mockResolvedValueOnce(availableOutcome(9));
-    const session = createInspectionSession<TestFacts>({numberFact, stringFact: unusedStringProvider()});
+        // Assert
+        expect(Exit.isFailure(failed)).toBe(true);
+        expect(retried).toEqual(availableOutcome(9));
+        expect(runs).toBe(2);
+      }),
+    makeTestLayer().layer,
+  );
 
-    await expect(session.inspect("numberFact")).rejects.toBe(failure);
-    await expect(session.inspect("numberFact")).resolves.toEqual(availableOutcome(9));
+  effectTest(
+    "delivers an in-flight result to its waiters after invalidate without re-caching it",
+    () =>
+      Effect.gen(function* () {
+        // Arrange
+        const release = yield* Deferred.make<void>();
+        let runs = 0;
+        const gated: InspectionProvider<number> = Effect.gen(function* () {
+          runs += 1;
+          const run = runs;
+          if (run === 1) {
+            yield* Deferred.await(release);
+          }
+          return availableOutcome(run);
+        });
+        const session = yield* createInspectionSession<TestFacts>({a: gated, b: unusedProvider});
 
-    expect(numberFact).toHaveBeenCalledTimes(2);
-  });
+        // Act
+        const waiter = yield* Effect.forkChild(session.inspect("a"));
+        yield* Effect.yieldNow;
+        yield* session.invalidate("a");
+        const replacement = yield* session.inspect("a");
+        yield* Deferred.succeed(release, undefined);
+        const stale = yield* Fiber.join(waiter);
+        const later = yield* session.inspect("a");
 
-  it("exposes a synchronous provider throw as a rejected, retryable inspection promise", async () => {
-    const failure = new Error("synchronous boom");
-    let callCount = 0;
-    const numberFact: InspectionProvider<number> = () => {
-      callCount += 1;
-      if (callCount === 1) {
-        throw failure;
-      }
-      return Promise.resolve(availableOutcome(3));
-    };
-    const session = createInspectionSession<TestFacts>({numberFact, stringFact: unusedStringProvider()});
+        // Assert
+        expect(stale).toEqual(availableOutcome(1));
+        expect(replacement).toEqual(availableOutcome(2));
+        expect(later).toBe(replacement);
+        expect(runs).toBe(2);
+      }),
+    makeTestLayer().layer,
+  );
 
-    await expect(session.inspect("numberFact")).rejects.toBe(failure);
-    expect(callCount).toBe(1);
+  effectTest(
+    "keeps a shared provider running when one waiter is interrupted",
+    () =>
+      Effect.gen(function* () {
+        // Arrange
+        const counted = countingProvider(5, 100);
+        const session = yield* createInspectionSession<TestFacts>({a: counted.provider, b: unusedProvider});
 
-    await expect(session.inspect("numberFact")).resolves.toEqual(availableOutcome(3));
-    expect(callCount).toBe(2);
-  });
+        // Act
+        const interrupted = yield* Effect.forkChild(session.inspect("a"));
+        const survivor = yield* Effect.forkChild(session.inspect("a"));
+        yield* Effect.yieldNow;
+        yield* Fiber.interrupt(interrupted);
+        yield* TestClock.adjust("100 millis");
+        const outcome = yield* Fiber.join(survivor);
 
-  it("does not evict the replacement promise when a stale rejection settles after invalidation", async () => {
-    const deferredFirst = createDeferred<InspectionOutcome<number>>();
-    let callCount = 0;
-    const numberFact: InspectionProvider<number> = () => {
-      callCount += 1;
-      if (callCount === 1) {
-        return deferredFirst.promise;
-      }
-      return Promise.resolve(availableOutcome(11));
-    };
-    const session = createInspectionSession<TestFacts>({numberFact, stringFact: unusedStringProvider()});
+        // Assert
+        expect(outcome).toEqual(availableOutcome(5, 100));
+        expect(counted.runs()).toBe(1);
+      }),
+    makeTestLayer().layer,
+  );
 
-    const stale = session.inspect("numberFact");
-    // Observe the eventual stale rejection on this handle without letting it surface as an
-    // unhandled rejection before the real assertion below awaits the same promise.
-    stale.catch(() => undefined);
+  effectTest(
+    "interrupts in-flight providers when the session scope closes",
+    () =>
+      Effect.gen(function* () {
+        // Arrange
+        const started = yield* Deferred.make<void>();
+        let interrupted = false;
+        const hanging: InspectionProvider<number> = Deferred.succeed(started, undefined).pipe(
+          Effect.andThen(Effect.never),
+          Effect.onInterrupt(() =>
+            Effect.sync(() => {
+              interrupted = true;
+            }),
+          ),
+        );
+        const scope = yield* Scope.make();
+        const session = yield* createInspectionSession<TestFacts>({a: hanging, b: unusedProvider}).pipe(Scope.provide(scope));
 
-    session.invalidate("numberFact");
-    const replacement = session.inspect("numberFact");
-    expect(callCount).toBe(2);
+        // Act
+        const waiter = yield* Effect.forkChild(session.inspect("a"));
+        yield* Deferred.await(started);
+        yield* Scope.close(scope, Exit.void);
+        const exit = yield* Fiber.await(waiter);
 
-    deferredFirst.reject(new Error("stale rejection"));
-    await expect(stale).rejects.toThrow("stale rejection");
-
-    await expect(replacement).resolves.toEqual(availableOutcome(11));
-    await expect(session.inspect("numberFact")).resolves.toEqual(availableOutcome(11));
-
-    expect(callCount).toBe(2);
-  });
+        // Assert
+        expect(interrupted).toBe(true);
+        expect(Exit.isFailure(exit)).toBe(true);
+      }),
+    makeTestLayer().layer,
+  );
 
   it("narrows all three outcome variants by their discriminant and preserves exact payload fields", () => {
     function assertUnreachable(value: never): never {

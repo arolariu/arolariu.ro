@@ -5,7 +5,10 @@
 
 import {dirname, parse, resolve} from "node:path";
 import {fileURLToPath} from "node:url";
-import type {ReadOnlyFileSystem} from "./runtime.ts";
+
+import {Effect, Schema} from "effect";
+
+import {ReadOnlyFiles} from "../platform/Files.ts";
 
 const REPOSITORY_PACKAGE_NAME = "@arolariu/monorepo";
 
@@ -70,9 +73,21 @@ export function createRepositoryPaths(root: string): RepositoryPaths {
   };
 }
 
-async function hasRepositoryIdentity(directory: string, files: ReadOnlyFileSystem): Promise<boolean> {
+/** No ancestor of a module identifies the arolariu.ro monorepository. */
+export class RepositoryRootNotFound extends Schema.TaggedError<RepositoryRootNotFound>()("RepositoryRootNotFound", {
+  message: Schema.String,
+  from: Schema.String,
+}) {}
+
+/**
+ * Checks whether `package.json` contents name the monorepository.
+ *
+ * @param contents - Raw `package.json` text.
+ * @returns `true` for the monorepository identity; malformed JSON is `false`.
+ */
+function isRepositoryIdentity(contents: string): boolean {
   try {
-    const packageJson: unknown = JSON.parse(await files.readText(resolve(directory, "package.json")));
+    const packageJson: unknown = JSON.parse(contents);
     return typeof packageJson === "object" && packageJson !== null && "name" in packageJson && packageJson.name === REPOSITORY_PACKAGE_NAME;
   } catch {
     return false;
@@ -80,26 +95,45 @@ async function hasRepositoryIdentity(directory: string, files: ReadOnlyFileSyste
 }
 
 /**
+ * Checks whether a directory holds the monorepository `package.json` identity.
+ *
+ * @param directory - Candidate repository root.
+ * @returns `true` when its `package.json` names the monorepository; any read or parse failure is `false`.
+ */
+function hasRepositoryIdentity(directory: string): Effect.Effect<boolean, never, ReadOnlyFiles> {
+  return Effect.gen(function* () {
+    const files = yield* ReadOnlyFiles;
+    return yield* files.readFileString(resolve(directory, "package.json")).pipe(
+      Effect.map(isRepositoryIdentity),
+      Effect.orElseSucceed(() => false),
+    );
+  });
+}
+
+/**
  * Discovers the repository root from a module URL and verifies its package identity.
  *
  * @param moduleUrl - File URL belonging to a module within the repository.
- * @param files - Read-only filesystem capability used to read candidate `package.json` files.
- * @returns Canonical paths anchored to the verified repository root.
- * @throws When no ancestor package identifies the arolariu.ro monorepository.
+ * @returns Canonical paths anchored to the verified repository root, read through
+ * {@link ReadOnlyFiles}; fails with {@link RepositoryRootNotFound} when no ancestor package
+ * identifies the arolariu.ro monorepository.
  */
-export async function resolveRepositoryPaths(moduleUrl: string, files: ReadOnlyFileSystem): Promise<RepositoryPaths> {
-  let candidate = dirname(fileURLToPath(moduleUrl));
-  const filesystemRoot = parse(candidate).root;
+export function resolveRepositoryPaths(moduleUrl: string): Effect.Effect<RepositoryPaths, RepositoryRootNotFound, ReadOnlyFiles> {
+  return Effect.gen(function* () {
+    const from = dirname(fileURLToPath(moduleUrl));
+    const filesystemRoot = parse(from).root;
+    let candidate = from;
 
-  while (true) {
-    if (await hasRepositoryIdentity(candidate, files)) {
-      return createRepositoryPaths(candidate);
+    while (true) {
+      if (yield* hasRepositoryIdentity(candidate)) {
+        return createRepositoryPaths(candidate);
+      }
+      if (candidate === filesystemRoot) {
+        break;
+      }
+      candidate = dirname(candidate);
     }
-    if (candidate === filesystemRoot) {
-      break;
-    }
-    candidate = dirname(candidate);
-  }
 
-  throw new Error(`Unable to locate repository root for ${REPOSITORY_PACKAGE_NAME}`);
+    return yield* new RepositoryRootNotFound({message: `Unable to locate repository root for ${REPOSITORY_PACKAGE_NAME}`, from});
+  });
 }

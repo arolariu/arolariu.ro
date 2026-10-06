@@ -1,243 +1,347 @@
+// @vitest-environment node
 /**
- * @fileoverview Tests for the injected local Cosmos/Azurite selfhost storage bootstrap adapter.
+ * @fileoverview Tests for the local Cosmos/Azurite selfhost storage bootstrap.
  * @module scripts/container-runtime/selfhost.bootstrap.test
+ *
+ * @remarks
+ * `ensureCosmos` runs over the harness `HttpClient` with scripted emulator answers (or a client whose
+ * requests never complete, for interruption); `ensureAzurite` runs over a recording
+ * `LocalBlobStorage` layer. `LocalBlobStorageLive` is exercised only on a malformed connection string,
+ * which the Azure Blob SDK rejects before any request, so no test reaches Cosmos or Azurite.
  */
 
+import {Effect, Exit, Fiber, Layer, Redacted} from "effect";
+import {HttpClient} from "effect/http";
 import {describe, expect, it, vi} from "vitest";
-import {createHttpResponse} from "../common/runtime.testing.ts";
-import {CommandCancellation, type HttpClient, type HttpRequest, type HttpResponse} from "../common/runtime.ts";
+
+import {effectTest, makeTestLayer, type ScriptedHttp} from "../platform/testing.ts";
 import {
+  azuriteBootstrapFailure,
   azuriteDevelopmentConnectionString,
   cosmosBootstrapMaximumResponseBytes,
-  createLocalStorageBootstrap,
+  ensureAzurite,
+  ensureCosmos,
+  LocalBlobStorage,
+  LocalBlobStorageLive,
   localCosmosEndpoint,
   requiredAzuriteBlobContainers,
-  type LocalBlobStorage,
-  type LocalBlobStorageFactory,
 } from "./selfhost.bootstrap.ts";
 import {ContainerRuntimeError} from "./types.ts";
 
-type RecordingHttpClient = HttpClient & Readonly<{requests: readonly HttpRequest[]}>;
+/** The wrapped-failure prefix of every Cosmos bootstrap failure. */
+const COSMOS_PREFIX =
+  "Cosmos bootstrap failed. Ensure the cosmosdb container is running and reachable at http://localhost:8081. Original error: ";
 
 /**
- * Creates an HTTP client that records every request and replays scripted responses.
+ * Scripts every Cosmos request with the same answer.
  *
- * @param responses - Responses returned in order; a `201 Created` response is returned once exhausted.
- * @returns A recording HTTP capability that performs no network I/O.
+ * @param status - Response status.
+ * @param body - Response body.
+ * @returns The scripted HTTP responses.
  */
-function createRecordingHttpClient(responses: readonly HttpResponse[] = []): RecordingHttpClient {
-  const requests: HttpRequest[] = [];
-  const queue = [...responses];
-
-  return {
-    request: (request: Readonly<HttpRequest>): Promise<HttpResponse> => {
-      requests.push(request);
-      return Promise.resolve(queue.shift() ?? createHttpResponse(201, "{}"));
-    },
-    requests,
-  };
+function cosmosAnswers(status: number, body: string): readonly ScriptedHttp[] {
+  return [{match: (request) => request.url.startsWith(localCosmosEndpoint), respond: {status, body}}];
 }
 
+/** Recording blob storage plus the operations it saw. */
 interface RecordingBlobStorage {
-  readonly factory: LocalBlobStorageFactory;
-  readonly connectionStrings: readonly string[];
-  readonly operations: readonly string[];
-  readonly signals: readonly AbortSignal[];
+  readonly layer: Layer.Layer<LocalBlobStorage>;
+  readonly operations: () => readonly string[];
 }
 
 /**
- * Creates a blob-storage factory that records every provisioning operation.
+ * Builds a blob storage layer that records every operation.
  *
- * @param behavior - Optional failure behavior layered over the recording fake.
- * @returns A recording blob-storage factory that never touches Azurite.
+ * @param failOn - Operation (`ensureContainer:<name>` or `applyCorsPolicy`) that fails.
+ * @returns The layer and its recorded operations.
  */
-function createRecordingBlobStorage(behavior: Readonly<Partial<LocalBlobStorage>> = {}): RecordingBlobStorage {
-  const connectionStrings: string[] = [];
+function recordingBlobStorage(failOn?: string): RecordingBlobStorage {
   const operations: string[] = [];
-  const signals: AbortSignal[] = [];
-
-  const factory: LocalBlobStorageFactory = (connectionString: string): LocalBlobStorage => {
-    connectionStrings.push(connectionString);
-    return {
-      ensureContainer: async (name: string, signal: AbortSignal): Promise<void> => {
-        operations.push(`ensureContainer:${name}`);
-        signals.push(signal);
-        await behavior.ensureContainer?.(name, signal);
-      },
-      applyCorsPolicy: async (signal: AbortSignal): Promise<void> => {
-        operations.push("applyCorsPolicy");
-        signals.push(signal);
-        await behavior.applyCorsPolicy?.(signal);
-      },
-    };
+  const step = (operation: string, connectionString: Redacted.Redacted<string>): Effect.Effect<void, ContainerRuntimeError> =>
+    Effect.suspend(() => {
+      operations.push(`${operation}@${Redacted.value(connectionString)}`);
+      return operation === failOn ? Effect.fail(new ContainerRuntimeError({message: `${operation} failed`})) : Effect.void;
+    });
+  return {
+    layer: Layer.succeed(
+      LocalBlobStorage,
+      LocalBlobStorage.of({
+        ensureContainer: (connectionString, name) => step(`ensureContainer:${name}`, connectionString),
+        applyCorsPolicy: (connectionString) => step("applyCorsPolicy", connectionString),
+      }),
+    ),
+    operations: () => [...operations],
   };
-
-  return {factory, connectionStrings, operations, signals};
 }
 
-function abortedSignal(): AbortSignal {
-  const controller = new AbortController();
-  controller.abort(new CommandCancellation("Terminated by test signal.", 143));
-  return controller.signal;
-}
+describe("ensureCosmos", () => {
+  {
+    const harness = makeTestLayer({http: cosmosAnswers(201, "{}")});
+    effectTest(
+      "provisions the database and every required container at the documented emulator endpoint",
+      () =>
+        Effect.gen(function* () {
+          // Act
+          yield* ensureCosmos.pipe(Effect.withSpan("selfhost.bootstrap.test"));
 
-describe("createLocalStorageBootstrap.ensureCosmos", () => {
-  it("provisions the database and every required container at the documented emulator endpoint", async () => {
-    const http = createRecordingHttpClient();
-    const bootstrap = createLocalStorageBootstrap({http, createBlobStorage: createRecordingBlobStorage().factory});
-
-    await expect(bootstrap.ensureCosmos(new AbortController().signal)).resolves.toBeUndefined();
-
-    expect(http.requests.map((request) => [request.method, request.url.href])).toEqual([
-      ["POST", `${localCosmosEndpoint}/dbs`],
-      ["POST", `${localCosmosEndpoint}/dbs/primary/colls`],
-      ["POST", `${localCosmosEndpoint}/dbs/primary/colls`],
-    ]);
-    expect(http.requests.map((request) => request.body)).toEqual([
-      JSON.stringify({id: "primary"}),
-      JSON.stringify({id: "invoices", partitionKey: {paths: ["/UserIdentifier"], kind: "Hash"}}),
-      JSON.stringify({id: "merchants", partitionKey: {paths: ["/ParentCompanyId"], kind: "Hash"}}),
-    ]);
-    expect(http.requests.every((request) => request.headers?.["Content-Type"] === "application/json")).toBe(true);
-  });
-
-  it("bounds every buffered response body through the runtime HTTP contract", async () => {
-    const http = createRecordingHttpClient();
-    const bootstrap = createLocalStorageBootstrap({http, createBlobStorage: createRecordingBlobStorage().factory});
-
-    await bootstrap.ensureCosmos(new AbortController().signal);
-
-    expect(http.requests.every((request) => request.maximumResponseBytes === cosmosBootstrapMaximumResponseBytes)).toBe(true);
-  });
-
-  it("threads the invocation signal into every emulator request", async () => {
-    const controller = new AbortController();
-    const http = createRecordingHttpClient();
-    const bootstrap = createLocalStorageBootstrap({http, createBlobStorage: createRecordingBlobStorage().factory});
-
-    await bootstrap.ensureCosmos(controller.signal);
-
-    expect(http.requests.every((request) => request.signal === controller.signal)).toBe(true);
-  });
-
-  it("treats an already-provisioned resource reported as HTTP 409 as success", async () => {
-    const http = createRecordingHttpClient([
-      createHttpResponse(409, "Conflict"),
-      createHttpResponse(409, "Conflict"),
-      createHttpResponse(409, "Conflict"),
-    ]);
-    const bootstrap = createLocalStorageBootstrap({http, createBlobStorage: createRecordingBlobStorage().factory});
-
-    await expect(bootstrap.ensureCosmos(new AbortController().signal)).resolves.toBeUndefined();
-    expect(http.requests).toHaveLength(3);
-  });
-
-  it("returns a bounded status/body failure for an unexpected response and stops immediately", async () => {
-    const http = createRecordingHttpClient([createHttpResponse(500, "x".repeat(10_000))]);
-    const bootstrap = createLocalStorageBootstrap({http, createBlobStorage: createRecordingBlobStorage().factory});
-
-    const failure = await bootstrap.ensureCosmos(new AbortController().signal).catch((error: unknown) => error);
-
-    expect(failure).toBeInstanceOf(ContainerRuntimeError);
-    const message = failure instanceof Error ? failure.message : "";
-    expect(message).toContain("Cosmos bootstrap failed");
-    expect(message).toContain(`${localCosmosEndpoint}/dbs`);
-    expect(message).toContain("HTTP 500");
-    expect(message.length).toBeLessThan(2_000);
-    expect(http.requests).toHaveLength(1);
-  });
-
-  it("rejects with the invocation's cancellation reason without sending a request", async () => {
-    const http = createRecordingHttpClient();
-    const bootstrap = createLocalStorageBootstrap({http, createBlobStorage: createRecordingBlobStorage().factory});
-
-    await expect(bootstrap.ensureCosmos(abortedSignal())).rejects.toMatchObject({
-      name: "CommandCancellation",
-      exitCode: 143,
-      message: "Terminated by test signal.",
-    });
-    expect(http.requests).toHaveLength(0);
-  });
-});
-
-describe("createLocalStorageBootstrap.ensureAzurite", () => {
-  it("creates every required container and applies the local CORS policy through the injected factory", async () => {
-    const blobs = createRecordingBlobStorage();
-    const bootstrap = createLocalStorageBootstrap({http: createRecordingHttpClient(), createBlobStorage: blobs.factory});
-
-    await expect(bootstrap.ensureAzurite(new AbortController().signal)).resolves.toBeUndefined();
-
-    expect(blobs.connectionStrings).toEqual([azuriteDevelopmentConnectionString]);
-    expect(azuriteDevelopmentConnectionString).toBe("UseDevelopmentStorage=true");
-    expect(blobs.operations).toEqual([
-      ...requiredAzuriteBlobContainers.map((container) => `ensureContainer:${container}`),
-      "applyCorsPolicy",
-    ]);
-    expect(requiredAzuriteBlobContainers).toEqual(["invoices"]);
-  });
-
-  it("threads the invocation signal into every blob operation", async () => {
-    const controller = new AbortController();
-    const blobs = createRecordingBlobStorage();
-    const bootstrap = createLocalStorageBootstrap({http: createRecordingHttpClient(), createBlobStorage: blobs.factory});
-
-    await bootstrap.ensureAzurite(controller.signal);
-
-    expect(blobs.signals.every((signal) => signal === controller.signal)).toBe(true);
-  });
-
-  it("never exposes storage credentials in a wrapped provisioning failure", async () => {
-    const blobs = createRecordingBlobStorage({
-      ensureContainer: (): Promise<void> =>
-        Promise.reject(new Error("PUT failed for BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1;AccountKey=s3cr3tLocalKeyValue==;")),
-    });
-    const bootstrap = createLocalStorageBootstrap({http: createRecordingHttpClient(), createBlobStorage: blobs.factory});
-
-    const failure = await bootstrap.ensureAzurite(new AbortController().signal).catch((error: unknown) => error);
-
-    expect(failure).toBeInstanceOf(ContainerRuntimeError);
-    const message = failure instanceof Error ? failure.message : "";
-    expect(message).toContain("Azurite bootstrap failed");
-    expect(message).toContain("[REDACTED]");
-    expect(message).not.toContain("s3cr3tLocalKeyValue==");
-    expect(message.length).toBeLessThan(2_000);
-  });
-
-  it("rejects with the invocation's cancellation reason without constructing a blob client", async () => {
-    const blobs = createRecordingBlobStorage();
-    const bootstrap = createLocalStorageBootstrap({http: createRecordingHttpClient(), createBlobStorage: blobs.factory});
-
-    await expect(bootstrap.ensureAzurite(abortedSignal())).rejects.toMatchObject({
-      name: "CommandCancellation",
-      exitCode: 143,
-      message: "Terminated by test signal.",
-    });
-    expect(blobs.connectionStrings).toEqual([]);
-  });
-});
-
-describe("createLocalStorageBootstrap diagnostics", () => {
-  it("writes nothing to the console while succeeding or failing", async () => {
-    const spies = (["log", "info", "warn", "error", "debug"] as const).map((method) =>
-      vi.spyOn(console, method).mockImplementation(() => undefined),
+          // Assert
+          const calls = harness.httpCalls();
+          expect(calls.map((request) => [request.method, request.url])).toEqual([
+            ["POST", `${localCosmosEndpoint}/dbs`],
+            ["POST", `${localCosmosEndpoint}/dbs/primary/colls`],
+            ["POST", `${localCosmosEndpoint}/dbs/primary/colls`],
+          ]);
+          expect(calls.map((request) => (request.body._tag === "Uint8Array" ? request.body.text : undefined))).toEqual([
+            JSON.stringify({id: "primary"}),
+            JSON.stringify({id: "invoices", partitionKey: {paths: ["/UserIdentifier"], kind: "Hash"}}),
+            JSON.stringify({id: "merchants", partitionKey: {paths: ["/ParentCompanyId"], kind: "Hash"}}),
+          ]);
+          expect(calls.every((request) => request.body._tag === "Uint8Array" && request.body.contentType === "application/json")).toBe(
+            true,
+          );
+          expect(calls.every((request) => !("traceparent" in request.headers) && !("b3" in request.headers))).toBe(true);
+        }),
+      harness.layer,
     );
-    const blobs = createRecordingBlobStorage({
-      applyCorsPolicy: (): Promise<void> => Promise.reject(new Error("AccountKey=anotherLocalKey==")),
-    });
-    const bootstrap = createLocalStorageBootstrap({
-      http: createRecordingHttpClient([createHttpResponse(503, "unavailable")]),
-      createBlobStorage: blobs.factory,
-    });
+  }
 
-    try {
-      await bootstrap.ensureCosmos(new AbortController().signal).catch(() => undefined);
-      await bootstrap.ensureAzurite(new AbortController().signal).catch(() => undefined);
+  {
+    const harness = makeTestLayer({http: cosmosAnswers(409, "Conflict")});
+    effectTest(
+      "treats an already-provisioned resource reported as HTTP 409 as success",
+      () =>
+        Effect.gen(function* () {
+          // Act
+          yield* ensureCosmos;
 
-      expect(spies.every((spy) => spy.mock.calls.length === 0)).toBe(true);
-    } finally {
-      for (const spy of spies) {
-        spy.mockRestore();
-      }
-    }
+          // Assert
+          expect(harness.httpCalls()).toHaveLength(3);
+        }),
+      harness.layer,
+    );
+  }
+
+  {
+    const harness = makeTestLayer({http: cosmosAnswers(500, "x".repeat(10_000))});
+    effectTest(
+      "returns a bounded status/body failure for an unexpected response and stops immediately",
+      () =>
+        Effect.gen(function* () {
+          // Act
+          const error = yield* Effect.flip(ensureCosmos);
+
+          // Assert
+          expect(error).toBeInstanceOf(ContainerRuntimeError);
+          expect(error.message.startsWith(`${COSMOS_PREFIX}Cosmos bootstrap failed for ${localCosmosEndpoint}/dbs: HTTP 500 xxx`)).toBe(
+            true,
+          );
+          expect(error.message.length).toBeLessThan(2_000);
+          expect(harness.httpCalls()).toHaveLength(1);
+        }),
+      harness.layer,
+    );
+  }
+
+  {
+    const harness = makeTestLayer({http: cosmosAnswers(201, "x".repeat(cosmosBootstrapMaximumResponseBytes + 1))});
+    effectTest(
+      "bounds the cosmos bootstrap response",
+      () =>
+        Effect.gen(function* () {
+          // Act
+          const error = yield* Effect.flip(ensureCosmos);
+
+          // Assert
+          expect(error).toBeInstanceOf(ContainerRuntimeError);
+          expect(error.message).toBe(`${COSMOS_PREFIX}Response exceeded the 65536 byte limit.`);
+          expect(harness.httpCalls()).toHaveLength(1);
+        }),
+      harness.layer,
+    );
+  }
+
+  {
+    const harness = makeTestLayer({http: cosmosAnswers(201, "x".repeat(cosmosBootstrapMaximumResponseBytes))});
+    effectTest(
+      "accepts a response body of exactly the bound",
+      () =>
+        Effect.gen(function* () {
+          // Act
+          yield* ensureCosmos;
+
+          // Assert
+          expect(harness.httpCalls()).toHaveLength(3);
+        }),
+      harness.layer,
+    );
+  }
+
+  {
+    const harness = makeTestLayer({http: cosmosAnswers(503, "AccountKey=s3cr3tCosmosKey==; emulator starting")});
+    effectTest(
+      "strips storage credentials from a wrapped failure",
+      () =>
+        Effect.gen(function* () {
+          // Act
+          const error = yield* Effect.flip(ensureCosmos);
+
+          // Assert
+          expect(error.message).toBe(
+            `${COSMOS_PREFIX}Cosmos bootstrap failed for ${localCosmosEndpoint}/dbs: HTTP 503 AccountKey=[REDACTED]; emulator starting`,
+          );
+        }),
+      harness.layer,
+    );
+  }
+
+  {
+    let requests = 0;
+    const hanging = Layer.succeed(
+      HttpClient.HttpClient,
+      HttpClient.make(() => {
+        requests += 1;
+        return Effect.never;
+      }),
+    );
+    effectTest(
+      "stops at the in-flight request when interrupted",
+      () =>
+        Effect.gen(function* () {
+          // Arrange
+          const fiber = yield* Effect.forkChild(ensureCosmos);
+          while (requests === 0) {
+            yield* Effect.yieldNow;
+          }
+
+          // Act
+          const exit = yield* Fiber.interrupt(fiber).pipe(Effect.andThen(Fiber.await(fiber)));
+
+          // Assert
+          expect(Exit.hasInterrupts(exit)).toBe(true);
+          expect(requests).toBe(1);
+        }),
+      hanging,
+    );
+  }
+});
+
+describe("ensureAzurite", () => {
+  {
+    const blobs = recordingBlobStorage();
+    effectTest(
+      "creates every required container, then applies the local CORS policy, with the development connection string",
+      () =>
+        Effect.gen(function* () {
+          // Act
+          yield* ensureAzurite;
+
+          // Assert
+          expect(blobs.operations()).toEqual([
+            ...requiredAzuriteBlobContainers.map((container) => `ensureContainer:${container}@UseDevelopmentStorage=true`),
+            "applyCorsPolicy@UseDevelopmentStorage=true",
+          ]);
+          expect(requiredAzuriteBlobContainers).toEqual(["invoices"]);
+        }),
+      blobs.layer,
+    );
+  }
+
+  {
+    const blobs = recordingBlobStorage("ensureContainer:invoices");
+    effectTest(
+      "stops at the first failed operation and keeps its failure",
+      () =>
+        Effect.gen(function* () {
+          // Act
+          const error = yield* Effect.flip(ensureAzurite);
+
+          // Assert
+          expect(error.message).toBe("ensureContainer:invoices failed");
+          expect(blobs.operations()).toEqual(["ensureContainer:invoices@UseDevelopmentStorage=true"]);
+        }),
+      blobs.layer,
+    );
+  }
+
+  it("types the development connection string as a redacted value", () => {
+    expect(Redacted.value(azuriteDevelopmentConnectionString)).toBe("UseDevelopmentStorage=true");
+    expect(String(azuriteDevelopmentConnectionString)).not.toContain("UseDevelopmentStorage");
   });
+});
+
+describe("azuriteBootstrapFailure", () => {
+  it("never exposes storage credentials and bounds the detail", () => {
+    // Act
+    const error = azuriteBootstrapFailure(
+      new Error(
+        `PUT failed for BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1;AccountKey=s3cr3tLocalKeyValue==;${"x".repeat(5_000)}`,
+      ),
+    );
+
+    // Assert
+    expect(error).toBeInstanceOf(ContainerRuntimeError);
+    expect(
+      error.message.startsWith(
+        "Azurite bootstrap failed. Ensure the azurite container is running and reachable at http://localhost:10000. Original error: PUT failed",
+      ),
+    ).toBe(true);
+    expect(error.message).toContain("AccountKey=[REDACTED]");
+    expect(error.message).not.toContain("s3cr3tLocalKeyValue==");
+    expect(error.message.length).toBeLessThan(2_000);
+  });
+
+  it("describes a non-error rejection", () => {
+    expect(azuriteBootstrapFailure("Sig=abc").message).toBe(
+      "Azurite bootstrap failed. Ensure the azurite container is running and reachable at http://localhost:10000. Original error: Sig=[REDACTED]",
+    );
+  });
+});
+
+describe("LocalBlobStorageLive", () => {
+  for (const operation of ["ensureContainer", "applyCorsPolicy"] as const) {
+    effectTest(
+      `${operation} fails with the Azurite bootstrap failure when the client cannot be built`,
+      () =>
+        Effect.gen(function* () {
+          // Arrange
+          const storage = yield* LocalBlobStorage;
+          const connectionString = Redacted.make("AccountKey=s3cr3tLocalKeyValue==;not-a-connection-string");
+
+          // Act
+          const error = yield* Effect.flip(
+            operation === "ensureContainer"
+              ? storage.ensureContainer(connectionString, "invoices")
+              : storage.applyCorsPolicy(connectionString),
+          );
+
+          // Assert
+          expect(error.message.startsWith("Azurite bootstrap failed. Ensure the azurite container is running")).toBe(true);
+          expect(error.message).not.toContain("s3cr3tLocalKeyValue==");
+        }),
+      LocalBlobStorageLive,
+    );
+  }
+});
+
+describe("bootstrap diagnostics", () => {
+  const harness = makeTestLayer({http: cosmosAnswers(503, "unavailable")});
+  effectTest(
+    "writes nothing to the console or the output while failing",
+    () =>
+      Effect.gen(function* () {
+        // Arrange
+        const spies = (["log", "info", "warn", "error", "debug"] as const).map((method) =>
+          vi.spyOn(console, method).mockImplementation(() => undefined),
+        );
+
+        // Act
+        yield* Effect.flip(ensureCosmos);
+        yield* Effect.flip(ensureAzurite.pipe(Effect.provide(recordingBlobStorage("applyCorsPolicy").layer)));
+
+        // Assert
+        expect(spies.every((spy) => spy.mock.calls.length === 0)).toBe(true);
+        expect(harness.output()).toEqual([]);
+      }),
+    harness.layer,
+  );
 });
