@@ -1,17 +1,21 @@
 using AppHost;
 using AppHost.Applications.Exp;
 using AppHost.Infrastructure.Storage;
+using AppHost.Infrastructure.Sql;
 using AppHost.LocalDevelopment;
+using AppHost.Repository;
 using Aspire.Hosting;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 #pragma warning disable ASPIREJAVASCRIPT001  // AddNextJsApp is experimental in Aspire 13.x
 #pragma warning disable ASPIRECERTIFICATES001 // WithoutHttpsCertificate is evaluation-only in 13.x
 #pragma warning disable ASPIRECOSMOSDB001     // RunAsPreviewEmulator is experimental in 13.x
 
 var builder = DistributedApplication.CreateBuilder(args);
+RepositoryLayout layout = RepositoryLayout.Resolve(builder.AppHostDirectory);
+string sqlPasswordValue = builder.Configuration["Parameters:sql-password"]
+    ?? throw new InvalidOperationException("Parameters:sql-password is required.");
 
 // Generate sites/exp.arolariu.ro/config.aspire.json by copying config.docker.json
 // (the developer's source-of-truth for non-endpoint secrets) and overlaying Aspire
@@ -19,19 +23,9 @@ var builder = DistributedApplication.CreateBuilder(args);
 // Sync, runs once at startup — no event subscriptions, no shutdown restore, no
 // crash recovery, no race against uvicorn launch (the file exists before exp starts).
 ExpConfigGenerator.GenerateAspireConfig(
-    sourcePath: "../../sites/exp.arolariu.ro/config.docker.json",
-    targetPath: "../../sites/exp.arolariu.ro/config.aspire.json",
-    endpointOverrides: new Dictionary<string, string>
-    {
-      ["Endpoints:Database:NoSQL"] = $"AccountEndpoint=https://localhost:{Constants.CosmosGatewayPort}/;"
-                                     + $"AccountKey={Constants.CosmosEmulatorWellKnownKey};",
-      // Encrypt=False / 127.0.0.1 — see sql-ready health check below for rationale.
-      ["Endpoints:Database:SQL"] = $"Server=127.0.0.1,{Constants.SqlPort};Database={Constants.SqlDatabaseName};"
-                                   + $"User Id=sa;Password={builder.Configuration["Parameters:sql-password"]};"
-                                   + $"Encrypt=False;TrustServerCertificate=true;",
-      ["Endpoints:Storage:Blob"] = $"http://localhost:{Constants.AzuriteBlobPort}/devstoreaccount1",
-      ["Endpoints:Service:Api"] = $"http://localhost:{Constants.ApiPort}",
-    });
+    sourcePath: layout.SourceConfigPath,
+    targetPath: layout.GeneratedConfigPath,
+    endpointOverrides: ExpResources.CreateEndpointOverrides(sqlPasswordValue));
 
 // ─────────────────────────────────────────────────────────────────────
 // Infrastructure — native Aspire 13.x declarations.
@@ -42,9 +36,6 @@ ExpConfigGenerator.GenerateAspireConfig(
 // ─────────────────────────────────────────────────────────────────────
 
 var sqlPassword = builder.AddParameter("sql-password", secret: true);
-var sqlPasswordValue = builder.Configuration["Parameters:sql-password"]
-    ?? throw new InvalidOperationException(
-        "Parameters:sql-password not configured. Set via 'dotnet user-secrets set Parameters:sql-password <value>' or appsettings.Development.json.");
 var sql = builder
     .AddSqlServer("mssql", password: sqlPassword, port: Constants.SqlPort)
     .WithDataVolume(Constants.SqlDataVolume)
@@ -74,31 +65,9 @@ var sqlDb = sql.AddDatabase(Constants.SqlDatabaseName)
 // the container starts — well before SQL Server's TDS listener accepts queries.
 // Without this gate, downstream services (exp, api) hit a half-initialized SQL
 // Server and the SqlClient connection pool gets poisoned by the failed handshake.
-builder.Services.AddHealthChecks().AddAsyncCheck("sql-ready", async () =>
-{
-  // Connect to 'master' (always exists on a fresh container) — the readiness
-  // probe just needs to verify TDS is accepting queries, not that the app's
-  // database exists yet. The app's database is created later by EF migrations
-  // / API bootstrap. Encrypt=False bypasses the vpnkit-mangled TLS handshake
-  // that Docker Desktop on Windows produces; equivalent to selfhost's Docker-
-  // network path which is unencrypted by default.
-  var connStr = $"Server=127.0.0.1,{Constants.SqlPort};Database=master;User Id=sa;"
-              + $"Password={sqlPasswordValue};Encrypt=False;TrustServerCertificate=true;"
-              + $"Connection Timeout=5;";
-
-  try
-  {
-    await using var conn = new SqlConnection(connStr);
-    await conn.OpenAsync().ConfigureAwait(false);
-    await using var cmd = new SqlCommand("SELECT 1", conn);
-    await cmd.ExecuteScalarAsync().ConfigureAwait(false);
-    return HealthCheckResult.Healthy();
-  }
-  catch (Exception ex)
-  {
-    return HealthCheckResult.Unhealthy(ex.Message);
-  }
-});
+builder.Services.AddHealthChecks().AddCheck("sql-ready",
+    new SqlReadinessHealthCheck(() =>
+      new SqlConnection(SqlResources.CreateConnectionString(sqlPasswordValue, "master", 5))));
 sql.WithHealthCheck("sql-ready");
 
 // Use RunAsPreviewEmulator for the Linux-based vnext emulator (matches the
@@ -198,7 +167,7 @@ var redis = builder
 // ─────────────────────────────────────────────────────────────────────
 
 var exp = builder
-    .AddUvicornApp("exp", "../../sites/exp.arolariu.ro", "main:app")
+    .AddUvicornApp("exp", layout.ExpDirectory, "main:app")
     .WithPip() // force pip mode (uv may not be installed)
     .WithVirtualEnvironment(".venv")
     // isProxied: false — uvicorn binds host 5002 directly. With DCP in the path,
@@ -228,8 +197,7 @@ var exp = builder
     .WithIconName("KeyMultiple")
     .WithHttpHealthCheck("/api/ready");
 
-string aspireConfigPath = Path.GetFullPath(
-    "../../sites/exp.arolariu.ro/config.aspire.json");
+string aspireConfigPath = layout.GeneratedConfigPath;
 IReadOnlyDictionary<string, string> identityEnvironment =
     LocalDevelopmentResourceConfiguration.CreateIdentityEnvironment(
         aspireConfigPath,
@@ -273,7 +241,7 @@ var api = builder
 // ─────────────────────────────────────────────────────────────────────
 
 var website = builder
-    .AddNextJsApp("website", "../../sites/arolariu.ro")
+    .AddNextJsApp("website", layout.WebsiteDirectory)
     // Next.js dev serves HTTPS via its own self-signed cert (--experimental-https).
     // Declare the binding as https so the Aspire dashboard's clickable URL matches
     // what the browser actually opens (https://localhost:3000), instead of an http://
@@ -297,7 +265,7 @@ var website = builder
 // ─────────────────────────────────────────────────────────────────────
 
 var cv = builder
-    .AddViteApp("cv", "../../sites/cv.arolariu.ro")
+    .AddViteApp("cv", layout.CvDirectory)
     .WithHttpEndpoint(port: Constants.CvPort, env: "PORT")
     .WithIconName("PersonAccounts");
 
@@ -316,7 +284,7 @@ var cv = builder
 // ─────────────────────────────────────────────────────────────────────
 
 var docs = builder
-    .AddJavaScriptApp("docs", "../../sites/docs.arolariu.ro", runScriptName: "start")
+    .AddJavaScriptApp("docs", layout.DocsDirectory, runScriptName: "start")
     .WithHttpEndpoint(port: Constants.DocsPort, isProxied: false)
     .WithIconName("BookOpenGlobe");
 
@@ -325,7 +293,7 @@ var docs = builder
 // ─────────────────────────────────────────────────────────────────────
 
 var status = builder
-    .AddViteApp("status", "../../sites/status.arolariu.ro")
+    .AddViteApp("status", layout.StatusDirectory)
     .WithHttpEndpoint(port: Constants.StatusPort, env: "PORT")
     .WithIconName("PulseSquare");
 

@@ -28,7 +28,7 @@ internal static class ExpConfigGenerator
 {
   /// <summary>
   /// Reads <paramref name="sourcePath"/>, applies <paramref name="endpointOverrides"/>
-  /// to matching top-level keys, and writes the result to <paramref name="targetPath"/>.
+  /// to matching top-level keys, and atomically replaces <paramref name="targetPath"/>.
   /// Overrides for keys absent in the source are silently skipped (defensive — never
   /// introduce keys that the source file doesn't already define).
   /// </summary>
@@ -39,10 +39,27 @@ internal static class ExpConfigGenerator
       string sourcePath,
       string targetPath,
       IReadOnlyDictionary<string, string> endpointOverrides)
+    => GenerateAspireConfig(sourcePath, targetPath, endpointOverrides, ReplaceTarget);
+
+  internal static void GenerateAspireConfig(
+      string sourcePath,
+      string targetPath,
+      IReadOnlyDictionary<string, string> endpointOverrides,
+      Action<string, string> replaceTarget)
   {
     ArgumentException.ThrowIfNullOrWhiteSpace(sourcePath);
     ArgumentException.ThrowIfNullOrWhiteSpace(targetPath);
     ArgumentNullException.ThrowIfNull(endpointOverrides);
+    ArgumentNullException.ThrowIfNull(replaceTarget);
+
+    sourcePath = Path.GetFullPath(sourcePath);
+    targetPath = Path.GetFullPath(targetPath);
+    StringComparison comparison = OperatingSystem.IsWindows()
+      ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+    if (string.Equals(sourcePath, targetPath, comparison))
+    {
+      throw new ArgumentException("Generated configuration must not overwrite its source.", nameof(targetPath));
+    }
 
     if (!File.Exists(sourcePath))
     {
@@ -64,6 +81,24 @@ internal static class ExpConfigGenerator
     }
 
     var output = config.ToJsonString(new JsonSerializerOptions { WriteIndented = true });
-    File.WriteAllText(targetPath, output);
+    string temporaryPath = Path.Combine(
+      Path.GetDirectoryName(targetPath)
+        ?? throw new ArgumentException("Generated configuration requires a parent directory.", nameof(targetPath)),
+      $".{Path.GetFileName(targetPath)}.{Guid.NewGuid():N}.tmp");
+    try
+    {
+      File.WriteAllText(temporaryPath, output);
+      replaceTarget(temporaryPath, targetPath);
+    }
+    finally
+    {
+      File.Delete(temporaryPath);
+    }
+  }
+
+  private static void ReplaceTarget(string temporaryPath, string targetPath)
+  {
+    if (File.Exists(targetPath)) { File.Replace(temporaryPath, targetPath, destinationBackupFileName: null); }
+    else { File.Move(temporaryPath, targetPath); }
   }
 }
