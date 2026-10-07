@@ -930,7 +930,7 @@ describe("manifest readiness from shared facts", () => {
     const harness = createHarness({
       infrastructure: [
         infrastructureAvailable({
-          manifestIssues: ["Missing required manifest: tooling/AppHost/AppHost.csproj"],
+          manifestIssues: ["Missing required manifest: tooling/src/AppHost/AppHost.csproj"],
         }),
       ],
       config: {status: "valid", config: {schemaVersion: 1, containerEngine: "rancher"}},
@@ -939,7 +939,7 @@ describe("manifest readiness from shared facts", () => {
     const result = await runPhase(harness);
 
     expect(result.status).toBe("failed");
-    expect(result.evidence).toContain("Missing required manifest: tooling/AppHost/AppHost.csproj");
+    expect(result.evidence).toContain("Missing required manifest: tooling/src/AppHost/AppHost.csproj");
     expect(result.nextActions).toContain("Restore the required tracked local infrastructure files, then rerun setup.");
   });
 });

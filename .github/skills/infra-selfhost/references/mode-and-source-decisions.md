@@ -4,7 +4,7 @@
 
 | Mode | Behavior | Live owners to reopen |
 | --- | --- | --- |
-| Aspire | AppHost runs applications natively and asks the selected engine for infrastructure containers | `package.json`; `scripts/container-runtime/aspire.ts`; `tooling/AppHost/Program.cs` |
+| Aspire | AppHost runs applications natively and asks the selected engine for infrastructure containers | `package.json`; `scripts/container-runtime/aspire.ts`; `tooling/src/AppHost/Program.cs` |
 | Selfhost | Management, storage, API, and website run through ordered Compose projects | `scripts/container-runtime/selfhost.ts`; `infra/Local/**/docker-compose.yml` |
 | Standalone | One root/Nx development target runs without AppHost coordination | Root `package.json`, the service package/project manifest, and its nearest `AGENTS.md` |
 | Ad hoc | One supported image target or Compose file is operated through the engine adapter | Root `package.json`; `scripts/container-runtime/{image,compose}.ts`; `infra/containers/**`; selected Compose file |
@@ -29,7 +29,9 @@ isolated process.
 Read the graph before acting:
 
 - Aspire ordering is expressed by `WaitFor`, `WaitForCompletion`, references,
-  endpoint declarations, and health checks in `tooling/AppHost/Program.cs`.
+  endpoint declarations, and health checks in the `Infrastructure`,
+  `Applications`, and `LocalDevelopment` slices under `tooling/src/AppHost`;
+  `Program.cs` composes those slices.
   Infrastructure gates config/identity/bootstrap resources; those gate the
   API; the API gates the website. Independent sites should not block a narrow
   request unless their live declarations say otherwise.
@@ -44,10 +46,10 @@ Read the graph before acting:
 Never use a remembered service table as authority. Derive the active endpoint:
 
 1. Aspire dashboard and OTLP bindings:
-   `tooling/AppHost/Properties/launchSettings.json`.
+   `tooling/src/AppHost/Properties/launchSettings.json`.
 2. Aspire resource names, endpoints, schemes, dependencies, and health paths:
-   `tooling/AppHost/Program.cs`; shared port symbols:
-   `tooling/AppHost/Constants.cs`.
+   capability slices under `tooling/src/AppHost`; shared port symbols:
+   `tooling/src/AppHost/Constants.cs`.
 3. Selfhost host ports and container health checks:
    `infra/Local/**/docker-compose.yml`; generated HTTPS routes:
    `scripts/container-runtime/traefik.ts`.

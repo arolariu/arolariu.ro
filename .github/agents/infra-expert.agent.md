@@ -16,7 +16,7 @@ local-development boundary.
 
 - `infra/Azure/Bicep/**`
 - `infra/Local/**`
-- `tooling/AppHost/**`
+- `tooling/src/AppHost/**`
 - Root scripts and package commands that own local Aspire, selfhost, image,
   Compose, or container-engine behavior
 - `.github/workflows/**`
@@ -37,7 +37,7 @@ change infrastructure.
 2. The matching owner:
    - `.github/instructions/bicep.instructions.md` for Bicep
    - `.github/instructions/workflows.instructions.md` and RFC 0001 for workflows
-   - `package.json`, `tooling/AppHost/Program.cs`, and `infra/Local/readme.md`
+   - `package.json`, `tooling/src/AppHost/Program.cs`, and `infra/Local/readme.md`
      for local Aspire/selfhost work
 3. The calling module, workflow, or runtime script and one sibling
    implementation for the same deployment/build/runtime family

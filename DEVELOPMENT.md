@@ -41,7 +41,7 @@ There are three ways to develop locally. Choose based on your needs:
 
 ### Recommended workflow
 
-Use **Aspire mode** (`npm run dev`). Aspire 13.x's AppHost (`tooling/AppHost/Program.cs`) runs each app natively (dotnet / Next.js / SvelteKit / Docusaurus / uvicorn) for full hot reload while spawning infrastructure (SQL Server, Cosmos vNext emulator, Azurite, Redis) as Aspire-managed containers. The Aspire dashboard at `https://localhost:17080` surfaces live OTel traces, metrics, and logs.
+Use **Aspire mode** (`npm run dev`). Aspire 13.x's AppHost (`tooling/src/AppHost/Program.cs`) runs each app natively (dotnet / Next.js / SvelteKit / Docusaurus / uvicorn) for full hot reload while spawning infrastructure (SQL Server, Cosmos vNext emulator, Azurite, Redis) as Aspire-managed containers. The Aspire dashboard at `https://localhost:17080` surfaces live OTel traces, metrics, and logs.
 
 See **[AGENTS.md → Local Dev — Aspire vs Selfhost](AGENTS.md#local-dev--aspire-vs-selfhost)** for the canonical mode reference.
 
@@ -67,7 +67,7 @@ npm run dev          # ← This is what you'll use every day (alias: npm run dev
 ```
 
 **What `npm run dev` does:**
-1. ✅ Runs `dotnet run --project tooling/AppHost` — the Aspire AppHost
+1. ✅ Runs `dotnet run --project tooling/src/AppHost` — the Aspire AppHost
 2. 🐳 Spawns Aspire-managed containers: SQL Server, Cosmos vNext emulator, Redis, Azurite
 3. ⏳ Waits for infra health, initializes schemas
 4. 🚀 Starts each app natively with hot reload — dotnet, npm dev scripts, uvicorn

@@ -119,7 +119,7 @@ export function buildSelfhostPlan(inputs: SelfhostPlanInputs): readonly RuntimeC
 export function buildLocalStorageBootstrapCommand(): RuntimeCommand {
   return {
     command: "dotnet",
-    args: ["run", "--project", "../../tooling/LocalDevelopment.Bootstrap", "--", "--ensure-storage-only"],
+    args: ["run", "--project", "../../tooling/src/LocalDevelopment.Bootstrap", "--", "--ensure-storage-only"],
   };
 }
 

@@ -5,7 +5,7 @@
       "name": "🚀 Full stack (Aspire)",
       "type": "aspire",
       "request": "launch",
-      "program": "${workspaceFolder}/tooling/AppHost",
+      "program": "${workspaceFolder}/tooling/src/AppHost",
       "command": "run",
       "debuggers": {
         "apphost": {},
@@ -18,7 +18,7 @@
       "name": "🚀 [Podman] Full stack (Aspire)",
       "type": "aspire",
       "request": "launch",
-      "program": "${workspaceFolder}/tooling/AppHost",
+      "program": "${workspaceFolder}/tooling/src/AppHost",
       "command": "run",
       "env": {
         "DOTNET_ASPIRE_CONTAINER_RUNTIME": "podman"
@@ -35,7 +35,7 @@
       "name": "🚀 [Rancher] Full stack (Aspire)",
       "type": "aspire",
       "request": "launch",
-      "program": "${workspaceFolder}/tooling/AppHost",
+      "program": "${workspaceFolder}/tooling/src/AppHost",
       "command": "run",
       "env": {
         "DOTNET_ASPIRE_CONTAINER_RUNTIME": "docker"
@@ -53,7 +53,7 @@
       "type": "aspire",
       "request": "launch",
       "noDebug": true,
-      "program": "${workspaceFolder}/tooling/AppHost",
+      "program": "${workspaceFolder}/tooling/src/AppHost",
       "command": "run"
     },
     {
@@ -61,7 +61,7 @@
       "type": "aspire",
       "request": "launch",
       "noDebug": true,
-      "program": "${workspaceFolder}/tooling/AppHost",
+      "program": "${workspaceFolder}/tooling/src/AppHost",
       "command": "run",
       "env": {
         "DOTNET_ASPIRE_CONTAINER_RUNTIME": "podman"
@@ -73,7 +73,7 @@
       "type": "aspire",
       "request": "launch",
       "noDebug": true,
-      "program": "${workspaceFolder}/tooling/AppHost",
+      "program": "${workspaceFolder}/tooling/src/AppHost",
       "command": "run",
       "env": {
         "DOTNET_ASPIRE_CONTAINER_RUNTIME": "docker"

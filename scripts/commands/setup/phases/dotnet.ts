@@ -90,7 +90,7 @@ type DotnetMutationOutcome =
 /** A step of the phase: fails with {@link SetupActionFailed} for a failed required mutation. */
 type DotnetStep<A> = Effect.Effect<A, SetupActionFailed, SetupRequirements>;
 
-const APPHOST_PROJECT_SEGMENTS = ["tooling", "AppHost", "AppHost.csproj"] as const;
+const APPHOST_PROJECT_SEGMENTS = ["tooling", "src", "AppHost", "AppHost.csproj"] as const;
 const REQUIRED_APPHOST_SECRET_KEYS = ["Parameters:sql-password", "Parameters:redis-password"] as const;
 const REQUIRED_LOCAL_TOOL_NAME = "defaultdocumentation.console";
 const DOTNET_MANUAL_INSTALL = "Install the required SDK from https://dotnet.microsoft.com/download, then rerun setup.";

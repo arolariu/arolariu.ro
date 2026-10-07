@@ -33,14 +33,14 @@
     <Project Path="sites/docs.arolariu.ro/docs.arolariu.ro.esproj" />
     <Project Path="sites/status.arolariu.ro/status.arolariu.ro.esproj" />
   </Folder>
-  <Folder Name="/tooling/">
-    <Project Path="tooling/AppHost/AppHost.csproj" />
-    <Project Path="tooling/LocalDevelopment.Bootstrap/LocalDevelopment.Bootstrap.csproj" />
-    <Project Path="tooling/LocalDevelopment.Identity/LocalDevelopment.Identity.csproj" />
+  <Folder Name="/tooling/src/">
+    <Project Path="tooling/src/AppHost/AppHost.csproj" />
+    <Project Path="tooling/src/LocalDevelopment.Bootstrap/LocalDevelopment.Bootstrap.csproj" />
+    <Project Path="tooling/src/LocalDevelopment.Identity/LocalDevelopment.Identity.csproj" />
   </Folder>
   <Folder Name="/tooling/tests/">
-    <Project Path="tooling/tests/LocalDevelopment.Tests/LocalDevelopment.Tests.csproj">
-      <BuildDependency Project="tooling/AppHost/AppHost.csproj" />
-    </Project>
+    <Project Path="tooling/tests/AppHost.Tests/AppHost.Tests.csproj" />
+    <Project Path="tooling/tests/LocalDevelopment.Bootstrap.Tests/LocalDevelopment.Bootstrap.Tests.csproj" />
+    <Project Path="tooling/tests/LocalDevelopment.Identity.Tests/LocalDevelopment.Identity.Tests.csproj" />
   </Folder>
 </Solution>

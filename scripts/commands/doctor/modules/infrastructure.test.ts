@@ -47,7 +47,7 @@ const STABLE_INFRASTRUCTURE_IDS = [
 ] as const;
 
 const REQUIRED_MANIFEST_RELATIVE_SEGMENTS: readonly (readonly string[])[] = [
-  ["tooling", "AppHost", "AppHost.csproj"],
+  ["tooling", "src", "AppHost", "AppHost.csproj"],
   ["infra", "Local", "Management", "docker-compose.yml"],
   ["infra", "Local", "Storage", "docker-compose.yml"],
   ["infra", "Local", "Backend", "docker-compose.yml"],
@@ -591,7 +591,7 @@ describe("infrastructureDoctorModule – manifests", () => {
   it("fails manifests when manifestIssues is non-empty", async () => {
     const fixture = await createInfrastructureFixture({
       env: {AROLARIU_CONTAINER_ENGINE: "rancher"},
-      initialFacts: healthyFacts({manifestIssues: ["Missing required manifest: tooling/AppHost/AppHost.csproj"]}),
+      initialFacts: healthyFacts({manifestIssues: ["Missing required manifest: tooling/src/AppHost/AppHost.csproj"]}),
     });
 
     const results = await fixture.run();
@@ -712,7 +712,7 @@ describe("infrastructureDoctorModule – CI parity", () => {
       healthyFacts({dockerConflict: true}),
       healthyFacts({ports: [{port: 3000, available: false, repositoryOwned: false}]}),
       healthyFacts({certificateIssues: ["Missing selfhost certificate file: infra/Local/Management/certs/local-cert.pem"]}),
-      healthyFacts({manifestIssues: ["Missing required manifest: tooling/AppHost/AppHost.csproj"]}),
+      healthyFacts({manifestIssues: ["Missing required manifest: tooling/src/AppHost/AppHost.csproj"]}),
       healthyFacts({containers: [{name: "mssql", state: "exited", publishedPorts: [], repositoryOwned: true}]}),
     ];
 

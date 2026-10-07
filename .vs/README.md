@@ -8,7 +8,7 @@ Open `arolariu.slnx`. AppHost (under `tooling/`) is set as the startup project.
 F5 launches:
 
 1. Aspire's native infrastructure containers (SQL Server, Cosmos vNext emulator,
-   Azurite, Redis) via `tooling/AppHost/Program.cs`
+   Azurite, Redis) via `tooling/src/AppHost/Program.cs`
 2. Native processes: exp (Python uvicorn), API (.NET), Website (Next.js),
    CV (SvelteKit), docs (Docusaurus), status (SvelteKit)
 3. Aspire dashboard at `https://localhost:17080`; services reachable directly at their
@@ -34,7 +34,7 @@ F5 launches:
 ## Tests
 
 - .NET tests: visible in Test Explorer natively
-- Local-development tests (`tooling/tests/LocalDevelopment.Tests/`): same
+- Owner-specific tooling tests (`tooling/tests/`): AppHost, Bootstrap, and Identity suites
 - Vitest: run via integrated terminal (`npm run test:unit`) or VS Code's Vitest extension
 - Playwright / Newman: CLI-only
 

@@ -47,7 +47,7 @@ import {createDotnetSetupPhase, dotnetSetupPhase, generateLocalDevelopmentPasswo
 
 const requiredDotnet: MinimumVersion = {major: 10, minor: 0, patch: 0};
 const paths = createRepositoryPaths(resolve("C:\\fixture\\arolariu.ro"));
-const appHostProject = resolve(paths.root, "tooling", "AppHost", "AppHost.csproj");
+const appHostProject = resolve(paths.root, "tooling", "src", "AppHost", "AppHost.csproj");
 const sqlSecretKey = "Parameters:sql-password";
 const redisSecretKey = "Parameters:redis-password";
 /**
@@ -1330,7 +1330,7 @@ describe("restore postconditions", () => {
   });
 
   it("fails when the solution restore leaves generated NuGet restore issues", async () => {
-    const restoreIssue = "Missing NuGet restore assets: tooling/AppHost/AppHost.csproj";
+    const restoreIssue = "Missing NuGet restore assets: tooling/src/AppHost/AppHost.csproj";
     const harness = await createHarness({
       dotnetOutcomes: [availableOutcome(), availableOutcome(), availableOutcome({solutionRestoreIssues: [restoreIssue]})],
     });

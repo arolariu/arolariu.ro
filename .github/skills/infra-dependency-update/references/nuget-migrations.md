@@ -15,19 +15,21 @@ Load only after live inspection establishes NuGet ownership.
   [`Invoices/packages.lock.json`](../../../../sites/api.arolariu.ro/src/Invoices/packages.lock.json),
   have durable resolved-state evidence. Do not infer a lock for a project that
   has none.
-- Tooling projects are outside the API central-management subtree and own
-  versions directly in project files, including
-  [`AppHost.csproj`](../../../../tooling/AppHost/AppHost.csproj),
-  [`LocalDevelopment.Bootstrap.csproj`](../../../../tooling/LocalDevelopment.Bootstrap/LocalDevelopment.Bootstrap.csproj),
+- [`Tooling Directory.Packages.props`](../../../../tooling/Directory.Packages.props)
+  owns tooling PackageReference versions independently of the API catalog.
+  Tooling projects declare package use, including
+  [`AppHost.csproj`](../../../../tooling/src/AppHost/AppHost.csproj),
+  [`LocalDevelopment.Bootstrap.csproj`](../../../../tooling/src/LocalDevelopment.Bootstrap/LocalDevelopment.Bootstrap.csproj),
   and
-  [`LocalDevelopment.Identity.csproj`](../../../../tooling/LocalDevelopment.Identity/LocalDevelopment.Identity.csproj).
-  No `packages.lock.json` is committed for those tooling owners.
+  [`LocalDevelopment.Identity.csproj`](../../../../tooling/src/LocalDevelopment.Identity/LocalDevelopment.Identity.csproj).
+  The AppHost SDK declaration remains project-local. No `packages.lock.json`
+  is committed for those tooling owners.
 
 Inspect MSBuild import boundaries, the actual version owner, every consuming
-project, and only lockfiles that exist. API central ownership and tooling
-project-local ownership are both valid; do not add a project-local `Version`
-to a centrally managed API reference or assume the API central file governs
-tooling.
+project, and only lockfiles that exist. API and tooling central ownership remain
+separate; do not add inline PackageReference versions to either centrally managed
+subtree or assume the API catalog governs tooling. SDK declarations have their
+own resolution boundary.
 
 ## Read-Only Compatibility Pass
 
@@ -38,7 +40,7 @@ tooling.
 2. Read the exact NuGet package page, maintainer release/migration notes, API
    reference, target-framework support, dependencies, and advisories.
 3. Compare the package's target frameworks with the live owner: API
-   `Directory.Build.props` or the tooling project file. Check SDK/runtime
+   `Directory.Build.props` or the tooling root build file. Check SDK/runtime
    support without copying its current value into this resource.
 4. Inspect analyzer and compiler diagnostic changes because repository
    warnings fail builds.
@@ -65,8 +67,8 @@ and lockfile generation remain blocked before approval.
 ## After Explicit Approval
 
 1. Establish focused build/test baselines for every consuming project.
-2. Change the version at the approved owner: the API central declaration or a
-   tooling project's local package/SDK declaration. Change ownership itself
+2. Change the version at the approved owner: the API/tooling central declaration
+   or a project's local SDK declaration. Change ownership itself
    only when that scope is separately approved.
 3. Restore affected projects. Review each existing `packages.lock.json` delta
    before source edits; for a lockless owner, capture and compare the freshly

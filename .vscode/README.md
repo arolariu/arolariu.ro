@@ -1,13 +1,13 @@
 # .vscode Configuration
 
 This workspace's VS Code config is tuned for **Aspire-mode** development. F5 launches
-the full stack via the `tooling/AppHost` project (.NET Aspire 13.x).
+the full stack via the `tooling/src/AppHost` project (.NET Aspire 13.x).
 
 ## Launch configs (Run and Debug, Ctrl+Shift+D)
 
 | Config | What it does |
 |---|---|
-| 🚀 Full stack (Aspire) | F5 default. Runs `dotnet run --project tooling/AppHost`. Debugger attached. |
+| 🚀 Full stack (Aspire) | F5 default. Runs `dotnet run --project tooling/src/AppHost`. Debugger attached. |
 | 🚀 Full stack (no debug) | Same, no attach. Faster startup. |
 | 🌐 Website only | Runs `npm run dev` in `sites/arolariu.ro`. Standalone. |
 | 🔧 API only | Runs `dotnet run` on the API project. Standalone. |
@@ -28,7 +28,7 @@ Plus retained custom configs for Edge browser debug, DocFX, and Python exp FastA
 
 Aspire mode (F5) does not need any `Infra: up` preLaunchTask — Aspire 13.x's AppHost
 spawns its own infra containers (SQL Server, Cosmos vNext emulator, Azurite, Redis) natively
-via `tooling/AppHost/Program.cs`. The Aspire dashboard opens at `https://localhost:17080`.
+via `tooling/src/AppHost/Program.cs`. The Aspire dashboard opens at `https://localhost:17080`.
 
 ## Recommended extensions
 

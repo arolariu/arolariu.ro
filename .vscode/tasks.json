@@ -85,7 +85,7 @@
             "watch",
             "run",
             "--project",
-            "${workspaceFolder}/tooling/AppHost/AppHost.csproj"
+            "${workspaceFolder}/tooling/src/AppHost/AppHost.csproj"
         ],
         "problemMatcher": "$msCompile"
     }
