@@ -3,7 +3,6 @@ using AppHost.Applications.Exp;
 using AppHost.Infrastructure;
 using AppHost.LocalDevelopment;
 using AppHost.Repository;
-using Aspire.Hosting;
 
 var builder = DistributedApplication.CreateBuilder(args);
 RepositoryLayout layout = RepositoryLayout.Resolve(builder.AppHostDirectory);

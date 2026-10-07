@@ -130,7 +130,7 @@ internal static class SeedData
     SeedInvoiceDefinition definition,
     SeedPersonaDefinition owner,
     Guid merchantIdentifier,
-    IReadOnlyDictionary<string, SeedPersonaDefinition> personas,
+    Dictionary<string, SeedPersonaDefinition> personas,
     string version,
     DateOnly utcAnchorDate)
   {

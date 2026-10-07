@@ -6,6 +6,7 @@ using System.Text;
 using System.Runtime.Versioning;
 using System.Security.AccessControl;
 using System.Security.Principal;
+using System.Runtime.ExceptionServices;
 
 /// <summary>
 /// Generates <c>config.aspire.json</c> for the <c>exp</c> service by copying
@@ -90,6 +91,7 @@ internal static class ExpConfigGenerator
         ?? throw new ArgumentException("Generated configuration requires a parent directory.", nameof(targetPath)),
       $".{Path.GetFileName(targetPath)}.{Guid.NewGuid():N}.tmp");
     Exception? generationError = null;
+    Exception? cleanupError = null;
     try
     {
       WritePrivateTemporaryFile(temporaryPath, targetPath, output);
@@ -98,7 +100,6 @@ internal static class ExpConfigGenerator
     catch (Exception exception)
     {
       generationError = exception;
-      throw;
     }
     finally
     {
@@ -106,14 +107,19 @@ internal static class ExpConfigGenerator
       {
         File.Delete(temporaryPath);
       }
-      catch (Exception cleanupError) when (generationError is not null
-        && cleanupError is IOException or UnauthorizedAccessException)
+      catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
       {
-        throw new AggregateException(
-          "Configuration generation failed and its temporary file could not be removed.",
-          generationError, cleanupError);
+        cleanupError = exception;
       }
     }
+    if (generationError is not null && cleanupError is not null)
+    {
+      throw new AggregateException(
+        "Configuration generation failed and its temporary file could not be removed.",
+        generationError, cleanupError);
+    }
+    if (generationError is not null) { ExceptionDispatchInfo.Capture(generationError).Throw(); }
+    if (cleanupError is not null) { ExceptionDispatchInfo.Capture(cleanupError).Throw(); }
   }
 
   private static void ReplaceTarget(string temporaryPath, string targetPath)

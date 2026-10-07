@@ -135,7 +135,7 @@ internal static class SeedManifestValidator
   }
 
   private static void RequirePersona(
-    IReadOnlyDictionary<string, SeedPersonaDefinition> personas,
+    Dictionary<string, SeedPersonaDefinition> personas,
     string key,
     Guid expectedIdentifier)
   {
@@ -149,7 +149,7 @@ internal static class SeedManifestValidator
 
   private static void AssertApprovedCounts(
     SeedScenarioManifest manifest,
-    IReadOnlyDictionary<string, SeedPersonaDefinition> personas)
+    Dictionary<string, SeedPersonaDefinition> personas)
   {
     int CountInvoices(string persona) =>
       manifest.Invoices.Count(invoice => invoice.OwnerKey == persona);

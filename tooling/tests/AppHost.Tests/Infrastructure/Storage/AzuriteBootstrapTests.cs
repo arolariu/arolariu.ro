@@ -6,6 +6,7 @@ using Aspire.Hosting.ApplicationModel;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Logging;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -15,6 +16,30 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 [TestClass]
 public sealed class AzuriteBootstrapTests
 {
+  /// <summary>Verifies optimized logging preserves the event and structured retry contract.</summary>
+  [TestMethod]
+  public async Task RetryAsync_OneFailure_PreservesLoggingEventTemplateAndArguments()
+  {
+    var logger = new RecordingLogger();
+    var failure = new IOException("transient");
+    int attempts = 0;
+    await AzuriteBootstrap.RetryAsync("CORS",
+      _ => ++attempts == 1 ? Task.FromException(failure) : Task.CompletedTask,
+      logger, (_, _) => Task.CompletedTask, CancellationToken.None);
+
+    Assert.HasCount(1, logger.Entries);
+    LogEntry entry = logger.Entries[0];
+    Assert.AreEqual(LogLevel.Debug, entry.Level);
+    Assert.AreEqual(0, entry.Event.Id);
+    Assert.IsNull(entry.Event.Name);
+    Assert.AreSame(failure, entry.Exception);
+    Assert.AreEqual("Azurite {Operation} attempt {Attempt} failed; retrying in {Delay}s.",
+      entry.Values["{OriginalFormat}"]);
+    Assert.AreEqual("CORS", entry.Values["Operation"]);
+    Assert.AreEqual(1, entry.Values["Attempt"]);
+    Assert.AreEqual(1, entry.Values["Delay"]);
+  }
+
   /// <summary>Verifies initial polling cannot create the readiness/provisioning cycle.</summary>
   [TestMethod]
   public async Task CheckHealthAsync_BeforeReady_DoesNotProvision()
@@ -287,6 +312,24 @@ public sealed class AzuriteBootstrapTests
   }
 
   private sealed class TestResource(string name) : Resource(name);
+  private sealed record LogEntry(
+    LogLevel Level, EventId Event, Exception? Exception, IReadOnlyDictionary<string, object?> Values);
+  private sealed class RecordingLogger : ILogger
+  {
+    internal List<LogEntry> Entries { get; } = [];
+    public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+    public bool IsEnabled(LogLevel logLevel) => true;
+    public void Log<TState>(LogLevel logLevel, EventId eventId, TState state,
+      Exception? exception, Func<TState, Exception?, string> formatter)
+    {
+      if (state is not IEnumerable<KeyValuePair<string, object?>> values)
+      {
+        throw new InvalidOperationException("Structured logging state is required.");
+      }
+      Entries.Add(new(logLevel, eventId, exception, values.ToDictionary(pair => pair.Key, pair => pair.Value)));
+    }
+  }
+
   private sealed class ChildResource(string name, IResource parent) : Resource(name), IResourceWithParent
   {
     public IResource Parent { get; } = parent;

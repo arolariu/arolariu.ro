@@ -51,6 +51,24 @@ internal static class AzuriteBootstrap
 
   private const string HealthCheckName = "azurite-bootstrap";
 
+  private static readonly Action<ILogger, Exception?> ProvisioningCompleted = LoggerMessage.Define(
+    LogLevel.Information, new EventId(0), "Azurite bootstrap completed (CORS + blob container + queue creation).");
+  private static readonly Action<ILogger, Exception?> RecoveryFailed = LoggerMessage.Define(
+    LogLevel.Warning, new EventId(0), "Azurite provisioning recovery failed; storage remains unhealthy.");
+  private static readonly Action<ILogger, Exception?> ProvisioningFailed = LoggerMessage.Define(
+    LogLevel.Warning, new EventId(0), "Azurite bootstrap exhausted retries; storage reports unhealthy.");
+  private static readonly Action<ILogger, string, int, int, Exception?> AttemptFailed =
+    LoggerMessage.Define<string, int, int>(LogLevel.Debug, new EventId(0),
+      "Azurite {Operation} attempt {Attempt} failed; retrying in {Delay}s.");
+  private static readonly Action<ILogger, Exception?> CorsApplied = LoggerMessage.Define(
+    LogLevel.Information, new EventId(0), "Azurite CORS rules applied (allow-all).");
+  private static readonly Action<ILogger, string, Exception?> ContainerAlreadyExists = LoggerMessage.Define<string>(
+    LogLevel.Information, new EventId(0), "Azurite container '{Name}' already exists; upgraded public access to Blob.");
+  private static readonly Action<ILogger, string, Exception?> ContainerCreated = LoggerMessage.Define<string>(
+    LogLevel.Information, new EventId(0), "Azurite container '{Name}' created with public-blob access.");
+  private static readonly Action<ILogger, string, Exception?> QueueReady = LoggerMessage.Define<string>(
+    LogLevel.Information, new EventId(0), "Azurite queue '{Name}' is ready.");
+
   /// <summary>
   /// Subscribes a bootstrap handler to <paramref name="storage"/>'s
   /// <see cref="ResourceReadyEvent"/>. The handler applies allow-all CORS rules and
@@ -105,8 +123,7 @@ internal static class AzuriteBootstrap
         queueNames,
         logger,
         ct).ConfigureAwait(false);
-      logger.LogInformation(
-        "Azurite bootstrap completed (CORS + blob container + queue creation).");
+      ProvisioningCompleted(logger, null);
     }
 
     builder.Services.AddHealthChecks().Add(new HealthCheckRegistration(
@@ -140,7 +157,7 @@ internal static class AzuriteBootstrap
         catch (OperationCanceledException) { throw; }
         catch (Exception exception)
         {
-          logger.LogWarning(exception, "Azurite provisioning recovery failed; storage remains unhealthy.");
+          RecoveryFailed(logger, exception);
         }
       }
       return state.Error is Exception error
@@ -196,8 +213,8 @@ internal static class AzuriteBootstrap
       catch (OperationCanceledException) { throw; }
       catch (Exception exception)
       {
-        evt.Services.GetRequiredService<ILoggerFactory>().CreateLogger("AzuriteBootstrap")
-          .LogWarning(exception, "Azurite bootstrap exhausted retries; storage reports unhealthy.");
+        ILogger logger = evt.Services.GetRequiredService<ILoggerFactory>().CreateLogger("AzuriteBootstrap");
+        ProvisioningFailed(logger, exception);
       }
     };
   }
@@ -220,8 +237,7 @@ internal static class AzuriteBootstrap
       }
       catch (Exception exception) when (exception is not OperationCanceledException && attempt < MaxAttempts)
       {
-        logger?.LogDebug(exception, "Azurite {Operation} attempt {Attempt} failed; retrying in {Delay}s.",
-          operationName, attempt, attempt);
+        if (logger is not null) { AttemptFailed(logger, operationName, attempt, attempt, exception); }
         await delay(TimeSpan.FromSeconds(attempt), cancellationToken).ConfigureAwait(false);
       }
     }
@@ -262,19 +278,18 @@ internal static class AzuriteBootstrap
       BlobServiceClient client, ILogger? logger, CancellationToken ct)
     => RetryAsync("CORS", async token =>
     {
-        var props = (await client.GetPropertiesAsync(token).ConfigureAwait(false)).Value;
-        props.Cors.Clear();
-        props.Cors.Add(new BlobCorsRule
-        {
-          AllowedOrigins = "*",
-          AllowedMethods = "GET,PUT,POST,DELETE,HEAD,OPTIONS,MERGE",
-          AllowedHeaders = "*",
-          ExposedHeaders = "*",
-          MaxAgeInSeconds = 3600,
-        });
-        await client.SetPropertiesAsync(props, token).ConfigureAwait(false);
-        logger?.LogInformation(
-            "Azurite CORS rules applied (allow-all).");
+      var props = (await client.GetPropertiesAsync(token).ConfigureAwait(false)).Value;
+      props.Cors.Clear();
+      props.Cors.Add(new BlobCorsRule
+      {
+        AllowedOrigins = "*",
+        AllowedMethods = "GET,PUT,POST,DELETE,HEAD,OPTIONS,MERGE",
+        AllowedHeaders = "*",
+        ExposedHeaders = "*",
+        MaxAgeInSeconds = 3600,
+      });
+      await client.SetPropertiesAsync(props, token).ConfigureAwait(false);
+      if (logger is not null) { CorsApplied(logger, null); }
     }, logger, Task.Delay, ct);
 
   private static async Task EnsureContainersWithRetryAsync(
@@ -287,32 +302,30 @@ internal static class AzuriteBootstrap
 
     await RetryAsync("blob container creation", async token =>
     {
-        foreach (var name in containerNames)
-        {
-          var container = client.GetBlobContainerClient(name);
-          var created = await container.CreateIfNotExistsAsync(
-              publicAccessType: PublicAccessType.Blob,
-              cancellationToken: token).ConfigureAwait(false);
+      foreach (var name in containerNames)
+      {
+        var container = client.GetBlobContainerClient(name);
+        var created = await container.CreateIfNotExistsAsync(
+            publicAccessType: PublicAccessType.Blob,
+            cancellationToken: token).ConfigureAwait(false);
 
-          if (created?.Value is null)
-          {
-            // Container already existed (likely from a prior run with the
-            // persistent volume). The create call returns null in that
-            // case and does NOT touch the existing access policy, so
-            // explicitly upgrade it — first-time runs that predated this
-            // bootstrap may have left it at PublicAccessType.None.
-            await container.SetAccessPolicyAsync(
-                PublicAccessType.Blob,
-                cancellationToken: token).ConfigureAwait(false);
-            logger?.LogInformation(
-                "Azurite container '{Name}' already exists; upgraded public access to Blob.", name);
-          }
-          else
-          {
-            logger?.LogInformation(
-                "Azurite container '{Name}' created with public-blob access.", name);
-          }
+        if (created?.Value is null)
+        {
+          // Container already existed (likely from a prior run with the
+          // persistent volume). The create call returns null in that
+          // case and does NOT touch the existing access policy, so
+          // explicitly upgrade it — first-time runs that predated this
+          // bootstrap may have left it at PublicAccessType.None.
+          await container.SetAccessPolicyAsync(
+              PublicAccessType.Blob,
+              cancellationToken: token).ConfigureAwait(false);
+          if (logger is not null) { ContainerAlreadyExists(logger, name, null); }
         }
+        else
+        {
+          if (logger is not null) { ContainerCreated(logger, name, null); }
+        }
+      }
     }, logger, Task.Delay, ct).ConfigureAwait(false);
   }
 
@@ -329,16 +342,14 @@ internal static class AzuriteBootstrap
 
     await RetryAsync("queue creation", async token =>
     {
-        foreach (string queueName in queueNames)
-        {
-          await client
-            .GetQueueClient(queueName)
-            .CreateIfNotExistsAsync(cancellationToken: token)
-            .ConfigureAwait(false);
-          logger?.LogInformation(
-            "Azurite queue '{Name}' is ready.",
-            queueName);
-        }
+      foreach (string queueName in queueNames)
+      {
+        await client
+          .GetQueueClient(queueName)
+          .CreateIfNotExistsAsync(cancellationToken: token)
+          .ConfigureAwait(false);
+        if (logger is not null) { QueueReady(logger, queueName, null); }
+      }
 
     }, logger, Task.Delay, cancellationToken).ConfigureAwait(false);
   }
