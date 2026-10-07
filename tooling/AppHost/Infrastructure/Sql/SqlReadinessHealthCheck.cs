@@ -18,6 +18,7 @@ internal sealed class SqlReadinessHealthCheck(Func<DbConnection> createConnectio
       await using DbCommand command = connection.CreateCommand();
       command.CommandText = "SELECT 1";
       await command.ExecuteScalarAsync(cancellationToken).ConfigureAwait(false);
+      cancellationToken.ThrowIfCancellationRequested();
       return HealthCheckResult.Healthy();
     }
     catch (DbException exception)

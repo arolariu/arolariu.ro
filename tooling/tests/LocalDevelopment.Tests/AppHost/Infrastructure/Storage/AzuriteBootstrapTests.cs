@@ -13,6 +13,33 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 [TestClass]
 public sealed class AzuriteBootstrapTests
 {
+  /// <summary>Verifies cancellation that wins the completion race does not seal successful state.</summary>
+  [TestMethod]
+  public async Task RunOnceAsync_CancelledAtCompletion_ReleasesGuardWithoutSuccess()
+  {
+    using var source = new CancellationTokenSource();
+    var state = new AzuriteBootstrap.BootstrapState();
+    await Assert.ThrowsExactlyAsync<OperationCanceledException>(() =>
+      state.RunOnceAsync(_ => { source.Cancel(); return Task.CompletedTask; }, source.Token));
+    Assert.IsNull(state.Error);
+    int subsequentCalls = 0;
+    await state.RunOnceAsync(_ => { subsequentCalls++; return Task.CompletedTask; }, CancellationToken.None);
+    Assert.AreEqual(1, subsequentCalls);
+  }
+
+  /// <summary>Verifies a provider's successful return cannot hide caller cancellation.</summary>
+  [TestMethod]
+  public async Task RetryAsync_CancelledAtCompletion_ThrowsWithoutRetry()
+  {
+    using var source = new CancellationTokenSource();
+    int delays = 0;
+    await Assert.ThrowsExactlyAsync<OperationCanceledException>(() =>
+      AzuriteBootstrap.RetryAsync("test",
+        _ => { source.Cancel(); return Task.CompletedTask; }, null,
+        (_, _) => { delays++; return Task.CompletedTask; }, source.Token));
+    Assert.AreEqual(0, delays);
+  }
+
   /// <summary>Verifies separate registrations cannot share successful state.</summary>
   [TestMethod]
   public async Task RunOnceAsync_TwoStates_RunIndependently()

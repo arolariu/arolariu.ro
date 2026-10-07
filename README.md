@@ -400,7 +400,7 @@ for ownership, native resource contracts, and verification commands.
 | CV (SvelteKit) | `http://localhost:4173` | Preview server |
 | Docs (Docusaurus) | `http://localhost:3100` | |
 | Status | `http://localhost:3002` | |
-| exp (Python FastAPI) | `http://localhost:5002` | Config service for the API |
+| exp (Python FastAPI) | `https://localhost:5002` | Aspire-managed HTTPS; use the dashboard's current URL |
 | SQL Server | `localhost:8082` | `Encrypt=False` required (vpnkit TLS) |
 | Cosmos emulator | `https://localhost:8081` | vNext preview emulator |
 | Azurite | `http://localhost:10000-10002` | Blob · Queue · Table |
@@ -460,10 +460,16 @@ Each resource has a health check; check the dashboard's **Health** column for th
 |----------|-----------------|----------------|
 | API | `http://localhost:5000/health` | DB + Cosmos + Azurite + Redis + exp connectivity |
 | Website | `https://localhost:3000/api/health` | Website readiness plus configured exp/API upstream checks |
-| exp | `http://localhost:5002/api/ready` | FastAPI ready + config bootstrap done |
+| exp | `https://localhost:5002/api/ready` | FastAPI ready + runtime configuration available |
 | SQL Server | TDS handshake | Aspire's built-in `WaitFor` gate (`sql-ready`) |
 
-The API explicitly **waits on** SQL, Cosmos, Azurite, and exp before going live. If exp is yellow (Starting), the API stays Starting too — that's expected on cold boot for ~5-10 s while `ExpConfigGenerator` writes the bootstrap config. If exp stays Starting longer, check `tooling/AppHost/Applications/Exp/ExpConfigGenerator.cs` logs in the dashboard.
+The API waits for the local scenario bootstrap to complete successfully and for
+exp and the local identity service to become healthy. Those resources have their
+own SQL, Cosmos, and Azurite dependency gates. If exp remains Starting, inspect
+its dependency health and the **exp resource's console logs** in the dashboard.
+`ExpConfigGenerator` runs synchronously before AppHost starts the dashboard;
+configuration-generation failures appear in **AppHost startup output**, not
+dashboard resource logs.
 
 </details>
 

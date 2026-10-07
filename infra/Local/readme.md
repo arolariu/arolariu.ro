@@ -23,7 +23,7 @@ declares and orchestrates everything natively:
   Next.js can download/run certificate tooling and install a local CA; confirm
   that trust-store change before starting.
 - **Apps as native processes**: exp (Python uvicorn via `AddUvicornApp`), API (.NET via `AddProject`), Website (Next.js via `AddNextJsApp`), CV/status (SvelteKit via `AddViteApp`), docs (Docusaurus via `AddJavaScriptApp`). Hot reload preserved.
-- **Direct service URLs**: api → `http://localhost:5000`, website → `https://localhost:3000`, exp → `http://localhost:5002`, cv → `http://localhost:4173`, docs → `http://localhost:3100`, status → `http://localhost:3002`.
+- **Direct service URLs**: api → `http://localhost:5000`, website → `https://localhost:3000`, exp → `https://localhost:5002`, cv → `http://localhost:4173`, docs → `http://localhost:3100`, status → `http://localhost:3002`. Aspire's native certificate handling supplies HTTPS to exp; use the resource URL shown by the current dashboard. Selfhost URLs below belong to its separate Compose setup.
 - **Aspire dashboard**: live OTel traces / metrics / logs at `https://localhost:17080`.
 
 In Aspire mode, the `infra/Local/{Storage,Backend,Frontend}/docker-compose.yml` files are NOT used — Aspire spawns its own containers directly.

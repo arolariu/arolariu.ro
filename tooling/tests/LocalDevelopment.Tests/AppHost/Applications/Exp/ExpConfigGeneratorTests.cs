@@ -15,6 +15,43 @@ public sealed class ExpConfigGeneratorTests
 {
   [TestMethod]
   [SupportedOSPlatform("windows")]
+  public void GenerateAspireConfig_ReplacementAndCleanupFail_PreservesBothFailures()
+  {
+    if (!OperatingSystem.IsWindows()) { Assert.Inconclusive("Read-only file cleanup requires Windows."); }
+    string directory = Directory.CreateTempSubdirectory().FullName;
+    string source = Path.Combine(directory, "source.json");
+    string target = Path.Combine(directory, "target.json");
+    File.WriteAllText(source, """{"DbConnection":"source"}""");
+    File.WriteAllText(target, "previous");
+    var failure = new IOException("replacement failed");
+    try
+    {
+      AggregateException error = Assert.ThrowsExactly<AggregateException>(() =>
+        ExpConfigGenerator.GenerateAspireConfig(source, target, new Dictionary<string, string>(),
+          (temporary, _) =>
+          {
+            File.SetAttributes(temporary, FileAttributes.ReadOnly);
+            throw failure;
+          }));
+      Assert.HasCount(2, error.InnerExceptions);
+      Assert.AreSame(failure, error.InnerExceptions[0]);
+      Assert.IsInstanceOfType<UnauthorizedAccessException>(error.InnerExceptions[1]);
+      Assert.AreEqual("previous", File.ReadAllText(target));
+      Assert.AreEqual("""{"DbConnection":"source"}""", File.ReadAllText(source));
+    }
+    finally
+    {
+      foreach (string file in Directory.GetFiles(directory))
+      {
+        File.SetAttributes(file, FileAttributes.Normal);
+        File.Delete(file);
+      }
+      Directory.Delete(directory);
+    }
+  }
+
+  [TestMethod]
+  [SupportedOSPlatform("windows")]
   public void GenerateAspireConfig_ExistingWindowsTarget_PreservesProtectedAccessRules()
   {
     if (!OperatingSystem.IsWindows()) { Assert.Inconclusive("Windows ACL validation requires Windows."); }

@@ -89,14 +89,30 @@ internal static class ExpConfigGenerator
       Path.GetDirectoryName(targetPath)
         ?? throw new ArgumentException("Generated configuration requires a parent directory.", nameof(targetPath)),
       $".{Path.GetFileName(targetPath)}.{Guid.NewGuid():N}.tmp");
+    Exception? generationError = null;
     try
     {
       WritePrivateTemporaryFile(temporaryPath, targetPath, output);
       replaceTarget(temporaryPath, targetPath);
     }
+    catch (Exception exception)
+    {
+      generationError = exception;
+      throw;
+    }
     finally
     {
-      File.Delete(temporaryPath);
+      try
+      {
+        File.Delete(temporaryPath);
+      }
+      catch (Exception cleanupError) when (generationError is not null
+        && cleanupError is IOException or UnauthorizedAccessException)
+      {
+        throw new AggregateException(
+          "Configuration generation failed and its temporary file could not be removed.",
+          generationError, cleanupError);
+      }
     }
   }
 

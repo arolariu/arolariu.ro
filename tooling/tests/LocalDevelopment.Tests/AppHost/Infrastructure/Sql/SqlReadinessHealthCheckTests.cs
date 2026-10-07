@@ -11,6 +11,19 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 [TestClass]
 public sealed class SqlReadinessHealthCheckTests
 {
+  /// <summary>Verifies a query completion race cannot report cancelled readiness as healthy.</summary>
+  [TestMethod]
+  public async Task CheckHealthAsync_CancelledAtQueryCompletion_ThrowsCancellation()
+  {
+    using var source = new CancellationTokenSource();
+    var connection = new RecordingConnection();
+    connection.Command.AfterExecute = source.Cancel;
+    await Assert.ThrowsExactlyAsync<OperationCanceledException>(() =>
+      new SqlReadinessHealthCheck(() => connection).CheckHealthAsync(new HealthCheckContext(), source.Token));
+    Assert.IsTrue(connection.IsDisposed);
+    Assert.IsTrue(connection.Command.IsDisposed);
+  }
+
   /// <summary>Verifies cancellation reaches both database operations and resources are disposed.</summary>
   [TestMethod]
   public async Task CheckHealthAsync_Success_ForwardsTokenAndDisposesResources()
@@ -89,6 +102,7 @@ public sealed class SqlReadinessHealthCheckTests
 
   private sealed class RecordingCommand : DbCommand
   {
+    internal Action? AfterExecute { get; set; }
     internal CancellationToken ExecuteToken { get; private set; }
     internal bool IsDisposed { get; private set; }
     [AllowNull]
@@ -107,6 +121,7 @@ public sealed class SqlReadinessHealthCheckTests
     {
       ExecuteToken = cancellationToken;
       cancellationToken.ThrowIfCancellationRequested();
+      AfterExecute?.Invoke();
       return Task.FromResult<object?>(1);
     }
     public override void Prepare() => throw new NotSupportedException();

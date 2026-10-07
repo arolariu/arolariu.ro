@@ -134,6 +134,7 @@ internal static class AzuriteBootstrap
       try
       {
         await provision(cancellationToken).ConfigureAwait(false);
+        cancellationToken.ThrowIfCancellationRequested();
         Volatile.Write(ref error, null);
       }
       catch (OperationCanceledException)
@@ -185,6 +186,7 @@ internal static class AzuriteBootstrap
       try
       {
         await operation(cancellationToken).ConfigureAwait(false);
+        cancellationToken.ThrowIfCancellationRequested();
         return;
       }
       catch (Exception exception) when (exception is not OperationCanceledException && attempt < MaxAttempts)
