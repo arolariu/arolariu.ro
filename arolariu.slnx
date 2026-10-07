@@ -35,7 +35,11 @@
   </Folder>
   <Folder Name="/tooling/">
     <Project Path="tooling/AppHost/AppHost.csproj" />
-    <Project Path="tooling/AppHost.Tests/AppHost.Tests.csproj">
+    <Project Path="tooling/LocalDevelopment.Bootstrap/LocalDevelopment.Bootstrap.csproj" />
+    <Project Path="tooling/LocalDevelopment.Identity/LocalDevelopment.Identity.csproj" />
+  </Folder>
+  <Folder Name="/tooling/tests/">
+    <Project Path="tooling/tests/LocalDevelopment.Tests/LocalDevelopment.Tests.csproj">
       <BuildDependency Project="tooling/AppHost/AppHost.csproj" />
     </Project>
   </Folder>

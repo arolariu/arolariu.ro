@@ -34,7 +34,7 @@ F5 launches:
 ## Tests
 
 - .NET tests: visible in Test Explorer natively
-- AppHost tests (`tooling/AppHost.Tests/`): same
+- Local-development tests (`tooling/tests/LocalDevelopment.Tests/`): same
 - Vitest: run via integrated terminal (`npm run test:unit`) or VS Code's Vitest extension
 - Playwright / Newman: CLI-only
 

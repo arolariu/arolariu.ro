@@ -385,6 +385,13 @@ VS Code F5 includes `🚀 [Podman] Full stack (Aspire)` and `🚀 [Rancher] Full
 
 Rancher Desktop is selected through its Moby/Docker-compatible backend; Aspire/DCP sees this as `docker`, not as a separate `rancher-desktop` runtime.
 
+The host uses capability-first slices under `Infrastructure`, `Applications`,
+and `LocalDevelopment`; `RepositoryLayout` provides project-rooted paths.
+Bootstrap's invoice scenario and Identity's persona capability remain separate
+executables. Shared coverage lives in `tooling/tests/LocalDevelopment.Tests/`.
+See the [local tooling extension guide](infra/Local/readme.md#tooling-structure-and-extension-points)
+for ownership, native resource contracts, and verification commands.
+
 | Resource | URL | Notes |
 |----------|-----|-------|
 | Aspire dashboard | `https://localhost:17080` | OTel traces · metrics · logs · resource graph |
@@ -393,7 +400,7 @@ Rancher Desktop is selected through its Moby/Docker-compatible backend; Aspire/D
 | CV (SvelteKit) | `http://localhost:4173` | Preview server |
 | Docs (Docusaurus) | `http://localhost:3100` | |
 | Status | `http://localhost:3002` | |
-| exp (Python FastAPI) | `http://localhost:5002` | Config service for the API |
+| exp (Python FastAPI) | `https://localhost:5002` | Aspire-managed HTTPS; use the dashboard's current URL |
 | SQL Server | `localhost:8082` | `Encrypt=False` required (vpnkit TLS) |
 | Cosmos emulator | `https://localhost:8081` | vNext preview emulator |
 | Azurite | `http://localhost:10000-10002` | Blob · Queue · Table |
@@ -453,17 +460,23 @@ Each resource has a health check; check the dashboard's **Health** column for th
 |----------|-----------------|----------------|
 | API | `http://localhost:5000/health` | DB + Cosmos + Azurite + Redis + exp connectivity |
 | Website | `https://localhost:3000/api/health` | Website readiness plus configured exp/API upstream checks |
-| exp | `http://localhost:5002/api/ready` | FastAPI ready + config bootstrap done |
+| exp | `https://localhost:5002/api/ready` | FastAPI ready + runtime configuration available |
 | SQL Server | TDS handshake | Aspire's built-in `WaitFor` gate (`sql-ready`) |
 
-The API explicitly **waits on** SQL, Cosmos, Azurite, and exp before going live. If exp is yellow (Starting), the API stays Starting too — that's expected on cold boot for ~5-10 s while `ExpConfigGenerator` writes the bootstrap config. If exp stays Starting longer, check `tooling/AppHost/Aspire/ExpConfigGenerator.cs` logs in the dashboard.
+The API waits for the local scenario bootstrap to complete successfully and for
+exp and the local identity service to become healthy. Those resources have their
+own SQL, Cosmos, and Azurite dependency gates. If exp remains Starting, inspect
+its dependency health and the **exp resource's console logs** in the dashboard.
+`ExpConfigGenerator` runs synchronously before AppHost starts the dashboard;
+configuration-generation failures appear in **AppHost startup output**, not
+dashboard resource logs.
 
 </details>
 
 <details>
 <summary><b>🚪 DCP port collision (e.g. "address already in use")</b></summary>
 
-Aspire's **Distributed Container Proxy (DCP)** allocates dynamic ports for proxied resources. When a fixed host port is required (e.g. the docs site on `:3100`), the resource must opt out via `isProxied: false` in `tooling/AppHost/Program.cs`. If you add a new resource and it can't bind, either:
+Aspire's **Distributed Container Proxy (DCP)** allocates dynamic ports for proxied resources. When a fixed host port is required (e.g. the docs site on `:3100`), its owning resource slice must opt out via `isProxied: false`. Application declarations live in `tooling/AppHost/Applications/`; infrastructure bindings live in `tooling/AppHost/Infrastructure/`. If you add a new resource and it can't bind, either:
 
 - Let Aspire pick a port (read it from the dashboard), or
 - Set `isProxied: false` on the endpoint and pin the host port explicitly.
@@ -589,7 +602,9 @@ arolariu.ro/
 ├── 📜 scripts/                     # Build & utility scripts
 ├── 🛠️  tooling/                    # Dev tooling
 │   ├── AppHost/                    #    .NET Aspire local orchestrator
-│   └── AppHost.Tests/              #    MSTest tests for AppHost helpers
+│   ├── LocalDevelopment.Bootstrap/  #    Local scenario provisioning
+│   ├── LocalDevelopment.Identity/   #    Local persona tokens
+│   └── tests/LocalDevelopment.Tests/ #   MSTest coverage for local development
 ├── 📖 docs/                        # Architecture documentation & RFCs
 │   └── rfc/                        #    Architecture Decision Records
 │

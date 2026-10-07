@@ -23,10 +23,55 @@ declares and orchestrates everything natively:
   Next.js can download/run certificate tooling and install a local CA; confirm
   that trust-store change before starting.
 - **Apps as native processes**: exp (Python uvicorn via `AddUvicornApp`), API (.NET via `AddProject`), Website (Next.js via `AddNextJsApp`), CV/status (SvelteKit via `AddViteApp`), docs (Docusaurus via `AddJavaScriptApp`). Hot reload preserved.
-- **Direct service URLs**: api → `http://localhost:5000`, website → `https://localhost:3000`, exp → `http://localhost:5002`, cv → `http://localhost:4173`, docs → `http://localhost:3100`, status → `http://localhost:3002`.
+- **Direct service URLs**: api → `http://localhost:5000`, website → `https://localhost:3000`, exp → `https://localhost:5002`, cv → `http://localhost:4173`, docs → `http://localhost:3100`, status → `http://localhost:3002`. Aspire's native certificate handling supplies HTTPS to exp; use the resource URL shown by the current dashboard. Selfhost URLs below belong to its separate Compose setup.
 - **Aspire dashboard**: live OTel traces / metrics / logs at `https://localhost:17080`.
 
 In Aspire mode, the `infra/Local/{Storage,Backend,Frontend}/docker-compose.yml` files are NOT used — Aspire spawns its own containers directly.
+
+#### Tooling structure and extension points
+
+`tooling\AppHost\Program.cs` is the composition root. Capability slices keep
+resource definitions beside their supporting behavior: `Infrastructure\Sql`
+owns connection settings/readiness, `Infrastructure\Storage` owns Azurite
+provisioning, and `Applications\Exp` owns the exp resource/configuration overlay.
+`LocalDevelopment` wires the bootstrap and persona helpers. `RepositoryLayout`
+anchors project/config paths to the AppHost directory, independent of shell cwd.
+
+Extend an existing slice or add a focused native builder extension for a new
+capability, then wire its references/waits explicitly and add graph tests.
+Use Aspire's resource builders and typed handle bundles, not a parallel registry
+or generic repository framework. Shared `tooling\Directory.Build.props` contains
+only common build defaults; project-specific settings remain in each project.
+
+Bootstrap keeps invoice-scenario materialization and storage adapters together;
+Identity keeps persona lookup/token creation together. All three executable
+paths and launch commands are unchanged. The shared MSTest project is:
+
+```powershell
+dotnet test tooling\tests\LocalDevelopment.Tests\LocalDevelopment.Tests.csproj
+```
+
+The exp overlay is written through an atomic replacement: generation failures
+leave the previous target intact and never overwrite the developer-owned source.
+Filesystem-linked source/target aliases are rejected. Temporary configuration
+files start with owner-only access; replacement preserves the existing Windows
+target ACL or Unix target mode. New Unix targets use mode `0600`.
+Bootstrap forwards graceful-shutdown cancellation and checks it between reset
+phases. Cancellation stops subsequent work; already completed resets are **not**
+rolled back. Forced process termination cannot guarantee cooperative cleanup.
+The scenario-reset and certificate-trust checkpoints above still apply.
+
+Azurite's initial readiness event performs idempotent CORS/container/queue
+provisioning. If provisioning fails, native health polling retries only that
+failed work, with six attempts and the existing backoff per operation per poll.
+Storage remains unhealthy while recovery is pending or failing; a successful
+registration is not provisioned again. Recovery does not rerun scenario deletion
+or seed operations.
+
+Unix process-level coverage sends SIGTERM to the real Bootstrap executable while
+a synthetic loopback storage response is pending. It verifies cooperative exit
+code `1`, a cancellation diagnostic, and no subsequent queue operation; an
+unhandled control process verifies native signal termination separately.
 
 ### Mode 2: Selfhost (advanced — `npm run dev:selfhost -- --engine <rancher|podman>`)
 
