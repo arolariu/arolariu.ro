@@ -1,6 +1,9 @@
 namespace LocalDevelopment.Tests.AppHost.Applications.Exp;
 
 using System.Text.Json;
+using System.Security.AccessControl;
+using System.Security.Principal;
+using System.Runtime.Versioning;
 using global::AppHost.Applications.Exp;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -10,6 +13,149 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 [TestClass]
 public sealed class ExpConfigGeneratorTests
 {
+  [TestMethod]
+  [SupportedOSPlatform("windows")]
+  public void GenerateAspireConfig_ExistingWindowsTarget_PreservesProtectedAccessRules()
+  {
+    if (!OperatingSystem.IsWindows()) { Assert.Inconclusive("Windows ACL validation requires Windows."); }
+    string source = Path.GetTempFileName();
+    string target = Path.GetTempFileName();
+    File.WriteAllText(source, """{"DbConnection":"source"}""");
+    using WindowsIdentity identity = WindowsIdentity.GetCurrent();
+    SecurityIdentifier owner = identity.User ?? throw new InvalidOperationException("User SID is required.");
+    var original = new FileSecurity();
+    original.SetAccessRuleProtection(true, false);
+    original.AddAccessRule(new FileSystemAccessRule(owner, FileSystemRights.FullControl, AccessControlType.Allow));
+    new FileInfo(target).SetAccessControl(original);
+    string expected = new FileInfo(target).GetAccessControl().GetSecurityDescriptorSddlForm(AccessControlSections.Access);
+    try
+    {
+      ExpConfigGenerator.GenerateAspireConfig(source, target, new Dictionary<string, string>());
+      FileSecurity actual = new FileInfo(target).GetAccessControl();
+      Assert.IsTrue(actual.AreAccessRulesProtected);
+      Assert.AreEqual(expected, actual.GetSecurityDescriptorSddlForm(AccessControlSections.Access));
+    }
+    finally { File.Delete(source); File.Delete(target); }
+  }
+
+  [TestMethod]
+  [SupportedOSPlatform("windows")]
+  public void GenerateAspireConfig_WindowsTemporaryFile_IsOwnerOnlyBeforeReplacement()
+  {
+    if (!OperatingSystem.IsWindows()) { Assert.Inconclusive("Windows ACL validation requires Windows."); }
+    string source = Path.GetTempFileName();
+    string target = Path.GetTempFileName();
+    File.WriteAllText(source, """{"DbConnection":"source"}""");
+    using WindowsIdentity identity = WindowsIdentity.GetCurrent();
+    SecurityIdentifier owner = identity.User ?? throw new InvalidOperationException("User SID is required.");
+    try
+    {
+      ExpConfigGenerator.GenerateAspireConfig(source, target, new Dictionary<string, string>(), (temporary, destination) =>
+      {
+        FileSecurity security = new FileInfo(temporary).GetAccessControl();
+        Assert.IsTrue(security.AreAccessRulesProtected);
+        FileSystemAccessRule[] rules = security.GetAccessRules(true, true, typeof(SecurityIdentifier))
+          .Cast<FileSystemAccessRule>().ToArray();
+        Assert.HasCount(1, rules);
+        Assert.AreEqual(owner, rules[0].IdentityReference);
+        Assert.AreEqual(AccessControlType.Allow, rules[0].AccessControlType);
+        File.Replace(temporary, destination, null);
+      });
+    }
+    finally { File.Delete(source); File.Delete(target); }
+  }
+
+  [TestMethod]
+  [UnsupportedOSPlatform("windows")]
+  public void GenerateAspireConfig_UnixTemporaryFile_IsPrivateAndPreservesTargetMode()
+  {
+    if (OperatingSystem.IsWindows()) { Assert.Inconclusive("Unix file-mode execution requires a Unix .NET runtime."); }
+    string source = Path.GetTempFileName();
+    string target = Path.GetTempFileName();
+    File.WriteAllText(source, """{"DbConnection":"source"}""");
+    const UnixFileMode privateMode = UnixFileMode.UserRead | UnixFileMode.UserWrite;
+    File.SetUnixFileMode(target, privateMode);
+    try
+    {
+      ExpConfigGenerator.GenerateAspireConfig(source, target, new Dictionary<string, string>(), (temporary, destination) =>
+      {
+        Assert.AreEqual(privateMode, File.GetUnixFileMode(temporary));
+        File.Replace(temporary, destination, null);
+      });
+      Assert.AreEqual(privateMode, File.GetUnixFileMode(target));
+    }
+    finally { File.Delete(source); File.Delete(target); }
+  }
+
+  [TestMethod]
+  [UnsupportedOSPlatform("windows")]
+  public void GenerateAspireConfig_UnixNewTarget_IsPrivate()
+  {
+    if (OperatingSystem.IsWindows()) { Assert.Inconclusive("Unix file-mode execution requires a Unix .NET runtime."); }
+    string directory = Directory.CreateTempSubdirectory().FullName;
+    string source = Path.Combine(directory, "source.json");
+    string target = Path.Combine(directory, "target.json");
+    File.WriteAllText(source, """{"DbConnection":"source"}""");
+    try
+    {
+      ExpConfigGenerator.GenerateAspireConfig(source, target, new Dictionary<string, string>());
+      Assert.AreEqual(UnixFileMode.UserRead | UnixFileMode.UserWrite, File.GetUnixFileMode(target));
+    }
+    finally { File.Delete(source); File.Delete(target); Directory.Delete(directory); }
+  }
+
+  [TestMethod]
+  public void GenerateAspireConfig_SourceSymbolicLinkToTarget_RejectsAliasWithoutWriting()
+  {
+    string directory = Directory.CreateTempSubdirectory().FullName;
+    string source = Path.Combine(directory, "source.json");
+    string target = Path.Combine(directory, "target.json");
+    const string original = """{"DbConnection":"developer-owned"}""";
+    File.WriteAllText(target, original);
+    File.CreateSymbolicLink(source, target);
+    try
+    {
+      Assert.ThrowsExactly<ArgumentException>(() => ExpConfigGenerator.GenerateAspireConfig(
+        source, target, new Dictionary<string, string> { ["DbConnection"] = "new" }));
+      Assert.AreEqual(original, File.ReadAllText(source));
+      Assert.AreEqual(original, File.ReadAllText(target));
+    }
+    finally
+    {
+      File.Delete(source);
+      File.Delete(target);
+      Directory.Delete(directory);
+    }
+  }
+
+  [TestMethod]
+  public void GenerateAspireConfig_ParentDirectoryAlias_RejectsAliasWithoutWriting()
+  {
+    string directory = Directory.CreateTempSubdirectory().FullName;
+    string actualDirectory = Path.Combine(directory, "actual");
+    string linkedDirectory = Path.Combine(directory, "linked");
+    Directory.CreateDirectory(actualDirectory);
+    Directory.CreateSymbolicLink(linkedDirectory, actualDirectory);
+    string target = Path.Combine(actualDirectory, "config.json");
+    string source = Path.Combine(linkedDirectory, "config.json");
+    const string original = """{"DbConnection":"developer-owned"}""";
+    File.WriteAllText(target, original);
+    try
+    {
+      Assert.ThrowsExactly<ArgumentException>(() => ExpConfigGenerator.GenerateAspireConfig(
+        source, target, new Dictionary<string, string> { ["DbConnection"] = "new" }));
+      Assert.AreEqual(original, File.ReadAllText(source));
+      Assert.AreEqual(original, File.ReadAllText(target));
+    }
+    finally
+    {
+      Directory.Delete(linkedDirectory);
+      File.Delete(target);
+      Directory.Delete(actualDirectory);
+      Directory.Delete(directory);
+    }
+  }
+
   [TestMethod]
   public void GenerateAspireConfig_MalformedJson_PreservesPreviousTarget()
   {

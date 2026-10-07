@@ -2,6 +2,10 @@ namespace AppHost.Applications.Exp;
 
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Text;
+using System.Runtime.Versioning;
+using System.Security.AccessControl;
+using System.Security.Principal;
 
 /// <summary>
 /// Generates <c>config.aspire.json</c> for the <c>exp</c> service by copying
@@ -56,7 +60,7 @@ internal static class ExpConfigGenerator
     targetPath = Path.GetFullPath(targetPath);
     StringComparison comparison = OperatingSystem.IsWindows()
       ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
-    if (string.Equals(sourcePath, targetPath, comparison))
+    if (string.Equals(ResolveFileSystemPath(sourcePath), ResolveFileSystemPath(targetPath), comparison))
     {
       throw new ArgumentException("Generated configuration must not overwrite its source.", nameof(targetPath));
     }
@@ -87,7 +91,7 @@ internal static class ExpConfigGenerator
       $".{Path.GetFileName(targetPath)}.{Guid.NewGuid():N}.tmp");
     try
     {
-      File.WriteAllText(temporaryPath, output);
+      WritePrivateTemporaryFile(temporaryPath, targetPath, output);
       replaceTarget(temporaryPath, targetPath);
     }
     finally
@@ -100,5 +104,66 @@ internal static class ExpConfigGenerator
   {
     if (File.Exists(targetPath)) { File.Replace(temporaryPath, targetPath, destinationBackupFileName: null); }
     else { File.Move(temporaryPath, targetPath); }
+  }
+
+  private static void WritePrivateTemporaryFile(string temporaryPath, string targetPath, string content)
+  {
+    FileStream stream;
+    if (OperatingSystem.IsWindows())
+    {
+      stream = CreatePrivateWindowsFile(temporaryPath);
+    }
+    else
+    {
+      stream = new FileStream(temporaryPath, new FileStreamOptions
+      {
+        Mode = FileMode.CreateNew,
+        Access = FileAccess.Write,
+        Share = FileShare.None,
+        UnixCreateMode = UnixFileMode.UserRead | UnixFileMode.UserWrite,
+      });
+    }
+    using (stream)
+    using (var writer = new StreamWriter(stream, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false)))
+    {
+      writer.Write(content);
+    }
+    if (!OperatingSystem.IsWindows() && File.Exists(targetPath))
+    {
+      File.SetUnixFileMode(temporaryPath, File.GetUnixFileMode(targetPath));
+    }
+  }
+
+  [SupportedOSPlatform("windows")]
+  private static FileStream CreatePrivateWindowsFile(string path)
+  {
+    using WindowsIdentity identity = WindowsIdentity.GetCurrent();
+    SecurityIdentifier owner = identity.User
+      ?? throw new InvalidOperationException("A current user SID is required for private configuration.");
+    var security = new FileSecurity();
+    security.SetOwner(owner);
+    security.SetAccessRuleProtection(isProtected: true, preserveInheritance: false);
+    security.AddAccessRule(new FileSystemAccessRule(owner, FileSystemRights.FullControl, AccessControlType.Allow));
+    return new FileInfo(path).Create(FileMode.CreateNew, FileSystemRights.FullControl,
+      FileShare.None, 4096, FileOptions.None, security);
+  }
+
+  private static string ResolveFileSystemPath(string path, int depth = 0)
+  {
+    if (depth > 64) { throw new IOException("Configuration path contains too many filesystem links."); }
+    string fullPath = Path.GetFullPath(path);
+    string root = Path.GetPathRoot(fullPath)
+      ?? throw new ArgumentException("Configuration path requires a filesystem root.", nameof(path));
+    string resolved = root;
+    foreach (string component in fullPath[root.Length..].Split(
+      [Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar], StringSplitOptions.RemoveEmptyEntries))
+    {
+      string candidate = Path.Combine(resolved, component);
+      FileSystemInfo? target = Directory.Exists(candidate)
+        ? new DirectoryInfo(candidate).ResolveLinkTarget(returnFinalTarget: true)
+        : File.Exists(candidate) ? new FileInfo(candidate).ResolveLinkTarget(returnFinalTarget: true) : null;
+      resolved = target is null ? candidate : ResolveFileSystemPath(target.FullName, depth + 1);
+    }
+    return resolved;
   }
 }

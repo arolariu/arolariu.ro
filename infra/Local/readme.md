@@ -53,6 +53,9 @@ dotnet test tooling\tests\LocalDevelopment.Tests\LocalDevelopment.Tests.csproj
 
 The exp overlay is written through an atomic replacement: generation failures
 leave the previous target intact and never overwrite the developer-owned source.
+Filesystem-linked source/target aliases are rejected. Temporary configuration
+files start with owner-only access; replacement preserves the existing Windows
+target ACL or Unix target mode. New Unix targets use mode `0600`.
 Bootstrap forwards graceful-shutdown cancellation and checks it between reset
 phases. Cancellation stops subsequent work; already completed resets are **not**
 rolled back. Forced process termination cannot guarantee cooperative cleanup.
