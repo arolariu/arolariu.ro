@@ -93,3 +93,8 @@ inspecting/copying secret values into logs or screenshots.
 Configuration generation runs before the dashboard: use AppHost startup output for overlay-generation errors and resource console logs for
 app startup failures. Azurite recovery reattempts only failed idempotent provisioning on health polls; it does not rerun scenario
 deletion/seeding or repeat a successful registration.
+
+The website's `/api/health/` probe uses the `API_URL` and `EXP_PROXY_URL` endpoints injected by Aspire. Without explicit overrides, its
+existing Azure/Docker defaults remain in effect. Follow the website's trailing-slash redirect and inspect the final status and dependency
+entries: an HTTP 308 alone does not prove health. Native exp may use HTTPS; retain certificate validation rather than forcing its URL to
+HTTP.
