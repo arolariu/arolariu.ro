@@ -59,8 +59,8 @@ internal static class AzuriteBootstrap
   /// independently up to 6 times each with linear backoff.
   /// Bootstrap success/failure is surfaced via a custom health check
   /// (<c>azurite-bootstrap</c>) attached to <paramref name="storage"/>, so the dashboard
-  /// turns the storage resource red on persistent failure instead of leaving the user to
-  /// debug 404/CORS errors at upload time.
+  /// reports persistent failure and retries failed provisioning on subsequent health polls.
+  /// Successful provisioning is not repeated.
   /// </summary>
   /// <param name="builder">The Aspire distributed application builder.</param>
   /// <param name="storage">The Azurite storage resource to configure.</param>
@@ -89,35 +89,64 @@ internal static class AzuriteBootstrap
     string connectionString = CreateConnectionString(blobPort, queuePort);
     var state = new BootstrapState();
 
-    // Initially healthy: making this pending would block the readiness event that starts provisioning.
-    builder.Services.AddHealthChecks().AddCheck(HealthCheckName, () =>
-        state.Error is not Exception error
-            ? HealthCheckResult.Healthy()
-            : HealthCheckResult.Unhealthy("Azurite provisioning failed.", error));
-    storage.WithHealthCheck(HealthCheckName);
+    async Task ProvisionAsync(IServiceProvider services, CancellationToken ct)
+    {
+      ILogger logger = services.GetRequiredService<ILoggerFactory>().CreateLogger("AzuriteBootstrap");
+      var blobServiceClient = new BlobServiceClient(connectionString);
+      var queueServiceClient = new QueueServiceClient(connectionString);
+      await ApplyCorsWithRetryAsync(blobServiceClient, logger, ct).ConfigureAwait(false);
+      await EnsureContainersWithRetryAsync(
+        blobServiceClient,
+        blobContainerNames,
+        logger,
+        ct).ConfigureAwait(false);
+      await EnsureQueuesWithRetryAsync(
+        queueServiceClient,
+        queueNames,
+        logger,
+        ct).ConfigureAwait(false);
+      logger.LogInformation(
+        "Azurite bootstrap completed (CORS + blob container + queue creation).");
+    }
 
+    builder.Services.AddHealthChecks().Add(new HealthCheckRegistration(
+      HealthCheckName,
+      services => new BootstrapHealthCheck(state, token => ProvisionAsync(services, token),
+        services.GetRequiredService<ILoggerFactory>().CreateLogger("AzuriteBootstrap")),
+      HealthStatus.Unhealthy,
+      tags: null));
+    storage.WithHealthCheck(HealthCheckName);
     builder.Eventing.Subscribe<ResourceReadyEvent>(
-      CreateReadyHandler(storage.Resource, state, async (services, ct) =>
-      {
-        ILogger logger = services.GetRequiredService<ILoggerFactory>().CreateLogger("AzuriteBootstrap");
-        var blobServiceClient = new BlobServiceClient(connectionString);
-        var queueServiceClient = new QueueServiceClient(connectionString);
-        await ApplyCorsWithRetryAsync(blobServiceClient, logger, ct).ConfigureAwait(false);
-        await EnsureContainersWithRetryAsync(
-          blobServiceClient,
-          blobContainerNames,
-          logger,
-          ct).ConfigureAwait(false);
-        await EnsureQueuesWithRetryAsync(
-          queueServiceClient,
-          queueNames,
-          logger,
-          ct).ConfigureAwait(false);
-        logger.LogInformation(
-          "Azurite bootstrap completed (CORS + blob container + queue creation).");
-      }));
+      CreateReadyHandler(storage.Resource, state, ProvisionAsync));
 
     return builder;
+  }
+
+  internal sealed class BootstrapHealthCheck(
+    BootstrapState state, Func<CancellationToken, Task> provision, ILogger logger) : IHealthCheck
+  {
+    /// <inheritdoc />
+    public async Task<HealthCheckResult> CheckHealthAsync(
+      HealthCheckContext context, CancellationToken cancellationToken = default)
+    {
+      cancellationToken.ThrowIfCancellationRequested();
+      // Initial health must permit the readiness event; only recorded failures need recovery.
+      if (state.Error is not null)
+      {
+        try
+        {
+          await state.RunOnceAsync(provision, cancellationToken).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException) { throw; }
+        catch (Exception exception)
+        {
+          logger.LogWarning(exception, "Azurite provisioning recovery failed; storage remains unhealthy.");
+        }
+      }
+      return state.Error is Exception error
+        ? HealthCheckResult.Unhealthy("Azurite provisioning failed.", error)
+        : HealthCheckResult.Healthy();
+    }
   }
 
   internal sealed class BootstrapState

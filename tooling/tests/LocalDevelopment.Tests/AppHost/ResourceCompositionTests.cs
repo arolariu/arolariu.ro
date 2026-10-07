@@ -6,15 +6,34 @@ using Aspire.Hosting.Python;
 using global::AppHost.Applications;
 using global::AppHost.Applications.Exp;
 using global::AppHost.Infrastructure;
+using global::AppHost.Infrastructure.Storage;
 using global::AppHost.LocalDevelopment;
 using global::AppHost.Repository;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Options;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 /// <summary>Verifies the native resource model without starting processes or provisioning data.</summary>
 [TestClass]
 public sealed class ResourceCompositionTests
 {
+  /// <summary>Verifies the real registration resolves a cycle-free, recovery-capable health check.</summary>
+  [TestMethod]
+  public async Task Compose_StorageHealth_ResolvesRecoveryCheckWithoutInitialProvisioning()
+  {
+    var graph = CreateGraph();
+    using ServiceProvider provider = graph.Builder.Services.BuildServiceProvider();
+    HealthCheckRegistration registration = provider
+      .GetRequiredService<IOptions<HealthCheckServiceOptions>>().Value.Registrations
+      .Single(check => check.Name == "azurite-bootstrap");
+    IHealthCheck check = registration.Factory(provider);
+
+    Assert.IsInstanceOfType<AzuriteBootstrap.BootstrapHealthCheck>(check);
+    Assert.AreEqual(HealthStatus.Healthy, (await check.CheckHealthAsync(new HealthCheckContext())).Status);
+  }
+
   /// <summary>Verifies all existing resources remain registered.</summary>
   [TestMethod]
   public void Compose_ExistingCapabilities_PreservesResourceNames()

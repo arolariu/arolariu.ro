@@ -61,6 +61,18 @@ phases. Cancellation stops subsequent work; already completed resets are **not**
 rolled back. Forced process termination cannot guarantee cooperative cleanup.
 The scenario-reset and certificate-trust checkpoints above still apply.
 
+Azurite's initial readiness event performs idempotent CORS/container/queue
+provisioning. If provisioning fails, native health polling retries only that
+failed work, with six attempts and the existing backoff per operation per poll.
+Storage remains unhealthy while recovery is pending or failing; a successful
+registration is not provisioned again. Recovery does not rerun scenario deletion
+or seed operations.
+
+Unix process-level coverage sends SIGTERM to the real Bootstrap executable while
+a synthetic loopback storage response is pending. It verifies cooperative exit
+code `1`, a cancellation diagnostic, and no subsequent queue operation; an
+unhandled control process verifies native signal termination separately.
+
 ### Mode 2: Selfhost (advanced — `npm run dev:selfhost -- --engine <rancher|podman>`)
 
 Everything containerized via the selected Rancher Desktop or Podman Desktop Compose provider, including apps. Used for:

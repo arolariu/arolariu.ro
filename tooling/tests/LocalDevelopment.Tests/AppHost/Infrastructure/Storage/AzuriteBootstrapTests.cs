@@ -4,6 +4,8 @@ using global::AppHost.Infrastructure.Storage;
 using Aspire.Hosting;
 using Aspire.Hosting.ApplicationModel;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Logging.Abstractions;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -13,6 +15,122 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 [TestClass]
 public sealed class AzuriteBootstrapTests
 {
+  /// <summary>Verifies initial polling cannot create the readiness/provisioning cycle.</summary>
+  [TestMethod]
+  public async Task CheckHealthAsync_BeforeReady_DoesNotProvision()
+  {
+    var state = new AzuriteBootstrap.BootstrapState();
+    int calls = 0;
+    var check = new AzuriteBootstrap.BootstrapHealthCheck(state,
+      _ => { calls++; return Task.CompletedTask; }, NullLogger.Instance);
+    HealthCheckResult result = await check.CheckHealthAsync(new HealthCheckContext());
+    Assert.AreEqual(HealthStatus.Healthy, result.Status);
+    Assert.AreEqual(0, calls);
+  }
+
+  /// <summary>Verifies health polling recovers a failure without requiring another ready event.</summary>
+  [TestMethod]
+  public async Task CheckHealthAsync_PreviousFailure_RecoversAndDoesNotRepeatSuccess()
+  {
+    var state = new AzuriteBootstrap.BootstrapState();
+    await Assert.ThrowsExactlyAsync<IOException>(() =>
+      state.RunOnceAsync(_ => Task.FromException(new IOException("initial failure")), CancellationToken.None));
+    int calls = 0;
+    var check = new AzuriteBootstrap.BootstrapHealthCheck(state,
+      _ => { calls++; return Task.CompletedTask; }, NullLogger.Instance);
+
+    HealthCheckResult recovered = await check.CheckHealthAsync(new HealthCheckContext());
+    HealthCheckResult subsequent = await check.CheckHealthAsync(new HealthCheckContext());
+
+    Assert.AreEqual(HealthStatus.Healthy, recovered.Status);
+    Assert.AreEqual(HealthStatus.Healthy, subsequent.Status);
+    Assert.IsNull(state.Error);
+    Assert.AreEqual(1, calls);
+  }
+
+  /// <summary>Verifies persistent failures stay unhealthy and preserve the latest cause.</summary>
+  [TestMethod]
+  public async Task CheckHealthAsync_RecoveryFails_RemainsUnhealthyWithOriginalError()
+  {
+    var state = new AzuriteBootstrap.BootstrapState();
+    await Assert.ThrowsExactlyAsync<IOException>(() =>
+      state.RunOnceAsync(_ => Task.FromException(new IOException("initial failure")), CancellationToken.None));
+    var failure = new IOException("still unavailable");
+    var check = new AzuriteBootstrap.BootstrapHealthCheck(state,
+      _ => Task.FromException(failure), NullLogger.Instance);
+    HealthCheckResult result = await check.CheckHealthAsync(new HealthCheckContext());
+    Assert.AreEqual(HealthStatus.Unhealthy, result.Status);
+    Assert.AreSame(failure, result.Exception);
+  }
+
+  /// <summary>Verifies each failed poll retains the six-attempt operation budget.</summary>
+  [TestMethod]
+  public async Task CheckHealthAsync_PersistentFailure_BoundsAttemptsPerPoll()
+  {
+    var state = new AzuriteBootstrap.BootstrapState();
+    await Assert.ThrowsExactlyAsync<IOException>(() =>
+      state.RunOnceAsync(_ => Task.FromException(new IOException("initial failure")), CancellationToken.None));
+    var failure = new IOException("still unavailable");
+    int attempts = 0;
+    var delays = new List<double>();
+    var check = new AzuriteBootstrap.BootstrapHealthCheck(state,
+      token => AzuriteBootstrap.RetryAsync("test",
+        _ => { attempts++; return Task.FromException(failure); }, NullLogger.Instance,
+        (delay, _) => { delays.Add(delay.TotalSeconds); return Task.CompletedTask; }, token),
+      NullLogger.Instance);
+
+    HealthCheckResult first = await check.CheckHealthAsync(new HealthCheckContext());
+    Assert.AreEqual(6, attempts);
+    HealthCheckResult second = await check.CheckHealthAsync(new HealthCheckContext());
+
+    Assert.AreEqual(HealthStatus.Unhealthy, first.Status);
+    Assert.AreEqual(HealthStatus.Unhealthy, second.Status);
+    Assert.AreSame(failure, second.Exception);
+    Assert.AreEqual(12, attempts);
+    CollectionAssert.AreEqual(new[] { 1d, 2d, 3d, 4d, 5d, 1d, 2d, 3d, 4d, 5d }, delays);
+  }
+
+  /// <summary>Verifies overlapping polling cannot duplicate recovery or prematurely mark it healthy.</summary>
+  [TestMethod]
+  public async Task CheckHealthAsync_ConcurrentRecovery_RunsOnceAndStaysUnhealthyUntilComplete()
+  {
+    var state = new AzuriteBootstrap.BootstrapState();
+    await Assert.ThrowsExactlyAsync<IOException>(() =>
+      state.RunOnceAsync(_ => Task.FromException(new IOException("initial failure")), CancellationToken.None));
+    var gate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+    int calls = 0;
+    var check = new AzuriteBootstrap.BootstrapHealthCheck(state,
+      async token => { calls++; await gate.Task.WaitAsync(token); }, NullLogger.Instance);
+    Task<HealthCheckResult> first = check.CheckHealthAsync(new HealthCheckContext());
+    try
+    {
+      HealthCheckResult concurrent = await check.CheckHealthAsync(new HealthCheckContext());
+      Assert.AreEqual(HealthStatus.Unhealthy, concurrent.Status);
+      Assert.AreEqual(1, calls);
+    }
+    finally { gate.TrySetResult(); }
+    Assert.AreEqual(HealthStatus.Healthy, (await first).Status);
+  }
+
+  /// <summary>Verifies cancelled recovery remains retryable and cancellation is not swallowed.</summary>
+  [TestMethod]
+  public async Task CheckHealthAsync_RecoveryCancelled_PropagatesAndAllowsFutureRecovery()
+  {
+    var state = new AzuriteBootstrap.BootstrapState();
+    await Assert.ThrowsExactlyAsync<IOException>(() =>
+      state.RunOnceAsync(_ => Task.FromException(new IOException("initial failure")), CancellationToken.None));
+    using var source = new CancellationTokenSource();
+    var check = new AzuriteBootstrap.BootstrapHealthCheck(state,
+      token => { source.Cancel(); token.ThrowIfCancellationRequested(); return Task.CompletedTask; },
+      NullLogger.Instance);
+    await Assert.ThrowsExactlyAsync<OperationCanceledException>(() =>
+      check.CheckHealthAsync(new HealthCheckContext(), source.Token));
+    Assert.IsNotNull(state.Error);
+    var retry = new AzuriteBootstrap.BootstrapHealthCheck(state,
+      _ => Task.CompletedTask, NullLogger.Instance);
+    Assert.AreEqual(HealthStatus.Healthy, (await retry.CheckHealthAsync(new HealthCheckContext())).Status);
+  }
+
   /// <summary>Verifies cancellation that wins the completion race does not seal successful state.</summary>
   [TestMethod]
   public async Task RunOnceAsync_CancelledAtCompletion_ReleasesGuardWithoutSuccess()
