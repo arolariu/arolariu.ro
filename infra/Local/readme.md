@@ -40,8 +40,15 @@ anchors project/config paths to the AppHost directory, independent of shell cwd.
 Extend an existing slice or add a focused native builder extension for a new
 capability, then wire its references/waits explicitly and add graph tests.
 Use Aspire's resource builders and typed handle bundles, not a parallel registry
-or generic repository framework. Shared `tooling\Directory.Build.props` contains
-only common build defaults; project-specific settings remain in each project.
+or generic repository framework. Shared
+[`tooling\Directory.Build.props`](../../tooling/Directory.Build.props) owns the
+compiler, analyzer, style, and documentation policy for all tooling projects.
+Production uses recommended analysis and XML documentation; `.Tests` projects
+select the fixed framework-default analysis without XML documentation by project
+name during early MSBuild evaluation. SDK declarations and resource-specific
+settings remain in each project. See the
+[tooling build and package policy](../../tooling/README.md#build-and-package-policy)
+for the ownership boundaries.
 
 Bootstrap keeps invoice-scenario materialization and storage adapters together;
 Identity keeps persona lookup/token creation together. Source projects live under
