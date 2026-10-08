@@ -367,7 +367,7 @@ npx nx show project website      # 🔍 Show project details
 
 ### Aspire Mode (Default)
 
-`npm run dev -- --engine rancher` or `npm run dev -- --engine podman` starts the **.NET Aspire AppHost** at `tooling/AppHost/`. The AppHost orchestrates the entire dev stack:
+`npm run dev -- --engine rancher` or `npm run dev -- --engine podman` starts the **.NET Aspire AppHost** at `tooling/src/AppHost/`. The AppHost orchestrates the entire dev stack:
 
 - **Destructive local scenario bootstrap** — before restoring Alice, Bob, and
   Charlie, Aspire deletes all documents in the guarded local invoice/merchant
@@ -388,7 +388,9 @@ Rancher Desktop is selected through its Moby/Docker-compatible backend; Aspire/D
 The host uses capability-first slices under `Infrastructure`, `Applications`,
 and `LocalDevelopment`; `RepositoryLayout` provides project-rooted paths.
 Bootstrap's invoice scenario and Identity's persona capability remain separate
-executables. Shared coverage lives in `tooling/tests/LocalDevelopment.Tests/`.
+executables. Owner-specific coverage lives in `tooling/tests/AppHost.Tests/`,
+`tooling/tests/LocalDevelopment.Bootstrap.Tests/`, and
+`tooling/tests/LocalDevelopment.Identity.Tests/`.
 See the [local tooling extension guide](infra/Local/readme.md#tooling-structure-and-extension-points)
 for ownership, native resource contracts, and verification commands.
 
@@ -447,7 +449,7 @@ The Aspire AppHost spawns `next dev --inspect` which exposes the V8 inspector on
 3. If npm logs an `arborist` null-state error during startup, interrupt the
    owning AppHost terminal and re-run
    `npm run dev -- --engine <rancher|podman>`.
-4. For .NET debugging, F5 from `tooling/AppHost/AppHost.csproj` attaches automatically. The `watch` task in `.vscode/tasks.json` also targets the AppHost project.
+4. For .NET debugging, F5 from `tooling/src/AppHost/AppHost.csproj` attaches automatically. The `watch` task in `.vscode/tasks.json` also targets the AppHost project.
 
 </details>
 
@@ -476,7 +478,7 @@ dashboard resource logs.
 <details>
 <summary><b>🚪 DCP port collision (e.g. "address already in use")</b></summary>
 
-Aspire's **Distributed Container Proxy (DCP)** allocates dynamic ports for proxied resources. When a fixed host port is required (e.g. the docs site on `:3100`), its owning resource slice must opt out via `isProxied: false`. Application declarations live in `tooling/AppHost/Applications/`; infrastructure bindings live in `tooling/AppHost/Infrastructure/`. If you add a new resource and it can't bind, either:
+Aspire's **Distributed Container Proxy (DCP)** allocates dynamic ports for proxied resources. When a fixed host port is required (e.g. the docs site on `:3100`), its owning resource slice must opt out via `isProxied: false`. Application declarations live in `tooling/src/AppHost/Applications/`; infrastructure bindings live in `tooling/src/AppHost/Infrastructure/`. If you add a new resource and it can't bind, either:
 
 - Let Aspire pick a port (read it from the dashboard), or
 - Set `isProxied: false` on the endpoint and pin the host port explicitly.
@@ -502,7 +504,7 @@ The dashboard exposes two OTLP endpoints — **gRPC on `:21030`** and **HTTP on 
 1. Check the resource's **Console logs** tab in the dashboard for `OTLP exporter` errors.
 2. Confirm `OTEL_EXPORTER_OTLP_ENDPOINT` is set to the right protocol's port — the AppHost sets these per-resource.
 3. For Aspire dashboard TLS, inspect the Kestrel endpoint in
-   `tooling/AppHost/Properties/launchSettings.json` and the current ASP.NET
+   `tooling/src/AppHost/Properties/launchSettings.json` and the current ASP.NET
    Core development certificate. `mkcert` owns selfhost Traefik certificates,
    not the Aspire dashboard.
 
@@ -549,7 +551,7 @@ If the selected engine is not running, start Rancher Desktop or Podman Desktop b
 2. Inspect the first AppHost build/startup error rather than installing an
    undeclared workload.
 3. If the evidence identifies stale build output, remove only
-   `tooling/AppHost/bin` and `tooling/AppHost/obj`, then re-run
+   `tooling/src/AppHost/bin` and `tooling/src/AppHost/obj`, then re-run
    `npm run dev -- --engine <rancher|podman>`.
 4. Check that the current local AppHost configuration supplies the required
    parameter names without printing their values.
@@ -601,10 +603,8 @@ arolariu.ro/
 │
 ├── 📜 scripts/                     # Build & utility scripts
 ├── 🛠️  tooling/                    # Dev tooling
-│   ├── AppHost/                    #    .NET Aspire local orchestrator
-│   ├── LocalDevelopment.Bootstrap/  #    Local scenario provisioning
-│   ├── LocalDevelopment.Identity/   #    Local persona tokens
-│   └── tests/LocalDevelopment.Tests/ #   MSTest coverage for local development
+│   ├── src/                        #    AppHost, Bootstrap, and Identity projects
+│   └── tests/                      #    Owner-specific MSTest projects
 ├── 📖 docs/                        # Architecture documentation & RFCs
 │   └── rfc/                        #    Architecture Decision Records
 │

@@ -105,7 +105,7 @@ const KNOWN_LOCAL_CONTAINER_NAMES: ReadonlySet<string> = new Set([
 
 /** Repository-relative segments for every manifest required by local Aspire/selfhost runtimes. */
 const REQUIRED_MANIFEST_RELATIVE_SEGMENTS: readonly (readonly string[])[] = [
-  ["tooling", "AppHost", "AppHost.csproj"],
+  ["tooling", "src", "AppHost", "AppHost.csproj"],
   ["infra", "Local", "Management", "docker-compose.yml"],
   ["infra", "Local", "Storage", "docker-compose.yml"],
   ["infra", "Local", "Backend", "docker-compose.yml"],

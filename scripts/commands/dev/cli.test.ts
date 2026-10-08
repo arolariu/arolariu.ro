@@ -76,7 +76,7 @@ describe("dev command", () => {
     // Assert
     expect(result.code).toBe(0);
     expect(result.calls[0]?.request).toEqual({command: "docker", args: ["--version"]});
-    expect(result.calls.at(-1)?.request).toEqual({command: "dotnet", args: ["run", "--project", "tooling/AppHost"]});
+    expect(result.calls.at(-1)?.request).toEqual({command: "dotnet", args: ["run", "--project", "tooling/src/AppHost"]});
     expect(result.calls.at(-1)?.options.env?.["DOTNET_ASPIRE_CONTAINER_RUNTIME"]).toBe("docker");
   });
 

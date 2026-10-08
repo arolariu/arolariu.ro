@@ -83,7 +83,7 @@ describe("buildAspireCommand", () => {
         const command = buildAspireCommand(getContainerAdapter("rancher"), {EXISTING: "value"});
 
         expect(command.command).toBe("dotnet");
-        expect(command.args).toEqual(["run", "--project", "tooling/AppHost"]);
+        expect(command.args).toEqual(["run", "--project", "tooling/src/AppHost"]);
         expect(command.env).toEqual({EXISTING: "value", DOTNET_ASPIRE_CONTAINER_RUNTIME: "docker"});
       }),
     makeTestLayer().layer,
@@ -114,7 +114,7 @@ describe("runAspire", () => {
           // Assert
           expect(result).toEqual({engine: "rancher"});
           expect(harness.processCalls().at(-1)).toEqual({
-            request: {command: "dotnet", args: ["run", "--project", "tooling/AppHost"]},
+            request: {command: "dotnet", args: ["run", "--project", "tooling/src/AppHost"]},
             options: {env: {HOME: "/home/fixture", DOTNET_ASPIRE_CONTAINER_RUNTIME: "docker"}, output: "inherit"},
           });
         }),
@@ -298,7 +298,7 @@ describe("dev aspire characterization", () => {
         {command: "docker", args: ["ps", "-a", "--format", "{{.Names}}"], options: {}},
         {
           command: "dotnet",
-          args: ["run", "--project", "tooling/AppHost"],
+          args: ["run", "--project", "tooling/src/AppHost"],
           options: {
             env: {
               HOME: "/home/fixture",
@@ -343,7 +343,7 @@ describe("dev aspire characterization", () => {
         {command: "podman", args: ["ps", "-a", "--format", "{{.Names}}"], options: {}},
         {
           command: "dotnet",
-          args: ["run", "--project", "tooling/AppHost"],
+          args: ["run", "--project", "tooling/src/AppHost"],
           options: {
             env: {
               HOME: "/home/fixture",
@@ -387,7 +387,7 @@ describe("dev aspire characterization", () => {
         {command: "docker", args: ["ps", "-a", "--format", "{{.Names}}"], options: {}},
         {
           command: "dotnet",
-          args: ["run", "--project", "tooling/AppHost"],
+          args: ["run", "--project", "tooling/src/AppHost"],
           options: {
             env: {
               HOME: "/home/fixture",
@@ -423,7 +423,7 @@ describe("dev aspire characterization", () => {
               status: "failed",
               kind: "operational",
               message: "dotnet exited with code 3",
-              evidence: ["dotnet run --project tooling/AppHost exited with code 3", "stdout: apphost stdout", "stderr: apphost stderr"],
+              evidence: ["dotnet run --project tooling/src/AppHost exited with code 3", "stdout: apphost stdout", "stderr: apphost stderr"],
             },
             null,
             2,

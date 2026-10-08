@@ -18,7 +18,7 @@ import {inspectionProbeRunner, type ProbeOutcome} from "./probes.ts";
 import type {InspectionOutcome} from "./types.ts";
 
 const fixtureRoots: string[] = [];
-const APPHOST_PROJECT = "tooling/AppHost/AppHost.csproj";
+const APPHOST_PROJECT = "tooling/src/AppHost/AppHost.csproj";
 
 const DOTNET_VERSION = {command: "dotnet", args: ["--version"]} as const satisfies ProcessRequest;
 const DOTNET_SDKS = {command: "dotnet", args: ["--list-sdks"]} as const satisfies ProcessRequest;
@@ -173,7 +173,7 @@ async function createDotnetFixture(platform: NodeJS.Platform = "win32"): Promise
     writeRestoreAssets(root, commonProject),
     writeRestoreAssets(root, APPHOST_PROJECT),
     writeFixtureFile(
-      resolve(root, "tooling", "AppHost", "appsettings.Development.json"),
+      resolve(root, "tooling", "src", "AppHost", "appsettings.Development.json"),
       JSON.stringify({Parameters: {"sql-password": "tracked-value-marker"}}),
     ),
   ]);
@@ -800,7 +800,7 @@ describe("createDotnetProvider", () => {
   it("recognizes tracked AppHost parameter sections and keys case-insensitively", async () => {
     const fixture = await createDotnetFixture();
     await writeFixtureFile(
-      resolve(fixture.root, "tooling", "AppHost", "appsettings.Development.json"),
+      resolve(fixture.root, "tooling", "src", "AppHost", "appsettings.Development.json"),
       JSON.stringify({parameters: {"SQL-PASSWORD": "tracked-value-marker"}}),
     );
 
@@ -814,7 +814,10 @@ describe("createDotnetProvider", () => {
 
   it("returns missing AppHost parameter keys when neither tracked config nor user secrets supplies them", async () => {
     const fixture = await createDotnetFixture();
-    await writeFixtureFile(resolve(fixture.root, "tooling", "AppHost", "appsettings.Development.json"), JSON.stringify({Parameters: {}}));
+    await writeFixtureFile(
+      resolve(fixture.root, "tooling", "src", "AppHost", "appsettings.Development.json"),
+      JSON.stringify({Parameters: {}}),
+    );
     fixture.setResponse(DOTNET_USER_SECRETS, commandResult({stdout: "{}"}));
 
     const outcome = await fixture.provider();
@@ -832,7 +835,7 @@ describe("createDotnetProvider", () => {
 
   it("returns invalid for malformed tracked AppHost development configuration", async () => {
     const fixture = await createDotnetFixture();
-    await writeFixtureFile(resolve(fixture.root, "tooling", "AppHost", "appsettings.Development.json"), "{apphost-raw-marker");
+    await writeFixtureFile(resolve(fixture.root, "tooling", "src", "AppHost", "appsettings.Development.json"), "{apphost-raw-marker");
 
     const outcome = await fixture.provider();
 
@@ -849,7 +852,7 @@ describe("createDotnetProvider", () => {
     ["required Parameters child keys", '{"Parameters":{"sql-password":"first","sql-password":"second"}}'],
   ] as const)("returns invalid for exact duplicate tracked %s", async (_case, contents) => {
     const fixture = await createDotnetFixture();
-    await writeFixtureFile(resolve(fixture.root, "tooling", "AppHost", "appsettings.Development.json"), contents);
+    await writeFixtureFile(resolve(fixture.root, "tooling", "src", "AppHost", "appsettings.Development.json"), contents);
 
     const outcome = await fixture.provider();
 

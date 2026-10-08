@@ -66,7 +66,7 @@ export interface DotnetFacts {
   }>;
   /** Aspire AppHost project and parameter-key state. */
   readonly appHost: Readonly<{
-    /** Whether `tooling/AppHost/AppHost.csproj` exists as a regular file. */
+    /** Whether `tooling/src/AppHost/AppHost.csproj` exists as a regular file. */
     projectExists: boolean;
     /** Required Aspire parameter keys missing after user-secret-over-tracked configuration precedence. */
     missingParameterKeys: readonly string[];
@@ -117,8 +117,8 @@ interface JsonScanState {
 
 type JsonObjectContext = "root" | "parameters" | "other";
 
-const APPHOST_PROJECT_RELATIVE_PATH = "tooling/AppHost/AppHost.csproj";
-const APPHOST_SETTINGS_RELATIVE_PATH = "tooling/AppHost/appsettings.Development.json";
+const APPHOST_PROJECT_RELATIVE_PATH = "tooling/src/AppHost/AppHost.csproj";
+const APPHOST_SETTINGS_RELATIVE_PATH = "tooling/src/AppHost/appsettings.Development.json";
 const RESTORE_ASSET_PROJECT_EXTENSIONS: ReadonlySet<string> = new Set([".csproj", ".fsproj", ".vbproj"]);
 const RESTORE_ASSET_RELATIVE_SEGMENTS = ["obj", "project.assets.json"] as const;
 const REQUIRED_APPHOST_PARAMETER_KEYS = ["Parameters:sql-password", "Parameters:redis-password"] as const;

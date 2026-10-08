@@ -193,7 +193,7 @@ async function createInfrastructureFixture(
   if (input.writeManifests !== false) {
     await Promise.all(
       [
-        ["tooling", "AppHost", "AppHost.csproj"],
+        ["tooling", "src", "AppHost", "AppHost.csproj"],
         ["infra", "Local", "Management", "docker-compose.yml"],
         ["infra", "Local", "Storage", "docker-compose.yml"],
         ["infra", "Local", "Backend", "docker-compose.yml"],
@@ -651,7 +651,7 @@ describe("createInfrastructureProvider certificates and manifests", () => {
 
   it("reports a bounded issue for every missing required manifest", async () => {
     const fixture = await createInfrastructureFixture({writeManifests: false});
-    await writeFixtureFile(resolve(fixture.root, "tooling", "AppHost", "AppHost.csproj"), "manifest-marker");
+    await writeFixtureFile(resolve(fixture.root, "tooling", "src", "AppHost", "AppHost.csproj"), "manifest-marker");
     const provider = createProvider(fixture, {requestedEngine: undefined});
 
     const outcome = await provider();

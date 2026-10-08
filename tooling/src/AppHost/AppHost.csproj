@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <Sdk Name="Aspire.AppHost.Sdk" Version="13.4.6" />
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsAspireHost>true</IsAspireHost>
+    <UserSecretsId>arolariu-apphost-local</UserSecretsId>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Aspire.Hosting.AppHost" />
+    <PackageReference Include="Aspire.Hosting.Azure.CosmosDB" />
+    <PackageReference Include="Aspire.Hosting.Azure.Storage" />
+    <PackageReference Include="Aspire.Hosting.Docker" />
+    <PackageReference Include="Aspire.Hosting.JavaScript" />
+    <PackageReference Include="Aspire.Hosting.Python" />
+    <PackageReference Include="Aspire.Hosting.Redis" />
+    <PackageReference Include="Aspire.Hosting.SqlServer" />
+    <PackageReference Include="Azure.Storage.Queues" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\sites\api.arolariu.ro\src\Core\arolariu.Backend.Core.csproj" IsAspireProjectResource="true" />
+    <ProjectReference Include="..\LocalDevelopment.Bootstrap\LocalDevelopment.Bootstrap.csproj" IsAspireProjectResource="true" />
+    <ProjectReference Include="..\LocalDevelopment.Identity\LocalDevelopment.Identity.csproj" IsAspireProjectResource="true" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="AppHost.Tests" />
+  </ItemGroup>
+</Project>

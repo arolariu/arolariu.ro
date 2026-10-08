@@ -14,7 +14,7 @@ Guidance for AI coding agents working in the **arolariu.ro** monorepo.
 - `sites/exp.arolariu.ro/` - Python/FastAPI experimental service.
 - `sites/docs.arolariu.ro/` - documentation site.
 - `infra/Azure/Bicep/` - Azure infrastructure as code.
-- `tooling/AppHost/` - .NET Aspire local orchestration.
+- `tooling/src/AppHost/` - .NET Aspire local orchestration.
 
 ## Versions
 

@@ -378,9 +378,9 @@ function diagnoseAppHost(ctx: Readonly<ModuleRunContext>, facts: Readonly<Dotnet
       name: "AppHost configuration",
       status: "fail",
       summary: "The AppHost project file could not be found.",
-      evidence: ["tooling/AppHost/AppHost.csproj is missing."],
-      rootCause: "tooling/AppHost/AppHost.csproj is missing or inaccessible.",
-      fixes: [{description: "Restore the tooling/AppHost project, then rerun doctor."}],
+      evidence: ["tooling/src/AppHost/AppHost.csproj is missing."],
+      rootCause: "tooling/src/AppHost/AppHost.csproj is missing or inaccessible.",
+      fixes: [{description: "Restore the tooling/src/AppHost project, then rerun doctor."}],
     });
   }
 

@@ -13,7 +13,7 @@ Two coexisting modes for local development.
 > Preserve or export any local work before starting. Selfhost does not run this
 > scenario reset.
 
-Recommended for normal development. The .NET Aspire AppHost (under `tooling/AppHost`)
+Recommended for normal development. The .NET Aspire AppHost (under `tooling/src/AppHost`)
 declares and orchestrates everything natively:
 
 - **Infrastructure**: SQL Server, the Cosmos preview emulator, Azurite, and Redis are spawned through Aspire integrations (`AddSqlServer`, `AddAzureCosmosDB().RunAsPreviewEmulator()`, and related resources) on the selected Rancher Desktop or Podman Desktop engine.
@@ -30,7 +30,7 @@ In Aspire mode, the `infra/Local/{Storage,Backend,Frontend}/docker-compose.yml` 
 
 #### Tooling structure and extension points
 
-`tooling\AppHost\Program.cs` is the composition root. Capability slices keep
+`tooling\src\AppHost\Program.cs` is the composition root. Capability slices keep
 resource definitions beside their supporting behavior: `Infrastructure\Sql`
 owns connection settings/readiness, `Infrastructure\Storage` owns Azurite
 provisioning, and `Applications\Exp` owns the exp resource/configuration overlay.
@@ -40,15 +40,25 @@ anchors project/config paths to the AppHost directory, independent of shell cwd.
 Extend an existing slice or add a focused native builder extension for a new
 capability, then wire its references/waits explicitly and add graph tests.
 Use Aspire's resource builders and typed handle bundles, not a parallel registry
-or generic repository framework. Shared `tooling\Directory.Build.props` contains
-only common build defaults; project-specific settings remain in each project.
+or generic repository framework. Shared
+[`tooling\Directory.Build.props`](../../tooling/Directory.Build.props) owns the
+compiler, analyzer, style, and documentation policy for all tooling projects.
+Production uses recommended analysis and XML documentation; `.Tests` projects
+select the fixed framework-default analysis without XML documentation by project
+name during early MSBuild evaluation. SDK declarations and resource-specific
+settings remain in each project. See the
+[tooling build and package policy](../../tooling/README.md#build-and-package-policy)
+for the ownership boundaries.
 
 Bootstrap keeps invoice-scenario materialization and storage adapters together;
-Identity keeps persona lookup/token creation together. All three executable
-paths and launch commands are unchanged. The shared MSTest project is:
+Identity keeps persona lookup/token creation together. Source projects live under
+`tooling\src`; root launch commands are unchanged. Each executable has an owning
+MSTest project:
 
 ```powershell
-dotnet test tooling\tests\LocalDevelopment.Tests\LocalDevelopment.Tests.csproj
+dotnet test tooling\tests\AppHost.Tests\AppHost.Tests.csproj
+dotnet test tooling\tests\LocalDevelopment.Bootstrap.Tests\LocalDevelopment.Bootstrap.Tests.csproj
+dotnet test tooling\tests\LocalDevelopment.Identity.Tests\LocalDevelopment.Identity.Tests.csproj
 ```
 
 The exp overlay is written through an atomic replacement: generation failures

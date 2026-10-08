@@ -443,7 +443,7 @@ describe("dotnetDoctorModule", () => {
   });
 
   it("warns dotnet.solution for restore issues only", async () => {
-    const facts = healthyDotnetFacts({solutionRestoreIssues: ["Missing NuGet restore assets: tooling/AppHost/AppHost.csproj"]});
+    const facts = healthyDotnetFacts({solutionRestoreIssues: ["Missing NuGet restore assets: tooling/src/AppHost/AppHost.csproj"]});
     const fixture = createDotnetFixture({outcome: {kind: "available", value: facts, durationMs: 0}});
 
     const results = await fixture.run();

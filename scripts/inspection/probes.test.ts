@@ -355,8 +355,8 @@ describe("probes.workspace.executableResolution", () => {
 describe("probes.dotnet.userSecrets", () => {
   probeTest(
     "maps to the exact user-secrets command for the supplied project path",
-    () => probes.dotnet.userSecrets("tooling/AppHost/AppHost.csproj"),
-    runsCommand({command: "dotnet", args: ["user-secrets", "list", "--json", "--project", "tooling/AppHost/AppHost.csproj"]}),
+    () => probes.dotnet.userSecrets("tooling/src/AppHost/AppHost.csproj"),
+    runsCommand({command: "dotnet", args: ["user-secrets", "list", "--json", "--project", "tooling/src/AppHost/AppHost.csproj"]}),
   );
 
   it.each([

@@ -166,7 +166,7 @@ describe("buildLocalStorageBootstrapCommand", () => {
   it("uses the shared .NET local storage provisioner", () => {
     expect(buildLocalStorageBootstrapCommand()).toEqual({
       command: "dotnet",
-      args: ["run", "--project", "../../tooling/LocalDevelopment.Bootstrap", "--", "--ensure-storage-only"],
+      args: ["run", "--project", "../../tooling/src/LocalDevelopment.Bootstrap", "--", "--ensure-storage-only"],
     });
   });
 });
@@ -228,7 +228,7 @@ describe("runSelfhost start", () => {
         "podman compose -f Management/docker-compose.yml up -d",
         "podman compose -f Storage/docker-compose.yml --profile selfhost up -d",
         "podman exec -e SQLCMDPASSWORD mssql /opt/mssql-tools/bin/sqlcmd -C -S localhost -U sa -d master -i /usr/sql/sqlSchema.sql -No",
-        "dotnet run --project ../../tooling/LocalDevelopment.Bootstrap -- --ensure-storage-only",
+        "dotnet run --project ../../tooling/src/LocalDevelopment.Bootstrap -- --ensure-storage-only",
         "podman compose -f Backend/docker-compose.yml up -d",
         "podman compose -f Frontend/docker-compose.yml up -d",
       ]);
@@ -517,7 +517,7 @@ describe("runSelfhost HTTPS certificates", () => {
           "podman compose -f Management/docker-compose.yml up -d",
           "podman compose -f Storage/docker-compose.yml --profile selfhost up -d",
           "podman exec -e SQLCMDPASSWORD mssql /opt/mssql-tools/bin/sqlcmd -C -S localhost -U sa -d master -i /usr/sql/sqlSchema.sql -No",
-          "dotnet run --project ../../tooling/LocalDevelopment.Bootstrap -- --ensure-storage-only",
+          "dotnet run --project ../../tooling/src/LocalDevelopment.Bootstrap -- --ensure-storage-only",
           "podman compose -f Backend/docker-compose.yml up -d",
           "podman compose -f Frontend/docker-compose.yml up -d",
         ]);
@@ -743,7 +743,7 @@ const START_TIMELINE = [
   {blob: "applyCorsPolicy"},
   {
     process: "dotnet",
-    args: ["run", "--project", "../../tooling/LocalDevelopment.Bootstrap", "--", "--ensure-storage-only"],
+    args: ["run", "--project", "../../tooling/src/LocalDevelopment.Bootstrap", "--", "--ensure-storage-only"],
     options: {
       ...TEE,
       env: {
@@ -780,7 +780,7 @@ describe("dev selfhost characterization", () => {
         {stream: "stdout", text: "$ docker compose -f Management/docker-compose.yml up -d"},
         {stream: "stdout", text: "$ docker compose -f Storage/docker-compose.yml --profile selfhost up -d"},
         {stream: "stdout", text: SQLCMD_ECHO},
-        {stream: "stdout", text: "$ dotnet run --project ../../tooling/LocalDevelopment.Bootstrap -- --ensure-storage-only"},
+        {stream: "stdout", text: "$ dotnet run --project ../../tooling/src/LocalDevelopment.Bootstrap -- --ensure-storage-only"},
         {stream: "stdout", text: "$ docker compose -f Backend/docker-compose.yml up -d"},
         {stream: "stdout", text: "$ docker compose -f Frontend/docker-compose.yml up -d"},
         {stream: "stdout", text: "[arolariu::selfhost] ✅ Selfhost start completed for engine 'rancher'."},

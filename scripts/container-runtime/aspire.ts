@@ -39,7 +39,7 @@ export function buildAspireCommand(
 ): AspireCommand {
   return {
     command: "dotnet",
-    args: ["run", "--project", "tooling/AppHost"],
+    args: ["run", "--project", "tooling/src/AppHost"],
     env: {
       ...baseEnvironment,
       DOTNET_ASPIRE_CONTAINER_RUNTIME: adapter.aspireRuntime,

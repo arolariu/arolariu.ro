@@ -35,24 +35,26 @@ pair owns the target. A nested lock does not by itself require unrelated
 workspace reads, dual updates, or a stop; include multiple domains only when
 the target or an approved shared contract actually crosses them.
 
-## NuGet Central API and Project-Local Tooling Ownership
+## Independent NuGet API and Tooling Ownership
 
 **Live source:**
 
 - [`Directory.Packages.props`](../../../../sites/api.arolariu.ro/Directory.Packages.props)
 - [`Directory.Build.props`](../../../../sites/api.arolariu.ro/Directory.Build.props)
+- [`Tooling Directory.Packages.props`](../../../../tooling/Directory.Packages.props)
+- [`Tooling Directory.Build.props`](../../../../tooling/Directory.Build.props)
 - [`Invoices.csproj`](../../../../sites/api.arolariu.ro/src/Invoices/arolariu.Backend.Domain.Invoices.csproj)
 - [`Invoices/packages.lock.json`](../../../../sites/api.arolariu.ro/src/Invoices/packages.lock.json)
-- [`AppHost.csproj`](../../../../tooling/AppHost/AppHost.csproj)
-- [`LocalDevelopment.Bootstrap.csproj`](../../../../tooling/LocalDevelopment.Bootstrap/LocalDevelopment.Bootstrap.csproj)
-- [`LocalDevelopment.Identity.csproj`](../../../../tooling/LocalDevelopment.Identity/LocalDevelopment.Identity.csproj)
+- [`AppHost.csproj`](../../../../tooling/src/AppHost/AppHost.csproj)
+- [`LocalDevelopment.Bootstrap.csproj`](../../../../tooling/src/LocalDevelopment.Bootstrap/LocalDevelopment.Bootstrap.csproj)
+- [`LocalDevelopment.Identity.csproj`](../../../../tooling/src/LocalDevelopment.Identity/LocalDevelopment.Identity.csproj)
 - [`AzureDocumentIntelligenceBroker.cs`](../../../../sites/api.arolariu.ro/src/Invoices/Brokers/DocumentIntelligenceBroker/AzureDocumentIntelligenceBroker.cs)
 - [`AzureDocumentIntelligenceBroker.Internals.cs`](../../../../sites/api.arolariu.ro/src/Invoices/Brokers/DocumentIntelligenceBroker/AzureDocumentIntelligenceBroker.Internals.cs)
 - [`DocumentIntelligenceRecordContractTests.cs`](../../../../sites/api.arolariu.ro/tests/arolariu.Backend.Domain.Tests/Invoices/Brokers/DocumentIntelligenceRecordContractTests.cs)
 
 **Why representative:** API projects inherit central package versions and some
-commit per-project lockfiles. Tooling projects sit outside that import boundary,
-own local `PackageReference` versions, and have no committed package lock.
+commit per-project lockfiles. Tooling projects inherit their independent central
+package catalog, retain project-local SDK declarations, and have no committed package lock.
 Provider-specific SDK calls, provider-neutral mapping, and contract tests show
 how usage surfaces remain separate from version ownership.
 

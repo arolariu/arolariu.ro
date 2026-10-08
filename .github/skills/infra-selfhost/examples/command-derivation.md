@@ -36,7 +36,7 @@ prefer dashboard resource console output and the AppHost terminal.
 Use tracked source to locate the endpoint rather than copying a URL:
 
 ```powershell
-git --no-pager grep -n -E 'With(Http|Https)Endpoint|WithHttpHealthCheck|MapHealthChecks' -- tooling/AppHost sites
+git --no-pager grep -n -E 'With(Http|Https)Endpoint|WithHttpHealthCheck|MapHealthChecks' -- tooling/src/AppHost sites
 git --no-pager grep -n -E 'ports:|healthcheck:|Host\(' -- infra/Local
 ```
 
