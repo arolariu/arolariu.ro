@@ -16,7 +16,7 @@ Two coexisting modes for local development.
 Recommended for normal development. The .NET Aspire AppHost (under `tooling/src/AppHost`)
 declares and orchestrates everything natively:
 
-- **Infrastructure**: SQL Server, the Cosmos preview emulator, Azurite, and Redis are spawned through Aspire integrations (`AddSqlServer`, `AddAzureCosmosDB().RunAsPreviewEmulator()`, and related resources) on the selected Rancher Desktop or Podman Desktop engine.
+- **Infrastructure**: SQL Server, the Cosmos Linux vNext emulator, Azurite, and Redis are spawned through Aspire integrations (`AddSqlServer`, `AddAzureCosmosDB().RunAsEmulator()`, and related resources) on the selected Rancher Desktop or Podman Desktop engine.
 - **Configuration overlay**: Aspire copies the developer-owned `sites/exp.arolariu.ro/config.docker.json` into ignored `config.aspire.json`, then overlays Aspire-specific endpoints and credentials. Selfhost and Aspire do not rely on identical injected values.
 - **Native website HTTPS**: Aspire runs the website's
   `next dev --experimental-https` script. On a certificate-free first run,

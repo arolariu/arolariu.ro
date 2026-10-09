@@ -891,7 +891,7 @@ const toolingPromptOutputConfig: Config = defineConfig({
 
 const projectEslintConfig = defineConfig(websiteEslintConfig, cvEslintConfig, packagesEslintConfig, statusEslintConfig);
 
-// Add the global ignores to the default config.
+// Keep project-specific exclusions separate from global directory ignores and tooling rules.
 for (const individualEslintConfig of projectEslintConfig) {
   const eslintPathsIgnoreList = [
     "**/{node_modules,.storybook,.svelte-kit,.next,out,bin,build,dist,scripts,tests}/**", // dirs
