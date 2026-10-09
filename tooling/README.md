@@ -73,6 +73,10 @@ real Cosmos/Azurite data. Native graph tests do not start the distributed applic
 The root Aspire entry points and engine flags are unchanged. Consult the linked runbook before startup: **Aspire restores its local scenario
 by deleting existing scenario data**, and certificate-free website startup can affect local trust.
 
+AppHost uses `AspireUseCliBundle`, so its installed Aspire CLI/DCP/dashboard bundle must match the project's Aspire version in
+[root AGENTS.md](../AGENTS.md). Updating NuGet packages alone does not update that user-local bundle. Check `aspire --version` before
+startup; update an older stable installation with `aspire update --self --channel stable`, then restart AppHost.
+
 The existing [VS Code profiles](../.vscode/launch.json) and [tasks](../.vscode/tasks.json) target `tooling\src\AppHost`. Visual Studio uses
 the AppHost project in [the root solution](../arolariu.slnx). Set source or method breakpoints through the debugger's symbol search rather
 than importing line-bound breakpoint XML.
