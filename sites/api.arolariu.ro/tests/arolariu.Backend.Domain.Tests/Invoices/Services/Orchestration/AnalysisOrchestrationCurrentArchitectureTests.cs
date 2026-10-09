@@ -68,10 +68,9 @@ public sealed class AnalysisOrchestrationCurrentArchitectureTests
 
     Task<(Invoice Invoice, InvoiceAnalysisOptions? FailedOptions)> execution =
       service.AnalyzeInvoiceAsync(invoice, options, correlationId, CancellationToken.None);
-    Task completed = await Task.WhenAny(execution, Task.Delay(TimeSpan.FromSeconds(1)));
-    (Invoice analyzed, InvoiceAnalysisOptions? failed) = await execution;
+    (Invoice analyzed, InvoiceAnalysisOptions? failed) =
+      await execution.WaitAsync(TimeSpan.FromSeconds(1)).ConfigureAwait(false);
 
-    Assert.AreSame(execution, completed);
     Assert.IsNull(failed);
     Assert.AreEqual("Groceries", analyzed.Name);
     Assert.AreEqual("10000001", analyzed.Items.Single().Classification?.Code);
