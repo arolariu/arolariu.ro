@@ -28,7 +28,7 @@ internal static class InfrastructureResources
   {
     var sql = builder.AddLocalSql(sqlPassword);
     var cosmos = builder.AddAzureCosmosDB("cosmos")
-      .RunAsPreviewEmulator(emulator => emulator
+      .RunAsEmulator(emulator => emulator
         .WithGatewayPort(Constants.CosmosGatewayPort)
         .WithDataExplorer()
         .WithDataVolume(Constants.CosmosDataVolume)
