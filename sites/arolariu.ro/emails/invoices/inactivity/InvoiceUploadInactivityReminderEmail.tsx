@@ -103,7 +103,7 @@ export type Props = {
 const InvoiceUploadInactivityReminderEmail = defineEmailTemplate<Props>({
   namespace: "emails.invoiceInactivity",
   render: ({locale, t, props}) => {
-    const {username, daysWithoutUpload, lastUploadDate, createInvoiceUrl, invoicesUrl} = props;
+    const {username, daysWithoutUpload, lastUploadDate = "—", createInvoiceUrl, invoicesUrl} = props;
 
     const name = username?.trim() ? username : "there";
     const effectiveCreateInvoiceUrl = createInvoiceUrl ?? `${BRAND.url}/domains/invoices/create-invoice`;
@@ -140,6 +140,7 @@ const InvoiceUploadInactivityReminderEmail = defineEmailTemplate<Props>({
             title=''
             items={[
               {label: t(selectorFromPath("emails.invoiceInactivity.status.daysWithoutUpload")), value: String(daysWithoutUpload)},
+              // Keep the nullish fallback for runtime callers that explicitly provide null.
               {label: t(selectorFromPath("emails.invoiceInactivity.status.lastUpload")), value: lastUploadDate ?? "—"},
             ]}
           />

@@ -60,7 +60,7 @@ export async function copyText(text: string): Promise<Readonly<Result<void>>> {
   try {
     const ta = document.createElement("textarea");
     ta.value = text;
-    ta.setAttribute("readonly", "true");
+    ta.setAttribute("readonly", "");
     ta.style.position = "fixed";
     ta.style.top = "-9999px";
     document.body.appendChild(ta);

@@ -302,7 +302,7 @@ const Command = React.forwardRef<HTMLDivElement, CommandProps>(
         || existingItem.disabled !== nextItem.disabled
         || existingItem.forceMount !== nextItem.forceMount
         || existingItem.groupId !== nextItem.groupId
-        || existingItem.keywords.join("\u0000") !== nextItem.keywords.join("\u0000")
+        || existingItem.keywords.join("\0") !== nextItem.keywords.join("\0")
         || existingItem.ref !== nextItem.ref
         || existingItem.textValue !== nextItem.textValue
         || existingItem.value !== nextItem.value;
@@ -801,7 +801,7 @@ const CommandItem = React.forwardRef<HTMLDivElement, CommandItemProps>(
     const groupId = React.useContext(CommandGroupContext);
     const generatedId = React.useId();
     const itemRef = React.useRef<HTMLDivElement | null>(null);
-    const keywordSignature = React.useMemo(() => keywords.join("\u0000"), [keywords]);
+    const keywordSignature = React.useMemo(() => keywords.join("\0"), [keywords]);
 
     React.useLayoutEffect(() => {
       const textValue = value ?? itemRef.current?.textContent?.trim() ?? "";

@@ -230,8 +230,8 @@ export function DialogProvider({children}: Readonly<{children: ReactNode}>): Rea
   // Empty deps: functional setState reads `prev` synchronously, no closure over state needed.
   const actions = useMemo<DialogActions>(
     () => ({
-      openDialog: (dialog, mode, payload) =>
-        setDialogState((prev) => (prev.type === null ? {type: dialog, mode, payload: payload ?? null} : prev)),
+      openDialog: (dialog, mode, payload: unknown = null) =>
+        setDialogState((prev) => (prev.type === null ? {type: dialog, mode, payload} : prev)),
       closeDialog: () => setDialogState(INITIAL_STATE),
     }),
     [],

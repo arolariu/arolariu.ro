@@ -51,8 +51,7 @@ export interface KeyboardBindings {
 // eslint-disable-next-line no-unused-vars -- Return type documents the DOM event handler contract.
 export function createKeyboardHandler(bindings: KeyboardBindings): (event: KeyboardEvent) => void {
   return function handle(event: KeyboardEvent): void {
-    if (shouldIgnoreKeydown(event)) return;
-    if (event.defaultPrevented) return;
+    if (shouldIgnoreKeydown(event) || event.defaultPrevented) return;
 
     if (event.key === "?") {
       event.preventDefault();
