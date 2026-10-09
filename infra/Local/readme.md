@@ -131,7 +131,7 @@ containers do not embed the environment-specific values in source.
 
 - **Rancher Desktop** in Moby/dockerd mode, or **Podman Desktop** with `podman compose`
 - Docker Desktop is deprecated and is not a supported local runtime for this repository
-- **Node.js** ≥ 24 and **npm** ≥ 11 (for Azurite blob container init)
+- **Node.js** 24.15.0+ on the 24.x line, or ≥ 26, and **npm** ≥ 11 (for Azurite blob container init)
 - **Git** (to clone the repository)
 - `MSSQL_SA_PASSWORD` environment variable for the local SQL Server container. Keep it in your shell/session environment only; do not commit it to `.env` files, launch profiles, or source control.
 - 4GB+ RAM available for containers

@@ -218,7 +218,7 @@ never installs or upgrades Git, Node.js, or npm:
 | Tool | Version | Purpose |
 |:----:|:-------:|:--------|
 | ![Git](https://img.shields.io/badge/Git-required-F05032?style=flat-square&logo=git&logoColor=white) | — | Version control — must be installed and on `PATH`; probed by `npm run setup` (no minimum version enforced) — bootstrap prerequisite |
-| ![Node.js](https://img.shields.io/badge/Node.js-24%2B-339933?style=flat-square&logo=nodedotjs&logoColor=white) | ≥24.x | JavaScript runtime — bootstrap prerequisite |
+| ![Node.js](https://img.shields.io/badge/Node.js-24.15%2B_or_26%2B-339933?style=flat-square&logo=nodedotjs&logoColor=white) | 24.15.0+ (24.x) or ≥26 | JavaScript runtime — bootstrap prerequisite |
 | ![npm](https://img.shields.io/badge/npm-11%2B-CB3837?style=flat-square&logo=npm&logoColor=white) | ≥11.x | Package manager — bootstrap prerequisite |
 | ![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?style=flat-square&logo=dotnet&logoColor=white) | 10.0 | Backend runtime and Aspire AppHost — prepared by `npm run setup` |
 | Container engine | Rancher Desktop or Podman Desktop | Local SQL, Cosmos, Azurite, and Redis containers — selected/persisted by `npm run setup` (Docker Desktop is not supported) |

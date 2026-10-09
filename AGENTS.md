@@ -25,7 +25,7 @@ instead of copying version values.
 
 | Component | Version | Where to verify |
 | --- | --- | --- |
-| Node.js | >=24 | `package.json` engines |
+| Node.js | 24.15.0+ (24.x) or >=26 | `package.json` engines |
 | npm | >=11 | `package.json` engines |
 | .NET SDK | 10.0 | `sites/api.arolariu.ro/Directory.Build.props` |
 | Aspire | 13.6.1 | `tooling/src/AppHost/AppHost.csproj` and `tooling/Directory.Packages.props` |

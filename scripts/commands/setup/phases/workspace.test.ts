@@ -411,6 +411,33 @@ describe("workspace prerequisites", () => {
     expect(result.nextActions.join("\n")).toMatch(new RegExp(`install.*${tool}|${tool}.*install`, "i"));
   });
 
+  it.each([
+    ["v24.14.9", "failed"],
+    ["v24.15.0", "succeeded"],
+    ["v25.9.9", "failed"],
+    ["v26.0.0", "succeeded"],
+  ])("enforces the declared LTS/current branches for %s", async (version, status) => {
+    const engine = "^24.15.0 || >=26.0.0";
+    const {run, calls} = createHarness({
+      requirements: requirements({node: {major: 24, minor: 15, patch: 0, nextSupportedMajor: 26}}),
+      files: {
+        [FIXTURE_PATHS.packageJson]: JSON.stringify({
+          name: "@arolariu/monorepo",
+          engines: {node: engine, npm: ">=11"},
+          devDependencies: {},
+        }),
+      },
+      respond: (request) =>
+        request.command === "node" || request.command === FIXTURE_EXECUTABLE_PATH ? succeeded(`${version}\n`) : defaultOutcome(request),
+    });
+
+    const result = await run("workspace.prerequisites");
+
+    expect(result.status).toBe(status);
+    expect(result.evidence.join("\n")).toContain(engine);
+    expect(calls()).toHaveLength(4);
+  });
+
   it("fails when node --version contradicts the running runtime executable", async () => {
     const {run} = createHarness({
       respond: (request) => (request.command === "node" ? succeeded("v24.9.0\n") : defaultOutcome(request)),

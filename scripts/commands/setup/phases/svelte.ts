@@ -27,7 +27,7 @@
 
 import {Clock, Effect} from "effect";
 
-import {parseVersion, satisfiesMinimum, type MinimumVersion} from "../../../common/requirements.ts";
+import {formatVersionRequirement, parseNodeRequirement, requirementSatisfies, type MinimumVersion} from "../../../common/requirements.ts";
 import type {SvelteFacts, SvelteProjectId} from "../../../inspection/frontend.ts";
 import {SVELTE_INSPECTED_PACKAGE_NAMES, type PackageInventoryFacts} from "../../../inspection/packages.ts";
 import type {InspectionOutcome} from "../../../inspection/types.ts";
@@ -164,12 +164,12 @@ function projectProblems(facts: Readonly<SvelteFacts>, rootNode: MinimumVersion,
   const problems = [...relevant(facts.packageIssues), ...facts.scriptIssues, ...relevant(facts.adapterIssues)];
 
   if (facts.nodeEngine !== undefined) {
-    const projectMinimum = facts.nodeEngine.startsWith(">=") ? parseVersion(facts.nodeEngine.slice(2)) : null;
+    const projectMinimum = parseNodeRequirement(facts.nodeEngine);
     if (projectMinimum === null) {
       problems.push(`package.json#engines.node uses unsupported engine syntax '${facts.nodeEngine}'.`);
-    } else if (!satisfiesMinimum(rootNode, projectMinimum)) {
+    } else if (!requirementSatisfies(rootNode, projectMinimum)) {
       problems.push(
-        `Root Node minimum ${normalizedVersion(rootNode)} does not satisfy the project minimum ${normalizedVersion(projectMinimum)}.`,
+        `Root Node requirement ${formatVersionRequirement(rootNode)} does not satisfy the project requirement ${formatVersionRequirement(projectMinimum)}.`,
       );
     }
   }

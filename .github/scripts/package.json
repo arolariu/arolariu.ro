@@ -5,7 +5,7 @@
   "description": "Type-safe GitHub Actions toolkit-based scripts following SOLID principles and clean code architecture.",
   "type": "module",
   "engines": {
-    "node": ">=24.0.0"
+    "node": "^24.15.0 || >=26.0.0"
   },
   "scripts": {
     "test": "vitest run",
@@ -27,7 +27,7 @@
     "pretty-bytes": "7.2.0"
   },
   "devDependencies": {
-    "@types/node": "26.6.4",
+    "@types/node": "24.19.2",
     "@vitest/ui": "5.0.3",
     "typescript": "7.0.2",
     "vitest": "5.0.3"
