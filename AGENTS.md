@@ -29,11 +29,11 @@ instead of copying version values.
 | npm | >=11 | `package.json` engines |
 | .NET SDK | 10.0 | `sites/api.arolariu.ro/Directory.Build.props` |
 | C# | 14 | `<LangVersion>latest</LangVersion>` in `sites/api.arolariu.ro/Directory.Build.props` |
-| Next.js | 16.3.0 | `package.json` |
-| React | 19.2.8 | `package.json` |
+| Next.js | 16.4.0 | `package.json` |
+| React | 19.3.0 | `package.json` |
 | TypeScript | 6.0.3 | `package.json` |
-| SvelteKit | 2.70.2 | `package.json` |
-| Nx | 23.1.1 | `package.json` |
+| SvelteKit | 2.70.3 | `package.json` |
+| Nx | 23.3.0 | `package.json` |
 
 ## Commands
 

@@ -305,12 +305,6 @@ describe("runProbe", () => {
       return new Response(JSON.stringify({status: "Healthy"}), {status: 200});
     }) as typeof fetch;
 
-    // Intercept sleep to avoid waiting DEFAULT_SAMPLE_DELAYS_MS (which can be 200s+)
-    vi.mock("./probe", async (importOriginal) => {
-      const actual = await importOriginal<typeof import("./probe")>();
-      return {...actual};
-    });
-
     // Call with only dataDir — both now and sampleDelaysMs use defaults
     // We override sampleDelaysMs via a fresh call that passes [0] to stay fast,
     // but we need to verify the ?? branch. Using {dataDir} alone would run real delays,
