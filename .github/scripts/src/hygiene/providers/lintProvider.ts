@@ -3,12 +3,13 @@
  * @module github/scripts/src/hygiene/providers/lintProvider
  *
  * @remarks
- * Runs `npx eslint . --format json` directly (NOT via `npm run lint`, which uses
+ * Runs `npx eslint <scope> --format json` directly (NOT via `npm run lint`, which uses
  * a custom Piscina-based wrapper that does not support --format json).
- * Parses the structured JSON output to produce LineFinding per ESLint message.
+ * Isolates typed project state in sequential processes and parses their combined JSON output.
  */
 
 import * as exec from "@actions/exec";
+import * as path from "node:path";
 import {filesForEslint, filterExistingFiles} from "../domain/changedFiles.ts";
 import type {CheckProvider, ProviderRunInput, ProviderRunOutput, Schema} from "../domain/provider.ts";
 import type {Finding, LineFinding, Severity} from "../domain/types.ts";
@@ -52,6 +53,13 @@ function eslintSeverityToFinding(s: 0 | 1 | 2): Severity {
   if (s === 1) return "warning";
   return "info";
 }
+
+const LINT_PROJECTS = [
+  path.join("sites", "arolariu.ro"),
+  path.join("packages", "components"),
+  path.join("sites", "cv.arolariu.ro"),
+  path.join("sites", "status.arolariu.ro"),
+] as const;
 
 export function parseEslintJson(results: readonly EslintFileResult[]): {
   findings: Finding[];
@@ -102,17 +110,36 @@ export const lintProvider: CheckProvider<LintPayload> = {
       };
     }
 
-    const args = scopedFiles === null ? ["eslint", ".", "--format", "json"] : ["eslint", ...scopedFiles, "--format", "json"];
-    const result = await exec.getExecOutput("npx", args, {cwd: input.workspaceRoot, ignoreReturnCode: true, silent: true});
+    const projectPrefixes = LINT_PROJECTS.map((project) => `${project.replace(/\\/g, "/")}/`);
+    const groups =
+      scopedFiles === null
+        ? [...LINT_PROJECTS.map((project) => [project]), [".", ...projectPrefixes.flatMap((prefix) => ["--ignore-pattern", `${prefix}**`])]]
+        : [
+            ...projectPrefixes.map((prefix) => scopedFiles.filter((file) => file.startsWith(prefix))),
+            scopedFiles.filter((file) => !projectPrefixes.some((prefix) => file.startsWith(prefix))),
+          ].filter((group) => group.length > 0);
+    const parsed: EslintFileResult[] = [];
+    for (const group of groups) {
+      const result = await exec.getExecOutput("npx", ["eslint", ...group, "--format", "json"], {
+        cwd: input.workspaceRoot,
+        ignoreReturnCode: true,
+        silent: true,
+        // Release typed projectService/compiler state between projects instead of retaining the whole monorepo.
+        env: {...process.env, NODE_OPTIONS: `${process.env["NODE_OPTIONS"] ?? ""} --max-old-space-size=6144`.trim()},
+      });
 
-    // ESLint JSON output goes to stdout. If parsing fails, treat as zero findings
-    // but still surface the raw stderr to the runner via a thrown error so the
-    // outcome is "errored" rather than silently passing.
-    let parsed: readonly EslintFileResult[];
-    try {
-      parsed = JSON.parse(result.stdout) as readonly EslintFileResult[];
-    } catch (err) {
-      throw new Error(`Failed to parse ESLint JSON output: ${(err as Error).message}. ` + `stderr: ${result.stderr.substring(0, 500)}`);
+      if (result.exitCode > 1) {
+        throw new Error(`ESLint exited with code ${result.exitCode} for ${group[0]}. stderr: ${result.stderr.slice(-4000)}`);
+      }
+
+      try {
+        parsed.push(...(JSON.parse(result.stdout) as EslintFileResult[]));
+      } catch (err) {
+        throw new Error(
+          `Failed to parse ESLint JSON output for ${group[0]} (exit ${result.exitCode}): ${(err as Error).message}. `
+            + `stderr: ${result.stderr.slice(-4000)}`,
+        );
+      }
     }
 
     const {findings, errorCount, warningCount} = parseEslintJson(parsed);
