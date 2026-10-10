@@ -4,7 +4,7 @@
  *
  * @remarks
  * Every read-only React observation (installed package inventory, the `@arolariu/components`
- * workspace link, website `.env` key/syntax classification, generated artifacts, i18n and
+ * registry dependency, website `.env` key/syntax classification, generated artifacts, i18n and
  * framework contracts, and the installed Playwright browser inventory) is consumed exclusively
  * through `context.inspection.inspect("packages")` and `context.inspection.inspect("react")`.
  * This phase never runs `npm ls`, never parses a Playwright inventory listing, and never reads a
@@ -97,7 +97,6 @@ interface InventoryComparison {
 
 const LOCKED_PACKAGES = ["react", "react-dom", "next", "@clerk/nextjs", "@docusaurus/core", "@playwright/test", "playwright"] as const;
 const WORKSPACE_LINKED_PACKAGE = "@arolariu/components";
-const WORKSPACE_LINKED_ROOT = "packages/components";
 const ROOT_DEPENDENCIES_ACTION = "workspace.root-dependencies";
 const GENERATORS_ACTION = "workspace.generators";
 const LOCAL_DEFAULTS = new Map<string, string>([
@@ -291,10 +290,8 @@ function comparePackageInventory(policy: PackagePolicy, inventory: Readonly<Pack
     const linked = inventory.installed[WORKSPACE_LINKED_PACKAGE];
     if (linked === undefined) {
       absent.push(WORKSPACE_LINKED_PACKAGE);
-    } else if (linked.workspaceRoot !== WORKSPACE_LINKED_ROOT) {
-      defects.push(
-        `Required package '${WORKSPACE_LINKED_PACKAGE}' must resolve to the linked '${WORKSPACE_LINKED_ROOT}' workspace, not a published release.`,
-      );
+    } else if (linked.workspaceRoot !== undefined) {
+      defects.push(`Required package '${WORKSPACE_LINKED_PACKAGE}' must resolve to its published package, not local workspace source.`);
     }
   }
 
@@ -729,7 +726,7 @@ function planFreshCheckoutDryRun(
     }
 
     evidence.push(
-      `Deferred every shared React package, workspace link, generated artifact, and Playwright postcondition to the planned ${ROOT_DEPENDENCIES_ACTION} action.`,
+      `Deferred every shared React package, registry dependency, generated artifact, and Playwright postcondition to the planned ${ROOT_DEPENDENCIES_ACTION} action.`,
     );
     if (environment.actionDisposition === "planned") {
       evidence.push(`Planned action: ${ENVIRONMENT_WRITE_ACTION}`);
@@ -850,14 +847,14 @@ function prepareReact(
         );
       }
       evidence.push(
-        `Deferred absent required package(s) and the ${WORKSPACE_LINKED_PACKAGE} workspace link to the planned ${ROOT_DEPENDENCIES_ACTION} action: ${comparison.absent.join(", ")}.`,
+        `Deferred absent required package(s) and the ${WORKSPACE_LINKED_PACKAGE} registry dependency to the planned ${ROOT_DEPENDENCIES_ACTION} action: ${comparison.absent.join(", ")}.`,
       );
     } else {
       if (facts.workspaceLinkIssues.length > 0) {
-        return failedResult("The website does not consume the linked component workspace.", [...evidence, ...facts.workspaceLinkIssues]);
+        return failedResult("The website does not consume the published component package.", [...evidence, ...facts.workspaceLinkIssues]);
       }
       evidence.push(
-        `Verified ${requiredPackageCount(policy)} locked React workspace package(s) and the ${WORKSPACE_LINKED_PACKAGE} workspace link from shared facts.`,
+        `Verified ${requiredPackageCount(policy)} locked React workspace package(s) and the ${WORKSPACE_LINKED_PACKAGE} registry dependency from shared facts.`,
       );
     }
 

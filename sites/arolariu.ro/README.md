@@ -25,6 +25,21 @@ page.tsx / layout.tsx
 - Keep route-local artifacts under the owning App Router segment.
 - Use CSS/SCSS Modules and shared primitives from `@arolariu/components`.
 
+## Published component dependency
+
+The website consumes the exact npm registry tarball declared in [`package.json`](./package.json). The root
+[`package-lock.json`](../../package-lock.json) records its integrity and installs it under the website's `node_modules`.
+`packages/components` remains an npm workspace and Nx project for independent library development, but website builds, tests, Storybook,
+and containers do not use that workspace's source or `dist`.
+
+A semver dependency or npm alias can be linked to a same-name local workspace by npm. The explicit registry tarball prevents that implicit
+link, including when the local and published versions match. Do not restore source/dist test aliases or a local components build
+prerequisite.
+
+To adopt a future component release, publish and verify it through the existing component release workflow first, then update the website's
+registry tarball and root comparison pin with npm and commit the resulting lockfile. An unpublished local version is not a website release
+dependency. Reverting those manifest/lock changes restores the prior registry artifact without republishing the library.
+
 ## Internationalization
 
 User-visible text uses `next-intl` with typed `next-intl-selector` callbacks. English, Romanian, and French dictionaries share one key

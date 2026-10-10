@@ -1103,6 +1103,31 @@ describe("FrontendLicenseGenerator", () => {
   const licensesPath = join(workspace, "sites", "arolariu.ro", "licenses.json");
 
   artifactTest(
+    "reports the website registry copy instead of a same-name root workspace package",
+    {
+      files: {
+        ...manifest("sites/arolariu.ro/package.json", {
+          dependencies: {"@arolariu/components": "https://registry.npmjs.org/@arolariu/components/-/components-2.3.0.tgz"},
+        }),
+        ...manifest("node_modules/@arolariu/components/package.json", {name: "@arolariu/components", version: "2.4.0", license: "MIT"}),
+        ...manifest("sites/arolariu.ro/node_modules/@arolariu/components/package.json", {
+          name: "@arolariu/components",
+          version: "2.3.0",
+          license: "MIT",
+        }),
+      },
+    },
+    () =>
+      Effect.gen(function* () {
+        yield* new FrontendLicenseGenerator(workspace).generate();
+
+        expect(readObjectArray(yield* readText(licensesPath), "production")).toMatchObject([
+          {name: "@arolariu/components", version: "2.3.0"},
+        ]);
+      }),
+  );
+
+  artifactTest(
     "groups direct frontend dependencies",
     {
       files: {

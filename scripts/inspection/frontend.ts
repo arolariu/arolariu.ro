@@ -43,7 +43,7 @@ export interface EnvironmentFacts {
 export interface ReactFacts {
   /** Shared installed-package inventory for every React/Next.js and Svelte package name. */
   readonly packages: PackageInventoryFacts;
-  /** Deterministic issues for the `@arolariu/components` workspace link. */
+  /** Deterministic issues for the website's registry-resolved component dependency. */
   readonly workspaceLinkIssues: readonly string[];
   /** Website `.env` classification. */
   readonly environment: EnvironmentFacts;
@@ -266,6 +266,7 @@ function inspectWorkspaceLink(
 ): Effect.Effect<readonly string[], never, ReadOnlyFiles> {
   return Effect.gen(function* () {
     const issues: string[] = [];
+    let declaredVersion: string | undefined;
 
     const packageJsonOutcome = yield* readJsonRecord(resolve(paths.websiteRoot, "package.json"));
     if (packageJsonOutcome.kind !== "ok") {
@@ -274,6 +275,15 @@ function inspectWorkspaceLink(
       const dependencies = isRecord(packageJsonOutcome.value["dependencies"]) ? packageJsonOutcome.value["dependencies"] : {};
       if (!Object.hasOwn(dependencies, WORKSPACE_LINKED_PACKAGE)) {
         issues.push("sites/arolariu.ro/package.json does not declare a dependency on @arolariu/components.");
+      } else {
+        const dependency = dependencies[WORKSPACE_LINKED_PACKAGE];
+        declaredVersion =
+          typeof dependency === "string"
+            ? /^https:\/\/registry\.npmjs\.org\/@arolariu\/components\/-\/components-(\d+\.\d+\.\d+)\.tgz$/u.exec(dependency)?.[1]
+            : undefined;
+        if (declaredVersion === undefined) {
+          issues.push("sites/arolariu.ro/package.json must consume an exact published components registry artifact.");
+        }
       }
     }
 
@@ -282,19 +292,21 @@ function inspectWorkspaceLink(
       issues.push("sites/arolariu.ro/project.json could not be read or parsed.");
     } else {
       const targets = isRecord(projectJsonOutcome.value["targets"]) ? projectJsonOutcome.value["targets"] : {};
-      if (!getDependsOn(targets, "build").includes("components:build")) {
-        issues.push("sites/arolariu.ro/project.json build target does not depend on components:build.");
+      if (getDependsOn(targets, "build").includes("components:build")) {
+        issues.push("sites/arolariu.ro/project.json build target still depends on the local components build.");
       }
-      if (!getDependsOn(targets, "dev").includes("components:build")) {
-        issues.push("sites/arolariu.ro/project.json dev target does not depend on components:build.");
+      if (getDependsOn(targets, "dev").includes("components:build")) {
+        issues.push("sites/arolariu.ro/project.json dev target still depends on the local components build.");
       }
     }
 
     const installedComponents = packages.installed[WORKSPACE_LINKED_PACKAGE];
     if (installedComponents === undefined) {
       issues.push("@arolariu/components is not installed.");
-    } else if (installedComponents.workspaceRoot === undefined) {
-      issues.push("@arolariu/components is not linked to the local workspace package.");
+    } else if (installedComponents.workspaceRoot !== undefined) {
+      issues.push("@arolariu/components resolves to local workspace source instead of the published package.");
+    } else if (declaredVersion !== undefined && installedComponents.version !== declaredVersion) {
+      issues.push("@arolariu/components installed version does not match the declared registry artifact.");
     }
 
     return issues;

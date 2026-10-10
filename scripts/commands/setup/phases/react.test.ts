@@ -173,7 +173,7 @@ function inventory(
     installed[name] = {version: patch.versions?.get(name) ?? version};
   }
   if (patch.absent?.includes(workspaceLinkedPackage) !== true) {
-    const workspaceRoot = patch.componentsWorkspaceRoot === undefined ? workspaceLinkedRoot : patch.componentsWorkspaceRoot;
+    const workspaceRoot = patch.componentsWorkspaceRoot ?? null;
     installed[workspaceLinkedPackage] = {
       version: installedComponentsVersion,
       ...(workspaceRoot === null ? {} : {workspaceRoot}),
@@ -742,8 +742,8 @@ describe("locked package policy", () => {
     expect(result.evidence.join("\n")).toMatch(/workspace\.root-dependencies/);
   });
 
-  it("requires the components package to resolve to the local workspace link", async () => {
-    const harness = await createHarness({packages: [packagesAvailable(inventory({componentsWorkspaceRoot: null}))]});
+  it("rejects the components package when it resolves to local workspace source", async () => {
+    const harness = await createHarness({packages: [packagesAvailable(inventory({componentsWorkspaceRoot: workspaceLinkedRoot}))]});
 
     const result = await runPhase(harness);
 
@@ -760,9 +760,9 @@ describe("locked package policy", () => {
     expect(result.evidence.join("\n")).toMatch(/@arolariu\/components/);
   });
 
-  it("fails when the shared React facts report workspace link issues", async () => {
+  it("fails when the shared React facts report registry dependency issues", async () => {
     const harness = await createHarness({
-      react: [reactAvailable({workspaceLinkIssues: ["sites/arolariu.ro/project.json build target does not depend on components:build."]})],
+      react: [reactAvailable({workspaceLinkIssues: ["sites/arolariu.ro/project.json build target depends on local components:build."]})],
     });
 
     const result = await runPhase(harness);
@@ -1494,7 +1494,7 @@ describe("react characterization (pre-Effect migration)", () => {
         status: "succeeded",
         summary: "React packages, generated artifacts, website environment, and Playwright Chromium are ready.",
         evidence: [
-          "Verified 8 locked React workspace package(s) and the @arolariu/components workspace link from shared facts.",
+          "Verified 8 locked React workspace package(s) and the @arolariu/components registry dependency from shared facts.",
           "Verified the website message dictionary and framework configuration contracts.",
           "Verified every generated website taxonomy, license, and locale artifact.",
           "Preserved setup-owned environment keys: SITE_ENV, SITE_NAME, SITE_URL, USE_CDN, NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY, CLERK_SECRET_KEY.",
@@ -1525,7 +1525,7 @@ describe("react characterization (pre-Effect migration)", () => {
         status: "succeeded",
         summary: "React packages, generated artifacts, website environment, and Playwright Chromium are ready.",
         evidence: [
-          "Verified 8 locked React workspace package(s) and the @arolariu/components workspace link from shared facts.",
+          "Verified 8 locked React workspace package(s) and the @arolariu/components registry dependency from shared facts.",
           "Verified the website message dictionary and framework configuration contracts.",
           "Verified every generated website taxonomy, license, and locale artifact.",
           "Preserved setup-owned environment keys: SITE_ENV, SITE_NAME, SITE_URL, USE_CDN, NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY, CLERK_SECRET_KEY.",
@@ -1558,7 +1558,7 @@ describe("react characterization (pre-Effect migration)", () => {
         status: "failed",
         summary: "The required React workspace preparation phase failed.",
         evidence: [
-          "Verified 8 locked React workspace package(s) and the @arolariu/components workspace link from shared facts.",
+          "Verified 8 locked React workspace package(s) and the @arolariu/components registry dependency from shared facts.",
           "Verified the website message dictionary and framework configuration contracts.",
           "Verified every generated website taxonomy, license, and locale artifact.",
           "Preserved setup-owned environment keys: SITE_ENV, SITE_NAME, SITE_URL, USE_CDN, NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY, CLERK_SECRET_KEY.",

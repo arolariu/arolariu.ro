@@ -1,7 +1,7 @@
 {
   "name": "@arolariu/components",
   "displayName": "@arolariu/components",
-  "version": "2.3.0",
+  "version": "2.4.0",
   "description": "🎨 70+ beautiful, accessible React components built on Base UI. TypeScript-first, CSS Modules styling, tree-shakeable, SSR-ready. Perfect for modern web apps, design systems & rapid prototyping. Zero config, maximum flexibility! ⚡",
   "homepage": "https://arolariu.ro",
   "repository": {
@@ -92,44 +92,48 @@
     "build-storybook": "storybook build"
   },
   "dependencies": {
-    "clsx": "*",
-    "embla-carousel-react": "*",
-    "input-otp": "*",
-    "lucide-react": "*",
-    "react-day-picker": "*",
-    "react-resizable-panels": "*"
+    "clsx": "2.1.1",
+    "embla-carousel-react": "8.6.0",
+    "input-otp": "1.5.0",
+    "lucide-react": "1.55.0",
+    "react-day-picker": "10.0.2",
+    "react-resizable-panels": "4.14.4"
   },
   "peerDependencies": {
     "@base-ui/react": "^1",
-    "motion": "^13",
+    "motion": "^13 || ^14",
+    "react": "^18.2 || ^19",
     "react-dom": "^18.2 || ^19",
     "react-hook-form": "^7",
-    "react": "^18.2 || ^19",
     "recharts": "^3.8"
   },
   "devDependencies": {
-    "@base-ui/react": "*",
-    "@rsbuild/core": "*",
-    "@rsbuild/plugin-react": "*",
-    "@rslib/core": "*",
-    "@storybook/addon-a11y": "*",
-    "@storybook/addon-docs": "*",
-    "@storybook/addon-links": "*",
-    "@storybook/addon-themes": "*",
-    "@types/node": "*",
-    "@types/react-dom": "*",
-    "@types/react": "*",
-    "motion": "*",
+    "@base-ui/react": "1.9.0",
+    "@rsbuild/core": "2.2.12",
+    "@rsbuild/plugin-react": "2.1.1",
+    "@rslib/core": "1.0.3",
+    "@storybook/addon-a11y": "10.6.1",
+    "@storybook/addon-docs": "10.6.1",
+    "@storybook/addon-links": "10.6.1",
+    "@storybook/addon-themes": "10.6.1",
+    "@testing-library/react": "16.3.3",
+    "@types/node": "24.19.2",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@vitest/coverage-v8": "5.0.3",
+    "@vitest/ui": "5.0.3",
+    "motion": "14.1.0",
     "playwright": "*",
-    "postcss": "*",
-    "react-dom": "*",
-    "react-hook-form": "*",
-    "react": "*",
-    "recharts": "*",
-    "storybook-addon-rslib": "*",
-    "storybook-react-rsbuild": "*",
-    "storybook": "*",
-    "typescript": "*"
+    "postcss": "8.5.29",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "react-hook-form": "7.89.0",
+    "recharts": "3.10.1",
+    "storybook": "10.6.1",
+    "storybook-addon-rslib": "3.6.1",
+    "storybook-react-rsbuild": "3.6.1",
+    "typescript": "6.0.3",
+    "vitest": "5.0.3"
   },
   "publishConfig": {
     "access": "public",
@@ -137,8 +141,14 @@
   },
   "exports": {
     "./package.json": "./package.json",
-    "./styles": "./dist/index.css",
-    "./styles.css": "./dist/index.css",
+    "./styles": {
+      "types": "./dist/styles.d.ts",
+      "default": "./dist/index.css"
+    },
+    "./styles.css": {
+      "types": "./dist/styles.d.ts",
+      "default": "./dist/index.css"
+    },
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",

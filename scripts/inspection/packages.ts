@@ -259,7 +259,7 @@ function normalizeWorkspaceRoot(repositoryRoot: string, packageRoot: string): st
   }
 
   const normalized = relativeRoot.split(sep).join("/");
-  if (normalized === "node_modules" || normalized.startsWith("node_modules/")) {
+  if (normalized === "node_modules" || normalized.startsWith("node_modules/") || normalized.includes("/node_modules/")) {
     return undefined;
   }
   return normalized === "" ? "." : normalized;
@@ -414,16 +414,18 @@ export function createNpmTreeProvider(
 }
 
 /**
- * Creates a provider that reads only explicitly requested package manifests from root `node_modules`.
+ * Creates a provider that reads explicitly requested installed package manifests.
  *
- * @param input - Repository root and requested package names; manifests are read through
- * `ReadOnlyFiles`.
+ * @param input - Repository root, requested package names, and optional consumer roots.
+ * A consumer root selects its own `node_modules` copy rather than the root workspace link.
+ * Manifests are read through `ReadOnlyFiles`.
  * @returns A provider for deterministic installed-package metadata.
  */
 export function createInstalledPackageProvider(
   input: Readonly<{
     root: string;
     packageNames: readonly string[];
+    packageRoots?: Readonly<Record<string, string>>;
   }>,
 ): InspectionProvider<PackageInventoryFacts> {
   return timed(
@@ -449,7 +451,12 @@ export function createInstalledPackageProvider(
 
       const resolutions = yield* Effect.forEach(
         packageNames,
-        (packageName) => resolveInstalledPackage(repositoryRoot, canonicalRepositoryRoot.success, packageName),
+        (packageName) =>
+          resolveInstalledPackage(
+            resolve(input.packageRoots?.[packageName] ?? repositoryRoot),
+            canonicalRepositoryRoot.success,
+            packageName,
+          ),
         {concurrency: "unbounded"},
       );
       const unavailable = resolutions.filter((resolution) => resolution.kind === "unavailable");

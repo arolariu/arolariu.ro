@@ -215,7 +215,11 @@ export function createRepositoryInspectionSession(
       aggregate: request.profile === "quick" ? quickAggregateProvider : createAggregateProvider({root: paths.root}),
       "npm.root": createNpmTreeProvider({scope: "root", root: paths.root, probes}),
       "npm.github-scripts": createNpmTreeProvider({scope: "github-scripts", root: paths.githubScriptsRoot, probes}),
-      packages: createInstalledPackageProvider({root: paths.root, packageNames: INSPECTED_PACKAGE_NAMES}),
+      packages: createInstalledPackageProvider({
+        root: paths.root,
+        packageNames: INSPECTED_PACKAGE_NAMES,
+        packageRoots: {"@arolariu/components": paths.websiteRoot},
+      }),
       dotnet: createDotnetProvider({paths, probes}),
       python: createPythonProvider({paths, probes}),
       react: createReactProvider(frontendInput),

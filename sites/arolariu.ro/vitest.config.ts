@@ -19,6 +19,11 @@ export default mergeConfig(
     plugins: [react()],
     test: {
       silent: "passed-only",
+      server: {
+        deps: {
+          inline: ["@arolariu/components"],
+        },
+      },
       setupFiles: [resolve(__dirname, "./vitest.setup.ts")],
       exclude: ["**/node_modules/**", "**/tests/**"], // Exclude E2E tests directory
       coverage: {
@@ -62,11 +67,6 @@ export default mergeConfig(
         },
         // ── General aliases (must come after stubs) ──
         {find: "@", replacement: resolve(__dirname, "./src")},
-        {
-          find: /^@arolariu\/components\/styles\.css$/,
-          replacement: resolve(__dirname, "../../packages/components/dist/index.css"),
-        },
-        {find: /^@arolariu\/components$/, replacement: resolve(__dirname, "../../packages/components/dist/index.js")},
       ],
       conditions: ["node", "default"],
       mainFields: ["module", "jsnext:main", "jsnext"],

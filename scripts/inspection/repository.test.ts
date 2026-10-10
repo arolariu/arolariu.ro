@@ -222,7 +222,10 @@ describe("createRepositoryInspectionSession packages wiring", () => {
           .map(normalizedPath)
           .filter((path) => path.includes("/node_modules/"));
         expect(manifests.toSorted()).toEqual(
-          INSPECTED_PACKAGE_NAMES.map((name) => `${normalizedPath(repositoryPaths.root)}/node_modules/${name}/package.json`).toSorted(),
+          INSPECTED_PACKAGE_NAMES.map((name) => {
+            const root = name === "@arolariu/components" ? repositoryPaths.websiteRoot : repositoryPaths.root;
+            return `${normalizedPath(root)}/node_modules/${name}/package.json`;
+          }).toSorted(),
         );
         expect(outcome).toMatchObject({kind: "available", value: {installed: {react: {version: "19.2.8"}}}});
       }),

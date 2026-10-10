@@ -9,6 +9,20 @@ format and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## 🎉 Latest Releases
 
+### 2.4.0 - Unreleased
+
+**Dependency and build updates**
+
+- Upgrade Base UI, Motion, Rslib/Rsbuild, Storybook, Vitest, and component runtime dependencies to the exact versions in `package.json`.
+- Support both Motion 13 and 14 without removing the existing Motion 13 peer range.
+- Pin runtime dependencies rather than resolving wildcard versions in downstream installations.
+- Keep development React and ReactDOM aligned with the monorepo runtime to avoid multiple React dispatchers in hoisted peer dependencies.
+- Generate extension-qualified declaration imports with Rslib 1 for ESM consumers.
+- Give both stylesheet subpaths explicit type declarations for strict TypeScript side-effect imports.
+
+This version is prepared for the existing publishing workflow; it is not published by the website decoupling change. The website consumes
+the already published registry artifact pinned in its own manifest, not this workspace's build output.
+
 ### [2.3.0](https://www.npmjs.com/package/@arolariu/components/v/2.3.0) - 2026-08-06
 
 **💥 Breaking Changes**
