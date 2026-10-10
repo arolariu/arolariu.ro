@@ -1,4 +1,6 @@
 import {beforeEach, describe, expect, it, vi} from "vitest";
+import {access, writeFile} from "node:fs/promises";
+import * as path from "node:path";
 import type {VitestJsonReport} from "./_testHelpers.ts";
 
 const passing: VitestJsonReport = {
@@ -137,6 +139,35 @@ describe("testTypescriptProvider", () => {
       expect(f.ruleId).toBe("cv/runner-failed");
       expect(f.message).toContain("vitest produced no JSON report");
     }
+  });
+
+  it("reads the explicit JSON output file when Vitest writes no report to stdout and cleans up", async () => {
+    let reportPath = "";
+    const getExecOutput = vi.fn().mockImplementation(async (_cmd: string, args: string[]) => {
+      const outputIndex = args.indexOf("--outputFile");
+      if (outputIndex >= 0) {
+        reportPath = args[outputIndex + 1] ?? "";
+        await writeFile(reportPath, JSON.stringify(passing));
+      }
+      return {exitCode: 0, stdout: "JSON report written to file", stderr: ""};
+    });
+    vi.doMock("@actions/exec", () => ({getExecOutput}));
+    const {testTypescriptProvider} = await import("./testTypescriptProvider.ts");
+
+    const result = await testTypescriptProvider.run({
+      workspaceRoot: path.resolve("/w"),
+      baseRef: "main",
+      headRef: "HEAD",
+      changeScope: "known",
+      changedFiles: ["packages/components/src/index.ts"],
+      env: {},
+    });
+
+    expect(result.payload.passed).toBe(5);
+    expect(result.payload.failed).toBe(0);
+    expect(result.findings).toEqual([]);
+    expect(path.isAbsolute(reportPath)).toBe(true);
+    await expect(access(reportPath)).rejects.toMatchObject({code: "ENOENT"});
   });
 
   it("runs only the website suite for website-only changes", async () => {

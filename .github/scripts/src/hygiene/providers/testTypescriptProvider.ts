@@ -11,11 +11,13 @@
  * Each suite is run by invoking `npx vitest run --reporter=json` directly in
  * the project's directory (rather than via `nx run`) to:
  *   - Avoid nx target-specifier ambiguity warnings
- *   - Get deterministic, parseable JSON on stdout
+ *   - Get deterministic, parseable JSON from an explicit per-run output file
  *   - Allow per-project parallelism via Promise.all
  */
 
 import * as exec from "@actions/exec";
+import {mkdtemp, readFile, rm} from "node:fs/promises";
+import {tmpdir} from "node:os";
 import * as path from "node:path";
 import {suitesForTypeScriptChanges, type TypeScriptSuiteName} from "../domain/changedFiles.ts";
 import type {CheckProvider, ProviderRunInput, ProviderRunOutput} from "../domain/provider.ts";
@@ -43,31 +45,48 @@ export const TYPESCRIPT_SUITES: ReadonlyArray<readonly [TypeScriptSuiteName, str
 
 async function runSuite(name: string, projectDirRel: string, workspaceRoot: string): Promise<SuiteResult> {
   const cwd = path.join(workspaceRoot, projectDirRel);
-  const result = await exec.getExecOutput("npx", ["vitest", "run", "--reporter=json"], {cwd, ignoreReturnCode: true, silent: true});
+  const reportDirectory = await mkdtemp(path.join(tmpdir(), "arolariu-hygiene-vitest-"));
+  try {
+    const reportPath = path.join(reportDirectory, "report.json");
+    const result = await exec.getExecOutput("npx", ["vitest", "run", "--reporter=json", "--outputFile", reportPath], {
+      cwd,
+      ignoreReturnCode: true,
+      silent: true,
+    });
+    let reportSource: string;
+    try {
+      reportSource = await readFile(reportPath, "utf8");
+    } catch (error: unknown) {
+      if (!(error instanceof Error) || !("code" in error) || error.code !== "ENOENT") throw error;
+      reportSource = result.stdout;
+    }
 
-  const report = extractLastVitestReport(result.stdout);
-  if (!report) {
-    return {
-      name,
-      totalTests: 1,
-      passed: 0,
-      failed: 1,
-      skipped: 0,
-      findings: [
-        {
-          kind: "line",
-          severity: "error",
-          file: `<vitest in ${projectDirRel}>`,
-          line: 1,
-          column: 1,
-          message: `vitest produced no JSON report. exit ${result.exitCode}. stderr: ${result.stderr.substring(0, 300)}`,
-          ruleId: `${name}/runner-failed`,
-          suite: name,
-        },
-      ],
-    };
+    const report = extractLastVitestReport(reportSource);
+    if (!report) {
+      return {
+        name,
+        totalTests: 1,
+        passed: 0,
+        failed: 1,
+        skipped: 0,
+        findings: [
+          {
+            kind: "line",
+            severity: "error",
+            file: `<vitest in ${projectDirRel}>`,
+            line: 1,
+            column: 1,
+            message: `vitest produced no JSON report. exit ${result.exitCode}. stderr: ${result.stderr.substring(0, 300)}`,
+            ruleId: `${name}/runner-failed`,
+            suite: name,
+          },
+        ],
+      };
+    }
+    return vitestReportToSuiteResult(name, report);
+  } finally {
+    await rm(reportDirectory, {recursive: true, force: true});
   }
-  return vitestReportToSuiteResult(name, report);
 }
 
 export const testTypescriptProvider: CheckProvider<TestSuitesPayload> = {
