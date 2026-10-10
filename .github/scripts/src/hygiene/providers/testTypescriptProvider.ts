@@ -83,7 +83,25 @@ async function runSuite(name: string, projectDirRel: string, workspaceRoot: stri
         ],
       };
     }
-    return vitestReportToSuiteResult(name, report);
+    const suite = vitestReportToSuiteResult(name, report);
+    if (result.exitCode === 0 || suite.findings.some((finding) => finding.severity === "error")) return suite;
+
+    return {
+      ...suite,
+      findings: [
+        ...suite.findings,
+        {
+          kind: "line",
+          severity: "error",
+          file: `<vitest in ${projectDirRel}>`,
+          line: 1,
+          column: 1,
+          message: `vitest exited with code ${result.exitCode} despite reporting no failed assertions. stderr: ${result.stderr.substring(0, 300)}`,
+          ruleId: `${name}/runner-failed`,
+          suite: name,
+        },
+      ],
+    };
   } finally {
     await rm(reportDirectory, {recursive: true, force: true});
   }

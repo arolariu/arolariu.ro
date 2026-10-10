@@ -170,6 +170,30 @@ describe("testTypescriptProvider", () => {
     await expect(access(reportPath)).rejects.toMatchObject({code: "ENOENT"});
   });
 
+  it("preserves a nonzero runner exit when all reported assertions passed", async () => {
+    const getExecOutput = vi.fn().mockResolvedValue({exitCode: 1, stdout: JSON.stringify(passing), stderr: "Coverage threshold failed"});
+    vi.doMock("@actions/exec", () => ({getExecOutput}));
+    const {testTypescriptProvider} = await import("./testTypescriptProvider.ts");
+
+    const result = await testTypescriptProvider.run({
+      workspaceRoot: "/w",
+      baseRef: "main",
+      headRef: "HEAD",
+      changeScope: "known",
+      changedFiles: ["packages/components/src/index.ts"],
+      env: {},
+    });
+
+    expect(result.payload.passed).toBe(5);
+    expect(result.findings).toEqual([
+      expect.objectContaining({
+        severity: "error",
+        ruleId: "components/runner-failed",
+        message: expect.stringContaining("Coverage threshold failed"),
+      }),
+    ]);
+  });
+
   it("runs only the website suite for website-only changes", async () => {
     const getExecOutput = vi.fn().mockResolvedValue({exitCode: 0, stdout: JSON.stringify(passing), stderr: ""});
     vi.doMock("@actions/exec", () => ({getExecOutput}));
