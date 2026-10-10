@@ -570,11 +570,11 @@ describe("createReactProvider", () => {
     });
   });
 
-  it("rejects a local component build prerequisite in registry-only website targets", async () => {
+  it.each(["build", "dev"])("rejects a local component build prerequisite in the registry-only website %s target", async (target) => {
     const fixture = await createFrontendFixture({
       websiteProjectJsonContents: JSON.stringify({
         name: "@arolariu/website",
-        targets: {build: {dependsOn: ["components:build"]}, dev: {dependsOn: []}},
+        targets: {[target]: {dependsOn: ["components:build"]}},
       }),
     });
 
@@ -582,7 +582,9 @@ describe("createReactProvider", () => {
 
     expect(outcome.kind).toBe("available");
     const facts = (outcome as Extract<typeof outcome, {kind: "available"}>).value as ReactFacts;
-    expect(facts.workspaceLinkIssues).toContain("sites/arolariu.ro/project.json build target still depends on the local components build.");
+    expect(facts.workspaceLinkIssues).toContain(
+      `sites/arolariu.ro/project.json ${target} target still depends on the local components build.`,
+    );
   });
 
   it("treats an absent website .env file as every key missing without a syntax error", async () => {
