@@ -52,6 +52,53 @@ const sqlPasswordVariable = "MSSQL_SA_PASSWORD";
 /** Variable `sqlcmd` reads the password from when `-P` is absent; only its name reaches an argument vector. */
 const sqlcmdPasswordVariable = "SQLCMDPASSWORD";
 
+const persistentStorageByContainer = {
+  mssql: {destination: "/var/opt/mssql", volume: "arolariu-selfhost-mssql-data"},
+  cosmosdb: {destination: "/data", volume: "arolariu-selfhost-cosmos-data"},
+} as const;
+
+/**
+ * Refuses reconciliation or removal of databases not attached to the intended persistent volumes.
+ *
+ * @param adapter - Selected runtime adapter.
+ * @returns An effect that fails before any Compose operation when existing storage needs migration.
+ */
+function assertPersistentSelfhostStorage(
+  adapter: ContainerRuntimeAdapter,
+): Effect.Effect<void, ContainerRuntimeError | ProcessError, Process> {
+  return Effect.gen(function* () {
+    const runner = yield* Process;
+    const listing = yield* runner.run({command: adapter.primaryCli, args: ["ps", "-a", "--format", "{{.Names}}"]});
+    const existing = new Set(listing.stdout.split(/\r?\n/).map((name) => name.trim()));
+    for (const [name, {destination, volume}] of Object.entries(persistentStorageByContainer)) {
+      if (!existing.has(name)) continue;
+      const result = yield* runner.run({command: adapter.primaryCli, args: ["inspect", "--format", "{{json .Mounts}}", name]});
+      const mounts = yield* Effect.try({
+        try: (): unknown => JSON.parse(result.stdout),
+        catch: () => new ContainerRuntimeError({message: `Cannot verify persistent storage for ${name}; no containers were reconciled.`}),
+      });
+      const persistent =
+        Array.isArray(mounts)
+        && mounts.some(
+          (mount: unknown) =>
+            typeof mount === "object"
+            && mount !== null
+            && "Type" in mount
+            && mount.Type === "volume"
+            && "Name" in mount
+            && mount.Name === volume
+            && "Destination" in mount
+            && mount.Destination === destination,
+        );
+      if (!persistent) {
+        return yield* new ContainerRuntimeError({
+          message: `${name} is not attached to ${volume} at ${destination}. Refusing Compose reconciliation or removal: preserve the existing container and obtain separate approval for data migration before restarting selfhost.`,
+        });
+      }
+    }
+  });
+}
+
 /** Local stacks each selfhost action operates on, in execution order. */
 const stacksByAction: Readonly<Record<SelfhostAction, readonly SelfhostStack[]>> = {
   start: ["management", "storage", "profile", "backend", "frontend"],
@@ -330,6 +377,10 @@ export const runSelfhost: (
   PlatformServices | LocalBlobStorage
 > = Effect.fn("containers.selfhost")(function* (input: Readonly<SelfhostInput>) {
   const adapter = yield* prepareContainerEngine(input, "selfhost");
+
+  if (input.action !== "logs") {
+    yield* assertPersistentSelfhostStorage(adapter);
+  }
 
   if (shouldGenerateTaxonomyArtifacts(input.action)) {
     yield* silently(generateArtifacts({verbose: false}));

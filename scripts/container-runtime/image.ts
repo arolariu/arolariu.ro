@@ -40,7 +40,7 @@ export interface ImageRunOptions {
   readonly tag: string;
   readonly ports: readonly string[];
   readonly environment: Readonly<Record<string, string>>;
-  readonly environmentFiles?: readonly string[];
+  readonly environmentNames?: readonly string[];
   readonly mounts?: readonly string[];
 }
 
@@ -98,10 +98,10 @@ export function buildImageBuildCommand(adapter: ContainerRuntimeAdapter, options
  */
 export function buildImageRunCommand(adapter: ContainerRuntimeAdapter, options: ImageRunOptions): RuntimeCommand {
   const ports = options.ports.flatMap((port) => ["-p", port]);
-  const environmentFiles = (options.environmentFiles ?? []).flatMap((file) => ["--env-file", file]);
+  const environmentNames = (options.environmentNames ?? []).flatMap((name) => ["-e", name]);
   const mounts = (options.mounts ?? []).flatMap((mount) => ["--mount", mount]);
   const environment = Object.entries(options.environment).flatMap(([name, value]) => ["-e", `${name}=${value}`]);
-  return adapter.run(["--rm", ...ports, ...environmentFiles, ...mounts, ...environment, options.tag]);
+  return adapter.run(["--rm", ...ports, ...environmentNames, ...mounts, ...environment, options.tag]);
 }
 
 /**
@@ -112,7 +112,8 @@ export function buildImageRunCommand(adapter: ContainerRuntimeAdapter, options: 
  * artifacts with {@link generateArtifacts} (silently, `{verbose: false}`); a failed generation
  * stops before the engine CLI runs. Frontend builds forward only allowlisted public values from
  * the invocation environment or generated `.env`; private values never become build arguments.
- * Frontend runs use that `.env` as a runtime env-file, and exp runs mount its private configuration
+ * Frontend runs parse `.env` and deliver values through the child environment by variable name;
+ * exp runs mount its private configuration
  * read-only. Missing runtime files fail before image startup. The command is echoed as `$ <command>`
  * and runs with tee output; only runtime file paths, not their contents, reach that echo.
  *
@@ -175,7 +176,8 @@ export const runImage: (
     return {engine: adapter.engine, action: "build", target: input.target};
   }
 
-  const environmentFiles: string[] = [];
+  const environmentNames: string[] = [];
+  let privateEnvironment: Readonly<Record<string, string | undefined>> | undefined;
   const mounts: string[] = [];
   const environment: Record<string, string> = {INFRA: "local"};
   if (input.target === "frontend" || input.target === "exp") {
@@ -187,14 +189,17 @@ export const runImage: (
       return yield* new ContainerRuntimeError({message: `Private runtime configuration must be a file: ${configPath}`});
     }
     if (input.target === "frontend") {
-      environmentFiles.push(configPath);
+      const parsed = parseEnv(yield* fs.readFileString(configPath));
+      privateEnvironment = parsed;
+      environmentNames.push(...Object.keys(parsed));
     } else {
       mounts.push(`type=bind,source=${configPath},target=/app/config.docker.json,readonly`);
       environment["EXP_LOCAL_CONFIG_PATH"] = "/app/config.docker.json";
     }
   }
   yield* runEchoedRuntimeCommand(
-    buildImageRunCommand(adapter, {tag, ports: portsByTarget[input.target], environment, environmentFiles, mounts}),
+    buildImageRunCommand(adapter, {tag, ports: portsByTarget[input.target], environment, environmentNames, mounts}),
+    privateEnvironment === undefined ? {} : {env: privateEnvironment},
   );
   return {engine: adapter.engine, action: "run", target: input.target};
 });

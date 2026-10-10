@@ -255,12 +255,12 @@ describe("buildImageBuildCommand", () => {
 });
 
 describe("buildImageRunCommand", () => {
-  it("delivers private runtime configuration by file path, not argument values", () => {
+  it("delivers private runtime configuration by variable name and mount path, not argument values", () => {
     const command = buildImageRunCommand(getContainerAdapter("podman"), {
       tag: "arolariu-exp",
       ports: ["5002:8080"],
       environment: {INFRA: "local"},
-      environmentFiles: ["C:\\private\\website.env"],
+      environmentNames: ["CLERK_SECRET_KEY"],
       mounts: ["type=bind,source=C:\\private\\exp.json,target=/app/config.docker.json,readonly"],
     });
 
@@ -269,8 +269,8 @@ describe("buildImageRunCommand", () => {
       "--rm",
       "-p",
       "5002:8080",
-      "--env-file",
-      "C:\\private\\website.env",
+      "-e",
+      "CLERK_SECRET_KEY",
       "--mount",
       "type=bind,source=C:\\private\\exp.json,target=/app/config.docker.json,readonly",
       "-e",
@@ -305,6 +305,37 @@ describe("shouldGenerateTaxonomyArtifacts", () => {
 });
 
 describe("runImage", () => {
+  {
+    const {harness, extraction} = imageFixture();
+    effectTest(
+      "preserves quoted and padded dotenv values through the private process environment",
+      () =>
+        bound(
+          extraction,
+          Effect.gen(function* () {
+            const fs = yield* FileSystem.FileSystem;
+            yield* fs.writeFileString(
+              join(repositoryFixtureRoot, "sites", "arolariu.ro", ".env"),
+              'CLERK_SECRET_KEY="sk_test_private=literal"\nNEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="pk_test_padded=="\n',
+            );
+
+            yield* runImage({action: "run", target: "frontend", engine: "podman"});
+
+            const call = harness.processCalls().at(-1);
+            expect(call?.options.env).toEqual({
+              CLERK_SECRET_KEY: "sk_test_private=literal",
+              NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: "pk_test_padded==",
+            });
+            expect(call?.request.args).toContain("CLERK_SECRET_KEY");
+            expect(JSON.stringify(call?.request)).not.toContain("sk_test_private");
+            expect(JSON.stringify(harness.output())).not.toContain("sk_test_private");
+            expect(call?.request.args).not.toContain("--env-file");
+          }),
+        ),
+      harness.layer,
+    );
+  }
+
   {
     const {harness, extraction} = imageFixture();
     effectTest(

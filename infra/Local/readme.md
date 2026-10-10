@@ -184,8 +184,8 @@ echo 'CLERK_SECRET_KEY=sk_test_YOUR_KEY' >> .env
 
 Both files are gitignored — they will never be committed.
 
-Exp configuration is mounted read-only, never baked into its image. Container admin configuration edits therefore cannot overwrite the
-mounted file; edit the developer-owned source outside the container and allow the normal refresh. Exp listens on unprivileged port 8080
+Exp configuration is mounted read-only, never baked into its image. Local admin updates change only the in-memory snapshot, as before;
+edit the developer-owned source outside the container for persistent changes and allow the normal refresh. Exp listens on unprivileged port 8080
 internally (host port 5002 is unchanged). Its image probe is liveness; the selfhost Compose probe uses `/api/ready`, which checks
 configuration readability, not SQL/Cosmos/blob/Clerk availability.
 
@@ -194,6 +194,10 @@ separate from Aspire's existing volumes; adding these mounts does not migrate ol
 Preserve old containers and obtain a separate migration approval if their data must be moved. Ordinary Compose `down` preserves these named
 volumes; never add volume deletion or pruning implicitly. SQL health and bootstrap use `mssql-tools18`, retain the local
 self-signed-certificate policy and take passwords only from environment.
+
+The selfhost wrapper refuses start and stop reconciliation if existing `mssql`
+or `cosmosdb` containers are not attached to these exact data volumes. It leaves
+those containers intact; preservation or migration requires separate approval.
 
 ### 4. Start the environment
 
@@ -354,10 +358,9 @@ npm run dev:selfhost:stop -- --engine podman
 ```
 
 The stop wrapper runs Compose `down` for every project without `--volumes`.
-Named Azurite and Redis volumes survive ordinary teardown. SQL Server and
-Cosmos currently have no named data-volume mappings, so their container-layer
-state is not reattached after `down`. Confirm that persistence boundary before
-stopping a stack that contains local work.
+Named SQL Server, Cosmos, Azurite and Redis volumes survive ordinary teardown.
+The wrapper refuses to reconcile legacy SQL/Cosmos containers without their
+intended volumes; do not bypass that guard with direct Compose removal.
 
 ## HTTPS via Traefik + mkcert
 

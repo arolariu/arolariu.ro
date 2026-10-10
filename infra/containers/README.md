@@ -58,7 +58,8 @@ public website metadata, CDN selection and the Clerk publishable key are build i
 environment or the generated website `.env`; private keys are never build arguments. Without a public key override the recipes use a
 fabricated smoke-test key, not an authentication credential.
 
-Frontend `containers:run` requires the generated website `.env` and supplies it through `--env-file`. Exp `containers:run` requires
+Frontend `containers:run` requires the generated website `.env`, parses its quoted values and supplies them through the child process
+environment with engine variable-name flags, never secret values in arguments. Exp `containers:run` requires
 `sites/exp.arolariu.ro/config.docker.json` and mounts it read-only through `EXP_LOCAL_CONFIG_PATH`. Neither file is copied into an image.
 Supply real runtime secrets privately; fabricated defaults cannot authenticate. Website release tooling delivers its required Clerk runtime
 settings to App Service from a private temporary settings file, without putting values in arguments or image layers.
