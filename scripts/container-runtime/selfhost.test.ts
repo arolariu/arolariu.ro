@@ -225,12 +225,12 @@ describe("runSelfhost start", () => {
       // Assert
       expect(result).toEqual({action: "start", engine: "podman", stacks: ["management", "storage", "profile", "backend", "frontend"]});
       expect(businessCalls(fixture)).toEqual([
-        "podman compose -f Management/docker-compose.yml up -d",
-        "podman compose -f Storage/docker-compose.yml --profile selfhost up -d",
-        "podman exec -e SQLCMDPASSWORD mssql /opt/mssql-tools/bin/sqlcmd -C -S localhost -U sa -d master -i /usr/sql/sqlSchema.sql -No",
+        "podman compose --podman-build-args=--format=docker -f Management/docker-compose.yml up -d",
+        "podman compose --podman-build-args=--format=docker -f Storage/docker-compose.yml --profile selfhost up -d",
+        "podman exec -e SQLCMDPASSWORD mssql /opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -d master -i /usr/sql/sqlSchema.sql -b",
         "dotnet run --project ../../tooling/src/LocalDevelopment.Bootstrap -- --ensure-storage-only",
-        "podman compose -f Backend/docker-compose.yml up -d",
-        "podman compose -f Frontend/docker-compose.yml up -d",
+        "podman compose --podman-build-args=--format=docker -f Backend/docker-compose.yml up -d",
+        "podman compose --podman-build-args=--format=docker -f Frontend/docker-compose.yml up -d",
       ]);
       expect(fixture.harness.processCalls().at(-1)?.options).toEqual({cwd: "infra/Local", output: "tee", echo: false});
     }),
@@ -347,7 +347,7 @@ describe("runSelfhost start", () => {
 
   selfhostTest(
     "fails with a step-only message when the SQL schema bootstrap fails",
-    {process: (_command, args) => (args.includes("/opt/mssql-tools/bin/sqlcmd") ? exited(1) : succeededAnswer())},
+    {process: (_command, args) => (args.includes("/opt/mssql-tools18/bin/sqlcmd") ? exited(1) : succeededAnswer())},
     (fixture) =>
       Effect.gen(function* () {
         // Act
@@ -369,7 +369,7 @@ describe("runSelfhost start", () => {
   ] as const satisfies readonly (readonly [ProbeOutcome, string])[]) {
     selfhostTest(
       `describes a ${answer.kind} SQL schema bootstrap without its command line`,
-      {process: (_command, args) => (args.includes("/opt/mssql-tools/bin/sqlcmd") ? answer : succeededAnswer())},
+      {process: (_command, args) => (args.includes("/opt/mssql-tools18/bin/sqlcmd") ? answer : succeededAnswer())},
       () =>
         Effect.gen(function* () {
           // Act
@@ -444,8 +444,8 @@ describe("runSelfhost start", () => {
           // Assert
           expect(Exit.hasInterrupts(exit)).toBe(true);
           expect(businessCalls(fixture)).toEqual([
-            "podman compose -f Management/docker-compose.yml up -d",
-            "podman compose -f Storage/docker-compose.yml --profile selfhost up -d",
+            "podman compose --podman-build-args=--format=docker -f Management/docker-compose.yml up -d",
+            "podman compose --podman-build-args=--format=docker -f Storage/docker-compose.yml --profile selfhost up -d",
           ]);
           expect(fixture.cosmosCalls()).toEqual([]);
           expect(delays(fixture)).toEqual([3_000]);
@@ -514,12 +514,12 @@ describe("runSelfhost HTTPS certificates", () => {
         expect(result.action).toBe("start");
         expect(businessCalls(fixture)).toEqual([
           "mkcert --version",
-          "podman compose -f Management/docker-compose.yml up -d",
-          "podman compose -f Storage/docker-compose.yml --profile selfhost up -d",
-          "podman exec -e SQLCMDPASSWORD mssql /opt/mssql-tools/bin/sqlcmd -C -S localhost -U sa -d master -i /usr/sql/sqlSchema.sql -No",
+          "podman compose --podman-build-args=--format=docker -f Management/docker-compose.yml up -d",
+          "podman compose --podman-build-args=--format=docker -f Storage/docker-compose.yml --profile selfhost up -d",
+          "podman exec -e SQLCMDPASSWORD mssql /opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -d master -i /usr/sql/sqlSchema.sql -b",
           "dotnet run --project ../../tooling/src/LocalDevelopment.Bootstrap -- --ensure-storage-only",
-          "podman compose -f Backend/docker-compose.yml up -d",
-          "podman compose -f Frontend/docker-compose.yml up -d",
+          "podman compose --podman-build-args=--format=docker -f Backend/docker-compose.yml up -d",
+          "podman compose --podman-build-args=--format=docker -f Frontend/docker-compose.yml up -d",
         ]);
         expect(fixture.harness.output().some((record) => record.text.includes("mkcert is not available"))).toBe(true);
       }),
@@ -690,7 +690,7 @@ const SQLCMD = {
     "-e",
     "SQLCMDPASSWORD",
     "mssql",
-    "/opt/mssql-tools/bin/sqlcmd",
+    "/opt/mssql-tools18/bin/sqlcmd",
     "-C",
     "-S",
     "localhost",
@@ -700,7 +700,7 @@ const SQLCMD = {
     "master",
     "-i",
     "/usr/sql/sqlSchema.sql",
-    "-No",
+    "-b",
   ],
   options: {cwd: "infra/Local", env: {SQLCMDPASSWORD: "<sql-password>"}, output: "tee", echo: false},
 } as const;
@@ -770,7 +770,7 @@ const PASSWORD_ARGS: readonly unknown[] = [];
 
 /** The echo line of the SQL schema bootstrap. */
 const SQLCMD_ECHO =
-  "$ docker exec -e SQLCMDPASSWORD mssql /opt/mssql-tools/bin/sqlcmd -C -S localhost -U sa -d master -i /usr/sql/sqlSchema.sql -No";
+  "$ docker exec -e SQLCMDPASSWORD mssql /opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -d master -i /usr/sql/sqlSchema.sql -b";
 
 describe("dev selfhost characterization", () => {
   it("start: preflight, artifacts, certificates, Traefik file, ordered stacks, bootstrap, and success line", async () => {

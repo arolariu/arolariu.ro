@@ -83,7 +83,7 @@ COPY sites/api.arolariu.ro/src/Invoices/arolariu.Backend.Domain.Invoices.csproj 
 COPY sites/api.arolariu.ro/src/Core/arolariu.Backend.Core.csproj src/Core/
 
 # 3. Restore with locked mode for reproducible builds
-RUN dotnet restore src/Core/arolariu.Backend.Core.csproj \
+RUN --mount=type=secret,id=nuget_config,target=/src/NuGet.Config dotnet restore src/Core/arolariu.Backend.Core.csproj \
     --runtime linux-musl-x64
 
 # ========================================
@@ -121,15 +121,19 @@ FROM build AS test
 COPY sites/api.arolariu.ro/tests/ ./tests/
 
 # Restore and run tests
-RUN dotnet restore tests/arolariu.Backend.Core.Tests/arolariu.Backend.Core.Tests.csproj \
-    --runtime linux-musl-x64 || true
+RUN --mount=type=secret,id=nuget_config,target=/src/NuGet.Config dotnet restore tests/arolariu.Backend.Core.Tests/arolariu.Backend.Core.Tests.csproj \
+    && dotnet restore tests/arolariu.Backend.Domain.Tests/arolariu.Backend.Domain.Tests.csproj
 
 RUN dotnet test tests/arolariu.Backend.Core.Tests/arolariu.Backend.Core.Tests.csproj \
     --no-restore \
     --configuration Release \
     --logger "trx;LogFileName=test-results.trx" \
     --results-directory /app/test-results \
-    || true
+    && dotnet test tests/arolariu.Backend.Domain.Tests/arolariu.Backend.Domain.Tests.csproj \
+    --no-restore \
+    --configuration Release \
+    --logger "trx;LogFileName=domain-test-results.trx" \
+    --results-directory /app/test-results
 
 # ========================================
 # Stage 4: Publish application

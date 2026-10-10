@@ -148,11 +148,11 @@ jobs:
         uses: ./.github/actions/setup-workspace
         with:
           install-playwright: 'true'
-          run-generate: 'true'
-          run-build-components: 'true'
+          run-generate: "true"
+          run-build-components: "true"
 
       - name: 🧬 TypeScript type-check (tsgo)
-        working-directory: './sites/arolariu.ro'
+        working-directory: "./sites/arolariu.ro"
         run: |
           echo "::group::🧬 Running tsgo --noEmit"
           START_TIME=$(date +%s)
@@ -178,7 +178,7 @@ jobs:
           echo "| Tool | @typescript/native-preview (tsgo) |" >> $GITHUB_STEP_SUMMARY
 
       - name: 🧪 Running unit tests...
-        working-directory: './sites/arolariu.ro'
+        working-directory: "./sites/arolariu.ro"
         run: |
           echo "::group::🧪 Running Vitest Unit Tests"
           echo "📍 Framework: Vitest"
@@ -309,12 +309,12 @@ jobs:
           run-build-components: 'true'
 
       - name: 🔒 Performing auth against private Azure Container Registry...
-        working-directory: '.'
+        working-directory: "."
         run: az acr login --name "${ACR_LOGIN_SERVER%%.*}"
         env:
           ACR_LOGIN_SERVER: ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}
 
-      - name: 📋 Verify generated .env file exists
+      - name: 📋 Verify generated public build configuration exists
         run: |
           if [ -f "sites/arolariu.ro/.env" ]; then
             echo "✅ .env file found"
@@ -323,7 +323,7 @@ jobs:
             exit 1
           fi
         shell: bash
-        working-directory: '.'
+        working-directory: "."
 
       - name: 🏗️ Building the docker container...
         working-directory: '.'
@@ -347,7 +347,21 @@ jobs:
           echo ""
 
           START_TIME=$(date +%s)
+          PUBLIC_CLERK_KEY="$(node --input-type=module -e '
+            import {readFileSync} from "node:fs";
+            import {parseEnv} from "node:util";
+            const key = parseEnv(readFileSync("sites/arolariu.ro/.env", "utf8")).NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+            if (!key) throw new Error("Missing public Clerk build key");
+            process.stdout.write(key);
+          ')"
+          USE_CDN="$(node --input-type=module -e '
+            import {readFileSync} from "node:fs";
+            import {parseEnv} from "node:util";
+            process.stdout.write(parseEnv(readFileSync("sites/arolariu.ro/.env", "utf8")).USE_CDN ?? "false");
+          ')"
           docker build -f infra/containers/Dockerfile.frontend \
+            --build-arg NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="$PUBLIC_CLERK_KEY" \
+            --build-arg USE_CDN="$USE_CDN" \
             --build-arg AZURE_TENANT_ID=${{ env.AZURE_TENANT_ID }} \
             --build-arg AZURE_SUBSCRIPTION_ID=${{ env.AZURE_SUBSCRIPTION_ID }} \
             --build-arg AZURE_CLIENT_ID=${{ env.AZURE_CLIENT_ID }} \

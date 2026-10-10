@@ -3,6 +3,7 @@
 name: "arolariu-backend"
 
 networks:
+  default: {}
   arolariu-network:
     external: true
 
@@ -21,6 +22,7 @@ services:
     restart: unless-stopped
     environment:
       INFRA: local
+      EXP_PROXY_URL: http://exp:8080
       API_NAME: arolariu-backend-api
       API_URL: http://localhost:5000
       COMMIT_SHA: local-docker

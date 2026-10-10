@@ -103,7 +103,7 @@ describe("dev command", () => {
     // Assert
     expect(result.code).toBe(0);
     expect(result.calls[0]).toBe("podman --version");
-    expect(result.calls).toContain("podman compose -f Management/docker-compose.yml up -d");
+    expect(result.calls).toContain("podman compose --podman-build-args=--format=docker -f Management/docker-compose.yml up -d");
     expect(result.lines.at(-1)).toBe("[arolariu::selfhost] ✅ Selfhost start completed for engine 'podman'.");
   });
 

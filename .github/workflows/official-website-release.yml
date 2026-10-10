@@ -78,17 +78,23 @@ env:
   AZURE_TENANT_ID: ${{secrets.AZURE_TENANT_ID}}
   AZURE_SUBSCRIPTION_ID: ${{secrets.AZURE_SUBSCRIPTION_ID}}
   AZURE_CLIENT_ID: ${{secrets.AZURE_FRONTEND_MANAGED_IDENTITY_CLIENT_ID}}
+  SITE_ENV: ${{ inputs.environment == 'production' && 'PRODUCTION' || 'DEVELOPMENT' }}
 
 jobs:
   release:
     name: 🚀 Release phase (1/1)
     runs-on: ubuntu-latest
-    if: ${{ github.repository == 'arolariu/arolariu.ro' && (github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success')   }}
+    if:
+      ${{ github.repository == 'arolariu/arolariu.ro' && (github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion
+      == 'success')   }}
     environment:
       name: ${{ inputs.environment || 'development'}}
       url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
 
     steps:
+      - name: 🛫 Checkout runtime configuration tooling
+        uses: actions/checkout@v7
+
       - name: 🔐 Performing auth against Azure Public Cloud...
         uses: Azure/login@v3
         with:
@@ -96,8 +102,38 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
+      - name: 📦 Prepare runtime configuration
+        uses: ./.github/actions/setup-workspace
+        with:
+          run-generate: "true"
+          generate-args: "env"
+
+      - name: 🔐 Deliver private configuration outside the container image
+        env:
+          WEBAPP_NAME: ${{ inputs.container_name == 'frontend/arolariu' && 'www-arolariu-ro' || 'dev-arolariu-ro' }}
+        run: |
+          SETTINGS_FILE="$(mktemp)"
+          trap 'rm -f "$SETTINGS_FILE"' EXIT
+          chmod 600 "$SETTINGS_FILE"
+          SETTINGS_FILE="$SETTINGS_FILE" node --input-type=module -e '
+            import {readFileSync, writeFileSync} from "node:fs";
+            import {parseEnv} from "node:util";
+            const env = parseEnv(readFileSync("sites/arolariu.ro/.env", "utf8"));
+            const settings = {};
+            for (const key of ["NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY", "CLERK_SECRET_KEY"]) {
+              if (!env[key]) throw new Error(`Missing required runtime setting: ${key}`);
+              settings[key] = env[key];
+            }
+            writeFileSync(process.env.SETTINGS_FILE, JSON.stringify(settings), {mode: 0o600});
+          '
+          az webapp config appsettings set \
+            --name "$WEBAPP_NAME" \
+            --resource-group arolariu-rg \
+            --settings @"$SETTINGS_FILE" \
+            --output none
+
       - name: 🔐 Performing auth against private Azure Container Registry...
-        working-directory: '.'
+        working-directory: "."
         run: az acr login --name "${ACR_LOGIN_SERVER%%.*}"
         env:
           ACR_LOGIN_SERVER: ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}

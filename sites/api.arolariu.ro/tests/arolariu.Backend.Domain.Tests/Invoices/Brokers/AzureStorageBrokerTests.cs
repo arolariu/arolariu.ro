@@ -23,6 +23,20 @@ using Moq;
 [TestClass]
 public sealed class AzureStorageBrokerTests
 {
+  /// <summary>Verifies emulator service-name endpoints use the queue port while Azure endpoints retain their port.</summary>
+  [TestMethod]
+  [DataRow("http://azurite:10000/devstoreaccount1", "http://azurite:10001/devstoreaccount1")]
+  [DataRow("http://storage-validation:10000/devstoreaccount1", "http://storage-validation:10001/devstoreaccount1")]
+  [DataRow("http://127.0.0.1:10000/devstoreaccount1", "http://127.0.0.1:10001/devstoreaccount1")]
+  [DataRow("https://account.blob.core.windows.net/", "https://account.queue.core.windows.net/")]
+  [DataRow("https://account.blob.core.windows.net:10000/", "https://account.queue.core.windows.net:10000/")]
+  public void ResolveQueueEndpoint_StorageEndpoint_UsesQueueService(string blobEndpoint, string expectedQueueEndpoint)
+  {
+    Uri queueEndpoint = AzureStorageQueueBroker.ResolveQueueEndpoint(new Uri(blobEndpoint));
+
+    Assert.AreEqual(new Uri(expectedQueueEndpoint), queueEndpoint);
+  }
+
   /// <summary>
   /// Verifies the SDK-client test constructor rejects a missing logger factory.
   /// </summary>

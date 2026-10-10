@@ -214,7 +214,7 @@ function ensureHttpsCertificates(): Effect.Effect<
 function sqlSchemaCommand(adapter: ContainerRuntimeAdapter): RuntimeCommand {
   return adapter.exec(
     "mssql",
-    ["/opt/mssql-tools/bin/sqlcmd", "-C", "-S", "localhost", "-U", "sa", "-d", "master", "-i", "/usr/sql/sqlSchema.sql", "-No"],
+    ["/opt/mssql-tools18/bin/sqlcmd", "-C", "-S", "localhost", "-U", "sa", "-d", "master", "-i", "/usr/sql/sqlSchema.sql", "-b"],
     [sqlcmdPasswordVariable],
   );
 }

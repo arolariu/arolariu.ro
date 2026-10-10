@@ -34,7 +34,7 @@ describe("getContainerAdapter", () => {
     expect(adapter.displayName).toBe("Podman Desktop");
     expect(adapter.compose(["-f", "Management/docker-compose.yml", "up", "-d"])).toEqual({
       command: "podman",
-      args: ["compose", "-f", "Management/docker-compose.yml", "up", "-d"],
+      args: ["compose", "--podman-build-args=--format=docker", "-f", "Management/docker-compose.yml", "up", "-d"],
     });
     expect(adapter.exec("mssql", ["/bin/sh", "-c", "echo ok"])).toEqual({
       command: "podman",
@@ -45,6 +45,14 @@ describe("getContainerAdapter", () => {
   it("maps Aspire runtime values per engine", () => {
     expect(getContainerAdapter("rancher").aspireRuntime).toBe("docker");
     expect(getContainerAdapter("podman").aspireRuntime).toBe("podman");
+  });
+
+  it("preserves Docker healthcheck metadata for explicit Podman Compose builds", () => {
+    expect(getContainerAdapter("podman").compose(["-f", "Storage/docker-compose.yml", "build", "exp"])).toEqual({
+      command: "podman",
+      args: ["compose", "--podman-build-args=--format=docker", "-f", "Storage/docker-compose.yml", "build", "exp"],
+    });
+    expect(getContainerAdapter("podman").compose(["version"]).args).toEqual(["compose", "version"]);
   });
 
   it.each([

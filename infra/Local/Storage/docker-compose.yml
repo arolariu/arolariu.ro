@@ -9,8 +9,13 @@ name: "arolariu-storage"
 volumes:
   redis-data:
   azurite-data:
+  mssql-data:
+    name: arolariu-selfhost-mssql-data
+  cosmos-data:
+    name: arolariu-selfhost-cosmos-data
 
 networks:
+  default: {}
   arolariu-network:
     external: true
 
@@ -22,7 +27,7 @@ services:
       MSSQL_SA_PASSWORD: "${MSSQL_SA_PASSWORD:-}"
       ACCEPT_EULA: "Y"
     healthcheck:
-      test: ["CMD-SHELL", "/opt/mssql-tools/bin/sqlcmd -C -S localhost -U sa -P \"$MSSQL_SA_PASSWORD\" -Q \"SELECT 1\" -No"]
+      test: ["CMD-SHELL", 'SQLCMDPASSWORD="$${MSSQL_SA_PASSWORD}" /opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -Q "SELECT 1" -b']
       interval: 30s
       timeout: 10s
       retries: 2
@@ -34,6 +39,7 @@ services:
       - default
     volumes:
       - "./sqlSchema.sql:/usr/sql/sqlSchema.sql"
+      - "mssql-data:/var/opt/mssql"
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.mssql.rule=Host(`mssql.localhost`)"
@@ -50,6 +56,8 @@ services:
     environment:
       - AZURE_COSMOS_EMULATOR_ENABLE_DATA_PERSISTENCE=true
       - AZURE_COSMOS_EMULATOR_ENABLE_DATA_PLANE_HTTP=true
+    volumes:
+      - "cosmos-data:/data"
     networks:
       - arolariu-network
       - default
@@ -69,7 +77,9 @@ services:
   azurite:
     image: "mcr.microsoft.com/azure-storage/azurite:latest"
     container_name: "azurite"
-    command: "azurite --oauth basic --skipApiVersionCheck --blobHost 0.0.0.0 --blobPort 10000 --queueHost 0.0.0.0 --queuePort 10001 --tableHost 0.0.0.0 --tablePort 10002"
+    command:
+      "azurite --oauth basic --skipApiVersionCheck --blobHost 0.0.0.0 --blobPort 10000 --queueHost 0.0.0.0 --queuePort 10001 --tableHost
+      0.0.0.0 --tablePort 10002"
     ports:
       - "10000:10000" # Blob service
       - "10001:10001" # Queue service
@@ -85,7 +95,8 @@ services:
           "CMD",
           "node",
           "-e",
-          "const net=require('node:net'); const socket=net.createConnection({host:'127.0.0.1', port:10000}, () => { socket.end(); process.exit(0); }); socket.on('error', () => process.exit(1)); setTimeout(() => process.exit(1), 5000);",
+          "const net=require('node:net'); const socket=net.createConnection({host:'127.0.0.1', port:10000}, () => { socket.end();
+          process.exit(0); }); socket.on('error', () => process.exit(1)); setTimeout(() => process.exit(1), 5000);",
         ]
       interval: 30s
       timeout: 10s
@@ -137,13 +148,15 @@ services:
       dockerfile: infra/containers/Dockerfile.exp
     container_name: exp-arolariu-ro
     ports:
-      - "5002:80"
+      - "5002:8080"
     environment:
       - INFRA=local
       - EXP_CONFIG_REFRESH_INTERVAL_SECONDS=300
       - EXP_LOCAL_CONFIG_PATH=/app/config.docker.json
+    volumes:
+      - "../../../sites/exp.arolariu.ro/config.docker.json:/app/config.docker.json:ro"
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost/api/health', timeout=5)"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/api/ready', timeout=5)"]
       interval: 30s
       timeout: 10s
       retries: 3

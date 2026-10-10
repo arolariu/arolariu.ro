@@ -1,6 +1,7 @@
 # This docker-compose.yml file is a part of the arolariu.ro project.
 
 networks:
+  default: {}
   arolariu-network:
     external: true
 
@@ -11,6 +12,8 @@ services:
       dockerfile: infra/containers/Dockerfile.frontend
       args:
         INFRA: local
+        NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:-pk_test_Y2xlcmsuY2xlcmsuZGV2JA==}
+        USE_CDN: "false"
         SITE_ENV: DEVELOPMENT
         SITE_URL: http://localhost:3000
         SITE_NAME: dev.arolariu.ro
@@ -20,6 +23,7 @@ services:
     restart: unless-stopped
     environment:
       INFRA: local
+      EXP_PROXY_URL: http://exp:8080
       # Clerk requires structurally-valid base64 keys to boot.
       # These decode to "clerk.clerk.dev$" — a fabricated value, not a real key.
       NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:-pk_test_Y2xlcmsuY2xlcmsuZGV2JA==}

@@ -6,12 +6,9 @@ Two coexisting modes for local development.
 
 ### Mode 1: Aspire (default — `npm run dev -- --engine <rancher|podman>`)
 
-> [!WARNING]
-> Aspire's scenario bootstrap deletes all documents in the guarded local
-> invoice/merchant Cosmos containers, removes the local invoice blob container,
-> and clears the analysis queue before restoring Alice, Bob, and Charlie.
-> Preserve or export any local work before starting. Selfhost does not run this
-> scenario reset.
+> [!WARNING] Aspire's scenario bootstrap deletes all documents in the guarded local invoice/merchant Cosmos containers, removes the local
+> invoice blob container, and clears the analysis queue before restoring Alice, Bob, and Charlie. Preserve or export any local work before
+> starting. Selfhost does not run this scenario reset.
 
 Recommended for normal development. The .NET Aspire AppHost (under `tooling/src/AppHost`)
 declares and orchestrates everything natively:
@@ -86,6 +83,7 @@ unhandled control process verifies native signal termination separately.
 ### Mode 2: Selfhost (advanced — `npm run dev:selfhost -- --engine <rancher|podman>`)
 
 Everything containerized via the selected Rancher Desktop or Podman Desktop Compose provider, including apps. Used for:
+
 - Auditing container behavior
 - CI parity validation
 - Testing deploy-mock-of-prod configurations
@@ -118,7 +116,7 @@ The local environment is organized into four main container groups:
 ### Service dependency flow
 
 ```
-Frontend (localhost:3000)  →  exp (http://exp:80)  ←  Backend (localhost:5000)
+Frontend (localhost:3000)  →  exp (http://exp:8080)  ←  Backend (localhost:5000)
      ↓                            ↓                        ↓
    Clerk Auth               config.docker.json         CosmosDB / SQL / Azurite
 ```
@@ -186,6 +184,17 @@ echo 'CLERK_SECRET_KEY=sk_test_YOUR_KEY' >> .env
 
 Both files are gitignored — they will never be committed.
 
+Exp configuration is mounted read-only, never baked into its image. Container admin configuration edits therefore cannot overwrite the
+mounted file; edit the developer-owned source outside the container and allow the normal refresh. Exp listens on unprivileged port 8080
+internally (host port 5002 is unchanged). Its image probe is liveness; the selfhost Compose probe uses `/api/ready`, which checks
+configuration readability, not SQL/Cosmos/blob/Clerk availability.
+
+Selfhost SQL and Cosmos now store data in the named volumes `arolariu-selfhost-mssql-data` and `arolariu-selfhost-cosmos-data`. These are
+separate from Aspire's existing volumes; adding these mounts does not migrate old container-layer data or repair an existing database.
+Preserve old containers and obtain a separate migration approval if their data must be moved. Ordinary Compose `down` preserves these named
+volumes; never add volume deletion or pruning implicitly. SQL health and bootstrap use `mssql-tools18`, retain the local
+self-signed-certificate policy and take passwords only from environment.
+
 ### 4. Start the environment
 
 Aspire and selfhost have different data effects. The warning above applies to
@@ -220,7 +229,7 @@ not sufficient.
 ### Accessing Services
 
 | Service | URL | HTTPS URL | Notes |
-|---------|-----|-----------|-------|
+| --------------------- | -------------------------------- | ---------------------------- | -------------------------------------------------------------------------------- |
 | **Website** | http://localhost:3000 | https://website.localhost | Auth via Clerk |
 | **API Health** | http://localhost:5000/health | https://api.localhost/health | Shows dependency status |
 | **exp Health** | http://localhost:5002/api/health | — | Config service diagnostics |
@@ -234,15 +243,12 @@ not sufficient.
 ### How config flows locally
 
 1. **exp** loads `config.docker.json` at startup (contains all config keys)
-2. **API** fetches its indexed configuration values from `http://exp/api/v1/config`
-3. **Website** fetches config keys on demand from `http://exp/api/v1/config`
-4. **Ordinary website config values** use the server-declared refresh interval
-   in the process-local cache, with stale fallback while its circuit breaker is
-   open
-5. **Feature flags** invalidate their config cache before each read and fall
-   back to their defined defaults when exp is unavailable
-6. Changes via the **admin UI** become visible after the affected consumer
-   refreshes or invalidates its cache
+2. **API** fetches its indexed configuration values from `http://exp:8080/api/v1/config` through `EXP_PROXY_URL`
+3. **Website** fetches config keys on demand from `http://exp:8080/api/v1/config` through `EXP_PROXY_URL`
+4. **Ordinary website config values** use the server-declared refresh interval in the process-local cache, with stale fallback while its
+   circuit breaker is open
+5. **Feature flags** invalidate their config cache before each read and fall back to their defined defaults when exp is unavailable
+6. Changes via the **admin UI** become visible after the affected consumer refreshes or invalidates its cache
 
 ### Changing config at runtime
 
@@ -381,7 +387,7 @@ Browser ──HTTPS──▸ Traefik (:443) ──HTTP──▸ website (:3000)
 ### Available HTTPS routes
 
 | Route | Service |
-|-------|---------|
+| -------------------------------- | ---------------------- |
 | `https://website.localhost` | Next.js website |
 | `https://api.localhost` | .NET API |
 | `https://traefik.localhost` | Traefik dashboard |
@@ -397,17 +403,19 @@ ACME requires a publicly resolvable domain — `*.localhost` never resolves exte
 ### OS compatibility
 
 | OS | `*.localhost` DNS | HTTPS routes |
-|----|-------------------|--------------|
+| ----------------- | ------------------------------------ | ------------------------------------------------------------------------------------------- |
 | **macOS / Linux** | ✅ Resolves automatically (RFC 6761) | Work out of the box |
 | **Windows** | ❌ Does not resolve subdomains | Use direct `localhost:PORT` URLs, or add entries to `C:\Windows\System32\drivers\etc\hosts` |
 
 Windows hosts file entries are optional and require administrator approval:
+
 ```
 127.0.0.1  traefik.localhost website.localhost api.localhost health.localhost
 ```
 
-> Use:
-> Add-Content -Path "C:\Windows\System32\drivers\etc\hosts" -Value "`n# arolariu.ro local development (Traefik HTTPS)`n127.0.0.1  traefik.localhost website.localhost api.localhost health.localhost cosmosdb.localhost azurite-blob.localhost redis.localhost" -Encoding ASCII
+> Use: Add-Content -Path "C:\Windows\System32\drivers\etc\hosts" -Value "`n# arolariu.ro local development (Traefik HTTPS)`n127.0.0.1
+> traefik.localhost website.localhost api.localhost health.localhost cosmosdb.localhost azurite-blob.localhost redis.localhost" -Encoding
+> ASCII
 
 ### Regenerating certificates
 
@@ -423,7 +431,7 @@ npm run dev:selfhost -- --engine rancher
 ## Troubleshooting
 
 | Issue | Solution |
-|-------|----------|
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
 | Port conflicts | Ensure ports 3000, 5000, 5002, 8081, 8082, 10000 are free |
 | `exp` not starting | Check `config.docker.json` exists and is valid JSON |
 | Clerk auth errors | Verify Clerk keys in `Frontend/.env` match your Clerk dashboard |

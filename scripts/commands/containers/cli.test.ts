@@ -9,13 +9,15 @@
  * process calls show what the decoded flags reached. No module is mocked.
  */
 
+import {join} from "node:path";
+
 import {Effect} from "effect";
 import {describe, expect, it} from "vitest";
 
 import {makeRootCommand, runCli} from "../../cli.ts";
 import {exitCodeFor, type CommandExitCode} from "../../platform/exit.ts";
 import type {SinkRecord} from "../../platform/Output.ts";
-import {makeTestLayer, type RecordedProcessCall} from "../../platform/testing.ts";
+import {makeTestLayer, repositoryFixtureRoot, type RecordedProcessCall} from "../../platform/testing.ts";
 import {makeContainersCommand} from "./cli.ts";
 
 /** Outcome of one `containers` invocation. */
@@ -34,7 +36,10 @@ interface ContainersRun {
  */
 async function run(argv: readonly string[], variables: Readonly<Record<string, string>> = {}): Promise<ContainersRun> {
   const harness = makeTestLayer({
-    files: {"package.json": JSON.stringify({name: "@arolariu/monorepo"})},
+    files: {
+      "package.json": JSON.stringify({name: "@arolariu/monorepo"}),
+      "sites/exp.arolariu.ro/config.docker.json": "{}",
+    },
     environment: {variables},
     processes: [{match: () => true, respond: {stdout: "", stderr: "", durationMs: 0}}],
   });
@@ -96,7 +101,22 @@ describe("containers command", () => {
 
     // Assert
     expect(result.code).toBe(0);
-    expect(lastRequest(result)).toEqual({command: "podman", args: ["run", "--rm", "-p", "5002:80", "-e", "INFRA=local", "arolariu-exp"]});
+    expect(lastRequest(result)).toEqual({
+      command: "podman",
+      args: [
+        "run",
+        "--rm",
+        "-p",
+        "5002:8080",
+        "--mount",
+        `type=bind,source=${join(repositoryFixtureRoot, "sites", "exp.arolariu.ro", "config.docker.json")},target=/app/config.docker.json,readonly`,
+        "-e",
+        "INFRA=local",
+        "-e",
+        "EXP_LOCAL_CONFIG_PATH=/app/config.docker.json",
+        "arolariu-exp",
+      ],
+    });
   });
 
   it("rejects an unknown image target", async () => {

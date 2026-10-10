@@ -131,6 +131,10 @@ resource expWebsite 'Microsoft.Web/sites@2024-04-01' = {
       ipSecurityRestrictionsDefaultAction: 'Deny'
       appSettings: [
         {
+          name: 'WEBSITES_PORT'
+          value: '8080'
+        }
+        {
           name: 'AZURE_CLIENT_ID'
           value: expWebsiteIdentityClientId
         }
