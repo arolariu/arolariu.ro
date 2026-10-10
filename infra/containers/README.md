@@ -85,8 +85,8 @@ npm run containers:run -- --engine rancher --target frontend
 npm run containers:build -- --engine podman --target backend
 npm run containers:run -- --engine podman --target backend
 
-# Build specific stages
-podman build --format docker -f infra/containers/Dockerfile.backend --target=test -t arolariu-backend-test .
+# CI owns tests; image recipes only restore/build/publish.
+# Build the optional security-scanning input stage:
 podman build --format docker -f infra/containers/Dockerfile.backend --target=security-scan -t arolariu-backend-scan .
 ```
 

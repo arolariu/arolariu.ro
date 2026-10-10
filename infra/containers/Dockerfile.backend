@@ -13,7 +13,7 @@
 # - Includes health check endpoint for container orchestration
 # - Security hardening with non-root user and minimal attack surface
 # - OCI-compliant labels for container metadata
-# - Multi-stage build with dedicated test stage
+# - Multi-stage build; CI owns test execution
 # - Vulnerability scanning hooks
 #
 # Build context: Repository root (not sites/api.arolariu.ro)
@@ -113,30 +113,7 @@ RUN dotnet build src/Core/arolariu.Backend.Core.csproj \
     -o /app/build
 
 # ========================================
-# Stage 3: Run tests (optional, skip in CI with --target=publish)
-# ========================================
-FROM build AS test
-
-# Copy test projects
-COPY sites/api.arolariu.ro/tests/ ./tests/
-
-# Restore and run tests
-RUN --mount=type=secret,id=nuget_config,target=/src/NuGet.Config dotnet restore tests/arolariu.Backend.Core.Tests/arolariu.Backend.Core.Tests.csproj \
-    && dotnet restore tests/arolariu.Backend.Domain.Tests/arolariu.Backend.Domain.Tests.csproj
-
-RUN dotnet test tests/arolariu.Backend.Core.Tests/arolariu.Backend.Core.Tests.csproj \
-    --no-restore \
-    --configuration Release \
-    --logger "trx;LogFileName=test-results.trx" \
-    --results-directory /app/test-results \
-    && dotnet test tests/arolariu.Backend.Domain.Tests/arolariu.Backend.Domain.Tests.csproj \
-    --no-restore \
-    --configuration Release \
-    --logger "trx;LogFileName=domain-test-results.trx" \
-    --results-directory /app/test-results
-
-# ========================================
-# Stage 4: Publish application
+# Stage 3: Publish application
 # ========================================
 FROM build AS publish
 
@@ -160,7 +137,7 @@ RUN dotnet publish src/Core/arolariu.Backend.Core.csproj \
 RUN find /app/publish -name "*.pdb" -type f -delete || true
 
 # ========================================
-# Stage 5: Security scanning (optional)
+# Stage 4: Security scanning (optional)
 # ========================================
 FROM publish AS security-scan
 
@@ -169,7 +146,7 @@ FROM publish AS security-scan
 # Then: trivy image scan:latest
 
 # ========================================
-# Stage 6: Final production image
+# Stage 5: Final production image
 # ========================================
 FROM base AS final
 
