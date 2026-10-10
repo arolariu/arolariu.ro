@@ -149,9 +149,8 @@ describe("lintProvider.run", () => {
   });
 
   it("returns clean payload when ESLint exits 0 with empty array", async () => {
-    vi.doMock("@actions/exec", () => ({
-      getExecOutput: vi.fn().mockResolvedValue({exitCode: 0, stdout: "[]", stderr: ""}),
-    }));
+    const getExecOutput = vi.fn().mockResolvedValue({exitCode: 0, stdout: "[]", stderr: ""});
+    vi.doMock("@actions/exec", () => ({getExecOutput}));
     const {lintProvider: provider} = await import("./lintProvider.ts");
     const result = await provider.run({
       workspaceRoot: "/w",
@@ -159,10 +158,13 @@ describe("lintProvider.run", () => {
       headRef: "HEAD",
       changeScope: "unknown",
       changedFiles: [],
-      env: {},
+      env: {NODE_OPTIONS: "--enable-source-maps"},
     });
     expect(result.findings).toEqual([]);
     expect(result.payload.errorCount).toBe(0);
+    expect(getExecOutput.mock.calls[0]?.[2]).toMatchObject({
+      env: expect.objectContaining({NODE_OPTIONS: "--enable-source-maps --max-old-space-size=8192"}),
+    });
   });
 
   it("runs ESLint only on changed lintable files for known scoped changes", async () => {
@@ -188,6 +190,7 @@ describe("lintProvider.run", () => {
         cwd: workspaceRoot,
         ignoreReturnCode: true,
         silent: true,
+        env: expect.objectContaining({NODE_OPTIONS: expect.stringContaining("--max-old-space-size=8192")}),
       });
     } finally {
       await fs.rm(workspaceRoot, {recursive: true, force: true});

@@ -103,7 +103,14 @@ export const lintProvider: CheckProvider<LintPayload> = {
     }
 
     const args = scopedFiles === null ? ["eslint", ".", "--format", "json"] : ["eslint", ...scopedFiles, "--format", "json"];
-    const result = await exec.getExecOutput("npx", args, {cwd: input.workspaceRoot, ignoreReturnCode: true, silent: true});
+    const nodeOptions = input.env["NODE_OPTIONS"] ?? process.env["NODE_OPTIONS"] ?? "";
+    const env = {
+      ...process.env,
+      NODE_OPTIONS: /--max[-_]old[-_]space[-_]size(?:=|\s)/u.test(nodeOptions)
+        ? nodeOptions
+        : `${nodeOptions} --max-old-space-size=8192`.trim(),
+    };
+    const result = await exec.getExecOutput("npx", args, {cwd: input.workspaceRoot, ignoreReturnCode: true, silent: true, env});
 
     // ESLint JSON output goes to stdout. If parsing fails, treat as zero findings
     // but still surface the raw stderr to the runner via a thrown error so the
