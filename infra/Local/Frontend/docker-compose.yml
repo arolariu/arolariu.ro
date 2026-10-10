@@ -12,13 +12,14 @@ services:
       dockerfile: infra/containers/Dockerfile.frontend
       args:
         INFRA: local
-        NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:-pk_test_Y2xlcmsuY2xlcmsuZGV2JA==}
         USE_CDN: "false"
         SITE_ENV: DEVELOPMENT
         SITE_URL: http://localhost:3000
         SITE_NAME: dev.arolariu.ro
         COMMIT_SHA: local-docker
         VERSION: local-docker
+      secrets:
+        - website_env
     container_name: website-arolariu-ro
     restart: unless-stopped
     environment:
@@ -43,3 +44,7 @@ services:
       - "traefik.http.services.website.loadbalancer.server.port=3000"
       - "traefik.http.routers.website.entrypoints=websecure"
       - "traefik.http.routers.website.tls=true"
+
+secrets:
+  website_env:
+    file: ../../../sites/arolariu.ro/.env

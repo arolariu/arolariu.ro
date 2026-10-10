@@ -347,20 +347,13 @@ jobs:
           echo ""
 
           START_TIME=$(date +%s)
-          PUBLIC_CLERK_KEY="$(node --input-type=module -e '
-            import {readFileSync} from "node:fs";
-            import {parseEnv} from "node:util";
-            const key = parseEnv(readFileSync("sites/arolariu.ro/.env", "utf8")).NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
-            if (!key) throw new Error("Missing public Clerk build key");
-            process.stdout.write(key);
-          ')"
           USE_CDN="$(node --input-type=module -e '
             import {readFileSync} from "node:fs";
             import {parseEnv} from "node:util";
             process.stdout.write(parseEnv(readFileSync("sites/arolariu.ro/.env", "utf8")).USE_CDN ?? "false");
           ')"
           docker build -f infra/containers/Dockerfile.frontend \
-            --build-arg NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="$PUBLIC_CLERK_KEY" \
+            --secret id=website_env,src=sites/arolariu.ro/.env \
             --build-arg USE_CDN="$USE_CDN" \
             --build-arg AZURE_TENANT_ID=${{ env.AZURE_TENANT_ID }} \
             --build-arg AZURE_SUBSCRIPTION_ID=${{ env.AZURE_SUBSCRIPTION_ID }} \

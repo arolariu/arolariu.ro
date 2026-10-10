@@ -41,7 +41,7 @@ import {buildImageBuildCommand, buildImageRunCommand, runImage, shouldGenerateTa
 const WORKSPACE_FILES: Readonly<Record<string, string>> = {
   "package.json": JSON.stringify({name: "@arolariu/monorepo"}),
   "sites/arolariu.ro/package.json": JSON.stringify({}),
-  "sites/arolariu.ro/.env": "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_fixture\nCLERK_SECRET_KEY=private-runtime-only\n",
+  "sites/arolariu.ro/.env": "NEXT_PUBLIC_SERVICE_KEY=public-fixture\nRUNTIME_API_KEY=private-runtime-only\n",
   "sites/exp.arolariu.ro/config.docker.json": "{}",
 };
 
@@ -260,7 +260,7 @@ describe("buildImageRunCommand", () => {
       tag: "arolariu-exp",
       ports: ["5002:8080"],
       environment: {INFRA: "local"},
-      environmentNames: ["CLERK_SECRET_KEY"],
+      environmentNames: ["RUNTIME_API_KEY"],
       mounts: ["type=bind,source=C:\\private\\exp.json,target=/app/config.docker.json,readonly"],
     });
 
@@ -270,7 +270,7 @@ describe("buildImageRunCommand", () => {
       "-p",
       "5002:8080",
       "-e",
-      "CLERK_SECRET_KEY",
+      "RUNTIME_API_KEY",
       "--mount",
       "type=bind,source=C:\\private\\exp.json,target=/app/config.docker.json,readonly",
       "-e",
@@ -316,19 +316,19 @@ describe("runImage", () => {
             const fs = yield* FileSystem.FileSystem;
             yield* fs.writeFileString(
               join(repositoryFixtureRoot, "sites", "arolariu.ro", ".env"),
-              'CLERK_SECRET_KEY="sk_test_private=literal"\nNEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="pk_test_padded=="\n',
+              'RUNTIME_API_KEY="private=literal"\nNEXT_PUBLIC_SERVICE_KEY="public-padded=="\n',
             );
 
             yield* runImage({action: "run", target: "frontend", engine: "podman"});
 
             const call = harness.processCalls().at(-1);
             expect(call?.options.env).toEqual({
-              CLERK_SECRET_KEY: "sk_test_private=literal",
-              NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: "pk_test_padded==",
+              RUNTIME_API_KEY: "private=literal",
+              NEXT_PUBLIC_SERVICE_KEY: "public-padded==",
             });
-            expect(call?.request.args).toContain("CLERK_SECRET_KEY");
-            expect(JSON.stringify(call?.request)).not.toContain("sk_test_private");
-            expect(JSON.stringify(harness.output())).not.toContain("sk_test_private");
+            expect(call?.request.args).toContain("RUNTIME_API_KEY");
+            expect(JSON.stringify(call?.request)).not.toContain("private=literal");
+            expect(JSON.stringify(harness.output())).not.toContain("private=literal");
             expect(call?.request.args).not.toContain("--env-file");
           }),
         ),
@@ -387,7 +387,7 @@ describe("runImage", () => {
   {
     const {harness, extraction} = imageFixture();
     effectTest(
-      "passes only public website build inputs and keeps the private key out of commands",
+      "delivers provider-independent website build configuration only through a secret file",
       () =>
         bound(
           extraction,
@@ -395,7 +395,8 @@ describe("runImage", () => {
             yield* runImage({action: "build", target: "frontend", engine: "podman"});
 
             const command = harness.processCalls().at(-1)?.request;
-            expect(command?.args).toContain("NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_fixture");
+            expect(command?.args).toContain(`id=website_env,src=${join(repositoryFixtureRoot, "sites", "arolariu.ro", ".env")}`);
+            expect(JSON.stringify(command)).not.toContain("public-fixture");
             expect(JSON.stringify(harness.processCalls())).not.toContain("private-runtime-only");
             expect(JSON.stringify(harness.output())).not.toContain("private-runtime-only");
           }),
@@ -735,8 +736,8 @@ describe("containers build characterization", () => {
             "arolariu-frontend",
             "--build-arg",
             "VERSION=local",
-            "--build-arg",
-            "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_fixture",
+            "--secret",
+            `id=website_env,src=${join(repositoryFixtureRoot, "sites", "arolariu.ro", ".env")}`,
             "--format",
             "docker",
             ".",
@@ -747,7 +748,7 @@ describe("containers build characterization", () => {
       output: [
         {
           stream: "stdout",
-          text: "$ podman build -f infra/containers/Dockerfile.frontend -t arolariu-frontend --build-arg VERSION=local --build-arg NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_fixture --format docker .",
+          text: `$ podman build -f infra/containers/Dockerfile.frontend -t arolariu-frontend --build-arg VERSION=local --secret id=website_env,src=${join(repositoryFixtureRoot, "sites", "arolariu.ro", ".env")} --format docker .`,
         },
         {stream: "stdout", text: "[arolariu::image] ✅ Image build completed for target 'frontend' with engine 'podman'."},
       ],
@@ -777,8 +778,8 @@ describe("containers build characterization", () => {
             "arolariu-frontend",
             "--build-arg",
             "VERSION=local",
-            "--build-arg",
-            "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_fixture",
+            "--secret",
+            `id=website_env,src=${join(repositoryFixtureRoot, "sites", "arolariu.ro", ".env")}`,
             ".",
           ],
           options: TEE,

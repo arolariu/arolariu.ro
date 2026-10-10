@@ -54,15 +54,15 @@ must also use `--format docker`.
 
 Build contexts exclude environment files, private exp configuration, package-feed configuration, key material and nested build/dependency
 artifacts. Frontend recipes build the local components package themselves and preserve the complete Next.js standalone hierarchy. Only
-public website metadata, CDN selection and the Clerk publishable key are build inputs. The image helper selects these from the invocation
-environment or the generated website `.env`; private keys are never build arguments. Without a public key override the recipes use a
-fabricated smoke-test key, not an authentication credential.
+public website metadata and CDN selection are build arguments. Provider-independent `NEXT_PUBLIC_*` values are selected from the
+build-only `website_env` secret; private values are not passed to the compiler. The image helper and Compose select the generated
+website `.env` as this secret, without embedding the file in an image or introducing provider-specific defaults.
 
 Frontend `containers:run` requires the generated website `.env`, parses its quoted values and supplies them through the child process
 environment with engine variable-name flags, never secret values in arguments. Exp `containers:run` requires
 `sites/exp.arolariu.ro/config.docker.json` and mounts it read-only through `EXP_LOCAL_CONFIG_PATH`. Neither file is copied into an image.
-Supply real runtime secrets privately; fabricated defaults cannot authenticate. Website release tooling delivers its required Clerk runtime
-settings to App Service from a private temporary settings file, without putting values in arguments or image layers.
+Supply runtime configuration privately through the established environment contract. Authentication configuration and migration are
+owned by their separate workstream; this container follow-up does not provision provider-specific cloud settings.
 
 Use the package feeds configured for your environment. The image helper accepts `AROLARIU_CONTAINER_NPM_CONFIG`,
 `AROLARIU_CONTAINER_PIP_CONFIG` and `AROLARIU_CONTAINER_NUGET_CONFIG` as paths to private feed-policy files. The corresponding build secret

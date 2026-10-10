@@ -157,10 +157,17 @@ export const runImage: (
       secrets.push({id, source});
     }
     if (input.target === "frontend") {
-      const fileValues = (yield* fs.exists(paths.websiteEnvironment)) ? parseEnv(yield* fs.readFileString(paths.websiteEnvironment)) : {};
-      for (const key of ["SITE_ENV", "SITE_URL", "SITE_NAME", "USE_CDN", "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY"]) {
+      const hasConfiguration = yield* fs.exists(paths.websiteEnvironment);
+      if (hasConfiguration && (yield* fs.stat(paths.websiteEnvironment)).type !== "File") {
+        return yield* new ContainerRuntimeError({message: `Website build configuration must be a file: ${paths.websiteEnvironment}`});
+      }
+      const fileValues = hasConfiguration ? parseEnv(yield* fs.readFileString(paths.websiteEnvironment)) : {};
+      for (const key of ["SITE_ENV", "SITE_URL", "SITE_NAME", "USE_CDN"]) {
         const value = environment.variables[key] ?? fileValues[key];
         if (value !== undefined) buildArgs[key] = value;
+      }
+      if (hasConfiguration) {
+        secrets.push({id: "website_env", source: paths.websiteEnvironment});
       }
     }
 

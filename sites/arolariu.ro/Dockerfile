@@ -44,12 +44,10 @@ ARG INFRA
 ARG SITE_ENV
 ARG SITE_URL
 ARG SITE_NAME
-# NEXT_PUBLIC_ prefix → Next.js also replaces this in the client bundle at build time
-ARG NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_Y2xlcmsuYXVkaXQuaW52YWxpZCQ
 ARG USE_CDN=false
 
 # Make them available during build (Next.js embeds these at build time)
-# NOTE: SITE_ENV / SITE_URL / SITE_NAME / NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+# NOTE: SITE_ENV / SITE_URL / SITE_NAME
 #       are intentionally NOT propagated to the runner stage — they are baked into the
 #       .next/standalone bundle and do not need to be re-set as container runtime envs.
 ENV AZURE_TENANT_ID=${AZURE_TENANT_ID} \
@@ -60,7 +58,6 @@ ENV AZURE_TENANT_ID=${AZURE_TENANT_ID} \
     SITE_ENV=${SITE_ENV} \
     SITE_URL=${SITE_URL} \
     SITE_NAME=${SITE_NAME} \
-    NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY} \
     USE_CDN=${USE_CDN}
 
 # Copy everything from deps (includes node_modules with workspace links)
@@ -85,7 +82,7 @@ RUN test "$(find sites/arolariu.ro/src/data/taxonomies -maxdepth 1 -type f -name
 
 # Build the website
 WORKDIR /app/sites/arolariu.ro
-RUN npm run build
+RUN --mount=type=secret,id=website_env node scripts/containerBuild.ts
 
 # ========================================
 # Stage 3: Prepare the production image

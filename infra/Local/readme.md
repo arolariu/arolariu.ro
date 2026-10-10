@@ -187,7 +187,7 @@ Both files are gitignored — they will never be committed.
 Exp configuration is mounted read-only, never baked into its image. Local admin updates change only the in-memory snapshot, as before;
 edit the developer-owned source outside the container for persistent changes and allow the normal refresh. Exp listens on unprivileged port 8080
 internally (host port 5002 is unchanged). Its image probe is liveness; the selfhost Compose probe uses `/api/ready`, which checks
-configuration readability, not SQL/Cosmos/blob/Clerk availability.
+configuration readability, not upstream storage or identity-service availability.
 
 Selfhost SQL and Cosmos now store data in the named volumes `arolariu-selfhost-mssql-data` and `arolariu-selfhost-cosmos-data`. These are
 separate from Aspire's existing volumes; adding these mounts does not migrate old container-layer data or repair an existing database.
