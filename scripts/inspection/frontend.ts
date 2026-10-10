@@ -251,13 +251,22 @@ function readEnvironmentContent(path: string): Effect.Effect<string, FrontendIns
   );
 }
 
-function getDependsOn(targets: UnknownRecord, targetName: string): readonly string[] {
+function hasLocalComponentsPrerequisite(targets: UnknownRecord, targetName: string): boolean {
   const target = targets[targetName];
   if (!isRecord(target)) {
-    return [];
+    return false;
   }
   const dependsOn = target["dependsOn"];
-  return Array.isArray(dependsOn) ? dependsOn.filter((entry): entry is string => typeof entry === "string") : [];
+  if (!Array.isArray(dependsOn)) return false;
+  const componentProjects = ["components", "@arolariu/components"];
+  return dependsOn.some((entry: unknown) => {
+    if (typeof entry === "string") return componentProjects.some((project) => entry === `${project}:build`);
+    if (!isRecord(entry) || entry["target"] !== "build") return false;
+    const projects = entry["projects"];
+    return typeof projects === "string"
+      ? componentProjects.includes(projects)
+      : Array.isArray(projects) && projects.some((project: unknown) => typeof project === "string" && componentProjects.includes(project));
+  });
 }
 
 function inspectWorkspaceLink(
@@ -292,10 +301,10 @@ function inspectWorkspaceLink(
       issues.push("sites/arolariu.ro/project.json could not be read or parsed.");
     } else {
       const targets = isRecord(projectJsonOutcome.value["targets"]) ? projectJsonOutcome.value["targets"] : {};
-      if (getDependsOn(targets, "build").includes("components:build")) {
+      if (hasLocalComponentsPrerequisite(targets, "build")) {
         issues.push("sites/arolariu.ro/project.json build target still depends on the local components build.");
       }
-      if (getDependsOn(targets, "dev").includes("components:build")) {
+      if (hasLocalComponentsPrerequisite(targets, "dev")) {
         issues.push("sites/arolariu.ro/project.json dev target still depends on the local components build.");
       }
     }

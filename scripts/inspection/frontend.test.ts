@@ -587,6 +587,37 @@ describe("createReactProvider", () => {
     );
   });
 
+  it.each([
+    ["build", {projects: ["@arolariu/components"], target: "build"}],
+    ["dev", {projects: "components", target: "build"}],
+    ["build", "@arolariu/components:build"],
+  ])("rejects supported explicit local component prerequisites for %s: %j", async (target, prerequisite) => {
+    const fixture = await createFrontendFixture({
+      websiteProjectJsonContents: JSON.stringify({targets: {[String(target)]: {dependsOn: [prerequisite]}}}),
+    });
+
+    const outcome = await fixture.invoke(createReactProvider(fixture.input));
+
+    expect(outcome).toMatchObject({
+      kind: "available",
+      value: {
+        workspaceLinkIssues: [`sites/arolariu.ro/project.json ${String(target)} target still depends on the local components build.`],
+      },
+    });
+  });
+
+  it("accepts unrelated explicit Nx prerequisites", async () => {
+    const fixture = await createFrontendFixture({
+      websiteProjectJsonContents: JSON.stringify({
+        targets: {build: {dependsOn: [{projects: ["@arolariu/cv"], target: "build"}]}},
+      }),
+    });
+
+    const outcome = await fixture.invoke(createReactProvider(fixture.input));
+
+    expect(outcome).toMatchObject({kind: "available", value: {workspaceLinkIssues: []}});
+  });
+
   it("treats an absent website .env file as every key missing without a syntax error", async () => {
     const fixture = await createFrontendFixture({skipWebsiteEnv: true});
 
