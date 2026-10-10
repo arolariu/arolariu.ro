@@ -775,18 +775,30 @@ function diagnoseNxGraph(context: Readonly<ModuleRunContext>, outcome: Inspectio
   }
 
   const websiteDependencies = dependencies.filter(({source}) => source === WEBSITE_PROJECT).map(({target}) => target);
-  if (!projects.includes(WEBSITE_PROJECT) || !projects.includes(COMPONENTS_PROJECT) || !websiteDependencies.includes(COMPONENTS_PROJECT)) {
+  if (!projects.includes(WEBSITE_PROJECT) || !projects.includes(COMPONENTS_PROJECT)) {
     return issueDiagnostic(context, startedAt, {
       id: "workspace.nx-graph",
       name: "Nx graph",
       status: "fail",
-      summary: "The expected website-to-components Nx dependency is missing.",
+      summary: "The retained website or components Nx project is missing.",
       evidence: boundEvidence(
         [`Projects: ${projects.join(", ")}`, `${WEBSITE_PROJECT} dependencies: ${websiteDependencies.join(", ") || "(none)"}`],
         context.options.verbose,
       ),
-      rootCause: "Workspace metadata does not declare the required website dependency on the shared components project.",
-      fixes: [{description: "Restore the website project dependency on @arolariu/components."}],
+      rootCause: "Workspace metadata must retain both the website and shared components projects.",
+      fixes: [{description: "Restore the missing website or components project configuration."}],
+    });
+  }
+
+  if (websiteDependencies.includes(COMPONENTS_PROJECT)) {
+    return issueDiagnostic(context, startedAt, {
+      id: "workspace.nx-graph",
+      name: "Nx graph",
+      status: "fail",
+      summary: "The website still depends on local components in the Nx graph.",
+      evidence: [`${WEBSITE_PROJECT} -> ${COMPONENTS_PROJECT}`],
+      rootCause: "The registry-only website must not depend on the local components project.",
+      fixes: [{description: "Remove the website's local components dependency and restore registry artifact consumption."}],
     });
   }
 
@@ -799,7 +811,7 @@ function diagnoseNxGraph(context: Readonly<ModuleRunContext>, outcome: Inspectio
     boundEvidence(
       [
         `${String(projects.length)} projects.`,
-        `${WEBSITE_PROJECT} depends on ${COMPONENTS_PROJECT}.`,
+        `${WEBSITE_PROJECT} and ${COMPONENTS_PROJECT} are retained without a local component dependency.`,
         ...dependencies.map(({source, target}) => `${source} -> ${target}`),
       ],
       context.options.verbose,

@@ -21,6 +21,7 @@ const PACKAGE_JSON_PATH = path.resolve(__dirname, "../package.json");
 const COMPONENTS_DIR = path.resolve(__dirname, "../src/components/ui");
 const HOOKS_DIR = path.resolve(__dirname, "../src/hooks");
 const LIB_DIR = path.resolve(__dirname, "../src/lib");
+const DIST_DIR = path.resolve(__dirname, "../dist");
 
 // Helper function to check if path exists
 function pathExists(path: string): boolean {
@@ -54,8 +55,8 @@ interface ExportDirectoryConfig {
 // Initialize exports object with main entry
 const exports: Record<string, ExportEntry> = {
   "./package.json": "./package.json",
-  "./styles": "./dist/index.css",
-  "./styles.css": "./dist/index.css",
+  "./styles": {types: "./dist/styles.d.ts", default: "./dist/index.css"},
+  "./styles.css": {types: "./dist/styles.d.ts", default: "./dist/index.css"},
   ".": {
     types: "./dist/index.d.ts",
     import: "./dist/index.js",
@@ -175,6 +176,8 @@ export function main(): Record<string, ExportEntry> {
     Object.assign(exports, collectExportsFromDirectory(config));
   });
 
+  fs.mkdirSync(DIST_DIR, {recursive: true});
+  fs.writeFileSync(path.join(DIST_DIR, "styles.d.ts"), "export {};\r\n");
   packageJson.exports = exports;
   // Serialize with CRLF + trailing newline so the generated file matches the
   // repository convention (.editorconfig `end_of_line = crlf` /

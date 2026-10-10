@@ -58,7 +58,7 @@ FROM base AS deps
 WORKDIR /app
 
 # Copy root package files for workspace resolution
-COPY package.json package-lock.json ./
+COPY package.json package-lock.json .npmrc ./
 COPY tsconfig.json vitest.config.ts ./
 
 # Copy workspace package manifests (for npm workspace resolution)
@@ -66,7 +66,7 @@ COPY packages/components/package.json ./packages/components/
 COPY sites/arolariu.ro/package.json ./sites/arolariu.ro/
 
 # Install all dependencies
-RUN npm install --prefer-offline --no-audit && \
+RUN npm ci --prefer-offline --no-audit && \
     npm cache clean --force
 
 # ========================================
@@ -109,11 +109,9 @@ COPY --from=deps /app/package-lock.json ./package-lock.json
 COPY --from=deps /app/tsconfig.json ./tsconfig.json
 COPY --from=deps /app/vitest.config.ts ./vitest.config.ts
 
-# Copy the components package source (needed for workspace link)
-COPY packages/components/ ./packages/components/
-
 # Copy the website source
 COPY sites/arolariu.ro/ ./sites/arolariu.ro/
+COPY --from=deps /app/sites/arolariu.ro/node_modules ./sites/arolariu.ro/node_modules
 
 # Fail fast when host-side taxonomy generation was skipped.
 RUN test "$(find sites/arolariu.ro/src/data/taxonomies -maxdepth 1 -type f -name 'gpc-*.min.json' -size +0c | wc -l)" -eq 1 \
@@ -125,7 +123,7 @@ WORKDIR /app/sites/arolariu.ro
 ENV NODE_OPTIONS="--max-old-space-size=8192"
 RUN npm run build && \
     # Remove source maps in production for smaller image
-    find .next -name "*.map" -type f -delete 2>/dev/null || true
+    find .next -name "*.map" -type f -delete
 
 # ========================================
 # Stage 3: Production image

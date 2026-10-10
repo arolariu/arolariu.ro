@@ -11,7 +11,7 @@
         "cwd": "sites/arolariu.ro"
       },
       "outputs": ["{projectRoot}/.next"],
-      "dependsOn": ["components:build"]
+      "dependsOn": []
     },
     "build:storybook": {
       "executor": "nx:run-commands",
@@ -26,7 +26,7 @@
         "command": "npm run dev",
         "cwd": "sites/arolariu.ro"
       },
-      "dependsOn": ["components:build"]
+      "dependsOn": []
     },
     "start": {
       "executor": "nx:run-commands",

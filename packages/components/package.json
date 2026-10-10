@@ -1,7 +1,7 @@
 {
   "name": "@arolariu/components",
   "displayName": "@arolariu/components",
-  "version": "2.3.0",
+  "version": "2.4.0",
   "description": "🎨 70+ beautiful, accessible React components built on Base UI. TypeScript-first, CSS Modules styling, tree-shakeable, SSR-ready. Perfect for modern web apps, design systems & rapid prototyping. Zero config, maximum flexibility! ⚡",
   "homepage": "https://arolariu.ro",
   "repository": {
@@ -101,10 +101,10 @@
   },
   "peerDependencies": {
     "@base-ui/react": "^1",
-    "motion": "^13",
+    "motion": "^13 || ^14",
+    "react": "^18.2 || ^19",
     "react-dom": "^18.2 || ^19",
     "react-hook-form": "^7",
-    "react": "^18.2 || ^19",
     "recharts": "^3.8"
   },
   "devDependencies": {
@@ -116,20 +116,24 @@
     "@storybook/addon-docs": "*",
     "@storybook/addon-links": "*",
     "@storybook/addon-themes": "*",
+    "@testing-library/react": "*",
     "@types/node": "*",
-    "@types/react-dom": "*",
     "@types/react": "*",
+    "@types/react-dom": "*",
+    "@vitest/coverage-v8": "*",
+    "@vitest/ui": "*",
     "motion": "*",
     "playwright": "*",
     "postcss": "*",
+    "react": "*",
     "react-dom": "*",
     "react-hook-form": "*",
-    "react": "*",
     "recharts": "*",
+    "storybook": "*",
     "storybook-addon-rslib": "*",
     "storybook-react-rsbuild": "*",
-    "storybook": "*",
-    "typescript": "*"
+    "typescript": "*",
+    "vitest": "*"
   },
   "publishConfig": {
     "access": "public",
@@ -137,8 +141,14 @@
   },
   "exports": {
     "./package.json": "./package.json",
-    "./styles": "./dist/index.css",
-    "./styles.css": "./dist/index.css",
+    "./styles": {
+      "types": "./dist/styles.d.ts",
+      "default": "./dist/index.css"
+    },
+    "./styles.css": {
+      "types": "./dist/styles.d.ts",
+      "default": "./dist/index.css"
+    },
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",

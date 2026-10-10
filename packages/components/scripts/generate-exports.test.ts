@@ -1,4 +1,5 @@
 import fs from "node:fs";
+import {execFileSync} from "node:child_process";
 import os from "node:os";
 import path from "node:path";
 
@@ -13,6 +14,25 @@ describe("generate-exports helpers", () => {
     temporaryDirectories.splice(0).forEach((directoryPath) => {
       fs.rmSync(directoryPath, {force: true, recursive: true});
     });
+  });
+
+  it("generates typed stylesheet exports for strict side-effect imports", () => {
+    const packageDirectory = fs.mkdtempSync(path.join(os.tmpdir(), "ac-styles-exports-"));
+    temporaryDirectories.push(packageDirectory);
+    fs.mkdirSync(path.join(packageDirectory, "scripts"));
+    fs.mkdirSync(path.join(packageDirectory, "dist"));
+    fs.writeFileSync(path.join(packageDirectory, "package.json"), JSON.stringify({name: "@arolariu/components", type: "module"}));
+    fs.writeFileSync(path.join(packageDirectory, "dist", "index.css"), ":root { --ac-test: 1; }");
+    const scriptPath = path.join(packageDirectory, "scripts", "generate-exports.ts");
+    fs.copyFileSync(path.resolve(import.meta.dirname, "generate-exports.ts"), scriptPath);
+
+    execFileSync(process.execPath, [scriptPath], {stdio: "pipe"});
+
+    const manifest = JSON.parse(fs.readFileSync(path.join(packageDirectory, "package.json"), "utf8"));
+    for (const subpath of ["./styles", "./styles.css"]) {
+      expect(manifest.exports[subpath]).toEqual({types: "./dist/styles.d.ts", default: "./dist/index.css"});
+    }
+    expect(fs.readFileSync(path.join(packageDirectory, "dist", "styles.d.ts"), "utf8")).toContain("export {};");
   });
 
   it("creates export entries for hooks and utilities in their dedicated dist directories", () => {

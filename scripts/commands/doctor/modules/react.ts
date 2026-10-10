@@ -179,12 +179,10 @@ function diagnosePackages(context: Readonly<ModuleRunContext>, facts: Readonly<R
     }
 
     if (name === WORKSPACE_LINKED_PACKAGE) {
-      if (entry.workspaceRoot === undefined) {
-        issues.push(`${name} is not linked to the local workspace package.`);
+      if (entry.workspaceRoot !== undefined) {
+        issues.push(`${name} resolves to local workspace source instead of the published package.`);
         continue;
       }
-      okEvidence.push(`${name} is linked to workspace root ${entry.workspaceRoot}.`);
-      continue;
     }
 
     if (entry.version !== required) {
@@ -214,7 +212,9 @@ function diagnosePackages(context: Readonly<ModuleRunContext>, facts: Readonly<R
     summary: `${String(issues.length)} React ecosystem package${issues.length === 1 ? "" : "s"} failed installation verification.`,
     evidence,
     ...buildIssueDiagnosis(issues),
-    fixes: [{description: "Reinstall root dependencies and verify workspace links, then rerun doctor.", command: "npm install"}],
+    fixes: [
+      {description: "Reinstall root dependencies and verify the website's registry package, then rerun doctor.", command: "npm install"},
+    ],
   });
 }
 
@@ -227,11 +227,11 @@ function diagnoseWorkspaceLink(context: Readonly<ModuleRunContext>, facts: Reado
       context,
       startedAt,
       "react.workspace-link",
-      "Website components workspace link",
-      "The website declares and links its dependency on @arolariu/components.",
+      "Website components registry dependency",
+      "The website consumes the published @arolariu/components package.",
       [
         "sites/arolariu.ro/package.json declares @arolariu/components.",
-        "sites/arolariu.ro/project.json build and dev targets depend on components:build.",
+        "Website build and dev targets do not require local component compilation.",
       ],
     );
   }
@@ -239,12 +239,12 @@ function diagnoseWorkspaceLink(context: Readonly<ModuleRunContext>, facts: Reado
   const evidence = boundedIssues(issues);
   return issueDiagnostic(context, startedAt, {
     id: "react.workspace-link",
-    name: "Website components workspace link",
+    name: "Website components registry dependency",
     status: "fail",
-    summary: "The website's dependency on @arolariu/components is not fully linked.",
+    summary: "The website's registry dependency on @arolariu/components is invalid.",
     evidence,
     ...buildIssueDiagnosis(issues),
-    fixes: [{description: "Restore the @arolariu/components dependency declaration and Nx dependsOn linkage."}],
+    fixes: [{description: "Restore the published components artifact and remove local-source/build dependencies."}],
   });
 }
 
@@ -503,7 +503,7 @@ function degradedResults(context: Readonly<ModuleRunContext>, issues: readonly s
 
   return [
     packagesResult,
-    genericFail("react.workspace-link", "Website components workspace link"),
+    genericFail("react.workspace-link", "Website components registry dependency"),
     genericFail("react.environment", "React environment"),
     genericFail("react.i18n", "React i18n dictionaries"),
     genericFail("react.taxonomy-and-licenses", "React taxonomy and licenses"),

@@ -100,7 +100,7 @@ function availablePackages(
 function packagesOf(overrides: Readonly<Record<string, Readonly<{version: string; workspaceRoot?: string}>>> = {}): PackageInventoryFacts {
   const installed: Record<string, Readonly<{version: string; workspaceRoot?: string}>> = {};
   for (const [name, version] of REACT_PACKAGE_VERSIONS) {
-    installed[name] = name === "@arolariu/components" ? {version, workspaceRoot: "packages/components"} : {version};
+    installed[name] = {version};
   }
   for (const [name, version] of SVELTE_PACKAGE_VERSIONS) {
     installed[name] = {version};
@@ -296,7 +296,11 @@ async function createFrontendFixture(
     writes.push(
       writeFixtureFile(
         resolve(paths.websiteRoot, "package.json"),
-        input.websitePackageJsonContents ?? JSON.stringify({name: "@arolariu/website", dependencies: {"@arolariu/components": "*"}}),
+        input.websitePackageJsonContents
+          ?? JSON.stringify({
+            name: "@arolariu/website",
+            dependencies: {"@arolariu/components": "https://registry.npmjs.org/@arolariu/components/-/components-2.2.0.tgz"},
+          }),
       ),
     );
   }
@@ -308,8 +312,8 @@ async function createFrontendFixture(
           ?? JSON.stringify({
             name: "@arolariu/website",
             targets: {
-              build: {dependsOn: ["components:build"]},
-              dev: {dependsOn: ["components:build"]},
+              build: {dependsOn: []},
+              dev: {dependsOn: []},
             },
           }),
       ),
@@ -460,7 +464,7 @@ describe("createReactProvider", () => {
       missingAuthenticationKeys: ["CLERK_SECRET_KEY", "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY"],
     });
     expect(value.playwright).toEqual({version: "1.62.1", browsers: ["chromium-1179"]});
-    expect(value.packages.installed["@arolariu/components"]).toEqual({version: "2.2.0", workspaceRoot: "packages/components"});
+    expect(value.packages.installed["@arolariu/components"]).toEqual({version: "2.2.0"});
     expect(outcome.durationMs).toBeGreaterThanOrEqual(0);
   });
 
@@ -503,11 +507,11 @@ describe("createReactProvider", () => {
     expect(facts.workspaceLinkIssues).toContain("@arolariu/components is not installed.");
   });
 
-  it("reports a workspace-link issue when @arolariu/components resolves outside the workspace", async () => {
+  it("rejects local component links for a registry-only website", async () => {
     const fixture = await createFrontendFixture({
       packagesOutcome: {
         kind: "available",
-        value: packagesOf({"@arolariu/components": {version: "2.2.0"}}),
+        value: packagesOf({"@arolariu/components": {version: "2.2.0", workspaceRoot: "packages/components"}}),
         durationMs: 1,
       },
     });
@@ -516,10 +520,12 @@ describe("createReactProvider", () => {
 
     expect(outcome.kind).toBe("available");
     const facts = (outcome as Extract<typeof outcome, {kind: "available"}>).value as ReactFacts;
-    expect(facts.workspaceLinkIssues).toContain("@arolariu/components is not linked to the local workspace package.");
+    expect(facts.workspaceLinkIssues).toContain(
+      "@arolariu/components resolves to local workspace source instead of the published package.",
+    );
   });
 
-  it("reports a workspace-link issue when the website package.json omits the dependency", async () => {
+  it("reports a registry dependency issue when the website package.json omits the dependency", async () => {
     const fixture = await createFrontendFixture({
       websitePackageJsonContents: JSON.stringify({name: "@arolariu/website", dependencies: {}}),
     });
@@ -531,11 +537,44 @@ describe("createReactProvider", () => {
     expect(facts.workspaceLinkIssues).toContain("sites/arolariu.ro/package.json does not declare a dependency on @arolariu/components.");
   });
 
-  it("reports a workspace-link issue when the build target omits the components:build dependsOn linkage", async () => {
+  it.each(["*", "2.2.0", "file:../../packages/components", "https://example.com/components-2.2.0.tgz"])(
+    "rejects a component dependency that does not pin the official registry artifact: %s",
+    async (dependency) => {
+      const fixture = await createFrontendFixture({
+        websitePackageJsonContents: JSON.stringify({dependencies: {"@arolariu/components": dependency}}),
+      });
+
+      const outcome = await fixture.invoke(createReactProvider(fixture.input));
+
+      expect(outcome).toMatchObject({
+        kind: "available",
+        value: {workspaceLinkIssues: ["sites/arolariu.ro/package.json must consume an exact published components registry artifact."]},
+      });
+    },
+  );
+
+  it("rejects an installed component version that does not match the declared registry artifact", async () => {
+    const fixture = await createFrontendFixture({
+      packagesOutcome: {
+        kind: "available",
+        value: packagesOf({"@arolariu/components": {version: "2.4.0"}}),
+        durationMs: 1,
+      },
+    });
+
+    const outcome = await fixture.invoke(createReactProvider(fixture.input));
+
+    expect(outcome).toMatchObject({
+      kind: "available",
+      value: {workspaceLinkIssues: ["@arolariu/components installed version does not match the declared registry artifact."]},
+    });
+  });
+
+  it.each(["build", "dev"])("rejects a local component build prerequisite in the registry-only website %s target", async (target) => {
     const fixture = await createFrontendFixture({
       websiteProjectJsonContents: JSON.stringify({
         name: "@arolariu/website",
-        targets: {build: {dependsOn: []}, dev: {dependsOn: ["components:build"]}},
+        targets: {[target]: {dependsOn: ["components:build"]}},
       }),
     });
 
@@ -543,7 +582,40 @@ describe("createReactProvider", () => {
 
     expect(outcome.kind).toBe("available");
     const facts = (outcome as Extract<typeof outcome, {kind: "available"}>).value as ReactFacts;
-    expect(facts.workspaceLinkIssues).toContain("sites/arolariu.ro/project.json build target does not depend on components:build.");
+    expect(facts.workspaceLinkIssues).toContain(
+      `sites/arolariu.ro/project.json ${target} target still depends on the local components build.`,
+    );
+  });
+
+  it.each([
+    ["build", {projects: ["@arolariu/components"], target: "build"}],
+    ["dev", {projects: "components", target: "build"}],
+    ["build", "@arolariu/components:build"],
+  ])("rejects supported explicit local component prerequisites for %s: %j", async (target, prerequisite) => {
+    const fixture = await createFrontendFixture({
+      websiteProjectJsonContents: JSON.stringify({targets: {[String(target)]: {dependsOn: [prerequisite]}}}),
+    });
+
+    const outcome = await fixture.invoke(createReactProvider(fixture.input));
+
+    expect(outcome).toMatchObject({
+      kind: "available",
+      value: {
+        workspaceLinkIssues: [`sites/arolariu.ro/project.json ${String(target)} target still depends on the local components build.`],
+      },
+    });
+  });
+
+  it("accepts unrelated explicit Nx prerequisites", async () => {
+    const fixture = await createFrontendFixture({
+      websiteProjectJsonContents: JSON.stringify({
+        targets: {build: {dependsOn: [{projects: ["@arolariu/cv"], target: "build"}]}},
+      }),
+    });
+
+    const outcome = await fixture.invoke(createReactProvider(fixture.input));
+
+    expect(outcome).toMatchObject({kind: "available", value: {workspaceLinkIssues: []}});
   });
 
   it("treats an absent website .env file as every key missing without a syntax error", async () => {

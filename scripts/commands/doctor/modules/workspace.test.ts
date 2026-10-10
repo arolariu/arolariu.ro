@@ -177,7 +177,7 @@ function healthyWorkspaceFacts(): WorkspaceFacts {
       {name: "@arolariu/components", root: "packages/components", targets: ["build", "dev", "lint", "test"]},
       {name: "@arolariu/website", root: "sites/arolariu.ro", targets: ["build", "dev", "lint", "test"]},
     ],
-    dependencies: [{source: "@arolariu/website", target: "@arolariu/components"}],
+    dependencies: [],
     cycles: [],
   };
 }
@@ -785,6 +785,47 @@ describe("workspaceDoctorModule", () => {
     expect(graph.status).toBe("fail");
     expect(graph.summary).toContain("circular project dependencies");
     expect(graph.evidence).toContain("@arolariu/components -> @arolariu/website -> @arolariu/components");
+  });
+
+  it("rejects a local website-to-components dependency in the decoupled graph", async () => {
+    const facts = healthyWorkspaceFacts();
+    const fixture = await createWorkspaceFixture({
+      inspectionOverrides: new Map([
+        [
+          "workspace",
+          {
+            kind: "available",
+            value: {...facts, dependencies: [{source: "@arolariu/website", target: "@arolariu/components"}]},
+            durationMs: 0,
+          },
+        ],
+      ]),
+    });
+
+    const results = await fixture.run();
+
+    expect(resultById(results, "workspace.nx-graph").status).toBe("fail");
+    expect(resultById(results, "workspace.nx-graph").summary).toContain("local components");
+  });
+
+  it.each(["@arolariu/components", "@arolariu/website"])("rejects a graph missing the retained project %s", async (name) => {
+    const facts = healthyWorkspaceFacts();
+    const fixture = await createWorkspaceFixture({
+      inspectionOverrides: new Map([
+        [
+          "workspace",
+          {
+            kind: "available",
+            value: {...facts, projects: facts.projects.filter((project) => project.name !== name)},
+            durationMs: 0,
+          },
+        ],
+      ]),
+    });
+
+    const results = await fixture.run();
+
+    expect(resultById(results, "workspace.nx-graph").status).toBe("fail");
   });
 
   it("reports missing config files without running any commands", async () => {

@@ -9,6 +9,24 @@ format and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## 🎉 Latest Releases
 
+### 2.4.0 - Unreleased
+
+**✨ Added**
+
+- Accept Motion 14 alongside Motion 13 in the peer dependency range. Existing Motion 13 consumers do not need to upgrade.
+- Add explicit TypeScript declaration targets for `@arolariu/components/styles` and `@arolariu/components/styles.css`, allowing strict
+  side-effect imports without consumer-owned ambient declarations. Both subpaths still load the same stylesheet.
+
+**🔧 Compatibility**
+
+- Existing component APIs, React 18/19 peer support, and stylesheet runtime behavior are unchanged.
+- Runtime dependency ranges are unchanged from 2.3.0.
+
+**📚 Migration Guide**
+
+No component call-site changes are required. Motion 13 remains supported; Motion 14 is now also accepted. Existing stylesheet imports keep
+working, and TypeScript consumers no longer need an ambient declaration for either supported stylesheet subpath.
+
 ### [2.3.0](https://www.npmjs.com/package/@arolariu/components/v/2.3.0) - 2026-08-06
 
 **💥 Breaking Changes**
